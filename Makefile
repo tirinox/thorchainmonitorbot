@@ -26,6 +26,6 @@ clean:
 	@docker system prune --volumes --force
 
 upgrade:
-    @make -s pull
-    @make -s build
-    @make -s start
+	@make -s pull
+	@make -s build
+	@make -s start
