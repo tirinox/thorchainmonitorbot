@@ -1,3 +1,6 @@
+include .env
+export
+
 build:
 	$(info Make: Building images.)
 	docker-compose build --no-cache thtgbot redis
@@ -29,3 +32,6 @@ upgrade:
 	@make -s pull
 	@make -s build
 	@make -s start
+
+redis-cli:
+	redis-cli -p $REDIS_PORT -a $REDIS_PASSWORD
