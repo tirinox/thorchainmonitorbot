@@ -1,6 +1,6 @@
 build:
 	$(info Make: Building images.)
-	docker-compose build --no-cache tgbot redis
+	docker-compose build --no-cache thtgbot redis
 
 start:
 	$(info Make: Starting containers.)
@@ -24,7 +24,7 @@ pull:
 	git pull
 
 logs:
-	docker logs -f --tail 1000 `docker ps -aqf "name=selenium"`
+	docker logs -f --tail 1000 `docker ps -aqf "name=thtgbot"`
 
 clean:
 	@docker system prune --volumes --force

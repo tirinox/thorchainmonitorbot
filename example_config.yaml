@@ -1,0 +1,11 @@
+# rename it to "config.yaml"
+
+telegram:
+  bot:
+    token: "insert the bot token from @BotFather here"
+
+thorchain:
+  chaosnet:
+    urls:
+      network: "https://chaosnet-midgard.bepswap.com/v1/network"
+      mimir: "https://chaosnet-midgard.bepswap.com/v1/thorchain/mimir"
