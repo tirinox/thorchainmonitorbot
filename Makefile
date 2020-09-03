@@ -34,4 +34,4 @@ upgrade:
 	@make -s start
 
 redis-cli:
-	redis-cli -p $REDIS_PORT -a $REDIS_PASSWORD
+	redis-cli -p $(REDIS_PORT) -a $(REDIS_PASSWORD)
