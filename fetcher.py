@@ -7,16 +7,17 @@ from config import Config, DB
 
 
 class InfoFetcher:
-    SLEEP_PERIOD = 10
+    SLEEP_PERIOD = 30
     MULT = 10 ** -8
 
     KEY_OLD_CAP = 'th_old_cap'
+    KEY_OLD_STAKED = 'th_old_stakced'
 
     def __init__(self, cfg: Config, db: DB, callback: callable):
         self.cfg = cfg
         self.db = db
         self.callback = callback
-        self.r: Redis
+        self.r: Redis = None
 
     async def fetch_caps(self):
         urls = self.cfg.thorchain.chaosnet.urls
@@ -36,13 +37,24 @@ class InfoFetcher:
             }
 
     async def get_old_cap(self):
-        try:
-            return float(await self.r.get(self.KEY_OLD_CAP))
-        except (TypeError, ValueError):
-            return 0.0
+        if self.r is None:
+            return 0, 0
 
-    async def set_cap(self, cap):
+        try:
+            cap = float(await self.r.get(self.KEY_OLD_CAP))
+        except (TypeError, ValueError):
+            cap = 0.0
+
+        try:
+            staked = float(await self.r.get(self.KEY_OLD_STAKED))
+        except (TypeError, ValueError):
+            staked = 0.0
+
+        return cap, staked
+
+    async def set_cap(self, cap, staked):
         await self.r.set(self.KEY_OLD_CAP, cap)
+        await self.r.set(self.KEY_OLD_STAKED, staked)
 
     async def fetch_loop(self):
         await asyncio.sleep(3)
@@ -54,10 +66,10 @@ class InfoFetcher:
 
             max_cap = r['max_staked']
 
-            old_max_cap = await self.get_old_cap()
-            if max_cap > old_max_cap:
+            old_max_cap, old_staked = await self.get_old_cap()
+            if max_cap != old_max_cap:
                 staked = r['total_staked']
                 await self.callback(old_max_cap, max_cap, staked)
-                await self.set_cap(max_cap)
+                await self.set_cap(max_cap, staked)
 
             await asyncio.sleep(self.SLEEP_PERIOD)

@@ -7,10 +7,6 @@ start:
 	docker-compose up -d
 	docker ps
 
-bs:
-	@make -s build
-	@make -s start
-
 stop:
 	$(info Make: Stopping containers.)
 	@docker-compose stop
@@ -24,7 +20,12 @@ pull:
 	git pull
 
 logs:
-	docker logs -f --tail 1000 `docker ps -aqf "name=thtgbot"`
+	docker logs -f --tail 1000 `docker ps -aqf "name=thorchainmonitorbot_thtgbot_1"`
 
 clean:
 	@docker system prune --volumes --force
+
+upgrade:
+    @make -s pull
+    @make -s build
+    @make -s start
