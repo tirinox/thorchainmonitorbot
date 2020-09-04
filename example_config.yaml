@@ -9,3 +9,4 @@ thorchain:
     urls:
       network: "https://chaosnet-midgard.bepswap.com/v1/network"
       mimir: "https://chaosnet-midgard.bepswap.com/v1/thorchain/mimir"
+      busd_to_rune: "https://chaosnet-midgard.bepswap.com/v1/assets?asset=BNB.BUSD-BD1"
