@@ -27,8 +27,6 @@ class InfoFetcher:
                     mimir_resp = await resp.json()
                     max_staked = int(mimir_resp.get("mimir//MAXIMUMSTAKERUNE", 1)) * self.MULT
 
-                    max_staked = 666009
-
                 async with session.get(urls.busd_to_rune) as resp:
                     busd = await resp.json()
                     price = 1.0 / float(busd[0]["priceRune"])
