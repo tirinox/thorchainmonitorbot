@@ -26,7 +26,7 @@ class InfoFetcher:
                 async with session.get(urls.mimir) as resp:
                     mimir_resp = await resp.json()
                     max_staked = int(mimir_resp.get("mimir//MAXIMUMSTAKERUNE", 1)) * self.MULT
-                    # max_staked = 900007
+                    # max_staked = 900012
 
                 async with session.get(urls.busd_to_rune) as resp:
                     busd = await resp.json()
