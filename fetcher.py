@@ -32,7 +32,7 @@ class InfoFetcher:
                     busd = await resp.json()
                     price = 1.0 / float(busd[0]["priceRune"])
 
-            except (ValueError, TypeError, IndexError):
+            except (ValueError, TypeError, IndexError, ZeroDivisionError):
                 return ThorInfo.zero()
             else:
                 r = ThorInfo(cap=max_staked, stacked=total_staked, price=price)

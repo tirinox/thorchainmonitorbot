@@ -1,6 +1,7 @@
 .idea/
 .env
 config.yaml
+redis_data/dump.rdb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
