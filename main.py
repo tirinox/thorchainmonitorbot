@@ -1,9 +1,9 @@
 import logging
 from fetcher import InfoFetcher, ThorInfo
 from config import Config, DB
-from aiogram import Bot, Dispatcher, executor, types
+from aiogram import Bot, Dispatcher, executor
 from aiogram.types import *
-from message_format import notify_when_cap_changed, welcome_message, BUTTON_GET_UPDATE
+from message_format import notify_when_cap_changed, welcome_message, price_message
 
 
 class MyFetcher(InfoFetcher):
@@ -30,22 +30,18 @@ bot = Bot(token=cfg.telegram.bot.token, parse_mode=ParseMode.HTML)
 dp = Dispatcher(bot)
 
 
-@dp.message_handler(commands=['start', 'help'])
+@dp.message_handler(commands=['start', 'cap'])
 async def send_welcome(message: Message):
     welcome_text = await welcome_message(db)
-    await message.answer(welcome_text, reply_markup=ReplyKeyboardMarkup(keyboard=[[
-        KeyboardButton(BUTTON_GET_UPDATE)
-    ]], resize_keyboard=True), disable_web_page_preview=True)
-    my_id = message.from_user.id
+    await message.answer(welcome_text, reply_markup=ReplyKeyboardRemove(), disable_web_page_preview=True)
+    my_id = message.chat.id
     await db.add_user(my_id)
 
 
-@dp.message_handler()
-async def echo(message: Message):
-    if message.text == BUTTON_GET_UPDATE:
-        await send_welcome(message)
-    else:
-        await message.reply("Not supported")
+@dp.message_handler(commands=['price'])
+async def send_price(message: Message):
+    price_text = await price_message(db)
+    await message.answer(price_text, reply_markup=ReplyKeyboardRemove(), disable_web_page_preview=True)
 
 
 async def fetcher_task():
