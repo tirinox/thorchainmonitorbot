@@ -52,7 +52,7 @@ async def broadcaster(bot, user_ids, message) -> (int, list, list):
                 good_ones.append(user_id)
             else:
                 bad_ones.append(user_id)
-            await asyncio.sleep(.05)  # 20 messages per second (Limit: 30 messages per second)
+            await asyncio.sleep(.1)  # 20 messages per second (Limit: 30 messages per second)
     finally:
         log.info(f"{count} messages successful sent.")
 
