@@ -1,0 +1,14 @@
+Что стейкал:
+
+https://chaosnet-midgard.bepswap.com/v1/stakers/bnb1234
+
+Что вошло в стейк:
+
+https://chaosnet-midgard.bepswap.com/v1/txs?address=bnb1234&type=swap%2CdoubleSwap%2Cstake%2Cunstake&offset=0&limit=5
+
+https://chaosnet-midgard.bepswap.com/v1/stakers/bnb1234/pools?asset=BNB.BNB%2CBNB.BUSD-BD1
+
+Баланс кошелькая вне торчейна:
+
+https://dex.binance.org/api/v1/account/bnb1234
+
