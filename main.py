@@ -12,6 +12,10 @@ class MyFetcher(InfoFetcher):
         self.db = db
 
     async def on_got_info(self, info: ThorInfo):
+        if not info.is_ok:
+            logging.warning('no info got!')
+            return
+
         old_info = await self.db.get_old_cap()
         reached_ath = await self.db.update_ath(info.price)
         await self.db.set_cap(info)
