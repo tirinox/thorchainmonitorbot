@@ -2,8 +2,9 @@ import asyncio
 import logging
 
 import aiohttp
-from config import Config
-from model import ThorInfo
+
+from services.config import Config
+from services.model import ThorInfo
 
 
 class InfoFetcher:
@@ -26,7 +27,7 @@ class InfoFetcher:
                 async with session.get(urls.mimir) as resp:
                     mimir_resp = await resp.json()
                     max_staked = int(mimir_resp.get("mimir//MAXIMUMSTAKERUNE", 1)) * self.MULT
-                    # max_staked = 900012
+                    # max_staked = 9000  # for testing
 
                 async with session.get(urls.busd_to_rune) as resp:
                     busd = await resp.json()
@@ -46,5 +47,6 @@ class InfoFetcher:
         await asyncio.sleep(3)
         while True:
             new_info = await self.fetch_caps()
-            await self.on_got_info(new_info)
+            if new_info.is_ok:
+                await self.on_got_info(new_info)
             await asyncio.sleep(self.SLEEP_PERIOD)

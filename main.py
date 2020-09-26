@@ -1,56 +1,61 @@
 import logging
-from fetcher import InfoFetcher, ThorInfo
-from config import Config, DB
+
 from aiogram import Bot, Dispatcher, executor
 from aiogram.types import *
-from message_format import notify_when_cap_changed, welcome_message, price_message
 
-
-class MyFetcher(InfoFetcher):
-    def __init__(self, cfg: Config, db: DB):
-        super().__init__(cfg)
-        self.db = db
-
-    async def on_got_info(self, info: ThorInfo):
-        if not info.is_ok:
-            logging.warning('no info got!')
-            return
-
-        old_info = await self.db.get_old_cap()
-        reached_ath = await self.db.update_ath(info.price)
-        await self.db.set_cap(info)
-
-        if info.cap != old_info.cap:
-            await notify_when_cap_changed(bot, self.db, old_info, info, reached_ath)
-
+from services.config import Config, DB
+from localization import LocalizationManager
+from services.fetcher_with_notification import FetcherWithNotification
 
 logging.basicConfig(level=logging.INFO)
 
 cfg = Config()
 db = DB()
-fetcher = MyFetcher(cfg, db)
-
 bot = Bot(token=cfg.telegram.bot.token, parse_mode=ParseMode.HTML)
 dp = Dispatcher(bot)
+locman = LocalizationManager()
+fetcher = FetcherWithNotification(cfg, db, bot, locman)
 
 
-@dp.message_handler(commands=['start', 'cap'])
+@dp.message_handler(commands=['start'])
+async def on_start(message: Message):
+    text, kb = locman.default.lang_help()
+    await message.answer(text, reply_markup=kb)
+
+
+@dp.message_handler(commands=['cap'])
 async def send_welcome(message: Message):
-    welcome_text = await welcome_message(db)
+    info = await db.get_old_cap()
+    loc = await locman.get_from_db(message.chat.id, db)
+    welcome_text = loc.welcome_message(info)
     await message.answer(welcome_text, reply_markup=ReplyKeyboardRemove(), disable_web_page_preview=True)
-    my_id = message.chat.id
-    await db.add_user(my_id)
+    await db.add_user(message.chat.id)
 
 
 @dp.message_handler(commands=['price'])
 async def send_price(message: Message):
-    price_text = await price_message(db)
+    info = await db.get_old_cap()
+    loc = await locman.get_from_db(message.chat.id, db)
+    price_text = loc.price_message(info)
     await message.answer(price_text, reply_markup=ReplyKeyboardRemove(), disable_web_page_preview=True)
 
 
+@dp.message_handler(content_types=ContentType.TEXT)
+async def on_lang_set(message: Message):
+    t = message.text
+    if t == locman.default.BUTTON_ENG:
+        lang = 'eng'
+    elif t == locman.default.BUTTON_RUS:
+        lang = 'rus'
+    else:
+        await on_start(message)
+        return
+
+    await locman.set_lang(message.chat.id, lang, db)
+    await send_welcome(message)
+
+
 async def fetcher_task():
-    global fetcher
-    fetcher = MyFetcher(cfg, db)
     await db.get_redis()
     await fetcher.fetch_loop()
 

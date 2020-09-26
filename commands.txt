@@ -1,3 +1,4 @@
 start - запуск бота
 price - цена $RUNE
 cap - текущий кап по стейкингу
+lang - установка языка (set language)

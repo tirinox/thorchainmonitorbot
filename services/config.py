@@ -5,8 +5,12 @@ import yaml
 import sys
 import os
 from prodict import Prodict
+from dotenv import load_dotenv
 
-from model import ThorInfo
+from services.model import ThorInfo
+
+
+load_dotenv()
 
 
 class Config(Prodict):
@@ -31,7 +35,7 @@ class DB:
         if self.redis is not None:
             return self.redis
         host = os.environ.get('REDIS_HOST', 'localhost')
-        port = os.environ.get('REDIS_PORT', 6379)
+        port = os.environ.get('REDIS_PORT', 6382)
         password = os.environ.get('REDIS_PASSWORD', None)
         redis = await aioredis.create_redis(
             f'redis://{host}:{port}',
