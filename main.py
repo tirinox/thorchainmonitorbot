@@ -1,20 +1,24 @@
+import asyncio
 import logging
 
 from aiogram import Bot, Dispatcher, executor
 from aiogram.types import *
 
+from services.broadcast import Broadcaster
 from services.config import Config, DB
 from localization import LocalizationManager
 from services.fetch.cap_notify import CapFetcherNotification
 
 logging.basicConfig(level=logging.INFO)
 
+loop = asyncio.get_event_loop()
 cfg = Config()
-db = DB()
+db = DB(loop)
 bot = Bot(token=cfg.telegram.bot.token, parse_mode=ParseMode.HTML)
-dp = Dispatcher(bot)
+dp = Dispatcher(bot, loop=loop)
 locman = LocalizationManager()
-fetcher = CapFetcherNotification(cfg, db, bot, locman)
+broadcaster = Broadcaster(bot, db)
+fetcher = CapFetcherNotification(cfg, broadcaster, locman)
 
 
 @dp.message_handler(commands=['start'])
@@ -29,7 +33,7 @@ async def send_welcome(message: Message):
     loc = await locman.get_from_db(message.chat.id, db)
     welcome_text = loc.welcome_message(info)
     await message.answer(welcome_text, reply_markup=ReplyKeyboardRemove(), disable_web_page_preview=True)
-    await db.add_user(message.chat.id)
+    await broadcaster.register_user(message.chat.id)
 
 
 @dp.message_handler(commands=['price'])
