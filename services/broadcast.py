@@ -1,9 +1,14 @@
 import asyncio
 import logging
+import random
+import time
 
 from aiogram.utils import exceptions
 
 log = logging.getLogger('broadcast')
+
+broadcast_lock = asyncio.Lock()
+rng = random.Random(time.time())
 
 
 async def send_message(bot, chat_id: int, text: str, disable_notification: bool = False) -> bool:
@@ -24,8 +29,8 @@ async def send_message(bot, chat_id: int, text: str, disable_notification: bool 
         log.error(f"Target [ID:{chat_id}]: invalid user ID")
     except exceptions.RetryAfter as e:
         log.error(f"Target [ID:{chat_id}]: Flood limit is exceeded. Sleep {e.timeout} seconds.")
-        await asyncio.sleep(e.timeout)
-        return await send_message(bot, chat_id, text)  # Recursive call
+        await asyncio.sleep(e.timeout + 0.1)
+        return await send_message(bot, chat_id, text, disable_notification)  # Recursive call
     except exceptions.UserDeactivated:
         log.error(f"Target [ID:{chat_id}]: user is deactivated")
     except exceptions.TelegramAPIError:
@@ -37,28 +42,38 @@ async def send_message(bot, chat_id: int, text: str, disable_notification: bool 
     return False
 
 
-async def broadcaster(bot, chat_ids, message, delay=0.1) -> (int, list, list):
+def sort_and_shuffle_chats(chat_ids):
+    user_dialogs = [i for i in chat_ids if i > 0]
+    multi_chats = [i for i in chat_ids if i < 0]
+    rng.shuffle(user_dialogs)
+    rng.shuffle(multi_chats)
+    return multi_chats + user_dialogs
+
+
+async def broadcaster(bot, chat_ids, message, delay=0.075) -> (int, list, list):
     """
     Simple broadcaster
     :return: Count of messages and good and bad ids
     """
-    count = 0
-    good_ones, bad_ones = [], []
-    chat_ids = list(chat_ids)
+    async with broadcast_lock:
+        count = 0
+        good_ones, bad_ones = [], []
 
-    try:
-        for chat_id in chat_ids:
-            if isinstance(message, str):
-                final_message = message
-            else:
-                final_message = await message(chat_id)
-            if await send_message(bot, chat_id, final_message):
-                count += 1
-                good_ones.append(chat_id)
-            else:
-                bad_ones.append(chat_id)
-            await asyncio.sleep(delay)  # 10 messages per second (Limit: 30 messages per second)
-    finally:
-        log.info(f"{count} messages successful sent (of {len(chat_ids)})")
+        try:
+            chat_ids = sort_and_shuffle_chats(chat_ids)
 
-    return count, good_ones, bad_ones
+            for chat_id in chat_ids:
+                if isinstance(message, str):
+                    final_message = message
+                else:
+                    final_message = await message(chat_id)
+                if await send_message(bot, chat_id, final_message):
+                    count += 1
+                    good_ones.append(chat_id)
+                else:
+                    bad_ones.append(chat_id)
+                await asyncio.sleep(delay)  # 10 messages per second (Limit: 30 messages per second)
+        finally:
+            log.info(f"{count} messages successful sent (of {len(chat_ids)})")
+
+        return count, good_ones, bad_ones

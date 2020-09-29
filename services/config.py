@@ -7,7 +7,7 @@ import os
 from prodict import Prodict
 from dotenv import load_dotenv
 
-from services.model import ThorInfo
+from services.fetch.model import ThorInfo
 
 
 load_dotenv()

@@ -4,12 +4,12 @@ from aiogram import Bot
 
 from services.config import Config, DB
 from localization import LocalizationManager
-from services.model import ThorInfo
+from services.fetch.model import ThorInfo
 from services.broadcast import broadcaster
-from services.fetcher import InfoFetcher
+from services.fetch.cap import CapInfoFetcher
 
 
-class FetcherWithNotification(InfoFetcher):
+class CapFetcherNotification(CapInfoFetcher):
     def __init__(self, cfg: Config, db: DB, bot: Bot, locman: LocalizationManager):
         super().__init__(cfg)
         self.db = db

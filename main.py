@@ -5,7 +5,7 @@ from aiogram.types import *
 
 from services.config import Config, DB
 from localization import LocalizationManager
-from services.fetcher_with_notification import FetcherWithNotification
+from services.fetch.cap_notify import CapFetcherNotification
 
 logging.basicConfig(level=logging.INFO)
 
@@ -14,7 +14,7 @@ db = DB()
 bot = Bot(token=cfg.telegram.bot.token, parse_mode=ParseMode.HTML)
 dp = Dispatcher(bot)
 locman = LocalizationManager()
-fetcher = FetcherWithNotification(cfg, db, bot, locman)
+fetcher = CapFetcherNotification(cfg, db, bot, locman)
 
 
 @dp.message_handler(commands=['start'])

@@ -2,6 +2,8 @@ import json
 from dataclasses import dataclass, asdict
 
 
+MIDGARD_MULT = 10 ** -8
+
 @dataclass
 class ThorInfo:
     cap: int

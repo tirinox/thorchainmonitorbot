@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from services.model import ThorInfo
+from services.fetch.model import ThorInfo
 from aiogram.types import *
 
 

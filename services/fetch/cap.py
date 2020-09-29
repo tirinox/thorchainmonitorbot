@@ -4,12 +4,11 @@ import logging
 import aiohttp
 
 from services.config import Config
-from services.model import ThorInfo
+from services.fetch.model import ThorInfo, MIDGARD_MULT
 
 
-class InfoFetcher:
-    SLEEP_PERIOD = 30
-    MULT = 10 ** -8
+class CapInfoFetcher:
+    SLEEP_PERIOD = 60
 
     def __init__(self, cfg: Config):
         self.cfg = cfg
@@ -19,14 +18,14 @@ class InfoFetcher:
 
         async with aiohttp.ClientSession() as session:
             try:
-                logging.info("start fetching")
+                logging.info("start fetching caps and mimir")
                 async with session.get(urls.network) as resp:
                     networks_resp = await resp.json()
-                    total_staked = int(networks_resp.get('totalStaked', 0)) * self.MULT
+                    total_staked = int(networks_resp.get('totalStaked', 0)) * MIDGARD_MULT
 
                 async with session.get(urls.mimir) as resp:
                     mimir_resp = await resp.json()
-                    max_staked = int(mimir_resp.get("mimir//MAXIMUMSTAKERUNE", 1)) * self.MULT
+                    max_staked = int(mimir_resp.get("mimir//MAXIMUMSTAKERUNE", 1)) * MIDGARD_MULT
                     # max_staked = 9000  # for testing
 
                 async with session.get(urls.busd_to_rune) as resp:
