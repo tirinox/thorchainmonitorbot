@@ -24,9 +24,6 @@ class Config(Prodict):
 
 
 class DB:
-    KEY_INFO = 'th_info'
-    KEY_ATH = 'th_ath_rune_price'
-
     def __init__(self, loop):
         self.loop = loop
         self.redis: aioredis.Redis = None
@@ -47,30 +44,3 @@ class DB:
     async def close_redis(self):
         self.redis.close()
         await self.redis.wait_closed()
-
-    # -- ath --
-
-    async def get_ath(self):
-        try:
-            return float(await self.redis.get(self.KEY_ATH))
-        except (TypeError, ValueError, AttributeError):
-            return 0.0
-
-    async def update_ath(self, price):
-        ath = await self.get_ath()
-        if price > ath:
-            await self.redis.set(self.KEY_ATH, price)
-            return True
-        return False
-
-    # -- caps --
-
-    async def get_old_cap(self):
-        try:
-            return ThorInfo.from_json(await self.redis.get(self.KEY_INFO))
-        except (TypeError, ValueError, AttributeError, json.decoder.JSONDecodeError):
-            return ThorInfo.zero()
-
-    async def set_cap(self, info: ThorInfo):
-        if self.redis:
-            await self.redis.set(self.KEY_INFO, info.as_json)

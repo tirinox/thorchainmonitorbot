@@ -42,5 +42,10 @@ async def foo2():
     await asyncio.gather(mock_broadcaster('first', 10, 0.2), mock_broadcaster('second', 12, 0.1))
 
 
+
+async def foo3():
+    f = StakeTxFetcher(cfg)
+    await f.run()
+
 if __name__ == '__main__':
-    loop.run_until_complete(foo2())
+    loop.run_until_complete(foo3())

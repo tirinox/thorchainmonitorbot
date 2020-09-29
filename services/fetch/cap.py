@@ -49,3 +49,4 @@ class CapInfoFetcher:
             if new_info.is_ok:
                 await self.on_got_info(new_info)
             await asyncio.sleep(self.SLEEP_PERIOD)
+
