@@ -1,14 +1,9 @@
-import json
-
 import aioredis
 import yaml
 import sys
 import os
 from prodict import Prodict
 from dotenv import load_dotenv
-
-from services.fetch.model import ThorInfo
-
 
 load_dotenv()
 

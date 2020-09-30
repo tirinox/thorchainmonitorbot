@@ -2,10 +2,10 @@ import json
 import logging
 
 from localization import LocalizationManager
-from services.broadcast import Broadcaster
+from services.notify.broadcast import Broadcaster
 from services.config import Config
 from services.fetch.cap import CapInfoFetcher
-from services.fetch.model import ThorInfo
+from services.models.model import ThorInfo
 
 
 class CapFetcherNotification(CapInfoFetcher):
@@ -20,9 +20,9 @@ class CapFetcherNotification(CapInfoFetcher):
             logging.warning('no info got!')
             return
 
-        old_info = await self.db.get_old_cap()
-        await self.db.update_ath(info.price)
-        await self.db.set_cap(info)
+        old_info = await self.get_old_cap()
+        await self.update_ath(info.price)
+        await self.set_cap(info)
 
         if info.cap != old_info.cap:
             await self.notify_when_cap_changed(old_info, info)

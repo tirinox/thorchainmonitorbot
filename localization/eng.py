@@ -1,5 +1,5 @@
 from localization.base import BaseLocalization
-from services.fetch.model import ThorInfo
+from services.models.model import ThorInfo
 
 
 class EnglishLocalization(BaseLocalization):

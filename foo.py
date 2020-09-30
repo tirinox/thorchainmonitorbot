@@ -1,10 +1,7 @@
 import asyncio
 import logging
 
-from aiogram import Bot, Dispatcher
-from aiogram.types import *
-
-from services.broadcast import Broadcaster
+from services.notify.broadcast import Broadcaster
 from services.config import Config, DB
 from services.fetch.tx import StakeTxFetcher
 

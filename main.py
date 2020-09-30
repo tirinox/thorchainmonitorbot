@@ -4,10 +4,10 @@ import logging
 from aiogram import Bot, Dispatcher, executor
 from aiogram.types import *
 
-from services.broadcast import Broadcaster
+from services.notify.broadcast import Broadcaster
 from services.config import Config, DB
 from localization import LocalizationManager
-from services.fetch.cap_notify import CapFetcherNotification
+from services.notify.cap_notify import CapFetcherNotification
 
 logging.basicConfig(level=logging.INFO)
 
