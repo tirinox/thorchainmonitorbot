@@ -1,5 +1,5 @@
 from localization.base import BaseLocalization
-from services.models.model import ThorInfo
+from services.models.cap_info import ThorInfo
 
 
 class RussianLocalization(BaseLocalization):

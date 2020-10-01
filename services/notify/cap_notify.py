@@ -1,11 +1,10 @@
-import json
 import logging
 
 from localization import LocalizationManager
-from services.notify.broadcast import Broadcaster
 from services.config import Config
 from services.fetch.cap import CapInfoFetcher
-from services.models.model import ThorInfo
+from services.models.cap_info import ThorInfo
+from services.notify.broadcast import Broadcaster
 
 
 class CapFetcherNotification(CapInfoFetcher):
@@ -15,17 +14,18 @@ class CapFetcherNotification(CapInfoFetcher):
         self.loc_man = locman
         self.db = broadcaster.db
 
-    async def on_got_info(self, info: ThorInfo):
-        if not info.is_ok:
+    async def on_got_info(self, new_info: ThorInfo):
+        if not new_info.is_ok:
             logging.warning('no info got!')
             return
 
-        old_info = await self.get_old_cap()
-        await self.update_ath(info.price)
-        await self.set_cap(info)
+        db = self.db
+        old_info = await ThorInfo.get_old_cap(db)
+        await ThorInfo.update_ath(db, new_info.price)
+        await new_info.save(db)
 
-        if info.cap != old_info.cap:
-            await self.notify_when_cap_changed(old_info, info)
+        if new_info.cap != old_info.cap:
+            await self.notify_when_cap_changed(old_info, new_info)
 
     async def notify_when_cap_changed(self, old: ThorInfo, new: ThorInfo):
         async def message_gen(chat_id):
@@ -34,35 +34,3 @@ class CapFetcherNotification(CapInfoFetcher):
 
         users = await self.broadcaster.all_users()
         await self.broadcaster.broadcast(users, message_gen)
-
-    KEY_INFO = 'th_info'
-    KEY_ATH = 'th_ath_rune_price'
-
-    # -- ath --
-
-    async def get_ath(self):
-        try:
-            ath_str = await self.db.redis.get(self.KEY_ATH)
-            return float(ath_str)
-        except (TypeError, ValueError, AttributeError):
-            return 0.0
-
-    async def update_ath(self, price):
-        ath = await self.get_ath()
-        if price > ath:
-            await self.db.redis.set(self.KEY_ATH, price)
-            return True
-        return False
-
-    # -- caps --
-
-    async def get_old_cap(self):
-        try:
-            j = await self.db.redis.get(self.KEY_INFO)
-            return ThorInfo.from_json(j)
-        except (TypeError, ValueError, AttributeError, json.decoder.JSONDecodeError):
-            return ThorInfo.zero()
-
-    async def set_cap(self, info: ThorInfo):
-        if self.db.redis:
-            await self.db.redis.set(self.KEY_INFO, info.as_json)

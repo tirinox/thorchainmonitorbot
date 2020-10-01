@@ -1,9 +1,13 @@
 import asyncio
 import logging
 
+import aiohttp
+
+from services.fetch.price import get_prices_of, STABLE_COIN, get_price_of
 from services.notify.broadcast import Broadcaster
 from services.config import Config, DB
 from services.fetch.tx import StakeTxFetcher
+from services.models.tx import StakeTx, StakePoolStats
 
 logging.basicConfig(level=logging.INFO)
 
@@ -39,10 +43,65 @@ async def foo2():
     await asyncio.gather(mock_broadcaster('first', 10, 0.2), mock_broadcaster('second', 12, 0.1))
 
 
-
 async def foo3():
-    f = StakeTxFetcher(cfg)
+    f = StakeTxFetcher(cfg, db)
     await f.run()
 
+
+async def foo4():
+    await db.get_redis()
+    pool = 'BNB.BNB'
+    bnb_st = await StakePoolStats.get_from_db(pool, db)
+
+    print(f"bnb_st = {bnb_st}")
+
+    def stake(amt):
+        bnb_st.update(amt)
+        print(f"bnb_st = {bnb_st}")
+
+    for _ in range(30):
+        stake(100)
+
+    stake(100000)
+
+    for _ in range(50):
+        stake(100)
+
+    await bnb_st.save(db)
+
+    await asyncio.sleep(1)
+
+
+async def foo5():
+    async with aiohttp.ClientSession() as session:
+        mp = await get_prices_of(session, [STABLE_COIN, 'BNB.BNB'])
+        print(mp)
+        print(await get_price_of(session, STABLE_COIN))
+
+
+async def foo6():
+    # await StakePoolStats.clear_all_data(db)
+    # return
+
+    f = StakeTxFetcher(cfg, db)
+    txs = await f.tick()
+
+    if txs:
+        print('transactions:')
+        for tx in txs:
+            print(tx)
+            print('avg =', f.stat_map.get(tx.pool).rune_avg_amt, 'rune.')
+
+    # print('price map:')
+    # print(f.price_map)
+    # print('stat map:')
+    # print(f.stat_map)
+
+
+async def start_foos():
+    await db.get_redis()
+    await foo6()
+
+
 if __name__ == '__main__':
-    loop.run_until_complete(foo3())
+    loop.run_until_complete(start_foos())
