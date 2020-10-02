@@ -6,6 +6,7 @@ from services.models.cap_info import BaseModelMixin, MIDGARD_MULT
 
 @dataclass
 class StakeTx(BaseModelMixin):
+    date: int
     type: str
     pool: str
     asset_amount: float
@@ -40,7 +41,9 @@ class StakeTx(BaseModelMixin):
 
         tx_hash = j['in']['txID']
 
-        return cls(t, pool,
+        return cls(date=int(j['date']),
+                   type=t,
+                   pool=pool,
                    asset_amount=asset_amount * MIDGARD_MULT,
                    rune_amount=rune_amount * MIDGARD_MULT,
                    hash=tx_hash,

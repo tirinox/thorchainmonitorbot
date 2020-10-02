@@ -74,11 +74,13 @@ class Broadcaster:
                         final_message = message
                     else:
                         final_message = await message(chat_id, *args, **kwargs)
-                    if await self._send_message(chat_id, final_message):
-                        count += 1
-                    else:
-                        bad_ones.append(chat_id)
-                    await asyncio.sleep(delay)  # 10 messages per second (Limit: 30 messages per second)
+
+                    if final_message:
+                        if await self._send_message(chat_id, final_message):
+                            count += 1
+                        else:
+                            bad_ones.append(chat_id)
+                        await asyncio.sleep(delay)  # 10 messages per second (Limit: 30 messages per second)
 
                 await self.remove_users(bad_ones)
             finally:

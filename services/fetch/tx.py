@@ -12,7 +12,7 @@ TRANSACTION_URL = "https://chaosnet-midgard.bepswap.com/v1/txs?offset={offset}&l
 
 
 class StakeTxFetcher:
-    SLEEP_PERIOD = 60
+    SLEEP_PERIOD = 70  # sec
     MAX_TX_PER_ONE_TIME = 150
     TX_PER_BATCH = 50
 
@@ -134,9 +134,12 @@ class StakeTxFetcher:
     async def run(self):
         await asyncio.sleep(3)
         while True:
-            txs = await self.tick()
-            if txs:
-                runes_per_dollar = self.price_map.get(STABLE_COIN, 1)
-                await self.on_new_txs(txs, runes_per_dollar)
-                await self.mark_as_notified(txs)
+            try:
+                txs = await self.tick()
+                if txs:
+                    runes_per_dollar = self.price_map.get(STABLE_COIN, 1)
+                    await self.on_new_txs(txs, runes_per_dollar)
+                    await self.mark_as_notified(txs)
+            except Exception as e:
+                logging.error(f"StakeTxFetcher task error: {e}")
             await asyncio.sleep(self.SLEEP_PERIOD)
