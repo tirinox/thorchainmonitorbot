@@ -5,6 +5,7 @@ from aiogram import Bot, Dispatcher, executor
 from aiogram.types import *
 
 from services.models.cap_info import ThorInfo
+from services.models.tx import StakePoolStats
 from services.notify.broadcast import Broadcaster
 from services.config import Config, DB
 from localization import LocalizationManager
@@ -21,7 +22,7 @@ dp = Dispatcher(bot, loop=loop)
 loc_man = LocalizationManager()
 broadcaster = Broadcaster(bot, db)
 fetcher_cap = CapFetcherNotification(cfg, broadcaster, loc_man)
-fetcher_tx = StakeTxNotifier(cfg, broadcaster, loc_man)
+fetcher_tx = StakeTxNotifier(cfg, db, broadcaster, loc_man)
 
 
 @dp.message_handler(commands=['start'])
@@ -47,6 +48,12 @@ async def send_price(message: Message):
     await message.answer(price_text, reply_markup=ReplyKeyboardRemove(), disable_web_page_preview=True)
 
 
+@dp.message_handler(commands=['help'])
+async def send_price(message: Message):
+    # todo: help texts!
+    await message.answer("help", reply_markup=ReplyKeyboardRemove(), disable_web_page_preview=True)
+
+
 @dp.message_handler(content_types=ContentType.TEXT)
 async def on_lang_set(message: Message):
     t = message.text
@@ -64,8 +71,14 @@ async def on_lang_set(message: Message):
 
 async def fetcher_task():
     await db.get_redis()
-    await fetcher_cap.run()
-    await fetcher_tx.run()
+
+    # fixme: debug REMOVE!!!
+    await StakePoolStats.clear_all_data(db)
+
+    await asyncio.gather(
+        fetcher_cap.run(),
+        fetcher_tx.run()
+    )
 
 
 if __name__ == '__main__':

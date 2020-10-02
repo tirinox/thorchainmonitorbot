@@ -57,7 +57,7 @@ class Broadcaster:
         self._rng.shuffle(multi_chats)
         return multi_chats + user_dialogs
 
-    async def broadcast(self, chat_ids, message, delay=0.075) -> int:
+    async def broadcast(self, chat_ids, message, delay=0.075, *args, **kwargs) -> int:
         """
         Simple broadcaster
         :return: Count of messages sent
@@ -73,7 +73,7 @@ class Broadcaster:
                     if isinstance(message, str):
                         final_message = message
                     else:
-                        final_message = await message(chat_id)
+                        final_message = await message(chat_id, *args, **kwargs)
                     if await self._send_message(chat_id, final_message):
                         count += 1
                     else:

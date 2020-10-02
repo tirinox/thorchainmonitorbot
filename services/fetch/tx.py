@@ -5,7 +5,7 @@ from typing import List
 import aiohttp
 
 from services.config import Config, DB
-from services.fetch.price import get_prices_of
+from services.fetch.price import get_prices_of, STABLE_COIN
 from services.models.tx import StakeTx, StakePoolStats
 
 TRANSACTION_URL = "https://chaosnet-midgard.bepswap.com/v1/txs?offset={offset}&limit={limit}&type=stake,unstake"
@@ -98,6 +98,7 @@ class StakeTxFetcher:
 
     async def _load_stats(self, txs):
         pool_names = StakeTx.collect_pools(txs)
+        pool_names.add(STABLE_COIN)  # don't forget BUSD, for total usd volume!
         self.price_map = await get_prices_of(self.session, pool_names)
         self.stat_map = {
             pool: (await StakePoolStats.get_from_db(pool, self.db)) for pool in pool_names
@@ -127,7 +128,7 @@ class StakeTxFetcher:
             tx.set_notified(self.db) for tx in txs
         ])
 
-    async def on_new_txs(self, txs):
+    async def on_new_txs(self, txs, runes_per_dollar):
         ...
 
     async def run(self):
@@ -135,6 +136,7 @@ class StakeTxFetcher:
         while True:
             txs = await self.tick()
             if txs:
-                await self.on_new_txs(txs)
+                runes_per_dollar = self.price_map.get(STABLE_COIN, 1)
+                await self.on_new_txs(txs, runes_per_dollar)
                 await self.mark_as_notified(txs)
             await asyncio.sleep(self.SLEEP_PERIOD)

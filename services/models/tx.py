@@ -12,6 +12,7 @@ class StakeTx(BaseModelMixin):
     rune_amount: float
     hash: str
     full_rune: float
+    asset_price: float
 
     @classmethod
     def load_from_midgard(cls, j):
@@ -43,18 +44,24 @@ class StakeTx(BaseModelMixin):
                    asset_amount=asset_amount * MIDGARD_MULT,
                    rune_amount=rune_amount * MIDGARD_MULT,
                    hash=tx_hash,
-                   full_rune=0.0)
+                   full_rune=0.0,
+                   asset_price=0.0)
 
-    def assymetry(self, price, force_abs=False):
-        rune_asset_amount = self.asset_amount * price
+    def assymmetry(self, force_abs=False):
+        rune_asset_amount = self.asset_amount * self.asset_price
         factor = (self.rune_amount / (rune_asset_amount + self.rune_amount) - 0.5) * 200.0  # -100 % ... + 100 %
         return abs(factor) if force_abs else factor
+
+    def symmetry_rune_vs_asset(self):
+        f = 100.0 / self.full_rune
+        return self.rune_amount * f, self.asset_price * self.asset_amount * f
 
     @classmethod
     def collect_pools(cls, txs):
         return set(t.pool for t in txs)
 
     def full_rune_amount(self, asset_price):
+        self.asset_price = asset_price
         self.full_rune = self.asset_amount * asset_price + self.rune_amount
         return self.full_rune
 
@@ -105,4 +112,13 @@ class StakePoolStats(BaseModelMixin):
         r = await db.get_redis()
         keys = await r.keys('stake_pool_stats:*')
         keys += await r.keys('tx_not:*')
-        await r.delete(*keys)
+        if keys:
+            await r.delete(*keys)
+
+
+def short_asset_name(pool: str):
+    try:
+        cs = pool.split('.')
+        return cs[1].split('-')[0]
+    except IndexError:
+        return pool

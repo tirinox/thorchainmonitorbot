@@ -8,6 +8,7 @@ from services.notify.broadcast import Broadcaster
 from services.config import Config, DB
 from services.fetch.tx import StakeTxFetcher
 from services.models.tx import StakeTx, StakePoolStats
+from services.notify.tx_notify import StakeTxNotifier
 
 logging.basicConfig(level=logging.INFO)
 
@@ -80,22 +81,11 @@ async def foo5():
 
 
 async def foo6():
-    # await StakePoolStats.clear_all_data(db)
+    await StakePoolStats.clear_all_data(db)
     # return
 
-    f = StakeTxFetcher(cfg, db)
-    txs = await f.tick()
-
-    if txs:
-        print('transactions:')
-        for tx in txs:
-            print(tx)
-            print('avg =', f.stat_map.get(tx.pool).rune_avg_amt, 'rune.')
-
-    # print('price map:')
-    # print(f.price_map)
-    # print('stat map:')
-    # print(f.stat_map)
+    fetcher_tx = StakeTxNotifier(cfg, db, None, None)
+    await fetcher_tx.run()
 
 
 async def start_foos():

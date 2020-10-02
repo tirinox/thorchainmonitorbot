@@ -1,4 +1,5 @@
-start - запуск бота
-price - цена $RUNE
-cap - текущий кап по стейкингу
+start - start the bot
+price - price of Rune
+cap - current stake cap
 lang - установка языка (set language)
+help - help page
