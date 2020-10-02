@@ -72,8 +72,7 @@ async def on_lang_set(message: Message):
 async def fetcher_task():
     await db.get_redis()
 
-    # fixme: debug REMOVE!!!
-    await StakePoolStats.clear_all_data(db)
+    # await StakePoolStats.clear_all_data(db)
 
     await asyncio.gather(
         fetcher_cap.run(),
