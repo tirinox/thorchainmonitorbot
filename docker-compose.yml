@@ -24,7 +24,13 @@ services:
       - "${REDIS_PORT}:${REDIS_PORT}"
     expose:
       - "${REDIS_PORT}"
-    command: redis-server --requirepass ${REDIS_PASSWORD} --port ${REDIS_PORT}
+    command:
+      - 'redis-server'
+      - '--save 900 1'
+      - '--save 300 10'
+      - '--save 60 10000'
+      - '--port ${REDIS_PORT}'
+      - '--requirepass ${REDIS_PASSWORD}'
 
 networks:
   redis-net:
