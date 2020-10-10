@@ -21,6 +21,7 @@ class StakeTxNotifier(StakeTxFetcher):
         self.threshold_mult = float(scfg.threshold_mult)
         self.avg_n = int(scfg.avg_n)
         self.max_age_sec = int(scfg.max_age_sec)
+        self.min_usd_total = int(scfg.min_usd_total)
 
     def _filter_by_age(self, txs: List[StakeTx]):
         now = int(time.time())
@@ -28,9 +29,21 @@ class StakeTxNotifier(StakeTxFetcher):
             if tx.date > now - self.max_age_sec:
                 yield tx
 
+    def _filter_large_txs(self, txs, threshold_factor=5.0, min_rune_volume=10000):
+        for tx in txs:
+            tx: StakeTx
+            stats: StakePoolStats = self.pool_stat_map.get(tx.pool)
+            if stats is not None:
+                if tx.full_rune >= min_rune_volume and tx.full_rune >= stats.rune_avg_amt * threshold_factor:
+                    yield tx
+
     async def on_new_txs(self, txs: List[StakeTx]):
         new_txs = self._filter_by_age(txs)
-        large_txs = self.filter_large_txs(new_txs, self.threshold_mult)
+
+        runes_per_dollar = self.runes_per_dollar
+        min_rune_volume = self.min_usd_total * runes_per_dollar
+
+        large_txs = self._filter_large_txs(new_txs, self.threshold_mult, min_rune_volume)
 
         large_txs = list(large_txs)
         large_txs = large_txs[:self.MAX_TX_PER_ONE_TIME]
@@ -38,7 +51,6 @@ class StakeTxNotifier(StakeTxFetcher):
         logging.info(f"large_txs: {len(large_txs)}")
 
         if large_txs:
-            runes_per_dollar = self.runes_per_dollar
             user_lang_map = telegram_chats_from_config(self.cfg, self.loc_man)
 
             async def message_gen(chat_id):

@@ -110,14 +110,6 @@ class StakeTxFetcher:
             pool: (await StakePoolStats.get_from_db(pool, self.db)) for pool in pool_names
         }
 
-    def filter_large_txs(self, txs, threshold_factor=5.0):
-        for tx in txs:
-            tx: StakeTx
-            stats: StakePoolStats = self.pool_stat_map.get(tx.pool)
-            if stats is not None:
-                if tx.full_rune >= stats.rune_avg_amt * threshold_factor:
-                    yield tx
-
     async def tick(self):
         async with aiohttp.ClientSession() as self.session:
             txs = await self._fetch_txs()

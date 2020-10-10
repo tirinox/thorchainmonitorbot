@@ -19,3 +19,4 @@ tx:
     fetch_period: 70
     tx_per_batch: 50
     max_page_deep: 10
+    min_usd_total: 10000
