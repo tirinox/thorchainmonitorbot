@@ -7,9 +7,17 @@ from typing import Iterable
 from aiogram import Bot
 from aiogram.utils import exceptions
 
-from services.config import DB
+from localization import LocalizationManager
+from services.config import DB, Config
 
 log = logging.getLogger('broadcast')
+
+
+def telegram_chats_from_config(cfg: Config, loc_man: LocalizationManager):
+    channels = cfg.telegram.channels
+    return {
+        chan['name']: loc_man.get_from_lang(chan['lang']) for chan in channels if chan['type'] == 'telegram'
+    }
 
 
 class Broadcaster:
@@ -50,11 +58,15 @@ class Broadcaster:
         return False
 
     def sort_and_shuffle_chats(self, chat_ids):
-        user_dialogs = [i for i in chat_ids if i > 0]
-        multi_chats = [i for i in chat_ids if i < 0]
+        numeric_ids = [i for i in chat_ids if isinstance(i, int)]
+        non_numeric_ids = [i for i in chat_ids if not isinstance(i, int)]
+
+        user_dialogs = [i for i in numeric_ids if i > 0]
+        multi_chats = [i for i in numeric_ids if i < 0]
         self._rng.shuffle(user_dialogs)
         self._rng.shuffle(multi_chats)
-        return multi_chats + user_dialogs
+
+        return non_numeric_ids + multi_chats + user_dialogs
 
     async def broadcast(self, chat_ids: Iterable, message, delay=0.075, *args, **kwargs) -> int:
         """

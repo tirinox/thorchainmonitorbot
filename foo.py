@@ -2,7 +2,10 @@ import asyncio
 import logging
 
 import aiohttp
+from aiogram import Bot, Dispatcher
+from aiogram.types import ParseMode
 
+from localization import LocalizationManager
 from services.fetch.price import get_prices_of, STABLE_COIN, get_price_of
 from services.notify.broadcast import Broadcaster
 from services.config import Config, DB
@@ -10,22 +13,29 @@ from services.fetch.tx import StakeTxFetcher
 from services.models.tx import StakePoolStats
 from services.notify.types.tx_notify import StakeTxNotifier
 
-logging.basicConfig(level=logging.INFO)
-
 cfg = Config()
+
+log_level = cfg.get('log_level', logging.INFO)
+
+logging.basicConfig(level=logging.getLevelName(log_level))
+logging.info(f"Log level: {log_level}")
+
 loop = asyncio.get_event_loop()
 db = DB(loop)
 
-bk = Broadcaster(None, db)
+bot = Bot(token=cfg.telegram.bot.token, parse_mode=ParseMode.HTML)
+dp = Dispatcher(bot, loop=loop)
+loc_man = LocalizationManager()
+broadcaster = Broadcaster(bot, db)
 
 
 async def foo1():
     await db.get_redis()
-    users = await bk.all_users()
-    print(bk.sort_and_shuffle_chats(users))
+    users = await broadcaster.all_users()
+    print(broadcaster.sort_and_shuffle_chats(users))
 
-    print(bk.sort_and_shuffle_chats([
-        10, -1, 20, 50, -200, -300, -250, 11, 12, 14
+    print(broadcaster.sort_and_shuffle_chats([
+        10, -1, 20, 50, -200, "@test", -300, -250, 11, 12, 14, "@maxism"
     ]))
     # await StakeTxFetcher.fetch_loop()
 
@@ -82,9 +92,8 @@ async def foo5():
 
 async def foo6():
     await StakePoolStats.clear_all_data(db)
-    # return
 
-    fetcher_tx = StakeTxNotifier(cfg, db, None, None)
+    fetcher_tx = StakeTxNotifier(cfg, db, broadcaster, loc_man)
     await fetcher_tx.run()
 
 

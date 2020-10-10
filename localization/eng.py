@@ -1,6 +1,9 @@
-from localization.base import BaseLocalization, pretty_money, link
+import datetime
+import logging
+
+from localization.base import BaseLocalization, pretty_money, link, short_address
 from services.models.cap_info import ThorInfo
-from services.models.tx import StakeTx, short_asset_name
+from services.models.tx import StakeTx, short_asset_name, StakePoolStats
 
 
 class EnglishLocalization(BaseLocalization):
@@ -35,12 +38,12 @@ class EnglishLocalization(BaseLocalization):
         return f"Last $RUNE price: <code>{info.price:.3f} BUSD</code>."
 
     # ------ TXS -------
-    def tx_text(self, tx: StakeTx, rune_per_dollar):
+    def tx_text(self, tx: StakeTx, rune_per_dollar: float, pool: StakePoolStats):
         msg = ''
         if tx.type == 'stake':
-            msg += f'🐳 <b>Whale staked</b> 🟢\n'
+            msg += f'🐳 <b>Whale added liquidity</b> 🟢\n'
         elif tx.type == 'unstake':
-            msg += f'🐳 <b>Whale unstaked</b> 🔴\n'
+            msg += f'🐳 <b>Whale removed liquidity</b> 🔴\n'
 
         rp, ap = tx.symmetry_rune_vs_asset()
         msg += f"<b>{pretty_money(tx.rune_amount)} ᚱune</b> ({rp:.0f}%) ↔️ " \
@@ -49,7 +52,10 @@ class EnglishLocalization(BaseLocalization):
         total_usd_volume = tx.full_rune / rune_per_dollar if rune_per_dollar != 0 else 0.0
         msg += f"Total: <code>${pretty_money(total_usd_volume)}</code>\n"
 
-        rune_stake_info = link(f'https://runestake.info/demo?address={tx.address}', 'RuneStake.info')
-        msg += f"Stats: {rune_stake_info}"
+        d = datetime.datetime.fromtimestamp(tx.date)
+        msg += f"Date: {d}\n"
+
+        info = link(f'https://viewblock.io/thorchain/address/{tx.address}', short_address(tx.address))
+        msg += f"Explorer: {info}"
 
         return msg

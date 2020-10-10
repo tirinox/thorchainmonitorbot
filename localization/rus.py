@@ -1,6 +1,8 @@
-from localization.base import BaseLocalization, pretty_money, link
+from typing import Dict
+
+from localization.base import BaseLocalization, pretty_money, link, short_address
 from services.models.cap_info import ThorInfo
-from services.models.tx import StakeTx, short_asset_name
+from services.models.tx import StakeTx, short_asset_name, StakePoolStats
 
 
 class RussianLocalization(BaseLocalization):
@@ -36,12 +38,12 @@ class RussianLocalization(BaseLocalization):
         return f"Последняя цена $RUNE: <code>{info.price:.3f} BUSD</code>."
 
     # ------ TXS -------
-    def tx_text(self, tx: StakeTx, rune_per_dollar):
+    def tx_text(self, tx: StakeTx, rune_per_dollar: float, pool: StakePoolStats):
         msg = ''
         if tx.type == 'stake':
-            msg += f'🐳 <b>Кит застейкал</b> 🟢\n'
+            msg += f'🐳 <b>Кит добавил ликвидности</b> 🟢\n'
         elif tx.type == 'unstake':
-            msg += f'🐳 <b>Кит вывел из стейка</b> 🔴\n'
+            msg += f'🐳 <b>Кит вывел ликвидность</b> 🔴\n'
 
         rp, ap = tx.symmetry_rune_vs_asset()
         msg += f"<b>{pretty_money(tx.rune_amount)} ᚱune</b> ({rp:.0f}%) ↔️ " \
@@ -50,6 +52,7 @@ class RussianLocalization(BaseLocalization):
         total_usd_volume = tx.full_rune / rune_per_dollar if rune_per_dollar != 0 else 0.0
         msg += f"Всего: <code>${pretty_money(total_usd_volume)}</code>\n"
 
-        rune_stake_info = link(f'https://runestake.info/demo?address={tx.address}', 'RuneStake.info')
-        msg += f"Статистика этого адреса: {rune_stake_info}"
+        info = link(f'https://viewblock.io/thorchain/address/{tx.address}', short_address(tx.address))
+        msg += f"Смотреть: {info}"
+
         return msg

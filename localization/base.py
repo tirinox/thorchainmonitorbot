@@ -4,7 +4,7 @@ from math import log10, floor
 from aiogram.types import *
 
 from services.models.cap_info import ThorInfo
-from services.models.tx import StakeTx
+from services.models.tx import StakeTx, StakePoolStats
 
 
 class BaseLocalization(ABC):
@@ -37,7 +37,7 @@ class BaseLocalization(ABC):
     # ------- STAKES -------
 
     @abstractmethod
-    def tx_text(self, tx: StakeTx, rune_per_dollar): ...
+    def tx_text(self, tx: StakeTx, rune_per_dollar: float, pool: StakePoolStats): ...
 
 
 def number_commas(x):
@@ -59,6 +59,8 @@ def round_to_dig(x, e=2):
 def pretty_money(x):
     if x < 0:
         return "-" + pretty_money(-x)
+    elif x == 0:
+        return "0.0"
     else:
         if x < 100:
             return str(round_to_dig(x, 2))
@@ -76,3 +78,11 @@ def link(url, text):
 
 def code(text):
     return f"<code>{text}</code>"
+
+
+def short_address(address, begin=5, end=4, filler='...'):
+    address = str(address)
+    if len(address) > begin + end:
+        return address[:begin] + filler + address[-end:]
+    else:
+        return address

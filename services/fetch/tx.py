@@ -17,7 +17,7 @@ class StakeTxFetcher:
     def __init__(self, cfg: Config, db: DB):
         self.cfg = cfg
         self.db = db
-        self.stat_map = {}
+        self.pool_stat_map = {}
         self.price_map = {}
 
         scfg = cfg.tx.stake_unstake
@@ -25,6 +25,8 @@ class StakeTxFetcher:
         self.sleep_period = int(scfg.fetch_period)
         self.tx_per_batch = int(scfg.tx_per_batch)
         self.max_page_deep = int(scfg.max_page_deep)
+
+        logging.info(f"cfg.tx.stake_unstake: {scfg}")
 
     def tx_endpoint_url(self, offset=0, limit=10):
         return TRANSACTION_URL.format(offset=offset, limit=limit)
@@ -84,7 +86,7 @@ class StakeTxFetcher:
         for tx in txs:
             tx: StakeTx
             price = self.price_map.get(tx.pool)
-            stats: StakePoolStats = self.stat_map.get(tx.pool)
+            stats: StakePoolStats = self.pool_stat_map.get(tx.pool)
             if price and stats:
                 full_rune = tx.full_rune_amount(price)
                 stats.update(full_rune, self.avg_n)
@@ -94,7 +96,7 @@ class StakeTxFetcher:
         logging.info(f'pool stats updated for {", ".join(updated_stats)}')
 
         for pool_name in updated_stats:
-            await self.stat_map[pool_name].save(self.db)
+            await self.pool_stat_map[pool_name].save(self.db)
 
         logging.info(f'new tx to analyze: {len(result_txs)}')
 
@@ -104,14 +106,14 @@ class StakeTxFetcher:
         pool_names = StakeTx.collect_pools(txs)
         pool_names.add(STABLE_COIN)  # don't forget BUSD, for total usd volume!
         self.price_map = await get_prices_of(self.session, pool_names)
-        self.stat_map = {
+        self.pool_stat_map = {
             pool: (await StakePoolStats.get_from_db(pool, self.db)) for pool in pool_names
         }
 
     def filter_large_txs(self, txs, threshold_factor=5.0):
         for tx in txs:
             tx: StakeTx
-            stats: StakePoolStats = self.stat_map.get(tx.pool)
+            stats: StakePoolStats = self.pool_stat_map.get(tx.pool)
             if stats is not None:
                 if tx.full_rune >= stats.rune_avg_amt * threshold_factor:
                     yield tx
@@ -132,8 +134,12 @@ class StakeTxFetcher:
             tx.set_notified(self.db) for tx in txs
         ])
 
-    async def on_new_txs(self, txs, runes_per_dollar):
+    async def on_new_txs(self, txs):
         ...
+
+    @property
+    def runes_per_dollar(self):
+        return self.price_map.get(STABLE_COIN, 1)
 
     async def run(self):
         await asyncio.sleep(3)
@@ -141,9 +147,9 @@ class StakeTxFetcher:
             try:
                 txs = await self.tick()
                 if txs:
-                    runes_per_dollar = self.price_map.get(STABLE_COIN, 1)
-                    await self.on_new_txs(txs, runes_per_dollar)
+                    await self.on_new_txs(txs)
                     await self.mark_as_notified(txs)
             except Exception as e:
                 logging.error(f"StakeTxFetcher task error: {e}")
+                raise
             await asyncio.sleep(self.sleep_period)

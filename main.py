@@ -11,10 +11,13 @@ from localization import LocalizationManager
 from services.notify.types.cap_notify import CapFetcherNotification
 from services.notify.types.tx_notify import StakeTxNotifier
 
-logging.basicConfig(level=logging.INFO)
+cfg = Config()
+
+log_level = cfg.get('log_level', logging.INFO)
+logging.basicConfig(level=logging.getLevelName(log_level))
+logging.info(f"Log level: {log_level}")
 
 loop = asyncio.get_event_loop()
-cfg = Config()
 db = DB(loop)
 bot = Bot(token=cfg.telegram.bot.token, parse_mode=ParseMode.HTML)
 dp = Dispatcher(bot, loop=loop)
@@ -70,8 +73,6 @@ async def on_lang_set(message: Message):
 
 async def fetcher_task():
     await db.get_redis()
-
-    # await StakePoolStats.clear_all_data(db)
 
     await asyncio.gather(
         fetcher_cap.run(),

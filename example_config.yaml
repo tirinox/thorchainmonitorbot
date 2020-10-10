@@ -1,16 +1,21 @@
 # rename it to "config.yaml"
 
+log_level: INFO
+
 telegram:
   bot:
     token: "insert the bot token from @BotFather here"
-  channel: "@thorchain_alert"  # live channel
+  channels:
+    - type: telegram
+      name: "@thorchain_alert"  # live channel
+      lang: eng
 
 
 tx:
   stake_unstake:
-    avg_n: 10
+    avg_n: 20
     threshold_mult: 5.0
-    max_age_sec: 600
+    max_age_sec: 1200
     fetch_period: 70
     tx_per_batch: 50
     max_page_deep: 10
