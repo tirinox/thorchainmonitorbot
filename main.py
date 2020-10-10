@@ -5,12 +5,11 @@ from aiogram import Bot, Dispatcher, executor
 from aiogram.types import *
 
 from services.models.cap_info import ThorInfo
-from services.models.tx import StakePoolStats
 from services.notify.broadcast import Broadcaster
 from services.config import Config, DB
 from localization import LocalizationManager
-from services.notify.cap_notify import CapFetcherNotification
-from services.notify.tx_notify import StakeTxNotifier
+from services.notify.types.cap_notify import CapFetcherNotification
+from services.notify.types.tx_notify import StakeTxNotifier
 
 logging.basicConfig(level=logging.INFO)
 
@@ -50,8 +49,8 @@ async def send_price(message: Message):
 
 @dp.message_handler(commands=['help'])
 async def send_price(message: Message):
-    # todo: help texts!
-    await message.answer("help", reply_markup=ReplyKeyboardRemove(), disable_web_page_preview=True)
+    loc = await loc_man.get_from_db(message.chat.id, db)
+    await message.answer(loc.help(), reply_markup=ReplyKeyboardRemove(), disable_web_page_preview=True)
 
 
 @dp.message_handler(content_types=ContentType.TEXT)

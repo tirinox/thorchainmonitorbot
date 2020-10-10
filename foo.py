@@ -7,8 +7,8 @@ from services.fetch.price import get_prices_of, STABLE_COIN, get_price_of
 from services.notify.broadcast import Broadcaster
 from services.config import Config, DB
 from services.fetch.tx import StakeTxFetcher
-from services.models.tx import StakeTx, StakePoolStats
-from services.notify.tx_notify import StakeTxNotifier
+from services.models.tx import StakePoolStats
+from services.notify.types.tx_notify import StakeTxNotifier
 
 logging.basicConfig(level=logging.INFO)
 

@@ -2,6 +2,7 @@ import asyncio
 import logging
 import random
 import time
+from typing import Iterable
 
 from aiogram import Bot
 from aiogram.utils import exceptions
@@ -20,7 +21,7 @@ class Broadcaster:
         self._rng = random.Random(time.time())
         self.db = db
 
-    async def _send_message(self, chat_id: int, text: str, disable_notification: bool = False) -> bool:
+    async def _send_message(self, chat_id, text, *args, **kwargs) -> bool:
         """
         Safe messages sender
         :param chat_id:
@@ -29,9 +30,7 @@ class Broadcaster:
         :return:
         """
         try:
-            await self.bot.send_message(chat_id, text,
-                                        disable_notification=disable_notification,
-                                        disable_web_page_preview=True)
+            await self.bot.send_message(chat_id, text, *args, **kwargs)
         except exceptions.BotBlocked:
             log.error(f"Target [ID:{chat_id}]: blocked by user")
         except exceptions.ChatNotFound:
@@ -39,7 +38,7 @@ class Broadcaster:
         except exceptions.RetryAfter as e:
             log.error(f"Target [ID:{chat_id}]: Flood limit is exceeded. Sleep {e.timeout} seconds.")
             await asyncio.sleep(e.timeout + 0.1)
-            return await self._send_message(chat_id, text, disable_notification)  # Recursive call
+            return await self._send_message(chat_id, text, *args, **kwargs)  # Recursive call
         except exceptions.UserDeactivated:
             log.error(f"Target [ID:{chat_id}]: user is deactivated")
         except exceptions.TelegramAPIError:
@@ -57,9 +56,14 @@ class Broadcaster:
         self._rng.shuffle(multi_chats)
         return multi_chats + user_dialogs
 
-    async def broadcast(self, chat_ids, message, delay=0.075, *args, **kwargs) -> int:
+    async def broadcast(self, chat_ids: Iterable, message, delay=0.075, *args, **kwargs) -> int:
         """
         Simple broadcaster
+        :param chat_ids: list of chat ids
+        :param message:
+        :param delay:
+        :param args:
+        :param kwargs:
         :return: Count of messages sent
         """
         async with self._broadcast_lock:
@@ -76,7 +80,9 @@ class Broadcaster:
                         final_message = await message(chat_id, *args, **kwargs)
 
                     if final_message:
-                        if await self._send_message(chat_id, final_message):
+                        if await self._send_message(chat_id, final_message,
+                                                    disable_web_page_preview=True,
+                                                    disable_notification=False):
                             count += 1
                         else:
                             bad_ones.append(chat_id)

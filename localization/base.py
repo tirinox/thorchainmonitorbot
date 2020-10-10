@@ -11,6 +11,9 @@ class BaseLocalization(ABC):
     # ----- WELCOME ------
 
     @abstractmethod
+    def help(self): ...
+
+    @abstractmethod
     def welcome_message(self, info: ThorInfo): ...
 
     BUTTON_RUS = 'Русский'
@@ -61,3 +64,15 @@ def pretty_money(x):
             return str(round_to_dig(x, 2))
         else:
             return number_commas(int(round(x)))
+
+
+def bold(text):
+    return f"<b>{text}</b"
+
+
+def link(url, text):
+    return f'<a href="{url}">{text}</a>'
+
+
+def code(text):
+    return f"<code>{text}</code>"
