@@ -3,3 +3,14 @@
 telegram:
   bot:
     token: "insert the bot token from @BotFather here"
+  channel: "@thorchain_alert"  # live channel
+
+
+tx:
+  stake_unstake:
+    avg_n: 10
+    threshold_mult: 5.0
+    max_age_sec: 600
+    fetch_period: 70
+    tx_per_batch: 50
+    max_page_deep: 10

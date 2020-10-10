@@ -9,6 +9,7 @@ class StakeTx(BaseModelMixin):
     date: int
     type: str
     pool: str
+    address: str
     asset_amount: float
     rune_amount: float
     hash: str
@@ -40,10 +41,12 @@ class StakeTx(BaseModelMixin):
             return None
 
         tx_hash = j['in']['txID']
+        address = j['in']['address']
 
         return cls(date=int(j['date']),
                    type=t,
                    pool=pool,
+                   address=address,
                    asset_amount=asset_amount * MIDGARD_MULT,
                    rune_amount=rune_amount * MIDGARD_MULT,
                    hash=tx_hash,
@@ -89,7 +92,6 @@ class StakePoolStats(BaseModelMixin):
     n_tracked: int
 
     START_RUNE_AMT = 5000
-    MAX_N_TRACKED = 10
 
     @property
     def key(self):
@@ -104,10 +106,10 @@ class StakePoolStats(BaseModelMixin):
         old_j = await db.redis.get(empty.key)
         return cls.from_json(old_j) if old_j else empty
 
-    def update(self, rune_amount):
+    def update(self, rune_amount, avg_n=10):
         self.rune_avg_amt -= self.rune_avg_amt / self.n_tracked
         self.rune_avg_amt += rune_amount / self.n_tracked
-        self.n_tracked = min(self.n_tracked + 1, self.MAX_N_TRACKED)
+        self.n_tracked = min(self.n_tracked + 1, avg_n)
         return self.rune_avg_amt
 
     @classmethod

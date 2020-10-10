@@ -12,15 +12,19 @@ TRANSACTION_URL = "https://chaosnet-midgard.bepswap.com/v1/txs?offset={offset}&l
 
 
 class StakeTxFetcher:
-    SLEEP_PERIOD = 70  # sec
-    MAX_TX_PER_ONE_TIME = 150
-    TX_PER_BATCH = 50
+    MAX_PAGE_DEEP = 10
 
     def __init__(self, cfg: Config, db: DB):
         self.cfg = cfg
         self.db = db
         self.stat_map = {}
         self.price_map = {}
+
+        scfg = cfg.tx.stake_unstake
+        self.avg_n = int(scfg.avg_n)
+        self.sleep_period = int(scfg.fetch_period)
+        self.tx_per_batch = int(scfg.tx_per_batch)
+        self.max_page_deep = int(scfg.max_page_deep)
 
     def tx_endpoint_url(self, offset=0, limit=10):
         return TRANSACTION_URL.format(offset=offset, limit=limit)
@@ -32,7 +36,7 @@ class StakeTxFetcher:
                 yield StakeTx.load_from_midgard(tx)
 
     async def _fetch_one_batch(self, session, page):
-        url = self.tx_endpoint_url(page * self.TX_PER_BATCH, self.TX_PER_BATCH)
+        url = self.tx_endpoint_url(page * self.tx_per_batch, self.tx_per_batch)
         logging.info(f"start fetching tx: {url}")
         async with session.get(url) as resp:
             json = await resp.json()
@@ -66,7 +70,7 @@ class StakeTxFetcher:
                 all_txs += txs
                 page += 1
 
-                if stopped or len(all_txs) >= self.MAX_TX_PER_ONE_TIME or page > 10:
+                if stopped or page > self.max_page_deep:
                     break
         except (ValueError, TypeError, IndexError, ZeroDivisionError, KeyError) as e:
             logging.error(e)
@@ -83,7 +87,7 @@ class StakeTxFetcher:
             stats: StakePoolStats = self.stat_map.get(tx.pool)
             if price and stats:
                 full_rune = tx.full_rune_amount(price)
-                stats.update(full_rune)
+                stats.update(full_rune, self.avg_n)
                 updated_stats.add(tx.pool)
                 result_txs.append(tx)
 
@@ -104,7 +108,7 @@ class StakeTxFetcher:
             pool: (await StakePoolStats.get_from_db(pool, self.db)) for pool in pool_names
         }
 
-    def filter_small_txs(self, txs, threshold_factor=5.0):
+    def filter_large_txs(self, txs, threshold_factor=5.0):
         for tx in txs:
             tx: StakeTx
             stats: StakePoolStats = self.stat_map.get(tx.pool)
@@ -142,4 +146,4 @@ class StakeTxFetcher:
                     await self.mark_as_notified(txs)
             except Exception as e:
                 logging.error(f"StakeTxFetcher task error: {e}")
-            await asyncio.sleep(self.SLEEP_PERIOD)
+            await asyncio.sleep(self.sleep_period)
