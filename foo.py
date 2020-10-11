@@ -129,7 +129,7 @@ async def foo9():
 
 async def start_foos():
     await db.get_redis()
-    await foo8()
+    await foo6()
 
 
 if __name__ == '__main__':

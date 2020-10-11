@@ -37,7 +37,7 @@ class RussianLocalization(BaseLocalization):
 
     # ------ PRICE -------
     def price_message(self, info: ThorInfo, fair_price: RuneFairPrice):
-        return f"Последняя цена ᚱune: <code>{info.price:.3f} BUSD</code>." \
+        return f"Последняя цена ᚱune: <code>{info.price:.3f} BUSD</code>.\n" \
                f"Детерминистическая цена ᚱune сейчас: <code>${fair_price.fair_price:.3f}</code>."
 
     # ------ TXS -------
