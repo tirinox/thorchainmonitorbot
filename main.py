@@ -1,9 +1,11 @@
 import asyncio
 import logging
 
+import aiohttp
 from aiogram import Bot, Dispatcher, executor
 from aiogram.types import *
 
+from services.fetch.price import fair_rune_price
 from services.models.cap_info import ThorInfo
 from services.notify.broadcast import Broadcaster
 from services.config import Config, DB
@@ -46,7 +48,9 @@ async def send_welcome(message: Message):
 async def send_price(message: Message):
     info = await ThorInfo.get_old_cap(db)
     loc = await loc_man.get_from_db(message.chat.id, db)
-    price_text = loc.price_message(info)
+    async with aiohttp.ClientSession() as session:
+        fp = await fair_rune_price(session)
+    price_text = loc.price_message(info, fp)
     await message.answer(price_text, reply_markup=ReplyKeyboardRemove(), disable_web_page_preview=True)
 
 

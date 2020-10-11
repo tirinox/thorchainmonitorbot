@@ -58,7 +58,8 @@ class StakeTxNotifier(StakeTxFetcher):
                 texts = []
                 for tx in large_txs:
                     pool = self.pool_stat_map.get(tx.pool)
-                    texts.append(loc.tx_text(tx, runes_per_dollar, pool))
+                    pool_info = self.pool_info_map.get(tx.pool)
+                    texts.append(loc.tx_text(tx, runes_per_dollar, pool, pool_info))
                 return '\n\n'.join(texts)
 
             await self.broadcaster.broadcast(user_lang_map.keys(), message_gen)

@@ -5,7 +5,7 @@ from typing import List
 import aiohttp
 
 from services.config import Config, DB
-from services.fetch.price import get_prices_of, STABLE_COIN
+from services.fetch.price import get_prices_of, STABLE_COIN, PoolInfo, get_pool_info
 from services.models.tx import StakeTx, StakePoolStats
 
 TRANSACTION_URL = "https://chaosnet-midgard.bepswap.com/v1/txs?offset={offset}&limit={limit}&type=stake,unstake"
@@ -18,7 +18,7 @@ class StakeTxFetcher:
         self.cfg = cfg
         self.db = db
         self.pool_stat_map = {}
-        self.price_map = {}
+        self.pool_info_map = {}
 
         scfg = cfg.tx.stake_unstake
         self.avg_n = int(scfg.avg_n)
@@ -85,7 +85,7 @@ class StakeTxFetcher:
 
         for tx in txs:
             tx: StakeTx
-            price = self.price_map.get(tx.pool)
+            price = self.pool_info_map.get(tx.pool, PoolInfo.empty()).price
             stats: StakePoolStats = self.pool_stat_map.get(tx.pool)
             if price and stats:
                 full_rune = tx.full_rune_amount(price)
@@ -105,7 +105,7 @@ class StakeTxFetcher:
     async def _load_stats(self, txs):
         pool_names = StakeTx.collect_pools(txs)
         pool_names.add(STABLE_COIN)  # don't forget BUSD, for total usd volume!
-        self.price_map = await get_prices_of(self.session, pool_names)
+        self.pool_info_map = await get_pool_info(self.session, pool_names)
         self.pool_stat_map = {
             pool: (await StakePoolStats.get_from_db(pool, self.db)) for pool in pool_names
         }
@@ -131,7 +131,7 @@ class StakeTxFetcher:
 
     @property
     def runes_per_dollar(self):
-        return self.price_map.get(STABLE_COIN, 1)
+        return self.pool_info_map.get(STABLE_COIN, PoolInfo.empty()).price
 
     async def run(self):
         await asyncio.sleep(3)

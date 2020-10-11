@@ -3,6 +3,7 @@ from math import log10, floor
 
 from aiogram.types import *
 
+from services.fetch.price import PoolInfo, RuneFairPrice
 from services.models.cap_info import ThorInfo
 from services.models.tx import StakeTx, StakePoolStats
 
@@ -32,12 +33,12 @@ class BaseLocalization(ABC):
     def notification_cap_change_text(self, old: ThorInfo, new: ThorInfo): ...
 
     @abstractmethod
-    def price_message(self, info: ThorInfo): ...
+    def price_message(self, info: ThorInfo, fair_price: RuneFairPrice): ...
 
     # ------- STAKES -------
 
     @abstractmethod
-    def tx_text(self, tx: StakeTx, rune_per_dollar: float, pool: StakePoolStats): ...
+    def tx_text(self, tx: StakeTx, rune_per_dollar: float, pool: StakePoolStats, pool_info: PoolInfo): ...
 
 
 def number_commas(x):

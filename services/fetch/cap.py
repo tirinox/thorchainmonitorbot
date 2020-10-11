@@ -18,7 +18,6 @@ class CapInfoFetcher:
         self.cfg = cfg
 
     async def fetch_caps(self) -> ThorInfo:
-
         async with aiohttp.ClientSession() as session:
             try:
                 logging.info("start fetching caps and mimir")

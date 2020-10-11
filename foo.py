@@ -1,17 +1,19 @@
 import asyncio
 import logging
+from random import random
 
 import aiohttp
 from aiogram import Bot, Dispatcher
 from aiogram.types import ParseMode
 
 from localization import LocalizationManager
-from services.fetch.price import get_prices_of, STABLE_COIN, get_price_of
+from services.fetch.price import get_prices_of, STABLE_COIN, get_price_of, get_pool_info, BNB_BNB, fair_rune_price
 from services.notify.broadcast import Broadcaster
 from services.config import Config, DB
 from services.fetch.tx import StakeTxFetcher
 from services.models.tx import StakePoolStats
 from services.notify.types.tx_notify import StakeTxNotifier
+from services.utils import a_result_cached
 
 cfg = Config()
 
@@ -85,7 +87,7 @@ async def foo4():
 
 async def foo5():
     async with aiohttp.ClientSession() as session:
-        mp = await get_prices_of(session, [STABLE_COIN, 'BNB.BNB'])
+        mp = await get_prices_of(session, [STABLE_COIN, BNB_BNB])
         print(mp)
         print(await get_price_of(session, STABLE_COIN))
 
@@ -97,9 +99,37 @@ async def foo6():
     await fetcher_tx.run()
 
 
+async def foo7():
+    async with aiohttp.ClientSession() as session:
+        j = await get_pool_info(session, [STABLE_COIN, BNB_BNB])
+        print(*j.values(), sep='\n\n')
+
+
+async def foo8():
+    async with aiohttp.ClientSession() as session:
+        fp = await fair_rune_price(session)
+        print(fp)
+
+
+@a_result_cached(5)
+async def test_rand():
+    return random()
+
+
+async def foo9():
+    print(await test_rand())
+    print(await test_rand())
+    await asyncio.sleep(3)
+    print(await test_rand())
+    print('same above?')
+    await asyncio.sleep(3)
+    print('must be different:')
+    print(await test_rand())
+
+
 async def start_foos():
     await db.get_redis()
-    await foo6()
+    await foo8()
 
 
 if __name__ == '__main__':
