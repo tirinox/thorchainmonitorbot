@@ -2,28 +2,13 @@
 
 http://18.159.173.48:1317/thorchain/queue
 
-2) fair rune price
 
-get circulating supply:
+2) progress bar
 
-https://defi.delphidigital.io/chaosnet/int/marketdata
+▰▰▰▱▱▱▱
+▬▬▭▭▭▭▭▭▭▭
 
-{
-    priceUsd: "0.525769",
-    circulating: 210000000
-}
+3) ATH tracker
 
-rune vault balance
+4) large price movements
 
-https://defi.delphidigital.io/chaosnet/int/runevaultBalance
-
-128343208
-
-pool prices:
-
-https://chaosnet-midgard.bepswap.com/v1/pools/detail?asset={asset}&view=simple
-
-
-Runes_count = (Rune_circ - Rune_vault_locked)
-TLV = sum[for pools] (assetDepth * asset_price_in_runes / rune_per_usd)
-Rune_fair_price = 3 * TLV / Runes_count

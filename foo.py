@@ -7,6 +7,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.types import ParseMode
 
 from localization import LocalizationManager
+from services.cooldown import CooldownTracker
 from services.fetch.price import get_prices_of, STABLE_COIN, get_price_of, get_pool_info, BNB_BNB, fair_rune_price
 from services.notify.broadcast import Broadcaster
 from services.config import Config, DB
@@ -127,9 +128,19 @@ async def foo9():
     print(await test_rand())
 
 
+async def foo10():
+    tr = CooldownTracker(db)
+    print((await tr.can_do('1', 10)))
+    await tr.do('1')
+    print((await tr.can_do('1', 3)))
+    await asyncio.sleep(3.5)
+    print((await tr.can_do('1', 3)))
+    print((await tr.can_do('1', 10)))
+
+
 async def start_foos():
     await db.get_redis()
-    await foo6()
+    await foo10()
 
 
 if __name__ == '__main__':
