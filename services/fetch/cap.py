@@ -46,7 +46,10 @@ class CapInfoFetcher:
     async def run(self):
         await asyncio.sleep(3)
         while True:
-            new_info = await self.fetch_caps()
-            if new_info.is_ok:
-                await self.on_got_info(new_info)
+            try:
+                new_info = await self.fetch_caps()
+                if new_info.is_ok:
+                    await self.on_got_info(new_info)
+            except Exception as e:
+                logging.error(f'CapInfoFetcher error: {e}')
             await asyncio.sleep(self.SLEEP_PERIOD)

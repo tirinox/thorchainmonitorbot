@@ -143,5 +143,4 @@ class StakeTxFetcher:
                     await self.mark_as_notified(txs)
             except Exception as e:
                 logging.error(f"StakeTxFetcher task error: {e}")
-                raise
             await asyncio.sleep(self.sleep_period)
