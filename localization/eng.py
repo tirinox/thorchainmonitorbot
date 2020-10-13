@@ -19,18 +19,22 @@ class EnglishLocalization(BaseLocalization):
                f"<b>⚠️ All notifications are forwarded to️ @thorchain_alert channel!</b>"
 
     def welcome_message(self, info: ThorInfo):
-        return f"Hello! <b>{info.stacked:.0f}</b> coins of <b>{info.cap:.0f}</b> are currently staked.\n" \
-               f"The $RUNE price is <code>{info.price:.3f} BUSD</code> now.\n" \
+        return f"Hello! <b>{pretty_money(info.stacked)} ᚱune</b> of <b>{pretty_money(info.cap)} ᚱune</b> pooled.\n" \
+               f"The ᚱune price is <code>{info.price:.3f} BUSD</code> now.\n" \
                f"<b>⚠️ All notifications are forwarded to️ @thorchain_alert channel!</b>\n" \
                f"Type /help to see the command list."
+
+    def unknown_command(self):
+        return "Sorry, I didn't understand that command.\n" \
+               "/help"
 
     # ----- CAP ------
     def notification_cap_change_text(self, old: ThorInfo, new: ThorInfo):
         verb = "has been increased" if old.cap < new.cap else "has been decreased"
-        call = "Come on, go staking!\n" if new.cap > old.cap else ''
-        message = f'<b>Cap {verb} from {old.cap:.0f} to {new.cap:.0f}!</b>\n' \
-                  f'Currently <b>{new.stacked:.0f}</b> $RUNE are staked.\n' \
-                  f'The price of $RUNE in the pool is <code>{new.price:.3f} BUSD</code>.\n' \
+        call = "Come on, add more liquidity!\n" if new.cap > old.cap else ''
+        message = f'<b>Pool cap {verb} from {pretty_money(old.cap)} to {pretty_money(new.cap)}!</b>\n' \
+                  f'Currently <b>{pretty_money(new.stacked)}</b> ᚱune are in the liquidity pools.\n' \
+                  f'The price of ᚱune in the pool is <code>{new.price:.3f} BUSD</code>.\n' \
                   f'{call}' \
                   f'https://chaosnet.bepswap.com/'
         return message

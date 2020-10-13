@@ -27,6 +27,9 @@ class BaseLocalization(ABC):
                     KeyboardButton(self.BUTTON_ENG)
                 ]], resize_keyboard=True, one_time_keyboard=True))
 
+    @abstractmethod
+    def unknown_command(self): ...
+
     # ------- CAP -------
 
     @abstractmethod
@@ -50,7 +53,7 @@ def number_commas(x):
     while x >= 1000:
         x, r = divmod(x, 1000)
         result = f",{r:03d}{result}"
-    return f"{x:d}{result}.0"
+    return f"{x:d}{result}"
 
 
 def round_to_dig(x, e=2):

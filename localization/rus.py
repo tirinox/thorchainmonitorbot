@@ -24,12 +24,16 @@ class RussianLocalization(BaseLocalization):
                f"<b>⚠️ Бот теперь уведомляет только в канале️ @thorchain_alert!</b>\n" \
                f"Набери /help, чтобы видеть список команд."
 
+    def unknown_command(self):
+        return "Извини, я не знаю такой команды.\n" \
+               "/help"
+
     # ----- CAP ------
     def notification_cap_change_text(self, old: ThorInfo, new: ThorInfo):
         verb = "подрос" if old.cap < new.cap else "упал"
         call = "Ай-да застейкаем!\n" if new.cap > old.cap else ''
-        message = f'<b>Кап {verb} с {old.cap:.0f} до {new.cap:.0f}!</b>\n' \
-                  f'Сейчас застейкано <b>{new.stacked:.0f}</b> $RUNE.\n' \
+        message = f'<b>Кап {verb} с {pretty_money(old.cap)} до {pretty_money(new.cap)}!</b>\n' \
+                  f'Сейчас в пулы помещено <b>{pretty_money(new.stacked)}</b> ᚱune.\n' \
                   f'Цена ᚱune в пуле <code>{new.price:.3f} BUSD</code>.\n' \
                   f'{call}' \
                   f'https://chaosnet.bepswap.com/'
