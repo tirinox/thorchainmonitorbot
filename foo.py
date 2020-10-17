@@ -9,6 +9,7 @@ from aiogram.types import ParseMode
 from localization import LocalizationManager
 from services.cooldown import CooldownTracker
 from services.fetch.price import get_prices_of, STABLE_COIN, get_price_of, get_pool_info, BNB_BNB, fair_rune_price
+from services.fetch.queue import QueueFetcher
 from services.notify.broadcast import Broadcaster
 from services.config import Config, DB
 from services.fetch.tx import StakeTxFetcher
@@ -138,9 +139,15 @@ async def foo10():
     print((await tr.can_do('1', 10)))
 
 
+async def foo11():
+    qf = QueueFetcher(cfg)
+    r = await qf.fetch_info()
+    print(r)
+
+
 async def start_foos():
     await db.get_redis()
-    await foo10()
+    await foo11()
 
 
 if __name__ == '__main__':
