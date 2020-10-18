@@ -9,12 +9,12 @@ from services.notify.broadcast import Broadcaster, telegram_chats_from_config
 
 class CapFetcherNotification(CapInfoFetcher):
     def __init__(self, cfg: Config, broadcaster: Broadcaster, locman: LocalizationManager):
-        super().__init__(cfg)
+        super().__init__(cfg, broadcaster.db)
         self.broadcaster = broadcaster
         self.loc_man = locman
-        self.db = broadcaster.db
 
-    async def on_got_info(self, new_info: ThorInfo):
+    async def handle(self, data):
+        new_info: ThorInfo = data
         if not new_info.is_ok:
             logging.warning('no info got!')
             return
@@ -25,9 +25,9 @@ class CapFetcherNotification(CapInfoFetcher):
         await new_info.save(db)
 
         if new_info.cap != old_info.cap:
-            await self.notify_when_cap_changed(old_info, new_info)
+            await self._notify_when_cap_changed(old_info, new_info)
 
-    async def notify_when_cap_changed(self, old: ThorInfo, new: ThorInfo):
+    async def _notify_when_cap_changed(self, old: ThorInfo, new: ThorInfo):
         user_lang_map = telegram_chats_from_config(self.cfg, self.loc_man)
 
         async def message_gen(chat_id):

@@ -3,11 +3,16 @@ import logging
 from dataclasses import dataclass
 
 import aiohttp
+import random
 
 from services.config import Config
 
 
-THORCHAIN_QUEUE_URL = 'http://18.159.173.48:1317/thorchain/queue'
+FALLBACK_THORCHAIN_IP = '18.159.173.48'
+THORCHAIN_QUEUE_URL = lambda ip: f'http://{ip if ip else FALLBACK_THORCHAIN_IP}:1317/thorchain/queue'
+
+
+THORCHAIN_SEED_URL = 'https://chaosnet-seed.thorchain.info/'  # all addresses
 
 
 @dataclass
@@ -32,15 +37,18 @@ class QueueFetcher:
 
     async def fetch_info(self) -> QueueInfo:
         async with aiohttp.ClientSession() as session:
-            try:
-                logging.info(f"start fetching queue: {THORCHAIN_QUEUE_URL}")
-                async with session.get(THORCHAIN_QUEUE_URL) as resp:
-                    resp = await resp.json()
-                    swap_queue = int(resp.get('swap', 0))
-                    outbound_queue = int(resp.get('outbound', 0))
-                    return QueueInfo(swap_queue, outbound_queue)
-            except (ValueError, TypeError, IndexError, ZeroDivisionError, KeyError):
-                return QueueInfo.error()
+            logging.info(f"get seed: {THORCHAIN_SEED_URL}")
+            async with session.get(THORCHAIN_SEED_URL) as resp:
+                resp = await resp.json()
+                ip_addr = random.choice(resp) if resp else FALLBACK_THORCHAIN_IP
+
+            queue_url = THORCHAIN_QUEUE_URL(ip_addr)
+            logging.info(f"start fetching queue: {queue_url}")
+            async with session.get(queue_url) as resp:
+                resp = await resp.json()
+                swap_queue = int(resp.get('swap', 0))
+                outbound_queue = int(resp.get('outbound', 0))
+                return QueueInfo(swap_queue, outbound_queue)
 
     async def on_got_info(self, info: QueueInfo):
         ...
@@ -53,5 +61,5 @@ class QueueFetcher:
                 if new_info.is_ok:
                     await self.on_got_info(new_info)
             except Exception as e:
-                logging.error(f'QueueFetcher error: {e}')
+                logging.exception(f'QueueFetcher error: {e}')
             await asyncio.sleep(self.SLEEP_PERIOD)
