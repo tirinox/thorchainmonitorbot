@@ -12,10 +12,10 @@ from services.notify.broadcast import Broadcaster, telegram_chats_from_config
 class StakeTxNotifier(StakeTxFetcher):
     MAX_TX_PER_ONE_TIME = 10
 
-    def __init__(self, cfg: Config, db: DB, broadcaster: Broadcaster, locman: LocalizationManager):
+    def __init__(self, cfg: Config, db: DB, broadcaster: Broadcaster, loc_man: LocalizationManager):
         super().__init__(cfg, db)
         self.broadcaster = broadcaster
-        self.loc_man = locman
+        self.loc_man = loc_man
 
         scfg = cfg.tx.stake_unstake
         self.threshold_mult = float(scfg.threshold_mult)
@@ -48,7 +48,7 @@ class StakeTxNotifier(StakeTxFetcher):
         large_txs = list(large_txs)
         large_txs = large_txs[:self.MAX_TX_PER_ONE_TIME]
 
-        logging.info(f"large_txs: {len(large_txs)}")
+        self.logger.info(f"large_txs: {len(large_txs)}")
 
         if large_txs:
             user_lang_map = telegram_chats_from_config(self.cfg, self.loc_man)

@@ -28,7 +28,7 @@ class StakeTxFetcher(BaseFetcher, ABC):
         self.tx_per_batch = int(scfg.tx_per_batch)
         self.max_page_deep = int(scfg.max_page_deep)
 
-        logging.info(f"cfg.tx.stake_unstake: {scfg}")
+        self.logger.info(f"cfg.tx.stake_unstake: {scfg}")
 
     @abstractmethod
     async def on_new_txs(self, txs): ...
@@ -62,7 +62,7 @@ class StakeTxFetcher(BaseFetcher, ABC):
 
     async def _fetch_one_batch(self, session, page):
         url = self.tx_endpoint_url(page * self.tx_per_batch, self.tx_per_batch)
-        logging.info(f"start fetching tx: {url}")
+        self.logger.info(f"start fetching tx: {url}")
         async with session.get(url) as resp:
             json = await resp.json()
             txs = self._parse_txs(json)
@@ -75,7 +75,7 @@ class StakeTxFetcher(BaseFetcher, ABC):
             tx: StakeTx
             if await tx.is_notified(self.db):
                 stopped = True
-                logging.info(f'already counted: {tx} stopping')
+                self.logger.info(f'already counted: {tx} stopping')
                 break
             new_txs.append(tx)
 
@@ -88,7 +88,7 @@ class StakeTxFetcher(BaseFetcher, ABC):
             txs = await self._fetch_one_batch(self.session, page)
             stopped, txs = await self._filter_new(txs)
             if not txs:
-                logging.info(f"no more tx: got {len(all_txs)}")
+                self.logger.info(f"no more tx: got {len(all_txs)}")
                 break
 
             all_txs += txs
@@ -113,12 +113,12 @@ class StakeTxFetcher(BaseFetcher, ABC):
                 updated_stats.add(tx.pool)
                 result_txs.append(tx)
 
-        logging.info(f'pool stats updated for {", ".join(updated_stats)}')
+        self.logger.info(f'pool stats updated for {", ".join(updated_stats)}')
 
         for pool_name in updated_stats:
             await self.pool_stat_map[pool_name].save(self.db)
 
-        logging.info(f'new tx to analyze: {len(result_txs)}')
+        self.logger.info(f'new tx to analyze: {len(result_txs)}')
 
         return result_txs
 

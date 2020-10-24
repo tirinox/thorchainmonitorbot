@@ -12,6 +12,7 @@ from services.notify.broadcast import Broadcaster
 from services.config import Config, DB
 from localization import LocalizationManager
 from services.notify.types.cap_notify import CapFetcherNotification
+from services.notify.types.queue_notify import QueueNotifier
 from services.notify.types.tx_notify import StakeTxNotifier
 
 cfg = Config()
@@ -26,8 +27,6 @@ bot = Bot(token=cfg.telegram.bot.token, parse_mode=ParseMode.HTML)
 dp = Dispatcher(bot, loop=loop)
 loc_man = LocalizationManager()
 broadcaster = Broadcaster(bot, db)
-fetcher_cap = CapFetcherNotification(cfg, broadcaster, loc_man)
-fetcher_tx = StakeTxNotifier(cfg, db, broadcaster, loc_man)
 
 
 @dp.message_handler(commands=['start'])
@@ -92,9 +91,14 @@ async def on_lang_set(message: Message):
 async def fetcher_task():
     await db.get_redis()
 
+    notifier_cap = CapFetcherNotification(cfg, broadcaster, loc_man)
+    notifier_tx = StakeTxNotifier(cfg, db, broadcaster, loc_man)
+    notifier_queue = QueueNotifier(cfg, db, broadcaster, loc_man)
+
     await asyncio.gather(
-        fetcher_cap.run(),
-        fetcher_tx.run()
+        notifier_cap.run(),
+        notifier_tx.run(),
+        notifier_queue.run(),
     )
 
 

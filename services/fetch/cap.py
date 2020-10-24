@@ -16,7 +16,7 @@ MIMIR_URL = "https://chaosnet-midgard.bepswap.com/v1/thorchain/mimir"
 class CapInfoFetcher(BaseFetcher, ABC):
     async def fetch(self) -> ThorInfo:
         async with aiohttp.ClientSession() as session:
-            logging.info("start fetching caps and mimir")
+            self.logger.info("start fetching caps and mimir")
             async with session.get(NETWORK_URL) as resp:
                 networks_resp = await resp.json()
                 total_staked = int(networks_resp.get('totalStaked', 0)) * MIDGARD_MULT
@@ -31,5 +31,5 @@ class CapInfoFetcher(BaseFetcher, ABC):
             price = 1.0 / price  # Rune/Busd
 
             r = ThorInfo(cap=max_staked, stacked=total_staked, price=price)
-            logging.info(r)
+            self.logger.info(r)
             return r

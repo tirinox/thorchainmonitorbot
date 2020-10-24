@@ -8,15 +8,15 @@ from services.notify.broadcast import Broadcaster, telegram_chats_from_config
 
 
 class CapFetcherNotification(CapInfoFetcher):
-    def __init__(self, cfg: Config, broadcaster: Broadcaster, locman: LocalizationManager):
+    def __init__(self, cfg: Config, broadcaster: Broadcaster, loc_man: LocalizationManager):
         super().__init__(cfg, broadcaster.db)
         self.broadcaster = broadcaster
-        self.loc_man = locman
+        self.loc_man = loc_man
 
     async def handle(self, data):
         new_info: ThorInfo = data
         if not new_info.is_ok:
-            logging.warning('no info got!')
+            self.logger.warning('no info got!')
             return
 
         db = self.db
