@@ -2,7 +2,7 @@ from localization.base import BaseLocalization
 from services.fetch.price import PoolInfo, RuneFairPrice
 from services.models.cap_info import ThorInfo
 from services.models.tx import StakeTx, short_asset_name, StakePoolStats
-from services.utils import pretty_money, link, short_address
+from services.utils import pretty_money, link, short_address, code
 
 
 class RussianLocalization(BaseLocalization):
@@ -73,3 +73,10 @@ class RussianLocalization(BaseLocalization):
             f"Глубина пула сейчас: <b>${pretty_money(pool_depth_usd)}</b>.\n"
             f"Смотреть: {info}"
         )
+
+    # ------- QUEUE -------
+    def queue_update(self, item_type, step, value):
+        if step == 0:
+            return f"☺️ Очередь {item_type} снова опустела!"
+        else:
+            return f"🤬 <b>Внимание!</b> Очередь {code(item_type)} имеет {value} транзакций!"

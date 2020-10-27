@@ -48,3 +48,7 @@ class BaseLocalization(ABC):
     @abstractmethod
     def tx_text(self, tx: StakeTx, rune_per_dollar: float, pool: StakePoolStats, pool_info: PoolInfo): ...
 
+    # ------- QUEUE -------
+    @abstractmethod
+    def queue_update(self, item_type, step, value): ...
+

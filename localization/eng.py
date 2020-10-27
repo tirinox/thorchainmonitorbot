@@ -2,7 +2,7 @@ from localization.base import BaseLocalization
 from services.fetch.price import PoolInfo, RuneFairPrice
 from services.models.cap_info import ThorInfo
 from services.models.tx import StakeTx, short_asset_name, StakePoolStats
-from services.utils import pretty_money, link, short_address
+from services.utils import pretty_money, link, short_address, code
 
 
 class EnglishLocalization(BaseLocalization):
@@ -76,3 +76,10 @@ class EnglishLocalization(BaseLocalization):
         )
 
         return msg
+
+    # ------- QUEUE -------
+    def queue_update(self, item_type, step, value):
+        if step == 0:
+            return f"☺️ Queue {item_type} is now empty!"
+        else:
+            return f"🤬 <b>Attention!</b> Queue {code(item_type)} has {value} transactions!"
