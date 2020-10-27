@@ -3,25 +3,12 @@
 http://18.159.173.48:1317/thorchain/queue
 
 
-2) progress bar
-
-▰▰▰▱▱▱▱
-▬▬▭▭▭▭▭▭▭▭
-
 3) ATH tracker
 
 4) large price movements
 
-5) stake => add liquidity
-unstake => remove liqudity
 
-6)
-
-Could you add commas for the numbers plz? So 7,421,000 instead of 7421000 makes it easier on the eyes :)
-
-7)
-
-This bot is very cool.
+7) This bot is very cool.
 
 Would be great if the monitoring bot could be customisable so you could get a feed of transactions based on preferences and thresholds.
 
@@ -35,12 +22,14 @@ I'm happy to throw you and Bigboss a bounty if you want to work together. Imagin
 
 and later even dynamically generated charts. the more you guys work together the more value delivered
 
-8)
-
-Not sure. There are detailed amounts in the Treasury Reports each month (like https://medium.com/thorchain/monthly-treasury-report-september-74b13c27aa7f). Cant find any adresses this quick tho. Will have to dig deeper.
+8) Not sure. There are detailed amounts in the Treasury Reports each month (like https://medium.com/thorchain/monthly-treasury-report-september-74b13c27aa7f). Cant find any adresses this quick tho. Will have to dig deeper.
 
 the address that adds the reserve is
 
 bnb1axqc2gan462z6npw3c33srp4950mr5x28uc6wu
 
 9) add binance explorer link for staker/unstaker
+
+10) integrate with runestake.info
+
+11)

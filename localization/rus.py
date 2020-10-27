@@ -1,9 +1,8 @@
-from typing import Dict
-
-from localization.base import BaseLocalization, pretty_money, link, short_address
+from localization.base import BaseLocalization
 from services.fetch.price import PoolInfo, RuneFairPrice
 from services.models.cap_info import ThorInfo
 from services.models.tx import StakeTx, short_asset_name, StakePoolStats
+from services.utils import pretty_money, link, short_address
 
 
 class RussianLocalization(BaseLocalization):
@@ -18,8 +17,10 @@ class RussianLocalization(BaseLocalization):
                f"/price – текущая цена Rune.\n" \
                f"<b>⚠️ Бот теперь уведомляет только в канале️ @thorchain_alert!</b>\n"
 
+
     def welcome_message(self, info: ThorInfo):
         return f"Привет! <b>{info.stacked:.0f}</b> монет из <b>{info.cap:.0f}</b> сейчас застейканы.\n" \
+               f"{self._cap_pb(info)}" \
                f"Цена ᚱune сейчас <code>{info.price:.3f} BUSD</code>.\n" \
                f"<b>⚠️ Бот теперь уведомляет только в канале️ @thorchain_alert!</b>\n" \
                f"Набери /help, чтобы видеть список команд."
@@ -34,6 +35,7 @@ class RussianLocalization(BaseLocalization):
         call = "Ай-да застейкаем!\n" if new.cap > old.cap else ''
         message = f'<b>Кап {verb} с {pretty_money(old.cap)} до {pretty_money(new.cap)}!</b>\n' \
                   f'Сейчас в пулы помещено <b>{pretty_money(new.stacked)}</b> ᚱune.\n' \
+                  f"{self._cap_pb(new)}" \
                   f'Цена ᚱune в пуле <code>{new.price:.3f} BUSD</code>.\n' \
                   f'{call}' \
                   f'https://chaosnet.bepswap.com/'

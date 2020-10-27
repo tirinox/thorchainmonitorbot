@@ -1,10 +1,8 @@
-import datetime
-import logging
-
-from localization.base import BaseLocalization, pretty_money, link, short_address
+from localization.base import BaseLocalization
 from services.fetch.price import PoolInfo, RuneFairPrice
 from services.models.cap_info import ThorInfo
 from services.models.tx import StakeTx, short_asset_name, StakePoolStats
+from services.utils import pretty_money, link, short_address
 
 
 class EnglishLocalization(BaseLocalization):
@@ -20,6 +18,7 @@ class EnglishLocalization(BaseLocalization):
 
     def welcome_message(self, info: ThorInfo):
         return f"Hello! <b>{pretty_money(info.stacked)} ᚱune</b> of <b>{pretty_money(info.cap)} ᚱune</b> pooled.\n" \
+               f"{self._cap_pb(info)}" \
                f"The ᚱune price is <code>{info.price:.3f} BUSD</code> now.\n" \
                f"<b>⚠️ All notifications are forwarded to️ @thorchain_alert channel!</b>\n" \
                f"Type /help to see the command list."
@@ -34,6 +33,7 @@ class EnglishLocalization(BaseLocalization):
         call = "Come on, add more liquidity!\n" if new.cap > old.cap else ''
         message = f'<b>Pool cap {verb} from {pretty_money(old.cap)} to {pretty_money(new.cap)}!</b>\n' \
                   f'Currently <b>{pretty_money(new.stacked)}</b> ᚱune are in the liquidity pools.\n' \
+                  f"{self._cap_pb(new)}" \
                   f'The price of ᚱune in the pool is <code>{new.price:.3f} BUSD</code>.\n' \
                   f'{call}' \
                   f'https://chaosnet.bepswap.com/'

@@ -1,15 +1,18 @@
 from abc import ABC, abstractmethod
-from math import log10, floor
 
 from aiogram.types import *
 
 from services.fetch.price import PoolInfo, RuneFairPrice
 from services.models.cap_info import ThorInfo
 from services.models.tx import StakeTx, StakePoolStats
+from services.utils import format_percent, progressbar
 
 
 class BaseLocalization(ABC):
     # ----- WELCOME ------
+
+    def _cap_pb(self, info: ThorInfo):
+        return f'{progressbar(info.stacked, info.cap, 20)} ({format_percent(info.stacked, info.cap)})\n'
 
     @abstractmethod
     def help(self): ...
@@ -43,50 +46,3 @@ class BaseLocalization(ABC):
     @abstractmethod
     def tx_text(self, tx: StakeTx, rune_per_dollar: float, pool: StakePoolStats, pool_info: PoolInfo): ...
 
-
-def number_commas(x):
-    if not isinstance(x, int):
-        raise TypeError("Parameter must be an integer.")
-    if x < 0:
-        return '-' + number_commas(-x)
-    result = ''
-    while x >= 1000:
-        x, r = divmod(x, 1000)
-        result = f",{r:03d}{result}"
-    return f"{x:d}{result}"
-
-
-def round_to_dig(x, e=2):
-    return round(x, -int(floor(log10(abs(x)))) + e - 1)
-
-
-def pretty_money(x):
-    if x < 0:
-        return "-" + pretty_money(-x)
-    elif x == 0:
-        return "0.0"
-    else:
-        if x < 100:
-            return str(round_to_dig(x, 2))
-        else:
-            return number_commas(int(round(x)))
-
-
-def bold(text):
-    return f"<b>{text}</b"
-
-
-def link(url, text):
-    return f'<a href="{url}">{text}</a>'
-
-
-def code(text):
-    return f"<code>{text}</code>"
-
-
-def short_address(address, begin=5, end=4, filler='...'):
-    address = str(address)
-    if len(address) > begin + end:
-        return address[:begin] + filler + address[-end:]
-    else:
-        return address

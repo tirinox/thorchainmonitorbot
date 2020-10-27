@@ -15,7 +15,7 @@ from services.config import Config, DB
 from services.fetch.tx import StakeTxFetcher
 from services.models.tx import StakePoolStats
 from services.notify.types.tx_notify import StakeTxNotifier
-from services.utils import a_result_cached
+from services.utils import a_result_cached, progressbar
 
 cfg = Config()
 
@@ -140,14 +140,21 @@ async def foo10():
 
 
 async def foo11():
-    qf = QueueFetcher(cfg)
-    r = await qf.fetch_info()
+    qf = QueueFetcher(cfg, db)
+    r = await qf.fetch()
     print(r)
+
+
+async def foo12():
+    print(progressbar(0, 100, 30))
+    print(progressbar(-14, 100, 30))
+    print(progressbar(10, 100, 30))
+    print(progressbar(1200, 100, 30))
 
 
 async def start_foos():
     await db.get_redis()
-    await foo11()
+    await foo12()
 
 
 if __name__ == '__main__':
