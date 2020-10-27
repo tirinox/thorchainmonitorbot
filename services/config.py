@@ -27,7 +27,7 @@ class DB:
         if self.redis is not None:
             return self.redis
         host = os.environ.get('REDIS_HOST', 'localhost')
-        port = os.environ.get('REDIS_PORT', 6382)
+        port = os.environ.get('REDIS_PORT', 6379)
         password = os.environ.get('REDIS_PASSWORD', None)
         redis = await aioredis.create_redis(
             f'redis://{host}:{port}',

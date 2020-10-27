@@ -8,41 +8,51 @@ from services.utils import pretty_money, link, short_address
 class EnglishLocalization(BaseLocalization):
     # ---- WELCOME ----
     def help(self):
-        return f"This bot is for {link('https://thorchain.org/', 'THORChain')} monitoring.\n" \
-               f"Command list:\n" \
-               f"/help – this help page\n" \
-               f"/start – start and set your language\n" \
-               f"/cap – the current staking cap of Chaosnet\n" \
-               f"/price – the current Rune price.\n" \
-               f"<b>⚠️ All notifications are forwarded to️ @thorchain_alert channel!</b>"
+        return (
+            f"This bot is for {link('https://thorchain.org/', 'THORChain')} monitoring.\n"
+            f"Command list:\n"
+            f"/help – this help page\n"
+            f"/start – start and set your language\n"
+            f"/cap – the current staking cap of Chaosnet\n"
+            f"/price – the current Rune price.\n"
+            f"<b>⚠️ All notifications are forwarded to️ @thorchain_alert channel!</b>"
+        )
 
     def welcome_message(self, info: ThorInfo):
-        return f"Hello! <b>{pretty_money(info.stacked)} ᚱune</b> of <b>{pretty_money(info.cap)} ᚱune</b> pooled.\n" \
-               f"{self._cap_pb(info)}" \
-               f"The ᚱune price is <code>{info.price:.3f} BUSD</code> now.\n" \
-               f"<b>⚠️ All notifications are forwarded to️ @thorchain_alert channel!</b>\n" \
-               f"Type /help to see the command list."
+        return (
+            f"Hello! <b>{pretty_money(info.stacked)} {self.R}</b> of <b>{pretty_money(info.cap)} {self.R}</b> pooled.\n"
+            f"{self._cap_pb(info)}"
+            f"The {self.R} price is <code>{info.price:.3f} BUSD</code> now.\n"
+            f"<b>⚠️ All notifications are forwarded to️ @thorchain_alert channel!</b>\n"
+            f"Type /help to see the command list."
+        )
 
     def unknown_command(self):
-        return "Sorry, I didn't understand that command.\n" \
-               "/help"
+        return (
+            "Sorry, I didn't understand that command.\n"
+            "/help"
+        )
 
     # ----- CAP ------
     def notification_cap_change_text(self, old: ThorInfo, new: ThorInfo):
         verb = "has been increased" if old.cap < new.cap else "has been decreased"
         call = "Come on, add more liquidity!\n" if new.cap > old.cap else ''
-        message = f'<b>Pool cap {verb} from {pretty_money(old.cap)} to {pretty_money(new.cap)}!</b>\n' \
-                  f'Currently <b>{pretty_money(new.stacked)}</b> ᚱune are in the liquidity pools.\n' \
-                  f"{self._cap_pb(new)}" \
-                  f'The price of ᚱune in the pool is <code>{new.price:.3f} BUSD</code>.\n' \
-                  f'{call}' \
-                  f'https://chaosnet.bepswap.com/'
+        message = (
+            f'<b>Pool cap {verb} from {pretty_money(old.cap)} to {pretty_money(new.cap)}!</b>\n'
+            f'Currently <b>{pretty_money(new.stacked)}</b> {self.R} are in the liquidity pools.\n'
+            f"{self._cap_pb(new)}"
+            f'The price of {self.R} in the pool is <code>{new.price:.3f} BUSD</code>.\n'
+            f'{call}'
+            f'https://chaosnet.bepswap.com/'
+        )
         return message
 
     # ------ PRICE -------
     def price_message(self, info: ThorInfo, fair_price: RuneFairPrice):
-        return f"Last real price of ᚱune is <code>${info.price:.3f}</code>.\n" \
-               f"Deterministic price of ᚱune is <code>${fair_price.fair_price:.3f}</code>."
+        return (
+            f"Last real price of {self.R} is <code>${info.price:.3f}</code>.\n"
+            f"Deterministic price of {self.R} is <code>${fair_price.fair_price:.3f}</code>."
+        )
 
     # ------ TXS -------
     def tx_text(self, tx: StakeTx, rune_per_dollar: float, pool: StakePoolStats, pool_info: PoolInfo):
@@ -52,17 +62,17 @@ class EnglishLocalization(BaseLocalization):
         elif tx.type == 'unstake':
             msg += f'🐳 <b>Whale removed liquidity</b> 🔴\n'
 
-        rp, ap = tx.symmetry_rune_vs_asset()
-        msg += f"<b>{pretty_money(tx.rune_amount)} ᚱune</b> ({rp:.0f}%) ↔️ " \
-               f"<b>{pretty_money(tx.asset_amount)} {short_asset_name(tx.pool)}</b> ({ap:.0f}%)\n"
-
         total_usd_volume = tx.full_rune / rune_per_dollar if rune_per_dollar != 0 else 0.0
-        msg += f"Total: <code>${pretty_money(total_usd_volume)}</code>\n"
-
         pool_depth_usd = pool_info.rune_depth / rune_per_dollar
-        msg += f"Pool depth is <b>${pretty_money(pool_depth_usd)}</b> now.\n"
-
         info = link(f'https://viewblock.io/thorchain/address/{tx.address}', short_address(tx.address))
-        msg += f"Explorer: {info}"
+
+        rp, ap = tx.symmetry_rune_vs_asset()
+        msg += (
+            f"<b>{pretty_money(tx.rune_amount)} {self.R}</b> ({rp:.0f}%) ↔️ "
+            f"<b>{pretty_money(tx.asset_amount)} {short_asset_name(tx.pool)}</b> ({ap:.0f}%)\n"
+            f"Total: <code>${pretty_money(total_usd_volume)}</code>\n"
+            f"Pool depth is <b>${pretty_money(pool_depth_usd)}</b> now.\n"
+            f"Explorer: {info}"
+        )
 
         return msg

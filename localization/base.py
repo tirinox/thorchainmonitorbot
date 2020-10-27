@@ -23,6 +23,8 @@ class BaseLocalization(ABC):
     BUTTON_RUS = 'Русский'
     BUTTON_ENG = 'English'
 
+    R = 'Rune'
+
     def lang_help(self):
         return (f'Пожалуйста, выберите язык / Please select a language',
                 ReplyKeyboardMarkup(keyboard=[[

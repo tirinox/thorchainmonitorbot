@@ -3,6 +3,7 @@
 config.yaml
 redis_data/dump.rdb
 datavar/
+dump.rdb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
