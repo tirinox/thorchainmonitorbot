@@ -39,11 +39,10 @@ class QueueFetcher(BaseFetcher, ABC):
             self.logger.info(f"start fetching queue: {queue_url}")
             async with session.get(queue_url) as resp:
                 resp = await resp.json()
-                self.logger.info(f"got queue: {resp}")
                 swap_queue = int(resp.get('swap', 0))
                 outbound_queue = int(resp.get('outbound', 0))
+                # return QueueInfo(0, 0)  # debug
                 return QueueInfo(swap_queue, outbound_queue)
-                # return QueueInfo(55, 13)  # debug
 
 
 class QueueFetcherMock(QueueFetcher, ABC):

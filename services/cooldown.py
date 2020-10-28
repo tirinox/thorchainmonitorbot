@@ -19,3 +19,6 @@ class CooldownTracker:
 
     async def do(self, event_name):
         await self.db.redis.set(self.get_key(event_name), time())
+
+    async def clear(self, event_name):
+        await self.db.redis.set(self.get_key(event_name), 0.0)

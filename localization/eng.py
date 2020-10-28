@@ -80,6 +80,9 @@ class EnglishLocalization(BaseLocalization):
     # ------- QUEUE -------
     def queue_update(self, item_type, step, value):
         if step == 0:
-            return f"☺️ Queue {item_type} is now empty!"
+            return f"☺️ Queue {code(item_type)} is empty again!"
         else:
-            return f"🤬 <b>Attention!</b> Queue {code(item_type)} has {value} transactions!"
+            return (
+                f"🤬 <b>Attention!</b> Queue {code(item_type)} has {value} transactions!\n"
+                f"{code(item_type)} transactions may be delayed."
+            )

@@ -26,14 +26,29 @@ class QueueNotifier(QueueFetcher):
         await self.broadcaster.broadcast(user_lang_map.keys(), message_gen)
 
     async def handle_entry(self, item_type, value):
-        for step in self.steps:
-            if value >= step:
-                k = f'q:{item_type}:{step}'
-                if await self.cooldown_tracker.can_do(k, self.cooldown):
-                    await self.notify(item_type, step, value)
-                    await self.cooldown_tracker.do(k)
-                    break
+        threshold = 12  # fixme: move to config
+
+        key_gen = lambda s: f'q:{item_type}:{s}'
+
+        k_free = key_gen('free')
+        k_packed = key_gen('packed')
+
+        cdt = self.cooldown_tracker
+        free_notified_recently = not (await cdt.can_do(k_free, self.cooldown))
+        packed_notified_recently = not (await cdt.can_do(k_packed, self.cooldown))
+
+        if value > threshold:
+            if not packed_notified_recently:
+                await cdt.clear(k_free)
+                await cdt.do(k_packed)
+                await self.notify(item_type, threshold, value)
+        elif value == 0:
+            if not free_notified_recently and packed_notified_recently:
+                await cdt.clear(k_packed)
+                await cdt.do(k_free)
+                await self.notify(item_type, 0, 0)
 
     async def handle(self, data: QueueInfo):
-        await asyncio.gather(self.handle_entry('swap', data.swap),
-                             self.handle_entry('outbound', data.outbound))
+        self.logger.info(f"got queue: {data}")
+        await self.handle_entry('swap', data.swap)
+        await self.handle_entry('outbound', data.outbound)
