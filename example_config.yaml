@@ -20,3 +20,11 @@ tx:
     tx_per_batch: 50
     max_page_deep: 10
     min_usd_total: 10000
+
+
+queue:
+  steps:
+    - 10
+    - 50
+    - 100
+  cooldown: 3600
