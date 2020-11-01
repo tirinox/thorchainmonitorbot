@@ -1,9 +1,11 @@
 import random
 from abc import ABC
 from dataclasses import dataclass
+from time import time
 
 import aiohttp
 
+from services.config import Config, DB
 from services.fetch.base import BaseFetcher
 
 FALLBACK_THORCHAIN_IP = '18.159.173.48'
@@ -11,6 +13,9 @@ THORCHAIN_QUEUE_URL = lambda ip: f'http://{ip if ip else FALLBACK_THORCHAIN_IP}:
 
 
 THORCHAIN_SEED_URL = 'https://chaosnet-seed.thorchain.info/'  # all addresses
+
+
+NODE_REFRESH_TIME = 60 * 60 * 24
 
 
 @dataclass
@@ -28,14 +33,32 @@ class QueueInfo:
 
 
 class QueueFetcher(BaseFetcher, ABC):
+    def __init__(self, cfg: Config, db: DB, sleep_period=60):
+        super().__init__(cfg, db, sleep_period)
+        self.node_ip = None
+        self.last_ip_time = 0.0
+
+    async def on_error(self, e):
+        self.node_ip = None
+        async with aiohttp.ClientSession() as session:
+            await self.update_connected_node(session)
+
+    async def update_connected_node(self, session):
+        if self.node_ip is not None:
+            return
+
+        self.logger.info(f"update_connected_node from seed = {THORCHAIN_SEED_URL}")
+        async with session.get(THORCHAIN_SEED_URL) as resp:
+            resp = await resp.json()
+            self.node_ip = random.choice(resp) if resp else FALLBACK_THORCHAIN_IP
+            self.last_ip_time = time()
+            self.logger.info(f"updated node_ip = {self.node_ip} (t = {int(self.last_ip_time)})")
+
     async def fetch(self) -> QueueInfo:
         async with aiohttp.ClientSession() as session:
-            self.logger.info(f"get seed: {THORCHAIN_SEED_URL}")
-            async with session.get(THORCHAIN_SEED_URL) as resp:
-                resp = await resp.json()
-                ip_addr = random.choice(resp) if resp else FALLBACK_THORCHAIN_IP
+            await self.update_connected_node(session)
 
-            queue_url = THORCHAIN_QUEUE_URL(ip_addr)
+            queue_url = THORCHAIN_QUEUE_URL(self.node_ip)
             self.logger.info(f"start fetching queue: {queue_url}")
             async with session.get(queue_url) as resp:
                 resp = await resp.json()

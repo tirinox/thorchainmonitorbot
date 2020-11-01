@@ -19,6 +19,8 @@ class BaseFetcher(ABC):
     @abstractmethod
     async def handle(self, data): ...
 
+    async def on_error(self, e): ...
+
     async def run(self):
         await asyncio.sleep(1)
         while True:
@@ -29,5 +31,10 @@ class BaseFetcher(ABC):
 
             except Exception as e:
                 logging.exception(f"{self.name}: task error: {e}")
+
+                try:
+                    await self.on_error(e)
+                except Exception as e:
+                    logging.exception(f"{self.name}: task error while handling on_error: {e}")
 
             await asyncio.sleep(self.sleep_period)
