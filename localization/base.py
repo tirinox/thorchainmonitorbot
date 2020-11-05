@@ -12,7 +12,7 @@ class BaseLocalization(ABC):
     # ----- WELCOME ------
 
     def _cap_pb(self, info: ThorInfo):
-        return f'{progressbar(info.stacked, info.cap, 20)} ({format_percent(info.stacked, info.cap)})\n'
+        return f'{progressbar(info.stacked, info.cap, 10)} ({format_percent(info.stacked, info.cap)})\n'
 
     @abstractmethod
     def help(self): ...

@@ -8,7 +8,7 @@ import aiohttp
 from services.config import Config, DB
 from services.fetch.base import BaseFetcher
 
-FALLBACK_THORCHAIN_IP = '18.159.173.48'
+FALLBACK_THORCHAIN_IP = '3.131.115.233'
 THORCHAIN_QUEUE_URL = lambda ip: f'http://{ip if ip else FALLBACK_THORCHAIN_IP}:1317/thorchain/queue'
 
 

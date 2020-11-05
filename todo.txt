@@ -1,14 +1,18 @@
-1) monitor queue
+1) Broadcast task for all
 
-http://18.159.173.48:1317/thorchain/queue
+queue of messages -> forever loop with "anti-spam" delays
 
+2) Track large RUne movements over Binance chain
 
 3) ATH tracker
 
 4) large price movements
 
+5) Announce new pools!
 
-7) This bot is very cool.
+7) ToDo: integrate with runestake.info
+
+Kai: This bot is very cool.
 
 Would be great if the monitoring bot could be customisable so you could get a feed of transactions based on preferences and thresholds.
 
@@ -28,8 +32,9 @@ the address that adds the reserve is
 
 bnb1axqc2gan462z6npw3c33srp4950mr5x28uc6wu
 
-9) add binance explorer link for staker/unstaker
+9) Add favorite BNB adresses - monitor in/out tx, pool performance ...
 
-10) integrate with runestake.info
+10) Use aiogram state machine
 
-11)
+to manage Preferences and favorite addresses
+
