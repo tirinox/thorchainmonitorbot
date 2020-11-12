@@ -19,7 +19,6 @@ class PoolPriceFetcher(BaseFetcher):
                  session=None, delegate: INotified = None):
         super().__init__(cfg, db, session, delegate=delegate, sleep_period=cfg.price.fetch_period)
         self.thor_man = thor_man
-        self.logger = logging.getLogger('PoolPriceFetcher')
         self.session = session
         self.last_rune_price_in_usd = 0.0
 
@@ -69,7 +68,7 @@ class PoolPriceFetcher(BaseFetcher):
         base_url = await self.thor_man.select_node_url()
 
         url = f"{base_url}/thorchain/pools"
-        logging.info(f"loading pool data from {url}")
+        self.logger.info(f"loading pool data from {url}")
         async with self.session.get(url) as resp:
             pools_info = await resp.json()
             return {

@@ -81,3 +81,8 @@ class RussianLocalization(BaseLocalization):
             return f"☺️ Очередь {item_type} снова опустела!"
         else:
             return f"🤬 <b>Внимание!</b> Очередь {code(item_type)} имеет {value} транзакций!"
+
+    # ------- PRICE -------
+
+    def price_change(self, current_price, price_1h, price_24h, price_7d, fair_price):
+        return f"Цена {current_price}"

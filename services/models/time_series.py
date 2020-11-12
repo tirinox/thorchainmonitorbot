@@ -24,9 +24,9 @@ class TimeSeries:
         r = await self.db.get_redis()
         await r.xadd(self.stream_name, kwargs, message_id=message_id)
 
-    async def select(self, start, end):
+    async def select(self, start, end, count=100):
         r = await self.db.get_redis()
-        data = await r.xrange(self.stream_name, start, end)
+        data = await r.xrange(self.stream_name, start, end, count=count)
         return data
 
 

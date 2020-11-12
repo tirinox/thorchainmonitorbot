@@ -24,7 +24,8 @@ tx:
 price:
   fetch_period: 60
   global_cd: 12h
-  percent_change: 5
+  change_cd: 1h
+  percent_change_threshold: 5
 
 cap:
   fetch_period: 120

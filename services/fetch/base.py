@@ -43,11 +43,11 @@ class BaseFetcher(ABC):
                     await self.delegate.on_data(data)
 
             except Exception as e:
-                logging.exception(f"task error: {e}")
+                self.logger.exception(f"task error: {e}")
 
                 try:
                     await self.handle_error(e)
                 except Exception as e:
-                    logging.exception(f"task error while handling on_error: {e}")
+                    self.logger.exception(f"task error while handling on_error: {e}")
 
             await asyncio.sleep(self.sleep_period)

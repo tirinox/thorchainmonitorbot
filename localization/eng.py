@@ -87,3 +87,7 @@ class EnglishLocalization(BaseLocalization):
                 f"🤬 <b>Attention!</b> Queue {code(item_type)} has {value} transactions!\n"
                 f"{code(item_type)} transactions may be delayed."
             )
+    # ------- PRICE -------
+
+    def price_change(self, current_price, price_1h, price_24h, price_7d, fair_price):
+        return f"Price is {current_price}"  # todo! finish and polish!

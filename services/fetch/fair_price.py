@@ -41,6 +41,9 @@ class RuneFairPrice:
     tlv_usd: float
 
 
+logger = logging.getLogger('fetch_fair_rune_price')
+
+
 async def fetch_fair_rune_price():
     async with aiohttp.ClientSession() as session:
         pool_info, rune_vault, (circulating, rune_price_usd) = await asyncio.gather(
@@ -58,10 +61,10 @@ async def fetch_fair_rune_price():
 
         fair_price = 3 * tlv / working_rune  # The main formula of wealth!
 
-        logging.info(f"fetch_fair_rune_price: tlv = ${int(tlv)}, "
-                     f"circulating = R {int(circulating)}, "
-                     f"rune vault = R {int(rune_vault)}, "
-                     f"rune price = ${rune_price_usd:.3f}")
+        logger.info(f"fetch_fair_rune_price: tlv = ${int(tlv)}, "
+                    f"circulating = R {int(circulating)}, "
+                    f"rune vault = R {int(rune_vault)}, "
+                    f"rune price = ${rune_price_usd:.3f}")
 
         return RuneFairPrice(circulating, rune_vault, rune_price_usd, fair_price, tlv)
 
