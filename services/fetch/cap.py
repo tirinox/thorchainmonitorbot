@@ -13,9 +13,10 @@ MIMIR_URL = "https://chaosnet-midgard.bepswap.com/v1/thorchain/mimir"
 
 
 class CapInfoFetcher(BaseFetcher):
-    def __init__(self, cfg: Config, db: DB, session: ClientSession, ppf: PoolPriceFetcher, sleep_period=60,
+    def __init__(self, cfg: Config, db: DB, session: ClientSession, ppf: PoolPriceFetcher,
                  delegate: INotified = None):
         self.ppf = ppf
+        sleep_period = cfg.cap.fetch_period
         super().__init__(cfg, db, session, sleep_period, delegate)
 
     async def fetch(self) -> ThorInfo:

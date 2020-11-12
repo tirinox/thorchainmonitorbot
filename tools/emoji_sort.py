@@ -1,6 +1,6 @@
 import random
 
-from services.notify.types.rune_price import emoji_for_percent_change
+from services.notify.types.price_notify import emoji_for_percent_change
 
 
 def main():

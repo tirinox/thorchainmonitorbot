@@ -21,8 +21,17 @@ tx:
     max_page_deep: 10
     min_usd_total: 10000
 
+price:
+  fetch_period: 60
+  global_cd: 12h
+  percent_change: 5
+
+cap:
+  fetch_period: 120
+
 
 queue:
+  fetch_period: 80
   steps:
     - 20
     - 50

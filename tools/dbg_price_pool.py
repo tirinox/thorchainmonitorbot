@@ -1,23 +1,26 @@
 import asyncio
 
+import aiohttp
+
 from services.config import Config
 from services.db import DB
 from services.fetch.node_ip_manager import ThorNodeAddressManager
-from services.fetch.pool_price import PoolPriceFetcher, BUSD_SYMBOL
+from services.fetch.pool_price import PoolPriceFetcher, BUSD_SYMBOL, RUNE_SYMBOL
 from services.models.time_series import PriceTimeSeries
 
 
 async def price_fill_task(cfg, db):
-    thor_man = ThorNodeAddressManager()
-    ppf = PoolPriceFetcher(thor_man)
+    async with aiohttp.ClientSession() as session:
+        thor_man = ThorNodeAddressManager(session)
+        ppf = PoolPriceFetcher(cfg, db, thor_man, session)
 
-    series = PriceTimeSeries('rune', cfg, db)
+        series = PriceTimeSeries(RUNE_SYMBOL, cfg, db)
 
-    while True:
-        busd_in_rune = await ppf.get_price_in_rune(BUSD_SYMBOL)
-        print(f'busd_in_rune = {busd_in_rune}')
-        await series.add(price=busd_in_rune)
-        await asyncio.sleep(30)
+        while True:
+            busd_in_rune = await ppf.get_price_in_rune(BUSD_SYMBOL)
+            print(f'busd_in_rune = {busd_in_rune}')
+            await series.add(price=busd_in_rune)
+            await asyncio.sleep(30)
 
 
 if __name__ == '__main__':

@@ -4,15 +4,15 @@ import logging
 from services.config import Config
 from services.db import DB
 from services.fetch.node_ip_manager import ThorNodeAddressManager
-from services.fetch.pool_price import PoolPriceFetcher, BUSD_SYMBOL
-from services.models.time_series import TimeSeries
+from services.fetch.pool_price import PoolPriceFetcher, BUSD_SYMBOL, RUNE_SYMBOL
+from services.models.time_series import TimeSeries, PriceTimeSeries
+from services.utils import MINUTE, HOUR
 
 
 async def main(cfg, db):
-    thor_man = ThorNodeAddressManager()
-    ppf = PoolPriceFetcher(thor_man)
-    r = await ppf.fetch_pool_data_historic(BUSD_SYMBOL)
-    print(r)
+    ts = PriceTimeSeries(RUNE_SYMBOL, cfg, db)
+    price = await ts.select_average_ago(HOUR * 4, MINUTE * 5)
+    print(price)
 
 
 if __name__ == '__main__':
