@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 
 from services.db import DB
-from services.models.cap_info import BaseModelMixin, MIDGARD_MULT
+from services.fetch.pool_price import MIDGARD_MULT
+from services.models.cap_info import BaseModelMixin
 
 
 @dataclass
@@ -53,7 +54,7 @@ class StakeTx(BaseModelMixin):
                    full_rune=0.0,
                    asset_price=0.0)
 
-    def assymmetry(self, force_abs=False):
+    def asymmetry(self, force_abs=False):
         rune_asset_amount = self.asset_amount * self.asset_price
         factor = (self.rune_amount / (rune_asset_amount + self.rune_amount) - 0.5) * 200.0  # -100 % ... + 100 %
         return abs(factor) if force_abs else factor

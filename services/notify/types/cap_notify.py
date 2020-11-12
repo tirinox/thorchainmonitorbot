@@ -24,9 +24,11 @@ class CapFetcherNotification(INotified):
 
         old_info = await ThorInfo.get_old_cap(self.db)
 
-        if new_info.is_ok and new_info.cap != old_info.cap:
+        if new_info.is_ok:
             await new_info.save(self.db)
-            await self._notify_when_cap_changed(old_info, new_info)
+
+            if new_info.cap != old_info.cap:
+                await self._notify_when_cap_changed(old_info, new_info)
 
     async def _notify_when_cap_changed(self, old: ThorInfo, new: ThorInfo):
         user_lang_map = telegram_chats_from_config(self.cfg, self.loc_man)

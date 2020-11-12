@@ -7,6 +7,7 @@ from aiogram.types import ParseMode
 from localization import LocalizationManager
 from services.config import Config
 from services.db import DB
+from services.models.tx import StakePoolStats
 from services.notify.broadcast import Broadcaster
 from services.utils import progressbar
 
@@ -45,6 +46,7 @@ async def foo12():
     print(progressbar(-14, 100, 30))
     print(progressbar(10, 100, 30))
     print(progressbar(1200, 100, 30))
+    await StakePoolStats.clear_all_data(db)
 
 
 async def start_foos():

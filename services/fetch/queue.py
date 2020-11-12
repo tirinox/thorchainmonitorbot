@@ -1,4 +1,5 @@
 import aiohttp
+from aiohttp import ClientSession
 
 from services.config import Config
 from services.db import DB
@@ -9,10 +10,11 @@ from services.models.queue import QueueInfo
 
 class QueueFetcher(BaseFetcher):
     def __init__(self, cfg: Config, db: DB,
+                 session: ClientSession,
                  thor_man: ThorNodeAddressManager,
                  sleep_period=60,
                  delegate: INotified = None):
-        super().__init__(cfg, db, sleep_period, delegate)
+        super().__init__(cfg, db, session, sleep_period, delegate)
         self.thor_man = thor_man
         self.last_node_ip = None
 

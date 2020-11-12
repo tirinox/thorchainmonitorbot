@@ -9,6 +9,7 @@ EMOJI_SCALE = [
 
 REAL_REGISTERED_ATH = 1.62  # BUSD / Rune
 
+
 def emoji_for_percent_change(pc):
     for threshold, emoji in EMOJI_SCALE:
         if pc <= threshold:

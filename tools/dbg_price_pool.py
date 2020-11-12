@@ -3,7 +3,7 @@ import asyncio
 from services.config import Config
 from services.db import DB
 from services.fetch.node_ip_manager import ThorNodeAddressManager
-from services.fetch.pool_price import PoolPriceFetcher
+from services.fetch.pool_price import PoolPriceFetcher, BUSD_SYMBOL
 from services.models.time_series import PriceTimeSeries
 
 
@@ -14,7 +14,7 @@ async def price_fill_task(cfg, db):
     series = PriceTimeSeries('rune', cfg, db)
 
     while True:
-        busd_in_rune = await ppf.get_price_in_rune(ppf.BUSD)
+        busd_in_rune = await ppf.get_price_in_rune(BUSD_SYMBOL)
         print(f'busd_in_rune = {busd_in_rune}')
         await series.add(price=busd_in_rune)
         await asyncio.sleep(30)

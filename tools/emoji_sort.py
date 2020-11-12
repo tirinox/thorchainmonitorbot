@@ -8,8 +8,8 @@ def main():
         lines = f.readlines()
 
     items = []
-    for l in lines:
-        comp = (' '.join(l.split())).split()
+    for line in lines:
+        comp = (' '.join(line.split())).split()
         if len(comp) == 3:
             _, percent, emoji = comp
             percent = float(percent[:-1])
@@ -36,12 +36,14 @@ def main():
         ], file=f)
         print(min_arr)
 
+
 def tests():
     for _ in range(50):
         x = random.uniform(5, 200)
         y = random.uniform(-x, x)
         r = emoji_for_percent_change(y)
         print(round(y * 10) / 10, r)
+
 
 if __name__ == "__main__":
     main()

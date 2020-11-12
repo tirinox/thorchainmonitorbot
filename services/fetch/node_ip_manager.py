@@ -19,7 +19,7 @@ class ThorNodeAddressManager:
         self._cnt = 0
         self._black_list = set()
         self.reload_each_n_request = reload_each_n_request
-        self.session = session or aiohttp.ClientSession()
+        self.session = session
 
     async def get_thorchain_nodes(self):
         async with self.session.get(self.THORCHAIN_SEED_URL) as resp:
@@ -48,3 +48,11 @@ class ThorNodeAddressManager:
     async def blacklist_node(self, ip, reason='?'):
         self.logger.warning(f'blacklisting {ip} reason: {reason}.')
         self._black_list.add(ip)
+
+    __instance = None
+
+    @classmethod
+    def shared(cls) -> 'ThorNodeAddressManager':
+        if not cls.__instance:
+            cls.__instance = cls()
+        return cls.__instance

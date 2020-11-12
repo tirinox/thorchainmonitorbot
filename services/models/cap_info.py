@@ -4,8 +4,6 @@ from dataclasses import dataclass, asdict
 
 from services.db import DB
 
-MIDGARD_MULT = 10 ** -8
-
 
 @dataclass
 class BaseModelMixin:

@@ -1,7 +1,7 @@
 import os
 
 import aioredis
-from aiogram.contrib.fsm_storage.redis import RedisStorage, RedisStorage2
+from aiogram.contrib.fsm_storage.redis import RedisStorage2
 
 
 class DB:

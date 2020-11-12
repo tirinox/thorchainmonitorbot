@@ -2,7 +2,8 @@ from abc import ABC, abstractmethod
 
 from aiogram.types import *
 
-from services.fetch.price import PoolInfo, RuneFairPrice
+from services.fetch.fair_price import RuneFairPrice
+from services.fetch.pool_price import PoolInfo
 from services.models.cap_info import ThorInfo
 from services.models.tx import StakeTx, StakePoolStats
 from services.utils import format_percent, progressbar
@@ -11,7 +12,8 @@ from services.utils import format_percent, progressbar
 class BaseLocalization(ABC):
     # ----- WELCOME ------
 
-    def _cap_pb(self, info: ThorInfo):
+    @staticmethod
+    def _cap_pb(info: ThorInfo):
         return f'{progressbar(info.stacked, info.cap, 10)} ({format_percent(info.stacked, info.cap)})\n'
 
     @abstractmethod

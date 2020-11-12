@@ -14,7 +14,8 @@ class TimeSeries:
     def stream_name(self):
         return f'ts-stream:{self.name}'
 
-    def range(self, ago_sec, tolerance_sec):
+    @staticmethod
+    def range(ago_sec, tolerance_sec):
         now_ms = int(time.time() * 1000)
         t_ms = int(tolerance_sec * 1000)
         return now_ms - ago_sec - t_ms, now_ms - ago_sec + t_ms

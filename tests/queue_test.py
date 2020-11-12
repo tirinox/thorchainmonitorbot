@@ -5,7 +5,7 @@ from services.notify.types.queue_notify import QueueNotifier
 
 class FakeConfig(Config):
     def __init__(self):
-        ...
+        super().__init__()
 
 
 def setup():
@@ -22,6 +22,4 @@ def teardown():
 
 
 async def test1(mocker, cfg):
-
-    f = QueueNotifier(cfg, None)
-    await f.fetch()
+    ...

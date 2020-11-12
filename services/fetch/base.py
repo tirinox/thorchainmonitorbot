@@ -2,6 +2,8 @@ import asyncio
 import logging
 from abc import ABC, abstractmethod
 
+from aiohttp import ClientSession
+
 from services.config import Config
 from services.db import DB
 
@@ -15,9 +17,10 @@ class INotified(ABC):
 
 
 class BaseFetcher(ABC):
-    def __init__(self, cfg: Config, db: DB, sleep_period=60, delegate: INotified = None):
+    def __init__(self, cfg: Config, db: DB, session: ClientSession, sleep_period=60, delegate: INotified = None):
         self.cfg = cfg
         self.db = db
+        self.session = session
         self.delegate = delegate
         self.name = self.__class__.__qualname__
         self.sleep_period = sleep_period

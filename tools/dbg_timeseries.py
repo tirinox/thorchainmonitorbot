@@ -4,15 +4,14 @@ import logging
 from services.config import Config
 from services.db import DB
 from services.fetch.node_ip_manager import ThorNodeAddressManager
-from services.fetch.pool_price import PoolPriceFetcher
+from services.fetch.pool_price import PoolPriceFetcher, BUSD_SYMBOL
 from services.models.time_series import TimeSeries
 
 
 async def main(cfg, db):
-    t = TimeSeries('test2', cfg, db)
-    # await t.add(value=10)
-
-    r = await t.select(*t.range(120, 1200))
+    thor_man = ThorNodeAddressManager()
+    ppf = PoolPriceFetcher(thor_man)
+    r = await ppf.fetch_pool_data_historic(BUSD_SYMBOL)
     print(r)
 
 

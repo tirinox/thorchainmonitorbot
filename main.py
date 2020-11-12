@@ -1,6 +1,7 @@
 import asyncio
 import logging
 
+import aiohttp
 from aiogram import Bot, Dispatcher, executor
 from aiogram.types import *
 
@@ -10,6 +11,7 @@ from services.db import DB
 from services.dialog.dialog import register_commands
 from services.fetch.cap import CapInfoFetcher
 from services.fetch.node_ip_manager import ThorNodeAddressManager
+from services.fetch.pool_price import PoolPriceFetcher
 from services.fetch.queue import QueueFetcher
 from services.fetch.tx import StakeTxFetcher
 from services.notify.broadcast import Broadcaster
@@ -33,27 +35,30 @@ class App:
         self.loc_man = LocalizationManager()
         self.broadcaster = Broadcaster(self.bot, self.db)
 
-        self.thor_man = ThorNodeAddressManager()
-
         register_commands(self.dp, self.loc_man, self.db, self.broadcaster)
 
     async def _run_tasks(self):
         await self.db.get_redis()
         self.dp.storage = await self.db.get_storage()
 
-        notifier_cap = CapFetcherNotification(self.cfg, self.db, self.broadcaster, self.loc_man)
-        notifier_tx = StakeTxNotifier(self.cfg, self.db, self.broadcaster, self.loc_man, None)
-        notifier_queue = QueueNotifier(self.cfg, self.db, self.broadcaster, self.loc_man)
+        async with aiohttp.ClientSession() as session:
+            self.thor_man = ThorNodeAddressManager.shared()
+            self.thor_man.session = session
+            self.ppf = PoolPriceFetcher(self.thor_man, session)
 
-        fetcher_cap = CapInfoFetcher(self.cfg, self.db, delegate=notifier_cap)
-        fetcher_tx = StakeTxFetcher(self.cfg, self.db, delegate=notifier_tx)
-        fetcher_queue = QueueFetcher(self.cfg, self.db, thor_man=self.thor_man, delegate=notifier_queue)
+            notifier_cap = CapFetcherNotification(self.cfg, self.db, self.broadcaster, self.loc_man)
+            notifier_tx = StakeTxNotifier(self.cfg, self.db, self.broadcaster, self.loc_man, None)
+            notifier_queue = QueueNotifier(self.cfg, self.db, self.broadcaster, self.loc_man)
 
-        notifier_tx.fetcher = fetcher_tx  # fixme: back link
+            fetcher_cap = CapInfoFetcher(self.cfg, self.db, session, delegate=notifier_cap)
+            fetcher_tx = StakeTxFetcher(self.cfg, self.db, session, delegate=notifier_tx, ppf=self.ppf)
+            fetcher_queue = QueueFetcher(self.cfg, self.db, session, thor_man=self.thor_man, delegate=notifier_queue)
 
-        await asyncio.gather(*(task.run() for task in [
-            fetcher_tx, fetcher_cap, fetcher_queue
-        ]))
+            notifier_tx.fetcher = fetcher_tx  # fixme: back link
+
+            await asyncio.gather(*(task.run() for task in [
+                fetcher_tx, fetcher_cap, fetcher_queue
+            ]))
 
     def run(self):
         self.dp.loop.create_task(self._run_tasks())

@@ -5,15 +5,36 @@ import aiohttp
 
 from services.fetch.node_ip_manager import ThorNodeAddressManager
 
+MIDGARD_MULT = 10 ** -8
+
+BNB_SYMBOL = 'BNB.BNB'
+BUSD_SYMBOL = 'BNB.BUSD-BD1'
+RUNE_SYMBOL = 'BNB.RUNE-B1A'
+
 
 @dataclass
-class PoolBalance:
+class PoolInfo:
+    asset: str
+    price: float  # runes per 1 asset
+
     balance_asset: int
     balance_rune: int
 
+    enabled: bool
+
     @classmethod
-    def from_dict(cls, pool_data):
-        return PoolBalance(int(pool_data['balance_asset']), int(pool_data['balance_rune']))
+    def dummy(cls):
+        return cls('', 1, 1, 1, False)
+
+    @classmethod
+    def from_dict(cls, j):
+        balance_asset = int(j['balance_asset'])
+        balance_rune = int(j['balance_rune'])
+        return cls(asset=j['asset'],
+                   price=(balance_asset / balance_rune),
+                   balance_asset=balance_asset,
+                   balance_rune=balance_rune,
+                   enabled=(j['status'] == 'Enabled'))
 
     @property
     def to_dict(self):
@@ -24,19 +45,14 @@ class PoolBalance:
 
 
 class PoolPriceFetcher:
-    BUSD = 'BNB.BUSD-BD1'
-    RUNE_SYMBOL = 'BNB.RUNE-B1A'
-
-    def __init__(self, thor_man: ThorNodeAddressManager, session=None):
+    def __init__(self, thor_man: ThorNodeAddressManager = ThorNodeAddressManager.shared(), session=None):
         self.thor_man = thor_man
         self.logger = logging.getLogger('PoolPriceFetcher')
-        self.nodes_ip = []
-        self._cnt = 0
-        self.session = session or aiohttp.ClientSession()
+        self.session = session
 
-    async def fetch_pool_data(self, asset, height=0) -> PoolBalance:
-        if asset == self.RUNE_SYMBOL:
-            return PoolBalance(1, 1)
+    async def fetch_pool_data_historic(self, asset, height=0) -> PoolInfo:
+        if asset == RUNE_SYMBOL:
+            return PoolInfo.dummy()
 
         base_url = await self.thor_man.select_node_url()
 
@@ -44,19 +60,36 @@ class PoolPriceFetcher:
 
         async with self.session.get(url) as resp:
             j = await resp.json()
-            return PoolBalance.from_dict(j)
+            return PoolInfo.from_dict(j)
 
     async def get_price_in_rune(self, asset, height=0):
-        if asset == self.RUNE_SYMBOL:
+        if asset == RUNE_SYMBOL:
             return 1.0
-        asset_pool = await self.fetch_pool_data(asset, height)
+        asset_pool = await self.fetch_pool_data_historic(asset, height)
         asset_per_rune = asset_pool.balance_asset / asset_pool.balance_rune
         return asset_per_rune
 
     async def get_historical_price(self, asset, height=0):
-        dollar_per_rune = await self.get_price_in_rune(self.BUSD, height)
+        dollar_per_rune = await self.get_price_in_rune(BUSD_SYMBOL, height)
         asset_per_rune = await self.get_price_in_rune(asset, height)
 
         asset_price_in_usd = dollar_per_rune / asset_per_rune
 
         return dollar_per_rune, asset_price_in_usd
+
+    async def get_current_pool_data_full(self):
+        base_url = await self.thor_man.select_node_url()
+
+        url = f"{base_url}/thorchain/pools"
+        logging.info(f"loading pool data from {url}")
+        async with self.session.get(url) as resp:
+            pools_info = await resp.json()
+            return {
+                pool['asset']: PoolInfo.from_dict(pool) for pool in pools_info
+            }
+
+    async def get_prices_of(self, asset_list):
+        pool_dict = await self.get_current_pool_data_full()
+        return {
+            asset: pool for asset, pool in pool_dict.items() if pool in asset_list
+        }
