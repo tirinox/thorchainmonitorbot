@@ -1,10 +1,5 @@
-import asyncio
-import logging
-from abc import ABC
-
 import aiohttp
 
-from services.config import Config
 from services.fetch.base import BaseFetcher
 from services.fetch.price import get_price_of, STABLE_COIN
 from services.models.cap_info import ThorInfo, MIDGARD_MULT
@@ -13,7 +8,7 @@ NETWORK_URL = "https://chaosnet-midgard.bepswap.com/v1/network"
 MIMIR_URL = "https://chaosnet-midgard.bepswap.com/v1/thorchain/mimir"
 
 
-class CapInfoFetcher(BaseFetcher, ABC):
+class CapInfoFetcher(BaseFetcher):
     async def fetch(self) -> ThorInfo:
         async with aiohttp.ClientSession() as session:
             self.logger.info("start fetching caps and mimir")
@@ -31,5 +26,5 @@ class CapInfoFetcher(BaseFetcher, ABC):
             price = 1.0 / price  # Rune/Busd
 
             r = ThorInfo(cap=max_staked, stacked=total_staked, price=price)
-            self.logger.info(r)
+            self.logger.info(f"ThorInfo got the following {r}")
             return r

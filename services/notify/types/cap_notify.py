@@ -2,29 +2,30 @@ import logging
 
 from localization import LocalizationManager
 from services.config import Config
-from services.fetch.cap import CapInfoFetcher
+from services.db import DB
+from services.fetch.base import INotified
 from services.models.cap_info import ThorInfo
 from services.notify.broadcast import Broadcaster, telegram_chats_from_config
 
 
-class CapFetcherNotification(CapInfoFetcher):
-    def __init__(self, cfg: Config, broadcaster: Broadcaster, loc_man: LocalizationManager):
-        super().__init__(cfg, broadcaster.db)
+class CapFetcherNotification(INotified):
+    def __init__(self, cfg: Config, db: DB, broadcaster: Broadcaster, loc_man: LocalizationManager):
+        self.logger = logging.getLogger('CapFetcherNotification')
         self.broadcaster = broadcaster
         self.loc_man = loc_man
+        self.cfg = cfg
+        self.db = db
 
-    async def handle(self, data):
+    async def on_data(self, data):
         new_info: ThorInfo = data
         if not new_info.is_ok:
             self.logger.warning('no info got!')
             return
 
-        db = self.db
-        old_info = await ThorInfo.get_old_cap(db)
-        await ThorInfo.update_ath(db, new_info.price)
-        await new_info.save(db)
+        old_info = await ThorInfo.get_old_cap(self.db)
 
-        if new_info.cap != old_info.cap:
+        if new_info.is_ok and new_info.cap != old_info.cap:
+            await new_info.save(self.db)
             await self._notify_when_cap_changed(old_info, new_info)
 
     async def _notify_when_cap_changed(self, old: ThorInfo, new: ThorInfo):

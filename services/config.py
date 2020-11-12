@@ -1,9 +1,8 @@
-import aioredis
-import yaml
 import sys
-import os
-from prodict import Prodict
+
+import yaml
 from dotenv import load_dotenv
+from prodict import Prodict
 
 load_dotenv()
 
@@ -16,26 +15,3 @@ class Config(Prodict):
         with open(self._config_name, 'r') as f:
             data = yaml.load(f, Loader=yaml.SafeLoader)
         super().__init__(**data)
-
-
-class DB:
-    def __init__(self, loop):
-        self.loop = loop
-        self.redis: aioredis.Redis = None
-
-    async def get_redis(self) -> aioredis.Redis:
-        if self.redis is not None:
-            return self.redis
-        host = os.environ.get('REDIS_HOST', 'localhost')
-        port = os.environ.get('REDIS_PORT', 6379)
-        password = os.environ.get('REDIS_PASSWORD', None)
-        redis = await aioredis.create_redis(
-            f'redis://{host}:{port}',
-            password=password,
-            loop=self.loop)
-        self.redis = redis
-        return redis
-
-    async def close_redis(self):
-        self.redis.close()
-        await self.redis.wait_closed()

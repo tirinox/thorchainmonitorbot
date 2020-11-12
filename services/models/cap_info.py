@@ -1,7 +1,8 @@
 import json
+import logging
 from dataclasses import dataclass, asdict
 
-from services.config import DB
+from services.db import DB
 
 MIDGARD_MULT = 10 ** -8
 
@@ -14,7 +15,8 @@ class BaseModelMixin:
 
     @classmethod
     def from_json(cls, jstr):
-        return cls(**json.loads(jstr, encoding='utf-8'))
+        d = json.loads(jstr)
+        return cls(**d)
 
 
 @dataclass
@@ -37,30 +39,9 @@ class ThorInfo(BaseModelMixin):
 
     @property
     def is_ok(self):
-        return self.cap >= 0
+        return self.cap > 0
 
     KEY_INFO = 'th_info'
-    KEY_ATH = 'th_ath_rune_price'
-
-    # -- ath --
-
-    @classmethod
-    async def get_ath(cls, db: DB):
-        try:
-            ath_str = await db.redis.get(cls.KEY_ATH)
-            return float(ath_str)
-        except (TypeError, ValueError, AttributeError):
-            return 0.0
-
-    @classmethod
-    async def update_ath(cls, db: DB, price):
-        ath = await cls.get_ath(db)
-        if price > ath:
-            await db.redis.set(cls.KEY_ATH, price)
-            return True
-        return False
-
-    # -- caps --
 
     @classmethod
     async def get_old_cap(cls, db: DB):
@@ -68,8 +49,9 @@ class ThorInfo(BaseModelMixin):
             j = await db.redis.get(cls.KEY_INFO)
             return ThorInfo.from_json(j)
         except (TypeError, ValueError, AttributeError, json.decoder.JSONDecodeError):
-            return ThorInfo.zero()
+            logging.exception('get_old_cap error')
+            return ThorInfo.error()
 
     async def save(self, db: DB):
-        if db.redis:
-            await db.redis.set(self.KEY_INFO, self.as_json)
+        r = await db.get_redis()
+        await r.set(self.KEY_INFO, self.as_json)

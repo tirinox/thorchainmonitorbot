@@ -1,20 +1,23 @@
-import asyncio
+import logging
 
 from localization import LocalizationManager
-from services.config import Config, DB
-from services.fetch.queue import QueueFetcher, QueueInfo
+from services.config import Config
 from services.cooldown import CooldownTracker
+from services.db import DB
+from services.fetch.base import INotified
+from services.fetch.queue import QueueInfo
 from services.notify.broadcast import Broadcaster, telegram_chats_from_config
 
 
-class QueueNotifier(QueueFetcher):
+class QueueNotifier(INotified):
     def __init__(self, cfg: Config, db: DB, broadcaster: Broadcaster, loc_man: LocalizationManager):
-        super().__init__(cfg, db)
+        self.cfg = cfg
         self.broadcaster = broadcaster
+        self.logger = logging.getLogger('QueueNotifier')
         self.loc_man = loc_man
         self.cooldown_tracker = CooldownTracker(db)
-
         self.cooldown = cfg.queue.cooldown
+        self.threshold = cfg.queue.steps[0]
         self.steps = tuple(map(int, cfg.queue.steps))
 
     async def notify(self, item_type, step, value):
@@ -26,8 +29,6 @@ class QueueNotifier(QueueFetcher):
         await self.broadcaster.broadcast(user_lang_map.keys(), message_gen)
 
     async def handle_entry(self, item_type, value):
-        threshold = 12  # fixme: move to config
-
         key_gen = lambda s: f'q:{item_type}:{s}'
 
         k_free = key_gen('free')
@@ -37,18 +38,18 @@ class QueueNotifier(QueueFetcher):
         free_notified_recently = not (await cdt.can_do(k_free, self.cooldown))
         packed_notified_recently = not (await cdt.can_do(k_packed, self.cooldown))
 
-        if value > threshold:
+        if value > self.threshold:
             if not packed_notified_recently:
                 await cdt.clear(k_free)
                 await cdt.do(k_packed)
-                await self.notify(item_type, threshold, value)
+                await self.notify(item_type, self.threshold, value)
         elif value == 0:
             if not free_notified_recently and packed_notified_recently:
                 await cdt.clear(k_packed)
                 await cdt.do(k_free)
                 await self.notify(item_type, 0, 0)
 
-    async def handle(self, data: QueueInfo):
+    async def on_data(self, data: QueueInfo):
         self.logger.info(f"got queue: {data}")
         await self.handle_entry('swap', data.swap)
         await self.handle_entry('outbound', data.outbound)

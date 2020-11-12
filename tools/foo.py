@@ -108,9 +108,8 @@ async def foo7():
 
 
 async def foo8():
-    async with aiohttp.ClientSession() as session:
-        fp = await fair_rune_price(session)
-        print(fp)
+    fp = await fair_rune_price()
+    print(fp)
 
 
 @a_result_cached(5)

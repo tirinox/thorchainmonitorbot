@@ -1,77 +1,41 @@
-import random
-from abc import ABC
-from dataclasses import dataclass
-from time import time
-
 import aiohttp
 
-from services.config import Config, DB
-from services.fetch.base import BaseFetcher
-
-FALLBACK_THORCHAIN_IP = '3.131.115.233'
-THORCHAIN_QUEUE_URL = lambda ip: f'http://{ip if ip else FALLBACK_THORCHAIN_IP}:1317/thorchain/queue'
-
-
-THORCHAIN_SEED_URL = 'https://chaosnet-seed.thorchain.info/'  # all addresses
+from services.config import Config
+from services.db import DB
+from services.fetch.base import BaseFetcher, INotified
+from services.fetch.node_ip_manager import ThorNodeAddressManager
+from services.models.queue import QueueInfo
 
 
-NODE_REFRESH_TIME = 60 * 60 * 24
+class QueueFetcher(BaseFetcher):
+    def __init__(self, cfg: Config, db: DB,
+                 thor_man: ThorNodeAddressManager,
+                 sleep_period=60,
+                 delegate: INotified = None):
+        super().__init__(cfg, db, sleep_period, delegate)
+        self.thor_man = thor_man
+        self.last_node_ip = None
 
+    async def handle_error(self, e):  # override
+        if self.last_node_ip:
+            await self.thor_man.blacklist_node(self.last_node_ip)
+            self.last_node_ip = None
+        return await super().handle_error(e)
 
-@dataclass
-class QueueInfo:
-    swap: int
-    outbound: int
+    @staticmethod
+    def queue_url(base_url):
+        return f'{base_url}/thorchain/queue'
 
-    @classmethod
-    def error(cls):
-        return cls(-1, -1)
-
-    @property
-    def is_ok(self):
-        return self.swap >= 0 and self.outbound >= 0
-
-
-class QueueFetcher(BaseFetcher, ABC):
-    def __init__(self, cfg: Config, db: DB, sleep_period=60):
-        super().__init__(cfg, db, sleep_period)
-        self.node_ip = None
-        self.last_ip_time = 0.0
-
-    async def on_error(self, e):
-        self.node_ip = None
+    async def fetch(self) -> QueueInfo:  # override
         async with aiohttp.ClientSession() as session:
-            await self.update_connected_node(session)
+            self.last_node_ip = await self.thor_man.select_node()
+            queue_url = self.queue_url(self.thor_man.connection_url(self.last_node_ip))
 
-    async def update_connected_node(self, session):
-        if self.node_ip is not None:
-            return
-
-        self.logger.info(f"update_connected_node from seed = {THORCHAIN_SEED_URL}")
-        async with session.get(THORCHAIN_SEED_URL) as resp:
-            resp = await resp.json()
-            self.node_ip = random.choice(resp) if resp else FALLBACK_THORCHAIN_IP
-            self.last_ip_time = time()
-            self.logger.info(f"updated node_ip = {self.node_ip} (t = {int(self.last_ip_time)})")
-
-    async def fetch(self) -> QueueInfo:
-        async with aiohttp.ClientSession() as session:
-            await self.update_connected_node(session)
-
-            queue_url = THORCHAIN_QUEUE_URL(self.node_ip)
             self.logger.info(f"start fetching queue: {queue_url}")
             async with session.get(queue_url) as resp:
                 resp = await resp.json()
                 swap_queue = int(resp.get('swap', 0))
                 outbound_queue = int(resp.get('outbound', 0))
+
                 # return QueueInfo(0, 0)  # debug
                 return QueueInfo(swap_queue, outbound_queue)
-
-
-class QueueFetcherMock(QueueFetcher, ABC):
-    def __init__(self, results):
-        self.results = results
-        self._it = iter(results)
-
-    async def fetch(self) -> QueueInfo:
-        return next(self._it)

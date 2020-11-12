@@ -1,23 +1,22 @@
 import asyncio
-import logging
-from abc import abstractmethod, ABC
 from typing import List
 
 import aiohttp
 
-from services.config import Config, DB
-from services.fetch.base import BaseFetcher
+from services.config import Config
+from services.db import DB
+from services.fetch.base import BaseFetcher, INotified
 from services.fetch.price import STABLE_COIN, PoolInfo, get_pool_info
 from services.models.tx import StakeTx, StakePoolStats
 
 TRANSACTION_URL = "https://chaosnet-midgard.bepswap.com/v1/txs?offset={offset}&limit={limit}&type=stake,unstake"
 
 
-class StakeTxFetcher(BaseFetcher, ABC):
+class StakeTxFetcher(BaseFetcher):
     MAX_PAGE_DEEP = 10
 
-    def __init__(self, cfg: Config, db: DB):
-        super().__init__(cfg, db, sleep_period=60)
+    def __init__(self, cfg: Config, db: DB, delegate: INotified = None):
+        super().__init__(cfg, db, sleep_period=60, delegate=delegate)
 
         self.pool_stat_map = {}
         self.pool_info_map = {}
@@ -30,12 +29,9 @@ class StakeTxFetcher(BaseFetcher, ABC):
 
         self.logger.info(f"cfg.tx.stake_unstake: {scfg}")
 
-    @abstractmethod
-    async def on_new_txs(self, txs): ...
-
-    async def handle(self, data):
-        await self.on_new_txs(data)
-        await self._mark_as_notified(data)
+    @property
+    def runes_per_dollar(self):
+        return self.pool_info_map.get(STABLE_COIN, PoolInfo.empty()).price
 
     async def fetch(self):
         async with aiohttp.ClientSession() as self.session:
@@ -46,6 +42,8 @@ class StakeTxFetcher(BaseFetcher, ABC):
             await self._load_stats(txs)
 
             txs = await self._update_pools(txs)
+            if txs:
+                await self._mark_as_notified(txs)
             return txs
 
     # -------
@@ -134,7 +132,3 @@ class StakeTxFetcher(BaseFetcher, ABC):
         await asyncio.gather(*[
             tx.set_notified(self.db) for tx in txs
         ])
-
-    @property
-    def runes_per_dollar(self):
-        return self.pool_info_map.get(STABLE_COIN, PoolInfo.empty()).price

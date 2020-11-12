@@ -2,6 +2,8 @@ import asyncio
 import logging
 from dataclasses import dataclass
 
+import aiohttp
+
 from services.models.cap_info import MIDGARD_MULT
 from services.utils import a_result_cached
 
@@ -60,7 +62,7 @@ class PoolInfo:
 
     @classmethod
     def empty(cls):
-        return cls('', None, 0, 0, False)
+        return cls('', 0, 0, 0, False)
 
 
 async def get_pool_info(session, asset_list):
@@ -104,20 +106,21 @@ class RuneFairPrice:
 
 
 @a_result_cached(ttl=60)
-async def fair_rune_price(session):
-    pool_info, rune_vault, (circulating, rune_price_usd) = await asyncio.gather(
-        delphi_pool_info(session),
-        delphi_get_rune_vault_balance(session),
-        delphi_get_circulating_supply_and_price_of_rune(session)
-    )
+async def fair_rune_price():
+    async with aiohttp.ClientSession() as session:
+        pool_info, rune_vault, (circulating, rune_price_usd) = await asyncio.gather(
+            delphi_pool_info(session),
+            delphi_get_rune_vault_balance(session),
+            delphi_get_circulating_supply_and_price_of_rune(session)
+        )
 
-    working_rune = circulating - rune_vault
+        working_rune = circulating - rune_vault
 
-    tlv = 0
-    for pool in pool_info:
-        pool: PoolInfo
-        tlv += pool.rune_depth * rune_price_usd
+        tlv = 0
+        for pool in pool_info:
+            pool: PoolInfo
+            tlv += pool.rune_depth * rune_price_usd
 
-    fair_price = 3 * tlv / working_rune
+        fair_price = 3 * tlv / working_rune
 
-    return RuneFairPrice(circulating, rune_vault, rune_price_usd, fair_price, tlv)
+        return RuneFairPrice(circulating, rune_vault, rune_price_usd, fair_price, tlv)

@@ -1,5 +1,6 @@
-from services.config import DB
 from time import time
+
+from services.db import DB
 
 
 class CooldownTracker:

@@ -1,4 +1,4 @@
-from services.config import DB
+from services.db import DB
 from localization.base import BaseLocalization
 from localization.eng import EnglishLocalization
 from localization.rus import RussianLocalization

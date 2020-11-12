@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from services.config import DB
+from services.db import DB
 from services.models.cap_info import BaseModelMixin, MIDGARD_MULT
 
 
