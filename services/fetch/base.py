@@ -31,14 +31,15 @@ class BaseFetcher(ABC):
         ...
 
     async def handle_error(self, e):
-        await self.delegate.on_error(e)
+        if self.delegate:
+            await self.delegate.on_error(e)
 
     async def run(self):
         await asyncio.sleep(1)
         while True:
             try:
                 data = await self.fetch()
-                if data:
+                if data and self.delegate:
                     await self.delegate.on_data(data)
 
             except Exception as e:

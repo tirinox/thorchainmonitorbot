@@ -3,6 +3,9 @@ from dataclasses import dataclass
 
 import aiohttp
 
+from services.config import Config
+from services.db import DB
+from services.fetch.base import BaseFetcher, INotified
 from services.fetch.node_ip_manager import ThorNodeAddressManager
 
 MIDGARD_MULT = 10 ** -8
@@ -44,11 +47,20 @@ class PoolInfo:
         }
 
 
-class PoolPriceFetcher:
-    def __init__(self, thor_man: ThorNodeAddressManager = ThorNodeAddressManager.shared(), session=None):
+class PoolPriceFetcher(BaseFetcher):
+    def __init__(self, cfg: Config, db: DB, thor_man: ThorNodeAddressManager = ThorNodeAddressManager.shared(),
+                 session=None, delegate: INotified = None):
+        super().__init__(cfg, db, session, delegate=delegate)
         self.thor_man = thor_man
         self.logger = logging.getLogger('PoolPriceFetcher')
         self.session = session
+        self.last_rune_price_in_usd = 0.0
+
+    async def fetch(self):
+        price = await self.get_price_in_rune(BUSD_SYMBOL)
+        if price > 0:
+            self.last_rune_price_in_usd = price
+        self.logger.info(f'fresh rune price is ${self.last_rune_price_in_usd:.3f}')
 
     async def fetch_pool_data_historic(self, asset, height=0) -> PoolInfo:
         if asset == RUNE_SYMBOL:

@@ -1,4 +1,8 @@
-from services.fetch.base import BaseFetcher
+from aiohttp import ClientSession
+
+from services.config import Config
+from services.db import DB
+from services.fetch.base import BaseFetcher, INotified
 from services.fetch.pool_price import MIDGARD_MULT, PoolPriceFetcher, BUSD_SYMBOL
 
 from services.models.cap_info import ThorInfo
@@ -8,6 +12,11 @@ MIMIR_URL = "https://chaosnet-midgard.bepswap.com/v1/thorchain/mimir"
 
 
 class CapInfoFetcher(BaseFetcher):
+    def __init__(self, cfg: Config, db: DB, session: ClientSession, ppf: PoolPriceFetcher, sleep_period=60,
+                 delegate: INotified = None):
+        self.ppf = ppf
+        super().__init__(cfg, db, session, sleep_period, delegate)
+
     async def fetch(self) -> ThorInfo:
         self.logger.info("start fetching caps and mimir")
         async with self.session.get(NETWORK_URL) as resp:
@@ -20,8 +29,7 @@ class CapInfoFetcher(BaseFetcher):
 
             # max_staked = 900015  # for testing
 
-        ppf = PoolPriceFetcher(session=self.session)
-        price = await ppf.get_price_in_rune(BUSD_SYMBOL)
+        price = self.ppf.last_rune_price_in_usd
 
         r = ThorInfo(cap=max_staked, stacked=total_staked, price=price)
         self.logger.info(f"ThorInfo got the following {r}")

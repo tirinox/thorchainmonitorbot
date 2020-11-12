@@ -44,20 +44,22 @@ class App:
         async with aiohttp.ClientSession() as session:
             self.thor_man = ThorNodeAddressManager.shared()
             self.thor_man.session = session
-            self.ppf = PoolPriceFetcher(self.thor_man, session)
+            await self.thor_man.reload_nodes_ip()
 
             notifier_cap = CapFetcherNotification(self.cfg, self.db, self.broadcaster, self.loc_man)
             notifier_tx = StakeTxNotifier(self.cfg, self.db, self.broadcaster, self.loc_man, None)
             notifier_queue = QueueNotifier(self.cfg, self.db, self.broadcaster, self.loc_man)
+            notifier_price = None  # todo: implement
 
-            fetcher_cap = CapInfoFetcher(self.cfg, self.db, session, delegate=notifier_cap)
+            self.ppf = PoolPriceFetcher(self.cfg, self.db, self.thor_man, session, delegate=notifier_price)
+            fetcher_cap = CapInfoFetcher(self.cfg, self.db, session, ppf=self.ppf, delegate=notifier_cap)
             fetcher_tx = StakeTxFetcher(self.cfg, self.db, session, delegate=notifier_tx, ppf=self.ppf)
             fetcher_queue = QueueFetcher(self.cfg, self.db, session, thor_man=self.thor_man, delegate=notifier_queue)
 
             notifier_tx.fetcher = fetcher_tx  # fixme: back link
 
             await asyncio.gather(*(task.run() for task in [
-                fetcher_tx, fetcher_cap, fetcher_queue
+                fetcher_tx, fetcher_cap, fetcher_queue, self.ppf
             ]))
 
     def run(self):

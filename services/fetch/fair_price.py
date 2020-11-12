@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from dataclasses import dataclass
 
 import aiohttp
@@ -56,6 +57,11 @@ async def fetch_fair_rune_price():
             tlv += (pool.balance_rune * MIDGARD_MULT) * rune_price_usd
 
         fair_price = 3 * tlv / working_rune  # The main formula of wealth!
+
+        logging.info(f"fetch_fair_rune_price: tlv = ${int(tlv)}, "
+                     f"circulating = R {int(circulating)}, "
+                     f"rune vault = R {int(rune_vault)}, "
+                     f"rune price = ${rune_price_usd:.3f}")
 
         return RuneFairPrice(circulating, rune_vault, rune_price_usd, fair_price, tlv)
 
