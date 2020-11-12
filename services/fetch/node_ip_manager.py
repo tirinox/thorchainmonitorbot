@@ -45,5 +45,6 @@ class ThorNodeAddressManager:
     async def select_node_url(self):
         return self.connection_url(await self.select_node())
 
-    async def blacklist_node(self, ip):
+    async def blacklist_node(self, ip, reason='?'):
+        self.logger.warning(f'blacklisting {ip} reason: {reason}.')
         self._black_list.add(ip)

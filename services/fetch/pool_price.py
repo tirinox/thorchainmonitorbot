@@ -46,14 +46,14 @@ class PoolPriceFetcher:
             j = await resp.json()
             return PoolBalance.from_dict(j)
 
-    async def get_price_in_rune(self, asset, height):
+    async def get_price_in_rune(self, asset, height=0):
         if asset == self.RUNE_SYMBOL:
             return 1.0
         asset_pool = await self.fetch_pool_data(asset, height)
         asset_per_rune = asset_pool.balance_asset / asset_pool.balance_rune
         return asset_per_rune
 
-    async def get_historical_price(self, asset, height):
+    async def get_historical_price(self, asset, height=0):
         dollar_per_rune = await self.get_price_in_rune(self.BUSD, height)
         asset_per_rune = await self.get_price_in_rune(asset, height)
 

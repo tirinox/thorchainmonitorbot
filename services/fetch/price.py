@@ -121,6 +121,6 @@ async def fair_rune_price():
             pool: PoolInfo
             tlv += pool.rune_depth * rune_price_usd
 
-        fair_price = 3 * tlv / working_rune
+        fair_price = 3 * tlv / working_rune  # The main formula of wealth!
 
         return RuneFairPrice(circulating, rune_vault, rune_price_usd, fair_price, tlv)

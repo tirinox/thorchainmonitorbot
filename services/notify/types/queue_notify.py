@@ -18,6 +18,7 @@ class QueueNotifier(INotified):
         self.cooldown_tracker = CooldownTracker(db)
         self.cooldown = cfg.queue.cooldown
         self.threshold = cfg.queue.steps[0]
+        self.logger.info(f'config: {cfg.queue}')
         self.steps = tuple(map(int, cfg.queue.steps))
 
     async def notify(self, item_type, step, value):

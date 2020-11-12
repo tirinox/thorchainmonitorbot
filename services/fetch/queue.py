@@ -28,7 +28,9 @@ class QueueFetcher(BaseFetcher):
 
     async def fetch(self) -> QueueInfo:  # override
         async with aiohttp.ClientSession() as session:
-            self.last_node_ip = await self.thor_man.select_node()
+            if not self.last_node_ip:
+                self.last_node_ip = await self.thor_man.select_node()
+
             queue_url = self.queue_url(self.thor_man.connection_url(self.last_node_ip))
 
             self.logger.info(f"start fetching queue: {queue_url}")

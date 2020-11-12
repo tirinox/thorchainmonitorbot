@@ -38,3 +38,8 @@ bnb1axqc2gan462z6npw3c33srp4950mr5x28uc6wu
 
 to manage Preferences and favorite addresses
 
+11) price alams
+
+12) price graph + deterministic price graph
+
+use zrange to store timeseries
