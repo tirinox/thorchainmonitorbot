@@ -7,7 +7,8 @@ from aiohttp import ClientSession
 from services.config import Config
 from services.db import DB
 from services.fetch.base import BaseFetcher, INotified
-from services.fetch.pool_price import BUSD_SYMBOL, PoolInfo, PoolPriceFetcher
+from services.fetch.pool_price import BUSD_SYMBOL, PoolPriceFetcher
+from services.models.pool_info import PoolInfo
 from services.models.tx import StakeTx, StakePoolStats
 
 TRANSACTION_URL = "https://chaosnet-midgard.bepswap.com/v1/txs?offset={offset}&limit={limit}&type=stake,unstake"
@@ -33,7 +34,7 @@ class StakeTxFetcher(BaseFetcher):
 
     @property
     def runes_per_dollar(self):
-        return self.pool_info_map.get(BUSD_SYMBOL, PoolInfo.dummy()).price
+        return 1. / self.pool_info_map.get(BUSD_SYMBOL, PoolInfo.dummy()).price
 
     async def fetch(self):
         async with aiohttp.ClientSession() as self.session:

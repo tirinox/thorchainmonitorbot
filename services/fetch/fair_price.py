@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import aiohttp
 
-from services.fetch.pool_price import PoolInfo, MIDGARD_MULT
+from services.models.pool_info import MIDGARD_MULT, PoolInfo
 from services.utils import a_result_cached
 
 CIRCULATING_SUPPLY_URL = "https://defi.delphidigital.io/chaosnet/int/marketdata"

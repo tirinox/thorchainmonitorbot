@@ -1,8 +1,6 @@
 import logging
 import random
 
-import aiohttp
-
 
 class ThorNodeAddressManager:
     FALLBACK_THORCHAIN_IP = '3.131.115.233'

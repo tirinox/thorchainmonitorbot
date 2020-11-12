@@ -1,6 +1,6 @@
 from localization.base import BaseLocalization
 from services.fetch.fair_price import RuneFairPrice
-from services.fetch.pool_price import PoolInfo
+from services.models.pool_info import PoolInfo, MIDGARD_MULT
 from services.models.cap_info import ThorInfo
 from services.models.tx import StakeTx, short_asset_name, StakePoolStats
 from services.utils import pretty_money, link, short_address, code
@@ -64,7 +64,7 @@ class EnglishLocalization(BaseLocalization):
             msg += f'🐳 <b>Whale removed liquidity</b> 🔴\n'
 
         total_usd_volume = tx.full_rune / rune_per_dollar if rune_per_dollar != 0 else 0.0
-        pool_depth_usd = pool_info.balance_rune / rune_per_dollar
+        pool_depth_usd = pool_info.balance_rune * MIDGARD_MULT / rune_per_dollar
         info = link(f'https://viewblock.io/thorchain/address/{tx.address}', short_address(tx.address))
 
         rp, ap = tx.symmetry_rune_vs_asset()

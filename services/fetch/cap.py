@@ -3,7 +3,8 @@ from aiohttp import ClientSession
 from services.config import Config
 from services.db import DB
 from services.fetch.base import BaseFetcher, INotified
-from services.fetch.pool_price import MIDGARD_MULT, PoolPriceFetcher, BUSD_SYMBOL
+from services.fetch.pool_price import PoolPriceFetcher, BUSD_SYMBOL
+from services.models.pool_info import MIDGARD_MULT
 
 from services.models.cap_info import ThorInfo
 

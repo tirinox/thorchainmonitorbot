@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 from services.db import DB
-from services.fetch.pool_price import MIDGARD_MULT
+from services.models.pool_info import MIDGARD_MULT
 from services.models.cap_info import BaseModelMixin
 
 
@@ -69,7 +69,7 @@ class StakeTx(BaseModelMixin):
 
     def full_rune_amount(self, asset_price):
         self.asset_price = asset_price
-        self.full_rune = self.asset_amount * asset_price + self.rune_amount
+        self.full_rune = self.asset_amount / asset_price + self.rune_amount
         return self.full_rune
 
     @property

@@ -1,50 +1,18 @@
 import logging
-from dataclasses import dataclass
-
-import aiohttp
 
 from services.config import Config
 from services.db import DB
 from services.fetch.base import BaseFetcher, INotified
+from services.fetch.fair_price import fair_rune_price
 from services.fetch.node_ip_manager import ThorNodeAddressManager
+from services.models.pool_info import PoolInfo
+from services.models.time_series import PriceTimeSeries
 
-MIDGARD_MULT = 10 ** -8
 
 BNB_SYMBOL = 'BNB.BNB'
 BUSD_SYMBOL = 'BNB.BUSD-BD1'
 RUNE_SYMBOL = 'BNB.RUNE-B1A'
-
-
-@dataclass
-class PoolInfo:
-    asset: str
-    price: float  # runes per 1 asset
-
-    balance_asset: int
-    balance_rune: int
-
-    enabled: bool
-
-    @classmethod
-    def dummy(cls):
-        return cls('', 1, 1, 1, False)
-
-    @classmethod
-    def from_dict(cls, j):
-        balance_asset = int(j['balance_asset'])
-        balance_rune = int(j['balance_rune'])
-        return cls(asset=j['asset'],
-                   price=(balance_asset / balance_rune),
-                   balance_asset=balance_asset,
-                   balance_rune=balance_rune,
-                   enabled=(j['status'] == 'Enabled'))
-
-    @property
-    def to_dict(self):
-        return {
-            'balance_asset': self.balance_asset,
-            'balance_rune': self.balance_rune
-        }
+RUNE_SYMBOL_DET = 'RUNE-DET'
 
 
 class PoolPriceFetcher(BaseFetcher):
@@ -60,6 +28,13 @@ class PoolPriceFetcher(BaseFetcher):
         price = await self.get_price_in_rune(BUSD_SYMBOL)
         if price > 0:
             self.last_rune_price_in_usd = price
+            pts = PriceTimeSeries(RUNE_SYMBOL, self.cfg, self.db)
+            await pts.add(price=price)
+
+            pts_det = PriceTimeSeries(RUNE_SYMBOL_DET, self.cfg, self.db)
+            fair_price = await fair_rune_price()
+            await pts_det.add(price=fair_price.fair_price)
+
         self.logger.info(f'fresh rune price is ${self.last_rune_price_in_usd:.3f}')
 
     async def fetch_pool_data_historic(self, asset, height=0) -> PoolInfo:

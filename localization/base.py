@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from aiogram.types import *
 
 from services.fetch.fair_price import RuneFairPrice
-from services.fetch.pool_price import PoolInfo
+from services.models.pool_info import PoolInfo
 from services.models.cap_info import ThorInfo
 from services.models.tx import StakeTx, StakePoolStats
 from services.utils import format_percent, progressbar
