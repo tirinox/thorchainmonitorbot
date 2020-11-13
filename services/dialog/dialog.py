@@ -2,13 +2,16 @@ from aiogram import Dispatcher, filters
 from aiogram.types import *
 
 from localization import LocalizationManager
+from services.config import Config
 from services.db import DB
 from services.fetch.fair_price import fair_rune_price
 from services.models.cap_info import ThorInfo
+from services.models.price import PriceReport
 from services.notify.broadcast import Broadcaster
+from services.notify.types.price_notify import PriceNotifier
 
 
-def register_commands(dp: Dispatcher, loc_man: LocalizationManager, db: DB, broadcaster: Broadcaster):
+def register_commands(cfg: Config, dp: Dispatcher, loc_man: LocalizationManager, db: DB, broadcaster: Broadcaster):
     @dp.message_handler(commands=['start'])
     async def on_start(message: Message):
         text, kb = loc_man.default.lang_help()
@@ -27,10 +30,17 @@ def register_commands(dp: Dispatcher, loc_man: LocalizationManager, db: DB, broa
 
     @dp.message_handler(commands=['price'])
     async def send_price(message: Message):
-        info = await ThorInfo.get_old_cap(db)
         loc = await loc_man.get_from_db(message.chat.id, db)
         fp = await fair_rune_price()
-        price_text = loc.price_message(info, fp)
+
+        pn = PriceNotifier(cfg, db, broadcaster, loc_man)
+        price_1h, price_24h, price_7d = await pn.historical_get_triplet()
+
+        price_text = loc.price_change(PriceReport(
+            fp.real_rune_price, price_1h, price_24h, price_7d,
+            fair_price=fp)
+        )
+
         await message.answer(price_text, reply_markup=ReplyKeyboardRemove(),
                              disable_web_page_preview=True,
                              disable_notification=True)

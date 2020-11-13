@@ -11,7 +11,6 @@ CIRCULATING_SUPPLY_URL = "https://defi.delphidigital.io/chaosnet/int/marketdata"
 RUNE_VAULT_BALANCE_URL = "https://defi.delphidigital.io/chaosnet/int/runevaultBalance"
 POOL_LIST_URL = "https://defi.delphidigital.io/chaosnet/thorchain/pools"
 
-# todo get rank and mcap
 COIN_RANK_GECKO = "https://api.coingecko.com/api/v3/coins/thorchain?tickers=false&market_data=false&community_data=false&developer_data=false"
 
 

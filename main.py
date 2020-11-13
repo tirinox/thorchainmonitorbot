@@ -16,7 +16,7 @@ from services.fetch.queue import QueueFetcher
 from services.fetch.tx import StakeTxFetcher
 from services.notify.broadcast import Broadcaster
 from services.notify.types.cap_notify import CapFetcherNotification
-from services.notify.types.price_notify import PriceNotificatier
+from services.notify.types.price_notify import PriceNotifier
 from services.notify.types.queue_notify import QueueNotifier
 from services.notify.types.tx_notify import StakeTxNotifier
 
@@ -36,7 +36,7 @@ class App:
         self.loc_man = LocalizationManager()
         self.broadcaster = Broadcaster(self.bot, self.db)
 
-        register_commands(self.dp, self.loc_man, self.db, self.broadcaster)
+        register_commands(self.cfg, self.dp, self.loc_man, self.db, self.broadcaster)
 
     async def _run_tasks(self):
         await self.db.get_redis()
@@ -50,7 +50,7 @@ class App:
             notifier_cap = CapFetcherNotification(self.cfg, self.db, self.broadcaster, self.loc_man)
             notifier_tx = StakeTxNotifier(self.cfg, self.db, self.broadcaster, self.loc_man, None)
             notifier_queue = QueueNotifier(self.cfg, self.db, self.broadcaster, self.loc_man)
-            notifier_price = PriceNotificatier(self.cfg, self.db, self.broadcaster, self.loc_man)
+            notifier_price = PriceNotifier(self.cfg, self.db, self.broadcaster, self.loc_man)
 
             self.ppf = PoolPriceFetcher(self.cfg, self.db, self.thor_man, session, delegate=notifier_price)
             fetcher_cap = CapInfoFetcher(self.cfg, self.db, session, ppf=self.ppf, delegate=notifier_cap)

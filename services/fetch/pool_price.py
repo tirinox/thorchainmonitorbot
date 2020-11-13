@@ -1,5 +1,3 @@
-import logging
-
 from services.config import Config
 from services.db import DB
 from services.fetch.base import BaseFetcher, INotified

@@ -1,3 +1,4 @@
+import asyncio
 import logging
 
 from localization import LocalizationManager, BaseLocalization
@@ -9,12 +10,12 @@ from services.models.price import RuneFairPrice, PriceReport
 from services.fetch.pool_price import RUNE_SYMBOL
 from services.models.time_series import PriceTimeSeries
 from services.notify.broadcast import Broadcaster, telegram_chats_from_config
-from services.utils import parse_timespan_to_seconds, HOUR, MINUTE, DAY, calc_percent_change
+from services.utils import parse_timespan_to_seconds, HOUR, MINUTE, DAY, calc_percent_change, pretty_money
 
 REAL_REGISTERED_ATH = 1.18  # BUSD / Rune
 
 
-class PriceNotificatier(INotified):
+class PriceNotifier(INotified):
     def __init__(self, cfg: Config, db: DB, broadcaster: Broadcaster, loc_man: LocalizationManager):
         self.logger = logging.getLogger('PriceNotification')
         self.broadcaster = broadcaster
@@ -27,47 +28,62 @@ class PriceNotificatier(INotified):
         self.percent_change_threshold = cfg.price.percent_change_threshold
         self.time_series = PriceTimeSeries(RUNE_SYMBOL, db)
 
-    async def handle_ath(self, price):
-        return False
-
     CD_KEY_PRICE_NOTIFIED = 'price_notified'
     CD_KEY_PRICE_RISE_NOTIFIED = 'price_notified_ride'
     CD_KEY_PRICE_FALL_NOTIFIED = 'price_notified_fall'
     CD_KEY_ATH_NOTIFIED = 'ath_notified'
 
-    async def do_notify_price_table(self, price, fair_price, price_1h):
+    async def historical_get_triplet(self):
+        price_1h, price_24h, price_7d = await asyncio.gather(
+            self.time_series.select_average_ago(HOUR, tolerance=MINUTE * 5),
+            self.time_series.select_average_ago(DAY, tolerance=MINUTE * 30),
+            self.time_series.select_average_ago(DAY * 7, tolerance=HOUR * 1)
+        )
+        return price_1h, price_24h, price_7d
+
+    async def do_notify_price_table(self, price, fair_price, hist_prices):
         await self.cd.do(self.CD_KEY_PRICE_NOTIFIED)
-        price_24h = await self.time_series.select_average_ago(DAY, tolerance=MINUTE * 30)
-        price_7d = await self.time_series.select_average_ago(DAY * 7, tolerance=HOUR * 1)
 
         user_lang_map = telegram_chats_from_config(self.cfg, self.loc_man)
 
         async def message_gen(chat_id):
             loc: BaseLocalization = user_lang_map[chat_id]
             return loc.price_change(PriceReport(
-                price, price_1h, price_24h, price_7d, fair_price
+                price, *hist_prices, fair_price
             ))
 
         await self.broadcaster.broadcast(user_lang_map.keys(), message_gen)
 
-    async def handle_new_price(self, price, fair_price):
-        price_1h = await self.time_series.select_average_ago(HOUR, tolerance=MINUTE * 5)
-        await self.do_notify_price_table(price, fair_price, price_1h)
+    async def handle_new_price(self, price, fair_price: RuneFairPrice):
+        hist_prices = await self.historical_get_triplet()
 
-        # if price_1h:
-        #     percent_change = calc_percent_change(price_1h, price)
-        #     if abs(percent_change) >= self.percent_change_threshold:
-        #         if percent_change > 0 and (await self.cd.can_do(self.CD_KEY_PRICE_RISE_NOTIFIED, self.change_cd)):
-        #             await self.cd.do(self.CD_KEY_PRICE_RISE_NOTIFIED)
-        #             await self.do_notify_price_table(price, fair_price, price_1h)
-        #             return
-        #         elif percent_change < 0 and (await self.cd.can_do(self.CD_KEY_PRICE_FALL_NOTIFIED, self.change_cd)):
-        #             await self.cd.do(self.CD_KEY_PRICE_FALL_NOTIFIED)
-        #             await self.do_notify_price_table(price, fair_price, price_1h)
-        #             return
-        #
-        #     if await self.cd.can_do(self.CD_KEY_ATH_NOTIFIED, self.global_cd):
-        #         await self.do_notify_price_table(price, fair_price, price_1h)
+        # await self.do_notify_price_table(price, fair_price, price_1h, price_24h, price_7d)  # debug
+
+        price_1h = hist_prices[0]
+        send_it = False
+        if price_1h:
+            percent_change = calc_percent_change(price_1h, price)
+
+            if abs(percent_change) >= self.percent_change_threshold:  # significant price change
+                if percent_change > 0 and (await self.cd.can_do(self.CD_KEY_PRICE_RISE_NOTIFIED, self.change_cd)):
+                    self.logger.info(f'price rise {pretty_money(percent_change)} %')
+                    await self.cd.do(self.CD_KEY_PRICE_RISE_NOTIFIED)
+                    send_it = True
+                elif percent_change < 0 and (await self.cd.can_do(self.CD_KEY_PRICE_FALL_NOTIFIED, self.change_cd)):
+                    self.logger.info(f'price fall {pretty_money(percent_change)} %')
+                    await self.cd.do(self.CD_KEY_PRICE_FALL_NOTIFIED)
+                    send_it = True
+
+        if not send_it and await self.cd.can_do(self.CD_KEY_PRICE_NOTIFIED, self.global_cd):
+            self.logger.info('no price change but it is long time elapsed (global cd), so notify anyway')
+            await self.cd.do(self.CD_KEY_PRICE_NOTIFIED)
+            send_it = True
+
+        if send_it:
+            await self.do_notify_price_table(price, fair_price, hist_prices)
+
+    async def handle_ath(self, price):
+        return False
 
     async def on_data(self, data):
         price, fair_price = data

@@ -25,6 +25,8 @@ class CapFetcherNotification(INotified):
         old_info = await ThorInfo.get_old_cap(self.db)
 
         if new_info.is_ok:
+            if new_info.price <= 0:
+                new_info.price = old_info.price
             await new_info.save(self.db)
 
             if new_info.cap != old_info.cap:

@@ -4,6 +4,7 @@ import aiohttp
 
 from services.config import Config
 from services.db import DB
+from services.fetch.gecko_price import fill_rune_price_from_gecko
 from services.fetch.node_ip_manager import ThorNodeAddressManager
 from services.fetch.pool_price import PoolPriceFetcher, BUSD_SYMBOL, RUNE_SYMBOL
 from services.models.time_series import PriceTimeSeries
@@ -28,4 +29,5 @@ if __name__ == '__main__':
     cfg = Config(Config.DEFAULT_LVL_UP)
     db = DB(loop)
 
-    loop.run_until_complete(price_fill_task(cfg, db))
+    loop.run_until_complete(fill_rune_price_from_gecko(db))
+    # loop.run_until_complete(price_fill_task(cfg, db))

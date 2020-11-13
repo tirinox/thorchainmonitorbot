@@ -1,6 +1,5 @@
 import time
 
-from services.config import Config
 from services.db import DB
 
 
@@ -28,6 +27,10 @@ class TimeSeries:
         data = await r.xrange(self.stream_name, start, end, count=count)
         return data
 
+    async def clear(self):
+        r = await self.db.get_redis()
+        await r.delete(key=self.stream_name)
+
 
 class PriceTimeSeries(TimeSeries):
     def __init__(self, coin: str, db: DB):
@@ -45,5 +48,3 @@ class PriceTimeSeries(TimeSeries):
             return accum / n
         else:
             return 0
-
-
