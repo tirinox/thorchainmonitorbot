@@ -29,7 +29,7 @@ class PriceNotifier(INotified):
         self.time_series = PriceTimeSeries(RUNE_SYMBOL, db)
 
     CD_KEY_PRICE_NOTIFIED = 'price_notified'
-    CD_KEY_PRICE_RISE_NOTIFIED = 'price_notified_ride'
+    CD_KEY_PRICE_RISE_NOTIFIED = 'price_notified_rise'
     CD_KEY_PRICE_FALL_NOTIFIED = 'price_notified_fall'
     CD_KEY_ATH_NOTIFIED = 'ath_notified'
 
@@ -76,7 +76,6 @@ class PriceNotifier(INotified):
 
         if not send_it and await self.cd.can_do(self.CD_KEY_PRICE_NOTIFIED, self.global_cd):
             self.logger.info('no price change but it is long time elapsed (global cd), so notify anyway')
-            await self.cd.do(self.CD_KEY_PRICE_NOTIFIED)
             send_it = True
 
         if send_it:

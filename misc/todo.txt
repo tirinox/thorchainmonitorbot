@@ -6,8 +6,6 @@ queue of messages -> forever loop with "anti-spam" delays
 
 3) ATH tracker
 
-4) large price movements
-
 5) Announce new pools!
 
 7) ToDo: integrate with runestake.info
@@ -38,8 +36,9 @@ bnb1axqc2gan462z6npw3c33srp4950mr5x28uc6wu
 
 to manage Preferences and favorite addresses
 
-11) price alams
-
 12) price graph + deterministic price graph
 
 use zrange to store timeseries
+
+13) take mimir from thorchain http://IP:1317/thorchain/mimir bypassing Chaosnet
+
