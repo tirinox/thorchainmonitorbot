@@ -95,7 +95,7 @@ class RussianLocalization(BaseLocalization):
         message = f"{title} | {c_gecko_link}\n"
 
         pr_text = pretty_dollar(p.current_price)
-        message += f"Цена Rune сейчас {code(pr_text)}\n"
+        message += f"Цена RUNE сейчас {code(pr_text)}\n"
 
         time_combos = zip(
             ('1ч.', '24ч.', '7дн.'),
@@ -112,7 +112,7 @@ class RussianLocalization(BaseLocalization):
             message += f"Капитализация: {bold(pretty_dollar(fp.market_cap))} (#{bold(fp.rank)} место)\n"
 
         if fp.tlv_usd >= 1:
-            message += (f"TLV: ${pre(pretty_money(fp.tlv_usd))}\n"
+            message += (f"TLV (кроме RUNE): ${pre(pretty_money(fp.tlv_usd))}\n"
                         f"Детерминистическая цена руны: ${code(pretty_money(fp.fair_price))}\n"
                         f"Спекулятивый множитель: {pre(x_ses(fp.fair_price, p.current_price))}\n")
 
