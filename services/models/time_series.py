@@ -2,6 +2,11 @@ import time
 
 from services.db import DB
 
+BNB_SYMBOL = 'BNB.BNB'
+BUSD_SYMBOL = 'BNB.BUSD-BD1'
+RUNE_SYMBOL = 'BNB.RUNE-B1A'
+RUNE_SYMBOL_DET = 'RUNE-DET'
+
 
 class TimeSeries:
     def __init__(self, name: str, db: DB):

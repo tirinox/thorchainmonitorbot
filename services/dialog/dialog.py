@@ -6,12 +6,13 @@ from services.config import Config
 from services.db import DB
 from services.fetch.fair_price import fair_rune_price
 from services.models.cap_info import ThorInfo
-from services.models.price import PriceReport
+from services.models.price import PriceReport, LastPrice
 from services.notify.broadcast import Broadcaster
 from services.notify.types.price_notify import PriceNotifier
 
 
-def register_commands(cfg: Config, dp: Dispatcher, loc_man: LocalizationManager, db: DB, broadcaster: Broadcaster):
+def register_commands(cfg: Config, dp: Dispatcher, loc_man: LocalizationManager, db: DB, broadcaster: Broadcaster,
+                      price_holder: LastPrice):
     @dp.message_handler(commands=['start'])
     async def on_start(message: Message):
         text, kb = loc_man.default.lang_help()
@@ -37,7 +38,8 @@ def register_commands(cfg: Config, dp: Dispatcher, loc_man: LocalizationManager,
         price_1h, price_24h, price_7d = await pn.historical_get_triplet()
 
         price_text = loc.price_change(PriceReport(
-            fp.real_rune_price, price_1h, price_24h, price_7d,
+            price_holder.rune_price_in_usd,
+            price_1h, price_24h, price_7d,
             fair_price=fp)
         )
 

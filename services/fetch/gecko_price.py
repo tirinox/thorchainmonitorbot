@@ -1,10 +1,13 @@
+import logging
+
 import aiohttp
+from aioredis import ReplyError
 from tqdm import tqdm
 
-from services.fetch.pool_price import RUNE_SYMBOL
-from services.models.time_series import PriceTimeSeries
+from services.models.time_series import PriceTimeSeries, RUNE_SYMBOL
 
 COIN_CHART_GECKO = "https://api.coingecko.com/api/v3/coins/thorchain/market_chart?vs_currency=usd&days={days}"
+COIN_RANK_GECKO = "https://api.coingecko.com/api/v3/coins/thorchain?tickers=false&market_data=false&community_data=false&developer_data=false"
 
 
 async def get_rune_chart(days):
@@ -15,6 +18,7 @@ async def get_rune_chart(days):
 
 
 async def fill_rune_price_from_gecko(db):
+    logging.warning('fill_rune_price_from_gecko is called!')
     gecko_data8 = await get_rune_chart(8)
     gecko_data1 = await get_rune_chart(1)
 
@@ -26,4 +30,13 @@ async def fill_rune_price_from_gecko(db):
 
     for ts, price in tqdm(price_chart):
         ident = f'{ts}-0'
-        await series.add(message_id=ident, price=price)
+        try:
+            await series.add(message_id=ident, price=price)
+        except ReplyError:
+            pass
+
+
+async def gecko_info(session):
+    async with session.get(COIN_RANK_GECKO) as resp:
+        j = await resp.json()
+        return j

@@ -3,10 +3,9 @@ from aiohttp import ClientSession
 from services.config import Config
 from services.db import DB
 from services.fetch.base import BaseFetcher, INotified
-from services.fetch.pool_price import PoolPriceFetcher, BUSD_SYMBOL
-from services.models.pool_info import MIDGARD_MULT
-
+from services.fetch.pool_price import PoolPriceFetcher
 from services.models.cap_info import ThorInfo
+from services.models.pool_info import MIDGARD_MULT
 
 NETWORK_URL = "https://chaosnet-midgard.bepswap.com/v1/network"
 MIMIR_URL = "https://chaosnet-midgard.bepswap.com/v1/thorchain/mimir"
@@ -31,7 +30,7 @@ class CapInfoFetcher(BaseFetcher):
 
             # max_staked = 900015  # for testing
 
-        price = self.ppf.last_rune_price_in_usd
+        price = self.ppf.price_holder.rune_price_in_usd
 
         r = ThorInfo(cap=max_staked, stacked=total_staked, price=price)
         self.logger.info(f"ThorInfo got the following {r}")

@@ -6,8 +6,8 @@ from services.config import Config
 from services.db import DB
 from services.fetch.gecko_price import fill_rune_price_from_gecko
 from services.fetch.node_ip_manager import ThorNodeAddressManager
-from services.fetch.pool_price import PoolPriceFetcher, BUSD_SYMBOL, RUNE_SYMBOL
-from services.models.time_series import PriceTimeSeries
+from services.fetch.pool_price import PoolPriceFetcher
+from services.models.time_series import PriceTimeSeries, BUSD_SYMBOL, RUNE_SYMBOL
 
 
 async def price_fill_task(cfg, db):

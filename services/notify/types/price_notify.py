@@ -7,8 +7,7 @@ from services.cooldown import CooldownTracker
 from services.db import DB
 from services.fetch.base import INotified
 from services.models.price import RuneFairPrice, PriceReport
-from services.fetch.pool_price import RUNE_SYMBOL
-from services.models.time_series import PriceTimeSeries
+from services.models.time_series import PriceTimeSeries, RUNE_SYMBOL
 from services.notify.broadcast import Broadcaster, telegram_chats_from_config
 from services.utils import parse_timespan_to_seconds, HOUR, MINUTE, DAY, calc_percent_change, pretty_money
 
@@ -57,8 +56,6 @@ class PriceNotifier(INotified):
     async def handle_new_price(self, price, fair_price: RuneFairPrice):
         hist_prices = await self.historical_get_triplet()
 
-        # await self.do_notify_price_table(price, fair_price, price_1h, price_24h, price_7d)  # debug
-
         price_1h = hist_prices[0]
         send_it = False
         if price_1h:
@@ -88,7 +85,10 @@ class PriceNotifier(INotified):
         price, fair_price = data
         fair_price: RuneFairPrice
 
+        # price = 1.2  # debug
+
         await self.handle_new_price(price, fair_price)
+
         # todo: uncomment
         # if not await self.handle_ath(price):
         #     await self.handle_new_price(price, fair_price)

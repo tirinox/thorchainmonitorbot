@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 
 import aiohttp
 from aiogram import Bot, Dispatcher, executor
@@ -10,10 +11,12 @@ from services.config import Config
 from services.db import DB
 from services.dialog.dialog import register_commands
 from services.fetch.cap import CapInfoFetcher
+from services.fetch.gecko_price import fill_rune_price_from_gecko
 from services.fetch.node_ip_manager import ThorNodeAddressManager
 from services.fetch.pool_price import PoolPriceFetcher
 from services.fetch.queue import QueueFetcher
 from services.fetch.tx import StakeTxFetcher
+from services.models.price import LastPrice
 from services.notify.broadcast import Broadcaster
 from services.notify.types.cap_notify import CapFetcherNotification
 from services.notify.types.price_notify import PriceNotifier
@@ -35,15 +38,20 @@ class App:
         self.dp = Dispatcher(self.bot, loop=self.loop)
         self.loc_man = LocalizationManager()
         self.broadcaster = Broadcaster(self.bot, self.db)
+        self.price_holder = LastPrice()
 
-        register_commands(self.cfg, self.dp, self.loc_man, self.db, self.broadcaster)
+        self.thor_man = ThorNodeAddressManager.shared()
+
+        register_commands(self.cfg, self.dp, self.loc_man, self.db, self.broadcaster, self.price_holder)
 
     async def _run_tasks(self):
         await self.db.get_redis()
         self.dp.storage = await self.db.get_storage()
 
+        if 'REPLACE_RUNE_TIMESERIES_WITH_GECKOS' in os.environ:
+            await fill_rune_price_from_gecko(self.db)
+
         async with aiohttp.ClientSession() as session:
-            self.thor_man = ThorNodeAddressManager.shared()
             self.thor_man.session = session
             await self.thor_man.reload_nodes_ip()
 
@@ -52,7 +60,8 @@ class App:
             notifier_queue = QueueNotifier(self.cfg, self.db, self.broadcaster, self.loc_man)
             notifier_price = PriceNotifier(self.cfg, self.db, self.broadcaster, self.loc_man)
 
-            self.ppf = PoolPriceFetcher(self.cfg, self.db, self.thor_man, session, delegate=notifier_price)
+            self.ppf = PoolPriceFetcher(self.cfg, self.db, self.thor_man, session, delegate=notifier_price,
+                                        holder=self.price_holder)
             fetcher_cap = CapInfoFetcher(self.cfg, self.db, session, ppf=self.ppf, delegate=notifier_cap)
             fetcher_tx = StakeTxFetcher(self.cfg, self.db, session, delegate=notifier_tx, ppf=self.ppf)
             fetcher_queue = QueueFetcher(self.cfg, self.db, session, thor_man=self.thor_man, delegate=notifier_queue)
@@ -60,7 +69,10 @@ class App:
             notifier_tx.fetcher = fetcher_tx  # fixme: back link
 
             await asyncio.gather(*(task.run() for task in [
-                fetcher_tx, fetcher_cap, fetcher_queue, self.ppf
+                self.ppf,
+                fetcher_tx,
+                fetcher_cap,
+                fetcher_queue,
             ]))
 
     def run(self):

@@ -3,15 +3,14 @@ import logging
 
 import aiohttp
 
+from services.fetch.gecko_price import gecko_info
 from services.models.pool_info import MIDGARD_MULT, PoolInfo
-from services.models.price import RuneFairPrice
+from services.models.price import RuneFairPrice, LastPrice
 from services.utils import a_result_cached
 
 CIRCULATING_SUPPLY_URL = "https://defi.delphidigital.io/chaosnet/int/marketdata"
 RUNE_VAULT_BALANCE_URL = "https://defi.delphidigital.io/chaosnet/int/runevaultBalance"
 POOL_LIST_URL = "https://defi.delphidigital.io/chaosnet/thorchain/pools"
-
-COIN_RANK_GECKO = "https://api.coingecko.com/api/v3/coins/thorchain?tickers=false&market_data=false&community_data=false&developer_data=false"
 
 
 async def delphi_get_rune_vault_balance(session):
@@ -23,7 +22,8 @@ async def delphi_get_rune_vault_balance(session):
 async def delphi_get_circulating_supply_and_price_of_rune(session):
     async with session.get(CIRCULATING_SUPPLY_URL) as resp:
         j = await resp.json()
-        rune_price_usd = float(j['priceUsd'])
+        # rune_price_usd = float(j['priceUsd'])
+        rune_price_usd = LastPrice().rune_price_in_usd
         circulating = int(j['circulating'])
         return circulating, rune_price_usd
 
@@ -32,12 +32,6 @@ async def delphi_pool_info(session):
     async with session.get(POOL_LIST_URL) as resp:
         j = await resp.json()
         return [PoolInfo.from_dict(item) for item in j]
-
-
-async def gecko_info(session):
-    async with session.get(COIN_RANK_GECKO) as resp:
-        j = await resp.json()
-        return j
 
 
 logger = logging.getLogger('fetch_fair_rune_price')

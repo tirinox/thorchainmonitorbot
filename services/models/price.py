@@ -1,5 +1,7 @@
 from dataclasses import dataclass
 
+from services.utils import Singleton
+
 
 @dataclass
 class RuneFairPrice:
@@ -22,3 +24,8 @@ class PriceReport:
     price_24h: float = 0.0
     price_7d: float = 0.0
     fair_price: RuneFairPrice = RuneFairPrice()
+
+
+class LastPrice(metaclass=Singleton):
+    def __init__(self):
+        self.rune_price_in_usd = 0.0

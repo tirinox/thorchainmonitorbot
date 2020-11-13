@@ -7,7 +7,8 @@ from aiohttp import ClientSession
 from services.config import Config
 from services.db import DB
 from services.fetch.base import BaseFetcher, INotified
-from services.fetch.pool_price import BUSD_SYMBOL, PoolPriceFetcher
+from services.fetch.pool_price import PoolPriceFetcher
+from services.models.time_series import BUSD_SYMBOL
 from services.models.pool_info import PoolInfo
 from services.models.tx import StakeTx, StakePoolStats
 

@@ -4,28 +4,24 @@ from services.fetch.base import BaseFetcher, INotified
 from services.fetch.fair_price import fair_rune_price
 from services.fetch.node_ip_manager import ThorNodeAddressManager
 from services.models.pool_info import PoolInfo
-from services.models.time_series import PriceTimeSeries
-
-BNB_SYMBOL = 'BNB.BNB'
-BUSD_SYMBOL = 'BNB.BUSD-BD1'
-RUNE_SYMBOL = 'BNB.RUNE-B1A'
-RUNE_SYMBOL_DET = 'RUNE-DET'
+from services.models.price import LastPrice
+from services.models.time_series import PriceTimeSeries, BUSD_SYMBOL, RUNE_SYMBOL, RUNE_SYMBOL_DET
 
 
 class PoolPriceFetcher(BaseFetcher):
     def __init__(self, cfg: Config, db: DB, thor_man: ThorNodeAddressManager = ThorNodeAddressManager.shared(),
-                 session=None, delegate: INotified = None):
+                 session=None, delegate: INotified = None, holder: LastPrice = None):
         super().__init__(cfg, db, session, delegate=delegate, sleep_period=cfg.price.fetch_period)
         self.thor_man = thor_man
         self.session = session
-        self.last_rune_price_in_usd = 0.0
+        self.price_holder = holder
 
     async def fetch(self):
         price = await self.get_price_in_rune(BUSD_SYMBOL)
-        self.logger.info(f'fresh rune price is ${self.last_rune_price_in_usd:.3f}')
+        self.logger.info(f'fresh rune price is ${self.price_holder.rune_price_in_usd:.3f}')
 
         if price > 0:
-            self.last_rune_price_in_usd = price
+            self.price_holder.rune_price_in_usd = price
             pts = PriceTimeSeries(RUNE_SYMBOL, self.db)
             await pts.add(price=price)
 

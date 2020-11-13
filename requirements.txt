@@ -28,3 +28,4 @@ toml==0.10.2
 typing-extensions==3.7.4.3
 urllib3==1.26.1
 yarl==1.6.2
+tqdm
