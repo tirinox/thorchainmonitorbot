@@ -4,7 +4,7 @@ from services.models.pool_info import PoolInfo, MIDGARD_MULT
 from services.models.cap_info import ThorInfo
 from services.models.tx import StakeTx, short_asset_name, StakePoolStats
 from services.utils import pretty_money, link, short_address, code, bold, calc_percent_change, adaptive_round_to_str, \
-    emoji_for_percent_change, pre, x_ses
+    emoji_for_percent_change, pre, x_ses, pretty_dollar
 
 
 class EnglishLocalization(BaseLocalization):
@@ -100,8 +100,8 @@ class EnglishLocalization(BaseLocalization):
 
         message = f"{title} | {c_gecko_link}\n"
 
-        pr_text = adaptive_round_to_str(p.current_price)
-        message += code(f"Rune =  ${pr_text}") + "\n"
+        pr_text = pretty_dollar(p.current_price)
+        message += f"Rune price is {code(pr_text)} now.\n"
 
         time_combos = zip(
             ('1h', '24h', '7d'),
@@ -113,12 +113,13 @@ class EnglishLocalization(BaseLocalization):
                 message += pre(f"{title.rjust(4)}:{adaptive_round_to_str(pc, True).rjust(8)} % "
                                f"{emoji_for_percent_change(pc).ljust(4).rjust(6)}") + "\n"
 
-        if p.rank >= 1:
-            message += (f"Coin market rank: #{bold(p.rank)}, "
-                        f"market cap is ${bold(pretty_money(p.fair_price.market_cap))}\n")
-        if p.fair_price.tlv_usd >= 1:
-            message += (f"TLV: ${pre(pretty_money(p.fair_price.tlv_usd))}\n"
-                        f"So deterministic price of Rune is ${code(pretty_money(p.fair_price.fair_price))}\n"
-                        f"Speculative multiplier is {pre(x_ses(p.fair_price.fair_price, p.current_price))}\n")
+        fp = p.fair_price
+        if fp.rank >= 1:
+            message += f"Coin market cap is {bold(pretty_dollar(fp.market_cap))} (#{bold(fp.rank)})\n"
+
+        if fp.tlv_usd >= 1:
+            message += (f"TLV: ${pre(pretty_money(fp.tlv_usd))}\n"
+                        f"So deterministic price of Rune is {code(pretty_money(fp.fair_price, prefix='$'))}\n"
+                        f"Speculative multiplier is {pre(x_ses(fp.fair_price, p.current_price))}\n")
 
         return message.rstrip()

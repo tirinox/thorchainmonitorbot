@@ -35,16 +35,25 @@ async def delphi_pool_info(session):
         return [PoolInfo.from_dict(item) for item in j]
 
 
+async def gecko_info(session):
+    async with session.get(COIN_RANK_GECKO) as resp:
+        j = await resp.json()
+        return j
+
+
 logger = logging.getLogger('fetch_fair_rune_price')
 
 
 async def fetch_fair_rune_price():
     async with aiohttp.ClientSession() as session:
-        pool_info, rune_vault, (circulating, rune_price_usd) = await asyncio.gather(
+        pool_info, rune_vault, (circulating, rune_price_usd), gecko = await asyncio.gather(
             delphi_pool_info(session),
             delphi_get_rune_vault_balance(session),
-            delphi_get_circulating_supply_and_price_of_rune(session)
+            delphi_get_circulating_supply_and_price_of_rune(session),
+            gecko_info(session),
         )
+
+        rank = gecko.get('market_cap_rank', 0)
 
         working_rune = circulating - rune_vault
 
@@ -55,12 +64,9 @@ async def fetch_fair_rune_price():
 
         fair_price = 3 * tlv / working_rune  # The main formula of wealth!
 
-        logger.info(f"fetch_fair_rune_price: tlv = ${int(tlv)}, "
-                    f"circulating = R {int(circulating)}, "
-                    f"rune vault = R {int(rune_vault)}, "
-                    f"rune price = ${rune_price_usd:.3f}")
-
-        return RuneFairPrice(circulating, rune_vault, rune_price_usd, fair_price, tlv)
+        result = RuneFairPrice(circulating, rune_vault, rune_price_usd, fair_price, tlv, rank)
+        logger.info(result)
+        return result
 
 
 @a_result_cached(ttl=60)

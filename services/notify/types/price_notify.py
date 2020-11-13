@@ -5,7 +5,7 @@ from services.config import Config
 from services.cooldown import CooldownTracker
 from services.db import DB
 from services.fetch.base import INotified
-from services.models.price import RuneFairPrice
+from services.models.price import RuneFairPrice, PriceReport
 from services.fetch.pool_price import RUNE_SYMBOL
 from services.models.time_series import PriceTimeSeries
 from services.notify.broadcast import Broadcaster, telegram_chats_from_config
@@ -44,32 +44,36 @@ class PriceNotification(INotified):
 
         async def message_gen(chat_id):
             loc: BaseLocalization = user_lang_map[chat_id]
-            return loc.price_change(price, price_1h, price_24h, price_7d, fair_price)
+            return loc.price_change(PriceReport(
+                price, price_1h, price_24h, price_7d, fair_price
+            ))
 
         await self.broadcaster.broadcast(user_lang_map.keys(), message_gen)
 
     async def handle_new_price(self, price, fair_price):
         price_1h = await self.time_series.select_average_ago(HOUR, tolerance=MINUTE * 5)
+        await self.do_notify_price_table(price, fair_price, price_1h)
 
-        if price_1h:
-            percent_change = calc_percent_change(price_1h, price)
-            if abs(percent_change) >= self.percent_change_threshold:
-                if percent_change > 0 and (await self.cd.can_do(self.CD_KEY_PRICE_RISE_NOTIFIED, self.change_cd)):
-                    await self.cd.do(self.CD_KEY_PRICE_RISE_NOTIFIED)
-                    await self.do_notify_price_table(price, fair_price, price_1h)
-                    return
-                elif percent_change < 0 and (await self.cd.can_do(self.CD_KEY_PRICE_FALL_NOTIFIED, self.change_cd)):
-                    await self.cd.do(self.CD_KEY_PRICE_FALL_NOTIFIED)
-                    await self.do_notify_price_table(price, fair_price, price_1h)
-                    return
-
-            if await self.cd.can_do(self.CD_KEY_ATH_NOTIFIED, self.global_cd):
-                await self.do_notify_price_table(price, fair_price, price_1h)
+        # if price_1h:
+        #     percent_change = calc_percent_change(price_1h, price)
+        #     if abs(percent_change) >= self.percent_change_threshold:
+        #         if percent_change > 0 and (await self.cd.can_do(self.CD_KEY_PRICE_RISE_NOTIFIED, self.change_cd)):
+        #             await self.cd.do(self.CD_KEY_PRICE_RISE_NOTIFIED)
+        #             await self.do_notify_price_table(price, fair_price, price_1h)
+        #             return
+        #         elif percent_change < 0 and (await self.cd.can_do(self.CD_KEY_PRICE_FALL_NOTIFIED, self.change_cd)):
+        #             await self.cd.do(self.CD_KEY_PRICE_FALL_NOTIFIED)
+        #             await self.do_notify_price_table(price, fair_price, price_1h)
+        #             return
+        #
+        #     if await self.cd.can_do(self.CD_KEY_ATH_NOTIFIED, self.global_cd):
+        #         await self.do_notify_price_table(price, fair_price, price_1h)
 
     async def on_data(self, data):
         price, fair_price = data
         fair_price: RuneFairPrice
 
+        await self.handle_new_price(price, fair_price)
         # todo: uncomment
         # if not await self.handle_ath(price):
         #     await self.handle_new_price(price, fair_price)

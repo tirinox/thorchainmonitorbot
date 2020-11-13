@@ -8,6 +8,7 @@ class RuneFairPrice:
     real_rune_price: float = 0.0
     fair_price: float = 0.0
     tlv_usd: float = 0.0
+    rank: int = 0
 
     @property
     def market_cap(self):
@@ -20,5 +21,4 @@ class PriceReport:
     price_1h: float = 0.0
     price_24h: float = 0.0
     price_7d: float = 0.0
-    rank: int = 0
     fair_price: RuneFairPrice = RuneFairPrice()

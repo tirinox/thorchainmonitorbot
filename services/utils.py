@@ -124,16 +124,20 @@ def round_to_dig(x, e=2):
     return round(x, -int(floor(log10(abs(x)))) + e - 1)
 
 
-def pretty_money(x):
+def pretty_dollar(x):
+    return pretty_money(x, '$')
+
+
+def pretty_money(x, prefix=''):
     if x < 0:
-        return "-" + pretty_money(-x)
+        return f"{prefix}-{pretty_money(-x)}"
     elif x == 0:
-        return "0.0"
+        return f"{prefix}0.0"
     else:
         if x < 100:
-            return str(round_to_dig(x, 2))
+            return prefix + str(round_to_dig(x, 2))
         else:
-            return number_commas(int(round(x)))
+            return prefix + number_commas(int(round(x)))
 
 
 def bold(text):
@@ -190,9 +194,10 @@ def format_percent(x, total):
         return f'{s:.1f} %'
 
 
-def adaptive_round_to_str(x, force_sign=False):
+def adaptive_round_to_str(x, force_sign=False, prefix=''):
     ax = abs(x)
     sign = ('+' if force_sign else '') if x > 0 else '-'
+    sign = prefix + sign
     if ax < 1.0:
         return f"{sign}{ax:.2f}"
     elif ax < 10.0:

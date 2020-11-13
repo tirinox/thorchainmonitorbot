@@ -7,6 +7,7 @@ from aiogram.types import ParseMode
 from localization import LocalizationManager, BaseLocalization
 from services.config import Config
 from services.db import DB
+from services.fetch.fair_price import fetch_fair_rune_price
 from services.models.price import PriceReport, RuneFairPrice
 from services.notify.broadcast import telegram_chats_from_config, Broadcaster
 from services.utils import x_ses
@@ -18,10 +19,12 @@ async def send_to_channel_test_message(cfg, db):
 
     user_lang_map = telegram_chats_from_config(cfg, loc_man)
 
+    fp = await fetch_fair_rune_price()
+
     async def message_gen(chat_id):
         loc: BaseLocalization = user_lang_map[chat_id]
-        return loc.price_change(PriceReport(0.609, 1.601, 0.576, 0.05, rank=83,
-                                            fair_price=RuneFairPrice(tlv_usd=20_000_000, fair_price=0.1)))
+        return loc.price_change(PriceReport(0.609, 1.601, 0.576, 0.05,
+                                            fair_price=fp))
 
     await broadcaster.broadcast(user_lang_map.keys(), message_gen)
 

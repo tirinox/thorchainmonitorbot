@@ -4,7 +4,7 @@ from services.models.pool_info import PoolInfo
 from services.models.cap_info import ThorInfo
 from services.models.tx import StakeTx, short_asset_name, StakePoolStats
 from services.utils import pretty_money, link, short_address, code, bold, adaptive_round_to_str, calc_percent_change, \
-    pre, emoji_for_percent_change, x_ses
+    pre, emoji_for_percent_change, x_ses, pretty_dollar
 
 
 class RussianLocalization(BaseLocalization):
@@ -77,6 +77,7 @@ class RussianLocalization(BaseLocalization):
         )
 
     # ------- QUEUE -------
+
     def queue_update(self, item_type, step, value):
         if step == 0:
             return f"☺️ Очередь {item_type} снова опустела!"
@@ -93,8 +94,8 @@ class RussianLocalization(BaseLocalization):
 
         message = f"{title} | {c_gecko_link}\n"
 
-        pr_text = adaptive_round_to_str(p.current_price)
-        message += code(f"Rune =  ${pr_text}") + "\n"
+        pr_text = pretty_dollar(p.current_price)
+        message += f"Цена Rune сейчас {code(pr_text)}\n"
 
         time_combos = zip(
             ('1ч.', '24ч.', '7дн.'),
@@ -106,12 +107,13 @@ class RussianLocalization(BaseLocalization):
                 message += pre(f"{title.rjust(5)}:{adaptive_round_to_str(pc, True).rjust(8)} % "
                                f"{emoji_for_percent_change(pc).ljust(4).rjust(6)}") + "\n"
 
-        if p.rank >= 1:
-            message += (f"Позиция по капитализации: #{bold(p.rank)}, "
-                        f"капиталицазия: ${bold(pretty_money(p.fair_price.market_cap))}\n")
-        if p.fair_price.tlv_usd >= 1:
-            message += (f"TLV: ${pre(pretty_money(p.fair_price.tlv_usd))}\n"
-                        f"Детерминистическая цена руны: ${code(pretty_money(p.fair_price.fair_price))}\n"
-                        f"Спекулятивый множитель: {pre(x_ses(p.fair_price.fair_price, p.current_price))}\n")
+        fp = p.fair_price
+        if fp.rank >= 1:
+            message += f"Капитализация: {bold(pretty_dollar(fp.market_cap))} (#{bold(fp.rank)} место)\n"
+
+        if fp.tlv_usd >= 1:
+            message += (f"TLV: ${pre(pretty_money(fp.tlv_usd))}\n"
+                        f"Детерминистическая цена руны: ${code(pretty_money(fp.fair_price))}\n"
+                        f"Спекулятивый множитель: {pre(x_ses(fp.fair_price, p.current_price))}\n")
 
         return message.rstrip()
