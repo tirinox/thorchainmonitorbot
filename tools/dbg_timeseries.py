@@ -10,7 +10,7 @@ from services.utils import MINUTE, HOUR
 
 
 async def main(cfg, db):
-    ts = PriceTimeSeries(RUNE_SYMBOL, cfg, db)
+    ts = PriceTimeSeries(RUNE_SYMBOL, db)
     price = await ts.select_average_ago(HOUR * 4, MINUTE * 5)
     print(price)
 

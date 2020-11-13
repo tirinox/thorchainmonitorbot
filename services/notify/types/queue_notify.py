@@ -6,8 +6,10 @@ from services.cooldown import CooldownTracker
 from services.db import DB
 from services.fetch.base import INotified
 from services.fetch.queue import QueueInfo
+from services.models.time_series import PriceTimeSeries
 from services.notify.broadcast import Broadcaster, telegram_chats_from_config
 
+QUEUE_STREAM = 'QUEUE'
 
 class QueueNotifier(INotified):
     def __init__(self, cfg: Config, db: DB, broadcaster: Broadcaster, loc_man: LocalizationManager):
@@ -20,6 +22,8 @@ class QueueNotifier(INotified):
         self.threshold = cfg.queue.steps[0]
         self.logger.info(f'config: {cfg.queue}')
         self.steps = tuple(map(int, cfg.queue.steps))
+
+        self.time_series = PriceTimeSeries(QUEUE_STREAM, db)
 
     async def notify(self, item_type, step, value):
         user_lang_map = telegram_chats_from_config(self.cfg, self.loc_man)
@@ -52,5 +56,6 @@ class QueueNotifier(INotified):
 
     async def on_data(self, data: QueueInfo):
         self.logger.info(f"got queue: {data}")
+        await self.time_series.add(swap=data.swap, outbound=data.outbound)
         await self.handle_entry('swap', data.swap)
         await self.handle_entry('outbound', data.outbound)

@@ -25,7 +25,7 @@ class PriceNotification(INotified):
         self.global_cd = parse_timespan_to_seconds(cfg.price.global_cd)
         self.change_cd = parse_timespan_to_seconds(cfg.price.change_cd)
         self.percent_change_threshold = cfg.price.percent_change_threshold
-        self.time_series = PriceTimeSeries(RUNE_SYMBOL, cfg, db)
+        self.time_series = PriceTimeSeries(RUNE_SYMBOL, db)
 
     async def handle_ath(self, price):
         return False

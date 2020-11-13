@@ -28,10 +28,10 @@ class PoolPriceFetcher(BaseFetcher):
 
         if price > 0:
             self.last_rune_price_in_usd = price
-            pts = PriceTimeSeries(RUNE_SYMBOL, self.cfg, self.db)
+            pts = PriceTimeSeries(RUNE_SYMBOL, self.db)
             await pts.add(price=price)
 
-            pts_det = PriceTimeSeries(RUNE_SYMBOL_DET, self.cfg, self.db)
+            pts_det = PriceTimeSeries(RUNE_SYMBOL_DET, self.db)
             fair_price = await fair_rune_price()
             await pts_det.add(price=fair_price.fair_price)
 

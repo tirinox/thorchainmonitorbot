@@ -33,8 +33,8 @@ class StakeTxFetcher(BaseFetcher):
         self.logger.info(f"cfg.tx.stake_unstake: {scfg}")
 
     @property
-    def runes_per_dollar(self):
-        return 1. / self.pool_info_map.get(BUSD_SYMBOL, PoolInfo.dummy()).price
+    def usd_per_rune(self):
+        return self.pool_info_map.get(BUSD_SYMBOL, PoolInfo.dummy()).price
 
     async def fetch(self):
         async with aiohttp.ClientSession() as self.session:
@@ -117,7 +117,11 @@ class StakeTxFetcher(BaseFetcher):
         self.logger.info(f'pool stats updated for {", ".join(updated_stats)}')
 
         for pool_name in updated_stats:
-            await self.pool_stat_map[pool_name].save(self.db)
+            pool_stat: StakePoolStats = self.pool_stat_map[pool_name]
+            pool_info: PoolInfo = self.pool_info_map.get(pool_name)
+            pool_stat.usd_depth = pool_info.usd_depth(self.usd_per_rune)
+            await pool_stat.write_time_series(self.db)
+            await pool_stat.save(self.db)
 
         self.logger.info(f'new tx to analyze: {len(result_txs)}')
 

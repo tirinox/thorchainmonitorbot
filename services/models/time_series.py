@@ -5,9 +5,8 @@ from services.db import DB
 
 
 class TimeSeries:
-    def __init__(self, name: str, cfg: Config, db: DB):
+    def __init__(self, name: str, db: DB):
         self.db = db
-        self.cfg = cfg
         self.name = name
 
     @property
@@ -31,8 +30,8 @@ class TimeSeries:
 
 
 class PriceTimeSeries(TimeSeries):
-    def __init__(self, coin: str, cfg: Config, db: DB):
-        super().__init__(f'price-{coin}', cfg, db)
+    def __init__(self, coin: str, db: DB):
+        super().__init__(f'price-{coin}', db)
 
     async def select_average_ago(self, ago, tolerance):
         items = await self.select(*self.range(ago, tolerance))

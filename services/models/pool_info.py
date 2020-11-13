@@ -17,6 +17,10 @@ class PoolInfo:
     def dummy(cls):
         return cls('', 1, 1, 1, False)
 
+    def usd_depth(self, dollar_per_rune):
+        pool_depth_usd = self.balance_rune * MIDGARD_MULT * dollar_per_rune
+        return pool_depth_usd
+
     @classmethod
     def from_dict(cls, j):
         balance_asset = int(j['balance_asset'])

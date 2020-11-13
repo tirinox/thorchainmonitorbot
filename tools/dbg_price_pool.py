@@ -14,7 +14,7 @@ async def price_fill_task(cfg, db):
         thor_man = ThorNodeAddressManager(session)
         ppf = PoolPriceFetcher(cfg, db, thor_man, session)
 
-        series = PriceTimeSeries(RUNE_SYMBOL, cfg, db)
+        series = PriceTimeSeries(RUNE_SYMBOL, db)
 
         while True:
             busd_in_rune = await ppf.get_price_in_rune(BUSD_SYMBOL)

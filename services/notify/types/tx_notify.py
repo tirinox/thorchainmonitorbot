@@ -32,8 +32,8 @@ class StakeTxNotifier(INotified):
     async def on_data(self, txs: List[StakeTx]):
         new_txs = self._filter_by_age(txs)
 
-        runes_per_dollar = self.fetcher.runes_per_dollar
-        min_rune_volume = self.min_usd_total * runes_per_dollar
+        usd_per_rune = self.fetcher.usd_per_rune
+        min_rune_volume = self.min_usd_total / usd_per_rune
 
         large_txs = self._filter_large_txs(new_txs, self.threshold_mult, min_rune_volume)
 
@@ -51,7 +51,7 @@ class StakeTxNotifier(INotified):
                 for tx in large_txs:
                     pool = self.fetcher.pool_stat_map.get(tx.pool)
                     pool_info = self.fetcher.pool_info_map.get(tx.pool)
-                    texts.append(loc.tx_text(tx, runes_per_dollar, pool, pool_info))
+                    texts.append(loc.tx_text(tx, usd_per_rune, pool, pool_info))
                 return '\n\n'.join(texts)
 
             await self.broadcaster.broadcast(user_lang_map.keys(), message_gen)

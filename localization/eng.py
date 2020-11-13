@@ -56,15 +56,15 @@ class EnglishLocalization(BaseLocalization):
         )
 
     # ------ TXS -------
-    def tx_text(self, tx: StakeTx, rune_per_dollar: float, pool: StakePoolStats, pool_info: PoolInfo):
+    def tx_text(self, tx: StakeTx, dollar_per_rune: float, pool: StakePoolStats, pool_info: PoolInfo):
         msg = ''
         if tx.type == 'stake':
             msg += f'🐳 <b>Whale added liquidity</b> 🟢\n'
         elif tx.type == 'unstake':
             msg += f'🐳 <b>Whale removed liquidity</b> 🔴\n'
 
-        total_usd_volume = tx.full_rune / rune_per_dollar if rune_per_dollar != 0 else 0.0
-        pool_depth_usd = pool_info.balance_rune * MIDGARD_MULT / rune_per_dollar
+        total_usd_volume = tx.full_rune * dollar_per_rune if dollar_per_rune != 0 else 0.0
+        pool_depth_usd = pool_info.usd_depth(dollar_per_rune)
         info = link(f'https://viewblock.io/thorchain/address/{tx.address}', short_address(tx.address))
 
         rp, ap = tx.symmetry_rune_vs_asset()

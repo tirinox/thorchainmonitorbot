@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from services.db import DB
 from services.models.pool_info import MIDGARD_MULT
 from services.models.cap_info import BaseModelMixin
+from services.models.time_series import TimeSeries
 
 
 @dataclass
@@ -15,6 +16,7 @@ class StakeTx(BaseModelMixin):
     rune_amount: float
     hash: str
     full_rune: float
+    full_usd: float
     asset_price: float
 
     @classmethod
@@ -52,7 +54,8 @@ class StakeTx(BaseModelMixin):
                    rune_amount=rune_amount * MIDGARD_MULT,
                    hash=tx_hash,
                    full_rune=0.0,
-                   asset_price=0.0)
+                   asset_price=0.0,
+                   full_usd=0.0)
 
     def asymmetry(self, force_abs=False):
         rune_asset_amount = self.asset_amount * self.asset_price
@@ -89,8 +92,9 @@ class StakeTx(BaseModelMixin):
 class StakePoolStats(BaseModelMixin):
     pool: str
     last_tx: str
-    rune_avg_amt: float
-    n_tracked: int
+    rune_avg_amt: float = 0
+    n_tracked: int = 0
+    usd_depth: float = 0.0
 
     START_RUNE_AMT = 5000
 
@@ -103,7 +107,7 @@ class StakePoolStats(BaseModelMixin):
 
     @classmethod
     async def get_from_db(cls, pool, db: DB):
-        empty = cls(pool, '', cls.START_RUNE_AMT, 1)
+        empty = cls(pool, '', cls.START_RUNE_AMT, 1, 0)
         old_j = await db.redis.get(empty.key)
         return cls.from_json(old_j) if old_j else empty
 
@@ -120,6 +124,14 @@ class StakePoolStats(BaseModelMixin):
         keys += await r.keys('tx_not:*')
         if keys:
             await r.delete(*keys)
+
+    @property
+    def stream_name(self):
+        return f'POOL-DEPTH-{self.pool}'
+
+    async def write_time_series(self, db: DB):
+        ts = TimeSeries(self.stream_name, db)
+        await ts.add(usd_depth=self.usd_depth)
 
 
 def short_asset_name(pool: str):
