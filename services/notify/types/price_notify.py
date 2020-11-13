@@ -14,7 +14,7 @@ from services.utils import parse_timespan_to_seconds, HOUR, MINUTE, DAY, calc_pe
 REAL_REGISTERED_ATH = 1.18  # BUSD / Rune
 
 
-class PriceNotification(INotified):
+class PriceNotificatier(INotified):
     def __init__(self, cfg: Config, db: DB, broadcaster: Broadcaster, loc_man: LocalizationManager):
         self.logger = logging.getLogger('PriceNotification')
         self.broadcaster = broadcaster
