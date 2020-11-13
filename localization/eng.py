@@ -118,8 +118,9 @@ class EnglishLocalization(BaseLocalization):
             message += f"Coin market cap is {bold(pretty_dollar(fp.market_cap))} (#{bold(fp.rank)})\n"
 
         if fp.tlv_usd >= 1:
+            det_link = link('https://docs.thorchain.org/how-it-works/incentive-pendulum', 'deterministic price')
             message += (f"TLV: ${pre(pretty_money(fp.tlv_usd))}\n"
-                        f"So deterministic price of Rune is {code(pretty_money(fp.fair_price, prefix='$'))}\n"
+                        f"So {det_link} of Rune is {code(pretty_money(fp.fair_price, prefix='$'))}\n"
                         f"Speculative multiplier is {pre(x_ses(fp.fair_price, p.current_price))}\n")
 
         return message.rstrip()
