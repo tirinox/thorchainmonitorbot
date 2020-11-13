@@ -5,11 +5,11 @@ from services.config import Config
 from services.cooldown import CooldownTracker
 from services.db import DB
 from services.fetch.base import INotified
-from services.fetch.fair_price import RuneFairPrice
+from services.models.price import RuneFairPrice
 from services.fetch.pool_price import RUNE_SYMBOL
 from services.models.time_series import PriceTimeSeries
 from services.notify.broadcast import Broadcaster, telegram_chats_from_config
-from services.utils import parse_timespan_to_seconds, HOUR, MINUTE, DAY
+from services.utils import parse_timespan_to_seconds, HOUR, MINUTE, DAY, calc_percent_change
 
 REAL_REGISTERED_ATH = 1.18  # BUSD / Rune
 
@@ -52,7 +52,7 @@ class PriceNotification(INotified):
         price_1h = await self.time_series.select_average_ago(HOUR, tolerance=MINUTE * 5)
 
         if price_1h:
-            percent_change = (price - price_1h) / price_1h
+            percent_change = calc_percent_change(price_1h, price)
             if abs(percent_change) >= self.percent_change_threshold:
                 if percent_change > 0 and (await self.cd.can_do(self.CD_KEY_PRICE_RISE_NOTIFIED, self.change_cd)):
                     await self.cd.do(self.CD_KEY_PRICE_RISE_NOTIFIED)

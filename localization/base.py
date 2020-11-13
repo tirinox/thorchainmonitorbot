@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 
 from aiogram.types import *
 
-from services.fetch.fair_price import RuneFairPrice
+from services.models.price import RuneFairPrice, PriceReport
 from services.models.pool_info import PoolInfo
 from services.models.cap_info import ThorInfo
 from services.models.tx import StakeTx, StakePoolStats
@@ -58,6 +58,6 @@ class BaseLocalization(ABC):
     # ------- PRICE -------
 
     @abstractmethod
-    def price_change(self, current_price, price_1h, price_24h, price_7d, fair_price): ...
+    def price_change(self, p: PriceReport, ath=False): ...
 
 

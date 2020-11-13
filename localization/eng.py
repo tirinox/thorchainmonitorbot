@@ -1,9 +1,10 @@
 from localization.base import BaseLocalization
-from services.fetch.fair_price import RuneFairPrice
+from services.models.price import RuneFairPrice, PriceReport
 from services.models.pool_info import PoolInfo, MIDGARD_MULT
 from services.models.cap_info import ThorInfo
 from services.models.tx import StakeTx, short_asset_name, StakePoolStats
-from services.utils import pretty_money, link, short_address, code
+from services.utils import pretty_money, link, short_address, code, bold, calc_percent_change, adaptive_round_to_str, \
+    emoji_for_percent_change, pre, x_ses
 
 
 class EnglishLocalization(BaseLocalization):
@@ -79,6 +80,7 @@ class EnglishLocalization(BaseLocalization):
         return msg
 
     # ------- QUEUE -------
+
     def queue_update(self, item_type, step, value):
         if step == 0:
             return f"☺️ Queue {code(item_type)} is empty again!"
@@ -87,7 +89,36 @@ class EnglishLocalization(BaseLocalization):
                 f"🤬 <b>Attention!</b> Queue {code(item_type)} has {value} transactions!\n"
                 f"{code(item_type)} transactions may be delayed."
             )
+
     # ------- PRICE -------
 
-    def price_change(self, current_price, price_1h, price_24h, price_7d, fair_price):
-        return f"Price is {current_price}"  # todo! finish and polish!
+    def price_change(self, p: PriceReport, ath=False):
+        title = bold('Price update') if not ath else bold('🚀 A new all-time high has been achieved!')
+
+        c_gecko_url = 'https://www.coingecko.com/en/coins/thorchain'
+        c_gecko_link = link(c_gecko_url, 'RUNE')
+
+        message = f"{title} | {c_gecko_link}\n"
+
+        pr_text = adaptive_round_to_str(p.current_price)
+        message += code(f"Rune =  ${pr_text}") + "\n"
+
+        time_combos = zip(
+            ('1h', '24h', '7d'),
+            (p.price_1h, p.price_24h, p.price_7d)
+        )
+        for title, old_price in time_combos:
+            if old_price:
+                pc = calc_percent_change(old_price, p.current_price)
+                message += pre(f"{title.rjust(4)}:{adaptive_round_to_str(pc, True).rjust(8)} % "
+                               f"{emoji_for_percent_change(pc).ljust(4).rjust(6)}") + "\n"
+
+        if p.rank >= 1:
+            message += (f"Coin market rank: #{bold(p.rank)}, "
+                        f"market cap is ${bold(pretty_money(p.fair_price.market_cap))}\n")
+        if p.fair_price.tlv_usd >= 1:
+            message += (f"TLV: ${pre(pretty_money(p.fair_price.tlv_usd))}\n"
+                        f"So deterministic price of Rune is ${code(pretty_money(p.fair_price.fair_price))}\n"
+                        f"Speculative multiplier is {pre(x_ses(p.fair_price.fair_price, p.current_price))}\n")
+
+        return message.rstrip()

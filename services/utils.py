@@ -137,7 +137,7 @@ def pretty_money(x):
 
 
 def bold(text):
-    return f"<b>{text}</b"
+    return f"<b>{text}</b>"
 
 
 def link(url, text):
@@ -146,6 +146,19 @@ def link(url, text):
 
 def code(text):
     return f"<code>{text}</code>"
+
+
+def pre(text):
+    return f"<pre>{text}</pre>"
+
+
+def x_ses(one, two):
+    if one == 0 or two == 0:
+        return 'N/A'
+    else:
+        sign = 'x' if two > one else '-x'
+        times = two / one if two > one else one / two
+        return f'{sign}{pretty_money(times)}'
 
 
 def short_address(address, begin=5, end=4, filler='...'):
@@ -177,14 +190,29 @@ def format_percent(x, total):
         return f'{s:.1f} %'
 
 
+def adaptive_round_to_str(x, force_sign=False):
+    ax = abs(x)
+    sign = ('+' if force_sign else '') if x > 0 else '-'
+    if ax < 1.0:
+        return f"{sign}{ax:.2f}"
+    elif ax < 10.0:
+        return f"{sign}{ax:.1f}"
+    else:
+        return f"{sign}{pretty_money(ax)}"
+
+
 EMOJI_SCALE = [
     # negative
     (-50, '💥'), (-35, '👺'), (-25, '😱'), (-20, '😨'), (-15, '🥵'), (-10, '😰'), (-5, '😢'), (-3, '😥'), (-2, '😔'),
     (-1, '😑'), (0, '😕'),
     # positive
     (1, '😏'), (2, '😄'), (3, '😀'), (5, '🤗'), (10, '🍻'), (15, '🎉'), (20, '💸'), (25, '🔥'), (35, '🌙'), (50, '🌗'),
-    (65, '🌕'), (80, '⭐'), (100, '✨'), (10000000, '⚡')
+    (65, '🌕'), (80, '⭐'), (100, '✨'), (10000000, '🚀⚡')
 ]
+
+
+def calc_percent_change(old_value, new_value):
+    return 100.0 * (new_value - old_value) / old_value if old_value and new_value else 0.0
 
 
 def emoji_for_percent_change(pc):
