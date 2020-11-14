@@ -29,7 +29,12 @@ class App:
         self.cfg = Config()
 
         log_level = self.cfg.get('log_level', logging.INFO)
-        logging.basicConfig(level=logging.getLevelName(log_level))
+        logging.basicConfig(
+            level=logging.getLevelName(log_level),
+            format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S',
+        )
+
         logging.info(f"Log level: {log_level}")
 
         self.loop = asyncio.get_event_loop()
