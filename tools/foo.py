@@ -7,7 +7,7 @@ from aiogram.types import ParseMode
 from localization import LocalizationManager
 from services.config import Config
 from services.db import DB
-from services.models.tx import StakePoolStats
+from services.models.tx import StakePoolStats, StakeTx
 from services.notify.broadcast import Broadcaster
 from services.utils import progressbar
 

@@ -17,7 +17,7 @@ class StakeTx(BaseModelMixin):
     hash: str
     full_rune: float
     full_usd: float
-    asset_price: float
+    asset_per_rune: float
 
     @classmethod
     def load_from_midgard(cls, j):
@@ -54,25 +54,25 @@ class StakeTx(BaseModelMixin):
                    rune_amount=rune_amount * MIDGARD_MULT,
                    hash=tx_hash,
                    full_rune=0.0,
-                   asset_price=0.0,
+                   asset_per_rune=0.0,
                    full_usd=0.0)
 
     def asymmetry(self, force_abs=False):
-        rune_asset_amount = self.asset_amount * self.asset_price
+        rune_asset_amount = self.asset_amount * self.asset_per_rune
         factor = (self.rune_amount / (rune_asset_amount + self.rune_amount) - 0.5) * 200.0  # -100 % ... + 100 %
         return abs(factor) if force_abs else factor
 
     def symmetry_rune_vs_asset(self):
         f = 100.0 / self.full_rune
-        return self.rune_amount * f, self.asset_price * self.asset_amount * f
+        return self.rune_amount * f, self.asset_amount / self.asset_per_rune * f
 
     @classmethod
     def collect_pools(cls, txs):
         return set(t.pool for t in txs)
 
-    def full_rune_amount(self, asset_price):
-        self.asset_price = asset_price
-        self.full_rune = self.asset_amount / asset_price + self.rune_amount
+    def calc_full_rune_amount(self, asset_per_rune):
+        self.asset_per_rune = asset_per_rune
+        self.full_rune = self.asset_amount / asset_per_rune + self.rune_amount
         return self.full_rune
 
     @property

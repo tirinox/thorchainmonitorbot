@@ -110,7 +110,7 @@ class StakeTxFetcher(BaseFetcher):
             price = self.pool_info_map.get(tx.pool, PoolInfo.dummy()).price
             stats: StakePoolStats = self.pool_stat_map.get(tx.pool)
             if price and stats:
-                full_rune = tx.full_rune_amount(price)
+                full_rune = tx.calc_full_rune_amount(price)
                 stats.update(full_rune, self.avg_n)
                 updated_stats.add(tx.pool)
                 result_txs.append(tx)
