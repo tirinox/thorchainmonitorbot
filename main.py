@@ -18,7 +18,7 @@ from services.fetch.queue import QueueFetcher
 from services.fetch.tx import StakeTxFetcher
 from services.models.price import LastPrice
 from services.notify.broadcast import Broadcaster
-from services.notify.types.cap_notify import CapFetcherNotification
+from services.notify.types.cap_notify import CapFetcherNotifier
 from services.notify.types.price_notify import PriceNotifier
 from services.notify.types.queue_notify import QueueNotifier
 from services.notify.types.tx_notify import StakeTxNotifier
@@ -60,7 +60,7 @@ class App:
             self.thor_man.session = session
             await self.thor_man.reload_nodes_ip()
 
-            notifier_cap = CapFetcherNotification(self.cfg, self.db, self.broadcaster, self.loc_man)
+            notifier_cap = CapFetcherNotifier(self.cfg, self.db, self.broadcaster, self.loc_man)
             notifier_tx = StakeTxNotifier(self.cfg, self.db, self.broadcaster, self.loc_man, None)
             notifier_queue = QueueNotifier(self.cfg, self.db, self.broadcaster, self.loc_man)
             notifier_price = PriceNotifier(self.cfg, self.db, self.broadcaster, self.loc_man)

@@ -37,7 +37,7 @@ class ThorInfo(BaseModelMixin):
 
     @property
     def is_ok(self):
-        return self.cap > 0
+        return self.cap >= 1 and self.stacked >= 1
 
     KEY_INFO = 'th_info'
 

@@ -8,7 +8,7 @@ from services.models.cap_info import ThorInfo
 from services.notify.broadcast import Broadcaster, telegram_chats_from_config
 
 
-class CapFetcherNotification(INotified):
+class CapFetcherNotifier(INotified):
     def __init__(self, cfg: Config, db: DB, broadcaster: Broadcaster, loc_man: LocalizationManager):
         self.logger = logging.getLogger('CapFetcherNotification')
         self.broadcaster = broadcaster

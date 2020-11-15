@@ -30,6 +30,10 @@ class CapInfoFetcher(BaseFetcher):
 
             # max_staked = 900015  # for testing
 
+        if max_staked <= 1:
+            self.logger.error(f"max_staked = {max_staked} and total_staked = {total_staked} which seems like an error")
+            return ThorInfo.error()
+
         price = self.ppf.price_holder.rune_price_in_usd
 
         r = ThorInfo(cap=max_staked, stacked=total_staked, price=price)
