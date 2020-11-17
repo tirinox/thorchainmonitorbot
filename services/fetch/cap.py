@@ -6,6 +6,7 @@ from services.fetch.base import BaseFetcher, INotified
 from services.fetch.pool_price import PoolPriceFetcher
 from services.models.cap_info import ThorInfo
 from services.models.pool_info import MIDGARD_MULT
+from services.utils import parse_timespan_to_seconds
 
 NETWORK_URL = "https://chaosnet-midgard.bepswap.com/v1/network"
 MIMIR_URL = "https://chaosnet-midgard.bepswap.com/v1/thorchain/mimir"
@@ -15,7 +16,7 @@ class CapInfoFetcher(BaseFetcher):
     def __init__(self, cfg: Config, db: DB, session: ClientSession, ppf: PoolPriceFetcher,
                  delegate: INotified = None):
         self.ppf = ppf
-        sleep_period = cfg.cap.fetch_period
+        sleep_period = parse_timespan_to_seconds(cfg.cap.fetch_period)
         super().__init__(cfg, db, session, sleep_period, delegate)
 
     async def fetch(self) -> ThorInfo:

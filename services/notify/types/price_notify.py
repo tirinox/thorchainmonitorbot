@@ -1,20 +1,22 @@
 import asyncio
 import logging
+import random
+import time
 
 from localization import LocalizationManager, BaseLocalization
 from services.config import Config
 from services.cooldown import CooldownTracker
 from services.db import DB
 from services.fetch.base import INotified
-from services.models.price import RuneFairPrice, PriceReport
+from services.models.price import RuneFairPrice, PriceReport, PriceATH
 from services.models.time_series import PriceTimeSeries, RUNE_SYMBOL
 from services.notify.broadcast import Broadcaster, telegram_chats_from_config
 from services.utils import parse_timespan_to_seconds, HOUR, MINUTE, DAY, calc_percent_change, pretty_money
 
-REAL_REGISTERED_ATH = 1.18  # BUSD / Rune
-
 
 class PriceNotifier(INotified):
+    ATH_KEY = 'runeATH'
+
     def __init__(self, cfg: Config, db: DB, broadcaster: Broadcaster, loc_man: LocalizationManager):
         self.logger = logging.getLogger('PriceNotification')
         self.broadcaster = broadcaster
@@ -26,6 +28,8 @@ class PriceNotifier(INotified):
         self.change_cd = parse_timespan_to_seconds(cfg.price.change_cd)
         self.percent_change_threshold = cfg.price.percent_change_threshold
         self.time_series = PriceTimeSeries(RUNE_SYMBOL, db)
+        self.ath_stickers = cfg.price.ath.stickers
+        self.ath_cooldown = parse_timespan_to_seconds(cfg.price.ath.cooldown)
 
     CD_KEY_PRICE_NOTIFIED = 'price_notified'
     CD_KEY_PRICE_RISE_NOTIFIED = 'price_notified_rise'
@@ -40,7 +44,14 @@ class PriceNotifier(INotified):
         )
         return price_1h, price_24h, price_7d
 
-    async def do_notify_price_table(self, price, fair_price, hist_prices):
+    async def send_ath_sticker(self):
+        if not self.ath_stickers:
+            return
+        sticker = random.choice(self.ath_stickers)
+        user_lang_map = telegram_chats_from_config(self.cfg, self.loc_man)
+        await self.broadcaster.broadcast(user_lang_map.keys(), sticker, message_type='sticker')
+
+    async def do_notify_price_table(self, fair_price, hist_prices, ath):
         await self.cd.do(self.CD_KEY_PRICE_NOTIFIED)
 
         user_lang_map = telegram_chats_from_config(self.cfg, self.loc_man)
@@ -48,13 +59,16 @@ class PriceNotifier(INotified):
         async def message_gen(chat_id):
             loc: BaseLocalization = user_lang_map[chat_id]
             return loc.price_change(PriceReport(
-                price, *hist_prices, fair_price
-            ))
+                *hist_prices, fair_price
+            ), ath=ath)
 
         await self.broadcaster.broadcast(user_lang_map.keys(), message_gen)
+        if ath:
+            await self.send_ath_sticker()
 
-    async def handle_new_price(self, price, fair_price: RuneFairPrice):
+    async def handle_new_price(self, fair_price: RuneFairPrice):
         hist_prices = await self.historical_get_triplet()
+        price = fair_price.real_rune_price
 
         price_1h = hist_prices[0]
         send_it = False
@@ -76,22 +90,49 @@ class PriceNotifier(INotified):
             send_it = True
 
         if send_it:
-            await self.do_notify_price_table(price, fair_price, hist_prices)
+            await self.do_notify_price_table(fair_price, hist_prices, ath=False)
 
-    async def handle_ath(self, price):
+    async def get_prev_ath(self) -> PriceATH:
+        try:
+            await self.db.get_redis()
+            ath_str = await self.db.redis.get(self.ATH_KEY)
+            if ath_str is None:
+                return PriceATH()
+            else:
+                return PriceATH.from_json(ath_str)
+        except (TypeError, ValueError, AttributeError):
+            return PriceATH()
+
+    async def reset_ath(self):
+        await self.db.redis.delete(self.ATH_KEY)
+
+    async def update_ath(self, ath: PriceATH):
+        if ath.ath_price > 0:
+            await self.db.get_redis()
+            await self.db.redis.set(self.ATH_KEY, ath.as_json)
+
+    async def handle_ath(self, fair_price):
+        ath = await self.get_prev_ath()
+        price = fair_price.real_rune_price
+        if ath.is_new_ath(price):
+            await self.update_ath(PriceATH(
+                int(time.time()), price
+            ))
+
+            if await self.cd.can_do(self.CD_KEY_ATH_NOTIFIED, self.ath_cooldown):
+                await self.cd.do(self.CD_KEY_ATH_NOTIFIED)
+                await self.cd.do(self.CD_KEY_PRICE_RISE_NOTIFIED)  # prevent 2 notifications
+
+                hist_prices = await self.historical_get_triplet()
+                await self.do_notify_price_table(fair_price, hist_prices, ath=True)
+                return True
+
         return False
 
-    async def on_data(self, data):
-        price, fair_price = data
-        fair_price: RuneFairPrice
-
-        # price = 1.2  # debug
-
-        await self.handle_new_price(price, fair_price)
-
-        # todo: uncomment
-        # if not await self.handle_ath(price):
-        #     await self.handle_new_price(price, fair_price)
+    async def on_data(self, fprice: RuneFairPrice):
+        # fprice.real_rune_price = 1.396  # debug!!!
+        if not await self.handle_ath(fprice):
+            await self.handle_new_price(fprice)
 
     async def on_error(self, e):
         return await super().on_error(e)

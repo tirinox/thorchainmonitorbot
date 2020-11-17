@@ -1,12 +1,15 @@
 import asyncio
 import logging
 
+import aiohttp
 from aiogram import Bot, Dispatcher
 from aiogram.types import ParseMode
 
 from localization import LocalizationManager
 from services.config import Config
 from services.db import DB
+from services.fetch.node_ip_manager import ThorNodeAddressManager
+from services.fetch.pool_price import PoolPriceFetcher
 from services.models.tx import StakePoolStats, StakeTx
 from services.notify.broadcast import Broadcaster
 from services.utils import progressbar
@@ -49,9 +52,17 @@ async def foo12():
     await StakePoolStats.clear_all_data(db)
 
 
+async def foo13():
+    async with aiohttp.ClientSession() as session:
+        thor_man = ThorNodeAddressManager(session)
+        ppf = PoolPriceFetcher(cfg, db, session=session, thor_man=thor_man)
+        data = await ppf.get_current_pool_data_full()
+    print(data)
+
+
 async def start_foos():
     await db.get_redis()
-    await foo12()
+    await foo13()
 
 
 if __name__ == '__main__':

@@ -36,9 +36,8 @@ def register_commands(cfg: Config, dp: Dispatcher, loc_man: LocalizationManager,
 
         pn = PriceNotifier(cfg, db, broadcaster, loc_man)
         price_1h, price_24h, price_7d = await pn.historical_get_triplet()
-
+        fp.real_rune_price = price_holder.rune_price_in_usd
         price_text = loc.price_change(PriceReport(
-            price_holder.rune_price_in_usd,
             price_1h, price_24h, price_7d,
             fair_price=fp)
         )
@@ -72,3 +71,7 @@ def register_commands(cfg: Config, dp: Dispatcher, loc_man: LocalizationManager,
 
         await loc_man.set_lang(message.chat.id, lang, db)
         await send_welcome(message)
+
+    @dp.message_handler(content_types=ContentType.STICKER)
+    async def on_sticker(message: Message):
+        await message.reply(f"{message.sticker.emoji}: {message.sticker.file_id}")

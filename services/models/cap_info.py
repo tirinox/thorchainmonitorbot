@@ -1,20 +1,9 @@
 import json
 import logging
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 
 from services.db import DB
-
-
-@dataclass
-class BaseModelMixin:
-    @property
-    def as_json(self):
-        return json.dumps(asdict(self))
-
-    @classmethod
-    def from_json(cls, jstr):
-        d = json.loads(jstr)
-        return cls(**d)
+from services.models.base import BaseModelMixin
 
 
 @dataclass

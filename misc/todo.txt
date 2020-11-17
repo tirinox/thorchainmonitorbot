@@ -42,3 +42,6 @@ use zrange to store timeseries
 
 13) take mimir from thorchain http://IP:1317/thorchain/mimir bypassing Chaosnet
 
+14) you suggest it like this: 109,936 Rune (50% = $90K) ↔️ 3,281 BNB (50% = $90K)  ?
+
+make large numbers to K, and M also

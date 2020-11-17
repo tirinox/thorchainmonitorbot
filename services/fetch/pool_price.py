@@ -6,12 +6,14 @@ from services.fetch.node_ip_manager import ThorNodeAddressManager
 from services.models.pool_info import PoolInfo
 from services.models.price import LastPrice
 from services.models.time_series import PriceTimeSeries, BUSD_SYMBOL, RUNE_SYMBOL, RUNE_SYMBOL_DET
+from services.utils import parse_timespan_to_seconds
 
 
 class PoolPriceFetcher(BaseFetcher):
     def __init__(self, cfg: Config, db: DB, thor_man: ThorNodeAddressManager = ThorNodeAddressManager.shared(),
                  session=None, delegate: INotified = None, holder: LastPrice = None):
-        super().__init__(cfg, db, session, delegate=delegate, sleep_period=cfg.price.fetch_period)
+        period = parse_timespan_to_seconds(cfg.price.fetch_period)
+        super().__init__(cfg, db, session, delegate=delegate, sleep_period=period)
         self.thor_man = thor_man
         self.session = session
         self.price_holder = holder
@@ -28,8 +30,8 @@ class PoolPriceFetcher(BaseFetcher):
             pts_det = PriceTimeSeries(RUNE_SYMBOL_DET, self.db)
             fair_price = await fair_rune_price()
             await pts_det.add(price=fair_price.fair_price)
-
-            return price, fair_price
+            fair_price.real_rune_price = price
+            return fair_price
 
     async def fetch_pool_data_historic(self, asset, height=0) -> PoolInfo:
         if asset == RUNE_SYMBOL:

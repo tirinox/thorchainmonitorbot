@@ -9,6 +9,7 @@ from services.fetch.base import INotified
 from services.fetch.tx import StakeTxFetcher
 from services.models.tx import StakeTx, StakePoolStats
 from services.notify.broadcast import Broadcaster, telegram_chats_from_config
+from services.utils import parse_timespan_to_seconds
 
 
 class StakeTxNotifier(INotified):
@@ -26,7 +27,7 @@ class StakeTxNotifier(INotified):
         scfg = cfg.tx.stake_unstake
         self.threshold_mult = float(scfg.threshold_mult)
         self.avg_n = int(scfg.avg_n)
-        self.max_age_sec = int(scfg.max_age_sec)
+        self.max_age_sec = parse_timespan_to_seconds(scfg.max_age_sec)
         self.min_usd_total = int(scfg.min_usd_total)
 
     async def on_data(self, txs: List[StakeTx]):

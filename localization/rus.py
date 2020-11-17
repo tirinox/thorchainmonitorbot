@@ -93,8 +93,9 @@ class RussianLocalization(BaseLocalization):
         c_gecko_link = link(c_gecko_url, 'RUNE')
 
         message = f"{title} | {c_gecko_link}\n"
+        price = p.fair_price.real_rune_price
 
-        pr_text = pretty_dollar(p.current_price)
+        pr_text = pretty_dollar(price)
         message += f"Цена RUNE сейчас {code(pr_text)}\n"
 
         time_combos = zip(
@@ -103,7 +104,7 @@ class RussianLocalization(BaseLocalization):
         )
         for title, old_price in time_combos:
             if old_price:
-                pc = calc_percent_change(old_price, p.current_price)
+                pc = calc_percent_change(old_price, price)
                 message += pre(f"{title.rjust(5)}:{adaptive_round_to_str(pc, True).rjust(8)} % "
                                f"{emoji_for_percent_change(pc).ljust(4).rjust(6)}") + "\n"
 
@@ -114,6 +115,6 @@ class RussianLocalization(BaseLocalization):
         if fp.tlv_usd >= 1:
             message += (f"TLV (кроме RUNE): ${pre(pretty_money(fp.tlv_usd))}\n"
                         f"Детерминистическая цена руны: ${code(pretty_money(fp.fair_price))}\n"
-                        f"Спекулятивый множитель: {pre(x_ses(fp.fair_price, p.current_price))}\n")
+                        f"Спекулятивый множитель: {pre(x_ses(fp.fair_price, price))}\n")
 
         return message.rstrip()

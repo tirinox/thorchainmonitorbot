@@ -11,6 +11,7 @@ from services.fetch.pool_price import PoolPriceFetcher
 from services.models.time_series import BUSD_SYMBOL
 from services.models.pool_info import PoolInfo
 from services.models.tx import StakeTx, StakePoolStats
+from services.utils import parse_timespan_to_seconds
 
 TRANSACTION_URL = "https://chaosnet-midgard.bepswap.com/v1/txs?offset={offset}&limit={limit}&type=stake,unstake"
 
@@ -27,7 +28,7 @@ class StakeTxFetcher(BaseFetcher):
         scfg = cfg.tx.stake_unstake
         self.avg_n = int(scfg.avg_n)
         self.ppf = ppf
-        self.sleep_period = int(scfg.fetch_period)
+        self.sleep_period = parse_timespan_to_seconds(scfg.fetch_period)
         self.tx_per_batch = int(scfg.tx_per_batch)
         self.max_page_deep = int(scfg.max_page_deep)
 

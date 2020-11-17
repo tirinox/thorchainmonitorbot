@@ -99,8 +99,9 @@ class EnglishLocalization(BaseLocalization):
         c_gecko_link = link(c_gecko_url, 'RUNE')
 
         message = f"{title} | {c_gecko_link}\n"
+        price = p.fair_price.real_rune_price
 
-        pr_text = pretty_dollar(p.current_price)
+        pr_text = pretty_dollar(price)
         message += f"RUNE price is {code(pr_text)} now.\n"
 
         time_combos = zip(
@@ -109,7 +110,7 @@ class EnglishLocalization(BaseLocalization):
         )
         for title, old_price in time_combos:
             if old_price:
-                pc = calc_percent_change(old_price, p.current_price)
+                pc = calc_percent_change(old_price, price)
                 message += pre(f"{title.rjust(4)}:{adaptive_round_to_str(pc, True).rjust(8)} % "
                                f"{emoji_for_percent_change(pc).ljust(4).rjust(6)}") + "\n"
 
@@ -121,6 +122,6 @@ class EnglishLocalization(BaseLocalization):
             det_link = link('https://docs.thorchain.org/how-it-works/incentive-pendulum', 'deterministic price')
             message += (f"TVL of non-RUNE assets: ${pre(pretty_money(fp.tlv_usd))}\n"
                         f"So {det_link} of RUNE is {code(pretty_money(fp.fair_price, prefix='$'))}\n"
-                        f"Speculative multiplier is {pre(x_ses(fp.fair_price, p.current_price))}\n")
+                        f"Speculative multiplier is {pre(x_ses(fp.fair_price, price))}\n")
 
         return message.rstrip()

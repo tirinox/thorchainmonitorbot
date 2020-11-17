@@ -6,6 +6,7 @@ from services.db import DB
 from services.fetch.base import BaseFetcher, INotified
 from services.fetch.node_ip_manager import ThorNodeAddressManager
 from services.models.queue import QueueInfo
+from services.utils import parse_timespan_to_seconds
 
 
 class QueueFetcher(BaseFetcher):
@@ -13,7 +14,8 @@ class QueueFetcher(BaseFetcher):
                  session: ClientSession,
                  thor_man: ThorNodeAddressManager,
                  delegate: INotified = None):
-        super().__init__(cfg, db, session, cfg.queue.fetch_period, delegate)
+        period = parse_timespan_to_seconds(cfg.queue.fetch_period)
+        super().__init__(cfg, db, session, period, delegate)
         self.thor_man = thor_man
         self.last_node_ip = None
 

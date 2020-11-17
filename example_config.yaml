@@ -15,7 +15,7 @@ tx:
   stake_unstake:
     avg_n: 20
     threshold_mult: 5.0
-    max_age_sec: 1200
+    max_age_sec: 12h
     fetch_period: 70
     tx_per_batch: 50
     max_page_deep: 10
@@ -26,6 +26,24 @@ price:
   global_cd: 12h
   change_cd: 1h
   percent_change_threshold: 5
+  ath:
+    cooldown: 2m
+    stickers:
+      - CAACAgIAAxkBAAIPuF-zvf5B1guBsIC8YqQE7jHnNP39AAJkBQACP5XMCgTLN7BUdOcAAR4E
+      - CAACAgIAAxkBAAIPul-zvjBr2Oc88YgFBNhMtktP4pCeAAJpAgACVp29Cta5X0h7RGRvHgQ
+      - CAACAgIAAxkBAAIPvF-zvjn4-XPhcr-M06zZUUvwF700AAIpAAM7cR8iDQ6e_eGNDLUeBA
+      - CAACAgIAAxkBAAIPvl-zvkRAYSkjyVNi9QxzovYSDK4DAAKqBQACP5XMCpXI5d6t1J7eHgQ
+      - CAACAgIAAxkBAAIPwF-zvlRib5d5xSR1kWEwr0rpTJbIAAISAAP3F4Erq1mdGtkjKYUeBA
+      - CAACAgIAAxkBAAIPol-zvRRRPSdC-Sr4lqhKsfNWWh3qAAJPAQACIjeOBHyVl0hMcbwXHgQ
+      - CAACAgIAAxkBAAIPsF-zvVaSci3nhGf2-6l2YUEKcMKnAAICAAMUkqgdqsiIC2ZyV0oeBA
+      - CAACAgIAAxkBAAIPsl-zvWI-Ihnnh0BSm6BM6DpYjYuJAAISAAP3F4Erq1mdGtkjKYUeBA
+      - CAACAgIAAxkBAAIPuF-zvf5B1guBsIC8YqQE7jHnNP39AAJkBQACP5XMCgTLN7BUdOcAAR4E
+      - CAACAgIAAxkBAAIPul-zvjBr2Oc88YgFBNhMtktP4pCeAAJpAgACVp29Cta5X0h7RGRvHgQ
+      - CAACAgIAAxkBAAIPul-zvjBr2Oc88YgFBNhMtktP4pCeAAJpAgACVp29Cta5X0h7RGRvHgQ
+      - CAACAgIAAxkBAAIPvl-zvkRAYSkjyVNi9QxzovYSDK4DAAKqBQACP5XMCpXI5d6t1J7eHgQ
+      - CAACAgIAAxkBAAIPwF-zvlRib5d5xSR1kWEwr0rpTJbIAAISAAP3F4Erq1mdGtkjKYUeBA
+      - CAACAgIAAxkBAAIPwl-zyp2DJdPINcX6h0ZGesaakaMnAAJ9AwACbbBCA70TLvm2TbpTHgQ
+      - CAACAgIAAxkBAAIPyV-zzEtVsFiaAWTVrJ8ROptFYUqjAAJFAAP3F4ErgJFXK7AarK4eBA
 
 cap:
   fetch_period: 120
