@@ -28,6 +28,7 @@ class BaseFetcher(ABC):
 
     def subscribe(self, delegate: INotified):
         self.delegates.add(delegate)
+        return self
 
     @abstractmethod
     async def fetch(self):

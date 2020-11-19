@@ -19,6 +19,7 @@ from services.lib.db import DB
 from services.models.price import LastPriceHolder
 from services.notify.broadcast import Broadcaster
 from services.notify.types.cap_notify import CapFetcherNotifier
+from services.notify.types.pool_churn import PoolChurnNotifier
 from services.notify.types.price_notify import PriceNotifier
 from services.notify.types.queue_notify import QueueNotifier
 from services.notify.types.tx_notify import StakeTxNotifier
@@ -72,11 +73,13 @@ class App:
             notifier_tx = StakeTxNotifier(cfg, db, broadcaster, loc_man)
             notifier_queue = QueueNotifier(cfg, db, broadcaster, loc_man)
             notifier_price = PriceNotifier(cfg, db, broadcaster, loc_man)
+            notifier_pool_churn = PoolChurnNotifier(cfg, db, broadcaster, loc_man)
 
             fetcher_cap.subscribe(notifier_cap)
             fetcher_tx.subscribe(notifier_tx)
             fetcher_queue.subscribe(notifier_queue)
             self.ppf.subscribe(notifier_price)
+            self.ppf.subscribe(notifier_pool_churn)
 
             await asyncio.gather(*(task.run() for task in [
                 self.ppf,

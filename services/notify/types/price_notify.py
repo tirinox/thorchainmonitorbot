@@ -4,20 +4,18 @@ import random
 import time
 
 from localization import LocalizationManager, BaseLocalization
+from services.fetch.base import INotified
 from services.lib.config import Config
 from services.lib.cooldown import CooldownTracker
+from services.lib.datetime import MINUTE, HOUR, DAY, parse_timespan_to_seconds
 from services.lib.db import DB
-from services.fetch.base import INotified
+from services.lib.money import pretty_money, calc_percent_change
 from services.models.price import RuneFairPrice, PriceReport, PriceATH
 from services.models.time_series import PriceTimeSeries, RUNE_SYMBOL
 from services.notify.broadcast import Broadcaster, telegram_chats_from_config
-from services.lib.money import pretty_money, calc_percent_change
-from services.lib.datetime import MINUTE, HOUR, DAY, parse_timespan_to_seconds
 
 
 class PriceNotifier(INotified):
-    ATH_KEY = 'runeATH'
-
     def __init__(self, cfg: Config, db: DB, broadcaster: Broadcaster, loc_man: LocalizationManager):
         self.logger = logging.getLogger('PriceNotification')
         self.broadcaster = broadcaster
@@ -32,6 +30,14 @@ class PriceNotifier(INotified):
         self.ath_stickers = cfg.price.ath.stickers
         self.ath_cooldown = parse_timespan_to_seconds(cfg.price.ath.cooldown)
 
+    async def on_data(self, sender, fprice: RuneFairPrice):
+        # fprice.real_rune_price = 1.435  # debug!!!
+        if not await self.handle_ath(fprice):
+            await self.handle_new_price(fprice)
+
+    # -----
+
+    ATH_KEY = 'runeATH'
     CD_KEY_PRICE_NOTIFIED = 'price_notified'
     CD_KEY_PRICE_RISE_NOTIFIED = 'price_notified_rise'
     CD_KEY_PRICE_FALL_NOTIFIED = 'price_notified_fall'
@@ -129,8 +135,3 @@ class PriceNotifier(INotified):
                 return True
 
         return False
-
-    async def on_data(self, sender, fprice: RuneFairPrice):
-        # fprice.real_rune_price = 1.19  # debug!!!
-        if not await self.handle_ath(fprice):
-            await self.handle_new_price(fprice)
