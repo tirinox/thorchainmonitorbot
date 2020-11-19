@@ -7,8 +7,6 @@ from aiogram import Bot, Dispatcher, executor
 from aiogram.types import *
 
 from localization import LocalizationManager
-from services.lib.config import Config
-from services.lib.db import DB
 from services.dialog.dialog import register_commands
 from services.fetch.cap import CapInfoFetcher
 from services.fetch.gecko_price import fill_rune_price_from_gecko
@@ -16,6 +14,8 @@ from services.fetch.node_ip_manager import ThorNodeAddressManager
 from services.fetch.pool_price import PoolPriceFetcher
 from services.fetch.queue import QueueFetcher
 from services.fetch.tx import StakeTxFetcher
+from services.lib.config import Config
+from services.lib.db import DB
 from services.models.price import LastPriceHolder
 from services.notify.broadcast import Broadcaster
 from services.notify.types.cap_notify import CapFetcherNotifier
