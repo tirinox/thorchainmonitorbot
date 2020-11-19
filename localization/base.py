@@ -50,6 +50,14 @@ class BaseLocalization(ABC):
 
     # ------- STAKES -------
 
+    @staticmethod
+    def thor_explore_address(address):
+        return f'https://viewblock.io/thorchain/address/{address}'
+
+    @staticmethod
+    def binance_explore_address(address):
+        return f'https://explorer.binance.org/address/{address}'
+
     @abstractmethod
     def tx_text(self, tx: StakeTx, dollar_per_rune: float, pool: StakePoolStats, pool_info: PoolInfo): ...
 

@@ -9,14 +9,14 @@ from services.lib.config import Config
 from services.lib.db import DB
 from services.fetch.fair_price import fetch_fair_rune_price
 from services.models.price import PriceReport, LastPriceHolder
-from services.notify.broadcast import telegram_chats_from_config, Broadcaster
+from services.notify.broadcast import Broadcaster
 
 
 async def send_to_channel_test_message(cfg, db):
     loc_man = LocalizationManager()
-    broadcaster = Broadcaster(bot, db)
+    broadcaster = Broadcaster(cfg, bot, db)
 
-    user_lang_map = telegram_chats_from_config(cfg, loc_man)
+    user_lang_map = broadcaster.telegram_chats_from_config(loc_man)
 
     fp = await fetch_fair_rune_price(LastPriceHolder())
 

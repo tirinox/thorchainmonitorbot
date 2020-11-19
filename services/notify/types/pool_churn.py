@@ -1,4 +1,5 @@
 import logging
+from copy import deepcopy
 from typing import Dict
 
 from localization import LocalizationManager, BaseLocalization
@@ -20,7 +21,7 @@ class PoolChurnNotifier(INotified):
         self.old_pool_dict = {}
 
     async def on_data(self, sender: PoolPriceFetcher, fair_price):
-        new_pool_dict = sender.price_holder.pool_info_map
+        new_pool_dict = sender.price_holder.pool_info_map.copy()
         if not new_pool_dict:
             self.logger.warning('pool_info_map not filled yet..')
             return

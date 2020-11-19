@@ -3,7 +3,7 @@ import random
 
 
 class ThorNodeAddressManager:
-    FALLBACK_THORCHAIN_IP = '3.131.115.233'
+    FALLBACK_THORCHAIN_IP = '54.234.193.102'
     THORCHAIN_SEED_URL = 'https://chaosnet-seed.thorchain.info/'  # all addresses
 
     @staticmethod
@@ -20,6 +20,7 @@ class ThorNodeAddressManager:
         self.session = session
 
     async def get_thorchain_nodes(self):
+        assert self.session
         async with self.session.get(self.THORCHAIN_SEED_URL) as resp:
             return await resp.json()
 
@@ -28,12 +29,17 @@ class ThorNodeAddressManager:
         self.logger.info(f'nodes loaded: {self.nodes_ip}')
         assert len(self.nodes_ip) > 1
 
+    @property
+    def active_nodes(self):
+        return set(self.nodes_ip) - self._black_list
+
     async def select_node(self):
-        nodes = set(self.nodes_ip) - self._black_list
+        nodes = self.active_nodes
 
         if not nodes or not self.nodes_ip or self._cnt >= self.reload_each_n_request:
             self._cnt = 0
             await self.reload_nodes_ip()
+            nodes = self.active_nodes
         else:
             self._cnt += 1
 

@@ -3,9 +3,9 @@ from services.models.price import RuneFairPrice, PriceReport
 from services.models.pool_info import PoolInfo
 from services.models.cap_info import ThorInfo
 from services.models.tx import StakeTx, short_asset_name, StakePoolStats
-from services.lib.utils import link, code, bold, pre, x_ses
+from services.lib.utils import link, code, bold, pre, x_ses, ital
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
-    emoji_for_percent_change
+    emoji_for_percent_change, short_money
 
 
 class EnglishLocalization(BaseLocalization):
@@ -67,15 +67,21 @@ class EnglishLocalization(BaseLocalization):
 
         total_usd_volume = tx.full_rune * dollar_per_rune if dollar_per_rune != 0 else 0.0
         pool_depth_usd = pool_info.usd_depth(dollar_per_rune)
-        info = link(f'https://viewblock.io/thorchain/address/{tx.address}', short_address(tx.address))
+        thor_tx = link(self.thor_explore_address(tx.address), short_address(tx.address))
+        bnb_tx = link(self.binance_explore_address(tx.address), short_address(tx.address))
 
         rp, ap = tx.symmetry_rune_vs_asset()
+
+        rune_side_usd = tx.rune_amount * dollar_per_rune
+        rune_side_usd_short = short_money(rune_side_usd)
+        asset_side_usd_short = short_money(total_usd_volume - rune_side_usd)
+
         msg += (
-            f"<b>{pretty_money(tx.rune_amount)} {self.R}</b> ({rp:.0f}%) ↔️ "
-            f"<b>{pretty_money(tx.asset_amount)} {short_asset_name(tx.pool)}</b> ({ap:.0f}%)\n"
+            f"<b>{pretty_money(tx.rune_amount)} {self.R}</b> ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
+            f"<b>{pretty_money(tx.asset_amount)} {short_asset_name(tx.pool)}</b> ({ap:.0f}% = {asset_side_usd_short})\n"
             f"Total: <code>${pretty_money(total_usd_volume)}</code>\n"
             f"Pool depth is <b>${pretty_money(pool_depth_usd)}</b> now.\n"
-            f"Explorer: {info}"
+            f"Thor explorer: {thor_tx} / Binance explorer: {bnb_tx}."
         )
 
         return msg
@@ -130,18 +136,18 @@ class EnglishLocalization(BaseLocalization):
     # ------- POOL CHURN -------
 
     def pool_churn_text(self, added_pools, removed_pools, changed_status_pools):
-        message = bold('🏊 Liquidity pools update!') + '\n\n'
+        message = bold('🏊 Liquidity pool churn!') + '\n\n'
 
         def pool_text(pool_name, status, to_status=None):
             t = link(self.pool_link(pool_name), pool_name)
-            extra = '' if to_status is None else f' → {to_status}'
-            return f'{t} ({status}{extra})'
+            extra = '' if to_status is None else f' → {ital(to_status)}'
+            return f'  • {t} ({ital(status)}{extra})'
 
         if added_pools:
-            message += 'Pools added: ' + ', '.join([pool_text(*a) for a in added_pools]) + '\n'
+            message += '✅ Pools added:\n' + '\n'.join([pool_text(*a) for a in added_pools]) + '\n\n'
         if removed_pools:
-            message += 'Pools removed: ' + ', '.join([pool_text(*a) for a in removed_pools]) + '\n'
+            message += '❌ Pools removed:\n' + '\n'.join([pool_text(*a) for a in removed_pools]) + '\n\n'
         if changed_status_pools:
-            message += 'Pools changed: ' + ', '.join([pool_text(*a) for a in changed_status_pools]) + '\n'
+            message += '🔄 Pools changed:\n' + '\n'.join([pool_text(*a) for a in changed_status_pools]) + '\n\n'
 
         return message.rstrip()

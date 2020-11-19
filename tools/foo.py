@@ -27,7 +27,7 @@ db = DB(loop)
 bot = Bot(token=cfg.telegram.bot.token, parse_mode=ParseMode.HTML)
 dp = Dispatcher(bot, loop=loop)
 loc_man = LocalizationManager()
-broadcaster = Broadcaster(bot, db)
+broadcaster = Broadcaster(cfg, bot, db)
 
 loop = asyncio.get_event_loop()
 lock = asyncio.Lock()
@@ -62,7 +62,7 @@ async def foo13():
 
 async def start_foos():
     await db.get_redis()
-    await foo13()
+    await foo12()
 
 
 if __name__ == '__main__':

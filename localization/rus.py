@@ -3,7 +3,7 @@ from services.models.price import RuneFairPrice, PriceReport
 from services.models.pool_info import PoolInfo
 from services.models.cap_info import ThorInfo
 from services.models.tx import StakeTx, short_asset_name, StakePoolStats
-from services.lib.utils import link, code, bold, pre, x_ses
+from services.lib.utils import link, code, bold, pre, x_ses, ital
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change
 
@@ -67,14 +67,15 @@ class RussianLocalization(BaseLocalization):
         rp, ap = tx.symmetry_rune_vs_asset()
         total_usd_volume = tx.full_rune * dollar_per_rune if dollar_per_rune != 0 else 0.0
         pool_depth_usd = pool_info.usd_depth(dollar_per_rune)
-        info = link(f'https://viewblock.io/thorchain/address/{tx.address}', short_address(tx.address))
+        thor_tx = link(self.thor_explore_address(tx.address), short_address(tx.address))
+        bnb_tx = link(self.binance_explore_address(tx.address), short_address(tx.address))
 
         return (
             f"<b>{pretty_money(tx.rune_amount)} {self.R}</b> ({rp:.0f}%) ↔️ "
             f"<b>{pretty_money(tx.asset_amount)} {short_asset_name(tx.pool)}</b> ({ap:.0f}%)\n"
             f"Всего: <code>${pretty_money(total_usd_volume)}</code>\n"
             f"Глубина пула сейчас: <b>${pretty_money(pool_depth_usd)}</b>.\n"
-            f"Смотреть: {info}"
+            f"Thor обозреватель: {thor_tx} / Binance обозреватель: {bnb_tx}."
         )
 
     # ------- QUEUE -------
@@ -133,14 +134,14 @@ class RussianLocalization(BaseLocalization):
 
         def pool_text(pool_name, status, to_status=None):
             t = link(self.pool_link(pool_name), pool_name)
-            extra = '' if to_status is None else f' → {statuses[to_status]}'
-            return f'{t} ({statuses[status]}{extra})'
+            extra = '' if to_status is None else f' → {ital(statuses[to_status])}'
+            return f'{t} ({ital(statuses[status])}{extra})'
 
         if added_pools:
-            message += 'Пулы добавлены: ' + ', '.join([pool_text(*a) for a in added_pools]) + '\n'
+            message += '✅ Пулы добавлены: ' + ', '.join([pool_text(*a) for a in added_pools]) + '\n'
         if removed_pools:
-            message += 'Пулы удалены: ' + ', '.join([pool_text(*a) for a in removed_pools]) + '\n'
+            message += '❌ Пулы удалены: ' + ', '.join([pool_text(*a) for a in removed_pools]) + '\n'
         if changed_status_pools:
-            message += 'Пулы изменились: ' + ', '.join([pool_text(*a) for a in changed_status_pools]) + '\n'
+            message += '🔄 Пулы изменились: ' + ', '.join([pool_text(*a) for a in changed_status_pools]) + '\n'
 
         return message.rstrip()
