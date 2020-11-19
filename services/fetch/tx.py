@@ -120,7 +120,7 @@ class StakeTxFetcher(BaseFetcher):
         for pool_name in updated_stats:
             pool_stat: StakePoolStats = self.pool_stat_map[pool_name]
             pool_info: PoolInfo = self.pool_info_map.get(pool_name)
-            pool_stat.usd_depth = pool_info.usd_depth(self.price_holder.rune_price_in_usd)
+            pool_stat.usd_depth = pool_info.usd_depth(self.price_holder.usd_per_rune)
             await pool_stat.write_time_series(self.db)
             await pool_stat.save(self.db)
 

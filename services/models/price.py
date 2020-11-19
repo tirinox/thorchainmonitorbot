@@ -5,6 +5,7 @@ from typing import Dict
 from services.models.base import BaseModelMixin
 from services.models.pool_info import PoolInfo
 from services.lib.utils import Singleton
+from services.models.time_series import BUSD_SYMBOL
 
 
 @dataclass
@@ -44,9 +45,11 @@ class PriceReport:
 
 class LastPriceHolder(metaclass=Singleton):
     def __init__(self):
-        self.rune_price_in_usd = 0.0
+        self.usd_per_rune = 0.0
         self.pool_info_map: Dict[str, PoolInfo] = {}
         self.last_update_ts = 0
 
-    def update(self):
+    def update(self, new_pool_info_map: Dict[str, PoolInfo]):
+        self.pool_info_map = new_pool_info_map.copy()
+        self.usd_per_rune = self.pool_info_map.get(BUSD_SYMBOL, PoolInfo.dummy()).asset_per_rune
         self.last_update_ts = time.time()

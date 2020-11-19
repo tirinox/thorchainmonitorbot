@@ -23,7 +23,7 @@ async def delphi_get_circulating_supply_and_price_of_rune(session):
     async with session.get(CIRCULATING_SUPPLY_URL) as resp:
         j = await resp.json()
         # rune_price_usd = float(j['priceUsd'])
-        rune_price_usd = LastPriceHolder().rune_price_in_usd
+        rune_price_usd = LastPriceHolder().usd_per_rune
         circulating = int(j['circulating'])
         return circulating, rune_price_usd
 

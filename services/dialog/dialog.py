@@ -36,7 +36,7 @@ def register_commands(cfg: Config, dp: Dispatcher, loc_man: LocalizationManager,
 
         pn = PriceNotifier(cfg, db, broadcaster, loc_man)
         price_1h, price_24h, price_7d = await pn.historical_get_triplet()
-        fp.real_rune_price = price_holder.rune_price_in_usd
+        fp.real_rune_price = price_holder.usd_per_rune
         price_text = loc.price_change(PriceReport(
             price_1h, price_24h, price_7d,
             fair_price=fp)

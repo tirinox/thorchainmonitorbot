@@ -28,11 +28,10 @@ class PoolPriceFetcher(BaseFetcher):
 
     async def fetch(self):
         await self.get_current_pool_data_full()
-        price = self.price_holder.rune_price_in_usd
+        price = self.price_holder.usd_per_rune
         self.logger.info(f'fresh rune price is ${price:.3f}')
 
         if price > 0:
-            self.price_holder.rune_price_in_usd = price
             pts = PriceTimeSeries(RUNE_SYMBOL, self.db)
             await pts.add(price=price)
 
@@ -82,8 +81,7 @@ class PoolPriceFetcher(BaseFetcher):
                 pool['asset']: PoolInfo.from_dict(pool) for pool in pools_info
             }
             if results and self.price_holder is not None:
-                self.price_holder.pool_info_map = results
-                self.price_holder.update()
+                self.price_holder.update(results)
             return results
 
     async def get_prices_of(self, asset_list):
