@@ -1,4 +1,4 @@
-from services.utils import short_money, pretty_money
+from services.lib.money import pretty_money, short_money
 
 
 def test_short_money():

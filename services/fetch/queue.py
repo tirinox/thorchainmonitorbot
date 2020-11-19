@@ -1,12 +1,12 @@
 import aiohttp
 from aiohttp import ClientSession
 
-from services.config import Config
-from services.db import DB
+from services.lib.config import Config
+from services.lib.db import DB
 from services.fetch.base import BaseFetcher, INotified
 from services.fetch.node_ip_manager import ThorNodeAddressManager
 from services.models.queue import QueueInfo
-from services.utils import parse_timespan_to_seconds
+from services.lib.datetime import parse_timespan_to_seconds
 
 
 class QueueFetcher(BaseFetcher):

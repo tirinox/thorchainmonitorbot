@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from services.db import DB
+from services.lib.db import DB
 from services.models.pool_info import MIDGARD_MULT
 from services.models.cap_info import BaseModelMixin
 from services.models.time_series import TimeSeries

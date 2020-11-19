@@ -4,8 +4,8 @@ from abc import ABC, abstractmethod
 
 from aiohttp import ClientSession
 
-from services.config import Config
-from services.db import DB
+from services.lib.config import Config
+from services.lib.db import DB
 
 
 class INotified(ABC):

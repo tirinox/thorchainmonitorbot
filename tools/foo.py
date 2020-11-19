@@ -6,13 +6,13 @@ from aiogram import Bot, Dispatcher
 from aiogram.types import ParseMode
 
 from localization import LocalizationManager
-from services.config import Config
-from services.db import DB
+from services.lib.config import Config
+from services.lib.db import DB
 from services.fetch.node_ip_manager import ThorNodeAddressManager
 from services.fetch.pool_price import PoolPriceFetcher
-from services.models.tx import StakePoolStats, StakeTx
+from services.models.tx import StakePoolStats
 from services.notify.broadcast import Broadcaster
-from services.utils import progressbar
+from services.lib.utils import progressbar
 
 cfg = Config()
 

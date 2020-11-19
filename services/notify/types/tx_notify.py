@@ -3,13 +3,13 @@ import time
 from typing import List
 
 from localization import LocalizationManager
-from services.config import Config
-from services.db import DB
+from services.lib.config import Config
+from services.lib.db import DB
 from services.fetch.base import INotified
 from services.fetch.tx import StakeTxFetcher
 from services.models.tx import StakeTx, StakePoolStats
 from services.notify.broadcast import Broadcaster, telegram_chats_from_config
-from services.utils import parse_timespan_to_seconds
+from services.lib.datetime import parse_timespan_to_seconds
 
 
 class StakeTxNotifier(INotified):

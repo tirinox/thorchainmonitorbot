@@ -1,9 +1,9 @@
 import logging
 
 from localization import LocalizationManager
-from services.config import Config
-from services.cooldown import CooldownTracker
-from services.db import DB
+from services.lib.config import Config
+from services.lib.cooldown import CooldownTracker
+from services.lib.db import DB
 from services.fetch.base import INotified
 from services.fetch.queue import QueueInfo
 from services.models.time_series import PriceTimeSeries

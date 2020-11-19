@@ -2,8 +2,8 @@ import asyncio
 
 import aiohttp
 
-from services.config import Config
-from services.db import DB
+from services.lib.config import Config
+from services.lib.db import DB
 from services.fetch.gecko_price import fill_rune_price_from_gecko
 from services.fetch.node_ip_manager import ThorNodeAddressManager
 from services.fetch.pool_price import PoolPriceFetcher

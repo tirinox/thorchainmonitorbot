@@ -2,7 +2,7 @@ import json
 import logging
 from dataclasses import dataclass
 
-from services.db import DB
+from services.lib.db import DB
 from services.models.base import BaseModelMixin
 
 

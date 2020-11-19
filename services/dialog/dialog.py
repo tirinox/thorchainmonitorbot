@@ -2,8 +2,8 @@ from aiogram import Dispatcher, filters
 from aiogram.types import *
 
 from localization import LocalizationManager
-from services.config import Config
-from services.db import DB
+from services.lib.config import Config
+from services.lib.db import DB
 from services.fetch.fair_price import fair_rune_price
 from services.models.cap_info import ThorInfo
 from services.models.price import PriceReport, LastPriceHolder

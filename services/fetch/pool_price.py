@@ -1,12 +1,12 @@
-from services.config import Config
-from services.db import DB
+from services.lib.config import Config
+from services.lib.db import DB
 from services.fetch.base import BaseFetcher, INotified
 from services.fetch.fair_price import fair_rune_price
 from services.fetch.node_ip_manager import ThorNodeAddressManager
 from services.models.pool_info import PoolInfo
 from services.models.price import LastPriceHolder
 from services.models.time_series import PriceTimeSeries, BUSD_SYMBOL, RUNE_SYMBOL, RUNE_SYMBOL_DET
-from services.utils import parse_timespan_to_seconds
+from services.lib.datetime import parse_timespan_to_seconds
 
 
 class PoolPriceFetcher(BaseFetcher):

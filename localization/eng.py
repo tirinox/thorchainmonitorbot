@@ -1,10 +1,11 @@
 from localization.base import BaseLocalization
 from services.models.price import RuneFairPrice, PriceReport
-from services.models.pool_info import PoolInfo, MIDGARD_MULT
+from services.models.pool_info import PoolInfo
 from services.models.cap_info import ThorInfo
 from services.models.tx import StakeTx, short_asset_name, StakePoolStats
-from services.utils import pretty_money, link, short_address, code, bold, calc_percent_change, adaptive_round_to_str, \
-    emoji_for_percent_change, pre, x_ses, pretty_dollar
+from services.lib.utils import link, code, bold, pre, x_ses
+from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
+    emoji_for_percent_change
 
 
 class EnglishLocalization(BaseLocalization):

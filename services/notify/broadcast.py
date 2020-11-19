@@ -8,8 +8,8 @@ from aiogram import Bot
 from aiogram.utils import exceptions
 
 from localization import LocalizationManager
-from services.config import Config
-from services.db import DB
+from services.lib.config import Config
+from services.lib.db import DB
 
 log = logging.getLogger('broadcast')
 

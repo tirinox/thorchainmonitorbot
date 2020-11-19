@@ -4,7 +4,7 @@ from typing import Dict
 
 from services.models.base import BaseModelMixin
 from services.models.pool_info import PoolInfo
-from services.utils import Singleton
+from services.lib.utils import Singleton
 
 
 @dataclass

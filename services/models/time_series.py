@@ -1,6 +1,6 @@
 import time
 
-from services.db import DB
+from services.lib.db import DB
 
 BNB_SYMBOL = 'BNB.BNB'
 BUSD_SYMBOL = 'BNB.BUSD-BD1'

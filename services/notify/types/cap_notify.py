@@ -1,8 +1,8 @@
 import logging
 
 from localization import LocalizationManager
-from services.config import Config
-from services.db import DB
+from services.lib.config import Config
+from services.lib.db import DB
 from services.fetch.base import INotified
 from services.models.cap_info import ThorInfo
 from services.notify.broadcast import Broadcaster, telegram_chats_from_config

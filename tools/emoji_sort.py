@@ -1,6 +1,6 @@
 import random
 
-from services.utils import emoji_for_percent_change
+from services.lib.money import emoji_for_percent_change
 
 
 def main():

@@ -5,12 +5,11 @@ from aiogram import Bot, Dispatcher
 from aiogram.types import ParseMode
 
 from localization import LocalizationManager, BaseLocalization
-from services.config import Config
-from services.db import DB
+from services.lib.config import Config
+from services.lib.db import DB
 from services.fetch.fair_price import fetch_fair_rune_price
-from services.models.price import PriceReport, RuneFairPrice
+from services.models.price import PriceReport
 from services.notify.broadcast import telegram_chats_from_config, Broadcaster
-from services.utils import x_ses
 
 
 async def send_to_channel_test_message(cfg, db):

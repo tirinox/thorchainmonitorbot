@@ -3,8 +3,9 @@ from services.models.price import RuneFairPrice, PriceReport
 from services.models.pool_info import PoolInfo
 from services.models.cap_info import ThorInfo
 from services.models.tx import StakeTx, short_asset_name, StakePoolStats
-from services.utils import pretty_money, link, short_address, code, bold, adaptive_round_to_str, calc_percent_change, \
-    pre, emoji_for_percent_change, x_ses, pretty_dollar
+from services.lib.utils import link, code, bold, pre, x_ses
+from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
+    emoji_for_percent_change
 
 
 class RussianLocalization(BaseLocalization):

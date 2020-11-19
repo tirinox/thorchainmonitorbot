@@ -6,7 +6,8 @@ from services.models.price import RuneFairPrice, PriceReport
 from services.models.pool_info import PoolInfo
 from services.models.cap_info import ThorInfo
 from services.models.tx import StakeTx, StakePoolStats
-from services.utils import format_percent, progressbar
+from services.lib.utils import progressbar
+from services.lib.money import format_percent
 
 
 class BaseLocalization(ABC):
