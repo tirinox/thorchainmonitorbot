@@ -1,4 +1,4 @@
-from services.fetch.base import BaseFetcher, INotified
+from services.fetch.base import BaseFetcher
 from services.fetch.fair_price import fair_rune_price
 from services.fetch.node_ip_manager import ThorNodeAddressManager
 from services.lib.config import Config
@@ -11,9 +11,9 @@ from services.models.time_series import PriceTimeSeries, BUSD_SYMBOL, RUNE_SYMBO
 
 class PoolPriceFetcher(BaseFetcher):
     def __init__(self, cfg: Config, db: DB, thor_man: ThorNodeAddressManager = ThorNodeAddressManager.shared(),
-                 session=None, delegate: INotified = None, holder: LastPriceHolder = None):
+                 session=None, holder: LastPriceHolder = None):
         period = parse_timespan_to_seconds(cfg.price.fetch_period)
-        super().__init__(cfg, db, session, delegate=delegate, sleep_period=period)
+        super().__init__(cfg, db, session, sleep_period=period)
         self.thor_man = thor_man
         self.session = session
         self.price_holder = holder

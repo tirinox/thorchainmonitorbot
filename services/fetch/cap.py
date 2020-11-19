@@ -1,23 +1,22 @@
 from aiohttp import ClientSession
 
-from services.lib.config import Config
-from services.lib.db import DB
-from services.fetch.base import BaseFetcher, INotified
+from services.fetch.base import BaseFetcher
 from services.fetch.pool_price import PoolPriceFetcher
+from services.lib.config import Config
+from services.lib.datetime import parse_timespan_to_seconds
+from services.lib.db import DB
 from services.models.cap_info import ThorInfo
 from services.models.pool_info import MIDGARD_MULT
-from services.lib.datetime import parse_timespan_to_seconds
 
 NETWORK_URL = "https://chaosnet-midgard.bepswap.com/v1/network"
 MIMIR_URL = "https://chaosnet-midgard.bepswap.com/v1/thorchain/mimir"
 
 
 class CapInfoFetcher(BaseFetcher):
-    def __init__(self, cfg: Config, db: DB, session: ClientSession, ppf: PoolPriceFetcher,
-                 delegate: INotified = None):
+    def __init__(self, cfg: Config, db: DB, session: ClientSession, ppf: PoolPriceFetcher):
         self.ppf = ppf
         sleep_period = parse_timespan_to_seconds(cfg.cap.fetch_period)
-        super().__init__(cfg, db, session, sleep_period, delegate)
+        super().__init__(cfg, db, session, sleep_period)
 
     async def fetch(self) -> ThorInfo:
         self.logger.info("start fetching caps and mimir")

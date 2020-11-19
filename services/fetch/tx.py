@@ -4,14 +4,14 @@ from typing import List
 import aiohttp
 from aiohttp import ClientSession
 
+from services.fetch.base import BaseFetcher
 from services.lib.config import Config
+from services.lib.datetime import parse_timespan_to_seconds
 from services.lib.db import DB
-from services.fetch.base import BaseFetcher, INotified
 from services.models.pool_info import PoolInfo
 from services.models.price import LastPriceHolder
 from services.models.time_series import BUSD_SYMBOL
 from services.models.tx import StakeTx, StakePoolStats
-from services.lib.datetime import parse_timespan_to_seconds
 
 TRANSACTION_URL = "https://chaosnet-midgard.bepswap.com/v1/txs?offset={offset}&limit={limit}&type=stake,unstake"
 
@@ -21,9 +21,8 @@ class StakeTxFetcher(BaseFetcher):
 
     def __init__(self, cfg: Config, db: DB,
                  session: ClientSession,
-                 price_holder: LastPriceHolder,
-                 delegate: INotified = None):
-        super().__init__(cfg, db, session, sleep_period=60, delegate=delegate)
+                 price_holder: LastPriceHolder):
+        super().__init__(cfg, db, session, sleep_period=60)
 
         self.pool_stat_map = {}
         self.pool_info_map = {}

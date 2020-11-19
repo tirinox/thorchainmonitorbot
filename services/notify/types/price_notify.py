@@ -130,10 +130,7 @@ class PriceNotifier(INotified):
 
         return False
 
-    async def on_data(self, fprice: RuneFairPrice):
+    async def on_data(self, sender, fprice: RuneFairPrice):
         # fprice.real_rune_price = 1.19  # debug!!!
         if not await self.handle_ath(fprice):
             await self.handle_new_price(fprice)
-
-    async def on_error(self, e):
-        return await super().on_error(e)

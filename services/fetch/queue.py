@@ -1,21 +1,20 @@
 import aiohttp
 from aiohttp import ClientSession
 
-from services.lib.config import Config
-from services.lib.db import DB
-from services.fetch.base import BaseFetcher, INotified
+from services.fetch.base import BaseFetcher
 from services.fetch.node_ip_manager import ThorNodeAddressManager
-from services.models.queue import QueueInfo
+from services.lib.config import Config
 from services.lib.datetime import parse_timespan_to_seconds
+from services.lib.db import DB
+from services.models.queue import QueueInfo
 
 
 class QueueFetcher(BaseFetcher):
     def __init__(self, cfg: Config, db: DB,
                  session: ClientSession,
-                 thor_man: ThorNodeAddressManager,
-                 delegate: INotified = None):
+                 thor_man: ThorNodeAddressManager):
         period = parse_timespan_to_seconds(cfg.queue.fetch_period)
-        super().__init__(cfg, db, session, period, delegate)
+        super().__init__(cfg, db, session, period)
         self.thor_man = thor_man
         self.last_node_ip = None
 

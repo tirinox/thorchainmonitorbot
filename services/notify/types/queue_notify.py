@@ -1,15 +1,16 @@
 import logging
 
 from localization import LocalizationManager
+from services.fetch.base import INotified
+from services.fetch.queue import QueueInfo
 from services.lib.config import Config
 from services.lib.cooldown import CooldownTracker
 from services.lib.db import DB
-from services.fetch.base import INotified
-from services.fetch.queue import QueueInfo
 from services.models.time_series import PriceTimeSeries
 from services.notify.broadcast import Broadcaster, telegram_chats_from_config
 
 QUEUE_STREAM = 'QUEUE'
+
 
 class QueueNotifier(INotified):
     def __init__(self, cfg: Config, db: DB, broadcaster: Broadcaster, loc_man: LocalizationManager):
@@ -34,7 +35,8 @@ class QueueNotifier(INotified):
         await self.broadcaster.broadcast(user_lang_map.keys(), message_gen)
 
     async def handle_entry(self, item_type, value):
-        key_gen = lambda s: f'q:{item_type}:{s}'
+        def key_gen(s):
+            return f'q:{item_type}:{s}'
 
         k_free = key_gen('free')
         k_packed = key_gen('packed')
@@ -54,7 +56,7 @@ class QueueNotifier(INotified):
                 await cdt.do(k_free)
                 await self.notify(item_type, 0, 0)
 
-    async def on_data(self, data: QueueInfo):
+    async def on_data(self, sender, data: QueueInfo):
         self.logger.info(f"got queue: {data}")
         await self.time_series.add(swap=data.swap, outbound=data.outbound)
         await self.handle_entry('swap', data.swap)

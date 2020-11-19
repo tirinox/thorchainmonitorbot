@@ -16,7 +16,7 @@ class CapFetcherNotifier(INotified):
         self.cfg = cfg
         self.db = db
 
-    async def on_data(self, data):
+    async def on_data(self, sender, data):
         new_info: ThorInfo = data
         if not new_info.is_ok:
             self.logger.warning('no info got!')

@@ -57,32 +57,26 @@ class App:
             await fill_rune_price_from_gecko(self.db)
 
         async with aiohttp.ClientSession() as session:
-            self.thor_man.session = session
-            await self.thor_man.reload_nodes_ip()
+            cfg, db, loc_man, thor_man = self.cfg, self.db, self.loc_man, self.thor_man
+            price_holder, broadcaster = self.price_holder, self.broadcaster
 
-            notifier_cap = CapFetcherNotifier(self.cfg, self.db, self.broadcaster, self.loc_man)
-            notifier_tx = StakeTxNotifier(self.cfg, self.db, self.broadcaster, self.loc_man, None)
-            notifier_queue = QueueNotifier(self.cfg, self.db, self.broadcaster, self.loc_man)
-            notifier_price = PriceNotifier(self.cfg, self.db, self.broadcaster, self.loc_man)
+            thor_man.session = session
+            await thor_man.reload_nodes_ip()
 
-            self.ppf = PoolPriceFetcher(self.cfg, self.db, self.thor_man, session,
-                                        delegate=notifier_price,
-                                        holder=self.price_holder)
-            await self.ppf.get_current_pool_data_full()  # fill price holder before doing other fetch ops!
+            self.ppf = PoolPriceFetcher(cfg, db, thor_man, session, holder=price_holder)
+            fetcher_cap = CapInfoFetcher(cfg, db, session, ppf=self.ppf)
+            fetcher_tx = StakeTxFetcher(cfg, db, session, price_holder=price_holder)
+            fetcher_queue = QueueFetcher(cfg, db, session, thor_man=thor_man)
 
-            fetcher_cap = CapInfoFetcher(self.cfg, self.db, session,
-                                         ppf=self.ppf,
-                                         delegate=notifier_cap)
+            notifier_cap = CapFetcherNotifier(cfg, db, broadcaster, loc_man)
+            notifier_tx = StakeTxNotifier(cfg, db, broadcaster, loc_man)
+            notifier_queue = QueueNotifier(cfg, db, broadcaster, loc_man)
+            notifier_price = PriceNotifier(cfg, db, broadcaster, loc_man)
 
-            fetcher_tx = StakeTxFetcher(self.cfg, self.db, session,
-                                        price_holder=self.price_holder,
-                                        delegate=notifier_tx)
-
-            fetcher_queue = QueueFetcher(self.cfg, self.db, session,
-                                         thor_man=self.thor_man,
-                                         delegate=notifier_queue)
-
-            notifier_tx.fetcher = fetcher_tx  # fixme: back link
+            fetcher_cap.subscribe(notifier_cap)
+            fetcher_tx.subscribe(notifier_tx)
+            fetcher_queue.subscribe(notifier_queue)
+            self.ppf.subscribe(notifier_price)
 
             await asyncio.gather(*(task.run() for task in [
                 self.ppf,

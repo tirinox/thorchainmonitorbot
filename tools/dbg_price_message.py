@@ -8,7 +8,7 @@ from localization import LocalizationManager, BaseLocalization
 from services.lib.config import Config
 from services.lib.db import DB
 from services.fetch.fair_price import fetch_fair_rune_price
-from services.models.price import PriceReport
+from services.models.price import PriceReport, LastPriceHolder
 from services.notify.broadcast import telegram_chats_from_config, Broadcaster
 
 
@@ -18,7 +18,7 @@ async def send_to_channel_test_message(cfg, db):
 
     user_lang_map = telegram_chats_from_config(cfg, loc_man)
 
-    fp = await fetch_fair_rune_price()
+    fp = await fetch_fair_rune_price(LastPriceHolder())
 
     async def message_gen(chat_id):
         loc: BaseLocalization = user_lang_map[chat_id]
