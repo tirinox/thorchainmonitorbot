@@ -99,11 +99,11 @@ class EnglishLocalization(BaseLocalization):
         c_gecko_url = 'https://www.coingecko.com/en/coins/thorchain'
         c_gecko_link = link(c_gecko_url, 'RUNE')
 
-        message = f"{title} | {c_gecko_link}\n"
+        message = f"{title} | {c_gecko_link}\n\n"
         price = p.fair_price.real_rune_price
 
-        pr_text = pretty_dollar(price)
-        message += f"RUNE price is {code(pr_text)} now.\n"
+        pr_text = f"${price:.2f}"
+        message += f"<b>RUNE</b> price is {code(pr_text)} now.\n"
 
         time_combos = zip(
             ('1h', '24h', '7d'),

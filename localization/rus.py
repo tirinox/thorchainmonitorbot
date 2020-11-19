@@ -94,11 +94,11 @@ class RussianLocalization(BaseLocalization):
                       '%D0%9A%D1%80%D0%B8%D0%BF%D1%82%D0%BE%D0%B2%D0%B0%D0%BB%D1%8E%D1%82%D1%8B/thorchain'
         c_gecko_link = link(c_gecko_url, 'RUNE')
 
-        message = f"{title} | {c_gecko_link}\n"
+        message = f"{title} | {c_gecko_link}\n\n"
         price = p.fair_price.real_rune_price
 
-        pr_text = pretty_dollar(price)
-        message += f"Цена RUNE сейчас {code(pr_text)}\n"
+        pr_text = f"${price:.2f}"
+        message += f"Цена <b>RUNE</b> сейчас {code(pr_text)}.\n"
 
         time_combos = zip(
             ('1ч.', '24ч.', '7дн.'),
