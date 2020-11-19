@@ -1,13 +1,13 @@
 import logging
 
-from localization import LocalizationManager
+from localization import LocalizationManager, BaseLocalization
 from services.fetch.base import INotified
 from services.fetch.queue import QueueInfo
 from services.lib.config import Config
 from services.lib.cooldown import CooldownTracker
 from services.lib.db import DB
 from services.models.time_series import PriceTimeSeries
-from services.notify.broadcast import Broadcaster, telegram_chats_from_config
+from services.notify.broadcast import Broadcaster
 
 QUEUE_STREAM = 'QUEUE'
 
@@ -27,12 +27,9 @@ class QueueNotifier(INotified):
         self.time_series = PriceTimeSeries(QUEUE_STREAM, db)
 
     async def notify(self, item_type, step, value):
-        user_lang_map = telegram_chats_from_config(self.cfg, self.loc_man)
-
-        async def message_gen(chat_id):
-            return user_lang_map[chat_id].queue_update(item_type, step, value)
-
-        await self.broadcaster.broadcast(user_lang_map.keys(), message_gen)
+        await self.broadcaster.notify_preconfigured_channels(self.loc_man,
+                                                             BaseLocalization.queue_update,
+                                                             item_type, step, value)
 
     async def handle_entry(self, item_type, value):
         def key_gen(s):

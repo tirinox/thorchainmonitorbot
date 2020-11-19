@@ -12,7 +12,7 @@ class RussianLocalization(BaseLocalization):
     # ---- WELCOME ----
     def help(self):
         return (
-            f"Этот бот уведомляет о крупных движениях с сети {link('https://thorchain.org/', 'THORChain')}.\n"
+            f"Этот бот уведомляет о крупных движениях с сети {link(self.THORCHAIN_LINK, 'THORChain')}.\n"
             f"Команды:\n"
             f"/help – эта помощь\n"
             f"/start – запуск и установка языка\n"
@@ -118,5 +118,29 @@ class RussianLocalization(BaseLocalization):
             message += (f"TLV (кроме RUNE): ${pre(pretty_money(fp.tlv_usd))}\n"
                         f"Детерминистическая цена руны: ${code(pretty_money(fp.fair_price))}\n"
                         f"Спекулятивый множитель: {pre(x_ses(fp.fair_price, price))}\n")
+
+        return message.rstrip()
+
+    # ------- POOL CHURN -------
+
+    def pool_churn_text(self, added_pools, removed_pools, changed_status_pools):
+        message = bold('🏊 Изменения в пулах ликвидности:') + '\n\n'
+
+        statuses = {
+            'Enabled': 'включен',
+            'Bootstrap': 'загружается'
+        }
+
+        def pool_text(pool_name, status, to_status=None):
+            t = link(self.pool_link(pool_name), pool_name)
+            extra = '' if to_status is None else f' → {statuses[to_status]}'
+            return f'{t} ({statuses[status]}{extra})'
+
+        if added_pools:
+            message += 'Пулы добавлены: ' + ', '.join([pool_text(*a) for a in added_pools]) + '\n'
+        if removed_pools:
+            message += 'Пулы удалены: ' + ', '.join([pool_text(*a) for a in removed_pools]) + '\n'
+        if changed_status_pools:
+            message += 'Пулы изменились: ' + ', '.join([pool_text(*a) for a in changed_status_pools]) + '\n'
 
         return message.rstrip()

@@ -43,7 +43,7 @@ class App:
         self.bot = Bot(token=self.cfg.telegram.bot.token, parse_mode=ParseMode.HTML)
         self.dp = Dispatcher(self.bot, loop=self.loop)
         self.loc_man = LocalizationManager()
-        self.broadcaster = Broadcaster(self.bot, self.db)
+        self.broadcaster = Broadcaster(self.cfg, self.bot, self.db)
         self.price_holder = LastPriceHolder()
 
         self.thor_man = ThorNodeAddressManager.shared()

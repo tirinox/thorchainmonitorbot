@@ -11,24 +11,32 @@ from localization import LocalizationManager
 from services.lib.config import Config
 from services.lib.db import DB
 
-log = logging.getLogger('broadcast')
-
-
-def telegram_chats_from_config(cfg: Config, loc_man: LocalizationManager):
-    channels = cfg.telegram.channels
-    return {
-        chan['name']: loc_man.get_from_lang(chan['lang']) for chan in channels if chan['type'] == 'telegram'
-    }
-
 
 class Broadcaster:
     KEY_USERS = 'thbot_users'
 
-    def __init__(self, bot: Bot, db: DB):
+    def __init__(self, cfg: Config, bot: Bot, db: DB):
         self.bot = bot
+        self.cfg = cfg
         self._broadcast_lock = asyncio.Lock()
         self._rng = random.Random(time.time())
         self.db = db
+        self.logger = logging.getLogger('broadcast')
+
+    def telegram_chats_from_config(self, loc_man: LocalizationManager):
+        channels = self.cfg.telegram.channels
+        return {
+            chan['name']: loc_man.get_from_lang(chan['lang']) for chan in channels if chan['type'] == 'telegram'
+        }
+
+    async def notify_preconfigured_channels(self, loc_man: LocalizationManager, f, *args, **kwargs):
+        user_lang_map = self.telegram_chats_from_config(loc_man)
+
+        async def message_gen(chat_id):
+            locale = user_lang_map[chat_id]
+            return getattr(locale, f.__name__)(*args, **kwargs)
+
+        await self.broadcast(user_lang_map.keys(), message_gen)
 
     async def _send_message(self, chat_id, text, message_type='text', *args, **kwargs) -> bool:
         """
@@ -45,20 +53,20 @@ class Broadcaster:
                 del kwargs['disable_web_page_preview']
                 await self.bot.send_sticker(chat_id, sticker=text, *args, **kwargs)
         except exceptions.BotBlocked:
-            log.error(f"Target [ID:{chat_id}]: blocked by user")
+            self.logger.error(f"Target [ID:{chat_id}]: blocked by user")
         except exceptions.ChatNotFound:
-            log.error(f"Target [ID:{chat_id}]: invalid user ID")
+            self.logger.error(f"Target [ID:{chat_id}]: invalid user ID")
         except exceptions.RetryAfter as e:
-            log.error(f"Target [ID:{chat_id}]: Flood limit is exceeded. Sleep {e.timeout} seconds.")
+            self.logger.error(f"Target [ID:{chat_id}]: Flood limit is exceeded. Sleep {e.timeout} seconds.")
             await asyncio.sleep(e.timeout + 0.1)
             return await self._send_message(chat_id, text, message_type=message_type, *args, **kwargs)  # Recursive call
         except exceptions.UserDeactivated:
-            log.error(f"Target [ID:{chat_id}]: user is deactivated")
+            self.logger.error(f"Target [ID:{chat_id}]: user is deactivated")
         except exceptions.TelegramAPIError:
-            log.exception(f"Target [ID:{chat_id}]: failed")
+            self.logger.exception(f"Target [ID:{chat_id}]: failed")
             return True  # tg error is not the reason to exlude the user
         else:
-            log.info(f"Target [ID:{chat_id}]: success")
+            self.logger.info(f"Target [ID:{chat_id}]: success")
             return True
         return False
 
@@ -108,7 +116,7 @@ class Broadcaster:
 
                 await self.remove_users(bad_ones)
             finally:
-                log.info(f"{count} messages successful sent (of {len(chat_ids)})")
+                self.logger.info(f"{count} messages successful sent (of {len(chat_ids)})")
 
             return count
 

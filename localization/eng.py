@@ -12,7 +12,7 @@ class EnglishLocalization(BaseLocalization):
     # ---- WELCOME ----
     def help(self):
         return (
-            f"This bot is for {link('https://thorchain.org/', 'THORChain')} monitoring.\n"
+            f"This bot is for {link(self.THORCHAIN_LINK, 'THORChain')} monitoring.\n"
             f"Command list:\n"
             f"/help – this help page\n"
             f"/start – start and set your language\n"
@@ -120,9 +120,28 @@ class EnglishLocalization(BaseLocalization):
             message += f"Coin market cap is {bold(pretty_dollar(fp.market_cap))} (#{bold(fp.rank)})\n"
 
         if fp.tlv_usd >= 1:
-            det_link = link('https://docs.thorchain.org/how-it-works/incentive-pendulum', 'deterministic price')
+            det_link = link(self.DET_PRICE_HELP_PAGE, 'deterministic price')
             message += (f"TVL of non-RUNE assets: ${pre(pretty_money(fp.tlv_usd))}\n"
                         f"So {det_link} of RUNE is {code(pretty_money(fp.fair_price, prefix='$'))}\n"
                         f"Speculative multiplier is {pre(x_ses(fp.fair_price, price))}\n")
+
+        return message.rstrip()
+
+    # ------- POOL CHURN -------
+
+    def pool_churn_text(self, added_pools, removed_pools, changed_status_pools):
+        message = bold('🏊 Liquidity pools update!') + '\n\n'
+
+        def pool_text(pool_name, status, to_status=None):
+            t = link(self.pool_link(pool_name), pool_name)
+            extra = '' if to_status is None else f' → {to_status}'
+            return f'{t} ({status}{extra})'
+
+        if added_pools:
+            message += 'Pools added: ' + ', '.join([pool_text(*a) for a in added_pools]) + '\n'
+        if removed_pools:
+            message += 'Pools removed: ' + ', '.join([pool_text(*a) for a in removed_pools]) + '\n'
+        if changed_status_pools:
+            message += 'Pools changed: ' + ', '.join([pool_text(*a) for a in changed_status_pools]) + '\n'
 
         return message.rstrip()

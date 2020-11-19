@@ -12,7 +12,7 @@ from services.lib.db import DB
 from services.lib.money import pretty_money, calc_percent_change
 from services.models.price import RuneFairPrice, PriceReport, PriceATH
 from services.models.time_series import PriceTimeSeries, RUNE_SYMBOL
-from services.notify.broadcast import Broadcaster, telegram_chats_from_config
+from services.notify.broadcast import Broadcaster
 
 
 class PriceNotifier(INotified):
@@ -31,7 +31,7 @@ class PriceNotifier(INotified):
         self.ath_cooldown = parse_timespan_to_seconds(cfg.price.ath.cooldown)
 
     async def on_data(self, sender, fprice: RuneFairPrice):
-        # fprice.real_rune_price = 1.435  # debug!!!
+        # fprice.real_rune_price = 1.465  # debug!!!
         if not await self.handle_ath(fprice):
             await self.handle_new_price(fprice)
 
@@ -55,21 +55,17 @@ class PriceNotifier(INotified):
         if not self.ath_stickers:
             return
         sticker = random.choice(self.ath_stickers)
-        user_lang_map = telegram_chats_from_config(self.cfg, self.loc_man)
+        user_lang_map = self.broadcaster.telegram_chats_from_config(self.loc_man)
         await self.broadcaster.broadcast(user_lang_map.keys(), sticker, message_type='sticker')
 
     async def do_notify_price_table(self, fair_price, hist_prices, ath):
         await self.cd.do(self.CD_KEY_PRICE_NOTIFIED)
 
-        user_lang_map = telegram_chats_from_config(self.cfg, self.loc_man)
+        report = PriceReport(*hist_prices, fair_price)
+        await self.broadcaster.notify_preconfigured_channels(self.loc_man,
+                                                             BaseLocalization.price_change,
+                                                             report, ath=ath)
 
-        async def message_gen(chat_id):
-            loc: BaseLocalization = user_lang_map[chat_id]
-            return loc.price_change(PriceReport(
-                *hist_prices, fair_price
-            ), ath=ath)
-
-        await self.broadcaster.broadcast(user_lang_map.keys(), message_gen)
         if ath:
             await self.send_ath_sticker()
 

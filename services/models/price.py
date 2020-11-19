@@ -53,3 +53,7 @@ class LastPriceHolder(metaclass=Singleton):
         self.pool_info_map = new_pool_info_map.copy()
         self.usd_per_rune = self.pool_info_map.get(BUSD_SYMBOL, PoolInfo.dummy()).asset_per_rune
         self.last_update_ts = time.time()
+
+    @property
+    def pool_names(self):
+        return set(self.pool_info_map.keys())

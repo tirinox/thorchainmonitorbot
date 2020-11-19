@@ -9,7 +9,7 @@ from services.lib.config import Config
 from services.lib.datetime import parse_timespan_to_seconds
 from services.lib.db import DB
 from services.models.tx import StakeTx, StakePoolStats
-from services.notify.broadcast import Broadcaster, telegram_chats_from_config
+from services.notify.broadcast import Broadcaster
 
 
 class StakeTxNotifier(INotified):
@@ -42,7 +42,7 @@ class StakeTxNotifier(INotified):
         self.logger.info(f"large_txs: {len(large_txs)}")
 
         if large_txs:
-            user_lang_map = telegram_chats_from_config(self.cfg, self.loc_man)
+            user_lang_map = self.broadcaster.telegram_chats_from_config(self.loc_man)
 
             async def message_gen(chat_id):
                 loc = user_lang_map[chat_id]

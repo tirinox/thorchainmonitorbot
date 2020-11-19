@@ -1,11 +1,11 @@
 import logging
 
-from localization import LocalizationManager
+from localization import LocalizationManager, BaseLocalization
 from services.lib.config import Config
 from services.lib.db import DB
 from services.fetch.base import INotified
 from services.models.cap_info import ThorInfo
-from services.notify.broadcast import Broadcaster, telegram_chats_from_config
+from services.notify.broadcast import Broadcaster
 
 
 class CapFetcherNotifier(INotified):
@@ -33,9 +33,6 @@ class CapFetcherNotifier(INotified):
                 await self._notify_when_cap_changed(old_info, new_info)
 
     async def _notify_when_cap_changed(self, old: ThorInfo, new: ThorInfo):
-        user_lang_map = telegram_chats_from_config(self.cfg, self.loc_man)
-
-        async def message_gen(chat_id):
-            return user_lang_map[chat_id].notification_cap_change_text(old, new)
-
-        await self.broadcaster.broadcast(user_lang_map.keys(), message_gen)
+        await self.broadcaster.notify_preconfigured_channels(self.loc_man,
+                                                             BaseLocalization.notification_cap_change_text,
+                                                             old, new)

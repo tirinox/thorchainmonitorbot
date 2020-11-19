@@ -28,7 +28,7 @@ class CapInfoFetcher(BaseFetcher):
             mimir_resp = await resp.json()
             max_staked = int(mimir_resp.get("mimir//MAXIMUMSTAKERUNE", 1)) * MIDGARD_MULT
 
-            # max_staked = 900015  # for testing
+            # max_staked = 90_000_015  # for testing
 
         if max_staked <= 1:
             self.logger.error(f"max_staked = {max_staked} and total_staked = {total_staked} which seems like an error")
