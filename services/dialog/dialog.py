@@ -6,13 +6,13 @@ from services.config import Config
 from services.db import DB
 from services.fetch.fair_price import fair_rune_price
 from services.models.cap_info import ThorInfo
-from services.models.price import PriceReport, LastPrice
+from services.models.price import PriceReport, LastPriceHolder
 from services.notify.broadcast import Broadcaster
 from services.notify.types.price_notify import PriceNotifier
 
 
 def register_commands(cfg: Config, dp: Dispatcher, loc_man: LocalizationManager, db: DB, broadcaster: Broadcaster,
-                      price_holder: LastPrice):
+                      price_holder: LastPriceHolder):
     @dp.message_handler(commands=['start'])
     async def on_start(message: Message):
         text, kb = loc_man.default.lang_help()

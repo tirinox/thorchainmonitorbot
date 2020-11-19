@@ -130,14 +130,34 @@ def pretty_dollar(x):
 
 def pretty_money(x, prefix=''):
     if x < 0:
-        return f"{prefix}-{pretty_money(-x)}"
+        return f"-{prefix}{pretty_money(-x)}"
     elif x == 0:
-        return f"{prefix}0.0"
+        r = "0.0"
     else:
         if x < 100:
-            return prefix + str(round_to_dig(x, 2))
+            r = str(round_to_dig(x, 2))
         else:
-            return prefix + number_commas(int(round(x)))
+            r = number_commas(int(round(x)))
+    return prefix + r
+
+
+def short_money(x, prefix='$'):
+    if x < 0:
+        return f"-{prefix}{short_money(-x, prefix='')}"
+    elif x == 0:
+        r = '0.0'
+    elif x < 1_000:
+        r = f'{x:.1f}'
+    elif x < 1_000_000:
+        x /= 1_000
+        r = f'{x:.1f}K'
+    elif x < 1_000_000_000:
+        x /= 1_000_000
+        r = f'{x:.1f}M'
+    else:
+        x /= 1_000_000_000
+        r = f'{x:.1f}B'
+    return prefix + r
 
 
 def bold(text):

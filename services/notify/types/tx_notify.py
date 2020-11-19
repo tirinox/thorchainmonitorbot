@@ -33,7 +33,7 @@ class StakeTxNotifier(INotified):
     async def on_data(self, txs: List[StakeTx]):
         new_txs = self._filter_by_age(txs)
 
-        usd_per_rune = self.fetcher.usd_per_rune
+        usd_per_rune = self.fetcher.price_holder.rune_price_in_usd
         min_rune_volume = self.min_usd_total / usd_per_rune
 
         large_txs = self._filter_large_txs(new_txs, self.threshold_mult, min_rune_volume)

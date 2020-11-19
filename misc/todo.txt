@@ -6,7 +6,9 @@ queue of messages -> forever loop with "anti-spam" delays
 
 3) ATH tracker
 
-5) Announce new pools!
+Todo: how much time ago was last ATH?
+
+5) Announce new pools! (WIP)
 
 7) ToDo: integrate with runestake.info
 
@@ -24,13 +26,15 @@ I'm happy to throw you and Bigboss a bounty if you want to work together. Imagin
 
 and later even dynamically generated charts. the more you guys work together the more value delivered
 
+9) Add favorite BNB adresses - monitor in/out tx
+
 8) Not sure. There are detailed amounts in the Treasury Reports each month (like https://medium.com/thorchain/monthly-treasury-report-september-74b13c27aa7f). Cant find any adresses this quick tho. Will have to dig deeper.
 
 the address that adds the reserve is
 
 bnb1axqc2gan462z6npw3c33srp4950mr5x28uc6wu
 
-9) Add favorite BNB adresses - monitor in/out tx, pool performance ...
+
 
 10) Use aiogram state machine
 

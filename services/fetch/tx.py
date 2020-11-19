@@ -7,9 +7,9 @@ from aiohttp import ClientSession
 from services.config import Config
 from services.db import DB
 from services.fetch.base import BaseFetcher, INotified
-from services.fetch.pool_price import PoolPriceFetcher
-from services.models.time_series import BUSD_SYMBOL
 from services.models.pool_info import PoolInfo
+from services.models.price import LastPriceHolder
+from services.models.time_series import BUSD_SYMBOL
 from services.models.tx import StakeTx, StakePoolStats
 from services.utils import parse_timespan_to_seconds
 
@@ -19,7 +19,10 @@ TRANSACTION_URL = "https://chaosnet-midgard.bepswap.com/v1/txs?offset={offset}&l
 class StakeTxFetcher(BaseFetcher):
     MAX_PAGE_DEEP = 10
 
-    def __init__(self, cfg: Config, db: DB, session: ClientSession, ppf: PoolPriceFetcher, delegate: INotified = None):
+    def __init__(self, cfg: Config, db: DB,
+                 session: ClientSession,
+                 price_holder: LastPriceHolder,
+                 delegate: INotified = None):
         super().__init__(cfg, db, session, sleep_period=60, delegate=delegate)
 
         self.pool_stat_map = {}
@@ -27,16 +30,12 @@ class StakeTxFetcher(BaseFetcher):
 
         scfg = cfg.tx.stake_unstake
         self.avg_n = int(scfg.avg_n)
-        self.ppf = ppf
+        self.price_holder = price_holder
         self.sleep_period = parse_timespan_to_seconds(scfg.fetch_period)
         self.tx_per_batch = int(scfg.tx_per_batch)
         self.max_page_deep = int(scfg.max_page_deep)
 
         self.logger.info(f"cfg.tx.stake_unstake: {scfg}")
-
-    @property
-    def usd_per_rune(self):
-        return self.pool_info_map.get(BUSD_SYMBOL, PoolInfo.dummy()).price
 
     async def fetch(self):
         async with aiohttp.ClientSession() as self.session:
@@ -121,7 +120,7 @@ class StakeTxFetcher(BaseFetcher):
         for pool_name in updated_stats:
             pool_stat: StakePoolStats = self.pool_stat_map[pool_name]
             pool_info: PoolInfo = self.pool_info_map.get(pool_name)
-            pool_stat.usd_depth = pool_info.usd_depth(self.usd_per_rune)
+            pool_stat.usd_depth = pool_info.usd_depth(self.price_holder.rune_price_in_usd)
             await pool_stat.write_time_series(self.db)
             await pool_stat.save(self.db)
 
@@ -130,9 +129,12 @@ class StakeTxFetcher(BaseFetcher):
         return result_txs
 
     async def _load_stats(self, txs):
+        self.pool_info_map = self.price_holder.pool_info_map
+        if not self.pool_info_map:
+            raise LookupError("pool_info_map is not loaded into the price holder!")
+
         pool_names = StakeTx.collect_pools(txs)
         pool_names.add(BUSD_SYMBOL)  # don't forget BUSD, for total usd volume!
-        self.pool_info_map = await self.ppf.get_current_pool_data_full()
         self.pool_stat_map = {
             pool: (await StakePoolStats.get_from_db(pool, self.db)) for pool in pool_names
         }

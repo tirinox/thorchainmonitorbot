@@ -5,7 +5,7 @@ import aiohttp
 
 from services.fetch.gecko_price import gecko_info
 from services.models.pool_info import MIDGARD_MULT, PoolInfo
-from services.models.price import RuneFairPrice, LastPrice
+from services.models.price import RuneFairPrice, LastPriceHolder
 from services.utils import a_result_cached
 
 CIRCULATING_SUPPLY_URL = "https://defi.delphidigital.io/chaosnet/int/marketdata"
@@ -23,11 +23,12 @@ async def delphi_get_circulating_supply_and_price_of_rune(session):
     async with session.get(CIRCULATING_SUPPLY_URL) as resp:
         j = await resp.json()
         # rune_price_usd = float(j['priceUsd'])
-        rune_price_usd = LastPrice().rune_price_in_usd
+        rune_price_usd = LastPriceHolder().rune_price_in_usd
         circulating = int(j['circulating'])
         return circulating, rune_price_usd
 
 
+# fixme: use thorchain's pool info!
 async def delphi_pool_info(session):
     async with session.get(POOL_LIST_URL) as resp:
         j = await resp.json()

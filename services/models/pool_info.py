@@ -6,16 +6,31 @@ MIDGARD_MULT = 10 ** -8
 @dataclass
 class PoolInfo:
     asset: str
-    price: float  # runes per 1 asset
+    price: float  # assets per 1 rune
 
     balance_asset: int
     balance_rune: int
 
-    enabled: bool
+    status: str
+
+    BOOTSTRAP = 'Bootstrap'
+    ENABLED = 'Enabled'
 
     @classmethod
     def dummy(cls):
-        return cls('', 1, 1, 1, False)
+        return cls('', 1, 1, 1, cls.BOOTSTRAP)
+
+    @property
+    def asset_per_rune(self):
+        return self.balance_asset / self.balance_rune
+
+    @property
+    def runes_per_asset(self):
+        return self.balance_rune / self.balance_asset
+
+    @property
+    def is_enabled(self):
+        return self.status == self.ENABLED
 
     def usd_depth(self, dollar_per_rune):
         pool_depth_usd = self.balance_rune * MIDGARD_MULT * dollar_per_rune
@@ -29,11 +44,13 @@ class PoolInfo:
                    price=(balance_asset / balance_rune),
                    balance_asset=balance_asset,
                    balance_rune=balance_rune,
-                   enabled=(j['status'] == 'Enabled'))
+                   status=j['status'])
 
     @property
     def to_dict(self):
         return {
             'balance_asset': self.balance_asset,
-            'balance_rune': self.balance_rune
+            'balance_rune': self.balance_rune,
+            'asset': self.asset,
+            'status': self.status
         }

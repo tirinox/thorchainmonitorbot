@@ -16,7 +16,7 @@ from services.fetch.node_ip_manager import ThorNodeAddressManager
 from services.fetch.pool_price import PoolPriceFetcher
 from services.fetch.queue import QueueFetcher
 from services.fetch.tx import StakeTxFetcher
-from services.models.price import LastPrice
+from services.models.price import LastPriceHolder
 from services.notify.broadcast import Broadcaster
 from services.notify.types.cap_notify import CapFetcherNotifier
 from services.notify.types.price_notify import PriceNotifier
@@ -43,7 +43,7 @@ class App:
         self.dp = Dispatcher(self.bot, loop=self.loop)
         self.loc_man = LocalizationManager()
         self.broadcaster = Broadcaster(self.bot, self.db)
-        self.price_holder = LastPrice()
+        self.price_holder = LastPriceHolder()
 
         self.thor_man = ThorNodeAddressManager.shared()
 
@@ -65,11 +65,22 @@ class App:
             notifier_queue = QueueNotifier(self.cfg, self.db, self.broadcaster, self.loc_man)
             notifier_price = PriceNotifier(self.cfg, self.db, self.broadcaster, self.loc_man)
 
-            self.ppf = PoolPriceFetcher(self.cfg, self.db, self.thor_man, session, delegate=notifier_price,
+            self.ppf = PoolPriceFetcher(self.cfg, self.db, self.thor_man, session,
+                                        delegate=notifier_price,
                                         holder=self.price_holder)
-            fetcher_cap = CapInfoFetcher(self.cfg, self.db, session, ppf=self.ppf, delegate=notifier_cap)
-            fetcher_tx = StakeTxFetcher(self.cfg, self.db, session, delegate=notifier_tx, ppf=self.ppf)
-            fetcher_queue = QueueFetcher(self.cfg, self.db, session, thor_man=self.thor_man, delegate=notifier_queue)
+            await self.ppf.get_current_pool_data_full()  # fill price holder before doing other fetch ops!
+
+            fetcher_cap = CapInfoFetcher(self.cfg, self.db, session,
+                                         ppf=self.ppf,
+                                         delegate=notifier_cap)
+
+            fetcher_tx = StakeTxFetcher(self.cfg, self.db, session,
+                                        price_holder=self.price_holder,
+                                        delegate=notifier_tx)
+
+            fetcher_queue = QueueFetcher(self.cfg, self.db, session,
+                                         thor_man=self.thor_man,
+                                         delegate=notifier_queue)
 
             notifier_tx.fetcher = fetcher_tx  # fixme: back link
 

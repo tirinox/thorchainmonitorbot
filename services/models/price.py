@@ -1,6 +1,9 @@
+import time
 from dataclasses import dataclass
+from typing import Dict
 
 from services.models.base import BaseModelMixin
+from services.models.pool_info import PoolInfo
 from services.utils import Singleton
 
 
@@ -39,6 +42,11 @@ class PriceReport:
     fair_price: RuneFairPrice = RuneFairPrice()
 
 
-class LastPrice(metaclass=Singleton):
+class LastPriceHolder(metaclass=Singleton):
     def __init__(self):
         self.rune_price_in_usd = 0.0
+        self.pool_info_map: Dict[str, PoolInfo] = {}
+        self.last_update_ts = 0
+
+    def update(self):
+        self.last_update_ts = time.time()
