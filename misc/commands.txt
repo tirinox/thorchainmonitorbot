@@ -1,5 +1,5 @@
 start - start the bot
-price - price of Rune
-cap - current stake cap
+price - Rune's price stats
+cap - current liquidity cap
 lang - установка языка (set language)
 help - help page
