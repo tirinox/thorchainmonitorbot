@@ -14,7 +14,7 @@ class BaseLocalization(ABC):
     # ----- WELCOME ------
 
     @staticmethod
-    def _cap_pb(info: ThorInfo):
+    def _cap_progress_bar(info: ThorInfo):
         return f'{progressbar(info.stacked, info.cap, 10)} ({format_percent(info.stacked, info.cap)})\n'
 
     @abstractmethod
@@ -43,7 +43,7 @@ class BaseLocalization(ABC):
     # ------- CAP -------
 
     @abstractmethod
-    def notification_cap_change_text(self, old: ThorInfo, new: ThorInfo): ...
+    def notification_text_cap_change(self, old: ThorInfo, new: ThorInfo): ...
 
     @abstractmethod
     def price_message(self, info: ThorInfo, fair_price: RuneFairPrice): ...
@@ -59,19 +59,23 @@ class BaseLocalization(ABC):
         return f'https://explorer.binance.org/address/{address}'
 
     @abstractmethod
-    def tx_text(self, tx: StakeTx, dollar_per_rune: float, pool: StakePoolStats, pool_info: PoolInfo): ...
+    def notification_text_large_tx(self,
+                                   tx: StakeTx,
+                                   dollar_per_rune: float,
+                                   pool: StakePoolStats,
+                                   pool_info: PoolInfo): ...
 
     # ------- QUEUE -------
 
     @abstractmethod
-    def queue_update(self, item_type, step, value): ...
+    def notification_text_queue_update(self, item_type, step, value): ...
 
     # ------- PRICE -------
 
     DET_PRICE_HELP_PAGE = 'https://docs.thorchain.org/how-it-works/incentive-pendulum'
 
     @abstractmethod
-    def price_change(self, p: PriceReport, ath=False, last_ath: PriceATH = None): ...
+    def notification_text_price_update(self, p: PriceReport, ath=False, last_ath: PriceATH = None): ...
 
     # ------- POOL CHURN -------
 
@@ -80,4 +84,4 @@ class BaseLocalization(ABC):
         return f'https://chaosnet.bepswap.com/pool/{asset_name_cut_chain(pool_name)}'
 
     @abstractmethod
-    def pool_churn_text(self, added_pools, removed_pools, changed_status_pools): ...
+    def notification_text_pool_churn(self, added_pools, removed_pools, changed_status_pools): ...

@@ -63,7 +63,7 @@ class PriceNotifier(INotified):
 
         report = PriceReport(*hist_prices, fair_price)
         await self.broadcaster.notify_preconfigured_channels(self.loc_man,
-                                                             BaseLocalization.price_change,
+                                                             BaseLocalization.notification_text_price_update,
                                                              report,
                                                              ath=ath,
                                                              last_ath=last_ath)

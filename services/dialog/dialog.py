@@ -1,5 +1,8 @@
 from aiogram import Dispatcher, filters
+from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import *
+from aiogram.dispatcher import FSMContext
+from aiogram.utils.helper import HelperMode
 
 from localization import LocalizationManager
 from services.lib.config import Config
@@ -11,11 +14,20 @@ from services.notify.broadcast import Broadcaster
 from services.notify.types.price_notify import PriceNotifier
 
 
+class ChatStates(StatesGroup):
+    mode = HelperMode.snake_case
+
+    START = State()
+    ASK_LANGUAGE = State()
+    DUMMY = State()
+
+
 def register_commands(cfg: Config, dp: Dispatcher, loc_man: LocalizationManager, db: DB, broadcaster: Broadcaster,
                       price_holder: LastPriceHolder):
-    @dp.message_handler(commands=['start', 'lang'])
+    @dp.message_handler(commands=['start', 'lang'], state='*')
     async def on_start(message: Message):
         text, kb = loc_man.default.lang_help()
+        await ChatStates.ASK_LANGUAGE.set()
         await message.answer(text, reply_markup=kb,
                              disable_notification=True)
 
@@ -37,7 +49,7 @@ def register_commands(cfg: Config, dp: Dispatcher, loc_man: LocalizationManager,
         pn = PriceNotifier(cfg, db, broadcaster, loc_man)
         price_1h, price_24h, price_7d = await pn.historical_get_triplet()
         fp.real_rune_price = price_holder.usd_per_rune
-        price_text = loc.price_change(PriceReport(
+        price_text = loc.notification_text_price_update(PriceReport(
             price_1h, price_24h, price_7d,
             fair_price=fp)
         )
@@ -58,8 +70,8 @@ def register_commands(cfg: Config, dp: Dispatcher, loc_man: LocalizationManager,
         loc = await loc_man.get_from_db(message.chat.id, db)
         await message.answer(loc.unknown_command(), disable_notification=True)
 
-    @dp.message_handler(content_types=ContentType.TEXT)
-    async def on_lang_set(message: Message):
+    @dp.message_handler(content_types=ContentType.TEXT, state=ChatStates.ASK_LANGUAGE)
+    async def on_lang_set(message: Message, context: FSMContext):
         t = message.text
         if t == loc_man.default.BUTTON_ENG:
             lang = 'eng'
@@ -71,7 +83,3 @@ def register_commands(cfg: Config, dp: Dispatcher, loc_man: LocalizationManager,
 
         await loc_man.set_lang(message.chat.id, lang, db)
         await send_welcome(message)
-
-    # @dp.message_handler(content_types=ContentType.STICKER)
-    # async def on_sticker(message: Message):
-    #     await message.reply(f"{message.sticker.emoji}: {message.sticker.file_id}")

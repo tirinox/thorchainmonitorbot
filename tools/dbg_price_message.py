@@ -22,8 +22,8 @@ async def send_to_channel_test_message(cfg, db):
 
     async def message_gen(chat_id):
         loc: BaseLocalization = user_lang_map[chat_id]
-        return loc.price_change(PriceReport(1.601, 0.576, 0.05,
-                                            fair_price=fp))
+        return loc.notification_text_price_update(PriceReport(1.601, 0.576, 0.05,
+                                                              fair_price=fp))
 
     await broadcaster.broadcast(user_lang_map.keys(), message_gen)
 

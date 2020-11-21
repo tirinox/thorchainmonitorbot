@@ -32,7 +32,7 @@ class PoolChurnNotifier(INotified):
             added_pools, removed_pools, changed_status_pools = self.compare_pool_sets(new_pool_dict)
             if added_pools or removed_pools or changed_status_pools:
                 await self.broadcaster.notify_preconfigured_channels(self.loc_man,
-                                                                     BaseLocalization.pool_churn_text,
+                                                                     BaseLocalization.notification_text_pool_churn,
                                                                      added_pools,
                                                                      removed_pools,
                                                                      changed_status_pools)

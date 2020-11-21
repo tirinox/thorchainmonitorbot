@@ -28,7 +28,7 @@ class QueueNotifier(INotified):
 
     async def notify(self, item_type, step, value):
         await self.broadcaster.notify_preconfigured_channels(self.loc_man,
-                                                             BaseLocalization.queue_update,
+                                                             BaseLocalization.notification_text_queue_update,
                                                              item_type, step, value)
 
     async def handle_entry(self, item_type, value):

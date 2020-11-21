@@ -34,5 +34,5 @@ class CapFetcherNotifier(INotified):
 
     async def _notify_when_cap_changed(self, old: ThorInfo, new: ThorInfo):
         await self.broadcaster.notify_preconfigured_channels(self.loc_man,
-                                                             BaseLocalization.notification_cap_change_text,
+                                                             BaseLocalization.notification_text_cap_change,
                                                              old, new)

@@ -1,6 +1,8 @@
 import time
 from functools import wraps
 
+from aiogram.dispatcher import FSMContext
+
 from services.lib.money import pretty_money
 
 

@@ -25,7 +25,7 @@ class RussianLocalization(BaseLocalization):
     def welcome_message(self, info: ThorInfo):
         return (
             f"Привет! <b>{info.stacked:.0f}</b> монет из <b>{info.cap:.0f}</b> сейчас застейканы.\n"
-            f"{self._cap_pb(info)}"
+            f"{self._cap_progress_bar(info)}"
             f"Цена {self.R} сейчас <code>{info.price:.3f} BUSD</code>.\n"
             f"<b>⚠️ Бот теперь уведомляет только в канале️ @thorchain_alert!</b>\n"
             f"Набери /help, чтобы видеть список команд."
@@ -38,13 +38,13 @@ class RussianLocalization(BaseLocalization):
         )
 
     # ----- CAP ------
-    def notification_cap_change_text(self, old: ThorInfo, new: ThorInfo):
+    def notification_text_cap_change(self, old: ThorInfo, new: ThorInfo):
         verb = "подрос" if old.cap < new.cap else "упал"
         call = "Ай-да застейкаем!\n" if new.cap > old.cap else ''
         return (
             f'<b>Кап {verb} с {pretty_money(old.cap)} до {pretty_money(new.cap)}!</b>\n'
             f'Сейчас в пулы помещено <b>{pretty_money(new.stacked)}</b> {self.R}.\n'
-            f"{self._cap_pb(new)}"
+            f"{self._cap_progress_bar(new)}"
             f'Цена {self.R} в пуле <code>{new.price:.3f} BUSD</code>.\n'
             f'{call}'
             f'https://chaosnet.bepswap.com/'
@@ -58,7 +58,7 @@ class RussianLocalization(BaseLocalization):
         )
 
     # ------ TXS -------
-    def tx_text(self, tx: StakeTx, dollar_per_rune: float, pool: StakePoolStats, pool_info: PoolInfo):
+    def notification_text_large_tx(self, tx: StakeTx, dollar_per_rune: float, pool: StakePoolStats, pool_info: PoolInfo):
         msg = ''
         if tx.type == 'stake':
             msg += f'🐳 <b>Кит добавил ликвидности</b> 🟢\n'
@@ -81,7 +81,7 @@ class RussianLocalization(BaseLocalization):
 
     # ------- QUEUE -------
 
-    def queue_update(self, item_type, step, value):
+    def notification_text_queue_update(self, item_type, step, value):
         if step == 0:
             return f"☺️ Очередь {item_type} снова опустела!"
         else:
@@ -89,7 +89,7 @@ class RussianLocalization(BaseLocalization):
 
     # ------- PRICE -------
 
-    def price_change(self, p: PriceReport, ath=False, last_ath: PriceATH = None):
+    def notification_text_price_update(self, p: PriceReport, ath=False, last_ath: PriceATH = None):
         title = bold('Обновление цены') if not ath else bold('🚀 Достигнуть новый исторический максимум!')
 
         c_gecko_url = 'https://www.coingecko.com/ru/' \
@@ -128,7 +128,7 @@ class RussianLocalization(BaseLocalization):
 
     # ------- POOL CHURN -------
 
-    def pool_churn_text(self, added_pools, removed_pools, changed_status_pools):
+    def notification_text_pool_churn(self, added_pools, removed_pools, changed_status_pools):
         message = bold('🏊 Изменения в пулах ликвидности:') + '\n\n'
 
         statuses = {

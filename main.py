@@ -51,7 +51,6 @@ class App:
         register_commands(self.cfg, self.dp, self.loc_man, self.db, self.broadcaster, self.price_holder)
 
     async def _run_tasks(self):
-        await self.db.get_redis()
         self.dp.storage = await self.db.get_storage()
 
         if 'REPLACE_RUNE_TIMESERIES_WITH_GECKOS' in os.environ:
