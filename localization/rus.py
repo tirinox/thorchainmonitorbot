@@ -121,7 +121,7 @@ class RussianLocalization(BaseLocalization):
 
         if fp.tlv_usd >= 1:
             message += (f"TLV (кроме RUNE): ${pre(pretty_money(fp.tlv_usd))}\n"
-                        f"Детерминистическая цена руны: ${code(pretty_money(fp.fair_price))}\n"
+                        f"Детерминистическая цена: {code(pretty_money(fp.fair_price, prefix='$'))}\n"
                         f"Спекулятивый множитель: {pre(x_ses(fp.fair_price, price))}\n")
 
         return message.rstrip()

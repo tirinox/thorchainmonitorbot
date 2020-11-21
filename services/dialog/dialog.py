@@ -13,7 +13,7 @@ from services.notify.types.price_notify import PriceNotifier
 
 def register_commands(cfg: Config, dp: Dispatcher, loc_man: LocalizationManager, db: DB, broadcaster: Broadcaster,
                       price_holder: LastPriceHolder):
-    @dp.message_handler(commands=['start'])
+    @dp.message_handler(commands=['start', 'lang'])
     async def on_start(message: Message):
         text, kb = loc_man.default.lang_help()
         await message.answer(text, reply_markup=kb,
@@ -72,6 +72,6 @@ def register_commands(cfg: Config, dp: Dispatcher, loc_man: LocalizationManager,
         await loc_man.set_lang(message.chat.id, lang, db)
         await send_welcome(message)
 
-    @dp.message_handler(content_types=ContentType.STICKER)
-    async def on_sticker(message: Message):
-        await message.reply(f"{message.sticker.emoji}: {message.sticker.file_id}")
+    # @dp.message_handler(content_types=ContentType.STICKER)
+    # async def on_sticker(message: Message):
+    #     await message.reply(f"{message.sticker.emoji}: {message.sticker.file_id}")
