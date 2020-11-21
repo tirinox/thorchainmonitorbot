@@ -31,7 +31,7 @@ class PriceNotifier(INotified):
         self.ath_cooldown = parse_timespan_to_seconds(cfg.price.ath.cooldown)
 
     async def on_data(self, sender, fprice: RuneFairPrice):
-        # fprice.real_rune_price = 1.465  # debug!!!
+        # fprice.real_rune_price = 1.4  # debug!!! for ATH
         if not await self.handle_ath(fprice):
             await self.handle_new_price(fprice)
 
@@ -58,13 +58,15 @@ class PriceNotifier(INotified):
         user_lang_map = self.broadcaster.telegram_chats_from_config(self.loc_man)
         await self.broadcaster.broadcast(user_lang_map.keys(), sticker, message_type='sticker')
 
-    async def do_notify_price_table(self, fair_price, hist_prices, ath):
+    async def do_notify_price_table(self, fair_price, hist_prices, ath, last_ath=None):
         await self.cd.do(self.CD_KEY_PRICE_NOTIFIED)
 
         report = PriceReport(*hist_prices, fair_price)
         await self.broadcaster.notify_preconfigured_channels(self.loc_man,
                                                              BaseLocalization.price_change,
-                                                             report, ath=ath)
+                                                             report,
+                                                             ath=ath,
+                                                             last_ath=last_ath)
 
         if ath:
             await self.send_ath_sticker()
@@ -115,9 +117,9 @@ class PriceNotifier(INotified):
             await self.db.redis.set(self.ATH_KEY, ath.as_json)
 
     async def handle_ath(self, fair_price):
-        ath = await self.get_prev_ath()
+        last_ath = await self.get_prev_ath()
         price = fair_price.real_rune_price
-        if ath.is_new_ath(price):
+        if last_ath.is_new_ath(price):
             await self.update_ath(PriceATH(
                 int(time.time()), price
             ))
@@ -127,7 +129,7 @@ class PriceNotifier(INotified):
                 await self.cd.do(self.CD_KEY_PRICE_RISE_NOTIFIED)  # prevent 2 notifications
 
                 hist_prices = await self.historical_get_triplet()
-                await self.do_notify_price_table(fair_price, hist_prices, ath=True)
+                await self.do_notify_price_table(fair_price, hist_prices, ath=True, last_ath=last_ath)
                 return True
 
         return False

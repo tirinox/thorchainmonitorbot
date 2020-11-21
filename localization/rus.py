@@ -1,5 +1,6 @@
 from localization.base import BaseLocalization
-from services.models.price import RuneFairPrice, PriceReport
+from services.lib.datetime import format_time_ago
+from services.models.price import RuneFairPrice, PriceReport, PriceATH
 from services.models.pool_info import PoolInfo
 from services.models.cap_info import ThorInfo
 from services.models.tx import StakeTx, short_asset_name, StakePoolStats
@@ -88,7 +89,7 @@ class RussianLocalization(BaseLocalization):
 
     # ------- PRICE -------
 
-    def price_change(self, p: PriceReport, ath=False):
+    def price_change(self, p: PriceReport, ath=False, last_ath: PriceATH = None):
         title = bold('Обновление цены') if not ath else bold('🚀 Достигнуть новый исторический максимум!')
 
         c_gecko_url = 'https://www.coingecko.com/ru/' \
@@ -100,6 +101,9 @@ class RussianLocalization(BaseLocalization):
 
         pr_text = f"${price:.2f}"
         message += f"Цена <b>RUNE</b> сейчас {code(pr_text)}.\n"
+
+        if last_ath is not None:
+            message += f"Последний ATH был ${last_ath.ath_price:2.f} ({format_time_ago(last_ath.ath_date)}).\n"
 
         time_combos = zip(
             ('1ч.', '24ч.', '7дн.'),

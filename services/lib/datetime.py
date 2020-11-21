@@ -28,9 +28,9 @@ def seconds_human(seconds, equal_str='same time') -> str:
         days = hours // 24
 
         s = ''
-        s = append_if_not_zero(s, days, 'd')
+        s = append_if_not_zero(s, days, 'day' if days == 1 else 'days')
         if days <= 31:
-            s = append_if_not_zero(s, hours % 24, 'h')
+            s = append_if_not_zero(s, hours % 24, 'hour' if hours == 1 else 'hours')
         if not days:
             s = append_if_not_zero(s, minutes % 60, 'min')
         if not hours:

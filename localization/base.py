@@ -2,10 +2,10 @@ from abc import ABC, abstractmethod
 
 from aiogram.types import *
 
-from services.models.price import RuneFairPrice, PriceReport
+from services.models.price import RuneFairPrice, PriceReport, PriceATH
 from services.models.pool_info import PoolInfo
 from services.models.cap_info import ThorInfo
-from services.models.tx import StakeTx, StakePoolStats, short_asset_name
+from services.models.tx import StakeTx, StakePoolStats, short_asset_name, asset_name_cut_chain
 from services.lib.utils import progressbar
 from services.lib.money import format_percent
 
@@ -71,13 +71,13 @@ class BaseLocalization(ABC):
     DET_PRICE_HELP_PAGE = 'https://docs.thorchain.org/how-it-works/incentive-pendulum'
 
     @abstractmethod
-    def price_change(self, p: PriceReport, ath=False): ...
+    def price_change(self, p: PriceReport, ath=False, last_ath: PriceATH = None): ...
 
     # ------- POOL CHURN -------
 
     @staticmethod
     def pool_link(pool_name):
-        return f'https://chaosnet.bepswap.com/pool/{short_asset_name(pool_name)}'
+        return f'https://chaosnet.bepswap.com/pool/{asset_name_cut_chain(pool_name)}'
 
     @abstractmethod
     def pool_churn_text(self, added_pools, removed_pools, changed_status_pools): ...

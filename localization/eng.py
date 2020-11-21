@@ -1,5 +1,6 @@
 from localization.base import BaseLocalization
-from services.models.price import RuneFairPrice, PriceReport
+from services.lib.datetime import format_time_ago
+from services.models.price import RuneFairPrice, PriceReport, PriceATH
 from services.models.pool_info import PoolInfo
 from services.models.cap_info import ThorInfo
 from services.models.tx import StakeTx, short_asset_name, StakePoolStats
@@ -99,7 +100,7 @@ class EnglishLocalization(BaseLocalization):
 
     # ------- PRICE -------
 
-    def price_change(self, p: PriceReport, ath=False):
+    def price_change(self, p: PriceReport, ath=False, last_ath: PriceATH = None):
         title = bold('Price update') if not ath else bold('🚀 A new all-time high has been achieved!')
 
         c_gecko_url = 'https://www.coingecko.com/en/coins/thorchain'
@@ -110,6 +111,10 @@ class EnglishLocalization(BaseLocalization):
 
         pr_text = f"${price:.2f}"
         message += f"<b>RUNE</b> price is {code(pr_text)} now.\n"
+
+        if last_ath is not None:
+            last_ath_pr = f'{last_ath.ath_price:.2f}'
+            message += f"Last ATH was ${pre(last_ath_pr)} ({format_time_ago(last_ath.ath_date)}).\n"
 
         time_combos = zip(
             ('1h', '24h', '7d'),

@@ -41,6 +41,7 @@ class PriceReport:
     price_24h: float = 0.0
     price_7d: float = 0.0
     fair_price: RuneFairPrice = RuneFairPrice()
+    last_ath: PriceATH = PriceATH()
 
 
 class LastPriceHolder(metaclass=Singleton):

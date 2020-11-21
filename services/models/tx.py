@@ -140,3 +140,11 @@ def short_asset_name(pool: str):
         return cs[1].split('-')[0]
     except IndexError:
         return pool
+
+
+def asset_name_cut_chain(asset):
+    try:
+        cs = asset.split('.')
+        return cs[1]
+    except IndexError:
+        return asset
