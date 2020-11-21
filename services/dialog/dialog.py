@@ -17,6 +17,7 @@ from services.notify.types.price_notify import PriceNotifier
 class ChatStates(StatesGroup):
     mode = HelperMode.snake_case
 
+    MAIN_MENU = State()
     START = State()
     ASK_LANGUAGE = State()
     DUMMY = State()
@@ -71,7 +72,7 @@ def register_commands(cfg: Config, dp: Dispatcher, loc_man: LocalizationManager,
         await message.answer(loc.unknown_command(), disable_notification=True)
 
     @dp.message_handler(content_types=ContentType.TEXT, state=ChatStates.ASK_LANGUAGE)
-    async def on_lang_set(message: Message, context: FSMContext):
+    async def on_lang_set(message: Message, state: FSMContext):
         t = message.text
         if t == loc_man.default.BUTTON_ENG:
             lang = 'eng'
@@ -80,6 +81,9 @@ def register_commands(cfg: Config, dp: Dispatcher, loc_man: LocalizationManager,
         else:
             await on_start(message)
             return
+
+        async with state.proxy() as data:
+            data['language'] = lang
 
         await loc_man.set_lang(message.chat.id, lang, db)
         await send_welcome(message)
