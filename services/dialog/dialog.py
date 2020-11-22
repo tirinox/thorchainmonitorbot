@@ -23,8 +23,13 @@ class ChatStates(StatesGroup):
     DUMMY = State()
 
 
-def register_commands(cfg: Config, dp: Dispatcher, loc_man: LocalizationManager, db: DB, broadcaster: Broadcaster,
+def register_commands(cfg: Config,
+                      dp: Dispatcher,
+                      loc_man: LocalizationManager,
+                      db: DB,
+                      broadcaster: Broadcaster,
                       price_holder: LastPriceHolder):
+
     @dp.message_handler(commands=['start', 'lang'], state='*')
     async def on_start(message: Message):
         text, kb = loc_man.default.lang_help()

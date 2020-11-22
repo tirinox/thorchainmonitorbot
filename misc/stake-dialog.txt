@@ -1,1 +1,12 @@
-start
+/start ->
+
+If no lang:
+
+State: *
+Buttons: Rus / Eng
+ToState: ASK_LANG
+
+If lang -> Main menu
+
+State: Main menu
+Buttons: My liquidity

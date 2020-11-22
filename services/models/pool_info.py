@@ -10,6 +10,7 @@ class PoolInfo:
 
     balance_asset: int
     balance_rune: int
+    pool_units: int
 
     status: str
 
@@ -18,7 +19,7 @@ class PoolInfo:
 
     @classmethod
     def dummy(cls):
-        return cls('', 1, 1, 1, cls.BOOTSTRAP)
+        return cls('', 1, 1, 1, 1, cls.BOOTSTRAP)
 
     @property
     def asset_per_rune(self):
@@ -44,13 +45,15 @@ class PoolInfo:
                    price=(balance_asset / balance_rune),
                    balance_asset=balance_asset,
                    balance_rune=balance_rune,
+                   pool_units=int(j['pool_units']),
                    status=j['status'])
 
     @property
     def to_dict(self):
         return {
-            'balance_asset': self.balance_asset,
-            'balance_rune': self.balance_rune,
+            'balance_asset': str(self.balance_asset),
+            'balance_rune': str(self.balance_rune),
+            'pool_units': str(self.pool_units),
             'asset': self.asset,
             'status': self.status
         }

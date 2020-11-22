@@ -4,10 +4,19 @@ queue of messages -> forever loop with "anti-spam" delays
 
 2) Track large RUne movements over Binance chain
 
-3) ATH tracker
+3) Use median value for TX tracker (save last N tx volume)
 
-Todo: how much time ago was last ATH?
+4) move the source code and config to a separate folder -> bond it to a docker-compose volume
 
+in order not to rebuild the image every time code updates
+
+5) Filter ThorNodeAddressManager
+
+using :1317/thorchain/nodeaccounts
+
+6) thornode consensus check (versions, block height, accounts)
+
++ add API for thor node request with auto blacklist if error or time out + retries
 
 7) ToDo: integrate with runestake.info
 
