@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from statistics import median
 
 from services.lib.db import DB
 from services.models.pool_info import MIDGARD_MULT
@@ -18,6 +19,8 @@ class StakeTx(BaseModelMixin):
     full_rune: float
     full_usd: float
     asset_per_rune: float
+
+    KEY_PREFIX = 'tx_not'
 
     @classmethod
     def load_from_midgard(cls, j):
@@ -77,7 +80,14 @@ class StakeTx(BaseModelMixin):
 
     @property
     def notify_key(self):
-        return f"tx_not:{self.hash}"
+        return f"{self.KEY_PREFIX}:{self.hash}"
+
+    @classmethod
+    async def clear_all_data(cls, db: DB):
+        r = await db.get_redis()
+        keys = await r.keys(f'{cls.KEY_PREFIX}:*')
+        if keys:
+            await r.delete(*keys)
 
     async def is_notified(self, db: DB):
         r = await db.get_redis()
@@ -88,58 +98,69 @@ class StakeTx(BaseModelMixin):
         await r.set(self.notify_key, value)
 
 
-@dataclass
-class StakePoolStats(BaseModelMixin):
-    pool: str
-    last_tx: str
-    rune_avg_amt: float = 0
-    n_tracked: int = 0
-    usd_depth: float = 0.0
-
-    START_RUNE_AMT = 5000
-
-    @property
-    def key(self):
-        return f"stake_pool_stats:{self.pool}"
-
-    async def save(self, db: DB):
-        await db.redis.set(self.key, self.as_json)
-
-    @classmethod
-    async def get_from_db(cls, pool, db: DB):
-        empty = cls(pool, '', cls.START_RUNE_AMT, 1, 0)
-        old_j = await db.redis.get(empty.key)
-        return cls.from_json(old_j) if old_j else empty
-
-    def update(self, rune_amount, avg_n=10):
-        self.rune_avg_amt -= self.rune_avg_amt / self.n_tracked
-        self.rune_avg_amt += rune_amount / self.n_tracked
-        self.n_tracked = min(self.n_tracked + 1, avg_n)
-        return self.rune_avg_amt
-
-    @classmethod
-    async def clear_all_data(cls, db: DB):
-        r = await db.get_redis()
-        keys = await r.keys('stake_pool_stats:*')
-        keys += await r.keys('tx_not:*')
-        if keys:
-            await r.delete(*keys)
-
-    @property
-    def stream_name(self):
-        return f'POOL-DEPTH-{self.pool}'
-
-    async def write_time_series(self, db: DB):
-        ts = TimeSeries(self.stream_name, db)
-        await ts.add(usd_depth=self.usd_depth)
-
-
 def short_asset_name(pool: str):
     try:
         cs = pool.split('.')
         return cs[1].split('-')[0]
     except IndexError:
         return pool
+
+
+@dataclass
+class StakePoolStats(BaseModelMixin):
+    pool: str
+    last_tx: str = ''
+    usd_depth: float = 0.0
+    tx_acc: list = field(default_factory=list)
+
+    KEY_PREFIX = 'stake-pool-stats-v2'
+    KEY_POOL_DEPTH = 'POOL-DEPTH'
+
+    @property
+    def key(self):
+        return f"{self.KEY_PREFIX}:{self.pool}"
+
+    async def save(self, db: DB):
+        await db.get_redis()
+        await db.redis.set(self.key, self.as_json)
+
+    @classmethod
+    async def get_from_db(cls, pool, db: DB):
+        r = await db.get_redis()
+        empty = cls(pool, '', 1, [])
+        old_j = await r.get(empty.key)
+        return cls.from_json(old_j) if old_j else empty
+
+    def update(self, rune_amount, max_n=50):
+        self.tx_acc.append({
+            'rune_amount': rune_amount
+        })
+        n = len(self.tx_acc)
+        if n > max_n:
+            self.tx_acc = self.tx_acc[(n - max_n):]
+
+    @property
+    def n_elements(self):
+        return len(self.tx_acc)
+
+    @property
+    def median_rune_amount(self):
+        return median(tx['rune_amount'] for tx in self.tx_acc) if self.tx_acc else 0.0
+
+    @classmethod
+    async def clear_all_data(cls, db: DB):
+        r = await db.get_redis()
+        keys = await r.keys(f'{cls.KEY_PREFIX}:*')
+        if keys:
+            await r.delete(*keys)
+
+    @property
+    def stream_name(self):
+        return f'{self.KEY_POOL_DEPTH}-{self.pool}'
+
+    async def write_time_series(self, db: DB):
+        ts = TimeSeries(self.stream_name, db)
+        await ts.add(usd_depth=self.usd_depth)
 
 
 def asset_name_cut_chain(asset):

@@ -4,15 +4,13 @@ queue of messages -> forever loop with "anti-spam" delays
 
 2) Track large RUne movements over Binance chain
 
-3) Use median value for TX tracker (save last N tx volume)
+3) ?
 
 4) move the source code and config to a separate folder -> bond it to a docker-compose volume
 
 in order not to rebuild the image every time code updates
 
-5) Filter ThorNodeAddressManager
-
-using :1317/thorchain/nodeaccounts
+5) ?
 
 6) thornode consensus check (versions, block height, accounts)
 
@@ -34,14 +32,13 @@ I'm happy to throw you and Bigboss a bounty if you want to work together. Imagin
 
 and later even dynamically generated charts. the more you guys work together the more value delivered
 
-9) Add favorite BNB adresses - monitor in/out tx
+8) Add favorite BNB addresses - monitor in/out tx
 
-8) Not sure. There are detailed amounts in the Treasury Reports each month (like https://medium.com/thorchain/monthly-treasury-report-september-74b13c27aa7f). Cant find any adresses this quick tho. Will have to dig deeper.
+9) Not sure. There are detailed amounts in the Treasury Reports each month (like https://medium.com/thorchain/monthly-treasury-report-september-74b13c27aa7f). Cant find any adresses this quick tho. Will have to dig deeper.
 
 the address that adds the reserve is
 
 bnb1axqc2gan462z6npw3c33srp4950mr5x28uc6wu
-
 
 10) Use aiogram state machine
 
@@ -50,3 +47,12 @@ to manage Preferences and favorite addresses
 12) price graph + deterministic price graph
 
 13) take mimir from thorchain http://IP:1317/thorchain/mimir bypassing Chaosnet
+
+14) admin commands, add admin chat id to cfg,
+
+commands:
+1. get user count
+2. logs
+3. reset state?
+4. restart
+

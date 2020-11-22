@@ -9,7 +9,7 @@ load_dotenv('.env')
 
 class Config(Prodict):
     DEFAULT = './config.yaml'
-    DEFAULT_LVL_UP = './config.yaml'
+    DEFAULT_LVL_UP = '../config.yaml'
 
     def __init__(self, name=None):
         if name:

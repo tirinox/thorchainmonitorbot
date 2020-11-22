@@ -61,10 +61,13 @@ class StakeTxNotifier(INotified):
             if tx.date > now - self.max_age_sec:
                 yield tx
 
-    def _filter_large_txs(self, fetcher, txs, threshold_factor=5.0, min_rune_volume=10000):
+    @staticmethod
+    def _filter_large_txs(fetcher, txs, threshold_factor=5.0, min_rune_volume=10000):
         for tx in txs:
             tx: StakeTx
             stats: StakePoolStats = fetcher.pool_stat_map.get(tx.pool)
             if stats is not None:
-                if tx.full_rune >= min_rune_volume and tx.full_rune >= stats.rune_avg_amt * threshold_factor:
+                if (tx.full_rune >= min_rune_volume
+                        and stats.n_elements > 0
+                        and tx.full_rune >= stats.median_rune_amount * threshold_factor):
                     yield tx
