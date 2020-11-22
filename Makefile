@@ -23,7 +23,7 @@ pull:
 	git pull
 
 logs:
-	docker logs -f --tail 1000 `docker ps -aqf "name=thorchainmonitorbot_thtgbot_1"`
+	docker-compose logs -f --tail 1000 thtgbot
 
 clean:
 	@docker system prune --volumes --force

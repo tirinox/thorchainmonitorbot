@@ -37,7 +37,7 @@ def register_commands(cfg: Config,
         await message.answer(text, reply_markup=kb,
                              disable_notification=True)
 
-    @dp.message_handler(commands=['cap'])
+    @dp.message_handler(commands=['cap'], state='*')
     async def send_welcome(message: Message):
         info = await ThorInfo.get_old_cap(db)
         loc = await loc_man.get_from_db(message.chat.id, db)
@@ -47,7 +47,7 @@ def register_commands(cfg: Config,
                              disable_notification=True)
         await broadcaster.register_user(message.chat.id)
 
-    @dp.message_handler(commands=['price'])
+    @dp.message_handler(commands=['price'], state='*')
     async def send_price(message: Message):
         loc = await loc_man.get_from_db(message.chat.id, db)
         fp = await fair_rune_price()
@@ -64,7 +64,7 @@ def register_commands(cfg: Config,
                              disable_web_page_preview=True,
                              disable_notification=True)
 
-    @dp.message_handler(commands=['help'])
+    @dp.message_handler(commands=['help'], state='*')
     async def send_price(message: Message):
         loc = await loc_man.get_from_db(message.chat.id, db)
         await message.answer(loc.help(), reply_markup=ReplyKeyboardRemove(),

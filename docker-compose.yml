@@ -13,6 +13,9 @@ services:
       - REDIS_PORT=${REDIS_PORT}
     networks:
       - redis-net
+    volumes:
+      - ./app:/app
+
   redis:
     image: "redis:alpine"
     volumes:
@@ -37,3 +40,4 @@ networks:
 
 volumes:
   redis_data:
+  app:

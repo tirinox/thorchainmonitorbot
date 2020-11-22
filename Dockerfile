@@ -1,10 +1,10 @@
 FROM python:3.8-slim-buster as production
 
-WORKDIR /usr/src/app
+# dont forget to map source to /app volume
 
-COPY requirements.txt ./
+WORKDIR /app
+ADD ./app/requirements.txt .
+
 RUN pip install --no-cache-dir -r requirements.txt
-
-COPY . .
 
 CMD [ "python", "./main.py" ]

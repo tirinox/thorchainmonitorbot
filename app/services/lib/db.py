@@ -20,13 +20,16 @@ class DB:
         if self.redis is not None:
             return self.redis
 
-        self.redis = await aioredis.create_redis(
-            f'redis://{self.host}:{self.port}',
-            password=self.password,
-            loop=self.loop)
+        try:
+            self.redis = await aioredis.create_redis(
+                f'redis://{self.host}:{self.port}',
+                password=self.password,
+                loop=self.loop)
 
-        self.storage = RedisStorage2(prefix='fsm')
-        self.storage._redis = await self.get_redis()
+            self.storage = RedisStorage2(prefix='fsm')
+            self.storage._redis = self.redis
+        except Exception as e:
+            print(e)
 
         return self.redis
 

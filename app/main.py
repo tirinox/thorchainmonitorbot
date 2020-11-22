@@ -27,6 +27,8 @@ from services.notify.types.tx_notify import StakeTxNotifier
 
 class App:
     def __init__(self):
+        print('-' * 100)
+
         self.cfg = Config()
 
         log_level = self.cfg.get('log_level', logging.INFO)

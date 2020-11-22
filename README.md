@@ -1,9 +1,9 @@
 # thorchainmonitorbot
 
-Мониторит некоторые параметры THORChain.
+This is a telegram bot to monitor some aspects of THORChain.
 
-## Команды
+## Commands
 
-```/start``` – запуск бота  
-```/price``` – цена $RUNE  
-```/cap``` – текущий кап по стейкингу
+```/start``` – run the bot  
+```/price``` – Rune's price  
+```/cap``` – current staking cap
