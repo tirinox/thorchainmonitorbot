@@ -48,7 +48,7 @@ class MainMenuDialog(BaseDialog):
     @tg_filters(commands='price', state='*')
     async def cmd_price(self, message: Message):
         fp = await fair_rune_price(self.deps.price_holder)
-        pn = PriceNotifier(self.deps.cfg, self.deps.db, self.deps.broadcaster, LocalizationManager())
+        pn = PriceNotifier(self.deps)
         price_1h, price_24h, price_7d = await pn.historical_get_triplet()
         fp.real_rune_price = self.deps.price_holder.usd_per_rune
 

@@ -59,22 +59,19 @@ class App:
             await fill_rune_price_from_gecko(d.db)
 
         async with aiohttp.ClientSession() as d.session:
-            cfg, db, loc_man, thor_man = d.cfg, d.db, d.loc_man, d.thor_man
-            price_holder, broadcaster = d.price_holder, d.broadcaster
-
-            thor_man.session = d.session
-            await thor_man.reload_nodes_ip()
+            d.thor_man.session = d.session
+            await d.thor_man.reload_nodes_ip()
 
             self.ppf = PoolPriceFetcher(d)
             fetcher_cap = CapInfoFetcher(d, ppf=self.ppf)
             fetcher_tx = StakeTxFetcher(d)
             fetcher_queue = QueueFetcher(d)
 
-            notifier_cap = CapFetcherNotifier(cfg, db, broadcaster, loc_man)
-            notifier_tx = StakeTxNotifier(cfg, db, broadcaster, loc_man)
-            notifier_queue = QueueNotifier(cfg, db, broadcaster, loc_man)
-            notifier_price = PriceNotifier(cfg, db, broadcaster, loc_man)
-            notifier_pool_churn = PoolChurnNotifier(cfg, db, broadcaster, loc_man)
+            notifier_cap = CapFetcherNotifier(d)
+            notifier_tx = StakeTxNotifier(d)
+            notifier_queue = QueueNotifier(d)
+            notifier_price = PriceNotifier(d)
+            notifier_pool_churn = PoolChurnNotifier(d)
 
             fetcher_cap.subscribe(notifier_cap)
             fetcher_tx.subscribe(notifier_tx)

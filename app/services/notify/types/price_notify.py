@@ -3,32 +3,28 @@ import logging
 import random
 import time
 
-from localization import LocalizationManager, BaseLocalization
+from localization import BaseLocalization
 from services.fetch.base import INotified
-from services.lib.config import Config
 from services.lib.cooldown import CooldownTracker
 from services.lib.datetime import MINUTE, HOUR, DAY, parse_timespan_to_seconds
-from services.lib.db import DB
+from services.lib.depcont import DepContainer
 from services.lib.money import pretty_money, calc_percent_change
 from services.models.price import RuneFairPrice, PriceReport, PriceATH
 from services.models.time_series import PriceTimeSeries, RUNE_SYMBOL
-from services.notify.broadcast import Broadcaster
 
 
 class PriceNotifier(INotified):
-    def __init__(self, cfg: Config, db: DB, broadcaster: Broadcaster, loc_man: LocalizationManager):
+    def __init__(self, deps: DepContainer):
+        self.deps = deps
         self.logger = logging.getLogger('PriceNotification')
-        self.broadcaster = broadcaster
-        self.loc_man = loc_man
-        self.cfg = cfg
-        self.db = db
-        self.cd = CooldownTracker(db)
-        self.global_cd = parse_timespan_to_seconds(cfg.price.global_cd)
-        self.change_cd = parse_timespan_to_seconds(cfg.price.change_cd)
-        self.percent_change_threshold = cfg.price.percent_change_threshold
-        self.time_series = PriceTimeSeries(RUNE_SYMBOL, db)
-        self.ath_stickers = cfg.price.ath.stickers
-        self.ath_cooldown = parse_timespan_to_seconds(cfg.price.ath.cooldown)
+        self.cd = CooldownTracker(deps.db)
+        cfg = deps.cfg.price
+        self.global_cd = parse_timespan_to_seconds(cfg.global_cd)
+        self.change_cd = parse_timespan_to_seconds(cfg.change_cd)
+        self.percent_change_threshold = cfg.percent_change_threshold
+        self.time_series = PriceTimeSeries(RUNE_SYMBOL, deps.db)
+        self.ath_stickers = cfg.ath.stickers
+        self.ath_cooldown = parse_timespan_to_seconds(cfg.ath.cooldown)
 
     async def on_data(self, sender, fprice: RuneFairPrice):
         # fprice.real_rune_price = 1.4  # debug!!! for ATH
@@ -55,18 +51,18 @@ class PriceNotifier(INotified):
         if not self.ath_stickers:
             return
         sticker = random.choice(self.ath_stickers)
-        user_lang_map = self.broadcaster.telegram_chats_from_config(self.loc_man)
-        await self.broadcaster.broadcast(user_lang_map.keys(), sticker, message_type='sticker')
+        user_lang_map = self.deps.broadcaster.telegram_chats_from_config(self.deps.loc_man)
+        await self.deps.broadcaster.broadcast(user_lang_map.keys(), sticker, message_type='sticker')
 
     async def do_notify_price_table(self, fair_price, hist_prices, ath, last_ath=None):
         await self.cd.do(self.CD_KEY_PRICE_NOTIFIED)
 
         report = PriceReport(*hist_prices, fair_price)
-        await self.broadcaster.notify_preconfigured_channels(self.loc_man,
-                                                             BaseLocalization.notification_text_price_update,
-                                                             report,
-                                                             ath=ath,
-                                                             last_ath=last_ath)
+        await self.deps.broadcaster.notify_preconfigured_channels(self.deps.loc_man,
+                                                                  BaseLocalization.notification_text_price_update,
+                                                                  report,
+                                                                  ath=ath,
+                                                                  last_ath=last_ath)
 
         if ath:
             await self.send_ath_sticker()
@@ -99,8 +95,8 @@ class PriceNotifier(INotified):
 
     async def get_prev_ath(self) -> PriceATH:
         try:
-            await self.db.get_redis()
-            ath_str = await self.db.redis.get(self.ATH_KEY)
+            await self.deps.db.get_redis()
+            ath_str = await self.deps.db.redis.get(self.ATH_KEY)
             if ath_str is None:
                 return PriceATH()
             else:
@@ -109,12 +105,12 @@ class PriceNotifier(INotified):
             return PriceATH()
 
     async def reset_ath(self):
-        await self.db.redis.delete(self.ATH_KEY)
+        await self.deps.db.redis.delete(self.ATH_KEY)
 
     async def update_ath(self, ath: PriceATH):
         if ath.ath_price > 0:
-            await self.db.get_redis()
-            await self.db.redis.set(self.ATH_KEY, ath.as_json)
+            await self.deps.db.get_redis()
+            await self.deps.db.redis.set(self.ATH_KEY, ath.as_json)
 
     async def handle_ath(self, fair_price):
         last_ath = await self.get_prev_ath()

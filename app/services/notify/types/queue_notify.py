@@ -1,35 +1,31 @@
 import logging
 
-from localization import LocalizationManager, BaseLocalization
+from localization import BaseLocalization
 from services.fetch.base import INotified
 from services.fetch.queue import QueueInfo
-from services.lib.config import Config
 from services.lib.cooldown import CooldownTracker
-from services.lib.db import DB
+from services.lib.depcont import DepContainer
 from services.models.time_series import PriceTimeSeries
-from services.notify.broadcast import Broadcaster
 
 QUEUE_STREAM = 'QUEUE'
 
 
 class QueueNotifier(INotified):
-    def __init__(self, cfg: Config, db: DB, broadcaster: Broadcaster, loc_man: LocalizationManager):
-        self.cfg = cfg
-        self.broadcaster = broadcaster
+    def __init__(self, deps: DepContainer):
+        self.deps = deps
         self.logger = logging.getLogger('QueueNotifier')
-        self.loc_man = loc_man
-        self.cooldown_tracker = CooldownTracker(db)
-        self.cooldown = cfg.queue.cooldown
-        self.threshold = cfg.queue.steps[0]
-        self.logger.info(f'config: {cfg.queue}')
-        self.steps = tuple(map(int, cfg.queue.steps))
+        self.cooldown_tracker = CooldownTracker(deps.db)
+        self.cooldown = deps.cfg.queue.cooldown
+        self.threshold = deps.cfg.queue.steps[0]
+        self.logger.info(f'config: {deps.cfg.queue}')
+        self.steps = tuple(map(int, deps.cfg.queue.steps))
 
-        self.time_series = PriceTimeSeries(QUEUE_STREAM, db)
+        self.time_series = PriceTimeSeries(QUEUE_STREAM, deps.db)
 
     async def notify(self, item_type, step, value):
-        await self.broadcaster.notify_preconfigured_channels(self.loc_man,
-                                                             BaseLocalization.notification_text_queue_update,
-                                                             item_type, step, value)
+        await self.deps.broadcaster.notify_preconfigured_channels(self.deps.loc_man,
+                                                                  BaseLocalization.notification_text_queue_update,
+                                                                  item_type, step, value)
 
     async def handle_entry(self, item_type, value):
         def key_gen(s):

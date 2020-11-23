@@ -1,23 +1,17 @@
 import logging
-from copy import deepcopy
 from typing import Dict
 
-from localization import LocalizationManager, BaseLocalization
+from localization import BaseLocalization
 from services.fetch.base import INotified
 from services.fetch.pool_price import PoolPriceFetcher
-from services.lib.config import Config
-from services.lib.db import DB
+from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo
-from services.notify.broadcast import Broadcaster
 
 
 class PoolChurnNotifier(INotified):
-    def __init__(self, cfg: Config, db: DB, broadcaster: Broadcaster, loc_man: LocalizationManager):
+    def __init__(self, deps: DepContainer):
+        self.deps = deps
         self.logger = logging.getLogger('CapFetcherNotification')
-        self.broadcaster = broadcaster
-        self.loc_man = loc_man
-        self.cfg = cfg
-        self.db = db
         self.old_pool_dict = {}
 
     async def on_data(self, sender: PoolPriceFetcher, fair_price):
@@ -31,11 +25,11 @@ class PoolChurnNotifier(INotified):
             # compare starting w 2nd iteration
             added_pools, removed_pools, changed_status_pools = self.compare_pool_sets(new_pool_dict)
             if added_pools or removed_pools or changed_status_pools:
-                await self.broadcaster.notify_preconfigured_channels(self.loc_man,
-                                                                     BaseLocalization.notification_text_pool_churn,
-                                                                     added_pools,
-                                                                     removed_pools,
-                                                                     changed_status_pools)
+                await self.deps.broadcaster.notify_preconfigured_channels(self.deps.loc_man,
+                                                                          BaseLocalization.notification_text_pool_churn,
+                                                                          added_pools,
+                                                                          removed_pools,
+                                                                          changed_status_pools)
 
         self.old_pool_dict = new_pool_dict
 
