@@ -40,6 +40,7 @@ class StakeDialog(BaseDialog):
         if message.text == self.BUTTON_BACK:
             await self.go_back(message)
         else:
+            await StakeStates.MAIN_MENU.set()
             addr = message.text.strip()
             if addr:
                 if MyStakeAddress.is_good_address(addr):
@@ -61,5 +62,7 @@ class StakeDialog(BaseDialog):
                     items.append([
                         InlineKeyboardButton(short_address(addr.address, begin=10, end=7), callback_data=data)
                     ])
-                await message.answer('Your addresses. If you want to add one more, please send me it.',
+                await message.answer('Your addresses:',
                                      reply_markup=InlineKeyboardMarkup(inline_keyboard=items))
+                await message.answer('Select one of above. ☝️ If you want to add one more, please send me it. 👇',
+                                     reply_markup=kbd([self.BUTTON_BACK]))

@@ -65,12 +65,12 @@ class BaseDialog(ABC):
             handler_stuff = f.handler_stuff
 
             @d.dp.message_handler(*handler_stuff['custom_filters'],
-                                commands=handler_stuff['commands'],
-                                state=handler_stuff['state'],
-                                regexp=handler_stuff['regexp'],
-                                content_types=handler_stuff['content_types'],
-                                run_task=handler_stuff['run_task'],
-                                **handler_stuff['kwargs'])
+                                  commands=handler_stuff['commands'],
+                                  state=handler_stuff['state'],
+                                  regexp=handler_stuff['regexp'],
+                                  content_types=handler_stuff['content_types'],
+                                  run_task=handler_stuff['run_task'],
+                                  **handler_stuff['kwargs'])
             @bot_error_guard
             async def handler(message: Message, state: FSMContext, name=name):  # name=name important!!
                 logger.info({
