@@ -1,26 +1,20 @@
 import aiohttp
-from aiohttp import ClientSession
 
 from services.fetch.base import BaseFetcher
-from services.fetch.node_ip_manager import ThorNodeAddressManager
-from services.lib.config import Config
 from services.lib.datetime import parse_timespan_to_seconds
-from services.lib.db import DB
+from services.lib.depcont import DepContainer
 from services.models.queue import QueueInfo
 
 
 class QueueFetcher(BaseFetcher):
-    def __init__(self, cfg: Config, db: DB,
-                 session: ClientSession,
-                 thor_man: ThorNodeAddressManager):
-        period = parse_timespan_to_seconds(cfg.queue.fetch_period)
-        super().__init__(cfg, db, session, period)
-        self.thor_man = thor_man
+    def __init__(self, deps: DepContainer):
+        period = parse_timespan_to_seconds(deps.cfg.queue.fetch_period)
+        super().__init__(deps, period)
         self.last_node_ip = None
 
     async def handle_error(self, e):  # override
         if self.last_node_ip:
-            await self.thor_man.blacklist_node(self.last_node_ip)
+            await self.deps.thor_man.blacklist_node(self.last_node_ip)
             self.last_node_ip = None
         return await super().handle_error(e)
 
@@ -31,9 +25,9 @@ class QueueFetcher(BaseFetcher):
     async def fetch(self) -> QueueInfo:  # override
         async with aiohttp.ClientSession() as session:
             if not self.last_node_ip:
-                self.last_node_ip = await self.thor_man.select_node()
+                self.last_node_ip = await self.deps.thor_man.select_node()
 
-            queue_url = self.queue_url(self.thor_man.connection_url(self.last_node_ip))
+            queue_url = self.queue_url(self.deps.thor_man.connection_url(self.last_node_ip))
 
             self.logger.info(f"start fetching queue: {queue_url}")
             async with session.get(queue_url) as resp:

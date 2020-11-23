@@ -1,22 +1,19 @@
 from services.fetch.base import BaseFetcher
 from services.fetch.fair_price import fair_rune_price
-from services.fetch.node_ip_manager import ThorNodeAddressManager
-from services.lib.config import Config
 from services.lib.datetime import parse_timespan_to_seconds
-from services.lib.db import DB
+from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo
-from services.models.price import LastPriceHolder
 from services.models.time_series import PriceTimeSeries, BUSD_SYMBOL, RUNE_SYMBOL, RUNE_SYMBOL_DET
 
 
 class PoolPriceFetcher(BaseFetcher):
-    def __init__(self, cfg: Config, db: DB, thor_man: ThorNodeAddressManager = ThorNodeAddressManager.shared(),
-                 session=None, holder: LastPriceHolder = None):
+    def __init__(self, deps: DepContainer):
+        cfg = deps.cfg
         period = parse_timespan_to_seconds(cfg.price.fetch_period)
-        super().__init__(cfg, db, session, sleep_period=period)
-        self.thor_man = thor_man
-        self.session = session
-        self.price_holder = holder
+        super().__init__(deps, sleep_period=period)
+        self.thor_man = deps.thor_man
+        self.session = deps.session
+        self.price_holder = deps.price_holder
 
     @staticmethod
     def historic_url(base_url, asset, height):
@@ -30,13 +27,14 @@ class PoolPriceFetcher(BaseFetcher):
         await self.get_current_pool_data_full()
         price = self.price_holder.usd_per_rune
         self.logger.info(f'fresh rune price is ${price:.3f}')
+        db = self.deps.db
 
         if price > 0:
-            pts = PriceTimeSeries(RUNE_SYMBOL, self.db)
+            pts = PriceTimeSeries(RUNE_SYMBOL, db)
             await pts.add(price=price)
 
-            pts_det = PriceTimeSeries(RUNE_SYMBOL_DET, self.db)
-            fair_price = await fair_rune_price()
+            pts_det = PriceTimeSeries(RUNE_SYMBOL_DET, db)
+            fair_price = await fair_rune_price(self.deps.price_holder)
             await pts_det.add(price=fair_price.fair_price)
             fair_price.real_rune_price = price
             return fair_price

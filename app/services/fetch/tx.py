@@ -1,15 +1,10 @@
 import asyncio
 from typing import List
 
-import aiohttp
-from aiohttp import ClientSession
-
 from services.fetch.base import BaseFetcher
-from services.lib.config import Config
 from services.lib.datetime import parse_timespan_to_seconds
-from services.lib.db import DB
+from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo
-from services.models.price import LastPriceHolder
 from services.models.time_series import BUSD_SYMBOL
 from services.models.tx import StakeTx, StakePoolStats
 
@@ -19,35 +14,32 @@ TRANSACTION_URL = "https://chaosnet-midgard.bepswap.com/v1/txs?offset={offset}&l
 class StakeTxFetcher(BaseFetcher):
     MAX_PAGE_DEEP = 10
 
-    def __init__(self, cfg: Config, db: DB,
-                 session: ClientSession,
-                 price_holder: LastPriceHolder):
-        super().__init__(cfg, db, session, sleep_period=60)
+    def __init__(self, deps: DepContainer):
+        super().__init__(deps, sleep_period=60)
 
         self.pool_stat_map = {}
         self.pool_info_map = {}
 
-        scfg = cfg.tx.stake_unstake
-        self.avg_n = int(scfg.avg_n)
-        self.price_holder = price_holder
-        self.sleep_period = parse_timespan_to_seconds(scfg.fetch_period)
-        self.tx_per_batch = int(scfg.tx_per_batch)
-        self.max_page_deep = int(scfg.max_page_deep)
+        cfg = deps.cfg.tx.stake_unstake
+        self.avg_n = int(cfg.avg_n)
+        self.price_holder = deps.price_holder
+        self.sleep_period = parse_timespan_to_seconds(cfg.fetch_period)
+        self.tx_per_batch = int(cfg.tx_per_batch)
+        self.max_page_deep = int(cfg.max_page_deep)
 
-        self.logger.info(f"cfg.tx.stake_unstake: {scfg}")
+        self.logger.info(f"cfg.tx.stake_unstake: {cfg}")
 
     async def fetch(self):
-        async with aiohttp.ClientSession() as self.session:
-            txs = await self._fetch_txs()
-            if not txs:
-                return []
+        txs = await self._fetch_txs()
+        if not txs:
+            return []
 
-            await self._load_stats(txs)
+        await self._load_stats(txs)
 
-            txs = await self._update_pools(txs)
-            if txs:
-                await self._mark_as_notified(txs)
-            return txs
+        txs = await self._update_pools(txs)
+        if txs:
+            await self._mark_as_notified(txs)
+        return txs
 
     # -------
 
@@ -74,7 +66,7 @@ class StakeTxFetcher(BaseFetcher):
         stopped = False
         for tx in txs:
             tx: StakeTx
-            if await tx.is_notified(self.db):
+            if await tx.is_notified(self.deps.db):
                 stopped = True
                 self.logger.info(f'already counted: {tx} stopping')
                 break
@@ -86,7 +78,7 @@ class StakeTxFetcher(BaseFetcher):
         all_txs = []
         page = 0
         while True:
-            txs = await self._fetch_one_batch(self.session, page)
+            txs = await self._fetch_one_batch(self.deps.session, page)
             stopped, txs = await self._filter_new(txs)
             if not txs:
                 self.logger.info(f"no more tx: got {len(all_txs)}")
@@ -116,12 +108,13 @@ class StakeTxFetcher(BaseFetcher):
 
         self.logger.info(f'pool stats updated for {", ".join(updated_stats)}')
 
+        db = self.deps.db
         for pool_name in updated_stats:
             pool_stat: StakePoolStats = self.pool_stat_map[pool_name]
             pool_info: PoolInfo = self.pool_info_map.get(pool_name)
             pool_stat.usd_depth = pool_info.usd_depth(self.price_holder.usd_per_rune)
-            await pool_stat.write_time_series(self.db)
-            await pool_stat.save(self.db)
+            await pool_stat.write_time_series(db)
+            await pool_stat.save(db)
 
         self.logger.info(f'new tx to analyze: {len(result_txs)}')
 
@@ -135,10 +128,10 @@ class StakeTxFetcher(BaseFetcher):
         pool_names = StakeTx.collect_pools(txs)
         pool_names.add(BUSD_SYMBOL)  # don't forget BUSD, for total usd volume!
         self.pool_stat_map = {
-            pool: (await StakePoolStats.get_from_db(pool, self.db)) for pool in pool_names
+            pool: (await StakePoolStats.get_from_db(pool, self.deps.db)) for pool in pool_names
         }
 
     async def _mark_as_notified(self, txs: List[StakeTx]):
         await asyncio.gather(*[
-            tx.set_notified(self.db) for tx in txs
+            tx.set_notified(self.deps.db) for tx in txs
         ])

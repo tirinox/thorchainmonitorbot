@@ -10,7 +10,7 @@ from services.models.price import RuneFairPrice, PriceReport, PriceATH
 from services.models.tx import StakeTx, StakePoolStats, asset_name_cut_chain
 
 
-def kbd(buttons, resize=True, vert=False, one_time=False):
+def kbd(buttons, resize=True, vert=False, one_time=False, inline=False, row_width=3):
     if isinstance(buttons, str):
         buttons = [[buttons]]
     elif isinstance(buttons, (list, tuple, set)):
@@ -23,7 +23,10 @@ def kbd(buttons, resize=True, vert=False, one_time=False):
     buttons = [
         [KeyboardButton(b) for b in row] for row in buttons
     ]
-    return ReplyKeyboardMarkup(buttons, resize_keyboard=resize, one_time_keyboard=one_time)
+    return ReplyKeyboardMarkup(buttons,
+                               resize_keyboard=resize,
+                               one_time_keyboard=one_time,
+                               row_width=row_width)
 
 
 class BaseLocalization(ABC):
@@ -61,6 +64,10 @@ class BaseLocalization(ABC):
 
     @abstractmethod
     def kbd_main_menu(self): ...
+
+    # ------- STAKE INFO MENU -------
+
+    BUTTON_SM_ADD_ADDRESS = ''
 
     # ------- CAP -------
 

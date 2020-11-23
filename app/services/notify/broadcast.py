@@ -10,17 +10,19 @@ from aiogram.utils import exceptions
 from localization import LocalizationManager
 from services.lib.config import Config
 from services.lib.db import DB
+from services.lib.depcont import DepContainer
 
 
 class Broadcaster:
     KEY_USERS = 'thbot_users'
 
-    def __init__(self, cfg: Config, bot: Bot, db: DB):
-        self.bot = bot
-        self.cfg = cfg
+    def __init__(self, d: DepContainer):
+        self.bot = d.bot
+        self.cfg = d.cfg
+        self.db = d.db
+
         self._broadcast_lock = asyncio.Lock()
         self._rng = random.Random(time.time())
-        self.db = db
         self.logger = logging.getLogger('broadcast')
 
     def telegram_chats_from_config(self, loc_man: LocalizationManager):

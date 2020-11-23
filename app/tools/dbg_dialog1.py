@@ -8,6 +8,7 @@ from localization import LocalizationManager
 from services.dialog.main_menu import BaseDialog
 from services.lib.config import Config
 from services.lib.db import DB
+from services.models.stake_info import MyStakeAddress
 
 
 async def amain(cfg, db, loop):
@@ -16,6 +17,13 @@ async def amain(cfg, db, loop):
     loc_man = LocalizationManager()
 
     BaseDialog.register(cfg, db, dp, loc_man)
+
+    alist = [
+        '',
+        'bnb180cz7kar9w8x37zhahuhremapywswqdpdl3ddf'
+    ]
+    for addr in alist:
+        print(addr, MyStakeAddress.is_good_address(addr))
 
 
 if __name__ == '__main__':

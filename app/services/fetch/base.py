@@ -6,6 +6,7 @@ from aiohttp import ClientSession
 
 from services.lib.config import Config
 from services.lib.db import DB
+from services.lib.depcont import DepContainer
 
 
 class INotified(ABC):
@@ -17,10 +18,8 @@ class INotified(ABC):
 
 
 class BaseFetcher(ABC):
-    def __init__(self, cfg: Config, db: DB, session: ClientSession, sleep_period=60):
-        self.cfg = cfg
-        self.db = db
-        self.session = session
+    def __init__(self, deps: DepContainer, sleep_period=60):
+        self.deps = deps
         self.name = self.__class__.__qualname__
         self.sleep_period = sleep_period
         self.logger = logging.getLogger(f'{self.__class__.__name__}')

@@ -7,8 +7,7 @@ from aiogram import Bot, Dispatcher, executor
 from aiogram.types import *
 
 from localization import LocalizationManager
-from services.dialog.main_menu import MainMenuDialog
-from services.dialog.stake_info import StakeDialog
+from services.dialog import init_dialogs
 from services.fetch.cap import CapInfoFetcher
 from services.fetch.gecko_price import fill_rune_price_from_gecko
 from services.fetch.node_ip_manager import ThorNodeAddressManager
@@ -17,6 +16,7 @@ from services.fetch.queue import QueueFetcher
 from services.fetch.tx import StakeTxFetcher
 from services.lib.config import Config
 from services.lib.db import DB
+from services.lib.depcont import DepContainer
 from services.models.price import LastPriceHolder
 from services.notify.broadcast import Broadcaster
 from services.notify.types.cap_notify import CapFetcherNotifier
@@ -28,11 +28,10 @@ from services.notify.types.tx_notify import StakeTxNotifier
 
 class App:
     def __init__(self):
-        print('-' * 100)
+        d = self.deps = DepContainer()
+        d.cfg = Config()
 
-        cfg = self.cfg = Config()
-
-        log_level = self.cfg.get('log_level', logging.INFO)
+        log_level = d.cfg.get('log_level', logging.INFO)
         logging.basicConfig(
             level=logging.getLevelName(log_level),
             format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s',
@@ -41,40 +40,35 @@ class App:
 
         logging.info(f"Log level: {log_level}")
 
-        self.loop = asyncio.get_event_loop()
-        db = self.db = DB(self.loop)
-        self.bot = Bot(token=self.cfg.telegram.bot.token, parse_mode=ParseMode.HTML)
-        dp = self.dp = Dispatcher(self.bot, loop=self.loop)
-        loc_man = self.loc_man = LocalizationManager()
-        broadcaster = self.broadcaster = Broadcaster(self.cfg, self.bot, self.db)
-        price_holder = self.price_holder = LastPriceHolder()
+        d.loop = asyncio.get_event_loop()
+        d.db = DB(d.loop)
+        d.bot = Bot(token=d.cfg.telegram.bot.token, parse_mode=ParseMode.HTML)
+        d.dp = Dispatcher(d.bot, loop=d.loop)
+        d.loc_man = LocalizationManager()
+        d.broadcaster = Broadcaster(d)
+        d.price_holder = LastPriceHolder()
+        d.thor_man = ThorNodeAddressManager()
 
-        self.thor_man = ThorNodeAddressManager.shared()
-
-        MainMenuDialog.register(cfg, db, dp, loc_man,
-                                broadcaster=broadcaster,
-                                price_holder=price_holder)
-        StakeDialog.register(cfg, db, dp, loc_man,
-                             broadcaster=broadcaster,
-                             price_holder=price_holder)
+        init_dialogs(d)
 
     async def _run_tasks(self):
-        self.dp.storage = await self.db.get_storage()
+        d = self.deps
+        d.dp.storage = await d.db.get_storage()
 
         if 'REPLACE_RUNE_TIMESERIES_WITH_GECKOS' in os.environ:
-            await fill_rune_price_from_gecko(self.db)
+            await fill_rune_price_from_gecko(d.db)
 
-        async with aiohttp.ClientSession() as session:
-            cfg, db, loc_man, thor_man = self.cfg, self.db, self.loc_man, self.thor_man
-            price_holder, broadcaster = self.price_holder, self.broadcaster
+        async with aiohttp.ClientSession() as d.session:
+            cfg, db, loc_man, thor_man = d.cfg, d.db, d.loc_man, d.thor_man
+            price_holder, broadcaster = d.price_holder, d.broadcaster
 
-            thor_man.session = session
+            thor_man.session = d.session
             await thor_man.reload_nodes_ip()
 
-            self.ppf = PoolPriceFetcher(cfg, db, thor_man, session, holder=price_holder)
-            fetcher_cap = CapInfoFetcher(cfg, db, session, ppf=self.ppf)
-            fetcher_tx = StakeTxFetcher(cfg, db, session, price_holder=price_holder)
-            fetcher_queue = QueueFetcher(cfg, db, session, thor_man=thor_man)
+            self.ppf = PoolPriceFetcher(d)
+            fetcher_cap = CapInfoFetcher(d, ppf=self.ppf)
+            fetcher_tx = StakeTxFetcher(d)
+            fetcher_queue = QueueFetcher(d)
 
             notifier_cap = CapFetcherNotifier(cfg, db, broadcaster, loc_man)
             notifier_tx = StakeTxNotifier(cfg, db, broadcaster, loc_man)
@@ -96,9 +90,10 @@ class App:
             ]))
 
     def run(self):
-        self.dp.loop.create_task(self._run_tasks())
-        executor.start_polling(self.dp, skip_updates=True)
+        self.deps.dp.loop.create_task(self._run_tasks())
+        executor.start_polling(self.deps.dp, skip_updates=True)
 
 
 if __name__ == '__main__':
+    print('-' * 100)
     App().run()

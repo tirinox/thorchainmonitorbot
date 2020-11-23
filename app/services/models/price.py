@@ -4,7 +4,6 @@ from typing import Dict
 
 from services.models.base import BaseModelMixin
 from services.models.pool_info import PoolInfo
-from services.lib.utils import Singleton
 from services.models.time_series import BUSD_SYMBOL
 
 
@@ -44,7 +43,7 @@ class PriceReport:
     last_ath: PriceATH = PriceATH()
 
 
-class LastPriceHolder(metaclass=Singleton):
+class LastPriceHolder:
     def __init__(self):
         self.usd_per_rune = 0.0
         self.pool_info_map: Dict[str, PoolInfo] = {}

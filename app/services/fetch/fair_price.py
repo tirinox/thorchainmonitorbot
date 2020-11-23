@@ -62,6 +62,5 @@ async def fetch_fair_rune_price(price_holder: LastPriceHolder):
 
 
 @a_result_cached(ttl=60)
-async def fair_rune_price():
-    lph = LastPriceHolder()  # singleton
+async def fair_rune_price(lph: LastPriceHolder):
     return await fetch_fair_rune_price(lph)

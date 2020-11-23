@@ -84,11 +84,3 @@ class ThorNodeAddressManager:
     async def blacklist_node(self, ip, reason='?'):
         self.logger.warning(f'blacklisting {ip} reason: {reason}.')
         self._black_list.add(ip)
-
-    __instance = None
-
-    @classmethod
-    def shared(cls, *args, **kwargs) -> 'ThorNodeAddressManager':
-        if not cls.__instance:
-            cls.__instance = cls(*args, **kwargs)
-        return cls.__instance

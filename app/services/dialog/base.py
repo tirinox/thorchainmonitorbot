@@ -3,14 +3,12 @@ import secrets
 from abc import ABC
 from functools import wraps
 
-from aiogram import Dispatcher
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.dispatcher.storage import FSMContextProxy, FSMContext
 from aiogram.types import Message
 
-from localization import BaseLocalization, LocalizationManager
-from services.lib.config import Config
-from services.lib.db import DB
+from localization import BaseLocalization
+from services.lib.depcont import DepContainer
 from services.lib.utils import code
 
 logger = logging.getLogger('DIALOGS')
@@ -47,25 +45,26 @@ def tg_filters(*custom_filters, commands=None, regexp=None, content_types=None, 
 
 
 class BaseDialog(ABC):
+    back_dialog: 'BaseDialog' = None
+    back_func = None
+
     class States(StatesGroup):
         DUMMY = State()
 
-    def __init__(self, cfg: Config, db: DB, loc: BaseLocalization, data: FSMContextProxy, **kwargs):
-        self.cfg = cfg
-        self.db = db
+    def __init__(self, loc: BaseLocalization, data: FSMContextProxy, d: DepContainer):
+        self.deps = d
         self.loc = loc
         self.data = data
-        self.__dict__.update(kwargs)
 
     @classmethod
-    def register(cls, cfg: Config, db: DB, dp: Dispatcher, loc_man: LocalizationManager, **kwargs):
+    def register(cls, d: DepContainer):
         members = cls.__dict__.items()
         for name, f in members:
             if not hasattr(f, 'handler_stuff'):
                 continue
             handler_stuff = f.handler_stuff
 
-            @dp.message_handler(*handler_stuff['custom_filters'],
+            @d.dp.message_handler(*handler_stuff['custom_filters'],
                                 commands=handler_stuff['commands'],
                                 state=handler_stuff['state'],
                                 regexp=handler_stuff['regexp'],
@@ -73,13 +72,20 @@ class BaseDialog(ABC):
                                 run_task=handler_stuff['run_task'],
                                 **handler_stuff['kwargs'])
             @bot_error_guard
-            async def handler(message: Message, state: FSMContext, name=name):
+            async def handler(message: Message, state: FSMContext, name=name):  # name=name important!!
                 logger.info({
                     'from': (message.from_user.id, message.from_user.first_name, message.from_user.username),
                     'text': message.text
                 })
                 async with state.proxy() as data:
-                    loc = await loc_man.get_from_db(message.from_user.id, db)
-                    handler_class = cls(cfg, db, loc, data, **kwargs)
+                    loc = await d.loc_man.get_from_db(message.from_user.id, d.db)
+                    handler_class = cls(loc, data, d)
                     handler_method = getattr(handler_class, name)
                     return await handler_method(message)
+
+    # noinspection PyCallingNonCallable
+    async def go_back(self, message: Message):
+        message.text = ''
+        obj = self.back_dialog(self.loc, self.data, self.deps)
+        func = getattr(obj, self.back_func.__name__)
+        await func(message)
