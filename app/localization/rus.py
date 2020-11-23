@@ -11,7 +11,7 @@ from services.lib.money import pretty_dollar, pretty_money, short_address, adapt
 
 class RussianLocalization(BaseLocalization):
     # ---- WELCOME ----
-    def help(self):
+    def help_message(self):
         return (
             f"Этот бот уведомляет о крупных движениях с сети {link(self.THORCHAIN_LINK, 'THORChain')}.\n"
             f"Команды:\n"
@@ -19,7 +19,7 @@ class RussianLocalization(BaseLocalization):
             f"/start – запуск и установка языка\n"
             f"/cap – текущий кап для стейка в пулах Chaosnet\n"
             f"/price – текущая цена {self.R}.\n"
-            f"<b>⚠️ Бот теперь уведомляет только в канале️ @thorchain_alert!</b>\n"
+            f"<b>⚠️ Бот теперь уведомляет только в канале @thorchain_alert!</b>\n"
         )
 
     def welcome_message(self, info: ThorInfo):
@@ -27,7 +27,7 @@ class RussianLocalization(BaseLocalization):
             f"Привет! <b>{info.stacked:.0f}</b> монет из <b>{info.cap:.0f}</b> сейчас застейканы.\n"
             f"{self._cap_progress_bar(info)}"
             f"Цена {self.R} сейчас <code>{info.price:.3f} BUSD</code>.\n"
-            f"<b>⚠️ Бот теперь уведомляет только в канале️ @thorchain_alert!</b>\n"
+            f"<b>⚠️ Бот теперь уведомляет только в канале @thorchain_alert!</b>\n"
             f"Набери /help, чтобы видеть список команд."
         )
 

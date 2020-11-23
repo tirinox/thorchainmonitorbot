@@ -7,7 +7,7 @@ from aiogram import Bot, Dispatcher, executor
 from aiogram.types import *
 
 from localization import LocalizationManager
-from services.dialog.dialog import register_commands
+from services.dialog.dialog import bootstrap_bot_commands
 from services.fetch.cap import CapInfoFetcher
 from services.fetch.gecko_price import fill_rune_price_from_gecko
 from services.fetch.node_ip_manager import ThorNodeAddressManager
@@ -50,7 +50,7 @@ class App:
 
         self.thor_man = ThorNodeAddressManager.shared()
 
-        register_commands(self.cfg, self.dp, self.loc_man, self.db, self.broadcaster, self.price_holder)
+        bootstrap_bot_commands(self.cfg, self.dp, self.loc_man, self.db, self.broadcaster, self.price_holder)
 
     async def _run_tasks(self):
         self.dp.storage = await self.db.get_storage()

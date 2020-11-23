@@ -11,7 +11,7 @@ from services.lib.money import pretty_dollar, pretty_money, short_address, adapt
 
 class EnglishLocalization(BaseLocalization):
     # ---- WELCOME ----
-    def help(self):
+    def help_message(self):
         return (
             f"This bot is for {link(self.THORCHAIN_LINK, 'THORChain')} monitoring.\n"
             f"Command list:\n"
@@ -19,7 +19,7 @@ class EnglishLocalization(BaseLocalization):
             f"/start – start and set your language\n"
             f"/cap – the current staking cap of Chaosnet\n"
             f"/price – the current Rune price.\n"
-            f"<b>⚠️ All notifications are forwarded to️ @thorchain_alert channel!</b>"
+            f"<b>⚠️ All notifications are forwarded to @thorchain_alert channel!</b>"
         )
 
     def welcome_message(self, info: ThorInfo):
@@ -27,7 +27,7 @@ class EnglishLocalization(BaseLocalization):
             f"Hello! <b>{pretty_money(info.stacked)} {self.R}</b> of <b>{pretty_money(info.cap)} {self.R}</b> pooled.\n"
             f"{self._cap_progress_bar(info)}"
             f"The {self.R} price is <code>{info.price:.3f} BUSD</code> now.\n"
-            f"<b>⚠️ All notifications are forwarded to️ @thorchain_alert channel!</b>\n"
+            f"<b>⚠️ All notifications are forwarded to @thorchain_alert channel!</b>\n"
             f"Type /help to see the command list."
         )
 
