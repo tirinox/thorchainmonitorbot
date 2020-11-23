@@ -4,7 +4,7 @@ from aiogram.types import *
 from aiogram.utils.helper import HelperMode
 
 from localization import LocalizationManager
-from services.dialog.base import BaseDialog, tg_filters
+from services.dialog.base import BaseDialog, message_handler
 from services.dialog.stake_info import StakeDialog
 from services.fetch.fair_price import fair_rune_price
 from services.models.cap_info import ThorInfo
@@ -20,7 +20,7 @@ class MainStates(StatesGroup):
 
 
 class MainMenuDialog(BaseDialog):
-    @tg_filters(commands='start,lang', state='*')
+    @message_handler(commands='start,lang', state='*')
     async def entry_point(self, message: Message):
         await self.deps.broadcaster.register_user(message.from_user.id)
         loc_man = self.deps.loc_man
@@ -38,14 +38,14 @@ class MainMenuDialog(BaseDialog):
                                  disable_notification=True)
             await MainStates.MAIN_MENU.set()
 
-    @tg_filters(commands='cap', state='*')
+    @message_handler(commands='cap', state='*')
     async def cmd_cap(self, message: Message):
         info = await ThorInfo.get_old_cap(self.deps.db)
         await message.answer(self.loc.welcome_message(info),
                              disable_web_page_preview=True,
                              disable_notification=True)
 
-    @tg_filters(commands='price', state='*')
+    @message_handler(commands='price', state='*')
     async def cmd_price(self, message: Message):
         fp = await fair_rune_price(self.deps.price_holder)
         pn = PriceNotifier(self.deps)
@@ -61,17 +61,17 @@ class MainMenuDialog(BaseDialog):
                              disable_web_page_preview=True,
                              disable_notification=True)
 
-    @tg_filters(commands='help', state='*')
+    @message_handler(commands='help', state='*')
     async def cmd_help(self, message: Message):
         await message.answer(self.loc.help_message(),
                              disable_web_page_preview=True,
                              disable_notification=True)
 
-    @tg_filters(filters.RegexpCommandsFilter(regexp_commands=[r'/.*']), state='*')
+    @message_handler(filters.RegexpCommandsFilter(regexp_commands=[r'/.*']), state='*')
     async def on_unknown_command(self, message: Message):
         await message.answer(self.loc.unknown_command(), disable_notification=True)
 
-    @tg_filters(state=MainStates.ASK_LANGUAGE)
+    @message_handler(state=MainStates.ASK_LANGUAGE)
     async def on_lang_set(self, message: Message):
         t = message.text
         if t == self.loc.BUTTON_ENG:
@@ -88,7 +88,7 @@ class MainMenuDialog(BaseDialog):
         self.loc = await LocalizationManager().set_lang(message.from_user.id, lang, self.deps.db)
         await self.entry_point(message)
 
-    @tg_filters(state=MainStates.MAIN_MENU)
+    @message_handler(state=MainStates.MAIN_MENU)
     async def on_main_menu(self, message: Message):
         if message.text == self.loc.BUTTON_MM_PRICE:
             await self.cmd_price(message)
