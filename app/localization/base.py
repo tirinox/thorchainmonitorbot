@@ -2,12 +2,28 @@ from abc import ABC, abstractmethod
 
 from aiogram.types import *
 
-from services.models.price import RuneFairPrice, PriceReport, PriceATH
-from services.models.pool_info import PoolInfo
-from services.models.cap_info import ThorInfo
-from services.models.tx import StakeTx, StakePoolStats, short_asset_name, asset_name_cut_chain
-from services.lib.utils import progressbar
 from services.lib.money import format_percent
+from services.lib.utils import progressbar
+from services.models.cap_info import ThorInfo
+from services.models.pool_info import PoolInfo
+from services.models.price import RuneFairPrice, PriceReport, PriceATH
+from services.models.tx import StakeTx, StakePoolStats, asset_name_cut_chain
+
+
+def kbd(buttons, resize=True, vert=False, one_time=False):
+    if isinstance(buttons, str):
+        buttons = [[buttons]]
+    elif isinstance(buttons, (list, tuple, set)):
+        if all(isinstance(b, str) for b in buttons):
+            if vert:
+                buttons = [[b] for b in buttons]
+            else:
+                buttons = [buttons]
+
+    buttons = [
+        [KeyboardButton(b) for b in row] for row in buttons
+    ]
+    return ReplyKeyboardMarkup(buttons, resize_keyboard=resize, one_time_keyboard=one_time)
 
 
 class BaseLocalization(ABC):
@@ -31,14 +47,20 @@ class BaseLocalization(ABC):
     R = 'Rune'
 
     def lang_help(self):
-        return (f'Пожалуйста, выберите язык / Please select a language',
-                ReplyKeyboardMarkup(keyboard=[[
-                    KeyboardButton(self.BUTTON_RUS),
-                    KeyboardButton(self.BUTTON_ENG)
-                ]], resize_keyboard=True, one_time_keyboard=True))
+        return (
+            f'Пожалуйста, выберите язык / Please select a language',
+            kbd([self.BUTTON_RUS, self.BUTTON_ENG], one_time=True)
+        )
 
     @abstractmethod
     def unknown_command(self): ...
+
+    BUTTON_MM_MY_ADDRESS = ''
+    BUTTON_MM_CAP = ''
+    BUTTON_MM_PRICE = ''
+
+    @abstractmethod
+    def kbd_main_menu(self): ...
 
     # ------- CAP -------
 

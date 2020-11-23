@@ -12,7 +12,7 @@ from services.models.price import PriceReport, LastPriceHolder
 from services.notify.broadcast import Broadcaster
 
 
-async def send_to_channel_test_message(cfg, db):
+async def send_to_channel_test_message(cfg, db, dp):
     loc_man = LocalizationManager()
     broadcaster = Broadcaster(cfg, bot, db)
 
@@ -28,8 +28,8 @@ async def send_to_channel_test_message(cfg, db):
     await broadcaster.broadcast(user_lang_map.keys(), message_gen)
 
 
-async def main(cfg, db):
-    await send_to_channel_test_message(cfg, db)
+async def main(cfg, db, dp):
+    await send_to_channel_test_message(cfg, db, dp)
 
 
 if __name__ == '__main__':
@@ -43,4 +43,4 @@ if __name__ == '__main__':
     dp = Dispatcher(bot, loop=loop)
     loc_man = LocalizationManager()
 
-    asyncio.run(main(cfg, db))
+    asyncio.run(main(cfg, db, dp))

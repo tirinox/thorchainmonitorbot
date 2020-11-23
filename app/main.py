@@ -7,7 +7,7 @@ from aiogram import Bot, Dispatcher, executor
 from aiogram.types import *
 
 from localization import LocalizationManager
-from services.dialog.dialog import bootstrap_bot_commands
+from services.dialog.main_menu import MainMenuDialog
 from services.fetch.cap import CapInfoFetcher
 from services.fetch.gecko_price import fill_rune_price_from_gecko
 from services.fetch.node_ip_manager import ThorNodeAddressManager
@@ -29,7 +29,7 @@ class App:
     def __init__(self):
         print('-' * 100)
 
-        self.cfg = Config()
+        cfg = self.cfg = Config()
 
         log_level = self.cfg.get('log_level', logging.INFO)
         logging.basicConfig(
@@ -41,16 +41,16 @@ class App:
         logging.info(f"Log level: {log_level}")
 
         self.loop = asyncio.get_event_loop()
-        self.db = DB(self.loop)
-        self.bot = Bot(token=self.cfg.telegram.bot.token, parse_mode=ParseMode.HTML)
-        self.dp = Dispatcher(self.bot, loop=self.loop)
-        self.loc_man = LocalizationManager()
-        self.broadcaster = Broadcaster(self.cfg, self.bot, self.db)
-        self.price_holder = LastPriceHolder()
+        db = self.db = DB(self.loop)
+        bot = self.bot = Bot(token=self.cfg.telegram.bot.token, parse_mode=ParseMode.HTML)
+        dp = self.dp = Dispatcher(self.bot, loop=self.loop)
+        loc_man = self.loc_man = LocalizationManager()
+        broadcaster = self.broadcaster = Broadcaster(self.cfg, self.bot, self.db)
+        price_holder = self.price_holder = LastPriceHolder()
 
         self.thor_man = ThorNodeAddressManager.shared()
 
-        bootstrap_bot_commands(self.cfg, self.dp, self.loc_man, self.db, self.broadcaster, self.price_holder)
+        MainMenuDialog.bootstrap_bot_commands(cfg, dp, loc_man, db, broadcaster, price_holder)
 
     async def _run_tasks(self):
         self.dp.storage = await self.db.get_storage()

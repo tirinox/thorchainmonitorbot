@@ -1,12 +1,14 @@
-from localization.base import BaseLocalization
+from aiogram.types import *
+
+from localization.base import BaseLocalization, kbd
 from services.lib.datetime import format_time_ago
-from services.models.price import RuneFairPrice, PriceReport, PriceATH
-from services.models.pool_info import PoolInfo
-from services.models.cap_info import ThorInfo
-from services.models.tx import StakeTx, short_asset_name, StakePoolStats
-from services.lib.utils import link, code, bold, pre, x_ses, ital
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change
+from services.lib.utils import link, code, bold, pre, x_ses, ital
+from services.models.cap_info import ThorInfo
+from services.models.pool_info import PoolInfo
+from services.models.price import RuneFairPrice, PriceReport, PriceATH
+from services.models.tx import StakeTx, short_asset_name, StakePoolStats
 
 
 class RussianLocalization(BaseLocalization):
@@ -16,7 +18,8 @@ class RussianLocalization(BaseLocalization):
             f"Этот бот уведомляет о крупных движениях с сети {link(self.THORCHAIN_LINK, 'THORChain')}.\n"
             f"Команды:\n"
             f"/help – эта помощь\n"
-            f"/start – запуск и установка языка\n"
+            f"/start – запуск и перезапуск бота\n"
+            f"/lang – изменить язык\n"
             f"/cap – текущий кап для стейка в пулах Chaosnet\n"
             f"/price – текущая цена {self.R}.\n"
             f"<b>⚠️ Бот теперь уведомляет только в канале @thorchain_alert!</b>\n"
@@ -33,9 +36,18 @@ class RussianLocalization(BaseLocalization):
 
     def unknown_command(self):
         return (
-            "Извини, я не знаю такой команды.\n"
-            "/help"
+            "🙄 Извини, я не знаю такой команды.\n"
+            "Нажми на /help, чтобы увидеть доступные команды."
         )
+
+    # ----- MAIN MENU ------
+
+    BUTTON_MM_MY_ADDRESS = 'Мои адреса'
+    BUTTON_MM_CAP = 'Кап ликвидности'
+    BUTTON_MM_PRICE = f'Инфо о цене {BaseLocalization.R}'
+
+    def kbd_main_menu(self):
+        return kbd([self.BUTTON_MM_MY_ADDRESS, self.BUTTON_MM_PRICE, self.BUTTON_MM_CAP])
 
     # ----- CAP ------
     def notification_text_cap_change(self, old: ThorInfo, new: ThorInfo):
@@ -58,7 +70,8 @@ class RussianLocalization(BaseLocalization):
         )
 
     # ------ TXS -------
-    def notification_text_large_tx(self, tx: StakeTx, dollar_per_rune: float, pool: StakePoolStats, pool_info: PoolInfo):
+    def notification_text_large_tx(self, tx: StakeTx, dollar_per_rune: float, pool: StakePoolStats,
+                                   pool_info: PoolInfo):
         msg = ''
         if tx.type == 'stake':
             msg += f'🐳 <b>Кит добавил ликвидности</b> 🟢\n'

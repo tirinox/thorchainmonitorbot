@@ -2,9 +2,10 @@ from services.lib.db import DB
 from localization.base import BaseLocalization
 from localization.eng import EnglishLocalization
 from localization.rus import RussianLocalization
+from services.lib.utils import Singleton
 
 
-class LocalizationManager:
+class LocalizationManager(metaclass=Singleton):
     def __init__(self):
         self._langs = {
             'rus': RussianLocalization(),
@@ -27,6 +28,7 @@ class LocalizationManager:
     async def set_lang(self, chat_id, lang, db: DB):
         redis = await db.get_redis()
         await redis.set(self.lang_key(chat_id), str(lang))
+        return await self.get_from_db(chat_id, db)
 
     async def get_from_db(self, chat_id, db: DB):
         lang = await self.get_lang(chat_id, db)

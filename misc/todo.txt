@@ -67,6 +67,8 @@ async def cmd_set_commands(message: types.Message):
         await bot.set_my_commands(commands)
         await message.answer("Команды настроены.")
 
+16) for callback alert use await bot.answer_callback_query()
+
 ----
 
 From now on, notifications of large liquidity transactions will be sent only if the transaction volume is more than 5 times the median of the last 50 transactions.

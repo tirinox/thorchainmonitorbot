@@ -1,4 +1,4 @@
-from localization.base import BaseLocalization
+from localization.base import BaseLocalization, kbd
 from services.lib.datetime import format_time_ago
 from services.models.price import RuneFairPrice, PriceReport, PriceATH
 from services.models.pool_info import PoolInfo
@@ -16,8 +16,9 @@ class EnglishLocalization(BaseLocalization):
             f"This bot is for {link(self.THORCHAIN_LINK, 'THORChain')} monitoring.\n"
             f"Command list:\n"
             f"/help – this help page\n"
-            f"/start – start and set your language\n"
-            f"/cap – the current staking cap of Chaosnet\n"
+            f"/start – start/restart the bot\n"
+            f"/lang – set the language\n"
+            f"/cap – the current liquidity cap of Chaosnet\n"
             f"/price – the current Rune price.\n"
             f"<b>⚠️ All notifications are forwarded to @thorchain_alert channel!</b>"
         )
@@ -26,16 +27,24 @@ class EnglishLocalization(BaseLocalization):
         return (
             f"Hello! <b>{pretty_money(info.stacked)} {self.R}</b> of <b>{pretty_money(info.cap)} {self.R}</b> pooled.\n"
             f"{self._cap_progress_bar(info)}"
-            f"The {self.R} price is <code>{info.price:.3f} BUSD</code> now.\n"
-            f"<b>⚠️ All notifications are forwarded to @thorchain_alert channel!</b>\n"
-            f"Type /help to see the command list."
+            f"The {self.R} price is <code>${info.price:.3f}</code> now.\n"
+            f"<b>⚠️ All notifications are forwarded to @thorchain_alert channel!</b>"
         )
 
     def unknown_command(self):
         return (
-            "Sorry, I didn't understand that command.\n"
-            "/help"
+            "🙄 Sorry, I didn't understand that command.\n"
+            "Use /help to see available commands."
         )
+
+    # ----- MAIN MENU ------
+
+    BUTTON_MM_MY_ADDRESS = 'Manage my address'
+    BUTTON_MM_CAP = 'Liquidity cap'
+    BUTTON_MM_PRICE = f'{BaseLocalization.R} price info'
+
+    def kbd_main_menu(self):
+        return kbd([self.BUTTON_MM_MY_ADDRESS, self.BUTTON_MM_PRICE, self.BUTTON_MM_CAP])
 
     # ----- CAP ------
     def notification_text_cap_change(self, old: ThorInfo, new: ThorInfo):
