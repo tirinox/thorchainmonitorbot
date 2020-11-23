@@ -42,9 +42,9 @@ class RussianLocalization(BaseLocalization):
 
     # ----- MAIN MENU ------
 
-    BUTTON_MM_MY_ADDRESS = 'Мои адреса'
-    BUTTON_MM_CAP = 'Кап ликвидности'
-    BUTTON_MM_PRICE = f'Инфо о цене {BaseLocalization.R}'
+    BUTTON_MM_MY_ADDRESS = '🏦 Мои адреса'
+    BUTTON_MM_CAP = '📐 Кап ликвидности'
+    BUTTON_MM_PRICE = f'💲 Инфо о цене {BaseLocalization.R}'
 
     def kbd_main_menu(self):
         return kbd([self.BUTTON_MM_MY_ADDRESS, self.BUTTON_MM_PRICE, self.BUTTON_MM_CAP])

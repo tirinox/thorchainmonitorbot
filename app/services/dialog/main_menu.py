@@ -6,6 +6,7 @@ from aiogram.utils.helper import HelperMode
 
 from localization import LocalizationManager, BaseLocalization
 from services.dialog.base import BaseDialog, tg_filters
+from services.dialog.stake_info import StakeDialog
 from services.fetch.fair_price import fair_rune_price
 from services.lib.config import Config
 from services.lib.db import DB
@@ -16,7 +17,7 @@ from services.notify.types.price_notify import PriceNotifier
 
 
 class MainMenuDialog(BaseDialog):
-    class States(StatesGroup):
+    class MainStates(StatesGroup):
         mode = HelperMode.snake_case
 
         MAIN_MENU = State()
@@ -34,7 +35,7 @@ class MainMenuDialog(BaseDialog):
         loc_man = LocalizationManager()
         if message.get_command(pure=True) == 'lang' or await loc_man.get_lang(message.from_user.id, self.db) is None:
             # ask language if not set
-            await self.States.ASK_LANGUAGE.set()
+            await self.MainStates.ASK_LANGUAGE.set()
             text, kb = self.loc.lang_help()
             await message.answer(text, reply_markup=kb,
                                  disable_notification=True)
@@ -42,7 +43,7 @@ class MainMenuDialog(BaseDialog):
             info = await ThorInfo.get_old_cap(self.db)
             await message.answer(self.loc.welcome_message(info),
                                  reply_markup=self.loc.kbd_main_menu())
-            await self.States.MAIN_MENU.set()
+            await self.MainStates.MAIN_MENU.set()
 
     @tg_filters(commands='cap', state='*')
     async def cmd_cap(self, message: Message):
@@ -77,7 +78,7 @@ class MainMenuDialog(BaseDialog):
     async def on_unknown_command(self, message: Message):
         await message.answer(self.loc.unknown_command(), disable_notification=True)
 
-    @tg_filters(state=States.ASK_LANGUAGE)
+    @tg_filters(state=MainStates.ASK_LANGUAGE)
     async def on_lang_set(self, message: Message):
         t = message.text
         if t == self.loc.BUTTON_ENG:
@@ -89,30 +90,19 @@ class MainMenuDialog(BaseDialog):
 
         self.data['language'] = lang
 
-        await self.States.MAIN_MENU.set()
+        await self.MainStates.MAIN_MENU.set()
 
         self.loc = await LocalizationManager().set_lang(message.from_user.id, lang, self.db)
         await self.cmd_start(message)
 
-    @tg_filters(state=States.MAIN_MENU)
+    @tg_filters(state=MainStates.MAIN_MENU)
     async def on_main_menu(self, message: Message):
         if message.text == self.loc.BUTTON_MM_PRICE:
             await self.cmd_price(message)
         elif message.text == self.loc.BUTTON_MM_CAP:
             await self.cmd_cap(message)
         elif message.text == self.loc.BUTTON_MM_MY_ADDRESS:
-            ... # todo: go to stake info
+            await StakeDialog(self.cfg, self.db, self.loc, self.data,
+                              self.price_holder, self.broadcaster).on_menu(message)
         else:
             return False
-
-
-    @classmethod
-    def bootstrap_bot_commands(cls,
-                               cfg: Config,
-                               dp: Dispatcher,
-                               loc_man: LocalizationManager,
-                               db: DB,
-                               broadcaster: Broadcaster,
-                               price_holder: LastPriceHolder):
-
-        cls.register(cfg, db, dp, loc_man, broadcaster=broadcaster, price_holder=price_holder)

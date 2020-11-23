@@ -39,9 +39,9 @@ class EnglishLocalization(BaseLocalization):
 
     # ----- MAIN MENU ------
 
-    BUTTON_MM_MY_ADDRESS = 'Manage my address'
-    BUTTON_MM_CAP = 'Liquidity cap'
-    BUTTON_MM_PRICE = f'{BaseLocalization.R} price info'
+    BUTTON_MM_MY_ADDRESS = '🏦 Manage my address'
+    BUTTON_MM_CAP = '📐 Liquidity cap'
+    BUTTON_MM_PRICE = f'💲 {BaseLocalization.R} price info'
 
     def kbd_main_menu(self):
         return kbd([self.BUTTON_MM_MY_ADDRESS, self.BUTTON_MM_PRICE, self.BUTTON_MM_CAP])
