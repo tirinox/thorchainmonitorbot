@@ -64,7 +64,7 @@ class Broadcaster:
             self.logger.error(f"Target [ID:{chat_id}]: user is deactivated")
         except exceptions.TelegramAPIError:
             self.logger.exception(f"Target [ID:{chat_id}]: failed")
-            return True  # tg error is not the reason to exlude the user
+            return True  # tg error is not the reason to exclude the user
         else:
             self.logger.info(f"Target [ID:{chat_id}]: success")
             return True

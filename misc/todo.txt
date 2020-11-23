@@ -6,9 +6,7 @@ queue of messages -> forever loop with "anti-spam" delays
 
 3) ?
 
-4) move the source code and config to a separate folder -> bond it to a docker-compose volume
-
-in order not to rebuild the image every time code updates
+4) ?
 
 5) ?
 
@@ -17,6 +15,8 @@ in order not to rebuild the image every time code updates
 + add API for thor node request with auto blacklist if error or time out + retries
 
 7) ToDo: integrate with runestake.info
+
+IN PROGRESS
 
 Kai: This bot is very cool.
 
@@ -55,4 +55,19 @@ commands:
 2. logs
 3. reset state?
 4. restart
+5. send to all
+
+15) bot can edit commands like this:
+
+@dp.message_handler(commands="set_commands", state="*")
+async def cmd_set_commands(message: types.Message):
+    if message.from_user.id == 1234567:  # Подставьте сюда свой Telegram ID
+        commands = [types.BotCommand(command="/drinks", description="Заказать напитки"),
+                    types.BotCommand(command="/food", description="Заказать блюда")]
+        await bot.set_my_commands(commands)
+        await message.answer("Команды настроены.")
+
+----
+
+From now on, notifications of large liquidity transactions will be sent only if the transaction volume is more than 5 times the median of the last 50 transactions.
 
