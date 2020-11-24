@@ -23,6 +23,17 @@ Me: add sharable stake reports!
 
 ------------------------------------------------------------------------
 
+Bitcoin_Sage, [24 нояб. 2020 г., 11:19:49]:
+Hey man I see you're struggling to get the alerts for added liquidity right.
+
+Maybe it's an idea to base it on the depth of the pool? With shallow pools having a higher threshold and deeper pools a lower one before the alert goes of.
+
+EG. BTC pool alerts from 1% depth and sah SHR pool alert from 25% depth.
+
+sah = say
+
+------------------------------------------------------------------------
+
 ToDo: price graph + deterministic price graph
 
 ------------------------------------------------------------------------

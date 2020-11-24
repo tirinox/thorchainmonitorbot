@@ -11,9 +11,7 @@ class PoolPriceFetcher(BaseFetcher):
         cfg = deps.cfg
         period = parse_timespan_to_seconds(cfg.price.fetch_period)
         super().__init__(deps, sleep_period=period)
-        self.thor_man = deps.thor_man
-        self.session = deps.session
-        self.price_holder = deps.price_holder
+        self.deps = deps
 
     @staticmethod
     def historic_url(base_url, asset, height):
@@ -24,17 +22,17 @@ class PoolPriceFetcher(BaseFetcher):
         return f"{base_url}/thorchain/pools"
 
     async def fetch(self):
+        d = self.deps
         await self.get_current_pool_data_full()
-        price = self.price_holder.usd_per_rune
+        price = d.price_holder.usd_per_rune
         self.logger.info(f'fresh rune price is ${price:.3f}')
-        db = self.deps.db
 
         if price > 0:
-            pts = PriceTimeSeries(RUNE_SYMBOL, db)
+            pts = PriceTimeSeries(RUNE_SYMBOL, d.db)
             await pts.add(price=price)
 
-            pts_det = PriceTimeSeries(RUNE_SYMBOL_DET, db)
-            fair_price = await fair_rune_price(self.deps.price_holder)
+            pts_det = PriceTimeSeries(RUNE_SYMBOL_DET, d.db)
+            fair_price = await fair_rune_price(d.price_holder)
             await pts_det.add(price=fair_price.fair_price)
             fair_price.real_rune_price = price
             return fair_price
@@ -45,10 +43,10 @@ class PoolPriceFetcher(BaseFetcher):
         if asset == RUNE_SYMBOL:
             return PoolInfo.dummy()
 
-        base_url = await self.thor_man.select_node_url()
+        base_url = await self.deps.thor_man.select_node_url()
         url = self.historic_url(base_url, asset, height)
 
-        async with self.session.get(url) as resp:
+        async with self.deps.session.get(url) as resp:
             j = await resp.json()
             return PoolInfo.from_dict(j)
 
@@ -68,18 +66,18 @@ class PoolPriceFetcher(BaseFetcher):
         return dollar_per_rune, asset_price_in_usd
 
     async def get_current_pool_data_full(self):
-        base_url = await self.thor_man.select_node_url()
+        base_url = await self.deps.thor_man.select_node_url()
         url = self.full_pools_url(base_url)
 
         self.logger.info(f"loading pool data from {url}")
 
-        async with self.session.get(url) as resp:
+        async with self.deps.session.get(url) as resp:
             pools_info = await resp.json()
             results = {
                 pool['asset']: PoolInfo.from_dict(pool) for pool in pools_info
             }
-            if results and self.price_holder is not None:
-                self.price_holder.update(results)
+            if results and self.deps.price_holder is not None:
+                self.deps.price_holder.update(results)
             return results
 
     async def get_prices_of(self, asset_list):

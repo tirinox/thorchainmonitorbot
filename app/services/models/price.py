@@ -51,9 +51,13 @@ class LastPriceHolder:
 
     def update(self, new_pool_info_map: Dict[str, PoolInfo]):
         self.pool_info_map = new_pool_info_map.copy()
-        self.usd_per_rune = self.pool_info_map.get(BUSD_SYMBOL, PoolInfo.dummy()).asset_per_rune
+        self.usd_per_rune = self.pool_info_map[BUSD_SYMBOL].asset_per_rune
         self.last_update_ts = time.time()
 
     @property
     def pool_names(self):
         return set(self.pool_info_map.keys())
+
+    def usd_per_asset(self, pool):
+        runes_per_asset = self.pool_info_map[pool].runes_per_asset
+        return self.usd_per_rune * runes_per_asset

@@ -1,6 +1,8 @@
 from dataclasses import dataclass, field
 
+from services.lib.datetime import DAY
 from services.models.base import BaseModelMixin
+from services.models.pool_info import MIDGARD_MULT, PoolInfo
 
 BNB_CHAIN = 'BNB'
 BECH_2_CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
@@ -24,6 +26,12 @@ class MyStakeAddress(BaseModelMixin):
             return False
 
 
+def pool_share(rune_depth, asset_depth, stake_units, pool_unit):
+    rune_share = (rune_depth * stake_units) / pool_unit
+    asset_share = (asset_depth * stake_units) / pool_unit
+    return rune_share, asset_share
+
+
 @dataclass
 class CurrentLiquidity(BaseModelMixin):
     pool: str
@@ -38,16 +46,101 @@ class CurrentLiquidity(BaseModelMixin):
     total_unstaked_asset: float
     total_unstaked_rune: float
     total_unstaked_usd: float
-    first_stake: int
-    last_stake: int
+    first_stake_ts: int
+    last_stake_ts: int
 
     @classmethod
     def from_asgard(cls, d):
+        m = MIDGARD_MULT
         return cls(
-            d['pool'], d['runestake'], d['assetstake'], d['poolunits'],
-            d['assetwithdrawn'], d['runewithdrawn'],
-            d['totalstakedasset'], d['totalstakedrune'],
-            d['totalstakedusd'], d['totalunstakedasset'],
-            d['totalunstakedrune'], d['totalunstakedusd'],
+            d['pool'], d['runestake'] * m, d['assetstake'] * m, d['poolunits'],
+                       d['assetwithdrawn'] * m, d['runewithdrawn'] * m,
+                       d['totalstakedasset'] * m, d['totalstakedrune'] * m,
+                       d['totalstakedusd'] * m, d['totalunstakedasset'] * m,
+                       d['totalunstakedrune'] * m, d['totalunstakedusd'] * m,
             d['firststake'], d['laststake']
         )
+
+
+@dataclass
+class StakePoolReport:
+    usd_per_asset: float
+    usd_per_rune: float
+
+    liq: CurrentLiquidity
+    pool: PoolInfo
+
+    ASSET = 'asset'
+    RUNE = 'rune'
+    USD = 'usd'
+
+    @property
+    def lp_vs_hold(self) -> (float, float):
+        rune_added_in_usd = self.liq.rune_stake * self.usd_per_rune
+        asset_added_in_usd = self.liq.asset_stake * self.usd_per_asset
+        total_added_in_usd = rune_added_in_usd + asset_added_in_usd
+
+        rune_withdrawn_in_usd = self.liq.rune_withdrawn * self.usd_per_rune
+        asset_withdrawn_in_usd = self.liq.asset_withdrawn * self.usd_per_asset
+        total_withdrawn_in_usd = rune_withdrawn_in_usd + asset_withdrawn_in_usd
+
+        redeem_rune, redeem_asset = self.redeemable_rune_asset
+        redeem_rune_in_usd = redeem_rune * self.usd_per_rune
+        redeem_asset_in_usd = redeem_asset * self.usd_per_asset
+        total_redeemable_in_usd = redeem_rune_in_usd + redeem_asset_in_usd
+
+        lp_vs_hold_abs = total_redeemable_in_usd + total_withdrawn_in_usd - total_added_in_usd
+        lp_vs_hold_percent = lp_vs_hold_abs / total_added_in_usd * 100.0
+        return lp_vs_hold_abs, lp_vs_hold_percent
+
+    @property
+    def lp_vs_hold_apy(self) -> float:
+        _, lp_vs_hold_percent = self.lp_vs_hold
+        lp_vs_hold_percent /= 100.0
+        total_days = self.total_staking_sec / DAY
+        apy = (1 + lp_vs_hold_percent / total_days) ** 365 - 1
+        return apy * 100.0
+
+    def gain_loss(self, mode=USD) -> (float, float):
+        cur_val = self.current_value(mode)
+        wth_val = self.withdrawn_value(mode)
+        add_val = self.added_value(mode)
+        gain_loss_abs = cur_val + wth_val - add_val
+        gain_loss_percent = gain_loss_abs / add_val * 100.0
+        return gain_loss_abs, gain_loss_percent
+
+    @property
+    def redeemable_rune_asset(self):
+        r, a = pool_share(self.pool.balance_rune, self.pool.balance_asset, self.liq.pool_units, self.pool.pool_units)
+        return r * MIDGARD_MULT, a * MIDGARD_MULT
+
+    def added_value(self, mode=USD):
+        if mode == self.USD:
+            return self.liq.total_staked_usd
+        elif mode == self.RUNE:
+            return self.liq.total_staked_rune
+        elif mode == self.ASSET:
+            return self.liq.total_staked_asset
+
+    def withdrawn_value(self, mode=USD):
+        if mode == self.USD:
+            return self.liq.total_unstaked_usd
+        elif mode == self.RUNE:
+            return self.liq.total_unstaked_rune
+        elif mode == self.ASSET:
+            return self.liq.total_unstaked_asset
+
+    def current_value(self, mode=USD):
+        r, a = self.redeemable_rune_asset
+        usd_value = r * self.usd_per_rune + a * self.usd_per_asset
+        if mode == self.USD:
+            return usd_value
+        elif mode == self.RUNE:
+            return usd_value / self.usd_per_rune
+        elif mode == self.ASSET:
+            return usd_value / self.usd_per_asset
+
+    @property
+    def total_staking_sec(self):
+        return self.liq.last_stake_ts - self.liq.first_stake_ts
+
