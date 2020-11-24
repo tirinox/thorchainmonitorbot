@@ -13,13 +13,12 @@ telegram:
 
 tx:
   stake_unstake:
-    avg_n: 60
-    threshold_mult: 5.0
+    min_pool_percent: 5
     max_age_sec: 12h
     fetch_period: 70
     tx_per_batch: 50
     max_page_deep: 10
-    min_usd_total: 10000
+    min_usd_total: 50000
 
 price:
   fetch_period: 60

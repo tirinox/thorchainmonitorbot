@@ -28,7 +28,7 @@ class StakeTxFetcher(BaseFetcher):
         self.pool_info_map = {}
 
         scfg = cfg.tx.stake_unstake
-        self.avg_n = int(scfg.avg_n)
+
         self.price_holder = price_holder
         self.sleep_period = parse_timespan_to_seconds(scfg.fetch_period)
         self.tx_per_batch = int(scfg.tx_per_batch)
@@ -110,7 +110,7 @@ class StakeTxFetcher(BaseFetcher):
             stats: StakePoolStats = self.pool_stat_map.get(tx.pool)
             if price and stats:
                 full_rune = tx.calc_full_rune_amount(price)
-                stats.update(full_rune, self.avg_n)
+                stats.update(full_rune, 100)
                 updated_stats.add(tx.pool)
                 result_txs.append(tx)
 

@@ -76,11 +76,12 @@ class EnglishLocalization(BaseLocalization):
         rune_side_usd = tx.rune_amount * dollar_per_rune
         rune_side_usd_short = short_money(rune_side_usd)
         asset_side_usd_short = short_money(total_usd_volume - rune_side_usd)
+        percent_of_pool = pool_info.percent_share(tx.full_rune)
 
         msg += (
             f"<b>{pretty_money(tx.rune_amount)} {self.R}</b> ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
             f"<b>{pretty_money(tx.asset_amount)} {short_asset_name(tx.pool)}</b> ({ap:.0f}% = {asset_side_usd_short})\n"
-            f"Total: <code>${pretty_money(total_usd_volume)}</code>\n"
+            f"Total: <code>${pretty_money(total_usd_volume)}</code> ({percent_of_pool:.2f}% of the whole pool).\n"
             f"Pool depth is <b>${pretty_money(pool_depth_usd)}</b> now.\n"
             f"Thor explorer: {thor_tx} / Binance explorer: {bnb_tx}."
         )

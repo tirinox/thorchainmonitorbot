@@ -8,6 +8,7 @@ from services.fetch.tx import StakeTxFetcher
 from services.lib.config import Config
 from services.lib.datetime import parse_timespan_to_seconds
 from services.lib.db import DB
+from services.models.pool_info import PoolInfo, MIDGARD_MULT
 from services.models.tx import StakeTx, StakePoolStats
 from services.notify.broadcast import Broadcaster
 
@@ -23,8 +24,7 @@ class StakeTxNotifier(INotified):
         self.logger = logging.getLogger('StakeTxNotifier')
 
         scfg = cfg.tx.stake_unstake
-        self.threshold_mult = float(scfg.threshold_mult)
-        self.avg_n = int(scfg.avg_n)
+        self.min_pool_percent = float(scfg.min_pool_percent)
         self.max_age_sec = parse_timespan_to_seconds(scfg.max_age_sec)
         self.min_usd_total = int(scfg.min_usd_total)
 
@@ -34,7 +34,7 @@ class StakeTxNotifier(INotified):
         usd_per_rune = fetcher.price_holder.usd_per_rune
         min_rune_volume = self.min_usd_total / usd_per_rune
 
-        large_txs = self._filter_large_txs(fetcher, new_txs, self.threshold_mult, min_rune_volume)
+        large_txs = self._filter_large_txs(fetcher, new_txs, self.min_pool_percent, min_rune_volume)
 
         large_txs = list(large_txs)
         large_txs = large_txs[:self.MAX_TX_PER_ONE_TIME]
@@ -62,12 +62,12 @@ class StakeTxNotifier(INotified):
                 yield tx
 
     @staticmethod
-    def _filter_large_txs(fetcher, txs, threshold_factor=5.0, min_rune_volume=10000):
+    def _filter_large_txs(fetcher, txs, min_pool_percent=0.5, min_rune_volume=10000):
         for tx in txs:
             tx: StakeTx
             stats: StakePoolStats = fetcher.pool_stat_map.get(tx.pool)
+            pool_info: PoolInfo = fetcher.pool_info_map.get(tx.pool)
+            min_share_rune_volume = (pool_info.balance_rune * MIDGARD_MULT) * min_pool_percent / 100.0
             if stats is not None:
-                if (tx.full_rune >= min_rune_volume
-                        and stats.n_elements > 0
-                        and tx.full_rune >= stats.median_rune_amount * threshold_factor):
+                if tx.full_rune >= min_rune_volume and tx.full_rune >= min_share_rune_volume:
                     yield tx
