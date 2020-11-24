@@ -20,14 +20,13 @@ class StakeTxFetcher(BaseFetcher):
         self.pool_stat_map = {}
         self.pool_info_map = {}
 
-        cfg = deps.cfg.tx.stake_unstake
-        self.avg_n = int(cfg.avg_n)
-        self.price_holder = deps.price_holder
-        self.sleep_period = parse_timespan_to_seconds(cfg.fetch_period)
-        self.tx_per_batch = int(cfg.tx_per_batch)
-        self.max_page_deep = int(cfg.max_page_deep)
+        scfg = deps.cfg.tx.stake_unstake
 
-        self.logger.info(f"cfg.tx.stake_unstake: {cfg}")
+        self.sleep_period = parse_timespan_to_seconds(scfg.fetch_period)
+        self.tx_per_batch = int(scfg.tx_per_batch)
+        self.max_page_deep = int(scfg.max_page_deep)
+
+        self.logger.info(f"cfg.tx.stake_unstake: {scfg}")
 
     async def fetch(self):
         txs = await self._fetch_txs()
@@ -102,26 +101,25 @@ class StakeTxFetcher(BaseFetcher):
             stats: StakePoolStats = self.pool_stat_map.get(tx.pool)
             if price and stats:
                 full_rune = tx.calc_full_rune_amount(price)
-                stats.update(full_rune, self.avg_n)
+                stats.update(full_rune, 100)
                 updated_stats.add(tx.pool)
                 result_txs.append(tx)
 
         self.logger.info(f'pool stats updated for {", ".join(updated_stats)}')
 
-        db = self.deps.db
         for pool_name in updated_stats:
             pool_stat: StakePoolStats = self.pool_stat_map[pool_name]
             pool_info: PoolInfo = self.pool_info_map.get(pool_name)
-            pool_stat.usd_depth = pool_info.usd_depth(self.price_holder.usd_per_rune)
-            await pool_stat.write_time_series(db)
-            await pool_stat.save(db)
+            pool_stat.usd_depth = pool_info.usd_depth(self.deps.price_holder.usd_per_rune)
+            await pool_stat.write_time_series(self.deps.db)
+            await pool_stat.save(self.deps.db)
 
         self.logger.info(f'new tx to analyze: {len(result_txs)}')
 
         return result_txs
 
     async def _load_stats(self, txs):
-        self.pool_info_map = self.price_holder.pool_info_map
+        self.pool_info_map = self.deps.price_holder.pool_info_map
         if not self.pool_info_map:
             raise LookupError("pool_info_map is not loaded into the price holder!")
 

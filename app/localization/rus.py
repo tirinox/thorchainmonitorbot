@@ -83,11 +83,12 @@ class RussianLocalization(BaseLocalization):
         pool_depth_usd = pool_info.usd_depth(dollar_per_rune)
         thor_tx = link(self.thor_explore_address(tx.address), short_address(tx.address))
         bnb_tx = link(self.binance_explore_address(tx.address), short_address(tx.address))
+        percent_of_pool = pool_info.percent_share(tx.full_rune)
 
         return (
             f"<b>{pretty_money(tx.rune_amount)} {self.R}</b> ({rp:.0f}%) ↔️ "
             f"<b>{pretty_money(tx.asset_amount)} {short_asset_name(tx.pool)}</b> ({ap:.0f}%)\n"
-            f"Всего: <code>${pretty_money(total_usd_volume)}</code>\n"
+            f"Всего: <code>${pretty_money(total_usd_volume)}</code> ({percent_of_pool:.2f}% от всего пула).\n"
             f"Глубина пула сейчас: <b>${pretty_money(pool_depth_usd)}</b>.\n"
             f"Thor обозреватель: {thor_tx} / Binance обозреватель: {bnb_tx}."
         )

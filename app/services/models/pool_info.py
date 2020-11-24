@@ -17,6 +17,9 @@ class PoolInfo:
     BOOTSTRAP = 'Bootstrap'
     ENABLED = 'Enabled'
 
+    def percent_share(self, runes):
+        return runes / (2 * self.balance_rune * MIDGARD_MULT) * 100.0
+
     @classmethod
     def dummy(cls):
         return cls('', 1, 1, 1, 1, cls.BOOTSTRAP)
@@ -34,7 +37,7 @@ class PoolInfo:
         return self.status == self.ENABLED
 
     def usd_depth(self, dollar_per_rune):
-        pool_depth_usd = self.balance_rune * MIDGARD_MULT * dollar_per_rune
+        pool_depth_usd = 2 * self.balance_rune * MIDGARD_MULT * dollar_per_rune  # note: * 2 as in off. frontend
         return pool_depth_usd
 
     @classmethod
