@@ -10,9 +10,6 @@ MIDGARD_POOL_LIQUIDITY = 'https://chaosnet-midgard.bepswap.com/v1/pools/detail?a
 ASGRAD_CONSUMER_WEEKLY_HISTORY = 'https://asgard-consumer.vercel.app/api/weekly?address={address}&pool={pool}'
 ASGRAD_CONSUMER_CURRENT_LIQUIDITY = 'https://asgard-consumer.vercel.app/api/v2/history/liquidity?address={address}&pools={pool}'
 
-COIN_LOGO = 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/binance/assets/{asset}/logo.png'
-
-
 
 class LiqPoolFetcher:
     def __init__(self, deps: DepContainer):

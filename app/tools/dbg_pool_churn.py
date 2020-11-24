@@ -13,7 +13,7 @@ from services.lib.config import Config
 from services.lib.db import DB
 from services.models.pool_info import PoolInfo
 from services.models.price import LastPriceHolder
-from services.models.tx import short_asset_name
+from services.lib.money import short_asset_name
 from services.notify.broadcast import Broadcaster
 from services.notify.types.pool_churn import PoolChurnNotifier
 

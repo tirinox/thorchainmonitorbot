@@ -1,25 +1,29 @@
 import asyncio
 import logging
+import os
+import pickle
 
 import aiohttp
 
-from services.fetch.lp_calc import LiqPoolFetcher
+from services.dialog.lp_picture import lp_pool_picture, download_logo_cached
+from services.fetch.lp import LiqPoolFetcher
 from services.fetch.node_ip_manager import ThorNodeAddressManager
 from services.fetch.pool_price import PoolPriceFetcher
 from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.models.stake_info import BNB_CHAIN, StakePoolReport, CurrentLiquidity
+from services.models.time_series import BNB_SYMBOL, RUNE_SYMBOL, BUSD_SYMBOL
 
 
-async def lp_test(d: DepContainer):
+async def lp_test(d: DepContainer, addr):
     async with aiohttp.ClientSession() as d.session:
         lpf = LiqPoolFetcher(d)
         ppf = PoolPriceFetcher(d)
         d.thor_man = ThorNodeAddressManager(d.session)
         await ppf.get_current_pool_data_full()
 
-        cur_liqs = await lpf.fetch('bnb1rv89nkw2x5ksvhf6jtqwqpke4qhh7jmudpvqmj', BNB_CHAIN)
+        cur_liqs = await lpf.fetch(addr, BNB_CHAIN)
         cur_liq: CurrentLiquidity = cur_liqs['BNB.BNB']
 
         stake_report = StakePoolReport(d.price_holder.usd_per_asset(cur_liq.pool),
@@ -48,6 +52,25 @@ async def lp_test(d: DepContainer):
         print(f'stake_report.lp_vs_hold = {lp_abs}, {lp_per:.1f} %')
         print(f'stake_report.lp_vs_hold_apy = {apy}')
 
+        return stake_report
+
+
+PICKLE_PATH = '../../stake_report.pickle'
+
+
+async def test_image(d, addr):
+    if os.path.exists(PICKLE_PATH):
+        with open(PICKLE_PATH, 'rb') as f:
+            stake_report = pickle.load(f)
+    else:
+        stake_report = await lp_test(d, addr)
+        with open(PICKLE_PATH, 'wb') as f:
+            pickle.dump(stake_report, f)
+
+    img = await lp_pool_picture(stake_report)
+    img.save("../../stake_test.png", "PNG")
+
+
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
@@ -56,4 +79,4 @@ if __name__ == '__main__':
     d.cfg = Config(Config.DEFAULT_LVL_UP)
     d.db = DB(d.loop)
 
-    d.loop.run_until_complete(lp_test(d))
+    d.loop.run_until_complete(test_image(d, 'bnb1rv89nkw2x5ksvhf6jtqwqpke4qhh7jmudpvqmj'))

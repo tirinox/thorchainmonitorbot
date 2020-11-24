@@ -3,10 +3,10 @@ from services.lib.datetime import format_time_ago
 from services.models.price import RuneFairPrice, PriceReport, PriceATH
 from services.models.pool_info import PoolInfo
 from services.models.cap_info import ThorInfo
-from services.models.tx import StakeTx, short_asset_name, StakePoolStats
+from services.models.tx import StakeTx, StakePoolStats
 from services.lib.utils import link, code, bold, pre, x_ses, ital
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
-    emoji_for_percent_change, short_money
+    emoji_for_percent_change, short_money, short_asset_name
 
 
 class EnglishLocalization(BaseLocalization):

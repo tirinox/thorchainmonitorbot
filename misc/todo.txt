@@ -38,6 +38,10 @@ ToDo: price graph + deterministic price graph
 
 ------------------------------------------------------------------------
 
+Price info, rune price in btc ₿ symbol
+
+------------------------------------------------------------------------
+
 ToDo: admin commands, add admin chat id to cfg,
 
 commands:

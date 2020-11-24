@@ -37,16 +37,19 @@ def pretty_dollar(x):
     return pretty_money(x, '$')
 
 
-def pretty_money(x, prefix=''):
+def pretty_money(x, prefix='', signed=False):
     if x < 0:
         return f"-{prefix}{pretty_money(-x)}"
     elif x == 0:
         r = "0.0"
     else:
         if x < 100:
-            r = str(round_to_dig(x, 2))
+            r = str(round_to_dig(x, 3))
+        elif x < 1000:
+            r = str(round_to_dig(x, 4))
         else:
             r = number_commas(int(round(x)))
+    prefix = f'+{prefix}' if signed else prefix
     return prefix + r
 
 
@@ -102,3 +105,19 @@ def adaptive_round_to_str(x, force_sign=False, prefix=''):
 
 def calc_percent_change(old_value, new_value):
     return 100.0 * (new_value - old_value) / old_value if old_value and new_value else 0.0
+
+
+def short_asset_name(pool: str):
+    try:
+        cs = pool.split('.')
+        return cs[1].split('-')[0]
+    except IndexError:
+        return pool
+
+
+def asset_name_cut_chain(asset):
+    try:
+        cs = asset.split('.')
+        return cs[1]
+    except IndexError:
+        return asset

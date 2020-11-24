@@ -2,12 +2,12 @@ from abc import ABC, abstractmethod
 
 from aiogram.types import *
 
-from services.lib.money import format_percent
+from services.lib.money import format_percent, asset_name_cut_chain
 from services.lib.utils import progressbar
 from services.models.cap_info import ThorInfo
 from services.models.pool_info import PoolInfo
 from services.models.price import RuneFairPrice, PriceReport, PriceATH
-from services.models.tx import StakeTx, StakePoolStats, asset_name_cut_chain
+from services.models.tx import StakeTx, StakePoolStats
 
 
 def kbd(buttons, resize=True, vert=False, one_time=False, inline=False, row_width=3):

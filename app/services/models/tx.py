@@ -98,14 +98,6 @@ class StakeTx(BaseModelMixin):
         await r.set(self.notify_key, value)
 
 
-def short_asset_name(pool: str):
-    try:
-        cs = pool.split('.')
-        return cs[1].split('-')[0]
-    except IndexError:
-        return pool
-
-
 @dataclass
 class StakePoolStats(BaseModelMixin):
     pool: str
@@ -163,9 +155,3 @@ class StakePoolStats(BaseModelMixin):
         await ts.add(usd_depth=self.usd_depth)
 
 
-def asset_name_cut_chain(asset):
-    try:
-        cs = asset.split('.')
-        return cs[1]
-    except IndexError:
-        return asset
