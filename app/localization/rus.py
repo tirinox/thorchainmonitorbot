@@ -96,9 +96,14 @@ class RussianLocalization(BaseLocalization):
                f'Идет загрузка пулов для адреса {pre(address)}...\n' \
                f'Иногда она может идти долго, если Midgard сильно нагружен.'
 
-    def text_stake_provides_liq_to_pools(self, address):
-        return f'Адрес: {pre(address)} поставляет ликвидность в следующие пулы.\n' \
-               f'Выберите пул, чтобы получить подробную карточку информации'
+    def text_stake_provides_liq_to_pools(self, address, pools):
+        pools = pre(', '.join(pools))
+        thor_tx = link(self.thor_explore_address(address), 'thorchain.net')
+        bnb_tx = link(self.binance_explore_address(address), 'explorer.binance.org')
+        return f'🛳️ {pre(address)}\n' \
+               f'поставляет ликвидность в следующие пулы:\n{pools}.\n\n' \
+               f"🔍 Explorers: {thor_tx}; {bnb_tx}.\n\n" \
+               f'👇 Выберите пул, чтобы получить подробную карточку информаци.'
 
     # ----- CAP ------
     def notification_text_cap_change(self, old: ThorInfo, new: ThorInfo):

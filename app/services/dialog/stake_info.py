@@ -107,16 +107,21 @@ class StakeDialog(BaseDialog):
             await query.message.edit_text(text=self.loc.text_stake_loading_pools(address))
             my_pools = await lpf.get_my_pools(address)
             self.data[self.KEY_MY_POOLS] = my_pools
+        else:
+            my_pools = self.data[self.KEY_MY_POOLS]
 
         inline_kbd = self.kbd_for_pools()
-        await query.message.edit_text(text=self.loc.text_stake_provides_liq_to_pools(address),
-                                      reply_markup=inline_kbd)
+        await query.message.edit_text(text=self.loc.text_stake_provides_liq_to_pools(address, my_pools),
+                                      reply_markup=inline_kbd,
+                                      disable_web_page_preview=True)
 
     async def list_pools_new_message(self, query: CallbackQuery):
         inline_kbd = self.kbd_for_pools()
         address = self.data[self.KEY_ACTIVE_ADDRESS]
-        await query.message.answer(text=self.loc.text_stake_provides_liq_to_pools(address),
-                                   reply_markup=inline_kbd)
+        my_pools = self.data[self.KEY_MY_POOLS]
+        await query.message.answer(text=self.loc.text_stake_provides_liq_to_pools(address, my_pools),
+                                   reply_markup=inline_kbd,
+                                   disable_web_page_preview=True)
 
     async def view_pool_report(self, query: CallbackQuery):
         _, pool = query.data.split(':')

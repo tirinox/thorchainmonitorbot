@@ -111,7 +111,7 @@ class BaseLocalization(ABC):
         ...
 
     @abstractmethod
-    def text_stake_provides_liq_to_pools(self, address):
+    def text_stake_provides_liq_to_pools(self, address, pools):
         ...
 
     # ------- CAP -------

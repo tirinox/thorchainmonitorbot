@@ -74,9 +74,14 @@ class EnglishLocalization(BaseLocalization):
         return f'⏳ <b>Please wait.</b>\n' \
                f'Loading pools information for {pre(address)}...'
 
-    def text_stake_provides_liq_to_pools(self, address):
-        return f'Address: {pre(address)} provides liquidity to the following pools.\n' \
-               f'Click on the button to get a detailed card.'
+    def text_stake_provides_liq_to_pools(self, address, pools):
+        pools = pre(', '.join(pools))
+        thor_tx = link(self.thor_explore_address(address), 'thorchain.net')
+        bnb_tx = link(self.binance_explore_address(address), 'explorer.binance.org')
+        return f'🛳️ {pre(address)}\nprovides liquidity to the following pools:\n' \
+               f'{pools}.\n\n' \
+               f"🔍 Explorers: {thor_tx}; {bnb_tx}.\n\n" \
+               f'👇 Click on the button to get a detailed card.'
 
     # ----- CAP ------
     def notification_text_cap_change(self, old: ThorInfo, new: ThorInfo):
