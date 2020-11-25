@@ -9,6 +9,8 @@ import aiofiles as aiofiles
 import aiohttp
 from PIL import Image, ImageDraw, ImageFont
 
+from localization import BaseLocalization
+from localization.base import RAIDO_GLYPH
 from services.lib.money import asset_name_cut_chain, pretty_money, short_asset_name
 from services.lib.utils import Singleton
 from services.models.stake_info import StakePoolReport
@@ -22,7 +24,6 @@ GREEN_COLOR = '#00f2c3'
 RED_COLOR = '#e22222'
 FORE_COLOR = 'white'
 FADE_COLOR = '#cccccc'
-RAIDO_GLYPH = 'ᚱ'
 
 
 class Resources(metaclass=Singleton):
@@ -119,7 +120,7 @@ def is_stable_coin(pool):
     return pool == BUSD_SYMBOL
 
 
-async def lp_pool_picture(report: StakePoolReport, value_hidden=False):
+async def lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, value_hidden=False):
     r = Resources()
     asset = report.pool.asset
     rune_image, asset_image = await asyncio.gather(
@@ -138,8 +139,8 @@ async def lp_pool_picture(report: StakePoolReport, value_hidden=False):
     start_y = head_y + dy
 
     # HEADER
-    draw.text(pos_percent(center, head_y), 'POOL', font=r.font_head, fill=FADE_COLOR, anchor='ms')
-    draw.text(pos_percent(left, head_y), 'RUNE', font=r.font_head, fill=FORE_COLOR, anchor='rs')
+    draw.text(pos_percent(center, head_y), loc.LP_PIC_POOL, font=r.font_head, fill=FADE_COLOR, anchor='ms')
+    draw.text(pos_percent(left, head_y), loc.LP_PIC_RUNE, font=r.font_head, fill=FORE_COLOR, anchor='rs')
     draw.text(pos_percent(right, head_y), short_asset_name(asset), font=r.font_head, fill=FORE_COLOR, anchor='ls')
 
     # ------------------------------------------------------------------------------------------------
@@ -147,7 +148,7 @@ async def lp_pool_picture(report: StakePoolReport, value_hidden=False):
     # ------------------------------------------------------------------------------------------------
 
     # ADDED
-    draw.text(pos_percent(center, start_y), 'Added', font=r.font, fill=FADE_COLOR, anchor='ms')
+    draw.text(pos_percent(center, start_y), loc.LP_PIC_ADDED, font=r.font, fill=FADE_COLOR, anchor='ms')
     if value_hidden:
         r.put_hidden_plate(image, pos_percent(left, start_y), anchor='right')
         r.put_hidden_plate(image, pos_percent(right, start_y), anchor='left')
@@ -160,7 +161,7 @@ async def lp_pool_picture(report: StakePoolReport, value_hidden=False):
     start_y += dy
 
     # WITHDRAWN
-    draw.text(pos_percent(center, start_y), 'Withdrawn', font=r.font, fill=FADE_COLOR, anchor='ms')
+    draw.text(pos_percent(center, start_y), loc.LP_PIC_WITHDRAWN, font=r.font, fill=FADE_COLOR, anchor='ms')
     if value_hidden:
         r.put_hidden_plate(image, pos_percent(left, start_y), anchor='right')
         r.put_hidden_plate(image, pos_percent(right, start_y), anchor='left')
@@ -174,7 +175,7 @@ async def lp_pool_picture(report: StakePoolReport, value_hidden=False):
     start_y += dy
 
     # REDEEMABLE
-    draw.text(pos_percent(center, start_y), 'Redeemable', font=r.font, fill=FADE_COLOR, anchor='ms')
+    draw.text(pos_percent(center, start_y), loc.LP_PIC_REDEEM, font=r.font, fill=FADE_COLOR, anchor='ms')
     redeem_rune, redeem_asset = report.redeemable_rune_asset
     if value_hidden:
         r.put_hidden_plate(image, pos_percent(left, start_y), anchor='right')
@@ -188,7 +189,7 @@ async def lp_pool_picture(report: StakePoolReport, value_hidden=False):
     start_y += dy
 
     # GAIN LOSS
-    draw.text(pos_percent(center, start_y), 'Gain / Loss', font=r.font, fill=FADE_COLOR, anchor='ms')
+    draw.text(pos_percent(center, start_y), loc.LP_PIC_GAIN_LOSS, font=r.font, fill=FADE_COLOR, anchor='ms')
     gl_rune, gl_rune_per, gl_asset, gl_asset_per = report.gain_loss_raw
     if not value_hidden:
         draw.text(pos_percent(left, start_y), f'{pretty_money(gl_rune, signed=True)} {RAIDO_GLYPH}', font=r.font,
@@ -202,7 +203,7 @@ async def lp_pool_picture(report: StakePoolReport, value_hidden=False):
     # GAIN LOSS PERCENT
     gl_usd, gl_usd_p = report.gain_loss(report.USD)
 
-    draw.text(pos_percent(center, start_y), f'{pretty_money(gl_usd_p, signed=True)}% in USD',
+    draw.text(pos_percent(center, start_y), f'{pretty_money(gl_usd_p, signed=True)}% {loc.LP_PIC_IN_USD}',
               font=r.font_head if value_hidden else r.font,
               fill=result_color(gl_usd_p),
               anchor='ms')
@@ -225,7 +226,6 @@ async def lp_pool_picture(report: StakePoolReport, value_hidden=False):
 
     # VALUE
     table_x = 30
-
     rows_y = [start_y + 4 + r * 4.5 for r in range(5)]
 
     if is_stable_coin(asset):
@@ -236,7 +236,7 @@ async def lp_pool_picture(report: StakePoolReport, value_hidden=False):
         columns_x = [44 + c * 19 for c in range(3)]
         draw.text(pos_percent(columns_x[2], start_y), 'USD', font=r.font, fill=FADE_COLOR, anchor='ms')
 
-    draw.text(pos_percent(columns_x[0], start_y), f'{RAIDO_GLYPH}une', font=r.font, fill=FADE_COLOR, anchor='ms')
+    draw.text(pos_percent(columns_x[0], start_y), loc.LP_PIC_R_RUNE, font=r.font, fill=FADE_COLOR, anchor='ms')
     draw.text(pos_percent(columns_x[1], start_y), short_asset_name(asset), font=r.font, fill=FADE_COLOR, anchor='ms')
 
     for x, column in zip(columns_x, columns):
@@ -272,17 +272,16 @@ async def lp_pool_picture(report: StakePoolReport, value_hidden=False):
             draw.text(pos_percent(x, rows_y[4]), f'–', font=r.font_semi,
                       fill=FADE_COLOR, anchor='ms')
 
-    draw.text(pos_percent(table_x, rows_y[0]), 'Added value', font=r.font, fill=FADE_COLOR, anchor='rs')
-    draw.text(pos_percent(table_x, rows_y[1]), 'Withdrawn value', font=r.font, fill=FADE_COLOR, anchor='rs')
-    draw.text(pos_percent(table_x, rows_y[2]), 'Current value', font=r.font, fill=FADE_COLOR, anchor='rs')
-    draw.text(pos_percent(table_x, rows_y[3]), 'Gain / Loss', font=r.font, fill=FADE_COLOR, anchor='rs')
-    draw.text(pos_percent(table_x, rows_y[4]), 'Price change', font=r.font, fill=FADE_COLOR, anchor='rs')
-    draw.text(pos_percent(table_x, rows_y[4] + 2.5), 'since the first addition', font=r.font_small, fill=FADE_COLOR,
+    draw.text(pos_percent(table_x, rows_y[0]), loc.LP_PIC_ADDED_VALUE, font=r.font, fill=FADE_COLOR, anchor='rs')
+    draw.text(pos_percent(table_x, rows_y[1]), loc.LP_PIC_WITHDRAWN_VALUE, font=r.font, fill=FADE_COLOR, anchor='rs')
+    draw.text(pos_percent(table_x, rows_y[2]), loc.LP_PIC_CURRENT_VALUE, font=r.font, fill=FADE_COLOR, anchor='rs')
+    draw.text(pos_percent(table_x, rows_y[3]), loc.LP_PIC_GAIN_LOSS, font=r.font, fill=FADE_COLOR, anchor='rs')
+    draw.text(pos_percent(table_x, rows_y[4]), loc.LP_PIC_PRICE_CHANGE, font=r.font, fill=FADE_COLOR, anchor='rs')
+    draw.text(pos_percent(table_x, rows_y[4] + 2.5), loc.LP_PIC_PRICE_CHANGE_2, font=r.font_small, fill=FADE_COLOR,
               anchor='rs')
 
-    start_date = datetime.datetime.fromtimestamp(report.liq.first_stake_ts).strftime('%d.%m.%Y')
     draw.text(pos_percent(50, 92),
-              f'{ceil(report.total_days)} days ({start_date})',
+              loc.pic_stake_days(report.total_days, report.liq.first_stake_ts),
               anchor='ms', fill=FORE_COLOR,
               font=r.font_small)
 
@@ -299,8 +298,8 @@ async def lp_pool_picture(report: StakePoolReport, value_hidden=False):
     lp_abs, lp_per = report.lp_vs_hold
     apy = report.lp_vs_hold_apy
 
-    draw.text(pos_percent(20, logo_y), 'LP vs HOLD', anchor='ms', font=r.font_big, fill=FORE_COLOR)
-    draw.text(pos_percent(80, logo_y), 'LP APY', anchor='ms', font=r.font_big, fill=FORE_COLOR)
+    draw.text(pos_percent(20, logo_y), loc.LP_PIC_LP_VS_HOLD, anchor='ms', font=r.font_big, fill=FORE_COLOR)
+    draw.text(pos_percent(80, logo_y), loc.LP_PIC_LP_APY, anchor='ms', font=r.font_big, fill=FORE_COLOR)
     draw.text(pos_percent(20, logo_y + 6), f'{pretty_money(lp_per, signed=True)} %', anchor='ms',
               fill=result_color(lp_per),
               font=r.font_big)
@@ -313,13 +312,13 @@ async def lp_pool_picture(report: StakePoolReport, value_hidden=False):
                   fill=result_color(apy),
                   font=r.font_big)
     else:
-        draw.text(pos_percent(80, logo_y + 7), f'Early...', anchor='ms',
+        draw.text(pos_percent(80, logo_y + 7), loc.LP_PIC_EARLY, anchor='ms',
                   fill=FADE_COLOR,
                   font=r.font_head)
 
     # FOOTER
 
-    draw.text(pos_percent(98, 98), f"Powered by BigBoss' runestake.info", anchor='rs', fill=FADE_COLOR,
+    draw.text(pos_percent(98, 98), loc.LP_PIC_FOOTER, anchor='rs', fill=FADE_COLOR,
               font=r.font_small)
 
     # image.paste(hidden_img, (100, 400), hidden_img)

@@ -71,7 +71,7 @@ async def lp_test(d: DepContainer, addr):
 PICKLE_PATH = '../../stake_report.pickle'
 
 
-async def test_image(d, addr, hide):
+async def test_image(d: DepContainer, addr, hide):
     if os.path.exists(PICKLE_PATH):
         with open(PICKLE_PATH, 'rb') as f:
             stake_report = pickle.load(f)
@@ -82,7 +82,7 @@ async def test_image(d, addr, hide):
 
     # stake_report = await lp_test(d, addr)
 
-    img = await lp_pool_picture(stake_report, value_hidden=hide)
+    img = await lp_pool_picture(stake_report, d.loc_man.default, value_hidden=hide)
     img.save("../../stake_test.png", "PNG")
 
     # await price_of_day(d)

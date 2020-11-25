@@ -23,21 +23,17 @@ class StakeStates(StatesGroup):
 
 
 class StakeDialog(BaseDialog):
-    BUTTON_SM_ADD_ADDRESS = 'Add an address'
-    BUTTON_BACK = 'Back'
-    BUTTON_SM_BACK_TO_LIST = 'Back to list'
+    QUERY_VIEW_ADDRESS = 'view-addr'
+    QUERY_REMOVE_ADDRESS = 'remove-addr'
+    QUERY_BACK_TO_ADDRESS_LIST = 'back-to-addr-list'
+    QUERY_BACK_TOGGLE_VIEW_VALUE = 'toggle-view-value'
+    QUERY_VIEW_POOL = 'view-pool'
 
     KEY_MY_ADDRESSES = 'my-address-list'
     KEY_CAN_VIEW_VALUE = 'can-view-value'
     KEY_ACTIVE_ADDRESS = 'active-addr'
     KEY_ACTIVE_ADDRESS_INDEX = 'active-addr-id'
     KEY_MY_POOLS = 'my-pools'
-
-    QUERY_VIEW_ADDRESS = 'view-addr'
-    QUERY_REMOVE_ADDRESS = 'remove-addr'
-    QUERY_BACK_TO_ADDRESS_LIST = 'back-to-addr-list'
-    QUERY_BACK_TOGGLE_VIEW_VALUE = 'toggle-view-value'
-    QUERY_VIEW_POOL = 'view-pool'
 
     @property
     def my_addresses(self):
@@ -66,11 +62,11 @@ class StakeDialog(BaseDialog):
         f = message.edit_text if edit else message.answer
         kw = {} if edit else {'disable_notification': True}
         if not addresses:
-            await message.answer("You have not added any addresses yet. Send me one.",
-                                 reply_markup=kbd([self.BUTTON_BACK]),
+            await message.answer(self.loc.TEXT_NO_ADDRESSES,
+                                 reply_markup=kbd([self.loc.BUTTON_BACK]),
                                  **kw)
         else:
-            await f('Your addresses:', reply_markup=self.addresses_kbd(), **kw)
+            await f(self.loc.TEXT_YOUR_ADDRESSES, reply_markup=self.addresses_kbd(), **kw)
 
     def kbd_for_pools(self):
         view_value = self.data.get(self.KEY_CAN_VIEW_VALUE, True)
@@ -84,15 +80,16 @@ class StakeDialog(BaseDialog):
         inline_kbd += buttons
         inline_kbd += [
             [
-                InlineKeyboardButton('View it on runestake.info', url=RUNE_STAKE_INFO.format(address=address))
+                InlineKeyboardButton(self.loc.BUTTON_VIEW_RUNESTAKEINFO, url=RUNE_STAKE_INFO.format(address=address))
             ],
             [
-                InlineKeyboardButton('View value: ON' if view_value else 'View value: OFF',
+                InlineKeyboardButton(self.loc.BUTTON_VIEW_VALUE_ON if view_value else self.loc.BUTTON_VIEW_VALUE_OFF,
                                      callback_data=self.QUERY_BACK_TOGGLE_VIEW_VALUE),
-                InlineKeyboardButton('Remove this address', callback_data=f'{self.QUERY_REMOVE_ADDRESS}:{addr_idx}')
+                InlineKeyboardButton(self.loc.BUTTON_REMOVE_THIS_ADDRESS,
+                                     callback_data=f'{self.QUERY_REMOVE_ADDRESS}:{addr_idx}')
             ],
             [
-                InlineKeyboardButton(self.BUTTON_SM_BACK_TO_LIST, callback_data=self.QUERY_BACK_TO_ADDRESS_LIST)
+                InlineKeyboardButton(self.loc.BUTTON_SM_BACK_TO_LIST, callback_data=self.QUERY_BACK_TO_ADDRESS_LIST)
             ]
         ]
         return InlineKeyboardMarkup(inline_keyboard=inline_kbd)
@@ -107,18 +104,18 @@ class StakeDialog(BaseDialog):
         self.data[self.KEY_ACTIVE_ADDRESS_INDEX] = addr_idx
 
         if reload_pools:
-            await query.message.edit_text(text=f'Please wait. Loading pools for {pre(address)}...')
+            await query.message.edit_text(text=self.loc.text_stake_loading_pools(address))
             my_pools = await lpf.get_my_pools(address)
             self.data[self.KEY_MY_POOLS] = my_pools
 
         inline_kbd = self.kbd_for_pools()
-        await query.message.edit_text(text=f'Address: {pre(address)} provides liquidity to the following pools:',
+        await query.message.edit_text(text=self.loc.text_stake_provides_liq_to_pools(address),
                                       reply_markup=inline_kbd)
 
     async def list_pools_new_message(self, query: CallbackQuery):
         inline_kbd = self.kbd_for_pools()
-        addr = self.data[self.KEY_ACTIVE_ADDRESS]
-        await query.message.answer(text=f'Address: {pre(addr)} provides liquidity to the following pools:',
+        address = self.data[self.KEY_ACTIVE_ADDRESS]
+        await query.message.answer(text=self.loc.text_stake_provides_liq_to_pools(address),
                                    reply_markup=inline_kbd)
 
     async def view_pool_report(self, query: CallbackQuery):
@@ -133,7 +130,7 @@ class StakeDialog(BaseDialog):
         stake_report = await lpf.fetch_stake_report_for_pool(liq, ppf)
 
         value_hidden = not self.data.get(self.KEY_CAN_VIEW_VALUE, True)
-        picture = await lp_pool_picture(stake_report, value_hidden=value_hidden)
+        picture = await lp_pool_picture(stake_report, self.loc, value_hidden=value_hidden)
         picture_io = img_to_bio(picture, f'Thorchain_LP_{pool}.png')
 
         await query.message.answer_photo(picture_io)
@@ -148,7 +145,7 @@ class StakeDialog(BaseDialog):
 
     @message_handler(state=StakeStates.MAIN_MENU)
     async def on_enter(self, message: Message):
-        if message.text == self.BUTTON_BACK:
+        if message.text == self.loc.BUTTON_BACK:
             await self.go_back(message)
         else:
             await StakeStates.MAIN_MENU.set()
@@ -157,13 +154,12 @@ class StakeDialog(BaseDialog):
                 if MyStakeAddress.is_good_address(address):
                     self.add_address(address, BNB_CHAIN)
                 else:
-                    await message.answer(code('Invalid address!'))
+                    await message.answer(code(self.loc.TEXT_INVALID_ADDRESS))
 
             await self.display_addresses(message)
-            msg = 'Select one from above. ☝️ ' if self.my_addresses else ''
-            msg += 'If you want to add one more, please send me it. 👇'
-            await message.answer(msg,
-                                 reply_markup=kbd([self.BUTTON_BACK]))
+            msg = self.loc.TEXT_SELECT_ADDRESS_ABOVE if self.my_addresses else ''
+            msg += self.loc.TEXT_SELECT_ADDRESS_SEND_ME
+            await message.answer(msg, reply_markup=kbd([self.loc.BUTTON_BACK]))
 
     @query_handler(state=StakeStates.MAIN_MENU)
     async def on_tap_address(self, query: CallbackQuery):

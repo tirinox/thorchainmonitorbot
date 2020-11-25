@@ -1,3 +1,6 @@
+from datetime import datetime
+from math import ceil
+
 from localization.base import BaseLocalization, kbd
 from services.lib.datetime import format_time_ago
 from services.models.price import RuneFairPrice, PriceReport, PriceATH
@@ -45,6 +48,35 @@ class EnglishLocalization(BaseLocalization):
 
     def kbd_main_menu(self):
         return kbd([self.BUTTON_MM_MY_ADDRESS, self.BUTTON_MM_PRICE, self.BUTTON_MM_CAP])
+
+    # ------ STAKE INFO -----
+
+    BUTTON_SM_ADD_ADDRESS = '➕ Add an address'
+    BUTTON_BACK = '🔙 Back'
+    BUTTON_SM_BACK_TO_LIST = '🔙 Back to list'
+
+    BUTTON_VIEW_RUNESTAKEINFO = '🌎 View it on runestake.info'
+    BUTTON_VIEW_VALUE_ON = 'Show value: ON'
+    BUTTON_VIEW_VALUE_OFF = 'Show value: OFF'
+    BUTTON_REMOVE_THIS_ADDRESS = '❌ Remove this address'
+
+    TEXT_NO_ADDRESSES = "🔆 You have not added any addresses yet. Send me one."
+    TEXT_YOUR_ADDRESSES = '🔆 You added addresses:'
+    TEXT_INVALID_ADDRESS = code('⛔️ Invalid address!')
+    TEXT_SELECT_ADDRESS_ABOVE = 'Select one from above. ☝️ '
+    TEXT_SELECT_ADDRESS_SEND_ME = 'If you want to add one more, please send me it. 👇'
+
+    def pic_stake_days(self, total_days, first_stake_ts):
+        start_date = datetime.fromtimestamp(first_stake_ts).strftime('%d.%m.%Y')
+        return f'{ceil(total_days)} days ({start_date})'
+
+    def text_stake_loading_pools(self, address):
+        return f'⏳ <b>Please wait.</b>\n' \
+               f'Loading pools information for {pre(address)}...'
+
+    def text_stake_provides_liq_to_pools(self, address):
+        return f'Address: {pre(address)} provides liquidity to the following pools.\n' \
+               f'Click on the button to get a detailed card.'
 
     # ----- CAP ------
     def notification_text_cap_change(self, old: ThorInfo, new: ThorInfo):

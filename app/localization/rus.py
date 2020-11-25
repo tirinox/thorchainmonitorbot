@@ -1,6 +1,9 @@
+from datetime import datetime
+from math import ceil
+
 from aiogram.types import *
 
-from localization.base import BaseLocalization, kbd
+from localization.base import BaseLocalization, kbd, RAIDO_GLYPH
 from services.lib.datetime import format_time_ago
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change, short_asset_name
@@ -48,6 +51,54 @@ class RussianLocalization(BaseLocalization):
 
     def kbd_main_menu(self):
         return kbd([self.BUTTON_MM_MY_ADDRESS, self.BUTTON_MM_PRICE, self.BUTTON_MM_CAP])
+
+    # ------ STAKE INFO -----
+
+    BUTTON_SM_ADD_ADDRESS = '➕ Добавить новый адрес'
+    BUTTON_BACK = '🔙 Назад'
+    BUTTON_SM_BACK_TO_LIST = '🔙 Назад к адресам'
+
+    BUTTON_VIEW_RUNESTAKEINFO = '🌎 Открыть на runestake.info'
+    BUTTON_VIEW_VALUE_ON = 'Скрыть деньги: НЕТ'
+    BUTTON_VIEW_VALUE_OFF = 'Скрыть деньги: ДА'
+    BUTTON_REMOVE_THIS_ADDRESS = '❌ Удалить этот адресс'
+
+    TEXT_NO_ADDRESSES = "🔆 Вы еще не добавили никаких адресов. Пришлите мне адрес, чтобы добавить."
+    TEXT_YOUR_ADDRESSES = '🔆 Вы добавили следующие адреса:'
+    TEXT_INVALID_ADDRESS = code('⛔️ Ошибка в формате адреса!')
+    TEXT_SELECT_ADDRESS_ABOVE = 'Выбери адрес выше ☝️ '
+    TEXT_SELECT_ADDRESS_SEND_ME = 'Если хотите добавить адрес, пришлите его мне 👇'
+
+    LP_PIC_POOL = 'ПУЛ'
+    LP_PIC_RUNE = 'RUNE'
+    LP_PIC_ADDED = 'Добавлено'
+    LP_PIC_WITHDRAWN = 'Выведено'
+    LP_PIC_REDEEM = 'Можно забрать'
+    LP_PIC_GAIN_LOSS = 'Доход / убыток'
+    LP_PIC_IN_USD = 'в USD'
+    LP_PIC_R_RUNE = f'{RAIDO_GLYPH}une'
+    LP_PIC_ADDED_VALUE = 'Добавлено всего'
+    LP_PIC_WITHDRAWN_VALUE = 'Выведено всего'
+    LP_PIC_CURRENT_VALUE = 'Осталось в пуле'
+    LP_PIC_PRICE_CHANGE = 'Изменение цены'
+    LP_PIC_PRICE_CHANGE_2 = 'с момента 1го стейка'
+    LP_PIC_LP_VS_HOLD = 'Против ХОЛД'
+    LP_PIC_LP_APY = 'Годовых'
+    LP_PIC_EARLY = 'Еще рано...'
+    LP_PIC_FOOTER = "Испольует runestake.info от BigBoss"
+
+    def pic_stake_days(self, total_days, first_stake_ts):
+        start_date = datetime.fromtimestamp(first_stake_ts).strftime('%d.%m.%Y')
+        return f'{ceil(total_days)} дн. ({start_date})'
+
+    def text_stake_loading_pools(self, address):
+        return f'⏳ <b>Пожалуйста, подождите.</b>\n' \
+               f'Идет загрузка пулов для адреса {pre(address)}...\n' \
+               f'Иногда она может идти долго, если Midgard сильно нагружен.'
+
+    def text_stake_provides_liq_to_pools(self, address):
+        return f'Адрес: {pre(address)} поставляет ликвидность в следующие пулы.\n' \
+               f'Выберите пул, чтобы получить подробную карточку информации'
 
     # ----- CAP ------
     def notification_text_cap_change(self, old: ThorInfo, new: ThorInfo):
