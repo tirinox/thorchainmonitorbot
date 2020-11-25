@@ -35,7 +35,7 @@ async def lp_test(d: DepContainer, addr):
         d.thor_man = ThorNodeAddressManager(d.session)
         await ppf.get_current_pool_data_full()
 
-        cur_liqs = await lpf.fetch_liquidity_info(addr)
+        cur_liqs = await lpf.fetch_all_pool_liquidity_info(addr)
 
         cur_liq: CurrentLiquidity = cur_liqs[BTCB_SYMBOL]
 

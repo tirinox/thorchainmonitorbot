@@ -1,3 +1,4 @@
+import itertools
 import time
 from functools import wraps
 
@@ -68,3 +69,8 @@ class Singleton(type):
         if cls not in cls._instances:
             cls._instances[cls] = super(Singleton, cls).__call__(*args, **kwargs)
         return cls._instances[cls]
+
+
+def grouper(n, iterable):
+    args = [iter(iterable)] * n
+    return ([e for e in t if e is not None] for t in itertools.zip_longest(*args))

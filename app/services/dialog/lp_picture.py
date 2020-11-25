@@ -26,15 +26,16 @@ RAIDO_GLYPH = 'ᚱ'
 
 
 class Resources(metaclass=Singleton):
+    BASE = './data'
     LOGO_WIDTH, LOGO_HEIGHT = 64, 64
     COIN_LOGO = \
         'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/binance/assets/{asset}/logo.png'
-    LOCAL_COIN_LOGO = '../data/{asset}.png'
-    UNKNOWN_LOGO = '../data/unknown.png'
-    HIDDEN_IMG = '../data/hidden.png'
-    BG_IMG = '../data/lp_bg.png'
+    LOCAL_COIN_LOGO = f'{BASE}/{{asset}}.png'
+    UNKNOWN_LOGO = f'{BASE}/unknown.png'
+    HIDDEN_IMG = f'{BASE}/hidden.png'
+    BG_IMG = f'{BASE}/lp_bg.png'
 
-    FONT_BOLD = '../data/my.ttf'
+    FONT_BOLD = f'{BASE}/my.ttf'
 
     def __init__(self) -> None:
         self.hidden_img = Image.open(self.HIDDEN_IMG)

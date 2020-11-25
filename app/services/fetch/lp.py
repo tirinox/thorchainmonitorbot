@@ -26,16 +26,16 @@ class LiqPoolFetcher:
             my_pools = j['poolsArray']
             return my_pools
 
-    async def get_current_liquidity(self, address, pool):
+    async def fetch_one_pool_liquidity_info(self, address, pool):
         url = ASGRAD_CONSUMER_CURRENT_LIQUIDITY.format(address=address, pool=pool)
         self.logger.info(f'get {url}')
         async with self.deps.session.get(url) as resp:
             j = await resp.json()
             return CurrentLiquidity.from_asgard(j)
 
-    async def fetch_liquidity_info(self, address):
+    async def fetch_all_pool_liquidity_info(self, address):
         my_pools = await self.get_my_pools(address)
-        cur_liquidity = await asyncio.gather(*(self.get_current_liquidity(address, pool) for pool in my_pools))
+        cur_liquidity = await asyncio.gather(*(self.fetch_one_pool_liquidity_info(address, pool) for pool in my_pools))
         return {c.pool: c for c in cur_liquidity}
 
     async def fetch_stake_report_for_pool(self, liq: CurrentLiquidity, ppf: PoolPriceFetcher) -> StakePoolReport:
