@@ -125,17 +125,20 @@ async def lp_pool_picture(report: StakePoolReport, value_hidden=False):
     draw = ImageDraw.Draw(image)
 
     left, center, right = 30, 50, 70
-    head_y = 8
-    dy = 6
-    line1_y = 12
+    head_y = 16
+    dy = 5
+    line1_y = 11
     logo_y = 82
-    start_y = line1_y + dy
+    start_y = head_y + dy
 
     # HEADER
     draw.text(pos_percent(center, head_y), 'POOL', font=r.font_head, fill=FADE_COLOR, anchor='ms')
     draw.text(pos_percent(left, head_y), 'RUNE', font=r.font_head, fill=FORE_COLOR, anchor='rs')
-    draw.text(pos_percent(right, head_y), asset_name_cut_chain(asset), font=r.font, fill=FORE_COLOR, anchor='ls')
+    draw.text(pos_percent(right, head_y), short_asset_name(asset), font=r.font_head, fill=FORE_COLOR, anchor='ls')
+
+    # ------------------------------------------------------------------------------------------------
     draw.line((pos_percent(0, line1_y), pos_percent(100, line1_y)), fill=LINE_COLOR, width=2)
+    # ------------------------------------------------------------------------------------------------
 
     # ADDED
     draw.text(pos_percent(center, start_y), 'Added', font=r.font, fill=FADE_COLOR, anchor='ms')
@@ -206,9 +209,11 @@ async def lp_pool_picture(report: StakePoolReport, value_hidden=False):
               font=r.font_head if value_hidden else r.font,
               fill=result_color(gl_asset_per),
               anchor='ls')
-    start_y += 4
+    start_y += 3
 
+    # ------------------------------------------------------------------------------------------------
     draw.line((pos_percent(0, start_y), pos_percent(100, start_y)), fill=LINE_COLOR, width=2)
+    # ------------------------------------------------------------------------------------------------
     start_y += 5
 
     # VALUE
@@ -272,10 +277,12 @@ async def lp_pool_picture(report: StakePoolReport, value_hidden=False):
     image.paste(rune_image, pos_percent(46, logo_y + 2, -r.LOGO_WIDTH // 2, -r.LOGO_HEIGHT // 2), rune_image)
     image.paste(asset_image, pos_percent(54, logo_y + 2, -r.LOGO_WIDTH // 2, -r.LOGO_HEIGHT // 2), asset_image)
 
-    # RESULTS
+    # ------------------------------------------------------------------------------------------------
     line3_y = logo_y - 6
     draw.line((pos_percent(0, line3_y), pos_percent(100, line3_y)), fill=LINE_COLOR, width=2)
+    # ------------------------------------------------------------------------------------------------
 
+    # RESULTS
     lp_abs, lp_per = report.lp_vs_hold
     apy = report.lp_vs_hold_apy
 

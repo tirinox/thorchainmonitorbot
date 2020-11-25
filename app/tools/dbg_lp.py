@@ -14,8 +14,8 @@ from services.lib.config import Config
 from services.lib.datetime import DAY
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
-from services.models.stake_info import BNB_CHAIN, StakePoolReport, CurrentLiquidity
-from services.models.time_series import BNB_SYMBOL, RUNE_SYMBOL, BUSD_SYMBOL, BTCB_SYMBOL
+from services.models.stake_info import CurrentLiquidity
+from services.models.time_series import BTCB_SYMBOL
 
 
 async def price_of_day(d: DepContainer):
@@ -93,4 +93,4 @@ if __name__ == '__main__':
     d.cfg = Config(Config.DEFAULT_LVL_UP)
     d.db = DB(d.loop)
 
-    d.loop.run_until_complete(test_image(d, 'bnb1rv89nkw2x5ksvhf6jtqwqpke4qhh7jmudpvqmj', hide=True))
+    d.loop.run_until_complete(test_image(d, 'bnb1rv89nkw2x5ksvhf6jtqwqpke4qhh7jmudpvqmj', hide=False))
