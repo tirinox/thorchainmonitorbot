@@ -1,9 +1,13 @@
+import asyncio
+
 from services.fetch.base import BaseFetcher
 from services.fetch.fair_price import fair_rune_price
-from services.lib.datetime import parse_timespan_to_seconds
+from services.lib.datetime import parse_timespan_to_seconds, DAY
 from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo
 from services.models.time_series import PriceTimeSeries, BUSD_SYMBOL, RUNE_SYMBOL, RUNE_SYMBOL_DET
+
+MIDGARD_AGGREGATED_POOL_INFO = 'https://chaosnet-midgard.bepswap.com/v1/history/pools?pool={pool}&interval=day&from={from_ts}&to={to_ts}'
 
 
 class PoolPriceFetcher(BaseFetcher):
@@ -85,3 +89,30 @@ class PoolPriceFetcher(BaseFetcher):
         return {
             asset: pool for asset, pool in pool_dict.items() if pool in asset_list
         }
+
+    @staticmethod
+    def url_for_pool_info_by_day(pool, ts):
+        from_ts = int(ts - 1)
+        to_ts = int(ts + DAY + 1)
+        return MIDGARD_AGGREGATED_POOL_INFO.format(pool=pool, from_ts=from_ts, to_ts=to_ts)
+
+    async def get_asset_per_rune_of_pool_by_day(self, pool, day):
+        url = self.url_for_pool_info_by_day(pool, day)
+        self.logger.info(f"price_of_pool_by_day from: {url}")
+
+        async with self.deps.session.get(url) as resp:
+            pools_info = await resp.json()
+            pool_info = pools_info[0]
+            return int(pool_info['assetDepth']) / int(pool_info['runeDepth'])
+
+    async def get_usd_per_rune_asset_per_rune_by_day(self, pool, day_ts):
+        if pool == BUSD_SYMBOL:
+            usd_per_rune = await self.get_asset_per_rune_of_pool_by_day(BUSD_SYMBOL, day_ts)
+            return usd_per_rune, 1.0
+        else:
+            usd_per_rune, asset_per_rune = await asyncio.gather(
+                self.get_asset_per_rune_of_pool_by_day(BUSD_SYMBOL, day_ts),
+                self.get_asset_per_rune_of_pool_by_day(pool, day_ts)
+            )
+            usd_per_asset = usd_per_rune / asset_per_rune
+            return usd_per_rune, usd_per_asset

@@ -1,8 +1,9 @@
 import asyncio
 import logging
 
+from services.fetch.pool_price import PoolPriceFetcher
 from services.lib.depcont import DepContainer
-from services.models.stake_info import CurrentLiquidity
+from services.models.stake_info import CurrentLiquidity, StakePoolReport
 
 MIDGARD_MY_POOLS = 'https://chaosnet-midgard.bepswap.com/v1/stakers/{address}'
 MIDGARD_POOL_LIQUIDITY = 'https://chaosnet-midgard.bepswap.com/v1/pools/detail?asset={pools}&view=simple'
@@ -31,7 +32,23 @@ class LiqPoolFetcher:
             j = await resp.json()
             return CurrentLiquidity.from_asgard(j)
 
-    async def fetch(self, address, chain):
+    async def fetch_liquidity_info(self, address):
         my_pools = await self.get_my_pools(address)
         cur_liquidity = await asyncio.gather(*(self.get_current_liquidity(address, pool) for pool in my_pools))
         return {c.pool: c for c in cur_liquidity}
+
+    async def fetch_stake_report_for_pool(self, liq: CurrentLiquidity, ppf: PoolPriceFetcher) -> StakePoolReport:
+        try:
+            usd_per_rune_start, usd_per_asset_start = await ppf.get_usd_per_rune_asset_per_rune_by_day(
+                liq.pool,
+                liq.first_stake_ts)
+        except:
+            usd_per_rune_start, usd_per_asset_start = None, None
+
+        d = self.deps
+        stake_report = StakePoolReport(d.price_holder.usd_per_asset(liq.pool),
+                                       d.price_holder.usd_per_rune,
+                                       usd_per_asset_start, usd_per_rune_start,
+                                       liq,
+                                       d.price_holder.pool_info_map.get(liq.pool))
+        return stake_report

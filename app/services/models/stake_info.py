@@ -1,3 +1,4 @@
+import time
 from dataclasses import dataclass, field
 
 from services.lib.datetime import DAY
@@ -67,12 +68,23 @@ class StakePoolReport:
     usd_per_asset: float
     usd_per_rune: float
 
+    usd_per_asset_start: float
+    usd_per_rune_start: float
+
     liq: CurrentLiquidity
     pool: PoolInfo
 
     ASSET = 'asset'
     RUNE = 'rune'
     USD = 'usd'
+
+    def price_change(self, mode=USD):
+        if mode == self.USD:
+            return 0.0
+        elif mode == self.RUNE:
+            return (self.usd_per_rune / self.usd_per_rune_start - 1) * 100.0
+        elif mode == self.ASSET:
+            return (self.usd_per_asset / self.usd_per_asset_start - 1) * 100.0
 
     @property
     def lp_vs_hold(self) -> (float, float):
@@ -94,11 +106,15 @@ class StakePoolReport:
         return lp_vs_hold_abs, lp_vs_hold_percent
 
     @property
+    def total_days(self):
+        total_days = self.total_staking_sec / DAY
+        return total_days
+
+    @property
     def lp_vs_hold_apy(self) -> float:
         _, lp_vs_hold_percent = self.lp_vs_hold
         lp_vs_hold_percent /= 100.0
-        total_days = self.total_staking_sec / DAY
-        apy = (1 + lp_vs_hold_percent / total_days) ** 365 - 1
+        apy = (1 + lp_vs_hold_percent / self.total_days) ** 365 - 1
         return apy * 100.0
 
     def gain_loss(self, mode=USD) -> (float, float):
@@ -108,6 +124,22 @@ class StakePoolReport:
         gain_loss_abs = cur_val + wth_val - add_val
         gain_loss_percent = gain_loss_abs / add_val * 100.0
         return gain_loss_abs, gain_loss_percent
+
+    @property
+    def gain_loss_raw(self):
+        redeem_rune, redeem_asset = self.redeemable_rune_asset
+        gl_rune = self.liq.rune_withdrawn + redeem_rune - self.liq.rune_stake
+        gl_asset = self.liq.asset_withdrawn + redeem_asset - self.liq.asset_stake
+        gl_rune_per = gl_rune / self.liq.rune_stake * 100.0 if self.liq.rune_stake != 0 else 0.0
+        gl_asset_per = gl_asset / self.liq.asset_stake * 100.0 if self.liq.asset_stake != 0 else 0.0
+        return gl_rune, gl_rune_per, gl_asset, gl_asset_per
+
+    @property
+    def usd_gain_loss_percent(self):
+        gl_rune, gl_rune_per, gl_asset, gl_asset_per = self.gain_loss_raw
+        gl_usd = gl_rune * self.usd_per_rune + gl_asset * self.usd_per_asset
+        gl_usd_per = gl_usd / self.added_value(self.USD) * 100.0
+        return gl_usd_per
 
     @property
     def redeemable_rune_asset(self):
@@ -142,5 +174,4 @@ class StakePoolReport:
 
     @property
     def total_staking_sec(self):
-        return self.liq.last_stake_ts - self.liq.first_stake_ts
-
+        return int(time.time()) - self.liq.first_stake_ts

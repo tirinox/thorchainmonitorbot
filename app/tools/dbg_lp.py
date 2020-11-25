@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 import pickle
+from time import time
 
 import aiohttp
 
@@ -10,10 +11,21 @@ from services.fetch.lp import LiqPoolFetcher
 from services.fetch.node_ip_manager import ThorNodeAddressManager
 from services.fetch.pool_price import PoolPriceFetcher
 from services.lib.config import Config
+from services.lib.datetime import DAY
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.models.stake_info import BNB_CHAIN, StakePoolReport, CurrentLiquidity
-from services.models.time_series import BNB_SYMBOL, RUNE_SYMBOL, BUSD_SYMBOL
+from services.models.time_series import BNB_SYMBOL, RUNE_SYMBOL, BUSD_SYMBOL, BTCB_SYMBOL
+
+
+async def price_of_day(d: DepContainer):
+    async with aiohttp.ClientSession() as d.session:
+        lpf = LiqPoolFetcher(d)
+        ppf = PoolPriceFetcher(d)
+        d.thor_man = ThorNodeAddressManager(d.session)
+
+        r = await ppf.get_usd_per_rune_asset_per_rune_by_day(BTCB_SYMBOL, time() - 2 * DAY)
+        print(r)
 
 
 async def lp_test(d: DepContainer, addr):
@@ -23,13 +35,12 @@ async def lp_test(d: DepContainer, addr):
         d.thor_man = ThorNodeAddressManager(d.session)
         await ppf.get_current_pool_data_full()
 
-        cur_liqs = await lpf.fetch(addr, BNB_CHAIN)
-        cur_liq: CurrentLiquidity = cur_liqs['BNB.BNB']
+        cur_liqs = await lpf.fetch_liquidity_info(addr)
 
-        stake_report = StakePoolReport(d.price_holder.usd_per_asset(cur_liq.pool),
-                                       d.price_holder.usd_per_rune,
-                                       cur_liq,
-                                       d.price_holder.pool_info_map.get(cur_liq.pool))
+        cur_liq: CurrentLiquidity = cur_liqs[BTCB_SYMBOL]
+
+        stake_report = await lpf.fetch_stake_report_for_pool(cur_liq, ppf)
+
         print(f'cur_liq = {cur_liq}')
         print()
         redeem_rune, redeem_asset = stake_report.redeemable_rune_asset
@@ -67,9 +78,12 @@ async def test_image(d, addr):
         with open(PICKLE_PATH, 'wb') as f:
             pickle.dump(stake_report, f)
 
+    # stake_report = await lp_test(d, addr)
+
     img = await lp_pool_picture(stake_report)
     img.save("../../stake_test.png", "PNG")
 
+    # await price_of_day(d)
 
 
 if __name__ == '__main__':
