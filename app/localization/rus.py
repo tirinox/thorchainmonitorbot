@@ -87,7 +87,7 @@ class RussianLocalization(BaseLocalization):
     LP_PIC_LP_VS_HOLD = 'Против ХОЛД'
     LP_PIC_LP_APY = 'Годовых'
     LP_PIC_EARLY = 'Еще рано...'
-    LP_PIC_FOOTER = "Испольует runestake.info от BigBoss"
+    LP_PIC_FOOTER = "Испольует runestake.info от Bigboss"
 
     def pic_stake_days(self, total_days, first_stake_ts):
         start_date = datetime.fromtimestamp(first_stake_ts).strftime('%d.%m.%Y')

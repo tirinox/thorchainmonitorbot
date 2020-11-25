@@ -102,7 +102,7 @@ class BaseLocalization(ABC):
     LP_PIC_LP_VS_HOLD = 'LP vs HOLD'
     LP_PIC_LP_APY = 'LP APY'
     LP_PIC_EARLY = 'Early...'
-    LP_PIC_FOOTER = "Powered by BigBoss' runestake.info"
+    LP_PIC_FOOTER = "Powered by Bigboss' runestake.info"
 
     @abstractmethod
     def pic_stake_days(self, total_days, first_stake_ts):
