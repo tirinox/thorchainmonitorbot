@@ -11,6 +11,8 @@ from services.models.tx import StakeTx, StakePoolStats
 
 RAIDO_GLYPH = 'ᚱ'
 
+CREATOR_TG = '@account1242'
+
 
 def kbd(buttons, resize=True, vert=False, one_time=False, inline=False, row_width=3):
     if isinstance(buttons, str):

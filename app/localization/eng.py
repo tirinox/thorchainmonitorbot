@@ -1,7 +1,7 @@
 from datetime import datetime
 from math import ceil
 
-from localization.base import BaseLocalization, kbd
+from localization.base import BaseLocalization, kbd, CREATOR_TG
 from services.lib.datetime import format_time_ago
 from services.models.price import RuneFairPrice, PriceReport, PriceATH
 from services.models.pool_info import PoolInfo
@@ -23,7 +23,8 @@ class EnglishLocalization(BaseLocalization):
             f"/lang – set the language\n"
             f"/cap – the current liquidity cap of Chaosnet\n"
             f"/price – the current Rune price.\n"
-            f"<b>⚠️ All notifications are forwarded to @thorchain_alert channel!</b>"
+            f"<b>⚠️ All notifications are forwarded to @thorchain_alert channel!</b>\n"
+            f"🤗 Support and feedback: {CREATOR_TG}."
         )
 
     def welcome_message(self, info: ThorInfo):
@@ -31,7 +32,8 @@ class EnglishLocalization(BaseLocalization):
             f"Hello! <b>{pretty_money(info.stacked)} {self.R}</b> of <b>{pretty_money(info.cap)} {self.R}</b> pooled.\n"
             f"{self._cap_progress_bar(info)}"
             f"The {self.R} price is <code>${info.price:.3f}</code> now.\n"
-            f"<b>⚠️ All notifications are forwarded to @thorchain_alert channel!</b>"
+            f"<b>⚠️ All notifications are forwarded to @thorchain_alert channel!</b>\n"
+            f"🤗 Support and feedback: {CREATOR_TG}."
         )
 
     def unknown_command(self):

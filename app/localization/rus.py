@@ -3,7 +3,7 @@ from math import ceil
 
 from aiogram.types import *
 
-from localization.base import BaseLocalization, kbd, RAIDO_GLYPH
+from localization.base import BaseLocalization, kbd, RAIDO_GLYPH, CREATOR_TG
 from services.lib.datetime import format_time_ago
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change, short_asset_name
@@ -26,6 +26,7 @@ class RussianLocalization(BaseLocalization):
             f"/cap – текущий кап для стейка в пулах Chaosnet\n"
             f"/price – текущая цена {self.R}.\n"
             f"<b>⚠️ Бот теперь уведомляет только в канале @thorchain_alert!</b>\n"
+            f"🤗 Отзывы и поддержка: {CREATOR_TG}."
         )
 
     def welcome_message(self, info: ThorInfo):
@@ -34,7 +35,8 @@ class RussianLocalization(BaseLocalization):
             f"{self._cap_progress_bar(info)}"
             f"Цена {self.R} сейчас <code>{info.price:.3f} BUSD</code>.\n"
             f"<b>⚠️ Бот теперь уведомляет только в канале @thorchain_alert!</b>\n"
-            f"Набери /help, чтобы видеть список команд."
+            f"Набери /help, чтобы видеть список команд.\n"
+            f"🤗 Отзывы и поддержка: {CREATOR_TG}."
         )
 
     def unknown_command(self):

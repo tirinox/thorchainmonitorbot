@@ -8,6 +8,7 @@ from aiogram.dispatcher.storage import FSMContextProxy, FSMContext
 from aiogram.types import Message, CallbackQuery
 
 from localization import BaseLocalization
+from localization.base import CREATOR_TG
 from services.lib.depcont import DepContainer
 from services.lib.utils import code
 
@@ -17,7 +18,8 @@ logger = logging.getLogger('DIALOGS')
 async def display_error(message: Message, e: Exception):
     tag = secrets.token_hex(8)
     logger.exception(f"TAG: {tag}")
-    await message.answer(code(f"Sorry! An error occurred: {str(e)}. Incident ID is {tag}."))
+    await message.answer(code(f"Sorry! An error occurred: {str(e)}. Incident ID is {tag}.") +
+                         f"\nFeedback/support: {CREATOR_TG}.")
 
 
 def bot_query_error_guard(func):
