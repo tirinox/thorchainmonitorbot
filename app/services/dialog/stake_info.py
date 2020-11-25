@@ -14,7 +14,7 @@ from services.lib.utils import code, pre, grouper
 from services.models.stake_info import MyStakeAddress, BNB_CHAIN
 
 LOADING_STICKER = 'CAACAgIAAxkBAAIRx1--Tia-m6DNRIApk3yqmNWvap_sAALcAAP3AsgPUNi8Bnu98HweBA'
-
+RUNE_STAKE_INFO = 'https://runestake.info/debug?address={address}'
 
 class StakeStates(StatesGroup):
     mode = HelperMode.snake_case
@@ -66,6 +66,7 @@ class StakeDialog(BaseDialog):
     def kbd_for_pools(self):
         view_value = self.data.get('view-value', True)
         addr_idx = int(self.data.get('active_addr_idx', 0))
+        addr = self.data.get('active_addr')
         my_pools = self.data.get('my_pools', [])
 
         inline_kbd = []
@@ -73,6 +74,7 @@ class StakeDialog(BaseDialog):
         buttons = grouper(2, buttons)
         inline_kbd += buttons
         inline_kbd += [
+            [InlineKeyboardButton('View it on runestake.info', url=RUNE_STAKE_INFO.format(address=addr))],
             [
                 InlineKeyboardButton('View value: ON' if view_value else 'View value: OFF',
                                      callback_data=f'toggle_view_value'),
