@@ -121,12 +121,14 @@ class StakeDialog(BaseDialog):
         my_pools = self.data[self.KEY_MY_POOLS]
         await query.message.answer(text=self.loc.text_stake_provides_liq_to_pools(address, my_pools),
                                    reply_markup=inline_kbd,
-                                   disable_web_page_preview=True)
+                                   disable_web_page_preview=True,
+                                   disable_notification=True)
 
     async def view_pool_report(self, query: CallbackQuery):
         _, pool = query.data.split(':')
         address = self.data[self.KEY_ACTIVE_ADDRESS]
-        sticker = await query.message.answer_sticker(LOADING_STICKER)
+        sticker = await query.message.answer_sticker(LOADING_STICKER,
+                                                     disable_notification=True)
 
         lpf = LiqPoolFetcher(self.deps)
         liq = await lpf.fetch_one_pool_liquidity_info(address, pool)
@@ -138,7 +140,8 @@ class StakeDialog(BaseDialog):
         picture = await lp_pool_picture(stake_report, self.loc, value_hidden=value_hidden)
         picture_io = img_to_bio(picture, f'Thorchain_LP_{pool}.png')
 
-        await query.message.answer_photo(picture_io)
+        await query.message.answer_photo(picture_io,
+                                         disable_notification=True)
         await sticker.delete()
 
     async def show_pools_again(self, query: CallbackQuery):
@@ -159,12 +162,14 @@ class StakeDialog(BaseDialog):
                 if MyStakeAddress.is_good_address(address):
                     self.add_address(address, BNB_CHAIN)
                 else:
-                    await message.answer(code(self.loc.TEXT_INVALID_ADDRESS))
+                    await message.answer(code(self.loc.TEXT_INVALID_ADDRESS),
+                                         disable_notification=True)
 
             await self.display_addresses(message)
             msg = self.loc.TEXT_SELECT_ADDRESS_ABOVE if self.my_addresses else ''
             msg += self.loc.TEXT_SELECT_ADDRESS_SEND_ME
-            await message.answer(msg, reply_markup=kbd([self.loc.BUTTON_BACK]))
+            await message.answer(msg, reply_markup=kbd([self.loc.BUTTON_BACK]),
+                                 disable_notification=True)
 
     @query_handler(state=StakeStates.MAIN_MENU)
     async def on_tap_address(self, query: CallbackQuery):
