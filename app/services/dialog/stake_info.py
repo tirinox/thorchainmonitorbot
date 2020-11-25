@@ -16,22 +16,32 @@ from services.models.stake_info import MyStakeAddress, BNB_CHAIN
 LOADING_STICKER = 'CAACAgIAAxkBAAIRx1--Tia-m6DNRIApk3yqmNWvap_sAALcAAP3AsgPUNi8Bnu98HweBA'
 RUNE_STAKE_INFO = 'https://runestake.info/debug?address={address}'
 
+
 class StakeStates(StatesGroup):
     mode = HelperMode.snake_case
     MAIN_MENU = State()
-    ADD_ADDRESS = State()
 
 
 class StakeDialog(BaseDialog):
-    DATA_KEY_MY_ADDR = 'my_addr'
-
     BUTTON_SM_ADD_ADDRESS = 'Add an address'
     BUTTON_BACK = 'Back'
     BUTTON_SM_BACK_TO_LIST = 'Back to list'
 
+    KEY_MY_ADDRESSES = 'my-address-list'
+    KEY_CAN_VIEW_VALUE = 'can-view-value'
+    KEY_ACTIVE_ADDRESS = 'active-addr'
+    KEY_ACTIVE_ADDRESS_INDEX = 'active-addr-id'
+    KEY_MY_POOLS = 'my-pools'
+
+    QUERY_VIEW_ADDRESS = 'view-addr'
+    QUERY_REMOVE_ADDRESS = 'remove-addr'
+    QUERY_BACK_TO_ADDRESS_LIST = 'back-to-addr-list'
+    QUERY_BACK_TOGGLE_VIEW_VALUE = 'toggle-view-value'
+    QUERY_VIEW_POOL = 'view-pool'
+
     @property
     def my_addresses(self):
-        raw = self.data.get(self.DATA_KEY_MY_ADDR, [])
+        raw = self.data.get(self.KEY_MY_ADDRESSES, [])
         return [MyStakeAddress(**j) for j in raw]
 
     def add_address(self, new_addr, chain=BNB_CHAIN):
@@ -39,15 +49,15 @@ class StakeDialog(BaseDialog):
         current_list = self.my_addresses
         my_unique_addr = set((a.chain, a.address) for a in current_list)
         if (chain, new_addr) not in my_unique_addr:
-            self.data[self.DATA_KEY_MY_ADDR] = [asdict(a) for a in current_list + [MyStakeAddress(new_addr)]]
+            self.data[self.KEY_MY_ADDRESSES] = [asdict(a) for a in current_list + [MyStakeAddress(new_addr)]]
 
     def remove_address(self, index):
-        del self.data[self.DATA_KEY_MY_ADDR][int(index)]
+        del self.data[self.KEY_MY_ADDRESSES][int(index)]
 
     def addresses_kbd(self):
         buttons = []
         for i, addr in enumerate(self.my_addresses):
-            data = f'view-addr:{i}'
+            data = f'{self.QUERY_VIEW_ADDRESS}:{i}'
             buttons.append(InlineKeyboardButton(short_address(addr.address, begin=10, end=7), callback_data=data))
         return InlineKeyboardMarkup(inline_keyboard=grouper(2, buttons))
 
@@ -60,70 +70,78 @@ class StakeDialog(BaseDialog):
                                  reply_markup=kbd([self.BUTTON_BACK]),
                                  **kw)
         else:
-            await f('Your addresses:',
-                    reply_markup=self.addresses_kbd(), **kw)
+            await f('Your addresses:', reply_markup=self.addresses_kbd(), **kw)
 
     def kbd_for_pools(self):
-        view_value = self.data.get('view-value', True)
-        addr_idx = int(self.data.get('active_addr_idx', 0))
-        addr = self.data.get('active_addr')
-        my_pools = self.data.get('my_pools', [])
+        view_value = self.data.get(self.KEY_CAN_VIEW_VALUE, True)
+        addr_idx = int(self.data.get(self.KEY_ACTIVE_ADDRESS_INDEX, 0))
+        address = self.data.get(self.KEY_ACTIVE_ADDRESS)
+        my_pools = self.data.get(self.KEY_MY_POOLS, [])
 
         inline_kbd = []
-        buttons = [InlineKeyboardButton(pool, callback_data=f'view-pool:{pool}') for pool in my_pools]
+        buttons = [InlineKeyboardButton(pool, callback_data=f'{self.QUERY_VIEW_POOL}:{pool}') for pool in my_pools]
         buttons = grouper(2, buttons)
         inline_kbd += buttons
         inline_kbd += [
-            [InlineKeyboardButton('View it on runestake.info', url=RUNE_STAKE_INFO.format(address=addr))],
+            [
+                InlineKeyboardButton('View it on runestake.info', url=RUNE_STAKE_INFO.format(address=address))
+            ],
             [
                 InlineKeyboardButton('View value: ON' if view_value else 'View value: OFF',
-                                     callback_data=f'toggle_view_value'),
-                InlineKeyboardButton('Remove this address', callback_data=f'remove:{addr_idx}')
+                                     callback_data=self.QUERY_BACK_TOGGLE_VIEW_VALUE),
+                InlineKeyboardButton('Remove this address', callback_data=f'{self.QUERY_REMOVE_ADDRESS}:{addr_idx}')
             ],
-            [InlineKeyboardButton(self.BUTTON_SM_BACK_TO_LIST,
-                                  callback_data=f'back_to_list')
-             ]
+            [
+                InlineKeyboardButton(self.BUTTON_SM_BACK_TO_LIST, callback_data=self.QUERY_BACK_TO_ADDRESS_LIST)
+            ]
         ]
-        return inline_kbd
+        return InlineKeyboardMarkup(inline_keyboard=inline_kbd)
 
     async def on_selected_address(self, query: CallbackQuery, reload_pools=True):
         _, addr_idx = query.data.split(':')
         addr_idx = int(addr_idx)
-        addr = self.my_addresses[addr_idx].address
+        address = self.my_addresses[addr_idx].address
 
         lpf = LiqPoolFetcher(self.deps)
-        self.data['active_addr'] = addr
-        self.data['active_addr_idx'] = addr_idx
+        self.data[self.KEY_ACTIVE_ADDRESS] = address
+        self.data[self.KEY_ACTIVE_ADDRESS_INDEX] = addr_idx
 
         if reload_pools:
-            await query.message.edit_text(text=f'Please wait. Loading pools for {pre(addr)}...')
-            my_pools = await lpf.get_my_pools(addr)
-            self.data['my_pools'] = my_pools
+            await query.message.edit_text(text=f'Please wait. Loading pools for {pre(address)}...')
+            my_pools = await lpf.get_my_pools(address)
+            self.data[self.KEY_MY_POOLS] = my_pools
 
         inline_kbd = self.kbd_for_pools()
-        await query.message.edit_text(text=f'Address: {pre(addr)} provides liquidity to the following pools:',
-                                      reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_kbd))
+        await query.message.edit_text(text=f'Address: {pre(address)} provides liquidity to the following pools:',
+                                      reply_markup=inline_kbd)
+
+    async def list_pools_new_message(self, query: CallbackQuery):
+        inline_kbd = self.kbd_for_pools()
+        addr = self.data[self.KEY_ACTIVE_ADDRESS]
+        await query.message.answer(text=f'Address: {pre(addr)} provides liquidity to the following pools:',
+                                   reply_markup=inline_kbd)
 
     async def view_pool_report(self, query: CallbackQuery):
         _, pool = query.data.split(':')
-        addr = self.data['active_addr']
+        address = self.data[self.KEY_ACTIVE_ADDRESS]
         sticker = await query.message.answer_sticker(LOADING_STICKER)
 
         lpf = LiqPoolFetcher(self.deps)
-        liq = await lpf.fetch_one_pool_liquidity_info(addr, pool)
+        liq = await lpf.fetch_one_pool_liquidity_info(address, pool)
 
         ppf = PoolPriceFetcher(self.deps)
         stake_report = await lpf.fetch_stake_report_for_pool(liq, ppf)
 
-        value_hidden = not self.data.get('view-value', True)
+        value_hidden = not self.data.get(self.KEY_CAN_VIEW_VALUE, True)
         picture = await lp_pool_picture(stake_report, value_hidden=value_hidden)
-        picture_io = img_to_bio(picture, f'LP_{pool}.png')
+        picture_io = img_to_bio(picture, f'Thorchain_LP_{pool}.png')
 
         await query.message.answer_photo(picture_io)
         await sticker.delete()
 
     async def show_pools_again(self, query: CallbackQuery):
-        query.data = f"view-addr:{self.data['active_addr_idx']}"
+        active_addr_idx = self.data[self.KEY_ACTIVE_ADDRESS_INDEX]
+        query.data = f"{self.QUERY_VIEW_ADDRESS}:{active_addr_idx}"
         await self.on_selected_address(query, reload_pools=False)
 
     # ----------- HANDLERS ------------
@@ -134,10 +152,10 @@ class StakeDialog(BaseDialog):
             await self.go_back(message)
         else:
             await StakeStates.MAIN_MENU.set()
-            addr = message.text.strip()
-            if addr:
-                if MyStakeAddress.is_good_address(addr):
-                    self.add_address(addr, BNB_CHAIN)
+            address = message.text.strip()
+            if address:
+                if MyStakeAddress.is_good_address(address):
+                    self.add_address(address, BNB_CHAIN)
                 else:
                     await message.answer(code('Invalid address!'))
 
@@ -149,20 +167,17 @@ class StakeDialog(BaseDialog):
 
     @query_handler(state=StakeStates.MAIN_MENU)
     async def on_tap_address(self, query: CallbackQuery):
-        if query.data.startswith('view-addr:'):
+        if query.data.startswith(f'{self.QUERY_VIEW_ADDRESS}:'):
             await self.on_selected_address(query)
-        elif query.data == 'back_to_list':
+        elif query.data == self.QUERY_BACK_TO_ADDRESS_LIST:
             await self.display_addresses(query.message, edit=True)
-        elif query.data.startswith('remove:'):
+        elif query.data.startswith(f'{self.QUERY_REMOVE_ADDRESS}:'):
             _, index = query.data.split(':')
             self.remove_address(index)
             await self.display_addresses(query.message, edit=True)
-        elif query.data.startswith('view-pool:'):
+        elif query.data.startswith(f'{self.QUERY_VIEW_POOL}:'):
             await self.view_pool_report(query)
-            inline_kbd = self.kbd_for_pools()
-            addr = self.data['active_addr']
-            await query.message.answer(text=f'Address: {pre(addr)} provides liquidity to the following pools:',
-                                       reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_kbd))
-        elif query.data == 'toggle_view_value':
-            self.data['view-value'] = not self.data.get('view-value', True)
+            await self.list_pools_new_message(query)
+        elif query.data == self.QUERY_BACK_TOGGLE_VIEW_VALUE:
+            self.data[self.KEY_CAN_VIEW_VALUE] = not self.data.get(self.KEY_CAN_VIEW_VALUE, True)
             await self.show_pools_again(query)
