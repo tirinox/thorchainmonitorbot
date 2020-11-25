@@ -7,7 +7,8 @@ from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo
 from services.models.time_series import PriceTimeSeries, BUSD_SYMBOL, RUNE_SYMBOL, RUNE_SYMBOL_DET
 
-MIDGARD_AGGREGATED_POOL_INFO = 'https://chaosnet-midgard.bepswap.com/v1/history/pools?pool={pool}&interval=day&from={from_ts}&to={to_ts}'
+MIDGARD_AGGREGATED_POOL_INFO = \
+    'https://chaosnet-midgard.bepswap.com/v1/history/pools?pool={pool}&interval=day&from={from_ts}&to={to_ts}'
 
 
 class PoolPriceFetcher(BaseFetcher):

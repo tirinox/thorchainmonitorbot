@@ -27,7 +27,8 @@ RAIDO_GLYPH = 'ᚱ'
 
 class Resources(metaclass=Singleton):
     LOGO_WIDTH, LOGO_HEIGHT = 64, 64
-    COIN_LOGO = 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/binance/assets/{asset}/logo.png'
+    COIN_LOGO = \
+        'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/binance/assets/{asset}/logo.png'
     LOCAL_COIN_LOGO = '../data/{asset}.png'
     UNKNOWN_LOGO = '../data/unknown.png'
     HIDDEN_IMG = '../data/hidden.png'
@@ -162,7 +163,8 @@ async def lp_pool_picture(report: StakePoolReport, value_hidden=False):
         draw.text(pos_percent(left, start_y), f'{pretty_money(report.liq.rune_withdrawn)} {RAIDO_GLYPH}', font=r.font,
                   fill=FORE_COLOR,
                   anchor='rs')
-        draw.text(pos_percent(right, start_y), f'{pretty_money(report.liq.asset_withdrawn)}', font=r.font, fill=FORE_COLOR,
+        draw.text(pos_percent(right, start_y), f'{pretty_money(report.liq.asset_withdrawn)}', font=r.font,
+                  fill=FORE_COLOR,
                   anchor='ls')
     start_y += dy
 

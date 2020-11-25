@@ -12,6 +12,7 @@ from services.models.price import LastPriceHolder
 # from services.notify.broadcast import Broadcaster
 
 
+# noinspection PyUnresolvedReferences
 @dataclass
 class DepContainer:
     cfg: typing.Optional['Config'] = None

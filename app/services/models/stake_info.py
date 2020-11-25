@@ -54,11 +54,12 @@ class CurrentLiquidity(BaseModelMixin):
     def from_asgard(cls, d):
         m = MIDGARD_MULT
         return cls(
-            d['pool'], d['runestake'] * m, d['assetstake'] * m, d['poolunits'],
-                       d['assetwithdrawn'] * m, d['runewithdrawn'] * m,
-                       d['totalstakedasset'] * m, d['totalstakedrune'] * m,
-                       d['totalstakedusd'] * m, d['totalunstakedasset'] * m,
-                       d['totalunstakedrune'] * m, d['totalunstakedusd'] * m,
+            d['pool'],
+            d['runestake'] * m, d['assetstake'] * m, d['poolunits'],
+            d['assetwithdrawn'] * m, d['runewithdrawn'] * m,
+            d['totalstakedasset'] * m, d['totalstakedrune'] * m,
+            d['totalstakedusd'] * m, d['totalunstakedasset'] * m,
+            d['totalunstakedrune'] * m, d['totalunstakedusd'] * m,
             d['firststake'], d['laststake']
         )
 

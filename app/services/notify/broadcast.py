@@ -4,12 +4,9 @@ import random
 import time
 from typing import Iterable
 
-from aiogram import Bot
 from aiogram.utils import exceptions
 
 from localization import LocalizationManager
-from services.lib.config import Config
-from services.lib.db import DB
 from services.lib.depcont import DepContainer
 
 

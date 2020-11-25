@@ -1,6 +1,5 @@
 import logging
 import secrets
-import typing
 from abc import ABC
 from functools import wraps
 
@@ -95,7 +94,7 @@ class BaseDialog(ABC):
 
         @d.dp.callback_query_handler(*query_stuff['custom_filters'], state=query_stuff['state'])
         @bot_query_error_guard
-        async def handler(query: CallbackQuery, state: FSMContext, name=name):  # name=name important!!
+        async def handler(query: CallbackQuery, state: FSMContext, that_name=name):  # name=name important!!
             logger.info({
                 'from': (query.from_user.id, query.from_user.first_name, query.from_user.username),
                 'data': query.data
@@ -103,7 +102,7 @@ class BaseDialog(ABC):
             async with state.proxy() as data:
                 loc = await d.loc_man.get_from_db(query.from_user.id, d.db)
                 handler_class = cls(loc, data, d)
-                handler_method = getattr(handler_class, name)
+                handler_method = getattr(handler_class, that_name)
                 return await handler_method(query)
 
     @classmethod
@@ -116,7 +115,7 @@ class BaseDialog(ABC):
                               regexp=handler_stuff['regexp'],
                               content_types=handler_stuff['content_types'])
         @bot_error_guard
-        async def handler(message: Message, state: FSMContext, name=name):  # name=name important!!
+        async def handler(message: Message, state: FSMContext, that_name=name):  # name=name important!!
             logger.info({
                 'from': (message.from_user.id, message.from_user.first_name, message.from_user.username),
                 'text': message.text
@@ -124,7 +123,7 @@ class BaseDialog(ABC):
             async with state.proxy() as data:
                 loc = await d.loc_man.get_from_db(message.from_user.id, d.db)
                 handler_class = cls(loc, data, d)
-                handler_method = getattr(handler_class, name)
+                handler_method = getattr(handler_class, that_name)
                 return await handler_method(message)
 
     # noinspection PyCallingNonCallable

@@ -68,7 +68,8 @@ class EnglishLocalization(BaseLocalization):
         )
 
     # ------ TXS -------
-    def notification_text_large_tx(self, tx: StakeTx, dollar_per_rune: float, pool: StakePoolStats, pool_info: PoolInfo):
+    def notification_text_large_tx(self, tx: StakeTx, dollar_per_rune: float, pool: StakePoolStats,
+                                   pool_info: PoolInfo):
         msg = ''
         if tx.type == 'stake':
             msg += f'🐳 <b>Whale added liquidity</b> 🟢\n'

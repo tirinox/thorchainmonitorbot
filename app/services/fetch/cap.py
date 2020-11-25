@@ -34,7 +34,7 @@ class CapInfoFetcher(BaseFetcher):
             self.logger.error(f"max_staked = {max_staked} and total_staked = {total_staked} which seems like an error")
             return ThorInfo.error()
 
-        price = self.ppf.price_holder.usd_per_rune
+        price = self.deps.price_holder.usd_per_rune
 
         r = ThorInfo(cap=max_staked, stacked=total_staked, price=price)
         self.logger.info(f"ThorInfo got the following {r}")

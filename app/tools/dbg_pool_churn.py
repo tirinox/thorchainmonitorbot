@@ -11,22 +11,21 @@ from services.fetch.node_ip_manager import ThorNodeAddressManager
 from services.fetch.pool_price import PoolPriceFetcher
 from services.lib.config import Config
 from services.lib.db import DB
+from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo
 from services.models.price import LastPriceHolder
-from services.lib.money import short_asset_name
 from services.notify.broadcast import Broadcaster
 from services.notify.types.pool_churn import PoolChurnNotifier
 
 
-async def send_to_channel_test_message(cfg, db):
-    loc_man = LocalizationManager()
-    broadcaster = Broadcaster(cfg, bot, db)
-    thor_man = ThorNodeAddressManager.shared()
-    async with aiohttp.ClientSession() as session:
-        thor_man.session = session
+async def send_to_channel_test_message(d: DepContainer):
+    d.broadcaster = Broadcaster(d)
+
+    async with aiohttp.ClientSession() as d.session:
+        d.thor_man = ThorNodeAddressManager(d.session)
         lph = LastPriceHolder()
-        ppf = PoolPriceFetcher(cfg, db, thor_man, session, lph)
-        notifier_pool_churn = PoolChurnNotifier(cfg, db, broadcaster, loc_man)
+        ppf = PoolPriceFetcher(d)
+        notifier_pool_churn = PoolChurnNotifier(d)
 
         await ppf.get_current_pool_data_full()
 
@@ -45,19 +44,20 @@ async def send_to_channel_test_message(cfg, db):
         await notifier_pool_churn.on_data(ppf, None)  # no update at this momemnt!
 
 
-async def main(cfg, db):
-    await send_to_channel_test_message(cfg, db)
+async def main(d):
+    await send_to_channel_test_message(d)
 
 
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
 
-    loop = asyncio.get_event_loop()
-    cfg = Config(Config.DEFAULT_LVL_UP)
-    db = DB(loop)
+    d = DepContainer()
+    d.loop = asyncio.get_event_loop()
+    d.cfg = Config(Config.DEFAULT_LVL_UP)
+    d.db = DB(d.loop)
 
-    bot = Bot(token=cfg.telegram.bot.token, parse_mode=ParseMode.HTML)
-    dp = Dispatcher(bot, loop=loop)
+    bot = Bot(token=d.cfg.telegram.bot.token, parse_mode=ParseMode.HTML)
+    dp = Dispatcher(bot, loop=d.loop)
     loc_man = LocalizationManager()
 
-    asyncio.run(main(cfg, db))
+    asyncio.run(main(d))

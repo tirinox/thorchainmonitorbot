@@ -41,6 +41,8 @@ async def lp_test(d: DepContainer, addr):
 
         stake_report = await lpf.fetch_stake_report_for_pool(cur_liq, ppf)
 
+        # -------- print out ----------
+
         print(f'cur_liq = {cur_liq}')
         print()
         redeem_rune, redeem_asset = stake_report.redeemable_rune_asset
