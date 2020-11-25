@@ -6,7 +6,7 @@ from time import time
 
 import aiohttp
 
-from services.dialog.lp_picture import lp_pool_picture, download_logo_cached
+from services.dialog.lp_picture import lp_pool_picture
 from services.fetch.lp import LiqPoolFetcher
 from services.fetch.node_ip_manager import ThorNodeAddressManager
 from services.fetch.pool_price import PoolPriceFetcher
@@ -69,7 +69,7 @@ async def lp_test(d: DepContainer, addr):
 PICKLE_PATH = '../../stake_report.pickle'
 
 
-async def test_image(d, addr):
+async def test_image(d, addr, hide):
     if os.path.exists(PICKLE_PATH):
         with open(PICKLE_PATH, 'rb') as f:
             stake_report = pickle.load(f)
@@ -80,7 +80,7 @@ async def test_image(d, addr):
 
     # stake_report = await lp_test(d, addr)
 
-    img = await lp_pool_picture(stake_report)
+    img = await lp_pool_picture(stake_report, value_hidden=hide)
     img.save("../../stake_test.png", "PNG")
 
     # await price_of_day(d)
@@ -93,4 +93,4 @@ if __name__ == '__main__':
     d.cfg = Config(Config.DEFAULT_LVL_UP)
     d.db = DB(d.loop)
 
-    d.loop.run_until_complete(test_image(d, 'bnb1rv89nkw2x5ksvhf6jtqwqpke4qhh7jmudpvqmj'))
+    d.loop.run_until_complete(test_image(d, 'bnb1rv89nkw2x5ksvhf6jtqwqpke4qhh7jmudpvqmj', hide=True))
