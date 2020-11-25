@@ -12,7 +12,7 @@ from PIL import Image, ImageDraw, ImageFont
 from services.lib.money import asset_name_cut_chain, pretty_money, short_asset_name
 from services.lib.utils import Singleton
 from services.models.stake_info import StakePoolReport
-from services.models.time_series import BNB_SYMBOL, RUNE_SYMBOL
+from services.models.time_series import BNB_SYMBOL, RUNE_SYMBOL, BUSD_SYMBOL
 
 WIDTH, HEIGHT = 600, 800
 
@@ -113,6 +113,10 @@ def pos_percent(x, y, ax=0, ay=0, w=WIDTH, h=HEIGHT):
 
 def result_color(v):
     return RED_COLOR if v < 0 else GREEN_COLOR
+
+
+def is_stable_coin(pool):
+    return pool == BUSD_SYMBOL
 
 
 async def lp_pool_picture(report: StakePoolReport, value_hidden=False):
@@ -221,14 +225,20 @@ async def lp_pool_picture(report: StakePoolReport, value_hidden=False):
 
     # VALUE
     table_x = 30
-    columns_x = [44 + c * 19 for c in range(3)]
+
     rows_y = [start_y + 4 + r * 4.5 for r in range(5)]
+
+    if is_stable_coin(asset):
+        columns = (report.RUNE, report.ASSET)
+        columns_x = [50 + c * 25 for c in range(2)]
+    else:
+        columns = (report.RUNE, report.ASSET, report.USD)
+        columns_x = [44 + c * 19 for c in range(3)]
+        draw.text(pos_percent(columns_x[2], start_y), 'USD', font=r.font, fill=FADE_COLOR, anchor='ms')
 
     draw.text(pos_percent(columns_x[0], start_y), f'{RAIDO_GLYPH}une', font=r.font, fill=FADE_COLOR, anchor='ms')
     draw.text(pos_percent(columns_x[1], start_y), short_asset_name(asset), font=r.font, fill=FADE_COLOR, anchor='ms')
-    draw.text(pos_percent(columns_x[2], start_y), 'USD', font=r.font, fill=FADE_COLOR, anchor='ms')
 
-    columns = (report.RUNE, report.ASSET, report.USD)
     for x, column in zip(columns_x, columns):
         gl, _ = report.gain_loss(column)
 

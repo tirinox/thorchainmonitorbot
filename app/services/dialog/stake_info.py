@@ -45,13 +45,11 @@ class StakeDialog(BaseDialog):
         del self.data[self.DATA_KEY_MY_ADDR][int(index)]
 
     def addresses_kbd(self):
-        items = []
+        buttons = []
         for i, addr in enumerate(self.my_addresses):
             data = f'view-addr:{i}'
-            items.append([
-                InlineKeyboardButton(short_address(addr.address, begin=10, end=7), callback_data=data)
-            ])
-        return InlineKeyboardMarkup(inline_keyboard=items)
+            buttons.append(InlineKeyboardButton(short_address(addr.address, begin=10, end=7), callback_data=data))
+        return InlineKeyboardMarkup(inline_keyboard=grouper(2, buttons))
 
     async def display_addresses(self, message: Message, edit=False):
         addresses = self.my_addresses
@@ -65,23 +63,10 @@ class StakeDialog(BaseDialog):
             await f('Your addresses:',
                     reply_markup=self.addresses_kbd(), **kw)
 
-    async def on_selected_address(self, query: CallbackQuery, reload_pools=True):
-        _, addr_idx = query.data.split(':')
-        addr_idx = int(addr_idx)
-        addr = self.my_addresses[addr_idx].address
-
-        lpf = LiqPoolFetcher(self.deps)
-        self.data['active_addr'] = addr
-        self.data['active_addr_idx'] = addr_idx
-
-        if reload_pools:
-            await query.message.edit_text(text=f'Please wait. Loading pools for {pre(addr)}...')
-            my_pools = await lpf.get_my_pools(addr)
-            self.data['my_pools'] = my_pools
-        else:
-            my_pools = self.data['my_pools']
-
+    def kbd_for_pools(self):
         view_value = self.data.get('view-value', True)
+        addr_idx = int(self.data.get('active_addr_idx', 0))
+        my_pools = self.data.get('my_pools', [])
 
         inline_kbd = []
         buttons = [InlineKeyboardButton(pool, callback_data=f'view-pool:{pool}') for pool in my_pools]
@@ -97,6 +82,23 @@ class StakeDialog(BaseDialog):
                                   callback_data=f'back_to_list')
              ]
         ]
+        return inline_kbd
+
+    async def on_selected_address(self, query: CallbackQuery, reload_pools=True):
+        _, addr_idx = query.data.split(':')
+        addr_idx = int(addr_idx)
+        addr = self.my_addresses[addr_idx].address
+
+        lpf = LiqPoolFetcher(self.deps)
+        self.data['active_addr'] = addr
+        self.data['active_addr_idx'] = addr_idx
+
+        if reload_pools:
+            await query.message.edit_text(text=f'Please wait. Loading pools for {pre(addr)}...')
+            my_pools = await lpf.get_my_pools(addr)
+            self.data['my_pools'] = my_pools
+
+        inline_kbd = self.kbd_for_pools()
         await query.message.edit_text(text=f'Address: {pre(addr)} provides liquidity to the following pools:',
                                       reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_kbd))
 
@@ -138,7 +140,9 @@ class StakeDialog(BaseDialog):
                     await message.answer(code('Invalid address!'))
 
             await self.display_addresses(message)
-            await message.answer('Select one from above. ☝️ If you want to add one more, please send me it. 👇',
+            msg = 'Select one from above. ☝️ ' if self.my_addresses else ''
+            msg += 'If you want to add one more, please send me it. 👇'
+            await message.answer(msg,
                                  reply_markup=kbd([self.BUTTON_BACK]))
 
     @query_handler(state=StakeStates.MAIN_MENU)
@@ -153,6 +157,10 @@ class StakeDialog(BaseDialog):
             await self.display_addresses(query.message, edit=True)
         elif query.data.startswith('view-pool:'):
             await self.view_pool_report(query)
+            inline_kbd = self.kbd_for_pools()
+            addr = self.data['active_addr']
+            await query.message.answer(text=f'Address: {pre(addr)} provides liquidity to the following pools:',
+                                       reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_kbd))
         elif query.data == 'toggle_view_value':
             self.data['view-value'] = not self.data.get('view-value', True)
-            await self.show_pools_again()
+            await self.show_pools_again(query)
