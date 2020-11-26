@@ -317,9 +317,11 @@ async def lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, value_
     draw.text(pos_percent(20, logo_y + 6), f'{pretty_money(lp_per, signed=True)} %', anchor='ms',
               fill=result_color(lp_per),
               font=r.font_big)
-    draw.text(pos_percent(20, logo_y + 10), f'({pretty_money(lp_abs, signed=True, prefix="$")})', anchor='ms',
-              fill=result_color(lp_abs),
-              font=r.font)
+
+    if not value_hidden:
+        draw.text(pos_percent(20, logo_y + 10), f'({pretty_money(lp_abs, signed=True, prefix="$")})', anchor='ms',
+                  fill=result_color(lp_abs),
+                  font=r.font)
 
     if report.total_days >= 2:
         draw.text(pos_percent(80, logo_y + 7), f'{pretty_money(apy, signed=True)} %', anchor='ms',

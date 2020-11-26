@@ -1,3 +1,5 @@
+URL to start: https://telegram.me/thorchain_monitoring_bot?start=1
+
 T A S K S :
 ------------------------------------------------------------------------
 
@@ -58,6 +60,18 @@ commands:
 3. reset any states
 4. restart bot
 5. broadcast a message to all bot users
+
+------------------------------------------------------------------------
+
+TX volume curve:
+< 10k  50%
+< 100k  20%
+< 1m 5%
+< 10m 2%
+
+piece-wise linear function!
+
+> 5k$ lower bound
 
 ------------------------------------------------------------------------
 
