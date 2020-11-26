@@ -116,6 +116,10 @@ class BaseLocalization(ABC):
     def text_stake_provides_liq_to_pools(self, address, pools):
         ...
 
+    @abstractmethod
+    def text_stake_today(self):
+        ...
+
     # ------- CAP -------
 
     @abstractmethod
@@ -124,7 +128,7 @@ class BaseLocalization(ABC):
     @abstractmethod
     def price_message(self, info: ThorInfo, fair_price: RuneFairPrice): ...
 
-    # ------- STAKES -------
+    # ------- NOTIFY STAKES -------
 
     @staticmethod
     def thor_explore_address(address):

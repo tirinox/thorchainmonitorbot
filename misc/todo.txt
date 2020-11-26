@@ -21,6 +21,14 @@ and later even dynamically generated charts. the more you guys work together the
 
 Me: add sharable stake reports!
 
+ToDo:
+1. font size ++ (v)
+2. add today's date to the picture (v)
+3. light/dark theme
+4. add current prices (v)
+5. fix explorer link (v)
+6. cache history prices for stake TX
+
 ------------------------------------------------------------------------
 
 Bitcoin_Sage, [24 нояб. 2020 г., 11:19:49]:

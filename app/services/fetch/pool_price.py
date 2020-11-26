@@ -93,16 +93,18 @@ class PoolPriceFetcher(BaseFetcher):
 
     @staticmethod
     def url_for_pool_info_by_day(pool, ts):
-        from_ts = int(ts - 1)
-        to_ts = int(ts + DAY + 1)
+        from_ts = int(ts - 10)
+        to_ts = int(ts + DAY + 10)
         return MIDGARD_AGGREGATED_POOL_INFO.format(pool=pool, from_ts=from_ts, to_ts=to_ts)
 
     async def get_asset_per_rune_of_pool_by_day(self, pool, day):
         url = self.url_for_pool_info_by_day(pool, day)
-        self.logger.info(f"price_of_pool_by_day from: {url}")
+        self.logger.info(f"get_asset_per_rune_of_pool_by_day from: {url}")
 
         async with self.deps.session.get(url) as resp:
             pools_info = await resp.json()
+            if not pools_info:
+                self.logger.warning(f'get_asset_per_rune_of_pool_by_day = []!')
             pool_info = pools_info[0]
             return int(pool_info['assetDepth']) / int(pool_info['runeDepth'])
 

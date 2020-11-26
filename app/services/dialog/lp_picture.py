@@ -45,7 +45,7 @@ class Resources(metaclass=Singleton):
         self.font = ImageFont.truetype(self.FONT_BOLD, 20)
         self.font_head = ImageFont.truetype(self.FONT_BOLD, 24)
         self.font_small = ImageFont.truetype(self.FONT_BOLD, 14)
-        self.font_semi = ImageFont.truetype(self.FONT_BOLD, 16)
+        self.font_semi = ImageFont.truetype(self.FONT_BOLD, 18)
         self.font_big = ImageFont.truetype(self.FONT_BOLD, 32)
         self.bg_image = Image.open(self.BG_IMG)
 
@@ -262,9 +262,17 @@ async def lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, value_
         if report.usd_per_asset_start is not None and report.usd_per_rune_start is not None:
             price_change = report.price_change(column)
 
-            if column != report.USD:
+            is_stable = column == report.USD or (column == report.ASSET and is_stable_coin(report.pool.asset))
+            if not is_stable:
                 draw.text(pos_percent(x, rows_y[4]), f'{pretty_money(price_change, signed=True)}%', font=r.font_semi,
                           fill=result_color(price_change), anchor='ms')
+                if column == report.ASSET:
+                    price_text = pretty_money(report.usd_per_asset, prefix='$')
+                elif column == report.RUNE:
+                    price_text = pretty_money(report.usd_per_rune, prefix='$')
+                else:
+                    price_text = '–'
+                draw.text(pos_percent(x, rows_y[4] + 2.5), f"({price_text})", fill=FORE_COLOR, font=r.font_small, anchor='ms')
             else:
                 draw.text(pos_percent(x, rows_y[4]), f'–', font=r.font_semi,
                           fill=FADE_COLOR, anchor='ms')
@@ -280,9 +288,15 @@ async def lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, value_
     draw.text(pos_percent(table_x, rows_y[4] + 2.5), loc.LP_PIC_PRICE_CHANGE_2, font=r.font_small, fill=FADE_COLOR,
               anchor='rs')
 
+    # DATES
     draw.text(pos_percent(50, 92),
               loc.pic_stake_days(report.total_days, report.liq.first_stake_ts),
               anchor='ms', fill=FORE_COLOR,
+              font=r.font_small)
+
+    draw.text(pos_percent(50, 94),
+              loc.text_stake_today(),
+              anchor='ms', fill=FADE_COLOR,
               font=r.font_small)
 
     # LOGOS
@@ -321,13 +335,12 @@ async def lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, value_
     draw.text(pos_percent(98, 98), loc.LP_PIC_FOOTER, anchor='rs', fill=FADE_COLOR,
               font=r.font_small)
 
-    # image.paste(hidden_img, (100, 400), hidden_img)
     return image
 
 
 def img_to_bio(image, name):
     bio = BytesIO()
-    bio.name = name  # f'lp_report_{report.pool}.png'
+    bio.name = name
     image.save(bio, 'PNG')
     bio.seek(0)
     return bio

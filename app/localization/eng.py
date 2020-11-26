@@ -78,12 +78,16 @@ class EnglishLocalization(BaseLocalization):
 
     def text_stake_provides_liq_to_pools(self, address, pools):
         pools = pre(', '.join(pools))
-        thor_tx = link(self.thor_explore_address(address), 'thorchain.net')
+        thor_tx = link(self.thor_explore_address(address), 'viewblock.io')
         bnb_tx = link(self.binance_explore_address(address), 'explorer.binance.org')
         return f'🛳️ {pre(address)}\nprovides liquidity to the following pools:\n' \
                f'{pools}.\n\n' \
                f"🔍 Explorers: {thor_tx}; {bnb_tx}.\n\n" \
                f'👇 Click on the button to get a detailed card.'
+
+    def text_stake_today(self):
+        today = datetime.now().strftime('%d.%m.%Y')
+        return f'Today is {today}'
 
     # ----- CAP ------
     def notification_text_cap_change(self, old: ThorInfo, new: ThorInfo):
