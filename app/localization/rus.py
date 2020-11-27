@@ -48,7 +48,7 @@ class RussianLocalization(BaseLocalization):
     # ----- MAIN MENU ------
 
     BUTTON_MM_MY_ADDRESS = '🏦 Мои адреса'
-    BUTTON_MM_CAP = '📐 Кап ликвидности'
+    BUTTON_MM_CAP = '📊 Кап ликвидности'
     BUTTON_MM_PRICE = f'💲 Инфо о цене {BaseLocalization.R}'
 
     def kbd_main_menu(self):
@@ -59,6 +59,7 @@ class RussianLocalization(BaseLocalization):
     BUTTON_SM_ADD_ADDRESS = '➕ Добавить новый адрес'
     BUTTON_BACK = '🔙 Назад'
     BUTTON_SM_BACK_TO_LIST = '🔙 Назад к адресам'
+    BUTTON_SM_BACK_MM = '🔙 Главное меню'
 
     BUTTON_VIEW_RUNESTAKEINFO = '🌎 Открыть на runestake.info'
     BUTTON_VIEW_VALUE_ON = 'Скрыть деньги: НЕТ'
@@ -70,6 +71,9 @@ class RussianLocalization(BaseLocalization):
     TEXT_INVALID_ADDRESS = code('⛔️ Ошибка в формате адреса!')
     TEXT_SELECT_ADDRESS_ABOVE = 'Выбери адрес выше ☝️ '
     TEXT_SELECT_ADDRESS_SEND_ME = 'Если хотите добавить адрес, пришлите его мне 👇'
+    TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS = '📪 На этом адресе нет пулов ликвидности. ' \
+                                        'Выберите другой адрес или добавьте новый.'
+    TEXT_LP_IMG_CAPTION = f'Сгенерировано: {link(BaseLocalization.START_ME, "@thorchain_monitoring_bot")}'
 
     LP_PIC_POOL = 'ПУЛ'
     LP_PIC_RUNE = 'RUNE'

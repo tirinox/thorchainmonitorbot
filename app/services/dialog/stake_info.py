@@ -1,3 +1,4 @@
+import asyncio
 from dataclasses import asdict
 
 from aiogram.dispatcher.filters.state import StatesGroup, State
@@ -50,7 +51,7 @@ class StakeDialog(BaseDialog):
     def remove_address(self, index):
         del self.data[self.KEY_MY_ADDRESSES][int(index)]
 
-    def addresses_kbd(self):
+    def kbd_for_addresses(self):
         buttons = []
         for i, addr in enumerate(self.my_addresses):
             data = f'{self.QUERY_VIEW_ADDRESS}:{i}'
@@ -59,14 +60,15 @@ class StakeDialog(BaseDialog):
 
     async def display_addresses(self, message: Message, edit=False):
         addresses = self.my_addresses
-        f = message.edit_text if edit else message.answer
-        kw = {} if edit else {'disable_notification': True}
         if not addresses:
             await message.answer(self.loc.TEXT_NO_ADDRESSES,
                                  reply_markup=kbd([self.loc.BUTTON_BACK]),
-                                 **kw)
+                                 disable_notification=True)
         else:
-            await f(self.loc.TEXT_YOUR_ADDRESSES, reply_markup=self.addresses_kbd(), **kw)
+            if edit:
+                await message.edit_text(self.loc.TEXT_YOUR_ADDRESSES, reply_markup=self.kbd_for_addresses())
+            else:
+                await message.answer(self.loc.TEXT_YOUR_ADDRESSES, reply_markup=self.kbd_for_addresses())
 
     def kbd_for_pools(self):
         view_value = self.data.get(self.KEY_CAN_VIEW_VALUE, True)
@@ -107,29 +109,39 @@ class StakeDialog(BaseDialog):
             await query.message.edit_text(text=self.loc.text_stake_loading_pools(address))
             my_pools = await lpf.get_my_pools(address)
             self.data[self.KEY_MY_POOLS] = my_pools
-        else:
-            my_pools = self.data[self.KEY_MY_POOLS]
 
-        inline_kbd = self.kbd_for_pools()
-        await query.message.edit_text(text=self.loc.text_stake_provides_liq_to_pools(address, my_pools),
-                                      reply_markup=inline_kbd,
-                                      disable_web_page_preview=True)
+            if not my_pools:
+                await query.message.answer(self.loc.TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS,
+                                           disable_web_page_preview=True,
+                                           disable_notification=True,
+                                           reply_markup=self.kbd_for_addresses())
+                await query.message.delete()
+                return
 
-    async def list_pools_new_message(self, query: CallbackQuery):
+        await self.show_my_pools(query, edit=True)
+
+    async def show_my_pools(self, query: CallbackQuery, edit):
         inline_kbd = self.kbd_for_pools()
         address = self.data[self.KEY_ACTIVE_ADDRESS]
         my_pools = self.data[self.KEY_MY_POOLS]
-        await query.message.answer(text=self.loc.text_stake_provides_liq_to_pools(address, my_pools),
-                                   reply_markup=inline_kbd,
-                                   disable_web_page_preview=True,
-                                   disable_notification=True)
+        if edit:
+            await query.message.edit_text(text=self.loc.text_stake_provides_liq_to_pools(address, my_pools),
+                                          reply_markup=inline_kbd,
+                                          disable_web_page_preview=True)
+        else:
+            await query.message.answer(text=self.loc.text_stake_provides_liq_to_pools(address, my_pools),
+                                       reply_markup=inline_kbd,
+                                       disable_web_page_preview=True,
+                                       disable_notification=True)
 
     async def view_pool_report(self, query: CallbackQuery):
         _, pool = query.data.split(':')
         address = self.data[self.KEY_ACTIVE_ADDRESS]
-        sticker = await query.message.answer_sticker(LOADING_STICKER,
-                                                     disable_notification=True)
 
+        # POST A LOADING STICKER
+        sticker = await query.message.answer_sticker(LOADING_STICKER, disable_notification=True)
+
+        # WORK...
         lpf = LiqPoolFetcher(self.deps)
         liq = await lpf.fetch_one_pool_liquidity_info(address, pool)
 
@@ -140,9 +152,14 @@ class StakeDialog(BaseDialog):
         picture = await lp_pool_picture(stake_report, self.loc, value_hidden=value_hidden)
         picture_io = img_to_bio(picture, f'Thorchain_LP_{pool}.png')
 
-        await query.message.answer_photo(picture_io,
+        # ANSWER
+        await self.show_my_pools(query, edit=False)
+        await query.message.answer_photo(picture_io,  # caption=self.loc.TEXT_LP_IMG_CAPTION,
                                          disable_notification=True)
-        await sticker.delete()
+
+        # CLEAN UP
+        await asyncio.gather(query.message.delete(),
+                             sticker.delete())
 
     async def show_pools_again(self, query: CallbackQuery):
         active_addr_idx = self.data[self.KEY_ACTIVE_ADDRESS_INDEX]
@@ -153,7 +170,7 @@ class StakeDialog(BaseDialog):
 
     @message_handler(state=StakeStates.MAIN_MENU)
     async def on_enter(self, message: Message):
-        if message.text == self.loc.BUTTON_BACK:
+        if message.text == self.loc.BUTTON_SM_BACK_MM:
             await self.go_back(message)
         else:
             await StakeStates.MAIN_MENU.set()
@@ -168,7 +185,7 @@ class StakeDialog(BaseDialog):
             await self.display_addresses(message)
             msg = self.loc.TEXT_SELECT_ADDRESS_ABOVE if self.my_addresses else ''
             msg += self.loc.TEXT_SELECT_ADDRESS_SEND_ME
-            await message.answer(msg, reply_markup=kbd([self.loc.BUTTON_BACK]),
+            await message.answer(msg, reply_markup=kbd([self.loc.BUTTON_SM_BACK_MM]),
                                  disable_notification=True)
 
     @query_handler(state=StakeStates.MAIN_MENU)
@@ -183,7 +200,6 @@ class StakeDialog(BaseDialog):
             await self.display_addresses(query.message, edit=True)
         elif query.data.startswith(f'{self.QUERY_VIEW_POOL}:'):
             await self.view_pool_report(query)
-            await self.list_pools_new_message(query)
         elif query.data == self.QUERY_BACK_TOGGLE_VIEW_VALUE:
             self.data[self.KEY_CAN_VIEW_VALUE] = not self.data.get(self.KEY_CAN_VIEW_VALUE, True)
             await self.show_pools_again(query)

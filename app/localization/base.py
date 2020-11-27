@@ -10,7 +10,6 @@ from services.models.price import RuneFairPrice, PriceReport, PriceATH
 from services.models.tx import StakeTx, StakePoolStats
 
 RAIDO_GLYPH = 'ᚱ'
-
 CREATOR_TG = '@account1242'
 
 
@@ -35,6 +34,8 @@ def kbd(buttons, resize=True, vert=False, one_time=False, inline=False, row_widt
 
 class BaseLocalization(ABC):
     # ----- WELCOME ------
+
+    START_ME = 'https://telegram.me/thorchain_monitoring_bot?start=1'
 
     @staticmethod
     def _cap_progress_bar(info: ThorInfo):
@@ -75,6 +76,8 @@ class BaseLocalization(ABC):
     BUTTON_BACK = 'Back'
     BUTTON_SM_BACK_TO_LIST = 'Back to list'
 
+    BUTTON_SM_BACK_MM = 'Main menu'
+
     BUTTON_VIEW_RUNESTAKEINFO = 'View it on runestake.info'
     BUTTON_VIEW_VALUE_ON = 'Show value: ON'
     BUTTON_VIEW_VALUE_OFF = 'Show value: OFF'
@@ -85,6 +88,8 @@ class BaseLocalization(ABC):
     TEXT_INVALID_ADDRESS = 'Invalid address!'
     TEXT_SELECT_ADDRESS_ABOVE = 'Select one from above. ☝️ '
     TEXT_SELECT_ADDRESS_SEND_ME = 'If you want to add one more, please send me it. 👇'
+    TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS = ''
+    TEXT_LP_IMG_CAPTION = ''
 
     LP_PIC_POOL = 'POOL'
     LP_PIC_RUNE = 'RUNE'

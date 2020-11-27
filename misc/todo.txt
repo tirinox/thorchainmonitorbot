@@ -30,6 +30,27 @@ ToDo:
 4. add current prices (v)
 5. fix explorer link (v)
 6. cache history prices for stake TX
+7. Message is address has no pools
+8. Better back button
+9. summary picture
+
+------------------------------------------------------------------------
+
+View balance of my addresses...
+
+------------------------------------------------------------------------
+
+Last 7 days POOL leaderboard by
+1) APY / LP vs HOLD?
+2) Rune profits
+3) asset profits
+4) usd profits
+
+++ maybe the worse pools
+
+------------------------------------------------------------------------
+
+WebHook for the production bot
 
 ------------------------------------------------------------------------
 
@@ -41,6 +62,19 @@ Maybe it's an idea to base it on the depth of the pool? With shallow pools havin
 EG. BTC pool alerts from 1% depth and sah SHR pool alert from 25% depth.
 
 sah = say
+
+++ CURVE!!..
+
+TODO: s
+TX volume curve:
+< 10k  50%
+< 100k  20%
+< 1m 5%
+< 10m 2%
+
+piece-wise linear function!
+
+> 5k$ lower bound
 
 ------------------------------------------------------------------------
 
@@ -60,18 +94,6 @@ commands:
 3. reset any states
 4. restart bot
 5. broadcast a message to all bot users
-
-------------------------------------------------------------------------
-
-TX volume curve:
-< 10k  50%
-< 100k  20%
-< 1m 5%
-< 10m 2%
-
-piece-wise linear function!
-
-> 5k$ lower bound
 
 ------------------------------------------------------------------------
 
