@@ -20,10 +20,20 @@ class TimeSeries:
         return f'ts-stream:{self.name}'
 
     @staticmethod
-    def range(ago_sec, tolerance_sec):
-        now_sec = int(time.time())
-        t_sec = int(tolerance_sec)
-        return (now_sec - ago_sec - t_sec) * 1000, (now_sec - ago_sec + t_sec) * 1000
+    def range_ago(ago_sec, tolerance_sec=10):
+        now_sec = time.time()
+        return (
+            int((now_sec - ago_sec - tolerance_sec) * 1000),
+            int((now_sec - ago_sec + tolerance_sec) * 1000)
+        )
+
+    @staticmethod
+    def range_from_ago_to_now(ago_sec, tolerance_sec=10):
+        now_sec = time.time()
+        return (
+            int((now_sec - ago_sec - tolerance_sec) * 1000),
+            int((now_sec - + tolerance_sec) * 1000)
+        )
 
     async def add(self, message_id=b'*', **kwargs):
         r = await self.db.get_redis()
@@ -44,7 +54,7 @@ class PriceTimeSeries(TimeSeries):
         super().__init__(f'price-{coin}', db)
 
     async def select_average_ago(self, ago, tolerance):
-        items = await self.select(*self.range(ago, tolerance))
+        items = await self.select(*self.range_ago(ago, tolerance))
         n, accum = 0, 0
         for _, item in items:
             price = float(item[b'price'])

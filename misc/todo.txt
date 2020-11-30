@@ -127,5 +127,9 @@ async def cmd_set_commands(message: types.Message):
 
 16) for callback alert use await bot.answer_callback_query()
 
+17) Binance TX monitoring WS:
+
+wss://explorer.binance.org/ws/tx
+
 ----
 

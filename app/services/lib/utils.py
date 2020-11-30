@@ -1,8 +1,34 @@
 import itertools
 import time
 from functools import wraps
+import pandas as pd
 
 from services.lib.money import pretty_money
+
+
+def series_to_pandas(ts_result, shift_time=True):
+    normal_data = []
+    zero_t = None
+    for key, value_d in ts_result:
+        key = key.decode('ascii').split('-')
+        event_id = int(key[1])
+        if event_id > 99:
+            continue
+
+        # ms -> sec; + up to 100 events 0.01 sec each
+        time_point = float(key[0]) / 1000.0 + 0.01 * event_id
+        if zero_t is None:
+            zero_t = time_point
+
+        values = {
+            k.decode('ascii'): float(v) for k, v in value_d.items()
+        }
+
+        normal_data.append({
+            "t": (time_point - zero_t) if shift_time else time_point,
+            **values
+        })
+    return pd.DataFrame(normal_data)
 
 
 def a_result_cached(ttl=60):

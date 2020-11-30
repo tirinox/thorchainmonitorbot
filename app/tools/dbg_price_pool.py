@@ -2,20 +2,18 @@ import asyncio
 
 import aiohttp
 
+from services.fetch.pool_price import PoolPriceFetcher
 from services.lib.config import Config
 from services.lib.db import DB
-from services.fetch.gecko_price import fill_rune_price_from_gecko
-from services.fetch.node_ip_manager import ThorNodeAddressManager
-from services.fetch.pool_price import PoolPriceFetcher
+from services.lib.depcont import DepContainer
 from services.models.time_series import PriceTimeSeries, BUSD_SYMBOL, RUNE_SYMBOL
 
 
-async def price_fill_task(cfg, db):
-    async with aiohttp.ClientSession() as session:
-        thor_man = ThorNodeAddressManager(session)
-        ppf = PoolPriceFetcher(cfg, db, thor_man, session)
+async def price_fill_task(d: DepContainer):
+    async with aiohttp.ClientSession() as d.session:
+        ppf = PoolPriceFetcher(d)
 
-        series = PriceTimeSeries(RUNE_SYMBOL, db)
+        series = PriceTimeSeries(RUNE_SYMBOL, d.db)
 
         while True:
             busd_in_rune = await ppf.get_price_in_rune(BUSD_SYMBOL)
@@ -25,9 +23,9 @@ async def price_fill_task(cfg, db):
 
 
 if __name__ == '__main__':
-    loop = asyncio.get_event_loop()
-    cfg = Config(Config.DEFAULT_LVL_UP)
-    db = DB(loop)
+    d = DepContainer()
+    d.loop = asyncio.get_event_loop()
+    d.cfg = Config(Config.DEFAULT_LVL_UP)
+    d.db = DB(d.loop)
 
-    loop.run_until_complete(fill_rune_price_from_gecko(db))
-    # loop.run_until_complete(price_fill_task(cfg, db))
+    d.loop.run_until_complete(price_fill_task(d))

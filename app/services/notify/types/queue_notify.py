@@ -5,9 +5,6 @@ from services.fetch.base import INotified
 from services.fetch.queue import QueueInfo
 from services.lib.cooldown import CooldownTracker
 from services.lib.depcont import DepContainer
-from services.models.time_series import PriceTimeSeries
-
-QUEUE_STREAM = 'QUEUE'
 
 
 class QueueNotifier(INotified):
@@ -19,8 +16,6 @@ class QueueNotifier(INotified):
         self.threshold = deps.cfg.queue.steps[0]
         self.logger.info(f'config: {deps.cfg.queue}')
         self.steps = tuple(map(int, deps.cfg.queue.steps))
-
-        self.time_series = PriceTimeSeries(QUEUE_STREAM, deps.db)
 
     async def notify(self, item_type, step, value):
         await self.deps.broadcaster.notify_preconfigured_channels(self.deps.loc_man,
@@ -51,6 +46,5 @@ class QueueNotifier(INotified):
 
     async def on_data(self, sender, data: QueueInfo):
         self.logger.info(f"got queue: {data}")
-        await self.time_series.add(swap=data.swap, outbound=data.outbound)
         await self.handle_entry('swap', data.swap)
         await self.handle_entry('outbound', data.outbound)
