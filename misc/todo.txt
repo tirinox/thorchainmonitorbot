@@ -33,6 +33,8 @@ ToDo:
 7. Message is address has no pools
 8. Better back button
 9. summary picture
+10. Just check address, don't add
+11. Improve image quality (higher resolution mb 1200x1600)
 
 ------------------------------------------------------------------------
 
