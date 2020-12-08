@@ -4,7 +4,7 @@ from typing import Dict
 
 from services.models.base import BaseModelMixin
 from services.models.pool_info import PoolInfo
-from services.models.time_series import BUSD_SYMBOL
+from services.models.time_series import BUSD_SYMBOL, BTCB_SYMBOL
 
 
 @dataclass
@@ -41,17 +41,20 @@ class PriceReport:
     price_7d: float = 0.0
     fair_price: RuneFairPrice = RuneFairPrice()
     last_ath: PriceATH = PriceATH()
+    btc_real_rune_price: float = 0.0
 
 
 class LastPriceHolder:
     def __init__(self):
         self.usd_per_rune = 0.0
+        self.btc_per_rune = 0.0
         self.pool_info_map: Dict[str, PoolInfo] = {}
         self.last_update_ts = 0
 
     def update(self, new_pool_info_map: Dict[str, PoolInfo]):
         self.pool_info_map = new_pool_info_map.copy()
         self.usd_per_rune = self.pool_info_map[BUSD_SYMBOL].asset_per_rune
+        self.btc_per_rune = self.pool_info_map[BTCB_SYMBOL].asset_per_rune
         self.last_update_ts = time.time()
 
     @property

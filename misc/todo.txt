@@ -3,6 +3,16 @@ URL to start: https://telegram.me/thorchain_monitoring_bot?start=1
 T A S K S :
 ------------------------------------------------------------------------
 
+Add transactions!
+
+https://chaosnet-midgard.bepswap.com/v1/txs?offset=0&limit=50&type=add
+
+Docs:
+
+https://docs.thorchain.org/developers/transaction-memos#memo-alternatives
+
+------------------------------------------------------------------------
+
 ToDo: integrate with runestake.info
 
 IN PROGRESS
@@ -30,11 +40,12 @@ ToDo:
 4. add current prices (v)
 5. fix explorer link (v)
 6. cache history prices for stake TX
-7. Message is address has no pools
+7. Message is address has no pools (v)
 8. Better back button
 9. summary picture
 10. Just check address, don't add
 11. Improve image quality (higher resolution mb 1200x1600)
+12. BUG: can not delete an empty address
 
 ------------------------------------------------------------------------
 
@@ -85,6 +96,9 @@ ToDo: price graph + deterministic price graph
 ------------------------------------------------------------------------
 
 Price info, rune price in btc ₿ symbol
+
+₿₿₿₿
+ΞΞΞΞ ether
 
 ------------------------------------------------------------------------
 

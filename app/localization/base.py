@@ -160,7 +160,7 @@ class BaseLocalization(ABC):
     DET_PRICE_HELP_PAGE = 'https://docs.thorchain.org/how-it-works/incentive-pendulum'
 
     @abstractmethod
-    def notification_text_price_update(self, p: PriceReport, ath=False, last_ath: PriceATH = None): ...
+    def notification_text_price_update(self, p: PriceReport, ath=False): ...
 
     # ------- POOL CHURN -------
 

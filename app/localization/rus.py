@@ -169,7 +169,7 @@ class RussianLocalization(BaseLocalization):
 
     # ------- PRICE -------
 
-    def notification_text_price_update(self, p: PriceReport, ath=False, last_ath: PriceATH = None):
+    def notification_text_price_update(self, p: PriceReport, ath=False):
         title = bold('Обновление цены') if not ath else bold('🚀 Достигнуть новый исторический максимум!')
 
         c_gecko_url = 'https://www.coingecko.com/ru/' \
@@ -179,10 +179,12 @@ class RussianLocalization(BaseLocalization):
         message = f"{title} | {c_gecko_link}\n\n"
         price = p.fair_price.real_rune_price
 
+        btc_price = f"₿ {p.btc_real_rune_price:.8f}"
         pr_text = f"${price:.2f}"
-        message += f"Цена <b>RUNE</b> сейчас {code(pr_text)}.\n"
+        message += f"Цена <b>RUNE</b> сейчас {code(pr_text)} ({btc_price}).\n"
 
-        if last_ath is not None:
+        last_ath = p.last_ath
+        if last_ath is not None and ath:
             message += f"Последний ATH был ${last_ath.ath_price:2.f} ({format_time_ago(last_ath.ath_date)}).\n"
 
         time_combos = zip(

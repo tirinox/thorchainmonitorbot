@@ -51,11 +51,12 @@ class MainMenuDialog(BaseDialog):
         pn = PriceNotifier(self.deps)
         price_1h, price_24h, price_7d = await pn.historical_get_triplet()
         fp.real_rune_price = self.deps.price_holder.usd_per_rune
+        btc_price = self.deps.price_holder.btc_per_rune
 
         price_text = self.loc.notification_text_price_update(PriceReport(
             price_1h, price_24h, price_7d,
-            fair_price=fp)
-        )
+            fair_price=fp,
+            btc_real_rune_price=btc_price))
 
         await message.answer(price_text,
                              disable_web_page_preview=True,

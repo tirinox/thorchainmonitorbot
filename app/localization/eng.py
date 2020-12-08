@@ -158,7 +158,7 @@ class EnglishLocalization(BaseLocalization):
 
     # ------- PRICE -------
 
-    def notification_text_price_update(self, p: PriceReport, ath=False, last_ath: PriceATH = None):
+    def notification_text_price_update(self, p: PriceReport, ath=False):
         title = bold('Price update') if not ath else bold('🚀 A new all-time high has been achieved!')
 
         c_gecko_url = 'https://www.coingecko.com/en/coins/thorchain'
@@ -168,9 +168,11 @@ class EnglishLocalization(BaseLocalization):
         price = p.fair_price.real_rune_price
 
         pr_text = f"${price:.2f}"
-        message += f"<b>RUNE</b> price is {code(pr_text)} now.\n"
+        btc_price = f"₿ {p.btc_real_rune_price:.8f}"
+        message += f"<b>RUNE</b> price is {code(pr_text)} ({btc_price}) now.\n"
 
-        if last_ath is not None:
+        last_ath = p.last_ath
+        if last_ath is not None and ath:
             last_ath_pr = f'{last_ath.ath_price:.2f}'
             message += f"Last ATH was ${pre(last_ath_pr)} ({format_time_ago(last_ath.ath_date)}).\n"
 

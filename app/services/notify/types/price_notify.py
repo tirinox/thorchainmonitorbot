@@ -27,7 +27,7 @@ class PriceNotifier(INotified):
         self.ath_cooldown = parse_timespan_to_seconds(cfg.ath.cooldown)
 
     async def on_data(self, sender, fprice: RuneFairPrice):
-        # fprice.real_rune_price = 1.4  # debug!!! for ATH
+        # fprice.real_rune_price = 1.44  # debug!!! for ATH
         if not await self.handle_ath(fprice):
             await self.handle_new_price(fprice)
 
@@ -57,12 +57,12 @@ class PriceNotifier(INotified):
     async def do_notify_price_table(self, fair_price, hist_prices, ath, last_ath=None):
         await self.cd.do(self.CD_KEY_PRICE_NOTIFIED)
 
-        report = PriceReport(*hist_prices, fair_price)
+        btc_price = self.deps.price_holder.btc_per_rune
+        report = PriceReport(*hist_prices, fair_price, last_ath, btc_price)
         await self.deps.broadcaster.notify_preconfigured_channels(self.deps.loc_man,
                                                                   BaseLocalization.notification_text_price_update,
                                                                   report,
-                                                                  ath=ath,
-                                                                  last_ath=last_ath)
+                                                                  ath=ath)
 
         if ath:
             await self.send_ath_sticker()
