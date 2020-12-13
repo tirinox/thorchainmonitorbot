@@ -16,7 +16,7 @@ from services.lib.utils import Singleton
 from services.models.stake_info import StakePoolReport
 from services.models.time_series import BNB_SYMBOL, RUNE_SYMBOL, BUSD_SYMBOL
 
-WIDTH, HEIGHT = 600, 800
+WIDTH, HEIGHT = 1200, 1600
 
 BG_COLOR = (25, 25, 25, 255)
 LINE_COLOR = '#356'
@@ -28,7 +28,7 @@ FADE_COLOR = '#cccccc'
 
 class Resources(metaclass=Singleton):
     BASE = './data'
-    LOGO_WIDTH, LOGO_HEIGHT = 64, 64
+    LOGO_WIDTH, LOGO_HEIGHT = 128, 128
     COIN_LOGO = \
         'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/binance/assets/{asset}/logo.png'
     LOCAL_COIN_LOGO = f'{BASE}/{{asset}}.png'
@@ -40,13 +40,13 @@ class Resources(metaclass=Singleton):
 
     def __init__(self) -> None:
         self.hidden_img = Image.open(self.HIDDEN_IMG)
-        self.hidden_img.thumbnail((100, 18))
+        self.hidden_img.thumbnail((200, 36))
 
-        self.font = ImageFont.truetype(self.FONT_BOLD, 20)
-        self.font_head = ImageFont.truetype(self.FONT_BOLD, 24)
-        self.font_small = ImageFont.truetype(self.FONT_BOLD, 14)
-        self.font_semi = ImageFont.truetype(self.FONT_BOLD, 18)
-        self.font_big = ImageFont.truetype(self.FONT_BOLD, 32)
+        self.font = ImageFont.truetype(self.FONT_BOLD, 40)
+        self.font_head = ImageFont.truetype(self.FONT_BOLD, 48)
+        self.font_small = ImageFont.truetype(self.FONT_BOLD, 28)
+        self.font_semi = ImageFont.truetype(self.FONT_BOLD, 36)
+        self.font_big = ImageFont.truetype(self.FONT_BOLD, 64)
         self.bg_image = Image.open(self.BG_IMG)
 
     @staticmethod
@@ -96,7 +96,7 @@ def round_corner(radius, fill, bg):
     return corner
 
 
-def round_rectangle(size, radius, fill, bg=BG_COLOR):
+def round_rectangle(size, radius,  fill, bg=BG_COLOR):
     """Draw a rounded rectangle"""
     width, height = size
     rectangle = Image.new('RGB', size, fill)
@@ -144,7 +144,7 @@ async def lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, value_
     draw.text(pos_percent(right, head_y), short_asset_name(asset), font=r.font_head, fill=FORE_COLOR, anchor='ls')
 
     # ------------------------------------------------------------------------------------------------
-    draw.line((pos_percent(0, line1_y), pos_percent(100, line1_y)), fill=LINE_COLOR, width=2)
+    # draw.line((pos_percent(0, line1_y), pos_percent(100, line1_y)), fill=LINE_COLOR, width=2)
     # ------------------------------------------------------------------------------------------------
 
     # ADDED
@@ -292,9 +292,9 @@ async def lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, value_
     draw.text(pos_percent(50, 92),
               loc.pic_stake_days(report.total_days, report.liq.first_stake_ts),
               anchor='ms', fill=FORE_COLOR,
-              font=r.font_small)
+              font=r.font)
 
-    draw.text(pos_percent(50, 94),
+    draw.text(pos_percent(50, 95),
               loc.text_stake_today(),
               anchor='ms', fill=FADE_COLOR,
               font=r.font_small)
@@ -334,7 +334,7 @@ async def lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, value_
 
     # FOOTER
 
-    draw.text(pos_percent(98, 98), loc.LP_PIC_FOOTER, anchor='rs', fill=FADE_COLOR,
+    draw.text(pos_percent(98.5, 99), loc.LP_PIC_FOOTER, anchor='rs', fill=FADE_COLOR,
               font=r.font_small)
 
     return image

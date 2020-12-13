@@ -6,6 +6,7 @@ from time import time
 
 import aiohttp
 
+from localization import LocalizationManager
 from services.dialog.lp_picture import lp_pool_picture
 from services.fetch.lp import LiqPoolFetcher
 from services.fetch.node_ip_manager import ThorNodeAddressManager
@@ -92,7 +93,8 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     d = DepContainer()
     d.loop = asyncio.get_event_loop()
-    d.cfg = Config(Config.DEFAULT_LVL_UP)
+    d.cfg = Config()
+    d.loc_man = LocalizationManager()
     d.db = DB(d.loop)
 
     d.loop.run_until_complete(test_image(d, 'bnb1rv89nkw2x5ksvhf6jtqwqpke4qhh7jmudpvqmj', hide=False))
