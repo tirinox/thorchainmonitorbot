@@ -74,7 +74,8 @@ class EnglishLocalization(BaseLocalization):
 
     def pic_stake_days(self, total_days, first_stake_ts):
         start_date = datetime.fromtimestamp(first_stake_ts).strftime('%d.%m.%Y')
-        return f'{ceil(total_days)} days ({start_date})'
+        day_count_str = 'days' if total_days >= 2 else 'day'
+        return f'{ceil(total_days)} {day_count_str} ({start_date})'
 
     def text_stake_loading_pools(self, address):
         return f'⏳ <b>Please wait.</b>\n' \

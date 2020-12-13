@@ -10,26 +10,27 @@ from services.lib.config import Config
 from services.lib.db import DB
 from services.fetch.node_ip_manager import ThorNodeAddressManager
 from services.fetch.pool_price import PoolPriceFetcher
+from services.lib.depcont import DepContainer
 from services.models.tx import StakePoolStats
 from services.notify.broadcast import Broadcaster
 from services.lib.utils import progressbar
 
-cfg = Config()
+deps = DepContainer()
+deps.cfg = Config()
 
-log_level = cfg.get('log_level', logging.INFO)
+log_level = deps.cfg.get('log_level', logging.INFO)
 
 logging.basicConfig(level=logging.getLevelName(log_level))
 logging.info(f"Log level: {log_level}")
 
-loop = asyncio.get_event_loop()
-db = DB(loop)
+deps.loop = asyncio.get_event_loop()
+deps.db = DB(deps.loop)
 
-bot = Bot(token=cfg.telegram.bot.token, parse_mode=ParseMode.HTML)
-dp = Dispatcher(bot, loop=loop)
-loc_man = LocalizationManager()
-broadcaster = Broadcaster(cfg, bot, db)
+deps.bot = Bot(token=deps.cfg.telegram.bot.token, parse_mode=ParseMode.HTML)
+deps.dp = Dispatcher(deps.bot, loop=deps.loop)
+deps.loc_man = LocalizationManager()
+deps.broadcaster = Broadcaster(deps)
 
-loop = asyncio.get_event_loop()
 lock = asyncio.Lock()
 
 
@@ -49,21 +50,21 @@ async def foo12():
     print(progressbar(-14, 100, 30))
     print(progressbar(10, 100, 30))
     print(progressbar(1200, 100, 30))
-    await StakePoolStats.clear_all_data(db)
+    await StakePoolStats.clear_all_data(deps.db)
 
 
 async def foo13():
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession() as deps.session:
         thor_man = ThorNodeAddressManager(session)
-        ppf = PoolPriceFetcher(cfg, db, session=session, thor_man=thor_man)
+        ppf = PoolPriceFetcher(deps)
         data = await ppf.get_current_pool_data_full()
     print(data)
 
 
 async def start_foos():
-    await db.get_redis()
+    await deps.db.get_redis()
     await foo12()
 
 
 if __name__ == '__main__':
-    loop.run_until_complete(start_foos())
+    deps.loop.run_until_complete(start_foos())
