@@ -3,7 +3,7 @@ FROM python:3.8-slim-buster as production
 # dont forget to map source to /app volume
 
 RUN apt-get -y update
-RUN apt-get -y install libsecp256k1-dev
+RUN apt-get -y install pkg-config libsecp256k1-dev
 
 WORKDIR /app
 ADD ./app/requirements.txt .
