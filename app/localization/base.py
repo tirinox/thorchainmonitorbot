@@ -66,6 +66,7 @@ class BaseLocalization(ABC):
     BUTTON_MM_MY_ADDRESS = ''
     BUTTON_MM_CAP = ''
     BUTTON_MM_PRICE = ''
+    BUTTON_MM_SETTINGS = ''
 
     @abstractmethod
     def kbd_main_menu(self): ...
@@ -170,3 +171,8 @@ class BaseLocalization(ABC):
 
     @abstractmethod
     def notification_text_pool_churn(self, added_pools, removed_pools, changed_status_pools): ...
+
+    # -------- SETTINGS --------
+
+    BUTTON_SET_LANGUAGE = '🌐 Язык/Lang'
+    TEXT_SETTING_INTRO = '<b>Settings</b>\nWhat would you like?'

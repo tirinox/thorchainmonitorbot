@@ -1,6 +1,7 @@
 from aiogram.types import ContentTypes, Message
 
 from services.dialog.main_menu import MainMenuDialog
+from services.dialog.settings_menu import SettingsDialog
 from services.dialog.stake_info import StakeDialog
 from services.lib.depcont import DepContainer
 
@@ -12,7 +13,13 @@ async def sticker_handler(message: Message):
 
 def init_dialogs(d: DepContainer):
     MainMenuDialog.register(d)
+
     StakeDialog.back_dialog = MainMenuDialog
     StakeDialog.back_func = MainMenuDialog.entry_point
     StakeDialog.register(d)
+
+    SettingsDialog.back_dialog = MainMenuDialog
+    SettingsDialog.back_func = MainMenuDialog.entry_point
+    SettingsDialog.register(d)
+
     d.dp.register_message_handler(sticker_handler, content_types=ContentTypes.STICKER, state='*')

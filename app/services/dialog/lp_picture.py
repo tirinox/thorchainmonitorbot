@@ -134,7 +134,6 @@ async def lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, value_
     left, center, right = 30, 50, 70
     head_y = 16
     dy = 5
-    line1_y = 11
     logo_y = 82
     start_y = head_y + dy
 
@@ -144,6 +143,7 @@ async def lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, value_
     draw.text(pos_percent(right, head_y), short_asset_name(asset), font=r.font_head, fill=FORE_COLOR, anchor='ls')
 
     # ------------------------------------------------------------------------------------------------
+    # line1_y = 11
     # draw.line((pos_percent(0, line1_y), pos_percent(100, line1_y)), fill=LINE_COLOR, width=2)
     # ------------------------------------------------------------------------------------------------
 

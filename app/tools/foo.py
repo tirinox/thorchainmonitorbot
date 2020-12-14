@@ -7,6 +7,7 @@ from aiogram.types import ParseMode
 
 from localization import LocalizationManager
 from services.lib.config import Config
+from services.lib.cooldown import Cooldown
 from services.lib.db import DB
 from services.fetch.node_ip_manager import ThorNodeAddressManager
 from services.fetch.pool_price import PoolPriceFetcher
@@ -55,15 +56,36 @@ async def foo12():
 
 async def foo13():
     async with aiohttp.ClientSession() as deps.session:
-        thor_man = ThorNodeAddressManager(session)
+        deps.thor_man = ThorNodeAddressManager(deps.session)
         ppf = PoolPriceFetcher(deps)
         data = await ppf.get_current_pool_data_full()
     print(data)
 
 
+async def test_cd_mult():
+    cd = Cooldown(deps.db, 'test-event', 3, max_times=2)
+    assert await cd.can_do()
+    await cd.do()
+    assert await cd.can_do()
+    await cd.do()
+    assert not await cd.can_do()
+    await cd.do()
+    assert not await cd.can_do()
+    await asyncio.sleep(3.5)
+    assert await cd.can_do()
+    await cd.do()
+    assert await cd.can_do()
+    await cd.do()
+    await asyncio.sleep(2.5)
+    assert not await cd.can_do()
+    await asyncio.sleep(1.0)
+    assert await cd.can_do()
+    print('Done')
+
+
 async def start_foos():
     await deps.db.get_redis()
-    await foo12()
+    await test_cd_mult()
 
 
 if __name__ == '__main__':

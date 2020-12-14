@@ -29,7 +29,7 @@ async def price_of_day(d: DepContainer):
         print(r)
 
 
-async def lp_test(d: DepContainer, addr):
+async def lp_test(d: DepContainer, addr, pool=BTCB_SYMBOL):
     async with aiohttp.ClientSession() as d.session:
         lpf = LiqPoolFetcher(d)
         ppf = PoolPriceFetcher(d)
@@ -38,7 +38,7 @@ async def lp_test(d: DepContainer, addr):
 
         cur_liqs = await lpf.fetch_all_pool_liquidity_info(addr)
 
-        cur_liq: CurrentLiquidity = cur_liqs[BTCB_SYMBOL]
+        cur_liq: CurrentLiquidity = cur_liqs[pool]
 
         stake_report = await lpf.fetch_stake_report_for_pool(cur_liq, ppf)
 
@@ -72,12 +72,12 @@ async def lp_test(d: DepContainer, addr):
 PICKLE_PATH = '../../stake_report.pickle'
 
 
-async def test_image(d: DepContainer, addr, hide):
+async def test_image(d: DepContainer, addr, pool, hide):
     if os.path.exists(PICKLE_PATH):
         with open(PICKLE_PATH, 'rb') as f:
             stake_report = pickle.load(f)
     else:
-        stake_report = await lp_test(d, addr)
+        stake_report = await lp_test(d, addr, pool)
         with open(PICKLE_PATH, 'wb') as f:
             pickle.dump(stake_report, f)
 
@@ -97,4 +97,7 @@ if __name__ == '__main__':
     d.loc_man = LocalizationManager()
     d.db = DB(d.loop)
 
-    d.loop.run_until_complete(test_image(d, 'bnb1rv89nkw2x5ksvhf6jtqwqpke4qhh7jmudpvqmj', hide=False))
+    d.loop.run_until_complete(test_image(d,
+                                         'bnb1rv89nkw2x5ksvhf6jtqwqpke4qhh7jmudpvqmj',
+                                         pool=BTCB_SYMBOL,
+                                         hide=True))

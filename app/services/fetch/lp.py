@@ -23,8 +23,11 @@ class LiqPoolFetcher:
         self.logger.info(f'get {url}')
         async with self.deps.session.get(url) as resp:
             j = await resp.json()
-            my_pools = j['poolsArray']
-            return my_pools
+            try:
+                my_pools = j['poolsArray']
+                return my_pools
+            except KeyError:
+                return None
 
     async def fetch_one_pool_liquidity_info(self, address, pool):
         url = ASGRAD_CONSUMER_CURRENT_LIQUIDITY.format(address=address, pool=pool)

@@ -3,7 +3,7 @@ import logging
 from localization import BaseLocalization
 from services.fetch.base import INotified
 from services.fetch.queue import QueueInfo
-from services.lib.cooldown import CooldownTracker
+from services.lib.cooldown import CooldownSingle
 from services.lib.depcont import DepContainer
 
 
@@ -11,7 +11,7 @@ class QueueNotifier(INotified):
     def __init__(self, deps: DepContainer):
         self.deps = deps
         self.logger = logging.getLogger('QueueNotifier')
-        self.cooldown_tracker = CooldownTracker(deps.db)
+        self.cooldown_tracker = CooldownSingle(deps.db)
         self.cooldown = deps.cfg.queue.cooldown
         self.threshold = deps.cfg.queue.steps[0]
         self.logger.info(f'config: {deps.cfg.queue}')

@@ -75,8 +75,15 @@ class StakeDialog(BaseDialog):
         addr_idx = int(self.data.get(self.KEY_ACTIVE_ADDRESS_INDEX, 0))
         address = self.data.get(self.KEY_ACTIVE_ADDRESS)
         my_pools = self.data.get(self.KEY_MY_POOLS, [])
+        if my_pools is None:
+            my_pools = []
 
         inline_kbd = []
+
+        button_toggle_show_value = InlineKeyboardButton(
+            self.loc.BUTTON_VIEW_VALUE_ON if view_value else self.loc.BUTTON_VIEW_VALUE_OFF,
+            callback_data=self.QUERY_BACK_TOGGLE_VIEW_VALUE)
+
         buttons = [InlineKeyboardButton(pool, callback_data=f'{self.QUERY_VIEW_POOL}:{pool}') for pool in my_pools]
         buttons = grouper(2, buttons)
         inline_kbd += buttons
@@ -85,8 +92,7 @@ class StakeDialog(BaseDialog):
                 InlineKeyboardButton(self.loc.BUTTON_VIEW_RUNESTAKEINFO, url=RUNE_STAKE_INFO.format(address=address))
             ],
             [
-                InlineKeyboardButton(self.loc.BUTTON_VIEW_VALUE_ON if view_value else self.loc.BUTTON_VIEW_VALUE_OFF,
-                                     callback_data=self.QUERY_BACK_TOGGLE_VIEW_VALUE),
+                *([button_toggle_show_value] if my_pools else []),
                 InlineKeyboardButton(self.loc.BUTTON_REMOVE_THIS_ADDRESS,
                                      callback_data=f'{self.QUERY_REMOVE_ADDRESS}:{addr_idx}')
             ],
@@ -110,26 +116,20 @@ class StakeDialog(BaseDialog):
             my_pools = await lpf.get_my_pools(address)
             self.data[self.KEY_MY_POOLS] = my_pools
 
-            if not my_pools:
-                await query.message.answer(self.loc.TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS,
-                                           disable_web_page_preview=True,
-                                           disable_notification=True,
-                                           reply_markup=self.kbd_for_addresses())
-                await query.message.delete()
-                return
-
         await self.show_my_pools(query, edit=True)
 
     async def show_my_pools(self, query: CallbackQuery, edit):
         inline_kbd = self.kbd_for_pools()
         address = self.data[self.KEY_ACTIVE_ADDRESS]
         my_pools = self.data[self.KEY_MY_POOLS]
+        text = self.loc.text_stake_provides_liq_to_pools(address, my_pools) if my_pools \
+            else self.loc.TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS
         if edit:
-            await query.message.edit_text(text=self.loc.text_stake_provides_liq_to_pools(address, my_pools),
+            await query.message.edit_text(text=text,
                                           reply_markup=inline_kbd,
                                           disable_web_page_preview=True)
         else:
-            await query.message.answer(text=self.loc.text_stake_provides_liq_to_pools(address, my_pools),
+            await query.message.answer(text=text,
                                        reply_markup=inline_kbd,
                                        disable_web_page_preview=True,
                                        disable_notification=True)

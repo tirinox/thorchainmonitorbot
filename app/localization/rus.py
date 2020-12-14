@@ -1,8 +1,6 @@
 from datetime import datetime
 from math import ceil
 
-from aiogram.types import *
-
 from localization.base import BaseLocalization, kbd, RAIDO_GLYPH, CREATOR_TG
 from services.lib.datetime import format_time_ago
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
@@ -10,7 +8,7 @@ from services.lib.money import pretty_dollar, pretty_money, short_address, adapt
 from services.lib.utils import link, code, bold, pre, x_ses, ital
 from services.models.cap_info import ThorInfo
 from services.models.pool_info import PoolInfo
-from services.models.price import RuneFairPrice, PriceReport, PriceATH
+from services.models.price import RuneFairPrice, PriceReport
 from services.models.tx import StakeTx, StakePoolStats
 
 
@@ -50,9 +48,11 @@ class RussianLocalization(BaseLocalization):
     BUTTON_MM_MY_ADDRESS = '🏦 Мои адреса'
     BUTTON_MM_CAP = '📊 Кап ликвидности'
     BUTTON_MM_PRICE = f'💲 Инфо о цене {BaseLocalization.R}'
+    BUTTON_MM_SETTINGS = f'⚙️ Настройки'
 
     def kbd_main_menu(self):
-        return kbd([self.BUTTON_MM_MY_ADDRESS, self.BUTTON_MM_PRICE, self.BUTTON_MM_CAP])
+        return kbd([[self.BUTTON_MM_MY_ADDRESS, self.BUTTON_MM_PRICE],
+                    [self.BUTTON_MM_CAP, self.BUTTON_MM_SETTINGS]])
 
     # ------ STAKE INFO -----
 
@@ -71,7 +71,7 @@ class RussianLocalization(BaseLocalization):
     TEXT_INVALID_ADDRESS = code('⛔️ Ошибка в формате адреса!')
     TEXT_SELECT_ADDRESS_ABOVE = 'Выбери адрес выше ☝️ '
     TEXT_SELECT_ADDRESS_SEND_ME = 'Если хотите добавить адрес, пришлите его мне 👇'
-    TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS = '📪 На этом адресе нет пулов ликвидности. ' \
+    TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS = '📪 <b>На этом адресе нет пулов ликвидности.</b> ' \
                                         'Выберите другой адрес или добавьте новый.'
     TEXT_LP_IMG_CAPTION = f'Сгенерировано: {link(BaseLocalization.START_ME, "@thorchain_monitoring_bot")}'
 
@@ -231,3 +231,8 @@ class RussianLocalization(BaseLocalization):
             message += '🔄 Пулы изменились: ' + ', '.join([pool_text(*a) for a in changed_status_pools]) + '\n'
 
         return message.rstrip()
+
+    # -------- SETTINGS --------
+
+    BUTTON_SET_LANGUAGE = '🌐 Язык'
+    TEXT_SETTING_INTRO = '<b>Настройки</b>\nЧто вы хотите поменять в настройках?'

@@ -3,8 +3,8 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import *
 from aiogram.utils.helper import HelperMode
 
-from localization import LocalizationManager
 from services.dialog.base import BaseDialog, message_handler
+from services.dialog.settings_menu import SettingsDialog
 from services.dialog.stake_info import StakeDialog
 from services.fetch.fair_price import fair_rune_price
 from services.models.cap_info import ThorInfo
@@ -17,6 +17,7 @@ class MainStates(StatesGroup):
 
     MAIN_MENU = State()
     ASK_LANGUAGE = State()
+    SETTINGS = State()
 
 
 class MainMenuDialog(BaseDialog):
@@ -26,11 +27,7 @@ class MainMenuDialog(BaseDialog):
         loc_man = self.deps.loc_man
         if message.get_command(pure=True) == 'lang' or await loc_man.get_lang(message.from_user.id,
                                                                               self.deps.db) is None:
-            # ask language if not set
-            await MainStates.ASK_LANGUAGE.set()
-            text, kb = self.loc.lang_help()
-            await message.answer(text, reply_markup=kb,
-                                 disable_notification=True)
+            await SettingsDialog(self.loc, self.data, self.deps).ask_language(message)
         else:
             info = await ThorInfo.get_old_cap(self.deps.db)
             await message.answer(self.loc.welcome_message(info),
@@ -72,23 +69,6 @@ class MainMenuDialog(BaseDialog):
     async def on_unknown_command(self, message: Message):
         await message.answer(self.loc.unknown_command(), disable_notification=True)
 
-    @message_handler(state=MainStates.ASK_LANGUAGE)
-    async def on_lang_set(self, message: Message):
-        t = message.text
-        if t == self.loc.BUTTON_ENG:
-            lang = 'eng'
-        elif t == self.loc.BUTTON_RUS:
-            lang = 'rus'
-        else:
-            return False
-
-        self.data['language'] = lang
-
-        await MainStates.MAIN_MENU.set()
-
-        self.loc = await LocalizationManager().set_lang(message.from_user.id, lang, self.deps.db)
-        await self.entry_point(message)
-
     @message_handler(state=MainStates.MAIN_MENU)
     async def on_main_menu(self, message: Message):
         if message.text == self.loc.BUTTON_MM_PRICE:
@@ -98,5 +78,7 @@ class MainMenuDialog(BaseDialog):
         elif message.text == self.loc.BUTTON_MM_MY_ADDRESS:
             message.text = ''
             await StakeDialog(self.loc, self.data, self.deps).on_enter(message)
+        elif message.text == self.loc.BUTTON_MM_SETTINGS:
+            await SettingsDialog(self.loc, self.data, self.deps).on_enter(message)
         else:
             return False

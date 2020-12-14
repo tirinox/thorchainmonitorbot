@@ -5,7 +5,7 @@ import time
 
 from localization import BaseLocalization
 from services.fetch.base import INotified
-from services.lib.cooldown import CooldownTracker
+from services.lib.cooldown import CooldownSingle
 from services.lib.datetime import MINUTE, HOUR, DAY, parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.money import pretty_money, calc_percent_change
@@ -17,7 +17,7 @@ class PriceNotifier(INotified):
     def __init__(self, deps: DepContainer):
         self.deps = deps
         self.logger = logging.getLogger('PriceNotification')
-        self.cd = CooldownTracker(deps.db)
+        self.cd = CooldownSingle(deps.db)
         cfg = deps.cfg.price
         self.global_cd = parse_timespan_to_seconds(cfg.global_cd)
         self.change_cd = parse_timespan_to_seconds(cfg.change_cd)
