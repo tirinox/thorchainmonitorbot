@@ -62,3 +62,4 @@ urllib3==1.26.1
 websocket-client==0.57.0
 websockets==8.1
 yarl==1.6.2
+pandas
