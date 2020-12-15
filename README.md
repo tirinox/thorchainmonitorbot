@@ -3,7 +3,7 @@
 This is a telegram bot to monitor some aspects of THORChain.
 It can also generate liquidity pool reports for you. Like this:
 
-![](./misc/example_report.jpeg | width=200)
+[![Report](misc/example_report_thumbnail.png)](https://raw.githubusercontent.com/tirinox/thorchainmonitorbot/master/misc/example_report.jpeg)
 
 ## Commands
 
