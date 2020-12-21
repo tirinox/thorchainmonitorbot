@@ -16,6 +16,11 @@ from services.models.tx import StakePoolStats
 from services.notify.broadcast import Broadcaster
 from services.lib.utils import progressbar
 
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+import numpy as np
+
 deps = DepContainer()
 deps.cfg = Config()
 
@@ -40,6 +45,24 @@ async def mock_broadcaster(tag, n, delay=0.2):
         for i in range(n):
             print(f'mock_broadcaster : {tag} step {i}')
             await asyncio.sleep(delay)
+
+
+async def foo15():
+    series = []
+    x = 10
+    while x < 200_000_000:
+        p = StakePoolStats.curve_for_tx_threshold(x)
+        series.append((x, p, x * p))
+        print(f'{int(x)},{p:.2f},{(x * p):.0f}')
+        x *= 1.3
+    series = pd.DataFrame(series, columns=['depth', 'threshold', 'th_abs'])
+
+    # series['depth_log'] = np.log10(series['depth'])
+
+    f, ax = plt.subplots(figsize=(7, 7))
+    ax.set(xscale="log")
+    sns.lineplot(data=series, x='depth', y='th_abs', ax=ax)
+    plt.show()
 
 
 async def foo2():
@@ -85,7 +108,8 @@ async def test_cd_mult():
 
 async def start_foos():
     await deps.db.get_redis()
-    await test_cd_mult()
+    # await test_cd_mult()
+    await foo15()
 
 
 if __name__ == '__main__':

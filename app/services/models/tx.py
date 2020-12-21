@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from statistics import median
 
 from services.lib.db import DB
+from services.lib.utils import linear_transform
 from services.models.pool_info import MIDGARD_MULT
 from services.models.cap_info import BaseModelMixin
 from services.models.time_series import TimeSeries
@@ -153,5 +154,18 @@ class StakePoolStats(BaseModelMixin):
     async def write_time_series(self, db: DB):
         ts = TimeSeries(self.stream_name, db)
         await ts.add(usd_depth=self.usd_depth)
+
+    @staticmethod
+    def curve_for_tx_threshold(depth):
+        if depth < 10_000:
+            return 0.3
+        elif depth < 100_000:
+            return linear_transform(depth, 10_000, 100_000, 0.3, 0.2)
+        elif depth < 1_000_000:
+            return linear_transform(depth, 100_000, 1_000_000, 0.2, 0.1)
+        elif depth < 10_000_000:
+            return linear_transform(depth, 1_000_000, 10_000_000, 0.1, 0.03)
+        else:
+            return 0.03
 
 

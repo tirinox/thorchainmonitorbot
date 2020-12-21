@@ -100,3 +100,8 @@ class Singleton(type):
 def grouper(n, iterable):
     args = [iter(iterable)] * n
     return ([e for e in t if e is not None] for t in itertools.zip_longest(*args))
+
+
+def linear_transform(x, low_x, hi_x, low_y, hi_y):
+    x_norm = (x - low_x) / (hi_x - low_x)
+    return x_norm * (hi_y - low_y) + low_y
