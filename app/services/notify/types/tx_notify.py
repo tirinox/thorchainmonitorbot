@@ -62,9 +62,13 @@ class StakeTxNotifier(INotified):
             stats: StakePoolStats = fetcher.pool_stat_map.get(tx.pool)
             pool_info: PoolInfo = fetcher.pool_info_map.get(tx.pool)
 
-            min_pool_percent = stats.curve_for_tx_threshold(pool_info.usd_depth(fetcher.deps.price_holder.usd_per_rune))
+            usd_depth = pool_info.usd_depth(fetcher.deps.price_holder.usd_per_rune)
+            min_pool_percent = stats.curve_for_tx_threshold(usd_depth)
             min_share_rune_volume = (pool_info.balance_rune * MIDGARD_MULT) * min_pool_percent
-            
+
+            # print(f"{tx.pool}: {tx.full_rune:.2f} / {min_share_rune_volume:.2f} need rune, min_pool_percent = {min_pool_percent:.2f}, "
+            #       f"usd_depth = {usd_depth:.0f}")
+
             if stats is not None:
                 if tx.full_rune >= min_rune_volume and tx.full_rune >= min_share_rune_volume:
                     yield tx

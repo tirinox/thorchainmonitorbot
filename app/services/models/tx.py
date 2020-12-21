@@ -161,11 +161,13 @@ class StakePoolStats(BaseModelMixin):
             return 0.3
         elif depth < 100_000:
             return linear_transform(depth, 10_000, 100_000, 0.3, 0.2)
-        elif depth < 1_000_000:
-            return linear_transform(depth, 100_000, 1_000_000, 0.2, 0.1)
+        elif depth < 500_000:
+            return linear_transform(depth, 100_000, 500_000, 0.2, 0.1)
+        elif depth < 2_000_000:
+            return linear_transform(depth, 500_000, 2_000_000, 0.1, 0.05)
         elif depth < 10_000_000:
-            return linear_transform(depth, 1_000_000, 10_000_000, 0.1, 0.03)
+            return linear_transform(depth, 500_000, 10_000_000, 0.05, 0.02)
         else:
-            return 0.03
+            return 0.02
 
 

@@ -12,6 +12,7 @@ from services.lib.db import DB
 from services.fetch.node_ip_manager import ThorNodeAddressManager
 from services.fetch.pool_price import PoolPriceFetcher
 from services.lib.depcont import DepContainer
+from services.lib.money import pretty_money
 from services.models.tx import StakePoolStats
 from services.notify.broadcast import Broadcaster
 from services.lib.utils import progressbar
@@ -52,8 +53,9 @@ async def foo15():
     x = 10
     while x < 200_000_000:
         p = StakePoolStats.curve_for_tx_threshold(x)
-        series.append((x, p, x * p))
-        print(f'{int(x)},{p:.2f},{(x * p):.0f}')
+        abs_th = x * p
+        series.append((x, p, abs_th))
+        print(f'{pretty_money(x)},{p:.2f},{(x * p):.0f}')
         x *= 1.3
     series = pd.DataFrame(series, columns=['depth', 'threshold', 'th_abs'])
 
