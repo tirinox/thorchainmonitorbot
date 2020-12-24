@@ -12,7 +12,7 @@ from PIL import Image, ImageDraw, ImageFont
 from localization import BaseLocalization
 from localization.base import RAIDO_GLYPH
 from services.lib.money import asset_name_cut_chain, pretty_money, short_asset_name
-from services.lib.utils import Singleton
+from services.lib.utils import Singleton, async_wrap
 from services.models.stake_info import StakePoolReport
 from services.models.time_series import BNB_SYMBOL, RUNE_SYMBOL, BUSD_SYMBOL
 
@@ -127,6 +127,14 @@ async def lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, value_
         r.download_logo_cached(RUNE_SYMBOL),
         r.download_logo_cached(asset)
     )
+    return await sync_lp_pool_picture(report, loc, rune_image, asset_image, value_hidden)
+
+
+@async_wrap
+def sync_lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, rune_image, asset_image, value_hidden):
+    asset = report.pool.asset
+
+    r = Resources()
 
     image = r.bg_image.copy()
     draw = ImageDraw.Draw(image)
@@ -272,7 +280,11 @@ async def lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, value_
                     price_text = pretty_money(report.usd_per_rune, prefix='$')
                 else:
                     price_text = '–'
-                draw.text(pos_percent(x, rows_y[4] + 2.5), f"({price_text})", fill=FORE_COLOR, font=r.font_small, anchor='ms')
+                draw.text(pos_percent(x, rows_y[4] + 2.5),
+                          f"({price_text})",
+                          fill=FORE_COLOR,
+                          font=r.font_small,
+                          anchor='ms')
             else:
                 draw.text(pos_percent(x, rows_y[4]), f'–', font=r.font_semi,
                           fill=FADE_COLOR, anchor='ms')
