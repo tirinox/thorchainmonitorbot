@@ -5,9 +5,12 @@ from services.fetch.base import INotified
 from services.fetch.queue import QueueInfo
 from services.lib.cooldown import CooldownSingle
 from services.lib.depcont import DepContainer
+from services.models.time_series import TimeSeries
 
 
 class QueueNotifier(INotified):
+    QUEUE_TIME_SERIES = 'thor_queue'
+
     def __init__(self, deps: DepContainer):
         self.deps = deps
         self.logger = logging.getLogger('QueueNotifier')
@@ -46,5 +49,9 @@ class QueueNotifier(INotified):
 
     async def on_data(self, sender, data: QueueInfo):
         self.logger.info(f"got queue: {data}")
+
+        ts = TimeSeries(self.QUEUE_TIME_SERIES, self.deps.db)
+        await ts.add(swap_queue=data.swap, outbound_queue=data.outbound)
+
         await self.handle_entry('swap', data.swap)
         await self.handle_entry('outbound', data.outbound)

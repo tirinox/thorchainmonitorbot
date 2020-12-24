@@ -82,7 +82,10 @@ class BaseDialog(ABC):
         self.data = data
 
     @classmethod
-    def register(cls, d: DepContainer):
+    def register(cls, d: DepContainer, back_dialog=None, back_func=None):
+        cls.back_dialog = back_dialog
+        cls.back_func = back_func
+
         members = cls.__dict__.items()
         for name, f in members:
             if hasattr(f, 'handler_stuff'):

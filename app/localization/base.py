@@ -7,6 +7,7 @@ from services.lib.utils import progressbar
 from services.models.cap_info import ThorInfo
 from services.models.pool_info import PoolInfo
 from services.models.price import RuneFairPrice, PriceReport, PriceATH
+from services.models.queue import QueueInfo
 from services.models.tx import StakeTx, StakePoolStats
 
 RAIDO_GLYPH = 'ᚱ'
@@ -64,8 +65,7 @@ class BaseLocalization(ABC):
     def unknown_command(self): ...
 
     BUTTON_MM_MY_ADDRESS = ''
-    BUTTON_MM_CAP = ''
-    BUTTON_MM_PRICE = ''
+    BUTTON_MM_METRICS = ''
     BUTTON_MM_SETTINGS = ''
 
     @abstractmethod
@@ -176,3 +176,30 @@ class BaseLocalization(ABC):
 
     BUTTON_SET_LANGUAGE = '🌐 Язык/Lang'
     TEXT_SETTING_INTRO = '<b>Settings</b>\nWhat would you like?'
+
+    # -------- METRICS ----------
+
+    BUTTON_METR_CAP = '📊 Кап ливкидности'
+    BUTTON_METR_PRICE = 'Цена'
+    BUTTON_METR_QUEUE = '👥 Очередь'
+
+    TEXT_METRICS_INTRO = ''
+
+    @abstractmethod
+    def cap_message(self, info: ThorInfo):
+        ...
+
+    @abstractmethod
+    def queue_message(self, queue_info: QueueInfo):
+        ...
+
+    @staticmethod
+    def queue_to_smile(n):
+        if n <= 1:
+            return '🟢'
+        elif n <= 7:
+            return '🟡'
+        elif n <= 20:
+            return '🔴'
+        elif n <= 50:
+            return '🤬!!'

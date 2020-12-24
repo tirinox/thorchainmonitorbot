@@ -13,7 +13,6 @@ class SettingsStates(StatesGroup):
 
 
 class SettingsDialog(BaseDialog):
-
     # ----------- HANDLERS ------------
 
     async def ask_language(self, message: Message):

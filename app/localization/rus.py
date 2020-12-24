@@ -9,6 +9,7 @@ from services.lib.utils import link, code, bold, pre, x_ses, ital
 from services.models.cap_info import ThorInfo
 from services.models.pool_info import PoolInfo
 from services.models.price import RuneFairPrice, PriceReport
+from services.models.queue import QueueInfo
 from services.models.tx import StakeTx, StakePoolStats
 
 
@@ -29,8 +30,7 @@ class RussianLocalization(BaseLocalization):
 
     def welcome_message(self, info: ThorInfo):
         return (
-            f"Привет! <b>{info.stacked:.0f}</b> монет из <b>{info.cap:.0f}</b> сейчас застейканы.\n"
-            f"{self._cap_progress_bar(info)}"
+            f"Привет! Здесь ты можешь найти метрики THORChain и узнать результаты предоставления ликвидности в пулы.\n"
             f"Цена {self.R} сейчас <code>{info.price:.3f} BUSD</code>.\n"
             f"<b>⚠️ Бот теперь уведомляет только в канале @thorchain_alert!</b>\n"
             f"Набери /help, чтобы видеть список команд.\n"
@@ -46,13 +46,11 @@ class RussianLocalization(BaseLocalization):
     # ----- MAIN MENU ------
 
     BUTTON_MM_MY_ADDRESS = '🏦 Мои адреса'
-    BUTTON_MM_CAP = '📊 Кап ликвидности'
-    BUTTON_MM_PRICE = f'💲 Инфо о цене {BaseLocalization.R}'
+    BUTTON_MM_METRICS = '📐 Метрики'
     BUTTON_MM_SETTINGS = f'⚙️ Настройки'
 
     def kbd_main_menu(self):
-        return kbd([[self.BUTTON_MM_MY_ADDRESS, self.BUTTON_MM_PRICE],
-                    [self.BUTTON_MM_CAP, self.BUTTON_MM_SETTINGS]])
+        return kbd([[self.BUTTON_MM_MY_ADDRESS, self.BUTTON_MM_METRICS, self.BUTTON_MM_SETTINGS]])
 
     # ------ STAKE INFO -----
 
@@ -236,3 +234,27 @@ class RussianLocalization(BaseLocalization):
 
     BUTTON_SET_LANGUAGE = '🌐 Язык'
     TEXT_SETTING_INTRO = '<b>Настройки</b>\nЧто вы хотите поменять в настройках?'
+
+    # -------- METRICS ----------
+
+    BUTTON_METR_CAP = '📊 Кап ливкидности'
+    BUTTON_METR_PRICE = f'💲 {BaseLocalization.R} инфо о цене'
+    BUTTON_METR_QUEUE = f'👥 Очередь'
+
+    TEXT_METRICS_INTRO = 'Что вы хотите узнать?'
+
+    def cap_message(self, info: ThorInfo):
+        return (
+            f"<b>{pretty_money(info.stacked)}</b> монет из "
+            f"<b>{pretty_money(info.cap)}</b> сейчас застейканы.\n"
+            f"{self._cap_progress_bar(info)}"
+            f"Цена {bold(self.R)} сейчас <code>{info.price:.3f} BUSD</code>.\n"
+        )
+
+    def queue_message(self, queue_info: QueueInfo):
+        return (
+            f"<b>Информация об очередях:</b>\n"
+            f"Исходящие транзакции (outbound): {code(queue_info.outbound)} шт.\n"
+            f"Очередь обменов (swap): {code(queue_info.swap)} шт.\n"
+            f"Если в очереди много транзакций, ваши операции могут занять гораздо больше времени, чем обычно."
+        )

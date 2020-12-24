@@ -6,6 +6,7 @@ from services.lib.datetime import format_time_ago
 from services.models.price import RuneFairPrice, PriceReport, PriceATH
 from services.models.pool_info import PoolInfo
 from services.models.cap_info import ThorInfo
+from services.models.queue import QueueInfo
 from services.models.tx import StakeTx, StakePoolStats
 from services.lib.utils import link, code, bold, pre, x_ses, ital
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
@@ -29,8 +30,7 @@ class EnglishLocalization(BaseLocalization):
 
     def welcome_message(self, info: ThorInfo):
         return (
-            f"Hello! <b>{pretty_money(info.stacked)} {self.R}</b> of <b>{pretty_money(info.cap)} {self.R}</b> pooled.\n"
-            f"{self._cap_progress_bar(info)}"
+            f"Hello! Here you can find THORChain metrics and review your liquidity results.\n"
             f"The {self.R} price is <code>${info.price:.3f}</code> now.\n"
             f"<b>⚠️ All notifications are forwarded to @thorchain_alert channel!</b>\n"
             f"🤗 Support and feedback: {CREATOR_TG}."
@@ -45,13 +45,11 @@ class EnglishLocalization(BaseLocalization):
     # ----- MAIN MENU ------
 
     BUTTON_MM_MY_ADDRESS = '🏦 Manage my address'
-    BUTTON_MM_CAP = '📊 Liquidity cap'
-    BUTTON_MM_PRICE = f'💲 {BaseLocalization.R} price info'
+    BUTTON_MM_METRICS = '📐 Metrics'
     BUTTON_MM_SETTINGS = f'⚙️ Settings'
 
     def kbd_main_menu(self):
-        return kbd([[self.BUTTON_MM_MY_ADDRESS, self.BUTTON_MM_PRICE],
-                    [self.BUTTON_MM_CAP, self.BUTTON_MM_SETTINGS]])
+        return kbd([[self.BUTTON_MM_MY_ADDRESS, self.BUTTON_MM_METRICS, self.BUTTON_MM_SETTINGS]])
 
     # ------ STAKE INFO -----
 
@@ -224,3 +222,27 @@ class EnglishLocalization(BaseLocalization):
 
     BUTTON_SET_LANGUAGE = '🌐 Language'
     TEXT_SETTING_INTRO = '<b>Settings</b>\nWhat would you like to tune?'
+
+    # -------- METRICS ----------
+
+    BUTTON_METR_CAP = '📊 Liquidity cap'
+    BUTTON_METR_PRICE = f'💲 {BaseLocalization.R} price info'
+    BUTTON_METR_QUEUE = f'👥 Queue'
+
+    TEXT_METRICS_INTRO = 'What metrics would you like to know?'
+
+    def cap_message(self, info: ThorInfo):
+        return (
+            f"Hello! <b>{pretty_money(info.stacked)} {self.R}</b> of "
+            f"<b>{pretty_money(info.cap)} {self.R}</b> pooled.\n"
+            f"{self._cap_progress_bar(info)}"
+            f"The {bold(self.R)} price is <code>${info.price:.3f}</code> now.\n"
+        )
+
+    def queue_message(self, queue_info: QueueInfo):
+        return (
+            f"<b>Queue info:</b>\n"
+            f"- <b>Outbound</b>: {code(queue_info.outbound)} txs {self.queue_to_smile(queue_info.outbound)}\n"
+            f"- <b>Swap</b>: {code(queue_info.swap)} txs {self.queue_to_smile(queue_info.swap)}\n"
+            f"If there are many transactions in the queue, your operations may take much longer than usual."
+        )
