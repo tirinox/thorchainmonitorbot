@@ -1,6 +1,13 @@
 URL to start: https://telegram.me/thorchain_monitoring_bot?start=1
 
 T A S K S :
+
+------------------------------------------------------------------------
+
+TX avg time per type:
+
+pending .... success => avg time?
+
 ------------------------------------------------------------------------
 
 Add transactions!
@@ -13,39 +20,10 @@ https://docs.thorchain.org/developers/transaction-memos#memo-alternatives
 
 ------------------------------------------------------------------------
 
-ToDo: integrate with runestake.info
-
-IN PROGRESS
+Customizable notificiations!
 
 Kai: This bot is very cool.
-
 Would be great if the monitoring bot could be customisable so you could get a feed of transactions based on preferences and thresholds.
-
-I'm happy to throw you and Bigboss a bounty if you want to work together. Imagine the bot could spit out data from runestake.info
-
-- total gain / loss
-- rune gain / loss
-- asset gain / loss
-- redeemable value
-- LP Vs. HODL
-
-and later even dynamically generated charts. the more you guys work together the more value delivered
-
-Me: add sharable stake reports!
-
-ToDo:
-1. font size ++ (v)
-2. add today's date to the picture (v)
-3. light/dark theme
-4. add current prices (v)
-5. fix explorer link (v)
-6. cache history prices for stake TX
-7. Message is address has no pools (v)
-8. Better back button
-9. summary picture
-10. Just check address, don't add
-11. Improve image quality (higher resolution mb 1200x1600)
-12. BUG: can not delete an empty address
 
 ------------------------------------------------------------------------
 
@@ -67,27 +45,23 @@ WebHook for the production bot
 
 ------------------------------------------------------------------------
 
-Bitcoin_Sage, [24 нояб. 2020 г., 11:19:49]:
-Hey man I see you're struggling to get the alerts for added liquidity right.
+Swap tx notify
 
-Maybe it's an idea to base it on the depth of the pool? With shallow pools having a higher threshold and deeper pools a lower one before the alert goes of.
+------------------------------------------------------------------------
 
-EG. BTC pool alerts from 1% depth and sah SHR pool alert from 25% depth.
+Pool depth growth / drop?
 
-sah = say
+------------------------------------------------------------------------
 
-++ CURVE!!..
+Stake info: summary!
 
-TODO: s
-TX volume curve:
-< 10k  50%
-< 100k  20%
-< 1m 5%
-< 10m 2%
+------------------------------------------------------------------------
 
-piece-wise linear function!
+Stake info: Just check address, don't add
 
-> 5k$ lower bound
+------------------------------------------------------------------------
+
+Stake info: all addresses to one button!
 
 ------------------------------------------------------------------------
 
@@ -95,12 +69,6 @@ ToDo: price graph + deterministic price graph
 
 ------------------------------------------------------------------------
 
-Price info, rune price in btc ₿ symbol
-
-₿₿₿₿
-ΞΞΞΞ ether
-
-------------------------------------------------------------------------
 
 ToDo: admin commands, add admin chat id to cfg,
 
@@ -110,6 +78,14 @@ commands:
 3. reset any states
 4. restart bot
 5. broadcast a message to all bot users
+
+------------------------------------------------------------------------
+
+Multi-chain support
+
+------------------------------------------------------------------------
+
+ETH-bridge support
 
 ------------------------------------------------------------------------
 

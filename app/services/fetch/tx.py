@@ -29,6 +29,8 @@ class StakeTxFetcher(BaseFetcher):
         self.logger.info(f"cfg.tx.stake_unstake: {scfg}")
 
     async def fetch(self):
+        await self.deps.db.get_redis()
+
         txs = await self._fetch_txs()
         if not txs:
             return []
@@ -62,32 +64,24 @@ class StakeTxFetcher(BaseFetcher):
 
     async def _filter_new(self, txs):
         new_txs = []
-        stopped = False
         for tx in txs:
             tx: StakeTx
-            if await tx.is_notified(self.deps.db):
-                stopped = True
-                self.logger.info(f'already counted: {tx} stopping')
-                break
-            new_txs.append(tx)
-
-        return stopped, new_txs
+            if not (await tx.is_notified(self.deps.db)):
+                new_txs.append(tx)
+        return new_txs
 
     async def _fetch_txs(self):
         all_txs = []
         page = 0
-        while True:
+        while page < self.max_page_deep:
             txs = await self._fetch_one_batch(self.deps.session, page)
-            stopped, txs = await self._filter_new(txs)
+            txs = await self._filter_new(txs)
             if not txs:
                 self.logger.info(f"no more tx: got {len(all_txs)}")
                 break
 
             all_txs += txs
             page += 1
-
-            if stopped or page > self.max_page_deep:
-                break
 
         return all_txs
 

@@ -51,19 +51,21 @@ async def mock_broadcaster(tag, n, delay=0.2):
 async def foo15():
     series = []
     x = 10
-    while x < 200_000_000:
+    while x < 1_000_000_000:
         p = StakePoolStats.curve_for_tx_threshold(x)
         abs_th = x * p
         series.append((x, p, abs_th))
-        print(f'{pretty_money(x)},{p:.2f},{(x * p):.0f}')
+        print(f'{x},{p:.2f},{(x * p):.0f}')
         x *= 1.3
-    series = pd.DataFrame(series, columns=['depth', 'threshold', 'th_abs'])
-
-    # series['depth_log'] = np.log10(series['depth'])
+    series = pd.DataFrame(series, columns=['pool_depth_usd', 'percent', 'threshold_usd'])
 
     f, ax = plt.subplots(figsize=(7, 7))
-    ax.set(xscale="log")
-    sns.lineplot(data=series, x='depth', y='th_abs', ax=ax)
+
+    sns.set_theme()
+    sns.lineplot(data=series, x='pool_depth_usd', y='threshold_usd', ax=ax)
+    # sns.lineplot(data=series, x='pool_depth_usd', y='percent', ax=ax)
+    ax.set(xscale="log", yscale='log')
+    ax.grid()
     plt.show()
 
 
