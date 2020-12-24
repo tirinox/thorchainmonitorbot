@@ -1,6 +1,6 @@
 .idea/
 app/config.yaml
-redis_data/dump.rdb
+redis_data/
 datavar/
 dump.rdb
 stake_test.png
