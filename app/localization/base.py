@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from aiogram.types import *
 
 from services.lib.money import format_percent, asset_name_cut_chain
-from services.lib.utils import progressbar
+from services.lib.texts import progressbar
 from services.models.cap_info import ThorInfo
 from services.models.pool_info import PoolInfo
 from services.models.price import RuneFairPrice, PriceReport, PriceATH

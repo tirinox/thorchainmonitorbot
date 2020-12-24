@@ -8,12 +8,13 @@ import seaborn as sns
 
 from services.fetch.queue import QueueFetcher
 from services.lib.config import Config
-from services.lib.datetime import DAY, HOUR
+from services.lib.datetime import DAY, HOUR, series_to_pandas
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
-from services.lib.utils import series_to_pandas
 from services.models.time_series import TimeSeries
 import pandas as pd
+
+from services.notify.types.queue_notify import QueueNotifier
 
 
 def save_pic(file_path='~/sns_test.png'):
@@ -26,17 +27,18 @@ def save_pic(file_path='~/sns_test.png'):
 
 
 async def points(d: DepContainer):
-    ts = TimeSeries(QueueFetcher.QUEUE_TIME_SERIES, d.db)
+    ts = TimeSeries(QueueNotifier.QUEUE_TIME_SERIES, d.db)
     points = await ts.select(*ts.range_from_ago_to_now(DAY, tolerance_sec=10))
     df = series_to_pandas(points, shift_time=False)
     df["t"] = pd.to_datetime(df["t"], unit='s')
+    df = df.resample('10min', on='t').sum()
 
     f, ax = plt.subplots(1, 1)
 
-    ax.plot_date(df["t"], df["outbound_queue"], color="blue", label="outbound_queue", linestyle="-")
-    ax.plot_date(df["t"], df["swap_queue"], color="green", label="swap_queue", linestyle="-")
+    ax.plot_date(df.index, df["outbound_queue"], color="blue", label="outbound_queue", linestyle="-", marker='')
+    ax.plot_date(df.index, df["swap_queue"], color="green", label="swap_queue", linestyle="-", marker='')
 
-    x_dates = df['t'].dt.strftime('%H:%M').sort_values().unique()
+    x_dates = df.index.strftime('%H:%M').sort_values().unique()
     ax.set_xticklabels(labels=x_dates, rotation=45, ha='right')
 
     ax.legend()

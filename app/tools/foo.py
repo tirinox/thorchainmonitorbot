@@ -15,7 +15,7 @@ from services.lib.depcont import DepContainer
 from services.lib.money import pretty_money
 from services.models.tx import StakePoolStats
 from services.notify.broadcast import Broadcaster
-from services.lib.utils import progressbar
+from services.lib.texts import progressbar
 
 import matplotlib.pyplot as plt
 import seaborn as sns

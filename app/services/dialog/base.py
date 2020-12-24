@@ -10,7 +10,7 @@ from aiogram.types import Message, CallbackQuery
 from localization import BaseLocalization
 from localization.base import CREATOR_TG
 from services.lib.depcont import DepContainer
-from services.lib.utils import code
+from services.lib.texts import code
 
 logger = logging.getLogger('DIALOGS')
 

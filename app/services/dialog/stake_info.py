@@ -11,7 +11,7 @@ from services.dialog.lp_picture import lp_pool_picture, img_to_bio
 from services.fetch.lp import LiqPoolFetcher
 from services.fetch.pool_price import PoolPriceFetcher
 from services.lib.money import short_address
-from services.lib.utils import code, pre, grouper
+from services.lib.texts import code, pre, grouper
 from services.models.stake_info import MyStakeAddress, BNB_CHAIN
 
 LOADING_STICKER = 'CAACAgIAAxkBAAIRx1--Tia-m6DNRIApk3yqmNWvap_sAALcAAP3AsgPUNi8Bnu98HweBA'

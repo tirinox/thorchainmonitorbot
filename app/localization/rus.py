@@ -5,7 +5,7 @@ from localization.base import BaseLocalization, kbd, RAIDO_GLYPH, CREATOR_TG
 from services.lib.datetime import format_time_ago
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change, short_asset_name
-from services.lib.utils import link, code, bold, pre, x_ses, ital
+from services.lib.texts import bold, link, code, ital, pre, x_ses
 from services.models.cap_info import ThorInfo
 from services.models.pool_info import PoolInfo
 from services.models.price import RuneFairPrice, PriceReport
