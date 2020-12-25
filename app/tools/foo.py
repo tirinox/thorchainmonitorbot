@@ -12,9 +12,15 @@ from services.lib.db import DB
 from services.fetch.node_ip_manager import ThorNodeAddressManager
 from services.fetch.pool_price import PoolPriceFetcher
 from services.lib.depcont import DepContainer
+from services.lib.money import pretty_money
 from services.models.tx import StakePoolStats
 from services.notify.broadcast import Broadcaster
-from services.lib.utils import progressbar
+from services.lib.texts import progressbar
+
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
+import numpy as np
 
 deps = DepContainer()
 deps.cfg = Config()
@@ -40,6 +46,27 @@ async def mock_broadcaster(tag, n, delay=0.2):
         for i in range(n):
             print(f'mock_broadcaster : {tag} step {i}')
             await asyncio.sleep(delay)
+
+
+async def foo15():
+    series = []
+    x = 10
+    while x < 1_000_000_000:
+        p = StakePoolStats.curve_for_tx_threshold(x)
+        abs_th = x * p
+        series.append((x, p, abs_th))
+        print(f'{x},{p:.2f},{(x * p):.0f}')
+        x *= 1.3
+    series = pd.DataFrame(series, columns=['pool_depth_usd', 'percent', 'threshold_usd'])
+
+    f, ax = plt.subplots(figsize=(7, 7))
+
+    sns.set_theme()
+    sns.lineplot(data=series, x='pool_depth_usd', y='threshold_usd', ax=ax)
+    # sns.lineplot(data=series, x='pool_depth_usd', y='percent', ax=ax)
+    ax.set(xscale="log", yscale='log')
+    ax.grid()
+    plt.show()
 
 
 async def foo2():
@@ -85,7 +112,8 @@ async def test_cd_mult():
 
 async def start_foos():
     await deps.db.get_redis()
-    await test_cd_mult()
+    # await test_cd_mult()
+    await foo15()
 
 
 if __name__ == '__main__':

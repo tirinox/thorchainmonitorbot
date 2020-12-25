@@ -2,6 +2,7 @@ from dataclasses import dataclass, field
 from statistics import median
 
 from services.lib.db import DB
+from services.lib.utils import linear_transform
 from services.models.pool_info import MIDGARD_MULT
 from services.models.cap_info import BaseModelMixin
 from services.models.time_series import TimeSeries
@@ -90,12 +91,10 @@ class StakeTx(BaseModelMixin):
             await r.delete(*keys)
 
     async def is_notified(self, db: DB):
-        r = await db.get_redis()
-        return bool(await r.get(self.notify_key))
+        return bool(await db.redis.get(self.notify_key))
 
     async def set_notified(self, db: DB, value=1):
-        r = await db.get_redis()
-        await r.set(self.notify_key, value)
+        await db.redis.set(self.notify_key, value)
 
 
 @dataclass
@@ -154,4 +153,21 @@ class StakePoolStats(BaseModelMixin):
         ts = TimeSeries(self.stream_name, db)
         await ts.add(usd_depth=self.usd_depth)
 
+    TX_VS_DEPTH_CURVE = [
+        (10_000, 0.3),  # if depth < 10_000 then 0.3
+        (100_000, 0.2),  # if 10_000 <= depth < 100_000 then 0.3 ... 0.2
+        (500_000, 0.15),  # if 10_000 <= depth < 100_000 then 0.3 ... 0.2
+        (1_000_000, 0.1),
+        (10_000_000, 0.05),
+    ]
 
+    @classmethod
+    def curve_for_tx_threshold(cls, depth):
+        lower_bound = 0
+        lower_percent = cls.TX_VS_DEPTH_CURVE[0][1]
+        for upper_bound, upper_percent in cls.TX_VS_DEPTH_CURVE:
+            if depth < upper_bound:
+                return linear_transform(depth, lower_bound, upper_bound, lower_percent, upper_percent)
+            lower_percent = upper_percent
+            lower_bound = upper_bound
+        return cls.TX_VS_DEPTH_CURVE[-1][1]

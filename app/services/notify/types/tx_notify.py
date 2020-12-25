@@ -28,7 +28,7 @@ class StakeTxNotifier(INotified):
         usd_per_rune = self.deps.price_holder.usd_per_rune
         min_rune_volume = self.min_usd_total / usd_per_rune
 
-        large_txs = self._filter_large_txs(fetcher, new_txs, self.min_pool_percent, min_rune_volume)
+        large_txs = self._filter_large_txs(fetcher, new_txs, min_rune_volume)
 
         large_txs = list(large_txs)
         large_txs = large_txs[:self.MAX_TX_PER_ONE_TIME]
@@ -56,12 +56,19 @@ class StakeTxNotifier(INotified):
                 yield tx
 
     @staticmethod
-    def _filter_large_txs(fetcher, txs, min_pool_percent=0.5, min_rune_volume=10000):
+    def _filter_large_txs(fetcher, txs, min_rune_volume=10000):
         for tx in txs:
             tx: StakeTx
             stats: StakePoolStats = fetcher.pool_stat_map.get(tx.pool)
             pool_info: PoolInfo = fetcher.pool_info_map.get(tx.pool)
-            min_share_rune_volume = (pool_info.balance_rune * MIDGARD_MULT) * min_pool_percent / 100.0
+
+            usd_depth = pool_info.usd_depth(fetcher.deps.price_holder.usd_per_rune)
+            min_pool_percent = stats.curve_for_tx_threshold(usd_depth)
+            min_share_rune_volume = (pool_info.balance_rune * MIDGARD_MULT) * min_pool_percent
+
+            # print(f"{tx.pool}: {tx.full_rune:.2f} / {min_share_rune_volume:.2f} need rune, min_pool_percent = {min_pool_percent:.2f}, "
+            #       f"usd_depth = {usd_depth:.0f}")
+
             if stats is not None:
                 if tx.full_rune >= min_rune_volume and tx.full_rune >= min_share_rune_volume:
                     yield tx

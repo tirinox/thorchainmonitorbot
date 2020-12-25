@@ -1,5 +1,7 @@
 from datetime import datetime
 
+import pandas as pd
+
 MINUTE = 60
 HOUR = 60 * 60
 DAY = 24 * 60 * 60
@@ -85,3 +87,43 @@ def format_time_ago(d):
         return 'never'
     else:
         return f'{seconds_human(now_ts() - d)} ago'
+
+
+def format_time_ago_short(d, now=None):
+    now = now or now_ts()
+    seconds = int(d - now)
+    if seconds < 0:
+        return "-" + format_time_ago_short(now, d)
+
+    minutes = seconds // 60
+    hours = minutes // 60
+    days = hours // 24
+    days = f'{days}d ' if days else ''
+    minutes = minutes % 60
+    hours = hours % 24
+    return f'{days}{hours:02}:{minutes:02}'
+
+
+def series_to_pandas(ts_result, shift_time=True):
+    normal_data = []
+    zero_t = None
+    for key, value_d in ts_result:
+        key = key.decode('ascii').split('-')
+        event_id = int(key[1])
+        if event_id > 99:
+            continue
+
+        # ms -> sec; + up to 100 events 0.01 sec each
+        time_point = float(key[0]) / 1000.0 + 0.01 * event_id
+        if zero_t is None:
+            zero_t = time_point
+
+        values = {
+            k.decode('ascii'): float(v) for k, v in value_d.items()
+        }
+
+        normal_data.append({
+            "t": (time_point - zero_t) if shift_time else time_point,
+            **values
+        })
+    return pd.DataFrame(normal_data)

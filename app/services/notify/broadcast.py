@@ -8,6 +8,7 @@ from aiogram.utils import exceptions
 
 from localization import LocalizationManager
 from services.lib.depcont import DepContainer
+from services.lib.texts import MessageType, BoardMessage
 
 
 class Broadcaster:
@@ -33,11 +34,15 @@ class Broadcaster:
 
         async def message_gen(chat_id):
             locale = user_lang_map[chat_id]
-            return getattr(locale, f.__name__)(*args, **kwargs)
+            loc_f = getattr(locale, f.__name__)
+            if asyncio.iscoroutinefunction(loc_f):
+                return await loc_f(*args, **kwargs)
+            else:
+                return loc_f(*args, **kwargs)
 
         await self.broadcast(user_lang_map.keys(), message_gen)
 
-    async def _send_message(self, chat_id, text, message_type='text', *args, **kwargs) -> bool:
+    async def _send_message(self, chat_id, text, message_type=MessageType.TEXT, *args, **kwargs) -> bool:
         """
         Safe messages sender
         :param chat_id:
@@ -46,11 +51,14 @@ class Broadcaster:
         :return:
         """
         try:
-            if message_type == 'text':
+            if message_type == MessageType.TEXT:
                 await self.bot.send_message(chat_id, text, *args, **kwargs)
-            elif message_type == 'sticker':
+            elif message_type == MessageType.STICKER:
                 del kwargs['disable_web_page_preview']
                 await self.bot.send_sticker(chat_id, sticker=text, *args, **kwargs)
+            elif message_type == MessageType.PHOTO:
+                del kwargs['disable_web_page_preview']
+                await self.bot.send_photo(chat_id, caption=text, *args, **kwargs)
         except exceptions.BotBlocked:
             self.logger.error(f"Target [ID:{chat_id}]: blocked by user")
         except exceptions.ChatNotFound:
@@ -80,10 +88,11 @@ class Broadcaster:
 
         return non_numeric_ids + multi_chats + user_dialogs
 
-    async def broadcast(self, chat_ids: Iterable, message, delay=0.075, message_type='text', *args, **kwargs) -> int:
+    async def broadcast(self, chat_ids: Iterable, message, delay=0.075,
+                        message_type=MessageType.TEXT, *args, **kwargs) -> int:
         """
         Simple broadcaster
-        :param message_type: text | sticker
+        :param message_type: see MessageType
         :param chat_ids: list of chat ids
         :param message: message string or sticker id
         :param delay: anti-spam delay
@@ -99,15 +108,23 @@ class Broadcaster:
                 chat_ids = self.sort_and_shuffle_chats(chat_ids)
 
                 for chat_id in chat_ids:
+                    extra = {}
                     if isinstance(message, str):
-                        final_message = message
-                    else:
-                        final_message = await message(chat_id, *args, **kwargs)
+                        text = message
+                    elif callable(message):
+                        message = await message(chat_id, *args, **kwargs)
+                        if isinstance(message, BoardMessage):
+                            message_type = message.message_type
+                            if message.message_type is MessageType.PHOTO:
+                                extra['photo'] = message.photo
+                            text = message.text
+                        else:
+                            text = message
 
-                    if final_message:
-                        if await self._send_message(chat_id, final_message, message_type=message_type,
+                    if text:
+                        if await self._send_message(chat_id, text, message_type=message_type,
                                                     disable_web_page_preview=True,
-                                                    disable_notification=False):
+                                                    disable_notification=False, **extra):
                             count += 1
                         else:
                             bad_ones.append(chat_id)

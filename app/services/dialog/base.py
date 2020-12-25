@@ -10,7 +10,7 @@ from aiogram.types import Message, CallbackQuery
 from localization import BaseLocalization
 from localization.base import CREATOR_TG
 from services.lib.depcont import DepContainer
-from services.lib.utils import code
+from services.lib.texts import code
 
 logger = logging.getLogger('DIALOGS')
 
@@ -82,7 +82,10 @@ class BaseDialog(ABC):
         self.data = data
 
     @classmethod
-    def register(cls, d: DepContainer):
+    def register(cls, d: DepContainer, back_dialog=None, back_func=None):
+        cls.back_dialog = back_dialog
+        cls.back_func = back_func
+
         members = cls.__dict__.items()
         for name, f in members:
             if hasattr(f, 'handler_stuff'):

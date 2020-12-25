@@ -63,6 +63,8 @@ class App:
             await d.thor_man.reload_nodes_ip()
 
             self.ppf = PoolPriceFetcher(d)
+            await self.ppf.get_current_pool_data_full()
+
             fetcher_cap = CapInfoFetcher(d, ppf=self.ppf)
             fetcher_tx = StakeTxFetcher(d)
             fetcher_queue = QueueFetcher(d)

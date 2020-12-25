@@ -2,7 +2,7 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import *
 from aiogram.utils.helper import HelperMode
 
-from localization.base import kbd
+from services.lib.texts import kbd
 from services.dialog.base import BaseDialog, message_handler
 
 
@@ -13,7 +13,6 @@ class SettingsStates(StatesGroup):
 
 
 class SettingsDialog(BaseDialog):
-
     # ----------- HANDLERS ------------
 
     async def ask_language(self, message: Message):

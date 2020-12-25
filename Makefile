@@ -3,8 +3,11 @@ export
 
 .DEFAULT_GOAL := help
 
+
+.PHONY: help build start stop restart pull logs clean upgrade redis-cli redis-sv-loc
+
 help:
-	$(info Commands: build | start | stop | restart | pull | logs | clean | upgrade | redis-cli)
+	$(info Commands: build | start | stop | restart | pull | logs | clean | upgrade | redis-cli | redis-sv-loc)
 
 build:
 	$(info Make: Building images.)
@@ -42,3 +45,7 @@ upgrade:
 
 redis-cli:
 	@redis-cli -p $(REDIS_PORT) -a $(REDIS_PASSWORD)
+
+redis-sv-loc:
+	cd redis_data
+	redis-server

@@ -1,0 +1,5 @@
+redis-cli KEYS "prefix:*" | xargs redis-cli DEL
+
+Notified TX clear:
+
+redis-cli KEYS "tx_not*" | xargs redis-cli DEL

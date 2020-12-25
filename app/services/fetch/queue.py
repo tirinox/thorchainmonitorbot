@@ -4,12 +4,9 @@ from services.fetch.base import BaseFetcher
 from services.lib.datetime import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.models.queue import QueueInfo
-from services.models.time_series import TimeSeries
 
 
 class QueueFetcher(BaseFetcher):
-    QUEUE_TIME_SERIES = 'thor_queue'
-
     def __init__(self, deps: DepContainer):
         period = parse_timespan_to_seconds(deps.cfg.queue.fetch_period)
         super().__init__(deps, period)
@@ -38,8 +35,5 @@ class QueueFetcher(BaseFetcher):
                 swap_queue = int(resp.get('swap', 0))
                 outbound_queue = int(resp.get('outbound', 0))
 
-                ts = TimeSeries(self.QUEUE_TIME_SERIES, self.deps.db)
-                await ts.add(swap_queue=swap_queue, outbound_queue=outbound_queue)
-
-                # return QueueInfo(0, 0)  # debug
+                # return QueueInfo(50, 0)  # debug
                 return QueueInfo(swap_queue, outbound_queue)
