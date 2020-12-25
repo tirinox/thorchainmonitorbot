@@ -70,7 +70,6 @@ class PlotBarGraph:
         self.min_y = 1e100
         self.max_y = -1e100
 
-        colors = [s[1] for s in self.series]
         y_values = [s[0] for s in self.series]
         for x, *ys in zip(self.x_values, *y_values):
             total_y = sum(ys)
@@ -114,16 +113,22 @@ class PlotBarGraph:
             y_step = 0
             anchor = 'lm'
         else:
-            cur_x = self.left * 0.85
+            cur_x = self.left * 0.8
             cur_y = self.h - self.bottom
             height = self.h - self.top - self.bottom
             y_step = -height / (n_ticks - 1)
             x_step = 0
             anchor = 'rm'
+            self.draw.line((self.left, int(cur_y), self.left, int(self.top)), self.PLOT_COLOR_2, width=1)
 
         for t in ticks:
-            self.draw.text((int(cur_x), int(cur_y)), t, anchor=anchor, fill=text_color,
+            x, y = int(cur_x), int(cur_y)
+            self.draw.text((x, y), t, anchor=anchor, fill=text_color,
                            font=self.font_ticks)
+            if axis == 'y':
+                self.draw.line((self.left, y, self.left - 4, y), self.PLOT_COLOR_2, width=1)
+            else:
+                self.draw.line((x, self.h - self.bottom, x, self.h - self.bottom + 4), self.PLOT_COLOR_2, width=1)
             cur_x += x_step
             cur_y += y_step
 
