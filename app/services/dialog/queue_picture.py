@@ -6,14 +6,13 @@ from services.lib.depcont import DepContainer
 from services.lib.plot_graph import PlotBarGraph
 from services.lib.utils import async_wrap
 from services.models.time_series import TimeSeries
-from services.notify.types.queue_notify import QueueNotifier
 
-
+QUEUE_TIME_SERIES = 'thor_queue'
 RESAMPLE_TIME = '10min'
 
 
 async def queue_graph(d: DepContainer, loc: BaseLocalization):
-    ts = TimeSeries(QueueNotifier.QUEUE_TIME_SERIES, d.db)
+    ts = TimeSeries(QUEUE_TIME_SERIES, d.db)
     points = await ts.select(*ts.range_from_ago_to_now(DAY, tolerance_sec=10), count=10000)
     if not points:
         return None

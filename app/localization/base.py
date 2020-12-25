@@ -5,13 +5,12 @@ from math import ceil
 from services.lib.datetime import format_time_ago
 from services.lib.money import format_percent, asset_name_cut_chain, pretty_money, short_address, short_money, \
     short_asset_name, calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change
-from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital
+from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, BoardMessage
 from services.models.cap_info import ThorInfo
 from services.models.pool_info import PoolInfo
 from services.models.price import RuneFairPrice, PriceReport
 from services.models.queue import QueueInfo
 from services.models.tx import StakeTx, StakePoolStats
-
 
 RAIDO_GLYPH = 'ᚱ'
 CREATOR_TG = '@account1242'
@@ -184,7 +183,7 @@ class BaseLocalization(ABC):  # == English
 
     # ------- QUEUE -------
 
-    def notification_text_queue_update(self, item_type, step, value, include_pic=False):
+    def notification_text_queue_update(self, item_type, step, value):
         if step == 0:
             return f"☺️ Queue {code(item_type)} is empty again!"
         else:

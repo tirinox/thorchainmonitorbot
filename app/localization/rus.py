@@ -159,7 +159,7 @@ class RussianLocalization(BaseLocalization):
 
     # ------- QUEUE -------
 
-    def notification_text_queue_update(self, item_type, step, value, include_pic=False):
+    def notification_text_queue_update(self, item_type, step, value):
         if step == 0:
             return f"☺️ Очередь {item_type} снова опустела!"
         else:

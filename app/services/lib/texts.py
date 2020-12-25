@@ -1,8 +1,27 @@
 import itertools
+from dataclasses import dataclass
+from enum import Enum
 
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 
 from services.lib.money import pretty_money
+
+
+class MessageType(Enum):
+    TEXT = 'text'
+    STICKER = 'sticker'
+    PHOTO = 'photo'
+
+
+@dataclass
+class BoardMessage:
+    text: str
+    message_type: MessageType = MessageType.TEXT
+    photo: str = None
+
+    @classmethod
+    def make_photo(cls, photo, caption):
+        return cls(caption, MessageType.PHOTO, photo)
 
 
 def bold(text):
