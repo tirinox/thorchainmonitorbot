@@ -29,5 +29,7 @@ def queue_graph_sync(points, loc: BaseLocalization):
     gr = PlotBarGraph()
     gr.plot_bars(df, 'outbound_queue', gr.PLOT_COLOR)
     gr.plot_bars(df, 'swap_queue', gr.PLOT_COLOR_2)
+    gr.update_bounds_y()
+    gr.max_y = max(gr.max_y, 20)
     gr.add_title(loc.TEXT_QUEUE_PLOT_TITLE)
     return gr.finalize()

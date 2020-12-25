@@ -2,7 +2,7 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import *
 from aiogram.utils.helper import HelperMode
 
-from localization.base import kbd
+from services.lib.texts import kbd
 from services.dialog.base import BaseDialog, message_handler
 from services.dialog.queue_picture import queue_graph
 from services.fetch.fair_price import fair_rune_price

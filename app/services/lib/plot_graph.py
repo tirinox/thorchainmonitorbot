@@ -53,6 +53,8 @@ class PlotBarGraph:
         self.bottom = 60
         self.top = 60
         self.title = ''
+        self.min_y = None
+        self.max_y = None
 
     def plot_bars(self, df: pd.DataFrame, column, color):
         values = df[column]
@@ -64,11 +66,7 @@ class PlotBarGraph:
 
         return self
 
-    def _plot(self):
-        n = len(self.x_values)
-        if n <= 0:
-            return
-
+    def update_bounds_y(self):
         self.min_y = 1e100
         self.max_y = -1e100
 
@@ -78,6 +76,14 @@ class PlotBarGraph:
             total_y = sum(ys)
             self.min_y = min(total_y, self.min_y)
             self.max_y = max(total_y, self.max_y)
+
+    def _plot(self):
+        n = len(self.x_values)
+        if n <= 0:
+            return
+
+        colors = [s[1] for s in self.series]
+        y_values = [s[0] for s in self.series]
 
         m = self.margin
         h = self.h - self.bottom - self.top
@@ -121,7 +127,7 @@ class PlotBarGraph:
             cur_x += x_step
             cur_y += y_step
 
-    def _plot_ticks_time_horizontal(self, n_ticks=10, text_color='#ffffff'):
+    def _plot_ticks_time_horizontal(self, n_ticks=11, text_color='#ffffff'):
         n = len(self.x_values)
         if n <= 0:
             return
@@ -130,7 +136,7 @@ class PlotBarGraph:
         max_x = max(self.x_values)
 
         cur_t = min_x
-        t_step = (max_x - min_x) / n_ticks
+        t_step = (max_x - min_x) / (n_ticks - 1)
 
         ticks = []
         for i in range(n_ticks):
@@ -141,13 +147,13 @@ class PlotBarGraph:
 
         self._plot_ticks(ticks, 'x', text_color)
 
-    def _plot_ticks_int_vertical(self, n_ticks=10, text_color='#ffffff'):
+    def _plot_ticks_int_vertical(self, n_ticks=11, text_color='#ffffff'):
         n = len(self.x_values)
         if n <= 0:
             return
 
         cur_t = self.min_y
-        t_step = (self.max_y - self.min_y) / n_ticks
+        t_step = (self.max_y - self.min_y) / (n_ticks - 1)
 
         ticks = []
         for i in range(n_ticks):
@@ -166,6 +172,8 @@ class PlotBarGraph:
         self.draw.text((x, y), self.title, 'white', self.font_title, anchor='mm')
 
     def finalize(self, name='plot.png'):
+        if self.max_y is None:
+            self.update_bounds_y()
         self._plot()
         self._plot_ticks_time_horizontal()
         self._plot_ticks_int_vertical()

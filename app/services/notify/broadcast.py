@@ -51,6 +51,8 @@ class Broadcaster:
             elif message_type == 'sticker':
                 del kwargs['disable_web_page_preview']
                 await self.bot.send_sticker(chat_id, sticker=text, *args, **kwargs)
+            elif message_type == 'photo':
+                await self.bot.send_photo(chat_id, kwargs['photo'], caption=text, *args, **kwargs)
         except exceptions.BotBlocked:
             self.logger.error(f"Target [ID:{chat_id}]: blocked by user")
         except exceptions.ChatNotFound:

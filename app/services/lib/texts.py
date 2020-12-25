@@ -1,5 +1,7 @@
 import itertools
 
+from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
+
 from services.lib.money import pretty_money
 
 
@@ -45,3 +47,22 @@ def progressbar(x, total, symbol_width=10):
 def grouper(n, iterable):
     args = [iter(iterable)] * n
     return ([e for e in t if e is not None] for t in itertools.zip_longest(*args))
+
+
+def kbd(buttons, resize=True, vert=False, one_time=False, inline=False, row_width=3):
+    if isinstance(buttons, str):
+        buttons = [[buttons]]
+    elif isinstance(buttons, (list, tuple, set)):
+        if all(isinstance(b, str) for b in buttons):
+            if vert:
+                buttons = [[b] for b in buttons]
+            else:
+                buttons = [buttons]
+
+    buttons = [
+        [KeyboardButton(b) for b in row] for row in buttons
+    ]
+    return ReplyKeyboardMarkup(buttons,
+                               resize_keyboard=resize,
+                               one_time_keyboard=one_time,
+                               row_width=row_width)
