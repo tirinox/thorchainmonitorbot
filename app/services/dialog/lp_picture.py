@@ -1,11 +1,9 @@
 import asyncio
-import datetime
 import logging
 import os
 from io import BytesIO
-from math import ceil
 
-import aiofiles as aiofiles
+import aiofiles
 import aiohttp
 from PIL import Image, ImageDraw, ImageFont
 
@@ -96,7 +94,7 @@ def round_corner(radius, fill, bg):
     return corner
 
 
-def round_rectangle(size, radius,  fill, bg=BG_COLOR):
+def round_rectangle(size, radius, fill, bg=BG_COLOR):
     """Draw a rounded rectangle"""
     width, height = size
     rectangle = Image.new('RGB', size, fill)
@@ -350,11 +348,3 @@ def sync_lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, rune_im
               font=r.font_small)
 
     return image
-
-
-def img_to_bio(image, name):
-    bio = BytesIO()
-    bio.name = name
-    image.save(bio, 'PNG')
-    bio.seek(0)
-    return bio

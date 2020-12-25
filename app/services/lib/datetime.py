@@ -89,6 +89,21 @@ def format_time_ago(d):
         return f'{seconds_human(now_ts() - d)} ago'
 
 
+def format_time_ago_short(d, now=None):
+    now = now or now_ts()
+    seconds = int(d - now)
+    if seconds < 0:
+        return "-" + format_time_ago_short(now, d)
+
+    minutes = seconds // 60
+    hours = minutes // 60
+    days = hours // 24
+    days = f'{days}d ' if days else ''
+    minutes = minutes % 60
+    hours = hours % 24
+    return f'{days}{hours:02}:{minutes:02}'
+
+
 def series_to_pandas(ts_result, shift_time=True):
     normal_data = []
     zero_t = None

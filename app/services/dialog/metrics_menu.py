@@ -4,6 +4,7 @@ from aiogram.utils.helper import HelperMode
 
 from localization.base import kbd
 from services.dialog.base import BaseDialog, message_handler
+from services.dialog.queue_picture import queue_graph
 from services.fetch.fair_price import fair_rune_price
 from services.fetch.queue import QueueFetcher
 from services.models.cap_info import ThorInfo
@@ -50,10 +51,9 @@ class MetricsDialog(BaseDialog):
                              disable_notification=True)
 
     async def show_queue(self, message: Message):
-        fetcher = QueueFetcher(self.deps)
-        queue_info = await fetcher.fetch()
-        await message.answer(self.loc.queue_message(queue_info),
-                             disable_notification=True)
+        queue_info = self.deps.queue_holder
+        plot = await queue_graph(self.deps, self.loc)
+        await message.answer_photo(plot, caption=self.loc.queue_message(queue_info), disable_notification=True)
 
     async def show_price_info(self, message: Message):
         fp = await fair_rune_price(self.deps.price_holder)

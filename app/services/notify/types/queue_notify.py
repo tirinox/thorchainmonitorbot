@@ -52,6 +52,7 @@ class QueueNotifier(INotified):
 
         ts = TimeSeries(self.QUEUE_TIME_SERIES, self.deps.db)
         await ts.add(swap_queue=data.swap, outbound_queue=data.outbound)
+        self.deps.queue_holder = data
 
         await self.handle_entry('swap', data.swap)
         await self.handle_entry('outbound', data.outbound)

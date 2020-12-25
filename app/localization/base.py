@@ -185,6 +185,8 @@ class BaseLocalization(ABC):
 
     TEXT_METRICS_INTRO = ''
 
+    TEXT_QUEUE_PLOT_TITLE = 'THORChain Queue'
+
     @abstractmethod
     def cap_message(self, info: ThorInfo):
         ...

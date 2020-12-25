@@ -13,3 +13,7 @@ class QueueInfo:
     @property
     def is_ok(self):
         return self.swap >= 0 and self.outbound >= 0
+
+    @property
+    def is_full(self):
+        return self.swap > 0 or self.outbound > 0

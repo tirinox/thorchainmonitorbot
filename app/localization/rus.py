@@ -256,5 +256,7 @@ class RussianLocalization(BaseLocalization):
             f"<b>Информация об очередях:</b>\n"
             f"Исходящие транзакции (outbound): {code(queue_info.outbound)} шт.\n"
             f"Очередь обменов (swap): {code(queue_info.swap)} шт.\n"
+        ) + (
             f"Если в очереди много транзакций, ваши операции могут занять гораздо больше времени, чем обычно."
+            if queue_info.is_full else ''
         )

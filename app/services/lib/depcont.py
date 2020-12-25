@@ -9,6 +9,7 @@ from aiohttp import ClientSession
 # from services.lib.config import Config
 # from services.lib.db import DB
 from services.models.price import LastPriceHolder
+from services.models.queue import QueueInfo
 # from services.notify.broadcast import Broadcaster
 
 
@@ -27,3 +28,4 @@ class DepContainer:
     loc_man: typing.Optional['LocalizationManager'] = None
     broadcaster: typing.Optional['Broadcaster'] = None
     price_holder: LastPriceHolder = LastPriceHolder()
+    queue_holder: QueueInfo = QueueInfo.error()
