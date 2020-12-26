@@ -83,7 +83,7 @@ async def foo12():
 
 async def foo13():
     async with aiohttp.ClientSession() as deps.session:
-        deps.thor_man = ThorNodeAddressManager(deps.session)
+        deps.thor_man = ThorNodeAddressManager(deps.cfg.thornode.seed, deps.session)
         ppf = PoolPriceFetcher(deps)
         data = await ppf.get_current_pool_data_full()
     print(data)

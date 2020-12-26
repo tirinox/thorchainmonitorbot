@@ -57,13 +57,17 @@ class App:
         init_dialogs(d)
 
     async def connect_chat_storage(self):
-        self.deps.dp.storage = await self.deps.db.get_storage()
+        if self.deps.dp:
+            self.deps.dp.storage = await self.deps.db.get_storage()
 
     async def create_thor_node_connector(self):
         d = self.deps
-        d.thor_man = ThorNodeAddressManager()
+        cfg = d.cfg.thornode
+        d.thor_man = ThorNodeAddressManager(cfg.seed)
         d.thor_man.session = d.session
-        d.thor_nodes = ThorNode(d.thor_man, d.session, cohort_size=d.cfg, consensus=2)
+        d.thor_nodes = ThorNode(d.thor_man, d.session,
+                                cohort_size=cfg.consensus.cohort,
+                                consensus=cfg.consensus.agree)
         await d.thor_man.reload_nodes_ip()
 
     async def _run_background_jobs(self):
@@ -109,7 +113,7 @@ class App:
     async def on_shutdown(self, _):
         await self.deps.session.close()
 
-    def run(self):
+    def run_bot(self):
         self.create_bot_stuff()
         executor.start_polling(self.deps.dp, skip_updates=True, on_startup=self.on_startup,
                                on_shutdown=self.on_shutdown)
@@ -117,4 +121,4 @@ class App:
 
 if __name__ == '__main__':
     print('-' * 100)
-    App().run()
+    App().run_bot()

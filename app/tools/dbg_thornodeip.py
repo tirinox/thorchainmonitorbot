@@ -8,7 +8,7 @@ from services.fetch.node_ip_manager import ThorNodeAddressManager
 
 async def main():
     async with aiohttp.ClientSession() as session:
-        thor_man = ThorNodeAddressManager(session)
+        thor_man = ThorNodeAddressManager('https://chaosnet-seed.thorchain.info/', session)
         node = await thor_man.select_node()
         print(node)
 

@@ -22,7 +22,7 @@ async def send_to_channel_test_message(d: DepContainer):
     d.broadcaster = Broadcaster(d)
 
     async with aiohttp.ClientSession() as d.session:
-        d.thor_man = ThorNodeAddressManager(d.session)
+        d.thor_man = ThorNodeAddressManager(d.cfg.thornode.seed, d.session)
         lph = LastPriceHolder()
         ppf = PoolPriceFetcher(d)
         notifier_pool_churn = PoolChurnNotifier(d)

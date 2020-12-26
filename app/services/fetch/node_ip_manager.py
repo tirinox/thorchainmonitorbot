@@ -4,17 +4,15 @@ from typing import List
 
 
 class ThorNodeAddressManager:
-    FALLBACK_THORCHAIN_IP = '54.234.193.102'
-    THORCHAIN_SEED_URL = 'https://chaosnet-seed.thorchain.info/'  # all addresses
-
     @staticmethod
     def connection_url(ip_address, path=''):
-        ip_address = ip_address if ip_address else ThorNodeAddressManager.FALLBACK_THORCHAIN_IP
         return f'http://{ip_address}:1317{path}'
 
-    def __init__(self, session=None, reload_each_n_request=100):
+    def __init__(self, seed, session=None, reload_each_n_request=100):
+        assert seed
         self.logger = logging.getLogger('ThorNodeAddressManager')
         self.nodes_ip = []
+        self.seed_url = seed
         self._cnt = 0
         self._black_list = set()
         self.reload_each_n_request = reload_each_n_request
@@ -23,7 +21,7 @@ class ThorNodeAddressManager:
 
     async def get_seed_nodes(self):
         assert self.session
-        async with self.session.get(self.THORCHAIN_SEED_URL) as resp:
+        async with self.session.get(self.seed_url) as resp:
             return await resp.json()
 
     @staticmethod
