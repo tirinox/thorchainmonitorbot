@@ -38,10 +38,10 @@ async def send_to_channel_test_message(d: DepContainer):
         lph.pool_info_map['BNB.FSN-E14'].status = PoolInfo.ENABLED
         lph.pool_info_map['BNB.RAVEN-F66'].status = PoolInfo.BOOTSTRAP
 
-        lph.pool_info_map['BTC.BTC'] = PoolInfo('BTC.BTC', 18555, 100, 18555 * 100, PoolInfo.BOOTSTRAP)
+        lph.pool_info_map['BTC.BTC'] = PoolInfo('BTC.BTC', 18555, 18555, 100, 18555 * 100, PoolInfo.BOOTSTRAP)
 
         await notifier_pool_churn.on_data(ppf, None)  # must notify about changes above ^^^
-        await notifier_pool_churn.on_data(ppf, None)  # no update at this momemnt!
+        await notifier_pool_churn.on_data(ppf, None)  # no update at this moment!
 
 
 async def main(d):
