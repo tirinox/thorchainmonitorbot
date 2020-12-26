@@ -1,15 +1,12 @@
 URL to start: https://telegram.me/thorchain_monitoring_bot?start=1
 
+V2: https://testnet.midgard.thorchain.info/v2/doc
+
 T A S K S :
 
 ------------------------------------------------------------------------
 
 TODO Test TX notifications!!!!
-
-------------------------------------------------------------------------
-
-Consensus for thornamager
-Same reqeust for 3-4 thornodes: get majority or report
 
 ------------------------------------------------------------------------
 

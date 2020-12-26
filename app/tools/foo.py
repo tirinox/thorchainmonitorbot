@@ -6,13 +6,16 @@ from aiogram import Bot, Dispatcher
 from aiogram.types import ParseMode
 
 from localization import LocalizationManager
+from services.dialog.queue_picture import QUEUE_TIME_SERIES
 from services.lib.config import Config
 from services.lib.cooldown import Cooldown
+from services.lib.datetime import DAY
 from services.lib.db import DB
 from services.fetch.node_ip_manager import ThorNodeAddressManager
 from services.fetch.pool_price import PoolPriceFetcher
 from services.lib.depcont import DepContainer
 from services.lib.money import pretty_money
+from services.models.time_series import TimeSeries
 from services.models.tx import StakePoolStats
 from services.notify.broadcast import Broadcaster
 from services.lib.texts import progressbar
@@ -110,10 +113,16 @@ async def test_cd_mult():
     print('Done')
 
 
+async def foo16(d):
+    ts = TimeSeries(QUEUE_TIME_SERIES, d.db)
+    avg = await ts.average(DAY, 'outbound_queue')
+    print(avg)
+
+
 async def start_foos():
     await deps.db.get_redis()
     # await test_cd_mult()
-    await foo15()
+    await foo16(deps)
 
 
 if __name__ == '__main__':

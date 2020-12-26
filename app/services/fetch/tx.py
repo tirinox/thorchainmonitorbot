@@ -51,7 +51,7 @@ class StakeTxFetcher(BaseFetcher):
     @staticmethod
     def _parse_txs(j):
         for tx in j['txs']:
-            if tx['status'] == 'Success':
+            if str(tx['status']).lower() == 'success':
                 yield StakeTx.load_from_midgard(tx)
 
     async def _fetch_one_batch(self, session, page):

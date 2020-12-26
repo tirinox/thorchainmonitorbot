@@ -1,0 +1,40 @@
+http://68.183.241.109:1317/thorchain/queue/outbound
+
+[
+{
+chain: "BNB",
+to: "bnb1300yv4630qf0ytelx24qhrj4jj7exh8nknq5ty",
+vault_pubkey: "thorpub1addwnpepqwmudv8sdpqv6qp3h73edftkzrfwnkss7r8f25hxczux8agz8hv3qtdct53",
+coin: {
+asset: "BNB.USDT-6D8",
+amount: "7244819255"
+},
+memo: "OUTBOUND:F1E4F7042C7493B6FFD8F68024C726BBA81475B109C3AA5DB24604038D13783A",
+max_gas: [
+{
+asset: "BNB.BNB",
+amount: "1309333"
+}
+],
+in_hash: "F1E4F7042C7493B6FFD8F68024C726BBA81475B109C3AA5DB24604038D13783A",
+out_hash: ""
+},
+{
+chain: "BNB",
+to: "bnb1300yv4630qf0ytelx24qhrj4jj7exh8nknq5ty",
+vault_pubkey: "thorpub1addwnpepqwmudv8sdpqv6qp3h73edftkzrfwnkss7r8f25hxczux8agz8hv3qtdct53",
+coin: {
+asset: "BNB.RUNE-B1A",
+amount: "8219380474"
+},
+memo: "OUTBOUND:F1E4F7042C7493B6FFD8F68024C726BBA81475B109C3AA5DB24604038D13783A",
+max_gas: [
+{
+asset: "BNB.BNB",
+amount: "1309333"
+}
+],
+in_hash: "F1E4F7042C7493B6FFD8F68024C726BBA81475B109C3AA5DB24604038D13783A",
+out_hash: ""
+}
+]

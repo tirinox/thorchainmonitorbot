@@ -15,7 +15,7 @@ class QueueFetcher(BaseFetcher):
 
     async def fetch(self) -> QueueInfo:  # override
         async with aiohttp.ClientSession() as session:
-            # return QueueInfo(50, 0)  # debug
+            # return QueueInfo(0, 1)  # debug
 
             resp = await self.deps.thor_nodes.request(self.QUEUE_PATH)
             if resp is None:

@@ -57,9 +57,9 @@ cap:
 
 
 queue:
-  fetch_period: 80
-  steps:
-    - 20
-    - 50
-    - 100
+  fetch_period: 60
+  threshold:
+    avg_period: 10m
+    congested: 20
+    free: 2
   cooldown: 3600
