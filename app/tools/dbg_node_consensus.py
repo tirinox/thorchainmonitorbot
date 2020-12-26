@@ -3,13 +3,21 @@ import asyncio
 import aiohttp
 
 from main import App
+from services.fetch.thor_node import ThorNode
 
 
 class ConsensusTestApp(App):
     async def main(self):
-        self.deps.session = aiohttp.ClientSession()
+        d = self.deps
+        d.session = aiohttp.ClientSession()
         await self.create_thor_node_connector()
-        await self.deps.session.close()
+
+        thor: ThorNode = d.thor_nodes
+
+        results = await thor.request('/thorchain/queue')
+        print(results)
+
+        await d.session.close()
 
 
 if __name__ == '__main__':

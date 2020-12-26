@@ -3,6 +3,7 @@ import logging
 import os
 
 import aiohttp
+import ujson
 from aiogram import Bot, Dispatcher, executor
 from aiogram.types import *
 
@@ -105,7 +106,7 @@ class App:
     async def on_startup(self, _):
         await self.connect_chat_storage()
 
-        self.deps.session = aiohttp.ClientSession()
+        self.deps.session = aiohttp.ClientSession(json_serialize=ujson.dumps)
         await self.create_thor_node_connector()
 
         asyncio.create_task(self._run_background_jobs())

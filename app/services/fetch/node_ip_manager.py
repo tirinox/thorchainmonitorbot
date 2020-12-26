@@ -21,6 +21,7 @@ class ThorNodeAddressManager:
 
     async def get_seed_nodes(self):
         assert self.session
+        self.logger.info(f'Using seed URL: {self.seed_url}')
         async with self.session.get(self.seed_url) as resp:
             return await resp.json()
 
@@ -39,7 +40,7 @@ class ThorNodeAddressManager:
         async with self.session.get(url) as resp:
             json = await resp.json()
             nodes = [node['ip_address'] for node in json if self.is_ok_node(node)]
-            self.logger.info(f'total: {len(nodes)}')
+            self.logger.info(f'total nodes loaded: {len(json)}; active: {len(nodes)} ')
             return nodes
 
     async def reload_nodes_ip(self):
@@ -58,7 +59,7 @@ class ThorNodeAddressManager:
 
         assert self.nodes_ip
 
-        self.logger.info(f'nodes loaded: {self.nodes_ip}')
+        self.logger.info(f'active nodes loaded: ({len(self.nodes_ip)}) {self.nodes_ip})')
         assert len(self.nodes_ip) > 1
 
     @property
