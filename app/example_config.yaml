@@ -2,6 +2,14 @@
 
 log_level: INFO
 
+
+thornode:
+  seed: https://chaosnet-seed.thorchain.info/
+  consensus:
+    cohort: 3
+    agree: 2
+
+
 telegram:
   bot:
     token: "insert the bot token from @BotFather here"

@@ -4,6 +4,24 @@ T A S K S :
 
 ------------------------------------------------------------------------
 
+TODO Test TX notifications!!!!
+
+------------------------------------------------------------------------
+
+Consensus for thornamager
+Same reqeust for 3-4 thornodes: get majority or report
+
+------------------------------------------------------------------------
+
+Node churn notifications!
+
+See:
+https://chaosnet-midgard.bepswap.com/v1/network
+https://a2wva4alb6.execute-api.us-east-1.amazonaws.com/dev/thornode/thorchain/nodeaccounts?network=CHAOSNET
+http://68.183.241.109:1317/thorchain/nodeaccounts
+
+------------------------------------------------------------------------
+
 TX avg time per type:
 
 pending .... success => avg time?
