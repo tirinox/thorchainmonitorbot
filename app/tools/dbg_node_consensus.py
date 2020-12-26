@@ -4,7 +4,6 @@ import aiohttp
 
 from main import App
 from services.fetch.queue import QueueFetcher
-from services.fetch.thor_node import ThorNode
 
 
 class ConsensusTestApp(App):
