@@ -82,6 +82,8 @@ class BaseLocalization(ABC):  # == English
     BUTTON_SM_BACK_TO_LIST = '🔙 Back to list'
     BUTTON_SM_BACK_MM = '🔙 Main menu'
 
+    BUTTON_SM_SUMMARY = '💲 Summary'
+
     BUTTON_VIEW_RUNESTAKEINFO = '🌎 View it on runestake.info'
     BUTTON_VIEW_VALUE_ON = 'Show value: ON'
     BUTTON_VIEW_VALUE_OFF = 'Show value: OFF'
@@ -223,7 +225,7 @@ class BaseLocalization(ABC):  # == English
         message = f"{title} | {c_gecko_link}\n\n"
         price = p.fair_price.real_rune_price
 
-        pr_text = f"${price:.2f}"
+        pr_text = f"${price:.3f}"
         btc_price = f"₿ {p.btc_real_rune_price:.8f}"
         message += f"<b>RUNE</b> price is {code(pr_text)} ({btc_price}) now.\n"
 

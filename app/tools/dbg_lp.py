@@ -7,7 +7,7 @@ from time import time
 import aiohttp
 
 from localization import LocalizationManager
-from services.dialog.lp_picture import lp_pool_picture
+from services.dialog.lp_picture import lp_pool_picture, lp_address_summary_picture
 from services.fetch.lp import LiqPoolFetcher
 from services.fetch.node_ip_manager import ThorNodeAddressManager
 from services.fetch.pool_price import PoolPriceFetcher
@@ -19,18 +19,9 @@ from services.models.stake_info import CurrentLiquidity
 from services.models.time_series import BTCB_SYMBOL
 
 
-async def price_of_day(d: DepContainer):
+async def load_one_pool_liquidity(d: DepContainer, addr, pool=BTCB_SYMBOL):
     async with aiohttp.ClientSession() as d.session:
-        lpf = LiqPoolFetcher(d)
-        ppf = PoolPriceFetcher(d)
-        d.thor_man = ThorNodeAddressManager(d.cfg.thornode.seed, d.session)
-
-        r = await ppf.get_usd_per_rune_asset_per_rune_by_day(BTCB_SYMBOL, time() - 2 * DAY)
-        print(r)
-
-
-async def lp_test(d: DepContainer, addr, pool=BTCB_SYMBOL):
-    async with aiohttp.ClientSession() as d.session:
+        await d.db.get_redis()
         lpf = LiqPoolFetcher(d)
         ppf = PoolPriceFetcher(d)
         d.thor_man = ThorNodeAddressManager(d.cfg.thornode.seed, d.session)
@@ -69,24 +60,53 @@ async def lp_test(d: DepContainer, addr, pool=BTCB_SYMBOL):
         return stake_report
 
 
-PICKLE_PATH = '../../stake_report.pickle'
+async def load_summary_for_address(d: DepContainer, address):
+    async with aiohttp.ClientSession() as d.session:
+        await d.db.get_redis()
+        d.thor_man.session = d.session
+        lpf = LiqPoolFetcher(d)
+        ppf = PoolPriceFetcher(d)
+        await ppf.get_current_pool_data_full()
+        liqs = await lpf.fetch_all_pool_liquidity_info(address)
+        liqs = liqs.values()
+        stake_reports = await asyncio.gather(*[lpf.fetch_stake_report_for_pool(liq, ppf) for liq in liqs])
+        return stake_reports
 
 
-async def test_image(d: DepContainer, addr, pool, hide):
+async def test_one_pool_picture_generator(d: DepContainer, addr, pool, hide):
+    PICKLE_PATH = '../../stake_report.pickle'
+    PICTURE_PATH = '../../stake_test.png'
+
     if os.path.exists(PICKLE_PATH):
         with open(PICKLE_PATH, 'rb') as f:
             stake_report = pickle.load(f)
     else:
-        stake_report = await lp_test(d, addr, pool)
+        stake_report = await load_one_pool_liquidity(d, addr, pool)
         with open(PICKLE_PATH, 'wb') as f:
             pickle.dump(stake_report, f)
 
-    # stake_report = await lp_test(d, addr)
-
     img = await lp_pool_picture(stake_report, d.loc_man.default, value_hidden=hide)
-    img.save("../../stake_test.png", "PNG")
+    img.save(PICTURE_PATH, "PNG")
+    os.system(f'open "{PICTURE_PATH}"')
 
-    # await price_of_day(d)
+
+async def test_summary_picture_generator(d: DepContainer, addr, hide):
+    PICKLE_PATH = '../../stake_report_summary.pickle'
+    PICTURE_PATH = '../../stake_test_summary.png'
+
+    if os.path.exists(PICKLE_PATH):
+        with open(PICKLE_PATH, 'rb') as f:
+            stakes = pickle.load(f)
+    else:
+        stakes = await load_summary_for_address(d, addr)
+        with open(PICKLE_PATH, 'wb') as f:
+            pickle.dump(stakes, f)
+
+    # stakes = await load_summary_for_address(d, addr)  # direct load
+
+    img = await lp_address_summary_picture(stakes, d.loc_man.default, value_hidden=hide)
+    img.save(PICTURE_PATH, "PNG")
+    os.system(f'open "{PICTURE_PATH}"')
 
 
 if __name__ == '__main__':
@@ -95,9 +115,16 @@ if __name__ == '__main__':
     d.loop = asyncio.get_event_loop()
     d.cfg = Config()
     d.loc_man = LocalizationManager()
+    d.thor_man = ThorNodeAddressManager(d.cfg.thornode.seed)
     d.db = DB(d.loop)
 
-    d.loop.run_until_complete(test_image(d,
-                                         'bnb1rv89nkw2x5ksvhf6jtqwqpke4qhh7jmudpvqmj',
-                                         pool=BTCB_SYMBOL,
-                                         hide=True))
+    # d.loop.run_until_complete(
+    #     test_one_pool_picture_generator(d,
+    #                                     'bnb1rv89nkw2x5ksvhf6jtqwqpke4qhh7jmudpvqmj',
+    #                                     pool=BTCB_SYMBOL,
+    #                                     hide=True))
+
+    d.loop.run_until_complete(
+        test_summary_picture_generator(d,
+                                       'bnb1ugxwex84acznd3sx26nm0feyfma5namvcr08cw',
+                                       hide=True))

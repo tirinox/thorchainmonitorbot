@@ -1,8 +1,10 @@
 import asyncio
 
+import ujson
+
 from services.fetch.base import BaseFetcher
 from services.fetch.fair_price import fair_rune_price
-from services.lib.datetime import parse_timespan_to_seconds, DAY
+from services.lib.datetime import parse_timespan_to_seconds, DAY, HOUR
 from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo
 from services.models.time_series import PriceTimeSeries, BUSD_SYMBOL, RUNE_SYMBOL, RUNE_SYMBOL_DET
@@ -93,29 +95,40 @@ class PoolPriceFetcher(BaseFetcher):
 
     @staticmethod
     def url_for_pool_info_by_day(pool, ts):
-        from_ts = int(ts - 10)
-        to_ts = int(ts + DAY + 10)
+        from_ts = int(ts - HOUR)
+        to_ts = int(ts + DAY + HOUR)
         return MIDGARD_AGGREGATED_POOL_INFO.format(pool=pool, from_ts=from_ts, to_ts=to_ts)
 
+    @staticmethod
+    def cache_key_for_pool_info_by_day(pool, day):
+        return f'midg_pool_info:{pool}:{day}'
+
     async def get_asset_per_rune_of_pool_by_day(self, pool, day):
+        cache_key = self.cache_key_for_pool_info_by_day(pool, day)
+        cached_raw = await self.deps.db.redis.get(cache_key)
+        if cached_raw:
+            try:
+                return float(cached_raw)
+            except ValueError:
+                pass
+
         url = self.url_for_pool_info_by_day(pool, day)
-        self.logger.info(f"get_asset_per_rune_of_pool_by_day from: {url}")
+        self.logger.info(f"get: {url}")
 
         async with self.deps.session.get(url) as resp:
             pools_info = await resp.json()
             if not pools_info:
-                self.logger.warning(f'get_asset_per_rune_of_pool_by_day = []!')
+                self.logger.warning(f'fetch result = []!')
             pool_info = pools_info[0]
-            return int(pool_info['assetDepth']) / int(pool_info['runeDepth'])
+            price = int(pool_info['assetDepth']) / int(pool_info['runeDepth'])
+            await self.deps.db.redis.set(cache_key, price)
+            return price
 
     async def get_usd_per_rune_asset_per_rune_by_day(self, pool, day_ts):
+        usd_per_rune = await self.get_asset_per_rune_of_pool_by_day(BUSD_SYMBOL, day_ts)
         if pool == BUSD_SYMBOL:
-            usd_per_rune = await self.get_asset_per_rune_of_pool_by_day(BUSD_SYMBOL, day_ts)
             return usd_per_rune, 1.0
         else:
-            usd_per_rune, asset_per_rune = await asyncio.gather(
-                self.get_asset_per_rune_of_pool_by_day(BUSD_SYMBOL, day_ts),
-                self.get_asset_per_rune_of_pool_by_day(pool, day_ts)
-            )
+            asset_per_rune = await self.get_asset_per_rune_of_pool_by_day(pool, day_ts)
             usd_per_asset = usd_per_rune / asset_per_rune
             return usd_per_rune, usd_per_asset

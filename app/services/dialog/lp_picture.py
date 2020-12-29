@@ -1,7 +1,9 @@
 import asyncio
 import logging
 import os
+from collections import defaultdict
 from io import BytesIO
+from typing import List
 
 import aiofiles
 import aiohttp
@@ -346,5 +348,51 @@ def sync_lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, rune_im
 
     draw.text(pos_percent(98.5, 99), loc.LP_PIC_FOOTER, anchor='rs', fill=FADE_COLOR,
               font=r.font_small)
+
+    return image
+
+
+async def lp_address_summary_picture(reports: List[StakePoolReport], loc: BaseLocalization, value_hidden=False):
+    # r = Resources()
+    # rune_image, asset_image = await asyncio.gather(
+    #     r.download_logo_cached(RUNE_SYMBOL),
+    #     r.download_logo_cached(asset)
+    # )
+    return await sync_lp_address_summary_picture(reports, loc, value_hidden)
+
+
+@async_wrap
+def sync_lp_address_summary_picture(reports: List[StakePoolReport], loc: BaseLocalization, value_hidden):
+    r = Resources()
+
+    total_added_value_usd = sum(r.added_value(r.USD) for r in reports)
+    total_added_value_rune = sum(r.added_value(r.RUNE) for r in reports)
+
+    total_withdrawn_value_usd = sum(r.withdrawn_value(r.USD) for r in reports)
+    total_withdrawn_value_rune = sum(r.withdrawn_value(r.RUNE) for r in reports)
+
+    total_current_value_usd = sum(r.current_value(r.USD) for r in reports)
+    total_current_value_rune = sum(r.current_value(r.RUNE) for r in reports)
+
+    asset_values = defaultdict(float)
+    asset_values_usd = defaultdict(float)
+    for r in reports:
+        asset_values[r.pool.asset] += r.current_value(r.ASSET) * 0.5
+        asset_values_usd[r.pool.asset] += r.current_value(r.USD) * 0.5
+        asset_values[RUNE_SYMBOL] += r.current_value(r.RUNE) * 0.5
+
+    total_vs_hold_abs = total_current_value_usd + total_withdrawn_value_usd - total_added_value_usd
+    total_lp_vs_hold_percent = total_vs_hold_abs / total_added_value_usd * 100.0
+
+    image = r.bg_image.copy()
+    draw = ImageDraw.Draw(image)
+
+    # 1. Header
+    # 2. Total added, total withdrawn value (USD/RUNE)
+    # 3. Total current value USD (RUNE)
+    # 4. Gain/Loss USD(RUNE) + %
+    # 5. APY??? weighted?
+    # 6. LINE
+    # 7. Graph
 
     return image

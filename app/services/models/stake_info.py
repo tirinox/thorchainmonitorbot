@@ -34,6 +34,35 @@ def pool_share(rune_depth, asset_depth, stake_units, pool_unit):
 
 
 @dataclass
+class StakeDayGraphPoint:
+    asset_depth: int = 0
+    rune_depth: int = 0
+    busd_rune_price: float = 1.0
+    day_str: str = ''
+    timestamp: int = 0
+    pool_units: int = 0
+    stake_units: int = 0
+
+    @classmethod
+    def from_asgard(cls, j):
+        return cls(
+            asset_depth=int(j.get('assetdepth', 1)),
+            rune_depth=int(j.get('runedepth', 1)),
+            busd_rune_price=float(j.get('busdpricerune', 1.0)),
+            day_str=j.get('day', ''),
+            pool_units=int(j.get('poolunits', 1)),
+            stake_units=int(j.get('stakeunit', 1)),
+            timestamp=int(j.get('time', 0)),
+        )
+
+    @property
+    def usd_value(self):
+        r, a = pool_share(self.rune_depth, self.asset_depth, self.stake_units, self.pool_units)
+        usd_value = r * self.busd_rune_price * 2
+        return usd_value
+
+
+@dataclass
 class CurrentLiquidity(BaseModelMixin):
     pool: str
     rune_stake: int

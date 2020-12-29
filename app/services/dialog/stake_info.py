@@ -6,7 +6,7 @@ from aiogram.types import *
 from aiogram.utils.helper import HelperMode
 
 from services.dialog.base import BaseDialog, message_handler, query_handler
-from services.dialog.lp_picture import lp_pool_picture
+from services.dialog.lp_picture import lp_pool_picture, lp_address_summary_picture
 from services.fetch.lp import LiqPoolFetcher
 from services.fetch.pool_price import PoolPriceFetcher
 from services.lib.money import short_address
@@ -26,6 +26,7 @@ class StakeStates(StatesGroup):
 class StakeDialog(BaseDialog):
     QUERY_VIEW_ADDRESS = 'view-addr'
     QUERY_REMOVE_ADDRESS = 'remove-addr'
+    QUERY_SUMMARY_OF_ADDRESS = 'summary-addr'
     QUERY_BACK_TO_ADDRESS_LIST = 'back-to-addr-list'
     QUERY_BACK_TOGGLE_VIEW_VALUE = 'toggle-view-value'
     QUERY_VIEW_POOL = 'view-pool'
@@ -89,7 +90,10 @@ class StakeDialog(BaseDialog):
         inline_kbd += buttons
         inline_kbd += [
             [
-                InlineKeyboardButton(self.loc.BUTTON_VIEW_RUNESTAKEINFO, url=RUNE_STAKE_INFO.format(address=address))
+                InlineKeyboardButton(self.loc.BUTTON_SM_SUMMARY,
+                                     callback_data=f'{self.QUERY_SUMMARY_OF_ADDRESS}:{addr_idx}'),
+                InlineKeyboardButton(self.loc.BUTTON_VIEW_RUNESTAKEINFO,
+                                     url=RUNE_STAKE_INFO.format(address=address))
             ],
             [
                 *([button_toggle_show_value] if my_pools else []),
@@ -166,6 +170,34 @@ class StakeDialog(BaseDialog):
         query.data = f"{self.QUERY_VIEW_ADDRESS}:{active_addr_idx}"
         await self.on_selected_address(query, reload_pools=False)
 
+    async def view_address_summary(self, query: CallbackQuery):
+        address = self.data[self.KEY_ACTIVE_ADDRESS]
+
+        # POST A LOADING STICKER
+        sticker = await query.message.answer_sticker(LOADING_STICKER, disable_notification=True)
+
+        # WORK
+        ppf = PoolPriceFetcher(self.deps)
+        lpf = LiqPoolFetcher(self.deps)
+
+        my_pools = self.data[self.KEY_MY_POOLS]
+        liqs = await lpf.fetch_all_pool_liquidity_info(address, my_pools)
+        liqs = liqs.values()
+        stake_reports = await asyncio.gather(*[lpf.fetch_stake_report_for_pool(liq, ppf) for liq in liqs])
+
+        value_hidden = not self.data.get(self.KEY_CAN_VIEW_VALUE, True)
+        picture = lp_address_summary_picture(stake_reports, self.loc, value_hidden=value_hidden)
+        picture_io = img_to_bio(picture, 'Thorchain_LP_Summary.png')
+
+        # ANSWER
+        await self.show_my_pools(query, edit=False)
+        await query.message.answer_photo(picture_io,
+                                         disable_notification=True)
+
+        # CLEAN UP
+        await asyncio.gather(query.message.delete(),
+                             sticker.delete())
+
     # ----------- HANDLERS ------------
 
     @message_handler(state=StakeStates.MAIN_MENU)
@@ -198,6 +230,8 @@ class StakeDialog(BaseDialog):
             _, index = query.data.split(':')
             self.remove_address(index)
             await self.display_addresses(query.message, edit=True)
+        elif query.data.strip(f'{self.QUERY_SUMMARY_OF_ADDRESS}:'):
+            await self.view_address_summary(query)
         elif query.data.startswith(f'{self.QUERY_VIEW_POOL}:'):
             await self.view_pool_report(query)
         elif query.data == self.QUERY_BACK_TOGGLE_VIEW_VALUE:
