@@ -1,8 +1,8 @@
 import asyncio
 import logging
+import operator
 import os
 from collections import defaultdict
-from io import BytesIO
 from typing import List
 
 import aiofiles
@@ -12,6 +12,7 @@ from PIL import Image, ImageDraw, ImageFont
 from localization import BaseLocalization
 from localization.base import RAIDO_GLYPH
 from services.lib.money import asset_name_cut_chain, pretty_money, short_asset_name
+from services.lib.texts import grouper
 from services.lib.utils import Singleton, async_wrap
 from services.models.stake_info import StakePoolReport
 from services.models.time_series import BNB_SYMBOL, RUNE_SYMBOL, BUSD_SYMBOL
@@ -24,6 +25,10 @@ GREEN_COLOR = '#00f2c3'
 RED_COLOR = '#e22222'
 FORE_COLOR = 'white'
 FADE_COLOR = '#cccccc'
+CATEGORICAL_PALETTE = [
+    '#648FFF', '#785EF0', '#DC267F', 'FE6100', '#FFB000',
+    '#005AB5', '#DC3220'
+]
 
 
 class Resources(metaclass=Singleton):
@@ -130,6 +135,10 @@ async def lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, value_
     return await sync_lp_pool_picture(report, loc, rune_image, asset_image, value_hidden)
 
 
+def hor_line(draw, y, width=2, w=WIDTH, h=HEIGHT):
+    draw.line((pos_percent(0, y, w=w, h=h), pos_percent(100, y, w=w, h=h)), fill=LINE_COLOR, width=width)
+
+
 @async_wrap
 def sync_lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, rune_image, asset_image, value_hidden):
     asset = report.pool.asset
@@ -228,7 +237,7 @@ def sync_lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, rune_im
     start_y += 3
 
     # ------------------------------------------------------------------------------------------------
-    draw.line((pos_percent(0, start_y), pos_percent(100, start_y)), fill=LINE_COLOR, width=2)
+    hor_line(draw, start_y)
     # ------------------------------------------------------------------------------------------------
     start_y += 5
 
@@ -317,7 +326,7 @@ def sync_lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, rune_im
 
     # ------------------------------------------------------------------------------------------------
     line3_y = logo_y - 6
-    draw.line((pos_percent(0, line3_y), pos_percent(100, line3_y)), fill=LINE_COLOR, width=2)
+    hor_line(draw, line3_y)
     # ------------------------------------------------------------------------------------------------
 
     # RESULTS
@@ -361,10 +370,62 @@ async def lp_address_summary_picture(reports: List[StakePoolReport], loc: BaseLo
     return await sync_lp_address_summary_picture(reports, loc, value_hidden)
 
 
+def lp_line_segments(draw, asset_values, asset_values_usd, y):
+    res = Resources()
+
+    segments = []
+    total_usd_value = 0.0
+    for asset, usd_value in asset_values_usd.items():
+        asset_value = asset_values[asset]
+        segments.append((asset, usd_value, asset_value))
+        total_usd_value += usd_value
+    segments.sort(key=operator.itemgetter(1), reverse=True)
+
+    hp_bar_margin = 5
+    hp_bar_height = 2.0
+    hp_bar_width = 100 - hp_bar_margin * 2
+
+    bar_x = hp_bar_margin
+    bar_y = y
+    for i, (asset, usd_value, *_) in enumerate(segments):
+        color = CATEGORICAL_PALETTE[i % len(CATEGORICAL_PALETTE)]
+        segment_width = usd_value / total_usd_value * hp_bar_width
+        draw.rectangle(
+            (pos_percent(bar_x, bar_y), pos_percent(bar_x + segment_width, bar_y + hp_bar_height)),
+            fill=color
+        )
+        bar_x += segment_width
+
+    # line legend
+    items_in_line = 2
+    line_groups = list(grouper(items_in_line, segments))
+    legend_y = y + 3.5
+    legend_y_step = 3
+    legend_dx = (hp_bar_width - 40) / (items_in_line - 1)
+    legend_sq_w = 2
+    legend_sq_h = legend_sq_w * WIDTH / HEIGHT
+    counter = 0
+    for line in line_groups:
+        legend_x = hp_bar_margin
+        for asset, usd_value, asset_value in line:
+            color = CATEGORICAL_PALETTE[counter % len(CATEGORICAL_PALETTE)]
+            draw.rectangle((
+                pos_percent(legend_x, legend_y),
+                pos_percent(legend_x + legend_sq_w, legend_y + legend_sq_h)
+            ), fill=color)
+
+            asset = RAIDO_GLYPH if asset == RUNE_SYMBOL else short_asset_name(asset)
+            text = f'{pretty_money(asset_value)} {asset} ≈ {pretty_money(usd_value, prefix="$")}'
+            draw.text(pos_percent(legend_x + 3, legend_y), text, FORE_COLOR, font=res.font_small, anchor='lt')
+
+            legend_x += legend_dx
+            counter += 1
+        legend_y += legend_y_step
+    return len(line_groups) * legend_y_step
+
+
 @async_wrap
 def sync_lp_address_summary_picture(reports: List[StakePoolReport], loc: BaseLocalization, value_hidden):
-    r = Resources()
-
     total_added_value_usd = sum(r.added_value(r.USD) for r in reports)
     total_added_value_rune = sum(r.added_value(r.RUNE) for r in reports)
 
@@ -376,23 +437,133 @@ def sync_lp_address_summary_picture(reports: List[StakePoolReport], loc: BaseLoc
 
     asset_values = defaultdict(float)
     asset_values_usd = defaultdict(float)
+    total_gain_loss_rune = 0.0
+    total_gain_loss_usd = 0.0
     for r in reports:
         asset_values[r.pool.asset] += r.current_value(r.ASSET) * 0.5
-        asset_values_usd[r.pool.asset] += r.current_value(r.USD) * 0.5
         asset_values[RUNE_SYMBOL] += r.current_value(r.RUNE) * 0.5
 
-    total_vs_hold_abs = total_current_value_usd + total_withdrawn_value_usd - total_added_value_usd
-    total_lp_vs_hold_percent = total_vs_hold_abs / total_added_value_usd * 100.0
+        asset_usd_value = r.current_value(r.USD) * 0.5
+        asset_values_usd[r.pool.asset] += asset_usd_value
+        asset_values_usd[RUNE_SYMBOL] += asset_usd_value
 
-    image = r.bg_image.copy()
+        total_gain_loss_usd += r.gain_loss(r.USD)[0]
+        total_gain_loss_rune += r.gain_loss(r.RUNE)[0]
+
+    total_gain_loss_usd_p = total_gain_loss_usd / total_added_value_usd * 100.0
+    total_gain_loss_rune_p = total_gain_loss_rune / total_added_value_rune * 100.0
+
+    total_lp_vs_hold_abs = total_current_value_usd + total_withdrawn_value_usd - total_added_value_usd
+    total_lp_vs_hold_percent = total_lp_vs_hold_abs / total_added_value_usd * 100.0
+
+    res = Resources()
+    image = res.bg_image.copy()
     draw = ImageDraw.Draw(image)
 
+    # ------------------------------------------------------------------------------------------------
+
     # 1. Header
-    # 2. Total added, total withdrawn value (USD/RUNE)
+    run_y = 12
+    hor_line(draw, run_y)
+
+    run_y += 3.3
+    draw.text(pos_percent(50, run_y), 'Liquidity pools summary', fill=FORE_COLOR, font=res.font_head, anchor='mm')
+
+    pool_percents = [
+        (short_asset_name(r.pool.asset), asset_values_usd[r.pool.asset] / total_current_value_usd * 2.0 * 100.0) for r
+        in reports
+    ]
+    # pool_percents = pool_percents * 5  # debug
+    pool_percents.sort(key=operator.itemgetter(1), reverse=True)
+
+    # limit to 12 items max (2 lines by 6)
+    pool_dist_str = ',\n'.join(
+        ', '.join(f'{asset} ({percent:.1f}%)' for asset, percent in line) for line in grouper(6, pool_percents[:12])
+    ) + '.'
+
+    run_y += 4.7
+    draw.text(pos_percent(50, run_y), pool_dist_str, fill=FADE_COLOR, font=res.font_small, anchor='mm')
+
+    # ------------------------------------------------------------------------------------------------
+    # 2. Line segments
+
+    run_y += 3.0
+    run_y += lp_line_segments(draw, asset_values, asset_values_usd, run_y)
+
+    # ------------------------------------------------------------------------------------------------
+
+    # 3. Total added, total withdrawn value (USD/RUNE)
+    run_y += 4.0
+    hor_line(draw, run_y)
+    run_y += 3.5
+
+    data_cr = [
+        [
+            '',
+            ('Added value', FADE_COLOR),
+            ('Withdrawn', FADE_COLOR),
+            ('Current value', FADE_COLOR),
+            ('Total gain/loss', FADE_COLOR),
+            ('Total gain/loss %', FADE_COLOR)
+        ],
+        [
+            (f'As if in {RAIDO_GLYPH}', FADE_COLOR),
+            pretty_money(total_added_value_rune),
+            pretty_money(total_withdrawn_value_rune),
+            pretty_money(total_current_value_rune),
+            (pretty_money(total_gain_loss_rune, signed=True, prefix=RAIDO_GLYPH), result_color(total_gain_loss_rune)),
+            (pretty_money(total_gain_loss_rune_p, signed=True) + '%', result_color(total_gain_loss_rune_p))
+        ],
+        [
+            ('As if in $', FADE_COLOR),
+            pretty_money(total_added_value_usd),
+            pretty_money(total_withdrawn_value_usd),
+            pretty_money(total_current_value_usd),
+            (pretty_money(total_gain_loss_usd, signed=True, prefix='$'), result_color(total_gain_loss_usd)),
+            (pretty_money(total_gain_loss_usd_p, signed=True) + '%', result_color(total_gain_loss_usd_p))
+        ],
+    ]
+    column_xs = [29, 50, 75]
+
+    row_start_y = run_y
+    row_step = 4
+    for ic, _ in enumerate(data_cr):
+        row_y = row_start_y
+        for ir, _ in enumerate(data_cr[0]):
+            text = data_cr[ic][ir]
+            if isinstance(text, tuple):
+                text, color = text
+            else:
+                color = FORE_COLOR
+
+            draw.text(
+                pos_percent(column_xs[ic], row_y),
+                text,
+                fill=color,
+                font=res.font,
+                anchor='mm' if ic else 'rm'
+            )
+            row_y += row_step
+    run_y += 24.0
+
     # 3. Total current value USD (RUNE)
     # 4. Gain/Loss USD(RUNE) + %
-    # 5. APY??? weighted?
-    # 6. LINE
-    # 7. Graph
+    hor_line(draw, run_y)
+    run_y += 3.5
+    draw.text(pos_percent(50, run_y), 'Total LP vs Hold $', fill=FORE_COLOR, font=res.font_head, anchor='mm')
+
+    run_y += 5.0
+    lp_vs_hold_y = run_y
+    draw.text(pos_percent(33.3, lp_vs_hold_y),
+              pretty_money(total_lp_vs_hold_percent, signed=True) + '%',
+              fill=result_color(total_lp_vs_hold_percent),
+              font=res.font_head, anchor='mm')
+    draw.text(pos_percent(50, lp_vs_hold_y), '|', fill=FADE_COLOR, font=res.font_head, anchor='mm')
+    draw.text(pos_percent(66.6, lp_vs_hold_y),
+              pretty_money(total_lp_vs_hold_abs, signed=True, prefix='$'),
+              fill=result_color(total_lp_vs_hold_abs),
+              font=res.font_head, anchor='mm')
+
+    # 5. Graph
 
     return image

@@ -8,7 +8,6 @@ from services.lib.utils import a_result_cached
 from services.models.pool_info import MIDGARD_MULT, PoolInfo
 from services.models.price import RuneFairPrice, LastPriceHolder
 
-
 CIRCULATING_SUPPLY_URL = "https://defi.delphidigital.io/chaosnet/int/marketdata"
 RUNE_VAULT_BALANCE_URL = "https://defi.delphidigital.io/chaosnet/int/runevaultBalance"
 
