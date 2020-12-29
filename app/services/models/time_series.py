@@ -32,8 +32,25 @@ class TimeSeries:
         now_sec = time.time()
         return (
             int((now_sec - ago_sec - tolerance_sec) * 1000),
-            int((now_sec - + tolerance_sec) * 1000)
+            int((now_sec - tolerance_sec) * 1000)
         )
+
+    async def get_last_values(self, period_sec, key, max_points=10000, tolerance_sec=10):
+        points = await self.select(*self.range_from_ago_to_now(period_sec,
+                                                               tolerance_sec=tolerance_sec),
+                                   count=max_points)
+        key = key.encode('utf-8')
+        values = [float(p[1][key]) for p in points if key in p[1]]
+        return values
+
+    async def average(self, period_sec, key, max_points=10000, tolerance_sec=10):
+        values = await self.get_last_values(period_sec, key, max_points, tolerance_sec)
+        n = len(values)
+        return sum(values) / n if n else None
+
+    async def sum(self, period_sec, key, max_points=10000, tolerance_sec=10):
+        values = await self.get_last_values(period_sec, key, max_points, tolerance_sec)
+        return sum(values)
 
     async def add(self, message_id=b'*', **kwargs):
         r = await self.db.get_redis()

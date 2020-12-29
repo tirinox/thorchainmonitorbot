@@ -23,7 +23,7 @@ async def price_of_day(d: DepContainer):
     async with aiohttp.ClientSession() as d.session:
         lpf = LiqPoolFetcher(d)
         ppf = PoolPriceFetcher(d)
-        d.thor_man = ThorNodeAddressManager(d.session)
+        d.thor_man = ThorNodeAddressManager(d.cfg.thornode.seed, d.session)
 
         r = await ppf.get_usd_per_rune_asset_per_rune_by_day(BTCB_SYMBOL, time() - 2 * DAY)
         print(r)
@@ -33,7 +33,7 @@ async def lp_test(d: DepContainer, addr, pool=BTCB_SYMBOL):
     async with aiohttp.ClientSession() as d.session:
         lpf = LiqPoolFetcher(d)
         ppf = PoolPriceFetcher(d)
-        d.thor_man = ThorNodeAddressManager(d.session)
+        d.thor_man = ThorNodeAddressManager(d.cfg.thornode.seed, d.session)
         await ppf.get_current_pool_data_full()
 
         cur_liqs = await lpf.fetch_all_pool_liquidity_info(addr)

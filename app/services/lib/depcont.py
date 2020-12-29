@@ -1,16 +1,12 @@
 import typing
+import asyncio
 from dataclasses import dataclass
 
 from aiogram import Bot, Dispatcher
 from aiohttp import ClientSession
 
-# from localization import LocalizationManager
-# from services.fetch.node_ip_manager import ThorNodeAddressManager
-# from services.lib.config import Config
-# from services.lib.db import DB
 from services.models.price import LastPriceHolder
 from services.models.queue import QueueInfo
-# from services.notify.broadcast import Broadcaster
 
 
 # noinspection PyUnresolvedReferences
@@ -18,6 +14,7 @@ from services.models.queue import QueueInfo
 class DepContainer:
     cfg: typing.Optional['Config'] = None
     db: typing.Optional['DB'] = None
+    loop: typing.Optional[asyncio.BaseEventLoop] = None
 
     session: typing.Optional[ClientSession] = None
 
@@ -25,6 +22,7 @@ class DepContainer:
     dp: typing.Optional['Dispatcher'] = None
 
     thor_man: typing.Optional['ThorNodeAddressManager'] = None
+    thor_nodes: typing.Optional['ThorNode'] = None
     loc_man: typing.Optional['LocalizationManager'] = None
     broadcaster: typing.Optional['Broadcaster'] = None
     price_holder: LastPriceHolder = LastPriceHolder()

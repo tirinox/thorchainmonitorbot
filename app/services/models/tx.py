@@ -154,12 +154,20 @@ class StakePoolStats(BaseModelMixin):
         await ts.add(usd_depth=self.usd_depth)
 
     TX_VS_DEPTH_CURVE = [
-        (10_000, 0.3),  # if depth < 10_000 then 0.3
-        (100_000, 0.2),  # if 10_000 <= depth < 100_000 then 0.3 ... 0.2
-        (500_000, 0.15),  # if 10_000 <= depth < 100_000 then 0.3 ... 0.2
-        (1_000_000, 0.1),
-        (10_000_000, 0.05),
+        (10_000, 0.2),  # if depth < 10_000 then 0.3
+        (100_000, 0.12),  # if 10_000 <= depth < 100_000 then 0.3 ... 0.2
+        (500_000, 0.08),  # if 10_000 <= depth < 100_000 then 0.3 ... 0.2
+        (1_000_000, 0.05),
+        (10_000_000, 0.015),
     ]
+
+    # TX_VS_DEPTH_CURVE = [
+    #     (10_000, 0.05),  # if depth < 10_000 then 0.3
+    #     (100_000, 0.02),  # if 10_000 <= depth < 100_000 then 0.3 ... 0.2
+    #     (500_000, 0.01),  # if 10_000 <= depth < 100_000 then 0.3 ... 0.2
+    #     (1_000_000, 0.01),
+    #     (10_000_000, 0.01),
+    # ]
 
     @classmethod
     def curve_for_tx_threshold(cls, depth):
