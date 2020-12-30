@@ -66,6 +66,11 @@ class PlotBarGraph:
 
         return self
 
+    def plot_arrays(self, colors, dates, list_of_series):
+        self.x_values = dates
+        for series, color in zip(list_of_series, colors):
+            self.series.append((list(series), color))
+
     def update_bounds_y(self):
         self.min_y = 1e100
         self.max_y = -1e100
