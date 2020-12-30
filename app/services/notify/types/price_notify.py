@@ -9,6 +9,7 @@ from services.lib.cooldown import CooldownSingle
 from services.lib.datetime import MINUTE, HOUR, DAY, parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.money import pretty_money, calc_percent_change
+from services.lib.texts import MessageType
 from services.models.price import RuneFairPrice, PriceReport, PriceATH
 from services.models.time_series import PriceTimeSeries, RUNE_SYMBOL
 
@@ -52,7 +53,7 @@ class PriceNotifier(INotified):
             return
         sticker = random.choice(self.ath_stickers)
         user_lang_map = self.deps.broadcaster.telegram_chats_from_config(self.deps.loc_man)
-        await self.deps.broadcaster.broadcast(user_lang_map.keys(), sticker, message_type='sticker')
+        await self.deps.broadcaster.broadcast(user_lang_map.keys(), sticker, message_type=MessageType.STICKER)
 
     async def do_notify_price_table(self, fair_price, hist_prices, ath, last_ath=None):
         await self.cd.do(self.CD_KEY_PRICE_NOTIFIED)
