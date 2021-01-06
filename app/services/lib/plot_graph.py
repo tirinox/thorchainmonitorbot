@@ -37,13 +37,16 @@ class PlotBarGraph:
 
     BASE = './data'
     FONT_BOLD = f'{BASE}/my.ttf'
-    font_ticks = ImageFont.truetype(FONT_BOLD, 15)
-    font_title = ImageFont.truetype(FONT_BOLD, 35)
+    default_font_ticks = ImageFont.truetype(FONT_BOLD, 15)
+    default_font_title = ImageFont.truetype(FONT_BOLD, 35)
 
-    def __init__(self, w=800, h=600):
+    def __init__(self, w=800, h=600, bg='gradient'):
         self.w = w
         self.h = h
-        self.image = generate_gradient(self.GRADIENT_TOP_COLOR, self.GRADIENT_BOTTOM_COLOR, w, h)
+        if bg == 'gradient':
+            self.image = generate_gradient(self.GRADIENT_TOP_COLOR, self.GRADIENT_BOTTOM_COLOR, w, h)
+        else:
+            self.image = Image.new('RGBA', (w, h), bg)
         self.draw = ImageDraw.Draw(self.image)
         self.series = []
         self.x_values = []
@@ -55,11 +58,17 @@ class PlotBarGraph:
         self.title = ''
         self.min_y = None
         self.max_y = None
+        self.x_formatter = self.time_formatter
+        self.y_formatter = self.int_formatter
+        self.n_ticks_x = 11
+        self.n_ticks_y = 20
+        self.font_ticks = self.default_font_ticks
+        self.font_title = self.default_font_title
 
     def plot_bars(self, df: pd.DataFrame, column, color):
         values = df[column]
 
-        self.x_values = df.index.values.tolist()
+        self.x_values = [int(cur_t / 1_000_000_000) for cur_t in df.index.values.tolist()]
         self.series.append((
             values.values.tolist(), color
         ))
@@ -137,7 +146,16 @@ class PlotBarGraph:
             cur_x += x_step
             cur_y += y_step
 
-    def _plot_ticks_time_horizontal(self, n_ticks=11, text_color='#ffffff'):
+    @staticmethod
+    def time_formatter(timestamp):
+        return datetime.fromtimestamp(timestamp).strftime('%H:%M')
+
+    @staticmethod
+    def int_formatter(y):
+        return str(int(y))
+
+    def _plot_ticks_time_horizontal(self, text_color='#ffffff'):
+        n_ticks = self.n_ticks_x
         n = len(self.x_values)
         if n <= 0:
             return
@@ -150,14 +168,14 @@ class PlotBarGraph:
 
         ticks = []
         for i in range(n_ticks):
-            seconds = int(cur_t / 1_000_000_000)
-            text = datetime.fromtimestamp(seconds).strftime('%H:%M')
+            text = self.x_formatter(cur_t)
             ticks.append(text)
             cur_t += t_step
 
         self._plot_ticks(ticks, 'x', text_color)
 
-    def _plot_ticks_int_vertical(self, n_ticks=11, text_color='#ffffff'):
+    def _plot_ticks_int_vertical(self, text_color='#ffffff'):
+        n_ticks = self.n_ticks_y
         n = len(self.x_values)
         if n <= 0:
             return
@@ -167,7 +185,7 @@ class PlotBarGraph:
 
         ticks = []
         for i in range(n_ticks):
-            ticks.append(str(int(cur_t)))
+            ticks.append(self.y_formatter(cur_t))
             cur_t += t_step
 
         self._plot_ticks(ticks, 'y', text_color)
@@ -181,7 +199,7 @@ class PlotBarGraph:
         y = int(self.top * 0.5)
         self.draw.text((x, y), self.title, 'white', self.font_title, anchor='mm')
 
-    def finalize(self, name='plot.png'):
+    def finalize(self):
         if self.max_y is None:
             self.update_bounds_y()
         self._plot()
@@ -189,4 +207,4 @@ class PlotBarGraph:
         self._plot_ticks_int_vertical()
         if self.title:
             self._draw_title()
-        return img_to_bio(self.image, name)
+        return self.image

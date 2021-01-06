@@ -68,9 +68,11 @@ async def load_summary_for_address(d: DepContainer, address):
         ppf = PoolPriceFetcher(d)
         await ppf.get_current_pool_data_full()
         liqs = await lpf.fetch_all_pool_liquidity_info(address)
-        liqs = liqs.values()
+        pools = list(liqs.keys())
+        liqs = list(liqs.values())
+        weekly_charts = await lpf.fetch_all_pools_weekly_charts(address, pools)
         stake_reports = await asyncio.gather(*[lpf.fetch_stake_report_for_pool(liq, ppf) for liq in liqs])
-        return stake_reports
+        return stake_reports, weekly_charts
 
 
 async def test_one_pool_picture_generator(d: DepContainer, addr, pool, hide):
@@ -96,15 +98,15 @@ async def test_summary_picture_generator(d: DepContainer, addr, hide):
 
     if os.path.exists(PICKLE_PATH):
         with open(PICKLE_PATH, 'rb') as f:
-            stakes = pickle.load(f)
+            stakes, charts = pickle.load(f)
     else:
-        stakes = await load_summary_for_address(d, addr)
+        stakes, charts = await load_summary_for_address(d, addr)
         with open(PICKLE_PATH, 'wb') as f:
-            pickle.dump(stakes, f)
+            pickle.dump((stakes, charts), f)
 
     # stakes = await load_summary_for_address(d, addr)  # direct load
 
-    img = await lp_address_summary_picture(stakes, d.loc_man.default, value_hidden=hide)
+    img = await lp_address_summary_picture(stakes, charts, d.loc_man.default, value_hidden=hide)
     img.save(PICTURE_PATH, "PNG")
     os.system(f'open "{PICTURE_PATH}"')
 
@@ -126,5 +128,5 @@ if __name__ == '__main__':
 
     d.loop.run_until_complete(
         test_summary_picture_generator(d,
-                                       'bnb1ugxwex84acznd3sx26nm0feyfma5namvcr08cw',
+                                       'bnb1rv89nkw2x5ksvhf6jtqwqpke4qhh7jmudpvqmj',
                                        hide=True))

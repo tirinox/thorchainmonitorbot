@@ -3,6 +3,7 @@ import logging
 import operator
 import os
 from collections import defaultdict
+from datetime import datetime
 from typing import List
 
 import aiofiles
@@ -11,15 +12,15 @@ from PIL import Image, ImageDraw, ImageFont
 
 from localization import BaseLocalization
 from localization.base import RAIDO_GLYPH
-from services.lib.money import asset_name_cut_chain, pretty_money, short_asset_name
+from services.lib.money import asset_name_cut_chain, pretty_money, short_asset_name, pretty_dollar
 from services.lib.texts import grouper
 from services.lib.utils import Singleton, async_wrap
-from services.models.stake_info import StakePoolReport
+from services.models.stake_info import StakePoolReport, StakeDayGraphPoint
 from services.models.time_series import BNB_SYMBOL, RUNE_SYMBOL, BUSD_SYMBOL
+from services.lib.plot_graph import PlotBarGraph
 
 WIDTH, HEIGHT = 1200, 1600
 
-BG_COLOR = (25, 25, 25, 255)
 LINE_COLOR = '#356'
 GREEN_COLOR = '#00f2c3'
 RED_COLOR = '#e22222'
@@ -29,6 +30,7 @@ CATEGORICAL_PALETTE = [
     '#648FFF', '#785EF0', '#DC267F', 'FE6100', '#FFB000',
     '#005AB5', '#DC3220'
 ]
+BG_COLOR = '#141a1a'
 
 
 class Resources(metaclass=Singleton):
@@ -53,6 +55,8 @@ class Resources(metaclass=Singleton):
         self.font_semi = ImageFont.truetype(self.FONT_BOLD, 36)
         self.font_big = ImageFont.truetype(self.FONT_BOLD, 64)
         self.bg_image = Image.open(self.BG_IMG)
+
+        self.font_sum_ticks = ImageFont.truetype(self.FONT_BOLD, 24)
 
     @staticmethod
     def image_url(asset):
@@ -99,18 +103,6 @@ def round_corner(radius, fill, bg):
     draw = ImageDraw.Draw(corner)
     draw.pieslice((0, 0, radius * 2, radius * 2), 180, 270, fill=fill)
     return corner
-
-
-def round_rectangle(size, radius, fill, bg=BG_COLOR):
-    """Draw a rounded rectangle"""
-    width, height = size
-    rectangle = Image.new('RGB', size, fill)
-    corner = round_corner(radius, fill, bg)
-    rectangle.paste(corner, (0, 0))
-    rectangle.paste(corner.rotate(90), (0, height - radius))  # Rotate the corner and paste it
-    rectangle.paste(corner.rotate(180), (width - radius, height - radius))
-    rectangle.paste(corner.rotate(270), (width - radius, 0))
-    return rectangle
 
 
 def pos_percent(x, y, ax=0, ay=0, w=WIDTH, h=HEIGHT):
@@ -361,13 +353,14 @@ def sync_lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, rune_im
     return image
 
 
-async def lp_address_summary_picture(reports: List[StakePoolReport], loc: BaseLocalization, value_hidden=False):
+async def lp_address_summary_picture(reports: List[StakePoolReport], weekly_charts,
+                                     loc: BaseLocalization, value_hidden=False):
     # r = Resources()
     # rune_image, asset_image = await asyncio.gather(
     #     r.download_logo_cached(RUNE_SYMBOL),
     #     r.download_logo_cached(asset)
     # )
-    return await sync_lp_address_summary_picture(reports, loc, value_hidden)
+    return await sync_lp_address_summary_picture(reports, weekly_charts, loc, value_hidden)
 
 
 def lp_line_segments(draw, asset_values, asset_values_usd, y):
@@ -387,8 +380,10 @@ def lp_line_segments(draw, asset_values, asset_values_usd, y):
 
     bar_x = hp_bar_margin
     bar_y = y
+    color_map = {}
     for i, (asset, usd_value, *_) in enumerate(segments):
         color = CATEGORICAL_PALETTE[i % len(CATEGORICAL_PALETTE)]
+        color_map[asset] = color
         segment_width = usd_value / total_usd_value * hp_bar_width
         draw.rectangle(
             (pos_percent(bar_x, bar_y), pos_percent(bar_x + segment_width, bar_y + hp_bar_height)),
@@ -421,11 +416,48 @@ def lp_line_segments(draw, asset_values, asset_values_usd, y):
             legend_x += legend_dx
             counter += 1
         legend_y += legend_y_step
-    return len(line_groups) * legend_y_step
+    return len(line_groups) * legend_y_step, color_map
+
+
+def lp_weekly_graph(w, h, weekly_charts: dict, color_map: dict):
+    graph = PlotBarGraph(w, h, bg=BG_COLOR)
+    graph.margin = 10
+
+    colors = []
+    dates = []
+    all_series = []
+    pt: StakeDayGraphPoint
+    for asset, color in color_map.items():  # color_map is already sorted by $ amount
+        current_chart = weekly_charts.get(asset)
+        if current_chart:
+            current_dates = []
+            one_series = []
+            for pt in current_chart:
+                one_series.append(pt.usd_value)  # Fixme: invalid USD VALUE
+                current_dates.append(pt.timestamp)
+            dates = current_dates
+            all_series.append(one_series)
+            colors.append(color)
+
+    graph.left = 152
+    graph.right = 90
+    graph.top = 10
+    graph.n_ticks_y = 8
+    graph.y_formatter = pretty_dollar
+    graph.x_formatter = lambda t: datetime.fromtimestamp(t).strftime('%b %d')
+    graph.n_ticks_x = 8
+
+    graph.font_ticks = Resources().font_sum_ticks
+
+    graph.plot_arrays(colors, dates, all_series)
+    graph.update_bounds_y()
+
+    graph_img = graph.finalize()
+    return graph_img
 
 
 @async_wrap
-def sync_lp_address_summary_picture(reports: List[StakePoolReport], loc: BaseLocalization, value_hidden):
+def sync_lp_address_summary_picture(reports: List[StakePoolReport], weekly_charts, loc: BaseLocalization, value_hidden):
     total_added_value_usd = sum(r.added_value(r.USD) for r in reports)
     total_added_value_rune = sum(r.added_value(r.RUNE) for r in reports)
 
@@ -488,7 +520,8 @@ def sync_lp_address_summary_picture(reports: List[StakePoolReport], loc: BaseLoc
     # 2. Line segments
 
     run_y += 3.0
-    run_y += lp_line_segments(draw, asset_values, asset_values_usd, run_y)
+    dy, color_map = lp_line_segments(draw, asset_values, asset_values_usd, run_y)
+    run_y += dy
 
     # ------------------------------------------------------------------------------------------------
 
@@ -563,7 +596,15 @@ def sync_lp_address_summary_picture(reports: List[StakePoolReport], loc: BaseLoc
               pretty_money(total_lp_vs_hold_abs, signed=True, prefix='$'),
               fill=result_color(total_lp_vs_hold_abs),
               font=res.font_head, anchor='mm')
+    run_y += 5.0
 
     # 5. Graph
+    graph_margin_x, graph_margin_y = 1.0, 0.0
+    graph_width, graph_height = pos_percent(
+        100.0 - graph_margin_x * 2,
+        100.0 - run_y - graph_margin_y * 2)
+
+    graph_img = lp_weekly_graph(graph_width, graph_height, weekly_charts, color_map)
+    image.paste(graph_img, pos_percent(graph_margin_x, run_y - graph_margin_y))
 
     return image

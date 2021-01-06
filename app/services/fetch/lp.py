@@ -41,7 +41,11 @@ class LiqPoolFetcher:
         self.logger.info(f'get {url}')
         async with self.deps.session.get(url) as resp:
             j = await resp.json()
-            return StakeDayGraphPoint.from_asgard(j)
+            return pool, [StakeDayGraphPoint.from_asgard(point) for point in j['data']]
+
+    async def fetch_all_pools_weekly_charts(self, address, pools):
+        weekly_charts = await asyncio.gather(*[self.fetch_one_pool_weekly_chart(address, pool) for pool in pools])
+        return dict(weekly_charts)
 
     async def fetch_all_pool_liquidity_info(self, address, my_pools=None) -> dict:
         my_pools = (await self.get_my_pools(address)) if my_pools is None else my_pools

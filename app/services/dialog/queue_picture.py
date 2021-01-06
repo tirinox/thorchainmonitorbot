@@ -3,7 +3,7 @@ import pandas as pd
 from localization import BaseLocalization
 from services.lib.datetime import series_to_pandas, DAY
 from services.lib.depcont import DepContainer
-from services.lib.plot_graph import PlotBarGraph
+from services.lib.plot_graph import PlotBarGraph, img_to_bio
 from services.lib.utils import async_wrap
 from services.models.time_series import TimeSeries
 
@@ -31,4 +31,4 @@ def queue_graph_sync(points, loc: BaseLocalization):
     gr.update_bounds_y()
     gr.max_y = max(gr.max_y, 20)
     gr.add_title(loc.TEXT_QUEUE_PLOT_TITLE)
-    return gr.finalize()
+    return img_to_bio(gr.finalize(), 'thorchain_queue.png')
