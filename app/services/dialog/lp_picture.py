@@ -429,8 +429,9 @@ def lp_weekly_graph(w, h, weekly_charts: dict, color_map: dict):
         if current_chart:
             current_dates = []
             one_series = []
+            current_chart = sorted(current_chart, key=operator.attrgetter('timestamp'))  # sort by date!
             for pt in current_chart:
-                one_series.append(pt.usd_value)  # Fixme: invalid USD VALUE
+                one_series.append(pt.usd_value)
                 current_dates.append(pt.timestamp)
             dates = current_dates
             all_series.append(one_series)
@@ -581,6 +582,8 @@ def sync_lp_address_summary_picture(reports: List[StakePoolReport], weekly_chart
     hor_line(draw, run_y)
     run_y += 3.5
     draw.text(pos_percent(50, run_y), 'Total LP vs Hold $', fill=FORE_COLOR, font=res.font_head, anchor='mm')
+
+    # fixme: !!! lp vs hold invalid!
 
     run_y += 5.0
     lp_vs_hold_y = run_y

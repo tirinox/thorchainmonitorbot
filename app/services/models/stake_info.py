@@ -58,7 +58,9 @@ class StakeDayGraphPoint:
     @property
     def usd_value(self):
         r, a = pool_share(self.rune_depth, self.asset_depth, self.stake_units, self.pool_units)
-        usd_value = r * MIDGARD_MULT * self.busd_rune_price * 2
+        runes_per_asset = self.rune_depth / self.asset_depth
+        total_rune = r * MIDGARD_MULT + a * MIDGARD_MULT * runes_per_asset
+        usd_value = total_rune / self.busd_rune_price
         return usd_value
 
 
