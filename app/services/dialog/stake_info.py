@@ -182,11 +182,13 @@ class StakeDialog(BaseDialog):
 
         my_pools = self.data[self.KEY_MY_POOLS]
         liqs = await lpf.fetch_all_pool_liquidity_info(address, my_pools)
-        liqs = liqs.values()
+        pools = list(liqs.keys())
+        liqs = list(liqs.values())
+        weekly_charts = await lpf.fetch_all_pools_weekly_charts(address, pools)
         stake_reports = await asyncio.gather(*[lpf.fetch_stake_report_for_pool(liq, ppf) for liq in liqs])
 
         value_hidden = not self.data.get(self.KEY_CAN_VIEW_VALUE, True)
-        picture = lp_address_summary_picture(stake_reports, self.loc, value_hidden=value_hidden)
+        picture = await lp_address_summary_picture(stake_reports, weekly_charts, self.loc, value_hidden=value_hidden)
         picture_io = img_to_bio(picture, 'Thorchain_LP_Summary.png')
 
         # ANSWER
@@ -230,7 +232,7 @@ class StakeDialog(BaseDialog):
             _, index = query.data.split(':')
             self.remove_address(index)
             await self.display_addresses(query.message, edit=True)
-        elif query.data.strip(f'{self.QUERY_SUMMARY_OF_ADDRESS}:'):
+        elif query.data.startswith(f'{self.QUERY_SUMMARY_OF_ADDRESS}:'):
             await self.view_address_summary(query)
         elif query.data.startswith(f'{self.QUERY_VIEW_POOL}:'):
             await self.view_pool_report(query)

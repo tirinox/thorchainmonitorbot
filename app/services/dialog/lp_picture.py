@@ -27,7 +27,9 @@ RED_COLOR = '#e22222'
 FORE_COLOR = 'white'
 FADE_COLOR = '#cccccc'
 CATEGORICAL_PALETTE = [
-    '#648FFF', '#785EF0', '#DC267F', 'FE6100', '#FFB000',
+    '#648FFF', '#785EF0',
+    '#DC267F',
+    '#FE6100', '#FFB000',
     '#005AB5', '#DC3220'
 ]
 BG_COLOR = '#141a1a'
@@ -355,11 +357,6 @@ def sync_lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, rune_im
 
 async def lp_address_summary_picture(reports: List[StakePoolReport], weekly_charts,
                                      loc: BaseLocalization, value_hidden=False):
-    # r = Resources()
-    # rune_image, asset_image = await asyncio.gather(
-    #     r.download_logo_cached(RUNE_SYMBOL),
-    #     r.download_logo_cached(asset)
-    # )
     return await sync_lp_address_summary_picture(reports, weekly_charts, loc, value_hidden)
 
 

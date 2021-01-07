@@ -41,7 +41,11 @@ class LiqPoolFetcher:
         self.logger.info(f'get {url}')
         async with self.deps.session.get(url) as resp:
             j = await resp.json()
-            return pool, [StakeDayGraphPoint.from_asgard(point) for point in j['data']]
+            try:
+                return pool, [StakeDayGraphPoint.from_asgard(point) for point in j['data']]
+            except TypeError:
+                self.logger.warning(f'no weekly chart for {pool} @ {address}')
+                return pool, None
 
     async def fetch_all_pools_weekly_charts(self, address, pools):
         weekly_charts = await asyncio.gather(*[self.fetch_one_pool_weekly_chart(address, pool) for pool in pools])
