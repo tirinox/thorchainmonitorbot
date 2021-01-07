@@ -84,17 +84,17 @@ class CurrentLiquidity(BaseModelMixin):
         m = MIDGARD_MULT
         return cls(
             d['pool'],
-            int(d['runestake']) * m,
-            int(d['assetstake']) * m,
+            float(d['runestake']) * m,
+            float(d['assetstake']) * m,
             int(d['poolunits']),
-            int(d['assetwithdrawn']) * m,
-            int(d['runewithdrawn']) * m,
-            int(d['totalstakedasset']) * m,
-            int(d['totalstakedrune']) * m,
-            int(d['totalstakedusd']) * m,
-            int(d['totalunstakedasset']) * m,
-            int(d['totalunstakedrune']) * m,
-            int(d['totalunstakedusd']) * m,
+            float(d['assetwithdrawn']) * m,
+            float(d['runewithdrawn']) * m,
+            float(d['totalstakedasset']) * m,
+            float(d['totalstakedrune']) * m,
+            float(d['totalstakedusd']) * m,
+            float(d['totalunstakedasset']) * m,
+            float(d['totalunstakedrune']) * m,
+            float(d['totalunstakedusd']) * m,
             int(d['firststake']),
             int(d['laststake'])
         )
