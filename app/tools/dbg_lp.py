@@ -129,4 +129,4 @@ if __name__ == '__main__':
     d.loop.run_until_complete(
         test_summary_picture_generator(d,
                                        'bnb1rv89nkw2x5ksvhf6jtqwqpke4qhh7jmudpvqmj',
-                                       hide=True))
+                                       hide=True))  # bnb1rv89nkw2x5ksvhf6jtqwqpke4qhh7jmudpvqmj
