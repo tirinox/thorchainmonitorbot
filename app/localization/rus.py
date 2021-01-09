@@ -91,6 +91,16 @@ class RussianLocalization(BaseLocalization):
     LP_PIC_EARLY = 'Еще рано...'
     LP_PIC_FOOTER = "Испольует runestake.info от Bigboss"
 
+    LP_PIC_SUMMARY_HEADER = 'Сводка по пулам ликвидности'
+    LP_PIC_SUMMARY_ADDED_VALUE = 'Добавлено'
+    LP_PIC_SUMMARY_WITHDRAWN_VALUE = 'Выведено'
+    LP_PIC_SUMMARY_CURRENT_VALUE = 'Сейчас в пуле'
+    LP_PIC_SUMMARY_TOTAL_GAIN_LOSS = 'Доход/убыток'
+    LP_PIC_SUMMARY_TOTAL_GAIN_LOSS_PERCENT = 'Доход/убыток %'
+    LP_PIC_SUMMARY_AS_IF_IN_RUNE = f'Если все в {RAIDO_GLYPH}'
+    LP_PIC_SUMMARY_AS_IF_IN_USD = 'Если все в $'
+    LP_PIC_SUMMARY_TOTAL_LP_VS_HOLD = 'Итого холд против пулов, $'
+
     def pic_stake_days(self, total_days, first_stake_ts):
         start_date = datetime.fromtimestamp(first_stake_ts).strftime('%d.%m.%Y')
         return f'{ceil(total_days)} дн. ({start_date})'

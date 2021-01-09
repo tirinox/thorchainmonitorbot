@@ -13,11 +13,11 @@ from PIL import Image, ImageDraw, ImageFont
 from localization import BaseLocalization
 from localization.base import RAIDO_GLYPH
 from services.lib.money import asset_name_cut_chain, pretty_money, short_asset_name, pretty_dollar
+from services.lib.plot_graph import PlotBarGraph
 from services.lib.texts import grouper
 from services.lib.utils import Singleton, async_wrap
 from services.models.stake_info import StakePoolReport, StakeDayGraphPoint
 from services.models.time_series import BNB_SYMBOL, RUNE_SYMBOL, BUSD_SYMBOL
-from services.lib.plot_graph import PlotBarGraph
 
 WIDTH, HEIGHT = 1200, 1600
 
@@ -360,7 +360,7 @@ async def lp_address_summary_picture(reports: List[StakePoolReport], weekly_char
     return await sync_lp_address_summary_picture(reports, weekly_charts, loc, value_hidden)
 
 
-def lp_line_segments(draw, asset_values, asset_values_usd, y):
+def lp_line_segments(draw, asset_values, asset_values_usd, y, value_hidden):
     res = Resources()
 
     segments = []
@@ -389,7 +389,7 @@ def lp_line_segments(draw, asset_values, asset_values_usd, y):
         bar_x += segment_width
 
     # line legend
-    items_in_line = 2
+    items_in_line = 4 if value_hidden else 2
     line_groups = list(grouper(items_in_line, segments))
     legend_y = y + 3.5
     legend_y_step = 3
@@ -407,7 +407,12 @@ def lp_line_segments(draw, asset_values, asset_values_usd, y):
             ), fill=color)
 
             asset = RAIDO_GLYPH if asset == RUNE_SYMBOL else short_asset_name(asset)
-            text = f'{pretty_money(asset_value)} {asset} ≈ {pretty_money(usd_value, prefix="$")}'
+
+            if value_hidden:
+                text = asset
+            else:
+                text = f'{pretty_money(asset_value)} {asset} ≈ {pretty_money(usd_value, prefix="$")}'
+
             draw.text(pos_percent(legend_x + 3, legend_y), text, FORE_COLOR, font=res.font_small, anchor='lt')
 
             legend_x += legend_dx
@@ -416,7 +421,7 @@ def lp_line_segments(draw, asset_values, asset_values_usd, y):
     return len(line_groups) * legend_y_step, color_map
 
 
-def lp_weekly_graph(w, h, weekly_charts: dict, color_map: dict):
+def lp_weekly_graph(w, h, weekly_charts: dict, color_map: dict, value_hidden):
     graph = PlotBarGraph(w, h, bg=BG_COLOR)
     graph.margin = 10
 
@@ -440,8 +445,8 @@ def lp_weekly_graph(w, h, weekly_charts: dict, color_map: dict):
     graph.left = 152
     graph.right = 90
     graph.top = 10
-    graph.n_ticks_y = 8
-    graph.y_formatter = pretty_dollar
+    graph.n_ticks_y = 3 if value_hidden else 8
+    graph.y_formatter = (lambda x: '??? $') if value_hidden else pretty_dollar
     graph.x_formatter = lambda t: datetime.fromtimestamp(t).strftime('%b %d')
     graph.n_ticks_x = 8
 
@@ -469,6 +474,7 @@ def sync_lp_address_summary_picture(reports: List[StakePoolReport], weekly_chart
     asset_values_usd = defaultdict(float)
     total_gain_loss_rune = 0.0
     total_gain_loss_usd = 0.0
+    total_lp_vs_hold_abs = 0.0
     for r in reports:
         asset_values[r.pool.asset] += r.current_value(r.ASSET) * 0.5
         asset_values[RUNE_SYMBOL] += r.current_value(r.RUNE) * 0.5
@@ -477,14 +483,14 @@ def sync_lp_address_summary_picture(reports: List[StakePoolReport], weekly_chart
         asset_values_usd[r.pool.asset] += asset_usd_value
         asset_values_usd[RUNE_SYMBOL] += asset_usd_value
 
+        total_lp_vs_hold_abs += r.lp_vs_hold[0]
+
         total_gain_loss_usd += r.gain_loss(r.USD)[0]
         total_gain_loss_rune += r.gain_loss(r.RUNE)[0]
 
     total_gain_loss_usd_p = total_gain_loss_usd / total_added_value_usd * 100.0
     total_gain_loss_rune_p = total_gain_loss_rune / total_added_value_rune * 100.0
-
-    total_lp_vs_hold_abs = total_current_value_usd + total_withdrawn_value_usd - total_added_value_usd
-    total_lp_vs_hold_percent = total_lp_vs_hold_abs / total_added_value_usd * 100.0
+    total_lp_vs_hold_percent = total_lp_vs_hold_abs / (total_added_value_rune - total_withdrawn_value_usd) * 100.0
 
     res = Resources()
     image = res.bg_image.copy()
@@ -497,7 +503,7 @@ def sync_lp_address_summary_picture(reports: List[StakePoolReport], weekly_chart
     hor_line(draw, run_y)
 
     run_y += 3.3
-    draw.text(pos_percent(50, run_y), 'Liquidity pools summary', fill=FORE_COLOR, font=res.font_head, anchor='mm')
+    draw.text(pos_percent(50, run_y), loc.LP_PIC_SUMMARY_HEADER, fill=FORE_COLOR, font=res.font_head, anchor='mm')
 
     pool_percents = [
         (short_asset_name(r.pool.asset), asset_values_usd[r.pool.asset] / total_current_value_usd * 2.0 * 100.0) for r
@@ -518,7 +524,7 @@ def sync_lp_address_summary_picture(reports: List[StakePoolReport], weekly_chart
     # 2. Line segments
 
     run_y += 3.0
-    dy, color_map = lp_line_segments(draw, asset_values, asset_values_usd, run_y)
+    dy, color_map = lp_line_segments(draw, asset_values, asset_values_usd, run_y, value_hidden)
     run_y += dy
 
     # ------------------------------------------------------------------------------------------------
@@ -531,14 +537,14 @@ def sync_lp_address_summary_picture(reports: List[StakePoolReport], weekly_chart
     data_cr = [
         [
             '',
-            ('Added value', FADE_COLOR),
-            ('Withdrawn', FADE_COLOR),
-            ('Current value', FADE_COLOR),
-            ('Total gain/loss', FADE_COLOR),
-            ('Total gain/loss %', FADE_COLOR)
+            (loc.LP_PIC_SUMMARY_ADDED_VALUE, FADE_COLOR),
+            (loc.LP_PIC_SUMMARY_WITHDRAWN_VALUE, FADE_COLOR),
+            (loc.LP_PIC_SUMMARY_CURRENT_VALUE, FADE_COLOR),
+            (loc.LP_PIC_SUMMARY_TOTAL_GAIN_LOSS, FADE_COLOR),
+            (loc.LP_PIC_SUMMARY_TOTAL_GAIN_LOSS_PERCENT, FADE_COLOR)
         ],
         [
-            (f'As if in {RAIDO_GLYPH}', FADE_COLOR),
+            (loc.LP_PIC_SUMMARY_AS_IF_IN_RUNE, FADE_COLOR),
             pretty_money(total_added_value_rune),
             pretty_money(total_withdrawn_value_rune),
             pretty_money(total_current_value_rune),
@@ -546,7 +552,7 @@ def sync_lp_address_summary_picture(reports: List[StakePoolReport], weekly_chart
             (pretty_money(total_gain_loss_rune_p, signed=True) + '%', result_color(total_gain_loss_rune_p))
         ],
         [
-            ('As if in $', FADE_COLOR),
+            (loc.LP_PIC_SUMMARY_AS_IF_IN_USD, FADE_COLOR),
             pretty_money(total_added_value_usd),
             pretty_money(total_withdrawn_value_usd),
             pretty_money(total_current_value_usd),
@@ -567,13 +573,17 @@ def sync_lp_address_summary_picture(reports: List[StakePoolReport], weekly_chart
             else:
                 color = FORE_COLOR
 
-            draw.text(
-                pos_percent(column_xs[ic], row_y),
-                text,
-                fill=color,
-                font=res.font,
-                anchor='mm' if ic else 'rm'
-            )
+            pos = pos_percent(column_xs[ic], row_y)
+            if value_hidden and ic > 0 and ir > 0 and ir != 5:
+                res.put_hidden_plate(image, pos, 'center', ey=-20)
+            else:
+                draw.text(
+                    pos,
+                    text,
+                    fill=color,
+                    font=res.font,
+                    anchor='mm' if ic else 'rm'
+                )
             row_y += row_step
     run_y += 24.0
 
@@ -581,9 +591,11 @@ def sync_lp_address_summary_picture(reports: List[StakePoolReport], weekly_chart
     # 4. Gain/Loss USD(RUNE) + %
     hor_line(draw, run_y)
     run_y += 3.5
-    draw.text(pos_percent(50, run_y), 'Total LP vs Hold $', fill=FORE_COLOR, font=res.font_head, anchor='mm')
-
-    # fixme: !!! lp vs hold invalid!
+    draw.text(pos_percent(50, run_y),
+              loc.LP_PIC_SUMMARY_TOTAL_LP_VS_HOLD,
+              fill=FORE_COLOR,
+              font=res.font_head,
+              anchor='mm')
 
     run_y += 5.0
     lp_vs_hold_y = run_y
@@ -591,11 +603,16 @@ def sync_lp_address_summary_picture(reports: List[StakePoolReport], weekly_chart
               pretty_money(total_lp_vs_hold_percent, signed=True) + '%',
               fill=result_color(total_lp_vs_hold_percent),
               font=res.font_head, anchor='mm')
+
     draw.text(pos_percent(50, lp_vs_hold_y), '|', fill=FADE_COLOR, font=res.font_head, anchor='mm')
-    draw.text(pos_percent(66.6, lp_vs_hold_y),
-              pretty_money(total_lp_vs_hold_abs, signed=True, prefix='$'),
-              fill=result_color(total_lp_vs_hold_abs),
-              font=res.font_head, anchor='mm')
+
+    if value_hidden:
+        res.put_hidden_plate(image, pos_percent(66.6, lp_vs_hold_y), anchor='center', ey=-18)
+    else:
+        draw.text(pos_percent(66.6, lp_vs_hold_y),
+                  pretty_money(total_lp_vs_hold_abs, signed=True, prefix='$'),
+                  fill=result_color(total_lp_vs_hold_abs),
+                  font=res.font_head, anchor='mm')
     run_y += 5.0
 
     # 5. Graph
@@ -604,7 +621,7 @@ def sync_lp_address_summary_picture(reports: List[StakePoolReport], weekly_chart
         100.0 - graph_margin_x * 2,
         100.0 - run_y - graph_margin_y * 2)
 
-    graph_img = lp_weekly_graph(graph_width, graph_height, weekly_charts, color_map)
+    graph_img = lp_weekly_graph(graph_width, graph_height, weekly_charts, color_map, value_hidden)
     image.paste(graph_img, pos_percent(graph_margin_x, run_y - graph_margin_y))
 
     return image

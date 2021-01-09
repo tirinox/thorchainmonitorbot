@@ -6,7 +6,7 @@ from time import time
 
 import aiohttp
 
-from localization import LocalizationManager
+from localization import LocalizationManager, RussianLocalization
 from services.dialog.lp_picture import lp_pool_picture, lp_address_summary_picture
 from services.fetch.lp import LiqPoolFetcher
 from services.fetch.node_ip_manager import ThorNodeAddressManager
@@ -106,7 +106,7 @@ async def test_summary_picture_generator(d: DepContainer, addr, hide):
 
     # stakes = await load_summary_for_address(d, addr)  # direct load
 
-    img = await lp_address_summary_picture(stakes, charts, d.loc_man.default, value_hidden=hide)
+    img = await lp_address_summary_picture(stakes, charts, RussianLocalization(), value_hidden=hide)
     img.save(PICTURE_PATH, "PNG")
     os.system(f'open "{PICTURE_PATH}"')
 
@@ -129,4 +129,4 @@ if __name__ == '__main__':
     d.loop.run_until_complete(
         test_summary_picture_generator(d,
                                        'bnb1rv89nkw2x5ksvhf6jtqwqpke4qhh7jmudpvqmj',
-                                       hide=True))  # bnb1rv89nkw2x5ksvhf6jtqwqpke4qhh7jmudpvqmj
+                                       hide=False))  # bnb1rv89nkw2x5ksvhf6jtqwqpke4qhh7jmudpvqmj

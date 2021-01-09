@@ -116,6 +116,16 @@ class BaseLocalization(ABC):  # == English
     LP_PIC_EARLY = 'Early...'
     LP_PIC_FOOTER = "Powered by Bigboss' runestake.info"
 
+    LP_PIC_SUMMARY_HEADER = 'Liquidity pools summary'
+    LP_PIC_SUMMARY_ADDED_VALUE = 'Added value'
+    LP_PIC_SUMMARY_WITHDRAWN_VALUE = 'Withdrawn'
+    LP_PIC_SUMMARY_CURRENT_VALUE = 'Current value'
+    LP_PIC_SUMMARY_TOTAL_GAIN_LOSS = 'Total gain/loss'
+    LP_PIC_SUMMARY_TOTAL_GAIN_LOSS_PERCENT = 'Total gain/loss %'
+    LP_PIC_SUMMARY_AS_IF_IN_RUNE = f'As if in {RAIDO_GLYPH}'
+    LP_PIC_SUMMARY_AS_IF_IN_USD = 'As if in $'
+    LP_PIC_SUMMARY_TOTAL_LP_VS_HOLD = 'Total LP vs Hold $'
+
     def pic_stake_days(self, total_days, first_stake_ts):
         start_date = datetime.fromtimestamp(first_stake_ts).strftime('%d.%m.%Y')
         day_count_str = 'days' if total_days >= 2 else 'day'
