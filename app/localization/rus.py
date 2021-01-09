@@ -59,6 +59,8 @@ class RussianLocalization(BaseLocalization):
     BUTTON_SM_BACK_TO_LIST = '🔙 Назад к адресам'
     BUTTON_SM_BACK_MM = '🔙 Главное меню'
 
+    BUTTON_SM_SUMMARY = '💲 Сводка'
+
     BUTTON_VIEW_RUNESTAKEINFO = '🌎 Открыть на runestake.info'
     BUTTON_VIEW_VALUE_ON = 'Скрыть деньги: НЕТ'
     BUTTON_VIEW_VALUE_OFF = 'Скрыть деньги: ДА'
