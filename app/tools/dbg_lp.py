@@ -128,5 +128,5 @@ if __name__ == '__main__':
 
     d.loop.run_until_complete(
         test_summary_picture_generator(d,
-                                       'bnb1rv89nkw2x5ksvhf6jtqwqpke4qhh7jmudpvqmj',
+                                       'bnb157zacwqaplw5kdwpkrve6n2jdxu3ps9cj3xdcp',
                                        hide=False))  # bnb1rv89nkw2x5ksvhf6jtqwqpke4qhh7jmudpvqmj
