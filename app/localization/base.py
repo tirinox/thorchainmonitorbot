@@ -165,6 +165,10 @@ class BaseLocalization(ABC):  # == English
 
     # ------ PRICE -------
 
+    PRICE_GRAPH_TITLE = f'Rune price, USD'
+    PRICE_GRAPH_LEGEND_DET_PRICE = f'Deterministic {RAIDO_GLYPH} price'
+    PRICE_GRAPH_LEGEND_ACTUAL_PRICE = f'Market {RAIDO_GLYPH} price'
+
     def price_message(self, info: ThorInfo, fair_price: RuneFairPrice):
         return (
             f"Last real price of {self.R} is <code>${info.price:.3f}</code>.\n"

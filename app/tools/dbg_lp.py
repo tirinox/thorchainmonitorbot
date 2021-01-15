@@ -2,7 +2,6 @@ import asyncio
 import logging
 import os
 import pickle
-from time import time
 
 import aiohttp
 
@@ -12,7 +11,6 @@ from services.fetch.lp import LiqPoolFetcher
 from services.fetch.node_ip_manager import ThorNodeAddressManager
 from services.fetch.pool_price import PoolPriceFetcher
 from services.lib.config import Config
-from services.lib.datetime import DAY
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.models.stake_info import CurrentLiquidity

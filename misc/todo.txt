@@ -102,6 +102,18 @@ Multi-chain support
 
 ETH-bridge support
 
+Smart contract: https://etherscan.io/tokentxns?a=0x7eFc09181CFeB60E59C4B5f17aaB3219521b8AC4
+
+Notify: Large eth->rune and rune->eth
+Metrics: 24h volume, total volume, tx fee, tx time?
+
+------------------------------------------------------------------------
+
+midgard seed
+https://docs.thorchain.org/developers/connecting-to-thorchain
+
+https://gitlab.com/thorchain/asgardex-common/asgardex-midgard
+
 ------------------------------------------------------------------------
 
 ToDo: OPTIONAL TODOs or IDEAS:

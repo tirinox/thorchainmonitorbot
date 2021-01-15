@@ -447,7 +447,7 @@ def lp_weekly_graph(w, h, weekly_charts: dict, color_map: dict, value_hidden):
     graph.top = 10
     graph.n_ticks_y = 3 if value_hidden else 8
     graph.y_formatter = (lambda x: '??? $') if value_hidden else pretty_dollar
-    graph.x_formatter = lambda t: datetime.fromtimestamp(t).strftime('%b %d')
+    graph.x_formatter = graph.date_formatter
     graph.n_ticks_x = 8
 
     graph.font_ticks = Resources().font_sum_ticks

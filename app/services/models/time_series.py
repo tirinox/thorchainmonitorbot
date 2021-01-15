@@ -35,12 +35,26 @@ class TimeSeries:
             int((now_sec - tolerance_sec) * 1000)
         )
 
-    async def get_last_values(self, period_sec, key, max_points=10000, tolerance_sec=10):
-        points = await self.select(*self.range_from_ago_to_now(period_sec,
-                                                               tolerance_sec=tolerance_sec),
+    @staticmethod
+    def get_ts_from_index(index: bytes):
+        s = index.decode().split('-')
+        return int(s[0]) / 1_000
+
+    async def get_last_points(self, period_sec, max_points=10000, tolerance_sec=10):
+        points = await self.select(*self.range_from_ago_to_now(period_sec, tolerance_sec=tolerance_sec),
                                    count=max_points)
-        key = key.encode('utf-8')
-        values = [float(p[1][key]) for p in points if key in p[1]]
+        return points
+
+    async def get_last_values(self, period_sec, key, max_points=10000, tolerance_sec=10, with_ts=False):
+        points = await self.get_last_points(period_sec, max_points, tolerance_sec)
+        if isinstance(key, str):
+            key = key.encode('utf-8')
+
+        if with_ts:
+            values = [(self.get_ts_from_index(p[0]), float(p[1][key])) for p in points if key in p[1]]
+        else:
+            values = [float(p[1][key]) for p in points if key in p[1]]
+
         return values
 
     async def average(self, period_sec, key, max_points=10000, tolerance_sec=10):
@@ -70,11 +84,13 @@ class PriceTimeSeries(TimeSeries):
     def __init__(self, coin: str, db: DB):
         super().__init__(f'price-{coin}', db)
 
+    KEY = b'price'
+
     async def select_average_ago(self, ago, tolerance):
         items = await self.select(*self.range_ago(ago, tolerance))
         n, accum = 0, 0
         for _, item in items:
-            price = float(item[b'price'])
+            price = float(item[self.KEY])
             if price > 0:
                 n += 1
                 accum += price
@@ -82,3 +98,7 @@ class PriceTimeSeries(TimeSeries):
             return accum / n
         else:
             return 0
+
+    async def get_last_values(self, period_sec, key=None, max_points=10000, tolerance_sec=10, with_ts=True):
+        key = key or self.KEY
+        return await super().get_last_values(period_sec, key, max_points, tolerance_sec, with_ts)

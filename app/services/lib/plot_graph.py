@@ -29,11 +29,12 @@ def generate_gradient(
     return base
 
 
-class PlotBarGraph:
+class PlotGraph:
     GRADIENT_TOP_COLOR = '#3d5975'
     GRADIENT_BOTTOM_COLOR = '#121a23'
     PLOT_COLOR = '#62d0e3'
     PLOT_COLOR_2 = '#52c0d3'
+    TICK_COLOR = PLOT_COLOR_2
 
     BASE = './data'
     FONT_BOLD = f'{BASE}/my.ttf'
@@ -48,8 +49,6 @@ class PlotBarGraph:
         else:
             self.image = Image.new('RGBA', (w, h), bg)
         self.draw = ImageDraw.Draw(self.image)
-        self.series = []
-        self.x_values = []
         self.margin = 2  # px
         self.left = 60
         self.right = 60
@@ -64,6 +63,83 @@ class PlotBarGraph:
         self.n_ticks_y = 20
         self.font_ticks = self.default_font_ticks
         self.font_title = self.default_font_title
+
+    def plot_rect(self):
+        width = self.w - self.left - self.right
+        height = self.h - self.top - self.bottom
+        return self.left, self.h - self.bottom, width, height
+
+    def _plot_ticks(self, ticks, axis='x', text_color='#ffffff'):
+        if not ticks:
+            return
+        n_ticks = len(ticks)
+
+        ox, oy, width, height = self.plot_rect()
+
+        if axis == 'x':
+            cur_x = self.left
+            cur_y = self.h - self.bottom * 0.7
+            x_step = width / (n_ticks - 1)
+            y_step = 0
+            anchor = 'lm'
+            self.draw.line((int(ox), int(oy),
+                            int(self.left + width), int(self.h - self.bottom)), self.TICK_COLOR, width=1)
+        else:
+            cur_x = self.left * 0.8
+            cur_y = self.h - self.bottom
+            y_step = -height / (n_ticks - 1)
+            x_step = 0
+            anchor = 'rm'
+            self.draw.line((int(ox), int(cur_y),
+                            int(ox), int(self.top)), self.TICK_COLOR, width=1)
+
+        for t in ticks:
+            x, y = int(cur_x), int(cur_y)
+            self.draw.text((x, y), t, anchor=anchor, fill=text_color,
+                           font=self.font_ticks)
+            if axis == 'y':
+                self.draw.line((self.left, y, self.left - 4, y), self.TICK_COLOR, width=1)
+            else:
+                self.draw.line((x, self.h - self.bottom, x, self.h - self.bottom + 4), self.TICK_COLOR, width=1)
+            cur_x += x_step
+            cur_y += y_step
+
+    @staticmethod
+    def time_formatter(timestamp):
+        return datetime.fromtimestamp(timestamp).strftime('%H:%M')
+
+    @staticmethod
+    def int_formatter(y):
+        return str(int(y))
+
+    @staticmethod
+    def date_formatter(t):
+        return datetime.fromtimestamp(t).strftime('%b %d')
+
+    def add_title(self, title):
+        self.title = title
+        return self
+
+    def _draw_title(self):
+        x = int(self.w * 0.5)
+        y = int(self.top * 0.5)
+        self.draw.text((x, y), self.title, 'white', self.font_title, anchor='mm')
+
+    def _plot(self):  # abstract
+        ...
+
+    def finalize(self):
+        self._plot()
+        if self.title:
+            self._draw_title()
+        return self.image
+
+
+class PlotBarGraph(PlotGraph):
+    def __init__(self, w=800, h=600, bg='gradient'):
+        super().__init__(w, h, bg)
+        self.series = []
+        self.x_values = []
 
     def plot_bars(self, df: pd.DataFrame, column, color):
         values = df[column]
@@ -95,6 +171,9 @@ class PlotBarGraph:
         if n <= 0:
             return
 
+        if self.max_y is None:
+            self.update_bounds_y()
+
         colors = [s[1] for s in self.series]
         y_values = [s[0] for s in self.series]
 
@@ -114,45 +193,8 @@ class PlotBarGraph:
                 cur_y += height
             cur_x += block_width + m
 
-    def _plot_ticks(self, ticks, axis='x', text_color='#ffffff'):
-        if not ticks:
-            return
-        n_ticks = len(ticks)
-
-        if axis == 'x':
-            cur_x = self.left
-            cur_y = self.h - self.bottom * 0.7
-            width = self.w - self.left - self.right
-            x_step = width / (n_ticks - 1)
-            y_step = 0
-            anchor = 'lm'
-        else:
-            cur_x = self.left * 0.8
-            cur_y = self.h - self.bottom
-            height = self.h - self.top - self.bottom
-            y_step = -height / (n_ticks - 1)
-            x_step = 0
-            anchor = 'rm'
-            self.draw.line((self.left, int(cur_y), self.left, int(self.top)), self.PLOT_COLOR_2, width=1)
-
-        for t in ticks:
-            x, y = int(cur_x), int(cur_y)
-            self.draw.text((x, y), t, anchor=anchor, fill=text_color,
-                           font=self.font_ticks)
-            if axis == 'y':
-                self.draw.line((self.left, y, self.left - 4, y), self.PLOT_COLOR_2, width=1)
-            else:
-                self.draw.line((x, self.h - self.bottom, x, self.h - self.bottom + 4), self.PLOT_COLOR_2, width=1)
-            cur_x += x_step
-            cur_y += y_step
-
-    @staticmethod
-    def time_formatter(timestamp):
-        return datetime.fromtimestamp(timestamp).strftime('%H:%M')
-
-    @staticmethod
-    def int_formatter(y):
-        return str(int(y))
+        self._plot_ticks_time_horizontal()
+        self._plot_ticks_int_vertical()
 
     def _plot_ticks_time_horizontal(self, text_color='#ffffff'):
         n_ticks = self.n_ticks_x
@@ -190,21 +232,91 @@ class PlotBarGraph:
 
         self._plot_ticks(ticks, 'y', text_color)
 
-    def add_title(self, title):
-        self.title = title
-        return self
 
-    def _draw_title(self):
-        x = int(self.w * 0.5)
-        y = int(self.top * 0.5)
-        self.draw.text((x, y), self.title, 'white', self.font_title, anchor='mm')
+class PlotGraphLines(PlotGraph):
+    def __init__(self, w=800, h=600, bg='gradient'):
+        super().__init__(w, h, bg)
+        self.series = []
+        self.min_x = self.max_x = 0.0
+        self.line_width = 3
+        self.legend_x = self.left
+        self.legend_y = self.h - self.bottom * 0.5
 
-    def finalize(self):
-        if self.max_y is None:
-            self.update_bounds_y()
-        self._plot()
-        self._plot_ticks_time_horizontal()
-        self._plot_ticks_int_vertical()
-        if self.title:
-            self._draw_title()
-        return self.image
+    def update_bounds(self):
+        self.min_x = self.min_y = 1e10
+        self.max_x = self.max_y = -1e10
+        for line_desc in self.series:
+            points = line_desc['pts']
+            for x, y in points:
+                self.min_x = min(self.min_x, x)
+                self.min_y = min(self.min_y, y)
+                self.max_x = max(self.max_x, x)
+                self.max_y = max(self.max_y, y)
+
+    def add_series(self, list_of_points, color):
+        self.series.append({
+            'pts': list_of_points,
+            'color': color
+        })
+
+    def _plot_ticks_axis(self, v_min, v_max, axis, n_ticks, text_color='#ffffff'):
+        if v_min >= v_max:
+            return
+
+        cur_v = v_min
+        t_step = (v_max - v_min) / (n_ticks - 1)
+
+        formatter = self.x_formatter if axis == 'x' else self.y_formatter
+        ticks = []
+        for i in range(n_ticks):
+            text = formatter(cur_v)
+            ticks.append(text)
+            cur_v += t_step
+
+        self._plot_ticks(ticks, axis, text_color)
+
+    def convert_coords(self, x, y, ox, oy, w, h):
+        norm_x, norm_y = (
+            (x - self.min_x) / (self.max_x - self.min_x),
+            (y - self.min_y) / (self.max_y - self.min_y),
+        )
+        return int(ox + norm_x * w), int(oy - norm_y * h)
+
+    def add_legend(self, color, title):
+        tw, th = self.font_ticks.getsize(title)
+        half_square_sz = 5
+        self.draw.rectangle(
+            (
+                self.legend_x - half_square_sz,
+                self.legend_y - half_square_sz,
+                self.legend_x + half_square_sz,
+                self.legend_y + half_square_sz
+            ),
+            fill=color
+        )
+        self.legend_x += 20
+        self.draw.text((self.legend_x - half_square_sz, self.legend_y),
+                       title, fill='#fff', font=self.font_ticks, anchor='lm')
+        self.legend_x += tw + 20
+
+    def _plot(self):
+        # if self.max_y <= self.min_y or self.max_x <= self.max_y:
+
+        self._plot_ticks_axis(self.min_x, self.max_x, 'x', self.n_ticks_x)
+        self._plot_ticks_axis(self.min_y, self.max_y, 'y', self.n_ticks_y)
+
+        ox, oy, plot_w, plot_h = self.plot_rect()
+
+        for line_desc in self.series:
+            points = line_desc['pts']
+            if not points:
+                continue
+
+            color = line_desc['color']
+
+            x0, y0 = points[0]
+            last_x, last_y = self.convert_coords(x0, y0, ox, oy, plot_w, plot_h)
+            for x, y in points[1:]:
+                cur_x, cur_y = self.convert_coords(x, y, ox, oy, plot_w, plot_h)
+                self.draw.line((last_x, last_y, cur_x, cur_y), fill=color, width=self.line_width)
+                last_x, last_y = cur_x, cur_y

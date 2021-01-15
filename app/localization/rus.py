@@ -139,6 +139,11 @@ class RussianLocalization(BaseLocalization):
         )
 
     # ------ PRICE -------
+
+    PRICE_GRAPH_TITLE = f'Цена {RAIDO_GLYPH}уны'
+    PRICE_GRAPH_LEGEND_DET_PRICE = 'Детерминистская цена'
+    PRICE_GRAPH_LEGEND_ACTUAL_PRICE = 'Рыночная цена'
+
     def price_message(self, info: ThorInfo, fair_price: RuneFairPrice):
         return (
             f"Последняя цена {self.R}: <code>{info.price:.3f} BUSD</code>.\n"
