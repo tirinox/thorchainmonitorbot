@@ -4,12 +4,13 @@ import random
 import time
 
 from localization import BaseLocalization
+from services.dialog.price_picture import price_graph_from_db
 from services.fetch.base import INotified
 from services.lib.cooldown import CooldownSingle
 from services.lib.datetime import MINUTE, HOUR, DAY, parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.money import pretty_money, calc_percent_change
-from services.lib.texts import MessageType
+from services.lib.texts import MessageType, BoardMessage
 from services.models.price import RuneFairPrice, PriceReport, PriceATH
 from services.models.time_series import PriceTimeSeries, RUNE_SYMBOL
 
@@ -26,6 +27,7 @@ class PriceNotifier(INotified):
         self.time_series = PriceTimeSeries(RUNE_SYMBOL, deps.db)
         self.ath_stickers = cfg.ath.stickers
         self.ath_cooldown = parse_timespan_to_seconds(cfg.ath.cooldown)
+        self.price_graph_period = parse_timespan_to_seconds(cfg.price_graph.default_period)
 
     async def on_data(self, sender, fprice: RuneFairPrice):
         # fprice.real_rune_price = 1.44  # debug!!! for ATH
@@ -60,10 +62,15 @@ class PriceNotifier(INotified):
 
         btc_price = self.deps.price_holder.btc_per_rune
         report = PriceReport(*hist_prices, fair_price, last_ath, btc_price)
-        await self.deps.broadcaster.notify_preconfigured_channels(self.deps.loc_man,
-                                                                  BaseLocalization.notification_text_price_update,
-                                                                  report,
-                                                                  ath=ath)
+
+        user_lang_map = self.deps.broadcaster.telegram_chats_from_config(self.deps.loc_man)
+
+        async def price_graph_gen(chat_id):
+            loc: BaseLocalization = user_lang_map[chat_id]
+            graph = await price_graph_from_db(self.deps.db, loc, self.price_graph_period)
+            return BoardMessage.make_photo(graph, caption=loc.notification_text_price_update(report, ath))
+
+        await self.deps.broadcaster.broadcast(user_lang_map, price_graph_gen)
 
         if ath:
             await self.send_ath_sticker()

@@ -38,4 +38,4 @@ if __name__ == '__main__':
     d.loc_man = LocalizationManager()
     d.thor_man = ThorNodeAddressManager(d.cfg.thornode.seed)
     d.db = DB(d.loop)
-    d.loop.run_until_complete(test_price_graph(d, renew=False))
+    d.loop.run_until_complete(test_price_graph(d, renew=True))

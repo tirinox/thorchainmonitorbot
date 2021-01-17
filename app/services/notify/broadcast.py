@@ -121,7 +121,7 @@ class Broadcaster:
                         else:
                             text = message
 
-                    if text:
+                    if text or 'photo' in extra:
                         if await self._send_message(chat_id, text, message_type=message_type,
                                                     disable_web_page_preview=True,
                                                     disable_notification=False, **extra):

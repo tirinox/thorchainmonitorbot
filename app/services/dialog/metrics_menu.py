@@ -2,6 +2,9 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import *
 from aiogram.utils.helper import HelperMode
 
+from services.dialog.price_picture import price_graph_from_db
+from services.lib.datetime import DAY
+from services.lib.plot_graph import img_to_bio
 from services.lib.texts import kbd
 from services.dialog.base import BaseDialog, message_handler
 from services.dialog.queue_picture import queue_graph
@@ -67,6 +70,8 @@ class MetricsDialog(BaseDialog):
             fair_price=fp,
             btc_real_rune_price=btc_price))
 
+        graph = await price_graph_from_db(self.deps.db, self.loc, DAY * 7)
+        await message.answer_photo(graph)
         await message.answer(price_text,
                              disable_web_page_preview=True,
                              disable_notification=True)

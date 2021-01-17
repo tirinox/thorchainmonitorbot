@@ -20,7 +20,7 @@ class BoardMessage:
     photo: str = None
 
     @classmethod
-    def make_photo(cls, photo, caption):
+    def make_photo(cls, photo, caption=''):
         return cls(caption, MessageType.PHOTO, photo)
 
 

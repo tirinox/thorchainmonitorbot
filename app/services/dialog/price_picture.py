@@ -1,7 +1,7 @@
 from localization import BaseLocalization
 from services.lib.datetime import DAY
 from services.lib.db import DB
-from services.lib.plot_graph import PlotGraphLines
+from services.lib.plot_graph import PlotGraphLines, img_to_bio
 from services.lib.utils import async_wrap
 from services.models.time_series import PriceTimeSeries, RUNE_SYMBOL, RUNE_SYMBOL_DET
 
@@ -37,12 +37,12 @@ def price_graph(price_df, det_price_df, loc: BaseLocalization):
     return graph.finalize()
 
 
-async def price_graph_from_db(db: DB, loc: BaseLocalization):
+async def price_graph_from_db(db: DB, loc: BaseLocalization, period=DAY):
     series = PriceTimeSeries(RUNE_SYMBOL, db)
     det_series = PriceTimeSeries(RUNE_SYMBOL_DET, db)
 
-    prices = await series.get_last_values(DAY, with_ts=True)
-    det_prices = await det_series.get_last_values(DAY, with_ts=True)
+    prices = await series.get_last_values(period, with_ts=True)
+    det_prices = await det_series.get_last_values(period, with_ts=True)
 
     img = await price_graph(prices, det_prices, loc)
-    return img
+    return img_to_bio(img, 'price.jpg')
