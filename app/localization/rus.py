@@ -48,9 +48,7 @@ class RussianLocalization(BaseLocalization):
     BUTTON_MM_MY_ADDRESS = '🏦 Мои адреса'
     BUTTON_MM_METRICS = '📐 Метрики'
     BUTTON_MM_SETTINGS = f'⚙️ Настройки'
-
-    def kbd_main_menu(self):
-        return kbd([[self.BUTTON_MM_MY_ADDRESS, self.BUTTON_MM_METRICS, self.BUTTON_MM_SETTINGS]])
+    BUTTON_MM_MAKE_AVATAR = f'🦹‍️️ Сделай аву'
 
     # ------ STAKE INFO -----
 

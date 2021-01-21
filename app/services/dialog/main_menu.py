@@ -3,6 +3,7 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import *
 from aiogram.utils.helper import HelperMode
 
+from services.dialog.avatar_picture import handle_avatar_picture
 from services.dialog.base import BaseDialog, message_handler
 from services.dialog.metrics_menu import MetricsDialog
 from services.dialog.settings_menu import SettingsDialog
@@ -62,5 +63,7 @@ class MainMenuDialog(BaseDialog):
         elif message.text == self.loc.BUTTON_MM_SETTINGS:
             message.text = ''
             await SettingsDialog(self.loc, self.data, self.deps).on_enter(message)
+        elif message.text == self.loc.BUTTON_MM_MAKE_AVATAR:
+            await handle_avatar_picture(message, self.loc)
         else:
             return False

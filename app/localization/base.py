@@ -71,9 +71,13 @@ class BaseLocalization(ABC):  # == English
     BUTTON_MM_MY_ADDRESS = '🏦 Manage my address'
     BUTTON_MM_METRICS = '📐 Metrics'
     BUTTON_MM_SETTINGS = f'⚙️ Settings'
+    BUTTON_MM_MAKE_AVATAR = f'🦹‍️️ THOR Avatar'
 
     def kbd_main_menu(self):
-        return kbd([[self.BUTTON_MM_MY_ADDRESS, self.BUTTON_MM_METRICS, self.BUTTON_MM_SETTINGS]])
+        return kbd([
+            [self.BUTTON_MM_MY_ADDRESS, self.BUTTON_MM_METRICS],
+            [self.BUTTON_MM_MAKE_AVATAR, self.BUTTON_MM_SETTINGS]
+        ])
 
     # ------- STAKE INFO MENU -------
 
