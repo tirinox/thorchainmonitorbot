@@ -88,19 +88,18 @@ class AvatarDialog(BaseDialog):
                 user_pic = await download_tg_photo(explicit_picture)
             else:
                 user_pic = await get_userpic(message.from_user)
-                if user_pic is None:
-                    await self.on_enter(message)
-                    await message.reply(loc.TEXT_AVA_ERR_NO_PIC, reply_markup=self.menu_kbd())
+
+            if user_pic is None:
+                await message.reply(loc.TEXT_AVA_ERR_NO_PIC, reply_markup=self.menu_kbd())
+                return 
 
             w, h = user_pic.size
             if w != h:
                 await message.reply(loc.TEXT_AVA_ERR_SQUARE, reply_markup=self.menu_kbd())
-                await self.on_enter(message)
                 return
 
             if not w or not h:
                 await message.reply(loc.TEXT_AVA_ERR_INVALID, reply_markup=self.menu_kbd())
-                await self.on_enter(message)
                 return
 
             pic = await combine_frame_and_photo(user_pic)
