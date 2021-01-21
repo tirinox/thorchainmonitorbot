@@ -332,11 +332,24 @@ class BaseLocalization(ABC):  # == English
 
     @staticmethod
     def queue_to_smile(n):
-        if n <= 1:
+        if n <= 3:
             return '🟢'
-        elif n <= 7:
-            return '🟡'
         elif n <= 20:
-            return '🔴'
+            return '🟡'
         elif n <= 50:
+            return '🔴'
+        elif n <= 100:
             return '🤬!!'
+
+    # ------- AVATAR -------
+
+    TEXT_AVA_WELCOME = '🖼️ Drop me a square picture and I make you THORChain-styled avatar with a gradient frame.'
+
+    TEXT_AVA_ERR_INVALID = '⚠️ Your picture has invalid format!'
+    TEXT_AVA_ERR_SQUARE = '🖼️ Your picture is not square!'
+    TEXT_AVA_ERR_NO_PIC = '⚠️ You have no user pic...'
+    TEXT_AVA_READY = '🥳 <b>Your THORChain avatar is ready!</b> Download this image and set it as a profile picture' \
+                     ' at Telegram and other social networks.'
+
+    BUTTON_AVA_FROM_MY_USERPIC = '😀 From my userpic'
+
