@@ -121,3 +121,7 @@ def asset_name_cut_chain(asset):
         return cs[1]
     except IndexError:
         return asset
+
+
+def weighted_mean(values, weights):
+    return sum(values[g] * weights[g] for g in range(len(values))) / sum(weights)

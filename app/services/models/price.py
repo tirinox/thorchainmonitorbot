@@ -1,10 +1,12 @@
+import logging
 import time
 from dataclasses import dataclass
 from typing import Dict
 
+from services.lib.money import weighted_mean
 from services.models.base import BaseModelMixin
 from services.models.pool_info import PoolInfo
-from services.models.time_series import BUSD_SYMBOL, BTCB_SYMBOL
+from services.models.time_series import BUSD_SYMBOL, BTCB_SYMBOL, USDT_SYMBOL
 
 
 @dataclass
@@ -46,14 +48,29 @@ class PriceReport:
 
 class LastPriceHolder:
     def __init__(self):
-        self.usd_per_rune = 0.0
-        self.btc_per_rune = 0.0
+        self.usd_per_rune = 1.0
+        self.btc_per_rune = 0.000001
         self.pool_info_map: Dict[str, PoolInfo] = {}
         self.last_update_ts = 0
 
+    def calculate_weighted_rune_price(self):
+        stable_coins = [BUSD_SYMBOL, USDT_SYMBOL]
+
+        prices, weights = [], []
+        for stable_symbol in stable_coins:
+            pool_info = self.pool_info_map.get(stable_symbol)
+            if pool_info and pool_info.balance_rune > 0 and pool_info.asset_per_rune > 0:
+                prices.append(pool_info.asset_per_rune)
+                weights.append(pool_info.balance_rune)
+
+        if prices:
+            self.usd_per_rune = weighted_mean(prices, weights)
+        else:
+            logging.error(f'LastPriceHolder was unable to find any stable coin pools!')
+
     def update(self, new_pool_info_map: Dict[str, PoolInfo]):
         self.pool_info_map = new_pool_info_map.copy()
-        self.usd_per_rune = self.pool_info_map[BUSD_SYMBOL].asset_per_rune
+        self.calculate_weighted_rune_price()
         self.btc_per_rune = self.pool_info_map[BTCB_SYMBOL].asset_per_rune
         self.last_update_ts = time.time()
 

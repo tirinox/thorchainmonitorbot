@@ -91,7 +91,7 @@ class AvatarDialog(BaseDialog):
 
             if user_pic is None:
                 await message.reply(loc.TEXT_AVA_ERR_NO_PIC, reply_markup=self.menu_kbd())
-                return 
+                return
 
             w, h = user_pic.size
             if w != h:
