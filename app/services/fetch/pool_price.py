@@ -1,13 +1,9 @@
-import asyncio
-
-import ujson
-
 from services.fetch.base import BaseFetcher
 from services.fetch.fair_price import fair_rune_price
 from services.lib.datetime import parse_timespan_to_seconds, DAY, HOUR
 from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo
-from services.models.time_series import PriceTimeSeries, BUSD_SYMBOL, RUNE_SYMBOL, RUNE_SYMBOL_DET
+from services.models.time_series import PriceTimeSeries, BUSD_SYMBOL, RUNE_SYMBOL, RUNE_SYMBOL_DET, TimeSeries
 
 MIDGARD_AGGREGATED_POOL_INFO = \
     'https://chaosnet-midgard.bepswap.com/v1/history/pools?pool={pool}&interval=day&from={from_ts}&to={to_ts}'
@@ -19,6 +15,7 @@ class PoolPriceFetcher(BaseFetcher):
         period = parse_timespan_to_seconds(cfg.price.fetch_period)
         super().__init__(deps, sleep_period=period)
         self.deps = deps
+        self.pool_series = TimeSeries('pool-info', self.deps.db)
 
     @staticmethod
     def historic_url(base_url, asset, height):
@@ -30,9 +27,12 @@ class PoolPriceFetcher(BaseFetcher):
 
     async def fetch(self):
         d = self.deps
-        await self.get_current_pool_data_full()
+        new_pool_info = await self.get_current_pool_data_full()
         price = d.price_holder.usd_per_rune
         self.logger.info(f'fresh rune price is ${price:.3f}')
+
+        # if new_pool_info:
+        #     await self._save_historical_pool_data(new_pool_info)
 
         if price > 0:
             pts = PriceTimeSeries(RUNE_SYMBOL, d.db)
@@ -72,8 +72,13 @@ class PoolPriceFetcher(BaseFetcher):
 
         return dollar_per_rune, asset_price_in_usd
 
+    async def _save_historical_pool_data(self, pool_info_dict):
+        await self.pool_series.add_as_json(j={
+            pool: info.as_dict for pool, info in pool_info_dict.items()
+        })
+
     async def get_current_pool_data_full(self):
-        base_url = await self.deps.thor_man.select_node_url()
+        base_url = await self.deps.thor_man.select_node_url()  # todo: use consensus module
         url = self.full_pools_url(base_url)
 
         self.logger.info(f"loading pool data from {url}")

@@ -51,8 +51,7 @@ class PoolInfo:
                    pool_units=int(j['pool_units']),
                    status=j['status'])
 
-    @property
-    def to_dict(self):
+    def as_dict(self):
         return {
             'balance_asset': str(self.balance_asset),
             'balance_rune': str(self.balance_rune),

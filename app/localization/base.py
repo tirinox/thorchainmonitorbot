@@ -341,6 +341,13 @@ class BaseLocalization(ABC):  # == English
         elif n <= 100:
             return '🤬!!'
 
+    TEXT_PRICE_INFO_ASK_DURATION = 'For what period of time do you want to get a graph?'
+
+    BUTTON_1_HOUR = '1 hour'
+    BUTTON_24_HOURS = '24 hours'
+    BUTTON_1_WEEK = '1 week'
+    BUTTON_30_DAYS = '30 days'
+
     # ------- AVATAR -------
 
     TEXT_AVA_WELCOME = '🖼️ Drop me a square picture and I make you THORChain-styled avatar with a gradient frame.'

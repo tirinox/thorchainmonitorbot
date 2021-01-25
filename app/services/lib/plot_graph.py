@@ -34,7 +34,7 @@ class PlotGraph:
     GRADIENT_BOTTOM_COLOR = '#121a23'
     PLOT_COLOR = '#62d0e3'
     PLOT_COLOR_2 = '#52c0d3'
-    TICK_COLOR = PLOT_COLOR_2
+    TICK_COLOR = '#555577'
 
     BASE = './data'
     FONT_BOLD = f'{BASE}/my.ttf'
@@ -63,13 +63,17 @@ class PlotGraph:
         self.n_ticks_y = 20
         self.font_ticks = self.default_font_ticks
         self.font_title = self.default_font_title
+        self.tick_size = 4
+        self.axis_text_color = '#ffffff'
+        self.grid_lines = False
+        self.tick_color = self.TICK_COLOR
 
     def plot_rect(self):
         width = self.w - self.left - self.right
         height = self.h - self.top - self.bottom
         return self.left, self.h - self.bottom, width, height
 
-    def _plot_ticks(self, ticks, axis='x', text_color='#ffffff'):
+    def _plot_ticks(self, ticks, axis='x'):
         if not ticks:
             return
         n_ticks = len(ticks)
@@ -83,7 +87,8 @@ class PlotGraph:
             y_step = 0
             anchor = 'lm'
             self.draw.line((int(ox), int(oy),
-                            int(self.left + width), int(self.h - self.bottom)), self.TICK_COLOR, width=1)
+                            int(self.left + width), int(self.h - self.bottom)),
+                           self.tick_color, width=1)
         else:
             cur_x = self.left * 0.8
             cur_y = self.h - self.bottom
@@ -91,16 +96,20 @@ class PlotGraph:
             x_step = 0
             anchor = 'rm'
             self.draw.line((int(ox), int(cur_y),
-                            int(ox), int(self.top)), self.TICK_COLOR, width=1)
+                            int(ox), int(self.top)),
+                           self.tick_color, width=1)
 
         for t in ticks:
             x, y = int(cur_x), int(cur_y)
-            self.draw.text((x, y), t, anchor=anchor, fill=text_color,
+            self.draw.text((x, y), t, anchor=anchor, fill=self.axis_text_color,
                            font=self.font_ticks)
             if axis == 'y':
-                self.draw.line((self.left, y, self.left - 4, y), self.TICK_COLOR, width=1)
+                left = self.left + width if self.grid_lines else self.left
+                self.draw.line((left, y, self.left - self.tick_size, y), self.tick_color, width=1)
             else:
-                self.draw.line((x, self.h - self.bottom, x, self.h - self.bottom + 4), self.TICK_COLOR, width=1)
+                top = self.top if self.grid_lines else self.h - self.bottom
+                self.draw.line((x, top, x, self.h - self.bottom + self.tick_size),
+                               self.tick_color, width=1)
             cur_x += x_step
             cur_y += y_step
 
@@ -196,7 +205,7 @@ class PlotBarGraph(PlotGraph):
         self._plot_ticks_time_horizontal()
         self._plot_ticks_int_vertical()
 
-    def _plot_ticks_time_horizontal(self, text_color='#ffffff'):
+    def _plot_ticks_time_horizontal(self):
         n_ticks = self.n_ticks_x
         n = len(self.x_values)
         if n <= 0:
@@ -214,9 +223,9 @@ class PlotBarGraph(PlotGraph):
             ticks.append(text)
             cur_t += t_step
 
-        self._plot_ticks(ticks, 'x', text_color)
+        self._plot_ticks(ticks, 'x')
 
-    def _plot_ticks_int_vertical(self, text_color='#ffffff'):
+    def _plot_ticks_int_vertical(self):
         n_ticks = self.n_ticks_y
         n = len(self.x_values)
         if n <= 0:
@@ -230,7 +239,7 @@ class PlotBarGraph(PlotGraph):
             ticks.append(self.y_formatter(cur_t))
             cur_t += t_step
 
-        self._plot_ticks(ticks, 'y', text_color)
+        self._plot_ticks(ticks, 'y')
 
 
 class PlotGraphLines(PlotGraph):
@@ -259,7 +268,7 @@ class PlotGraphLines(PlotGraph):
             'color': color
         })
 
-    def _plot_ticks_axis(self, v_min, v_max, axis, n_ticks, text_color='#ffffff'):
+    def _plot_ticks_axis(self, v_min, v_max, axis, n_ticks):
         if v_min >= v_max:
             return
 
@@ -273,7 +282,7 @@ class PlotGraphLines(PlotGraph):
             ticks.append(text)
             cur_v += t_step
 
-        self._plot_ticks(ticks, axis, text_color)
+        self._plot_ticks(ticks, axis)
 
     def convert_coords(self, x, y, ox, oy, w, h):
         norm_x, norm_y = (

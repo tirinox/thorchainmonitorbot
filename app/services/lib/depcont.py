@@ -5,11 +5,11 @@ from dataclasses import dataclass
 from aiogram import Bot, Dispatcher
 from aiohttp import ClientSession
 
+from services.fetch.thor_node import ThorNode
 from services.models.price import LastPriceHolder
 from services.models.queue import QueueInfo
 
 
-# noinspection PyUnresolvedReferences
 @dataclass
 class DepContainer:
     cfg: typing.Optional['Config'] = None
@@ -22,7 +22,7 @@ class DepContainer:
     dp: typing.Optional['Dispatcher'] = None
 
     thor_man: typing.Optional['ThorNodeAddressManager'] = None
-    thor_nodes: typing.Optional['ThorNode'] = None
+    thor_nodes: typing.Optional[ThorNode] = None
     loc_man: typing.Optional['LocalizationManager'] = None
     broadcaster: typing.Optional['Broadcaster'] = None
     price_holder: LastPriceHolder = LastPriceHolder()

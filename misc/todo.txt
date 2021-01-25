@@ -80,7 +80,11 @@ Stake info: all addresses to one button!
 
 ------------------------------------------------------------------------
 
-ToDo: price graph + deterministic price graph
+Price graph
+1) Grid lines
+2) + spec coeff graph
+3) 1h , 1day ,1 week, 1 month buttons
+4) 
 
 ------------------------------------------------------------------------
 

@@ -276,6 +276,13 @@ class RussianLocalization(BaseLocalization):
                    if queue_info.is_full else ''
                )
 
+    TEXT_PRICE_INFO_ASK_DURATION = 'За какой период времени вы хотите получить график?'
+
+    BUTTON_1_HOUR = '1 часов'
+    BUTTON_24_HOURS = '24 часа'
+    BUTTON_1_WEEK = '1 неделя'
+    BUTTON_30_DAYS = '30 дней'
+
     # ------- AVATAR -------
 
     TEXT_AVA_WELCOME = '🖼️ Скинь мне квадратное фото, и я сделаю для тебя аватар в стиле THORChain ' \

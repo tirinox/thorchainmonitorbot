@@ -11,9 +11,9 @@ QUEUE_TIME_SERIES = 'thor_queue'
 RESAMPLE_TIME = '10min'
 
 
-async def queue_graph(d: DepContainer, loc: BaseLocalization):
+async def queue_graph(d: DepContainer, loc: BaseLocalization, duration=DAY):
     ts = TimeSeries(QUEUE_TIME_SERIES, d.db)
-    points = await ts.select(*ts.range_from_ago_to_now(DAY, tolerance_sec=10), count=10000)
+    points = await ts.select(*ts.range_from_ago_to_now(duration, tolerance_sec=10), count=10000)
     if not points:
         return None
     return await queue_graph_sync(points, loc)

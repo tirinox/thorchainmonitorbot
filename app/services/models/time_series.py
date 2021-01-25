@@ -1,3 +1,4 @@
+import json
 import time
 
 from services.lib.db import DB
@@ -46,17 +47,22 @@ class TimeSeries:
                                    count=max_points)
         return points
 
-    async def get_last_values(self, period_sec, key, max_points=10000, tolerance_sec=10, with_ts=False):
+    async def get_last_values(self, period_sec, key, max_points=10000, tolerance_sec=10, with_ts=False,
+                              decoder=float):
         points = await self.get_last_points(period_sec, max_points, tolerance_sec)
         if isinstance(key, str):
             key = key.encode('utf-8')
 
         if with_ts:
-            values = [(self.get_ts_from_index(p[0]), float(p[1][key])) for p in points if key in p[1]]
+            values = [(self.get_ts_from_index(p[0]), decoder(p[1][key])) for p in points if key in p[1]]
         else:
-            values = [float(p[1][key]) for p in points if key in p[1]]
+            values = [decoder(p[1][key]) for p in points if key in p[1]]
 
         return values
+
+    # noinspection PyTypeChecker
+    async def get_last_values_json(self, period_sec, max_points=10000, tolerance_sec=10, with_ts=False):
+        return await self.get_last_values(period_sec, 'json', max_points, tolerance_sec, with_ts, decoder=json.loads)
 
     async def average(self, period_sec, key, max_points=10000, tolerance_sec=10):
         values = await self.get_last_values(period_sec, key, max_points, tolerance_sec)
@@ -70,6 +76,9 @@ class TimeSeries:
     async def add(self, message_id=b'*', **kwargs):
         r = await self.db.get_redis()
         await r.xadd(self.stream_name, kwargs, message_id=message_id)
+
+    async def add_as_json(self, message_id=b'*', j: dict = None):
+        await self.add(message_id, json=json.dumps(j))
 
     async def select(self, start, end, count=100):
         r = await self.db.get_redis()
