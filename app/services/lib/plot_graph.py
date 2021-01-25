@@ -183,6 +183,9 @@ class PlotBarGraph(PlotGraph):
         if self.max_y is None:
             self.update_bounds_y()
 
+        self._plot_ticks_time_horizontal()
+        self._plot_ticks_int_vertical()
+
         colors = [s[1] for s in self.series]
         y_values = [s[0] for s in self.series]
 
@@ -201,9 +204,6 @@ class PlotBarGraph(PlotGraph):
                 ), fill=color)
                 cur_y += height
             cur_x += block_width + m
-
-        self._plot_ticks_time_horizontal()
-        self._plot_ticks_int_vertical()
 
     def _plot_ticks_time_horizontal(self):
         n_ticks = self.n_ticks_x
