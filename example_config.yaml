@@ -9,6 +9,9 @@ thornode:
     cohort: 3
     agree: 2
 
+midgard:
+  api_url: https://chaosnet-midgard.bepswap.com/
+
 
 telegram:
   bot:

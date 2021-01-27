@@ -53,7 +53,7 @@ if __name__ == '__main__':
 
     d = DepContainer()
     d.loop = asyncio.get_event_loop()
-    d.cfg = Config(Config.DEFAULT_LVL_UP)
+    d.cfg = Config()
     d.db = DB(d.loop)
 
     bot = Bot(token=d.cfg.telegram.bot.token, parse_mode=ParseMode.HTML)

@@ -2,16 +2,16 @@ include .env
 export
 
 .DEFAULT_GOAL := help
-
-
 .PHONY: help build start stop restart pull logs clean upgrade redis-cli redis-sv-loc
+
+BOTNAME = thtgbot
 
 help:
 	$(info Commands: build | start | stop | restart | pull | logs | clean | upgrade | redis-cli | redis-sv-loc)
 
 build:
 	$(info Make: Building images.)
-	docker-compose build --no-cache thtgbot redis
+	docker-compose build --no-cache $(BOTNAME) redis
 
 start:
 	$(info Make: Starting containers.)
@@ -33,7 +33,7 @@ pull:
 	@git pull
 
 logs:
-	@docker-compose logs -f --tail 1000 thtgbot
+	@docker-compose logs -f --tail 1000 $(BOTNAME)
 
 clean:
 	@docker system prune --volumes --force

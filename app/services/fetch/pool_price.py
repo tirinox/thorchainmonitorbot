@@ -18,16 +18,16 @@ class PoolPriceFetcher(BaseFetcher):
         self.pool_series = TimeSeries('pool-info', self.deps.db)
 
     @staticmethod
-    def historic_url(base_url, asset, height):
-        return f"{base_url}/thorchain/pool/{asset}?height={height}"
+    def historic_url(asset, height):
+        return f"/thorchain/pool/{asset}?height={height}"
 
     @staticmethod
-    def full_pools_url(base_url):
-        return f"{base_url}/thorchain/pools"
+    def full_pools_url():
+        return f"/thorchain/pools"
 
     async def fetch(self):
         d = self.deps
-        new_pool_info = await self.get_current_pool_data_full()
+        await self.get_current_pool_data_full()
         price = d.price_holder.usd_per_rune
         self.logger.info(f'fresh rune price is ${price:.3f}')
 
@@ -50,12 +50,9 @@ class PoolPriceFetcher(BaseFetcher):
         if asset == RUNE_SYMBOL:
             return PoolInfo.dummy()
 
-        base_url = await self.deps.thor_man.select_node_url()
-        url = self.historic_url(base_url, asset, height)
-
-        async with self.deps.session.get(url) as resp:
-            j = await resp.json()
-            return PoolInfo.from_dict(j)
+        url = self.historic_url(asset, height)
+        pool_info_raw = await self.deps.thor_nodes.request(url)
+        return PoolInfo.from_dict(pool_info_raw)
 
     async def get_price_in_rune(self, asset, height=0):
         if asset == RUNE_SYMBOL:
@@ -78,19 +75,13 @@ class PoolPriceFetcher(BaseFetcher):
         })
 
     async def get_current_pool_data_full(self):
-        base_url = await self.deps.thor_man.select_node_url()  # todo: use consensus module
-        url = self.full_pools_url(base_url)
-
-        self.logger.info(f"loading pool data from {url}")
-
-        async with self.deps.session.get(url) as resp:
-            pools_info = await resp.json()
-            results = {
-                pool['asset']: PoolInfo.from_dict(pool) for pool in pools_info
-            }
-            if results and self.deps.price_holder is not None:
-                self.deps.price_holder.update(results)
-            return results
+        pool_info_raw = await self.deps.thor_nodes.request(self.full_pools_url())
+        results = {
+            pool['asset']: PoolInfo.from_dict(pool) for pool in pool_info_raw
+        }
+        if results and self.deps.price_holder is not None:
+            self.deps.price_holder.update(results)
+        return results
 
     async def get_prices_of(self, asset_list):
         pool_dict = await self.get_current_pool_data_full()

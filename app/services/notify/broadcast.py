@@ -42,6 +42,16 @@ class Broadcaster:
 
         await self.broadcast(user_lang_map.keys(), message_gen)
 
+    @staticmethod
+    def remove_bad_args(kwargs, dis_web_preview=False, dis_notification=False):
+        if dis_web_preview:
+            if 'disable_web_page_preview' in kwargs:
+                del kwargs['disable_web_page_preview']
+        if dis_notification:
+            if 'disable_notification' in kwargs:
+                del kwargs['disable_notification']
+        return kwargs
+
     async def _send_message(self, chat_id, text, message_type=MessageType.TEXT, *args, **kwargs) -> bool:
         """
         Safe messages sender
@@ -54,10 +64,10 @@ class Broadcaster:
             if message_type == MessageType.TEXT:
                 await self.bot.send_message(chat_id, text, *args, **kwargs)
             elif message_type == MessageType.STICKER:
-                del kwargs['disable_web_page_preview']
+                kwargs = self.remove_bad_args(kwargs, dis_web_preview=True)
                 await self.bot.send_sticker(chat_id, sticker=text, *args, **kwargs)
             elif message_type == MessageType.PHOTO:
-                del kwargs['disable_web_page_preview']
+                kwargs = self.remove_bad_args(kwargs, dis_web_preview=True)
                 await self.bot.send_photo(chat_id, caption=text, *args, **kwargs)
         except exceptions.BotBlocked:
             self.logger.error(f"Target [ID:{chat_id}]: blocked by user")

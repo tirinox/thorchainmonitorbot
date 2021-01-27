@@ -15,6 +15,7 @@ services:
       - redis-net
     volumes:
       - ./app:/app
+      - ./config.yaml:/config/config.yaml
 
   redis:
     image: "redis:alpine"

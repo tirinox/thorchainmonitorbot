@@ -1,5 +1,5 @@
 .idea/
-app/config.yaml
+config.yaml
 redis_data/
 datavar/
 dump.rdb

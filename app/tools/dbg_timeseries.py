@@ -17,7 +17,7 @@ if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
 
     loop = asyncio.get_event_loop()
-    cfg = Config(Config.DEFAULT_LVL_UP)
+    cfg = Config()
     db = DB(loop)
 
     asyncio.run(main(cfg, db))

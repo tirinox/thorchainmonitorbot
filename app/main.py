@@ -40,6 +40,7 @@ class App:
             datefmt='%Y-%m-%d %H:%M:%S',
         )
 
+        logging.info('-' * 100)
         logging.info(f"Log level: {log_level}")
 
         d.loop = asyncio.get_event_loop()
@@ -121,5 +122,4 @@ class App:
 
 
 if __name__ == '__main__':
-    print('-' * 100)
     App().run_bot()
