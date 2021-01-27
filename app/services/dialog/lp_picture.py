@@ -17,7 +17,7 @@ from services.lib.plot_graph import PlotBarGraph
 from services.lib.texts import grouper
 from services.lib.utils import Singleton, async_wrap
 from services.models.stake_info import StakePoolReport, StakeDayGraphPoint
-from services.models.time_series import BNB_SYMBOL, RUNE_SYMBOL, BUSD_SYMBOL
+from services.lib.assets import BNB_SYMBOL, BUSD_SYMBOL, BUSD_TEST_SYMBOL, USDT_SYMBOL, RUNE_SYMBOL, is_stable_coin
 
 WIDTH, HEIGHT = 1200, 1600
 
@@ -114,9 +114,6 @@ def pos_percent(x, y, ax=0, ay=0, w=WIDTH, h=HEIGHT):
 def result_color(v):
     return RED_COLOR if v < 0 else GREEN_COLOR
 
-
-def is_stable_coin(pool):
-    return pool == BUSD_SYMBOL
 
 
 async def lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, value_hidden=False):

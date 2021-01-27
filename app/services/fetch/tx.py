@@ -2,13 +2,12 @@ import asyncio
 from typing import List
 
 from services.fetch.base import BaseFetcher
+from services.fetch.midgard import get_midgard_url
 from services.lib.datetime import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo
-from services.models.time_series import BUSD_SYMBOL
+from services.lib.assets import BUSD_SYMBOL, USDT_SYMBOL, BUSD_TEST_SYMBOL
 from services.models.tx import StakeTx, StakePoolStats
-
-TRANSACTION_URL = "https://chaosnet-midgard.bepswap.com/v1/txs?offset={offset}&limit={limit}&type=stake,unstake"
 
 
 class StakeTxFetcher(BaseFetcher):
@@ -44,9 +43,8 @@ class StakeTxFetcher(BaseFetcher):
 
     # -------
 
-    @staticmethod
-    def tx_endpoint_url(offset=0, limit=10):
-        return TRANSACTION_URL.format(offset=offset, limit=limit)
+    def tx_endpoint_url(self, offset=0, limit=10):
+        return get_midgard_url(self.deps.cfg, f"/txs?offset={offset}&limit={limit}&type=stake,unstake")
 
     @staticmethod
     def _parse_txs(j):
@@ -118,7 +116,11 @@ class StakeTxFetcher(BaseFetcher):
             raise LookupError("pool_info_map is not loaded into the price holder!")
 
         pool_names = StakeTx.collect_pools(txs)
-        pool_names.add(BUSD_SYMBOL)  # don't forget BUSD, for total usd volume!
+        pool_names.update({
+            BUSD_SYMBOL,
+            BUSD_TEST_SYMBOL,
+            USDT_SYMBOL,
+        })  # don't forget BUSD, for total usd volume!
         self.pool_stat_map = {
             pool: (await StakePoolStats.get_from_db(pool, self.deps.db)) for pool in pool_names
         }

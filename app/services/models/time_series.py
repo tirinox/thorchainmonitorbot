@@ -3,14 +3,6 @@ import time
 
 from services.lib.db import DB
 
-BNB_SYMBOL = 'BNB.BNB'
-BUSD_SYMBOL = 'BNB.BUSD-BD1'
-USDT_SYMBOL = 'BNB.USDT-6D8'
-RUNE_SYMBOL = 'BNB.RUNE-B1A'
-BTCB_SYMBOL = 'BNB.BTCB-1DE'
-ETHB_SYMBOL = 'BNB.ETH-1C9'
-RUNE_SYMBOL_DET = 'RUNE-DET'
-
 
 class TimeSeries:
     def __init__(self, name: str, db: DB):
@@ -109,6 +101,7 @@ class PriceTimeSeries(TimeSeries):
         else:
             return 0
 
-    async def get_last_values(self, period_sec, key=None, max_points=10000, tolerance_sec=10, with_ts=True):
+    async def get_last_values(self, period_sec, key, max_points=10000, tolerance_sec=10, with_ts=False,
+                              decoder=float):
         key = key or self.KEY
         return await super().get_last_values(period_sec, key, max_points, tolerance_sec, with_ts)

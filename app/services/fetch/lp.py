@@ -1,16 +1,10 @@
 import asyncio
 import logging
 
+from services.fetch.midgard import get_midgard_url
 from services.fetch.pool_price import PoolPriceFetcher
 from services.lib.depcont import DepContainer
 from services.models.stake_info import CurrentLiquidity, StakePoolReport, StakeDayGraphPoint
-
-MIDGARD_MY_POOLS = 'https://chaosnet-midgard.bepswap.com/v1/stakers/{address}'
-MIDGARD_POOL_LIQUIDITY = 'https://chaosnet-midgard.bepswap.com/v1/pools/detail?asset={pools}&view=simple'
-
-ASGARD_CONSUMER_WEEKLY_HISTORY = 'https://asgard-consumer.vercel.app/api/weekly?address={address}&pool={pool}'
-ASGARD_CONSUMER_CURRENT_LIQUIDITY = \
-    'https://asgard-consumer.vercel.app/api/v2/history/liquidity?address={address}&pools={pool}'
 
 
 class LiqPoolFetcher:
@@ -18,8 +12,19 @@ class LiqPoolFetcher:
         self.deps = deps
         self.logger = logging.getLogger('LiqPoolFetcher')
 
+    def url_midgard_my_pools(self, address):
+        return get_midgard_url(self.deps.cfg, f"/stakers/{address}")
+
+    @staticmethod
+    def url_asgard_consumer_weekly_history(address, pool):
+        return f'https://asgard-consumer.vercel.app/api/weekly?address={address}&pool={pool}'
+
+    @staticmethod
+    def url_asgard_consumer_liquidity(address, pool):
+        return f'https://asgard-consumer.vercel.app/api/v2/history/liquidity?address={address}&pools={pool}'
+
     async def get_my_pools(self, address):
-        url = MIDGARD_MY_POOLS.format(address=address)
+        url = self.url_midgard_my_pools(address)
         self.logger.info(f'get {url}')
         async with self.deps.session.get(url) as resp:
             j = await resp.json()
@@ -30,14 +35,14 @@ class LiqPoolFetcher:
                 return None
 
     async def fetch_one_pool_liquidity_info(self, address, pool):
-        url = ASGARD_CONSUMER_CURRENT_LIQUIDITY.format(address=address, pool=pool)
+        url = self.url_asgard_consumer_liquidity(address, pool)
         self.logger.info(f'get {url}')
         async with self.deps.session.get(url) as resp:
             j = await resp.json()
             return CurrentLiquidity.from_asgard(j)
 
     async def fetch_one_pool_weekly_chart(self, address, pool):
-        url = ASGARD_CONSUMER_WEEKLY_HISTORY.format(address=address, pool=pool)
+        url = self.url_asgard_consumer_weekly_history(address, pool)
         self.logger.info(f'get {url}')
         async with self.deps.session.get(url) as resp:
             j = await resp.json()

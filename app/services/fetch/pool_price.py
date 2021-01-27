@@ -1,12 +1,11 @@
 from services.fetch.base import BaseFetcher
 from services.fetch.fair_price import fair_rune_price
+from services.fetch.midgard import get_midgard_url
 from services.lib.datetime import parse_timespan_to_seconds, DAY, HOUR
 from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo
-from services.models.time_series import PriceTimeSeries, BUSD_SYMBOL, RUNE_SYMBOL, RUNE_SYMBOL_DET, TimeSeries
-
-MIDGARD_AGGREGATED_POOL_INFO = \
-    'https://chaosnet-midgard.bepswap.com/v1/history/pools?pool={pool}&interval=day&from={from_ts}&to={to_ts}'
+from services.models.time_series import PriceTimeSeries, TimeSeries
+from services.lib.assets import BUSD_SYMBOL, RUNE_SYMBOL, RUNE_SYMBOL_DET
 
 
 class PoolPriceFetcher(BaseFetcher):
@@ -24,6 +23,12 @@ class PoolPriceFetcher(BaseFetcher):
     @staticmethod
     def full_pools_url():
         return f"/thorchain/pools"
+
+    def url_for_historical_pool_state(self, pool, ts):
+        from_ts = int(ts - HOUR)
+        to_ts = int(ts + DAY + HOUR)
+        query = f"/history/pools?pool={pool}&interval=day&from={from_ts}&to={to_ts}"
+        return get_midgard_url(self.deps.cfg, query)
 
     async def fetch(self):
         d = self.deps
@@ -81,6 +86,9 @@ class PoolPriceFetcher(BaseFetcher):
         }
         if results and self.deps.price_holder is not None:
             self.deps.price_holder.update(results)
+
+        # print(results)
+
         return results
 
     async def get_prices_of(self, asset_list):
@@ -88,12 +96,6 @@ class PoolPriceFetcher(BaseFetcher):
         return {
             asset: pool for asset, pool in pool_dict.items() if pool in asset_list
         }
-
-    @staticmethod
-    def url_for_pool_info_by_day(pool, ts):
-        from_ts = int(ts - HOUR)
-        to_ts = int(ts + DAY + HOUR)
-        return MIDGARD_AGGREGATED_POOL_INFO.format(pool=pool, from_ts=from_ts, to_ts=to_ts)
 
     @staticmethod
     def cache_key_for_pool_info_by_day(pool, day):
@@ -108,7 +110,7 @@ class PoolPriceFetcher(BaseFetcher):
             except ValueError:
                 pass
 
-        url = self.url_for_pool_info_by_day(pool, day)
+        url = self.url_for_historical_pool_state(pool, day)
         self.logger.info(f"get: {url}")
 
         async with self.deps.session.get(url) as resp:

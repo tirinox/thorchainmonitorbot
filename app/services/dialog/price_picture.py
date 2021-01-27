@@ -3,7 +3,8 @@ from services.lib.datetime import DAY
 from services.lib.db import DB
 from services.lib.plot_graph import PlotGraphLines, img_to_bio
 from services.lib.utils import async_wrap
-from services.models.time_series import PriceTimeSeries, RUNE_SYMBOL, RUNE_SYMBOL_DET
+from services.models.time_series import PriceTimeSeries
+from services.lib.assets import RUNE_SYMBOL, RUNE_SYMBOL_DET
 
 PRICE_GRAPH_WIDTH = 640
 PRICE_GRAPH_HEIGHT = 480

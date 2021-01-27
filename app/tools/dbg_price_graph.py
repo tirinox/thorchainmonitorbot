@@ -12,7 +12,8 @@ from services.lib.config import Config
 from services.lib.datetime import DAY, series_to_pandas
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
-from services.models.time_series import PriceTimeSeries, RUNE_SYMBOL, RUNE_SYMBOL_DET
+from services.models.time_series import PriceTimeSeries
+from services.lib.assets import RUNE_SYMBOL, RUNE_SYMBOL_DET
 
 
 async def test_price_graph(d: DepContainer, renew=True):

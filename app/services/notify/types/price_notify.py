@@ -12,7 +12,8 @@ from services.lib.depcont import DepContainer
 from services.lib.money import pretty_money, calc_percent_change
 from services.lib.texts import MessageType, BoardMessage
 from services.models.price import RuneFairPrice, PriceReport, PriceATH
-from services.models.time_series import PriceTimeSeries, RUNE_SYMBOL
+from services.models.time_series import PriceTimeSeries
+from services.lib.assets import RUNE_SYMBOL
 
 
 class PriceNotifier(INotified):
