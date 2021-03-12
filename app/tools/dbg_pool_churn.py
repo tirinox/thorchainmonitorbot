@@ -5,9 +5,10 @@ from copy import deepcopy
 import aiohttp
 from aiogram import Bot, Dispatcher
 from aiogram.types import ParseMode
+from aiothornode.connector import ThorConnector
+from aiothornode.types import TEST_NET_ENVIRONMENT_MULTI_1
 
 from localization import LocalizationManager
-from services.fetch.node_ip_manager import ThorNodeAddressManager
 from services.fetch.pool_price import PoolPriceFetcher
 from services.lib.config import Config
 from services.lib.db import DB
@@ -22,7 +23,7 @@ async def send_to_channel_test_message(d: DepContainer):
     d.broadcaster = Broadcaster(d)
 
     async with aiohttp.ClientSession() as d.session:
-        d.thor_man = ThorNodeAddressManager(d.cfg.thornode.seed, d.session)
+        d.thor_connector = ThorConnector(TEST_NET_ENVIRONMENT_MULTI_1.copy(), d.session)
         lph = LastPriceHolder()
         ppf = PoolPriceFetcher(d)
         notifier_pool_churn = PoolChurnNotifier(d)

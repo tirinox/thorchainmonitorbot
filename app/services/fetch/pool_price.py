@@ -56,9 +56,9 @@ class PoolPriceFetcher(BaseFetcher):
         if asset == RUNE_SYMBOL:
             return PoolInfo.dummy()
 
-        url = self.historic_url(asset, height)
-        pool_info_raw = await self.deps.thor_nodes.request(url)
-        return PoolInfo.from_dict(pool_info_raw)
+        p = await self.deps.thor_connector.query_pool(asset, height)
+        return PoolInfo(p.asset, p.assets_per_rune, p.balance_asset_int, p.balance_rune_int, p.pool_units_int,
+                        p.status)
 
     async def get_price_in_rune(self, asset, height=0):
         if asset == RUNE_SYMBOL:
@@ -81,9 +81,12 @@ class PoolPriceFetcher(BaseFetcher):
         })
 
     async def get_current_pool_data_full(self):
-        pool_info_raw = await self.deps.thor_nodes.request(self.full_pools_url())
+        pool_info_raw = await self.deps.thor_connector.query_pools()
         results = {
-            pool['asset']: PoolInfo.from_dict(pool) for pool in pool_info_raw
+            p.asset: PoolInfo(p.asset,
+                              p.assets_per_rune, p.balance_asset_int, p.balance_rune_int,
+                              p.pool_units_int, p.status)
+            for p in pool_info_raw
         }
         if results and self.deps.price_holder is not None:
             self.deps.price_holder.update(results)

@@ -4,17 +4,17 @@ import os
 import pickle
 
 import aiohttp
+from aiothornode.connector import ThorConnector, TEST_NET_ENVIRONMENT_MULTI_1
 
 from localization import LocalizationManager, RussianLocalization
 from services.dialog.lp_picture import lp_pool_picture, lp_address_summary_picture
 from services.fetch.lp import LiqPoolFetcher
-from services.fetch.node_ip_manager import ThorNodeAddressManager
 from services.fetch.pool_price import PoolPriceFetcher
 from services.lib.config import Config
+from services.lib.constants import BTCB_SYMBOL
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.models.stake_info import CurrentLiquidity
-from services.lib.constants import BTCB_SYMBOL
 
 
 async def load_one_pool_liquidity(d: DepContainer, addr, pool=BTCB_SYMBOL):
@@ -22,7 +22,7 @@ async def load_one_pool_liquidity(d: DepContainer, addr, pool=BTCB_SYMBOL):
         await d.db.get_redis()
         lpf = LiqPoolFetcher(d)
         ppf = PoolPriceFetcher(d)
-        d.thor_man = ThorNodeAddressManager(d.cfg.thornode.seed, d.session)
+        d.thor_connector = ThorConnector(TEST_NET_ENVIRONMENT_MULTI_1.copy(), d.session)
         await ppf.get_current_pool_data_full()
 
         cur_liqs = await lpf.fetch_all_pool_liquidity_info(addr)
@@ -115,7 +115,6 @@ if __name__ == '__main__':
     d.loop = asyncio.get_event_loop()
     d.cfg = Config()
     d.loc_man = LocalizationManager()
-    d.thor_man = ThorNodeAddressManager(d.cfg.thornode.seed)
     d.db = DB(d.loop)
 
     # d.loop.run_until_complete(

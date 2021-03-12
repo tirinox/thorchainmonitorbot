@@ -4,26 +4,20 @@ import logging
 import aiohttp
 from aiogram import Bot, Dispatcher
 from aiogram.types import ParseMode
+from aiothornode.connector import ThorConnector, TEST_NET_ENVIRONMENT_MULTI_1
 
 from localization import LocalizationManager
 from services.dialog.queue_picture import QUEUE_TIME_SERIES
+from services.fetch.pool_price import PoolPriceFetcher
 from services.lib.config import Config
 from services.lib.cooldown import Cooldown
 from services.lib.datetime import DAY
 from services.lib.db import DB
-from services.fetch.node_ip_manager import ThorNodeAddressManager
-from services.fetch.pool_price import PoolPriceFetcher
 from services.lib.depcont import DepContainer
-from services.lib.money import pretty_money
+from services.lib.texts import progressbar
 from services.models.time_series import TimeSeries
 from services.models.tx import StakePoolStats
 from services.notify.broadcast import Broadcaster
-from services.lib.texts import progressbar
-
-import matplotlib.pyplot as plt
-import seaborn as sns
-import pandas as pd
-import numpy as np
 
 deps = DepContainer()
 deps.cfg = Config()
@@ -51,27 +45,6 @@ async def mock_broadcaster(tag, n, delay=0.2):
             await asyncio.sleep(delay)
 
 
-async def foo15():
-    series = []
-    x = 10
-    while x < 1_000_000_000:
-        p = StakePoolStats.curve_for_tx_threshold(x)
-        abs_th = x * p
-        series.append((x, p, abs_th))
-        print(f'{x},{p:.2f},{(x * p):.0f}')
-        x *= 1.3
-    series = pd.DataFrame(series, columns=['pool_depth_usd', 'percent', 'threshold_usd'])
-
-    f, ax = plt.subplots(figsize=(7, 7))
-
-    sns.set_theme()
-    sns.lineplot(data=series, x='pool_depth_usd', y='threshold_usd', ax=ax)
-    # sns.lineplot(data=series, x='pool_depth_usd', y='percent', ax=ax)
-    ax.set(xscale="log", yscale='log')
-    ax.grid()
-    plt.show()
-
-
 async def foo2():
     await asyncio.gather(mock_broadcaster('first', 10, 0.2), mock_broadcaster('second', 12, 0.1))
 
@@ -86,7 +59,7 @@ async def foo12():
 
 async def foo13():
     async with aiohttp.ClientSession() as deps.session:
-        deps.thor_man = ThorNodeAddressManager(deps.cfg.thornode.seed, deps.session)
+        deps.thor_connector = ThorConnector(TEST_NET_ENVIRONMENT_MULTI_1.copy(), deps.session)
         ppf = PoolPriceFetcher(deps)
         data = await ppf.get_current_pool_data_full()
     print(data)

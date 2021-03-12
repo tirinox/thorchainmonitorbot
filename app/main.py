@@ -6,17 +6,18 @@ import aiohttp
 import ujson
 from aiogram import Bot, Dispatcher, executor
 from aiogram.types import *
+from aiothornode.connector import ThorConnector
+from aiothornode.types import TEST_NET_ENVIRONMENT_MULTI_1, CHAOS_NET_BNB_ENVIRONMENT, ThorEnvironment
 
 from localization import LocalizationManager
 from services.dialog import init_dialogs
 from services.fetch.cap import CapInfoFetcher
 from services.fetch.gecko_price import fill_rune_price_from_gecko
-from services.fetch.node_ip_manager import ThorNodeAddressManager
 from services.fetch.pool_price import PoolPriceFetcher
 from services.fetch.queue import QueueFetcher
-from services.fetch.thor_node import ThorNode
 from services.fetch.tx import StakeTxFetcher
 from services.lib.config import Config
+from services.lib.constants import NetworkIdents
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.models.price import LastPriceHolder
@@ -26,6 +27,16 @@ from services.notify.types.pool_churn import PoolChurnNotifier
 from services.notify.types.price_notify import PriceNotifier
 from services.notify.types.queue_notify import QueueNotifier
 from services.notify.types.tx_notify import StakeTxNotifier
+
+
+def get_thor_env_by_network_id(network_id) -> ThorEnvironment:
+    if network_id == NetworkIdents.TESTNET_MULTICHAIN:
+        return TEST_NET_ENVIRONMENT_MULTI_1.copy()
+    elif network_id == NetworkIdents.CHAOSNET_BEP2CHAIN:
+        return CHAOS_NET_BNB_ENVIRONMENT.copy()
+    else:
+        # todo: add multi-chain chaosnet
+        raise KeyError('unsupported network ID!')
 
 
 class App:
@@ -65,13 +76,8 @@ class App:
 
     async def create_thor_node_connector(self):
         d = self.deps
-        cfg = d.cfg.thornode
-        d.thor_man = ThorNodeAddressManager(cfg.seed)
-        d.thor_man.session = d.session
-        d.thor_nodes = ThorNode(d.thor_man, d.session,
-                                cohort_size=cfg.consensus.cohort,
-                                consensus=cfg.consensus.agree)
-        await d.thor_man.reload_nodes_ip()
+        d.thor_connector = ThorConnector(get_thor_env_by_network_id(d.cfg.network_id), d.session)
+        await d.thor_connector.update_nodes()
 
     async def _run_background_jobs(self):
         d = self.deps

@@ -1,4 +1,4 @@
-import aiohttp
+from aiothornode.types import ThorQueue
 
 from services.fetch.base import BaseFetcher
 from services.lib.datetime import parse_timespan_to_seconds
@@ -14,15 +14,12 @@ class QueueFetcher(BaseFetcher):
         super().__init__(deps, period)
 
     async def fetch(self) -> QueueInfo:  # override
-        async with aiohttp.ClientSession() as session:
-            # return QueueInfo(0, 1)  # debug
+        resp: ThorQueue = await self.deps.thor_connector.query_queue()
+        if resp is None:
+            return QueueInfo.error()
 
-            resp = await self.deps.thor_nodes.request(self.QUEUE_PATH)
-            if resp is None:
-                return QueueInfo.error()
-
-            swap_queue = int(resp.get('swap', 0))
-            outbound_queue = int(resp.get('outbound', 0))
-            # todo: "internal" key
-
-            return QueueInfo(swap_queue, outbound_queue)
+        return QueueInfo(
+            int(resp.swap),
+            int(resp.outbound),
+            int(resp.internal)
+        )
