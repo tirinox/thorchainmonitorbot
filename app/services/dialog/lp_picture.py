@@ -17,7 +17,7 @@ from services.lib.plot_graph import PlotBarGraph
 from services.lib.texts import grouper
 from services.lib.utils import Singleton, async_wrap
 from services.models.stake_info import StakePoolReport, StakeDayGraphPoint
-from services.lib.constants import BNB_SYMBOL, BUSD_SYMBOL, BUSD_TEST_SYMBOL, USDT_SYMBOL, RUNE_SYMBOL, is_stable_coin
+from services.lib.constants import BNB_SYMBOL, BUSD_SYMBOL, BUSD_TEST_SYMBOL, USDT_SYMBOL, RUNE_SYMBOL_BEP2, is_stable_coin
 
 WIDTH, HEIGHT = 1200, 1600
 
@@ -120,7 +120,7 @@ async def lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, value_
     r = Resources()
     asset = report.pool.asset
     rune_image, asset_image = await asyncio.gather(
-        r.download_logo_cached(RUNE_SYMBOL),
+        r.download_logo_cached(RUNE_SYMBOL_BEP2),
         r.download_logo_cached(asset)
     )
     return await sync_lp_pool_picture(report, loc, rune_image, asset_image, value_hidden)
@@ -403,7 +403,7 @@ def lp_line_segments(draw, asset_values, asset_values_usd, y, value_hidden):
                 pos_percent(legend_x + legend_sq_w, legend_y + legend_sq_h)
             ), fill=color)
 
-            asset = RAIDO_GLYPH if asset == RUNE_SYMBOL else short_asset_name(asset)
+            asset = RAIDO_GLYPH if asset == RUNE_SYMBOL_BEP2 else short_asset_name(asset)
 
             if value_hidden:
                 text = asset
@@ -474,11 +474,11 @@ def sync_lp_address_summary_picture(reports: List[StakePoolReport], weekly_chart
     total_lp_vs_hold_abs = 0.0
     for r in reports:
         asset_values[r.pool.asset] += r.current_value(r.ASSET) * 0.5
-        asset_values[RUNE_SYMBOL] += r.current_value(r.RUNE) * 0.5
+        asset_values[RUNE_SYMBOL_BEP2] += r.current_value(r.RUNE) * 0.5
 
         asset_usd_value = r.current_value(r.USD) * 0.5
         asset_values_usd[r.pool.asset] += asset_usd_value
-        asset_values_usd[RUNE_SYMBOL] += asset_usd_value
+        asset_values_usd[RUNE_SYMBOL_BEP2] += asset_usd_value
 
         total_lp_vs_hold_abs += r.lp_vs_hold[0]
 

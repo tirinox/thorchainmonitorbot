@@ -1,6 +1,8 @@
 import asyncio
 from typing import List
 
+from aioredis import Redis
+
 from services.fetch.base import BaseFetcher
 from services.fetch.midgard import get_midgard_url
 from services.lib.datetime import parse_timespan_to_seconds
@@ -130,3 +132,15 @@ class StakeTxFetcher(BaseFetcher):
         await asyncio.gather(*[
             tx.set_notified(self.deps.db) for tx in txs
         ])
+
+    # todo: optimization
+    KEY_LAST_NOTIFIED_TX_DATE = 'tx:scanner:last_notified:date'
+
+    async def get_last_notified_tx_hash(self):
+        r: Redis = await self.deps.db.get_redis()
+        result = await r.get(self.KEY_LAST_NOTIFIED_TX_DATE)
+        return result or 0
+
+    async def set_last_notified_tx_date(self, d):
+        r: Redis = await self.deps.db.get_redis()
+        return await r.set(self.KEY_LAST_NOTIFIED_TX_DATE, int(d))

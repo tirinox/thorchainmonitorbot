@@ -5,7 +5,7 @@ from services.lib.datetime import parse_timespan_to_seconds, DAY, HOUR
 from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo
 from services.models.time_series import PriceTimeSeries, TimeSeries
-from services.lib.constants import BUSD_SYMBOL, RUNE_SYMBOL, RUNE_SYMBOL_DET
+from services.lib.constants import BUSD_SYMBOL, RUNE_SYMBOL_BEP2, RUNE_SYMBOL_DET
 
 
 class PoolPriceFetcher(BaseFetcher):
@@ -41,7 +41,7 @@ class PoolPriceFetcher(BaseFetcher):
         #     await self._save_historical_pool_data(new_pool_info)
 
         if price > 0:
-            pts = PriceTimeSeries(RUNE_SYMBOL, d.db)
+            pts = PriceTimeSeries(RUNE_SYMBOL_BEP2, d.db)
             await pts.add(price=price)
 
             pts_det = PriceTimeSeries(RUNE_SYMBOL_DET, d.db)
@@ -53,7 +53,7 @@ class PoolPriceFetcher(BaseFetcher):
             self.logger.warning(f'really ${price:.3f}? that is odd!')
 
     async def fetch_pool_data_historic(self, asset, height=0) -> PoolInfo:
-        if asset == RUNE_SYMBOL:
+        if asset == RUNE_SYMBOL_BEP2:
             return PoolInfo.dummy()
 
         p = await self.deps.thor_connector.query_pool(asset, height)
@@ -61,7 +61,7 @@ class PoolPriceFetcher(BaseFetcher):
                         p.status)
 
     async def get_price_in_rune(self, asset, height=0):
-        if asset == RUNE_SYMBOL:
+        if asset == RUNE_SYMBOL_BEP2:
             return 1.0
         asset_pool = await self.fetch_pool_data_historic(asset, height)
         asset_per_rune = asset_pool.balance_asset / asset_pool.balance_rune

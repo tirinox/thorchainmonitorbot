@@ -4,7 +4,7 @@ from services.lib.db import DB
 from services.lib.plot_graph import PlotGraphLines, img_to_bio
 from services.lib.utils import async_wrap
 from services.models.time_series import PriceTimeSeries
-from services.lib.constants import RUNE_SYMBOL, RUNE_SYMBOL_DET
+from services.lib.constants import RUNE_SYMBOL_BEP2, RUNE_SYMBOL_DET
 
 PRICE_GRAPH_WIDTH = 640
 PRICE_GRAPH_HEIGHT = 480
@@ -40,7 +40,7 @@ def price_graph(price_df, det_price_df, loc: BaseLocalization, time_scale_mode='
 
 
 async def price_graph_from_db(db: DB, loc: BaseLocalization, period=DAY):
-    series = PriceTimeSeries(RUNE_SYMBOL, db)
+    series = PriceTimeSeries(RUNE_SYMBOL_BEP2, db)
     det_series = PriceTimeSeries(RUNE_SYMBOL_DET, db)
 
     prices = await series.get_last_values(period, with_ts=True)

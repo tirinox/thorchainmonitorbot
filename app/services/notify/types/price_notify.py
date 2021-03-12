@@ -14,7 +14,7 @@ from services.lib.texts import MessageType, BoardMessage
 from services.lib.utils import circular_shuffled_iterator
 from services.models.price import RuneFairPrice, PriceReport, PriceATH
 from services.models.time_series import PriceTimeSeries
-from services.lib.constants import RUNE_SYMBOL
+from services.lib.constants import RUNE_SYMBOL_BEP2
 
 
 class PriceNotifier(INotified):
@@ -26,7 +26,7 @@ class PriceNotifier(INotified):
         self.global_cd = parse_timespan_to_seconds(cfg.global_cd)
         self.change_cd = parse_timespan_to_seconds(cfg.change_cd)
         self.percent_change_threshold = cfg.percent_change_threshold
-        self.time_series = PriceTimeSeries(RUNE_SYMBOL, deps.db)
+        self.time_series = PriceTimeSeries(RUNE_SYMBOL_BEP2, deps.db)
         self.ath_stickers = cfg.ath.stickers
         self.ath_sticker_iter = self.load_ath_stickers(self.ath_stickers)
         self.ath_cooldown = parse_timespan_to_seconds(cfg.ath.cooldown)
