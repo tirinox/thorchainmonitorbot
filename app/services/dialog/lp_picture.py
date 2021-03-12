@@ -17,7 +17,7 @@ from services.lib.plot_graph import PlotBarGraph
 from services.lib.texts import grouper
 from services.lib.utils import Singleton, async_wrap
 from services.models.stake_info import StakePoolReport, StakeDayGraphPoint
-from services.lib.assets import BNB_SYMBOL, BUSD_SYMBOL, BUSD_TEST_SYMBOL, USDT_SYMBOL, RUNE_SYMBOL, is_stable_coin
+from services.lib.constants import BNB_SYMBOL, BUSD_SYMBOL, BUSD_TEST_SYMBOL, USDT_SYMBOL, RUNE_SYMBOL, is_stable_coin
 
 WIDTH, HEIGHT = 1200, 1600
 

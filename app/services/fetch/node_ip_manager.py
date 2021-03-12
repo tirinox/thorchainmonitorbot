@@ -3,6 +3,7 @@ import random
 from typing import List
 
 
+# fixme: aiothornode
 class ThorNodeAddressManager:
     @staticmethod
     def connection_url(ip_address, path=''):

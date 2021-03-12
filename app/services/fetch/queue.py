@@ -23,5 +23,6 @@ class QueueFetcher(BaseFetcher):
 
             swap_queue = int(resp.get('swap', 0))
             outbound_queue = int(resp.get('outbound', 0))
+            # todo: "internal" key
 
             return QueueInfo(swap_queue, outbound_queue)

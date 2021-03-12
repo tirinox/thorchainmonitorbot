@@ -5,7 +5,7 @@ from services.lib.datetime import parse_timespan_to_seconds, DAY, HOUR
 from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo
 from services.models.time_series import PriceTimeSeries, TimeSeries
-from services.lib.assets import BUSD_SYMBOL, RUNE_SYMBOL, RUNE_SYMBOL_DET
+from services.lib.constants import BUSD_SYMBOL, RUNE_SYMBOL, RUNE_SYMBOL_DET
 
 
 class PoolPriceFetcher(BaseFetcher):
@@ -24,6 +24,7 @@ class PoolPriceFetcher(BaseFetcher):
     def full_pools_url():
         return f"/thorchain/pools"
 
+    # todo: v2 compatibility
     def url_for_historical_pool_state(self, pool, ts):
         from_ts = int(ts - HOUR)
         to_ts = int(ts + DAY + HOUR)
@@ -86,8 +87,6 @@ class PoolPriceFetcher(BaseFetcher):
         }
         if results and self.deps.price_holder is not None:
             self.deps.price_holder.update(results)
-
-        # print(results)
 
         return results
 

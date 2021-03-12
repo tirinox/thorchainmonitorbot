@@ -6,7 +6,7 @@ from typing import Dict
 from services.lib.money import weighted_mean
 from services.models.base import BaseModelMixin
 from services.models.pool_info import PoolInfo
-from services.lib.assets import BUSD_SYMBOL, BUSD_TEST_SYMBOL, USDT_SYMBOL, BTCB_SYMBOL, BTC_SYMBOL, STABLE_COIN_POOLS
+from services.lib.constants import BUSD_SYMBOL, BUSD_TEST_SYMBOL, USDT_SYMBOL, BTCB_SYMBOL, BTC_SYMBOL, STABLE_COIN_POOLS
 
 
 @dataclass

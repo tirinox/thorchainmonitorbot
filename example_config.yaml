@@ -3,14 +3,13 @@
 log_level: INFO
 
 
-thornode:
-  seed: https://chaosnet-seed.thorchain.info/
+thor:
+  #  'testnet-multi' for MTCN
+  #  'chaosnet-multi' for MCCN
+  network_id: "chaosnet-bep2"
   consensus:
     cohort: 3
     agree: 2
-
-midgard:
-  api_url: https://chaosnet-midgard.bepswap.com/
 
 
 telegram:
@@ -64,6 +63,19 @@ price:
       - CAACAgUAAxkBAAJQv1_4ewpDR4CoS3lWCVv2P0jEgZjfAAIUAAPRi-YkVzAp86uZwLMeBA
       - CAACAgUAAxkBAAJQw1_4ex7Ly2p8QAuLQvkeASXbgk9mAAIfAAPRi-YkQByn2GfGsIAeBA
       - CAACAgIAAxkBAAJQxV_4ezGuN6vz35bTfmLe4GPoT6GFAAKlAQACFkJrCqSMglNGCdzWHgQ
+      - CAACAgUAAxkBAAJQtV_4eqqciwvp9NCRdslyOoCKsOSaAAIdAAPRi-Yk3GCYqQrnOzceBA
+      - CAACAgIAAxkBAAJQt1_4esnnDoR3NjLpgKHilirOZWybAAJsAAMUkqgduXN64vXUPDceBA
+      - CAACAgUAAxkBAAJQuV_4eupYryWgJXeuLUu8xQsrfiBEAAIMAAPRi-Ykfll73qqZa3keBA
+      - CAACAgUAAxkBAAJQu1_4eu8AAVG_deJgnwdKZcU9bsMYdgACGQAD0YvmJI2929l8C8ycHgQ
+      - CAACAgUAAxkBAAJQvV_4ev8v5xXq_gABGb1O3g7UzdcZeAACHAAD0YvmJMnrKQclfN7VHgQ
+      - CAACAgIAAxkBAAKYGmAxSKM0wcVUir6olqJ8GUILs7PEAAI2AwACnNbnCqJFmbVS5co5HgQ
+      - CAACAgIAAxkBAAKYGGAxSJmnC6uu7NyUkjwD2uQ2k8Z3AAITAwACnNbnCv7sKag-OU5jHgQ
+      - CAACAgIAAxkBAAKYFmAxSI6jczWX5DMkK9N7D5U3arbZAAIDAQACVp29CgLl0XiH5fpPHgQ
+      - CAACAgIAAxkBAAKYHGAxSOVmUIJnSALFOQmjvDUUhE8SAAIvAwACnNbnCp7xW8futGVHHgQ
+      - CAACAgIAAxkBAAKYHmAxSPKMMhaVi529pPU-_ROhQlB_AAIUAAM7YCQUKWeBEgL3yOoeBA
+      - CAACAgIAAxkBAAKYImAxSRLALhyBbigWlLSUzrLaf84mAAJVBgAC-gu2CMHtlUjSy95hHgQ
+      - CAACAgIAAxkBAAKYJGAxSSC1U9D67zyg-7RJfjkork8EAAKMAAMWQmsKQo7-Yhc9TeIeBA
+      - CAACAgIAAxkBAAKYJmAxST6CTOiOStfQ9CH7hqLiv0iWAAL8BgACRvusBG1XSZhZ24v-HgQ
 
 cap:
   fetch_period: 120

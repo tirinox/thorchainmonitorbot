@@ -15,10 +15,12 @@ class LiqPoolFetcher:
     def url_midgard_my_pools(self, address):
         return get_midgard_url(self.deps.cfg, f"/stakers/{address}")
 
+    # fixme: Multi-chain
     @staticmethod
     def url_asgard_consumer_weekly_history(address, pool):
         return f'https://asgard-consumer.vercel.app/api/weekly?address={address}&pool={pool}'
 
+    # fixme: Multi-chain
     @staticmethod
     def url_asgard_consumer_liquidity(address, pool):
         return f'https://asgard-consumer.vercel.app/api/v2/history/liquidity?address={address}&pools={pool}'

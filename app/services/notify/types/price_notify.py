@@ -11,9 +11,10 @@ from services.lib.datetime import MINUTE, HOUR, DAY, parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.money import pretty_money, calc_percent_change
 from services.lib.texts import MessageType, BoardMessage
+from services.lib.utils import circular_shuffled_iterator
 from services.models.price import RuneFairPrice, PriceReport, PriceATH
 from services.models.time_series import PriceTimeSeries
-from services.lib.assets import RUNE_SYMBOL
+from services.lib.constants import RUNE_SYMBOL
 
 
 class PriceNotifier(INotified):
@@ -27,8 +28,14 @@ class PriceNotifier(INotified):
         self.percent_change_threshold = cfg.percent_change_threshold
         self.time_series = PriceTimeSeries(RUNE_SYMBOL, deps.db)
         self.ath_stickers = cfg.ath.stickers
+        self.ath_sticker_iter = self.load_ath_stickers(self.ath_stickers)
         self.ath_cooldown = parse_timespan_to_seconds(cfg.ath.cooldown)
         self.price_graph_period = parse_timespan_to_seconds(cfg.price_graph.default_period)
+
+    @staticmethod
+    def load_ath_stickers(name_list):
+        no_dup_list = list(set(name_list))  # remove duplicates
+        return circular_shuffled_iterator(no_dup_list)
 
     async def on_data(self, sender, fprice: RuneFairPrice):
         # fprice.real_rune_price = 1.44  # debug!!! for ATH
@@ -52,9 +59,7 @@ class PriceNotifier(INotified):
         return price_1h, price_24h, price_7d
 
     async def send_ath_sticker(self):
-        if not self.ath_stickers:
-            return
-        sticker = random.choice(self.ath_stickers)
+        sticker = next(self.ath_sticker_iter)
         user_lang_map = self.deps.broadcaster.telegram_chats_from_config(self.deps.loc_man)
         await self.deps.broadcaster.broadcast(user_lang_map.keys(), sticker, message_type=MessageType.STICKER)
 

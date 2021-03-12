@@ -19,3 +19,5 @@ class Config(Prodict):
         with open(self._config_name, 'r') as f:
             data = yaml.load(f, Loader=yaml.SafeLoader)
         super().__init__(**data)
+
+        self.network_id = self.thor.network_id

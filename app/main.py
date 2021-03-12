@@ -41,6 +41,7 @@ class App:
         )
 
         logging.info('-' * 100)
+        logging.info(f'Starting THORChainMonitoringBot for "{d.cfg.network_id}".')
         logging.info(f"Log level: {log_level}")
 
         d.loop = asyncio.get_event_loop()

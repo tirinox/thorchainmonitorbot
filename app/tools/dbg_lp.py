@@ -14,7 +14,7 @@ from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.models.stake_info import CurrentLiquidity
-from services.lib.assets import BTCB_SYMBOL
+from services.lib.constants import BTCB_SYMBOL
 
 
 async def load_one_pool_liquidity(d: DepContainer, addr, pool=BTCB_SYMBOL):

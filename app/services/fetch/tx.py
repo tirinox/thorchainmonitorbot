@@ -6,7 +6,7 @@ from services.fetch.midgard import get_midgard_url
 from services.lib.datetime import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo
-from services.lib.assets import BUSD_SYMBOL, USDT_SYMBOL, BUSD_TEST_SYMBOL
+from services.lib.constants import BUSD_SYMBOL, USDT_SYMBOL, BUSD_TEST_SYMBOL
 from services.models.tx import StakeTx, StakePoolStats
 
 
@@ -43,6 +43,7 @@ class StakeTxFetcher(BaseFetcher):
 
     # -------
 
+    # fixme: migrate to midgard v2
     def tx_endpoint_url(self, offset=0, limit=10):
         return get_midgard_url(self.deps.cfg, f"/txs?offset={offset}&limit={limit}&type=stake,unstake")
 
