@@ -9,7 +9,8 @@ from services.lib.datetime import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo
 from services.lib.constants import BUSD_SYMBOL, USDT_SYMBOL, BUSD_TEST_SYMBOL
-from services.models.tx import StakeTx, StakePoolStats
+from services.models.tx import StakeTx
+from services.models.pool_stats import StakePoolStats
 
 
 class StakeTxFetcher(BaseFetcher):

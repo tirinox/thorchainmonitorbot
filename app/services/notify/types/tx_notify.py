@@ -7,7 +7,8 @@ from services.fetch.tx import StakeTxFetcher
 from services.lib.datetime import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo, MIDGARD_MULT
-from services.models.tx import StakeTx, StakePoolStats
+from services.models.tx import StakeTx
+from services.models.pool_stats import StakePoolStats
 
 
 class StakeTxNotifier(INotified):

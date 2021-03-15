@@ -1,11 +1,150 @@
-from dataclasses import dataclass, field
-from statistics import median
+from collections import defaultdict
+from dataclasses import dataclass
+from typing import List, Optional, Iterable
 
+from services.lib.constants import is_rune, THOR_DIVIDER_INV
 from services.lib.db import DB
-from services.lib.utils import linear_transform
-from services.models.pool_info import MIDGARD_MULT
 from services.models.cap_info import BaseModelMixin
-from services.models.time_series import TimeSeries
+from services.models.pool_info import MIDGARD_MULT
+
+
+class ThorTxType:
+    OLD_TYPE_STAKE = 'stake'  # deprecated (only for v1 parsing)
+    TYPE_ADD_LIQUIDITY = 'addLiquidity'
+    TYPE_SWAP = 'swap'
+    OLD_TYPE_DOUBLE_SWAP = 'doubleSwap'  # deprecated (only for v1 parsing)
+    TYPE_WITHDRAW = 'withdraw'
+    OLD_TYPE_UNSTAKE = 'unstake'  # deprecated (only for v1 parsing)
+    OLD_TYPE_ADD = 'add'
+    TYPE_DONATE = 'donate'
+    TYPE_REFUND = 'refund'
+
+
+@dataclass
+class ThorCoin:
+    amount: str
+    asset: str
+
+    @property
+    def amount_float(self):
+        return int(self.amount) * THOR_DIVIDER_INV
+
+
+@dataclass
+class ThorSubTx:
+    address: str
+    coins: List[ThorCoin]
+    tx_id: str
+
+    @classmethod
+    def parse(cls, j):
+        coins = [ThorCoin(**cj) for cj in j.get('coins', [])]
+        return cls(address=j.get('address', ''),
+                   coins=coins,
+                   tx_id=j.get('txID', ''))
+
+    @property
+    def first_asset(self):
+        return self.coins[0].asset if self.coins else None
+
+    @property
+    def first_amount(self):
+        return self.coins[0].amount if self.coins else None
+
+    @classmethod
+    def join_coins(cls, tx_list: Iterable):
+        coin_dict = defaultdict(int)
+        for tx in tx_list:
+            for coin in tx.coins:
+                coin_dict[coin.asset] += int(coin.amount)
+        return cls(address='', coins=[ThorCoin(str(amount), asset) for asset, amount in coin_dict.items()], tx_id='')
+
+    @property
+    def rune_coin(self):
+        return next((c for c in self.coins if is_rune(c.asset)), None)
+
+    @property
+    def none_rune_coins(self):
+        return [c for c in self.coins if not is_rune(c.asset)]
+
+
+@dataclass
+class ThorMetaSwap:
+    liquidity_fee: str
+    network_fees: List[ThorCoin]
+    trade_slip: str
+    trade_target: str
+
+    @classmethod
+    def parse(cls, j):
+        fees = [ThorCoin(**cj) for cj in j.get('networkFees', [])]
+        return cls(liquidity_fee=j.get('liquidityFee', 0),
+                   network_fees=fees,
+                   trade_slip=j.get('tradeSlip', '0'),
+                   trade_target=j.get('tradeTarget', '0'))
+
+
+@dataclass
+class ThorMetaWithdraw:
+    asymmetry: str
+    basis_points: str
+    liquidity_units: str
+    network_fees: List[ThorCoin]
+
+    @classmethod
+    def parse(cls, j):
+        fees = [ThorCoin(**cj) for cj in j.get('networkFees', [])]
+        return cls(asymmetry=j.get('asymmetry', '0'),
+                   network_fees=fees,
+                   liquidity_units=j.get('liquidityUnits', '0'),
+                   basis_points=j.get('basisPoints', '0'))
+
+
+@dataclass
+class ThorMetaRefund:
+    reason: str
+    network_fees: List[ThorCoin]
+
+    @classmethod
+    def parse(cls, j):
+        fees = [ThorCoin(**cj) for cj in j.get('networkFees', [])]
+        return cls(reason=j.get('reason', '?'),
+                   network_fees=fees)
+
+
+@dataclass
+class ThorMetaAddLiquidity:
+    liquidity_units: str
+
+    @classmethod
+    def parse(cls, j):
+        return cls(liquidity_units=j.get('liquidityUnits', '0'))
+
+
+@dataclass
+class ThorTx:
+    date: str
+    height: str
+    status: str
+    type: str
+    pools: List[str]
+    in_tx: List[ThorSubTx]
+    out_tx: List[ThorSubTx]
+    meta_add: Optional[ThorMetaAddLiquidity] = None
+    meta_withdraw: Optional[ThorMetaWithdraw] = None
+    meta_swap: Optional[ThorMetaSwap] = None
+    meta_refund: Optional[ThorMetaRefund] = None
+
+    SUCCESS = 'success'
+    PENDING = 'pending'
+
+    @property
+    def date_timestamp(self):
+        return int(self.date) * 1e-10
+
+    @property
+    def height_int(self):
+        return int(self.height)
 
 
 @dataclass
@@ -95,87 +234,3 @@ class StakeTx(BaseModelMixin):
 
     async def set_notified(self, db: DB, value=1):
         await db.redis.set(self.notify_key, value)
-
-
-@dataclass
-class StakePoolStats(BaseModelMixin):
-    pool: str
-    last_tx: str = ''
-    usd_depth: float = 0.0
-    tx_acc: list = field(default_factory=list)
-
-    KEY_PREFIX = 'stake-pool-stats-v2'
-    KEY_POOL_DEPTH = 'POOL-DEPTH'
-
-    @property
-    def key(self):
-        return f"{self.KEY_PREFIX}:{self.pool}"
-
-    async def save(self, db: DB):
-        await db.get_redis()
-        await db.redis.set(self.key, self.as_json)
-
-    @classmethod
-    async def get_from_db(cls, pool, db: DB):
-        r = await db.get_redis()
-        empty = cls(pool, '', 1, [])
-        old_j = await r.get(empty.key)
-        return cls.from_json(old_j) if old_j else empty
-
-    def update(self, rune_amount, max_n=50):
-        self.tx_acc.append({
-            'rune_amount': rune_amount
-        })
-        n = len(self.tx_acc)
-        if n > max_n:
-            self.tx_acc = self.tx_acc[(n - max_n):]
-
-    @property
-    def n_elements(self):
-        return len(self.tx_acc)
-
-    @property
-    def median_rune_amount(self):
-        return median(tx['rune_amount'] for tx in self.tx_acc) if self.tx_acc else 0.0
-
-    @classmethod
-    async def clear_all_data(cls, db: DB):
-        r = await db.get_redis()
-        keys = await r.keys(f'{cls.KEY_PREFIX}:*')
-        if keys:
-            await r.delete(*keys)
-
-    @property
-    def stream_name(self):
-        return f'{self.KEY_POOL_DEPTH}-{self.pool}'
-
-    async def write_time_series(self, db: DB):
-        ts = TimeSeries(self.stream_name, db)
-        await ts.add(usd_depth=self.usd_depth)
-
-    TX_VS_DEPTH_CURVE = [
-        (10_000, 0.2),  # if depth < 10_000 then 0.3
-        (100_000, 0.12),  # if 10_000 <= depth < 100_000 then 0.3 ... 0.2
-        (500_000, 0.08),  # if 10_000 <= depth < 100_000 then 0.3 ... 0.2
-        (1_000_000, 0.05),
-        (10_000_000, 0.015),
-    ]
-
-    # TX_VS_DEPTH_CURVE = [
-    #     (10_000, 0.05),  # if depth < 10_000 then 0.3
-    #     (100_000, 0.02),  # if 10_000 <= depth < 100_000 then 0.3 ... 0.2
-    #     (500_000, 0.01),  # if 10_000 <= depth < 100_000 then 0.3 ... 0.2
-    #     (1_000_000, 0.01),
-    #     (10_000_000, 0.01),
-    # ]
-
-    @classmethod
-    def curve_for_tx_threshold(cls, depth):
-        lower_bound = 0
-        lower_percent = cls.TX_VS_DEPTH_CURVE[0][1]
-        for upper_bound, upper_percent in cls.TX_VS_DEPTH_CURVE:
-            if depth < upper_bound:
-                return linear_transform(depth, lower_bound, upper_bound, lower_percent, upper_percent)
-            lower_percent = upper_percent
-            lower_bound = upper_bound
-        return cls.TX_VS_DEPTH_CURVE[-1][1]

@@ -10,7 +10,8 @@ from services.models.cap_info import ThorInfo
 from services.models.pool_info import PoolInfo
 from services.models.price import RuneFairPrice, PriceReport
 from services.models.queue import QueueInfo
-from services.models.tx import StakeTx, StakePoolStats
+from services.models.tx import StakeTx
+from services.models.pool_stats import StakePoolStats
 
 
 class RussianLocalization(BaseLocalization):

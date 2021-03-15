@@ -16,7 +16,7 @@ from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.texts import progressbar
 from services.models.time_series import TimeSeries
-from services.models.tx import StakePoolStats
+from services.models.pool_stats import StakePoolStats
 from services.notify.broadcast import Broadcaster
 
 deps = DepContainer()
