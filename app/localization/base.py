@@ -6,7 +6,7 @@ from services.lib.datetime import format_time_ago
 from services.lib.money import format_percent, asset_name_cut_chain, pretty_money, short_address, short_money, \
     short_asset_name, calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change
 from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, BoardMessage
-from services.models.cap_info import ThorInfo
+from services.models.cap_info import ThorCapInfo
 from services.models.pool_info import PoolInfo
 from services.models.price import RuneFairPrice, PriceReport
 from services.models.queue import QueueInfo
@@ -23,7 +23,7 @@ class BaseLocalization(ABC):  # == English
     START_ME = 'https://telegram.me/thorchain_monitoring_bot?start=1'
 
     @staticmethod
-    def _cap_progress_bar(info: ThorInfo):
+    def _cap_progress_bar(info: ThorCapInfo):
         return f'{progressbar(info.stacked, info.cap, 10)} ({format_percent(info.stacked, info.cap)})\n'
 
     # ---- WELCOME ----
@@ -40,7 +40,7 @@ class BaseLocalization(ABC):  # == English
             f"🤗 Support and feedback: {CREATOR_TG}."
         )
 
-    def welcome_message(self, info: ThorInfo):
+    def welcome_message(self, info: ThorCapInfo):
         return (
             f"Hello! Here you can find THORChain metrics and review your liquidity results.\n"
             f"The {self.R} price is <code>${info.price:.3f}</code> now.\n"
@@ -155,7 +155,7 @@ class BaseLocalization(ABC):  # == English
 
     # ------- CAP -------
 
-    def notification_text_cap_change(self, old: ThorInfo, new: ThorInfo):
+    def notification_text_cap_change(self, old: ThorCapInfo, new: ThorCapInfo):
         verb = "has been increased" if old.cap < new.cap else "has been decreased"
         call = "Come on, add more liquidity!\n" if new.cap > old.cap else ''
         message = (
@@ -174,7 +174,7 @@ class BaseLocalization(ABC):  # == English
     PRICE_GRAPH_LEGEND_DET_PRICE = f'Deterministic {RAIDO_GLYPH} price'
     PRICE_GRAPH_LEGEND_ACTUAL_PRICE = f'Market {RAIDO_GLYPH} price'
 
-    def price_message(self, info: ThorInfo, fair_price: RuneFairPrice):
+    def price_message(self, info: ThorCapInfo, fair_price: RuneFairPrice):
         return (
             f"Last real price of {self.R} is <code>${info.price:.3f}</code>.\n"
             f"Deterministic price of {self.R} is <code>${fair_price.fair_price:.3f}</code>."
@@ -313,7 +313,7 @@ class BaseLocalization(ABC):  # == English
 
     TEXT_QUEUE_PLOT_TITLE = 'THORChain Queue'
 
-    def cap_message(self, info: ThorInfo):
+    def cap_message(self, info: ThorCapInfo):
         return (
             f"Hello! <b>{pretty_money(info.stacked)} {self.R}</b> of "
             f"<b>{pretty_money(info.cap)} {self.R}</b> pooled.\n"

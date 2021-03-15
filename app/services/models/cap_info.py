@@ -7,7 +7,7 @@ from services.models.base import BaseModelMixin
 
 
 @dataclass
-class ThorInfo(BaseModelMixin):
+class ThorCapInfo(BaseModelMixin):
     cap: int
     stacked: int
     price: float
@@ -34,10 +34,10 @@ class ThorInfo(BaseModelMixin):
     async def get_old_cap(cls, db: DB):
         try:
             j = await db.redis.get(cls.KEY_INFO)
-            return ThorInfo.from_json(j)
+            return ThorCapInfo.from_json(j)
         except (TypeError, ValueError, AttributeError, json.decoder.JSONDecodeError):
             logging.exception('get_old_cap error')
-            return ThorInfo.error()
+            return ThorCapInfo.error()
 
     async def save(self, db: DB):
         r = await db.get_redis()

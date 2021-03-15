@@ -6,7 +6,7 @@ from services.lib.datetime import format_time_ago
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change, short_asset_name
 from services.lib.texts import bold, link, code, ital, pre, x_ses, kbd
-from services.models.cap_info import ThorInfo
+from services.models.cap_info import ThorCapInfo
 from services.models.pool_info import PoolInfo
 from services.models.price import RuneFairPrice, PriceReport
 from services.models.queue import QueueInfo
@@ -29,7 +29,7 @@ class RussianLocalization(BaseLocalization):
             f"🤗 Отзывы и поддержка: {CREATOR_TG}."
         )
 
-    def welcome_message(self, info: ThorInfo):
+    def welcome_message(self, info: ThorCapInfo):
         return (
             f"Привет! Здесь ты можешь найти метрики THORChain и узнать результаты предоставления ликвидности в пулы.\n"
             f"Цена {self.R} сейчас <code>{info.price:.3f} BUSD</code>.\n"
@@ -125,7 +125,7 @@ class RussianLocalization(BaseLocalization):
         return f'Сегодня: {today}'
 
     # ----- CAP ------
-    def notification_text_cap_change(self, old: ThorInfo, new: ThorInfo):
+    def notification_text_cap_change(self, old: ThorCapInfo, new: ThorCapInfo):
         verb = "подрос" if old.cap < new.cap else "упал"
         call = "Ай-да застейкаем!\n" if new.cap > old.cap else ''
         return (
@@ -143,7 +143,7 @@ class RussianLocalization(BaseLocalization):
     PRICE_GRAPH_LEGEND_DET_PRICE = 'Детерминистская цена'
     PRICE_GRAPH_LEGEND_ACTUAL_PRICE = 'Рыночная цена'
 
-    def price_message(self, info: ThorInfo, fair_price: RuneFairPrice):
+    def price_message(self, info: ThorCapInfo, fair_price: RuneFairPrice):
         return (
             f"Последняя цена {self.R}: <code>{info.price:.3f} BUSD</code>.\n"
             f"Детерминистическая цена {self.R} сейчас: <code>${fair_price.fair_price:.3f}</code>."
@@ -259,7 +259,7 @@ class RussianLocalization(BaseLocalization):
 
     TEXT_METRICS_INTRO = 'Что вы хотите узнать?'
 
-    def cap_message(self, info: ThorInfo):
+    def cap_message(self, info: ThorCapInfo):
         return (
             f"<b>{pretty_money(info.stacked)}</b> монет из "
             f"<b>{pretty_money(info.cap)}</b> сейчас застейканы.\n"

@@ -8,8 +8,8 @@ from aiothornode.connector import ThorConnector, TEST_NET_ENVIRONMENT_MULTI_1
 
 from localization import LocalizationManager, RussianLocalization
 from services.dialog.lp_picture import lp_pool_picture, lp_address_summary_picture
-from services.fetch.lp import LiqPoolFetcher
-from services.fetch.pool_price import PoolPriceFetcher
+from services.jobs.fetch.lp import LiqPoolFetcher
+from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.lib.config import Config
 from services.lib.constants import BTCB_SYMBOL
 from services.lib.db import DB

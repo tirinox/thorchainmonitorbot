@@ -7,7 +7,7 @@ from aiothornode.connector import ThorConnector, TEST_NET_ENVIRONMENT_MULTI_1
 
 from localization import LocalizationManager, EnglishLocalization
 from services.dialog.price_picture import price_graph_from_db
-from services.fetch.gecko_price import fill_rune_price_from_gecko
+from services.jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.depcont import DepContainer

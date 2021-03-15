@@ -3,7 +3,7 @@ import asyncio
 import aiohttp
 
 from main import App
-from services.fetch.queue import QueueFetcher
+from services.jobs.fetch.queue import QueueFetcher
 
 
 class ConsensusTestApp(App):

@@ -7,11 +7,11 @@ from aiogram.utils.helper import HelperMode
 
 from services.dialog.base import BaseDialog, message_handler, query_handler
 from services.dialog.lp_picture import lp_pool_picture, lp_address_summary_picture
-from services.fetch.lp import LiqPoolFetcher
-from services.fetch.pool_price import PoolPriceFetcher
+from services.jobs.fetch.lp import LiqPoolFetcher
+from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.lib.money import short_address
 from services.lib.plot_graph import img_to_bio
-from services.lib.texts import code, pre, grouper, kbd
+from services.lib.texts import code, grouper, kbd
 from services.models.stake_info import MyStakeAddress, BNB_CHAIN
 
 LOADING_STICKER = 'CAACAgIAAxkBAAIRx1--Tia-m6DNRIApk3yqmNWvap_sAALcAAP3AsgPUNi8Bnu98HweBA'

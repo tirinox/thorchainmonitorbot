@@ -2,8 +2,8 @@ import logging
 from typing import Dict
 
 from localization import BaseLocalization
-from services.fetch.base import INotified
-from services.fetch.pool_price import PoolPriceFetcher
+from services.jobs.fetch.base import INotified
+from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo
 

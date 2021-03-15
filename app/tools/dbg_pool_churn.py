@@ -9,7 +9,7 @@ from aiothornode.connector import ThorConnector
 from aiothornode.types import TEST_NET_ENVIRONMENT_MULTI_1
 
 from localization import LocalizationManager
-from services.fetch.pool_price import PoolPriceFetcher
+from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.depcont import DepContainer

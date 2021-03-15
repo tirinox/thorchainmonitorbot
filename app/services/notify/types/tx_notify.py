@@ -2,8 +2,8 @@ import logging
 import time
 from typing import List
 
-from services.fetch.base import INotified
-from services.fetch.tx import StakeTxFetcher
+from services.jobs.fetch.base import INotified
+from services.jobs.fetch.tx import TxFetcher
 from services.lib.datetime import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo, MIDGARD_MULT
@@ -23,7 +23,7 @@ class StakeTxNotifier(INotified):
         self.max_age_sec = parse_timespan_to_seconds(scfg.max_age_sec)
         self.min_usd_total = int(scfg.min_usd_total)
 
-    async def on_data(self, fetcher: StakeTxFetcher, txs: List[StakeTx]):
+    async def on_data(self, fetcher: TxFetcher, txs: List[StakeTx]):
         new_txs = self._filter_by_age(txs)
 
         usd_per_rune = self.deps.price_holder.usd_per_rune

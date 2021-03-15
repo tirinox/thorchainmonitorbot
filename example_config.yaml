@@ -35,6 +35,8 @@ price:
   global_cd: 12h
   change_cd: 1h
   percent_change_threshold: 5
+  price_graph:
+    default_period: 7d
   ath:
     cooldown: 2m
     stickers:

@@ -1,8 +1,8 @@
 import asyncio
 import logging
 
-from services.fetch.midgard import get_midgard_url
-from services.fetch.pool_price import PoolPriceFetcher
+from services.jobs.midgard import get_midgard_url
+from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.lib.depcont import DepContainer
 from services.models.stake_info import CurrentLiquidity, StakePoolReport, StakeDayGraphPoint
 

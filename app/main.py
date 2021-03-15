@@ -11,11 +11,11 @@ from aiothornode.types import TEST_NET_ENVIRONMENT_MULTI_1, CHAOS_NET_BNB_ENVIRO
 
 from localization import LocalizationManager
 from services.dialog import init_dialogs
-from services.fetch.cap import CapInfoFetcher
-from services.fetch.gecko_price import fill_rune_price_from_gecko
-from services.fetch.pool_price import PoolPriceFetcher
-from services.fetch.queue import QueueFetcher
-from services.fetch.tx import StakeTxFetcher
+from services.jobs.fetch.cap import CapInfoFetcher
+from services.jobs.fetch.gecko_price import fill_rune_price_from_gecko
+from services.jobs.fetch.pool_price import PoolPriceFetcher
+from services.jobs.fetch.queue import QueueFetcher
+from services.jobs.fetch.tx import TxFetcher
 from services.lib.config import Config
 from services.lib.constants import NetworkIdents
 from services.lib.db import DB
@@ -89,7 +89,7 @@ class App:
         await self.ppf.get_current_pool_data_full()
 
         fetcher_cap = CapInfoFetcher(d, ppf=self.ppf)
-        fetcher_tx = StakeTxFetcher(d)
+        fetcher_tx = TxFetcher(d)
         fetcher_queue = QueueFetcher(d)
 
         notifier_cap = CapFetcherNotifier(d)

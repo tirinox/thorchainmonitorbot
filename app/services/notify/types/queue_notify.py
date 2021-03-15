@@ -2,10 +2,10 @@ import logging
 
 from localization import BaseLocalization
 from services.dialog.queue_picture import queue_graph, QUEUE_TIME_SERIES
-from services.fetch.base import INotified
-from services.fetch.queue import QueueInfo
-from services.lib.cooldown import CooldownSingle, Cooldown
-from services.lib.datetime import parse_timespan_to_seconds, HOUR
+from services.jobs.fetch.base import INotified
+from services.jobs.fetch.queue import QueueInfo
+from services.lib.cooldown import CooldownSingle
+from services.lib.datetime import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.texts import BoardMessage
 from services.models.time_series import TimeSeries

@@ -139,12 +139,25 @@ class ThorTx:
     PENDING = 'pending'
 
     @property
+    def is_success(self):
+        return self.status == self.SUCCESS
+
+    @property
     def date_timestamp(self):
         return int(self.date) * 1e-10
 
     @property
     def height_int(self):
         return int(self.height)
+
+    @property
+    def tx_hash(self):
+        if self.in_tx:
+            return self.in_tx[0].tx_id
+        elif self.out_tx:
+            return self.out_tx[0].tx_id
+        else:
+            return self.date
 
 
 @dataclass

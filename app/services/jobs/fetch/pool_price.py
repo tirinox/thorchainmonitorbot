@@ -1,6 +1,6 @@
-from services.fetch.base import BaseFetcher
-from services.fetch.fair_price import fair_rune_price
-from services.fetch.midgard import get_midgard_url
+from services.jobs.fetch.base import BaseFetcher
+from services.jobs.fetch.fair_price import fair_rune_price
+from services.jobs.midgard import get_midgard_url
 from services.lib.datetime import parse_timespan_to_seconds, DAY, HOUR
 from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo

@@ -8,7 +8,7 @@ from aiothornode.connector import ThorConnector, TEST_NET_ENVIRONMENT_MULTI_1
 
 from localization import LocalizationManager
 from services.dialog.queue_picture import QUEUE_TIME_SERIES
-from services.fetch.pool_price import PoolPriceFetcher
+from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.lib.config import Config
 from services.lib.cooldown import Cooldown
 from services.lib.datetime import DAY

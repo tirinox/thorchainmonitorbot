@@ -3,7 +3,7 @@ import logging
 
 import aiohttp
 
-from services.fetch.gecko_price import gecko_info
+from services.jobs.fetch.gecko_price import gecko_info
 from services.lib.utils import a_result_cached
 from services.models.pool_info import MIDGARD_MULT, PoolInfo
 from services.models.price import RuneFairPrice, LastPriceHolder

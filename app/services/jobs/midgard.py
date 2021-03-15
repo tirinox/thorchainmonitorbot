@@ -5,7 +5,7 @@ from typing import NamedTuple, List
 from aiothornode.types import TEST_NET_ENVIRONMENT_MULTI_1, CHAOS_NET_BNB_ENVIRONMENT
 
 from services.lib.config import Config
-from services.lib.constants import NetworkIdents, is_rune, THOR_DIVIDER_INV
+from services.lib.constants import NetworkIdents
 from services.models.tx import ThorTx, ThorTxType, ThorSubTx, ThorMetaRefund, ThorMetaWithdraw, ThorMetaSwap, \
     ThorMetaAddLiquidity
 
@@ -14,11 +14,11 @@ logger = logging.getLogger(__name__)
 
 def get_midgard_url(cfg: Config, path: str):
     if cfg.network_id == NetworkIdents.TESTNET_MULTICHAIN:
-        version = 'v1'
+        version = 'v2'
         base_url = TEST_NET_ENVIRONMENT_MULTI_1.midgard_url
     elif cfg.network_id == NetworkIdents.CHAOSNET_BEP2CHAIN:
         base_url = CHAOS_NET_BNB_ENVIRONMENT.midgard_url
-        version = 'v2'
+        version = 'v1'
     elif cfg.network_id == NetworkIdents.CHAOSNET_MULTICHAIN:
         raise NotImplementedError
     else:

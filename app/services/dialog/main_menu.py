@@ -8,7 +8,7 @@ from services.dialog.base import BaseDialog, message_handler
 from services.dialog.metrics_menu import MetricsDialog
 from services.dialog.settings_menu import SettingsDialog
 from services.dialog.stake_info_dialog import StakeDialog
-from services.models.cap_info import ThorInfo
+from services.models.cap_info import ThorCapInfo
 
 
 class MainStates(StatesGroup):
@@ -28,7 +28,7 @@ class MainMenuDialog(BaseDialog):
                                                                               self.deps.db) is None:
             await SettingsDialog(self.loc, self.data, self.deps).ask_language(message)
         else:
-            info = await ThorInfo.get_old_cap(self.deps.db)
+            info = await ThorCapInfo.get_old_cap(self.deps.db)
             await message.answer(self.loc.welcome_message(info),
                                  reply_markup=self.loc.kbd_main_menu(),
                                  disable_notification=True)
