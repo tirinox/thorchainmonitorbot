@@ -105,13 +105,13 @@ class TxParserV1(TxParserBase):
         else:
             return tx_type
 
-    def parse_tx(self, r):
+    def parse_one_tx(self, r):
         status = r.get('status', '').lower()
         tx_type_orig = r.get('type')
         tx_type = self.fix_tx_type(tx_type_orig)
 
         height = r.get('height', '0')
-        date = str(r.get('date') * 1e10)
+        date = str(int(r.get('date')) * 1_000_000_000)
 
         pool = r.get('pool', '')
         pools = [pool] if pool and pool != '.' else []
