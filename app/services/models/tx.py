@@ -3,9 +3,7 @@ from dataclasses import dataclass
 from typing import List, Optional, Iterable
 
 from services.lib.constants import is_rune, THOR_DIVIDER_INV
-from services.lib.db import DB
 from services.models.cap_info import BaseModelMixin
-from services.models.pool_info import MIDGARD_MULT
 
 
 class ThorTxType:
@@ -159,6 +157,14 @@ class ThorTx:
         else:
             return self.date
 
+    def sum_of_asset(self, asset, in_only=False, out_only=False):
+        search_realm = self.in_tx if in_only else self.out_tx if out_only else in_only + out_only
+        return sum(coin.amount_float for sub_tx in search_realm for coin in sub_tx.coins if coin.asset == asset)
+
+    def sum_of_rune(self, in_only=False, out_only=False):
+        search_realm = self.in_tx if in_only else self.out_tx if out_only else in_only + out_only
+        return sum(coin.amount_float for sub_tx in search_realm for coin in sub_tx.coins if is_rune(coin.asset))
+
 
 @dataclass
 class StakeTx(BaseModelMixin):
@@ -170,48 +176,36 @@ class StakeTx(BaseModelMixin):
     rune_amount: float
     hash: str
     full_rune: float
-    full_usd: float
     asset_per_rune: float
-
-    KEY_PREFIX = 'tx_not'
+    tx: ThorTx
 
     @classmethod
-    def load_from_midgard(cls, j):
-        t = j['type']
-        pool = j['pool']
+    def load_from_thor_tx(cls, tx: ThorTx):
+        t = tx.type
+        if t not in (ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_ADD_LIQUIDITY):
+            return None
 
-        if t == 'stake':
-            coins = j['in']['coins']
-            if coins[0]['asset'] == pool:
-                asset_amount = float(coins[0]['amount'])
-                rune_amount = float(coins[1]['amount']) if len(coins) >= 2 else 0.0
-            else:
-                asset_amount = float(coins[1]['amount']) if len(coins) >= 2 else 0.0
-                rune_amount = float(coins[0]['amount'])
-        elif t == 'unstake':
-            out = j['out']
-            if out[0]['coins'][0]['asset'] == pool:
-                asset_amount = float(out[0]['coins'][0]['amount'])
-                rune_amount = float(out[1]['coins'][0]['amount'])
-            else:
-                asset_amount = float(out[1]['coins'][0]['amount'])
-                rune_amount = float(out[0]['coins'][0]['amount'])
+        pool = tx.pools[0]
+
+        if t == ThorTxType.TYPE_ADD_LIQUIDITY:
+            rune_amount = tx.sum_of_rune(in_only=True)
+            asset_amount = tx.sum_of_asset(pool, in_only=True)
+        elif t == ThorTxType.TYPE_WITHDRAW:
+            rune_amount = tx.sum_of_rune(out_only=True)
+            asset_amount = tx.sum_of_asset(pool, out_only=True)
         else:
             return None
 
-        tx_hash = j['in']['txID']
-        address = j['in']['address']
-
-        return cls(date=int(j['date']),
+        return cls(date=int(tx.date_timestamp),
                    type=t,
                    pool=pool,
-                   address=address,
-                   asset_amount=asset_amount * MIDGARD_MULT,
-                   rune_amount=rune_amount * MIDGARD_MULT,
-                   hash=tx_hash,
+                   address=tx.in_tx[0].address,
+                   asset_amount=asset_amount,
+                   rune_amount=rune_amount,
+                   hash=tx.tx_hash,
                    full_rune=0.0,
                    asset_per_rune=0.0,
-                   full_usd=0.0)
+                   tx=tx)
 
     def asymmetry(self, force_abs=False):
         rune_asset_amount = self.asset_amount * self.asset_per_rune
@@ -230,20 +224,3 @@ class StakeTx(BaseModelMixin):
         self.asset_per_rune = asset_per_rune
         self.full_rune = self.asset_amount / asset_per_rune + self.rune_amount
         return self.full_rune
-
-    @property
-    def notify_key(self):
-        return f"{self.KEY_PREFIX}:{self.hash}"
-
-    @classmethod
-    async def clear_all_data(cls, db: DB):
-        r = await db.get_redis()
-        keys = await r.keys(f'{cls.KEY_PREFIX}:*')
-        if keys:
-            await r.delete(*keys)
-
-    async def is_notified(self, db: DB):
-        return bool(await db.redis.get(self.notify_key))
-
-    async def set_notified(self, db: DB, value=1):
-        await db.redis.set(self.notify_key, value)

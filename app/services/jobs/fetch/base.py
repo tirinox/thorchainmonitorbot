@@ -13,36 +13,47 @@ class INotified(ABC):
         ...
 
 
-class BaseFetcher(ABC):
-    def __init__(self, deps: DepContainer, sleep_period=60):
-        self.deps = deps
-        self.name = self.__class__.__qualname__
-        self.sleep_period = sleep_period
-        self.logger = logging.getLogger(f'{self.__class__.__name__}')
+class WithDelegates:
+    def __init__(self):
         self.delegates = set()
 
     def subscribe(self, delegate: INotified):
         self.delegates.add(delegate)
         return self
 
+    async def handle_error(self, e, sender=None):
+        sender = sender or self
+        for delegate in self.delegates:
+            await delegate.on_error(sender, e)
+
+    async def handle_data(self, data, sender=None):
+        if not data:
+            return
+        sender = sender or self
+        for delegate in self.delegates:
+            delegate: INotified
+            await delegate.on_data(sender, data)
+
+
+class BaseFetcher(WithDelegates, ABC):
+    def __init__(self, deps: DepContainer, sleep_period=60):
+        super().__init__()
+        self.deps = deps
+        self.name = self.__class__.__qualname__
+        self.sleep_period = sleep_period
+        self.logger = logging.getLogger(f'{self.__class__.__name__}')
+        self.delegates = set()
+
     @abstractmethod
     async def fetch(self):
         ...
-
-    async def handle_error(self, e):
-        for delegate in self.delegates:
-            await delegate.on_error(self, e)
 
     async def run(self):
         await asyncio.sleep(1)
         while True:
             try:
                 data = await self.fetch()
-                if data:
-                    for delegate in self.delegates:
-                        delegate: INotified
-                        await delegate.on_data(self, data)
-
+                await self.handle_data(data)
             except Exception as e:
                 self.logger.exception(f"task error: {e}")
 

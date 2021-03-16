@@ -100,11 +100,12 @@ class App:
         notifier_pool_churn = PoolChurnNotifier(d)
 
         stats_updater = PoolStatsUpdater(d)
+        stats_updater.subscribe(notifier_tx)
+        fetcher_tx.subscribe(stats_updater)
 
         fetcher_cap.subscribe(notifier_cap)
-        fetcher_tx.subscribe(notifier_tx)
-        fetcher_tx.subscribe(stats_updater)
         fetcher_queue.subscribe(notifier_queue)
+
         self.ppf.subscribe(notifier_price)
         self.ppf.subscribe(notifier_pool_churn)
 

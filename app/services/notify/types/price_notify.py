@@ -37,7 +37,7 @@ class PriceNotifier(INotified):
         return circular_shuffled_iterator(no_dup_list)
 
     async def on_data(self, sender, fprice: RuneFairPrice):
-        # fprice.real_rune_price = 1.44  # debug!!! for ATH
+        # fprice.real_rune_price = 10.54  # debug!!! for ATH
         if not await self.handle_ath(fprice):
             await self.handle_new_price(fprice)
 

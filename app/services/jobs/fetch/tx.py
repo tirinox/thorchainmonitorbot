@@ -25,6 +25,7 @@ class TxFetcher(BaseFetcher):
     async def fetch(self):
         await self.deps.db.get_redis()
         txs = await self._fetch_txs()
+        self.logger.info(f'new tx to analyze: {len(txs)}')
         return txs
 
     # -------
@@ -59,10 +60,10 @@ class TxFetcher(BaseFetcher):
         r: Redis = self.deps.db.redis
         return await r.sismember(self.KEY_LAST_SEEN_TX_HASH, tx_hash)
 
-    async def add_last_seen_tx(self, hash):
-        if hash:
+    async def add_last_seen_tx_hashes(self, hashes):
+        if hashes:
             r: Redis = await self.deps.db.get_redis()
-            await r.sadd(self.KEY_LAST_SEEN_TX_HASH, hash)
+            await r.sadd(self.KEY_LAST_SEEN_TX_HASH, *hashes)
 
     async def clear_all_seen_tx(self):
         r: Redis = await self.deps.db.get_redis()

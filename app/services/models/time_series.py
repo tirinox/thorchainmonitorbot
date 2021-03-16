@@ -101,7 +101,7 @@ class PriceTimeSeries(TimeSeries):
         else:
             return 0
 
-    async def get_last_values(self, period_sec, key, max_points=10000, tolerance_sec=10, with_ts=False,
+    async def get_last_values(self, period_sec, key=None, max_points=10000, tolerance_sec=10, with_ts=False,
                               decoder=float):
         key = key or self.KEY
         return await super().get_last_values(period_sec, key, max_points, tolerance_sec, with_ts)

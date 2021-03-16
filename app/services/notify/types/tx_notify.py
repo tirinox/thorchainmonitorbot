@@ -23,14 +23,13 @@ class StakeTxNotifier(INotified):
         self.max_age_sec = parse_timespan_to_seconds(scfg.max_age_sec)
         self.min_usd_total = int(scfg.min_usd_total)
 
-    async def on_data(self, fetcher: TxFetcher, txs: List[StakeTx]):
+    async def on_data(self, sender: TxFetcher, txs: List[StakeTx]):
         new_txs = self._filter_by_age(txs)
 
         usd_per_rune = self.deps.price_holder.usd_per_rune
         min_rune_volume = self.min_usd_total / usd_per_rune
 
-        large_txs = self._filter_large_txs(fetcher, new_txs, min_rune_volume)
-
+        large_txs = self._filter_large_txs(sender, new_txs, min_rune_volume)
         large_txs = list(large_txs)
         large_txs = large_txs[:self.MAX_TX_PER_ONE_TIME]
 
@@ -43,15 +42,15 @@ class StakeTxNotifier(INotified):
                 loc = user_lang_map[chat_id]
                 texts = []
                 for tx in large_txs:
-                    pool = fetcher.pool_stat_map.get(tx.pool)
-                    pool_info = fetcher.pool_info_map.get(tx.pool)
+                    pool = sender.pool_stat_map.get(tx.pool)
+                    pool_info = sender.pool_info_map.get(tx.pool)
                     texts.append(loc.notification_text_large_tx(tx, usd_per_rune, pool, pool_info))
                 return '\n\n'.join(texts)
 
             await self.deps.broadcaster.broadcast(user_lang_map.keys(), message_gen)
 
-        # todo: save as notified
-        # for tx in new_txs:
+        hashes = [t.tx.tx_hash for t in txs]
+        await sender.add_last_seen_tx_hashes(hashes)
 
     def _filter_by_age(self, txs: List[StakeTx]):
         now = int(time.time())
