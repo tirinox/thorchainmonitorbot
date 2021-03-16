@@ -50,6 +50,9 @@ class StakeTxNotifier(INotified):
 
             await self.deps.broadcaster.broadcast(user_lang_map.keys(), message_gen)
 
+        # todo: save as notified
+        # for tx in new_txs:
+
     def _filter_by_age(self, txs: List[StakeTx]):
         now = int(time.time())
         for tx in txs:

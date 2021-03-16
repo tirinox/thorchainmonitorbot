@@ -9,6 +9,7 @@ from aiothornode.connector import ThorConnector, TEST_NET_ENVIRONMENT_MULTI_1
 from localization import LocalizationManager
 from services.dialog.queue_picture import QUEUE_TIME_SERIES
 from services.jobs.fetch.pool_price import PoolPriceFetcher
+from services.jobs.fetch.tx import TxFetcher
 from services.lib.config import Config
 from services.lib.cooldown import Cooldown
 from services.lib.datetime import DAY
@@ -17,6 +18,7 @@ from services.lib.depcont import DepContainer
 from services.lib.texts import progressbar
 from services.models.time_series import TimeSeries
 from services.models.pool_stats import StakePoolStats
+from services.models.tx import ThorTx
 from services.notify.broadcast import Broadcaster
 
 deps = DepContainer()
@@ -92,10 +94,21 @@ async def foo16(d):
     print(avg)
 
 
+async def foo17(d):
+    txf = TxFetcher(d)
+    # await txf.clear_all_seen_tx()
+    r = await txf.fetch()
+    print(r)
+    # for tx in r:
+    #     tx: ThorTx
+    #     await txf.add_last_seen_tx(tx.tx_hash)
+    ...
+
+
 async def start_foos():
-    await deps.db.get_redis()
-    # await test_cd_mult()
-    await foo16(deps)
+    async with aiohttp.ClientSession() as deps.session:
+        await deps.db.get_redis()
+        await foo17(deps)
 
 
 if __name__ == '__main__':

@@ -11,13 +11,13 @@ from services.dialog.lp_picture import lp_pool_picture, lp_address_summary_pictu
 from services.jobs.fetch.lp import LiqPoolFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.lib.config import Config
-from services.lib.constants import BTCB_SYMBOL
+from services.lib.constants import BNB_BTCB_SYMBOL
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.models.stake_info import CurrentLiquidity
 
 
-async def load_one_pool_liquidity(d: DepContainer, addr, pool=BTCB_SYMBOL):
+async def load_one_pool_liquidity(d: DepContainer, addr, pool=BNB_BTCB_SYMBOL):
     async with aiohttp.ClientSession() as d.session:
         await d.db.get_redis()
         lpf = LiqPoolFetcher(d)

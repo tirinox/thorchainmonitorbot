@@ -3,10 +3,10 @@ import time
 from dataclasses import dataclass
 from typing import Dict
 
+from services.lib.constants import BNB_BTCB_SYMBOL, BTC_SYMBOL, STABLE_COIN_POOLS
 from services.lib.money import weighted_mean
 from services.models.base import BaseModelMixin
 from services.models.pool_info import PoolInfo
-from services.lib.constants import BUSD_SYMBOL, BUSD_TEST_SYMBOL, USDT_SYMBOL, BTCB_SYMBOL, BTC_SYMBOL, STABLE_COIN_POOLS
 
 
 @dataclass
@@ -68,7 +68,7 @@ class LastPriceHolder:
 
     def _calculate_btc_price(self):
         self.btc_per_rune = 0.0
-        btc_symbols = (BTC_SYMBOL, BTCB_SYMBOL)
+        btc_symbols = (BTC_SYMBOL, BNB_BTCB_SYMBOL)
         for btc_symbol in btc_symbols:
             pool = self.pool_info_map.get(btc_symbol)
             if pool is not None:

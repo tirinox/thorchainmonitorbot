@@ -16,6 +16,7 @@ from services.jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.queue import QueueFetcher
 from services.jobs.fetch.tx import TxFetcher
+from services.jobs.pool_stats import PoolStatsUpdater
 from services.lib.config import Config
 from services.lib.constants import NetworkIdents
 from services.lib.db import DB
@@ -98,8 +99,11 @@ class App:
         notifier_price = PriceNotifier(d)
         notifier_pool_churn = PoolChurnNotifier(d)
 
+        stats_updater = PoolStatsUpdater(d)
+
         fetcher_cap.subscribe(notifier_cap)
         fetcher_tx.subscribe(notifier_tx)
+        fetcher_tx.subscribe(stats_updater)
         fetcher_queue.subscribe(notifier_queue)
         self.ppf.subscribe(notifier_price)
         self.ppf.subscribe(notifier_pool_churn)

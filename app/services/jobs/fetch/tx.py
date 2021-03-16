@@ -4,10 +4,6 @@ from services.jobs.fetch.base import BaseFetcher
 from services.jobs.midgard import get_url_gen_by_network_id, get_parser_by_network_id
 from services.lib.datetime import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
-from services.models.pool_info import PoolInfo
-from services.lib.constants import BUSD_SYMBOL, USDT_SYMBOL, BUSD_TEST_SYMBOL
-from services.models.tx import StakeTx
-from services.models.pool_stats import StakePoolStats
 
 
 class TxFetcher(BaseFetcher):
@@ -28,14 +24,7 @@ class TxFetcher(BaseFetcher):
 
     async def fetch(self):
         await self.deps.db.get_redis()
-
         txs = await self._fetch_txs()
-        if not txs:
-            return []
-
-        await self._load_stats(txs)
-
-        txs = await self._update_pools(txs)
         return txs
 
     # -------
@@ -49,76 +38,32 @@ class TxFetcher(BaseFetcher):
 
     async def _fetch_txs(self):
         all_txs = []
-        last_seen_hash = await self.get_last_seen_tx_hash()
+        await self.deps.db.get_redis()
         for page in range(self.max_page_deep):
             results = await self._fetch_one_batch(self.deps.session, page)
-            txs = [tx for tx in results.txs if tx.is_success]
-            stop_scan = any(1 for tx in txs if tx.tx_hash == last_seen_hash)
-            # fixme: bad algo!
-            if stop_scan or not txs:
+            new_txs = []
+            for tx in results.txs:
+                if tx.is_success and not (await self.is_seen(tx.tx_hash)):
+                    new_txs.append(tx)
+            if not new_txs:
                 self.logger.info(f"no more tx: got {len(all_txs)}")
                 break
-
-        new_seen_hash = all_txs[0].tx_hash if all_txs else None
-        if new_seen_hash:
-            await self.set_last_seen_tx(new_seen_hash)
-
+            all_txs += new_txs
         return all_txs
-
-    async def _update_pools(self, txs):
-        updated_stats = set()
-        result_txs = []
-
-        for tx in txs:
-            tx: StakeTx
-            price = self.pool_info_map.get(tx.pool, PoolInfo.dummy()).price
-            stats: StakePoolStats = self.pool_stat_map.get(tx.pool)
-            if price and stats:
-                full_rune = tx.calc_full_rune_amount(price)
-                stats.update(full_rune, 100)
-                updated_stats.add(tx.pool)
-                result_txs.append(tx)
-
-        self.logger.info(f'pool stats updated for {", ".join(updated_stats)}')
-
-        for pool_name in updated_stats:
-            pool_stat: StakePoolStats = self.pool_stat_map[pool_name]
-            pool_info: PoolInfo = self.pool_info_map.get(pool_name)
-            pool_stat.usd_depth = pool_info.usd_depth(self.deps.price_holder.usd_per_rune)
-            await pool_stat.write_time_series(self.deps.db)
-            await pool_stat.save(self.deps.db)
-
-        self.logger.info(f'new tx to analyze: {len(result_txs)}')
-
-        return result_txs
-
-    async def _load_stats(self, txs):
-        self.pool_info_map = self.deps.price_holder.pool_info_map
-        if not self.pool_info_map:
-            raise LookupError("pool_info_map is not loaded into the price holder!")
-
-        pool_names = StakeTx.collect_pools(txs)
-        pool_names.update({
-            BUSD_SYMBOL,
-            BUSD_TEST_SYMBOL,
-            USDT_SYMBOL,
-        })  # don't forget BUSD, for total usd volume!
-        self.pool_stat_map = {
-            pool: (await StakePoolStats.get_from_db(pool, self.deps.db)) for pool in pool_names
-        }
 
     KEY_LAST_SEEN_TX_HASH = 'tx:scanner:last_seen:hash'
 
-    async def get_last_seen_tx_hash(self):
-        r: Redis = await self.deps.db.get_redis()
-        result = await r.get(self.KEY_LAST_SEEN_TX_HASH)
-        return result
+    async def is_seen(self, tx_hash):
+        if not tx_hash:
+            return False
+        r: Redis = self.deps.db.redis
+        return await r.sismember(self.KEY_LAST_SEEN_TX_HASH, tx_hash)
 
-    async def set_last_seen_tx(self, hash):
-        r: Redis = await self.deps.db.get_redis()
-        return await r.set(self.KEY_LAST_SEEN_TX_HASH, hash)
+    async def add_last_seen_tx(self, hash):
+        if hash:
+            r: Redis = await self.deps.db.get_redis()
+            await r.sadd(self.KEY_LAST_SEEN_TX_HASH, hash)
 
-    # 0. PSH = prev seen hash = get()
-    # 1. batch = scan a page of TX
-    # 2. if PSH in batch: stop scan
-    # 3. write the oldest
+    async def clear_all_seen_tx(self):
+        r: Redis = await self.deps.db.get_redis()
+        await r.delete(self.KEY_LAST_SEEN_TX_HASH)
