@@ -1,6 +1,6 @@
-from datetime import datetime
-
 import pandas as pd
+
+from datetime import datetime
 
 MINUTE = 60
 HOUR = 60 * 60
@@ -127,3 +127,8 @@ def series_to_pandas(ts_result, shift_time=True):
             **values
         })
     return pd.DataFrame(normal_data)
+
+
+def today_str():
+    now = datetime.now()
+    return now.strftime("%d-%m-%Y--%H-%M-%S")

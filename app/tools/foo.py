@@ -12,7 +12,7 @@ from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.tx import TxFetcher
 from services.lib.config import Config
 from services.lib.cooldown import Cooldown
-from services.lib.datetime import DAY
+from services.lib.datetime import DAY, today_str
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.texts import progressbar
@@ -34,7 +34,7 @@ deps.db = DB(deps.loop)
 
 deps.bot = Bot(token=deps.cfg.telegram.bot.token, parse_mode=ParseMode.HTML)
 deps.dp = Dispatcher(deps.bot, loop=deps.loop)
-deps.loc_man = LocalizationManager()
+deps.loc_man = LocalizationManager(deps.cfg)
 deps.broadcaster = Broadcaster(deps)
 
 lock = asyncio.Lock()
@@ -105,10 +105,14 @@ async def foo17(d):
     ...
 
 
+async def foo18(d):
+    print(today_str())
+
+
 async def start_foos():
     async with aiohttp.ClientSession() as deps.session:
         await deps.db.get_redis()
-        await foo17(deps)
+        await foo18(deps)
 
 
 if __name__ == '__main__':

@@ -58,8 +58,6 @@ class StakeTxNotifier(INotified):
     def _filter_by_age(self, txs: List[StakeTx]):
         now = int(time.time())
         for tx in txs:
-            print(f"{now=}, {tx.date=}")
-            # print(now - tx.date, "vs", self.max_age_sec)
             if tx.date > now - self.max_age_sec:
                 yield tx
 

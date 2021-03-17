@@ -9,6 +9,7 @@ from services.dialog.base import BaseDialog, message_handler, query_handler
 from services.dialog.lp_picture import lp_pool_picture, lp_address_summary_picture
 from services.jobs.fetch.lp import LiqPoolFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher
+from services.lib.datetime import today_str
 from services.lib.money import short_address
 from services.lib.plot_graph import img_to_bio
 from services.lib.texts import code, grouper, kbd
@@ -154,7 +155,7 @@ class StakeDialog(BaseDialog):
 
         value_hidden = not self.data.get(self.KEY_CAN_VIEW_VALUE, True)
         picture = await lp_pool_picture(stake_report, self.loc, value_hidden=value_hidden)
-        picture_io = img_to_bio(picture, f'Thorchain_LP_{pool}.png')
+        picture_io = img_to_bio(picture, f'Thorchain_LP_{pool}_{today_str()}.png')
 
         # ANSWER
         await self.show_my_pools(query, edit=False)
@@ -189,7 +190,7 @@ class StakeDialog(BaseDialog):
 
         value_hidden = not self.data.get(self.KEY_CAN_VIEW_VALUE, True)
         picture = await lp_address_summary_picture(stake_reports, weekly_charts, self.loc, value_hidden=value_hidden)
-        picture_io = img_to_bio(picture, 'Thorchain_LP_Summary.png')
+        picture_io = img_to_bio(picture, f'Thorchain_LP_Summary_{today_str()}.png')
 
         # ANSWER
         await self.show_my_pools(query, edit=False)

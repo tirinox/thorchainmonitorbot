@@ -1,5 +1,5 @@
 from localization import BaseLocalization
-from services.lib.datetime import DAY
+from services.lib.datetime import DAY, today_str
 from services.lib.db import DB
 from services.lib.plot_graph import PlotGraphLines, img_to_bio
 from services.lib.utils import async_wrap
@@ -49,4 +49,4 @@ async def price_graph_from_db(db: DB, loc: BaseLocalization, period=DAY):
     time_scale_mode = 'time' if period <= DAY else 'date'
 
     img = await price_graph(prices, det_prices, loc, time_scale_mode=time_scale_mode)
-    return img_to_bio(img, 'price.jpg')
+    return img_to_bio(img, f'price-{today_str()}.jpg')

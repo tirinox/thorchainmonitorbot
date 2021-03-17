@@ -103,5 +103,7 @@ class AvatarDialog(BaseDialog):
                 return
 
             pic = await combine_frame_and_photo(user_pic)
-            pic = img_to_bio(pic, name='thor_ava.png')
+
+            user_id = message.from_user.id
+            pic = img_to_bio(pic, name=f'thor_ava_{user_id}.png')
             await message.reply_document(pic, caption=loc.TEXT_AVA_READY, reply_markup=self.menu_kbd())

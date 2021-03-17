@@ -1,4 +1,5 @@
 import os
+import logging
 import typing
 from contextlib import asynccontextmanager
 
@@ -28,8 +29,8 @@ class DB:
 
             self.storage = RedisStorage2(prefix='fsm')
             self.storage._redis = self.redis
-        except Exception as e:
-            print(e)
+        except Exception:
+            logging.exception('cannot connect to redis')
 
         return self.redis
 

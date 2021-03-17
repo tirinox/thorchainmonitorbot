@@ -1,7 +1,8 @@
 import pandas as pd
 
 from localization import BaseLocalization
-from services.lib.datetime import series_to_pandas, DAY
+from services.dialog.lp_picture import CATEGORICAL_PALETTE
+from services.lib.datetime import series_to_pandas, DAY, today_str
 from services.lib.depcont import DepContainer
 from services.lib.plot_graph import PlotBarGraph, img_to_bio
 from services.lib.utils import async_wrap
@@ -26,9 +27,11 @@ def queue_graph_sync(points, loc: BaseLocalization):
     df = df.resample(RESAMPLE_TIME, on='t').sum()
 
     gr = PlotBarGraph()
-    gr.plot_bars(df, 'outbound_queue', gr.PLOT_COLOR)
-    gr.plot_bars(df, 'swap_queue', gr.PLOT_COLOR_2)
+    gr.plot_bars(df, 'outbound', gr.PLOT_COLOR)
+    gr.plot_bars(df, 'swap', gr.PLOT_COLOR_2)
+    gr.plot_bars(df, 'internal', CATEGORICAL_PALETTE[0])
     gr.update_bounds_y()
     gr.max_y = max(gr.max_y, 20)
     gr.add_title(loc.TEXT_QUEUE_PLOT_TITLE)
-    return img_to_bio(gr.finalize(), 'thorchain_queue.png')
+    today = today_str()
+    return img_to_bio(gr.finalize(), f'thorchain_queue_{today}.png')

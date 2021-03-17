@@ -76,7 +76,9 @@ class QueueNotifier(INotified):
         self.logger.info(f"got queue: {data}")
 
         ts = TimeSeries(QUEUE_TIME_SERIES, self.deps.db)
-        await ts.add(swap_queue=data.swap, outbound_queue=data.outbound)
+        await ts.add(swap=data.swap,
+                     outbound=data.outbound,
+                     internal=data.internal)
         self.deps.queue_holder = data
 
         await self.handle_entry('outbound', ts, key='outbound_queue')
