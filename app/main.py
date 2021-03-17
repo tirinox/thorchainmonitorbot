@@ -66,7 +66,7 @@ class App:
 
         d.bot = Bot(token=d.cfg.telegram.bot.token, parse_mode=ParseMode.HTML)
         d.dp = Dispatcher(d.bot, loop=d.loop)
-        d.loc_man = LocalizationManager()
+        d.loc_man = LocalizationManager(d.cfg)
         d.broadcaster = Broadcaster(d)
 
         init_dialogs(d)

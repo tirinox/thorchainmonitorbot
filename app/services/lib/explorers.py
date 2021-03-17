@@ -9,7 +9,8 @@ class ExploreAssets:
     BNB = 'bnb'
 
 
-def get_explorer_url(network_id, asset, address):
+def get_explorer_url(network_id, asset: str, address: str):
+    asset = asset.lower()
     is_live = not NetworkIdents.is_test(network_id)
     if asset == ExploreAssets.RUNE:
         if network_id == NetworkIdents.TESTNET_MULTICHAIN:
@@ -31,4 +32,5 @@ def get_explorer_url(network_id, asset, address):
         return f'https://blockchair.com/litecoin/address/{address}' if is_live else \
             f'https://tltc.bitaps.com/{address}'
     else:
-        return f'https://letmegooglethat.com/?q={asset}+explorer+{"" if is_live else "test"}'
+        url = f'https://www.google.com/search?q={asset}+explorer'
+        return url if is_live else f'{url}+test'

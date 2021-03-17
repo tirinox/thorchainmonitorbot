@@ -1,3 +1,4 @@
+from services.lib.config import Config
 from services.lib.db import DB
 from localization.base import BaseLocalization
 from localization.eng import EnglishLocalization
@@ -6,12 +7,13 @@ from services.lib.utils import Singleton
 
 
 class LocalizationManager(metaclass=Singleton):
-    def __init__(self):
+    def __init__(self, cfg: Config):
+        self.config = cfg
+        self.default = EnglishLocalization(cfg)
         self._langs = {
-            'rus': RussianLocalization(),
-            'eng': EnglishLocalization()
+            'rus': RussianLocalization(cfg),
+            'eng': self.default
         }
-        self.default = EnglishLocalization()
 
     def get_from_lang(self, lang):
         return self._langs.get(str(lang), self.default)

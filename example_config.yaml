@@ -15,6 +15,7 @@ thor:
 telegram:
   bot:
     token: "insert the bot token from @BotFather here"
+    username: "thorchain_monitoring_bot"
   channels:
     - type: telegram
       name: "@thorchain_alert"  # live channel

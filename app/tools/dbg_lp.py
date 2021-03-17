@@ -104,7 +104,7 @@ async def test_summary_picture_generator(d: DepContainer, addr, hide):
 
     # stakes = await load_summary_for_address(d, addr)  # direct load
 
-    img = await lp_address_summary_picture(stakes, charts, RussianLocalization(), value_hidden=hide)
+    img = await lp_address_summary_picture(stakes, charts, RussianLocalization(d.cfg), value_hidden=hide)
     img.save(PICTURE_PATH, "PNG")
     os.system(f'open "{PICTURE_PATH}"')
 
@@ -114,7 +114,7 @@ if __name__ == '__main__':
     d = DepContainer()
     d.loop = asyncio.get_event_loop()
     d.cfg = Config()
-    d.loc_man = LocalizationManager()
+    d.loc_man = LocalizationManager(d.cfg)
     d.db = DB(d.loop)
 
     # d.loop.run_until_complete(

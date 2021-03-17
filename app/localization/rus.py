@@ -25,7 +25,7 @@ class RussianLocalization(BaseLocalization):
             f"/lang – изменить язык\n"
             f"/cap – текущий кап для стейка в пулах Chaosnet\n"
             f"/price – текущая цена {self.R}.\n"
-            f"<b>⚠️ Бот теперь уведомляет только в канале @thorchain_alert!</b>\n"
+            f"<b>⚠️ Бот теперь уведомляет только в канале {self.alert_channel_name}!</b>\n"
             f"🤗 Отзывы и поддержка: {CREATOR_TG}."
         )
 
@@ -33,7 +33,7 @@ class RussianLocalization(BaseLocalization):
         return (
             f"Привет! Здесь ты можешь найти метрики THORChain и узнать результаты предоставления ликвидности в пулы.\n"
             f"Цена {self.R} сейчас <code>{info.price:.3f} BUSD</code>.\n"
-            f"<b>⚠️ Бот теперь уведомляет только в канале @thorchain_alert!</b>\n"
+            f"<b>⚠️ Бот теперь уведомляет только в канале {self.alert_channel_name}!</b>\n"
             f"Набери /help, чтобы видеть список команд.\n"
             f"🤗 Отзывы и поддержка: {CREATOR_TG}."
         )
@@ -72,7 +72,11 @@ class RussianLocalization(BaseLocalization):
     TEXT_SELECT_ADDRESS_SEND_ME = 'Если хотите добавить адрес, пришлите его мне 👇'
     TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS = '📪 <b>На этом адресе нет пулов ликвидности.</b> ' \
                                         'Выберите другой адрес или добавьте новый.'
-    TEXT_LP_IMG_CAPTION = f'Сгенерировано: {link(BaseLocalization.START_ME, "@thorchain_monitoring_bot")}'
+
+    def text_lp_img_caption(self):
+        bot_link = "@" + self.this_bot_name
+        start_me = self.url_start_me
+        return f'Сгенерировано: {link(start_me, bot_link)}'
 
     LP_PIC_POOL = 'ПУЛ'
     LP_PIC_RUNE = 'RUNE'
