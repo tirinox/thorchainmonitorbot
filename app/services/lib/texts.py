@@ -1,6 +1,7 @@
 import itertools
 from dataclasses import dataclass
 from enum import Enum
+from urllib.parse import urlparse
 
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 
@@ -29,6 +30,12 @@ def bold(text):
 
 
 def link(url, text):
+    return f'<a href="{url}">{text}</a>'
+
+
+def link_with_domain_text(url):
+    parsed_uri = urlparse(url)
+    text = parsed_uri.netloc
     return f'<a href="{url}">{text}</a>'
 
 

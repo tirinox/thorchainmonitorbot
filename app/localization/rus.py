@@ -5,7 +5,7 @@ from localization.base import BaseLocalization, RAIDO_GLYPH, CREATOR_TG
 from services.lib.datetime import format_time_ago
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change, short_asset_name
-from services.lib.texts import bold, link, code, ital, pre, x_ses, kbd
+from services.lib.texts import bold, link, code, ital, pre, x_ses, kbd, link_with_domain_text
 from services.models.cap_info import ThorCapInfo
 from services.models.pool_info import PoolInfo
 from services.models.price import RuneFairPrice, PriceReport
@@ -117,8 +117,9 @@ class RussianLocalization(BaseLocalization):
 
     def text_stake_provides_liq_to_pools(self, address, pools):
         pools = pre(', '.join(pools))
-        thor_tx = link(self.thor_explore_address(address), 'viewblock.io')
-        bnb_tx = link(self.binance_explore_address(address), 'explorer.binance.org')
+        thor_url, bnb_url = self.address_urls(address)
+        thor_tx = link_with_domain_text(thor_url)
+        bnb_tx = link_with_domain_text(bnb_url)
         return f'🛳️ {pre(address)}\n' \
                f'поставляет ликвидность в следующие пулы:\n{pools}.\n\n' \
                f"🔍 Explorers: {thor_tx}; {bnb_tx}.\n\n" \
@@ -165,8 +166,11 @@ class RussianLocalization(BaseLocalization):
         rp, ap = tx.symmetry_rune_vs_asset()
         total_usd_volume = tx.full_rune * dollar_per_rune if dollar_per_rune != 0 else 0.0
         pool_depth_usd = pool_info.usd_depth(dollar_per_rune)
-        thor_tx = link(self.thor_explore_address(tx.address), short_address(tx.address))
-        bnb_tx = link(self.binance_explore_address(tx.address), short_address(tx.address))
+
+        thor_url, bnb_url = self.address_urls(tx.address)  # todo
+        thor_tx = link(thor_url, short_address(tx.address))
+        bnb_tx = link(bnb_url, short_address(tx.address))
+
         percent_of_pool = pool_info.percent_share(tx.full_rune)
 
         return (

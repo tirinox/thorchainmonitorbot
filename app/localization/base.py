@@ -4,10 +4,10 @@ from math import ceil
 
 from services.lib.config import Config
 from services.lib.datetime import format_time_ago
-from services.lib.explorers import get_explorer_url
+from services.lib.explorers import get_explorer_url, ExploreAssets
 from services.lib.money import format_percent, asset_name_cut_chain, pretty_money, short_address, short_money, \
     short_asset_name, calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change
-from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, BoardMessage
+from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, BoardMessage, link_with_domain_text
 from services.models.cap_info import ThorCapInfo
 from services.models.pool_info import PoolInfo
 from services.models.price import RuneFairPrice, PriceReport
@@ -167,10 +167,17 @@ class BaseLocalization(ABC):  # == English
         return f'⏳ <b>Please wait.</b>\n' \
                f'Loading pools information for {pre(address)}...'
 
+    def address_urls(self, address):
+        thor_explore_url = get_explorer_url(self.cfg.network_id, ExploreAssets.RUNE, address)
+        bnb_explore_url = get_explorer_url(self.cfg.network_id, ExploreAssets.BNB, address)
+        return thor_explore_url, bnb_explore_url
+
     def text_stake_provides_liq_to_pools(self, address, pools):
         pools = pre(', '.join(pools))
-        thor_tx = link(self.thor_explore_address(address), 'viewblock.io')
-        bnb_tx = link(self.binance_explore_address(address), 'explorer.binance.org')
+
+        thor_url, bnb_url = self.address_urls(address)
+        thor_tx = link_with_domain_text(thor_url)
+        bnb_tx = link_with_domain_text(bnb_url)
         return f'🛳️ {pre(address)}\nprovides liquidity to the following pools:\n' \
                f'{pools}.\n\n' \
                f"🔍 Explorers: {thor_tx}; {bnb_tx}.\n\n" \
@@ -220,8 +227,10 @@ class BaseLocalization(ABC):  # == English
         total_usd_volume = tx.full_rune * dollar_per_rune if dollar_per_rune != 0 else 0.0
         pool_depth_usd = pool_info.usd_depth(dollar_per_rune)
         # get_explorer_url(self.cfg.network_id, ExplorerAssets)
-        thor_tx = link(self.thor_explore_address(tx.address), short_address(tx.address))
-        bnb_tx = link(self.binance_explore_address(tx.address), short_address(tx.address))
+
+        thor_url, bnb_url = self.address_urls(tx.address)
+        thor_tx = link(thor_url, short_address(tx.address))
+        bnb_tx = link(bnb_url, short_address(tx.address))
 
         rp, ap = tx.symmetry_rune_vs_asset()
 
