@@ -24,7 +24,7 @@ telegram:
 tx:
   stake_unstake:
     min_pool_percent: 5
-    max_age_sec: 12h
+    max_age: 12h
     fetch_period: 70
     tx_per_batch: 50
     max_page_deep: 10

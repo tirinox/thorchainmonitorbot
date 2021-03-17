@@ -21,7 +21,7 @@ ETH_USDT_TEST_SYMBOL = 'ETH.USDT-0X62E273709DA575835C7F6AEF4A31140CA5B1D190'
 
 STABLE_COIN_POOLS = (
     BNB_BUSD_SYMBOL, BNB_BUSD_TEST_SYMBOL, BNB_BUSD_TEST2_SYMBOL,
-    BNB_USDT_SYMBOL,  BNB_USDT_TEST_SYMBOL,
+    BNB_USDT_SYMBOL, BNB_USDT_TEST_SYMBOL,
     ETH_USDT_TEST_SYMBOL
 )
 
@@ -44,6 +44,10 @@ class NetworkIdents:
     TESTNET_MULTICHAIN = 'testnet-multi'
     CHAOSNET_MULTICHAIN = 'chaosnet-multi'
     CHAOSNET_BEP2CHAIN = 'chaosnet-bep2'
+
+    @classmethod
+    def is_test(cls, network):
+        return 'testnet' in network
 
 
 THOR_DIVIDER = 100_000_000.0

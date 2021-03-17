@@ -13,8 +13,6 @@ class TxFetcher(BaseFetcher):
         sleep_period = parse_timespan_to_seconds(scfg.fetch_period)
         super().__init__(deps, sleep_period=sleep_period)
 
-        self.pool_stat_map = {}
-        self.pool_info_map = {}
         self.tx_per_batch = int(scfg.tx_per_batch)
         self.max_page_deep = int(scfg.max_page_deep)
         self.url_gen_midgard = get_url_gen_by_network_id(deps.cfg.network_id)

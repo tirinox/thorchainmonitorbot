@@ -20,7 +20,7 @@ class PoolStatsUpdater(WithDelegates, INotified):
         add_withdraw_txs = [StakeTx.load_from_thor_tx(tx) for tx in add_withdraw_txs]
         await self._load_stats(add_withdraw_txs)
         await self._update_pools(add_withdraw_txs)
-        await self.handle_data(add_withdraw_txs, sender=sender)
+        await self.handle_data(add_withdraw_txs, sender=(sender, self))
 
     async def _update_pools(self, txs: List[StakeTx]):
         updated_stats = set()

@@ -4,6 +4,7 @@ from typing import List
 
 from services.jobs.fetch.base import INotified
 from services.jobs.fetch.tx import TxFetcher
+from services.jobs.pool_stats import PoolStatsUpdater
 from services.lib.datetime import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo, MIDGARD_MULT
@@ -20,17 +21,19 @@ class StakeTxNotifier(INotified):
 
         scfg = deps.cfg.tx.stake_unstake
         self.min_pool_percent = float(scfg.min_pool_percent)
-        self.max_age_sec = parse_timespan_to_seconds(scfg.max_age_sec)
+        self.max_age_sec = parse_timespan_to_seconds(scfg.max_age)
         self.min_usd_total = int(scfg.min_usd_total)
 
-    async def on_data(self, sender: TxFetcher, txs: List[StakeTx]):
+    async def on_data(self, senders, txs: List[StakeTx]):
+        fetcher: TxFetcher = senders[0]
+        psu: PoolStatsUpdater = senders[1]
+
         new_txs = self._filter_by_age(txs)
 
         usd_per_rune = self.deps.price_holder.usd_per_rune
         min_rune_volume = self.min_usd_total / usd_per_rune
 
-        large_txs = self._filter_large_txs(sender, new_txs, min_rune_volume)
-        large_txs = list(large_txs)
+        large_txs = list(self._filter_large_txs(psu, new_txs, min_rune_volume))
         large_txs = large_txs[:self.MAX_TX_PER_ONE_TIME]
 
         self.logger.info(f"large_txs: {len(large_txs)}")
@@ -42,30 +45,35 @@ class StakeTxNotifier(INotified):
                 loc = user_lang_map[chat_id]
                 texts = []
                 for tx in large_txs:
-                    pool = sender.pool_stat_map.get(tx.pool)
-                    pool_info = sender.pool_info_map.get(tx.pool)
+                    pool = psu.pool_stat_map.get(tx.pool)
+                    pool_info = psu.pool_info_map.get(tx.pool)
                     texts.append(loc.notification_text_large_tx(tx, usd_per_rune, pool, pool_info))
                 return '\n\n'.join(texts)
 
             await self.deps.broadcaster.broadcast(user_lang_map.keys(), message_gen)
 
-        hashes = [t.tx.tx_hash for t in txs]
-        await sender.add_last_seen_tx_hashes(hashes)
+        # hashes = [t.tx.tx_hash for t in txs]
+        # await fetcher.add_last_seen_tx_hashes(hashes)
 
     def _filter_by_age(self, txs: List[StakeTx]):
         now = int(time.time())
         for tx in txs:
+            print(f"{now=}, {tx.date=}")
+            # print(now - tx.date, "vs", self.max_age_sec)
             if tx.date > now - self.max_age_sec:
                 yield tx
 
     @staticmethod
-    def _filter_large_txs(fetcher, txs, min_rune_volume=10000):
+    def _filter_large_txs(psu: PoolStatsUpdater, txs, min_rune_volume=10000):
         for tx in txs:
             tx: StakeTx
-            stats: StakePoolStats = fetcher.pool_stat_map.get(tx.pool)
-            pool_info: PoolInfo = fetcher.pool_info_map.get(tx.pool)
+            stats: StakePoolStats = psu.pool_stat_map.get(tx.pool)
+            pool_info: PoolInfo = psu.pool_info_map.get(tx.pool)
 
-            usd_depth = pool_info.usd_depth(fetcher.deps.price_holder.usd_per_rune)
+            if not stats or not pool_info:
+                continue
+
+            usd_depth = pool_info.usd_depth(psu.deps.price_holder.usd_per_rune)
             min_pool_percent = stats.curve_for_tx_threshold(usd_depth)
             min_share_rune_volume = (pool_info.balance_rune * MIDGARD_MULT) * min_pool_percent
 
