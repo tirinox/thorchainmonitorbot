@@ -233,7 +233,7 @@ class BaseLocalization(ABC):  # == English
 
     # ------- PRICE -------
 
-    DET_PRICE_HELP_PAGE = 'https://docs.thorchain.org/how-it-works/incentive-pendulum'
+    DET_PRICE_HELP_PAGE = 'https://thorchain.org/rune#what-influences-it'
 
     def notification_text_price_update(self, p: PriceReport, ath=False):
         title = bold('Price update') if not ath else bold('🚀 A new all-time high has been achieved!')
