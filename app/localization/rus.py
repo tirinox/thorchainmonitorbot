@@ -117,12 +117,10 @@ class RussianLocalization(BaseLocalization):
 
     def text_stake_provides_liq_to_pools(self, address, pools):
         pools = pre(', '.join(pools))
-        thor_url, bnb_url = self.address_urls(address)
-        thor_tx = link_with_domain_text(thor_url)
-        bnb_tx = link_with_domain_text(bnb_url)
+        explorer_links = self.explorer_links_to_thor_address(address)
         return f'🛳️ {pre(address)}\n' \
                f'поставляет ликвидность в следующие пулы:\n{pools}.\n\n' \
-               f"🔍 Explorers: {thor_tx}; {bnb_tx}.\n\n" \
+               f"🔍 Explorer: {explorer_links}.\n\n" \
                f'👇 Выберите пул, чтобы получить подробную карточку информаци.'
 
     def text_stake_today(self):

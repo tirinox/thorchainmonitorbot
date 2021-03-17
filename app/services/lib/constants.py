@@ -40,6 +40,16 @@ def is_stable_coin(pool):
     return pool in STABLE_COIN_POOLS
 
 
+class Chains:
+    RUNE = 'THOR'
+    ETH = 'ETH'
+    BTC = 'BTC'
+    LTC = 'LTC'
+    BNB = 'BNB'
+    DOT = 'DOT'
+    ZIL = 'ZIL'
+
+
 class NetworkIdents:
     TESTNET_MULTICHAIN = 'testnet-multi'
     CHAOSNET_MULTICHAIN = 'chaosnet-multi'

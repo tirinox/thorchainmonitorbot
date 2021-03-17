@@ -3,8 +3,9 @@ from datetime import datetime
 from math import ceil
 
 from services.lib.config import Config
+from services.lib.constants import NetworkIdents
 from services.lib.datetime import format_time_ago
-from services.lib.explorers import get_explorer_url, ExploreAssets
+from services.lib.explorers import get_explorer_url, Chains
 from services.lib.money import format_percent, asset_name_cut_chain, pretty_money, short_address, short_money, \
     short_asset_name, calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change
 from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, BoardMessage, link_with_domain_text
@@ -168,19 +169,31 @@ class BaseLocalization(ABC):  # == English
                f'Loading pools information for {pre(address)}...'
 
     def address_urls(self, address):
-        thor_explore_url = get_explorer_url(self.cfg.network_id, ExploreAssets.RUNE, address)
-        bnb_explore_url = get_explorer_url(self.cfg.network_id, ExploreAssets.BNB, address)
+        thor_explore_url = get_explorer_url(self.cfg.network_id, Chains.RUNE, address)
+        bnb_explore_url = get_explorer_url(self.cfg.network_id, Chains.BNB, address)
         return thor_explore_url, bnb_explore_url
+
+    def explorer_links_to_thor_address(self, address):
+        net = self.cfg.network_id
+        if net == NetworkIdents.CHAOSNET_BEP2CHAIN:
+            explorer_links = [
+                get_explorer_url(net, Chains.RUNE, address),
+                get_explorer_url(net, Chains.BNB, address)
+            ]
+        else:
+            explorer_links = [get_explorer_url(net, Chains.RUNE, address)]
+
+        explorer_links = [link_with_domain_text(url) for url in explorer_links]
+        return '; '.join(explorer_links)
 
     def text_stake_provides_liq_to_pools(self, address, pools):
         pools = pre(', '.join(pools))
 
-        thor_url, bnb_url = self.address_urls(address)
-        thor_tx = link_with_domain_text(thor_url)
-        bnb_tx = link_with_domain_text(bnb_url)
+        explorer_links = self.explorer_links_to_thor_address(address)
+
         return f'🛳️ {pre(address)}\nprovides liquidity to the following pools:\n' \
                f'{pools}.\n\n' \
-               f"🔍 Explorers: {thor_tx}; {bnb_tx}.\n\n" \
+               f"🔍 Explorer: {explorer_links}.\n\n" \
                f'👇 Click on the button to get a detailed card.'
 
     def text_stake_today(self):
@@ -228,7 +241,7 @@ class BaseLocalization(ABC):  # == English
         pool_depth_usd = pool_info.usd_depth(dollar_per_rune)
         # get_explorer_url(self.cfg.network_id, ExplorerAssets)
 
-        thor_url, bnb_url = self.address_urls(tx.address)
+        thor_url, bnb_url = self.address_urls(tx.address)  # todo
         thor_tx = link(thor_url, short_address(tx.address))
         bnb_tx = link(bnb_url, short_address(tx.address))
 
