@@ -11,11 +11,11 @@ from aiogram.utils.helper import HelperMode
 
 from localization import BaseLocalization
 from services.dialog.base import BaseDialog, message_handler
+from services.dialog.picture.avatar import image_square_crop, combine_frame_and_photo, make_avatar
 from services.dialog.stake_info_dialog import LOADING_STICKER, ContentTypes
 from services.lib.depcont import DepContainer
 from services.lib.plot_graph import img_to_bio
 from services.lib.texts import kbd
-from services.lib.utils import async_wrap
 
 
 async def download_tg_photo(photo: Downloadable) -> Image.Image:
@@ -29,38 +29,6 @@ async def get_userpic(user: User) -> Image.Image:
     if pics.photos and pics.photos[0]:
         first_pic: PhotoSize = pics.photos[0][0]
         return await download_tg_photo(first_pic)
-
-
-def image_square_crop(im):
-    width, height = im.size  # Get dimensions
-
-    if width > height:
-        new_width, new_height = height, height
-    elif width < height:
-        new_width, new_height = width, width
-    else:
-        return im
-
-    left = int((width - new_width) / 2)
-    top = int((height - new_height) / 2)
-    right = int((width + new_width) / 2)
-    bottom = int((height + new_height) / 2)
-
-    # Crop the center of the image
-    return im.crop((left, top, right, bottom))
-
-
-THOR_AVA_FRAME_PATH = './data/thor_ava_frame.png'
-
-
-@async_wrap
-def combine_frame_and_photo(photo: Image.Image):
-    frame = Image.open(THOR_AVA_FRAME_PATH)
-
-    photo = photo.resize(frame.size).convert('RGBA')
-    result = Image.alpha_composite(photo, frame)
-
-    return result
 
 
 class AvatarStates(StatesGroup):
@@ -97,7 +65,8 @@ class AvatarDialog(BaseDialog):
     async def on_picture_doc(self, message: Message):
         await self.handle_avatar_picture(message, self.loc, explicit_picture=message.document)
 
-    async def handle_avatar_picture(self, message: Message, loc: BaseLocalization, explicit_picture: Downloadable = None):
+    async def handle_avatar_picture(self, message: Message, loc: BaseLocalization,
+                                    explicit_picture: Downloadable = None):
         async with AsyncExitStack() as stack:
             await stack.enter_async_context(self._work_lock)
 
@@ -121,17 +90,12 @@ class AvatarDialog(BaseDialog):
                 await message.reply(loc.TEXT_AVA_ERR_NO_PIC, reply_markup=self.menu_kbd())
                 return
 
-            user_pic = image_square_crop(user_pic)
-
             w, h = user_pic.size
-            if w != h:
-                user_pic = image_square_crop(user_pic)
-
             if not w or not h:
                 await message.reply(loc.TEXT_AVA_ERR_INVALID, reply_markup=self.menu_kbd())
                 return
 
-            pic = await combine_frame_and_photo(user_pic)
+            pic = await make_avatar(user_pic, with_lasers=True)
 
             user_id = message.from_user.id
             pic = img_to_bio(pic, name=f'thor_ava_{user_id}.png')

@@ -6,7 +6,7 @@ from aiogram.types import *
 from aiogram.utils.helper import HelperMode
 
 from services.dialog.base import BaseDialog, message_handler, query_handler
-from services.dialog.lp_picture import lp_pool_picture, lp_address_summary_picture
+from services.dialog.picture.lp_picture import lp_pool_picture, lp_address_summary_picture
 from services.jobs.fetch.lp import LiqPoolFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.lib.datetime import today_str
