@@ -82,7 +82,7 @@ class Resources(metaclass=Singleton):
             if not os.path.exists(local_path):
                 await self.download_logo(asset)
             logo = Image.open(local_path).convert("RGBA")
-        except:
+        except Exception:
             logo = Image.open(self.UNKNOWN_LOGO)
             logging.exception('')
         logo.thumbnail((self.LOGO_WIDTH, self.LOGO_HEIGHT))

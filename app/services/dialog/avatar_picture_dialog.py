@@ -6,6 +6,7 @@ from PIL import Image
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.dispatcher.storage import FSMContextProxy
 from aiogram.types import User, Message, PhotoSize, ReplyKeyboardRemove
+from aiogram.types.mixins import Downloadable
 from aiogram.utils.helper import HelperMode
 
 from localization import BaseLocalization
@@ -17,7 +18,7 @@ from services.lib.texts import kbd
 from services.lib.utils import async_wrap
 
 
-async def download_tg_photo(photo: PhotoSize) -> Image.Image:
+async def download_tg_photo(photo: Downloadable) -> Image.Image:
     photo_raw = BytesIO()
     await photo.download(destination=photo_raw)
     return Image.open(photo_raw)
@@ -28,6 +29,25 @@ async def get_userpic(user: User) -> Image.Image:
     if pics.photos and pics.photos[0]:
         first_pic: PhotoSize = pics.photos[0][0]
         return await download_tg_photo(first_pic)
+
+
+def image_square_crop(im):
+    width, height = im.size  # Get dimensions
+
+    if width > height:
+        new_width, new_height = height, height
+    elif width < height:
+        new_width, new_height = width, width
+    else:
+        return im
+
+    left = int((width - new_width) / 2)
+    top = int((height - new_height) / 2)
+    right = int((width + new_width) / 2)
+    bottom = int((height + new_height) / 2)
+
+    # Crop the center of the image
+    return im.crop((left, top, right, bottom))
 
 
 THOR_AVA_FRAME_PATH = './data/thor_ava_frame.png'
@@ -73,9 +93,13 @@ class AvatarDialog(BaseDialog):
     async def on_picture(self, message: Message):
         await self.handle_avatar_picture(message, self.loc, explicit_picture=message.photo[0])
 
-    async def handle_avatar_picture(self, message: Message, loc: BaseLocalization, explicit_picture: PhotoSize = None):
+    @message_handler(state=AvatarStates.MAIN, content_types=ContentTypes.DOCUMENT)
+    async def on_picture_doc(self, message: Message):
+        await self.handle_avatar_picture(message, self.loc, explicit_picture=message.document)
+
+    async def handle_avatar_picture(self, message: Message, loc: BaseLocalization, explicit_picture: Downloadable = None):
         async with AsyncExitStack() as stack:
-            stack.enter_async_context(self._work_lock)
+            await stack.enter_async_context(self._work_lock)
 
             # POST A LOADING STICKER
             sticker = await message.answer_sticker(LOADING_STICKER,
@@ -84,19 +108,24 @@ class AvatarDialog(BaseDialog):
             # CLEAN UP IN THE END
             stack.push_async_callback(sticker.delete)
 
-            if explicit_picture is not None:
-                user_pic = await download_tg_photo(explicit_picture)
-            else:
-                user_pic = await get_userpic(message.from_user)
+            try:
+                if explicit_picture is not None:
+                    user_pic = await download_tg_photo(explicit_picture)
+                else:
+                    user_pic = await get_userpic(message.from_user)
+            except Exception:
+                await message.reply(loc.TEXT_AVA_ERR_INVALID, reply_markup=self.menu_kbd())
+                return
 
             if user_pic is None:
                 await message.reply(loc.TEXT_AVA_ERR_NO_PIC, reply_markup=self.menu_kbd())
                 return
 
+            user_pic = image_square_crop(user_pic)
+
             w, h = user_pic.size
             if w != h:
-                await message.reply(loc.TEXT_AVA_ERR_SQUARE, reply_markup=self.menu_kbd())
-                return
+                user_pic = image_square_crop(user_pic)
 
             if not w or not h:
                 await message.reply(loc.TEXT_AVA_ERR_INVALID, reply_markup=self.menu_kbd())
