@@ -5,15 +5,16 @@ from math import ceil
 from services.lib.config import Config
 from services.lib.constants import NetworkIdents
 from services.lib.datetime import format_time_ago
-from services.lib.explorers import get_explorer_url, Chains
+from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx
 from services.lib.money import format_percent, asset_name_cut_chain, pretty_money, short_address, short_money, \
-    short_asset_name, calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change
+    short_asset_name, calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, \
+    chain_name_from_pool
 from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, BoardMessage, link_with_domain_text
 from services.models.cap_info import ThorCapInfo
 from services.models.pool_info import PoolInfo
 from services.models.price import RuneFairPrice, PriceReport
 from services.models.queue import QueueInfo
-from services.models.tx import StakeTx
+from services.models.tx import StakeTx, ThorTxType
 from services.models.pool_stats import StakePoolStats
 
 RAIDO_GLYPH = 'ᚱ'
@@ -169,19 +170,19 @@ class BaseLocalization(ABC):  # == English
                f'Loading pools information for {pre(address)}...'
 
     def address_urls(self, address):
-        thor_explore_url = get_explorer_url(self.cfg.network_id, Chains.RUNE, address)
-        bnb_explore_url = get_explorer_url(self.cfg.network_id, Chains.BNB, address)
+        thor_explore_url = get_explorer_url_to_address(self.cfg.network_id, Chains.THOR, address)
+        bnb_explore_url = get_explorer_url_to_address(self.cfg.network_id, Chains.BNB, address)
         return thor_explore_url, bnb_explore_url
 
     def explorer_links_to_thor_address(self, address):
         net = self.cfg.network_id
         if net == NetworkIdents.CHAOSNET_BEP2CHAIN:
             explorer_links = [
-                get_explorer_url(net, Chains.RUNE, address),
-                get_explorer_url(net, Chains.BNB, address)
+                get_explorer_url_to_address(net, Chains.THOR, address),
+                get_explorer_url_to_address(net, Chains.BNB, address)
             ]
         else:
-            explorer_links = [get_explorer_url(net, Chains.RUNE, address)]
+            explorer_links = [get_explorer_url_to_address(net, Chains.THOR, address)]
 
         explorer_links = [link_with_domain_text(url) for url in explorer_links]
         return '; '.join(explorer_links)
@@ -229,21 +230,50 @@ class BaseLocalization(ABC):  # == English
 
     # ------- NOTIFY STAKES -------
 
+    def links_to_explorer_for_stake_tx(self, tx: StakeTx):
+        net = self.cfg.network_id
+        if tx.address_rune:
+            rune_link = link(
+                get_explorer_url_to_address(net, Chains.THOR, tx.address_rune), short_address(tx.address_rune))
+        elif tx.tx_hash_rune:
+            rune_link = link(
+                get_explorer_url_to_tx(net, Chains.THOR, tx.tx_hash_rune), short_address(tx.tx_hash_rune))
+        else:
+            rune_link = ''
+
+        if tx.address_rune:
+            asset_link = link(
+                get_explorer_url_to_address(net, tx.pool, tx.address_asset), short_address(tx.address_asset))
+        elif tx.tx_hash_rune:
+            asset_link = link(
+                get_explorer_url_to_tx(net, tx.pool, tx.tx_hash_asset), short_address(tx.tx_hash_asset))
+        else:
+            asset_link = ''
+
+        return rune_link, asset_link
+
+    def link_to_explorer_user_address_for_stake_tx(self, tx: StakeTx):
+        if tx.address_rune:
+            return link(
+                get_explorer_url_to_address(self.cfg.network_id, Chains.THOR, tx.address_rune),
+                short_address(tx.address_rune)
+            )
+        else:
+            return link(
+                get_explorer_url_to_address(self.cfg.network_id, tx.pool, tx.address_asset),
+                short_address(tx.address_asset)
+            )
+
     def notification_text_large_tx(self, tx: StakeTx, dollar_per_rune: float, pool: StakePoolStats,
                                    pool_info: PoolInfo):
         msg = ''
-        if tx.type == 'stake':
+        if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
             msg += f'🐳 <b>Whale added liquidity</b> 🟢\n'
-        elif tx.type == 'unstake':
+        elif tx.type == ThorTxType.TYPE_WITHDRAW:
             msg += f'🐳 <b>Whale removed liquidity</b> 🔴\n'
 
         total_usd_volume = tx.full_rune * dollar_per_rune if dollar_per_rune != 0 else 0.0
         pool_depth_usd = pool_info.usd_depth(dollar_per_rune)
-        # get_explorer_url(self.cfg.network_id, ExplorerAssets)
-
-        thor_url, bnb_url = self.address_urls(tx.address)  # todo
-        thor_tx = link(thor_url, short_address(tx.address))
-        bnb_tx = link(bnb_url, short_address(tx.address))
 
         rp, ap = tx.symmetry_rune_vs_asset()
 
@@ -252,12 +282,17 @@ class BaseLocalization(ABC):  # == English
         asset_side_usd_short = short_money(total_usd_volume - rune_side_usd)
         percent_of_pool = pool_info.percent_share(tx.full_rune)
 
+        thor_url, asset_url = self.links_to_explorer_for_stake_tx(tx)
+        user_url = self.link_to_explorer_user_address_for_stake_tx(tx)
+        chain = chain_name_from_pool(tx.pool)
+
         msg += (
             f"<b>{pretty_money(tx.rune_amount)} {self.R}</b> ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
             f"<b>{pretty_money(tx.asset_amount)} {short_asset_name(tx.pool)}</b> ({ap:.0f}% = {asset_side_usd_short})\n"
             f"Total: <code>${pretty_money(total_usd_volume)}</code> ({percent_of_pool:.2f}% of the whole pool).\n"
             f"Pool depth is <b>${pretty_money(pool_depth_usd)}</b> now.\n"
-            f"Thor explorer: {thor_tx} / Binance explorer: {bnb_tx}."
+            f"User: {user_url}.\n"
+            f"Txs: {self.R} – {thor_url} / {chain} – {asset_url}."
         )
 
         return msg

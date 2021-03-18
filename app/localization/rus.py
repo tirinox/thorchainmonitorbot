@@ -4,13 +4,13 @@ from math import ceil
 from localization.base import BaseLocalization, RAIDO_GLYPH, CREATOR_TG
 from services.lib.datetime import format_time_ago
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
-    emoji_for_percent_change, short_asset_name
+    emoji_for_percent_change, short_asset_name, chain_name_from_pool
 from services.lib.texts import bold, link, code, ital, pre, x_ses, kbd, link_with_domain_text
 from services.models.cap_info import ThorCapInfo
 from services.models.pool_info import PoolInfo
 from services.models.price import RuneFairPrice, PriceReport
 from services.models.queue import QueueInfo
-from services.models.tx import StakeTx
+from services.models.tx import StakeTx, ThorTxType
 from services.models.pool_stats import StakePoolStats
 
 
@@ -156,18 +156,19 @@ class RussianLocalization(BaseLocalization):
     def notification_text_large_tx(self, tx: StakeTx, dollar_per_rune: float, pool: StakePoolStats,
                                    pool_info: PoolInfo):
         msg = ''
-        if tx.type == 'stake':
+
+        if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
             msg += f'🐳 <b>Кит добавил ликвидности</b> 🟢\n'
-        elif tx.type == 'unstake':
+        elif tx.type == ThorTxType.TYPE_WITHDRAW:
             msg += f'🐳 <b>Кит вывел ликвидность</b> 🔴\n'
 
         rp, ap = tx.symmetry_rune_vs_asset()
         total_usd_volume = tx.full_rune * dollar_per_rune if dollar_per_rune != 0 else 0.0
         pool_depth_usd = pool_info.usd_depth(dollar_per_rune)
 
-        thor_url, bnb_url = self.address_urls(tx.address)  # todo
-        thor_tx = link(thor_url, short_address(tx.address))
-        bnb_tx = link(bnb_url, short_address(tx.address))
+        thor_url, asset_url = self.links_to_explorer_for_stake_tx(tx)
+        user_url = self.link_to_explorer_user_address_for_stake_tx(tx)
+        chain = chain_name_from_pool(tx.pool)
 
         percent_of_pool = pool_info.percent_share(tx.full_rune)
 
@@ -176,7 +177,8 @@ class RussianLocalization(BaseLocalization):
             f"<b>{pretty_money(tx.asset_amount)} {short_asset_name(tx.pool)}</b> ({ap:.0f}%)\n"
             f"Всего: <code>${pretty_money(total_usd_volume)}</code> ({percent_of_pool:.2f}% от всего пула).\n"
             f"Глубина пула сейчас: <b>${pretty_money(pool_depth_usd)}</b>.\n"
-            f"Thor обозреватель: {thor_tx} / Binance обозреватель: {bnb_tx}."
+            f"Пользователь: {user_url}.\n"
+            f"Транзакции: {self.R} - {thor_url} / {chain} - {asset_url}."
         )
 
     # ------- QUEUE -------

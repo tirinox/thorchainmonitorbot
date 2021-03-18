@@ -2,7 +2,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import List, Optional, Iterable
 
-from services.lib.constants import is_rune, THOR_DIVIDER_INV
+from services.lib.constants import is_rune, THOR_DIVIDER_INV, RUNE_SYMBOL
 from services.models.cap_info import BaseModelMixin
 
 
@@ -157,13 +157,24 @@ class ThorTx:
         else:
             return self.date
 
+    def search_realm(self, in_only=False, out_only=False):
+        return self.in_tx if in_only else self.out_tx if out_only else in_only + out_only
+
+    def get_sub_tx(self, asset, in_only=False, out_only=False):
+        for sub_tx in self.search_realm(in_only, out_only):
+            for coin in sub_tx.coins:
+                if asset == coin.asset:
+                    return sub_tx
+                elif is_rune(asset) and is_rune(coin.asset):
+                    return sub_tx
+
     def sum_of_asset(self, asset, in_only=False, out_only=False):
-        search_realm = self.in_tx if in_only else self.out_tx if out_only else in_only + out_only
-        return sum(coin.amount_float for sub_tx in search_realm for coin in sub_tx.coins if coin.asset == asset)
+        return sum(coin.amount_float for sub_tx in self.search_realm(in_only, out_only) for coin in sub_tx.coins if
+                   coin.asset == asset)
 
     def sum_of_rune(self, in_only=False, out_only=False):
-        search_realm = self.in_tx if in_only else self.out_tx if out_only else in_only + out_only
-        return sum(coin.amount_float for sub_tx in search_realm for coin in sub_tx.coins if is_rune(coin.asset))
+        return sum(coin.amount_float for sub_tx in self.search_realm(in_only, out_only) for coin in sub_tx.coins if
+                   is_rune(coin.asset))
 
 
 @dataclass
@@ -171,7 +182,10 @@ class StakeTx(BaseModelMixin):
     date: int
     type: str
     pool: str
-    address: str
+    address_rune: str
+    address_asset: str
+    tx_hash_rune: str
+    tx_hash_asset: str
     asset_amount: float
     rune_amount: float
     hash: str
@@ -187,19 +201,38 @@ class StakeTx(BaseModelMixin):
 
         pool = tx.pools[0]
 
+        address_rune, address_asset = None, None
+
         if t == ThorTxType.TYPE_ADD_LIQUIDITY:
             rune_amount = tx.sum_of_rune(in_only=True)
             asset_amount = tx.sum_of_asset(pool, in_only=True)
+
+            rune_sub_tx = tx.get_sub_tx(RUNE_SYMBOL, in_only=True)
+            address_rune = rune_sub_tx.address if rune_sub_tx else None
+            tx_hash_rune = rune_sub_tx.tx_id if rune_sub_tx else None
+
+            asset_sub_tx = tx.get_sub_tx(pool, in_only=True)
+            address_asset = asset_sub_tx.address if asset_sub_tx else None
+            tx_hash_asset = asset_sub_tx.tx_id if asset_sub_tx else None
+
         elif t == ThorTxType.TYPE_WITHDRAW:
             rune_amount = tx.sum_of_rune(out_only=True)
             asset_amount = tx.sum_of_asset(pool, out_only=True)
+
+            address_rune = tx.get_sub_tx(RUNE_SYMBOL, in_only=True).address
+
+            tx_hash_rune = tx.get_sub_tx(RUNE_SYMBOL, out_only=True)
+            tx_hash_asset = tx.get_sub_tx(pool, out_only=True)
         else:
             return None
 
         return cls(date=int(tx.date_timestamp),
                    type=t,
                    pool=pool,
-                   address=tx.in_tx[0].address,
+                   address_rune=address_rune,
+                   address_asset=address_asset,
+                   tx_hash_rune=tx_hash_rune,
+                   tx_hash_asset=tx_hash_asset,
                    asset_amount=asset_amount,
                    rune_amount=rune_amount,
                    hash=tx.tx_hash,
