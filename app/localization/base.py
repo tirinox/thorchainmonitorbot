@@ -428,7 +428,8 @@ class BaseLocalization(ABC):  # == English
 
     # ------- AVATAR -------
 
-    TEXT_AVA_WELCOME = '🖼️ Drop me a square picture and I make you THORChain-styled avatar with a gradient frame.'
+    TEXT_AVA_WELCOME = '🖼️ Drop me a picture and I make you THORChain-styled avatar with a gradient frame. ' \
+                       'You can send me a picture as a file (or document) to avoid compression issues.'
 
     TEXT_AVA_ERR_INVALID = '⚠️ Your picture has invalid format!'
     TEXT_AVA_ERR_NO_PIC = '⚠️ You have no user pic...'
