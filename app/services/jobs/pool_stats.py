@@ -35,7 +35,8 @@ class PoolStatsUpdater(WithDelegates, INotified):
                 updated_stats.add(tx.pool)
                 result_txs.append(tx)
 
-        self.logger.info(f'pool stats updated for {", ".join(updated_stats)}')
+        if updated_stats:
+            self.logger.info(f'pool stats updated for {", ".join(updated_stats)}')
 
         for pool_name in updated_stats:
             pool_stat: StakePoolStats = self.pool_stat_map[pool_name]

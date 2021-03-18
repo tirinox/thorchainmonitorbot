@@ -52,8 +52,8 @@ class StakeTxNotifier(INotified):
 
             await self.deps.broadcaster.broadcast(user_lang_map.keys(), message_gen)
 
-        # hashes = [t.tx.tx_hash for t in txs]
-        # await fetcher.add_last_seen_tx_hashes(hashes)
+        hashes = [t.tx.tx_hash for t in txs]
+        await fetcher.add_last_seen_tx_hashes(hashes)
 
     def _filter_by_age(self, txs: List[StakeTx]):
         now = int(time.time())
