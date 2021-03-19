@@ -8,7 +8,7 @@ from services.lib.utils import async_wrap
 
 
 class LaserEyeMask:
-    def __init__(self, laser_mask='data/laser_2.png', size_p=15, debug=False):
+    def __init__(self, laser_mask='data/laser_green_2.png', size_p=15, debug=False):
         self.debug = debug
         self.size_p = size_p
         self.laser_eye_1 = Image.open(laser_mask).convert('RGBA')
@@ -66,8 +66,8 @@ def image_square_crop(im):
 
 
 THOR_AVA_FRAME_PATH = './data/thor_ava_frame.png'
-THOR_LASER_PATH = './data/laser_1.png'
-THOR_LASER_SIZE = 16
+THOR_LASER_PATH = './data/laser_green_2.png'
+THOR_LASER_SIZE = 24
 
 laser_masker = LaserEyeMask(THOR_LASER_PATH, THOR_LASER_SIZE)
 
