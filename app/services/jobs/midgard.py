@@ -37,15 +37,25 @@ class MidgardURLGenBase(ABC):
     def url_for_tx(self, offset=0, count=50) -> str:
         ...
 
+    @abstractmethod
+    def url_for_pool_depth_history(self, pool, from_ts, to_ts) -> str:
+        ...
+
 
 class MidgardURLGenV1(MidgardURLGenBase):
     def url_for_tx(self, offset=0, count=50) -> str:
         return f'{self.base_url}/v1/txs?offset={offset}&limit={count}'
 
+    def url_for_pool_depth_history(self, pool, from_ts, to_ts) -> str:
+        return f"/history/pools?pool={pool}&interval=day&from={from_ts}&to={to_ts}"
+
 
 class MidgardURLGenV2(MidgardURLGenBase):
     def url_for_tx(self, offset=0, count=50) -> str:
         return f'{self.base_url}/v2/actions?offset={offset}&limit={count}'
+
+    def url_for_pool_depth_history(self, pool, from_ts, to_ts) -> str:
+        return f"/history/depths/{pool}&interval=day&from={from_ts}&to={to_ts}"
 
 
 def get_url_gen_by_network_id(network_id) -> MidgardURLGenBase:

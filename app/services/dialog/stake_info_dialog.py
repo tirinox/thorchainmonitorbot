@@ -9,6 +9,7 @@ from services.dialog.base import BaseDialog, message_handler, query_handler
 from services.dialog.picture.lp_picture import lp_pool_picture, lp_address_summary_picture
 from services.jobs.fetch.lp import LiqPoolFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher
+from services.lib.constants import NetworkIdents
 from services.lib.datetime import today_str
 from services.lib.money import short_address
 from services.lib.plot_graph import img_to_bio
@@ -16,7 +17,15 @@ from services.lib.texts import code, grouper, kbd
 from services.models.stake_info import MyStakeAddress, BNB_CHAIN
 
 LOADING_STICKER = 'CAACAgIAAxkBAAIRx1--Tia-m6DNRIApk3yqmNWvap_sAALcAAP3AsgPUNi8Bnu98HweBA'
-RUNE_STAKE_INFO = 'https://runestake.info/debug?address={address}'
+
+
+def get_rune_stake_info_address(network: str, address: str):
+    if network == NetworkIdents.CHAOSNET_BEP2CHAIN:
+        return f'https://runestake.info/debug?address={address}'
+    elif network == NetworkIdents.TESTNET_MULTICHAIN:
+        return f'https://runestake.info/debug?address={address}'  # todo
+    else:
+        return f'https://runestake.info/debug?address={address}'  # todo
 
 
 class StakeStates(StatesGroup):
@@ -94,7 +103,7 @@ class StakeDialog(BaseDialog):
                 InlineKeyboardButton(self.loc.BUTTON_SM_SUMMARY,
                                      callback_data=f'{self.QUERY_SUMMARY_OF_ADDRESS}:{addr_idx}'),
                 InlineKeyboardButton(self.loc.BUTTON_VIEW_RUNESTAKEINFO,
-                                     url=RUNE_STAKE_INFO.format(address=address))
+                                     url=get_rune_stake_info_address(self.deps.cfg.network, address))
             ],
             [
                 *([button_toggle_show_value] if my_pools else []),
@@ -211,7 +220,7 @@ class StakeDialog(BaseDialog):
             await StakeStates.MAIN_MENU.set()
             address = message.text.strip()
             if address:
-                if MyStakeAddress.is_good_address(address):
+                if MyStakeAddress.validate_address(address):
                     self.add_address(address, BNB_CHAIN)
                 else:
                     await message.answer(code(self.loc.TEXT_INVALID_ADDRESS),

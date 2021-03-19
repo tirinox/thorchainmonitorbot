@@ -16,15 +16,18 @@ class MyStakeAddress(BaseModelMixin):
     pools: list = field(default_factory=list)
 
     @classmethod
-    def is_good_address(cls, addr: str, chain=BNB_CHAIN):
-        if chain == BNB_CHAIN:
-            addr = addr.strip()
+    def is_good_bnb_address(cls, addr: str):
+        addr = addr.strip()
+        return (addr.startswith('bnb1')
+                and 30 <= len(addr) <= 50
+                and set(addr[4:]) < set(BECH_2_CHARSET))
 
-            return (addr.startswith('bnb1')
-                    and 30 <= len(addr) <= 50
-                    and set(addr[4:]) < set(BECH_2_CHARSET))
-        else:
+    @classmethod
+    def validate_address(cls, addr: str):
+        addr = addr.strip()
+        if not (26 <= len(addr) <= 78):
             return False
+        return addr.isalnum()
 
 
 def pool_share(rune_depth, asset_depth, stake_units, pool_unit):

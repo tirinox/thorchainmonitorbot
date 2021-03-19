@@ -1,12 +1,14 @@
 from services.jobs.fetch.base import BaseFetcher
 from services.jobs.fetch.fair_price import fair_rune_price
-from services.jobs.midgard import get_midgard_url
+from services.jobs.midgard import get_url_gen_by_network_id
+from services.lib.constants import BNB_BUSD_SYMBOL, RUNE_SYMBOL_DET, is_stable_coin
 from services.lib.datetime import parse_timespan_to_seconds, DAY, HOUR
 from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo
-from services.models.time_series import PriceTimeSeries, TimeSeries
-from services.lib.constants import BNB_BUSD_SYMBOL, BNB_RUNE_SYMBOL, RUNE_SYMBOL_DET
+from services.models.time_series import PriceTimeSeries
 
+
+# todo => block number === date map
 
 class PoolPriceFetcher(BaseFetcher):
     def __init__(self, deps: DepContainer):
@@ -14,22 +16,7 @@ class PoolPriceFetcher(BaseFetcher):
         period = parse_timespan_to_seconds(cfg.price.fetch_period)
         super().__init__(deps, sleep_period=period)
         self.deps = deps
-        self.pool_series = TimeSeries('pool-info', self.deps.db)
-
-    @staticmethod
-    def historic_url(asset, height):
-        return f"/thorchain/pool/{asset}?height={height}"
-
-    @staticmethod
-    def full_pools_url():
-        return f"/thorchain/pools"
-
-    # todo: v2 compatibility
-    def url_for_historical_pool_state(self, pool, ts):
-        from_ts = int(ts - HOUR)
-        to_ts = int(ts + DAY + HOUR)
-        query = f"/history/pools?pool={pool}&interval=day&from={from_ts}&to={to_ts}"
-        return get_midgard_url(self.deps.cfg, query)
+        self.midgrad_url_gen = get_url_gen_by_network_id(cfg.network)
 
     async def fetch(self):
         d = self.deps
@@ -37,48 +24,19 @@ class PoolPriceFetcher(BaseFetcher):
         price = d.price_holder.usd_per_rune
         self.logger.info(f'fresh rune price is ${price:.3f}')
 
-        # if new_pool_info:
-        #     await self._save_historical_pool_data(new_pool_info)
-
         if price > 0:
-            pts = PriceTimeSeries(BNB_RUNE_SYMBOL, d.db)
-            await pts.add(price=price)
+            price_series = PriceTimeSeries('rune_market_price', d.db)
+            await price_series.add(price=price)
 
-            pts_det = PriceTimeSeries(RUNE_SYMBOL_DET, d.db)
             fair_price = await fair_rune_price(d.price_holder)
-            await pts_det.add(price=fair_price.fair_price)
             fair_price.real_rune_price = price
+
+            deterministic_price_series = PriceTimeSeries(RUNE_SYMBOL_DET, d.db)
+            await deterministic_price_series.add(price=fair_price.fair_price)
+
             return fair_price
         else:
             self.logger.warning(f'really ${price:.3f}? that is odd!')
-
-    async def fetch_pool_data_historic(self, asset, height=0) -> PoolInfo:
-        if asset == BNB_RUNE_SYMBOL:
-            return PoolInfo.dummy()
-
-        p = await self.deps.thor_connector.query_pool(asset, height)
-        return PoolInfo(p.asset, p.assets_per_rune, p.balance_asset_int, p.balance_rune_int, p.pool_units_int,
-                        p.status)
-
-    async def get_price_in_rune(self, asset, height=0):
-        if asset == BNB_RUNE_SYMBOL:
-            return 1.0
-        asset_pool = await self.fetch_pool_data_historic(asset, height)
-        asset_per_rune = asset_pool.balance_asset / asset_pool.balance_rune
-        return asset_per_rune
-
-    async def get_historical_price(self, asset, height=0):
-        dollar_per_rune = await self.get_price_in_rune(BNB_BUSD_SYMBOL, height)
-        asset_per_rune = await self.get_price_in_rune(asset, height)
-
-        asset_price_in_usd = dollar_per_rune / asset_per_rune
-
-        return dollar_per_rune, asset_price_in_usd
-
-    async def _save_historical_pool_data(self, pool_info_dict):
-        await self.pool_series.add_as_json(j={
-            pool: info.as_dict for pool, info in pool_info_dict.items()
-        })
 
     async def get_current_pool_data_full(self):
         pool_info_raw = await self.deps.thor_connector.query_pools()
@@ -93,18 +51,13 @@ class PoolPriceFetcher(BaseFetcher):
 
         return results
 
-    async def get_prices_of(self, asset_list):
-        pool_dict = await self.get_current_pool_data_full()
-        return {
-            asset: pool for asset, pool in pool_dict.items() if pool in asset_list
-        }
-
-    @staticmethod
-    def cache_key_for_pool_info_by_day(pool, day):
-        return f'midg_pool_info:{pool}:{day}'
+    def url_for_historical_pool_state(self, pool, ts):
+        from_ts = int(ts - HOUR)
+        to_ts = int(ts + DAY + HOUR)
+        return self.midgrad_url_gen.url_for_pool_depth_history(pool, from_ts, to_ts)
 
     async def get_asset_per_rune_of_pool_by_day(self, pool, day):
-        cache_key = self.cache_key_for_pool_info_by_day(pool, day)
+        cache_key = f'midg_pool_info:{pool}:{day}'
         cached_raw = await self.deps.db.redis.get(cache_key)
         if cached_raw:
             try:
@@ -125,8 +78,9 @@ class PoolPriceFetcher(BaseFetcher):
             return price
 
     async def get_usd_per_rune_asset_per_rune_by_day(self, pool, day_ts):
-        usd_per_rune = await self.get_asset_per_rune_of_pool_by_day(BNB_BUSD_SYMBOL, day_ts)
-        if pool == BNB_BUSD_SYMBOL:
+        stable_coin_symbol = BNB_BUSD_SYMBOL  # todo: get price from coin gecko OR from weighted usd price cache
+        usd_per_rune = await self.get_asset_per_rune_of_pool_by_day(stable_coin_symbol, day_ts)
+        if is_stable_coin(pool):
             return usd_per_rune, 1.0
         else:
             asset_per_rune = await self.get_asset_per_rune_of_pool_by_day(pool, day_ts)
