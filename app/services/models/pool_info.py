@@ -59,3 +59,12 @@ class PoolInfo:
             'asset': self.asset,
             'status': self.status
         }
+
+
+@dataclass
+class PoolInfoHistoricEntry:
+    asset_depth: int = 0
+    rune_depth: int = 0
+    asset_price: float = 0.0
+    asset_price_usd: float = 0.0
+    liquidity_units: int = 0

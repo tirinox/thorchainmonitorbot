@@ -6,6 +6,7 @@ from aiothornode.types import TEST_NET_ENVIRONMENT_MULTI_1, CHAOS_NET_BNB_ENVIRO
 
 from services.lib.config import Config
 from services.lib.constants import NetworkIdents
+from services.models.pool_info import PoolInfoHistoricEntry
 from services.models.tx import ThorTx, ThorTxType, ThorSubTx, ThorMetaRefund, ThorMetaWithdraw, ThorMetaSwap, \
     ThorMetaAddLiquidity
 
@@ -78,7 +79,7 @@ class TxParseResult(NamedTuple):
         return len(self.txs)
 
 
-class TxParserBase(metaclass=ABCMeta):
+class MidgardParserBase(metaclass=ABCMeta):
     def __init__(self, network_id):
         self.network_id = network_id
 
@@ -98,8 +99,13 @@ class TxParserBase(metaclass=ABCMeta):
                 logger.error(f'failed to parse TX. error: {e!r}; json = {r}')
                 continue
 
+    @abstractmethod
+    def parse_historic_pool_items(self, response: dict) -> List[PoolInfoHistoricEntry]:
+        ...
 
-class TxParserV1(TxParserBase):
+
+
+class MidgardParserV1(MidgardParserBase):
     """
     Midgard V1 + Single chain BEP Swap network
     """
@@ -176,8 +182,22 @@ class TxParserV1(TxParserBase):
         count = int(response.get('count', 0))
         return TxParseResult(count, txs, len(raw_txs), network_id=self.network_id)
 
+    def parse_historic_pool_items(self, response: dict) -> List[PoolInfoHistoricEntry]:
+        results = []
+        for j in response:
+            asset_depth = int(j.get('assetDepth', '0'))
+            rune_depth = int(j.get('runeDepth', '0'))
+            results.append(PoolInfoHistoricEntry(
+                asset_depth=asset_depth,
+                rune_depth=asset_depth,
+                liquidity_units=0,
+                asset_price=asset_depth / rune_depth,
+                asset_price_usd=0.0,
+            ))
+        return results
 
-class TxParserV2(TxParserBase):
+
+class MidgardParserV2(MidgardParserBase):
     """
     Midgard V2 + Multi-chain network
     """
@@ -213,11 +233,26 @@ class TxParserV2(TxParserBase):
         txs = list(self.safe_parse_raw_batch(raw_txs))
         return TxParseResult(count, txs, len(raw_txs), network_id=self.network_id)
 
+    def parse_historic_pool_items(self, response: dict) -> List[PoolInfoHistoricEntry]:
+        results = []
+        intervals = response.get('intervals', [])
+        for j in intervals:
+            asset_depth = int(j.get('assetDepth', '0'))
+            rune_depth = int(j.get('runeDepth', '0'))
+            results.append(PoolInfoHistoricEntry(
+                asset_depth=asset_depth,
+                rune_depth=asset_depth,
+                liquidity_units=0,
+                asset_price=asset_depth / rune_depth,
+                asset_price_usd=float(j.get('assetPriceUSD', '0')),
+            ))
+        return results
 
-def get_parser_by_network_id(network_id) -> TxParserBase:
+
+def get_parser_by_network_id(network_id) -> MidgardParserBase:
     if network_id in (NetworkIdents.TESTNET_MULTICHAIN, NetworkIdents.CHAOSNET_MULTICHAIN):
-        return TxParserV2(network_id)
+        return MidgardParserV2(network_id)
     elif network_id == NetworkIdents.CHAOSNET_BEP2CHAIN:
-        return TxParserV1(network_id)
+        return MidgardParserV1(network_id)
     else:
         raise KeyError('unsupported network ID!')

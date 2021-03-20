@@ -3,7 +3,7 @@ import os
 
 import pytest
 
-from services.jobs.midgard import TxParserV1, TxParserV2
+from services.jobs.midgard import MidgardParserV1, MidgardParserV2
 from services.lib.constants import NetworkIdents, THOR_DIVIDER
 
 PATH = './app/tests/tx_examples'
@@ -22,7 +22,7 @@ def example_tx_gen():
 
 def test_parser_v1_swap(example_tx_gen):
     txs = example_tx_gen(name='v1_swap.json')
-    p = TxParserV1(network_id=NetworkIdents.CHAOSNET_BEP2CHAIN)
+    p = MidgardParserV1(network_id=NetworkIdents.CHAOSNET_BEP2CHAIN)
     res = p.parse_tx_response(txs)
     assert res
     assert res.tx_count == 50
@@ -38,7 +38,7 @@ def test_parser_v1_swap(example_tx_gen):
 
 def test_parser_v1_double_swap(example_tx_gen):
     txs = example_tx_gen(name='v1_dbl_swap.json')
-    p = TxParserV1(network_id=NetworkIdents.CHAOSNET_BEP2CHAIN)
+    p = MidgardParserV1(network_id=NetworkIdents.CHAOSNET_BEP2CHAIN)
     res = p.parse_tx_response(txs)
 
     t0 = res.txs[0]
@@ -56,7 +56,7 @@ def test_parser_v1_double_swap(example_tx_gen):
 ])
 def test_parser_v2_smoke(fn, example_tx_gen):
     txs = example_tx_gen(name=fn)
-    p = TxParserV2(network_id=NetworkIdents.TESTNET_MULTICHAIN)
+    p = MidgardParserV2(network_id=NetworkIdents.TESTNET_MULTICHAIN)
     res = p.parse_tx_response(txs)
     assert res.tx_count > 0
     assert res.total_count > 0

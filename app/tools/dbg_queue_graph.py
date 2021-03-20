@@ -27,7 +27,7 @@ async def test_plots(d):
 
 if __name__ == '__main__':
     d = DepContainer()
-    d.loc_man = LocalizationManager()
+    d.loc_man = LocalizationManager(d.cfg)
     d.loop = asyncio.get_event_loop()
     d.cfg = Config()
     d.db = DB(d.loop)

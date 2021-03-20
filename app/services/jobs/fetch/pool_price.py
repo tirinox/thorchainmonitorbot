@@ -1,6 +1,6 @@
 from services.jobs.fetch.base import BaseFetcher
 from services.jobs.fetch.fair_price import fair_rune_price
-from services.jobs.midgard import get_url_gen_by_network_id
+from services.jobs.midgard import get_url_gen_by_network_id, get_parser_by_network_id
 from services.lib.config import Config
 from services.lib.constants import BNB_BUSD_SYMBOL, RUNE_SYMBOL_DET, is_stable_coin, NetworkIdents, ETH_USDT_TEST_SYMBOL
 from services.lib.datetime import parse_timespan_to_seconds, DAY, HOUR
@@ -57,6 +57,9 @@ class PoolPriceFetcher(BaseFetcher):
         to_ts = int(ts + DAY + HOUR)
         return self.midgrad_url_gen.url_for_pool_depth_history(pool, from_ts, to_ts)
 
+    def parse_pool_history_item(self, j):
+        ...
+
     async def get_asset_per_rune_of_pool_by_day(self, pool, day):
         cache_key = f'midg_pool_info:{pool}:{day}'
         cached_raw = await self.deps.db.redis.get(cache_key)
@@ -69,22 +72,24 @@ class PoolPriceFetcher(BaseFetcher):
         url = self.url_for_historical_pool_state(pool, day)
         self.logger.info(f"get: {url}")
 
+        parser = get_parser_by_network_id(self.deps.cfg.network_id)
+
         async with self.deps.session.get(url) as resp:
-            pools_info = await resp.json()
+            raw_data = await resp.json()
+            pools_info = parser.parse_historic_pool_items(raw_data)
             if not pools_info:
                 self.logger.warning(f'fetch result = []!')
-            if isinstance(pools_info, list):
-                pool_info = pools_info[0]
+                return None
             else:
-                pool_info = pools_info['intervals'][0]
-            price = int(pool_info['assetDepth']) / int(pool_info['runeDepth'])
-            await self.deps.db.redis.set(cache_key, price)
-            return price
+                price = pools_info[0].asset_price
+                await self.deps.db.redis.set(cache_key, price)
+                return price
 
     async def get_usd_per_rune_asset_per_rune_by_day(self, pool, day_ts):
         network = self.deps.cfg.network_id
         if network == NetworkIdents.CHAOSNET_BEP2CHAIN or network == NetworkIdents.CHAOSNET_MULTICHAIN:
             stable_coin_symbol = BNB_BUSD_SYMBOL  # todo: get price from coin gecko OR from weighted usd price cache
+            # todo: Midgard V2 already returns usd price, there is no need to query a stable coin pool
         elif network == NetworkIdents.TESTNET_MULTICHAIN:
             stable_coin_symbol = ETH_USDT_TEST_SYMBOL
         else:
