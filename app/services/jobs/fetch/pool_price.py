@@ -1,7 +1,8 @@
 from services.jobs.fetch.base import BaseFetcher
 from services.jobs.fetch.fair_price import fair_rune_price
 from services.jobs.midgard import get_url_gen_by_network_id
-from services.lib.constants import BNB_BUSD_SYMBOL, RUNE_SYMBOL_DET, is_stable_coin
+from services.lib.config import Config
+from services.lib.constants import BNB_BUSD_SYMBOL, RUNE_SYMBOL_DET, is_stable_coin, NetworkIdents, ETH_USDT_TEST_SYMBOL
 from services.lib.datetime import parse_timespan_to_seconds, DAY, HOUR
 from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo
@@ -12,11 +13,11 @@ from services.models.time_series import PriceTimeSeries
 
 class PoolPriceFetcher(BaseFetcher):
     def __init__(self, deps: DepContainer):
-        cfg = deps.cfg
+        cfg: Config = deps.cfg
         period = parse_timespan_to_seconds(cfg.price.fetch_period)
         super().__init__(deps, sleep_period=period)
         self.deps = deps
-        self.midgrad_url_gen = get_url_gen_by_network_id(cfg.network)
+        self.midgrad_url_gen = get_url_gen_by_network_id(cfg.network_id)
 
     async def fetch(self):
         d = self.deps
@@ -72,13 +73,23 @@ class PoolPriceFetcher(BaseFetcher):
             pools_info = await resp.json()
             if not pools_info:
                 self.logger.warning(f'fetch result = []!')
-            pool_info = pools_info[0]
+            if isinstance(pools_info, list):
+                pool_info = pools_info[0]
+            else:
+                pool_info = pools_info['intervals'][0]
             price = int(pool_info['assetDepth']) / int(pool_info['runeDepth'])
             await self.deps.db.redis.set(cache_key, price)
             return price
 
     async def get_usd_per_rune_asset_per_rune_by_day(self, pool, day_ts):
-        stable_coin_symbol = BNB_BUSD_SYMBOL  # todo: get price from coin gecko OR from weighted usd price cache
+        network = self.deps.cfg.network_id
+        if network == NetworkIdents.CHAOSNET_BEP2CHAIN or network == NetworkIdents.CHAOSNET_MULTICHAIN:
+            stable_coin_symbol = BNB_BUSD_SYMBOL  # todo: get price from coin gecko OR from weighted usd price cache
+        elif network == NetworkIdents.TESTNET_MULTICHAIN:
+            stable_coin_symbol = ETH_USDT_TEST_SYMBOL
+        else:
+            raise NotImplementedError
+
         usd_per_rune = await self.get_asset_per_rune_of_pool_by_day(stable_coin_symbol, day_ts)
         if is_stable_coin(pool):
             return usd_per_rune, 1.0

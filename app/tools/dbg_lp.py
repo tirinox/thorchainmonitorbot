@@ -5,9 +5,9 @@ import pickle
 
 import aiohttp
 from aiothornode.connector import ThorConnector, TEST_NET_ENVIRONMENT_MULTI_1
+from services.dialog.picture.lp_picture import lp_pool_picture, lp_address_summary_picture
 
 from localization import LocalizationManager, RussianLocalization
-from services.dialog.lp_picture import lp_pool_picture, lp_address_summary_picture
 from services.jobs.fetch.lp import LiqPoolFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.lib.config import Config
@@ -61,7 +61,7 @@ async def load_one_pool_liquidity(d: DepContainer, addr, pool=BNB_BTCB_SYMBOL):
 async def load_summary_for_address(d: DepContainer, address):
     async with aiohttp.ClientSession() as d.session:
         await d.db.get_redis()
-        d.thor_man.session = d.session
+        # todo: Add THORConnector
         lpf = LiqPoolFetcher(d)
         ppf = PoolPriceFetcher(d)
         await ppf.get_current_pool_data_full()
@@ -117,13 +117,8 @@ if __name__ == '__main__':
     d.loc_man = LocalizationManager(d.cfg)
     d.db = DB(d.loop)
 
-    # d.loop.run_until_complete(
-    #     test_one_pool_picture_generator(d,
-    #                                     'bnb1rv89nkw2x5ksvhf6jtqwqpke4qhh7jmudpvqmj',
-    #                                     pool=BTCB_SYMBOL,
-    #                                     hide=True))
+    g1 = test_summary_picture_generator(d, 'bnb157zacwqaplw5kdwpkrve6n2jdxu3ps9cj3xdcp', hide=False)
+    g2 = test_one_pool_picture_generator(d, 'bnb1rv89nkw2x5ksvhf6jtqwqpke4qhh7jmudpvqmj', pool=BNB_BTCB_SYMBOL,
+                                         hide=False)
 
-    d.loop.run_until_complete(
-        test_summary_picture_generator(d,
-                                       'bnb157zacwqaplw5kdwpkrve6n2jdxu3ps9cj3xdcp',
-                                       hide=False))  # bnb1rv89nkw2x5ksvhf6jtqwqpke4qhh7jmudpvqmj
+    d.loop.run_until_complete(g1)
