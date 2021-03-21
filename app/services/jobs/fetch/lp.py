@@ -1,10 +1,21 @@
 import asyncio
+import datetime
 import logging
 
 from services.jobs.midgard import get_midgard_url
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.lib.depcont import DepContainer
 from services.models.stake_info import CurrentLiquidity, StakePoolReport, StakeDayGraphPoint
+
+
+# https://mctn.vercel.app/dashboard?thor=tthor1zzwlsaq84sxuyn8zt3fz5vredaycvgm7n8gs6e  multi-chain
+# FEES:
+# https://multichain-asgard-consumer-api.vercel.app/api/v2/member/fee?address=tthor1zzwlsaq84sxuyn8zt3fz5vredaycvgm7n8gs6e|tb1qsasla0n6rjgwr6s4pa8jrqmvzzr0vfugulyyf0&pool=BTC.BTC
+# thor address vs on-chain address:
+# https://multichain-asgard-consumer-api.vercel.app/api/v2/member/pooladdress?address=tthor1zzwlsaq84sxuyn8zt3fz5vredaycvgm7n8gs6e
+# POOL list of address:
+# https://multichain-asgard-consumer-api.vercel.app/api/v2/member/poollist?address=tthor1zzwlsaq84sxuyn8zt3fz5vredaycvgm7n8gs6e&isDev
+# Midgard pool info https://testnet.midgard.thorchain.info/v2/pool/BTC.BTC
 
 
 class LiqPoolFetcher:
@@ -65,10 +76,11 @@ class LiqPoolFetcher:
 
     async def fetch_stake_report_for_pool(self, liq: CurrentLiquidity, ppf: PoolPriceFetcher) -> StakePoolReport:
         try:
+            first_stake_dt = datetime.datetime.utcfromtimestamp(liq.first_stake_ts)
             # get prices at the moment of first stake
-            usd_per_rune_start, usd_per_asset_start = await ppf.get_usd_per_rune_asset_per_rune_by_day(
+            usd_per_rune_start, usd_per_asset_start = await ppf.get_usd_price_of_rune_and_asset_by_day(
                 liq.pool,
-                liq.first_stake_ts)
+                first_stake_dt.date())
         except Exception as e:
             self.logger.exception(e, exc_info=True)
             usd_per_rune_start, usd_per_asset_start = None, None

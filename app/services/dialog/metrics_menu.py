@@ -2,11 +2,11 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import *
 from aiogram.utils.helper import HelperMode
 
-from services.dialog.price_picture import price_graph_from_db
+from services.dialog.picture.price_picture import price_graph_from_db
 from services.lib.datetime import DAY, HOUR, parse_timespan_to_seconds
 from services.lib.texts import kbd
 from services.dialog.base import BaseDialog, message_handler
-from services.dialog.queue_picture import queue_graph
+from services.dialog.picture.queue_picture import queue_graph
 from services.jobs.fetch.fair_price import fair_rune_price
 from services.models.cap_info import ThorCapInfo
 from services.models.price import PriceReport

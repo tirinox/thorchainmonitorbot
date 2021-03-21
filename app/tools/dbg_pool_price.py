@@ -16,19 +16,19 @@ async def main(d: DepContainer):
     async with aiohttp.ClientSession() as d.session:
         await d.db.get_redis()
 
-        day2ago = datetime.datetime.now() - datetime.timedelta(days=2)
+        day2ago = datetime.date(2021, 3, 20)
 
         cfg: Config = d.cfg
 
         cfg.network_id = NetworkIdents.TESTNET_MULTICHAIN
         ppf = PoolPriceFetcher(d)
-        result = await ppf.get_usd_per_rune_asset_per_rune_by_day(BTC_SYMBOL, day2ago.timestamp())
-        print(f'Test net MC: {result} ')
+        usd_per_rune, usd_per_asset = await ppf.get_usd_price_of_rune_and_asset_by_day(BTC_SYMBOL, day2ago)
+        print(f'Test net MC: {usd_per_rune=}, ({BTC_SYMBOL}) {usd_per_asset=} ')
 
         cfg.network_id = NetworkIdents.CHAOSNET_BEP2CHAIN
         ppf = PoolPriceFetcher(d)
-        result = await ppf.get_usd_per_rune_asset_per_rune_by_day(BNB_BTCB_SYMBOL, day2ago.timestamp())
-        print(f'Test net BEP2 Chaosnet: {result}')
+        usd_per_rune, usd_per_asset = await ppf.get_usd_price_of_rune_and_asset_by_day(BNB_BTCB_SYMBOL, day2ago, caching=False)
+        print(f'Test net BEP2 Chaosnet: {usd_per_rune=}, ({BNB_BTCB_SYMBOL}) {usd_per_asset=}')
 
 
 if __name__ == '__main__':

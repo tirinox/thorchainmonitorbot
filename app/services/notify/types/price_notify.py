@@ -3,7 +3,7 @@ import logging
 import time
 
 from localization import BaseLocalization
-from services.dialog.price_picture import price_graph_from_db
+from services.dialog.picture.price_picture import price_graph_from_db
 from services.jobs.fetch.base import INotified
 from services.lib.cooldown import CooldownSingle
 from services.lib.datetime import MINUTE, HOUR, DAY, parse_timespan_to_seconds

@@ -2,7 +2,7 @@ import asyncio
 import os
 
 from localization import LocalizationManager
-from services.dialog.queue_picture import queue_graph
+from services.dialog.picture.queue_picture import queue_graph
 from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.depcont import DepContainer

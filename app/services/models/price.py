@@ -48,7 +48,7 @@ class PriceReport:
 
 class LastPriceHolder:
     def __init__(self):
-        self.usd_per_rune = 1.0
+        self.usd_per_rune = 1.0  # weighted across multiple stable coin pools
         self.btc_per_rune = 0.000001
         self.pool_info_map: Dict[str, PoolInfo] = {}
         self.last_update_ts = 0
