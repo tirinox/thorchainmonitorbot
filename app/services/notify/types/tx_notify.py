@@ -5,9 +5,10 @@ from typing import List
 from services.jobs.fetch.base import INotified
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.pool_stats import PoolStatsUpdater
+from services.lib.constants import THOR_DIVIDER_INV
 from services.lib.datetime import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
-from services.models.pool_info import PoolInfo, MIDGARD_MULT
+from services.models.pool_info import PoolInfo
 from services.models.tx import StakeTx
 from services.models.pool_stats import StakePoolStats
 
@@ -73,9 +74,10 @@ class StakeTxNotifier(INotified):
 
             usd_depth = pool_info.usd_depth(psu.deps.price_holder.usd_per_rune)
             min_pool_percent = stats.curve_for_tx_threshold(usd_depth)
-            min_share_rune_volume = (pool_info.balance_rune * MIDGARD_MULT) * min_pool_percent
+            min_share_rune_volume = (pool_info.balance_rune * THOR_DIVIDER_INV) * min_pool_percent
 
-            # print(f"{tx.pool}: {tx.full_rune:.2f} / {min_share_rune_volume:.2f} need rune, min_pool_percent = {min_pool_percent:.2f}, "
+            # print(f"{tx.pool}: {tx.full_rune:.2f} / {min_share_rune_volume:.2f} need rune,
+            # min_pool_percent = {min_pool_percent:.2f}, "
             #       f"usd_depth = {usd_depth:.0f}")
 
             if stats is not None:

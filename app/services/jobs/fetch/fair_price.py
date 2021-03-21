@@ -4,8 +4,9 @@ import logging
 import aiohttp
 
 from services.jobs.fetch.gecko_price import gecko_info
+from services.lib.constants import THOR_DIVIDER_INV
 from services.lib.utils import a_result_cached
-from services.models.pool_info import MIDGARD_MULT, PoolInfo
+from services.models.pool_info import PoolInfo
 from services.models.price import RuneFairPrice, LastPriceHolder
 
 CIRCULATING_SUPPLY_URL = "https://defi.delphidigital.io/chaosnet/int/marketdata"
@@ -51,7 +52,7 @@ async def fetch_fair_rune_price(price_holder: LastPriceHolder):
         tlv = 0  # in USD
         for pool in price_holder.pool_info_map.values():
             pool: PoolInfo
-            tlv += (pool.balance_rune * MIDGARD_MULT) * usd_per_rune
+            tlv += (pool.balance_rune * THOR_DIVIDER_INV) * usd_per_rune
 
         fair_price = 3 * tlv / working_rune  # The main formula of wealth!
 

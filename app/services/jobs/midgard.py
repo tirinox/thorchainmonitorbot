@@ -104,7 +104,6 @@ class MidgardParserBase(metaclass=ABCMeta):
         ...
 
 
-
 class MidgardParserV1(MidgardParserBase):
     """
     Midgard V1 + Single chain BEP Swap network

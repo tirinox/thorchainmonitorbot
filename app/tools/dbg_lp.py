@@ -8,7 +8,8 @@ from aiothornode.connector import ThorConnector, TEST_NET_ENVIRONMENT_MULTI_1
 from services.dialog.picture.lp_picture import lp_pool_picture, lp_address_summary_picture
 
 from localization import LocalizationManager, RussianLocalization
-from services.jobs.fetch.lp import LiqPoolFetcher
+from services.jobs.fetch.runeyield import get_rune_yield_connector
+from services.jobs.fetch.runeyield.lp import AsgardConsumerConnectorV1
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.lib.config import Config
 from services.lib.constants import BNB_BTCB_SYMBOL
@@ -20,16 +21,16 @@ from services.models.stake_info import CurrentLiquidity
 async def load_one_pool_liquidity(d: DepContainer, addr, pool=BNB_BTCB_SYMBOL):
     async with aiohttp.ClientSession() as d.session:
         await d.db.get_redis()
-        lpf = LiqPoolFetcher(d)
         ppf = PoolPriceFetcher(d)
+        rune_yield = get_rune_yield_connector(d, ppf)
         d.thor_connector = ThorConnector(TEST_NET_ENVIRONMENT_MULTI_1.copy(), d.session)
         await ppf.get_current_pool_data_full()
 
-        cur_liqs = await lpf.fetch_all_pool_liquidity_info(addr)
+        cur_liqs = await rune_yield._fetch_all_pool_liquidity_info(addr)
 
         cur_liq: CurrentLiquidity = cur_liqs[pool]
 
-        stake_report = await lpf.fetch_stake_report_for_pool(cur_liq, ppf)
+        stake_report = await rune_yield._generate_yield_report(cur_liq)
 
         # -------- print out ----------
 
@@ -62,14 +63,14 @@ async def load_summary_for_address(d: DepContainer, address):
     async with aiohttp.ClientSession() as d.session:
         await d.db.get_redis()
         # todo: Add THORConnector
-        lpf = LiqPoolFetcher(d)
         ppf = PoolPriceFetcher(d)
+        rune_yield = get_rune_yield_connector(d, ppf)
         await ppf.get_current_pool_data_full()
-        liqs = await lpf.fetch_all_pool_liquidity_info(address)
+        liqs = await rune_yield._fetch_all_pool_liquidity_info(address)
         pools = list(liqs.keys())
         liqs = list(liqs.values())
-        weekly_charts = await lpf.fetch_all_pools_weekly_charts(address, pools)
-        stake_reports = await asyncio.gather(*[lpf.fetch_stake_report_for_pool(liq, ppf) for liq in liqs])
+        weekly_charts = await rune_yield._fetch_all_pools_weekly_charts(address, pools)
+        stake_reports = await asyncio.gather(*[rune_yield._generate_yield_report(liq) for liq in liqs])
         return stake_reports, weekly_charts
 
 

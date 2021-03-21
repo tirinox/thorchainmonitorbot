@@ -7,14 +7,14 @@ from aiogram.utils.helper import HelperMode
 
 from services.dialog.base import BaseDialog, message_handler, query_handler
 from services.dialog.picture.lp_picture import lp_pool_picture, lp_address_summary_picture
-from services.jobs.fetch.lp import LiqPoolFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher
-from services.lib.constants import NetworkIdents
+from services.jobs.fetch.runeyield import get_rune_yield_connector
+from services.lib.constants import NetworkIdents, Chains
 from services.lib.datetime import today_str
 from services.lib.money import short_address
 from services.lib.plot_graph import img_to_bio
 from services.lib.texts import code, grouper, kbd
-from services.models.stake_info import MyStakeAddress, BNB_CHAIN
+from services.models.stake_info import MyStakeAddress
 
 LOADING_STICKER = 'CAACAgIAAxkBAAIRx1--Tia-m6DNRIApk3yqmNWvap_sAALcAAP3AsgPUNi8Bnu98HweBA'
 
@@ -23,9 +23,9 @@ def get_rune_stake_info_address(network: str, address: str):
     if network == NetworkIdents.CHAOSNET_BEP2CHAIN:
         return f'https://runestake.info/debug?address={address}'
     elif network == NetworkIdents.TESTNET_MULTICHAIN:
-        return f'https://runestake.info/debug?address={address}'  # todo
+        return f'https://mctn.vercel.app/dashboard?thor={address}'  # todo thor address only?
     else:
-        return f'https://runestake.info/debug?address={address}'  # todo
+        return f'https://app.runeyield.info/dashboard?thor={address}'  # todo
 
 
 class StakeStates(StatesGroup):
@@ -52,7 +52,7 @@ class StakeDialog(BaseDialog):
         raw = self.data.get(self.KEY_MY_ADDRESSES, [])
         return [MyStakeAddress(**j) for j in raw]
 
-    def add_address(self, new_addr, chain=BNB_CHAIN):
+    def add_address(self, new_addr, chain=Chains.BNB):
         new_addr = str(new_addr).strip()
         current_list = self.my_addresses
         my_unique_addr = set((a.chain, a.address) for a in current_list)
@@ -121,13 +121,13 @@ class StakeDialog(BaseDialog):
         addr_idx = int(addr_idx)
         address = self.my_addresses[addr_idx].address
 
-        lpf = LiqPoolFetcher(self.deps)
+        rune_yield = get_rune_yield_connector(self.deps, ppf=PoolPriceFetcher(self.deps))
         self.data[self.KEY_ACTIVE_ADDRESS] = address
         self.data[self.KEY_ACTIVE_ADDRESS_INDEX] = addr_idx
 
         if reload_pools:
             await query.message.edit_text(text=self.loc.text_stake_loading_pools(address))
-            my_pools = await lpf.get_my_pools(address)
+            my_pools = await rune_yield.get_my_pools(address)
             self.data[self.KEY_MY_POOLS] = my_pools
 
         await self.show_my_pools(query, edit=True)
@@ -156,12 +156,11 @@ class StakeDialog(BaseDialog):
         sticker = await query.message.answer_sticker(LOADING_STICKER, disable_notification=True)
 
         # WORK...
-        lpf = LiqPoolFetcher(self.deps)
-        liq = await lpf.fetch_one_pool_liquidity_info(address, pool)
-
         ppf = PoolPriceFetcher(self.deps)
-        stake_report = await lpf.fetch_stake_report_for_pool(liq, ppf)
+        rune_yield = get_rune_yield_connector(self.deps, ppf)
+        stake_report = await rune_yield.generate_yield_report_single_pool(address, pool)
 
+        # GENERATE A PICTURE
         value_hidden = not self.data.get(self.KEY_CAN_VIEW_VALUE, True)
         picture = await lp_pool_picture(stake_report, self.loc, value_hidden=value_hidden)
         picture_io = img_to_bio(picture, f'Thorchain_LP_{pool}_{today_str()}.png')
@@ -187,18 +186,17 @@ class StakeDialog(BaseDialog):
         sticker = await query.message.answer_sticker(LOADING_STICKER, disable_notification=True)
 
         # WORK
-        ppf = PoolPriceFetcher(self.deps)
-        lpf = LiqPoolFetcher(self.deps)
-
         my_pools = self.data[self.KEY_MY_POOLS]
-        liqs = await lpf.fetch_all_pool_liquidity_info(address, my_pools)
-        pools = list(liqs.keys())
-        liqs = list(liqs.values())
-        weekly_charts = await lpf.fetch_all_pools_weekly_charts(address, pools)
-        stake_reports = await asyncio.gather(*[lpf.fetch_stake_report_for_pool(liq, ppf) for liq in liqs])
 
+        ppf = PoolPriceFetcher(self.deps)
+        rune_yield = get_rune_yield_connector(self.deps, ppf)
+        stake_reports, weekly_charts = await rune_yield.generate_yield_summary(address, my_pools)
+
+        # GENERATE A PICTURE
         value_hidden = not self.data.get(self.KEY_CAN_VIEW_VALUE, True)
-        picture = await lp_address_summary_picture(stake_reports, weekly_charts, self.loc, value_hidden=value_hidden)
+        picture = await lp_address_summary_picture(list(stake_reports),
+                                                   weekly_charts, self.loc,
+                                                   value_hidden=value_hidden)
         picture_io = img_to_bio(picture, f'Thorchain_LP_Summary_{today_str()}.png')
 
         # ANSWER
@@ -221,7 +219,7 @@ class StakeDialog(BaseDialog):
             address = message.text.strip()
             if address:
                 if MyStakeAddress.validate_address(address):
-                    self.add_address(address, BNB_CHAIN)
+                    self.add_address(address, Chains.BNB)
                 else:
                     await message.answer(code(self.loc.TEXT_INVALID_ADDRESS),
                                          disable_notification=True)

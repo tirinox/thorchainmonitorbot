@@ -1,18 +1,18 @@
 import time
 from dataclasses import dataclass, field
 
+from services.lib.constants import THOR_DIVIDER_INV, Chains
 from services.lib.datetime import DAY
 from services.models.base import BaseModelMixin
-from services.models.pool_info import MIDGARD_MULT, PoolInfo
+from services.models.pool_info import PoolInfo
 
-BNB_CHAIN = 'BNB'
 BECH_2_CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
 
 
 @dataclass
 class MyStakeAddress(BaseModelMixin):
     address: str = ''
-    chain: str = BNB_CHAIN
+    chain: str = Chains.BNB
     pools: list = field(default_factory=list)
 
     @classmethod
@@ -23,9 +23,16 @@ class MyStakeAddress(BaseModelMixin):
                 and set(addr[4:]) < set(BECH_2_CHARSET))
 
     @classmethod
+    def is_thor_prefix(cls, addr: str):
+        addr = addr.lower()
+        return addr.startswith('tthor') or addr.startswith('thor')
+
+    @classmethod
     def validate_address(cls, addr: str):
         addr = addr.strip()
         if not (26 <= len(addr) <= 78):
+            return False
+        if not cls.is_thor_prefix(addr):
             return False
         return addr.isalnum()
 
@@ -62,7 +69,7 @@ class StakeDayGraphPoint:
     def usd_value(self):
         r, a = pool_share(self.rune_depth, self.asset_depth, self.stake_units, self.pool_units)
         runes_per_asset = self.rune_depth / self.asset_depth
-        total_rune = r * MIDGARD_MULT + a * MIDGARD_MULT * runes_per_asset
+        total_rune = r * THOR_DIVIDER_INV + a * THOR_DIVIDER_INV * runes_per_asset
         usd_value = total_rune / self.busd_rune_price
         return usd_value
 
@@ -84,9 +91,11 @@ class CurrentLiquidity(BaseModelMixin):
     first_stake_ts: int
     last_stake_ts: int
 
+    fee_earn_used: float
+
     @classmethod
     def from_asgard(cls, d):
-        m = MIDGARD_MULT
+        m = THOR_DIVIDER_INV
         return cls(
             d['pool'],
             float(d['runestake']) * m,
@@ -101,7 +110,8 @@ class CurrentLiquidity(BaseModelMixin):
             float(d['totalunstakedrune']) * m,
             float(d['totalunstakedusd']) * m,
             int(d['firststake']),
-            int(d['laststake'])
+            int(d['laststake']),
+            fee_earn_used=0.0
         )
 
 
@@ -186,7 +196,7 @@ class StakePoolReport:
     @property
     def redeemable_rune_asset(self):
         r, a = pool_share(self.pool.balance_rune, self.pool.balance_asset, self.liq.pool_units, self.pool.pool_units)
-        return r * MIDGARD_MULT, a * MIDGARD_MULT
+        return r * THOR_DIVIDER_INV, a * THOR_DIVIDER_INV
 
     def added_value(self, mode=USD):
         if mode == self.USD:

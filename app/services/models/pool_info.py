@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-MIDGARD_MULT = 10 ** -8
+from services.lib.constants import THOR_DIVIDER_INV
 
 
 @dataclass
@@ -18,7 +18,7 @@ class PoolInfo:
     ENABLED = 'Enabled'
 
     def percent_share(self, runes):
-        return runes / (2 * self.balance_rune * MIDGARD_MULT) * 100.0
+        return runes / (2 * self.balance_rune * THOR_DIVIDER_INV) * 100.0
 
     @classmethod
     def dummy(cls):
@@ -37,7 +37,7 @@ class PoolInfo:
         return self.status == self.ENABLED
 
     def usd_depth(self, dollar_per_rune):
-        pool_depth_usd = 2 * self.balance_rune * MIDGARD_MULT * dollar_per_rune  # note: * 2 as in off. frontend
+        pool_depth_usd = 2 * self.balance_rune * THOR_DIVIDER_INV * dollar_per_rune  # note: * 2 as in off. frontend
         return pool_depth_usd
 
     @classmethod

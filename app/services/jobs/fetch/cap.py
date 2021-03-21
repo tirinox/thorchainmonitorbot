@@ -1,10 +1,10 @@
 from services.jobs.fetch.base import BaseFetcher
 from services.jobs.midgard import get_midgard_url
 from services.jobs.fetch.pool_price import PoolPriceFetcher
+from services.lib.constants import THOR_DIVIDER_INV
 from services.lib.datetime import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.models.cap_info import ThorCapInfo
-from services.models.pool_info import MIDGARD_MULT
 
 
 class CapInfoFetcher(BaseFetcher):
@@ -31,11 +31,11 @@ class CapInfoFetcher(BaseFetcher):
             else:
                 total_staked = networks_resp.get('totalPooledRune', 0)
 
-            total_staked = int(total_staked) * MIDGARD_MULT
+            total_staked = int(total_staked) * THOR_DIVIDER_INV
 
         async with session.get(self.url_mimir()) as resp:
             mimir_resp = await resp.json()
-            max_staked = int(mimir_resp.get("mimir//MAXIMUMSTAKERUNE", 1)) * MIDGARD_MULT
+            max_staked = int(mimir_resp.get("mimir//MAXIMUMSTAKERUNE", 1)) * THOR_DIVIDER_INV
 
             # max_staked = 90_000_015  # for testing
 

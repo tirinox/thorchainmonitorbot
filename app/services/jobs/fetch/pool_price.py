@@ -16,6 +16,9 @@ from services.models.time_series import PriceTimeSeries
 # todo => block number === date map
 
 class PoolPriceFetcher(BaseFetcher):
+    """
+    This class queries Midgard and THORNodes to get current and historical pool prices and depths
+    """
     def __init__(self, deps: DepContainer):
         cfg: Config = deps.cfg
         period = parse_timespan_to_seconds(cfg.price.fetch_period)
