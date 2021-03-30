@@ -11,9 +11,6 @@ class AsgardConsumerConnectorV1(AsgardConsumerConnectorBase):
     Chaosnet and Midgard V1 and RuneStake.info connector
     """
 
-    def _url_midgard_my_pools(self, address):
-        return get_midgard_url(self.deps.cfg, f"/stakers/{address}")
-
     @staticmethod
     def _url_asgard_consumer_weekly_history(address, pool):
         return f'https://asgard-consumer.vercel.app/api/weekly?address={address}&pool={pool}'
@@ -23,7 +20,7 @@ class AsgardConsumerConnectorV1(AsgardConsumerConnectorBase):
         return f'https://asgard-consumer.vercel.app/api/v2/history/liquidity?address={address}&pools={pool}'
 
     async def get_my_pools(self, address):
-        url = self._url_midgard_my_pools(address)
+        url = self.url_gen.url_for_address_pool_membership(address)
         self.logger.info(f'get {url}')
         async with self.deps.session.get(url) as resp:
             j = await resp.json()

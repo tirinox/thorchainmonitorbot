@@ -219,7 +219,8 @@ class StakeTx(BaseModelMixin):
             rune_amount = tx.sum_of_rune(out_only=True)
             asset_amount = tx.sum_of_asset(pool, out_only=True)
 
-            address_rune = tx.get_sub_tx(RUNE_SYMBOL, in_only=True).address
+            sub_tx_rune = tx.get_sub_tx(RUNE_SYMBOL, in_only=True)
+            address_rune = sub_tx_rune.address if sub_tx_rune else tx.in_tx[0].address
 
             tx_hash_rune = tx.get_sub_tx(RUNE_SYMBOL, out_only=True)
             tx_hash_asset = tx.get_sub_tx(pool, out_only=True)

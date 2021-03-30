@@ -6,6 +6,7 @@ from functools import wraps
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.dispatcher.storage import FSMContextProxy, FSMContext
 from aiogram.types import Message, CallbackQuery
+from aiogram.utils.exceptions import MessageCantBeDeleted, MessageToEditNotFound
 
 from localization import BaseLocalization
 from localization.base import CREATOR_TG
@@ -137,3 +138,10 @@ class BaseDialog(ABC):
         obj = self.back_dialog(self.loc, self.data, self.deps)
         func = getattr(obj, self.back_func.__name__)
         await func(message)
+
+    async def safe_delete(self, message: Message):
+        try:
+            await message.delete()
+        except (MessageCantBeDeleted, MessageToEditNotFound):
+            logger.warning('can not delete message')
+            pass

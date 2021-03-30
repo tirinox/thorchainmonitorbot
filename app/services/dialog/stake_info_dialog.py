@@ -13,7 +13,7 @@ from services.lib.constants import NetworkIdents, Chains
 from services.lib.datetime import today_str
 from services.lib.money import short_address
 from services.lib.plot_graph import img_to_bio
-from services.lib.texts import code, grouper, kbd
+from services.lib.texts import code, grouper, kbd, cut_long_text
 from services.models.stake_info import MyStakeAddress
 
 LOADING_STICKER = 'CAACAgIAAxkBAAIRx1--Tia-m6DNRIApk3yqmNWvap_sAALcAAP3AsgPUNi8Bnu98HweBA'
@@ -95,7 +95,8 @@ class StakeDialog(BaseDialog):
             self.loc.BUTTON_VIEW_VALUE_ON if view_value else self.loc.BUTTON_VIEW_VALUE_OFF,
             callback_data=self.QUERY_BACK_TOGGLE_VIEW_VALUE)
 
-        buttons = [InlineKeyboardButton(pool, callback_data=f'{self.QUERY_VIEW_POOL}:{pool}') for pool in my_pools]
+        buttons = [InlineKeyboardButton(cut_long_text(pool), callback_data=f'{self.QUERY_VIEW_POOL}:{pool}')
+                   for pool in my_pools]
         buttons = grouper(2, buttons)
         inline_kbd += buttons
         inline_kbd += [
@@ -103,7 +104,7 @@ class StakeDialog(BaseDialog):
                 InlineKeyboardButton(self.loc.BUTTON_SM_SUMMARY,
                                      callback_data=f'{self.QUERY_SUMMARY_OF_ADDRESS}:{addr_idx}'),
                 InlineKeyboardButton(self.loc.BUTTON_VIEW_RUNESTAKEINFO,
-                                     url=get_rune_stake_info_address(self.deps.cfg.network, address))
+                                     url=get_rune_stake_info_address(self.deps.cfg.network_id, address))
             ],
             [
                 *([button_toggle_show_value] if my_pools else []),

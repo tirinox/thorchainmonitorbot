@@ -92,3 +92,12 @@ def kbd(buttons, resize=True, vert=False, one_time=False, inline=False, row_widt
                                resize_keyboard=resize,
                                one_time_keyboard=one_time,
                                row_width=row_width)
+
+
+def cut_long_text(text: str, max_symbols=15, end='...'):
+    end_len, text_len = len(end), len(text)
+    if text_len > max_symbols - end_len:
+        cut = max_symbols - end_len
+        return text[:cut] + end
+    else:
+        return text

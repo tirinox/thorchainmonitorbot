@@ -22,7 +22,15 @@ class AsgardConsumerConnectorV2(AsgardConsumerConnectorBase):
     """
 
     async def get_my_pools(self, address):
-        raise NotImplementedError
+        url = self.url_gen.url_for_address_pool_membership(address)
+        self.logger.info(f'get {url}')
+        async with self.deps.session.get(url) as resp:
+            j = await resp.json()
+            try:
+                my_pools = j.get('pools', [])
+                return [p['pool'] for p in my_pools if 'pool' in p]
+            except KeyError:
+                return []
 
     async def _fetch_one_pool_liquidity_info(self, address, pool):
         raise NotImplementedError

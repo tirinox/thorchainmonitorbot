@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from aiogram import Bot, Dispatcher
 from aiohttp import ClientSession
 
+from services.lib.config import Config
 from services.models.price import LastPriceHolder
 from services.models.queue import QueueInfo
 
@@ -13,7 +14,7 @@ from aiothornode.connector import ThorConnector
 
 @dataclass
 class DepContainer:
-    cfg: typing.Optional['Config'] = None
+    cfg: typing.Optional[Config] = None
     db: typing.Optional['DB'] = None
     loop: typing.Optional[asyncio.BaseEventLoop] = None
 

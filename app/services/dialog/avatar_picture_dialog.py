@@ -65,10 +65,10 @@ class AvatarDialog(BaseDialog):
     async def on_tap_address(self, query: CallbackQuery):
         if query.data == 'back':
             await self.go_back(query.message)
-            await query.message.delete()
+            await self.safe_delete(query.message)
         elif query.data == 'from_user_pic':
             await self.handle_avatar_picture(query.message, self.loc)
-            await query.message.delete()
+            await self.safe_delete(query.message)
         elif query.data == 'toggle_laser_eyes':
             self.data['laser_eyes'] = not self.with_lasers
             if query.message.text:
