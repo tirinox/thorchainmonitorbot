@@ -1,18 +1,15 @@
 import asyncio
-import logging
 import operator
-import os
 from collections import defaultdict
 from typing import List
 
-import aiofiles
-import aiohttp
 from PIL import Image, ImageDraw, ImageFont
 
 from localization import BaseLocalization
 from localization.base import RAIDO_GLYPH
-from services.lib.constants import BNB_BNB_SYMBOL, BNB_RUNE_SYMBOL, is_stable_coin
-from services.lib.money import asset_name_cut_chain, pretty_money, short_asset_name, pretty_dollar
+from services.dialog.picture.crypto_logo import CryptoLogoDownloader
+from services.lib.constants import BNB_RUNE_SYMBOL, is_stable_coin
+from services.lib.money import pretty_money, short_asset_name, pretty_dollar
 from services.lib.plot_graph import PlotBarGraph
 from services.lib.texts import grouper
 from services.lib.utils import Singleton, async_wrap
@@ -37,10 +34,6 @@ BG_COLOR = '#141a1a'
 class Resources(metaclass=Singleton):
     BASE = './data'
     LOGO_WIDTH, LOGO_HEIGHT = 128, 128
-    COIN_LOGO = \
-        'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains/binance/assets/{asset}/logo.png'
-    LOCAL_COIN_LOGO = f'{BASE}/{{asset}}.png'
-    UNKNOWN_LOGO = f'{BASE}/unknown.png'
     HIDDEN_IMG = f'{BASE}/hidden.png'
     BG_IMG = f'{BASE}/lp_bg.png'
 
@@ -57,36 +50,9 @@ class Resources(metaclass=Singleton):
         self.font_big = ImageFont.truetype(self.FONT_BOLD, 64)
         self.bg_image = Image.open(self.BG_IMG)
 
+        self.logo_downloader = CryptoLogoDownloader(self.BASE)
+
         self.font_sum_ticks = ImageFont.truetype(self.FONT_BOLD, 24)
-
-    @staticmethod
-    def image_url(asset):
-        if asset == BNB_BNB_SYMBOL:
-            return 'https://s2.coinmarketcap.com/static/img/coins/200x200/1839.png'
-        else:
-            return Resources.COIN_LOGO.format(asset=asset_name_cut_chain(asset))
-
-    async def download_logo(self, asset):
-        async with aiohttp.ClientSession() as session:
-            url = self.image_url(asset)
-            logging.info(f'Downloading logo for {asset} from {url}...')
-            async with session.get(url) as resp:
-                if resp.status == 200:
-                    f = await aiofiles.open(self.LOCAL_COIN_LOGO.format(asset=asset), mode='wb')
-                    await f.write(await resp.read())
-                    await f.close()
-
-    async def download_logo_cached(self, asset):
-        try:
-            local_path = self.LOCAL_COIN_LOGO.format(asset=asset)
-            if not os.path.exists(local_path):
-                await self.download_logo(asset)
-            logo = Image.open(local_path).convert("RGBA")
-        except Exception:
-            logo = Image.open(self.UNKNOWN_LOGO)
-            logging.exception('')
-        logo.thumbnail((self.LOGO_WIDTH, self.LOGO_HEIGHT))
-        return logo
 
     def put_hidden_plate(self, image, position, anchor='left', ey=-3):
         x, y = position
@@ -114,13 +80,12 @@ def result_color(v):
     return RED_COLOR if v < 0 else GREEN_COLOR
 
 
-
 async def lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, value_hidden=False):
     r = Resources()
     asset = report.pool.asset
     rune_image, asset_image = await asyncio.gather(
-        r.download_logo_cached(BNB_RUNE_SYMBOL),
-        r.download_logo_cached(asset)
+        r.logo_downloader.get_or_download_logo_cached(BNB_RUNE_SYMBOL),
+        r.logo_downloader.get_or_download_logo_cached(asset)
     )
     return await sync_lp_pool_picture(report, loc, rune_image, asset_image, value_hidden)
 
