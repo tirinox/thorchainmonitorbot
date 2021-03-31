@@ -56,22 +56,3 @@ class AsgardConsumerConnectorV1(AsgardConsumerConnectorBase):
         my_pools = (await self.get_my_pools(address)) if my_pools is None else my_pools
         cur_liquidity = await asyncio.gather(*(self._fetch_one_pool_liquidity_info(address, pool) for pool in my_pools))
         return {c.pool: c for c in cur_liquidity}
-
-    async def _generate_yield_report(self, liq: CurrentLiquidity) -> StakePoolReport:
-        try:
-            first_stake_dt = datetime.datetime.utcfromtimestamp(liq.first_stake_ts)
-            # get prices at the moment of first stake
-            usd_per_rune_start, usd_per_asset_start = await self.ppf.get_usd_price_of_rune_and_asset_by_day(
-                liq.pool,
-                first_stake_dt.date())
-        except Exception as e:
-            self.logger.exception(e, exc_info=True)
-            usd_per_rune_start, usd_per_asset_start = None, None
-
-        d = self.deps
-        stake_report = StakePoolReport(d.price_holder.usd_per_asset(liq.pool),
-                                       d.price_holder.usd_per_rune,
-                                       usd_per_asset_start, usd_per_rune_start,
-                                       liq,
-                                       d.price_holder.pool_info_map.get(liq.pool))
-        return stake_report

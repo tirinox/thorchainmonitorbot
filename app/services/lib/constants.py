@@ -52,6 +52,17 @@ class Chains:
     DOT = 'DOT'
     ZIL = 'ZIL'
 
+    @staticmethod
+    def detect_chain(address: str) -> str:
+        address = address.lower()
+        if address.startswith('0x'):
+            return Chains.ETH
+        elif address.startswith('thor') or address.startswith('tthor'):
+            return Chains.THOR
+        elif address.startswith('bnb') or address.startswith('tbnb'):
+            return Chains.BNB
+        return ''
+
 
 class NetworkIdents:
     TESTNET_MULTICHAIN = 'testnet-multi'

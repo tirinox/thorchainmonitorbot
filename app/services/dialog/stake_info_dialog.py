@@ -19,7 +19,7 @@ from services.models.stake_info import MyStakeAddress
 LOADING_STICKER = 'CAACAgIAAxkBAAIRx1--Tia-m6DNRIApk3yqmNWvap_sAALcAAP3AsgPUNi8Bnu98HweBA'
 
 
-def get_rune_stake_info_address(network: str, address: str):
+def get_rune_stake_info_address(network: str, address: str, chain: str = Chains.THOR):
     if network == NetworkIdents.CHAOSNET_BEP2CHAIN:
         return f'https://runestake.info/debug?address={address}'
     elif network == NetworkIdents.TESTNET_MULTICHAIN:
@@ -95,6 +95,9 @@ class StakeDialog(BaseDialog):
             self.loc.BUTTON_VIEW_VALUE_ON if view_value else self.loc.BUTTON_VIEW_VALUE_OFF,
             callback_data=self.QUERY_BACK_TOGGLE_VIEW_VALUE)
 
+        chain = Chains.detect_chain(address)
+        chain = chain if chain else Chains.BTC  # fixme: how about other chains?
+
         buttons = [InlineKeyboardButton(cut_long_text(pool), callback_data=f'{self.QUERY_VIEW_POOL}:{pool}')
                    for pool in my_pools]
         buttons = grouper(2, buttons)
@@ -104,7 +107,7 @@ class StakeDialog(BaseDialog):
                 InlineKeyboardButton(self.loc.BUTTON_SM_SUMMARY,
                                      callback_data=f'{self.QUERY_SUMMARY_OF_ADDRESS}:{addr_idx}'),
                 InlineKeyboardButton(self.loc.BUTTON_VIEW_RUNESTAKEINFO,
-                                     url=get_rune_stake_info_address(self.deps.cfg.network_id, address))
+                                     url=get_rune_stake_info_address(self.deps.cfg.network_id, address, chain))
             ],
             [
                 *([button_toggle_show_value] if my_pools else []),

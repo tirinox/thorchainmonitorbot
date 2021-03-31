@@ -5,12 +5,11 @@ import pickle
 
 import aiohttp
 from aiothornode.connector import ThorConnector, TEST_NET_ENVIRONMENT_MULTI_1
-from services.dialog.picture.lp_picture import lp_pool_picture, lp_address_summary_picture
 
 from localization import LocalizationManager, RussianLocalization
-from services.jobs.fetch.runeyield import get_rune_yield_connector
-from services.jobs.fetch.runeyield.lp import AsgardConsumerConnectorV1
+from services.dialog.picture.lp_picture import lp_pool_picture, lp_address_summary_picture
 from services.jobs.fetch.pool_price import PoolPriceFetcher
+from services.jobs.fetch.runeyield import get_rune_yield_connector
 from services.lib.config import Config
 from services.lib.constants import BNB_BTCB_SYMBOL
 from services.lib.db import DB
@@ -110,6 +109,18 @@ async def test_summary_picture_generator(d: DepContainer, addr, hide):
     os.system(f'open "{PICTURE_PATH}"')
 
 
+async def test_single_chain_chaosnet(d: DepContainer):
+    g1 = test_summary_picture_generator(d, 'bnb157zacwqaplw5kdwpkrve6n2jdxu3ps9cj3xdcp', hide=False)
+    g2 = test_one_pool_picture_generator(d, 'bnb1rv89nkw2x5ksvhf6jtqwqpke4qhh7jmudpvqmj', pool=BNB_BTCB_SYMBOL,
+                                         hide=False)
+
+    await g1
+
+
+async def test_multi_chain_testet(d: DepContainer):
+    await test_one_pool_picture_generator(d, 'tthor1vyp3y7pjuwsz2hpkwrwrrvemcn7t758sfs0glr', 'BTC.BTC', hide=False)
+
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     d = DepContainer()
@@ -118,8 +129,5 @@ if __name__ == '__main__':
     d.loc_man = LocalizationManager(d.cfg)
     d.db = DB(d.loop)
 
-    g1 = test_summary_picture_generator(d, 'bnb157zacwqaplw5kdwpkrve6n2jdxu3ps9cj3xdcp', hide=False)
-    g2 = test_one_pool_picture_generator(d, 'bnb1rv89nkw2x5ksvhf6jtqwqpke4qhh7jmudpvqmj', pool=BNB_BTCB_SYMBOL,
-                                         hide=False)
-
-    d.loop.run_until_complete(g1)
+    d.loop.run_until_complete(test_multi_chain_testet(d))
+    # d.loop.run_until_complete(test_single_chain_chaosnet())
