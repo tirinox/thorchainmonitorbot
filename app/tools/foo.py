@@ -15,6 +15,7 @@ from services.lib.cooldown import Cooldown
 from services.lib.datetime import DAY, today_str
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
+from services.lib.money import pretty_money
 from services.lib.texts import progressbar
 from services.models.time_series import TimeSeries
 from services.models.pool_stats import StakePoolStats
@@ -106,7 +107,13 @@ async def foo17(d):
 
 
 async def foo18(d):
-    print(today_str())
+    # print(today_str())
+    money = 524
+    while money > 1e-8:
+        print(pretty_money(money))
+        money *= 0.1
+
+
 
 
 async def start_foos():
