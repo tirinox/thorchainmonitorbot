@@ -2,24 +2,26 @@ import asyncio
 import logging
 
 import aiohttp
+import sha3
 from aiogram import Bot, Dispatcher
 from aiogram.types import ParseMode
 from aiothornode.connector import ThorConnector, TEST_NET_ENVIRONMENT_MULTI_1
 
 from localization import LocalizationManager
+from services.dialog.picture.crypto_logo import CryptoLogoDownloader
 from services.dialog.picture.queue_picture import QUEUE_TIME_SERIES
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.tx import TxFetcher
 from services.lib.config import Config
+from services.lib.constants import *
 from services.lib.cooldown import Cooldown
-from services.lib.datetime import DAY, today_str
+from services.lib.datetime import DAY
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.money import pretty_money
 from services.lib.texts import progressbar
-from services.models.time_series import TimeSeries
 from services.models.pool_stats import StakePoolStats
-from services.models.tx import ThorTx
+from services.models.time_series import TimeSeries
 from services.notify.broadcast import Broadcaster
 
 deps = DepContainer()
@@ -114,12 +116,34 @@ async def foo18(d):
         money *= 0.1
 
 
+async def foo19(d):
+    dl = CryptoLogoDownloader('./data')
+    assets = [
+        # 'LTC.LTC',
+        # 'ETH.ETH',
+        # BNB_ETHB_SYMBOL,
+        # BNB_BTCB_SYMBOL,
+        # ETH_USDT_SYMBOL,
+        # ETH_RUNE_SYMBOL_TEST,
+        # ETH_RUNE_SYMBOL,
+        ETH_USDT_TEST_SYMBOL,
+    ]
+    for asset in assets:
+        pic = await dl.get_or_download_logo_cached(asset)
+        pic.show()
+
+
+async def foo20(d):
+    eth_address = '234'
+    print(sha3.keccak_256(eth_address.encode('utf-8')).hexdigest())
+    print('0xc1912fee45d61c87cc5ea59dae311904cd86b84fee17cc96966216f811ce6a79')
+    print('0xbc36789e7a1e281436464229828f817d6612f7b477d66591ff96a9e064bcc98a')
 
 
 async def start_foos():
     async with aiohttp.ClientSession() as deps.session:
         await deps.db.get_redis()
-        await foo18(deps)
+        await foo19(deps)
 
 
 if __name__ == '__main__':

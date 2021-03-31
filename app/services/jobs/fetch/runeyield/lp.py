@@ -1,9 +1,7 @@
 import asyncio
-import datetime
 
 from services.jobs.fetch.runeyield.base import AsgardConsumerConnectorBase
-from services.jobs.midgard import get_midgard_url
-from services.models.stake_info import CurrentLiquidity, StakePoolReport, StakeDayGraphPoint
+from services.models.stake_info import CurrentLiquidity, StakeDayGraphPoint
 
 
 class AsgardConsumerConnectorV1(AsgardConsumerConnectorBase):

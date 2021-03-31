@@ -69,7 +69,7 @@ THOR_AVA_FRAME_PATH = './data/thor_ava_frame.png'
 THOR_LASER_PATH = './data/laser_green_2.png'
 THOR_LASER_SIZE = 24
 
-laser_masker = LaserEyeMask(THOR_LASER_PATH, THOR_LASER_SIZE)
+laser_masker: LaserEyeMask
 
 
 def combine_frame_and_photo(photo: Image.Image):
@@ -86,6 +86,9 @@ def make_avatar(photo: Image.Image, with_lasers=False):
     photo = image_square_crop(photo)
 
     if with_lasers:
+        global laser_masker
+        if not laser_masker:
+            laser_masker = LaserEyeMask(THOR_LASER_PATH, THOR_LASER_SIZE)
         photo = laser_masker.apply(photo)
 
     return combine_frame_and_photo(photo)

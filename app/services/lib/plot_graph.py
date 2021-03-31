@@ -38,8 +38,6 @@ class PlotGraph:
 
     BASE = './data'
     FONT_BOLD = f'{BASE}/my.ttf'
-    default_font_ticks = ImageFont.truetype(FONT_BOLD, 15)
-    default_font_title = ImageFont.truetype(FONT_BOLD, 35)
 
     def __init__(self, w=800, h=600, bg='gradient'):
         self.w = w
@@ -61,8 +59,8 @@ class PlotGraph:
         self.y_formatter = self.int_formatter
         self.n_ticks_x = 11
         self.n_ticks_y = 20
-        self.font_ticks = self.default_font_ticks
-        self.font_title = self.default_font_title
+        self.font_ticks = ImageFont.truetype(self.FONT_BOLD, 15)
+        self.font_title = ImageFont.truetype(self.FONT_BOLD, 35)
         self.tick_size = 4
         self.axis_text_color = '#ffffff'
         self.grid_lines = False
