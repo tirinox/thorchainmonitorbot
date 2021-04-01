@@ -116,6 +116,33 @@ class CurrentLiquidity(BaseModelMixin):
 
 
 @dataclass
+class FeeReport:
+    height: int = 0
+    pair: str = ''
+    liquidity_token_balance: float = 0.0
+    liquidity_token_supply: float = 0.0
+    reserve_0: float = 0.0
+    reserve_1: float = 0.0
+    reserve_usdt: float = 0.0
+    reserve_token_0_price_usd: float = 0.0
+    reserve_token_1_price_usd: float = 0.0
+
+    @classmethod
+    def parse_from_asgard(cls, j):
+        return cls(
+            height=int(j.get('height', 0)),
+            pair=j.get('pair', ''),
+            liquidity_token_balance=float(j.get('liquidityTokenBalance', 0.0)),
+            liquidity_token_supply=float(j.get('liquidityTokenTotalSupply', 0.0)),
+            reserve_0=float(j.get('reserve0', 0.0)),
+            reserve_1=float(j.get('reserve1', 0.0)),
+            reserve_usdt=float(j.get('reserveUSD', 0.0)),
+            reserve_token_0_price_usd=float(j.get('token0PriceUSD', 0.0)),
+            reserve_token_1_price_usd=float(j.get('token1PriceUSD', 0.0)),
+        )
+
+
+@dataclass
 class StakePoolReport:
     usd_per_asset: float
     usd_per_rune: float
@@ -124,6 +151,7 @@ class StakePoolReport:
     usd_per_rune_start: float
 
     liq: CurrentLiquidity
+    fees: FeeReport
     pool: PoolInfo
 
     ASSET = 'asset'

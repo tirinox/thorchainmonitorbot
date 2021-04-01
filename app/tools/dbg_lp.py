@@ -7,6 +7,7 @@ import aiohttp
 from aiothornode.connector import ThorConnector, TEST_NET_ENVIRONMENT_MULTI_1
 
 from localization import LocalizationManager, RussianLocalization
+from main import get_thor_env_by_network_id
 from services.dialog.picture.lp_picture import lp_pool_picture, lp_address_summary_picture
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.runeyield import get_rune_yield_connector
@@ -14,7 +15,6 @@ from services.lib.config import Config
 from services.lib.constants import BNB_BTCB_SYMBOL
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
-from services.models.stake_info import CurrentLiquidity
 
 
 async def load_one_pool_liquidity(d: DepContainer, addr, pool=BNB_BTCB_SYMBOL):
@@ -22,19 +22,13 @@ async def load_one_pool_liquidity(d: DepContainer, addr, pool=BNB_BTCB_SYMBOL):
         await d.db.get_redis()
         ppf = PoolPriceFetcher(d)
         rune_yield = get_rune_yield_connector(d, ppf)
-        d.thor_connector = ThorConnector(TEST_NET_ENVIRONMENT_MULTI_1.copy(), d.session)
+        d.thor_connector = ThorConnector(get_thor_env_by_network_id(d.cfg.network_id), d.session)
         await ppf.get_current_pool_data_full()
 
-        cur_liqs = await rune_yield._fetch_all_pool_liquidity_info(addr)
-
-        cur_liq: CurrentLiquidity = cur_liqs[pool]
-
-        stake_report = await rune_yield._generate_yield_report(cur_liq)
+        stake_report = await rune_yield.generate_yield_report_single_pool(addr, pool)
 
         # -------- print out ----------
 
-        print(f'cur_liq = {cur_liq}')
-        print()
         redeem_rune, redeem_asset = stake_report.redeemable_rune_asset
         print(f'redeem_rune = {redeem_rune} and redeem_asset = {redeem_asset}')
         print()
@@ -61,15 +55,12 @@ async def load_one_pool_liquidity(d: DepContainer, addr, pool=BNB_BTCB_SYMBOL):
 async def load_summary_for_address(d: DepContainer, address):
     async with aiohttp.ClientSession() as d.session:
         await d.db.get_redis()
-        # todo: Add THORConnector
+        d.thor_connector = ThorConnector(get_thor_env_by_network_id(d.cfg.network_id), d.session)
         ppf = PoolPriceFetcher(d)
         rune_yield = get_rune_yield_connector(d, ppf)
         await ppf.get_current_pool_data_full()
-        liqs = await rune_yield._fetch_all_pool_liquidity_info(address)
-        pools = list(liqs.keys())
-        liqs = list(liqs.values())
-        weekly_charts = await rune_yield._fetch_all_pools_weekly_charts(address, pools)
-        stake_reports = await asyncio.gather(*[rune_yield._generate_yield_report(liq) for liq in liqs])
+
+        stake_reports, weekly_charts = await rune_yield.generate_yield_summary(address, [])
         return stake_reports, weekly_charts
 
 
@@ -118,7 +109,9 @@ async def test_single_chain_chaosnet(d: DepContainer):
 
 
 async def test_multi_chain_testet(d: DepContainer):
-    await test_one_pool_picture_generator(d, 'tthor1vyp3y7pjuwsz2hpkwrwrrvemcn7t758sfs0glr', 'BTC.BTC', hide=False)
+    # await test_one_pool_picture_generator(d, 'tthor1cwcqhhjhwe8vvyn8vkufzyg0tt38yjgzdf9whh', 'BTC.BTC', hide=False)
+
+    await test_summary_picture_generator(d, 'tthor1vyp3y7pjuwsz2hpkwrwrrvemcn7t758sfs0glr', hide=False)
 
 
 if __name__ == '__main__':

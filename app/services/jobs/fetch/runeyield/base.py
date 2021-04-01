@@ -1,13 +1,11 @@
-import asyncio
-import datetime
 import logging
 from abc import abstractmethod
-from typing import List
+from typing import List, Tuple
 
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.midgard import MidgardURLGenBase
 from services.lib.depcont import DepContainer
-from services.models.stake_info import CurrentLiquidity, StakePoolReport
+from services.models.stake_info import StakePoolReport
 
 
 class AsgardConsumerConnectorBase:
@@ -17,54 +15,17 @@ class AsgardConsumerConnectorBase:
         self.ppf = ppf
         self.url_gen = url_gen
 
-    async def generate_yield_summary(self, address, pools: List[str]):
-        liqs = await self._fetch_all_pool_liquidity_info(address, pools)
-        pools = list(liqs.keys())
-        liqs = list(liqs.values())
-        weekly_charts = await self._fetch_all_pools_weekly_charts(address, pools)
-        stake_reports = await self._generate_yield_reports(liqs)
-        return stake_reports, weekly_charts
+    # interface
+    @abstractmethod
+    async def generate_yield_summary(self, address, pools: List[str]) -> Tuple[dict, List[StakePoolReport]]:
+        ...
 
+    # interface
+    @abstractmethod
     async def generate_yield_report_single_pool(self, address, pool):
-        liq = await self._fetch_one_pool_liquidity_info(address, pool)
-        stake_report = await self._generate_yield_report(liq)
-        return stake_report
+        ...
 
-    async def _generate_yield_reports(self, liqs: List[CurrentLiquidity]) -> List[StakePoolReport]:
-        result = await asyncio.gather(*[self._generate_yield_report(liq) for liq in liqs])
-        return list(result)
-
-    async def _generate_yield_report(self, liq: CurrentLiquidity) -> StakePoolReport:
-        try:
-            first_stake_dt = datetime.datetime.utcfromtimestamp(liq.first_stake_ts)
-            # get prices at the moment of first stake
-            usd_per_rune_start, usd_per_asset_start = await self.ppf.get_usd_price_of_rune_and_asset_by_day(
-                liq.pool,
-                first_stake_dt.date())
-        except Exception as e:
-            self.logger.exception(e, exc_info=True)
-            usd_per_rune_start, usd_per_asset_start = None, None
-
-        d = self.deps
-        stake_report = StakePoolReport(d.price_holder.usd_per_asset(liq.pool),
-                                       d.price_holder.usd_per_rune,
-                                       usd_per_asset_start, usd_per_rune_start,
-                                       liq,
-                                       d.price_holder.pool_info_map.get(liq.pool))
-        return stake_report
-
+    # interface
     @abstractmethod
     async def get_my_pools(self, address):
-        ...
-
-    @abstractmethod
-    async def _fetch_one_pool_liquidity_info(self, address, pool):
-        ...
-
-    @abstractmethod
-    async def _fetch_all_pool_liquidity_info(self, address, my_pools=None) -> dict:
-        ...
-
-    @abstractmethod
-    async def _fetch_all_pools_weekly_charts(self, address, pools):
         ...

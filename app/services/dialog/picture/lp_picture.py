@@ -105,7 +105,7 @@ def sync_lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, rune_im
 
     left, center, right = 30, 50, 70
     head_y = 16
-    dy = 5
+    dy = 4.5
     logo_y = 82
     start_y = head_y + dy
 
@@ -198,7 +198,7 @@ def sync_lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, rune_im
 
     # VALUE
     table_x = 30
-    rows_y = [start_y + 4 + r * 4.5 for r in range(5)]
+    rows_y = [start_y + 4 + r * 4 for r in range(6)]
 
     if is_stable_coin(asset):
         columns = (report.RUNE, report.ASSET)
@@ -223,20 +223,23 @@ def sync_lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, rune_im
             draw.text(pos_percent(x, rows_y[1]), pretty_money(withdrawn), font=r.font_semi, fill=FORE_COLOR,
                       anchor='ms')
             draw.text(pos_percent(x, rows_y[2]), pretty_money(current), font=r.font_semi, fill=FORE_COLOR, anchor='ms')
-            draw.text(pos_percent(x, rows_y[3]), pretty_money(gl, signed=True), font=r.font_semi, fill=result_color(gl),
+            draw.text(pos_percent(x, rows_y[4]), pretty_money(gl, signed=True), font=r.font_semi, fill=result_color(gl),
                       anchor='ms')
         else:
             r.put_hidden_plate(image, pos_percent(x, rows_y[0]), anchor='center')
             r.put_hidden_plate(image, pos_percent(x, rows_y[1]), anchor='center')
             r.put_hidden_plate(image, pos_percent(x, rows_y[2]), anchor='center')
-            r.put_hidden_plate(image, pos_percent(x, rows_y[3]), anchor='center')
+            r.put_hidden_plate(image, pos_percent(x, rows_y[4]), anchor='center')
+
+        draw.text(pos_percent(x, rows_y[3]), '???', font=r.font_semi, fill=FORE_COLOR,
+                  anchor='ms')  # todo: fill fees! show fee % relatively to redeemable if hidden value
 
         if report.usd_per_asset_start is not None and report.usd_per_rune_start is not None:
             price_change = report.price_change(column)
 
             is_stable = column == report.USD or (column == report.ASSET and is_stable_coin(report.pool.asset))
             if not is_stable:
-                draw.text(pos_percent(x, rows_y[4]), f'{pretty_money(price_change, signed=True)}%', font=r.font_semi,
+                draw.text(pos_percent(x, rows_y[5]), f'{pretty_money(price_change, signed=True)}%', font=r.font_semi,
                           fill=result_color(price_change), anchor='ms')
                 if column == report.ASSET:
                     price_text = pretty_money(report.usd_per_asset, prefix='$')
@@ -244,13 +247,13 @@ def sync_lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, rune_im
                     price_text = pretty_money(report.usd_per_rune, prefix='$')
                 else:
                     price_text = '–'
-                draw.text(pos_percent(x, rows_y[4] + 2.5),
+                draw.text(pos_percent(x, rows_y[5] + 2.5),
                           f"({price_text})",
                           fill=FORE_COLOR,
                           font=r.font_small,
                           anchor='ms')
             else:
-                draw.text(pos_percent(x, rows_y[4]), f'–', font=r.font_semi,
+                draw.text(pos_percent(x, rows_y[5]), f'–', font=r.font_semi,
                           fill=FADE_COLOR, anchor='ms')
         else:
             draw.text(pos_percent(x, rows_y[4]), f'–', font=r.font_semi,
@@ -259,9 +262,10 @@ def sync_lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, rune_im
     draw.text(pos_percent(table_x, rows_y[0]), loc.LP_PIC_ADDED_VALUE, font=r.font, fill=FADE_COLOR, anchor='rs')
     draw.text(pos_percent(table_x, rows_y[1]), loc.LP_PIC_WITHDRAWN_VALUE, font=r.font, fill=FADE_COLOR, anchor='rs')
     draw.text(pos_percent(table_x, rows_y[2]), loc.LP_PIC_CURRENT_VALUE, font=r.font, fill=FADE_COLOR, anchor='rs')
-    draw.text(pos_percent(table_x, rows_y[3]), loc.LP_PIC_GAIN_LOSS, font=r.font, fill=FADE_COLOR, anchor='rs')
-    draw.text(pos_percent(table_x, rows_y[4]), loc.LP_PIC_PRICE_CHANGE, font=r.font, fill=FADE_COLOR, anchor='rs')
-    draw.text(pos_percent(table_x, rows_y[4] + 2.5), loc.LP_PIC_PRICE_CHANGE_2, font=r.font_small, fill=FADE_COLOR,
+    draw.text(pos_percent(table_x, rows_y[3]), 'Fees', font=r.font, fill=FADE_COLOR, anchor='rs')  # fixme! localization
+    draw.text(pos_percent(table_x, rows_y[4]), loc.LP_PIC_GAIN_LOSS, font=r.font, fill=FADE_COLOR, anchor='rs')
+    draw.text(pos_percent(table_x, rows_y[5]), loc.LP_PIC_PRICE_CHANGE, font=r.font, fill=FADE_COLOR, anchor='rs')
+    draw.text(pos_percent(table_x, rows_y[5] + 2.5), loc.LP_PIC_PRICE_CHANGE_2, font=r.font_small, fill=FADE_COLOR,
               anchor='rs')
 
     # DATES
@@ -321,7 +325,12 @@ async def lp_address_summary_picture(reports: List[StakePoolReport], weekly_char
     return await sync_lp_address_summary_picture(reports, weekly_charts, loc, value_hidden)
 
 
-def lp_line_segments(draw, asset_values, asset_values_usd, y, value_hidden):
+def generate_color_map(assets):
+    n_colors = len(CATEGORICAL_PALETTE)
+    return {asset: CATEGORICAL_PALETTE[i % n_colors] for i, asset in enumerate(assets)}
+
+
+def lp_line_segments(draw, asset_values, asset_values_usd, y, value_hidden, color_map):
     res = Resources()
 
     segments = []
@@ -338,14 +347,12 @@ def lp_line_segments(draw, asset_values, asset_values_usd, y, value_hidden):
 
     bar_x = hp_bar_margin
     bar_y = y
-    color_map = {}
+
     for i, (asset, usd_value, *_) in enumerate(segments):
-        color = CATEGORICAL_PALETTE[i % len(CATEGORICAL_PALETTE)]
-        color_map[asset] = color
         segment_width = usd_value / total_usd_value * hp_bar_width
         draw.rectangle(
             (pos_percent(bar_x, bar_y), pos_percent(bar_x + segment_width, bar_y + hp_bar_height)),
-            fill=color
+            fill=color_map[asset]
         )
         bar_x += segment_width
 
@@ -379,7 +386,7 @@ def lp_line_segments(draw, asset_values, asset_values_usd, y, value_hidden):
             legend_x += legend_dx
             counter += 1
         legend_y += legend_y_step
-    return len(line_groups) * legend_y_step, color_map
+    return len(line_groups) * legend_y_step
 
 
 def lp_weekly_graph(w, h, weekly_charts: dict, color_map: dict, value_hidden):
@@ -457,6 +464,8 @@ def sync_lp_address_summary_picture(reports: List[StakePoolReport], weekly_chart
     image = res.bg_image.copy()
     draw = ImageDraw.Draw(image)
 
+    color_map = generate_color_map(r.pool for r in reports)
+
     # ------------------------------------------------------------------------------------------------
 
     # 1. Header
@@ -485,7 +494,7 @@ def sync_lp_address_summary_picture(reports: List[StakePoolReport], weekly_chart
     # 2. Line segments
 
     run_y += 3.0
-    dy, color_map = lp_line_segments(draw, asset_values, asset_values_usd, run_y, value_hidden)
+    dy = lp_line_segments(draw, asset_values, asset_values_usd, run_y, value_hidden, color_map)
     run_y += dy
 
     # ------------------------------------------------------------------------------------------------
@@ -582,7 +591,11 @@ def sync_lp_address_summary_picture(reports: List[StakePoolReport], weekly_chart
         100.0 - graph_margin_x * 2,
         100.0 - run_y - graph_margin_y * 2)
 
-    graph_img = lp_weekly_graph(graph_width, graph_height, weekly_charts, color_map, value_hidden)
-    image.paste(graph_img, pos_percent(graph_margin_x, run_y - graph_margin_y))
+    if weekly_charts:
+        graph_img = lp_weekly_graph(graph_width, graph_height, weekly_charts, color_map, value_hidden)
+        image.paste(graph_img, pos_percent(graph_margin_x, run_y - graph_margin_y))
+    else:
+        draw.text(pos_percent(50, 30), "No weekly chart, sorry", fill=FORE_COLOR,
+                  font=res.font)  # todo: test and localize
 
     return image

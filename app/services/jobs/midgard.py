@@ -248,11 +248,12 @@ class MidgardParserV2(MidgardParserBase):
         for j in intervals:
             asset_depth = int(j.get('assetDepth', '0'))
             rune_depth = int(j.get('runeDepth', '0'))
+            asset_price = asset_depth / rune_depth if rune_depth else 0.0
             results.append(PoolInfoHistoricEntry(
                 asset_depth=asset_depth,
                 rune_depth=asset_depth,
                 liquidity_units=0,
-                asset_price=asset_depth / rune_depth,
+                asset_price=asset_price,
                 asset_price_usd=float(j.get('assetPriceUSD', '0')),
             ))
         return results
