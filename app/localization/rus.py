@@ -105,6 +105,7 @@ class RussianLocalization(BaseLocalization):
     LP_PIC_SUMMARY_AS_IF_IN_RUNE = f'Если все в {RAIDO_GLYPH}'
     LP_PIC_SUMMARY_AS_IF_IN_USD = 'Если все в $'
     LP_PIC_SUMMARY_TOTAL_LP_VS_HOLD = 'Итого холд против пулов, $'
+    LP_PIC_SUMMARY_NO_WEEKLY_CHAR = "Нет недельного графика, извините..."
 
     def pic_stake_days(self, total_days, first_stake_ts):
         start_date = datetime.fromtimestamp(first_stake_ts).strftime('%d.%m.%Y')

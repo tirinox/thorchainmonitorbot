@@ -159,6 +159,7 @@ class BaseLocalization(ABC):  # == English
     LP_PIC_SUMMARY_AS_IF_IN_RUNE = f'Total as {RAIDO_GLYPH}'
     LP_PIC_SUMMARY_AS_IF_IN_USD = 'Total as $'
     LP_PIC_SUMMARY_TOTAL_LP_VS_HOLD = 'Total LP vs Hold $'
+    LP_PIC_SUMMARY_NO_WEEKLY_CHAR = "No weekly chart, sorry"
 
     def pic_stake_days(self, total_days, first_stake_ts):
         start_date = datetime.fromtimestamp(first_stake_ts).strftime('%d.%m.%Y')

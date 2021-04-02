@@ -21,19 +21,34 @@ class AsgardConsumerConnectorV2(AsgardConsumerConnectorBase):
     """
 
     # override
-    async def generate_yield_summary(self, address, pools: List[str]):
-        liqs = await self._fetch_all_pool_liquidity_info(address, pools)
-        pools = list(liqs.keys())
-        liqs = list(liqs.values())
-        weekly_charts, stake_reports = await asyncio.gather(self._fetch_all_pools_weekly_charts(address, pools),
-                                                            self._generate_yield_reports(address, liqs))
-        return stake_reports, weekly_charts
+    async def get_my_pools(self, address):
+        compound_addresses = await self.get_compound_addresses(address)
+        return [p.pool for p in compound_addresses]
 
     # override
-    async def generate_yield_report_single_pool(self, address, pool):
-        liq = await self._fetch_one_pool_liquidity_info(address, pool)
-        stake_report = await self._generate_yield_report(address, liq)
+    async def generate_yield_report_single_pool(self, address: str, pool: str):
+        comp_addresses = await self.get_compound_addresses(address)
+        comp_address_for_pool = next(ca for ca in comp_addresses if ca.pool == pool)
+
+        liq_map = await self._fetch_all_pool_liquidity_info(address)
+        liq = liq_map[pool]
+        stake_report = await self._generate_yield_report(comp_address_for_pool, liq)
         return stake_report
+
+    # override
+    async def generate_yield_summary(self, address, pools: List[str]):
+        comp_addresses = await self.get_compound_addresses(address)
+        liqs_dict = await self._fetch_all_pool_liquidity_info(address)
+
+        reports = [
+            self._generate_yield_report(comp_addr, liqs_dict[comp_addr.pool])
+            for comp_addr in comp_addresses
+        ]
+
+        pools = list(liqs_dict.keys())
+        weekly_charts, *stake_reports = await asyncio.gather(self._fetch_all_pools_weekly_charts(address, pools),
+                                                             *reports)
+        return stake_reports, weekly_charts
 
     # -----------
 
@@ -69,36 +84,15 @@ class AsgardConsumerConnectorV2(AsgardConsumerConnectorBase):
             except KeyError:
                 return []
 
-    async def get_my_pools(self, address):
-        compound_addresses = await self.get_compound_addresses(address)
-        return [p.pool for p in compound_addresses]
-
-        # url = self.url_gen.url_for_address_pool_membership(address)
-        # self.logger.info(f'get: {url}')
-        # async with self.deps.session.get(url) as resp:
-        #     j = await resp.json()
-        #     try:
-        #         my_pools = j.get('pools', [])
-        #         return [p['pool'] for p in my_pools if 'pool' in p]
-        #     except KeyError:
-        #         return []
-
-    async def _get_fee_report(self, address, pool) -> FeeReport:
-        # todo: you must ask with thorADDRES|assetADDRESS otherwise -> fail; know your colateral address!
-        url = self.url_asgard_consumer_fees(address, pool)
+    async def _get_fee_report(self, comp_addr) -> FeeReport:
+        # todo: you must ask with thorADDRES|assetADDRESS otherwise -> fail; know your collateral address!
+        url = self.url_asgard_consumer_fees(comp_addr.addresses, comp_addr.pool)
         self.logger.info(f'get: {url}')
         async with self.deps.session.get(url) as resp:
             j = await resp.json()
-            return FeeReport.parse_from_asgard(j)
+            return FeeReport.parse_from_asgard(j[0])
 
-    async def _fetch_one_pool_liquidity_info(self, address, pool):
-        url = self.url_asgard_consumer_liquidity(address)
-        self.logger.info(f'get: {url}')
-        async with self.deps.session.get(url) as resp:
-            raw_response = await resp.json()
-            return next(CurrentLiquidity.from_asgard(item) for item in raw_response if item['pool'] == pool)
-
-    async def _fetch_all_pool_liquidity_info(self, address, my_pools=None) -> dict:
+    async def _fetch_all_pool_liquidity_info(self, address) -> dict:
         url = self.url_asgard_consumer_liquidity(address)
         self.logger.info(f'get: {url}')
         async with self.deps.session.get(url) as resp:
@@ -109,7 +103,7 @@ class AsgardConsumerConnectorV2(AsgardConsumerConnectorBase):
     async def _fetch_all_pools_weekly_charts(self, address, pools):
         return {}
 
-    async def _generate_yield_report(self, address, liq: CurrentLiquidity) -> StakePoolReport:
+    async def _generate_yield_report(self, comp_address: CompoundAddress, liq: CurrentLiquidity) -> StakePoolReport:
         try:
             first_stake_dt = datetime.datetime.utcfromtimestamp(liq.first_stake_ts)
             # get prices at the moment of first stake
@@ -120,7 +114,7 @@ class AsgardConsumerConnectorV2(AsgardConsumerConnectorBase):
             self.logger.exception(e, exc_info=True)
             usd_per_rune_start, usd_per_asset_start = None, None
 
-        fees = await self._get_fee_report(address, liq.pool)
+        fees = await self._get_fee_report(comp_address)
 
         d = self.deps
         stake_report = StakePoolReport(
@@ -132,9 +126,6 @@ class AsgardConsumerConnectorV2(AsgardConsumerConnectorBase):
         )
         return stake_report
 
-    async def _generate_yield_reports(self, address, liqs: List[CurrentLiquidity]) -> List[StakePoolReport]:
-        result = await asyncio.gather(*[self._generate_yield_report(address, liq) for liq in liqs])
-        return list(result)
 
 
 # MULTI-chain

@@ -8,7 +8,7 @@ from PIL import Image, ImageDraw, ImageFont
 from localization import BaseLocalization
 from localization.base import RAIDO_GLYPH
 from services.dialog.picture.crypto_logo import CryptoLogoDownloader
-from services.lib.constants import BNB_RUNE_SYMBOL, is_stable_coin
+from services.lib.constants import BNB_RUNE_SYMBOL, is_stable_coin, is_rune, RUNE_SYMBOL
 from services.lib.money import pretty_money, short_asset_name, pretty_dollar
 from services.lib.plot_graph import PlotBarGraph
 from services.lib.texts import grouper
@@ -374,7 +374,7 @@ def lp_line_segments(draw, asset_values, asset_values_usd, y, value_hidden, colo
                 pos_percent(legend_x + legend_sq_w, legend_y + legend_sq_h)
             ), fill=color)
 
-            asset = RAIDO_GLYPH if asset == BNB_RUNE_SYMBOL else short_asset_name(asset)
+            asset = RAIDO_GLYPH if is_rune(asset) else short_asset_name(asset)
 
             if value_hidden:
                 text = asset
@@ -445,11 +445,11 @@ def sync_lp_address_summary_picture(reports: List[StakePoolReport], weekly_chart
     total_lp_vs_hold_abs = 0.0
     for r in reports:
         asset_values[r.pool.asset] += r.current_value(r.ASSET) * 0.5
-        asset_values[BNB_RUNE_SYMBOL] += r.current_value(r.RUNE) * 0.5
+        asset_values[RUNE_SYMBOL] += r.current_value(r.RUNE) * 0.5
 
         asset_usd_value = r.current_value(r.USD) * 0.5
         asset_values_usd[r.pool.asset] += asset_usd_value
-        asset_values_usd[BNB_RUNE_SYMBOL] += asset_usd_value
+        asset_values_usd[RUNE_SYMBOL] += asset_usd_value
 
         total_lp_vs_hold_abs += r.lp_vs_hold[0]
 
@@ -464,7 +464,7 @@ def sync_lp_address_summary_picture(reports: List[StakePoolReport], weekly_chart
     image = res.bg_image.copy()
     draw = ImageDraw.Draw(image)
 
-    color_map = generate_color_map(r.pool for r in reports)
+    color_map = generate_color_map(asset for asset in asset_values.keys())
 
     # ------------------------------------------------------------------------------------------------
 
@@ -510,6 +510,7 @@ def sync_lp_address_summary_picture(reports: List[StakePoolReport], weekly_chart
             (loc.LP_PIC_SUMMARY_ADDED_VALUE, FADE_COLOR),
             (loc.LP_PIC_SUMMARY_WITHDRAWN_VALUE, FADE_COLOR),
             (loc.LP_PIC_SUMMARY_CURRENT_VALUE, FADE_COLOR),
+            # todo: add fees
             (loc.LP_PIC_SUMMARY_TOTAL_GAIN_LOSS, FADE_COLOR),
             (loc.LP_PIC_SUMMARY_TOTAL_GAIN_LOSS_PERCENT, FADE_COLOR)
         ],
@@ -518,6 +519,7 @@ def sync_lp_address_summary_picture(reports: List[StakePoolReport], weekly_chart
             pretty_money(total_added_value_rune),
             pretty_money(total_withdrawn_value_rune),
             pretty_money(total_current_value_rune),
+            # todo: add fees
             (pretty_money(total_gain_loss_rune, signed=True, prefix=RAIDO_GLYPH), result_color(total_gain_loss_rune)),
             (pretty_money(total_gain_loss_rune_p, signed=True) + '%', result_color(total_gain_loss_rune_p))
         ],
@@ -526,6 +528,7 @@ def sync_lp_address_summary_picture(reports: List[StakePoolReport], weekly_chart
             pretty_money(total_added_value_usd),
             pretty_money(total_withdrawn_value_usd),
             pretty_money(total_current_value_usd),
+            # todo: add fees
             (pretty_money(total_gain_loss_usd, signed=True, prefix='$'), result_color(total_gain_loss_usd)),
             (pretty_money(total_gain_loss_usd_p, signed=True) + '%', result_color(total_gain_loss_usd_p))
         ],
@@ -595,7 +598,7 @@ def sync_lp_address_summary_picture(reports: List[StakePoolReport], weekly_chart
         graph_img = lp_weekly_graph(graph_width, graph_height, weekly_charts, color_map, value_hidden)
         image.paste(graph_img, pos_percent(graph_margin_x, run_y - graph_margin_y))
     else:
-        draw.text(pos_percent(50, 30), "No weekly chart, sorry", fill=FORE_COLOR,
-                  font=res.font)  # todo: test and localize
+        draw.text(pos_percent(50, 83), loc.LP_PIC_SUMMARY_NO_WEEKLY_CHAR, fill=FADE_COLOR,
+                  font=res.font_head, anchor='mm')
 
     return image
