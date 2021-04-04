@@ -7,7 +7,7 @@ from services.jobs.fetch.runeyield.base import AsgardConsumerConnectorBase
 from services.jobs.midgard import MidgardURLGenBase
 from services.lib.constants import NetworkIdents
 from services.lib.depcont import DepContainer
-from services.models.stake_info import CurrentLiquidity, FeeReport, StakePoolReport
+from services.models.stake_info import CurrentLiquidity, FeeRequest, StakePoolReport
 
 
 class CompoundAddress(NamedTuple):
@@ -84,13 +84,13 @@ class AsgardConsumerConnectorV2(AsgardConsumerConnectorBase):
             except KeyError:
                 return []
 
-    async def _get_fee_report(self, comp_addr) -> FeeReport:
+    async def _get_fee_report(self, comp_addr) -> FeeRequest:
         # todo: you must ask with thorADDRES|assetADDRESS otherwise -> fail; know your collateral address!
         url = self.url_asgard_consumer_fees(comp_addr.addresses, comp_addr.pool)
         self.logger.info(f'get: {url}')
         async with self.deps.session.get(url) as resp:
             j = await resp.json()
-            return FeeReport.parse_from_asgard(j[0])
+            return FeeRequest.parse_from_asgard(j[0])
 
     async def _fetch_all_pool_liquidity_info(self, address) -> dict:
         url = self.url_asgard_consumer_liquidity(address)
@@ -135,6 +135,17 @@ class AsgardConsumerConnectorV2(AsgardConsumerConnectorBase):
 
 # FEES:
 # https://multichain-asgard-consumer-api.vercel.app/api/v2/member/fee?address=tthor1cwcqhhjhwe8vvyn8vkufzyg0tt38yjgzdf9whh|0x8edafa9247d10d2f8c38be2a3448e302bc516054&pool=ETH.USDT-0X62E273709DA575835C7F6AEF4A31140CA5B1D190
+# FEE_1
+
+# POST : https://asgard-consumer.vercel.app/v2/fee1?address=bnb1h9zxfev58qxjf435crjwc0jp4yhr0x3289j6f3&pool=BNB.XRP-BF2
+# post data: {liquidityTokenBalance: 94.1949254
+# liquidityTokenTotalSupply: 16008.80719301
+# pair: "BNB.XRP-BF2"
+# reserve0: 16553.73782158
+# reserve1: 236526.506849
+# reserveUSD: 280194.0895413372
+# token0PriceUSD: 8.463166825563317
+# token1PriceUSD: 0.5923101247172582}
 
 # thor address vs on-chain address (search for matches)  ==> important for Fees
 # https://multichain-asgard-consumer-api.vercel.app/api/v2/member/pooladdress?address=tthor1vyp3y7pjuwsz2hpkwrwrrvemcn7t758sfs0glr

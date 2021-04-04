@@ -1,10 +1,9 @@
 import asyncio
 import datetime
-
 from typing import List
 
 from services.jobs.fetch.runeyield.base import AsgardConsumerConnectorBase
-from services.models.stake_info import CurrentLiquidity, StakeDayGraphPoint, FeeReport, StakePoolReport
+from services.models.stake_info import CurrentLiquidity, StakeDayGraphPoint, FeeRequest, StakePoolReport, FeeResponse
 
 
 class AsgardConsumerConnectorV1(AsgardConsumerConnectorBase):
@@ -51,14 +50,16 @@ class AsgardConsumerConnectorV1(AsgardConsumerConnectorBase):
 
     @staticmethod
     def _url_asgard_consumer_fees(address, pool):
-        return f'https://asgard-consumer.vercel.app/api/v2/history/fee?address={address}&pool={pool}'
+        return f'https://asgard-consumer.vercel.app/v2/fee1?address={address}&pool={pool}'
 
-    async def _get_fee_report(self, address, pool) -> FeeReport:
-        url = self.url_gen.url_for_address_pool_membership(address)
-        self.logger.info(f'get: {url}')
-        async with self.deps.session.get(url) as resp:
+    async def _get_fee_report(self, address, pool, my_lp_points) -> FeeResponse:
+        url = self._url_asgard_consumer_fees(address, pool)
+        self.logger.info(f'post: {url}')
+        pool = self.deps.price_holder.find_pool(pool)
+        report = pool.create_lp_position(my_lp_points, self.deps.price_holder.usd_per_rune)
+        async with self.deps.session.post(url, data=report) as resp:
             j = await resp.json()
-            return FeeReport.parse_from_asgard(j)
+            return FeeResponse.parse_from_asgard(j)
 
     async def _fetch_one_pool_liquidity_info(self, address, pool):
         url = self.url_asgard_consumer_liquidity(address, pool)
@@ -98,7 +99,7 @@ class AsgardConsumerConnectorV1(AsgardConsumerConnectorBase):
             self.logger.exception(e, exc_info=True)
             usd_per_rune_start, usd_per_asset_start = None, None
 
-        fees = await self._get_fee_report(address, liq.pool)
+        fees = await self._get_fee_report(address, liq.pool, liq.pool_units)
 
         d = self.deps
         stake_report = StakePoolReport(

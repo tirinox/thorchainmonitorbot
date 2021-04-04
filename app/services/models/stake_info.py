@@ -116,7 +116,28 @@ class CurrentLiquidity(BaseModelMixin):
 
 
 @dataclass
-class FeeReport:
+class FeeResponse:
+    asset: str = ''
+    imp_loss_usd: float = 0.0
+    imp_loss_percent: float = 0.0
+    fee_usd: float = 0.0
+    fee_rune: float = 0.0
+    fee_asset: float = 0.0
+
+    @classmethod
+    def parse_from_asgard(cls, j):
+        return cls(
+            asset=j['asset'],
+            imp_loss_usd=float(j['impLoss']['usd']),
+            imp_loss_percent=float(j['impLoss']['percent']),
+            fee_usd=float(j['fee']['usd']),
+            fee_rune=float(j['fee']['rune']),
+            fee_asset=float(j['fee']['asset']),
+        )
+
+
+@dataclass
+class FeeRequest:
     height: int = 0
     pair: str = ''
     liquidity_token_balance: float = 0.0
@@ -151,7 +172,7 @@ class StakePoolReport:
     usd_per_rune_start: float
 
     liq: CurrentLiquidity
-    fees: FeeReport
+    fees: FeeResponse
     pool: PoolInfo
 
     ASSET = 'asset'
@@ -255,3 +276,11 @@ class StakePoolReport:
     @property
     def total_staking_sec(self):
         return int(time.time()) - self.liq.first_stake_ts
+
+    def fee_value(self, mode=USD):
+        if mode == self.USD:
+            return self.fees.fee_usd
+        elif mode == self.RUNE:
+            return self.fees.fee_rune
+        else:
+            return self.fees.fee_asset

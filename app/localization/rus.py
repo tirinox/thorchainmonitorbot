@@ -95,6 +95,7 @@ class RussianLocalization(BaseLocalization):
     LP_PIC_LP_APY = 'Годовых'
     LP_PIC_EARLY = 'Еще рано...'
     LP_PIC_FOOTER = "Испольует runestake.info от Bigboss"
+    LP_PIC_FEES = 'Ваши чаевые'
 
     LP_PIC_SUMMARY_HEADER = 'Сводка по пулам ликвидности'
     LP_PIC_SUMMARY_ADDED_VALUE = 'Добавлено'

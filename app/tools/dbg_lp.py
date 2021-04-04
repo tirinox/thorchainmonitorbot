@@ -16,7 +16,7 @@ from services.lib.constants import BNB_BTCB_SYMBOL
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 
-CACHE_REPORTS = True
+CACHE_REPORTS = False
 
 
 class LpTesterBase:
@@ -80,6 +80,11 @@ class LpGenerator(LpTesterBase):
         stake_reports, weekly_charts = await self.rune_yield.generate_yield_summary(address, [])
         return stake_reports, weekly_charts
 
+    async def get_lp_position(self, asset, my_stake_units):
+        pool_info = self.deps.price_holder.find_pool(asset)
+        if pool_info:
+            return pool_info.create_lp_position(my_stake_units, self.deps.price_holder.usd_per_rune)
+
 
 async def test_one_pool_picture_generator(addr, pool, hide):
     PICKLE_PATH = '../../stake_report.pickle'
@@ -142,10 +147,23 @@ async def test_my_pools():
             print(comp_addr)
 
 
+async def test_lp_position():
+    lpgen = LpGenerator()
+    async with lpgen:
+        print(await lpgen.get_lp_position('BTC.BTC', 0.1))
+
+
 async def test_multi_chain_testnet():
     # await test_my_pools()
+    # MCTN
     # await test_one_pool_picture_generator('tthor1cwcqhhjhwe8vvyn8vkufzyg0tt38yjgzdf9whh', 'BTC.BTC', hide=False)
-    await test_summary_picture_generator('tthor1vyp3y7pjuwsz2hpkwrwrrvemcn7t758sfs0glr', hide=False)
+    # await test_one_pool_picture_generator('bnb1sa4hx03jrcg44ktmxuxu5g2jj8u6rln063kx9l', 'BNB.USDT-6D8', hide=False)  # BEP2
+
+    # await test_summary_picture_generator('tthor1vyp3y7pjuwsz2hpkwrwrrvemcn7t758sfs0glr', hide=False)
+    # await test_lp_position()
+
+    await test_one_pool_picture_generator('bnb1h9zxfev58qxjf435crjwc0jp4yhr0x3289j6f3', 'BNB.ETH-1C9',
+                                          hide=False)  # BEP2
 
 
 if __name__ == '__main__':

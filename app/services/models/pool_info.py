@@ -60,6 +60,40 @@ class PoolInfo:
             'status': self.status
         }
 
+    def create_lp_position(self, my_units: int, usd_per_rune: float):
+        """
+      createLPPosition(poolDetail: PoolDetail, stakersAssetData: StakersAssetData, runePriceBUSD: BigNumber,
+                       assetPriceBUSD: BigNumber): LPPosition {
+        const stakeUnitsBN = new BigNumber(stakersAssetData.units);
+        const runeDepthBN = new BigNumber(poolDetail.runeDepth);
+        const assetDepthBN = new BigNumber(poolDetail.assetDepth);
+        const poolUnitsBN = new BigNumber(poolDetail.poolUnits);
+        const totalBalanceUSD = (runeDepthBN.multipliedBy(runePriceBUSD)).plus((assetDepthBN.multipliedBy(assetPriceBUSD)))
+        const position: LPPosition = {
+          pair: poolDetail.asset,
+          liquidityTokenBalance: stakeUnitsBN.div(this.baseNumber).toNumber(),
+          liquidityTokenTotalSupply: poolUnitsBN.div(this.baseNumber).toNumber(),
+          reserve0: runeDepthBN.div(this.baseNumber).toNumber(),
+          reserve1: assetDepthBN.div(this.baseNumber).toNumber(),
+          reserveUSD: totalBalanceUSD.div(this.baseNumber).toNumber(),
+          token0PriceUSD: runePriceBUSD.toNumber(),
+          token1PriceUSD: assetPriceBUSD.toNumber(),
+        }
+        return position
+      }
+        """
+        usd_per_asset = usd_per_rune / self.asset_per_rune
+        return {
+            "pair": self.asset,
+            "liquidityTokenBalance": my_units * THOR_DIVIDER_INV,
+            "liquidityTokenTotalSupply": self.pool_units * THOR_DIVIDER_INV,
+            "reserve0": self.balance_rune * THOR_DIVIDER_INV,
+            "reserve1": self.balance_asset * THOR_DIVIDER_INV,
+            "reserveUSD": self.balance_rune * THOR_DIVIDER_INV * usd_per_rune * 2.0,
+            "token0PriceUSD": usd_per_rune,
+            "token1PriceUSD": usd_per_asset,
+        }
+
 
 @dataclass
 class PoolInfoHistoricEntry:

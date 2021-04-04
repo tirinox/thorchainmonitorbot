@@ -9,7 +9,7 @@ from localization import BaseLocalization
 from localization.base import RAIDO_GLYPH
 from services.dialog.picture.crypto_logo import CryptoLogoDownloader
 from services.lib.constants import BNB_RUNE_SYMBOL, is_stable_coin, is_rune, RUNE_SYMBOL
-from services.lib.money import pretty_money, short_asset_name, pretty_dollar
+from services.lib.money import pretty_money, short_asset_name, pretty_dollar, format_percent
 from services.lib.plot_graph import PlotBarGraph
 from services.lib.texts import grouper
 from services.lib.utils import Singleton, async_wrap
@@ -214,25 +214,30 @@ def sync_lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, rune_im
     for x, column in zip(columns_x, columns):
         gl, _ = report.gain_loss(column)
 
+        fee_value = report.fee_value(column)
+        current = report.current_value(column)
+
         if not value_hidden:
             added = report.added_value(column)
             withdrawn = report.withdrawn_value(column)
-            current = report.current_value(column)
+
+            fee_text = pretty_money(fee_value)
 
             draw.text(pos_percent(x, rows_y[0]), pretty_money(added), font=r.font_semi, fill=FORE_COLOR, anchor='ms')
             draw.text(pos_percent(x, rows_y[1]), pretty_money(withdrawn), font=r.font_semi, fill=FORE_COLOR,
                       anchor='ms')
             draw.text(pos_percent(x, rows_y[2]), pretty_money(current), font=r.font_semi, fill=FORE_COLOR, anchor='ms')
+            draw.text(pos_percent(x, rows_y[3]), fee_text, font=r.font_semi, fill=result_color(fee_value), anchor='ms')
             draw.text(pos_percent(x, rows_y[4]), pretty_money(gl, signed=True), font=r.font_semi, fill=result_color(gl),
                       anchor='ms')
         else:
+            fee_text = format_percent(fee_value, current)
+
             r.put_hidden_plate(image, pos_percent(x, rows_y[0]), anchor='center')
             r.put_hidden_plate(image, pos_percent(x, rows_y[1]), anchor='center')
             r.put_hidden_plate(image, pos_percent(x, rows_y[2]), anchor='center')
+            draw.text(pos_percent(x, rows_y[3]), fee_text, font=r.font_semi, fill=result_color(fee_value), anchor='ms')
             r.put_hidden_plate(image, pos_percent(x, rows_y[4]), anchor='center')
-
-        draw.text(pos_percent(x, rows_y[3]), '???', font=r.font_semi, fill=FORE_COLOR,
-                  anchor='ms')  # todo: fill fees! show fee % relatively to redeemable if hidden value
 
         if report.usd_per_asset_start is not None and report.usd_per_rune_start is not None:
             price_change = report.price_change(column)
@@ -262,7 +267,7 @@ def sync_lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, rune_im
     draw.text(pos_percent(table_x, rows_y[0]), loc.LP_PIC_ADDED_VALUE, font=r.font, fill=FADE_COLOR, anchor='rs')
     draw.text(pos_percent(table_x, rows_y[1]), loc.LP_PIC_WITHDRAWN_VALUE, font=r.font, fill=FADE_COLOR, anchor='rs')
     draw.text(pos_percent(table_x, rows_y[2]), loc.LP_PIC_CURRENT_VALUE, font=r.font, fill=FADE_COLOR, anchor='rs')
-    draw.text(pos_percent(table_x, rows_y[3]), 'Fees', font=r.font, fill=FADE_COLOR, anchor='rs')  # fixme! localization
+    draw.text(pos_percent(table_x, rows_y[3]), loc.LP_PIC_FEES, font=r.font, fill=FADE_COLOR, anchor='rs')
     draw.text(pos_percent(table_x, rows_y[4]), loc.LP_PIC_GAIN_LOSS, font=r.font, fill=FADE_COLOR, anchor='rs')
     draw.text(pos_percent(table_x, rows_y[5]), loc.LP_PIC_PRICE_CHANGE, font=r.font, fill=FADE_COLOR, anchor='rs')
     draw.text(pos_percent(table_x, rows_y[5] + 2.5), loc.LP_PIC_PRICE_CHANGE_2, font=r.font_small, fill=FADE_COLOR,

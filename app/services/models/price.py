@@ -88,3 +88,6 @@ class LastPriceHolder:
     def usd_per_asset(self, pool):
         runes_per_asset = self.pool_info_map[pool].runes_per_asset
         return self.usd_per_rune * runes_per_asset
+
+    def find_pool(self, asset):
+        return self.pool_info_map.get(asset)

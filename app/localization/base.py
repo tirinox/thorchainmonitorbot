@@ -149,6 +149,7 @@ class BaseLocalization(ABC):  # == English
     LP_PIC_LP_APY = 'LP APY'
     LP_PIC_EARLY = 'Early...'
     LP_PIC_FOOTER = "Powered by Bigboss' runestake.info"
+    LP_PIC_FEES = 'Fees earned'
 
     LP_PIC_SUMMARY_HEADER = 'Liquidity pools summary'
     LP_PIC_SUMMARY_ADDED_VALUE = 'Added value'
