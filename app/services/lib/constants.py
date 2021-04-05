@@ -75,8 +75,12 @@ class NetworkIdents:
     CHAOSNET_BEP2CHAIN = 'chaosnet-bep2'
 
     @classmethod
-    def is_test(cls, network):
+    def is_test(cls, network: str):
         return 'testnet' in network
+
+    @classmethod
+    def is_multi(cls, network: str):
+        return 'multi' in network
 
 
 THOR_DIVIDER = 100_000_000.0

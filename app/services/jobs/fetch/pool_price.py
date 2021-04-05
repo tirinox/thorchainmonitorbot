@@ -1,5 +1,11 @@
 import calendar
+import dataclasses
+import json
 from datetime import date
+
+from typing import Optional, List
+
+from aiothornode.types import ThorPool
 
 from services.jobs.fetch.base import BaseFetcher
 from services.jobs.fetch.fair_price import fair_rune_price
@@ -9,7 +15,7 @@ from services.lib.constants import BNB_BUSD_SYMBOL, RUNE_SYMBOL_DET, is_stable_c
     ETH_USDT_TEST_SYMBOL, RUNE_SYMBOL_MARKET
 from services.lib.datetime import parse_timespan_to_seconds, DAY, HOUR
 from services.lib.depcont import DepContainer
-from services.models.pool_info import PoolInfo
+from services.models.pool_info import PoolInfo, PoolInfoHistoricEntry
 from services.models.time_series import PriceTimeSeries
 
 
@@ -28,7 +34,12 @@ class PoolPriceFetcher(BaseFetcher):
 
     async def fetch(self):
         d = self.deps
-        await self.get_current_pool_data_full()
+
+        current_pools = await self.get_current_pool_data_full()
+
+        if current_pools and self.deps.price_holder is not None:
+            self.deps.price_holder.update(current_pools)
+
         price = d.price_holder.usd_per_rune
         self.logger.info(f'fresh rune price is ${price:.3f}')
 
@@ -46,31 +57,44 @@ class PoolPriceFetcher(BaseFetcher):
         else:
             self.logger.warning(f'really ${price:.3f}? that is odd!')
 
-    async def get_current_pool_data_full(self):
-        pool_info_raw = await self.deps.thor_connector.query_pools()
-        results = {
+    @staticmethod
+    def _parse_thor_pools(thor_pools: List[ThorPool]):
+        return {
             p.asset: PoolInfo(p.asset,
                               p.assets_per_rune, p.balance_asset_int, p.balance_rune_int,
                               p.pool_units_int, p.status)
-            for p in pool_info_raw
+            for p in thor_pools
         }
-        if results and self.deps.price_holder is not None:
-            self.deps.price_holder.update(results)
 
-        return results
+    async def get_current_pool_data_full(self, height=None, caching=False):
+        cache_key = f'ThorNodePool:{height}'
+
+        if caching and height:
+            cached_raw = await self.deps.db.redis.get(cache_key)
+            if cached_raw:
+                try:
+                    j = json.loads(cached_raw)
+                    thor_pools = [ThorPool.from_json(pool_j) for pool_j in j]
+                    return self._parse_thor_pools(thor_pools)
+                except ValueError:
+                    pass
+
+        thor_pools = await self.deps.thor_connector.query_pools(height)
+
+        if caching and height:
+            serialized_thor_pools = json.dumps([dataclasses.asdict(p) for p in thor_pools])
+            await self.deps.db.redis.set(cache_key, serialized_thor_pools)
+
+        return self._parse_thor_pools(thor_pools)
 
     def url_for_historical_pool_state(self, pool, ts):
         from_ts = int(ts - HOUR)
         to_ts = int(ts + DAY + HOUR)
         return self.midgard_url_gen.url_for_pool_depth_history(pool, from_ts, to_ts)
 
-    def parse_pool_history_item(self, j):
-        ...
-
-    async def get_asset_per_rune_of_pool_by_day(self, pool, day: date, caching=True):
-        cache_key = ''
+    async def get_asset_per_rune_of_pool_by_day(self, pool: str, day: date, caching=True):
+        cache_key = f'MidgardPrice:{pool}:{day.year}.{day.month}.{day.day}' if caching else ''
         if caching:
-            cache_key = f'midg_pool_info:{pool}:{day.year}.{day.month}.{day.day}'
             cached_raw = await self.deps.db.redis.get(cache_key)
             if cached_raw:
                 try:
@@ -92,10 +116,41 @@ class PoolPriceFetcher(BaseFetcher):
                 return None
             else:
                 price = pools_info[0].asset_price
-                if caching:
+                if caching and price:
                     await self.deps.db.redis.set(cache_key, price)
                 return price
 
+    async def get_pool_info_by_day(self, pool: str, day: date, caching=True) -> Optional[PoolInfoHistoricEntry]:
+        parser = get_parser_by_network_id(self.deps.cfg.network_id)
+
+        cache_key = ''
+        if caching:
+            cache_key = f'MidgardPoolInfo:{pool}:{day.year}.{day.month}.{day.day}'
+            cached_raw = await self.deps.db.redis.get(cache_key)
+            if cached_raw:
+                try:
+                    j = json.loads(cached_raw)
+                    return parser.parse_historic_pool_items(j)[0]
+                except ValueError:
+                    pass
+
+        timestamp = calendar.timegm(day.timetuple())
+        url = self.url_for_historical_pool_state(pool, timestamp)
+        self.logger.info(f"get: {url}")
+
+        async with self.deps.session.get(url) as resp:
+            raw_data = await resp.json()
+            pools_info = parser.parse_historic_pool_items(raw_data)
+            if not pools_info:
+                self.logger.error(f'there were no historical data returned!')
+                return None
+            else:
+                if caching and raw_data:
+                    await self.deps.db.redis.set(cache_key, json.dumps(raw_data))
+                pool_info = pools_info[0]
+                return pool_info
+
+    # todo: price -> poolInfo full (+ caching)
     async def get_usd_price_of_rune_and_asset_by_day(self, pool, day: date, caching=True):
         network = self.deps.cfg.network_id
         if network == NetworkIdents.CHAOSNET_BEP2CHAIN or network == NetworkIdents.CHAOSNET_MULTICHAIN:

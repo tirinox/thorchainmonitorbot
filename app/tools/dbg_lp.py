@@ -160,10 +160,7 @@ async def test_multi_chain_testnet():
     # await test_one_pool_picture_generator('bnb1sa4hx03jrcg44ktmxuxu5g2jj8u6rln063kx9l', 'BNB.USDT-6D8', hide=False)  # BEP2
 
     # await test_summary_picture_generator('tthor1vyp3y7pjuwsz2hpkwrwrrvemcn7t758sfs0glr', hide=False)
-    # await test_lp_position()
-
-    await test_one_pool_picture_generator('bnb1h9zxfev58qxjf435crjwc0jp4yhr0x3289j6f3', 'BNB.ETH-1C9',
-                                          hide=False)  # BEP2
+    await test_lp_position()
 
 
 if __name__ == '__main__':
