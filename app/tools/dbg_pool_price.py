@@ -39,6 +39,16 @@ async def test_thor_pools_caching(d: DepContainer):
     pp = await ppf.get_current_pool_data_full(caching=True, height=501)
     print(pp)
 
+    # ===
+
+    d.cfg.network_id = NetworkIdents.CHAOSNET_BEP2CHAIN
+
+    d.thor_connector = ThorConnector(get_thor_env_by_network_id(d.cfg.network_id), d.session)
+    ppf = PoolPriceFetcher(d)
+    pp = await ppf.get_current_pool_data_full(caching=True, height=200100)
+    print(pp)
+
+
 
 async def test_pool_cache(d):
     d.cfg.network_id = NetworkIdents.TESTNET_MULTICHAIN

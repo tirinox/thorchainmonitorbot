@@ -31,11 +31,13 @@ def get_midgard_url(cfg: Config, path: str):
 
 
 class MidgardURLGenBase(ABC):
+    LIQUIDITY_TX_TYPES_STRING = ''
+
     def __init__(self, base_url: str):
         self.base_url = base_url.rstrip('/')
 
     @abstractmethod
-    def url_for_tx(self, offset=0, count=50) -> str:
+    def url_for_tx(self, offset=0, count=50, address=None, types=None) -> str:
         ...
 
     @abstractmethod
@@ -48,8 +50,15 @@ class MidgardURLGenBase(ABC):
 
 
 class MidgardURLGenV1(MidgardURLGenBase):
-    def url_for_tx(self, offset=0, count=50) -> str:
-        return f'{self.base_url}/v1/txs?offset={offset}&limit={count}'
+    LIQUIDITY_TX_TYPES_STRING = 'stake,unstake'
+
+    def url_for_tx(self, offset=0, count=50, address=None, types=None) -> str:
+        url = f'{self.base_url}/v1/txs?offset={offset}&limit={count}'
+        if address:
+            url += f'&address={address}'
+        if types:
+            url += f'&type={types}'
+        return url
 
     def url_for_pool_depth_history(self, pool, from_ts, to_ts) -> str:
         return f"{self.base_url}/v1/history/pools?pool={pool}&interval=day&from={from_ts}&to={to_ts}"
@@ -59,8 +68,15 @@ class MidgardURLGenV1(MidgardURLGenBase):
 
 
 class MidgardURLGenV2(MidgardURLGenBase):
-    def url_for_tx(self, offset=0, count=50) -> str:
-        return f'{self.base_url}/v2/actions?offset={offset}&limit={count}'
+    LIQUIDITY_TX_TYPES_STRING = 'withdraw,addLiquidity'
+
+    def url_for_tx(self, offset=0, count=50, address=None, types=None) -> str:
+        url = f'{self.base_url}/v2/actions?offset={offset}&limit={count}'
+        if address:
+            url += f'&address={address}'
+        if types:
+            url += f'&type={types}'
+        return url
 
     def url_for_pool_depth_history(self, pool, from_ts, to_ts) -> str:
         return f"{self.base_url}/v2/history/depths/{pool}?interval=day&from={from_ts}&to={to_ts}"

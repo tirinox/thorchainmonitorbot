@@ -26,6 +26,27 @@ class TxFetcher(BaseFetcher):
         self.logger.info(f'new tx to analyze: {len(txs)}')
         return txs
 
+    async def fetch_user_tx(self, address, liquidity_change_only=False):
+        page = 0
+        txs = []
+        while True:
+            types = self.url_gen_midgard.LIQUIDITY_TX_TYPES_STRING if liquidity_change_only else None
+
+            url = self.url_gen_midgard.url_for_tx(page * self.tx_per_batch, self.tx_per_batch,
+                                                  types=types,
+                                                  address=address)
+
+            self.logger.info(f"start fetching user's tx: {url}")
+            async with self.deps.session.get(url) as resp:
+                json = await resp.json()
+                new_txs = self.tx_parser.parse_tx_response(json)
+                txs += new_txs.txs
+                if not new_txs.tx_count or new_txs.tx_count < self.tx_per_batch:
+                    break
+                page += 1
+        self.logger.info(f'user {address} has {len(txs)} tx.')
+        return txs
+
     # -------
 
     async def _fetch_one_batch(self, session, page):
