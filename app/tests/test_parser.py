@@ -3,7 +3,7 @@ import os
 
 import pytest
 
-from services.jobs.midgard import MidgardParserV1, MidgardParserV2
+from services.lib.midgard.parser import MidgardParserV1, MidgardParserV2
 from services.lib.constants import NetworkIdents, THOR_DIVIDER
 
 PATH = './app/tests/tx_examples'

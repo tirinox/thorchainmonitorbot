@@ -9,7 +9,8 @@ from aiothornode.types import ThorPool
 
 from services.jobs.fetch.base import BaseFetcher
 from services.jobs.fetch.fair_price import fair_rune_price
-from services.jobs.midgard import get_url_gen_by_network_id, get_parser_by_network_id
+from services.lib.midgard.parser import get_parser_by_network_id
+from services.lib.midgard.urlgen import get_url_gen_by_network_id
 from services.lib.config import Config
 from services.lib.constants import BNB_BUSD_SYMBOL, RUNE_SYMBOL_DET, is_stable_coin, NetworkIdents, \
     ETH_USDT_TEST_SYMBOL, RUNE_SYMBOL_MARKET

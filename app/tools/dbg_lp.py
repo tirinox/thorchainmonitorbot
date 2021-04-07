@@ -11,6 +11,7 @@ from main import get_thor_env_by_network_id
 from services.dialog.picture.lp_picture import lp_pool_picture, lp_address_summary_picture
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.runeyield import get_rune_yield_connector, AsgardConsumerConnectorBase
+from services.lib.midgard.urlgen import get_url_gen_by_network_id
 from services.lib.config import Config
 from services.lib.constants import BNB_BTCB_SYMBOL
 from services.lib.db import DB
@@ -20,7 +21,7 @@ CACHE_REPORTS = False
 
 
 class LpTesterBase:
-    def __init__(self) -> None:
+    def __init__(self, rune_yield_class=None) -> None:
         d = DepContainer()
         d.loop = asyncio.get_event_loop()
         d.cfg = Config()
@@ -28,13 +29,17 @@ class LpTesterBase:
         d.db = DB(d.loop)
         self.deps = d
         self.rune_yield: AsgardConsumerConnectorBase
+        self.rune_yield_class = rune_yield_class
 
     async def prepare(self):
         d = self.deps
         d.session = aiohttp.ClientSession()
         await d.db.get_redis()
         ppf = PoolPriceFetcher(d)
-        self.rune_yield = get_rune_yield_connector(d, ppf)
+        if self.rune_yield_class:
+            self.rune_yield = self.rune_yield_class(d, ppf, get_url_gen_by_network_id(self.deps.cfg.network_id))
+        else:
+            self.rune_yield = get_rune_yield_connector(d, ppf)
         d.thor_connector = ThorConnector(get_thor_env_by_network_id(d.cfg.network_id), d.session)
         await ppf.get_current_pool_data_full()
 

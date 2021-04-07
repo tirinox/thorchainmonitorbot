@@ -2,7 +2,7 @@ from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.runeyield.base import AsgardConsumerConnectorBase
 from services.jobs.fetch.runeyield.lp import AsgardConsumerConnectorV1
 from services.jobs.fetch.runeyield.lp_v2 import AsgardConsumerConnectorV2
-from services.jobs.midgard import get_url_gen_by_network_id
+from services.lib.midgard.urlgen import get_url_gen_by_network_id
 from services.lib.constants import NetworkIdents
 from services.lib.depcont import DepContainer
 

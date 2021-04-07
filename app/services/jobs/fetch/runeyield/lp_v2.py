@@ -4,7 +4,7 @@ from typing import Union, List, NamedTuple
 
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.runeyield.base import AsgardConsumerConnectorBase
-from services.jobs.midgard import MidgardURLGenBase
+from services.lib.midgard.urlgen import MidgardURLGenBase
 from services.lib.constants import NetworkIdents
 from services.lib.depcont import DepContainer
 from services.models.stake_info import CurrentLiquidity, FeeRequest, StakePoolReport, FeeResponse

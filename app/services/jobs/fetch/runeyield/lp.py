@@ -27,7 +27,7 @@ class AsgardConsumerConnectorV1(AsgardConsumerConnectorBase):
         return stake_report
 
     # override
-    async def get_my_pools(self, address):
+    async def get_my_pools(self, address) -> List[str]:
         url = self.url_gen.url_for_address_pool_membership(address)
         self.logger.info(f'get: {url}')
         async with self.deps.session.get(url) as resp:
@@ -36,7 +36,7 @@ class AsgardConsumerConnectorV1(AsgardConsumerConnectorBase):
                 my_pools = j['poolsArray']
                 return my_pools
             except KeyError:
-                return None
+                return []
 
     # ------------ implementation ----------
 

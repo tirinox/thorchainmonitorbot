@@ -1,9 +1,12 @@
 from aioredis import Redis
+from typing import List
 
 from services.jobs.fetch.base import BaseFetcher
-from services.jobs.midgard import get_url_gen_by_network_id, get_parser_by_network_id
+from services.lib.midgard.parser import get_parser_by_network_id
+from services.lib.midgard.urlgen import get_url_gen_by_network_id
 from services.lib.datetime import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
+from services.models.tx import ThorTx
 
 
 class TxFetcher(BaseFetcher):
@@ -26,7 +29,7 @@ class TxFetcher(BaseFetcher):
         self.logger.info(f'new tx to analyze: {len(txs)}')
         return txs
 
-    async def fetch_user_tx(self, address, liquidity_change_only=False):
+    async def fetch_user_tx(self, address, liquidity_change_only=False) -> List[ThorTx]:
         page = 0
         txs = []
         while True:

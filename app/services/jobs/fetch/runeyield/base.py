@@ -3,7 +3,7 @@ from abc import abstractmethod
 from typing import List, Tuple
 
 from services.jobs.fetch.pool_price import PoolPriceFetcher
-from services.jobs.midgard import MidgardURLGenBase
+from services.lib.midgard.urlgen import MidgardURLGenBase
 from services.lib.depcont import DepContainer
 from services.models.stake_info import StakePoolReport
 
@@ -22,10 +22,10 @@ class AsgardConsumerConnectorBase:
 
     # interface
     @abstractmethod
-    async def generate_yield_report_single_pool(self, address, pool):
+    async def generate_yield_report_single_pool(self, address, pool) -> StakePoolReport:
         ...
 
     # interface
     @abstractmethod
-    async def get_my_pools(self, address):
+    async def get_my_pools(self, address) -> List[str]:
         ...
