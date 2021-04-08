@@ -4,6 +4,7 @@ import logging
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.runeyield.lp_my import HomebrewLPConnector
 from services.jobs.fetch.tx import TxFetcher
+from services.lib.utils import setup_logs
 from tools.dbg_lp import LpTesterBase
 
 
@@ -15,7 +16,9 @@ async def test_get_user_lp_actions(lpgen: LpTesterBase):
 
 
 async def test_filter_my_tx(lpgen: LpTesterBase):
-    await lpgen.rune_yield.generate_yield_report_single_pool('bnb1lc66rzzudra4e0qrw4qemgupd0f0ctd5m03svx', 'BNB.ADA-9F4')
+    await lpgen.rune_yield.generate_yield_report_single_pool(
+        'bnb10z6pvckwlpl630nujweugqrqkdfmnxnrplssav',
+        'BNB.SXP-CCC')
 
 
 async def main():
@@ -26,5 +29,5 @@ async def main():
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
+    setup_logs(logging.INFO)
     asyncio.run(main())

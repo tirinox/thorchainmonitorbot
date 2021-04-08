@@ -21,6 +21,7 @@ from services.lib.config import Config
 from services.lib.constants import NetworkIdents
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
+from services.lib.utils import setup_logs
 from services.models.price import LastPriceHolder
 from services.notify.broadcast import Broadcaster
 from services.notify.types.cap_notify import CapFetcherNotifier
@@ -46,15 +47,9 @@ class App:
         d.cfg = Config()
 
         log_level = d.cfg.get('log_level', logging.INFO)
-        logging.basicConfig(
-            level=logging.getLevelName(log_level),
-            format='%(asctime)s.%(msecs)03d %(levelname)s %(module)s - %(funcName)s: %(message)s',
-            datefmt='%Y-%m-%d %H:%M:%S',
-        )
+        setup_logs(log_level)
 
-        logging.info('-' * 100)
         logging.info(f'Starting THORChainMonitoringBot for "{d.cfg.network_id}".')
-        logging.info(f"Log level: {log_level}")
 
         d.loop = asyncio.get_event_loop()
         d.db = DB(d.loop)

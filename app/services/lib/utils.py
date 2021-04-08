@@ -1,4 +1,5 @@
 import asyncio
+import logging
 import time
 from collections import deque
 from functools import wraps, partial
@@ -63,3 +64,15 @@ def circular_shuffled_iterator(lst):
         if shifts >= len(d):
             random.shuffle(d)
             shifts = 0
+
+
+def setup_logs(log_level):
+    logging.basicConfig(
+        level=logging.getLevelName(log_level),
+        format='%(asctime)s %(levelname)s:%(module)s:%(funcName)s: %(message)s',
+        datefmt='%Y-%m-%d %H:%M:%S',
+    )
+
+    logging.info('-' * 100)
+    logging.info(f"Log level: {log_level}")
+

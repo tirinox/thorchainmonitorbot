@@ -4,6 +4,7 @@ from typing import NamedTuple, List
 
 from services.lib.constants import NetworkIdents
 from services.models.pool_info import PoolInfoHistoricEntry
+from services.models.pool_member import PoolMemberDetails
 from services.models.tx import ThorTx, ThorTxType, ThorSubTx, ThorMetaSwap, ThorMetaRefund, ThorMetaWithdraw, \
     ThorMetaAddLiquidity
 
@@ -43,6 +44,14 @@ class MidgardParserBase(metaclass=ABCMeta):
 
     @abstractmethod
     def parse_historic_pool_items(self, response: dict) -> List[PoolInfoHistoricEntry]:
+        ...
+
+    @abstractmethod
+    def parse_pool_member_details(self, response, address='') -> List[PoolMemberDetails]:
+        ...
+
+    @abstractmethod
+    def parse_pool_membership(self, response) -> List[str]:
         ...
 
 
@@ -137,6 +146,26 @@ class MidgardParserV1(MidgardParserBase):
             ))
         return results
 
+    def parse_pool_member_details(self, response, address='') -> List[PoolMemberDetails]:
+        results = []
+        for j in response:
+            results.append(PoolMemberDetails(
+                asset_added=int(j.get('assetStaked', 0)),
+                asset_address=address,
+                asset_withdrawn=int(j.get('assetWithdrawn', 0)),
+                date_first_added=int(j.get('dateFirstStaked', 0)),
+                date_last_added=int(j.get('heightLastStaked', 0)),
+                liquidity_units=int(j.get('units', 0)),
+                pool=j.get('asset', ''),
+                rune_added=int(j.get('runeAdded', 0)),
+                rune_withdrawn=int(j.get('runeWithdrawn', 0)),
+                run_address=address
+            ))
+        return results
+
+    def parse_pool_membership(self, response) -> List[str]:
+        return response.get('poolsArray', [])
+
 
 class MidgardParserV2(MidgardParserBase):
     """
@@ -189,6 +218,27 @@ class MidgardParserV2(MidgardParserBase):
                 asset_price_usd=float(j.get('assetPriceUSD', '0')),
             ))
         return results
+
+    def parse_pool_member_details(self, response, address='') -> List[PoolMemberDetails]:
+        results = []
+        for j in response.get('pools', []):
+            results.append(PoolMemberDetails(
+                asset_added=int(j.get('assetAdded', 0)),
+                asset_address=j.get('assetAddress', ''),
+                asset_withdrawn=int(j.get('assetWithdrawn', 0)),
+                date_first_added=int(j.get('dateFirstAdded', 0)),
+                date_last_added=int(j.get('dateLastAdded', 0)),
+                liquidity_units=int(j.get('liquidityUnits', 0)),
+                pool=j.get('pool', ''),
+                rune_added=int(j.get('runeAdded', 0)),
+                rune_withdrawn=int(j.get('runeWithdrawn', 0)),
+                run_address=j.get('runeAddress', '')
+            ))
+        return results
+
+    def parse_pool_membership(self, response) -> List[str]:
+        pools = response.get('pools', [])
+        return [p['pool'] for p in pools if 'pool' in p]
 
 
 def get_parser_by_network_id(network_id) -> MidgardParserBase:

@@ -54,7 +54,7 @@ class MidgardURLGenV1(MidgardURLGenBase):
         return f"{self.base_url}/v1/stakers/{address}"
 
     def url_details_of_pools(self, address, pools) -> str:
-        pools = pools if not isinstance(pools, str) else ','.join(pools)
+        pools = pools if isinstance(pools, str) else ','.join(pools)
         return f'{self.base_url}/v1/stakers/{address}/pools?asset={pools}'
 
     def url_mimir(self):

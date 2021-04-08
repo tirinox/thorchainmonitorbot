@@ -91,7 +91,7 @@ class CurrentLiquidity(BaseModelMixin):
     first_stake_ts: int
     last_stake_ts: int
 
-    fee_earn_used: float
+    fee_earn_usd: float
 
     @classmethod
     def from_asgard(cls, d):
@@ -111,7 +111,7 @@ class CurrentLiquidity(BaseModelMixin):
             float(d['totalunstakedusd']) * m,
             int(d['firststake']),
             int(d['laststake']),
-            fee_earn_used=0.0
+            fee_earn_usd=0.0
         )
 
 
