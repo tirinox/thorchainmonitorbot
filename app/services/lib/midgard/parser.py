@@ -157,7 +157,7 @@ class MidgardParserV1(MidgardParserBase):
                 date_last_added=int(j.get('heightLastStaked', 0)),
                 liquidity_units=int(j.get('units', 0)),
                 pool=j.get('asset', ''),
-                rune_added=int(j.get('runeAdded', 0)),
+                rune_added=int(j.get('runeStaked', 0)),
                 rune_withdrawn=int(j.get('runeWithdrawn', 0)),
                 run_address=address
             ))

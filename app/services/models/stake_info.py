@@ -77,13 +77,13 @@ class StakeDayGraphPoint:
 @dataclass
 class CurrentLiquidity(BaseModelMixin):
     pool: str
-    rune_stake: int
-    asset_stake: int
+    rune_stake: float
+    asset_stake: float
     pool_units: int
-    asset_withdrawn: int
-    rune_withdrawn: int
-    total_staked_asset: int
-    total_staked_rune: int
+    asset_withdrawn: float
+    rune_withdrawn: float
+    total_staked_asset: float
+    total_staked_rune: float
     total_staked_usd: float
     total_unstaked_asset: float
     total_unstaked_rune: float

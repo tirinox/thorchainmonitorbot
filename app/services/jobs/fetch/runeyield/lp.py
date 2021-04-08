@@ -3,7 +3,7 @@ import datetime
 from typing import List
 
 from services.jobs.fetch.runeyield.base import AsgardConsumerConnectorBase
-from services.models.stake_info import CurrentLiquidity, StakeDayGraphPoint, FeeRequest, StakePoolReport, FeeResponse
+from services.models.stake_info import CurrentLiquidity, StakeDayGraphPoint, StakePoolReport, FeeResponse
 
 
 class AsgardConsumerConnectorV1(AsgardConsumerConnectorBase):

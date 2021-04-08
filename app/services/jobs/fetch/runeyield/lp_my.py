@@ -1,17 +1,21 @@
 import asyncio
-from typing import List, Tuple, Dict
+from typing import List, Tuple, Dict, Optional
 
 from aiothornode.types import ThorPool
 
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.runeyield import AsgardConsumerConnectorBase
 from services.jobs.fetch.tx import TxFetcher
+from services.lib.constants import THOR_DIVIDER_INV, STABLE_COIN_POOLS
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import MidgardURLGenBase
 from services.lib.depcont import DepContainer
+from services.lib.money import weighted_mean
 from services.models.pool_member import PoolMemberDetails
 from services.models.stake_info import StakePoolReport, CurrentLiquidity
-from services.models.tx import ThorTx
+from services.models.tx import ThorTx, ThorTxType
+
+HeightToAllPools = Dict[int, Dict[str, ThorPool]]
 
 
 class HomebrewLPConnector(AsgardConsumerConnectorBase):
@@ -25,21 +29,27 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         pass
 
     async def generate_yield_report_single_pool(self, address, pool) -> StakePoolReport:
-        # todo: idea check date_last_added, if it is not changed - get user_txs from local cache
+        # todo: idea: check date_last_added, if it is not changed - get user_txs from local cache
+
         user_txs = await self._get_user_tx_actions(address, pool)
 
-        historic_pool_states, current_pools_details = await asyncio.gather(
+        # todo: idea: cache historic_pool_states
+        historic_all_pool_states, current_pools_details = await asyncio.gather(
             self._fetch_historical_pool_states(user_txs),
             self._get_details_of_staked_pools(address, pool)
         )
 
         # filter only 1 pool
-        historic_pool_states = {height: pools[pool] for height, pools in historic_pool_states.items()}
+        historic_pool_state = {height: pools[pool] for height, pools in historic_all_pool_states.items()}
         current_pool_details: PoolMemberDetails = current_pools_details.get(pool)
+
+        cur_liq = await self._get_current_liquidity(user_txs, current_pool_details, historic_all_pool_states)
+
+        print(cur_liq)
 
         print('--- POOLS ---')
 
-        for height, pool_info in historic_pool_states.items():
+        for height, pool_info in historic_pool_state.items():
             print(height)
             print(pool_info)
             print('-----')
@@ -74,13 +84,14 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             txs = [tx for tx in txs if pool_filter in tx.pools]
         return txs
 
-    async def _fetch_historical_pool_states(self, txs: List[ThorTx]) -> Dict[int, Dict[str, ThorPool]]:
+    async def _fetch_historical_pool_states(self, txs: List[ThorTx]) -> HeightToAllPools:
         heights = list(set(tx.height_int for tx in txs))
         thor_conn = self.deps.thor_connector
 
         # make sure, that connections are fresh, in order not to update it at all the height simultaneously
         await thor_conn._get_random_clients()
 
+        # todo: cache it!
         tasks = [
             thor_conn.query_pools(h, consensus=self.use_thor_consensus) for h in heights
         ]
@@ -98,5 +109,72 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             pool_array = self.parser.parse_pool_member_details(j, address)
             return {p.pool: p for p in pool_array}
 
-    async def _get_current_liquidity(self, txs: List[ThorTx], pool_details: PoolMemberDetails) -> CurrentLiquidity:
-        ...
+    async def _get_current_liquidity(self, txs: List[ThorTx],
+                                     pool_details: PoolMemberDetails,
+                                     pool_historic: HeightToAllPools) -> CurrentLiquidity:
+        first_state_date, last_stake_date = 0, 0
+        total_added_rune, total_withdrawn_rune = 0.0, 0.0
+        total_added_usd, total_withdrawn_usd = 0.0, 0.0
+        total_added_asset, total_withdrawn_asset = 0.0, 0.0
+        fee_earn_usd = 0.0
+
+        for tx in txs:
+            tx_timestamp = tx.date_timestamp
+            first_state_date = min(first_state_date, tx_timestamp) if first_state_date else tx_timestamp
+            last_stake_date = max(last_stake_date, tx_timestamp) if last_stake_date else tx_timestamp
+
+            pools_info: Dict[str, ThorPool] = pool_historic[tx.height_int]
+            this_asset_pool_info = pools_info.get(pool_details.pool)
+
+            usd_per_rune = self._calculate_weighted_rune_price_in_usd(pools_info)
+
+            if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
+                runes = tx.sum_of_rune(in_only=True)
+                assets = tx.sum_of_asset(pool_details.pool, in_only=True)
+
+                total_this_runes = runes + this_asset_pool_info.runes_per_asset * assets
+
+                total_added_rune += total_this_runes
+                total_added_usd += total_this_runes * usd_per_rune
+                total_added_asset += assets + this_asset_pool_info.assets_per_rune * runes
+            else:
+                runes = tx.sum_of_rune(out_only=True)
+                assets = tx.sum_of_asset(pool_details.pool, out_only=True)
+
+                total_this_runes = runes + this_asset_pool_info.runes_per_asset * assets
+
+                total_withdrawn_rune += total_this_runes
+                total_withdrawn_usd += total_this_runes * usd_per_rune
+                total_withdrawn_asset += assets + this_asset_pool_info.assets_per_rune * runes
+
+        m = THOR_DIVIDER_INV
+
+        results = CurrentLiquidity(
+            pool=pool_details.pool,
+            rune_stake=pool_details.rune_added * m,
+            asset_stake=pool_details.asset_added * m,
+            pool_units=pool_details.liquidity_units,
+            asset_withdrawn=pool_details.asset_withdrawn * m,
+            rune_withdrawn=pool_details.rune_withdrawn * m,
+            total_staked_asset=total_added_asset,
+            total_staked_rune=total_added_rune,
+            total_staked_usd=total_added_usd,
+            total_unstaked_asset=total_withdrawn_asset,
+            total_unstaked_rune=total_withdrawn_rune,
+            total_unstaked_usd=total_withdrawn_usd,
+            first_stake_ts=int(first_state_date),
+            last_stake_ts=int(last_stake_date),
+            fee_earn_usd=fee_earn_usd,
+        )
+        return results
+
+    def _calculate_weighted_rune_price_in_usd(self, pool_map: Dict[str, ThorPool]) -> Optional[float]:
+        prices, weights = [], []
+        for stable_symbol in STABLE_COIN_POOLS:
+            pool_info = pool_map.get(stable_symbol)
+            if pool_info and pool_info.balance_rune_int > 0 and pool_info.assets_per_rune > 0:
+                prices.append(pool_info.assets_per_rune)
+                weights.append(pool_info.balance_rune_int)
+
+        if prices:
+            return weighted_mean(prices, weights)
