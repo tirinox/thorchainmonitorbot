@@ -176,6 +176,10 @@ class ThorTx:
         return sum(coin.amount_float for sub_tx in self.search_realm(in_only, out_only) for coin in sub_tx.coins if
                    is_rune(coin.asset))
 
+    @property
+    def first_pool(self):
+        return self.pools[0] if self.pools else None
+
 
 @dataclass
 class StakeTx(BaseModelMixin):
@@ -199,7 +203,7 @@ class StakeTx(BaseModelMixin):
         if t not in (ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_ADD_LIQUIDITY):
             return None
 
-        pool = tx.pools[0]
+        pool = tx.first_pool
 
         address_rune, address_asset = None, None
 

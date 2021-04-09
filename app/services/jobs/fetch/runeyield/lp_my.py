@@ -28,7 +28,31 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         self.use_thor_consensus = True
 
     async def generate_yield_summary(self, address, pools: List[str]) -> Tuple[dict, List[StakePoolReport]]:
-        pass
+        user_txs = await self._get_user_tx_actions(address)
+
+        historic_all_pool_states, current_pools_details = await asyncio.gather(
+            self._fetch_historical_pool_states(user_txs),
+            self._get_details_of_staked_pools(address, pools)
+        )
+
+        d = self.deps
+        reports = []
+        for pool_details in current_pools_details.values():
+            this_pool_txs = [tx for tx in user_txs if tx.first_pool == pool_details.pool]
+            liq = self._get_current_liquidity(this_pool_txs, pool_details, historic_all_pool_states)
+            fees = await self._get_fee_report()
+            usd_per_asset_start, usd_per_rune_start = self._get_earliest_prices(this_pool_txs, historic_all_pool_states)
+            stake_report = StakePoolReport(
+                d.price_holder.usd_per_asset(liq.pool),
+                d.price_holder.usd_per_rune,
+                usd_per_asset_start, usd_per_rune_start,
+                liq, fees=fees,
+                pool=d.price_holder.pool_info_map.get(liq.pool)
+            )
+            reports.append(stake_report)
+
+        weekly_chars = {}
+        return weekly_chars, reports
 
     async def generate_yield_report_single_pool(self, address, pool) -> StakePoolReport:
         # todo: idea: check date_last_added, if it is not changed - get user_txs from local cache
@@ -44,13 +68,13 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         # historic_pool_state = {height: pools[pool] for height, pools in historic_all_pool_states.items()}
         current_pool_details: PoolMemberDetails = current_pools_details.get(pool)
 
-        cur_liq = await self._get_current_liquidity(user_txs, current_pool_details, historic_all_pool_states)
+        cur_liq = self._get_current_liquidity(user_txs, current_pool_details, historic_all_pool_states)
 
         # print(cur_liq)
         # print(current_pool_details)
 
         fees = await self._get_fee_report()
-        usd_per_asset_start, usd_per_rune_start = await self._get_earliest_prices(user_txs, historic_all_pool_states)
+        usd_per_asset_start, usd_per_rune_start = self._get_earliest_prices(user_txs, historic_all_pool_states)
 
         d = self.deps
         stake_report = StakePoolReport(
@@ -120,9 +144,9 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             pool_array = self.parser.parse_pool_member_details(j, address)
             return {p.pool: p for p in pool_array}
 
-    async def _get_current_liquidity(self, txs: List[ThorTx],
-                                     pool_details: PoolMemberDetails,
-                                     pool_historic: HeightToAllPools) -> CurrentLiquidity:
+    def _get_current_liquidity(self, txs: List[ThorTx],
+                               pool_details: PoolMemberDetails,
+                               pool_historic: HeightToAllPools) -> CurrentLiquidity:
         first_state_date, last_stake_date = 0, 0
         total_added_rune, total_withdrawn_rune = 0.0, 0.0
         total_added_usd, total_withdrawn_usd = 0.0, 0.0
@@ -191,7 +215,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         if prices:
             return weighted_mean(prices, weights)
 
-    async def _get_earliest_prices(self, txs: List[ThorTx], pool_historic: HeightToAllPools) -> Tuple[
+    def _get_earliest_prices(self, txs: List[ThorTx], pool_historic: HeightToAllPools) -> Tuple[
         Optional[float], Optional[float]]:
         if not txs:
             return None, None
@@ -203,7 +227,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
         earliest_pools = pool_historic.get(earliest_tx.height_int)
         usd_per_rune = self._calculate_weighted_rune_price_in_usd(earliest_pools)
-        this_pool = earliest_pools.get(earliest_tx.pools[0])
+        this_pool = earliest_pools.get(earliest_tx.first_pool)
         rune_per_asset = this_pool.runes_per_asset
         usd_per_asset = usd_per_rune * rune_per_asset
 
