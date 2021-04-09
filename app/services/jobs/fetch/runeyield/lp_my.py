@@ -14,7 +14,7 @@ from services.lib.midgard.urlgen import MidgardURLGenBase
 from services.lib.money import weighted_mean
 from services.models.pool_info import PoolInfo, parse_thor_pools
 from services.models.pool_member import PoolMemberDetails
-from services.models.stake_info import StakePoolReport, CurrentLiquidity
+from services.models.stake_info import StakePoolReport, CurrentLiquidity, FeeResponse
 from services.models.tx import ThorTx, ThorTxType
 
 HeightToAllPools = Dict[int, Dict[str, PoolInfo]]
@@ -41,33 +41,26 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         )
 
         # filter only 1 pool
-        historic_pool_state = {height: pools[pool] for height, pools in historic_all_pool_states.items()}
+        # historic_pool_state = {height: pools[pool] for height, pools in historic_all_pool_states.items()}
         current_pool_details: PoolMemberDetails = current_pools_details.get(pool)
 
         cur_liq = await self._get_current_liquidity(user_txs, current_pool_details, historic_all_pool_states)
 
-        print(cur_liq)
+        # print(cur_liq)
+        # print(current_pool_details)
 
-        print('--- POOLS ---')
+        fees = await self._get_fee_report()
+        usd_per_asset_start, usd_per_rune_start = await self._get_earliest_prices(user_txs, historic_all_pool_states)
 
-        for height, pool_info in historic_pool_state.items():
-            print(height)
-            print(pool_info)
-            print('-----')
-
-        print()
-        print('--- TXS ---')
-
-        for tx in user_txs:
-            print(tx)
-            print('-----')
-
-        print()
-        print('--- CURRENT POOL INFO ---')
-
-        print(current_pool_details)
-
-        # return StakePoolReport()  # todo
+        d = self.deps
+        stake_report = StakePoolReport(
+            d.price_holder.usd_per_asset(cur_liq.pool),
+            d.price_holder.usd_per_rune,
+            usd_per_asset_start, usd_per_rune_start,
+            cur_liq, fees=fees,
+            pool=d.price_holder.pool_info_map.get(cur_liq.pool)
+        )
+        return stake_report
 
     async def get_my_pools(self, address) -> List[str]:
         url = self.url_gen.url_for_address_pool_membership(address)
@@ -197,3 +190,24 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
         if prices:
             return weighted_mean(prices, weights)
+
+    async def _get_earliest_prices(self, txs: List[ThorTx], pool_historic: HeightToAllPools) -> Tuple[
+        Optional[float], Optional[float]]:
+        if not txs:
+            return None, None
+
+        earliest_tx = txs[0]
+        for tx in txs[1:]:
+            if tx.height_int < earliest_tx.height_int:
+                earliest_tx = tx
+
+        earliest_pools = pool_historic.get(earliest_tx.height_int)
+        usd_per_rune = self._calculate_weighted_rune_price_in_usd(earliest_pools)
+        this_pool = earliest_pools.get(earliest_tx.pools[0])
+        rune_per_asset = this_pool.runes_per_asset
+        usd_per_asset = usd_per_rune * rune_per_asset
+
+        return usd_per_asset, usd_per_rune
+
+    async def _get_fee_report(self):
+        return FeeResponse()

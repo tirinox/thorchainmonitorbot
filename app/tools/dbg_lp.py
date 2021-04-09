@@ -30,18 +30,19 @@ class LpTesterBase:
         self.deps = d
         self.rune_yield: AsgardConsumerConnectorBase
         self.rune_yield_class = rune_yield_class
+        self.ppf = PoolPriceFetcher(d)
 
     async def prepare(self):
         d = self.deps
         d.session = aiohttp.ClientSession()
         await d.db.get_redis()
-        ppf = PoolPriceFetcher(d)
+        self.ppf = PoolPriceFetcher(d)
         if self.rune_yield_class:
-            self.rune_yield = self.rune_yield_class(d, ppf, get_url_gen_by_network_id(self.deps.cfg.network_id))
+            self.rune_yield = self.rune_yield_class(d, self.ppf, get_url_gen_by_network_id(self.deps.cfg.network_id))
         else:
-            self.rune_yield = get_rune_yield_connector(d, ppf)
+            self.rune_yield = get_rune_yield_connector(d, self.ppf)
         d.thor_connector = ThorConnector(get_thor_env_by_network_id(d.cfg.network_id), d.session)
-        await ppf.get_current_pool_data_full()
+        await self.ppf.fetch()
 
     async def close(self):
         await self.deps.session.close()
