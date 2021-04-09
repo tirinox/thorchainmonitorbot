@@ -2,21 +2,20 @@ import calendar
 import dataclasses
 import json
 from datetime import date
-
-from typing import Optional, List
+from typing import Optional
 
 from aiothornode.types import ThorPool
 
 from services.jobs.fetch.base import BaseFetcher
 from services.jobs.fetch.fair_price import fair_rune_price
-from services.lib.midgard.parser import get_parser_by_network_id
-from services.lib.midgard.urlgen import get_url_gen_by_network_id
 from services.lib.config import Config
 from services.lib.constants import BNB_BUSD_SYMBOL, RUNE_SYMBOL_DET, is_stable_coin, NetworkIdents, \
     ETH_USDT_TEST_SYMBOL, RUNE_SYMBOL_MARKET
 from services.lib.datetime import parse_timespan_to_seconds, DAY, HOUR
 from services.lib.depcont import DepContainer
-from services.models.pool_info import PoolInfo, PoolInfoHistoricEntry
+from services.lib.midgard.parser import get_parser_by_network_id
+from services.lib.midgard.urlgen import get_url_gen_by_network_id
+from services.models.pool_info import PoolInfoHistoricEntry, parse_thor_pools
 from services.models.time_series import PriceTimeSeries
 
 
@@ -26,6 +25,7 @@ class PoolPriceFetcher(BaseFetcher):
     """
     This class queries Midgard and THORNodes to get current and historical pool prices and depths
     """
+
     def __init__(self, deps: DepContainer):
         cfg: Config = deps.cfg
         period = parse_timespan_to_seconds(cfg.price.fetch_period)
@@ -58,15 +58,6 @@ class PoolPriceFetcher(BaseFetcher):
         else:
             self.logger.warning(f'really ${price:.3f}? that is odd!')
 
-    @staticmethod
-    def _parse_thor_pools(thor_pools: List[ThorPool]):
-        return {
-            p.asset: PoolInfo(p.asset,
-                              p.assets_per_rune, p.balance_asset_int, p.balance_rune_int,
-                              p.pool_units_int, p.status)
-            for p in thor_pools
-        }
-
     async def get_current_pool_data_full(self, height=None, caching=False):
         cache_key = f'ThorNodePool:{height}'
 
@@ -76,7 +67,7 @@ class PoolPriceFetcher(BaseFetcher):
                 try:
                     j = json.loads(cached_raw)
                     thor_pools = [ThorPool.from_json(pool_j) for pool_j in j]
-                    return self._parse_thor_pools(thor_pools)
+                    return parse_thor_pools(thor_pools)
                 except ValueError:
                     pass
 
@@ -86,7 +77,7 @@ class PoolPriceFetcher(BaseFetcher):
             serialized_thor_pools = json.dumps([dataclasses.asdict(p) for p in thor_pools])
             await self.deps.db.redis.set(cache_key, serialized_thor_pools)
 
-        return self._parse_thor_pools(thor_pools)
+        return parse_thor_pools(thor_pools)
 
     def url_for_historical_pool_state(self, pool, ts):
         from_ts = int(ts - HOUR)

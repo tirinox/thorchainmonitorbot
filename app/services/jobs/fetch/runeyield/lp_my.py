@@ -1,21 +1,23 @@
 import asyncio
+import json
 from typing import List, Tuple, Dict, Optional
 
-from aiothornode.types import ThorPool
+from aioredis import Redis
 
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.runeyield import AsgardConsumerConnectorBase
 from services.jobs.fetch.tx import TxFetcher
 from services.lib.constants import THOR_DIVIDER_INV, STABLE_COIN_POOLS
+from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import MidgardURLGenBase
-from services.lib.depcont import DepContainer
 from services.lib.money import weighted_mean
+from services.models.pool_info import PoolInfo, parse_thor_pools
 from services.models.pool_member import PoolMemberDetails
 from services.models.stake_info import StakePoolReport, CurrentLiquidity
 from services.models.tx import ThorTx, ThorTxType
 
-HeightToAllPools = Dict[int, Dict[str, ThorPool]]
+HeightToAllPools = Dict[int, Dict[str, PoolInfo]]
 
 
 class HomebrewLPConnector(AsgardConsumerConnectorBase):
@@ -33,7 +35,6 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
         user_txs = await self._get_user_tx_actions(address, pool)
 
-        # todo: idea: cache historic_pool_states
         historic_all_pool_states, current_pools_details = await asyncio.gather(
             self._fetch_historical_pool_states(user_txs),
             self._get_details_of_staked_pools(address, pool)
@@ -59,7 +60,6 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
         for tx in user_txs:
             print(tx)
-            print(historic_pool_states[tx.height_int])
             print('-----')
 
         print()
@@ -84,6 +84,28 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             txs = [tx for tx in txs if pool_filter in tx.pools]
         return txs
 
+    async def _query_pools_cached(self, height) -> Dict[str, PoolInfo]:
+        key = f"PoolInfo:height={height}"
+        r: Redis = await self.deps.db.get_redis()
+        cached_item = await r.get(key)
+        if cached_item:
+            raw_dict = json.loads(cached_item)
+            pool_infos = {k: PoolInfo.from_dict(it) for k, it in raw_dict.items()}
+            return pool_infos
+        else:
+            thor_pools = await self.deps.thor_connector.query_pools(height, consensus=self.use_thor_consensus)
+            pool_infos = parse_thor_pools(thor_pools)
+            j_pools = json.dumps({key: p.as_dict() for key, p in pool_infos.items()})
+            await r.set(key, j_pools)
+            return pool_infos
+
+    async def purge_pool_height_cache(self):
+        key_pattern = f"PoolInfo:height=*"
+        r: Redis = await self.deps.db.get_redis()
+        keys = await r.keys(key_pattern)
+        if keys:
+            await r.delete(*keys)
+
     async def _fetch_historical_pool_states(self, txs: List[ThorTx]) -> HeightToAllPools:
         heights = list(set(tx.height_int for tx in txs))
         thor_conn = self.deps.thor_connector
@@ -91,12 +113,8 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         # make sure, that connections are fresh, in order not to update it at all the height simultaneously
         await thor_conn._get_random_clients()
 
-        # todo: cache it!
-        tasks = [
-            thor_conn.query_pools(h, consensus=self.use_thor_consensus) for h in heights
-        ]
+        tasks = [self._query_pools_cached(h) for h in heights]
         pool_states = await asyncio.gather(*tasks)
-        pool_states = [{p.asset: p for p in pools} for pools in pool_states]
         return dict(zip(heights, pool_states))
 
     async def _get_details_of_staked_pools(self, address, pools) -> Dict[str, PoolMemberDetails]:
@@ -123,7 +141,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             first_state_date = min(first_state_date, tx_timestamp) if first_state_date else tx_timestamp
             last_stake_date = max(last_stake_date, tx_timestamp) if last_stake_date else tx_timestamp
 
-            pools_info: Dict[str, ThorPool] = pool_historic[tx.height_int]
+            pools_info: Dict[str, PoolInfo] = pool_historic[tx.height_int]
             this_asset_pool_info = pools_info.get(pool_details.pool)
 
             usd_per_rune = self._calculate_weighted_rune_price_in_usd(pools_info)
@@ -136,7 +154,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
                 total_added_rune += total_this_runes
                 total_added_usd += total_this_runes * usd_per_rune
-                total_added_asset += assets + this_asset_pool_info.assets_per_rune * runes
+                total_added_asset += assets + this_asset_pool_info.asset_per_rune * runes
             else:
                 runes = tx.sum_of_rune(out_only=True)
                 assets = tx.sum_of_asset(pool_details.pool, out_only=True)
@@ -145,7 +163,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
                 total_withdrawn_rune += total_this_runes
                 total_withdrawn_usd += total_this_runes * usd_per_rune
-                total_withdrawn_asset += assets + this_asset_pool_info.assets_per_rune * runes
+                total_withdrawn_asset += assets + this_asset_pool_info.asset_per_rune * runes
 
         m = THOR_DIVIDER_INV
 
@@ -168,13 +186,14 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         )
         return results
 
-    def _calculate_weighted_rune_price_in_usd(self, pool_map: Dict[str, ThorPool]) -> Optional[float]:
+    @staticmethod
+    def _calculate_weighted_rune_price_in_usd(pool_map: Dict[str, PoolInfo]) -> Optional[float]:
         prices, weights = [], []
         for stable_symbol in STABLE_COIN_POOLS:
             pool_info = pool_map.get(stable_symbol)
-            if pool_info and pool_info.balance_rune_int > 0 and pool_info.assets_per_rune > 0:
-                prices.append(pool_info.assets_per_rune)
-                weights.append(pool_info.balance_rune_int)
+            if pool_info and pool_info.balance_rune > 0 and pool_info.asset_per_rune > 0:
+                prices.append(pool_info.asset_per_rune)
+                weights.append(pool_info.balance_rune)
 
         if prices:
             return weighted_mean(prices, weights)

@@ -1,4 +1,7 @@
 from dataclasses import dataclass
+from typing import List
+
+from aiothornode.types import ThorPool
 
 from services.lib.constants import THOR_DIVIDER_INV
 
@@ -6,7 +9,6 @@ from services.lib.constants import THOR_DIVIDER_INV
 @dataclass
 class PoolInfo:
     asset: str
-    price: float  # assets per 1 rune
 
     balance_asset: int
     balance_rune: int
@@ -22,7 +24,7 @@ class PoolInfo:
 
     @classmethod
     def dummy(cls):
-        return cls('', 1, 1, 1, 1, cls.BOOTSTRAP)
+        return cls('', 1, 1, 1, cls.BOOTSTRAP)
 
     @property
     def asset_per_rune(self):
@@ -45,7 +47,6 @@ class PoolInfo:
         balance_asset = int(j['balance_asset'])
         balance_rune = int(j['balance_rune'])
         return cls(asset=j['asset'],
-                   price=(balance_asset / balance_rune),
                    balance_asset=balance_asset,
                    balance_rune=balance_rune,
                    pool_units=int(j['pool_units']),
@@ -81,3 +82,12 @@ class PoolInfoHistoricEntry:
     asset_price: float = 0.0
     asset_price_usd: float = 0.0
     liquidity_units: int = 0
+
+
+def parse_thor_pools(thor_pools: List[ThorPool]):
+    return {
+        p.asset: PoolInfo(p.asset,
+                          p.balance_asset_int, p.balance_rune_int,
+                          p.pool_units_int, p.status)
+        for p in thor_pools
+    }
