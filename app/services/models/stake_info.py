@@ -1,10 +1,11 @@
 import time
 from dataclasses import dataclass, field
+from math import sqrt
 
 from services.lib.constants import THOR_DIVIDER_INV, Chains
 from services.lib.datetime import DAY
 from services.models.base import BaseModelMixin
-from services.models.pool_info import PoolInfo
+from services.models.pool_info import PoolInfo, LPPosition
 
 BECH_2_CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
 
@@ -133,6 +134,63 @@ class FeeResponse:
             fee_usd=float(j['fee']['usd']),
             fee_rune=float(j['fee']['rune']),
             fee_asset=float(j['fee']['asset']),
+        )
+
+
+@dataclass
+class ReturnMetrics:
+    hold_return: float = 0.0
+    net_return: float = 0.0
+    uniswap_return: float = 0.0
+    imp_loss: float = 0.0
+    fees_usd: float = 0.0
+    percentage: float = 0.0
+
+    @classmethod
+    def from_position_window(cls, p0: LPPosition, p1: LPPosition):
+        t0_ownership = p0.liquidity_units / p0.liquidity_total
+        t1_ownership = p1.liquidity_units / p1.liquidity_total
+
+        t0_rune_amount = t0_ownership * p0.rune_balance
+        t0_asset_amount = t0_ownership * p0.asset_balance
+
+        t1_rune_amount = t1_ownership * p1.rune_balance
+        t1_asset_amount = t1_ownership * p1.asset_balance
+
+        sqrt_k_t0 = sqrt(t0_rune_amount * t0_asset_amount)
+        price_ratio_t1 = p1.usd_per_asset / p1.rune_balance if p1.rune_balance else 0.0
+
+        rune_amount_no_fees = sqrt_k_t0 * sqrt(price_ratio_t1) if p1.usd_per_asset and price_ratio_t1 else 0.0
+        asset_amount_no_fees = sqrt_k_t0 / sqrt(price_ratio_t1) if p1.usd_per_asset and price_ratio_t1 else 0.0
+        usd_no_fees = rune_amount_no_fees * p1.usd_per_rune + asset_amount_no_fees * p1.usd_per_asset
+
+        difference_fees_rune = t1_rune_amount - rune_amount_no_fees
+        difference_fees_asset = t1_asset_amount - asset_amount_no_fees
+        difference_fees_usd = difference_fees_rune * p1.usd_per_rune + difference_fees_asset * p1.usd_per_asset
+
+        t0_asset_value = t0_rune_amount * p0.usd_per_rune + t0_asset_amount * p0.usd_per_asset
+        t1_asset_value = t1_rune_amount * p1.usd_per_rune + t1_asset_amount * p1.usd_per_asset
+
+        imp_loss_usd = usd_no_fees - t1_asset_value
+        uniswap_return = difference_fees_usd + imp_loss_usd
+
+        t0_net_value = t0_ownership * p0.total_usd_balance
+        t1_net_value = t1_ownership * p1.total_usd_balance
+
+        hold_return = t1_asset_value - t0_asset_value
+        net_return = t1_net_value - t0_net_value
+        percentage = imp_loss_usd / (p0.usd_per_rune * t1_rune_amount + p0.usd_per_asset * t0_asset_amount)
+
+        return cls(hold_return, net_return, uniswap_return, imp_loss_usd, difference_fees_usd, percentage)
+
+    def __add__(self, other: 'ReturnMetrics'):
+        return ReturnMetrics(
+            self.hold_return + other.hold_return,
+            self.net_return + other.net_return,
+            self.uniswap_return + other.uniswap_return,
+            self.imp_loss + other.imp_loss,
+            self.fees_usd + other.fees_usd,
+            self.percentage + other.percentage
         )
 
 

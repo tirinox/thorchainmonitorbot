@@ -76,6 +76,32 @@ class PoolInfo:
 
 
 @dataclass
+class LPPosition:
+    pool: str
+    liquidity_units: int
+    liquidity_total: int
+    rune_balance: float
+    asset_balance: float
+    usd_per_rune: float
+    usd_per_asset: float
+    total_usd_balance: float
+
+    @classmethod
+    def create(cls, pool: PoolInfo, my_units: int, usd_per_rune: float):
+        usd_per_asset = usd_per_rune / pool.asset_per_rune
+        return cls(
+            pool=pool.asset,
+            liquidity_units=my_units,
+            liquidity_total=pool.pool_units,
+            rune_balance=pool.balance_rune * THOR_DIVIDER_INV,
+            asset_balance=pool.balance_rune * THOR_DIVIDER_INV,
+            usd_per_rune=usd_per_rune,
+            usd_per_asset=usd_per_asset,
+            total_usd_balance=pool.balance_rune * THOR_DIVIDER_INV * usd_per_rune * 2.0
+        )
+
+
+@dataclass
 class PoolInfoHistoricEntry:
     asset_depth: int = 0
     rune_depth: int = 0

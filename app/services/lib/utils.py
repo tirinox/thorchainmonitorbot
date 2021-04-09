@@ -4,6 +4,7 @@ import time
 from collections import deque
 from functools import wraps, partial
 import random
+from itertools import tee
 
 
 def a_result_cached(ttl=60):
@@ -76,3 +77,9 @@ def setup_logs(log_level):
     logging.info('-' * 100)
     logging.info(f"Log level: {log_level}")
 
+
+def pairwise(iterable):
+    "s -> (s0,s1), (s1,s2), (s2, s3), ..."
+    a, b = tee(iterable)
+    next(b, None)
+    return zip(a, b)
