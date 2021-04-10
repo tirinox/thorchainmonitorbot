@@ -3,7 +3,7 @@ import datetime
 from typing import List
 
 from services.jobs.fetch.runeyield.base import AsgardConsumerConnectorBase
-from services.models.stake_info import CurrentLiquidity, StakeDayGraphPoint, StakePoolReport, FeeReport
+from services.models.lp_info import CurrentLiquidity, LPDailyGraphPoint, LiquidityPoolReport, FeeReport
 
 
 class AsgardConsumerConnectorV1(AsgardConsumerConnectorBase):
@@ -74,7 +74,7 @@ class AsgardConsumerConnectorV1(AsgardConsumerConnectorBase):
         async with self.deps.session.get(url) as resp:
             j = await resp.json()
             try:
-                return pool, [StakeDayGraphPoint.from_asgard(point) for point in j['data']]
+                return pool, [LPDailyGraphPoint.from_asgard(point) for point in j['data']]
             except TypeError:
                 self.logger.warning(f'no weekly chart for {pool} @ {address}')
                 return pool, None
@@ -88,7 +88,7 @@ class AsgardConsumerConnectorV1(AsgardConsumerConnectorBase):
         cur_liquidity = await asyncio.gather(*(self._fetch_one_pool_liquidity_info(address, pool) for pool in pools))
         return {c.pool: c for c in cur_liquidity}
 
-    async def _generate_yield_report(self, address, liq: CurrentLiquidity) -> StakePoolReport:
+    async def _generate_yield_report(self, address, liq: CurrentLiquidity) -> LiquidityPoolReport:
         try:
             first_stake_dt = datetime.datetime.utcfromtimestamp(liq.first_stake_ts)
             # get prices at the moment of first stake
@@ -102,7 +102,7 @@ class AsgardConsumerConnectorV1(AsgardConsumerConnectorBase):
         fees = await self._get_fee_report(address, liq.pool, liq.pool_units)
 
         d = self.deps
-        stake_report = StakePoolReport(
+        stake_report = LiquidityPoolReport(
             d.price_holder.usd_per_asset(liq.pool),
             d.price_holder.usd_per_rune,
             usd_per_asset_start, usd_per_rune_start,
@@ -111,6 +111,6 @@ class AsgardConsumerConnectorV1(AsgardConsumerConnectorBase):
         )
         return stake_report
 
-    async def _generate_yield_reports(self, address, liqs: List[CurrentLiquidity]) -> List[StakePoolReport]:
+    async def _generate_yield_reports(self, address, liqs: List[CurrentLiquidity]) -> List[LiquidityPoolReport]:
         result = await asyncio.gather(*[self._generate_yield_report(address, liq) for liq in liqs])
         return list(result)

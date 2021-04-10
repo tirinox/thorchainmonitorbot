@@ -13,7 +13,7 @@ from services.lib.money import pretty_money, short_asset_name, pretty_dollar, fo
 from services.lib.plot_graph import PlotBarGraph
 from services.lib.texts import grouper
 from services.lib.utils import Singleton, async_wrap
-from services.models.stake_info import StakePoolReport, StakeDayGraphPoint
+from services.models.lp_info import LiquidityPoolReport, LPDailyGraphPoint
 
 WIDTH, HEIGHT = 1200, 1600
 
@@ -80,7 +80,7 @@ def result_color(v):
     return RED_COLOR if v < 0 else GREEN_COLOR
 
 
-async def lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, value_hidden=False):
+async def lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, value_hidden=False):
     r = Resources()
     asset = report.pool.asset
     rune_image, asset_image = await asyncio.gather(
@@ -95,7 +95,7 @@ def hor_line(draw, y, width=2, w=WIDTH, h=HEIGHT):
 
 
 @async_wrap
-def sync_lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, rune_image, asset_image, value_hidden):
+def sync_lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, rune_image, asset_image, value_hidden):
     asset = report.pool.asset
 
     r = Resources()
@@ -325,7 +325,7 @@ def sync_lp_pool_picture(report: StakePoolReport, loc: BaseLocalization, rune_im
     return image
 
 
-async def lp_address_summary_picture(reports: List[StakePoolReport], weekly_charts,
+async def lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_charts,
                                      loc: BaseLocalization, value_hidden=False):
     return await sync_lp_address_summary_picture(reports, weekly_charts, loc, value_hidden)
 
@@ -401,7 +401,7 @@ def lp_weekly_graph(w, h, weekly_charts: dict, color_map: dict, value_hidden):
     colors = []
     dates = []
     all_series = []
-    pt: StakeDayGraphPoint
+    pt: LPDailyGraphPoint
     for asset, color in color_map.items():  # color_map is already sorted by $ amount
         current_chart = weekly_charts.get(asset)
         if current_chart:
@@ -433,7 +433,7 @@ def lp_weekly_graph(w, h, weekly_charts: dict, color_map: dict, value_hidden):
 
 
 @async_wrap
-def sync_lp_address_summary_picture(reports: List[StakePoolReport], weekly_charts, loc: BaseLocalization, value_hidden):
+def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_charts, loc: BaseLocalization, value_hidden):
     total_added_value_usd = sum(r.added_value(r.USD) for r in reports)
     total_added_value_rune = sum(r.added_value(r.RUNE) for r in reports)
 
@@ -603,7 +603,7 @@ def sync_lp_address_summary_picture(reports: List[StakePoolReport], weekly_chart
         graph_img = lp_weekly_graph(graph_width, graph_height, weekly_charts, color_map, value_hidden)
         image.paste(graph_img, pos_percent(graph_margin_x, run_y - graph_margin_y))
     else:
-        draw.text(pos_percent(50, 83), loc.LP_PIC_SUMMARY_NO_WEEKLY_CHAR, fill=FADE_COLOR,
+        draw.text(pos_percent(50, 83), loc.LP_PIC_SUMMARY_NO_WEEKLY_CHART, fill=FADE_COLOR,
                   font=res.font_head, anchor='mm')
 
     return image

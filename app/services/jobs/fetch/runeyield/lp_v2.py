@@ -7,7 +7,7 @@ from services.jobs.fetch.runeyield.base import AsgardConsumerConnectorBase
 from services.lib.midgard.urlgen import MidgardURLGenBase
 from services.lib.constants import NetworkIdents
 from services.lib.depcont import DepContainer
-from services.models.stake_info import CurrentLiquidity, FeeRequest, StakePoolReport, FeeReport
+from services.models.lp_info import CurrentLiquidity, FeeRequest, LiquidityPoolReport, FeeReport
 
 
 class CompoundAddress(NamedTuple):
@@ -103,7 +103,7 @@ class AsgardConsumerConnectorV2(AsgardConsumerConnectorBase):
     async def _fetch_all_pools_weekly_charts(self, address, pools):
         return {}
 
-    async def _generate_yield_report(self, comp_address: CompoundAddress, liq: CurrentLiquidity) -> StakePoolReport:
+    async def _generate_yield_report(self, comp_address: CompoundAddress, liq: CurrentLiquidity) -> LiquidityPoolReport:
         try:
             first_stake_dt = datetime.datetime.utcfromtimestamp(liq.first_stake_ts)
             # get prices at the moment of first stake
@@ -117,7 +117,7 @@ class AsgardConsumerConnectorV2(AsgardConsumerConnectorBase):
         fees = await self._get_fee_report(comp_address)
 
         d = self.deps
-        stake_report = StakePoolReport(
+        stake_report = LiquidityPoolReport(
             d.price_holder.usd_per_asset(liq.pool),
             d.price_holder.usd_per_rune,
             usd_per_asset_start, usd_per_rune_start,

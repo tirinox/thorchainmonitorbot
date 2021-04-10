@@ -6,7 +6,7 @@ from services.lib.constants import STABLE_COIN_POOLS
 from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo
 from services.models.pool_stats import StakePoolStats
-from services.models.tx import StakeTx, ThorTx, ThorTxType
+from services.models.tx import LPAddWithdrawTx, ThorTx, ThorTxType
 
 
 class PoolStatsUpdater(WithDelegates, INotified):
@@ -17,12 +17,12 @@ class PoolStatsUpdater(WithDelegates, INotified):
 
     async def on_data(self, sender, txs: List[ThorTx]):
         add_withdraw_txs = [tx for tx in txs if tx.type in (ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_ADD_LIQUIDITY)]
-        add_withdraw_txs = [StakeTx.load_from_thor_tx(tx) for tx in add_withdraw_txs]
+        add_withdraw_txs = [LPAddWithdrawTx.load_from_thor_tx(tx) for tx in add_withdraw_txs]
         await self._load_stats(add_withdraw_txs)
         await self._update_pools(add_withdraw_txs)
         await self.handle_data(add_withdraw_txs, sender=(sender, self))
 
-    async def _update_pools(self, txs: List[StakeTx]):
+    async def _update_pools(self, txs: List[LPAddWithdrawTx]):
         updated_stats = set()
         result_txs = []
 
@@ -52,7 +52,7 @@ class PoolStatsUpdater(WithDelegates, INotified):
         if not self.pool_info_map:
             raise LookupError("pool_info_map is not loaded into the price holder!")
 
-        pool_names = StakeTx.collect_pools(txs)
+        pool_names = LPAddWithdrawTx.collect_pools(txs)
         pool_names.update(set(STABLE_COIN_POOLS))  # don't forget BUSD, for total usd volume!
         self.pool_stat_map = {
             pool: (await StakePoolStats.get_from_db(pool, self.deps.db)) for pool in pool_names

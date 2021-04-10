@@ -11,7 +11,7 @@ BECH_2_CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
 
 
 @dataclass
-class MyStakeAddress(BaseModelMixin):
+class LPAddress(BaseModelMixin):
     address: str = ''
     chain: str = Chains.BNB
     pools: list = field(default_factory=list)
@@ -45,7 +45,7 @@ def pool_share(rune_depth, asset_depth, my_units, pool_tolal_units):
 
 
 @dataclass
-class StakeDayGraphPoint:
+class LPDailyGraphPoint:
     asset_depth: int = 0
     rune_depth: int = 0
     busd_rune_price: float = 1.0
@@ -224,7 +224,7 @@ class FeeRequest:
 
 
 @dataclass
-class StakePoolReport:
+class LiquidityPoolReport:
     usd_per_asset: float
     usd_per_rune: float
 

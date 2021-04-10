@@ -1,7 +1,6 @@
 import asyncio
 import logging
 
-from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.runeyield import AsgardConsumerConnectorV1
 from services.jobs.fetch.runeyield.lp_my import HomebrewLPConnector
 from services.jobs.fetch.tx import TxFetcher
@@ -16,7 +15,7 @@ async def test_get_user_lp_actions(lpgen: LpTesterBase):
         print(tx, end='\n-----\n')
 
 
-ADDR = '??'
+ADDR = ''
 # POOL = 'BNB.BUSD-BD1'
 POOL = 'BNB.ETHBULL-D33'
 

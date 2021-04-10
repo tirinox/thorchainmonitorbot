@@ -14,7 +14,7 @@ from services.lib.datetime import today_str
 from services.lib.money import short_address
 from services.lib.plot_graph import img_to_bio
 from services.lib.texts import code, grouper, kbd, cut_long_text
-from services.models.stake_info import MyStakeAddress
+from services.models.lp_info import LPAddress
 
 LOADING_STICKER = 'CAACAgIAAxkBAAIRx1--Tia-m6DNRIApk3yqmNWvap_sAALcAAP3AsgPUNi8Bnu98HweBA'
 
@@ -50,14 +50,14 @@ class StakeDialog(BaseDialog):
     @property
     def my_addresses(self):
         raw = self.data.get(self.KEY_MY_ADDRESSES, [])
-        return [MyStakeAddress(**j) for j in raw]
+        return [LPAddress(**j) for j in raw]
 
     def add_address(self, new_addr, chain=Chains.BNB):
         new_addr = str(new_addr).strip()
         current_list = self.my_addresses
         my_unique_addr = set((a.chain, a.address) for a in current_list)
         if (chain, new_addr) not in my_unique_addr:
-            self.data[self.KEY_MY_ADDRESSES] = [asdict(a) for a in current_list + [MyStakeAddress(new_addr)]]
+            self.data[self.KEY_MY_ADDRESSES] = [asdict(a) for a in current_list + [LPAddress(new_addr)]]
 
     def remove_address(self, index):
         del self.data[self.KEY_MY_ADDRESSES][int(index)]
@@ -222,7 +222,7 @@ class StakeDialog(BaseDialog):
             await StakeStates.MAIN_MENU.set()
             address = message.text.strip()
             if address:
-                if MyStakeAddress.validate_address(address):
+                if LPAddress.validate_address(address):
                     self.add_address(address, Chains.BNB)
                 else:
                     await message.answer(code(self.loc.TEXT_INVALID_ADDRESS),

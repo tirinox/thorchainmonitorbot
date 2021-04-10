@@ -190,7 +190,7 @@ class ThorTx:
 
 
 @dataclass
-class StakeTx(BaseModelMixin):
+class LPAddWithdrawTx(BaseModelMixin):
     date: int
     type: str
     pool: str

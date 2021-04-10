@@ -14,7 +14,7 @@ from services.models.cap_info import ThorCapInfo
 from services.models.pool_info import PoolInfo
 from services.models.price import RuneFairPrice, PriceReport
 from services.models.queue import QueueInfo
-from services.models.tx import StakeTx, ThorTxType
+from services.models.tx import LPAddWithdrawTx, ThorTxType
 from services.models.pool_stats import StakePoolStats
 
 RAIDO_GLYPH = 'ᚱ'
@@ -160,7 +160,7 @@ class BaseLocalization(ABC):  # == English
     LP_PIC_SUMMARY_AS_IF_IN_RUNE = f'Total as {RAIDO_GLYPH}'
     LP_PIC_SUMMARY_AS_IF_IN_USD = 'Total as $'
     LP_PIC_SUMMARY_TOTAL_LP_VS_HOLD = 'Total LP vs Hold $'
-    LP_PIC_SUMMARY_NO_WEEKLY_CHAR = "No weekly chart, sorry"
+    LP_PIC_SUMMARY_NO_WEEKLY_CHART = "No weekly chart, sorry"
 
     def pic_stake_days(self, total_days, first_stake_ts):
         start_date = datetime.fromtimestamp(first_stake_ts).strftime('%d.%m.%Y')
@@ -232,7 +232,7 @@ class BaseLocalization(ABC):  # == English
 
     # ------- NOTIFY STAKES -------
 
-    def links_to_explorer_for_stake_tx(self, tx: StakeTx):
+    def links_to_explorer_for_stake_tx(self, tx: LPAddWithdrawTx):
         net = self.cfg.network_id
         if tx.address_rune:
             rune_link = link(
@@ -254,7 +254,7 @@ class BaseLocalization(ABC):  # == English
 
         return rune_link, asset_link
 
-    def link_to_explorer_user_address_for_stake_tx(self, tx: StakeTx):
+    def link_to_explorer_user_address_for_stake_tx(self, tx: LPAddWithdrawTx):
         if tx.address_rune:
             return link(
                 get_explorer_url_to_address(self.cfg.network_id, Chains.THOR, tx.address_rune),
@@ -266,7 +266,7 @@ class BaseLocalization(ABC):  # == English
                 short_address(tx.address_asset)
             )
 
-    def notification_text_large_tx(self, tx: StakeTx, dollar_per_rune: float, pool: StakePoolStats,
+    def notification_text_large_tx(self, tx: LPAddWithdrawTx, dollar_per_rune: float, pool: StakePoolStats,
                                    pool_info: PoolInfo):
         msg = ''
         if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:

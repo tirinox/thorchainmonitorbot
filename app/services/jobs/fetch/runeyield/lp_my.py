@@ -16,7 +16,7 @@ from services.lib.money import weighted_mean
 from services.lib.utils import pairwise
 from services.models.pool_info import PoolInfo, parse_thor_pools, LPPosition
 from services.models.pool_member import PoolMemberDetails
-from services.models.stake_info import StakePoolReport, CurrentLiquidity, FeeReport, ReturnMetrics, pool_share
+from services.models.lp_info import LiquidityPoolReport, CurrentLiquidity, FeeReport, ReturnMetrics, pool_share
 from services.models.tx import ThorTx, ThorTxType
 
 HeightToAllPools = Dict[int, Dict[str, PoolInfo]]
@@ -29,7 +29,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         self.parser = get_parser_by_network_id(deps.cfg.network_id)
         self.use_thor_consensus = True
 
-    async def generate_yield_summary(self, address, pools: List[str]) -> Tuple[dict, List[StakePoolReport]]:
+    async def generate_yield_summary(self, address, pools: List[str]) -> Tuple[dict, List[LiquidityPoolReport]]:
         user_txs = await self._get_user_tx_actions(address)
 
         historic_all_pool_states, current_pools_details = await asyncio.gather(
@@ -44,7 +44,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             liq = self._get_current_liquidity(this_pool_txs, pool_details, historic_all_pool_states)
             fees = self._get_fee_report(this_pool_txs, pool_details, historic_all_pool_states)
             usd_per_asset_start, usd_per_rune_start = self._get_earliest_prices(this_pool_txs, historic_all_pool_states)
-            stake_report = StakePoolReport(
+            stake_report = LiquidityPoolReport(
                 d.price_holder.usd_per_asset(liq.pool),
                 d.price_holder.usd_per_rune,
                 usd_per_asset_start, usd_per_rune_start,
@@ -56,7 +56,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         weekly_chars = {}
         return weekly_chars, reports
 
-    async def generate_yield_report_single_pool(self, address, pool) -> StakePoolReport:
+    async def generate_yield_report_single_pool(self, address, pool) -> LiquidityPoolReport:
         # todo: idea: check date_last_added, if it is not changed - get user_txs from local cache
         # todo: or you can compare current liq_units! if it has changed, you reload tx!
 
@@ -79,7 +79,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         usd_per_asset_start, usd_per_rune_start = self._get_earliest_prices(user_txs, historic_all_pool_states)
 
         d = self.deps
-        stake_report = StakePoolReport(
+        stake_report = LiquidityPoolReport(
             d.price_holder.usd_per_asset(cur_liq.pool),
             d.price_holder.usd_per_rune,
             usd_per_asset_start, usd_per_rune_start,

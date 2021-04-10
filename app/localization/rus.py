@@ -10,7 +10,7 @@ from services.models.cap_info import ThorCapInfo
 from services.models.pool_info import PoolInfo
 from services.models.price import RuneFairPrice, PriceReport
 from services.models.queue import QueueInfo
-from services.models.tx import StakeTx, ThorTxType
+from services.models.tx import LPAddWithdrawTx, ThorTxType
 from services.models.pool_stats import StakePoolStats
 
 
@@ -106,7 +106,7 @@ class RussianLocalization(BaseLocalization):
     LP_PIC_SUMMARY_AS_IF_IN_RUNE = f'Если все в {RAIDO_GLYPH}'
     LP_PIC_SUMMARY_AS_IF_IN_USD = 'Если все в $'
     LP_PIC_SUMMARY_TOTAL_LP_VS_HOLD = 'Итого холд против пулов, $'
-    LP_PIC_SUMMARY_NO_WEEKLY_CHAR = "Нет недельного графика, извините..."
+    LP_PIC_SUMMARY_NO_WEEKLY_CHART = "Нет недельного графика, извините..."
 
     def pic_stake_days(self, total_days, first_stake_ts):
         start_date = datetime.fromtimestamp(first_stake_ts).strftime('%d.%m.%Y')
@@ -155,7 +155,7 @@ class RussianLocalization(BaseLocalization):
         )
 
     # ------ TXS -------
-    def notification_text_large_tx(self, tx: StakeTx, dollar_per_rune: float, pool: StakePoolStats,
+    def notification_text_large_tx(self, tx: LPAddWithdrawTx, dollar_per_rune: float, pool: StakePoolStats,
                                    pool_info: PoolInfo):
         msg = ''
 

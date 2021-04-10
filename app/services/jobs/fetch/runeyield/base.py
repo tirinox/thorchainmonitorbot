@@ -1,11 +1,16 @@
 import logging
 from abc import abstractmethod
-from typing import List, Tuple
+from typing import List, Tuple, NamedTuple, Dict
 
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.lib.midgard.urlgen import MidgardURLGenBase
 from services.lib.depcont import DepContainer
-from services.models.stake_info import StakePoolReport
+from services.models.lp_info import LiquidityPoolReport, LPDailyGraphPoint
+
+
+class YieldSummary(NamedTuple):
+    reports: List[LiquidityPoolReport]
+    charts: Dict[str, List[LPDailyGraphPoint]]
 
 
 class AsgardConsumerConnectorBase:
@@ -17,12 +22,12 @@ class AsgardConsumerConnectorBase:
 
     # interface
     @abstractmethod
-    async def generate_yield_summary(self, address, pools: List[str]) -> Tuple[dict, List[StakePoolReport]]:
+    async def generate_yield_summary(self, address, pools: List[str]) -> Tuple[dict, List[LiquidityPoolReport]]:
         ...
 
     # interface
     @abstractmethod
-    async def generate_yield_report_single_pool(self, address, pool) -> StakePoolReport:
+    async def generate_yield_report_single_pool(self, address, pool) -> LiquidityPoolReport:
         ...
 
     # interface

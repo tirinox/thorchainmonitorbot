@@ -9,7 +9,7 @@ from services.lib.constants import THOR_DIVIDER_INV
 from services.lib.datetime import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo
-from services.models.tx import StakeTx
+from services.models.tx import LPAddWithdrawTx
 from services.models.pool_stats import StakePoolStats
 
 
@@ -25,7 +25,7 @@ class StakeTxNotifier(INotified):
         self.max_age_sec = parse_timespan_to_seconds(scfg.max_age)
         self.min_usd_total = int(scfg.min_usd_total)
 
-    async def on_data(self, senders, txs: List[StakeTx]):
+    async def on_data(self, senders, txs: List[LPAddWithdrawTx]):
         fetcher: TxFetcher = senders[0]
         psu: PoolStatsUpdater = senders[1]
 
@@ -56,7 +56,7 @@ class StakeTxNotifier(INotified):
         hashes = [t.tx.tx_hash for t in txs]
         await fetcher.add_last_seen_tx_hashes(hashes)
 
-    def _filter_by_age(self, txs: List[StakeTx]):
+    def _filter_by_age(self, txs: List[LPAddWithdrawTx]):
         now = int(time.time())
         for tx in txs:
             if tx.date > now - self.max_age_sec:
@@ -65,7 +65,7 @@ class StakeTxNotifier(INotified):
     @staticmethod
     def _filter_large_txs(psu: PoolStatsUpdater, txs, min_rune_volume=10000):
         for tx in txs:
-            tx: StakeTx
+            tx: LPAddWithdrawTx
             stats: StakePoolStats = psu.pool_stat_map.get(tx.pool)
             pool_info: PoolInfo = psu.pool_info_map.get(tx.pool)
 
