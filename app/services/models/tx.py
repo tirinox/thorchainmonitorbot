@@ -89,6 +89,10 @@ class ThorMetaWithdraw:
     liquidity_units: str
     network_fees: List[ThorCoin]
 
+    @property
+    def liquidity_units_int(self):
+        return int(self.liquidity_units)
+
     @classmethod
     def parse(cls, j):
         fees = [ThorCoin(**cj) for cj in j.get('networkFees', [])]
@@ -113,6 +117,10 @@ class ThorMetaRefund:
 @dataclass
 class ThorMetaAddLiquidity:
     liquidity_units: str
+
+    @property
+    def liquidity_units_int(self):
+        return int(self.liquidity_units)
 
     @classmethod
     def parse(cls, j):

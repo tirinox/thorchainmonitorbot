@@ -38,9 +38,9 @@ class MyStakeAddress(BaseModelMixin):
         return addr.isalnum()
 
 
-def pool_share(rune_depth, asset_depth, stake_units, pool_unit):
-    rune_share = (rune_depth * stake_units) / pool_unit
-    asset_share = (asset_depth * stake_units) / pool_unit
+def pool_share(rune_depth, asset_depth, my_units, pool_tolal_units):
+    rune_share = (rune_depth * my_units) / pool_tolal_units
+    asset_share = (asset_depth * my_units) / pool_tolal_units
     return rune_share, asset_share
 
 
@@ -117,7 +117,7 @@ class CurrentLiquidity(BaseModelMixin):
 
 
 @dataclass
-class FeeResponse:
+class FeeReport:
     asset: str = ''
     imp_loss_usd: float = 0.0
     imp_loss_percent: float = 0.0
@@ -144,7 +144,7 @@ class ReturnMetrics:
     uniswap_return: float = 0.0
     imp_loss: float = 0.0
     fees_usd: float = 0.0
-    percentage: float = 0.0
+    imp_loss_percentage: float = 0.0
 
     @classmethod
     def from_position_window(cls, p0: LPPosition, p1: LPPosition):
@@ -157,8 +157,13 @@ class ReturnMetrics:
         t1_rune_amount = t1_ownership * p1.rune_balance
         t1_asset_amount = t1_ownership * p1.asset_balance
 
+        t0_asset_value = t0_rune_amount * p0.usd_per_rune + t0_asset_amount * p0.usd_per_asset
+        t1_asset_value_hold = t0_rune_amount * p1.usd_per_rune + t0_asset_amount * p1.usd_per_asset
+
+        # we use XYK formula to just get asset and rune amount based ONLY on price change, no fees and rewards are added
+
         sqrt_k_t0 = sqrt(t0_rune_amount * t0_asset_amount)
-        price_ratio_t1 = p1.usd_per_asset / p1.rune_balance if p1.rune_balance else 0.0
+        price_ratio_t1 = p1.usd_per_asset / p1.usd_per_rune if p1.usd_per_rune else 0.0
 
         rune_amount_no_fees = sqrt_k_t0 * sqrt(price_ratio_t1) if p1.usd_per_asset and price_ratio_t1 else 0.0
         asset_amount_no_fees = sqrt_k_t0 / sqrt(price_ratio_t1) if p1.usd_per_asset and price_ratio_t1 else 0.0
@@ -168,16 +173,13 @@ class ReturnMetrics:
         difference_fees_asset = t1_asset_amount - asset_amount_no_fees
         difference_fees_usd = difference_fees_rune * p1.usd_per_rune + difference_fees_asset * p1.usd_per_asset
 
-        t0_asset_value = t0_rune_amount * p0.usd_per_rune + t0_asset_amount * p0.usd_per_asset
-        t1_asset_value = t1_rune_amount * p1.usd_per_rune + t1_asset_amount * p1.usd_per_asset
-
-        imp_loss_usd = usd_no_fees - t1_asset_value
+        imp_loss_usd = usd_no_fees - t1_asset_value_hold
         uniswap_return = difference_fees_usd + imp_loss_usd
 
         t0_net_value = t0_ownership * p0.total_usd_balance
         t1_net_value = t1_ownership * p1.total_usd_balance
 
-        hold_return = t1_asset_value - t0_asset_value
+        hold_return = t1_asset_value_hold - t0_asset_value
         net_return = t1_net_value - t0_net_value
         percentage = imp_loss_usd / (p0.usd_per_rune * t1_rune_amount + p0.usd_per_asset * t0_asset_amount)
 
@@ -190,7 +192,7 @@ class ReturnMetrics:
             self.uniswap_return + other.uniswap_return,
             self.imp_loss + other.imp_loss,
             self.fees_usd + other.fees_usd,
-            self.percentage + other.percentage
+            self.imp_loss_percentage + other.imp_loss_percentage
         )
 
 
@@ -230,7 +232,7 @@ class StakePoolReport:
     usd_per_rune_start: float
 
     liq: CurrentLiquidity
-    fees: FeeResponse
+    fees: FeeReport
     pool: PoolInfo
 
     ASSET = 'asset'

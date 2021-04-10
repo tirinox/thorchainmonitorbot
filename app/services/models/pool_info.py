@@ -94,7 +94,7 @@ class LPPosition:
             liquidity_units=my_units,
             liquidity_total=pool.pool_units,
             rune_balance=pool.balance_rune * THOR_DIVIDER_INV,
-            asset_balance=pool.balance_rune * THOR_DIVIDER_INV,
+            asset_balance=pool.balance_asset * THOR_DIVIDER_INV,
             usd_per_rune=usd_per_rune,
             usd_per_asset=usd_per_asset,
             total_usd_balance=pool.balance_rune * THOR_DIVIDER_INV * usd_per_rune * 2.0

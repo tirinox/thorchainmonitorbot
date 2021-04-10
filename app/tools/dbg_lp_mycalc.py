@@ -16,8 +16,9 @@ async def test_get_user_lp_actions(lpgen: LpTesterBase):
         print(tx, end='\n-----\n')
 
 
-ADDR = ''
-POOL = 'BNB.BUSD-BD1'
+ADDR = '??'
+# POOL = 'BNB.BUSD-BD1'
+POOL = 'BNB.ETHBULL-D33'
 
 
 # ADDR = 'bnb10z6pvckwlpl630nujweugqrqkdfmnxnrplssav'
@@ -31,17 +32,23 @@ async def show_me_example_liquidity():
         print(liq)
 
 
+async def test_summary_of_all_pools(lpgen: LpTesterBase):
+    pools = await lpgen.rune_yield.get_my_pools(ADDR)
+    charts, reports = await lpgen.rune_yield.generate_yield_summary(ADDR, pools)
+    for r in reports:
+        print(r.fees)
+        print('------')
+
+
+async def test_1_pool(lpgen: LpTesterBase):
+    report = await lpgen.rune_yield.generate_yield_report_single_pool(ADDR, POOL)
+    print(report)
+
+
 async def main():
     lpgen = LpTesterBase(HomebrewLPConnector)
     async with lpgen:
-        # await test_get_user_lp_actions(lpgen)
-
-        # await lpgen.rune_yield.purge_pool_height_cache()
-        pools = await lpgen.rune_yield.get_my_pools(ADDR)
-        charts, reports = await lpgen.rune_yield.generate_yield_summary(ADDR, pools)
-        print(reports)
-        # report = await lpgen.rune_yield.generate_yield_report_single_pool(ADDR, POOL)
-        # print(report)
+        await test_1_pool(lpgen)
 
 
 if __name__ == "__main__":

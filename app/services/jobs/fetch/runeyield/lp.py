@@ -3,7 +3,7 @@ import datetime
 from typing import List
 
 from services.jobs.fetch.runeyield.base import AsgardConsumerConnectorBase
-from services.models.stake_info import CurrentLiquidity, StakeDayGraphPoint, StakePoolReport, FeeResponse
+from services.models.stake_info import CurrentLiquidity, StakeDayGraphPoint, StakePoolReport, FeeReport
 
 
 class AsgardConsumerConnectorV1(AsgardConsumerConnectorBase):
@@ -52,14 +52,14 @@ class AsgardConsumerConnectorV1(AsgardConsumerConnectorBase):
     def _url_asgard_consumer_fees(address, pool):
         return f'https://asgard-consumer.vercel.app/v2/fee1?address={address}&pool={pool}'
 
-    async def _get_fee_report(self, address, pool, my_lp_points) -> FeeResponse:
+    async def _get_fee_report(self, address, pool, my_lp_points) -> FeeReport:
         url = self._url_asgard_consumer_fees(address, pool)
         self.logger.info(f'post: {url}')
         pool = self.deps.price_holder.find_pool(pool)
         report = pool.create_lp_position(my_lp_points, self.deps.price_holder.usd_per_rune)
         async with self.deps.session.post(url, data=report) as resp:
             j = await resp.json()
-            return FeeResponse.parse_from_asgard(j)
+            return FeeReport.parse_from_asgard(j)
 
     async def _fetch_one_pool_liquidity_info(self, address, pool):
         url = self.url_asgard_consumer_liquidity(address, pool)

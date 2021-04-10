@@ -7,7 +7,7 @@ from services.jobs.fetch.runeyield.base import AsgardConsumerConnectorBase
 from services.lib.midgard.urlgen import MidgardURLGenBase
 from services.lib.constants import NetworkIdents
 from services.lib.depcont import DepContainer
-from services.models.stake_info import CurrentLiquidity, FeeRequest, StakePoolReport, FeeResponse
+from services.models.stake_info import CurrentLiquidity, FeeRequest, StakePoolReport, FeeReport
 
 
 class CompoundAddress(NamedTuple):
@@ -84,7 +84,7 @@ class AsgardConsumerConnectorV2(AsgardConsumerConnectorBase):
             except KeyError:
                 return []
 
-    async def _get_fee_report(self, comp_addr) -> FeeResponse:
+    async def _get_fee_report(self, comp_addr) -> FeeReport:
         # todo: you must ask with thorADDRES|assetADDRESS otherwise -> fail; know your collateral address!
         url = self.url_asgard_consumer_fees(comp_addr.addresses, comp_addr.pool)
         self.logger.info(f'get: {url}')

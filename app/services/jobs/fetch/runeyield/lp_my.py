@@ -1,5 +1,6 @@
 import asyncio
 import json
+import operator
 from typing import List, Tuple, Dict, Optional
 
 from aioredis import Redis
@@ -12,9 +13,10 @@ from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import MidgardURLGenBase
 from services.lib.money import weighted_mean
-from services.models.pool_info import PoolInfo, parse_thor_pools
+from services.lib.utils import pairwise
+from services.models.pool_info import PoolInfo, parse_thor_pools, LPPosition
 from services.models.pool_member import PoolMemberDetails
-from services.models.stake_info import StakePoolReport, CurrentLiquidity, FeeResponse, ReturnMetrics
+from services.models.stake_info import StakePoolReport, CurrentLiquidity, FeeReport, ReturnMetrics, pool_share
 from services.models.tx import ThorTx, ThorTxType
 
 HeightToAllPools = Dict[int, Dict[str, PoolInfo]]
@@ -40,7 +42,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         for pool_details in current_pools_details.values():
             this_pool_txs = [tx for tx in user_txs if tx.first_pool == pool_details.pool]
             liq = self._get_current_liquidity(this_pool_txs, pool_details, historic_all_pool_states)
-            fees = await self._get_fee_report(this_pool_txs, pool_details, historic_all_pool_states)
+            fees = self._get_fee_report(this_pool_txs, pool_details, historic_all_pool_states)
             usd_per_asset_start, usd_per_rune_start = self._get_earliest_prices(this_pool_txs, historic_all_pool_states)
             stake_report = StakePoolReport(
                 d.price_holder.usd_per_asset(liq.pool),
@@ -56,6 +58,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
     async def generate_yield_report_single_pool(self, address, pool) -> StakePoolReport:
         # todo: idea: check date_last_added, if it is not changed - get user_txs from local cache
+        # todo: or you can compare current liq_units! if it has changed, you reload tx!
 
         user_txs = await self._get_user_tx_actions(address, pool)
 
@@ -65,7 +68,6 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         )
 
         # filter only 1 pool
-        # historic_pool_state = {height: pools[pool] for height, pools in historic_all_pool_states.items()}
         current_pool_details: PoolMemberDetails = current_pools_details.get(pool)
 
         cur_liq = self._get_current_liquidity(user_txs, current_pool_details, historic_all_pool_states)
@@ -73,7 +75,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         # print(cur_liq)
         # print(current_pool_details)
 
-        fees = await self._get_fee_report(user_txs, current_pool_details, historic_all_pool_states)
+        fees = self._get_fee_report(user_txs, current_pool_details, historic_all_pool_states)
         usd_per_asset_start, usd_per_rune_start = self._get_earliest_prices(user_txs, historic_all_pool_states)
 
         d = self.deps
@@ -98,7 +100,8 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
     async def _get_user_tx_actions(self, address: str, pool_filter=None) -> List[ThorTx]:
         txs = await self.tx_fetcher.fetch_user_tx(address, liquidity_change_only=True)
         if pool_filter:
-            txs = [tx for tx in txs if pool_filter in tx.pools]
+            txs = [tx for tx in txs if pool_filter == tx.first_pool]
+        txs.sort(key=operator.attrgetter('height_int'))
         return txs
 
     async def _query_pools_cached(self, height) -> Dict[str, PoolInfo]:
@@ -233,71 +236,70 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
         return usd_per_asset, usd_per_rune
 
-    async def _get_fee_report(self,
-                              txs: List[ThorTx],
-                              pool_details: PoolMemberDetails,
-                              pool_historic: HeightToAllPools):
+    def _create_lp_position(self, pool, height, my_units: int, pool_historic: HeightToAllPools) -> LPPosition:
+        all_pool_info_at_height = pool_historic.get(height)
+        pool_info = all_pool_info_at_height.get(pool)
+        usd_per_rune = self._calculate_weighted_rune_price_in_usd(all_pool_info_at_height)
+        return LPPosition.create(pool_info, my_units, usd_per_rune)
 
+    def _create_current_lp_position(self, pool, my_units: int) -> LPPosition:
+        pool_info = self.deps.price_holder.find_pool(pool)
+        usd_per_rune = self.deps.price_holder.usd_per_rune
+        return LPPosition.create(pool_info, my_units, usd_per_rune)
+
+    @staticmethod
+    def _update_units(units, tx: ThorTx):
+        if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
+            units += tx.meta_add.liquidity_units_int
+        elif tx.type == ThorTxType.TYPE_WITHDRAW:
+            units += tx.meta_withdraw.liquidity_units_int
+        return units
+
+    def _get_fee_report(self,
+                        txs: List[ThorTx],
+                        pool_details: PoolMemberDetails,
+                        pool_historic: HeightToAllPools):
+
+        # metrics (fee, imp loss, etc) accumulator
         return_metrics = ReturnMetrics()
+        pool = pool_details.pool
 
-        for tx in txs[:1]:
-            ...
+        # pairs of position (same lp units) between each add/withdraw tx of the user
+        position_pairs: List[Tuple[LPPosition, LPPosition]] = []
 
-        return FeeResponse()
+        units = 0
+        for tx0, tx1 in pairwise(txs):
+            tx0: ThorTx
+            tx1: ThorTx
+            units = self._update_units(units, tx0)
+            p0 = self._create_lp_position(pool, tx0.height_int, units, pool_historic)
+            p1 = self._create_lp_position(pool, tx1.height_int, units, pool_historic)
+            position_pairs.append((p0, p1))
 
+        # add the last window from the latest tx to the present moment
+        last_tx = txs[-1]
+        units = self._update_units(units, last_tx)
+        position_pairs.append((
+            self._create_lp_position(pool, last_tx.height_int, units, pool_historic),
+            self._create_current_lp_position(pool, units)
+        ))
 
-    """
-    
-export function getMetricsForPositionWindow(positionT0: Position, positionT1: Position): ReturnMetrics {
+        # collect and accumulate all metrics
+        for p0, p1 in position_pairs:
+            return_metrics += ReturnMetrics.from_position_window(p0, p1)
 
-    // calculate ownership at ends of window, for end of window we need original LP token balance / new total supply
-    const t0Ownership = positionT0.liquidityTokenBalance / positionT0.liquidityTokenTotalSupply
-    const t1Ownership = positionT0.liquidityTokenBalance / positionT1.liquidityTokenTotalSupply
+        # some aux calculations for FeeReport
+        current_pool = self.deps.price_holder.find_pool(pool_details.pool)
 
-    // get starting amounts of token0 and token1 deposited by LP
-    const token0_amount_t0 = t0Ownership * positionT0.reserve0
-    const token1_amount_t0 = t0Ownership * positionT0.reserve1
+        curr_usd_per_rune = self.deps.price_holder.usd_per_rune
+        curr_usd_per_asset = curr_usd_per_rune * current_pool.runes_per_asset
 
-    // get current token values
-    const token0_amount_t1 = t1Ownership * positionT1.reserve0
-    const token1_amount_t1 = t1Ownership * positionT1.reserve1
+        fee_rune = return_metrics.fees_usd * 0.5 / curr_usd_per_rune
+        fee_asset = return_metrics.fees_usd * 0.5 / curr_usd_per_asset
 
-    // calculate squares to find imp loss and fee differences
-    const sqrK_t0 = Math.sqrt(token0_amount_t0 * token1_amount_t0)
-    // eslint-disable-next-line eqeqeq
-    const priceRatioT1 = positionT1.token0PriceUSD != 0 ? positionT1.token1PriceUSD / positionT1.token0PriceUSD : 0
-
-    const token0_amount_no_fees = positionT1.token1PriceUSD && priceRatioT1 ? sqrK_t0 * Math.sqrt(priceRatioT1) : 0
-    const token1_amount_no_fees =
-        Number(positionT1.token1PriceUSD) && priceRatioT1 ? sqrK_t0 / Math.sqrt(priceRatioT1) : 0
-    const no_fees_usd =
-        token0_amount_no_fees * positionT1.token0PriceUSD + token1_amount_no_fees * positionT1.token1PriceUSD
-
-    const difference_fees_token0 = token0_amount_t1 - token0_amount_no_fees
-    const difference_fees_token1 = token1_amount_t1 - token1_amount_no_fees
-    const difference_fees_usd =
-        difference_fees_token0 * positionT1.token0PriceUSD + difference_fees_token1 * positionT1.token1PriceUSD
-
-    // calculate USD value at t0 and t1 using initial token deposit amounts for asset return
-    const assetValueT0 = token0_amount_t0 * positionT0.token0PriceUSD + token1_amount_t0 * positionT0.token1PriceUSD
-    const assetValueT1 = token0_amount_t0 * positionT1.token0PriceUSD + token1_amount_t0 * positionT1.token1PriceUSD
-
-    const imp_loss_usd = no_fees_usd - assetValueT1
-    const uniswap_return = difference_fees_usd + imp_loss_usd
-
-    // get net value change for combined data
-    const netValueT0 = t0Ownership * positionT0.reserveUSD
-    const netValueT1 = t1Ownership * positionT1.reserveUSD
-
-    return {
-        hodleReturn: assetValueT1 - assetValueT0,
-        netReturn: netValueT1 - netValueT0,
-        uniswapReturn: uniswap_return,
-        impLoss: imp_loss_usd,
-        fees: difference_fees_usd,
-        percentage:( Math.abs(imp_loss_usd) / ((positionT0.token0PriceUSD * token0_amount_t1) + (positionT0.token1PriceUSD * token1_amount_t0))),
-    }
-}
-
-
-    """
+        return FeeReport(asset=pool_details.pool,
+                         imp_loss_usd=return_metrics.imp_loss,
+                         imp_loss_percent=return_metrics.imp_loss_percentage,
+                         fee_usd=return_metrics.fees_usd,
+                         fee_rune=fee_rune,
+                         fee_asset=fee_asset)
