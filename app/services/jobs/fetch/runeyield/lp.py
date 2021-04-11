@@ -2,7 +2,7 @@ import asyncio
 import datetime
 from typing import List
 
-from services.jobs.fetch.runeyield.base import AsgardConsumerConnectorBase
+from services.jobs.fetch.runeyield.base import AsgardConsumerConnectorBase, YieldSummary
 from services.models.lp_info import CurrentLiquidity, LPDailyGraphPoint, LiquidityPoolReport, FeeReport
 
 
@@ -18,7 +18,7 @@ class AsgardConsumerConnectorV1(AsgardConsumerConnectorBase):
         liqs = list(liqs.values())
         weekly_charts, stake_reports = await asyncio.gather(self._fetch_all_pools_weekly_charts(address, pools),
                                                             self._generate_yield_reports(address, liqs))
-        return stake_reports, weekly_charts
+        return YieldSummary(stake_reports, weekly_charts)
 
     # override
     async def generate_yield_report_single_pool(self, address, pool):

@@ -2,7 +2,7 @@ import pandas as pd
 
 from localization import BaseLocalization
 from services.dialog.picture.lp_picture import CATEGORICAL_PALETTE
-from services.lib.datetime import series_to_pandas, DAY, today_str
+from services.lib.date_utils import series_to_pandas, DAY, today_str
 from services.lib.depcont import DepContainer
 from services.lib.plot_graph import PlotBarGraph, img_to_bio
 from services.lib.utils import async_wrap

@@ -1,7 +1,7 @@
 from aiothornode.types import ThorQueue
 
 from services.jobs.fetch.base import BaseFetcher
-from services.lib.datetime import parse_timespan_to_seconds
+from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.models.queue import QueueInfo
 

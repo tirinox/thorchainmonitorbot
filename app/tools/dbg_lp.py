@@ -6,25 +6,27 @@ import pickle
 import aiohttp
 from aiothornode.connector import ThorConnector
 
-from localization import LocalizationManager, RussianLocalization
+from localization import LocalizationManager
 from main import get_thor_env_by_network_id
 from services.dialog.picture.lp_picture import lp_pool_picture, lp_address_summary_picture
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.runeyield import get_rune_yield_connector, AsgardConsumerConnectorBase
-from services.lib.midgard.urlgen import get_url_gen_by_network_id
+from services.jobs.fetch.runeyield.lp_my import HomebrewLPConnector
 from services.lib.config import Config
-from services.lib.constants import BNB_BTCB_SYMBOL
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
+from services.lib.midgard.urlgen import get_url_gen_by_network_id
 
 CACHE_REPORTS = False
 
 
 class LpTesterBase:
-    def __init__(self, rune_yield_class=None) -> None:
+    def __init__(self, rune_yield_class=None, network=None) -> None:
         d = DepContainer()
         d.loop = asyncio.get_event_loop()
         d.cfg = Config()
+        if network:
+            d.cfg.network_id = network
         d.loc_man = LocalizationManager(d.cfg)
         d.db = DB(d.loop)
         self.deps = d
@@ -86,17 +88,12 @@ class LpGenerator(LpTesterBase):
         stake_reports, weekly_charts = await self.rune_yield.generate_yield_summary(address, [])
         return stake_reports, weekly_charts
 
-    async def get_lp_position(self, asset, my_stake_units):
-        pool_info = self.deps.price_holder.find_pool(asset)
-        if pool_info:
-            return pool_info.create_lp_position(my_stake_units, self.deps.price_holder.usd_per_rune)
 
-
-async def test_one_pool_picture_generator(addr, pool, hide):
+async def test_one_pool_picture_generator(addr, pool, hide, rune_yield_class=None):
     PICKLE_PATH = '../../stake_report.pickle'
     PICTURE_PATH = '../../stake_test.png'
 
-    lpgen = LpGenerator()
+    lpgen = LpGenerator(rune_yield_class)
 
     if CACHE_REPORTS and os.path.exists(PICKLE_PATH):
         with open(PICKLE_PATH, 'rb') as f:
@@ -112,11 +109,11 @@ async def test_one_pool_picture_generator(addr, pool, hide):
     os.system(f'open "{PICTURE_PATH}"')
 
 
-async def test_summary_picture_generator(addr, hide):
+async def test_summary_picture_generator(addr, hide, rune_yield_class=None):
     PICKLE_PATH = '../../stake_report_summary.pickle'
     PICTURE_PATH = '../../stake_test_summary.png'
 
-    lpgen = LpGenerator()
+    lpgen = LpGenerator(rune_yield_class)
 
     if CACHE_REPORTS and os.path.exists(PICKLE_PATH):
         with open(PICKLE_PATH, 'rb') as f:
@@ -135,14 +132,14 @@ async def test_summary_picture_generator(addr, hide):
 
 async def test_single_chain_chaosnet():
     g1 = test_summary_picture_generator('bnb157zacwqaplw5kdwpkrve6n2jdxu3ps9cj3xdcp', hide=False)
-    g2 = test_one_pool_picture_generator('bnb1rv89nkw2x5ksvhf6jtqwqpke4qhh7jmudpvqmj', pool=BNB_BTCB_SYMBOL,
-                                         hide=False)
+    # g2 = test_one_pool_picture_generator('bnb1rv89nkw2x5ksvhf6jtqwqpke4qhh7jmudpvqmj', pool=BNB_BTCB_SYMBOL,
+    #                                      hide=False)
 
     await g1
 
 
 async def test_my_pools():
-    lpgen = LpTesterBase()
+    lpgen = LpTesterBase(HomebrewLPConnector)
     async with lpgen:
         my_pools = await lpgen.rune_yield.get_my_pools('tthor1cwcqhhjhwe8vvyn8vkufzyg0tt38yjgzdf9whh')
 
@@ -153,20 +150,15 @@ async def test_my_pools():
             print(comp_addr)
 
 
-async def test_lp_position():
-    lpgen = LpGenerator()
-    async with lpgen:
-        print(await lpgen.get_lp_position('BTC.BTC', 0.1))
-
-
 async def test_multi_chain_testnet():
-    # await test_my_pools()
-    # MCTN
     # await test_one_pool_picture_generator('tthor1cwcqhhjhwe8vvyn8vkufzyg0tt38yjgzdf9whh', 'BTC.BTC', hide=False)
-    # await test_one_pool_picture_generator('bnb1sa4hx03jrcg44ktmxuxu5g2jj8u6rln063kx9l', 'BNB.USDT-6D8', hide=False)  # BEP2
+    # await test_one_pool_picture_generator('bnb1deeu3qxjuqrdumpz53huum8yg39aarlcf4sg6q', 'BNB.BNB',
+    #                                       hide=False,
+    #                                       rune_yield_class=HomebrewLPConnector)  # BEP2
 
     # await test_summary_picture_generator('tthor1vyp3y7pjuwsz2hpkwrwrrvemcn7t758sfs0glr', hide=False)
-    await test_lp_position()
+    await test_summary_picture_generator('bnb1deeu3qxjuqrdumpz53huum8yg39aarlcf4sg6q', hide=False,
+                                         rune_yield_class=HomebrewLPConnector)
 
 
 if __name__ == '__main__':

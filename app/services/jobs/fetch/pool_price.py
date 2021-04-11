@@ -4,6 +4,7 @@ import json
 from datetime import date
 from typing import Optional
 
+from aioredis import Redis
 from aiothornode.types import ThorPool
 
 from services.jobs.fetch.base import BaseFetcher
@@ -11,11 +12,11 @@ from services.jobs.fetch.fair_price import fair_rune_price
 from services.lib.config import Config
 from services.lib.constants import BNB_BUSD_SYMBOL, RUNE_SYMBOL_DET, is_stable_coin, NetworkIdents, \
     ETH_USDT_TEST_SYMBOL, RUNE_SYMBOL_MARKET
-from services.lib.datetime import parse_timespan_to_seconds, DAY, HOUR
+from services.lib.date_utils import parse_timespan_to_seconds, DAY, HOUR
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import get_url_gen_by_network_id
-from services.models.pool_info import PoolInfoHistoricEntry, parse_thor_pools
+from services.models.pool_info import PoolInfoHistoricEntry, parse_thor_pools, PoolInfo
 from services.models.time_series import PriceTimeSeries
 
 
@@ -32,6 +33,8 @@ class PoolPriceFetcher(BaseFetcher):
         super().__init__(deps, sleep_period=period)
         self.deps = deps
         self.midgard_url_gen = get_url_gen_by_network_id(cfg.network_id)
+        self.max_attempts = 5
+        self.use_thor_consensus = False
 
     async def fetch(self):
         d = self.deps
@@ -58,26 +61,45 @@ class PoolPriceFetcher(BaseFetcher):
         else:
             self.logger.warning(f'really ${price:.3f}? that is odd!')
 
-    async def get_current_pool_data_full(self, height=None, caching=False):
-        cache_key = f'ThorNodePool:{height}'
-
-        if caching and height:
-            cached_raw = await self.deps.db.redis.get(cache_key)
-            if cached_raw:
-                try:
-                    j = json.loads(cached_raw)
-                    thor_pools = [ThorPool.from_json(pool_j) for pool_j in j]
-                    return parse_thor_pools(thor_pools)
-                except ValueError:
-                    pass
-
-        thor_pools = await self.deps.thor_connector.query_pools(height)
-
-        if caching and height:
-            serialized_thor_pools = json.dumps([dataclasses.asdict(p) for p in thor_pools])
-            await self.deps.db.redis.set(cache_key, serialized_thor_pools)
-
+    async def _fetch_current_pool_data_from_thornodes(self, height=None):
+        thor_pools = {}
+        for attempt in range(1, self.max_attempts):
+            try:
+                thor_pools = await self.deps.thor_connector.query_pools(height, consensus=self.use_thor_consensus)
+            except (TypeError, IndexError):
+                self.logger.warning(f'thor_connector.query_pools failed! Attempt: #{attempt}')
+                pass
         return parse_thor_pools(thor_pools)
+
+    DB_KEY_POOL_INFO_HASH = 'PoolInfo:hashtable'
+
+    async def _save_to_cache(self, r: Redis, height, pool_infos: dict):
+        j_pools = json.dumps({key: p.as_dict() for key, p in pool_infos.items()})
+        await r.hset(self.DB_KEY_POOL_INFO_HASH, str(height), j_pools)
+
+    async def _load_from_cache(self, r: Redis, height):
+        cached_item = await r.hget(self.DB_KEY_POOL_INFO_HASH, str(height))
+        if cached_item:
+            raw_dict = json.loads(cached_item)
+            pool_infos = {k: PoolInfo.from_dict(it) for k, it in raw_dict.items()}
+            return pool_infos
+
+    async def get_current_pool_data_full(self, height=None, caching=False):
+        if caching and height:
+            r: Redis = await self.deps.db.get_redis()
+            pool_infos = await self._load_from_cache(r, height)
+
+            if pool_infos is None:
+                pool_infos = await self._fetch_current_pool_data_from_thornodes(height)
+                await self._save_to_cache(r, height, pool_infos)
+
+            return pool_infos
+        else:
+            return await self._fetch_current_pool_data_from_thornodes(height)
+
+    async def purge_pool_height_cache(self):
+        r: Redis = await self.deps.db.get_redis()
+        await r.delete(self.DB_KEY_POOL_INFO_HASH)
 
     def url_for_historical_pool_state(self, pool, ts):
         from_ts = int(ts - HOUR)

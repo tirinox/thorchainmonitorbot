@@ -5,7 +5,7 @@ from services.lib.config import Config
 from services.lib.db import DB
 from services.models.time_series import PriceTimeSeries
 from services.lib.constants import BNB_RUNE_SYMBOL
-from services.lib.datetime import MINUTE, HOUR
+from services.lib.date_utils import MINUTE, HOUR
 
 
 async def main(cfg, db):

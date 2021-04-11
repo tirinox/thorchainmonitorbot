@@ -22,7 +22,7 @@ class AsgardConsumerConnectorBase:
 
     # interface
     @abstractmethod
-    async def generate_yield_summary(self, address, pools: List[str]) -> Tuple[dict, List[LiquidityPoolReport]]:
+    async def generate_yield_summary(self, address, pools: List[str]) -> YieldSummary:
         ...
 
     # interface

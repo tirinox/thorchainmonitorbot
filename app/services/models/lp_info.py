@@ -3,7 +3,7 @@ from dataclasses import dataclass, field
 from math import sqrt
 
 from services.lib.constants import THOR_DIVIDER_INV, Chains
-from services.lib.datetime import DAY
+from services.lib.date_utils import DAY
 from services.models.base import BaseModelMixin
 from services.models.pool_info import PoolInfo, LPPosition
 
@@ -46,33 +46,26 @@ def pool_share(rune_depth, asset_depth, my_units, pool_tolal_units):
 
 @dataclass
 class LPDailyGraphPoint:
-    asset_depth: int = 0
-    rune_depth: int = 0
-    busd_rune_price: float = 1.0
-    day_str: str = ''
     timestamp: int = 0
-    pool_units: int = 0
-    stake_units: int = 0
+    usd_value: float = 0
 
     @classmethod
     def from_asgard(cls, j):
+        asset_depth = int(j.get('assetdepth', 1))
+        rune_depth = int(j.get('runedepth', 1))
+        busd_rune_price = float(j.get('busdpricerune', 1.0))
+        pool_units = int(j.get('poolunits', 1))
+        stake_units = int(j.get('stakeunit', 1))
+
+        r, a = pool_share(rune_depth, asset_depth, stake_units, pool_units)
+        runes_per_asset = rune_depth / asset_depth
+        total_rune = r * THOR_DIVIDER_INV + a * THOR_DIVIDER_INV * runes_per_asset
+        usd_value = total_rune / busd_rune_price
+
         return cls(
-            asset_depth=int(j.get('assetdepth', 1)),
-            rune_depth=int(j.get('runedepth', 1)),
-            busd_rune_price=float(j.get('busdpricerune', 1.0)),
-            day_str=j.get('day', ''),
-            pool_units=int(j.get('poolunits', 1)),
-            stake_units=int(j.get('stakeunit', 1)),
+            usd_value=usd_value,
             timestamp=int(j.get('time', 0)),
         )
-
-    @property
-    def usd_value(self):
-        r, a = pool_share(self.rune_depth, self.asset_depth, self.stake_units, self.pool_units)
-        runes_per_asset = self.rune_depth / self.asset_depth
-        total_rune = r * THOR_DIVIDER_INV + a * THOR_DIVIDER_INV * runes_per_asset
-        usd_value = total_rune / self.busd_rune_price
-        return usd_value
 
 
 @dataclass

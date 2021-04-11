@@ -4,7 +4,7 @@ from typing import List
 from services.jobs.fetch.base import BaseFetcher
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import get_url_gen_by_network_id
-from services.lib.datetime import parse_timespan_to_seconds
+from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.models.tx import ThorTx
 

@@ -3,7 +3,7 @@ import datetime
 from typing import Union, List, NamedTuple
 
 from services.jobs.fetch.pool_price import PoolPriceFetcher
-from services.jobs.fetch.runeyield.base import AsgardConsumerConnectorBase
+from services.jobs.fetch.runeyield.base import AsgardConsumerConnectorBase, YieldSummary
 from services.lib.midgard.urlgen import MidgardURLGenBase
 from services.lib.constants import NetworkIdents
 from services.lib.depcont import DepContainer
@@ -48,7 +48,7 @@ class AsgardConsumerConnectorV2(AsgardConsumerConnectorBase):
         pools = list(liqs_dict.keys())
         weekly_charts, *stake_reports = await asyncio.gather(self._fetch_all_pools_weekly_charts(address, pools),
                                                              *reports)
-        return stake_reports, weekly_charts
+        return YieldSummary(stake_reports, weekly_charts)
 
     # -----------
 

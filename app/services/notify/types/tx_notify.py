@@ -6,7 +6,7 @@ from services.jobs.fetch.base import INotified
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.pool_stats import PoolStatsUpdater
 from services.lib.constants import THOR_DIVIDER_INV
-from services.lib.datetime import parse_timespan_to_seconds
+from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo
 from services.models.tx import LPAddWithdrawTx

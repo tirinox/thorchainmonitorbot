@@ -1,5 +1,5 @@
 from localization import BaseLocalization
-from services.lib.datetime import DAY, today_str
+from services.lib.date_utils import DAY, today_str
 from services.lib.db import DB
 from services.lib.plot_graph import PlotGraphLines, img_to_bio
 from services.lib.utils import async_wrap

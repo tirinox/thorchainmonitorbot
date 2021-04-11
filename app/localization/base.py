@@ -4,7 +4,7 @@ from math import ceil
 
 from services.lib.config import Config
 from services.lib.constants import NetworkIdents
-from services.lib.datetime import format_time_ago
+from services.lib.date_utils import format_time_ago
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx
 from services.lib.money import format_percent, asset_name_cut_chain, pretty_money, short_address, short_money, \
     short_asset_name, calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, \
@@ -148,7 +148,7 @@ class BaseLocalization(ABC):  # == English
     LP_PIC_LP_VS_HOLD = 'LP vs HOLD'
     LP_PIC_LP_APY = 'LP APY'
     LP_PIC_EARLY = 'Early...'
-    LP_PIC_FOOTER = "Powered by Bigboss' runestake.info"
+    LP_PIC_FOOTER = ""
     LP_PIC_FEES = 'Fees earned'
 
     LP_PIC_SUMMARY_HEADER = 'Liquidity pools summary'

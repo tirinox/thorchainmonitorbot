@@ -1,22 +1,22 @@
 import asyncio
-import json
+import datetime
 import operator
 from typing import List, Tuple, Dict, Optional
 
-from aioredis import Redis
-
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.runeyield import AsgardConsumerConnectorBase
+from services.jobs.fetch.runeyield.base import YieldSummary
 from services.jobs.fetch.tx import TxFetcher
-from services.lib.constants import THOR_DIVIDER_INV, STABLE_COIN_POOLS
+from services.lib.constants import THOR_DIVIDER_INV, STABLE_COIN_POOLS, NetworkIdents
+from services.lib.date_utils import days_ago_noon
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import MidgardURLGenBase
 from services.lib.money import weighted_mean
 from services.lib.utils import pairwise
-from services.models.pool_info import PoolInfo, parse_thor_pools, LPPosition
+from services.models.lp_info import LiquidityPoolReport, CurrentLiquidity, FeeReport, ReturnMetrics, LPDailyGraphPoint
+from services.models.pool_info import PoolInfo, LPPosition
 from services.models.pool_member import PoolMemberDetails
-from services.models.lp_info import LiquidityPoolReport, CurrentLiquidity, FeeReport, ReturnMetrics, pool_share
 from services.models.tx import ThorTx, ThorTxType
 
 HeightToAllPools = Dict[int, Dict[str, PoolInfo]]
@@ -27,10 +27,16 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         super().__init__(deps, ppf, url_gen)
         self.tx_fetcher = TxFetcher(deps)
         self.parser = get_parser_by_network_id(deps.cfg.network_id)
-        self.use_thor_consensus = True
+        self.use_thor_consensus = False
+        self.days_for_chart = 14
+        self.max_attempts = 5
 
     async def generate_yield_summary(self, address, pools: List[str]) -> Tuple[dict, List[LiquidityPoolReport]]:
         user_txs = await self._get_user_tx_actions(address)
+
+        # On Midgard V1 we must manually get list of Lpools
+        if not NetworkIdents.is_multi(self.deps.cfg.network_id) and not pools:
+            pools = await self.get_my_pools(address)
 
         historic_all_pool_states, current_pools_details = await asyncio.gather(
             self._fetch_historical_pool_states(user_txs),
@@ -53,8 +59,9 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             )
             reports.append(stake_report)
 
-        weekly_chars = {}
-        return weekly_chars, reports
+        weekly_charts = await self._get_charts(user_txs, current_pools_details, historic_all_pool_states,
+                                               self.days_for_chart)
+        return YieldSummary(reports, weekly_charts)
 
     async def generate_yield_report_single_pool(self, address, pool) -> LiquidityPoolReport:
         # todo: idea: check date_last_added, if it is not changed - get user_txs from local cache
@@ -95,7 +102,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             j = await resp.json()
             return self.parser.parse_pool_membership(j)
 
-    # ----
+    # ------------------------------------------------------------------------------------------------------------------
 
     async def _get_user_tx_actions(self, address: str, pool_filter=None) -> List[ThorTx]:
         txs = await self.tx_fetcher.fetch_user_tx(address, liquidity_change_only=True)
@@ -104,28 +111,6 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         txs.sort(key=operator.attrgetter('height_int'))
         return txs
 
-    async def _query_pools_cached(self, height) -> Dict[str, PoolInfo]:
-        key = f"PoolInfo:height={height}"
-        r: Redis = await self.deps.db.get_redis()
-        cached_item = await r.get(key)
-        if cached_item:
-            raw_dict = json.loads(cached_item)
-            pool_infos = {k: PoolInfo.from_dict(it) for k, it in raw_dict.items()}
-            return pool_infos
-        else:
-            thor_pools = await self.deps.thor_connector.query_pools(height, consensus=self.use_thor_consensus)
-            pool_infos = parse_thor_pools(thor_pools)
-            j_pools = json.dumps({key: p.as_dict() for key, p in pool_infos.items()})
-            await r.set(key, j_pools)
-            return pool_infos
-
-    async def purge_pool_height_cache(self):
-        key_pattern = f"PoolInfo:height=*"
-        r: Redis = await self.deps.db.get_redis()
-        keys = await r.keys(key_pattern)
-        if keys:
-            await r.delete(*keys)
-
     async def _fetch_historical_pool_states(self, txs: List[ThorTx]) -> HeightToAllPools:
         heights = list(set(tx.height_int for tx in txs))
         thor_conn = self.deps.thor_connector
@@ -133,7 +118,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         # make sure, that connections are fresh, in order not to update it at all the height simultaneously
         await thor_conn._get_random_clients()
 
-        tasks = [self._query_pools_cached(h) for h in heights]
+        tasks = [self.ppf.get_current_pool_data_full(h, caching=True) for h in heights]
         pool_states = await asyncio.gather(*tasks)
         return dict(zip(heights, pool_states))
 
@@ -303,3 +288,32 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
                          fee_usd=return_metrics.fees_usd,
                          fee_rune=fee_rune,
                          fee_asset=fee_asset)
+
+    async def _pool_units_by_day(self, txs: List[ThorTx], now=None, days=14) -> List:
+        if not txs:
+            return []
+
+        now = now or datetime.datetime.now().timestamp()
+
+        units_history = []
+        current_units = 0
+        for tx in txs:
+            current_units = self._update_units(current_units, tx)
+            units_history.append((tx.date_timestamp, current_units))
+
+        day_to_pools = {}
+
+        for day in range(days):
+            if day:
+                day_ago_date = days_ago_noon(day, now)  # yesterday + n: noon (for caching purposes)
+            else:
+                day_ago_date = datetime.datetime.now()  # exact now
+
+        return []
+
+    async def _get_charts(self,
+                          txs: List[ThorTx],
+                          current_pools_details: List[PoolMemberDetails],
+                          historic_all_pool_states: HeightToAllPools,
+                          day_for_chart) -> Dict[str, List[LPDailyGraphPoint]]:
+        return {}

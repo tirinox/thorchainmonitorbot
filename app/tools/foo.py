@@ -15,7 +15,7 @@ from services.jobs.fetch.tx import TxFetcher
 from services.lib.config import Config
 from services.lib.constants import *
 from services.lib.cooldown import Cooldown
-from services.lib.datetime import DAY
+from services.lib.date_utils import DAY
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.money import pretty_money

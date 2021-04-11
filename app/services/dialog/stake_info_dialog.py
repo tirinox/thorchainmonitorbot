@@ -10,7 +10,7 @@ from services.dialog.picture.lp_picture import lp_pool_picture, lp_address_summa
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.runeyield import get_rune_yield_connector
 from services.lib.constants import NetworkIdents, Chains
-from services.lib.datetime import today_str
+from services.lib.date_utils import today_str
 from services.lib.money import short_address
 from services.lib.plot_graph import img_to_bio
 from services.lib.texts import code, grouper, kbd, cut_long_text
@@ -194,13 +194,13 @@ class StakeDialog(BaseDialog):
 
         ppf = PoolPriceFetcher(self.deps)
         rune_yield = get_rune_yield_connector(self.deps, ppf)
-        stake_reports, weekly_charts = await rune_yield.generate_yield_summary(address, my_pools)
+        yield_summary = await rune_yield.generate_yield_summary(address, my_pools)
 
         # GENERATE A PICTURE
         value_hidden = not self.data.get(self.KEY_CAN_VIEW_VALUE, True)
-        picture = await lp_address_summary_picture(list(stake_reports),
-                                                   weekly_charts, self.loc,
-                                                   value_hidden=value_hidden)
+        picture = await lp_address_summary_picture(list(yield_summary.reports),
+                                                   yield_summary.charts,
+                                                   self.loc, value_hidden=value_hidden)
         picture_io = img_to_bio(picture, f'Thorchain_LP_Summary_{today_str()}.png')
 
         # ANSWER

@@ -1,6 +1,6 @@
-import pandas as pd
+from datetime import datetime, timedelta
 
-from datetime import datetime
+import pandas as pd
 
 MINUTE = 60
 HOUR = 60 * 60
@@ -132,3 +132,18 @@ def series_to_pandas(ts_result, shift_time=True):
 def today_str():
     now = datetime.now()
     return now.strftime("%d-%m-%Y--%H-%M-%S")
+
+
+def days_ago_noon(days_ago, now=None) -> datetime:
+    now = now or datetime.now()
+    day_back = now - timedelta(days=days_ago)
+    day_back_noon = day_back.replace(hour=12, minute=0, second=0, microsecond=0)
+    return day_back_noon
+
+
+def block_number_days_ago_noon(current_block, block_time, days_ago, now: datetime = None) -> int:
+    now = now or datetime.now()
+    that_noon = days_ago_noon(days_ago, now)
+    seconds_elapsed = now.timestamp() - that_noon.timestamp()
+    blocks_elapsed = seconds_elapsed / block_time
+    return current_block - blocks_elapsed

@@ -318,9 +318,8 @@ def sync_lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, run
                   font=r.font_head)
 
     # FOOTER
-
-    draw.text(pos_percent(98.5, 99), loc.LP_PIC_FOOTER, anchor='rs', fill=FADE_COLOR,
-              font=r.font_small)
+    if loc.LP_PIC_FOOTER:
+        draw.text(pos_percent(98.5, 99), loc.LP_PIC_FOOTER, anchor='rs', fill=FADE_COLOR, font=r.font_small)
 
     return image
 
@@ -433,7 +432,8 @@ def lp_weekly_graph(w, h, weekly_charts: dict, color_map: dict, value_hidden):
 
 
 @async_wrap
-def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_charts, loc: BaseLocalization, value_hidden):
+def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_charts, loc: BaseLocalization,
+                                    value_hidden):
     total_added_value_usd = sum(r.added_value(r.USD) for r in reports)
     total_added_value_rune = sum(r.added_value(r.RUNE) for r in reports)
 

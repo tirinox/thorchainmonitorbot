@@ -6,7 +6,7 @@ from localization import BaseLocalization
 from services.dialog.picture.price_picture import price_graph_from_db
 from services.jobs.fetch.base import INotified
 from services.lib.cooldown import CooldownSingle
-from services.lib.datetime import MINUTE, HOUR, DAY, parse_timespan_to_seconds
+from services.lib.date_utils import MINUTE, HOUR, DAY, parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.money import pretty_money, calc_percent_change
 from services.lib.texts import MessageType, BoardMessage
