@@ -1,11 +1,9 @@
 import calendar
-import dataclasses
 import json
 from datetime import date
 from typing import Optional
 
 from aioredis import Redis
-from aiothornode.types import ThorPool
 
 from services.jobs.fetch.base import BaseFetcher
 from services.jobs.fetch.fair_price import fair_rune_price

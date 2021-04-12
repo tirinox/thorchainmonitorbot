@@ -448,6 +448,8 @@ def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_c
     total_gain_loss_rune = 0.0
     total_gain_loss_usd = 0.0
     total_lp_vs_hold_abs = 0.0
+    total_fees_usd = 0.0
+    total_fees_rune = 0.0
     for r in reports:
         asset_values[r.pool.asset] += r.current_value(r.ASSET) * 0.5
         asset_values[RUNE_SYMBOL] += r.current_value(r.RUNE) * 0.5
@@ -460,10 +462,12 @@ def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_c
 
         total_gain_loss_usd += r.gain_loss(r.USD)[0]
         total_gain_loss_rune += r.gain_loss(r.RUNE)[0]
+        total_fees_usd += r.fees.fee_usd
+        total_fees_rune += r.fees.fee_rune
 
     total_gain_loss_usd_p = total_gain_loss_usd / total_added_value_usd * 100.0
     total_gain_loss_rune_p = total_gain_loss_rune / total_added_value_rune * 100.0
-    total_lp_vs_hold_percent = total_lp_vs_hold_abs / (total_added_value_rune - total_withdrawn_value_usd) * 100.0
+    total_lp_vs_hold_percent = total_lp_vs_hold_abs / total_added_value_usd * 100
 
     res = Resources()
     image = res.bg_image.copy()
@@ -515,25 +519,25 @@ def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_c
             (loc.LP_PIC_SUMMARY_ADDED_VALUE, FADE_COLOR),
             (loc.LP_PIC_SUMMARY_WITHDRAWN_VALUE, FADE_COLOR),
             (loc.LP_PIC_SUMMARY_CURRENT_VALUE, FADE_COLOR),
-            # todo: add fees
+            (loc.LP_PIC_FEES, FADE_COLOR),
             (loc.LP_PIC_SUMMARY_TOTAL_GAIN_LOSS, FADE_COLOR),
             (loc.LP_PIC_SUMMARY_TOTAL_GAIN_LOSS_PERCENT, FADE_COLOR)
         ],
         [
             (loc.LP_PIC_SUMMARY_AS_IF_IN_RUNE, FADE_COLOR),
-            pretty_money(total_added_value_rune),
-            pretty_money(total_withdrawn_value_rune),
-            pretty_money(total_current_value_rune),
-            # todo: add fees
+            pretty_money(total_added_value_rune, prefix=RAIDO_GLYPH),
+            pretty_money(total_withdrawn_value_rune, prefix=RAIDO_GLYPH),
+            pretty_money(total_current_value_rune, prefix=RAIDO_GLYPH),
+            (pretty_money(total_fees_rune, signed=True, prefix=RAIDO_GLYPH), result_color(total_fees_rune)),
             (pretty_money(total_gain_loss_rune, signed=True, prefix=RAIDO_GLYPH), result_color(total_gain_loss_rune)),
             (pretty_money(total_gain_loss_rune_p, signed=True) + '%', result_color(total_gain_loss_rune_p))
         ],
         [
             (loc.LP_PIC_SUMMARY_AS_IF_IN_USD, FADE_COLOR),
-            pretty_money(total_added_value_usd),
-            pretty_money(total_withdrawn_value_usd),
-            pretty_money(total_current_value_usd),
-            # todo: add fees
+            pretty_money(total_added_value_usd, prefix='$'),
+            pretty_money(total_withdrawn_value_usd, prefix='$'),
+            pretty_money(total_current_value_usd, prefix='$'),
+            (pretty_money(total_fees_usd, signed=True, prefix='$'), result_color(total_fees_usd)),
             (pretty_money(total_gain_loss_usd, signed=True, prefix='$'), result_color(total_gain_loss_usd)),
             (pretty_money(total_gain_loss_usd_p, signed=True) + '%', result_color(total_gain_loss_usd_p))
         ],
@@ -541,7 +545,7 @@ def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_c
     column_xs = [29, 50, 75]
 
     row_start_y = run_y
-    row_step = 4
+    row_step = 3.7
     for ic, _ in enumerate(data_cr):
         row_y = row_start_y
         for ir, _ in enumerate(data_cr[0]):
@@ -563,7 +567,7 @@ def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_c
                     anchor='mm' if ic else 'rm'
                 )
             row_y += row_step
-    run_y += 24.0
+    run_y += 26.0
 
     # 3. Total current value USD (RUNE)
     # 4. Gain/Loss USD(RUNE) + %

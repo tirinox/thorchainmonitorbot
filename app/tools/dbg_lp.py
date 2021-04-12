@@ -17,7 +17,7 @@ from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.midgard.urlgen import get_url_gen_by_network_id
 
-CACHE_REPORTS = False
+CACHE_REPORTS = True
 
 
 class LpTesterBase:
