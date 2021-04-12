@@ -108,6 +108,16 @@ class PoolInfoHistoricEntry:
     asset_price: float = 0.0
     asset_price_usd: float = 0.0
     liquidity_units: int = 0
+    timestamp: int = 0
+
+    def to_pool_info(self, asset) -> PoolInfo:
+        return PoolInfo(
+            asset,
+            self.asset_depth,
+            self.rune_depth,
+            self.liquidity_units,
+            PoolInfo.ENABLED
+        )
 
 
 def parse_thor_pools(thor_pools: List[ThorPool]):

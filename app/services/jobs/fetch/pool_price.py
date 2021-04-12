@@ -20,8 +20,6 @@ from services.models.pool_info import PoolInfoHistoricEntry, parse_thor_pools, P
 from services.models.time_series import PriceTimeSeries
 
 
-# todo => block number === date map
-
 class PoolPriceFetcher(BaseFetcher):
     """
     This class queries Midgard and THORNodes to get current and historical pool prices and depths
@@ -107,40 +105,22 @@ class PoolPriceFetcher(BaseFetcher):
         return self.midgard_url_gen.url_for_pool_depth_history(pool, from_ts, to_ts)
 
     async def get_asset_per_rune_of_pool_by_day(self, pool: str, day: date, caching=True):
-        cache_key = f'MidgardPrice:{pool}:{day.year}.{day.month}.{day.day}' if caching else ''
-        if caching:
-            cached_raw = await self.deps.db.redis.get(cache_key)
-            if cached_raw:
-                try:
-                    return float(cached_raw)
-                except ValueError:
-                    pass
+        info: PoolInfoHistoricEntry = await self.get_pool_info_by_day(pool, day, caching)
+        return info.to_pool_info(pool).asset_per_rune if info else 0.0
 
-        timestamp = calendar.timegm(day.timetuple())
-        url = self.url_for_historical_pool_state(pool, timestamp)
-        self.logger.info(f"get: {url}")
+    DB_KEY_HISTORIC_POOL = 'MidgardPoolInfo'
 
-        parser = get_parser_by_network_id(self.deps.cfg.network_id)
-
-        async with self.deps.session.get(url) as resp:
-            raw_data = await resp.json()
-            pools_info = parser.parse_historic_pool_items(raw_data)
-            if not pools_info:
-                self.logger.error(f'there were no historical data returned!')
-                return None
-            else:
-                price = pools_info[0].asset_price
-                if caching and price:
-                    await self.deps.db.redis.set(cache_key, price)
-                return price
+    async def purge_historic_midgard_pool_cache(self):
+        r: Redis = await self.deps.db.get_redis()
+        await r.delete(self.DB_KEY_HISTORIC_POOL)
 
     async def get_pool_info_by_day(self, pool: str, day: date, caching=True) -> Optional[PoolInfoHistoricEntry]:
         parser = get_parser_by_network_id(self.deps.cfg.network_id)
 
-        cache_key = ''
+        hash_key = ''
         if caching:
-            cache_key = f'MidgardPoolInfo:{pool}:{day.year}.{day.month}.{day.day}'
-            cached_raw = await self.deps.db.redis.get(cache_key)
+            hash_key = f'{pool}:{day.year}.{day.month}.{day.day}'
+            cached_raw = await self.deps.db.redis.hget(self.DB_KEY_HISTORIC_POOL, hash_key)
             if cached_raw:
                 try:
                     j = json.loads(cached_raw)
@@ -160,25 +140,35 @@ class PoolPriceFetcher(BaseFetcher):
                 return None
             else:
                 if caching and raw_data:
-                    await self.deps.db.redis.set(cache_key, json.dumps(raw_data))
+                    await self.deps.db.redis.hset(self.DB_KEY_HISTORIC_POOL, hash_key, json.dumps(raw_data))
                 pool_info = pools_info[0]
                 return pool_info
 
     # todo: price -> poolInfo full (+ caching)
     async def get_usd_price_of_rune_and_asset_by_day(self, pool, day: date, caching=True):
         network = self.deps.cfg.network_id
-        if network == NetworkIdents.CHAOSNET_BEP2CHAIN or network == NetworkIdents.CHAOSNET_MULTICHAIN:
+        single_action = True
+        if network == NetworkIdents.CHAOSNET_BEP2CHAIN:
+            stable_coin_symbol = BNB_BUSD_SYMBOL
+            single_action = False
+        elif network == NetworkIdents.CHAOSNET_MULTICHAIN:
             stable_coin_symbol = BNB_BUSD_SYMBOL  # todo: get price from coin gecko OR from weighted usd price cache
-            # todo: Midgard V2 already returns usd price, there is no need to query a stable coin pool
         elif network == NetworkIdents.TESTNET_MULTICHAIN:
             stable_coin_symbol = ETH_USDT_TEST_SYMBOL
         else:
             raise NotImplementedError
 
-        usd_per_rune = await self.get_asset_per_rune_of_pool_by_day(stable_coin_symbol, day, caching=caching)
-        if is_stable_coin(pool):
-            return usd_per_rune, 1.0
-        else:
-            asset_per_rune = await self.get_asset_per_rune_of_pool_by_day(pool, day, caching=caching)
-            usd_per_asset = usd_per_rune / asset_per_rune
+        if single_action:
+            info = await self.get_pool_info_by_day(pool, day, caching)
+            usd_per_asset = info.asset_price_usd
+            asset_per_rune = info.asset_depth / info.rune_depth
+            usd_per_rune = asset_per_rune * usd_per_asset
             return usd_per_rune, usd_per_asset
+        else:
+            usd_per_rune = await self.get_asset_per_rune_of_pool_by_day(stable_coin_symbol, day, caching=caching)
+            if is_stable_coin(pool):
+                return usd_per_rune, 1.0
+            else:
+                asset_per_rune = await self.get_asset_per_rune_of_pool_by_day(pool, day, caching=caching)
+                usd_per_asset = usd_per_rune / asset_per_rune
+                return usd_per_rune, usd_per_asset

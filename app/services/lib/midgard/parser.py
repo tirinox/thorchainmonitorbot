@@ -1,8 +1,9 @@
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import NamedTuple, List
+from typing import NamedTuple, List, Dict
 
 from services.lib.constants import NetworkIdents
+from services.models.last_block import LastBlock
 from services.models.pool_info import PoolInfoHistoricEntry
 from services.models.pool_member import PoolMemberDetails
 from services.models.tx import ThorTx, ThorTxType, ThorSubTx, ThorMetaSwap, ThorMetaRefund, ThorMetaWithdraw, \
@@ -52,6 +53,10 @@ class MidgardParserBase(metaclass=ABCMeta):
 
     @abstractmethod
     def parse_pool_membership(self, response) -> List[str]:
+        ...
+
+    @abstractmethod
+    def parse_last_block(self, response) -> Dict[str, LastBlock]:
         ...
 
 
@@ -139,10 +144,11 @@ class MidgardParserV1(MidgardParserBase):
             rune_depth = int(j.get('runeDepth', '0'))
             results.append(PoolInfoHistoricEntry(
                 asset_depth=asset_depth,
-                rune_depth=asset_depth,
+                rune_depth=rune_depth,
                 liquidity_units=0,
                 asset_price=asset_depth / rune_depth,
                 asset_price_usd=0.0,
+                timestamp=int(j.get('time', 0))
             ))
         return results
 
@@ -165,6 +171,17 @@ class MidgardParserV1(MidgardParserBase):
 
     def parse_pool_membership(self, response) -> List[str]:
         return response.get('poolsArray', [])
+
+    def parse_last_block(self, response) -> Dict[str, LastBlock]:
+        chain = response.get('chain', '')
+        return {
+            chain: LastBlock(
+                chain,
+                last_observed_in=int(response.get('lastobservedin', 0)),
+                last_signed_out=int(response.get('lastsignedout', 0)),
+                thorchain=int(response.get('thorchain', 0))
+            )
+        }
 
 
 class MidgardParserV2(MidgardParserBase):
@@ -212,10 +229,11 @@ class MidgardParserV2(MidgardParserBase):
             asset_price = asset_depth / rune_depth if rune_depth else 0.0
             results.append(PoolInfoHistoricEntry(
                 asset_depth=asset_depth,
-                rune_depth=asset_depth,
+                rune_depth=rune_depth,
                 liquidity_units=0,
                 asset_price=asset_price,
                 asset_price_usd=float(j.get('assetPriceUSD', '0')),
+                timestamp=int(j.get('endTime', 0))
             ))
         return results
 
@@ -239,6 +257,17 @@ class MidgardParserV2(MidgardParserBase):
     def parse_pool_membership(self, response) -> List[str]:
         pools = response.get('pools', [])
         return [p['pool'] for p in pools if 'pool' in p]
+
+    def parse_last_block(self, response) -> Dict[str, LastBlock]:
+        last_blocks = []
+        for j in response:
+            last_blocks.append(LastBlock(
+                chain=j.get('chain', ''),
+                last_observed_in=int(j.get('last_observed_in', 0)),
+                last_signed_out=int(j.get('last_signed_out', 0)),
+                thorchain=int(j.get('thorchain', 0))
+            ))
+        return {b.chain: b for b in last_blocks}
 
 
 def get_parser_by_network_id(network_id) -> MidgardParserBase:
