@@ -15,7 +15,7 @@ from services.lib.midgard.urlgen import MidgardURLGenBase
 from services.lib.money import weighted_mean
 from services.lib.utils import pairwise
 from services.models.lp_info import LiquidityPoolReport, CurrentLiquidity, FeeReport, ReturnMetrics, LPDailyGraphPoint
-from services.models.pool_info import PoolInfo, LPPosition
+from services.models.pool_info import LPPosition, PoolInfoMap
 from services.models.pool_member import PoolMemberDetails
 from services.models.tx import ThorTx, ThorTxType
 

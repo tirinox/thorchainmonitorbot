@@ -465,6 +465,8 @@ def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_c
         total_fees_usd += r.fees.fee_usd
         total_fees_rune += r.fees.fee_rune
 
+    total_fees_rune *= 2.0  # we show full rune fees because there is no split rune/asset
+
     total_gain_loss_usd_p = total_gain_loss_usd / total_added_value_usd * 100.0
     total_gain_loss_rune_p = total_gain_loss_rune / total_added_value_rune * 100.0
     total_lp_vs_hold_percent = total_lp_vs_hold_abs / total_added_value_usd * 100.0
@@ -513,6 +515,15 @@ def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_c
     hor_line(draw, run_y)
     run_y += 3.5
 
+    if value_hidden:
+        fee_percent_rune = total_fees_rune / total_current_value_rune * 100.0
+        fee_percent_usd = total_fees_usd / total_current_value_usd * 100.0
+        fee_rune_str = (pretty_money(fee_percent_rune, signed=True) + '%', result_color(fee_percent_rune))
+        fee_usd_str = (pretty_money(fee_percent_usd, signed=True) + '%', result_color(fee_percent_usd))
+    else:
+        fee_rune_str = (pretty_money(total_fees_rune, signed=True, prefix=RAIDO_GLYPH), result_color(total_fees_rune))
+        fee_usd_str = (pretty_money(total_fees_usd, signed=True, prefix='$'), result_color(total_fees_usd))
+
     data_cr = [
         [
             '',
@@ -528,7 +539,7 @@ def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_c
             pretty_money(total_added_value_rune, prefix=RAIDO_GLYPH),
             pretty_money(total_withdrawn_value_rune, prefix=RAIDO_GLYPH),
             pretty_money(total_current_value_rune, prefix=RAIDO_GLYPH),
-            (pretty_money(total_fees_rune, signed=True, prefix=RAIDO_GLYPH), result_color(total_fees_rune)),
+            fee_rune_str,
             (pretty_money(total_gain_loss_rune, signed=True, prefix=RAIDO_GLYPH), result_color(total_gain_loss_rune)),
             (pretty_money(total_gain_loss_rune_p, signed=True) + '%', result_color(total_gain_loss_rune_p))
         ],
@@ -537,7 +548,7 @@ def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_c
             pretty_money(total_added_value_usd, prefix='$'),
             pretty_money(total_withdrawn_value_usd, prefix='$'),
             pretty_money(total_current_value_usd, prefix='$'),
-            (pretty_money(total_fees_usd, signed=True, prefix='$'), result_color(total_fees_usd)),
+            fee_usd_str,
             (pretty_money(total_gain_loss_usd, signed=True, prefix='$'), result_color(total_gain_loss_usd)),
             (pretty_money(total_gain_loss_usd_p, signed=True) + '%', result_color(total_gain_loss_usd_p))
         ],
@@ -556,7 +567,7 @@ def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_c
                 color = FORE_COLOR
 
             pos = pos_percent(column_xs[ic], row_y)
-            if value_hidden and ic > 0 and ir > 0 and ir != 5:
+            if value_hidden and ic > 0 and ir > 0 and ir != 4:  # all except first column and fees row
                 res.put_hidden_plate(image, pos, 'center', ey=-20)
             else:
                 draw.text(

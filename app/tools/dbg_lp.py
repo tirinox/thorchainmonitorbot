@@ -153,11 +153,11 @@ async def test_my_pools():
 async def test_multi_chain_testnet():
     # await test_one_pool_picture_generator('tthor1cwcqhhjhwe8vvyn8vkufzyg0tt38yjgzdf9whh', 'BTC.BTC', hide=False)
     # await test_one_pool_picture_generator('bnb1deeu3qxjuqrdumpz53huum8yg39aarlcf4sg6q', 'BNB.BNB',
-    #                                       hide=False,
+    #                                       hide=True,
     #                                       rune_yield_class=HomebrewLPConnector)  # BEP2
 
     # await test_summary_picture_generator('tthor1vyp3y7pjuwsz2hpkwrwrrvemcn7t758sfs0glr', hide=False)
-    await test_summary_picture_generator('bnb1deeu3qxjuqrdumpz53huum8yg39aarlcf4sg6q', hide=False,
+    await test_summary_picture_generator('bnb1deeu3qxjuqrdumpz53huum8yg39aarlcf4sg6q', hide=True,
                                          rune_yield_class=HomebrewLPConnector)
 
 
