@@ -467,7 +467,7 @@ def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_c
 
     total_gain_loss_usd_p = total_gain_loss_usd / total_added_value_usd * 100.0
     total_gain_loss_rune_p = total_gain_loss_rune / total_added_value_rune * 100.0
-    total_lp_vs_hold_percent = total_lp_vs_hold_abs / total_added_value_usd * 100
+    total_lp_vs_hold_percent = total_lp_vs_hold_abs / total_added_value_usd * 100.0
 
     res = Resources()
     image = res.bg_image.copy()

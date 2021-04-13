@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, Dict
 
 from aiothornode.types import ThorPool
 
@@ -120,7 +120,10 @@ class PoolInfoHistoricEntry:
         )
 
 
-def parse_thor_pools(thor_pools: List[ThorPool]):
+PoolInfoMap = Dict[str, PoolInfo]
+
+
+def parse_thor_pools(thor_pools: List[ThorPool]) -> PoolInfoMap:
     return {
         p.asset: PoolInfo(p.asset,
                           p.balance_asset_int, p.balance_rune_int,

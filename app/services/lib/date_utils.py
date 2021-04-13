@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 import pandas as pd
 
@@ -147,3 +147,9 @@ def block_number_days_ago_noon(current_block, block_time, days_ago, now: datetim
     seconds_elapsed = now.timestamp() - that_noon.timestamp()
     blocks_elapsed = seconds_elapsed / block_time
     return current_block - blocks_elapsed
+
+
+def day_to_key(day: date, prefix=''):
+    if day is None:
+        day = datetime.now().date()
+    return f'{prefix}:{day.year}.{day.month}.{day.day}'

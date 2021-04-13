@@ -5,7 +5,7 @@ from localization import BaseLocalization
 from services.jobs.fetch.base import INotified
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.lib.depcont import DepContainer
-from services.models.pool_info import PoolInfo
+from services.models.pool_info import PoolInfo, PoolInfoMap
 
 
 class PoolChurnNotifier(INotified):
@@ -34,12 +34,12 @@ class PoolChurnNotifier(INotified):
         self.old_pool_dict = new_pool_dict
 
     @staticmethod
-    def split_pools_by_status(pim: Dict[str, PoolInfo]):
+    def split_pools_by_status(pim: PoolInfoMap):
         enabled_pools = set(p.asset for p in pim.values() if p.is_enabled)
         bootstrap_pools = set(pim.keys()) - enabled_pools
         return enabled_pools, bootstrap_pools
 
-    def compare_pool_sets(self, new_pool_dict: Dict[str, PoolInfo]):
+    def compare_pool_sets(self, new_pool_dict: PoolInfoMap):
         new_pools = set(new_pool_dict.keys())
         old_pools = set(self.old_pool_dict.keys())
         all_pools = new_pools | old_pools

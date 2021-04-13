@@ -19,7 +19,7 @@ from services.models.pool_info import PoolInfo, LPPosition
 from services.models.pool_member import PoolMemberDetails
 from services.models.tx import ThorTx, ThorTxType
 
-HeightToAllPools = Dict[int, Dict[str, PoolInfo]]
+HeightToAllPools = Dict[int, PoolInfoMap]
 
 
 class HomebrewLPConnector(AsgardConsumerConnectorBase):
@@ -146,7 +146,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             first_state_date = min(first_state_date, tx_timestamp) if first_state_date else tx_timestamp
             last_stake_date = max(last_stake_date, tx_timestamp) if last_stake_date else tx_timestamp
 
-            pools_info: Dict[str, PoolInfo] = pool_historic[tx.height_int]
+            pools_info: PoolInfoMap = pool_historic[tx.height_int]
             this_asset_pool_info = pools_info.get(pool_details.pool)
 
             usd_per_rune = self._calculate_weighted_rune_price_in_usd(pools_info)
@@ -192,7 +192,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         return results
 
     @staticmethod
-    def _calculate_weighted_rune_price_in_usd(pool_map: Dict[str, PoolInfo]) -> Optional[float]:
+    def _calculate_weighted_rune_price_in_usd(pool_map: PoolInfoMap) -> Optional[float]:
         prices, weights = [], []
         for stable_symbol in STABLE_COIN_POOLS:
             pool_info = pool_map.get(stable_symbol)

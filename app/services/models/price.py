@@ -6,7 +6,7 @@ from typing import Dict
 from services.lib.constants import BNB_BTCB_SYMBOL, BTC_SYMBOL, STABLE_COIN_POOLS
 from services.lib.money import weighted_mean
 from services.models.base import BaseModelMixin
-from services.models.pool_info import PoolInfo
+from services.models.pool_info import PoolInfo, PoolInfoMap
 
 
 @dataclass
@@ -50,7 +50,7 @@ class LastPriceHolder:
     def __init__(self):
         self.usd_per_rune = 1.0  # weighted across multiple stable coin pools
         self.btc_per_rune = 0.000001
-        self.pool_info_map: Dict[str, PoolInfo] = {}
+        self.pool_info_map: PoolInfoMap = {}
         self.last_update_ts = 0
 
     def _calculate_weighted_rune_price(self):
@@ -75,7 +75,7 @@ class LastPriceHolder:
                 self.btc_per_rune = pool.asset_per_rune
                 return
 
-    def update(self, new_pool_info_map: Dict[str, PoolInfo]):
+    def update(self, new_pool_info_map: PoolInfoMap):
         self.pool_info_map = new_pool_info_map.copy()
         self._calculate_weighted_rune_price()
         self._calculate_btc_price()

@@ -1,6 +1,6 @@
 import calendar
 import json
-from datetime import date
+from datetime import date, datetime
 from typing import Optional
 
 from aioredis import Redis
@@ -10,11 +10,11 @@ from services.jobs.fetch.fair_price import fair_rune_price
 from services.lib.config import Config
 from services.lib.constants import BNB_BUSD_SYMBOL, RUNE_SYMBOL_DET, is_stable_coin, NetworkIdents, \
     ETH_USDT_TEST_SYMBOL, RUNE_SYMBOL_MARKET
-from services.lib.date_utils import parse_timespan_to_seconds, DAY, HOUR
+from services.lib.date_utils import parse_timespan_to_seconds, DAY, HOUR, day_to_key
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import get_url_gen_by_network_id
-from services.models.pool_info import PoolInfoHistoricEntry, parse_thor_pools, PoolInfo
+from services.models.pool_info import PoolInfoHistoricEntry, parse_thor_pools, PoolInfo, PoolInfoMap
 from services.models.time_series import PriceTimeSeries
 
 
@@ -57,7 +57,7 @@ class PoolPriceFetcher(BaseFetcher):
         else:
             self.logger.warning(f'really ${price:.3f}? that is odd!')
 
-    async def _fetch_current_pool_data_from_thornodes(self, height=None):
+    async def _fetch_current_pool_data_from_thornodes(self, height=None) -> PoolInfoMap:
         thor_pools = {}
         for attempt in range(1, self.max_attempts):
             try:
@@ -69,25 +69,27 @@ class PoolPriceFetcher(BaseFetcher):
 
     DB_KEY_POOL_INFO_HASH = 'PoolInfo:hashtable'
 
-    async def _save_to_cache(self, r: Redis, height, pool_infos: dict):
+    async def _save_to_cache(self, r: Redis, subkey, pool_infos: PoolInfoMap):
         j_pools = json.dumps({key: p.as_dict() for key, p in pool_infos.items()})
-        await r.hset(self.DB_KEY_POOL_INFO_HASH, str(height), j_pools)
+        await r.hset(self.DB_KEY_POOL_INFO_HASH, str(subkey), j_pools)
 
-    async def _load_from_cache(self, r: Redis, height):
-        cached_item = await r.hget(self.DB_KEY_POOL_INFO_HASH, str(height))
+    async def _load_from_cache(self, r: Redis, subkey) -> PoolInfoMap:
+        cached_item = await r.hget(self.DB_KEY_POOL_INFO_HASH, str(subkey))
         if cached_item:
             raw_dict = json.loads(cached_item)
             pool_infos = {k: PoolInfo.from_dict(it) for k, it in raw_dict.items()}
             return pool_infos
 
-    async def get_current_pool_data_full(self, height=None, caching=False):
-        if caching and height:
+    async def get_current_pool_data_full(self, height=None, caching=False) -> PoolInfoMap:
+        if caching:
             r: Redis = await self.deps.db.get_redis()
-            pool_infos = await self._load_from_cache(r, height)
 
-            if pool_infos is None:
+            cache_key = height if height else day_to_key(datetime.now().date(), 'ByDay')
+            pool_infos = await self._load_from_cache(r, cache_key)
+
+            if not pool_infos:
                 pool_infos = await self._fetch_current_pool_data_from_thornodes(height)
-                await self._save_to_cache(r, height, pool_infos)
+                await self._save_to_cache(r, cache_key, pool_infos)
 
             return pool_infos
         else:
@@ -106,7 +108,7 @@ class PoolPriceFetcher(BaseFetcher):
         info: PoolInfoHistoricEntry = await self.get_pool_info_by_day(pool, day, caching)
         return info.to_pool_info(pool).asset_per_rune if info else 0.0
 
-    DB_KEY_HISTORIC_POOL = 'MidgardPoolInfo'
+    DB_KEY_HISTORIC_POOL = 'MidgardPoolInfoHistoric'
 
     async def purge_historic_midgard_pool_cache(self):
         r: Redis = await self.deps.db.get_redis()
@@ -117,7 +119,7 @@ class PoolPriceFetcher(BaseFetcher):
 
         hash_key = ''
         if caching:
-            hash_key = f'{pool}:{day.year}.{day.month}.{day.day}'
+            hash_key = day_to_key(day, prefix=pool)
             cached_raw = await self.deps.db.redis.hget(self.DB_KEY_HISTORIC_POOL, hash_key)
             if cached_raw:
                 try:

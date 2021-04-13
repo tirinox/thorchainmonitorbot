@@ -38,26 +38,37 @@ async def test_prices_at_day(d: DepContainer):
     await test_prices_at_day_sccn(d, day2ago)
 
 
-async def test_thor_pools_caching_mctn(d: DepContainer):
-    d.cfg.network_id = NetworkIdents.TESTNET_MULTICHAIN
-
+def set_network(d: DepContainer, network_id: str):
+    d.cfg.network_id = network_id
     d.thor_connector = ThorConnector(get_thor_env_by_network_id(d.cfg.network_id), d.session)
+
+
+async def test_thor_pools_caching_mctn(d: DepContainer):
+    set_network(d, NetworkIdents.TESTNET_MULTICHAIN)
+
     ppf = PoolPriceFetcher(d)
     pp = await ppf.get_current_pool_data_full(caching=True, height=501)
     print(pp)
 
 
 async def test_thor_pools_caching_sccn(d: DepContainer):
-    d.cfg.network_id = NetworkIdents.CHAOSNET_BEP2CHAIN
+    set_network(d, NetworkIdents.CHAOSNET_BEP2CHAIN)
 
-    d.thor_connector = ThorConnector(get_thor_env_by_network_id(d.cfg.network_id), d.session)
     ppf = PoolPriceFetcher(d)
     pp = await ppf.get_current_pool_data_full(caching=True, height=200101)
     print(pp)
 
 
+async def test_thor_by_day_full_caching_sccn(d: DepContainer):
+    set_network(d, NetworkIdents.CHAOSNET_BEP2CHAIN)
+
+    ppf = PoolPriceFetcher(d)
+    pp = await ppf.get_current_pool_data_full(caching=True)
+    print(pp)
+
+
 async def test_thor_pools_caching(d: DepContainer):
-    await test_thor_pools_caching_sccn(d)
+    await test_thor_by_day_full_caching_sccn(d)
 
 
 async def test_pool_cache(d):
@@ -75,7 +86,7 @@ async def main(d: DepContainer):
 
         # await test_prices(d)
         # await test_pool_cache(d)
-        await test_prices_at_day(d)
+        await test_thor_pools_caching(d)
 
 
 if __name__ == '__main__':
