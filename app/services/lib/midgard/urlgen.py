@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from aiothornode.types import TEST_NET_ENVIRONMENT_MULTI_1, CHAOS_NET_BNB_ENVIRONMENT
+from aiothornode.env import TEST_NET_ENVIRONMENT_MULTI_1, CHAOS_NET_BNB_ENVIRONMENT, MULTICHAIN_CHAOSNET_ENVIRONMENT
 
 from services.lib.constants import NetworkIdents
 
@@ -106,5 +106,7 @@ def get_url_gen_by_network_id(network_id) -> MidgardURLGenBase:
         return MidgardURLGenV2(TEST_NET_ENVIRONMENT_MULTI_1.midgard_url)
     elif network_id == NetworkIdents.CHAOSNET_BEP2CHAIN:
         return MidgardURLGenV1(CHAOS_NET_BNB_ENVIRONMENT.midgard_url)
+    elif network_id == NetworkIdents.CHAOSNET_MULTICHAIN:
+        return MidgardURLGenV2(MULTICHAIN_CHAOSNET_ENVIRONMENT)
     else:
         raise KeyError('unsupported network ID!')

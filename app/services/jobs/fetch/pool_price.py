@@ -9,7 +9,7 @@ from services.jobs.fetch.base import BaseFetcher
 from services.jobs.fetch.fair_price import fair_rune_price
 from services.lib.config import Config
 from services.lib.constants import BNB_BUSD_SYMBOL, RUNE_SYMBOL_DET, is_stable_coin, NetworkIdents, \
-    ETH_USDT_TEST_SYMBOL, RUNE_SYMBOL_MARKET, THOR_BLOCK_TIME
+    ETH_USDT_TEST_SYMBOL, RUNE_SYMBOL_MARKET, THOR_BLOCK_TIME, ETH_USDT_SYMBOL
 from services.lib.date_utils import parse_timespan_to_seconds, DAY, HOUR, day_to_key
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
@@ -176,7 +176,6 @@ class PoolPriceFetcher(BaseFetcher):
                 pool_info = pools_info[0]
                 return pool_info
 
-    # todo: price -> poolInfo full (+ caching)
     async def get_usd_price_of_rune_and_asset_by_day(self, pool, day: date, caching=True):
         network = self.deps.cfg.network_id
         single_action = True
@@ -184,7 +183,7 @@ class PoolPriceFetcher(BaseFetcher):
             stable_coin_symbol = BNB_BUSD_SYMBOL
             single_action = False
         elif network == NetworkIdents.CHAOSNET_MULTICHAIN:
-            stable_coin_symbol = BNB_BUSD_SYMBOL  # todo: get price from coin gecko OR from weighted usd price cache
+            stable_coin_symbol = ETH_USDT_SYMBOL  # todo: get price from coin gecko OR from weighted usd price cache
         elif network == NetworkIdents.TESTNET_MULTICHAIN:
             stable_coin_symbol = ETH_USDT_TEST_SYMBOL
         else:

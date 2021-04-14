@@ -150,7 +150,7 @@ class ThorTx:
 
     @property
     def date_timestamp(self):
-        return int(self.date) * 1e-9
+        return int(int(self.date) * 1e-9)
 
     @property
     def height_int(self):

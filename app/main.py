@@ -7,7 +7,7 @@ import ujson
 from aiogram import Bot, Dispatcher, executor
 from aiogram.types import *
 from aiothornode.connector import ThorConnector
-from aiothornode.types import TEST_NET_ENVIRONMENT_MULTI_1, CHAOS_NET_BNB_ENVIRONMENT, ThorEnvironment
+from aiothornode.env import TEST_NET_ENVIRONMENT_MULTI_1, CHAOS_NET_BNB_ENVIRONMENT, ThorEnvironment
 
 from localization import LocalizationManager
 from services.dialog import init_dialogs

@@ -15,7 +15,9 @@ async def test_get_user_lp_actions(lpgen: LpTesterBase):
         print(tx, end='\n-----\n')
 
 
-ADDR = 'bnb1deeu3qxjuqrdumpz53huum8yg39aarlcf4sg6q'
+# ADDR = 'bnb1nqcg6f8cfc6clhm8hac6002xq3h7l7gxh3qm34'  # to much stake/unstake
+
+ADDR = 'bnb1vqh9sc2vce2fmdhmtjsmvgm80p038h4qvs2ghv'
 POOL = 'BNB.BNB'
 # POOL = 'BNB.ETHBULL-D33'
 
@@ -47,7 +49,6 @@ async def test_1_pool(lpgen: LpTesterBase):
 
 
 async def test_charts(lpgen: LpTesterBase, address=ADDR, pool=POOL):
-
     rl = lpgen.rune_yield
     user_txs = await rl._get_user_tx_actions(address, pool)
 
@@ -61,8 +62,8 @@ async def test_charts(lpgen: LpTesterBase, address=ADDR, pool=POOL):
 async def main():
     lpgen = LpTesterBase(HomebrewLPConnector)
     async with lpgen:
-        await test_1_pool(lpgen)
-        # await test_charts(lpgen)
+        # await test_1_pool(lpgen)
+        await test_charts(lpgen)
 
 
 if __name__ == "__main__":

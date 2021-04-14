@@ -7,9 +7,6 @@ thor:
   #  'testnet-multi' for MTCN
   #  'chaosnet-multi' for MCCN
   network_id: "chaosnet-bep2"
-  consensus:
-    cohort: 3
-    agree: 2
 
 
 telegram:

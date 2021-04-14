@@ -293,23 +293,32 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         if not txs:
             return []
 
-        now = now or datetime.datetime.now().timestamp()
-
         units_history = []
         current_units = 0
+        old_ts = 0
         for tx in txs:
             current_units = self._update_units(current_units, tx)
             units_history.append((tx.date_timestamp, current_units))
+            assert tx.date_timestamp >= old_ts, "tx list must be sorted"
+            old_ts = tx.date_timestamp
+        units_history = list(reversed(units_history))
 
-        day_to_pools = {}
-
+        now = now or datetime.datetime.now()
+        current_index = 0
+        day_to_pools = []
         for day in range(days):
             if day:
-                day_ago_date = days_ago_noon(day, now)  # yesterday + n: noon (for caching purposes)
+                day_ago_date_ts = days_ago_noon(day, now).timestamp()  # yesterday + n: noon (for caching purposes)
             else:
-                day_ago_date = datetime.datetime.now()  # exact now
+                day_ago_date_ts = datetime.datetime.now().timestamp()  # exact now
 
-        return []
+            ts, units = units_history[current_index]
+            while ts > day_ago_date_ts and current_index < len(txs) - 1:
+                current_index += 1
+                ts, units = units_history[current_index]
+            day_to_pools.append((day, units))
+
+        return day_to_pools
 
     async def _get_charts(self,
                           txs: List[ThorTx],

@@ -5,7 +5,8 @@ import aiohttp
 import sha3
 from aiogram import Bot, Dispatcher
 from aiogram.types import ParseMode
-from aiothornode.connector import ThorConnector, TEST_NET_ENVIRONMENT_MULTI_1
+from aiothornode.connector import ThorConnector
+from aiothornode.env import TEST_NET_ENVIRONMENT_MULTI_1
 
 from localization import LocalizationManager
 from services.dialog.picture.crypto_logo import CryptoLogoDownloader

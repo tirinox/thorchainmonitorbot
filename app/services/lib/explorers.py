@@ -10,7 +10,7 @@ def get_explorer_url_to_address(network_id, pool_or_chain: str, address: str):
         if network_id == NetworkIdents.TESTNET_MULTICHAIN:
             return f"https://main.d2rtjbuh4gx2cf.amplifyapp.com/#/address/{address}"  # todo
         elif network_id == NetworkIdents.CHAOSNET_MULTICHAIN:
-            return f"https://main.d1h4hfl6gvp736.amplifyapp.com/#/address/{address}"  # todo
+            return f"https://www.thorchain.net/#/address/{address}"  # todo
         elif network_id == NetworkIdents.CHAOSNET_BEP2CHAIN:
             return f"https://viewblock.io/thorchain/address/{address}"
     elif chain == Chains.BNB:
@@ -41,7 +41,7 @@ def get_explorer_url_to_tx(network_id, pool_or_chain: str, tx_id: str):
         if network_id == NetworkIdents.TESTNET_MULTICHAIN:
             return f"https://main.d2rtjbuh4gx2cf.amplifyapp.com/#/txs/{tx_id}"  # todo
         elif network_id == NetworkIdents.CHAOSNET_MULTICHAIN:
-            return f"https://main.d1h4hfl6gvp736.amplifyapp.com/#/txs/{tx_id}"  # todo
+            return f"https://www.thorchain.net/#/txs/{tx_id}"  # todo
         elif network_id == NetworkIdents.CHAOSNET_BEP2CHAIN:
             return f"https://viewblock.io/thorchain/tx/{tx_id}"
     elif chain == Chains.BNB:
