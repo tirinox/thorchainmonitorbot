@@ -19,13 +19,14 @@ from services.models.lp_info import LPAddress
 LOADING_STICKER = 'CAACAgIAAxkBAAIRx1--Tia-m6DNRIApk3yqmNWvap_sAALcAAP3AsgPUNi8Bnu98HweBA'
 
 
-def get_rune_stake_info_address(network: str, address: str, chain: str = Chains.THOR):
+def get_runeyield_info_address(network: str, address: str, chain: str = Chains.THOR):
     if network == NetworkIdents.CHAOSNET_BEP2CHAIN:
         return f'https://runestake.info/debug?address={address}'
     elif network == NetworkIdents.TESTNET_MULTICHAIN:
         return f'https://mctn.vercel.app/dashboard?thor={address}'  # todo thor address only?
     else:
-        return f'https://app.runeyield.info/dashboard?thor={address}'  # todo
+        chain = chain.lower()
+        return f'https://app.runeyield.info/dashboard?{chain}={address}'  # todo
 
 
 class StakeStates(StatesGroup):
@@ -107,7 +108,7 @@ class StakeDialog(BaseDialog):
                 InlineKeyboardButton(self.loc.BUTTON_SM_SUMMARY,
                                      callback_data=f'{self.QUERY_SUMMARY_OF_ADDRESS}:{addr_idx}'),
                 InlineKeyboardButton(self.loc.BUTTON_VIEW_RUNESTAKEINFO,
-                                     url=get_rune_stake_info_address(self.deps.cfg.network_id, address, chain))
+                                     url=get_runeyield_info_address(self.deps.cfg.network_id, address, chain))
             ],
             [
                 *([button_toggle_show_value] if my_pools else []),

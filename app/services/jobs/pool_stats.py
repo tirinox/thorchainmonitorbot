@@ -27,10 +27,11 @@ class PoolStatsUpdater(WithDelegates, INotified):
         result_txs = []
 
         for tx in txs:
-            price = self.pool_info_map.get(tx.pool, PoolInfo.dummy()).price
+            pool_info: PoolInfo = self.pool_info_map.get(tx.pool, PoolInfo.dummy())
+
             stats: StakePoolStats = self.pool_stat_map.get(tx.pool)
-            if price and stats:
-                full_rune = tx.calc_full_rune_amount(price)
+            if pool_info.asset_per_rune and stats:
+                full_rune = tx.calc_full_rune_amount(pool_info.asset_per_rune)
                 stats.update(full_rune, 100)
                 updated_stats.add(tx.pool)
                 result_txs.append(tx)

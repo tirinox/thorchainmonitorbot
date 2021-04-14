@@ -70,7 +70,6 @@ class MetricsDialog(BaseDialog):
 
     @message_handler(state=MetricsStates.QUEUE_SELECT_DURATION)
     async def on_queue_duration_answered(self, message: Message):
-        period = HOUR
         if message.text == self.loc.BUTTON_1_HOUR:
             period = HOUR
         elif message.text == self.loc.BUTTON_24_HOURS:
@@ -82,6 +81,7 @@ class MetricsDialog(BaseDialog):
         elif message.text == self.loc.BUTTON_BACK:
             message.text = ''
             await self.on_enter(message)
+            return
         else:
             period = parse_timespan_to_seconds(message.text.strip())
             if isinstance(period, str):
@@ -94,18 +94,6 @@ class MetricsDialog(BaseDialog):
 
     @message_handler(state=MetricsStates.PRICE_SELECT_DURATION)
     async def on_price_duration_answered(self, message: Message):
-        fp = await fair_rune_price(self.deps.price_holder)
-        pn = PriceNotifier(self.deps)
-        price_1h, price_24h, price_7d = await pn.historical_get_triplet()
-        fp.real_rune_price = self.deps.price_holder.usd_per_rune
-        btc_price = self.deps.price_holder.btc_per_rune
-
-        price_text = self.loc.notification_text_price_update(PriceReport(
-            price_1h, price_24h, price_7d,
-            fair_price=fp,
-            btc_real_rune_price=btc_price))
-
-        period = HOUR
         if message.text == self.loc.BUTTON_1_HOUR:
             period = HOUR
         elif message.text == self.loc.BUTTON_24_HOURS:
@@ -117,11 +105,23 @@ class MetricsDialog(BaseDialog):
         elif message.text == self.loc.BUTTON_BACK:
             message.text = ''
             await self.on_enter(message)
+            return
         else:
             period = parse_timespan_to_seconds(message.text.strip())
             if isinstance(period, str):
                 await message.answer(f'Error: {period}')
                 return
+
+        fp = await fair_rune_price(self.deps.price_holder)
+        pn = PriceNotifier(self.deps)
+        price_1h, price_24h, price_7d = await pn.historical_get_triplet()
+        fp.real_rune_price = self.deps.price_holder.usd_per_rune
+        btc_price = self.deps.price_holder.btc_per_rune
+
+        price_text = self.loc.notification_text_price_update(PriceReport(
+            price_1h, price_24h, price_7d,
+            fair_price=fp,
+            btc_real_rune_price=btc_price))
 
         graph = await price_graph_from_db(self.deps.db, self.loc, period=period)
         await message.answer_photo(graph)

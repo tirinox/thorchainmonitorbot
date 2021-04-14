@@ -7,7 +7,7 @@ import ujson
 from aiogram import Bot, Dispatcher, executor
 from aiogram.types import *
 from aiothornode.connector import ThorConnector
-from aiothornode.env import TEST_NET_ENVIRONMENT_MULTI_1, CHAOS_NET_BNB_ENVIRONMENT, ThorEnvironment
+from aiothornode.env import *
 
 from localization import LocalizationManager
 from services.dialog import init_dialogs
@@ -36,6 +36,8 @@ def get_thor_env_by_network_id(network_id) -> ThorEnvironment:
         return TEST_NET_ENVIRONMENT_MULTI_1.copy()
     elif network_id == NetworkIdents.CHAOSNET_BEP2CHAIN:
         return CHAOS_NET_BNB_ENVIRONMENT.copy()
+    elif network_id == NetworkIdents.CHAOSNET_MULTICHAIN:
+        return MULTICHAIN_CHAOSNET_ENVIRONMENT.copy()
     else:
         # todo: add multi-chain chaosnet
         raise KeyError('unsupported network ID!')

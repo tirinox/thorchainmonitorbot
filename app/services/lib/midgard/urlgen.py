@@ -107,6 +107,6 @@ def get_url_gen_by_network_id(network_id) -> MidgardURLGenBase:
     elif network_id == NetworkIdents.CHAOSNET_BEP2CHAIN:
         return MidgardURLGenV1(CHAOS_NET_BNB_ENVIRONMENT.midgard_url)
     elif network_id == NetworkIdents.CHAOSNET_MULTICHAIN:
-        return MidgardURLGenV2(MULTICHAIN_CHAOSNET_ENVIRONMENT)
+        return MidgardURLGenV2(MULTICHAIN_CHAOSNET_ENVIRONMENT.midgard_url)
     else:
         raise KeyError('unsupported network ID!')

@@ -15,11 +15,10 @@ class CapInfoFetcher(BaseFetcher):
         self.url_gen = get_url_gen_by_network_id(deps.cfg.network_id)
 
     async def fetch(self) -> ThorCapInfo:
-        self.logger.info("start fetching caps and mimir")
-
         session = self.deps.session
-
-        async with session.get(self.url_gen.url_network()) as resp:
+        url_network = self.url_gen.url_network()
+        self.logger.info(f"get network: {url_network}")
+        async with session.get(url_network) as resp:
             networks_resp = await resp.json()
             if 'totalStaked' in networks_resp:
                 total_staked = networks_resp.get('totalStaked', 0)
@@ -28,9 +27,16 @@ class CapInfoFetcher(BaseFetcher):
 
             total_staked = int(total_staked) * THOR_DIVIDER_INV
 
-        async with session.get(self.url_gen.url_mimir()) as resp:
+        url_mimir = self.url_gen.url_mimir()
+        self.logger.info(f"get mimir: {url_network}")
+        async with session.get(url_mimir) as resp:
             mimir_resp = await resp.json()
-            max_staked = int(mimir_resp.get("mimir//MAXIMUMSTAKERUNE", 1)) * THOR_DIVIDER_INV
+            if 'mimir//MAXLIQUIDITYRUNE' in mimir_resp:
+                max_staked_str = mimir_resp.get("mimir//MAXLIQUIDITYRUNE", 1)
+            else:
+                max_staked_str = mimir_resp.get("mimir//MAXIMUMSTAKERUNE", 1)
+
+            max_staked = int(max_staked_str) * THOR_DIVIDER_INV
 
             # max_staked = 90_000_015  # for testing
 

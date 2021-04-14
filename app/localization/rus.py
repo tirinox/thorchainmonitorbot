@@ -32,7 +32,7 @@ class RussianLocalization(BaseLocalization):
     def welcome_message(self, info: ThorCapInfo):
         return (
             f"Привет! Здесь ты можешь найти метрики THORChain и узнать результаты предоставления ликвидности в пулы.\n"
-            f"Цена {self.R} сейчас <code>{info.price:.3f} BUSD</code>.\n"
+            f"Цена {self.R} сейчас <code>{info.price:.3f} $</code>.\n"
             f"<b>⚠️ Бот теперь уведомляет только в канале {self.alert_channel_name}!</b>\n"
             f"Набери /help, чтобы видеть список команд.\n"
             f"🤗 Отзывы и поддержка: {CREATOR_TG}."
@@ -60,7 +60,7 @@ class RussianLocalization(BaseLocalization):
 
     BUTTON_SM_SUMMARY = '💲 Сводка'
 
-    BUTTON_VIEW_RUNESTAKEINFO = '🌎 Открыть на runestake.info'
+    BUTTON_VIEW_RUNESTAKEINFO = '🌎 Открыть на runeyield.info'
     BUTTON_VIEW_VALUE_ON = 'Скрыть деньги: НЕТ'
     BUTTON_VIEW_VALUE_OFF = 'Скрыть деньги: ДА'
     BUTTON_REMOVE_THIS_ADDRESS = '❌ Удалить этот адресс'
@@ -94,7 +94,7 @@ class RussianLocalization(BaseLocalization):
     LP_PIC_LP_VS_HOLD = 'Против ХОЛД'
     LP_PIC_LP_APY = 'Годовых'
     LP_PIC_EARLY = 'Еще рано...'
-    LP_PIC_FOOTER = "Испольует runestake.info от Bigboss"
+    LP_PIC_FOOTER = "Испольует runeyield.info от Bigboss"
     LP_PIC_FEES = 'Ваши чаевые'
 
     LP_PIC_SUMMARY_HEADER = 'Сводка по пулам ликвидности'
@@ -137,7 +137,7 @@ class RussianLocalization(BaseLocalization):
             f'<b>Кап {verb} с {pretty_money(old.cap)} до {pretty_money(new.cap)}!</b>\n'
             f'Сейчас в пулы помещено <b>{pretty_money(new.stacked)}</b> {self.R}.\n'
             f"{self._cap_progress_bar(new)}"
-            f'Цена {self.R} в пуле <code>{new.price:.3f} BUSD</code>.\n'
+            f'Цена {self.R} в пуле <code>{new.price:.3f} $</code>.\n'
             f'{call}'
             f'https://chaosnet.bepswap.com/'
         )
@@ -150,7 +150,7 @@ class RussianLocalization(BaseLocalization):
 
     def price_message(self, info: ThorCapInfo, fair_price: RuneFairPrice):
         return (
-            f"Последняя цена {self.R}: <code>{info.price:.3f} BUSD</code>.\n"
+            f"Последняя цена {self.R}: <code>{info.price:.3f} $</code>.\n"
             f"Детерминистическая цена {self.R} сейчас: <code>${fair_price.fair_price:.3f}</code>."
         )
 
@@ -274,7 +274,7 @@ class RussianLocalization(BaseLocalization):
             f"<b>{pretty_money(info.stacked)}</b> монет из "
             f"<b>{pretty_money(info.cap)}</b> сейчас застейканы.\n"
             f"{self._cap_progress_bar(info)}"
-            f"Цена {bold(self.R)} сейчас <code>{info.price:.3f} BUSD</code>.\n"
+            f"Цена {bold(self.R)} сейчас <code>{info.price:.3f} $</code>.\n"
         )
 
     def queue_message(self, queue_info: QueueInfo):
