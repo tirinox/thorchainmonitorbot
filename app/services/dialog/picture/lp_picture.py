@@ -618,7 +618,7 @@ def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_c
         graph_img = lp_weekly_graph(graph_width, graph_height, weekly_charts, color_map, value_hidden)
         image.paste(graph_img, pos_percent(graph_margin_x, run_y - graph_margin_y))
     else:
-        draw.text(pos_percent(50, 83), loc.LP_PIC_SUMMARY_NO_WEEKLY_CHART, fill=FADE_COLOR,
+        draw.text(pos_percent(50, 90), loc.LP_PIC_SUMMARY_NO_WEEKLY_CHART, fill=FADE_COLOR,
                   font=res.font_head, anchor='mm')
 
     return image

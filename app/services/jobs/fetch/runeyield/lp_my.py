@@ -21,6 +21,8 @@ from services.models.tx import ThorTx, ThorTxType
 
 HeightToAllPools = Dict[int, PoolInfoMap]
 
+DEFAULT_RUNE_PRICE = 10.0  # USD
+
 
 class HomebrewLPConnector(AsgardConsumerConnectorBase):
     def __init__(self, deps: DepContainer, ppf: PoolPriceFetcher, url_gen: MidgardURLGenBase):
@@ -149,7 +151,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             pools_info: PoolInfoMap = pool_historic[tx.height_int]
             this_asset_pool_info = pools_info.get(pool_details.pool)
 
-            usd_per_rune = self._calculate_weighted_rune_price_in_usd(pools_info)
+            usd_per_rune = self._calculate_weighted_rune_price_in_usd(pools_info, use_default_price=True)
 
             if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
                 runes = tx.sum_of_rune(in_only=True)
@@ -192,7 +194,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         return results
 
     @staticmethod
-    def _calculate_weighted_rune_price_in_usd(pool_map: PoolInfoMap) -> Optional[float]:
+    def _calculate_weighted_rune_price_in_usd(pool_map: PoolInfoMap, use_default_price=False) -> Optional[float]:
         prices, weights = [], []
         for stable_symbol in STABLE_COIN_POOLS:
             pool_info = pool_map.get(stable_symbol)
@@ -202,6 +204,8 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
         if prices:
             return weighted_mean(prices, weights)
+        elif use_default_price:
+            return DEFAULT_RUNE_PRICE  # todo: get rune price somewhere else!
 
     def _get_earliest_prices(self, txs: List[ThorTx], pool_historic: HeightToAllPools) -> Tuple[
         Optional[float], Optional[float]]:
@@ -214,7 +218,9 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
                 earliest_tx = tx
 
         earliest_pools = pool_historic.get(earliest_tx.height_int)
-        usd_per_rune = self._calculate_weighted_rune_price_in_usd(earliest_pools)
+
+        usd_per_rune = self._calculate_weighted_rune_price_in_usd(earliest_pools, use_default_price=True)
+
         this_pool = earliest_pools.get(earliest_tx.first_pool)
         rune_per_asset = this_pool.runes_per_asset
         usd_per_asset = usd_per_rune * rune_per_asset
@@ -224,7 +230,9 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
     def _create_lp_position(self, pool, height, my_units: int, pool_historic: HeightToAllPools) -> LPPosition:
         all_pool_info_at_height = pool_historic.get(height)
         pool_info = all_pool_info_at_height.get(pool)
-        usd_per_rune = self._calculate_weighted_rune_price_in_usd(all_pool_info_at_height)
+
+        usd_per_rune = self._calculate_weighted_rune_price_in_usd(all_pool_info_at_height, use_default_price=True)
+
         return LPPosition.create(pool_info, my_units, usd_per_rune)
 
     def _create_current_lp_position(self, pool, my_units: int) -> LPPosition:

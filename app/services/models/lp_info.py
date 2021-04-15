@@ -1,3 +1,4 @@
+import string
 import time
 from dataclasses import dataclass, field
 from math import sqrt
@@ -33,8 +34,13 @@ class LPAddress(BaseModelMixin):
         addr = addr.strip()
         if not (26 <= len(addr) <= 78):
             return False
-        if not cls.is_thor_prefix(addr):
+        # if not cls.is_thor_prefix(addr):
+        #     return False
+
+        english_and_numbers = string.ascii_letters + string.digits
+        if not all(c in english_and_numbers for c in addr):
             return False
+
         return addr.isalnum()
 
 
