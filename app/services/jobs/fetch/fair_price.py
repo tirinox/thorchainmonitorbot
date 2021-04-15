@@ -12,6 +12,8 @@ from services.models.price import RuneFairPrice, LastPriceHolder
 CIRCULATING_SUPPLY_URL = "https://defi.delphidigital.io/chaosnet/int/marketdata"
 RUNE_VAULT_BALANCE_URL = "https://defi.delphidigital.io/chaosnet/int/runevaultBalance"
 
+MIDGARD_BEP2_STATS_URL = 'https://chaosnet-midgard.bepswap.com/v1/network'
+MIDGARD_MCCN_STATS_URL = 'https://midgard.thorchain.info/v2/network'
 
 logger = logging.getLogger('fetch_fair_rune_price')
 
@@ -29,12 +31,31 @@ async def delphi_get_circulating_supply(session):
         return circulating
 
 
+async def total_pooled_rune(session, network_stats_url):
+    async with session.get(network_stats_url) as resp:
+        j = await resp.json()
+        total_pooled_rune = int(j.get('totalStaked', 0))
+        if not total_pooled_rune:
+            total_pooled_rune = int(j.get('totalPooledRune', 0))
+        total_pooled_rune *= THOR_DIVIDER_INV
+        return total_pooled_rune
+
+
+async def total_locked_value_all_networks(session):
+    tlv_bepswap, tlv_mccn = await asyncio.gather(
+        total_pooled_rune(session, MIDGARD_BEP2_STATS_URL),
+        total_pooled_rune(session, MIDGARD_MCCN_STATS_URL)
+    )
+    return tlv_mccn + tlv_bepswap
+
+
 async def fetch_fair_rune_price(price_holder: LastPriceHolder):
     async with aiohttp.ClientSession() as session:
-        rune_vault, circulating, gecko = await asyncio.gather(
+        rune_vault, circulating, gecko, total_locked_rune = await asyncio.gather(
             delphi_get_rune_vault_balance(session),
             delphi_get_circulating_supply(session),
             gecko_info(session),
+            total_locked_value_all_networks(session)
         )
 
         if circulating <= 0:
@@ -47,16 +68,11 @@ async def fetch_fair_rune_price(price_holder: LastPriceHolder):
         if not price_holder.pool_info_map or not price_holder.usd_per_rune:
             raise ValueError(f"pool_info_map is empty!")
 
-        usd_per_rune = price_holder.usd_per_rune
-
-        tlv = 0  # in USD
-        for pool in price_holder.pool_info_map.values():
-            pool: PoolInfo
-            tlv += (pool.balance_rune * THOR_DIVIDER_INV) * usd_per_rune
+        tlv = total_locked_rune * price_holder.usd_per_rune  # == tlv of non-rune assets
 
         fair_price = 3 * tlv / working_rune  # The main formula of wealth!
 
-        result = RuneFairPrice(circulating, rune_vault, usd_per_rune, fair_price, tlv, rank)
+        result = RuneFairPrice(circulating, rune_vault, price_holder.usd_per_rune, fair_price, tlv, rank)
         logger.info(result)
         return result
 

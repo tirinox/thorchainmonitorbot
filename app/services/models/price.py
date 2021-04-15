@@ -3,7 +3,7 @@ import time
 from dataclasses import dataclass
 from typing import Dict
 
-from services.lib.constants import BNB_BTCB_SYMBOL, BTC_SYMBOL, STABLE_COIN_POOLS
+from services.lib.constants import BNB_BTCB_SYMBOL, BTC_SYMBOL, STABLE_COIN_POOLS, THOR_DIVIDER_INV
 from services.lib.money import weighted_mean
 from services.models.base import BaseModelMixin
 from services.models.pool_info import PoolInfo, PoolInfoMap
@@ -91,3 +91,11 @@ class LastPriceHolder:
 
     def find_pool(self, asset):
         return self.pool_info_map.get(asset)
+
+    @property
+    def total_locked_value_usd(self):
+        tlv = 0  # in USD
+        for pool in self.pool_info_map.values():
+            pool: PoolInfo
+            tlv += (pool.balance_rune * THOR_DIVIDER_INV) * self.usd_per_rune
+        return tlv
