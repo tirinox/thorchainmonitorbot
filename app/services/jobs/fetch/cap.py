@@ -38,7 +38,7 @@ class CapInfoFetcher(BaseFetcher):
 
             max_staked = int(max_staked_str) * THOR_DIVIDER_INV
 
-            # max_staked = 90_000_015  # for testing
+            # max_staked = 200_000  # for testing
 
         if max_staked <= 1:
             self.logger.error(f"max_staked = {max_staked} and total_staked = {total_staked} which seems like an error")

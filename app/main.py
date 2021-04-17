@@ -84,7 +84,12 @@ class App:
             await fill_rune_price_from_gecko(d.db)
 
         self.ppf = PoolPriceFetcher(d)
-        await self.ppf.get_current_pool_data_full()
+        current_pools = await self.ppf.get_current_pool_data_full()
+        if not current_pools:
+            logging.error("no pool data at startup! halt it!")
+            exit(-1)
+
+        self.deps.price_holder.update(current_pools)
 
         fetcher_cap = CapInfoFetcher(d, ppf=self.ppf)
         fetcher_tx = TxFetcher(d)

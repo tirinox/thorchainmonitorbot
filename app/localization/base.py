@@ -20,6 +20,9 @@ from services.models.pool_stats import StakePoolStats
 RAIDO_GLYPH = 'ᚱ'
 CREATOR_TG = '@account1242'
 
+BEP2_SWAP = 'https://chaosnet.bepswap.com/'
+THOR_SWAP = 'https://app.thorswap.finance/'
+
 
 class BaseLocalization(ABC):  # == English
     def __init__(self, cfg: Config):
@@ -205,6 +208,12 @@ class BaseLocalization(ABC):  # == English
 
     # ------- CAP -------
 
+    def thor_site(self):
+        if self.cfg.network_id == NetworkIdents.CHAOSNET_MULTICHAIN:
+            return THOR_SWAP
+        else:
+            return BEP2_SWAP
+
     def notification_text_cap_change(self, old: ThorCapInfo, new: ThorCapInfo):
         verb = "has been increased" if old.cap < new.cap else "has been decreased"
         call = "Come on, add more liquidity!\n" if new.cap > old.cap else ''
@@ -212,9 +221,9 @@ class BaseLocalization(ABC):  # == English
             f'<b>Pool cap {verb} from {pretty_money(old.cap)} to {pretty_money(new.cap)}!</b>\n'
             f'Currently <b>{pretty_money(new.stacked)}</b> {self.R} are in the liquidity pools.\n'
             f"{self._cap_progress_bar(new)}"
-            f'The price of {self.R} in the pool is <code>{new.price:.3f} BUSD</code>.\n'
+            f'The price of {self.R} in the pool is <code>{new.price:.3f} $</code>.\n'
             f'{call}'
-            f'https://chaosnet.bepswap.com/'
+            f'{self.thor_site()}'
         )
         return message
 

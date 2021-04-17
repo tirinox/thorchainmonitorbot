@@ -139,7 +139,7 @@ class RussianLocalization(BaseLocalization):
             f"{self._cap_progress_bar(new)}"
             f'Цена {self.R} в пуле <code>{new.price:.3f} $</code>.\n'
             f'{call}'
-            f'https://chaosnet.bepswap.com/'
+            f'{self.thor_site()}'
         )
 
     # ------ PRICE -------
