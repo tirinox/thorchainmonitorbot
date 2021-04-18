@@ -306,3 +306,8 @@ class RussianLocalization(BaseLocalization):
                      'Скачай это фото и установи его в Телеграм и социальных сетях.'
 
     BUTTON_AVA_FROM_MY_USERPIC = '😀 Из фото профиля'
+
+    # ------- NETWORK SUMMARY -------
+
+    def notification_text_network_summary(self):
+        return 'Состояние сети. Work in progress'  # todo:

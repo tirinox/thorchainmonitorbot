@@ -4,15 +4,16 @@ log_level: INFO
 
 
 thor:
-  #  'testnet-multi' for MTCN
-  #  'chaosnet-multi' for MCCN
-  network_id: "chaosnet-bep2"
+  #  "testnet-multi" for MTCN
+  #  "chaosnet-multi" for MCCN
+  #  "chaosnet-bep2" for Bepswap Chaosnet
+  network_id: "chaosnet-multi"
 
 
 telegram:
   bot:
     token: "insert the bot token from @BotFather here"
-    username: "thorchain_monitoring_bot"
+    username: "thor_infobot"
   channels:
     - type: telegram
       name: "@thorchain_alert"  # live channel
@@ -88,3 +89,8 @@ queue:
     congested: 20
     free: 2
   cooldown: 3600
+
+net_summary:
+  fetch_period: 120s
+  notification:
+    cooldown: 6h

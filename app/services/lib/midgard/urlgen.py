@@ -39,6 +39,10 @@ class MidgardURLGenBase(ABC):
     def url_last_block(self):
         ...
 
+    @abstractmethod
+    def url_stats(self):
+        ...
+
 
 class MidgardURLGenV1(MidgardURLGenBase):
     LIQUIDITY_TX_TYPES_STRING = 'stake,unstake'
@@ -70,6 +74,9 @@ class MidgardURLGenV1(MidgardURLGenBase):
     def url_last_block(self):
         return f'{self.base_url}/v1/thorchain/lastblock'
 
+    def url_stats(self):
+        return f'{self.base_url}/v1/stats'
+
 
 class MidgardURLGenV2(MidgardURLGenBase):
     LIQUIDITY_TX_TYPES_STRING = 'withdraw,addLiquidity'
@@ -99,6 +106,9 @@ class MidgardURLGenV2(MidgardURLGenBase):
 
     def url_last_block(self):
         return f'{self.base_url}/v2/thorchain/lastblock'
+
+    def url_stats(self):
+        return f'{self.base_url}/v2/stats'
 
 
 def get_url_gen_by_network_id(network_id) -> MidgardURLGenBase:

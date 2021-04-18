@@ -357,7 +357,7 @@ class BaseLocalization(ABC):  # == English
 
         if fp.tlv_usd >= 1:
             det_link = link(self.DET_PRICE_HELP_PAGE, 'deterministic price')
-            message += (f"TVL of non-RUNE assets: ${pre(pretty_money(fp.tlv_usd))}\n"
+            message += (f"TLV of non-RUNE assets: ${pre(pretty_money(fp.tlv_usd))}\n"
                         f"So {det_link} of RUNE is {code(pretty_money(fp.fair_price, prefix='$'))}\n"
                         f"Speculative multiplier is {pre(x_ses(fp.fair_price, price))}\n")
 
@@ -365,9 +365,11 @@ class BaseLocalization(ABC):  # == English
 
     # ------- POOL CHURN -------
 
-    @staticmethod
-    def pool_link(pool_name):
-        return f'https://chaosnet.bepswap.com/pool/{asset_name_cut_chain(pool_name)}'
+    def pool_link(self, pool_name):
+        if self.cfg.network_id == NetworkIdents.CHAOSNET_MULTICHAIN:
+            return f'https://app.thorswap.finance/pool/{pool_name}'
+        else:
+            return f'https://chaosnet.bepswap.com/pool/{asset_name_cut_chain(pool_name)}'
 
     def notification_text_pool_churn(self, added_pools, removed_pools, changed_status_pools):
         message = bold('🏊 Liquidity pool churn!') + '\n\n'
@@ -448,3 +450,8 @@ class BaseLocalization(ABC):  # == English
                      ' at Telegram and other social networks.'
 
     BUTTON_AVA_FROM_MY_USERPIC = '😀 From my userpic'
+
+    # ------- NETWORK SUMMARY -------
+
+    def notification_text_network_summary(self):
+        return 'Work in progress'  # todo:

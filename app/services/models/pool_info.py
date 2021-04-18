@@ -18,6 +18,8 @@ class PoolInfo:
 
     BOOTSTRAP = 'Bootstrap'
     ENABLED = 'Enabled'
+    AVAILABLE = 'available'  # enabled
+    STAGED = 'staged'  # bootstrap
 
     def percent_share(self, runes):
         return runes / (2 * self.balance_rune * THOR_DIVIDER_INV) * 100.0
@@ -36,7 +38,7 @@ class PoolInfo:
 
     @property
     def is_enabled(self):
-        return self.status == self.ENABLED
+        return self.status.lower() in (self.ENABLED, self.AVAILABLE)  # v2 compatibility
 
     def usd_depth(self, dollar_per_rune):
         pool_depth_usd = 2 * self.balance_rune * THOR_DIVIDER_INV * dollar_per_rune  # note: * 2 as in off. frontend

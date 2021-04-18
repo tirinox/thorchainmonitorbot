@@ -1,7 +1,6 @@
 import logging
 import time
 from dataclasses import dataclass
-from typing import Dict
 
 from services.lib.constants import BNB_BTCB_SYMBOL, BTC_SYMBOL, STABLE_COIN_POOLS, THOR_DIVIDER_INV
 from services.lib.money import weighted_mean

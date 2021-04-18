@@ -6,10 +6,10 @@ from services.lib.depcont import DepContainer
 from services.models.cap_info import ThorCapInfo
 
 
-class CapFetcherNotifier(INotified):
+class LiquidityCapNotifier(INotified):
     def __init__(self, deps: DepContainer):
         self.deps = deps
-        self.logger = logging.getLogger('CapFetcherNotification')
+        self.logger = logging.getLogger(self.__class__.__name__)
 
     async def on_data(self, sender, data):
         d = self.deps
