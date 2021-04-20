@@ -6,7 +6,6 @@ import aiohttp
 from services.jobs.fetch.gecko_price import gecko_info
 from services.lib.constants import THOR_DIVIDER_INV
 from services.lib.utils import a_result_cached
-from services.models.pool_info import PoolInfo
 from services.models.price import RuneFairPrice, LastPriceHolder
 
 CIRCULATING_SUPPLY_URL = "https://defi.delphidigital.io/chaosnet/int/marketdata"

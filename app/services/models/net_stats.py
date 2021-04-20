@@ -27,13 +27,13 @@ class NetworkStats(BaseModelMixin):
     added_rune: float = 0  # stats
     withdrawn_rune: float = 0  # stats
 
-    usd_added_24h: float = 0  # ??
-    usd_withdrawn_24h: float = 0  # ??
+    usd_added_24h: float = 0  # todo
+    usd_withdrawn_24h: float = 0  # todo
 
     loss_protection_paid_rune: float = 0.0  # stats
 
-    active_pool_count: int = 0  # pools .
-    pending_pool_count: int = 0  # pools .
+    active_pool_count: int = 0  # pools
+    pending_pool_count: int = 0  # pools
 
     active_nodes: int = 0  # network
     standby_nodes: int = 0  # network
@@ -46,7 +46,7 @@ class NetworkStats(BaseModelMixin):
     reserve_rune: float = 0.0  # network
 
     next_pool_activation_ts: int = 0  # network
-    next_pool_to_activate: str = ''  # pools .
+    next_pool_to_activate: str = ''  # pools
 
     @property
     def total_bond_usd(self):
