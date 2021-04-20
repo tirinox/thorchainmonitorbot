@@ -121,7 +121,7 @@ class App:
             fetcher_tx,
             fetcher_cap,
             fetcher_queue,
-            # fetcher_stats,
+            fetcher_stats,
         ]))
 
     async def on_startup(self, _):

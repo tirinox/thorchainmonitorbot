@@ -1,8 +1,5 @@
-import json
-import logging
 from dataclasses import dataclass
 
-from services.lib.db import DB
 from services.models.base import BaseModelMixin
 
 
@@ -28,17 +25,3 @@ class ThorCapInfo(BaseModelMixin):
     def is_ok(self):
         return self.cap >= 1 and self.stacked >= 1
 
-    KEY_INFO = 'th_info'
-
-    @classmethod
-    async def get_old_cap(cls, db: DB):
-        try:
-            j = await db.redis.get(cls.KEY_INFO)
-            return ThorCapInfo.from_json(j)
-        except (TypeError, ValueError, AttributeError, json.decoder.JSONDecodeError):
-            logging.exception('get_old_cap error')
-            return ThorCapInfo.error()
-
-    async def save(self, db: DB):
-        r = await db.get_redis()
-        await r.set(self.KEY_INFO, self.as_json)

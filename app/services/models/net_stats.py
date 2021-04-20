@@ -18,8 +18,6 @@ class NetworkStats(BaseModelMixin):
     swaps_24h: int = 0  # stats
     swaps_30d: int = 0  # stats
 
-    pool_depth_rune: float = 0.0  # stats
-
     switched_rune: int = 0  # stats
 
     add_count: int = 0  # stats
@@ -42,6 +40,7 @@ class NetworkStats(BaseModelMixin):
 
     total_rune_pooled: float = 0.0  # stats
     total_bond_rune: float = 0.0  # network
+    total_active_bond_rune: float = 0.0  # network
 
     reserve_rune: float = 0.0  # network
 
@@ -71,3 +70,7 @@ class NetworkStats(BaseModelMixin):
     @property
     def tlv_usd(self):
         return (self.total_rune_pooled + self.total_bond_rune) * self.usd_per_rune
+
+    @property
+    def network_security_ratio(self):
+        return self.total_active_bond_rune / (self.total_active_bond_rune + self.total_rune_pooled)

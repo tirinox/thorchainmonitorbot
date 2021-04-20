@@ -453,5 +453,17 @@ class BaseLocalization(ABC):  # == English
 
     # ------- NETWORK SUMMARY -------
 
+    def network_bond_security_text(self, network_security_ratio):
+        if network_security_ratio > 0.9:
+            return "INEFFICIENT"
+        elif 0.9 >= network_security_ratio > 0.75:
+            return "OVERBONDED"
+        elif 0.75 >= network_security_ratio >= 0.6:
+            return "OPTIMAL"
+        elif 0.6 > network_security_ratio >= 0.5:
+            return "UNDBERBONDED"
+        else:
+            return "INSECURE"
+
     def notification_text_network_summary(self):
         return 'Work in progress'  # todo:

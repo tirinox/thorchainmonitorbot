@@ -64,10 +64,9 @@ class NetworkStatisticsFetcher(BaseFetcher):
             ns.next_pool_activation_ts = datetime.datetime.now().timestamp() + THOR_BLOCK_TIME * next_cool_cd
 
             bonding_metrics = j['bondMetrics']
-            ns.total_bond_rune = (
-                                         int(bonding_metrics['totalActiveBond']) +
-                                         int(bonding_metrics['totalStandbyBond'])
-                                 ) * THOR_DIVIDER_INV
+            ns.total_active_bond_rune = int(bonding_metrics['totalActiveBond']) * THOR_DIVIDER_INV
+            ns.total_bond_rune = (int(bonding_metrics['totalActiveBond']) +
+                                  int(bonding_metrics['totalStandbyBond'])) * THOR_DIVIDER_INV
 
     async def _get_pools(self, _, ns: NetworkStats):
         pools = await self.ppf.get_current_pool_data_full()
