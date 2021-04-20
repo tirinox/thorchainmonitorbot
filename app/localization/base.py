@@ -11,6 +11,7 @@ from services.lib.money import format_percent, asset_name_cut_chain, pretty_mone
     chain_name_from_pool
 from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, BoardMessage, link_with_domain_text
 from services.models.cap_info import ThorCapInfo
+from services.models.net_stats import NetworkStats
 from services.models.pool_info import PoolInfo
 from services.models.price import RuneFairPrice, PriceReport
 from services.models.queue import QueueInfo
@@ -465,5 +466,5 @@ class BaseLocalization(ABC):  # == English
         else:
             return "INSECURE"
 
-    def notification_text_network_summary(self):
+    def notification_text_network_summary(self, old: NetworkStats, new: NetworkStats):
         return 'Work in progress'  # todo:

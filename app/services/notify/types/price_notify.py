@@ -123,7 +123,7 @@ class PriceNotifier(INotified):
     async def update_ath(self, ath: PriceATH):
         if ath.ath_price > 0:
             await self.deps.db.get_redis()
-            await self.deps.db.redis.set(self.ATH_KEY, ath.as_json)
+            await self.deps.db.redis.set(self.ATH_KEY, ath.as_json_string)
 
     async def handle_ath(self, fair_price):
         last_ath = await self.get_prev_ath()

@@ -21,7 +21,7 @@ class LiquidityCapNotifier(INotified):
 
     async def save_cap_info(self, cap: ThorCapInfo):
         r = await self.deps.db.get_redis()
-        await r.set(self.KEY_INFO, cap.as_json)
+        await r.set(self.KEY_INFO, cap.as_json_string)
 
     def __init__(self, deps: DepContainer):
         self.deps = deps

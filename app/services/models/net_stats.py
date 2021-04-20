@@ -5,6 +5,8 @@ from services.models.base import BaseModelMixin
 
 @dataclass
 class NetworkStats(BaseModelMixin):
+    date_ts: int = 0
+
     usd_per_rune: float = 0.0  # stats
 
     bonding_apy: float = 0.0  # network
@@ -24,9 +26,6 @@ class NetworkStats(BaseModelMixin):
     withdraw_count: int = 0  # stats
     added_rune: float = 0  # stats
     withdrawn_rune: float = 0  # stats
-
-    usd_added_24h: float = 0  # todo
-    usd_withdrawn_24h: float = 0  # todo
 
     loss_protection_paid_rune: float = 0.0  # stats
 
@@ -74,3 +73,8 @@ class NetworkStats(BaseModelMixin):
     @property
     def network_security_ratio(self):
         return self.total_active_bond_rune / (self.total_active_bond_rune + self.total_rune_pooled)
+
+    @property
+    def is_ok(self):
+        return self.total_rune_pooled > 0 and self.active_pool_count > 0 and \
+               self.total_bond_rune > 0 and self.active_nodes > 0

@@ -77,5 +77,6 @@ class Cooldown:
         cd.increment_count(self.max_times)
         await self.write(self.event_name, cd)
 
-    async def clear(self, event_name):
+    async def clear(self, event_name=None):
+        event_name = event_name or self.event_name
         await self.write(event_name, cd=CooldownRecord(0, 0))

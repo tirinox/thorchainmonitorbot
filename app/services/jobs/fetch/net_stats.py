@@ -1,10 +1,9 @@
 import asyncio
-import datetime
 
 from services.jobs.fetch.base import BaseFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.lib.constants import THOR_DIVIDER_INV, THOR_BLOCK_TIME
-from services.lib.date_utils import parse_timespan_to_seconds
+from services.lib.date_utils import parse_timespan_to_seconds, now_ts
 from services.lib.depcont import DepContainer
 from services.lib.midgard.urlgen import get_url_gen_by_network_id
 from services.models.net_stats import NetworkStats
@@ -61,7 +60,7 @@ class NetworkStatisticsFetcher(BaseFetcher):
             ns.reserve_rune = int(j['totalReserve']) * THOR_DIVIDER_INV
 
             next_cool_cd = int(j['poolActivationCountdown'])
-            ns.next_pool_activation_ts = datetime.datetime.now().timestamp() + THOR_BLOCK_TIME * next_cool_cd
+            ns.next_pool_activation_ts = now_ts() + THOR_BLOCK_TIME * next_cool_cd
 
             bonding_metrics = j['bondMetrics']
             ns.total_active_bond_rune = int(bonding_metrics['totalActiveBond']) * THOR_DIVIDER_INV
@@ -88,4 +87,5 @@ class NetworkStatisticsFetcher(BaseFetcher):
             self._get_network(session, ns),
             self._get_pools(session, ns)
         )
+        ns.date_ts = now_ts()
         return ns

@@ -23,7 +23,7 @@ class StakePoolStats(BaseModelMixin):
 
     async def save(self, db: DB):
         await db.get_redis()
-        await db.redis.set(self.key, self.as_json)
+        await db.redis.set(self.key, self.as_json_string)
 
     @classmethod
     async def get_from_db(cls, pool, db: DB):

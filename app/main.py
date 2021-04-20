@@ -116,6 +116,8 @@ class App:
         self.ppf.subscribe(notifier_price)
         self.ppf.subscribe(notifier_pool_churn)
 
+        # await notifier_stats.clear_cd()
+
         await asyncio.gather(*(task.run() for task in [
             self.ppf,
             fetcher_tx,

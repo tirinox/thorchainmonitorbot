@@ -8,7 +8,7 @@ from services.jobs.fetch.runeyield import AsgardConsumerConnectorBase
 from services.jobs.fetch.runeyield.base import YieldSummary
 from services.jobs.fetch.tx import TxFetcher
 from services.lib.constants import THOR_DIVIDER_INV, STABLE_COIN_POOLS, NetworkIdents
-from services.lib.date_utils import days_ago_noon
+from services.lib.date_utils import days_ago_noon, now_ts
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import MidgardURLGenBase
@@ -318,7 +318,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             if day:
                 day_ago_date_ts = days_ago_noon(day, now).timestamp()  # yesterday + n: noon (for caching purposes)
             else:
-                day_ago_date_ts = datetime.datetime.now().timestamp()  # exact now
+                day_ago_date_ts = now_ts()  # exact now
 
             ts, units = units_history[current_index]
             while ts > day_ago_date_ts and current_index < len(txs) - 1:
@@ -333,4 +333,4 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
                           current_pools_details: List[PoolMemberDetails],
                           historic_all_pool_states: HeightToAllPools,
                           day_for_chart) -> Dict[str, List[LPDailyGraphPoint]]:
-        return {}
+        return {}  # todo!
