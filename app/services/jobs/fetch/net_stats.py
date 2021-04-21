@@ -39,7 +39,7 @@ class NetworkStatisticsFetcher(BaseFetcher):
             ns.swaps_total = int(j['swapCount'])
             ns.swaps_24h = int(j['swapCount24h'])
             ns.swaps_30d = int(j['swapCount30d'])
-            ns.swap_volume_rune = int(j['swapVolume'])
+            ns.swap_volume_rune = int(j['swapVolume']) * THOR_DIVIDER_INV
 
             ns.switched_rune = int(j['switchedRune']) * THOR_DIVIDER_INV
             ns.total_rune_pooled = int(j['runeDepth']) * THOR_DIVIDER_INV
@@ -54,8 +54,8 @@ class NetworkStatisticsFetcher(BaseFetcher):
             ns.active_nodes = int(j['activeNodeCount'])
             ns.standby_nodes = int(j['standbyNodeCount'])
 
-            ns.bonding_apy = float(j['bondingAPY'])
-            ns.liquidity_apy = float(j['liquidityAPY'])
+            ns.bonding_apy = float(j['bondingAPY']) * 100.0
+            ns.liquidity_apy = float(j['liquidityAPY']) * 100.0
 
             ns.reserve_rune = int(j['totalReserve']) * THOR_DIVIDER_INV
 

@@ -4,12 +4,13 @@ from math import ceil
 
 from services.lib.config import Config
 from services.lib.constants import NetworkIdents
-from services.lib.date_utils import format_time_ago
+from services.lib.date_utils import format_time_ago, now_ts, seconds_human
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx
 from services.lib.money import format_percent, asset_name_cut_chain, pretty_money, short_address, short_money, \
     short_asset_name, calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, \
     chain_name_from_pool
-from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, BoardMessage, link_with_domain_text
+from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, BoardMessage, \
+    link_with_domain_text, up_down_arrow, bracketify
 from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
 from services.models.pool_info import PoolInfo
@@ -456,15 +457,115 @@ class BaseLocalization(ABC):  # == English
 
     def network_bond_security_text(self, network_security_ratio):
         if network_security_ratio > 0.9:
-            return "INEFFICIENT"
+            return "🥱 INEFFICIENT"
         elif 0.9 >= network_security_ratio > 0.75:
-            return "OVERBONDED"
+            return "🥸 OVERBONDED"
         elif 0.75 >= network_security_ratio >= 0.6:
-            return "OPTIMAL"
+            return "⚡ OPTIMAL"
         elif 0.6 > network_security_ratio >= 0.5:
-            return "UNDBERBONDED"
+            return "🤢 UNDBERBONDED"
         else:
-            return "INSECURE"
+            return "🤬 INSECURE"
 
     def notification_text_network_summary(self, old: NetworkStats, new: NetworkStats):
-        return 'Work in progress'  # todo:
+        message = bold('🌐 THORChain stats') + '\n'
+
+        message += '\n'
+
+        security_pb = progressbar(new.network_security_ratio, 1.0, 10)
+        security_text = self.network_bond_security_text(new.network_security_ratio)
+        message += f'🕸️ Network is {bold(security_text)} {security_pb}.\n'
+
+        active_nodes_change = bracketify(up_down_arrow(old.active_nodes, new.active_nodes, int_delta=True))
+        standby_nodes_change = bracketify(up_down_arrow(old.active_nodes, new.active_nodes, int_delta=True))
+        message += f"🖥️ {bold(new.active_nodes)} active nodes{active_nodes_change} " \
+                   f"and {bold(new.standby_nodes)} standby nodes{standby_nodes_change}.\n"
+
+        current_bond_text = bold(pretty_money(new.total_bond_rune, postfix=RAIDO_GLYPH))
+        current_pooled_text = bold(pretty_money(new.total_rune_pooled, postfix=RAIDO_GLYPH))
+        current_bond_change = bracketify(up_down_arrow(old.total_bond_rune, new.total_bond_rune, money_delta=True))
+        current_pooled_change = bracketify(up_down_arrow(old.total_rune_pooled, new.total_rune_pooled, money_delta=True))
+
+        current_bond_usd_text = bold(pretty_dollar(new.total_bond_usd))
+        current_pooled_usd_text = bold(pretty_dollar(new.total_pooled_usd))
+        current_bond_usd_change = bracketify(up_down_arrow(old.total_bond_usd, new.total_bond_usd, money_delta=True))
+        current_pooled_usd_change = bracketify(
+            up_down_arrow(old.total_pooled_usd, new.total_pooled_usd, money_delta=True))
+
+        message += f"🔗 Total bonded: {current_bond_text}{current_bond_change} or " \
+                   f"{current_bond_usd_text}{current_bond_usd_change}.\n"
+        message += f"🏊 Total pooled: {current_pooled_text}{current_pooled_change} or " \
+                   f"{current_pooled_usd_text}{current_pooled_usd_change}.\n"
+
+        reserve_change = bracketify(up_down_arrow(old.reserve_rune, new.reserve_rune,
+                                                  postfix=RAIDO_GLYPH, money_delta=True))
+        message += f'💰 Reserve: {bold(pretty_money(new.reserve_rune, postfix=RAIDO_GLYPH))}{reserve_change}.\n'
+
+        tlv_change = bracketify(up_down_arrow(old.tlv_usd, new.tlv_usd, money_delta=True, money_prefix='$'))
+        message += f'🏦 TLV: {code(pretty_dollar(new.tlv_usd))}{tlv_change}.\n'
+
+        message += '\n'
+
+        if old.is_ok:
+            # 24 h Add/withdrawal
+            added_24h_rune = new.added_rune - old.added_rune
+            withdrawn_24h_rune = new.withdrawn_rune - old.withdrawn_rune
+            swap_volume_24h_rune = new.swap_volume_rune - old.swap_volume_rune
+            switched_24h_rune = new.switched_rune - old.swap_volume_rune
+
+            add_rune_text = bold(pretty_money(added_24h_rune, prefix=RAIDO_GLYPH))
+            withdraw_rune_text = bold(pretty_money(withdrawn_24h_rune, prefix=RAIDO_GLYPH))
+            swap_rune_text = bold(pretty_money(swap_volume_24h_rune, prefix=RAIDO_GLYPH))
+            switch_rune_text = bold(pretty_money(switched_24h_rune, prefix=RAIDO_GLYPH))
+
+            price = new.usd_per_rune
+
+            add_usd_text = pretty_dollar(added_24h_rune * price)
+            withdraw_usd_text = pretty_dollar(withdrawn_24h_rune * price)
+            swap_usd_text = pretty_dollar(swap_volume_24h_rune * price)
+            switch_usd_text = pretty_dollar(switched_24h_rune * price)
+
+            message += f'{ital("Last 24 hours:")}\n' \
+                       f'➕ Rune added to pools: {add_rune_text} ({add_usd_text}).\n' \
+                       f'➖ Rune withdrawn: {withdraw_rune_text} ({withdraw_usd_text}).\n' \
+                       f'🔀 Rune swap volume: {swap_rune_text} ({swap_usd_text}) by {bold(new.swaps_24h)} operations.\n' \
+                       f'💎 Rune switched to native: {switch_rune_text} ({switch_usd_text}).\n' \
+
+            message += '\n'
+
+        if abs(old.bonding_apy - new.bonding_apy) > 0.01:
+            bonding_apy_change = bracketify(
+                up_down_arrow(old.bonding_apy, new.bonding_apy, money_delta=True, postfix='%'))
+        else:
+            bonding_apy_change = ''
+
+        if abs(old.liquidity_apy - new.liquidity_apy) > 0.01:
+            liquidity_apy_change = bracketify(
+                up_down_arrow(old.liquidity_apy, new.liquidity_apy, money_delta=True, postfix='%'))
+        else:
+            liquidity_apy_change = ''
+
+        message += f'📈 Bonding APY is {code(pretty_money(new.bonding_apy, postfix="%"))}{bonding_apy_change} and ' \
+                   f'Liquidity APY is {code(pretty_money(new.liquidity_apy, postfix="%"))}{liquidity_apy_change}.\n'
+
+        message += f'🛡️ Loss protection paid: {code(pretty_dollar(new.loss_protection_paid_usd))}.\n'
+
+        daily_users_change = bracketify(up_down_arrow(old.users_daily, new.users_daily, int_delta=True))
+        monthly_users_change = bracketify(up_down_arrow(old.users_monthly, new.users_monthly, int_delta=True))
+        message += f'👥 Daily users: {code(new.users_daily)}{daily_users_change}, ' \
+                   f'monthly users: {code(new.users_monthly)}{monthly_users_change}\n'
+
+        message += '\n'
+
+        active_pool_changes = bracketify(up_down_arrow(old.active_pool_count,
+                                                       new.active_pool_count, int_delta=True))
+        pending_pool_changes = bracketify(up_down_arrow(old.pending_pool_count,
+                                                         new.pending_pool_count, int_delta=True))
+        message += f'{bold(new.active_pool_count)} active pools{active_pool_changes} and ' \
+                   f'{bold(new.pending_pool_count)} pending pools{pending_pool_changes}.\n'
+
+        next_pool_wait = seconds_human(new.next_pool_activation_ts - now_ts())
+        next_pool = link(self.pool_link(new.next_pool_to_activate), new.next_pool_to_activate)
+        message += f"Next pool is likely be activated: {next_pool} in {next_pool_wait}."
+
+        return message

@@ -37,9 +37,9 @@ def pretty_dollar(x):
     return pretty_money(x, '$')
 
 
-def pretty_money(x, prefix='', signed=False):
+def pretty_money(x, prefix='', signed=False, postfix=''):
     if x < 0:
-        return f"-{prefix}{pretty_money(-x)}"
+        return f"-{prefix}{pretty_money(-x)}{postfix}"
     elif x == 0:
         r = "0.0"
     else:
@@ -52,7 +52,7 @@ def pretty_money(x, prefix='', signed=False):
         else:
             r = number_commas(int(round(x)))
     prefix = f'+{prefix}' if signed else prefix
-    return prefix + r
+    return prefix + r + postfix
 
 
 def short_money(x, prefix='$'):
@@ -82,15 +82,13 @@ def short_address(address, begin=5, end=4, filler='...'):
         return address
 
 
-def format_percent(x, total):
+def format_percent(x, total, signed=False):
     if total <= 0:
         s = 0
     else:
         s = x / total * 100.0
-    if s < 1:
-        return f'{s:.3f} %'
-    else:
-        return f'{s:.1f} %'
+
+    return pretty_money(s, signed=signed) + " %"
 
 
 def adaptive_round_to_str(x, force_sign=False, prefix=''):

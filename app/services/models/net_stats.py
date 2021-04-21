@@ -20,7 +20,7 @@ class NetworkStats(BaseModelMixin):
     swaps_24h: int = 0  # stats
     swaps_30d: int = 0  # stats
 
-    switched_rune: int = 0  # stats
+    switched_rune: float = 0  # stats
 
     add_count: int = 0  # stats
     withdraw_count: int = 0  # stats
@@ -51,6 +51,10 @@ class NetworkStats(BaseModelMixin):
         return self.total_bond_rune * self.usd_per_rune
 
     @property
+    def total_pooled_usd(self):
+        return self.total_rune_pooled * self.usd_per_rune
+
+    @property
     def swap_volume_usd(self):
         return self.swap_volume_rune * self.usd_per_rune
 
@@ -73,6 +77,10 @@ class NetworkStats(BaseModelMixin):
     @property
     def network_security_ratio(self):
         return self.total_active_bond_rune / (self.total_active_bond_rune + self.total_rune_pooled)
+
+    @property
+    def total_nodes(self):
+        return self.active_nodes + self.standby_nodes
 
     @property
     def is_ok(self):

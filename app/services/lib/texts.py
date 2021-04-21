@@ -5,7 +5,7 @@ from urllib.parse import urlparse
 
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 
-from services.lib.money import pretty_money
+from services.lib.money import pretty_money, format_percent
 
 
 class MessageType(Enum):
@@ -101,3 +101,35 @@ def cut_long_text(text: str, max_symbols=15, end='...'):
         return text[:cut] + end
     else:
         return text
+
+
+def bracketify(item):
+    return f"({item})" if item else ''
+
+
+def up_down_arrow(old_value, new_value, smiley=False, more_is_better=True, same_result='',
+                  int_delta=False, money_delta=False, percent_delta=False, signed=True,
+                  money_prefix='', ignore_on_no_old=True, postfix=''):
+    if ignore_on_no_old and not old_value:
+        return same_result
+
+    delta = new_value - old_value
+
+    if delta == 0:
+        return same_result
+
+    better = delta > 0 if more_is_better else delta < 0
+
+    smiley = ('😃' if better else '🙁') if smiley else ''
+    arrow = '↑' if better else '↓'
+
+    delta_text = ''
+    if int_delta:
+        sign = ('+' if delta >= 0 else '') if signed else ''
+        delta_text = f"{sign}{int(delta)}"
+    elif money_delta:
+        delta_text = pretty_money(delta, money_prefix, signed)
+    elif percent_delta:
+        delta_text = format_percent(delta, old_value, signed)
+
+    return f"{smiley} {arrow} {delta_text}{postfix}".strip()
