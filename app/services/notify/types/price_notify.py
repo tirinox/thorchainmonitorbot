@@ -51,9 +51,9 @@ class PriceNotifier(INotified):
 
     async def historical_get_triplet(self):
         price_1h, price_24h, price_7d = await asyncio.gather(
-            self.time_series.select_average_ago(HOUR, tolerance=MINUTE * 5),
-            self.time_series.select_average_ago(DAY, tolerance=MINUTE * 30),
-            self.time_series.select_average_ago(DAY * 7, tolerance=HOUR * 1)
+            self.time_series.select_average_ago(HOUR, tolerance=MINUTE * 7),
+            self.time_series.select_average_ago(DAY, tolerance=MINUTE * 40),
+            self.time_series.select_average_ago(DAY * 7, tolerance=HOUR * 2)
         )
         return price_1h, price_24h, price_7d
 
