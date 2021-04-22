@@ -23,7 +23,7 @@ class NetworkStatisticsFetcher(BaseFetcher):
         async with session.get(url_stats) as resp:
             j = await resp.json()
 
-            ns.usd_per_rune = float(j['runePriceUSD'])
+            ns.usd_per_rune = float(j.get('runePriceUSD', self.deps.price_holder.usd_per_rune))
 
             ns.users_daily = int(j['dailyActiveUsers'])
             ns.users_monthly = int(j['monthlyActiveUsers'])

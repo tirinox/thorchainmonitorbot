@@ -8,7 +8,8 @@ from services.dialog.base import BaseDialog, message_handler
 from services.dialog.metrics_menu import MetricsDialog
 from services.dialog.settings_menu import SettingsDialog
 from services.dialog.stake_info_dialog import StakeDialog
-from services.models.cap_info import ThorCapInfo
+from services.lib.date_utils import DAY
+from services.notify.types.cap_notify import LiquidityCapNotifier
 
 
 class MainStates(StatesGroup):
@@ -28,7 +29,8 @@ class MainMenuDialog(BaseDialog):
                                                                               self.deps.db) is None:
             await SettingsDialog(self.loc, self.data, self.deps).ask_language(message)
         else:
-            info = await ThorCapInfo.get_old_cap(self.deps.db)
+            info = await LiquidityCapNotifier(self.deps).get_old_cap()
+
             await message.answer(self.loc.welcome_message(info),
                                  reply_markup=self.loc.kbd_main_menu(),
                                  disable_notification=True)
@@ -40,7 +42,8 @@ class MainMenuDialog(BaseDialog):
 
     @message_handler(commands='price', state='*')
     async def cmd_price(self, message: Message):
-        await MetricsDialog(self.loc, self.data, self.deps).show_price_info(message)
+        message.text = str(DAY)
+        await MetricsDialog(self.loc, self.data, self.deps).on_price_duration_answered(message)
 
     @message_handler(commands='help', state='*')
     async def cmd_help(self, message: Message):

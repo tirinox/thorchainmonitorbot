@@ -10,6 +10,7 @@ from services.dialog.picture.queue_picture import queue_graph
 from services.jobs.fetch.fair_price import fair_rune_price
 from services.models.cap_info import ThorCapInfo
 from services.models.price import PriceReport
+from services.notify.types.cap_notify import LiquidityCapNotifier
 from services.notify.types.price_notify import PriceNotifier
 
 
@@ -49,7 +50,7 @@ class MetricsDialog(BaseDialog):
                              disable_notification=True)
 
     async def show_cap(self, message: Message):
-        info = await ThorCapInfo.get_old_cap(self.deps.db)
+        info = await LiquidityCapNotifier(self.deps).get_old_cap()
         await message.answer(self.loc.cap_message(info),
                              disable_web_page_preview=True,
                              disable_notification=True)
