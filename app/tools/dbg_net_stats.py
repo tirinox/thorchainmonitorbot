@@ -43,7 +43,6 @@ def randomize_all_fields(old: NetworkStats, dev=10):
     return new
 
 
-
 async def print_message(new_info: NetworkStats, deps: DepContainer):
     old_info = copy(new_info)
     old_info.date_ts -= DAY

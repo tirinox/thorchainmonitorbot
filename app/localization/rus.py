@@ -7,6 +7,8 @@ from services.lib.money import pretty_dollar, pretty_money, short_address, adapt
     emoji_for_percent_change, short_asset_name, chain_name_from_pool
 from services.lib.texts import bold, link, code, ital, pre, x_ses, kbd, link_with_domain_text
 from services.models.cap_info import ThorCapInfo
+from services.models.net_stats import NetworkStats
+from services.models.node_info import NodeInfoChanges
 from services.models.pool_info import PoolInfo
 from services.models.price import RuneFairPrice, PriceReport
 from services.models.queue import QueueInfo
@@ -321,5 +323,10 @@ class RussianLocalization(BaseLocalization):
         else:
             return "НЕБЕЗОПАСНА"
 
-    def notification_text_network_summary(self):
-        return 'Состояние сети. Work in progress'  # todo:
+    def notification_text_network_summary(self, old: NetworkStats, new: NetworkStats):
+        return super().notification_text_network_summary(old, new)  # todo! rus
+
+    # ------- NETWORK NODES -------
+
+    def notification_text_for_node_churn(self, changes: NodeInfoChanges):
+        return super().notification_text_for_node_churn(changes)  # todo! rus

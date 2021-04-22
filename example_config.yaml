@@ -94,3 +94,6 @@ net_summary:
   fetch_period: 120s
   notification:
     cooldown: 6h
+
+node_info:
+  fetch_period: 140s

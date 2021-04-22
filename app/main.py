@@ -14,6 +14,7 @@ from services.dialog import init_dialogs
 from services.jobs.fetch.cap import CapInfoFetcher
 from services.jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
+from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.queue import QueueFetcher
 from services.jobs.fetch.tx import TxFetcher
@@ -26,6 +27,7 @@ from services.lib.utils import setup_logs
 from services.models.price import LastPriceHolder
 from services.notify.broadcast import Broadcaster
 from services.notify.types.cap_notify import LiquidityCapNotifier
+from services.notify.types.node_churn_notify import NodeChurnNotifier
 from services.notify.types.pool_churn import PoolChurnNotifier
 from services.notify.types.price_notify import PriceNotifier
 from services.notify.types.queue_notify import QueueNotifier
@@ -97,6 +99,7 @@ class App:
         fetcher_tx = TxFetcher(d)
         fetcher_queue = QueueFetcher(d)
         fetcher_stats = NetworkStatisticsFetcher(d, ppf=self.ppf)
+        fetcher_nodes = NodeInfoFetcher(d)
 
         notifier_cap = LiquidityCapNotifier(d)
         notifier_tx = StakeTxNotifier(d)
@@ -104,6 +107,7 @@ class App:
         notifier_price = PriceNotifier(d)
         notifier_pool_churn = PoolChurnNotifier(d)
         notifier_stats = NetworkStatsNotifier(d)
+        notifier_nodes = NodeChurnNotifier(d)
 
         stats_updater = PoolStatsUpdater(d)
         stats_updater.subscribe(notifier_tx)
@@ -112,6 +116,7 @@ class App:
         fetcher_cap.subscribe(notifier_cap)
         fetcher_queue.subscribe(notifier_queue)
         fetcher_stats.subscribe(notifier_stats)
+        fetcher_nodes.subscribe(notifier_nodes)
 
         self.ppf.subscribe(notifier_price)
         self.ppf.subscribe(notifier_pool_churn)
@@ -124,6 +129,7 @@ class App:
             fetcher_cap,
             fetcher_queue,
             fetcher_stats,
+            fetcher_nodes,
         ]))
 
     async def on_startup(self, _):

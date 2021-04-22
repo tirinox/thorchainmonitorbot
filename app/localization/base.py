@@ -13,6 +13,7 @@ from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, i
     link_with_domain_text, up_down_arrow, bracketify
 from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
+from services.models.node_info import NodeInfoChanges, NodeInfo
 from services.models.pool_info import PoolInfo
 from services.models.price import RuneFairPrice, PriceReport
 from services.models.queue import QueueInfo
@@ -484,7 +485,8 @@ class BaseLocalization(ABC):  # == English
         current_bond_text = bold(pretty_money(new.total_bond_rune, postfix=RAIDO_GLYPH))
         current_pooled_text = bold(pretty_money(new.total_rune_pooled, postfix=RAIDO_GLYPH))
         current_bond_change = bracketify(up_down_arrow(old.total_bond_rune, new.total_bond_rune, money_delta=True))
-        current_pooled_change = bracketify(up_down_arrow(old.total_rune_pooled, new.total_rune_pooled, money_delta=True))
+        current_pooled_change = bracketify(
+            up_down_arrow(old.total_rune_pooled, new.total_rune_pooled, money_delta=True))
 
         current_bond_usd_text = bold(pretty_dollar(new.total_bond_usd))
         current_pooled_usd_text = bold(pretty_dollar(new.total_pooled_usd))
@@ -565,7 +567,7 @@ class BaseLocalization(ABC):  # == English
         active_pool_changes = bracketify(up_down_arrow(old.active_pool_count,
                                                        new.active_pool_count, int_delta=True))
         pending_pool_changes = bracketify(up_down_arrow(old.pending_pool_count,
-                                                         new.pending_pool_count, int_delta=True))
+                                                        new.pending_pool_count, int_delta=True))
         message += f'{bold(new.active_pool_count)} active pools{active_pool_changes} and ' \
                    f'{bold(new.pending_pool_count)} pending pools{pending_pool_changes}.\n'
 
@@ -574,3 +576,29 @@ class BaseLocalization(ABC):  # == English
         message += f"Next pool is likely be activated: {next_pool} in {next_pool_wait}."
 
         return message
+
+    # ------- NETWORK NODES -------
+
+    def _format_node_text(self, node: NodeInfo):
+        node_link = link(f'https://www.infobyip.com/ip-{node.ip_address}.html', node.ip_address)
+        return f'{bold(short_address(node.node_address))} ({node_link}, v. {node.version}) ' \
+               f'with {pretty_money(node.bond, postfix=RAIDO_GLYPH)} bonded'
+
+    def _make_node_list(self, nodes, title):
+        if not nodes:
+            return ''
+
+        message = ital(title) + "\n"
+        for i, node in enumerate(nodes, start=1):
+            message += f"{i}. {self._format_node_text(node)}.\n"
+        return message + "\n"
+
+    def notification_text_for_node_churn(self, changes: NodeInfoChanges):
+        message = bold('♻️ Node churn') + '\n\n'
+
+        message += self._make_node_list(changes.nodes_added, '🆕 New nodes:')
+        message += self._make_node_list(changes.nodes_activated, '➡️ Nodes that churned in:')
+        message += self._make_node_list(changes.nodes_deactivated, '⬅️️ Nodes that churned out:')
+        message += self._make_node_list(changes.nodes_removed, '🗑️ Nodes that disconnected:')
+
+        return message.rstrip()

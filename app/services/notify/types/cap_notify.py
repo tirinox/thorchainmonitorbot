@@ -16,7 +16,7 @@ class LiquidityCapNotifier(INotified):
             j = await db.redis.get(self.KEY_INFO)
             return ThorCapInfo.from_json(j)
         except (TypeError, ValueError, AttributeError, json.decoder.JSONDecodeError):
-            logging.exception('get_old_cap error')
+            self.logger.exception('get_old_cap error')
             return ThorCapInfo.error()
 
     async def save_cap_info(self, cap: ThorCapInfo):
