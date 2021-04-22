@@ -28,11 +28,14 @@ class CapInfoFetcher(BaseFetcher):
             total_staked = int(total_staked) * THOR_DIVIDER_INV
 
         url_mimir = self.url_gen.url_mimir()
-        self.logger.info(f"get mimir: {url_network}")
+        self.logger.info(f"get mimir: {url_mimir}")
         async with session.get(url_mimir) as resp:
             mimir_resp = await resp.json()
+
             if 'mimir//MAXLIQUIDITYRUNE' in mimir_resp:
                 max_staked_str = mimir_resp.get("mimir//MAXLIQUIDITYRUNE", 1)
+            elif 'mimir//MAXIMUMLIQUIDITYRUNE' in mimir_resp:
+                max_staked_str = mimir_resp.get("mimir//MAXIMUMLIQUIDITYRUNE", 1)
             else:
                 max_staked_str = mimir_resp.get("mimir//MAXIMUMSTAKERUNE", 1)
 
