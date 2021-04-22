@@ -511,7 +511,7 @@ class BaseLocalization(ABC):  # == English
             added_24h_rune = new.added_rune - old.added_rune
             withdrawn_24h_rune = new.withdrawn_rune - old.withdrawn_rune
             swap_volume_24h_rune = new.swap_volume_rune - old.swap_volume_rune
-            switched_24h_rune = new.switched_rune - old.swap_volume_rune
+            switched_24h_rune = new.switched_rune - old.switched_rune
 
             add_rune_text = bold(pretty_money(added_24h_rune, prefix=RAIDO_GLYPH))
             withdraw_rune_text = bold(pretty_money(withdrawn_24h_rune, prefix=RAIDO_GLYPH))
@@ -525,12 +525,17 @@ class BaseLocalization(ABC):  # == English
             swap_usd_text = pretty_dollar(swap_volume_24h_rune * price)
             switch_usd_text = pretty_dollar(switched_24h_rune * price)
 
-            message += f'{ital("Last 24 hours:")}\n' \
-                       f'➕ Rune added to pools: {add_rune_text} ({add_usd_text}).\n' \
-                       f'➖ Rune withdrawn: {withdraw_rune_text} ({withdraw_usd_text}).\n' \
-                       f'🔀 Rune swap volume: {swap_rune_text} ({swap_usd_text}) by {bold(new.swaps_24h)} operations.\n' \
-                       f'💎 Rune switched to native: {switch_rune_text} ({switch_usd_text}).\n' \
+            message += f'{ital("Last 24 hours:")}\n'
 
+            if added_24h_rune:
+                message += f'➕ Rune added to pools: {add_rune_text} ({add_usd_text}).\n'
+            if withdrawn_24h_rune:
+                message += f'➖ Rune withdrawn: {withdraw_rune_text} ({withdraw_usd_text}).\n'
+            if swap_volume_24h_rune:
+                message += f'🔀 Rune swap volume: {swap_rune_text} ({swap_usd_text}) ' \
+                           f'by {bold(new.swaps_24h)} operations.\n'
+            if switched_24h_rune:
+                message += f'💎 Rune switched to native: {switch_rune_text} ({switch_usd_text}).\n'
             message += '\n'
 
         if abs(old.bonding_apy - new.bonding_apy) > 0.01:
