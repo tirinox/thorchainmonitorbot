@@ -32,7 +32,7 @@ class NetworkStatsNotifier(INotified):
 
         if await self.notify_cd.can_do():
             old_info = await self._load_saved_stats()
-            await self._notify(new_info, old_info)
+            await self._notify(old_info, new_info)
             await self.notify_cd.do()
 
     async def clear_cd(self):
