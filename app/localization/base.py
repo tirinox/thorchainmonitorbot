@@ -398,9 +398,10 @@ class BaseLocalization(ABC):  # == English
 
     # -------- METRICS ----------
 
-    BUTTON_METR_CAP = '📊 Liquidity cap'
+    BUTTON_METR_CAP = '✋ Liquidity cap'
     BUTTON_METR_PRICE = f'💲 {R} price info'
     BUTTON_METR_QUEUE = f'👥 Queue'
+    BUTTON_METR_STATS = '📊 Stats'
 
     TEXT_METRICS_INTRO = 'What metrics would you like to know?'
 
@@ -580,8 +581,10 @@ class BaseLocalization(ABC):  # == English
     # ------- NETWORK NODES -------
 
     def _format_node_text(self, node: NodeInfo):
-        node_link = link(f'https://www.infobyip.com/ip-{node.ip_address}.html', node.ip_address)
-        return f'{bold(short_address(node.node_address))} ({node_link}, v. {node.version}) ' \
+        node_ip_link = link(f'https://www.infobyip.com/ip-{node.ip_address}.html', node.ip_address)
+        thor_explore_url = get_explorer_url_to_address(self.cfg.network_id, Chains.THOR, node.node_address)
+        node_thor_link = link(thor_explore_url, short_address(node.node_address))
+        return f'{bold(node_thor_link)} ({node_ip_link}, v. {node.version}) ' \
                f'with {pretty_money(node.bond, postfix=RAIDO_GLYPH)} bonded'
 
     def _make_node_list(self, nodes, title):

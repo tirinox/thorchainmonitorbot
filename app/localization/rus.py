@@ -2,13 +2,16 @@ from datetime import datetime
 from math import ceil
 
 from localization.base import BaseLocalization, RAIDO_GLYPH, CREATOR_TG
-from services.lib.date_utils import format_time_ago
+from services.lib.constants import Chains
+from services.lib.date_utils import format_time_ago, seconds_human, now_ts
+from services.lib.explorers import get_explorer_url_to_address
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change, short_asset_name, chain_name_from_pool
-from services.lib.texts import bold, link, code, ital, pre, x_ses, kbd, link_with_domain_text
+from services.lib.texts import bold, link, code, ital, pre, x_ses, kbd, link_with_domain_text, progressbar, bracketify, \
+    up_down_arrow
 from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
-from services.models.node_info import NodeInfoChanges
+from services.models.node_info import NodeInfoChanges, NodeInfo
 from services.models.pool_info import PoolInfo
 from services.models.price import RuneFairPrice, PriceReport
 from services.models.queue import QueueInfo
@@ -265,9 +268,10 @@ class RussianLocalization(BaseLocalization):
 
     # -------- METRICS ----------
 
-    BUTTON_METR_CAP = '📊 Кап ливкидности'
+    BUTTON_METR_CAP = '✋ Кап ливкидности'
     BUTTON_METR_PRICE = f'💲 {BaseLocalization.R} инфо о цене'
     BUTTON_METR_QUEUE = f'👥 Очередь'
+    BUTTON_METR_STATS = f'📊 Статистика'
 
     TEXT_METRICS_INTRO = 'Что вы хотите узнать?'
 
@@ -313,20 +317,140 @@ class RussianLocalization(BaseLocalization):
 
     def network_bond_security_text(self, network_security_ratio):
         if network_security_ratio > 0.9:
-            return "НЕЭФФЕКТИВНА"
+            return "🥱 НЕЭФФЕКТИВНА"
         elif 0.9 >= network_security_ratio > 0.75:
-            return "ПЕРЕОБЕСПЕЧЕНА"
+            return "🥸 ПЕРЕОБЕСПЕЧЕНА"
         elif 0.75 >= network_security_ratio >= 0.6:
-            return "ОПТИМАЛЬНО"
+            return "⚡ ОПТИМАЛЬНА"
         elif 0.6 > network_security_ratio >= 0.5:
-            return "НЕДООБЕСПЕЧЕНА"
+            return "🤢 НЕДООБЕСПЕЧЕНА"
         else:
-            return "НЕБЕЗОПАСНА"
+            return "🤬 НЕБЕЗОПАСНА"
 
     def notification_text_network_summary(self, old: NetworkStats, new: NetworkStats):
-        return super().notification_text_network_summary(old, new)  # todo! rus
+        message = bold('🌐 THORChain статистика') + '\n'
+
+        message += '\n'
+
+        security_pb = progressbar(new.network_security_ratio, 1.0, 10)
+        security_text = self.network_bond_security_text(new.network_security_ratio)
+        message += f'🕸️ Сейчас сеть {bold(security_text)} {security_pb}.\n'
+
+        active_nodes_change = bracketify(up_down_arrow(old.active_nodes, new.active_nodes, int_delta=True))
+        standby_nodes_change = bracketify(up_down_arrow(old.active_nodes, new.active_nodes, int_delta=True))
+        message += f"🖥️ {bold(new.active_nodes)} активных нод{active_nodes_change} " \
+                   f"and {bold(new.standby_nodes)} нод в режиме ожидания{standby_nodes_change}.\n"
+
+        current_bond_text = bold(pretty_money(new.total_bond_rune, postfix=RAIDO_GLYPH))
+        current_pooled_text = bold(pretty_money(new.total_rune_pooled, postfix=RAIDO_GLYPH))
+        current_bond_change = bracketify(up_down_arrow(old.total_bond_rune, new.total_bond_rune, money_delta=True))
+        current_pooled_change = bracketify(
+            up_down_arrow(old.total_rune_pooled, new.total_rune_pooled, money_delta=True))
+
+        current_bond_usd_text = bold(pretty_dollar(new.total_bond_usd))
+        current_pooled_usd_text = bold(pretty_dollar(new.total_pooled_usd))
+        current_bond_usd_change = bracketify(up_down_arrow(old.total_bond_usd, new.total_bond_usd, money_delta=True))
+        current_pooled_usd_change = bracketify(
+            up_down_arrow(old.total_pooled_usd, new.total_pooled_usd, money_delta=True))
+
+        message += f"🔗 Всего в бонде: {current_bond_text}{current_bond_change} или " \
+                   f"{current_bond_usd_text}{current_bond_usd_change}.\n"
+        message += f"🏊 Всего в пулах ликвидности: {current_pooled_text}{current_pooled_change} или " \
+                   f"{current_pooled_usd_text}{current_pooled_usd_change}.\n"
+
+        reserve_change = bracketify(up_down_arrow(old.reserve_rune, new.reserve_rune,
+                                                  postfix=RAIDO_GLYPH, money_delta=True))
+        message += f'💰 Резервы: {bold(pretty_money(new.reserve_rune, postfix=RAIDO_GLYPH))}{reserve_change}.\n'
+
+        tlv_change = bracketify(up_down_arrow(old.tlv_usd, new.tlv_usd, money_delta=True, money_prefix='$'))
+        message += f'🏦 TLV (всего средств заблокировано): {code(pretty_dollar(new.tlv_usd))}{tlv_change}.\n'
+
+        message += '\n'
+
+        if old.is_ok:
+            # 24 h Add/withdrawal
+            added_24h_rune = new.added_rune - old.added_rune
+            withdrawn_24h_rune = new.withdrawn_rune - old.withdrawn_rune
+            swap_volume_24h_rune = new.swap_volume_rune - old.swap_volume_rune
+            switched_24h_rune = new.switched_rune - old.switched_rune
+
+            add_rune_text = bold(pretty_money(added_24h_rune, prefix=RAIDO_GLYPH))
+            withdraw_rune_text = bold(pretty_money(withdrawn_24h_rune, prefix=RAIDO_GLYPH))
+            swap_rune_text = bold(pretty_money(swap_volume_24h_rune, prefix=RAIDO_GLYPH))
+            switch_rune_text = bold(pretty_money(switched_24h_rune, prefix=RAIDO_GLYPH))
+
+            price = new.usd_per_rune
+
+            add_usd_text = pretty_dollar(added_24h_rune * price)
+            withdraw_usd_text = pretty_dollar(withdrawn_24h_rune * price)
+            swap_usd_text = pretty_dollar(swap_volume_24h_rune * price)
+            switch_usd_text = pretty_dollar(switched_24h_rune * price)
+
+            message += f'{ital("За последние 24 часа:")}\n'
+
+            if added_24h_rune:
+                message += f'➕ Рун добавлено в пулы: {add_rune_text} ({add_usd_text}).\n'
+            if withdrawn_24h_rune:
+                message += f'➖ Рун выведено из пулов: {withdraw_rune_text} ({withdraw_usd_text}).\n'
+            if swap_volume_24h_rune:
+                message += f'🔀 Объем торгов: {swap_rune_text} ({swap_usd_text}) ' \
+                           f'при {bold(new.swaps_24h)} обменов совершено.\n'
+            if switched_24h_rune:
+                message += f'💎 Рун конвертировано в нативные: {switch_rune_text} ({switch_usd_text}).\n'
+            message += '\n'
+
+        if abs(old.bonding_apy - new.bonding_apy) > 0.01:
+            bonding_apy_change = bracketify(
+                up_down_arrow(old.bonding_apy, new.bonding_apy, money_delta=True, postfix='%'))
+        else:
+            bonding_apy_change = ''
+
+        if abs(old.liquidity_apy - new.liquidity_apy) > 0.01:
+            liquidity_apy_change = bracketify(
+                up_down_arrow(old.liquidity_apy, new.liquidity_apy, money_delta=True, postfix='%'))
+        else:
+            liquidity_apy_change = ''
+
+        message += f'📈 Доход от бондов в нодах, годовых: {code(pretty_money(new.bonding_apy, postfix="%"))}{bonding_apy_change} and ' \
+                   f'Доход от пулов в среднем, годовых {code(pretty_money(new.liquidity_apy, postfix="%"))}{liquidity_apy_change}.\n'
+
+        message += f'🛡️ Выплачено страховки от IL (непостоянных потерь): {code(pretty_dollar(new.loss_protection_paid_usd))}.\n'
+
+        daily_users_change = bracketify(up_down_arrow(old.users_daily, new.users_daily, int_delta=True))
+        monthly_users_change = bracketify(up_down_arrow(old.users_monthly, new.users_monthly, int_delta=True))
+        message += f'👥 Пользователей за день: {code(new.users_daily)}{daily_users_change}, ' \
+                   f'пользователей за месяц: {code(new.users_monthly)}{monthly_users_change}\n'
+
+        message += '\n'
+
+        active_pool_changes = bracketify(up_down_arrow(old.active_pool_count,
+                                                       new.active_pool_count, int_delta=True))
+        pending_pool_changes = bracketify(up_down_arrow(old.pending_pool_count,
+                                                        new.pending_pool_count, int_delta=True))
+        message += f'{bold(new.active_pool_count)} активных пулов{active_pool_changes} и ' \
+                   f'{bold(new.pending_pool_count)} ожидающих активации пулов{pending_pool_changes}.\n'
+
+        next_pool_wait = seconds_human(new.next_pool_activation_ts - now_ts())
+        next_pool = link(self.pool_link(new.next_pool_to_activate), new.next_pool_to_activate)
+        message += f"Вероятно, будет активирован пул: {next_pool} через {next_pool_wait}."
+
+        return message
 
     # ------- NETWORK NODES -------
 
+    def _format_node_text(self, node: NodeInfo):
+        node_ip_link = link(f'https://www.infobyip.com/ip-{node.ip_address}.html', node.ip_address)
+        thor_explore_url = get_explorer_url_to_address(self.cfg.network_id, Chains.THOR, node.node_address)
+        node_thor_link = link(thor_explore_url, short_address(node.node_address))
+        return f'{bold(node_thor_link)} ({node_ip_link}, версия {node.version}) ' \
+               f'с {pretty_money(node.bond, postfix=RAIDO_GLYPH)} бонд'
+
     def notification_text_for_node_churn(self, changes: NodeInfoChanges):
-        return super().notification_text_for_node_churn(changes)  # todo! rus
+        message = bold('♻️ Перемешивание нод') + '\n\n'
+
+        message += self._make_node_list(changes.nodes_added, '🆕 Новые ноды подключились:')
+        message += self._make_node_list(changes.nodes_activated, '➡️ Ноды активироны:')
+        message += self._make_node_list(changes.nodes_deactivated, '⬅️️ Ноды деактивированы:')
+        message += self._make_node_list(changes.nodes_removed, '🗑️ Ноды отключились:')
+
+        return message.rstrip()

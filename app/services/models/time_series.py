@@ -1,6 +1,7 @@
 import json
 import time
 
+from services.lib.date_utils import now_ts
 from services.lib.db import DB
 
 
@@ -15,7 +16,7 @@ class TimeSeries:
 
     @staticmethod
     def range_ago(ago_sec, tolerance_sec=10):
-        now_sec = time.time()
+        now_sec = now_ts()
         return (
             int((now_sec - ago_sec - tolerance_sec) * 1000),
             int((now_sec - ago_sec + tolerance_sec) * 1000)
@@ -23,10 +24,10 @@ class TimeSeries:
 
     @staticmethod
     def range_from_ago_to_now(ago_sec, tolerance_sec=10):
-        now_sec = time.time()
+        now_sec = now_ts()
         return (
             int((now_sec - ago_sec - tolerance_sec) * 1000),
-            int((now_sec - tolerance_sec) * 1000)
+            int((now_sec + tolerance_sec) * 1000)
         )
 
     @staticmethod

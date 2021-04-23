@@ -2,6 +2,7 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import *
 from aiogram.utils.helper import HelperMode
 
+from localization import BaseLocalization
 from services.dialog.picture.price_picture import price_graph_from_db
 from services.lib.date_utils import DAY, HOUR, parse_timespan_to_seconds
 from services.lib.texts import kbd
@@ -12,6 +13,7 @@ from services.models.cap_info import ThorCapInfo
 from services.models.price import PriceReport
 from services.notify.types.cap_notify import LiquidityCapNotifier
 from services.notify.types.price_notify import PriceNotifier
+from services.notify.types.stats_notify import NetworkStatsNotifier
 
 
 class MetricsStates(StatesGroup):
@@ -36,6 +38,9 @@ class MetricsDialog(BaseDialog):
         elif message.text == self.loc.BUTTON_METR_CAP:
             await self.show_cap(message)
             await self.show_menu(message)
+        elif message.text == self.loc.BUTTON_METR_STATS:
+            await self.show_last_stats(message)
+            await self.show_menu(message)
         else:
             await self.show_menu(message)
 
@@ -43,7 +48,8 @@ class MetricsDialog(BaseDialog):
         await MetricsStates.MAIN_METRICS_MENU.set()
         reply_markup = kbd([
             [self.loc.BUTTON_METR_PRICE, self.loc.BUTTON_METR_CAP],
-            [self.loc.BUTTON_METR_QUEUE, self.loc.BUTTON_BACK]
+            [self.loc.BUTTON_METR_QUEUE, self.loc.BUTTON_METR_STATS],
+            [self.loc.BUTTON_BACK]
         ])
         await message.answer(self.loc.TEXT_METRICS_INTRO,
                              reply_markup=reply_markup,
@@ -52,6 +58,15 @@ class MetricsDialog(BaseDialog):
     async def show_cap(self, message: Message):
         info = await LiquidityCapNotifier(self.deps).get_old_cap()
         await message.answer(self.loc.cap_message(info),
+                             disable_web_page_preview=True,
+                             disable_notification=True)
+
+    async def show_last_stats(self, message: Message):
+        nsn = NetworkStatsNotifier(self.deps)
+        old_info = await nsn.get_previous_stats()
+        new_info = await nsn.get_latest_info()
+        loc: BaseLocalization = self.loc
+        await message.answer(loc.notification_text_network_summary(old_info, new_info),
                              disable_web_page_preview=True,
                              disable_notification=True)
 
