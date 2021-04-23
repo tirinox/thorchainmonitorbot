@@ -3,13 +3,13 @@ from aiogram.types import *
 from aiogram.utils.helper import HelperMode
 
 from localization import BaseLocalization
-from services.dialog.picture.price_picture import price_graph_from_db
-from services.lib.date_utils import DAY, HOUR, parse_timespan_to_seconds
-from services.lib.texts import kbd
 from services.dialog.base import BaseDialog, message_handler
+from services.dialog.picture.price_picture import price_graph_from_db
 from services.dialog.picture.queue_picture import queue_graph
 from services.jobs.fetch.fair_price import fair_rune_price
-from services.models.cap_info import ThorCapInfo
+from services.jobs.fetch.node_info import NodeInfoFetcher
+from services.lib.date_utils import DAY, HOUR, parse_timespan_to_seconds
+from services.lib.texts import kbd
 from services.models.price import PriceReport
 from services.notify.types.cap_notify import LiquidityCapNotifier
 from services.notify.types.price_notify import PriceNotifier
@@ -41,14 +41,17 @@ class MetricsDialog(BaseDialog):
         elif message.text == self.loc.BUTTON_METR_STATS:
             await self.show_last_stats(message)
             await self.show_menu(message)
+        elif message.text == self.loc.BUTTON_METR_NODES:
+            await self.show_node_list(message)
+            await self.show_menu(message)
         else:
             await self.show_menu(message)
 
     async def show_menu(self, message: Message):
         await MetricsStates.MAIN_METRICS_MENU.set()
         reply_markup = kbd([
-            [self.loc.BUTTON_METR_PRICE, self.loc.BUTTON_METR_CAP],
-            [self.loc.BUTTON_METR_QUEUE, self.loc.BUTTON_METR_STATS],
+            [self.loc.BUTTON_METR_PRICE, self.loc.BUTTON_METR_CAP, self.loc.BUTTON_METR_QUEUE],
+            [self.loc.BUTTON_METR_STATS, self.loc.BUTTON_METR_NODES],
             [self.loc.BUTTON_BACK]
         ])
         await message.answer(self.loc.TEXT_METRICS_INTRO,
@@ -69,6 +72,12 @@ class MetricsDialog(BaseDialog):
         await message.answer(loc.notification_text_network_summary(old_info, new_info),
                              disable_web_page_preview=True,
                              disable_notification=True)
+
+    async def show_node_list(self, message: Message):
+        node_list = await NodeInfoFetcher(self.deps).fetch_current_node_list()
+        await message.answer(self.loc.node_list_text(node_list),
+                             disable_notification=True,
+                             disable_web_page_preview=True)
 
     async def ask_queue_duration(self, message: Message):
         await message.answer(self.loc.TEXT_PRICE_INFO_ASK_DURATION, reply_markup=kbd([

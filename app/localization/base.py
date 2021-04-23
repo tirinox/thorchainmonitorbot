@@ -1,6 +1,7 @@
 from abc import ABC
 from datetime import datetime
 from math import ceil
+from typing import List
 
 from services.lib.config import Config
 from services.lib.constants import NetworkIdents
@@ -402,6 +403,7 @@ class BaseLocalization(ABC):  # == English
     BUTTON_METR_PRICE = f'💲 {R} price info'
     BUTTON_METR_QUEUE = f'👥 Queue'
     BUTTON_METR_STATS = '📊 Stats'
+    BUTTON_METR_NODES = '🖥 Nodes'
 
     TEXT_METRICS_INTRO = 'What metrics would you like to know?'
 
@@ -530,15 +532,27 @@ class BaseLocalization(ABC):  # == English
 
             message += f'{ital("Last 24 hours:")}\n'
 
+            some_added = False
             if added_24h_rune:
+                some_added = True
                 message += f'➕ Rune added to pools: {add_rune_text} ({add_usd_text}).\n'
+
             if withdrawn_24h_rune:
+                some_added = True
                 message += f'➖ Rune withdrawn: {withdraw_rune_text} ({withdraw_usd_text}).\n'
+
             if swap_volume_24h_rune:
+                some_added = True
                 message += f'🔀 Rune swap volume: {swap_rune_text} ({swap_usd_text}) ' \
                            f'by {bold(new.swaps_24h)} operations.\n'
+
             if switched_24h_rune:
+                some_added = True
                 message += f'💎 Rune switched to native: {switch_rune_text} ({switch_usd_text}).\n'
+
+            if not some_added:
+                message += '–\n'
+
             message += '\n'
 
         if abs(old.bonding_apy - new.bonding_apy) > 0.01:
@@ -580,21 +594,46 @@ class BaseLocalization(ABC):  # == English
 
     # ------- NETWORK NODES -------
 
-    def _format_node_text(self, node: NodeInfo):
+    def _format_node_text(self, node: NodeInfo, add_status=False, extended_info=False):
         node_ip_link = link(f'https://www.infobyip.com/ip-{node.ip_address}.html', node.ip_address)
         thor_explore_url = get_explorer_url_to_address(self.cfg.network_id, Chains.THOR, node.node_address)
         node_thor_link = link(thor_explore_url, short_address(node.node_address))
-        return f'{bold(node_thor_link)} ({node_ip_link}, v. {node.version}) ' \
-               f'with {pretty_money(node.bond, postfix=RAIDO_GLYPH)} bonded'
+        extra = ''
+        if extended_info:
+            if node.slash_points:
+                extra += f', {bold(node.slash_points)} slash points'
 
-    def _make_node_list(self, nodes, title):
+            if node.current_award:
+                award_text = bold(pretty_money(node.current_award, postfix=RAIDO_GLYPH))
+                extra += f", current award is {award_text}"
+
+        status = f', ({pre(node.status)})' if add_status else ''
+        return f'{bold(node_thor_link)} ({node_ip_link}, v. {node.version}) ' \
+               f'with {bold(pretty_money(node.bond, postfix=RAIDO_GLYPH))} bonded{status}{extra}'.strip()
+
+    def _make_node_list(self, nodes, title, add_status=False, extended_info=False):
         if not nodes:
             return ''
 
         message = ital(title) + "\n"
         for i, node in enumerate(nodes, start=1):
-            message += f"{i}. {self._format_node_text(node)}.\n"
+            message += f"{i}. {self._format_node_text(node, add_status, extended_info)}.\n"
         return message + "\n"
+
+    def node_list_text(self, nodes: List[NodeInfo]):
+        message = bold('🕸️ THORChain Nodes') + '\n'
+
+        message += '\n'
+
+        active_nodes = [n for n in nodes if n.is_active]
+        standby_nodes = [n for n in nodes if n.is_standby]
+        other_nodes = [n for n in nodes if n.in_strange_status]
+
+        message += self._make_node_list(active_nodes, '✅ Active nodes:', extended_info=True)
+        message += self._make_node_list(standby_nodes, '⏱ Standby nodes:', extended_info=True)
+        message += self._make_node_list(other_nodes, '❔ Other nodes:', add_status=True, extended_info=True)
+
+        return message.rstrip()
 
     def notification_text_for_node_churn(self, changes: NodeInfoChanges):
         message = bold('♻️ Node churn') + '\n\n'

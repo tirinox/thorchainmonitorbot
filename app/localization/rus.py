@@ -1,5 +1,6 @@
 from datetime import datetime
 from math import ceil
+from typing import List
 
 from localization.base import BaseLocalization, RAIDO_GLYPH, CREATOR_TG
 from services.lib.constants import Chains
@@ -7,16 +8,16 @@ from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change, short_asset_name, chain_name_from_pool
-from services.lib.texts import bold, link, code, ital, pre, x_ses, kbd, link_with_domain_text, progressbar, bracketify, \
+from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
     up_down_arrow
 from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeInfoChanges, NodeInfo
 from services.models.pool_info import PoolInfo
+from services.models.pool_stats import StakePoolStats
 from services.models.price import RuneFairPrice, PriceReport
 from services.models.queue import QueueInfo
 from services.models.tx import LPAddWithdrawTx, ThorTxType
-from services.models.pool_stats import StakePoolStats
 
 
 class RussianLocalization(BaseLocalization):
@@ -272,6 +273,7 @@ class RussianLocalization(BaseLocalization):
     BUTTON_METR_PRICE = f'💲 {BaseLocalization.R} инфо о цене'
     BUTTON_METR_QUEUE = f'👥 Очередь'
     BUTTON_METR_STATS = f'📊 Статистика'
+    BUTTON_METR_NODES = '🖥 Ноды (узлы)'
 
     TEXT_METRICS_INTRO = 'Что вы хотите узнать?'
 
@@ -411,8 +413,8 @@ class RussianLocalization(BaseLocalization):
         else:
             liquidity_apy_change = ''
 
-        message += f'📈 Доход от бондов в нодах, годовых: {code(pretty_money(new.bonding_apy, postfix="%"))}{bonding_apy_change} and ' \
-                   f'Доход от пулов в среднем, годовых {code(pretty_money(new.liquidity_apy, postfix="%"))}{liquidity_apy_change}.\n'
+        message += f'📈 Доход от бондов в нодах, годовых: {code(pretty_money(new.bonding_apy, postfix="%"))}{bonding_apy_change} и ' \
+                   f'доход от пулов в среднем, годовых {code(pretty_money(new.liquidity_apy, postfix="%"))}{liquidity_apy_change}.\n'
 
         message += f'🛡️ Выплачено страховки от IL (непостоянных потерь): {code(pretty_dollar(new.loss_protection_paid_usd))}.\n'
 
@@ -438,12 +440,32 @@ class RussianLocalization(BaseLocalization):
 
     # ------- NETWORK NODES -------
 
-    def _format_node_text(self, node: NodeInfo):
+    def _format_node_text(self, node: NodeInfo, add_status=False, extended_info=False):
         node_ip_link = link(f'https://www.infobyip.com/ip-{node.ip_address}.html', node.ip_address)
         thor_explore_url = get_explorer_url_to_address(self.cfg.network_id, Chains.THOR, node.node_address)
         node_thor_link = link(thor_explore_url, short_address(node.node_address))
+
+        node_status = node.status.lower()
+        if node_status == node.STANDBY:
+            status = 'Ожидание'
+        elif node_status == node.ACTIVE:
+            status = 'Активна'
+        elif node_status == node.DISABLED:
+            status = 'Отключена!'
+        else:
+            status = node.status
+
+        extra = ''
+        if extended_info:
+            if node.slash_points:
+                extra += f", {bold(node.slash_points)} штрафов"
+            if node.current_award:
+                award_text = bold(pretty_money(node.current_award, postfix=RAIDO_GLYPH))
+                extra += f", {award_text} награды"
+
+        status = f', ({pre(status)})' if add_status else ''
         return f'{bold(node_thor_link)} ({node_ip_link}, версия {node.version}) ' \
-               f'с {pretty_money(node.bond, postfix=RAIDO_GLYPH)} бонд'
+               f'с {bold(pretty_money(node.bond, postfix=RAIDO_GLYPH))} бонд {status}{extra}'.strip()
 
     def notification_text_for_node_churn(self, changes: NodeInfoChanges):
         message = bold('♻️ Перемешивание нод') + '\n\n'
@@ -452,5 +474,20 @@ class RussianLocalization(BaseLocalization):
         message += self._make_node_list(changes.nodes_activated, '➡️ Ноды активироны:')
         message += self._make_node_list(changes.nodes_deactivated, '⬅️️ Ноды деактивированы:')
         message += self._make_node_list(changes.nodes_removed, '🗑️ Ноды отключились:')
+
+        return message.rstrip()
+
+    def node_list_text(self, nodes: List[NodeInfo]):
+        message = bold('🕸️ THORChain ноды (узлы)') + '\n'
+
+        message += '\n'
+
+        active_nodes = [n for n in nodes if n.is_active]
+        standby_nodes = [n for n in nodes if n.is_standby]
+        other_nodes = [n for n in nodes if n.in_strange_status]
+
+        message += self._make_node_list(active_nodes, '✅ Активные ноды:', extended_info=True)
+        message += self._make_node_list(standby_nodes, '⏱ Ожидающие активации ноды:', extended_info=True)
+        message += self._make_node_list(other_nodes, '❔ Ноды в других статусах:', add_status=True, extended_info=True)
 
         return message.rstrip()

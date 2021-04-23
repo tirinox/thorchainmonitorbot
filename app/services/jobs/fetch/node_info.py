@@ -63,7 +63,7 @@ class NodeInfoFetcher(BaseFetcher):
 
         return NodeInfoChanges(nodes_added, nodes_removed, nodes_activated, nodes_deactivated, new_nodes)
 
-    async def fetch(self) -> NodeInfoChanges:
+    async def fetch_current_node_list(self) -> List[NodeInfo]:
         session = self.deps.session
 
         url = self.url_gen.url_thor_nodes()
@@ -79,12 +79,16 @@ class NodeInfoFetcher(BaseFetcher):
                     bond=int(j['bond']) * THOR_DIVIDER_INV,
                     ip_address=j['ip_address'],
                     version=j['version'],
-                    slash_points=int(j['slash_points'])
+                    slash_points=int(j['slash_points']),
+                    current_award=int(j['current_award']) * THOR_DIVIDER_INV,
                 ))
 
-        # new_nodes = self._test_churn(new_nodes)  #  debug!!
+        new_nodes.sort(key=lambda k: (k.status, -k.bond))
+        return new_nodes
 
-        new_nodes.sort(key=lambda k: (k.status, k.node_address))
+    async def fetch(self) -> NodeInfoChanges:
+        new_nodes = await self.fetch_current_node_list()
+        # new_nodes = self._test_churn(new_nodes)  #  debug!!
 
         results = await self._extract_changes(new_nodes)
 

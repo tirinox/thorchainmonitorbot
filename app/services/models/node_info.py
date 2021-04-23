@@ -6,8 +6,10 @@ from services.models.base import BaseModelMixin
 
 @dataclass
 class NodeInfo(BaseModelMixin):
-    ACTIVE = 'Active'
-    STANDBY = 'Standby'
+    ACTIVE = 'active'
+    STANDBY = 'standby'
+    WHITELISTED = 'whitelisted'
+    DISABLED = 'disabled'
 
     status: str = ''
 
@@ -18,11 +20,21 @@ class NodeInfo(BaseModelMixin):
     version: str = ''
     slash_points: int = 0
 
+    current_award: float = ''
+
     # there are not all properties
 
     @property
     def is_active(self):
-        return self.status == self.ACTIVE
+        return self.status.lower() == self.ACTIVE
+
+    @property
+    def is_standby(self):
+        return self.status.lower() == self.STANDBY
+
+    @property
+    def in_strange_status(self):
+        return not self.is_standby and not self.is_active
 
     @property
     def ident(self):
