@@ -432,9 +432,12 @@ class RussianLocalization(BaseLocalization):
         message += f'{bold(new.active_pool_count)} активных пулов{active_pool_changes} и ' \
                    f'{bold(new.pending_pool_count)} ожидающих активации пулов{pending_pool_changes}.\n'
 
-        next_pool_wait = seconds_human(new.next_pool_activation_ts - now_ts())
-        next_pool = link(self.pool_link(new.next_pool_to_activate), new.next_pool_to_activate)
-        message += f"Вероятно, будет активирован пул: {next_pool} через {next_pool_wait}."
+        if new.next_pool_to_activate:
+            next_pool_wait = seconds_human(new.next_pool_activation_ts - now_ts())
+            next_pool = link(self.pool_link(new.next_pool_to_activate), new.next_pool_to_activate)
+            message += f"Вероятно, будет активирован пул: {next_pool} через {next_pool_wait}."
+        else:
+            message += f"Пока что нет достойного пула для активации."
 
         return message
 

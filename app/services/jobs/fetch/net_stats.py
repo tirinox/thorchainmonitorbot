@@ -1,5 +1,7 @@
 import asyncio
 
+from aiothornode.types import ThorConstants, ThorMimir
+
 from services.jobs.fetch.base import BaseFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.lib.constants import THOR_DIVIDER_INV, THOR_BLOCK_TIME
@@ -67,6 +69,22 @@ class NetworkStatisticsFetcher(BaseFetcher):
             ns.total_bond_rune = (int(bonding_metrics['totalActiveBond']) +
                                   int(bonding_metrics['totalStandbyBond'])) * THOR_DIVIDER_INV
 
+    KEY_CONST_MIN_RUNE_POOL_DEPTH = 'MinRunePoolDepth'
+
+    def _get_constant_value_int(self, name: str, mimir: ThorMimir, constants: ThorConstants):
+        hardcoded_value = int(constants.constants.get(name, 0))
+
+        wanted_const = f'mimir//{name.upper()}'
+        if not hardcoded_value or wanted_const in mimir.constants:
+            return int(mimir.constants[wanted_const])
+        else:
+            return hardcoded_value
+
+    async def _get_min_pool_depth(self) -> int:
+        mimir, constants = await asyncio.gather(self.deps.thor_connector.query_mimir(),
+                                                self.deps.thor_connector.query_constants())
+        return self._get_constant_value_int(self.KEY_CONST_MIN_RUNE_POOL_DEPTH, mimir, constants)
+
     async def _get_pools(self, _, ns: NetworkStats):
         pools = await self.ppf.get_current_pool_data_full()
         active_pools = [p for p in pools.values() if p.is_enabled]
@@ -74,9 +92,15 @@ class NetworkStatisticsFetcher(BaseFetcher):
         ns.active_pool_count = len(active_pools)
         ns.pending_pool_count = len(pending_pools)
 
+        min_pool_depth_rune = await self._get_min_pool_depth()
+
         pending_pools = list(sorted(pending_pools, key=lambda p: p.balance_rune, reverse=True))
         if pending_pools:
-            ns.next_pool_to_activate = pending_pools[0].asset
+            best_pool = pending_pools[0]
+            if best_pool.balance_rune >= min_pool_depth_rune:
+                ns.next_pool_to_activate = pending_pools[0].asset
+            else:
+                ns.next_pool_to_activate = None
 
     async def fetch(self) -> NetworkStats:
         session = self.deps.session

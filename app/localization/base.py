@@ -586,9 +586,12 @@ class BaseLocalization(ABC):  # == English
         message += f'{bold(new.active_pool_count)} active pools{active_pool_changes} and ' \
                    f'{bold(new.pending_pool_count)} pending pools{pending_pool_changes}.\n'
 
-        next_pool_wait = seconds_human(new.next_pool_activation_ts - now_ts())
-        next_pool = link(self.pool_link(new.next_pool_to_activate), new.next_pool_to_activate)
-        message += f"Next pool is likely be activated: {next_pool} in {next_pool_wait}."
+        if new.next_pool_to_activate:
+            next_pool_wait = seconds_human(new.next_pool_activation_ts - now_ts())
+            next_pool = link(self.pool_link(new.next_pool_to_activate), new.next_pool_to_activate)
+            message += f"Next pool is likely be activated: {next_pool} in {next_pool_wait}."
+        else:
+            message += f"There is no eligible pool to be activated yet."
 
         return message
 
