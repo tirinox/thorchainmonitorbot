@@ -2,6 +2,7 @@ import string
 import time
 from dataclasses import dataclass, field
 from math import sqrt
+from typing import List, Dict
 
 from services.lib.constants import THOR_DIVIDER_INV, Chains
 from services.lib.date_utils import DAY
@@ -73,6 +74,8 @@ class LPDailyGraphPoint:
             timestamp=int(j.get('time', 0)),
         )
 
+
+LPDailyChartByPoolDict = Dict[str, List[LPDailyGraphPoint]]
 
 @dataclass
 class CurrentLiquidity(BaseModelMixin):

@@ -4,6 +4,7 @@ from typing import List, Dict
 from aiothornode.types import ThorPool
 
 from services.lib.constants import THOR_DIVIDER_INV
+from services.models.lp_info import pool_share
 
 
 @dataclass
@@ -23,6 +24,10 @@ class PoolInfo:
 
     def percent_share(self, runes):
         return runes / (2 * self.balance_rune * THOR_DIVIDER_INV) * 100.0
+
+    def rune_share_of_pool(self, units) -> float:
+        r, a = pool_share(self.balance_rune, self.balance_asset, self.pool_units, units)
+        return r * self.balance_rune * THOR_DIVIDER_INV
 
     @classmethod
     def dummy(cls):

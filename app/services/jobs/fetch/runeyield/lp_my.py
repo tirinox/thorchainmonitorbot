@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 import operator
+from collections import defaultdict
 from typing import List, Tuple, Dict, Optional
 
 from services.jobs.fetch.pool_price import PoolPriceFetcher
@@ -14,7 +15,8 @@ from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import MidgardURLGenBase
 from services.lib.money import weighted_mean
 from services.lib.utils import pairwise
-from services.models.lp_info import LiquidityPoolReport, CurrentLiquidity, FeeReport, ReturnMetrics, LPDailyGraphPoint
+from services.models.lp_info import LiquidityPoolReport, CurrentLiquidity, FeeReport, ReturnMetrics, LPDailyGraphPoint, \
+    LPDailyChartByPoolDict, pool_share
 from services.models.pool_info import LPPosition, PoolInfoMap
 from services.models.pool_member import PoolMemberDetails
 from services.models.tx import ThorTx, ThorTxType
@@ -80,9 +82,6 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         current_pool_details: PoolMemberDetails = current_pools_details.get(pool)
 
         cur_liq = self._get_current_liquidity(user_txs, current_pool_details, historic_all_pool_states)
-
-        # print(cur_liq)
-        # print(current_pool_details)
 
         fees = self._get_fee_report(user_txs, current_pool_details, historic_all_pool_states)
         usd_per_asset_start, usd_per_rune_start = self._get_earliest_prices(user_txs, historic_all_pool_states)
@@ -297,9 +296,9 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
                          fee_rune=fee_rune,
                          fee_asset=fee_asset)
 
-    async def _pool_units_by_day(self, txs: List[ThorTx], now=None, days=14) -> List:
+    def _pool_units_by_day(self, txs: List[ThorTx], now=None, days=14) -> List:
         if not txs:
-            return []
+            return [(i, 0) for i in range(days)]  # always 0
 
         units_history = []
         current_units = 0
@@ -309,28 +308,49 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             units_history.append((tx.date_timestamp, current_units))
             assert tx.date_timestamp >= old_ts, "tx list must be sorted"
             old_ts = tx.date_timestamp
-        units_history = list(reversed(units_history))
 
         now = now or datetime.datetime.now()
-        current_index = 0
-        day_to_pools = []
+        day_to_units = []
+
+        last_action_ts, current_units = units_history[-1]
         for day in range(days):
             if day:
                 day_ago_date_ts = days_ago_noon(day, now).timestamp()  # yesterday + n: noon (for caching purposes)
             else:
                 day_ago_date_ts = now_ts()  # exact now
 
-            ts, units = units_history[current_index]
-            while ts > day_ago_date_ts and current_index < len(txs) - 1:
-                current_index += 1
-                ts, units = units_history[current_index]
-            day_to_pools.append((day, units))
+            while day_ago_date_ts < last_action_ts:
+                last_action_ts, current_units = units_history.pop() if units_history else (0, 0)
 
-        return day_to_pools
+            day_to_units.append((day, day_ago_date_ts, current_units))
+
+        return day_to_units
 
     async def _get_charts(self,
                           txs: List[ThorTx],
                           current_pools_details: List[PoolMemberDetails],
                           historic_all_pool_states: HeightToAllPools,
-                          day_for_chart) -> Dict[str, List[LPDailyGraphPoint]]:
-        return {}  # todo!
+                          days=14) -> LPDailyChartByPoolDict:
+
+        tx_by_pool_map = defaultdict(list)
+        for tx in txs:
+            tx_by_pool_map[tx.first_pool].append(tx)
+
+        results = {}
+        for pool, pool_txs in tx_by_pool_map.items():
+            day_to_units = self._pool_units_by_day(pool_txs, days)  # List of (day_no, timestamp, units)
+
+            graph_points = []
+            for day, ts, units in day_to_units:
+                height = 0  # ts -> height
+                pools_at_height = historic_all_pool_states[height]
+                pool_info = pools_at_height[pool]
+
+                usd_per_rune = self._calculate_weighted_rune_price_in_usd(pools_at_height)
+                total_my_runes = 2.0 * pool_info.rune_share_of_pool(units)
+                usd_value = total_my_runes * usd_per_rune
+
+                graph_points.append(LPDailyGraphPoint(ts, usd_value))
+            results[pool] = graph_points
+
+        return results

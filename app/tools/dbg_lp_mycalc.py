@@ -4,7 +4,7 @@ import logging
 from services.jobs.fetch.runeyield import AsgardConsumerConnectorV1
 from services.jobs.fetch.runeyield.lp_my import HomebrewLPConnector
 from services.jobs.fetch.tx import TxFetcher
-from services.lib.utils import setup_logs
+from services.lib.utils import setup_logs, load_pickle, save_pickle
 from tools.dbg_lp import LpTesterBase
 
 
@@ -17,12 +17,13 @@ async def test_get_user_lp_actions(lpgen: LpTesterBase):
 
 # ADDR = 'bnb1nqcg6f8cfc6clhm8hac6002xq3h7l7gxh3qm34'  # to much stake/unstake
 
-ADDR = 'bnb1vqh9sc2vce2fmdhmtjsmvgm80p038h4qvs2ghv'
-POOL = 'BNB.BNB'
+ADDR = 'bnb1v9jldefnx0mngfetkwuczzxerrgw6ncvlukad5'
+POOL = 'BNB.USDT-6D8'
 # POOL = 'BNB.ETHBULL-D33'
 
 ADDR_MCTN = 'tthor1erl5a09ahua0umwcxp536cad7snerxt4eflyq0'
 POOL_MCTN = ''
+
 
 # ADDR = 'bnb10z6pvckwlpl630nujweugqrqkdfmnxnrplssav'
 # POOL = 'BNB.SXP-CCC'
@@ -48,16 +49,27 @@ async def test_1_pool(lpgen: LpTesterBase):
     print(report)
 
 
-async def test_charts(lpgen: LpTesterBase, address=ADDR, pool=POOL):
+async def test_charts(lpgen: LpTesterBase, address=ADDR):
     rl = lpgen.rune_yield
-    user_txs = await rl._get_user_tx_actions(address, pool)
 
-    historic_all_pool_states, current_pools_details = await asyncio.gather(
-        rl._fetch_historical_pool_states(user_txs),
-        rl._get_details_of_staked_pools(address, pool)
-    )
+    data_path = '../../lp_chart_data_many.pickle'
 
-    await rl._pool_units_by_day(user_txs)
+    data = load_pickle(data_path)
+    if data:
+        user_txs, historic_all_pool_states, current_pools_details, pools = data
+    else:
+        pools = await rl.get_my_pools(address)
+        user_txs = await rl._get_user_tx_actions(address)
+
+        historic_all_pool_states, current_pools_details = await asyncio.gather(
+            rl._fetch_historical_pool_states(user_txs),
+            rl._get_details_of_staked_pools(address, pools)
+        )
+        save_pickle(data_path, (user_txs, historic_all_pool_states, current_pools_details, pools))
+
+    day_units = await rl._get_charts(user_txs, current_pools_details, historic_all_pool_states, days=300)
+    print(day_units)
+
 
 async def main():
     lpgen = LpTesterBase(HomebrewLPConnector)
