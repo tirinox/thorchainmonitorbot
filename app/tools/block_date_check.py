@@ -4,7 +4,7 @@ import datetime
 import aiohttp
 
 # NODE_IP = '164.90.245.92'  # MCCN
-from services.lib.date_utils import MINUTE
+from services.lib.date_utils import MINUTE, date_parse_rfc
 
 NODE_IP = '157.230.75.66'  # BEPSwap
 NODE_RPC_PORT = 27147
@@ -22,16 +22,12 @@ async def get_block_info(session, height):
         return resp
 
 
-def date_parse(s: str):
-    s = s.rstrip('Z')
-    s = s[:-3]
-    return datetime.datetime.strptime(s, "%Y-%m-%dT%H:%M:%S.%f")
 
 
 async def get_block_date(session, block_height):
     r = await get_block_info(session, block_height)
     iso_time = r['result']['block']['header']['time']
-    time = date_parse(iso_time)
+    time = date_parse_rfc(iso_time)
     return time
 
 

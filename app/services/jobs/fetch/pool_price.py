@@ -1,6 +1,6 @@
 import calendar
 import json
-from datetime import date, datetime, timedelta
+from datetime import date, datetime
 from typing import Optional
 
 from aioredis import Redis
@@ -9,12 +9,11 @@ from services.jobs.fetch.base import BaseFetcher
 from services.jobs.fetch.fair_price import fair_rune_price
 from services.lib.config import Config
 from services.lib.constants import BNB_BUSD_SYMBOL, RUNE_SYMBOL_DET, is_stable_coin, NetworkIdents, \
-    ETH_USDT_TEST_SYMBOL, RUNE_SYMBOL_MARKET, THOR_BLOCK_TIME, ETH_USDT_SYMBOL
+    ETH_USDT_TEST_SYMBOL, RUNE_SYMBOL_MARKET, ETH_USDT_SYMBOL
 from services.lib.date_utils import parse_timespan_to_seconds, DAY, HOUR, day_to_key
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import get_url_gen_by_network_id
-from services.models.last_block import LastBlock
 from services.models.pool_info import PoolInfoHistoricEntry, parse_thor_pools, PoolInfo, PoolInfoMap
 from services.models.time_series import PriceTimeSeries
 

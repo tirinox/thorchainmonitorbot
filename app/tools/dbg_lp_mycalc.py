@@ -74,7 +74,9 @@ async def test_charts(lpgen: LpTesterBase, address=ADDR):
 
 async def test_block_calibration(lpgen: LpTesterBase):
     dbm = DateToBlockMapper(lpgen.deps)
-    await dbm.calibrate(14)
+    # await dbm.calibrate(14)
+    r = await dbm.get_date_by_block_height(15042)
+    print(r)
 
 
 async def main():

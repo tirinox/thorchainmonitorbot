@@ -153,3 +153,9 @@ def day_to_key(day: date, prefix=''):
     if day is None:
         day = datetime.now().date()
     return f'{prefix}:{day.year}.{day.month}.{day.day}'
+
+
+def date_parse_rfc(s: str):
+    s = s.rstrip('Z')
+    s = s[:-3]
+    return datetime.strptime(s, "%Y-%m-%dT%H:%M:%S.%f")

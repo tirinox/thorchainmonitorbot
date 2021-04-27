@@ -5,7 +5,7 @@ from typing import Dict
 from aioredis import Redis
 
 from services.lib.constants import THOR_BLOCK_TIME
-from services.lib.date_utils import day_to_key, days_ago_noon, DAY
+from services.lib.date_utils import day_to_key, days_ago_noon, DAY, date_parse_rfc
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import get_url_gen_by_network_id
@@ -27,6 +27,12 @@ class DateToBlockMapper:
             raw_data = await resp.json()
             last_blocks = self.midgard_parser.parse_last_block(raw_data)
             return last_blocks
+
+    async def get_date_by_block_height(self, block_height):
+        block_info = await self.deps.thor_connector.query_tendermint_block_raw(block_height)
+        rfc_time = block_info['result']['block']['header']['time']
+        dt = date_parse_rfc(rfc_time)
+        return dt
 
     DB_KEY_DATE_TO_BLOCK_MAPPER = 'Date2Block:Thorchain'
 

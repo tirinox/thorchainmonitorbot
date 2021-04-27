@@ -80,13 +80,22 @@ async def test_pool_cache(d):
     print(pool_info)
 
 
+async def test_price_continuously(d: DepContainer):
+    ppf = PoolPriceFetcher(d)
+    d.thor_connector = ThorConnector(get_thor_env_by_network_id(d.cfg.network_id), d.session)
+    while True:
+        await ppf.fetch()
+        await asyncio.sleep(2.0)
+
+
 async def main(d: DepContainer):
     async with aiohttp.ClientSession() as d.session:
         await d.db.get_redis()
 
         # await test_prices(d)
         # await test_pool_cache(d)
-        await test_thor_pools_caching(d)
+        # await test_thor_pools_caching(d)
+        await test_price_continuously(d)
 
 
 if __name__ == '__main__':
