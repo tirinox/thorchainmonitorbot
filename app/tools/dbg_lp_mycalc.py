@@ -54,7 +54,7 @@ async def test_1_pool(lpgen: LpTesterBase):
 async def test_charts(lpgen: LpTesterBase, address=ADDR):
     rl = lpgen.rune_yield
 
-    data_path = '../../lp_chart_data_many.pickle'
+    data_path = f'../../lp_chart_data-{address}.pickle'
 
     data = load_pickle(data_path)
     if data:
@@ -69,7 +69,7 @@ async def test_charts(lpgen: LpTesterBase, address=ADDR):
         )
         save_pickle(data_path, (user_txs, historic_all_pool_states, current_pools_details, pools))
 
-    day_units = await rl._get_charts(user_txs, current_pools_details, historic_all_pool_states, days=300)
+    day_units = await rl._get_charts(user_txs, days=14)
     print(day_units)
 
 
@@ -92,13 +92,19 @@ async def test_block_by_date(lpgen: LpTesterBase):
     print(r)
 
 
+async def clear_date2block(lpgen: LpTesterBase):
+    dbm = DateToBlockMapper(lpgen.deps)
+    await dbm.clear()
+
+
 async def main():
     lpgen = LpTesterBase(HomebrewLPConnector)
     async with lpgen:
         # await test_1_pool(lpgen)
-        # await test_charts(lpgen)
+        # await test_charts(lpgen, address='bnb1snqqjdvcqjf76fdztxrtwgv0ws9hsvvfsjv02z')  # mccn (bnb only)
+        await test_charts(lpgen, address='0x52e07b963ab0f525b15e281b3b42d55e8048f027')  # mccn (many pools + withdraw)
         # await test_block_calibration(lpgen)
-        await test_block_by_date(lpgen)
+        # await test_block_by_date(lpgen)
 
 
 if __name__ == "__main__":

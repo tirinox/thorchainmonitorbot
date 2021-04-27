@@ -207,8 +207,8 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         elif use_default_price:
             return DEFAULT_RUNE_PRICE  # todo: get rune price somewhere else!
 
-    def _get_earliest_prices(self, txs: List[ThorTx], pool_historic: HeightToAllPools) -> Tuple[
-        Optional[float], Optional[float]]:
+    def _get_earliest_prices(self, txs: List[ThorTx], pool_historic: HeightToAllPools) \
+            -> Tuple[Optional[float], Optional[float]]:
         if not txs:
             return None, None
 
@@ -290,6 +290,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         fee_rune = return_metrics.fees_usd * 0.5 / curr_usd_per_rune
         fee_asset = return_metrics.fees_usd * 0.5 / curr_usd_per_asset
 
+        # fixme: negative fee!
         return FeeReport(asset=pool_details.pool,
                          imp_loss_usd=return_metrics.imp_loss,
                          imp_loss_percent=return_metrics.imp_loss_percentage,
@@ -335,23 +336,28 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         for tx in txs:
             tx_by_pool_map[tx.first_pool].append(tx)
 
+        last_block = await self.block_mapper.get_last_thorchain_block()
         results = {}
         now = datetime.datetime.now()
         for pool, pool_txs in tx_by_pool_map.items():
-            day_to_units = self._pool_units_by_day(pool_txs, days)  # List of (day_no, timestamp, units)
+            day_to_units = self._pool_units_by_day(pool_txs, days=days)  # List of (day_no, timestamp, units)
 
             graph_points = []
             for day, ts, units in day_to_units:
                 that_day = now - datetime.timedelta(days=day)
-                height = await self.block_mapper.get_block_height_by_date(that_day.date())
+                height = await self.block_mapper.get_block_height_by_date(that_day.date(), last_block)
                 pools_at_height = await self.ppf.get_current_pool_data_full(height, caching=True)
-                pool_info = pools_at_height[pool]
+                pool_info = pools_at_height.get(pool, None)
 
-                usd_per_rune = self._calculate_weighted_rune_price_in_usd(pools_at_height)
-                total_my_runes = 2.0 * pool_info.rune_share_of_pool(units)
-                usd_value = total_my_runes * usd_per_rune
+                if pool_info:
+                    usd_per_rune = self._calculate_weighted_rune_price_in_usd(pools_at_height)
+                    total_my_runes = pool_info.total_my_capital_of_pool_in_rune(units)
+                    usd_value = total_my_runes * usd_per_rune
+                    pt = LPDailyGraphPoint(ts, usd_value)
+                else:
+                    pt = LPDailyGraphPoint(ts, 0.0)
 
-                graph_points.append(LPDailyGraphPoint(ts, usd_value))
-            results[pool] = graph_points
+                graph_points.append(pt)
+            results[pool] = list(reversed(graph_points))  # chronologically
 
         return results
