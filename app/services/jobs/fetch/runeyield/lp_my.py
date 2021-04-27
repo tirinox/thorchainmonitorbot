@@ -7,6 +7,7 @@ from typing import List, Tuple, Dict, Optional
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.runeyield import AsgardConsumerConnectorBase
 from services.jobs.fetch.runeyield.base import YieldSummary
+from services.jobs.fetch.runeyield.date2block import DateToBlockMapper
 from services.jobs.fetch.tx import TxFetcher
 from services.lib.constants import THOR_DIVIDER_INV, STABLE_COIN_POOLS, NetworkIdents
 from services.lib.date_utils import days_ago_noon, now_ts
@@ -16,7 +17,7 @@ from services.lib.midgard.urlgen import MidgardURLGenBase
 from services.lib.money import weighted_mean
 from services.lib.utils import pairwise
 from services.models.lp_info import LiquidityPoolReport, CurrentLiquidity, FeeReport, ReturnMetrics, LPDailyGraphPoint, \
-    LPDailyChartByPoolDict, pool_share
+    LPDailyChartByPoolDict
 from services.models.pool_info import LPPosition, PoolInfoMap
 from services.models.pool_member import PoolMemberDetails
 from services.models.tx import ThorTx, ThorTxType
@@ -34,6 +35,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         self.use_thor_consensus = False
         self.days_for_chart = 14
         self.max_attempts = 5
+        self.block_mapper = DateToBlockMapper(deps)
 
     async def generate_yield_summary(self, address, pools: List[str]) -> Tuple[dict, List[LiquidityPoolReport]]:
         user_txs = await self._get_user_tx_actions(address)
@@ -63,8 +65,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             )
             reports.append(stake_report)
 
-        weekly_charts = await self._get_charts(user_txs, current_pools_details, historic_all_pool_states,
-                                               self.days_for_chart)
+        weekly_charts = await self._get_charts(user_txs, days=self.days_for_chart)
         return YieldSummary(reports, weekly_charts)
 
     async def generate_yield_report_single_pool(self, address, pool) -> LiquidityPoolReport:
@@ -328,8 +329,6 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
     async def _get_charts(self,
                           txs: List[ThorTx],
-                          current_pools_details: List[PoolMemberDetails],
-                          historic_all_pool_states: HeightToAllPools,
                           days=14) -> LPDailyChartByPoolDict:
 
         tx_by_pool_map = defaultdict(list)
@@ -337,13 +336,15 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             tx_by_pool_map[tx.first_pool].append(tx)
 
         results = {}
+        now = datetime.datetime.now()
         for pool, pool_txs in tx_by_pool_map.items():
             day_to_units = self._pool_units_by_day(pool_txs, days)  # List of (day_no, timestamp, units)
 
             graph_points = []
             for day, ts, units in day_to_units:
-                height = 0  # ts -> height
-                pools_at_height = historic_all_pool_states[height]
+                that_day = now - datetime.timedelta(days=day)
+                height = await self.block_mapper.get_block_height_by_date(that_day.date())
+                pools_at_height = await self.ppf.get_current_pool_data_full(height, caching=True)
                 pool_info = pools_at_height[pool]
 
                 usd_per_rune = self._calculate_weighted_rune_price_in_usd(pools_at_height)

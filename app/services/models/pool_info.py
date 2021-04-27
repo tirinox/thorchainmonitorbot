@@ -4,7 +4,12 @@ from typing import List, Dict
 from aiothornode.types import ThorPool
 
 from services.lib.constants import THOR_DIVIDER_INV
-from services.models.lp_info import pool_share
+
+
+def pool_share(rune_depth, asset_depth, my_units, pool_tolal_units):
+    rune_share = (rune_depth * my_units) / pool_tolal_units
+    asset_share = (asset_depth * my_units) / pool_tolal_units
+    return rune_share, asset_share
 
 
 @dataclass

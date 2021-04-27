@@ -2,6 +2,7 @@ import asyncio
 import logging
 
 from services.jobs.fetch.runeyield import AsgardConsumerConnectorV1
+from services.jobs.fetch.runeyield.date2block import DateToBlockMapper
 from services.jobs.fetch.runeyield.lp_my import HomebrewLPConnector
 from services.jobs.fetch.tx import TxFetcher
 from services.lib.utils import setup_logs, load_pickle, save_pickle
@@ -71,11 +72,17 @@ async def test_charts(lpgen: LpTesterBase, address=ADDR):
     print(day_units)
 
 
+async def test_block_calibration(lpgen: LpTesterBase):
+    dbm = DateToBlockMapper(lpgen.deps)
+    await dbm.calibrate(14)
+
+
 async def main():
     lpgen = LpTesterBase(HomebrewLPConnector)
     async with lpgen:
         # await test_1_pool(lpgen)
-        await test_charts(lpgen)
+        # await test_charts(lpgen)
+        await test_block_calibration(lpgen)
 
 
 if __name__ == "__main__":

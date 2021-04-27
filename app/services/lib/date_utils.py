@@ -134,10 +134,10 @@ def today_str():
     return now.strftime("%d-%m-%Y--%H-%M-%S")
 
 
-def days_ago_noon(days_ago, now=None) -> datetime:
+def days_ago_noon(days_ago, now=None, hour=12) -> datetime:
     now = now or datetime.now()
     day_back = now - timedelta(days=days_ago)
-    day_back_noon = day_back.replace(hour=12, minute=0, second=0, microsecond=0)
+    day_back_noon = day_back.replace(hour=hour, minute=0, second=0, microsecond=0)
     return day_back_noon
 
 

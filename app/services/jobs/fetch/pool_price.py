@@ -59,14 +59,13 @@ class PoolPriceFetcher(BaseFetcher):
             self.logger.warning(f'really ${price:.3f}? that is odd!')
 
     async def _fetch_current_pool_data_from_thornodes(self, height=None) -> PoolInfoMap:
-        thor_pools = {}
         for attempt in range(1, self.max_attempts):
             try:
                 thor_pools = await self.deps.thor_connector.query_pools(height, consensus=self.use_thor_consensus)
+                return parse_thor_pools(thor_pools)
             except (TypeError, IndexError):
                 self.logger.warning(f'thor_connector.query_pools failed! Attempt: #{attempt}')
-                pass
-        return parse_thor_pools(thor_pools)
+        return {}
 
     DB_KEY_POOL_INFO_HASH = 'PoolInfo:hashtable'
 
@@ -99,33 +98,6 @@ class PoolPriceFetcher(BaseFetcher):
             return pool_infos
         else:
             return await self._fetch_current_pool_data_from_thornodes(height)
-
-    async def get_pool_data_full_for_last_days(self, days=14, now=None):
-        r: Redis = await self.deps.db.get_redis()
-
-        now = now if now else datetime.now()
-        results = []
-        for day_no in range(days):
-            dt = now - timedelta(days=day_no)
-            cache_key = self._hash_key_day(dt)
-            pool_infos = await self._load_from_cache(r, cache_key)
-            results.append(pool_infos)
-
-        return results
-
-    async def fill_pool_data_full_for_last_days(self, days=14):
-        url_last_block = self.midgard_url_gen.url_last_block()
-        parser = get_parser_by_network_id(self.deps.cfg.network_id)
-
-        self.logger.info(f"get: {url_last_block}")
-
-        async with self.deps.session.get(url_last_block) as resp:
-            raw_data = await resp.json()
-            last_block: LastBlock = next(parser.parse_last_block(raw_data).values())
-            start_block = last_block.thorchain
-            blocks_per_day = DAY / THOR_BLOCK_TIME
-            for block in range(start_block, blocks_per_day * (days + 1), -blocks_per_day):
-                print(block)  # fixme!
 
     async def purge_pool_height_cache(self):
         r: Redis = await self.deps.db.get_redis()
