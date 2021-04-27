@@ -82,7 +82,7 @@ class DateToBlockMapper:
 
         return estimated_block_height
 
-    async def calibrate(self, days=14):
+    async def calibrate(self, days=14, overwrite=False):
         last_block = await self.get_last_thorchain_block()
 
         today_beginning = days_ago_noon(0, hour=0)
@@ -91,12 +91,21 @@ class DateToBlockMapper:
 
         for day_ago in range(days):
             that_day = today_beginning - timedelta(days=day_ago)
-            block_no = await self.iterative_block_discovery_by_timestamp(that_day.timestamp(),
-                                                                         last_block)
-            print(f'{day_ago = }, {that_day = }, {block_no = }')  # fixme: debug
+
+            if not overwrite:
+                block_no = await self.load_height_from_day_cache(that_day)
+                if block_no is not None:
+                    blocks.append((that_day, block_no))
+                    continue
+
+            block_no = await self.iterative_block_discovery_by_timestamp(that_day.timestamp(), last_block)
+            self.logger.info(f'Writing date2block cache: {day_ago = }, {that_day = }, {block_no = }')
+
+            if block_no is not None and block_no > 0:
+                await self.save_height_to_day_cache(that_day, block_no)
+
             blocks.append((that_day, block_no))
 
-        print(blocks)  # fixme: debug
         return blocks
 
     async def get_block_height_by_date(self, d: date) -> int:

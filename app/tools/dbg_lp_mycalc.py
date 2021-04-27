@@ -75,7 +75,9 @@ async def test_charts(lpgen: LpTesterBase, address=ADDR):
 
 async def test_block_calibration(lpgen: LpTesterBase):
     dbm = DateToBlockMapper(lpgen.deps)
-    await dbm.calibrate(14)
+    blocks = await dbm.calibrate(14, overwrite=True)
+    print('-' * 100)
+    print(blocks)
     # date_of_interest = datetime.now() - timedelta(days=1)
     # r = await dbm.iterative_block_discovery_by_timestamp(date_of_interest.timestamp())
     # print(r)
