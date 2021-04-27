@@ -141,14 +141,6 @@ def days_ago_noon(days_ago, now=None, hour=12) -> datetime:
     return day_back_noon
 
 
-def block_number_days_ago_noon(current_block, block_time, days_ago, now: datetime = None) -> int:
-    now = now or datetime.now()
-    that_noon = days_ago_noon(days_ago, now)
-    seconds_elapsed = now.timestamp() - that_noon.timestamp()
-    blocks_elapsed = seconds_elapsed / block_time
-    return current_block - blocks_elapsed
-
-
 def day_to_key(day: date, prefix=''):
     if day is None:
         day = datetime.now().date()

@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 
 from services.jobs.fetch.runeyield import AsgardConsumerConnectorV1
 from services.jobs.fetch.runeyield.date2block import DateToBlockMapper
@@ -83,12 +83,22 @@ async def test_block_calibration(lpgen: LpTesterBase):
     # print(r)
 
 
+async def test_block_by_date(lpgen: LpTesterBase):
+    dbm = DateToBlockMapper(lpgen.deps)
+    d = date(2021, 4, 13)
+
+    last_block = await dbm.get_last_thorchain_block()
+    r = await dbm.get_block_height_by_date(d, last_block)
+    print(r)
+
+
 async def main():
     lpgen = LpTesterBase(HomebrewLPConnector)
     async with lpgen:
         # await test_1_pool(lpgen)
         # await test_charts(lpgen)
-        await test_block_calibration(lpgen)
+        # await test_block_calibration(lpgen)
+        await test_block_by_date(lpgen)
 
 
 if __name__ == "__main__":
