@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from datetime import datetime, timedelta
 
 from services.jobs.fetch.runeyield import AsgardConsumerConnectorV1
 from services.jobs.fetch.runeyield.date2block import DateToBlockMapper
@@ -74,9 +75,10 @@ async def test_charts(lpgen: LpTesterBase, address=ADDR):
 
 async def test_block_calibration(lpgen: LpTesterBase):
     dbm = DateToBlockMapper(lpgen.deps)
-    # await dbm.calibrate(14)
-    r = await dbm.get_date_by_block_height(15042)
-    print(r)
+    await dbm.calibrate(14)
+    # date_of_interest = datetime.now() - timedelta(days=1)
+    # r = await dbm.iterative_block_discovery_by_timestamp(date_of_interest.timestamp())
+    # print(r)
 
 
 async def main():

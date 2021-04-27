@@ -28,11 +28,16 @@ class DateToBlockMapper:
             last_blocks = self.midgard_parser.parse_last_block(raw_data)
             return last_blocks
 
-    async def get_date_by_block_height(self, block_height):
+    async def get_last_thorchain_block(self) -> int:
+        last_blocks = await self.get_last_blocks()
+        last_block: LastBlock = list(last_blocks.values())[0]
+        return last_block.thorchain
+
+    async def get_timestamp_by_block_height(self, block_height) -> float:
         block_info = await self.deps.thor_connector.query_tendermint_block_raw(block_height)
         rfc_time = block_info['result']['block']['header']['time']
         dt = date_parse_rfc(rfc_time)
-        return dt
+        return dt.timestamp()
 
     DB_KEY_DATE_TO_BLOCK_MAPPER = 'Date2Block:Thorchain'
 
@@ -49,26 +54,50 @@ class DateToBlockMapper:
         data = await r.hget(self.DB_KEY_DATE_TO_BLOCK_MAPPER, day_to_key(day))
         return int(data) if data else None
 
-    async def calibrate(self, days=14):
-        last_blocks = await self.get_last_blocks()
-        last_block: LastBlock = list(last_blocks.values())[0]
-        now = datetime.now()
-        today_beginning = days_ago_noon(0, hour=0)
+    async def iterative_block_discovery_by_timestamp(self, ts: float, last_block=None, max_steps=10,
+                                                     tolerance_sec=THOR_BLOCK_TIME * 1.5):
+        if not last_block:
+            last_block = await self.get_last_thorchain_block()
 
-        blocks_from_day_beginning = (now.timestamp() - today_beginning.timestamp()) / THOR_BLOCK_TIME
-        blocks_per_day = DAY / THOR_BLOCK_TIME
+        now = datetime.now()
+        total_seconds = now.timestamp() - ts
+        assert total_seconds > 0
+
+        estimated_block_height = last_block - total_seconds / THOR_BLOCK_TIME
+        estimated_block_height = int(max(0, estimated_block_height))
+
+        self.logger.info(f'Initial guess for {ts = } is #{estimated_block_height}')
+
+        for step in range(max_steps):
+            guess_ts = await self.get_timestamp_by_block_height(estimated_block_height)
+            seconds_diff = guess_ts - ts
+            if abs(seconds_diff) <= tolerance_sec:
+                self.logger.info(f'Success. #{estimated_block_height = }!')
+                break
+
+            estimated_block_height -= seconds_diff / THOR_BLOCK_TIME
+            estimated_block_height = int(max(0, estimated_block_height))
+
+            self.logger.info(f'Step #{step + 1}. {estimated_block_height = }')
+
+        return estimated_block_height
+
+    async def calibrate(self, days=14):
+        last_block = await self.get_last_thorchain_block()
+
+        today_beginning = days_ago_noon(0, hour=0)
 
         blocks = []
 
         for day_ago in range(days):
-            that_day = days_ago_noon(day_ago, hour=0)
-            block_that_day = int(last_block.thorchain - blocks_from_day_beginning - blocks_per_day * day_ago)
-            block_that_day = max(0, block_that_day)
-
-            print(f'{day_ago = }, {that_day = }, {block_that_day = }')  # fixme: debug
-            blocks.append((that_day, block_that_day))
+            that_day = today_beginning - timedelta(days=day_ago)
+            block_no = await self.iterative_block_discovery_by_timestamp(that_day.timestamp(),
+                                                                         last_block)
+            print(f'{day_ago = }, {that_day = }, {block_no = }')  # fixme: debug
+            blocks.append((that_day, block_no))
 
         print(blocks)  # fixme: debug
+        return blocks
 
     async def get_block_height_by_date(self, d: date) -> int:
         return 0  # todo
