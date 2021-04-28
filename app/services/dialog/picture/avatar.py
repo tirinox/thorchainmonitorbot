@@ -38,6 +38,8 @@ class LaserEyeMask:
     def apply(self, frame):
         np_image = np.asarray(frame)
 
+        np_image = np_image[:, :, :3]  # discard Alpha-channel
+
         face_landmarks_list = face_recognition.face_landmarks(np_image)
 
         logging.debug(f'{len(face_landmarks_list)} faces found.')
