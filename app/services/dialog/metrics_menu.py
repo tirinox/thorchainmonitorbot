@@ -44,6 +44,9 @@ class MetricsDialog(BaseDialog):
         elif message.text == self.loc.BUTTON_METR_NODES:
             await self.show_node_list(message)
             await self.show_menu(message)
+        elif message.text == self.loc.BUTTON_METR_LEADERBOARD:
+            await self.show_leaderboard(message)
+            await self.show_menu(message)
         else:
             await self.show_menu(message)
 
@@ -51,7 +54,7 @@ class MetricsDialog(BaseDialog):
         await MetricsStates.MAIN_METRICS_MENU.set()
         reply_markup = kbd([
             [self.loc.BUTTON_METR_PRICE, self.loc.BUTTON_METR_CAP, self.loc.BUTTON_METR_QUEUE],
-            [self.loc.BUTTON_METR_STATS, self.loc.BUTTON_METR_NODES],
+            [self.loc.BUTTON_METR_STATS, self.loc.BUTTON_METR_NODES, self.loc.BUTTON_METR_LEADERBOARD],
             [self.loc.BUTTON_BACK]
         ])
         await message.answer(self.loc.TEXT_METRICS_INTRO,
@@ -63,6 +66,11 @@ class MetricsDialog(BaseDialog):
         await message.answer(self.loc.cap_message(info),
                              disable_web_page_preview=True,
                              disable_notification=True)
+
+    async def show_leaderboard(self, message: Message):
+        await message.answer(self.loc.text_leaderboard_info(),
+                             disable_notification=True,
+                             disable_web_page_preview=True)
 
     async def show_last_stats(self, message: Message):
         nsn = NetworkStatsNotifier(self.deps)
