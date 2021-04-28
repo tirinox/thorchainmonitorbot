@@ -24,8 +24,10 @@ from services.models.pool_stats import StakePoolStats
 RAIDO_GLYPH = 'ᚱ'
 CREATOR_TG = '@account1242'
 
-BEP2_SWAP = 'https://chaosnet.bepswap.com/'
-THOR_SWAP = 'https://app.thorswap.finance/'
+URL_BEP2_SWAP = 'https://chaosnet.bepswap.com/'
+URL_THOR_SWAP = 'https://app.thorswap.finance/'
+
+URL_LEADERBOARD_MCCN = 'https://leaderboard.thornode.org/'
 
 
 class BaseLocalization(ABC):  # == English
@@ -214,9 +216,9 @@ class BaseLocalization(ABC):  # == English
 
     def thor_site(self):
         if self.cfg.network_id == NetworkIdents.CHAOSNET_MULTICHAIN:
-            return THOR_SWAP
+            return URL_THOR_SWAP
         else:
-            return BEP2_SWAP
+            return URL_BEP2_SWAP
 
     def notification_text_cap_change(self, old: ThorCapInfo, new: ThorCapInfo):
         verb = "has been increased" if old.cap < new.cap else "has been decreased"
@@ -404,6 +406,7 @@ class BaseLocalization(ABC):  # == English
     BUTTON_METR_QUEUE = f'👥 Queue'
     BUTTON_METR_STATS = '📊 Stats'
     BUTTON_METR_NODES = '🖥 Nodes'
+    BUTTON_METR_LEADERBOARD = '🏆 Leaderboard'
 
     TEXT_METRICS_INTRO = 'What metrics would you like to know?'
 
@@ -416,6 +419,11 @@ class BaseLocalization(ABC):  # == English
             f"{self._cap_progress_bar(info)}"
             f"The {bold(self.R)} price is <code>${info.price:.3f}</code> now.\n"
         )
+
+    def text_leaderboard_info(self):
+        return f"🏆 Traders leaderboard is here:\n" \
+               f"\n" \
+               f" 👉 {bold(URL_LEADERBOARD_MCCN)} 👈\n"
 
     def queue_message(self, queue_info: QueueInfo):
         return (

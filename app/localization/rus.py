@@ -2,7 +2,7 @@ from datetime import datetime
 from math import ceil
 from typing import List
 
-from localization.base import BaseLocalization, RAIDO_GLYPH, CREATOR_TG
+from localization.base import BaseLocalization, RAIDO_GLYPH, CREATOR_TG, URL_LEADERBOARD_MCCN
 from services.lib.constants import Chains
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address
@@ -274,6 +274,7 @@ class RussianLocalization(BaseLocalization):
     BUTTON_METR_QUEUE = f'👥 Очередь'
     BUTTON_METR_STATS = f'📊 Статистика'
     BUTTON_METR_NODES = '🖥 Ноды (узлы)'
+    BUTTON_METR_LEADERBOARD = '🏆 Доска рекордов'
 
     TEXT_METRICS_INTRO = 'Что вы хотите узнать?'
 
@@ -284,6 +285,11 @@ class RussianLocalization(BaseLocalization):
             f"{self._cap_progress_bar(info)}"
             f"Цена {bold(self.R)} сейчас <code>{info.price:.3f} $</code>.\n"
         )
+
+    def text_leaderboard_info(self):
+        return f"🏆 Доска лушчих трейдеров THORChain:\n" \
+               f"\n" \
+               f" 👉 {bold(URL_LEADERBOARD_MCCN)} 👈\n"
 
     def queue_message(self, queue_info: QueueInfo):
         return (
