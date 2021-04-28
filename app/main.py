@@ -109,6 +109,8 @@ class App:
         notifier_stats = NetworkStatsNotifier(d)
         notifier_nodes = NodeChurnNotifier(d)
 
+        # await notifier_cap.test()
+
         stats_updater = PoolStatsUpdater(d)
         stats_updater.subscribe(notifier_tx)
         fetcher_tx.subscribe(stats_updater)

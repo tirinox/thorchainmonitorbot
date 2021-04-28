@@ -47,3 +47,7 @@ class LiquidityCapNotifier(INotified):
         await self.deps.broadcaster.notify_preconfigured_channels(self.deps.loc_man,
                                                                   BaseLocalization.notification_text_cap_change,
                                                                   old, new)
+
+    async def test(self):
+        old_info = await self.get_old_cap()
+        await self._notify_when_cap_changed(old_info, old_info)

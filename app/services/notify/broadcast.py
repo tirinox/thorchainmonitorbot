@@ -122,14 +122,14 @@ class Broadcaster:
                     if isinstance(message, str):
                         text = message
                     elif callable(message):
-                        message = await message(chat_id, *args, **kwargs)
-                        if isinstance(message, BoardMessage):
-                            message_type = message.message_type
-                            if message.message_type is MessageType.PHOTO:
-                                extra['photo'] = message.photo
-                            text = message.text
+                        message_result = await message(chat_id, *args, **kwargs)
+                        if isinstance(message_result, BoardMessage):
+                            message_type = message_result.message_type
+                            if message_result.message_type is MessageType.PHOTO:
+                                extra['photo'] = message_result.photo
+                            text = message_result.text
                         else:
-                            text = message
+                            text = message_result
 
                     if text or 'photo' in extra:
                         if await self._send_message(chat_id, text, message_type=message_type,
