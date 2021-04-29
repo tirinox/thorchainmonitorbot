@@ -649,9 +649,9 @@ class BaseLocalization(ABC):  # == English
     def notification_text_for_node_churn(self, changes: NodeInfoChanges):
         message = bold('♻️ Node churn') + '\n\n'
 
-        message += self._make_node_list(changes.nodes_added, '🆕 New nodes:')
+        message += self._make_node_list(changes.nodes_added, '🆕 New nodes:', add_status=True)
         message += self._make_node_list(changes.nodes_activated, '➡️ Nodes that churned in:')
         message += self._make_node_list(changes.nodes_deactivated, '⬅️️ Nodes that churned out:')
-        message += self._make_node_list(changes.nodes_removed, '🗑️ Nodes that disconnected:')
+        message += self._make_node_list(changes.nodes_removed, '🗑️ Nodes that disconnected:', add_status=True)
 
         return message.rstrip()

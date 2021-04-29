@@ -101,6 +101,8 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         url = self.url_gen.url_for_address_pool_membership(address)
         self.logger.info(f'get: {url}')
         async with self.deps.session.get(url) as resp:
+            if resp.status == 404:
+                raise FileNotFoundError
             j = await resp.json()
             return self.parser.parse_pool_membership(j)
 

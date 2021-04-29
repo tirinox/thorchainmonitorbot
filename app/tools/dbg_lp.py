@@ -108,8 +108,8 @@ async def test_one_pool_picture_generator(addr, pool, hide, rune_yield_class=Non
 
 
 async def test_summary_picture_generator(addr, hide, rune_yield_class=None):
-    stake_summary_path = '../../stake_report_summary.pickle'
-    PICTURE_PATH = '../../stake_test_summary.png'
+    stake_summary_path = f'../../stake_report_summary_{addr}.pickle'
+    stake_picture_path = f'../../stake_test_summary_{addr}.png'
 
     lpgen = LpGenerator(rune_yield_class)
 
@@ -123,8 +123,8 @@ async def test_summary_picture_generator(addr, hide, rune_yield_class=None):
         save_pickle(stake_summary_path, (stakes, charts))
 
     img = await lp_address_summary_picture(stakes, charts, lpgen.deps.loc_man.default, value_hidden=hide)
-    img.save(PICTURE_PATH, "PNG")
-    os.system(f'open "{PICTURE_PATH}"')
+    img.save(stake_picture_path, "PNG")
+    os.system(f'open "{stake_picture_path}"')
 
 
 async def test_single_chain_chaosnet():
@@ -154,7 +154,7 @@ async def test_multi_chain_testnet():
     #                                       rune_yield_class=HomebrewLPConnector)  # BEP2
 
     # await test_summary_picture_generator('tthor1vyp3y7pjuwsz2hpkwrwrrvemcn7t758sfs0glr', hide=False)
-    await test_summary_picture_generator('bnb1deeu3qxjuqrdumpz53huum8yg39aarlcf4sg6q', hide=True,
+    await test_summary_picture_generator('0x52e07b963ab0f525b15e281b3b42d55e8048f027', hide=False,
                                          rune_yield_class=HomebrewLPConnector)
 
 

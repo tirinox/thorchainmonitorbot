@@ -418,9 +418,11 @@ def lp_weekly_graph(w, h, weekly_charts: dict, color_map: dict, value_hidden):
     graph.right = 90
     graph.top = 10
     graph.n_ticks_y = 3 if value_hidden else 8
-    graph.y_formatter = (lambda x: '??? $') if value_hidden else pretty_dollar
+    graph.y_formatter = \
+        (lambda x: '$ ???') if value_hidden else \
+        (lambda x: pretty_money(x, prefix='$', short_form=True))
     graph.x_formatter = graph.date_formatter
-    graph.n_ticks_x = 8
+    graph.n_ticks_x = 7
 
     graph.font_ticks = Resources().font_sum_ticks
 
@@ -606,7 +608,7 @@ def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_c
                   pretty_money(total_lp_vs_hold_abs, signed=True, prefix='$'),
                   fill=result_color(total_lp_vs_hold_abs),
                   font=res.font_head, anchor='mm')
-    run_y += 5.0
+    run_y += 3.0
 
     # 5. Graph
     graph_margin_x, graph_margin_y = 1.0, 0.0
