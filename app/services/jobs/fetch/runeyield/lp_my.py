@@ -289,10 +289,12 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         curr_usd_per_rune = self.deps.price_holder.usd_per_rune
         curr_usd_per_asset = curr_usd_per_rune * current_pool.runes_per_asset
 
+        # fixme: negative fee!
+        return_metrics.fees_usd = max(0.0, return_metrics.fees_usd)
+
         fee_rune = return_metrics.fees_usd * 0.5 / curr_usd_per_rune
         fee_asset = return_metrics.fees_usd * 0.5 / curr_usd_per_asset
 
-        # fixme: negative fee!
         return FeeReport(asset=pool_details.pool,
                          imp_loss_usd=return_metrics.imp_loss,
                          imp_loss_percent=return_metrics.imp_loss_percentage,

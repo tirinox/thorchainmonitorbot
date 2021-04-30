@@ -20,7 +20,7 @@ from services.notify.broadcast import Broadcaster
 from tools.dbg_lp import LpTesterBase
 
 CACHE_NET_STATS = True
-CACHE_NET_STATS_FILE = '../../net_stats.pickle'
+CACHE_NET_STATS_FILE = '../../tmp/net_stats.pickle'
 
 DRY_RUN = False
 

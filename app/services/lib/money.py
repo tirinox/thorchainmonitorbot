@@ -75,7 +75,7 @@ def pretty_money(x, prefix='', signed=False, postfix='', short_form=False):
         r = "0.0"
     else:
         if x < 1e-4:
-            r = f'{x:.8f}'
+            r = f'{x:.4f}'
         elif x < 100:
             r = str(round_to_dig(x, 3))
         elif x < 1000:

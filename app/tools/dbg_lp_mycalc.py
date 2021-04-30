@@ -54,7 +54,7 @@ async def test_1_pool(lpgen: LpTesterBase):
 async def test_charts(lpgen: LpTesterBase, address=ADDR):
     rl = lpgen.rune_yield
 
-    data_path = f'../../lp_chart_data-{address}.pickle'
+    data_path = f'../../tmp/lp_chart_data-{address}.pickle'
 
     data = load_pickle(data_path)
     if data:

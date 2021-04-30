@@ -23,7 +23,7 @@ async def test_price_graph(d: DepContainer, renew=True):
 
         img = await price_graph_from_db(d.db, EnglishLocalization())
 
-        picture_path = '../../price.png'
+        picture_path = '../../tmp/price.png'
         img.save(picture_path, "PNG")
         os.system(f'open "{picture_path}"')
 

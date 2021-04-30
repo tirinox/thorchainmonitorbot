@@ -569,7 +569,7 @@ def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_c
                 color = FORE_COLOR
 
             pos = pos_percent(column_xs[ic], row_y)
-            if value_hidden and ic > 0 and ir > 0 and ir != 4:  # all except first column and fees row
+            if value_hidden and ic > 0 and ir > 0 and ir != 4 and ir != 6:  # all except first column and fees row
                 res.put_hidden_plate(image, pos, 'center', ey=-20)
             else:
                 draw.text(
