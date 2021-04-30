@@ -83,7 +83,7 @@ class PlotGraph:
             cur_y = self.h - self.bottom * 0.7
             x_step = width / (n_ticks - 1)
             y_step = 0
-            anchor = 'lm'
+            anchor = 'mm'
             self.draw.line((int(ox), int(oy),
                             int(self.left + width), int(self.h - self.bottom)),
                            self.tick_color, width=1)

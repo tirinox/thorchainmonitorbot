@@ -1,8 +1,10 @@
 import asyncio
+import logging
 from dataclasses import asdict
 
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import *
+from aiogram.utils.exceptions import MessageToDeleteNotFound
 from aiogram.utils.helper import HelperMode
 
 from services.dialog.base import BaseDialog, message_handler, query_handler
@@ -132,7 +134,12 @@ class StakeDialog(BaseDialog):
 
         if reload_pools:
             await query.message.edit_text(text=self.loc.text_stake_loading_pools(address))
-            my_pools = await rune_yield.get_my_pools(address)
+            try:
+                my_pools = await rune_yield.get_my_pools(address)
+            except FileNotFoundError:
+                logging.error(f'not found pools for address {address}')
+                my_pools = []
+
             self.data[self.KEY_MY_POOLS] = my_pools
 
         await self.show_my_pools(query, edit=True)
@@ -176,8 +183,12 @@ class StakeDialog(BaseDialog):
                                          disable_notification=True)
 
         # CLEAN UP
-        await asyncio.gather(query.message.delete(),
-                             sticker.delete())
+        try:
+            await asyncio.gather(query.message.delete(),
+                                 sticker.delete())
+        except MessageToDeleteNotFound as e:
+            logging.warning(f'could not delete message: {e}')
+            pass
 
     async def show_pools_again(self, query: CallbackQuery):
         active_addr_idx = self.data[self.KEY_ACTIVE_ADDRESS_INDEX]

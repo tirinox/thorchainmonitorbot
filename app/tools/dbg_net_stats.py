@@ -14,13 +14,13 @@ from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
 from services.lib.date_utils import DAY
 from services.lib.depcont import DepContainer
 from services.lib.texts import up_down_arrow
-from services.lib.utils import setup_logs
+from services.lib.utils import setup_logs, load_pickle, save_pickle
 from services.models.net_stats import NetworkStats
 from services.notify.broadcast import Broadcaster
 from tools.dbg_lp import LpTesterBase
 
 CACHE_NET_STATS = True
-CACHE_NET_STATS_FILE = '../../net_stats.pickle'
+CACHE_NET_STATS_FILE = '../../tmp/net_stats.pickle'
 
 DRY_RUN = False
 
@@ -72,17 +72,15 @@ async def print_message(new_info: NetworkStats, deps: DepContainer):
 async def main():
     lpgen = LpTesterBase()
 
-    if CACHE_NET_STATS and os.path.exists(CACHE_NET_STATS_FILE):
-        with open(CACHE_NET_STATS_FILE, 'rb') as f:
-            new_info = pickle.load(f)
-    else:
+    new_info = load_pickle(CACHE_NET_STATS_FILE) if CACHE_NET_STATS else None
+
+    if not new_info:
         async with lpgen:
             nsf = NetworkStatisticsFetcher(lpgen.deps, lpgen.ppf)
             new_info = await nsf.fetch()
 
             if CACHE_NET_STATS:
-                with open(CACHE_NET_STATS_FILE, 'wb') as f:
-                    pickle.dump(new_info, f)
+                save_pickle(CACHE_NET_STATS_FILE, new_info)
 
     await print_message(new_info, lpgen.deps)
 

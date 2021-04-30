@@ -134,22 +134,20 @@ def today_str():
     return now.strftime("%d-%m-%Y--%H-%M-%S")
 
 
-def days_ago_noon(days_ago, now=None) -> datetime:
+def days_ago_noon(days_ago, now=None, hour=12) -> datetime:
     now = now or datetime.now()
     day_back = now - timedelta(days=days_ago)
-    day_back_noon = day_back.replace(hour=12, minute=0, second=0, microsecond=0)
+    day_back_noon = day_back.replace(hour=hour, minute=0, second=0, microsecond=0)
     return day_back_noon
-
-
-def block_number_days_ago_noon(current_block, block_time, days_ago, now: datetime = None) -> int:
-    now = now or datetime.now()
-    that_noon = days_ago_noon(days_ago, now)
-    seconds_elapsed = now.timestamp() - that_noon.timestamp()
-    blocks_elapsed = seconds_elapsed / block_time
-    return current_block - blocks_elapsed
 
 
 def day_to_key(day: date, prefix=''):
     if day is None:
         day = datetime.now().date()
     return f'{prefix}:{day.year}.{day.month}.{day.day}'
+
+
+def date_parse_rfc(s: str):
+    s = s.rstrip('Z')
+    s = s[:-3]
+    return datetime.strptime(s, "%Y-%m-%dT%H:%M:%S.%f")

@@ -32,9 +32,8 @@ class TxFetcher(BaseFetcher):
     async def fetch_user_tx(self, address, liquidity_change_only=False) -> List[ThorTx]:
         page = 0
         txs = []
+        types = self.url_gen_midgard.LIQUIDITY_TX_TYPES_STRING if liquidity_change_only else None
         while True:
-            types = self.url_gen_midgard.LIQUIDITY_TX_TYPES_STRING if liquidity_change_only else None
-
             url = self.url_gen_midgard.url_for_tx(page * self.tx_per_batch, self.tx_per_batch,
                                                   types=types,
                                                   address=address)

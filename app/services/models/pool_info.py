@@ -6,6 +6,12 @@ from aiothornode.types import ThorPool
 from services.lib.constants import THOR_DIVIDER_INV
 
 
+def pool_share(rune_depth, asset_depth, my_units, pool_total_units):
+    rune_share = (rune_depth * my_units) / pool_total_units
+    asset_share = (asset_depth * my_units) / pool_total_units
+    return rune_share, asset_share
+
+
 @dataclass
 class PoolInfo:
     asset: str
@@ -23,6 +29,13 @@ class PoolInfo:
 
     def percent_share(self, runes):
         return runes / (2 * self.balance_rune * THOR_DIVIDER_INV) * 100.0
+
+    def rune_share_of_pool(self, units) -> float:
+        r, a = pool_share(self.balance_rune, self.balance_asset, my_units=units, pool_total_units=self.pool_units)
+        return r * THOR_DIVIDER_INV
+
+    def total_my_capital_of_pool_in_rune(self, units) -> float:
+        return self.rune_share_of_pool(units) * 2.0
 
     @classmethod
     def dummy(cls):

@@ -2,11 +2,12 @@ import string
 import time
 from dataclasses import dataclass, field
 from math import sqrt
+from typing import List, Dict
 
 from services.lib.constants import THOR_DIVIDER_INV, Chains
 from services.lib.date_utils import DAY
 from services.models.base import BaseModelMixin
-from services.models.pool_info import PoolInfo, LPPosition
+from services.models.pool_info import PoolInfo, LPPosition, pool_share
 
 BECH_2_CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
 
@@ -44,12 +45,6 @@ class LPAddress(BaseModelMixin):
         return addr.isalnum()
 
 
-def pool_share(rune_depth, asset_depth, my_units, pool_tolal_units):
-    rune_share = (rune_depth * my_units) / pool_tolal_units
-    asset_share = (asset_depth * my_units) / pool_tolal_units
-    return rune_share, asset_share
-
-
 @dataclass
 class LPDailyGraphPoint:
     timestamp: int = 0
@@ -73,6 +68,8 @@ class LPDailyGraphPoint:
             timestamp=int(j.get('time', 0)),
         )
 
+
+LPDailyChartByPoolDict = Dict[str, List[LPDailyGraphPoint]]
 
 @dataclass
 class CurrentLiquidity(BaseModelMixin):

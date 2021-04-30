@@ -1,5 +1,7 @@
 import asyncio
 import logging
+import os
+import pickle
 import time
 from collections import deque
 from functools import wraps, partial
@@ -83,3 +85,20 @@ def pairwise(iterable):
     a, b = tee(iterable)
     next(b, None)
     return zip(a, b)
+
+
+def load_pickle(path):
+    try:
+        if os.path.exists(path):
+            with open(path, 'rb') as f:
+                data = pickle.load(f)
+                logging.info(f'Loaded pickled data of type {type(data)} from "{path}"')
+                return data
+    except Exception as e:
+        logging.error(f'Failed to load pickled data "{path}"! Error is "{e!r}".')
+        return None
+
+
+def save_pickle(path, data):
+    with open(path, 'wb') as f:
+        pickle.dump(data, f)

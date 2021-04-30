@@ -1,7 +1,6 @@
 import asyncio
 import logging
 import os
-import pickle
 
 import aiohttp
 from aiothornode.connector import ThorConnector
@@ -16,8 +15,9 @@ from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.midgard.urlgen import get_url_gen_by_network_id
+from services.lib.utils import load_pickle, save_pickle
 
-CACHE_REPORTS = True
+CACHE_REPORTS = True  # fixme!
 
 
 class LpTesterBase:
@@ -90,44 +90,41 @@ class LpGenerator(LpTesterBase):
 
 
 async def test_one_pool_picture_generator(addr, pool, hide, rune_yield_class=None):
-    PICKLE_PATH = '../../stake_report.pickle'
-    PICTURE_PATH = '../../stake_test.png'
+    stake_report_path = f'../../tmp/stake_report_{addr}.pickle'
+    stake_picture_path = f'../../tmp/stake_test_{addr}.png'
 
     lpgen = LpGenerator(rune_yield_class)
 
-    if CACHE_REPORTS and os.path.exists(PICKLE_PATH):
-        with open(PICKLE_PATH, 'rb') as f:
-            stake_report = pickle.load(f)
-    else:
+    stake_report = load_pickle(stake_report_path) if CACHE_REPORTS else None
+
+    if not stake_report:
         async with lpgen:
             stake_report = await lpgen.get_report(addr, pool)
-            with open(PICKLE_PATH, 'wb') as f:
-                pickle.dump(stake_report, f)
+            save_pickle(stake_report_path, stake_report)
 
     img = await lp_pool_picture(stake_report, lpgen.deps.loc_man.default, value_hidden=hide)
-    img.save(PICTURE_PATH, "PNG")
-    os.system(f'open "{PICTURE_PATH}"')
+    img.save(stake_picture_path, "PNG")
+    os.system(f'open "{stake_picture_path}"')
 
 
 async def test_summary_picture_generator(addr, hide, rune_yield_class=None):
-    PICKLE_PATH = '../../stake_report_summary.pickle'
-    PICTURE_PATH = '../../stake_test_summary.png'
+    stake_summary_path = f'../../tmp/stake_report_summary_{addr}.pickle'
+    stake_picture_path = f'../../tmp/stake_test_summary_{addr}.png'
 
     lpgen = LpGenerator(rune_yield_class)
 
-    if CACHE_REPORTS and os.path.exists(PICKLE_PATH):
-        with open(PICKLE_PATH, 'rb') as f:
-            stakes, charts = pickle.load(f)
+    data = load_pickle(stake_summary_path) if CACHE_REPORTS else None
+
+    if data:
+        stakes, charts = data
     else:
         async with lpgen:
             stakes, charts = await lpgen.test_summary(addr)
-
-        with open(PICKLE_PATH, 'wb') as f:
-            pickle.dump((stakes, charts), f)
+        save_pickle(stake_summary_path, (stakes, charts))
 
     img = await lp_address_summary_picture(stakes, charts, lpgen.deps.loc_man.default, value_hidden=hide)
-    img.save(PICTURE_PATH, "PNG")
-    os.system(f'open "{PICTURE_PATH}"')
+    img.save(stake_picture_path, "PNG")
+    os.system(f'open "{stake_picture_path}"')
 
 
 async def test_single_chain_chaosnet():
@@ -152,12 +149,17 @@ async def test_my_pools():
 
 async def test_multi_chain_testnet():
     # await test_one_pool_picture_generator('tthor1cwcqhhjhwe8vvyn8vkufzyg0tt38yjgzdf9whh', 'BTC.BTC', hide=False)
+
+    # await test_one_pool_picture_generator('0x52e07b963ab0f525b15e281b3b42d55e8048f027',
+    #                                       'ETH.AAVE-0X7FC66500C84A76AD7E9C93437BFC5AC33E2DDAE9', hide=False)
+
     # await test_one_pool_picture_generator('bnb1deeu3qxjuqrdumpz53huum8yg39aarlcf4sg6q', 'BNB.BNB',
     #                                       hide=True,
     #                                       rune_yield_class=HomebrewLPConnector)  # BEP2
 
     # await test_summary_picture_generator('tthor1vyp3y7pjuwsz2hpkwrwrrvemcn7t758sfs0glr', hide=False)
-    await test_summary_picture_generator('bnb1deeu3qxjuqrdumpz53huum8yg39aarlcf4sg6q', hide=True,
+
+    await test_summary_picture_generator('0x52e07b963ab0f525b15e281b3b42d55e8048f027', hide=True,
                                          rune_yield_class=HomebrewLPConnector)
 
 

@@ -1,4 +1,4 @@
-from services.lib.money import pretty_money, short_money
+from services.lib.money import pretty_money, short_money, number_short_with_postfix
 
 
 def test_short_money():
@@ -23,3 +23,26 @@ def test_pretty_money():
     assert p(-10_777_888, '$') == '-$10,777,888'
     assert p(10_777_888, '$') == '$10,777,888'
     assert p(10_777_888_999, '$') == '$10,777,888,999'
+
+
+def test_number_short():
+    assert number_short_with_postfix(10) == '10.0'
+    assert number_short_with_postfix(-10) == '-10.0'
+
+    assert number_short_with_postfix(999) == '999.0'
+
+    assert number_short_with_postfix(-1000) == '-1.0K'
+    assert number_short_with_postfix(-1099) == '-1.1K'
+    assert number_short_with_postfix(1234) == '1.2K'
+
+    assert number_short_with_postfix(12345) == '12.3K'
+    assert number_short_with_postfix(123456) == '123.5K'
+    assert number_short_with_postfix(1234567) == '1.2M'
+    assert number_short_with_postfix(12345678) == '12.3M'
+    assert number_short_with_postfix(123456789) == '123.5M'
+    assert number_short_with_postfix(1234567890) == '1.2B'
+    assert number_short_with_postfix(-1234567890) == '-1.2B'
+
+    assert number_short_with_postfix(999) == '999.0'
+    assert number_short_with_postfix(999_999) == '1.0M'
+    assert number_short_with_postfix(999990000000) == '1.0T'

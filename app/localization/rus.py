@@ -100,7 +100,7 @@ class RussianLocalization(BaseLocalization):
     LP_PIC_LP_VS_HOLD = 'Против ХОЛД'
     LP_PIC_LP_APY = 'Годовых'
     LP_PIC_EARLY = 'Еще рано...'
-    LP_PIC_FOOTER = "Испольует runeyield.info от Bigboss"
+    LP_PIC_FOOTER = ""  # my LP scanner is used
     LP_PIC_FEES = 'Ваши чаевые'
 
     LP_PIC_SUMMARY_HEADER = 'Сводка по пулам ликвидности'
@@ -128,7 +128,7 @@ class RussianLocalization(BaseLocalization):
         explorer_links = self.explorer_links_to_thor_address(address)
         return f'🛳️ {pre(address)}\n' \
                f'поставляет ликвидность в следующие пулы:\n{pools}.\n\n' \
-               f"🔍 Explorer: {explorer_links}.\n\n" \
+               f"🔍 Обозреватель: {explorer_links}.\n\n" \
                f'👇 Выберите пул, чтобы получить подробную карточку информаци.'
 
     def text_stake_today(self):
@@ -347,7 +347,7 @@ class RussianLocalization(BaseLocalization):
         active_nodes_change = bracketify(up_down_arrow(old.active_nodes, new.active_nodes, int_delta=True))
         standby_nodes_change = bracketify(up_down_arrow(old.active_nodes, new.active_nodes, int_delta=True))
         message += f"🖥️ {bold(new.active_nodes)} активных нод{active_nodes_change} " \
-                   f"and {bold(new.standby_nodes)} нод в режиме ожидания{standby_nodes_change}.\n"
+                   f"и {bold(new.standby_nodes)} нод в режиме ожидания{standby_nodes_change}.\n"
 
         current_bond_text = bold(pretty_money(new.total_bond_rune, postfix=RAIDO_GLYPH))
         current_pooled_text = bold(pretty_money(new.total_rune_pooled, postfix=RAIDO_GLYPH))
@@ -479,10 +479,10 @@ class RussianLocalization(BaseLocalization):
     def notification_text_for_node_churn(self, changes: NodeInfoChanges):
         message = bold('♻️ Перемешивание нод') + '\n\n'
 
-        message += self._make_node_list(changes.nodes_added, '🆕 Новые ноды подключились:')
+        message += self._make_node_list(changes.nodes_added, '🆕 Новые ноды появились:', add_status=True)
         message += self._make_node_list(changes.nodes_activated, '➡️ Ноды активироны:')
         message += self._make_node_list(changes.nodes_deactivated, '⬅️️ Ноды деактивированы:')
-        message += self._make_node_list(changes.nodes_removed, '🗑️ Ноды отключились:')
+        message += self._make_node_list(changes.nodes_removed, '🗑️ Ноды отключились или исчезли:', add_status=True)
 
         return message.rstrip()
 

@@ -3,7 +3,8 @@ import datetime
 from typing import List
 
 from services.jobs.fetch.runeyield.base import AsgardConsumerConnectorBase, YieldSummary
-from services.models.lp_info import CurrentLiquidity, LPDailyGraphPoint, LiquidityPoolReport, FeeReport
+from services.models.lp_info import CurrentLiquidity, LPDailyGraphPoint, LiquidityPoolReport, FeeReport, \
+    LPDailyChartByPoolDict
 
 
 class AsgardConsumerConnectorV1(AsgardConsumerConnectorBase):
@@ -79,7 +80,7 @@ class AsgardConsumerConnectorV1(AsgardConsumerConnectorBase):
                 self.logger.warning(f'no weekly chart for {pool} @ {address}')
                 return pool, None
 
-    async def _fetch_all_pools_weekly_charts(self, address, pools):
+    async def _fetch_all_pools_weekly_charts(self, address, pools) -> LPDailyChartByPoolDict:
         weekly_charts = await asyncio.gather(*[self._fetch_one_pool_weekly_chart(address, pool) for pool in pools])
         return dict(weekly_charts)
 
