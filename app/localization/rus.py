@@ -137,10 +137,12 @@ class RussianLocalization(BaseLocalization):
 
     # ----- CAP ------
     def notification_text_cap_change(self, old: ThorCapInfo, new: ThorCapInfo):
-        verb = "подрос" if old.cap < new.cap else "упал"
-        call = "Ай-да застейкаем!\n" if new.cap > old.cap else ''
+        up = old.cap < new.cap
+        verb = "подрос" if up else "упал"
+        arrow = '⬆️' if up else '⚠️ ⬇️'
+        call = "Ай-да застейкаем!\n" if up else ''
         return (
-            f'<b>Кап {verb} с {pretty_money(old.cap)} до {pretty_money(new.cap)}!</b>\n'
+            f'{arrow} <b>Кап {verb} с {pretty_money(old.cap)} до {pretty_money(new.cap)}!</b>\n'
             f'Сейчас в пулы помещено <b>{pretty_money(new.stacked)}</b> {self.R}.\n'
             f"{self._cap_progress_bar(new)}"
             f'Цена {self.R} в пуле <code>{new.price:.3f} $</code>.\n'

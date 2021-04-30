@@ -69,6 +69,11 @@ def circular_shuffled_iterator(lst):
             shifts = 0
 
 
+def make_stickers_iterator(name_list):
+    no_dup_list = list(set(name_list))  # remove duplicates
+    return circular_shuffled_iterator(no_dup_list)
+
+
 def setup_logs(log_level):
     logging.basicConfig(
         level=logging.getLevelName(log_level),

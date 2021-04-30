@@ -221,10 +221,12 @@ class BaseLocalization(ABC):  # == English
             return URL_BEP2_SWAP
 
     def notification_text_cap_change(self, old: ThorCapInfo, new: ThorCapInfo):
-        verb = "has been increased" if old.cap < new.cap else "has been decreased"
-        call = "Come on, add more liquidity!\n" if new.cap > old.cap else ''
+        up = old.cap < new.cap
+        verb = "has been increased" if up else "has been decreased"
+        arrow = '⬆️' if up else '⚠️ ⬇️'
+        call = "Come on, add more liquidity!\n" if up else ''
         message = (
-            f'<b>Pool cap {verb} from {pretty_money(old.cap)} to {pretty_money(new.cap)}!</b>\n'
+            f'{arrow} <b>Pool cap {verb} from {pretty_money(old.cap)} to {pretty_money(new.cap)}!</b>\n'
             f'Currently <b>{pretty_money(new.stacked)}</b> {self.R} are in the liquidity pools.\n'
             f"{self._cap_progress_bar(new)}"
             f'The price of {self.R} in the pool is <code>{new.price:.3f} $</code>.\n'

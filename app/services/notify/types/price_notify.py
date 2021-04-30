@@ -11,7 +11,7 @@ from services.lib.date_utils import MINUTE, HOUR, DAY, parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.money import pretty_money, calc_percent_change
 from services.lib.texts import MessageType, BoardMessage
-from services.lib.utils import circular_shuffled_iterator
+from services.lib.utils import make_stickers_iterator
 from services.models.price import RuneFairPrice, PriceReport, PriceATH
 from services.models.time_series import PriceTimeSeries
 
@@ -26,18 +26,15 @@ class PriceNotifier(INotified):
         self.change_cd = parse_timespan_to_seconds(cfg.change_cd)
         self.percent_change_threshold = cfg.percent_change_threshold
         self.time_series = PriceTimeSeries(RUNE_SYMBOL_MARKET, deps.db)
+
         self.ath_stickers = cfg.ath.stickers
-        self.ath_sticker_iter = self.load_ath_stickers(self.ath_stickers)
+        self.ath_sticker_iter = make_stickers_iterator(self.ath_stickers)
+
         self.ath_cooldown = parse_timespan_to_seconds(cfg.ath.cooldown)
         self.price_graph_period = parse_timespan_to_seconds(cfg.price_graph.default_period)
 
-    @staticmethod
-    def load_ath_stickers(name_list):
-        no_dup_list = list(set(name_list))  # remove duplicates
-        return circular_shuffled_iterator(no_dup_list)
-
     async def on_data(self, sender, fprice: RuneFairPrice):
-        # fprice.real_rune_price = 10.54  # debug!!! for ATH
+        # fprice.real_rune_price = 20.54  # fixme: debug! for ATH
         if not await self.handle_ath(fprice):
             await self.handle_new_price(fprice)
 

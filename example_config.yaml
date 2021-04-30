@@ -80,6 +80,11 @@ price:
 
 cap:
   fetch_period: 120
+  raised:
+    stickers:
+      - CAACAgIAAxkBAAIKKmCLydn1J32d6Rawoy8AAZYxwCXnPQACLQADFJKoHX4nAr5MyGKYHwQ
+      - CAACAgIAAxkBAAIKLGCLyeS4VTRUaSJDGhpCQ-51H8HHAAJGAAMUkqgdblkQIwX7yqsfBA
+      - CAACAgIAAxkBAAIKMGCLyi1YmvVywp3aSZV7tuAzFUhLAAI9AAMUkqgdxLKS55dH2qkfBA
 
 
 queue:
