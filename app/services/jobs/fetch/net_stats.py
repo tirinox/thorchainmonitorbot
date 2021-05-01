@@ -80,9 +80,15 @@ class NetworkStatisticsFetcher(BaseFetcher):
         else:
             return hardcoded_value
 
+    async def get_constants_and_mimir(self):
+        mimir, constants = await asyncio.gather(
+            self.deps.thor_connector.query_mimir(),
+            self.deps.thor_connector.query_constants()
+        )
+        return constants, mimir
+
     async def _get_min_pool_depth(self) -> int:
-        mimir, constants = await asyncio.gather(self.deps.thor_connector.query_mimir(),
-                                                self.deps.thor_connector.query_constants())
+        mimir, constants = await self.get_constants_and_mimir()
         return self._get_constant_value_int(self.KEY_CONST_MIN_RUNE_POOL_DEPTH, mimir, constants)
 
     async def _get_pools(self, _, ns: NetworkStats):
