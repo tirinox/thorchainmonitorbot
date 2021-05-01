@@ -71,24 +71,24 @@ class NetworkStatisticsFetcher(BaseFetcher):
 
     KEY_CONST_MIN_RUNE_POOL_DEPTH = 'MinRunePoolDepth'
 
-    def _get_constant_value_int(self, name: str, mimir: ThorMimir, constants: ThorConstants):
+    def _get_constant_value_int(self, name: str, mimir: ThorMimir, constants: ThorConstants, default=0):
         hardcoded_value = int(constants.constants.get(name, 0))
 
         wanted_const = f'mimir//{name.upper()}'
-        if not hardcoded_value or wanted_const in mimir.constants:
-            return int(mimir.constants[wanted_const])
+        if wanted_const in mimir.constants:
+            return int(mimir.constants.get(wanted_const, default))
         else:
             return hardcoded_value
 
     async def get_constants_and_mimir(self):
-        mimir, constants = await asyncio.gather(
+        constants, mimir = await asyncio.gather(
+            self.deps.thor_connector.query_constants(),
             self.deps.thor_connector.query_mimir(),
-            self.deps.thor_connector.query_constants()
         )
         return constants, mimir
 
     async def _get_min_pool_depth(self) -> int:
-        mimir, constants = await self.get_constants_and_mimir()
+        constants, mimir = await self.get_constants_and_mimir()
         return self._get_constant_value_int(self.KEY_CONST_MIN_RUNE_POOL_DEPTH, mimir, constants)
 
     async def _get_pools(self, _, ns: NetworkStats):

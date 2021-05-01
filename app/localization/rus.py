@@ -246,8 +246,11 @@ class RussianLocalization(BaseLocalization):
         message = bold('🏊 Изменения в пулах ликвидности:') + '\n\n'
 
         statuses = {
-            'Enabled': 'включен',
-            'Bootstrap': 'загружается'
+            PoolInfo.ENABLED: 'включен',
+            PoolInfo.AVAILABLE: 'включен',
+
+            PoolInfo.BOOTSTRAP: 'загружается',
+            PoolInfo.STAGED: 'загружается'
         }
 
         def pool_text(pool_name, status, to_status=None):
