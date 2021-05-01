@@ -12,6 +12,7 @@ from aiothornode.env import *
 from localization import LocalizationManager
 from services.dialog import init_dialogs
 from services.jobs.fetch.cap import CapInfoFetcher
+from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
 from services.jobs.fetch.node_info import NodeInfoFetcher
@@ -100,6 +101,9 @@ class App:
         fetcher_queue = QueueFetcher(d)
         fetcher_stats = NetworkStatisticsFetcher(d, ppf=self.ppf)
         fetcher_nodes = NodeInfoFetcher(d)
+        fetcher_mimir = ConstMimirFetcher(d)
+
+        await fetcher_mimir.fetch()  # get constants beforehand
 
         notifier_cap = LiquidityCapNotifier(d)
         notifier_tx = StakeTxNotifier(d)
