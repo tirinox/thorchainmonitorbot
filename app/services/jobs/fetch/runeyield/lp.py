@@ -22,7 +22,7 @@ class AsgardConsumerConnectorV1(AsgardConsumerConnectorBase):
         return YieldSummary(stake_reports, weekly_charts)
 
     # override
-    async def generate_yield_report_single_pool(self, address, pool):
+    async def generate_yield_report_single_pool(self, address, pool, user_txs=None):
         liq = await self._fetch_one_pool_liquidity_info(address, pool)
         stake_report = await self._generate_yield_report(address, liq)
         return stake_report

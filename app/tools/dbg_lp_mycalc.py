@@ -54,7 +54,7 @@ async def test_1_pool(lpgen: LpAppFramework):
 async def test_charts(lpgen: LpAppFramework, address=ADDR):
     rl = lpgen.rune_yield
 
-    data_path = f'../../tmp/lp_chart_data-{address}.pickle'
+    data_path = f'../../tmp/lp_chart_data-format2-{address}.pickle'
 
     data = load_pickle(data_path)
     if data:
@@ -63,11 +63,8 @@ async def test_charts(lpgen: LpAppFramework, address=ADDR):
         pools = await rl.get_my_pools(address)
         user_txs = await rl._get_user_tx_actions(address)
 
-        historic_all_pool_states, current_pools_details = await asyncio.gather(
-            rl._fetch_historical_pool_states(user_txs),
-            rl._get_details_of_staked_pools(address, pools)
-        )
-        save_pickle(data_path, (user_txs, historic_all_pool_states, current_pools_details, pools))
+        historic_all_pool_states = await rl._fetch_historical_pool_states(user_txs)
+        save_pickle(data_path, (user_txs, historic_all_pool_states, pools))
 
     day_units = await rl._get_charts(user_txs, days=14)
     print(day_units)

@@ -2,7 +2,6 @@
 
 import asyncio
 import datetime
-import json
 import logging
 import os
 from collections import defaultdict
@@ -15,7 +14,7 @@ from services.jobs.fetch.tx import TxFetcher
 from services.lib.constants import NetworkIdents
 from services.lib.date_utils import DAY
 from services.lib.utils import load_pickle, save_pickle
-from services.models.tx import ThorTx, ThorTxType
+from services.models.tx import ThorTx, final_liquidity, ThorTxType, cut_txs_before_previous_full_withdraw
 from tools.lib.lp_common import LpAppFramework
 
 logging.basicConfig(level=logging.INFO)
@@ -75,32 +74,18 @@ async def sort_txs_to_pool_and_users(txs: List[ThorTx]) -> UserToPoolToTxList:
     return u2p2txs
 
 
-def final_liquidity(txs: List[ThorTx]):
-    lp = 0
-    for tx in txs:
-        if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
-            lp += tx.meta_add.liquidity_units_int
-        elif tx.type == ThorTxType.TYPE_WITHDRAW:
-            lp += tx.meta_withdraw.liquidity_units_int
-
-    if lp == 0 and txs:
-        logging.debug(f'lp = 0 for {txs[0].sender_address} in {txs[0].first_pool}')
-
-    return lp
-
-
 def is_good_tx_list(txs: List[ThorTx], discard_later_ts, since_last_action=False, check_positive_lp=True) -> bool:
-    if txs:
-        control_tx = txs[-1 if since_last_action else 0]
-        if control_tx.date_timestamp > discard_later_ts:
-            return False
-
-        if check_positive_lp and final_liquidity(txs) <= 0:
-            return False
-
-        return True
-    else:
+    if not txs:
         return False
+
+    control_tx = txs[-1 if since_last_action else 0]  # 0 = earliest, -1 = laters
+    if control_tx.date_timestamp > discard_later_ts:
+        return False
+
+    if check_positive_lp and final_liquidity(txs) <= 0:
+        return False
+
+    return True
 
 
 def filter_txs(u2p2txs: UserToPoolToTxList, discard_later_ts, since_last_action=False,
@@ -110,6 +95,12 @@ def filter_txs(u2p2txs: UserToPoolToTxList, discard_later_ts, since_last_action=
     for address, p2txs2 in u2p2txs.items():
         result_p2txs = {}
         for pool, txs in p2txs2.items():
+            prev_tx_count = len(txs)
+            txs = cut_txs_before_previous_full_withdraw(txs)
+            if prev_tx_count != len(txs):
+                logging.debug(f'Full withdraw detected for {address = !r} at {pool = !r}, {prev_tx_count = }, '
+                              f'now {len(txs) = }')
+
             if is_good_tx_list(txs, discard_later_ts, since_last_action, check_positive_lp):
                 result_p2txs[pool] = txs
 
@@ -126,6 +117,24 @@ def ensure_data_dir():
         os.makedirs(dir_name, exist_ok=True)
 
 
+async def calc_impermanent_loss(app: LpAppFramework, address, pool, txs: List[ThorTx]):
+    yield_report = await app.rune_yield.generate_yield_report_single_pool(address, pool, user_txs=txs)
+
+
+def find_pool_with_withdraws(filter_u2p2txs: UserToPoolToTxList, start=0):
+    tx: ThorTx
+    i = 0
+    for address, p2txs in filter_u2p2txs.items():
+        if i >= start:
+            for pool, txs in p2txs.items():
+                for tx in txs:
+                    if tx.type == ThorTxType.TYPE_WITHDRAW:
+                        return address, pool, txs
+        i += 1
+
+    return None, None, None
+
+
 async def run_pipeline(app: LpAppFramework):
     ensure_data_dir()
 
@@ -135,9 +144,20 @@ async def run_pipeline(app: LpAppFramework):
 
     discard_later_ts = datetime.datetime.now().timestamp() - 100 * DAY
 
-    filter_u2p2txs = filter_txs(user_to_txs, discard_later_ts, since_last_action=False, check_positive_lp=True)
+    filtered_u2p2txs = filter_txs(user_to_txs, discard_later_ts, since_last_action=False, check_positive_lp=True)
+    print(len(filtered_u2p2txs), 'users finally.')
 
-    print(len(filter_u2p2txs), 'users finally.')
+    # address1, pool1, txs1 = find_pool_with_withdraws(filtered_u2p2txs, start=500)
+    address1 = 'bnb1gatq8xrczffkwer3ulhunk65n62ck0r0pz6lz4'
+    pool1 = 'BNB.TWT-8C2'
+    txs1 = filtered_u2p2txs[address1][pool1]
+
+    print(address1, pool1)
+
+    await calc_impermanent_loss(app, address1, pool1, txs1)
+
+    lp = final_liquidity(txs1)
+    print(f'Final liquidity {pool1} @ {address1} = {lp}')
 
 
 async def main():

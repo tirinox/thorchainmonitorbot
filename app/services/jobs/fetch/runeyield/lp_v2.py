@@ -26,7 +26,7 @@ class AsgardConsumerConnectorV2(AsgardConsumerConnectorBase):
         return [p.pool for p in compound_addresses]
 
     # override
-    async def generate_yield_report_single_pool(self, address: str, pool: str):
+    async def generate_yield_report_single_pool(self, address: str, pool: str, user_txs=None):
         comp_addresses = await self.get_compound_addresses(address)
         comp_address_for_pool = next(ca for ca in comp_addresses if ca.pool == pool)
 

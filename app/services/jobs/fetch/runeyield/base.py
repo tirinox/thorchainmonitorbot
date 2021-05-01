@@ -27,7 +27,7 @@ class AsgardConsumerConnectorBase:
 
     # interface
     @abstractmethod
-    async def generate_yield_report_single_pool(self, address, pool) -> LiquidityPoolReport:
+    async def generate_yield_report_single_pool(self, address, pool, user_txs=None) -> LiquidityPoolReport:
         ...
 
     # interface

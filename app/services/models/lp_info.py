@@ -88,8 +88,6 @@ class CurrentLiquidity(BaseModelMixin):
     first_stake_ts: int
     last_stake_ts: int
 
-    fee_earn_usd: float
-
     @classmethod
     def from_asgard(cls, d):
         m = THOR_DIVIDER_INV
@@ -107,8 +105,7 @@ class CurrentLiquidity(BaseModelMixin):
             float(d['totalunstakedrune']) * m,
             float(d['totalunstakedusd']) * m,
             int(d['firststake']),
-            int(d['laststake']),
-            fee_earn_usd=0.0
+            int(d['laststake'])
         )
 
 
