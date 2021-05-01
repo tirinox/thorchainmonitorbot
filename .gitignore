@@ -1,3 +1,5 @@
+temp/*
+
 .idea/
 config.yaml
 redis_data/

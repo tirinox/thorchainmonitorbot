@@ -94,7 +94,7 @@ def pairwise(iterable):
 
 def load_pickle(path):
     try:
-        if os.path.exists(path):
+        if path and os.path.exists(path):
             with open(path, 'rb') as f:
                 data = pickle.load(f)
                 logging.info(f'Loaded pickled data of type {type(data)} from "{path}"')
@@ -105,5 +105,8 @@ def load_pickle(path):
 
 
 def save_pickle(path, data):
-    with open(path, 'wb') as f:
-        pickle.dump(data, f)
+    if path:
+        with open(path, 'wb') as f:
+            logging.info(f'Saving pickle to "{path}"...')
+            pickle.dump(data, f)
+            logging.info(f'Saving pickle to "{path}" done!')

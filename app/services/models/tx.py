@@ -165,6 +165,10 @@ class ThorTx:
         else:
             return self.date
 
+    @property
+    def sender_address(self):
+        return self.in_tx[0].address if self.in_tx else None
+
     def search_realm(self, in_only=False, out_only=False):
         return self.in_tx if in_only else self.out_tx if out_only else in_only + out_only
 

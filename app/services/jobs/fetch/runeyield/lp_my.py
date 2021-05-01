@@ -109,7 +109,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
     # ------------------------------------------------------------------------------------------------------------------
 
     async def _get_user_tx_actions(self, address: str, pool_filter=None) -> List[ThorTx]:
-        txs = await self.tx_fetcher.fetch_user_tx(address, liquidity_change_only=True)
+        txs = await self.tx_fetcher.fetch_all_tx(address, liquidity_change_only=True)
         if pool_filter:
             txs = [tx for tx in txs if pool_filter == tx.first_pool]
         txs.sort(key=operator.attrgetter('height_int'))

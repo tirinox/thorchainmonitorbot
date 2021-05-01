@@ -17,7 +17,7 @@ from services.lib.texts import up_down_arrow
 from services.lib.utils import setup_logs, load_pickle, save_pickle
 from services.models.net_stats import NetworkStats
 from services.notify.broadcast import Broadcaster
-from tools.dbg_lp import LpTesterBase
+from tools.lib.lp_common import LpAppFramework
 
 CACHE_NET_STATS = True
 CACHE_NET_STATS_FILE = '../../tmp/net_stats.pickle'
@@ -70,7 +70,7 @@ async def print_message(new_info: NetworkStats, deps: DepContainer):
 
 
 async def main():
-    lpgen = LpTesterBase()
+    lpgen = LpAppFramework()
 
     new_info = load_pickle(CACHE_NET_STATS_FILE) if CACHE_NET_STATS else None
 

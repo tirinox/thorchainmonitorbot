@@ -7,12 +7,12 @@ from services.jobs.fetch.runeyield.date2block import DateToBlockMapper
 from services.jobs.fetch.runeyield.lp_my import HomebrewLPConnector
 from services.jobs.fetch.tx import TxFetcher
 from services.lib.utils import setup_logs, load_pickle, save_pickle
-from tools.dbg_lp import LpTesterBase
+from tools.lib.lp_common import LpAppFramework
 
 
-async def test_get_user_lp_actions(lpgen: LpTesterBase):
+async def test_get_user_lp_actions(lpgen: LpAppFramework):
     txf = TxFetcher(lpgen.deps)
-    res = await txf.fetch_user_tx('tthor1qtedshax98p3v9al3pqjrfmf32xmrlfzs7lxg2', liquidity_change_only=True)
+    res = await txf.fetch_all_tx('tthor1qtedshax98p3v9al3pqjrfmf32xmrlfzs7lxg2', liquidity_change_only=True)
     for tx in res:
         print(tx, end='\n-----\n')
 
@@ -32,13 +32,13 @@ POOL_MCTN = ''
 
 
 async def show_me_example_liquidity():
-    lpgen = LpTesterBase(AsgardConsumerConnectorV1)
+    lpgen = LpAppFramework(AsgardConsumerConnectorV1)
     async with lpgen:
         liq = await lpgen.rune_yield._fetch_one_pool_liquidity_info(ADDR, POOL)
         print(liq)
 
 
-async def test_summary_of_all_pools(lpgen: LpTesterBase):
+async def test_summary_of_all_pools(lpgen: LpAppFramework):
     pools = await lpgen.rune_yield.get_my_pools(ADDR)
     yield_report = await lpgen.rune_yield.generate_yield_summary(ADDR, pools)
     for r in yield_report.reports:
@@ -46,12 +46,12 @@ async def test_summary_of_all_pools(lpgen: LpTesterBase):
         print('------')
 
 
-async def test_1_pool(lpgen: LpTesterBase):
+async def test_1_pool(lpgen: LpAppFramework):
     report = await lpgen.rune_yield.generate_yield_report_single_pool(ADDR, POOL)
     print(report)
 
 
-async def test_charts(lpgen: LpTesterBase, address=ADDR):
+async def test_charts(lpgen: LpAppFramework, address=ADDR):
     rl = lpgen.rune_yield
 
     data_path = f'../../tmp/lp_chart_data-{address}.pickle'
@@ -73,7 +73,7 @@ async def test_charts(lpgen: LpTesterBase, address=ADDR):
     print(day_units)
 
 
-async def test_block_calibration(lpgen: LpTesterBase):
+async def test_block_calibration(lpgen: LpAppFramework):
     dbm = DateToBlockMapper(lpgen.deps)
     blocks = await dbm.calibrate(14, overwrite=True)
     print('-' * 100)
@@ -83,7 +83,7 @@ async def test_block_calibration(lpgen: LpTesterBase):
     # print(r)
 
 
-async def test_block_by_date(lpgen: LpTesterBase):
+async def test_block_by_date(lpgen: LpAppFramework):
     dbm = DateToBlockMapper(lpgen.deps)
     d = date(2021, 4, 13)
 
@@ -92,13 +92,13 @@ async def test_block_by_date(lpgen: LpTesterBase):
     print(r)
 
 
-async def clear_date2block(lpgen: LpTesterBase):
+async def clear_date2block(lpgen: LpAppFramework):
     dbm = DateToBlockMapper(lpgen.deps)
     await dbm.clear()
 
 
 async def main():
-    lpgen = LpTesterBase(HomebrewLPConnector)
+    lpgen = LpAppFramework(HomebrewLPConnector)
     async with lpgen:
         # await test_1_pool(lpgen)
         # await test_charts(lpgen, address='bnb1snqqjdvcqjf76fdztxrtwgv0ws9hsvvfsjv02z')  # mccn (bnb only)
