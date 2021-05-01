@@ -6,7 +6,7 @@ from services.models.base import BaseModelMixin
 @dataclass
 class ThorCapInfo(BaseModelMixin):
     cap: int
-    stacked: int
+    pooled_rune: int
     price: float
 
     @classmethod
@@ -23,5 +23,4 @@ class ThorCapInfo(BaseModelMixin):
 
     @property
     def is_ok(self):
-        return self.cap >= 1 and self.stacked >= 1
-
+        return self.cap >= 1 and self.pooled_rune >= 1

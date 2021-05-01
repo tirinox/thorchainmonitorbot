@@ -143,7 +143,7 @@ class RussianLocalization(BaseLocalization):
         call = "Ай-да застейкаем!\n" if up else ''
         return (
             f'{arrow} <b>Кап {verb} с {pretty_money(old.cap)} до {pretty_money(new.cap)}!</b>\n'
-            f'Сейчас в пулы помещено <b>{pretty_money(new.stacked)}</b> {self.R}.\n'
+            f'Сейчас в пулы помещено <b>{pretty_money(new.pooled_rune)}</b> {self.R}.\n'
             f"{self._cap_progress_bar(new)}"
             f'Цена {self.R} в пуле <code>{new.price:.3f} $</code>.\n'
             f'{call}'
@@ -282,7 +282,7 @@ class RussianLocalization(BaseLocalization):
 
     def cap_message(self, info: ThorCapInfo):
         return (
-            f"<b>{pretty_money(info.stacked)}</b> монет из "
+            f"<b>{pretty_money(info.pooled_rune)}</b> монет из "
             f"<b>{pretty_money(info.cap)}</b> сейчас застейканы.\n"
             f"{self._cap_progress_bar(info)}"
             f"Цена {bold(self.R)} сейчас <code>{info.price:.3f} $</code>.\n"

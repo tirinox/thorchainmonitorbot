@@ -58,7 +58,7 @@ class BaseLocalization(ABC):  # == English
 
     @staticmethod
     def _cap_progress_bar(info: ThorCapInfo):
-        return f'{progressbar(info.stacked, info.cap, 10)} ({format_percent(info.stacked, info.cap)})\n'
+        return f'{progressbar(info.pooled_rune, info.cap, 10)} ({format_percent(info.pooled_rune, info.cap)})\n'
 
     # ---- WELCOME ----
     def help_message(self):
@@ -227,7 +227,7 @@ class BaseLocalization(ABC):  # == English
         call = "Come on, add more liquidity!\n" if up else ''
         message = (
             f'{arrow} <b>Pool cap {verb} from {pretty_money(old.cap)} to {pretty_money(new.cap)}!</b>\n'
-            f'Currently <b>{pretty_money(new.stacked)}</b> {self.R} are in the liquidity pools.\n'
+            f'Currently <b>{pretty_money(new.pooled_rune)}</b> {self.R} are in the liquidity pools.\n'
             f"{self._cap_progress_bar(new)}"
             f'The price of {self.R} in the pool is <code>{new.price:.3f} $</code>.\n'
             f'{call}'
@@ -416,7 +416,7 @@ class BaseLocalization(ABC):  # == English
 
     def cap_message(self, info: ThorCapInfo):
         return (
-            f"Hello! <b>{pretty_money(info.stacked)} {self.R}</b> of "
+            f"Hello! <b>{pretty_money(info.pooled_rune)} {self.R}</b> of "
             f"<b>{pretty_money(info.cap)} {self.R}</b> pooled.\n"
             f"{self._cap_progress_bar(info)}"
             f"The {bold(self.R)} price is <code>${info.price:.3f}</code> now.\n"
