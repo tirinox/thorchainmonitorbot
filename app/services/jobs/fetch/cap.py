@@ -10,8 +10,7 @@ from services.models.cap_info import ThorCapInfo
 
 
 class CapInfoFetcher(BaseFetcher):
-    def __init__(self, deps: DepContainer, ppf: PoolPriceFetcher):
-        self.ppf = ppf
+    def __init__(self, deps: DepContainer):
         sleep_period = parse_timespan_to_seconds(deps.cfg.cap.fetch_period)
         super().__init__(deps, sleep_period)
         self.url_gen = get_url_gen_by_network_id(deps.cfg.network_id)

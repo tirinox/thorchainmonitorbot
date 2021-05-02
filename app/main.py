@@ -88,22 +88,22 @@ class App:
         if 'REPLACE_RUNE_TIMESERIES_WITH_GECKOS' in os.environ:
             await fill_rune_price_from_gecko(d.db)
 
-        self.ppf = PoolPriceFetcher(d)
-        current_pools = await self.ppf.get_current_pool_data_full()
+        ppf = d.price_pool_fetcher = PoolPriceFetcher(d)
+        current_pools = await d.price_pool_fetcher.get_current_pool_data_full()
         if not current_pools:
             logging.error("no pool data at startup! halt it!")
             exit(-1)
 
         self.deps.price_holder.update(current_pools)
 
-        fetcher_cap = CapInfoFetcher(d, ppf=self.ppf)
+        fetcher_mimir = ConstMimirFetcher(d)
+        await fetcher_mimir.fetch()  # get constants beforehand
+
+        fetcher_cap = CapInfoFetcher(d)
         fetcher_tx = TxFetcher(d)
         fetcher_queue = QueueFetcher(d)
-        fetcher_stats = NetworkStatisticsFetcher(d, ppf=self.ppf)
+        fetcher_stats = NetworkStatisticsFetcher(d)
         fetcher_nodes = NodeInfoFetcher(d)
-        fetcher_mimir = ConstMimirFetcher(d)
-
-        await fetcher_mimir.fetch()  # get constants beforehand
 
         notifier_cap = LiquidityCapNotifier(d)
         notifier_tx = StakeTxNotifier(d)
@@ -124,13 +124,13 @@ class App:
         fetcher_stats.subscribe(notifier_stats)
         fetcher_nodes.subscribe(notifier_nodes)
 
-        self.ppf.subscribe(notifier_price)
-        self.ppf.subscribe(notifier_pool_churn)
+        ppf.subscribe(notifier_price)
+        ppf.subscribe(notifier_pool_churn)
 
         # await notifier_stats.clear_cd()
 
         await asyncio.gather(*(task.run() for task in [
-            self.ppf,
+            ppf,
             fetcher_tx,
             fetcher_cap,
             fetcher_queue,

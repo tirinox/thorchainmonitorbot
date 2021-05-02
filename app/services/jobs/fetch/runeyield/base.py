@@ -1,10 +1,11 @@
 import logging
 from abc import abstractmethod
-from typing import List, Tuple, NamedTuple, Dict
+from typing import List, NamedTuple, Dict
 
+from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher
-from services.lib.midgard.urlgen import MidgardURLGenBase
 from services.lib.depcont import DepContainer
+from services.lib.midgard.urlgen import MidgardURLGenBase
 from services.models.lp_info import LiquidityPoolReport, LPDailyGraphPoint
 
 
@@ -14,10 +15,9 @@ class YieldSummary(NamedTuple):
 
 
 class AsgardConsumerConnectorBase:
-    def __init__(self, deps: DepContainer, ppf: PoolPriceFetcher, url_gen: MidgardURLGenBase):
+    def __init__(self, deps: DepContainer, url_gen: MidgardURLGenBase):
         self.deps = deps
         self.logger = logging.getLogger(self.__class__.__name__)
-        self.ppf = ppf
         self.url_gen = url_gen
 
     # interface

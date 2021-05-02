@@ -4,12 +4,11 @@ import operator
 from collections import defaultdict
 from typing import List, Tuple, Dict, Optional
 
-from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.runeyield import AsgardConsumerConnectorBase
 from services.jobs.fetch.runeyield.base import YieldSummary
 from services.jobs.fetch.runeyield.date2block import DateToBlockMapper
 from services.jobs.fetch.tx import TxFetcher
-from services.lib.constants import STABLE_COIN_POOLS, NetworkIdents
+from services.lib.constants import STABLE_COIN_POOLS, NetworkIdents, THOR_DIVIDER_INV
 from services.lib.date_utils import days_ago_noon, now_ts
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
@@ -28,17 +27,24 @@ DEFAULT_RUNE_PRICE = 10.0  # USD
 
 
 class HomebrewLPConnector(AsgardConsumerConnectorBase):
-    def __init__(self, deps: DepContainer, ppf: PoolPriceFetcher, url_gen: MidgardURLGenBase):
-        super().__init__(deps, ppf, url_gen)
+    def __init__(self, deps: DepContainer, url_gen: MidgardURLGenBase):
+        super().__init__(deps, url_gen)
         self.tx_fetcher = TxFetcher(deps)
         self.parser = get_parser_by_network_id(deps.cfg.network_id)
         self.use_thor_consensus = False
         self.days_for_chart = 14
         self.max_attempts = 5
         self.block_mapper = DateToBlockMapper(deps)
+        self.withdraw_fee_rune = 2.0
+
+    KEY_CONST_FEE_OUTBOUND = 'OutboundTransactionFee'
+
+    def update_fees(self):
+        withdraw_fee_rune = self.deps.mimir_const_holder.get_constant(self.KEY_CONST_FEE_OUTBOUND, default=2000000)
+        self.withdraw_fee_rune = int(withdraw_fee_rune) * THOR_DIVIDER_INV
 
     async def generate_yield_summary(self, address, pools: List[str]) -> Tuple[dict, List[LiquidityPoolReport]]:
-        withdraw_fee_rune = 2.0  # todo: get from constants!
+        self.update_fees()
 
         user_txs = await self._get_user_tx_actions(address)
 
@@ -54,7 +60,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             this_pool_txs = [tx for tx in user_txs if tx.first_pool == pool_name]
 
             liq = self._get_current_liquidity(this_pool_txs, pool_name, historic_all_pool_states,
-                                              withdraw_fee_rune=withdraw_fee_rune)
+                                              withdraw_fee_rune=self.withdraw_fee_rune)
 
             fees = self._get_fee_report(this_pool_txs, pool_name, historic_all_pool_states)
 
@@ -73,7 +79,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         return YieldSummary(reports, weekly_charts)
 
     async def generate_yield_report_single_pool(self, address, pool_name, user_txs=None) -> LiquidityPoolReport:
-        withdraw_fee_rune = 2.0  # todo! get it from constants
+        self.update_fees()
 
         # todo: idea: check date_last_added, if it is not changed - get user_txs from local cache
         # todo: or you can compare current liq_units! if it has changed, you reload tx! (unsafe)
@@ -83,20 +89,20 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         historic_all_pool_states = await self._fetch_historical_pool_states(user_txs)
 
         cur_liq = self._get_current_liquidity(user_txs, pool_name, historic_all_pool_states,
-                                              withdraw_fee_rune=withdraw_fee_rune)
+                                              withdraw_fee_rune=self.withdraw_fee_rune)
 
         fees = self._get_fee_report(user_txs, pool_name, historic_all_pool_states)
         usd_per_asset_start, usd_per_rune_start = self._get_earliest_prices(user_txs, historic_all_pool_states)
 
         d = self.deps
-        stake_report = LiquidityPoolReport(
+        liq_report = LiquidityPoolReport(
             d.price_holder.usd_per_asset(cur_liq.pool),
             d.price_holder.usd_per_rune,
             usd_per_asset_start, usd_per_rune_start,
             cur_liq, fees=fees,
             pool=d.price_holder.pool_info_map.get(cur_liq.pool)
         )
-        return stake_report
+        return liq_report
 
     async def get_my_pools(self, address) -> List[str]:
         url = self.url_gen.url_for_address_pool_membership(address)
@@ -123,7 +129,8 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         # make sure, that connections are fresh, in order not to update it at all the height simultaneously
         await thor_conn._get_random_clients()
 
-        tasks = [self.ppf.get_current_pool_data_full(h, caching=True) for h in heights]
+        ppf = self.deps.price_pool_fetcher
+        tasks = [ppf.get_current_pool_data_full(h, caching=True) for h in heights]
         pool_states = await asyncio.gather(*tasks)
         return dict(zip(heights, pool_states))
 
@@ -140,7 +147,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
     def _get_current_liquidity(self, txs: List[ThorTx],
                                pool_name,
                                pool_historic: HeightToAllPools,
-                               withdraw_fee_rune=2.0) -> CurrentLiquidity:
+                               withdraw_fee_rune) -> CurrentLiquidity:
         first_state_date, last_stake_date = 0, 0
         total_added_rune, total_withdrawn_rune = 0.0, 0.0
         total_added_usd, total_withdrawn_usd = 0.0, 0.0
@@ -359,6 +366,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         last_block = await self.block_mapper.get_last_thorchain_block()
         results = {}
         now = datetime.datetime.now()
+        ppf = self.deps.price_pool_fetcher
         for pool, pool_txs in tx_by_pool_map.items():
             day_to_units = self._pool_units_by_day(pool_txs, days=days)  # List of (day_no, timestamp, units)
 
@@ -366,7 +374,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             for day, ts, units in day_to_units:
                 that_day = now - datetime.timedelta(days=day)
                 height = await self.block_mapper.get_block_height_by_date(that_day.date(), last_block)
-                pools_at_height = await self.ppf.get_current_pool_data_full(height, caching=True)
+                pools_at_height = await ppf.get_current_pool_data_full(height, caching=True)
                 pool_info = pools_at_height.get(pool, None)
 
                 if pool_info:

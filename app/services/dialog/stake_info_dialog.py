@@ -128,7 +128,7 @@ class StakeDialog(BaseDialog):
         addr_idx = int(addr_idx)
         address = self.my_addresses[addr_idx].address
 
-        rune_yield = get_rune_yield_connector(self.deps, ppf=PoolPriceFetcher(self.deps))
+        rune_yield = get_rune_yield_connector(self.deps)
         self.data[self.KEY_ACTIVE_ADDRESS] = address
         self.data[self.KEY_ACTIVE_ADDRESS_INDEX] = addr_idx
 
@@ -168,8 +168,7 @@ class StakeDialog(BaseDialog):
         sticker = await query.message.answer_sticker(LOADING_STICKER, disable_notification=True)
 
         # WORK...
-        ppf = PoolPriceFetcher(self.deps)
-        rune_yield = get_rune_yield_connector(self.deps, ppf)
+        rune_yield = get_rune_yield_connector(self.deps)
         stake_report = await rune_yield.generate_yield_report_single_pool(address, pool)
 
         # GENERATE A PICTURE
@@ -204,8 +203,7 @@ class StakeDialog(BaseDialog):
         # WORK
         my_pools = self.data[self.KEY_MY_POOLS]
 
-        ppf = PoolPriceFetcher(self.deps)
-        rune_yield = get_rune_yield_connector(self.deps, ppf)
+        rune_yield = get_rune_yield_connector(self.deps)
         yield_summary = await rune_yield.generate_yield_summary(address, my_pools)
 
         # GENERATE A PICTURE

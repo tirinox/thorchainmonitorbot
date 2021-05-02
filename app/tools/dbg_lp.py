@@ -10,7 +10,7 @@ from tools.lib.lp_common import LpAppFramework, LpGenerator
 CACHE_REPORTS = True  # fixme!
 
 
-async def test_one_pool_picture_generator(addr, pool, hide, rune_yield_class=None):
+async def test_one_pool_picture_generator(addr, pool, hide, rune_yield_class=HomebrewLPConnector):
     stake_report_path = f'../../tmp/stake_report_{addr}.pickle'
     stake_picture_path = f'../../tmp/stake_test_{addr}.png'
 
@@ -28,7 +28,7 @@ async def test_one_pool_picture_generator(addr, pool, hide, rune_yield_class=Non
     os.system(f'open "{stake_picture_path}"')
 
 
-async def test_summary_picture_generator(addr, hide, rune_yield_class=None):
+async def test_summary_picture_generator(addr, hide, rune_yield_class=HomebrewLPConnector):
     stake_summary_path = f'../../tmp/stake_report_summary_{addr}.pickle'
     stake_picture_path = f'../../tmp/stake_test_summary_{addr}.png'
 
@@ -80,8 +80,10 @@ async def test_multi_chain_testnet():
 
     # await test_summary_picture_generator('tthor1vyp3y7pjuwsz2hpkwrwrrvemcn7t758sfs0glr', hide=False)
 
-    await test_summary_picture_generator('0x52e07b963ab0f525b15e281b3b42d55e8048f027', hide=True,
-                                         rune_yield_class=HomebrewLPConnector)
+    # await test_summary_picture_generator('0x52e07b963ab0f525b15e281b3b42d55e8048f027', hide=True,
+    #                                      rune_yield_class=HomebrewLPConnector)
+
+    await test_one_pool_picture_generator('bnb1t57fmptcaxc4aag2ax86a7x354p543t3zs8m7c', 'BNB.BNB', hide=False)
 
 
 if __name__ == '__main__':

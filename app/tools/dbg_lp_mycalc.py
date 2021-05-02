@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from datetime import datetime, timedelta, date
+from datetime import date
 
 from services.jobs.fetch.runeyield import AsgardConsumerConnectorV1
 from services.jobs.fetch.runeyield.date2block import DateToBlockMapper

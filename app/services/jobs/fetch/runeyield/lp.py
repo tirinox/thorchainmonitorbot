@@ -93,9 +93,9 @@ class AsgardConsumerConnectorV1(AsgardConsumerConnectorBase):
         try:
             first_stake_dt = datetime.datetime.utcfromtimestamp(liq.first_stake_ts)
             # get prices at the moment of first stake
-            usd_per_rune_start, usd_per_asset_start = await self.ppf.get_usd_price_of_rune_and_asset_by_day(
-                liq.pool,
-                first_stake_dt.date())
+            usd_per_rune_start, usd_per_asset_start = \
+                await self.deps.price_pool_fetcher.get_usd_price_of_rune_and_asset_by_day(liq.pool,
+                                                                                          first_stake_dt.date())
         except Exception as e:
             self.logger.exception(e, exc_info=True)
             usd_per_rune_start, usd_per_asset_start = None, None

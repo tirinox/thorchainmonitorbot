@@ -10,16 +10,16 @@ from services.lib.explorers import get_explorer_url_to_address, Chains, get_expl
 from services.lib.money import format_percent, asset_name_cut_chain, pretty_money, short_address, short_money, \
     short_asset_name, calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, \
     chain_name_from_pool
-from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, BoardMessage, \
-    link_with_domain_text, up_down_arrow, bracketify
+from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
+    up_down_arrow, bracketify
 from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeInfoChanges, NodeInfo
 from services.models.pool_info import PoolInfo
+from services.models.pool_stats import StakePoolStats
 from services.models.price import RuneFairPrice, PriceReport
 from services.models.queue import QueueInfo
 from services.models.tx import LPAddWithdrawTx, ThorTxType
-from services.models.pool_stats import StakePoolStats
 
 RAIDO_GLYPH = 'ᚱ'
 CREATOR_TG = '@account1242'

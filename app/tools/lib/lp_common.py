@@ -5,6 +5,7 @@ from aiothornode.connector import ThorConnector
 
 from localization import LocalizationManager
 from main import get_thor_env_by_network_id
+from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.runeyield import AsgardConsumerConnectorBase, get_rune_yield_connector
 from services.lib.config import Config
@@ -25,19 +26,27 @@ class LpAppFramework:
         self.deps = d
         self.rune_yield: AsgardConsumerConnectorBase
         self.rune_yield_class = rune_yield_class
-        self.ppf = PoolPriceFetcher(d)
+        self.deps.price_pool_fetcher = PoolPriceFetcher(d)
+        self.deps.mimir_const_holder = ConstMimirFetcher(d)
 
     async def prepare(self):
         d = self.deps
         d.session = aiohttp.ClientSession()
-        await d.db.get_redis()
-        self.ppf = PoolPriceFetcher(d)
-        if self.rune_yield_class:
-            self.rune_yield = self.rune_yield_class(d, self.ppf, get_url_gen_by_network_id(self.deps.cfg.network_id))
-        else:
-            self.rune_yield = get_rune_yield_connector(d, self.ppf)
         d.thor_connector = ThorConnector(get_thor_env_by_network_id(d.cfg.network_id), d.session)
-        await self.ppf.fetch()
+
+        await d.db.get_redis()
+
+        d.mimir_const_holder = ConstMimirFetcher(d)
+        await d.mimir_const_holder.fetch()  # get constants beforehand
+
+        d.price_pool_fetcher = PoolPriceFetcher(d)
+
+        if self.rune_yield_class:
+            self.rune_yield = self.rune_yield_class(d, get_url_gen_by_network_id(self.deps.cfg.network_id))
+        else:
+            self.rune_yield = get_rune_yield_connector(d)
+
+        await d.price_pool_fetcher.fetch()
 
     async def close(self):
         await self.deps.session.close()

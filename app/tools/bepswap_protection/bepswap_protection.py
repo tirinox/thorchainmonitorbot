@@ -13,6 +13,7 @@ from services.jobs.fetch.runeyield import HomebrewLPConnector
 from services.jobs.fetch.tx import TxFetcher
 from services.lib.constants import NetworkIdents
 from services.lib.date_utils import DAY
+from services.lib.money import short_address
 from services.lib.utils import load_pickle, save_pickle
 from services.models.tx import ThorTx, final_liquidity, ThorTxType, cut_txs_before_previous_full_withdraw
 from tools.lib.lp_common import LpAppFramework
@@ -120,6 +121,9 @@ def ensure_data_dir():
 async def calc_impermanent_loss(app: LpAppFramework, address, pool, txs: List[ThorTx]):
     yield_report = await app.rune_yield.generate_yield_report_single_pool(address, pool, user_txs=txs)
 
+    print()
+    print(f'Pool: "{pool}" @ "{address}" {yield_report.fees.imp_loss_percent = }, {yield_report.fees.imp_loss_usd = } $')
+
 
 def find_pool_with_withdraws(filter_u2p2txs: UserToPoolToTxList, start=0):
     tx: ThorTx
@@ -135,6 +139,20 @@ def find_pool_with_withdraws(filter_u2p2txs: UserToPoolToTxList, start=0):
     return None, None, None
 
 
+async def debug_1_pool(app, filtered_u2p2txs):
+    # address1, pool1, txs1 = find_pool_with_withdraws(filtered_u2p2txs, start=500)
+    address1 = 'bnb1gatq8xrczffkwer3ulhunk65n62ck0r0pz6lz4'
+    pool1 = 'BNB.TWT-8C2'
+    txs1 = filtered_u2p2txs[address1][pool1]
+
+    print(address1, pool1)
+
+    await calc_impermanent_loss(app, address1, pool1, txs1)
+
+    lp = final_liquidity(txs1)
+    print(f'Final liquidity {pool1} @ {address1} = {lp}')
+
+
 async def run_pipeline(app: LpAppFramework):
     ensure_data_dir()
 
@@ -147,17 +165,9 @@ async def run_pipeline(app: LpAppFramework):
     filtered_u2p2txs = filter_txs(user_to_txs, discard_later_ts, since_last_action=False, check_positive_lp=True)
     print(len(filtered_u2p2txs), 'users finally.')
 
-    # address1, pool1, txs1 = find_pool_with_withdraws(filtered_u2p2txs, start=500)
-    address1 = 'bnb1gatq8xrczffkwer3ulhunk65n62ck0r0pz6lz4'
-    pool1 = 'BNB.TWT-8C2'
-    txs1 = filtered_u2p2txs[address1][pool1]
-
-    print(address1, pool1)
-
-    await calc_impermanent_loss(app, address1, pool1, txs1)
-
-    lp = final_liquidity(txs1)
-    print(f'Final liquidity {pool1} @ {address1} = {lp}')
+    for user, p2txs in tqdm(filtered_u2p2txs.items()):
+        for pool, txs in p2txs.items():
+            await calc_impermanent_loss(app, user, pool, txs)
 
 
 async def main():

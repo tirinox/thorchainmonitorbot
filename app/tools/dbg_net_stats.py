@@ -1,15 +1,14 @@
 import asyncio
 import logging
-import os
-import pickle
 import random
 from copy import copy
-from dataclasses import dataclass, Field
+from dataclasses import Field
 
 from aiogram import Bot, Dispatcher
 from aiogram.types import ParseMode
 
 from localization import BaseLocalization
+from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
 from services.lib.date_utils import DAY
 from services.lib.depcont import DepContainer
@@ -76,7 +75,7 @@ async def main():
 
     if not new_info:
         async with lpgen:
-            nsf = NetworkStatisticsFetcher(lpgen.deps, lpgen.ppf)
+            nsf = NetworkStatisticsFetcher(lpgen.deps)
             new_info = await nsf.fetch()
 
             if CACHE_NET_STATS:

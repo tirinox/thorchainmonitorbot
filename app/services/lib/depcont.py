@@ -1,4 +1,4 @@
-import typing
+from typing import Optional
 import asyncio
 from dataclasses import dataclass
 
@@ -6,6 +6,7 @@ from aiogram import Bot, Dispatcher
 from aiohttp import ClientSession
 
 from services.lib.config import Config
+from services.lib.db import DB
 from services.models.price import LastPriceHolder
 from services.models.queue import QueueInfo
 
@@ -14,18 +15,21 @@ from aiothornode.connector import ThorConnector
 
 @dataclass
 class DepContainer:
-    cfg: typing.Optional[Config] = None
-    db: typing.Optional['DB'] = None
-    loop: typing.Optional[asyncio.BaseEventLoop] = None
+    cfg: Optional[Config] = None
+    db: Optional[DB] = None
+    loop: Optional[asyncio.BaseEventLoop] = None
 
-    session: typing.Optional[ClientSession] = None
+    session: Optional[ClientSession] = None
 
-    bot: typing.Optional['Bot'] = None
-    dp: typing.Optional['Dispatcher'] = None
+    bot: Optional[Bot] = None
+    dp: Optional[Dispatcher] = None
 
-    thor_connector: typing.Optional[ThorConnector] = None
+    thor_connector: Optional[ThorConnector] = None
 
-    loc_man: typing.Optional['LocalizationManager'] = None
-    broadcaster: typing.Optional['Broadcaster'] = None
+    loc_man: Optional['LocalizationManager'] = None
+    broadcaster: Optional['Broadcaster'] = None
     price_holder: LastPriceHolder = LastPriceHolder()
     queue_holder: QueueInfo = QueueInfo.error()
+
+    mimir_const_holder: Optional['ConstMimirFetcher'] = None
+    price_pool_fetcher: Optional['PoolPriceFetcher'] = None
