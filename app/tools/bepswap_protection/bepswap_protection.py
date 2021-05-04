@@ -26,13 +26,14 @@ logging.basicConfig(level=logging.INFO)
 TX_CACHE_FILE = '../temp/bepswap_protection/txs_list.pickle'
 RESULTS_XLSX = '../temp/bepswap_protection/results_{date}.xlsx'
 CUT_OFF_HEIGHT = 999_999_999_999
+MIN_DAYS_LP_REQUIRED = 100
 
 PoolToTxList = Dict[str, List[ThorTx]]
 UserToPoolToTxList = Dict[str, PoolToTxList]
 
 
 # 1. Load all stakes/unstakes => cache them into data file
-# 1.1 Filter those that older than 100 days (options since first action/since last action)
+# 1.1 Filter those that older than 100 days (options like: since first action/since last action)
 # 2. Load all pool prices at heights of these TXs
 # 3. Import LP calculator and get all LP positions, calculate impermanent losses and rune compensation at current price
 # 4. Export to XLS
@@ -188,9 +189,6 @@ async def process_one_address_one_pool(app: LpAppFramework, address, pool, txs: 
         return 0.0
 
     rune_coverage = calculate_impermanent_loss_in_rune(txs, pool_info)
-    # print(f'{address} @ {pool} => protection = {rune_coverage} R')
-
-    # yield_report = await app.rune_yield.generate_yield_report_single_pool(address, pool, user_txs=txs)
     return rune_coverage
 
 
@@ -264,6 +262,7 @@ def save_results(xls_path, results: List[CoverageEntry]):
     if row:
         worksheet.write_formula(f'C{row + 1}', f'=SUM(C3:C{row})')
         worksheet.write_formula(f'D{row + 1}', f'=SUM(D3:D{row})')
+        worksheet.write(f'A{row + 1}', f'Sum:')
 
     worksheet.set_column(0, 0, 50)
     worksheet.set_column(1, 1, 17)
@@ -289,14 +288,13 @@ def last_add_date(txs: List[ThorTx]):
 async def run_pipeline(app: LpAppFramework):
     ensure_data_dir()
 
-    min_days = 100
     mode = ProtectionMode.SINCE_LAST_DEPOSIT
 
     txs = await get_transactions(app, TX_CACHE_FILE)
 
     user_to_txs = await sort_txs_to_pool_and_users(txs)
 
-    discard_later_ts = datetime.datetime.now().timestamp() - min_days * DAY
+    discard_later_ts = datetime.datetime.now().timestamp() - MIN_DAYS_LP_REQUIRED * DAY
     filtered_u2p2txs = filter_txs(user_to_txs, discard_later_ts, mode, check_positive_lp=True)
 
     print(len(filtered_u2p2txs), 'users finally.')
