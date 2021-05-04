@@ -97,6 +97,7 @@ class App:
         self.deps.price_holder.update(current_pools)
 
         fetcher_mimir = ConstMimirFetcher(d)
+        self.deps.mimir_const_holder = fetcher_mimir
         await fetcher_mimir.fetch()  # get constants beforehand
 
         fetcher_cap = CapInfoFetcher(d)

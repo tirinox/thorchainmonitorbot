@@ -217,7 +217,11 @@ class RussianLocalization(BaseLocalization):
 
         last_ath = p.last_ath
         if last_ath is not None and ath:
-            message += f"Последний ATH был ${last_ath.ath_price:2.f} ({format_time_ago(last_ath.ath_date)}).\n"
+            if isinstance(last_ath.ath_date, float):
+                last_ath_pr = f'{last_ath.ath_price:.2f}'
+            else:
+                last_ath_pr = str(last_ath.ath_price)
+            message += f"Последний ATH был ${pre(last_ath_pr)} ({format_time_ago(last_ath.ath_date)}).\n"
 
         time_combos = zip(
             ('1ч.', '24ч.', '7дн.'),
