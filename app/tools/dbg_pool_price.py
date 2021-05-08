@@ -88,6 +88,12 @@ async def test_price_continuously(d: DepContainer):
         await asyncio.sleep(2.0)
 
 
+async def test_get_pool_info_midgard(d: DepContainer):
+    ppf = PoolPriceFetcher(d)
+    pool_map = await ppf.get_pool_info_midgard()
+    print(pool_map)
+
+
 async def main(d: DepContainer):
     async with aiohttp.ClientSession() as d.session:
         await d.db.get_redis()
@@ -95,7 +101,8 @@ async def main(d: DepContainer):
         # await test_prices(d)
         # await test_pool_cache(d)
         # await test_thor_pools_caching(d)
-        await test_price_continuously(d)
+        # await test_price_continuously(d)
+        await test_get_pool_info_midgard(d)
 
 
 if __name__ == '__main__':

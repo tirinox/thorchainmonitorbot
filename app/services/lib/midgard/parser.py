@@ -4,7 +4,7 @@ from typing import NamedTuple, List, Dict
 
 from services.lib.constants import NetworkIdents
 from services.models.last_block import LastBlock
-from services.models.pool_info import PoolInfoHistoricEntry
+from services.models.pool_info import PoolInfoHistoricEntry, PoolInfoMap, PoolInfo
 from services.models.pool_member import PoolMemberDetails
 from services.models.tx import ThorTx, ThorTxType, ThorSubTx, ThorMetaSwap, ThorMetaRefund, ThorMetaWithdraw, \
     ThorMetaAddLiquidity
@@ -57,6 +57,10 @@ class MidgardParserBase(metaclass=ABCMeta):
 
     @abstractmethod
     def parse_last_block(self, response) -> Dict[str, LastBlock]:
+        ...
+
+    @abstractmethod
+    def parse_pool_info(self, response) -> PoolInfoMap:
         ...
 
 
@@ -268,6 +272,19 @@ class MidgardParserV2(MidgardParserBase):
                 thorchain=int(j.get('thorchain', 0))
             ))
         return {b.chain: b for b in last_blocks}
+
+    def parse_pool_info(self, response) -> PoolInfoMap:
+        pm = {}
+        for j in response:
+            asset = j['asset']
+            pm[asset] = PoolInfo(
+                asset=asset,
+                balance_asset=int(j['assetDepth']),
+                balance_rune=int(j['runeDepth']),
+                pool_units=int(j['units']),
+                status=str(j['status']).lower()
+            )
+        return pm
 
 
 def get_parser_by_network_id(network_id) -> MidgardParserBase:

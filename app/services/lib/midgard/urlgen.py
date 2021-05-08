@@ -24,7 +24,7 @@ class MidgardURLGenBase(ABC):
         ...
 
     @abstractmethod
-    def url_details_of_pools(self, address, pools) -> str:
+    def url_pool_member_details(self, address, pools) -> str:
         ...
 
     @abstractmethod
@@ -47,6 +47,10 @@ class MidgardURLGenBase(ABC):
     def url_thor_nodes(self):
         ...
 
+    @abstractmethod
+    def url_pool_info(self):
+        ...
+
 
 class MidgardURLGenV1(MidgardURLGenBase):
     LIQUIDITY_TX_TYPES_STRING = 'stake,unstake'
@@ -65,7 +69,7 @@ class MidgardURLGenV1(MidgardURLGenBase):
     def url_for_address_pool_membership(self, address) -> str:
         return f"{self.base_url}/v1/stakers/{address}"
 
-    def url_details_of_pools(self, address, pools) -> str:
+    def url_pool_member_details(self, address, pools) -> str:
         pools = pools if isinstance(pools, str) else ','.join(pools)
         return f'{self.base_url}/v1/stakers/{address}/pools?asset={pools}'
 
@@ -102,7 +106,7 @@ class MidgardURLGenV2(MidgardURLGenBase):
     def url_for_address_pool_membership(self, address) -> str:
         return f"{self.base_url}/v2/member/{address}"
 
-    def url_details_of_pools(self, address, pools) -> str:
+    def url_pool_member_details(self, address, pools) -> str:
         return f'{self.base_url}/v2/member/{address}'  # no need pools
 
     def url_mimir(self):
@@ -119,6 +123,9 @@ class MidgardURLGenV2(MidgardURLGenBase):
 
     def url_thor_nodes(self):
         return f'{self.base_url}/v2/thorchain/nodes'
+
+    def url_pool_info(self):
+        return f'{self.base_url}/v2/pools'
 
 
 def get_url_gen_by_network_id(network_id) -> MidgardURLGenBase:

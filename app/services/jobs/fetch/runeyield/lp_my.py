@@ -135,7 +135,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         return dict(zip(heights, pool_states))
 
     async def _get_details_of_staked_pools(self, address, pools) -> Dict[str, PoolMemberDetails]:
-        url = self.url_gen.url_details_of_pools(address, pools)
+        url = self.url_gen.url_pool_member_details(address, pools)
         self.logger.info(f'get: {url}')
         async with self.deps.session.get(url) as resp:
             j = await resp.json()

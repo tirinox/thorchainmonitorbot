@@ -174,3 +174,13 @@ class PoolPriceFetcher(BaseFetcher):
                 asset_per_rune = await self.get_asset_per_rune_of_pool_by_day(pool, day, caching=caching)
                 usd_per_asset = usd_per_rune / asset_per_rune
                 return usd_per_rune, usd_per_asset
+
+    async def get_pool_info_midgard(self):
+        url = self.midgard_url_gen.url_pool_info()
+        self.logger.info(f"get: {url}")
+
+        parser = get_parser_by_network_id(self.deps.cfg.network_id)
+
+        async with self.deps.session.get(url) as resp:
+            raw_data = await resp.json()
+            return parser.parse_pool_info(raw_data)
