@@ -22,8 +22,8 @@ class PoolInfo:
 
     status: str
 
-    BOOTSTRAP = 'Bootstrap'
-    ENABLED = 'Enabled'
+    BOOTSTRAP = 'bootstrap'
+    ENABLED = 'enabled'
     AVAILABLE = 'available'  # enabled
     STAGED = 'staged'  # bootstrap
 
@@ -65,7 +65,7 @@ class PoolInfo:
                    balance_asset=balance_asset,
                    balance_rune=balance_rune,
                    pool_units=int(j['pool_units']),
-                   status=j['status'])
+                   status=str(j['status']).lower())
 
     def as_dict(self):
         return {
@@ -74,19 +74,6 @@ class PoolInfo:
             'pool_units': str(self.pool_units),
             'asset': self.asset,
             'status': self.status
-        }
-
-    def create_lp_position(self, my_units: int, usd_per_rune: float):
-        usd_per_asset = usd_per_rune / self.asset_per_rune
-        return {
-            "pair": self.asset,
-            "liquidityTokenBalance": my_units * THOR_DIVIDER_INV,
-            "liquidityTokenTotalSupply": self.pool_units * THOR_DIVIDER_INV,
-            "reserve0": self.balance_rune * THOR_DIVIDER_INV,
-            "reserve1": self.balance_asset * THOR_DIVIDER_INV,
-            "reserveUSD": self.balance_rune * THOR_DIVIDER_INV * usd_per_rune * 2.0,
-            "token0PriceUSD": usd_per_rune,
-            "token1PriceUSD": usd_per_asset,
         }
 
 

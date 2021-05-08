@@ -143,7 +143,7 @@ class RussianLocalization(BaseLocalization):
         call = "Ай-да застейкаем!\n" if up else ''
         return (
             f'{arrow} <b>Кап {verb} с {pretty_money(old.cap)} до {pretty_money(new.cap)}!</b>\n'
-            f'Сейчас в пулы помещено <b>{pretty_money(new.stacked)}</b> {self.R}.\n'
+            f'Сейчас в пулы помещено <b>{pretty_money(new.pooled_rune)}</b> {self.R}.\n'
             f"{self._cap_progress_bar(new)}"
             f'Цена {self.R} в пуле <code>{new.price:.3f} $</code>.\n'
             f'{call}'
@@ -217,7 +217,10 @@ class RussianLocalization(BaseLocalization):
 
         last_ath = p.last_ath
         if last_ath is not None and ath:
-            last_ath_pr = f'{last_ath.ath_price:.2f}'
+            if isinstance(last_ath.ath_date, float):
+                last_ath_pr = f'{last_ath.ath_price:.2f}'
+            else:
+                last_ath_pr = str(last_ath.ath_price)
             message += f"Последний ATH был ${pre(last_ath_pr)} ({format_time_ago(last_ath.ath_date)}).\n"
 
         time_combos = zip(
@@ -247,8 +250,11 @@ class RussianLocalization(BaseLocalization):
         message = bold('🏊 Изменения в пулах ликвидности:') + '\n\n'
 
         statuses = {
-            'Enabled': 'включен',
-            'Bootstrap': 'загружается'
+            PoolInfo.ENABLED: 'включен',
+            PoolInfo.AVAILABLE: 'включен',
+
+            PoolInfo.BOOTSTRAP: 'загружается',
+            PoolInfo.STAGED: 'загружается'
         }
 
         def pool_text(pool_name, status, to_status=None):
@@ -283,7 +289,7 @@ class RussianLocalization(BaseLocalization):
 
     def cap_message(self, info: ThorCapInfo):
         return (
-            f"<b>{pretty_money(info.stacked)}</b> монет из "
+            f"<b>{pretty_money(info.pooled_rune)}</b> монет из "
             f"<b>{pretty_money(info.cap)}</b> сейчас застейканы.\n"
             f"{self._cap_progress_bar(info)}"
             f"Цена {bold(self.R)} сейчас <code>{info.price:.3f} $</code>.\n"

@@ -40,7 +40,7 @@ class LiquidityCapNotifier(INotified):
 
         old_info = await self.get_old_cap()
 
-        if new_info.is_ok:
+        if new_info.is_ok and old_info.is_ok:
             if new_info.price <= 0:
                 new_info.price = old_info.price
             await self.save_cap_info(new_info)

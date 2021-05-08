@@ -1,8 +1,7 @@
 import asyncio
 
-from aiothornode.types import ThorConstants, ThorMimir
-
 from services.jobs.fetch.base import BaseFetcher
+from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.lib.constants import THOR_DIVIDER_INV, THOR_BLOCK_TIME
 from services.lib.date_utils import parse_timespan_to_seconds, now_ts
@@ -12,8 +11,7 @@ from services.models.net_stats import NetworkStats
 
 
 class NetworkStatisticsFetcher(BaseFetcher):
-    def __init__(self, deps: DepContainer, ppf: PoolPriceFetcher):
-        self.ppf = ppf
+    def __init__(self, deps: DepContainer):
         sleep_period = parse_timespan_to_seconds(deps.cfg.net_summary.fetch_period)
         super().__init__(deps, sleep_period)
         self.url_gen = get_url_gen_by_network_id(deps.cfg.network_id)
@@ -71,28 +69,17 @@ class NetworkStatisticsFetcher(BaseFetcher):
 
     KEY_CONST_MIN_RUNE_POOL_DEPTH = 'MinRunePoolDepth'
 
-    def _get_constant_value_int(self, name: str, mimir: ThorMimir, constants: ThorConstants):
-        hardcoded_value = int(constants.constants.get(name, 0))
-
-        wanted_const = f'mimir//{name.upper()}'
-        if not hardcoded_value or wanted_const in mimir.constants:
-            return int(mimir.constants[wanted_const])
-        else:
-            return hardcoded_value
-
-    async def _get_min_pool_depth(self) -> int:
-        mimir, constants = await asyncio.gather(self.deps.thor_connector.query_mimir(),
-                                                self.deps.thor_connector.query_constants())
-        return self._get_constant_value_int(self.KEY_CONST_MIN_RUNE_POOL_DEPTH, mimir, constants)
-
     async def _get_pools(self, _, ns: NetworkStats):
-        pools = await self.ppf.get_current_pool_data_full()
+        ppf: PoolPriceFetcher = self.deps.price_pool_fetcher
+        cmf: ConstMimirFetcher = self.deps.mimir_const_holder
+
+        pools = await ppf.get_current_pool_data_full()
         active_pools = [p for p in pools.values() if p.is_enabled]
         pending_pools = [p for p in pools.values() if not p.is_enabled]
         ns.active_pool_count = len(active_pools)
         ns.pending_pool_count = len(pending_pools)
 
-        min_pool_depth_rune = await self._get_min_pool_depth()
+        min_pool_depth_rune = cmf.get_constant(self.KEY_CONST_MIN_RUNE_POOL_DEPTH)
 
         pending_pools = list(sorted(pending_pools, key=lambda p: p.balance_rune, reverse=True))
         if pending_pools:

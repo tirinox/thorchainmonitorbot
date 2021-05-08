@@ -12,6 +12,7 @@ from aiothornode.env import *
 from localization import LocalizationManager
 from services.dialog import init_dialogs
 from services.jobs.fetch.cap import CapInfoFetcher
+from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
 from services.jobs.fetch.node_info import NodeInfoFetcher
@@ -87,18 +88,22 @@ class App:
         if 'REPLACE_RUNE_TIMESERIES_WITH_GECKOS' in os.environ:
             await fill_rune_price_from_gecko(d.db)
 
-        self.ppf = PoolPriceFetcher(d)
-        current_pools = await self.ppf.get_current_pool_data_full()
+        ppf = d.price_pool_fetcher = PoolPriceFetcher(d)
+        current_pools = await d.price_pool_fetcher.get_current_pool_data_full()
         if not current_pools:
             logging.error("no pool data at startup! halt it!")
             exit(-1)
 
         self.deps.price_holder.update(current_pools)
 
-        fetcher_cap = CapInfoFetcher(d, ppf=self.ppf)
+        fetcher_mimir = ConstMimirFetcher(d)
+        self.deps.mimir_const_holder = fetcher_mimir
+        await fetcher_mimir.fetch()  # get constants beforehand
+
+        fetcher_cap = CapInfoFetcher(d)
         fetcher_tx = TxFetcher(d)
         fetcher_queue = QueueFetcher(d)
-        fetcher_stats = NetworkStatisticsFetcher(d, ppf=self.ppf)
+        fetcher_stats = NetworkStatisticsFetcher(d)
         fetcher_nodes = NodeInfoFetcher(d)
 
         notifier_cap = LiquidityCapNotifier(d)
@@ -120,13 +125,13 @@ class App:
         fetcher_stats.subscribe(notifier_stats)
         fetcher_nodes.subscribe(notifier_nodes)
 
-        self.ppf.subscribe(notifier_price)
-        self.ppf.subscribe(notifier_pool_churn)
+        ppf.subscribe(notifier_price)
+        ppf.subscribe(notifier_pool_churn)
 
         # await notifier_stats.clear_cd()
 
         await asyncio.gather(*(task.run() for task in [
-            self.ppf,
+            ppf,
             fetcher_tx,
             fetcher_cap,
             fetcher_queue,

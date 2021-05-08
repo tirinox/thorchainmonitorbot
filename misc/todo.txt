@@ -4,18 +4,13 @@ V2: https://testnet.midgard.thorchain.info/v2/doc
 
 T A S K S :
 
-------------------------------------------------------------------------
-
-TODO Test TX notifications!!!!
 
 ------------------------------------------------------------------------
 
-Node churn notifications!
+Imp loss protection
 
-See:
-https://chaosnet-midgard.bepswap.com/v1/network
-https://a2wva4alb6.execute-api.us-east-1.amazonaws.com/dev/thornode/thorchain/nodeaccounts?network=CHAOSNET
-http://68.183.241.109:1317/thorchain/nodeaccounts
+https://gitlab.com/thorchain/thornode/-/blob/chaosnet-multichain/x/thorchain/withdraw_v50.go
+
 
 ------------------------------------------------------------------------
 
@@ -54,9 +49,6 @@ Last 7 days POOL leaderboard by
 
 ++ maybe the worse pools
 
-------------------------------------------------------------------------
-
-WebHook for the production bot
 
 ------------------------------------------------------------------------
 
@@ -66,25 +58,12 @@ Swap tx notify
 
 Pool depth growth / drop?
 
-------------------------------------------------------------------------
-
-Stake info: summary!
 
 ------------------------------------------------------------------------
 
 Stake info: Just check address, don't add
 
-------------------------------------------------------------------------
 
-Stake info: all addresses to one button!
-
-------------------------------------------------------------------------
-
-Price graph
-1) Grid lines
-2) + spec coeff graph
-3) 1h , 1day ,1 week, 1 month buttons
-4) 
 
 ------------------------------------------------------------------------
 
@@ -98,35 +77,12 @@ commands:
 4. restart bot
 5. broadcast a message to all bot users
 
-------------------------------------------------------------------------
 
-Multi-chain support
 
 ------------------------------------------------------------------------
 
-ETH-bridge support
 
-Smart contract: https://etherscan.io/tokentxns?a=0x7eFc09181CFeB60E59C4B5f17aaB3219521b8AC4
 
-Notify: Large eth->rune and rune->eth
-Metrics: 24h volume, total volume, tx fee, tx time?
-
-------------------------------------------------------------------------
-
-midgard seed
-https://docs.thorchain.org/developers/connecting-to-thorchain
-
-https://gitlab.com/thorchain/asgardex-common/asgardex-midgard
-
-------------------------------------------------------------------------
-
-ToDo: OPTIONAL TODOs or IDEAS:
-
-6) thornode consensus check (versions, block height, accounts)
-
-+ add API for thor node request with auto blacklist if error or time out + retries
-
-8) Add favorite BNB addresses - monitor in/out tx
 
 9) Not sure. There are detailed amounts in the Treasury Reports each month (like https://medium.com/thorchain/monthly-treasury-report-september-74b13c27aa7f). Cant find any adresses this quick tho. Will have to dig deeper.
 
@@ -135,8 +91,6 @@ the address that adds the reserve is
 bnb1axqc2gan462z6npw3c33srp4950mr5x28uc6wu
 
 10) ?
-
-13) take mimir from thorchain http://IP:1317/thorchain/mimir bypassing Chaosnet
 
 15) bot can edit commands like this:
 

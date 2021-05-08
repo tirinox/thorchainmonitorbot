@@ -1,6 +1,8 @@
 from aioredis import Redis
 from typing import List
 
+from tqdm import tqdm
+
 from services.jobs.fetch.base import BaseFetcher
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import get_url_gen_by_network_id
@@ -20,8 +22,15 @@ class TxFetcher(BaseFetcher):
         self.max_page_deep = int(scfg.max_page_deep)
         self.url_gen_midgard = get_url_gen_by_network_id(deps.cfg.network_id)
         self.tx_parser = get_parser_by_network_id(deps.cfg.network_id)
+        self.progress_tracker: tqdm = None
 
         self.logger.info(f"cfg.tx.stake_unstake: {scfg}")
+
+    def _update_progress(self, new_txs, total):
+        if self.progress_tracker:
+            if total and total > 0:
+                self.progress_tracker.total = total
+            self.progress_tracker.update(new_txs)
 
     async def fetch(self):
         await self.deps.db.get_redis()
@@ -29,7 +38,7 @@ class TxFetcher(BaseFetcher):
         self.logger.info(f'new tx to analyze: {len(txs)}')
         return txs
 
-    async def fetch_user_tx(self, address, liquidity_change_only=False) -> List[ThorTx]:
+    async def fetch_all_tx(self, address=None, liquidity_change_only=False, max_pages=None) -> List[ThorTx]:
         page = 0
         txs = []
         types = self.url_gen_midgard.LIQUIDITY_TX_TYPES_STRING if liquidity_change_only else None
@@ -38,15 +47,24 @@ class TxFetcher(BaseFetcher):
                                                   types=types,
                                                   address=address)
 
-            self.logger.info(f"start fetching user's tx: {url}")
+            if not self.progress_tracker:
+                self.logger.info(f"start fetching user's tx: {url}")
+
             async with self.deps.session.get(url) as resp:
                 json = await resp.json()
                 new_txs = self.tx_parser.parse_tx_response(json)
+
+                self._update_progress(new_txs.tx_count, new_txs.total_count)
+
                 txs += new_txs.txs
                 if not new_txs.tx_count or new_txs.tx_count < self.tx_per_batch:
                     break
                 page += 1
-        self.logger.info(f'user {address} has {len(txs)} tx.')
+
+            if max_pages and page >= max_pages:
+                self.logger.info(f'Max pages {max_pages} reached.')
+                break
+        self.logger.info(f'User {address = } has {len(txs)} tx ({liquidity_change_only = }).')
         return txs
 
     # -------

@@ -5,7 +5,7 @@ from typing import Dict
 from aioredis import Redis
 
 from services.lib.constants import THOR_BLOCK_TIME
-from services.lib.date_utils import day_to_key, days_ago_noon, DAY, date_parse_rfc
+from services.lib.date_utils import day_to_key, days_ago_noon, date_parse_rfc
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import get_url_gen_by_network_id

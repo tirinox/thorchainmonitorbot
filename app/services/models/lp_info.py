@@ -88,8 +88,6 @@ class CurrentLiquidity(BaseModelMixin):
     first_stake_ts: int
     last_stake_ts: int
 
-    fee_earn_usd: float
-
     @classmethod
     def from_asgard(cls, d):
         m = THOR_DIVIDER_INV
@@ -107,8 +105,7 @@ class CurrentLiquidity(BaseModelMixin):
             float(d['totalunstakedrune']) * m,
             float(d['totalunstakedusd']) * m,
             int(d['firststake']),
-            int(d['laststake']),
-            fee_earn_usd=0.0
+            int(d['laststake'])
         )
 
 
@@ -169,6 +166,7 @@ class ReturnMetrics:
         difference_fees_asset = t1_asset_amount - asset_amount_no_fees
         difference_fees_usd = difference_fees_rune * p1.usd_per_rune + difference_fees_asset * p1.usd_per_asset
 
+        # fixme: invalid calculation
         imp_loss_usd = usd_no_fees - t1_asset_value_hold
         uniswap_return = difference_fees_usd + imp_loss_usd
 

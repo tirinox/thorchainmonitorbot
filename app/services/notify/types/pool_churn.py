@@ -4,6 +4,8 @@ from typing import Dict
 from localization import BaseLocalization
 from services.jobs.fetch.base import INotified
 from services.jobs.fetch.pool_price import PoolPriceFetcher
+from services.lib.cooldown import Cooldown
+from services.lib.date_utils import MINUTE, parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo, PoolInfoMap
 
@@ -11,8 +13,10 @@ from services.models.pool_info import PoolInfo, PoolInfoMap
 class PoolChurnNotifier(INotified):
     def __init__(self, deps: DepContainer):
         self.deps = deps
-        self.logger = logging.getLogger('CapFetcherNotification')
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.old_pool_dict = {}
+        cooldown_sec = parse_timespan_to_seconds(deps.cfg.pool_churn.notification.cooldown)
+        self.spam_cd = Cooldown(self.deps.db, 'PoolChurnNotifier-spam', cooldown_sec)
 
     async def on_data(self, sender: PoolPriceFetcher, fair_price):
         new_pool_dict = self.deps.price_holder.pool_info_map.copy()
@@ -21,6 +25,12 @@ class PoolChurnNotifier(INotified):
             return
 
         if self.old_pool_dict:
+            if not await self.spam_cd.can_do():
+                self.logger.warning(f'Pool churn cooldown triggered:\n'
+                                    f'{self.old_pool_dict = }\n'
+                                    f'{new_pool_dict = }!')
+                return
+
             # todo: persist old_pool_data in DB!
             # compare starting w 2nd iteration
             added_pools, removed_pools, changed_status_pools = self.compare_pool_sets(new_pool_dict)
@@ -30,6 +40,7 @@ class PoolChurnNotifier(INotified):
                                                                           added_pools,
                                                                           removed_pools,
                                                                           changed_status_pools)
+                await self.spam_cd.do()
 
         self.old_pool_dict = new_pool_dict
 

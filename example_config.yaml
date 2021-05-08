@@ -29,6 +29,7 @@ tx:
     max_page_deep: 10
     min_usd_total: 50000
 
+
 price:
   fetch_period: 60
   global_cd: 12h
@@ -96,10 +97,16 @@ queue:
     free: 2
   cooldown: 3600
 
+
 net_summary:
   fetch_period: 120s
   notification:
     cooldown: 6h
 
+
 node_info:
   fetch_period: 140s
+
+
+constants:
+  fetch_period: 130s

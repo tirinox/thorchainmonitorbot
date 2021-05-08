@@ -4,8 +4,8 @@ import aiohttp
 from aioredis import ReplyError
 from tqdm import tqdm
 
+from services.lib.constants import RUNE_SYMBOL_DET, RUNE_SYMBOL_MARKET
 from services.models.time_series import PriceTimeSeries
-from services.lib.constants import BNB_RUNE_SYMBOL, RUNE_SYMBOL_DET, RUNE_SYMBOL_MARKET
 
 COIN_CHART_GECKO = "https://api.coingecko.com/api/v3/coins/thorchain/market_chart?vs_currency=usd&days={days}"
 COIN_RANK_GECKO = "https://api.coingecko.com/api/v3/coins/thorchain?" \

@@ -10,16 +10,16 @@ from services.lib.explorers import get_explorer_url_to_address, Chains, get_expl
 from services.lib.money import format_percent, asset_name_cut_chain, pretty_money, short_address, short_money, \
     short_asset_name, calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, \
     chain_name_from_pool
-from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, BoardMessage, \
-    link_with_domain_text, up_down_arrow, bracketify
+from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
+    up_down_arrow, bracketify
 from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeInfoChanges, NodeInfo
 from services.models.pool_info import PoolInfo
+from services.models.pool_stats import StakePoolStats
 from services.models.price import RuneFairPrice, PriceReport
 from services.models.queue import QueueInfo
 from services.models.tx import LPAddWithdrawTx, ThorTxType
-from services.models.pool_stats import StakePoolStats
 
 RAIDO_GLYPH = 'ᚱ'
 CREATOR_TG = '@account1242'
@@ -58,7 +58,7 @@ class BaseLocalization(ABC):  # == English
 
     @staticmethod
     def _cap_progress_bar(info: ThorCapInfo):
-        return f'{progressbar(info.stacked, info.cap, 10)} ({format_percent(info.stacked, info.cap)})\n'
+        return f'{progressbar(info.pooled_rune, info.cap, 10)} ({format_percent(info.pooled_rune, info.cap)})\n'
 
     # ---- WELCOME ----
     def help_message(self):
@@ -227,7 +227,7 @@ class BaseLocalization(ABC):  # == English
         call = "Come on, add more liquidity!\n" if up else ''
         message = (
             f'{arrow} <b>Pool cap {verb} from {pretty_money(old.cap)} to {pretty_money(new.cap)}!</b>\n'
-            f'Currently <b>{pretty_money(new.stacked)}</b> {self.R} are in the liquidity pools.\n'
+            f'Currently <b>{pretty_money(new.pooled_rune)}</b> {self.R} are in the liquidity pools.\n'
             f"{self._cap_progress_bar(new)}"
             f'The price of {self.R} in the pool is <code>{new.price:.3f} $</code>.\n'
             f'{call}'
@@ -416,7 +416,7 @@ class BaseLocalization(ABC):  # == English
 
     def cap_message(self, info: ThorCapInfo):
         return (
-            f"Hello! <b>{pretty_money(info.stacked)} {self.R}</b> of "
+            f"Hello! <b>{pretty_money(info.pooled_rune)} {self.R}</b> of "
             f"<b>{pretty_money(info.cap)} {self.R}</b> pooled.\n"
             f"{self._cap_progress_bar(info)}"
             f"The {bold(self.R)} price is <code>${info.price:.3f}</code> now.\n"

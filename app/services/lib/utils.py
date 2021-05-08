@@ -86,7 +86,7 @@ def setup_logs(log_level):
 
 
 def pairwise(iterable):
-    "s -> (s0,s1), (s1,s2), (s2, s3), ..."
+    """s -> (s0,s1), (s1,s2), (s2, s3), ..."""
     a, b = tee(iterable)
     next(b, None)
     return zip(a, b)
@@ -94,7 +94,7 @@ def pairwise(iterable):
 
 def load_pickle(path):
     try:
-        if os.path.exists(path):
+        if path and os.path.exists(path):
             with open(path, 'rb') as f:
                 data = pickle.load(f)
                 logging.info(f'Loaded pickled data of type {type(data)} from "{path}"')
@@ -105,5 +105,8 @@ def load_pickle(path):
 
 
 def save_pickle(path, data):
-    with open(path, 'wb') as f:
-        pickle.dump(data, f)
+    if path:
+        with open(path, 'wb') as f:
+            logging.info(f'Saving pickle to "{path}"...')
+            pickle.dump(data, f)
+            logging.info(f'Saving pickle to "{path}" done!')

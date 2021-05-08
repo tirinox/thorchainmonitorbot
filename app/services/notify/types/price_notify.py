@@ -34,7 +34,7 @@ class PriceNotifier(INotified):
         self.price_graph_period = parse_timespan_to_seconds(cfg.price_graph.default_period)
 
     async def on_data(self, sender, fprice: RuneFairPrice):
-        # fprice.real_rune_price = 20.54  # fixme: debug! for ATH
+        # fprice.real_rune_price = 21.94  # fixme: debug! for ATH
         if not await self.handle_ath(fprice):
             await self.handle_new_price(fprice)
 

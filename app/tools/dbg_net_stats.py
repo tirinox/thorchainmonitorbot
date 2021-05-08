@@ -1,15 +1,14 @@
 import asyncio
 import logging
-import os
-import pickle
 import random
 from copy import copy
-from dataclasses import dataclass, Field
+from dataclasses import Field
 
 from aiogram import Bot, Dispatcher
 from aiogram.types import ParseMode
 
 from localization import BaseLocalization
+from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
 from services.lib.date_utils import DAY
 from services.lib.depcont import DepContainer
@@ -17,7 +16,7 @@ from services.lib.texts import up_down_arrow
 from services.lib.utils import setup_logs, load_pickle, save_pickle
 from services.models.net_stats import NetworkStats
 from services.notify.broadcast import Broadcaster
-from tools.dbg_lp import LpTesterBase
+from tools.lib.lp_common import LpAppFramework
 
 CACHE_NET_STATS = True
 CACHE_NET_STATS_FILE = '../../tmp/net_stats.pickle'
@@ -70,13 +69,13 @@ async def print_message(new_info: NetworkStats, deps: DepContainer):
 
 
 async def main():
-    lpgen = LpTesterBase()
+    lpgen = LpAppFramework()
 
     new_info = load_pickle(CACHE_NET_STATS_FILE) if CACHE_NET_STATS else None
 
     if not new_info:
         async with lpgen:
-            nsf = NetworkStatisticsFetcher(lpgen.deps, lpgen.ppf)
+            nsf = NetworkStatisticsFetcher(lpgen.deps)
             new_info = await nsf.fetch()
 
             if CACHE_NET_STATS:
