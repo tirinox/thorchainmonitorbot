@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import logging
 
 import aiohttp
@@ -6,12 +7,11 @@ from aiothornode.connector import ThorConnector
 
 from localization import LocalizationManager
 from main import get_thor_env_by_network_id
-from services.jobs.fetch.pool_price import PoolPriceFetcher
+from services.jobs.fetch.pool_price import PoolPriceFetcher, PoolInfoFetcherMidgard
 from services.lib.config import Config
 from services.lib.constants import NetworkIdents, BTC_SYMBOL, BNB_BTCB_SYMBOL
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
-import datetime
 
 
 async def test_prices_at_day_mctn(d: DepContainer, day2ago):
@@ -89,8 +89,8 @@ async def test_price_continuously(d: DepContainer):
 
 
 async def test_get_pool_info_midgard(d: DepContainer):
-    ppf = PoolPriceFetcher(d)
-    pool_map = await ppf.get_pool_info_midgard()
+    ppf = PoolInfoFetcherMidgard(d)
+    pool_map = await ppf.fetch()
     print(pool_map)
 
 

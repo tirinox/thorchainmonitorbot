@@ -1,13 +1,12 @@
 import logging
-from typing import Dict
 
 from localization import BaseLocalization
 from services.jobs.fetch.base import INotified
-from services.jobs.fetch.pool_price import PoolPriceFetcher
+from services.jobs.fetch.pool_price import PoolInfoFetcherMidgard
 from services.lib.cooldown import Cooldown
-from services.lib.date_utils import MINUTE, parse_timespan_to_seconds
+from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
-from services.models.pool_info import PoolInfo, PoolInfoMap
+from services.models.pool_info import PoolInfoMap
 
 
 class PoolChurnNotifier(INotified):
@@ -18,12 +17,7 @@ class PoolChurnNotifier(INotified):
         cooldown_sec = parse_timespan_to_seconds(deps.cfg.pool_churn.notification.cooldown)
         self.spam_cd = Cooldown(self.deps.db, 'PoolChurnNotifier-spam', cooldown_sec)
 
-    async def on_data(self, sender: PoolPriceFetcher, fair_price):
-        new_pool_dict = self.deps.price_holder.pool_info_map.copy()
-        if not new_pool_dict:
-            self.logger.warning('pool_info_map not filled yet..')
-            return
-
+    async def on_data(self, sender: PoolInfoFetcherMidgard, new_pool_dict: PoolInfoMap):
         if self.old_pool_dict:
             if not await self.spam_cd.can_do():
                 self.logger.warning(f'Pool churn cooldown triggered:\n'

@@ -1,6 +1,7 @@
 import calendar
 import json
 from datetime import date, datetime
+from random import random
 from typing import Optional
 
 from aioredis import Redis
@@ -34,11 +35,10 @@ class PoolPriceFetcher(BaseFetcher):
 
     async def fetch(self):
         d = self.deps
-
         current_pools = await self.get_current_pool_data_full()
 
-        if current_pools and self.deps.price_holder is not None:
-            self.deps.price_holder.update(current_pools)
+        if current_pools and d.price_holder is not None:
+            d.price_holder.update(current_pools)
 
         price = d.price_holder.usd_per_rune
         self.logger.info(f'fresh rune price is ${price:.3f}')
@@ -175,7 +175,16 @@ class PoolPriceFetcher(BaseFetcher):
                 usd_per_asset = usd_per_rune / asset_per_rune
                 return usd_per_rune, usd_per_asset
 
-    async def get_pool_info_midgard(self):
+
+class PoolInfoFetcherMidgard(BaseFetcher):
+    def __init__(self, deps: DepContainer):
+        cfg: Config = deps.cfg
+        period = parse_timespan_to_seconds(cfg.pool_churn.fetch_period)
+        super().__init__(deps, sleep_period=period)
+        self.deps = deps
+        self.midgard_url_gen = get_url_gen_by_network_id(cfg.network_id)
+
+    async def get_pool_info_midgard(self) -> PoolInfoMap:
         url = self.midgard_url_gen.url_pool_info()
         self.logger.info(f"get: {url}")
 
@@ -184,3 +193,17 @@ class PoolPriceFetcher(BaseFetcher):
         async with self.deps.session.get(url) as resp:
             raw_data = await resp.json()
             return parser.parse_pool_info(raw_data)
+
+    async def fetch(self):
+        result = await self.get_pool_info_midgard()
+        # result = self._test_drop_one(result)  # fixme: debug!
+        return result
+
+    def _test_drop_one(self, pool_info_map: PoolInfoMap) -> PoolInfoMap:
+        if not pool_info_map or random() > 0.5:
+            return pool_info_map
+
+        pool_info_map = pool_info_map.copy()
+        first_key = next(iter(pool_info_map.keys()))
+        del pool_info_map[first_key]
+        return pool_info_map

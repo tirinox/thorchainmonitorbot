@@ -16,7 +16,7 @@ from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
 from services.jobs.fetch.node_info import NodeInfoFetcher
-from services.jobs.fetch.pool_price import PoolPriceFetcher
+from services.jobs.fetch.pool_price import PoolPriceFetcher, PoolInfoFetcherMidgard
 from services.jobs.fetch.queue import QueueFetcher
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.pool_stats import PoolStatsUpdater
@@ -105,6 +105,7 @@ class App:
         fetcher_queue = QueueFetcher(d)
         fetcher_stats = NetworkStatisticsFetcher(d)
         fetcher_nodes = NodeInfoFetcher(d)
+        fetcher_pool_info = PoolInfoFetcherMidgard(d)
 
         notifier_cap = LiquidityCapNotifier(d)
         notifier_tx = StakeTxNotifier(d)
@@ -113,8 +114,6 @@ class App:
         notifier_pool_churn = PoolChurnNotifier(d)
         notifier_stats = NetworkStatsNotifier(d)
         notifier_nodes = NodeChurnNotifier(d)
-
-        # await notifier_cap.test()
 
         stats_updater = PoolStatsUpdater(d)
         stats_updater.subscribe(notifier_tx)
@@ -126,12 +125,14 @@ class App:
         fetcher_nodes.subscribe(notifier_nodes)
 
         ppf.subscribe(notifier_price)
-        ppf.subscribe(notifier_pool_churn)
+        fetcher_pool_info.subscribe(notifier_pool_churn)
 
+        # await notifier_cap.test()
         # await notifier_stats.clear_cd()
 
         await asyncio.gather(*(task.run() for task in [
             ppf,
+            fetcher_pool_info,
             fetcher_tx,
             fetcher_cap,
             fetcher_queue,

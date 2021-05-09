@@ -19,7 +19,7 @@ from services.models.time_series import PriceTimeSeries
 class PriceNotifier(INotified):
     def __init__(self, deps: DepContainer):
         self.deps = deps
-        self.logger = logging.getLogger('PriceNotification')
+        self.logger = logging.getLogger(self.__class__.__name__)
         self.cd = CooldownSingle(deps.db)
         cfg = deps.cfg.price
         self.global_cd = parse_timespan_to_seconds(cfg.global_cd)
@@ -34,7 +34,7 @@ class PriceNotifier(INotified):
         self.price_graph_period = parse_timespan_to_seconds(cfg.price_graph.default_period)
 
     async def on_data(self, sender, fprice: RuneFairPrice):
-        # fprice.real_rune_price = 21.94  # fixme: debug! for ATH
+        # fprice.real_rune_price = 21.95  # fixme: debug! for ATH
         if not await self.handle_ath(fprice):
             await self.handle_new_price(fprice)
 
