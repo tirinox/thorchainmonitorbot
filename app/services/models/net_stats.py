@@ -76,7 +76,8 @@ class NetworkStats(BaseModelMixin):
 
     @property
     def network_security_ratio(self):
-        return self.total_active_bond_rune / (self.total_active_bond_rune + self.total_rune_pooled)
+        divisor = self.total_active_bond_rune + self.total_rune_pooled
+        return self.total_active_bond_rune / divisor if divisor else 0.0
 
     @property
     def total_nodes(self):

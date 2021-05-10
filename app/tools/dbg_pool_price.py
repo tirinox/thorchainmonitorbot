@@ -6,10 +6,9 @@ import aiohttp
 from aiothornode.connector import ThorConnector
 
 from localization import LocalizationManager
-from main import get_thor_env_by_network_id
 from services.jobs.fetch.pool_price import PoolPriceFetcher, PoolInfoFetcherMidgard
 from services.lib.config import Config
-from services.lib.constants import NetworkIdents, BTC_SYMBOL, BNB_BTCB_SYMBOL
+from services.lib.constants import NetworkIdents, BTC_SYMBOL, BNB_BTCB_SYMBOL, get_thor_env_by_network_id
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 

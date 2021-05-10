@@ -4,7 +4,7 @@ import aiohttp
 from aiothornode.connector import ThorConnector
 
 from localization import LocalizationManager
-from main import get_thor_env_by_network_id
+from services.lib.constants import get_thor_env_by_network_id
 from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.runeyield import AsgardConsumerConnectorBase, get_rune_yield_connector

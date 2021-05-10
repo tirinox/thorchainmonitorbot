@@ -7,7 +7,6 @@ import ujson
 from aiogram import Bot, Dispatcher, executor
 from aiogram.types import *
 from aiothornode.connector import ThorConnector
-from aiothornode.env import *
 
 from localization import LocalizationManager
 from services.dialog import init_dialogs
@@ -21,7 +20,7 @@ from services.jobs.fetch.queue import QueueFetcher
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.pool_stats import PoolStatsUpdater
 from services.lib.config import Config
-from services.lib.constants import NetworkIdents
+from services.lib.constants import get_thor_env_by_network_id
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.utils import setup_logs
@@ -34,18 +33,6 @@ from services.notify.types.price_notify import PriceNotifier
 from services.notify.types.queue_notify import QueueNotifier
 from services.notify.types.stats_notify import NetworkStatsNotifier
 from services.notify.types.tx_notify import StakeTxNotifier
-
-
-def get_thor_env_by_network_id(network_id) -> ThorEnvironment:
-    if network_id == NetworkIdents.TESTNET_MULTICHAIN:
-        return TEST_NET_ENVIRONMENT_MULTI_1.copy()
-    elif network_id == NetworkIdents.CHAOSNET_BEP2CHAIN:
-        return CHAOS_NET_BNB_ENVIRONMENT.copy()
-    elif network_id == NetworkIdents.CHAOSNET_MULTICHAIN:
-        return MULTICHAIN_CHAOSNET_ENVIRONMENT.copy()
-    else:
-        # todo: add multi-chain chaosnet
-        raise KeyError('unsupported network ID!')
 
 
 class App:

@@ -1,3 +1,6 @@
+from aiothornode.env import TEST_NET_ENVIRONMENT_MULTI_1, CHAOS_NET_BNB_ENVIRONMENT, MULTICHAIN_CHAOSNET_ENVIRONMENT
+from aiothornode.types import ThorEnvironment
+
 BNB_BNB_SYMBOL = 'BNB.BNB'
 BNB_BUSD_SYMBOL = 'BNB.BUSD-BD1'
 BNB_BUSD_TEST_SYMBOL = 'BNB.BUSD-BAF'
@@ -88,3 +91,15 @@ THOR_DIVIDER = 100_000_000.0  # 1e8
 THOR_DIVIDER_INV = 1.0 / THOR_DIVIDER
 
 THOR_BLOCK_TIME = 6.0  # seconds. 10 blocks / minute
+
+
+def get_thor_env_by_network_id(network_id) -> ThorEnvironment:
+    if network_id == NetworkIdents.TESTNET_MULTICHAIN:
+        return TEST_NET_ENVIRONMENT_MULTI_1.copy()
+    elif network_id == NetworkIdents.CHAOSNET_BEP2CHAIN:
+        return CHAOS_NET_BNB_ENVIRONMENT.copy()
+    elif network_id == NetworkIdents.CHAOSNET_MULTICHAIN:
+        return MULTICHAIN_CHAOSNET_ENVIRONMENT.copy()
+    else:
+        # todo: add multi-chain chaosnet
+        raise KeyError('unsupported network ID!')

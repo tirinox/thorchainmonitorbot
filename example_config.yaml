@@ -21,6 +21,7 @@ telegram:
 
 
 tx:
+  enabled: true
   stake_unstake:
     min_pool_percent: 5
     max_age: 12h
@@ -31,6 +32,7 @@ tx:
 
 
 price:
+  enabled: true
   fetch_period: 60
   global_cd: 12h
   change_cd: 1h
@@ -80,6 +82,7 @@ price:
       - CAACAgIAAxkBAAKYJmAxST6CTOiOStfQ9CH7hqLiv0iWAAL8BgACRvusBG1XSZhZ24v-HgQ
 
 cap:
+  enabled: true
   fetch_period: 120
   raised:
     stickers:
@@ -90,6 +93,7 @@ cap:
 
 
 queue:
+  enabled: true
   fetch_period: 60
   threshold:
     avg_period: 10m
@@ -99,12 +103,14 @@ queue:
 
 
 net_summary:
+  enabled: true
   fetch_period: 120s
   notification:
     cooldown: 6h
 
 
 pool_churn:
+  enabled: true
   notification:
     cooldown: 1h
   fetch_period: 135s

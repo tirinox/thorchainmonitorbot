@@ -10,13 +10,14 @@ from services.models.cap_info import ThorCapInfo
 
 
 class LiquidityCapNotifier(INotified):
-    KEY_INFO = 'th_info'
+    KEY_INFO = 'ChaosnetCapInfo'
 
     async def get_old_cap(self):
         try:
             db = self.deps.db
             j = await db.redis.get(self.KEY_INFO)
-            return ThorCapInfo.from_json(j)
+            result = ThorCapInfo.from_json(j)
+            return result if result else ThorCapInfo.error()
         except (TypeError, ValueError, AttributeError, json.decoder.JSONDecodeError):
             self.logger.exception('get_old_cap error')
             return ThorCapInfo.error()
@@ -40,13 +41,15 @@ class LiquidityCapNotifier(INotified):
 
         old_info = await self.get_old_cap()
 
-        if new_info.is_ok and old_info.is_ok:
+        if new_info.is_ok:
             if new_info.price <= 0:
                 new_info.price = old_info.price
+
             await self.save_cap_info(new_info)
 
-            if new_info.cap != old_info.cap:
-                await self._notify_when_cap_changed(old_info, new_info)
+            if old_info and old_info.is_ok:
+                if new_info.cap != old_info.cap:
+                    await self._notify_when_cap_changed(old_info, new_info)
 
     async def send_cap_raised_sticker(self):
         sticker = next(self.raise_sticker_iter)
