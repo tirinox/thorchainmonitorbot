@@ -64,6 +64,7 @@ class PoolPriceFetcher(BaseFetcher):
                 return parse_thor_pools(thor_pools)
             except (TypeError, IndexError):
                 self.logger.warning(f'thor_connector.query_pools failed! Attempt: #{attempt}')
+
         return {}
 
     DB_KEY_POOL_INFO_HASH = 'PoolInfo:hashtable'
