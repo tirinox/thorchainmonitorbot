@@ -117,6 +117,7 @@ pool_churn:
 
 
 node_info:
+  enabled: true
   fetch_period: 140s
 
 

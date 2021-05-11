@@ -87,45 +87,59 @@ class App:
         self.deps.mimir_const_holder = fetcher_mimir
         await fetcher_mimir.fetch()  # get constants beforehand
 
-        fetcher_cap = CapInfoFetcher(d)
-        fetcher_tx = TxFetcher(d)
-        fetcher_queue = QueueFetcher(d)
-        fetcher_stats = NetworkStatisticsFetcher(d)
-        fetcher_nodes = NodeInfoFetcher(d)
-        fetcher_pool_info = PoolInfoFetcherMidgard(d)
+        tasks = [
+            # mandatory tasks!
+            ppf, fetcher_mimir
+        ]
 
-        notifier_cap = LiquidityCapNotifier(d)
-        notifier_tx = StakeTxNotifier(d)
-        notifier_queue = QueueNotifier(d)
-        notifier_price = PriceNotifier(d)
-        notifier_pool_churn = PoolChurnNotifier(d)
-        notifier_stats = NetworkStatsNotifier(d)
-        notifier_nodes = NodeChurnNotifier(d)
+        if d.cfg.get('tx.enabled', True):
+            fetcher_tx = TxFetcher(d)
+            stats_updater = PoolStatsUpdater(d)
 
-        stats_updater = PoolStatsUpdater(d)
-        stats_updater.subscribe(notifier_tx)
-        fetcher_tx.subscribe(stats_updater)
+            notifier_tx = StakeTxNotifier(d)
+            stats_updater.subscribe(notifier_tx)
 
-        fetcher_cap.subscribe(notifier_cap)
-        fetcher_queue.subscribe(notifier_queue)
-        fetcher_stats.subscribe(notifier_stats)
-        fetcher_nodes.subscribe(notifier_nodes)
+            fetcher_tx.subscribe(stats_updater)
+            tasks.append(fetcher_tx)
 
-        ppf.subscribe(notifier_price)
-        fetcher_pool_info.subscribe(notifier_pool_churn)
+        if d.cfg.get('cap.enabled', True):
+            fetcher_cap = CapInfoFetcher(d)
+            notifier_cap = LiquidityCapNotifier(d)
+            fetcher_cap.subscribe(notifier_cap)
+            tasks.append(fetcher_cap)
+
+        if d.cfg.get('queue.enabled', True):
+            fetcher_queue = QueueFetcher(d)
+            notifier_queue = QueueNotifier(d)
+            fetcher_queue.subscribe(notifier_queue)
+            tasks.append(fetcher_queue)
+
+        if d.cfg.get('net_summary.enabled', True):
+            fetcher_stats = NetworkStatisticsFetcher(d)
+            notifier_stats = NetworkStatsNotifier(d)
+            fetcher_stats.subscribe(notifier_stats)
+            tasks.append(fetcher_stats)
+
+        if d.cfg.get('node_info.enabled', True):
+            fetcher_nodes = NodeInfoFetcher(d)
+            notifier_nodes = NodeChurnNotifier(d)
+            fetcher_nodes.subscribe(notifier_nodes)
+            tasks.append(fetcher_nodes)
+
+        if d.cfg.get('price.enabled', True):
+            notifier_price = PriceNotifier(d)
+            ppf.subscribe(notifier_price)
+
+        if d.cfg.get('pool_churn.enabled', True):
+            fetcher_pool_info = PoolInfoFetcherMidgard(d)
+            notifier_pool_churn = PoolChurnNotifier(d)
+            fetcher_pool_info.subscribe(notifier_pool_churn)
+            tasks.append(fetcher_pool_info)
 
         # await notifier_cap.test()
         # await notifier_stats.clear_cd()
 
-        await asyncio.gather(*(task.run() for task in [
-            ppf,
-            fetcher_pool_info,
-            fetcher_tx,
-            fetcher_cap,
-            fetcher_queue,
-            fetcher_stats,
-            fetcher_nodes,
-        ]))
+        await asyncio.gather(*(task.run() for task in tasks))
 
     async def on_startup(self, _):
         await self.connect_chat_storage()
