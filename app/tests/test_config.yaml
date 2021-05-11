@@ -1,0 +1,31 @@
+
+log_level: INFO
+
+
+thor:
+  network_id: "chaosnet-multi"
+  bool_value: true
+
+
+telegram:
+  bot:
+    token: "insert the bot token from @BotFather here"
+    username: "thor_infobot"
+  channels:
+    - type: telegram
+      name: "@thorchain_alert"  # live channel
+      lang: eng
+
+foo:
+  - x: 10
+    y: 20
+  - x: 11
+    y: 21
+  - x: 12
+    y: 22
+
+a:
+  b:
+    c:
+      d:
+        final: boom!

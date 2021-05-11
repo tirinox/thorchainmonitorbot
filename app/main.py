@@ -40,7 +40,7 @@ class App:
         d = self.deps = DepContainer()
         d.cfg = Config()
 
-        log_level = d.cfg.get('log_level', logging.INFO)
+        log_level = d.cfg.get_pure('log_level', logging.INFO)
         setup_logs(log_level)
 
         logging.info(f'Starting THORChainMonitoringBot for "{d.cfg.network_id}".')
