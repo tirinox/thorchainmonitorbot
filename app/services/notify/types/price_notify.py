@@ -34,7 +34,7 @@ class PriceNotifier(INotified):
         self.price_graph_period = parse_timespan_to_seconds(cfg.price_graph.default_period)
 
     async def on_data(self, sender, fprice: RuneFairPrice):
-        # fprice.real_rune_price = 21.95  # fixme: debug! for ATH
+        # fprice.real_rune_price = 21.98  # fixme: debug! for ATH
         if not await self.handle_ath(fprice):
             await self.handle_new_price(fprice)
 
@@ -72,10 +72,10 @@ class PriceNotifier(INotified):
             graph = await price_graph_from_db(self.deps.db, loc, self.price_graph_period)
             return BoardMessage.make_photo(graph, caption=loc.notification_text_price_update(report, ath))
 
-        await self.deps.broadcaster.broadcast(user_lang_map, price_graph_gen)
-
         if ath:
             await self.send_ath_sticker()
+
+        await self.deps.broadcaster.broadcast(user_lang_map, price_graph_gen)
 
     async def handle_new_price(self, fair_price: RuneFairPrice):
         hist_prices = await self.historical_get_triplet()

@@ -6,7 +6,6 @@ import sha3
 from aiogram import Bot, Dispatcher
 from aiogram.types import ParseMode
 from aiothornode.connector import ThorConnector
-from aiothornode.env import TEST_NET_ENVIRONMENT_MULTI_1
 
 from localization import LocalizationManager
 from services.dialog.picture.crypto_logo import CryptoLogoDownloader
@@ -28,7 +27,7 @@ from services.notify.broadcast import Broadcaster
 deps = DepContainer()
 deps.cfg = Config()
 
-log_level = deps.cfg.get('log_level', logging.INFO)
+log_level = deps.cfg.get_pure('log_level', logging.INFO)
 
 logging.basicConfig(level=logging.getLevelName(log_level))
 logging.info(f"Log level: {log_level}")
