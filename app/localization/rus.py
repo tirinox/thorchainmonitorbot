@@ -29,7 +29,7 @@ class RussianLocalization(BaseLocalization):
             f"/help – эта помощь\n"
             f"/start – запуск и перезапуск бота\n"
             f"/lang – изменить язык\n"
-            f"/cap – текущий кап для стейка в пулах Chaosnet\n"
+            f"/cap – текущий кап для ликвидности в пулах Chaosnet\n"
             f"/price – текущая цена {self.R}.\n"
             f"<b>⚠️ Бот теперь уведомляет только в канале {self.alert_channel_name}!</b>\n"
             f"🤗 Отзывы и поддержка: {CREATOR_TG}."
@@ -96,7 +96,7 @@ class RussianLocalization(BaseLocalization):
     LP_PIC_WITHDRAWN_VALUE = 'Выведено всего'
     LP_PIC_CURRENT_VALUE = 'Осталось в пуле'
     LP_PIC_PRICE_CHANGE = 'Изменение цены'
-    LP_PIC_PRICE_CHANGE_2 = 'с момента 1го стейка'
+    LP_PIC_PRICE_CHANGE_2 = 'с 1го добавления'
     LP_PIC_LP_VS_HOLD = 'Против ХОЛД'
     LP_PIC_LP_APY = 'Годовых'
     LP_PIC_EARLY = 'Еще рано...'
@@ -140,7 +140,7 @@ class RussianLocalization(BaseLocalization):
         up = old.cap < new.cap
         verb = "подрос" if up else "упал"
         arrow = '⬆️' if up else '⚠️ ⬇️'
-        call = "Ай-да застейкаем!\n" if up else ''
+        call = "Ай-да запулим еще!\n" if up else ''
         return (
             f'{arrow} <b>Кап {verb} с {pretty_money(old.cap)} до {pretty_money(new.cap)}!</b>\n'
             f'Сейчас в пулы помещено <b>{pretty_money(new.pooled_rune)}</b> {self.R}.\n'
@@ -165,13 +165,6 @@ class RussianLocalization(BaseLocalization):
     # ------ TXS -------
     def notification_text_large_tx(self, tx: LPAddWithdrawTx, dollar_per_rune: float, pool: StakePoolStats,
                                    pool_info: PoolInfo):
-        msg = ''
-
-        if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
-            msg += f'🐳 <b>Кит добавил ликвидности</b> 🟢\n'
-        elif tx.type == ThorTxType.TYPE_WITHDRAW:
-            msg += f'🐳 <b>Кит вывел ликвидность</b> 🔴\n'
-
         rp, ap = tx.symmetry_rune_vs_asset()
         total_usd_volume = tx.full_rune * dollar_per_rune if dollar_per_rune != 0 else 0.0
         pool_depth_usd = pool_info.usd_depth(dollar_per_rune)
@@ -182,7 +175,14 @@ class RussianLocalization(BaseLocalization):
 
         percent_of_pool = pool_info.percent_share(tx.full_rune)
 
+        heading = ''
+        if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
+            heading = f'🐳 <b>Кит добавил ликвидности</b> 🟢'
+        elif tx.type == ThorTxType.TYPE_WITHDRAW:
+            heading = f'🐳 <b>Кит вывел ликвидность</b> 🔴'
+
         return (
+            f"{heading}\n\n" 
             f"<b>{pretty_money(tx.rune_amount)} {self.R}</b> ({rp:.0f}%) ↔️ "
             f"<b>{pretty_money(tx.asset_amount)} {short_asset_name(tx.pool)}</b> ({ap:.0f}%)\n"
             f"Всего: <code>${pretty_money(total_usd_volume)}</code> ({percent_of_pool:.2f}% от всего пула).\n"
@@ -289,8 +289,8 @@ class RussianLocalization(BaseLocalization):
 
     def cap_message(self, info: ThorCapInfo):
         return (
-            f"<b>{pretty_money(info.pooled_rune)}</b> монет из "
-            f"<b>{pretty_money(info.cap)}</b> сейчас застейканы.\n"
+            f"<b>{self.R}{pretty_money(info.pooled_rune)}</b> монет из "
+            f"<b>{self.R}{pretty_money(info.cap)}</b> сейчас в пулах.\n"
             f"{self._cap_progress_bar(info)}"
             f"Цена {bold(self.R)} сейчас <code>{info.price:.3f} $</code>.\n"
         )
