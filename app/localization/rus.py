@@ -56,6 +56,7 @@ class RussianLocalization(BaseLocalization):
     BUTTON_MM_METRICS = '📐 Метрики'
     BUTTON_MM_SETTINGS = f'⚙️ Настройки'
     BUTTON_MM_MAKE_AVATAR = f'🦹‍️️ Сделай аву'
+    BUTTON_MM_NODE_OP = 'Операторам нод'
 
     # ------ STAKE INFO -----
 

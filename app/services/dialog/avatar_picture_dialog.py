@@ -13,7 +13,7 @@ from aiogram.utils.helper import HelperMode
 from localization import BaseLocalization
 from services.dialog.base import BaseDialog, message_handler, query_handler
 from services.dialog.picture.avatar import make_avatar
-from services.dialog.stake_info_dialog import LOADING_STICKER, ContentTypes, CallbackQuery
+from services.dialog.lp_info_dialog import LOADING_STICKER, ContentTypes, CallbackQuery
 from services.lib.depcont import DepContainer
 from services.lib.plot_graph import img_to_bio
 

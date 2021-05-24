@@ -125,6 +125,7 @@ class PriceNotifier(INotified):
     async def handle_ath(self, fair_price):
         last_ath = await self.get_prev_ath()
         price = fair_price.real_rune_price
+        
         if last_ath.is_new_ath(price):
             await self.update_ath(PriceATH(
                 int(time.time()), price

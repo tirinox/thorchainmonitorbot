@@ -107,11 +107,13 @@ class BaseLocalization(ABC):  # == English
     BUTTON_MM_METRICS = '📐 Metrics'
     BUTTON_MM_SETTINGS = f'⚙️ Settings'
     BUTTON_MM_MAKE_AVATAR = f'🦹‍️️ THOR Avatar'
+    BUTTON_MM_NODE_OP = 'Node Op tools'
 
     def kbd_main_menu(self):
         return kbd([
             [self.BUTTON_MM_MY_ADDRESS, self.BUTTON_MM_METRICS],
-            [self.BUTTON_MM_MAKE_AVATAR, self.BUTTON_MM_SETTINGS]
+            [self.BUTTON_MM_MAKE_AVATAR, self.BUTTON_MM_NODE_OP],
+            [self.BUTTON_MM_SETTINGS]
         ])
 
     # ------- STAKE INFO MENU -------
@@ -657,3 +659,6 @@ class BaseLocalization(ABC):  # == English
         message += self._make_node_list(changes.nodes_removed, '🗑️ Nodes that disconnected:', add_status=True)
 
         return message.rstrip()
+
+    # ------- NODE OP TOOLS -------
+
