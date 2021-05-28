@@ -74,6 +74,7 @@ class NetworkStatisticsFetcher(BaseFetcher):
         cmf: ConstMimirFetcher = self.deps.mimir_const_holder
 
         pools = await ppf.get_current_pool_data_full()
+
         active_pools = [p for p in pools.values() if p.is_enabled]
         pending_pools = [p for p in pools.values() if not p.is_enabled]
         ns.active_pool_count = len(active_pools)

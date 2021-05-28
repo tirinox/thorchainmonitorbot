@@ -14,9 +14,10 @@ class NetworkStatsNotifier(INotified):
         self.deps = deps
         self.logger = logging.getLogger(self.__class__.__name__)
 
-        notify_cd_sec = parse_timespan_to_seconds(self.deps.cfg.net_summary.notification.cooldown)
+        raw_cd = self.deps.cfg.net_summary.notification.cooldown
+        notify_cd_sec = parse_timespan_to_seconds(raw_cd)
         self.notify_cd = Cooldown(self.deps.db, 'NetworkStats:Notify', notify_cd_sec)
-        self.logger.info(f"it will notify every {notify_cd_sec} sec")
+        self.logger.info(f"it will notify every {notify_cd_sec} sec ({raw_cd})")
         self.series = TimeSeries('NetworkStats', self.deps.db)
 
     async def on_data(self, sender, data):
@@ -27,7 +28,7 @@ class NetworkStatsNotifier(INotified):
         await self.series.add(info=new_info.as_json_string)
 
         if await self.notify_cd.can_do():
-            old_info = await self.get_previous_stats(ago=DAY)
+            old_info = await self.get_previous_stats(ago=self.notify_cd.cooldown)  # since last time notified
             await self._notify(old_info, new_info)
             await self.notify_cd.do()
 
