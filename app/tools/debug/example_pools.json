@@ -1,0 +1,234 @@
+[
+	{
+		"balance_rune": "8718636791683",
+		"balance_asset": "145185803454",
+		"asset": "BCH.BCH",
+		"pool_units": "7256956134343",
+		"status": "Available",
+		"synth_units": "0",
+		"pending_inbound_rune": "1207037453",
+		"pending_inbound_asset": "32369078597"
+	},
+	{
+		"balance_rune": "99000000000",
+		"balance_asset": "400000000000",
+		"asset": "BNB.AVA-645",
+		"pool_units": "100000000000",
+		"status": "Staged",
+		"synth_units": "0",
+		"pending_inbound_rune": "0",
+		"pending_inbound_asset": "0"
+	},
+	{
+		"balance_rune": "24388729685129",
+		"balance_asset": "877288342827",
+		"asset": "BNB.BNB",
+		"pool_units": "28084286519771",
+		"status": "Available",
+		"synth_units": "0",
+		"pending_inbound_rune": "0",
+		"pending_inbound_asset": "1077964345"
+	},
+	{
+		"balance_rune": "6951446623367",
+		"balance_asset": "2306984013",
+		"asset": "BNB.BTCB-1DE",
+		"pool_units": "8012869063388",
+		"status": "Available",
+		"synth_units": "0",
+		"pending_inbound_rune": "0",
+		"pending_inbound_asset": "1589099"
+	},
+	{
+		"balance_rune": "20210156370453",
+		"balance_asset": "246771532188705",
+		"asset": "BNB.BUSD-BD1",
+		"pool_units": "19536518706819",
+		"status": "Available",
+		"synth_units": "0",
+		"pending_inbound_rune": "0",
+		"pending_inbound_asset": "59423879233"
+	},
+	{
+		"balance_rune": "6842677532320",
+		"balance_asset": "32534729649",
+		"asset": "BNB.ETH-1C9",
+		"pool_units": "5525730539025",
+		"status": "Available",
+		"synth_units": "0",
+		"pending_inbound_rune": "0",
+		"pending_inbound_asset": "100000"
+	},
+	{
+		"balance_rune": "81850152616577",
+		"balance_asset": "27106348171",
+		"asset": "BTC.BTC",
+		"pool_units": "102512182435656",
+		"status": "Available",
+		"synth_units": "0",
+		"pending_inbound_rune": "471542822",
+		"pending_inbound_asset": "565382806"
+	},
+	{
+		"balance_rune": "476805203711",
+		"balance_asset": "16564910034",
+		"asset": "ETH.AAVE-0X7FC66500C84A76AD7E9C93437BFC5AC33E2DDAE9",
+		"pool_units": "520552297834",
+		"status": "Staged",
+		"synth_units": "0",
+		"pending_inbound_rune": "0",
+		"pending_inbound_asset": "0"
+	},
+	{
+		"balance_rune": "1814864373470",
+		"balance_asset": "26869676772567",
+		"asset": "ETH.ALPHA-0XA1FAA113CBE53436DF28FF0AEE54275C13B40975",
+		"pool_units": "2510485206701",
+		"status": "Available",
+		"synth_units": "0",
+		"pending_inbound_rune": "0",
+		"pending_inbound_asset": "0"
+	},
+	{
+		"balance_rune": "1478851750206",
+		"balance_asset": "155649082639",
+		"asset": "ETH.CREAM-0X2BA592F78DB6436527729929AAF6C908497CB200",
+		"pool_units": "1752309371479",
+		"status": "Available",
+		"synth_units": "0",
+		"pending_inbound_rune": "0",
+		"pending_inbound_asset": "0"
+	},
+	{
+		"balance_rune": "112521712745",
+		"balance_asset": "29668924859637",
+		"asset": "ETH.DNA-0XEF6344DE1FCFC5F48C30234C16C1389E8CDC572C",
+		"pool_units": "155852717864",
+		"status": "Staged",
+		"synth_units": "0",
+		"pending_inbound_rune": "0",
+		"pending_inbound_asset": "0"
+	},
+	{
+		"balance_rune": "57419935405536",
+		"balance_asset": "272995414994",
+		"asset": "ETH.ETH",
+		"pool_units": "51268990063896",
+		"status": "Available",
+		"synth_units": "0",
+		"pending_inbound_rune": "17211019787",
+		"pending_inbound_asset": "260524096"
+	},
+	{
+		"balance_rune": "385999623552",
+		"balance_asset": "21961806683516",
+		"asset": "ETH.HEGIC-0X584BC13C7D411C00C01A62E8019472DE68768430",
+		"pool_units": "388859151364",
+		"status": "Staged",
+		"synth_units": "0",
+		"pending_inbound_rune": "0",
+		"pending_inbound_asset": "0"
+	},
+	{
+		"balance_rune": "3120326347012",
+		"balance_asset": "4381651891900839",
+		"asset": "ETH.HOT-0X6C6EE5E31D828DE241282B9606C8E98EA48526E2",
+		"pool_units": "3150779809059",
+		"status": "Available",
+		"synth_units": "0",
+		"pending_inbound_rune": "0",
+		"pending_inbound_asset": "0"
+	},
+	{
+		"balance_rune": "3685863572297",
+		"balance_asset": "120873739899433",
+		"asset": "ETH.KYL-0X67B6D479C7BB412C54E03DCA8E1BC6740CE6B99C",
+		"pool_units": "4202461943035",
+		"status": "Available",
+		"synth_units": "0",
+		"pending_inbound_rune": "0",
+		"pending_inbound_asset": "75508399460"
+	},
+	{
+		"balance_rune": "955256078632",
+		"balance_asset": "1278582750852",
+		"asset": "ETH.PERP-0XBC396689893D065F41BC2C6ECBEE5E0085233447",
+		"pool_units": "665840615464",
+		"status": "Staged",
+		"synth_units": "0",
+		"pending_inbound_rune": "0",
+		"pending_inbound_asset": "0"
+	},
+	{
+		"balance_rune": "2043255737477",
+		"balance_asset": "2025756237256",
+		"asset": "ETH.SNX-0XC011A73EE8576FB46F5E1C5751CA3B9FE0AF2A6F",
+		"pool_units": "2514150384843",
+		"status": "Available",
+		"synth_units": "0",
+		"pending_inbound_rune": "0",
+		"pending_inbound_asset": "0"
+	},
+	{
+		"balance_rune": "13887820683619",
+		"balance_asset": "14430730099105",
+		"asset": "ETH.SUSHI-0X6B3595068778DD592E39A122F4F5A5CF09C90FE2",
+		"pool_units": "16358524168710",
+		"status": "Available",
+		"synth_units": "0",
+		"pending_inbound_rune": "0",
+		"pending_inbound_asset": "0"
+	},
+	{
+		"balance_rune": "83929504105",
+		"balance_asset": "3900247957792",
+		"asset": "ETH.TVK-0XD084B83C305DAFD76AE3E1B4E1F1FE2ECCCB3988",
+		"pool_units": "121100000000",
+		"status": "Staged",
+		"synth_units": "0",
+		"pending_inbound_rune": "0",
+		"pending_inbound_asset": "0"
+	},
+	{
+		"balance_rune": "24516458029005",
+		"balance_asset": "300914900119700",
+		"asset": "ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48",
+		"pool_units": "17989279191428",
+		"status": "Available",
+		"decimals": 6,
+		"synth_units": "0",
+		"pending_inbound_rune": "0",
+		"pending_inbound_asset": "5611688900"
+	},
+	{
+		"balance_rune": "16919549761341",
+		"balance_asset": "206791458628100",
+		"asset": "ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7",
+		"pool_units": "21319632065688",
+		"status": "Available",
+		"decimals": 6,
+		"synth_units": "0",
+		"pending_inbound_rune": "0",
+		"pending_inbound_asset": "0"
+	},
+	{
+		"balance_rune": "2605744999291",
+		"balance_asset": "739223843",
+		"asset": "ETH.YFI-0X0BC529C00C6401AEF6D220BE8C6EA1667F6AD93E",
+		"pool_units": "2641288397786",
+		"status": "Available",
+		"synth_units": "0",
+		"pending_inbound_rune": "0",
+		"pending_inbound_asset": "0"
+	},
+	{
+		"balance_rune": "8324598985854",
+		"balance_asset": "573847706599",
+		"asset": "LTC.LTC",
+		"pool_units": "9761114312002",
+		"status": "Available",
+		"synth_units": "0",
+		"pending_inbound_rune": "51488719240",
+		"pending_inbound_asset": "31990193754"
+	}
+]
