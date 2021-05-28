@@ -434,6 +434,7 @@ class BaseLocalization(ABC):  # == English
                    f"<b>Queue info:</b>\n"
                    f"- <b>Outbound</b>: {code(queue_info.outbound)} txs {self.queue_to_smile(queue_info.outbound)}\n"
                    f"- <b>Swap</b>: {code(queue_info.swap)} txs {self.queue_to_smile(queue_info.swap)}\n"
+                   f"- <b>Internal</b>: {code(queue_info.internal)} txs {self.queue_to_smile(queue_info.internal)}\n"
                ) + (
                    f"If there are many transactions in the queue, your operations may take much longer than usual."
                    if queue_info.is_full else ''
