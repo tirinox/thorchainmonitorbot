@@ -3,6 +3,8 @@ import sys
 import yaml
 from dotenv import load_dotenv
 
+from services.lib.constants import NetworkIdents
+
 
 class SubConfig:
     def __init__(self, config_data):
@@ -90,3 +92,4 @@ class Config(SubConfig):
         super().__init__(data)
 
         self.network_id = self.get('thor.network_id')
+        self.is_midgard_v2 = self.network_id in (NetworkIdents.TESTNET_MULTICHAIN, NetworkIdents.CHAOSNET_MULTICHAIN)

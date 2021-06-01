@@ -1,6 +1,8 @@
-from dataclasses import dataclass
+import json
+from dataclasses import dataclass, field
 from typing import List
 
+from services.lib.constants import THOR_DIVIDER_INV
 from services.models.base import BaseModelMixin
 
 
@@ -20,7 +22,13 @@ class NodeInfo(BaseModelMixin):
     version: str = ''
     slash_points: int = 0
 
-    current_award: float = ''
+    current_award: float = 0.0
+
+    # new fields
+    requested_to_leave: bool = False
+    forced_to_leave: bool = False
+    active_block_height: int = 0
+    observe_chains: List = field(default_factory=list)
 
     # there are not all properties
 
@@ -39,6 +47,25 @@ class NodeInfo(BaseModelMixin):
     @property
     def ident(self):
         return self.node_address
+
+    @classmethod
+    def from_json(cls, jstr):
+        if not jstr:
+            return None
+        d = json.loads(jstr) if isinstance(jstr, (str, bytes)) else jstr
+        return cls(
+            status=d.get('status', NodeInfo.DISABLED),
+            node_address=d.get('node_address', ''),
+            bond=int(d.get('bond', 0)) * THOR_DIVIDER_INV,
+            ip_address=d.get('ip_address', ''),
+            version=d.get('version', ''),
+            slash_points=int(d.get('slash_points', 0)),
+            current_award=int(d.get('current_award', 0.0)) * THOR_DIVIDER_INV,
+            requested_to_leave=bool(d.get('requested_to_leave', False)),
+            forced_to_leave=bool(d.get('forced_to_leave', False)),
+            active_block_height=int(d.get('active_block_height', 0)),
+            observe_chains=d.get('observe_chains', [])
+        )
 
 
 @dataclass

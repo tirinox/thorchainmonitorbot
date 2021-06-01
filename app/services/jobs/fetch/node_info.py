@@ -19,7 +19,7 @@ class NodeInfoFetcher(BaseFetcher):
 
     DB_KEY_OLD_NODE_LIST = 'PreviousNodeInfo'
 
-    async def _get_old_node_info(self) -> List[NodeInfo]:
+    async def get_last_node_info(self) -> List[NodeInfo]:
         try:
             db = self.deps.db
             j = await db.redis.get(self.DB_KEY_OLD_NODE_LIST)
@@ -35,7 +35,7 @@ class NodeInfoFetcher(BaseFetcher):
         await r.set(self.DB_KEY_OLD_NODE_LIST, json.dumps(data))
 
     async def _extract_changes(self, new_nodes: List[NodeInfo]) -> NodeInfoChanges:
-        old_nodes = await self._get_old_node_info()
+        old_nodes = await self.get_last_node_info()
         if not old_nodes:
             return NodeInfoChanges.empty()
 
@@ -73,15 +73,7 @@ class NodeInfoFetcher(BaseFetcher):
         async with session.get(url) as resp:
             raw_nodes = await resp.json()
             for j in raw_nodes:
-                new_nodes.append(NodeInfo(
-                    status=j['status'],
-                    node_address=j['node_address'],
-                    bond=int(j['bond']) * THOR_DIVIDER_INV,
-                    ip_address=j['ip_address'],
-                    version=j['version'],
-                    slash_points=int(j['slash_points']),
-                    current_award=int(j['current_award']) * THOR_DIVIDER_INV,
-                ))
+                new_nodes.append(NodeInfo.from_json(j))
 
         new_nodes.sort(key=lambda k: (k.status, -k.bond))
         return new_nodes

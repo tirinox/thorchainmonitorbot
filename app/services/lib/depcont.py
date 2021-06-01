@@ -28,8 +28,9 @@ class DepContainer:
 
     loc_man: Optional['LocalizationManager'] = None
     broadcaster: Optional['Broadcaster'] = None
+
+    price_pool_fetcher: Optional['PoolPriceFetcher'] = None
+
     price_holder: LastPriceHolder = LastPriceHolder()
     queue_holder: QueueInfo = QueueInfo.error()
-
     mimir_const_holder: Optional['ConstMimirFetcher'] = None
-    price_pool_fetcher: Optional['PoolPriceFetcher'] = None
