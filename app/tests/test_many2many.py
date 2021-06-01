@@ -13,60 +13,110 @@ def many2many():
     return ManyToManySet(db, 'Users', 'Groups')
 
 
+async def prepare_simple(many2many):
+    await many2many.clear()
+    await many2many.associate('A', 'G1')
+    await many2many.associate_many(['B'], ['G1', 'G2'])
+    await many2many.associate_many(['C'], ['G3', 'G2'])
+
+
 @pytest.mark.asyncio
 async def test_clear(many2many: ManyToManySet):
+    await prepare_simple(many2many)
+
     await many2many.clear()
-    assert not await many2many.all_rights('A')
-    assert not await many2many.all_rights('B')
-    assert not await many2many.all_rights('C')
-    assert not await many2many.all_lefts('G1')
-    assert not await many2many.all_lefts('G2')
-    assert not await many2many.all_lefts('G3')
+
+    assert not await many2many.all_rights_for_left_one('A')
+    assert not await many2many.all_rights_for_left_one('B')
+    assert not await many2many.all_rights_for_left_one('C')
+    assert not await many2many.all_lefts_for_right_one('G1')
+    assert not await many2many.all_lefts_for_right_one('G2')
+    assert not await many2many.all_lefts_for_right_one('G3')
 
 
 @pytest.mark.asyncio
 async def test_add1(many2many: ManyToManySet):
     await many2many.associate('A', 'G1')
-    assert await many2many.all_rights('A') == {'G1'}
-    assert await many2many.all_lefts('G1') == {'A'}
+    assert await many2many.all_rights_for_left_one('A') == {'G1'}
+    assert await many2many.all_lefts_for_right_one('G1') == {'A'}
 
     await many2many.associate_many(['B'], ['G1', 'G2'])
-    assert await many2many.all_rights('A') == {'G1'}
-    assert await many2many.all_rights('B') == {'G1', 'G2'}
-    assert await many2many.all_lefts('G1') == {'A', 'B'}
+    assert await many2many.all_rights_for_left_one('A') == {'G1'}
+    assert await many2many.all_rights_for_left_one('B') == {'G1', 'G2'}
+    assert await many2many.all_lefts_for_right_one('G1') == {'A', 'B'}
 
     await many2many.associate_many(['C'], ['G3', 'G2'])
-    assert await many2many.all_lefts('G1') == {'A', 'B'}
-    assert await many2many.all_lefts('G2') == {'C', 'B'}
-    assert await many2many.all_lefts('G3') == {'C'}
-    assert await many2many.all_rights('A') == {'G1'}
-    assert await many2many.all_rights('B') == {'G1', 'G2'}
-    assert await many2many.all_rights('C') == {'G3', 'G2'}
+    assert await many2many.all_lefts_for_right_one('G1') == {'A', 'B'}
+    assert await many2many.all_lefts_for_right_one('G2') == {'C', 'B'}
+    assert await many2many.all_lefts_for_right_one('G3') == {'C'}
+    assert await many2many.all_rights_for_left_one('A') == {'G1'}
+    assert await many2many.all_rights_for_left_one('B') == {'G1', 'G2'}
+    assert await many2many.all_rights_for_left_one('C') == {'G3', 'G2'}
 
     # don't confuse lefts and rights
-    assert not await many2many.all_rights('G1')
-    assert not await many2many.all_rights('G2')
-    assert not await many2many.all_rights('G3')
+    assert not await many2many.all_rights_for_left_one('G1')
+    assert not await many2many.all_rights_for_left_one('G2')
+    assert not await many2many.all_rights_for_left_one('G3')
 
     # don't confuse lefts and rights
-    assert not await many2many.all_lefts('A')
-    assert not await many2many.all_lefts('B')
-    assert not await many2many.all_lefts('C')
+    assert not await many2many.all_lefts_for_right_one('A')
+    assert not await many2many.all_lefts_for_right_one('B')
+    assert not await many2many.all_lefts_for_right_one('C')
 
 
 @pytest.mark.asyncio
-async def test_remove(many2many: ManyToManySet):
+async def test_remove_side(many2many: ManyToManySet):
     await many2many.remove_all_rights('C')
 
-    assert await many2many.all_rights('A') == {'G1'}
-    assert await many2many.all_rights('B') == {'G1', 'G2'}
-    assert await many2many.all_rights('C') == set()
+    assert await many2many.all_rights_for_left_one('A') == {'G1'}
+    assert await many2many.all_rights_for_left_one('B') == {'G1', 'G2'}
+    assert await many2many.all_rights_for_left_one('C') == set()
 
     await many2many.remove_all_lefts('G1')
 
-    assert await many2many.all_rights('A') == set()
-    assert await many2many.all_rights('B') == {'G2'}
-    assert await many2many.all_rights('C') == set()
+    assert await many2many.all_rights_for_left_one('A') == set()
+    assert await many2many.all_rights_for_left_one('B') == {'G2'}
+    assert await many2many.all_rights_for_left_one('C') == set()
 
-    assert not await many2many.all_rights('G3')
-    assert not await many2many.all_rights('G1')
+    assert not await many2many.all_rights_for_left_one('G3')
+    assert not await many2many.all_rights_for_left_one('G1')
+
+
+@pytest.mark.asyncio
+async def test_remove_1(many2many: ManyToManySet):
+    await many2many.associate('A', 'G1')
+    await many2many.associate_many(['B'], ['G1', 'G2'])
+    await many2many.associate_many(['C', 'D'], ['G3', 'G2'])
+
+    await many2many.remove_one_item('D', 'G2')
+
+    assert await many2many.all_rights_for_left_one('D') == {'G3'}
+    assert await many2many.all_rights_for_left_one('C') == {'G3', 'G2'}
+
+    await many2many.remove_one_item('D', 'G3')
+
+    assert await many2many.all_rights_for_left_one('D') == set()
+    assert await many2many.all_rights_for_left_one('C') == {'G3', 'G2'}
+    assert await many2many.all_lefts_for_right_one('G3') == {'C'}
+
+    await many2many.associate('D', 'G4')
+    assert await many2many.all_rights_for_left_one('D') == {'G4'}
+    assert await many2many.all_lefts_for_right_one('G4') == {'D'}
+
+    await many2many.remove_one_item('D', 'G4')
+
+    assert await many2many.all_rights_for_left_one('D') == set()
+    assert await many2many.all_lefts_for_right_one('G4') == set()
+
+
+@pytest.mark.asyncio
+async def test_all_one_side(many2many: ManyToManySet):
+    await prepare_simple(many2many)
+
+    assert await many2many.all_lefts() == {'A', 'B', 'C'}
+    assert await many2many.all_rights() == {'G1', 'G2', 'G3'}
+
+    await many2many.remove_all_lefts('G3')
+    await many2many.remove_all_lefts('G2')
+
+    assert await many2many.all_lefts() == {'A', 'B'}

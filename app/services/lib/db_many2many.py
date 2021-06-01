@@ -40,25 +40,51 @@ class ManyToManySet:
     async def associate(self, left_one: str, right_one: str):
         await self.associate_many([left_one], [right_one])
 
-    async def all_lefts(self, right_one: str):
+    async def all_lefts_for_right_one(self, right_one: str):
         r = await self._redis()
         return set(await r.smembers(self.right_key(right_one), encoding='utf8'))
 
-    async def all_rights(self, left_one: str):
+    async def all_rights_for_left_one(self, left_one: str):
         r = await self._redis()
         return set(await r.smembers(self.left_key(left_one), encoding='utf8'))
+
+    async def all_from_side(self, key_gen):
+        r = await self._redis()
+        key_pattern = key_gen('*')
+        start_pos = len(key_pattern) - 1
+        names = await r.keys(key_pattern)
+        return set(n.decode('utf-8')[start_pos:] for n in names)
+
+    async def all_lefts(self):
+        return await self.all_from_side(key_gen=self.left_key)
+
+    async def all_rights(self):
+        return await self.all_from_side(key_gen=self.right_key)
+
+    async def all_right(self):
+        r = await self._redis()
+        lefts = await r.keys(self.left_key('*'))
+        results = []
+        for left_one in lefts:
+            results += await r.smembers(left_one)
+        return results
 
     # noinspection PyArgumentList
     async def remove_association(self, item: str, is_item_left: bool):
         r = await self._redis()
 
-        getter = self.all_rights if is_item_left else self.all_lefts
+        getter = self.all_rights_for_left_one if is_item_left else self.all_lefts_for_right_one
         all_items = await getter(item)
         other_side_key = self.left_key(item) if is_item_left else self.right_key(item)
         await r.srem(other_side_key, *all_items)
         for other_item in all_items:
             this_side_key = self.right_key(other_item) if is_item_left else self.left_key(other_item)
             await r.srem(this_side_key, item)
+
+    async def remove_one_item(self, left_item, right_item):
+        r = await self._redis()
+        await r.srem(self.left_key(left_item), right_item)
+        await r.srem(self.right_key(right_item), left_item)
 
     async def remove_all_rights(self, left_one: str):
         await self.remove_association(left_one, is_item_left=True)
