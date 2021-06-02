@@ -9,25 +9,19 @@ from localization import BaseLocalization
 from localization.base import RAIDO_GLYPH
 from services.dialog.picture.crypto_logo import CryptoLogoDownloader
 from services.lib.constants import BNB_RUNE_SYMBOL, is_stable_coin, is_rune, RUNE_SYMBOL
-from services.lib.money import pretty_money, short_asset_name, pretty_dollar, format_percent
+from services.lib.draw_utils import CATEGORICAL_PALETTE, pos_percent, result_color, hor_line
+from services.lib.money import pretty_money, short_asset_name, format_percent
 from services.lib.plot_graph import PlotBarGraph
 from services.lib.texts import grouper
 from services.lib.utils import Singleton, async_wrap
 from services.models.lp_info import LiquidityPoolReport, LPDailyGraphPoint
 
-WIDTH, HEIGHT = 1200, 1600
+LP_PIC_WIDTH, LP_PIC_HEIGHT = 1200, 1600
 
 LINE_COLOR = '#356'
-GREEN_COLOR = '#00f2c3'
-RED_COLOR = '#e22222'
 FORE_COLOR = 'white'
 FADE_COLOR = '#cccccc'
-CATEGORICAL_PALETTE = [
-    '#648FFF', '#785EF0',
-    '#DC267F',
-    '#FE6100', '#FFB000',
-    '#005AB5', '#DC3220'
-]
+
 BG_COLOR = '#141a1a'
 
 
@@ -64,22 +58,6 @@ class Resources(metaclass=Singleton):
         image.paste(self.hidden_img, (x, y), self.hidden_img)
 
 
-def round_corner(radius, fill, bg):
-    """Draw a round corner"""
-    corner = Image.new('RGB', (radius, radius), bg)
-    draw = ImageDraw.Draw(corner)
-    draw.pieslice((0, 0, radius * 2, radius * 2), 180, 270, fill=fill)
-    return corner
-
-
-def pos_percent(x, y, ax=0, ay=0, w=WIDTH, h=HEIGHT):
-    return int(x / 100 * w + ax), int(y / 100 * h + ay)
-
-
-def result_color(v):
-    return RED_COLOR if v < 0 else GREEN_COLOR
-
-
 async def lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, value_hidden=False):
     r = Resources()
     asset = report.pool.asset
@@ -88,10 +66,6 @@ async def lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, va
         r.logo_downloader.get_or_download_logo_cached(asset)
     )
     return await sync_lp_pool_picture(report, loc, rune_image, asset_image, value_hidden)
-
-
-def hor_line(draw, y, width=2, w=WIDTH, h=HEIGHT):
-    draw.line((pos_percent(0, y, w=w, h=h), pos_percent(100, y, w=w, h=h)), fill=LINE_COLOR, width=width)
 
 
 @async_wrap
@@ -367,7 +341,7 @@ def lp_line_segments(draw, asset_values, asset_values_usd, y, value_hidden, colo
     legend_y_step = 3
     legend_dx = (hp_bar_width - 40) / (items_in_line - 1)
     legend_sq_w = 2
-    legend_sq_h = legend_sq_w * WIDTH / HEIGHT
+    legend_sq_h = legend_sq_w * LP_PIC_WIDTH / LP_PIC_HEIGHT
     counter = 0
     for line in line_groups:
         legend_x = hp_bar_margin

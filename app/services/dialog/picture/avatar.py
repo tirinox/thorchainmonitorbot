@@ -5,6 +5,7 @@ import face_recognition
 import numpy as np
 from PIL import Image, ImageDraw
 
+from services.lib.draw_utils import image_square_crop
 from services.lib.utils import async_wrap
 
 
@@ -47,25 +48,6 @@ class LaserEyeMask:
         for face in face_landmarks_list:
             self._apply_for_face(frame, face)
         return frame
-
-
-def image_square_crop(im):
-    width, height = im.size  # Get dimensions
-
-    if width > height:
-        new_width, new_height = height, height
-    elif width < height:
-        new_width, new_height = width, width
-    else:
-        return im
-
-    left = int((width - new_width) / 2)
-    top = int((height - new_height) / 2)
-    right = int((width + new_width) / 2)
-    bottom = int((height + new_height) / 2)
-
-    # Crop the center of the image
-    return im.crop((left, top, right, bottom))
 
 
 THOR_AVA_FRAME_PATH = './data/thor_ava_frame.png'

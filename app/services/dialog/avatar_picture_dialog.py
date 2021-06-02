@@ -15,7 +15,7 @@ from services.dialog.base import BaseDialog, message_handler, query_handler
 from services.dialog.picture.avatar import make_avatar
 from services.dialog.lp_info_dialog import LOADING_STICKER, ContentTypes, CallbackQuery
 from services.lib.depcont import DepContainer
-from services.lib.plot_graph import img_to_bio
+from services.lib.draw_utils import img_to_bio
 
 
 async def download_tg_photo(photo: Downloadable) -> Image.Image:

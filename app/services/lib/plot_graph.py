@@ -1,32 +1,10 @@
 from datetime import datetime
-from io import BytesIO
 
 import pandas as pd
 from PIL import Image
 from PIL import ImageDraw, ImageFont
 
-
-def img_to_bio(image, name):
-    bio = BytesIO()
-    bio.name = name
-    image.save(bio, 'PNG')
-    bio.seek(0)
-    return bio
-
-
-def generate_gradient(
-        colour1: str, colour2: str, width: int, height: int) -> Image:
-    """Generate a vertical gradient."""
-    base = Image.new('RGB', (width, height), colour1)
-    top = Image.new('RGB', (width, height), colour2)
-    mask = Image.new('L', (width, height))
-    mask_data = []
-    for y in range(height):
-        for x in range(width):
-            mask_data.append(int(255 * (y / height)))
-    mask.putdata(mask_data)
-    base.paste(top, (0, 0), mask)
-    return base
+from services.lib.draw_utils import generate_gradient
 
 
 class PlotGraph:
@@ -327,3 +305,5 @@ class PlotGraphLines(PlotGraph):
                 cur_x, cur_y = self.convert_coords(x, y, ox, oy, plot_w, plot_h)
                 self.draw.line((last_x, last_y, cur_x, cur_y), fill=color, width=self.line_width)
                 last_x, last_y = cur_x, cur_y
+
+

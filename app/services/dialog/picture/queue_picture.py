@@ -1,10 +1,10 @@
 import pandas as pd
 
 from localization import BaseLocalization
-from services.dialog.picture.lp_picture import CATEGORICAL_PALETTE
+from services.lib.draw_utils import CATEGORICAL_PALETTE, img_to_bio
 from services.lib.date_utils import series_to_pandas, DAY, today_str
 from services.lib.depcont import DepContainer
-from services.lib.plot_graph import PlotBarGraph, img_to_bio
+from services.lib.plot_graph import PlotBarGraph
 from services.lib.utils import async_wrap
 from services.models.time_series import TimeSeries
 

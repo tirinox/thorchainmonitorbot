@@ -14,7 +14,7 @@ from services.jobs.fetch.runeyield import get_rune_yield_connector
 from services.lib.constants import NetworkIdents, Chains
 from services.lib.date_utils import today_str
 from services.lib.money import short_address
-from services.lib.plot_graph import img_to_bio
+from services.lib.draw_utils import img_to_bio
 from services.lib.texts import code, grouper, kbd, cut_long_text
 from services.models.lp_info import LPAddress
 
