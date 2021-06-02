@@ -18,6 +18,8 @@ telegram:
     - type: telegram
       name: "@thorchain_alert"  # live channel
       lang: eng
+  common:  # new
+    loading_sticker: CAACAgIAAxkBAAIRx1--Tia-m6DNRIApk3yqmNWvap_sAALcAAP3AsgPUNi8Bnu98HweBA
 
 
 tx:
@@ -119,6 +121,8 @@ pool_churn:
 node_info:
   enabled: true
   fetch_period: 140s
+  geo_ip: # new
+    expire: 48h
 
 
 constants:

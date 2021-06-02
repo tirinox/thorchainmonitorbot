@@ -5,7 +5,7 @@ from functools import wraps
 
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.dispatcher.storage import FSMContextProxy, FSMContext
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove
 from aiogram.utils.exceptions import MessageCantBeDeleted, MessageToEditNotFound
 
 from localization import BaseLocalization
@@ -145,3 +145,11 @@ class BaseDialog(ABC):
         except (MessageCantBeDeleted, MessageToEditNotFound):
             logger.warning('can not delete message')
             pass
+
+    @property
+    def loading_sticker(self):
+        return self.deps.cfg.as_str('telegram.common.loading_sticker', default=None)
+
+    async def answer_loading_sticker(self, message: Message, silent=True, remove_keyboard=False) -> Message:
+        return await message.answer_sticker(self.loading_sticker, disable_notification=silent,
+                                            reply_markup=ReplyKeyboardRemove() if remove_keyboard else None)

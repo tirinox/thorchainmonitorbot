@@ -6,14 +6,14 @@ from PIL import Image
 from aiogram import Bot
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.dispatcher.storage import FSMContextProxy
-from aiogram.types import Message, PhotoSize, ReplyKeyboardRemove, InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import Message, PhotoSize, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.types.mixins import Downloadable
 from aiogram.utils.helper import HelperMode
 
 from localization import BaseLocalization
 from services.dialog.base import BaseDialog, message_handler, query_handler
+from services.dialog.lp_info_dialog import ContentTypes, CallbackQuery
 from services.dialog.picture.avatar import make_avatar
-from services.dialog.lp_info_dialog import LOADING_STICKER, ContentTypes, CallbackQuery
 from services.lib.depcont import DepContainer
 from services.lib.draw_utils import img_to_bio
 
@@ -95,9 +95,8 @@ class AvatarDialog(BaseDialog):
             await stack.enter_async_context(self._work_lock)
 
             # POST A LOADING STICKER
-            sticker = await message.answer_sticker(LOADING_STICKER,
-                                                   disable_notification=True,
-                                                   reply_markup=ReplyKeyboardRemove())
+            sticker = await self.answer_loading_sticker(message, remove_keyboard=True)
+
             # CLEAN UP IN THE END
             stack.push_async_callback(sticker.delete)
 

@@ -3,7 +3,7 @@ from io import BytesIO
 
 from PIL import Image, ImageDraw
 
-from services.dialog.picture.lp_picture import LP_PIC_WIDTH, LP_PIC_HEIGHT, LINE_COLOR
+LINE_COLOR = '#356'
 
 COLOR_OF_PROFIT = '#00f2c3'
 COLOR_OF_LOSS = '#e22222'
@@ -39,7 +39,7 @@ def round_corner(radius, fill, bg):
     return corner
 
 
-def pos_percent(x, y, ax=0, ay=0, w=LP_PIC_WIDTH, h=LP_PIC_HEIGHT):
+def pos_percent(x, y, ax=0, ay=0, w=1000, h=1000):
     return int(x / 100 * w + ax), int(y / 100 * h + ay)
 
 
@@ -47,7 +47,7 @@ def result_color(v):
     return COLOR_OF_LOSS if v < 0 else COLOR_OF_PROFIT
 
 
-def hor_line(draw, y, width=2, w=LP_PIC_WIDTH, h=LP_PIC_HEIGHT):
+def hor_line(draw, y, width=2, w=1000, h=1000):
     draw.line((pos_percent(0, y, w=w, h=h), pos_percent(100, y, w=w, h=h)), fill=LINE_COLOR, width=width)
 
 

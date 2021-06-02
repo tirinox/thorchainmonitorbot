@@ -9,16 +9,13 @@ from aiogram.utils.helper import HelperMode
 
 from services.dialog.base import BaseDialog, message_handler, query_handler
 from services.dialog.picture.lp_picture import lp_pool_picture, lp_address_summary_picture
-from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.runeyield import get_rune_yield_connector
 from services.lib.constants import NetworkIdents, Chains
 from services.lib.date_utils import today_str
-from services.lib.money import short_address
 from services.lib.draw_utils import img_to_bio
+from services.lib.money import short_address
 from services.lib.texts import code, grouper, kbd, cut_long_text
 from services.models.lp_info import LPAddress
-
-LOADING_STICKER = 'CAACAgIAAxkBAAIRx1--Tia-m6DNRIApk3yqmNWvap_sAALcAAP3AsgPUNi8Bnu98HweBA'
 
 
 def get_runeyield_info_address(network: str, address: str, chain: str = Chains.THOR):
@@ -190,7 +187,7 @@ class LiquidityInfoDialog(BaseDialog):
         address = self.data[self.KEY_ACTIVE_ADDRESS]
 
         # POST A LOADING STICKER
-        sticker = await query.message.answer_sticker(LOADING_STICKER, disable_notification=True)
+        sticker = await self.answer_loading_sticker(query.message)
 
         # WORK...
         rune_yield = get_rune_yield_connector(self.deps)
@@ -228,7 +225,7 @@ class LiquidityInfoDialog(BaseDialog):
             return
 
         # POST A LOADING STICKER
-        sticker = await query.message.answer_sticker(LOADING_STICKER, disable_notification=True)
+        sticker = await self.answer_loading_sticker(query.message)
 
         # WORK
         rune_yield = get_rune_yield_connector(self.deps)
