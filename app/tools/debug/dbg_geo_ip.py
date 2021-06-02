@@ -2,7 +2,7 @@ import asyncio
 import logging
 from collections import Counter
 
-from services.dialog.picture.node_geo_picture import node_geo_pic
+from services.dialog.picture.node_geo_picture import node_geo_pic, make_donut_chart
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.lib.draw_utils import save_image_and_show
 from services.lib.geo_ip import GeoIPManager
@@ -54,10 +54,17 @@ async def test_geo_ip_thor_2():
         pic.show()
 
 
+async def test_donuts():
+    # real_data = [('AMAZON', 24), ('DIGITALOCEAN', 10), ('MICROSOFT', 2), ('Others', 3)]
+    fake_data_1 = [('AMAZON', 100), ('DIGITALOCEAN', 50), ('MICROSOFT', 20), ('Others', 1)]
+    donut = make_donut_chart(fake_data_1, width=400, margin=104, line_width=60, gap=2, label_r=120)
+    donut.show()
+
+
 async def main():
     # await test_geo_ip_google()
-    await test_geo_ip_thor_2()
-
+    # await test_geo_ip_thor_2()
+    await test_donuts()
 
 if __name__ == "__main__":
     setup_logs(logging.INFO)
