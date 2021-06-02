@@ -2,7 +2,9 @@ import asyncio
 import logging
 from collections import Counter
 
+from services.dialog.picture.node_geo_picture import node_geo_pic
 from services.jobs.fetch.node_info import NodeInfoFetcher
+from services.lib.draw_utils import save_image_and_show
 from services.lib.geo_ip import GeoIPManager
 from services.lib.utils import setup_logs
 from tools.lib.lp_common import LpAppFramework
@@ -31,13 +33,15 @@ async def test_geo_ip_thor_2():
         print('IP addresses = ')
         print(*ip_addresses, sep=', ')
 
+        ip_infos = await geo_ip.get_ip_info_bulk(ip_addresses)
+
         organizations = {}
         providers = {}
-        for ip in ip_addresses:
-            print(f'Loading: {ip}...')
-            info = await geo_ip.get_ip_info(ip)
-            organizations[ip] = info['org']
-            providers[ip] = geo_ip.get_general_provider(info)
+        for info in ip_infos:
+            if info:
+                ip = info['ip']
+                organizations[ip] = info['org']
+                providers[ip] = geo_ip.get_general_provider(info)
 
         print(organizations)
         print('----')
@@ -46,6 +50,8 @@ async def test_geo_ip_thor_2():
         c = Counter(providers.values())
         print(c)
 
+        pic = await node_geo_pic(ip_infos)
+        pic.show()
 
 
 async def main():

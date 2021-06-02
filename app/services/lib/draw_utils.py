@@ -1,5 +1,8 @@
 import math
+import os
+import tempfile
 from io import BytesIO
+from time import sleep
 
 from PIL import Image, ImageDraw
 
@@ -66,45 +69,28 @@ def generate_gradient(
     return base
 
 
-def arc(draw, bbox, start, end, fill, width=1, segments=100):
-    """
-    Hack that looks similar to PIL's draw.arc(), but can specify a line width.
-    """
-    # radians
-    start *= math.pi / 180
-    end *= math.pi / 180
+def draw_arc_aa(image, bounds, start, end, width=1, outline='white', antialias=4):
+    """Improved ellipse drawing function, based on PIL.ImageDraw."""
 
-    # angle step
-    da = (end - start) / segments
+    # Use a single channel image (mode='L') as mask.
+    # The size of the mask can be increased relative to the imput image
+    # to get smoother looking results.
+    mask = Image.new(
+        size=[int(dim * antialias) for dim in image.size],
+        mode='L', color='black')
+    draw = ImageDraw.Draw(mask)
 
-    # shift end points with half a segment angle
-    start -= da / 2
-    end -= da / 2
+    # draw outer shape in white (color) and inner shape in black (transparent)
+    for offset, fill in (width / -2.0, 'white'), (width / 2.0, 'black'):
+        left, top = [(value + offset) * antialias for value in bounds[:2]]
+        right, bottom = [(value - offset) * antialias for value in bounds[2:]]
+        draw.arc([left, top, right, bottom], start, end, fill=fill, width=width)
 
-    # ellips radii
-    rx = (bbox[2] - bbox[0]) / 2
-    ry = (bbox[3] - bbox[1]) / 2
-
-    # box centre
-    cx = bbox[0] + rx
-    cy = bbox[1] + ry
-
-    # segment length
-    l = (rx + ry) * da / 2.0
-
-    for i in range(segments):
-        # angle centre
-        a = start + (i + 0.5) * da
-
-        # x,y centre
-        x = cx + math.cos(a) * rx
-        y = cy + math.sin(a) * ry
-
-        # derivatives
-        dx = -math.sin(a) * rx / (rx + ry)
-        dy = math.cos(a) * ry / (rx + ry)
-
-        draw.line([(x - dx * l, y - dy * l), (x + dx * l, y + dy * l)], fill=fill, width=width)
+    # downsample the mask using PIL.Image.LANCZOS
+    # (a high-quality downsampling filter).
+    mask = mask.resize(image.size, Image.LANCZOS)
+    # paste outline color to input image through the mask
+    image.paste(outline, mask=mask)
 
 
 def img_to_bio(image, name):
@@ -132,3 +118,17 @@ def image_square_crop(im):
 
     # Crop the center of the image
     return im.crop((left, top, right, bottom))
+
+
+def _save_image_and_show(image: Image, path):
+    image.save(path, "PNG")
+    os.system(f'open "{path}"')  # MacOS
+
+
+def save_image_and_show(image: Image, path=None):
+    if path is None:
+        with tempfile.NamedTemporaryFile(suffix='.png') as f:
+            _save_image_and_show(image, f.name)
+            sleep(1.5)  # until it is shown by OS
+    else:
+        _save_image_and_show(image, path)
