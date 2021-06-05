@@ -3,10 +3,24 @@ import logging
 import os
 import pickle
 import time
-from collections import deque
+from collections import deque, Counter
 from functools import wraps, partial
 import random
 from itertools import tee
+
+
+def most_common_and_other(values: list, max_categories, other_str='Others'):
+    """
+    Count categories in the values, if there are more than max_categories, sum up all others to other_str field
+    Returns: List of most common elements ( [name, count_of_occur], [name_2, count_2], ..., ["Others", count_of_others])
+    """
+    provider_counter = Counter(values)
+    total = sum(provider_counter.values())
+    elements = provider_counter.most_common(max_categories)
+    total_most_common = sum(item[1] for item in elements)
+    others_sum = total - total_most_common
+    elements.append((other_str, others_sum))
+    return elements
 
 
 def a_result_cached(ttl=60):
@@ -53,6 +67,11 @@ def async_wrap(func):
 
 
 def circular_shuffled_iterator(lst):
+    """
+    Shuffle list, go round it, shuffle again.
+    Infinite iterator.
+    Guaranteed no duplicates (except of border cases sometimes)
+    """
     if not lst:
         return None
 

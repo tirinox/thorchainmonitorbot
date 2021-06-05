@@ -11,6 +11,8 @@ LINE_COLOR = '#356'
 COLOR_OF_PROFIT = '#00f2c3'
 COLOR_OF_LOSS = '#e22222'
 
+LIGHT_TEXT_COLOR = 'white'
+
 CATEGORICAL_PALETTE = [
     '#648FFF', '#785EF0',
     '#DC267F',
@@ -50,8 +52,8 @@ def result_color(v):
     return COLOR_OF_LOSS if v < 0 else COLOR_OF_PROFIT
 
 
-def hor_line(draw, y, width=2, w=1000, h=1000):
-    draw.line((pos_percent(0, y, w=w, h=h), pos_percent(100, y, w=w, h=h)), fill=LINE_COLOR, width=width)
+def hor_line(draw, y, width=2, w=1000, h=1000, color=LINE_COLOR):
+    draw.line((pos_percent(0, y, w=w, h=h), pos_percent(100, y, w=w, h=h)), fill=color, width=width)
 
 
 def generate_gradient(

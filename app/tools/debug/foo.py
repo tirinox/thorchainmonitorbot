@@ -1,5 +1,7 @@
 import asyncio
 import logging
+import random
+import secrets
 
 import aiohttp
 import sha3
@@ -20,6 +22,7 @@ from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.money import pretty_money
 from services.lib.texts import progressbar
+from services.models.node_info import NodeInfoChanges, NodeInfo
 from services.models.pool_stats import StakePoolStats
 from services.models.time_series import TimeSeries
 from services.notify.broadcast import Broadcaster
@@ -140,10 +143,33 @@ async def foo20(d):
     print('0xbc36789e7a1e281436464229828f817d6612f7b477d66591ff96a9e064bcc98a')
 
 
+def fake_node(status=NodeInfo.ACTIVE, address=None, bond=None, ip=None, version='54.1', slash=0):
+    r = lambda: random.randint(1, 255)
+    ip = ip if ip is not None else f'{r()}.{r()}.{r()}.{r()}'
+    address = address if address is not None else f'thor{secrets.token_hex(32)}'
+    bond = bond if bond is not None else random.randint(1, 2_000_000)
+    return NodeInfo(status, address, bond, ip, version, slash)
+
+
+async def foo21(d):
+    loc_man: LocalizationManager = d.loc_man
+    loc = loc_man.get_from_lang('rus')
+
+    c = NodeInfoChanges(
+        nodes_added=[],
+        nodes_removed=[fake_node()],
+        nodes_deactivated=[],
+        nodes_activated=[],
+        nodes_all=[]
+    )
+
+    print(loc.notification_text_for_node_churn(c))
+
+
 async def start_foos():
     async with aiohttp.ClientSession() as deps.session:
         await deps.db.get_redis()
-        await foo19(deps)
+        await foo21(deps)
 
 
 if __name__ == '__main__':

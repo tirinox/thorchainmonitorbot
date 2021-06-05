@@ -21,6 +21,8 @@ from services.models.tx import LPAddWithdrawTx, ThorTxType
 
 
 class RussianLocalization(BaseLocalization):
+    LOADING = '⌛ Загрузка...'
+
     # ---- WELCOME ----
     def help_message(self):
         return (
@@ -56,9 +58,9 @@ class RussianLocalization(BaseLocalization):
     BUTTON_MM_METRICS = '📐 Метрики'
     BUTTON_MM_SETTINGS = f'⚙️ Настройки'
     BUTTON_MM_MAKE_AVATAR = f'🦹‍️️ Сделай аву'
-    BUTTON_MM_NODE_OP = 'Операторам нод'
+    BUTTON_MM_NODE_OP = '🔜 Операторам нод'
 
-    # ------ STAKE INFO -----
+    # ------ LP INFO -----
 
     BUTTON_SM_ADD_ADDRESS = '➕ Добавить новый адрес'
     BUTTON_BACK = '🔙 Назад'
@@ -137,6 +139,7 @@ class RussianLocalization(BaseLocalization):
         return f'Сегодня: {today}'
 
     # ----- CAP ------
+
     def notification_text_cap_change(self, old: ThorCapInfo, new: ThorCapInfo):
         up = old.cap < new.cap
         verb = "подрос" if up else "упал"
@@ -488,7 +491,10 @@ class RussianLocalization(BaseLocalization):
                f'с {bold(pretty_money(node.bond, postfix=RAIDO_GLYPH))} бонд {status}{extra}'.strip()
 
     def notification_text_for_node_churn(self, changes: NodeInfoChanges):
-        message = bold('♻️ Перемешивание нод') + '\n\n'
+        message = ''
+
+        if changes.nodes_activated or changes.nodes_deactivated:
+            message += bold('♻️ Перемешивание нод') + '\n\n'
 
         message += self._make_node_list(changes.nodes_added, '🆕 Новые ноды появились:', add_status=True)
         message += self._make_node_list(changes.nodes_activated, '➡️ Ноды активироны:')

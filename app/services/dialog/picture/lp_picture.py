@@ -9,7 +9,7 @@ from localization import BaseLocalization
 from localization.base import RAIDO_GLYPH
 from services.dialog.picture.crypto_logo import CryptoLogoDownloader
 from services.lib.constants import BNB_RUNE_SYMBOL, is_stable_coin, is_rune, RUNE_SYMBOL
-from services.lib.draw_utils import CATEGORICAL_PALETTE, pos_percent, result_color, hor_line
+from services.lib.draw_utils import CATEGORICAL_PALETTE, pos_percent, result_color, hor_line, LIGHT_TEXT_COLOR
 from services.lib.money import pretty_money, short_asset_name, format_percent
 from services.lib.plot_graph import PlotBarGraph
 from services.lib.texts import grouper
@@ -18,7 +18,7 @@ from services.models.lp_info import LiquidityPoolReport, LPDailyGraphPoint
 
 LP_PIC_WIDTH, LP_PIC_HEIGHT = 1200, 1600
 
-FORE_COLOR = 'white'
+FORE_COLOR = LIGHT_TEXT_COLOR
 FADE_COLOR = '#cccccc'
 
 BG_COLOR = '#141a1a'

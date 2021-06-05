@@ -4,7 +4,7 @@ import pandas as pd
 from PIL import Image
 from PIL import ImageDraw, ImageFont
 
-from services.lib.draw_utils import generate_gradient
+from services.lib.draw_utils import generate_gradient, LIGHT_TEXT_COLOR
 
 
 class PlotGraph:
@@ -108,7 +108,7 @@ class PlotGraph:
     def _draw_title(self):
         x = int(self.w * 0.5)
         y = int(self.top * 0.5)
-        self.draw.text((x, y), self.title, 'white', self.font_title, anchor='mm')
+        self.draw.text((x, y), self.title, LIGHT_TEXT_COLOR, self.font_title, anchor='mm')
 
     def _plot(self):  # abstract
         ...

@@ -19,7 +19,7 @@ class GeoIPManager:
     def __init__(self, deps: DepContainer):
         self.deps = deps
         self.expire_period_sec = int(
-            parse_timespan_to_seconds(deps.cfg.as_str('node_info.geo_ip.expire', default='12h')))
+            parse_timespan_to_seconds(deps.cfg.as_str('node_info.geo_ip.expire', default='24h')))
         self.logger = logging.getLogger(self.__class__.__name__)
 
     def key(self, ip: str):

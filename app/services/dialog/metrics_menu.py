@@ -4,11 +4,14 @@ from aiogram.utils.helper import HelperMode
 
 from localization import BaseLocalization
 from services.dialog.base import BaseDialog, message_handler
+from services.dialog.picture.node_geo_picture import NetworkNodeIpInfo, node_geo_pic
 from services.dialog.picture.price_picture import price_graph_from_db
 from services.dialog.picture.queue_picture import queue_graph
 from services.jobs.fetch.fair_price import fair_rune_price
 from services.jobs.fetch.node_info import NodeInfoFetcher
-from services.lib.date_utils import DAY, HOUR, parse_timespan_to_seconds
+from services.lib.date_utils import DAY, HOUR, parse_timespan_to_seconds, today_str
+from services.lib.draw_utils import img_to_bio
+from services.lib.geo_ip import GeoIPManager
 from services.lib.texts import kbd
 from services.models.price import PriceReport
 from services.notify.types.cap_notify import LiquidityCapNotifier
@@ -82,10 +85,27 @@ class MetricsDialog(BaseDialog):
                              disable_notification=True)
 
     async def show_node_list(self, message: Message):
-        node_list = await NodeInfoFetcher(self.deps).fetch_current_node_list()
-        await message.answer(self.loc.node_list_text(node_list),
-                             disable_notification=True,
-                             disable_web_page_preview=True)
+        my_message = await message.answer(self.loc.LOADING, disable_notification=True, disable_web_page_preview=True)
+
+        node_fetcher = NodeInfoFetcher(self.deps)
+        node_list = await node_fetcher.fetch_current_node_list()
+
+        ip_addresses = [node.ip_address for node in node_list if node.ip_address]
+
+        geo_ip = GeoIPManager(self.deps)
+        ip_info_list = await geo_ip.get_ip_info_bulk(ip_addresses)
+        ip_info_dict = {n["ip"]: n for n in ip_info_list if n and 'ip' in n}
+
+        result_network_info = NetworkNodeIpInfo(
+            node_list,
+            ip_info_dict
+        )
+
+        # todo: split this into 3 messages
+        await my_message.edit_text(self.loc.node_list_text(node_list), disable_web_page_preview=True)
+
+        pic = await node_geo_pic(result_network_info, self.loc)
+        await message.answer_photo(img_to_bio(pic, f'NodeDiversity-{today_str()}.png'), disable_notification=True)
 
     async def ask_queue_duration(self, message: Message):
         await message.answer(self.loc.TEXT_PRICE_INFO_ASK_DURATION, reply_markup=kbd([

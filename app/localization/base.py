@@ -36,6 +36,8 @@ class BaseLocalization(ABC):  # == English
 
     # ----- WELCOME ------
 
+    LOADING = '⌛ Loading...'
+
     @property
     def this_bot_name(self):
         return self.cfg.telegram.bot.username
@@ -107,7 +109,7 @@ class BaseLocalization(ABC):  # == English
     BUTTON_MM_METRICS = '📐 Metrics'
     BUTTON_MM_SETTINGS = f'⚙️ Settings'
     BUTTON_MM_MAKE_AVATAR = f'🦹‍️️ THOR Avatar'
-    BUTTON_MM_NODE_OP = 'Node Op tools'
+    BUTTON_MM_NODE_OP = '🔜 Node Op tools'
 
     def kbd_main_menu(self):
         return kbd([
@@ -652,7 +654,10 @@ class BaseLocalization(ABC):  # == English
         return message.rstrip()
 
     def notification_text_for_node_churn(self, changes: NodeInfoChanges):
-        message = bold('♻️ Node churn') + '\n\n'
+        message = ''
+
+        if changes.nodes_activated or changes.nodes_deactivated:
+            message += bold('♻️ Node churn') + '\n\n'
 
         message += self._make_node_list(changes.nodes_added, '🆕 New nodes:', add_status=True)
         message += self._make_node_list(changes.nodes_activated, '➡️ Nodes that churned in:')
