@@ -23,6 +23,7 @@ from services.lib.depcont import DepContainer
 from services.lib.money import pretty_money
 from services.lib.texts import progressbar
 from services.models.node_info import NodeInfoChanges, NodeInfo
+from services.models.pool_info import PoolChange, PoolChanges, PoolInfo
 from services.models.pool_stats import StakePoolStats
 from services.models.time_series import TimeSeries
 from services.notify.broadcast import Broadcaster
@@ -44,6 +45,10 @@ deps.loc_man = LocalizationManager(deps.cfg)
 deps.broadcaster = Broadcaster(deps)
 
 lock = asyncio.Lock()
+
+
+def sep():
+    print('-' * 100)
 
 
 async def mock_broadcaster(tag, n, delay=0.2):
@@ -166,10 +171,38 @@ async def foo21(d):
     print(loc.notification_text_for_node_churn(c))
 
 
+async def foo22(d):
+    loc_man: LocalizationManager = d.loc_man
+    loc_ru = loc_man.get_from_lang('rus')
+    loc_en = loc_man.get_from_lang('eng')
+
+    pc = PoolChanges(pools_added=[],
+                     pools_removed=[],
+                     pools_changed=[
+                         PoolChange('ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7', PoolInfo.STAGED, PoolInfo.DEPREATED_ENABLED),
+                         PoolChange('DOGE.DOGE', PoolInfo.DEPREATED_ENABLED, PoolInfo.STAGED)
+                     ])
+    for loc in (loc_ru, loc_en):
+        sep()
+        print(loc.notification_text_pool_churn(pc))
+
+    sep()
+
+    pc = PoolChanges(pools_added=[PoolChange('DOGE.DOGE', PoolInfo.DEPREATED_ENABLED, PoolInfo.STAGED)],
+                     pools_removed=[],
+                     pools_changed=[])
+
+    for loc in (loc_ru, loc_en):
+        sep()
+        print(loc.notification_text_pool_churn(pc))
+
+
+
+
 async def start_foos():
     async with aiohttp.ClientSession() as deps.session:
         await deps.db.get_redis()
-        await foo21(deps)
+        await foo22(deps)
 
 
 if __name__ == '__main__':

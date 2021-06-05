@@ -36,10 +36,10 @@ async def send_to_channel_test_message(d: DepContainer):
         lph.pool_info_map = deepcopy(lph.pool_info_map)  # make a copy
         del lph.pool_info_map['BNB.AERGO-46B']  # deleted pool
         del lph.pool_info_map['BNB.BEAR-14C']  # deleted pool
-        lph.pool_info_map['BNB.FSN-E14'].status = PoolInfo.ENABLED
-        lph.pool_info_map['BNB.RAVEN-F66'].status = PoolInfo.BOOTSTRAP
+        lph.pool_info_map['BNB.FSN-E14'].status = PoolInfo.DEPREATED_ENABLED
+        lph.pool_info_map['BNB.RAVEN-F66'].status = PoolInfo.DEPRECATED_BOOTSTRAP
 
-        lph.pool_info_map['BTC.BTC'] = PoolInfo('BTC.BTC', 18555, 18555, 100, PoolInfo.BOOTSTRAP)
+        lph.pool_info_map['BTC.BTC'] = PoolInfo('BTC.BTC', 18555, 18555, 100, PoolInfo.DEPRECATED_BOOTSTRAP)
 
         await notifier_pool_churn.on_data(ppf, None)  # must notify about changes above ^^^
         await notifier_pool_churn.on_data(ppf, None)  # no update at this moment!

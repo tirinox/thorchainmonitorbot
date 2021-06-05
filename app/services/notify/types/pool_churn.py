@@ -6,7 +6,7 @@ from services.jobs.fetch.pool_price import PoolInfoFetcherMidgard
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
-from services.models.pool_info import PoolInfoMap
+from services.models.pool_info import PoolInfoMap, PoolChanges, PoolChange
 
 
 class PoolChurnNotifier(INotified):
@@ -27,13 +27,11 @@ class PoolChurnNotifier(INotified):
 
             # todo: persist old_pool_data in DB!
             # compare starting w 2nd iteration
-            added_pools, removed_pools, changed_status_pools = self.compare_pool_sets(new_pool_dict)
-            if added_pools or removed_pools or changed_status_pools:
+            pool_changes = self.compare_pool_sets(new_pool_dict)
+            if pool_changes.any_changed:
                 await self.deps.broadcaster.notify_preconfigured_channels(self.deps.loc_man,
                                                                           BaseLocalization.notification_text_pool_churn,
-                                                                          added_pools,
-                                                                          removed_pools,
-                                                                          changed_status_pools)
+                                                                          pool_changes)
                 await self.spam_cd.do()
 
         self.old_pool_dict = new_pool_dict
@@ -44,7 +42,7 @@ class PoolChurnNotifier(INotified):
         bootstrap_pools = set(pim.keys()) - enabled_pools
         return enabled_pools, bootstrap_pools
 
-    def compare_pool_sets(self, new_pool_dict: PoolInfoMap):
+    def compare_pool_sets(self, new_pool_dict: PoolInfoMap) -> PoolChanges:
         new_pools = set(new_pool_dict.keys())
         old_pools = set(self.old_pool_dict.keys())
         all_pools = new_pools | old_pools
@@ -57,10 +55,12 @@ class PoolChurnNotifier(INotified):
                 old_status = self.old_pool_dict[name].status
                 new_status = new_pool_dict[name].status
                 if old_status != new_status:
-                    changed_status_pools.append((name, old_status, new_status))
+                    changed_status_pools.append(PoolChange(name, old_status, new_status))
             elif name in new_pools and name not in old_pools:
-                added_pools.append((name, new_pool_dict[name].status))
+                status = new_pool_dict[name].status
+                added_pools.append(PoolChange(name, status, status))
             elif name not in new_pools and name in old_pools:
-                removed_pools.append((name, self.old_pool_dict[name].status))
+                status = self.old_pool_dict[name].status
+                removed_pools.append(PoolChange(name, status, status))
 
-        return added_pools, removed_pools, changed_status_pools
+        return PoolChanges(added_pools, removed_pools, changed_status_pools)

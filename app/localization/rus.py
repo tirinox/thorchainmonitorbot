@@ -13,7 +13,7 @@ from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, 
 from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeInfoChanges, NodeInfo
-from services.models.pool_info import PoolInfo
+from services.models.pool_info import PoolInfo, PoolChanges
 from services.models.pool_stats import StakePoolStats
 from services.models.price import RuneFairPrice, PriceReport
 from services.models.queue import QueueInfo
@@ -250,28 +250,36 @@ class RussianLocalization(BaseLocalization):
 
     # ------- POOL CHURN -------
 
-    def notification_text_pool_churn(self, added_pools, removed_pools, changed_status_pools):
-        message = bold('🏊 Изменения в пулах ликвидности:') + '\n\n'
+    def notification_text_pool_churn(self, pc: PoolChanges):
+        if pc.pools_changed:
+            message = bold('🏊 Изменения в пулах ликвидности:') + '\n\n'
+        else:
+            message = ''
 
-        statuses = {
-            PoolInfo.ENABLED: 'включен',
+        ru_stat = {
+            PoolInfo.DEPREATED_ENABLED: 'включен',
             PoolInfo.AVAILABLE: 'включен',
 
-            PoolInfo.BOOTSTRAP: 'загружается',
-            PoolInfo.STAGED: 'загружается'
+            PoolInfo.DEPRECATED_BOOTSTRAP: 'ожидает',
+            PoolInfo.STAGED: 'ожидает'
         }
 
         def pool_text(pool_name, status, to_status=None):
-            t = link(self.pool_link(pool_name), pool_name)
-            extra = '' if to_status is None else f' → {ital(statuses[to_status])}'
-            return f'{t} ({ital(statuses[status])}{extra})'
+            if PoolInfo.is_status_enabled(to_status):
+                extra = '🎉 ПУЛ АКТИВИРОВАН. Можете делать обмены!'
+            else:
+                extra = ital(ru_stat[status])
+                if to_status is not None:
+                    extra += f' → {ital(ru_stat[to_status])}'
+                extra = f'({extra})'
+            return f'  • {self.pool_link(pool_name)}: {extra}'
 
-        if added_pools:
-            message += '✅ Пулы добавлены: ' + ', '.join([pool_text(*a) for a in added_pools]) + '\n'
-        if removed_pools:
-            message += '❌ Пулы удалены: ' + ', '.join([pool_text(*a) for a in removed_pools]) + '\n'
-        if changed_status_pools:
-            message += '🔄 Пулы изменились: ' + ', '.join([pool_text(*a) for a in changed_status_pools]) + '\n'
+        if pc.pools_added:
+            message += '✅ Пулы добавлены:\n' + '\n'.join([pool_text(*a) for a in pc.pools_added]) + '\n'
+        if pc.pools_removed:
+            message += '❌ Пулы удалены:\n' + '\n'.join([pool_text(*a) for a in pc.pools_removed]) + '\n'
+        if pc.pools_changed:
+            message += '🔄 Пулы изменились:\n' + '\n'.join([pool_text(*a) for a in pc.pools_changed]) + '\n'
 
         return message.rstrip()
 

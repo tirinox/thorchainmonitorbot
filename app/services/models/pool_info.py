@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, Dict
+from typing import List, Dict, NamedTuple
 
 from aiothornode.types import ThorPool
 
@@ -22,8 +22,8 @@ class PoolInfo:
 
     status: str
 
-    BOOTSTRAP = 'bootstrap'
-    ENABLED = 'enabled'
+    DEPRECATED_BOOTSTRAP = 'bootstrap'
+    DEPREATED_ENABLED = 'enabled'
     AVAILABLE = 'available'  # enabled
     STAGED = 'staged'  # bootstrap
 
@@ -39,7 +39,7 @@ class PoolInfo:
 
     @classmethod
     def dummy(cls):
-        return cls('', 1, 1, 1, cls.BOOTSTRAP)
+        return cls('', 1, 1, 1, cls.DEPRECATED_BOOTSTRAP)
 
     @property
     def asset_per_rune(self):
@@ -49,9 +49,13 @@ class PoolInfo:
     def runes_per_asset(self):
         return self.balance_rune / self.balance_asset
 
+    @staticmethod
+    def is_status_enabled(status):
+        return status.lower() in (PoolInfo.DEPREATED_ENABLED, PoolInfo.AVAILABLE)  # v2 compatibility
+
     @property
     def is_enabled(self):
-        return self.status.lower() in (self.ENABLED, self.AVAILABLE)  # v2 compatibility
+        return self.is_status_enabled(self.status)
 
     def usd_depth(self, dollar_per_rune):
         pool_depth_usd = 2 * self.balance_rune * THOR_DIVIDER_INV * dollar_per_rune  # note: * 2 as in off. frontend
@@ -118,7 +122,7 @@ class PoolInfoHistoricEntry:
             self.asset_depth,
             self.rune_depth,
             self.liquidity_units,
-            PoolInfo.ENABLED
+            PoolInfo.DEPREATED_ENABLED
         )
 
 
@@ -132,3 +136,19 @@ def parse_thor_pools(thor_pools: List[ThorPool]) -> PoolInfoMap:
                           p.pool_units_int, p.status)
         for p in thor_pools
     }
+
+
+class PoolChange(NamedTuple):
+    pool_name: str
+    old_status: str
+    new_status: str
+
+
+class PoolChanges(NamedTuple):
+    pools_added: List[PoolChange]
+    pools_removed: List[PoolChange]
+    pools_changed: List[PoolChange]
+
+    @property
+    def any_changed(self):
+        return self.pools_changed or self.pools_added or self.pools_removed

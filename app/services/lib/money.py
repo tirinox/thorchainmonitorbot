@@ -112,7 +112,7 @@ def short_money(x, prefix='$'):
 def short_address(address, begin=5, end=4, filler='...'):
     address = str(address)
     if len(address) > begin + end:
-        return address[:begin] + filler + address[-end:]
+        return address[:begin] + filler + (address[-end:] if end else '')
     else:
         return address
 
