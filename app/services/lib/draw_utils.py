@@ -1,10 +1,11 @@
 import math
 import os
 import tempfile
+from colorsys import rgb_to_hls, hls_to_rgb
 from io import BytesIO
 from time import sleep
 
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageColor
 
 LINE_COLOR = '#356'
 
@@ -34,6 +35,14 @@ PALETTE = [
 
 def get_palette_color_by_index(i):
     return PALETTE[int(i) % len(PALETTE)]
+
+
+def hls_transform_hex(color_hex, transformer: callable):
+    r, g, b = ImageColor.getrgb(color_hex)
+    h, l, s = rgb_to_hls(r / 255, g / 255, b / 255)
+    h, l, s = transformer(h, l, s)
+    r, g, b = hls_to_rgb(h, l, s)
+    return f"#{int(r * 255):02x}{int(g * 255):02x}{int(b * 255):02x}"
 
 
 def round_corner(radius, fill, bg):

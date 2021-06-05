@@ -1,6 +1,5 @@
 import logging
 import math
-import random
 import time
 from dataclasses import dataclass, field
 from typing import List, Tuple, Dict
@@ -9,14 +8,14 @@ from PIL import ImageDraw, Image, ImageFont
 
 import localization
 from services.lib.draw_utils import generate_gradient, draw_arc_aa, get_palette_color_by_index, LIGHT_TEXT_COLOR, \
-    hor_line
+    hls_transform_hex
 from services.lib.geo_ip import GeoIPManager
 from services.lib.plot_graph import PlotGraph
 from services.lib.texts import grouper
 from services.lib.utils import async_wrap, Singleton, most_common_and_other
 from services.models.node_info import NodeInfo
 
-NODE_GEO_PIC_WIDTH, NODE_GEO_PIC_HEIGHT = 800, 800
+NODE_GEO_PIC_WIDTH, NODE_GEO_PIC_HEIGHT = 800, 720
 
 
 @dataclass
@@ -79,14 +78,27 @@ def radial_pos_int(cx, cy, r, angle_deg):
     return int(x), int(y)
 
 
+SegmentDesc = Tuple[str, int, bool]  # Name, Value, isEmpty?
+
+
+def get_disabled_palette_color_by_index(i):
+    def disable_color_hls(h, l, s):
+        l *= 0.9
+        s *= 0.5
+        return h, l, s
+
+    return hls_transform_hex(get_palette_color_by_index(i), disable_color_hls)
+
+
 def make_donut_chart(elements: List[Tuple[str, int]],
                      width=400, margin=4, line_width=40, gap=1, label_r=0,
                      title_color=LIGHT_TEXT_COLOR,
                      font_middle=None,
                      font_abs_count=None,
-                     font_percent=None):
-    bg_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255), 0)
-    # bg_color = (0, 0, 0, 0)
+                     font_percent=None,
+                     palette=None):
+    # bg_color = (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255), 0)
+    bg_color = (0, 0, 0, 0)
     image = Image.new('RGBA', (width, width), bg_color)
     draw = ImageDraw.Draw(image)
 
@@ -103,8 +115,6 @@ def make_donut_chart(elements: List[Tuple[str, int]],
         width - margin - half_width
     ]
 
-    r = Resources()
-
     gap *= 0.5
     cx = cy = width // 2
 
@@ -113,7 +123,8 @@ def make_donut_chart(elements: List[Tuple[str, int]],
     for i, (label, value) in enumerate(elements):
         arc_len = deg_per_one * value
 
-        color = get_palette_color_by_index(i)
+        color = palette(i) if palette else get_palette_color_by_index(i)
+
         arc_start = current + gap
         arc_end = current + arc_len - gap
         if arc_start < arc_end:
@@ -145,7 +156,7 @@ def geo_legend(draw: ImageDraw, elements: List[str], xy, font, width=400, sq_siz
     x, y = xy
 
     line_groups = list(grouper(items_in_row, elements))
-    legend_dx = width / (items_in_row - 1) if items_in_row >= 2 else 0
+    legend_dx = width / items_in_row if items_in_row >= 2 else 0
     counter = 0
 
     for line in line_groups:
@@ -185,7 +196,7 @@ def node_geo_pic_sync(info: NetworkNodeIpInfo, loc: localization.BaseLocalizatio
 
     others_str = 'Others'  # fixme: get from the localization
 
-    def one_donut(node_list, xy, big, title):
+    def one_donut(node_list, xy, big, title, palette):
         elements = most_common_and_other(info.get_providers(node_list), max_categories, others_str)
         donut_w = 360 if big else 210
         donut = make_donut_chart(elements,
@@ -196,20 +207,34 @@ def node_geo_pic_sync(info: NetworkNodeIpInfo, loc: localization.BaseLocalizatio
                                  label_r=164 if big else 90,
                                  font_middle=r.font_large if big else r.font_head,
                                  font_percent=None,
-                                 font_abs_count=r.font_norm)
+                                 font_abs_count=r.font_norm,
+                                 palette=palette)
         image.paste(donut, xy, mask=donut)
 
         x, y = xy
-        draw.text((x + donut_w // 2, y - 10), title, fill=LIGHT_TEXT_COLOR,
+        ty = y - 10
+        draw.text((x + donut_w // 2, ty), title, fill=LIGHT_TEXT_COLOR,
                   font=r.font_subtitle if big else r.font_norm,
                   anchor='mb')
 
         return elements
 
     elements_all = \
-        one_donut(info.node_info_list, (40, 160), True, 'All nodes')  # fixme: loc
-    one_donut(info.active_nodes, (40, 570), False, 'Active only')  # fixme: loc
-    one_donut(info.standby_nodes, (420, 570), False, 'Standby')  # fixme: loc
+        one_donut(info.node_info_list, (w // 2 - 180, 160), True,
+                  'All nodes',
+                  palette=None)  # fixme: loc
+
+    sdhw = 210 // 2
+    sdy = 230
+    sdd = 280
+
+    one_donut(info.active_nodes, (w // 2 - sdhw - sdd, sdy), False,
+              'Active nodes',
+              palette=None)  # fixme: loc
+
+    one_donut(info.standby_nodes, (w // 2 - sdhw + sdd, sdy), False,
+              'Standby nodes',
+              palette=get_disabled_palette_color_by_index)  # fixme: loc, palette change
 
     t1 = time.monotonic()
     logging.info(f'node_geo_pic: donat chart time = {(t1 - t0):.3f} sec')
@@ -217,7 +242,9 @@ def node_geo_pic_sync(info: NetworkNodeIpInfo, loc: localization.BaseLocalizatio
     # 3. LEGEND
     only_providers = [e[0] for e in elements_all]
 
-    geo_legend(draw, only_providers, (480, 160), r.font_norm, 100,
-               sq_size=24, y_step=36, items_in_row=1)
+    lmar = 100
+
+    geo_legend(draw, only_providers, (lmar, 560), r.font_norm, w - lmar * 2,
+               sq_size=24, y_step=36, items_in_row=2)
 
     return image
