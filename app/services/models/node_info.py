@@ -1,6 +1,7 @@
 import json
+import re
 from dataclasses import dataclass, field
-from typing import List
+from typing import List, Dict
 
 from services.lib.constants import THOR_DIVIDER_INV
 from services.models.base import BaseModelMixin
@@ -86,3 +87,44 @@ class NodeInfoChanges:
                 not self.nodes_added and
                 not self.nodes_activated and
                 not self.nodes_deactivated)
+
+
+@dataclass
+class NetworkNodeIpInfo:
+    UNKNOWN_PROVIDER = 'Unknown'
+
+    node_info_list: List[NodeInfo] = field(default_factory=list)
+    ip_info_dict: Dict[str, dict] = field(default_factory=dict)  # IP -> Geo Info
+
+    @property
+    def standby_nodes(self):
+        return [n for n in self.node_info_list if n.is_standby]
+
+    @property
+    def active_nodes(self):
+        return [n for n in self.node_info_list if n.is_active]
+
+    def select_ip_info_for_nodes(self, nodes: List[NodeInfo]) -> List[dict]:
+        return [self.ip_info_dict.get(n.ip_address, None) for n in nodes]
+
+    @staticmethod
+    def get_general_provider(data: dict):
+        org = data.get('org', '')
+        components = re.split('[ -]', org)
+        if components:
+            return str(components[0]).upper()
+        return org
+
+    def get_providers(self, nodes: List[NodeInfo] = None) -> List[str]:
+        if not nodes:
+            nodes = self.node_info_list  # all nodes from this class
+
+        providers = []
+        for node in nodes:
+            ip_info = self.ip_info_dict.get(node.ip_address, None)
+            if ip_info:
+                providers.append(self.get_general_provider(ip_info))
+            else:
+                providers.append(self.UNKNOWN_PROVIDER)
+
+        return providers

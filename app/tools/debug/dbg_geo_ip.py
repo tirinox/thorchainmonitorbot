@@ -3,10 +3,11 @@ import logging
 from collections import Counter
 
 import localization
-from services.dialog.picture.node_geo_picture import node_geo_pic, make_donut_chart, NetworkNodeIpInfo
+from services.dialog.picture.node_geo_picture import node_geo_pic, make_donut_chart
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.lib.geo_ip import GeoIPManager
 from services.lib.utils import setup_logs, load_pickle, save_pickle
+from services.models.node_info import NetworkNodeIpInfo
 from tools.lib.lp_common import LpAppFramework
 
 

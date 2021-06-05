@@ -9,8 +9,6 @@ from aioredis import Redis
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 
-import re
-
 
 class GeoIPManager:
     DB_KEY_IP_INFO = 'NodeIpGeoInfo'
@@ -56,11 +54,3 @@ class GeoIPManager:
 
     async def get_ip_info_bulk(self, ip_list: List[str], cached=True):
         return await asyncio.gather(*(self.get_ip_info(ip, cached) for ip in ip_list))
-
-    @staticmethod
-    def get_general_provider(data: dict):
-        org = data.get('org', '')
-        components = re.split('[ -]', org)
-        if components:
-            return str(components[0]).upper()
-        return org

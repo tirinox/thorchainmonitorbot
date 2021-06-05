@@ -1,54 +1,19 @@
 import logging
 import math
 import time
-from dataclasses import dataclass, field
-from typing import List, Tuple, Dict
+from typing import List, Tuple
 
 from PIL import ImageDraw, Image, ImageFont
 
 import localization
 from services.lib.draw_utils import generate_gradient, draw_arc_aa, get_palette_color_by_index, LIGHT_TEXT_COLOR, \
     hls_transform_hex
-from services.lib.geo_ip import GeoIPManager
 from services.lib.plot_graph import PlotGraph
 from services.lib.texts import grouper
 from services.lib.utils import async_wrap, Singleton, most_common_and_other
-from services.models.node_info import NodeInfo
+from services.models.node_info import NetworkNodeIpInfo
 
 NODE_GEO_PIC_WIDTH, NODE_GEO_PIC_HEIGHT = 800, 720
-
-
-@dataclass
-class NetworkNodeIpInfo:
-    UNKNOWN_PROVIDER = 'Unknown'
-
-    node_info_list: List[NodeInfo] = field(default_factory=list)
-    ip_info_dict: Dict[str, dict] = field(default_factory=dict)  # IP -> Geo Info
-
-    @property
-    def standby_nodes(self):
-        return [n for n in self.node_info_list if n.is_standby]
-
-    @property
-    def active_nodes(self):
-        return [n for n in self.node_info_list if n.is_active]
-
-    def select_ip_info_for_nodes(self, nodes: List[NodeInfo]) -> List[dict]:
-        return [self.ip_info_dict.get(n.ip_address, None) for n in nodes]
-
-    def get_providers(self, nodes: List[NodeInfo] = None) -> List[str]:
-        if not nodes:
-            nodes = self.node_info_list  # all nodes from this class
-
-        providers = []
-        for node in nodes:
-            ip_info = self.ip_info_dict.get(node.ip_address, None)
-            if ip_info:
-                providers.append(GeoIPManager.get_general_provider(ip_info))
-            else:
-                providers.append(self.UNKNOWN_PROVIDER)
-
-        return providers
 
 
 async def node_geo_pic(info: NetworkNodeIpInfo, loc: localization.BaseLocalization, max_categories=5):

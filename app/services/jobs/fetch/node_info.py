@@ -4,11 +4,11 @@ from dataclasses import asdict
 from typing import List
 
 from services.jobs.fetch.base import BaseFetcher
-from services.lib.constants import THOR_DIVIDER_INV
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
+from services.lib.geo_ip import GeoIPManager
 from services.lib.midgard.urlgen import get_url_gen_by_network_id
-from services.models.node_info import NodeInfo, NodeInfoChanges
+from services.models.node_info import NodeInfo, NodeInfoChanges, NetworkNodeIpInfo
 
 
 class NodeInfoFetcher(BaseFetcher):
@@ -116,3 +116,20 @@ class NodeInfoFetcher(BaseFetcher):
             node.status = node.STANDBY if node.is_active else node.ACTIVE
 
         return new_nodes
+
+    async def get_node_list_and_geo_info(self, node_list=None):
+        node_fetcher = NodeInfoFetcher(self.deps)
+
+        if node_list is None:
+            node_list = await node_fetcher.fetch_current_node_list()
+
+        ip_addresses = [node.ip_address for node in node_list if node.ip_address]
+
+        geo_ip = GeoIPManager(self.deps)
+        ip_info_list = await geo_ip.get_ip_info_bulk(ip_addresses)
+        ip_info_dict = {n["ip"]: n for n in ip_info_list if n and 'ip' in n}
+
+        return NetworkNodeIpInfo(
+            node_list,
+            ip_info_dict
+        )

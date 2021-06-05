@@ -4,14 +4,13 @@ from aiogram.utils.helper import HelperMode
 
 from localization import BaseLocalization
 from services.dialog.base import BaseDialog, message_handler
-from services.dialog.picture.node_geo_picture import NetworkNodeIpInfo, node_geo_pic
+from services.dialog.picture.node_geo_picture import node_geo_pic
 from services.dialog.picture.price_picture import price_graph_from_db
 from services.dialog.picture.queue_picture import queue_graph
 from services.jobs.fetch.fair_price import fair_rune_price
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.lib.date_utils import DAY, HOUR, parse_timespan_to_seconds, today_str
 from services.lib.draw_utils import img_to_bio
-from services.lib.geo_ip import GeoIPManager
 from services.lib.texts import kbd
 from services.models.node_info import NodeInfo
 from services.models.price import PriceReport
@@ -89,18 +88,8 @@ class MetricsDialog(BaseDialog):
         my_message = await message.answer(self.loc.LOADING, disable_notification=True, disable_web_page_preview=True)
 
         node_fetcher = NodeInfoFetcher(self.deps)
-        node_list = await node_fetcher.fetch_current_node_list()
-
-        ip_addresses = [node.ip_address for node in node_list if node.ip_address]
-
-        geo_ip = GeoIPManager(self.deps)
-        ip_info_list = await geo_ip.get_ip_info_bulk(ip_addresses)
-        ip_info_dict = {n["ip"]: n for n in ip_info_list if n and 'ip' in n}
-
-        result_network_info = NetworkNodeIpInfo(
-            node_list,
-            ip_info_dict
-        )
+        result_network_info = await node_fetcher.get_node_list_and_geo_info()
+        node_list = result_network_info.node_info_list
 
         await my_message.edit_text(self.loc.node_list_text(node_list, NodeInfo.ACTIVE), disable_web_page_preview=True)
         await my_message.answer(self.loc.node_list_text(node_list, NodeInfo.STANDBY), disable_web_page_preview=True,
