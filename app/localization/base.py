@@ -60,7 +60,7 @@ class BaseLocalization(ABC):  # == English
 
     @staticmethod
     def _cap_progress_bar(info: ThorCapInfo):
-        return f'{progressbar(info.pooled_rune, info.cap, 10)} ({format_percent(info.pooled_rune, info.cap)})\n'
+        return f'{progressbar(info.pooled_rune, info.cap, 10)} ({format_percent(info.pooled_rune, info.cap)})'
 
     # ---- WELCOME ----
     def help_message(self):
@@ -232,7 +232,7 @@ class BaseLocalization(ABC):  # == English
         message = (
             f'{arrow} <b>Pool cap {verb} from {pretty_money(old.cap)} to {pretty_money(new.cap)}!</b>\n'
             f'Currently <b>{pretty_money(new.pooled_rune)}</b> {self.R} are in the liquidity pools.\n'
-            f"{self._cap_progress_bar(new)}"
+            f"{self._cap_progress_bar(new)}\n"
             f'The price of {self.R} in the pool is <code>{new.price:.3f} $</code>.\n'
             f'{call}'
             f'{self.thor_site()}'
@@ -430,10 +430,19 @@ class BaseLocalization(ABC):  # == English
     TEXT_QUEUE_PLOT_TITLE = 'THORChain Queue'
 
     def cap_message(self, info: ThorCapInfo):
+        if info.can_add_liquidity:
+            rune_vacant = info.how_much_rune_you_can_lp
+            usd_vacant = rune_vacant * info.price
+            more_info = f'🤲🏻 You can add {bold(pretty_money(rune_vacant) + " " + RAIDO_GLYPH)} {self.R} ' \
+                        f'or {bold(pretty_dollar(usd_vacant))}.\n👉🏻 {self.thor_site()}'
+        else:
+            more_info = '🛑 You cannot add liquidity at this time. Please wait to be notified. #RAISETHECAPS'
+
         return (
             f"Hello! <b>{pretty_money(info.pooled_rune)} {self.R}</b> of "
             f"<b>{pretty_money(info.cap)} {self.R}</b> pooled.\n"
-            f"{self._cap_progress_bar(info)}"
+            f"{self._cap_progress_bar(info)}\n"
+            f"{more_info}\n"
             f"The {bold(self.R)} price is <code>${info.price:.3f}</code> now.\n"
         )
 
@@ -614,7 +623,7 @@ class BaseLocalization(ABC):  # == English
 
         if new.next_pool_to_activate:
             next_pool_wait = seconds_human(new.next_pool_activation_ts - now_ts())
-            next_pool = link(self.pool_link(new.next_pool_to_activate), new.next_pool_to_activate)
+            next_pool = self.pool_link(new.next_pool_to_activate)
             message += f"Next pool is likely be activated: {next_pool} in {next_pool_wait}."
         else:
             message += f"There is no eligible pool to be activated yet."

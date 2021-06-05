@@ -148,7 +148,7 @@ class RussianLocalization(BaseLocalization):
         return (
             f'{arrow} <b>Кап {verb} с {pretty_money(old.cap)} до {pretty_money(new.cap)}!</b>\n'
             f'Сейчас в пулы помещено <b>{pretty_money(new.pooled_rune)}</b> {self.R}.\n'
-            f"{self._cap_progress_bar(new)}"
+            f"{self._cap_progress_bar(new)}\n"
             f'Цена {self.R} в пуле <code>{new.price:.3f} $</code>.\n'
             f'{call}'
             f'{self.thor_site()}'
@@ -300,10 +300,19 @@ class RussianLocalization(BaseLocalization):
     TEXT_METRICS_INTRO = 'Что вы хотите узнать?'
 
     def cap_message(self, info: ThorCapInfo):
+        if info.can_add_liquidity:
+            rune_vacant = info.how_much_rune_you_can_lp
+            usd_vacant = rune_vacant * info.price
+            more_info = f'🤲🏻 Можно добавить еще {bold(pretty_money(rune_vacant) + " " + RAIDO_GLYPH)} {self.R} ' \
+                        f'или {bold(pretty_dollar(usd_vacant))}.\n👉🏻 {self.thor_site()}'
+        else:
+            more_info = '🛑 Вы не можете добавлять ликвидность сейчас. Дождитесь уведомления о поднятии капы!'
+
         return (
-            f"<b>{self.R}{pretty_money(info.pooled_rune)}</b> монет из "
-            f"<b>{self.R}{pretty_money(info.cap)}</b> сейчас в пулах.\n"
-            f"{self._cap_progress_bar(info)}"
+            f"<b>{pretty_money(info.pooled_rune)} {RAIDO_GLYPH} {self.R}</b> монет из "
+            f"<b>{pretty_money(info.cap)} {RAIDO_GLYPH} {self.R}</b> сейчас в пулах.\n"
+            f"{self._cap_progress_bar(info)}\n"
+            f"{more_info}\n"
             f"Цена {bold(self.R)} сейчас <code>{info.price:.3f} $</code>.\n"
         )
 
@@ -462,7 +471,7 @@ class RussianLocalization(BaseLocalization):
 
         if new.next_pool_to_activate:
             next_pool_wait = seconds_human(new.next_pool_activation_ts - now_ts())
-            next_pool = link(self.pool_link(new.next_pool_to_activate), new.next_pool_to_activate)
+            next_pool = self.pool_link(new.next_pool_to_activate)
             message += f"Вероятно, будет активирован пул: {next_pool} через {next_pool_wait}."
         else:
             message += f"Пока что нет достойного пула для активации."
