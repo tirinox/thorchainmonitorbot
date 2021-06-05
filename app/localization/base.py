@@ -632,6 +632,13 @@ class BaseLocalization(ABC):  # == English
 
     # ------- NETWORK NODES -------
 
+    TEXT_PIC_ACTIVE_NODES = 'Active nodes'
+    TEXT_PIC_STANDBY_NODES = 'Standby nodes'
+    TEXT_PIC_ALL_NODES = 'All nodes'
+    TEXT_PIC_NODE_DIVERSITY = 'Node Diversity'
+    TEXT_PIC_OTHERS = 'Others'
+    TEXT_PIC_UNKNOWN = 'Unknown'
+
     def _format_node_text(self, node: NodeInfo, add_status=False, extended_info=False):
         node_ip_link = link(f'https://www.infobyip.com/ip-{node.ip_address}.html', node.ip_address)
         thor_explore_url = get_explorer_url_to_address(self.cfg.network_id, Chains.THOR, node.node_address)
@@ -658,21 +665,6 @@ class BaseLocalization(ABC):  # == English
             message += f"{i}. {self._format_node_text(node, add_status, extended_info)}.\n"
         return message + "\n"
 
-    def node_list_text(self, nodes: List[NodeInfo]):
-        message = bold('🕸️ THORChain Nodes') + '\n'
-
-        message += '\n'
-
-        active_nodes = [n for n in nodes if n.is_active]
-        standby_nodes = [n for n in nodes if n.is_standby]
-        other_nodes = [n for n in nodes if n.in_strange_status]
-
-        message += self._make_node_list(active_nodes, '✅ Active nodes:', extended_info=True)
-        message += self._make_node_list(standby_nodes, '⏱ Standby nodes:', extended_info=True)
-        message += self._make_node_list(other_nodes, '❔ Other nodes:', add_status=True, extended_info=True)
-
-        return message.rstrip()
-
     def notification_text_for_node_churn(self, changes: NodeInfoChanges):
         message = ''
 
@@ -683,6 +675,21 @@ class BaseLocalization(ABC):  # == English
         message += self._make_node_list(changes.nodes_activated, '➡️ Nodes that churned in:')
         message += self._make_node_list(changes.nodes_deactivated, '⬅️️ Nodes that churned out:')
         message += self._make_node_list(changes.nodes_removed, '🗑️ Nodes that disconnected:', add_status=True)
+
+        return message.rstrip()
+
+    def node_list_text(self, nodes: List[NodeInfo], status):
+        message = bold('🕸️ THORChain Nodes') + '\n\n' if status == NodeInfo.ACTIVE else ''
+
+        if status == NodeInfo.ACTIVE:
+            active_nodes = [n for n in nodes if n.is_active]
+            message += self._make_node_list(active_nodes, '✅ Active nodes:', extended_info=True)
+        elif status == NodeInfo.STANDBY:
+            standby_nodes = [n for n in nodes if n.is_standby]
+            message += self._make_node_list(standby_nodes, '⏱ Standby nodes:', extended_info=True)
+        else:
+            other_nodes = [n for n in nodes if n.in_strange_status]
+            message += self._make_node_list(other_nodes, '❔ Other nodes:', add_status=True, extended_info=True)
 
         return message.rstrip()
 

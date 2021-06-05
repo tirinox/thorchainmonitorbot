@@ -13,6 +13,7 @@ from services.lib.date_utils import DAY, HOUR, parse_timespan_to_seconds, today_
 from services.lib.draw_utils import img_to_bio
 from services.lib.geo_ip import GeoIPManager
 from services.lib.texts import kbd
+from services.models.node_info import NodeInfo
 from services.models.price import PriceReport
 from services.notify.types.cap_notify import LiquidityCapNotifier
 from services.notify.types.price_notify import PriceNotifier
@@ -101,8 +102,11 @@ class MetricsDialog(BaseDialog):
             ip_info_dict
         )
 
-        # todo: split this into 3 messages
-        await my_message.edit_text(self.loc.node_list_text(node_list), disable_web_page_preview=True)
+        await my_message.edit_text(self.loc.node_list_text(node_list, NodeInfo.ACTIVE), disable_web_page_preview=True)
+        await my_message.answer(self.loc.node_list_text(node_list, NodeInfo.STANDBY), disable_web_page_preview=True,
+                                disable_notification=True)
+        await my_message.answer(self.loc.node_list_text(node_list, 'others'), disable_web_page_preview=True,
+                                disable_notification=True)
 
         pic = await node_geo_pic(result_network_info, self.loc)
         await message.answer_photo(img_to_bio(pic, f'NodeDiversity-{today_str()}.png'), disable_notification=True)

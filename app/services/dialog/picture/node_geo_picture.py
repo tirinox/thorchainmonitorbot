@@ -186,7 +186,10 @@ def node_geo_pic_sync(info: NetworkNodeIpInfo, loc: localization.BaseLocalizatio
     cx = image.width // 2
 
     # 1. HEADER
-    draw.text((cx, 30), 'Node Diversity', fill=LIGHT_TEXT_COLOR, font=r.font_head, anchor='mt')
+    draw.text((cx, 30),
+              loc.TEXT_PIC_NODE_DIVERSITY,
+              fill=LIGHT_TEXT_COLOR,
+              font=r.font_head, anchor='mt')
 
     h_line_y = 90
     draw.line((0, h_line_y, w, h_line_y), '#468', 2)
@@ -194,10 +197,13 @@ def node_geo_pic_sync(info: NetworkNodeIpInfo, loc: localization.BaseLocalizatio
     # 2. CHART
     t0 = time.monotonic()
 
-    others_str = 'Others'  # fixme: get from the localization
-
     def one_donut(node_list, xy, big, title, palette):
-        elements = most_common_and_other(info.get_providers(node_list), max_categories, others_str)
+        providers = info.get_providers(node_list)
+        providers = [(loc.TEXT_PIC_UNKNOWN if p == NetworkNodeIpInfo.UNKNOWN_PROVIDER else p)
+                     for p in providers]
+        elements = most_common_and_other(providers,
+                                         max_categories,
+                                         loc.TEXT_PIC_OTHERS)
         donut_w = 360 if big else 210
         donut = make_donut_chart(elements,
                                  width=donut_w,
@@ -221,20 +227,20 @@ def node_geo_pic_sync(info: NetworkNodeIpInfo, loc: localization.BaseLocalizatio
 
     elements_all = \
         one_donut(info.node_info_list, (w // 2 - 180, 160), True,
-                  'All nodes',
-                  palette=None)  # fixme: loc
+                  loc.TEXT_PIC_ALL_NODES,
+                  palette=None)
 
     sdhw = 210 // 2
     sdy = 230
     sdd = 280
 
     one_donut(info.active_nodes, (w // 2 - sdhw - sdd, sdy), False,
-              'Active nodes',
-              palette=None)  # fixme: loc
+              loc.TEXT_PIC_ACTIVE_NODES,
+              palette=None)
 
     one_donut(info.standby_nodes, (w // 2 - sdhw + sdd, sdy), False,
-              'Standby nodes',
-              palette=get_disabled_palette_color_by_index)  # fixme: loc, palette change
+              loc.TEXT_PIC_STANDBY_NODES,
+              palette=get_disabled_palette_color_by_index)
 
     t1 = time.monotonic()
     logging.info(f'node_geo_pic: donat chart time = {(t1 - t0):.3f} sec')
@@ -243,7 +249,6 @@ def node_geo_pic_sync(info: NetworkNodeIpInfo, loc: localization.BaseLocalizatio
     only_providers = [e[0] for e in elements_all]
 
     lmar = 100
-
     geo_legend(draw, only_providers, (lmar, 560), r.font_norm, w - lmar * 2,
                sq_size=24, y_step=36, items_in_row=2)
 

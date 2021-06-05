@@ -480,6 +480,13 @@ class RussianLocalization(BaseLocalization):
 
     # ------- NETWORK NODES -------
 
+    TEXT_PIC_ACTIVE_NODES = 'Активные'
+    TEXT_PIC_STANDBY_NODES = 'Ожидающие'
+    TEXT_PIC_ALL_NODES = 'Все ноды'
+    TEXT_PIC_NODE_DIVERSITY = 'Распределение нод'
+    TEXT_PIC_OTHERS = 'Другие'
+    TEXT_PIC_UNKNOWN = 'Не известно'
+
     def _format_node_text(self, node: NodeInfo, add_status=False, extended_info=False):
         node_ip_link = link(f'https://www.infobyip.com/ip-{node.ip_address}.html', node.ip_address)
         thor_explore_url = get_explorer_url_to_address(self.cfg.network_id, Chains.THOR, node.node_address)
@@ -520,17 +527,17 @@ class RussianLocalization(BaseLocalization):
 
         return message.rstrip()
 
-    def node_list_text(self, nodes: List[NodeInfo]):
-        message = bold('🕸️ THORChain ноды (узлы)') + '\n'
+    def node_list_text(self, nodes: List[NodeInfo], status):
+        message = bold('🕸️ THORChain ноды (узлы)') + '\n\n'  if status == NodeInfo.ACTIVE else ''
 
-        message += '\n'
-
-        active_nodes = [n for n in nodes if n.is_active]
-        standby_nodes = [n for n in nodes if n.is_standby]
-        other_nodes = [n for n in nodes if n.in_strange_status]
-
-        message += self._make_node_list(active_nodes, '✅ Активные ноды:', extended_info=True)
-        message += self._make_node_list(standby_nodes, '⏱ Ожидающие активации ноды:', extended_info=True)
-        message += self._make_node_list(other_nodes, '❔ Ноды в других статусах:', add_status=True, extended_info=True)
+        if status == NodeInfo.ACTIVE:
+            active_nodes = [n for n in nodes if n.is_active]
+            message += self._make_node_list(active_nodes, '✅ Активные ноды:', extended_info=True)
+        elif status == NodeInfo.STANDBY:
+            standby_nodes = [n for n in nodes if n.is_standby]
+            message += self._make_node_list(standby_nodes, '⏱ Ожидающие активации ноды:', extended_info=True)
+        else:
+            other_nodes = [n for n in nodes if n.in_strange_status]
+            message += self._make_node_list(other_nodes, '❔ Ноды в других статусах:', add_status=True, extended_info=True)
 
         return message.rstrip()
