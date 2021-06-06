@@ -71,6 +71,7 @@ class LPDailyGraphPoint:
 
 LPDailyChartByPoolDict = Dict[str, List[LPDailyGraphPoint]]
 
+
 @dataclass
 class CurrentLiquidity(BaseModelMixin):
     pool: str

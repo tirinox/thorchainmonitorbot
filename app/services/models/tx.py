@@ -4,6 +4,7 @@ from typing import List, Optional, Iterable
 
 from services.lib.constants import is_rune, THOR_DIVIDER_INV, RUNE_SYMBOL
 from services.models.cap_info import BaseModelMixin
+from services.models.pool_info import PoolInfo
 
 
 class ThorTxType:
@@ -299,5 +300,18 @@ class LPAddWithdrawTx(BaseModelMixin):
 
     def calc_full_rune_amount(self, asset_per_rune):
         self.asset_per_rune = asset_per_rune
-        self.full_rune = self.asset_amount / asset_per_rune + self.rune_amount
+        if asset_per_rune > 0:
+            self.full_rune = self.asset_amount / asset_per_rune + self.rune_amount
+        else:
+            self.full_rune = self.rune_amount
         return self.full_rune
+
+    def get_usd_volume(self, usd_per_rune):
+        return usd_per_rune * self.full_rune
+
+    def what_percent_of_pool(self, pool_info: PoolInfo) -> float:
+        percent_of_pool = 100.0
+        if pool_info:
+            correction = self.full_rune if self.type == ThorTxType.TYPE_WITHDRAW else 0.0
+            percent_of_pool = pool_info.percent_share(self.full_rune, correction)
+        return percent_of_pool

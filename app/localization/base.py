@@ -16,7 +16,7 @@ from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeInfoChanges, NodeInfo
 from services.models.pool_info import PoolInfo, PoolChanges
-from services.models.pool_stats import StakePoolStats
+from services.models.pool_stats import LiquidityPoolStats
 from services.models.price import RuneFairPrice, PriceReport
 from services.models.queue import QueueInfo
 from services.models.tx import LPAddWithdrawTx, ThorTxType
@@ -287,27 +287,16 @@ class BaseLocalization(ABC):  # == English
                 short_address(tx.address_asset)
             )
 
-    def notification_text_large_tx(self, tx: LPAddWithdrawTx, dollar_per_rune: float, pool: StakePoolStats,
+    def notification_text_large_tx(self, tx: LPAddWithdrawTx, dollar_per_rune: float,
                                    pool_info: PoolInfo):
+        (ap, asset_side_usd_short, asset_url, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short, thor_url,
+         total_usd_volume, user_url) = self.lp_tx_calculations(dollar_per_rune, pool_info, tx)
+
         msg = ''
         if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
             msg += f'🐳 <b>Whale added liquidity</b> 🟢\n'
         elif tx.type == ThorTxType.TYPE_WITHDRAW:
             msg += f'🐳 <b>Whale removed liquidity</b> 🔴\n'
-
-        total_usd_volume = tx.full_rune * dollar_per_rune if dollar_per_rune != 0 else 0.0
-        pool_depth_usd = pool_info.usd_depth(dollar_per_rune)
-
-        rp, ap = tx.symmetry_rune_vs_asset()
-
-        rune_side_usd = tx.rune_amount * dollar_per_rune
-        rune_side_usd_short = short_money(rune_side_usd)
-        asset_side_usd_short = short_money(total_usd_volume - rune_side_usd)
-        percent_of_pool = pool_info.percent_share(tx.full_rune)
-
-        thor_url, asset_url = self.links_to_explorer_for_stake_tx(tx)
-        user_url = self.link_to_explorer_user_address_for_stake_tx(tx)
-        chain = chain_name_from_pool(tx.pool)
 
         msg += (
             f"<b>{pretty_money(tx.rune_amount)} {self.R}</b> ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
@@ -319,6 +308,26 @@ class BaseLocalization(ABC):  # == English
         )
 
         return msg
+
+    def lp_tx_calculations(self, dollar_per_rune, pool_info: PoolInfo, tx: LPAddWithdrawTx):
+        total_usd_volume = tx.full_rune * dollar_per_rune
+        pool_depth_usd = pool_info.usd_depth(dollar_per_rune) if pool_info else 0.0
+
+        percent_of_pool = tx.what_percent_of_pool(pool_info)
+        rp, ap = tx.symmetry_rune_vs_asset()
+        rune_side_usd = tx.rune_amount * dollar_per_rune
+
+        rune_side_usd_short = short_money(rune_side_usd)
+        asset_side_usd_short = short_money(total_usd_volume - rune_side_usd)
+
+        thor_url, asset_url = self.links_to_explorer_for_stake_tx(tx)
+        user_url = self.link_to_explorer_user_address_for_stake_tx(tx)
+        chain = chain_name_from_pool(tx.pool)
+
+        return (
+            ap, asset_side_usd_short, asset_url, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short, thor_url,
+            total_usd_volume, user_url
+        )
 
     # ------- QUEUE -------
 
@@ -694,4 +703,3 @@ class BaseLocalization(ABC):  # == English
         return message.rstrip()
 
     # ------- NODE OP TOOLS -------
-

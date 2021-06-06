@@ -24,7 +24,7 @@ telegram:
 
 tx:
   enabled: true
-  stake_unstake:
+  liquidity:  # new! rename
     min_pool_percent: 5
     max_age: 12h
     fetch_period: 70

@@ -8,13 +8,13 @@ from services.models.time_series import TimeSeries
 
 
 @dataclass
-class StakePoolStats(BaseModelMixin):
+class LiquidityPoolStats(BaseModelMixin):
     pool: str
     last_tx: str = ''
     usd_depth: float = 0.0
     tx_acc: list = field(default_factory=list)
 
-    KEY_PREFIX = 'stake-pool-stats-v2'
+    KEY_PREFIX = 'liq-pool-stats-v2'
     KEY_POOL_DEPTH = 'POOL-DEPTH'
 
     @property

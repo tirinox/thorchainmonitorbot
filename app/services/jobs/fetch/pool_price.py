@@ -25,6 +25,7 @@ class PoolPriceFetcher(BaseFetcher):
     """
 
     def __init__(self, deps: DepContainer):
+        assert deps
         cfg: Config = deps.cfg
         period = parse_timespan_to_seconds(cfg.price.fetch_period)
         super().__init__(deps, sleep_period=period)
@@ -33,7 +34,7 @@ class PoolPriceFetcher(BaseFetcher):
         self.max_attempts = 5
         self.use_thor_consensus = False
 
-    async def fetch(self):
+    async def reload_global_pools(self):
         d = self.deps
         current_pools = await self.get_current_pool_data_full()
 
@@ -42,6 +43,14 @@ class PoolPriceFetcher(BaseFetcher):
 
         price = d.price_holder.usd_per_rune
         self.logger.info(f'fresh rune price is ${price:.3f}')
+
+        return current_pools
+
+    async def fetch(self):
+        d = self.deps
+
+        await self.reload_global_pools()
+        price = d.price_holder.usd_per_rune
 
         if price > 0:
             price_series = PriceTimeSeries(RUNE_SYMBOL_MARKET, d.db)

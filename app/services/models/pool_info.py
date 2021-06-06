@@ -23,12 +23,13 @@ class PoolInfo:
     status: str
 
     DEPRECATED_BOOTSTRAP = 'bootstrap'
-    DEPREATED_ENABLED = 'enabled'
+    DEPRECATED_ENABLED = 'enabled'
     AVAILABLE = 'available'  # enabled
     STAGED = 'staged'  # bootstrap
 
-    def percent_share(self, runes):
-        return runes / (2 * self.balance_rune * THOR_DIVIDER_INV) * 100.0
+    def percent_share(self, runes, correction=0.0):
+        full_balance_rune = 2 * self.balance_rune * THOR_DIVIDER_INV + correction
+        return runes / full_balance_rune * 100.0
 
     def rune_share_of_pool(self, units) -> float:
         r, a = pool_share(self.balance_rune, self.balance_asset, my_units=units, pool_total_units=self.pool_units)
@@ -51,7 +52,7 @@ class PoolInfo:
 
     @staticmethod
     def is_status_enabled(status):
-        return status.lower() in (PoolInfo.DEPREATED_ENABLED, PoolInfo.AVAILABLE)  # v2 compatibility
+        return status.lower() in (PoolInfo.DEPRECATED_ENABLED, PoolInfo.AVAILABLE)  # v2 compatibility
 
     @property
     def is_enabled(self):
@@ -122,7 +123,7 @@ class PoolInfoHistoricEntry:
             self.asset_depth,
             self.rune_depth,
             self.liquidity_units,
-            PoolInfo.DEPREATED_ENABLED
+            PoolInfo.DEPRECATED_ENABLED
         )
 
 

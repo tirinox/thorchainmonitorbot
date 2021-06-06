@@ -32,7 +32,7 @@ from services.notify.types.pool_churn import PoolChurnNotifier
 from services.notify.types.price_notify import PriceNotifier
 from services.notify.types.queue_notify import QueueNotifier
 from services.notify.types.stats_notify import NetworkStatsNotifier
-from services.notify.types.tx_notify import StakeTxNotifier
+from services.notify.types.tx_notify import PoolLiquidityTxNotifier
 
 
 class App:
@@ -75,13 +75,13 @@ class App:
         if 'REPLACE_RUNE_TIMESERIES_WITH_GECKOS' in os.environ:
             await fill_rune_price_from_gecko(d.db)
 
-        ppf = d.price_pool_fetcher = PoolPriceFetcher(d)
-        current_pools = await d.price_pool_fetcher.get_current_pool_data_full()
-        if not current_pools:
-            logging.error("no pool data at startup! halt it!")
-            exit(-1)
+        d.price_pool_fetcher = PoolPriceFetcher(d)
 
-        self.deps.price_holder.update(current_pools)
+        # update pools for bootstrap (other components need them)
+        current_pools = await d.price_pool_fetcher.reload_global_pools()
+        if not current_pools:
+            logging.error("No pool data at startup! Halt it!")
+            exit(-1)
 
         fetcher_mimir = ConstMimirFetcher(d)
         self.deps.mimir_const_holder = fetcher_mimir
@@ -89,17 +89,19 @@ class App:
 
         tasks = [
             # mandatory tasks!
-            ppf, fetcher_mimir
+            d.price_pool_fetcher,
+            fetcher_mimir
         ]
 
         if d.cfg.get('tx.enabled', True):
             fetcher_tx = TxFetcher(d)
             stats_updater = PoolStatsUpdater(d)
 
-            notifier_tx = StakeTxNotifier(d)
+            notifier_tx = PoolLiquidityTxNotifier(d)
+            # TxFetcher -> PoolStatsUpdater -> StakeTxNotifier(gets 2 senders as a tuple)
+            fetcher_tx.subscribe(stats_updater)
             stats_updater.subscribe(notifier_tx)
 
-            fetcher_tx.subscribe(stats_updater)
             tasks.append(fetcher_tx)
 
         if d.cfg.get('cap.enabled', True):
@@ -128,7 +130,7 @@ class App:
 
         if d.cfg.get('price.enabled', True):
             notifier_price = PriceNotifier(d)
-            ppf.subscribe(notifier_price)
+            d.price_pool_fetcher.subscribe(notifier_price)
 
         if d.cfg.get('pool_churn.enabled', True):
             fetcher_pool_info = PoolInfoFetcherMidgard(d)

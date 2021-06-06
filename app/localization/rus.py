@@ -7,14 +7,14 @@ from services.lib.constants import Chains
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
-    emoji_for_percent_change, short_asset_name, chain_name_from_pool
+    emoji_for_percent_change, short_asset_name, chain_name_from_pool, short_money
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
     up_down_arrow
 from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeInfoChanges, NodeInfo
 from services.models.pool_info import PoolInfo, PoolChanges
-from services.models.pool_stats import StakePoolStats
+from services.models.pool_stats import LiquidityPoolStats
 from services.models.price import RuneFairPrice, PriceReport
 from services.models.queue import QueueInfo
 from services.models.tx import LPAddWithdrawTx, ThorTxType
@@ -167,17 +167,9 @@ class RussianLocalization(BaseLocalization):
         )
 
     # ------ TXS -------
-    def notification_text_large_tx(self, tx: LPAddWithdrawTx, dollar_per_rune: float, pool: StakePoolStats,
-                                   pool_info: PoolInfo):
-        rp, ap = tx.symmetry_rune_vs_asset()
-        total_usd_volume = tx.full_rune * dollar_per_rune if dollar_per_rune != 0 else 0.0
-        pool_depth_usd = pool_info.usd_depth(dollar_per_rune)
-
-        thor_url, asset_url = self.links_to_explorer_for_stake_tx(tx)
-        user_url = self.link_to_explorer_user_address_for_stake_tx(tx)
-        chain = chain_name_from_pool(tx.pool)
-
-        percent_of_pool = pool_info.percent_share(tx.full_rune)
+    def notification_text_large_tx(self, tx: LPAddWithdrawTx, dollar_per_rune: float, pool_info: PoolInfo):
+        (ap, asset_side_usd_short, asset_url, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short, thor_url,
+         total_usd_volume, user_url) = self.lp_tx_calculations(dollar_per_rune, pool_info, tx)
 
         heading = ''
         if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
@@ -257,7 +249,7 @@ class RussianLocalization(BaseLocalization):
             message = ''
 
         ru_stat = {
-            PoolInfo.DEPREATED_ENABLED: 'включен',
+            PoolInfo.DEPRECATED_ENABLED: 'включен',
             PoolInfo.AVAILABLE: 'включен',
 
             PoolInfo.DEPRECATED_BOOTSTRAP: 'ожидает',

@@ -13,7 +13,7 @@ from services.models.tx import ThorTx
 
 class TxFetcher(BaseFetcher):
     def __init__(self, deps: DepContainer):
-        scfg = deps.cfg.tx.stake_unstake
+        scfg = deps.cfg.tx.liquidity
 
         sleep_period = parse_timespan_to_seconds(scfg.fetch_period)
         super().__init__(deps, sleep_period=sleep_period)
@@ -24,19 +24,21 @@ class TxFetcher(BaseFetcher):
         self.tx_parser = get_parser_by_network_id(deps.cfg.network_id)
         self.progress_tracker: tqdm = None
 
-        self.logger.info(f"cfg.tx.stake_unstake: {scfg}")
-
-    def _update_progress(self, new_txs, total):
-        if self.progress_tracker:
-            if total and total > 0:
-                self.progress_tracker.total = total
-            self.progress_tracker.update(new_txs)
+        self.logger.info(f"cfg.tx.liquidity: {scfg}")
 
     async def fetch(self):
         await self.deps.db.get_redis()
         txs = await self._fetch_txs()
         self.logger.info(f'new tx to analyze: {len(txs)}')
         return txs
+
+    # -----------------------
+
+    def _update_progress(self, new_txs, total):
+        if self.progress_tracker:
+            if total and total > 0:
+                self.progress_tracker.total = total
+            self.progress_tracker.update(new_txs)
 
     async def fetch_all_tx(self, address=None, liquidity_change_only=False, max_pages=None) -> List[ThorTx]:
         page = 0

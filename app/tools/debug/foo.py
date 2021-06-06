@@ -17,15 +17,16 @@ from services.jobs.fetch.tx import TxFetcher
 from services.lib.config import Config
 from services.lib.constants import *
 from services.lib.cooldown import Cooldown
-from services.lib.date_utils import DAY
+from services.lib.date_utils import DAY, now_ts
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.money import pretty_money
 from services.lib.texts import progressbar
 from services.models.node_info import NodeInfoChanges, NodeInfo
 from services.models.pool_info import PoolChange, PoolChanges, PoolInfo
-from services.models.pool_stats import StakePoolStats
+from services.models.pool_stats import LiquidityPoolStats
 from services.models.time_series import TimeSeries
+from services.models.tx import LPAddWithdrawTx, ThorTxType
 from services.notify.broadcast import Broadcaster
 
 deps = DepContainer()
@@ -67,7 +68,7 @@ async def foo12():
     print(progressbar(-14, 100, 30))
     print(progressbar(10, 100, 30))
     print(progressbar(1200, 100, 30))
-    await StakePoolStats.clear_all_data(deps.db)
+    await LiquidityPoolStats.clear_all_data(deps.db)
 
 
 async def foo13():
@@ -179,8 +180,9 @@ async def foo22(d):
     pc = PoolChanges(pools_added=[],
                      pools_removed=[],
                      pools_changed=[
-                         PoolChange('ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7', PoolInfo.STAGED, PoolInfo.DEPREATED_ENABLED),
-                         PoolChange('DOGE.DOGE', PoolInfo.DEPREATED_ENABLED, PoolInfo.STAGED)
+                         PoolChange('ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7', PoolInfo.STAGED,
+                                    PoolInfo.DEPRECATED_ENABLED),
+                         PoolChange('DOGE.DOGE', PoolInfo.DEPRECATED_ENABLED, PoolInfo.STAGED)
                      ])
     for loc in (loc_ru, loc_en):
         sep()
@@ -188,7 +190,7 @@ async def foo22(d):
 
     sep()
 
-    pc = PoolChanges(pools_added=[PoolChange('DOGE.DOGE', PoolInfo.DEPREATED_ENABLED, PoolInfo.STAGED)],
+    pc = PoolChanges(pools_added=[PoolChange('DOGE.DOGE', PoolInfo.DEPRECATED_ENABLED, PoolInfo.STAGED)],
                      pools_removed=[],
                      pools_changed=[])
 
@@ -197,12 +199,66 @@ async def foo22(d):
         print(loc.notification_text_pool_churn(pc))
 
 
+async def foo23(d):
+    loc_man: LocalizationManager = d.loc_man
+    loc_ru = loc_man.get_from_lang('rus')
+    loc_en = loc_man.get_from_lang('eng')
+
+    add_tx = LPAddWithdrawTx(
+        int(now_ts()),
+        ThorTxType.TYPE_ADD_LIQUIDITY,
+        'FOO',
+        '123000000BB',
+        '456000000AA',
+        '11BBCC',
+        '22DDEE',
+        50.0,
+        100.0,
+        '88EE88',
+        200.0,
+        0.5,
+        None
+    )
+
+    withdraw_tx = LPAddWithdrawTx(
+        int(now_ts()),
+        ThorTxType.TYPE_WITHDRAW,
+        'FOO',
+        '123000000BB',
+        '456000000AA',
+        '11BBCC',
+        '22DDEE',
+        50.0,
+        100.0,
+        '88EE88',
+        200.0,
+        0.5,
+        None
+    )
+
+    tx_pool_factor = 1000  # tx is percent of pool
+
+    pool_info = PoolInfo(
+        'FOO',
+        balance_asset=5_000_000_0 * tx_pool_factor,
+        balance_rune=10_000_000_0 * tx_pool_factor,
+        pool_units=2_000_000_000_000,
+        status=PoolInfo.AVAILABLE
+    )
+
+    # pool_info = None
+
+    for loc in (loc_ru, loc_en):
+        sep()
+        print(loc.notification_text_large_tx(add_tx, 10.0, pool_info))
+        sep()
+        print(loc.notification_text_large_tx(withdraw_tx, 10.0, pool_info))
 
 
 async def start_foos():
     async with aiohttp.ClientSession() as deps.session:
         await deps.db.get_redis()
-        await foo22(deps)
+        await foo23(deps)
 
 
 if __name__ == '__main__':
