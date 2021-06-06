@@ -25,12 +25,22 @@ telegram:
 tx:
   enabled: true
   liquidity:  # new! rename
-    min_pool_percent: 5
     max_age: 12h
     fetch_period: 70
     tx_per_batch: 50
     max_page_deep: 10
     min_usd_total: 50000
+    usd_requirements_curve: # new!
+      - depth: 10000
+        percent: 20  # if depth < 10_000 then 20% min
+      - depth: 100000
+        percent: 12  # if 10_000 <= depth < 100_000 then 20 % ... 12 %
+      - depth: 500000
+        percent: 8  # and so on...
+      - depth: 1000000
+        percent: 5
+      - depth: 10000000
+        percent: 1.5
 
 
 price:

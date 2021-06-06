@@ -5,25 +5,50 @@ from typing import List
 from services.jobs.fetch.base import INotified
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.pool_stats import PoolStatsUpdater
+from services.lib.config import SubConfig
 from services.lib.constants import THOR_DIVIDER_INV
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
+from services.lib.utils import linear_transform
 from services.models.pool_info import PoolInfo
-from services.models.tx import LPAddWithdrawTx
 from services.models.pool_stats import LiquidityPoolStats
+from services.models.tx import LPAddWithdrawTx
 
 
 class PoolLiquidityTxNotifier(INotified):
     MAX_TX_PER_ONE_TIME = 12
 
+    DEFAULT_TX_VS_DEPTH_CURVE = [
+        {'depth': 10_000, 'percent': 20},  # if depth < 10_000 then 0.2
+        {'depth': 100_000, 'percent': 12},  # if 10_000 <= depth < 100_000 then 0.2 ... 0.12
+        {'depth': 500_000, 'percent': 8},  # if 100_000 <= depth < 500_000 then 0.12 ... 0.08
+        {'depth': 1_000_000, 'percent': 5},  # and so on...
+        {'depth': 10_000_000, 'percent': 1.5},
+    ]
+
+    def curve_for_tx_threshold(self, depth):
+        lower_bound = 0
+        lower_percent = self.curve[0]['percent']
+        for curve_entry in self.curve:
+            upper_bound = curve_entry['depth']
+            upper_percent = curve_entry['percent']
+            if depth < upper_bound:
+                return linear_transform(depth, lower_bound, upper_bound, lower_percent, upper_percent)
+            lower_percent = upper_percent
+            lower_bound = upper_bound
+        return self.curve[-1]['percent']
+
     def __init__(self, deps: DepContainer):
         self.deps = deps
         self.logger = logging.getLogger(self.__class__.__name__)
 
-        scfg = deps.cfg.tx.liquidity
-        self.min_pool_percent = float(scfg.min_pool_percent)
+        scfg: SubConfig = deps.cfg.tx.liquidity
         self.max_age_sec = parse_timespan_to_seconds(scfg.max_age)
         self.min_usd_total = int(scfg.min_usd_total)
+
+        self.curve = scfg.get_pure('usd_requirements_curve', None)
+        if not self.curve:
+            self.curve = self.DEFAULT_TX_VS_DEPTH_CURVE
 
     async def on_data(self, senders, txs: List[LPAddWithdrawTx]):
         fetcher: TxFetcher = senders[0]
@@ -61,8 +86,7 @@ class PoolLiquidityTxNotifier(INotified):
             if tx.date > now - self.max_age_sec:
                 yield tx
 
-    @staticmethod
-    def _filter_large_txs(psu: PoolStatsUpdater, txs, min_rune_volume=10000):
+    def _filter_large_txs(self, psu: PoolStatsUpdater, txs, min_rune_volume=10000):
         price_holder = psu.deps.price_holder
 
         for tx in txs:
@@ -74,8 +98,8 @@ class PoolLiquidityTxNotifier(INotified):
                 continue
 
             usd_depth = pool_info.usd_depth(price_holder.usd_per_rune)
-            min_pool_percent = stats.curve_for_tx_threshold(usd_depth)
-            min_share_rune_volume = (pool_info.balance_rune * THOR_DIVIDER_INV) * min_pool_percent
+            min_pool_percent = self.curve_for_tx_threshold(usd_depth)
+            min_share_rune_volume = (2 * pool_info.balance_rune * THOR_DIVIDER_INV) * min_pool_percent * 0.01
 
             # print(f"{tx.pool}: {tx.full_rune:.2f} / {min_share_rune_volume:.2f} need rune,
             # min_pool_percent = {min_pool_percent:.2f}, "

@@ -16,7 +16,6 @@ from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeInfoChanges, NodeInfo
 from services.models.pool_info import PoolInfo, PoolChanges
-from services.models.pool_stats import LiquidityPoolStats
 from services.models.price import RuneFairPrice, PriceReport
 from services.models.queue import QueueInfo
 from services.models.tx import LPAddWithdrawTx, ThorTxType
@@ -511,7 +510,7 @@ class BaseLocalization(ABC):  # == English
         elif 0.75 >= network_security_ratio >= 0.6:
             return "⚡ OPTIMAL"
         elif 0.6 > network_security_ratio >= 0.5:
-            return "🤢 UNDBERBONDED"
+            return "🤢 UNDERBONDED"
         else:
             return "🤬 INSECURE"
 
