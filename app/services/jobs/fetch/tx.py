@@ -1,3 +1,4 @@
+from aiohttp import ContentTypeError
 from aioredis import Redis
 from typing import List
 
@@ -74,15 +75,21 @@ class TxFetcher(BaseFetcher):
     async def _fetch_one_batch(self, session, page):
         url = self.url_gen_midgard.url_for_tx(page * self.tx_per_batch, self.tx_per_batch)
         self.logger.info(f"start fetching tx: {url}")
-        async with session.get(url) as resp:
-            json = await resp.json()
-            return self.tx_parser.parse_tx_response(json)
+        try:
+            async with session.get(url) as resp:
+                json = await resp.json()
+                return self.tx_parser.parse_tx_response(json)
+        except ContentTypeError:
+            return None
 
     async def _fetch_txs(self):
         all_txs = []
         await self.deps.db.get_redis()
         for page in range(self.max_page_deep):
             results = await self._fetch_one_batch(self.deps.session, page)
+            if results is None:
+                continue
+
             new_txs = []
             for tx in results.txs:
                 if tx.is_success and not (await self.is_seen(tx.tx_hash)):

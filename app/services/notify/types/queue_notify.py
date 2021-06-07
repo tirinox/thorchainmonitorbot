@@ -44,7 +44,7 @@ class QueueNotifier(INotified):
 
         await self.deps.broadcaster.broadcast(user_lang_map.keys(), message_gen)
 
-    async def handle_entry(self, item_type, ts: TimeSeries, key):
+    async def handle_entry(self, item_type, ts: TimeSeries):
         def key_gen(s):
             return f'q:{item_type}:{s}'
 
@@ -55,11 +55,11 @@ class QueueNotifier(INotified):
         free_notified_recently = not (await cdt.can_do(k_free, self.cooldown))
         congested_notified_recently = not (await cdt.can_do(k_packed, self.cooldown))
 
-        avg_value = await ts.average(self.avg_period, key)
+        avg_value = await ts.average(self.avg_period, item_type)
         if avg_value is None:
             return
 
-        self.logger.info(f'Avg {key} is {avg_value:.1f}')
+        self.logger.info(f'Avg {item_type} is {avg_value:.1f}')
 
         if avg_value > self.threshold_congested:
             if not congested_notified_recently:
@@ -81,4 +81,5 @@ class QueueNotifier(INotified):
                      internal=data.internal)
         self.deps.queue_holder = data
 
-        await self.handle_entry('outbound', ts, key='outbound_queue')
+        for key in ('outbound', 'internal', 'swap'):
+            await self.handle_entry(key, ts)

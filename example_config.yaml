@@ -28,7 +28,7 @@ tx:
     max_age: 12h
     fetch_period: 70
     tx_per_batch: 50
-    max_page_deep: 10
+    max_page_deep: 5
     min_usd_total: 50000
     usd_requirements_curve: # new!
       - depth: 10000
