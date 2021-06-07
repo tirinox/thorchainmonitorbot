@@ -176,7 +176,8 @@ class ReturnMetrics:
 
         hold_return = t1_asset_value_hold - t0_asset_value
         net_return = t1_net_value - t0_net_value
-        percentage = imp_loss_usd / (p0.usd_per_rune * t1_rune_amount + p0.usd_per_asset * t0_asset_amount)
+        a_sum = (p0.usd_per_rune * t1_rune_amount + p0.usd_per_asset * t0_asset_amount)
+        percentage = imp_loss_usd / a_sum if a_sum != 0.0 else 0.0
 
         return cls(hold_return, net_return, uniswap_return, imp_loss_usd, difference_fees_usd, percentage)
 
