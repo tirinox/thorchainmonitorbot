@@ -200,6 +200,16 @@ class RussianLocalization(BaseLocalization):
 
         return msg
 
+    def notification_text_cap_full(self, cap: ThorCapInfo):
+        return (
+            '🙆‍♀️ <b>Ликвидность достигла установленного предела!</b>\n'
+            'Пожалуйста, пока что не пытайтесь ничего добавить в пулы. '
+            'Вы получите возврат ваших средств!\n'
+            f'<b>{pretty_money(cap.pooled_rune)} {self.R}</b> из '
+            f"<b>{pretty_money(cap.cap)} {self.R}</b> сейчас в пулах.\n"
+            f"{self._cap_progress_bar(cap)}\n"
+        )
+
     # ------- QUEUE -------
 
     def notification_text_queue_update(self, item_type, step, value):

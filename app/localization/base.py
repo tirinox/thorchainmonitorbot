@@ -238,6 +238,16 @@ class BaseLocalization(ABC):  # == English
         )
         return message
 
+    def notification_text_cap_full(self, cap: ThorCapInfo):
+        return (
+            '🙆‍♀️ <b>Liquidity cap has reached the limit!</b>\n'
+            'Please stop adding liquidity. '
+            'You will get refunded if you provide liquidity from now on!\n'
+            f'<b>{pretty_money(cap.pooled_rune)} {self.R}</b> of '
+            f"<b>{pretty_money(cap.cap)} {self.R}</b> pooled.\n"
+            f"{self._cap_progress_bar(cap)}\n"
+        )
+
     # ------ PRICE -------
 
     PRICE_GRAPH_TITLE = f'Rune price, USD'

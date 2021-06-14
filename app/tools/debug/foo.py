@@ -205,7 +205,7 @@ async def foo22(d):
         print(loc.notification_text_pool_churn(pc))
 
 
-async def foo23(d):
+async def foo23_tx_msg(d):
     loc_man: LocalizationManager = d.loc_man
     loc_ru = loc_man.get_from_lang('rus')
     loc_en = loc_man.get_from_lang('eng')
@@ -273,10 +273,28 @@ async def foo23(d):
         await telegram_send_message_basic(token, TG_USER, msg)
 
 
+async def foo24_cap_limit(d):
+    loc_man: LocalizationManager = d.loc_man
+    loc_ru = loc_man.get_from_lang('rus')
+    loc_en = loc_man.get_from_lang('eng')
+
+    cap = ThorCapInfo(
+        5_500_500, 5_499_100, 9.21
+    )
+
+    token = str(d.cfg.get('telegram.bot.token'))
+
+    for loc in (loc_ru, loc_en):
+        text = loc.notification_text_cap_full(cap)
+        print(text)
+        sep()
+        await telegram_send_message_basic(token, TG_USER, text)
+
+
 async def start_foos():
     async with aiohttp.ClientSession() as deps.session:
         await deps.db.get_redis()
-        await foo23(deps)
+        await foo24_cap_limit(deps)
 
 
 if __name__ == '__main__':

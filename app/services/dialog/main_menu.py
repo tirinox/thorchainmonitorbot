@@ -34,7 +34,7 @@ class MainMenuDialog(BaseDialog):
         elif message.get_command(pure=True) == 'lang' or current_language is None:
             await SettingsDialog(self.loc, self.data, self.deps).ask_language(message)
         else:
-            info = await LiquidityCapNotifier(self.deps).get_old_cap()
+            info = await LiquidityCapNotifier(self.deps).get_last_cap()
 
             await message.answer(self.loc.welcome_message(info),
                                  reply_markup=self.loc.kbd_main_menu(),

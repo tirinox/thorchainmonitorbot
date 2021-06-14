@@ -68,7 +68,7 @@ class PoolLiquidityTxNotifier(INotified):
         if large_txs:
             user_lang_map = self.deps.broadcaster.telegram_chats_from_config(self.deps.loc_man)
 
-            cap_info = await LiquidityCapNotifier(self.deps).get_old_cap()
+            cap_info = await LiquidityCapNotifier(self.deps).get_last_cap()
 
             async def message_gen(chat_id):
                 loc = user_lang_map[chat_id]

@@ -24,13 +24,13 @@ telegram:
 
 tx:
   enabled: true
-  liquidity:  # new! rename
+  liquidity:
     max_age: 12h
     fetch_period: 70
     tx_per_batch: 50
     max_page_deep: 5
     min_usd_total: 50000
-    usd_requirements_curve: # new!
+    usd_requirements_curve:
       - depth: 10000
         percent: 20  # if depth < 10_000 then 20% min
       - depth: 100000
@@ -96,6 +96,11 @@ price:
 cap:
   enabled: true
   fetch_period: 120
+
+  full: # new!
+    enabled: True
+    full_limit_ratio: 0.99  # new!
+
   raised:
     stickers:
       - CAACAgIAAxkBAAIKKmCLydn1J32d6Rawoy8AAZYxwCXnPQACLQADFJKoHX4nAr5MyGKYHwQ
@@ -131,7 +136,7 @@ pool_churn:
 node_info:
   enabled: true
   fetch_period: 140s
-  geo_ip: # new
+  geo_ip:
     expire: 48h
 
 
