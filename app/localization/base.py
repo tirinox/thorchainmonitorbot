@@ -321,7 +321,7 @@ class BaseLocalization(ABC):  # == English
             msg += '\n'
             msg += (
                 f"Liquidity cap is {self._cap_progress_bar(cap)} full now.\n"
-                f'You can add {code(cap.how_much_rune_you_can_lp)} {bold(self.R)} '
+                f'You can add {code(pretty_money(cap.how_much_rune_you_can_lp))} {bold(self.R)} '
                 f'({pretty_dollar(cap.how_much_usd_you_can_lp)}) more.'
             )
 

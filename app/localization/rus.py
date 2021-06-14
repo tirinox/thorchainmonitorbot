@@ -194,7 +194,7 @@ class RussianLocalization(BaseLocalization):
             msg += '\n'
             msg += (
                 f"Кап ликвидности {self._cap_progress_bar(cap)}.\n"
-                f'Вы можете добавить еще {code(cap.how_much_rune_you_can_lp)} {bold(self.R)} '
+                f'Вы можете добавить еще {code(pretty_money(cap.how_much_rune_you_can_lp))} {bold(self.R)} '
                 f'({pretty_dollar(cap.how_much_usd_you_can_lp)}).'
             )
 
