@@ -1,11 +1,12 @@
 import asyncio
+import binascii
 import logging
 import os
 import pickle
+import random
 import time
 from collections import deque, Counter
 from functools import wraps, partial
-import random
 from itertools import tee
 
 
@@ -129,3 +130,11 @@ def save_pickle(path, data):
             logging.info(f'Saving pickle to "{path}"...')
             pickle.dump(data, f)
             logging.info(f'Saving pickle to "{path}" done!')
+
+
+def random_hex(length=12):
+    return binascii.b2a_hex(os.urandom(length))
+
+
+def random_ip_address():
+    return ".".join(str(random.randint(0, 255)) for _ in range(4))

@@ -19,7 +19,7 @@ class NodeChurnNotifier(INotified):
         self.cd = Cooldown(self.deps.db, 'NodeChurnNotification', MINUTE * 10, 5)
 
     async def on_data(self, sender, data: NodeInfoChanges):
-        if not data.is_empty:
+        if not data.is_empty and not data.is_nonsense:
             if await self.cd.can_do():
                 await self._notify_when_node_churn(data)
                 await self.cd.do()

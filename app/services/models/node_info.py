@@ -88,6 +88,13 @@ class NodeInfoChanges:
                 not self.nodes_activated and
                 not self.nodes_deactivated)
 
+    @property
+    def is_nonsense(self):
+        all_add_removed_are_strange = all(
+            node.in_strange_status for node in (self.nodes_added + self.nodes_removed)
+        )
+        return not self.nodes_activated and not self.nodes_deactivated and all_add_removed_are_strange
+
 
 @dataclass
 class NetworkNodeIpInfo:
