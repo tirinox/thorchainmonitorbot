@@ -8,6 +8,7 @@ import sha3
 from aiogram import Bot, Dispatcher
 from aiogram.types import ParseMode
 from aiothornode.connector import ThorConnector
+from pycoingecko import CoinGeckoAPI
 
 from localization import LocalizationManager
 from services.dialog.picture.crypto_logo import CryptoLogoDownloader
@@ -30,7 +31,6 @@ from services.models.pool_stats import LiquidityPoolStats
 from services.models.time_series import TimeSeries
 from services.models.tx import LPAddWithdrawTx, ThorTxType
 from services.notify.broadcast import Broadcaster
-
 
 TG_USER = 192398802
 SEND_TO_TG = True
@@ -291,10 +291,16 @@ async def foo24_cap_limit(d):
         await telegram_send_message_basic(token, TG_USER, text)
 
 
+async def foo25_coingecko_test(d):
+    cg = CoinGeckoAPI()
+    r = cg.get_price(ids=['thorchain'], vs_currencies='usd')
+    print(r)
+
+
 async def start_foos():
     async with aiohttp.ClientSession() as deps.session:
         await deps.db.get_redis()
-        await foo24_cap_limit(deps)
+        await foo25_coingecko_test(deps)
 
 
 if __name__ == '__main__':
