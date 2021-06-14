@@ -9,7 +9,7 @@ class ThorCapInfo(BaseModelMixin):
     pooled_rune: int
     price: float
 
-    MAX_ALLOWED_RATIO = 0.9
+    MAX_ALLOWED_RATIO = 1.0  # 100 %
 
     @classmethod
     def zero(cls):
@@ -34,3 +34,7 @@ class ThorCapInfo(BaseModelMixin):
     @property
     def how_much_rune_you_can_lp(self):
         return max(0.0, self.cap * self.MAX_ALLOWED_RATIO - self.pooled_rune)
+
+    @property
+    def how_much_usd_you_can_lp(self):
+        return self.how_much_rune_you_can_lp * self.price

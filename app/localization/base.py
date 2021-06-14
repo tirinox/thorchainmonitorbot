@@ -287,7 +287,8 @@ class BaseLocalization(ABC):  # == English
             )
 
     def notification_text_large_tx(self, tx: LPAddWithdrawTx, dollar_per_rune: float,
-                                   pool_info: PoolInfo):
+                                   pool_info: PoolInfo,
+                                   cap: ThorCapInfo = None):
         (ap, asset_side_usd_short, asset_url, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short, thor_url,
          total_usd_volume, user_url) = self.lp_tx_calculations(dollar_per_rune, pool_info, tx)
 
@@ -305,6 +306,14 @@ class BaseLocalization(ABC):  # == English
             f"User: {user_url}.\n"
             f"Txs: {self.R} – {thor_url} / {chain} – {asset_url}."
         )
+
+        if cap:
+            msg += '\n'
+            msg += (
+                f"Liquidity cap is {self._cap_progress_bar(cap)} full now.\n"
+                f'You can add {code(cap.how_much_rune_you_can_lp)} {bold(self.R)} '
+                f'({pretty_dollar(cap.how_much_usd_you_can_lp)}) more.'
+            )
 
         return msg
 
@@ -324,7 +333,8 @@ class BaseLocalization(ABC):  # == English
         chain = chain_name_from_pool(tx.pool)
 
         return (
-            ap, asset_side_usd_short, asset_url, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short, thor_url,
+            ap, asset_side_usd_short, asset_url, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short,
+            thor_url,
             total_usd_volume, user_url
         )
 

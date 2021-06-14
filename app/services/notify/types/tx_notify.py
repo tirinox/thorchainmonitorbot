@@ -13,6 +13,7 @@ from services.lib.utils import linear_transform
 from services.models.pool_info import PoolInfo
 from services.models.pool_stats import LiquidityPoolStats
 from services.models.tx import LPAddWithdrawTx
+from services.notify.types.cap_notify import LiquidityCapNotifier
 
 
 class PoolLiquidityTxNotifier(INotified):
@@ -67,12 +68,15 @@ class PoolLiquidityTxNotifier(INotified):
         if large_txs:
             user_lang_map = self.deps.broadcaster.telegram_chats_from_config(self.deps.loc_man)
 
+            cap_info = await LiquidityCapNotifier(self.deps).get_old_cap()
+
             async def message_gen(chat_id):
                 loc = user_lang_map[chat_id]
                 texts = []
                 for tx in large_txs:
                     pool_info = self.deps.price_holder.pool_info_map.get(tx.pool)
-                    texts.append(loc.notification_text_large_tx(tx, usd_per_rune, pool_info))
+                    cap_info_last = cap_info if tx == large_txs[-1] else None  # append it only to the last one
+                    texts.append(loc.notification_text_large_tx(tx, usd_per_rune, pool_info, cap_info_last))
                 return '\n\n'.join(texts)
 
             await self.deps.broadcaster.broadcast(user_lang_map.keys(), message_gen)

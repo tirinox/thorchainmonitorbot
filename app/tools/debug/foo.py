@@ -21,7 +21,9 @@ from services.lib.date_utils import DAY, now_ts
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.money import pretty_money
+from services.lib.telegram import telegram_send_message_basic
 from services.lib.texts import progressbar
+from services.models.cap_info import ThorCapInfo
 from services.models.node_info import NodeInfoChanges, NodeInfo
 from services.models.pool_info import PoolChange, PoolChanges, PoolInfo
 from services.models.pool_stats import LiquidityPoolStats
@@ -29,12 +31,16 @@ from services.models.time_series import TimeSeries
 from services.models.tx import LPAddWithdrawTx, ThorTxType
 from services.notify.broadcast import Broadcaster
 
+
+TG_USER = 192398802
+SEND_TO_TG = True
+
 deps = DepContainer()
 deps.cfg = Config()
 
 log_level = deps.cfg.get_pure('log_level', logging.INFO)
 
-logging.basicConfig(level=logging.getLevelName(log_level))
+logging.basicConfig(level=logging.getLevelName(str(log_level)))
 logging.info(f"Log level: {log_level}")
 
 deps.loop = asyncio.get_event_loop()
@@ -248,11 +254,23 @@ async def foo23(d):
 
     # pool_info = None
 
+    cap = ThorCapInfo(
+        5_500_500, 5_234_000, 9.21
+    )
+
+    token = str(d.cfg.get('telegram.bot.token'))
+
     for loc in (loc_ru, loc_en):
+        text1 = loc.notification_text_large_tx(add_tx, 10.0, pool_info, cap)
+        text2 = loc.notification_text_large_tx(withdraw_tx, 10.0, pool_info, cap)
+
         sep()
-        print(loc.notification_text_large_tx(add_tx, 10.0, pool_info))
+        print(text1)
         sep()
-        print(loc.notification_text_large_tx(withdraw_tx, 10.0, pool_info))
+        print(text2)
+        sep()
+        msg = text1 + "\n\n" + text2
+        await telegram_send_message_basic(token, TG_USER, msg)
 
 
 async def start_foos():

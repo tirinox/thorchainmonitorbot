@@ -167,9 +167,12 @@ class RussianLocalization(BaseLocalization):
         )
 
     # ------ TXS -------
-    def notification_text_large_tx(self, tx: LPAddWithdrawTx, dollar_per_rune: float, pool_info: PoolInfo):
+    def notification_text_large_tx(self, tx: LPAddWithdrawTx,
+                                   usd_per_rune: float,
+                                   pool_info: PoolInfo,
+                                   cap: ThorCapInfo = None):
         (ap, asset_side_usd_short, asset_url, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short, thor_url,
-         total_usd_volume, user_url) = self.lp_tx_calculations(dollar_per_rune, pool_info, tx)
+         total_usd_volume, user_url) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
         heading = ''
         if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
@@ -177,8 +180,8 @@ class RussianLocalization(BaseLocalization):
         elif tx.type == ThorTxType.TYPE_WITHDRAW:
             heading = f'🐳 <b>Кит вывел ликвидность</b> 🔴'
 
-        return (
-            f"{heading}\n\n" 
+        msg = (
+            f"{heading}\n"
             f"<b>{pretty_money(tx.rune_amount)} {self.R}</b> ({rp:.0f}%) ↔️ "
             f"<b>{pretty_money(tx.asset_amount)} {short_asset_name(tx.pool)}</b> ({ap:.0f}%)\n"
             f"Всего: <code>${pretty_money(total_usd_volume)}</code> ({percent_of_pool:.2f}% от всего пула).\n"
@@ -186,6 +189,16 @@ class RussianLocalization(BaseLocalization):
             f"Пользователь: {user_url}.\n"
             f"Транзакции: {self.R} - {thor_url} / {chain} - {asset_url}."
         )
+
+        if cap:
+            msg += '\n'
+            msg += (
+                f"Кап ликвидности {self._cap_progress_bar(cap)}.\n"
+                f'Вы можете добавить еще {code(cap.how_much_rune_you_can_lp)} {bold(self.R)} '
+                f'({pretty_dollar(cap.how_much_usd_you_can_lp)}).'
+            )
+
+        return msg
 
     # ------- QUEUE -------
 
@@ -520,7 +533,7 @@ class RussianLocalization(BaseLocalization):
         return message.rstrip()
 
     def node_list_text(self, nodes: List[NodeInfo], status):
-        message = bold('🕸️ THORChain ноды (узлы)') + '\n\n'  if status == NodeInfo.ACTIVE else ''
+        message = bold('🕸️ THORChain ноды (узлы)') + '\n\n' if status == NodeInfo.ACTIVE else ''
 
         if status == NodeInfo.ACTIVE:
             active_nodes = [n for n in nodes if n.is_active]
@@ -530,6 +543,7 @@ class RussianLocalization(BaseLocalization):
             message += self._make_node_list(standby_nodes, '⏱ Ожидающие активации ноды:', extended_info=True)
         else:
             other_nodes = [n for n in nodes if n.in_strange_status]
-            message += self._make_node_list(other_nodes, '❔ Ноды в других статусах:', add_status=True, extended_info=True)
+            message += self._make_node_list(other_nodes, '❔ Ноды в других статусах:', add_status=True,
+                                            extended_info=True)
 
         return message.rstrip()
