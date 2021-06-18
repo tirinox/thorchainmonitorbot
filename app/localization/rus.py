@@ -499,6 +499,7 @@ class RussianLocalization(BaseLocalization):
     TEXT_PIC_STANDBY_NODES = 'Ожидающие'
     TEXT_PIC_ALL_NODES = 'Все ноды'
     TEXT_PIC_NODE_DIVERSITY = 'Распределение нод'
+    TEXT_PIC_NODE_DIVERSITY_SUBTITLE = 'по провайдеру инфраструктуры'
     TEXT_PIC_OTHERS = 'Другие'
     TEXT_PIC_UNKNOWN = 'Не известно'
 

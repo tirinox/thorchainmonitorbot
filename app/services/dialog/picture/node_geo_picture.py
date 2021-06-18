@@ -156,7 +156,12 @@ def node_geo_pic_sync(info: NetworkNodeIpInfo, loc: localization.BaseLocalizatio
               fill=LIGHT_TEXT_COLOR,
               font=r.font_head, anchor='mt')
 
-    h_line_y = 90
+    draw.text((cx, 80),
+              loc.TEXT_PIC_NODE_DIVERSITY_SUBTITLE,
+              fill=LIGHT_TEXT_COLOR,
+              font=r.font_small, anchor='mt')
+
+    h_line_y = 110
     draw.line((0, h_line_y, w, h_line_y), '#468', 2)
 
     # 2. CHART

@@ -666,6 +666,7 @@ class BaseLocalization(ABC):  # == English
     TEXT_PIC_STANDBY_NODES = 'Standby nodes'
     TEXT_PIC_ALL_NODES = 'All nodes'
     TEXT_PIC_NODE_DIVERSITY = 'Node Diversity'
+    TEXT_PIC_NODE_DIVERSITY_SUBTITLE = 'by infrastructure provider'
     TEXT_PIC_OTHERS = 'Others'
     TEXT_PIC_UNKNOWN = 'Unknown'
 
