@@ -11,6 +11,7 @@ from aiothornode.connector import ThorConnector
 from localization import LocalizationManager
 from services.dialog import init_dialogs
 from services.jobs.fetch.cap import CapInfoFetcher
+from services.jobs.fetch.chains import ChainStateFetcher
 from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
@@ -27,6 +28,7 @@ from services.lib.utils import setup_logs
 from services.models.price import LastPriceHolder
 from services.notify.broadcast import Broadcaster
 from services.notify.types.cap_notify import LiquidityCapNotifier
+from services.notify.types.chain_notify import TradingHaltedNotifier
 from services.notify.types.node_churn_notify import NodeChurnNotifier
 from services.notify.types.pool_churn import PoolChurnNotifier
 from services.notify.types.price_notify import PriceNotifier
@@ -137,6 +139,12 @@ class App:
             notifier_pool_churn = PoolChurnNotifier(d)
             fetcher_pool_info.subscribe(notifier_pool_churn)
             tasks.append(fetcher_pool_info)
+
+        if d.cfg.get('chain_state.enabled', True):
+            fetcher_chain_state = ChainStateFetcher(d)
+            notifier_trade_halt = TradingHaltedNotifier(d)
+            fetcher_chain_state.subscribe(notifier_trade_halt)
+            tasks.append(fetcher_chain_state)
 
         # await notifier_cap.test()
         # await notifier_stats.clear_cd()

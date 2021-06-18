@@ -3,6 +3,8 @@ from datetime import datetime
 from math import ceil
 from typing import List
 
+from aiothornode.types import ThorChainInfo
+
 from services.lib.config import Config
 from services.lib.constants import NetworkIdents
 from services.lib.date_utils import format_time_ago, now_ts, seconds_human
@@ -720,5 +722,11 @@ class BaseLocalization(ABC):  # == English
             message += self._make_node_list(other_nodes, '❔ Other nodes:', add_status=True, extended_info=True)
 
         return message.rstrip()
+
+    def notification_text_trading_halted(self, chain_info: ThorChainInfo):
+        if chain_info.halted:
+            return f'Attention! Trading is halted on chain: {code(chain_info.chain)}!'
+        else:
+            return f'Attention! Trading is resumed on chain: {code(chain_info.chain)}!'
 
     # ------- NODE OP TOOLS -------

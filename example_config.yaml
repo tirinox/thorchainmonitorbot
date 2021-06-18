@@ -142,3 +142,8 @@ node_info:
 
 constants:
   fetch_period: 130s
+
+
+chain_state:  # new!
+  enabled: true
+  fetch_period: 67s
