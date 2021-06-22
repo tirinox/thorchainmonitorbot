@@ -8,6 +8,7 @@ import sha3
 from aiogram import Bot, Dispatcher
 from aiogram.types import ParseMode
 from aiothornode.connector import ThorConnector
+from aiothornode.types import ThorChainInfo
 from pycoingecko import CoinGeckoAPI
 
 from localization import LocalizationManager
@@ -297,10 +298,39 @@ async def foo25_coingecko_test(d):
     print(r)
 
 
+async def foo26_trading_halt_text(d):
+    loc_man: LocalizationManager = d.loc_man
+    loc_ru = loc_man.get_from_lang('rus')
+    loc_en = loc_man.get_from_lang('eng')
+
+    ch = ThorChainInfo(
+        chain='BNB',
+        halted=True
+    )
+
+    token = str(d.cfg.get('telegram.bot.token'))
+
+    for loc in (loc_ru, loc_en):
+        ch.halted = True
+        text = loc.notification_text_trading_halted(ch)
+        print(text)
+        sep()
+        await telegram_send_message_basic(token, TG_USER, text)
+
+        sep()
+
+        ch.halted = False
+        text = loc.notification_text_trading_halted(ch)
+        print(text)
+        sep()
+        await telegram_send_message_basic(token, TG_USER, text)
+
+
+
 async def start_foos():
     async with aiohttp.ClientSession() as deps.session:
         await deps.db.get_redis()
-        await foo25_coingecko_test(deps)
+        await foo26_trading_halt_text(deps)
 
 
 if __name__ == '__main__':

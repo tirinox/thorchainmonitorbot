@@ -1,9 +1,11 @@
 import json
 import logging
+import random
 from typing import Dict
 
 from aiothornode.types import ThorChainInfo
 
+from localization import BaseLocalization
 from services.jobs.fetch.base import INotified
 from services.lib.depcont import DepContainer
 
@@ -14,7 +16,14 @@ class TradingHaltedNotifier(INotified):
         self.logger = logging.getLogger(self.__class__.__name__)
         # self.spam_cd = Cooldown(self.deps.db, 'TradingHalted', 30 * MINUTE)
 
+    def _dbg_randomize_chain_dic_halted(self, data: Dict[str, ThorChainInfo]):
+        for item in data.values():
+            item.halted = random.uniform(0, 1) > 0.5
+        return data
+
     async def on_data(self, sender, data: Dict[str, ThorChainInfo]):
+        # data = self._dbg_randomize_chain_dic_halted(data)
+
         changed_chains = []
 
         for chain, new_info in data.items():
@@ -23,12 +32,17 @@ class TradingHaltedNotifier(INotified):
                 old_info = await self._get_saved_chain_state(chain)
                 if old_info and old_info.is_ok:
                     if old_info.halted != new_info.halted:
-                        changed_chains.append((chain, new_info.halted))
+                        changed_chains.append(new_info)
 
                 await self._save_chain_state(new_info)
 
         if changed_chains:
-            ...
+            await self.deps.broadcaster.notify_preconfigured_channels(
+                self.deps.loc_man,
+                BaseLocalization.joiner,
+                BaseLocalization.notification_text_trading_halted,
+                changed_chains
+            )
 
     KEY_CHAIN_HALTED = 'Chain:LastInfo'
 

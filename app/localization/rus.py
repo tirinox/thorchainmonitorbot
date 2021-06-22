@@ -2,6 +2,8 @@ from datetime import datetime
 from math import ceil
 from typing import List
 
+from aiothornode.types import ThorChainInfo
+
 from localization.base import BaseLocalization, RAIDO_GLYPH, CREATOR_TG, URL_LEADERBOARD_MCCN
 from services.lib.constants import Chains
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
@@ -558,3 +560,10 @@ class RussianLocalization(BaseLocalization):
                                             extended_info=True)
 
         return message.rstrip()
+
+    def notification_text_trading_halted(self, chain_info: ThorChainInfo):
+        if chain_info.halted:
+            return f'🚨🚨🚨 <b>Внимание!</b> Торговля остановлена на блокчейне {code(chain_info.chain)}! ' \
+                   f'Воздержитесь от обменов, пока торговля не будет снова запущена! 🚨🚨🚨'
+        else:
+            return f'✅ <b>Внимание!</b> Торговля снова возобновлена на блокчейне {code(chain_info.chain)}!'

@@ -726,8 +726,13 @@ class BaseLocalization(ABC):  # == English
 
     def notification_text_trading_halted(self, chain_info: ThorChainInfo):
         if chain_info.halted:
-            return f'Attention! Trading is halted on chain: {code(chain_info.chain)}!'
+            return f'🚨🚨🚨 <b>Attention!</b> Trading is halted on the {code(chain_info.chain)} chain! ' \
+                   f'Refrain from using it until the trading is restarted! 🚨🚨🚨'
         else:
-            return f'Attention! Trading is resumed on chain: {code(chain_info.chain)}!'
+            return f'✅ <b>Heads up!</b> Trading is resumed on the {code(chain_info.chain)} chain!'
+
+    def joiner(self, fun: callable, items, glue='\n\n'):
+        my_fun = getattr(self, fun.__name__)
+        return glue.join(map(my_fun, items))
 
     # ------- NODE OP TOOLS -------
