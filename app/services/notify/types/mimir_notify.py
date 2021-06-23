@@ -33,6 +33,9 @@ class MimirChangedNotifier(INotified):
 
         # fresh_mimir = self._dbg_randomize_mimir(fresh_mimir)
 
+        if not fresh_mimir.constants:
+            return
+
         old_mimir = await self._get_saved_mimir_state()
         if not old_mimir:
             self.logger.warning('Mimir has not been saved yet. Waiting for the next tick...')
