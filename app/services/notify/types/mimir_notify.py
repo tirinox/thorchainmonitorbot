@@ -18,15 +18,20 @@ class MimirChangedNotifier(INotified):
 
     def _dbg_randomize_mimir(self, fresh_mimir: ThorMimir):
         if random.uniform(0, 1) > 0.5:
-            fresh_mimir.constants['LOKI_CONST'] = "555"
+            fresh_mimir.constants['mimir//LOKI_CONST'] = "555"
         if random.uniform(0, 1) > 0.3:
-            fresh_mimir.constants['LOKI_CONST'] = "777"
+            fresh_mimir.constants['mimir//LOKI_CONST'] = "777"
+        if random.uniform(0, 1) > 0.6:
+            fresh_mimir.constants['mimir//NativeTransactionFee'] = 300000
+        # del fresh_mimir.constants['mimir//NativeTransactionFee']
+        # fresh_mimir.constants['mimir//NATIVETRANSACTIONFEE'] = 300000
+        # fresh_mimir.constants['mimir//CHURNINTERVAL'] = 43333
         return fresh_mimir
 
     async def on_data(self, sender: ConstMimirFetcher, data: Tuple[ThorConstants, ThorMimir]):
         _, fresh_mimir = data
 
-        fresh_mimir = self._dbg_randomize_mimir(fresh_mimir)  # fixme: debug
+        # fresh_mimir = self._dbg_randomize_mimir(fresh_mimir)
 
         old_mimir = await self._get_saved_mimir_state()
         if not old_mimir:
@@ -35,7 +40,7 @@ class MimirChangedNotifier(INotified):
             return
 
         fresh_const_names = set(fresh_mimir.constants.keys())
-        old_const_names = set(old_mimir.keys())
+        old_const_names = set(old_mimir.constants.keys())
         all_const_names = fresh_const_names | old_const_names
 
         changes = []
@@ -58,7 +63,6 @@ class MimirChangedNotifier(INotified):
         if changes:
             await self.deps.broadcaster.notify_preconfigured_channels(
                 self.deps.loc_man,
-                BaseLocalization.joiner,
                 BaseLocalization.notification_text_mimir_changed,
                 changes
             )

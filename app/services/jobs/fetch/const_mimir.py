@@ -42,7 +42,7 @@ class ConstMimirFetcher(BaseFetcher):
                     return v
             return default
         else:
-            return const_holder.constants.get(name, default=None)
+            return const_holder.constants.get(name)
 
     def get_constant(self, name: str, default=0, const_type=int):
         return self.get_constant_static(name, self.last_mimir, self.last_constants, default=default,
