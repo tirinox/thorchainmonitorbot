@@ -141,6 +141,8 @@ node_info:
 
 
 constants:
+  mimir_change: # new!
+    enabled: true
   fetch_period: 130s
 
 

@@ -7,9 +7,14 @@ def to_json_bool(b):
     return 'true' if b else 'false'
 
 
-async def telegram_send_message_basic(bot_token, user_id, message_text,
+async def telegram_send_message_basic(bot_token, user_id, message_text: str,
                                       disable_web_page_preview=True,
                                       disable_notification=True):
+    message_text = message_text.strip()
+
+    if not message_text:
+        return
+
     message_text = urllib.parse.quote_plus(message_text)
     url = (
         f"https://api.telegram.org/"

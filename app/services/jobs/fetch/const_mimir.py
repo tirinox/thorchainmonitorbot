@@ -17,19 +17,39 @@ class ConstMimirFetcher(BaseFetcher):
         self.last_constants: ThorConstants = ThorConstants()
         self.last_mimir: ThorMimir = ThorMimir()
 
+    MIMIR_PREFIX = 'mimir//'
+
     @staticmethod
     def get_constant_static(name: str, mimir: ThorMimir, constants: ThorConstants, default=0, const_type=int):
-        hardcoded_value = const_type(constants.constants.get(name, 0))
+        raw_hardcoded_value = constants.constants.get(name, 0)
+        hardcoded_value = const_type(raw_hardcoded_value) if const_type else raw_hardcoded_value
 
-        wanted_const = f'mimir//{name.upper()}'
-        if wanted_const in mimir.constants:
-            return const_type(mimir.constants.get(wanted_const, default))
+        prefix = ConstMimirFetcher.MIMIR_PREFIX
+        mimir_name = f'{prefix}{name.upper()}'
+
+        if mimir_name in mimir.constants:
+            return const_type(mimir.constants.get(mimir_name, default))
         else:
             return hardcoded_value
+
+    @staticmethod
+    def get_hardcoded_const_static(name: str, const_holder: ThorConstants, default=None):
+        prefix = ConstMimirFetcher.MIMIR_PREFIX
+        if name.startswith(prefix):
+            pure_name = name[len(prefix):]
+            for k, v in const_holder.constants.items():
+                if pure_name.upper() == k.upper():
+                    return v
+            return default
+        else:
+            return const_holder.constants.get(name, default=None)
 
     def get_constant(self, name: str, default=0, const_type=int):
         return self.get_constant_static(name, self.last_mimir, self.last_constants, default=default,
                                         const_type=const_type)
+
+    def get_hardcoded_const(self, name: str, default=None):
+        return self.get_hardcoded_const_static(name, self.last_constants, default)
 
     async def fetch(self) -> Tuple[ThorConstants, ThorMimir]:
         self.last_constants, self.last_mimir = await asyncio.gather(

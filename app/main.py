@@ -29,6 +29,7 @@ from services.models.price import LastPriceHolder
 from services.notify.broadcast import Broadcaster
 from services.notify.types.cap_notify import LiquidityCapNotifier
 from services.notify.types.chain_notify import TradingHaltedNotifier
+from services.notify.types.mimir_notify import MimirChangedNotifier
 from services.notify.types.node_churn_notify import NodeChurnNotifier
 from services.notify.types.pool_churn import PoolChurnNotifier
 from services.notify.types.price_notify import PriceNotifier
@@ -145,6 +146,10 @@ class App:
             notifier_trade_halt = TradingHaltedNotifier(d)
             fetcher_chain_state.subscribe(notifier_trade_halt)
             tasks.append(fetcher_chain_state)
+
+        if d.cfg.get('constants.mimir_change', True):
+            notifier_mimir_change = MimirChangedNotifier(d)
+            fetcher_mimir.subscribe(notifier_mimir_change)
 
         # await notifier_cap.test()
         # await notifier_stats.clear_cd()

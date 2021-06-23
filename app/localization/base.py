@@ -731,6 +731,40 @@ class BaseLocalization(ABC):  # == English
         else:
             return f'✅ <b>Heads up!</b> Trading is resumed on the {code(chain_info.chain)} chain!'
 
+    def notification_text_mimir_changed(self, changes):
+        if not changes:
+            return ''
+
+        text = '🔔 <b>Mimir update!</b>\n' \
+               'The team has just updated global THORChain settings:\n\n'
+
+        for change in changes:
+            change_type, const_name, old_value, new_value = change
+
+            if change_type == '+':
+                text += (
+                    f'➕ The constant {code(const_name)} has been overridden by a new Mimir. '
+                    f'The default value was {code(old_value)} → the new value is {code(new_value)}‼️'
+                )
+            elif change_type == '-':
+                text += (
+                    f"➖ Mimir's constant {code(const_name)} has been deleted. It had the value: {code(old_value)} → "
+                    f"now this constant reverted to its default value: {code(new_value)}‼️"
+                )
+            else:
+                text += (
+                    f"🔄 Mimir's constant {code(const_name)} has been updated from the value {code(old_value)} → "
+                    f"to {code(new_value)}‼️"
+                )
+            text += '\n\n'
+
+        text += ital(f'{link("https://en.wikipedia.org/wiki/M%C3%ADmir", "Mimir")} '
+                     f'is a feature to allow admins to change constants in the chain, '
+                     f'such as MinimumBond, ChurnSpeed and more during Chaosnet. '
+                     f'When Mimir is destroyed, the chain will be uncapped and in Mainnet. ')
+
+        return text
+
     def joiner(self, fun: callable, items, glue='\n\n'):
         my_fun = getattr(self, fun.__name__)
         return glue.join(map(my_fun, items))

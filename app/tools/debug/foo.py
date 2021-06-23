@@ -14,6 +14,7 @@ from pycoingecko import CoinGeckoAPI
 from localization import LocalizationManager
 from services.dialog.picture.crypto_logo import CryptoLogoDownloader
 from services.dialog.picture.queue_picture import QUEUE_TIME_SERIES
+from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.tx import TxFetcher
 from services.lib.config import Config
@@ -53,6 +54,12 @@ deps.loc_man = LocalizationManager(deps.cfg)
 deps.broadcaster = Broadcaster(deps)
 
 lock = asyncio.Lock()
+
+TG_TOKEN = str(deps.cfg.get('telegram.bot.token'))
+
+loc_man: LocalizationManager = deps.loc_man
+loc_ru = loc_man.get_from_lang('rus')
+loc_en = loc_man.get_from_lang('eng')
 
 
 def sep():
@@ -107,14 +114,14 @@ async def test_cd_mult():
     print('Done')
 
 
-async def foo16(d):
-    ts = TimeSeries(QUEUE_TIME_SERIES, d.db)
+async def foo16():
+    ts = TimeSeries(QUEUE_TIME_SERIES, deps.db)
     avg = await ts.average(DAY, 'outbound_queue')
     print(avg)
 
 
-async def foo17(d):
-    txf = TxFetcher(d)
+async def foo17():
+    txf = TxFetcher(deps)
     # await txf.clear_all_seen_tx()
     r = await txf.fetch()
     print(r)
@@ -124,7 +131,7 @@ async def foo17(d):
     ...
 
 
-async def foo18(d):
+async def foo18():
     # print(today_str())
     money = 524
     while money > 1e-8:
@@ -132,7 +139,7 @@ async def foo18(d):
         money *= 0.1
 
 
-async def foo19(d):
+async def foo19():
     dl = CryptoLogoDownloader('./data')
     assets = [
         # 'LTC.LTC',
@@ -149,7 +156,7 @@ async def foo19(d):
         pic.show()
 
 
-async def foo20(d):
+async def foo20():
     eth_address = '234'
     print(sha3.keccak_256(eth_address.encode('utf-8')).hexdigest())
     print('0xc1912fee45d61c87cc5ea59dae311904cd86b84fee17cc96966216f811ce6a79')
@@ -164,10 +171,7 @@ def fake_node(status=NodeInfo.ACTIVE, address=None, bond=None, ip=None, version=
     return NodeInfo(status, address, bond, ip, version, slash)
 
 
-async def foo21(d):
-    loc_man: LocalizationManager = d.loc_man
-    loc = loc_man.get_from_lang('rus')
-
+async def foo21():
     c = NodeInfoChanges(
         nodes_added=[],
         nodes_removed=[fake_node()],
@@ -176,14 +180,10 @@ async def foo21(d):
         nodes_all=[]
     )
 
-    print(loc.notification_text_for_node_churn(c))
+    print(loc_ru.notification_text_for_node_churn(c))
 
 
-async def foo22(d):
-    loc_man: LocalizationManager = d.loc_man
-    loc_ru = loc_man.get_from_lang('rus')
-    loc_en = loc_man.get_from_lang('eng')
-
+async def foo22():
     pc = PoolChanges(pools_added=[],
                      pools_removed=[],
                      pools_changed=[
@@ -206,11 +206,7 @@ async def foo22(d):
         print(loc.notification_text_pool_churn(pc))
 
 
-async def foo23_tx_msg(d):
-    loc_man: LocalizationManager = d.loc_man
-    loc_ru = loc_man.get_from_lang('rus')
-    loc_en = loc_man.get_from_lang('eng')
-
+async def foo23_tx_msg():
     add_tx = LPAddWithdrawTx(
         int(now_ts()),
         ThorTxType.TYPE_ADD_LIQUIDITY,
@@ -259,8 +255,6 @@ async def foo23_tx_msg(d):
         5_500_500, 5_234_000, 9.21
     )
 
-    token = str(d.cfg.get('telegram.bot.token'))
-
     for loc in (loc_ru, loc_en):
         text1 = loc.notification_text_large_tx(add_tx, 10.0, pool_info, cap)
         text2 = loc.notification_text_large_tx(withdraw_tx, 10.0, pool_info, cap)
@@ -271,51 +265,39 @@ async def foo23_tx_msg(d):
         print(text2)
         sep()
         msg = text1 + "\n\n" + text2
-        await telegram_send_message_basic(token, TG_USER, msg)
+        await telegram_send_message_basic(TG_TOKEN, TG_USER, msg)
 
 
-async def foo24_cap_limit(d):
-    loc_man: LocalizationManager = d.loc_man
-    loc_ru = loc_man.get_from_lang('rus')
-    loc_en = loc_man.get_from_lang('eng')
-
+async def foo24_cap_limit():
     cap = ThorCapInfo(
         5_500_500, 5_499_100, 9.21
     )
-
-    token = str(d.cfg.get('telegram.bot.token'))
 
     for loc in (loc_ru, loc_en):
         text = loc.notification_text_cap_full(cap)
         print(text)
         sep()
-        await telegram_send_message_basic(token, TG_USER, text)
+        await telegram_send_message_basic(TG_TOKEN, TG_USER, text)
 
 
-async def foo25_coingecko_test(d):
+async def foo25_coingecko_test():
     cg = CoinGeckoAPI()
     r = cg.get_price(ids=['thorchain'], vs_currencies='usd')
     print(r)
 
 
-async def foo26_trading_halt_text(d):
-    loc_man: LocalizationManager = d.loc_man
-    loc_ru = loc_man.get_from_lang('rus')
-    loc_en = loc_man.get_from_lang('eng')
-
+async def foo26_trading_halt_text():
     ch = ThorChainInfo(
         chain='BNB',
         halted=True
     )
-
-    token = str(d.cfg.get('telegram.bot.token'))
 
     for loc in (loc_ru, loc_en):
         ch.halted = True
         text = loc.notification_text_trading_halted(ch)
         print(text)
         sep()
-        await telegram_send_message_basic(token, TG_USER, text)
+        await telegram_send_message_basic(TG_TOKEN, TG_USER, text)
 
         sep()
 
@@ -323,14 +305,36 @@ async def foo26_trading_halt_text(d):
         text = loc.notification_text_trading_halted(ch)
         print(text)
         sep()
-        await telegram_send_message_basic(token, TG_USER, text)
+        await telegram_send_message_basic(TG_TOKEN, TG_USER, text)
 
+
+async def foo27_mimir_message():
+    # cmf = ConstMimirFetcher(deps)
+    # await cmf.fetch()
+
+    changes = [
+        # (change_type, const_name, old_value, new_value)
+        ('+', 'monalled', 10, 20),
+        ('+', 'purgrotabile', None, 777),
+        ('-', 'offectinhow', 90, 80),
+        ('-', 'pestritenda', 10, None),
+        ('~', 'frivessile', 999, 1888),
+        ('~', 'deouslate', 'text', 'another'),
+    ]
+
+    for loc in (loc_ru, loc_en):
+    # for loc in (loc_en,):
+        text = loc.notification_text_mimir_changed(changes)
+        print(text)
+        sep()
+        await telegram_send_message_basic(TG_TOKEN, TG_USER, text)
 
 
 async def start_foos():
     async with aiohttp.ClientSession() as deps.session:
+        deps.thor_connector = ThorConnector(get_thor_env_by_network_id(deps.cfg.network_id), deps.session)
         await deps.db.get_redis()
-        await foo26_trading_halt_text(deps)
+        await foo27_mimir_message()
 
 
 if __name__ == '__main__':
