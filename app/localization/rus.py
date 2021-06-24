@@ -230,6 +230,11 @@ class RussianLocalization(BaseLocalization):
         pr_text = f"${price:.2f}"
         message += f"Цена <b>RUNE</b> сейчас {code(pr_text)} ({btc_price}).\n"
 
+        fp = p.fair_price
+
+        if fp.cex_price > 0.0:
+            message += f"Цена <b>RUNE</b> на централизованной бирже Binance: {bold(pretty_dollar(fp.cex_price))}.\n"
+
         last_ath = p.last_ath
         if last_ath is not None and ath:
             if isinstance(last_ath.ath_date, float):
@@ -248,7 +253,6 @@ class RussianLocalization(BaseLocalization):
                 message += pre(f"{title.rjust(5)}:{adaptive_round_to_str(pc, True).rjust(8)} % "
                                f"{emoji_for_percent_change(pc).ljust(4).rjust(6)}") + "\n"
 
-        fp = p.fair_price
         if fp.rank >= 1:
             message += f"Капитализация: {bold(pretty_dollar(fp.market_cap))} (#{bold(fp.rank)} место)\n"
 

@@ -372,6 +372,12 @@ class BaseLocalization(ABC):  # == English
         btc_price = f"₿ {p.btc_real_rune_price:.8f}"
         message += f"<b>RUNE</b> price is {code(pr_text)} ({btc_price}) now.\n"
 
+        fp = p.fair_price
+
+        if fp.cex_price > 0.0:
+            message += f"<b>RUNE</b> price at Binance (CEX) is {bold(pretty_dollar(fp.cex_price))} " \
+                       f"(RUNE/USDT market).\n"
+
         last_ath = p.last_ath
         if last_ath is not None and ath:
             last_ath_pr = f'{last_ath.ath_price:.2f}'
@@ -387,7 +393,6 @@ class BaseLocalization(ABC):  # == English
                 message += pre(f"{title.rjust(4)}:{adaptive_round_to_str(pc, True).rjust(8)} % "
                                f"{emoji_for_percent_change(pc).ljust(4).rjust(6)}") + "\n"
 
-        fp = p.fair_price
         if fp.rank >= 1:
             message += f"Coin market cap is {bold(pretty_dollar(fp.market_cap))} (#{bold(fp.rank)})\n"
 
