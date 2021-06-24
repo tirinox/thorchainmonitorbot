@@ -1,11 +1,11 @@
 from localization import BaseLocalization
+from services.lib.constants import RUNE_SYMBOL_DET, RUNE_SYMBOL_MARKET
 from services.lib.date_utils import DAY, today_str
 from services.lib.db import DB
-from services.lib.plot_graph import PlotGraphLines
 from services.lib.draw_utils import img_to_bio
+from services.lib.plot_graph import PlotGraphLines
 from services.lib.utils import async_wrap
 from services.models.time_series import PriceTimeSeries
-from services.lib.constants import BNB_RUNE_SYMBOL, RUNE_SYMBOL_DET, RUNE_SYMBOL_MARKET
 
 PRICE_GRAPH_WIDTH = 640
 PRICE_GRAPH_HEIGHT = 480

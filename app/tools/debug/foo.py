@@ -14,7 +14,6 @@ from pycoingecko import CoinGeckoAPI
 from localization import LocalizationManager
 from services.dialog.picture.crypto_logo import CryptoLogoDownloader
 from services.dialog.picture.queue_picture import QUEUE_TIME_SERIES
-from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.tx import TxFetcher
 from services.lib.config import Config

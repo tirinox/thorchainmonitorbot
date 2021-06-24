@@ -18,7 +18,7 @@ from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeInfoChanges, NodeInfo
 from services.models.pool_info import PoolInfo, PoolChanges
-from services.models.price import RuneFairPrice, PriceReport
+from services.models.price import PriceReport
 from services.models.queue import QueueInfo
 from services.models.tx import LPAddWithdrawTx, ThorTxType
 
@@ -255,12 +255,6 @@ class BaseLocalization(ABC):  # == English
     PRICE_GRAPH_TITLE = f'Rune price, USD'
     PRICE_GRAPH_LEGEND_DET_PRICE = f'Deterministic {RAIDO_GLYPH} price'
     PRICE_GRAPH_LEGEND_ACTUAL_PRICE = f'Market {RAIDO_GLYPH} price'
-
-    def price_message(self, info: ThorCapInfo, fair_price: RuneFairPrice):
-        return (
-            f"Last real price of {self.R} is <code>${info.price:.3f}</code>.\n"
-            f"Deterministic price of {self.R} is <code>${fair_price.fair_price:.3f}</code>."
-        )
 
     # ------- NOTIFY STAKES -------
 

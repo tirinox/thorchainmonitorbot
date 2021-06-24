@@ -1,5 +1,4 @@
 import json
-import time
 
 from services.lib.date_utils import now_ts
 from services.lib.db import DB

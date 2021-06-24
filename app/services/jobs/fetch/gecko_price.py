@@ -9,7 +9,7 @@ from services.models.time_series import PriceTimeSeries
 
 COIN_CHART_GECKO = "https://api.coingecko.com/api/v3/coins/thorchain/market_chart?vs_currency=usd&days={days}"
 COIN_RANK_GECKO = "https://api.coingecko.com/api/v3/coins/thorchain?" \
-                  "tickers=false&market_data=false&community_data=false&developer_data=false"
+                  "tickers=true&market_data=false&community_data=false&developer_data=false"
 
 
 async def get_rune_chart(days):
@@ -44,7 +44,20 @@ async def fill_rune_price_from_gecko(db, include_fake_det=False, fake_value=0.2)
             pass
 
 
-async def gecko_info(session):
+async def get_thorchain_coin_gecko_info(session):
     async with session.get(COIN_RANK_GECKO) as resp:
         j = await resp.json()
         return j
+
+
+def gecko_market_cap_rank(gecko_json):
+    return gecko_json.get('market_cap_rank', 0) if gecko_json else 0
+
+
+def gecko_ticker_price(gecko_json, exchange='binance', base_curr='USDT'):
+    tickers = gecko_json.get('tickers', [])
+    for t in tickers:
+        this_base_curr = t.get('target')
+        this_exchange = t.get('market', {}).get('identifier')
+        if this_exchange == exchange and this_base_curr == base_curr:
+            return float(t.get('last', 0))

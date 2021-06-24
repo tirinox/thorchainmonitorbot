@@ -9,15 +9,14 @@ from services.lib.constants import Chains
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
-    emoji_for_percent_change, short_asset_name, chain_name_from_pool, short_money
+    emoji_for_percent_change, short_asset_name
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
     up_down_arrow
 from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeInfoChanges, NodeInfo
 from services.models.pool_info import PoolInfo, PoolChanges
-from services.models.pool_stats import LiquidityPoolStats
-from services.models.price import RuneFairPrice, PriceReport
+from services.models.price import PriceReport
 from services.models.queue import QueueInfo
 from services.models.tx import LPAddWithdrawTx, ThorTxType
 
@@ -162,13 +161,8 @@ class RussianLocalization(BaseLocalization):
     PRICE_GRAPH_LEGEND_DET_PRICE = 'Детерминистская цена'
     PRICE_GRAPH_LEGEND_ACTUAL_PRICE = 'Рыночная цена'
 
-    def price_message(self, info: ThorCapInfo, fair_price: RuneFairPrice):
-        return (
-            f"Последняя цена {self.R}: <code>{info.price:.3f} $</code>.\n"
-            f"Детерминистическая цена {self.R} сейчас: <code>${fair_price.fair_price:.3f}</code>."
-        )
-
     # ------ TXS -------
+
     def notification_text_large_tx(self, tx: LPAddWithdrawTx,
                                    usd_per_rune: float,
                                    pool_info: PoolInfo,

@@ -7,7 +7,7 @@ from services.dialog.base import BaseDialog, message_handler
 from services.dialog.picture.node_geo_picture import node_geo_pic
 from services.dialog.picture.price_picture import price_graph_from_db
 from services.dialog.picture.queue_picture import queue_graph
-from services.jobs.fetch.fair_price import fair_rune_price
+from services.jobs.fetch.fair_price import get_fair_rune_price_cached
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.lib.date_utils import DAY, HOUR, parse_timespan_to_seconds, today_str
 from services.lib.draw_utils import img_to_bio
@@ -158,7 +158,7 @@ class MetricsDialog(BaseDialog):
                 await message.answer(f'Error: {period}')
                 return
 
-        fp = await fair_rune_price(self.deps.price_holder)
+        fp = await get_fair_rune_price_cached(self.deps.price_holder)
         pn = PriceNotifier(self.deps)
         price_1h, price_24h, price_7d = await pn.historical_get_triplet()
         fp.real_rune_price = self.deps.price_holder.usd_per_rune

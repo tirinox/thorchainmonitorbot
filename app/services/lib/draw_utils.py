@@ -1,4 +1,3 @@
-import math
 import os
 import tempfile
 from colorsys import rgb_to_hls, hls_to_rgb

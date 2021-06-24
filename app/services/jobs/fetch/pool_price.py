@@ -7,7 +7,7 @@ from typing import Optional
 from aioredis import Redis
 
 from services.jobs.fetch.base import BaseFetcher
-from services.jobs.fetch.fair_price import fair_rune_price
+from services.jobs.fetch.fair_price import get_fair_rune_price_cached
 from services.lib.config import Config
 from services.lib.constants import BNB_BUSD_SYMBOL, RUNE_SYMBOL_DET, is_stable_coin, NetworkIdents, \
     ETH_USDT_TEST_SYMBOL, RUNE_SYMBOL_MARKET, ETH_USDT_SYMBOL
@@ -56,7 +56,7 @@ class PoolPriceFetcher(BaseFetcher):
             price_series = PriceTimeSeries(RUNE_SYMBOL_MARKET, d.db)
             await price_series.add(price=price)
 
-            fair_price = await fair_rune_price(d.price_holder)
+            fair_price = await get_fair_rune_price_cached(d.price_holder)
             fair_price.real_rune_price = price
 
             deterministic_price_series = PriceTimeSeries(RUNE_SYMBOL_DET, d.db)
@@ -71,7 +71,7 @@ class PoolPriceFetcher(BaseFetcher):
             try:
                 thor_pools = await self.deps.thor_connector.query_pools(height, consensus=self.use_thor_consensus)
                 return parse_thor_pools(thor_pools)
-            except (TypeError, IndexError) as e:
+            except (TypeError, IndexError):
                 self.logger.exception(f'thor_connector.query_pools failed! Attempt: #{attempt}')
 
         return {}

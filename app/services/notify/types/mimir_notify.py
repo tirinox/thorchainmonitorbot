@@ -1,7 +1,7 @@
 import json
 import logging
 import random
-from typing import Dict, Tuple
+from typing import Tuple
 
 from aiothornode.types import ThorConstants, ThorMimir
 

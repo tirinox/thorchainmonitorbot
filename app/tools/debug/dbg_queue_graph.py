@@ -20,7 +20,7 @@ async def stake_graph():
     ...
 
 
-async def test_plots(d):
+async def test_plots():
     # await q_points(d)
     await stake_graph()
 
@@ -32,4 +32,4 @@ if __name__ == '__main__':
     d.cfg = Config()
     d.db = DB(d.loop)
 
-    d.loop.run_until_complete(test_plots(d))
+    d.loop.run_until_complete(test_plots())

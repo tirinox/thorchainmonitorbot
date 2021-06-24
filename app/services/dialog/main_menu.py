@@ -4,12 +4,11 @@ from aiogram.types import *
 from aiogram.utils.helper import HelperMode
 
 from services.dialog.avatar_picture_dialog import AvatarDialog
-from services.dialog.base import BaseDialog, message_handler, query_handler
+from services.dialog.base import BaseDialog, message_handler
+from services.dialog.lp_info_dialog import LiquidityInfoDialog, LPMenuStates
 from services.dialog.metrics_menu import MetricsDialog
 from services.dialog.settings_menu import SettingsDialog
-from services.dialog.lp_info_dialog import LiquidityInfoDialog, LPMenuStates
 from services.lib.date_utils import DAY
-from services.lib.texts import code
 from services.notify.types.cap_notify import LiquidityCapNotifier
 
 

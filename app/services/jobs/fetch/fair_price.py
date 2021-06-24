@@ -3,7 +3,7 @@ import logging
 
 import aiohttp
 
-from services.jobs.fetch.gecko_price import gecko_info
+from services.jobs.fetch.gecko_price import get_thorchain_coin_gecko_info, gecko_market_cap_rank, gecko_ticker_price
 from services.lib.constants import THOR_DIVIDER_INV
 from services.lib.utils import a_result_cached
 from services.models.price import RuneFairPrice, LastPriceHolder
@@ -30,7 +30,7 @@ async def delphi_get_circulating_supply(session):
         return circulating
 
 
-async def total_pooled_rune(session, network_stats_url):
+async def get_total_pooled_rune(session, network_stats_url):
     async with session.get(network_stats_url) as resp:
         j = await resp.json()
         total_pooled_rune = int(j.get('totalStaked', 0))
@@ -42,8 +42,8 @@ async def total_pooled_rune(session, network_stats_url):
 
 async def total_locked_value_all_networks(session):
     tlv_bepswap, tlv_mccn = await asyncio.gather(
-        total_pooled_rune(session, MIDGARD_BEP2_STATS_URL),
-        total_pooled_rune(session, MIDGARD_MCCN_STATS_URL)
+        get_total_pooled_rune(session, MIDGARD_BEP2_STATS_URL),
+        get_total_pooled_rune(session, MIDGARD_MCCN_STATS_URL)
     )
     return tlv_mccn + tlv_bepswap
 
@@ -53,14 +53,12 @@ async def fetch_fair_rune_price(price_holder: LastPriceHolder):
         rune_vault, circulating, gecko, total_locked_rune = await asyncio.gather(
             delphi_get_rune_vault_balance(session),
             delphi_get_circulating_supply(session),
-            gecko_info(session),
+            get_thorchain_coin_gecko_info(session),
             total_locked_value_all_networks(session)
         )
 
         if circulating <= 0:
             raise ValueError(f"circulating is invalid ({circulating})")
-
-        rank = gecko.get('market_cap_rank', 0)
 
         working_rune = circulating - float(rune_vault)
 
@@ -71,11 +69,20 @@ async def fetch_fair_rune_price(price_holder: LastPriceHolder):
 
         fair_price = 3 * tlv / working_rune  # The main formula of wealth!
 
-        result = RuneFairPrice(circulating, rune_vault, price_holder.usd_per_rune, fair_price, tlv, rank)
+        cex_price = gecko_ticker_price(gecko, 'binance', 'USDT')  # RUNE/USDT @ Binance
+        rank = gecko_market_cap_rank(gecko)
+
+        result = RuneFairPrice(circulating=circulating,
+                               rune_vault_locked=rune_vault,
+                               real_rune_price=price_holder.usd_per_rune,
+                               fair_price=fair_price,
+                               cex_price=cex_price,
+                               tlv_usd=tlv,
+                               rank=rank)
         logger.info(result)
         return result
 
 
 @a_result_cached(ttl=60)
-async def fair_rune_price(lph: LastPriceHolder):
+async def get_fair_rune_price_cached(lph: LastPriceHolder):
     return await fetch_fair_rune_price(lph)

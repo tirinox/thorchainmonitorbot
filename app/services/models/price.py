@@ -12,8 +12,9 @@ from services.models.pool_info import PoolInfo, PoolInfoMap
 class RuneFairPrice:
     circulating: int = 500_000_000
     rune_vault_locked: int = 0
-    real_rune_price: float = 0.0
-    fair_price: float = 0.0
+    real_rune_price: float = 0.0  # THORChain Pool Price (weighted across stable coins)
+    fair_price: float = 0.0  # Deterministic Price
+    cex_price: float = 0.0  # Price on Centralised Exchanges
     tlv_usd: float = 0.0
     rank: int = 0
 

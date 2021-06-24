@@ -2,8 +2,6 @@ import logging
 from abc import abstractmethod
 from typing import List, NamedTuple, Dict
 
-from services.jobs.fetch.const_mimir import ConstMimirFetcher
-from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.lib.depcont import DepContainer
 from services.lib.midgard.urlgen import MidgardURLGenBase
 from services.models.lp_info import LiquidityPoolReport, LPDailyGraphPoint
