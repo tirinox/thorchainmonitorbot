@@ -127,7 +127,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         thor_conn = self.deps.thor_connector
 
         # make sure, that connections are fresh, in order not to update it at all the height simultaneously
-        await thor_conn._get_random_clients()
+        await thor_conn.get_random_clients()
 
         ppf = self.deps.price_pool_fetcher
         tasks = [ppf.get_current_pool_data_full(h, caching=True) for h in heights]
