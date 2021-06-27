@@ -12,7 +12,7 @@ from services.lib.depcont import DepContainer
 from services.lib.money import pretty_money, calc_percent_change
 from services.lib.texts import MessageType, BoardMessage
 from services.lib.utils import make_stickers_iterator
-from services.models.price import RuneFairPrice, PriceReport, PriceATH
+from services.models.price import RuneMarketInfo, PriceReport, PriceATH
 from services.models.time_series import PriceTimeSeries
 
 
@@ -33,7 +33,7 @@ class PriceNotifier(INotified):
         self.ath_cooldown = parse_timespan_to_seconds(cfg.ath.cooldown)
         self.price_graph_period = parse_timespan_to_seconds(cfg.price_graph.default_period)
 
-    async def on_data(self, sender, fprice: RuneFairPrice):
+    async def on_data(self, sender, fprice: RuneMarketInfo):
         # fprice.real_rune_price = 21.98  # fixme: debug! for ATH
         if not await self.handle_ath(fprice):
             await self.handle_new_price(fprice)
@@ -77,7 +77,7 @@ class PriceNotifier(INotified):
 
         await self.deps.broadcaster.broadcast(user_lang_map, price_graph_gen)
 
-    async def handle_new_price(self, fair_price: RuneFairPrice):
+    async def handle_new_price(self, fair_price: RuneMarketInfo):
         hist_prices = await self.historical_get_triplet()
         price = fair_price.real_rune_price
 
@@ -140,3 +140,11 @@ class PriceNotifier(INotified):
                 return True
 
         return False
+
+    # ----- PRICE PEAK DETECTOR
+
+    async def price_peak(self, period_sec=HOUR):
+        points = await self.time_series.get_last_values(period_sec, tolerance_sec=period_sec / 100, with_ts=True)
+        # [ (ts, price) ]
+
+

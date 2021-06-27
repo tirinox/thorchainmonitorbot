@@ -6,7 +6,7 @@ import aiohttp
 from services.jobs.fetch.gecko_price import get_thorchain_coin_gecko_info, gecko_market_cap_rank, gecko_ticker_price
 from services.lib.constants import THOR_DIVIDER_INV
 from services.lib.utils import a_result_cached
-from services.models.price import RuneFairPrice, LastPriceHolder
+from services.models.price import RuneMarketInfo, LastPriceHolder
 
 CIRCULATING_SUPPLY_URL = "https://defi.delphidigital.io/chaosnet/int/marketdata"
 RUNE_VAULT_BALANCE_URL = "https://defi.delphidigital.io/chaosnet/int/runevaultBalance"
@@ -72,13 +72,13 @@ async def fetch_fair_rune_price(price_holder: LastPriceHolder):
         cex_price = gecko_ticker_price(gecko, 'binance', 'USDT')  # RUNE/USDT @ Binance
         rank = gecko_market_cap_rank(gecko)
 
-        result = RuneFairPrice(circulating=circulating,
-                               rune_vault_locked=rune_vault,
-                               real_rune_price=price_holder.usd_per_rune,
-                               fair_price=fair_price,
-                               cex_price=cex_price,
-                               tlv_usd=tlv,
-                               rank=rank)
+        result = RuneMarketInfo(circulating=circulating,
+                                rune_vault_locked=rune_vault,
+                                real_rune_price=price_holder.usd_per_rune,
+                                fair_price=fair_price,
+                                cex_price=cex_price,
+                                tlv_usd=tlv,
+                                rank=rank)
         logger.info(result)
         return result
 

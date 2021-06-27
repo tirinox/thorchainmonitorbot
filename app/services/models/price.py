@@ -9,7 +9,7 @@ from services.models.pool_info import PoolInfo, PoolInfoMap
 
 
 @dataclass
-class RuneFairPrice:
+class RuneMarketInfo:
     circulating: int = 500_000_000
     rune_vault_locked: int = 0
     real_rune_price: float = 0.0  # THORChain Pool Price (weighted across stable coins)
@@ -41,7 +41,7 @@ class PriceReport:
     price_1h: float = 0.0
     price_24h: float = 0.0
     price_7d: float = 0.0
-    fair_price: RuneFairPrice = RuneFairPrice()
+    fair_price: RuneMarketInfo = RuneMarketInfo()
     last_ath: PriceATH = PriceATH()
     btc_real_rune_price: float = 0.0
 

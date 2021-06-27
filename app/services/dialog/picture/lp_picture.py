@@ -109,7 +109,8 @@ def sync_lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, run
         draw.text(pos_percent_lp(left, start_y), f'{pretty_money(report.liq.rune_stake)} {RAIDO_GLYPH}', font=r.font,
                   fill=FORE_COLOR,
                   anchor='rs')
-        draw.text(pos_percent_lp(right, start_y), f'{pretty_money(report.liq.asset_stake)}', font=r.font, fill=FORE_COLOR,
+        draw.text(pos_percent_lp(right, start_y), f'{pretty_money(report.liq.asset_stake)}', font=r.font,
+                  fill=FORE_COLOR,
                   anchor='ls')
     start_y += dy
 
@@ -119,7 +120,8 @@ def sync_lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, run
         r.put_hidden_plate(image, pos_percent_lp(left, start_y), anchor='right')
         r.put_hidden_plate(image, pos_percent_lp(right, start_y), anchor='left')
     else:
-        draw.text(pos_percent_lp(left, start_y), f'{pretty_money(report.liq.rune_withdrawn)} {RAIDO_GLYPH}', font=r.font,
+        draw.text(pos_percent_lp(left, start_y), f'{pretty_money(report.liq.rune_withdrawn)} {RAIDO_GLYPH}',
+                  font=r.font,
                   fill=FORE_COLOR,
                   anchor='rs')
         draw.text(pos_percent_lp(right, start_y), f'{pretty_money(report.liq.asset_withdrawn)}', font=r.font,
@@ -179,7 +181,7 @@ def sync_lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, run
 
     # VALUE
     table_x = 30
-    rows_y = [start_y + 4 + r * 4 for r in range(6)]
+    rows_y = [start_y + 4 + r * 3.3 for r in range(7)]
 
     if is_stable_coin(asset):
         columns = (report.RUNE, report.ASSET)
@@ -197,6 +199,7 @@ def sync_lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, run
 
         fee_value = report.fee_value(column)
         current = report.current_value(column)
+        il_prot = report.il_protection_value(column)
 
         if not value_hidden:
             added = report.added_value(column)
@@ -207,25 +210,38 @@ def sync_lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, run
             draw.text(pos_percent_lp(x, rows_y[0]), pretty_money(added), font=r.font_semi, fill=FORE_COLOR, anchor='ms')
             draw.text(pos_percent_lp(x, rows_y[1]), pretty_money(withdrawn), font=r.font_semi, fill=FORE_COLOR,
                       anchor='ms')
-            draw.text(pos_percent_lp(x, rows_y[2]), pretty_money(current), font=r.font_semi, fill=FORE_COLOR, anchor='ms')
-            draw.text(pos_percent_lp(x, rows_y[3]), fee_text, font=r.font_semi, fill=result_color(fee_value), anchor='ms')
-            draw.text(pos_percent_lp(x, rows_y[4]), pretty_money(gl, signed=True), font=r.font_semi, fill=result_color(gl),
+            draw.text(pos_percent_lp(x, rows_y[2]), pretty_money(current), font=r.font_semi, fill=FORE_COLOR,
                       anchor='ms')
+            draw.text(pos_percent_lp(x, rows_y[3]), fee_text, font=r.font_semi, fill=result_color(fee_value),
+                      anchor='ms')
+            draw.text(pos_percent_lp(x, rows_y[4]), pretty_money(gl, signed=True), font=r.font_semi,
+                      fill=result_color(gl),
+                      anchor='ms')
+
+            draw.text(pos_percent_lp(x, rows_y[5]), pretty_money(il_prot, signed=True), font=r.font_semi,
+                      fill=result_color(il_prot),
+                      anchor='ms')
+
         else:
             fee_text = format_percent(fee_value, current)
+            il_prot_text = format_percent(report.protection.progress_progress, 1.0)
 
             r.put_hidden_plate(image, pos_percent_lp(x, rows_y[0]), anchor='center')
             r.put_hidden_plate(image, pos_percent_lp(x, rows_y[1]), anchor='center')
             r.put_hidden_plate(image, pos_percent_lp(x, rows_y[2]), anchor='center')
-            draw.text(pos_percent_lp(x, rows_y[3]), fee_text, font=r.font_semi, fill=result_color(fee_value), anchor='ms')
+            draw.text(pos_percent_lp(x, rows_y[3]), fee_text, font=r.font_semi, fill=result_color(fee_value),
+                      anchor='ms')
             r.put_hidden_plate(image, pos_percent_lp(x, rows_y[4]), anchor='center')
+
+            draw.text(pos_percent_lp(x, rows_y[5]), il_prot_text, font=r.font_semi,
+                      fill=LIGHT_TEXT_COLOR, anchor='ms')
 
         if report.usd_per_asset_start is not None and report.usd_per_rune_start is not None:
             price_change = report.price_change(column)
 
             is_stable = column == report.USD or (column == report.ASSET and is_stable_coin(report.pool.asset))
             if not is_stable:
-                draw.text(pos_percent_lp(x, rows_y[5]), f'{pretty_money(price_change, signed=True)}%', font=r.font_semi,
+                draw.text(pos_percent_lp(x, rows_y[6]), f'{pretty_money(price_change, signed=True)}%', font=r.font_semi,
                           fill=result_color(price_change), anchor='ms')
                 if column == report.ASSET:
                     price_text = pretty_money(report.usd_per_asset, prefix='$')
@@ -233,16 +249,16 @@ def sync_lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, run
                     price_text = pretty_money(report.usd_per_rune, prefix='$')
                 else:
                     price_text = '–'
-                draw.text(pos_percent_lp(x, rows_y[5] + 2.5),
+                draw.text(pos_percent_lp(x, rows_y[6] + 2.5),
                           f"({price_text})",
                           fill=FORE_COLOR,
                           font=r.font_small,
                           anchor='ms')
             else:
-                draw.text(pos_percent_lp(x, rows_y[5]), f'–', font=r.font_semi,
+                draw.text(pos_percent_lp(x, rows_y[6]), f'–', font=r.font_semi,
                           fill=FADE_COLOR, anchor='ms')
         else:
-            draw.text(pos_percent_lp(x, rows_y[4]), f'–', font=r.font_semi,
+            draw.text(pos_percent_lp(x, rows_y[5]), f'–', font=r.font_semi,
                       fill=FADE_COLOR, anchor='ms')
 
     draw.text(pos_percent_lp(table_x, rows_y[0]), loc.LP_PIC_ADDED_VALUE, font=r.font, fill=FADE_COLOR, anchor='rs')
@@ -250,8 +266,9 @@ def sync_lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, run
     draw.text(pos_percent_lp(table_x, rows_y[2]), loc.LP_PIC_CURRENT_VALUE, font=r.font, fill=FADE_COLOR, anchor='rs')
     draw.text(pos_percent_lp(table_x, rows_y[3]), loc.LP_PIC_FEES, font=r.font, fill=FADE_COLOR, anchor='rs')
     draw.text(pos_percent_lp(table_x, rows_y[4]), loc.LP_PIC_GAIN_LOSS, font=r.font, fill=FADE_COLOR, anchor='rs')
-    draw.text(pos_percent_lp(table_x, rows_y[5]), loc.LP_PIC_PRICE_CHANGE, font=r.font, fill=FADE_COLOR, anchor='rs')
-    draw.text(pos_percent_lp(table_x, rows_y[5] + 2.5), loc.LP_PIC_PRICE_CHANGE_2, font=r.font_small, fill=FADE_COLOR,
+    draw.text(pos_percent_lp(table_x, rows_y[5]), 'IL protection', font=r.font, fill=FADE_COLOR, anchor='rs')
+    draw.text(pos_percent_lp(table_x, rows_y[6]), loc.LP_PIC_PRICE_CHANGE, font=r.font, fill=FADE_COLOR, anchor='rs')
+    draw.text(pos_percent_lp(table_x, rows_y[6] + 2.5), loc.LP_PIC_PRICE_CHANGE_2, font=r.font_small, fill=FADE_COLOR,
               anchor='rs')
 
     # DATES
@@ -401,7 +418,7 @@ def lp_weekly_graph(w, h, weekly_charts: dict, color_map: dict, value_hidden):
     graph.n_ticks_y = 3 if value_hidden else 8
     graph.y_formatter = \
         (lambda x: '$ ???') if value_hidden else \
-        (lambda x: pretty_money(x, prefix='$', short_form=True))
+            (lambda x: pretty_money(x, prefix='$', short_form=True))
     graph.x_formatter = graph.date_formatter
     graph.n_ticks_x = 7
 
