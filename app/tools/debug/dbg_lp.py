@@ -83,7 +83,13 @@ async def test_multi_chain_testnet():
     # await test_summary_picture_generator('0x52e07b963ab0f525b15e281b3b42d55e8048f027', hide=True,
     #                                      rune_yield_class=HomebrewLPConnector)
 
-    await test_one_pool_picture_generator('bnb1t57fmptcaxc4aag2ax86a7x354p543t3zs8m7c', 'BNB.BNB', hide=False)
+    # await test_one_pool_picture_generator('bnb1t57fmptcaxc4aag2ax86a7x354p543t3zs8m7c', 'BNB.BNB', hide=False)
+
+    # todo: 1) test for address with no IL coverage
+
+    # 2) test for address with IL coverage added to final numbers
+    await test_one_pool_picture_generator('bnb1rpw69vck9txkql2hw8t80uxdapve0rlw6ywkhf', 'BNB.BUSD-BD1', hide=False)
+    # await test_one_pool_picture_generator('bnb1rpw69vck9txkql2hw8t80uxdapve0rlw6ywkhf', 'BNB.BUSD-BD1', hide=True)
 
 
 if __name__ == '__main__':

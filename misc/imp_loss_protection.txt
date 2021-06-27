@@ -80,3 +80,53 @@ protectionRuneAmount := cosmos.ZeroUint()
 			poolUnits = newPoolUnits
 		}
 	}
+
+	----
+
+
+	        """
+        See 1. https://gitlab.com/thorchain/thornode/-/blob/develop/x/thorchain/withdraw_v55.go#L73
+
+        2. https://gitlab.com/thorchain/thornode/-/blob/develop/x/thorchain/withdraw_v1.go#L226
+
+        func calcImpLossProtectionAmtV1(ctx cosmos.Context, lastDepositHeight, target int64) int64 {
+            age := common.BlockHeight(ctx) - lastDepositHeight
+            if age < 17280 { // set minimum age to 1 day (17280 blocks)
+                return 0
+            }
+            if age >= target {
+                return 10000
+            }
+            return (age * 10000) / target
+        }
+
+        3. https://gitlab.com/thorchain/thornode/-/blob/develop/x/thorchain/withdraw_v47.go#L176
+
+        // calculate if there needs to add some imp loss protection, in rune
+        func calcImpLossV47(lp LiquidityProvider, withdrawBasisPoints cosmos.Uint, protectionBasisPoints int64, pool Pool) cosmos.Uint {
+            /*
+                A0 = assetDepositValue; R0 = runeDepositValue;
+
+                liquidityUnits = units the member wishes to redeem after applying withdrawBasisPoints
+                A1 = GetShare(liquidityUnits, lpUnits, assetDepth);
+                R1 = GetShare(liquidityUnits, lpUnits, runeDepth);
+                P1 = R1/A1
+                coverage = (R0 - R1) + (A0 - A1) * P1
+            */
+            A0 := lp.AssetDepositValue
+            R0 := lp.RuneDepositValue
+            A1 := common.GetShare(lp.Units, pool.LPUnits, pool.BalanceAsset)
+            R1 := common.GetShare(lp.Units, pool.LPUnits, pool.BalanceRune)
+            P1 := R1.Quo(A1)
+            coverage := common.SafeSub(A0, A1).Mul(P1).Add(common.SafeSub(R0, R1))
+
+            // taking withdrawBasisPoints, calculate how much of the coverage the user should receives
+            coverage = common.GetShare(withdrawBasisPoints, cosmos.NewUint(10000), coverage)
+
+            // taking protection basis points, calculate how much of the coverage the user actually receives
+            result := coverage.MulUint64(uint64(protectionBasisPoints)).QuoUint64(10000)
+            return result
+        }
+
+
+        """

@@ -16,9 +16,8 @@ from services.lib.midgard.urlgen import MidgardURLGenBase
 from services.lib.money import weighted_mean
 from services.lib.utils import pairwise
 from services.models.lp_info import LiquidityPoolReport, CurrentLiquidity, FeeReport, ReturnMetrics, LPDailyGraphPoint, \
-    LPDailyChartByPoolDict
-from services.models.pool_info import LPPosition, PoolInfoMap
-from services.models.pool_member import PoolMemberDetails
+    LPDailyChartByPoolDict, ILProtectionReport
+from services.models.pool_info import LPPosition, PoolInfoMap, PoolInfo, pool_share
 from services.models.tx import ThorTx, ThorTxType, final_liquidity
 
 HeightToAllPools = Dict[int, PoolInfoMap]
@@ -36,8 +35,10 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         self.max_attempts = 5
         self.block_mapper = DateToBlockMapper(deps)
         self.withdraw_fee_rune = 2.0
+        self.last_block = 0
 
     KEY_CONST_FEE_OUTBOUND = 'OutboundTransactionFee'
+    KEY_CONST_FULL_IL_PROTECTION_BLOCKS = 'FullImpLossProtectionBlocks'
 
     def update_fees(self):
         withdraw_fee_rune = self.deps.mimir_const_holder.get_constant(self.KEY_CONST_FEE_OUTBOUND, default=2000000)
@@ -54,26 +55,16 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
         historic_all_pool_states = await self._fetch_historical_pool_states(user_txs)
 
-        d = self.deps
         reports = []
         for pool_name in pools:
             this_pool_txs = [tx for tx in user_txs if tx.first_pool == pool_name]
 
-            liq = self._get_current_liquidity(this_pool_txs, pool_name, historic_all_pool_states,
-                                              withdraw_fee_rune=self.withdraw_fee_rune)
-
-            fees = self._get_fee_report(this_pool_txs, pool_name, historic_all_pool_states)
-
-            usd_per_asset_start, usd_per_rune_start = self._get_earliest_prices(this_pool_txs, historic_all_pool_states)
-
-            stake_report = LiquidityPoolReport(
-                d.price_holder.usd_per_asset(liq.pool),
-                d.price_holder.usd_per_rune,
-                usd_per_asset_start, usd_per_rune_start,
-                liq, fees=fees,
-                pool=d.price_holder.pool_info_map.get(liq.pool)
+            liq_report = await self._create_lp_report_for_one_pool(
+                historic_all_pool_states,
+                pool_name,
+                this_pool_txs
             )
-            reports.append(stake_report)
+            reports.append(liq_report)
 
         weekly_charts = await self._get_charts(user_txs, days=self.days_for_chart)
         return YieldSummary(reports, weekly_charts)
@@ -81,26 +72,43 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
     async def generate_yield_report_single_pool(self, address, pool_name, user_txs=None) -> LiquidityPoolReport:
         self.update_fees()
 
+        user_txs = await self._get_user_tx_actions(address, pool_name) if not user_txs else user_txs
+        historic_all_pool_states = await self._fetch_historical_pool_states(user_txs)
+        return await self._create_lp_report_for_one_pool(historic_all_pool_states, pool_name, user_txs)
+
+    async def _create_lp_report_for_one_pool(self, historic_all_pool_states,
+                                             pool_name: str,
+                                             user_txs: List[ThorTx]) -> LiquidityPoolReport:
         # todo: idea: check date_last_added, if it is not changed - get user_txs from local cache
         # todo: or you can compare current liq_units! if it has changed, you reload tx! (unsafe)
-
-        user_txs = await self._get_user_tx_actions(address, pool_name) if not user_txs else user_txs
-
-        historic_all_pool_states = await self._fetch_historical_pool_states(user_txs)
 
         cur_liq = self._get_current_liquidity(user_txs, pool_name, historic_all_pool_states,
                                               withdraw_fee_rune=self.withdraw_fee_rune)
 
         fees = self._get_fee_report(user_txs, pool_name, historic_all_pool_states)
+
         usd_per_asset_start, usd_per_rune_start = self._get_earliest_prices(user_txs, historic_all_pool_states)
 
-        d = self.deps
+        pool_info = self.deps.price_holder.pool_info_map.get(cur_liq.pool)
+
+        protection_report = await self._get_il_report(
+            pool_info, user_txs,
+            asset_residual=(cur_liq.asset_stake - cur_liq.asset_withdrawn),
+            rune_residual=(cur_liq.rune_stake - cur_liq.rune_withdrawn),
+            final_my_liq_units=cur_liq.pool_units
+        )
+
+        self.logger.info(f'{protection_report=}')
+
+        # todo! add protection to final APY, LPvsHodl, % and so on!!!!
+
         liq_report = LiquidityPoolReport(
-            d.price_holder.usd_per_asset(cur_liq.pool),
-            d.price_holder.usd_per_rune,
+            self.deps.price_holder.usd_per_asset(cur_liq.pool),
+            self.deps.price_holder.usd_per_rune,
             usd_per_asset_start, usd_per_rune_start,
             cur_liq, fees=fees,
-            pool=d.price_holder.pool_info_map.get(cur_liq.pool)
+            pool=pool_info,
+            protection=protection_report
         )
         return liq_report
 
@@ -133,16 +141,6 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         tasks = [ppf.get_current_pool_data_full(h, caching=True) for h in heights]
         pool_states = await asyncio.gather(*tasks)
         return dict(zip(heights, pool_states))
-
-    async def _get_details_of_staked_pools(self, address, pools) -> Dict[str, PoolMemberDetails]:
-        url = self.url_gen.url_pool_member_details(address, pools)
-        self.logger.info(f'get: {url}')
-        async with self.deps.session.get(url) as resp:
-            j = await resp.json()
-            if 'error' in j:
-                raise FileNotFoundError(j['error'])
-            pool_array = self.parser.parse_pool_member_details(j, address)
-            return {p.pool: p for p in pool_array}
 
     def _get_current_liquidity(self, txs: List[ThorTx],
                                pool_name,
@@ -355,6 +353,11 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
         return day_to_units
 
+    async def get_last_thorchain_block(self):
+        if self.last_block == 0:
+            self.last_block = await self.block_mapper.get_last_thorchain_block()
+        return self.last_block
+
     async def _get_charts(self,
                           txs: List[ThorTx],
                           days=14) -> LPDailyChartByPoolDict:
@@ -363,7 +366,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         for tx in txs:
             tx_by_pool_map[tx.first_pool].append(tx)
 
-        last_block = await self.block_mapper.get_last_thorchain_block()
+        self.last_block = await self.get_last_thorchain_block()
         results = {}
         now = datetime.datetime.now()
         ppf = self.deps.price_pool_fetcher
@@ -373,7 +376,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             graph_points = []
             for day, ts, units in day_to_units:
                 that_day = now - datetime.timedelta(days=day)
-                height = await self.block_mapper.get_block_height_by_date(that_day.date(), last_block)
+                height = await self.block_mapper.get_block_height_by_date(that_day.date(), self.last_block)
                 pools_at_height = await ppf.get_current_pool_data_full(height, caching=True)
                 pool_info = pools_at_height.get(pool, None)
 
@@ -389,3 +392,54 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             results[pool] = list(reversed(graph_points))  # chronologically
 
         return results
+
+    @staticmethod
+    def get_last_deposit_height(txs: List[ThorTx]) -> int:
+        last_deposit_height = -1
+        for tx in txs:
+            if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
+                if last_deposit_height < tx.height_int:
+                    last_deposit_height = tx.height_int
+        return last_deposit_height
+
+    def get_il_protection_progress(self, current_block_height: int, last_deposit_height: int) -> float:
+        blocks_protected_full = int(self.deps.mimir_const_holder.get_constant(
+            self.KEY_CONST_FULL_IL_PROTECTION_BLOCKS, default=1728000))
+
+        age = current_block_height - last_deposit_height
+
+        if age < 17280 or blocks_protected_full <= 0 or last_deposit_height <= 0:
+            return 0.0
+
+        if age >= blocks_protected_full:
+            return 1.0
+
+        return age / blocks_protected_full
+
+    @staticmethod
+    def calculate_imp_loss(pool: PoolInfo, liquidity_units: int,
+                           asset_residual: float, rune_residual: float) -> float:
+        r0, a0 = rune_residual, asset_residual
+        r1, a1 = pool_share(pool.balance_rune, pool.balance_asset, liquidity_units, pool.pool_units)
+        coverage = (r0 - r1) + (a0 - a1) * r1 / a1
+        return max(0.0, coverage)
+
+    async def _get_il_report(self, pool: PoolInfo, txs: List[ThorTx],
+                             asset_residual: float, rune_residual: float,
+                             final_my_liq_units: int) -> ILProtectionReport:
+        last_block = await self.get_last_thorchain_block()
+        last_deposit_height = self.get_last_deposit_height(txs)
+
+        if last_deposit_height <= 0:
+            return ILProtectionReport()
+
+        protection_progress = self.get_il_protection_progress(last_block, last_deposit_height)
+
+        imp_loss_rune = self.calculate_imp_loss(pool, final_my_liq_units, asset_residual, rune_residual)
+        coverage_rune = imp_loss_rune * protection_progress
+
+        return ILProtectionReport(
+            protection_progress,
+            coverage_rune,
+            imp_loss_rune
+        )

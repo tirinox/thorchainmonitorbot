@@ -57,6 +57,8 @@ def pos_percent(x, y, ax=0, ay=0, w=1000, h=1000):
 
 
 def result_color(v):
+    if v == 0.0:
+        return LIGHT_TEXT_COLOR
     return COLOR_OF_LOSS if v < 0 else COLOR_OF_PROFIT
 
 

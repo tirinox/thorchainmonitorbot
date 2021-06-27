@@ -4,7 +4,7 @@ from typing import List
 
 from services.jobs.fetch.runeyield.base import AsgardConsumerConnectorBase, YieldSummary
 from services.models.lp_info import CurrentLiquidity, LPDailyGraphPoint, LiquidityPoolReport, FeeReport, \
-    LPDailyChartByPoolDict
+    LPDailyChartByPoolDict, ILProtectionReport
 
 
 class AsgardConsumerConnectorV1(AsgardConsumerConnectorBase):
@@ -108,7 +108,8 @@ class AsgardConsumerConnectorV1(AsgardConsumerConnectorBase):
             d.price_holder.usd_per_rune,
             usd_per_asset_start, usd_per_rune_start,
             liq, fees=fees,
-            pool=d.price_holder.pool_info_map.get(liq.pool)
+            pool=d.price_holder.pool_info_map.get(liq.pool),
+            protection=ILProtectionReport(),
         )
         return stake_report
 

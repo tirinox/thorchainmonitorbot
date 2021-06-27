@@ -132,6 +132,15 @@ class FeeReport:
 
 
 @dataclass
+class ILProtectionReport:
+    progress_progress: float = 0.0  # up to 1.0 (full)
+    rune_compensation: float = 0.0
+    max_rune_compensation: float = 0.0  # if it is 100%
+    cover_of_asset: float = 0.0  # extra amount on withdraw
+    cover_of_rune: float = 0.0  # extra amount on withdraw
+
+
+@dataclass
 class ReturnMetrics:
     hold_return: float = 0.0
     net_return: float = 0.0
@@ -230,6 +239,7 @@ class LiquidityPoolReport:
     liq: CurrentLiquidity
     fees: FeeReport
     pool: PoolInfo
+    protection: ILProtectionReport
 
     ASSET = 'asset'
     RUNE = 'rune'
@@ -340,3 +350,11 @@ class LiquidityPoolReport:
             return self.fees.fee_rune
         else:
             return self.fees.fee_asset
+
+    def il_protection_value(self, mode=USD):
+        if mode == self.USD:
+            return self.protection.rune_compensation * self.usd_per_rune
+        elif mode == self.RUNE:
+            return self.protection.rune_compensation
+        elif mode == self.ASSET:
+            return self.protection.rune_compensation * self.usd_per_rune / self.usd_per_asset
