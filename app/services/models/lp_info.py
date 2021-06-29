@@ -136,8 +136,10 @@ class ILProtectionReport:
     progress_progress: float = 0.0  # up to 1.0 (full)
     rune_compensation: float = 0.0
     max_rune_compensation: float = 0.0  # if it is 100%
-    cover_of_asset: float = 0.0  # extra amount on withdraw
-    cover_of_rune: float = 0.0  # extra amount on withdraw
+    # cover_of_asset: float = 0.0  # extra amount on withdraw
+    # cover_of_rune: float = 0.0  # extra amount on withdraw
+    corrected_pool: PoolInfo = field(default_factory=PoolInfo.dummy)
+    member_extra_units: int = 0
 
 
 @dataclass

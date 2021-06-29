@@ -1,15 +1,22 @@
+import copy
+import logging
 from dataclasses import dataclass
 from typing import List, Dict, NamedTuple
 
 from aiothornode.types import ThorPool
 
-from services.lib.constants import THOR_DIVIDER_INV
+from services.lib.constants import float_to_thor, thor_to_float
 
 
 def pool_share(rune_depth, asset_depth, my_units, pool_total_units):
     rune_share = (rune_depth * my_units) / pool_total_units
     asset_share = (asset_depth * my_units) / pool_total_units
     return rune_share, asset_share
+
+
+class PoolUnitsAdjustment(NamedTuple):
+    delta_units: int
+    new_units: int
 
 
 @dataclass
@@ -28,19 +35,23 @@ class PoolInfo:
     STAGED = 'staged'  # bootstrap
 
     def percent_share(self, runes, correction=0.0):
-        full_balance_rune = 2 * self.balance_rune * THOR_DIVIDER_INV + correction
+        full_balance_rune = 2 * thor_to_float(self.balance_rune) + correction
         return runes / full_balance_rune * 100.0
 
-    def rune_share_of_pool(self, units) -> float:
+    def get_share_rune_and_asset(self, units: int) -> (float, float):
         r, a = pool_share(self.balance_rune, self.balance_asset, my_units=units, pool_total_units=self.pool_units)
-        return r * THOR_DIVIDER_INV
+        return thor_to_float(r), thor_to_float(a)
 
-    def total_my_capital_of_pool_in_rune(self, units) -> float:
-        return self.rune_share_of_pool(units) * 2.0
+    def total_my_capital_of_pool_in_rune(self, units: int) -> float:
+        r, _ = self.get_share_rune_and_asset(units)
+        return r * 2.0
 
     @classmethod
     def dummy(cls):
         return cls('', 1, 1, 1, cls.DEPRECATED_BOOTSTRAP)
+
+    def copy(self):
+        return copy.copy(self)
 
     @property
     def asset_per_rune(self):
@@ -59,8 +70,25 @@ class PoolInfo:
         return self.is_status_enabled(self.status)
 
     def usd_depth(self, dollar_per_rune):
-        pool_depth_usd = 2 * self.balance_rune * THOR_DIVIDER_INV * dollar_per_rune  # note: * 2 as in off. frontend
+        pool_depth_usd = 2 * thor_to_float(self.balance_rune) * dollar_per_rune  # note: * 2 as in off. frontend
         return pool_depth_usd
+
+    def calculate_pool_units_rune_asset(self, add_rune: int, add_asset: int) -> PoolUnitsAdjustment:
+        r0, a0 = self.balance_rune, self.balance_asset
+        r, a = add_rune, add_asset
+
+        if r0 + r == 0 or a0 + a == 0:
+            logging.warning(f'total rune or asset is zero: {r0 + r = }, {a0 + a = }!')
+            return PoolUnitsAdjustment(0, 0)
+        if r0 == 0 or a0 == 0:
+            return PoolUnitsAdjustment(add_rune, add_rune)
+
+        slip_adjustment = 1.0 - abs((r0 * a - r * a0) / ((r + r0) * (a + a0)))
+
+        delta_units = int(self.pool_units * (a * r0 + a0 * r) / (2 * r0 * a0) * slip_adjustment)
+        new_pool_unit = delta_units + self.pool_units
+
+        return PoolUnitsAdjustment(delta_units, new_pool_unit)
 
     @classmethod
     def from_dict(cls, j):
@@ -100,11 +128,11 @@ class LPPosition:
             pool=pool.asset,
             liquidity_units=my_units,
             liquidity_total=pool.pool_units,
-            rune_balance=pool.balance_rune * THOR_DIVIDER_INV,
-            asset_balance=pool.balance_asset * THOR_DIVIDER_INV,
+            rune_balance=thor_to_float(pool.balance_rune),
+            asset_balance=thor_to_float(pool.balance_asset),
             usd_per_rune=usd_per_rune,
             usd_per_asset=usd_per_asset,
-            total_usd_balance=pool.balance_rune * THOR_DIVIDER_INV * usd_per_rune * 2.0
+            total_usd_balance=thor_to_float(pool.balance_rune) * usd_per_rune * 2.0
         )
 
 

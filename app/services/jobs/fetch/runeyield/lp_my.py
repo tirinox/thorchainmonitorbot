@@ -8,7 +8,7 @@ from services.jobs.fetch.runeyield import AsgardConsumerConnectorBase
 from services.jobs.fetch.runeyield.base import YieldSummary
 from services.jobs.fetch.runeyield.date2block import DateToBlockMapper
 from services.jobs.fetch.tx import TxFetcher
-from services.lib.constants import STABLE_COIN_POOLS, NetworkIdents, THOR_DIVIDER_INV
+from services.lib.constants import STABLE_COIN_POOLS, NetworkIdents, thor_to_float, float_to_thor, THOR_BASIS_POINT_MAX
 from services.lib.date_utils import days_ago_noon, now_ts
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
@@ -42,7 +42,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
     def update_fees(self):
         withdraw_fee_rune = self.deps.mimir_const_holder.get_constant(self.KEY_CONST_FEE_OUTBOUND, default=2000000)
-        self.withdraw_fee_rune = int(withdraw_fee_rune) * THOR_DIVIDER_INV
+        self.withdraw_fee_rune = thor_to_float(int(withdraw_fee_rune))
 
     async def generate_yield_summary(self, address, pools: List[str]) -> Tuple[dict, List[LiquidityPoolReport]]:
         self.update_fees()
@@ -93,8 +93,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
         protection_report = await self._get_il_report(
             pool_info, user_txs,
-            asset_residual=(cur_liq.asset_stake - cur_liq.asset_withdrawn),
-            rune_residual=(cur_liq.rune_stake - cur_liq.rune_withdrawn),
+            historic_all_pool_states,
             final_my_liq_units=cur_liq.pool_units
         )
 
@@ -271,6 +270,9 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
                         pool: str,
                         pool_historic: HeightToAllPools):
 
+        if not txs:
+            return FeeReport(pool)  # empty
+
         # metrics (fee, imp loss, etc) accumulator
         return_metrics = ReturnMetrics()
 
@@ -417,29 +419,72 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         return age / blocks_protected_full
 
     @staticmethod
-    def calculate_imp_loss(pool: PoolInfo, liquidity_units: int,
-                           asset_residual: float, rune_residual: float) -> float:
-        r0, a0 = rune_residual, asset_residual
+    def calculate_imp_loss(pool: PoolInfo, liquidity_units: int, r0: float, a0: float) -> float:
         r1, a1 = pool_share(pool.balance_rune, pool.balance_asset, liquidity_units, pool.pool_units)
+        r1, a1 = thor_to_float(r1), thor_to_float(a1)
         coverage = (r0 - r1) + (a0 - a1) * r1 / a1
         return max(0.0, coverage)
 
+    def _get_deposit_values_r0_and_a0(self, txs: List[ThorTx],
+                                      historic_all_pool_states: HeightToAllPools,
+                                      pool_name: str) -> (float, float):
+        """
+        r0 = runeDepositValue // the deposit value of the rune received
+        a0 = assetDepositValue // the deposit value of the asset received
+        """
+        r0, a0 = 0.0, 0.0
+        for tx in txs:
+            if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
+                pool = self.get_pool(historic_all_pool_states, tx.height_int, pool_name)
+                r, a = pool.get_share_rune_and_asset(tx.meta_add.liquidity_units_int)
+                r0 += r
+                a0 += a
+            elif tx.type == ThorTxType.TYPE_WITHDRAW:
+                part_ratio = tx.meta_withdraw.basis_points_int / THOR_BASIS_POINT_MAX
+                r0 -= r0 * part_ratio
+                a0 -= a0 * part_ratio
+
+        return r0, a0
+
+    @staticmethod
+    def get_pool(historic_all_pool_states: HeightToAllPools, height, pool_name: str) -> PoolInfo:
+        pools = historic_all_pool_states.get(int(height), {})
+        pool = pools.get(pool_name)
+        return pool or PoolInfo(pool_name, 0, 0, 0, PoolInfo.STAGED)
+
     async def _get_il_report(self, pool: PoolInfo, txs: List[ThorTx],
-                             asset_residual: float, rune_residual: float,
+                             historic_all_pool_states: HeightToAllPools,
                              final_my_liq_units: int) -> ILProtectionReport:
+        # Explanation: https://gitlab.com/thorchain/thornode/-/issues/794
         last_block = await self.get_last_thorchain_block()
         last_deposit_height = self.get_last_deposit_height(txs)
 
-        if last_deposit_height <= 0:
+        if last_deposit_height <= 0 and pool.is_enabled:
             return ILProtectionReport()
 
         protection_progress = self.get_il_protection_progress(last_block, last_deposit_height)
 
-        imp_loss_rune = self.calculate_imp_loss(pool, final_my_liq_units, asset_residual, rune_residual)
-        coverage_rune = imp_loss_rune * protection_progress
+        r0, a0 = self._get_deposit_values_r0_and_a0(txs, historic_all_pool_states, pool.asset)
+
+        full_imp_loss_rune = self.calculate_imp_loss(pool, final_my_liq_units, r0, a0)
+        coverage_rune = full_imp_loss_rune * protection_progress
+
+        new_pool_info = pool.copy()
+        member_extra_units = 0
+        if coverage_rune > 0:
+            pool_adj = pool.calculate_pool_units_rune_asset(
+                add_rune=float_to_thor(coverage_rune),
+                add_asset=0
+            )
+
+            new_pool_info.balance_rune += float_to_thor(coverage_rune)
+            new_pool_info.pool_units += pool_adj.delta_units
+            member_extra_units = pool_adj.delta_units
 
         return ILProtectionReport(
             protection_progress,
             coverage_rune,
-            imp_loss_rune
+            full_imp_loss_rune,
+            new_pool_info,
+            member_extra_units
         )

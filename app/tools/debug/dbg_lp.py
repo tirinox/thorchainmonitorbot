@@ -7,7 +7,9 @@ from services.jobs.fetch.runeyield.lp_my import HomebrewLPConnector
 from services.lib.utils import load_pickle, save_pickle
 from tools.lib.lp_common import LpAppFramework, LpGenerator
 
-CACHE_REPORTS = True  # fixme!
+CACHE_REPORTS = False  # fixme!
+
+TOKEN_KYL = 'ETH.KYL-0X67B6D479C7BB412C54E03DCA8E1BC6740CE6B99C'
 
 
 async def test_one_pool_picture_generator(addr, pool, hide, rune_yield_class=HomebrewLPConnector):
@@ -69,27 +71,30 @@ async def test_my_pools():
 
 
 async def test_multi_chain_testnet():
-    # await test_one_pool_picture_generator('tthor1cwcqhhjhwe8vvyn8vkufzyg0tt38yjgzdf9whh', 'BTC.BTC', hide=False)
-
-    # await test_one_pool_picture_generator('0x52e07b963ab0f525b15e281b3b42d55e8048f027',
-    #                                       'ETH.AAVE-0X7FC66500C84A76AD7E9C93437BFC5AC33E2DDAE9', hide=False)
-
-    # await test_one_pool_picture_generator('bnb1deeu3qxjuqrdumpz53huum8yg39aarlcf4sg6q', 'BNB.BNB',
-    #                                       hide=True,
-    #                                       rune_yield_class=HomebrewLPConnector)  # BEP2
-
-    # await test_summary_picture_generator('tthor1vyp3y7pjuwsz2hpkwrwrrvemcn7t758sfs0glr', hide=False)
-
-    # await test_summary_picture_generator('0x52e07b963ab0f525b15e281b3b42d55e8048f027', hide=True,
-    #                                      rune_yield_class=HomebrewLPConnector)
-
-    # await test_one_pool_picture_generator('bnb1t57fmptcaxc4aag2ax86a7x354p543t3zs8m7c', 'BNB.BNB', hide=False)
-
     # todo: 1) test for address with no IL coverage
 
+    # await test_one_pool_picture_generator('thor1zaphk0dm3v3kucla7a4hlh05hsdhwqdfdjqadg', 'BNB.BNB', hide=False)
+    # fixme: APY!
+
     # 2) test for address with IL coverage added to final numbers
+
+    # this has + and -
+    # await test_one_pool_picture_generator('bnb13njdl8ktw7pen3jcjy7epfa3mzcdjxuu3w4dxh', 'BNB.BNB', hide=False)
     await test_one_pool_picture_generator('bnb1rpw69vck9txkql2hw8t80uxdapve0rlw6ywkhf', 'BNB.BUSD-BD1', hide=False)
-    # await test_one_pool_picture_generator('bnb1rpw69vck9txkql2hw8t80uxdapve0rlw6ywkhf', 'BNB.BUSD-BD1', hide=True)
+    # fixme: last tx? withdraw 10000? all??
+
+    # ----------------
+
+    # 5 TX, No IL protection needed!
+    # https://app.runeyield.info/dashboard?eth=0x5d11b2491ec1673402de8ee85f0076ba4c27d1a1
+    # await test_one_pool_picture_generator('0x5d11b2491ec1673402de8ee85f0076ba4c27d1a1', 'ETH.ETH', hide=False)
+
+    # ----------------
+
+    # todo! eth tokens test fee > 0!
+    # https://app.runeyield.info/dashboard?eth=0x5d11b2491ec1673402de8ee85f0076ba4c27d1a1
+    # 0x5d11b2491ec1673402de8ee85f0076ba4c27d1a1
+    # await test_one_pool_picture_generator('0x5d11b2491ec1673402de8ee85f0076ba4c27d1a1', TOKEN_KYL, hide=False)
 
 
 if __name__ == '__main__':

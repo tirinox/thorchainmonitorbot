@@ -130,3 +130,52 @@ protectionRuneAmount := cosmos.ZeroUint()
 
 
         """
+
+        // r = rune provided;
+// a = asset provided
+// R = rune Balance (before)
+// A = asset Balance (before)
+// P = existing Pool Units
+// slipAdjustment = (1 - ABS((R a - r A)/((r + R) (a + A))))
+// units = ((P (a R + A r))/(2 A R))*slidAdjustment
+func calculatePoolUnitsV1(oldPoolUnits, poolRune, poolAsset, addRune, addAsset cosmos.Uint) (cosmos.Uint, cosmos.Uint, error) {
+	if addRune.Add(poolRune).IsZero() {
+		return cosmos.ZeroUint(), cosmos.ZeroUint(), errors.New("total RUNE in the pool is zero")
+	}
+	if addAsset.Add(poolAsset).IsZero() {
+		return cosmos.ZeroUint(), cosmos.ZeroUint(), errors.New("total asset in the pool is zero")
+	}
+	if poolRune.IsZero() || poolAsset.IsZero() {
+		return addRune, addRune, nil
+	}
+	P := cosmos.NewDecFromBigInt(oldPoolUnits.BigInt())
+	R := cosmos.NewDecFromBigInt(poolRune.BigInt())
+	A := cosmos.NewDecFromBigInt(poolAsset.BigInt())
+	r := cosmos.NewDecFromBigInt(addRune.BigInt())
+	a := cosmos.NewDecFromBigInt(addAsset.BigInt())
+
+	// (r + R) (a + A)
+	slipAdjDenominator := (r.Add(R)).Mul(a.Add(A))
+	// ABS((R a - r A)/((2 r + R) (a + A)))
+	var slipAdjustment cosmos.Dec
+	if R.Mul(a).GT(r.Mul(A)) {
+		slipAdjustment = R.Mul(a).Sub(r.Mul(A)).Quo(slipAdjDenominator)
+	} else {
+		slipAdjustment = r.Mul(A).Sub(R.Mul(a)).Quo(slipAdjDenominator)
+	}
+	// (1 - ABS((R a - r A)/((2 r + R) (a + A))))
+	slipAdjustment = cosmos.NewDec(1).Sub(slipAdjustment)
+
+	// ((P (a R + A r))
+	numerator := P.Mul(a.Mul(R).Add(A.Mul(r)))
+	// 2AR
+	denominator := cosmos.NewDec(2).Mul(A).Mul(R)
+	liquidityUnits := numerator.Quo(denominator).Mul(slipAdjustment)
+	newPoolUnit := P.Add(liquidityUnits)
+
+	pUnits := cosmos.NewUintFromBigInt(newPoolUnit.TruncateInt().BigInt())
+	sUnits := cosmos.NewUintFromBigInt(liquidityUnits.TruncateInt().BigInt())
+
+	return pUnits, sUnits, nil
+}
+

@@ -91,6 +91,10 @@ class ThorMetaWithdraw:
     network_fees: List[ThorCoin]
 
     @property
+    def basis_points_int(self):
+        return int(self.basis_points)
+
+    @property
     def liquidity_units_int(self):
         return int(self.liquidity_units)
 

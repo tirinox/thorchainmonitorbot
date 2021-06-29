@@ -194,6 +194,8 @@ def sync_lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, run
     draw.text(pos_percent_lp(columns_x[0], start_y), loc.LP_PIC_R_RUNE, font=r.font, fill=FADE_COLOR, anchor='ms')
     draw.text(pos_percent_lp(columns_x[1], start_y), short_asset_name(asset), font=r.font, fill=FADE_COLOR, anchor='ms')
 
+    need_protection = report.protection.member_extra_units > 0
+
     for x, column in zip(columns_x, columns):
         gl, _ = report.gain_loss(column)
 
@@ -218,9 +220,10 @@ def sync_lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, run
                       fill=result_color(gl),
                       anchor='ms')
 
-            draw.text(pos_percent_lp(x, rows_y[5]), pretty_money(il_prot, signed=True), font=r.font_semi,
-                      fill=result_color(il_prot),
-                      anchor='ms')
+            if need_protection:
+                draw.text(pos_percent_lp(x, rows_y[5]), pretty_money(il_prot, signed=True), font=r.font_semi,
+                          fill=result_color(il_prot),
+                          anchor='ms')
 
         else:
             fee_text = format_percent(fee_value, current)
@@ -233,8 +236,9 @@ def sync_lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, run
                       anchor='ms')
             r.put_hidden_plate(image, pos_percent_lp(x, rows_y[4]), anchor='center')
 
-            draw.text(pos_percent_lp(x, rows_y[5]), il_prot_text, font=r.font_semi,
-                      fill=LIGHT_TEXT_COLOR, anchor='ms')
+            if need_protection:
+                draw.text(pos_percent_lp(x, rows_y[5]), il_prot_text, font=r.font_semi,
+                          fill=LIGHT_TEXT_COLOR, anchor='ms')
 
         if report.usd_per_asset_start is not None and report.usd_per_rune_start is not None:
             price_change = report.price_change(column)
@@ -261,12 +265,17 @@ def sync_lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, run
             draw.text(pos_percent_lp(x, rows_y[5]), f'–', font=r.font_semi,
                       fill=FADE_COLOR, anchor='ms')
 
+    if not need_protection:
+        draw.text(pos_percent_lp(columns_x[1], rows_y[5]), loc.LP_PIC_NO_NEED_PROTECTION, font=r.font_semi,
+                  fill=LIGHT_TEXT_COLOR,
+                  anchor='ms')
+
     draw.text(pos_percent_lp(table_x, rows_y[0]), loc.LP_PIC_ADDED_VALUE, font=r.font, fill=FADE_COLOR, anchor='rs')
     draw.text(pos_percent_lp(table_x, rows_y[1]), loc.LP_PIC_WITHDRAWN_VALUE, font=r.font, fill=FADE_COLOR, anchor='rs')
     draw.text(pos_percent_lp(table_x, rows_y[2]), loc.LP_PIC_CURRENT_VALUE, font=r.font, fill=FADE_COLOR, anchor='rs')
     draw.text(pos_percent_lp(table_x, rows_y[3]), loc.LP_PIC_FEES, font=r.font, fill=FADE_COLOR, anchor='rs')
     draw.text(pos_percent_lp(table_x, rows_y[4]), loc.LP_PIC_GAIN_LOSS, font=r.font, fill=FADE_COLOR, anchor='rs')
-    draw.text(pos_percent_lp(table_x, rows_y[5]), 'IL protection', font=r.font, fill=FADE_COLOR, anchor='rs')
+    draw.text(pos_percent_lp(table_x, rows_y[5]), loc.LP_PIC_IL_PROTECTION, font=r.font, fill=FADE_COLOR, anchor='rs')
     draw.text(pos_percent_lp(table_x, rows_y[6]), loc.LP_PIC_PRICE_CHANGE, font=r.font, fill=FADE_COLOR, anchor='rs')
     draw.text(pos_percent_lp(table_x, rows_y[6] + 2.5), loc.LP_PIC_PRICE_CHANGE_2, font=r.font_small, fill=FADE_COLOR,
               anchor='rs')

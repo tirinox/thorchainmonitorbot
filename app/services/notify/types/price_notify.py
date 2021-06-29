@@ -147,4 +147,11 @@ class PriceNotifier(INotified):
         points = await self.time_series.get_last_values(period_sec, tolerance_sec=period_sec / 100, with_ts=True)
         # [ (ts, price) ]
 
+        # ----- ATH DETECTOR ----
+        # todo:
+        # 1. take a window on the timeline (e.g. 1 HOUR till now)
+        # 2. detect if it has ATH inside
+        # 3. make sure that after ATH price is less than it for some time (10min)
+        # 4. signal
+
 

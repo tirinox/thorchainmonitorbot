@@ -96,6 +96,16 @@ THOR_DIVIDER_INV = 1.0 / THOR_DIVIDER
 
 THOR_BLOCK_TIME = 6.0  # seconds. 10 blocks / minute
 
+THOR_BASIS_POINT_MAX = 10_000
+
+
+def thor_to_float(x: int) -> float:
+    return x * THOR_DIVIDER_INV
+
+
+def float_to_thor(x: float) -> int:
+    return int(x * THOR_DIVIDER)
+
 
 def get_thor_env_by_network_id(network_id) -> ThorEnvironment:
     if network_id == NetworkIdents.TESTNET_MULTICHAIN:
