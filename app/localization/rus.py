@@ -98,7 +98,7 @@ class RussianLocalization(BaseLocalization):
     LP_PIC_R_RUNE = f'{RAIDO_GLYPH}une'
     LP_PIC_ADDED_VALUE = 'Добавлено всего'
     LP_PIC_WITHDRAWN_VALUE = 'Выведено всего'
-    LP_PIC_CURRENT_VALUE = 'Осталось в пуле'
+    LP_PIC_CURRENT_VALUE = 'В пуле (+чай)'
     LP_PIC_PRICE_CHANGE = 'Изменение цены'
     LP_PIC_PRICE_CHANGE_2 = 'с 1го добавления'
     LP_PIC_LP_VS_HOLD = 'Против ХОЛД'
@@ -106,6 +106,8 @@ class RussianLocalization(BaseLocalization):
     LP_PIC_EARLY = 'Еще рано...'
     LP_PIC_FOOTER = ""  # my LP scanner is used
     LP_PIC_FEES = 'Ваши чаевые'
+    LP_PIC_IL_PROTECTION = 'Страховка от IL'
+    LP_PIC_NO_NEED_PROTECTION = 'Не требуется.'
 
     LP_PIC_SUMMARY_HEADER = 'Сводка по пулам ликвидности'
     LP_PIC_SUMMARY_ADDED_VALUE = 'Добавлено'
@@ -559,12 +561,19 @@ class RussianLocalization(BaseLocalization):
 
         return message.rstrip()
 
-    def notification_text_trading_halted(self, chain_info: ThorChainInfo):
-        if chain_info.halted:
-            return f'🚨🚨🚨 <b>Внимание!</b> Торговля остановлена на блокчейне {code(chain_info.chain)}! ' \
-                   f'Воздержитесь от обменов, пока торговля не будет снова запущена! 🚨🚨🚨'
-        else:
-            return f'✅ <b>Внимание!</b> Торговля снова возобновлена на блокчейне {code(chain_info.chain)}!'
+    def notification_text_trading_halted_multi(self, chain_infos: List[ThorChainInfo]):
+        msg = ''
+
+        halted_chains = ', '.join(c.chain for c in chain_infos if c.halted)
+        if halted_chains:
+            msg += f'🚨🚨🚨 <b>Внимание!</b> Торговля остановлена на блокчейнах: {code(halted_chains)}! ' \
+                   f'Воздержитесь от обменов, пока торговля не будет снова запущена! 🚨🚨🚨\n\n'
+
+        resumed_chains = ', '.join(c.chain for c in chain_infos if not c.halted)
+        if resumed_chains:
+            msg += f'✅ <b>Внимание!</b> Торговля снова возобновлена на блокчейнах: {code(resumed_chains)}!'
+
+        return msg.strip()
 
     def notification_text_mimir_changed(self, changes):
         if not changes:

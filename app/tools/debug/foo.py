@@ -286,22 +286,36 @@ async def foo25_coingecko_test():
 
 
 async def foo26_trading_halt_text():
-    ch = ThorChainInfo(
-        chain='BNB',
-        halted=True
-    )
+
+    changes1 = [
+        ThorChainInfo(chain='BNB', halted=True),
+        ThorChainInfo(chain='BTC', halted=True),
+        ThorChainInfo(chain='ETH', halted=True),
+    ]
+
+    changes2 = [
+        ThorChainInfo(chain='BNB', halted=False),
+        ThorChainInfo(chain='BTC', halted=False),
+        ThorChainInfo(chain='ETH', halted=False),
+    ]
 
     for loc in (loc_ru, loc_en):
-        ch.halted = True
-        text = loc.notification_text_trading_halted(ch)
+
+        text = loc.notification_text_trading_halted_multi(changes1)
         print(text)
         sep()
         await telegram_send_message_basic(TG_TOKEN, TG_USER, text)
 
         sep()
 
-        ch.halted = False
-        text = loc.notification_text_trading_halted(ch)
+        text = loc.notification_text_trading_halted_multi(changes2)
+        print(text)
+        sep()
+        await telegram_send_message_basic(TG_TOKEN, TG_USER, text)
+
+        sep()
+
+        text = loc.notification_text_trading_halted_multi(changes2 + changes1)
         print(text)
         sep()
         await telegram_send_message_basic(TG_TOKEN, TG_USER, text)
@@ -322,7 +336,7 @@ async def foo27_mimir_message():
     ]
 
     for loc in (loc_ru, loc_en):
-    # for loc in (loc_en,):
+        # for loc in (loc_en,):
         text = loc.notification_text_mimir_changed(changes)
         print(text)
         sep()
@@ -333,7 +347,8 @@ async def start_foos():
     async with aiohttp.ClientSession() as deps.session:
         deps.thor_connector = ThorConnector(get_thor_env_by_network_id(deps.cfg.network_id), deps.session)
         await deps.db.get_redis()
-        await foo27_mimir_message()
+        # await foo27_mimir_message()
+        await foo26_trading_halt_text()
 
 
 if __name__ == '__main__':

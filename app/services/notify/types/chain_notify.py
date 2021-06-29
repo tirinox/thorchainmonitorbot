@@ -39,8 +39,7 @@ class TradingHaltedNotifier(INotified):
         if changed_chains:
             await self.deps.broadcaster.notify_preconfigured_channels(
                 self.deps.loc_man,
-                BaseLocalization.joiner,
-                BaseLocalization.notification_text_trading_halted,
+                BaseLocalization.notification_text_trading_halted_multi,
                 changed_chains
             )
 
