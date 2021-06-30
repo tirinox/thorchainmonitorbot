@@ -95,6 +95,15 @@ class NodeInfoChanges:
         )
         return not self.nodes_activated and not self.nodes_deactivated and all_add_removed_are_strange
 
+    @property
+    def count_of_changes(self):
+        return (
+                len(self.nodes_added) +
+                len(self.nodes_activated) +
+                len(self.nodes_deactivated) +
+                len(self.nodes_removed)
+        )
+
 
 @dataclass
 class NetworkNodeIpInfo:

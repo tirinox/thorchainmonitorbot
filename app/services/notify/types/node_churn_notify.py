@@ -42,4 +42,5 @@ class NodeChurnNotifier(INotified):
             bio_graph = img_to_bio(graph, "node_diversity.png")
             return BoardMessage.make_photo(bio_graph)
 
-        await self.deps.broadcaster.broadcast(user_lang_map, node_div_pic_gen)
+        if changes.count_of_changes > 2:
+            await self.deps.broadcaster.broadcast(user_lang_map, node_div_pic_gen)
