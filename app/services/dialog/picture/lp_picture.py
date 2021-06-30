@@ -188,11 +188,13 @@ def sync_lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, run
         columns_x = [50 + c * 25 for c in range(2)]
     else:
         columns = (report.RUNE, report.ASSET, report.USD)
-        columns_x = [44 + c * 19 for c in range(3)]
-        draw.text(pos_percent_lp(columns_x[2], start_y), 'USD', font=r.font, fill=FADE_COLOR, anchor='ms')
+        columns_x = [44 + c * 20.5 for c in range(3)]
+        draw.text(pos_percent_lp(columns_x[2], start_y), loc.LP_PIC_IN_USD_CAP, font=r.font, fill=FADE_COLOR,
+                  anchor='ms')
 
     draw.text(pos_percent_lp(columns_x[0], start_y), loc.LP_PIC_R_RUNE, font=r.font, fill=FADE_COLOR, anchor='ms')
-    draw.text(pos_percent_lp(columns_x[1], start_y), short_asset_name(asset), font=r.font, fill=FADE_COLOR, anchor='ms')
+    draw.text(pos_percent_lp(columns_x[1], start_y), loc.LP_PIC_IN_ASSET.format(short_asset_name(asset)), font=r.font,
+              fill=FADE_COLOR, anchor='ms')
 
     need_protection = report.protection.member_extra_units > 0
 

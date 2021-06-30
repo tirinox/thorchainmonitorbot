@@ -2,8 +2,10 @@ import asyncio
 import logging
 import os
 
+from localization import RussianLocalization
 from services.dialog.picture.lp_picture import lp_pool_picture, lp_address_summary_picture
 from services.jobs.fetch.runeyield.lp_my import HomebrewLPConnector
+from services.lib.constants import BNB_BUSD_SYMBOL
 from services.lib.utils import load_pickle, save_pickle
 from tools.lib.lp_common import LpAppFramework, LpGenerator
 
@@ -13,6 +15,7 @@ TOKEN_KYL = 'ETH.KYL-0X67B6D479C7BB412C54E03DCA8E1BC6740CE6B99C'
 
 
 async def test_one_pool_picture_generator(addr, pool, hide, rune_yield_class=HomebrewLPConnector):
+
     stake_report_path = f'../../tmp/stake_report_{addr}.pickle'
     stake_picture_path = f'../../tmp/stake_test_{addr}.png'
 
@@ -25,7 +28,10 @@ async def test_one_pool_picture_generator(addr, pool, hide, rune_yield_class=Hom
             stake_report = await lpgen.get_report(addr, pool)
             save_pickle(stake_report_path, stake_report)
 
-    img = await lp_pool_picture(stake_report, lpgen.deps.loc_man.default, value_hidden=hide)
+    loc = lpgen.deps.loc_man.default
+    # loc = RussianLocalization(lpgen.deps.cfg)
+
+    img = await lp_pool_picture(stake_report, loc, value_hidden=hide)
     img.save(stake_picture_path, "PNG")
     os.system(f'open "{stake_picture_path}"')
 
@@ -80,7 +86,7 @@ async def test_multi_chain_testnet():
 
     # this has + and -
     # await test_one_pool_picture_generator('bnb13njdl8ktw7pen3jcjy7epfa3mzcdjxuu3w4dxh', 'BNB.BNB', hide=False)
-    await test_one_pool_picture_generator('bnb1rpw69vck9txkql2hw8t80uxdapve0rlw6ywkhf', 'BNB.BUSD-BD1', hide=False)
+    # await test_one_pool_picture_generator('bnb1rpw69vck9txkql2hw8t80uxdapve0rlw6ywkhf', BNB_BUSD_SYMBOL, hide=False)
     # fixme: last tx? withdraw 10000? all??
 
     # ----------------
@@ -95,6 +101,12 @@ async def test_multi_chain_testnet():
     # https://app.runeyield.info/dashboard?eth=0x5d11b2491ec1673402de8ee85f0076ba4c27d1a1
     # 0x5d11b2491ec1673402de8ee85f0076ba4c27d1a1
     # await test_one_pool_picture_generator('0x5d11b2491ec1673402de8ee85f0076ba4c27d1a1', TOKEN_KYL, hide=False)
+
+    # ----------------
+
+    # thor1vsr6nard8svfqcf5eznzsaenuctpslahpgf4hq
+    # todo: LPvsHodl and LPvsHodl APY!
+    await test_one_pool_picture_generator('thor1vsr6nard8svfqcf5eznzsaenuctpslahpgf4hq', BNB_BUSD_SYMBOL, hide=False)
 
 
 if __name__ == '__main__':
