@@ -132,6 +132,10 @@ class ThorMetaAddLiquidity:
         return cls(liquidity_units=j.get('liquidityUnits', '0'))
 
 
+SUCCESS = 'success'
+PENDING = 'pending'
+
+
 @dataclass
 class ThorTx:
     date: str
@@ -146,12 +150,9 @@ class ThorTx:
     meta_swap: Optional[ThorMetaSwap] = None
     meta_refund: Optional[ThorMetaRefund] = None
 
-    SUCCESS = 'success'
-    PENDING = 'pending'
-
     @property
     def is_success(self):
-        return self.status == self.SUCCESS
+        return self.status == SUCCESS
 
     @property
     def date_timestamp(self):
@@ -175,6 +176,10 @@ class ThorTx:
         for in_tx in self.in_tx:
             if Chains.detect_chain(in_tx.address) == Chains.THOR:
                 return in_tx.address
+
+    @property
+    def is_asset_side_only(self):
+        return self.input_thor_address is None
 
     @property
     def sender_address(self):

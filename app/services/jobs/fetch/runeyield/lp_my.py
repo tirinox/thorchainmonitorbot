@@ -8,8 +8,7 @@ from services.jobs.fetch.runeyield import AsgardConsumerConnectorBase
 from services.jobs.fetch.runeyield.base import YieldSummary
 from services.jobs.fetch.runeyield.date2block import DateToBlockMapper
 from services.jobs.fetch.tx import TxFetcher
-from services.lib.constants import STABLE_COIN_POOLS, NetworkIdents, thor_to_float, float_to_thor, THOR_BASIS_POINT_MAX, \
-    Chains
+from services.lib.constants import STABLE_COIN_POOLS, NetworkIdents, thor_to_float, float_to_thor, Chains
 from services.lib.date_utils import days_ago_noon, now_ts
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
@@ -98,9 +97,11 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             final_my_liq_units=cur_liq.pool_units
         )
 
-        self.logger.info(f'{protection_report=}')
+        # add protection to final APY, LPvsHodl, % and so on!
+        cur_liq.pool_units = protection_report.member_extra_units + cur_liq.pool_units
+        pool_info = protection_report.corrected_pool or pool_info
 
-        # todo! add protection to final APY, LPvsHodl, % and so on!!!!
+        self.logger.info(f'{protection_report=}')
 
         liq_report = LiquidityPoolReport(
             self.deps.price_holder.usd_per_asset(cur_liq.pool),
@@ -357,8 +358,8 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         # fixme: negative fee!
         return_metrics.fees_usd = max(0.0, return_metrics.fees_usd)
 
-        fee_rune = return_metrics.fees_usd * 0.5 / curr_usd_per_rune
-        fee_asset = return_metrics.fees_usd * 0.5 / curr_usd_per_asset
+        fee_rune = return_metrics.fees_usd / curr_usd_per_rune  # this
+        fee_asset = return_metrics.fees_usd / curr_usd_per_asset  # or this, not a SUM!
 
         return FeeReport(asset=pool,
                          imp_loss_usd=return_metrics.imp_loss,
@@ -475,14 +476,19 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         a0 = assetDepositValue // the deposit value of the asset received
         """
         r0, a0 = 0.0, 0.0
+        units = 0
         for tx in txs:
             if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
                 pool = self._get_pool(historic_all_pool_states, tx.height_int, pool_name)
                 r, a = pool.get_share_rune_and_asset(tx.meta_add.liquidity_units_int)
                 r0 += r
                 a0 += a
+                units += tx.meta_add.liquidity_units_int
             elif tx.type == ThorTxType.TYPE_WITHDRAW:
-                part_ratio = tx.meta_withdraw.basis_points_int / THOR_BASIS_POINT_MAX
+                # part_ratio = tx.meta_withdraw.basis_points_int / THOR_BASIS_POINT_MAX
+                delta_units = abs(tx.meta_withdraw.liquidity_units_int)
+                part_ratio = delta_units / units
+                units -= delta_units
                 r0 -= r0 * part_ratio
                 a0 -= a0 * part_ratio
 
