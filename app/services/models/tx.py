@@ -2,7 +2,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import List, Optional, Iterable
 
-from services.lib.constants import is_rune, THOR_DIVIDER_INV, RUNE_SYMBOL
+from services.lib.constants import is_rune, THOR_DIVIDER_INV, RUNE_SYMBOL, Chains
 from services.models.cap_info import BaseModelMixin
 from services.models.pool_info import PoolInfo
 
@@ -171,6 +171,12 @@ class ThorTx:
             return self.date
 
     @property
+    def input_thor_address(self) -> Optional[str]:
+        for in_tx in self.in_tx:
+            if Chains.detect_chain(in_tx.address) == Chains.THOR:
+                return in_tx.address
+
+    @property
     def sender_address(self):
         return self.in_tx[0].address if self.in_tx else None
 
@@ -196,6 +202,15 @@ class ThorTx:
     @property
     def first_pool(self):
         return self.pools[0] if self.pools else None
+
+    def __hash__(self) -> int:
+        return int(self.tx_hash, 16)
+
+    def __eq__(self, other):
+        if isinstance(other, ThorTx):
+            return self.height_int == other.height_int and self.tx_hash == other.tx_hash and self.type == other.type
+        else:
+            return False
 
 
 def final_liquidity(txs: List[ThorTx]):

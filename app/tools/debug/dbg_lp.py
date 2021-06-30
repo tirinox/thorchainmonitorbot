@@ -5,7 +5,7 @@ import os
 from localization import RussianLocalization
 from services.dialog.picture.lp_picture import lp_pool_picture, lp_address_summary_picture
 from services.jobs.fetch.runeyield.lp_my import HomebrewLPConnector
-from services.lib.constants import BNB_BUSD_SYMBOL
+from services.lib.constants import BNB_BUSD_SYMBOL, ETH_SYMBOL
 from services.lib.utils import load_pickle, save_pickle
 from tools.lib.lp_common import LpAppFramework, LpGenerator
 
@@ -86,7 +86,7 @@ async def test_multi_chain_testnet():
 
     # this has + and -
     # await test_one_pool_picture_generator('bnb13njdl8ktw7pen3jcjy7epfa3mzcdjxuu3w4dxh', 'BNB.BNB', hide=False)
-    # await test_one_pool_picture_generator('bnb1rpw69vck9txkql2hw8t80uxdapve0rlw6ywkhf', BNB_BUSD_SYMBOL, hide=False)
+    await test_one_pool_picture_generator('bnb1rpw69vck9txkql2hw8t80uxdapve0rlw6ywkhf', BNB_BUSD_SYMBOL, hide=False)
     # fixme: last tx? withdraw 10000? all??
 
     # ----------------
@@ -101,12 +101,13 @@ async def test_multi_chain_testnet():
     # https://app.runeyield.info/dashboard?eth=0x5d11b2491ec1673402de8ee85f0076ba4c27d1a1
     # 0x5d11b2491ec1673402de8ee85f0076ba4c27d1a1
     # await test_one_pool_picture_generator('0x5d11b2491ec1673402de8ee85f0076ba4c27d1a1', TOKEN_KYL, hide=False)
+    # await test_one_pool_picture_generator('0x5d11b2491ec1673402de8ee85f0076ba4c27d1a1', ETH_SYMBOL, hide=False)
 
     # ----------------
 
     # thor1vsr6nard8svfqcf5eznzsaenuctpslahpgf4hq
     # todo: LPvsHodl and LPvsHodl APY!
-    await test_one_pool_picture_generator('thor1vsr6nard8svfqcf5eznzsaenuctpslahpgf4hq', BNB_BUSD_SYMBOL, hide=False)
+    # await test_one_pool_picture_generator('thor1vsr6nard8svfqcf5eznzsaenuctpslahpgf4hq', BNB_BUSD_SYMBOL, hide=False)
 
 
 if __name__ == '__main__':

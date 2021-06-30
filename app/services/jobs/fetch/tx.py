@@ -1,6 +1,6 @@
 from aiohttp import ContentTypeError
 from aioredis import Redis
-from typing import List
+from typing import List, Optional
 
 from tqdm import tqdm
 
@@ -23,7 +23,7 @@ class TxFetcher(BaseFetcher):
         self.max_page_deep = int(scfg.max_page_deep)
         self.url_gen_midgard = get_url_gen_by_network_id(deps.cfg.network_id)
         self.tx_parser = get_parser_by_network_id(deps.cfg.network_id)
-        self.progress_tracker: tqdm = None
+        self.progress_tracker: Optional[tqdm] = None
 
         self.logger.info(f"cfg.tx.liquidity: {scfg}")
 

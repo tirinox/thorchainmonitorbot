@@ -1,14 +1,15 @@
 import asyncio
 import datetime
 import operator
-from collections import defaultdict
+from collections import defaultdict, Counter
 from typing import List, Tuple, Dict, Optional
 
 from services.jobs.fetch.runeyield import AsgardConsumerConnectorBase
 from services.jobs.fetch.runeyield.base import YieldSummary
 from services.jobs.fetch.runeyield.date2block import DateToBlockMapper
 from services.jobs.fetch.tx import TxFetcher
-from services.lib.constants import STABLE_COIN_POOLS, NetworkIdents, thor_to_float, float_to_thor, THOR_BASIS_POINT_MAX
+from services.lib.constants import STABLE_COIN_POOLS, NetworkIdents, thor_to_float, float_to_thor, THOR_BASIS_POINT_MAX, \
+    Chains
 from services.lib.date_utils import days_ago_noon, now_ts
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
@@ -122,10 +123,49 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
     # ------------------------------------------------------------------------------------------------------------------
 
+    @staticmethod
+    def _find_thor_address_in_tx_list(txs: List[ThorTx]) -> str:
+        thor_addresses = (tx.input_thor_address for tx in txs)
+        thor_addresses = list(filter(bool, thor_addresses))
+        if thor_addresses:
+            counter = Counter(thor_addresses)
+            top = counter.most_common(1)[0][0]
+            return top
+        return ''
+
+    @staticmethod
+    def _apply_pool_filter(txs: List[ThorTx], pool_filter=None) -> List[ThorTx]:
+        if pool_filter:
+            return [tx for tx in txs if pool_filter == tx.first_pool]
+        else:
+            return txs
+
     async def _get_user_tx_actions(self, address: str, pool_filter=None) -> List[ThorTx]:
         txs = await self.tx_fetcher.fetch_all_tx(address, liquidity_change_only=True)
-        if pool_filter:
-            txs = [tx for tx in txs if pool_filter == tx.first_pool]
+
+        txs = self._apply_pool_filter(txs, pool_filter)
+
+        if Chains.detect_chain(address) != Chains.THOR:
+            # It is not THOR address! So perhaps there are not all TXS!
+            self.logger.info('It is not THOR address. I must find it and load its Txs too!')
+
+            thor_address = self._find_thor_address_in_tx_list(txs)
+
+            self.logger.info(f'Found THOR address: "{thor_address}".')
+
+            txs_from_thor_address = await self.tx_fetcher.fetch_all_tx(thor_address, liquidity_change_only=True)
+            txs_from_thor_address = self._apply_pool_filter(txs_from_thor_address, pool_filter)
+
+            old_txs_len = len(txs)
+            new_txs_len = len(txs_from_thor_address)
+
+            txs = set(txs) | set(txs_from_thor_address)
+            txs = list(txs)
+
+            self.logger.info(f"It has {new_txs_len} Txs, "
+                             f"while the original address {address!r} has {old_txs_len} txs. "
+                             f"After merging there are {len(txs)} txs left.")
+
         txs.sort(key=operator.attrgetter('height_int'))
         return txs
 
@@ -398,7 +438,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         return results
 
     @staticmethod
-    def get_last_deposit_height(txs: List[ThorTx]) -> int:
+    def _get_last_deposit_height(txs: List[ThorTx]) -> int:
         last_deposit_height = -1
         for tx in txs:
             if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
@@ -437,7 +477,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         r0, a0 = 0.0, 0.0
         for tx in txs:
             if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
-                pool = self.get_pool(historic_all_pool_states, tx.height_int, pool_name)
+                pool = self._get_pool(historic_all_pool_states, tx.height_int, pool_name)
                 r, a = pool.get_share_rune_and_asset(tx.meta_add.liquidity_units_int)
                 r0 += r
                 a0 += a
@@ -449,7 +489,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         return r0, a0
 
     @staticmethod
-    def get_pool(historic_all_pool_states: HeightToAllPools, height, pool_name: str) -> PoolInfo:
+    def _get_pool(historic_all_pool_states: HeightToAllPools, height, pool_name: str) -> PoolInfo:
         pools = historic_all_pool_states.get(int(height), {})
         pool = pools.get(pool_name)
         return pool or PoolInfo(pool_name, 0, 0, 0, PoolInfo.STAGED)
@@ -459,7 +499,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
                              final_my_liq_units: int) -> ILProtectionReport:
         # Explanation: https://gitlab.com/thorchain/thornode/-/issues/794
         last_block = await self.get_last_thorchain_block()
-        last_deposit_height = self.get_last_deposit_height(txs)
+        last_deposit_height = self._get_last_deposit_height(txs)
 
         if last_deposit_height <= 0 and pool.is_enabled:
             return ILProtectionReport()
