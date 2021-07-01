@@ -15,8 +15,8 @@ from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import MidgardURLGenBase
 from services.lib.money import weighted_mean
 from services.lib.utils import pairwise
-from services.models.lp_info import LiquidityPoolReport, CurrentLiquidity, FeeReport, ReturnMetrics, LPDailyGraphPoint, \
-    LPDailyChartByPoolDict, ILProtectionReport
+from services.models.lp_info import LiquidityPoolReport, CurrentLiquidity, FeeReport, ReturnMetrics, \
+    LPDailyGraphPoint, LPDailyChartByPoolDict, ILProtectionReport
 from services.models.pool_info import LPPosition, PoolInfoMap, PoolInfo, pool_share
 from services.models.tx import ThorTx, ThorTxType, final_liquidity
 

@@ -1,7 +1,5 @@
 import asyncio
 import logging
-import random
-import secrets
 
 import aiohttp
 import sha3
@@ -162,18 +160,10 @@ async def foo20():
     print('0xbc36789e7a1e281436464229828f817d6612f7b477d66591ff96a9e064bcc98a')
 
 
-def fake_node(status=NodeInfo.ACTIVE, address=None, bond=None, ip=None, version='54.1', slash=0):
-    r = lambda: random.randint(1, 255)
-    ip = ip if ip is not None else f'{r()}.{r()}.{r()}.{r()}'
-    address = address if address is not None else f'thor{secrets.token_hex(32)}'
-    bond = bond if bond is not None else random.randint(1, 2_000_000)
-    return NodeInfo(status, address, bond, ip, version, slash)
-
-
 async def foo21():
     c = NodeInfoChanges(
         nodes_added=[],
-        nodes_removed=[fake_node()],
+        nodes_removed=[NodeInfo.fake_node()],
         nodes_deactivated=[],
         nodes_activated=[],
         nodes_all=[]
@@ -286,7 +276,6 @@ async def foo25_coingecko_test():
 
 
 async def foo26_trading_halt_text():
-
     changes1 = [
         ThorChainInfo(chain='BNB', halted=True),
         ThorChainInfo(chain='BTC', halted=True),
@@ -300,7 +289,6 @@ async def foo26_trading_halt_text():
     ]
 
     for loc in (loc_ru, loc_en):
-
         text = loc.notification_text_trading_halted_multi(changes1)
         print(text)
         sep()

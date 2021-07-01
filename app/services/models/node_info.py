@@ -1,5 +1,7 @@
 import json
+import random
 import re
+import secrets
 from dataclasses import dataclass, field
 from typing import List, Dict
 
@@ -68,6 +70,14 @@ class NodeInfo(BaseModelMixin):
             observe_chains=d.get('observe_chains', [])
         )
 
+    @staticmethod
+    def fake_node(status=ACTIVE, address=None, bond=None, ip=None, version='54.1', slash=0):
+        r = lambda: random.randint(1, 255)
+        ip = ip if ip is not None else f'{r()}.{r()}.{r()}.{r()}'
+        address = address if address is not None else f'thor{secrets.token_hex(32)}'
+        bond = bond if bond is not None else random.randint(1, 2_000_000)
+        return NodeInfo(status, address, bond, ip, version, slash)
+
 
 @dataclass
 class NodeInfoChanges:
@@ -83,10 +93,7 @@ class NodeInfoChanges:
 
     @property
     def is_empty(self):
-        return (not self.nodes_removed and
-                not self.nodes_added and
-                not self.nodes_activated and
-                not self.nodes_deactivated)
+        return self.count_of_changes == 0
 
     @property
     def is_nonsense(self):

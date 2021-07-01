@@ -9,7 +9,7 @@ from services.lib.date_utils import MINUTE
 from services.lib.depcont import DepContainer
 from services.lib.draw_utils import img_to_bio
 from services.lib.texts import BoardMessage
-from services.models.node_info import NodeInfoChanges
+from services.models.node_info import NodeInfoChanges, NodeInfo
 
 
 class NodeChurnNotifier(INotified):
