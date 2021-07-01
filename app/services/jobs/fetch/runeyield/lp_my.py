@@ -152,20 +152,23 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
             thor_address = self._find_thor_address_in_tx_list(txs)
 
-            self.logger.info(f'Found THOR address: "{thor_address}".')
+            if thor_address:
+                self.logger.info(f'Found THOR address: "{thor_address}" for asset address: "{address}".')
 
-            txs_from_thor_address = await self.tx_fetcher.fetch_all_tx(thor_address, liquidity_change_only=True)
-            txs_from_thor_address = self._apply_pool_filter(txs_from_thor_address, pool_filter)
+                txs_from_thor_address = await self.tx_fetcher.fetch_all_tx(thor_address, liquidity_change_only=True)
+                txs_from_thor_address = self._apply_pool_filter(txs_from_thor_address, pool_filter)
 
-            old_txs_len = len(txs)
-            new_txs_len = len(txs_from_thor_address)
+                old_txs_len = len(txs)
+                new_txs_len = len(txs_from_thor_address)
 
-            txs = set(txs) | set(txs_from_thor_address)
-            txs = list(txs)
+                txs = set(txs) | set(txs_from_thor_address)
+                txs = list(txs)
 
-            self.logger.info(f"It has {new_txs_len} Txs, "
-                             f"while the original address {address!r} has {old_txs_len} txs. "
-                             f"After merging there are {len(txs)} txs left.")
+                self.logger.info(f"It has {new_txs_len} Txs, "
+                                 f"while the original address {address!r} has {old_txs_len} txs. "
+                                 f"After merging there are {len(txs)} txs left.")
+            else:
+                self.logger.info(f'Not found THOR address for "{address}".')
 
         txs.sort(key=operator.attrgetter('height_int'))
         return txs
