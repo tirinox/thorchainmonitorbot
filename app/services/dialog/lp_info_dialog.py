@@ -204,12 +204,8 @@ class LiquidityInfoDialog(BaseDialog):
                                          disable_notification=True)
 
         # CLEAN UP
-        try:
-            await asyncio.gather(query.message.delete(),
-                                 sticker.delete())
-        except MessageToDeleteNotFound as e:
-            logging.warning(f'could not delete message: {e}')
-            pass
+        await asyncio.gather(self.safe_delete(query.message),
+                             self.safe_delete(sticker))
 
     async def show_pools_again(self, query: CallbackQuery):
         active_addr_idx = self.data[self.KEY_ACTIVE_ADDRESS_INDEX]
@@ -244,8 +240,8 @@ class LiquidityInfoDialog(BaseDialog):
                                          disable_notification=True)
 
         # CLEAN UP
-        await asyncio.gather(query.message.delete(),
-                             sticker.delete())
+        await asyncio.gather(self.safe_delete(query.message),
+                             self.safe_delete(sticker))
 
     # ----------- HANDLERS ------------
 
