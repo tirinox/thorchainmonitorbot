@@ -50,12 +50,13 @@ async def total_locked_value_all_networks(session):
 
 async def fetch_fair_rune_price(price_holder: LastPriceHolder):
     async with aiohttp.ClientSession() as session:
-        rune_vault, circulating, gecko, total_locked_rune = await asyncio.gather(
+        rune_vault, gecko, total_locked_rune = await asyncio.gather(
             delphi_get_rune_vault_balance(session),
-            delphi_get_circulating_supply(session),
             get_thorchain_coin_gecko_info(session),
             total_locked_value_all_networks(session)
         )
+
+        circulating = int(gecko['market_data']['circulating_supply'])
 
         if circulating <= 0:
             raise ValueError(f"circulating is invalid ({circulating})")
