@@ -1,6 +1,7 @@
 from aiogram.types import ContentTypes, Message
 
 from services.dialog.avatar_picture_dialog import AvatarDialog
+from services.dialog.inline_bot_handler import InlineBotHandlerDialog
 from services.dialog.main_menu import MainMenuDialog
 from services.dialog.metrics_menu import MetricsDialog
 from services.dialog.settings_menu import SettingsDialog
@@ -21,5 +22,6 @@ def init_dialogs(d: DepContainer):
     SettingsDialog.register(d, mm, mm.entry_point)
     MetricsDialog.register(d, mm, mm.entry_point)
     AvatarDialog.register(d, mm, mm.entry_point)
+    InlineBotHandlerDialog.register(d, mm, mm.entry_point)
 
     d.dp.register_message_handler(sticker_handler, content_types=ContentTypes.STICKER, state='*')

@@ -780,3 +780,9 @@ class BaseLocalization(ABC):  # == English
         return glue.join(map(my_fun, items))
 
     # ------- NODE OP TOOLS -------
+
+    # ------- INLINE BOT -------
+
+    INLINE_INVALID_QUERY_TITLE = 'Invalid query!'
+    INLINE_INVALID_QUERY_CONTENT = 'Use scheme: <code>@{bot} ADDRESS POOL</code>'
+    INLINE_INVALID_QUERY_DESC = 'Use scheme: @{bot} ADDRESS POOL'

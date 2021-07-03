@@ -18,9 +18,10 @@ telegram:
     - type: telegram
       name: "@thorchain_alert"  # live channel
       lang: eng
-  common:  # new
+  common:
     loading_sticker: CAACAgIAAxkBAAIRx1--Tia-m6DNRIApk3yqmNWvap_sAALcAAP3AsgPUNi8Bnu98HweBA
 
+  buffer_chat: -12334  # new! a chat for uploading temporary photos (like photo-hosting), add this bot to it
 
 tx:
   enabled: true
