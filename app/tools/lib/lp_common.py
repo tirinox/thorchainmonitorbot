@@ -61,31 +61,31 @@ class LpAppFramework:
 
 class LpGenerator(LpAppFramework):
     async def get_report(self, addr, pool):
-        stake_report = await self.rune_yield.generate_yield_report_single_pool(addr, pool)
+        lp_report = await self.rune_yield.generate_yield_report_single_pool(addr, pool)
 
         # -------- print out ----------
-        redeem_rune, redeem_asset = stake_report.redeemable_rune_asset
+        redeem_rune, redeem_asset = lp_report.redeemable_rune_asset
         print(f'redeem_rune = {redeem_rune} and redeem_asset = {redeem_asset}')
         print()
-        USD, ASSET, RUNE = stake_report.USD, stake_report.ASSET, stake_report.RUNE
-        print(f'current_value(USD) = {stake_report.current_value(USD)}')
-        print(f'current_value(ASSET) = {stake_report.current_value(ASSET)}')
-        print(f'current_value(RUNE) = {stake_report.current_value(RUNE)}')
+        USD, ASSET, RUNE = lp_report.USD, lp_report.ASSET, lp_report.RUNE
+        print(f'current_value(USD) = {lp_report.current_value(USD)}')
+        print(f'current_value(ASSET) = {lp_report.current_value(ASSET)}')
+        print(f'current_value(RUNE) = {lp_report.current_value(RUNE)}')
         print()
-        gl_usd, gl_usd_p = stake_report.gain_loss(USD)
-        gl_ass, gl_ass_p = stake_report.gain_loss(ASSET)
-        gl_rune, gl_rune_p = stake_report.gain_loss(RUNE)
+        gl_usd, gl_usd_p = lp_report.gain_loss(USD)
+        gl_ass, gl_ass_p = lp_report.gain_loss(ASSET)
+        gl_rune, gl_rune_p = lp_report.gain_loss(RUNE)
         print(f'gain/loss(USD) = {gl_usd}, {gl_usd_p:.1f} %')
         print(f'gain/loss(ASSET) = {gl_ass}, {gl_ass_p:.1f} %')
         print(f'gain/loss(RUNE) = {gl_rune}, {gl_rune_p:.1f} %')
         print()
-        lp_abs, lp_per = stake_report.lp_vs_hold
-        apy = stake_report.lp_vs_hold_apy
-        print(f'stake_report.lp_vs_hold = {lp_abs}, {lp_per:.1f} %')
-        print(f'stake_report.lp_vs_hold_apy = {apy}')
+        lp_abs, lp_per = lp_report.lp_vs_hold
+        apy = lp_report.lp_vs_hold_apy
+        print(f'lp_report.lp_vs_hold = {lp_abs}, {lp_per:.1f} %')
+        print(f'lp_report.lp_vs_hold_apy = {apy}')
 
-        return stake_report
+        return lp_report
 
     async def test_summary(self, address):
-        stake_reports, weekly_charts = await self.rune_yield.generate_yield_summary(address, [])
-        return stake_reports, weekly_charts
+        lp_reports, weekly_charts = await self.rune_yield.generate_yield_summary(address, [])
+        return lp_reports, weekly_charts

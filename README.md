@@ -8,7 +8,9 @@ This is a telegram bot to monitor some aspects of THORChain. It can also generat
 
 ```/start``` – run the bot  
 ```/price``` – Rune's price  
-```/cap``` – current staking cap
+```/cap``` – current LP cap
+
+Inline command `@bot ADDRESS POOL` to make a LP card for ADDRESS providing liquidity to POOL, POOL may not be exact but short like BTC or TOKEN-0x443. 
 
 ## Live bot
 

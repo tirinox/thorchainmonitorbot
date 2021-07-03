@@ -16,13 +16,11 @@ async def q_points(d: DepContainer):
         os.system(f'open "{p}"')
 
 
-async def stake_graph():
-    ...
 
 
 async def test_plots():
     # await q_points(d)
-    await stake_graph()
+    ...
 
 
 if __name__ == '__main__':

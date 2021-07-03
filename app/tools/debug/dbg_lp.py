@@ -2,58 +2,57 @@ import asyncio
 import logging
 import os
 
-from localization import RussianLocalization
 from services.dialog.picture.lp_picture import lp_pool_picture, lp_address_summary_picture
 from services.jobs.fetch.runeyield.lp_my import HomebrewLPConnector
-from services.lib.constants import BNB_BUSD_SYMBOL, ETH_SYMBOL
+from services.lib.constants import BNB_BUSD_SYMBOL
 from services.lib.utils import load_pickle, save_pickle
 from tools.lib.lp_common import LpAppFramework, LpGenerator
 
-CACHE_REPORTS = False  # fixme!
+CACHE_REPORTS = False
 
 TOKEN_KYL = 'ETH.KYL-0X67B6D479C7BB412C54E03DCA8E1BC6740CE6B99C'
 
 
 async def test_one_pool_picture_generator(addr, pool, hide, rune_yield_class=HomebrewLPConnector):
 
-    stake_report_path = f'../../tmp/stake_report_{addr}.pickle'
-    stake_picture_path = f'../../tmp/stake_test_{addr}.png'
+    lp_report_path = f'../../tmp/lp_report_{addr}.pickle'
+    lp_picture_path = f'../../tmp/lp_test_{addr}.png'
 
     lpgen = LpGenerator(rune_yield_class)
 
-    stake_report = load_pickle(stake_report_path) if CACHE_REPORTS else None
+    lp_report = load_pickle(lp_report_path) if CACHE_REPORTS else None
 
-    if not stake_report:
+    if not lp_report:
         async with lpgen:
-            stake_report = await lpgen.get_report(addr, pool)
-            save_pickle(stake_report_path, stake_report)
+            lp_report = await lpgen.get_report(addr, pool)
+            save_pickle(lp_report_path, lp_report)
 
     loc = lpgen.deps.loc_man.default
     # loc = RussianLocalization(lpgen.deps.cfg)
 
-    img = await lp_pool_picture(stake_report, loc, value_hidden=hide)
-    img.save(stake_picture_path, "PNG")
-    os.system(f'open "{stake_picture_path}"')
+    img = await lp_pool_picture(lp_report, loc, value_hidden=hide)
+    img.save(lp_picture_path, "PNG")
+    os.system(f'open "{lp_picture_path}"')
 
 
 async def test_summary_picture_generator(addr, hide, rune_yield_class=HomebrewLPConnector):
-    stake_summary_path = f'../../tmp/stake_report_summary_{addr}.pickle'
-    stake_picture_path = f'../../tmp/stake_test_summary_{addr}.png'
+    lp_summary_path = f'../../tmp/lp_report_summary_{addr}.pickle'
+    lp_picture_path = f'../../tmp/lp_test_summary_{addr}.png'
 
     lpgen = LpGenerator(rune_yield_class)
 
-    data = load_pickle(stake_summary_path) if CACHE_REPORTS else None
+    data = load_pickle(lp_summary_path) if CACHE_REPORTS else None
 
     if data:
-        stakes, charts = data
+        lps, charts = data
     else:
         async with lpgen:
-            stakes, charts = await lpgen.test_summary(addr)
-        save_pickle(stake_summary_path, (stakes, charts))
+            lps, charts = await lpgen.test_summary(addr)
+        save_pickle(lp_summary_path, (lps, charts))
 
-    img = await lp_address_summary_picture(stakes, charts, lpgen.deps.loc_man.default, value_hidden=hide)
-    img.save(stake_picture_path, "PNG")
-    os.system(f'open "{stake_picture_path}"')
+    img = await lp_address_summary_picture(lps, charts, lpgen.deps.loc_man.default, value_hidden=hide)
+    img.save(lp_picture_path, "PNG")
+    os.system(f'open "{lp_picture_path}"')
 
 
 async def test_single_chain_chaosnet():

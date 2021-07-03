@@ -122,16 +122,16 @@ class RussianLocalization(BaseLocalization):
     LP_PIC_SUMMARY_TOTAL_LP_VS_HOLD = 'Итого холд против пулов, $'
     LP_PIC_SUMMARY_NO_WEEKLY_CHART = "Нет недельного графика, извините..."
 
-    def pic_stake_days(self, total_days, first_stake_ts):
-        start_date = datetime.fromtimestamp(first_stake_ts).strftime('%d.%m.%Y')
+    def pic_lping_days(self, total_days, first_add_ts):
+        start_date = datetime.fromtimestamp(first_add_ts).strftime('%d.%m.%Y')
         return f'{ceil(total_days)} дн. ({start_date})'
 
-    def text_stake_loading_pools(self, address):
+    def text_lp_loading_pools(self, address):
         return f'⏳ <b>Пожалуйста, подождите.</b>\n' \
                f'Идет загрузка пулов для адреса {pre(address)}...\n' \
                f'Иногда она может идти долго, если Midgard сильно нагружен.'
 
-    def text_stake_provides_liq_to_pools(self, address, pools):
+    def text_user_provides_liq_to_pools(self, address, pools):
         pools = pre(', '.join(pools))
         explorer_links = self.explorer_links_to_thor_address(address)
         return f'🛳️ {pre(address)}\n' \
@@ -139,7 +139,7 @@ class RussianLocalization(BaseLocalization):
                f"🔍 Обозреватель: {explorer_links}.\n\n" \
                f'👇 Выберите пул, чтобы получить подробную карточку информаци.'
 
-    def text_stake_today(self):
+    def text_lp_today(self):
         today = datetime.now().strftime('%d.%m.%Y')
         return f'Сегодня: {today}'
 

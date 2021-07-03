@@ -180,12 +180,12 @@ class BaseLocalization(ABC):  # == English
     LP_PIC_SUMMARY_TOTAL_LP_VS_HOLD = 'Total LP vs Hold $'
     LP_PIC_SUMMARY_NO_WEEKLY_CHART = "No weekly chart, sorry"
 
-    def pic_stake_days(self, total_days, first_stake_ts):
-        start_date = datetime.fromtimestamp(first_stake_ts).strftime('%d.%m.%Y')
+    def pic_lping_days(self, total_days, first_add_ts):
+        start_date = datetime.fromtimestamp(first_add_ts).strftime('%d.%m.%Y')
         day_count_str = 'days' if total_days >= 2 else 'day'
         return f'{ceil(total_days)} {day_count_str} ({start_date})'
 
-    def text_stake_loading_pools(self, address):
+    def text_lp_loading_pools(self, address):
         return f'⏳ <b>Please wait.</b>\n' \
                f'Loading pools information for {pre(address)}...'
 
@@ -207,7 +207,7 @@ class BaseLocalization(ABC):  # == English
         explorer_links = [link_with_domain_text(url) for url in explorer_links]
         return '; '.join(explorer_links)
 
-    def text_stake_provides_liq_to_pools(self, address, pools):
+    def text_user_provides_liq_to_pools(self, address, pools):
         pools = pre(', '.join(pools))
 
         explorer_links = self.explorer_links_to_thor_address(address)
@@ -217,7 +217,7 @@ class BaseLocalization(ABC):  # == English
                f"🔍 Explorer: {explorer_links}.\n\n" \
                f'👇 Click on the button to get a detailed card.'
 
-    def text_stake_today(self):
+    def text_lp_today(self):
         today = datetime.now().strftime('%d.%m.%Y')
         return f'Today is {today}'
 
@@ -262,7 +262,7 @@ class BaseLocalization(ABC):  # == English
 
     # ------- NOTIFY STAKES -------
 
-    def links_to_explorer_for_stake_tx(self, tx: LPAddWithdrawTx):
+    def links_to_explorer_for_add_withdraw_tx(self, tx: LPAddWithdrawTx):
         net = self.cfg.network_id
         if tx.address_rune:
             rune_link = link(
@@ -284,7 +284,7 @@ class BaseLocalization(ABC):  # == English
 
         return rune_link, asset_link
 
-    def link_to_explorer_user_address_for_stake_tx(self, tx: LPAddWithdrawTx):
+    def link_to_explorer_user_address_for_tx(self, tx: LPAddWithdrawTx):
         if tx.address_rune:
             return link(
                 get_explorer_url_to_address(self.cfg.network_id, Chains.THOR, tx.address_rune),
@@ -338,8 +338,8 @@ class BaseLocalization(ABC):  # == English
         rune_side_usd_short = short_money(rune_side_usd)
         asset_side_usd_short = short_money(total_usd_volume - rune_side_usd)
 
-        thor_url, asset_url = self.links_to_explorer_for_stake_tx(tx)
-        user_url = self.link_to_explorer_user_address_for_stake_tx(tx)
+        thor_url, asset_url = self.links_to_explorer_for_add_withdraw_tx(tx)
+        user_url = self.link_to_explorer_user_address_for_tx(tx)
         chain = chain_name_from_pool(tx.pool)
 
         return (

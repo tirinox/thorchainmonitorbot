@@ -52,7 +52,7 @@ class InlineBotHandlerDialog(BaseDialog):
             picture_io = img_to_bio(picture, f'Thorchain_LP_{exact_pool}_{today_str()}.png')
 
             # UPLOAD AND SEND RESULT
-            ident = hashlib.md5(today_str() + address + exact_pool).hexdigest()
+            ident = hashlib.md5((today_str() + address + exact_pool).encode()).hexdigest()
             loc = self.get_localization()
             title = loc.INLINE_LP_CARD.format(address=address, exact_pool=exact_pool)
             await self._answer_photo(inline_query, picture_io, title, ident=ident)

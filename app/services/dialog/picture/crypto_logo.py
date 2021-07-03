@@ -97,6 +97,6 @@ class CryptoLogoDownloader:
             logo = Image.open(local_path).convert("RGBA")
         except Exception:
             logo = Image.open(self.get_full_path(self.UNKNOWN_LOGO))
-            logger.exception('')
+            logger.error(f'error loading logo for "{asset}". using the default one...')
         logo.thumbnail((self.LOGO_WIDTH, self.LOGO_HEIGHT))  # fixme: move thumbnail to download_logo
         return logo

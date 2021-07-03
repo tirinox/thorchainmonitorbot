@@ -5,7 +5,7 @@ from datetime import date
 from services.jobs.fetch.runeyield.date2block import DateToBlockMapper
 from services.jobs.fetch.runeyield.lp_my import HomebrewLPConnector
 from services.jobs.fetch.tx import TxFetcher
-from services.lib.utils import setup_logs, load_pickle, save_pickle
+from services.lib.utils import setup_logs
 from tools.lib.lp_common import LpAppFramework
 
 
@@ -16,18 +16,12 @@ async def test_get_user_lp_actions(lpgen: LpAppFramework):
         print(tx, end='\n-----\n')
 
 
-# ADDR = 'bnb1nqcg6f8cfc6clhm8hac6002xq3h7l7gxh3qm34'  # to much stake/unstake
-
 ADDR = 'bnb1v9jldefnx0mngfetkwuczzxerrgw6ncvlukad5'
 POOL = 'BNB.USDT-6D8'
 # POOL = 'BNB.ETHBULL-D33'
 
 ADDR_MCTN = 'tthor1erl5a09ahua0umwcxp536cad7snerxt4eflyq0'
 POOL_MCTN = ''
-
-
-# ADDR = 'bnb10z6pvckwlpl630nujweugqrqkdfmnxnrplssav'
-# POOL = 'BNB.SXP-CCC'
 
 
 async def test_summary_of_all_pools(lpgen: LpAppFramework):
@@ -43,23 +37,6 @@ async def test_1_pool(lpgen: LpAppFramework):
     print(report)
 
 
-async def test_charts(lpgen: LpAppFramework, address=ADDR):
-    rl = lpgen.rune_yield
-
-    data_path = f'../../tmp/lp_chart_data-format2-{address}.pickle'
-
-    data = load_pickle(data_path)
-    if data:
-        user_txs, historic_all_pool_states, current_pools_details, pools = data
-    else:
-        pools = await rl.get_my_pools(address)
-        user_txs = await rl._get_user_tx_actions(address)
-
-        historic_all_pool_states = await rl._fetch_historical_pool_states(user_txs)
-        save_pickle(data_path, (user_txs, historic_all_pool_states, pools))
-
-    day_units = await rl._get_charts(user_txs, days=14)
-    print(day_units)
 
 
 async def test_block_calibration(lpgen: LpAppFramework):
@@ -91,9 +68,10 @@ async def main():
     async with lpgen:
         # await test_1_pool(lpgen)
         # await test_charts(lpgen, address='bnb1snqqjdvcqjf76fdztxrtwgv0ws9hsvvfsjv02z')  # mccn (bnb only)
-        await test_charts(lpgen, address='0x52e07b963ab0f525b15e281b3b42d55e8048f027')  # mccn (many pools + withdraw)
+        # await test_charts(lpgen, address='0x52e07b963ab0f525b15e281b3b42d55e8048f027')  # mccn (many pools + withdraw)
         # await test_block_calibration(lpgen)
         # await test_block_by_date(lpgen)
+        ...
 
 
 if __name__ == "__main__":

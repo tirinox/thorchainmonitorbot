@@ -5,8 +5,7 @@ config.yaml
 redis_data/
 datavar/
 dump.rdb
-stake_test.png
-stake_report.pickle
+
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

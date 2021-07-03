@@ -32,7 +32,7 @@ PoolToTxList = Dict[str, List[ThorTx]]
 UserToPoolToTxList = Dict[str, PoolToTxList]
 
 
-# 1. Load all stakes/unstakes => cache them into data file
+# 1. Load all add/withdraw => cache them into data file
 # 1.1 Filter those that older than 100 days (options like: since first action/since last action)
 # 2. Load all pool prices at heights of these TXs
 # 3. Import LP calculator and get all LP positions, calculate impermanent losses and rune compensation at current price

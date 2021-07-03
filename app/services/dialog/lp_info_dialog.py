@@ -19,13 +19,11 @@ from services.models.lp_info import LPAddress
 
 
 def get_runeyield_info_address(network: str, address: str, chain: str = Chains.THOR):
-    if network == NetworkIdents.CHAOSNET_BEP2CHAIN:
-        return f'https://runestake.info/debug?address={address}'
-    elif network == NetworkIdents.TESTNET_MULTICHAIN:
-        return f'https://mctn.vercel.app/dashboard?thor={address}'  # todo thor address only?
+    if network == NetworkIdents.TESTNET_MULTICHAIN:
+        return f'https://mctn.vercel.app/dashboard?{chain}={address}'
     else:
         chain = chain.lower()
-        return f'https://app.runeyield.info/dashboard?{chain}={address}'  # todo
+        return f'https://app.runeyield.info/dashboard?{chain}={address}'
 
 
 class LPMenuStates(StatesGroup):
@@ -142,9 +140,9 @@ class LiquidityInfoDialog(BaseDialog):
 
         if reload_pools:
             if edit:
-                await message.edit_text(text=self.loc.text_stake_loading_pools(address))
+                await message.edit_text(text=self.loc.text_lp_loading_pools(address))
             else:
-                message = await message.answer(text=self.loc.text_stake_loading_pools(address),
+                message = await message.answer(text=self.loc.text_lp_loading_pools(address),
                                                reply_markup=kbd([self.loc.BUTTON_SM_BACK_MM]))
 
             try:
@@ -170,7 +168,7 @@ class LiquidityInfoDialog(BaseDialog):
         address = self.data[self.KEY_ACTIVE_ADDRESS]
         my_pools = self.data[self.KEY_MY_POOLS]
 
-        text = self.loc.text_stake_provides_liq_to_pools(address, my_pools) if my_pools \
+        text = self.loc.text_user_provides_liq_to_pools(address, my_pools) if my_pools \
             else self.loc.TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS
         if edit:
             await message.edit_text(text=text,

@@ -189,7 +189,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
                                pool_name,
                                pool_historic: HeightToAllPools,
                                withdraw_fee_rune) -> CurrentLiquidity:
-        first_state_date, last_stake_date = 0, 0
+        first_add_date, last_add_date = 0, 0
         total_added_rune, total_withdrawn_rune = 0.0, 0.0
         total_added_usd, total_withdrawn_usd = 0.0, 0.0
         total_added_asset, total_withdrawn_asset = 0.0, 0.0
@@ -199,8 +199,8 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
         for tx in txs:
             tx_timestamp = tx.date_timestamp
-            first_state_date = min(first_state_date, tx_timestamp) if first_state_date else tx_timestamp
-            last_stake_date = max(last_stake_date, tx_timestamp) if last_stake_date else tx_timestamp
+            first_add_date = min(first_add_date, tx_timestamp) if first_add_date else tx_timestamp
+            last_add_date = max(last_add_date, tx_timestamp) if last_add_date else tx_timestamp
 
             pools_info: PoolInfoMap = pool_historic[tx.height_int]
             this_asset_pool_info = pools_info.get(pool_name)
@@ -237,19 +237,19 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
         results = CurrentLiquidity(
             pool=pool_name,
-            rune_stake=rune_added,
-            asset_stake=asset_added,
+            rune_added=rune_added,
+            asset_added=asset_added,
             pool_units=liquidity_units,
             asset_withdrawn=asset_withdrawn,
             rune_withdrawn=rune_withdrawn,
-            total_staked_asset=total_added_asset,
-            total_staked_rune=total_added_rune,
-            total_staked_usd=total_added_usd,
-            total_unstaked_asset=total_withdrawn_asset,
-            total_unstaked_rune=total_withdrawn_rune,
-            total_unstaked_usd=total_withdrawn_usd,
-            first_stake_ts=int(first_state_date),
-            last_stake_ts=int(last_stake_date),
+            total_added_asset=total_added_asset,
+            total_added_rune=total_added_rune,
+            total_added_usd=total_added_usd,
+            total_withdrawn_asset=total_withdrawn_asset,
+            total_withdrawn_rune=total_withdrawn_rune,
+            total_withdrawn_usd=total_withdrawn_usd,
+            first_add_ts=int(first_add_date),
+            last_add_ts=int(last_add_date),
         )
 
         return results

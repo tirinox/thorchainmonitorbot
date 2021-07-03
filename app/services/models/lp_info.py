@@ -50,24 +50,6 @@ class LPDailyGraphPoint:
     timestamp: int = 0
     usd_value: float = 0
 
-    @classmethod
-    def from_asgard(cls, j):
-        asset_depth = int(j.get('assetdepth', 1))
-        rune_depth = int(j.get('runedepth', 1))
-        busd_rune_price = float(j.get('busdpricerune', 1.0))
-        pool_units = int(j.get('poolunits', 1))
-        stake_units = int(j.get('stakeunit', 1))
-
-        r, a = pool_share(rune_depth, asset_depth, stake_units, pool_units)
-        runes_per_asset = rune_depth / asset_depth
-        total_rune = r * THOR_DIVIDER_INV + a * THOR_DIVIDER_INV * runes_per_asset
-        usd_value = total_rune / busd_rune_price
-
-        return cls(
-            usd_value=usd_value,
-            timestamp=int(j.get('time', 0)),
-        )
-
 
 LPDailyChartByPoolDict = Dict[str, List[LPDailyGraphPoint]]
 
@@ -75,39 +57,19 @@ LPDailyChartByPoolDict = Dict[str, List[LPDailyGraphPoint]]
 @dataclass
 class CurrentLiquidity(BaseModelMixin):
     pool: str
-    rune_stake: float
-    asset_stake: float
+    rune_added: float
+    asset_added: float
     pool_units: int
     asset_withdrawn: float
     rune_withdrawn: float
-    total_staked_asset: float
-    total_staked_rune: float
-    total_staked_usd: float
-    total_unstaked_asset: float
-    total_unstaked_rune: float
-    total_unstaked_usd: float
-    first_stake_ts: int
-    last_stake_ts: int
-
-    @classmethod
-    def from_asgard(cls, d):
-        m = THOR_DIVIDER_INV
-        return cls(
-            d['pool'],
-            float(d['runestake']) * m,
-            float(d['assetstake']) * m,
-            int(d['poolunits']),
-            float(d['assetwithdrawn']) * m,
-            float(d['runewithdrawn']) * m,
-            float(d['totalstakedasset']) * m,
-            float(d['totalstakedrune']) * m,
-            float(d['totalstakedusd']) * m,
-            float(d['totalunstakedasset']) * m,
-            float(d['totalunstakedrune']) * m,
-            float(d['totalunstakedusd']) * m,
-            int(d['firststake']),
-            int(d['laststake'])
-        )
+    total_added_asset: float
+    total_added_rune: float
+    total_added_usd: float
+    total_withdrawn_asset: float
+    total_withdrawn_rune: float
+    total_withdrawn_usd: float
+    first_add_ts: int
+    last_add_ts: int
 
 
 @dataclass
@@ -118,17 +80,6 @@ class FeeReport:
     fee_usd: float = 0.0
     fee_rune: float = 0.0
     fee_asset: float = 0.0
-
-    @classmethod
-    def parse_from_asgard(cls, j):
-        return cls(
-            asset=j['asset'],
-            imp_loss_usd=float(j['impLoss']['usd']),
-            imp_loss_percent=float(j['impLoss']['percent']),
-            fee_usd=float(j['fee']['usd']),
-            fee_rune=float(j['fee']['rune']),
-            fee_asset=float(j['fee']['asset']),
-        )
 
 
 @dataclass
@@ -204,33 +155,6 @@ class ReturnMetrics:
 
 
 @dataclass
-class FeeRequest:
-    height: int = 0
-    pair: str = ''
-    liquidity_token_balance: float = 0.0
-    liquidity_token_supply: float = 0.0
-    reserve_0: float = 0.0
-    reserve_1: float = 0.0
-    reserve_usdt: float = 0.0
-    reserve_token_0_price_usd: float = 0.0
-    reserve_token_1_price_usd: float = 0.0
-
-    @classmethod
-    def parse_from_asgard(cls, j):
-        return cls(
-            height=int(j.get('height', 0)),
-            pair=j.get('pair', ''),
-            liquidity_token_balance=float(j.get('liquidityTokenBalance', 0.0)),
-            liquidity_token_supply=float(j.get('liquidityTokenTotalSupply', 0.0)),
-            reserve_0=float(j.get('reserve0', 0.0)),
-            reserve_1=float(j.get('reserve1', 0.0)),
-            reserve_usdt=float(j.get('reserveUSD', 0.0)),
-            reserve_token_0_price_usd=float(j.get('token0PriceUSD', 0.0)),
-            reserve_token_1_price_usd=float(j.get('token1PriceUSD', 0.0)),
-        )
-
-
-@dataclass
 class LiquidityPoolReport:
     usd_per_asset: float
     usd_per_rune: float
@@ -257,8 +181,8 @@ class LiquidityPoolReport:
 
     @property
     def lp_vs_hold(self) -> (float, float):
-        rune_added_in_usd = self.liq.rune_stake * self.usd_per_rune
-        asset_added_in_usd = self.liq.asset_stake * self.usd_per_asset
+        rune_added_in_usd = self.liq.rune_added * self.usd_per_rune
+        asset_added_in_usd = self.liq.asset_added * self.usd_per_asset
         total_added_in_usd = rune_added_in_usd + asset_added_in_usd
 
         rune_withdrawn_in_usd = self.liq.rune_withdrawn * self.usd_per_rune
@@ -276,7 +200,7 @@ class LiquidityPoolReport:
 
     @property
     def total_days(self):
-        total_days = self.total_staking_sec / DAY
+        total_days = self.total_lping_sec / DAY
         return total_days
 
     @property
@@ -297,10 +221,10 @@ class LiquidityPoolReport:
     @property
     def gain_loss_raw(self):
         redeem_rune, redeem_asset = self.redeemable_rune_asset
-        gl_rune = self.liq.rune_withdrawn + redeem_rune - self.liq.rune_stake
-        gl_asset = self.liq.asset_withdrawn + redeem_asset - self.liq.asset_stake
-        gl_rune_per = gl_rune / self.liq.rune_stake * 100.0 if self.liq.rune_stake != 0 else 0.0
-        gl_asset_per = gl_asset / self.liq.asset_stake * 100.0 if self.liq.asset_stake != 0 else 0.0
+        gl_rune = self.liq.rune_withdrawn + redeem_rune - self.liq.rune_added
+        gl_asset = self.liq.asset_withdrawn + redeem_asset - self.liq.asset_added
+        gl_rune_per = gl_rune / self.liq.rune_added * 100.0 if self.liq.rune_added != 0 else 0.0
+        gl_asset_per = gl_asset / self.liq.asset_added * 100.0 if self.liq.asset_added != 0 else 0.0
         return gl_rune, gl_rune_per, gl_asset, gl_asset_per
 
     @property
@@ -317,19 +241,19 @@ class LiquidityPoolReport:
 
     def added_value(self, mode=USD):
         if mode == self.USD:
-            return self.liq.total_staked_usd
+            return self.liq.total_added_usd
         elif mode == self.RUNE:
-            return self.liq.total_staked_rune
+            return self.liq.total_added_rune
         elif mode == self.ASSET:
-            return self.liq.total_staked_asset
+            return self.liq.total_added_asset
 
     def withdrawn_value(self, mode=USD):
         if mode == self.USD:
-            return self.liq.total_unstaked_usd
+            return self.liq.total_withdrawn_usd
         elif mode == self.RUNE:
-            return self.liq.total_unstaked_rune
+            return self.liq.total_withdrawn_rune
         elif mode == self.ASSET:
-            return self.liq.total_unstaked_asset
+            return self.liq.total_withdrawn_asset
 
     def current_value(self, mode=USD):
         r, a = self.redeemable_rune_asset
@@ -342,8 +266,8 @@ class LiquidityPoolReport:
             return usd_value / self.usd_per_asset
 
     @property
-    def total_staking_sec(self):
-        return int(time.time()) - self.liq.first_stake_ts
+    def total_lping_sec(self):
+        return int(time.time()) - self.liq.first_add_ts
 
     def fee_value(self, mode=USD):
         if mode == self.USD:

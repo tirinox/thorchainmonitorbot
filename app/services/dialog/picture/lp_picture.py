@@ -106,10 +106,10 @@ def sync_lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, run
         r.put_hidden_plate(image, pos_percent_lp(left, start_y), anchor='right')
         r.put_hidden_plate(image, pos_percent_lp(right, start_y), anchor='left')
     else:
-        draw.text(pos_percent_lp(left, start_y), f'{pretty_money(report.liq.rune_stake)} {RAIDO_GLYPH}', font=r.font,
+        draw.text(pos_percent_lp(left, start_y), f'{pretty_money(report.liq.rune_added)} {RAIDO_GLYPH}', font=r.font,
                   fill=FORE_COLOR,
                   anchor='rs')
-        draw.text(pos_percent_lp(right, start_y), f'{pretty_money(report.liq.asset_stake)}', font=r.font,
+        draw.text(pos_percent_lp(right, start_y), f'{pretty_money(report.liq.asset_added)}', font=r.font,
                   fill=FORE_COLOR,
                   anchor='ls')
     start_y += dy
@@ -284,12 +284,12 @@ def sync_lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, run
 
     # DATES
     draw.text(pos_percent_lp(50, 92),
-              loc.pic_stake_days(report.total_days, report.liq.first_stake_ts),
+              loc.pic_lping_days(report.total_days, report.liq.first_add_ts),
               anchor='ms', fill=FORE_COLOR,
               font=r.font)
 
     draw.text(pos_percent_lp(50, 95),
-              loc.text_stake_today(),
+              loc.text_lp_today(),
               anchor='ms', fill=FADE_COLOR,
               font=r.font_small)
 
