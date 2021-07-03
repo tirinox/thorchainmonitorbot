@@ -2,7 +2,6 @@ import asyncio
 import logging
 from datetime import date
 
-from services.jobs.fetch.runeyield import AsgardConsumerConnectorV1
 from services.jobs.fetch.runeyield.date2block import DateToBlockMapper
 from services.jobs.fetch.runeyield.lp_my import HomebrewLPConnector
 from services.jobs.fetch.tx import TxFetcher
@@ -29,13 +28,6 @@ POOL_MCTN = ''
 
 # ADDR = 'bnb10z6pvckwlpl630nujweugqrqkdfmnxnrplssav'
 # POOL = 'BNB.SXP-CCC'
-
-
-async def show_me_example_liquidity():
-    lpgen = LpAppFramework(AsgardConsumerConnectorV1)
-    async with lpgen:
-        liq = await lpgen.rune_yield._fetch_one_pool_liquidity_info(ADDR, POOL)
-        print(liq)
 
 
 async def test_summary_of_all_pools(lpgen: LpAppFramework):

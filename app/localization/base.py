@@ -786,3 +786,8 @@ class BaseLocalization(ABC):  # == English
     INLINE_INVALID_QUERY_TITLE = 'Invalid query!'
     INLINE_INVALID_QUERY_CONTENT = 'Use scheme: <code>@{bot} ADDRESS POOL</code>'
     INLINE_INVALID_QUERY_DESC = 'Use scheme: @{bot} ADDRESS POOL'
+    INLINE_POOL_NOT_FOUND_TITLE = 'Pool not found!'
+    INLINE_POOL_NOT_FOUND_TEXT = '{pool}": no such pool.'
+    INLINE_INVALID_ADDRESS_TITLE = 'Invalid address!'
+    INLINE_INVALID_ADDRESS_TEXT = 'Use THOR or Asset address here.'
+    INLINE_LP_CARD = 'LP card of {address} on pool {exact_pool}.'

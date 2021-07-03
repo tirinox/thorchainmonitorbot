@@ -1,5 +1,4 @@
 from services.jobs.fetch.runeyield.base import AsgardConsumerConnectorBase
-from services.jobs.fetch.runeyield.lp import AsgardConsumerConnectorV1
 from services.jobs.fetch.runeyield.lp_my import HomebrewLPConnector
 from services.lib.depcont import DepContainer
 from services.lib.midgard.urlgen import get_url_gen_by_network_id

@@ -191,11 +191,11 @@ class LiquidityInfoDialog(BaseDialog):
 
         # WORK...
         rune_yield = get_rune_yield_connector(self.deps)
-        stake_report = await rune_yield.generate_yield_report_single_pool(address, pool)
+        lp_report = await rune_yield.generate_yield_report_single_pool(address, pool)
 
         # GENERATE A PICTURE
         value_hidden = not self.data.get(self.KEY_CAN_VIEW_VALUE, True)
-        picture = await lp_pool_picture(stake_report, self.loc, value_hidden=value_hidden)
+        picture = await lp_pool_picture(lp_report, self.loc, value_hidden=value_hidden)
         picture_io = img_to_bio(picture, f'Thorchain_LP_{pool}_{today_str()}.png')
 
         # ANSWER
