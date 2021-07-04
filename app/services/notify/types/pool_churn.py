@@ -20,15 +20,16 @@ class PoolChurnNotifier(INotified):
     async def on_data(self, sender: PoolInfoFetcherMidgard, new_pool_dict: PoolInfoMap):
         if self.old_pool_dict:
             if not await self.spam_cd.can_do():
-                self.logger.warning(f'Pool churn cooldown triggered:\n'
-                                    f'{self.old_pool_dict = }\n'
-                                    f'{new_pool_dict = }!')
                 return
 
             # todo: persist old_pool_data in DB!
+
             # compare starting w 2nd iteration
             pool_changes = self.compare_pool_sets(new_pool_dict)
             if pool_changes.any_changed:
+                self.logger.warning(f'Pool churn changes:\n'
+                                    f'{self.old_pool_dict = }\n'
+                                    f'{new_pool_dict = }!')
                 await self.deps.broadcaster.notify_preconfigured_channels(self.deps.loc_man,
                                                                           BaseLocalization.notification_text_pool_churn,
                                                                           pool_changes)

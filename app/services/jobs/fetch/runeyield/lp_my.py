@@ -450,19 +450,23 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
                     last_deposit_height = tx.height_int
         return last_deposit_height
 
-    def get_il_protection_progress(self, current_block_height: int, last_deposit_height: int) -> float:
+    def get_il_protection_progress(self, current_block_height: int, last_deposit_height: int) -> (float, str):
         blocks_protected_full = int(self.deps.mimir_const_holder.get_constant(
             self.KEY_CONST_FULL_IL_PROTECTION_BLOCKS, default=1728000))
 
+        if blocks_protected_full <= 0 or last_deposit_height <= 0:
+            return 0.0, ILProtectionReport.STATUS_DISABLED
+
         age = current_block_height - last_deposit_height
 
-        if age < 17280 or blocks_protected_full <= 0 or last_deposit_height <= 0:
-            return 0.0
+        if age < 17280:
+            return 0.0, ILProtectionReport.STATUS_EARLY
 
         if age >= blocks_protected_full:
-            return 1.0
+            return 1.0, ILProtectionReport.STATUS_FULL
 
-        return age / blocks_protected_full
+        ratio = age / blocks_protected_full
+        return ratio, ILProtectionReport.STATUS_PARTIAL
 
     @staticmethod
     def calculate_imp_loss(pool: PoolInfo, liquidity_units: int, r0: float, a0: float) -> float:
@@ -513,7 +517,9 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         if last_deposit_height <= 0 and pool.is_enabled:
             return ILProtectionReport()
 
-        protection_progress = self.get_il_protection_progress(last_block, last_deposit_height)
+        protection_progress, protection_status = self.get_il_protection_progress(last_block, last_deposit_height)
+
+        self.logger.info(f'Protection for "{pool.asset}" is {protection_progress * 100:.1f} % ({protection_status}).')
 
         r0, a0 = self._get_deposit_values_r0_and_a0(txs, historic_all_pool_states, pool.asset)
 
@@ -532,10 +538,14 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             new_pool_info.pool_units += pool_adj.delta_units
             member_extra_units = pool_adj.delta_units
 
+        if member_extra_units == 0 and protection_status in ILProtectionReport.PROTECTED_STATUSES:
+            protection_status = ILProtectionReport.STATUS_NOT_NEED
+
         return ILProtectionReport(
             protection_progress,
             coverage_rune,
             full_imp_loss_rune,
             new_pool_info,
-            member_extra_units
+            member_extra_units,
+            protection_status
         )

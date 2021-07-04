@@ -38,6 +38,7 @@ class BaseLocalization(ABC):  # == English
     # ----- WELCOME ------
 
     LOADING = '⌛ Loading...'
+    LONG_DASH = '–'
 
     @property
     def this_bot_name(self):
@@ -167,7 +168,9 @@ class BaseLocalization(ABC):  # == English
     LP_PIC_FOOTER = ""
     LP_PIC_FEES = 'Fees earned'
     LP_PIC_IL_PROTECTION = 'IL protection'
-    LP_PIC_NO_NEED_PROTECTION = 'Not needed.'
+    LP_PIC_NO_NEED_PROTECTION = 'Not needed'
+    LP_PIC_EARLY_TO_PROTECT = 'Too early. Please wait...'
+    LP_PIC_PROTECTION_DISABLED = 'Disabled'
 
     LP_PIC_SUMMARY_HEADER = 'Liquidity pools summary'
     LP_PIC_SUMMARY_ADDED_VALUE = 'Added value'
@@ -619,7 +622,7 @@ class BaseLocalization(ABC):  # == English
                 message += f'💎 Rune switched to native: {switch_rune_text} ({switch_usd_text}).\n'
 
             if not some_added:
-                message += '–\n'
+                message += self.LONG_DASH + '\n'
 
             message += '\n'
 
@@ -791,3 +794,7 @@ class BaseLocalization(ABC):  # == English
     INLINE_INVALID_ADDRESS_TITLE = 'Invalid address!'
     INLINE_INVALID_ADDRESS_TEXT = 'Use THOR or Asset address here.'
     INLINE_LP_CARD = 'LP card of {address} on pool {exact_pool}.'
+
+    INLINE_INTERNAL_ERROR_TITLE = 'Internal error!'
+    INLINE_INTERNAL_ERROR_CONTENT = f'Sorry, something went wrong! Please report it to {CREATOR_TG}.'
+

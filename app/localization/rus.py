@@ -109,7 +109,9 @@ class RussianLocalization(BaseLocalization):
     LP_PIC_FOOTER = ""  # my LP scanner is used
     LP_PIC_FEES = 'Ваши чаевые'
     LP_PIC_IL_PROTECTION = 'Страховка от IL'
-    LP_PIC_NO_NEED_PROTECTION = 'Не требуется.'
+    LP_PIC_NO_NEED_PROTECTION = 'Не требуется'
+    LP_PIC_EARLY_TO_PROTECT = 'Рано, подождите...'
+    LP_PIC_PROTECTION_DISABLED = 'Отключена'
 
     LP_PIC_SUMMARY_HEADER = 'Сводка по пулам ликвидности'
     LP_PIC_SUMMARY_ADDED_VALUE = 'Добавлено'

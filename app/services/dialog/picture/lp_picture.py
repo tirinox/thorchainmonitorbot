@@ -14,7 +14,7 @@ from services.lib.money import pretty_money, short_asset_name, format_percent
 from services.lib.plot_graph import PlotBarGraph
 from services.lib.texts import grouper
 from services.lib.utils import Singleton, async_wrap
-from services.models.lp_info import LiquidityPoolReport, LPDailyGraphPoint
+from services.models.lp_info import LiquidityPoolReport, LPDailyGraphPoint, ILProtectionReport
 
 LP_PIC_WIDTH, LP_PIC_HEIGHT = 1200, 1600
 
@@ -196,7 +196,8 @@ def sync_lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, run
     draw.text(pos_percent_lp(columns_x[1], start_y), loc.LP_PIC_IN_ASSET.format(short_asset_name(asset)), font=r.font,
               fill=FADE_COLOR, anchor='ms')
 
-    need_protection = report.protection.member_extra_units > 0
+    prot = report.protection
+    is_il_protected = prot.is_protected
 
     for x, column in zip(columns_x, columns):
         gl, _ = report.gain_loss(column)
@@ -222,14 +223,14 @@ def sync_lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, run
                       fill=result_color(gl),
                       anchor='ms')
 
-            if need_protection:
+            if is_il_protected:
                 draw.text(pos_percent_lp(x, rows_y[5]), pretty_money(il_prot, signed=True), font=r.font_semi,
                           fill=result_color(il_prot),
                           anchor='ms')
 
         else:
             fee_text = format_percent(fee_value, current)
-            il_prot_text = format_percent(report.protection.progress_progress, 1.0)
+            il_prot_text = format_percent(prot.progress_progress, 1.0)
 
             r.put_hidden_plate(image, pos_percent_lp(x, rows_y[0]), anchor='center')
             r.put_hidden_plate(image, pos_percent_lp(x, rows_y[1]), anchor='center')
@@ -238,7 +239,7 @@ def sync_lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, run
                       anchor='ms')
             r.put_hidden_plate(image, pos_percent_lp(x, rows_y[4]), anchor='center')
 
-            if need_protection:
+            if is_il_protected:
                 draw.text(pos_percent_lp(x, rows_y[5]), il_prot_text, font=r.font_semi,
                           fill=LIGHT_TEXT_COLOR, anchor='ms')
 
@@ -254,23 +255,35 @@ def sync_lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, run
                 elif column == report.RUNE:
                     price_text = pretty_money(report.usd_per_rune, prefix='$')
                 else:
-                    price_text = '–'
+                    price_text = loc.LONG_DASH
                 draw.text(pos_percent_lp(x, rows_y[6] + 2.5),
                           f"({price_text})",
                           fill=FORE_COLOR,
                           font=r.font_small,
                           anchor='ms')
             else:
-                draw.text(pos_percent_lp(x, rows_y[6]), f'–', font=r.font_semi,
+                draw.text(pos_percent_lp(x, rows_y[6]), loc.LONG_DASH, font=r.font_semi,
                           fill=FADE_COLOR, anchor='ms')
         else:
-            draw.text(pos_percent_lp(x, rows_y[5]), f'–', font=r.font_semi,
+            draw.text(pos_percent_lp(x, rows_y[5]), loc.LONG_DASH, font=r.font_semi,
                       fill=FADE_COLOR, anchor='ms')
 
-    if not need_protection:
-        draw.text(pos_percent_lp(columns_x[1], rows_y[5]), loc.LP_PIC_NO_NEED_PROTECTION, font=r.font_semi,
+    if not is_il_protected:
+        if prot.status == ILProtectionReport.STATUS_NOT_NEED:
+            il_prot_text = loc.LP_PIC_NO_NEED_PROTECTION
+        elif prot.status == ILProtectionReport.STATUS_DISABLED:
+            il_prot_text = loc.LP_PIC_PROTECTION_DISABLED
+        elif prot.status == ILProtectionReport.STATUS_EARLY:
+            il_prot_text = loc.LP_PIC_EARLY_TO_PROTECT
+        else:
+            il_prot_text = 'Unknown status.'
+        draw.text(pos_percent_lp(columns_x[0], rows_y[5]), il_prot_text, font=r.font_semi,
                   fill=LIGHT_TEXT_COLOR,
                   anchor='ms')
+        for col in range(1, len(columns)):
+            draw.text(pos_percent_lp(columns_x[col], rows_y[5]), loc.LONG_DASH, font=r.font_semi,
+                      fill=LIGHT_TEXT_COLOR,
+                      anchor='ms')
 
     draw.text(pos_percent_lp(table_x, rows_y[0]), loc.LP_PIC_ADDED_VALUE, font=r.font, fill=FADE_COLOR, anchor='rs')
     draw.text(pos_percent_lp(table_x, rows_y[1]), loc.LP_PIC_WITHDRAWN_VALUE, font=r.font, fill=FADE_COLOR, anchor='rs')

@@ -27,7 +27,7 @@ class InlineBotHandlerDialog(BaseDialog):
 
             components = text.split(' ')
             if len(components) < 2:
-                raise LookupError('too few query parameters')
+                return await self._answer_invalid_query(inline_query)
 
             address, pool_query, *_ = components
 
@@ -44,7 +44,7 @@ class InlineBotHandlerDialog(BaseDialog):
             # GENERATE A REPORT
             rune_yield = get_rune_yield_connector(self.deps)
             lp_report = await rune_yield.generate_yield_report_single_pool(address, exact_pool)
-            # pools = ?
+            # todo: idea: make a gallery!
             # summary = await rune_yield.generate_yield_summary(address, pools)
 
             # GENERATE A PICTURE
@@ -58,7 +58,7 @@ class InlineBotHandlerDialog(BaseDialog):
             await self._answer_photo(inline_query, picture_io, title, ident=ident)
         except Exception:
             logging.exception('Inline response generation exception')
-            await self._answer_invalid_query(inline_query)
+            await self._answer_internal_error(inline_query)
 
     def get_localization(self) -> BaseLocalization:
         return self.deps.loc_man.default
@@ -74,6 +74,13 @@ class InlineBotHandlerDialog(BaseDialog):
         await self._answer_error(inline_query, 'invalid_address',
                                  title=loc.INLINE_INVALID_ADDRESS_TITLE,
                                  text=loc.INLINE_INVALID_ADDRESS_TEXT)
+
+    async def _answer_internal_error(self, inline_query: InlineQuery):
+        loc = self.get_localization()
+        await self._answer_error(inline_query, 'internal_error',
+                                 title=loc.INLINE_INTERNAL_ERROR_TITLE,
+                                 text=loc.INLINE_INTERNAL_ERROR_CONTENT,
+                                 desc=loc.INLINE_INTERNAL_ERROR_CONTENT)
 
     async def _answer_invalid_query(self, inline_query: InlineQuery):
         loc = self.get_localization()
