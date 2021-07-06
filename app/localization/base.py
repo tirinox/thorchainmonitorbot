@@ -261,7 +261,8 @@ class BaseLocalization(ABC):  # == English
 
     PRICE_GRAPH_TITLE = f'Rune price, USD'
     PRICE_GRAPH_LEGEND_DET_PRICE = f'Deterministic {RAIDO_GLYPH} price'
-    PRICE_GRAPH_LEGEND_ACTUAL_PRICE = f'Market {RAIDO_GLYPH} price'
+    PRICE_GRAPH_LEGEND_ACTUAL_PRICE = f'Pool {RAIDO_GLYPH} price'
+    PRICE_GRAPH_LEGEND_CEX_PRICE = f'Binance {RAIDO_GLYPH} price'
 
     # ------- NOTIFY STAKES -------
 
@@ -433,7 +434,7 @@ class BaseLocalization(ABC):  # == English
                 extra = '🎉 BECAME ACTIVE. You can swap!'
             else:
                 extra = ital(status)
-                if to_status is not None:
+                if to_status is not None and status != to_status:  # fix: staged -> staged
                     extra += f' → {ital(to_status)}'
                 extra = f'({extra})'
             return f'  • {self.pool_link(pool_name)}: {extra}'

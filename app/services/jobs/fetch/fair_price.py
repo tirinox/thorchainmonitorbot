@@ -48,7 +48,7 @@ async def total_locked_value_all_networks(session):
     return tlv_mccn + tlv_bepswap
 
 
-async def fetch_fair_rune_price(price_holder: LastPriceHolder):
+async def fetch_fair_rune_price(price_holder: LastPriceHolder) -> RuneMarketInfo:
     async with aiohttp.ClientSession() as session:
         rune_vault, gecko, total_locked_rune = await asyncio.gather(
             delphi_get_rune_vault_balance(session),
@@ -85,5 +85,5 @@ async def fetch_fair_rune_price(price_holder: LastPriceHolder):
 
 
 @a_result_cached(ttl=60)
-async def get_fair_rune_price_cached(lph: LastPriceHolder):
+async def get_fair_rune_price_cached(lph: LastPriceHolder) -> RuneMarketInfo:
     return await fetch_fair_rune_price(lph)

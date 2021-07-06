@@ -10,12 +10,13 @@ from services.jobs.fetch.base import BaseFetcher
 from services.jobs.fetch.fair_price import get_fair_rune_price_cached
 from services.lib.config import Config
 from services.lib.constants import BNB_BUSD_SYMBOL, RUNE_SYMBOL_DET, is_stable_coin, NetworkIdents, \
-    ETH_USDT_TEST_SYMBOL, RUNE_SYMBOL_MARKET, ETH_USDT_SYMBOL
+    ETH_USDT_TEST_SYMBOL, RUNE_SYMBOL_POOL, ETH_USDT_SYMBOL, RUNE_SYMBOL_CEX
 from services.lib.date_utils import parse_timespan_to_seconds, DAY, HOUR, day_to_key
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import get_url_gen_by_network_id
 from services.models.pool_info import PoolInfoHistoricEntry, parse_thor_pools, PoolInfo, PoolInfoMap
+from services.models.price import RuneMarketInfo
 from services.models.time_series import PriceTimeSeries
 
 
@@ -53,12 +54,19 @@ class PoolPriceFetcher(BaseFetcher):
         price = d.price_holder.usd_per_rune
 
         if price > 0:
-            price_series = PriceTimeSeries(RUNE_SYMBOL_MARKET, d.db)
-            await price_series.add(price=price)
+            pool_price_series = PriceTimeSeries(RUNE_SYMBOL_POOL, d.db)
+            await pool_price_series.add(price=price)
 
-            fair_price = await get_fair_rune_price_cached(d.price_holder)
+            # Pool price fill
+            fair_price: RuneMarketInfo = await get_fair_rune_price_cached(d.price_holder)
             fair_price.real_rune_price = price
 
+            # CEX price fill
+            cex_price_series = PriceTimeSeries(RUNE_SYMBOL_CEX, d.db)
+            if fair_price and fair_price.cex_price:
+                await cex_price_series.add(price=fair_price.cex_price)
+
+            # Deterministic price fill
             deterministic_price_series = PriceTimeSeries(RUNE_SYMBOL_DET, d.db)
             await deterministic_price_series.add(price=fair_price.fair_price)
 

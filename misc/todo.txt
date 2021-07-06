@@ -7,13 +7,6 @@ T A S K S :
 
 ------------------------------------------------------------------------
 
-Imp loss protection
-
-https://gitlab.com/thorchain/thornode/-/blob/chaosnet-multichain/x/thorchain/withdraw_v50.go
-
-
-------------------------------------------------------------------------
-
 TX avg time per type:
 
 pending .... success => avg time?
@@ -57,11 +50,6 @@ Swap tx notify
 ------------------------------------------------------------------------
 
 Pool depth growth / drop?
-
-
-------------------------------------------------------------------------
-
-Stake info: Just check address, don't add
 
 
 

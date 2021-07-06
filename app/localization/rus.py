@@ -165,7 +165,8 @@ class RussianLocalization(BaseLocalization):
 
     PRICE_GRAPH_TITLE = f'Цена {RAIDO_GLYPH}уны'
     PRICE_GRAPH_LEGEND_DET_PRICE = 'Детерминистская цена'
-    PRICE_GRAPH_LEGEND_ACTUAL_PRICE = 'Рыночная цена'
+    PRICE_GRAPH_LEGEND_ACTUAL_PRICE = 'Цена пулов'
+    PRICE_GRAPH_LEGEND_CEX_PRICE = f'Binance цена'
 
     # ------ TXS -------
 

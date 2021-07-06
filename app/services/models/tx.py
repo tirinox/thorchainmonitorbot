@@ -264,8 +264,6 @@ class LPAddWithdrawTx(BaseModelMixin):
     @classmethod
     def load_from_thor_tx(cls, tx: ThorTx):
         t = tx.type
-        if t not in (ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_ADD_LIQUIDITY):
-            return None
 
         pool = tx.first_pool
 

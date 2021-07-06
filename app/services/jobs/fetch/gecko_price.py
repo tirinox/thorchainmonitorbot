@@ -4,7 +4,7 @@ import aiohttp
 from aioredis import ReplyError
 from tqdm import tqdm
 
-from services.lib.constants import RUNE_SYMBOL_DET, RUNE_SYMBOL_MARKET
+from services.lib.constants import RUNE_SYMBOL_DET, RUNE_SYMBOL_POOL
 from services.models.time_series import PriceTimeSeries
 
 COIN_CHART_GECKO = "https://api.coingecko.com/api/v3/coins/thorchain/market_chart?vs_currency=usd&days={days}"
@@ -27,7 +27,7 @@ async def fill_rune_price_from_gecko(db, include_fake_det=False, fake_value=0.2)
     price_chart = gecko_data8 + gecko_data1
     price_chart.sort(key=lambda p: p[0])
 
-    series = PriceTimeSeries(RUNE_SYMBOL_MARKET, db)
+    series = PriceTimeSeries(RUNE_SYMBOL_POOL, db)
     await series.clear()
 
     det_series = PriceTimeSeries(RUNE_SYMBOL_DET, db)

@@ -5,7 +5,7 @@ import time
 from localization import BaseLocalization
 from services.dialog.picture.price_picture import price_graph_from_db
 from services.jobs.fetch.base import INotified
-from services.lib.constants import RUNE_SYMBOL_MARKET
+from services.lib.constants import RUNE_SYMBOL_POOL
 from services.lib.cooldown import CooldownSingle
 from services.lib.date_utils import MINUTE, HOUR, DAY, parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
@@ -25,7 +25,7 @@ class PriceNotifier(INotified):
         self.global_cd = parse_timespan_to_seconds(cfg.global_cd)
         self.change_cd = parse_timespan_to_seconds(cfg.change_cd)
         self.percent_change_threshold = cfg.percent_change_threshold
-        self.time_series = PriceTimeSeries(RUNE_SYMBOL_MARKET, deps.db)
+        self.time_series = PriceTimeSeries(RUNE_SYMBOL_POOL, deps.db)
 
         self.ath_stickers = cfg.ath.stickers
         self.ath_sticker_iter = make_stickers_iterator(self.ath_stickers)

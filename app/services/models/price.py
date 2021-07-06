@@ -115,4 +115,3 @@ class LastPriceHolder:
             if query in pool_name:
                 variants.append(pool_name)
         return variants
-
