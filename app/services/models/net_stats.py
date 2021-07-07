@@ -55,6 +55,14 @@ class NetworkStats(BaseModelMixin):
         return self.total_rune_pooled * self.usd_per_rune
 
     @property
+    def total_liquidity_usd(self):
+        return self.total_pooled_usd * 2
+
+    @property
+    def total_locked_usd(self):
+        return self.total_liquidity_usd + self.total_bond_usd
+
+    @property
     def swap_volume_usd(self):
         return self.swap_volume_rune * self.usd_per_rune
 
@@ -69,10 +77,6 @@ class NetworkStats(BaseModelMixin):
     @property
     def withdrawn_usd(self):
         return self.withdrawn_rune * self.usd_per_rune
-
-    @property
-    def tlv_usd(self):
-        return (self.total_rune_pooled + self.total_bond_rune) * self.usd_per_rune
 
     @property
     def network_security_ratio(self):

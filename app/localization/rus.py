@@ -403,29 +403,54 @@ class RussianLocalization(BaseLocalization):
         message += f"🖥️ {bold(new.active_nodes)} активных нод{active_nodes_change} " \
                    f"и {bold(new.standby_nodes)} нод в режиме ожидания{standby_nodes_change}.\n"
 
+        # -- BOND
+
         current_bond_text = bold(pretty_money(new.total_bond_rune, postfix=RAIDO_GLYPH))
-        current_pooled_text = bold(pretty_money(new.total_rune_pooled, postfix=RAIDO_GLYPH))
         current_bond_change = bracketify(up_down_arrow(old.total_bond_rune, new.total_bond_rune, money_delta=True))
-        current_pooled_change = bracketify(
-            up_down_arrow(old.total_rune_pooled, new.total_rune_pooled, money_delta=True))
 
         current_bond_usd_text = bold(pretty_dollar(new.total_bond_usd))
-        current_pooled_usd_text = bold(pretty_dollar(new.total_pooled_usd))
-        current_bond_usd_change = bracketify(up_down_arrow(old.total_bond_usd, new.total_bond_usd, money_delta=True))
-        current_pooled_usd_change = bracketify(
-            up_down_arrow(old.total_pooled_usd, new.total_pooled_usd, money_delta=True))
+        current_bond_usd_change = bracketify(
+            up_down_arrow(old.total_bond_usd, new.total_bond_usd, money_delta=True, money_prefix='$')
+        )
 
         message += f"🔗 Всего в бонде: {current_bond_text}{current_bond_change} или " \
                    f"{current_bond_usd_text}{current_bond_usd_change}.\n"
-        message += f"🏊 Всего в пулах ликвидности: {current_pooled_text}{current_pooled_change} или " \
+
+        # -- POOL
+
+        current_pooled_text = bold(pretty_money(new.total_rune_pooled, postfix=RAIDO_GLYPH))
+        current_pooled_change = bracketify(
+            up_down_arrow(old.total_rune_pooled, new.total_rune_pooled, money_delta=True))
+
+        current_pooled_usd_text = bold(pretty_dollar(new.total_pooled_usd))
+        current_pooled_usd_change = bracketify(
+            up_down_arrow(old.total_pooled_usd, new.total_pooled_usd, money_delta=True, money_prefix='$'))
+
+        message += f"🏊 Всего в пулах: {current_pooled_text}{current_pooled_change} или " \
                    f"{current_pooled_usd_text}{current_pooled_usd_change}.\n"
+
+        # -- LIQ
+
+        current_liquidity_usd_text = bold(pretty_dollar(new.total_liquidity_usd))
+        current_liquidity_usd_change = bracketify(
+            up_down_arrow(old.total_liquidity_usd, new.total_liquidity_usd, money_delta=True, money_prefix='$'))
+
+        message += f"🌊 Всего ликвидности (TVL): {current_liquidity_usd_text}{current_liquidity_usd_change}.\n"
+
+        # -- TVL
+
+        tlv_change = bracketify(
+            up_down_arrow(old.total_locked_usd, new.total_locked_usd, money_delta=True, money_prefix='$'))
+        message += f'🏦 TVL + бонды нод: {code(pretty_dollar(new.total_locked_usd))}{tlv_change}.\n'
+
+        # -- RESERVE
 
         reserve_change = bracketify(up_down_arrow(old.reserve_rune, new.reserve_rune,
                                                   postfix=RAIDO_GLYPH, money_delta=True))
+
         message += f'💰 Резервы: {bold(pretty_money(new.reserve_rune, postfix=RAIDO_GLYPH))}{reserve_change}.\n'
 
-        tlv_change = bracketify(up_down_arrow(old.tlv_usd, new.tlv_usd, money_delta=True, money_prefix='$'))
-        message += f'🏦 TLV (всего средств заблокировано): {code(pretty_dollar(new.tlv_usd))}{tlv_change}.\n'
+        # --- FLOWS:
 
         message += '\n'
 
@@ -474,7 +499,7 @@ class RussianLocalization(BaseLocalization):
             liquidity_apy_change = ''
 
         message += f'📈 Доход от бондов в нодах, годовых: {code(pretty_money(new.bonding_apy, postfix="%"))}{bonding_apy_change} и ' \
-                   f'доход от пулов в среднем, годовых {code(pretty_money(new.liquidity_apy, postfix="%"))}{liquidity_apy_change}.\n'
+                   f'доход от пулов в среднем, годовых: {code(pretty_money(new.liquidity_apy, postfix="%"))}{liquidity_apy_change}.\n'
 
         message += f'🛡️ Выплачено страховки от IL (непостоянных потерь): {code(pretty_dollar(new.loss_protection_paid_usd))}.\n'
 

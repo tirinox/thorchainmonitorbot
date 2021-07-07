@@ -45,8 +45,8 @@ def randomize_all_fields(old: NetworkStats, dev=10):
     return new
 
 
-async def print_message(old_info: NetworkStats, new_info: NetworkStats, deps: DepContainer, post_tg=True):
-    loc: BaseLocalization = deps.loc_man.default
+async def print_message(old_info: NetworkStats, new_info: NetworkStats, deps: DepContainer, post_tg=True, loc=None):
+    loc: BaseLocalization = loc or deps.loc_man.default
     message = loc.notification_text_network_summary(old_info, new_info)
     print('OLD:')
     print(old_info)
@@ -61,6 +61,7 @@ async def print_message(old_info: NetworkStats, new_info: NetworkStats, deps: De
         deps.bot = Bot(token=deps.cfg.telegram.bot.token, parse_mode=ParseMode.HTML)
         deps.dp = Dispatcher(deps.bot, loop=deps.loop)
         deps.broadcaster = Broadcaster(deps)
+
         await deps.broadcaster.notify_preconfigured_channels(
             deps.loc_man,
             loc.notification_text_network_summary,
@@ -110,7 +111,8 @@ async def test_pool_consistency():
         assert old_info.pending_pool_count == 5
         assert new_info.pending_pool_count == 6
 
-    await print_message(old_info, new_info, lpgen.deps, post_tg=False)
+    await print_message(old_info, new_info, lpgen.deps, post_tg=False, loc=lpgen.deps.loc_man.get_from_lang('rus'))
+    # await print_message(old_info, new_info, lpgen.deps, post_tg=False, loc=lpgen.deps.loc_man.get_from_lang('eng'))
 
 
 async def test_generic_pool_message():
@@ -129,7 +131,8 @@ async def test_generic_pool_message():
 
     old_info, new_info = get_info_pair_for_test(new_info)
 
-    await print_message(old_info, new_info, lpgen.deps)
+    await print_message(old_info, new_info, lpgen.deps, loc=lpgen.deps.loc_man.get_from_lang('rus'))
+    # await print_message(old_info, new_info, lpgen.deps, loc=lpgen.deps.loc_man.get_from_lang('eng'))
 
 
 def upd(old_value, new_value, smiley=False, more_is_better=True, same_result='',
@@ -154,7 +157,7 @@ def test_upd():
 
 
 async def main():
-    await test_pool_consistency()
+    await test_generic_pool_message()
 
 
 if __name__ == "__main__":
