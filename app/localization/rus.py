@@ -105,6 +105,7 @@ class RussianLocalization(BaseLocalization):
     LP_PIC_PRICE_CHANGE_2 = 'с 1го добавления'
     LP_PIC_LP_VS_HOLD = 'Против ХОЛД'
     LP_PIC_LP_APY = 'Годовых'
+    LP_PIC_LP_APY_OVER_LIMIT = 'Очень много %'
     LP_PIC_EARLY = 'Еще рано...'
     LP_PIC_FOOTER = ""  # my LP scanner is used
     LP_PIC_FEES = 'Ваши чаевые'

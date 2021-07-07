@@ -1,3 +1,4 @@
+import math
 from math import floor, log10
 
 EMOJI_SCALE = [
@@ -88,6 +89,16 @@ def pretty_money(x, prefix='', signed=False, postfix='', short_form=False):
                 r = number_commas(x)
     prefix = f'+{prefix}' if signed else prefix
     return f'{prefix}{r}{postfix}'
+
+
+def too_big(x, limit_abs=1e7):
+    return math.isinf(x) or math.isnan(x) or abs(x) > limit_abs
+
+
+def pretty_percent(x, limit_abs=1e7, limit_text='N/A %', signed=True):
+    if too_big(x, limit_abs):
+        return limit_text
+    return pretty_money(x, postfix=' %', signed=signed)
 
 
 def short_money(x, prefix='$'):

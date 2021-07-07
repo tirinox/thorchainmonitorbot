@@ -164,6 +164,7 @@ class BaseLocalization(ABC):  # == English
     LP_PIC_PRICE_CHANGE_2 = 'since the first addition'
     LP_PIC_LP_VS_HOLD = 'LP vs HOLD'
     LP_PIC_LP_APY = 'LP APY'
+    LP_PIC_LP_APY_OVER_LIMIT = 'Too much %'
     LP_PIC_EARLY = 'Early...'
     LP_PIC_FOOTER = ""
     LP_PIC_FEES = 'Fees earned'

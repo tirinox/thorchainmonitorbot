@@ -10,7 +10,7 @@ from localization.base import RAIDO_GLYPH
 from services.dialog.picture.crypto_logo import CryptoLogoDownloader
 from services.lib.constants import BNB_RUNE_SYMBOL, is_stable_coin, is_rune, RUNE_SYMBOL
 from services.lib.draw_utils import CATEGORICAL_PALETTE, pos_percent, result_color, hor_line, LIGHT_TEXT_COLOR
-from services.lib.money import pretty_money, short_asset_name, format_percent
+from services.lib.money import pretty_money, short_asset_name, format_percent, pretty_percent
 from services.lib.plot_graph import PlotBarGraph
 from services.lib.texts import grouper
 from services.lib.utils import Singleton, async_wrap
@@ -321,9 +321,13 @@ def sync_lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, run
 
     draw.text(pos_percent_lp(20, logo_y), loc.LP_PIC_LP_VS_HOLD, anchor='ms', font=r.font_big, fill=FORE_COLOR)
     draw.text(pos_percent_lp(80, logo_y), loc.LP_PIC_LP_APY, anchor='ms', font=r.font_big, fill=FORE_COLOR)
-    draw.text(pos_percent_lp(20, logo_y + 6), f'{pretty_money(lp_per, signed=True)} %', anchor='ms',
+
+    lp_font = r.font_big if abs(lp_per) < 1e5 else r.font
+    draw.text(pos_percent_lp(20, logo_y + 6),
+              pretty_percent(lp_per, limit_text=loc.LP_PIC_LP_APY_OVER_LIMIT),
+              anchor='ms',
               fill=result_color(lp_per),
-              font=r.font_big)
+              font=lp_font)
 
     if not value_hidden:
         draw.text(pos_percent_lp(20, logo_y + 10), f'({pretty_money(lp_abs, signed=True, prefix="$")})', anchor='ms',
@@ -331,9 +335,12 @@ def sync_lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, run
                   font=r.font)
 
     if report.total_days >= 2:
-        draw.text(pos_percent_lp(80, logo_y + 7), f'{pretty_money(apy, signed=True)} %', anchor='ms',
+        apy_font = r.font_big if abs(apy) < 1e5 else r.font
+        draw.text(pos_percent_lp(80, logo_y + 7),
+                  pretty_percent(apy, limit_text=loc.LP_PIC_LP_APY_OVER_LIMIT),
+                  anchor='ms',
                   fill=result_color(apy),
-                  font=r.font_big)
+                  font=apy_font)
     else:
         draw.text(pos_percent_lp(80, logo_y + 7), loc.LP_PIC_EARLY, anchor='ms',
                   fill=FADE_COLOR,
