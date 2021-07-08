@@ -34,7 +34,7 @@ class PriceNotifier(INotified):
         self.price_graph_period = parse_timespan_to_seconds(cfg.price_graph.default_period)
 
     async def on_data(self, sender, fprice: RuneMarketInfo):
-        # fprice.real_rune_price = 21.98  # fixme: debug! for ATH
+        # fprice.pool_rune_price = 21.98  # fixme: debug! for ATH
         if not await self.handle_ath(fprice):
             await self.handle_new_price(fprice)
 
@@ -79,7 +79,7 @@ class PriceNotifier(INotified):
 
     async def handle_new_price(self, fair_price: RuneMarketInfo):
         hist_prices = await self.historical_get_triplet()
-        price = fair_price.real_rune_price
+        price = fair_price.pool_rune_price
 
         price_1h = hist_prices[0]
         send_it = False
@@ -124,7 +124,7 @@ class PriceNotifier(INotified):
 
     async def handle_ath(self, fair_price):
         last_ath = await self.get_prev_ath()
-        price = fair_price.real_rune_price
+        price = fair_price.pool_rune_price
         
         if last_ath.is_new_ath(price):
             await self.update_ath(PriceATH(

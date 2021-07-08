@@ -85,7 +85,7 @@ async def test_multi_chain_testnet():
 
     # this has + and -
     # await test_one_pool_picture_generator('bnb13njdl8ktw7pen3jcjy7epfa3mzcdjxuu3w4dxh', 'BNB.BNB', hide=False)
-    await test_one_pool_picture_generator('bnb1rpw69vck9txkql2hw8t80uxdapve0rlw6ywkhf', BNB_BUSD_SYMBOL, hide=False)
+    # await test_one_pool_picture_generator('bnb1rpw69vck9txkql2hw8t80uxdapve0rlw6ywkhf', BNB_BUSD_SYMBOL, hide=False)
     # fixme: last tx? withdraw 10000? all??
 
     # ----------------
@@ -107,6 +107,9 @@ async def test_multi_chain_testnet():
     # thor1vsr6nard8svfqcf5eznzsaenuctpslahpgf4hq
     # todo: LPvsHodl and LPvsHodl APY!
     # await test_one_pool_picture_generator('thor1vsr6nard8svfqcf5eznzsaenuctpslahpgf4hq', BNB_BUSD_SYMBOL, hide=False)
+
+    # error : div / zero
+    await test_one_pool_picture_generator('thor1hsmr2v809n8kmdk2m2l5lu735q3hv7vw52l0tk', "BNB.USDT-6D8", hide=False)
 
 
 if __name__ == '__main__':

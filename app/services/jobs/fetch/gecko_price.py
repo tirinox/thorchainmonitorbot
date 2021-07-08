@@ -61,3 +61,7 @@ def gecko_ticker_price(gecko_json, exchange='binance', base_curr='USDT'):
         this_exchange = t.get('market', {}).get('identifier')
         if this_exchange == exchange and this_base_curr == base_curr:
             return float(t.get('last', 0))
+
+
+def gecko_market_volume(gecko_json):
+    return float(gecko_json.get('market_data', {}).get('total_volume', {}).get('usd', 0.0))

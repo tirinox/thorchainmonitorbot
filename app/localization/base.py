@@ -375,16 +375,16 @@ class BaseLocalization(ABC):  # == English
         c_gecko_link = link(c_gecko_url, 'RUNE')
 
         message = f"{title} | {c_gecko_link}\n\n"
-        price = p.fair_price.real_rune_price
+        price = p.fair_price.pool_rune_price
 
         pr_text = f"${price:.3f}"
-        btc_price = f"₿ {p.btc_real_rune_price:.8f}"
+        btc_price = f"₿ {p.btc_pool_rune_price:.8f}"
         message += f"<b>RUNE</b> price is {code(pr_text)} ({btc_price}) now.\n"
 
         fp = p.fair_price
 
         if fp.cex_price > 0.0:
-            message += f"<b>RUNE</b> price at Binance (CEX) is {bold(pretty_dollar(fp.cex_price))} " \
+            message += f"<b>RUNE</b> price at Binance (CEX) is {code(pretty_dollar(fp.cex_price))} " \
                        f"(RUNE/USDT market).\n"
 
         last_ath = p.last_ath
@@ -405,9 +405,14 @@ class BaseLocalization(ABC):  # == English
         if fp.rank >= 1:
             message += f"Coin market cap is {bold(pretty_dollar(fp.market_cap))} (#{bold(fp.rank)})\n"
 
+        if fp.total_trade_volume_usd > 0:
+            message += f"Total trading volume is {bold(pretty_dollar(fp.total_trade_volume_usd))}\n"
+
+        message += '\n'
+
         if fp.tlv_usd >= 1:
             det_link = link(self.DET_PRICE_HELP_PAGE, 'deterministic price')
-            message += (f"TLV of non-RUNE assets: ${pre(pretty_money(fp.tlv_usd))}\n"
+            message += (f"TVL of non-RUNE assets: ${bold(pretty_money(fp.tlv_usd))}\n"
                         f"So {det_link} of RUNE is {code(pretty_money(fp.fair_price, prefix='$'))}\n"
                         f"Speculative multiplier is {pre(x_ses(fp.fair_price, price))}\n")
 

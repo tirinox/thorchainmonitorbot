@@ -3,7 +3,8 @@ import logging
 
 import aiohttp
 
-from services.jobs.fetch.gecko_price import get_thorchain_coin_gecko_info, gecko_market_cap_rank, gecko_ticker_price
+from services.jobs.fetch.gecko_price import get_thorchain_coin_gecko_info, gecko_market_cap_rank, gecko_ticker_price, \
+    gecko_market_volume
 from services.lib.constants import THOR_DIVIDER_INV
 from services.lib.utils import a_result_cached
 from services.models.price import RuneMarketInfo, LastPriceHolder
@@ -72,14 +73,16 @@ async def fetch_fair_rune_price(price_holder: LastPriceHolder) -> RuneMarketInfo
 
         cex_price = gecko_ticker_price(gecko, 'binance', 'USDT')  # RUNE/USDT @ Binance
         rank = gecko_market_cap_rank(gecko)
+        trade_volume = gecko_market_volume(gecko)
 
         result = RuneMarketInfo(circulating=circulating,
                                 rune_vault_locked=rune_vault,
-                                real_rune_price=price_holder.usd_per_rune,
+                                pool_rune_price=price_holder.usd_per_rune,
                                 fair_price=fair_price,
                                 cex_price=cex_price,
                                 tlv_usd=tlv,
-                                rank=rank)
+                                rank=rank,
+                                total_trade_volume_usd=trade_volume)
         logger.info(result)
         return result
 

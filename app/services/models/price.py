@@ -13,15 +13,16 @@ from services.models.pool_info import PoolInfo, PoolInfoMap
 class RuneMarketInfo:
     circulating: int = 500_000_000
     rune_vault_locked: int = 0
-    real_rune_price: float = 0.0  # THORChain Pool Price (weighted across stable coins)
+    pool_rune_price: float = 0.0  # THORChain Pool Price (weighted across stable coins)
     fair_price: float = 0.0  # Deterministic Price
     cex_price: float = 0.0  # Price on Centralised Exchanges
     tlv_usd: float = 0.0
     rank: int = 0
+    total_trade_volume_usd: float = 0.0
 
     @property
     def market_cap(self):
-        return self.real_rune_price * self.circulating
+        return self.pool_rune_price * self.circulating
 
 
 REAL_REGISTERED_ATH = 1.18  # BUSD / Rune
@@ -44,7 +45,7 @@ class PriceReport:
     price_7d: float = 0.0
     fair_price: RuneMarketInfo = RuneMarketInfo()
     last_ath: PriceATH = PriceATH()
-    btc_real_rune_price: float = 0.0
+    btc_pool_rune_price: float = 0.0
 
 
 class LastPriceHolder:

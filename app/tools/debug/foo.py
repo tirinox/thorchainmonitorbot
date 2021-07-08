@@ -12,6 +12,7 @@ from pycoingecko import CoinGeckoAPI
 from localization import LocalizationManager
 from services.dialog.picture.crypto_logo import CryptoLogoDownloader
 from services.dialog.picture.queue_picture import QUEUE_TIME_SERIES
+from services.jobs.fetch.gecko_price import get_thorchain_coin_gecko_info
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.tx import TxFetcher
 from services.lib.config import Config
@@ -331,12 +332,17 @@ async def foo27_mimir_message():
         await telegram_send_message_basic(TG_TOKEN, TG_USER, text)
 
 
+async def foo28_gecko_cex_volume():
+    data = await get_thorchain_coin_gecko_info(deps.session)
+    print(data)
+
+
 async def start_foos():
     async with aiohttp.ClientSession() as deps.session:
         deps.thor_connector = ThorConnector(get_thor_env_by_network_id(deps.cfg.network_id), deps.session)
         await deps.db.get_redis()
         # await foo27_mimir_message()
-        await foo26_trading_halt_text()
+        await foo28_gecko_cex_volume()
 
 
 if __name__ == '__main__':

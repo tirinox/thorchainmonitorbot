@@ -203,7 +203,9 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             last_add_date = max(last_add_date, tx_timestamp) if last_add_date else tx_timestamp
 
             pools_info: PoolInfoMap = pool_historic[tx.height_int]
-            this_asset_pool_info = pools_info.get(pool_name)
+            this_asset_pool_info = self._get_pool(pool_historic, tx.height_int, pool_name)
+            # fixme: block has final state after all TX settled. this_asset_pool_info may be None!
+            # fixme: this_asset_pool_info is a real object, but 1/1:1 values inside.
 
             usd_per_rune = self._calculate_weighted_rune_price_in_usd(pools_info, use_default_price=True)
 
@@ -292,7 +294,8 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
     def _create_lp_position(self, pool, height, my_units: int, pool_historic: HeightToAllPools) -> LPPosition:
         all_pool_info_at_height = pool_historic.get(height)
-        pool_info = all_pool_info_at_height.get(pool)
+
+        pool_info = self._get_pool(pool_historic, height, pool)
 
         usd_per_rune = self._calculate_weighted_rune_price_in_usd(all_pool_info_at_height, use_default_price=True)
 
@@ -475,6 +478,18 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         coverage = (r0 - r1) + (a0 - a1) * r1 / a1
         return max(0.0, coverage)
 
+    @staticmethod
+    def calculate_imp_loss_v58(pool: PoolInfo, liquidity_units: int, r0: float, a0: float) -> float:
+        # https://gitlab.com/thorchain/thornode/-/blob/develop/x/thorchain/withdraw_v58.go#L176
+        # https://gitlab.com/thorchain/thornode/-/merge_requests/1796
+        r1, a1 = pool_share(pool.balance_rune, pool.balance_asset, liquidity_units, pool.pool_units)
+        r1, a1 = thor_to_float(r1), thor_to_float(a1)
+        p1 = r1 / a1
+        deposit_value = a0 * p1 + r0
+        redeem_value = a1 * p1 + r1
+        coverage = deposit_value - redeem_value
+        return max(0.0, coverage)
+
     def _get_deposit_values_r0_and_a0(self, txs: List[ThorTx],
                                       historic_all_pool_states: HeightToAllPools,
                                       pool_name: str) -> (float, float):
@@ -505,7 +520,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
     def _get_pool(historic_all_pool_states: HeightToAllPools, height, pool_name: str) -> PoolInfo:
         pools = historic_all_pool_states.get(int(height), {})
         pool = pools.get(pool_name)
-        return pool or PoolInfo(pool_name, 0, 0, 0, PoolInfo.STAGED)
+        return pool or PoolInfo(pool_name, 1, 1, 1, PoolInfo.STAGED)
 
     async def _get_il_report(self, pool: PoolInfo, txs: List[ThorTx],
                              historic_all_pool_states: HeightToAllPools,

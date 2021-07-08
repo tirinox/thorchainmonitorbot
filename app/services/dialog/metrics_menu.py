@@ -161,13 +161,13 @@ class MetricsDialog(BaseDialog):
         fp = await get_fair_rune_price_cached(self.deps.price_holder)
         pn = PriceNotifier(self.deps)
         price_1h, price_24h, price_7d = await pn.historical_get_triplet()
-        fp.real_rune_price = self.deps.price_holder.usd_per_rune
+        fp.pool_rune_price = self.deps.price_holder.usd_per_rune
         btc_price = self.deps.price_holder.btc_per_rune
 
         price_text = self.loc.notification_text_price_update(PriceReport(
             price_1h, price_24h, price_7d,
             fair_price=fp,
-            btc_real_rune_price=btc_price))
+            btc_pool_rune_price=btc_price))
 
         graph = await price_graph_from_db(self.deps.db, self.loc, period=period)
         await message.answer_photo(graph)

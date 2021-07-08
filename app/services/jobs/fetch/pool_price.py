@@ -58,19 +58,19 @@ class PoolPriceFetcher(BaseFetcher):
             await pool_price_series.add(price=price)
 
             # Pool price fill
-            fair_price: RuneMarketInfo = await get_fair_rune_price_cached(d.price_holder)
-            fair_price.real_rune_price = price
+            rune_market_info: RuneMarketInfo = await get_fair_rune_price_cached(d.price_holder)
+            rune_market_info.pool_rune_price = price
 
             # CEX price fill
             cex_price_series = PriceTimeSeries(RUNE_SYMBOL_CEX, d.db)
-            if fair_price and fair_price.cex_price:
-                await cex_price_series.add(price=fair_price.cex_price)
+            if rune_market_info and rune_market_info.cex_price:
+                await cex_price_series.add(price=rune_market_info.cex_price)
 
             # Deterministic price fill
             deterministic_price_series = PriceTimeSeries(RUNE_SYMBOL_DET, d.db)
-            await deterministic_price_series.add(price=fair_price.fair_price)
+            await deterministic_price_series.add(price=rune_market_info.fair_price)
 
-            return fair_price
+            return rune_market_info
         else:
             self.logger.warning(f'really ${price:.3f}? that is odd!')
 

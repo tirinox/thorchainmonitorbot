@@ -232,9 +232,9 @@ class RussianLocalization(BaseLocalization):
         c_gecko_link = link(c_gecko_url, 'RUNE')
 
         message = f"{title} | {c_gecko_link}\n\n"
-        price = p.fair_price.real_rune_price
+        price = p.fair_price.pool_rune_price
 
-        btc_price = f"₿ {p.btc_real_rune_price:.8f}"
+        btc_price = f"₿ {p.btc_pool_rune_price:.8f}"
         pr_text = f"${price:.2f}"
         message += f"Цена <b>RUNE</b> сейчас {code(pr_text)} ({btc_price}).\n"
 
@@ -264,8 +264,13 @@ class RussianLocalization(BaseLocalization):
         if fp.rank >= 1:
             message += f"Капитализация: {bold(pretty_dollar(fp.market_cap))} (#{bold(fp.rank)} место)\n"
 
+        if fp.total_trade_volume_usd > 0:
+            message += f"Объем торгов сегодня: {bold(pretty_dollar(fp.total_trade_volume_usd))}.\n"
+
+        message += '\n'
+
         if fp.tlv_usd >= 1:
-            message += (f"TLV (кроме RUNE): ${pre(pretty_money(fp.tlv_usd))}\n"
+            message += (f"TVL (не-RUNE активов): ${bold(pretty_money(fp.tlv_usd))}\n"
                         f"Детерминистическая цена: {code(pretty_money(fp.fair_price, prefix='$'))}\n"
                         f"Спекулятивый множитель: {pre(x_ses(fp.fair_price, price))}\n")
 
