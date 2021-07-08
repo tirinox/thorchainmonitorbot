@@ -375,13 +375,13 @@ class BaseLocalization(ABC):  # == English
         c_gecko_link = link(c_gecko_url, 'RUNE')
 
         message = f"{title} | {c_gecko_link}\n\n"
-        price = p.fair_price.pool_rune_price
+        price = p.market_info.pool_rune_price
 
         pr_text = f"${price:.3f}"
         btc_price = f"₿ {p.btc_pool_rune_price:.8f}"
         message += f"<b>RUNE</b> price is {code(pr_text)} ({btc_price}) now.\n"
 
-        fp = p.fair_price
+        fp = p.market_info
 
         if fp.cex_price > 0.0:
             message += f"<b>RUNE</b> price at Binance (CEX) is {code(pretty_dollar(fp.cex_price))} " \

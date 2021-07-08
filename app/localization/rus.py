@@ -232,13 +232,13 @@ class RussianLocalization(BaseLocalization):
         c_gecko_link = link(c_gecko_url, 'RUNE')
 
         message = f"{title} | {c_gecko_link}\n\n"
-        price = p.fair_price.pool_rune_price
+        price = p.market_info.pool_rune_price
 
         btc_price = f"₿ {p.btc_pool_rune_price:.8f}"
         pr_text = f"${price:.2f}"
         message += f"Цена <b>RUNE</b> сейчас {code(pr_text)} ({btc_price}).\n"
 
-        fp = p.fair_price
+        fp = p.market_info
 
         if fp.cex_price > 0.0:
             message += f"Цена <b>RUNE</b> на централизованной бирже Binance: {bold(pretty_dollar(fp.cex_price))}.\n"

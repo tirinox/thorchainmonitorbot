@@ -43,7 +43,7 @@ class PriceReport:
     price_1h: float = 0.0
     price_24h: float = 0.0
     price_7d: float = 0.0
-    fair_price: RuneMarketInfo = RuneMarketInfo()
+    market_info: RuneMarketInfo = RuneMarketInfo()
     last_ath: PriceATH = PriceATH()
     btc_pool_rune_price: float = 0.0
 
