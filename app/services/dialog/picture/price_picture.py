@@ -21,8 +21,8 @@ def price_graph(pool_price_df, det_price_df, cex_prices_df, loc: BaseLocalizatio
     graph.left = 80
     graph.legend_x = 95
     graph.bottom = 100
-    graph.add_series(cex_prices_df, LINE_COLOR_POOL_PRICE)
-    graph.add_series(pool_price_df, LINE_COLOR_CEX_PRICE)
+    graph.add_series(pool_price_df, LINE_COLOR_POOL_PRICE)
+    graph.add_series(cex_prices_df, LINE_COLOR_CEX_PRICE)
     graph.add_series(det_price_df, LINE_COLOR_DET_PRICE)
     graph.update_bounds()
     graph.min_y = 0.0
