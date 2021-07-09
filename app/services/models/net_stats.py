@@ -51,6 +51,10 @@ class NetworkStats(BaseModelMixin):
         return self.total_bond_rune * self.usd_per_rune
 
     @property
+    def total_active_bond_usd(self):
+        return self.total_active_bond_rune * self.usd_per_rune
+
+    @property
     def total_pooled_usd(self):
         return self.total_rune_pooled * self.usd_per_rune
 

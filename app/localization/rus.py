@@ -410,16 +410,28 @@ class RussianLocalization(BaseLocalization):
 
         # -- BOND
 
-        current_bond_text = bold(pretty_money(new.total_bond_rune, postfix=RAIDO_GLYPH))
-        current_bond_change = bracketify(up_down_arrow(old.total_bond_rune, new.total_bond_rune, money_delta=True))
+        current_bond_text = bold(pretty_money(new.total_active_bond_rune, postfix=RAIDO_GLYPH))
+        current_bond_change = bracketify(up_down_arrow(old.total_active_bond_rune, new.total_active_bond_rune, money_delta=True))
 
-        current_bond_usd_text = bold(pretty_dollar(new.total_bond_usd))
+        current_bond_usd_text = bold(pretty_dollar(new.total_active_bond_usd))
         current_bond_usd_change = bracketify(
+            up_down_arrow(old.total_active_bond_usd, new.total_active_bond_usd, money_delta=True, money_prefix='$')
+        )
+
+        current_total_bond_text = bold(pretty_money(new.total_bond_rune, postfix=RAIDO_GLYPH))
+        current_total_bond_change = bracketify(
+            up_down_arrow(old.total_bond_rune, new.total_bond_rune, money_delta=True))
+
+        current_total_bond_usd_text = bold(pretty_dollar(new.total_bond_usd))
+        current_total_bond_usd_change = bracketify(
             up_down_arrow(old.total_bond_usd, new.total_bond_usd, money_delta=True, money_prefix='$')
         )
 
-        message += f"🔗 Всего в бонде: {current_bond_text}{current_bond_change} или " \
+        message += f"🔗 Бонд активных нод: {current_bond_text}{current_bond_change} or " \
                    f"{current_bond_usd_text}{current_bond_usd_change}.\n"
+
+        message += f"🔗 Бонд всех нод: {current_total_bond_text}{current_total_bond_change} or " \
+                   f"{current_total_bond_usd_text}{current_total_bond_usd_change}.\n"
 
         # -- POOL
 
