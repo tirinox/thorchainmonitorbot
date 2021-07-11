@@ -35,6 +35,7 @@ class TradingHaltedNotifier(INotified):
                         changed_chains.append(new_info)
 
                 await self._save_chain_state(new_info)
+                self._update_global_state(chain, new_info.halted)
 
         if changed_chains:
             await self.deps.broadcaster.notify_preconfigured_channels(
@@ -44,6 +45,14 @@ class TradingHaltedNotifier(INotified):
             )
 
     KEY_CHAIN_HALTED = 'Chain:LastInfo'
+
+    def _update_global_state(self, chain, is_halted):
+        if chain:
+            halted_set = self.deps.halted_chains
+            if is_halted:
+                halted_set.add(chain)
+            else:
+                halted_set.remove(chain)
 
     async def _get_saved_chain_state(self, chain):
         if not chain:

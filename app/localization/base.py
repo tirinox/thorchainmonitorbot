@@ -368,13 +368,17 @@ class BaseLocalization(ABC):  # == English
 
     DET_PRICE_HELP_PAGE = 'https://thorchain.org/rune#what-influences-it'
 
-    def notification_text_price_update(self, p: PriceReport, ath=False):
+    def notification_text_price_update(self, p: PriceReport, ath=False, is_halted=False):
         title = bold('Price update') if not ath else bold('🚀 A new all-time high has been achieved!')
 
         c_gecko_url = 'https://www.coingecko.com/en/coins/thorchain'
         c_gecko_link = link(c_gecko_url, 'RUNE')
 
         message = f"{title} | {c_gecko_link}\n\n"
+
+        if is_halted:
+            message += "🚨 <code>Trading is still halted.</code>\n\n"
+
         price = p.market_info.pool_rune_price
 
         pr_text = f"${price:.3f}"
@@ -566,7 +570,8 @@ class BaseLocalization(ABC):  # == English
         # -- BOND
 
         current_bond_text = bold(pretty_money(new.total_active_bond_rune, postfix=RAIDO_GLYPH))
-        current_bond_change = bracketify(up_down_arrow(old.total_active_bond_rune, new.total_active_bond_rune, money_delta=True))
+        current_bond_change = bracketify(
+            up_down_arrow(old.total_active_bond_rune, new.total_active_bond_rune, money_delta=True))
 
         current_bond_usd_text = bold(pretty_dollar(new.total_active_bond_usd))
         current_bond_usd_change = bracketify(
@@ -840,4 +845,3 @@ class BaseLocalization(ABC):  # == English
 
     INLINE_INTERNAL_ERROR_TITLE = 'Internal error!'
     INLINE_INTERNAL_ERROR_CONTENT = f'Sorry, something went wrong! Please report it to {CREATOR_TG}.'
-

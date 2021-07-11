@@ -224,7 +224,7 @@ class RussianLocalization(BaseLocalization):
 
     # ------- PRICE -------
 
-    def notification_text_price_update(self, p: PriceReport, ath=False):
+    def notification_text_price_update(self, p: PriceReport, ath=False, is_halted=False):
         title = bold('Обновление цены') if not ath else bold('🚀 Достигнуть новый исторический максимум!')
 
         c_gecko_url = 'https://www.coingecko.com/ru/' \
@@ -232,6 +232,10 @@ class RussianLocalization(BaseLocalization):
         c_gecko_link = link(c_gecko_url, 'RUNE')
 
         message = f"{title} | {c_gecko_link}\n\n"
+
+        if is_halted:
+            message += "🚨 <code>Торговля по-прежнему остановлена.</code>\n\n"
+
         price = p.market_info.pool_rune_price
 
         btc_price = f"₿ {p.btc_pool_rune_price:.8f}"

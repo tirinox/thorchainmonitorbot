@@ -167,7 +167,9 @@ class MetricsDialog(BaseDialog):
         price_text = self.loc.notification_text_price_update(PriceReport(
             price_1h, price_24h, price_7d,
             market_info=fp,
-            btc_pool_rune_price=btc_price))
+            btc_pool_rune_price=btc_price),
+            is_halted=bool(self.deps.halted_chains)
+        )
 
         graph = await price_graph_from_db(self.deps.db, self.loc, period=period)
         await message.answer_photo(graph)

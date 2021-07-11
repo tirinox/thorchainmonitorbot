@@ -47,9 +47,10 @@ class PoolStatsUpdater(WithDelegates, INotified):
         for pool_name in updated_stats:
             pool_stat: LiquidityPoolStats = self.pool_stat_map[pool_name]
             pool_info: PoolInfo = pool_info_map.get(pool_name)
-            pool_stat.usd_depth = pool_info.usd_depth(self.deps.price_holder.usd_per_rune)
-            await pool_stat.write_time_series(self.deps.db)
-            await pool_stat.save(self.deps.db)
+            if pool_info:
+                pool_stat.usd_depth = pool_info.usd_depth(self.deps.price_holder.usd_per_rune)
+                await pool_stat.write_time_series(self.deps.db)
+                await pool_stat.save(self.deps.db)
 
         if updated_stats:
             self.logger.info(f'pool stats updated for {", ".join(updated_stats)}')

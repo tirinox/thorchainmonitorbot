@@ -1,6 +1,6 @@
-from typing import Optional
+from typing import Optional, List, Set
 import asyncio
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from aiogram import Bot, Dispatcher
 from aiohttp import ClientSession
@@ -31,6 +31,9 @@ class DepContainer:
 
     price_pool_fetcher: Optional['PoolPriceFetcher'] = None
 
+    # shared data holders
+
     price_holder: LastPriceHolder = LastPriceHolder()
     queue_holder: QueueInfo = QueueInfo.error()
     mimir_const_holder: Optional['ConstMimirFetcher'] = None
+    halted_chains: Set[str] = field(default_factory=set)

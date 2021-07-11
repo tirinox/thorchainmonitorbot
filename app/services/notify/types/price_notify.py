@@ -70,7 +70,8 @@ class PriceNotifier(INotified):
         async def price_graph_gen(chat_id):
             loc: BaseLocalization = user_lang_map[chat_id]
             graph = await price_graph_from_db(self.deps.db, loc, self.price_graph_period)
-            return BoardMessage.make_photo(graph, caption=loc.notification_text_price_update(report, ath))
+            caption = loc.notification_text_price_update(report, ath, is_halted=bool(self.deps.halted_chains))
+            return BoardMessage.make_photo(graph, caption=caption)
 
         if ath:
             await self.send_ath_sticker()
@@ -125,7 +126,7 @@ class PriceNotifier(INotified):
     async def handle_ath(self, market_info: RuneMarketInfo):
         last_ath = await self.get_prev_ath()
         price = market_info.pool_rune_price
-        
+
         if last_ath.is_new_ath(price):
             await self.update_ath(PriceATH(
                 int(time.time()), price
@@ -153,5 +154,3 @@ class PriceNotifier(INotified):
         # 2. detect if it has ATH inside
         # 3. make sure that after ATH price is less than it for some time (10min)
         # 4. signal
-
-

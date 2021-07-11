@@ -48,9 +48,13 @@ async def price_graph_from_db(db: DB, loc: BaseLocalization, period=DAY):
     det_series = PriceTimeSeries(RUNE_SYMBOL_DET, db)
     cex_price_series = PriceTimeSeries(RUNE_SYMBOL_CEX, db)
 
-    prices = await series.get_last_values(period, with_ts=True)
-    det_prices = await det_series.get_last_values(period, with_ts=True)
-    cex_prices = await cex_price_series.get_last_values(period, with_ts=True)
+    max_points = 10_000
+    if period >= 7 * DAY:
+        max_points = 60_000
+
+    prices = await series.get_last_values(period, with_ts=True, max_points=max_points)
+    det_prices = await det_series.get_last_values(period, with_ts=True, max_points=max_points)
+    cex_prices = await cex_price_series.get_last_values(period, with_ts=True, max_points=max_points)
 
     time_scale_mode = 'time' if period <= DAY else 'date'
 
