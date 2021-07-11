@@ -51,7 +51,7 @@ class TradingHaltedNotifier(INotified):
             halted_set = self.deps.halted_chains
             if is_halted:
                 halted_set.add(chain)
-            else:
+            elif chain in halted_set:
                 halted_set.remove(chain)
 
     async def _get_saved_chain_state(self, chain):
