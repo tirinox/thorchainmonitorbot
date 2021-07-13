@@ -25,7 +25,7 @@ from services.lib.money import pretty_money
 from services.lib.telegram import telegram_send_message_basic
 from services.lib.texts import progressbar
 from services.models.cap_info import ThorCapInfo
-from services.models.node_info import NodeInfoChanges, NodeInfo
+from services.models.node_info import NodeSetChanges, NodeInfo
 from services.models.pool_info import PoolChange, PoolChanges, PoolInfo
 from services.models.pool_stats import LiquidityPoolStats
 from services.models.time_series import TimeSeries
@@ -162,7 +162,7 @@ async def foo20():
 
 
 async def foo21():
-    c = NodeInfoChanges(
+    c = NodeSetChanges(
         nodes_added=[],
         nodes_removed=[NodeInfo.fake_node()],
         nodes_deactivated=[],

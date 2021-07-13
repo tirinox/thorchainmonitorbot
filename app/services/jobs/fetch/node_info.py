@@ -8,7 +8,7 @@ from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.geo_ip import GeoIPManager
 from services.lib.midgard.urlgen import get_url_gen_by_network_id
-from services.models.node_info import NodeInfo, NodeInfoChanges, NetworkNodeIpInfo
+from services.models.node_info import NodeInfo, NodeSetChanges, NetworkNodeIpInfo
 
 
 class NodeInfoFetcher(BaseFetcher):
@@ -34,10 +34,10 @@ class NodeInfoFetcher(BaseFetcher):
         data = [asdict(item) for item in infos]
         await r.set(self.DB_KEY_OLD_NODE_LIST, json.dumps(data))
 
-    async def _extract_changes(self, new_nodes: List[NodeInfo]) -> NodeInfoChanges:
+    async def _extract_changes(self, new_nodes: List[NodeInfo]) -> NodeSetChanges:
         old_nodes = await self.get_last_node_info()
         if not old_nodes:
-            return NodeInfoChanges.empty()
+            return NodeSetChanges.empty()
 
         new_node_ids = set(n.ident for n in new_nodes)
         old_node_ids = set(n.ident for n in old_nodes)
@@ -61,7 +61,7 @@ class NodeInfoFetcher(BaseFetcher):
             if old_n.ident not in new_node_ids:
                 nodes_removed.append(old_n)
 
-        return NodeInfoChanges(nodes_added, nodes_removed, nodes_activated, nodes_deactivated, new_nodes)
+        return NodeSetChanges(nodes_added, nodes_removed, nodes_activated, nodes_deactivated, nodes_all=new_nodes)
 
     async def fetch_current_node_list(self) -> List[NodeInfo]:
         session = self.deps.session
@@ -78,7 +78,7 @@ class NodeInfoFetcher(BaseFetcher):
         new_nodes.sort(key=lambda k: (k.status, -k.bond))
         return new_nodes
 
-    async def fetch(self) -> NodeInfoChanges:
+    async def fetch(self) -> NodeSetChanges:
         new_nodes = await self.fetch_current_node_list()
         # new_nodes = self._test_churn(new_nodes)  #  debug!!
 

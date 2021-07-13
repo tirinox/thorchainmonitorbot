@@ -14,7 +14,7 @@ from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, 
     up_down_arrow
 from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
-from services.models.node_info import NodeInfoChanges, NodeInfo
+from services.models.node_info import NodeSetChanges, NodeInfo
 from services.models.pool_info import PoolInfo, PoolChanges
 from services.models.price import PriceReport
 from services.models.queue import QueueInfo
@@ -584,7 +584,7 @@ class RussianLocalization(BaseLocalization):
         return f'{bold(node_thor_link)} ({node_ip_link}, версия {node.version}) ' \
                f'с {bold(pretty_money(node.bond, postfix=RAIDO_GLYPH))} бонд {status}{extra}'.strip()
 
-    def notification_text_for_node_churn(self, changes: NodeInfoChanges):
+    def notification_text_for_node_churn(self, changes: NodeSetChanges):
         message = ''
 
         if changes.nodes_activated or changes.nodes_deactivated:

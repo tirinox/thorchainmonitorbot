@@ -16,7 +16,7 @@ from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, i
     up_down_arrow, bracketify
 from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
-from services.models.node_info import NodeInfoChanges, NodeInfo
+from services.models.node_info import NodeSetChanges, NodeInfo
 from services.models.pool_info import PoolInfo, PoolChanges
 from services.models.price import PriceReport
 from services.models.queue import QueueInfo
@@ -750,7 +750,7 @@ class BaseLocalization(ABC):  # == English
             message += f"{i}. {self._format_node_text(node, add_status, extended_info)}.\n"
         return message + "\n"
 
-    def notification_text_for_node_churn(self, changes: NodeInfoChanges):
+    def notification_text_for_node_churn(self, changes: NodeSetChanges):
         message = ''
 
         if changes.nodes_activated or changes.nodes_deactivated:

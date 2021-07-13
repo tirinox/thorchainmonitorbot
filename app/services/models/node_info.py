@@ -80,7 +80,7 @@ class NodeInfo(BaseModelMixin):
 
 
 @dataclass
-class NodeInfoChanges:
+class NodeSetChanges:
     nodes_added: List[NodeInfo]
     nodes_removed: List[NodeInfo]
     nodes_activated: List[NodeInfo]
