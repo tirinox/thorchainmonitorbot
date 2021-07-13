@@ -2,11 +2,15 @@ import json
 import random
 import re
 import secrets
+from collections import Counter
 from dataclasses import dataclass, field
 from typing import List, Dict
+from semver import VersionInfo
 
 from services.lib.constants import THOR_DIVIDER_INV
 from services.models.base import BaseModelMixin
+
+ZERO_VERSION = VersionInfo(0, 0, 0)
 
 
 @dataclass
@@ -78,6 +82,13 @@ class NodeInfo(BaseModelMixin):
         bond = bond if bond is not None else random.randint(1, 2_000_000)
         return NodeInfo(status, address, bond, ip, version, slash)
 
+    @property
+    def parsed_version(self) -> VersionInfo:
+        try:
+            return VersionInfo.parse(self.version)
+        except ValueError:
+            return ZERO_VERSION
+
 
 @dataclass
 class NodeSetChanges:
@@ -86,10 +97,11 @@ class NodeSetChanges:
     nodes_activated: List[NodeInfo]
     nodes_deactivated: List[NodeInfo]
     nodes_all: List[NodeInfo]  # all current nodes
+    nodes_previous: List[NodeInfo]  # previous node set
 
     @classmethod
     def empty(cls):
-        return cls([], [], [], [], [])
+        return cls([], [], [], [], [], [])
 
     @property
     def is_empty(self):
@@ -111,6 +123,51 @@ class NodeSetChanges:
                 len(self.nodes_removed)
         )
 
+    @property
+    def active_only_nodes(self) -> List[NodeInfo]:
+        return [n for n in self.nodes_all if n.is_active]
+
+    @property
+    def previous_active_only_nodes(self) -> List[NodeInfo]:
+        return [n for n in self.nodes_previous if n.is_active]
+
+    @staticmethod
+    def minimal_active_version(node_list) -> VersionInfo:
+        """
+        THORChain run min versions among all active nodes.
+        """
+        if not node_list:
+            return ZERO_VERSION
+
+        min_ver = node_list[0].parsed_version
+        for node in node_list:
+            cur_ver = node.parsed_version
+            if cur_ver < min_ver:
+                min_ver = cur_ver
+        return min_ver
+
+    @staticmethod
+    def version_set(nodes: List[NodeInfo]):
+        return {n.parsed_version for n in nodes if n.parsed_version != ZERO_VERSION}
+
+    @staticmethod
+    def find_nodes_with_version(nodes: List[NodeInfo], v: VersionInfo) -> List[NodeInfo]:
+        if isinstance(v, VersionInfo):
+            return [n for n in nodes if n.parsed_version == v]
+        else:
+            return [n for n in nodes if n.version == v]
+
+    @staticmethod
+    def version_counter(nodes: List[NodeInfo]):
+        return Counter(n.parsed_version for n in nodes)
+
+    @staticmethod
+    def count_version(nodes: List[NodeInfo], v: VersionInfo):
+        return sum(1 for n in nodes if n.parsed_version == v)
+
+    @property
+    def max_active_version(self):
+        return max(n.parsed_version for n in self.active_only_nodes)
 
 @dataclass
 class NetworkNodeIpInfo:

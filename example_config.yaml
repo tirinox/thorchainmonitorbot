@@ -126,6 +126,15 @@ net_summary:
   notification:
     cooldown: 6h
 
+  version: # new
+    enabled: true
+    new_version_appears:  # node joined/upgraded to unseen version
+      enabled: true
+      cooldown: 1h
+    version_activates:  # new active version (minimal active version)
+      enabled: true
+      cooldown: 1h
+
 
 pool_churn:
   enabled: true

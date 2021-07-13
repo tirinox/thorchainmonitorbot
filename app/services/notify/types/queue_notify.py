@@ -14,7 +14,7 @@ from services.models.time_series import TimeSeries
 class QueueNotifier(INotified):
     def __init__(self, deps: DepContainer):
         self.deps = deps
-        self.logger = logging.getLogger('QueueNotifier')
+        self.logger = logging.getLogger(self.__class__.__name__)
 
         self.cooldown_tracker = CooldownSingle(deps.db)
 

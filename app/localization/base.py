@@ -4,6 +4,7 @@ from math import ceil
 from typing import List
 
 from aiothornode.types import ThorChainInfo
+from semver import VersionInfo
 
 from services.lib.config import Config
 from services.lib.constants import NetworkIdents
@@ -13,7 +14,7 @@ from services.lib.money import format_percent, asset_name_cut_chain, pretty_mone
     short_asset_name, calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, \
     chain_name_from_pool
 from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
-    up_down_arrow, bracketify
+    up_down_arrow, bracketify, plural
 from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo
@@ -777,6 +778,44 @@ class BaseLocalization(ABC):  # == English
             message += self._make_node_list(other_nodes, '❔ Other nodes:', add_status=True, extended_info=True)
 
         return message.rstrip()
+
+    def notification_text_version_upgrade(self,
+                                          data: NodeSetChanges,
+                                          new_versions: List[VersionInfo],
+                                          old_active_ver: VersionInfo,
+                                          new_active_ver: VersionInfo):
+        msg = bold('💫 THORChain protocol version update') + '\n\n'
+
+        def version_and_nodes(v, all=False):
+            realm = data.nodes_all if all else data.active_only_nodes
+            n_nodes = len(data.find_nodes_with_version(realm, v))
+            return f"{code(v)} ({n_nodes} {plural(n_nodes, 'node', 'nodes')})"
+
+        if new_versions:
+            new_version_joined = ', '.join(version_and_nodes(v, all=True) for v in new_versions)
+            msg += f"🆕 New version detected: {new_version_joined}.\n\n"
+
+        if old_active_ver != new_active_ver:
+            msg += f"Active protocol version has been changed.\n"
+
+            emoji = '🆙' if new_active_ver > old_active_ver else '⬇️'
+            action = bold('Upgrade' if new_active_ver > old_active_ver else 'Downgrade')
+            msg += f"{emoji}  {action} from {version_and_nodes(old_active_ver)} to {version_and_nodes(new_active_ver)}.\n\n"
+
+            msg += ital('* Minimum version among all active nodes.') + '\n\n'
+
+        max_active_ver = data.max_active_version
+
+        cnt = data.version_counter(data.active_only_nodes)
+        if len(cnt) == 1:
+            msg += f"All nodes run version {code(max_active_ver)}.\n"
+        elif len(cnt) > 1:
+            msg += f"Max active version is {version_and_nodes(max_active_ver)}.\n\n"
+            msg += bold(f"The most popular versions are") + '\n'
+            for i, (v, count) in enumerate(cnt.most_common(5), start=1):
+                msg += f"{i}. {version_and_nodes(v)}.\n"
+
+        return msg
 
     def notification_text_trading_halted_multi(self, chain_infos: List[ThorChainInfo]):
         msg = ''

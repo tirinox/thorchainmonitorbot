@@ -36,6 +36,7 @@ from services.notify.types.price_notify import PriceNotifier
 from services.notify.types.queue_notify import QueueNotifier
 from services.notify.types.stats_notify import NetworkStatsNotifier
 from services.notify.types.tx_notify import PoolLiquidityTxNotifier
+from services.notify.types.version_notify import VersionNotifier
 
 
 class App:
@@ -130,6 +131,10 @@ class App:
             notifier_nodes = NodeChurnNotifier(d)
             fetcher_nodes.subscribe(notifier_nodes)
             tasks.append(fetcher_nodes)
+
+            if d.cfg.get('node_info.version.enabled', True):
+                notifier_version = VersionNotifier(d)
+                fetcher_nodes.subscribe(notifier_version)
 
         if d.cfg.get('price.enabled', True):
             notifier_price = PriceNotifier(d)

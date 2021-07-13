@@ -3,6 +3,7 @@ from math import ceil
 from typing import List
 
 from aiothornode.types import ThorChainInfo
+from semver import VersionInfo
 
 from localization.base import BaseLocalization, RAIDO_GLYPH, CREATOR_TG, URL_LEADERBOARD_MCCN
 from services.lib.constants import Chains
@@ -11,7 +12,7 @@ from services.lib.explorers import get_explorer_url_to_address
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change, short_asset_name
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
-    up_down_arrow
+    up_down_arrow, plural
 from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo
@@ -612,6 +613,45 @@ class RussianLocalization(BaseLocalization):
                                             extended_info=True)
 
         return message.rstrip()
+
+    def notification_text_version_upgrade(self,
+                                          data: NodeSetChanges,
+                                          new_versions: List[VersionInfo],
+                                          old_active_ver: VersionInfo,
+                                          new_active_ver: VersionInfo):
+        msg = bold('💫 Обовление версии протокола THORChain') + '\n\n'
+
+        def version_and_nodes(v, all=False):
+            realm = data.nodes_all if all else data.active_only_nodes
+            n_nodes = len(data.find_nodes_with_version(realm, v))
+            return f"{code(v)} ({n_nodes} {plural(n_nodes, 'нода', 'нод')})"
+
+        if new_versions:
+            new_version_joined = ', '.join(version_and_nodes(v, all=True) for v in new_versions)
+            msg += f"🆕 Обнаружена новая версия: {new_version_joined}.\n\n"
+
+        if old_active_ver != new_active_ver:
+            msg += f"Активная версия протокола изменилась.\n"
+
+            emoji = '🆙' if new_active_ver > old_active_ver else '⬇️'
+            action = bold('Обновление' if new_active_ver > old_active_ver else 'Откат')
+            msg += f"{emoji}  {action} с версии {version_and_nodes(old_active_ver)} " \
+                   f"до версии {version_and_nodes(new_active_ver)}.\n\n"
+
+            msg += ital('* Это минимальная версия среди всех активных нод.') + '\n\n'
+
+        max_active_ver = data.max_active_version
+
+        cnt = data.version_counter(data.active_only_nodes)
+        if len(cnt) == 1:
+            msg += f"Все ноды имеют версию {code(max_active_ver)}.\n"
+        elif len(cnt) > 1:
+            msg += f"Максимальная версия среди активных нод {version_and_nodes(max_active_ver)}.\n\n"
+            msg += bold(f"Самые популярные версии нод:") + '\n'
+            for i, (v, count) in enumerate(cnt.most_common(5), start=1):
+                msg += f"{i}. {version_and_nodes(v)}.\n"
+
+        return msg
 
     def notification_text_trading_halted_multi(self, chain_infos: List[ThorChainInfo]):
         msg = ''

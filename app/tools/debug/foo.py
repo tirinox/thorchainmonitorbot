@@ -22,8 +22,9 @@ from services.lib.date_utils import DAY, now_ts
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.money import pretty_money
-from services.lib.telegram import telegram_send_message_basic
+from services.lib.telegram import telegram_send_message_basic, TG_TEST_USER
 from services.lib.texts import progressbar
+from services.lib.utils import sep
 from services.models.cap_info import ThorCapInfo
 from services.models.node_info import NodeSetChanges, NodeInfo
 from services.models.pool_info import PoolChange, PoolChanges, PoolInfo
@@ -32,7 +33,7 @@ from services.models.time_series import TimeSeries
 from services.models.tx import LPAddWithdrawTx, ThorTxType
 from services.notify.broadcast import Broadcaster
 
-TG_USER = 192398802
+TG_USER = TG_TEST_USER
 SEND_TO_TG = True
 
 deps = DepContainer()
@@ -58,10 +59,6 @@ TG_TOKEN = str(deps.cfg.get('telegram.bot.token'))
 loc_man: LocalizationManager = deps.loc_man
 loc_ru = loc_man.get_from_lang('rus')
 loc_en = loc_man.get_from_lang('eng')
-
-
-def sep():
-    print('-' * 100)
 
 
 async def mock_broadcaster(tag, n, delay=0.2):
@@ -167,7 +164,8 @@ async def foo21():
         nodes_removed=[NodeInfo.fake_node()],
         nodes_deactivated=[],
         nodes_activated=[],
-        nodes_all=[]
+        nodes_all=[],
+        nodes_previous=[]
     )
 
     print(loc_ru.notification_text_for_node_churn(c))

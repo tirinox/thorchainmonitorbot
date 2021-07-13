@@ -133,3 +133,7 @@ def up_down_arrow(old_value, new_value, smiley=False, more_is_better=True, same_
         delta_text = format_percent(delta, old_value, signed)
 
     return f"{smiley} {arrow} {delta_text}{postfix}".strip()
+
+
+def plural(n: int, one_thing, many_things):
+    return one_thing if n == 1 else many_things

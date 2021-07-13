@@ -26,7 +26,7 @@ class NodeInfoFetcher(BaseFetcher):
             raw_data_list = json.loads(j)
             return [NodeInfo(**d) for d in raw_data_list]
         except (TypeError, ValueError, AttributeError, json.decoder.JSONDecodeError):
-            self.logger.exception('get_old_cap error')
+            self.logger.exception('get_last_node_info db error')
             return []
 
     async def _save_node_infos(self, infos: List[NodeInfo]):
@@ -61,7 +61,12 @@ class NodeInfoFetcher(BaseFetcher):
             if old_n.ident not in new_node_ids:
                 nodes_removed.append(old_n)
 
-        return NodeSetChanges(nodes_added, nodes_removed, nodes_activated, nodes_deactivated, nodes_all=new_nodes)
+        return NodeSetChanges(nodes_added,
+                              nodes_removed,
+                              nodes_activated,
+                              nodes_deactivated,
+                              nodes_all=new_nodes,
+                              nodes_previous=old_nodes)
 
     async def fetch_current_node_list(self) -> List[NodeInfo]:
         session = self.deps.session

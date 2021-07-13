@@ -2,6 +2,7 @@ import urllib.parse
 
 import aiohttp
 
+TG_TEST_USER = 192398802
 
 def to_json_bool(b):
     return 'true' if b else 'false'

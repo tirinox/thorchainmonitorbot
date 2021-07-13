@@ -138,3 +138,7 @@ def random_hex(length=12):
 
 def random_ip_address():
     return ".".join(str(random.randint(0, 255)) for _ in range(4))
+
+
+def sep():
+    print('-' * 100)

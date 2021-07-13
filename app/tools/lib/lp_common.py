@@ -12,6 +12,7 @@ from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.midgard.urlgen import get_url_gen_by_network_id
+from services.lib.telegram import telegram_send_message_basic, TG_TEST_USER
 
 
 class LpAppFramework:
@@ -28,6 +29,13 @@ class LpAppFramework:
         self.rune_yield_class = rune_yield_class
         self.deps.price_pool_fetcher = PoolPriceFetcher(d)
         self.deps.mimir_const_holder = ConstMimirFetcher(d)
+
+    @property
+    def tg_token(self):
+        return self.deps.cfg.get('telegram.bot.token')
+
+    async def send_test_tg_message(self, txt, **kwargs):
+        return await telegram_send_message_basic(self.tg_token, TG_TEST_USER, txt, **kwargs)
 
     async def prepare(self):
         d = self.deps
