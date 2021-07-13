@@ -538,7 +538,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
         r0, a0 = self._get_deposit_values_r0_and_a0(txs, historic_all_pool_states, pool.asset)
 
-        full_imp_loss_rune = self.calculate_imp_loss(pool, final_my_liq_units, r0, a0)
+        full_imp_loss_rune = self.calculate_imp_loss_v58(pool, final_my_liq_units, r0, a0)
         coverage_rune = full_imp_loss_rune * protection_progress
 
         new_pool_info = pool.copy()
