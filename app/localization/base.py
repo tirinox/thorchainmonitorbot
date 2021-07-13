@@ -791,29 +791,32 @@ class BaseLocalization(ABC):  # == English
             n_nodes = len(data.find_nodes_with_version(realm, v))
             return f"{code(v)} ({n_nodes} {plural(n_nodes, 'node', 'nodes')})"
 
+        msg_active_version = f"⚡️ Active protocol version is {version_and_nodes(data.current_active_version)}.\n" + \
+                             ital('* Minimum version among all active nodes.')
+
         if new_versions:
             new_version_joined = ', '.join(version_and_nodes(v, all=True) for v in new_versions)
             msg += f"🆕 New version detected: {new_version_joined}.\n\n"
+            msg += msg_active_version + '\n\n'
 
         if old_active_ver != new_active_ver:
-            msg += f"Active protocol version has been changed.\n"
-
+            action = 'upgraded' if new_active_ver > old_active_ver else 'downgraded'
             emoji = '🆙' if new_active_ver > old_active_ver else '⬇️'
-            action = bold('Upgrade' if new_active_ver > old_active_ver else 'Downgrade')
-            msg += f"{emoji}  {action} from {version_and_nodes(old_active_ver)} to {version_and_nodes(new_active_ver)}.\n\n"
+            msg += (
+                f"{emoji} Active protocol version has been {bold(action)} from {version_and_nodes(old_active_ver)} "
+                f"to {version_and_nodes(new_active_ver)}\n\n"
+            )
 
-            msg += ital('* Minimum version among all active nodes.') + '\n\n'
+            max_active_ver = data.max_active_version
 
-        max_active_ver = data.max_active_version
-
-        cnt = data.version_counter(data.active_only_nodes)
-        if len(cnt) == 1:
-            msg += f"All nodes run version {code(max_active_ver)}.\n"
-        elif len(cnt) > 1:
-            msg += f"Max active version is {version_and_nodes(max_active_ver)}.\n\n"
-            msg += bold(f"The most popular versions are") + '\n'
-            for i, (v, count) in enumerate(cnt.most_common(5), start=1):
-                msg += f"{i}. {version_and_nodes(v)}.\n"
+            cnt = data.version_counter(data.active_only_nodes)
+            if len(cnt) == 1:
+                msg += f"All active nodes run version {code(max_active_ver)}.\n"
+            elif len(cnt) > 1:
+                msg += bold(f"The most popular versions are") + '\n'
+                for i, (v, count) in enumerate(cnt.most_common(5), start=1):
+                    msg += f"{i}. {version_and_nodes(v)}.\n"
+                msg += f"Maximum version available is {version_and_nodes(max_active_ver)}.\n"
 
         return msg
 

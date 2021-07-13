@@ -57,7 +57,7 @@ class VersionNotifier(INotified):
     @staticmethod
     def _test_active_version_changed(data: NodeSetChanges):
         previous_active_version = data.minimal_active_version(data.previous_active_only_nodes)
-        current_active_version = data.minimal_active_version(data.active_only_nodes)
+        current_active_version = data.current_active_version
         if previous_active_version != ZERO_VERSION and current_active_version != ZERO_VERSION:
             if previous_active_version != current_active_version:
                 return previous_active_version, current_active_version

@@ -17,7 +17,9 @@ async def node_version_notification_check_1(lpgen: LpAppFramework, data):
     loc_ru = loc_man.get_from_lang('rus')
     loc_en = loc_man.get_from_lang('eng')
 
-    for loc in (loc_ru, loc_en):
+    locs = (loc_en, )
+
+    for loc in locs:
         sep()
         msg = loc.notification_text_version_upgrade(
             data,
@@ -25,9 +27,8 @@ async def node_version_notification_check_1(lpgen: LpAppFramework, data):
                 VersionInfo.parse('0.59.1'),
                 VersionInfo.parse('0.60.0'),
             ],
-            old_active_ver=VersionInfo.parse('0.59.1'),
-            # new_active_ver=VersionInfo.parse('0.45.0')
-            new_active_ver=VersionInfo.parse('0.59.2')
+            old_active_ver=None,
+            new_active_ver=None
         )
         print(msg)
         await lpgen.send_test_tg_message(msg)
@@ -45,14 +46,14 @@ async def node_version_notification_check_1(lpgen: LpAppFramework, data):
         if random.uniform(0, 1) > 0.5:
             n.version = '0.60.3'
 
-    for loc in (loc_ru, loc_en):
+    for loc in locs:
         sep()
         msg = loc.notification_text_version_upgrade(
             data,
             new_versions=[],
             old_active_ver=VersionInfo.parse('0.59.1'),
             # new_active_ver=VersionInfo.parse('0.45.0')
-            new_active_ver=VersionInfo.parse('0.59.2')
+            new_active_ver=VersionInfo.parse('0.59.0')
         )
         print(msg)
         await lpgen.send_test_tg_message(msg)

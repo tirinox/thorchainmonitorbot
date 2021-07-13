@@ -5,6 +5,7 @@ import secrets
 from collections import Counter
 from dataclasses import dataclass, field
 from typing import List, Dict
+
 from semver import VersionInfo
 
 from services.lib.constants import THOR_DIVIDER_INV
@@ -168,6 +169,11 @@ class NodeSetChanges:
     @property
     def max_active_version(self):
         return max(n.parsed_version for n in self.active_only_nodes)
+
+    @property
+    def current_active_version(self):
+        return self.minimal_active_version(self.active_only_nodes)
+
 
 @dataclass
 class NetworkNodeIpInfo:
