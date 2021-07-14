@@ -17,7 +17,7 @@ from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, i
     up_down_arrow, bracketify, plural
 from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
-from services.models.node_info import NodeSetChanges, NodeInfo
+from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus
 from services.models.pool_info import PoolInfo, PoolChanges
 from services.models.price import PriceReport
 from services.models.queue import QueueInfo
@@ -787,6 +787,24 @@ class BaseLocalization(ABC):  # == English
         n_nodes = len(data.find_nodes_with_version(realm, v))
         return f"{code(v)} ({n_nodes} {plural(n_nodes, 'node', 'nodes')})"
 
+    def notification_text_version_upgrade_progress(self,
+                                                   data: NodeSetChanges,
+                                                   ver_con: NodeVersionConsensus):
+        msg = bold('🕖 THORChain version upgrade progress\n\n')
+
+        progress = ver_con.ratio * 100.0
+        pb = progressbar(progress, 100.0, 14)
+
+        msg += f'{pb} {progress:.0f} %\n'
+        msg += f"{pre(ver_con.top_version_count)} of {pre(ver_con.total_active_node_count)} nodes " \
+               f"upgraded to version {pre(ver_con.top_version)}.\n\n"
+
+        cur_version_txt = self.node_version(data.current_active_version, data, active=True)
+        msg += f"⚡️ Active protocol version is {cur_version_txt}.\n" + \
+               ital('* Minimum version among all active nodes.') + '\n\n'
+
+        return msg
+
     def notification_text_version_upgrade(self,
                                           data: NodeSetChanges,
                                           new_versions: List[VersionInfo],
@@ -812,7 +830,8 @@ class BaseLocalization(ABC):  # == English
             action = 'upgraded' if new_active_ver > old_active_ver else 'downgraded'
             emoji = '🆙' if new_active_ver > old_active_ver else '⬇️'
             msg += (
-                f"{emoji} {bold('Attention!')} Active protocol version has been {bold(action)} from {version_and_nodes(old_active_ver)} "
+                f"{emoji} {bold('Attention!')} Active protocol version has been {bold(action)} "
+                f"from {pre(old_active_ver)} "
                 f"to {version_and_nodes(new_active_ver)}.\n\n"
             )
 

@@ -15,7 +15,7 @@ from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, 
     up_down_arrow, plural
 from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
-from services.models.node_info import NodeSetChanges, NodeInfo
+from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus
 from services.models.pool_info import PoolInfo, PoolChanges
 from services.models.price import PriceReport
 from services.models.queue import QueueInfo
@@ -416,7 +416,8 @@ class RussianLocalization(BaseLocalization):
         # -- BOND
 
         current_bond_text = bold(pretty_money(new.total_active_bond_rune, postfix=RAIDO_GLYPH))
-        current_bond_change = bracketify(up_down_arrow(old.total_active_bond_rune, new.total_active_bond_rune, money_delta=True))
+        current_bond_change = bracketify(
+            up_down_arrow(old.total_active_bond_rune, new.total_active_bond_rune, money_delta=True))
 
         current_bond_usd_text = bold(pretty_dollar(new.total_active_bond_usd))
         current_bond_usd_change = bracketify(
@@ -616,6 +617,30 @@ class RussianLocalization(BaseLocalization):
 
     # ------ VERSION ------
 
+    @staticmethod
+    def node_version(v, data: NodeSetChanges, active=True):
+        realm = data.active_only_nodes if active else data.nodes_all
+        n_nodes = len(data.find_nodes_with_version(realm, v))
+        return f"{code(v)} ({n_nodes} {plural(n_nodes, 'node', 'nodes')})"
+
+    def notification_text_version_upgrade_progress(self,
+                                                   data: NodeSetChanges,
+                                                   ver_con: NodeVersionConsensus):
+        msg = bold('🕖 Прогресс обновления протокола THORChain\n\n')
+
+        progress = ver_con.ratio * 100.0
+        pb = progressbar(progress, 100.0, 14)
+
+        msg += f'{pb} {progress:.0f} %\n'
+        msg += f"{pre(ver_con.top_version_count)} из {pre(ver_con.total_active_node_count)} нод " \
+               f"обновились до версии {pre(ver_con.top_version)}.\n\n"
+
+        cur_version_txt = self.node_version(data.current_active_version, data, active=True)
+        msg += f"⚡️ Активная версия протокола сейчас – {cur_version_txt}.\n" + \
+               ital('* Это минимальная версия среди всех активных нод.') + '\n\n'
+
+        return msg
+
     def notification_text_version_upgrade(self,
                                           data: NodeSetChanges,
                                           new_versions: List[VersionInfo],
@@ -643,7 +668,7 @@ class RussianLocalization(BaseLocalization):
             emoji = '🆙' if new_active_ver > old_active_ver else '⬇️'
             msg += (
                 f"{emoji} {bold('Внимание!')} Активная версия протокола {bold(action)} "
-                f"с версии {version_and_nodes(old_active_ver)} "
+                f"с версии {pre(old_active_ver)} "
                 f"до версии {version_and_nodes(new_active_ver)}.\n\n"
             )
 

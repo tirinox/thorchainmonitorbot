@@ -134,6 +134,10 @@ net_summary:
     version_activates:  # new active version (minimal active version)
       enabled: true
       cooldown: 15m
+    upgrade_progress:  # if not all act. nodes run same version, show upgrade progress every cooldown
+      enabled: true
+      cooldown: 2h
+
 
 
 pool_churn:

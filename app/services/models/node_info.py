@@ -3,8 +3,9 @@ import random
 import re
 import secrets
 from collections import Counter
+from copy import copy
 from dataclasses import dataclass, field
-from typing import List, Dict
+from typing import List, Dict, NamedTuple, Optional
 
 from semver import VersionInfo
 
@@ -88,6 +89,13 @@ class NodeInfo(BaseModelMixin):
         address = address if address is not None else f'thor{secrets.token_hex(32)}'
         bond = bond if bond is not None else random.randint(1, 2_000_000)
         return NodeInfo(status, address, bond, ip, version, slash)
+
+
+class NodeVersionConsensus(NamedTuple):
+    ratio: float
+    top_version: VersionInfo
+    top_version_count: int
+    total_active_node_count: int
 
 
 @dataclass
@@ -178,7 +186,7 @@ class NodeSetChanges:
         return self.minimal_active_version(self.active_only_nodes)
 
     @property
-    def version_consensus(self):
+    def version_consensus(self) -> Optional[NodeVersionConsensus]:
         """
         Most popular version node count / Active node count = 0..1
         1 = all run the same version
@@ -186,11 +194,13 @@ class NodeSetChanges:
         """
         active_nodes = self.active_only_nodes
         if not active_nodes:
-            return 0.0
+            return
 
         counter = self.version_counter(active_nodes)
-        _, top_count = counter.most_common(1)
-        return top_count / len(active_nodes)
+        top_version = self.max_active_version
+        top_count = counter[top_version]
+        ratio = top_count / len(active_nodes)
+        return NodeVersionConsensus(ratio, top_version, top_count, len(active_nodes))
 
 
 @dataclass

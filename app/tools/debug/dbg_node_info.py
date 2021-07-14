@@ -8,17 +8,48 @@ from semver import VersionInfo
 from localization import LocalizationManager
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.lib.utils import setup_logs, sep
-from services.models.node_info import NodeSetChanges
+from services.models.node_info import NodeSetChanges, NodeVersionConsensus
 from tools.lib.lp_common import LpAppFramework
 
 
-async def node_version_notification_check_1(lpgen: LpAppFramework, data):
+def localizations(lpgen: LpAppFramework):
     loc_man: LocalizationManager = lpgen.deps.loc_man
 
     locs = (
         loc_man.get_from_lang('eng'),
         loc_man.get_from_lang('rus'),
     )
+    return locs
+
+async def node_version_notification_check_progress(lpgen: LpAppFramework, data: NodeSetChanges):
+    locs = localizations(lpgen)
+
+    await lpgen.send_test_tg_message('------------------------------------')
+
+    new_ver = '0.60.1'
+    n_new = 0
+    progress = 0.1  # 0..1
+    for n in data.nodes_all:
+        if random.uniform(0, 1) <= progress:
+            n.version = new_ver
+            n_new += 1
+
+    ver_con = NodeVersionConsensus(
+        n_new / len(data.active_only_nodes),
+        VersionInfo.parse(new_ver),
+        n_new,
+        len(data.active_only_nodes)
+    )
+
+    for loc in locs:
+        sep()
+        msg = loc.notification_text_version_upgrade_progress(data, ver_con)
+        print(msg)
+        await lpgen.send_test_tg_message(msg)
+
+
+async def node_version_notification_check_1(lpgen: LpAppFramework, data):
+    locs = localizations(lpgen)
 
     await lpgen.send_test_tg_message('------------------------------------')
 
@@ -82,6 +113,7 @@ async def main():
         data = await node_info_fetcher.fetch()
 
         await node_version_notification_check_1(lpgen, data)
+        # await node_version_notification_check_progress(lpgen, data)
 
 
 if __name__ == "__main__":
