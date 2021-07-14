@@ -499,14 +499,14 @@ class RussianLocalization(BaseLocalization):
             message += f'{ital("За последние 24 часа:")}\n'
 
             if added_24h_rune:
-                message += f'➕ Рун добавлено в пулы: {add_rune_text} ({add_usd_text}).\n'
+                message += f'➕ Добавлено в пулы: {add_rune_text} ({add_usd_text}).\n'
             if withdrawn_24h_rune:
-                message += f'➖ Рун выведено из пулов: {withdraw_rune_text} ({withdraw_usd_text}).\n'
+                message += f'➖ Выведено из пулов: {withdraw_rune_text} ({withdraw_usd_text}).\n'
             if swap_volume_24h_rune:
                 message += f'🔀 Объем торгов: {swap_rune_text} ({swap_usd_text}) ' \
                            f'при {bold(new.swaps_24h)} обменов совершено.\n'
             if switched_24h_rune:
-                message += f'💎 Рун конвертировано в нативные: {switch_rune_text} ({switch_usd_text}).\n'
+                message += f'💎 Rune конвертировано в нативные: {switch_rune_text} ({switch_usd_text}).\n'
             message += '\n'
 
         if abs(old.bonding_apy - new.bonding_apy) > 0.01:
@@ -520,6 +520,9 @@ class RussianLocalization(BaseLocalization):
                 up_down_arrow(old.liquidity_apy, new.liquidity_apy, money_delta=True, postfix='%'))
         else:
             liquidity_apy_change = ''
+
+        switch_rune_total_text = bold(pretty_money(new.switched_rune, prefix=RAIDO_GLYPH))
+        message += f'💎 Всего Rune перевели в нативные: {switch_rune_total_text}.\n\n'
 
         message += f'📈 Доход от бондов в нодах, годовых: {code(pretty_money(new.bonding_apy, postfix="%"))}{bonding_apy_change} и ' \
                    f'доход от пулов в среднем, годовых: {code(pretty_money(new.liquidity_apy, postfix="%"))}{liquidity_apy_change}.\n'

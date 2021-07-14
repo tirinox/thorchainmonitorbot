@@ -687,6 +687,9 @@ class BaseLocalization(ABC):  # == English
         else:
             liquidity_apy_change = ''
 
+        switch_rune_total_text = bold(pretty_money(new.switched_rune, prefix=RAIDO_GLYPH))
+        message += f'💎 Total Rune switched to native: {switch_rune_total_text}.\n\n'
+
         message += f'📈 Bonding APY is {code(pretty_money(new.bonding_apy, postfix="%"))}{bonding_apy_change} and ' \
                    f'Liquidity APY is {code(pretty_money(new.liquidity_apy, postfix="%"))}{liquidity_apy_change}.\n'
 
