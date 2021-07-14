@@ -614,11 +614,14 @@ class RussianLocalization(BaseLocalization):
 
         return message.rstrip()
 
+    # ------ VERSION ------
+
     def notification_text_version_upgrade(self,
                                           data: NodeSetChanges,
                                           new_versions: List[VersionInfo],
                                           old_active_ver: VersionInfo,
                                           new_active_ver: VersionInfo):
+
         msg = bold('💫 Обовление версии протокола THORChain') + '\n\n'
 
         def version_and_nodes(v, all=False):
@@ -626,32 +629,37 @@ class RussianLocalization(BaseLocalization):
             n_nodes = len(data.find_nodes_with_version(realm, v))
             return f"{code(v)} ({n_nodes} {plural(n_nodes, 'нода', 'нод')})"
 
+        current_active_version = data.current_active_version
+
         if new_versions:
             new_version_joined = ', '.join(version_and_nodes(v, all=True) for v in new_versions)
             msg += f"🆕 Обнаружена новая версия: {new_version_joined}.\n\n"
 
+            msg += f"⚡️ Активная версия протокола сейчас – {version_and_nodes(current_active_version)}.\n" + \
+                   ital('* Это минимальная версия среди всех активных нод.') + '\n\n'
+
         if old_active_ver != new_active_ver:
-            msg += f"Активная версия протокола изменилась.\n"
-
+            action = 'улучшилась' if new_active_ver > old_active_ver else 'откатилась'
             emoji = '🆙' if new_active_ver > old_active_ver else '⬇️'
-            action = bold('Обновление' if new_active_ver > old_active_ver else 'Откат')
-            msg += f"{emoji}  {action} с версии {version_and_nodes(old_active_ver)} " \
-                   f"до версии {version_and_nodes(new_active_ver)}.\n\n"
+            msg += (
+                f"{emoji} {bold('Внимание!')} Активная версия протокола {bold(action)} "
+                f"с версии {version_and_nodes(old_active_ver)} "
+                f"до версии {version_and_nodes(new_active_ver)}.\n\n"
+            )
 
-            msg += ital('* Это минимальная версия среди всех активных нод.') + '\n\n'
-
-        max_active_ver = data.max_active_version
-
-        cnt = data.version_counter(data.active_only_nodes)
-        if len(cnt) == 1:
-            msg += f"Все ноды имеют версию {code(max_active_ver)}.\n"
-        elif len(cnt) > 1:
-            msg += f"Максимальная версия среди активных нод {version_and_nodes(max_active_ver)}.\n\n"
-            msg += bold(f"Самые популярные версии нод:") + '\n'
-            for i, (v, count) in enumerate(cnt.most_common(5), start=1):
-                msg += f"{i}. {version_and_nodes(v)}.\n"
+            cnt = data.version_counter(data.active_only_nodes)
+            if len(cnt) == 1:
+                msg += f"Все активные ноды имеют версию {code(current_active_version)}.\n"
+            elif len(cnt) > 1:
+                msg += bold(f"Самые популярные версии нод:") + '\n'
+                for i, (v, count) in enumerate(cnt.most_common(5), start=1):
+                    active_node = ' 👈' if v == current_active_version else ''
+                    msg += f"{i}. {version_and_nodes(v)} {active_node}\n"
+                msg += f"Максимальная доступная версия – {version_and_nodes(data.max_available_version)}.\n"
 
         return msg
+
+    # --------- TRADING HALTED -----------
 
     def notification_text_trading_halted_multi(self, chain_infos: List[ThorChainInfo]):
         msg = ''
@@ -666,6 +674,8 @@ class RussianLocalization(BaseLocalization):
             msg += f'✅ <b>Внимание!</b> Торговля снова возобновлена на блокчейнах: {code(resumed_chains)}!'
 
         return msg.strip()
+
+    # --------- MIMIR CHANGED -----------
 
     def notification_text_mimir_changed(self, changes):
         if not changes:

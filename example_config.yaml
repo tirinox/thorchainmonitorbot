@@ -130,10 +130,10 @@ net_summary:
     enabled: true
     new_version_appears:  # node joined/upgraded to unseen version
       enabled: true
-      cooldown: 1h
+      cooldown: 15m
     version_activates:  # new active version (minimal active version)
       enabled: true
-      cooldown: 1h
+      cooldown: 15m
 
 
 pool_churn:

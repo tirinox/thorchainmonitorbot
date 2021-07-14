@@ -45,11 +45,12 @@ class CooldownRecord:
 
 
 class Cooldown:
-    def __init__(self, db: DB, event_name, cooldown, max_times=1):
+    def __init__(self, db: DB, event_name, cooldown: float, max_times=1):
         self.db = db
         self.event_name = event_name
         self.cooldown = cooldown
         self.max_times = max_times
+        assert isinstance(cooldown, (int, float))
 
     @staticmethod
     def get_key(name):

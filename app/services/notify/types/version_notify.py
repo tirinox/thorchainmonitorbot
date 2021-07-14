@@ -1,4 +1,5 @@
 import logging
+import random
 from typing import List
 
 from semver import VersionInfo
@@ -19,10 +20,12 @@ class VersionNotifier(INotified):
 
         cfg: SubConfig = deps.cfg.node_info.version
 
-        cd_activate_sec = parse_timespan_to_seconds(str(cfg.get('version_activates', '1h')))
+        self.is_version_activation_enabled = bool(cfg.get('version_activates.enabled', True))
+        cd_activate_sec = parse_timespan_to_seconds(str(cfg.get('version_activates.cooldown', '1h')))
         self.cd_activate_version = Cooldown(deps.db, 'activate_version', cd_activate_sec)
 
-        cd_new_ver_sec = parse_timespan_to_seconds(str(cfg.get('new_version_appears', '1h')))
+        self.is_new_version_enabled = bool(cfg.get('new_version_appears.enabled', True))
+        cd_new_ver_sec = parse_timespan_to_seconds(str(cfg.get('new_version_appears.cooldown', '1h')))
         self.cd_new_version = Cooldown(deps.db, 'new_version', cd_new_ver_sec)
 
     DB_KEY_NEW_VERSION = 'THORNode.Version.Already.Notified.As.New'
@@ -49,10 +52,10 @@ class VersionNotifier(INotified):
         else:
             return []
 
-    async def _mark_as_known(self, string_versions):
+    async def _mark_as_known(self, versions):
         r = await self.deps.db.get_redis()
-        for v in string_versions:
-            await r.sadd(self.DB_KEY_NEW_VERSION, v)
+        for v in versions:
+            await r.sadd(self.DB_KEY_NEW_VERSION, str(v))
 
     @staticmethod
     def _test_active_version_changed(data: NodeSetChanges):
@@ -64,25 +67,52 @@ class VersionNotifier(INotified):
 
         return None, None  # no change
 
-    async def on_data(self, sender, data: NodeSetChanges):
+    async def _handle_new_versions(self, data: NodeSetChanges):
         new_versions = await self._find_new_versions(data)
 
-        old_active_ver, new_active_ver = self._test_active_version_changed(data)
-        activated_version_alert = old_active_ver != new_active_ver
-
-        if activated_version_alert or new_versions:
+        if new_versions:
             await self.deps.broadcaster.notify_preconfigured_channels(
                 self.deps.loc_man,
                 BaseLocalization.notification_text_version_upgrade,
                 data,
                 new_versions,
-                old_active_ver,
-                new_active_ver
+                None, None
             )
 
-        if new_versions:
             await self._mark_as_known(new_versions)
             await self.cd_new_version.do()
 
-        if activated_version_alert:
+    async def _handle_active_version_change(self, data: NodeSetChanges):
+        old_active_ver, new_active_ver = self._test_active_version_changed(data)
+
+        if old_active_ver != new_active_ver:
+            await self.deps.broadcaster.notify_preconfigured_channels(
+                self.deps.loc_man,
+                BaseLocalization.notification_text_version_upgrade,
+                data, [],
+                old_active_ver,
+                new_active_ver
+            )
             await self.cd_activate_version.do()
+
+    async def on_data(self, sender, data: NodeSetChanges):
+        # data = self._debug_modification(data)
+
+        if self.is_new_version_enabled:
+            await self._handle_new_versions(data)
+
+        if self.is_version_activation_enabled:
+            await self._handle_active_version_change(data)
+
+    def _debug_modification(self, data: NodeSetChanges) -> NodeSetChanges:
+        # 1. new version
+        # data.nodes_all[0].version = '0.88.1'
+
+        # 2. Min versions
+        for n in data.nodes_all:
+            if random.uniform(0, 1) > 0.5:
+                n.version = '0.57.5'
+            n.version = '0.61.66'
+        data.nodes_all[0].version = '0.61.63'
+
+        return data

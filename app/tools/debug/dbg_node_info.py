@@ -14,10 +14,13 @@ from tools.lib.lp_common import LpAppFramework
 
 async def node_version_notification_check_1(lpgen: LpAppFramework, data):
     loc_man: LocalizationManager = lpgen.deps.loc_man
-    loc_ru = loc_man.get_from_lang('rus')
-    loc_en = loc_man.get_from_lang('eng')
 
-    locs = (loc_en, )
+    locs = (
+        loc_man.get_from_lang('eng'),
+        loc_man.get_from_lang('rus'),
+    )
+
+    await lpgen.send_test_tg_message('------------------------------------')
 
     for loc in locs:
         sep()
@@ -33,17 +36,30 @@ async def node_version_notification_check_1(lpgen: LpAppFramework, data):
         print(msg)
         await lpgen.send_test_tg_message(msg)
 
-    await lpgen.send_test_tg_message('-----')
+    await lpgen.send_test_tg_message('------------------------------------')
+
+    for loc in locs:
+        sep()
+        msg = loc.notification_text_version_upgrade(
+            data,
+            new_versions=[],
+            old_active_ver=VersionInfo.parse('0.59.0'),
+            new_active_ver=VersionInfo.parse('0.59.1')
+        )
+        print(msg)
+        await lpgen.send_test_tg_message(msg)
+
+    await lpgen.send_test_tg_message('------------------------------------')
 
     data: NodeSetChanges = copy(data)
     for n in data.nodes_all:
-        if random.uniform(0, 1) > 0.5:
+        if random.uniform(0, 1) > 0.35:
             n.version = '0.59.2'
-        if random.uniform(0, 1) > 0.5:
+        if random.uniform(0, 1) > 0.25:
             n.version = '0.60.0'
-        if random.uniform(0, 1) > 0.5:
+        if random.uniform(0, 1) > 0.20:
             n.version = '0.60.1'
-        if random.uniform(0, 1) > 0.5:
+        if random.uniform(0, 1) > 0.15:
             n.version = '0.60.3'
 
     for loc in locs:
@@ -52,7 +68,6 @@ async def node_version_notification_check_1(lpgen: LpAppFramework, data):
             data,
             new_versions=[],
             old_active_ver=VersionInfo.parse('0.59.1'),
-            # new_active_ver=VersionInfo.parse('0.45.0')
             new_active_ver=VersionInfo.parse('0.59.0')
         )
         print(msg)

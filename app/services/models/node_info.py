@@ -38,7 +38,12 @@ class NodeInfo(BaseModelMixin):
     active_block_height: int = 0
     observe_chains: List = field(default_factory=list)
 
-    # there are not all properties
+    @property
+    def parsed_version(self) -> VersionInfo:
+        try:
+            return VersionInfo.parse(self.version)
+        except ValueError:
+            return ZERO_VERSION
 
     @property
     def is_active(self):
@@ -61,6 +66,7 @@ class NodeInfo(BaseModelMixin):
         if not jstr:
             return None
         d = json.loads(jstr) if isinstance(jstr, (str, bytes)) else jstr
+
         return cls(
             status=d.get('status', NodeInfo.DISABLED),
             node_address=d.get('node_address', ''),
@@ -82,13 +88,6 @@ class NodeInfo(BaseModelMixin):
         address = address if address is not None else f'thor{secrets.token_hex(32)}'
         bond = bond if bond is not None else random.randint(1, 2_000_000)
         return NodeInfo(status, address, bond, ip, version, slash)
-
-    @property
-    def parsed_version(self) -> VersionInfo:
-        try:
-            return VersionInfo.parse(self.version)
-        except ValueError:
-            return ZERO_VERSION
 
 
 @dataclass
@@ -171,8 +170,27 @@ class NodeSetChanges:
         return max(n.parsed_version for n in self.active_only_nodes)
 
     @property
+    def max_available_version(self):
+        return max(n.parsed_version for n in self.nodes_all)
+
+    @property
     def current_active_version(self):
         return self.minimal_active_version(self.active_only_nodes)
+
+    @property
+    def version_consensus(self):
+        """
+        Most popular version node count / Active node count = 0..1
+        1 = all run the same version
+        0 = no nodes at all
+        """
+        active_nodes = self.active_only_nodes
+        if not active_nodes:
+            return 0.0
+
+        counter = self.version_counter(active_nodes)
+        _, top_count = counter.most_common(1)
+        return top_count / len(active_nodes)
 
 
 @dataclass
