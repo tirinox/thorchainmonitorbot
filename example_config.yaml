@@ -126,18 +126,6 @@ net_summary:
   notification:
     cooldown: 6h
 
-  version: # new
-    enabled: true
-    new_version_appears:  # node joined/upgraded to unseen version
-      enabled: true
-      cooldown: 15m
-    version_activates:  # new active version (minimal active version)
-      enabled: true
-      cooldown: 15m
-    upgrade_progress:  # if not all act. nodes run same version, show upgrade progress every cooldown
-      enabled: true
-      cooldown: 2h
-
 
 
 pool_churn:
@@ -152,6 +140,18 @@ node_info:
   fetch_period: 140s
   geo_ip:
     expire: 48h
+
+  version: # new
+    enabled: true
+    new_version_appears: # node joined/upgraded to unseen version
+      enabled: true
+      cooldown: 15m
+    version_activates: # new active version (minimal active version)
+      enabled: true
+      cooldown: 15m
+    upgrade_progress: # if not all act. nodes run same version, show upgrade progress every cooldown
+      enabled: true
+      cooldown: 2h
 
 
 constants:
