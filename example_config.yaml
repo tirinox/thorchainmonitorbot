@@ -21,7 +21,7 @@ telegram:
   common:
     loading_sticker: CAACAgIAAxkBAAIRx1--Tia-m6DNRIApk3yqmNWvap_sAALcAAP3AsgPUNi8Bnu98HweBA
 
-  buffer_chat: -12334  # new! a chat for uploading temporary photos (like photo-hosting), add this bot to it
+  buffer_chat: -12334  # a chat for uploading temporary photos (like photo-hosting), add this bot to it
 
 tx:
   enabled: true
@@ -98,9 +98,9 @@ cap:
   enabled: true
   fetch_period: 120
 
-  full: # new!
+  full:
     enabled: True
-    full_limit_ratio: 0.99  # new!
+    full_limit_ratio: 0.995
 
   raised:
     stickers:
@@ -141,7 +141,7 @@ node_info:
   geo_ip:
     expire: 48h
 
-  version: # new
+  version:
     enabled: true
     new_version_appears: # node joined/upgraded to unseen version
       enabled: true
@@ -155,11 +155,11 @@ node_info:
 
 
 constants:
-  mimir_change: # new!
+  mimir_change:
     enabled: true
   fetch_period: 130s
 
 
-chain_state:  # new!
+chain_state:
   enabled: true
   fetch_period: 67s

@@ -19,7 +19,7 @@ from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConse
 from services.models.pool_info import PoolInfo, PoolChanges
 from services.models.price import PriceReport
 from services.models.queue import QueueInfo
-from services.models.tx import LPAddWithdrawTx, ThorTxType
+from services.models.tx import ThorTxExtended, ThorTxType
 
 
 class RussianLocalization(BaseLocalization):
@@ -172,7 +172,7 @@ class RussianLocalization(BaseLocalization):
 
     # ------ TXS -------
 
-    def notification_text_large_tx(self, tx: LPAddWithdrawTx,
+    def notification_text_large_tx(self, tx: ThorTxExtended,
                                    usd_per_rune: float,
                                    pool_info: PoolInfo,
                                    cap: ThorCapInfo = None):

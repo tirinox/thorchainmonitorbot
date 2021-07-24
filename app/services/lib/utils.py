@@ -142,3 +142,7 @@ def random_ip_address():
 
 def sep():
     print('-' * 100)
+
+
+def class_logger(self):
+    return logging.getLogger(self.__class__.__name__)

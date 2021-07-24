@@ -10,13 +10,19 @@ from services.models.pool_info import PoolInfo
 class ThorTxType:
     OLD_TYPE_STAKE = 'stake'  # deprecated (only for v1 parsing)
     TYPE_ADD_LIQUIDITY = 'addLiquidity'
+
     TYPE_SWAP = 'swap'
     OLD_TYPE_DOUBLE_SWAP = 'doubleSwap'  # deprecated (only for v1 parsing)
+
     TYPE_WITHDRAW = 'withdraw'
+
     OLD_TYPE_UNSTAKE = 'unstake'  # deprecated (only for v1 parsing)
-    OLD_TYPE_ADD = 'add'
+    OLD_TYPE_ADD = 'add'  # deprecated (only for v1 parsing)
+
     TYPE_DONATE = 'donate'
+
     TYPE_REFUND = 'refund'
+    TYPE_SWITCH = 'switch'  # BNB/ETH Rune => Native RUNE
 
 
 @dataclass
@@ -246,7 +252,7 @@ def cut_txs_before_previous_full_withdraw(txs: List[ThorTx]):
 
 
 @dataclass
-class LPAddWithdrawTx(BaseModelMixin):
+class ThorTxExtended(BaseModelMixin):
     date: int
     type: str
     pool: str
@@ -269,7 +275,7 @@ class LPAddWithdrawTx(BaseModelMixin):
 
         address_rune, address_asset = None, None
 
-        if t == ThorTxType.TYPE_ADD_LIQUIDITY:
+        if t == ThorTxType.TYPE_ADD_LIQUIDITY or t == ThorTxType.TYPE_DONATE:
             rune_amount = tx.sum_of_rune(in_only=True)
             asset_amount = tx.sum_of_asset(pool, in_only=True)
 
@@ -290,8 +296,20 @@ class LPAddWithdrawTx(BaseModelMixin):
 
             tx_hash_rune = tx.get_sub_tx(RUNE_SYMBOL, out_only=True)
             tx_hash_asset = tx.get_sub_tx(pool, out_only=True)
+
+        elif t == ThorTxType.TYPE_SWITCH:
+            rune_amount = tx.sum_of_rune(out_only=True)
+            asset_amount = rune_amount
+
+            input_tx = tx.in_tx[0] if tx.in_tx else None
+            tx_hash_asset = input_tx.tx_id if input_tx else None
+            tx_hash_rune = None
+
         else:
-            return None
+            tx_hash_rune = None
+            tx_hash_asset = None
+            asset_amount = 0.0
+            rune_amount = 0.0
 
         return cls(date=int(tx.date_timestamp),
                    type=t,
@@ -315,10 +333,6 @@ class LPAddWithdrawTx(BaseModelMixin):
     def symmetry_rune_vs_asset(self):
         f = 100.0 / self.full_rune
         return self.rune_amount * f, self.asset_amount / self.asset_per_rune * f
-
-    @classmethod
-    def collect_pools(cls, txs):
-        return set(t.pool for t in txs)
 
     def calc_full_rune_amount(self, asset_per_rune):
         self.asset_per_rune = asset_per_rune

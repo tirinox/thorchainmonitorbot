@@ -61,4 +61,3 @@ class LiquidityPoolStats(BaseModelMixin):
     async def write_time_series(self, db: DB):
         ts = TimeSeries(self.stream_name, db)
         await ts.add(usd_depth=self.usd_depth)
-

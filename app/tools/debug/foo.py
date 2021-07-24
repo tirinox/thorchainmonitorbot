@@ -30,7 +30,7 @@ from services.models.node_info import NodeSetChanges, NodeInfo
 from services.models.pool_info import PoolChange, PoolChanges, PoolInfo
 from services.models.pool_stats import LiquidityPoolStats
 from services.models.time_series import TimeSeries
-from services.models.tx import LPAddWithdrawTx, ThorTxType
+from services.models.tx import ThorTxExtended, ThorTxType
 from services.notify.broadcast import Broadcaster
 
 TG_USER = TG_TEST_USER
@@ -195,7 +195,7 @@ async def foo22():
 
 
 async def foo23_tx_msg():
-    add_tx = LPAddWithdrawTx(
+    add_tx = ThorTxExtended(
         int(now_ts()),
         ThorTxType.TYPE_ADD_LIQUIDITY,
         'FOO',
@@ -211,7 +211,7 @@ async def foo23_tx_msg():
         None
     )
 
-    withdraw_tx = LPAddWithdrawTx(
+    withdraw_tx = ThorTxExtended(
         int(now_ts()),
         ThorTxType.TYPE_WITHDRAW,
         'FOO',

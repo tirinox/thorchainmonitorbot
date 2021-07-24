@@ -21,7 +21,7 @@ from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConse
 from services.models.pool_info import PoolInfo, PoolChanges
 from services.models.price import PriceReport
 from services.models.queue import QueueInfo
-from services.models.tx import LPAddWithdrawTx, ThorTxType
+from services.models.tx import ThorTxExtended, ThorTxType
 
 RAIDO_GLYPH = 'ᚱ'
 CREATOR_TG = '@account1242'
@@ -268,7 +268,7 @@ class BaseLocalization(ABC):  # == English
 
     # ------- NOTIFY STAKES -------
 
-    def links_to_explorer_for_add_withdraw_tx(self, tx: LPAddWithdrawTx):
+    def links_to_explorer_for_add_withdraw_tx(self, tx: ThorTxExtended):
         net = self.cfg.network_id
         if tx.address_rune:
             rune_link = link(
@@ -290,7 +290,7 @@ class BaseLocalization(ABC):  # == English
 
         return rune_link, asset_link
 
-    def link_to_explorer_user_address_for_tx(self, tx: LPAddWithdrawTx):
+    def link_to_explorer_user_address_for_tx(self, tx: ThorTxExtended):
         if tx.address_rune:
             return link(
                 get_explorer_url_to_address(self.cfg.network_id, Chains.THOR, tx.address_rune),
@@ -302,7 +302,7 @@ class BaseLocalization(ABC):  # == English
                 short_address(tx.address_asset)
             )
 
-    def notification_text_large_tx(self, tx: LPAddWithdrawTx, dollar_per_rune: float,
+    def notification_text_large_tx(self, tx: ThorTxExtended, dollar_per_rune: float,
                                    pool_info: PoolInfo,
                                    cap: ThorCapInfo = None):
         (ap, asset_side_usd_short, asset_url, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short, thor_url,
@@ -333,7 +333,7 @@ class BaseLocalization(ABC):  # == English
 
         return msg
 
-    def lp_tx_calculations(self, dollar_per_rune, pool_info: PoolInfo, tx: LPAddWithdrawTx):
+    def lp_tx_calculations(self, dollar_per_rune, pool_info: PoolInfo, tx: ThorTxExtended):
         total_usd_volume = tx.full_rune * dollar_per_rune
         pool_depth_usd = pool_info.usd_depth(dollar_per_rune) if pool_info else 0.0
 

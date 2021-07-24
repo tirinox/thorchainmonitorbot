@@ -44,6 +44,9 @@ class BaseFetcher(WithDelegates, ABC):
         self.logger = logging.getLogger(f'{self.__class__.__name__}')
         self.delegates = set()
 
+    async def post_action(self, data):
+        ...
+
     @abstractmethod
     async def fetch(self):
         ...
@@ -54,6 +57,7 @@ class BaseFetcher(WithDelegates, ABC):
             try:
                 data = await self.fetch()
                 await self.handle_data(data)
+                await self.post_action(data)
             except Exception as e:
                 self.logger.exception(f"task error: {e}")
 

@@ -19,7 +19,6 @@ from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher, PoolInfoFetcherMidgard
 from services.jobs.fetch.queue import QueueFetcher
 from services.jobs.fetch.tx import TxFetcher
-from services.jobs.pool_stats import PoolStatsUpdater
 from services.lib.config import Config
 from services.lib.constants import get_thor_env_by_network_id
 from services.lib.db import DB
@@ -99,12 +98,12 @@ class App:
 
         if d.cfg.get('tx.enabled', True):
             fetcher_tx = TxFetcher(d)
-            stats_updater = PoolStatsUpdater(d)
+
+            # stats_updater = PoolStatsUpdater(d)
+            # fetcher_tx.subscribe(stats_updater)
 
             notifier_tx = PoolLiquidityTxNotifier(d)
-            # TxFetcher -> PoolStatsUpdater -> StakeTxNotifier(gets 2 senders as a tuple)
-            fetcher_tx.subscribe(stats_updater)
-            stats_updater.subscribe(notifier_tx)
+            fetcher_tx.subscribe(notifier_tx)
 
             tasks.append(fetcher_tx)
 
