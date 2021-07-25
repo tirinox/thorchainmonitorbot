@@ -10,9 +10,9 @@ from services.lib.config import Config
 from services.lib.constants import NetworkIdents
 from services.lib.date_utils import format_time_ago, now_ts, seconds_human
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx
-from services.lib.money import format_percent, asset_name_cut_chain, pretty_money, short_address, short_money, \
+from services.lib.money import format_percent, pretty_money, short_address, short_money, \
     short_asset_name, calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, \
-    chain_name_from_pool
+    chain_name_from_pool, Asset
 from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
     up_down_arrow, bracketify, plural
 from services.models.cap_info import ThorCapInfo
@@ -270,21 +270,21 @@ class BaseLocalization(ABC):  # == English
 
     def links_to_explorer_for_add_withdraw_tx(self, tx: ThorTxExtended):
         net = self.cfg.network_id
-        if tx.address_rune:
-            rune_link = link(
-                get_explorer_url_to_address(net, Chains.THOR, tx.address_rune), short_address(tx.address_rune))
-        elif tx.tx_hash_rune:
+        if tx.tx_hash_rune:
             rune_link = link(
                 get_explorer_url_to_tx(net, Chains.THOR, tx.tx_hash_rune), short_address(tx.tx_hash_rune))
+        elif tx.address_rune:
+            rune_link = link(
+                get_explorer_url_to_address(net, Chains.THOR, tx.address_rune), short_address(tx.address_rune))
         else:
             rune_link = ''
 
-        if tx.address_rune:
+        if tx.tx_hash_asset:
             asset_link = link(
-                get_explorer_url_to_address(net, tx.pool, tx.address_asset), short_address(tx.address_asset))
-        elif tx.tx_hash_rune:
+                get_explorer_url_to_tx(net, tx.first_pool, tx.tx_hash_asset), short_address(tx.tx_hash_asset))
+        elif tx.address_asset:
             asset_link = link(
-                get_explorer_url_to_tx(net, tx.pool, tx.tx_hash_asset), short_address(tx.tx_hash_asset))
+                get_explorer_url_to_address(net, tx.first_pool, tx.address_asset), short_address(tx.address_asset))
         else:
             asset_link = ''
 
@@ -298,25 +298,30 @@ class BaseLocalization(ABC):  # == English
             )
         else:
             return link(
-                get_explorer_url_to_address(self.cfg.network_id, tx.pool, tx.address_asset),
+                get_explorer_url_to_address(self.cfg.network_id, tx.first_pool, tx.address_asset),
                 short_address(tx.address_asset)
             )
 
-    def notification_text_large_tx(self, tx: ThorTxExtended, dollar_per_rune: float,
+    def notification_text_large_tx(self, tx: ThorTxExtended, usd_per_rune: float,
                                    pool_info: PoolInfo,
                                    cap: ThorCapInfo = None):
-        (ap, asset_side_usd_short, asset_url, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short, thor_url,
-         total_usd_volume, user_url) = self.lp_tx_calculations(dollar_per_rune, pool_info, tx)
+        thor_url, asset_url = self.links_to_explorer_for_add_withdraw_tx(tx)
+        (ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short,
+         total_usd_volume, user_url) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
         msg = ''
         if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
             msg += f'🐳 <b>Whale added liquidity</b> 🟢\n'
         elif tx.type == ThorTxType.TYPE_WITHDRAW:
             msg += f'🐳 <b>Whale removed liquidity</b> 🔴\n'
+        elif tx.type == ThorTxType.TYPE_DONATE:
+            msg += f'🙌 <b>Donation detected</b>\n'
 
         msg += (
             f"<b>{pretty_money(tx.rune_amount)} {self.R}</b> ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
-            f"<b>{pretty_money(tx.asset_amount)} {short_asset_name(tx.pool)}</b> ({ap:.0f}% = {asset_side_usd_short})\n"
+            f"<b>{pretty_money(tx.asset_amount)} {short_asset_name(tx.first_pool)}</b> "
+            f"({ap:.0f}% = {asset_side_usd_short})\n"
+
             f"Total: <code>${pretty_money(total_usd_volume)}</code> ({percent_of_pool:.2f}% of the whole pool).\n"
             f"Pool depth is <b>${pretty_money(pool_depth_usd)}</b> now.\n"
             f"User: {user_url}.\n"
@@ -333,24 +338,23 @@ class BaseLocalization(ABC):  # == English
 
         return msg
 
-    def lp_tx_calculations(self, dollar_per_rune, pool_info: PoolInfo, tx: ThorTxExtended):
-        total_usd_volume = tx.full_rune * dollar_per_rune
-        pool_depth_usd = pool_info.usd_depth(dollar_per_rune) if pool_info else 0.0
+    def lp_tx_calculations(self, usd_per_rune, pool_info: PoolInfo, tx: ThorTxExtended):
+        total_usd_volume = tx.full_rune * usd_per_rune
+        pool_depth_usd = pool_info.usd_depth(usd_per_rune) if pool_info else 0.0
 
         percent_of_pool = tx.what_percent_of_pool(pool_info)
         rp, ap = tx.symmetry_rune_vs_asset()
-        rune_side_usd = tx.rune_amount * dollar_per_rune
+        rune_side_usd = tx.rune_amount * usd_per_rune
 
         rune_side_usd_short = short_money(rune_side_usd)
         asset_side_usd_short = short_money(total_usd_volume - rune_side_usd)
 
-        thor_url, asset_url = self.links_to_explorer_for_add_withdraw_tx(tx)
         user_url = self.link_to_explorer_user_address_for_tx(tx)
-        chain = chain_name_from_pool(tx.pool)
+        chain = chain_name_from_pool(tx.first_pool)
 
         return (
-            ap, asset_side_usd_short, asset_url, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short,
-            thor_url,
+            ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd,
+            rp, rune_side_usd_short,
             total_usd_volume, user_url
         )
 
@@ -429,7 +433,8 @@ class BaseLocalization(ABC):  # == English
         if self.cfg.network_id == NetworkIdents.CHAOSNET_MULTICHAIN:
             return f'https://app.thorswap.finance/pool/{pool_name}'
         else:
-            return f'https://chaosnet.bepswap.com/pool/{asset_name_cut_chain(pool_name)}'
+            name = Asset.from_string(pool_name).full_name
+            return f'https://chaosnet.bepswap.com/pool/{name}'
 
     def pool_link(self, pool_name):
         return link(self.pool_url(pool_name), short_address(pool_name, 14, 4))

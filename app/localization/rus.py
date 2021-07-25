@@ -172,11 +172,16 @@ class RussianLocalization(BaseLocalization):
 
     # ------ TXS -------
 
+    @staticmethod
+    def none_str(x):
+        return 'нет' if x is None else x
+
     def notification_text_large_tx(self, tx: ThorTxExtended,
                                    usd_per_rune: float,
                                    pool_info: PoolInfo,
                                    cap: ThorCapInfo = None):
-        (ap, asset_side_usd_short, asset_url, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short, thor_url,
+        thor_url, asset_url = self.links_to_explorer_for_add_withdraw_tx(tx)
+        (ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short,
          total_usd_volume, user_url) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
         heading = ''
@@ -184,15 +189,17 @@ class RussianLocalization(BaseLocalization):
             heading = f'🐳 <b>Кит добавил ликвидности</b> 🟢'
         elif tx.type == ThorTxType.TYPE_WITHDRAW:
             heading = f'🐳 <b>Кит вывел ликвидность</b> 🔴'
+        elif tx.type == ThorTxType.TYPE_DONATE:
+            heading += f'🙌 <b>Безвозмездное добавление в пул</b>\n'
 
         msg = (
             f"{heading}\n"
             f"<b>{pretty_money(tx.rune_amount)} {self.R}</b> ({rp:.0f}%) ↔️ "
-            f"<b>{pretty_money(tx.asset_amount)} {short_asset_name(tx.pool)}</b> ({ap:.0f}%)\n"
+            f"<b>{pretty_money(tx.asset_amount)} {short_asset_name(tx.first_pool)}</b> ({ap:.0f}%)\n"
             f"Всего: <code>${pretty_money(total_usd_volume)}</code> ({percent_of_pool:.2f}% от всего пула).\n"
             f"Глубина пула сейчас: <b>${pretty_money(pool_depth_usd)}</b>.\n"
             f"Пользователь: {user_url}.\n"
-            f"Транзакции: {self.R} - {thor_url} / {chain} - {asset_url}."
+            f"Транзакции: {self.R} - {self.none_str(thor_url)} / {chain} - {self.none_str(asset_url)}."
         )
 
         if cap:

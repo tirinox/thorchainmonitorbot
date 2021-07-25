@@ -5,6 +5,7 @@ import pytest
 
 from services.lib.midgard.parser import MidgardParserV1, MidgardParserV2
 from services.lib.constants import NetworkIdents, THOR_DIVIDER
+from services.models.tx import SUCCESS
 
 PATH = './app/tests/tx_examples'
 DIV = THOR_DIVIDER
@@ -29,7 +30,7 @@ def test_parser_v1_swap(example_tx_gen):
     assert res.total_count == 211078
     t0 = res.txs[0]
 
-    assert t0.status == t0.SUCCESS
+    assert t0.status == SUCCESS
     assert t0.height == "2648585"
     assert t0.height_int == 2648585
     assert t0.date == "1613413527000000000"

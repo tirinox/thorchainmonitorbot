@@ -1,5 +1,7 @@
 import asyncio
+import json
 import logging
+import os
 
 import aiohttp
 import sha3
@@ -18,9 +20,10 @@ from services.jobs.fetch.tx import TxFetcher
 from services.lib.config import Config
 from services.lib.constants import *
 from services.lib.cooldown import Cooldown
-from services.lib.date_utils import DAY, now_ts
+from services.lib.date_utils import DAY
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
+from services.lib.midgard.parser import MidgardParserV2
 from services.lib.money import pretty_money
 from services.lib.telegram import telegram_send_message_basic, TG_TEST_USER
 from services.lib.texts import progressbar
@@ -30,7 +33,7 @@ from services.models.node_info import NodeSetChanges, NodeInfo
 from services.models.pool_info import PoolChange, PoolChanges, PoolInfo
 from services.models.pool_stats import LiquidityPoolStats
 from services.models.time_series import TimeSeries
-from services.models.tx import ThorTxExtended, ThorTxType
+from services.models.tx import ThorTxExtended
 from services.notify.broadcast import Broadcaster
 
 TG_USER = TG_TEST_USER
@@ -194,68 +197,6 @@ async def foo22():
         print(loc.notification_text_pool_churn(pc))
 
 
-async def foo23_tx_msg():
-    add_tx = ThorTxExtended(
-        int(now_ts()),
-        ThorTxType.TYPE_ADD_LIQUIDITY,
-        'FOO',
-        '123000000BB',
-        '456000000AA',
-        '11BBCC',
-        '22DDEE',
-        50.0,
-        100.0,
-        '88EE88',
-        200.0,
-        0.5,
-        None
-    )
-
-    withdraw_tx = ThorTxExtended(
-        int(now_ts()),
-        ThorTxType.TYPE_WITHDRAW,
-        'FOO',
-        '123000000BB',
-        '456000000AA',
-        '11BBCC',
-        '22DDEE',
-        50.0,
-        100.0,
-        '88EE88',
-        200.0,
-        0.5,
-        None
-    )
-
-    tx_pool_factor = 1000  # tx is percent of pool
-
-    pool_info = PoolInfo(
-        'FOO',
-        balance_asset=5_000_000_0 * tx_pool_factor,
-        balance_rune=10_000_000_0 * tx_pool_factor,
-        pool_units=2_000_000_000_000,
-        status=PoolInfo.AVAILABLE
-    )
-
-    # pool_info = None
-
-    cap = ThorCapInfo(
-        5_500_500, 5_234_000, 9.21
-    )
-
-    for loc in (loc_ru, loc_en):
-        text1 = loc.notification_text_large_tx(add_tx, 10.0, pool_info, cap)
-        text2 = loc.notification_text_large_tx(withdraw_tx, 10.0, pool_info, cap)
-
-        sep()
-        print(text1)
-        sep()
-        print(text2)
-        sep()
-        msg = text1 + "\n\n" + text2
-        await telegram_send_message_basic(TG_TOKEN, TG_USER, msg)
-
-
 async def foo24_cap_limit():
     cap = ThorCapInfo(
         5_500_500, 5_499_100, 9.21
@@ -335,12 +276,38 @@ async def foo28_gecko_cex_volume():
     print(data)
 
 
+def load_sample_tx(filename):
+    samples = './tests/tx_examples'
+    with open(os.path.join(samples, filename), 'r') as f:
+        data = json.load(f)
+
+    p = MidgardParserV2(network_id=NetworkIdents.CHAOSNET_MULTICHAIN)
+    txs = p.parse_tx_response(data).txs
+    return txs
+
+
+async def foo29_donate_notification():
+    txs = load_sample_tx('v2_donate.json')
+    tx = ThorTxExtended(**txs[0].__dict__)
+
+    usd_per_rune = 4.0
+    pool_info = PoolInfo('ETH.XRUNE-0X69FA0FEE221AD11012BAB0FDB45D444D3D2CE71C',
+                         100000000, 323434434343, 76767654554, PoolInfo.AVAILABLE)
+    tx.calc_full_rune_amount(pool_info.asset_per_rune)
+
+    for loc in (loc_ru, loc_en):
+        # for loc in (loc_en,):
+        text = loc.notification_text_large_tx(tx, usd_per_rune, pool_info)
+        print(text)
+        sep()
+        await telegram_send_message_basic(TG_TOKEN, TG_USER, text)
+
+
 async def start_foos():
     async with aiohttp.ClientSession() as deps.session:
         deps.thor_connector = ThorConnector(get_thor_env_by_network_id(deps.cfg.network_id), deps.session)
         await deps.db.get_redis()
-        # await foo27_mimir_message()
-        await foo28_gecko_cex_volume()
+        await foo29_donate_notification()
 
 
 if __name__ == '__main__':

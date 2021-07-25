@@ -202,13 +202,24 @@ class ThorTx:
                 elif is_rune(asset) and is_rune(coin.asset):
                     return sub_tx
 
+    def sum_of(self, predicate, in_only=False, out_only=False):
+        return sum(coin.amount_float for sub_tx in self.search_realm(in_only, out_only) for coin in sub_tx.coins
+                   if predicate(coin))
+
     def sum_of_asset(self, asset, in_only=False, out_only=False):
-        return sum(coin.amount_float for sub_tx in self.search_realm(in_only, out_only) for coin in sub_tx.coins if
-                   coin.asset == asset)
+        return self.sum_of(lambda c: c.asset == asset, in_only, out_only)
+
+    def sum_of_non_rune(self, in_only=False, out_only=False):
+        return self.sum_of(lambda c: not is_rune(c.asset), in_only, out_only)
 
     def sum_of_rune(self, in_only=False, out_only=False):
-        return sum(coin.amount_float for sub_tx in self.search_realm(in_only, out_only) for coin in sub_tx.coins if
-                   is_rune(coin.asset))
+        return self.sum_of(lambda c: is_rune(c.asset), in_only, out_only)
+
+    def not_rune_asset(self, in_only=False, out_only=False):
+        for sub_tx in self.search_realm(in_only, out_only):
+            for coin in sub_tx.coins:
+                if not is_rune(coin):
+                    return coin
 
     @property
     def first_pool(self):
@@ -252,78 +263,52 @@ def cut_txs_before_previous_full_withdraw(txs: List[ThorTx]):
 
 
 @dataclass
-class ThorTxExtended(BaseModelMixin):
-    date: int
-    type: str
-    pool: str
-    address_rune: str
-    address_asset: str
-    tx_hash_rune: str
-    tx_hash_asset: str
-    asset_amount: float
-    rune_amount: float
-    hash: str
-    full_rune: float
-    asset_per_rune: float
-    tx: ThorTx
+class ThorTxExtended(ThorTx):
+    address_rune: str = ''
+    address_asset: str = ''
+    tx_hash_rune: str = ''
+    tx_hash_asset: str = ''
+    asset_amount: float = 0.0
+    rune_amount: float = 0.0
+    full_rune: float = 0.0
+    asset_per_rune: float = 0.0
 
-    @classmethod
-    def load_from_thor_tx(cls, tx: ThorTx):
-        t = tx.type
-
-        pool = tx.first_pool
-
-        address_rune, address_asset = None, None
-
+    def __post_init__(self):
+        t = self.type
         if t == ThorTxType.TYPE_ADD_LIQUIDITY or t == ThorTxType.TYPE_DONATE:
-            rune_amount = tx.sum_of_rune(in_only=True)
-            asset_amount = tx.sum_of_asset(pool, in_only=True)
+            pool = self.first_pool
+            self.rune_amount = self.sum_of_rune(in_only=True)
+            self.asset_amount = self.sum_of_asset(pool, in_only=True)
 
-            rune_sub_tx = tx.get_sub_tx(RUNE_SYMBOL, in_only=True)
-            address_rune = rune_sub_tx.address if rune_sub_tx else None
-            tx_hash_rune = rune_sub_tx.tx_id if rune_sub_tx else None
+            rune_sub_tx = self.get_sub_tx(RUNE_SYMBOL, in_only=True)
+            self.address_rune = rune_sub_tx.address if rune_sub_tx else None
+            self.tx_hash_rune = rune_sub_tx.tx_id if rune_sub_tx else None
 
-            asset_sub_tx = tx.get_sub_tx(pool, in_only=True)
-            address_asset = asset_sub_tx.address if asset_sub_tx else None
-            tx_hash_asset = asset_sub_tx.tx_id if asset_sub_tx else None
+            asset_sub_tx = self.get_sub_tx(pool, in_only=True)
+            self.address_asset = asset_sub_tx.address if asset_sub_tx else None
+            self.tx_hash_asset = asset_sub_tx.tx_id if asset_sub_tx else None
 
         elif t == ThorTxType.TYPE_WITHDRAW:
-            rune_amount = tx.sum_of_rune(out_only=True)
-            asset_amount = tx.sum_of_asset(pool, out_only=True)
+            pool = self.first_pool
+            self.rune_amount = self.sum_of_rune(out_only=True)
+            self.asset_amount = self.sum_of_asset(pool, out_only=True)
 
-            sub_tx_rune = tx.get_sub_tx(RUNE_SYMBOL, in_only=True)
-            address_rune = sub_tx_rune.address if sub_tx_rune else tx.in_tx[0].address
+            sub_tx_rune = self.get_sub_tx(RUNE_SYMBOL, in_only=True)
+            self.address_rune = sub_tx_rune.address if sub_tx_rune else self.in_tx[0].address
 
-            tx_hash_rune = tx.get_sub_tx(RUNE_SYMBOL, out_only=True)
-            tx_hash_asset = tx.get_sub_tx(pool, out_only=True)
+            self.tx_hash_rune = self.get_sub_tx(RUNE_SYMBOL, out_only=True)
+            self.tx_hash_asset = self.get_sub_tx(pool, out_only=True)
 
         elif t == ThorTxType.TYPE_SWITCH:
-            rune_amount = tx.sum_of_rune(out_only=True)
-            asset_amount = rune_amount
+            rune_amount = self.sum_of_rune(out_only=True)
+            self.asset_amount = rune_amount
 
-            input_tx = tx.in_tx[0] if tx.in_tx else None
-            tx_hash_asset = input_tx.tx_id if input_tx else None
-            tx_hash_rune = None
+            input_tx = self.in_tx[0] if self.in_tx else None
+            self.tx_hash_asset = input_tx.tx_id if input_tx else None
 
         else:
-            tx_hash_rune = None
-            tx_hash_asset = None
-            asset_amount = 0.0
-            rune_amount = 0.0
-
-        return cls(date=int(tx.date_timestamp),
-                   type=t,
-                   pool=pool,
-                   address_rune=address_rune,
-                   address_asset=address_asset,
-                   tx_hash_rune=tx_hash_rune,
-                   tx_hash_asset=tx_hash_asset,
-                   asset_amount=asset_amount,
-                   rune_amount=rune_amount,
-                   hash=tx.tx_hash,
-                   full_rune=0.0,
-                   asset_per_rune=0.0,
-                   tx=tx)
+            self.asset_amount = 0.0
+            self.rune_amount = 0.0
 
     def asymmetry(self, force_abs=False):
         rune_asset_amount = self.asset_amount * self.asset_per_rune

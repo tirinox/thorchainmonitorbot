@@ -1,4 +1,5 @@
 import math
+from dataclasses import dataclass
 from math import floor, log10
 
 EMOJI_SCALE = [
@@ -159,6 +160,55 @@ def short_asset_name(pool: str):
         return cs[1].split('-')[0]
     except IndexError:
         return pool
+
+
+@dataclass
+class Asset:
+    chain: str = ''
+    name: str = ''
+    tag: str = ''
+
+    @property
+    def valid(self):
+        return bool(self.chain) and bool(self.name)
+
+    def __post_init__(self):
+        if self.chain and not self.name:
+            a = self.from_string(self.chain)
+            self.chain = a.chain
+            self.name = a.name
+            self.tag = a.tag
+
+    @classmethod
+    def from_string(cls, asset: str):
+        try:
+            chain, name_and_tag = asset.split('.', maxsplit=2)
+            components = name_and_tag.split('-', maxsplit=2)
+            if len(components) == 2:
+                name, tag = components
+            else:
+                name, tag = name_and_tag, ''
+            return cls(str(chain).upper(), str(name).upper(), str(tag).upper())
+        except (IndexError, TypeError, ValueError):
+            return cls('', asset, '')
+
+    @property
+    def short_str(self):
+        if self.tag:
+            short_tag = self.tag[:6]
+            return f'{self.chain}.{self.name}-{short_tag}'
+        else:
+            return f'{self.chain}.{self.name}'
+
+    @property
+    def full_name(self):
+        if self.valid:
+            return f'{self.name}-{self.tag}' if self.tag else self.name
+        else:
+            return self.name
+
+    def __str__(self):
+        return f'{self.chain}.{self.full_name}' if self.valid else self.name
 
 
 def asset_name_cut_chain(asset):

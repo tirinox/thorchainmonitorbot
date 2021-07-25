@@ -48,6 +48,8 @@ def get_explorer_url_to_tx(network_id, pool_or_chain: str, tx_id: str):
         return f'https://explorer.binance.org/tx/{tx_id}' if is_live else \
             f'https://testnet-explorer.binance.org/tx/{tx_id}'
     elif chain == Chains.ETH:
+        if not tx_id.startswith('0x') and not tx_id.startswith('0X'):
+            tx_id = '0x' + tx_id
         return f'https://etherscan.io/tx/{tx_id}' if is_live else \
             f'https://ropsten.etherscan.io/tx/{tx_id}'
     elif chain == Chains.BTC:
