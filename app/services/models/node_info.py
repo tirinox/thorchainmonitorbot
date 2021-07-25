@@ -3,7 +3,6 @@ import random
 import re
 import secrets
 from collections import Counter
-from copy import copy
 from dataclasses import dataclass, field
 from typing import List, Dict, NamedTuple, Optional
 

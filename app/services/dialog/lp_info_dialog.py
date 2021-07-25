@@ -4,7 +4,6 @@ from dataclasses import asdict
 
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import *
-from aiogram.utils.exceptions import MessageToDeleteNotFound
 from aiogram.utils.helper import HelperMode
 
 from services.dialog.base import BaseDialog, message_handler, query_handler

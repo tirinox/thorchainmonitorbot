@@ -53,6 +53,9 @@ class MidgardURLGenBase(ABC):
 
 
 class MidgardURLGenV1(MidgardURLGenBase):
+    def url_pool_info(self):
+        pass
+
     LIQUIDITY_TX_TYPES_STRING = 'stake,unstake'
 
     def url_for_tx(self, offset=0, count=50, address=None, types=None) -> str:

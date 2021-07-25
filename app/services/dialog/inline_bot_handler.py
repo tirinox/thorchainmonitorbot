@@ -2,12 +2,10 @@ import hashlib
 import logging
 from uuid import uuid4
 
-from aiogram.types import InlineQuery, InputTextMessageContent, InlineQueryResultArticle, InlineQueryResultPhoto, \
-    InlineQueryResultCachedPhoto
+from aiogram.types import InlineQuery, InputTextMessageContent, InlineQueryResultArticle, InlineQueryResultCachedPhoto
 
 from localization import BaseLocalization
 from services.dialog.base import BaseDialog, inline_bot_handler
-
 # test bot: @thorchain_monitoring_test_bot ADDRESS POOL
 from services.dialog.picture.lp_picture import lp_pool_picture
 from services.jobs.fetch.runeyield import get_rune_yield_connector

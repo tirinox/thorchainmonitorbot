@@ -288,10 +288,27 @@ def load_sample_tx(filename):
 
 async def foo29_donate_notification():
     txs = load_sample_tx('v2_donate.json')
-    tx = ThorTxExtended(**txs[0].__dict__)
+    tx = ThorTxExtended.load_from_thor_tx(txs[0])
 
     usd_per_rune = 4.0
     pool_info = PoolInfo('ETH.XRUNE-0X69FA0FEE221AD11012BAB0FDB45D444D3D2CE71C',
+                         100000000, 323434434343, 76767654554, PoolInfo.AVAILABLE)
+    tx.calc_full_rune_amount(pool_info.asset_per_rune)
+
+    for loc in (loc_ru, loc_en):
+        # for loc in (loc_en,):
+        text = loc.notification_text_large_tx(tx, usd_per_rune, pool_info)
+        print(text)
+        sep()
+        await telegram_send_message_basic(TG_TOKEN, TG_USER, text)
+
+
+async def foo30_swap_notification():
+    txs = load_sample_tx('v2_swap.json')
+    tx = ThorTxExtended.load_from_thor_tx(txs[0])
+
+    usd_per_rune = 4.0
+    pool_info = PoolInfo('BTC.BTC',
                          100000000, 323434434343, 76767654554, PoolInfo.AVAILABLE)
     tx.calc_full_rune_amount(pool_info.asset_per_rune)
 
@@ -307,7 +324,8 @@ async def start_foos():
     async with aiohttp.ClientSession() as deps.session:
         deps.thor_connector = ThorConnector(get_thor_env_by_network_id(deps.cfg.network_id), deps.session)
         await deps.db.get_redis()
-        await foo29_donate_notification()
+        # await foo29_donate_notification()
+        await foo30_swap_notification()
 
 
 if __name__ == '__main__':

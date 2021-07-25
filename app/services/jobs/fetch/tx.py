@@ -38,7 +38,7 @@ class TxFetcher(BaseFetcher):
         return txs
 
     async def post_action(self, txs: List[ThorTxExtended]):
-        hashes = [t.hash for t in txs]
+        hashes = [t.tx_hash for t in txs]
         await self.mark_tx_hashes_as_seen(hashes)
 
     # -----------------------

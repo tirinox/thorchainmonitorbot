@@ -69,6 +69,9 @@ class MidgardParserV1(MidgardParserBase):
     Midgard V1 + Single chain BEP Swap network
     """
 
+    def parse_pool_info(self, response) -> PoolInfoMap:
+        pass
+
     @staticmethod
     def fix_tx_type(tx_type):
         if tx_type == ThorTxType.OLD_TYPE_UNSTAKE:

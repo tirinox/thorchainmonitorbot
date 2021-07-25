@@ -3,7 +3,6 @@ from dataclasses import dataclass
 from typing import List, Optional, Iterable
 
 from services.lib.constants import is_rune, THOR_DIVIDER_INV, RUNE_SYMBOL, Chains
-from services.models.cap_info import BaseModelMixin
 from services.models.pool_info import PoolInfo
 
 
@@ -273,6 +272,10 @@ class ThorTxExtended(ThorTx):
     full_rune: float = 0.0
     asset_per_rune: float = 0.0
 
+    @classmethod
+    def load_from_thor_tx(cls, tx: ThorTx):
+        return cls(**tx.__dict__)
+
     def __post_init__(self):
         t = self.type
         if t == ThorTxType.TYPE_ADD_LIQUIDITY or t == ThorTxType.TYPE_DONATE:
@@ -316,6 +319,9 @@ class ThorTxExtended(ThorTx):
         return abs(factor) if force_abs else factor
 
     def symmetry_rune_vs_asset(self):
+        if not self.full_rune:
+            return 0.0, 0.0
+
         f = 100.0 / self.full_rune
         return self.rune_amount * f, self.asset_amount / self.asset_per_rune * f
 

@@ -11,8 +11,7 @@ from services.lib.constants import NetworkIdents
 from services.lib.date_utils import format_time_ago, now_ts, seconds_human
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx
 from services.lib.money import format_percent, pretty_money, short_address, short_money, \
-    short_asset_name, calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, \
-    chain_name_from_pool, Asset
+    calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset
 from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
     up_down_arrow, bracketify, plural
 from services.models.cap_info import ThorCapInfo
@@ -309,19 +308,33 @@ class BaseLocalization(ABC):  # == English
         (ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short,
          total_usd_volume, user_url) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
-        msg = ''
+        heading = ''
         if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
-            msg += f'🐳 <b>Whale added liquidity</b> 🟢\n'
+            heading = f'🐳 <b>Whale added liquidity</b> 🟢'
         elif tx.type == ThorTxType.TYPE_WITHDRAW:
-            msg += f'🐳 <b>Whale removed liquidity</b> 🔴\n'
+            heading = f'🐳 <b>Whale removed liquidity</b> 🔴'
         elif tx.type == ThorTxType.TYPE_DONATE:
-            msg += f'🙌 <b>Donation detected</b>\n'
+            heading = f'🙌 <b>Donation to the pool</b>'
+        elif tx.type == ThorTxType.TYPE_SWAP:
+            heading = f'🐳 <b>Large swap</b> 🔁'
+        elif tx.type == ThorTxType.TYPE_REFUND:
+            heading = f'↩️❗️ <b>Big refund</b>'
+        elif tx.type == ThorTxType.TYPE_SWITCH:
+            heading = f'🐳 <b>Large Rune switch</b> 🔼'
 
-        msg += (
-            f"<b>{pretty_money(tx.rune_amount)} {self.R}</b> ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
-            f"<b>{pretty_money(tx.asset_amount)} {short_asset_name(tx.first_pool)}</b> "
-            f"({ap:.0f}% = {asset_side_usd_short})\n"
+        asset = Asset(tx.first_pool).name
 
+        content = ''
+        if tx.type in (ThorTxType.TYPE_ADD_LIQUIDITY, ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_DONATE):
+            content = (
+                f"<b>{pretty_money(tx.rune_amount)} {self.R}</b> ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
+                f"<b>{pretty_money(tx.asset_amount)} {asset}</b> "
+                f"({ap:.0f}% = {asset_side_usd_short})"
+            )
+
+        msg = (
+            f"{heading}\n"
+            f"{content}\n"
             f"Total: <code>${pretty_money(total_usd_volume)}</code> ({percent_of_pool:.2f}% of the whole pool).\n"
             f"Pool depth is <b>${pretty_money(pool_depth_usd)}</b> now.\n"
             f"User: {user_url}.\n"
@@ -350,7 +363,7 @@ class BaseLocalization(ABC):  # == English
         asset_side_usd_short = short_money(total_usd_volume - rune_side_usd)
 
         user_url = self.link_to_explorer_user_address_for_tx(tx)
-        chain = chain_name_from_pool(tx.first_pool)
+        chain = Asset(tx.first_pool).chain
 
         return (
             ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd,

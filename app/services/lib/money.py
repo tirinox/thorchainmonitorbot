@@ -4,7 +4,7 @@ from math import floor, log10
 
 EMOJI_SCALE = [
     # negative
-    (-50, '💥'), (-35, '👺'), (-25, '😱'), (-20, '😨'), (-15, '🥵'), (-10, '😰'), (-5, '😢'), (-3, '😥'), (-2, '😔'),
+    (-50, '💥'), (-35, '👺'), (-25, '🥵'), (-20, '😱'), (-15, '😨'), (-10, '😰'), (-5, '😢'), (-3, '😥'), (-2, '😔'),
     (-1, '😑'), (0, '😕'),
     # positive
     (1, '😏'), (2, '😄'), (3, '😀'), (5, '🤗'), (10, '🍻'), (15, '🎉'), (20, '💸'), (25, '🔥'), (35, '🌙'), (50, '🌗'),
@@ -154,14 +154,6 @@ def calc_percent_change(old_value, new_value):
     return 100.0 * (new_value - old_value) / old_value if old_value and new_value else 0.0
 
 
-def short_asset_name(pool: str):
-    try:
-        cs = pool.split('.')
-        return cs[1].split('-')[0]
-    except IndexError:
-        return pool
-
-
 @dataclass
 class Asset:
     chain: str = ''
@@ -207,24 +199,12 @@ class Asset:
         else:
             return self.name
 
+    @property
+    def first_filled_component(self):
+        return self.chain or self.name or self.tag
+
     def __str__(self):
         return f'{self.chain}.{self.full_name}' if self.valid else self.name
-
-
-def asset_name_cut_chain(asset):
-    try:
-        cs = asset.split('.')
-        return cs[1]
-    except IndexError:
-        return asset
-
-
-def chain_name_from_pool(pool: str) -> str:
-    try:
-        cs = pool.split('.')
-        return cs[0]
-    except IndexError:
-        return pool
 
 
 def weighted_mean(values, weights):

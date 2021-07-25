@@ -38,15 +38,18 @@ class PoolStatsUpdater(WithDelegates, INotified):
 
         updated_stats = set()
         for tx in txs:
-            pool_info: PoolInfo = pool_info_map.get(tx.pool)
+            if not tx.first_pool:
+                continue
+                
+            pool_info: PoolInfo = pool_info_map.get(tx.first_pool)
 
             asset_per_rune = pool_info.asset_per_rune if pool_info else 0.0
             full_rune = tx.calc_full_rune_amount(asset_per_rune)  # this one fills rune_volume of each TX
 
-            stats: LiquidityPoolStats = self.pool_stat_map.get(tx.pool)
+            stats: LiquidityPoolStats = self.pool_stat_map.get(tx.first_pool)
             if stats:
                 stats.update(full_rune, 100)
-                updated_stats.add(tx.pool)
+                updated_stats.add(tx.first_pool)
 
         for pool_name in updated_stats:
             pool_stat: LiquidityPoolStats = self.pool_stat_map[pool_name]

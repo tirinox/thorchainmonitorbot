@@ -1,14 +1,12 @@
 import logging
 
-from aiohttp import ClientSession
-from aiothornode.connector import ThorConnector
-
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import get_url_gen_by_network_id
 from services.models.time_series import TimeSeries
 
 ERROR_RESPONSE = 'ERROR_Midgard'
+
 
 class MidgardConnector:
     """
@@ -20,6 +18,7 @@ class MidgardConnector:
     5. Select other Midgard if many errors on official Midgard
     Todo: one task -> one class please sir 🇮🇳
     """
+
     def __init__(self, d: DepContainer):
         network_id = d.cfg.network_id
         self.deps = d

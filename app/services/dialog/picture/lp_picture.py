@@ -10,7 +10,7 @@ from localization.base import RAIDO_GLYPH
 from services.dialog.picture.crypto_logo import CryptoLogoDownloader
 from services.lib.constants import BNB_RUNE_SYMBOL, is_stable_coin, is_rune, RUNE_SYMBOL
 from services.lib.draw_utils import CATEGORICAL_PALETTE, pos_percent, result_color, hor_line, LIGHT_TEXT_COLOR
-from services.lib.money import pretty_money, short_asset_name, format_percent, pretty_percent
+from services.lib.money import pretty_money, format_percent, pretty_percent, Asset
 from services.lib.plot_graph import PlotBarGraph
 from services.lib.texts import grouper
 from services.lib.utils import Singleton, async_wrap
@@ -91,9 +91,10 @@ def sync_lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, run
     start_y = head_y + dy
 
     # HEADER
+    short_asset = Asset(asset).name
     draw.text(pos_percent_lp(center, head_y), loc.LP_PIC_POOL, font=r.font_head, fill=FADE_COLOR, anchor='ms')
     draw.text(pos_percent_lp(left, head_y), loc.LP_PIC_RUNE, font=r.font_head, fill=FORE_COLOR, anchor='rs')
-    draw.text(pos_percent_lp(right, head_y), short_asset_name(asset), font=r.font_head, fill=FORE_COLOR, anchor='ls')
+    draw.text(pos_percent_lp(right, head_y), short_asset, font=r.font_head, fill=FORE_COLOR, anchor='ls')
 
     # ------------------------------------------------------------------------------------------------
     # line1_y = 11
@@ -193,7 +194,7 @@ def sync_lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, run
                   anchor='ms')
 
     draw.text(pos_percent_lp(columns_x[0], start_y), loc.LP_PIC_R_RUNE, font=r.font, fill=FADE_COLOR, anchor='ms')
-    draw.text(pos_percent_lp(columns_x[1], start_y), loc.LP_PIC_IN_ASSET.format(short_asset_name(asset)), font=r.font,
+    draw.text(pos_percent_lp(columns_x[1], start_y), loc.LP_PIC_IN_ASSET.format(short_asset), font=r.font,
               fill=FADE_COLOR, anchor='ms')
 
     prot = report.protection
@@ -407,7 +408,7 @@ def lp_line_segments(draw, asset_values, asset_values_usd, y, value_hidden, colo
                 pos_percent_lp(legend_x + legend_sq_w, legend_y + legend_sq_h)
             ), fill=color)
 
-            asset = RAIDO_GLYPH if is_rune(asset) else short_asset_name(asset)
+            asset = RAIDO_GLYPH if is_rune(asset) else Asset(asset).name
 
             if value_hidden:
                 text = asset
@@ -518,7 +519,7 @@ def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_c
     draw.text(pos_percent_lp(50, run_y), loc.LP_PIC_SUMMARY_HEADER, fill=FORE_COLOR, font=res.font_head, anchor='mm')
 
     pool_percents = [
-        (short_asset_name(r.pool.asset), asset_values_usd[r.pool.asset] / total_current_value_usd * 2.0 * 100.0) for r
+        (Asset(r.pool.asset).name, asset_values_usd[r.pool.asset] / total_current_value_usd * 2.0 * 100.0) for r
         in reports
     ]
     # pool_percents = pool_percents * 5  # debug

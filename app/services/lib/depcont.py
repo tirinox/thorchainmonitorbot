@@ -1,16 +1,15 @@
-from typing import Optional, List, Set
 import asyncio
 from dataclasses import dataclass, field
+from typing import Optional, Set
 
 from aiogram import Bot, Dispatcher
 from aiohttp import ClientSession
+from aiothornode.connector import ThorConnector
 
 from services.lib.config import Config
 from services.lib.db import DB
 from services.models.price import LastPriceHolder
 from services.models.queue import QueueInfo
-
-from aiothornode.connector import ThorConnector
 
 
 @dataclass

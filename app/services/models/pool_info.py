@@ -5,7 +5,7 @@ from typing import List, Dict, NamedTuple
 
 from aiothornode.types import ThorPool
 
-from services.lib.constants import float_to_thor, thor_to_float
+from services.lib.constants import thor_to_float
 
 
 def pool_share(rune_depth, asset_depth, my_units, pool_total_units):

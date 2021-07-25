@@ -143,7 +143,7 @@ class BaseDialog(ABC):
                 handler_class = cls(loc, None, d)
                 handler_method = getattr(handler_class, that_name)
                 return await handler_method(inline_query)
-            except Exception as e:
+            except Exception:
                 logger.exception('Inline bot query exception!')
 
     @classmethod

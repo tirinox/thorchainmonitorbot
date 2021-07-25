@@ -72,7 +72,6 @@ async def test_geo_ip_thor_2():
             if info:
                 ip = info['ip']
                 organizations[ip] = info['org']
-                providers[ip] = geo_ip.get_general_provider(info)
 
         print(organizations)
         print('----')

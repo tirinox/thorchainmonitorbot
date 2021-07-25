@@ -10,7 +10,7 @@ from services.lib.constants import Chains
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
-    emoji_for_percent_change, short_asset_name
+    emoji_for_percent_change, Asset
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
     up_down_arrow, plural
 from services.models.cap_info import ThorCapInfo
@@ -186,16 +186,21 @@ class RussianLocalization(BaseLocalization):
 
         heading = ''
         if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
-            heading = f'🐳 <b>Кит добавил ликвидности</b> 🟢'
+            heading = f'🐳 <b>Кит добавил ликвидности</b> 🟢\n'
         elif tx.type == ThorTxType.TYPE_WITHDRAW:
-            heading = f'🐳 <b>Кит вывел ликвидность</b> 🔴'
+            heading = f'🐳 <b>Кит вывел ликвидность</b> 🔴\n'
         elif tx.type == ThorTxType.TYPE_DONATE:
             heading += f'🙌 <b>Безвозмездное добавление в пул</b>\n'
+        elif tx.type == ThorTxType.TYPE_SWAP:
+            heading += f'🐳 <b>Крупный обмен</b> 🔁\n'
+        elif tx.type == ThorTxType.TYPE_REFUND:
+            heading += f'↩️❗️ <b>Большой возврат средств</b>\n'
 
+        asset = Asset(tx.first_pool).name
         msg = (
             f"{heading}\n"
             f"<b>{pretty_money(tx.rune_amount)} {self.R}</b> ({rp:.0f}%) ↔️ "
-            f"<b>{pretty_money(tx.asset_amount)} {short_asset_name(tx.first_pool)}</b> ({ap:.0f}%)\n"
+            f"<b>{pretty_money(tx.asset_amount)} {asset}</b> ({ap:.0f}%)\n"
             f"Всего: <code>${pretty_money(total_usd_volume)}</code> ({percent_of_pool:.2f}% от всего пула).\n"
             f"Глубина пула сейчас: <b>${pretty_money(pool_depth_usd)}</b>.\n"
             f"Пользователь: {user_url}.\n"

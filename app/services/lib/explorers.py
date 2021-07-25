@@ -1,9 +1,9 @@
 from services.lib.constants import NetworkIdents, Chains
-from services.lib.money import chain_name_from_pool
+from services.lib.money import Asset
 
 
 def get_explorer_url_to_address(network_id, pool_or_chain: str, address: str):
-    chain = chain_name_from_pool(pool_or_chain).upper()
+    chain = Asset(pool_or_chain).first_filled_component
 
     is_live = not NetworkIdents.is_test(network_id)
     if chain == Chains.THOR:
@@ -34,7 +34,7 @@ def get_explorer_url_to_address(network_id, pool_or_chain: str, address: str):
 
 
 def get_explorer_url_to_tx(network_id, pool_or_chain: str, tx_id: str):
-    chain = chain_name_from_pool(pool_or_chain).upper()
+    chain = Asset(pool_or_chain).first_filled_component
 
     is_live = not NetworkIdents.is_test(network_id)
     if chain == Chains.THOR:

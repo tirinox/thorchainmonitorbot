@@ -1,12 +1,10 @@
 import abc
 import logging
-import time
 from abc import ABC
 from typing import List
 
 from services.jobs.fetch.base import INotified
 from services.jobs.fetch.tx import TxFetcher
-from services.jobs.pool_stats import PoolStatsUpdater
 from services.lib.config import SubConfig
 from services.lib.constants import THOR_DIVIDER_INV
 from services.lib.date_utils import parse_timespan_to_seconds
@@ -96,7 +94,7 @@ class GenericTxNotifier(INotified, ABC):
         for tx in txs:
             tx: ThorTxExtended
 
-            pool_info: PoolInfo = price_holder.pool_info_map.get(tx.pool)
+            pool_info: PoolInfo = price_holder.pool_info_map.get(tx.first_pool)
             if not pool_info:
                 continue
 
@@ -134,7 +132,7 @@ class PoolLiquidityTxNotifier(GenericTxNotifier):
                 loc = user_lang_map[chat_id]
                 texts = []
                 for tx in large_txs:
-                    pool_info = self.deps.price_holder.pool_info_map.get(tx.pool)
+                    pool_info = self.deps.price_holder.pool_info_map.get(tx.first_pool)
                     cap_info_last = cap_info if tx == large_txs[-1] else None  # append it only to the last one
                     texts.append(loc.notification_text_large_tx(tx, usd_per_rune, pool_info, cap_info_last))
                 return '\n\n'.join(texts)
