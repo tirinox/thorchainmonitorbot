@@ -2,7 +2,8 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import List, Optional, Iterable
 
-from services.lib.constants import is_rune, THOR_DIVIDER_INV, RUNE_SYMBOL, Chains
+from services.lib.constants import is_rune, THOR_DIVIDER_INV, RUNE_SYMBOL, Chains, NATIVE_RUNE_SYMBOL
+from services.lib.money import Asset
 from services.models.pool_info import PoolInfo
 
 
@@ -177,6 +178,22 @@ class ThorTx:
             return self.date
 
     @property
+    def first_input_tx_hash(self):
+        return self.in_tx[0].tx_id if self.in_tx else None
+
+    @property
+    def first_output_tx_hash(self):
+        return self.out_tx[0].tx_id if self.out_tx else None
+
+    @property
+    def first_input_tx(self):
+        return self.in_tx[0] if self.in_tx else None
+
+    @property
+    def first_output_tx(self):
+        return self.in_tx[0] if self.in_tx else None
+
+    @property
     def input_thor_address(self) -> Optional[str]:
         for in_tx in self.in_tx:
             if Chains.detect_chain(in_tx.address) == Chains.THOR:
@@ -189,6 +206,26 @@ class ThorTx:
     @property
     def sender_address(self):
         return self.in_tx[0].address if self.in_tx else None
+
+    @property
+    def rune_input_address(self):
+        for tx in self.in_tx:
+            for coin in tx.coins:
+                if coin.asset == NATIVE_RUNE_SYMBOL:
+                    return tx.address
+
+    @property
+    def sender_address_and_chain(self):
+        rune_address = self.rune_input_address
+        if rune_address:
+            return rune_address, Chains.THOR
+        elif self.in_tx:
+            first_tx = self.first_input_tx
+            for coin in first_tx.coins:
+                chain = Asset(coin.asset).chain
+                return first_tx.address, chain
+        else:
+            return None, None
 
     def search_realm(self, in_only=False, out_only=False):
         return self.in_tx if in_only else self.out_tx if out_only else in_only + out_only
@@ -263,13 +300,26 @@ def cut_txs_before_previous_full_withdraw(txs: List[ThorTx]):
 
 @dataclass
 class ThorTxExtended(ThorTx):
+    # for add, withdraw, donate
     address_rune: str = ''
     address_asset: str = ''
     tx_hash_rune: str = ''
     tx_hash_asset: str = ''
     asset_amount: float = 0.0
     rune_amount: float = 0.0
-    full_rune: float = 0.0
+
+    # for switch, refund, swap
+    # input_address: str = ''
+    # output_address: str = ''
+    # input_tx_hash: str = ''
+    # output_tx_hash: str = ''
+    # input_amount: float = 0.0
+    # output_amount: float = 0.0
+    # input_asset: str = ''
+    # output_asset: str = ''
+
+    # filled by "calc_full_rune_amount"
+    full_rune: float = 0.0  # TX volume
     asset_per_rune: float = 0.0
 
     @classmethod
@@ -302,16 +352,10 @@ class ThorTxExtended(ThorTx):
             self.tx_hash_rune = self.get_sub_tx(RUNE_SYMBOL, out_only=True)
             self.tx_hash_asset = self.get_sub_tx(pool, out_only=True)
 
-        elif t == ThorTxType.TYPE_SWITCH:
-            rune_amount = self.sum_of_rune(out_only=True)
-            self.asset_amount = rune_amount
-
-            input_tx = self.in_tx[0] if self.in_tx else None
-            self.tx_hash_asset = input_tx.tx_id if input_tx else None
-
-        else:
-            self.asset_amount = 0.0
-            self.rune_amount = 0.0
+        elif t in (ThorTxType.TYPE_SWITCH, ThorTxType.TYPE_REFUND, ThorTxType.TYPE_SWAP):
+            # only outputs
+            self.rune_amount = self.sum_of_rune(out_only=True)
+            self.asset_amount = self.sum_of_non_rune(out_only=True)
 
     def asymmetry(self, force_abs=False):
         rune_asset_amount = self.asset_amount * self.asset_per_rune
@@ -327,10 +371,10 @@ class ThorTxExtended(ThorTx):
 
     def calc_full_rune_amount(self, asset_per_rune):
         self.asset_per_rune = asset_per_rune
-        if asset_per_rune > 0:
-            self.full_rune = self.asset_amount / asset_per_rune + self.rune_amount
-        else:
+        if asset_per_rune == 0.0:
             self.full_rune = self.rune_amount
+        else:
+            self.full_rune = self.asset_amount / asset_per_rune + self.rune_amount
         return self.full_rune
 
     def get_usd_volume(self, usd_per_rune):

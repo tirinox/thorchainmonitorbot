@@ -324,8 +324,8 @@ async def start_foos():
     async with aiohttp.ClientSession() as deps.session:
         deps.thor_connector = ThorConnector(get_thor_env_by_network_id(deps.cfg.network_id), deps.session)
         await deps.db.get_redis()
-        # await foo29_donate_notification()
-        await foo30_swap_notification()
+        await foo29_donate_notification()
+        # await foo30_swap_notification()
 
 
 if __name__ == '__main__':

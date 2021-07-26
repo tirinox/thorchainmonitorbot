@@ -180,9 +180,9 @@ class RussianLocalization(BaseLocalization):
                                    usd_per_rune: float,
                                    pool_info: PoolInfo,
                                    cap: ThorCapInfo = None):
-        thor_url, asset_url = self.links_to_explorer_for_add_withdraw_tx(tx)
+        # thor_url, asset_url = self.links_to_explorer_for_add_withdraw_tx(tx)
         (ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short,
-         total_usd_volume, user_url) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
+         total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
         heading = ''
         if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
@@ -203,19 +203,23 @@ class RussianLocalization(BaseLocalization):
             f"<b>{pretty_money(tx.asset_amount)} {asset}</b> ({ap:.0f}%)\n"
             f"Всего: <code>${pretty_money(total_usd_volume)}</code> ({percent_of_pool:.2f}% от всего пула).\n"
             f"Глубина пула сейчас: <b>${pretty_money(pool_depth_usd)}</b>.\n"
-            f"Пользователь: {user_url}.\n"
-            f"Транзакции: {self.R} - {self.none_str(thor_url)} / {chain} - {self.none_str(asset_url)}."
+            f"Пользователь: {self.link_to_explorer_user_address_for_tx(tx)}.\n"
         )
 
+        if tx.in_tx:
+            msg += 'Входящие транзы: ' + self.links_to_txs(tx.in_tx) + '\n'
+
+        if tx.out_tx:
+            msg += 'Исходящие транзы: ' + self.links_to_txs(tx.out_tx) + '\n'
+
         if cap:
-            msg += '\n'
             msg += (
                 f"Кап ликвидности {self._cap_progress_bar(cap)}.\n"
                 f'Вы можете добавить еще {code(pretty_money(cap.how_much_rune_you_can_lp))} {bold(self.R)} '
                 f'({pretty_dollar(cap.how_much_usd_you_can_lp)}).'
             )
 
-        return msg
+        return msg.strip()
 
     def notification_text_cap_full(self, cap: ThorCapInfo):
         return (
@@ -648,10 +652,10 @@ class RussianLocalization(BaseLocalization):
 
         msg += f'{pb} {progress:.0f} %\n'
         msg += f"{pre(ver_con.top_version_count)} из {pre(ver_con.total_active_node_count)} нод " \
-               f"обновились до версии {pre(ver_con.top_version)}.\n\n"
+               f"обновились до версии {pre(ver_con.top_version)}\n\n"
 
         cur_version_txt = self.node_version(data.current_active_version, data, active=True)
-        msg += f"⚡️ Активная версия протокола сейчас – {cur_version_txt}.\n" + \
+        msg += f"⚡️ Активная версия протокола сейчас – {cur_version_txt}\n" + \
                ital('* Это минимальная версия среди всех активных нод.') + '\n\n'
 
         return msg
@@ -673,9 +677,9 @@ class RussianLocalization(BaseLocalization):
 
         if new_versions:
             new_version_joined = ', '.join(version_and_nodes(v, all=True) for v in new_versions)
-            msg += f"🆕 Обнаружена новая версия: {new_version_joined}.\n\n"
+            msg += f"🆕 Обнаружена новая версия: {new_version_joined}\n\n"
 
-            msg += f"⚡️ Активная версия протокола сейчас – {version_and_nodes(current_active_version)}.\n" + \
+            msg += f"⚡️ Активная версия протокола сейчас – {version_and_nodes(current_active_version)}\n" + \
                    ital('* Это минимальная версия среди всех активных нод.') + '\n\n'
 
         if old_active_ver != new_active_ver:
@@ -684,18 +688,18 @@ class RussianLocalization(BaseLocalization):
             msg += (
                 f"{emoji} {bold('Внимание!')} Активная версия протокола {bold(action)} "
                 f"с версии {pre(old_active_ver)} "
-                f"до версии {version_and_nodes(new_active_ver)}.\n\n"
+                f"до версии {version_and_nodes(new_active_ver)}\n\n"
             )
 
             cnt = data.version_counter(data.active_only_nodes)
             if len(cnt) == 1:
-                msg += f"Все активные ноды имеют версию {code(current_active_version)}.\n"
+                msg += f"Все активные ноды имеют версию {code(current_active_version)}\n"
             elif len(cnt) > 1:
                 msg += bold(f"Самые популярные версии нод:") + '\n'
                 for i, (v, count) in enumerate(cnt.most_common(5), start=1):
                     active_node = ' 👈' if v == current_active_version else ''
                     msg += f"{i}. {version_and_nodes(v)} {active_node}\n"
-                msg += f"Максимальная доступная версия – {version_and_nodes(data.max_available_version)}.\n"
+                msg += f"Максимальная доступная версия – {version_and_nodes(data.max_available_version)}\n"
 
         return msg
 

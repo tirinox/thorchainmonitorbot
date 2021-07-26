@@ -19,11 +19,9 @@ class PoolStatsUpdater(WithDelegates, INotified):
     async def on_data(self, sender, txs: List[ThorTx]):
         # transform
         extended_txs = [ThorTxExtended.load_from_thor_tx(tx) for tx in txs]
-
-        add_withdraw_txs = [tx for tx in extended_txs if tx.type in
-                            (ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_ADD_LIQUIDITY)]
-        await self._update_pools(add_withdraw_txs)
-
+        # update & fill
+        await self._update_pools(extended_txs)
+        # send to the listeners
         await self.handle_data(extended_txs, sender=(sender, self))  # pass it to the next subscribers
 
     async def _update_pools(self, txs: List[ThorTxExtended]):
@@ -40,7 +38,7 @@ class PoolStatsUpdater(WithDelegates, INotified):
         for tx in txs:
             if not tx.first_pool:
                 continue
-                
+
             pool_info: PoolInfo = pool_info_map.get(tx.first_pool)
 
             asset_per_rune = pool_info.asset_per_rune if pool_info else 0.0

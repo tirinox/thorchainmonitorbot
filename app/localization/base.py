@@ -20,7 +20,7 @@ from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConse
 from services.models.pool_info import PoolInfo, PoolChanges
 from services.models.price import PriceReport
 from services.models.queue import QueueInfo
-from services.models.tx import ThorTxExtended, ThorTxType
+from services.models.tx import ThorTxExtended, ThorTxType, ThorSubTx
 
 RAIDO_GLYPH = 'ᚱ'
 CREATOR_TG = '@account1242'
@@ -51,14 +51,6 @@ class BaseLocalization(ABC):  # == English
     @property
     def alert_channel_name(self):
         return self.cfg.telegram.channels[0]['name']
-
-    @staticmethod
-    def thor_explore_address(address):
-        return f'https://viewblock.io/thorchain/address/{address}'
-
-    @staticmethod
-    def binance_explore_address(address):
-        return f'https://explorer.binance.org/address/{address}'
 
     @staticmethod
     def _cap_progress_bar(info: ThorCapInfo):
@@ -267,46 +259,48 @@ class BaseLocalization(ABC):  # == English
 
     # ------- NOTIFY STAKES -------
 
-    def links_to_explorer_for_add_withdraw_tx(self, tx: ThorTxExtended):
+    def links_to_txs(self, txs: List[ThorSubTx]):
         net = self.cfg.network_id
-        if tx.tx_hash_rune:
-            rune_link = link(
-                get_explorer_url_to_tx(net, Chains.THOR, tx.tx_hash_rune), short_address(tx.tx_hash_rune))
-        elif tx.address_rune:
-            rune_link = link(
-                get_explorer_url_to_address(net, Chains.THOR, tx.address_rune), short_address(tx.address_rune))
-        else:
-            rune_link = ''
-
-        if tx.tx_hash_asset:
-            asset_link = link(
-                get_explorer_url_to_tx(net, tx.first_pool, tx.tx_hash_asset), short_address(tx.tx_hash_asset))
-        elif tx.address_asset:
-            asset_link = link(
-                get_explorer_url_to_address(net, tx.first_pool, tx.address_asset), short_address(tx.address_asset))
-        else:
-            asset_link = ''
-
-        return rune_link, asset_link
+        items = []
+        for tx in txs:
+            a = Asset(tx.first_asset)
+            url = get_explorer_url_to_tx(net, a.chain, tx.tx_id)
+            label = a.chain
+            items.append(link(url, label))
+        return ', '.join(items)
 
     def link_to_explorer_user_address_for_tx(self, tx: ThorTxExtended):
-        if tx.address_rune:
-            return link(
-                get_explorer_url_to_address(self.cfg.network_id, Chains.THOR, tx.address_rune),
-                short_address(tx.address_rune)
-            )
-        else:
-            return link(
-                get_explorer_url_to_address(self.cfg.network_id, tx.first_pool, tx.address_asset),
-                short_address(tx.address_asset)
-            )
+        address, _ = tx.sender_address_and_chain
+        return link(
+            get_explorer_url_to_address(self.cfg.network_id, Chains.THOR, address),
+            short_address(address)
+        )
+
+    def lp_tx_calculations(self, usd_per_rune, pool_info: PoolInfo, tx: ThorTxExtended):
+        total_usd_volume = tx.full_rune * usd_per_rune
+        pool_depth_usd = pool_info.usd_depth(usd_per_rune) if pool_info else 0.0
+
+        percent_of_pool = tx.what_percent_of_pool(pool_info)
+        rp, ap = tx.symmetry_rune_vs_asset()
+        rune_side_usd = tx.rune_amount * usd_per_rune
+
+        rune_side_usd_short = short_money(rune_side_usd)
+        asset_side_usd_short = short_money(total_usd_volume - rune_side_usd)
+
+        chain = Asset(tx.first_pool).chain
+
+        return (
+            ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd,
+            rp, rune_side_usd_short,
+            total_usd_volume
+        )
 
     def notification_text_large_tx(self, tx: ThorTxExtended, usd_per_rune: float,
                                    pool_info: PoolInfo,
                                    cap: ThorCapInfo = None):
-        thor_url, asset_url = self.links_to_explorer_for_add_withdraw_tx(tx)
+
         (ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short,
-         total_usd_volume, user_url) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
+         total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
         heading = ''
         if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
@@ -337,39 +331,23 @@ class BaseLocalization(ABC):  # == English
             f"{content}\n"
             f"Total: <code>${pretty_money(total_usd_volume)}</code> ({percent_of_pool:.2f}% of the whole pool).\n"
             f"Pool depth is <b>${pretty_money(pool_depth_usd)}</b> now.\n"
-            f"User: {user_url}.\n"
-            f"Txs: {self.R} – {thor_url} / {chain} – {asset_url}."
+            f"User: {self.link_to_explorer_user_address_for_tx(tx)}.\n"
         )
 
+        if tx.in_tx:
+            msg += 'In Txs: ' + self.links_to_txs(tx.in_tx) + '\n'
+
+        if tx.out_tx:
+            msg += 'Out Txs: ' + self.links_to_txs(tx.out_tx) + '\n'
+
         if cap:
-            msg += '\n'
             msg += (
                 f"Liquidity cap is {self._cap_progress_bar(cap)} full now.\n"
                 f'You can add {code(pretty_money(cap.how_much_rune_you_can_lp))} {bold(self.R)} '
-                f'({pretty_dollar(cap.how_much_usd_you_can_lp)}) more.'
+                f'({pretty_dollar(cap.how_much_usd_you_can_lp)}) more.\n'
             )
 
-        return msg
-
-    def lp_tx_calculations(self, usd_per_rune, pool_info: PoolInfo, tx: ThorTxExtended):
-        total_usd_volume = tx.full_rune * usd_per_rune
-        pool_depth_usd = pool_info.usd_depth(usd_per_rune) if pool_info else 0.0
-
-        percent_of_pool = tx.what_percent_of_pool(pool_info)
-        rp, ap = tx.symmetry_rune_vs_asset()
-        rune_side_usd = tx.rune_amount * usd_per_rune
-
-        rune_side_usd_short = short_money(rune_side_usd)
-        asset_side_usd_short = short_money(total_usd_volume - rune_side_usd)
-
-        user_url = self.link_to_explorer_user_address_for_tx(tx)
-        chain = Asset(tx.first_pool).chain
-
-        return (
-            ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd,
-            rp, rune_side_usd_short,
-            total_usd_volume, user_url
-        )
+        return msg.strip()
 
     # ------- QUEUE -------
 
@@ -842,9 +820,9 @@ class BaseLocalization(ABC):  # == English
 
         if new_versions:
             new_version_joined = ', '.join(version_and_nodes(v, all=True) for v in new_versions)
-            msg += f"🆕 New version detected: {new_version_joined}.\n\n"
+            msg += f"🆕 New version detected: {new_version_joined}\n\n"
 
-            msg += f"⚡️ Active protocol version is {version_and_nodes(current_active_version)}.\n" + \
+            msg += f"⚡️ Active protocol version is {version_and_nodes(current_active_version)}\n" + \
                    ital('* Minimum version among all active nodes.') + '\n\n'
 
         if old_active_ver != new_active_ver:
@@ -853,18 +831,18 @@ class BaseLocalization(ABC):  # == English
             msg += (
                 f"{emoji} {bold('Attention!')} Active protocol version has been {bold(action)} "
                 f"from {pre(old_active_ver)} "
-                f"to {version_and_nodes(new_active_ver)}.\n\n"
+                f"to {version_and_nodes(new_active_ver)}\n\n"
             )
 
             cnt = data.version_counter(data.active_only_nodes)
             if len(cnt) == 1:
-                msg += f"All active nodes run version {code(current_active_version)}.\n"
+                msg += f"All active nodes run version {code(current_active_version)}\n"
             elif len(cnt) > 1:
                 msg += bold(f"The most popular versions are") + '\n'
                 for i, (v, count) in enumerate(cnt.most_common(5), start=1):
                     active_node = ' 👈' if v == current_active_version else ''
                     msg += f"{i}. {version_and_nodes(v)} {active_node}\n"
-                msg += f"Maximum version available is {version_and_nodes(data.max_available_version)}.\n"
+                msg += f"Maximum version available is {version_and_nodes(data.max_available_version)}\n"
 
         return msg
 
