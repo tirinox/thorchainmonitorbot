@@ -19,9 +19,10 @@ logger = logging.getLogger('fetch_fair_rune_price')
 
 
 async def delphi_get_rune_vault_balance(session):
-    async with session.get(RUNE_VAULT_BALANCE_URL) as resp:
-        v = await resp.json()
-        return int(v)
+    # async with session.get(RUNE_VAULT_BALANCE_URL) as resp:
+    #     v = await resp.json()
+    #     return int(v)
+    return 0  # assuming, that Rune Vault is empty
 
 
 async def delphi_get_circulating_supply(session):
