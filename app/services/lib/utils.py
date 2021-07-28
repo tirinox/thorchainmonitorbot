@@ -140,8 +140,12 @@ def random_ip_address():
     return ".".join(str(random.randint(0, 255)) for _ in range(4))
 
 
-def sep():
+def sep(space=False):
+    if space:
+        print()
     print('-' * 100)
+    if space:
+        print()
 
 
 def class_logger(self):

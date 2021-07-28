@@ -6,7 +6,7 @@ from aiothornode.types import ThorChainInfo
 from semver import VersionInfo
 
 from localization.base import BaseLocalization, RAIDO_GLYPH, CREATOR_TG, URL_LEADERBOARD_MCCN
-from services.lib.constants import Chains
+from services.lib.constants import Chains, thor_to_float, rune_origin
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
@@ -172,6 +172,8 @@ class RussianLocalization(BaseLocalization):
 
     # ------ TXS -------
 
+    TEXT_MORE_TXS = ' и {n} еще'
+
     @staticmethod
     def none_str(x):
         return 'нет' if x is None else x
@@ -180,7 +182,6 @@ class RussianLocalization(BaseLocalization):
                                    usd_per_rune: float,
                                    pool_info: PoolInfo,
                                    cap: ThorCapInfo = None):
-        # thor_url, asset_url = self.links_to_explorer_for_add_withdraw_tx(tx)
         (ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short,
          total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
@@ -190,19 +191,50 @@ class RussianLocalization(BaseLocalization):
         elif tx.type == ThorTxType.TYPE_WITHDRAW:
             heading = f'🐳 <b>Кит вывел ликвидность</b> 🔴\n'
         elif tx.type == ThorTxType.TYPE_DONATE:
-            heading += f'🙌 <b>Безвозмездное добавление в пул</b>\n'
+            heading = f'🙌 <b>Безвозмездное добавление в пул</b>\n'
         elif tx.type == ThorTxType.TYPE_SWAP:
-            heading += f'🐳 <b>Крупный обмен</b> 🔁\n'
+            heading = f'🐳 <b>Крупный обмен</b> 🔁\n'
         elif tx.type == ThorTxType.TYPE_REFUND:
-            heading += f'↩️❗️ <b>Большой возврат средств</b>\n'
+            heading = f'🐳️ <b>Большой возврат средств</b> ↩️❗\n'
+        elif tx.type == ThorTxType.TYPE_SWITCH:
+            heading = f'🐳 <b>Крупный апгрейд {self.R}</b> 🔼'
 
         asset = Asset(tx.first_pool).name
+
+        content = ''
+        if tx.type in (ThorTxType.TYPE_ADD_LIQUIDITY, ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_DONATE):
+            content = (
+                f"<b>{pretty_money(tx.rune_amount)} {self.R}</b> ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
+                f"<b>{pretty_money(tx.asset_amount)} {asset}</b> "
+                f"({ap:.0f}% = {asset_side_usd_short})\n"
+                f"Всего: <code>${pretty_money(total_usd_volume)}</code> ({percent_of_pool:.2f}% от всего пула).\n"
+                f"Глубина пула сейчас: <b>${pretty_money(pool_depth_usd)}</b>.\n"
+            )
+        elif tx.type == ThorTxType.TYPE_SWITCH:
+            # [Amt] Rune [Blockchain: ERC20/BEP2] -> [Amt] THOR Rune ($usd)
+            if tx.first_input_tx and tx.first_output_tx:
+                amt = thor_to_float(tx.first_input_tx.first_amount)
+                origin = rune_origin(tx.first_input_tx.first_asset)
+                content = f"{bold(pretty_money(amt))} {origin} {self.R} ➡️ {bold(pretty_money(amt))} Нативных {self.R}"
+        elif tx.type == ThorTxType.TYPE_REFUND:
+            inputs = tx.get_asset_summary(in_only=True, short_name=True)
+            outputs = tx.get_asset_summary(out_only=True, short_name=True)
+
+            input_str = ', '.join(f"{bold(pretty_money(amount))} {asset}" for asset, amount in inputs.items())
+            output_str = ', '.join(f"{bold(pretty_money(amount))} {asset}" for asset, amount in outputs.items())
+
+            content = (
+                f"{input_str} ➡️ {output_str} ({pretty_dollar(tx.get_usd_volume(usd_per_rune))})\n"
+                f"Причина: {pre(tx.meta_refund.reason[:180])}"
+            )
+        elif tx.type == ThorTxType.TYPE_SWAP:
+            ...
+
         msg = (
             f"{heading}\n"
+            f"{content}\n"
             f"<b>{pretty_money(tx.rune_amount)} {self.R}</b> ({rp:.0f}%) ↔️ "
             f"<b>{pretty_money(tx.asset_amount)} {asset}</b> ({ap:.0f}%)\n"
-            f"Всего: <code>${pretty_money(total_usd_volume)}</code> ({percent_of_pool:.2f}% от всего пула).\n"
-            f"Глубина пула сейчас: <b>${pretty_money(pool_depth_usd)}</b>.\n"
             f"Пользователь: {self.link_to_explorer_user_address_for_tx(tx)}.\n"
         )
 

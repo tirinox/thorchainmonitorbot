@@ -55,6 +55,17 @@ def is_rune(symbol):
     return symbol in RUNE_SYMBOLS
 
 
+def rune_origin(symbol):
+    if symbol in (ETH_RUNE_SYMBOL, ETH_RUNE_SYMBOL_TEST):
+        return 'ERC20'
+    elif symbol in (BNB_RUNE_SYMBOL, BNB_RUNE_TEST_SYMBOL):
+        return 'BEP2'
+    elif symbol == NATIVE_RUNE_SYMBOL:
+        return 'Native'
+    else:
+        return 'Unknown'
+
+
 def is_stable_coin(pool):
     return pool in STABLE_COIN_POOLS
 
@@ -103,8 +114,8 @@ THOR_BLOCK_TIME = 6.0  # seconds. 10 blocks / minute
 THOR_BASIS_POINT_MAX = 10_000
 
 
-def thor_to_float(x: int) -> float:
-    return x * THOR_DIVIDER_INV
+def thor_to_float(x) -> float:
+    return int(x) * THOR_DIVIDER_INV
 
 
 def float_to_thor(x: float) -> int:

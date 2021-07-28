@@ -7,11 +7,11 @@ from aiothornode.types import ThorChainInfo
 from semver import VersionInfo
 
 from services.lib.config import Config
-from services.lib.constants import NetworkIdents
+from services.lib.constants import NetworkIdents, rune_origin, thor_to_float
 from services.lib.date_utils import format_time_ago, now_ts, seconds_human
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx
 from services.lib.money import format_percent, pretty_money, short_address, short_money, \
-    calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset
+    calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset, pretty_percent
 from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
     up_down_arrow, bracketify, plural
 from services.models.cap_info import ThorCapInfo
@@ -259,15 +259,24 @@ class BaseLocalization(ABC):  # == English
 
     # ------- NOTIFY STAKES -------
 
-    def links_to_txs(self, txs: List[ThorSubTx]):
+    TEXT_MORE_TXS = ' and {n} more'
+
+    def links_to_txs(self, txs: List[ThorSubTx], max_n=2):
         net = self.cfg.network_id
         items = []
-        for tx in txs:
-            a = Asset(tx.first_asset)
-            url = get_explorer_url_to_tx(net, a.chain, tx.tx_id)
-            label = a.chain
-            items.append(link(url, label))
-        return ', '.join(items)
+        for tx in txs[:max_n]:
+            if tx.tx_id:
+                a = Asset(tx.first_asset)
+                url = get_explorer_url_to_tx(net, a.chain, tx.tx_id)
+                label = a.chain
+                items.append(link(url, label))
+
+        result = ', '.join(items)
+
+        extra_n = len(txs) - max_n
+        if extra_n > 0:
+            result += self.TEXT_MORE_TXS.format(n=extra_n)
+        return result
 
     def link_to_explorer_user_address_for_tx(self, tx: ThorTxExtended):
         address, _ = tx.sender_address_and_chain
@@ -295,6 +304,16 @@ class BaseLocalization(ABC):  # == English
             total_usd_volume
         )
 
+    @staticmethod
+    def tx_convert_string(tx: ThorTxExtended, usd_per_rune):
+        inputs = tx.get_asset_summary(in_only=True, short_name=True)
+        outputs = tx.get_asset_summary(out_only=True, short_name=True)
+
+        input_str = ', '.join(f"{bold(pretty_money(amount))} {asset}" for asset, amount in inputs.items())
+        output_str = ', '.join(f"{bold(pretty_money(amount))} {asset}" for asset, amount in outputs.items())
+
+        return f"{input_str} ➡️ {output_str} ({pretty_dollar(tx.get_usd_volume(usd_per_rune))})"
+
     def notification_text_large_tx(self, tx: ThorTxExtended, usd_per_rune: float,
                                    pool_info: PoolInfo,
                                    cap: ThorCapInfo = None):
@@ -312,7 +331,7 @@ class BaseLocalization(ABC):  # == English
         elif tx.type == ThorTxType.TYPE_SWAP:
             heading = f'🐳 <b>Large swap</b> 🔁'
         elif tx.type == ThorTxType.TYPE_REFUND:
-            heading = f'↩️❗️ <b>Big refund</b>'
+            heading = f'🐳 <b>Big refund</b> ↩️❗'
         elif tx.type == ThorTxType.TYPE_SWITCH:
             heading = f'🐳 <b>Large Rune switch</b> 🔼'
 
@@ -323,22 +342,46 @@ class BaseLocalization(ABC):  # == English
             content = (
                 f"<b>{pretty_money(tx.rune_amount)} {self.R}</b> ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
                 f"<b>{pretty_money(tx.asset_amount)} {asset}</b> "
-                f"({ap:.0f}% = {asset_side_usd_short})"
+                f"({ap:.0f}% = {asset_side_usd_short})\n"
+                f"Total: <code>${pretty_money(total_usd_volume)}</code> ({percent_of_pool:.2f}% of the whole pool).\n"
+                f"Pool depth is <b>${pretty_money(pool_depth_usd)}</b> now."
+            )
+        elif tx.type == ThorTxType.TYPE_SWITCH:
+            # [Amt] Rune [Blockchain: ERC20/BEP2] -> [Amt] THOR Rune ($usd)
+            if tx.first_input_tx and tx.first_output_tx:
+                amt = thor_to_float(tx.first_input_tx.first_amount)
+                origin = rune_origin(tx.first_input_tx.first_asset)
+                content = (
+                    f"{bold(pretty_money(amt))} {origin} {self.R} ➡️ {bold(pretty_money(amt))} Native {self.R} "
+                    f"({pretty_dollar(tx.get_usd_volume(usd_per_rune))})"
+                )
+        elif tx.type == ThorTxType.TYPE_REFUND:
+            content = (
+                self.tx_convert_string(tx, usd_per_rune) +
+                f"Reason: {pre(tx.meta_refund.reason[:180])}"
+            )
+        elif tx.type == ThorTxType.TYPE_SWAP:
+            content = self.tx_convert_string(tx, usd_per_rune)
+            slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
+            l_fee_usd = tx.meta_swap.liquidity_fee_rune_float * usd_per_rune
+
+            content += (
+                f"\n"
+                f"Slip: {bold(slip_str)}, "
+                f"liquidity fee: {bold(pretty_dollar(l_fee_usd))}"
             )
 
         msg = (
             f"{heading}\n"
             f"{content}\n"
-            f"Total: <code>${pretty_money(total_usd_volume)}</code> ({percent_of_pool:.2f}% of the whole pool).\n"
-            f"Pool depth is <b>${pretty_money(pool_depth_usd)}</b> now.\n"
             f"User: {self.link_to_explorer_user_address_for_tx(tx)}.\n"
         )
 
         if tx.in_tx:
-            msg += 'In Txs: ' + self.links_to_txs(tx.in_tx) + '\n'
+            msg += 'In txs: ' + self.links_to_txs(tx.in_tx) + '\n'
 
         if tx.out_tx:
-            msg += 'Out Txs: ' + self.links_to_txs(tx.out_tx) + '\n'
+            msg += 'Out txs: ' + self.links_to_txs(tx.out_tx) + '\n'
 
         if cap:
             msg += (

@@ -13,7 +13,7 @@ Input tx, output tx
 Reason: ...
 
 -- Optional:
-Last 24h this address did 123 refunds (total volume $123)
+Last 24h this address had 123 refunds (total volume $123)
 
 3. Swap
 

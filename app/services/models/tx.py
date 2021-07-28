@@ -2,7 +2,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import List, Optional, Iterable
 
-from services.lib.constants import is_rune, THOR_DIVIDER_INV, RUNE_SYMBOL, Chains, NATIVE_RUNE_SYMBOL
+from services.lib.constants import is_rune, RUNE_SYMBOL, Chains, NATIVE_RUNE_SYMBOL, thor_to_float
 from services.lib.money import Asset
 from services.models.pool_info import PoolInfo
 
@@ -27,12 +27,12 @@ class ThorTxType:
 
 @dataclass
 class ThorCoin:
-    amount: str
-    asset: str
+    amount: str = '0'
+    asset: str = ''
 
     @property
     def amount_float(self):
-        return int(self.amount) * THOR_DIVIDER_INV
+        return thor_to_float(self.amount)
 
 
 @dataclass
@@ -87,6 +87,14 @@ class ThorMetaSwap:
                    network_fees=fees,
                    trade_slip=j.get('tradeSlip', '0'),
                    trade_target=j.get('tradeTarget', '0'))
+
+    @property
+    def trade_slip_percent(self):
+        return int(self.trade_slip) / 100.0
+
+    @property
+    def liquidity_fee_rune_float(self):
+        return thor_to_float(self.liquidity_fee)
 
 
 @dataclass
@@ -238,9 +246,11 @@ class ThorTx:
                 elif is_rune(asset) and is_rune(coin.asset):
                     return sub_tx
 
+    def coins_of(self, in_only=False, out_only=False):
+        return (coin for sub_tx in self.search_realm(in_only, out_only) for coin in sub_tx.coins)
+
     def sum_of(self, predicate, in_only=False, out_only=False):
-        return sum(coin.amount_float for sub_tx in self.search_realm(in_only, out_only) for coin in sub_tx.coins
-                   if predicate(coin))
+        return sum(coin.amount_float for coin in self.coins_of(in_only, out_only) if predicate(coin))
 
     def sum_of_asset(self, asset, in_only=False, out_only=False):
         return self.sum_of(lambda c: c.asset == asset, in_only, out_only)
@@ -251,11 +261,17 @@ class ThorTx:
     def sum_of_rune(self, in_only=False, out_only=False):
         return self.sum_of(lambda c: is_rune(c.asset), in_only, out_only)
 
+    def get_asset_summary(self, in_only=False, out_only=False, short_name=False):
+        results = defaultdict(float)
+        for coin in self.coins_of(in_only, out_only):
+            name = Asset(coin.asset).short_str if short_name else coin.asset
+            results[name] += coin.amount_float
+        return results
+
     def not_rune_asset(self, in_only=False, out_only=False):
-        for sub_tx in self.search_realm(in_only, out_only):
-            for coin in sub_tx.coins:
-                if not is_rune(coin):
-                    return coin
+        for coin in self.coins_of(in_only, out_only):
+            if not is_rune(coin):
+                return coin
 
     @property
     def first_pool(self):
