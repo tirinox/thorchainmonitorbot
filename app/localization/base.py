@@ -371,17 +371,15 @@ class BaseLocalization(ABC):  # == English
                 f"liquidity fee: {bold(pretty_dollar(l_fee_usd))}"
             )
 
-        msg = (
-            f"{heading}\n"
-            f"{content}\n"
-            f"User: {self.link_to_explorer_user_address_for_tx(tx)}.\n"
-        )
+        blockchain_components = [f"User: {self.link_to_explorer_user_address_for_tx(tx)}"]
 
         if tx.in_tx:
-            msg += 'In txs: ' + self.links_to_txs(tx.in_tx) + '\n'
+            blockchain_components.append('Inputs: ' + self.links_to_txs(tx.in_tx))
 
         if tx.out_tx:
-            msg += 'Out txs: ' + self.links_to_txs(tx.out_tx) + '\n'
+            blockchain_components.append('Outputs: ' + self.links_to_txs(tx.out_tx))
+
+        msg = f"{heading}\n{content}\n" + " / ".join(blockchain_components)
 
         if cap:
             msg += (

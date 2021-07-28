@@ -339,7 +339,7 @@ async def foo33_many_sub_tx():
 
 async def foo34_swap_test_notification():
     txs = load_sample_tx('v2_swap.json')
-    await eval_notifications(txs, send_to_tg=False, locs=[loc_en])
+    await eval_notifications([txs[34]], send_to_tg=True, locs=[loc_en, loc_ru])
 
 
 async def start_foos():

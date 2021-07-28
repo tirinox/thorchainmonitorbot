@@ -187,15 +187,15 @@ class RussianLocalization(BaseLocalization):
 
         heading = ''
         if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
-            heading = f'🐳 <b>Кит добавил ликвидности</b> 🟢\n'
+            heading = f'🐳 <b>Кит добавил ликвидности</b> 🟢'
         elif tx.type == ThorTxType.TYPE_WITHDRAW:
-            heading = f'🐳 <b>Кит вывел ликвидность</b> 🔴\n'
+            heading = f'🐳 <b>Кит вывел ликвидность</b> 🔴'
         elif tx.type == ThorTxType.TYPE_DONATE:
-            heading = f'🙌 <b>Безвозмездное добавление в пул</b>\n'
+            heading = f'🙌 <b>Безвозмездное добавление в пул</b>'
         elif tx.type == ThorTxType.TYPE_SWAP:
-            heading = f'🐳 <b>Крупный обмен</b> 🔁\n'
+            heading = f'🐳 <b>Крупный обмен</b> 🔁'
         elif tx.type == ThorTxType.TYPE_REFUND:
-            heading = f'🐳️ <b>Большой возврат средств</b> ↩️❗\n'
+            heading = f'🐳️ <b>Большой возврат средств</b> ↩️❗'
         elif tx.type == ThorTxType.TYPE_SWITCH:
             heading = f'🐳 <b>Крупный апгрейд {self.R}</b> 🔼'
 
@@ -228,21 +228,25 @@ class RussianLocalization(BaseLocalization):
                 f"Причина: {pre(tx.meta_refund.reason[:180])}"
             )
         elif tx.type == ThorTxType.TYPE_SWAP:
-            ...
+            content = self.tx_convert_string(tx, usd_per_rune)
+            slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
+            l_fee_usd = tx.meta_swap.liquidity_fee_rune_float * usd_per_rune
 
-        msg = (
-            f"{heading}\n"
-            f"{content}\n"
-            f"<b>{pretty_money(tx.rune_amount)} {self.R}</b> ({rp:.0f}%) ↔️ "
-            f"<b>{pretty_money(tx.asset_amount)} {asset}</b> ({ap:.0f}%)\n"
-            f"Пользователь: {self.link_to_explorer_user_address_for_tx(tx)}.\n"
-        )
+            content += (
+                f"\n"
+                f"Проскальзывание: {bold(slip_str)}\n"
+                f"Комиссия пулам: {bold(pretty_dollar(l_fee_usd))}"
+            )
+
+        blockchain_components = [f"Пользователь: {self.link_to_explorer_user_address_for_tx(tx)}"]
 
         if tx.in_tx:
-            msg += 'Входящие транзы: ' + self.links_to_txs(tx.in_tx) + '\n'
+            blockchain_components.append('Входы: ' + self.links_to_txs(tx.in_tx))
 
         if tx.out_tx:
-            msg += 'Исходящие транзы: ' + self.links_to_txs(tx.out_tx) + '\n'
+            blockchain_components.append('Выходы: ' + self.links_to_txs(tx.out_tx))
+
+        msg = f"{heading}\n{content}\n" + " / ".join(blockchain_components)
 
         if cap:
             msg += (
