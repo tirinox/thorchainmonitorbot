@@ -25,6 +25,7 @@ from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.utils import setup_logs
 from services.models.price import LastPriceHolder
+from services.models.tx import ThorTxType
 from services.notify.broadcast import Broadcaster
 from services.notify.types.cap_notify import LiquidityCapNotifier
 from services.notify.types.chain_notify import TradingHaltedNotifier
@@ -34,7 +35,7 @@ from services.notify.types.pool_churn import PoolChurnNotifier
 from services.notify.types.price_notify import PriceNotifier
 from services.notify.types.queue_notify import QueueNotifier
 from services.notify.types.stats_notify import NetworkStatsNotifier
-from services.notify.types.tx_notify import PoolLiquidityTxNotifier
+from services.notify.types.tx_notify import GenericTxNotifier, SwitchTxNotifier
 from services.notify.types.version_notify import VersionNotifier
 
 
@@ -102,8 +103,26 @@ class App:
             # stats_updater = PoolStatsUpdater(d)
             # fetcher_tx.subscribe(stats_updater)
 
-            notifier_tx = PoolLiquidityTxNotifier(d)
-            fetcher_tx.subscribe(notifier_tx)
+            if d.cfg.tx.liquidity.get('enabled', True):
+                liq_notifier_tx = GenericTxNotifier(d, d.cfg.tx.liquidity,
+                                                    tx_types=(ThorTxType.TYPE_ADD_LIQUIDITY, ThorTxType.TYPE_WITHDRAW))
+                fetcher_tx.subscribe(liq_notifier_tx)
+
+            if d.cfg.tx.donate.get('enabled', True):
+                donate_notifier_tx = GenericTxNotifier(d, d.cfg.tx.donate, tx_types=(ThorTxType.TYPE_DONATE,))
+                fetcher_tx.subscribe(donate_notifier_tx)
+
+            if d.cfg.tx.swap.get('enabled', True):
+                swap_notifier_tx = GenericTxNotifier(d, d.cfg.tx.swap, tx_types=(ThorTxType.TYPE_SWAP,))
+                fetcher_tx.subscribe(swap_notifier_tx)
+
+            if d.cfg.tx.refund.get('enabled', True):
+                refund_notifier_tx = GenericTxNotifier(d, d.cfg.tx.refund, tx_types=(ThorTxType.TYPE_REFUND,))
+                fetcher_tx.subscribe(refund_notifier_tx)
+
+            if d.cfg.tx.switch.get('enabled', True):
+                switch_notifier_tx = SwitchTxNotifier(d, d.cfg.tx.switch, tx_types=(ThorTxType.TYPE_SWITCH,))
+                fetcher_tx.subscribe(switch_notifier_tx)
 
             tasks.append(fetcher_tx)
 

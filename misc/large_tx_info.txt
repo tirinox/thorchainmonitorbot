@@ -2,6 +2,7 @@
 
 [Amt] Rune [Blockchain: ERC20/BEP2] -> [Amt] THOR Rune ($usd)
 
+[todo]
 -- Optional:
 Last 24h this address did 123 refunds (total volume $123)
 Total switch progress [====---] 43% (1m rune of 2m circulating)
@@ -12,6 +13,7 @@ Total switch progress [====---] 43% (1m rune of 2m circulating)
 Input tx, output tx
 Reason: ...
 
+[todo]
 -- Optional:
 Last 24h this address had 123 refunds (total volume $123)
 
@@ -22,5 +24,6 @@ Slip: 0.1% ($usd)
 Fee paid ($usd)
 Input tx, output tx
 
+[todo]
 -- Optional:
 Last 24h this address did 123 swaps (total volume $123)

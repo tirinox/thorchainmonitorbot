@@ -1,21 +1,16 @@
-import abc
 import logging
-from abc import ABC
 from typing import List
 
 from services.jobs.fetch.base import INotified
-from services.jobs.fetch.tx import TxFetcher
 from services.lib.config import SubConfig
-from services.lib.constants import THOR_DIVIDER_INV
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.utils import linear_transform
-from services.models.pool_info import PoolInfo
 from services.models.tx import ThorTxExtended
 from services.notify.types.cap_notify import LiquidityCapNotifier
 
 
-class GenericTxNotifier(INotified, ABC):
+class GenericTxNotifier(INotified):
     MAX_TX_PER_ONE_TIME = 12
 
     DEFAULT_TX_VS_DEPTH_CURVE = [
@@ -28,7 +23,7 @@ class GenericTxNotifier(INotified, ABC):
 
     @staticmethod
     def curve_for_tx_threshold(curve, depth):
-        curve = curve or PoolLiquidityTxNotifier.DEFAULT_TX_VS_DEPTH_CURVE
+        curve = curve or GenericTxNotifier.DEFAULT_TX_VS_DEPTH_CURVE
         lower_bound = 0
         lower_percent = curve[0]['percent']
         for curve_entry in curve:
@@ -40,85 +35,31 @@ class GenericTxNotifier(INotified, ABC):
             lower_bound = upper_bound
         return curve[-1]['percent']
 
-    @abc.abstractmethod
-    def get_config(self) -> SubConfig:
-        ...
-
-    def __init__(self, deps: DepContainer):
+    def __init__(self, deps: DepContainer, params: SubConfig, tx_types):
         self.deps = deps
+        self.params = params
+        self.tx_types = tx_types
         self.logger = logging.getLogger(self.__class__.__name__)
 
-        s_cfg = self.get_config()
-        self.max_age_sec = parse_timespan_to_seconds(s_cfg.max_age)
-        self.min_usd_total = int(s_cfg.min_usd_total)
+        self.max_age_sec = parse_timespan_to_seconds(params.max_age)
+        self.min_usd_total = int(params.min_usd_total)
 
-        self.curve = s_cfg.get_pure('usd_requirements_curve', None)
+        self.curve = params.get_pure('usd_requirements_curve', None)
         if not self.curve:
             self.curve = self.DEFAULT_TX_VS_DEPTH_CURVE
 
     async def on_data(self, senders, txs: List[ThorTxExtended]):
-        ...
-        # fetcher: TxFetcher = senders[0]
-        # psu: PoolStatsUpdater = senders[1]
-        #
-        # new_txs = self._filter_by_age(txs)
-        #
-        # usd_per_rune = self.deps.price_holder.usd_per_rune
-        # min_rune_volume = self.min_usd_total / usd_per_rune
-        #
-        # large_txs = list(self._filter_large_txs(psu, new_txs, min_rune_volume))
-        # large_txs = large_txs[:self.MAX_TX_PER_ONE_TIME]  # limit for 1 notification
-        #
-        # self.logger.info(f"large_txs: {len(large_txs)}")
-        #
-        # if large_txs:
-        #     user_lang_map = self.deps.broadcaster.telegram_chats_from_config(self.deps.loc_man)
-        #
-        #     cap_info = await LiquidityCapNotifier(self.deps).get_last_cap()
-        #
-        #     async def message_gen(chat_id):
-        #         loc = user_lang_map[chat_id]
-        #         texts = []
-        #         for tx in large_txs:
-        #             pool_info = self.deps.price_holder.pool_info_map.get(tx.pool)
-        #             cap_info_last = cap_info if tx == large_txs[-1] else None  # append it only to the last one
-        #             texts.append(loc.notification_text_large_tx(tx, usd_per_rune, pool_info, cap_info_last))
-        #         return '\n\n'.join(texts)
-        #
-        #     await self.deps.broadcaster.broadcast(user_lang_map.keys(), message_gen)
+        txs = [tx for tx in txs if tx.type in self.tx_types]
 
-
-    def _filter_large_txs(self, txs, min_rune_volume=10000):
-        price_holder = self.deps.price_holder
-
-        for tx in txs:
-            tx: ThorTxExtended
-
-            pool_info: PoolInfo = price_holder.pool_info_map.get(tx.first_pool)
-            if not pool_info:
-                continue
-
-            usd_depth = pool_info.usd_depth(price_holder.usd_per_rune)
-            min_pool_percent = self.curve_for_tx_threshold(self.curve, usd_depth)
-            min_share_rune_volume = (2 * pool_info.balance_rune * THOR_DIVIDER_INV) * min_pool_percent * 0.01
-
-            # print(f"{tx.pool}: {tx.full_rune:.2f} / {min_share_rune_volume:.2f} need rune,
-            # min_pool_percent = {min_pool_percent:.2f}, "
-            #       f"usd_depth = {usd_depth:.0f}")
-
-            if tx.full_rune >= min_rune_volume and tx.full_rune >= min_share_rune_volume:
-                yield tx
-
-
-class PoolLiquidityTxNotifier(GenericTxNotifier):
-    def get_config(self) -> SubConfig:
-        return self.deps.cfg.tx.liquidity
-
-    async def on_data(self, fetcher: TxFetcher, new_txs: List[ThorTxExtended]):
         usd_per_rune = self.deps.price_holder.usd_per_rune
+
+        if not usd_per_rune:
+            self.logger.error(f'Can not filter Txs, no USD/Rune price')
+            return
+
         min_rune_volume = self.min_usd_total / usd_per_rune
 
-        large_txs = list(self._filter_large_txs(new_txs, min_rune_volume))
+        large_txs = list(self._filter_large_txs(txs, min_rune_volume, usd_per_rune))
         large_txs = large_txs[:self.MAX_TX_PER_ONE_TIME]  # limit for 1 notification
 
         self.logger.info(f"large_txs: {len(large_txs)}")
@@ -138,3 +79,38 @@ class PoolLiquidityTxNotifier(GenericTxNotifier):
                 return '\n\n'.join(texts)
 
             await self.deps.broadcaster.broadcast(user_lang_map.keys(), message_gen)
+
+    def _get_min_usd_depth(self, tx: ThorTxExtended, usd_per_rune):
+        pools = tx.pools or [tx.first_input_tx.first_asset]
+        pool_infos = [self.deps.price_holder.pool_info_map.get(pool) for pool in pools]
+        if not pool_infos:
+            return 0.0
+        min_pool_depth = min(p.usd_depth(usd_per_rune) for p in pool_infos)
+        return min_pool_depth
+
+    def _filter_large_txs(self, txs, min_rune_volume, usd_per_rune):
+        for tx in txs:
+            tx: ThorTxExtended
+
+            pool_usd_depth = self._get_min_usd_depth(tx, usd_per_rune)
+            if pool_usd_depth == 0.0:
+                self.logger.warning(f'No pool depth for Tx: {tx}.')
+                continue
+
+            min_pool_percent = self.curve_for_tx_threshold(self.curve, pool_usd_depth)
+            min_share_rune_volume = pool_usd_depth / usd_per_rune * min_pool_percent * 0.01
+
+            # print(f"{tx.pool}: {tx.full_rune:.2f} / {min_share_rune_volume:.2f} need rune,
+            # min_pool_percent = {min_pool_percent:.2f}, "
+            #       f"usd_depth = {usd_depth:.0f}")
+
+            if tx.full_rune >= min_rune_volume and tx.full_rune >= min_share_rune_volume:
+                yield tx
+
+
+class SwitchTxNotifier(GenericTxNotifier):
+    def _filter_large_txs(self, txs, min_rune_volume, usd_per_rune):
+        for tx in txs:
+            tx: ThorTxExtended
+            if tx.full_rune >= min_rune_volume:
+                yield tx
