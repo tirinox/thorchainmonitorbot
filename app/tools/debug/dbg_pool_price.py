@@ -8,7 +8,7 @@ from aiothornode.connector import ThorConnector
 from localization import LocalizationManager
 from services.jobs.fetch.pool_price import PoolPriceFetcher, PoolInfoFetcherMidgard
 from services.lib.config import Config
-from services.lib.constants import NetworkIdents, BTC_SYMBOL, BNB_BTCB_SYMBOL, get_thor_env_by_network_id
+from services.lib.constants import NetworkIdents, BTC_SYMBOL, get_thor_env_by_network_id
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 
@@ -22,19 +22,10 @@ async def test_prices_at_day_mctn(d: DepContainer, day2ago):
     print(f'Test net MC: {usd_per_rune=}, ({BTC_SYMBOL}) {usd_per_asset=} ')
 
 
-async def test_prices_at_day_sccn(d: DepContainer, day2ago):
-    cfg: Config = d.cfg
-    cfg.network_id = NetworkIdents.CHAOSNET_BEP2CHAIN
-    ppf = PoolPriceFetcher(d)
-    usd_per_rune, usd_per_asset = await ppf.get_usd_price_of_rune_and_asset_by_day(BNB_BTCB_SYMBOL, day2ago,
-                                                                                   caching=False)
-    print(f'Test net BEP2 Chaosnet: {usd_per_rune=}, ({BNB_BTCB_SYMBOL}) {usd_per_asset=}')
-
-
 async def test_prices_at_day(d: DepContainer):
     day2ago = datetime.date(2021, 4, 11)
 
-    await test_prices_at_day_sccn(d, day2ago)
+    await test_prices_at_day_mctn(d, day2ago)
 
 
 def set_network(d: DepContainer, network_id: str):
@@ -48,26 +39,6 @@ async def test_thor_pools_caching_mctn(d: DepContainer):
     ppf = PoolPriceFetcher(d)
     pp = await ppf.get_current_pool_data_full(caching=True, height=501)
     print(pp)
-
-
-async def test_thor_pools_caching_sccn(d: DepContainer):
-    set_network(d, NetworkIdents.CHAOSNET_BEP2CHAIN)
-
-    ppf = PoolPriceFetcher(d)
-    pp = await ppf.get_current_pool_data_full(caching=True, height=200101)
-    print(pp)
-
-
-async def test_thor_by_day_full_caching_sccn(d: DepContainer):
-    set_network(d, NetworkIdents.CHAOSNET_BEP2CHAIN)
-
-    ppf = PoolPriceFetcher(d)
-    pp = await ppf.get_current_pool_data_full(caching=True)
-    print(pp)
-
-
-async def test_thor_pools_caching(d: DepContainer):
-    await test_thor_by_day_full_caching_sccn(d)
 
 
 async def test_pool_cache(d):

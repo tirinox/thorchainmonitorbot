@@ -11,15 +11,6 @@ TX avg time per type:
 
 pending .... success => avg time?
 
-------------------------------------------------------------------------
-
-Add transactions!
-
-https://chaosnet-midgard.bepswap.com/v1/txs?offset=0&limit=50&type=add
-
-Docs:
-
-https://docs.thorchain.org/developers/transaction-memos#memo-alternatives
 
 ------------------------------------------------------------------------
 

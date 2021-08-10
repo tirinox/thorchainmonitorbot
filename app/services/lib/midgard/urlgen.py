@@ -134,8 +134,6 @@ class MidgardURLGenV2(MidgardURLGenBase):
 def get_url_gen_by_network_id(network_id) -> MidgardURLGenBase:
     if network_id == NetworkIdents.TESTNET_MULTICHAIN:
         return MidgardURLGenV2(TEST_NET_ENVIRONMENT_MULTI_1.midgard_url)
-    elif network_id == NetworkIdents.CHAOSNET_BEP2CHAIN:
-        return MidgardURLGenV1(CHAOS_NET_BNB_ENVIRONMENT.midgard_url)
     elif network_id == NetworkIdents.CHAOSNET_MULTICHAIN:
         return MidgardURLGenV2(MULTICHAIN_CHAOSNET_ENVIRONMENT.midgard_url)
     else:

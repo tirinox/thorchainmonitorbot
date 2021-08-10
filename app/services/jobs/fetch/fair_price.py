@@ -9,27 +9,9 @@ from services.lib.constants import THOR_DIVIDER_INV
 from services.lib.utils import a_result_cached
 from services.models.price import RuneMarketInfo, LastPriceHolder
 
-CIRCULATING_SUPPLY_URL = "https://defi.delphidigital.io/chaosnet/int/marketdata"
-RUNE_VAULT_BALANCE_URL = "https://defi.delphidigital.io/chaosnet/int/runevaultBalance"
-
-MIDGARD_BEP2_STATS_URL = 'https://chaosnet-midgard.bepswap.com/v1/network'
 MIDGARD_MCCN_STATS_URL = 'https://midgard.thorchain.info/v2/network'
 
 logger = logging.getLogger('fetch_fair_rune_price')
-
-
-async def delphi_get_rune_vault_balance(session):
-    # async with session.get(RUNE_VAULT_BALANCE_URL) as resp:
-    #     v = await resp.json()
-    #     return int(v)
-    return 0  # assuming, that Rune Vault is empty
-
-
-async def delphi_get_circulating_supply(session):
-    async with session.get(CIRCULATING_SUPPLY_URL) as resp:
-        j = await resp.json()
-        circulating = int(j['circulating'])
-        return circulating
 
 
 async def get_total_pooled_rune(session, network_stats_url):
@@ -48,8 +30,8 @@ async def total_locked_value_all_networks(session):
 
 async def fetch_fair_rune_price(price_holder: LastPriceHolder) -> RuneMarketInfo:
     async with aiohttp.ClientSession() as session:
-        rune_vault, gecko, total_locked_rune = await asyncio.gather(
-            delphi_get_rune_vault_balance(session),
+        rune_vault = 0
+        gecko, total_locked_rune = await asyncio.gather(
             get_thorchain_coin_gecko_info(session),
             total_locked_value_all_networks(session)
         )

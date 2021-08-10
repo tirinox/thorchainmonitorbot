@@ -6,7 +6,6 @@ log_level: INFO
 thor:
   #  "testnet-multi" for MTCN
   #  "chaosnet-multi" for MCCN
-  #  "chaosnet-bep2" for Bepswap Chaosnet
   network_id: "chaosnet-multi"
 
 

@@ -166,32 +166,11 @@ class PoolPriceFetcher(BaseFetcher):
                 return pool_info
 
     async def get_usd_price_of_rune_and_asset_by_day(self, pool, day: date, caching=True):
-        network = self.deps.cfg.network_id
-        single_action = True
-        if network == NetworkIdents.CHAOSNET_BEP2CHAIN:
-            stable_coin_symbol = BNB_BUSD_SYMBOL
-            single_action = False
-        elif network == NetworkIdents.CHAOSNET_MULTICHAIN:
-            stable_coin_symbol = ETH_USDT_SYMBOL  # todo: get price from coin gecko OR from weighted usd price cache
-        elif network == NetworkIdents.TESTNET_MULTICHAIN:
-            stable_coin_symbol = ETH_USDT_TEST_SYMBOL
-        else:
-            raise NotImplementedError
-
-        if single_action:
-            info = await self.get_pool_info_by_day(pool, day, caching)
-            usd_per_asset = info.asset_price_usd
-            asset_per_rune = info.asset_depth / info.rune_depth
-            usd_per_rune = asset_per_rune * usd_per_asset
-            return usd_per_rune, usd_per_asset
-        else:
-            usd_per_rune = await self.get_asset_per_rune_of_pool_by_day(stable_coin_symbol, day, caching=caching)
-            if is_stable_coin(pool):
-                return usd_per_rune, 1.0
-            else:
-                asset_per_rune = await self.get_asset_per_rune_of_pool_by_day(pool, day, caching=caching)
-                usd_per_asset = usd_per_rune / asset_per_rune
-                return usd_per_rune, usd_per_asset
+        info = await self.get_pool_info_by_day(pool, day, caching)
+        usd_per_asset = info.asset_price_usd
+        asset_per_rune = info.asset_depth / info.rune_depth
+        usd_per_rune = asset_per_rune * usd_per_asset
+        return usd_per_rune, usd_per_asset
 
 
 class PoolInfoFetcherMidgard(BaseFetcher):

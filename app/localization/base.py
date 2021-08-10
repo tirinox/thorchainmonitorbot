@@ -25,7 +25,6 @@ from services.models.tx import ThorTxExtended, ThorTxType, ThorSubTx
 RAIDO_GLYPH = 'ᚱ'
 CREATOR_TG = '@account1242'
 
-URL_BEP2_SWAP = 'https://chaosnet.bepswap.com/'
 URL_THOR_SWAP = 'https://app.thorswap.finance/'
 
 URL_LEADERBOARD_MCCN = 'https://leaderboard.thornode.org/'
@@ -192,16 +191,7 @@ class BaseLocalization(ABC):  # == English
 
     def explorer_links_to_thor_address(self, address):
         net = self.cfg.network_id
-        if net == NetworkIdents.CHAOSNET_BEP2CHAIN:
-            explorer_links = [
-                get_explorer_url_to_address(net, Chains.THOR, address),
-                get_explorer_url_to_address(net, Chains.BNB, address)
-            ]
-        else:
-            explorer_links = [get_explorer_url_to_address(net, Chains.THOR, address)]
-
-        explorer_links = [link_with_domain_text(url) for url in explorer_links]
-        return '; '.join(explorer_links)
+        return link_with_domain_text(get_explorer_url_to_address(net, Chains.THOR, address))
 
     def text_user_provides_liq_to_pools(self, address, pools):
         pools = pre(', '.join(pools))
@@ -219,11 +209,9 @@ class BaseLocalization(ABC):  # == English
 
     # ------- CAP -------
 
-    def thor_site(self):
-        if self.cfg.network_id == NetworkIdents.CHAOSNET_MULTICHAIN:
-            return URL_THOR_SWAP
-        else:
-            return URL_BEP2_SWAP
+    @staticmethod
+    def thor_site():
+        return URL_THOR_SWAP
 
     def notification_text_cap_change(self, old: ThorCapInfo, new: ThorCapInfo):
         up = old.cap < new.cap

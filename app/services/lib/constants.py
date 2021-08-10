@@ -1,4 +1,4 @@
-from aiothornode.env import TEST_NET_ENVIRONMENT_MULTI_1, CHAOS_NET_BNB_ENVIRONMENT, MULTICHAIN_CHAOSNET_ENVIRONMENT
+from aiothornode.env import TEST_NET_ENVIRONMENT_MULTI_1, MULTICHAIN_CHAOSNET_ENVIRONMENT
 from aiothornode.types import ThorEnvironment
 
 BNB_BNB_SYMBOL = 'BNB.BNB'
@@ -95,7 +95,6 @@ class Chains:
 class NetworkIdents:
     TESTNET_MULTICHAIN = 'testnet-multi'
     CHAOSNET_MULTICHAIN = 'chaosnet-multi'
-    CHAOSNET_BEP2CHAIN = 'chaosnet-bep2'
 
     @classmethod
     def is_test(cls, network: str):
@@ -125,10 +124,7 @@ def float_to_thor(x: float) -> int:
 def get_thor_env_by_network_id(network_id) -> ThorEnvironment:
     if network_id == NetworkIdents.TESTNET_MULTICHAIN:
         return TEST_NET_ENVIRONMENT_MULTI_1.copy()
-    elif network_id == NetworkIdents.CHAOSNET_BEP2CHAIN:
-        return CHAOS_NET_BNB_ENVIRONMENT.copy()
     elif network_id == NetworkIdents.CHAOSNET_MULTICHAIN:
         return MULTICHAIN_CHAOSNET_ENVIRONMENT.copy()
     else:
-        # todo: add multi-chain chaosnet
         raise KeyError('unsupported network ID!')
