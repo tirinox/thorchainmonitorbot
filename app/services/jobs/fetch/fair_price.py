@@ -25,7 +25,7 @@ async def get_total_pooled_rune(session, network_stats_url):
 
 
 async def total_locked_value_all_networks(session):
-    return get_total_pooled_rune(session, MIDGARD_MCCN_STATS_URL)
+    return await get_total_pooled_rune(session, MIDGARD_MCCN_STATS_URL)
 
 
 async def fetch_fair_rune_price(price_holder: LastPriceHolder) -> RuneMarketInfo:
