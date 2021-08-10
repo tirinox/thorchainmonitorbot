@@ -21,27 +21,78 @@ telegram:
   common:
     loading_sticker: CAACAgIAAxkBAAIRx1--Tia-m6DNRIApk3yqmNWvap_sAALcAAP3AsgPUNi8Bnu98HweBA
 
-  buffer_chat: -12334  # new! a chat for uploading temporary photos (like photo-hosting), add this bot to it
+  buffer_chat: -12334  # a chat for uploading temporary photos (like photo-hosting), add this bot to it
 
 tx:
   enabled: true
+  max_age: 1d
+  fetch_period: 70
+  tx_per_batch: 50
+  max_page_deep: 5
+
   liquidity:
-    max_age: 12h
-    fetch_period: 70
-    tx_per_batch: 50
-    max_page_deep: 5
+    enabled: true  # new!
     min_usd_total: 50000
     usd_requirements_curve:
       - depth: 10000
-        percent: 20  # if depth < 10_000 then 20% min
+        percent: 20  # if depth < 10_000 then
       - depth: 100000
-        percent: 12  # if 10_000 <= depth < 100_000 then 20 % ... 12 %
+        percent: 12  # if 10_000 <= depth < 100_000 then
       - depth: 500000
         percent: 8  # and so on...
       - depth: 1000000
         percent: 5
       - depth: 10000000
         percent: 1.5
+
+  swap: # new!
+    enabled: true
+    min_usd_total: 5000
+    usd_requirements_curve:
+      - depth: 10000
+        percent: 20  # if depth < 10_000 then
+      - depth: 100000
+        percent: 10  # if 10_000 <= depth < 100_000 then
+      - depth: 500000
+        percent: 7  # and so on...
+      - depth: 1000000
+        percent: 4
+      - depth: 10000000
+        percent: 1.5
+
+    donate: # new!
+      enabled: true
+      min_usd_total: 1000
+      usd_requirements_curve:
+        - depth: 10000
+          percent: 10  # if depth < 10_000 then
+        - depth: 100000
+          percent: 5  # if 10_000 <= depth < 100_000 then
+        - depth: 500000
+          percent: 2.5  # and so on...
+        - depth: 1000000
+          percent: 1
+        - depth: 10000000
+          percent: 0.5
+
+    refund: # new!
+      enabled: true
+      min_usd_total: 20000
+      usd_requirements_curve:
+        - depth: 20000
+          percent: 15  # if depth < 10_000 then
+        - depth: 100000
+          percent: 10  # if 10_000 <= depth < 100_000 then
+        - depth: 500000
+          percent: 8  # and so on...
+        - depth: 1000000
+          percent: 5
+        - depth: 10000000
+          percent: 1.5
+
+    switch: # new!
+      enabled: true
+      min_usd_total: 150000
 
 
 price:
@@ -98,9 +149,9 @@ cap:
   enabled: true
   fetch_period: 120
 
-  full: # new!
+  full:
     enabled: True
-    full_limit_ratio: 0.99  # new!
+    full_limit_ratio: 0.995
 
   raised:
     stickers:
@@ -141,7 +192,7 @@ node_info:
   geo_ip:
     expire: 48h
 
-  version: # new
+  version:
     enabled: true
     new_version_appears: # node joined/upgraded to unseen version
       enabled: true
@@ -155,11 +206,11 @@ node_info:
 
 
 constants:
-  mimir_change: # new!
+  mimir_change:
     enabled: true
   fetch_period: 130s
 
 
-chain_state:  # new!
+chain_state:
   enabled: true
   fetch_period: 67s

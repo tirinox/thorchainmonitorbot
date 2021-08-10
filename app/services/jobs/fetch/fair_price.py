@@ -42,11 +42,7 @@ async def get_total_pooled_rune(session, network_stats_url):
 
 
 async def total_locked_value_all_networks(session):
-    tlv_bepswap, tlv_mccn = await asyncio.gather(
-        get_total_pooled_rune(session, MIDGARD_BEP2_STATS_URL),
-        get_total_pooled_rune(session, MIDGARD_MCCN_STATS_URL)
-    )
-    return tlv_mccn + tlv_bepswap
+    return get_total_pooled_rune(session, MIDGARD_MCCN_STATS_URL)
 
 
 async def fetch_fair_rune_price(price_holder: LastPriceHolder) -> RuneMarketInfo:

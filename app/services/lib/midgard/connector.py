@@ -42,3 +42,5 @@ class MidgardConnector:
         except Exception as e:
             self.logger.error(f'Midgard exception: {e!s}.')
             return ERROR_RESPONSE
+
+    # Query N midgards -> pass data to handler -> compare results -> consensus or not
