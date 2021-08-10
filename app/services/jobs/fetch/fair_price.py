@@ -42,13 +42,13 @@ async def get_total_pooled_rune(session, network_stats_url):
 
 
 async def total_locked_value_all_networks(session):
-    return get_total_pooled_rune(session, MIDGARD_MCCN_STATS_URL)
+    return await get_total_pooled_rune(session, MIDGARD_MCCN_STATS_URL)
 
 
 async def fetch_fair_rune_price(price_holder: LastPriceHolder) -> RuneMarketInfo:
     async with aiohttp.ClientSession() as session:
-        rune_vault, gecko, total_locked_rune = await asyncio.gather(
-            delphi_get_rune_vault_balance(session),
+        rune_vault = 0
+        gecko, total_locked_rune = await asyncio.gather(
             get_thorchain_coin_gecko_info(session),
             total_locked_value_all_networks(session)
         )
