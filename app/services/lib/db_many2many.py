@@ -1,3 +1,4 @@
+import asyncio
 from typing import List
 
 from aioredis import Redis
@@ -43,6 +44,20 @@ class ManyToManySet:
     async def all_lefts_for_right_one(self, right_one: str):
         r = await self._redis()
         return set(await r.smembers(self.right_key(right_one), encoding='utf8'))
+
+    async def all_items_for_many_other_side(self, inputs, getter: callable):
+        inputs = set(inputs)
+        groups = await asyncio.gather(
+            *(getter(item) for item in inputs)
+        )
+        # flatten
+        return set(item for group in groups for item in group)
+
+    async def all_lefts_for_many_rights(self, rights: iter):
+        return await self.all_items_for_many_other_side(rights, self.all_lefts_for_right_one)
+
+    async def all_rights_for_many_lefts(self, lefts: iter):
+        return await self.all_items_for_many_other_side(lefts, self.all_rights_for_left_one)
 
     async def all_rights_for_left_one(self, left_one: str):
         r = await self._redis()
