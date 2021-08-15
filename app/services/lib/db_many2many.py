@@ -47,6 +47,7 @@ class ManyToManySet:
 
     async def all_items_for_many_other_side(self, inputs, getter: callable):
         inputs = set(inputs)
+        # fixme: use MGET?
         groups = await asyncio.gather(
             *(getter(item) for item in inputs)
         )
@@ -67,8 +68,8 @@ class ManyToManySet:
         r = await self._redis()
         key_pattern = key_gen('*')
         start_pos = len(key_pattern) - 1
-        names = await r.keys(key_pattern)
-        return set(n.decode('utf-8')[start_pos:] for n in names)
+        names = await r.keys(key_pattern, encoding='utf-8')
+        return set(n[start_pos:] for n in names)
 
     async def all_lefts(self):
         return await self.all_from_side(key_gen=self.left_key)

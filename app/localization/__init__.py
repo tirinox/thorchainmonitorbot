@@ -24,8 +24,8 @@ class LocalizationManager(metaclass=Singleton):
 
     async def get_lang(self, chat_id, db: DB):
         redis = await db.get_redis()
-        lang = await redis.get(self.lang_key(chat_id))
-        return lang.decode() if lang else None
+        lang = await redis.get(self.lang_key(chat_id), encoding='utf-8')
+        return lang if lang else None
 
     async def set_lang(self, chat_id, lang, db: DB):
         redis = await db.get_redis()

@@ -4,6 +4,7 @@ import logging
 import os
 import pickle
 import random
+import re
 import time
 from collections import deque, Counter
 from functools import wraps, partial
@@ -150,3 +151,17 @@ def sep(space=False):
 
 def class_logger(self):
     return logging.getLogger(self.__class__.__name__)
+
+
+def parse_list_from_string(text: str, upper=False, lower=False, strip=True):
+    items = re.split(';|,|\n|\t', text)
+
+    if lower:
+        items = map(str.lower, items)
+    elif upper:
+        items = map(str.upper, items)
+
+    if strip:
+        items = map(str.strip, items)
+
+    return [x for x in items if x]
