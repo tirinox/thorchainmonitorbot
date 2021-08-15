@@ -80,10 +80,10 @@ class GenericTxNotifier(INotified):
 
     def _get_min_usd_depth(self, tx: ThorTxExtended, usd_per_rune):
         pools = tx.pools or [tx.first_input_tx.first_asset]
-        pool_infos = [self.deps.price_holder.pool_info_map.get(pool) for pool in pools]
-        if not pool_infos:
+        pool_info_list = list(filter(bool, (self.deps.price_holder.pool_info_map.get(pool) for pool in pools)))
+        if not pool_info_list:
             return 0.0
-        min_pool_depth = min(p.usd_depth(usd_per_rune) for p in pool_infos)
+        min_pool_depth = min(p.usd_depth(usd_per_rune) for p in pool_info_list)
         return min_pool_depth
 
     def _filter_large_txs(self, txs, min_rune_volume, usd_per_rune):
@@ -93,10 +93,10 @@ class GenericTxNotifier(INotified):
             pool_usd_depth = self._get_min_usd_depth(tx, usd_per_rune)
             if pool_usd_depth == 0.0:
                 self.logger.warning(f'No pool depth for Tx: {tx}.')
-                continue
-
-            min_pool_percent = self.curve_for_tx_threshold(self.curve, pool_usd_depth)
-            min_share_rune_volume = pool_usd_depth / usd_per_rune * min_pool_percent * 0.01
+                min_share_rune_volume = 0.0
+            else:
+                min_pool_percent = self.curve_for_tx_threshold(self.curve, pool_usd_depth)
+                min_share_rune_volume = pool_usd_depth / usd_per_rune * min_pool_percent * 0.01
 
             # print(f"{tx.pool}: {tx.full_rune:.2f} / {min_share_rune_volume:.2f} need rune,
             # min_pool_percent = {min_pool_percent:.2f}, "

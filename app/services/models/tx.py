@@ -386,11 +386,14 @@ class ThorTxExtended(ThorTx):
         return self.rune_amount * f, self.asset_amount / self.asset_per_rune * f
 
     def calc_full_rune_amount(self, asset_per_rune):
-        self.asset_per_rune = asset_per_rune
-        if asset_per_rune == 0.0:
+        if self.type == ThorTxType.TYPE_SWITCH:
             self.full_rune = self.rune_amount
         else:
-            self.full_rune = self.asset_amount / asset_per_rune + self.rune_amount
+            self.asset_per_rune = asset_per_rune
+            if asset_per_rune == 0.0:
+                self.full_rune = self.rune_amount
+            else:
+                self.full_rune = self.asset_amount / asset_per_rune + self.rune_amount
         return self.full_rune
 
     def get_usd_volume(self, usd_per_rune):

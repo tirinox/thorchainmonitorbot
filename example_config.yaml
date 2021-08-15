@@ -76,7 +76,7 @@ tx:
 
     refund: # new!
       enabled: true
-      min_usd_total: 20000
+      min_usd_total: 50000
       usd_requirements_curve:
         - depth: 20000
           percent: 15  # if depth < 10_000 then

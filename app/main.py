@@ -19,6 +19,8 @@ from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher, PoolInfoFetcherMidgard
 from services.jobs.fetch.queue import QueueFetcher
 from services.jobs.fetch.tx import TxFetcher
+from services.jobs.pool_stats import PoolStatsUpdater
+from services.jobs.volume_filler import VolumeFillerUpdater
 from services.lib.config import Config
 from services.lib.constants import get_thor_env_by_network_id
 from services.lib.db import DB
@@ -100,29 +102,29 @@ class App:
         if d.cfg.get('tx.enabled', True):
             fetcher_tx = TxFetcher(d)
 
-            # stats_updater = PoolStatsUpdater(d)
-            # fetcher_tx.subscribe(stats_updater)
+            volume_filler = VolumeFillerUpdater(d)
+            fetcher_tx.subscribe(volume_filler)
 
             if d.cfg.tx.liquidity.get('enabled', True):
                 liq_notifier_tx = GenericTxNotifier(d, d.cfg.tx.liquidity,
                                                     tx_types=(ThorTxType.TYPE_ADD_LIQUIDITY, ThorTxType.TYPE_WITHDRAW))
-                fetcher_tx.subscribe(liq_notifier_tx)
+                volume_filler.subscribe(liq_notifier_tx)
 
             if d.cfg.tx.donate.get('enabled', True):
                 donate_notifier_tx = GenericTxNotifier(d, d.cfg.tx.donate, tx_types=(ThorTxType.TYPE_DONATE,))
-                fetcher_tx.subscribe(donate_notifier_tx)
+                volume_filler.subscribe(donate_notifier_tx)
 
             if d.cfg.tx.swap.get('enabled', True):
                 swap_notifier_tx = GenericTxNotifier(d, d.cfg.tx.swap, tx_types=(ThorTxType.TYPE_SWAP,))
-                fetcher_tx.subscribe(swap_notifier_tx)
+                volume_filler.subscribe(swap_notifier_tx)
 
             if d.cfg.tx.refund.get('enabled', True):
                 refund_notifier_tx = GenericTxNotifier(d, d.cfg.tx.refund, tx_types=(ThorTxType.TYPE_REFUND,))
-                fetcher_tx.subscribe(refund_notifier_tx)
+                volume_filler.subscribe(refund_notifier_tx)
 
             if d.cfg.tx.switch.get('enabled', True):
                 switch_notifier_tx = SwitchTxNotifier(d, d.cfg.tx.switch, tx_types=(ThorTxType.TYPE_SWITCH,))
-                fetcher_tx.subscribe(switch_notifier_tx)
+                volume_filler.subscribe(switch_notifier_tx)
 
             tasks.append(fetcher_tx)
 
