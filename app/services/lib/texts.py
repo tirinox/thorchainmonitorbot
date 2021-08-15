@@ -75,7 +75,7 @@ def grouper(n, iterable):
     return ([e for e in t if e is not None] for t in itertools.zip_longest(*args))
 
 
-def kbd(buttons, resize=True, vert=False, one_time=False, inline=False, row_width=3):
+def kbd(buttons, resize=True, vert=False, one_time=False, row_width=3):
     if isinstance(buttons, str):
         buttons = [[buttons]]
     elif isinstance(buttons, (list, tuple, set)):

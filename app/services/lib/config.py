@@ -36,7 +36,8 @@ class SubConfig:
             else:
                 # primitive => always pure!
                 return sub_config
-        except (KeyError, IndexError):
+        except (KeyError, IndexError) as e:
+            # fixme: ?? print(e)
             if default is not None:
                 return default
             else:

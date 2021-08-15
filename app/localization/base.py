@@ -933,6 +933,26 @@ class BaseLocalization(ABC):  # == English
 
     # ------- NODE OP TOOLS -------
 
+    BUTTON_NOP_ADD_NODES = '➕ Add nodes'
+    BUTTON_NOP_MANAGE_NODES = '🖊️ Edit nodes'
+    BUTTON_NOP_SETTINGS = '⚙️ Settings'
+
+    @staticmethod
+    def short_node_name(node_address: str):
+        return node_address[-4:].upper()
+
+    def text_node_op_welcome_text(self, watch_list: dict):
+        text = bold('Welcome to the Node Monitor tool!') + '\n\n'
+        text += 'It will send you personalized notifications ' \
+                'when something important happens to the nodes you are monitoring.\n\n'
+        if watch_list:
+            named_nodes = [(addr, name) for addr, name in watch_list.items() if name]
+            node_list = ', '.join(map(self.short_node_name, watch_list))
+        else:
+            text += f'You did not add anything to the watch list. Click {ital(self.BUTTON_NOP_ADD_NODES)} first 👇.'
+
+        return text
+
     # ------- INLINE BOT (English only) -------
 
     INLINE_INVALID_QUERY_TITLE = 'Invalid query!'

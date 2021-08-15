@@ -1,8 +1,13 @@
+import math
+import typing
 import urllib.parse
 
 import aiohttp
+from aiogram.dispatcher.storage import FSMContextProxy
+from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, Message
 
 TG_TEST_USER = 192398802
+
 
 def to_json_bool(b):
     return 'true' if b else 'false'
@@ -33,3 +38,141 @@ async def telegram_send_message_basic(bot_token, user_id, message_text: str,
                 err = await resp.read()
                 raise Exception(f'Telegram error: "{err}"')
             return resp.status == 200
+
+
+class InlineListResult(typing.NamedTuple):
+    NOT_HANDLED = ''
+    BACK = 'back'
+    PREV_PAGE = 'prev'
+    NEXT_PAGE = 'next'
+    SELECTED = 'selected'
+    result: str = NOT_HANDLED
+    selected_item: object = None
+    selected_item_index: int = 0
+
+
+class TelegramInlineList:
+    def __init__(self, items,
+                 data_proxy: FSMContextProxy,
+                 max_rows=3, max_columns=2,
+                 back_text='Back',
+                 prev_page_text='«',
+                 next_page_text='»',
+                 data_prefix='list'):
+        assert isinstance(items, (list, tuple))
+        self._items = items
+        self._data = data_proxy
+        self.back_text = back_text
+        self.prev_page_text = prev_page_text
+        self.next_page_text = next_page_text
+        self._max_columns = max_columns
+        self._max_rows = max_rows
+        self._n = len(items)
+        self._per_page = max_rows * max_columns
+        self._total_pages = int(math.ceil(self._n / self._per_page))
+        self.data_prefix = data_prefix
+
+    def keyboard(self):
+        inline_kbd = []
+
+        current_page = self.current_page
+
+        offset = current_page * self._per_page
+
+        for rows in range(self._max_rows):
+            row = []
+            for column in range(self._max_columns):
+                counter = offset + 1
+                item = self._items[offset]
+                row.append(
+                    InlineKeyboardButton(
+                        f'{counter}. {item}',
+                        callback_data=f'{self.data_prefix}:{offset}'
+                    )
+                )
+                offset += 1
+                if offset == self._n:
+                    break
+            inline_kbd.append(row)
+            if offset == self._n:
+                break
+
+        last_row = [
+            InlineKeyboardButton(
+                self.back_text,
+                callback_data=f'{self.data_prefix}:{InlineListResult.BACK}'
+            )
+        ]
+
+        if current_page > 0:
+            last_row.append(InlineKeyboardButton(
+                self.prev_page_text,
+                callback_data=f'{self.data_prefix}:{InlineListResult.PREV_PAGE}')
+            )
+
+        if current_page < self._total_pages - 1:
+            last_row.append(InlineKeyboardButton(
+                self.next_page_text,
+                callback_data=f'{self.data_prefix}:{InlineListResult.NEXT_PAGE}'))
+
+        inline_kbd.append(last_row)
+
+        return InlineKeyboardMarkup(inline_keyboard=inline_kbd)
+
+    @property
+    def current_page(self):
+        return int(self._data.get(self.data_page_key, 0))
+
+    @property
+    def data_page_key(self):
+        return f"{self.data_prefix}:page"
+
+    def reset_page(self):
+        self._data[self.data_page_key] = 0
+        return self
+
+    async def _flip_keyboard_page(self, message: Message, forward=True):
+        old_page = self.current_page
+        if forward:
+            new_page = min(self._total_pages - 1, old_page + 1)
+        else:
+            new_page = max(0, old_page - 1)
+
+        if old_page != new_page:
+            self._data[self.data_page_key] = new_page
+            await message.edit_reply_markup(self.keyboard())
+
+    async def clear_keyboard(self, query: CallbackQuery):
+        await query.message.edit_reply_markup(reply_markup=None)
+
+    async def handle_query(self, query: CallbackQuery) -> InlineListResult:
+        ILR = InlineListResult
+        data = query.data
+        if not data.startswith(self.data_prefix):
+            return ILR(ILR.NOT_HANDLED)
+
+        try:
+            action = data.split(':')[1]
+        except (IndexError, AttributeError):
+            return ILR(ILR.NOT_HANDLED)
+
+        if action == ILR.BACK:
+            await self.clear_keyboard(query)
+            return ILR(ILR.BACK)
+        elif action == ILR.PREV_PAGE:
+            await self._flip_keyboard_page(query.message, forward=False)
+            return ILR(ILR.PREV_PAGE)
+        elif action == ILR.NEXT_PAGE:
+            await self._flip_keyboard_page(query.message, forward=True)
+            return ILR(ILR.NEXT_PAGE)
+        else:
+            try:
+                item_index = int(action)
+                assert 0 <= item_index < self._n
+            except (ValueError, AssertionError):
+                return ILR(ILR.NOT_HANDLED)
+            else:
+                item = self._items[item_index]
+                return ILR(ILR.SELECTED,
+                           selected_item=item,
+                           selected_item_index=item_index)

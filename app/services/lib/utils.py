@@ -154,7 +154,7 @@ def class_logger(self):
 
 
 def parse_list_from_string(text: str, upper=False, lower=False, strip=True):
-    items = re.split(';|,|\n|\t', text)
+    items = re.split('[;,\n\t]', text)
 
     if lower:
         items = map(str.lower, items)

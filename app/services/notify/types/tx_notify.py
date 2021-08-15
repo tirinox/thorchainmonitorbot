@@ -41,12 +41,10 @@ class GenericTxNotifier(INotified):
         self.tx_types = tx_types
         self.logger = logging.getLogger(self.__class__.__name__)
 
-        self.max_age_sec = parse_timespan_to_seconds(params.max_age)
+        self.max_age_sec = parse_timespan_to_seconds(deps.cfg.tx.max_age)
         self.min_usd_total = int(params.min_usd_total)
 
-        self.curve = params.get_pure('usd_requirements_curve', None)
-        if not self.curve:
-            self.curve = self.DEFAULT_TX_VS_DEPTH_CURVE
+        self.curve = params.get_pure('usd_requirements_curve', self.DEFAULT_TX_VS_DEPTH_CURVE)
 
     async def on_data(self, senders, txs: List[ThorTxExtended]):
         txs = [tx for tx in txs if tx.type in self.tx_types]
@@ -112,5 +110,6 @@ class SwitchTxNotifier(GenericTxNotifier):
     def _filter_large_txs(self, txs, min_rune_volume, usd_per_rune):
         for tx in txs:
             tx: ThorTxExtended
+            # fixme: AttributeError: 'ThorTx' object has no attribute 'full_rune'
             if tx.full_rune >= min_rune_volume:
                 yield tx
