@@ -71,6 +71,11 @@ class TelegramInlineList:
         self._per_page = max_rows * max_columns
         self._total_pages = int(math.ceil(self._n / self._per_page))
         self.data_prefix = data_prefix
+        self.extra_buttons = []
+
+    def set_extra_buttons(self, extra_buttons):
+        self.extra_buttons = extra_buttons
+        return self
 
     def keyboard(self):
         inline_kbd = []
@@ -117,6 +122,8 @@ class TelegramInlineList:
 
         inline_kbd.append(last_row)
 
+        inline_kbd += self.extra_buttons
+
         return InlineKeyboardMarkup(inline_keyboard=inline_kbd)
 
     @property
@@ -142,7 +149,8 @@ class TelegramInlineList:
             self._data[self.data_page_key] = new_page
             await message.edit_reply_markup(self.keyboard())
 
-    async def clear_keyboard(self, query: CallbackQuery):
+    @staticmethod
+    async def clear_keyboard(query: CallbackQuery):
         await query.message.edit_reply_markup(reply_markup=None)
 
     async def handle_query(self, query: CallbackQuery) -> InlineListResult:
@@ -155,7 +163,6 @@ class TelegramInlineList:
             action = data.split(':')[1]
         except (IndexError, AttributeError):
             return ILR(ILR.NOT_HANDLED)
-
         if action == ILR.BACK:
             await self.clear_keyboard(query)
             return ILR(ILR.BACK)

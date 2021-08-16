@@ -9,6 +9,7 @@ import time
 from collections import deque, Counter
 from functools import wraps, partial
 from itertools import tee
+from typing import List
 
 
 def most_common_and_other(values: list, max_categories, other_str='Others'):
@@ -165,3 +166,18 @@ def parse_list_from_string(text: str, upper=False, lower=False, strip=True):
         items = map(str.strip, items)
 
     return [x for x in items if x]
+
+
+def fuzzy_search(query: str, realm) -> List[str]:
+    if not query:
+        return []
+
+    query = query.upper()
+    if query in realm:  # perfect match
+        return [query]
+
+    variants = []
+    for name in realm:
+        if query in name:
+            variants.append(name)
+    return variants

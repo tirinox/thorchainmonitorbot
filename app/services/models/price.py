@@ -5,6 +5,7 @@ from typing import List
 
 from services.lib.constants import BNB_BTCB_SYMBOL, BTC_SYMBOL, STABLE_COIN_POOLS, THOR_DIVIDER_INV
 from services.lib.money import weighted_mean
+from services.lib.utils import fuzzy_search
 from services.models.base import BaseModelMixin
 from services.models.pool_info import PoolInfo, PoolInfoMap
 
@@ -103,16 +104,5 @@ class LastPriceHolder:
         return tlv
 
     def pool_fuzzy_search(self, query: str) -> List[str]:
-        if not query:
-            return []
-
-        query = query.upper()
-        pool_names = self.pool_names
-        if query in pool_names:  # perfect match
-            return [query]
-
-        variants = []
-        for pool_name in pool_names:
-            if query in pool_name:
-                variants.append(pool_name)
-        return variants
+        # todo: test
+        return fuzzy_search(query, self.pool_names)

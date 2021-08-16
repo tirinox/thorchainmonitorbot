@@ -937,9 +937,14 @@ class BaseLocalization(ABC):  # == English
     BUTTON_NOP_MANAGE_NODES = '🖊️ Edit nodes'
     BUTTON_NOP_SETTINGS = '⚙️ Settings'
 
-    @staticmethod
-    def short_node_name(node_address: str):
+    @classmethod
+    def short_node_name(cls, node_address: str):
         return node_address[-4:].upper()
+
+    def short_node_desc(self, node: NodeInfo):
+        addr = self.short_node_name(node.node_address)
+        bond = node.bond
+        return f'{addr} ({pretty_money(bond)} {self.R})'
 
     def text_node_op_welcome_text(self, watch_list: dict):
         text = bold('Welcome to the Node Monitor tool!') + '\n\n'

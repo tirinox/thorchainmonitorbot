@@ -29,6 +29,7 @@ class DepContainer:
     broadcaster: Optional['Broadcaster'] = None
 
     price_pool_fetcher: Optional['PoolPriceFetcher'] = None
+    node_info_fetcher: Optional['NodeInfoFetcher'] = None
 
     # shared data holders
 

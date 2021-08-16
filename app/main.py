@@ -19,7 +19,6 @@ from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher, PoolInfoFetcherMidgard
 from services.jobs.fetch.queue import QueueFetcher
 from services.jobs.fetch.tx import TxFetcher
-from services.jobs.pool_stats import PoolStatsUpdater
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.lib.config import Config
 from services.lib.constants import get_thor_env_by_network_id
@@ -148,6 +147,7 @@ class App:
 
         if d.cfg.get('node_info.enabled', True):
             fetcher_nodes = NodeInfoFetcher(d)
+            d.node_info_fetcher = fetcher_nodes
             notifier_nodes = NodeChurnNotifier(d)
             fetcher_nodes.subscribe(notifier_nodes)
             tasks.append(fetcher_nodes)
