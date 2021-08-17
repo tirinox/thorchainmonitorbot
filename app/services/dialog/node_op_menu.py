@@ -63,13 +63,29 @@ class NodeOpDialog(BaseDialog):
             max_rows=3, back_text=self.loc.BUTTON_BACK,
             data_prefix='all_nodes'
         ).set_extra_buttons_above([
-            [self.loc.BUTTON_NOP_ADD_ALL_NODES, self.loc.BUTTON_NOP_ADD_ALL_NODES]
+            [
+                InlineKeyboardButton(self.loc.BUTTON_NOP_ADD_ALL_NODES, callback_data='add:all'),
+                InlineKeyboardButton(self.loc.BUTTON_NOP_ADD_ALL_ACTIVE_NODES, callback_data='add:active')
+            ]
         ])
 
     async def on_add_node_menu(self, message: Message):
         await NodeOpStates.ADDING.set()
         tg_list = await self.all_nodes_list_maker()
         await message.answer(self.loc.TEXT_NOP_ADD_INSTRUCTIONS, reply_markup=tg_list.reset_page().keyboard())
+
+    @query_handler(state=NodeOpStates.ADDING)
+    async def on_add_list_callback(self, query: CallbackQuery):
+        tg_list = await self.all_nodes_list_maker()
+        result = await tg_list.handle_query(query)
+        if result.result == result.BACK:
+            await self.on_enter(query.message)
+        elif result.result == result.SELECTED:
+            await query.message.answer(f'You selected {result.selected_item}')
+        elif query.data == 'add:all':
+            await query.message.answer(f'Adding all!')  # todo
+        elif query.data == 'add:active':
+            await query.message.answer(f'Adding all active!')  # todo
 
     # -------- MANAGE ---------
 

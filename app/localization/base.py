@@ -945,7 +945,7 @@ class BaseLocalization(ABC):  # == English
 
     def short_node_desc(self, node: NodeInfo, name=None):
         addr = self.short_node_name(node.node_address, name)
-        return f'{addr} ({pretty_money(node.bond)} {self.R})'
+        return f'{addr} ({short_money(node.bond, prefix="R")})'
 
     def text_node_op_welcome_text(self, watch_list: dict):
         text = bold('Welcome to the Node Monitor tool!') + '\n\n'
@@ -970,7 +970,7 @@ class BaseLocalization(ABC):  # == English
                                 f'Items of the list can be separated by spaces, commas or even new lines.\n\n' \
                                 f'Example: {pre("66ew, xqmm, 7nv9")}'
     BUTTON_NOP_ADD_ALL_NODES = 'Add all nodes'
-    BUTTON_NOP_ADD_ALL_ACTIVE_NODES = 'Add all active'
+    BUTTON_NOP_ADD_ALL_ACTIVE_NODES = 'Add all ACTIVE nodes'
 
     TEXT_NOP_SURE_TO_ADD = 'Are you sure to add {n} nodes to your watchlist?'
     TEXT_NOP_SURE_TO_REMOVE = 'Are you sure to remove all {n} nodes from your watchlist?'
