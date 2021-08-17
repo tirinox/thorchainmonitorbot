@@ -11,7 +11,7 @@ from services.lib.constants import NetworkIdents, rune_origin, thor_to_float
 from services.lib.date_utils import format_time_ago, now_ts, seconds_human
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx
 from services.lib.money import format_percent, pretty_money, short_address, short_money, \
-    calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset, pretty_percent
+    calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset
 from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
     up_down_arrow, bracketify, plural
 from services.models.cap_info import ThorCapInfo
@@ -21,6 +21,7 @@ from services.models.pool_info import PoolInfo, PoolChanges
 from services.models.price import PriceReport
 from services.models.queue import QueueInfo
 from services.models.tx import ThorTxExtended, ThorTxType, ThorSubTx
+
 
 RAIDO_GLYPH = 'ᚱ'
 CREATOR_TG = '@account1242'
@@ -345,8 +346,8 @@ class BaseLocalization(ABC):  # == English
                 )
         elif tx.type == ThorTxType.TYPE_REFUND:
             content = (
-                self.tx_convert_string(tx, usd_per_rune) +
-                f"Reason: {pre(tx.meta_refund.reason[:180])}"
+                    self.tx_convert_string(tx, usd_per_rune) +
+                    f"Reason: {pre(tx.meta_refund.reason[:180])}"
             )
         elif tx.type == ThorTxType.TYPE_SWAP:
             content = self.tx_convert_string(tx, usd_per_rune)
@@ -938,13 +939,13 @@ class BaseLocalization(ABC):  # == English
     BUTTON_NOP_SETTINGS = '⚙️ Settings'
 
     @classmethod
-    def short_node_name(cls, node_address: str):
-        return node_address[-4:].upper()
+    def short_node_name(cls, node_address: str, name=None):
+        short_name = node_address[-4:].upper()
+        return f'{name} ({short_name})' if name else short_name
 
-    def short_node_desc(self, node: NodeInfo):
-        addr = self.short_node_name(node.node_address)
-        bond = node.bond
-        return f'{addr} ({pretty_money(bond)} {self.R})'
+    def short_node_desc(self, node: NodeInfo, name=None):
+        addr = self.short_node_name(node.node_address, name)
+        return f'{addr} ({pretty_money(node.bond)} {self.R})'
 
     def text_node_op_welcome_text(self, watch_list: dict):
         text = bold('Welcome to the Node Monitor tool!') + '\n\n'
@@ -957,6 +958,22 @@ class BaseLocalization(ABC):  # == English
             text += f'You did not add anything to the watch list. Click {ital(self.BUTTON_NOP_ADD_NODES)} first 👇.'
 
         return text
+
+    TEXT_NOP_MANAGE = 'You added the following nodes to your watchlist. ' \
+                      'Select one in the menu below to edit or to unwatch it.'
+    TEXT_NOP_ADD_INSTRUCTIONS = 'Select the nodes which you would like to add to <b>your watchlist</b> ' \
+                                'from the list below.\n\n' \
+                                '🤓 If you know the addresses of the nodes you are interested in, ' \
+                                f'just send them to me as a text message. ' \
+                                f'You may use the full name {pre("thorAbc5andD1so2on")} or ' \
+                                f'the last 3, 4 or more characters. ' \
+                                f'Items of the list can be separated by spaces, commas or even new lines.\n\n' \
+                                f'Example: {pre("66ew, xqmm, 7nv9")}'
+    BUTTON_NOP_ADD_ALL_NODES = 'Add all nodes'
+    BUTTON_NOP_ADD_ALL_ACTIVE_NODES = 'Add all active'
+
+    TEXT_NOP_SURE_TO_ADD = 'Are you sure to add {n} nodes to your watchlist?'
+    TEXT_NOP_SURE_TO_REMOVE = 'Are you sure to remove all {n} nodes from your watchlist?'
 
     # ------- INLINE BOT (English only) -------
 

@@ -26,7 +26,6 @@ class NodeOpDialog(BaseDialog):
     async def on_enter(self, message: Message):
         if message.text == self.loc.BUTTON_BACK:
             await self.go_back(message)
-            return
         elif message.text == self.loc.BUTTON_NOP_ADD_NODES:
             await self.on_add_node_menu(message)
         elif message.text == self.loc.BUTTON_NOP_MANAGE_NODES:
@@ -43,7 +42,7 @@ class NodeOpDialog(BaseDialog):
             [self.loc.BUTTON_NOP_SETTINGS, self.loc.BUTTON_BACK]
         ]
 
-        watch_list = await NodeWatcherStorage(self.deps, message.from_user.id).all_nodes_with_names_for_user()
+        watch_list = await self.storage(message.chat.id).all_nodes_with_names_for_user()
         await message.answer(self.loc.text_node_op_welcome_text(watch_list),
                              reply_markup=kbd(buttons),
                              disable_notification=True)
@@ -54,45 +53,53 @@ class NodeOpDialog(BaseDialog):
 
     # -------- ADDING ---------
 
-    def all_nodes_list_maker(self):
-        # todo: get the last list of all nodes
+    async def all_nodes_list_maker(self):
         node_info_fetcher: NodeInfoFetcher = self.deps.node_info_fetcher
         last_nodes = await node_info_fetcher.get_last_node_info()
         last_node_texts = [self.loc.short_node_desc(n) for n in last_nodes]
-
-        # todo:
-        # 1. add all
-        # 2. text handle
-
-        return TelegramInlineList(last_node_texts,
-                                  data_proxy=self.data,
-                                  max_rows=3, back_text=self.loc.BUTTON_BACK,
-                                  data_prefix='all_nodes')
+        return TelegramInlineList(
+            last_node_texts,
+            data_proxy=self.data,
+            max_rows=3, back_text=self.loc.BUTTON_BACK,
+            data_prefix='all_nodes'
+        ).set_extra_buttons_above([
+            [self.loc.BUTTON_NOP_ADD_ALL_NODES, self.loc.BUTTON_NOP_ADD_ALL_NODES]
+        ])
 
     async def on_add_node_menu(self, message: Message):
         await NodeOpStates.ADDING.set()
+        tg_list = await self.all_nodes_list_maker()
+        await message.answer(self.loc.TEXT_NOP_ADD_INSTRUCTIONS, reply_markup=tg_list.reset_page().keyboard())
 
     # -------- MANAGE ---------
 
-    def my_node_list_maker(self):
-        # todo: load my nodes
-        return TelegramInlineList(TEST_ITEMS, data_proxy=self.data,
-                                  max_rows=4, back_text=self.loc.BUTTON_BACK, data_prefix='node_list')
+    async def my_node_list_maker(self, user_id):
+        watch_list = await self.storage(user_id).all_nodes_with_names_for_user()
+        my_nodes_names = [self.loc.short_node_name(*pair) for pair in watch_list.items()]
+        return TelegramInlineList(my_nodes_names, data_proxy=self.data,
+                                  max_rows=4, back_text=self.loc.BUTTON_BACK, data_prefix='my_nodes')
 
     async def on_manage_menu(self, message: Message):
         await NodeOpStates.MANAGE_MENU.set()
-        keyboard = self.my_node_list_maker().reset_page().keyboard()
-        await message.answer('List test:', reply_markup=keyboard)
+        tg_list = await self.my_node_list_maker(message.chat.id)
+        keyboard = tg_list.reset_page().keyboard()
+        await message.answer(self.loc.TEXT_NOP_MANAGE, reply_markup=keyboard)
 
     @query_handler(state=NodeOpStates.MANAGE_MENU)
     async def on_manage_callback(self, query: CallbackQuery):
-        result = await self.my_node_list_maker().handle_query(query)
+        tg_list = await self.my_node_list_maker(query.message.chat.id)
+        result = await tg_list.handle_query(query)
         if result.result == result.BACK:
             await self.on_enter(query.message)
         elif result.result == result.SELECTED:
-            print(f'Selected {result.selected_item}')
+            await query.message.answer(f'You selected {result.selected_item}')
 
     # -------- SETTINGS ---------
 
     async def on_settings_menu(self, message: Message):
         await message.answer('Not implemented yet..')  # todo: implement settings menu
+
+    # ---- UTILS ---
+
+    def storage(self, user_id):
+        return NodeWatcherStorage(self.deps, user_id)
