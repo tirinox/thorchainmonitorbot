@@ -25,6 +25,13 @@ from services.models.tx import ThorTxExtended, ThorTxType
 class RussianLocalization(BaseLocalization):
     LOADING = '⌛ Загрузка...'
 
+    SHORT_MONEY_LOC = {
+        'K': ' тыс',
+        'M': ' млн',
+        'B': ' млрд',
+        'T': ' трлн',
+    }
+
     # ---- WELCOME ----
     def help_message(self):
         return (
