@@ -1,11 +1,12 @@
 from aiogram.dispatcher.filters.state import StatesGroup, State
-from aiogram.types import Message, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import Message, CallbackQuery, InlineKeyboardButton
 from aiogram.utils.helper import HelperMode
 
 from services.dialog.base import BaseDialog, message_handler, query_handler
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.lib.telegram import TelegramInlineList
 from services.lib.texts import kbd
+from services.lib.utils import parse_list_from_string
 from services.models.node_watchers import NodeWatcherStorage
 
 
@@ -16,13 +17,11 @@ class NodeOpStates(StatesGroup):
     MANAGE_MENU = State()
 
 
-TEST_ITEMS = [f'Item {n}.' for n in range(1, 35)]
-
-
 class NodeOpDialog(BaseDialog):
+
     # ----------- MAIN ------------
 
-    @message_handler(state=NodeOpStates.all_states)
+    @message_handler(state=NodeOpStates.MAIN_MENU)
     async def on_enter(self, message: Message):
         if message.text == self.loc.BUTTON_BACK:
             await self.go_back(message)
@@ -73,6 +72,11 @@ class NodeOpDialog(BaseDialog):
         await NodeOpStates.ADDING.set()
         tg_list = await self.all_nodes_list_maker()
         await message.answer(self.loc.TEXT_NOP_ADD_INSTRUCTIONS, reply_markup=tg_list.reset_page().keyboard())
+
+    @message_handler(state=NodeOpStates.ADDING)
+    async def on_add_got_message(self, message: Message):
+        items = parse_list_from_string(message.text, upper=True)
+        await message.answer(f'List: {", ".join(items)}')  # todo
 
     @query_handler(state=NodeOpStates.ADDING)
     async def on_add_list_callback(self, query: CallbackQuery):

@@ -94,6 +94,8 @@ class TelegramInlineList:
         for rows in range(self._max_rows):
             row = []
             for column in range(self._max_columns):
+                if offset == self._n:
+                    break
                 counter = offset + 1
                 item = self._items[offset]
                 row.append(
@@ -103,8 +105,7 @@ class TelegramInlineList:
                     )
                 )
                 offset += 1
-                if offset == self._n:
-                    break
+
             inline_kbd.append(row)
             if offset == self._n:
                 break
