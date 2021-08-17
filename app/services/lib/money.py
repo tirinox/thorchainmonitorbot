@@ -102,23 +102,37 @@ def pretty_percent(x, limit_abs=1e7, limit_text='N/A %', signed=True):
     return pretty_money(x, postfix=' %', signed=signed)
 
 
-def short_money(x, prefix='$'):
+def short_money(x, prefix='', postfix='', localization=None):
+    localization = localization or {}
+    key = ''
+
     if x < 0:
-        return f"-{prefix}{short_money(-x, prefix='')}"
+        tr = short_money(-x, '', '', localization)
+        return f"-{prefix}{tr}{postfix}"
     elif x == 0:
-        r = '0.0'
+        return f'{prefix}0.0{postfix}'
     elif x < 1_000:
-        r = f'{x:.1f}'
+        pass
     elif x < 1_000_000:
         x /= 1_000
-        r = f'{x:.1f}K'
+        key = 'K'
     elif x < 1_000_000_000:
         x /= 1_000_000
-        r = f'{x:.1f}M'
-    else:
+        key = 'M'
+    elif x < 1_000_000_000_000:
         x /= 1_000_000_000
-        r = f'{x:.1f}B'
-    return prefix + r
+        key = 'B'
+    else:
+        x /= 1_000_000_000_000
+        key = 'T'
+
+    letter = localization.get(key, key)
+    result = f'{x:.1f}{letter}'
+    return prefix + result + postfix
+
+
+def short_dollar(x, localization=None):
+    return short_money(x, prefix='$', localization=localization)
 
 
 def short_address(address, begin=5, end=4, filler='...'):
