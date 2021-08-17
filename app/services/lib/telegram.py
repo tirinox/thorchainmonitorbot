@@ -71,14 +71,21 @@ class TelegramInlineList:
         self._per_page = max_rows * max_columns
         self._total_pages = int(math.ceil(self._n / self._per_page))
         self.data_prefix = data_prefix
-        self.extra_buttons = []
+        self.extra_buttons_above = []
+        self.extra_buttons_below = []
 
-    def set_extra_buttons(self, extra_buttons):
-        self.extra_buttons = extra_buttons
+    def set_extra_buttons_above(self, extra_buttons):
+        self.extra_buttons_above = extra_buttons
+        return self
+
+    def set_extra_buttons_below(self, extra_buttons):
+        self.extra_buttons_below = extra_buttons
         return self
 
     def keyboard(self):
         inline_kbd = []
+        if self.extra_buttons_above:
+            inline_kbd += self.extra_buttons_above
 
         current_page = self.current_page
 
@@ -122,7 +129,8 @@ class TelegramInlineList:
 
         inline_kbd.append(last_row)
 
-        inline_kbd += self.extra_buttons
+        if self.extra_buttons_below:
+            inline_kbd += self.extra_buttons_below
 
         return InlineKeyboardMarkup(inline_keyboard=inline_kbd)
 
