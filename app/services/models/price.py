@@ -104,5 +104,4 @@ class LastPriceHolder:
         return tlv
 
     def pool_fuzzy_search(self, query: str) -> List[str]:
-        # todo: test
         return fuzzy_search(query, self.pool_names)

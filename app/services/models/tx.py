@@ -4,6 +4,7 @@ from typing import List, Optional, Iterable
 
 from services.lib.constants import is_rune, RUNE_SYMBOL, Chains, NATIVE_RUNE_SYMBOL, thor_to_float
 from services.lib.money import Asset
+from services.models.lp_info import LPAddress
 from services.models.pool_info import PoolInfo
 
 
@@ -199,7 +200,7 @@ class ThorTx:
 
     @property
     def first_output_tx(self):
-        return self.in_tx[0] if self.in_tx else None
+        return self.out_tx[0] if self.out_tx else None
 
     @property
     def input_thor_address(self) -> Optional[str]:
@@ -218,6 +219,10 @@ class ThorTx:
     @property
     def rune_input_address(self):
         for tx in self.in_tx:
+            if not tx.coins and LPAddress.is_thor_prefix(tx.address):
+                # in the case when it is "empty" thor tx (with no coins sent)
+                return tx.address
+
             for coin in tx.coins:
                 if coin.asset == NATIVE_RUNE_SYMBOL:
                     return tx.address
@@ -232,8 +237,8 @@ class ThorTx:
             for coin in first_tx.coins:
                 chain = Asset(coin.asset).chain
                 return first_tx.address, chain
-        else:
-            return None, None
+
+        return None, None
 
     def search_realm(self, in_only=False, out_only=False):
         return self.in_tx if in_only else self.out_tx if out_only else in_only + out_only
@@ -383,7 +388,10 @@ class ThorTxExtended(ThorTx):
             return 0.0, 0.0
 
         f = 100.0 / self.full_rune
-        return self.rune_amount * f, self.asset_amount / self.asset_per_rune * f
+        if self.asset_per_rune == 0.0:
+            return 0.0, 0.0
+        else:
+            return self.rune_amount * f, self.asset_amount / self.asset_per_rune * f
 
     def calc_full_rune_amount(self, asset_per_rune):
         if self.type == ThorTxType.TYPE_SWITCH:
