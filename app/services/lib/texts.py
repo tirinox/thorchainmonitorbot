@@ -137,3 +137,8 @@ def up_down_arrow(old_value, new_value, smiley=False, more_is_better=True, same_
 
 def plural(n: int, one_thing, many_things):
     return one_thing if n == 1 else many_things
+
+
+def join_as_numbered_list(items, sep='\n', start=1):
+    en_items = (f'{i}. {text!s}' for i, text in enumerate(items, start=start))
+    return sep.join(en_items)

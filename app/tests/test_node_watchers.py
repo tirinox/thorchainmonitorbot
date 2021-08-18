@@ -75,6 +75,8 @@ def test_multi_split():
     assert parse_list_from_string(";TeSt,", upper=True) == ['TEST']
     assert parse_list_from_string("TeSt;fOo", upper=True) == ['TEST', 'FOO']
 
+    assert parse_list_from_string("xqmm") == ["xqmm"]
+
     assert parse_list_from_string("thorA, THORB, tHorC", upper=True) == ['THORA', 'THORB', 'THORC']
     assert parse_list_from_string("thorA  , THORB    ; tHorC", upper=True) == ['THORA', 'THORB', 'THORC']
     assert parse_list_from_string("thorA  , THORB    ; tHorC", upper=True) == ['THORA', 'THORB', 'THORC']

@@ -22,7 +22,6 @@ from services.models.price import PriceReport
 from services.models.queue import QueueInfo
 from services.models.tx import ThorTxExtended, ThorTxType, ThorSubTx
 
-
 RAIDO_GLYPH = 'ᚱ'
 CREATOR_TG = '@account1242'
 
@@ -764,12 +763,12 @@ class BaseLocalization(ABC):  # == English
                 extra += f', {bold(node.slash_points)} slash points'
 
             if node.current_award:
-                award_text = bold(pretty_money(node.current_award, postfix=RAIDO_GLYPH))
+                award_text = bold(short_money(node.current_award, postfix=RAIDO_GLYPH))
                 extra += f", current award is {award_text}"
 
         status = f', ({pre(node.status)})' if add_status else ''
         return f'{bold(node_thor_link)} ({node_ip_link}, v. {node.version}) ' \
-               f'with {bold(pretty_money(node.bond, postfix=RAIDO_GLYPH))} bonded{status}{extra}'.strip()
+               f'with {bold(short_money(node.bond, postfix=RAIDO_GLYPH))} bonded{status}{extra}'.strip()
 
     def _make_node_list(self, nodes, title, add_status=False, extended_info=False):
         if not nodes:
@@ -947,6 +946,10 @@ class BaseLocalization(ABC):  # == English
         addr = self.short_node_name(node.node_address, name)
         return f'{addr} ({short_money(node.bond, prefix="R")})'
 
+    def pretty_node_desc(self, node: NodeInfo, name=None):
+        addr = self.short_node_name(node.node_address, name)
+        return f'{pre(addr)} ({bold(short_money(node.bond, prefix="R"))} bond)'
+
     def text_node_op_welcome_text(self, watch_list: dict):
         text = bold('Welcome to the Node Monitor tool!') + '\n\n'
         text += 'It will send you personalized notifications ' \
@@ -961,9 +964,9 @@ class BaseLocalization(ABC):  # == English
 
     TEXT_NOP_MANAGE = 'You added the following nodes to your watchlist. ' \
                       'Select one in the menu below to edit or to unwatch it.'
-    TEXT_NOP_ADD_INSTRUCTIONS = 'Select the nodes which you would like to add to <b>your watchlist</b> ' \
-                                'from the list below.\n\n' \
-                                '🤓 If you know the addresses of the nodes you are interested in, ' \
+    TEXT_NOP_ADD_INSTRUCTIONS_PRE = 'Select the nodes which you would like to add to <b>your watchlist</b> ' \
+                                    'from the list below.'
+    TEXT_NOP_ADD_INSTRUCTIONS = '🤓 If you know the addresses of the nodes you are interested in, ' \
                                 f'just send them to me as a text message. ' \
                                 f'You may use the full name {pre("thorAbc5andD1so2on")} or ' \
                                 f'the last 3, 4 or more characters. ' \
@@ -974,6 +977,8 @@ class BaseLocalization(ABC):  # == English
 
     TEXT_NOP_SURE_TO_ADD = 'Are you sure to add {n} nodes to your watchlist?'
     TEXT_NOP_SURE_TO_REMOVE = 'Are you sure to remove all {n} nodes from your watchlist?'
+    TEXT_NOP_SEARCH_NO_VARIANTS = 'No matches found for current search. Please refine your search or use the list.'
+    TEXT_NOP_SEARCH_VARIANTS = 'We found the following nodes that match the search:'
 
     # ------- INLINE BOT (English only) -------
 

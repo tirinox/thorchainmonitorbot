@@ -1,12 +1,16 @@
+from typing import List
+
+import aiogram.types
 from aiogram.dispatcher.filters.state import StatesGroup, State
-from aiogram.types import Message, CallbackQuery, InlineKeyboardButton
+from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, ReplyKeyboardRemove
 from aiogram.utils.helper import HelperMode
 
 from services.dialog.base import BaseDialog, message_handler, query_handler
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.lib.telegram import TelegramInlineList
-from services.lib.texts import kbd
-from services.lib.utils import parse_list_from_string
+from services.lib.texts import kbd, join_as_numbered_list
+from services.lib.utils import parse_list_from_string, fuzzy_search
+from services.models.node_info import NodeInfo
 from services.models.node_watchers import NodeWatcherStorage
 
 
@@ -53,8 +57,7 @@ class NodeOpDialog(BaseDialog):
     # -------- ADDING ---------
 
     async def all_nodes_list_maker(self):
-        node_info_fetcher: NodeInfoFetcher = self.deps.node_info_fetcher
-        last_nodes = await node_info_fetcher.get_last_node_info()
+        last_nodes = await self.get_all_nodes()
         last_node_texts = [self.loc.short_node_desc(n) for n in last_nodes]
         return TelegramInlineList(
             last_node_texts,
@@ -71,12 +74,18 @@ class NodeOpDialog(BaseDialog):
     async def on_add_node_menu(self, message: Message):
         await NodeOpStates.ADDING.set()
         tg_list = await self.all_nodes_list_maker()
+        # to hide KB
+        await message.answer(self.loc.TEXT_NOP_ADD_INSTRUCTIONS_PRE, reply_markup=ReplyKeyboardRemove())
         await message.answer(self.loc.TEXT_NOP_ADD_INSTRUCTIONS, reply_markup=tg_list.reset_page().keyboard())
 
     @message_handler(state=NodeOpStates.ADDING)
     async def on_add_got_message(self, message: Message):
-        items = parse_list_from_string(message.text, upper=True)
-        await message.answer(f'List: {", ".join(items)}')  # todo
+        nodes = await self.parse_nodes_from_text_list(message.text)
+        if not nodes:
+            await message.answer(self.loc.TEXT_NOP_SEARCH_NO_VARIANTS)
+        else:
+            variants = join_as_numbered_list(map(self.loc.pretty_node_desc, nodes))
+            await message.answer(self.loc.TEXT_NOP_SEARCH_VARIANTS + '\n\n' + variants)
 
     @query_handler(state=NodeOpStates.ADDING)
     async def on_add_list_callback(self, query: CallbackQuery):
@@ -123,3 +132,23 @@ class NodeOpDialog(BaseDialog):
 
     def storage(self, user_id):
         return NodeWatcherStorage(self.deps, user_id)
+
+    async def get_all_nodes(self):
+        node_info_fetcher: NodeInfoFetcher = self.deps.node_info_fetcher
+        return await node_info_fetcher.get_last_node_info()
+
+    async def parse_nodes_from_text_list(self, message: str) -> List[NodeInfo]:
+        user_items = parse_list_from_string(message, upper=True)  # parse
+        user_items = [item for item in user_items if len(item) >= 3]  # filter short
+
+        # run fuzzy search
+        nodes = await self.get_all_nodes()
+        node_addresses = [n.node_address.upper() for n in nodes]
+        results = set()
+        for query in user_items:
+            variants = fuzzy_search(query, node_addresses)
+            results.update(set(variants))
+
+        # pick node info
+        nodes_dic = {node.node_address.upper(): node for node in nodes}
+        return list(filter(bool, (nodes_dic.get(address) for address in results)))

@@ -91,6 +91,8 @@ class MetricsDialog(BaseDialog):
         result_network_info = await node_fetcher.get_node_list_and_geo_info()
         node_list = result_network_info.node_info_list
 
+        # fixme: aiogram.utils.exceptions.BadRequest: Message_too_long
+        # fixme: split?
         await my_message.edit_text(self.loc.node_list_text(node_list, NodeInfo.ACTIVE), disable_web_page_preview=True)
         await my_message.answer(self.loc.node_list_text(node_list, NodeInfo.STANDBY), disable_web_page_preview=True,
                                 disable_notification=True)
