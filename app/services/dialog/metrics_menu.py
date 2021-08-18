@@ -85,19 +85,20 @@ class MetricsDialog(BaseDialog):
                              disable_notification=True)
 
     async def show_node_list(self, message: Message):
-        my_message = await message.answer(self.loc.LOADING, disable_notification=True, disable_web_page_preview=True)
+        loading_message = await message.answer(self.loc.LOADING, disable_notification=True, disable_web_page_preview=True)
 
         node_fetcher = NodeInfoFetcher(self.deps)
         result_network_info = await node_fetcher.get_node_list_and_geo_info()
         node_list = result_network_info.node_info_list
 
-        # fixme: aiogram.utils.exceptions.BadRequest: Message_too_long
-        # fixme: split?
-        await my_message.edit_text(self.loc.node_list_text(node_list, NodeInfo.ACTIVE), disable_web_page_preview=True)
-        await my_message.answer(self.loc.node_list_text(node_list, NodeInfo.STANDBY), disable_web_page_preview=True,
-                                disable_notification=True)
-        await my_message.answer(self.loc.node_list_text(node_list, 'others'), disable_web_page_preview=True,
-                                disable_notification=True)
+        active_node_messages = self.loc.node_list_text(node_list, NodeInfo.ACTIVE)
+        standby_node_messages = self.loc.node_list_text(node_list, NodeInfo.STANDBY)
+        other_node_messages = self.loc.node_list_text(node_list, 'others')
+
+        await self.safe_delete(loading_message)
+
+        for message_text in (active_node_messages + standby_node_messages + other_node_messages):
+            await message.answer(message_text, disable_web_page_preview=True, disable_notification=True)
 
         pic = await node_geo_pic(result_network_info, self.loc)
         await message.answer_photo(img_to_bio(pic, f'NodeDiversity-{today_str()}.png'), disable_notification=True)

@@ -57,7 +57,8 @@ class Cooldown:
         return f"cooldown:{name}"
 
     async def read(self, event_name):
-        data = await self.db.redis.get(self.get_key(event_name))
+        redis = await self.db.get_redis()
+        data = await redis.get(self.get_key(event_name))
         try:
             return CooldownRecord(**json.loads(data))
         except (TypeError, json.decoder.JSONDecodeError):

@@ -13,7 +13,7 @@ from services.lib.explorers import get_explorer_url_to_address, Chains, get_expl
 from services.lib.money import format_percent, pretty_money, short_address, short_money, \
     calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset
 from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
-    up_down_arrow, bracketify, plural
+    up_down_arrow, bracketify, plural, grouper, join_as_numbered_list
 from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus
@@ -465,9 +465,9 @@ class BaseLocalization(ABC):  # == English
         else:
             message = ''
 
-        def pool_text(pool_name, status, to_status=None):
-            if PoolInfo.is_status_enabled(to_status):
-                extra = '🎉 BECAME ACTIVE. You can swap!'
+        def pool_text(pool_name, status, to_status=None, can_swap=True):
+            if can_swap and PoolInfo.is_status_enabled(to_status):
+                extra = '🎉 <b>BECAME ACTIVE, you can swap!</b>'
             else:
                 extra = ital(status)
                 if to_status is not None and status != to_status:  # fix: staged -> staged
@@ -478,7 +478,8 @@ class BaseLocalization(ABC):  # == English
         if pc.pools_added:
             message += '✅ Pools added:\n' + '\n'.join([pool_text(*a) for a in pc.pools_added]) + '\n\n'
         if pc.pools_removed:
-            message += '❌ Pools removed:\n' + '\n'.join([pool_text(*a) for a in pc.pools_removed]) + '\n\n'
+            message += ('❌ Pools removed:\n' + '\n'.join([pool_text(*a, can_swap=False) for a in pc.pools_removed])
+                        + '\n\n')
         if pc.pools_changed:
             message += '🔄 Pools changed:\n' + '\n'.join([pool_text(*a) for a in pc.pools_changed]) + '\n\n'
 
@@ -754,7 +755,8 @@ class BaseLocalization(ABC):  # == English
     TEXT_PIC_UNKNOWN = 'Unknown'
 
     def _format_node_text(self, node: NodeInfo, add_status=False, extended_info=False):
-        node_ip_link = link(f'https://www.infobyip.com/ip-{node.ip_address}.html', node.ip_address)
+        node_ip_link = link(f'https://www.infobyip.com/ip-{node.ip_address}.html', node.ip_address) \
+            if node.ip_address else 'No IP'
         thor_explore_url = get_explorer_url_to_address(self.cfg.network_id, Chains.THOR, node.node_address)
         node_thor_link = link(thor_explore_url, short_address(node.node_address))
         extra = ''
@@ -770,13 +772,15 @@ class BaseLocalization(ABC):  # == English
         return f'{bold(node_thor_link)} ({node_ip_link}, v. {node.version}) ' \
                f'with {bold(short_money(node.bond, postfix=RAIDO_GLYPH))} bonded{status}{extra}'.strip()
 
-    def _make_node_list(self, nodes, title, add_status=False, extended_info=False):
+    def _make_node_list(self, nodes, title, add_status=False, extended_info=False, start=1):
         if not nodes:
             return ''
 
         message = ital(title) + "\n"
-        for i, node in enumerate(nodes, start=1):
-            message += f"{i}. {self._format_node_text(node, add_status, extended_info)}.\n"
+        message += join_as_numbered_list(
+            (self._format_node_text(node, add_status, extended_info) for node in nodes),
+            start=start
+        )
         return message + "\n"
 
     def notification_text_for_node_churn(self, changes: NodeSetChanges):
@@ -792,20 +796,35 @@ class BaseLocalization(ABC):  # == English
 
         return message.rstrip()
 
-    def node_list_text(self, nodes: List[NodeInfo], status):
-        message = bold('🕸️ THORChain Nodes') + '\n\n' if status == NodeInfo.ACTIVE else ''
-
+    def node_list_text(self, nodes: List[NodeInfo], status, items_per_chunk=12):
+        add_status = False
         if status == NodeInfo.ACTIVE:
-            active_nodes = [n for n in nodes if n.is_active]
-            message += self._make_node_list(active_nodes, '✅ Active nodes:', extended_info=True)
+            title = '✅ Active nodes:'
+            nodes = [n for n in nodes if n.is_active]
         elif status == NodeInfo.STANDBY:
-            standby_nodes = [n for n in nodes if n.is_standby]
-            message += self._make_node_list(standby_nodes, '⏱ Standby nodes:', extended_info=True)
+            title = '⏱ Standby nodes:'
+            nodes = [n for n in nodes if n.is_standby]
         else:
-            other_nodes = [n for n in nodes if n.in_strange_status]
-            message += self._make_node_list(other_nodes, '❔ Other nodes:', add_status=True, extended_info=True)
+            title = '❔ Other nodes:'
+            nodes = [n for n in nodes if n.in_strange_status]
+            add_status = True
 
-        return message.rstrip()
+        groups = list(grouper(items_per_chunk, nodes))
+
+        starts = []
+        current_start = 1
+        for group in groups:
+            starts.append(current_start)
+            current_start += len(group)
+
+        return [
+            self._make_node_list(group,
+                                 title if start == 1 else '',
+                                 extended_info=True,
+                                 add_status=add_status,
+                                 start=start).rstrip()
+            for start, group in zip(starts, groups)
+        ]
 
     # ------ VERSION ------
 

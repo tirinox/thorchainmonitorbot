@@ -193,7 +193,7 @@ class PoolInfoFetcherMidgard(BaseFetcher):
 
     async def fetch(self):
         result = await self.get_pool_info_midgard()
-        # result = self._test_drop_one(result)  # fixme: debug!
+        # result = self._test_drop_one(result)  # for debug case!
         return result
 
     def _test_drop_one(self, pool_info_map: PoolInfoMap) -> PoolInfoMap:
