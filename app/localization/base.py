@@ -974,15 +974,17 @@ class BaseLocalization(ABC):  # == English
         text += 'It will send you personalized notifications ' \
                 'when something important happens to the nodes you are monitoring.\n\n'
         if watch_list:
-            named_nodes = [(addr, name) for addr, name in watch_list.items() if name]
-            node_list = ', '.join(map(self.short_node_name, watch_list))
+            # node_list = ', '.join(self.short_node_name(addr, name) for addr, name in watch_list.items())
+            # node_list = pre(node_list[:3000])
+            text += f'You have {len(watch_list)} nodes in the watchlist.'
         else:
             text += f'You did not add anything to the watch list. Click {ital(self.BUTTON_NOP_ADD_NODES)} first 👇.'
 
         return text
 
-    TEXT_NOP_MANAGE = 'You added the following nodes to your watchlist. ' \
-                      'Select one in the menu below to edit or to unwatch it.'
+    TEXT_NOP_MANAGE_LIST_TITLE = \
+        'You added the following nodes to your watchlist. Total: <pre>{n}</pre>. ' \
+        'Select one in the menu below to edit or to unwatch it.'
     TEXT_NOP_ADD_INSTRUCTIONS_PRE = 'Select the nodes which you would like to add to <b>your watchlist</b> ' \
                                     'from the list below.'
     TEXT_NOP_ADD_INSTRUCTIONS = '🤓 If you know the addresses of the nodes you are interested in, ' \
@@ -998,6 +1000,17 @@ class BaseLocalization(ABC):  # == English
     TEXT_NOP_SURE_TO_REMOVE = 'Are you sure to remove all {n} nodes from your watchlist?'
     TEXT_NOP_SEARCH_NO_VARIANTS = 'No matches found for current search. Please refine your search or use the list.'
     TEXT_NOP_SEARCH_VARIANTS = 'We found the following nodes that match the search:'
+
+    def text_nop_success_add(self, node_addresses):
+        node_addresses_text = ','.join([self.short_node_name(a) for a in node_addresses])
+        node_addresses_text = node_addresses_text[:3000]  # just in case!
+        message = f'😉 Success! You added: {pre(node_addresses_text)} to your watchlist. ' \
+                  f'Expect notifications of important events.'
+        return message
+
+    BUTTON_NOP_CLEAR_LIST = '🗑️ Clear the list ({n})'
+    BUTTON_NOP_REMOVE_INACTIVE = '❌ Remove inactive ({n})'
+    BUTTON_NOP_REMOVE_DISCONNECTED = '❌ Remove disconnected ({n})'
 
     # ------- INLINE BOT (English only) -------
 
