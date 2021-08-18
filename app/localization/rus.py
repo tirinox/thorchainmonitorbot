@@ -12,7 +12,7 @@ from services.lib.explorers import get_explorer_url_to_address
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change, Asset
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
-    up_down_arrow, plural
+    up_down_arrow, plural, grouper
 from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus
@@ -661,21 +661,35 @@ class RussianLocalization(BaseLocalization):
 
         return message.rstrip()
 
-    def node_list_text(self, nodes: List[NodeInfo], status):
-        message = bold('🕸️ THORChain ноды (узлы)') + '\n\n' if status == NodeInfo.ACTIVE else ''
-
+    def node_list_text(self, nodes: List[NodeInfo], status, items_per_chunk=12):
+        add_status = False
         if status == NodeInfo.ACTIVE:
-            active_nodes = [n for n in nodes if n.is_active]
-            message += self._make_node_list(active_nodes, '✅ Активные ноды:', extended_info=True)
+            title = '✅ Активные ноды:'
+            nodes = [n for n in nodes if n.is_active]
         elif status == NodeInfo.STANDBY:
-            standby_nodes = [n for n in nodes if n.is_standby]
-            message += self._make_node_list(standby_nodes, '⏱ Ожидающие активации ноды:', extended_info=True)
+            title = '⏱ Ожидающие активации ноды:'
+            nodes = [n for n in nodes if n.is_standby]
         else:
-            other_nodes = [n for n in nodes if n.in_strange_status]
-            message += self._make_node_list(other_nodes, '❔ Ноды в других статусах:', add_status=True,
-                                            extended_info=True)
+            title = '❔ Ноды в других статусах:'
+            nodes = [n for n in nodes if n.in_strange_status]
+            add_status = True
 
-        return message.rstrip()
+        groups = list(grouper(items_per_chunk, nodes))
+
+        starts = []
+        current_start = 1
+        for group in groups:
+            starts.append(current_start)
+            current_start += len(group)
+
+        return [
+            self._make_node_list(group,
+                                 title if start == 1 else '',
+                                 extended_info=True,
+                                 add_status=add_status,
+                                 start=start).rstrip()
+            for start, group in zip(starts, groups)
+        ]
 
     # ------ VERSION ------
 
