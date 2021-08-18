@@ -49,6 +49,7 @@ class InlineListResult(typing.NamedTuple):
     result: str = NOT_HANDLED
     selected_item: object = None
     selected_item_index: int = 0
+    selected_data_tag: str = ''
 
 
 class TelegramInlineList:
@@ -74,6 +75,22 @@ class TelegramInlineList:
         self.extra_buttons_above = []
         self.extra_buttons_below = []
 
+    def get_item_display_text(self, index):
+        item = self._items[index]
+        if isinstance(item, tuple):
+            display_text, _ = item
+            return display_text
+        else:
+            return item
+
+    def get_item_data_tag(self, index):
+        item = self._items[index]
+        if isinstance(item, tuple):
+            _, data_tag = item
+            return data_tag
+        else:
+            return item
+
     def set_extra_buttons_above(self, extra_buttons):
         self.extra_buttons_above = extra_buttons
         return self
@@ -97,10 +114,10 @@ class TelegramInlineList:
                 if offset == self._n:
                     break
                 counter = offset + 1
-                item = self._items[offset]
+                text = self.get_item_display_text(offset)
                 row.append(
                     InlineKeyboardButton(
-                        f'{counter}. {item}',
+                        f'{counter}. {text}',
                         callback_data=f'{self.data_prefix}:{offset}'
                     )
                 )
@@ -162,6 +179,9 @@ class TelegramInlineList:
     async def clear_keyboard(query: CallbackQuery):
         await query.message.edit_reply_markup(reply_markup=None)
 
+    def __len__(self):
+        return len(self._items)
+
     async def handle_query(self, query: CallbackQuery) -> InlineListResult:
         ILR = InlineListResult
         data = query.data
@@ -188,7 +208,9 @@ class TelegramInlineList:
             except (ValueError, AssertionError):
                 return ILR(ILR.NOT_HANDLED)
             else:
-                item = self._items[item_index]
+                text = self.get_item_display_text(item_index)
+                data_tag = self.get_item_data_tag(item_index)
                 return ILR(ILR.SELECTED,
-                           selected_item=item,
-                           selected_item_index=item_index)
+                           selected_item=text,
+                           selected_item_index=item_index,
+                           selected_data_tag=data_tag)
