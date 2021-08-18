@@ -105,7 +105,7 @@ class LiquidityInfoDialog(BaseDialog):
             [
                 InlineKeyboardButton(self.loc.BUTTON_SM_SUMMARY,
                                      callback_data=f'{self.QUERY_SUMMARY_OF_ADDRESS}:{addr_idx}'),
-                InlineKeyboardButton(self.loc.BUTTON_VIEW_RUNESTAKEINFO,
+                InlineKeyboardButton(self.loc.BUTTON_VIEW_RUNE_DOT_YIELD,
                                      url=get_runeyield_info_address(self.deps.cfg.network_id, address, chain))
             ]
         ]

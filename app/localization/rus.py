@@ -78,7 +78,7 @@ class RussianLocalization(BaseLocalization):
 
     BUTTON_SM_SUMMARY = '💲 Сводка'
 
-    BUTTON_VIEW_RUNESTAKEINFO = '🌎 Открыть на runeyield.info'
+    BUTTON_VIEW_RUNE_DOT_YIELD = '🌎 Открыть на runeyield.info'
     BUTTON_VIEW_VALUE_ON = 'Скрыть деньги: НЕТ'
     BUTTON_VIEW_VALUE_OFF = 'Скрыть деньги: ДА'
     BUTTON_REMOVE_THIS_ADDRESS = '❌ Удалить этот адресс'

@@ -120,7 +120,7 @@ class BaseLocalization(ABC):  # == English
 
     BUTTON_SM_SUMMARY = '💲 Summary'
 
-    BUTTON_VIEW_RUNESTAKEINFO = '🌎 View it on runeyield.info'
+    BUTTON_VIEW_RUNE_DOT_YIELD = '🌎 View it on runeyield.info'
     BUTTON_VIEW_VALUE_ON = 'Show value: ON'
     BUTTON_VIEW_VALUE_OFF = 'Show value: OFF'
     BUTTON_REMOVE_THIS_ADDRESS = '❌ Remove this address'
@@ -1011,6 +1011,14 @@ class BaseLocalization(ABC):  # == English
     BUTTON_NOP_CLEAR_LIST = '🗑️ Clear the list ({n})'
     BUTTON_NOP_REMOVE_INACTIVE = '❌ Remove inactive ({n})'
     BUTTON_NOP_REMOVE_DISCONNECTED = '❌ Remove disconnected ({n})'
+
+    BUTTON_NOP_SURE_TO_REMOVE_ONE = 'Are you sure to remove node <pre>{node}</pre> from your watchlist?'
+    BUTTON_NOP_SURE_TO_REMOVE_MANY = 'Are you sure to remove node <pre>{n}</pre> nodes from your watchlist?'
+
+    def text_nop_success_remove(self, node_addresses):
+        node_addresses_text = ','.join([self.short_node_name(a) for a in node_addresses])
+        node_addresses_text = node_addresses_text[:3000]  # just in case!
+        return f'😉 Success! You removed: {pre(node_addresses_text)} ({len(node_addresses)} nodes) from your watchlist.'
 
     # ------- INLINE BOT (English only) -------
 

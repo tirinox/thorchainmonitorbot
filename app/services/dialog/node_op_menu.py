@@ -98,16 +98,18 @@ class NodeOpDialog(BaseDialog):
         tg_list = await self.all_nodes_list_maker()
         result = await tg_list.handle_query(query)
 
+        user_id = query.message.chat.id
+
         if result.result == result.BACK:
             await self.on_enter(query.message)
         elif result.result == result.SELECTED:
-            await self.add_nodes_for_user(query.message, [result.selected_data_tag], query.message.chat.id)
+            await self.add_nodes_for_user(query.message, [result.selected_data_tag], user_id)
         elif query.data == 'add:all':
             last_nodes = await self.get_all_nodes()
-            await self.add_nodes_for_user(query.message, [n.node_address for n in last_nodes], query.message.chat.id)
+            await self.add_nodes_for_user(query.message, [n.node_address for n in last_nodes], user_id)
         elif query.data == 'add:active':
             last_nodes = await self.get_all_active_nodes()
-            await self.add_nodes_for_user(query.message, [n.node_address for n in last_nodes], query.message.chat.id)
+            await self.add_nodes_for_user(query.message, [n.node_address for n in last_nodes], user_id)
         await query.answer()
 
     async def add_nodes_for_user(self, message: Message, node_list: list, user_id):
@@ -125,23 +127,30 @@ class NodeOpDialog(BaseDialog):
         disconnected_addresses, inactive_addresses = await self.filter_user_nodes_by_category(list(watch_list.keys()))
 
         my_nodes_names = [self.loc.short_node_name(*pair) for pair in watch_list.items()]
+
+        extra_row = []
+        if watch_list:
+            extra_row.append(InlineKeyboardButton(
+                self.loc.BUTTON_NOP_CLEAR_LIST.format(n=len(watch_list)),
+                callback_data='del:all'
+            ))
+
+        if inactive_addresses:
+            extra_row.append(InlineKeyboardButton(
+                self.loc.BUTTON_NOP_REMOVE_INACTIVE.format(n=len(inactive_addresses)),
+                callback_data='del:inactive'
+            ))
+
+        if disconnected_addresses:
+            extra_row.append(InlineKeyboardButton(
+                self.loc.BUTTON_NOP_REMOVE_DISCONNECTED.format(n=len(disconnected_addresses)),
+                callback_data='del:disconnected'
+            ))
+
         return TelegramInlineList(
             my_nodes_names, data_proxy=self.data,
             max_rows=4, back_text=self.loc.BUTTON_BACK, data_prefix='my_nodes'
-        ).set_extra_buttons_below([[
-            InlineKeyboardButton(
-                self.loc.BUTTON_NOP_CLEAR_LIST.format(n=len(watch_list)),
-                callback_data='del:all'
-            ),
-            InlineKeyboardButton(
-                self.loc.BUTTON_NOP_REMOVE_INACTIVE.format(n=len(inactive_addresses)),
-                callback_data='del:inactive'
-            ),
-            InlineKeyboardButton(
-                self.loc.BUTTON_NOP_REMOVE_DISCONNECTED.format(n=len(disconnected_addresses)),
-                callback_data='del:disconnected'
-            ),
-        ]])
+        ).set_extra_buttons_below([extra_row])
 
     async def on_manage_menu(self, message: Message):
         await NodeOpStates.MANAGE_MENU.set()
@@ -151,13 +160,31 @@ class NodeOpDialog(BaseDialog):
 
     @query_handler(state=NodeOpStates.MANAGE_MENU)
     async def on_manage_callback(self, query: CallbackQuery):
-        tg_list = await self.my_node_list_maker(query.message.chat.id)
+        user_id = query.message.chat.id
+        tg_list = await self.my_node_list_maker(user_id)
         result = await tg_list.handle_query(query)
+
+        watch_list = await self.storage(user_id).all_nodes_for_user()
+        disconnected_addresses, inactive_addresses = await self.filter_user_nodes_by_category(list(watch_list))
+
         if result.result == result.BACK:
             await self.on_enter(query.message)
         elif result.result == result.SELECTED:
             await query.message.answer(f'You selected {result.selected_item}')
+        elif query.data == 'del:all':
+            await self.remove_nodes_for_user(query.message, watch_list, user_id)
+        elif query.data == 'del:inactive':
+            await self.remove_nodes_for_user(query.message, inactive_addresses, user_id)
+        elif query.data == 'del:disconnected':
+            await self.remove_nodes_for_user(query.message, disconnected_addresses, user_id)
         await query.answer()
+
+    async def remove_nodes_for_user(self, message: Message, node_list: iter, user_id):
+        if not node_list:
+            return
+        await self.storage(user_id).remove_user_nodes(node_list)
+        await message.edit_text(self.loc.text_nop_success_remove(node_list), reply_markup=InlineKeyboardMarkup())
+        await self.show_menu(message)
 
     # -------- SETTINGS ---------
 
