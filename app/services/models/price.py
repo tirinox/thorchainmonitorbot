@@ -3,7 +3,7 @@ import time
 from dataclasses import dataclass
 from typing import List
 
-from services.lib.constants import BNB_BTCB_SYMBOL, BTC_SYMBOL, STABLE_COIN_POOLS, THOR_DIVIDER_INV
+from services.lib.constants import BNB_BTCB_SYMBOL, BTC_SYMBOL, STABLE_COIN_POOLS, thor_to_float
 from services.lib.money import weighted_mean
 from services.lib.utils import fuzzy_search
 from services.models.base import BaseModelMixin
@@ -100,7 +100,7 @@ class LastPriceHolder:
         tlv = 0  # in USD
         for pool in self.pool_info_map.values():
             pool: PoolInfo
-            tlv += (pool.balance_rune * THOR_DIVIDER_INV) * self.usd_per_rune
+            tlv += thor_to_float(pool.balance_rune) * self.usd_per_rune
         return tlv
 
     def pool_fuzzy_search(self, query: str) -> List[str]:

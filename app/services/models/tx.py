@@ -9,7 +9,6 @@ from services.models.pool_info import PoolInfo
 
 
 class ThorTxType:
-    OLD_TYPE_STAKE = 'stake'  # deprecated (only for v1 parsing)
     TYPE_ADD_LIQUIDITY = 'addLiquidity'
 
     TYPE_SWAP = 'swap'
@@ -17,7 +16,6 @@ class ThorTxType:
 
     TYPE_WITHDRAW = 'withdraw'
 
-    OLD_TYPE_UNSTAKE = 'unstake'  # deprecated (only for v1 parsing)
     OLD_TYPE_ADD = 'add'  # deprecated (only for v1 parsing)
 
     TYPE_DONATE = 'donate'

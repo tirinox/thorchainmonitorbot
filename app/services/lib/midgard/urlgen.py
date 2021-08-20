@@ -52,46 +52,6 @@ class MidgardURLGenBase(ABC):
         ...
 
 
-class MidgardURLGenV1(MidgardURLGenBase):
-    def url_pool_info(self):
-        pass
-
-    LIQUIDITY_TX_TYPES_STRING = 'stake,unstake'
-
-    def url_for_tx(self, offset=0, count=50, address=None, types=None) -> str:
-        url = f'{self.base_url}/v1/txs?offset={offset}&limit={count}'
-        if address:
-            url += f'&address={address}'
-        if types:
-            url += f'&type={types}'
-        return url
-
-    def url_for_pool_depth_history(self, pool, from_ts, to_ts) -> str:
-        return f"{self.base_url}/v1/history/pools?pool={pool}&interval=day&from={from_ts}&to={to_ts}"
-
-    def url_for_address_pool_membership(self, address) -> str:
-        return f"{self.base_url}/v1/stakers/{address}"
-
-    def url_pool_member_details(self, address, pools) -> str:
-        pools = pools if isinstance(pools, str) else ','.join(pools)
-        return f'{self.base_url}/v1/stakers/{address}/pools?asset={pools}'
-
-    def url_mimir(self):
-        return f'{self.base_url}/v1/thorchain/mimir'
-
-    def url_network(self):
-        return f'{self.base_url}/v1/network'
-
-    def url_last_block(self):
-        return f'{self.base_url}/v1/thorchain/lastblock'
-
-    def url_stats(self):
-        return f'{self.base_url}/v1/stats'
-
-    def url_thor_nodes(self):
-        return f'{self.base_url}/v1/thorchain/nodes'  # todo: is it correct?
-
-
 class MidgardURLGenV2(MidgardURLGenBase):
     LIQUIDITY_TX_TYPES_STRING = 'withdraw,addLiquidity'
 

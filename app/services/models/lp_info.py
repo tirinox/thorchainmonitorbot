@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from math import sqrt
 from typing import List, Dict
 
-from services.lib.constants import THOR_DIVIDER_INV, Chains
+from services.lib.constants import Chains, thor_to_float
 from services.lib.date_utils import DAY
 from services.models.base import BaseModelMixin
 from services.models.pool_info import PoolInfo, LPPosition, pool_share
@@ -250,7 +250,7 @@ class LiquidityPoolReport:
     @property
     def redeemable_rune_asset(self):
         r, a = pool_share(self.pool.balance_rune, self.pool.balance_asset, self.liq.pool_units, self.pool.pool_units)
-        return r * THOR_DIVIDER_INV, a * THOR_DIVIDER_INV
+        return thor_to_float(r), thor_to_float(a)
 
     def added_value(self, mode=USD):
         if mode == self.USD:

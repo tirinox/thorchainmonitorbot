@@ -3,7 +3,7 @@ import asyncio
 from services.jobs.fetch.base import BaseFetcher
 from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher
-from services.lib.constants import THOR_DIVIDER_INV, THOR_BLOCK_TIME
+from services.lib.constants import THOR_BLOCK_TIME, thor_to_float
 from services.lib.date_utils import parse_timespan_to_seconds, now_ts
 from services.lib.depcont import DepContainer
 from services.lib.midgard.urlgen import get_url_gen_by_network_id
@@ -29,20 +29,20 @@ class NetworkStatisticsFetcher(BaseFetcher):
             ns.users_monthly = int(j['monthlyActiveUsers'])
 
             ns.add_count = int(j['addLiquidityCount'])
-            ns.added_rune = int(j['addLiquidityVolume']) * THOR_DIVIDER_INV
+            ns.added_rune = thor_to_float(j['addLiquidityVolume'])
 
             ns.withdraw_count = int(j['withdrawCount'])
-            ns.withdrawn_rune = int(j['withdrawVolume']) * THOR_DIVIDER_INV
+            ns.withdrawn_rune = thor_to_float(j['withdrawVolume'])
 
-            ns.loss_protection_paid_rune = int(j['impermanentLossProtectionPaid']) * THOR_DIVIDER_INV
+            ns.loss_protection_paid_rune = thor_to_float(j['impermanentLossProtectionPaid'])
 
             ns.swaps_total = int(j['swapCount'])
             ns.swaps_24h = int(j['swapCount24h'])
             ns.swaps_30d = int(j['swapCount30d'])
-            ns.swap_volume_rune = int(j['swapVolume']) * THOR_DIVIDER_INV
+            ns.swap_volume_rune = thor_to_float(j['swapVolume'])
 
-            ns.switched_rune = int(j['switchedRune']) * THOR_DIVIDER_INV
-            ns.total_rune_pooled = int(j['runeDepth']) * THOR_DIVIDER_INV
+            ns.switched_rune = thor_to_float(j['switchedRune'])
+            ns.total_rune_pooled = thor_to_float(j['runeDepth'])
 
     async def _get_network(self, session, ns: NetworkStats):
         url_network = self.url_gen.url_network()
@@ -57,15 +57,17 @@ class NetworkStatisticsFetcher(BaseFetcher):
             ns.bonding_apy = float(j['bondingAPY']) * 100.0
             ns.liquidity_apy = float(j['liquidityAPY']) * 100.0
 
-            ns.reserve_rune = int(j['totalReserve']) * THOR_DIVIDER_INV
+            ns.reserve_rune = thor_to_float(j['totalReserve'])
 
             next_cool_cd = int(j['poolActivationCountdown'])
             ns.next_pool_activation_ts = now_ts() + THOR_BLOCK_TIME * next_cool_cd
 
             bonding_metrics = j['bondMetrics']
-            ns.total_active_bond_rune = int(bonding_metrics['totalActiveBond']) * THOR_DIVIDER_INV
-            ns.total_bond_rune = (int(bonding_metrics['totalActiveBond']) +
-                                  int(bonding_metrics['totalStandbyBond'])) * THOR_DIVIDER_INV
+
+            ns.total_active_bond_rune = thor_to_float(bonding_metrics['totalActiveBond'])
+
+            stand_by_bond = thor_to_float(bonding_metrics['totalStandbyBond'])
+            ns.total_bond_rune = ns.total_active_bond_rune + stand_by_bond
 
     KEY_CONST_MIN_RUNE_POOL_DEPTH = 'MinRunePoolDepth'
 

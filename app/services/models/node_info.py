@@ -8,7 +8,7 @@ from typing import List, Dict, NamedTuple, Optional
 
 from semver import VersionInfo
 
-from services.lib.constants import THOR_DIVIDER_INV
+from services.lib.constants import thor_to_float
 from services.models.base import BaseModelMixin
 
 ZERO_VERSION = VersionInfo(0, 0, 0)
@@ -70,11 +70,11 @@ class NodeInfo(BaseModelMixin):
         return cls(
             status=d.get('status', NodeInfo.DISABLED),
             node_address=d.get('node_address', ''),
-            bond=int(d.get('bond', 0)) * THOR_DIVIDER_INV,
+            bond=int(thor_to_float(d.get('bond', 0))),
             ip_address=d.get('ip_address', ''),
             version=d.get('version', ''),
             slash_points=int(d.get('slash_points', 0)),
-            current_award=int(d.get('current_award', 0.0)) * THOR_DIVIDER_INV,
+            current_award=thor_to_float(d.get('current_award', 0.0)),
             requested_to_leave=bool(d.get('requested_to_leave', False)),
             forced_to_leave=bool(d.get('forced_to_leave', False)),
             active_block_height=int(d.get('active_block_height', 0)),

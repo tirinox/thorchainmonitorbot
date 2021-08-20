@@ -1,7 +1,7 @@
 import asyncio
 
 from services.jobs.fetch.base import BaseFetcher
-from services.lib.constants import THOR_DIVIDER_INV
+from services.lib.constants import thor_to_float
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.midgard.urlgen import get_url_gen_by_network_id
@@ -45,14 +45,14 @@ class CapInfoFetcher(BaseFetcher):
         else:
             lp_rune = networks_resp.get('totalPooledRune', 0)
 
-        return int(lp_rune) * THOR_DIVIDER_INV
+        return thor_to_float(lp_rune)
 
     async def get_max_possible_pooled_rune(self):
         mimir_resp = await self.get_mimir()
 
         for key in self.MIMIR_CAP_KEYS:
             if key in mimir_resp:
-                return int(mimir_resp[key]) * THOR_DIVIDER_INV
+                return thor_to_float(mimir_resp[key])
         return 1e-8
 
     async def fetch(self) -> ThorCapInfo:
