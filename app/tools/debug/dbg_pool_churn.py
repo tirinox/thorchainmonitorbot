@@ -6,7 +6,6 @@ import aiohttp
 from aiogram import Bot, Dispatcher
 from aiogram.types import ParseMode
 from aiothornode.connector import ThorConnector
-from aiothornode.env import TEST_NET_ENVIRONMENT_MULTI_1
 
 from localization import LocalizationManager
 from services.jobs.fetch.pool_price import PoolPriceFetcher, PoolInfoFetcherMidgard

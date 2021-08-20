@@ -4,7 +4,6 @@ import os
 
 from services.dialog.picture.lp_picture import lp_pool_picture, lp_address_summary_picture
 from services.jobs.fetch.runeyield.lp_my import HomebrewLPConnector
-from services.lib.constants import BNB_BUSD_SYMBOL
 from services.lib.utils import load_pickle, save_pickle
 from tools.lib.lp_common import LpAppFramework, LpGenerator
 

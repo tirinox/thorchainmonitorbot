@@ -7,7 +7,7 @@ from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
 from services.models.pool_info import PoolInfo
 from services.models.pool_stats import LiquidityPoolStats
-from services.models.tx import ThorTxExtended, ThorTx, ThorTxType
+from services.models.tx import ThorTxExtended, ThorTx
 
 
 class PoolStatsUpdater(WithDelegates, INotified):
