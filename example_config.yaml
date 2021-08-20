@@ -203,6 +203,9 @@ node_info:
       enabled: true
       cooldown: 2h
 
+  personal:  # new!
+    enabled: true
+
 
 constants:
   mimir_change:

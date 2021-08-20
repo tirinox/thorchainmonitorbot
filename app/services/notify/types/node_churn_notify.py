@@ -1,15 +1,17 @@
 import logging
+from typing import List
 
 from localization import BaseLocalization
 from services.dialog.picture.node_geo_picture import node_geo_pic
 from services.jobs.fetch.base import INotified
 from services.jobs.fetch.node_info import NodeInfoFetcher
+from services.jobs.node_churn import NodeChurnDetector
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import MINUTE
 from services.lib.depcont import DepContainer
 from services.lib.draw_utils import img_to_bio
 from services.lib.texts import BoardMessage
-from services.models.node_info import NodeSetChanges
+from services.models.node_info import NodeSetChanges, NodeInfo
 
 
 class NodeChurnNotifier(INotified):
@@ -18,10 +20,12 @@ class NodeChurnNotifier(INotified):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.cd = Cooldown(self.deps.db, 'NodeChurnNotification', MINUTE * 10, 5)
 
-    async def on_data(self, sender, data: NodeSetChanges):
-        if not data.is_empty and not data.is_nonsense:
+    async def on_data(self, sender, data: List[NodeInfo]):
+        detector = NodeChurnDetector(self.deps)
+        changes = await detector.extract_changes(data)
+        if not changes.is_empty and not changes.is_nonsense:
             if await self.cd.can_do():
-                await self._notify_when_node_churn(data)
+                await self._notify_when_node_churn(changes)
                 await self.cd.do()
 
     async def _notify_when_node_churn(self, changes: NodeSetChanges):

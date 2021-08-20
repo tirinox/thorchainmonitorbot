@@ -156,6 +156,9 @@ class App:
                 notifier_version = VersionNotifier(d)
                 fetcher_nodes.subscribe(notifier_version)
 
+            if d.cfg.get('node_info.personal.enabled', True):
+                ...  # todo: connect personal analizer
+
         if d.cfg.get('price.enabled', True):
             notifier_price = PriceNotifier(d)
             d.price_pool_fetcher.subscribe(notifier_price)

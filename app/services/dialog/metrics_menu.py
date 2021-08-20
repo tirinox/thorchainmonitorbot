@@ -85,10 +85,12 @@ class MetricsDialog(BaseDialog):
                              disable_notification=True)
 
     async def show_node_list(self, message: Message):
-        loading_message = await message.answer(self.loc.LOADING, disable_notification=True, disable_web_page_preview=True)
+        loading_message = await message.answer(self.loc.LOADING,
+                                               disable_notification=True,
+                                               disable_web_page_preview=True)
 
         node_fetcher = NodeInfoFetcher(self.deps)
-        result_network_info = await node_fetcher.get_node_list_and_geo_info()
+        result_network_info = await node_fetcher.get_node_list_and_geo_info()  # todo: switch to NodeChurnDetector (DB)
         node_list = result_network_info.node_info_list
 
         active_node_messages = self.loc.node_list_text(node_list, NodeInfo.ACTIVE)
