@@ -98,11 +98,11 @@ class BaseLocalization(ABC):  # == English
 
     # ----- MAIN MENU ------
 
-    BUTTON_MM_MY_ADDRESS = '🏦 Manage my address'
+    BUTTON_MM_MY_ADDRESS = '🏦 My Liquidity Yield'
     BUTTON_MM_METRICS = '📐 Metrics'
     BUTTON_MM_SETTINGS = f'⚙️ Settings'
     BUTTON_MM_MAKE_AVATAR = f'🦹‍️️ THOR Avatar'
-    BUTTON_MM_NODE_OP = '🔜 Node Op tools'
+    BUTTON_MM_NODE_OP = '🤖 NodeOp tools'
 
     def kbd_main_menu(self):
         return kbd([
@@ -111,7 +111,7 @@ class BaseLocalization(ABC):  # == English
             [self.BUTTON_MM_SETTINGS]
         ])
 
-    # ------- STAKE INFO MENU -------
+    # ------- MY LIQUIDITY INFO MENU -------
 
     BUTTON_SM_ADD_ADDRESS = '➕ Add an address'
     BUTTON_BACK = '🔙 Back'
@@ -245,7 +245,7 @@ class BaseLocalization(ABC):  # == English
     PRICE_GRAPH_LEGEND_ACTUAL_PRICE = f'Pool {RAIDO_GLYPH} price'
     PRICE_GRAPH_LEGEND_CEX_PRICE = f'Binance {RAIDO_GLYPH} price'
 
-    # ------- NOTIFY STAKES -------
+    # ------- NOTIFY TXS -------
 
     TEXT_MORE_TXS = ' and {n} more'
 

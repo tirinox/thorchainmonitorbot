@@ -63,11 +63,11 @@ class RussianLocalization(BaseLocalization):
 
     # ----- MAIN MENU ------
 
-    BUTTON_MM_MY_ADDRESS = '🏦 Мои адреса'
+    BUTTON_MM_MY_ADDRESS = '🏦 Мои LP адреса'
     BUTTON_MM_METRICS = '📐 Метрики'
     BUTTON_MM_SETTINGS = f'⚙️ Настройки'
     BUTTON_MM_MAKE_AVATAR = f'🦹‍️️ Сделай аву'
-    BUTTON_MM_NODE_OP = '🔜 Операторам нод'
+    BUTTON_MM_NODE_OP = '🤖 Операторам нод'
 
     # ------ LP INFO -----
 
