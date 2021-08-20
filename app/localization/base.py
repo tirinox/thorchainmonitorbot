@@ -969,9 +969,11 @@ class BaseLocalization(ABC):  # == English
         addr = self.short_node_name(node.node_address, name)
         return f'{pre(addr)} ({bold(short_money(node.bond, prefix="R"))} bond)'
 
-    def text_node_op_welcome_text(self, watch_list: dict):
-        text = bold('Welcome to the Node Monitor tool!') + '\n\n'
-        text += 'It will send you personalized notifications ' \
+    def text_node_op_welcome_text_part1(self):
+        return bold('Welcome to the Node Monitor tool!')
+
+    def text_node_op_welcome_text_part2(self, watch_list: dict):
+        text = 'It will send you personalized notifications ' \
                 'when something important happens to the nodes you are monitoring.\n\n'
         if watch_list:
             # node_list = ', '.join(self.short_node_name(addr, name) for addr, name in watch_list.items())
@@ -1001,10 +1003,10 @@ class BaseLocalization(ABC):  # == English
     TEXT_NOP_SEARCH_NO_VARIANTS = 'No matches found for current search. Please refine your search or use the list.'
     TEXT_NOP_SEARCH_VARIANTS = 'We found the following nodes that match the search:'
 
-    def text_nop_success_add(self, node_addresses):
+    def text_nop_success_add_banner(self, node_addresses):
         node_addresses_text = ','.join([self.short_node_name(a) for a in node_addresses])
-        node_addresses_text = node_addresses_text[:3000]  # just in case!
-        message = f'😉 Success! You added: {pre(node_addresses_text)} to your watchlist. ' \
+        node_addresses_text = node_addresses_text[:80]  # just in case!
+        message = f'😉 Success! {node_addresses_text} added to your watchlist. ' \
                   f'Expect notifications of important events.'
         return message
 
@@ -1015,10 +1017,10 @@ class BaseLocalization(ABC):  # == English
     BUTTON_NOP_SURE_TO_REMOVE_ONE = 'Are you sure to remove node <pre>{node}</pre> from your watchlist?'
     BUTTON_NOP_SURE_TO_REMOVE_MANY = 'Are you sure to remove node <pre>{n}</pre> nodes from your watchlist?'
 
-    def text_nop_success_remove(self, node_addresses):
+    def text_nop_success_remove_banner(self, node_addresses):
         node_addresses_text = ','.join([self.short_node_name(a) for a in node_addresses])
-        node_addresses_text = node_addresses_text[:3000]  # just in case!
-        return f'😉 Success! You removed: {pre(node_addresses_text)} ({len(node_addresses)} nodes) from your watchlist.'
+        node_addresses_text = node_addresses_text[:120]  # just in case!
+        return f'😉 Success! You removed: {node_addresses_text} ({len(node_addresses)} nodes) from your watchlist.'
 
     # ------- INLINE BOT (English only) -------
 

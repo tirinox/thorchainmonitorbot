@@ -82,7 +82,6 @@ class MainMenuDialog(BaseDialog):
             message.text = ''
             await AvatarDialog(self.loc, self.data, self.deps).on_enter(message)
         elif message.text == self.loc.BUTTON_MM_NODE_OP:
-            message.text = ''
-            await NodeOpDialog(self.loc, self.data, self.deps).on_enter(message)
+            await NodeOpDialog(self.loc, self.data, self.deps).show_main_menu(message)
         else:
             return False

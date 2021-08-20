@@ -194,12 +194,15 @@ class TelegramInlineList:
             return ILR(ILR.NOT_HANDLED)
         if action == ILR.BACK:
             await self.clear_keyboard(query)
+            await query.answer()
             return ILR(ILR.BACK)
         elif action == ILR.PREV_PAGE:
             await self._flip_keyboard_page(query.message, forward=False)
+            await query.answer()
             return ILR(ILR.PREV_PAGE)
         elif action == ILR.NEXT_PAGE:
             await self._flip_keyboard_page(query.message, forward=True)
+            await query.answer()
             return ILR(ILR.NEXT_PAGE)
         else:
             try:

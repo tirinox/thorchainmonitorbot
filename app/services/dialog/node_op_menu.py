@@ -1,8 +1,7 @@
 from typing import List
 
-import aiogram.types
 from aiogram.dispatcher.filters.state import StatesGroup, State
-from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, ReplyKeyboardRemove, InlineKeyboardMarkup
+from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.helper import HelperMode
 
 from services.dialog.base import BaseDialog, message_handler, query_handler
@@ -19,46 +18,61 @@ class NodeOpStates(StatesGroup):
     MAIN_MENU = State()
     ADDING = State()
     MANAGE_MENU = State()
+    SETTINGS = State()
 
 
 class NodeOpDialog(BaseDialog):
-
     # ----------- MAIN ------------
-
     @message_handler(state=NodeOpStates.MAIN_MENU)
-    async def on_enter(self, message: Message):
+    async def on_handle_main_menu(self, message: Message):
         if message.text == self.loc.BUTTON_BACK:
             await self.go_back(message)
-        elif message.text == self.loc.BUTTON_NOP_ADD_NODES:
-            await self.on_add_node_menu(message)
-        elif message.text == self.loc.BUTTON_NOP_MANAGE_NODES:
-            await self.on_manage_menu(message)
-        elif message.text == self.loc.BUTTON_NOP_SETTINGS:
-            await self.on_settings_menu(message)
         else:
-            await self.show_menu(message)
+            return False
+        return True
 
-    async def show_menu(self, message: Message):
+    async def show_main_menu(self, message: Message, with_welcome=True):
         await NodeOpStates.MAIN_MENU.set()
-        buttons = [
-            [self.loc.BUTTON_NOP_ADD_NODES, self.loc.BUTTON_NOP_MANAGE_NODES],
-            [self.loc.BUTTON_NOP_SETTINGS, self.loc.BUTTON_BACK]
-        ]
 
         watch_list = await self.storage(message.chat.id).all_nodes_with_names_for_user()
-        await message.answer(self.loc.text_node_op_welcome_text(watch_list),
-                             reply_markup=kbd(buttons),
-                             disable_notification=True)
 
-    # @query_handler(state=NodeOpStates.MAIN_MENU)
-    # async def on_main_callback(self, query: CallbackQuery):
-    #     ...
+        inline_kbd = [
+            [
+                InlineKeyboardButton(self.loc.BUTTON_NOP_ADD_NODES, callback_data='mm:add'),
+                InlineKeyboardButton(self.loc.BUTTON_NOP_MANAGE_NODES, callback_data='mm:edit')
+            ],
+            [
+                InlineKeyboardButton(self.loc.BUTTON_NOP_SETTINGS, callback_data='mm:settings'),
+                # InlineKeyboardButton(self.loc.BUTTON_BACK)  # not needed
+            ]
+        ]
+
+        if with_welcome:
+            await message.answer(self.loc.text_node_op_welcome_text_part1(),
+                                 reply_markup=kbd([[self.loc.BUTTON_BACK]]))
+            await message.answer(self.loc.text_node_op_welcome_text_part2(watch_list),
+                                 reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_kbd),
+                                 disable_notification=True)
+        else:
+            await message.edit_text(self.loc.text_node_op_welcome_text_part2(watch_list),
+                                    reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_kbd))
+
+    @query_handler(state=NodeOpStates.MAIN_MENU)
+    async def on_main_menu_callback(self, query: CallbackQuery):
+        if query.data == 'mm:add':
+            await self.on_add_node_menu(query.message)
+        elif query.data == 'mm:edit':
+            await self.on_manage_menu(query.message)
+        elif query.data == 'mm:settings':
+            await self.on_settings_menu(query.message)
+        await query.answer()
 
     # -------- ADDING ---------
 
     async def all_nodes_list_maker(self):
         last_nodes = await self.get_all_nodes()
         last_node_texts = [
+            # add node_address as a tag
             (self.loc.short_node_desc(n), n.node_address) for n in last_nodes
         ]
         return TelegramInlineList(
@@ -76,14 +90,19 @@ class NodeOpDialog(BaseDialog):
     async def on_add_node_menu(self, message: Message):
         await NodeOpStates.ADDING.set()
         tg_list = await self.all_nodes_list_maker()
+
         # to hide KB
-        await message.answer(self.loc.TEXT_NOP_ADD_INSTRUCTIONS_PRE, reply_markup=ReplyKeyboardRemove())
-        await message.answer(self.loc.TEXT_NOP_ADD_INSTRUCTIONS, reply_markup=tg_list.reset_page().keyboard())
+        # await message.answer(self.loc.TEXT_NOP_ADD_INSTRUCTIONS_PRE, reply_markup=ReplyKeyboardRemove())
+        # await message.answer(self.loc.TEXT_NOP_ADD_INSTRUCTIONS, reply_markup=tg_list.reset_page().keyboard())
+
+        await message.edit_text(
+            self.loc.TEXT_NOP_ADD_INSTRUCTIONS_PRE + '\n\n' +
+            self.loc.TEXT_NOP_ADD_INSTRUCTIONS, reply_markup=tg_list.reset_page().keyboard())
 
     @message_handler(state=NodeOpStates.ADDING)
     async def on_add_got_message(self, message: Message):
         if message.text == self.loc.BUTTON_BACK:
-            await self.show_menu(message)
+            await self.show_main_menu(message, with_welcome=True)
             return
 
         nodes = await self.parse_nodes_from_text_list(message.text)
@@ -101,23 +120,23 @@ class NodeOpDialog(BaseDialog):
         user_id = query.message.chat.id
 
         if result.result == result.BACK:
-            await self.on_enter(query.message)
+            await self.show_main_menu(query.message, with_welcome=False)
         elif result.result == result.SELECTED:
-            await self.add_nodes_for_user(query.message, [result.selected_data_tag], user_id)
+            await self.add_nodes_for_user(query, [result.selected_data_tag], user_id, go_back=False)
         elif query.data == 'add:all':
             last_nodes = await self.get_all_nodes()
-            await self.add_nodes_for_user(query.message, [n.node_address for n in last_nodes], user_id)
+            await self.add_nodes_for_user(query, [n.node_address for n in last_nodes], user_id)
         elif query.data == 'add:active':
             last_nodes = await self.get_all_active_nodes()
-            await self.add_nodes_for_user(query.message, [n.node_address for n in last_nodes], user_id)
-        await query.answer()
+            await self.add_nodes_for_user(query, [n.node_address for n in last_nodes], user_id)
 
-    async def add_nodes_for_user(self, message: Message, node_list: list, user_id):
+    async def add_nodes_for_user(self, query: CallbackQuery, node_list: list, user_id, go_back=True):
         if not node_list:
             return
         await self.storage(user_id).add_user_to_node_list(node_list)
-        await message.edit_text(self.loc.text_nop_success_add(node_list), reply_markup=InlineKeyboardMarkup())
-        await self.show_menu(message)
+        await query.answer(self.loc.text_nop_success_add_banner(node_list))
+        if go_back:
+            await self.show_main_menu(query.message)
 
     # -------- MANAGE ---------
 
@@ -126,7 +145,10 @@ class NodeOpDialog(BaseDialog):
 
         disconnected_addresses, inactive_addresses = await self.filter_user_nodes_by_category(list(watch_list.keys()))
 
-        my_nodes_names = [self.loc.short_node_name(*pair) for pair in watch_list.items()]
+        my_nodes_names = [
+            # add node_address as a tag
+            (self.loc.short_node_name(address, name), address) for address, name in watch_list.items()
+        ]
 
         extra_row = []
         if watch_list:
@@ -150,13 +172,13 @@ class NodeOpDialog(BaseDialog):
         return TelegramInlineList(
             my_nodes_names, data_proxy=self.data,
             max_rows=4, back_text=self.loc.BUTTON_BACK, data_prefix='my_nodes'
-        ).set_extra_buttons_below([extra_row])
+        ).set_extra_buttons_above([extra_row])
 
     async def on_manage_menu(self, message: Message):
         await NodeOpStates.MANAGE_MENU.set()
         tg_list = await self.my_node_list_maker(message.chat.id)
         keyboard = tg_list.reset_page().keyboard()
-        await message.answer(self.loc.TEXT_NOP_MANAGE_LIST_TITLE.format(n=len(tg_list)), reply_markup=keyboard)
+        await message.edit_text(self.loc.TEXT_NOP_MANAGE_LIST_TITLE.format(n=len(tg_list)), reply_markup=keyboard)
 
     @query_handler(state=NodeOpStates.MANAGE_MENU)
     async def on_manage_callback(self, query: CallbackQuery):
@@ -168,28 +190,45 @@ class NodeOpDialog(BaseDialog):
         disconnected_addresses, inactive_addresses = await self.filter_user_nodes_by_category(list(watch_list))
 
         if result.result == result.BACK:
-            await self.on_enter(query.message)
+            await self.show_main_menu(query.message, with_welcome=False)
         elif result.result == result.SELECTED:
-            await query.message.answer(f'You selected {result.selected_item}')
+            await self.remove_nodes_for_user(query, [result.selected_data_tag], user_id, go_back=False)
         elif query.data == 'del:all':
-            await self.remove_nodes_for_user(query.message, watch_list, user_id)
+            await self.remove_nodes_for_user(query, watch_list, user_id)
         elif query.data == 'del:inactive':
-            await self.remove_nodes_for_user(query.message, inactive_addresses, user_id)
+            await self.remove_nodes_for_user(query, inactive_addresses, user_id)
         elif query.data == 'del:disconnected':
-            await self.remove_nodes_for_user(query.message, disconnected_addresses, user_id)
-        await query.answer()
+            await self.remove_nodes_for_user(query, disconnected_addresses, user_id)
 
-    async def remove_nodes_for_user(self, message: Message, node_list: iter, user_id):
+    async def remove_nodes_for_user(self, query: CallbackQuery, node_list: iter, user_id, go_back=True):
         if not node_list:
             return
+
         await self.storage(user_id).remove_user_nodes(node_list)
-        await message.edit_text(self.loc.text_nop_success_remove(node_list), reply_markup=InlineKeyboardMarkup())
-        await self.show_menu(message)
+
+        await query.answer(self.loc.text_nop_success_remove_banner(node_list))
+        if go_back:
+            await self.show_main_menu(query.message, with_welcome=False)
+        else:
+            await self.on_manage_menu(query.message)
 
     # -------- SETTINGS ---------
 
     async def on_settings_menu(self, message: Message):
-        await message.answer('Not implemented yet..')  # todo: implement settings menu
+        # todo: implement settings menu
+        await NodeOpStates.SETTINGS.set()
+        await message.edit_text('Not implemented yet..', reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[[
+                InlineKeyboardButton(self.loc.BUTTON_BACK, callback_data='setting:back')
+            ]]
+        ))
+
+    @query_handler(state=NodeOpStates.SETTINGS)
+    # todo: implement settings menu
+    async def on_setting_callback(self, query: CallbackQuery):
+        if query.data == 'setting:back':
+            await self.show_main_menu(query.message, with_welcome=False)
+        await query.answer()
 
     # ---- UTILS ---
 
