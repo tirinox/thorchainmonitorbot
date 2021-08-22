@@ -2,19 +2,20 @@ import json
 from dataclasses import asdict
 from typing import List
 
+from services.jobs.fetch.base import WithDelegates, INotified
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
 from services.models.node_info import NodeSetChanges, NodeInfo
 
 
-class NodeChurnDetector:
+class NodeStateDatabase:
+    DB_KEY_OLD_NODE_LIST = 'PreviousNodeInfo'
+
     def __init__(self, deps: DepContainer):
         self.logger = class_logger(self)
         self.deps = deps
 
-    DB_KEY_OLD_NODE_LIST = 'PreviousNodeInfo'
-
-    async def get_last_node_info(self) -> List[NodeInfo]:
+    async def get_last_node_info_list(self) -> List[NodeInfo]:
         try:
             db = self.deps.db
             j = await db.redis.get(self.DB_KEY_OLD_NODE_LIST)
@@ -24,10 +25,22 @@ class NodeChurnDetector:
             self.logger.exception('get_last_node_info db error')
             return []
 
-    async def _save_node_infos(self, infos: List[NodeInfo]):
+    async def save_node_info_list(self, info_list: List[NodeInfo]):
+        if not info_list:
+            return
         r = await self.deps.db.get_redis()
-        data = [asdict(item) for item in infos]
+        data = [asdict(item) for item in info_list]
         await r.set(self.DB_KEY_OLD_NODE_LIST, json.dumps(data))
+
+
+class NodeChurnDetector(WithDelegates, INotified):
+    def __init__(self, deps: DepContainer):
+        super().__init__()
+        self.logger = class_logger(self)
+        self.deps = deps
+
+    async def get_last_node_info(self) -> List[NodeInfo]:
+        return await NodeStateDatabase(self.deps).get_last_node_info_list()
 
     async def extract_changes(self, new_nodes: List[NodeInfo]) -> NodeSetChanges:
         old_nodes = await self.get_last_node_info()
@@ -62,3 +75,9 @@ class NodeChurnDetector:
                               nodes_deactivated,
                               nodes_all=new_nodes,
                               nodes_previous=old_nodes)
+
+    async def on_data(self, sender, info_list: List[NodeInfo]):
+        changes = await self.extract_changes(info_list)
+        await NodeStateDatabase(self.deps).save_node_info_list(info_list)
+        self.logger.info(f'Saved previous state of {len(info_list)} nodes.')
+        return changes

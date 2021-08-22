@@ -19,6 +19,7 @@ from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher, PoolInfoFetcherMidgard
 from services.jobs.fetch.queue import QueueFetcher
 from services.jobs.fetch.tx import TxFetcher
+from services.jobs.node_churn import NodeChurnDetector
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.lib.config import Config
 from services.lib.constants import get_thor_env_by_network_id
@@ -28,6 +29,7 @@ from services.lib.utils import setup_logs
 from services.models.price import LastPriceHolder
 from services.models.tx import ThorTxType
 from services.notify.broadcast import Broadcaster
+from services.notify.personal.node_change import NodeChangePersonalNotifier
 from services.notify.types.cap_notify import LiquidityCapNotifier
 from services.notify.types.chain_notify import TradingHaltedNotifier
 from services.notify.types.mimir_notify import MimirChangedNotifier
@@ -148,16 +150,22 @@ class App:
         if d.cfg.get('node_info.enabled', True):
             fetcher_nodes = NodeInfoFetcher(d)
             d.node_info_fetcher = fetcher_nodes
+
+            churn_detector = NodeChurnDetector(d)
+            fetcher_nodes.subscribe(churn_detector)
+
             notifier_nodes = NodeChurnNotifier(d)
-            fetcher_nodes.subscribe(notifier_nodes)
+            churn_detector.subscribe(notifier_nodes)
+
             tasks.append(fetcher_nodes)
 
             if d.cfg.get('node_info.version.enabled', True):
                 notifier_version = VersionNotifier(d)
-                fetcher_nodes.subscribe(notifier_version)
+                churn_detector.subscribe(notifier_version)
 
             if d.cfg.get('node_info.personal.enabled', True):
-                ...  # todo: connect personal analizer
+                node_personal_notifier = NodeChangePersonalNotifier(d)
+                churn_detector.subscribe(node_personal_notifier)
 
         if d.cfg.get('price.enabled', True):
             notifier_price = PriceNotifier(d)

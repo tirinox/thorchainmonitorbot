@@ -134,17 +134,17 @@ class VersionNotifier(INotified):
             await self._set_old_upgrade_progress(ver_con.ratio)
             await self.cd_upgrade.do()
 
-    async def on_data(self, sender, data: NodeSetChanges):
+    async def on_data(self, sender, changes: NodeSetChanges):
         # data = self._debug_modification(data)
 
         if self.is_new_version_enabled:
-            await self._handle_new_versions(data)
+            await self._handle_new_versions(changes)
 
         if self.is_version_activation_enabled:
-            await self._handle_upgrade_progress(data)
+            await self._handle_upgrade_progress(changes)
 
         if self.is_version_activation_enabled:
-            await self._handle_active_version_change(data)
+            await self._handle_active_version_change(changes)
 
     def _debug_modification(self, data: NodeSetChanges) -> NodeSetChanges:
         # 1. new version

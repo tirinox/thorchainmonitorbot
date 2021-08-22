@@ -5,7 +5,7 @@ from localization import BaseLocalization
 from services.jobs.fetch.base import INotified
 from services.lib.depcont import DepContainer
 from services.lib.texts import MessageType
-from services.lib.utils import make_stickers_iterator
+from services.lib.utils import make_stickers_iterator, class_logger
 from services.models.cap_info import ThorCapInfo
 
 
@@ -25,7 +25,7 @@ class LiquidityCapNotifier(INotified):
 
     def __init__(self, deps: DepContainer):
         self.deps = deps
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = class_logger(self)
 
         self.raise_stickers = deps.cfg.cap.raised.stickers
         self.raise_sticker_iter = make_stickers_iterator(self.raise_stickers)

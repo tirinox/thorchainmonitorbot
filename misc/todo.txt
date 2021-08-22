@@ -4,13 +4,11 @@ V2: https://testnet.midgard.thorchain.info/v2/doc
 
 T A S K S :
 
-
 ------------------------------------------------------------------------
 
 TX avg time per type:
 
 pending .... success => avg time?
-
 
 ------------------------------------------------------------------------
 
@@ -33,19 +31,7 @@ Last 7 days POOL leaderboard by
 
 ++ maybe the worse pools
 
-
 ------------------------------------------------------------------------
-
-Swap tx notify
-
-------------------------------------------------------------------------
-
-Pool depth growth / drop?
-
-
-
-------------------------------------------------------------------------
-
 
 ToDo: admin commands, add admin chat id to cfg,
 
@@ -56,11 +42,7 @@ commands:
 4. restart bot
 5. broadcast a message to all bot users
 
-
-
 ------------------------------------------------------------------------
-
-
 
 
 9) Not sure. There are detailed amounts in the Treasury Reports each month (like https://medium.com/thorchain/monthly-treasury-report-september-74b13c27aa7f). Cant find any adresses this quick tho. Will have to dig deeper.
@@ -80,8 +62,6 @@ async def cmd_set_commands(message: types.Message):
                     types.BotCommand(command="/food", description="Заказать блюда")]
         await bot.set_my_commands(commands)
         await message.answer("Команды настроены.")
-
-16) for callback alert use await bot.answer_callback_query()
 
 17) Binance TX monitoring WS:
 

@@ -2,6 +2,7 @@ import random
 from typing import List
 
 from services.jobs.fetch.base import BaseFetcher
+from services.jobs.node_churn import NodeStateDatabase
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.geo_ip import GeoIPManager
@@ -77,3 +78,7 @@ class NodeInfoFetcher(BaseFetcher):
             node_list,
             ip_info_dict
         )
+
+    async def post_action(self, info_list):
+        await NodeStateDatabase(self.deps).save_node_info_list(info_list)
+        self.logger.info(f'Saved previous state of {len(info_list)} nodes.')

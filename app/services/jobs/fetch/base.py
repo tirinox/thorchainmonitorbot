@@ -15,10 +15,11 @@ class INotified(ABC):
 
 class WithDelegates:
     def __init__(self):
-        self.delegates = set()
+        self.delegates = []  # list for fixed order
 
     def subscribe(self, delegate: INotified):
-        self.delegates.add(delegate)
+        if delegate not in self.delegates:
+            self.delegates.append(delegate)
         return self
 
     async def handle_error(self, e, sender=None):
@@ -42,7 +43,6 @@ class BaseFetcher(WithDelegates, ABC):
         self.name = self.__class__.__qualname__
         self.sleep_period = sleep_period
         self.logger = logging.getLogger(f'{self.__class__.__name__}')
-        self.delegates = set()
 
     async def post_action(self, data):
         ...

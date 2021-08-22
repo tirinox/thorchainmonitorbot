@@ -20,9 +20,7 @@ class NodeChurnNotifier(INotified):
         self.logger = logging.getLogger(self.__class__.__name__)
         self.cd = Cooldown(self.deps.db, 'NodeChurnNotification', MINUTE * 10, 5)
 
-    async def on_data(self, sender, data: List[NodeInfo]):
-        detector = NodeChurnDetector(self.deps)
-        changes = await detector.extract_changes(data)
+    async def on_data(self, sender, changes: NodeSetChanges):
         if not changes.is_empty and not changes.is_nonsense:
             if await self.cd.can_do():
                 await self._notify_when_node_churn(changes)
