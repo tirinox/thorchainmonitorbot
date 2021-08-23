@@ -1,50 +1,69 @@
+import abc
 import asyncio
 import socket
+
+import ujson
 
 import websockets
 
 from services.lib.utils import class_logger
 
 
-class WSClient:
-    def __init__(self, url, **kwargs):
+class WSClient(abc.ABC):
+    @abc.abstractmethod
+    async def handle_message(self, reply: dict):
+        ...
+
+    async def on_connected(self):
+        ...
+
+    def __init__(self, url, reply_timeout=10, ping_timeout=5, sleep_time=5, headers=None):
         self.url = url
-        self.reply_timeout = kwargs.get('reply_timeout') or 10
-        self.ping_timeout = kwargs.get('ping_timeout') or 5
-        self.sleep_time = kwargs.get('sleep_time') or 5
-        self.callback = kwargs.get('callback')
+        self.reply_timeout = reply_timeout
+        self.ping_timeout = ping_timeout
+        self.sleep_time = sleep_time
         self.logger = class_logger(self)
+        self.headers = headers or {}
+        self.ws: websockets.WebSocketClientProtocol = None
+
+    async def send_message(self, message):
+        await self.ws.send(ujson.dumps(message))
 
     async def listen_forever(self):
         while True:
-            self.logger.debug('Creating new connection...')
+            self.logger.info(f'Creating new connection... to {self.url}')
             try:
-                async with websockets.connect(self.url) as ws:
+                async with websockets.connect(self.url, extra_headers=self.headers) as self.ws:
+                    await self.on_connected()
                     while True:
                         # listener loop
                         try:
-                            reply = await asyncio.wait_for(ws.recv(), timeout=self.reply_timeout)
+                            reply = await asyncio.wait_for(self.ws.recv(), timeout=self.reply_timeout)
                         except (asyncio.TimeoutError, websockets.ConnectionClosed):
                             try:
-                                pong = await ws.ping()
+                                pong = await self.ws.ping()
                                 await asyncio.wait_for(pong, timeout=self.ping_timeout)
                                 self.logger.debug('Ping OK, keeping connection alive...')
                                 continue
                             except:
                                 self.logger.debug(
-                                    'Ping error - retrying connection in {} sec (Ctrl-C to quit)'.format(self.sleep_time))
+                                    'Ping error - retrying connection in {} sec (Ctrl-C to quit)'.format(
+                                        self.sleep_time))
                                 await asyncio.sleep(self.sleep_time)
                                 break
                         self.logger.debug('Server said > {}'.format(reply))
-                        if self.callback:
-                            self.callback(reply)
+                        try:
+                            message = ujson.loads(reply)
+                            await self.handle_message(message)
+                        except ValueError:
+                            self.logger.error(f'Error decoding WebSocket JSON message! {reply[:1000]}...')
+
             except socket.gaierror:
-                self.logger.debug(
-                    'Socket error - retrying connection in {} sec (Ctrl-C to quit)'.format(self.sleep_time))
+                self.logger.warn(f'Socket error - retrying connection in {self.sleep_time} sec ')
                 await asyncio.sleep(self.sleep_time)
                 continue
             except ConnectionRefusedError:
                 self.logger.debug('Nobody seems to listen to this endpoint. Please check the URL.')
-                self.logger.debug('Retrying connection in {} sec (Ctrl-C to quit)'.format(self.sleep_time))
+                self.logger.debug(f'Retrying connection in {self.sleep_time}')
                 await asyncio.sleep(self.sleep_time)
                 continue
