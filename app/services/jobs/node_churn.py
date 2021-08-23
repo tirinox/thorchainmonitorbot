@@ -77,7 +77,4 @@ class NodeChurnDetector(WithDelegates, INotified):
                               nodes_previous=old_nodes)
 
     async def on_data(self, sender, info_list: List[NodeInfo]):
-        changes = await self.extract_changes(info_list)
-        await NodeStateDatabase(self.deps).save_node_info_list(info_list)
-        self.logger.info(f'Saved previous state of {len(info_list)} nodes.')
-        return changes
+        return await self.extract_changes(info_list)

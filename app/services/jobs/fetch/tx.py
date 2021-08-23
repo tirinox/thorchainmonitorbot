@@ -104,16 +104,17 @@ class TxFetcher(BaseFetcher):
             new_txs = list(self._filter_by_age(new_txs))  # filter out old TXs
 
             # filter out seen TXs
-            for tx in results.txs:
+            unseen_new_txs = []
+            for tx in new_txs:
                 is_seen = await self.is_seen(tx.tx_hash)
                 if not is_seen:
-                    new_txs.append(tx)
+                    unseen_new_txs.append(tx)
 
             if not results.txs:
                 self.logger.info(f"no more tx: got {len(all_txs)}")
                 break
 
-            all_txs += new_txs
+            all_txs += unseen_new_txs
         return all_txs
 
     def _filter_by_age(self, txs: List[ThorTx]):
