@@ -22,6 +22,14 @@ telegram:
 
   buffer_chat: -12334  # a chat for uploading temporary photos (like photo-hosting), add this bot to it
 
+  menu:  # new!
+    node_op_tools:
+      enabled: true
+
+  inline_bot:  # new!
+    enabled: true
+
+
 tx:
   enabled: true
   max_age: 1d

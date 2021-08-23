@@ -5,7 +5,7 @@ from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKe
 from aiogram.utils.helper import HelperMode
 
 from services.dialog.base import BaseDialog, message_handler, query_handler
-from services.jobs.fetch.node_info import NodeInfoFetcher
+from services.jobs.node_churn import NodeStateDatabase
 from services.lib.telegram import TelegramInlineList
 from services.lib.texts import kbd, join_as_numbered_list
 from services.lib.utils import parse_list_from_string, fuzzy_search
@@ -19,6 +19,8 @@ class NodeOpStates(StatesGroup):
     ADDING = State()
     MANAGE_MENU = State()
     SETTINGS = State()
+
+
 
 
 class NodeOpDialog(BaseDialog):
@@ -236,8 +238,7 @@ class NodeOpDialog(BaseDialog):
         return NodeWatcherStorage(self.deps, user_id)
 
     async def get_all_nodes(self):
-        node_info_fetcher: NodeInfoFetcher = self.deps.node_info_fetcher
-        return await node_info_fetcher.get_last_node_info()
+        return await NodeStateDatabase(self.deps).get_last_node_info_list()
 
     async def get_all_active_nodes(self):
         nodes = await self.get_all_nodes()
@@ -276,3 +277,7 @@ class NodeOpDialog(BaseDialog):
                 inactive_addresses.add(address)
 
         return disconnected_addresses, inactive_addresses
+
+    @classmethod
+    def is_enabled(cls, cfg):
+        return bool(cfg.get('telegram.menu.node_op_tools.enabled', default=False))

@@ -104,13 +104,6 @@ class BaseLocalization(ABC):  # == English
     BUTTON_MM_MAKE_AVATAR = f'🦹‍️️ THOR Avatar'
     BUTTON_MM_NODE_OP = '🤖 NodeOp tools'
 
-    def kbd_main_menu(self):
-        return kbd([
-            [self.BUTTON_MM_MY_ADDRESS, self.BUTTON_MM_METRICS],
-            [self.BUTTON_MM_MAKE_AVATAR, self.BUTTON_MM_NODE_OP],
-            [self.BUTTON_MM_SETTINGS]
-        ])
-
     # ------- MY LIQUIDITY INFO MENU -------
 
     BUTTON_SM_ADD_ADDRESS = '➕ Add an address'

@@ -9,6 +9,7 @@ from services.dialog.base import BaseDialog, inline_bot_handler
 # test bot: @thorchain_monitoring_test_bot ADDRESS POOL
 from services.dialog.picture.lp_picture import lp_pool_picture
 from services.jobs.fetch.runeyield import get_rune_yield_connector
+from services.lib.config import Config
 from services.lib.date_utils import today_str, MINUTE
 from services.lib.draw_utils import img_to_bio
 from services.models.lp_info import LPAddress
@@ -18,8 +19,15 @@ class InlineBotHandlerDialog(BaseDialog):
     CACHE_TIME = 5 * MINUTE  # sec
     DEFAULT_ICON = 'https://raw.githubusercontent.com/thorchain/Resources/master/logos/png/RUNE-ICON-256.png'
 
+    @staticmethod
+    def is_enabled(cfg: Config):
+        return bool(cfg.get('telegram.inline_bot.enabled', default=True))
+
     @inline_bot_handler()
     async def handle(self, inline_query: InlineQuery):
+        if not self.is_enabled:
+            return
+
         try:
             text = inline_query.query.strip()
 

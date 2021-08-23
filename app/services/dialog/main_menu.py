@@ -10,6 +10,7 @@ from services.dialog.metrics_menu import MetricsDialog
 from services.dialog.node_op_menu import NodeOpDialog
 from services.dialog.settings_menu import SettingsDialog
 from services.lib.date_utils import DAY
+from services.lib.texts import kbd
 from services.notify.types.cap_notify import LiquidityCapNotifier
 
 
@@ -36,8 +37,19 @@ class MainMenuDialog(BaseDialog):
         else:
             info = await LiquidityCapNotifier(self.deps).get_last_cap()
 
+            keyboard = kbd([
+                # 1st row
+                [self.loc.BUTTON_MM_MY_ADDRESS, self.loc.BUTTON_MM_METRICS],
+                # 2nd row
+                [self.loc.BUTTON_MM_MAKE_AVATAR] + (
+                    [self.loc.BUTTON_MM_NODE_OP] if NodeOpDialog.is_enabled(self.deps.cfg) else []
+                ),
+                # 3rd row
+                [self.loc.BUTTON_MM_SETTINGS]
+            ])
+
             await message.answer(self.loc.welcome_message(info),
-                                 reply_markup=self.loc.kbd_main_menu(),
+                                 reply_markup=keyboard,
                                  disable_notification=True)
             await MainStates.MAIN_MENU.set()
 
@@ -81,7 +93,7 @@ class MainMenuDialog(BaseDialog):
         elif message.text == self.loc.BUTTON_MM_MAKE_AVATAR:
             message.text = ''
             await AvatarDialog(self.loc, self.data, self.deps).on_enter(message)
-        elif message.text == self.loc.BUTTON_MM_NODE_OP:
+        elif message.text == self.loc.BUTTON_MM_NODE_OP and NodeOpDialog.is_enabled(self.deps.cfg):
             await NodeOpDialog(self.loc, self.data, self.deps).show_main_menu(message)
         else:
             return False

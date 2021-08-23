@@ -1,3 +1,5 @@
+import logging
+
 from aiogram.types import ContentTypes, Message
 
 from services.dialog.avatar_picture_dialog import AvatarDialog
@@ -8,6 +10,7 @@ from services.dialog.settings_menu import SettingsDialog
 from services.dialog.lp_info_dialog import LiquidityInfoDialog
 from services.lib.depcont import DepContainer
 from services.dialog.node_op_menu import NodeOpDialog
+
 
 async def sticker_handler(message: Message):
     s = message.sticker
@@ -22,7 +25,13 @@ def init_dialogs(d: DepContainer):
     SettingsDialog.register(d, mm, mm.entry_point)
     MetricsDialog.register(d, mm, mm.entry_point)
     AvatarDialog.register(d, mm, mm.entry_point)
-    InlineBotHandlerDialog.register(d, mm, mm.entry_point)
-    NodeOpDialog.register(d, mm, mm.entry_point)
+
+    if InlineBotHandlerDialog.is_enabled(d.cfg):
+        logging.info('InlineBotHandlerDialog is enabled.')
+        InlineBotHandlerDialog.register(d, mm, mm.entry_point)
+
+    if NodeOpDialog.is_enabled(d.cfg):
+        logging.info('NodeOpDialog is enabled.')
+        NodeOpDialog.register(d, mm, mm.entry_point)
 
     d.dp.register_message_handler(sticker_handler, content_types=ContentTypes.STICKER, state='*')
