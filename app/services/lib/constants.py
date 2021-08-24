@@ -1,5 +1,5 @@
-from aiothornode.env import TEST_NET_ENVIRONMENT_MULTI_1, MULTICHAIN_CHAOSNET_ENVIRONMENT
-from aiothornode.types import ThorEnvironment
+from aiothornode.env import TEST_NET_ENVIRONMENT_MULTI_1, MULTICHAIN_CHAOSNET_ENVIRONMENT, ThorEnvironment
+
 
 BNB_BNB_SYMBOL = 'BNB.BNB'
 
