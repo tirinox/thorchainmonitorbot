@@ -67,39 +67,39 @@ tx:
       - depth: 10000000
         percent: 1.5
 
-    donate: # new!
-      enabled: true
-      min_usd_total: 1000
-      usd_requirements_curve:
-        - depth: 10000
-          percent: 10  # if depth < 10_000 then
-        - depth: 100000
-          percent: 5  # if 10_000 <= depth < 100_000 then
-        - depth: 500000
-          percent: 2.5  # and so on...
-        - depth: 1000000
-          percent: 1
-        - depth: 10000000
-          percent: 0.5
+  donate: # new!
+    enabled: true
+    min_usd_total: 1000
+    usd_requirements_curve:
+      - depth: 10000
+        percent: 10  # if depth < 10_000 then
+      - depth: 100000
+        percent: 5  # if 10_000 <= depth < 100_000 then
+      - depth: 500000
+        percent: 2.5  # and so on...
+      - depth: 1000000
+        percent: 1
+      - depth: 10000000
+        percent: 0.5
 
-    refund: # new!
-      enabled: true
-      min_usd_total: 50000
-      usd_requirements_curve:
-        - depth: 20000
-          percent: 15  # if depth < 10_000 then
-        - depth: 100000
-          percent: 10  # if 10_000 <= depth < 100_000 then
-        - depth: 500000
-          percent: 8  # and so on...
-        - depth: 1000000
-          percent: 5
-        - depth: 10000000
-          percent: 1.5
+  refund: # new!
+    enabled: true
+    min_usd_total: 50000
+    usd_requirements_curve:
+      - depth: 20000
+        percent: 15  # if depth < 10_000 then
+      - depth: 100000
+        percent: 10  # if 10_000 <= depth < 100_000 then
+      - depth: 500000
+        percent: 8  # and so on...
+      - depth: 1000000
+        percent: 5
+      - depth: 10000000
+        percent: 1.5
 
-    switch: # new!
-      enabled: true
-      min_usd_total: 150000
+  switch: # new!
+    enabled: true
+    min_usd_total: 150000
 
 
 price:
