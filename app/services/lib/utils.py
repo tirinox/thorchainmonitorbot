@@ -99,7 +99,7 @@ def make_stickers_iterator(name_list):
 def setup_logs(log_level):
     logging.basicConfig(
         level=logging.getLevelName(log_level),
-        format='%(asctime)s %(levelname)s:%(module)s:%(funcName)s: %(message)s',
+        format='%(asctime)s %(levelname)s:%(name)s:%(funcName)s: %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S',
     )
 
