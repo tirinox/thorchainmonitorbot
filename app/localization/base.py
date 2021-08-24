@@ -3,7 +3,7 @@ from datetime import datetime
 from math import ceil
 from typing import List
 
-from aiothornode.types import ThorChainInfo
+from aiothornode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
 from services.lib.config import Config
@@ -186,13 +186,18 @@ class BaseLocalization(ABC):  # == English
         net = self.cfg.network_id
         return link_with_domain_text(get_explorer_url_to_address(net, Chains.THOR, address))
 
-    def text_user_provides_liq_to_pools(self, address, pools):
+    def text_user_provides_liq_to_pools(self, address, pools, balances: ThorBalances):
         pools = pre(', '.join(pools))
 
         explorer_links = self.explorer_links_to_thor_address(address)
 
+        balance_str = ''
+        if balances is not None:
+            bal = balances.runes_float
+            balance_str = f'Account balance: {pre(short_money(bal, prefix=RAIDO_GLYPH))}.\n\n'
+
         return f'🛳️ {pre(address)}\nprovides liquidity to the following pools:\n' \
-               f'{pools}.\n\n' \
+               f'{pools}.\n\n{balance_str}' \
                f"🔍 Explorer: {explorer_links}.\n\n" \
                f'👇 Click on the button to get a detailed card.'
 
