@@ -2,7 +2,7 @@ from datetime import datetime
 from math import ceil
 from typing import List
 
-from aiothornode.types import ThorChainInfo
+from aiothornode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
 from localization.base import BaseLocalization, RAIDO_GLYPH, CREATOR_TG, URL_LEADERBOARD_MCCN
@@ -10,7 +10,7 @@ from services.lib.constants import Chains, thor_to_float, rune_origin
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
-    emoji_for_percent_change, Asset
+    emoji_for_percent_change, Asset, short_money
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
     up_down_arrow, plural, grouper
 from services.models.cap_info import ThorCapInfo
@@ -142,12 +142,18 @@ class RussianLocalization(BaseLocalization):
                f'Идет загрузка пулов для адреса {pre(address)}...\n' \
                f'Иногда она может идти долго, если Midgard сильно нагружен.'
 
-    def text_user_provides_liq_to_pools(self, address, pools):
+    def text_user_provides_liq_to_pools(self, address, pools, balances: ThorBalances):
         pools = pre(', '.join(pools))
         explorer_links = self.explorer_links_to_thor_address(address)
+
+        balance_str = ''
+        if balances is not None:
+            bal = balances.runes_float
+            balance_str = f'Баланс аккаунта : {pre(short_money(bal, prefix=RAIDO_GLYPH))}.\n\n'
+
         return f'🛳️ {pre(address)}\n' \
                f'поставляет ликвидность в следующие пулы:\n{pools}.\n\n' \
-               f"🔍 Обозреватель: {explorer_links}.\n\n" \
+               f"🔍 Обозреватель: {explorer_links}.\n\n{balance_str}" \
                f'👇 Выберите пул, чтобы получить подробную карточку информаци.'
 
     def text_lp_today(self):
