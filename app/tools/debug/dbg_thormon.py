@@ -20,8 +20,8 @@ async def test_solvency():
 
 
 async def main():
-    await test_solvency()
-    # await test_wss()
+    # await test_solvency()
+    await test_wss()
 
 
 if __name__ == '__main__':

@@ -4,7 +4,7 @@ import re
 import secrets
 from collections import Counter
 from dataclasses import dataclass, field
-from typing import List, Dict, NamedTuple, Optional
+from typing import List, Dict, NamedTuple, Optional, Tuple
 
 from semver import VersionInfo
 
@@ -95,6 +95,9 @@ class NodeVersionConsensus(NamedTuple):
     top_version: VersionInfo
     top_version_count: int
     total_active_node_count: int
+
+
+MapAddressToPrevAndCurrNode = Dict[str, Tuple[NodeInfo, NodeInfo]]
 
 
 @dataclass
@@ -200,6 +203,18 @@ class NodeSetChanges:
         top_count = counter[top_version]
         ratio = top_count / len(active_nodes)
         return NodeVersionConsensus(ratio, top_version, top_count, len(active_nodes))
+
+    @staticmethod
+    def node_map(nodes: List[NodeInfo]):
+        return {n.node_address: n for n in nodes}
+
+    @property
+    def prev_and_curr_node_map(self) -> MapAddressToPrevAndCurrNode:
+        old = self.node_map(self.nodes_previous)
+        new = self.node_map(self.nodes_all)
+
+        common_addresses = set(new.keys()) & set(old.keys())
+        return {address: (old[address], new[address]) for address in common_addresses}
 
 
 @dataclass

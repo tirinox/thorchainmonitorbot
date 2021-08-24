@@ -33,6 +33,11 @@ async def test_get_many_from_many(many2many: ManyToManySet):
     assert await many2many.all_rights_for_many_lefts(['B', 'C']) == {'G1', 'G2', 'G3'}
     assert await many2many.all_rights_for_many_lefts([]) == set()
 
+    assert await many2many.all_rights_for_many_lefts(['A'], flatten=False) == {'A': {'G1'}}
+    assert await many2many.all_rights_for_many_lefts(['A', 'C'], flatten=False) == {'A': {'G1'}, 'C': {'G2', 'G3'}}
+    assert await many2many.all_rights_for_many_lefts(['B', 'C'], flatten=False) == {'B': {'G1', 'G2'},
+                                                                                    'C': {'G2', 'G3'}}
+
 
 @pytest.mark.asyncio
 async def test_clear(many2many: ManyToManySet):

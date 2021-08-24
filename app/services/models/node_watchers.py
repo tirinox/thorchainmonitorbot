@@ -14,7 +14,7 @@ class NodeWatchInfo:
 
 
 class NodeWatcherStorage:
-    def __init__(self, d: DepContainer, user_id: str):
+    def __init__(self, d: DepContainer, user_id: str = ''):
         self.deps = d
         self.user_id = user_id
         self.many2many = ManyToManySet(d.db, 'UserID', 'WatchNodeIP')
@@ -58,6 +58,9 @@ class NodeWatcherStorage:
 
     async def all_users_for_node(self, node: str) -> List[str]:
         return await self.many2many.all_lefts_for_right_one(node)
+
+    async def all_users_for_many_nodes(self, nodes: iter) -> Dict[str, List[str]]:
+        return await self.many2many.all_lefts_for_many_rights(nodes, flatten=False)
 
     async def all_nodes_for_user(self) -> List[str]:
         return await self.many2many.all_rights_for_left_one(self.user_id)

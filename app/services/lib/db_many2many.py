@@ -45,20 +45,23 @@ class ManyToManySet:
         r = await self._redis()
         return set(await r.smembers(self.right_key(right_one), encoding='utf8'))
 
-    async def all_items_for_many_other_side(self, inputs, getter: callable):
+    @staticmethod
+    async def all_items_for_many_other_side(inputs, getter: callable, flatten=True):
         inputs = set(inputs)
         # fixme: use MGET?
         groups = await asyncio.gather(
             *(getter(item) for item in inputs)
         )
-        # flatten
-        return set(item for group in groups for item in group)
+        if flatten:
+            return set(item for group in groups for item in group)
+        else:
+            return {name: group for name, group in zip(inputs, groups)}
 
-    async def all_lefts_for_many_rights(self, rights: iter):
-        return await self.all_items_for_many_other_side(rights, self.all_lefts_for_right_one)
+    async def all_lefts_for_many_rights(self, rights: iter, flatten=True):
+        return await self.all_items_for_many_other_side(rights, self.all_lefts_for_right_one, flatten)
 
-    async def all_rights_for_many_lefts(self, lefts: iter):
-        return await self.all_items_for_many_other_side(lefts, self.all_rights_for_left_one)
+    async def all_rights_for_many_lefts(self, lefts: iter, flatten=True):
+        return await self.all_items_for_many_other_side(lefts, self.all_rights_for_left_one, flatten)
 
     async def all_rights_for_left_one(self, left_one: str):
         r = await self._redis()
