@@ -1,12 +1,13 @@
 import asyncio
 import binascii
 import logging
+import operator
 import os
 import pickle
 import random
 import re
 import time
-from collections import deque, Counter
+from collections import deque, Counter, defaultdict
 from functools import wraps, partial
 from itertools import tee
 from typing import List
@@ -181,3 +182,12 @@ def fuzzy_search(query: str, realm) -> List[str]:
         if query in name:
             variants.append(name)
     return variants
+
+
+def turn_dic_inside_out(d: dict, factory=set, op=set.add):
+    result = defaultdict(factory)
+    for k, v in d.items():
+        for item in v:
+            # noinspection PyArgumentList
+            op(result[item], k)
+    return dict(result)

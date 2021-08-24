@@ -1,15 +1,18 @@
 import asyncio
 import operator
+from collections import defaultdict
 from functools import reduce
 from typing import List, NamedTuple
 
 from services.jobs.fetch.base import INotified
 from services.lib.depcont import DepContainer
-from services.lib.utils import class_logger
+from services.lib.texts import grouper
+from services.lib.utils import class_logger, turn_dic_inside_out
 from services.models.node_info import NodeSetChanges, NodeInfo, MapAddressToPrevAndCurrNode
 from services.models.node_watchers import NodeWatcherStorage
 
 DEFAULT_SLASH_THRESHOLD = 5
+MAX_CHANGES_PER_MESSAGE = 10
 
 
 class NodeChangeType:
@@ -39,31 +42,46 @@ class NodeChangePersonalNotifier(INotified):
     async def _bg_job(self, node_set_change: NodeSetChanges):
         prev_and_curr_node_map = node_set_change.prev_and_curr_node_map
 
-        changes = []
+        # 1. extract changes
+        changes: List[NodeChange] = []
         changes += self._changes_churned_nodes(node_set_change.nodes_activated, is_in=True)
         changes += self._changes_churned_nodes(node_set_change.nodes_deactivated, is_in=False)
         changes += self._changes_of_version(prev_and_curr_node_map)
         changes += self._changes_of_slash(prev_and_curr_node_map)
 
+        # changes += self._dbg_add_mock_changes(prev_and_curr_node_map)      # fixme: debug!
+
+        # 2. get list of changed nodes
         all_changed_node_addresses = set(c.address for c in changes)
 
-        user_to_node_maps = await self.watchers.all_users_for_many_nodes(all_changed_node_addresses)
-        all_users = reduce(operator.and_, user_to_node_maps.keys()) if user_to_node_maps else []
+        # 3. get list of user who watch those nodes
+        node_to_user = await self.watchers.all_users_for_many_nodes(all_changed_node_addresses)
+        all_users = reduce(operator.or_, node_to_user.values()) if node_to_user else []
 
         if not all_users:
             return  # nobody is interested in those changes...
 
-        print('All users:', all_users)
+        user_changes = defaultdict(list)
 
-        # 1. compare old and new?
-        # 2. extract changes
-        # 3. get list of changed nodes
-        # 4. get list of user who watch those nodes
-        # 5. for user in Watchers:
-        #    for node in user.nodes:
-        #     changes = changes[node.address]
-        #     for change in changes:
-        #        user.sendMessage(format(change))
+        for change in changes:
+            for user in node_to_user[change.address]:
+                user_changes[user].append(change)
+
+        for user, ch_list in user_changes.items():
+            groups = list(grouper(MAX_CHANGES_PER_MESSAGE, ch_list))
+            for group in groups:
+                text = '\n\n'.join(map(self._change_to_text, group))
+                text = text.strip()
+                if text:
+                    asyncio.create_task(self.deps.broadcaster.safe_send_message(user, text))
+                # await self.deps.bot.send_message(user, text)  # todo: empower the spam machine!
+
+    def _change_to_text(self, c: NodeChange):
+        if c.type == NodeChangeType.SLASHING:
+            old, new = c.data
+            # todo: loc.format message!
+            return f'Your node <pre>{(c.address[-4:])}</pre> slashed <b>{new - old}</b> pts!'
+        return ''
 
     @staticmethod
     def _changes_churned_nodes(nodes: List[NodeInfo], is_in: bool) -> List[NodeChange]:
@@ -84,6 +102,11 @@ class NodeChangePersonalNotifier(INotified):
         for a, (prev, curr) in pc_node_map.items():
             if prev.slash_points != curr.slash_points:
                 yield NodeChange(prev.node_address, NodeChangeType.SLASHING, (prev.slash_points, curr.slash_points))
+
+    @staticmethod
+    def _dbg_add_mock_changes(pc_node_map: MapAddressToPrevAndCurrNode):
+        return [NodeChange(addr, NodeChangeType.SLASHING, (curr.slash_points, curr.slash_points + 10)) for
+                addr, (prev, curr) in pc_node_map.items()]
 
 # Changes?
 #  1. (inst) version update
