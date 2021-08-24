@@ -2,6 +2,7 @@ from typing import List, NamedTuple
 
 import ujson
 
+from services.lib.constants import thor_to_float
 from services.lib.web_sockets import WSClient
 
 THORMON_WSS_ADDRESS = 'wss://thormon.nexain.com/cable'
@@ -22,8 +23,8 @@ class ThorMonChainHeight(NamedTuple):
 class ThorMonNode(NamedTuple):
     node_address: str
     ip_address: str
-    bond: int
-    current_award: int
+    bond: float
+    current_award: float
     slash_points: int
     version: str
     status: str
@@ -44,8 +45,8 @@ class ThorMonNode(NamedTuple):
         return cls(
             node_address=j.get('node_address', ''),
             ip_address=j.get('ip_address', ''),
-            bond=int(j.get('bond', 0)),
-            current_award=int(j.get('current_award', 0)),
+            bond=thor_to_float(j.get('bond', 0)),
+            current_award=thor_to_float(j.get('current_award', 0)),
             slash_points=int(j.get('slash_points', 0)),
             version=j.get('version', '0.0.0'),
             status=j.get('status', 'Standby'),
@@ -90,9 +91,14 @@ class ThormonWSSClient(WSClient):
 
     async def handle_message(self, j):
         message = j.get('message', {})
+
         if isinstance(message, dict):
             answer = ThorMonAnswer.from_json(message)
-            print(f'Incoming: {answer}')  # todo
+
+            # todo
+            if answer.nodes:
+                node1 = answer.nodes[0]
+                print(f'Incoming: {node1}')  # todo
         else:
             print(f'Text msg: {j}')
 
