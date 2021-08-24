@@ -48,7 +48,12 @@ class NodeChangePersonalNotifier(INotified):
         all_changed_node_addresses = set(c.address for c in changes)
 
         user_to_node_maps = await self.watchers.all_users_for_many_nodes(all_changed_node_addresses)
-        all_users = reduce(operator.and_, user_to_node_maps.keys())
+        all_users = reduce(operator.and_, user_to_node_maps.keys()) if user_to_node_maps else []
+
+        if not all_users:
+            return  # nobody is interested in those changes...
+
+        print('All users:', all_users)
 
         # 1. compare old and new?
         # 2. extract changes
