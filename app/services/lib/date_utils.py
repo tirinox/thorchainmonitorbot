@@ -147,6 +147,10 @@ def day_to_key(day: date, prefix=''):
     return f'{prefix}:{day.year}.{day.month}.{day.day}'
 
 
+def date_parse_rfc_z_no_ms(s):
+    return datetime.strptime(s, "%Y-%m-%dT%H:%M:%S.%fZ")
+
+
 def date_parse_rfc(s: str):
     s = s.rstrip('Z')
     s = s[:-3]

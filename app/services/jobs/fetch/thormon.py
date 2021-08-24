@@ -1,12 +1,18 @@
-from typing import List, NamedTuple
+from datetime import datetime
+from typing import List, NamedTuple, Optional
 
 import ujson
 
+from services.jobs.fetch.base import BaseFetcher
 from services.lib.constants import thor_to_float
+from services.lib.date_utils import date_parse_rfc_z_no_ms
+from services.lib.depcont import DepContainer
 from services.lib.web_sockets import WSClient
 
 THORMON_WSS_ADDRESS = 'wss://thormon.nexain.com/cable'
 THORMON_ORIGIN = 'https://thorchain.network'
+THORMON_SOLVENCY_URL = 'https://thorchain-mainnet-solvency.nexain.com/api/v1/solvency/data/latest_snapshot'
+
 USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) ' \
              'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36'
 
@@ -108,3 +114,47 @@ class ThormonWSSClient(WSClient):
         await self.send_message({
             "command": "subscribe", "identifier": ident_encoded
         })
+
+
+class ThorMonSolvencyAsset(NamedTuple):
+    symbol: str
+    is_ok: bool
+    created_at: datetime
+    snapshot_date: datetime
+    pending_inbound_asset: float
+    pool_balance: float
+    vault_balance: float
+    wallet_balance: float
+    pool_vs_vault_diff: float
+    wallet_vs_vault_diff: float
+    error: Optional[str]
+
+    @classmethod
+    def from_json(cls, j):
+        datum = j.get('assetDatum', {})
+
+        return cls(
+            error=j.get('error'),
+            symbol=j.get('symbol', ''),
+            is_ok=bool(j.get('statusOK', False)),
+            created_at=date_parse_rfc_z_no_ms(datum.get('createdAt')),
+            snapshot_date=date_parse_rfc_z_no_ms(datum.get('snapshotDate')),
+            pending_inbound_asset=float(datum.get('pendingInboundAsset', 0.0)),
+            pool_balance=float(datum.get('poolBalance', 0.0)),
+            vault_balance=float(datum.get('vaultBalance', 0.0)),
+            wallet_balance=float(datum.get('walletBalance', 0.0)),
+            pool_vs_vault_diff=float(datum.get('poolVsVaultDiff', 0.0)),
+            wallet_vs_vault_diff=float(datum.get('walletVsVaultDiff', 0.0)),
+        )
+
+
+class ThorMonSolvencyFetcher(BaseFetcher):
+    def __init__(self, deps: DepContainer, sleep_period=60, url=THORMON_SOLVENCY_URL):
+        super().__init__(deps, sleep_period)
+        self.url = url
+
+    async def fetch(self):
+        self.logger.info(f"Get solvency: {self.url}")
+        async with self.deps.session.get(self.url) as resp:
+            raw_data = await resp.json()
+            return [ThorMonSolvencyAsset.from_json(item) for item in raw_data]
