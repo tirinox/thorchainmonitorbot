@@ -3,9 +3,9 @@ from typing import List, NamedTuple, Optional
 
 import ujson
 
-from services.jobs.fetch.base import BaseFetcher
-from services.lib.constants import thor_to_float
-from services.lib.date_utils import date_parse_rfc_z_no_ms
+from services.jobs.fetch.base import BaseFetcher, WithDelegates
+from services.lib.constants import thor_to_float, NetworkIdents
+from services.lib.date_utils import date_parse_rfc_z_no_ms, now_ts
 from services.lib.depcont import DepContainer
 from services.lib.web_sockets import WSClient
 
@@ -74,17 +74,21 @@ class ThorMonAnswer(NamedTuple):
     nodes: List[ThorMonNode]
 
     @classmethod
+    def empty(cls):
+        return ThorMonAnswer(0, 0, [])
+
+    @classmethod
     def from_json(cls, j):
         return cls(
-            last_block=int(j.get('last_block', 0)),
+            last_block=int(j.get('lastblock', 0)),
             next_churn=int(j.get('next_churn', 0)),
             nodes=[ThorMonNode.from_json(node) for node in j.get('nodes', [])]
         )
 
 
-class ThormonWSSClient(WSClient):
-    def __init__(self, net="mainnet", reply_timeout=10, ping_timeout=5, sleep_time=5):
-        self.net = net
+class ThorMonWSSClient(WSClient, WithDelegates):
+    def __init__(self, network, reply_timeout=10, ping_timeout=5, sleep_time=5):
+        self._thormon_net = 'mainnet' if NetworkIdents.is_live(network) else 'testnet'
         headers = {
             'Origin': THORMON_ORIGIN,
             'Sec-WebSocket-Extensions': 'permessage-deflate; client_max_window_bits',
@@ -92,25 +96,28 @@ class ThormonWSSClient(WSClient):
             'Pragma': 'no-cache',
             'User-Agent': ''
         }
+        self.last_message_ts = 0.0
 
         super().__init__(THORMON_WSS_ADDRESS, reply_timeout, ping_timeout, sleep_time, headers=headers)
 
-    async def handle_message(self, j):
+    @property
+    def last_signal_sec_ago(self):
+        return now_ts() - self.last_message_ts
+
+    async def handle_wss_message(self, j):
         message = j.get('message', {})
+        self.last_message_ts = now_ts()
 
         if isinstance(message, dict):
             answer = ThorMonAnswer.from_json(message)
-
-            # todo
             if answer.nodes:
-                node1 = answer.nodes[0]
-                print(f'Incoming: {node1}')  # todo
+                await self.handle_data(answer)
         else:
-            print(f'Text msg: {j}')
+            self.logger.debug(f'Other message: {message}')
 
     async def on_connected(self):
         self.logger.info('Connected to THORMon. Subscribing to the ThorchainChannel channel...')
-        ident_encoded = ujson.dumps({"channel": "ThorchainChannel", "network": self.net})
+        ident_encoded = ujson.dumps({"channel": "ThorchainChannel", "network": self._thormon_net})
         await self.send_message({
             "command": "subscribe", "identifier": ident_encoded
         })

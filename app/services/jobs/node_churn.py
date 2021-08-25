@@ -78,4 +78,29 @@ class NodeChurnDetector(WithDelegates, INotified):
 
     async def on_data(self, sender, info_list: List[NodeInfo]):
         result = await self.extract_changes(info_list)
+
+        # result = self._debug_modification(result)
+
         await self.handle_data(result, (sender, self))
+
+    # ------------------------------------------------------------------------------------------------------------------
+
+    def _debug_modification(self, data: NodeSetChanges) -> NodeSetChanges:
+        # 1. new version
+        data.nodes_all[0].version = '0.88.82'
+        # data.nodes_all[1].version = '0.88.5'
+
+        # 2. Min versions
+        # for n in data.nodes_all:
+        #     if random.uniform(0, 1) > 0.5:
+        #         n.version = '0.57.5'
+        #     n.version = '0.61.66'
+        # data.nodes_all[0].version = '0.61.63'
+
+        # 3. Upgrade
+        # progress = 0.99  # 0..1
+        # for n in data.nodes_all:
+        #     if random.uniform(0, 1) <= progress:
+        #         n.version = '0.60.6'
+
+        return data

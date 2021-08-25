@@ -188,6 +188,13 @@ class NodeSetChanges:
         return self.minimal_active_version(self.active_only_nodes)
 
     @property
+    def new_versions(self):
+        old_ver_set = self.version_set(self.nodes_previous)
+        new_ver_set = self.version_set(self.nodes_all)
+        new_versions = new_ver_set - old_ver_set
+        return list(sorted(new_versions))
+
+    @property
     def version_consensus(self) -> Optional[NodeVersionConsensus]:
         """
         Most popular version node count / Active node count = 0..1

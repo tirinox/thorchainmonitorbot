@@ -11,7 +11,7 @@ from services.lib.utils import class_logger
 
 class WSClient(abc.ABC):
     @abc.abstractmethod
-    async def handle_message(self, reply: dict):
+    async def handle_wss_message(self, reply: dict):
         ...
 
     async def on_connected(self):
@@ -25,6 +25,7 @@ class WSClient(abc.ABC):
         self.logger = class_logger(self)
         self.headers = headers or {}
         self.ws: websockets.WebSocketClientProtocol = None
+        super().__init__()
 
     async def send_message(self, message):
         await self.ws.send(ujson.dumps(message))
@@ -54,7 +55,7 @@ class WSClient(abc.ABC):
                         self.logger.debug('Server said > {}'.format(reply))
                         try:
                             message = ujson.loads(reply)
-                            await self.handle_message(message)
+                            await self.handle_wss_message(message)
                         except ValueError:
                             self.logger.error(f'Error decoding WebSocket JSON message! {reply[:1000]}...')
 

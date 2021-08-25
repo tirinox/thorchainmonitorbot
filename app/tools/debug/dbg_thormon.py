@@ -1,13 +1,13 @@
 import asyncio
 import logging
 
-from services.jobs.fetch.thormon import ThormonWSSClient, ThorMonSolvencyFetcher
+from services.jobs.fetch.thormon import ThorMonWSSClient, ThorMonSolvencyFetcher
 from tools.lib.lp_common import LpAppFramework
 
 
 async def test_wss():
     logging.basicConfig(level=logging.DEBUG)
-    client = ThormonWSSClient()
+    client = ThorMonWSSClient()
     await client.listen_forever()
 
 

@@ -101,6 +101,10 @@ class NetworkIdents:
         return 'testnet' in network
 
     @classmethod
+    def is_live(cls, network: str):
+        return not cls.is_test(network)
+
+    @classmethod
     def is_multi(cls, network: str):
         return 'multi' in network
 

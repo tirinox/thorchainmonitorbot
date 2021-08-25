@@ -1,23 +1,61 @@
 import logging
 import random
-from typing import List
+from typing import List, NamedTuple
 
 from aioredis import Redis
 from semver import VersionInfo
 
 from localization import BaseLocalization
-from services.jobs.fetch.base import INotified
+from services.jobs.fetch.base import INotified, WithDelegates
 from services.lib.config import SubConfig
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
+from services.lib.utils import class_logger
 from services.models.node_info import NodeSetChanges, ZERO_VERSION
 
 
-class VersionNotifier(INotified):
-    def __init__(self, deps: DepContainer):
+class NewVersions(NamedTuple):
+    versions: List[str]
+
+
+class KnownVersionStorage:
+    def __init__(self, deps: DepContainer, context_name):
         self.deps = deps
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.context_name = context_name
+        self.logger = class_logger(self)
+
+    DB_KEY_NEW_VERSION = 'THORNode.Version.Already.Notified.As.New'
+    DB_KEY_LAST_PROGRESS = 'THORNode.Version.Last.Progress'
+
+    async def is_version_known(self, new_v) -> List[VersionInfo]:
+        r = await self.deps.db.get_redis()
+        return await r.sismember(self.DB_KEY_NEW_VERSION + self.context_name, str(new_v))
+
+    async def mark_as_known(self, versions):
+        r = await self.deps.db.get_redis()
+        for v in versions:
+            await r.sadd(self.DB_KEY_NEW_VERSION + self.context_name, str(v))
+
+    async def get_upgrade_progress(self):
+        r: Redis = await self.deps.db.get_redis()
+        old_progress_raw = await r.get(self.DB_KEY_LAST_PROGRESS + self.context_name)
+        try:
+            return float(old_progress_raw)
+        except (TypeError, ValueError):
+            return 0.0
+
+    async def set_upgrade_progress(self, progress: float):
+        r: Redis = await self.deps.db.get_redis()
+        await r.set(self.DB_KEY_LAST_PROGRESS + self.context_name, progress)
+
+
+class VersionNotifier(INotified, WithDelegates):
+    def __init__(self, deps: DepContainer):
+        super().__init__()
+        self.deps = deps
+        self.logger = class_logger(self)
+        self.store = KnownVersionStorage(deps, context_name='public')
 
         cfg: SubConfig = deps.cfg.node_info.version
 
@@ -33,35 +71,20 @@ class VersionNotifier(INotified):
         cd_upgrade_progress_sec = parse_timespan_to_seconds(str(cfg.get('upgrade_progress.cooldown', '2h')))
         self.cd_upgrade = Cooldown(deps.db, 'upgrade_progress', cd_upgrade_progress_sec)
 
-    DB_KEY_NEW_VERSION = 'THORNode.Version.Already.Notified.As.New'
-    DB_KEY_LAST_PROGRESS = 'THORNode.Version.Last.Progress'
-
     async def _find_new_versions(self, data: NodeSetChanges) -> List[VersionInfo]:
-        old_ver_set = data.version_set(data.nodes_previous)
-        new_ver_set = data.version_set(data.nodes_all)
-        new_versions = new_ver_set - old_ver_set
-
-        if new_versions:
-            if not await self.cd_new_version.can_do():
-                return []
-
-            r = await self.deps.db.get_redis()
-
-            # filter out known ones
-            versions_to_announce = []
-            for new_v in new_versions:
-                was_notified = await r.sismember(self.DB_KEY_NEW_VERSION, str(new_v))
-                if not was_notified:
-                    versions_to_announce.append(new_v)
-
-            return list(sorted(versions_to_announce))
-        else:
+        new_versions = data.new_versions
+        if not new_versions:
             return []
 
-    async def _mark_as_known(self, versions):
-        r = await self.deps.db.get_redis()
-        for v in versions:
-            await r.sadd(self.DB_KEY_NEW_VERSION, str(v))
+        if not await self.cd_new_version.can_do():
+            return []
+
+        # filter out known ones
+        versions_to_announce = []
+        for new_v in new_versions:
+            if not await self.store.is_version_known(new_v):
+                versions_to_announce.append(new_v)
+        return versions_to_announce
 
     @staticmethod
     def _test_active_version_changed(data: NodeSetChanges):
@@ -85,7 +108,7 @@ class VersionNotifier(INotified):
                 None, None
             )
 
-            await self._mark_as_known(new_versions)
+            await self.store.mark_as_known(new_versions)
             await self.cd_new_version.do()
 
     async def _handle_active_version_change(self, data: NodeSetChanges):
@@ -101,18 +124,6 @@ class VersionNotifier(INotified):
             )
             await self.cd_activate_version.do()
 
-    async def _get_old_upgrade_progress(self):
-        r: Redis = await self.deps.db.get_redis()
-        old_progress_raw = await r.get(self.DB_KEY_LAST_PROGRESS)
-        try:
-            return float(old_progress_raw)
-        except (TypeError, ValueError):
-            return 0.0
-
-    async def _set_old_upgrade_progress(self, progress: float):
-        r: Redis = await self.deps.db.get_redis()
-        await r.set(self.DB_KEY_LAST_PROGRESS, progress)
-
     async def _handle_upgrade_progress(self, data: NodeSetChanges):
         ver_con = data.version_consensus
         if not ver_con:
@@ -121,7 +132,7 @@ class VersionNotifier(INotified):
         if ver_con.ratio == 1.0:
             return  # not interfere with _handle_active_version_change when progress == 100%!
 
-        old_progress = await self._get_old_upgrade_progress()
+        old_progress = await self.store.get_upgrade_progress()
         if abs(old_progress - ver_con.ratio) < 0.005:
             return  # no change
 
@@ -131,12 +142,10 @@ class VersionNotifier(INotified):
                 BaseLocalization.notification_text_version_upgrade_progress,
                 data, ver_con
             )
-            await self._set_old_upgrade_progress(ver_con.ratio)
+            await self.store.set_upgrade_progress(ver_con.ratio)
             await self.cd_upgrade.do()
 
     async def on_data(self, sender, changes: NodeSetChanges):
-        # data = self._debug_modification(data)
-
         if self.is_new_version_enabled:
             await self._handle_new_versions(changes)
 
@@ -145,22 +154,3 @@ class VersionNotifier(INotified):
 
         if self.is_version_activation_enabled:
             await self._handle_active_version_change(changes)
-
-    def _debug_modification(self, data: NodeSetChanges) -> NodeSetChanges:
-        # 1. new version
-        # data.nodes_all[0].version = '0.88.1'
-
-        # 2. Min versions
-        # for n in data.nodes_all:
-        #     if random.uniform(0, 1) > 0.5:
-        #         n.version = '0.57.5'
-        #     n.version = '0.61.66'
-        # data.nodes_all[0].version = '0.61.63'
-
-        # 3. Upgrade
-        progress = 0.99  # 0..1
-        for n in data.nodes_all:
-            if random.uniform(0, 1) <= progress:
-                n.version = '0.60.6'
-
-        return data
