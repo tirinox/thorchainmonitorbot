@@ -44,6 +44,8 @@ class ThorMonNode(NamedTuple):
     midgard: bool
     bifrost: bool
 
+    original_dict: dict  # holds unparsed data
+
     @classmethod
     def from_json(cls, j):
         raw_chains = j.get('observe_chains') or []
@@ -65,6 +67,8 @@ class ThorMonNode(NamedTuple):
             rpc=bool(j.get('rpc')),
             midgard=bool(j.get('midgard')),
             bifrost=bool(j.get('bifrost')),
+
+            original_dict=j
         )
 
 
@@ -72,6 +76,7 @@ class ThorMonAnswer(NamedTuple):
     last_block: int
     next_churn: int
     nodes: List[ThorMonNode]
+
 
     @classmethod
     def empty(cls):

@@ -1,4 +1,5 @@
 import json
+from typing import Tuple
 
 from services.lib.date_utils import now_ts
 from services.lib.db import DB
@@ -38,6 +39,18 @@ class TimeSeries:
         points = await self.select(*self.range_from_ago_to_now(period_sec, tolerance_sec=tolerance_sec),
                                    count=max_points)
         return points
+
+    async def get_best_point_ago(self, ago_sec: float, tolerance_sec=10) -> Tuple[dict, float]:
+        exact_point = now_ts() - ago_sec
+        points = await self.select(*self.range_ago(ago_sec, tolerance_sec))
+        best_point = None
+        best_diff = 1e30
+        for index, data in points:
+            ts = self.get_ts_from_index(index)
+            diff = abs(exact_point - ts)
+            if diff < best_diff:
+                best_point, best_diff = data, diff
+        return best_point, best_diff
 
     async def get_last_values(self, period_sec, key, max_points=10000, tolerance_sec=10, with_ts=False,
                               decoder=float):

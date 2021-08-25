@@ -3,6 +3,7 @@ import typing
 import urllib.parse
 
 import aiohttp
+from aiogram import Dispatcher
 from aiogram.dispatcher.storage import FSMContextProxy
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton, Message
 

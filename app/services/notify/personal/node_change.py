@@ -13,6 +13,7 @@ from services.lib.texts import grouper
 from services.lib.utils import class_logger
 from services.models.node_info import NodeSetChanges, NodeInfo, MapAddressToPrevAndCurrNode
 from services.models.node_watchers import NodeWatcherStorage
+from services.notify.personal.node_online import NodeOnlineTracker
 from services.notify.types.version_notify import KnownVersionStorage
 
 DEFAULT_SLASH_THRESHOLD = 5
@@ -41,6 +42,7 @@ class NodeChangePersonalNotifier(INotified):
         self.logger = class_logger(self)
         self.watchers = NodeWatcherStorage(deps)
         self.thor_mon = ThorMonWSSClient(deps.cfg.network_id)
+        self.online_tracker = NodeOnlineTracker(deps)
         self.prev_thormon_state = ThorMonAnswer.empty()
         self.version_store = KnownVersionStorage(deps, context_name='personal')
 
@@ -52,10 +54,13 @@ class NodeChangePersonalNotifier(INotified):
         if isinstance(data, NodeSetChanges):
             asyncio.create_task(self._handle_node_churn_bg_job(data))  # long-running job goes to the background!
         elif isinstance(data, ThorMonAnswer):
+            await self.online_tracker.write_telemetry(data)
             asyncio.create_task(self._handle_thormon_message_bg_job(data))  # long-running job goes to the background!
 
     async def _handle_thormon_message_bg_job(self, data: ThorMonAnswer):
         changes = []
+        for node in data.nodes:
+            ...
         await self._cast_messages_for_changes(changes)
 
     async def _handle_node_churn_bg_job(self, node_set_change: NodeSetChanges):
@@ -95,6 +100,9 @@ class NodeChangePersonalNotifier(INotified):
                 this_user.append(change)
 
         for user, ch_list in user_changes.items():
+            settings = await self.watchers.get_user_settings(user)
+            print(settings)
+
             groups = list(grouper(MAX_CHANGES_PER_MESSAGE, ch_list))  # split to several messages
             for group in groups:
                 text = '\n\n'.join(map(self._format_change_to_text, group))
@@ -160,14 +168,15 @@ class NodeChangePersonalNotifier(INotified):
         return [NodeChange(addr, NodeChangeType.SLASHING, (curr.slash_points, curr.slash_points + 10)) for
                 addr, (prev, curr) in pc_node_map.items()]
 
+
+
 # Changes?
 #  1. (inst) version update
 #  2. (inst) new version detected, consider upgrade?
 #  3. (inst) slash point increase (over threshold)  .
 #  4. bond changes (over threshold) e.g. > 1% in hour??
 #  5. ip address change?
-#  6. (from cable) went offline?
-#  7. (from cable) went online!
+#  6. (from cable) went offline/online? (time from in this status?)
 #  8. block height is not increasing
 #  9. block height is not increasing on CHAIN?!
 #  10. your node churned in / out
