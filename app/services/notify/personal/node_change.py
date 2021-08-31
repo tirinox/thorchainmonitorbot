@@ -54,10 +54,11 @@ class NodeChangePersonalNotifier(INotified):
         if isinstance(data, NodeSetChanges):
             asyncio.create_task(self._handle_node_churn_bg_job(data))  # long-running job goes to the background!
         elif isinstance(data, ThorMonAnswer):
-            await self.online_tracker.write_telemetry(data)
             asyncio.create_task(self._handle_thormon_message_bg_job(data))  # long-running job goes to the background!
 
     async def _handle_thormon_message_bg_job(self, data: ThorMonAnswer):
+        await self.online_tracker.write_telemetry(data)
+
         changes = []
         for node in data.nodes:
             ...
