@@ -1,3 +1,4 @@
+from services.jobs.fetch.thormon import ThorMonNode
 from services.notify.personal.node_online import ServiceOnlineProfile
 
 
@@ -47,3 +48,29 @@ def test_common_3():
     assert p.num_last_silent_points == 1
     assert p.recent_offline_ratio == 0.1
     assert p.online_ratio == 0.6
+
+
+def make_node_test(online, service='rpc'):
+    return ThorMonNode.from_json({service: online})
+
+
+def test_load():
+    node_points = [
+        make_node_test(True),
+        make_node_test(True),
+        make_node_test(False),
+        make_node_test(False),
+        make_node_test(False),
+        make_node_test(True),
+        make_node_test(True),
+        make_node_test(True),
+        make_node_test(False),
+        make_node_test(False),
+    ]
+    p = ServiceOnlineProfile.from_thormon_nodes(node_points, 'rpc')
+
+    assert p.num_points == 10
+    assert p.num_last_silent_points == 2
+    assert p.recent_offline_ratio == 0.2
+    assert p.online_ratio == 0.5
+    assert p.num_online_points == 5
