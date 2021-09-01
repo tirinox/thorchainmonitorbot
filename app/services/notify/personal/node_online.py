@@ -5,13 +5,14 @@ import ujson
 
 from services.jobs.fetch.thormon import ThorMonAnswer, ThorMonNode
 from services.lib.cooldown import CooldownBiTrigger
-from services.lib.date_utils import MINUTE, HOUR, now_ts
+from services.lib.date_utils import MINUTE, HOUR, now_ts, DAY
 from services.lib.depcont import DepContainer
 from services.models.time_series import TimeSeries
 from services.notify.personal.models import NodeChange, NodeChangeType, ChangeOnline
 
 MAX_HISTORY_DURATION = HOUR
 DETECTION_OFFLINE_TIME = 10.0  # sec
+TRIGGER_OFFLINE_TIME = 2 * DAY
 
 TimeStampedList = List[Tuple[float, bool]]
 
@@ -141,7 +142,7 @@ class NodeTelemetryDatabase:
         for service in (profile.rpc, profile.thor, profile.bifrost, profile.midgard):
             offline = service.offline_time
 
-            trigger = CooldownBiTrigger(self.deps.db, f'online.{service.name}', DETECTION_OFFLINE_TIME)
+            trigger = CooldownBiTrigger(self.deps.db, f'online.{service.name}.{node_address}', TRIGGER_OFFLINE_TIME)
 
             if offline >= DETECTION_OFFLINE_TIME and await trigger.turn_off():
                 changes.append(NodeChange(node_address, NodeChangeType.SERVICE_ONLINE, ChangeOnline(False, offline)))
