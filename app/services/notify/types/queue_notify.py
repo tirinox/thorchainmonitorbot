@@ -4,7 +4,7 @@ from localization import BaseLocalization
 from services.dialog.picture.queue_picture import queue_graph, QUEUE_TIME_SERIES
 from services.jobs.fetch.base import INotified
 from services.jobs.fetch.queue import QueueInfo
-from services.lib.cooldown import CooldownSingle
+from services.lib.cooldown import CooldownBiTrigger
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.texts import BoardMessage
@@ -16,13 +16,13 @@ class QueueNotifier(INotified):
         self.deps = deps
         self.logger = logging.getLogger(self.__class__.__name__)
 
-        self.cooldown_tracker = CooldownSingle(deps.db)
-
         cfg = deps.cfg.queue
         self.cooldown = parse_timespan_to_seconds(cfg.cooldown)
         self.threshold_congested = int(cfg.threshold.congested)
         self.threshold_free = int(cfg.threshold.free)
         self.avg_period = parse_timespan_to_seconds(cfg.threshold.avg_period)
+
+        self.cd_trigger = CooldownBiTrigger(deps.db, 'QueueClog', self.cooldown)
 
         self.logger.info(f'config: {deps.cfg.queue}')
 
@@ -45,16 +45,6 @@ class QueueNotifier(INotified):
         await self.deps.broadcaster.broadcast(user_lang_map.keys(), message_gen)
 
     async def handle_entry(self, item_type, ts: TimeSeries):
-        def key_gen(s):
-            return f'q:{item_type}:{s}'
-
-        k_free = key_gen('free')
-        k_packed = key_gen('packed')
-
-        cdt = self.cooldown_tracker
-        free_notified_recently = not (await cdt.can_do(k_free, self.cooldown))
-        congested_notified_recently = not (await cdt.can_do(k_packed, self.cooldown))
-
         avg_value = await ts.average(self.avg_period, item_type)
         if avg_value is None:
             return
@@ -62,14 +52,10 @@ class QueueNotifier(INotified):
         self.logger.info(f'Avg {item_type} is {avg_value:.1f}')
 
         if avg_value > self.threshold_congested:
-            if not congested_notified_recently:
-                await cdt.clear(k_free)
-                await cdt.do(k_packed)
+            if await self.cd_trigger.turn_on():
                 await self.notify(item_type, self.threshold_congested, int(avg_value))
         elif avg_value < self.threshold_free:
-            if not free_notified_recently and congested_notified_recently:
-                await cdt.clear(k_packed)
-                await cdt.do(k_free)
+            if await self.cd_trigger.turn_off():
                 await self.notify(item_type, 0, 0)
 
     async def on_data(self, sender, data: QueueInfo):

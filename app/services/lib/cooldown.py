@@ -1,3 +1,4 @@
+import asyncio
 import json
 from dataclasses import dataclass
 from time import time
@@ -82,3 +83,27 @@ class Cooldown:
     async def clear(self, event_name=None):
         event_name = event_name or self.event_name
         await self.write(event_name, cd=CooldownRecord(0, 0))
+
+
+class CooldownBiTrigger:
+    def __init__(self, db: DB, event_name, cooldown_sec: float):
+        self.db = db
+        self.event_name = event_name
+        self.cooldown_sec = cooldown_sec
+        self.cd_on = Cooldown(db, f'trigger.{event_name}.on', cooldown_sec)
+        self.cd_off = Cooldown(db, f'trigger.{event_name}.off', cooldown_sec)
+
+    async def turn_on(self) -> bool:
+        return await self.turn()
+
+    async def turn_off(self) -> bool:
+        return await self.turn(on=False)
+
+    async def turn(self, on=True) -> bool:
+        if on and await self.cd_on.can_do():
+            await asyncio.gather(self.cd_on.do(), self.cd_off.clear())
+            return True
+        elif not on and await self.cd_off.can_do():
+            await asyncio.gather(self.cd_off.do(), self.cd_on.clear())
+            return True
+        return False
