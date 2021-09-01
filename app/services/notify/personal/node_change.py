@@ -2,9 +2,7 @@ import asyncio
 import operator
 from collections import defaultdict
 from functools import reduce
-from typing import List, NamedTuple
-
-from semver import VersionInfo
+from typing import List
 
 from services.jobs.fetch.base import INotified
 from services.jobs.fetch.thormon import ThorMonWSSClient, ThorMonAnswer
@@ -13,27 +11,13 @@ from services.lib.texts import grouper
 from services.lib.utils import class_logger
 from services.models.node_info import NodeSetChanges, NodeInfo, MapAddressToPrevAndCurrNode
 from services.models.node_watchers import NodeWatcherStorage
-from services.notify.personal.node_online import NodeOnlineTracker
+from services.notify.personal.models import NodeChange, NodeChangeType
+from services.notify.personal.node_online import NodeTelemetryDatabase
 from services.notify.types.version_notify import KnownVersionStorage
 
 DEFAULT_SLASH_THRESHOLD = 5
 MAX_CHANGES_PER_MESSAGE = 10
 
-
-class NodeChangeType:
-    VERSION_CHANGED = 'version_change'
-    NEW_VERSION_DETECTED = 'new_version'
-    SLASHING = 'slashing'
-    CHURNED_IN = 'churned_in'
-    CHURNED_OUT = 'churned_out'
-    # todo: add more types
-
-
-class NodeChange(NamedTuple):
-    address: str
-    type: str
-    data: object
-    single_per_user: bool = False
 
 
 class NodeChangePersonalNotifier(INotified):
@@ -42,7 +26,7 @@ class NodeChangePersonalNotifier(INotified):
         self.logger = class_logger(self)
         self.watchers = NodeWatcherStorage(deps)
         self.thor_mon = ThorMonWSSClient(deps.cfg.network_id)
-        self.online_tracker = NodeOnlineTracker(deps)
+        self.online_tracker = NodeTelemetryDatabase(deps)
         self.prev_thormon_state = ThorMonAnswer.empty()
         self.version_store = KnownVersionStorage(deps, context_name='personal')
 
@@ -72,8 +56,9 @@ class NodeChangePersonalNotifier(INotified):
         changes += self._changes_churned_nodes(node_set_change.nodes_activated, is_in=True)
         changes += self._changes_churned_nodes(node_set_change.nodes_deactivated, is_in=False)
         changes += self._changes_of_version(prev_and_curr_node_map)
-        changes += self._changes_of_slash(prev_and_curr_node_map)
         changes += await self._changes_of_detected_new_version(node_set_change)
+        changes += self._changes_of_slash(prev_and_curr_node_map)  # todo: overtime?
+        changes += self._changes_of_ip_address(prev_and_curr_node_map)
         # changes += self._dbg_add_mock_changes(prev_and_curr_node_map)      # fixme: debug!
 
         await self._cast_messages_for_changes(changes)
@@ -111,7 +96,8 @@ class NodeChangePersonalNotifier(INotified):
                 if text:
                     asyncio.create_task(self.deps.broadcaster.safe_send_message(user, text))
 
-    def _format_change_to_text(self, c: NodeChange):
+    @staticmethod
+    def _format_change_to_text(c: NodeChange):
         # todo: loc.format message!
         message = ''
         if c.type == NodeChangeType.SLASHING:
@@ -119,9 +105,12 @@ class NodeChangePersonalNotifier(INotified):
             message = f'Your node <pre>{(c.address[-4:])}</pre> slashed <b>{new - old}</b> pts!'
         elif c.type == NodeChangeType.VERSION_CHANGED:
             old, new = c.data
-            message = f'Your node <pre>{(c.address[-4:])}</pre> version from <b>{old}</b> to <b>{new}</b>!'
+            message = f'Your node <pre>{(c.address[-4:])}</pre> version from <i>{old}</i> to <b>{new}</b>!'
         elif c.type == NodeChangeType.NEW_VERSION_DETECTED:
             message = f'New version detected! <b>{c.data}</b>! Consider upgrading!'
+        elif c.type == NodeChangeType.IP_ADDRESS_CHANGED:
+            old, new = c.data
+            message = f'Node changed its IP address from <i>{old}</i> to <b>{new}</b>!'
         return message
 
     @staticmethod
@@ -165,6 +154,12 @@ class NodeChangePersonalNotifier(INotified):
                 yield NodeChange(prev.node_address, NodeChangeType.SLASHING, (prev.slash_points, curr.slash_points))
 
     @staticmethod
+    def _changes_of_ip_address(pc_node_map: MapAddressToPrevAndCurrNode):
+        for a, (prev, curr) in pc_node_map.items():
+            if prev.ip_address != curr.ip_address:
+                yield NodeChange(prev.node_address, NodeChangeType.IP_ADDRESS_CHANGED, (prev.ip_address, curr.ip_address))
+
+    @staticmethod
     def _dbg_add_mock_changes(pc_node_map: MapAddressToPrevAndCurrNode):
         return [NodeChange(addr, NodeChangeType.SLASHING, (curr.slash_points, curr.slash_points + 10)) for
                 addr, (prev, curr) in pc_node_map.items()]
@@ -176,7 +171,7 @@ class NodeChangePersonalNotifier(INotified):
 #  2. (inst) new version detected, consider upgrade?
 #  3. (inst) slash point increase (over threshold)  .
 #  4. bond changes (over threshold) e.g. > 1% in hour??
-#  5. ip address change?
+#  5. (inst) ip address change?
 #  6. (from cable) went offline/online? (time from in this status?)
 #  8. block height is not increasing
 #  9. block height is not increasing on CHAIN?!

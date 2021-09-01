@@ -7,7 +7,7 @@ from tools.lib.lp_common import LpAppFramework
 
 async def test_wss():
     logging.basicConfig(level=logging.DEBUG)
-    client = ThorMonWSSClient()
+    client = ThorMonWSSClient('mainnet')
     await client.listen_forever()
 
 

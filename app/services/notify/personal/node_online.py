@@ -48,13 +48,13 @@ class NodeOnlineProfile(NamedTuple):
     bifrost: ServiceOnlineProfile
 
 
-class NodeOnlineTracker:
+class NodeTelemetryDatabase:
     def __init__(self, deps: DepContainer):
         self.deps = deps
 
     @staticmethod
     def time_series_key(node_address: str):
-        return f'NodeOnline:{node_address}'
+        return f'NodeTelemetry:{node_address}'
 
     async def write_telemetry(self, thormon: ThorMonAnswer):
         for node in thormon.nodes:
@@ -77,20 +77,23 @@ class NodeOnlineTracker:
             results[node_address] = best_point
         return results
 
-    @staticmethod
-    def _make_profile(node_address, points: List):
-        answers = [ThorMonNode.from_json(j) for j in points]
-
-        return NodeOnlineProfile(
-            node_address
-        )
-
-    async def get_online_profile(self, node_addresses: List[str], max_ago_sec: float = HOUR, tolerance=MINUTE):
+    async def get_online_profiles(self, node_addresses: List[str], max_ago_sec: float = HOUR, tolerance=MINUTE):
         results = {}
         for node_address in node_addresses:
-            series = self.get_series(node_address)
-            points = await series.get_last_values_json(max_ago_sec, tolerance_sec=tolerance)
-            results[node_address] = self._make_profile(node_address, points)
+            results[node_address] = await self.get_online_profile(node_address, max_ago_sec, tolerance)
         return results
 
-    # async def
+    async def get_online_profile(self, node_address: str, max_ago_sec: float = HOUR, tolerance=MINUTE):
+        series = self.get_series(node_address)
+        points = await series.get_last_values_json(max_ago_sec, tolerance_sec=tolerance)
+        node_points = [ThorMonNode.from_json(j) for j in points]
+        return NodeOnlineProfile(
+            node_address,
+            rpc=ServiceOnlineProfile.from_thormon_nodes(node_points, 'rpc'),
+            midgard=ServiceOnlineProfile.from_thormon_nodes(node_points, 'midgard'),
+            bifrost=ServiceOnlineProfile.from_thormon_nodes(node_points, 'bifrost'),
+            thor=ServiceOnlineProfile.from_thormon_nodes(node_points, 'thor'),
+        )
+
+    async def get_changes(self, node_address):
+        return []
