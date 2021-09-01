@@ -19,7 +19,6 @@ DEFAULT_SLASH_THRESHOLD = 5
 MAX_CHANGES_PER_MESSAGE = 10
 
 
-
 class NodeChangePersonalNotifier(INotified):
     def __init__(self, deps: DepContainer):
         self.deps = deps
@@ -42,16 +41,14 @@ class NodeChangePersonalNotifier(INotified):
 
     async def _handle_thormon_message_bg_job(self, data: ThorMonAnswer):
         await self.online_tracker.write_telemetry(data)
-
         changes = []
         for node in data.nodes:
-            ...
+            changes += self.online_tracker.get_changes(node.node_address)
         await self._cast_messages_for_changes(changes)
 
     async def _handle_node_churn_bg_job(self, node_set_change: NodeSetChanges):
         prev_and_curr_node_map = node_set_change.prev_and_curr_node_map
 
-        # 1. extract changes
         changes = []
         changes += self._changes_churned_nodes(node_set_change.nodes_activated, is_in=True)
         changes += self._changes_churned_nodes(node_set_change.nodes_deactivated, is_in=False)
@@ -87,14 +84,21 @@ class NodeChangePersonalNotifier(INotified):
 
         for user, ch_list in user_changes.items():
             settings = await self.watchers.get_user_settings(user)
-            print(settings)
 
-            groups = list(grouper(MAX_CHANGES_PER_MESSAGE, ch_list))  # split to several messages
+            # filter changes according to the user's setting
+            filtered_change_list = self._filter_changes(ch_list, settings)
+
+            groups = list(grouper(MAX_CHANGES_PER_MESSAGE, filtered_change_list))  # split to several messages
             for group in groups:
                 text = '\n\n'.join(map(self._format_change_to_text, group))
                 text = text.strip()
                 if text:
                     asyncio.create_task(self.deps.broadcaster.safe_send_message(user, text))
+
+    @staticmethod
+    async def _filter_changes(ch_list: List[NodeChange], settings: dict) -> List[NodeChange]:
+        # todo! use settings!
+        return ch_list
 
     @staticmethod
     def _format_change_to_text(c: NodeChange):
@@ -157,14 +161,13 @@ class NodeChangePersonalNotifier(INotified):
     def _changes_of_ip_address(pc_node_map: MapAddressToPrevAndCurrNode):
         for a, (prev, curr) in pc_node_map.items():
             if prev.ip_address != curr.ip_address:
-                yield NodeChange(prev.node_address, NodeChangeType.IP_ADDRESS_CHANGED, (prev.ip_address, curr.ip_address))
+                yield NodeChange(prev.node_address, NodeChangeType.IP_ADDRESS_CHANGED,
+                                 (prev.ip_address, curr.ip_address))
 
     @staticmethod
     def _dbg_add_mock_changes(pc_node_map: MapAddressToPrevAndCurrNode):
         return [NodeChange(addr, NodeChangeType.SLASHING, (curr.slash_points, curr.slash_points + 10)) for
                 addr, (prev, curr) in pc_node_map.items()]
-
-
 
 # Changes?
 #  1. (inst) version update
