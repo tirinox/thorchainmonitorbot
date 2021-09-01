@@ -26,6 +26,10 @@ class ThorMonChainHeight(NamedTuple):
         return cls(chain=j.get('chain', ''), height=int(j.get('height', 0)))
 
 
+def is_ok(j, key):
+    return str(j.get(key, 'BAD')) == 'OK'
+
+
 class ThorMonNode(NamedTuple):
     node_address: str
     ip_address: str
@@ -63,10 +67,10 @@ class ThorMonNode(NamedTuple):
             forced_to_leave=bool(j.get('forced_to_leave')),
             leave_height=int(j.get('leave_height', 0)),
             status_since=int(j.get('status_since', 0)),
-            thor=bool(j.get('thor')),
-            rpc=bool(j.get('rpc')),
-            midgard=bool(j.get('midgard')),
-            bifrost=bool(j.get('bifrost')),
+            thor=is_ok(j, 'thor'),
+            rpc=is_ok(j, 'rpc'),
+            midgard=is_ok(j, 'midgard'),
+            bifrost=is_ok(j, 'bifrost'),
 
             original_dict=j
         )
