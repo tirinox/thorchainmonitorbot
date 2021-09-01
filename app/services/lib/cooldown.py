@@ -86,12 +86,14 @@ class Cooldown:
 
 
 class CooldownBiTrigger:
-    def __init__(self, db: DB, event_name, cooldown_sec: float):
+    def __init__(self, db: DB, event_name, cooldown_sec: float, switch_cooldown_sec: float = 0.0):
         self.db = db
         self.event_name = event_name
         self.cooldown_sec = cooldown_sec
+        self.switch_cooldown_sec = switch_cooldown_sec
         self.cd_on = Cooldown(db, f'trigger.{event_name}.on', cooldown_sec)
         self.cd_off = Cooldown(db, f'trigger.{event_name}.off', cooldown_sec)
+        self.cd_switch = Cooldown(db, f'trigger.{event_name}.switch', switch_cooldown_sec)
 
     async def turn_on(self) -> bool:
         return await self.turn()
@@ -100,10 +102,21 @@ class CooldownBiTrigger:
         return await self.turn(on=False)
 
     async def turn(self, on=True) -> bool:
+        has_switch_cd = self.switch_cooldown_sec > 0.0
+
+        if has_switch_cd and not await self.cd_switch.can_do():
+            return False
+
+        result = False
+
         if on and await self.cd_on.can_do():
             await asyncio.gather(self.cd_on.do(), self.cd_off.clear())
-            return True
+            result = True
         elif not on and await self.cd_off.can_do():
             await asyncio.gather(self.cd_off.do(), self.cd_on.clear())
-            return True
-        return False
+            result = True
+
+        if result and has_switch_cd:
+            await self.cd_switch.do()
+
+        return result
