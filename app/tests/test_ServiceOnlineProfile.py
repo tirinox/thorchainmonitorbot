@@ -56,7 +56,7 @@ def test_common_3():
 
 
 def test_filter():
-    p = ServiceOnlineProfile.from_points(build_helper([0, 1, 0, 1, 1, 0, 1, 1, 1, 0]), 'test').filter_age(4)
+    p = ServiceOnlineProfile.from_points(build_helper([0, 1, 0, 1, 1, 0, 1, 1, 1, 0]), 'test').filter_age(3)
     assert p.num_points == 4
     assert p.num_online_points == 3
     assert p.num_last_silent_points == 1
@@ -64,8 +64,13 @@ def test_filter():
     assert p.recent_offline_ratio == 0.25
 
 
-def make_node_test(online, ts, service='rpc'):
-    return ts, ThorMonNode.from_json({service: boolz(online)})
+def test_offline_time():
+    p = ServiceOnlineProfile.from_points(build_helper([0, 1, 0, 1, 1, 0, 1, 1, 1, 1]), 'test')
+    assert p.calc_offline_time(now=9) == 0
+    assert p.calc_offline_time(now=10) == 0
+
+    p = ServiceOnlineProfile.from_points(build_helper([0, 1, 0, 1, 1, 0, 1, 1, 0, 0]), 'test')
+    assert p.calc_offline_time(now=9) == 1.0
 
 
 def build_helper_node(arr: list, service='rpc'):

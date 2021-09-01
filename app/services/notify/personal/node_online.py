@@ -1,28 +1,23 @@
-from itertools import takewhile
+from itertools import takewhile, islice
 from typing import List, NamedTuple, Tuple
 
 import ujson
 
 from services.jobs.fetch.thormon import ThorMonAnswer, ThorMonNode
-from services.lib.date_utils import MINUTE, HOUR
+from services.lib.cooldown import CooldownBiTrigger
+from services.lib.date_utils import MINUTE, HOUR, now_ts
 from services.lib.depcont import DepContainer
 from services.models.time_series import TimeSeries
+from services.notify.personal.models import NodeChange, NodeChangeType, ChangeOnline
 
 MAX_HISTORY_DURATION = HOUR
-
-HISTORY_DURATION_GRADES = [
-    MINUTE,
-    5 * MINUTE,
-    15 * MINUTE,
-    HOUR
-]
-
+DETECTION_OFFLINE_TIME = 10.0  # sec
 
 TimeStampedList = List[Tuple[float, bool]]
 
 
 class ServiceOnlineProfile(NamedTuple):
-    service: str
+    name: str
     num_points: int
     num_online_points: int
     num_last_silent_points: int
@@ -34,8 +29,8 @@ class ServiceOnlineProfile(NamedTuple):
         if not self.points:
             return self
         youngest_ts = max(ts for ts, p in self.points)
-        filtered_points = [(ts, p) for ts, p in self.points if ts > youngest_ts - max_age_sec]
-        return self.from_points(filtered_points, self.service)
+        filtered_points = [(ts, p) for ts, p in self.points if ts >= youngest_ts - max_age_sec]
+        return self.from_points(filtered_points, self.name)
 
     @classmethod
     def from_thormon_nodes(cls, data: List[Tuple[float, ThorMonNode]], service):
@@ -59,6 +54,19 @@ class ServiceOnlineProfile(NamedTuple):
             online_ratio, recent_offline_ratio,
             points=points
         )
+
+    def calc_offline_time(self, now=None, skip=0):
+        now = now or now_ts()
+        youngest_ts = now
+        for ts, value in islice(reversed(self.points), skip, None):
+            if value:
+                break
+            youngest_ts = ts
+        return now - youngest_ts
+
+    @property
+    def offline_time(self):
+        return self.calc_offline_time(now_ts())
 
 
 class NodeOnlineProfile(NamedTuple):
@@ -130,5 +138,19 @@ class NodeTelemetryDatabase:
         profile = await self.get_online_profile(node_address,
                                                 max_ago_sec=MAX_HISTORY_DURATION,
                                                 tolerance=MAX_HISTORY_DURATION / 60.0)
+        for service in (profile.rpc, profile.thor, profile.bifrost, profile.midgard):
+            offline = service.offline_time
+
+            trigger = CooldownBiTrigger(self.deps.db, f'online.{service.name}', DETECTION_OFFLINE_TIME)
+
+            if offline >= DETECTION_OFFLINE_TIME and await trigger.turn_off():
+                changes.append(NodeChange(node_address, NodeChangeType.SERVICE_ONLINE, ChangeOnline(False, offline)))
+            elif offline == 0.0 and await trigger.turn_on():
+                changes.append(NodeChange(node_address, NodeChangeType.SERVICE_ONLINE, ChangeOnline(True, 0.0)))
 
         return changes
+
+
+"""
+If node.service offil
+"""

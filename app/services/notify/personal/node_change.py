@@ -43,7 +43,7 @@ class NodeChangePersonalNotifier(INotified):
         await self.online_tracker.write_telemetry(data)
         changes = []
         for node in data.nodes:
-            changes += self.online_tracker.get_changes(node.node_address)
+            changes += await self.online_tracker.get_changes(node.node_address)
         await self._cast_messages_for_changes(changes)
 
     async def _handle_node_churn_bg_job(self, node_set_change: NodeSetChanges):
@@ -86,7 +86,7 @@ class NodeChangePersonalNotifier(INotified):
             settings = await self.watchers.get_user_settings(user)
 
             # filter changes according to the user's setting
-            filtered_change_list = self._filter_changes(ch_list, settings)
+            filtered_change_list = await self._filter_changes(ch_list, settings)
 
             groups = list(grouper(MAX_CHANGES_PER_MESSAGE, filtered_change_list))  # split to several messages
             for group in groups:
@@ -104,17 +104,23 @@ class NodeChangePersonalNotifier(INotified):
     def _format_change_to_text(c: NodeChange):
         # todo: loc.format message!
         message = ''
+        short_addr = f'<pre>{c.address[-4:]}</pre>'
         if c.type == NodeChangeType.SLASHING:
             old, new = c.data
-            message = f'Your node <pre>{(c.address[-4:])}</pre> slashed <b>{new - old}</b> pts!'
+            message = f'Your node {short_addr} slashed <b>{new - old}</b> pts!'
         elif c.type == NodeChangeType.VERSION_CHANGED:
             old, new = c.data
-            message = f'Your node <pre>{(c.address[-4:])}</pre> version from <i>{old}</i> to <b>{new}</b>!'
+            message = f'Your node {short_addr} version from <i>{old}</i> to <b>{new}</b>!'
         elif c.type == NodeChangeType.NEW_VERSION_DETECTED:
             message = f'New version detected! <b>{c.data}</b>! Consider upgrading!'
         elif c.type == NodeChangeType.IP_ADDRESS_CHANGED:
             old, new = c.data
-            message = f'Node changed its IP address from <i>{old}</i> to <b>{new}</b>!'
+            message = f'Node {short_addr} changed its IP address from <i>{old}</i> to <b>{new}</b>!'
+        elif c.type == NodeChangeType.SERVICE_ONLINE:
+            online, duration = c.data
+            online_txt = 'online' if online else f'offline (already for {int(duration)} sec)'
+            message = f'Node {short_addr} went <b>{online_txt}</b>!'
+
         return message
 
     @staticmethod
