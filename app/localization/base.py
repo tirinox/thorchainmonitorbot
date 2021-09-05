@@ -959,9 +959,10 @@ class BaseLocalization(ABC):  # == English
         short_name = node_address[-4:].upper()
         return f'{name} ({short_name})' if name else short_name
 
-    def short_node_desc(self, node: NodeInfo, name=None):
+    def short_node_desc(self, node: NodeInfo, name=None, watching=False):
         addr = self.short_node_name(node.node_address, name)
-        return f'{addr} ({short_money(node.bond, prefix="R")})'
+        extra = ' ✔️' if watching else ''
+        return f'{addr} ({short_money(node.bond, prefix="R")}){extra}'
 
     def pretty_node_desc(self, node: NodeInfo, name=None):
         addr = self.short_node_name(node.node_address, name)

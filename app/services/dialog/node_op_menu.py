@@ -21,8 +21,6 @@ class NodeOpStates(StatesGroup):
     SETTINGS = State()
 
 
-
-
 class NodeOpDialog(BaseDialog):
     # ----------- MAIN ------------
     @message_handler(state=NodeOpStates.MAIN_MENU)
@@ -71,11 +69,12 @@ class NodeOpDialog(BaseDialog):
 
     # -------- ADDING ---------
 
-    async def all_nodes_list_maker(self):
+    async def all_nodes_list_maker(self, user_id):
+        watch_list = set(await self.storage(user_id).all_nodes_for_user())
         last_nodes = await self.get_all_nodes()
         last_node_texts = [
             # add node_address as a tag
-            (self.loc.short_node_desc(n), n.node_address) for n in last_nodes
+            (self.loc.short_node_desc(n, watching=(n.node_address in watch_list)), n.node_address) for n in last_nodes
         ]
         return TelegramInlineList(
             last_node_texts,
@@ -91,7 +90,7 @@ class NodeOpDialog(BaseDialog):
 
     async def on_add_node_menu(self, message: Message):
         await NodeOpStates.ADDING.set()
-        tg_list = await self.all_nodes_list_maker()
+        tg_list = await self.all_nodes_list_maker(message.chat.id)
 
         # to hide KB
         # await message.answer(self.loc.TEXT_NOP_ADD_INSTRUCTIONS_PRE, reply_markup=ReplyKeyboardRemove())
@@ -116,15 +115,21 @@ class NodeOpDialog(BaseDialog):
 
     @query_handler(state=NodeOpStates.ADDING)
     async def on_add_list_callback(self, query: CallbackQuery):
-        tg_list = await self.all_nodes_list_maker()
-        result = await tg_list.handle_query(query)
-
         user_id = query.message.chat.id
+
+        tg_list = await self.all_nodes_list_maker(user_id)
+        result = await tg_list.handle_query(query)
 
         if result.result == result.BACK:
             await self.show_main_menu(query.message, with_welcome=False)
         elif result.result == result.SELECTED:
-            await self.add_nodes_for_user(query, [result.selected_data_tag], user_id, go_back=False)
+            node_to_add = result.selected_data_tag
+
+            current_node_set = set(await self.storage(user_id).all_nodes_for_user())
+            if node_to_add in current_node_set:
+                await self.storage(user_id).remove_user_nodes([node_to_add])
+            else:
+                await self.add_nodes_for_user(query, [node_to_add], user_id, go_back=False)
         elif query.data == 'add:all':
             last_nodes = await self.get_all_nodes()
             await self.add_nodes_for_user(query, [n.node_address for n in last_nodes], user_id)
@@ -219,10 +224,22 @@ class NodeOpDialog(BaseDialog):
     async def on_settings_menu(self, message: Message):
         # todo: implement settings menu
         await NodeOpStates.SETTINGS.set()
-        await message.edit_text('Not implemented yet..', reply_markup=InlineKeyboardMarkup(
-            inline_keyboard=[[
-                InlineKeyboardButton(self.loc.BUTTON_BACK, callback_data='setting:back')
-            ]]
+        await message.edit_text('Tune your notifications here.', reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton('Slashing', callback_data='setting:slash:menu'),
+                    InlineKeyboardButton('Version', callback_data='setting:version:menu'),
+                    InlineKeyboardButton('Offline', callback_data='setting:offline:menu'),
+                ],
+                [
+                    InlineKeyboardButton('Churning', callback_data='setting:churning:menu'),
+                    InlineKeyboardButton('Bond', callback_data='setting:bond:menu'),
+                    InlineKeyboardButton('Block height', callback_data='setting:height:menu'),
+                ],
+                [
+                    InlineKeyboardButton(self.loc.BUTTON_BACK, callback_data='setting:back')
+                ]
+            ]
         ))
 
     @query_handler(state=NodeOpStates.SETTINGS)

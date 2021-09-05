@@ -3,7 +3,10 @@ import json
 from dataclasses import dataclass
 from time import time
 
+from services.lib.date_utils import DAY
 from services.lib.db import DB
+
+INFINITE_TIME = 10000 * DAY
 
 
 class CooldownSingle:
@@ -86,10 +89,11 @@ class Cooldown:
 
 
 class CooldownBiTrigger:
-    def __init__(self, db: DB, event_name, cooldown_sec: float, switch_cooldown_sec: float = 0.0):
+    def __init__(self, db: DB, event_name, cooldown_sec: float, switch_cooldown_sec: float = 0.0, default=None):
         self.db = db
         self.event_name = event_name
         self.cooldown_sec = cooldown_sec
+        self.default = bool(default)
         self.switch_cooldown_sec = switch_cooldown_sec
         self.cd_on = Cooldown(db, f'trigger.{event_name}.on', cooldown_sec)
         self.cd_off = Cooldown(db, f'trigger.{event_name}.off', cooldown_sec)
@@ -109,10 +113,26 @@ class CooldownBiTrigger:
 
         result = False
 
-        if on and await self.cd_on.can_do():
+        can_on, can_off = await asyncio.gather(self.cd_on.can_do(), self.cd_off.can_do())
+
+        if not can_on and not can_off and self.default is not None:
+            # 1st time! using Default
+            default = bool(self.default)
+            which = self.cd_on if default else self.cd_off
+            await which.do()
+            result = on != default
+            """
+             DEFAULT = True
+                1. On = True (== default) => turn it on! 
+                    FALSE (it is already ON by default)
+                2. On = False (!= default) => turn it off!
+                    TRUE
+            """
+
+        elif on and can_on:
             await asyncio.gather(self.cd_on.do(), self.cd_off.clear())
             result = True
-        elif not on and await self.cd_off.can_do():
+        elif not on and can_off:
             await asyncio.gather(self.cd_off.do(), self.cd_on.clear())
             result = True
 

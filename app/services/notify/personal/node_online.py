@@ -4,7 +4,7 @@ from typing import List, NamedTuple, Tuple
 import ujson
 
 from services.jobs.fetch.thormon import ThorMonAnswer, ThorMonNode
-from services.lib.cooldown import CooldownBiTrigger
+from services.lib.cooldown import CooldownBiTrigger, INFINITE_TIME
 from services.lib.date_utils import MINUTE, HOUR, now_ts, DAY
 from services.lib.depcont import DepContainer
 from services.models.time_series import TimeSeries
@@ -142,7 +142,11 @@ class NodeTelemetryDatabase:
         for service in (profile.rpc, profile.thor, profile.bifrost, profile.midgard):
             offline = service.offline_time
 
-            trigger = CooldownBiTrigger(self.deps.db, f'online.{service.name}.{node_address}', TRIGGER_OFFLINE_TIME)
+            # node is considered online by default!
+            trigger = CooldownBiTrigger(self.deps.db,
+                                        f'online.{service.name}.{node_address}',
+                                        INFINITE_TIME,
+                                        default=True)
 
             if offline >= DETECTION_OFFLINE_TIME and await trigger.turn_off():
                 changes.append(NodeChange(node_address, NodeChangeType.SERVICE_ONLINE, ChangeOnline(False, offline)))
@@ -150,8 +154,3 @@ class NodeTelemetryDatabase:
                 changes.append(NodeChange(node_address, NodeChangeType.SERVICE_ONLINE, ChangeOnline(True, 0.0)))
 
         return changes
-
-
-"""
-If node.service offil
-"""
