@@ -15,14 +15,14 @@ class LocalizationManager(metaclass=Singleton):
             'eng': self.default
         }
 
-    def get_from_lang(self, lang):
+    def get_from_lang(self, lang) -> BaseLocalization:
         return self._langs.get(str(lang), self.default)
 
     @staticmethod
     def lang_key(chat_id):
         return f'user:lang:{chat_id}'
 
-    async def get_lang(self, chat_id, db: DB):
+    async def get_lang(self, chat_id, db: DB) -> str:
         redis = await db.get_redis()
         lang = await redis.get(self.lang_key(chat_id), encoding='utf-8')
         return lang if lang else None
@@ -32,6 +32,6 @@ class LocalizationManager(metaclass=Singleton):
         await redis.set(self.lang_key(chat_id), str(lang))
         return await self.get_from_db(chat_id, db)
 
-    async def get_from_db(self, chat_id, db: DB):
+    async def get_from_db(self, chat_id, db: DB) -> BaseLocalization:
         lang = await self.get_lang(chat_id, db)
         return self.get_from_lang(lang)

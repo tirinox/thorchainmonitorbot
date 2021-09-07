@@ -29,7 +29,7 @@ from services.lib.utils import setup_logs
 from services.models.price import LastPriceHolder
 from services.models.tx import ThorTxType
 from services.notify.broadcast import Broadcaster
-from services.notify.personal.node_change import NodeChangePersonalNotifier
+from services.notify.personal import NodeChangePersonalNotifier
 from services.notify.types.cap_notify import LiquidityCapNotifier
 from services.notify.types.chain_notify import TradingHaltedNotifier
 from services.notify.types.mimir_notify import MimirChangedNotifier

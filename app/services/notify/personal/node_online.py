@@ -1,18 +1,17 @@
 from itertools import takewhile, islice
 from typing import List, NamedTuple, Tuple
 
-import ujson
-
-from services.jobs.fetch.thormon import ThorMonAnswer, ThorMonNode
+from services.models.thormon import ThorMonNode
 from services.lib.cooldown import CooldownBiTrigger, INFINITE_TIME
-from services.lib.date_utils import MINUTE, HOUR, now_ts, DAY
+from services.lib.date_utils import MINUTE, HOUR, now_ts
 from services.lib.depcont import DepContainer
-from services.models.time_series import TimeSeries
-from services.notify.personal.models import NodeChange, NodeChangeType, ChangeOnline
+from services.notify.personal.models import BaseChangeTracker
+from services.models.node_info import ChangeOnline, NodeChangeType, NodeChange
+from services.notify.personal.telemetry import NodeTelemetryDatabase
 
 MAX_HISTORY_DURATION = HOUR
 DETECTION_OFFLINE_TIME = 10.0  # sec
-TRIGGER_OFFLINE_TIME = 2 * DAY
+TRIGGER_SWITCH_CD = 30.0  # sec
 
 TimeStampedList = List[Tuple[float, bool]]
 
@@ -78,39 +77,10 @@ class NodeOnlineProfile(NamedTuple):
     bifrost: ServiceOnlineProfile
 
 
-class NodeTelemetryDatabase:
+class NodeOnlineTracker(BaseChangeTracker):
     def __init__(self, deps: DepContainer):
         self.deps = deps
-        self.previous_nodes = {}
-
-    @staticmethod
-    def time_series_key(node_address: str):
-        return f'NodeTelemetry:{node_address}'
-
-    async def write_telemetry(self, thormon: ThorMonAnswer):
-        self.previous_nodes = {}
-        for node in thormon.nodes:
-            if not node.node_address:
-                continue
-
-            self.previous_nodes[node.node_address] = node
-
-            series = TimeSeries(self.time_series_key(node.node_address), self.deps.db)
-            await series.add(
-                json=ujson.dumps(node.original_dict)
-            )
-
-    def get_series(self, node_address):
-        return TimeSeries(self.time_series_key(node_address), self.deps.db)
-
-    async def read_telemetry(self, node_addresses: List[str], ago_sec: float, tolerance=MINUTE):
-        results = {}
-        for node_address in node_addresses:
-            best_point, _ = await self.get_series(node_address).get_best_point_ago(ago_sec, tolerance)
-            if best_point:
-                best_point = ujson.loads(best_point['json'])
-            results[node_address] = best_point
-        return results
+        self.telemetry_db = NodeTelemetryDatabase(deps)
 
     async def get_online_profiles(self, node_addresses: List[str], max_ago_sec: float = HOUR, tolerance=MINUTE):
         results = {}
@@ -119,9 +89,7 @@ class NodeTelemetryDatabase:
         return results
 
     async def get_online_profile(self, node_address: str, max_ago_sec: float = HOUR, tolerance=MINUTE):
-        series = self.get_series(node_address)
-        points = await series.get_last_values_json(max_ago_sec, tolerance_sec=tolerance, with_ts=True)
-        node_points = [(ts, ThorMonNode.from_json(j)) for ts, j in points]
+        node_points = await self.telemetry_db.read_telemetry(node_address, max_ago_sec, tolerance)
         return NodeOnlineProfile(
             node_address,
             rpc=ServiceOnlineProfile.from_thormon_nodes(node_points, 'rpc'),
@@ -130,7 +98,7 @@ class NodeTelemetryDatabase:
             thor=ServiceOnlineProfile.from_thormon_nodes(node_points, 'thor'),
         )
 
-    async def get_changes(self, node_address):
+    async def get_node_changes(self, node_address, **kwargs):
         if not node_address:
             return []
 
@@ -145,7 +113,8 @@ class NodeTelemetryDatabase:
             # node is considered online by default!
             trigger = CooldownBiTrigger(self.deps.db,
                                         f'online.{service.name}.{node_address}',
-                                        INFINITE_TIME,
+                                        cooldown_sec=INFINITE_TIME,
+                                        switch_cooldown_sec=TRIGGER_SWITCH_CD,
                                         default=True)
 
             if offline >= DETECTION_OFFLINE_TIME and await trigger.turn_off():

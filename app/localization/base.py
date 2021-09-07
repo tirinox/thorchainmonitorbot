@@ -16,7 +16,7 @@ from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, i
     up_down_arrow, bracketify, plural, grouper, join_as_numbered_list
 from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
-from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus
+from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeChangeType, NodeChange
 from services.models.pool_info import PoolInfo, PoolChanges
 from services.models.price import PriceReport
 from services.models.queue import QueueInfo
@@ -973,7 +973,7 @@ class BaseLocalization(ABC):  # == English
 
     def text_node_op_welcome_text_part2(self, watch_list: dict):
         text = 'It will send you personalized notifications ' \
-                'when something important happens to the nodes you are monitoring.\n\n'
+               'when something important happens to the nodes you are monitoring.\n\n'
         if watch_list:
             text += f'You have {len(watch_list)} nodes in the watchlist.'
         else:
@@ -1017,6 +1017,34 @@ class BaseLocalization(ABC):  # == English
         node_addresses_text = ','.join([self.short_node_name(a) for a in node_addresses])
         node_addresses_text = node_addresses_text[:120]  # just in case!
         return f'😉 Success! You removed: {node_addresses_text} ({len(node_addresses)} nodes) from your watchlist.'
+
+    TEXT_NOP_SETTINGS_TITLE = 'Tune your notifications here.'
+
+    @staticmethod
+    def notification_text_for_node_op_changes(c: NodeChange):
+        # todo! make it good-looking
+        message = ''
+        short_addr = f'<pre>{c.address[-4:]}</pre>'
+        if c.type == NodeChangeType.SLASHING:
+            old, new = c.data
+            message = f'Your node {short_addr} slashed <b>{new - old}</b> pts (now {new} pts.)!'
+        elif c.type == NodeChangeType.VERSION_CHANGED:
+            old, new = c.data
+            message = f'Your node {short_addr} version from <i>{old}</i> to <b>{new}</b>!'
+        elif c.type == NodeChangeType.NEW_VERSION_DETECTED:
+            message = f'New version detected! <b>{c.data}</b>! Consider upgrading!'
+        elif c.type == NodeChangeType.IP_ADDRESS_CHANGED:
+            old, new = c.data
+            message = f'Node {short_addr} changed its IP address from <i>{old}</i> to <b>{new}</b>!'
+        elif c.type == NodeChangeType.SERVICE_ONLINE:
+            online, duration = c.data
+            online_txt = 'online' if online else f'offline (already for {int(duration)} sec)'
+            message = f'Node {short_addr} went <b>{online_txt}</b>!'
+        elif c.type == NodeChangeType.CHURNING:
+            verb = 'churned in' if c.data else 'churned out'
+            message = f'Node {short_addr} <b>{verb}</b>!'
+
+        return message
 
     # ------- INLINE BOT (English only) -------
 

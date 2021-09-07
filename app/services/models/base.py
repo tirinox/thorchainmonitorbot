@@ -1,4 +1,4 @@
-import json
+import ujson
 from dataclasses import dataclass, asdict
 
 
@@ -6,11 +6,11 @@ from dataclasses import dataclass, asdict
 class BaseModelMixin:
     @property
     def as_json_string(self):
-        return json.dumps(asdict(self))
+        return ujson.dumps(asdict(self))
 
     @classmethod
     def from_json(cls, jstr):
         if not jstr:
             return None
-        d = json.loads(jstr)
+        d = ujson.loads(jstr)
         return cls(**d)

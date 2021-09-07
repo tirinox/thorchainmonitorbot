@@ -1,10 +1,11 @@
 import asyncio
 
 from services.jobs.fetch.base import INotified
-from services.jobs.fetch.thormon import ThorMonWSSClient, ThorMonAnswer
+from services.jobs.fetch.thormon import ThorMonWSSClient
+from services.models.thormon import ThorMonAnswer
 from services.lib.depcont import DepContainer
 from services.lib.utils import sep
-from services.notify.personal.node_online import NodeTelemetryDatabase
+from services.notify.personal.node_online import NodeOnlineTracker
 from tools.lib.lp_common import LpAppFramework
 
 
@@ -12,7 +13,7 @@ class ThorMonListenerTest(INotified):
     def __init__(self, deps: DepContainer):
         self.deps = deps
         self.thor_mon = ThorMonWSSClient(deps.cfg.network_id)
-        self.online_tracker = NodeTelemetryDatabase(deps)
+        self.online_tracker = NodeOnlineTracker(deps)
         self.known_nodes = []
 
     async def prepare(self):

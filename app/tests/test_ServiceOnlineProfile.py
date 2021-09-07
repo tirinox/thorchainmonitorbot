@@ -1,4 +1,4 @@
-from services.jobs.fetch.thormon import ThorMonNode
+from services.models.thormon import ThorMonNode
 from services.notify.personal.node_online import ServiceOnlineProfile
 
 

@@ -1,29 +1,15 @@
-from typing import NamedTuple
+from typing import List
+
+from services.models.node_info import NodeChange
 
 
-class ChangeOldNew(NamedTuple):
-    old: object
-    new: object
+class BaseChangeTracker:
+    async def get_node_changes(self, node_address, *args, **kwargs) -> List[NodeChange]:
+        return []
 
+    async def get_all_changes(self, *args, **kwargs) -> List[NodeChange]:
+        return []
 
-class ChangeOnline(NamedTuple):
-    online: bool
-    duration: float
+    async def filter_changes(self, ch_list: List[NodeChange], settings: dict) -> List[NodeChange]:
+        return ch_list
 
-
-class NodeChangeType:
-    VERSION_CHANGED = 'version_change'
-    NEW_VERSION_DETECTED = 'new_version'
-    SLASHING = 'slashing'
-    CHURNED_IN = 'churned_in'
-    CHURNED_OUT = 'churned_out'
-    IP_ADDRESS_CHANGED = 'ip_address'
-    SERVICE_ONLINE = 'service_online'
-    # todo: add more types
-
-
-class NodeChange(NamedTuple):
-    address: str
-    type: str
-    data: object
-    single_per_user: bool = False

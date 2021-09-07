@@ -4,12 +4,13 @@ import re
 import secrets
 from collections import Counter
 from dataclasses import dataclass, field
-from typing import List, Dict, NamedTuple, Optional, Tuple
+from typing import List, Dict, NamedTuple, Optional, Tuple, Union
 
 from semver import VersionInfo
 
 from services.lib.constants import thor_to_float
 from services.models.base import BaseModelMixin
+from services.models.thormon import ThorMonNode
 
 ZERO_VERSION = VersionInfo(0, 0, 0)
 
@@ -263,3 +264,37 @@ class NetworkNodeIpInfo:
                 providers.append(self.UNKNOWN_PROVIDER)
 
         return providers
+
+
+class ChangeOldNew(NamedTuple):
+    old: object
+    new: object
+
+
+class ChangeOnline(NamedTuple):
+    online: bool
+    duration: float
+
+
+class ChangeBlockHeight(NamedTuple):
+    client_name: str
+    lag: int
+    how_long_behind: float
+
+
+class NodeChangeType:
+    VERSION_CHANGED = 'version_change'
+    NEW_VERSION_DETECTED = 'new_version'
+    SLASHING = 'slashing'
+    CHURNING = 'churning'
+    IP_ADDRESS_CHANGED = 'ip_address'
+    SERVICE_ONLINE = 'service_online'
+    BLOCK_HEIGHT = 'block_height'
+
+
+class NodeChange(NamedTuple):
+    address: str
+    type: str
+    data: object
+    single_per_user: bool = False
+    node: object = Union[NodeInfo, ThorMonNode, None]
