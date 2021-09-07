@@ -975,8 +975,6 @@ class BaseLocalization(ABC):  # == English
         text = 'It will send you personalized notifications ' \
                 'when something important happens to the nodes you are monitoring.\n\n'
         if watch_list:
-            # node_list = ', '.join(self.short_node_name(addr, name) for addr, name in watch_list.items())
-            # node_list = pre(node_list[:3000])
             text += f'You have {len(watch_list)} nodes in the watchlist.'
         else:
             text += f'You did not add anything to the watch list. Click {ital(self.BUTTON_NOP_ADD_NODES)} first 👇.'
@@ -984,10 +982,12 @@ class BaseLocalization(ABC):  # == English
         return text
 
     TEXT_NOP_MANAGE_LIST_TITLE = \
-        'You added the following nodes to your watchlist. Total: <pre>{n}</pre>. ' \
-        'Select one in the menu below to edit or to unwatch it.'
+        'You added <pre>{n}</pre> nodes to your watchlist. ' \
+        'Select one in the menu below to stop monitoring the node.'
+
     TEXT_NOP_ADD_INSTRUCTIONS_PRE = 'Select the nodes which you would like to add to <b>your watchlist</b> ' \
                                     'from the list below.'
+
     TEXT_NOP_ADD_INSTRUCTIONS = '🤓 If you know the addresses of the nodes you are interested in, ' \
                                 f'just send them to me as a text message. ' \
                                 f'You may use the full name {pre("thorAbc5andD1so2on")} or ' \
@@ -1012,9 +1012,6 @@ class BaseLocalization(ABC):  # == English
     BUTTON_NOP_CLEAR_LIST = '🗑️ Clear the list ({n})'
     BUTTON_NOP_REMOVE_INACTIVE = '❌ Remove inactive ({n})'
     BUTTON_NOP_REMOVE_DISCONNECTED = '❌ Remove disconnected ({n})'
-
-    BUTTON_NOP_SURE_TO_REMOVE_ONE = 'Are you sure to remove node <pre>{node}</pre> from your watchlist?'
-    BUTTON_NOP_SURE_TO_REMOVE_MANY = 'Are you sure to remove node <pre>{n}</pre> nodes from your watchlist?'
 
     def text_nop_success_remove_banner(self, node_addresses):
         node_addresses_text = ','.join([self.short_node_name(a) for a in node_addresses])
