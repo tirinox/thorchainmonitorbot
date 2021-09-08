@@ -39,6 +39,8 @@ class BaseLocalization(ABC):  # == English
 
     LOADING = '⌛ Loading...'
     LONG_DASH = '–'
+    SUCCESS = '✅ Success!'
+    ERROR = '❌ Error'
 
     @property
     def this_bot_name(self):
@@ -969,12 +971,10 @@ class BaseLocalization(ABC):  # == English
         addr = self.short_node_name(node.node_address, name)
         return f'{pre(addr)} ({bold(short_money(node.bond, prefix="R"))} bond)'
 
-    def text_node_op_welcome_text_part1(self):
-        return bold('Welcome to the Node Monitor tool!')
-
     def text_node_op_welcome_text_part2(self, watch_list: dict):
-        text = 'It will send you personalized notifications ' \
-               'when something important happens to the nodes you are monitoring.\n\n'
+        text = bold('Welcome to the Node Monitor tool!') + '\n\n'
+        text += 'It will send you personalized notifications ' \
+                'when something important happens to the nodes you are monitoring.\n\n'
         if watch_list:
             text += f'You have {len(watch_list)} nodes in the watchlist.'
         else:
@@ -1020,6 +1020,24 @@ class BaseLocalization(ABC):  # == English
         return f'😉 Success! You removed: {node_addresses_text} ({len(node_addresses)} nodes) from your watchlist.'
 
     TEXT_NOP_SETTINGS_TITLE = 'Tune your notifications here.'
+
+    BUTTON_NOP_SETT_SLASHING = 'Slashing'
+    BUTTON_NOP_SETT_VERSION = 'Version'
+    BUTTON_NOP_SETT_OFFLINE = 'Offline'
+    BUTTON_NOP_SETT_CHURNING = 'Churning'
+    BUTTON_NOP_SETT_BOND = 'Bond'
+    BUTTON_NOP_SETT_HEIGHT = 'Block height'
+
+    BUTTON_NOP_5MIN = '5 min'
+    BUTTON_NOP_15MIN = '15 min'
+    BUTTON_NOP_60MIN = '60 min'
+
+    TEXT_NOP_SLASH_THRESHOLD = 'Please select a threshold for slash point ' \
+                               'alerts in slash points (recommended around 5 - 10):'
+    TEXT_NOP_SLASH_PERIOD = 'Great! Please choose a time period for monitoring.\n' \
+                            'For example, if you choose <i>10 minutes</i> and a threshold of <i>{pts} pts</i>, ' \
+                            'you will get a notification if your node has incurred more than ' \
+                            '<i>{pts} slash pts</i> in the last <i>10 minutes</i>.'
 
     @staticmethod
     def notification_text_for_node_op_changes(c: NodeChange):

@@ -3,7 +3,7 @@ from typing import List
 from services.lib.depcont import DepContainer
 from services.models.thormon import ThorMonNodeTimeSeries
 from services.notify.personal.telemetry import NodeTelemetryDatabase
-from services.notify.personal.models import BaseChangeTracker
+from services.notify.personal.helpers import BaseChangeTracker
 from services.models.node_info import NodeChange
 
 TRIGGER_SWITCH_CD = 30.0  # sec

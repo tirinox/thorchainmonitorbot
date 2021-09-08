@@ -2,7 +2,7 @@ from typing import List
 
 from services.lib.depcont import DepContainer
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeChangeType, NodeChange
-from services.notify.personal.models import BaseChangeTracker
+from services.notify.personal.helpers import BaseChangeTracker
 
 
 class NodeChurnTracker(BaseChangeTracker):

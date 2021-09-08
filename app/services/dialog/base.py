@@ -143,8 +143,8 @@ class BaseDialog(ABC):
                 handler_class = cls(loc, None, d)
                 handler_method = getattr(handler_class, that_name)
                 return await handler_method(inline_query)
-            except Exception:
-                logger.exception('Inline bot query exception!')
+            except Exception as e:
+                logger.exception(f'Inline bot query exception! {e}')
 
     @classmethod
     def register_handler(cls, d, f, name):
@@ -184,7 +184,7 @@ class BaseDialog(ABC):
 
     @property
     def loading_sticker(self):
-        return self.deps.cfg.as_str('telegram.common.loading_sticker', default=None)
+        return self.deps.cfg.as_str('telegram.common.loading_sticker')
 
     async def answer_loading_sticker(self, message: Message, silent=True, remove_keyboard=False) -> Message:
         return await message.answer_sticker(self.loading_sticker, disable_notification=silent,

@@ -6,7 +6,7 @@ from services.lib.date_utils import HOUR, now_ts
 from services.lib.depcont import DepContainer
 from services.models.node_info import ChangeOnline, NodeChangeType, NodeChange
 from services.models.thormon import ThorMonNode, ThorMonNodeTimeSeries
-from services.notify.personal.models import BaseChangeTracker
+from services.notify.personal.helpers import BaseChangeTracker
 from services.notify.personal.telemetry import NodeTelemetryDatabase
 
 MAX_HISTORY_DURATION = HOUR

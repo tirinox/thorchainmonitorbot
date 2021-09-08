@@ -9,6 +9,7 @@ from typing import List, Dict, NamedTuple, Optional, Tuple, Union, Any
 from semver import VersionInfo
 
 from services.lib.constants import thor_to_float
+from services.lib.date_utils import MINUTE
 from services.models.base import BaseModelMixin
 from services.models.thormon import ThorMonNode
 
@@ -283,11 +284,24 @@ class ChangeBlockHeight(NamedTuple):
     restored: bool = False
 
 
+class ChangeVariation(NamedTuple):
+    current_val: float
+    previous_values: Dict[float, Any]
+
+
+STANDARD_INTERVALS = [
+    5 * MINUTE,
+    15 * MINUTE,
+    60 * MINUTE
+]
+
+
 class NodeChangeType:
     VERSION_CHANGED = 'version_change'
     NEW_VERSION_DETECTED = 'new_version'
     SLASHING = 'slashing'
     CHURNING = 'churning'
+    BOND = 'bond'
     IP_ADDRESS_CHANGED = 'ip_address'
     SERVICE_ONLINE = 'service_online'
     BLOCK_HEIGHT = 'block_height'

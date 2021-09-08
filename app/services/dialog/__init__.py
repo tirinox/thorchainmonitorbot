@@ -17,6 +17,12 @@ async def sticker_handler(message: Message):
     await message.reply(f'Sticker: {s.emoji}: {s.file_id}')
 
 
+async def unhandled_handler(message: Message):
+    logging.warning(f'Unhandled message = {message}')
+    await message.reply('💁‍♀️ <b>Sorry.</b> Your message could not be handled in the current bot state. '
+                        'Please run 🤜 /start 🤛 command to restart the bot.', disable_notification=True)
+
+
 def init_dialogs(d: DepContainer):
     MainMenuDialog.register(d)
 
@@ -35,3 +41,5 @@ def init_dialogs(d: DepContainer):
         NodeOpDialog.register(d, mm, mm.entry_point)
 
     d.dp.register_message_handler(sticker_handler, content_types=ContentTypes.STICKER, state='*')
+
+    d.dp.register_message_handler(unhandled_handler, content_types=ContentTypes.TEXT, state='*')

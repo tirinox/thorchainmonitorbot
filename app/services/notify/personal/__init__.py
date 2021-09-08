@@ -14,10 +14,11 @@ from services.lib.texts import grouper
 from services.lib.utils import class_logger
 from services.models.node_info import NodeSetChanges, MapAddressToPrevAndCurrNode, NodeChangeType, NodeChange
 from services.models.node_watchers import NodeWatcherStorage
+from services.notify.personal.bond import BondTracker
 from services.notify.personal.chain_height import ChainHeightTracker
 from services.notify.personal.churning import NodeChurnTracker
 from services.notify.personal.ip_addr import IpAddressTracker
-from services.notify.personal.models import BaseChangeTracker
+from services.notify.personal.helpers import BaseChangeTracker
 from services.notify.personal.node_online import NodeOnlineTracker
 from services.notify.personal.slashing import SlashPointTracker
 from services.notify.personal.telemetry import NodeTelemetryDatabase
@@ -46,6 +47,7 @@ class NodeChangePersonalNotifier(INotified):
         self.ip_address_tracker = IpAddressTracker(deps)
         self.churn_tracker = NodeChurnTracker(deps)
         self.slash_tracker = SlashPointTracker(deps)
+        self.bond_tracker = BondTracker(deps)
 
     async def prepare(self):
         self.thor_mon.subscribe(self)
@@ -68,6 +70,7 @@ class NodeChangePersonalNotifier(INotified):
             )
             changes += await self.online_tracker.get_node_changes(node.node_address, telemetry_data)
             changes += await self.chain_height_tracker.get_node_changes(node.node_address, telemetry_data)
+            changes += await self.slash_tracker.get_node_changes(node.node_address, telemetry_data)
         await self._cast_messages_for_changes(changes)
 
     async def _handle_node_churn_bg_job(self, node_set_change: NodeSetChanges):
@@ -76,8 +79,8 @@ class NodeChangePersonalNotifier(INotified):
         changes = []
         changes += await self.churn_tracker.get_all_changes(node_set_change)
         changes += await self.version_tracker.get_all_changes(node_set_change)
-        changes += await self.slash_tracker.get_all_changes(prev_and_curr_node_map)
         changes += await self.ip_address_tracker.get_all_changes(prev_and_curr_node_map)
+        changes += await self.bond_tracker.get_all_changes(prev_and_curr_node_map)
 
         # changes += self._dbg_add_mock_changes(prev_and_curr_node_map)
 
@@ -135,7 +138,8 @@ class NodeChangePersonalNotifier(INotified):
             self.slash_tracker,
             self.churn_tracker,
             self.ip_address_tracker,
-            self.version_tracker
+            self.version_tracker,
+            self.bond_tracker,
         )
         for tracker in trackers:
             tracker: BaseChangeTracker

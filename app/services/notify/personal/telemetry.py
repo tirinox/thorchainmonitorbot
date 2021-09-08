@@ -25,8 +25,7 @@ class NodeTelemetryDatabase:
 
             self.previous_nodes[node.node_address] = node
 
-            series = TimeSeries(self.time_series_key(node.node_address), self.deps.db)
-            await series.add(
+            await self.get_series(node.node_address).add(
                 json=ujson.dumps(node.original_dict)
             )
 

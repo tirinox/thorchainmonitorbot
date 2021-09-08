@@ -6,11 +6,13 @@ from aiogram.utils.helper import HelperMode
 
 from services.dialog.base import BaseDialog, message_handler, query_handler
 from services.jobs.node_churn import NodeStateDatabase
+from services.lib.date_utils import MINUTE
 from services.lib.telegram import TelegramInlineList
 from services.lib.texts import kbd, join_as_numbered_list
 from services.lib.utils import parse_list_from_string, fuzzy_search
 from services.models.node_info import NodeInfo
 from services.models.node_watchers import NodeWatcherStorage
+from services.notify.personal.helpers import NodeOpSetting
 
 
 class NodeOpStates(StatesGroup):
@@ -19,17 +21,19 @@ class NodeOpStates(StatesGroup):
     ADDING = State()
     MANAGE_MENU = State()
     SETTINGS = State()
+    SETT_SLASH_PERIOD = State()
+    SETT_SLASH_THRESHOLD = State()
 
 
 class NodeOpDialog(BaseDialog):
     # ----------- MAIN ------------
-    @message_handler(state=NodeOpStates.MAIN_MENU)
-    async def on_handle_main_menu(self, message: Message):
-        if message.text == self.loc.BUTTON_BACK:
-            await self.go_back(message)
-        else:
-            return False
-        return True
+    # @message_handler(state=NodeOpStates.MAIN_MENU)
+    # async def on_handle_main_menu(self, message: Message):
+    #     if message.text == self.loc.BUTTON_BACK:
+    #         await self.go_back(message)
+    #     else:
+    #         return False
+    #     return True
 
     async def show_main_menu(self, message: Message, with_welcome=True):
         await NodeOpStates.MAIN_MENU.set()
@@ -43,13 +47,11 @@ class NodeOpDialog(BaseDialog):
             ],
             [
                 InlineKeyboardButton(self.loc.BUTTON_NOP_SETTINGS, callback_data='mm:settings'),
-                # InlineKeyboardButton(self.loc.BUTTON_BACK)  # not needed
+                InlineKeyboardButton(self.loc.BUTTON_BACK, callback_data='back')
             ]
         ]
 
         if with_welcome:
-            await message.answer(self.loc.text_node_op_welcome_text_part1(),
-                                 reply_markup=kbd([[self.loc.BUTTON_BACK]]))
             await message.answer(self.loc.text_node_op_welcome_text_part2(watch_list),
                                  reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_kbd),
                                  disable_notification=True)
@@ -65,6 +67,9 @@ class NodeOpDialog(BaseDialog):
             await self.on_manage_menu(query.message)
         elif query.data == 'mm:settings':
             await self.on_settings_menu(query.message)
+        else:
+            await self.safe_delete(query.message)
+            await self.go_back(query.message)  # fixme: asking lang because query message is bot's message, not user's!
         await query.answer()
 
     # -------- ADDING ---------
@@ -222,19 +227,19 @@ class NodeOpDialog(BaseDialog):
     # -------- SETTINGS ---------
 
     async def on_settings_menu(self, message: Message):
-        # todo: implement settings menu
+        loc = self.loc
         await NodeOpStates.SETTINGS.set()
-        await message.edit_text('Tune your notifications here.', reply_markup=InlineKeyboardMarkup(
+        await message.edit_text(loc.TEXT_NOP_SETTINGS_TITLE, reply_markup=InlineKeyboardMarkup(
             inline_keyboard=[
                 [
-                    InlineKeyboardButton('Slashing', callback_data='setting:slash:menu'),
-                    InlineKeyboardButton('Version', callback_data='setting:version:menu'),
-                    InlineKeyboardButton('Offline', callback_data='setting:offline:menu'),
+                    InlineKeyboardButton(loc.BUTTON_NOP_SETT_SLASHING, callback_data='setting:slash:menu'),
+                    InlineKeyboardButton(loc.BUTTON_NOP_SETT_VERSION, callback_data='setting:version:menu'),
+                    InlineKeyboardButton(loc.BUTTON_NOP_SETT_OFFLINE, callback_data='setting:offline:menu'),
                 ],
                 [
-                    InlineKeyboardButton('Churning', callback_data='setting:churning:menu'),
-                    InlineKeyboardButton('Bond', callback_data='setting:bond:menu'),
-                    InlineKeyboardButton('Block height', callback_data='setting:height:menu'),
+                    InlineKeyboardButton(loc.BUTTON_NOP_SETT_CHURNING, callback_data='setting:churning:menu'),
+                    InlineKeyboardButton(loc.BUTTON_NOP_SETT_BOND, callback_data='setting:bond:menu'),
+                    InlineKeyboardButton(loc.BUTTON_NOP_SETT_HEIGHT, callback_data='setting:height:menu'),
                 ],
                 [
                     InlineKeyboardButton(self.loc.BUTTON_BACK, callback_data='setting:back')
@@ -243,11 +248,76 @@ class NodeOpDialog(BaseDialog):
         ))
 
     @query_handler(state=NodeOpStates.SETTINGS)
-    # todo: implement settings menu
     async def on_setting_callback(self, query: CallbackQuery):
         if query.data == 'setting:back':
             await self.show_main_menu(query.message, with_welcome=False)
+        elif query.data == 'setting:slash:menu':
+            await self.ask_slash_threshold(query)
         await query.answer()
+
+    async def ask_slash_threshold(self, query: CallbackQuery):
+        await NodeOpStates.SETT_SLASH_THRESHOLD.set()
+        await query.message.edit_text(self.loc.TEXT_NOP_SLASH_THRESHOLD, reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton('1 pt', callback_data='1'),
+                    InlineKeyboardButton('2 pts', callback_data='2'),
+                    InlineKeyboardButton('5 pts', callback_data='5'),
+                ],
+                [
+                    InlineKeyboardButton('10 pts', callback_data='10'),
+                    InlineKeyboardButton('15 pts', callback_data='15'),
+                    InlineKeyboardButton('20 pts', callback_data='20'),
+                ],
+                [
+                    InlineKeyboardButton('50 pts', callback_data='50'),
+                    InlineKeyboardButton('100 pts', callback_data='100'),
+                    InlineKeyboardButton('200 pts', callback_data='200'),
+                ],
+                [
+                    InlineKeyboardButton(self.loc.BUTTON_BACK, callback_data='back')
+                ]
+            ]
+        ))
+
+    @query_handler(state=NodeOpStates.SETT_SLASH_THRESHOLD)
+    async def slash_threshold_answer_query(self, query: CallbackQuery):
+        if query.data == 'back':
+            await self.on_settings_menu(query.message)
+            await query.answer()
+        else:
+            threshold = int(query.data)
+            self.data[NodeOpSetting.SLASH_THRESHOLD] = threshold
+            await self.ask_slash_period(query)
+            await query.answer(self.loc.SUCCESS)
+
+    async def ask_slash_period(self, query: CallbackQuery):
+        await NodeOpStates.SETT_SLASH_PERIOD.set()
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(self.loc.BUTTON_NOP_5MIN, callback_data='5'),
+                    InlineKeyboardButton(self.loc.BUTTON_NOP_15MIN, callback_data='15'),
+                    InlineKeyboardButton(self.loc.BUTTON_NOP_60MIN, callback_data='60'),
+                ],
+                [
+                    InlineKeyboardButton(self.loc.BUTTON_BACK, callback_data='back')
+                ]
+            ]
+        )
+        text = self.loc.TEXT_NOP_SLASH_THRESHOLD.format(pts=self.data[NodeOpSetting.SLASH_THRESHOLD])
+        await query.message.edit_text(text, reply_markup=keyboard)
+
+    @query_handler(state=NodeOpStates.SETT_SLASH_PERIOD)
+    async def slash_period_answer_query(self, query: CallbackQuery):
+        if query.data == 'back':
+            await self.on_settings_menu(query.message)
+            await query.answer()
+        else:
+            period = int(query.data)
+            self.data[NodeOpSetting.SLASH_PERIOD] = MINUTE * period
+            await self.on_settings_menu(query.message)
+            await query.answer(self.loc.SUCCESS)
 
     # ---- UTILS ---
 
