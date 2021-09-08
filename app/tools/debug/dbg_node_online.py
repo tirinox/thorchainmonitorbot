@@ -25,27 +25,26 @@ class ThorMonListenerTest(INotified):
             if data.nodes:
                 print('Got message from THORMon')
                 self.known_nodes = [n.node_address for n in data.nodes]
-                await self.online_tracker.write_telemetry(data)
+                await self.online_tracker.telemetry_db.write_telemetry(data)
 
 
-async def test_node_online_telemetry():
+async def my_test_node_online_telemetry():
     lp_app = LpAppFramework()
     thor_mon = ThorMonListenerTest(lp_app.deps)
     async with lp_app:
         await thor_mon.prepare()
         while True:
             sep()
-
-            profile = await thor_mon.online_tracker.get_online_profiles(thor_mon.known_nodes)
-            if profile:
-                print('Online profile:')
-                profile1 = next(iter(profile.values()))
-                print(profile1)
+            # profile = await thor_mon.online_tracker.get_online_profiles(thor_mon.known_nodes)
+            # if profile:
+            #     print('Online profile:')
+            #     profile1 = next(iter(profile.values()))
+            #     print(profile1)
             await asyncio.sleep(5.0)
 
 
 async def main():
-    await test_node_online_telemetry()
+    await my_test_node_online_telemetry()
 
 
 if __name__ == '__main__':

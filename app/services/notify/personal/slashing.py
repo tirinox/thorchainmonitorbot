@@ -12,10 +12,14 @@ class SlashPointTracker(BaseChangeTracker):
     async def get_all_changes(self, pc_node_map: MapAddressToPrevAndCurrNode) -> List[NodeChange]:
         changes = []
         for a, (prev, curr) in pc_node_map.items():
-            if prev.slash_points != curr.slash_points:
+            delta_slash = curr.slash_points - prev.slash_points
+            if delta_slash != 0:
                 changes.append(
                     NodeChange(
                         prev.node_address, NodeChangeType.SLASHING, (prev.slash_points, curr.slash_points)
                     )
                 )
         return changes
+
+    async def filter_changes(self, ch_list: List[NodeChange], settings: dict) -> List[NodeChange]:
+        return await super().filter_changes(ch_list, settings)

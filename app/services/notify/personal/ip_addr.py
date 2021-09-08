@@ -18,3 +18,6 @@ class IpAddressTracker(BaseChangeTracker):
                                (prev.ip_address, curr.ip_address)))
 
         return changes
+
+    async def filter_changes(self, ch_list: List[NodeChange], settings: dict) -> List[NodeChange]:
+        return await super().filter_changes(ch_list, settings)

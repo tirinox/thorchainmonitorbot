@@ -1,4 +1,4 @@
-from typing import NamedTuple, List
+from typing import NamedTuple, List, Tuple
 
 from services.lib.constants import thor_to_float
 
@@ -67,7 +67,6 @@ class ThorMonAnswer(NamedTuple):
     next_churn: int
     nodes: List[ThorMonNode]
 
-
     @classmethod
     def empty(cls):
         return ThorMonAnswer(0, 0, [])
@@ -79,3 +78,6 @@ class ThorMonAnswer(NamedTuple):
             next_churn=int(j.get('next_churn', 0)),
             nodes=[ThorMonNode.from_json(node) for node in j.get('nodes', [])]
         )
+
+
+ThorMonNodeTimeSeries = List[Tuple[float, ThorMonNode]]

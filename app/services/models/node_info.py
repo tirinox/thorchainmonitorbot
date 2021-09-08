@@ -4,7 +4,7 @@ import re
 import secrets
 from collections import Counter
 from dataclasses import dataclass, field
-from typing import List, Dict, NamedTuple, Optional, Tuple, Union
+from typing import List, Dict, NamedTuple, Optional, Tuple, Union, Any
 
 from semver import VersionInfo
 
@@ -278,8 +278,9 @@ class ChangeOnline(NamedTuple):
 
 class ChangeBlockHeight(NamedTuple):
     client_name: str
-    lag: int
-    how_long_behind: float
+    block_lag: int = 0
+    how_long_behind: float = 0.0
+    restored: bool = False
 
 
 class NodeChangeType:
@@ -295,6 +296,6 @@ class NodeChangeType:
 class NodeChange(NamedTuple):
     address: str
     type: str
-    data: object
+    data: Any
     single_per_user: bool = False
     node: object = Union[NodeInfo, ThorMonNode, None]

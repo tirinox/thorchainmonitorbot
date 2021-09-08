@@ -7,6 +7,7 @@ from typing import List
 from localization import LocalizationManager
 from services.jobs.fetch.base import INotified
 from services.jobs.fetch.thormon import ThorMonWSSClient
+from services.lib.date_utils import HOUR, MINUTE
 from services.models.thormon import ThorMonAnswer
 from services.lib.depcont import DepContainer
 from services.lib.texts import grouper
@@ -24,6 +25,10 @@ from services.notify.personal.versions import VersionTracker
 
 DEFAULT_SLASH_THRESHOLD = 5
 MAX_CHANGES_PER_MESSAGE = 10
+
+TELEMETRY_MAX_HISTORY_DURATION = HOUR
+TELEMETRY_TOLERANCE = MINUTE
+TELEMETRY_MAX_POINTS = 5_000
 
 
 class NodeChangePersonalNotifier(INotified):
@@ -57,8 +62,12 @@ class NodeChangePersonalNotifier(INotified):
 
         changes = []
         for node in data.nodes:
-            changes += await self.online_tracker.get_node_changes(node.node_address)
-            changes += await self.chain_height_tracker.get_node_changes(node.node_address)
+            telemetry_data = await NodeTelemetryDatabase(self.deps).read_telemetry(
+                node.node_address, max_ago_sec=TELEMETRY_MAX_HISTORY_DURATION,
+                tolerance=TELEMETRY_TOLERANCE, n_points=TELEMETRY_MAX_POINTS
+            )
+            changes += await self.online_tracker.get_node_changes(node.node_address, telemetry_data)
+            changes += await self.chain_height_tracker.get_node_changes(node.node_address, telemetry_data)
         await self._cast_messages_for_changes(changes)
 
     async def _handle_node_churn_bg_job(self, node_set_change: NodeSetChanges):
@@ -150,5 +159,4 @@ class NodeChangePersonalNotifier(INotified):
 #  8. block height is not increasing
 #  9. block height is not increasing on CHAIN?!
 #  10. (inst) your node churned in / out
-#  11. your node became a candidate for churn in (dropped?)
-#  12. account txs (comes from native TX scanner (to implement))
+#  11. account txs (comes from native TX scanner (to implement))

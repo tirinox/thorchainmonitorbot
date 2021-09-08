@@ -2,7 +2,7 @@ from typing import List
 
 import ujson
 
-from services.models.thormon import ThorMonNode, ThorMonAnswer
+from services.models.thormon import ThorMonNode, ThorMonAnswer, ThorMonNodeTimeSeries
 from services.lib.date_utils import MINUTE, HOUR
 from services.lib.depcont import DepContainer
 from services.models.time_series import TimeSeries
@@ -42,7 +42,8 @@ class NodeTelemetryDatabase:
             results[node_address] = best_point
         return results
 
-    async def read_telemetry(self, node_address, max_ago_sec: float = HOUR, tolerance=MINUTE, n_points=10_000):
+    async def read_telemetry(self, node_address, max_ago_sec: float = HOUR, tolerance=MINUTE,
+                             n_points=10_000) -> ThorMonNodeTimeSeries:
         series = self.get_series(node_address)
         points = await series.get_last_values_json(max_ago_sec, tolerance_sec=tolerance, with_ts=True,
                                                    max_points=n_points)

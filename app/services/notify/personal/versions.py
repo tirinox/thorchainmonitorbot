@@ -42,3 +42,6 @@ class VersionTracker(BaseChangeTracker):
                                           NodeChangeType.NEW_VERSION_DETECTED,
                                           new_version, single_per_user=True))
         return changes
+
+    async def filter_changes(self, ch_list: List[NodeChange], settings: dict) -> List[NodeChange]:
+        return await super().filter_changes(ch_list, settings)

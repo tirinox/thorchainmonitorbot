@@ -1,12 +1,12 @@
 from itertools import takewhile, islice
 from typing import List, NamedTuple, Tuple
 
-from services.models.thormon import ThorMonNode
 from services.lib.cooldown import CooldownBiTrigger, INFINITE_TIME
-from services.lib.date_utils import MINUTE, HOUR, now_ts
+from services.lib.date_utils import HOUR, now_ts
 from services.lib.depcont import DepContainer
-from services.notify.personal.models import BaseChangeTracker
 from services.models.node_info import ChangeOnline, NodeChangeType, NodeChange
+from services.models.thormon import ThorMonNode, ThorMonNodeTimeSeries
+from services.notify.personal.models import BaseChangeTracker
 from services.notify.personal.telemetry import NodeTelemetryDatabase
 
 MAX_HISTORY_DURATION = HOUR
@@ -82,31 +82,29 @@ class NodeOnlineTracker(BaseChangeTracker):
         self.deps = deps
         self.telemetry_db = NodeTelemetryDatabase(deps)
 
-    async def get_online_profiles(self, node_addresses: List[str], max_ago_sec: float = HOUR, tolerance=MINUTE):
+    async def get_online_profiles(self, node_addresses: List[str], telemetry):
         results = {}
         for node_address in node_addresses:
-            results[node_address] = await self.get_online_profile(node_address, max_ago_sec, tolerance)
+            results[node_address] = self.get_online_profile(node_address, telemetry)
         return results
 
-    async def get_online_profile(self, node_address: str, max_ago_sec: float = HOUR, tolerance=MINUTE):
-        node_points = await self.telemetry_db.read_telemetry(node_address, max_ago_sec, tolerance)
+    @staticmethod
+    def get_online_profile(node_address: str, telemetry):
         return NodeOnlineProfile(
             node_address,
-            rpc=ServiceOnlineProfile.from_thormon_nodes(node_points, 'rpc'),
-            midgard=ServiceOnlineProfile.from_thormon_nodes(node_points, 'midgard'),
-            bifrost=ServiceOnlineProfile.from_thormon_nodes(node_points, 'bifrost'),
-            thor=ServiceOnlineProfile.from_thormon_nodes(node_points, 'thor'),
+            rpc=ServiceOnlineProfile.from_thormon_nodes(telemetry, 'rpc'),
+            midgard=ServiceOnlineProfile.from_thormon_nodes(telemetry, 'midgard'),
+            bifrost=ServiceOnlineProfile.from_thormon_nodes(telemetry, 'bifrost'),
+            thor=ServiceOnlineProfile.from_thormon_nodes(telemetry, 'thor'),
         )
 
-    async def get_node_changes(self, node_address, **kwargs):
+    async def get_node_changes(self, node_address, telemetry: ThorMonNodeTimeSeries):
         if not node_address:
             return []
 
         changes = []
 
-        profile = await self.get_online_profile(node_address,
-                                                max_ago_sec=MAX_HISTORY_DURATION,
-                                                tolerance=MAX_HISTORY_DURATION / 60.0)
+        profile = self.get_online_profile(node_address, telemetry)
         for service in (profile.rpc, profile.thor, profile.bifrost, profile.midgard):
             offline = service.offline_time
 
@@ -123,3 +121,6 @@ class NodeOnlineTracker(BaseChangeTracker):
                 changes.append(NodeChange(node_address, NodeChangeType.SERVICE_ONLINE, ChangeOnline(True, 0.0)))
 
         return changes
+
+    async def filter_changes(self, ch_list: List[NodeChange], settings: dict) -> List[NodeChange]:
+        return await super().filter_changes(ch_list, settings)

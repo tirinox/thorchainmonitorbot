@@ -16,7 +16,8 @@ from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, i
     up_down_arrow, bracketify, plural, grouper, join_as_numbered_list
 from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
-from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeChangeType, NodeChange
+from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeChangeType, NodeChange, \
+    ChangeBlockHeight
 from services.models.pool_info import PoolInfo, PoolChanges
 from services.models.price import PriceReport
 from services.models.queue import QueueInfo
@@ -1024,25 +1025,31 @@ class BaseLocalization(ABC):  # == English
     def notification_text_for_node_op_changes(c: NodeChange):
         # todo! make it good-looking
         message = ''
-        short_addr = f'<pre>{c.address[-4:]}</pre>'
+        short_addr = pre(c.address[-4:])
         if c.type == NodeChangeType.SLASHING:
             old, new = c.data
-            message = f'Your node {short_addr} slashed <b>{new - old}</b> pts (now {new} pts.)!'
+            message = f'Your node {short_addr} slashed {bold(new - old)} pts (now {new} pts.)!'
         elif c.type == NodeChangeType.VERSION_CHANGED:
             old, new = c.data
-            message = f'Your node {short_addr} version from <i>{old}</i> to <b>{new}</b>!'
+            message = f'Your node {short_addr} version from {ital(old)} to {bold(new)}!'
         elif c.type == NodeChangeType.NEW_VERSION_DETECTED:
-            message = f'New version detected! <b>{c.data}</b>! Consider upgrading!'
+            message = f'New version detected! {bold(c.data)}! Consider upgrading!'
         elif c.type == NodeChangeType.IP_ADDRESS_CHANGED:
             old, new = c.data
-            message = f'Node {short_addr} changed its IP address from <i>{old}</i> to <b>{new}</b>!'
+            message = f'Node {short_addr} changed its IP address from {ital(old)} to {bold(new)}!'
         elif c.type == NodeChangeType.SERVICE_ONLINE:
             online, duration = c.data
             online_txt = 'online' if online else f'offline (already for {int(duration)} sec)'
-            message = f'Node {short_addr} went <b>{online_txt}</b>!'
+            message = f'Node {short_addr} went {bold(online_txt)}!'
         elif c.type == NodeChangeType.CHURNING:
             verb = 'churned in' if c.data else 'churned out'
-            message = f'Node {short_addr} <b>{verb}</b>!'
+            message = f'Node {short_addr} {bold(verb)}!'
+        elif c.type == NodeChangeType.BLOCK_HEIGHT:
+            data: ChangeBlockHeight = c.data
+            if data.restored:
+                message = f'Node {short_addr} caught up blocks for {pre(data.client_name)}'
+            else:
+                message = f'Node {short_addr} is behind {data.block_lag} blocks on chain {pre(data.client_name)}!'
 
         return message
 
