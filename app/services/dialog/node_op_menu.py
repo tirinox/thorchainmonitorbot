@@ -1,14 +1,14 @@
 from typing import List
 
 from aiogram.dispatcher.filters.state import StatesGroup, State
-from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup
+from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove
 from aiogram.utils.helper import HelperMode
 
 from services.dialog.base import BaseDialog, message_handler, query_handler
 from services.jobs.node_churn import NodeStateDatabase
 from services.lib.date_utils import MINUTE
 from services.lib.telegram import TelegramInlineList
-from services.lib.texts import kbd, join_as_numbered_list
+from services.lib.texts import join_as_numbered_list
 from services.lib.utils import parse_list_from_string, fuzzy_search
 from services.models.node_info import NodeInfo
 from services.models.node_watchers import NodeWatcherStorage
@@ -21,6 +21,7 @@ class NodeOpStates(StatesGroup):
     ADDING = State()
     MANAGE_MENU = State()
     SETTINGS = State()
+    SETT_SLASH_ENABLED = State()
     SETT_SLASH_PERIOD = State()
     SETT_SLASH_THRESHOLD = State()
 
@@ -52,6 +53,9 @@ class NodeOpDialog(BaseDialog):
         ]
 
         if with_welcome:
+            await message.answer(self.loc.TEXT_NOP_INTRO_HEADING,
+                                 reply_markup=ReplyKeyboardRemove(),
+                                 disable_notification=True)
             await message.answer(self.loc.text_node_op_welcome_text_part2(watch_list),
                                  reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_kbd),
                                  disable_notification=True)
@@ -81,17 +85,14 @@ class NodeOpDialog(BaseDialog):
             # add node_address as a tag
             (self.loc.short_node_desc(n, watching=(n.node_address in watch_list)), n.node_address) for n in last_nodes
         ]
-        return TelegramInlineList(
-            last_node_texts,
-            data_proxy=self.data,
-            max_rows=3, back_text=self.loc.BUTTON_BACK,
-            data_prefix='all_nodes'
-        ).set_extra_buttons_above([
+        return TelegramInlineList(last_node_texts, data_proxy=self.data, back_text=self.loc.BUTTON_BACK,
+                                  data_prefix='all_nodes').set_extra_buttons_above(
             [
-                InlineKeyboardButton(self.loc.BUTTON_NOP_ADD_ALL_NODES, callback_data='add:all'),
-                InlineKeyboardButton(self.loc.BUTTON_NOP_ADD_ALL_ACTIVE_NODES, callback_data='add:active')
-            ]
-        ])
+                [
+                    InlineKeyboardButton(self.loc.BUTTON_NOP_ADD_ALL_NODES, callback_data='add:all'),
+                    InlineKeyboardButton(self.loc.BUTTON_NOP_ADD_ALL_ACTIVE_NODES, callback_data='add:active')
+                ]
+            ])
 
     async def on_add_node_menu(self, message: Message):
         await NodeOpStates.ADDING.set()
@@ -108,7 +109,7 @@ class NodeOpDialog(BaseDialog):
     @message_handler(state=NodeOpStates.ADDING)
     async def on_add_got_message(self, message: Message):
         if message.text == self.loc.BUTTON_BACK:
-            await self.show_main_menu(message, with_welcome=True)
+            await self.show_main_menu(message)
             return
 
         nodes = await self.parse_nodes_from_text_list(message.text)
@@ -232,14 +233,15 @@ class NodeOpDialog(BaseDialog):
         await message.edit_text(loc.TEXT_NOP_SETTINGS_TITLE, reply_markup=InlineKeyboardMarkup(
             inline_keyboard=[
                 [
-                    InlineKeyboardButton(loc.BUTTON_NOP_SETT_SLASHING, callback_data='setting:slash:menu'),
-                    InlineKeyboardButton(loc.BUTTON_NOP_SETT_VERSION, callback_data='setting:version:menu'),
-                    InlineKeyboardButton(loc.BUTTON_NOP_SETT_OFFLINE, callback_data='setting:offline:menu'),
+                    self.alert_setting_button(loc.BUTTON_NOP_SETT_SLASHING, NodeOpSetting.SLASH),
+                    self.alert_setting_button(loc.BUTTON_NOP_SETT_VERSION,
+                                              (NodeOpSetting.VERSION, NodeOpSetting.NEW_VERSION)),
+                    self.alert_setting_button(loc.BUTTON_NOP_SETT_OFFLINE, NodeOpSetting.OFFLINE),
                 ],
                 [
-                    InlineKeyboardButton(loc.BUTTON_NOP_SETT_CHURNING, callback_data='setting:churning:menu'),
-                    InlineKeyboardButton(loc.BUTTON_NOP_SETT_BOND, callback_data='setting:bond:menu'),
-                    InlineKeyboardButton(loc.BUTTON_NOP_SETT_HEIGHT, callback_data='setting:height:menu'),
+                    self.alert_setting_button(loc.BUTTON_NOP_SETT_CHURNING, NodeOpSetting.CHURNING),
+                    self.alert_setting_button(loc.BUTTON_NOP_SETT_BOND, NodeOpSetting.BOND),
+                    self.alert_setting_button(loc.BUTTON_NOP_SETT_HEIGHT, NodeOpSetting.CHAIN_HEIGHT),
                 ],
                 [
                     InlineKeyboardButton(self.loc.BUTTON_BACK, callback_data='setting:back')
@@ -251,8 +253,38 @@ class NodeOpDialog(BaseDialog):
     async def on_setting_callback(self, query: CallbackQuery):
         if query.data == 'setting:back':
             await self.show_main_menu(query.message, with_welcome=False)
-        elif query.data == 'setting:slash:menu':
+        elif query.data == NodeOpSetting.SLASH:
+            await self.ask_slash_enabled(query)
+        await query.answer()
+
+    # -------- SETTINGS : SLASH ---------
+
+    async def ask_slash_enabled(self, query: CallbackQuery):
+        await NodeOpStates.SETT_SLASH_ENABLED.set()
+        is_on = self.is_alert_on(NodeOpSetting.SLASH)
+        loc = self.loc
+        await query.message.edit_text(
+            loc.text_nop_slash_enabled(is_on),
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [
+                    InlineKeyboardButton(loc.BUTTON_NOP_LEAVE_ON if is_on else loc.BUTTON_NOP_TURN_ON,
+                                         callback_data='on'),
+                    InlineKeyboardButton(loc.BUTTON_NOP_LEAVE_OFF if not is_on else loc.BUTTON_NOP_TURN_OFF,
+                                         callback_data='off')
+                ],
+                [InlineKeyboardButton(loc.BUTTON_BACK, callback_data='back')]
+            ]))
+
+    @query_handler(state=NodeOpStates.SETT_SLASH_ENABLED)
+    async def slash_enabled_answer_query(self, query: CallbackQuery):
+        if query.data == 'back':
+            await self.on_settings_menu(query.message)
+        elif query.data == 'on':
+            self.data[NodeOpSetting.SLASH] = True
             await self.ask_slash_threshold(query)
+        elif query.data == 'off':
+            self.data[NodeOpSetting.SLASH] = False
+            await self.on_settings_menu(query.message)
         await query.answer()
 
     async def ask_slash_threshold(self, query: CallbackQuery):
@@ -305,7 +337,7 @@ class NodeOpDialog(BaseDialog):
                 ]
             ]
         )
-        text = self.loc.TEXT_NOP_SLASH_THRESHOLD.format(pts=self.data[NodeOpSetting.SLASH_THRESHOLD])
+        text = self.loc.TEXT_NOP_SLASH_PERIOD.format(pts=self.data[NodeOpSetting.SLASH_THRESHOLD])
         await query.message.edit_text(text, reply_markup=keyboard)
 
     @query_handler(state=NodeOpStates.SETT_SLASH_PERIOD)
@@ -318,6 +350,8 @@ class NodeOpDialog(BaseDialog):
             self.data[NodeOpSetting.SLASH_PERIOD] = MINUTE * period
             await self.on_settings_menu(query.message)
             await query.answer(self.loc.SUCCESS)
+
+    # -------- SETTINGS : BOND ---------
 
     # ---- UTILS ---
 
@@ -368,3 +402,13 @@ class NodeOpDialog(BaseDialog):
     @classmethod
     def is_enabled(cls, cfg):
         return bool(cfg.get('telegram.menu.node_op_tools.enabled', default=False))
+
+    def is_alert_on(self, name):
+        return bool(self.data.get(name, True))
+
+    def alert_setting_button(self, orig, setting):
+        if isinstance(setting, (list, tuple)):
+            is_on = any(self.is_alert_on(s) for s in setting)
+        else:
+            is_on = self.is_alert_on(setting)
+        return InlineKeyboardButton(orig + (f' ✔' if is_on else ''), callback_data=setting)

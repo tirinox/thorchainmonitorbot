@@ -971,10 +971,11 @@ class BaseLocalization(ABC):  # == English
         addr = self.short_node_name(node.node_address, name)
         return f'{pre(addr)} ({bold(short_money(node.bond, prefix="R"))} bond)'
 
+    TEXT_NOP_INTRO_HEADING = bold('Welcome to the Node Monitor tool!')
+
     def text_node_op_welcome_text_part2(self, watch_list: dict):
-        text = bold('Welcome to the Node Monitor tool!') + '\n\n'
-        text += 'It will send you personalized notifications ' \
-                'when something important happens to the nodes you are monitoring.\n\n'
+        text = 'It will send you personalized notifications ' \
+               'when something important happens to the nodes you are monitoring.\n\n'
         if watch_list:
             text += f'You have {len(watch_list)} nodes in the watchlist.'
         else:
@@ -998,8 +999,6 @@ class BaseLocalization(ABC):  # == English
     BUTTON_NOP_ADD_ALL_NODES = 'Add all nodes'
     BUTTON_NOP_ADD_ALL_ACTIVE_NODES = 'Add all ACTIVE nodes'
 
-    TEXT_NOP_SURE_TO_ADD = 'Are you sure to add {n} nodes to your watchlist?'
-    TEXT_NOP_SURE_TO_REMOVE = 'Are you sure to remove all {n} nodes from your watchlist?'
     TEXT_NOP_SEARCH_NO_VARIANTS = 'No matches found for current search. Please refine your search or use the list.'
     TEXT_NOP_SEARCH_VARIANTS = 'We found the following nodes that match the search:'
 
@@ -1019,7 +1018,7 @@ class BaseLocalization(ABC):  # == English
         node_addresses_text = node_addresses_text[:120]  # just in case!
         return f'😉 Success! You removed: {node_addresses_text} ({len(node_addresses)} nodes) from your watchlist.'
 
-    TEXT_NOP_SETTINGS_TITLE = 'Tune your notifications here.'
+    TEXT_NOP_SETTINGS_TITLE = 'Tune your notifications here. Choose a topic to adjust settings.'
 
     BUTTON_NOP_SETT_SLASHING = 'Slashing'
     BUTTON_NOP_SETT_VERSION = 'Version'
@@ -1027,6 +1026,15 @@ class BaseLocalization(ABC):  # == English
     BUTTON_NOP_SETT_CHURNING = 'Churning'
     BUTTON_NOP_SETT_BOND = 'Bond'
     BUTTON_NOP_SETT_HEIGHT = 'Block height'
+
+    def text_nop_slash_enabled(self, is_on):
+        en_text = 'enabled' if is_on else 'disabled'
+        return f'Slash point notification are {bold(en_text)}.'
+
+    BUTTON_NOP_LEAVE_ON = '✔ Leave it ON'
+    BUTTON_NOP_LEAVE_OFF = '✔ Leave it OFF'
+    BUTTON_NOP_TURN_ON = 'Turn ON'
+    BUTTON_NOP_TURN_OFF = 'Turn OFF'
 
     BUTTON_NOP_5MIN = '5 min'
     BUTTON_NOP_15MIN = '15 min'

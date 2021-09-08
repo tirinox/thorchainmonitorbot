@@ -5,6 +5,13 @@ from services.models.node_info import NodeChange
 
 
 class NodeOpSetting:
+    VERSION = 'nop:slash:on'
+    NEW_VERSION = 'nop:new_v:on'
+    BOND = 'nop:bond:on'
+    OFFLINE = 'nop:offline:on'
+    CHAIN_HEIGHT = 'nop:height:on'
+    CHURNING = 'nop:churning:on'
+    SLASH = 'nop:slash:on'
     SLASH_THRESHOLD = 'nop:slash:threshold'
     SLASH_PERIOD = 'nop:slash:period'
 
