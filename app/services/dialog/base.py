@@ -85,6 +85,10 @@ class BaseDialog(ABC):
     back_dialog: 'BaseDialog' = None
     back_func = None
 
+    @staticmethod
+    def user_id(message: Message):
+        return message.chat.id
+
     class States(StatesGroup):
         DUMMY = State()
 
@@ -162,7 +166,7 @@ class BaseDialog(ABC):
                 'text': message.text
             })
             async with state.proxy() as data:
-                loc = await d.loc_man.get_from_db(message.from_user.id, d.db)
+                loc = await d.loc_man.get_from_db(cls.user_id(message), d.db)
                 handler_class = cls(loc, data, d)
                 handler_method = getattr(handler_class, that_name)
                 return await handler_method(message)

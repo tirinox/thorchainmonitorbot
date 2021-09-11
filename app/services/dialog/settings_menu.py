@@ -32,7 +32,7 @@ class SettingsDialog(BaseDialog):
             return False
 
         self.data['language'] = lang
-        self.loc = await self.deps.loc_man.set_lang(message.from_user.id, lang, self.deps.db)
+        self.loc = await self.deps.loc_man.set_lang(self.user_id(message), lang, self.deps.db)
         await self.go_back(message)
 
     @message_handler(state=SettingsStates.MAIN_SETTINGS_MENU)

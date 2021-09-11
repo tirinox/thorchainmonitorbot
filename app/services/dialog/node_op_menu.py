@@ -24,6 +24,7 @@ class NodeOpStates(StatesGroup):
     SETT_SLASH_ENABLED = State()
     SETT_SLASH_PERIOD = State()
     SETT_SLASH_THRESHOLD = State()
+    SETT_BOND_ENABLED = State()
 
 
 class NodeOpDialog(BaseDialog):
@@ -235,7 +236,8 @@ class NodeOpDialog(BaseDialog):
                 [
                     self.alert_setting_button(loc.BUTTON_NOP_SETT_SLASHING, NodeOpSetting.SLASH),
                     self.alert_setting_button(loc.BUTTON_NOP_SETT_VERSION,
-                                              (NodeOpSetting.VERSION, NodeOpSetting.NEW_VERSION)),
+                                              (NodeOpSetting.VERSION, NodeOpSetting.NEW_VERSION),
+                                              data='setting:version'),
                     self.alert_setting_button(loc.BUTTON_NOP_SETT_OFFLINE, NodeOpSetting.OFFLINE),
                 ],
                 [
@@ -255,6 +257,16 @@ class NodeOpDialog(BaseDialog):
             await self.show_main_menu(query.message, with_welcome=False)
         elif query.data == NodeOpSetting.SLASH:
             await self.ask_slash_enabled(query)
+        elif query.data == 'setting:version':
+            ...  # todo
+        elif query.data == NodeOpSetting.BOND:
+            ...  # todo
+        elif query.data == NodeOpSetting.OFFLINE:
+            ...  # todo
+        elif query.data == NodeOpSetting.CHAIN_HEIGHT:
+            ...  # todo
+        elif query.data == NodeOpSetting.CHURNING:
+            ...  # todo
         await query.answer()
 
     # -------- SETTINGS : SLASH ---------
@@ -406,9 +418,37 @@ class NodeOpDialog(BaseDialog):
     def is_alert_on(self, name):
         return bool(self.data.get(name, True))
 
-    def alert_setting_button(self, orig, setting):
+    def alert_setting_button(self, orig, setting, data=None):
+        data = data or setting
         if isinstance(setting, (list, tuple)):
             is_on = any(self.is_alert_on(s) for s in setting)
         else:
             is_on = self.is_alert_on(setting)
-        return InlineKeyboardButton(orig + (f' ✔' if is_on else ''), callback_data=setting)
+        return InlineKeyboardButton(orig + (f' ✔' if is_on else ''), callback_data=data)
+
+    async def ask_something_enabled(self, query: CallbackQuery, state: State, text: str, is_on: bool):
+        await state.set()
+        loc = self.loc
+        await query.message.edit_text(
+            text,
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
+                [
+                    InlineKeyboardButton(loc.BUTTON_NOP_LEAVE_ON if is_on else loc.BUTTON_NOP_TURN_ON,
+                                         callback_data='on'),
+                    InlineKeyboardButton(loc.BUTTON_NOP_LEAVE_OFF if not is_on else loc.BUTTON_NOP_TURN_OFF,
+                                         callback_data='off')
+                ],
+                [InlineKeyboardButton(loc.BUTTON_BACK, callback_data='back')]
+            ]))
+
+    async def test_something_on(self, query: CallbackQuery, setting, next_on_func, next_off_func):
+        if query.data == 'back':
+            await self.on_settings_menu(query.message)
+        elif query.data == 'on':
+            self.data[setting] = True
+            await next_on_func(query)
+        elif query.data == 'off':
+            self.data[setting] = False
+            await next_off_func(query)
+        await query.answer()
+
