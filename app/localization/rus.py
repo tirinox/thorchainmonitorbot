@@ -889,6 +889,26 @@ class RussianLocalization(BaseLocalization):
         en_text = self.text_enabled_disabled(is_on)
         return f'Уведомления об обновлении версии ноды {bold(en_text)}.'
 
+    def text_nop_offline_enabled(self, is_on):
+        en_text = self.text_enabled_disabled(is_on)
+        # todo
+        return f'Offline/online node notifications are {bold(en_text)}.\n\n' \
+               f'<i>You can tune enabled services at the next steps.</i>'
+
+    def text_nop_churning_enabled(self, is_on):
+        en_text = self.text_enabled_disabled(is_on)
+        # todo
+        return f'Churn in/out notifications are {bold(en_text)}.\n\n' \
+               f'<i>You will receive a notification when your node churned in or out the active validator set.</i>'
+
+    def text_nop_chain_height_enabled(self, is_on):
+        en_text = self.text_enabled_disabled(is_on)
+        # todo
+        return f'Chain height stuck/unstuck notifications are {bold(en_text)}.\n\n' \
+               f'<i>You will receive a notification when any ' \
+               f'blockchain client on your node stuck or unstuck scanning blocks.</i>'
+
+
     BUTTON_NOP_LEAVE_ON = '✔ Вкл.'
     BUTTON_NOP_LEAVE_OFF = '✔ Выкл.'
     BUTTON_NOP_TURN_ON = 'Вкл.'

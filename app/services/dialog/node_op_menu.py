@@ -27,6 +27,9 @@ class NodeOpStates(StatesGroup):
     SETT_BOND_ENABLED = State()
     SETT_NEW_VERSION_ENABLED = State()
     SETT_UPDATE_VERSION_ENABLED = State()
+    SETT_CHURNING_ENABLED = State()
+    SETT_OFFLINE_ENABLED = State()
+    SETT_HEIGHT_ENABLED = State()
 
 
 class NodeOpDialog(BaseDialog):
@@ -264,11 +267,11 @@ class NodeOpDialog(BaseDialog):
         elif query.data == NodeOpSetting.BOND:
             await self.ask_bond_enabled(query)
         elif query.data == NodeOpSetting.OFFLINE:
-            ...  # todo
+            await self.ask_offline_enabled(query)
         elif query.data == NodeOpSetting.CHAIN_HEIGHT:
-            ...  # todo
+            await self.ask_chain_height_enabled(query)
         elif query.data == NodeOpSetting.CHURNING:
-            ...  # todo
+            await self.ask_churning_enabled(query)
         await query.answer()
 
     # -------- SETTINGS : SLASH ---------
@@ -391,6 +394,51 @@ class NodeOpDialog(BaseDialog):
     async def bond_enabled_query_handle(self, query: CallbackQuery):
         await self.handle_query_for_something_on(query,
                                                  NodeOpSetting.BOND,
+                                                 self.on_settings_menu,
+                                                 self.on_settings_menu)
+
+    # -------- SETTINGS : OFFLINE ---------
+
+    async def ask_offline_enabled(self, query: CallbackQuery):
+        is_on = self.is_alert_on(NodeOpSetting.OFFLINE)
+        await self.ask_something_enabled(query, NodeOpStates.SETT_OFFLINE_ENABLED,
+                                         self.loc.text_nop_offline_enabled(is_on),
+                                         is_on)
+
+    @query_handler(state=NodeOpStates.SETT_OFFLINE_ENABLED)
+    async def offline_enabled_query_handle(self, query: CallbackQuery):
+        await self.handle_query_for_something_on(query,
+                                                 NodeOpSetting.OFFLINE,
+                                                 self.on_settings_menu,
+                                                 self.on_settings_menu)
+
+    # -------- SETTINGS : CHAIN HEIGHT ---------
+
+    async def ask_chain_height_enabled(self, query: CallbackQuery):
+        is_on = self.is_alert_on(NodeOpSetting.CHAIN_HEIGHT)
+        await self.ask_something_enabled(query, NodeOpStates.SETT_HEIGHT_ENABLED,
+                                         self.loc.text_nop_chain_height_enabled(is_on),
+                                         is_on)
+
+    @query_handler(state=NodeOpStates.SETT_HEIGHT_ENABLED)
+    async def chain_height_enabled_query_handle(self, query: CallbackQuery):
+        await self.handle_query_for_something_on(query,
+                                                 NodeOpSetting.CHAIN_HEIGHT,
+                                                 self.on_settings_menu,
+                                                 self.on_settings_menu)
+
+    # -------- SETTINGS : CHURNING ---------
+
+    async def ask_churning_enabled(self, query: CallbackQuery):
+        is_on = self.is_alert_on(NodeOpSetting.CHURNING)
+        await self.ask_something_enabled(query, NodeOpStates.SETT_CHURNING_ENABLED,
+                                         self.loc.text_nop_churning_enabled(is_on),
+                                         is_on)
+
+    @query_handler(state=NodeOpStates.SETT_CHURNING_ENABLED)
+    async def churning_enabled_query_handle(self, query: CallbackQuery):
+        await self.handle_query_for_something_on(query,
+                                                 NodeOpSetting.CHURNING,
                                                  self.on_settings_menu,
                                                  self.on_settings_menu)
 
