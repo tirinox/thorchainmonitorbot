@@ -5,7 +5,7 @@ from services.models.node_info import NodeChange
 
 
 class NodeOpSetting:
-    VERSION = 'nop:slash:on'
+    VERSION = 'nop:version:on'
     NEW_VERSION = 'nop:new_v:on'
     BOND = 'nop:bond:on'
     OFFLINE = 'nop:offline:on'

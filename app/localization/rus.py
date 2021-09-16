@@ -869,10 +869,25 @@ class RussianLocalization(BaseLocalization):
     BUTTON_NOP_SETT_BOND = 'Бонд'
     BUTTON_NOP_SETT_HEIGHT = 'Высота блоков'
 
+    @staticmethod
+    def text_enabled_disabled(is_on):
+        return 'включены' if is_on else 'выключены'
+
     def text_nop_slash_enabled(self, is_on):
-        en_text = 'включены' if is_on else 'выключены'
+        en_text = self.text_enabled_disabled(is_on)
         return f'Уведомления о начислении штрафных очков нодам {bold(en_text)}.'
 
+    def text_nop_bond_is_enabled(self, is_on):
+        en_text = self.text_enabled_disabled(is_on)
+        return f'Уведомления об изменении бонда {bold(en_text)}.'
+
+    def text_nop_new_version_enabled(self, is_on):
+        en_text = self.text_enabled_disabled(is_on)
+        return f'Уведомления о появлении новой версии {bold(en_text)}.'
+
+    def text_nop_version_up_enabled(self, is_on):
+        en_text = self.text_enabled_disabled(is_on)
+        return f'Уведомления об обновлении версии ноды {bold(en_text)}.'
 
     BUTTON_NOP_LEAVE_ON = '✔ Вкл.'
     BUTTON_NOP_LEAVE_OFF = '✔ Выкл.'

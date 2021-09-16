@@ -25,6 +25,8 @@ class NodeOpStates(StatesGroup):
     SETT_SLASH_PERIOD = State()
     SETT_SLASH_THRESHOLD = State()
     SETT_BOND_ENABLED = State()
+    SETT_NEW_VERSION_ENABLED = State()
+    SETT_UPDATE_VERSION_ENABLED = State()
 
 
 class NodeOpDialog(BaseDialog):
@@ -71,7 +73,7 @@ class NodeOpDialog(BaseDialog):
         elif query.data == 'mm:edit':
             await self.on_manage_menu(query.message)
         elif query.data == 'mm:settings':
-            await self.on_settings_menu(query.message)
+            await self.on_settings_menu(query)
         else:
             await self.safe_delete(query.message)
             await self.go_back(query.message)  # fixme: asking lang because query message is bot's message, not user's!
@@ -228,10 +230,10 @@ class NodeOpDialog(BaseDialog):
 
     # -------- SETTINGS ---------
 
-    async def on_settings_menu(self, message: Message):
+    async def on_settings_menu(self, query: CallbackQuery):
         loc = self.loc
         await NodeOpStates.SETTINGS.set()
-        await message.edit_text(loc.TEXT_NOP_SETTINGS_TITLE, reply_markup=InlineKeyboardMarkup(
+        await query.message.edit_text(loc.TEXT_NOP_SETTINGS_TITLE, reply_markup=InlineKeyboardMarkup(
             inline_keyboard=[
                 [
                     self.alert_setting_button(loc.BUTTON_NOP_SETT_SLASHING, NodeOpSetting.SLASH),
@@ -258,9 +260,9 @@ class NodeOpDialog(BaseDialog):
         elif query.data == NodeOpSetting.SLASH:
             await self.ask_slash_enabled(query)
         elif query.data == 'setting:version':
-            ...  # todo
+            await self.ask_new_version_enabled(query)
         elif query.data == NodeOpSetting.BOND:
-            ...  # todo
+            await self.ask_bond_enabled(query)
         elif query.data == NodeOpSetting.OFFLINE:
             ...  # todo
         elif query.data == NodeOpSetting.CHAIN_HEIGHT:
@@ -272,32 +274,17 @@ class NodeOpDialog(BaseDialog):
     # -------- SETTINGS : SLASH ---------
 
     async def ask_slash_enabled(self, query: CallbackQuery):
-        await NodeOpStates.SETT_SLASH_ENABLED.set()
         is_on = self.is_alert_on(NodeOpSetting.SLASH)
-        loc = self.loc
-        await query.message.edit_text(
-            loc.text_nop_slash_enabled(is_on),
-            reply_markup=InlineKeyboardMarkup(inline_keyboard=[
-                [
-                    InlineKeyboardButton(loc.BUTTON_NOP_LEAVE_ON if is_on else loc.BUTTON_NOP_TURN_ON,
-                                         callback_data='on'),
-                    InlineKeyboardButton(loc.BUTTON_NOP_LEAVE_OFF if not is_on else loc.BUTTON_NOP_TURN_OFF,
-                                         callback_data='off')
-                ],
-                [InlineKeyboardButton(loc.BUTTON_BACK, callback_data='back')]
-            ]))
+        await self.ask_something_enabled(query, NodeOpStates.SETT_SLASH_ENABLED,
+                                         self.loc.text_nop_slash_enabled(is_on),
+                                         is_on)
 
     @query_handler(state=NodeOpStates.SETT_SLASH_ENABLED)
     async def slash_enabled_answer_query(self, query: CallbackQuery):
-        if query.data == 'back':
-            await self.on_settings_menu(query.message)
-        elif query.data == 'on':
-            self.data[NodeOpSetting.SLASH] = True
-            await self.ask_slash_threshold(query)
-        elif query.data == 'off':
-            self.data[NodeOpSetting.SLASH] = False
-            await self.on_settings_menu(query.message)
-        await query.answer()
+        await self.handle_query_for_something_on(query,
+                                                 NodeOpSetting.SLASH,
+                                                 self.ask_slash_threshold,
+                                                 self.on_settings_menu)
 
     async def ask_slash_threshold(self, query: CallbackQuery):
         await NodeOpStates.SETT_SLASH_THRESHOLD.set()
@@ -327,7 +314,7 @@ class NodeOpDialog(BaseDialog):
     @query_handler(state=NodeOpStates.SETT_SLASH_THRESHOLD)
     async def slash_threshold_answer_query(self, query: CallbackQuery):
         if query.data == 'back':
-            await self.on_settings_menu(query.message)
+            await self.on_settings_menu(query)
             await query.answer()
         else:
             threshold = int(query.data)
@@ -355,15 +342,57 @@ class NodeOpDialog(BaseDialog):
     @query_handler(state=NodeOpStates.SETT_SLASH_PERIOD)
     async def slash_period_answer_query(self, query: CallbackQuery):
         if query.data == 'back':
-            await self.on_settings_menu(query.message)
+            await self.on_settings_menu(query)
             await query.answer()
         else:
             period = int(query.data)
             self.data[NodeOpSetting.SLASH_PERIOD] = MINUTE * period
-            await self.on_settings_menu(query.message)
+            await self.on_settings_menu(query)
             await query.answer(self.loc.SUCCESS)
 
+    # -------- SETTINGS : VERSION ---------
+
+    async def ask_new_version_enabled(self, query: CallbackQuery):
+        is_on = self.is_alert_on(NodeOpSetting.NEW_VERSION)
+        await self.ask_something_enabled(query, NodeOpStates.SETT_NEW_VERSION_ENABLED,
+                                         self.loc.text_nop_new_version_enabled(is_on),
+                                         is_on)
+
+    @query_handler(state=NodeOpStates.SETT_NEW_VERSION_ENABLED)
+    async def new_version_query_handle(self, query: CallbackQuery):
+        await self.handle_query_for_something_on(query,
+                                                 NodeOpSetting.NEW_VERSION,
+                                                 self.ask_version_up_enabled,
+                                                 self.ask_version_up_enabled)
+
+    async def ask_version_up_enabled(self, query: CallbackQuery):
+        is_on = self.is_alert_on(NodeOpSetting.VERSION)
+        await self.ask_something_enabled(query,
+                                         NodeOpStates.SETT_UPDATE_VERSION_ENABLED,
+                                         self.loc.text_nop_version_up_enabled(is_on),
+                                         is_on)
+
+    @query_handler(state=NodeOpStates.SETT_UPDATE_VERSION_ENABLED)
+    async def version_up_query_handle(self, query: CallbackQuery):
+        await self.handle_query_for_something_on(query,
+                                                 NodeOpSetting.VERSION,
+                                                 self.on_settings_menu,
+                                                 self.on_settings_menu)
+
     # -------- SETTINGS : BOND ---------
+
+    async def ask_bond_enabled(self, query: CallbackQuery):
+        is_on = self.is_alert_on(NodeOpSetting.BOND)
+        await self.ask_something_enabled(query, NodeOpStates.SETT_BOND_ENABLED,
+                                         self.loc.text_nop_bond_is_enabled(is_on),
+                                         is_on)
+
+    @query_handler(state=NodeOpStates.SETT_BOND_ENABLED)
+    async def bond_enabled_query_handle(self, query: CallbackQuery):
+        await self.handle_query_for_something_on(query,
+                                                 NodeOpSetting.BOND,
+                                                 self.on_settings_menu,
+                                                 self.on_settings_menu)
 
     # ---- UTILS ---
 
@@ -441,9 +470,9 @@ class NodeOpDialog(BaseDialog):
                 [InlineKeyboardButton(loc.BUTTON_BACK, callback_data='back')]
             ]))
 
-    async def test_something_on(self, query: CallbackQuery, setting, next_on_func, next_off_func):
+    async def handle_query_for_something_on(self, query: CallbackQuery, setting, next_on_func, next_off_func):
         if query.data == 'back':
-            await self.on_settings_menu(query.message)
+            await self.on_settings_menu(query)
         elif query.data == 'on':
             self.data[setting] = True
             await next_on_func(query)
@@ -451,4 +480,3 @@ class NodeOpDialog(BaseDialog):
             self.data[setting] = False
             await next_off_func(query)
         await query.answer()
-

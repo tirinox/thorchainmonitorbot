@@ -1027,9 +1027,27 @@ class BaseLocalization(ABC):  # == English
     BUTTON_NOP_SETT_BOND = 'Bond'
     BUTTON_NOP_SETT_HEIGHT = 'Block height'
 
+    @staticmethod
+    def text_enabled_disabled(is_on):
+        return 'enabled' if is_on else 'disabled'
+
     def text_nop_slash_enabled(self, is_on):
-        en_text = 'enabled' if is_on else 'disabled'
-        return f'Slash point notification are {bold(en_text)}.'
+        en_text = self.text_enabled_disabled(is_on)
+        return f'Slash point notifications are {bold(en_text)}.'
+
+    def text_nop_bond_is_enabled(self, is_on):
+        en_text = self.text_enabled_disabled(is_on)
+        return f'Bond change notifications are {bold(en_text)}.'
+
+    def text_nop_new_version_enabled(self, is_on):
+        en_text = self.text_enabled_disabled(is_on)
+        return f'New version notifications are {bold(en_text)}.\n\n' \
+               f'<i>You will receive a notification when new versions are available.</i>'
+
+    def text_nop_version_up_enabled(self, is_on):
+        en_text = self.text_enabled_disabled(is_on)
+        return f'Node version upgrade notifications are {bold(en_text)}.\n\n' \
+               f'<i>You will receive a notification when your node is upgraded its software.</i>'
 
     BUTTON_NOP_LEAVE_ON = '✔ Leave it ON'
     BUTTON_NOP_LEAVE_OFF = '✔ Leave it OFF'
