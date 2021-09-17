@@ -386,7 +386,7 @@ class BaseLocalization(ABC):  # == English
 
     DET_PRICE_HELP_PAGE = 'https://thorchain.org/rune#what-influences-it'
 
-    def notification_text_price_update(self, p: PriceReport, ath=False, is_halted=False):
+    def notification_text_price_update(self, p: PriceReport, ath=False, halted_chains=None):
         title = bold('Price update') if not ath else bold('🚀 A new all-time high has been achieved!')
 
         c_gecko_url = 'https://www.coingecko.com/en/coins/thorchain'
@@ -394,8 +394,9 @@ class BaseLocalization(ABC):  # == English
 
         message = f"{title} | {c_gecko_link}\n\n"
 
-        if is_halted:
-            message += "🚨 <code>Trading is still halted.</code>\n\n"
+        if halted_chains:
+            hc = pre(', '.join(halted_chains))
+            message += f"🚨 <code>Trading is still halted on {hc}.</code>\n\n"
 
         price = p.market_info.pool_rune_price
 

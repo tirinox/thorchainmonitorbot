@@ -3,7 +3,7 @@ import time
 from dataclasses import dataclass
 from typing import List
 
-from services.lib.constants import BNB_BTCB_SYMBOL, BTC_SYMBOL, STABLE_COIN_POOLS, thor_to_float
+from services.lib.constants import BNB_BTCB_SYMBOL, BTC_SYMBOL, STABLE_COIN_POOLS, thor_to_float, STABLE_COIN_BNB_POOLS
 from services.lib.money import weighted_mean
 from services.lib.utils import fuzzy_search
 from services.models.base import BaseModelMixin
@@ -58,7 +58,8 @@ class LastPriceHolder:
 
     def _calculate_weighted_rune_price(self):
         prices, weights = [], []
-        for stable_symbol in STABLE_COIN_POOLS:
+        stable_coins = STABLE_COIN_BNB_POOLS  # todo: fixme: after other chains relauch!
+        for stable_symbol in stable_coins:
             pool_info = self.pool_info_map.get(stable_symbol)
             if pool_info and pool_info.balance_rune > 0 and pool_info.asset_per_rune > 0:
                 prices.append(pool_info.asset_per_rune)
