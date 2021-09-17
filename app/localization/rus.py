@@ -883,7 +883,8 @@ class RussianLocalization(BaseLocalization):
 
     def text_nop_new_version_enabled(self, is_on):
         en_text = self.text_enabled_disabled(is_on)
-        return f'Уведомления о появлении новой версии {bold(en_text)}.'
+        return f'Уведомления о появлении новой версии {bold(en_text)}.\n\n' \
+               f'<i>На следующием шаге вы настроите уведомления об обновлении ваших нод.</i>'
 
     def text_nop_version_up_enabled(self, is_on):
         en_text = self.text_enabled_disabled(is_on)
@@ -891,23 +892,19 @@ class RussianLocalization(BaseLocalization):
 
     def text_nop_offline_enabled(self, is_on):
         en_text = self.text_enabled_disabled(is_on)
-        # todo
-        return f'Offline/online node notifications are {bold(en_text)}.\n\n' \
-               f'<i>You can tune enabled services at the next steps.</i>'
+        return f'Уведомления об уходе ноды в оффлайн и возврате в онлайн {bold(en_text)}.\n\n' \
+               f'<i>На следующих шагах вы настроите сервисы.</i>'
 
     def text_nop_churning_enabled(self, is_on):
         en_text = self.text_enabled_disabled(is_on)
-        # todo
-        return f'Churn in/out notifications are {bold(en_text)}.\n\n' \
-               f'<i>You will receive a notification when your node churned in or out the active validator set.</i>'
+        return f'Уведомлении о перемешивании нод {bold(en_text)}.\n\n' \
+               f'<i>Вы получите персональное уведомление, ' \
+               f'если ваша нода вступает в активный набор нод или покидает его.</i>'
 
     def text_nop_chain_height_enabled(self, is_on):
         en_text = self.text_enabled_disabled(is_on)
-        # todo
-        return f'Chain height stuck/unstuck notifications are {bold(en_text)}.\n\n' \
-               f'<i>You will receive a notification when any ' \
-               f'blockchain client on your node stuck or unstuck scanning blocks.</i>'
-
+        return f'Уведомления о зависших клиентах блокчейнов {bold(en_text)}.\n\n' \
+               f'<i>Вы получите уведомление, если ваши блокчейн клиенты на нодах перестали сканировать блоки.</i>'
 
     BUTTON_NOP_LEAVE_ON = '✔ Вкл.'
     BUTTON_NOP_LEAVE_OFF = '✔ Выкл.'
