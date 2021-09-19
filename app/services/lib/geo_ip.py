@@ -48,7 +48,7 @@ class GeoIPManager:
         data = await self.get_ip_info_from_external_api(ip)
 
         if cached and data:
-            await r.set(self.key(ip), json.dumps(data), expire=self.expire_period_sec)
+            await r.set(self.key(ip), json.dumps(data), ex=self.expire_period_sec)
 
         return data
 

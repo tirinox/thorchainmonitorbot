@@ -108,7 +108,7 @@ def series_to_pandas(ts_result, shift_time=True):
     normal_data = []
     zero_t = None
     for key, value_d in ts_result:
-        key = key.decode('ascii').split('-')
+        key = key.split('-')
         event_id = int(key[1])
         if event_id > 99:
             continue
@@ -119,7 +119,7 @@ def series_to_pandas(ts_result, shift_time=True):
             zero_t = time_point
 
         values = {
-            k.decode('ascii'): float(v) for k, v in value_d.items()
+            k: float(v) for k, v in value_d.items()
         }
 
         normal_data.append({
