@@ -1,7 +1,7 @@
 import logging
 
 import aiohttp
-from aioredis import ReplyError
+import aioredis
 from tqdm import tqdm
 
 from services.lib.constants import RUNE_SYMBOL_DET, RUNE_SYMBOL_POOL
@@ -40,7 +40,7 @@ async def fill_rune_price_from_gecko(db, include_fake_det=False, fake_value=0.2)
             await series.add(message_id=ident, price=price)
             if include_fake_det:
                 await det_series.add(message_id=ident, price=fake_value)
-        except ReplyError:
+        except aioredis.ResponseError:
             pass
 
 

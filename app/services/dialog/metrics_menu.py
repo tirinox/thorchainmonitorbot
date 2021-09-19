@@ -173,7 +173,7 @@ class MetricsDialog(BaseDialog):
             price_1h, price_24h, price_7d,
             market_info=fp,
             btc_pool_rune_price=btc_price),
-            is_halted=bool(self.deps.halted_chains)
+            halted_chains=self.deps.halted_chains
         )
 
         graph = await price_graph_from_db(self.deps.db, self.loc, period=period)

@@ -70,7 +70,7 @@ class PriceNotifier(INotified):
         async def price_graph_gen(chat_id):
             loc: BaseLocalization = user_lang_map[chat_id]
             graph = await price_graph_from_db(self.deps.db, loc, self.price_graph_period)
-            caption = loc.notification_text_price_update(report, ath, is_halted=bool(self.deps.halted_chains))
+            caption = loc.notification_text_price_update(report, ath, halted_chains=self.deps.halted_chains)
             return BoardMessage.make_photo(graph, caption=caption)
 
         if ath:
