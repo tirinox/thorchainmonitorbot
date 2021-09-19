@@ -31,8 +31,8 @@ class TimeSeries:
         )
 
     @staticmethod
-    def get_ts_from_index(index: bytes):
-        s = index.decode().split('-')
+    def get_ts_from_index(index: str):
+        s = index.split('-')
         return int(s[0]) / 1_000
 
     async def get_last_points(self, period_sec, max_points=10000, tolerance_sec=10):
@@ -55,8 +55,6 @@ class TimeSeries:
     async def get_last_values(self, period_sec, key, max_points=10000, tolerance_sec=10, with_ts=False,
                               decoder=float):
         points = await self.get_last_points(period_sec, max_points, tolerance_sec)
-        if isinstance(key, str):
-            key = key.encode('utf-8')
 
         if with_ts:
             values = [(self.get_ts_from_index(p[0]), decoder(p[1][key])) for p in points if key in p[1]]
@@ -80,7 +78,7 @@ class TimeSeries:
 
     async def add(self, message_id=b'*', **kwargs):
         r = await self.db.get_redis()
-        await r.xadd(self.stream_name, kwargs, message_id=message_id)
+        await r.xadd(self.stream_name, kwargs, id=message_id)
 
     async def add_as_json(self, message_id=b'*', j: dict = None):
         await self.add(message_id, json=json.dumps(j))
@@ -92,14 +90,14 @@ class TimeSeries:
 
     async def clear(self):
         r = await self.db.get_redis()
-        await r.delete(key=self.stream_name)
+        await r.delete(self.stream_name)
 
 
 class PriceTimeSeries(TimeSeries):
     def __init__(self, coin: str, db: DB):
         super().__init__(f'price-{coin}', db)
 
-    KEY = b'price'
+    KEY = 'price'
 
     async def select_average_ago(self, ago, tolerance):
         items = await self.select(*self.range_ago(ago, tolerance))

@@ -54,14 +54,6 @@ async def test_names(node_watcher: NodeWatcherStorage):
     assert names1 == {'thorA': 'Apple', 'thorB': 'Burger'}
 
 
-@pytest.mark.asyncio
-async def test_redis_multi_get(deps: DepContainer):
-    r = await deps.db.get_redis()
-    await r.mset('a', 1, 'b', 2, 'c', 3)
-    results = await r.mget("a", "b", "c", encoding='utf-8')
-    assert results == ['1', '2', '3']
-
-
 def test_multi_split():
     assert parse_list_from_string("") == []
     assert parse_list_from_string("\n") == []

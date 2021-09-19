@@ -43,7 +43,7 @@ class ManyToManySet:
 
     async def all_lefts_for_right_one(self, right_one: str):
         r = await self._redis()
-        return set(await r.smembers(self.right_key(right_one), encoding='utf8'))
+        return set(await r.smembers(self.right_key(right_one)))
 
     @staticmethod
     async def all_items_for_many_other_side(inputs, getter: callable, flatten=True):
@@ -65,13 +65,13 @@ class ManyToManySet:
 
     async def all_rights_for_left_one(self, left_one: str):
         r = await self._redis()
-        return set(await r.smembers(self.left_key(left_one), encoding='utf8'))
+        return set(await r.smembers(self.left_key(left_one)))
 
     async def all_from_side(self, key_gen):
         r = await self._redis()
         key_pattern = key_gen('*')
         start_pos = len(key_pattern) - 1
-        names = await r.keys(key_pattern, encoding='utf-8')
+        names = await r.keys(key_pattern)
         return set(n[start_pos:] for n in names)
 
     async def all_lefts(self):

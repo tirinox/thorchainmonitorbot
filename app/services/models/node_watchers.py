@@ -35,7 +35,7 @@ class NodeWatcherStorage:
         if not node_list:
             return {}
         r = await self.deps.db.get_redis()
-        names = await r.mget(*map(self.key_for_node_names, node_list), encoding='utf-8')
+        names = await r.mget(*map(self.key_for_node_names, node_list))
         return dict(zip(node_list, names))
 
     async def add_user_to_node(self, node: str, name: str):
