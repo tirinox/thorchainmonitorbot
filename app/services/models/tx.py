@@ -373,7 +373,7 @@ class ThorTxExtended(ThorTx):
 
         elif t in (ThorTxType.TYPE_SWITCH, ThorTxType.TYPE_REFUND, ThorTxType.TYPE_SWAP):
             # only outputs
-            self.rune_amount = self.sum_of_rune(out_only=True)
+            self.rune_amount = self.sum_of_rune(out_only=True)  # fixme: error! doubleswap!!
             self.asset_amount = self.sum_of_non_rune(out_only=True)
 
     def asymmetry(self, force_abs=False):
@@ -395,11 +395,18 @@ class ThorTxExtended(ThorTx):
         if self.type == ThorTxType.TYPE_SWITCH:
             self.full_rune = self.rune_amount
         else:
-            self.asset_per_rune = asset_per_rune
-            if asset_per_rune == 0.0:
-                self.full_rune = self.rune_amount
+            if self.type == ThorTxType.TYPE_SWAP:
+                if len(self.pools) == 1:  # simple swap
+                    self.full_rune = max(self.sum_of_rune(in_only=True), self.sum_of_rune(out_only=True))
+                else:  # double swap
+                    #  asset_per_rune = for 1st pool
+                    self.full_rune = self.sum_of_non_rune(in_only=True) / asset_per_rune if asset_per_rune else 0.0
             else:
-                self.full_rune = self.asset_amount / asset_per_rune + self.rune_amount
+                if asset_per_rune == 0.0:
+                    self.full_rune = self.rune_amount
+                else:
+                    self.full_rune = self.asset_amount / asset_per_rune + self.rune_amount
+            self.asset_per_rune = asset_per_rune
         return self.full_rune
 
     def get_usd_volume(self, usd_per_rune):
