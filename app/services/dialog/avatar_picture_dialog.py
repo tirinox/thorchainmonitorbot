@@ -41,25 +41,13 @@ class AvatarDialog(BaseDialog):
         super().__init__(loc, data, d)
         self._work_lock = asyncio.Lock()
 
-    # def menu_kbd(self):
-    #     return kbd([
-    #         self.loc.BUTTON_AVA_FROM_MY_USERPIC,
-    #         self.loc.BUTTON_SM_BACK_MM,
-    #     ], vert=True)
-
     def menu_inline_kbd(self):
-        laser_eyes_text = "Laser Eyes [ON]" if self.with_lasers else "Laser Eyes [OFF]"
         return InlineKeyboardMarkup(
             inline_keyboard=[
                 [InlineKeyboardButton(self.loc.BUTTON_AVA_FROM_MY_USERPIC, callback_data='from_user_pic')],
-                [InlineKeyboardButton(laser_eyes_text, callback_data='toggle_laser_eyes')],
                 [InlineKeyboardButton(self.loc.BUTTON_SM_BACK_MM, callback_data='back')],
             ]
         )
-
-    @property
-    def with_lasers(self):
-        return self.data.get('laser_eyes', True)
 
     @query_handler(state=AvatarStates.MAIN)
     async def on_tap_address(self, query: CallbackQuery):
@@ -69,12 +57,6 @@ class AvatarDialog(BaseDialog):
         elif query.data == 'from_user_pic':
             await self.handle_avatar_picture(query.message, self.loc)
             await self.safe_delete(query.message)
-        elif query.data == 'toggle_laser_eyes':
-            self.data['laser_eyes'] = not self.with_lasers
-            if query.message.text:
-                await query.message.edit_text(query.message.text, reply_markup=self.menu_inline_kbd())
-            else:
-                await self.on_enter(query.message)
 
     @message_handler(state=AvatarStates.MAIN)
     async def on_enter(self, message: Message):
@@ -118,7 +100,7 @@ class AvatarDialog(BaseDialog):
                 await message.answer(loc.TEXT_AVA_ERR_INVALID, reply_markup=self.menu_inline_kbd())
                 return
 
-            pic = await make_avatar(user_pic, with_lasers=self.with_lasers)
+            pic = await make_avatar(user_pic)
 
             user_id = message.from_user.id
             pic = img_to_bio(pic, name=f'thor_ava_{user_id}.png')

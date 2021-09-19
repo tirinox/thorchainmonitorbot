@@ -6,12 +6,12 @@ from services.lib.config import SubConfig
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.utils import linear_transform
-from services.models.tx import ThorTxExtended
+from services.models.tx import ThorTxExtended, ThorTxType
 from services.notify.types.cap_notify import LiquidityCapNotifier
 
 
 class GenericTxNotifier(INotified):
-    MAX_TX_PER_ONE_TIME = 12
+    MAX_TX_PER_ONE_TIME = 10  # todo: move to config
 
     DEFAULT_TX_VS_DEPTH_CURVE = [
         {'depth': 10_000, 'percent': 20},  # if depth < 10_000 then 0.2
@@ -47,7 +47,10 @@ class GenericTxNotifier(INotified):
         self.curve = params.get_pure('usd_requirements_curve', self.DEFAULT_TX_VS_DEPTH_CURVE)
 
     async def on_data(self, senders, txs: List[ThorTxExtended]):
-        txs = [tx for tx in txs if tx.type in self.tx_types]
+        txs = [tx for tx in txs if tx.type in self.tx_types]  # filter my TX types
+
+        if not txs:
+            return
 
         usd_per_rune = self.deps.price_holder.usd_per_rune
 
@@ -60,6 +63,8 @@ class GenericTxNotifier(INotified):
         large_txs = list(self._filter_large_txs(txs, min_rune_volume, usd_per_rune))
         large_txs = large_txs[:self.MAX_TX_PER_ONE_TIME]  # limit for 1 notification
 
+        if not large_txs:
+            return
         self.logger.info(f"large_txs: {len(large_txs)}")
 
         if large_txs:
@@ -70,9 +75,15 @@ class GenericTxNotifier(INotified):
             async def message_gen(chat_id):
                 loc = user_lang_map[chat_id]
                 texts = []
+                has_liquidity = False
                 for tx in large_txs:
+                    if tx.type in (ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_ADD_LIQUIDITY):
+                        has_liquidity = True
                     pool_info = self.deps.price_holder.pool_info_map.get(tx.first_pool)
-                    cap_info_last = cap_info if tx == large_txs[-1] else None  # append it only to the last one
+
+                    # append it only to the last one (if has liquidity change TXS)
+                    cap_info_last = cap_info if (tx == large_txs[-1] and has_liquidity) else None
+
                     texts.append(loc.notification_text_large_tx(tx, usd_per_rune, pool_info, cap_info_last))
                 return '\n\n'.join(texts)
 
@@ -97,10 +108,6 @@ class GenericTxNotifier(INotified):
             else:
                 min_pool_percent = self.curve_for_tx_threshold(self.curve, pool_usd_depth)
                 min_share_rune_volume = pool_usd_depth / usd_per_rune * min_pool_percent * 0.01
-
-            # print(f"{tx.pool}: {tx.full_rune:.2f} / {min_share_rune_volume:.2f} need rune,
-            # min_pool_percent = {min_pool_percent:.2f}, "
-            #       f"usd_depth = {usd_depth:.0f}")
 
             if tx.full_rune >= min_rune_volume and tx.full_rune >= min_share_rune_volume:
                 yield tx

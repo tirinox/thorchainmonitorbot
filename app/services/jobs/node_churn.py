@@ -77,4 +77,5 @@ class NodeChurnDetector(WithDelegates, INotified):
                               nodes_previous=old_nodes)
 
     async def on_data(self, sender, info_list: List[NodeInfo]):
-        return await self.extract_changes(info_list)
+        result = await self.extract_changes(info_list)
+        await self.handle_data(result, (sender, self))

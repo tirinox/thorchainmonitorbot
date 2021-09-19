@@ -22,10 +22,12 @@ class DB:
             return self.redis
 
         try:
-            self.redis = await aioredis.create_redis(
+            self.redis = await aioredis.from_url(
                 f'redis://{self.host}:{self.port}',
                 password=self.password,
-                loop=self.loop)
+                encoding="utf-8",
+                decode_responses=True
+            )
 
             self.storage = RedisStorage2(prefix='fsm')
             self.storage._redis = self.redis
@@ -39,8 +41,7 @@ class DB:
         return self.storage
 
     async def close_redis(self):
-        self.redis.close()
-        await self.redis.wait_closed()
+        await self.redis.close()
 
     @asynccontextmanager
     async def tg_context(self, user=None, chat=None):

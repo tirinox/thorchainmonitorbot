@@ -107,6 +107,7 @@ class TxFetcher(BaseFetcher):
             unseen_new_txs = []
             for tx in new_txs:
                 is_seen = await self.is_seen(tx.tx_hash)
+
                 if not is_seen:
                     unseen_new_txs.append(tx)
 
@@ -127,7 +128,7 @@ class TxFetcher(BaseFetcher):
 
     async def is_seen(self, tx_hash):
         if not tx_hash:
-            return False
+            return True
         r: Redis = self.deps.db.redis
         return await r.sismember(self.KEY_LAST_SEEN_TX_HASH, tx_hash)
 

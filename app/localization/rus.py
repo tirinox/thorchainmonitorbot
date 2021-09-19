@@ -263,6 +263,7 @@ class RussianLocalization(BaseLocalization):
 
         if cap:
             msg += (
+                f"\n\n"
                 f"Кап ликвидности {self._cap_progress_bar(cap)}.\n"
                 f'Вы можете добавить еще {code(pretty_money(cap.how_much_rune_you_can_lp))} {bold(self.R)} '
                 f'({pretty_dollar(cap.how_much_usd_you_can_lp)}).'
@@ -290,7 +291,7 @@ class RussianLocalization(BaseLocalization):
 
     # ------- PRICE -------
 
-    def notification_text_price_update(self, p: PriceReport, ath=False, is_halted=False):
+    def notification_text_price_update(self, p: PriceReport, ath=False, halted_chains=None):
         title = bold('Обновление цены') if not ath else bold('🚀 Достигнуть новый исторический максимум!')
 
         c_gecko_url = 'https://www.coingecko.com/ru/' \
@@ -299,8 +300,9 @@ class RussianLocalization(BaseLocalization):
 
         message = f"{title} | {c_gecko_link}\n\n"
 
-        if is_halted:
-            message += "🚨 <code>Торговля по-прежнему остановлена.</code>\n\n"
+        if halted_chains:
+            hc = pre(', '.join(halted_chains))
+            message += f"🚨 <code>Торговля по-прежнему остановлена на {hc}.</code>\n\n"
 
         price = p.market_info.pool_rune_price
 

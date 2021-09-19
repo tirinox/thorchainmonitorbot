@@ -41,7 +41,7 @@ class NetworkStatsNotifier(INotified):
         data = await self.series.select(start, end, 1)
         if not data:
             return NetworkStats()
-        return NetworkStats.from_json(data[0][1][b'info'])
+        return NetworkStats.from_json(data[0][1]['info'])
 
     async def get_latest_info(self):
         return await self.get_previous_stats(0)

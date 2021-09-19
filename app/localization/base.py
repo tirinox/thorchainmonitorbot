@@ -303,7 +303,6 @@ class BaseLocalization(ABC):  # == English
     def notification_text_large_tx(self, tx: ThorTxExtended, usd_per_rune: float,
                                    pool_info: PoolInfo,
                                    cap: ThorCapInfo = None):
-
         (ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short,
          total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
@@ -369,7 +368,8 @@ class BaseLocalization(ABC):  # == English
 
         if cap:
             msg += (
-                f"\n\nLiquidity cap is {self._cap_progress_bar(cap)} full now.\n"
+                f"\n\n"
+                f"Liquidity cap is {self._cap_progress_bar(cap)} full now.\n"
                 f'You can add {code(pretty_money(cap.how_much_rune_you_can_lp))} {bold(self.R)} '
                 f'({pretty_dollar(cap.how_much_usd_you_can_lp)}) more.\n'
             )
@@ -391,7 +391,7 @@ class BaseLocalization(ABC):  # == English
 
     DET_PRICE_HELP_PAGE = 'https://thorchain.org/rune#what-influences-it'
 
-    def notification_text_price_update(self, p: PriceReport, ath=False, is_halted=False):
+    def notification_text_price_update(self, p: PriceReport, ath=False, halted_chains=None):
         title = bold('Price update') if not ath else bold('🚀 A new all-time high has been achieved!')
 
         c_gecko_url = 'https://www.coingecko.com/en/coins/thorchain'
@@ -399,8 +399,9 @@ class BaseLocalization(ABC):  # == English
 
         message = f"{title} | {c_gecko_link}\n\n"
 
-        if is_halted:
-            message += "🚨 <code>Trading is still halted.</code>\n\n"
+        if halted_chains:
+            hc = pre(', '.join(halted_chains))
+            message += f"🚨 <code>Trading is still halted on {hc}.</code>\n\n"
 
         price = p.market_info.pool_rune_price
 
