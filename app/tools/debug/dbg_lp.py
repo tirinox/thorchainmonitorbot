@@ -29,7 +29,7 @@ async def test_one_pool_picture_generator(addr, pool, hide, rune_yield_class=Hom
     loc = lpgen.deps.loc_man.default
     # loc = RussianLocalization(lpgen.deps.cfg)
 
-    img = await lp_pool_picture(lp_report, loc, value_hidden=hide)
+    img = await lp_pool_picture(lpgen.deps.price_holder, lp_report, loc, value_hidden=hide)
     img.save(lp_picture_path, "PNG")
     os.system(f'open "{lp_picture_path}"')
 

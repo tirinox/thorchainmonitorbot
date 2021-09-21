@@ -8,13 +8,14 @@ from PIL import Image, ImageDraw, ImageFont
 from localization import BaseLocalization
 from localization.base import RAIDO_GLYPH
 from services.dialog.picture.crypto_logo import CryptoLogoDownloader
-from services.lib.constants import BNB_RUNE_SYMBOL, is_stable_coin, is_rune, RUNE_SYMBOL
+from services.lib.constants import BNB_RUNE_SYMBOL, is_rune, RUNE_SYMBOL
 from services.lib.draw_utils import CATEGORICAL_PALETTE, pos_percent, result_color, hor_line, LIGHT_TEXT_COLOR
 from services.lib.money import pretty_money, format_percent, pretty_percent, Asset
 from services.lib.plot_graph import PlotBarGraph
 from services.lib.texts import grouper
 from services.lib.utils import Singleton, async_wrap
 from services.models.lp_info import LiquidityPoolReport, LPDailyGraphPoint, ILProtectionReport
+from services.models.price import LastPriceHolder
 
 LP_PIC_WIDTH, LP_PIC_HEIGHT = 1200, 1600
 
@@ -65,18 +66,20 @@ class Resources(metaclass=Singleton):
         image.paste(self.hidden_img, (x, y), self.hidden_img)
 
 
-async def lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, value_hidden=False):
+async def lp_pool_picture(price_holder: LastPriceHolder, report: LiquidityPoolReport, loc: BaseLocalization,
+                          value_hidden=False):
     r = Resources()
     asset = report.pool.asset
     rune_image, asset_image = await asyncio.gather(
         r.logo_downloader.get_or_download_logo_cached(BNB_RUNE_SYMBOL),
         r.logo_downloader.get_or_download_logo_cached(asset)
     )
-    return await sync_lp_pool_picture(report, loc, rune_image, asset_image, value_hidden)
+    return await sync_lp_pool_picture(price_holder, report, loc, rune_image, asset_image, value_hidden)
 
 
 @async_wrap
-def sync_lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, rune_image, asset_image, value_hidden):
+def sync_lp_pool_picture(price_holder: LastPriceHolder, report: LiquidityPoolReport, loc: BaseLocalization, rune_image,
+                         asset_image, value_hidden):
     asset = report.pool.asset
 
     r = Resources()
@@ -184,7 +187,7 @@ def sync_lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, run
     table_x = 30
     rows_y = [start_y + 4 + r * 3.3 for r in range(7)]
 
-    if is_stable_coin(asset):
+    if price_holder.is_stable_coin(asset):
         columns = (report.RUNE, report.ASSET)
         columns_x = [50 + c * 25 for c in range(2)]
     else:
@@ -247,7 +250,8 @@ def sync_lp_pool_picture(report: LiquidityPoolReport, loc: BaseLocalization, run
         if report.usd_per_asset_start is not None and report.usd_per_rune_start is not None:
             price_change = report.price_change(column)
 
-            is_stable = column == report.USD or (column == report.ASSET and is_stable_coin(report.pool.asset))
+            is_stable = column == report.USD or (
+                        column == report.ASSET and price_holder.is_stable_coin(report.pool.asset))
             if not is_stable:
                 draw.text(pos_percent_lp(x, rows_y[6]), f'{pretty_money(price_change, signed=True)}%', font=r.font_semi,
                           fill=result_color(price_change), anchor='ms')

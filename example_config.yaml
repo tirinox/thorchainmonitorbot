@@ -8,6 +8,16 @@ thor:
   #  "chaosnet-multi" for MCCN
   network_id: "chaosnet-multi"
 
+  stable_coins:  # new!
+    - ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48
+    - ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7
+    - ETH.USDT-0XA3910454BF2CB59B8B3A401589A3BACC5CA42306  # test
+    - BNB.USDT-6D8
+    - BNB.USDT-DC8  # test
+    - BNB.BUSD-BD1
+    - BNB.BUSD-BAF  # test
+    - BNB.BUSD-74E  # test
+
 
 telegram:
   bot:

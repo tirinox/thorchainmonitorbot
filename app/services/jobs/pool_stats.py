@@ -2,7 +2,6 @@ from typing import List
 
 from services.jobs.fetch.base import INotified, WithDelegates
 from services.jobs.fetch.pool_price import PoolPriceFetcher
-from services.lib.constants import STABLE_COIN_POOLS
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
 from services.models.pool_info import PoolInfo
@@ -66,7 +65,7 @@ class PoolStatsUpdater(WithDelegates, INotified):
             raise LookupError("pool_info_map is not loaded into the price holder!")
 
         pool_names = set(t.pool for t in txs)
-        pool_names.update(set(STABLE_COIN_POOLS))  # don't forget stable coins, for total usd volume!
+        pool_names.update(set(self.deps.price_holder.stable_coins))  # don't forget stable coins, for total usd volume!
         self.pool_stat_map = {
             pool: (await LiquidityPoolStats.get_from_db(pool, self.deps.db)) for pool in pool_names
         }

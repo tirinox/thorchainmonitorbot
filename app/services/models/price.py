@@ -3,6 +3,7 @@ import time
 from dataclasses import dataclass
 from typing import List
 
+from services.lib.config import Config
 from services.lib.constants import BNB_BTCB_SYMBOL, BTC_SYMBOL, STABLE_COIN_POOLS, thor_to_float
 from services.lib.money import weighted_mean
 from services.lib.utils import fuzzy_search
@@ -55,10 +56,18 @@ class LastPriceHolder:
         self.btc_per_rune = 0.000001
         self.pool_info_map: PoolInfoMap = {}
         self.last_update_ts = 0
+        self.stable_coins = STABLE_COIN_POOLS
+
+    def is_stable_coin(self, c):
+        return c in self.stable_coins
+
+    def load_stable_coins(self, cfg: Config):
+        self.stable_coins = cfg.get('thor.stable_coins', default=STABLE_COIN_POOLS)
+        logging.info(f'Stable coins are {", ".join(self.stable_coins)}')
 
     def _calculate_weighted_rune_price(self):
         prices, weights = [], []
-        stable_coins = STABLE_COIN_POOLS
+        stable_coins = self.stable_coins
         for stable_symbol in stable_coins:
             pool_info = self.pool_info_map.get(stable_symbol)
             if pool_info and pool_info.balance_rune > 0 and pool_info.asset_per_rune > 0:
