@@ -9,7 +9,8 @@ from semver import VersionInfo
 from services.lib.config import Config
 from services.lib.constants import NetworkIdents, rune_origin, thor_to_float
 from services.lib.date_utils import format_time_ago, now_ts, seconds_human
-from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx
+from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
+    get_explorer_url_for_node
 from services.lib.money import format_percent, pretty_money, short_address, short_money, \
     calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset
 from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
@@ -580,6 +581,8 @@ class BaseLocalization(ABC):  # == English
             return "⚡ OPTIMAL"
         elif 0.6 > network_security_ratio >= 0.5:
             return "🤢 UNDERBONDED"
+        elif network_security_ratio == 0.0:
+            return '🚧 DATA NOT AVAILABLE...'
         else:
             return "🤬 INSECURE"
 
@@ -1102,13 +1105,18 @@ class BaseLocalization(ABC):  # == English
                'If the threshold interval is less than the typical block time for the blockchain, ' \
                'it will be increased to 150% of the typical time (15 minutes for BTC).'
 
+    @staticmethod
+    def node_link(address):
+        short_addr = pre(address[-4:]) if len(address) >= 4 else 'UNKNOWN'
+        return link(get_explorer_url_for_node(address), short_addr)
+
     def notification_text_for_node_op_changes(self, c: NodeChange):
         # todo! make it good-looking
         message = ''
-        short_addr = pre(c.address[-4:])
+        short_addr = self.node_link(c.address)
         if c.type == NodeChangeType.SLASHING:
             old, new = c.data
-            message = f'🟨 Node {short_addr} slashed {bold(new - old)} pts (now <i>{new}</i> pts.)!'
+            message = f'🟨 Node {short_addr} got slashed for {bold(new - old)} pts (now <i>{new}</i> slash pts)!'
         elif c.type == NodeChangeType.VERSION_CHANGED:
             old, new = c.data
             message = f'🆙 Node {short_addr} version upgrade from {ital(old)} to {bold(new)}!'
@@ -1132,7 +1140,8 @@ class BaseLocalization(ABC):  # == English
             if data.restored:
                 message = f'✅ Node {short_addr} caught up blocks for {pre(data.client_name)}.'
             else:
-                message = f'🔴 Node {short_addr} is behind {data.block_lag} blocks on chain {pre(data.client_name)}!'
+                message = f'🔴 Node {short_addr} is behind {pre(data.block_lag)} blocks ' \
+                          f'on the {pre(data.client_name)} chain!'
 
         return message
 

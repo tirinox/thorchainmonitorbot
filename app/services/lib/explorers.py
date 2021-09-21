@@ -60,3 +60,10 @@ def get_explorer_url_to_tx(network_id, pool_or_chain: str, tx_id: str):
     else:
         url = f'https://www.google.com/search?q={chain}+explorer'
         return url if is_live else f'{url}+test'
+
+
+def get_explorer_url_for_node(address: str):
+    if address.lower().startswith('tthor'):
+        return f'https://testnet.thorchain.net/#/nodes/{address}'
+    else:
+        return f'https://thorchain.net/#/nodes/{address}'

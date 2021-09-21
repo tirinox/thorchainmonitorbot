@@ -465,6 +465,8 @@ class RussianLocalization(BaseLocalization):
             return "⚡ ОПТИМАЛЬНА"
         elif 0.6 > network_security_ratio >= 0.5:
             return "🤢 НЕДООБЕСПЕЧЕНА"
+        elif network_security_ratio == 0:
+            return '🚧 ДАННЫЕ НЕ ПОЛУЧЕНЫ...'
         else:
             return "🤬 НЕБЕЗОПАСНА"
 
