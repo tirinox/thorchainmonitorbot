@@ -111,6 +111,8 @@ class Chains:
             return 0.4
         elif chain == Chains.THOR:
             return THOR_BLOCK_TIME
+        elif chain == Chains.DOGE:
+            return MINUTE
 
 
 class NetworkIdents:
