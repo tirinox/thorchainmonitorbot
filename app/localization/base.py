@@ -1071,16 +1071,27 @@ class BaseLocalization(ABC):  # == English
     BUTTON_NOP_TURN_ON = 'Turn ON'
     BUTTON_NOP_TURN_OFF = 'Turn OFF'
 
+    BUTTON_NOP_2MIN = '2 min'
     BUTTON_NOP_5MIN = '5 min'
     BUTTON_NOP_15MIN = '15 min'
+    BUTTON_NOP_30MIN = '30 min'
     BUTTON_NOP_60MIN = '60 min'
 
     TEXT_NOP_SLASH_THRESHOLD = 'Please select a threshold for slash point ' \
                                'alerts in slash points (recommended around 5 - 10):'
-    TEXT_NOP_SLASH_PERIOD = 'Great! Please choose a time period for monitoring.\n' \
-                            'For example, if you choose <i>10 minutes</i> and a threshold of <i>{pts} pts</i>, ' \
-                            'you will get a notification if your node has incurred more than ' \
-                            '<i>{pts} slash pts</i> in the last <i>10 minutes</i>.'
+
+    def text_nop_ask_slash_period(self, pts):
+        return f'Great! Please choose a time period for monitoring.\n' \
+               f'For example, if you choose <i>10 minutes</i> and a threshold of <i>{pts} pts</i>, ' \
+               f'you will get a notification if your node has incurred more than ' \
+               f'<i>{pts} slash pts</i> in the last <i>10 minutes</i>.'
+
+    def text_nop_ask_chain_height_lag_time(self, current_lag_time):
+        return 'Please select a time interval for the notification threshold. ' \
+               'If your node does not scan blocks for more than this time, ' \
+               'you will receive a notification about it.\n\n' \
+               'If the threshold interval is less than the typical block time for the blockchain, ' \
+               'it will be increased to 150% of the typical time (15 minutes for BTC).'
 
     def notification_text_for_node_op_changes(self, c: NodeChange):
         # todo! make it good-looking

@@ -30,6 +30,7 @@ class NodeOpStates(StatesGroup):
     SETT_CHURNING_ENABLED = State()
     SETT_OFFLINE_ENABLED = State()
     SETT_HEIGHT_ENABLED = State()
+    SETT_HEIGHT_LAG_TIME = State()
 
 
 class NodeOpDialog(BaseDialog):
@@ -330,8 +331,10 @@ class NodeOpDialog(BaseDialog):
         keyboard = InlineKeyboardMarkup(
             inline_keyboard=[
                 [
+                    InlineKeyboardButton(self.loc.BUTTON_NOP_2MIN, callback_data='2'),
                     InlineKeyboardButton(self.loc.BUTTON_NOP_5MIN, callback_data='5'),
                     InlineKeyboardButton(self.loc.BUTTON_NOP_15MIN, callback_data='15'),
+                    InlineKeyboardButton(self.loc.BUTTON_NOP_30MIN, callback_data='30'),
                     InlineKeyboardButton(self.loc.BUTTON_NOP_60MIN, callback_data='60'),
                 ],
                 [
@@ -339,7 +342,7 @@ class NodeOpDialog(BaseDialog):
                 ]
             ]
         )
-        text = self.loc.TEXT_NOP_SLASH_PERIOD.format(pts=self.data[NodeOpSetting.SLASH_THRESHOLD])
+        text = self.loc.text_nop_ask_slash_period(self.data.get(NodeOpSetting.SLASH_THRESHOLD, 1))
         await query.message.edit_text(text, reply_markup=keyboard)
 
     @query_handler(state=NodeOpStates.SETT_SLASH_PERIOD)
@@ -424,8 +427,38 @@ class NodeOpDialog(BaseDialog):
     async def chain_height_enabled_query_handle(self, query: CallbackQuery):
         await self.handle_query_for_something_on(query,
                                                  NodeOpSetting.CHAIN_HEIGHT,
-                                                 self.on_settings_menu,
+                                                 self.ask_block_lag_time,
                                                  self.on_settings_menu)
+
+    async def ask_block_lag_time(self, query: CallbackQuery):
+        await NodeOpStates.SETT_HEIGHT_LAG_TIME.set()
+        keyboard = InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(self.loc.BUTTON_NOP_2MIN, callback_data='2'),
+                    InlineKeyboardButton(self.loc.BUTTON_NOP_5MIN, callback_data='5'),
+                    InlineKeyboardButton(self.loc.BUTTON_NOP_15MIN, callback_data='15'),
+                    InlineKeyboardButton(self.loc.BUTTON_NOP_30MIN, callback_data='30'),
+                    InlineKeyboardButton(self.loc.BUTTON_NOP_60MIN, callback_data='60'),
+                ],
+                [
+                    InlineKeyboardButton(self.loc.BUTTON_BACK, callback_data='back')
+                ]
+            ]
+        )
+        text = self.loc.text_nop_ask_chain_height_lag_time(self.data.get(NodeOpSetting.CHAIN_HEIGHT_INTERVAL, 1))
+        await query.message.edit_text(text, reply_markup=keyboard)
+
+    @query_handler(state=NodeOpStates.SETT_HEIGHT_LAG_TIME)
+    async def block_height_lag_time_answer_query(self, query: CallbackQuery):
+        if query.data == 'back':
+            await self.on_settings_menu(query)
+            await query.answer()
+        else:
+            period = int(query.data)
+            self.data[NodeOpSetting.CHAIN_HEIGHT_INTERVAL] = MINUTE * period
+            await self.on_settings_menu(query)
+            await query.answer(self.loc.SUCCESS)
 
     # -------- SETTINGS : CHURNING ---------
 

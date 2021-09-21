@@ -10,6 +10,7 @@ class NodeOpSetting:
     BOND = 'nop:bond:on'
     OFFLINE = 'nop:offline:on'
     CHAIN_HEIGHT = 'nop:height:on'
+    CHAIN_HEIGHT_INTERVAL = 'nop:height:interval'
     CHURNING = 'nop:churning:on'
     SLASH = 'nop:slash:on'
     SLASH_THRESHOLD = 'nop:slash:threshold'
