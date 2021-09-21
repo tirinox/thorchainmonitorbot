@@ -21,7 +21,11 @@ class VersionTracker(BaseChangeTracker):
     def _changes_of_version(pc_node_map: MapAddressToPrevAndCurrNode):
         for a, (prev, curr) in pc_node_map.items():
             if prev.version != curr.version:
-                yield NodeChange(prev.node_address, NodeChangeType.VERSION_CHANGED, (prev.version, curr.version))
+                yield NodeChange(
+                    prev.node_address, NodeChangeType.VERSION_CHANGED,
+                    (prev.version, curr.version),
+                    node=curr
+                )
 
     async def _changes_of_detected_new_version(self, c: NodeSetChanges):
         new_versions = c.new_versions
@@ -38,9 +42,12 @@ class VersionTracker(BaseChangeTracker):
         changes = []
         for node in c.nodes_all:
             if node.parsed_version < new_version:
-                changes.append(NodeChange(node.node_address,
-                                          NodeChangeType.NEW_VERSION_DETECTED,
-                                          new_version, single_per_user=True))
+                changes.append(NodeChange(
+                    node.node_address,
+                    NodeChangeType.NEW_VERSION_DETECTED,
+                    new_version, single_per_user=True,
+                    node=node
+                ))
         return changes
 
     async def filter_changes(self, ch_list: List[NodeChange], settings: dict) -> List[NodeChange]:

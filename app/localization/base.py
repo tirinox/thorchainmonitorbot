@@ -1082,35 +1082,37 @@ class BaseLocalization(ABC):  # == English
                             'you will get a notification if your node has incurred more than ' \
                             '<i>{pts} slash pts</i> in the last <i>10 minutes</i>.'
 
-    @staticmethod
-    def notification_text_for_node_op_changes(c: NodeChange):
+    def notification_text_for_node_op_changes(self, c: NodeChange):
         # todo! make it good-looking
         message = ''
         short_addr = pre(c.address[-4:])
         if c.type == NodeChangeType.SLASHING:
             old, new = c.data
-            message = f'Your node {short_addr} slashed {bold(new - old)} pts (now {new} pts.)!'
+            message = f'🟨 Node {short_addr} slashed {bold(new - old)} pts (now <i>{new}</i> pts.)!'
         elif c.type == NodeChangeType.VERSION_CHANGED:
             old, new = c.data
-            message = f'Your node {short_addr} version from {ital(old)} to {bold(new)}!'
+            message = f'🆙 Node {short_addr} version upgrade from {ital(old)} to {bold(new)}!'
         elif c.type == NodeChangeType.NEW_VERSION_DETECTED:
-            message = f'New version detected! {bold(c.data)}! Consider upgrading!'
+            message = f'🆕 New version detected! {bold(c.data)}! Consider upgrading!'
         elif c.type == NodeChangeType.IP_ADDRESS_CHANGED:
             old, new = c.data
-            message = f'Node {short_addr} changed its IP address from {ital(old)} to {bold(new)}!'
+            message = f'🏤 Node {short_addr} changed its IP address from {ital(old)} to {bold(new)}!'
         elif c.type == NodeChangeType.SERVICE_ONLINE:
             online, duration = c.data
-            online_txt = 'online' if online else f'offline (already for {int(duration)} sec)'
-            message = f'Node {short_addr} went {bold(online_txt)}!'
+            if online:
+                message = f'✅ Node {short_addr} went <b>online</b>!'
+            else:
+                message = f'🔴 Node {short_addr} went <b>offline</b> (already for {int(duration)} sec)!'
         elif c.type == NodeChangeType.CHURNING:
-            verb = 'churned in' if c.data else 'churned out'
-            message = f'Node {short_addr} {bold(verb)}!'
+            verb = 'churned in ⬅️' if c.data else 'churned out ➡️'
+            bond = c.node.bond
+            message = f'🌐 Node {short_addr} ({short_money(bond, localization=self)} {RAIDO_GLYPH} bond) {bold(verb)}!'
         elif c.type == NodeChangeType.BLOCK_HEIGHT:
             data: ChangeBlockHeight = c.data
             if data.restored:
-                message = f'Node {short_addr} caught up blocks for {pre(data.client_name)}'
+                message = f'✅ Node {short_addr} caught up blocks for {pre(data.client_name)}.'
             else:
-                message = f'Node {short_addr} is behind {data.block_lag} blocks on chain {pre(data.client_name)}!'
+                message = f'🔴 Node {short_addr} is behind {data.block_lag} blocks on chain {pre(data.client_name)}!'
 
         return message
 

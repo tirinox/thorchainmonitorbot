@@ -312,4 +312,5 @@ class NodeChange(NamedTuple):
     type: str
     data: Any
     single_per_user: bool = False
-    node: object = Union[NodeInfo, ThorMonNode, None]
+    node: NodeInfo = None
+    thor_node: ThorMonNode = None

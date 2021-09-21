@@ -234,3 +234,9 @@ constants:
 chain_state:
   enabled: true
   fetch_period: 67s
+
+
+blockchain:  # (!) new:
+  block_time:  # block_time overriding... (optional)
+    BTC: 13m
+    ETH: 13s

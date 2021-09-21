@@ -5,7 +5,7 @@ from services.lib.cooldown import CooldownBiTrigger, INFINITE_TIME
 from services.lib.date_utils import HOUR, now_ts
 from services.lib.depcont import DepContainer
 from services.models.node_info import ChangeOnline, NodeChangeType, NodeChange
-from services.models.thormon import ThorMonNode, ThorMonNodeTimeSeries
+from services.models.thormon import ThorMonNode, ThorMonNodeTimeSeries, get_last_thormon_node_state
 from services.notify.personal.helpers import BaseChangeTracker
 from services.notify.personal.telemetry import NodeTelemetryDatabase
 
@@ -116,9 +116,15 @@ class NodeOnlineTracker(BaseChangeTracker):
                                         default=True)
 
             if offline >= DETECTION_OFFLINE_TIME and await trigger.turn_off():
-                changes.append(NodeChange(node_address, NodeChangeType.SERVICE_ONLINE, ChangeOnline(False, offline)))
+                changes.append(NodeChange(
+                    node_address, NodeChangeType.SERVICE_ONLINE, ChangeOnline(False, offline),
+                    thor_node=get_last_thormon_node_state(telemetry)
+                ))
             elif offline == 0.0 and await trigger.turn_on():
-                changes.append(NodeChange(node_address, NodeChangeType.SERVICE_ONLINE, ChangeOnline(True, 0.0)))
+                changes.append(NodeChange(
+                    node_address, NodeChangeType.SERVICE_ONLINE, ChangeOnline(True, 0.0),
+                    thor_node=get_last_thormon_node_state(telemetry)
+                ))
 
         return changes
 

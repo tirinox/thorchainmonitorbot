@@ -1,5 +1,7 @@
 from aiothornode.env import TEST_NET_ENVIRONMENT_MULTI_1, MULTICHAIN_CHAOSNET_ENVIRONMENT, ThorEnvironment
 
+from services.lib.date_utils import MINUTE
+
 BNB_BNB_SYMBOL = 'BNB.BNB'
 
 BNB_BUSD_SYMBOL = 'BNB.BUSD-BD1'
@@ -82,8 +84,7 @@ class Chains:
     BCH = 'BCH'
     LTC = 'LTC'
     BNB = 'BNB'
-    DOT = 'DOT'
-    ZIL = 'ZIL'
+    DOGE = 'DOGE'
 
     @staticmethod
     def detect_chain(address: str) -> str:
@@ -94,7 +95,22 @@ class Chains:
             return Chains.THOR
         elif address.startswith('bnb') or address.startswith('tbnb'):
             return Chains.BNB
+        elif address.startswith('D'):
+            return Chains.DOGE
         return ''
+
+    @staticmethod
+    def block_time_default(chain: str) -> float:
+        if chain == Chains.ETH:
+            return 13
+        elif chain == Chains.BTC or chain == Chains.BCH:
+            return 10 * MINUTE
+        elif chain == Chains.LTC:
+            return 2.5 * MINUTE
+        elif chain == Chains.BNB:
+            return 0.4
+        elif chain == Chains.THOR:
+            return THOR_BLOCK_TIME
 
 
 class NetworkIdents:

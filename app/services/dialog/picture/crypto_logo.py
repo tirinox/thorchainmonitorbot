@@ -34,9 +34,8 @@ class CryptoLogoDownloader:
         Chains.BTC: 'bitcoin',
         Chains.LTC: 'litecoin',
         Chains.BCH: 'bitcoincash',
-        Chains.DOT: 'polkadot',
         Chains.ETH: 'ethereum',
-        Chains.ZIL: 'zilliqa',
+        Chains.DOGE: 'doge',
     }
 
     TEST_ASSET_MAPPING = {
@@ -95,8 +94,8 @@ class CryptoLogoDownloader:
             if not os.path.exists(local_path):
                 await self._download_logo(asset)
             logo = Image.open(local_path).convert("RGBA")
-        except Exception:
+        except Exception as e:
             logo = Image.open(self.get_full_path(self.UNKNOWN_LOGO))
-            logger.error(f'error loading logo for "{asset}". using the default one...')
+            logger.error(f'error ({e}) loading logo for "{asset}". using the default one...')
         logo.thumbnail((self.LOGO_WIDTH, self.LOGO_HEIGHT))  # fixme: move thumbnail to download_logo
         return logo

@@ -81,3 +81,8 @@ class ThorMonAnswer(NamedTuple):
 
 
 ThorMonNodeTimeSeries = List[Tuple[float, ThorMonNode]]
+
+
+def get_last_thormon_node_state(data: ThorMonNodeTimeSeries) -> ThorMonNode:
+    if data:
+        return data[-1][1]

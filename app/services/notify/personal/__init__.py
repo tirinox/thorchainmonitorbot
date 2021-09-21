@@ -149,8 +149,10 @@ class NodeChangePersonalNotifier(INotified):
     @staticmethod
     def _dbg_add_mock_changes(pc_node_map: MapAddressToPrevAndCurrNode):
         return [
-            NodeChange(addr, NodeChangeType.SLASHING, (curr.slash_points, curr.slash_points + 10)) for
-            addr, (prev, curr) in pc_node_map.items()
+            NodeChange(
+                addr, NodeChangeType.SLASHING, (curr.slash_points, curr.slash_points + 10)
+            )
+            for addr, (prev, curr) in pc_node_map.items()
         ]
 
 # Changes?
