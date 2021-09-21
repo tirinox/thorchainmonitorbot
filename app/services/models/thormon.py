@@ -11,6 +11,10 @@ class ThorMonChainHeight(NamedTuple):
     def from_json(cls, j):
         return cls(chain=j.get('chain', ''), height=int(j.get('height', 0)))
 
+    @property
+    def valid(self):
+        return self.height > 0 and self.chain
+
 
 def is_ok(j, key):
     return str(j.get(key, 'BAD')) == 'OK'

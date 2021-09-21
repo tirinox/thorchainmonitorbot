@@ -59,16 +59,16 @@ class NodeOpDialog(BaseDialog):
             ]
         ]
 
+        text = self.loc.text_node_op_welcome_text_part2(watch_list, self.deps.node_op_notifier.last_signal_sec_ago)
         if with_welcome:
             await message.answer(self.loc.TEXT_NOP_INTRO_HEADING,
                                  reply_markup=ReplyKeyboardRemove(),
                                  disable_notification=True)
-            await message.answer(self.loc.text_node_op_welcome_text_part2(watch_list),
+            await message.answer(text,
                                  reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_kbd),
                                  disable_notification=True)
         else:
-            await message.edit_text(self.loc.text_node_op_welcome_text_part2(watch_list),
-                                    reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_kbd))
+            await message.edit_text(text, reply_markup=InlineKeyboardMarkup(inline_keyboard=inline_kbd))
 
     @query_handler(state=NodeOpStates.MAIN_MENU)
     async def on_main_menu_callback(self, query: CallbackQuery):

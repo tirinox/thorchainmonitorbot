@@ -421,7 +421,8 @@ class BaseLocalization(ABC):  # == English
         last_ath = p.last_ath
         if last_ath is not None and ath:
             last_ath_pr = f'{last_ath.ath_price:.2f}'
-            message += f"Last ATH was ${pre(last_ath_pr)} ({format_time_ago(last_ath.ath_date)}).\n"
+            ago_str = format_time_ago(now_ts() - last_ath.ath_date)
+            message += f"Last ATH was ${pre(last_ath_pr)} ({ago_str}).\n"
 
         time_combos = zip(
             ('1h', '24h', '7d'),
@@ -974,13 +975,21 @@ class BaseLocalization(ABC):  # == English
 
     TEXT_NOP_INTRO_HEADING = bold('Welcome to the Node Monitor tool!')
 
-    def text_node_op_welcome_text_part2(self, watch_list: dict):
+    def text_node_op_welcome_text_part2(self, watch_list: dict, last_signal_ago: float):
         text = 'It will send you personalized notifications ' \
                'when something important happens to the nodes you are monitoring.\n\n'
         if watch_list:
             text += f'You have {len(watch_list)} nodes in the watchlist.'
         else:
             text += f'You did not add anything to the watch list. Click {ital(self.BUTTON_NOP_ADD_NODES)} first 👇.'
+
+        text += f'\n\nLast signal from ThorMon was {ital(format_time_ago(last_signal_ago))} '
+        if last_signal_ago > 60:
+            text += '🔴'
+        elif last_signal_ago > 20:
+            text += '🟠'
+        else:
+            text += '🟢'
 
         return text
 
@@ -1140,3 +1149,9 @@ class BaseLocalization(ABC):  # == English
 
     INLINE_INTERNAL_ERROR_TITLE = 'Internal error!'
     INLINE_INTERNAL_ERROR_CONTENT = f'Sorry, something went wrong! Please report it to {CREATOR_TG}.'
+
+    # ---- MISC ----
+
+    def ago(self, seconds):
+        return seconds_human(seconds)
+

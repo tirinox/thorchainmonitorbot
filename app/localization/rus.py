@@ -322,7 +322,8 @@ class RussianLocalization(BaseLocalization):
                 last_ath_pr = f'{last_ath.ath_price:.2f}'
             else:
                 last_ath_pr = str(last_ath.ath_price)
-            message += f"Последний ATH был ${pre(last_ath_pr)} ({format_time_ago(last_ath.ath_date)}).\n"
+            ago_str = self.format_time_ago(now_ts() - last_ath.ath_date)
+            message += f"Последний ATH был ${pre(last_ath_pr)} ({ago_str}).\n"
 
         time_combos = zip(
             ('1ч.', '24ч.', '7дн.'),
@@ -612,7 +613,7 @@ class RussianLocalization(BaseLocalization):
                    f'{bold(new.pending_pool_count)} ожидающих активации пулов{pending_pool_changes}.\n'
 
         if new.next_pool_to_activate:
-            next_pool_wait = seconds_human(new.next_pool_activation_ts - now_ts())
+            next_pool_wait = self.seconds_human(new.next_pool_activation_ts - now_ts())
             next_pool = self.pool_link(new.next_pool_to_activate)
             message += f"Вероятно, будет активирован пул: {next_pool} через {next_pool_wait}."
         else:
@@ -834,7 +835,7 @@ class RussianLocalization(BaseLocalization):
 
     TEXT_NOP_INTRO_HEADING = bold('Добро пожаловать в Инстременты Операторов Нод.')
 
-    def text_node_op_welcome_text_part2(self, watch_list: dict):
+    def text_node_op_welcome_text_part2(self, watch_list: dict, last_signal_ago: float):
         text = 'Мы будем отправлять вам персонифицированные уведомления ' \
                'когда что-то важное случается с нодами, которые вы мониторите.\n\n'
         if watch_list:
@@ -842,6 +843,14 @@ class RussianLocalization(BaseLocalization):
         else:
             text += f'Вы не добавили еще пока ни одной ноды в список слежения. ' \
                     f'Нажмите "{ital(self.BUTTON_NOP_ADD_NODES)}" сперва 👇.'
+
+        text += f'\n\nПоследний сигнал был: {ital(self.format_time_ago(last_signal_ago))}'
+        if last_signal_ago > 60:
+            text += '🔴'
+        elif last_signal_ago > 20:
+            text += '🟠'
+        else:
+            text += '🟢'
 
         return text
 
@@ -934,22 +943,36 @@ class RussianLocalization(BaseLocalization):
                'Если пороговое время меньше типичного времени блока для какой-либо цепочки блоков, ' \
                'то оно будет увеличено до 150% от типичного времени (15 минут для BTC).'
 
+    def text_nop_success_add_banner(self, node_addresses):
+        node_addresses_text = ','.join([self.short_node_name(a) for a in node_addresses])
+        node_addresses_text = node_addresses_text[:80]  # just in case!
+        message = f'😉 Успех! {node_addresses_text} добавлены в ваш список. ' \
+                  f'Ожидайте уведомлений, если произойдет что-то важное!'
+        return message
 
-def text_nop_success_add_banner(self, node_addresses):
-    node_addresses_text = ','.join([self.short_node_name(a) for a in node_addresses])
-    node_addresses_text = node_addresses_text[:80]  # just in case!
-    message = f'😉 Успех! {node_addresses_text} добавлены в ваш список. ' \
-              f'Ожидайте уведомлений, если произойдет что-то важное!'
-    return message
+    BUTTON_NOP_CLEAR_LIST = '🗑️ Очистить все ({n})'
+    BUTTON_NOP_REMOVE_INACTIVE = '❌ Убрать неактивные ({n})'
+    BUTTON_NOP_REMOVE_DISCONNECTED = '❌ Убрать отключенные ({n})'
 
+    def text_nop_success_remove_banner(self, node_addresses):
+        node_addresses_text = ','.join([self.short_node_name(a) for a in node_addresses])
+        node_addresses_text = node_addresses_text[:120]  # just in case!
+        return f'😉 Успех! Вы убрали ноды из вашего списка слежения: ' \
+               f'{node_addresses_text} ({len(node_addresses)} всего).'
 
-BUTTON_NOP_CLEAR_LIST = '🗑️ Очистить все ({n})'
-BUTTON_NOP_REMOVE_INACTIVE = '❌ Убрать неактивные ({n})'
-BUTTON_NOP_REMOVE_DISCONNECTED = '❌ Убрать отключенные ({n})'
+    DATE_TRANSLATOR = {
+        'just now': 'прямо сейчас',
+        'never': 'никогда',
+        'sec': 'сек',
+        'min': 'мин',
+        'hour': 'час',
+        'hours': 'час',
+        'day': 'дн',
+        'days': 'дн',
+    }
 
+    def format_time_ago(self, d):
+        return format_time_ago(d, self.DATE_TRANSLATOR)
 
-def text_nop_success_remove_banner(self, node_addresses):
-    node_addresses_text = ','.join([self.short_node_name(a) for a in node_addresses])
-    node_addresses_text = node_addresses_text[:120]  # just in case!
-    return f'😉 Успех! Вы убрали ноды из вашего списка слежения: ' \
-           f'{node_addresses_text} ({len(node_addresses)} всего).'
+    def seconds_human(self, s):
+        return seconds_human(s, translate=self.DATE_TRANSLATOR)

@@ -27,6 +27,14 @@ def most_common_and_other(values: list, max_categories, other_str='Others'):
     return elements
 
 
+def most_common(values: list):
+    if not values:
+        return
+    counter = Counter(values)
+    [(v, n)] = counter.most_common(1)
+    return v
+
+
 def a_result_cached(ttl=60):
     def decorator(func):
         last_update_ts = -1.0

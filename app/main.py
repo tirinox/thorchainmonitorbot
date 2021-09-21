@@ -166,9 +166,9 @@ class App:
                 churn_detector.subscribe(notifier_version)
 
             if d.cfg.get('node_info.personal.enabled', True):
-                node_personal_notifier = NodeChangePersonalNotifier(d)
-                await node_personal_notifier.prepare()
-                churn_detector.subscribe(node_personal_notifier)
+                self.deps.node_op_notifier = NodeChangePersonalNotifier(d)
+                await self.deps.node_op_notifier.prepare()
+                churn_detector.subscribe(self.deps.node_op_notifier)
 
         if d.cfg.get('price.enabled', True):
             notifier_price = PriceNotifier(d)

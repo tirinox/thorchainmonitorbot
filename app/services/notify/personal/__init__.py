@@ -62,6 +62,8 @@ class NodeChangePersonalNotifier(INotified):
     async def _handle_thormon_message_bg_job(self, data: ThorMonAnswer):
         await self.telemetry_db.write_telemetry(data)
 
+        self.chain_height_tracker.estimate_block_height(data)
+
         changes = []
         for node in data.nodes:
             telemetry_data = await NodeTelemetryDatabase(self.deps).read_telemetry(
@@ -146,6 +148,10 @@ class NodeChangePersonalNotifier(INotified):
             ch_list = await tracker.filter_changes(ch_list, settings)
         return ch_list
 
+    @property
+    def last_signal_sec_ago(self):
+        return self.thor_mon.last_signal_sec_ago
+
     @staticmethod
     def _dbg_add_mock_changes(pc_node_map: MapAddressToPrevAndCurrNode):
         return [
@@ -154,15 +160,3 @@ class NodeChangePersonalNotifier(INotified):
             )
             for addr, (prev, curr) in pc_node_map.items()
         ]
-
-# Changes?
-#  1. (inst) version update
-#  2. (inst) new version detected, consider upgrade?
-#  3. (inst) slash point increase (over threshold)  .
-#  4. bond changes (over threshold) e.g. > 1% in hour??
-#  5. (inst) ip address change?
-#  6. (from cable) went offline/online? (time from in this status?)
-#  8. block height is not increasing
-#  9. block height is not increasing on CHAIN?!
-#  10. (inst) your node churned in / out
-#  11. account txs (comes from native TX scanner (to implement))
