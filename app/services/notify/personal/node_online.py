@@ -4,7 +4,7 @@ from typing import List, NamedTuple, Tuple
 from services.lib.cooldown import CooldownBiTrigger, INFINITE_TIME
 from services.lib.date_utils import HOUR, now_ts
 from services.lib.depcont import DepContainer
-from services.models.node_info import ChangeOnline, NodeChangeType, NodeChange
+from services.models.node_info import EventNodeOnline, NodeEventType, NodeEvent
 from services.models.thormon import ThorMonNode, ThorMonNodeTimeSeries, get_last_thormon_node_state
 from services.notify.personal.helpers import BaseChangeTracker
 from services.notify.personal.telemetry import NodeTelemetryDatabase
@@ -98,7 +98,7 @@ class NodeOnlineTracker(BaseChangeTracker):
             thor=ServiceOnlineProfile.from_thormon_nodes(telemetry, 'thor'),
         )
 
-    async def get_node_changes(self, node_address, telemetry: ThorMonNodeTimeSeries):
+    async def get_node_events(self, node_address, telemetry: ThorMonNodeTimeSeries):
         if not node_address:
             return []
 
@@ -116,17 +116,17 @@ class NodeOnlineTracker(BaseChangeTracker):
                                         default=True)
 
             if offline >= DETECTION_OFFLINE_TIME and await trigger.turn_off():
-                changes.append(NodeChange(
-                    node_address, NodeChangeType.SERVICE_ONLINE, ChangeOnline(False, offline),
+                changes.append(NodeEvent(
+                    node_address, NodeEventType.SERVICE_ONLINE, EventNodeOnline(False, offline),
                     thor_node=get_last_thormon_node_state(telemetry)
                 ))
             elif offline == 0.0 and await trigger.turn_on():
-                changes.append(NodeChange(
-                    node_address, NodeChangeType.SERVICE_ONLINE, ChangeOnline(True, 0.0),
+                changes.append(NodeEvent(
+                    node_address, NodeEventType.SERVICE_ONLINE, EventNodeOnline(True, 0.0),
                     thor_node=get_last_thormon_node_state(telemetry)
                 ))
 
         return changes
 
-    async def filter_changes(self, ch_list: List[NodeChange], settings: dict) -> List[NodeChange]:
-        return await super().filter_changes(ch_list, settings)
+    async def filter_events(self, ch_list: List[NodeEvent], settings: dict) -> List[NodeEvent]:
+        return await super().filter_events(ch_list, settings)

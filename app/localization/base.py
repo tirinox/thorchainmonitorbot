@@ -17,8 +17,8 @@ from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, i
     up_down_arrow, bracketify, plural, grouper, join_as_numbered_list
 from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
-from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeChangeType, NodeChange, \
-    ChangeBlockHeight
+from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEventType, NodeEvent, \
+    EventBlockHeight
 from services.models.pool_info import PoolInfo, PoolChanges
 from services.models.price import PriceReport
 from services.models.queue import QueueInfo
@@ -1089,6 +1089,12 @@ class BaseLocalization(ABC):  # == English
     BUTTON_NOP_30MIN = '30 min'
     BUTTON_NOP_60MIN = '60 min'
 
+    BUTTON_NOP_2H = '2 h'
+    BUTTON_NOP_6H = '6 h'
+    BUTTON_NOP_12H = '12 h'
+    BUTTON_NOP_24H = '24 h'
+    BUTTON_NOP_3D = '3 days'
+
     TEXT_NOP_SLASH_THRESHOLD = 'Please select a threshold for slash point ' \
                                'alerts in slash points (recommended around 5 - 10):'
 
@@ -1110,33 +1116,33 @@ class BaseLocalization(ABC):  # == English
         short_addr = pre(address[-4:]) if len(address) >= 4 else 'UNKNOWN'
         return link(get_explorer_url_for_node(address), short_addr)
 
-    def notification_text_for_node_op_changes(self, c: NodeChange):
+    def notification_text_for_node_op_changes(self, c: NodeEvent):
         # todo! make it good-looking
         message = ''
         short_addr = self.node_link(c.address)
-        if c.type == NodeChangeType.SLASHING:
+        if c.type == NodeEventType.SLASHING:
             old, new = c.data
             message = f'🟨 Node {short_addr} got slashed for {bold(new - old)} pts (now <i>{new}</i> slash pts)!'
-        elif c.type == NodeChangeType.VERSION_CHANGED:
+        elif c.type == NodeEventType.VERSION_CHANGED:
             old, new = c.data
             message = f'🆙 Node {short_addr} version upgrade from {ital(old)} to {bold(new)}!'
-        elif c.type == NodeChangeType.NEW_VERSION_DETECTED:
+        elif c.type == NodeEventType.NEW_VERSION_DETECTED:
             message = f'🆕 New version detected! {bold(c.data)}! Consider upgrading!'
-        elif c.type == NodeChangeType.IP_ADDRESS_CHANGED:
+        elif c.type == NodeEventType.IP_ADDRESS_CHANGED:
             old, new = c.data
             message = f'🏤 Node {short_addr} changed its IP address from {ital(old)} to {bold(new)}!'
-        elif c.type == NodeChangeType.SERVICE_ONLINE:
+        elif c.type == NodeEventType.SERVICE_ONLINE:
             online, duration = c.data
             if online:
                 message = f'✅ Node {short_addr} went <b>online</b>!'
             else:
                 message = f'🔴 Node {short_addr} went <b>offline</b> (already for {int(duration)} sec)!'
-        elif c.type == NodeChangeType.CHURNING:
+        elif c.type == NodeEventType.CHURNING:
             verb = 'churned in ⬅️' if c.data else 'churned out ➡️'
             bond = c.node.bond
             message = f'🌐 Node {short_addr} ({short_money(bond)} {RAIDO_GLYPH} bond) {bold(verb)}!'
-        elif c.type == NodeChangeType.BLOCK_HEIGHT:
-            data: ChangeBlockHeight = c.data
+        elif c.type == NodeEventType.BLOCK_HEIGHT:
+            data: EventBlockHeight = c.data
             if data.restored:
                 message = f'✅ Node {short_addr} caught up blocks for {pre(data.client_name)}.'
             else:

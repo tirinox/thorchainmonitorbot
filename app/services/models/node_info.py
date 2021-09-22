@@ -272,13 +272,15 @@ class ChangeOldNew(NamedTuple):
     new: object
 
 
-class ChangeOnline(NamedTuple):
+class EventNodeOnline(NamedTuple):
     online: bool
     duration: float
 
 
-class ChangeBlockHeight(NamedTuple):
-    client_name: str
+class EventBlockHeight(NamedTuple):
+    chain: str
+    expected_block: int = 0
+    actual_block: int = 0
     block_lag: int = 0
     how_long_behind: float = 0.0
     restored: bool = False
@@ -296,7 +298,7 @@ STANDARD_INTERVALS = [
 ]
 
 
-class NodeChangeType:
+class NodeEventType:
     VERSION_CHANGED = 'version_change'
     NEW_VERSION_DETECTED = 'new_version'
     SLASHING = 'slashing'
@@ -307,7 +309,7 @@ class NodeChangeType:
     BLOCK_HEIGHT = 'block_height'
 
 
-class NodeChange(NamedTuple):
+class NodeEvent(NamedTuple):
     address: str
     type: str
     data: Any

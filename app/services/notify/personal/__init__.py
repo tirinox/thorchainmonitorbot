@@ -12,7 +12,7 @@ from services.models.thormon import ThorMonAnswer
 from services.lib.depcont import DepContainer
 from services.lib.texts import grouper
 from services.lib.utils import class_logger
-from services.models.node_info import NodeSetChanges, MapAddressToPrevAndCurrNode, NodeChangeType, NodeChange
+from services.models.node_info import NodeSetChanges, MapAddressToPrevAndCurrNode, NodeEventType, NodeEvent
 from services.models.node_watchers import NodeWatcherStorage
 from services.notify.personal.bond import BondTracker
 from services.notify.personal.chain_height import ChainHeightTracker
@@ -70,9 +70,9 @@ class NodeChangePersonalNotifier(INotified):
                 node.node_address, max_ago_sec=TELEMETRY_MAX_HISTORY_DURATION,
                 tolerance=TELEMETRY_TOLERANCE, n_points=TELEMETRY_MAX_POINTS
             )
-            changes += await self.online_tracker.get_node_changes(node.node_address, telemetry_data)
-            changes += await self.chain_height_tracker.get_node_changes(node.node_address, telemetry_data)
-            changes += await self.slash_tracker.get_node_changes(node.node_address, telemetry_data)
+            changes += await self.online_tracker.get_node_events(node.node_address, telemetry_data)
+            changes += await self.chain_height_tracker.get_node_events(node.node_address, telemetry_data)
+            changes += await self.slash_tracker.get_node_events(node.node_address, telemetry_data)
         await self._cast_messages_for_changes(changes)
 
     async def _handle_node_churn_bg_job(self, node_set_change: NodeSetChanges):
@@ -88,7 +88,7 @@ class NodeChangePersonalNotifier(INotified):
 
         await self._cast_messages_for_changes(changes)
 
-    async def _cast_messages_for_changes(self, changes: List[NodeChange]):
+    async def _cast_messages_for_changes(self, changes: List[NodeEvent]):
         if not changes:
             return
 
@@ -120,7 +120,7 @@ class NodeChangePersonalNotifier(INotified):
             settings = await self.watchers.get_user_settings(user)
 
             # filter changes according to the user's setting
-            filtered_change_list = await self._filter_changes(ch_list, settings)
+            filtered_change_list = await self._filter_events(ch_list, settings)
 
             groups = list(grouper(MAX_CHANGES_PER_MESSAGE, filtered_change_list))  # split to several messages
 
@@ -133,7 +133,7 @@ class NodeChangePersonalNotifier(INotified):
                 if text:
                     asyncio.create_task(self.deps.broadcaster.safe_send_message(user, text))
 
-    async def _filter_changes(self, ch_list: List[NodeChange], settings: dict) -> List[NodeChange]:
+    async def _filter_events(self, ch_list: List[NodeEvent], settings: dict) -> List[NodeEvent]:
         trackers = (
             self.online_tracker,
             self.chain_height_tracker,
@@ -145,7 +145,7 @@ class NodeChangePersonalNotifier(INotified):
         )
         for tracker in trackers:
             tracker: BaseChangeTracker
-            ch_list = await tracker.filter_changes(ch_list, settings)
+            ch_list = await tracker.filter_events(ch_list, settings)
         return ch_list
 
     @property
@@ -155,8 +155,8 @@ class NodeChangePersonalNotifier(INotified):
     @staticmethod
     def _dbg_add_mock_changes(pc_node_map: MapAddressToPrevAndCurrNode):
         return [
-            NodeChange(
-                addr, NodeChangeType.SLASHING, (curr.slash_points, curr.slash_points + 10)
+            NodeEvent(
+                addr, NodeEventType.SLASHING, (curr.slash_points, curr.slash_points + 10)
             )
             for addr, (prev, curr) in pc_node_map.items()
         ]

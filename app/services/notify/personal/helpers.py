@@ -1,7 +1,7 @@
 from typing import List, Any, Tuple
 
 from services.lib.date_utils import now_ts
-from services.models.node_info import NodeChange
+from services.models.node_info import NodeEvent
 
 
 class NodeOpSetting:
@@ -18,7 +18,7 @@ class NodeOpSetting:
 
 
 class BaseChangeTracker:
-    async def filter_changes(self, ch_list: List[NodeChange], settings: dict) -> List[NodeChange]:
+    async def filter_events(self, ch_list: List[NodeEvent], settings: dict) -> List[NodeEvent]:
         return ch_list
 
 

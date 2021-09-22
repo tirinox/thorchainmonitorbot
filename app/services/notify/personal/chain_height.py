@@ -5,8 +5,8 @@ from services.lib.constants import Chains
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.utils import most_common
-from services.models.node_info import NodeChange
-from services.models.thormon import ThorMonNodeTimeSeries, ThorMonAnswer
+from services.models.node_info import NodeEvent, NodeEventType
+from services.models.thormon import ThorMonNodeTimeSeries, ThorMonAnswer, get_last_thormon_node_state
 from services.notify.personal.helpers import BaseChangeTracker
 
 TRIGGER_SWITCH_CD = 30.0  # sec
@@ -30,20 +30,29 @@ class ChainHeightTracker(BaseChangeTracker):
     def estimate_block_height(self, data: ThorMonAnswer):
         chain_block_height = defaultdict(list)
         for node in data.nodes:
-            for chain_info in node.observe_chains:
+            for name, chain_info in node.observe_chains.items():
                 if chain_info.valid:
-                    chain_block_height[chain_info.chain].append(chain_info.height)
+                    chain_block_height[name].append(chain_info.height)
             # chain_block_height[Chains.THOR].append(node.active_block_height) # todo!
 
         self.recent_max_blocks = {chain: most_common(height_list) for chain, height_list in chain_block_height.items()}
 
-    async def get_node_changes(self, node_address, telemetry: ThorMonNodeTimeSeries):
-        if not node_address:
+    async def get_node_events(self, node_address, telemetry: ThorMonNodeTimeSeries):
+        if not node_address or not telemetry:
             return []
 
-        changes = []
+        events = []
+        last_point = get_last_thormon_node_state(telemetry)
+        
+        for chain, expected_block_height in self.recent_max_blocks.items():
+            actual_block_height = last_point.observe_chains.get(chain, 0)
+            if actual_block_height < expected_block_height:
+                events.append(NodeEvent(
+                    node_address, NodeEventType.BLOCK_HEIGHT, (chain, actual_block_height, expected_block_height)
+                ))
 
-        return changes
 
-    async def filter_changes(self, ch_list: List[NodeChange], settings: dict) -> List[NodeChange]:
-        return await super().filter_changes(ch_list, settings)
+        return events
+
+    async def filter_events(self, ch_list: List[NodeEvent], settings: dict) -> List[NodeEvent]:
+        return await super().filter_events(ch_list, settings)

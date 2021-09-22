@@ -1,4 +1,4 @@
-from typing import NamedTuple, List, Tuple
+from typing import NamedTuple, List, Tuple, Dict
 
 from services.lib.constants import thor_to_float
 
@@ -28,7 +28,7 @@ class ThorMonNode(NamedTuple):
     slash_points: int
     version: str
     status: str
-    observe_chains: List[ThorMonChainHeight]
+    observe_chains: Dict[str, ThorMonChainHeight]
     requested_to_leave: bool
     forced_to_leave: bool
     leave_height: int
@@ -44,6 +44,7 @@ class ThorMonNode(NamedTuple):
     def from_json(cls, j):
         raw_chains = j.get('observe_chains') or []
         chains = [ThorMonChainHeight.from_json(o) for o in raw_chains]
+        chain_dict = {c.chain: c for c in chains}
         return cls(
             node_address=j.get('node_address', ''),
             ip_address=j.get('ip_address', ''),
@@ -52,7 +53,7 @@ class ThorMonNode(NamedTuple):
             slash_points=int(j.get('slash_points', 0)),
             version=j.get('version', '0.0.0'),
             status=j.get('status', 'Standby'),
-            observe_chains=chains,
+            observe_chains=chain_dict,
             requested_to_leave=bool(j.get('requested_to_leave')),
             forced_to_leave=bool(j.get('forced_to_leave')),
             leave_height=int(j.get('leave_height', 0)),

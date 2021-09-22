@@ -15,7 +15,7 @@ from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, 
     up_down_arrow, plural, grouper
 from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
-from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus
+from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEvent
 from services.models.pool_info import PoolInfo, PoolChanges
 from services.models.price import PriceReport
 from services.models.queue import QueueInfo
@@ -930,6 +930,12 @@ class RussianLocalization(BaseLocalization):
     BUTTON_NOP_30MIN = '30 мин.'
     BUTTON_NOP_60MIN = '60 мин.'
 
+    BUTTON_NOP_2H = '2 ч'
+    BUTTON_NOP_6H = '6 ч'
+    BUTTON_NOP_12H = '12 ч'
+    BUTTON_NOP_24H = '24 ч'
+    BUTTON_NOP_3D = '3 дн'
+
     TEXT_NOP_SLASH_THRESHOLD = 'Выберете порог для сообщений о ' \
                                'штрафных очках (рекомендуем в районе 5 - 10):'
 
@@ -961,6 +967,10 @@ class RussianLocalization(BaseLocalization):
         node_addresses_text = node_addresses_text[:120]  # just in case!
         return f'😉 Успех! Вы убрали ноды из вашего списка слежения: ' \
                f'{node_addresses_text} ({len(node_addresses)} всего).'
+
+    def notification_text_for_node_op_changes(self, c: NodeEvent):
+        # todo!
+        return super().notification_text_for_node_op_changes(c)
 
     DATE_TRANSLATOR = {
         'just now': 'прямо сейчас',

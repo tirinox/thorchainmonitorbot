@@ -1,7 +1,7 @@
 from typing import List
 
 from services.lib.depcont import DepContainer
-from services.models.node_info import MapAddressToPrevAndCurrNode, NodeChangeType, NodeChange, STANDARD_INTERVALS, \
+from services.models.node_info import NodeEvent, STANDARD_INTERVALS, \
     ChangeVariation
 from services.models.thormon import ThorMonNodeTimeSeries
 from services.notify.personal.helpers import BaseChangeTracker, get_points_at_time_points
@@ -25,7 +25,8 @@ class SlashPointTracker(BaseChangeTracker):
         last_point = telemetry[-1][1]
         return ChangeVariation(last_point.slash_points, previous_values=node_states)
 
-    async def get_node_changes(self, node_address, telemetry: ThorMonNodeTimeSeries) -> List[NodeChange]:
+    async def get_node_events(self, node_address, telemetry: ThorMonNodeTimeSeries) -> List[NodeEvent]:
+        # todo
         node_states = get_points_at_time_points(telemetry, STANDARD_INTERVALS)
         return []
 
@@ -41,5 +42,5 @@ class SlashPointTracker(BaseChangeTracker):
     #             )
     #     return changes
 
-    async def filter_changes(self, ch_list: List[NodeChange], settings: dict) -> List[NodeChange]:
-        return await super().filter_changes(ch_list, settings)
+    async def filter_events(self, ch_list: List[NodeEvent], settings: dict) -> List[NodeEvent]:
+        return await super().filter_events(ch_list, settings)

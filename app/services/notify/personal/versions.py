@@ -1,7 +1,7 @@
 from typing import List
 
 from services.lib.depcont import DepContainer
-from services.models.node_info import MapAddressToPrevAndCurrNode, NodeSetChanges, NodeChangeType, NodeChange
+from services.models.node_info import MapAddressToPrevAndCurrNode, NodeSetChanges, NodeEventType, NodeEvent
 from services.notify.personal.helpers import BaseChangeTracker
 from services.notify.types.version_notify import KnownVersionStorage
 
@@ -11,7 +11,7 @@ class VersionTracker(BaseChangeTracker):
         self.deps = deps
         self.version_store = KnownVersionStorage(deps, context_name='personal')
 
-    async def get_all_changes(self, node_set_change: NodeSetChanges) -> List[NodeChange]:
+    async def get_all_changes(self, node_set_change: NodeSetChanges) -> List[NodeEvent]:
         changes = []
         changes += self._changes_of_version(node_set_change.prev_and_curr_node_map)
         changes += await self._changes_of_detected_new_version(node_set_change)
@@ -21,8 +21,8 @@ class VersionTracker(BaseChangeTracker):
     def _changes_of_version(pc_node_map: MapAddressToPrevAndCurrNode):
         for a, (prev, curr) in pc_node_map.items():
             if prev.version != curr.version:
-                yield NodeChange(
-                    prev.node_address, NodeChangeType.VERSION_CHANGED,
+                yield NodeEvent(
+                    prev.node_address, NodeEventType.VERSION_CHANGED,
                     (prev.version, curr.version),
                     node=curr
                 )
@@ -42,13 +42,13 @@ class VersionTracker(BaseChangeTracker):
         changes = []
         for node in c.nodes_all:
             if node.parsed_version < new_version:
-                changes.append(NodeChange(
+                changes.append(NodeEvent(
                     node.node_address,
-                    NodeChangeType.NEW_VERSION_DETECTED,
+                    NodeEventType.NEW_VERSION_DETECTED,
                     new_version, single_per_user=True,
                     node=node
                 ))
         return changes
 
-    async def filter_changes(self, ch_list: List[NodeChange], settings: dict) -> List[NodeChange]:
-        return await super().filter_changes(ch_list, settings)
+    async def filter_events(self, ch_list: List[NodeEvent], settings: dict) -> List[NodeEvent]:
+        return await super().filter_events(ch_list, settings)
