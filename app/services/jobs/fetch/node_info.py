@@ -29,6 +29,9 @@ class NodeInfoFetcher(BaseFetcher):
                 new_nodes.append(NodeInfo.from_json(j))
 
         new_nodes.sort(key=lambda k: (k.status, -k.bond))
+
+        # new_nodes = self._test_churn(new_nodes)  # fixme: debug
+
         return new_nodes
 
     async def fetch(self) -> List[NodeInfo]:
@@ -40,6 +43,8 @@ class NodeInfoFetcher(BaseFetcher):
         This is for debug purposes
         """
         new_nodes = list(new_nodes)
+
+        new_nodes[0].version = '0.68.6'  # version fun?
 
         def random_node(nodes):
             return nodes[random.randint(0, len(nodes))]

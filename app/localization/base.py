@@ -1134,7 +1134,7 @@ class BaseLocalization(ABC):  # == English
         elif c.type == NodeChangeType.CHURNING:
             verb = 'churned in ⬅️' if c.data else 'churned out ➡️'
             bond = c.node.bond
-            message = f'🌐 Node {short_addr} ({short_money(bond, localization=self)} {RAIDO_GLYPH} bond) {bold(verb)}!'
+            message = f'🌐 Node {short_addr} ({short_money(bond)} {RAIDO_GLYPH} bond) {bold(verb)}!'
         elif c.type == NodeChangeType.BLOCK_HEIGHT:
             data: ChangeBlockHeight = c.data
             if data.restored:

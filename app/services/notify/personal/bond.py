@@ -16,7 +16,8 @@ class BondTracker(BaseChangeTracker):
     def _changes_of_bond(pc_node_map: MapAddressToPrevAndCurrNode):
         for a, (prev, curr) in pc_node_map.items():
             if prev.bond != curr.bond:
-                yield NodeChange(prev.node_address, NodeChangeType.BOND, (prev.bond, curr.bond))
+                yield NodeChange(prev.node_address, NodeChangeType.BOND, (prev.bond, curr.bond),
+                                 node=curr)
 
     async def filter_changes(self, ch_list: List[NodeChange], settings: dict) -> List[NodeChange]:
         return await super().filter_changes(ch_list, settings)

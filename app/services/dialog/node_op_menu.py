@@ -156,7 +156,7 @@ class NodeOpDialog(BaseDialog):
         await self.storage(user_id).add_user_to_node_list(node_list)
         await query.answer(self.loc.text_nop_success_add_banner(node_list))
         if go_back:
-            await self.show_main_menu(query.message)
+            await self.show_main_menu(query.message, with_welcome=False)
 
     # -------- MANAGE ---------
 

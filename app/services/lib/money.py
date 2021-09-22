@@ -103,6 +103,9 @@ def pretty_percent(x, limit_abs=1e7, limit_text='N/A %', signed=True):
 
 
 def short_money(x, prefix='', postfix='', localization=None):
+    if hasattr(localization, 'SHORT_MONEY_LOC'):
+        localization = localization.SHORT_MONEY_LOC
+
     localization = localization or {}
     key = ''
 
@@ -126,7 +129,7 @@ def short_money(x, prefix='', postfix='', localization=None):
         x /= 1_000_000_000_000
         key = 'T'
 
-    letter = localization.get(key, key)
+    letter = localization.get(key, key) if localization else key
     result = f'{x:.1f}{letter}'
     return prefix + result + postfix
 

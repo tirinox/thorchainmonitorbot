@@ -5,10 +5,9 @@ from services.lib.constants import Chains
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.utils import most_common
-from services.models.thormon import ThorMonNodeTimeSeries, ThorMonAnswer
-from services.notify.personal.telemetry import NodeTelemetryDatabase
-from services.notify.personal.helpers import BaseChangeTracker
 from services.models.node_info import NodeChange
+from services.models.thormon import ThorMonNodeTimeSeries, ThorMonAnswer
+from services.notify.personal.helpers import BaseChangeTracker
 
 TRIGGER_SWITCH_CD = 30.0  # sec
 
@@ -34,6 +33,7 @@ class ChainHeightTracker(BaseChangeTracker):
             for chain_info in node.observe_chains:
                 if chain_info.valid:
                     chain_block_height[chain_info.chain].append(chain_info.height)
+            # chain_block_height[Chains.THOR].append(node.active_block_height) # todo!
 
         self.recent_max_blocks = {chain: most_common(height_list) for chain, height_list in chain_block_height.items()}
 
