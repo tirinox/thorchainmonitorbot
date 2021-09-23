@@ -3,12 +3,12 @@ from typing import List
 
 from services.lib.constants import Chains
 from services.lib.cooldown import CooldownBiTrigger, INFINITE_TIME
-from services.lib.date_utils import parse_timespan_to_seconds
+from services.lib.date_utils import parse_timespan_to_seconds, HOUR
 from services.lib.depcont import DepContainer
 from services.lib.utils import most_common
 from services.models.node_info import NodeEvent, NodeEventType, EventBlockHeight
 from services.models.thormon import ThorMonNodeTimeSeries, ThorMonAnswer, get_last_thormon_node_state
-from services.notify.personal.helpers import BaseChangeTracker
+from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
 
 
 class ChainHeightTracker(BaseChangeTracker):
@@ -72,4 +72,11 @@ class ChainHeightTracker(BaseChangeTracker):
         return events
 
     async def is_event_ok(self, event: NodeEvent, settings: dict) -> bool:
-        return await super().is_event_ok(event, settings)
+        if not bool(settings.get(NodeOpSetting.CHAIN_HEIGHT_ON, True)):
+            return False
+
+        if event.type == NodeEventType.BLOCK_HEIGHT_STUCK:
+            threshold_interval = float(settings.get(NodeOpSetting.CHAIN_HEIGHT_INTERVAL, HOUR))
+            return event.data.how_long_behind >= threshold_interval
+        else:
+            return True

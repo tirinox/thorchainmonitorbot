@@ -2,7 +2,7 @@ from typing import List
 
 from services.lib.depcont import DepContainer
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeEventType, NodeEvent
-from services.notify.personal.helpers import BaseChangeTracker
+from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
 
 
 class NodeChurnTracker(BaseChangeTracker):
@@ -23,4 +23,4 @@ class NodeChurnTracker(BaseChangeTracker):
         ]
 
     async def is_event_ok(self, event: NodeEvent, settings: dict) -> bool:
-        return await super().is_event_ok(event, settings)
+        return bool(settings.get(NodeOpSetting.CHURNING_ON, True))

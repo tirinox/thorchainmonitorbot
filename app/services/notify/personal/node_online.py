@@ -6,7 +6,7 @@ from services.lib.date_utils import HOUR, now_ts
 from services.lib.depcont import DepContainer
 from services.models.node_info import EventNodeOnline, NodeEventType, NodeEvent
 from services.models.thormon import ThorMonNode, ThorMonNodeTimeSeries, get_last_thormon_node_state
-from services.notify.personal.helpers import BaseChangeTracker
+from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
 from services.notify.personal.telemetry import NodeTelemetryDatabase
 
 MAX_HISTORY_DURATION = HOUR
@@ -129,4 +129,5 @@ class NodeOnlineTracker(BaseChangeTracker):
         return changes
 
     async def is_event_ok(self, event: NodeEvent, settings: dict) -> bool:
-        return await super().is_event_ok(event, settings)
+        # todo! todo
+        return bool(settings.get(NodeOpSetting.OFFLINE_ON, True))

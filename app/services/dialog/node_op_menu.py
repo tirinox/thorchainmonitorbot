@@ -6,7 +6,7 @@ from aiogram.utils.helper import HelperMode
 
 from services.dialog.base import BaseDialog, message_handler, query_handler
 from services.jobs.node_churn import NodeStateDatabase
-from services.lib.date_utils import MINUTE, parse_timespan_to_seconds
+from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.telegram import TelegramInlineList
 from services.lib.texts import join_as_numbered_list
 from services.lib.utils import parse_list_from_string, fuzzy_search
@@ -31,6 +31,7 @@ class NodeOpStates(StatesGroup):
     SETT_OFFLINE_ENABLED = State()
     SETT_HEIGHT_ENABLED = State()
     SETT_HEIGHT_LAG_TIME = State()
+    SETT_IP_ADDRESS = State()
 
 
 class NodeOpDialog(BaseDialog):
@@ -240,16 +241,17 @@ class NodeOpDialog(BaseDialog):
         await query.message.edit_text(loc.TEXT_NOP_SETTINGS_TITLE, reply_markup=InlineKeyboardMarkup(
             inline_keyboard=[
                 [
-                    self.alert_setting_button(loc.BUTTON_NOP_SETT_SLASHING, NodeOpSetting.SLASH),
+                    self.alert_setting_button(loc.BUTTON_NOP_SETT_SLASHING, NodeOpSetting.SLASH_ON),
                     self.alert_setting_button(loc.BUTTON_NOP_SETT_VERSION,
-                                              (NodeOpSetting.VERSION, NodeOpSetting.NEW_VERSION),
+                                              (NodeOpSetting.VERSION_ON, NodeOpSetting.NEW_VERSION_ON),
                                               data='setting:version'),
-                    self.alert_setting_button(loc.BUTTON_NOP_SETT_OFFLINE, NodeOpSetting.OFFLINE),
+                    self.alert_setting_button(loc.BUTTON_NOP_SETT_OFFLINE, NodeOpSetting.OFFLINE_ON),
                 ],
                 [
-                    self.alert_setting_button(loc.BUTTON_NOP_SETT_CHURNING, NodeOpSetting.CHURNING),
-                    self.alert_setting_button(loc.BUTTON_NOP_SETT_BOND, NodeOpSetting.BOND),
-                    self.alert_setting_button(loc.BUTTON_NOP_SETT_HEIGHT, NodeOpSetting.CHAIN_HEIGHT),
+                    self.alert_setting_button(loc.BUTTON_NOP_SETT_CHURNING, NodeOpSetting.CHURNING_ON),
+                    self.alert_setting_button(loc.BUTTON_NOP_SETT_BOND, NodeOpSetting.BOND_ON),
+                    self.alert_setting_button(loc.BUTTON_NOP_SETT_HEIGHT, NodeOpSetting.CHAIN_HEIGHT_ON),
+                    self.alert_setting_button(loc.BUTTON_NOP_SETT_IP_ADDR, NodeOpSetting.IP_ADDRESS_ON),
                 ],
                 [
                     InlineKeyboardButton(self.loc.BUTTON_BACK, callback_data='setting:back')
@@ -261,24 +263,26 @@ class NodeOpDialog(BaseDialog):
     async def on_setting_callback(self, query: CallbackQuery):
         if query.data == 'setting:back':
             await self.show_main_menu(query.message, with_welcome=False)
-        elif query.data == NodeOpSetting.SLASH:
+        elif query.data == NodeOpSetting.SLASH_ON:
             await self.ask_slash_enabled(query)
         elif query.data == 'setting:version':
             await self.ask_new_version_enabled(query)
-        elif query.data == NodeOpSetting.BOND:
+        elif query.data == NodeOpSetting.BOND_ON:
             await self.ask_bond_enabled(query)
-        elif query.data == NodeOpSetting.OFFLINE:
+        elif query.data == NodeOpSetting.OFFLINE_ON:
             await self.ask_offline_enabled(query)
-        elif query.data == NodeOpSetting.CHAIN_HEIGHT:
+        elif query.data == NodeOpSetting.CHAIN_HEIGHT_ON:
             await self.ask_chain_height_enabled(query)
-        elif query.data == NodeOpSetting.CHURNING:
+        elif query.data == NodeOpSetting.CHURNING_ON:
             await self.ask_churning_enabled(query)
+        elif query.data == NodeOpSetting.IP_ADDRESS_ON:
+            await self.ask_ip_address_tracker_enabled(query)
         await query.answer()
 
     # -------- SETTINGS : SLASH ---------
 
     async def ask_slash_enabled(self, query: CallbackQuery):
-        is_on = self.is_alert_on(NodeOpSetting.SLASH)
+        is_on = self.is_alert_on(NodeOpSetting.SLASH_ON)
         await self.ask_something_enabled(query, NodeOpStates.SETT_SLASH_ENABLED,
                                          self.loc.text_nop_slash_enabled(is_on),
                                          is_on)
@@ -286,7 +290,7 @@ class NodeOpDialog(BaseDialog):
     @query_handler(state=NodeOpStates.SETT_SLASH_ENABLED)
     async def slash_enabled_answer_query(self, query: CallbackQuery):
         await self.handle_query_for_something_on(query,
-                                                 NodeOpSetting.SLASH,
+                                                 NodeOpSetting.SLASH_ON,
                                                  self.ask_slash_threshold,
                                                  self.on_settings_menu)
 
@@ -365,7 +369,7 @@ class NodeOpDialog(BaseDialog):
     # -------- SETTINGS : VERSION ---------
 
     async def ask_new_version_enabled(self, query: CallbackQuery):
-        is_on = self.is_alert_on(NodeOpSetting.NEW_VERSION)
+        is_on = self.is_alert_on(NodeOpSetting.NEW_VERSION_ON)
         await self.ask_something_enabled(query, NodeOpStates.SETT_NEW_VERSION_ENABLED,
                                          self.loc.text_nop_new_version_enabled(is_on),
                                          is_on)
@@ -373,12 +377,12 @@ class NodeOpDialog(BaseDialog):
     @query_handler(state=NodeOpStates.SETT_NEW_VERSION_ENABLED)
     async def new_version_query_handle(self, query: CallbackQuery):
         await self.handle_query_for_something_on(query,
-                                                 NodeOpSetting.NEW_VERSION,
+                                                 NodeOpSetting.NEW_VERSION_ON,
                                                  self.ask_version_up_enabled,
                                                  self.ask_version_up_enabled)
 
     async def ask_version_up_enabled(self, query: CallbackQuery):
-        is_on = self.is_alert_on(NodeOpSetting.VERSION)
+        is_on = self.is_alert_on(NodeOpSetting.VERSION_ON)
         await self.ask_something_enabled(query,
                                          NodeOpStates.SETT_UPDATE_VERSION_ENABLED,
                                          self.loc.text_nop_version_up_enabled(is_on),
@@ -387,14 +391,14 @@ class NodeOpDialog(BaseDialog):
     @query_handler(state=NodeOpStates.SETT_UPDATE_VERSION_ENABLED)
     async def version_up_query_handle(self, query: CallbackQuery):
         await self.handle_query_for_something_on(query,
-                                                 NodeOpSetting.VERSION,
+                                                 NodeOpSetting.VERSION_ON,
                                                  self.on_settings_menu,
                                                  self.on_settings_menu)
 
     # -------- SETTINGS : BOND ---------
 
     async def ask_bond_enabled(self, query: CallbackQuery):
-        is_on = self.is_alert_on(NodeOpSetting.BOND)
+        is_on = self.is_alert_on(NodeOpSetting.BOND_ON)
         await self.ask_something_enabled(query, NodeOpStates.SETT_BOND_ENABLED,
                                          self.loc.text_nop_bond_is_enabled(is_on),
                                          is_on)
@@ -402,14 +406,14 @@ class NodeOpDialog(BaseDialog):
     @query_handler(state=NodeOpStates.SETT_BOND_ENABLED)
     async def bond_enabled_query_handle(self, query: CallbackQuery):
         await self.handle_query_for_something_on(query,
-                                                 NodeOpSetting.BOND,
+                                                 NodeOpSetting.BOND_ON,
                                                  self.on_settings_menu,
                                                  self.on_settings_menu)
 
     # -------- SETTINGS : OFFLINE ---------
 
     async def ask_offline_enabled(self, query: CallbackQuery):
-        is_on = self.is_alert_on(NodeOpSetting.OFFLINE)
+        is_on = self.is_alert_on(NodeOpSetting.OFFLINE_ON)
         await self.ask_something_enabled(query, NodeOpStates.SETT_OFFLINE_ENABLED,
                                          self.loc.text_nop_offline_enabled(is_on),
                                          is_on)
@@ -417,14 +421,14 @@ class NodeOpDialog(BaseDialog):
     @query_handler(state=NodeOpStates.SETT_OFFLINE_ENABLED)
     async def offline_enabled_query_handle(self, query: CallbackQuery):
         await self.handle_query_for_something_on(query,
-                                                 NodeOpSetting.OFFLINE,
+                                                 NodeOpSetting.OFFLINE_ON,
                                                  self.on_settings_menu,
                                                  self.on_settings_menu)
 
     # -------- SETTINGS : CHAIN HEIGHT ---------
 
     async def ask_chain_height_enabled(self, query: CallbackQuery):
-        is_on = self.is_alert_on(NodeOpSetting.CHAIN_HEIGHT)
+        is_on = self.is_alert_on(NodeOpSetting.CHAIN_HEIGHT_ON)
         await self.ask_something_enabled(query, NodeOpStates.SETT_HEIGHT_ENABLED,
                                          self.loc.text_nop_chain_height_enabled(is_on),
                                          is_on)
@@ -432,7 +436,7 @@ class NodeOpDialog(BaseDialog):
     @query_handler(state=NodeOpStates.SETT_HEIGHT_ENABLED)
     async def chain_height_enabled_query_handle(self, query: CallbackQuery):
         await self.handle_query_for_something_on(query,
-                                                 NodeOpSetting.CHAIN_HEIGHT,
+                                                 NodeOpSetting.CHAIN_HEIGHT_ON,
                                                  self.ask_block_lag_time,
                                                  self.on_settings_menu)
 
@@ -473,10 +477,25 @@ class NodeOpDialog(BaseDialog):
             await self.on_settings_menu(query)
             await query.answer(self.loc.SUCCESS)
 
+    # -------- SETTINGS : IP ADDRESS ---------
+
+    async def ask_ip_address_tracker_enabled(self, query: CallbackQuery):
+        is_on = self.is_alert_on(NodeOpSetting.IP_ADDRESS_ON)
+        await self.ask_something_enabled(query, NodeOpStates.SETT_IP_ADDRESS,
+                                         self.loc.text_nop_ip_address_enabled(is_on),
+                                         is_on)
+
+    @query_handler(state=NodeOpStates.SETT_IP_ADDRESS)
+    async def ip_addresss_enabled_query_handle(self, query: CallbackQuery):
+        await self.handle_query_for_something_on(query,
+                                                 NodeOpSetting.IP_ADDRESS_ON,
+                                                 self.on_settings_menu,
+                                                 self.on_settings_menu)
+
     # -------- SETTINGS : CHURNING ---------
 
     async def ask_churning_enabled(self, query: CallbackQuery):
-        is_on = self.is_alert_on(NodeOpSetting.CHURNING)
+        is_on = self.is_alert_on(NodeOpSetting.CHURNING_ON)
         await self.ask_something_enabled(query, NodeOpStates.SETT_CHURNING_ENABLED,
                                          self.loc.text_nop_churning_enabled(is_on),
                                          is_on)
@@ -484,7 +503,7 @@ class NodeOpDialog(BaseDialog):
     @query_handler(state=NodeOpStates.SETT_CHURNING_ENABLED)
     async def churning_enabled_query_handle(self, query: CallbackQuery):
         await self.handle_query_for_something_on(query,
-                                                 NodeOpSetting.CHURNING,
+                                                 NodeOpSetting.CHURNING_ON,
                                                  self.on_settings_menu,
                                                  self.on_settings_menu)
 

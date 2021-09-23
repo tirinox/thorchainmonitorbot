@@ -2,7 +2,7 @@ from typing import List
 
 from services.lib.depcont import DepContainer
 from services.models.node_info import NodeEvent, MapAddressToPrevAndCurrNode, NodeEventType
-from services.notify.personal.helpers import BaseChangeTracker
+from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
 
 
 class BondTracker(BaseChangeTracker):
@@ -19,4 +19,4 @@ class BondTracker(BaseChangeTracker):
                                 node=curr, tracker=self)
 
     async def is_event_ok(self, event: NodeEvent, settings: dict) -> bool:
-        return await super().is_event_ok(event, settings)
+        return bool(settings.get(NodeOpSetting.BOND_ON, True))

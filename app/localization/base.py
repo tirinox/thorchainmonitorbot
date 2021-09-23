@@ -1042,6 +1042,7 @@ class BaseLocalization(ABC):  # == English
     BUTTON_NOP_SETT_CHURNING = 'Churning'
     BUTTON_NOP_SETT_BOND = 'Bond'
     BUTTON_NOP_SETT_HEIGHT = 'Block height'
+    BUTTON_NOP_SETT_IP_ADDR = 'IP addr.'
 
     @staticmethod
     def text_enabled_disabled(is_on):
@@ -1074,6 +1075,11 @@ class BaseLocalization(ABC):  # == English
         en_text = self.text_enabled_disabled(is_on)
         return f'Churn in/out notifications are {bold(en_text)}.\n\n' \
                f'<i>You will receive a notification when your node churned in or out the active validator set.</i>'
+
+    def text_nop_ip_address_enabled(self, is_on):
+        en_text = self.text_enabled_disabled(is_on)
+        return f'IP address change notifications are {bold(en_text)}.\n\n' \
+               f'<i>You will receive a notification when your node changes its IP address.</i>'
 
     def text_nop_chain_height_enabled(self, is_on):
         en_text = self.text_enabled_disabled(is_on)

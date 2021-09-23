@@ -2,7 +2,7 @@ from typing import List
 
 from services.lib.depcont import DepContainer
 from services.models.node_info import MapAddressToPrevAndCurrNode, NodeSetChanges, NodeEventType, NodeEvent
-from services.notify.personal.helpers import BaseChangeTracker
+from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
 from services.notify.types.version_notify import KnownVersionStorage
 
 
@@ -52,4 +52,10 @@ class VersionTracker(BaseChangeTracker):
         return changes
 
     async def is_event_ok(self, event: NodeEvent, settings: dict) -> bool:
-        return await super().is_event_ok(event, settings)
+        if event.type == NodeEventType.NEW_VERSION_DETECTED and bool(settings.get(NodeOpSetting.NEW_VERSION_ON, True)):
+            return True
+
+        if event.type == NodeEventType.VERSION_CHANGED and bool(settings.get(NodeOpSetting.VERSION_ON, True)):
+            return True
+
+        return False

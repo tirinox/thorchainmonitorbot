@@ -5,14 +5,15 @@ from services.models.node_info import NodeEvent, NodeEventType
 
 
 class NodeOpSetting:
-    VERSION = 'nop:version:on'
-    NEW_VERSION = 'nop:new_v:on'
-    BOND = 'nop:bond:on'
-    OFFLINE = 'nop:offline:on'
-    CHAIN_HEIGHT = 'nop:height:on'
+    IP_ADDRESS_ON = 'nop:ip:on'
+    VERSION_ON = 'nop:version:on'
+    NEW_VERSION_ON = 'nop:new_v:on'
+    BOND_ON = 'nop:bond:on'
+    OFFLINE_ON = 'nop:offline:on'
+    CHAIN_HEIGHT_ON = 'nop:height:on'
     CHAIN_HEIGHT_INTERVAL = 'nop:height:interval'
-    CHURNING = 'nop:churning:on'
-    SLASH = 'nop:slash:on'
+    CHURNING_ON = 'nop:churning:on'
+    SLASH_ON = 'nop:slash:on'
     SLASH_THRESHOLD = 'nop:slash:threshold'
     SLASH_PERIOD = 'nop:slash:period'
 

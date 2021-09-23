@@ -2,10 +2,9 @@ from typing import List
 
 from services.lib.date_utils import MINUTE
 from services.lib.depcont import DepContainer
-from services.models.node_info import NodeEvent, STANDARD_INTERVALS, \
-    EventDataVariation, NodeEventType
+from services.models.node_info import NodeEvent, EventDataVariation, NodeEventType
 from services.models.thormon import ThorMonNodeTimeSeries, get_last_thormon_node_state
-from services.notify.personal.helpers import BaseChangeTracker, get_points_at_time_points, NodeOpSetting
+from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
 
 
 class SlashPointTracker(BaseChangeTracker):
@@ -24,8 +23,12 @@ class SlashPointTracker(BaseChangeTracker):
         return []
 
     async def is_event_ok(self, event: NodeEvent, settings: dict) -> bool:
+        if bool(settings.get(NodeOpSetting.SLASH_ON, True)):
+            return False
+        # todo
+
         threshold = settings.get(NodeOpSetting.SLASH_THRESHOLD, 50)
         interval = settings.get(NodeOpSetting.SLASH_PERIOD, 5 * MINUTE)
 
-        return await super().is_event_ok(event, settings)
+        return True
 

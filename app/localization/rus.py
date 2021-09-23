@@ -881,6 +881,7 @@ class RussianLocalization(BaseLocalization):
     BUTTON_NOP_SETT_CHURNING = 'Перемешивание'
     BUTTON_NOP_SETT_BOND = 'Бонд'
     BUTTON_NOP_SETT_HEIGHT = 'Высота блоков'
+    BUTTON_NOP_SETT_IP_ADDR = 'IP адр.'
 
     @staticmethod
     def text_enabled_disabled(is_on):
@@ -913,6 +914,11 @@ class RussianLocalization(BaseLocalization):
         return f'Уведомлении о перемешивании нод {bold(en_text)}.\n\n' \
                f'<i>Вы получите персональное уведомление, ' \
                f'если ваша нода вступает в активный набор нод или покидает его.</i>'
+
+    def text_nop_ip_address_enabled(self, is_on):
+        en_text = self.text_enabled_disabled(is_on)
+        return f'Уведомления об смене IP адреса {bold(en_text)}.\n\n' \
+               f'<i>Вы получите уведомление, если нода вдруг изменит свой IP адрес.</i>'
 
     def text_nop_chain_height_enabled(self, is_on):
         en_text = self.text_enabled_disabled(is_on)
