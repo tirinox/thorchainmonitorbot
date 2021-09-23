@@ -66,9 +66,10 @@ class ChainHeightTracker(BaseChangeTracker):
 
                 time_delay = abs(actual_block_height - expected_block_height) * self.get_block_time(chain)
                 ev_data = EventBlockHeight(chain, expected_block_height, actual_block_height, time_delay, is_ok)
-                events.append(NodeEvent(node_address, ev_type, ev_data, thor_node=last_node_state))
+
+                events.append(NodeEvent(node_address, ev_type, ev_data, thor_node=last_node_state, tracker=self))
 
         return events
 
-    async def filter_events(self, ch_list: List[NodeEvent], settings: dict) -> List[NodeEvent]:
-        return await super().filter_events(ch_list, settings)
+    async def is_event_ok(self, event: NodeEvent, settings: dict) -> bool:
+        return await super().is_event_ok(event, settings)

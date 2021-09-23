@@ -1,6 +1,7 @@
 from typing import NamedTuple, List, Tuple, Dict
 
 from services.lib.constants import thor_to_float
+from services.lib.date_utils import now_ts
 
 
 class ThorMonChainHeight(NamedTuple):

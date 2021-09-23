@@ -64,29 +64,36 @@ class NodeChangePersonalNotifier(INotified):
 
         self.chain_height_tracker.estimate_block_height(data)
 
-        changes = []
+        events = []
         for node in data.nodes:
             telemetry_data = await NodeTelemetryDatabase(self.deps).read_telemetry(
                 node.node_address, max_ago_sec=TELEMETRY_MAX_HISTORY_DURATION,
                 tolerance=TELEMETRY_TOLERANCE, n_points=TELEMETRY_MAX_POINTS
             )
-            changes += await self.online_tracker.get_node_events(node.node_address, telemetry_data)
-            changes += await self.chain_height_tracker.get_node_events(node.node_address, telemetry_data)
-            changes += await self.slash_tracker.get_node_events(node.node_address, telemetry_data)
-        await self._cast_messages_for_changes(changes)
+            events += await self.online_tracker.get_node_events(node.node_address, telemetry_data)
+            events += await self.chain_height_tracker.get_node_events(node.node_address, telemetry_data)
+            events += await self.slash_tracker.get_node_events(node.node_address, telemetry_data)
+
+        # if events:  # fixme: debug
+        #     print('-----')
+        #     for e in events:
+        #         print(e)
+        #     print('-----')
+
+        await self._cast_messages_for_changes(events)
 
     async def _handle_node_churn_bg_job(self, node_set_change: NodeSetChanges):
         prev_and_curr_node_map = node_set_change.prev_and_curr_node_map
 
-        changes = []
-        changes += await self.churn_tracker.get_all_changes(node_set_change)
-        changes += await self.version_tracker.get_all_changes(node_set_change)
-        changes += await self.ip_address_tracker.get_all_changes(prev_and_curr_node_map)
-        changes += await self.bond_tracker.get_all_changes(prev_and_curr_node_map)
+        events = []
+        events += await self.churn_tracker.get_all_changes(node_set_change)
+        events += await self.version_tracker.get_all_changes(node_set_change)
+        events += await self.ip_address_tracker.get_all_changes(prev_and_curr_node_map)
+        events += await self.bond_tracker.get_all_changes(prev_and_curr_node_map)
 
         # changes += self._dbg_add_mock_changes(prev_and_curr_node_map)
 
-        await self._cast_messages_for_changes(changes)
+        await self._cast_messages_for_changes(events)
 
     async def _cast_messages_for_changes(self, changes: List[NodeEvent]):
         if not changes:
@@ -114,18 +121,18 @@ class NodeChangePersonalNotifier(INotified):
 
         loc_man: LocalizationManager = self.deps.loc_man
 
-        for user, ch_list in user_changes.items():
+        for user, event_list in user_changes.items():
             loc = await loc_man.get_from_db(user, self.deps.db)
 
             settings = await self.watchers.get_user_settings(user)
 
             # filter changes according to the user's setting
-            filtered_change_list = await self._filter_events(ch_list, settings)
+            filtered_change_list = await self._filter_events(event_list, settings)
 
             groups = list(grouper(MAX_CHANGES_PER_MESSAGE, filtered_change_list))  # split to several messages
 
             self.logger.info(f'Sending personal notifications to user: {user}: '
-                             f'{len(ch_list)} changes grouped to {len(groups)} groups...')
+                             f'{len(event_list)} changes grouped to {len(groups)} groups...')
 
             for group in groups:
                 messages = [loc.notification_text_for_node_op_changes(c) for c in group]
@@ -134,20 +141,14 @@ class NodeChangePersonalNotifier(INotified):
                 if text:
                     asyncio.create_task(self.deps.broadcaster.safe_send_message(user, text))
 
-    async def _filter_events(self, ch_list: List[NodeEvent], settings: dict) -> List[NodeEvent]:
-        trackers = (
-            self.online_tracker,
-            self.chain_height_tracker,
-            self.slash_tracker,
-            self.churn_tracker,
-            self.ip_address_tracker,
-            self.version_tracker,
-            self.bond_tracker,
-        )
-        for tracker in trackers:
-            tracker: BaseChangeTracker
-            ch_list = await tracker.filter_events(ch_list, settings)
-        return ch_list
+    async def _filter_events(self, event_list: List[NodeEvent], settings: dict) -> List[NodeEvent]:
+        results = []
+        for event in event_list:
+            # noinspection PyTypeChecker
+            tracker: BaseChangeTracker = event.tracker
+            if tracker and await tracker.is_event_ok(event, settings):
+                results.append(event)
+        return results
 
     @property
     def last_signal_sec_ago(self):

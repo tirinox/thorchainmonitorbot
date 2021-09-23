@@ -1,7 +1,7 @@
 from typing import List, Any, Tuple
 
 from services.lib.date_utils import now_ts
-from services.models.node_info import NodeEvent
+from services.models.node_info import NodeEvent, NodeEventType
 
 
 class NodeOpSetting:
@@ -18,8 +18,8 @@ class NodeOpSetting:
 
 
 class BaseChangeTracker:
-    async def filter_events(self, ch_list: List[NodeEvent], settings: dict) -> List[NodeEvent]:
-        return ch_list
+    async def is_event_ok(self, event: NodeEvent, settings: dict) -> bool:
+        return True
 
 
 def get_points_at_time_points(data: List[Tuple[float, Any]], ago_sec_list: list):

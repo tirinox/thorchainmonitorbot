@@ -15,13 +15,12 @@ class NodeChurnTracker(BaseChangeTracker):
         changes += self._changes_churned_nodes(node_set_change.nodes_deactivated, is_in=False)
         return changes
 
-    @staticmethod
-    def _changes_churned_nodes(nodes: List[NodeInfo], is_in: bool) -> List[NodeEvent]:
+    def _changes_churned_nodes(self, nodes: List[NodeInfo], is_in: bool) -> List[NodeEvent]:
         return [
             NodeEvent(
-                n.node_address, NodeEventType.CHURNING, is_in, node=n
+                n.node_address, NodeEventType.CHURNING, is_in, node=n, tracker=self
             ) for n in nodes
         ]
 
-    async def filter_events(self, ch_list: List[NodeEvent], settings: dict) -> List[NodeEvent]:
-        return await super().filter_events(ch_list, settings)
+    async def is_event_ok(self, event: NodeEvent, settings: dict) -> bool:
+        return await super().is_event_ok(event, settings)

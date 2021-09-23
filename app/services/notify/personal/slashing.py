@@ -1,46 +1,31 @@
 from typing import List
 
+from services.lib.date_utils import MINUTE
 from services.lib.depcont import DepContainer
 from services.models.node_info import NodeEvent, STANDARD_INTERVALS, \
-    EventDataVariation
-from services.models.thormon import ThorMonNodeTimeSeries
-from services.notify.personal.helpers import BaseChangeTracker, get_points_at_time_points
-
-"""
-User selects a time period (5min, 15min, 1h)
-And threshold (e.g. 5 pts)
-
-if not cooldown and now.slash - [5min ago].slash > threshold:
-    emit notification
-    start cooldown
-"""
+    EventDataVariation, NodeEventType
+from services.models.thormon import ThorMonNodeTimeSeries, get_last_thormon_node_state
+from services.notify.personal.helpers import BaseChangeTracker, get_points_at_time_points, NodeOpSetting
 
 
 class SlashPointTracker(BaseChangeTracker):
     def __init__(self, deps: DepContainer):
         self.deps = deps
 
-    def get_slash_changes(self, telemetry: ThorMonNodeTimeSeries):
-        node_states = get_points_at_time_points(telemetry, STANDARD_INTERVALS)
-        last_point = telemetry[-1][1]
-        return EventDataVariation(last_point.slash_points, previous_values=node_states)
-
     async def get_node_events(self, node_address, telemetry: ThorMonNodeTimeSeries) -> List[NodeEvent]:
-        # todo
-        node_states = get_points_at_time_points(telemetry, STANDARD_INTERVALS)
+        slash_curve = [(t, node.slash_points) for t, node in telemetry]
+        if len(slash_curve) >= 2:
+            slash_start = slash_curve[0][1]
+            slash_end = slash_curve[-1][1]
+            if slash_end != slash_start:
+                last_state = get_last_thormon_node_state(telemetry)
+                data = EventDataVariation(slash_curve)
+                return [NodeEvent(node_address, NodeEventType.SLASHING, data, thor_node=last_state, tracker=self)]
         return []
 
-    # async def get_all_changes(self, pc_node_map: MapAddressToPrevAndCurrNode) -> List[NodeChange]:
-    #     changes = []
-    #     for a, (prev, curr) in pc_node_map.items():
-    #         delta_slash = curr.slash_points - prev.slash_points
-    #         if delta_slash != 0:
-    #             changes.append(
-    #                 NodeChange(
-    #                     prev.node_address, NodeChangeType.SLASHING, (prev.slash_points, curr.slash_points)
-    #                 )
-    #             )
-    #     return changes
+    async def is_event_ok(self, event: NodeEvent, settings: dict) -> bool:
+        threshold = settings.get(NodeOpSetting.SLASH_THRESHOLD, 50)
+        interval = settings.get(NodeOpSetting.SLASH_PERIOD, 5 * MINUTE)
 
-    async def filter_events(self, ch_list: List[NodeEvent], settings: dict) -> List[NodeEvent]:
-        return await super().filter_events(ch_list, settings)
+        return await super().is_event_ok(event, settings)
+

@@ -118,15 +118,15 @@ class NodeOnlineTracker(BaseChangeTracker):
             if offline >= DETECTION_OFFLINE_TIME and await trigger.turn_off():
                 changes.append(NodeEvent(
                     node_address, NodeEventType.SERVICE_ONLINE, EventNodeOnline(False, offline, service.name),
-                    thor_node=get_last_thormon_node_state(telemetry)
+                    thor_node=get_last_thormon_node_state(telemetry), tracker=self
                 ))
             elif offline == 0.0 and await trigger.turn_on():
                 changes.append(NodeEvent(
                     node_address, NodeEventType.SERVICE_ONLINE, EventNodeOnline(True, 0.0, service.name),
-                    thor_node=get_last_thormon_node_state(telemetry)
+                    thor_node=get_last_thormon_node_state(telemetry), tracker=self
                 ))
 
         return changes
 
-    async def filter_events(self, ch_list: List[NodeEvent], settings: dict) -> List[NodeEvent]:
-        return await super().filter_events(ch_list, settings)
+    async def is_event_ok(self, event: NodeEvent, settings: dict) -> bool:
+        return await super().is_event_ok(event, settings)

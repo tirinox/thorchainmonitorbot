@@ -15,10 +15,10 @@ class IpAddressTracker(BaseChangeTracker):
             if prev.ip_address != curr.ip_address:
                 changes.append(NodeEvent(
                     prev.node_address, NodeEventType.IP_ADDRESS_CHANGED,
-                    (prev.ip_address, curr.ip_address), node=curr
+                    (prev.ip_address, curr.ip_address), node=curr, tracker=self
                 ))
 
         return changes
 
-    async def filter_events(self, ch_list: List[NodeEvent], settings: dict) -> List[NodeEvent]:
-        return await super().filter_events(ch_list, settings)
+    async def is_event_ok(self, event: NodeEvent, settings: dict) -> bool:
+        return await super().is_event_ok(event, settings)

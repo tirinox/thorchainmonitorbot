@@ -19,14 +19,13 @@ class VersionTracker(BaseChangeTracker):
 
     # todo: Event: The NodeOp majority upgraded to the new version! hurry up!
 
-    @staticmethod
-    def _changes_of_version(pc_node_map: MapAddressToPrevAndCurrNode):
+    def _changes_of_version(self, pc_node_map: MapAddressToPrevAndCurrNode):
         for a, (prev, curr) in pc_node_map.items():
             if prev.version != curr.version:
                 yield NodeEvent(
                     prev.node_address, NodeEventType.VERSION_CHANGED,
                     (prev.version, curr.version),
-                    node=curr
+                    node=curr, tracker=self
                 )
 
     async def _changes_of_detected_new_version(self, c: NodeSetChanges):
@@ -48,9 +47,9 @@ class VersionTracker(BaseChangeTracker):
                     node.node_address,
                     NodeEventType.NEW_VERSION_DETECTED,
                     new_version, single_per_user=True,
-                    node=node
+                    node=node, tracker=self
                 ))
         return changes
 
-    async def filter_events(self, ch_list: List[NodeEvent], settings: dict) -> List[NodeEvent]:
-        return await super().filter_events(ch_list, settings)
+    async def is_event_ok(self, event: NodeEvent, settings: dict) -> bool:
+        return await super().is_event_ok(event, settings)

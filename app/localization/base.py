@@ -18,7 +18,7 @@ from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, i
 from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEventType, NodeEvent, \
-    EventBlockHeight
+    EventBlockHeight, EventDataVariation
 from services.models.pool_info import PoolInfo, PoolChanges
 from services.models.price import PriceReport
 from services.models.queue import QueueInfo
@@ -1124,8 +1124,9 @@ class BaseLocalization(ABC):  # == English
         message = ''
         short_addr = self.node_link(c.address)
         if c.type == NodeEventType.SLASHING:
-            old, new = c.data
-            message = f'🟨 Node {short_addr} got slashed for {bold(new - old)} pts (now <i>{new}</i> slash pts)!'
+            data: EventDataVariation = c.data
+            old, new = data.previous_values[0][1], data.previous_values[-1][1]  # fixme!
+            message = f'🔪 Node {short_addr} got slashed for {bold(new - old)} pts (now <i>{new}</i> slash pts)!'
         elif c.type == NodeEventType.VERSION_CHANGED:
             old, new = c.data
             message = f'🆙 Node {short_addr} version upgrade from {ital(old)} to {bold(new)}!'
@@ -1154,9 +1155,6 @@ class BaseLocalization(ABC):  # == English
             else:
                 message = f'🔴 Node {short_addr} is {pre(data.block_lag)} blocks behind ' \
                           f'on the {pre(data.chain)} chain (≈{self.seconds_human(data.how_long_behind)})!'
-            # else:
-            #     message = f'🟨 Node {short_addr} is {pre(data.block_lag)} blocks ahead ' \
-            #               f'on the {pre(data.chain)} chain (≈{self.seconds_human(data.how_long_behind)})?!'
 
         return message
 

@@ -4,12 +4,12 @@ import re
 import secrets
 from collections import Counter
 from dataclasses import dataclass, field
-from typing import List, Dict, NamedTuple, Optional, Tuple, Union, Any
+from typing import List, Dict, NamedTuple, Optional, Tuple, Any
 
 from semver import VersionInfo
 
 from services.lib.constants import thor_to_float
-from services.lib.date_utils import MINUTE
+from services.lib.date_utils import MINUTE, now_ts
 from services.models.base import BaseModelMixin
 from services.models.thormon import ThorMonNode
 
@@ -286,8 +286,14 @@ class EventBlockHeight(NamedTuple):
 
 
 class EventDataVariation(NamedTuple):
-    current_val: float
-    previous_values: Dict[float, Any]
+    previous_values: List[Tuple[float, Any]]
+
+    def get_point_ago(self, seconds_ago):
+        t0 = now_ts() - seconds_ago
+        for t, v in reversed(self.previous_values):
+            if t < t0:
+                return t, v
+        return self.previous_values[0] if self.previous_values else 0, 0
 
 
 STANDARD_INTERVALS = [
@@ -317,3 +323,4 @@ class NodeEvent(NamedTuple):
     single_per_user: bool = False
     node: NodeInfo = None
     thor_node: ThorMonNode = None
+    tracker: object = None
