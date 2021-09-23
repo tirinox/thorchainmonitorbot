@@ -1135,11 +1135,11 @@ class BaseLocalization(ABC):  # == English
             old, new = c.data
             message = f'🏤 Node {short_addr} changed its IP address from {ital(old)} to {bold(new)}!'
         elif c.type == NodeEventType.SERVICE_ONLINE:
-            online, duration = c.data
+            online, duration, service = c.data
             if online:
-                message = f'✅ Node {short_addr} went <b>online</b>!'
+                message = f'✅ Node {short_addr}\'s [{bold(service)}] went <b>online</b>!'
             else:
-                message = f'🔴 Node {short_addr} went <b>offline</b> (already for {int(duration)} sec)!'
+                message = f'🔴 Node {short_addr}\'s [{bold(service)}] went <b>offline</b> (already for {int(duration)} sec)!'
         elif c.type == NodeEventType.CHURNING:
             verb = 'churned in ⬅️' if c.data else 'churned out ➡️'
             bond = c.node.bond

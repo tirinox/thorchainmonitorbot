@@ -270,6 +270,7 @@ class NetworkNodeIpInfo:
 class EventNodeOnline(NamedTuple):
     online: bool
     duration: float
+    service: str
 
 
 class EventBlockHeight(NamedTuple):
