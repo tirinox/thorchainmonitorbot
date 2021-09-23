@@ -2,7 +2,7 @@ from typing import List
 
 from services.lib.depcont import DepContainer
 from services.models.node_info import NodeEvent, STANDARD_INTERVALS, \
-    ChangeVariation
+    EventDataVariation
 from services.models.thormon import ThorMonNodeTimeSeries
 from services.notify.personal.helpers import BaseChangeTracker, get_points_at_time_points
 
@@ -23,7 +23,7 @@ class SlashPointTracker(BaseChangeTracker):
     def get_slash_changes(self, telemetry: ThorMonNodeTimeSeries):
         node_states = get_points_at_time_points(telemetry, STANDARD_INTERVALS)
         last_point = telemetry[-1][1]
-        return ChangeVariation(last_point.slash_points, previous_values=node_states)
+        return EventDataVariation(last_point.slash_points, previous_values=node_states)
 
     async def get_node_events(self, node_address, telemetry: ThorMonNodeTimeSeries) -> List[NodeEvent]:
         # todo

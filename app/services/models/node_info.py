@@ -267,11 +267,6 @@ class NetworkNodeIpInfo:
         return providers
 
 
-class ChangeOldNew(NamedTuple):
-    old: object
-    new: object
-
-
 class EventNodeOnline(NamedTuple):
     online: bool
     duration: float
@@ -281,12 +276,15 @@ class EventBlockHeight(NamedTuple):
     chain: str
     expected_block: int = 0
     actual_block: int = 0
-    block_lag: int = 0
     how_long_behind: float = 0.0
-    restored: bool = False
+    is_ok: bool = False
+
+    @property
+    def block_lag(self):
+        return self.expected_block - self.actual_block
 
 
-class ChangeVariation(NamedTuple):
+class EventDataVariation(NamedTuple):
     current_val: float
     previous_values: Dict[float, Any]
 
@@ -306,7 +304,9 @@ class NodeEventType:
     BOND = 'bond'
     IP_ADDRESS_CHANGED = 'ip_address'
     SERVICE_ONLINE = 'service_online'
-    BLOCK_HEIGHT = 'block_height'
+    BLOCK_HEIGHT_STUCK = 'block_height_stuck'
+    BLOCK_HEIGHT_AHEAD = 'block_height_ahead'
+    BLOCK_HEIGHT_OK = 'block_height_ok'
 
 
 class NodeEvent(NamedTuple):

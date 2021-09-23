@@ -994,6 +994,9 @@ class BaseLocalization(ABC):  # == English
         else:
             text += '🟢'
 
+        thormon_link = 'https://thorchain.network/'
+        text += f'\n\nRealtime monitoring: {link(thormon_link, thormon_link)}'
+
         return text
 
     TEXT_NOP_MANAGE_LIST_TITLE = \
@@ -1141,13 +1144,17 @@ class BaseLocalization(ABC):  # == English
             verb = 'churned in ⬅️' if c.data else 'churned out ➡️'
             bond = c.node.bond
             message = f'🌐 Node {short_addr} ({short_money(bond)} {RAIDO_GLYPH} bond) {bold(verb)}!'
-        elif c.type == NodeEventType.BLOCK_HEIGHT:
+        elif c.type in NodeEventType.BLOCK_HEIGHT_STUCK:
             data: EventBlockHeight = c.data
-            if data.restored:
-                message = f'✅ Node {short_addr} caught up blocks for {pre(data.client_name)}.'
+
+            if data.is_ok:
+                message = f'✅ Node {short_addr} caught up blocks for {pre(data.chain)}.'
             else:
-                message = f'🔴 Node {short_addr} is behind {pre(data.block_lag)} blocks ' \
-                          f'on the {pre(data.client_name)} chain!'
+                message = f'🔴 Node {short_addr} is {pre(data.block_lag)} blocks behind ' \
+                          f'on the {pre(data.chain)} chain (≈{self.seconds_human(data.how_long_behind)})!'
+            # else:
+            #     message = f'🟨 Node {short_addr} is {pre(data.block_lag)} blocks ahead ' \
+            #               f'on the {pre(data.chain)} chain (≈{self.seconds_human(data.how_long_behind)})?!'
 
         return message
 
@@ -1167,6 +1174,8 @@ class BaseLocalization(ABC):  # == English
 
     # ---- MISC ----
 
-    def ago(self, seconds):
-        return seconds_human(seconds)
+    def format_time_ago(self, d):
+        return format_time_ago(d)
 
+    def seconds_human(self, s):
+        return seconds_human(s)

@@ -2,14 +2,13 @@ from collections import defaultdict
 from typing import List
 
 from services.lib.constants import Chains
+from services.lib.cooldown import CooldownBiTrigger, INFINITE_TIME
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.utils import most_common
-from services.models.node_info import NodeEvent, NodeEventType
+from services.models.node_info import NodeEvent, NodeEventType, EventBlockHeight
 from services.models.thormon import ThorMonNodeTimeSeries, ThorMonAnswer, get_last_thormon_node_state
 from services.notify.personal.helpers import BaseChangeTracker
-
-TRIGGER_SWITCH_CD = 30.0  # sec
 
 
 class ChainHeightTracker(BaseChangeTracker):
@@ -42,15 +41,30 @@ class ChainHeightTracker(BaseChangeTracker):
             return []
 
         events = []
-        last_point = get_last_thormon_node_state(telemetry)
-        
-        for chain, expected_block_height in self.recent_max_blocks.items():
-            actual_block_height = last_point.observe_chains.get(chain, 0)
-            if actual_block_height < expected_block_height:
-                events.append(NodeEvent(
-                    node_address, NodeEventType.BLOCK_HEIGHT, (chain, actual_block_height, expected_block_height)
-                ))
+        last_node_state = get_last_thormon_node_state(telemetry)
 
+        for chain, expected_block_height in self.recent_max_blocks.items():
+            actual = last_node_state.observe_chains.get(chain)
+            actual_block_height = actual.height if actual else 0
+
+            is_ok = actual_block_height >= expected_block_height
+
+            trigger = CooldownBiTrigger(self.deps.db,
+                                        f'height.{chain}.{node_address}',
+                                        cooldown_sec=INFINITE_TIME,
+                                        switch_cooldown_sec=0,
+                                        default=True)
+
+            if await trigger.turn(is_ok):
+                # the state has changed
+                if is_ok:
+                    ev_type = NodeEventType.BLOCK_HEIGHT_OK
+                else:
+                    ev_type = NodeEventType.BLOCK_HEIGHT_STUCK
+
+                time_delay = abs(actual_block_height - expected_block_height) * self.get_block_time(chain)
+                ev_data = EventBlockHeight(chain, expected_block_height, actual_block_height, time_delay, is_ok)
+                events.append(NodeEvent(node_address, ev_type, ev_data, thor_node=last_node_state))
 
         return events
 

@@ -128,7 +128,8 @@ class NodeChangePersonalNotifier(INotified):
                              f'{len(ch_list)} changes grouped to {len(groups)} groups...')
 
             for group in groups:
-                text = '\n\n'.join(loc.notification_text_for_node_op_changes(c) for c in group)
+                messages = [loc.notification_text_for_node_op_changes(c) for c in group]
+                text = '\n\n'.join(m for m in messages if m)
                 text = text.strip()
                 if text:
                     asyncio.create_task(self.deps.broadcaster.safe_send_message(user, text))

@@ -17,6 +17,8 @@ class VersionTracker(BaseChangeTracker):
         changes += await self._changes_of_detected_new_version(node_set_change)
         return changes
 
+    # todo: Event: The NodeOp majority upgraded to the new version! hurry up!
+
     @staticmethod
     def _changes_of_version(pc_node_map: MapAddressToPrevAndCurrNode):
         for a, (prev, curr) in pc_node_map.items():
