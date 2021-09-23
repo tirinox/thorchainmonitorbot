@@ -1136,15 +1136,17 @@ class BaseLocalization(ABC):  # == English
             message = f'🏤 Node {short_addr} changed its IP address from {ital(old)} to {bold(new)}!'
         elif c.type == NodeEventType.SERVICE_ONLINE:
             online, duration, service = c.data
+            service = bold(str(service).upper())
             if online:
-                message = f'✅ Node {short_addr}\'s [{bold(service)}] went <b>online</b>!'
+                message = f'✅ Service {service} of node {short_addr} is <b>online</b> again!'
             else:
-                message = f'🔴 Node {short_addr}\'s [{bold(service)}] went <b>offline</b> (already for {int(duration)} sec)!'
+                message = f'🔴 Service {service} of node {short_addr} went <b>offline</b> ' \
+                          f'(already for {int(duration)} sec)!'
         elif c.type == NodeEventType.CHURNING:
             verb = 'churned in ⬅️' if c.data else 'churned out ➡️'
             bond = c.node.bond
             message = f'🌐 Node {short_addr} ({short_money(bond)} {RAIDO_GLYPH} bond) {bold(verb)}!'
-        elif c.type in NodeEventType.BLOCK_HEIGHT_STUCK:
+        elif c.type in (NodeEventType.BLOCK_HEIGHT_STUCK, NodeEventType.BLOCK_HEIGHT_OK):
             data: EventBlockHeight = c.data
 
             if data.is_ok:

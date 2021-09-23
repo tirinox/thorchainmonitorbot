@@ -46,6 +46,8 @@ class ChainHeightTracker(BaseChangeTracker):
         for chain, expected_block_height in self.recent_max_blocks.items():
             actual = last_node_state.observe_chains.get(chain)
             actual_block_height = actual.height if actual else 0
+            if actual_block_height == 0:
+                continue
 
             is_ok = actual_block_height >= expected_block_height
 
