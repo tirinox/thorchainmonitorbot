@@ -6,7 +6,7 @@ from aiogram.utils.helper import HelperMode
 
 from services.dialog.base import BaseDialog, message_handler, query_handler
 from services.jobs.node_churn import NodeStateDatabase
-from services.lib.date_utils import parse_timespan_to_seconds
+from services.lib.date_utils import parse_timespan_to_seconds, HOUR
 from services.lib.telegram import TelegramInlineList
 from services.lib.texts import join_as_numbered_list
 from services.lib.utils import parse_list_from_string, fuzzy_search
@@ -29,6 +29,7 @@ class NodeOpStates(StatesGroup):
     SETT_UPDATE_VERSION_ENABLED = State()
     SETT_CHURNING_ENABLED = State()
     SETT_OFFLINE_ENABLED = State()
+    SETT_OFFLINE_INTERVAL = State()
     SETT_HEIGHT_ENABLED = State()
     SETT_HEIGHT_LAG_TIME = State()
     SETT_IP_ADDRESS = State()
@@ -250,6 +251,8 @@ class NodeOpDialog(BaseDialog):
                 [
                     self.alert_setting_button(loc.BUTTON_NOP_SETT_CHURNING, NodeOpSetting.CHURNING_ON),
                     self.alert_setting_button(loc.BUTTON_NOP_SETT_BOND, NodeOpSetting.BOND_ON),
+                ],
+                [
                     self.alert_setting_button(loc.BUTTON_NOP_SETT_HEIGHT, NodeOpSetting.CHAIN_HEIGHT_ON),
                     self.alert_setting_button(loc.BUTTON_NOP_SETT_IP_ADDR, NodeOpSetting.IP_ADDRESS_ON),
                 ],
@@ -332,27 +335,7 @@ class NodeOpDialog(BaseDialog):
 
     async def ask_slash_period(self, query: CallbackQuery):
         await NodeOpStates.SETT_SLASH_PERIOD.set()
-        keyboard = InlineKeyboardMarkup(
-            inline_keyboard=[
-                [
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_2MIN, callback_data='2m'),
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_5MIN, callback_data='5m'),
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_15MIN, callback_data='15m'),
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_30MIN, callback_data='30m'),
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_60MIN, callback_data='60m'),
-                ],
-                [
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_2H, callback_data='2h'),
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_6H, callback_data='6h'),
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_12H, callback_data='12h'),
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_24H, callback_data='24h'),
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_3D, callback_data='3d'),
-                ],
-                [
-                    InlineKeyboardButton(self.loc.BUTTON_BACK, callback_data='back')
-                ]
-            ]
-        )
+        keyboard = self.inline_keyboard_time_selector()
         text = self.loc.text_nop_ask_slash_period(self.data.get(NodeOpSetting.SLASH_THRESHOLD, 1))
         await query.message.edit_text(text, reply_markup=keyboard)
 
@@ -422,8 +405,24 @@ class NodeOpDialog(BaseDialog):
     async def offline_enabled_query_handle(self, query: CallbackQuery):
         await self.handle_query_for_something_on(query,
                                                  NodeOpSetting.OFFLINE_ON,
-                                                 self.on_settings_menu,
+                                                 self.ask_offline_interval,
                                                  self.on_settings_menu)
+
+    async def ask_offline_interval(self, query: CallbackQuery):
+        await NodeOpStates.SETT_OFFLINE_INTERVAL.set()
+        keyboard = self.inline_keyboard_time_selector()
+        text = self.loc.text_nop_ask_offline_period(self.data.get(NodeOpSetting.OFFLINE_INTERVAL, HOUR))
+        await query.message.edit_text(text, reply_markup=keyboard)
+
+    @query_handler(state=NodeOpStates.SETT_OFFLINE_INTERVAL)
+    async def offline_period_answer_query(self, query: CallbackQuery):
+        if query.data == 'back':
+            await self.on_settings_menu(query)
+            await query.answer()
+        else:
+            self.data[NodeOpSetting.OFFLINE_INTERVAL] = parse_timespan_to_seconds(query.data)
+            await self.on_settings_menu(query)
+            await query.answer(self.loc.SUCCESS)
 
     # -------- SETTINGS : CHAIN HEIGHT ---------
 
@@ -442,27 +441,7 @@ class NodeOpDialog(BaseDialog):
 
     async def ask_block_lag_time(self, query: CallbackQuery):
         await NodeOpStates.SETT_HEIGHT_LAG_TIME.set()
-        keyboard = InlineKeyboardMarkup(
-            inline_keyboard=[
-                [
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_2MIN, callback_data='2m'),
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_5MIN, callback_data='5m'),
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_15MIN, callback_data='15m'),
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_30MIN, callback_data='30m'),
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_60MIN, callback_data='60m'),
-                ],
-                [
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_2H, callback_data='2h'),
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_6H, callback_data='6h'),
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_12H, callback_data='12h'),
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_24H, callback_data='24h'),
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_3D, callback_data='3d'),
-                ],
-                [
-                    InlineKeyboardButton(self.loc.BUTTON_BACK, callback_data='back')
-                ]
-            ]
-        )
+        keyboard = self.inline_keyboard_time_selector()
         text = self.loc.text_nop_ask_chain_height_lag_time(self.data.get(NodeOpSetting.CHAIN_HEIGHT_INTERVAL, 1))
         await query.message.edit_text(text, reply_markup=keyboard)
 
@@ -593,3 +572,26 @@ class NodeOpDialog(BaseDialog):
             self.data[setting] = False
             await next_off_func(query)
         await query.answer()
+
+    def inline_keyboard_time_selector(self):
+        return InlineKeyboardMarkup(
+            inline_keyboard=[
+                [
+                    InlineKeyboardButton(self.loc.BUTTON_NOP_2MIN, callback_data='2m'),
+                    InlineKeyboardButton(self.loc.BUTTON_NOP_5MIN, callback_data='5m'),
+                    InlineKeyboardButton(self.loc.BUTTON_NOP_15MIN, callback_data='15m'),
+                    InlineKeyboardButton(self.loc.BUTTON_NOP_30MIN, callback_data='30m'),
+                    InlineKeyboardButton(self.loc.BUTTON_NOP_60MIN, callback_data='60m'),
+                ],
+                [
+                    InlineKeyboardButton(self.loc.BUTTON_NOP_2H, callback_data='2h'),
+                    InlineKeyboardButton(self.loc.BUTTON_NOP_6H, callback_data='6h'),
+                    InlineKeyboardButton(self.loc.BUTTON_NOP_12H, callback_data='12h'),
+                    InlineKeyboardButton(self.loc.BUTTON_NOP_24H, callback_data='24h'),
+                    InlineKeyboardButton(self.loc.BUTTON_NOP_3D, callback_data='3d'),
+                ],
+                [
+                    InlineKeyboardButton(self.loc.BUTTON_BACK, callback_data='back')
+                ]
+            ]
+        )

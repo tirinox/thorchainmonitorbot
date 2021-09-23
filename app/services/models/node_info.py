@@ -286,21 +286,15 @@ class EventBlockHeight(NamedTuple):
 
 
 class EventDataVariation(NamedTuple):
-    previous_values: List[Tuple[float, Any]]
+    points: List[Tuple[float, Any]]
 
     def get_point_ago(self, seconds_ago):
         t0 = now_ts() - seconds_ago
-        for t, v in reversed(self.previous_values):
+        for t, v in reversed(self.points):
             if t < t0:
                 return t, v
-        return self.previous_values[0] if self.previous_values else 0, 0
+        return self.points[0] if self.points else 0, 0
 
-
-STANDARD_INTERVALS = [
-    5 * MINUTE,
-    15 * MINUTE,
-    60 * MINUTE
-]
 
 
 class NodeEventType:

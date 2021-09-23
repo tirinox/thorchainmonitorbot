@@ -1081,6 +1081,12 @@ class BaseLocalization(ABC):  # == English
         return f'IP address change notifications are {bold(en_text)}.\n\n' \
                f'<i>You will receive a notification when your node changes its IP address.</i>'
 
+    def text_nop_ask_offline_period(self, current):
+        return f'Please tell me the time limit you would like to set for offline notifications. \n\n' \
+               f'If there is no connection to your node\'s services for the specified time, ' \
+               f'you will receive a message.\n\n' \
+               f'Now: {pre(self.seconds_human(current))}.'
+
     def text_nop_chain_height_enabled(self, is_on):
         en_text = self.text_enabled_disabled(is_on)
         return f'Chain height stuck/unstuck notifications are {bold(en_text)}.\n\n' \
@@ -1131,7 +1137,7 @@ class BaseLocalization(ABC):  # == English
         short_addr = self.node_link(c.address)
         if c.type == NodeEventType.SLASHING:
             data: EventDataVariation = c.data
-            old, new = data.previous_values[0][1], data.previous_values[-1][1]  # fixme!
+            old, new = data.points[0][1], data.points[-1][1]  # fixme!
             message = f'🔪 Node {short_addr} got slashed for {bold(new - old)} pts (now <i>{new}</i> slash pts)!'
         elif c.type == NodeEventType.VERSION_CHANGED:
             old, new = c.data

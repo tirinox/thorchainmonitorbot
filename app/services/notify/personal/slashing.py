@@ -29,6 +29,6 @@ class SlashPointTracker(BaseChangeTracker):
 
         threshold = settings.get(NodeOpSetting.SLASH_THRESHOLD, 50)
         interval = settings.get(NodeOpSetting.SLASH_PERIOD, 5 * MINUTE)
+        # fixme!
 
         return True
-

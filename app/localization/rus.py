@@ -920,6 +920,12 @@ class RussianLocalization(BaseLocalization):
         return f'Уведомления об смене IP адреса {bold(en_text)}.\n\n' \
                f'<i>Вы получите уведомление, если нода вдруг изменит свой IP адрес.</i>'
 
+    def text_nop_ask_offline_period(self, current):
+        return f'Какой лимит времени вы хотите установить для оффлайн уведомлений?\n\n' \
+               f'Если с сервисами вашей ноды нет соединения в течении указанного времени, ' \
+               f'то вы получите сообщение.\n\n' \
+               f'Сейчас: {pre(self.seconds_human(current))}.'
+
     def text_nop_chain_height_enabled(self, is_on):
         en_text = self.text_enabled_disabled(is_on)
         return f'Уведомления о зависших клиентах блокчейнов {bold(en_text)}.\n\n' \

@@ -129,5 +129,16 @@ class NodeOnlineTracker(BaseChangeTracker):
         return changes
 
     async def is_event_ok(self, event: NodeEvent, settings: dict) -> bool:
-        # todo! todo
-        return bool(settings.get(NodeOpSetting.OFFLINE_ON, True))
+        if not bool(settings.get(NodeOpSetting.OFFLINE_ON, True)):
+            return False
+
+        # fixme!
+
+        online_time_threshold = float(settings.get(NodeOpSetting.OFFLINE_INTERVAL, HOUR))
+        data: EventNodeOnline = event.data
+        if data.online:
+            return True
+        elif data.duration >= online_time_threshold:
+            return True
+        else:
+            return False

@@ -10,6 +10,7 @@ class NodeOpSetting:
     NEW_VERSION_ON = 'nop:new_v:on'
     BOND_ON = 'nop:bond:on'
     OFFLINE_ON = 'nop:offline:on'
+    OFFLINE_INTERVAL = 'nop:offline:interval'
     CHAIN_HEIGHT_ON = 'nop:height:on'
     CHAIN_HEIGHT_INTERVAL = 'nop:height:interval'
     CHURNING_ON = 'nop:churning:on'

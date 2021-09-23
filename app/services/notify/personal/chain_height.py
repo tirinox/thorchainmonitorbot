@@ -1,5 +1,4 @@
 from collections import defaultdict
-from typing import List
 
 from services.lib.constants import Chains
 from services.lib.cooldown import CooldownBiTrigger, INFINITE_TIME
@@ -26,7 +25,8 @@ class ChainHeightTracker(BaseChangeTracker):
     def blocks_to_lag(self, chain: str, seconds: float):
         return seconds / self.get_block_time(chain)
 
-    def estimate_block_height(self, data: ThorMonAnswer):
+    @staticmethod
+    def estimate_block_height_most_common(data: ThorMonAnswer):
         chain_block_height = defaultdict(list)
         for node in data.nodes:
             for name, chain_info in node.observe_chains.items():
@@ -34,7 +34,23 @@ class ChainHeightTracker(BaseChangeTracker):
                     chain_block_height[name].append(chain_info.height)
             # chain_block_height[Chains.THOR].append(node.active_block_height) # todo!
 
-        self.recent_max_blocks = {chain: most_common(height_list) for chain, height_list in chain_block_height.items()}
+        return {chain: most_common(height_list) for chain, height_list in chain_block_height.items()}
+
+    @staticmethod
+    def estimate_block_height_maximum(data: ThorMonAnswer):
+        chain_block_height = defaultdict(int)
+        for node in data.nodes:
+            for name, chain_info in node.observe_chains.items():
+                if chain_info.valid:
+                    chain_block_height[name] = max(chain_block_height[name], chain_info.height)
+            # chain_block_height[Chains.THOR].append(node.active_block_height) # todo!
+        return chain_block_height
+
+    def estimate_block_height(self, data: ThorMonAnswer, maximum=False):
+        if maximum:
+            self.recent_max_blocks = self.estimate_block_height_maximum(data)
+        else:
+            self.recent_max_blocks = self.estimate_block_height_most_common(data)
 
     async def get_node_events(self, node_address, telemetry: ThorMonNodeTimeSeries):
         if not node_address or not telemetry:
@@ -74,6 +90,8 @@ class ChainHeightTracker(BaseChangeTracker):
     async def is_event_ok(self, event: NodeEvent, settings: dict) -> bool:
         if not bool(settings.get(NodeOpSetting.CHAIN_HEIGHT_ON, True)):
             return False
+
+        # fixme!
 
         if event.type == NodeEventType.BLOCK_HEIGHT_STUCK:
             threshold_interval = float(settings.get(NodeOpSetting.CHAIN_HEIGHT_INTERVAL, HOUR))
