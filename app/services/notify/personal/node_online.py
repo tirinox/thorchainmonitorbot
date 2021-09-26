@@ -4,7 +4,7 @@ from services.lib.date_utils import HOUR, now_ts
 from services.lib.depcont import DepContainer
 from services.models.node_info import EventNodeOnline, NodeEvent, NodeEventType
 from services.models.thormon import ThorMonAnswer, ThorMonNode
-from services.notify.personal import UserDataCache
+from services.notify.personal.user_data import UserDataCache
 from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
 from services.notify.personal.telemetry import NodeTelemetryDatabase
 
@@ -30,7 +30,7 @@ class NodeOnlineTracker(BaseChangeTracker):
         return self.cache.user_node_service_data[user][node][service].get(self.KEY_ONLINE_STATE, True)
 
     def set_user_state(self, user, node, service, is_ok):
-        return self.cache.user_node_service_data[user][node][service].get(self.KEY_ONLINE_STATE, is_ok)
+        self.cache.user_node_service_data[user][node][service][self.KEY_ONLINE_STATE] = is_ok
 
     def _update(self, nodes: List[ThorMonNode], ref_ts=None):
         ref_ts = ref_ts or now_ts()
@@ -41,7 +41,7 @@ class NodeOnlineTracker(BaseChangeTracker):
                 is_ok = bool(getattr(node, service))
 
                 if is_ok:
-                    self.cache.node_service_data[node][service][self.KEY_LAST_ONLINE_TS] = ref_ts
+                    self.cache.node_service_data[address][service][self.KEY_LAST_ONLINE_TS] = ref_ts
 
                 events.append(NodeEvent(
                     address,

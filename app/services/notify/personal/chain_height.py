@@ -7,7 +7,7 @@ from services.lib.depcont import DepContainer
 from services.lib.utils import most_common
 from services.models.node_info import NodeEvent, NodeEventType, EventBlockHeight
 from services.models.thormon import ThorMonAnswer
-from services.notify.personal import UserDataCache
+from services.notify.personal.user_data import UserDataCache
 from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
 
 
@@ -60,7 +60,7 @@ class ChainHeightTracker(BaseChangeTracker):
         return self.cache.user_node_service_data[user][node][service].get(self.KEY_SYNC_STATE, True)
 
     def set_user_state(self, user, node, service, is_ok):
-        return self.cache.user_node_service_data[user][node][service].get(self.KEY_SYNC_STATE, is_ok)
+        self.cache.user_node_service_data[user][node][service][self.KEY_SYNC_STATE] = is_ok
 
     async def get_events(self, last_answer: ThorMonAnswer, user_cache: UserDataCache):
         self.cache = user_cache

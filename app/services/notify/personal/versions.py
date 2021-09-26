@@ -51,7 +51,7 @@ class VersionTracker(BaseChangeTracker):
                 ))
         return changes
 
-    async def is_event_ok(self, event: NodeEvent, settings: dict) -> bool:
+    async def is_event_ok(self, event: NodeEvent, user_id, settings: dict) -> bool:
         if event.type == NodeEventType.NEW_VERSION_DETECTED and bool(settings.get(NodeOpSetting.NEW_VERSION_ON, True)):
             return True
 

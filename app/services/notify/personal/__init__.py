@@ -136,8 +136,9 @@ class NodeChangePersonalNotifier(INotified):
 
             groups = list(grouper(MAX_CHANGES_PER_MESSAGE, filtered_change_list))  # split to several messages
 
-            self.logger.info(f'Sending personal notifications to user: {user}: '
-                             f'{len(event_list)} changes grouped to {len(groups)} groups...')
+            if groups:
+                self.logger.info(f'Sending personal notifications to user: {user}: '
+                                 f'{len(event_list)} changes grouped to {len(groups)} groups...')
 
             for group in groups:
                 messages = [loc.notification_text_for_node_op_changes(c) for c in group]

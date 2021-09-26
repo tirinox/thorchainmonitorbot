@@ -22,7 +22,7 @@ class SlashPointTracker(BaseChangeTracker):
                 return [NodeEvent(node_address, NodeEventType.SLASHING, data, thor_node=last_state, tracker=self)]
         return []
 
-    async def is_event_ok(self, event: NodeEvent, settings: dict) -> bool:
+    async def is_event_ok(self, event: NodeEvent, user_id, settings: dict) -> bool:
         if bool(settings.get(NodeOpSetting.SLASH_ON, True)):
             return False
         # todo
@@ -31,4 +31,4 @@ class SlashPointTracker(BaseChangeTracker):
         interval = settings.get(NodeOpSetting.SLASH_PERIOD, 5 * MINUTE)
         # fixme!
 
-        return True
+        return False

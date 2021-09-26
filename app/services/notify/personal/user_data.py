@@ -21,11 +21,15 @@ class UserDataCache(NamedTuple):
     @classmethod
     def from_json(cls, j):
         if not j:
-            return cls({}, {})
-        j = ujson.loads(j) if isinstance(j, str) else j
+            node_service_data = {}
+            user_node_service_data = {}
+        else:
+            j = ujson.loads(j) if isinstance(j, str) else j
+            node_service_data = j.get('node_service_data', {})
+            user_node_service_data = j.get('user_node_service_data', {})
         return cls(
-            node_service_data=make_nested_default_dict(j.get('node_service_data', {})),
-            user_node_service_data=make_nested_default_dict(j.get('user_node_service_data', {}))
+            make_nested_default_dict(node_service_data),
+            make_nested_default_dict(user_node_service_data)
         )
 
     async def save(self, db: DB):
