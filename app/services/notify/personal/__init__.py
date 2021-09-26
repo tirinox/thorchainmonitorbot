@@ -74,9 +74,9 @@ class NodeChangePersonalNotifier(INotified):
                 node.node_address, max_ago_sec=TELEMETRY_MAX_HISTORY_DURATION,
                 tolerance=TELEMETRY_TOLERANCE, n_points=TELEMETRY_MAX_POINTS
             )
-            events += await self.online_tracker.get_node_events(node.node_address, data)
-            events += await self.chain_height_tracker.get_node_events(node.node_address, telemetry_data)
-            events += await self.slash_tracker.get_node_events(node.node_address, telemetry_data)
+            events += await self.online_tracker.get_node_events(node.node_address, data, user_cache)
+            events += await self.chain_height_tracker.get_node_events(node.node_address, telemetry_data)  # todo params
+            events += await self.slash_tracker.get_node_events(node.node_address, telemetry_data)  # todo params
 
         await self._cast_messages_for_events(events)
 

@@ -1,6 +1,9 @@
-import pytest
+import json
 
-from services.lib.utils import nested_set, nested_get
+import pytest
+import ujson
+
+from services.lib.utils import nested_set, nested_get, make_nested_default_dict
 
 
 def test_get():
@@ -45,3 +48,21 @@ def test_set():
 
     assert dic['my']['dic'] == {'foo': 100}
     assert dic['your']['dic'] == {'bar': 200}
+
+
+def test_make_nested_default_dict():
+    assert make_nested_default_dict({}) == {}
+    assert make_nested_default_dict({
+        'foo': 'bar'
+    }) == {'foo': 'bar'}
+    assert make_nested_default_dict({
+        'foo': {'bar': 'del'},
+    }) == {'foo': {'bar': 'del'}}
+    d = make_nested_default_dict({})
+    d['x']['y']['z'] = 25
+    assert d['x']['y']['z'] == 25
+    assert d == {'x': {'y': {'z': 25}}}
+    d['x']['gram'] = 200
+    assert d == {'x': {'y': {'z': 25}, 'gram': 200}}
+
+    assert ujson.loads(ujson.dumps(d)) == d

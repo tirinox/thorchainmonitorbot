@@ -217,3 +217,11 @@ def nested_get(dic, keys, default=None):
     for key in keys[:-1]:
         dic = dic.get(key, {})
     return dic.get(keys[-1], default)
+
+
+def make_nested_default_dict(d):
+    factory = lambda: defaultdict(factory)
+    target = factory()
+    target.update(d)
+    return target
+
