@@ -389,6 +389,7 @@ class RussianLocalization(BaseLocalization):
 
     BUTTON_SET_LANGUAGE = '🌐 Язык'
     TEXT_SETTING_INTRO = '<b>Настройки</b>\nЧто вы хотите поменять в настройках?'
+    BUTTON_SET_NODE_OP_GOTO = 'Операторам нод'
 
     # -------- METRICS ----------
 

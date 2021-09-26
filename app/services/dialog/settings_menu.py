@@ -2,6 +2,7 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import *
 from aiogram.utils.helper import HelperMode
 
+from services.dialog.node_op_menu import NodeOpDialog
 from services.lib.texts import kbd
 from services.dialog.base import BaseDialog, message_handler
 
@@ -35,14 +36,22 @@ class SettingsDialog(BaseDialog):
         self.loc = await self.deps.loc_man.set_lang(self.user_id(message), lang, self.deps.db)
         await self.go_back(message)
 
+    async def go_to_node_op_settings(self, message: Message):
+        await NodeOpDialog(self.loc, self.data, self.deps).show_main_menu(message)
+
     @message_handler(state=SettingsStates.MAIN_SETTINGS_MENU)
     async def on_enter(self, message: Message):
         if message.text == self.loc.BUTTON_SM_BACK_MM:
             await self.go_back(message)
         elif message.text == self.loc.BUTTON_SET_LANGUAGE:
             await self.ask_language(message)
+        elif message.text == self.loc.BUTTON_SET_NODE_OP_GOTO:
+            await self.go_to_node_op_settings(message)
         else:
             await SettingsStates.MAIN_SETTINGS_MENU.set()
             await message.reply(self.loc.TEXT_SETTING_INTRO, reply_markup=kbd(
-                [self.loc.BUTTON_SET_LANGUAGE, self.loc.BUTTON_SM_BACK_MM], vert=True
+                [
+                    [self.loc.BUTTON_SET_LANGUAGE, self.loc.BUTTON_SET_NODE_OP_GOTO],
+                    [self.loc.BUTTON_SM_BACK_MM],
+                ], vert=True
             ))

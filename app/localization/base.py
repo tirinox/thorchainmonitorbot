@@ -493,6 +493,7 @@ class BaseLocalization(ABC):  # == English
 
     BUTTON_SET_LANGUAGE = '🌐 Language'
     TEXT_SETTING_INTRO = '<b>Settings</b>\nWhat would you like to tune?'
+    BUTTON_SET_NODE_OP_GOTO = 'NodeOp settings'
 
     # -------- METRICS ----------
 

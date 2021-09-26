@@ -56,7 +56,7 @@ class WSClient(abc.ABC):
                         try:
                             message = ujson.loads(reply)
                             await self.handle_wss_message(message)
-                        except ValueError:
+                        except (ValueError, TypeError, LookupError):
                             self.logger.error(f'Error decoding WebSocket JSON message! {reply[:1000]}...')
 
             except socket.gaierror:
@@ -64,7 +64,10 @@ class WSClient(abc.ABC):
                 await asyncio.sleep(self.sleep_time)
                 continue
             except ConnectionRefusedError:
-                self.logger.debug('Nobody seems to listen to this endpoint. Please check the URL.')
+                self.logger.error('Nobody seems to listen to this endpoint. Please check the URL.')
                 self.logger.debug(f'Retrying connection in {self.sleep_time}')
                 await asyncio.sleep(self.sleep_time)
                 continue
+            except Exception as e:
+                self.logger.error(f'Other error: {e}')
+                await asyncio.sleep(self.sleep_time)
