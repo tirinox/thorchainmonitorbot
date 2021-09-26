@@ -206,7 +206,6 @@ class App:
     async def on_shutdown(self, _):
         await self.deps.session.close()
 
-
     def run_bot(self):
         self.create_bot_stuff()
         executor.start_polling(self.deps.dp, skip_updates=True, on_startup=self.on_startup,

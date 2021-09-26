@@ -4,6 +4,20 @@ from services.lib.date_utils import now_ts
 from services.models.node_info import NodeEvent
 
 
+STANDARD_INTERVALS = [
+    '2m',
+    '5m',
+    '15m',
+    '30m',
+    '60m',
+    '2h',
+    '6h',
+    '12h',
+    '24h',
+    '3d',
+]
+
+
 class NodeOpSetting:
     IP_ADDRESS_ON = 'nop:ip:on'
     VERSION_ON = 'nop:version:on'

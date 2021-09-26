@@ -18,7 +18,7 @@ from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, i
 from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEventType, NodeEvent, \
-    EventBlockHeight, EventDataVariation
+    EventBlockHeight, EventDataVariation, EventDataSlash
 from services.models.pool_info import PoolInfo, PoolChanges
 from services.models.price import PriceReport
 from services.models.queue import QueueInfo
@@ -1098,17 +1098,18 @@ class BaseLocalization(ABC):  # == English
     BUTTON_NOP_TURN_ON = 'Turn ON'
     BUTTON_NOP_TURN_OFF = 'Turn OFF'
 
-    BUTTON_NOP_2MIN = '2 min'
-    BUTTON_NOP_5MIN = '5 min'
-    BUTTON_NOP_15MIN = '15 min'
-    BUTTON_NOP_30MIN = '30 min'
-    BUTTON_NOP_60MIN = '60 min'
-
-    BUTTON_NOP_2H = '2 h'
-    BUTTON_NOP_6H = '6 h'
-    BUTTON_NOP_12H = '12 h'
-    BUTTON_NOP_24H = '24 h'
-    BUTTON_NOP_3D = '3 days'
+    BUTTON_NOP_INTERVALS = {
+        '2m': '2 min',
+        '5m': '5 min',
+        '15m': '15 min',
+        '30m': '30 min',
+        '60m': '60 min',
+        '2h': '2 h',
+        '6h': '6 h',
+        '12h': '12 h',
+        '24h': '24 h',
+        '3d': '3 days',
+    }
 
     TEXT_NOP_SLASH_THRESHOLD = 'Please select a threshold for slash point ' \
                                'alerts in slash points (recommended around 5 - 10):'
@@ -1132,13 +1133,12 @@ class BaseLocalization(ABC):  # == English
         return link(get_explorer_url_for_node(address), short_addr)
 
     def notification_text_for_node_op_changes(self, c: NodeEvent):
-        # todo! make it good-looking
         message = ''
         short_addr = self.node_link(c.address)
         if c.type == NodeEventType.SLASHING:
-            data: EventDataVariation = c.data
-            old, new = data.points[0][1], data.points[-1][1]  # fixme!
-            message = f'🔪 Node {short_addr} got slashed for {bold(new - old)} pts (now <i>{new}</i> slash pts)!'
+            data: EventDataSlash = c.data
+            message = f'🔪 Node {short_addr} got slashed ' \
+                      f'for {bold(data.delta_pts)} pts (now <i>{data.current_pts}</i> slash pts)!'
         elif c.type == NodeEventType.VERSION_CHANGED:
             old, new = c.data
             message = f'🆙 Node {short_addr} version upgrade from {ital(old)} to {bold(new)}!'

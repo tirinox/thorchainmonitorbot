@@ -8,11 +8,11 @@ from services.dialog.base import BaseDialog, message_handler, query_handler
 from services.jobs.node_churn import NodeStateDatabase
 from services.lib.date_utils import parse_timespan_to_seconds, HOUR
 from services.lib.telegram import TelegramInlineList
-from services.lib.texts import join_as_numbered_list
+from services.lib.texts import join_as_numbered_list, grouper
 from services.lib.utils import parse_list_from_string, fuzzy_search
 from services.models.node_info import NodeInfo
 from services.models.node_watchers import NodeWatcherStorage
-from services.notify.personal.helpers import NodeOpSetting
+from services.notify.personal.helpers import NodeOpSetting, STANDARD_INTERVALS
 
 
 class NodeOpStates(StatesGroup):
@@ -574,24 +574,12 @@ class NodeOpDialog(BaseDialog):
         await query.answer()
 
     def inline_keyboard_time_selector(self):
-        return InlineKeyboardMarkup(
-            inline_keyboard=[
-                [
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_2MIN, callback_data='2m'),
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_5MIN, callback_data='5m'),
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_15MIN, callback_data='15m'),
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_30MIN, callback_data='30m'),
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_60MIN, callback_data='60m'),
-                ],
-                [
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_2H, callback_data='2h'),
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_6H, callback_data='6h'),
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_12H, callback_data='12h'),
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_24H, callback_data='24h'),
-                    InlineKeyboardButton(self.loc.BUTTON_NOP_3D, callback_data='3d'),
-                ],
-                [
-                    InlineKeyboardButton(self.loc.BUTTON_BACK, callback_data='back')
-                ]
-            ]
-        )
+        localization = self.loc.BUTTON_NOP_INTERVALS
+        buttons = [
+            InlineKeyboardButton(localization.get(t, t), callback_data=t) for t in STANDARD_INTERVALS
+        ]
+        butt_groups = list(grouper(5, buttons))
+        butt_groups += [[
+            InlineKeyboardButton(self.loc.BUTTON_BACK, callback_data='back')
+        ]]
+        return InlineKeyboardMarkup(inline_keyboard=butt_groups)

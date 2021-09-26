@@ -296,6 +296,16 @@ class EventDataVariation(NamedTuple):
         return self.points[0] if self.points else 0, 0
 
 
+class EventDataSlash(NamedTuple):
+    previous_pts: int
+    current_pts: int
+    interval_sec: float
+
+    @property
+    def delta_pts(self):
+        return abs(self.current_pts - self.previous_pts)
+
+
 class NodeEventType:
     VERSION_CHANGED = 'version_change'
     NEW_VERSION_DETECTED = 'new_version'

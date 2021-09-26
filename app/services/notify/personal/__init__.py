@@ -68,18 +68,13 @@ class NodeChangePersonalNotifier(INotified):
         user_cache = await UserDataCache.load(self.deps.db)
         self.logger.info(str(user_cache))
 
-        events = []
-
-        events += await self.online_tracker.get_events(data, user_cache)
-        events += await self.chain_height_tracker.get_events(data, user_cache)
-
-        for node in data.nodes:
-            # fixme!
-            telemetry_data = await NodeTelemetryDatabase(self.deps).read_telemetry(
-                node.node_address, max_ago_sec=TELEMETRY_MAX_HISTORY_DURATION,
-                tolerance=TELEMETRY_TOLERANCE, n_points=TELEMETRY_MAX_POINTS
-            )
-            events += await self.slash_tracker.get_node_events(node.node_address, telemetry_data)  # todo params
+        events = sum(
+            await asyncio.gather(
+                self.online_tracker.get_events(data, user_cache),
+                self.chain_height_tracker.get_events(data, user_cache),
+                self.slash_tracker.get_events(data, user_cache),
+            ), []
+        )
 
         await self._cast_messages_for_events(events)
 

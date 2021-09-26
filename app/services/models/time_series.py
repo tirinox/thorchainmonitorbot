@@ -40,8 +40,13 @@ class TimeSeries:
                                    count=max_points)
         return points
 
-    async def get_best_point_ago(self, ago_sec: float, tolerance_sec=10) -> Tuple[dict, float]:
-        exact_point = now_ts() - ago_sec
+    async def get_best_point_ago(self, ago_sec: float,
+                                 tolerance_sec=10, tolerance_percent=None,
+                                 ref_ts=None) -> Tuple[dict, float]:
+        ref_ts = ref_ts or now_ts()
+        exact_point = ref_ts - ago_sec
+        if tolerance_percent is not None:
+            tolerance_sec = max(tolerance_sec, ago_sec * tolerance_percent * 0.01)
         points = await self.select(*self.range_ago(ago_sec, tolerance_sec))
         best_point = None
         best_diff = 1e30

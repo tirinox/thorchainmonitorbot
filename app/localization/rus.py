@@ -936,17 +936,18 @@ class RussianLocalization(BaseLocalization):
     BUTTON_NOP_TURN_ON = 'Вкл.'
     BUTTON_NOP_TURN_OFF = 'Выкл.'
 
-    BUTTON_NOP_2MIN = '2 мин.'
-    BUTTON_NOP_5MIN = '5 мин.'
-    BUTTON_NOP_15MIN = '15 мин.'
-    BUTTON_NOP_30MIN = '30 мин.'
-    BUTTON_NOP_60MIN = '60 мин.'
-
-    BUTTON_NOP_2H = '2 ч'
-    BUTTON_NOP_6H = '6 ч'
-    BUTTON_NOP_12H = '12 ч'
-    BUTTON_NOP_24H = '24 ч'
-    BUTTON_NOP_3D = '3 дн'
+    BUTTON_NOP_INTERVALS = {
+        '2m': '2 мин',
+        '5m': '5 мин',
+        '15m': '15 мин',
+        '30m': '30 мин',
+        '60m': '1 час',
+        '2h': '2 часа',
+        '6h': '6 ч.',
+        '12h': '12 ч.',
+        '24h': '1 день',
+        '3d': '3 дня',
+    }
 
     TEXT_NOP_SLASH_THRESHOLD = 'Выберете порог для сообщений о ' \
                                'штрафных очках (рекомендуем в районе 5 - 10):'
