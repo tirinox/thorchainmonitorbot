@@ -5,7 +5,7 @@ from services.jobs.fetch.base import INotified
 from services.lib.config import SubConfig
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
-from services.lib.utils import linear_transform
+from services.lib.utils import linear_transform, class_logger
 from services.models.tx import ThorTxExtended, ThorTxType
 from services.notify.types.cap_notify import LiquidityCapNotifier
 
@@ -39,7 +39,7 @@ class GenericTxNotifier(INotified):
         self.deps = deps
         self.params = params
         self.tx_types = tx_types
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = class_logger(self)
 
         self.max_age_sec = parse_timespan_to_seconds(deps.cfg.tx.max_age)
         self.min_usd_total = int(params.min_usd_total)

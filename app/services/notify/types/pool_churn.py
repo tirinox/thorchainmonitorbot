@@ -6,13 +6,14 @@ from services.jobs.fetch.pool_price import PoolInfoFetcherMidgard
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
+from services.lib.utils import class_logger
 from services.models.pool_info import PoolInfoMap, PoolChanges, PoolChange
 
 
 class PoolChurnNotifier(INotified):
     def __init__(self, deps: DepContainer):
         self.deps = deps
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = class_logger(self)
         self.old_pool_dict = {}
         cooldown_sec = parse_timespan_to_seconds(deps.cfg.pool_churn.notification.cooldown)
         self.spam_cd = Cooldown(self.deps.db, 'PoolChurnNotifier-spam', cooldown_sec)

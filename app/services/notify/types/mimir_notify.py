@@ -9,12 +9,13 @@ from localization import BaseLocalization
 from services.jobs.fetch.base import INotified
 from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.lib.depcont import DepContainer
+from services.lib.utils import class_logger
 
 
 class MimirChangedNotifier(INotified):
     def __init__(self, deps: DepContainer):
         self.deps = deps
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = class_logger(self)
 
     def _dbg_randomize_mimir(self, fresh_mimir: ThorMimir):
         if random.uniform(0, 1) > 0.5:

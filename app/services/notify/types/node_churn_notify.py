@@ -11,13 +11,14 @@ from services.lib.date_utils import MINUTE
 from services.lib.depcont import DepContainer
 from services.lib.draw_utils import img_to_bio
 from services.lib.texts import BoardMessage
+from services.lib.utils import class_logger
 from services.models.node_info import NodeSetChanges, NodeInfo
 
 
 class NodeChurnNotifier(INotified):
     def __init__(self, deps: DepContainer):
         self.deps = deps
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = class_logger(self)
         self.cd = Cooldown(self.deps.db, 'NodeChurnNotification', MINUTE * 10, 5)
 
     async def on_data(self, sender, changes: NodeSetChanges):

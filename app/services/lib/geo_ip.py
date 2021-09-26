@@ -8,6 +8,7 @@ from aioredis import Redis
 
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
+from services.lib.utils import class_logger
 
 
 class GeoIPManager:
@@ -18,7 +19,7 @@ class GeoIPManager:
         self.deps = deps
         self.expire_period_sec = int(
             parse_timespan_to_seconds(deps.cfg.as_str('node_info.geo_ip.expire', default='24h')))
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = class_logger(self)
 
     def key(self, ip: str):
         return f'{self.DB_KEY_IP_INFO}:{ip}'

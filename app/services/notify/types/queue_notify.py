@@ -8,13 +8,14 @@ from services.lib.cooldown import CooldownBiTrigger
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.texts import BoardMessage
+from services.lib.utils import class_logger
 from services.models.time_series import TimeSeries
 
 
 class QueueNotifier(INotified):
     def __init__(self, deps: DepContainer):
         self.deps = deps
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = class_logger(self)
 
         cfg = deps.cfg.queue
         self.cooldown = parse_timespan_to_seconds(cfg.cooldown)
