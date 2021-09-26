@@ -18,5 +18,5 @@ class BondTracker(BaseChangeTracker):
                 yield NodeEvent(prev.node_address, NodeEventType.BOND, (prev.bond, curr.bond),
                                 node=curr, tracker=self)
 
-    async def is_event_ok(self, event: NodeEvent, settings: dict) -> bool:
+    async def is_event_ok(self, event: NodeEvent, user_id, settings: dict) -> bool:
         return bool(settings.get(NodeOpSetting.BOND_ON, True))

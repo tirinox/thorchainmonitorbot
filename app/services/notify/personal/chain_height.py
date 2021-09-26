@@ -87,7 +87,7 @@ class ChainHeightTracker(BaseChangeTracker):
 
         return events
 
-    async def is_event_ok(self, event: NodeEvent, settings: dict) -> bool:
+    async def is_event_ok(self, event: NodeEvent, user_id, settings: dict) -> bool:
         if not bool(settings.get(NodeOpSetting.CHAIN_HEIGHT_ON, True)):
             return False
 

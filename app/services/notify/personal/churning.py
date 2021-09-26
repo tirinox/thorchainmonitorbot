@@ -22,5 +22,5 @@ class NodeChurnTracker(BaseChangeTracker):
             ) for n in nodes
         ]
 
-    async def is_event_ok(self, event: NodeEvent, settings: dict) -> bool:
+    async def is_event_ok(self, event: NodeEvent, user_id, settings: dict) -> bool:
         return bool(settings.get(NodeOpSetting.CHURNING_ON, True))

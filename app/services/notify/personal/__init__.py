@@ -2,7 +2,7 @@ import asyncio
 import operator
 from collections import defaultdict
 from functools import reduce
-from typing import List
+from typing import List, Optional
 
 from localization import LocalizationManager
 from services.jobs.fetch.base import INotified
@@ -22,6 +22,7 @@ from services.notify.personal.helpers import BaseChangeTracker
 from services.notify.personal.node_online import NodeOnlineTracker
 from services.notify.personal.slashing import SlashPointTracker
 from services.notify.personal.telemetry import NodeTelemetryDatabase
+from services.notify.personal.user_data import UserDataCache
 from services.notify.personal.versions import VersionTracker
 
 DEFAULT_SLASH_THRESHOLD = 5
@@ -54,9 +55,9 @@ class NodeChangePersonalNotifier(INotified):
         asyncio.create_task(self.thor_mon.listen_forever())
 
     async def on_data(self, sender, data):
-        if isinstance(data, NodeSetChanges):
+        if isinstance(data, NodeSetChanges):  # from Churn Fetcher
             asyncio.create_task(self._handle_node_churn_bg_job(data))  # long-running job goes to the background!
-        elif isinstance(data, ThorMonAnswer):
+        elif isinstance(data, ThorMonAnswer):  # from ThorMon
             asyncio.create_task(self._handle_thormon_message_bg_job(data))  # long-running job goes to the background!
 
     async def _handle_thormon_message_bg_job(self, data: ThorMonAnswer):
@@ -64,23 +65,22 @@ class NodeChangePersonalNotifier(INotified):
 
         self.chain_height_tracker.estimate_block_height(data, maximum=True)
 
+        user_cache = await UserDataCache.load(self.deps.db)
+        self.logger.info(str(user_cache))
+
         events = []
         for node in data.nodes:
             telemetry_data = await NodeTelemetryDatabase(self.deps).read_telemetry(
                 node.node_address, max_ago_sec=TELEMETRY_MAX_HISTORY_DURATION,
                 tolerance=TELEMETRY_TOLERANCE, n_points=TELEMETRY_MAX_POINTS
             )
-            events += await self.online_tracker.get_node_events(node.node_address, telemetry_data)
+            events += await self.online_tracker.get_node_events(node.node_address, data)
             events += await self.chain_height_tracker.get_node_events(node.node_address, telemetry_data)
             events += await self.slash_tracker.get_node_events(node.node_address, telemetry_data)
 
-        # if events:  # fixme: debug
-        #     print('-----')
-        #     for e in events:
-        #         print(e)
-        #     print('-----')
+        await self._cast_messages_for_events(events)
 
-        await self._cast_messages_for_changes(events)
+        await user_cache.save(self.deps.db)
 
     async def _handle_node_churn_bg_job(self, node_set_change: NodeSetChanges):
         prev_and_curr_node_map = node_set_change.prev_and_curr_node_map
@@ -91,43 +91,45 @@ class NodeChangePersonalNotifier(INotified):
         events += await self.ip_address_tracker.get_all_changes(prev_and_curr_node_map)
         events += await self.bond_tracker.get_all_changes(prev_and_curr_node_map)
 
-        # changes += self._dbg_add_mock_changes(prev_and_curr_node_map)
+        await self._cast_messages_for_events(events)
 
-        await self._cast_messages_for_changes(events)
-
-    async def _cast_messages_for_changes(self, changes: List[NodeEvent]):
-        if not changes:
+    async def _cast_messages_for_events(self, events: List[NodeEvent]):
+        if not events:
             return
 
-        self.logger.info(f'Casting Node changes ({len(changes)} items)')
+        self.logger.info(f'Casting Node changes ({len(events)} items)')
 
         # 2. get list of changed nodes
-        all_changed_node_addresses = set(c.address for c in changes)
+        affected_node_addresses = set(c.address for c in events)
 
         # 3. get list of user who watch those nodes
-        node_to_user = await self.watchers.all_users_for_many_nodes(all_changed_node_addresses)
+        node_to_user = await self.watchers.all_users_for_many_nodes(affected_node_addresses)
         all_users = reduce(operator.or_, node_to_user.values()) if node_to_user else []
 
         if not all_users:
             return  # nobody is interested in those changes...
 
-        user_changes = defaultdict(list)
-        for change in changes:
-            for user in node_to_user[change.address]:
-                this_user = user_changes[user]
-                if change.single_per_user and any(c.type == change.type for c in this_user):
+        user_events = defaultdict(list)
+        for event in events:
+            for user in node_to_user[event.address]:
+                this_user = user_events[user]
+
+                # single_per_user: skip all events of this kind if there was one before!
+                if event.single_per_user and any(e.type == event.type for e in this_user):
                     continue
-                this_user.append(change)
+
+                this_user.append(event)
 
         loc_man: LocalizationManager = self.deps.loc_man
 
-        for user, event_list in user_changes.items():
+        # for every user
+        for user, event_list in user_events.items():
             loc = await loc_man.get_from_db(user, self.deps.db)
 
             settings = await self.watchers.get_user_settings(user)
 
             # filter changes according to the user's setting
-            filtered_change_list = await self._filter_events(event_list, settings)
+            filtered_change_list = await self._filter_events(event_list, user, settings)
 
             groups = list(grouper(MAX_CHANGES_PER_MESSAGE, filtered_change_list))  # split to several messages
 
@@ -141,24 +143,16 @@ class NodeChangePersonalNotifier(INotified):
                 if text:
                     asyncio.create_task(self.deps.broadcaster.safe_send_message(user, text))
 
-    async def _filter_events(self, event_list: List[NodeEvent], settings: dict) -> List[NodeEvent]:
+    @staticmethod
+    async def _filter_events(event_list: List[NodeEvent], user_id, settings: dict) -> List[NodeEvent]:
         results = []
         for event in event_list:
             # noinspection PyTypeChecker
             tracker: BaseChangeTracker = event.tracker
-            if tracker and await tracker.is_event_ok(event, settings):
+            if tracker and await tracker.is_event_ok(event, user_id, settings):
                 results.append(event)
         return results
 
     @property
     def last_signal_sec_ago(self):
         return self.thor_mon.last_signal_sec_ago
-
-    @staticmethod
-    def _dbg_add_mock_changes(pc_node_map: MapAddressToPrevAndCurrNode):
-        return [
-            NodeEvent(
-                addr, NodeEventType.SLASHING, (curr.slash_points, curr.slash_points + 10)
-            )
-            for addr, (prev, curr) in pc_node_map.items()
-        ]

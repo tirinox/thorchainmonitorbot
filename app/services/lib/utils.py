@@ -199,3 +199,21 @@ def turn_dic_inside_out(d: dict, factory=set, op=set.add):
             # noinspection PyArgumentList
             op(result[item], k)
     return dict(result)
+
+
+def nested_set(dic, keys, value):
+    if not keys:
+        raise KeyError
+    original = dic
+    for key in keys[:-1]:
+        dic = dic.setdefault(key, {})
+    dic[keys[-1]] = value
+    return original
+
+
+def nested_get(dic, keys, default=None):
+    if not keys:
+        return default
+    for key in keys[:-1]:
+        dic = dic.get(key, {})
+    return dic.get(keys[-1], default)

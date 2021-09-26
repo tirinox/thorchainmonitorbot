@@ -20,7 +20,7 @@ class NodeOpSetting:
 
 
 class BaseChangeTracker:
-    async def is_event_ok(self, event: NodeEvent, settings: dict) -> bool:
+    async def is_event_ok(self, event: NodeEvent, user_id, settings: dict) -> bool:
         return True
 
 

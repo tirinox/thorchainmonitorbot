@@ -1,80 +1,16 @@
-from itertools import takewhile, islice
-from typing import List, NamedTuple, Tuple
+from typing import List, Tuple
 
-from services.lib.cooldown import CooldownBiTrigger, INFINITE_TIME
-from services.lib.date_utils import HOUR, now_ts
+from services.lib.date_utils import HOUR
 from services.lib.depcont import DepContainer
-from services.models.node_info import EventNodeOnline, NodeEventType, NodeEvent
-from services.models.thormon import ThorMonNode, ThorMonNodeTimeSeries, get_last_thormon_node_state
+from services.models.node_info import EventNodeOnline, NodeEvent
+from services.models.thormon import ThorMonAnswer
+from services.notify.personal import UserDataCache
 from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
 from services.notify.personal.telemetry import NodeTelemetryDatabase
 
-MAX_HISTORY_DURATION = HOUR
-DETECTION_OFFLINE_TIME = 10.0  # sec
-TRIGGER_SWITCH_CD = 30.0  # sec
-
 TimeStampedList = List[Tuple[float, bool]]
 
-
-class ServiceOnlineProfile(NamedTuple):
-    name: str
-    num_points: int
-    num_online_points: int
-    num_last_silent_points: int
-    online_ratio: float
-    recent_offline_ratio: float
-    points: TimeStampedList
-
-    def filter_age(self, max_age_sec):
-        if not self.points:
-            return self
-        youngest_ts = max(ts for ts, p in self.points)
-        filtered_points = [(ts, p) for ts, p in self.points if ts >= youngest_ts - max_age_sec]
-        return self.from_points(filtered_points, self.name)
-
-    @classmethod
-    def from_thormon_nodes(cls, data: List[Tuple[float, ThorMonNode]], service):
-        points = [(ts, getattr(node, service)) for ts, node in data]
-        return cls.from_points(points, service)
-
-    @classmethod
-    def from_points(cls, points: TimeStampedList, service):
-        num_online_points = sum(1 for ts, p in points if p)
-        num_points = len(points)
-        if not num_points:
-            return cls(service, 0, 0, 0, 0, 0, [])
-
-        online_ratio = num_online_points / num_points
-        num_last_silent_points = sum(1 for _ in takewhile(lambda e: not e[1], reversed(points)))
-        recent_offline_ratio = num_last_silent_points / num_points
-
-        return cls(
-            service,
-            num_points, num_online_points, num_last_silent_points,
-            online_ratio, recent_offline_ratio,
-            points=points
-        )
-
-    def calc_offline_time(self, now=None, skip=0):
-        now = now or now_ts()
-        youngest_ts = now
-        for ts, value in islice(reversed(self.points), skip, None):
-            if value:
-                break
-            youngest_ts = ts
-        return now - youngest_ts
-
-    @property
-    def offline_time(self):
-        return self.calc_offline_time(now_ts())
-
-
-class NodeOnlineProfile(NamedTuple):
-    node_address: str
-    rpc: ServiceOnlineProfile
-    thor: ServiceOnlineProfile
-    midgard: ServiceOnlineProfile
-    bifrost: ServiceOnlineProfile
+SERVICES = ['rpc', 'midgard', 'thor', 'bifrost']
 
 
 class NodeOnlineTracker(BaseChangeTracker):
@@ -82,63 +18,72 @@ class NodeOnlineTracker(BaseChangeTracker):
         self.deps = deps
         self.telemetry_db = NodeTelemetryDatabase(deps)
 
-    async def get_online_profiles(self, node_addresses: List[str], telemetry):
-        results = {}
-        for node_address in node_addresses:
-            results[node_address] = self.get_online_profile(node_address, telemetry)
-        return results
-
-    @staticmethod
-    def get_online_profile(node_address: str, telemetry):
-        return NodeOnlineProfile(
-            node_address,
-            rpc=ServiceOnlineProfile.from_thormon_nodes(telemetry, 'rpc'),
-            midgard=ServiceOnlineProfile.from_thormon_nodes(telemetry, 'midgard'),
-            bifrost=ServiceOnlineProfile.from_thormon_nodes(telemetry, 'bifrost'),
-            thor=ServiceOnlineProfile.from_thormon_nodes(telemetry, 'thor'),
-        )
-
-    async def get_node_events(self, node_address, telemetry: ThorMonNodeTimeSeries):
+    async def get_node_events(self, node_address, last_answer: ThorMonAnswer, user_cache: UserDataCache):
         if not node_address:
             return []
 
-        changes = []
 
-        profile = self.get_online_profile(node_address, telemetry)
-        for service in (profile.rpc, profile.thor, profile.bifrost, profile.midgard):
-            offline = service.offline_time
+        # events = self.data.update(last_answer.nodes, ref_ts=now_ts())
+        # await self.data.save(self.deps.db)
 
-            # node is considered online by default!
-            trigger = CooldownBiTrigger(self.deps.db,
-                                        f'online.{service.name}.{node_address}',
-                                        cooldown_sec=INFINITE_TIME,
-                                        switch_cooldown_sec=TRIGGER_SWITCH_CD,
-                                        default=True)
+        return events
 
-            if offline >= DETECTION_OFFLINE_TIME and await trigger.turn_off():
-                changes.append(NodeEvent(
-                    node_address, NodeEventType.SERVICE_ONLINE, EventNodeOnline(False, offline, service.name),
-                    thor_node=get_last_thormon_node_state(telemetry), tracker=self
-                ))
-            elif offline == 0.0 and await trigger.turn_on():
-                changes.append(NodeEvent(
-                    node_address, NodeEventType.SERVICE_ONLINE, EventNodeOnline(True, 0.0, service.name),
-                    thor_node=get_last_thormon_node_state(telemetry), tracker=self
-                ))
-
-        return changes
-
-    async def is_event_ok(self, event: NodeEvent, settings: dict) -> bool:
+    async def is_event_ok(self, event: NodeEvent, user_id, settings: dict) -> bool:
         if not bool(settings.get(NodeOpSetting.OFFLINE_ON, True)):
             return False
 
-        # fixme!
+        event_data: EventNodeOnline = event.data
+        threshold_interval = float(settings.get(NodeOpSetting.OFFLINE_INTERVAL, HOUR))
 
-        online_time_threshold = float(settings.get(NodeOpSetting.OFFLINE_INTERVAL, HOUR))
-        data: EventNodeOnline = event.data
-        if data.online:
-            return True
-        elif data.duration >= online_time_threshold:
-            return True
-        else:
-            return False
+        return True
+
+"""
+
+    # def last_online_ts(self, node: str, service: str):
+    #     try:
+    #         return self.node_service_last_online_ts[node][service]
+    #     except LookupError:
+    #         return 0
+
+    # def offline_time(self, node: str, service: str, ts=None):
+    #     ref_ts = ts or now_ts()
+    #     return ref_ts - self.last_online_ts(node, service)
+
+
+    def update(self, nodes: List[ThorMonNode], ref_ts=None):
+        ref_ts = ref_ts or now_ts()
+        cache = self.node_service_last_online_ts
+        events = []
+        for node in nodes:
+            address = node.node_address
+            for service in SERVICES:
+                is_ok = bool(getattr(node, service))
+                if is_ok:
+                    if address not in cache:
+                        cache[address] = {}
+                    cache[address][service] = ref_ts()
+
+                events.append(NodeEvent(
+                    address,
+                    NodeEventType.SERVICE_ONLINE,
+                    EventNodeOnline(is_ok, self.offline_time(address, service, ref_ts), service),
+                    thor_node=node,
+                    tracker=self
+                ))
+        return events
+
+    def is_online_tracked(self, user, node, service, default=True):
+        try:
+            return self.user_node_service_is_online[user][node][service]
+        except LookupError:
+            return default
+
+    def set_online_tracked(self, user, node, service, online_flag):
+        cache = self.user_node_service_is_online
+        if user not in cache:
+            cache[user] = {}
+        if node not in cache[user]:
+            cache[user][node] = {}
+        cache[user][node][service] = online_flag
+
+"""

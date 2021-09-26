@@ -37,12 +37,15 @@ class LpAppFramework:
     async def send_test_tg_message(self, txt, **kwargs):
         return await telegram_send_message_basic(self.tg_token, TG_TEST_USER, txt, **kwargs)
 
-    async def prepare(self):
+    async def prepare(self, brief=False):
         d = self.deps
         d.session = aiohttp.ClientSession()
         d.thor_connector = ThorConnector(get_thor_env_by_network_id(d.cfg.network_id), d.session)
 
         await d.db.get_redis()
+
+        if brief:
+            return
 
         d.mimir_const_holder = ConstMimirFetcher(d)
         await d.mimir_const_holder.fetch()  # get constants beforehand
