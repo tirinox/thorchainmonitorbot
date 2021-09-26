@@ -1159,10 +1159,10 @@ class BaseLocalization(ABC):  # == English
             verb = 'churned in ⬅️' if c.data else 'churned out ➡️'
             bond = c.node.bond
             message = f'🌐 Node {short_addr} ({short_money(bond)} {RAIDO_GLYPH} bond) {bold(verb)}!'
-        elif c.type in (NodeEventType.BLOCK_HEIGHT_STUCK, NodeEventType.BLOCK_HEIGHT_OK):
+        elif c.type in NodeEventType.BLOCK_HEIGHT:
             data: EventBlockHeight = c.data
 
-            if data.is_ok:
+            if data.is_sync:
                 message = f'✅ Node {short_addr} caught up blocks for {pre(data.chain)}.'
             else:
                 message = f'🔴 Node {short_addr} is {pre(data.block_lag)} blocks behind ' \

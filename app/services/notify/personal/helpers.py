@@ -1,7 +1,7 @@
 from typing import List, Any, Tuple
 
 from services.lib.date_utils import now_ts
-from services.models.node_info import NodeEvent, NodeEventType
+from services.models.node_info import NodeEvent
 
 
 class NodeOpSetting:

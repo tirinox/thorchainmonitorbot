@@ -9,7 +9,7 @@ from typing import List, Dict, NamedTuple, Optional, Tuple, Any
 from semver import VersionInfo
 
 from services.lib.constants import thor_to_float
-from services.lib.date_utils import MINUTE, now_ts
+from services.lib.date_utils import now_ts
 from services.models.base import BaseModelMixin
 from services.models.thormon import ThorMonNode
 
@@ -278,7 +278,7 @@ class EventBlockHeight(NamedTuple):
     expected_block: int = 0
     actual_block: int = 0
     how_long_behind: float = 0.0
-    is_ok: bool = False
+    is_sync: bool = False
 
     @property
     def block_lag(self):
@@ -296,7 +296,6 @@ class EventDataVariation(NamedTuple):
         return self.points[0] if self.points else 0, 0
 
 
-
 class NodeEventType:
     VERSION_CHANGED = 'version_change'
     NEW_VERSION_DETECTED = 'new_version'
@@ -305,9 +304,7 @@ class NodeEventType:
     BOND = 'bond'
     IP_ADDRESS_CHANGED = 'ip_address'
     SERVICE_ONLINE = 'service_online'
-    BLOCK_HEIGHT_STUCK = 'block_height_stuck'
-    BLOCK_HEIGHT_AHEAD = 'block_height_ahead'
-    BLOCK_HEIGHT_OK = 'block_height_ok'
+    BLOCK_HEIGHT = 'block_height'
 
 
 class NodeEvent(NamedTuple):

@@ -1,12 +1,13 @@
 from collections import defaultdict
+from typing import Optional
 
 from services.lib.constants import Chains
-from services.lib.cooldown import CooldownBiTrigger, INFINITE_TIME
 from services.lib.date_utils import parse_timespan_to_seconds, HOUR
 from services.lib.depcont import DepContainer
 from services.lib.utils import most_common
 from services.models.node_info import NodeEvent, NodeEventType, EventBlockHeight
-from services.models.thormon import ThorMonNodeTimeSeries, ThorMonAnswer, get_last_thormon_node_state
+from services.models.thormon import ThorMonAnswer
+from services.notify.personal import UserDataCache
 from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
 
 
@@ -18,6 +19,7 @@ class ChainHeightTracker(BaseChangeTracker):
             self.block_times[chain] = parse_timespan_to_seconds(en_time)
 
         self.recent_max_blocks = {}
+        self.cache: Optional[UserDataCache] = None
 
     def get_block_time(self, chain):
         return self.block_times.get(chain, Chains.block_time_default(chain))
@@ -52,49 +54,61 @@ class ChainHeightTracker(BaseChangeTracker):
         else:
             self.recent_max_blocks = self.estimate_block_height_most_common(data)
 
-    async def get_node_events(self, node_address, telemetry: ThorMonNodeTimeSeries):
-        if not node_address or not telemetry:
-            return []
+    KEY_SYNC_STATE = 'sync'
+
+    def get_user_state(self, user, node, service):
+        return self.cache.user_node_service_data[user][node][service].get(self.KEY_SYNC_STATE, True)
+
+    def set_user_state(self, user, node, service, is_ok):
+        return self.cache.user_node_service_data[user][node][service].get(self.KEY_SYNC_STATE, is_ok)
+
+    async def get_events(self, last_answer: ThorMonAnswer, user_cache: UserDataCache):
+        self.cache = user_cache
 
         events = []
-        last_node_state = get_last_thormon_node_state(telemetry)
-
         for chain, expected_block_height in self.recent_max_blocks.items():
-            actual = last_node_state.observe_chains.get(chain)
-            actual_block_height = actual.height if actual else 0
-            if actual_block_height == 0:
-                continue
+            for node in last_answer.nodes:
+                actual = node.observe_chains.get(chain)
+                actual_block_height = actual.height if actual else 0
+                if actual_block_height == 0:
+                    continue
 
-            is_ok = actual_block_height >= expected_block_height
+                is_ok = actual_block_height >= expected_block_height
+                time_lag = abs(actual_block_height - expected_block_height) * self.get_block_time(chain)
 
-            trigger = CooldownBiTrigger(self.deps.db,
-                                        f'height.{chain}.{node_address}',
-                                        cooldown_sec=INFINITE_TIME,
-                                        switch_cooldown_sec=0,
-                                        default=True)
-
-            if await trigger.turn(is_ok):
-                # the state has changed
-                if is_ok:
-                    ev_type = NodeEventType.BLOCK_HEIGHT_OK
-                else:
-                    ev_type = NodeEventType.BLOCK_HEIGHT_STUCK
-
-                time_delay = abs(actual_block_height - expected_block_height) * self.get_block_time(chain)
-                ev_data = EventBlockHeight(chain, expected_block_height, actual_block_height, time_delay, is_ok)
-
-                events.append(NodeEvent(node_address, ev_type, ev_data, thor_node=last_node_state, tracker=self))
+                events.append(NodeEvent(
+                    node.node_address, NodeEventType.BLOCK_HEIGHT,
+                    EventBlockHeight(
+                        chain, expected_block_height, actual_block_height,
+                        time_lag, is_ok
+                    ),
+                    thor_node=node, tracker=self
+                ))
 
         return events
+
+    @staticmethod
+    def get_service_name(chain):
+        return f'height_{chain}'
 
     async def is_event_ok(self, event: NodeEvent, user_id, settings: dict) -> bool:
         if not bool(settings.get(NodeOpSetting.CHAIN_HEIGHT_ON, True)):
             return False
 
-        # fixme!
+        event_data: EventBlockHeight = event.data
 
-        if event.type == NodeEventType.BLOCK_HEIGHT_STUCK:
-            threshold_interval = float(settings.get(NodeOpSetting.CHAIN_HEIGHT_INTERVAL, HOUR))
-            return event.data.how_long_behind >= threshold_interval
-        else:
+        threshold_interval = float(settings.get(NodeOpSetting.CHAIN_HEIGHT_INTERVAL, HOUR))
+        threshold_interval = max(threshold_interval, self.get_block_time(event_data.chain) * 1.5)
+
+        node, service = event.thor_node.node_address, self.get_service_name(event_data.chain)
+        user_thinks_sync = self.get_user_state(user_id, node, service)
+
+        if user_thinks_sync and not event_data.is_sync and event_data.how_long_behind >= threshold_interval:
+            self.set_user_state(user_id, node, service, is_ok=False)
             return True
+
+        if not user_thinks_sync and event_data.is_sync:
+            self.set_user_state(user_id, node, service, is_ok=True)
+            return True
+
+        return False

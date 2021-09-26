@@ -27,7 +27,7 @@ class NodeOnlineTracker(BaseChangeTracker):
         return ref_ts - self.cache.node_service_data[node][service].get(self.KEY_LAST_ONLINE_TS, 0)
 
     def get_user_state(self, user, node, service):
-        return self.cache.user_node_service_data[user][node][service].get(self.KEY_LAST_ONLINE_TS, True)
+        return self.cache.user_node_service_data[user][node][service].get(self.KEY_ONLINE_STATE, True)
 
     def set_user_state(self, user, node, service, is_ok):
         return self.cache.user_node_service_data[user][node][service].get(self.KEY_ONLINE_STATE, is_ok)
@@ -52,10 +52,7 @@ class NodeOnlineTracker(BaseChangeTracker):
                 ))
         return events
 
-    async def get_node_events(self, node_address, last_answer: ThorMonAnswer, user_cache: UserDataCache):
-        if not node_address:
-            return []
-
+    async def get_events(self, last_answer: ThorMonAnswer, user_cache: UserDataCache):
         self.cache = user_cache
         return self._update(last_answer.nodes, now_ts())
 
