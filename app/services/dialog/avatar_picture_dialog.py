@@ -82,11 +82,13 @@ class AvatarDialog(BaseDialog):
             # CLEAN UP IN THE END
             stack.push_async_callback(sticker.delete)
 
+            user_id = self.user_id(message)
+
             try:
                 if explicit_picture is not None:
                     user_pic = await download_tg_photo(explicit_picture)
                 else:
-                    user_pic = await get_userpic(message.bot, message.chat.id)
+                    user_pic = await get_userpic(message.bot, user_id)
             except Exception:
                 await message.answer(loc.TEXT_AVA_ERR_INVALID, reply_markup=self.menu_inline_kbd())
                 return
@@ -102,6 +104,5 @@ class AvatarDialog(BaseDialog):
 
             pic = await make_avatar(user_pic)
 
-            user_id = message.from_user.id
             pic = img_to_bio(pic, name=f'thor_ava_{user_id}.png')
             await message.answer_document(pic, caption=loc.TEXT_AVA_READY, reply_markup=self.menu_inline_kbd())

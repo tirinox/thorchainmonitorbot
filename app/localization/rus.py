@@ -15,7 +15,7 @@ from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, 
     up_down_arrow, plural, grouper
 from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
-from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus
+from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEvent
 from services.models.pool_info import PoolInfo, PoolChanges
 from services.models.price import PriceReport
 from services.models.queue import QueueInfo
@@ -24,6 +24,7 @@ from services.models.tx import ThorTxExtended, ThorTxType
 
 class RussianLocalization(BaseLocalization):
     LOADING = '⌛ Загрузка...'
+    SUCCESS = '✅ Успех!'
 
     SHORT_MONEY_LOC = {
         'K': ' тыс',
@@ -321,7 +322,8 @@ class RussianLocalization(BaseLocalization):
                 last_ath_pr = f'{last_ath.ath_price:.2f}'
             else:
                 last_ath_pr = str(last_ath.ath_price)
-            message += f"Последний ATH был ${pre(last_ath_pr)} ({format_time_ago(last_ath.ath_date)}).\n"
+            ago_str = self.format_time_ago(now_ts() - last_ath.ath_date)
+            message += f"Последний ATH был ${pre(last_ath_pr)} ({ago_str}).\n"
 
         time_combos = zip(
             ('1ч.', '24ч.', '7дн.'),
@@ -387,6 +389,7 @@ class RussianLocalization(BaseLocalization):
 
     BUTTON_SET_LANGUAGE = '🌐 Язык'
     TEXT_SETTING_INTRO = '<b>Настройки</b>\nЧто вы хотите поменять в настройках?'
+    BUTTON_SET_NODE_OP_GOTO = 'Операторам нод'
 
     # -------- METRICS ----------
 
@@ -463,6 +466,8 @@ class RussianLocalization(BaseLocalization):
             return "⚡ ОПТИМАЛЬНА"
         elif 0.6 > network_security_ratio >= 0.5:
             return "🤢 НЕДООБЕСПЕЧЕНА"
+        elif network_security_ratio == 0:
+            return '🚧 ДАННЫЕ НЕ ПОЛУЧЕНЫ...'
         else:
             return "🤬 НЕБЕЗОПАСНА"
 
@@ -611,7 +616,7 @@ class RussianLocalization(BaseLocalization):
                    f'{bold(new.pending_pool_count)} ожидающих активации пулов{pending_pool_changes}.\n'
 
         if new.next_pool_to_activate:
-            next_pool_wait = seconds_human(new.next_pool_activation_ts - now_ts())
+            next_pool_wait = self.seconds_human(new.next_pool_activation_ts - now_ts())
             next_pool = self.pool_link(new.next_pool_to_activate)
             message += f"Вероятно, будет активирован пул: {next_pool} через {next_pool_wait}."
         else:
@@ -820,3 +825,181 @@ class RussianLocalization(BaseLocalization):
                      'Когда Мимир уничтожается, сеть становится Mainnet без ограничений на ликвидность.')
 
         return text
+
+    # ------- NODE OP TOOLS -------
+
+    BUTTON_NOP_ADD_NODES = '➕ Добавь ноды'
+    BUTTON_NOP_MANAGE_NODES = '🖊️ Редактировать'
+    BUTTON_NOP_SETTINGS = '⚙️ Настройки'
+
+    def pretty_node_desc(self, node: NodeInfo, name=None):
+        addr = self.short_node_name(node.node_address, name)
+        return f'{pre(addr)} ({bold(short_money(node.bond, prefix="R"))} бонд)'
+
+    TEXT_NOP_INTRO_HEADING = bold('Добро пожаловать в Инстременты Операторов Нод.')
+
+    def text_node_op_welcome_text_part2(self, watch_list: dict, last_signal_ago: float):
+        text = 'Мы будем отправлять вам персонифицированные уведомления ' \
+               'когда что-то важное случается с нодами, которые вы мониторите.\n\n'
+        if watch_list:
+            text += f'У вас {len(watch_list)} нод в списке слежения.'
+        else:
+            text += f'Вы не добавили еще пока ни одной ноды в список слежения. ' \
+                    f'Нажмите "{ital(self.BUTTON_NOP_ADD_NODES)}" сперва 👇.'
+
+        text += f'\n\nПоследний сигнал был: {ital(self.format_time_ago(last_signal_ago))}'
+        if last_signal_ago > 60:
+            text += '🔴'
+        elif last_signal_ago > 20:
+            text += '🟠'
+        else:
+            text += '🟢'
+
+        return text
+
+    TEXT_NOP_MANAGE_LIST_TITLE = \
+        'Вы добавили <pre>{n}</pre> нод в ваш список слежения. ' \
+        'Вы можете убрать ноды из списка слежения, нажав на кпонки снизу.'
+
+    TEXT_NOP_ADD_INSTRUCTIONS = '🤓 Если вам уже известны адреса интересующих вас нод, ' \
+                                f'пожалуйста, отправьте мне их списком через сообщение. ' \
+                                f'Вы можете использовать полный адрес {pre("thorAbc5andD1so2on")} или ' \
+                                f'последние 3 или более символов. ' \
+                                f'Имена нод в списке могут быть разделены пробелами, запятыми или энтерами.\n\n' \
+                                f'Пример: {pre("66ew, xqmm, 7nv9")}'
+    BUTTON_NOP_ADD_ALL_NODES = 'Добавить все ноды'
+    BUTTON_NOP_ADD_ALL_ACTIVE_NODES = 'Добавить все активные'
+
+    TEXT_NOP_SEARCH_NO_VARIANTS = 'Совпадений не найдено! Попробуйте уточнить свой запрос ' \
+                                  'или воспользуйтесь списком для поиска нужных нод.'
+    TEXT_NOP_SEARCH_VARIANTS = 'Мы нашли следующие ноды, подходящие под ваш поисковый запрос:'
+
+    TEXT_NOP_SETTINGS_TITLE = 'Настройте ваши уведомления здесь. Выберите тему для настройки:'
+
+    BUTTON_NOP_SETT_SLASHING = 'Штрафы'
+    BUTTON_NOP_SETT_VERSION = 'Версии'
+    BUTTON_NOP_SETT_OFFLINE = 'Оффлайн'
+    BUTTON_NOP_SETT_CHURNING = 'Перемешивание'
+    BUTTON_NOP_SETT_BOND = 'Бонд'
+    BUTTON_NOP_SETT_HEIGHT = 'Высота блоков'
+    BUTTON_NOP_SETT_IP_ADDR = 'IP адр.'
+    BUTTON_NOP_SETT_PAUSE_ALL = 'Приостановить все уведомления'
+
+    @staticmethod
+    def text_enabled_disabled(is_on):
+        return 'включены' if is_on else 'выключены'
+
+    def text_nop_slash_enabled(self, is_on):
+        en_text = self.text_enabled_disabled(is_on)
+        return f'Уведомления о начислении штрафных очков нодам {bold(en_text)}.'
+
+    def text_nop_bond_is_enabled(self, is_on):
+        en_text = self.text_enabled_disabled(is_on)
+        return f'Уведомления об изменении бонда {bold(en_text)}.'
+
+    def text_nop_new_version_enabled(self, is_on):
+        en_text = self.text_enabled_disabled(is_on)
+        return f'Уведомления о появлении новой версии {bold(en_text)}.\n\n' \
+               f'<i>На следующием шаге вы настроите уведомления об обновлении ваших нод.</i>'
+
+    def text_nop_version_up_enabled(self, is_on):
+        en_text = self.text_enabled_disabled(is_on)
+        return f'Уведомления об обновлении версии ноды {bold(en_text)}.'
+
+    def text_nop_offline_enabled(self, is_on):
+        en_text = self.text_enabled_disabled(is_on)
+        return f'Уведомления об уходе ноды в оффлайн и возврате в онлайн {bold(en_text)}.\n\n' \
+               f'<i>На следующих шагах вы настроите сервисы.</i>'
+
+    def text_nop_churning_enabled(self, is_on):
+        en_text = self.text_enabled_disabled(is_on)
+        return f'Уведомлении о перемешивании нод {bold(en_text)}.\n\n' \
+               f'<i>Вы получите персональное уведомление, ' \
+               f'если ваша нода вступает в активный набор нод или покидает его.</i>'
+
+    def text_nop_ip_address_enabled(self, is_on):
+        en_text = self.text_enabled_disabled(is_on)
+        return f'Уведомления об смене IP адреса {bold(en_text)}.\n\n' \
+               f'<i>Вы получите уведомление, если нода вдруг изменит свой IP адрес.</i>'
+
+    def text_nop_ask_offline_period(self, current):
+        return f'Какой лимит времени вы хотите установить для оффлайн уведомлений?\n\n' \
+               f'Если с сервисами вашей ноды нет соединения в течении указанного времени, ' \
+               f'то вы получите сообщение.\n\n' \
+               f'Сейчас: {pre(self.seconds_human(current))}.'
+
+    def text_nop_chain_height_enabled(self, is_on):
+        en_text = self.text_enabled_disabled(is_on)
+        return f'Уведомления о зависших клиентах блокчейнов {bold(en_text)}.\n\n' \
+               f'<i>Вы получите уведомление, если ваши блокчейн клиенты на нодах перестали сканировать блоки.</i>'
+
+    BUTTON_NOP_LEAVE_ON = '✔ Вкл.'
+    BUTTON_NOP_LEAVE_OFF = '✔ Выкл.'
+    BUTTON_NOP_TURN_ON = 'Вкл.'
+    BUTTON_NOP_TURN_OFF = 'Выкл.'
+
+    BUTTON_NOP_INTERVALS = {
+        '2m': '2 мин',
+        '5m': '5 мин',
+        '15m': '15 мин',
+        '30m': '30 мин',
+        '60m': '1 час',
+        '2h': '2 часа',
+        '6h': '6 ч.',
+        '12h': '12 ч.',
+        '24h': '1 день',
+        '3d': '3 дня',
+    }
+
+    TEXT_NOP_SLASH_THRESHOLD = 'Выберете порог для сообщений о ' \
+                               'штрафных очках (рекомендуем в районе 5 - 10):'
+
+    def text_nop_ask_slash_period(self, pts):
+        return f'Отлично! Выберите период мониторинга.\n' \
+               f'К примеру, если вы установите <i>10 минут</i> и порог <i>{pts} очков</i>, то ' \
+               f'вы получите уведомление, если ваша нода наберет ' \
+               f'<i>{pts} очков штрафа</i> за последние <i>10 минут</i>.'
+
+    def text_nop_ask_chain_height_lag_time(self, current_lag_time):
+        return 'Пожалуйста, выберите промежуток времени для порога уведомления. ' \
+               'Если ваша нода не сканирует блоки более этого времени, то вы получите уведомление об этом.\n\n' \
+               'Если пороговое время меньше типичного времени блока для какой-либо цепочки блоков, ' \
+               'то оно будет увеличено до 150% от типичного времени (15 минут для BTC).'
+
+    def text_nop_success_add_banner(self, node_addresses):
+        node_addresses_text = ','.join([self.short_node_name(a) for a in node_addresses])
+        node_addresses_text = node_addresses_text[:80]  # just in case!
+        message = f'😉 Успех! {node_addresses_text} добавлены в ваш список. ' \
+                  f'Ожидайте уведомлений, если произойдет что-то важное!'
+        return message
+
+    BUTTON_NOP_CLEAR_LIST = '🗑️ Очистить все ({n})'
+    BUTTON_NOP_REMOVE_INACTIVE = '❌ Убрать неактивные ({n})'
+    BUTTON_NOP_REMOVE_DISCONNECTED = '❌ Убрать отключенные ({n})'
+
+    def text_nop_success_remove_banner(self, node_addresses):
+        node_addresses_text = ','.join([self.short_node_name(a) for a in node_addresses])
+        node_addresses_text = node_addresses_text[:120]  # just in case!
+        return f'😉 Успех! Вы убрали ноды из вашего списка слежения: ' \
+               f'{node_addresses_text} ({len(node_addresses)} всего).'
+
+    def notification_text_for_node_op_changes(self, c: NodeEvent):
+        # todo!
+        return super().notification_text_for_node_op_changes(c)
+
+    DATE_TRANSLATOR = {
+        'just now': 'прямо сейчас',
+        'never': 'никогда',
+        'sec': 'сек',
+        'min': 'мин',
+        'hour': 'час',
+        'hours': 'час',
+        'day': 'дн',
+        'days': 'дн',
+    }
+
+    def format_time_ago(self, d):
+        return format_time_ago(d, self.DATE_TRANSLATOR)
+
+    def seconds_human(self, s):
+        return seconds_human(s, translate=self.DATE_TRANSLATOR)

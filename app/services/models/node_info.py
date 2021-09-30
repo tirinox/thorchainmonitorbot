@@ -4,12 +4,14 @@ import re
 import secrets
 from collections import Counter
 from dataclasses import dataclass, field
-from typing import List, Dict, NamedTuple, Optional
+from typing import List, Dict, NamedTuple, Optional, Tuple, Any
 
 from semver import VersionInfo
 
 from services.lib.constants import thor_to_float
+from services.lib.date_utils import now_ts
 from services.models.base import BaseModelMixin
+from services.models.thormon import ThorMonNode
 
 ZERO_VERSION = VersionInfo(0, 0, 0)
 
@@ -95,6 +97,9 @@ class NodeVersionConsensus(NamedTuple):
     top_version: VersionInfo
     top_version_count: int
     total_active_node_count: int
+
+
+MapAddressToPrevAndCurrNode = Dict[str, Tuple[NodeInfo, NodeInfo]]
 
 
 @dataclass
@@ -185,6 +190,13 @@ class NodeSetChanges:
         return self.minimal_active_version(self.active_only_nodes)
 
     @property
+    def new_versions(self):
+        old_ver_set = self.version_set(self.nodes_previous)
+        new_ver_set = self.version_set(self.nodes_all)
+        new_versions = new_ver_set - old_ver_set
+        return list(sorted(new_versions))
+
+    @property
     def version_consensus(self) -> Optional[NodeVersionConsensus]:
         """
         Most popular version node count / Active node count = 0..1
@@ -200,6 +212,18 @@ class NodeSetChanges:
         top_count = counter[top_version]
         ratio = top_count / len(active_nodes)
         return NodeVersionConsensus(ratio, top_version, top_count, len(active_nodes))
+
+    @staticmethod
+    def node_map(nodes: List[NodeInfo]):
+        return {n.node_address: n for n in nodes}
+
+    @property
+    def prev_and_curr_node_map(self) -> MapAddressToPrevAndCurrNode:
+        old = self.node_map(self.nodes_previous)
+        new = self.node_map(self.nodes_all)
+
+        common_addresses = set(new.keys()) & set(old.keys())
+        return {address: (old[address], new[address]) for address in common_addresses}
 
 
 @dataclass
@@ -241,3 +265,63 @@ class NetworkNodeIpInfo:
                 providers.append(self.UNKNOWN_PROVIDER)
 
         return providers
+
+
+class EventNodeOnline(NamedTuple):
+    online: bool
+    duration: float
+    service: str
+
+
+class EventBlockHeight(NamedTuple):
+    chain: str
+    expected_block: int = 0
+    actual_block: int = 0
+    how_long_behind: float = 0.0
+    is_sync: bool = False
+
+    @property
+    def block_lag(self):
+        return self.expected_block - self.actual_block
+
+
+class EventDataVariation(NamedTuple):
+    points: List[Tuple[float, Any]]
+
+    def get_point_ago(self, seconds_ago):
+        t0 = now_ts() - seconds_ago
+        for t, v in reversed(self.points):
+            if t < t0:
+                return t, v
+        return self.points[0] if self.points else 0, 0
+
+
+class EventDataSlash(NamedTuple):
+    previous_pts: int
+    current_pts: int
+    interval_sec: float
+
+    @property
+    def delta_pts(self):
+        return abs(self.current_pts - self.previous_pts)
+
+
+class NodeEventType:
+    VERSION_CHANGED = 'version_change'
+    NEW_VERSION_DETECTED = 'new_version'
+    SLASHING = 'slashing'
+    CHURNING = 'churning'
+    BOND = 'bond'
+    IP_ADDRESS_CHANGED = 'ip_address'
+    SERVICE_ONLINE = 'service_online'
+    BLOCK_HEIGHT = 'block_height'
+
+
+class NodeEvent(NamedTuple):
+    address: str
+    type: str
+    data: Any
+    single_per_user: bool = False
+    node: NodeInfo = None
+    thor_node: ThorMonNode = None
+    tracker: object = None

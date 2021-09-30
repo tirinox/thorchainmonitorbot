@@ -4,6 +4,7 @@ from typing import List, NamedTuple, Dict
 
 from services.lib.depcont import DepContainer
 from services.lib.midgard.urlgen import MidgardURLGenBase
+from services.lib.utils import class_logger
 from services.models.lp_info import LiquidityPoolReport, LPDailyGraphPoint
 
 
@@ -15,7 +16,7 @@ class YieldSummary(NamedTuple):
 class AsgardConsumerConnectorBase:
     def __init__(self, deps: DepContainer, url_gen: MidgardURLGenBase):
         self.deps = deps
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = class_logger(self)
         self.url_gen = url_gen
 
     # interface

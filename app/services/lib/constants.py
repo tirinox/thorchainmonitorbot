@@ -1,5 +1,6 @@
 from aiothornode.env import TEST_NET_ENVIRONMENT_MULTI_1, MULTICHAIN_CHAOSNET_ENVIRONMENT, ThorEnvironment
 
+from services.lib.date_utils import MINUTE
 
 BNB_BNB_SYMBOL = 'BNB.BNB'
 
@@ -35,7 +36,7 @@ ETH_USDT_SYMBOL = 'ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7'
 
 ETH_USDC_SYMBOL = 'ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48'
 
-STABLE_COIN_POOLS = (
+STABLE_COIN_POOLS_ALL = (
     BNB_BUSD_SYMBOL, BNB_BUSD_TEST_SYMBOL, BNB_BUSD_TEST2_SYMBOL,
     BNB_USDT_SYMBOL, BNB_USDT_TEST_SYMBOL,
     ETH_USDT_TEST_SYMBOL, ETH_USDT_SYMBOL,
@@ -46,6 +47,7 @@ STABLE_COIN_BNB_POOLS = (
     BNB_BUSD_SYMBOL, BNB_BUSD_TEST_SYMBOL, BNB_BUSD_TEST2_SYMBOL,
 )
 
+STABLE_COIN_POOLS = STABLE_COIN_BNB_POOLS
 
 RUNE_SYMBOLS = (
     BNB_RUNE_SYMBOL,
@@ -82,8 +84,7 @@ class Chains:
     BCH = 'BCH'
     LTC = 'LTC'
     BNB = 'BNB'
-    DOT = 'DOT'
-    ZIL = 'ZIL'
+    DOGE = 'DOGE'
 
     @staticmethod
     def detect_chain(address: str) -> str:
@@ -94,7 +95,25 @@ class Chains:
             return Chains.THOR
         elif address.startswith('bnb') or address.startswith('tbnb'):
             return Chains.BNB
+        elif address.startswith('D'):
+            return Chains.DOGE
         return ''
+
+    @staticmethod
+    def block_time_default(chain: str) -> float:
+        if chain == Chains.ETH:
+            return 13
+        elif chain == Chains.BTC or chain == Chains.BCH:
+            return 10 * MINUTE
+        elif chain == Chains.LTC:
+            return 2.5 * MINUTE
+        elif chain == Chains.BNB:
+            return 0.4
+        elif chain == Chains.THOR:
+            return THOR_BLOCK_TIME
+        elif chain == Chains.DOGE:
+            return MINUTE
+        return 0.01
 
 
 class NetworkIdents:
@@ -104,6 +123,10 @@ class NetworkIdents:
     @classmethod
     def is_test(cls, network: str):
         return 'testnet' in network
+
+    @classmethod
+    def is_live(cls, network: str):
+        return not cls.is_test(network)
 
     @classmethod
     def is_multi(cls, network: str):

@@ -14,6 +14,8 @@ from services.lib.texts import MessageType, BoardMessage
 class Broadcaster:
     KEY_USERS = 'thbot_users'
 
+    EXTRA_RETRY_DELAY = 0.1
+
     def __init__(self, d: DepContainer):
         self.bot = d.bot
         self.cfg = d.cfg
@@ -52,14 +54,7 @@ class Broadcaster:
                 del kwargs['disable_notification']
         return kwargs
 
-    async def _send_message(self, chat_id, text, message_type=MessageType.TEXT, *args, **kwargs) -> bool:
-        """
-        Safe messages sender
-        :param chat_id:
-        :param text:
-        :param disable_notification:
-        :return:
-        """
+    async def safe_send_message(self, chat_id, text, message_type=MessageType.TEXT, *args, **kwargs) -> bool:
         try:
             if message_type == MessageType.TEXT:
                 await self.bot.send_message(chat_id, text, *args, **kwargs)
@@ -75,8 +70,8 @@ class Broadcaster:
             self.logger.error(f"Target [ID:{chat_id}]: invalid user ID")
         except exceptions.RetryAfter as e:
             self.logger.error(f"Target [ID:{chat_id}]: Flood limit is exceeded. Sleep {e.timeout} seconds.")
-            await asyncio.sleep(e.timeout + 0.1)
-            return await self._send_message(chat_id, text, message_type=message_type, *args, **kwargs)  # Recursive call
+            await asyncio.sleep(e.timeout + self.EXTRA_RETRY_DELAY)
+            return await self.safe_send_message(chat_id, text, message_type=message_type, *args, **kwargs)  # Recursive call
         except exceptions.UserDeactivated:
             self.logger.error(f"Target [ID:{chat_id}]: user is deactivated")
         except exceptions.TelegramAPIError:
@@ -132,9 +127,9 @@ class Broadcaster:
                             text = message_result
 
                     if text or 'photo' in extra:
-                        if await self._send_message(chat_id, text, message_type=message_type,
-                                                    disable_web_page_preview=True,
-                                                    disable_notification=False, **extra):
+                        if await self.safe_send_message(chat_id, text, message_type=message_type,
+                                                        disable_web_page_preview=True,
+                                                        disable_notification=False, **extra):
                             count += 1
                         else:
                             bad_ones.append(chat_id)

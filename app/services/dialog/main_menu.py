@@ -25,9 +25,10 @@ class MainStates(StatesGroup):
 class MainMenuDialog(BaseDialog):
     @message_handler(commands='start,lang', state='*')
     async def entry_point(self, message: Message):
-        await self.deps.broadcaster.register_user(message.from_user.id)
+        user_id = message.chat.id
+        await self.deps.broadcaster.register_user(user_id)
         loc_man = self.deps.loc_man
-        current_language = await loc_man.get_lang(message.from_user.id, self.deps.db)
+        current_language = await loc_man.get_lang(user_id, self.deps.db)
         components = message.text.split(' ')
         if len(components) == 2 and components[0] == '/start':
             # deep linking

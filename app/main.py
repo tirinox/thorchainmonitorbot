@@ -29,7 +29,7 @@ from services.lib.utils import setup_logs
 from services.models.price import LastPriceHolder
 from services.models.tx import ThorTxType
 from services.notify.broadcast import Broadcaster
-from services.notify.personal.node_change import NodeChangePersonalNotifier
+from services.notify.personal import NodeChangePersonalNotifier
 from services.notify.types.cap_notify import LiquidityCapNotifier
 from services.notify.types.chain_notify import TradingHaltedNotifier
 from services.notify.types.mimir_notify import MimirChangedNotifier
@@ -51,6 +51,8 @@ class App:
         setup_logs(log_level)
 
         logging.info(f'Starting THORChainMonitoringBot for "{d.cfg.network_id}".')
+
+        d.price_holder.load_stable_coins(d.cfg)
 
         d.loop = asyncio.get_event_loop()
         d.db = DB(d.loop)
@@ -164,8 +166,9 @@ class App:
                 churn_detector.subscribe(notifier_version)
 
             if d.cfg.get('node_info.personal.enabled', True):
-                node_personal_notifier = NodeChangePersonalNotifier(d)
-                churn_detector.subscribe(node_personal_notifier)
+                self.deps.node_op_notifier = NodeChangePersonalNotifier(d)
+                await self.deps.node_op_notifier.prepare()
+                churn_detector.subscribe(self.deps.node_op_notifier)
 
         if d.cfg.get('price.enabled', True):
             notifier_price = PriceNotifier(d)

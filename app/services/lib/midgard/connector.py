@@ -3,6 +3,7 @@ import logging
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import get_url_gen_by_network_id
+from services.lib.utils import class_logger
 from services.models.time_series import TimeSeries
 
 ERROR_RESPONSE = 'ERROR_Midgard'
@@ -24,7 +25,7 @@ class MidgardConnector:
         self.deps = d
         self.url_gen = get_url_gen_by_network_id(network_id)
         self.parser = get_parser_by_network_id(network_id)
-        self.logger = logging.Logger(self.__class__.__name__)
+        self.logger = class_logger(self)
         self.stats_series = TimeSeries('MidgardStats', self.deps.db)
 
     async def raw_request(self, url: str, path: str):

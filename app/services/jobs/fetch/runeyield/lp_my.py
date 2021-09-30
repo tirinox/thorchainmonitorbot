@@ -8,7 +8,7 @@ from services.jobs.fetch.runeyield import AsgardConsumerConnectorBase
 from services.jobs.fetch.runeyield.base import YieldSummary
 from services.jobs.fetch.runeyield.date2block import DateToBlockMapper
 from services.jobs.fetch.tx import TxFetcher
-from services.lib.constants import STABLE_COIN_POOLS, NetworkIdents, thor_to_float, float_to_thor, Chains
+from services.lib.constants import NetworkIdents, thor_to_float, float_to_thor, Chains
 from services.lib.date_utils import days_ago_noon, now_ts
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
@@ -258,7 +258,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
     def _calculate_weighted_rune_price_in_usd(self, pool_map: PoolInfoMap, use_default_price=False) -> Optional[float]:
         prices, weights = [], []
-        for stable_symbol in STABLE_COIN_POOLS:
+        for stable_symbol in self.deps.price_holder.stable_coins:
             pool_info = pool_map.get(stable_symbol)
             if pool_info and pool_info.balance_rune > 0 and pool_info.asset_per_rune > 0:
                 prices.append(pool_info.asset_per_rune)

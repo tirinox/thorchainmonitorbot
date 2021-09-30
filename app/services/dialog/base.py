@@ -85,6 +85,10 @@ class BaseDialog(ABC):
     back_dialog: 'BaseDialog' = None
     back_func = None
 
+    @staticmethod
+    def user_id(message: Message):
+        return message.chat.id
+
     class States(StatesGroup):
         DUMMY = State()
 
@@ -143,8 +147,8 @@ class BaseDialog(ABC):
                 handler_class = cls(loc, None, d)
                 handler_method = getattr(handler_class, that_name)
                 return await handler_method(inline_query)
-            except Exception:
-                logger.exception('Inline bot query exception!')
+            except Exception as e:
+                logger.exception(f'Inline bot query exception! {e}')
 
     @classmethod
     def register_handler(cls, d, f, name):
@@ -162,7 +166,7 @@ class BaseDialog(ABC):
                 'text': message.text
             })
             async with state.proxy() as data:
-                loc = await d.loc_man.get_from_db(message.from_user.id, d.db)
+                loc = await d.loc_man.get_from_db(cls.user_id(message), d.db)
                 handler_class = cls(loc, data, d)
                 handler_method = getattr(handler_class, that_name)
                 return await handler_method(message)
@@ -184,7 +188,7 @@ class BaseDialog(ABC):
 
     @property
     def loading_sticker(self):
-        return self.deps.cfg.as_str('telegram.common.loading_sticker', default=None)
+        return self.deps.cfg.as_str('telegram.common.loading_sticker')
 
     async def answer_loading_sticker(self, message: Message, silent=True, remove_keyboard=False) -> Message:
         return await message.answer_sticker(self.loading_sticker, disable_notification=silent,

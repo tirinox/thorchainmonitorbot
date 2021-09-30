@@ -9,6 +9,7 @@ from services.lib.date_utils import day_to_key, days_ago_noon, date_parse_rfc
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import get_url_gen_by_network_id
+from services.lib.utils import class_logger
 from services.models.last_block import LastBlock
 
 
@@ -17,7 +18,7 @@ class DateToBlockMapper:
         self.deps = deps
         self.midgard_url_gen = get_url_gen_by_network_id(deps.cfg.network_id)
         self.midgard_parser = get_parser_by_network_id(deps.cfg.network_id)
-        self.logger = logging.getLogger(self.__class__.__name__)
+        self.logger = class_logger(self)
 
         self.iterative_algo_max_steps = 10
         self.iterative_algo_tolerance = THOR_BLOCK_TIME * 1.6

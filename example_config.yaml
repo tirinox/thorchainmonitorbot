@@ -1,4 +1,5 @@
-# rename it to "config.yaml"
+# THORChain monitoring bot configuration file
+# Rename it to "config.yaml"
 
 log_level: INFO
 
@@ -7,6 +8,16 @@ thor:
   #  "testnet-multi" for MTCN
   #  "chaosnet-multi" for MCCN
   network_id: "chaosnet-multi"
+
+  stable_coins:  # new!
+    - ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48
+    - ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7
+    - ETH.USDT-0XA3910454BF2CB59B8B3A401589A3BACC5CA42306  # test
+    - BNB.USDT-6D8
+    - BNB.USDT-DC8  # test
+    - BNB.BUSD-BD1
+    - BNB.BUSD-BAF  # test
+    - BNB.BUSD-74E  # test
 
 
 telegram:
@@ -22,11 +33,11 @@ telegram:
 
   buffer_chat: -12334  # a chat for uploading temporary photos (like photo-hosting), add this bot to it
 
-  menu:  # new!
+  menu:
     node_op_tools:
       enabled: true
 
-  inline_bot:  # new!
+  inline_bot:
     enabled: true
 
 
@@ -38,45 +49,45 @@ tx:
   max_page_deep: 5
 
   liquidity:
-    enabled: true  # new!
+    enabled: true
     min_usd_total: 50000
     usd_requirements_curve:
       - depth: 10000
-        percent: 20  # if depth < 10_000 then
+        percent: 20
       - depth: 100000
-        percent: 12  # if 10_000 <= depth < 100_000 then 
+        percent: 12
       - depth: 500000
-        percent: 8  # and so on...
+        percent: 8
       - depth: 1000000
         percent: 5
       - depth: 10000000
         percent: 1.5
 
-  swap: # new!
+  swap:
     enabled: true
     min_usd_total: 5000
     usd_requirements_curve:
       - depth: 10000
-        percent: 20  # if depth < 10_000 then
+        percent: 20
       - depth: 100000
-        percent: 10  # if 10_000 <= depth < 100_000 then
+        percent: 10
       - depth: 500000
-        percent: 7  # and so on...
+        percent: 7
       - depth: 1000000
         percent: 4
       - depth: 10000000
         percent: 1.5
 
-  donate: # new!
+  donate:
     enabled: true
     min_usd_total: 1000
     usd_requirements_curve:
       - depth: 10000
-        percent: 10  # if depth < 10_000 then
+        percent: 10
       - depth: 100000
-        percent: 5  # if 10_000 <= depth < 100_000 then
+        percent: 5
       - depth: 500000
-        percent: 2.5  # and so on...
+        percent: 2.5
       - depth: 1000000
         percent: 1
       - depth: 10000000
@@ -224,3 +235,9 @@ constants:
 chain_state:
   enabled: true
   fetch_period: 67s
+
+
+blockchain:  # (!) new:
+  block_time:  # block_time overriding... (optional)
+    BTC: 10m
+    ETH: 14s

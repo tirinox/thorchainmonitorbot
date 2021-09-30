@@ -31,6 +31,8 @@ class DepContainer:
     price_pool_fetcher: Optional['PoolPriceFetcher'] = None
     node_info_fetcher: Optional['NodeInfoFetcher'] = None
 
+    node_op_notifier: Optional['NodeChangePersonalNotifier'] = None
+
     # shared data holders
 
     price_holder: LastPriceHolder = LastPriceHolder()

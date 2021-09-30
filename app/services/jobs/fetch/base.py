@@ -3,6 +3,7 @@ import logging
 from abc import ABC, abstractmethod
 
 from services.lib.depcont import DepContainer
+from services.lib.utils import class_logger
 
 
 class INotified(ABC):
@@ -42,7 +43,7 @@ class BaseFetcher(WithDelegates, ABC):
         self.deps = deps
         self.name = self.__class__.__qualname__
         self.sleep_period = sleep_period
-        self.logger = logging.getLogger(f'{self.__class__.__name__}')
+        self.logger = class_logger(self)
 
     async def post_action(self, data):
         ...

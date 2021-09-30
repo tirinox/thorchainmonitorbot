@@ -9,14 +9,16 @@ from semver import VersionInfo
 from services.lib.config import Config
 from services.lib.constants import NetworkIdents, rune_origin, thor_to_float
 from services.lib.date_utils import format_time_ago, now_ts, seconds_human
-from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx
+from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
+    get_explorer_url_for_node
 from services.lib.money import format_percent, pretty_money, short_address, short_money, \
     calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset
 from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
     up_down_arrow, bracketify, plural, grouper, join_as_numbered_list
 from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
-from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus
+from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEventType, NodeEvent, \
+    EventBlockHeight, EventDataVariation, EventDataSlash
 from services.models.pool_info import PoolInfo, PoolChanges
 from services.models.price import PriceReport
 from services.models.queue import QueueInfo
@@ -38,6 +40,8 @@ class BaseLocalization(ABC):  # == English
 
     LOADING = '⌛ Loading...'
     LONG_DASH = '–'
+    SUCCESS = '✅ Success!'
+    ERROR = '❌ Error'
 
     @property
     def this_bot_name(self):
@@ -418,7 +422,8 @@ class BaseLocalization(ABC):  # == English
         last_ath = p.last_ath
         if last_ath is not None and ath:
             last_ath_pr = f'{last_ath.ath_price:.2f}'
-            message += f"Last ATH was ${pre(last_ath_pr)} ({format_time_ago(last_ath.ath_date)}).\n"
+            ago_str = format_time_ago(now_ts() - last_ath.ath_date)
+            message += f"Last ATH was ${pre(last_ath_pr)} ({ago_str}).\n"
 
         time_combos = zip(
             ('1h', '24h', '7d'),
@@ -488,6 +493,7 @@ class BaseLocalization(ABC):  # == English
 
     BUTTON_SET_LANGUAGE = '🌐 Language'
     TEXT_SETTING_INTRO = '<b>Settings</b>\nWhat would you like to tune?'
+    BUTTON_SET_NODE_OP_GOTO = 'NodeOp settings'
 
     # -------- METRICS ----------
 
@@ -576,6 +582,8 @@ class BaseLocalization(ABC):  # == English
             return "⚡ OPTIMAL"
         elif 0.6 > network_security_ratio >= 0.5:
             return "🤢 UNDERBONDED"
+        elif network_security_ratio == 0.0:
+            return '🚧 DATA NOT AVAILABLE...'
         else:
             return "🤬 INSECURE"
 
@@ -960,34 +968,45 @@ class BaseLocalization(ABC):  # == English
         short_name = node_address[-4:].upper()
         return f'{name} ({short_name})' if name else short_name
 
-    def short_node_desc(self, node: NodeInfo, name=None):
+    def short_node_desc(self, node: NodeInfo, name=None, watching=False):
         addr = self.short_node_name(node.node_address, name)
-        return f'{addr} ({short_money(node.bond, prefix="R")})'
+        extra = ' ✔️' if watching else ''
+        return f'{addr} ({short_money(node.bond, prefix="R")}){extra}'
 
     def pretty_node_desc(self, node: NodeInfo, name=None):
         addr = self.short_node_name(node.node_address, name)
         return f'{pre(addr)} ({bold(short_money(node.bond, prefix="R"))} bond)'
 
-    def text_node_op_welcome_text_part1(self):
-        return bold('Welcome to the Node Monitor tool!')
+    TEXT_NOP_INTRO_HEADING = bold('Welcome to the Node Monitor tool!')
 
-    def text_node_op_welcome_text_part2(self, watch_list: dict):
+    def text_node_op_welcome_text_part2(self, watch_list: dict, last_signal_ago: float):
         text = 'It will send you personalized notifications ' \
-                'when something important happens to the nodes you are monitoring.\n\n'
+               'when something important happens to the nodes you are monitoring.\n\n'
         if watch_list:
-            # node_list = ', '.join(self.short_node_name(addr, name) for addr, name in watch_list.items())
-            # node_list = pre(node_list[:3000])
             text += f'You have {len(watch_list)} nodes in the watchlist.'
         else:
             text += f'You did not add anything to the watch list. Click {ital(self.BUTTON_NOP_ADD_NODES)} first 👇.'
 
+        text += f'\n\nLast signal from ThorMon was {ital(format_time_ago(last_signal_ago))} '
+        if last_signal_ago > 60:
+            text += '🔴'
+        elif last_signal_ago > 20:
+            text += '🟠'
+        else:
+            text += '🟢'
+
+        thormon_link = 'https://thorchain.network/'
+        text += f'\n\nRealtime monitoring: {link(thormon_link, thormon_link)}'
+
         return text
 
     TEXT_NOP_MANAGE_LIST_TITLE = \
-        'You added the following nodes to your watchlist. Total: <pre>{n}</pre>. ' \
-        'Select one in the menu below to edit or to unwatch it.'
+        'You added <pre>{n}</pre> nodes to your watchlist. ' \
+        'Select one in the menu below to stop monitoring the node.'
+
     TEXT_NOP_ADD_INSTRUCTIONS_PRE = 'Select the nodes which you would like to add to <b>your watchlist</b> ' \
                                     'from the list below.'
+
     TEXT_NOP_ADD_INSTRUCTIONS = '🤓 If you know the addresses of the nodes you are interested in, ' \
                                 f'just send them to me as a text message. ' \
                                 f'You may use the full name {pre("thorAbc5andD1so2on")} or ' \
@@ -997,8 +1016,6 @@ class BaseLocalization(ABC):  # == English
     BUTTON_NOP_ADD_ALL_NODES = 'Add all nodes'
     BUTTON_NOP_ADD_ALL_ACTIVE_NODES = 'Add all ACTIVE nodes'
 
-    TEXT_NOP_SURE_TO_ADD = 'Are you sure to add {n} nodes to your watchlist?'
-    TEXT_NOP_SURE_TO_REMOVE = 'Are you sure to remove all {n} nodes from your watchlist?'
     TEXT_NOP_SEARCH_NO_VARIANTS = 'No matches found for current search. Please refine your search or use the list.'
     TEXT_NOP_SEARCH_VARIANTS = 'We found the following nodes that match the search:'
 
@@ -1013,13 +1030,147 @@ class BaseLocalization(ABC):  # == English
     BUTTON_NOP_REMOVE_INACTIVE = '❌ Remove inactive ({n})'
     BUTTON_NOP_REMOVE_DISCONNECTED = '❌ Remove disconnected ({n})'
 
-    BUTTON_NOP_SURE_TO_REMOVE_ONE = 'Are you sure to remove node <pre>{node}</pre> from your watchlist?'
-    BUTTON_NOP_SURE_TO_REMOVE_MANY = 'Are you sure to remove node <pre>{n}</pre> nodes from your watchlist?'
-
     def text_nop_success_remove_banner(self, node_addresses):
         node_addresses_text = ','.join([self.short_node_name(a) for a in node_addresses])
         node_addresses_text = node_addresses_text[:120]  # just in case!
         return f'😉 Success! You removed: {node_addresses_text} ({len(node_addresses)} nodes) from your watchlist.'
+
+    TEXT_NOP_SETTINGS_TITLE = 'Tune your notifications here. Choose a topic to adjust settings.'
+
+    BUTTON_NOP_SETT_SLASHING = 'Slashing'
+    BUTTON_NOP_SETT_VERSION = 'Version'
+    BUTTON_NOP_SETT_OFFLINE = 'Offline'
+    BUTTON_NOP_SETT_CHURNING = 'Churning'
+    BUTTON_NOP_SETT_BOND = 'Bond'
+    BUTTON_NOP_SETT_HEIGHT = 'Block height'
+    BUTTON_NOP_SETT_IP_ADDR = 'IP addr.'
+    BUTTON_NOP_SETT_PAUSE_ALL = 'Pause all NodeOp alerts'
+
+    @staticmethod
+    def text_enabled_disabled(is_on):
+        return 'enabled' if is_on else 'disabled'
+
+    def text_nop_slash_enabled(self, is_on):
+        en_text = self.text_enabled_disabled(is_on)
+        return f'Slash point notifications are {bold(en_text)}.'
+
+    def text_nop_bond_is_enabled(self, is_on):
+        en_text = self.text_enabled_disabled(is_on)
+        return f'Bond change notifications are {bold(en_text)}.'
+
+    def text_nop_new_version_enabled(self, is_on):
+        en_text = self.text_enabled_disabled(is_on)
+        return f'New version notifications are {bold(en_text)}.\n\n' \
+               f'<i>You will receive a notification when new versions are available.</i>'
+
+    def text_nop_version_up_enabled(self, is_on):
+        en_text = self.text_enabled_disabled(is_on)
+        return f'Node version upgrade notifications are {bold(en_text)}.\n\n' \
+               f'<i>You will receive a notification when your node is upgraded its software.</i>'
+
+    def text_nop_offline_enabled(self, is_on):
+        en_text = self.text_enabled_disabled(is_on)
+        return f'Offline/online node notifications are {bold(en_text)}.\n\n' \
+               f'<i>You can tune enabled services at the next steps.</i>'
+
+    def text_nop_churning_enabled(self, is_on):
+        en_text = self.text_enabled_disabled(is_on)
+        return f'Churn in/out notifications are {bold(en_text)}.\n\n' \
+               f'<i>You will receive a notification when your node churned in or out the active validator set.</i>'
+
+    def text_nop_ip_address_enabled(self, is_on):
+        en_text = self.text_enabled_disabled(is_on)
+        return f'IP address change notifications are {bold(en_text)}.\n\n' \
+               f'<i>You will receive a notification when your node changes its IP address.</i>'
+
+    def text_nop_ask_offline_period(self, current):
+        return f'Please tell me the time limit you would like to set for offline notifications. \n\n' \
+               f'If there is no connection to your node\'s services for the specified time, ' \
+               f'you will receive a message.\n\n' \
+               f'Now: {pre(self.seconds_human(current))}.'
+
+    def text_nop_chain_height_enabled(self, is_on):
+        en_text = self.text_enabled_disabled(is_on)
+        return f'Chain height stuck/unstuck notifications are {bold(en_text)}.\n\n' \
+               f'<i>You will receive a notification when any ' \
+               f'blockchain client on your node stuck or unstuck scanning blocks.</i>'
+
+    BUTTON_NOP_LEAVE_ON = '✔ Leave it ON'
+    BUTTON_NOP_LEAVE_OFF = '✔ Leave it OFF'
+    BUTTON_NOP_TURN_ON = 'Turn ON'
+    BUTTON_NOP_TURN_OFF = 'Turn OFF'
+
+    BUTTON_NOP_INTERVALS = {
+        '2m': '2 min',
+        '5m': '5 min',
+        '15m': '15 min',
+        '30m': '30 min',
+        '60m': '60 min',
+        '2h': '2 h',
+        '6h': '6 h',
+        '12h': '12 h',
+        '24h': '24 h',
+        '3d': '3 days',
+    }
+
+    TEXT_NOP_SLASH_THRESHOLD = 'Please select a threshold for slash point ' \
+                               'alerts in slash points (recommended around 5 - 10):'
+
+    def text_nop_ask_slash_period(self, pts):
+        return f'Great! Please choose a time period for monitoring.\n' \
+               f'For example, if you choose <i>10 minutes</i> and a threshold of <i>{pts} pts</i>, ' \
+               f'you will get a notification if your node has incurred more than ' \
+               f'<i>{pts} slash pts</i> in the last <i>10 minutes</i>.'
+
+    def text_nop_ask_chain_height_lag_time(self, current_lag_time):
+        return 'Please select a time interval for the notification threshold. ' \
+               'If your node does not scan blocks for more than this time, ' \
+               'you will receive a notification about it.\n\n' \
+               'If the threshold interval is less than the typical block time for the blockchain, ' \
+               'it will be increased to 150% of the typical time (15 minutes for BTC).'
+
+    @staticmethod
+    def node_link(address):
+        short_addr = pre(address[-4:]) if len(address) >= 4 else 'UNKNOWN'
+        return link(get_explorer_url_for_node(address), short_addr)
+
+    def notification_text_for_node_op_changes(self, c: NodeEvent):
+        message = ''
+        short_addr = self.node_link(c.address)
+        if c.type == NodeEventType.SLASHING:
+            data: EventDataSlash = c.data
+            message = f'🔪 Node {short_addr} got slashed ' \
+                      f'for {bold(data.delta_pts)} pts (now <i>{data.current_pts}</i> slash pts)!'
+        elif c.type == NodeEventType.VERSION_CHANGED:
+            old, new = c.data
+            message = f'🆙 Node {short_addr} version upgrade from {ital(old)} to {bold(new)}!'
+        elif c.type == NodeEventType.NEW_VERSION_DETECTED:
+            message = f'🆕 New version detected! {bold(c.data)}! Consider upgrading!'
+        elif c.type == NodeEventType.IP_ADDRESS_CHANGED:
+            old, new = c.data
+            message = f'🏤 Node {short_addr} changed its IP address from {ital(old)} to {bold(new)}!'
+        elif c.type == NodeEventType.SERVICE_ONLINE:
+            online, duration, service = c.data
+            service = bold(str(service).upper())
+            if online:
+                message = f'✅ Service {service} of node {short_addr} is <b>online</b> again!'
+            else:
+                message = f'🔴 Service {service} of node {short_addr} went <b>offline</b> ' \
+                          f'(already for {int(duration)} sec)!'
+        elif c.type == NodeEventType.CHURNING:
+            verb = 'churned in ⬅️' if c.data else 'churned out ➡️'
+            bond = c.node.bond
+            message = f'🌐 Node {short_addr} ({short_money(bond)} {RAIDO_GLYPH} bond) {bold(verb)}!'
+        elif c.type in NodeEventType.BLOCK_HEIGHT:
+            data: EventBlockHeight = c.data
+
+            if data.is_sync:
+                message = f'✅ Node {short_addr} caught up blocks for {pre(data.chain)}.'
+            else:
+                message = f'🔴 Node {short_addr} is {pre(data.block_lag)} blocks behind ' \
+                          f'on the {pre(data.chain)} chain (≈{self.seconds_human(data.how_long_behind)})!'
+
+        return message
 
     # ------- INLINE BOT (English only) -------
 
@@ -1034,3 +1185,11 @@ class BaseLocalization(ABC):  # == English
 
     INLINE_INTERNAL_ERROR_TITLE = 'Internal error!'
     INLINE_INTERNAL_ERROR_CONTENT = f'Sorry, something went wrong! Please report it to {CREATOR_TG}.'
+
+    # ---- MISC ----
+
+    def format_time_ago(self, d):
+        return format_time_ago(d)
+
+    def seconds_human(self, s):
+        return seconds_human(s)

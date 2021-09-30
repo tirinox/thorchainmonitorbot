@@ -16,27 +16,30 @@ def seconds_diff(t1: datetime, t2: datetime) -> float:
     return (t1 - t2).total_seconds()
 
 
-def seconds_human(seconds, equal_str='same time') -> str:
+def seconds_human(seconds, translate=None) -> str:
     seconds = int(seconds)
+
+    def tr(key):
+        return translate.get(key, key) if translate else key
 
     def append_if_not_zero(acc, val, time_type):
         return acc if val == 0 else "{} {} {}".format(acc, val, time_type)
 
     if seconds == 0:
-        return equal_str
+        return tr('just now')
     else:
         minutes = seconds // 60
         hours = minutes // 60
         days = hours // 24
 
         s = ''
-        s = append_if_not_zero(s, days, 'day' if days == 1 else 'days')
+        s = append_if_not_zero(s, days, tr('day') if days == 1 else tr('days'))
         if days <= 31:
-            s = append_if_not_zero(s, hours % 24, 'hour' if hours == 1 else 'hours')
+            s = append_if_not_zero(s, hours % 24, tr('hour') if hours == 1 else tr('hours'))
         if not days:
-            s = append_if_not_zero(s, minutes % 60, 'min')
+            s = append_if_not_zero(s, minutes % 60, tr('min'))
         if not hours:
-            s = append_if_not_zero(s, seconds % 60, 'sec')
+            s = append_if_not_zero(s, seconds % 60, tr('sec'))
         return s.strip()
 
 
@@ -82,11 +85,18 @@ def parse_timespan_to_seconds(span: str):
         return result
 
 
-def format_time_ago(d):
+def format_time_ago(d, max_time=30*DAY, translate=None):
+    def tr(key):
+        return translate.get(key, key) if translate else key
+
     if d is None or d == 0:
-        return 'never'
+        return tr('never')
+    elif abs(d) < 5:
+        return tr('just now')
+    elif abs(d) > max_time:
+        return tr('long-long ago')
     else:
-        return f'{seconds_human(now_ts() - d)} ago'
+        return f'{seconds_human(d, translate=translate)} {tr("ago")}'
 
 
 def format_time_ago_short(d, now=None):
@@ -145,6 +155,10 @@ def day_to_key(day: date, prefix=''):
     if day is None:
         day = datetime.now().date()
     return f'{prefix}:{day.year}.{day.month}.{day.day}'
+
+
+def date_parse_rfc_z_no_ms(s):
+    return datetime.strptime(s, "%Y-%m-%dT%H:%M:%S.%fZ")
 
 
 def date_parse_rfc(s: str):

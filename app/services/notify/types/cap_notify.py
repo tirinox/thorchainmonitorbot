@@ -1,6 +1,7 @@
 import json
 import logging
 
+import services.models.thormon
 from localization import BaseLocalization
 from services.jobs.fetch.base import INotified
 from services.lib.depcont import DepContainer
@@ -47,7 +48,7 @@ class LiquidityCapNotifier(INotified):
 
             await self._save_cap_info(new_info)
 
-            if old_info and old_info.is_ok:
+            if old_info and services.models.thormon.is_ok:
                 await self._test_cap_raise(new_info, old_info)
                 if self.full_notification_enabled:
                     await self._test_cap_limit_is_full(new_info)

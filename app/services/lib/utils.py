@@ -6,7 +6,7 @@ import pickle
 import random
 import re
 import time
-from collections import deque, Counter
+from collections import deque, Counter, defaultdict
 from functools import wraps, partial
 from itertools import tee
 from typing import List
@@ -24,6 +24,14 @@ def most_common_and_other(values: list, max_categories, other_str='Others'):
     others_sum = total - total_most_common
     elements.append((other_str, others_sum))
     return elements
+
+
+def most_common(values: list):
+    if not values:
+        return
+    counter = Counter(values)
+    [(v, n)] = counter.most_common(1)
+    return v
 
 
 def a_result_cached(ttl=60):
@@ -99,7 +107,7 @@ def make_stickers_iterator(name_list):
 def setup_logs(log_level):
     logging.basicConfig(
         level=logging.getLevelName(log_level),
-        format='%(asctime)s %(levelname)s:%(module)s:%(funcName)s: %(message)s',
+        format='%(asctime)s %(levelname)s:%(name)s:%(funcName)s: %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S',
     )
 
@@ -181,3 +189,40 @@ def fuzzy_search(query: str, realm) -> List[str]:
         if query in name:
             variants.append(name)
     return variants
+
+
+def turn_dic_inside_out(d: dict, factory=set, op=set.add):
+    result = defaultdict(factory)
+    for k, v in d.items():
+        for item in v:
+            # noinspection PyArgumentList
+            op(result[item], k)
+    return dict(result)
+
+
+def nested_set(dic, keys, value):
+    if not keys:
+        raise KeyError
+    original = dic
+    for key in keys[:-1]:
+        dic = dic.setdefault(key, {})
+    dic[keys[-1]] = value
+    return original
+
+
+def nested_get(dic, keys, default=None):
+    if not keys:
+        return default
+    for key in keys[:-1]:
+        dic = dic.get(key, {})
+    return dic.get(keys[-1], default)
+
+
+def tree_factory():
+    return defaultdict(tree_factory)
+
+
+def make_nested_default_dict(d):
+    if not isinstance(d, dict):
+        return d
+    return defaultdict(tree_factory, {k: make_nested_default_dict(v) for k, v in d.items()})

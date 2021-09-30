@@ -195,7 +195,7 @@ class LiquidityInfoDialog(BaseDialog):
 
         # GENERATE A PICTURE
         value_hidden = not self.data.get(self.KEY_CAN_VIEW_VALUE, True)
-        picture = await lp_pool_picture(lp_report, self.loc, value_hidden=value_hidden)
+        picture = await lp_pool_picture(self.deps.price_holder, lp_report, self.loc, value_hidden=value_hidden)
         picture_io = img_to_bio(picture, f'Thorchain_LP_{pool}_{today_str()}.png')
 
         # ANSWER

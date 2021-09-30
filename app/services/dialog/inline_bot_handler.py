@@ -54,7 +54,7 @@ class InlineBotHandlerDialog(BaseDialog):
             # summary = await rune_yield.generate_yield_summary(address, pools)
 
             # GENERATE A PICTURE
-            picture = await lp_pool_picture(lp_report, self.loc, value_hidden=False)
+            picture = await lp_pool_picture(self.deps.price_holder, lp_report, self.loc, value_hidden=False)
             picture_io = img_to_bio(picture, f'Thorchain_LP_{exact_pool}_{today_str()}.png')
 
             # UPLOAD AND SEND RESULT

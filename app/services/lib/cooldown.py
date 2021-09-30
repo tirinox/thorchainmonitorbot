@@ -1,8 +1,12 @@
+import asyncio
 import json
 from dataclasses import dataclass
 from time import time
 
+from services.lib.date_utils import DAY
 from services.lib.db import DB
+
+INFINITE_TIME = 10000 * DAY
 
 
 class CooldownSingle:
@@ -82,3 +86,57 @@ class Cooldown:
     async def clear(self, event_name=None):
         event_name = event_name or self.event_name
         await self.write(event_name, cd=CooldownRecord(0, 0))
+
+
+class CooldownBiTrigger:
+    def __init__(self, db: DB, event_name, cooldown_sec: float, switch_cooldown_sec: float = 0.0, default=None):
+        self.db = db
+        self.event_name = event_name
+        self.cooldown_sec = cooldown_sec
+        self.default = bool(default)
+        self.switch_cooldown_sec = switch_cooldown_sec
+        self.cd_on = Cooldown(db, f'trigger.{event_name}.on', cooldown_sec)
+        self.cd_off = Cooldown(db, f'trigger.{event_name}.off', cooldown_sec)
+        self.cd_switch = Cooldown(db, f'trigger.{event_name}.switch', switch_cooldown_sec)
+
+    async def turn_on(self) -> bool:
+        return await self.turn()
+
+    async def turn_off(self) -> bool:
+        return await self.turn(on=False)
+
+    async def turn(self, on=True) -> bool:
+        has_switch_cd = self.switch_cooldown_sec > 0.0
+
+        if has_switch_cd and not await self.cd_switch.can_do():
+            return False
+
+        result = False
+
+        can_on, can_off = await asyncio.gather(self.cd_on.can_do(), self.cd_off.can_do())
+
+        if not can_on and not can_off and self.default is not None:
+            # 1st time! using Default
+            default = bool(self.default)
+            which = self.cd_on if default else self.cd_off
+            await which.do()
+            result = on != default
+            """
+             DEFAULT = True
+                1. On = True (== default) => turn it on! 
+                    FALSE (it is already ON by default)
+                2. On = False (!= default) => turn it off!
+                    TRUE
+            """
+
+        elif on and can_on:
+            await asyncio.gather(self.cd_on.do(), self.cd_off.clear())
+            result = True
+        elif not on and can_off:
+            await asyncio.gather(self.cd_off.do(), self.cd_on.clear())
+            result = True
+
+        if result and has_switch_cd:
+            await self.cd_switch.do()
+
+        return result
