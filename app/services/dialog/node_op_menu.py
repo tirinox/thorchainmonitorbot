@@ -257,6 +257,9 @@ class NodeOpDialog(BaseDialog):
                     self.alert_setting_button(loc.BUTTON_NOP_SETT_IP_ADDR, NodeOpSetting.IP_ADDRESS_ON),
                 ],
                 [
+                    self.alert_setting_button(loc.BUTTON_NOP_SETT_PAUSE_ALL, NodeOpSetting.PAUSE_ALL_ON, default=False),
+                ],
+                [
                     InlineKeyboardButton(self.loc.BUTTON_BACK, callback_data='setting:back')
                 ]
             ]
@@ -280,7 +283,16 @@ class NodeOpDialog(BaseDialog):
             await self.ask_churning_enabled(query)
         elif query.data == NodeOpSetting.IP_ADDRESS_ON:
             await self.ask_ip_address_tracker_enabled(query)
+        elif query.data == NodeOpSetting.PAUSE_ALL_ON:
+            await self.toggle_pause_all(query)
         await query.answer()
+
+    # -------- SETTINGS : PAUSE ALL ---------
+
+    async def toggle_pause_all(self, query: CallbackQuery):
+        is_on = self.is_alert_on(NodeOpSetting.PAUSE_ALL_ON)
+        self.data[NodeOpSetting.PAUSE_ALL_ON] = not is_on
+        await self.on_settings_menu(query)
 
     # -------- SETTINGS : SLASH ---------
 
@@ -536,15 +548,15 @@ class NodeOpDialog(BaseDialog):
     def is_enabled(cls, cfg):
         return bool(cfg.get('telegram.menu.node_op_tools.enabled', default=False))
 
-    def is_alert_on(self, name):
-        return bool(self.data.get(name, True))
+    def is_alert_on(self, name, default=True):
+        return bool(self.data.get(name, default))
 
-    def alert_setting_button(self, orig, setting, data=None):
+    def alert_setting_button(self, orig, setting, data=None, default=True):
         data = data or setting
         if isinstance(setting, (list, tuple)):
-            is_on = any(self.is_alert_on(s) for s in setting)
+            is_on = any(self.is_alert_on(s, default) for s in setting)
         else:
-            is_on = self.is_alert_on(setting)
+            is_on = self.is_alert_on(setting, default)
         return InlineKeyboardButton(orig + (f' ✔' if is_on else ''), callback_data=data)
 
     async def ask_something_enabled(self, query: CallbackQuery, state: State, text: str, is_on: bool):

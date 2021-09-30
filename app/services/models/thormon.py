@@ -85,6 +85,10 @@ class ThorMonAnswer(NamedTuple):
             nodes=[ThorMonNode.from_json(node) for node in j.get('nodes', [])]
         )
 
+    @property
+    def address_to_node_map(self):
+        return {node.node_address: node for node in self.nodes}
+
 
 ThorMonNodeTimeSeries = List[Tuple[float, ThorMonNode]]
 

@@ -31,6 +31,7 @@ class NodeOpSetting:
     SLASH_ON = 'nop:slash:on'
     SLASH_THRESHOLD = 'nop:slash:threshold'
     SLASH_PERIOD = 'nop:slash:period'
+    PAUSE_ALL_ON = 'nop:pause_all:on'
 
 
 class BaseChangeTracker:

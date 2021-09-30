@@ -2,6 +2,7 @@ from typing import NamedTuple, Dict, List, Union
 
 import ujson
 
+from services.lib.date_utils import now_ts
 from services.lib.db import DB
 from services.lib.utils import make_nested_default_dict
 
@@ -43,3 +44,12 @@ class UserDataCache(NamedTuple):
     async def load(cls, db: DB):
         json_str = await db.redis.get(cls.DB_KEY)
         return cls.from_json(json_str)
+
+    def cooldown_can_do(self, user, node, service, name='cd', interval_sec=60, do=False):
+        storage = self.user_node_service_data[user][node][service]
+        last_trigger_ts = storage.get(name, 0)
+        now = now_ts()
+        can_do = now > last_trigger_ts + interval_sec
+        if can_do and do:
+            storage[name] = now
+        return can_do

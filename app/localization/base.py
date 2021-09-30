@@ -1044,6 +1044,7 @@ class BaseLocalization(ABC):  # == English
     BUTTON_NOP_SETT_BOND = 'Bond'
     BUTTON_NOP_SETT_HEIGHT = 'Block height'
     BUTTON_NOP_SETT_IP_ADDR = 'IP addr.'
+    BUTTON_NOP_SETT_PAUSE_ALL = 'Pause all NodeOp alerts'
 
     @staticmethod
     def text_enabled_disabled(is_on):

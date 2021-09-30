@@ -18,7 +18,7 @@ from services.notify.personal.bond import BondTracker
 from services.notify.personal.chain_height import ChainHeightTracker
 from services.notify.personal.churning import NodeChurnTracker
 from services.notify.personal.ip_addr import IpAddressTracker
-from services.notify.personal.helpers import BaseChangeTracker
+from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
 from services.notify.personal.node_online import NodeOnlineTracker
 from services.notify.personal.slashing import SlashPointTracker
 from services.notify.personal.telemetry import NodeTelemetryDatabase
@@ -125,6 +125,8 @@ class NodeChangePersonalNotifier(INotified):
             loc = await loc_man.get_from_db(user, self.deps.db)
 
             settings = await self.watchers.get_user_settings(user)
+            if settings.get(NodeOpSetting.PAUSE_ALL_ON, False):
+                continue  # skip those who paused all the events.
 
             # filter changes according to the user's setting
             filtered_change_list = await self._filter_events(event_list, user, settings)

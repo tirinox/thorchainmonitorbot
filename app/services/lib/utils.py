@@ -1,7 +1,6 @@
 import asyncio
 import binascii
 import logging
-import operator
 import os
 import pickle
 import random
@@ -224,4 +223,3 @@ def make_nested_default_dict(d):
     target = factory()
     target.update(d)
     return target
-

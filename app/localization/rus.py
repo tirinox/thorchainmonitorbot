@@ -883,6 +883,7 @@ class RussianLocalization(BaseLocalization):
     BUTTON_NOP_SETT_BOND = 'Бонд'
     BUTTON_NOP_SETT_HEIGHT = 'Высота блоков'
     BUTTON_NOP_SETT_IP_ADDR = 'IP адр.'
+    BUTTON_NOP_SETT_PAUSE_ALL = 'Приостановить все уведомления'
 
     @staticmethod
     def text_enabled_disabled(is_on):

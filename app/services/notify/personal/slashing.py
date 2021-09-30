@@ -1,5 +1,5 @@
 import asyncio
-from typing import List
+from typing import List, Optional
 
 from services.lib.date_utils import MINUTE, parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
@@ -18,6 +18,7 @@ class SlashPointTracker(BaseChangeTracker):
         self.intervals_sec = [parse_timespan_to_seconds(s) for s in STANDARD_INTERVALS]
         self.logger = class_logger(self)
         self.logger.info(f'{STANDARD_INTERVALS = }')
+        self.cache: Optional[UserDataCache] = None
 
     @staticmethod
     def _extract_slash_points(last_answer: ThorMonAnswer):
@@ -36,29 +37,42 @@ class SlashPointTracker(BaseChangeTracker):
         return await asyncio.gather(*tasks)
 
     async def get_events(self, last_answer: ThorMonAnswer, user_cache: UserDataCache) -> List[NodeEvent]:
+        self.cache = user_cache
         await self._save_point(last_answer)
 
         points = await self._read_points()
         current_state = self._extract_slash_points(last_answer)
 
+        node_map = last_answer.address_to_node_map
+
         events = []
         for interval, (data, _) in zip(self.intervals_sec, points):
             if data is None:
                 continue
+
             for address, slash_pts in data.items():
+                node = node_map.get(address)
+                if not node:
+                    continue
+
                 slash_pts = int(slash_pts)
                 current_slash_pts = int(current_state.get(address, 0))
                 if slash_pts != current_slash_pts:
                     events.append(NodeEvent(
                         address, NodeEventType.SLASHING,
                         EventDataSlash(slash_pts, current_slash_pts, interval),
-                        # todo: thor_node=?
-                        tracker=self
+                        tracker=self,
+                        thor_node=node
                     ))
 
         return events
 
+    KEY_SERVICE = 'slashing'
+
     async def is_event_ok(self, event: NodeEvent, user_id, settings: dict) -> bool:
+        if not self.cache:
+            return False
+
         if not bool(settings.get(NodeOpSetting.SLASH_ON, True)):
             return False
 
@@ -69,4 +83,11 @@ class SlashPointTracker(BaseChangeTracker):
             return False
 
         threshold = settings.get(NodeOpSetting.SLASH_THRESHOLD, 50)
-        return data.delta_pts >= threshold
+
+        if data.delta_pts >= threshold:
+            if self.cache.cooldown_can_do(user_id, event.thor_node.node_address,
+                                          self.KEY_SERVICE, interval_sec=interval,
+                                          do=True):
+                return True
+
+        return False
