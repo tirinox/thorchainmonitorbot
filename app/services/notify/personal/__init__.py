@@ -66,7 +66,6 @@ class NodeChangePersonalNotifier(INotified):
         self.chain_height_tracker.estimate_block_height(data, maximum=True)
 
         user_cache = await UserDataCache.load(self.deps.db)
-        self.logger.info(str(user_cache))
 
         events = sum(
             await asyncio.gather(
@@ -105,6 +104,7 @@ class NodeChangePersonalNotifier(INotified):
         all_users = reduce(operator.or_, node_to_user.values()) if node_to_user else []
 
         if not all_users:
+            self.logger.info('No users to receive alerts.')
             return  # nobody is interested in those changes...
 
         user_events = defaultdict(list)

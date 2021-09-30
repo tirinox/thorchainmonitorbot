@@ -2,6 +2,7 @@ from typing import List
 
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove
+from aiogram.utils.exceptions import MessageNotModified
 from aiogram.utils.helper import HelperMode
 
 from services.dialog.base import BaseDialog, message_handler, query_handler
@@ -236,10 +237,9 @@ class NodeOpDialog(BaseDialog):
 
     # -------- SETTINGS ---------
 
-    async def on_settings_menu(self, query: CallbackQuery):
+    def settings_kb(self):
         loc = self.loc
-        await NodeOpStates.SETTINGS.set()
-        await query.message.edit_text(loc.TEXT_NOP_SETTINGS_TITLE, reply_markup=InlineKeyboardMarkup(
+        return InlineKeyboardMarkup(
             inline_keyboard=[
                 [
                     self.alert_setting_button(loc.BUTTON_NOP_SETT_SLASHING, NodeOpSetting.SLASH_ON),
@@ -263,7 +263,12 @@ class NodeOpDialog(BaseDialog):
                     InlineKeyboardButton(self.loc.BUTTON_BACK, callback_data='setting:back')
                 ]
             ]
-        ))
+        )
+
+    async def on_settings_menu(self, query: CallbackQuery):
+        loc = self.loc
+        await NodeOpStates.SETTINGS.set()
+        await query.message.edit_text(loc.TEXT_NOP_SETTINGS_TITLE, reply_markup=self.settings_kb())
 
     @query_handler(state=NodeOpStates.SETTINGS)
     async def on_setting_callback(self, query: CallbackQuery):
@@ -292,7 +297,10 @@ class NodeOpDialog(BaseDialog):
     async def toggle_pause_all(self, query: CallbackQuery):
         is_on = self.is_alert_on(NodeOpSetting.PAUSE_ALL_ON)
         self.data[NodeOpSetting.PAUSE_ALL_ON] = not is_on
-        await self.on_settings_menu(query)
+        try:
+            await query.message.edit_reply_markup(reply_markup=self.settings_kb())
+        except MessageNotModified:
+            pass
 
     # -------- SETTINGS : SLASH ---------
 

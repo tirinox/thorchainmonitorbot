@@ -50,6 +50,10 @@ def test_set():
     assert dic['your']['dic'] == {'bar': 200}
 
 
+def unnest(d):
+    return ujson.loads(ujson.dumps(d))
+
+
 def test_make_nested_default_dict():
     assert make_nested_default_dict({}) == {}
     assert make_nested_default_dict({
@@ -64,5 +68,25 @@ def test_make_nested_default_dict():
     assert d == {'x': {'y': {'z': 25}}}
     d['x']['gram'] = 200
     assert d == {'x': {'y': {'z': 25}, 'gram': 200}}
+    assert unnest(d) == d
 
-    assert ujson.loads(ujson.dumps(d)) == d
+
+def test_make_nested_default_dict2():
+    nd = make_nested_default_dict({
+        'old': {
+            '1': 10
+        }
+    })
+    nd['1']['2']['3'] = 'hello'
+    nd['1']['2']['4'] = 'bye'
+    nd['2']['5'] = 'foo'
+    assert nd == {
+        'old': {'1': 10},
+        '1': {
+            '2': {
+                '3': 'hello',
+                '4': 'bye'
+            },
+        },
+        '2': {'5': 'foo'}
+    }

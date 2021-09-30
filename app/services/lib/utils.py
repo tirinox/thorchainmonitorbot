@@ -218,8 +218,11 @@ def nested_get(dic, keys, default=None):
     return dic.get(keys[-1], default)
 
 
+def tree_factory():
+    return defaultdict(tree_factory)
+
+
 def make_nested_default_dict(d):
-    factory = lambda: defaultdict(factory)
-    target = factory()
-    target.update(d)
-    return target
+    if not isinstance(d, dict):
+        return d
+    return defaultdict(tree_factory, {k: make_nested_default_dict(v) for k, v in d.items()})

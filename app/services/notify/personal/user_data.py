@@ -17,7 +17,7 @@ class UserDataCache(NamedTuple):
     node_service_data: Dict
     user_node_service_data: Dict
 
-    DB_KEY = 'NodeOp:UserCache'
+    DB_KEY = 'NodeOp:UserCache:v2'
 
     @classmethod
     def from_json(cls, j):
