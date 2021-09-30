@@ -25,6 +25,7 @@ from services.lib.config import Config
 from services.lib.constants import get_thor_env_by_network_id
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
+from services.lib.midgard.connector import MidgardConnector
 from services.lib.utils import setup_logs
 from services.models.price import LastPriceHolder
 from services.models.tx import ThorTxType
@@ -77,6 +78,7 @@ class App:
         d = self.deps
         d.thor_connector = ThorConnector(get_thor_env_by_network_id(d.cfg.network_id), d.session)
         await d.thor_connector.update_nodes()
+        d.midgard_connector = MidgardConnector(d)
 
     async def _run_background_jobs(self):
         d = self.deps

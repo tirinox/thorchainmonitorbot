@@ -24,6 +24,7 @@ class DepContainer:
     dp: Optional[Dispatcher] = None
 
     thor_connector: Optional[ThorConnector] = None
+    midgard_connector: Optional['MidgardConnector'] = None
 
     loc_man: Optional['LocalizationManager'] = None
     broadcaster: Optional['Broadcaster'] = None

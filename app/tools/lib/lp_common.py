@@ -11,6 +11,7 @@ from services.jobs.fetch.runeyield import AsgardConsumerConnectorBase, get_rune_
 from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
+from services.lib.midgard.connector import MidgardConnector
 from services.lib.midgard.urlgen import get_url_gen_by_network_id
 from services.lib.telegram import telegram_send_message_basic, TG_TEST_USER
 
@@ -41,6 +42,7 @@ class LpAppFramework:
         d = self.deps
         d.session = aiohttp.ClientSession()
         d.thor_connector = ThorConnector(get_thor_env_by_network_id(d.cfg.network_id), d.session)
+        d.midgard_connector = MidgardConnector(d)
 
         await d.db.get_redis()
 
