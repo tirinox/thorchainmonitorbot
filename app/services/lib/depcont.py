@@ -8,6 +8,7 @@ from aiothornode.connector import ThorConnector
 
 from services.lib.config import Config
 from services.lib.db import DB
+from services.lib.midgard.connector import MidgardConnector
 from services.models.price import LastPriceHolder
 from services.models.queue import QueueInfo
 
@@ -24,7 +25,7 @@ class DepContainer:
     dp: Optional[Dispatcher] = None
 
     thor_connector: Optional[ThorConnector] = None
-    midgard_connector: Optional['MidgardConnector'] = None
+    midgard_connector: Optional[MidgardConnector] = None
 
     loc_man: Optional['LocalizationManager'] = None
     broadcaster: Optional['Broadcaster'] = None

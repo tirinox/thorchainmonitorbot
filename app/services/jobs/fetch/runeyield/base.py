@@ -3,7 +3,7 @@ from abc import abstractmethod
 from typing import List, NamedTuple, Dict
 
 from services.lib.depcont import DepContainer
-from services.lib.midgard.urlgen import MidgardURLGenBase
+from services.lib.midgard.urlgen import MidgardURLGenBase, MidgardURLGenV2
 from services.lib.utils import class_logger
 from services.models.lp_info import LiquidityPoolReport, LPDailyGraphPoint
 
@@ -14,10 +14,10 @@ class YieldSummary(NamedTuple):
 
 
 class AsgardConsumerConnectorBase:
-    def __init__(self, deps: DepContainer, url_gen: MidgardURLGenBase):
+    def __init__(self, deps: DepContainer):
         self.deps = deps
         self.logger = class_logger(self)
-        self.url_gen = url_gen
+        self.url_gen = MidgardURLGenV2.get_free()
 
     # interface
     @abstractmethod

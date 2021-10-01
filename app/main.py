@@ -78,7 +78,7 @@ class App:
         d = self.deps
         d.thor_connector = ThorConnector(get_thor_env_by_network_id(d.cfg.network_id), d.session)
         await d.thor_connector.update_nodes()
-        d.midgard_connector = MidgardConnector(d)
+        d.midgard_connector = MidgardConnector(d.session, d.thor_connector, d.cfg.get_pure('thor.midgard.tries'))
 
     async def _run_background_jobs(self):
         d = self.deps

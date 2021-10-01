@@ -12,7 +12,6 @@ from services.lib.constants import NetworkIdents, thor_to_float, float_to_thor, 
 from services.lib.date_utils import days_ago_noon, now_ts
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
-from services.lib.midgard.urlgen import MidgardURLGenBase
 from services.lib.money import weighted_mean
 from services.lib.utils import pairwise
 from services.models.lp_info import LiquidityPoolReport, CurrentLiquidity, FeeReport, ReturnMetrics, \
@@ -26,8 +25,8 @@ DEFAULT_RUNE_PRICE = 10.0  # USD
 
 
 class HomebrewLPConnector(AsgardConsumerConnectorBase):
-    def __init__(self, deps: DepContainer, url_gen: MidgardURLGenBase):
-        super().__init__(deps, url_gen)
+    def __init__(self, deps: DepContainer):
+        super().__init__(deps)
         self.tx_fetcher = TxFetcher(deps)
         self.parser = get_parser_by_network_id(deps.cfg.network_id)
         self.use_thor_consensus = False
@@ -114,15 +113,13 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         return liq_report
 
     async def get_my_pools(self, address) -> List[str]:
-        url = self.url_gen.url_for_address_pool_membership(address)
-        self.logger.info(f'get: {url}')
-        async with self.deps.session.get(url) as resp:
-            if resp.status == 404:
-                raise FileNotFoundError
-            j = await resp.json()
-            return self.parser.parse_pool_membership(j)
+        j = await self.deps.midgard_connector.request_random_midgard(
+            self.url_gen.url_for_address_pool_membership(address))
+        if j == self.deps.midgard_connector.ERROR_RESPONSE:
+            raise FileNotFoundError
+        return self.parser.parse_pool_membership(j)
 
-    # ------------------------------------------------------------------------------------------------------------------
+        # ------------------------------------------------------------------------------------------------------------------
 
     @staticmethod
     def _find_thor_address_in_tx_list(txs: List[ThorTx]) -> str:

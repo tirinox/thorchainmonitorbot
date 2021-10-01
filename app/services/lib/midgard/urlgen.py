@@ -90,6 +90,10 @@ class MidgardURLGenV2(MidgardURLGenBase):
     def url_pool_info(self):
         return f'{self.base_url}/v2/pools'
 
+    @classmethod
+    def get_free(cls):
+        return cls('')
+
 
 def get_url_gen_by_network_id(network_id) -> MidgardURLGenBase:
     if network_id == NetworkIdents.TESTNET_MULTICHAIN:

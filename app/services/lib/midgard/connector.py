@@ -1,13 +1,11 @@
 import asyncio
 from typing import List
 
+import aiohttp
+from aiothornode.connector import ThorConnector
 from aiothornode.nodeclient import ThorNodeClient
 
-from services.lib.depcont import DepContainer
-from services.lib.midgard.parser import get_parser_by_network_id
-from services.lib.midgard.urlgen import get_url_gen_by_network_id, MidgardURLGenV2
 from services.lib.utils import class_logger
-from services.models.time_series import TimeSeries
 
 DEFAULT_MIDGARD_PORT = 8080
 
@@ -26,14 +24,11 @@ class MidgardConnector:
     ERROR_RESPONSE = 'ERROR_Midgard'
     ERROR_NO_CLIENT = 'ERROR_NoClient'
 
-    def __init__(self, d: DepContainer):
-        network_id = d.cfg.network_id
-        self.deps = d
-        self.n_tries = int(d.cfg.get_pure('thor.midgard.tries', 3))
-        self.url_gen = get_url_gen_by_network_id(network_id)
-        self.parser = get_parser_by_network_id(network_id)
+    def __init__(self, session: aiohttp.ClientSession, thor: ThorConnector, retry_number=3):
         self.logger = class_logger(self)
-        self.stats_series = TimeSeries('MidgardStats', self.deps.db)
+        self.thor = thor
+        self.session = session
+        self.retries = retry_number
 
     async def _request_json_from_midgard_by_ip(self, ip_address: str, path: str):
         port = DEFAULT_MIDGARD_PORT
@@ -42,7 +37,7 @@ class MidgardConnector:
 
         self.logger.info(f"Getting Midgard endpoint: {full_url}")
         try:
-            async with self.deps.session.get(full_url) as resp:
+            async with self.session.get(full_url) as resp:
                 if resp.status != 200:
                     try:
                         answer = resp.content[:200]
@@ -57,7 +52,7 @@ class MidgardConnector:
             return self.ERROR_RESPONSE
 
     async def request_random_midgard(self, path: str):
-        clients: List[ThorNodeClient] = await self.deps.thor_connector.get_random_clients(self.n_tries)
+        clients: List[ThorNodeClient] = await self.thor.get_random_clients(self.retries)
         if not clients:
             self.logger.error(f'No THOR clients connected for path "{path}"')
             return None
