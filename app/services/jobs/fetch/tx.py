@@ -1,16 +1,15 @@
 import time
+from typing import List, Optional
 
 from aiohttp import ContentTypeError
 from aioredis import Redis
-from typing import List, Optional
-
 from tqdm import tqdm
 
 from services.jobs.fetch.base import BaseFetcher
-from services.lib.midgard.parser import get_parser_by_network_id
-from services.lib.midgard.urlgen import get_url_gen_by_network_id
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
+from services.lib.midgard.parser import get_parser_by_network_id
+from services.lib.midgard.urlgen import free_url_gen
 from services.models.tx import ThorTx, ThorTxExtended
 
 
@@ -26,7 +25,6 @@ class TxFetcher(BaseFetcher):
         self.max_page_deep = int(s_cfg.max_page_deep)
         self.max_age_sec = parse_timespan_to_seconds(s_cfg.max_age)
 
-        self.url_gen_midgard = get_url_gen_by_network_id(deps.cfg.network_id)
         self.tx_parser = get_parser_by_network_id(deps.cfg.network_id)
 
         self.progress_tracker: Optional[tqdm] = None
@@ -52,25 +50,24 @@ class TxFetcher(BaseFetcher):
     async def fetch_all_tx(self, address=None, liquidity_change_only=False, max_pages=None) -> List[ThorTx]:
         page = 0
         txs = []
-        types = self.url_gen_midgard.LIQUIDITY_TX_TYPES_STRING if liquidity_change_only else None
+        types = free_url_gen.LIQUIDITY_TX_TYPES_STRING if liquidity_change_only else None
         while True:
-            url = self.url_gen_midgard.url_for_tx(page * self.tx_per_batch, self.tx_per_batch,
-                                                  types=types,
-                                                  address=address)
+            q_path = free_url_gen.url_for_tx(page * self.tx_per_batch, self.tx_per_batch,
+                                          types=types,
+                                          address=address)
 
             if not self.progress_tracker:
-                self.logger.info(f"start fetching user's tx: {url}")
+                self.logger.info(f"start fetching user's tx: {q_path}")
 
-            async with self.deps.session.get(url) as resp:
-                json = await resp.json()
-                new_txs = self.tx_parser.parse_tx_response(json)
+            j = await self.deps.midgard_connector.request_random_midgard(q_path)
+            new_txs = self.tx_parser.parse_tx_response(j)
 
-                self._update_progress(new_txs.tx_count, new_txs.total_count)
+            self._update_progress(new_txs.tx_count, new_txs.total_count)
 
-                txs += new_txs.txs
-                if not new_txs.tx_count or new_txs.tx_count < self.tx_per_batch:
-                    break
-                page += 1
+            txs += new_txs.txs
+            if not new_txs.tx_count or new_txs.tx_count < self.tx_per_batch:
+                break
+            page += 1
 
             if max_pages and page >= max_pages:
                 self.logger.info(f'Max pages {max_pages} reached.')
@@ -81,12 +78,11 @@ class TxFetcher(BaseFetcher):
     # -------
 
     async def _fetch_one_batch(self, session, page):
-        url = self.url_gen_midgard.url_for_tx(page * self.tx_per_batch, self.tx_per_batch)
-        self.logger.info(f"start fetching tx: {url}")
+        q_path = free_url_gen.url_for_tx(page * self.tx_per_batch, self.tx_per_batch)
+
         try:
-            async with session.get(url) as resp:
-                json = await resp.json()
-                return self.tx_parser.parse_tx_response(json)
+            j = await self.deps.midgard_connector.request_random_midgard(q_path)
+            return self.tx_parser.parse_tx_response(j)
         except ContentTypeError:
             return None
 

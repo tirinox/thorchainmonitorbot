@@ -4,7 +4,7 @@ from services.jobs.fetch.base import BaseFetcher
 from services.lib.constants import thor_to_float
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
-from services.lib.midgard.urlgen import get_url_gen_by_network_id
+from services.lib.midgard.urlgen import free_url_gen
 from services.models.cap_info import ThorCapInfo
 
 
@@ -12,7 +12,6 @@ class CapInfoFetcher(BaseFetcher):
     def __init__(self, deps: DepContainer):
         sleep_period = parse_timespan_to_seconds(deps.cfg.cap.fetch_period)
         super().__init__(deps, sleep_period)
-        self.url_gen = get_url_gen_by_network_id(deps.cfg.network_id)
         self.last_network_info = {}
         self.last_mimir = {}
 
@@ -22,23 +21,16 @@ class CapInfoFetcher(BaseFetcher):
         "mimir//MAXIMUMSTAKERUNE"
     ]
 
-    async def get_constants(self):
-        session = self.deps.session
-        url_network = self.url_gen.url_network()
-        self.logger.info(f"get network: {url_network}")
-        async with session.get(url_network) as resp:
-            self.last_network_info = await resp.json()
-            return self.last_network_info
+    async def get_network_info(self):
+        self.last_network_info = await self.deps.midgard_connector.request_random_midgard(free_url_gen.url_network())
+        return self.last_network_info
 
     async def get_mimir(self):
-        url_mimir = self.url_gen.url_mimir()
-        self.logger.info(f"get mimir: {url_mimir}")
-        async with self.deps.session.get(url_mimir) as resp:
-            self.last_mimir = await resp.json()
-            return self.last_mimir
+        self.last_mimir = await self.deps.midgard_connector.request_random_midgard(free_url_gen.url_mimir())
+        return self.last_mimir
 
     async def get_total_current_pooled_rune(self):
-        networks_resp = await self.get_constants()
+        networks_resp = await self.get_network_info()
 
         if 'totalStaked' in networks_resp:
             lp_rune = networks_resp.get('totalStaked', 0)

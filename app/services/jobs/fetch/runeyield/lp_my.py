@@ -12,6 +12,7 @@ from services.lib.constants import NetworkIdents, thor_to_float, float_to_thor, 
 from services.lib.date_utils import days_ago_noon, now_ts
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
+from services.lib.midgard.urlgen import free_url_gen
 from services.lib.money import weighted_mean
 from services.lib.utils import pairwise
 from services.models.lp_info import LiquidityPoolReport, CurrentLiquidity, FeeReport, ReturnMetrics, \
@@ -113,8 +114,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         return liq_report
 
     async def get_my_pools(self, address) -> List[str]:
-        j = await self.deps.midgard_connector.request_random_midgard(
-            self.url_gen.url_for_address_pool_membership(address))
+        j = await self.deps.midgard_connector.request_random_midgard(free_url_gen.url_for_address_pool_membership(address))
         if j == self.deps.midgard_connector.ERROR_RESPONSE:
             raise FileNotFoundError
         return self.parser.parse_pool_membership(j)

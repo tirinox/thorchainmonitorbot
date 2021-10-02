@@ -4,15 +4,14 @@ import aiohttp
 from aiothornode.connector import ThorConnector
 
 from localization import LocalizationManager
-from services.lib.constants import get_thor_env_by_network_id
 from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.runeyield import AsgardConsumerConnectorBase, get_rune_yield_connector
 from services.lib.config import Config
+from services.lib.constants import get_thor_env_by_network_id
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.midgard.connector import MidgardConnector
-from services.lib.midgard.urlgen import get_url_gen_by_network_id
 from services.lib.telegram import telegram_send_message_basic, TG_TEST_USER
 
 
@@ -55,7 +54,7 @@ class LpAppFramework:
         d.price_pool_fetcher = PoolPriceFetcher(d)
 
         if self.rune_yield_class:
-            self.rune_yield = self.rune_yield_class(d, get_url_gen_by_network_id(self.deps.cfg.network_id))
+            self.rune_yield = self.rune_yield_class(d)
         else:
             self.rune_yield = get_rune_yield_connector(d)
 

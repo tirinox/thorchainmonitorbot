@@ -17,7 +17,6 @@ class AsgardConsumerConnectorBase:
     def __init__(self, deps: DepContainer):
         self.deps = deps
         self.logger = class_logger(self)
-        self.url_gen = MidgardURLGenV2.get_free()
 
     # interface
     @abstractmethod

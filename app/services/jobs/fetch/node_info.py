@@ -6,7 +6,7 @@ from services.jobs.node_churn import NodeStateDatabase
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.geo_ip import GeoIPManager
-from services.lib.midgard.urlgen import get_url_gen_by_network_id
+from services.lib.midgard.urlgen import free_url_gen
 from services.models.node_info import NodeInfo, NetworkNodeIpInfo
 
 
@@ -14,24 +14,17 @@ class NodeInfoFetcher(BaseFetcher):
     def __init__(self, deps: DepContainer):
         sleep_period = parse_timespan_to_seconds(deps.cfg.node_info.fetch_period)
         super().__init__(deps, sleep_period)
-        self.url_gen = get_url_gen_by_network_id(deps.cfg.network_id)
 
     async def fetch_current_node_list(self) -> List[NodeInfo]:
-        session = self.deps.session
-
-        url = self.url_gen.url_thor_nodes()
-        self.logger.info(f"get Thor nodes: {url}")
+        raw_nodes = await self.deps.midgard_connector.request_random_midgard(
+            free_url_gen.url_thor_nodes()
+        )
 
         new_nodes = []
-        async with session.get(url) as resp:
-            raw_nodes = await resp.json()
-            for j in raw_nodes:
-                new_nodes.append(NodeInfo.from_json(j))
-
+        for j in raw_nodes:
+            new_nodes.append(NodeInfo.from_json(j))
         new_nodes.sort(key=lambda k: (k.status, -k.bond))
-
         # new_nodes = self._test_churn(new_nodes)  # fixme: debug
-
         return new_nodes
 
     async def fetch(self) -> List[NodeInfo]:

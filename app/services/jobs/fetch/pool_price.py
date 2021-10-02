@@ -13,10 +13,12 @@ from services.lib.constants import RUNE_SYMBOL_DET, RUNE_SYMBOL_POOL, RUNE_SYMBO
 from services.lib.date_utils import parse_timespan_to_seconds, DAY, HOUR, day_to_key
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
-from services.lib.midgard.urlgen import get_url_gen_by_network_id
+from services.lib.midgard.urlgen import free_url_gen
 from services.models.pool_info import PoolInfoHistoricEntry, parse_thor_pools, PoolInfo, PoolInfoMap
 from services.models.price import RuneMarketInfo
 from services.models.time_series import PriceTimeSeries
+
+MAX_ATTEMPTS_TO_FETCH_POOLS = 5
 
 
 class PoolPriceFetcher(BaseFetcher):
@@ -30,9 +32,9 @@ class PoolPriceFetcher(BaseFetcher):
         period = parse_timespan_to_seconds(cfg.price.fetch_period)
         super().__init__(deps, sleep_period=period)
         self.deps = deps
-        self.midgard_url_gen = get_url_gen_by_network_id(cfg.network_id)
-        self.max_attempts = 5
+        self.max_attempts = MAX_ATTEMPTS_TO_FETCH_POOLS
         self.use_thor_consensus = False
+        self.parser = get_parser_by_network_id(self.deps.cfg.network_id)
 
     async def reload_global_pools(self):
         d = self.deps
@@ -119,10 +121,11 @@ class PoolPriceFetcher(BaseFetcher):
         r: Redis = await self.deps.db.get_redis()
         await r.delete(self.DB_KEY_POOL_INFO_HASH)
 
-    def url_for_historical_pool_state(self, pool, ts):
+    @staticmethod
+    def path_for_historical_pool_state(pool, ts):
         from_ts = int(ts - HOUR)
         to_ts = int(ts + DAY + HOUR)
-        return self.midgard_url_gen.url_for_pool_depth_history(pool, from_ts, to_ts)
+        return free_url_gen.url_for_pool_depth_history(pool, from_ts, to_ts)
 
     async def get_asset_per_rune_of_pool_by_day(self, pool: str, day: date, caching=True):
         info: PoolInfoHistoricEntry = await self.get_pool_info_by_day(pool, day, caching)
@@ -135,8 +138,6 @@ class PoolPriceFetcher(BaseFetcher):
         await r.delete(self.DB_KEY_HISTORIC_POOL)
 
     async def get_pool_info_by_day(self, pool: str, day: date, caching=True) -> Optional[PoolInfoHistoricEntry]:
-        parser = get_parser_by_network_id(self.deps.cfg.network_id)
-
         hash_key = ''
         if caching:
             hash_key = day_to_key(day, prefix=pool)
@@ -144,25 +145,23 @@ class PoolPriceFetcher(BaseFetcher):
             if cached_raw:
                 try:
                     j = json.loads(cached_raw)
-                    return parser.parse_historic_pool_items(j)[0]
+                    return self.parser.parse_historic_pool_items(j)[0]
                 except ValueError:
                     pass
 
         timestamp = calendar.timegm(day.timetuple())
-        url = self.url_for_historical_pool_state(pool, timestamp)
-        self.logger.info(f"get: {url}")
+        q_path = self.path_for_historical_pool_state(pool, timestamp)
+        raw_data = await self.deps.midgard_connector.request_random_midgard(q_path)
 
-        async with self.deps.session.get(url) as resp:
-            raw_data = await resp.json()
-            pools_info = parser.parse_historic_pool_items(raw_data)
-            if not pools_info:
-                self.logger.error(f'there were no historical data returned!')
-                return None
-            else:
-                if caching and raw_data:
-                    await self.deps.db.redis.hset(self.DB_KEY_HISTORIC_POOL, hash_key, json.dumps(raw_data))
-                pool_info = pools_info[0]
-                return pool_info
+        pools_info = self.parser.parse_historic_pool_items(raw_data)
+        if not pools_info:
+            self.logger.error(f'there were no historical data returned!')
+            return None
+        else:
+            if caching and raw_data:
+                await self.deps.db.redis.hset(self.DB_KEY_HISTORIC_POOL, hash_key, json.dumps(raw_data))
+            pool_info = pools_info[0]
+            return pool_info
 
     async def get_usd_price_of_rune_and_asset_by_day(self, pool, day: date, caching=True):
         info = await self.get_pool_info_by_day(pool, day, caching)
@@ -178,17 +177,11 @@ class PoolInfoFetcherMidgard(BaseFetcher):
         period = parse_timespan_to_seconds(cfg.pool_churn.fetch_period)
         super().__init__(deps, sleep_period=period)
         self.deps = deps
-        self.midgard_url_gen = get_url_gen_by_network_id(cfg.network_id)
+        self.parser = get_parser_by_network_id(self.deps.cfg.network_id)
 
     async def get_pool_info_midgard(self) -> PoolInfoMap:
-        url = self.midgard_url_gen.url_pool_info()
-        self.logger.info(f"get: {url}")
-
-        parser = get_parser_by_network_id(self.deps.cfg.network_id)
-
-        async with self.deps.session.get(url) as resp:
-            raw_data = await resp.json()
-            return parser.parse_pool_info(raw_data)
+        raw_data = await self.deps.midgard_connector.request_random_midgard(free_url_gen.url_pool_info())
+        return self.parser.parse_pool_info(raw_data)
 
     async def fetch(self):
         result = await self.get_pool_info_midgard()

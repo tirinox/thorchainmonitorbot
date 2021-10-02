@@ -6,14 +6,12 @@ from aiothornode.types import ThorConstants, ThorMimir
 from services.jobs.fetch.base import BaseFetcher
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
-from services.lib.midgard.urlgen import get_url_gen_by_network_id
 
 
 class ConstMimirFetcher(BaseFetcher):
     def __init__(self, deps: DepContainer):
         sleep_period = parse_timespan_to_seconds(deps.cfg.constants.fetch_period)
         super().__init__(deps, sleep_period)
-        self.url_gen = get_url_gen_by_network_id(deps.cfg.network_id)
         self.last_constants: ThorConstants = ThorConstants()
         self.last_mimir: ThorMimir = ThorMimir()
 

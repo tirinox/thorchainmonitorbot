@@ -6,7 +6,7 @@ from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.lib.constants import THOR_BLOCK_TIME, thor_to_float
 from services.lib.date_utils import parse_timespan_to_seconds, now_ts
 from services.lib.depcont import DepContainer
-from services.lib.midgard.urlgen import get_url_gen_by_network_id
+from services.lib.midgard.urlgen import free_url_gen
 from services.models.net_stats import NetworkStats
 
 
@@ -14,64 +14,55 @@ class NetworkStatisticsFetcher(BaseFetcher):
     def __init__(self, deps: DepContainer):
         sleep_period = parse_timespan_to_seconds(deps.cfg.net_summary.fetch_period)
         super().__init__(deps, sleep_period)
-        self.url_gen = get_url_gen_by_network_id(deps.cfg.network_id)
 
-    async def _get_stats(self, session, ns: NetworkStats):
-        url_stats = self.url_gen.url_stats()
-        self.logger.info(f"get Thor stats: {url_stats}")
+    async def _get_stats(self, ns: NetworkStats):
+        j = await self.deps.midgard_connector.request_random_midgard(free_url_gen.url_stats())
 
-        async with session.get(url_stats) as resp:
-            j = await resp.json()
+        ns.usd_per_rune = float(j.get('runePriceUSD', self.deps.price_holder.usd_per_rune))
 
-            ns.usd_per_rune = float(j.get('runePriceUSD', self.deps.price_holder.usd_per_rune))
+        ns.users_daily = int(j['dailyActiveUsers'])
+        ns.users_monthly = int(j['monthlyActiveUsers'])
 
-            ns.users_daily = int(j['dailyActiveUsers'])
-            ns.users_monthly = int(j['monthlyActiveUsers'])
+        ns.add_count = int(j['addLiquidityCount'])
+        ns.added_rune = thor_to_float(j['addLiquidityVolume'])
 
-            ns.add_count = int(j['addLiquidityCount'])
-            ns.added_rune = thor_to_float(j['addLiquidityVolume'])
+        ns.withdraw_count = int(j['withdrawCount'])
+        ns.withdrawn_rune = thor_to_float(j['withdrawVolume'])
 
-            ns.withdraw_count = int(j['withdrawCount'])
-            ns.withdrawn_rune = thor_to_float(j['withdrawVolume'])
+        ns.loss_protection_paid_rune = thor_to_float(j['impermanentLossProtectionPaid'])
 
-            ns.loss_protection_paid_rune = thor_to_float(j['impermanentLossProtectionPaid'])
+        ns.swaps_total = int(j['swapCount'])
+        ns.swaps_24h = int(j['swapCount24h'])
+        ns.swaps_30d = int(j['swapCount30d'])
+        ns.swap_volume_rune = thor_to_float(j['swapVolume'])
 
-            ns.swaps_total = int(j['swapCount'])
-            ns.swaps_24h = int(j['swapCount24h'])
-            ns.swaps_30d = int(j['swapCount30d'])
-            ns.swap_volume_rune = thor_to_float(j['swapVolume'])
+        ns.switched_rune = thor_to_float(j['switchedRune'])
+        ns.total_rune_pooled = thor_to_float(j['runeDepth'])
 
-            ns.switched_rune = thor_to_float(j['switchedRune'])
-            ns.total_rune_pooled = thor_to_float(j['runeDepth'])
+    async def _get_network(self, ns: NetworkStats):
+        j = await self.deps.midgard_connector.request_random_midgard(free_url_gen.url_network())
 
-    async def _get_network(self, session, ns: NetworkStats):
-        url_network = self.url_gen.url_network()
-        self.logger.info(f"get Thor stats: {url_network}")
+        ns.active_nodes = int(j['activeNodeCount'])
+        ns.standby_nodes = int(j['standbyNodeCount'])
 
-        async with session.get(url_network) as resp:
-            j = await resp.json()
+        ns.bonding_apy = float(j['bondingAPY']) * 100.0
+        ns.liquidity_apy = float(j['liquidityAPY']) * 100.0
 
-            ns.active_nodes = int(j['activeNodeCount'])
-            ns.standby_nodes = int(j['standbyNodeCount'])
+        ns.reserve_rune = thor_to_float(j['totalReserve'])
 
-            ns.bonding_apy = float(j['bondingAPY']) * 100.0
-            ns.liquidity_apy = float(j['liquidityAPY']) * 100.0
+        next_cool_cd = int(j['poolActivationCountdown'])
+        ns.next_pool_activation_ts = now_ts() + THOR_BLOCK_TIME * next_cool_cd
 
-            ns.reserve_rune = thor_to_float(j['totalReserve'])
+        bonding_metrics = j['bondMetrics']
 
-            next_cool_cd = int(j['poolActivationCountdown'])
-            ns.next_pool_activation_ts = now_ts() + THOR_BLOCK_TIME * next_cool_cd
+        ns.total_active_bond_rune = thor_to_float(bonding_metrics['totalActiveBond'])
 
-            bonding_metrics = j['bondMetrics']
-
-            ns.total_active_bond_rune = thor_to_float(bonding_metrics['totalActiveBond'])
-
-            stand_by_bond = thor_to_float(bonding_metrics['totalStandbyBond'])
-            ns.total_bond_rune = ns.total_active_bond_rune + stand_by_bond
+        stand_by_bond = thor_to_float(bonding_metrics['totalStandbyBond'])
+        ns.total_bond_rune = ns.total_active_bond_rune + stand_by_bond
 
     KEY_CONST_MIN_RUNE_POOL_DEPTH = 'MinRunePoolDepth'
 
-    async def _get_pools(self, _, ns: NetworkStats):
+    async def _get_pools(self, ns: NetworkStats):
         ppf: PoolPriceFetcher = self.deps.price_pool_fetcher
         cmf: ConstMimirFetcher = self.deps.mimir_const_holder
 
@@ -93,13 +84,12 @@ class NetworkStatisticsFetcher(BaseFetcher):
                 ns.next_pool_to_activate = None
 
     async def fetch(self) -> NetworkStats:
-        session = self.deps.session
         ns = NetworkStats()
         ns.usd_per_rune = self.deps.price_holder.usd_per_rune
         await asyncio.gather(
-            self._get_stats(session, ns),
-            self._get_network(session, ns),
-            self._get_pools(session, ns)
+            self._get_stats(ns),
+            self._get_network(ns),
+            self._get_pools(ns)
         )
         ns.date_ts = now_ts()
         return ns
