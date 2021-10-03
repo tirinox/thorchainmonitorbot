@@ -13,7 +13,7 @@ async def test_midgard1():
 
         sep()
         print('Starting quering Midgards')
-        pools = await mdg.request_random_midgard('network')
+        pools = await mdg.request_random_midgard('v2/network')
         print(pools)
 
 

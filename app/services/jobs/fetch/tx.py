@@ -77,20 +77,20 @@ class TxFetcher(BaseFetcher):
 
     # -------
 
-    async def _fetch_one_batch(self, session, page):
+    async def _fetch_one_batch(self, page):
         q_path = free_url_gen.url_for_tx(page * self.tx_per_batch, self.tx_per_batch)
 
         try:
             j = await self.deps.midgard_connector.request_random_midgard(q_path)
             return self.tx_parser.parse_tx_response(j)
-        except ContentTypeError:
+        except (ContentTypeError, AttributeError):
             return None
 
     async def _fetch_unseen_txs(self):
         all_txs = []
         await self.deps.db.get_redis()
         for page in range(self.max_page_deep):
-            results = await self._fetch_one_batch(self.deps.session, page)
+            results = await self._fetch_one_batch(page)
 
             if results is None:
                 continue

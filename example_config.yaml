@@ -11,6 +11,10 @@ thor:
 
   midgard:  # new!
     tries: 3
+    use_nodes: true
+    public_url: "https://midgard.thorchain.info/"
+
+  timeout: 2.0  # (sec) new!
 
   stable_coins:  # new!
     - ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48

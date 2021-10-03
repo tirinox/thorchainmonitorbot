@@ -6,6 +6,7 @@ import aiohttp
 import ujson
 from aiogram import Bot, Dispatcher, executor
 from aiogram.types import *
+from aiohttp import ClientTimeout
 from aiothornode.connector import ThorConnector
 
 from localization import LocalizationManager
@@ -21,7 +22,7 @@ from services.jobs.fetch.queue import QueueFetcher
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.node_churn import NodeChurnDetector
 from services.jobs.volume_filler import VolumeFillerUpdater
-from services.lib.config import Config
+from services.lib.config import Config, SubConfig
 from services.lib.constants import get_thor_env_by_network_id
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
@@ -78,7 +79,16 @@ class App:
         d = self.deps
         d.thor_connector = ThorConnector(get_thor_env_by_network_id(d.cfg.network_id), d.session)
         await d.thor_connector.update_nodes()
-        d.midgard_connector = MidgardConnector(d.session, d.thor_connector, d.cfg.get_pure('thor.midgard.tries'))
+
+        cfg: SubConfig = d.cfg.get('thor.midgard')
+
+        d.midgard_connector = MidgardConnector(
+            d.session,
+            d.thor_connector,
+            int(cfg.get_pure('tries', 3)),
+            public_url=cfg.get('public_url', ''),
+            use_nodes=bool(cfg.get('use_nodes', True))
+        )
 
     async def _run_background_jobs(self):
         d = self.deps
@@ -200,7 +210,12 @@ class App:
     async def on_startup(self, _):
         await self.connect_chat_storage()
 
-        self.deps.session = aiohttp.ClientSession(json_serialize=ujson.dumps)
+        session_timeout = float(self.deps.cfg.get('thor.timeout', 2.0))
+        self.deps.session = aiohttp.ClientSession(json_serialize=ujson.dumps,
+                                                  timeout=ClientTimeout(total=session_timeout))
+
+        logging.info(f'HTTP Session timeout is {session_timeout} sec')
+
         await self.create_thor_node_connector()
 
         asyncio.create_task(self._run_background_jobs())

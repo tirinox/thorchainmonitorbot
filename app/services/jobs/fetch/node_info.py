@@ -20,10 +20,15 @@ class NodeInfoFetcher(BaseFetcher):
             free_url_gen.url_thor_nodes()
         )
 
+        if raw_nodes is None:
+            self.logger.error('not found!')
+            raise FileNotFoundError('node_list')
+
         new_nodes = []
         for j in raw_nodes:
             new_nodes.append(NodeInfo.from_json(j))
         new_nodes.sort(key=lambda k: (k.status, -k.bond))
+
         # new_nodes = self._test_churn(new_nodes)  # fixme: debug
         return new_nodes
 

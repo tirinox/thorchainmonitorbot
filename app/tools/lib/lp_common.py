@@ -1,6 +1,7 @@
 import asyncio
 
 import aiohttp
+from aiohttp import ClientTimeout
 from aiothornode.connector import ThorConnector
 
 from localization import LocalizationManager
@@ -39,7 +40,7 @@ class LpAppFramework:
 
     async def prepare(self, brief=False):
         d = self.deps
-        d.session = aiohttp.ClientSession()
+        d.session = aiohttp.ClientSession(timeout=ClientTimeout(total=2.5))
         d.thor_connector = ThorConnector(get_thor_env_by_network_id(d.cfg.network_id), d.session)
         d.midgard_connector = MidgardConnector(d.session, d.thor_connector)
 
