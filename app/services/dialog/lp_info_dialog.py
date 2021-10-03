@@ -191,6 +191,7 @@ class LiquidityInfoDialog(BaseDialog):
 
         # WORK...
         rune_yield = get_rune_yield_connector(self.deps)
+        rune_yield.add_il_protection_to_final_figures = True  # todo: get from settings!
         lp_report = await rune_yield.generate_yield_report_single_pool(address, pool)
 
         # GENERATE A PICTURE
@@ -225,6 +226,7 @@ class LiquidityInfoDialog(BaseDialog):
 
         # WORK
         rune_yield = get_rune_yield_connector(self.deps)
+        rune_yield.add_il_protection_to_final_figures = True  # todo: get from settings!
         yield_summary = await rune_yield.generate_yield_summary(address, my_pools)
 
         # GENERATE A PICTURE

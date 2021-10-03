@@ -17,6 +17,7 @@ class AsgardConsumerConnectorBase:
     def __init__(self, deps: DepContainer):
         self.deps = deps
         self.logger = class_logger(self)
+        self.add_il_protection_to_final_figures = True
 
     # interface
     @abstractmethod

@@ -37,6 +37,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         self.block_mapper = DateToBlockMapper(deps)
         self.withdraw_fee_rune = 2.0
         self.last_block = 0
+        self.add_il_protection_to_final_figures = True
 
     KEY_CONST_FEE_OUTBOUND = 'OutboundTransactionFee'
     KEY_CONST_FULL_IL_PROTECTION_BLOCKS = 'FullImpLossProtectionBlocks'
@@ -99,8 +100,9 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         )
 
         # add protection to final APY, LPvsHodl, % and so on!
-        cur_liq.pool_units = protection_report.member_extra_units + cur_liq.pool_units
-        pool_info = protection_report.corrected_pool or pool_info
+        if self.add_il_protection_to_final_figures:
+            cur_liq.pool_units = protection_report.member_extra_units + cur_liq.pool_units
+            pool_info = protection_report.corrected_pool or pool_info
 
         self.logger.info(f'{protection_report=}')
 
