@@ -7,6 +7,7 @@ from typing import List, Tuple, Dict, Optional
 from services.jobs.fetch.runeyield import AsgardConsumerConnectorBase
 from services.jobs.fetch.runeyield.base import YieldSummary
 from services.jobs.fetch.runeyield.date2block import DateToBlockMapper
+from services.jobs.fetch.runeyield.external import get_user_pools_from_thoryield
 from services.jobs.fetch.tx import TxFetcher
 from services.lib.constants import NetworkIdents, thor_to_float, float_to_thor, Chains
 from services.lib.date_utils import days_ago_noon, now_ts
@@ -114,9 +115,11 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         return liq_report
 
     async def get_my_pools(self, address) -> List[str]:
-        j = await self.deps.midgard_connector.request_random_midgard(free_url_gen.url_for_address_pool_membership(address))
+        j = await self.deps.midgard_connector.request_random_midgard(
+            free_url_gen.url_for_address_pool_membership(address)
+        )
         if j == self.deps.midgard_connector.ERROR_RESPONSE:
-            raise FileNotFoundError
+            return await get_user_pools_from_thoryield(self.deps.session, address)
         return self.parser.parse_pool_membership(j)
 
         # ------------------------------------------------------------------------------------------------------------------

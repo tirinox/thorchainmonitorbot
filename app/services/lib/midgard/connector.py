@@ -5,7 +5,7 @@ import aiohttp
 from aiothornode.connector import ThorConnector
 from aiothornode.nodeclient import ThorNodeClient
 
-from services.lib.utils import class_logger
+from services.lib.utils import class_logger, sep
 
 DEFAULT_MIDGARD_PORT = 8080
 
@@ -54,12 +54,12 @@ class MidgardConnector:
                         answer = resp.content[:200]
                     except TypeError:
                         answer = 'unknown'
-                    self.logger.warning(f'Midgard BAD response {resp.status = }, "{answer}"!')
+                    self.logger.warning(f'Midgard ({ip_address}) BAD response {resp.status = }, "{answer}"!')
                     return self.ERROR_RESPONSE
                 j = await resp.json()
                 return j
         except Exception as e:
-            self.logger.error(f'Midgard exception: {e}.')
+            self.logger.error(f'Midgard ({ip_address}/{path}) exception: {e!r}.')
             return self.ERROR_RESPONSE
 
     async def request_random_midgard(self, path: str):

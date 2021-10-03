@@ -24,10 +24,6 @@ class MidgardURLGenBase(ABC):
         ...
 
     @abstractmethod
-    def url_pool_member_details(self, address, pools) -> str:
-        ...
-
-    @abstractmethod
     def url_mimir(self):
         ...
 
@@ -68,9 +64,6 @@ class MidgardURLGenV2(MidgardURLGenBase):
 
     def url_for_address_pool_membership(self, address) -> str:
         return f"{self.base_url}/v2/member/{address}"
-
-    def url_pool_member_details(self, address, pools) -> str:
-        return f'{self.base_url}/v2/member/{address}'  # no need pools
 
     def url_mimir(self):
         return f'{self.base_url}/v2/thorchain/mimir'

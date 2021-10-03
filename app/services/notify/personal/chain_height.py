@@ -71,6 +71,11 @@ class ChainHeightTracker(BaseChangeTracker):
         else:
             raise ValueError(f'unknown method: {method}')
 
+        # # fixme: debug(!) ------ 8< -------
+        # print('got height (!)', self.recent_max_blocks)  # fixme; debug (!)
+        # print('max height (!)', self.estimate_block_height_maximum(data))
+        # # fixme: debug(!) ------ 8< -------
+
     KEY_SYNC_STATE = 'sync'
 
     def get_user_state(self, user, node, service):

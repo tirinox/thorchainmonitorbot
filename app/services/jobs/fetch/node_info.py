@@ -82,6 +82,23 @@ class NodeInfoFetcher(BaseFetcher):
             ip_info_dict
         )
 
-    async def post_action(self, info_list):
+    async def post_action(self, info_list: List[NodeInfo]):
         await NodeStateDatabase(self.deps).save_node_info_list(info_list)
         self.logger.info(f'Saved previous state of {len(info_list)} nodes.')
+
+        # fixme: debug(!) ------ 8< -------
+        # from collections import defaultdict
+        # chain_block_height = defaultdict(int)
+        # for node in info_list:
+        #     if not node.observe_chains:
+        #         continue
+        #     for chain_info in node.observe_chains:
+        #         chain = chain_info['chain']
+        #         height = int(chain_info['height'])
+        #         if chain and height:
+        #             chain_block_height[chain] = max(chain_block_height[chain], height)
+        #     # chain_block_height[Chains.THOR].append(node.active_block_height) # todo!
+        # print('my height (!)', chain_block_height)
+        # fixme: debug(!) ------ 8< -------
+
+
