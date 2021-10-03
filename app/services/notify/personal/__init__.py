@@ -63,7 +63,7 @@ class NodeChangePersonalNotifier(INotified):
     async def _handle_thormon_message_bg_job(self, data: ThorMonAnswer):
         await self.telemetry_db.write_telemetry(data)
 
-        self.chain_height_tracker.estimate_block_height(data, maximum=True)
+        self.chain_height_tracker.estimate_block_height(data)
 
         user_cache = await UserDataCache.load(self.deps.db)
 

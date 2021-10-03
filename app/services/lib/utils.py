@@ -226,3 +226,15 @@ def make_nested_default_dict(d):
     if not isinstance(d, dict):
         return d
     return defaultdict(tree_factory, {k: make_nested_default_dict(v) for k, v in d.items()})
+
+
+def estimate_max_by_committee(data, minimal_members=3, on_fail_return_max=True):
+    c = Counter(data)
+    mc = c.most_common()
+    mc.sort(reverse=True)  # sort Max value -> Min value
+    for value, count in mc:
+        if count >= minimal_members:
+            return value
+
+    if on_fail_return_max and mc:
+        return mc[0][0]

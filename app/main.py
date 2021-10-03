@@ -225,7 +225,8 @@ class App:
 
     def run_bot(self):
         self.create_bot_stuff()
-        executor.start_polling(self.deps.dp, skip_updates=True, on_startup=self.on_startup,
+        executor.start_polling(self.deps.dp, skip_updates=True,
+                               on_startup=self.on_startup,
                                on_shutdown=self.on_shutdown)
 
 
