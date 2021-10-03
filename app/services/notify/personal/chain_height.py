@@ -4,7 +4,7 @@ from typing import Optional
 from services.lib.constants import Chains
 from services.lib.date_utils import parse_timespan_to_seconds, HOUR
 from services.lib.depcont import DepContainer
-from services.lib.utils import most_common
+from services.lib.utils import most_common, estimate_max_by_committee
 from services.models.node_info import NodeEvent, NodeEventType, EventBlockHeight
 from services.models.thormon import ThorMonAnswer
 from services.notify.personal.user_data import UserDataCache
@@ -48,11 +48,28 @@ class ChainHeightTracker(BaseChangeTracker):
             # chain_block_height[Chains.THOR].append(node.active_block_height) # todo!
         return chain_block_height
 
-    def estimate_block_height(self, data: ThorMonAnswer, maximum=False):
-        if maximum:
+    @staticmethod
+    def estimate_block_height_max_by_committee(data: ThorMonAnswer, committee_members_min):
+        chain_block_height = defaultdict(list)
+        for node in data.nodes:
+            for name, chain_info in node.observe_chains.items():
+                if chain_info.valid:
+                    chain_block_height[name].append(chain_info.height)
+
+        return {chain: estimate_max_by_committee(
+            height_list,
+            minimal_members=committee_members_min
+        ) for chain, height_list in chain_block_height.items()}
+
+    def estimate_block_height(self, data: ThorMonAnswer, method='max_committee'):
+        if method == 'max':
             self.recent_max_blocks = self.estimate_block_height_maximum(data)
-        else:
+        elif method == 'most_common':
             self.recent_max_blocks = self.estimate_block_height_most_common(data)
+        elif method == 'max_committee':
+            self.recent_max_blocks = self.estimate_block_height_max_by_committee(data, committee_members_min=3)
+        else:
+            raise ValueError(f'unknown method: {method}')
 
     KEY_SYNC_STATE = 'sync'
 

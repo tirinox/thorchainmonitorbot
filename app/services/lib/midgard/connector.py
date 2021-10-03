@@ -77,9 +77,10 @@ class MidgardConnector:
         if not tasks:
             raise FileNotFoundError('no Midgard data source defined!')
 
-        results = await asyncio.gather(*tasks)
-        for result in results:
-            if result != self.ERROR_RESPONSE:
+        for f in asyncio.as_completed(tasks):
+            result = await f
+            if result and result != self.ERROR_RESPONSE:
+                print(result)
                 return result
 
         self.logger.error(f'No good response for path "{path}"')
