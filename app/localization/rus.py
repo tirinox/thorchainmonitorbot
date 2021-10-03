@@ -258,7 +258,9 @@ class RussianLocalization(BaseLocalization):
             blockchain_components.append('Входы: ' + self.links_to_txs(tx.in_tx))
 
         if tx.out_tx:
-            blockchain_components.append('Выходы: ' + self.links_to_txs(tx.out_tx))
+            out_links = self.links_to_txs(tx.out_tx)
+            if out_links:
+                blockchain_components.append('Выходы: ' + out_links)
 
         msg = f"{heading}\n{content}\n" + " / ".join(blockchain_components)
 
