@@ -1,5 +1,9 @@
-start - start the bot
-price - Rune's price stats
-cap - current liquidity cap
-lang - установка языка (set language)
-help - help page
+help - this help page
+start - start/restart the bot
+lang - set the language
+cap - the current liquidity cap of Chaosnet
+price - the current Rune price
+queue - TX queue info
+nodes - list of THOR Nodes
+stats - THORChain stats
+lp - check your LP yield

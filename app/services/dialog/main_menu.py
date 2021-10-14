@@ -70,6 +70,23 @@ class MainMenuDialog(BaseDialog):
         message.text = str(DAY)
         await MetricsDialog(self.loc, self.data, self.deps).on_price_duration_answered(message)
 
+    @message_handler(commands='nodes', state='*')
+    async def cmd_nodes(self, message: Message):
+        await MetricsDialog(self.loc, self.data, self.deps).show_node_list(message)
+
+    @message_handler(commands='stats', state='*')
+    async def cmd_stats(self, message: Message):
+        await MetricsDialog(self.loc, self.data, self.deps).show_last_stats(message)
+
+    @message_handler(commands='queue', state='*')
+    async def cmd_queue(self, message: Message):
+        await MetricsDialog(self.loc, self.data, self.deps).show_queue(message, DAY)
+
+    @message_handler(commands='lp', state='*')
+    async def cmd_lp(self, message: Message):
+        message.text = ''
+        await LiquidityInfoDialog(self.loc, self.data, self.deps).on_enter(message)
+
     @message_handler(commands='help', state='*')
     async def cmd_help(self, message: Message):
         await message.answer(self.loc.help_message(),

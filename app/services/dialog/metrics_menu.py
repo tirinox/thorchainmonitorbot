@@ -138,7 +138,9 @@ class MetricsDialog(BaseDialog):
             if isinstance(period, str):
                 await message.answer(f'Error: {period}')
                 return
+        await self.show_queue(message, period)
 
+    async def show_queue(self, message, period):
         queue_info = self.deps.queue_holder
         plot = await queue_graph(self.deps, self.loc, duration=period)
         await message.answer_photo(plot, caption=self.loc.queue_message(queue_info), disable_notification=True)

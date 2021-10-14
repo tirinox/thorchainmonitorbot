@@ -17,8 +17,6 @@ class QueueFetcher(BaseFetcher):
             self.logger.error(f'No queue data from THORnodes!')
             return QueueInfo.error()
 
-        # resp.internal = 30  # fixme: debug
-
         q = QueueInfo(
             int(resp.swap),
             int(resp.outbound),

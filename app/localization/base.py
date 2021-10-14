@@ -67,8 +67,12 @@ class BaseLocalization(ABC):  # == English
             f"/help – this help page\n"
             f"/start – start/restart the bot\n"
             f"/lang – set the language\n"
-            f"/cap – the current liquidity cap of Chaosnet\n"
+            f"/cap – the current liquidity cap\n"
             f"/price – the current Rune price.\n"
+            f"/queue – TX queue info\n"
+            f"/nodes – list of THOR Nodes\n"
+            f"/stats – THORChain stats\n"
+            f"/lp – check your LP yield\n"
             f"<b>⚠️ All notifications are forwarded to {self.alert_channel_name} channel!</b>\n"
             f"🤗 Support and feedback: {CREATOR_TG}."
         )
@@ -948,10 +952,7 @@ class BaseLocalization(ABC):  # == English
                 )
             text += '\n\n'
 
-        text += ital(f'{link("https://en.wikipedia.org/wiki/M%C3%ADmir", "Mimir")} '
-                     f'is a feature to allow admins to change constants in the chain, '
-                     f'such as MinimumBond, ChurnSpeed and more during Chaosnet. '
-                     f'When Mimir is destroyed, the chain will be uncapped and in Mainnet. ')
+        text += link("https://docs.thorchain.org/how-it-works/governance#mimir", "What is Mimir?")
 
         return text
 
