@@ -27,8 +27,8 @@ class RuneMarketInfo:
         return self.pool_rune_price * self.circulating
 
 
-REAL_REGISTERED_ATH = 1.18  # BUSD / Rune
-REAL_REGISTERED_ATH_DATE = 1598958000  # 1 sept 2020 11:00 UTC
+REAL_REGISTERED_ATH = 20.87  # $ / Rune
+REAL_REGISTERED_ATH_DATE = 1621418550  # 19 may 2021
 
 
 @dataclass
@@ -37,7 +37,12 @@ class PriceATH(BaseModelMixin):
     ath_price: float = REAL_REGISTERED_ATH
 
     def is_new_ath(self, price):
-        return price and float(price) > 0 and float(price) > self.ath_price
+        try:
+            price = float(price)
+        except TypeError:
+            return False
+
+        return price > REAL_REGISTERED_ATH and price > self.ath_price
 
 
 @dataclass
