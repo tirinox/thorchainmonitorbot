@@ -5,7 +5,7 @@ import aiohttp
 from aiothornode.connector import ThorConnector
 from aiothornode.nodeclient import ThorNodeClient
 
-from services.lib.utils import class_logger, sep
+from services.lib.utils import class_logger
 
 DEFAULT_MIDGARD_PORT = 8080
 

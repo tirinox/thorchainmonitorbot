@@ -6,66 +6,60 @@ import aiohttp
 from services.jobs.fetch.gecko_price import get_thorchain_coin_gecko_info, gecko_market_cap_rank, gecko_ticker_price, \
     gecko_market_volume
 from services.lib.constants import THOR_DIVIDER_INV
+from services.lib.midgard.connector import MidgardConnector
+from services.lib.midgard.urlgen import free_url_gen
 from services.lib.utils import a_result_cached
 from services.models.price import RuneMarketInfo, LastPriceHolder
-
-MIDGARD_MCCN_STATS_URL = 'https://midgard.thorchain.info/v2/network'
 
 logger = logging.getLogger('fetch_fair_rune_price')
 
 
-async def get_total_pooled_rune(session, network_stats_url):
-    async with session.get(network_stats_url) as resp:
-        j = await resp.json()
-        total_pooled_rune = int(j.get('totalStaked', 0))
-        if not total_pooled_rune:
-            total_pooled_rune = int(j.get('totalPooledRune', 0))
-        total_pooled_rune *= THOR_DIVIDER_INV
-        return total_pooled_rune
+async def total_locked_value_all_networks(midgard: MidgardConnector):
+    j = await midgard.request_random_midgard(free_url_gen.url_network())
+    total_pooled_rune = int(j.get('totalStaked', 0))
+    if not total_pooled_rune:
+        total_pooled_rune = int(j.get('totalPooledRune', 0))
+    total_pooled_rune *= THOR_DIVIDER_INV
+    return total_pooled_rune
 
 
-async def total_locked_value_all_networks(session):
-    return await get_total_pooled_rune(session, MIDGARD_MCCN_STATS_URL)
+async def fetch_fair_rune_price(price_holder: LastPriceHolder, midgard: MidgardConnector) -> RuneMarketInfo:
+    rune_vault = 0
+    gecko, total_locked_rune = await asyncio.gather(
+        get_thorchain_coin_gecko_info(midgard.session),
+        total_locked_value_all_networks(midgard)
+    )
 
+    circulating = int(gecko['market_data']['circulating_supply'])
 
-async def fetch_fair_rune_price(price_holder: LastPriceHolder) -> RuneMarketInfo:
-    async with aiohttp.ClientSession() as session:
-        rune_vault = 0
-        gecko, total_locked_rune = await asyncio.gather(
-            get_thorchain_coin_gecko_info(session),
-            total_locked_value_all_networks(session)
-        )
+    if circulating <= 0:
+        raise ValueError(f"circulating is invalid ({circulating})")
 
-        circulating = int(gecko['market_data']['circulating_supply'])
+    working_rune = circulating - float(rune_vault)
 
-        if circulating <= 0:
-            raise ValueError(f"circulating is invalid ({circulating})")
+    if not price_holder.pool_info_map or not price_holder.usd_per_rune:
+        raise ValueError(f"pool_info_map is empty!")
 
-        working_rune = circulating - float(rune_vault)
+    tlv = total_locked_rune * price_holder.usd_per_rune  # == tlv of non-rune assets
 
-        if not price_holder.pool_info_map or not price_holder.usd_per_rune:
-            raise ValueError(f"pool_info_map is empty!")
+    fair_price = 3 * tlv / working_rune  # The main formula of wealth!
 
-        tlv = total_locked_rune * price_holder.usd_per_rune  # == tlv of non-rune assets
+    cex_price = gecko_ticker_price(gecko, 'binance', 'USDT')  # RUNE/USDT @ Binance
+    rank = gecko_market_cap_rank(gecko)
+    trade_volume = gecko_market_volume(gecko)
 
-        fair_price = 3 * tlv / working_rune  # The main formula of wealth!
-
-        cex_price = gecko_ticker_price(gecko, 'binance', 'USDT')  # RUNE/USDT @ Binance
-        rank = gecko_market_cap_rank(gecko)
-        trade_volume = gecko_market_volume(gecko)
-
-        result = RuneMarketInfo(circulating=circulating,
-                                rune_vault_locked=rune_vault,
-                                pool_rune_price=price_holder.usd_per_rune,
-                                fair_price=fair_price,
-                                cex_price=cex_price,
-                                tlv_usd=tlv,
-                                rank=rank,
-                                total_trade_volume_usd=trade_volume)
-        logger.info(result)
-        return result
+    result = RuneMarketInfo(circulating=circulating,
+                            rune_vault_locked=rune_vault,
+                            pool_rune_price=price_holder.usd_per_rune,
+                            fair_price=fair_price,
+                            cex_price=cex_price,
+                            tlv_usd=tlv,
+                            rank=rank,
+                            total_trade_volume_usd=trade_volume)
+    logger.info(result)
+    return result
 
 
 @a_result_cached(ttl=60)
-async def get_fair_rune_price_cached(lph: LastPriceHolder) -> RuneMarketInfo:
-    return await fetch_fair_rune_price(lph)
+async def get_fair_rune_price_cached(lph: LastPriceHolder, midgard: MidgardConnector) -> RuneMarketInfo:
+    return await fetch_fair_rune_price(lph, midgard)

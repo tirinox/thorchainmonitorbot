@@ -165,7 +165,7 @@ class MetricsDialog(BaseDialog):
                 await message.answer(f'Error: {period}')
                 return
 
-        fp = await get_fair_rune_price_cached(self.deps.price_holder)
+        fp = await get_fair_rune_price_cached(self.deps.price_holder, self.deps.midgard_connector)
         pn = PriceNotifier(self.deps)
         price_1h, price_24h, price_7d = await pn.historical_get_triplet()
         fp.pool_rune_price = self.deps.price_holder.usd_per_rune

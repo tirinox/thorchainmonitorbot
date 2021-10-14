@@ -59,7 +59,7 @@ class PoolPriceFetcher(BaseFetcher):
             await pool_price_series.add(price=price)
 
             # Pool price fill
-            rune_market_info: RuneMarketInfo = await get_fair_rune_price_cached(d.price_holder)
+            rune_market_info: RuneMarketInfo = await get_fair_rune_price_cached(d.price_holder, d.midgard_connector)
             rune_market_info.pool_rune_price = price
 
             # CEX price fill
