@@ -23,8 +23,6 @@ class QueueNotifier(INotified):
         self.threshold_free = int(cfg.threshold.free)
         self.avg_period = parse_timespan_to_seconds(cfg.threshold.avg_period)
 
-        self.cd_trigger = CooldownBiTrigger(deps.db, 'QueueClog', self.cooldown)
-
         self.logger.info(f'config: {deps.cfg.queue}')
 
     async def notify(self, item_type, step, value, with_picture=True):
@@ -52,11 +50,13 @@ class QueueNotifier(INotified):
 
         self.logger.info(f'Avg {item_type} is {avg_value:.1f}')
 
+        cd_trigger = CooldownBiTrigger(self.deps.db, f'QueueClog-{item_type}', self.cooldown)
+
         if avg_value > self.threshold_congested:
-            if await self.cd_trigger.turn_on():
+            if await cd_trigger.turn_on():
                 await self.notify(item_type, self.threshold_congested, int(avg_value))
         elif avg_value < self.threshold_free:
-            if await self.cd_trigger.turn_off():
+            if await cd_trigger.turn_off():
                 await self.notify(item_type, 0, 0)
 
     async def on_data(self, sender, data: QueueInfo):

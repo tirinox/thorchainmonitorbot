@@ -1141,7 +1141,7 @@ class BaseLocalization(ABC):  # == English
         short_addr = self.node_link(c.address)
         if c.type == NodeEventType.SLASHING:
             data: EventDataSlash = c.data
-            date_str = self.format_time_ago(data.interval_sec)
+            date_str = self.seconds_human(data.interval_sec)
             message = f'🔪 Node {short_addr} got slashed ' \
                       f'for {bold(data.delta_pts)} pts in last ≈{date_str} ' \
                       f'(now it has total <i>{data.current_pts}</i> slash pts)!'
