@@ -1,8 +1,6 @@
 import asyncio
 import logging
 
-import aiohttp
-
 from services.jobs.fetch.gecko_price import get_thorchain_coin_gecko_info, gecko_market_cap_rank, gecko_ticker_price, \
     gecko_market_volume
 from services.lib.constants import THOR_DIVIDER_INV

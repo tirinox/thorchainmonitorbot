@@ -135,6 +135,8 @@ class MidgardParserV2(MidgardParserBase):
         return results
 
     def parse_pool_membership(self, response) -> List[str]:
+        if not response:
+            return []
         pools = response.get('pools', [])
         return [p['pool'] for p in pools if 'pool' in p]
 
