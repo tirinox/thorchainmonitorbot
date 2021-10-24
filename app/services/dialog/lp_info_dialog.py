@@ -5,7 +5,6 @@ from dataclasses import asdict
 from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import *
 from aiogram.utils.helper import HelperMode
-from aiothornode.types import ThorBalances
 
 from services.dialog.base import BaseDialog, message_handler, query_handler
 from services.dialog.picture.lp_picture import lp_pool_picture, lp_address_summary_picture
@@ -36,11 +35,13 @@ class LiquidityInfoDialog(BaseDialog):
     QUERY_REMOVE_ADDRESS = 'remove-addr'
     QUERY_SUMMARY_OF_ADDRESS = 'summary-addr'
     QUERY_BACK_TO_ADDRESS_LIST = 'back-to-addr-list'
-    QUERY_BACK_TOGGLE_VIEW_VALUE = 'toggle-view-value'
+    QUERY_TOGGLE_VIEW_VALUE = 'toggle-view-value'
     QUERY_VIEW_POOL = 'view-pool'
+    QUERY_TOGGLE_LP_RPOT = 'toggle-lp-prot'
 
     KEY_MY_ADDRESSES = 'my-address-list'
     KEY_CAN_VIEW_VALUE = 'can-view-value'
+    KEY_ADD_LP_PROTECTION = 'add-lp-prot'
     KEY_ACTIVE_ADDRESS = 'active-addr'
     KEY_IS_EXTERNAL = 'is-external'
     KEY_ACTIVE_ADDRESS_INDEX = 'active-addr-id'
@@ -83,6 +84,7 @@ class LiquidityInfoDialog(BaseDialog):
     def kbd_for_pools(self):
         external = self.data.get(self.KEY_IS_EXTERNAL, False)
         view_value = self.data.get(self.KEY_CAN_VIEW_VALUE, True)
+        lp_prot_on = self.data.get(self.KEY_ADD_LP_PROTECTION, True)
         addr_idx = int(self.data.get(self.KEY_ACTIVE_ADDRESS_INDEX, 0))
         address = self.data.get(self.KEY_ACTIVE_ADDRESS)
         my_pools = self.data.get(self.KEY_MY_POOLS, [])
@@ -90,10 +92,6 @@ class LiquidityInfoDialog(BaseDialog):
             my_pools = []
 
         inline_kbd = []
-
-        button_toggle_show_value = InlineKeyboardButton(
-            self.loc.BUTTON_VIEW_VALUE_ON if view_value else self.loc.BUTTON_VIEW_VALUE_OFF,
-            callback_data=self.QUERY_BACK_TOGGLE_VIEW_VALUE)
 
         chain = Chains.detect_chain(address)
         chain = chain if chain else Chains.BTC  # fixme: how about other chains?
@@ -111,22 +109,40 @@ class LiquidityInfoDialog(BaseDialog):
             ]
         ]
 
-        # remove this address button
-        if not external:
+        if my_pools:
+            button_toggle_show_value = InlineKeyboardButton(
+                self.loc.BUTTON_VIEW_VALUE_ON if view_value else self.loc.BUTTON_VIEW_VALUE_OFF,
+                callback_data=self.QUERY_TOGGLE_VIEW_VALUE)
+
+            button_toggle_lp_prot = InlineKeyboardButton(
+                self.loc.BUTTON_LP_PROT_ON if lp_prot_on else self.loc.BUTTON_LP_PROT_OFF,
+                callback_data=self.QUERY_TOGGLE_LP_RPOT
+            )
+
             inline_kbd += [
                 [
-                    *([button_toggle_show_value] if my_pools else []),
-                    InlineKeyboardButton(self.loc.BUTTON_REMOVE_THIS_ADDRESS,
-                                         callback_data=f'{self.QUERY_REMOVE_ADDRESS}:{addr_idx}')
-                ],
+                    button_toggle_show_value,
+                    button_toggle_lp_prot
+                ]
             ]
 
         # back button
-        inline_kbd += [
-            [
-                InlineKeyboardButton(self.loc.BUTTON_SM_BACK_TO_LIST, callback_data=self.QUERY_BACK_TO_ADDRESS_LIST)
+        if not external:
+            inline_kbd += [
+                [
+                    InlineKeyboardButton(self.loc.BUTTON_REMOVE_THIS_ADDRESS,
+                                         callback_data=f'{self.QUERY_REMOVE_ADDRESS}:{addr_idx}'),
+                    InlineKeyboardButton(self.loc.BUTTON_SM_BACK_TO_LIST,
+                                         callback_data=self.QUERY_BACK_TO_ADDRESS_LIST),
+                ]
             ]
-        ]
+        else:
+            inline_kbd += [
+                [
+                    InlineKeyboardButton(self.loc.BUTTON_SM_BACK_TO_LIST,
+                                         callback_data=self.QUERY_BACK_TO_ADDRESS_LIST),
+                ]
+            ]
 
         return InlineKeyboardMarkup(inline_keyboard=inline_kbd)
 
@@ -191,11 +207,12 @@ class LiquidityInfoDialog(BaseDialog):
 
         # WORK...
         rune_yield = get_rune_yield_connector(self.deps)
-        rune_yield.add_il_protection_to_final_figures = True  # todo: get from settings!
+        rune_yield.add_il_protection_to_final_figures = bool(self.data.get(self.KEY_ADD_LP_PROTECTION, True))
         lp_report = await rune_yield.generate_yield_report_single_pool(address, pool)
 
         # GENERATE A PICTURE
         value_hidden = not self.data.get(self.KEY_CAN_VIEW_VALUE, True)
+
         picture = await lp_pool_picture(self.deps.price_holder, lp_report, self.loc, value_hidden=value_hidden)
         picture_io = img_to_bio(picture, f'Thorchain_LP_{pool}_{today_str()}.png')
 
@@ -226,7 +243,7 @@ class LiquidityInfoDialog(BaseDialog):
 
         # WORK
         rune_yield = get_rune_yield_connector(self.deps)
-        rune_yield.add_il_protection_to_final_figures = True  # todo: get from settings!
+        rune_yield.add_il_protection_to_final_figures = bool(self.data.get(self.KEY_ADD_LP_PROTECTION, True))
         yield_summary = await rune_yield.generate_yield_summary(address, my_pools)
 
         # GENERATE A PICTURE
@@ -281,8 +298,11 @@ class LiquidityInfoDialog(BaseDialog):
             await self.view_address_summary(query)
         elif query.data.startswith(f'{self.QUERY_VIEW_POOL}:'):
             await self.view_pool_report(query)
-        elif query.data == self.QUERY_BACK_TOGGLE_VIEW_VALUE:
+        elif query.data == self.QUERY_TOGGLE_VIEW_VALUE:
             self.data[self.KEY_CAN_VIEW_VALUE] = not self.data.get(self.KEY_CAN_VIEW_VALUE, True)
+            await self.show_pools_again(query)
+        elif query.data == self.QUERY_TOGGLE_LP_RPOT:
+            self.data[self.KEY_ADD_LP_PROTECTION] = not self.data.get(self.KEY_ADD_LP_PROTECTION, True)
             await self.show_pools_again(query)
 
     # --- MISC ---

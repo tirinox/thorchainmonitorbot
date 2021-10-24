@@ -124,6 +124,10 @@ class BaseLocalization(ABC):  # == English
     BUTTON_VIEW_RUNE_DOT_YIELD = '🌎 View it on runeyield.info'
     BUTTON_VIEW_VALUE_ON = 'Show value: ON'
     BUTTON_VIEW_VALUE_OFF = 'Show value: OFF'
+
+    BUTTON_LP_PROT_ON = 'IL protection: ON'
+    BUTTON_LP_PROT_OFF = 'IL protection: OFF'
+
     BUTTON_REMOVE_THIS_ADDRESS = '❌ Remove this address'
 
     TEXT_NO_ADDRESSES = "🔆 You have not added any addresses yet. Send me one."

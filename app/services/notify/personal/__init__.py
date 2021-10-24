@@ -2,23 +2,23 @@ import asyncio
 import operator
 from collections import defaultdict
 from functools import reduce
-from typing import List, Optional
+from typing import List
 
 from localization import LocalizationManager
 from services.jobs.fetch.base import INotified
 from services.jobs.fetch.thormon import ThorMonWSSClient
 from services.lib.date_utils import HOUR, MINUTE
-from services.models.thormon import ThorMonAnswer
 from services.lib.depcont import DepContainer
 from services.lib.texts import grouper
 from services.lib.utils import class_logger
-from services.models.node_info import NodeSetChanges, MapAddressToPrevAndCurrNode, NodeEventType, NodeEvent
+from services.models.node_info import NodeSetChanges, NodeEvent
 from services.models.node_watchers import NodeWatcherStorage
+from services.models.thormon import ThorMonAnswer
 from services.notify.personal.bond import BondTracker
 from services.notify.personal.chain_height import ChainHeightTracker
 from services.notify.personal.churning import NodeChurnTracker
-from services.notify.personal.ip_addr import IpAddressTracker
 from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
+from services.notify.personal.ip_addr import IpAddressTracker
 from services.notify.personal.node_online import NodeOnlineTracker
 from services.notify.personal.slashing import SlashPointTracker
 from services.notify.personal.telemetry import NodeTelemetryDatabase

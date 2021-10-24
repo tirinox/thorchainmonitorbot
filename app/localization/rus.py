@@ -86,6 +86,10 @@ class RussianLocalization(BaseLocalization):
     BUTTON_VIEW_RUNE_DOT_YIELD = '🌎 Открыть на runeyield.info'
     BUTTON_VIEW_VALUE_ON = 'Скрыть деньги: НЕТ'
     BUTTON_VIEW_VALUE_OFF = 'Скрыть деньги: ДА'
+
+    BUTTON_LP_PROT_ON = 'IL защита: ДА'
+    BUTTON_LP_PROT_OFF = 'IL защита: НЕТ'
+
     BUTTON_REMOVE_THIS_ADDRESS = '❌ Удалить этот адресс'
 
     TEXT_NO_ADDRESSES = "🔆 Вы еще не добавили никаких адресов. Пришлите мне адрес, чтобы добавить."
