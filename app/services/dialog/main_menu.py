@@ -83,8 +83,12 @@ class MainMenuDialog(BaseDialog):
         await MetricsDialog(self.loc, self.data, self.deps).show_queue(message, DAY)
 
     @message_handler(commands='chains', state='*')
-    async def cmd_queue(self, message: Message):
+    async def cmd_chains(self, message: Message):
         await MetricsDialog(self.loc, self.data, self.deps).show_chain_info(message)
+
+    @message_handler(commands='mimir', state='*')
+    async def cmd_mimir(self, message: Message):
+        await MetricsDialog(self.loc, self.data, self.deps).show_mimir_info(message)
 
     @message_handler(commands='lp', state='*')
     async def cmd_lp(self, message: Message):

@@ -26,7 +26,8 @@ class ConstMimirFetcher(BaseFetcher):
         mimir_name = f'{prefix}{name.upper()}'
 
         if mimir_name in mimir.constants:
-            return const_type(mimir.constants.get(mimir_name, default))
+            v = mimir.constants.get(mimir_name, default)
+            return const_type(v) if const_type is not None else v
         else:
             return hardcoded_value
 

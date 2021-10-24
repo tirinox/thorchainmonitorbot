@@ -6,13 +6,14 @@ from aiothornode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
 from localization.base import BaseLocalization, RAIDO_GLYPH, CREATOR_TG, URL_LEADERBOARD_MCCN
+from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.lib.constants import Chains, thor_to_float, rune_origin
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change, Asset, short_money
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
-    up_down_arrow, plural, grouper
+    up_down_arrow, plural, grouper, split_by_camel_case
 from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEvent
@@ -411,6 +412,7 @@ class RussianLocalization(BaseLocalization):
     BUTTON_METR_NODES = '🖥 Ноды (узлы)'
     BUTTON_METR_LEADERBOARD = '🏆 Доска рекордов'
     BUTTON_METR_CHAINS = '⛓️ Блокчейны'
+    BUTTON_METR_MIMIR = '🎅 Мимир'
 
     TEXT_METRICS_INTRO = 'Что вы хотите узнать?'
 
@@ -806,6 +808,24 @@ class RussianLocalization(BaseLocalization):
             text += 'Инфо о блокчейнах еще не загружено...'
 
         return text.strip()
+
+    # --------- MIMIR INFO ------------
+
+    def text_mimir_info(self, holder: ConstMimirFetcher):
+        text = '🎅' + bold('Глобальные константы и Мимир') + '\n'
+        text += link(self.MIMIR_DOC_LINK, "Что такое Мимир?") + '\n\n'
+
+        all_const_names = list(sorted(holder.last_constants.constants.keys()))
+        for i, const_name in enumerate(all_const_names, start=1):
+            better_name = split_by_camel_case(const_name)
+            real_value = holder.get_constant(const_name, const_type=None)
+            hard_coded_value = holder.get_hardcoded_const(const_name)
+            overriden = real_value != hard_coded_value
+            mark = " 🔹" if overriden else ""
+            text += f'{i}. {better_name} = {pre(real_value)}{mark}\n'
+
+        text += '\n🔹 ' + ital(' значит, что константа переопределена Мимиром.')
+        return text
 
     # --------- TRADING HALTED -----------
 

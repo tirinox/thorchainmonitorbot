@@ -7,4 +7,5 @@ queue - TX queue info
 nodes - list of THOR Nodes
 stats - THORChain stats
 chains - Connected blockchains
+mimir - Mimir global constants
 lp - check your LP yield

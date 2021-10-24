@@ -6,6 +6,7 @@ from typing import List
 from aiothornode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
+from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.lib.config import Config
 from services.lib.constants import NetworkIdents, rune_origin, thor_to_float
 from services.lib.date_utils import format_time_ago, now_ts, seconds_human
@@ -14,7 +15,7 @@ from services.lib.explorers import get_explorer_url_to_address, Chains, get_expl
 from services.lib.money import format_percent, pretty_money, short_address, short_money, \
     calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset
 from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
-    up_down_arrow, bracketify, plural, grouper, join_as_numbered_list
+    up_down_arrow, bracketify, plural, grouper, join_as_numbered_list, split_by_camel_case
 from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEventType, NodeEvent, \
@@ -42,6 +43,8 @@ class BaseLocalization(ABC):  # == English
     LONG_DASH = '–'
     SUCCESS = '✅ Success!'
     ERROR = '❌ Error'
+
+    MIMIR_DOC_LINK = "https://docs.thorchain.org/how-it-works/governance#mimir"
 
     @property
     def this_bot_name(self):
@@ -515,6 +518,7 @@ class BaseLocalization(ABC):  # == English
     BUTTON_METR_NODES = '🖥 Nodes'
     BUTTON_METR_LEADERBOARD = '🏆 Leaderboard'
     BUTTON_METR_CHAINS = '⛓️ Chains'
+    BUTTON_METR_MIMIR = '🎅 Mimir consts'
 
     TEXT_METRICS_INTRO = 'What metrics would you like to know?'
 
@@ -935,6 +939,24 @@ class BaseLocalization(ABC):  # == English
 
         return text.strip()
 
+    # --------- MIMIR INFO ------------
+
+    def text_mimir_info(self, holder: ConstMimirFetcher):
+        text = '🎅' + bold('Global constants and Mimir') + '\n'
+        text += link(self.MIMIR_DOC_LINK, "What is Mimir?") + '\n\n'
+
+        all_const_names = list(sorted(holder.last_constants.constants.keys()))
+        for i, const_name in enumerate(all_const_names, start=1):
+            better_name = split_by_camel_case(const_name)
+            real_value = holder.get_constant(const_name, const_type=None)
+            hard_coded_value = holder.get_hardcoded_const(const_name)
+            overriden = real_value != hard_coded_value
+            mark = " 🔹" if overriden else ""
+            text += f'{i}. {better_name} = {pre(real_value)}{mark}\n'
+
+        text += '\n🔹 ' + ital(' it means that the constant is redefined by Mimir.')
+        return text
+
     # --------- TRADING HALTED ------------
 
     def notification_text_trading_halted_multi(self, chain_infos: List[ThorChainInfo]):
@@ -980,7 +1002,7 @@ class BaseLocalization(ABC):  # == English
                 )
             text += '\n\n'
 
-        text += link("https://docs.thorchain.org/how-it-works/governance#mimir", "What is Mimir?")
+        text += link(self.MIMIR_DOC_LINK, "What is Mimir?")
 
         return text
 

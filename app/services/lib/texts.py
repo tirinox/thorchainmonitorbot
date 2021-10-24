@@ -1,4 +1,5 @@
 import itertools
+import re
 from dataclasses import dataclass
 from enum import Enum
 from urllib.parse import urlparse
@@ -142,3 +143,24 @@ def plural(n: int, one_thing, many_things):
 def join_as_numbered_list(items, sep='\n', start=1):
     en_items = (f'{i}. {text!s}' for i, text in enumerate(items, start=start))
     return sep.join(en_items)
+
+
+def split_by_camel_case(s: str, abbr_correction=True):
+    items = re.findall('[A-Z][^A-Z]*', s)
+
+    if abbr_correction:
+        corrected_items = []
+        curr_abbr = ''
+        for item in items:
+            if len(item) == 1:
+                curr_abbr += item
+            else:
+                if curr_abbr:
+                    corrected_items.append(curr_abbr)
+                    curr_abbr = ''
+                corrected_items.append(item)
+        if curr_abbr:
+            corrected_items.append(curr_abbr)
+    else:
+        corrected_items = items
+    return ' '.join(corrected_items)
