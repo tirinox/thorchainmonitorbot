@@ -25,7 +25,7 @@ class ThorMonListenerTest(INotified):
             if data.nodes:
                 print('Got message from THORMon')
                 self.known_nodes = [n.node_address for n in data.nodes]
-                await self.online_tracker.telemetry_db.write_telemetry(data)
+                # await self.online_tracker.telemetry_db.write_telemetry(data)
 
 
 async def my_test_node_online_telemetry():
