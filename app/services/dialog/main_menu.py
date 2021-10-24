@@ -82,6 +82,10 @@ class MainMenuDialog(BaseDialog):
     async def cmd_queue(self, message: Message):
         await MetricsDialog(self.loc, self.data, self.deps).show_queue(message, DAY)
 
+    @message_handler(commands='chains', state='*')
+    async def cmd_queue(self, message: Message):
+        await MetricsDialog(self.loc, self.data, self.deps).show_chain_info(message)
+
     @message_handler(commands='lp', state='*')
     async def cmd_lp(self, message: Message):
         message.text = ''

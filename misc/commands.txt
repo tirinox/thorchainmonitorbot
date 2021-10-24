@@ -6,4 +6,5 @@ price - the current Rune price
 queue - TX queue info
 nodes - list of THOR Nodes
 stats - THORChain stats
+chains - Connected blockchains
 lp - check your LP yield

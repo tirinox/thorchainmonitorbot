@@ -46,6 +46,7 @@ class RussianLocalization(BaseLocalization):
             f"/queue – размер очереди транзакций\n"
             f"/nodes – список нод\n"
             f"/stats – THORChain статистика сети\n"
+            f"/chains – Подключенные блокчейны\n"
             f"/lp – мониторинг ваших пулов\n"
             f"<b>⚠️ Бот теперь уведомляет только в канале {self.alert_channel_name}!</b>\n"
             f"🤗 Отзывы и поддержка: {CREATOR_TG}."
@@ -783,6 +784,28 @@ class RussianLocalization(BaseLocalization):
                 msg += f"Максимальная доступная версия – {version_and_nodes(data.max_available_version)}\n"
 
         return msg
+
+    # --------- CHAIN INFO SUMMARY ------------
+
+    def text_chain_info(self, chain_infos: List[ThorChainInfo]):
+        text = '⛓️ ' + bold('THORChain подключен к блокчейнам:') + '\n\n'
+        for c in chain_infos:
+            address_link = link(get_explorer_url_to_address(self.cfg.network_id, c.chain, c.address), 'СКАН')
+            status = '🛑 Остановлен' if c.halted else '🆗 Активен'
+            text += f'{bold(c.chain)}:\n' \
+                    f'Статус: {status}\n' \
+                    f'Входящий адрес: {pre(c.address)} {address_link}\n'
+
+            if c.router:
+                router_link = link(get_explorer_url_to_address(self.cfg.network_id, c.chain, c.router), 'СКАН')
+                text += f'Роутер: {pre(c.router)} {router_link}\n'
+
+            text += f'Цена газа: {pre(c.gas_rate)}\n\n'
+
+        if not chain_infos:
+            text += 'Инфо о блокчейнах еще не загружено...'
+
+        return text.strip()
 
     # --------- TRADING HALTED -----------
 

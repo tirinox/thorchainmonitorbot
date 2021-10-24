@@ -72,6 +72,7 @@ class BaseLocalization(ABC):  # == English
             f"/queue – TX queue info\n"
             f"/nodes – list of THOR Nodes\n"
             f"/stats – THORChain stats\n"
+            f"/chains – Connected chains\n"
             f"/lp – check your LP yield\n"
             f"<b>⚠️ All notifications are forwarded to {self.alert_channel_name} channel!</b>\n"
             f"🤗 Support and feedback: {CREATOR_TG}."
