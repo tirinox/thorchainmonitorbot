@@ -61,7 +61,7 @@ class NodeChangePersonalNotifier(INotified):
             asyncio.create_task(self._handle_thormon_message_bg_job(data))  # long-running job goes to the background!
 
     async def _handle_thormon_message_bg_job(self, data: ThorMonAnswer):
-        await self.telemetry_db.write_telemetry(data)
+        # await self.telemetry_db.write_telemetry(data)
 
         self.chain_height_tracker.estimate_block_height(data)
 
