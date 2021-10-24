@@ -50,6 +50,9 @@ class MetricsDialog(BaseDialog):
         elif message.text == self.loc.BUTTON_METR_LEADERBOARD:
             await self.show_leaderboard(message)
             await self.show_menu(message)
+        elif message.text == self.loc.BUTTON_METR_CHAINS:
+            await self.show_chain_info(message)
+            await self.show_menu(message)
         else:
             await self.show_menu(message)
 
@@ -57,7 +60,8 @@ class MetricsDialog(BaseDialog):
         await MetricsStates.MAIN_METRICS_MENU.set()
         reply_markup = kbd([
             [self.loc.BUTTON_METR_PRICE, self.loc.BUTTON_METR_CAP, self.loc.BUTTON_METR_QUEUE],
-            [self.loc.BUTTON_METR_STATS, self.loc.BUTTON_METR_NODES, self.loc.BUTTON_METR_LEADERBOARD],
+            [self.loc.BUTTON_METR_STATS, self.loc.BUTTON_METR_NODES, self.loc.BUTTON_METR_CHAINS],
+            # [self.loc.BUTTON_METR_LEADERBOARD],  // fixme: temporarily
             [self.loc.BUTTON_BACK]
         ])
         await message.answer(self.loc.TEXT_METRICS_INTRO,
@@ -197,3 +201,10 @@ class MetricsDialog(BaseDialog):
             ]
         ]))
         await MetricsStates.PRICE_SELECT_DURATION.set()
+
+    async def show_chain_info(self, message: Message):
+        text = self.loc.text_chain_info(list(self.deps.chain_info.values()))
+        await message.answer(text,
+                             disable_web_page_preview=True,
+                             disable_notification=True)
+

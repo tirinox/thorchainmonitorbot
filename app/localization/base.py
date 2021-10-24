@@ -513,6 +513,7 @@ class BaseLocalization(ABC):  # == English
     BUTTON_METR_STATS = '📊 Stats'
     BUTTON_METR_NODES = '🖥 Nodes'
     BUTTON_METR_LEADERBOARD = '🏆 Leaderboard'
+    BUTTON_METR_CHAINS = '⛓️ Chains'
 
     TEXT_METRICS_INTRO = 'What metrics would you like to know?'
 
@@ -910,6 +911,28 @@ class BaseLocalization(ABC):  # == English
                 msg += f"Maximum version available is {version_and_nodes(data.max_available_version)}\n"
 
         return msg
+
+    # --------- CHAIN INFO SUMMARY ------------
+
+    def text_chain_info(self, chain_infos: List[ThorChainInfo]):
+        text = '⛓️ ' + bold('Chains connected to THORChain') + '\n\n'
+        for c in chain_infos:
+            address_link = link(get_explorer_url_to_address(self.cfg.network_id, c.chain, c.address), 'SCAN')
+            status = '🛑 Halted' if c.halted else '🆗 Active'
+            text += f'{bold(c.chain)}:\n' \
+                    f'Status: {status}\n' \
+                    f'Inbound address: {pre(c.address)} {address_link}\n' \
+
+            if c.router:
+                router_link = link(get_explorer_url_to_address(self.cfg.network_id, c.chain, c.router), 'SCAN')
+                text += f'Router: {pre(c.router)} {router_link}\n'
+
+            text += f'Gas rate: {pre(c.gas_rate)}\n\n'
+
+        if not chain_infos:
+            text += 'No chain info loaded yet...'
+
+        return text.strip()
 
     # --------- TRADING HALTED ------------
 

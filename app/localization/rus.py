@@ -409,6 +409,7 @@ class RussianLocalization(BaseLocalization):
     BUTTON_METR_STATS = f'📊 Статистика'
     BUTTON_METR_NODES = '🖥 Ноды (узлы)'
     BUTTON_METR_LEADERBOARD = '🏆 Доска рекордов'
+    BUTTON_METR_CHAINS = '⛓️ Блокчейны'
 
     TEXT_METRICS_INTRO = 'Что вы хотите узнать?'
 

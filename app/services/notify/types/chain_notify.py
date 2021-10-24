@@ -27,6 +27,8 @@ class TradingHaltedNotifier(INotified):
 
         changed_chains = []
 
+        self.deps.chain_info = data
+
         for chain, new_info in data.items():
             new_info: ThorChainInfo
             if new_info.is_ok:

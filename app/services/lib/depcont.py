@@ -1,10 +1,11 @@
 import asyncio
 from dataclasses import dataclass, field
-from typing import Optional, Set
+from typing import Optional, Set, Dict
 
 from aiogram import Bot, Dispatcher
 from aiohttp import ClientSession
 from aiothornode.connector import ThorConnector
+from aiothornode.types import ThorChainInfo
 
 from services.lib.config import Config
 from services.lib.db import DB
@@ -41,3 +42,4 @@ class DepContainer:
     queue_holder: QueueInfo = QueueInfo.error()
     mimir_const_holder: Optional['ConstMimirFetcher'] = None
     halted_chains: Set[str] = field(default_factory=set)
+    chain_info: Dict[str, ThorChainInfo] = field(default_factory=dict)
