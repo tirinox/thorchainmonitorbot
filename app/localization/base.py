@@ -359,7 +359,7 @@ class BaseLocalization(ABC):  # == English
         elif tx.type == ThorTxType.TYPE_REFUND:
             content = (
                     self.tx_convert_string(tx, usd_per_rune) +
-                    f"Reason: {pre(tx.meta_refund.reason[:180])}"
+                    f"\nReason: {pre(tx.meta_refund.reason[:180])}"
             )
         elif tx.type == ThorTxType.TYPE_SWAP:
             content = self.tx_convert_string(tx, usd_per_rune)

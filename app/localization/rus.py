@@ -249,7 +249,7 @@ class RussianLocalization(BaseLocalization):
 
             content = (
                 f"{input_str} ➡️ {output_str} ({pretty_dollar(tx.get_usd_volume(usd_per_rune))})\n"
-                f"Причина: {pre(tx.meta_refund.reason[:180])}"
+                f"\nПричина: {pre(tx.meta_refund.reason[:180])}"
             )
         elif tx.type == ThorTxType.TYPE_SWAP:
             content = self.tx_convert_string(tx, usd_per_rune)
@@ -519,10 +519,10 @@ class RussianLocalization(BaseLocalization):
             up_down_arrow(old.total_bond_usd, new.total_bond_usd, money_delta=True, money_prefix='$')
         )
 
-        message += f"🔗 Бонд активных нод: {current_bond_text}{current_bond_change} or " \
+        message += f"🔗 Бонд активных нод: {current_bond_text}{current_bond_change} или " \
                    f"{current_bond_usd_text}{current_bond_usd_change}.\n"
 
-        message += f"🔗 Бонд всех нод: {current_total_bond_text}{current_total_bond_change} or " \
+        message += f"🔗 Бонд всех нод: {current_total_bond_text}{current_total_bond_change} или " \
                    f"{current_total_bond_usd_text}{current_total_bond_usd_change}.\n"
 
         # -- POOL
