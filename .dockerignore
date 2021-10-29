@@ -1,0 +1,8 @@
+temp/*
+.pytest_cache/
+.idea/
+redis_data/
+datavar/
+dump.rdb
+misc/
+venv/
