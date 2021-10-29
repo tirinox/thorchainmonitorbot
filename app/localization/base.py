@@ -1211,7 +1211,7 @@ class BaseLocalization(ABC):  # == English
                 message = f'✅ Service {service} of node {short_addr} is <b>online</b> again!'
             else:
                 message = f'🔴 Service {service} of node {short_addr} went <b>offline</b> ' \
-                          f'(already for {int(duration)} sec)!'
+                          f'(already for {self.seconds_human(duration)} sec)!'
         elif c.type == NodeEventType.CHURNING:
             verb = 'churned in ⬅️' if c.data else 'churned out ➡️'
             bond = c.node.bond

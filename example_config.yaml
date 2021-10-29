@@ -11,7 +11,7 @@ thor:
 
   midgard:  # new!
     tries: 3
-    use_nodes: true
+    use_nodes: false
     public_url: "https://midgard.thorchain.info/"
 
   timeout: 2.0  # (sec) new!

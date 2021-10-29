@@ -64,7 +64,7 @@ class MidgardConnector:
 
     async def request_random_midgard(self, path: str):
         clients: List[ThorNodeClient] = await self.thor.get_random_clients(self.retries)
-        if not clients:
+        if not clients and not self.public_url:
             self.logger.error(f'No THOR clients connected for path "{path}"')
             return None
 
