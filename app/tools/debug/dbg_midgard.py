@@ -5,7 +5,7 @@ from services.lib.utils import sep
 from tools.lib.lp_common import LpAppFramework
 
 
-async def test_midgard1():
+async def my_test_midgard1():
     lp_app = LpAppFramework()
     async with lp_app:
         await lp_app.prepare(brief=True)
@@ -18,7 +18,7 @@ async def test_midgard1():
 
 
 async def main():
-    await test_midgard1()
+    await my_test_midgard1()
 
 
 if __name__ == '__main__':

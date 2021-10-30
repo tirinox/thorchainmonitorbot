@@ -822,12 +822,15 @@ class RussianLocalization(BaseLocalization):
             real_value = holder.get_constant(const_name, const_type=None)
             hard_coded_value = holder.get_hardcoded_const(const_name)
             overriden = real_value != hard_coded_value
-            mark = " 🔹" if overriden else ""
-            text_lines.append(f'{i}. {better_name} = {pre(real_value)}{mark}')
+            if overriden:
+                std_value = "🔹 обычное значение: " + pre(hard_coded_value)
+            else:
+                std_value = ''
+            text_lines.append(f'{i}. {ital(better_name)} = {code(real_value)}{std_value}')
 
         lines_grouped = ['\n'.join(line_group) for line_group in grouper(self.MIMIR_ENTRIES_PER_MESSAGE, text_lines)]
 
-        outro = '\n🔹 ' + ital(' значит, что константа переопределена Мимиром.')
+        outro = '\n\n🔹 ' + ital(' значит, что константа переопределена Мимиром.')
         if len(lines_grouped) >= 2:
             messages = [
                 intro + lines_grouped[0],

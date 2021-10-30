@@ -11,16 +11,6 @@ DEFAULT_MIDGARD_PORT = 8080
 
 
 class MidgardConnector:
-    """
-    Tasks:
-    1. Proxy Midgard requests
-    2. Error protection
-    3. Retries
-    4. Error statistics
-    5. Select other Midgard if many errors on official Midgard
-    Todo: one task -> one class
-    """
-
     ERROR_RESPONSE = 'ERROR_Midgard'
     ERROR_NO_CLIENT = 'ERROR_NoClient'
 

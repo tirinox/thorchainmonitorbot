@@ -1,6 +1,7 @@
 import asyncio
 from typing import Tuple
 
+from aiothornode.nodeclient import ThorNodePublicClient
 from aiothornode.types import ThorConstants, ThorMimir
 
 from services.jobs.fetch.base import BaseFetcher
@@ -50,11 +51,39 @@ class ConstMimirFetcher(BaseFetcher):
     def get_hardcoded_const(self, name: str, default=None):
         return self.get_hardcoded_const_static(name, self.last_constants, default)
 
+    async def fetch_constants_midgard(self) -> ThorConstants:
+        data = await self.deps.midgard_connector.request_random_midgard('/thorchain/constants')
+        return ThorConstants.from_json(data)
+
+    async def fetch_constants_fallback(self) -> ThorConstants:
+        client = ThorNodePublicClient(self.deps.session)
+        for attempt in range(1, 5):
+            response = await client.request('/thorchain/constants')
+            if response is not None:
+                return ThorConstants.from_json(response)
+            else:
+                self.logger.warning(f'fail attempt: #{attempt}')
+        return ThorConstants()
+
+    async def fetch_mimir_fallback(self) -> ThorMimir:
+        client = ThorNodePublicClient(self.deps.session)
+        for attempt in range(1, 5):
+            response = await client.request('/thorchain/mimir')
+            if response is not None:
+                return ThorMimir.from_json(response)
+            else:
+                self.logger.warning(f'fail attempt: #{attempt}')
+        return ThorMimir()
+
     async def fetch(self) -> Tuple[ThorConstants, ThorMimir]:
         self.last_constants, self.last_mimir = await asyncio.gather(
-            self.deps.thor_connector.query_constants(),
-            self.deps.thor_connector.query_mimir(),
+            self.fetch_constants_fallback(),
+            self.fetch_mimir_fallback(),
         )
+        # self.last_constants, self.last_mimir = await asyncio.gather(
+        #     self.deps.thor_connector.query_constants(),
+        #     self.deps.thor_connector.query_mimir(),
+        # )
         self.logger.info(f'Got {len(self.last_constants.constants)} CONST entries'
                          f' and {len(self.last_mimir.constants)} MIMIR entries.')
         return self.last_constants, self.last_mimir

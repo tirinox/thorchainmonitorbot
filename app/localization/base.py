@@ -953,12 +953,15 @@ class BaseLocalization(ABC):  # == English
             real_value = holder.get_constant(const_name, const_type=None)
             hard_coded_value = holder.get_hardcoded_const(const_name)
             overriden = real_value != hard_coded_value
-            mark = " 🔹" if overriden else ""
-            text_lines.append(f'{i}. {better_name} = {pre(real_value)}{mark} {ital("past value: " + hard_coded_value)}')
+            if overriden:
+                std_value = "🔹 standard value is " + pre(hard_coded_value)
+            else:
+                std_value = ''
+            text_lines.append(f'{i}. {bold(better_name)} = {code(real_value)}{std_value}')
 
         lines_grouped = ['\n'.join(line_group) for line_group in grouper(self.MIMIR_ENTRIES_PER_MESSAGE, text_lines)]
 
-        outro = '\n🔹 ' + ital(' it means that the constant is redefined by Mimir.')
+        outro = '\n\n🔹 ' + ital(' it means that the constant is redefined by Mimir.')
         if len(lines_grouped) >= 2:
             messages = [
                 intro + lines_grouped[0],

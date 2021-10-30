@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 import aiohttp
 from aiohttp import ClientTimeout
@@ -14,10 +15,12 @@ from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.midgard.connector import MidgardConnector
 from services.lib.telegram import telegram_send_message_basic, TG_TEST_USER
+from services.lib.utils import setup_logs
 
 
 class LpAppFramework:
     def __init__(self, rune_yield_class=None, network=None) -> None:
+        setup_logs(logging.DEBUG)
         d = DepContainer()
         d.loop = asyncio.get_event_loop()
         d.cfg = Config()
@@ -42,7 +45,15 @@ class LpAppFramework:
         d = self.deps
         d.session = aiohttp.ClientSession(timeout=ClientTimeout(total=2.5))
         d.thor_connector = ThorConnector(get_thor_env_by_network_id(d.cfg.network_id), d.session)
-        d.midgard_connector = MidgardConnector(d.session, d.thor_connector)
+
+        cfg = d.cfg.thor.midgard
+        d.midgard_connector = MidgardConnector(
+            d.session,
+            d.thor_connector,
+            int(cfg.get_pure('tries', 3)),
+            public_url=cfg.get('public_url', ''),
+            use_nodes=bool(cfg.get('use_nodes', True))
+        )
 
         await d.db.get_redis()
 
