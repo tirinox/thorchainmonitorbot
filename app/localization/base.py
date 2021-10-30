@@ -942,9 +942,10 @@ class BaseLocalization(ABC):  # == English
     # --------- MIMIR INFO ------------
 
     def text_mimir_info(self, holder: ConstMimirFetcher):
-        text = '🎅' + bold('Global constants and Mimir') + '\n'
-        text += link(self.MIMIR_DOC_LINK, "What is Mimir?") + '\n\n'
+        intro = '🎅' + bold('Global constants and Mimir') + '\n'
+        intro += link(self.MIMIR_DOC_LINK, "What is Mimir?") + '\n\n'
 
+        text_lines = []
         all_const_names = list(sorted(holder.last_constants.constants.keys()))
         for i, const_name in enumerate(all_const_names, start=1):
             better_name = split_by_camel_case(const_name)
@@ -952,10 +953,23 @@ class BaseLocalization(ABC):  # == English
             hard_coded_value = holder.get_hardcoded_const(const_name)
             overriden = real_value != hard_coded_value
             mark = " 🔹" if overriden else ""
-            text += f'{i}. {better_name} = {pre(real_value)}{mark}\n'
+            text_lines.append(f'{i}. {better_name} = {pre(real_value)}{mark} {ital("past value: " + hard_coded_value)}')
 
-        text += '\n🔹 ' + ital(' it means that the constant is redefined by Mimir.')
-        return text
+        lines_grouped = ['\n'.join(line_group) for line_group in grouper(20, text_lines)]
+
+        outro = '\n🔹 ' + ital(' it means that the constant is redefined by Mimir.')
+        if len(lines_grouped) >= 2:
+            messages = [
+                intro + lines_grouped[0],
+                *lines_grouped[1:-1],
+                lines_grouped[-1] + outro
+            ]
+        elif len(lines_grouped) == 1:
+            messages = [intro + lines_grouped[0] + outro]
+        else:
+            messages = []
+
+        return messages
 
     # --------- TRADING HALTED ------------
 
