@@ -812,9 +812,10 @@ class RussianLocalization(BaseLocalization):
     # --------- MIMIR INFO ------------
 
     def text_mimir_info(self, holder: ConstMimirFetcher):
-        text = '🎅' + bold('Глобальные константы и Мимир') + '\n'
-        text += link(self.MIMIR_DOC_LINK, "Что такое Мимир?") + '\n\n'
+        intro = '🎅' + bold('Глобальные константы и Мимир') + '\n'
+        intro += link(self.MIMIR_DOC_LINK, "Что такое Мимир?") + '\n\n'
 
+        text_lines = []
         all_const_names = list(sorted(holder.last_constants.constants.keys()))
         for i, const_name in enumerate(all_const_names, start=1):
             better_name = split_by_camel_case(const_name)
@@ -822,10 +823,23 @@ class RussianLocalization(BaseLocalization):
             hard_coded_value = holder.get_hardcoded_const(const_name)
             overriden = real_value != hard_coded_value
             mark = " 🔹" if overriden else ""
-            text += f'{i}. {better_name} = {pre(real_value)}{mark}\n'
+            text_lines.append(f'{i}. {better_name} = {pre(real_value)}{mark}')
 
-        text += '\n🔹 ' + ital(' значит, что константа переопределена Мимиром.')
-        return text
+        lines_grouped = ['\n'.join(line_group) for line_group in grouper(self.MIMIR_ENTRIES_PER_MESSAGE, text_lines)]
+
+        outro = '\n🔹 ' + ital(' значит, что константа переопределена Мимиром.')
+        if len(lines_grouped) >= 2:
+            messages = [
+                intro + lines_grouped[0],
+                *lines_grouped[1:-1],
+                lines_grouped[-1] + outro
+            ]
+        elif len(lines_grouped) == 1:
+            messages = [intro + lines_grouped[0] + outro]
+        else:
+            messages = []
+
+        return messages
 
     # --------- TRADING HALTED -----------
 

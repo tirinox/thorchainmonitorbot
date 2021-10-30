@@ -44,8 +44,6 @@ class BaseLocalization(ABC):  # == English
     SUCCESS = '✅ Success!'
     ERROR = '❌ Error'
 
-    MIMIR_DOC_LINK = "https://docs.thorchain.org/how-it-works/governance#mimir"
-
     @property
     def this_bot_name(self):
         return self.cfg.telegram.bot.username
@@ -941,6 +939,9 @@ class BaseLocalization(ABC):  # == English
 
     # --------- MIMIR INFO ------------
 
+    MIMIR_DOC_LINK = "https://docs.thorchain.org/how-it-works/governance#mimir"
+    MIMIR_ENTRIES_PER_MESSAGE = 20
+
     def text_mimir_info(self, holder: ConstMimirFetcher):
         intro = '🎅' + bold('Global constants and Mimir') + '\n'
         intro += link(self.MIMIR_DOC_LINK, "What is Mimir?") + '\n\n'
@@ -955,7 +956,7 @@ class BaseLocalization(ABC):  # == English
             mark = " 🔹" if overriden else ""
             text_lines.append(f'{i}. {better_name} = {pre(real_value)}{mark} {ital("past value: " + hard_coded_value)}')
 
-        lines_grouped = ['\n'.join(line_group) for line_group in grouper(20, text_lines)]
+        lines_grouped = ['\n'.join(line_group) for line_group in grouper(self.MIMIR_ENTRIES_PER_MESSAGE, text_lines)]
 
         outro = '\n🔹 ' + ital(' it means that the constant is redefined by Mimir.')
         if len(lines_grouped) >= 2:

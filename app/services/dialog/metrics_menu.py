@@ -212,7 +212,8 @@ class MetricsDialog(BaseDialog):
                              disable_notification=True)
 
     async def show_mimir_info(self, message: Message):
-        text = self.loc.text_mimir_info(self.deps.mimir_const_holder)  # todo: split message if long!
-        await message.answer(text,
-                             disable_web_page_preview=True,
-                             disable_notification=True)
+        texts = self.loc.text_mimir_info(self.deps.mimir_const_holder)
+        for text in texts:
+            await message.answer(text,
+                                 disable_web_page_preview=True,
+                                 disable_notification=True)
