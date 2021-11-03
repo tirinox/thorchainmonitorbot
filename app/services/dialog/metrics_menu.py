@@ -64,7 +64,7 @@ class MetricsDialog(BaseDialog):
         reply_markup = kbd([
             [self.loc.BUTTON_METR_PRICE, self.loc.BUTTON_METR_CAP, self.loc.BUTTON_METR_QUEUE],
             [self.loc.BUTTON_METR_STATS, self.loc.BUTTON_METR_NODES, self.loc.BUTTON_METR_CHAINS],
-            # [self.loc.BUTTON_METR_LEADERBOARD],  // fixme: temporarily
+            [self.loc.BUTTON_METR_LEADERBOARD],
             [self.loc.BUTTON_METR_MIMIR, self.loc.BUTTON_BACK]
         ])
         await message.answer(self.loc.TEXT_METRICS_INTRO,
