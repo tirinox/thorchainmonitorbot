@@ -16,6 +16,7 @@ from services.lib.depcont import DepContainer
 from services.lib.midgard.connector import MidgardConnector
 from services.lib.telegram import telegram_send_message_basic, TG_TEST_USER
 from services.lib.utils import setup_logs
+from services.models.mimir import MimirHolder
 
 
 class LpAppFramework:
@@ -32,7 +33,8 @@ class LpAppFramework:
         self.rune_yield: AsgardConsumerConnectorBase
         self.rune_yield_class = rune_yield_class
         self.deps.price_pool_fetcher = PoolPriceFetcher(d)
-        self.deps.mimir_const_holder = ConstMimirFetcher(d)
+        self.deps.mimir_const_fetcher = ConstMimirFetcher(d)
+        self.deps.mimir_const_holder = MimirHolder()
 
     @property
     def tg_token(self):
@@ -60,8 +62,9 @@ class LpAppFramework:
         if brief:
             return
 
-        d.mimir_const_holder = ConstMimirFetcher(d)
-        await d.mimir_const_holder.fetch()  # get constants beforehand
+        d.mimir_const_holder = MimirHolder()
+        d.mimir_const_fetcher = ConstMimirFetcher(d)
+        await d.mimir_const_fetcher.fetch()  # get constants beforehand
 
         d.price_pool_fetcher = PoolPriceFetcher(d)
 

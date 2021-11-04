@@ -7,6 +7,7 @@ from services.lib.constants import THOR_BLOCK_TIME, thor_to_float
 from services.lib.date_utils import parse_timespan_to_seconds, now_ts
 from services.lib.depcont import DepContainer
 from services.lib.midgard.urlgen import free_url_gen
+from services.models.mimir import MimirHolder
 from services.models.net_stats import NetworkStats
 
 
@@ -64,7 +65,7 @@ class NetworkStatisticsFetcher(BaseFetcher):
 
     async def _get_pools(self, ns: NetworkStats):
         ppf: PoolPriceFetcher = self.deps.price_pool_fetcher
-        cmf: ConstMimirFetcher = self.deps.mimir_const_holder
+        cmf: MimirHolder = self.deps.mimir_const_holder
 
         pools = await ppf.get_current_pool_data_full()
 

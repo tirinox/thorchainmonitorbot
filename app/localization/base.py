@@ -6,18 +6,17 @@ from typing import List
 from aiothornode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
-from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.lib.config import Config
-from services.lib.constants import NetworkIdents, rune_origin, thor_to_float
+from services.lib.constants import NetworkIdents, rune_origin, thor_to_float, THOR_BLOCK_TIME
 from services.lib.date_utils import format_time_ago, now_ts, seconds_human
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
     get_explorer_url_for_node
 from services.lib.money import format_percent, pretty_money, short_address, short_money, \
     calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset
 from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
-    up_down_arrow, bracketify, plural, grouper, join_as_numbered_list, split_by_camel_case
+    up_down_arrow, bracketify, plural, grouper, join_as_numbered_list
 from services.models.cap_info import ThorCapInfo
-from services.models.mimir import MimirChange
+from services.models.mimir import MimirChange, MimirHolder, MimirEntry
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEventType, NodeEvent, \
     EventBlockHeight, EventDataSlash
@@ -44,6 +43,8 @@ class BaseLocalization(ABC):  # == English
     LONG_DASH = '–'
     SUCCESS = '✅ Success!'
     ERROR = '❌ Error'
+
+    SHORT_MONEY_LOC = None  # default is Eng
 
     @property
     def this_bot_name(self):
@@ -951,26 +952,50 @@ class BaseLocalization(ABC):  # == English
     MIMIR_DOC_LINK = "https://docs.thorchain.org/how-it-works/governance#mimir"
     MIMIR_ENTRIES_PER_MESSAGE = 20
 
-    def text_mimir_info(self, holder: ConstMimirFetcher):
-        intro = '🎅' + bold('Global constants and Mimir') + '\n'
-        intro += link(self.MIMIR_DOC_LINK, "What is Mimir?") + '\n\n'
+    MIMIR_STANDARD_VALUE = 'default: '
+    MIMIR_MESSAGE_TITLE = 'Global constants and Mimir'
+    MIMIR_WHAT_IS_MIMIR = "What is Mimir?"
+    MIMIR_OUTRO = '\n\n🔹 ' + ital(' it means that the constant is redefined by Mimir.')
+    MIMIR_NO_DATA = 'No data'
+    MIMIR_BLOCKS = 'blocks'
+    MIMIR_DISABLED = 'DISABLED'
+
+    def format_mimir_value(self, v: str, m: MimirEntry):
+        if m.is_rune:
+            return short_money(thor_to_float(v), localization=self.SHORT_MONEY_LOC, postfix=f' {self.R}')
+        elif m.is_blocks:
+            blocks = int(v)
+            seconds = blocks * THOR_BLOCK_TIME
+            time_str = self.seconds_human(seconds) if seconds != 0 else self.MIMIR_DISABLED
+            return f'{time_str}, {blocks} {self.MIMIR_BLOCKS}'
+        else:
+            return v
+
+    def format_mimir_entry(self, i: int, m: MimirEntry):
+        if m.overriden:
+            std_value_fmt = self.format_mimir_value(m.hard_coded_value, m)
+            std_value = f'({self.MIMIR_STANDARD_VALUE} {pre(std_value_fmt)})'
+            mark = '🔹'
+        else:
+            mark, std_value = '', ''
+
+        real_value_fmt = self.format_mimir_value(m.real_value, m)
+        return f'{i}. {mark}{bold(m.pretty_name)} = {code(real_value_fmt)} {std_value}'
+
+    def text_mimir_info(self, holder: MimirHolder):
+        intro = '🎅' + bold(self.MIMIR_MESSAGE_TITLE) + '\n'
+        intro += link(self.MIMIR_DOC_LINK, self.MIMIR_WHAT_IS_MIMIR) + '\n\n'
 
         text_lines = []
         all_const_names = list(sorted(holder.last_constants.constants.keys()))
+
         for i, const_name in enumerate(all_const_names, start=1):
-            better_name = split_by_camel_case(const_name)
-            real_value = holder.get_constant(const_name, const_type=None)
-            hard_coded_value = holder.get_hardcoded_const(const_name)
-            overriden = real_value != hard_coded_value
-            if overriden:
-                std_value = "🔹 standard value is " + pre(hard_coded_value)
-            else:
-                std_value = ''
-            text_lines.append(f'{i}. {bold(better_name)} = {code(real_value)}{std_value}')
+            m = holder.get_entry(const_name)
+            text_lines.append(self.format_mimir_entry(i, m))
 
         lines_grouped = ['\n'.join(line_group) for line_group in grouper(self.MIMIR_ENTRIES_PER_MESSAGE, text_lines)]
 
-        outro = '\n\n🔹 ' + ital(' it means that the constant is redefined by Mimir.')
+        outro = self.MIMIR_OUTRO
         if len(lines_grouped) >= 2:
             messages = [
                 intro + lines_grouped[0],
@@ -980,7 +1005,7 @@ class BaseLocalization(ABC):  # == English
         elif len(lines_grouped) == 1:
             messages = [intro + lines_grouped[0] + outro]
         else:
-            messages = []
+            messages = [intro + self.MIMIR_NO_DATA]
 
         return messages
 

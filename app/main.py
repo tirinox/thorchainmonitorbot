@@ -28,6 +28,7 @@ from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.midgard.connector import MidgardConnector
 from services.lib.utils import setup_logs
+from services.models.mimir import MimirHolder
 from services.models.price import LastPriceHolder
 from services.models.tx import ThorTxType
 from services.notify.broadcast import Broadcaster
@@ -105,7 +106,8 @@ class App:
             exit(-1)
 
         fetcher_mimir = ConstMimirFetcher(d)
-        self.deps.mimir_const_holder = fetcher_mimir
+        self.deps.mimir_const_fetcher = fetcher_mimir
+        self.deps.mimir_const_holder = MimirHolder()
         await fetcher_mimir.fetch()  # get constants beforehand
 
         tasks = [

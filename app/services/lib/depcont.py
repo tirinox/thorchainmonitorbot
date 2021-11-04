@@ -10,6 +10,7 @@ from aiothornode.types import ThorChainInfo
 from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.midgard.connector import MidgardConnector
+from services.models.mimir import MimirHolder
 from services.models.price import LastPriceHolder
 from services.models.queue import QueueInfo
 
@@ -33,6 +34,7 @@ class DepContainer:
 
     price_pool_fetcher: Optional['PoolPriceFetcher'] = None
     node_info_fetcher: Optional['NodeInfoFetcher'] = None
+    mimir_const_fetcher: Optional['ConstMimirFetcher'] = None
 
     node_op_notifier: Optional['NodeChangePersonalNotifier'] = None
 
@@ -40,6 +42,6 @@ class DepContainer:
 
     price_holder: LastPriceHolder = LastPriceHolder()
     queue_holder: QueueInfo = QueueInfo.error()
-    mimir_const_holder: Optional['ConstMimirFetcher'] = None
+    mimir_const_holder: Optional[MimirHolder] = None
     halted_chains: Set[str] = field(default_factory=set)
     chain_info: Dict[str, ThorChainInfo] = field(default_factory=dict)

@@ -50,7 +50,7 @@ class MimirChangedNotifier(INotified):
     async def on_data(self, sender: ConstMimirFetcher, data: Tuple[ThorConstants, ThorMimir]):
         _, fresh_mimir = data
 
-        fresh_mimir = self._dbg_randomize_mimir(fresh_mimir)  # fixme
+        # fresh_mimir = self._dbg_randomize_mimir(fresh_mimir)  # fixme
 
         if not fresh_mimir.constants:
             return
@@ -69,6 +69,8 @@ class MimirChangedNotifier(INotified):
 
         timestamp = now_ts()
 
+        holder = self.deps.mimir_const_holder
+
         for name in all_const_names:
             change = None
 
@@ -79,11 +81,11 @@ class MimirChangedNotifier(INotified):
                     change = MimirChange(MimirChange.VALUE_CHANGE, name, old_value, new_value, timestamp)
             elif name in fresh_const_names and name not in old_const_names:
                 value = fresh_mimir[name]
-                old_value = sender.get_hardcoded_const(name)
+                old_value = holder.get_hardcoded_const(name)
                 change = MimirChange(MimirChange.ADDED_MIMIR, name, old_value, value, timestamp)
             elif name not in fresh_const_names and name in old_const_names:
                 old_value = old_mimir[name]
-                value = sender.get_hardcoded_const(name)
+                value = holder.get_hardcoded_const(name)
                 change = MimirChange(MimirChange.REMOVED_MIMIR, name, old_value, value, timestamp)
 
             if change is not None:
