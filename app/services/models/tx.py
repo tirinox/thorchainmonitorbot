@@ -375,7 +375,7 @@ class ThorTxExtended(ThorTx):
 
         elif t in (ThorTxType.TYPE_SWITCH, ThorTxType.TYPE_REFUND, ThorTxType.TYPE_SWAP):
             # only outputs
-            self.rune_amount = self.sum_of_rune(out_only=True)  # fixme: error! doubleswap!!
+            self.rune_amount = self.sum_of_rune(out_only=True)
             self.asset_amount = self.sum_of_non_rune(out_only=True)
 
     def asymmetry(self, force_abs=False):

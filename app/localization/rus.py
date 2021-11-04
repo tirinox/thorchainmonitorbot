@@ -265,7 +265,9 @@ class RussianLocalization(BaseLocalization):
         blockchain_components = [f"Пользователь: {self.link_to_explorer_user_address_for_tx(tx)}"]
 
         if tx.in_tx:
-            blockchain_components.append('Входы: ' + self.links_to_txs(tx.in_tx, tx.tx_hash))
+            in_links = self.links_to_txs(tx.in_tx, tx.tx_hash)
+            if in_links:
+                blockchain_components.append('Входы: ' + in_links)
 
         if tx.out_tx:
             out_links = self.links_to_txs(tx.out_tx, tx.tx_hash)

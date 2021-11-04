@@ -379,7 +379,7 @@ class BaseLocalization(ABC):  # == English
         blockchain_components = [f"User: {self.link_to_explorer_user_address_for_tx(tx)}"]
 
         if tx.in_tx:
-            in_links = self.links_to_txs(tx.in_tx)
+            in_links = self.links_to_txs(tx.in_tx, tx.tx_hash)
             if in_links:
                 blockchain_components.append('Inputs: ' + in_links)
 
