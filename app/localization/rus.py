@@ -15,6 +15,7 @@ from services.lib.money import pretty_dollar, pretty_money, short_address, adapt
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
     up_down_arrow, plural, grouper, split_by_camel_case
 from services.models.cap_info import ThorCapInfo
+from services.models.mimir import MimirChange
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEvent
 from services.models.pool_info import PoolInfo, PoolChanges
@@ -864,7 +865,7 @@ class RussianLocalization(BaseLocalization):
 
     # --------- MIMIR CHANGED -----------
 
-    def notification_text_mimir_changed(self, changes):
+    def notification_text_mimir_changed(self, changes: List[MimirChange]):
         if not changes:
             return ''
 
@@ -872,22 +873,23 @@ class RussianLocalization(BaseLocalization):
                'Команда только что обновила глобальные настройки THORChain:\n\n'
 
         for change in changes:
-            change_type, const_name, old_value, new_value = change
-
-            if change_type == '+':
+            if change.kind == MimirChange.ADDED_MIMIR:
                 text += (
-                    f'➕ Настройка {code(const_name)} теперь переопределена новым Мимиром. '
-                    f'Старое значение по умолчанию было: {code(old_value)} → новое значение стало: {code(new_value)}‼️'
+                    f'➕ Настройка {code(change.name)} теперь переопределена новым Мимиром. '
+                    f'Старое значение по умолчанию было: {code(change.old_value)} → '
+                    f'новое значение стало: {code(change.new_value)}‼️'
                 )
-            elif change_type == '-':
+            elif change.kind == MimirChange.REMOVED_MIMIR:
                 text += (
-                    f'➖ Настройка Мимира {code(const_name)} была удалена! Она имела значение: {code(old_value)} → '
-                    f'теперь она вернулась к исходной константе: {code(new_value)}‼️'
+                    f'➖ Настройка Мимира {code(change.name)} была удалена! '
+                    f'Она имела значение: {code(change.old_value)} → '
+                    f'теперь она вернулась к исходной константе: {code(change.new_value)}‼️'
                 )
             else:
                 text += (
-                    f'🔄 Настройка Мимира {code(const_name)} была изменена. Старое значение: {code(old_value)} → '
-                    f'новое значение теперь: {code(new_value)}‼️'
+                    f'🔄 Настройка Мимира {code(change.name)} была изменена. '
+                    f'Старое значение: {code(change.old_value)} → '
+                    f'новое значение теперь: {code(change.new_value)}‼️'
                 )
             text += '\n\n'
 
