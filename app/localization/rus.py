@@ -221,7 +221,7 @@ class RussianLocalization(BaseLocalization):
         elif tx.type == ThorTxType.TYPE_REFUND:
             heading = f'🐳️ <b>Большой возврат средств</b> ↩️❗'
         elif tx.type == ThorTxType.TYPE_SWITCH:
-            heading = f'🐳 <b>Крупный апгрейд {self.R}</b> 🔼'
+            heading = f'🐳 <b>Крупный апгрейд {self.R}</b> 🆙'
 
         asset = Asset(tx.first_pool).name
 
@@ -265,10 +265,10 @@ class RussianLocalization(BaseLocalization):
         blockchain_components = [f"Пользователь: {self.link_to_explorer_user_address_for_tx(tx)}"]
 
         if tx.in_tx:
-            blockchain_components.append('Входы: ' + self.links_to_txs(tx.in_tx))
+            blockchain_components.append('Входы: ' + self.links_to_txs(tx.in_tx, tx.tx_hash))
 
         if tx.out_tx:
-            out_links = self.links_to_txs(tx.out_tx)
+            out_links = self.links_to_txs(tx.out_tx, tx.tx_hash)
             if out_links:
                 blockchain_components.append('Выходы: ' + out_links)
 

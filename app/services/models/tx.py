@@ -368,8 +368,10 @@ class ThorTxExtended(ThorTx):
             sub_tx_rune = self.get_sub_tx(RUNE_SYMBOL, in_only=True)
             self.address_rune = sub_tx_rune.address if sub_tx_rune else self.in_tx[0].address
 
-            self.tx_hash_rune = self.get_sub_tx(RUNE_SYMBOL, out_only=True)
-            self.tx_hash_asset = self.get_sub_tx(pool, out_only=True)
+            out_sub_tx_rune = self.get_sub_tx(RUNE_SYMBOL, out_only=True)
+            out_sub_tx_asset = self.get_sub_tx(pool, out_only=True)
+            self.tx_hash_rune = out_sub_tx_rune.tx_id if out_sub_tx_rune else None
+            self.tx_hash_asset = out_sub_tx_asset.tx_id if out_sub_tx_asset else None
 
         elif t in (ThorTxType.TYPE_SWITCH, ThorTxType.TYPE_REFUND, ThorTxType.TYPE_SWAP):
             # only outputs

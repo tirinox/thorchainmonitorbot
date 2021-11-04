@@ -117,6 +117,5 @@ class SwitchTxNotifier(GenericTxNotifier):
     def _filter_large_txs(self, txs, min_rune_volume, usd_per_rune):
         for tx in txs:
             tx: ThorTxExtended
-            # fixme: AttributeError: 'ThorTx' object has no attribute 'full_rune'
             if tx.full_rune >= min_rune_volume:
                 yield tx

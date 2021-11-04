@@ -19,7 +19,7 @@ from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, i
 from services.models.cap_info import ThorCapInfo
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEventType, NodeEvent, \
-    EventBlockHeight, EventDataVariation, EventDataSlash
+    EventBlockHeight, EventDataSlash
 from services.models.pool_info import PoolInfo, PoolChanges
 from services.models.price import PriceReport
 from services.models.queue import QueueInfo
@@ -261,14 +261,16 @@ class BaseLocalization(ABC):  # == English
 
     TEXT_MORE_TXS = ' and {n} more'
 
-    def links_to_txs(self, txs: List[ThorSubTx], max_n=2):
+    def links_to_txs(self, txs: List[ThorSubTx], main_run_txid='', max_n=2):
         net = self.cfg.network_id
         items = []
         for tx in txs[:max_n]:
-            if tx.tx_id:
+            tx_id = tx.tx_id or main_run_txid
+            if tx_id:
                 a = Asset(tx.first_asset)
-                url = get_explorer_url_to_tx(net, a.chain, tx.tx_id)
-                label = a.chain
+                chain = a.chain if a.chain else Chains.THOR
+                url = get_explorer_url_to_tx(net, chain, tx_id)
+                label = 'RUNE' if (chain == Chains.THOR) else a.chain
                 items.append(link(url, label))
 
         result = ', '.join(items)
@@ -317,6 +319,10 @@ class BaseLocalization(ABC):  # == English
     def notification_text_large_tx(self, tx: ThorTxExtended, usd_per_rune: float,
                                    pool_info: PoolInfo,
                                    cap: ThorCapInfo = None):
+        # if tx.type == ThorTxType.TYPE_WITHDRAW:
+        #     if tx.meta_withdraw and tx.meta_withdraw.asymmetry != '0':
+        #         print('stop')
+
         (ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short,
          total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
@@ -332,7 +338,7 @@ class BaseLocalization(ABC):  # == English
         elif tx.type == ThorTxType.TYPE_REFUND:
             heading = f'🐳 <b>Big refund</b> ↩️❗'
         elif tx.type == ThorTxType.TYPE_SWITCH:
-            heading = f'🐳 <b>Large Rune switch</b> 🔼'
+            heading = f'🐳 <b>Large Rune switch</b> 🆙'
 
         asset = Asset(tx.first_pool).name
 
@@ -373,10 +379,12 @@ class BaseLocalization(ABC):  # == English
         blockchain_components = [f"User: {self.link_to_explorer_user_address_for_tx(tx)}"]
 
         if tx.in_tx:
-            blockchain_components.append('Inputs: ' + self.links_to_txs(tx.in_tx))
+            in_links = self.links_to_txs(tx.in_tx)
+            if in_links:
+                blockchain_components.append('Inputs: ' + in_links)
 
         if tx.out_tx:
-            out_links = self.links_to_txs(tx.out_tx)
+            out_links = self.links_to_txs(tx.out_tx, tx.tx_hash)
             if out_links:
                 blockchain_components.append('Outputs: ' + out_links)
 
@@ -924,7 +932,7 @@ class BaseLocalization(ABC):  # == English
             status = '🛑 Halted' if c.halted else '🆗 Active'
             text += f'{bold(c.chain)}:\n' \
                     f'Status: {status}\n' \
-                    f'Inbound address: {pre(c.address)} {address_link}\n' \
+                    f'Inbound address: {pre(c.address)} {address_link}\n'
 
             if c.router:
                 router_link = link(get_explorer_url_to_address(self.cfg.network_id, c.chain, c.router), 'SCAN')
