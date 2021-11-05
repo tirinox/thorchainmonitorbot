@@ -952,13 +952,16 @@ class BaseLocalization(ABC):  # == English
     MIMIR_DOC_LINK = "https://docs.thorchain.org/how-it-works/governance#mimir"
     MIMIR_ENTRIES_PER_MESSAGE = 20
 
-    MIMIR_STANDARD_VALUE = 'default: '
+    MIMIR_STANDARD_VALUE = 'default:'
     MIMIR_MESSAGE_TITLE = 'Global constants and Mimir'
     MIMIR_WHAT_IS_MIMIR = "What is Mimir?"
-    MIMIR_OUTRO = '\n\n🔹 ' + ital(' it means that the constant is redefined by Mimir.')
+    MIMIR_OUTRO = '\n\n🔹/🔸 ' + ital(' it means that the constant is redefined by Mimir.')
     MIMIR_NO_DATA = 'No data'
     MIMIR_BLOCKS = 'blocks'
     MIMIR_DISABLED = 'DISABLED'
+    MIMIR_YES = 'YES'
+    MIMIR_NO = 'NO'
+    MIMIR_ONLY = '🔸 Mimir only'
 
     def format_mimir_value(self, v: str, m: MimirEntry):
         if m.is_rune:
@@ -968,11 +971,16 @@ class BaseLocalization(ABC):  # == English
             seconds = blocks * THOR_BLOCK_TIME
             time_str = self.seconds_human(seconds) if seconds != 0 else self.MIMIR_DISABLED
             return f'{time_str}, {blocks} {self.MIMIR_BLOCKS}'
+        elif m.is_bool:
+            return self.MIMIR_YES if bool(int(v)) else self.MIMIR_NO
         else:
             return v
 
     def format_mimir_entry(self, i: int, m: MimirEntry):
-        if m.overriden:
+        if m.source == m.SOURCE_MIMIR:
+            mark = ''
+            std_value = self.MIMIR_ONLY
+        elif m.overridden:
             std_value_fmt = self.format_mimir_value(m.hard_coded_value, m)
             std_value = f'({self.MIMIR_STANDARD_VALUE} {pre(std_value_fmt)})'
             mark = '🔹'
@@ -987,11 +995,9 @@ class BaseLocalization(ABC):  # == English
         intro += link(self.MIMIR_DOC_LINK, self.MIMIR_WHAT_IS_MIMIR) + '\n\n'
 
         text_lines = []
-        all_const_names = list(sorted(holder.last_constants.constants.keys()))
 
-        for i, const_name in enumerate(all_const_names, start=1):
-            m = holder.get_entry(const_name)
-            text_lines.append(self.format_mimir_entry(i, m))
+        for i, entry in enumerate(holder.all_entries, start=1):
+            text_lines.append(self.format_mimir_entry(i, entry))
 
         lines_grouped = ['\n'.join(line_group) for line_group in grouper(self.MIMIR_ENTRIES_PER_MESSAGE, text_lines)]
 

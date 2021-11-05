@@ -814,13 +814,16 @@ class RussianLocalization(BaseLocalization):
 
     # --------- MIMIR INFO ------------
 
-    MIMIR_STANDARD_VALUE = "стандарт: "
+    MIMIR_STANDARD_VALUE = "стандарт:"
     MIMIR_MESSAGE_TITLE = 'Глобальные константы и Мимир'
     MIMIR_WHAT_IS_MIMIR = "Что такое Мимир?"
-    MIMIR_OUTRO = '\n\n🔹 ' + ital(' значит, что константа переопределена Мимиром.')
+    MIMIR_OUTRO = '\n\n🔹/🔸 ' + ital(' значит, что константа переопределена Мимиром.')
     MIMIR_NO_DATA = 'Нет данных'
     MIMIR_BLOCKS = 'блоков'
     MIMIR_DISABLED = 'ВЫКЛЮЧЕНО'
+    MIMIR_YES = 'ДА'
+    MIMIR_NO = 'НЕТ'
+    MIMIR_ONLY = '🔸 Только Мимир'
 
     # --------- TRADING HALTED -----------
 

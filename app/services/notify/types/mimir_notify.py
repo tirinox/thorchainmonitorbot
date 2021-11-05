@@ -74,6 +74,8 @@ class MimirChangedNotifier(INotified):
         for name in all_const_names:
             change = None
 
+            # todo: Rune/Block MimirEntry!
+
             if name in fresh_const_names and name in old_const_names:
                 old_value = old_mimir[name]
                 new_value = fresh_mimir[name]
