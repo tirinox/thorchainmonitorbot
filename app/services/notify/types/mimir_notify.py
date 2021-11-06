@@ -25,9 +25,15 @@ class MimirChangedNotifier(INotified):
             fresh_mimir.constants['mimir//LOKI_CONST'] = "777"
         if random.uniform(0, 1) > 0.6:
             fresh_mimir.constants['mimir//NativeTransactionFee'] = 300000
-        # del fresh_mimir.constants['mimir//NativeTransactionFee']
+        if random.uniform(0, 1) > 0.3:
+            try:
+                del fresh_mimir.constants['mimir//NativeTransactionFee']
+            except KeyError:
+                pass
+        del fresh_mimir.constants["mimir//EMISSIONCURVE"]
         # fresh_mimir.constants['mimir//NATIVETRANSACTIONFEE'] = 300000
-        # fresh_mimir.constants['mimir//CHURNINTERVAL'] = 43333
+        fresh_mimir.constants['mimir//MAXLIQUIDITYRUNE'] = 10000000000000 * random.randint(1, 99)
+        fresh_mimir.constants["mimir//FULLIMPLOSSPROTECTIONBLOCKS"] = 10000 * random.randint(1, 999)
         return fresh_mimir
 
     @staticmethod
@@ -67,30 +73,31 @@ class MimirChangedNotifier(INotified):
 
         changes = []
 
-        timestamp = now_ts()
-
         holder = self.deps.mimir_const_holder
 
-        for name in all_const_names:
-            change = None
+        timestamp = now_ts()
 
-            # todo: Rune/Block MimirEntry!
+        for name in all_const_names:
+            change_kind = None
+            old_value, new_value = None, None
 
             if name in fresh_const_names and name in old_const_names:
                 old_value = old_mimir[name]
                 new_value = fresh_mimir[name]
                 if old_value != new_value:
-                    change = MimirChange(MimirChange.VALUE_CHANGE, name, old_value, new_value, timestamp)
+                    change_kind = MimirChange.VALUE_CHANGE
             elif name in fresh_const_names and name not in old_const_names:
-                value = fresh_mimir[name]
+                new_value = fresh_mimir[name]
                 old_value = holder.get_hardcoded_const(name)
-                change = MimirChange(MimirChange.ADDED_MIMIR, name, old_value, value, timestamp)
+                change_kind = MimirChange.ADDED_MIMIR
             elif name not in fresh_const_names and name in old_const_names:
                 old_value = old_mimir[name]
-                value = holder.get_hardcoded_const(name)
-                change = MimirChange(MimirChange.REMOVED_MIMIR, name, old_value, value, timestamp)
+                new_value = holder.get_hardcoded_const(name)
+                change_kind = MimirChange.REMOVED_MIMIR
 
-            if change is not None:
+            if change_kind is not None:
+                entry = self.deps.mimir_const_holder.get_entry(name)
+                change = MimirChange(change_kind, name, old_value, new_value, entry, timestamp)
                 changes.append(change)
                 await self._save_mimir_change(change)
 
@@ -98,7 +105,8 @@ class MimirChangedNotifier(INotified):
             await self.deps.broadcaster.notify_preconfigured_channels(
                 self.deps.loc_man,
                 BaseLocalization.notification_text_mimir_changed,
-                changes
+                changes,
+                self.deps.mimir_const_holder,
             )
 
         if fresh_mimir and fresh_mimir.constants:

@@ -963,6 +963,8 @@ class BaseLocalization(ABC):  # == English
     MIMIR_CHEAT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1mc1mBBExGxtI5a85niijHhle5EtXoTR_S5Ihx808_tM/edit#gid=980980229'
 
     def format_mimir_value(self, v: str, m: MimirEntry):
+        if m is None:
+            return v
         if m.is_rune:
             return short_money(thor_to_float(v), localization=self.SHORT_MONEY_LOC, postfix=f' {self.R}')
         elif m.is_blocks:
@@ -1037,7 +1039,7 @@ class BaseLocalization(ABC):  # == English
 
     # --------- MIMIR CHANGED -----------
 
-    def notification_text_mimir_changed(self, changes: List[MimirChange]):
+    def notification_text_mimir_changed(self, changes: List[MimirChange], mimir: MimirHolder):
         if not changes:
             return ''
 
@@ -1045,22 +1047,26 @@ class BaseLocalization(ABC):  # == English
                'The team has just updated global THORChain settings:\n\n'
 
         for change in changes:
+            old_value_fmt = code(self.format_mimir_value(change.old_value, change.entry))
+            new_value_fmt = code(self.format_mimir_value(change.new_value, change.entry))
+            name = code(change.entry.pretty_name if change.entry else change.name)
+
             if change.kind == MimirChange.ADDED_MIMIR:
                 text += (
-                    f'➕ The constant {code(change.name)} has been overridden by a new Mimir. '
-                    f'The default value was {code(change.old_value)} → the new value is {code(change.new_value)}‼️'
+                    f'➕ The constant \"{name}\" has been overridden by a new Mimir. '
+                    f'The default value was {old_value_fmt} → the new value is {new_value_fmt}‼️'
                 )
             elif change.kind == MimirChange.REMOVED_MIMIR:
                 text += (
-                    f"➖ Mimir's constant {code(change.name)} has been deleted. It had the value: "
-                    f"{code(change.old_value)} → "
-                    f"now this constant reverted to its default value: {code(change.new_value)}‼️"
+                    f"➖ Mimir's constant \"{name}\" has been deleted. It had the value: "
+                    f"{old_value_fmt} → "
+                    f"now this constant reverted to its default value: {new_value_fmt}‼️"
                 )
             else:
                 text += (
-                    f"🔄 Mimir's constant {code(change.name)} has been updated from the value "
-                    f"{code(change.old_value)} → "
-                    f"to {code(change.new_value)}‼️"
+                    f"🔄 Mimir's constant \"{name}\" has been updated from the value "
+                    f"{old_value_fmt} → "
+                    f"to {new_value_fmt}‼️"
                 )
             text += '\n\n'
 

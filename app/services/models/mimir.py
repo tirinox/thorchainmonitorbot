@@ -1,27 +1,10 @@
 import typing
 from dataclasses import dataclass
-from itertools import chain
 
 from aiothornode.types import ThorConstants, ThorMimir
 
 from services.lib.texts import split_by_camel_case
 from services.models.base import BaseModelMixin
-
-
-@dataclass
-class MimirChange(BaseModelMixin):
-    kind: str
-    name: str
-    old_value: str
-    new_value: str
-    timestamp: float
-
-    VALUE_CHANGE = '~'
-    ADDED_MIMIR = '+'
-    REMOVED_MIMIR = '-'
-
-    def __post_init__(self):
-        self.timestamp = float(self.timestamp)
 
 
 class MimirEntry(typing.NamedTuple):
@@ -39,6 +22,23 @@ class MimirEntry(typing.NamedTuple):
     SOURCE_CONST = 'const'
     SOURCE_MIMIR = 'mimir'
     SOURCE_BOTH = 'both'
+
+
+@dataclass
+class MimirChange(BaseModelMixin):
+    kind: str
+    name: str
+    old_value: str
+    new_value: str
+    entry: MimirEntry
+    timestamp: float
+
+    VALUE_CHANGE = '~'
+    ADDED_MIMIR = '+'
+    REMOVED_MIMIR = '-'
+
+    def __post_init__(self):
+        self.timestamp = float(self.timestamp)
 
 
 class MimirHolder:
@@ -186,6 +186,9 @@ class MimirHolder:
         else:
             return self.last_constants.constants.get(name)
 
+    def get_entry(self, name) -> typing.Optional[MimirEntry]:
+        return self._const_map.get(name)
+
     def update(self, constants: ThorConstants, mimir: ThorMimir):
         consts = set(constants.constants.keys())
         only_mimir_names = set()
@@ -241,6 +244,7 @@ class MimirHolder:
                                is_bool=name in self._mimir_names_of_bool_constants,
                                source=MimirEntry.SOURCE_MIMIR)
             self._const_map[name] = entry
+            self._const_map[pure_name] = entry
             self._all_names.add(name)
             self._mimir_only_names.add(name)
 
