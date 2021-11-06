@@ -252,5 +252,5 @@ class MimirHolder:
     @property
     def all_entries(self) -> typing.List[MimirEntry]:
         entries = [self._const_map[name] for name in self._all_names]
-        entries.sort(key=lambda en: en.name)
+        entries.sort(key=lambda en: en.pretty_name)
         return entries

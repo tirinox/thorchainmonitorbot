@@ -953,15 +953,14 @@ class BaseLocalization(ABC):  # == English
     MIMIR_ENTRIES_PER_MESSAGE = 20
 
     MIMIR_STANDARD_VALUE = 'default:'
-    MIMIR_MESSAGE_TITLE = 'Global constants and Mimir'
-    MIMIR_WHAT_IS_MIMIR = "What is Mimir?"
-    MIMIR_OUTRO = '\n\n🔹/🔸 ' + ital(' it means that the constant is redefined by Mimir.')
+    MIMIR_OUTRO = f'\n\n🔹 – {ital("it means that the constant is redefined by Mimir.")}\n' \
+                  f'🔸 – {ital("defined only by Mimir.")}'
     MIMIR_NO_DATA = 'No data'
     MIMIR_BLOCKS = 'blocks'
     MIMIR_DISABLED = 'DISABLED'
     MIMIR_YES = 'YES'
     MIMIR_NO = 'NO'
-    MIMIR_ONLY = '🔸 Mimir only'
+    MIMIR_CHEAT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1mc1mBBExGxtI5a85niijHhle5EtXoTR_S5Ihx808_tM/edit#gid=980980229'
 
     def format_mimir_value(self, v: str, m: MimirEntry):
         if m.is_rune:
@@ -978,8 +977,8 @@ class BaseLocalization(ABC):  # == English
 
     def format_mimir_entry(self, i: int, m: MimirEntry):
         if m.source == m.SOURCE_MIMIR:
-            mark = ''
-            std_value = self.MIMIR_ONLY
+            mark = '🔸'
+            std_value = ''
         elif m.overridden:
             std_value_fmt = self.format_mimir_value(m.hard_coded_value, m)
             std_value = f'({self.MIMIR_STANDARD_VALUE} {pre(std_value_fmt)})'
@@ -990,10 +989,14 @@ class BaseLocalization(ABC):  # == English
         real_value_fmt = self.format_mimir_value(m.real_value, m)
         return f'{i}. {mark}{bold(m.pretty_name)} = {code(real_value_fmt)} {std_value}'
 
-    def text_mimir_info(self, holder: MimirHolder):
-        intro = '🎅' + bold(self.MIMIR_MESSAGE_TITLE) + '\n'
-        intro += link(self.MIMIR_DOC_LINK, self.MIMIR_WHAT_IS_MIMIR) + '\n\n'
+    def text_mimir_intro(self):
+        text = f'🎅 {bold("Global constants and Mimir")}\n'
+        cheatsheet_link = link(self.MIMIR_CHEAT_SHEET_URL, 'Cheat sheet')
+        what_is_mimir_link = link(self.MIMIR_DOC_LINK, "What is Mimir?")
+        text += f"{what_is_mimir_link} And also {cheatsheet_link}.\n\n"
+        return text
 
+    def text_mimir_info(self, holder: MimirHolder):
         text_lines = []
 
         for i, entry in enumerate(holder.all_entries, start=1):
@@ -1001,7 +1004,8 @@ class BaseLocalization(ABC):  # == English
 
         lines_grouped = ['\n'.join(line_group) for line_group in grouper(self.MIMIR_ENTRIES_PER_MESSAGE, text_lines)]
 
-        outro = self.MIMIR_OUTRO
+        intro, outro = self.text_mimir_intro(), self.MIMIR_OUTRO
+
         if len(lines_grouped) >= 2:
             messages = [
                 intro + lines_grouped[0],

@@ -815,15 +815,21 @@ class RussianLocalization(BaseLocalization):
     # --------- MIMIR INFO ------------
 
     MIMIR_STANDARD_VALUE = "стандарт:"
-    MIMIR_MESSAGE_TITLE = 'Глобальные константы и Мимир'
-    MIMIR_WHAT_IS_MIMIR = "Что такое Мимир?"
-    MIMIR_OUTRO = '\n\n🔹/🔸 ' + ital(' значит, что константа переопределена Мимиром.')
+    MIMIR_OUTRO = f'\n\n🔹 – {ital("значит, что константа переопределена Мимиром.")}\n' \
+                  f'🔸 – {ital("константа определена только через Мимир.")}'
     MIMIR_NO_DATA = 'Нет данных'
     MIMIR_BLOCKS = 'блоков'
     MIMIR_DISABLED = 'ВЫКЛЮЧЕНО'
     MIMIR_YES = 'ДА'
     MIMIR_NO = 'НЕТ'
-    MIMIR_ONLY = '🔸 Только Мимир'
+
+    def text_mimir_intro(self):
+        text = f'🎅 {bold("Глобальные константы и Мимир")}\n'
+        cheatsheet_link = link(self.MIMIR_CHEAT_SHEET_URL, 'Описание констант')
+        what_is_mimir_link = link(self.MIMIR_DOC_LINK, "Что такое мими?")
+        text += f"{what_is_mimir_link} А еще {cheatsheet_link}.\n\n"
+        return text
+
 
     # --------- TRADING HALTED -----------
 
