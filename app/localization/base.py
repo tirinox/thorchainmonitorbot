@@ -960,11 +960,16 @@ class BaseLocalization(ABC):  # == English
     MIMIR_DISABLED = 'DISABLED'
     MIMIR_YES = 'YES'
     MIMIR_NO = 'NO'
+    MIMIR_UNDEFINED = 'Undefined'
     MIMIR_CHEAT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1mc1mBBExGxtI5a85niijHhle5EtXoTR_S5Ihx808_tM/edit#gid=980980229'
 
     def format_mimir_value(self, v: str, m: MimirEntry):
+        if v is None:
+            return self.MIMIR_UNDEFINED
+
         if m is None:
             return v
+
         if m.is_rune:
             return short_money(thor_to_float(v), localization=self.SHORT_MONEY_LOC, postfix=f' {self.R}')
         elif m.is_blocks:

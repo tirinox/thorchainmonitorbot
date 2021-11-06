@@ -822,6 +822,7 @@ class RussianLocalization(BaseLocalization):
     MIMIR_DISABLED = 'ВЫКЛЮЧЕНО'
     MIMIR_YES = 'ДА'
     MIMIR_NO = 'НЕТ'
+    MIMIR_UNDEFINED = 'Неопределено'
 
     def text_mimir_intro(self):
         text = f'🎅 {bold("Глобальные константы и Мимир")}\n'

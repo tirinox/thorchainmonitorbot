@@ -19,18 +19,20 @@ class MimirChangedNotifier(INotified):
         self.logger = class_logger(self)
 
     def _dbg_randomize_mimir(self, fresh_mimir: ThorMimir):
-        if random.uniform(0, 1) > 0.5:
-            fresh_mimir.constants['mimir//LOKI_CONST'] = "555"
-        if random.uniform(0, 1) > 0.3:
-            fresh_mimir.constants['mimir//LOKI_CONST'] = "777"
-        if random.uniform(0, 1) > 0.6:
-            fresh_mimir.constants['mimir//NativeTransactionFee'] = 300000
-        if random.uniform(0, 1) > 0.3:
-            try:
-                del fresh_mimir.constants['mimir//NativeTransactionFee']
-            except KeyError:
-                pass
-        del fresh_mimir.constants["mimir//EMISSIONCURVE"]
+        # if random.uniform(0, 1) > 0.5:
+        #     fresh_mimir.constants['mimir//LOKI_CONST'] = "555"
+        # if random.uniform(0, 1) > 0.3:
+        #     fresh_mimir.constants['mimir//LOKI_CONST'] = "777"
+        # if random.uniform(0, 1) > 0.6:
+        #     fresh_mimir.constants['mimir//NativeTransactionFee'] = 300000
+        # if random.uniform(0, 1) > 0.3:
+        #     try:
+        #         del fresh_mimir.constants['mimir//NativeTransactionFee']
+        #     except KeyError:
+        #         pass
+        del fresh_mimir.constants["mimir//HALTBNBTRADING"]
+        fresh_mimir.constants["mimir//HALTETHTRADING"] = 1
+        # del fresh_mimir.constants["mimir//EMISSIONCURVE"]
         # fresh_mimir.constants['mimir//NATIVETRANSACTIONFEE'] = 300000
         fresh_mimir.constants['mimir//MAXLIQUIDITYRUNE'] = 10000000000000 * random.randint(1, 99)
         fresh_mimir.constants["mimir//FULLIMPLOSSPROTECTIONBLOCKS"] = 10000 * random.randint(1, 999)
