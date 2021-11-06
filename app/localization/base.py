@@ -321,10 +321,6 @@ class BaseLocalization(ABC):  # == English
     def notification_text_large_tx(self, tx: ThorTxExtended, usd_per_rune: float,
                                    pool_info: PoolInfo,
                                    cap: ThorCapInfo = None):
-        # if tx.type == ThorTxType.TYPE_WITHDRAW:
-        #     if tx.meta_withdraw and tx.meta_withdraw.asymmetry != '0':
-        #         print('stop')
-
         (ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short,
          total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
@@ -444,7 +440,7 @@ class BaseLocalization(ABC):  # == English
         last_ath = p.last_ath
         if last_ath is not None and ath:
             last_ath_pr = f'{last_ath.ath_price:.2f}'
-            ago_str = format_time_ago(now_ts() - last_ath.ath_date)
+            ago_str = self.format_time_ago(now_ts() - last_ath.ath_date)
             message += f"Last ATH was ${pre(last_ath_pr)} ({ago_str}).\n"
 
         time_combos = zip(
@@ -961,6 +957,7 @@ class BaseLocalization(ABC):  # == English
     MIMIR_YES = 'YES'
     MIMIR_NO = 'NO'
     MIMIR_UNDEFINED = 'Undefined'
+    MIMIR_LAST_CHANGE = 'Last change'
     MIMIR_CHEAT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1mc1mBBExGxtI5a85niijHhle5EtXoTR_S5Ihx808_tM/edit#gid=980980229'
 
     def format_mimir_value(self, v: str, m: MimirEntry):
@@ -993,8 +990,14 @@ class BaseLocalization(ABC):  # == English
         else:
             mark, std_value = '', ''
 
+        if m.changed_ts:
+            str_ago = self.format_time_ago(now_ts() - m.changed_ts)
+            last_change = f'{self.MIMIR_LAST_CHANGE} {ital(str_ago)}'
+        else:
+            last_change = ''
+
         real_value_fmt = self.format_mimir_value(m.real_value, m)
-        return f'{i}. {mark}{bold(m.pretty_name)} = {code(real_value_fmt)} {std_value}'
+        return f'{i}. {mark}{bold(m.pretty_name)} = {code(real_value_fmt)} {std_value} {last_change}'
 
     def text_mimir_intro(self):
         text = f'🎅 {bold("Global constants and Mimir")}\n'

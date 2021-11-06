@@ -1,6 +1,6 @@
 import json
 import random
-from typing import Tuple, Optional
+from typing import Tuple
 
 from aiothornode.types import ThorConstants, ThorMimir
 
@@ -40,28 +40,39 @@ class MimirChangedNotifier(INotified):
 
     @staticmethod
     def mimir_last_modification_key(name):
-        return f'MimirLastChange:{name}'
+        return f'MimirLastChangeTS:{name}'
 
-    async def last_mimir_change(self, name: str) -> Optional[MimirChange]:
+    async def last_mimir_change_date(self, name: str) -> float:
         if not name:
-            return
-        data = await self.deps.db.redis.get(self.mimir_last_modification_key(name))
-        if data:
-            return MimirChange.from_json(data)
-
-    async def _save_mimir_change(self, change: MimirChange):
+            return 0
         try:
-            await self.deps.db.redis.set(self.mimir_last_modification_key(change.name), change.as_json_string)
+            data = await self.deps.db.redis.get(self.mimir_last_modification_key(name))
+            return float(data)
+        except Exception:
+            return 0
+
+    async def _save_mimir_change_date(self, change: MimirChange):
+        try:
+            self.deps.mimir_const_holder.register_change_ts(change.name, change.timestamp)
+            await self.deps.db.redis.set(self.mimir_last_modification_key(change.name), change.timestamp)
         except Exception as e:
             self.logger.error(f'Failed to save last Mimir change: {e}')
+
+    async def _ensure_all_last_changes_in_holder(self, mimir: ThorMimir):
+        if not self.deps.mimir_const_holder.last_changes:
+            for name in mimir.constants.keys():
+                ts = await self.last_mimir_change_date(name)
+                self.deps.mimir_const_holder.register_change_ts(name, ts)
 
     async def on_data(self, sender: ConstMimirFetcher, data: Tuple[ThorConstants, ThorMimir]):
         _, fresh_mimir = data
 
         # fresh_mimir = self._dbg_randomize_mimir(fresh_mimir)  # fixme
 
-        if not fresh_mimir.constants:
+        if not fresh_mimir or not fresh_mimir.constants:
             return
+
+        await self._ensure_all_last_changes_in_holder(fresh_mimir)
 
         old_mimir = await self._get_saved_mimir_state()
         if not old_mimir:
@@ -101,7 +112,7 @@ class MimirChangedNotifier(INotified):
                 entry = self.deps.mimir_const_holder.get_entry(name)
                 change = MimirChange(change_kind, name, old_value, new_value, entry, timestamp)
                 changes.append(change)
-                await self._save_mimir_change(change)
+                await self._save_mimir_change_date(change)
 
         if changes:
             await self.deps.broadcaster.notify_preconfigured_channels(

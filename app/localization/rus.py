@@ -823,6 +823,7 @@ class RussianLocalization(BaseLocalization):
     MIMIR_YES = 'ДА'
     MIMIR_NO = 'НЕТ'
     MIMIR_UNDEFINED = 'Неопределено'
+    MIMIR_LAST_CHANGE = 'Последнее изменение'
 
     def text_mimir_intro(self):
         text = f'🎅 {bold("Глобальные константы и Мимир")}\n'
@@ -1058,7 +1059,7 @@ class RussianLocalization(BaseLocalization):
     }
 
     def format_time_ago(self, d):
-        return format_time_ago(d, self.DATE_TRANSLATOR)
+        return format_time_ago(d, translate=self.DATE_TRANSLATOR)
 
     def seconds_human(self, s):
         return seconds_human(s, translate=self.DATE_TRANSLATOR)

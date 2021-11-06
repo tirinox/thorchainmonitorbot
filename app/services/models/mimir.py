@@ -7,7 +7,8 @@ from services.lib.texts import split_by_camel_case
 from services.models.base import BaseModelMixin
 
 
-class MimirEntry(typing.NamedTuple):
+@dataclass
+class MimirEntry:
     name: str
     pretty_name: str
     real_value: str
@@ -46,7 +47,7 @@ class MimirHolder:
         self.last_constants: ThorConstants = ThorConstants()
         self.last_mimir: ThorMimir = ThorMimir()
 
-        self.last_changes: typing.Dict[str, MimirChange] = {}
+        self.last_changes: typing.Dict[str, float] = {}
 
         self._const_map = {}
 
@@ -216,11 +217,10 @@ class MimirHolder:
                 source = MimirEntry.SOURCE_BOTH
                 real_value = mimir.constants.get(mimir_name)
 
-            last_change = self.last_changes.get(name, None)
-            ts = last_change.timestamp if last_change else 0
+            last_change_ts = self.last_changes.get(name, 0)
 
             entry = MimirEntry(name, split_by_camel_case(name),
-                               real_value, value, overriden, ts,
+                               real_value, value, overriden, last_change_ts,
                                is_rune=name in self.RUNE_CONSTANTS,
                                is_blocks=name in self.BLOCK_CONSTANTS,
                                is_bool=name in self.BOOL_CONSTANTS,
@@ -232,13 +232,12 @@ class MimirHolder:
         for name in only_mimir_names:
             value = mimir.constants.get(name)
 
-            last_change = self.last_changes.get(name, None)
-            ts = last_change.timestamp if last_change else 0
+            last_change_ts = self.last_changes.get(name, 0)
 
             pure_name = self.pure_name(name)
             pretty_name = self.TRANSLATE_MIMIRS.get(pure_name, pure_name)
 
-            entry = MimirEntry(name, pretty_name, value, value, True, ts,
+            entry = MimirEntry(name, pretty_name, value, value, True, last_change_ts,
                                is_rune=name in self._mimir_names_of_rune_constants,
                                is_blocks=name in self._mimir_names_of_block_constants,
                                is_bool=name in self._mimir_names_of_bool_constants,
@@ -258,3 +257,10 @@ class MimirHolder:
         entries = [self._const_map[name] for name in self._all_names]
         entries.sort(key=lambda en: en.pretty_name)
         return entries
+
+    def register_change_ts(self, name, ts):
+        if name:
+            self.last_changes[name] = ts
+            entry: MimirEntry = self._const_map.get(name)
+            if entry and ts > 0:
+                entry.changed_ts = ts
