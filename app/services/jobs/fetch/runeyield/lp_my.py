@@ -289,6 +289,10 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         usd_per_rune = self._calculate_weighted_rune_price_in_usd(earliest_pools, use_default_price=True)
 
         this_pool = earliest_pools.get(earliest_tx.first_pool)
+
+        if this_pool is None:
+            return None, None
+
         rune_per_asset = this_pool.runes_per_asset
         usd_per_asset = usd_per_rune * rune_per_asset
 
@@ -486,9 +490,13 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         # https://gitlab.com/thorchain/thornode/-/merge_requests/1796
         r1, a1 = pool_share(pool.balance_rune, pool.balance_asset, liquidity_units, pool.pool_units)
         r1, a1 = thor_to_float(r1), thor_to_float(a1)
-        p1 = r1 / a1
-        deposit_value = a0 * p1 + r0
-        redeem_value = a1 * p1 + r1
+        if a1 != 0:
+            p1 = r1 / a1
+            deposit_value = a0 * p1 + r0
+            redeem_value = a1 * p1 + r1
+        else:
+            deposit_value = r0
+            redeem_value = r1
         coverage = deposit_value - redeem_value
         return max(0.0, coverage)
 
