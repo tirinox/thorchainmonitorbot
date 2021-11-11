@@ -31,6 +31,7 @@ def price_graph(pool_price_df, det_price_df, cex_prices_df, loc: BaseLocalizatio
     graph.n_ticks_x = 8
     graph.n_ticks_y = 8
     graph.grid_lines = True
+    graph.line_width = 1
 
     graph.add_title(loc.PRICE_GRAPH_TITLE)
 
