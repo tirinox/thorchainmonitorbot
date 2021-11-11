@@ -321,17 +321,18 @@ class PlotGraphLines(PlotGraph):
             min_x = max_x = points[0][0]
             min_y = max_y = points[0][1]
             for x, y in points[1:]:
-                min_x = min(x, min_x)
-                min_y = min(y, min_y)
-                max_x = max(x, max_x)
-                max_y = max(y, max_y)
+                if y < min_y:
+                    min_x, min_y = x, y
+                if y > max_y:
+                    max_x, max_y = x, y
 
-            print(f'{min_x = }, {min_y = }, {max_x = }, {max_y = }')
+            # print(f'{min_x = }, {min_y = }, {max_x = }, {max_y = }')
 
             min_px, min_py = self.convert_coords(min_x, min_y, ox, oy, plot_w, plot_h)
             max_px, max_py = self.convert_coords(max_x, max_y, ox, oy, plot_w, plot_h)
             color = line_desc['color']
 
-            self.draw.text((min_px + 6, min_py + 10), self.y_formatter(float(min_y)), color, self.font_ticks, anchor='mm')
-            self.draw.text((max_px + 6, max_py - 10), self.y_formatter(float(max_y)), color, self.font_ticks, anchor='mm')
-
+            self.draw.text((min_px + 6, min_py + 10), self.y_formatter(float(min_y)), color, self.font_ticks,
+                           anchor='mm')
+            self.draw.text((max_px + 6, max_py - 10), self.y_formatter(float(max_y)), color, self.font_ticks,
+                           anchor='mm')
