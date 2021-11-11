@@ -30,6 +30,7 @@ class NodeInfoFetcher(BaseFetcher):
         new_nodes.sort(key=lambda k: (k.status, -k.bond))
 
         # new_nodes = self._test_churn(new_nodes)  # fixme: debug
+
         return new_nodes
 
     async def fetch(self) -> List[NodeInfo]:

@@ -208,7 +208,7 @@ def node_geo_pic_sync(info: NetworkNodeIpInfo, loc: localization.BaseLocalizatio
               loc.TEXT_PIC_ACTIVE_NODES,
               palette=None)
 
-    one_donut(info.standby_nodes, (w // 2 - sdhw + sdd, sdy), False,
+    one_donut(info.not_active_nodes, (w // 2 - sdhw + sdd, sdy), False,
               loc.TEXT_PIC_STANDBY_NODES,
               palette=get_disabled_palette_color_by_index)
 

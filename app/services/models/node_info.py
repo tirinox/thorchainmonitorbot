@@ -241,6 +241,10 @@ class NetworkNodeIpInfo:
     def active_nodes(self):
         return [n for n in self.node_info_list if n.is_active]
 
+    @property
+    def not_active_nodes(self):
+        return [n for n in self.node_info_list if not n.is_active]
+
     def select_ip_info_for_nodes(self, nodes: List[NodeInfo]) -> List[dict]:
         return [self.ip_info_dict.get(n.ip_address, None) for n in nodes]
 
