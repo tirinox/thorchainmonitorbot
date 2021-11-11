@@ -226,6 +226,7 @@ class PlotGraphLines(PlotGraph):
         self.line_width = 3
         self.legend_x = self.left
         self.legend_y = self.h - self.bottom * 0.5
+        self.show_min_max = False
 
     def update_bounds(self):
         self.min_x = self.min_y = 1e10
@@ -306,4 +307,31 @@ class PlotGraphLines(PlotGraph):
                 self.draw.line((last_x, last_y, cur_x, cur_y), fill=color, width=self.line_width)
                 last_x, last_y = cur_x, cur_y
 
+        if self.show_min_max:
+            self._print_min_max()
+
+    def _print_min_max(self):
+        ox, oy, plot_w, plot_h = self.plot_rect()
+
+        for line_desc in self.series:
+            points = line_desc['pts']
+            if not points:
+                continue
+
+            min_x = max_x = points[0][0]
+            min_y = max_y = points[0][1]
+            for x, y in points[1:]:
+                min_x = min(x, min_x)
+                min_y = min(y, min_y)
+                max_x = max(x, max_x)
+                max_y = max(y, max_y)
+
+            print(f'{min_x = }, {min_y = }, {max_x = }, {max_y = }')
+
+            min_px, min_py = self.convert_coords(min_x, min_y, ox, oy, plot_w, plot_h)
+            max_px, max_py = self.convert_coords(max_x, max_y, ox, oy, plot_w, plot_h)
+            color = line_desc['color']
+
+            self.draw.text((min_px + 6, min_py + 10), self.y_formatter(float(min_y)), color, self.font_ticks, anchor='mm')
+            self.draw.text((max_px + 6, max_py - 10), self.y_formatter(float(max_y)), color, self.font_ticks, anchor='mm')
 

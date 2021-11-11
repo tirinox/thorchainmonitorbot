@@ -18,6 +18,7 @@ LINE_COLOR_DET_PRICE = '#FF8673'
 @async_wrap
 def price_graph(pool_price_df, det_price_df, cex_prices_df, loc: BaseLocalization, time_scale_mode='date'):
     graph = PlotGraphLines(PRICE_GRAPH_WIDTH, PRICE_GRAPH_HEIGHT)
+    graph.show_min_max = True
     graph.left = 80
     graph.legend_x = 95
     graph.bottom = 100
