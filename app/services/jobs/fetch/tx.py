@@ -19,8 +19,6 @@ class TxFetcher(BaseFetcher):
         sleep_period = parse_timespan_to_seconds(s_cfg.fetch_period)
         super().__init__(deps, sleep_period=sleep_period)
 
-        self.logger.info(f"cfg.tx: {s_cfg}")  # after super.init!
-
         self.tx_per_batch = int(s_cfg.tx_per_batch)
         self.max_page_deep = int(s_cfg.max_page_deep)
         self.max_age_sec = parse_timespan_to_seconds(s_cfg.max_age)
