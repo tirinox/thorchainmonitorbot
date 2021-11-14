@@ -9,7 +9,7 @@ from services.lib.utils import setup_logs
 from tools.lib.lp_common import LpAppFramework
 
 
-async def test_get_user_lp_actions(lpgen: LpAppFramework):
+async def my_test_get_user_lp_actions(lpgen: LpAppFramework):
     txf = TxFetcher(lpgen.deps)
     res = await txf.fetch_all_tx('tthor1qtedshax98p3v9al3pqjrfmf32xmrlfzs7lxg2', liquidity_change_only=True)
     for tx in res:
@@ -24,7 +24,7 @@ ADDR_MCTN = 'tthor1erl5a09ahua0umwcxp536cad7snerxt4eflyq0'
 POOL_MCTN = ''
 
 
-async def test_summary_of_all_pools(lpgen: LpAppFramework):
+async def my_test_summary_of_all_pools(lpgen: LpAppFramework):
     pools = await lpgen.rune_yield.get_my_pools(ADDR)
     yield_report = await lpgen.rune_yield.generate_yield_summary(ADDR, pools)
     for r in yield_report.reports:
@@ -32,14 +32,12 @@ async def test_summary_of_all_pools(lpgen: LpAppFramework):
         print('------')
 
 
-async def test_1_pool(lpgen: LpAppFramework):
+async def my_test_1_pool(lpgen: LpAppFramework):
     report = await lpgen.rune_yield.generate_yield_report_single_pool(ADDR, POOL)
     print(report)
 
 
-
-
-async def test_block_calibration(lpgen: LpAppFramework):
+async def my_test_block_calibration(lpgen: LpAppFramework):
     dbm = DateToBlockMapper(lpgen.deps)
     blocks = await dbm.calibrate(14, overwrite=True)
     print('-' * 100)
@@ -49,9 +47,9 @@ async def test_block_calibration(lpgen: LpAppFramework):
     # print(r)
 
 
-async def test_block_by_date(lpgen: LpAppFramework):
+async def my_test_block_by_date(lpgen: LpAppFramework):
     dbm = DateToBlockMapper(lpgen.deps)
-    d = date(2021, 4, 13)
+    d = date(2021, 11, 13)
 
     last_block = await dbm.get_last_thorchain_block()
     r = await dbm.get_block_height_by_date(d, last_block)
@@ -70,8 +68,8 @@ async def main():
         # await test_charts(lpgen, address='bnb1snqqjdvcqjf76fdztxrtwgv0ws9hsvvfsjv02z')  # mccn (bnb only)
         # await test_charts(lpgen, address='0x52e07b963ab0f525b15e281b3b42d55e8048f027')  # mccn (many pools + withdraw)
         # await test_block_calibration(lpgen)
-        # await test_block_by_date(lpgen)
-        ...
+        await clear_date2block(lpgen)
+        await my_test_block_by_date(lpgen)
 
 
 if __name__ == "__main__":
