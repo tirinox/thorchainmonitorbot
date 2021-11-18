@@ -1,7 +1,7 @@
 import json
 from typing import Tuple
 
-from services.lib.date_utils import now_ts
+from services.lib.date_utils import now_ts, MINUTE
 from services.lib.db import DB
 
 
@@ -96,6 +96,21 @@ class TimeSeries:
     async def clear(self):
         r = await self.db.get_redis()
         await r.delete(self.stream_name)
+
+    @staticmethod
+    def adjacent_difference_points(points: list):
+        return [(t2, t2 - t1, p2 - p1) for (t1, p1), (t2, p2) in zip(points, points[1:])]
+
+    @staticmethod
+    def make_sparse_points(points: list, min_interval=MINUTE):
+        if not points:
+            return
+        ts0, v0 = points[1]
+        yield ts0, v0
+        for ts, v in points[1:]:
+            if ts - ts0 > min_interval:
+                yield ts, v
+                ts0 = ts
 
 
 class PriceTimeSeries(TimeSeries):

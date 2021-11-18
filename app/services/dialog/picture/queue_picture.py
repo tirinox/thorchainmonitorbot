@@ -2,7 +2,7 @@ import pandas as pd
 
 from localization import BaseLocalization
 from services.lib.draw_utils import CATEGORICAL_PALETTE, img_to_bio
-from services.lib.date_utils import series_to_pandas, DAY, today_str
+from services.lib.date_utils import ts_event_points_to_pandas, DAY, today_str
 from services.lib.depcont import DepContainer
 from services.lib.plot_graph import PlotBarGraph
 from services.lib.utils import async_wrap
@@ -21,8 +21,8 @@ async def queue_graph(d: DepContainer, loc: BaseLocalization, duration=DAY):
 
 
 @async_wrap
-def queue_graph_sync(points, loc: BaseLocalization):
-    df = series_to_pandas(points, shift_time=False)
+def queue_graph_sync(event_points, loc: BaseLocalization):
+    df = ts_event_points_to_pandas(event_points, shift_time=False)
     df["t"] = pd.to_datetime(df["t"], unit='s')
     df = df.resample(RESAMPLE_TIME, on='t').sum()
 

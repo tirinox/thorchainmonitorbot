@@ -114,7 +114,7 @@ def format_time_ago_short(d, now=None):
     return f'{days}{hours:02}:{minutes:02}'
 
 
-def series_to_pandas(ts_result, shift_time=True):
+def ts_event_points_to_pandas(ts_result, shift_time=True):
     normal_data = []
     zero_t = None
     for key, value_d in ts_result:
@@ -137,6 +137,10 @@ def series_to_pandas(ts_result, shift_time=True):
             **values
         })
     return pd.DataFrame(normal_data)
+
+
+def ts_simple_points_to_pandas(points, value_name='value'):
+    return pd.DataFrame(points, columns=['time', value_name])
 
 
 def today_str():

@@ -15,6 +15,7 @@ from services.jobs.fetch.cap import CapInfoFetcher
 from services.jobs.fetch.chains import ChainStateFetcher
 from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.jobs.fetch.gecko_price import fill_rune_price_from_gecko
+from services.jobs.fetch.last_block import LastBlockFetcher
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher, PoolInfoFetcherMidgard
@@ -33,6 +34,7 @@ from services.models.price import LastPriceHolder
 from services.models.tx import ThorTxType
 from services.notify.broadcast import Broadcaster
 from services.notify.personal import NodeChangePersonalNotifier
+from services.notify.types.block_notify import BlockHeightNotifier
 from services.notify.types.cap_notify import LiquidityCapNotifier
 from services.notify.types.chain_notify import TradingHaltedNotifier
 from services.notify.types.mimir_notify import MimirChangedNotifier
@@ -163,6 +165,12 @@ class App:
             fetcher_stats.subscribe(notifier_stats)
             tasks.append(fetcher_stats)
 
+        if d.cfg.get('last_block.enabled', True):
+            fetcher_last_block = LastBlockFetcher(d)
+            last_block_notifier = BlockHeightNotifier(d)
+            fetcher_last_block.subscribe(last_block_notifier)
+            tasks.append(fetcher_last_block)
+
         if d.cfg.get('node_info.enabled', True):
             fetcher_nodes = NodeInfoFetcher(d)
             d.node_info_fetcher = fetcher_nodes
@@ -203,9 +211,6 @@ class App:
         if d.cfg.get('constants.mimir_change', True):
             notifier_mimir_change = MimirChangedNotifier(d)
             fetcher_mimir.subscribe(notifier_mimir_change)
-
-        # await notifier_cap.test()
-        # await notifier_stats.clear_cd()
 
         await asyncio.gather(*(task.run() for task in tasks))
 

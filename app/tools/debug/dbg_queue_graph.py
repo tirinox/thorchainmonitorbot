@@ -16,11 +16,8 @@ async def q_points(d: DepContainer):
         os.system(f'open "{p}"')
 
 
-
-
-async def test_plots():
-    # await q_points(d)
-    ...
+async def my_test_plots():
+    await q_points(d)
 
 
 if __name__ == '__main__':
@@ -30,4 +27,4 @@ if __name__ == '__main__':
     d.cfg = Config()
     d.db = DB(d.loop)
 
-    d.loop.run_until_complete(test_plots())
+    d.loop.run_until_complete(my_test_plots())
