@@ -29,6 +29,9 @@ restart:
 	@make -s stop
 	@make -s start
 
+poke:
+	@docker-compose restart thtgbot
+
 pull:
 	@git pull
 
