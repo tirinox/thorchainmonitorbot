@@ -38,6 +38,9 @@ telegram:
   common:
     loading_sticker: CAACAgIAAxkBAAIRx1--Tia-m6DNRIApk3yqmNWvap_sAALcAAP3AsgPUNi8Bnu98HweBA
 
+  admins: # (!) new
+    - 12345  # List of TG admins
+
   buffer_chat: -12334  # a chat for uploading temporary photos (like photo-hosting), add this bot to it
 
   menu:
@@ -244,7 +247,17 @@ chain_state:
   fetch_period: 67s
 
 
-blockchain:  # (!) new:
+last_block:  # (!) new...
+  enabled: true
+  fetch_period: 10s
+  chart:
+    estimation_interval: 5m
+  stuck_alert:
+    time_limit: 40s
+    repeat_cooldown: 24h
+
+
+blockchain:
   block_time:  # block_time overriding... (optional)
     BTC: 10m
     ETH: 14s

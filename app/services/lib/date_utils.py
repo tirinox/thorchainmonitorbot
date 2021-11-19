@@ -139,8 +139,10 @@ def ts_event_points_to_pandas(ts_result, shift_time=True):
     return pd.DataFrame(normal_data)
 
 
-def ts_simple_points_to_pandas(points, value_name='value'):
-    return pd.DataFrame(points, columns=['time', value_name])
+def ts_simple_points_to_pandas(points):
+    timestamps, values = list(zip(*points))
+    index = pd.to_datetime(timestamps, unit='s')
+    return pd.DataFrame(values, index=index)
 
 
 def today_str():

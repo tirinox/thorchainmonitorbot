@@ -4,6 +4,7 @@ import yaml
 from dotenv import load_dotenv
 
 from services.lib.constants import NetworkIdents
+from services.lib.date_utils import parse_timespan_to_seconds
 
 
 class SubConfig:
@@ -57,6 +58,10 @@ class SubConfig:
 
     def as_list(self, path: str = None, default=None):
         return list(self.get(path, default)._root_config)
+
+    @property
+    def as_seconds(self):
+        return parse_timespan_to_seconds(self._root_config)
 
     def __int__(self):
         return int(self._root_config)
