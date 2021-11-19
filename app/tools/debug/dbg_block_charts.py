@@ -39,8 +39,7 @@ async def my_test_block_fetch(app: LpAppFramework):
 
 
 async def main():
-    my_test_smart_block_time_estimator()
-    return
+    # my_test_smart_block_time_estimator()
 
     app = LpAppFramework()
 

@@ -63,7 +63,6 @@ async def print_message(old_info: NetworkStats, new_info: NetworkStats, deps: De
         deps.broadcaster = Broadcaster(deps)
 
         await deps.broadcaster.notify_preconfigured_channels(
-            deps.loc_man,
             loc.notification_text_network_summary,
             old_info, new_info)
         await asyncio.sleep(1.0)

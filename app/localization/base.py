@@ -1045,6 +1045,15 @@ class BaseLocalization(ABC):  # == English
 
         return msg.strip()
 
+    # ---------- BLOCK HEIGHT -----------
+
+    def notification_text_block_stuck(self, stuck):
+        # todo!
+        if stuck:
+            return 'ThorChain block height stuck!'
+        else:
+            return 'ThorChain block height is increasing once again!'
+
     # --------- MIMIR CHANGED -----------
 
     def notification_text_mimir_changed(self, changes: List[MimirChange], mimir: MimirHolder):
