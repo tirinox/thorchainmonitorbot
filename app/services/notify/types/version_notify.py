@@ -101,7 +101,6 @@ class VersionNotifier(INotified, WithDelegates):
 
         if new_versions:
             await self.deps.broadcaster.notify_preconfigured_channels(
-                self.deps.loc_man,
                 BaseLocalization.notification_text_version_upgrade,
                 data,
                 new_versions,
@@ -116,7 +115,6 @@ class VersionNotifier(INotified, WithDelegates):
 
         if old_active_ver != new_active_ver:
             await self.deps.broadcaster.notify_preconfigured_channels(
-                self.deps.loc_man,
                 BaseLocalization.notification_text_version_upgrade,
                 data, [],
                 old_active_ver,
@@ -138,7 +136,6 @@ class VersionNotifier(INotified, WithDelegates):
 
         if await self.cd_upgrade.can_do():
             await self.deps.broadcaster.notify_preconfigured_channels(
-                self.deps.loc_man,
                 BaseLocalization.notification_text_version_upgrade_progress,
                 data, ver_con
             )

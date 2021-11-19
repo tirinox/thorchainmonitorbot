@@ -29,9 +29,9 @@ class NodeChurnNotifier(INotified):
 
     async def _notify_when_node_churn(self, changes: NodeSetChanges):
         # TEXT
-        await self.deps.broadcaster.notify_preconfigured_channels(self.deps.loc_man,
-                                                                  BaseLocalization.notification_text_for_node_churn,
-                                                                  changes)
+        await self.deps.broadcaster.notify_preconfigured_channels(
+            BaseLocalization.notification_text_for_node_churn,
+            changes)
 
         # PICTURE
         user_lang_map = self.deps.broadcaster.telegram_chats_from_config(self.deps.loc_man)

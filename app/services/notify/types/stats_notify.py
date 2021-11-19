@@ -49,7 +49,6 @@ class NetworkStatsNotifier(INotified):
 
     async def _notify(self, old: NetworkStats, new: NetworkStats):
         await self.deps.broadcaster.notify_preconfigured_channels(
-            self.deps.loc_man,
             BaseLocalization.notification_text_network_summary,
             old, new
         )

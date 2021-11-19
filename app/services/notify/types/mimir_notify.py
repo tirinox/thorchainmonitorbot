@@ -116,7 +116,6 @@ class MimirChangedNotifier(INotified):
 
         if changes:
             await self.deps.broadcaster.notify_preconfigured_channels(
-                self.deps.loc_man,
                 BaseLocalization.notification_text_mimir_changed,
                 changes,
                 self.deps.mimir_const_holder,

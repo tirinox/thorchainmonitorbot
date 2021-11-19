@@ -64,9 +64,7 @@ class LiquidityCapNotifier(INotified):
             if new.cap > old.cap:
                 await self.send_cap_raised_sticker()
 
-            await self.deps.broadcaster.notify_preconfigured_channels(self.deps.loc_man,
-                                                                      BaseLocalization.notification_text_cap_change,
-                                                                      old, new)
+            await self.deps.broadcaster.notify_preconfigured_channels(old, new)
 
             await self._set_cap_limit_reached(False)  # reset full-cap limit notification
 
@@ -87,7 +85,6 @@ class LiquidityCapNotifier(INotified):
     async def _test_cap_limit_is_full(self, new_info: ThorCapInfo):
         can_do = not (await self._get_cap_limit_reached())
         if can_do and new_info.pooled_rune >= new_info.cap * self.full_limit_ratio:
-            await self.deps.broadcaster.notify_preconfigured_channels(self.deps.loc_man,
-                                                                      BaseLocalization.notification_text_cap_full,
+            await self.deps.broadcaster.notify_preconfigured_channels(BaseLocalization.notification_text_cap_full,
                                                                       new_info)
             await self._set_cap_limit_reached(True)

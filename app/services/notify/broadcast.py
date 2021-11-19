@@ -17,21 +17,20 @@ class Broadcaster:
     EXTRA_RETRY_DELAY = 0.1
 
     def __init__(self, d: DepContainer):
-        self.bot = d.bot
-        self.cfg = d.cfg
-        self.db = d.db
+        self.deps = d
 
         self._broadcast_lock = asyncio.Lock()
         self._rng = random.Random(time.time())
         self.logger = logging.getLogger('broadcast')
 
     def telegram_chats_from_config(self, loc_man: LocalizationManager):
-        channels = self.cfg.telegram.channels
+        channels = self.deps.cfg.telegram.channels
         return {
             chan['name']: loc_man.get_from_lang(chan['lang']) for chan in channels if chan['type'] == 'telegram'
         }
 
-    async def notify_preconfigured_channels(self, loc_man: LocalizationManager, f, *args, **kwargs):
+    async def notify_preconfigured_channels(self, f, *args, **kwargs):
+        loc_man: LocalizationManager = self.deps.loc_man
         user_lang_map = self.telegram_chats_from_config(loc_man)
 
         async def message_gen(chat_id):
@@ -56,14 +55,15 @@ class Broadcaster:
 
     async def safe_send_message(self, chat_id, text, message_type=MessageType.TEXT, *args, **kwargs) -> bool:
         try:
+            bot = self.deps.bot
             if message_type == MessageType.TEXT:
-                await self.bot.send_message(chat_id, text, *args, **kwargs)
+                await bot.send_message(chat_id, text, *args, **kwargs)
             elif message_type == MessageType.STICKER:
                 kwargs = self.remove_bad_args(kwargs, dis_web_preview=True)
-                await self.bot.send_sticker(chat_id, sticker=text, *args, **kwargs)
+                await bot.send_sticker(chat_id, sticker=text, *args, **kwargs)
             elif message_type == MessageType.PHOTO:
                 kwargs = self.remove_bad_args(kwargs, dis_web_preview=True)
-                await self.bot.send_photo(chat_id, caption=text, *args, **kwargs)
+                await bot.send_photo(chat_id, caption=text, *args, **kwargs)
         except exceptions.BotBlocked:
             self.logger.error(f"Target [ID:{chat_id}]: blocked by user")
         except exceptions.ChatNotFound:
@@ -143,16 +143,16 @@ class Broadcaster:
 
     async def register_user(self, chat_id):
         chat_id = str(int(chat_id))
-        r = await self.db.get_redis()
+        r = await self.deps.db.get_redis()
         await r.sadd(self.KEY_USERS, chat_id)
 
     async def remove_users(self, idents):
         idents = [str(int(i)) for i in idents]
         if idents:
-            r = await self.db.get_redis()
+            r = await self.deps.db.get_redis()
             await r.srem(self.KEY_USERS, *idents)
 
     async def all_users(self):
-        r = await self.db.get_redis()
+        r = await self.deps.db.get_redis()
         items = await r.smembers(self.KEY_USERS)
         return [int(it) for it in items]

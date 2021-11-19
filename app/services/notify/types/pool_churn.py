@@ -31,8 +31,7 @@ class PoolChurnNotifier(INotified):
                 self.logger.warning(f'Pool churn changes:\n'
                                     f'{self.old_pool_dict = }\n'
                                     f'{new_pool_dict = }!')
-                await self.deps.broadcaster.notify_preconfigured_channels(self.deps.loc_man,
-                                                                          BaseLocalization.notification_text_pool_churn,
+                await self.deps.broadcaster.notify_preconfigured_channels(BaseLocalization.notification_text_pool_churn,
                                                                           pool_changes)
                 await self.spam_cd.do()
 
