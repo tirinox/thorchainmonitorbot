@@ -46,6 +46,8 @@ class BlockHeightNotifier(INotified):
         high_speed_dev = 1 + cfg.as_float('high_block_speed_percent', 50) / 100
         self.normal_block_speed = self.normal_block_speed * high_speed_dev
 
+        self._foo = 0
+
     @staticmethod
     def smart_block_time_estimator(points: list, min_period: float):
         results = []
@@ -69,7 +71,7 @@ class BlockHeightNotifier(INotified):
         return results
 
     async def get_last_block_height_points(self, duration_sec=DAY):
-        return await self.series.get_last_values(duration_sec, key='thor_block', with_ts=True)
+        return await self.series.get_last_values(duration_sec, key='thor_block', with_ts=True, decoder=int)
 
     async def get_block_time_chart(self, duration_sec=DAY, convert_to_blocks_per_minute=False):
         points = await self.get_last_block_height_points(duration_sec)
@@ -121,6 +123,13 @@ class BlockHeightNotifier(INotified):
     async def on_data(self, sender: LastBlockFetcher, data: Dict[str, ThorLastBlock]):
         thor_block = max(v.thorchain for v in data.values()) if data else 0
 
+        # ----- fixme: debug -----
+        # if not self._foo:
+        #     self._foo = thor_block
+        # else:
+        #     thor_block = self._foo
+        # ----- fixme: debug -----
+
         if thor_block <= 0 or thor_block < self.last_thor_block:
             return
 
@@ -130,7 +139,7 @@ class BlockHeightNotifier(INotified):
         await self._alert_blocks_stuck(sender)
 
         tm = await self.get_last_block_time()
-        print(f'last block time = {tm}')
+        self.logger.info(f'Last block #{thor_block}. Last block time = {tm}.')
 
         # todo: Block time < threshold
         # todo: Block time >= normal
@@ -146,11 +155,10 @@ class BlockHeightNotifier(INotified):
         first_height = chart[0][1]
         really_stuck = all(first_height == height for _, height in chart[1:])
 
-        self.logger.info(f'Thor Block height {really_stuck = }.')
-
         cd_trigger = CooldownBiTrigger(self.deps.db, 'BlockHeightStuck', self.repeat_stuck_alert_cooldown_sec,
                                        default=False)
         if await cd_trigger.turn(really_stuck):
+            self.logger.info(f'Thor Block height {really_stuck = }.')
             await self.deps.broadcaster.notify_preconfigured_channels(
                 BaseLocalization.notification_text_block_stuck, really_stuck, self.time_without_new_blocks
             )

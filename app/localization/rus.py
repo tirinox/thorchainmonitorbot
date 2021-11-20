@@ -851,7 +851,7 @@ class RussianLocalization(BaseLocalization):
 
     TEXT_BLOCK_HEIGHT_CHART_TITLE = 'THORChain скорость генерации блоков'
     TEXT_BLOCK_HEIGHT_LEGEND_ACTUAL = 'Фактически блоков в минуту'
-    TEXT_BLOCK_HEIGHT_LEGEND_EXPECTED = 'Ожидаемая скорость (10 блоков/мин или 6 сек на блок)'
+    TEXT_BLOCK_HEIGHT_LEGEND_EXPECTED = 'Ожидаемая (10 блоков/мин)'
 
     def notification_text_block_stuck(self, stuck, time_without_new_block):
         # todo!
