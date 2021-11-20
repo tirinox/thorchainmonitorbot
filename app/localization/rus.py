@@ -6,14 +6,13 @@ from aiothornode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
 from localization.base import BaseLocalization, RAIDO_GLYPH, CREATOR_TG, URL_LEADERBOARD_MCCN
-from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.lib.constants import Chains, thor_to_float, rune_origin
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change, Asset, short_money
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
-    up_down_arrow, plural, grouper, split_by_camel_case
+    up_down_arrow, plural, grouper
 from services.models.cap_info import ThorCapInfo
 from services.models.mimir import MimirChange, MimirHolder
 from services.models.net_stats import NetworkStats
@@ -847,6 +846,19 @@ class RussianLocalization(BaseLocalization):
             msg += f'✅ <b>Внимание!</b> Торговля снова возобновлена на блокчейнах: {code(resumed_chains)}!'
 
         return msg.strip()
+
+    # ---------- BLOCK HEIGHT -----------
+
+    TEXT_BLOCK_HEIGHT_CHART_TITLE = 'THORChain скорость генерации блоков'
+    TEXT_BLOCK_HEIGHT_LEGEND_ACTUAL = 'Фактически блоков в минуту'
+    TEXT_BLOCK_HEIGHT_LEGEND_EXPECTED = 'Ожидаемая скорость (10 блоков/мин или 6 сек на блок)'
+
+    def notification_text_block_stuck(self, stuck, time_without_new_block):
+        # todo!
+        if stuck:
+            return f'ThorChain block height stuck ({self.format_time_ago(time_without_new_block)})!'
+        else:
+            return f'ThorChain block height is increasing once again!'
 
     # --------- MIMIR CHANGED -----------
 

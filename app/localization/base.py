@@ -1047,10 +1047,14 @@ class BaseLocalization(ABC):  # == English
 
     # ---------- BLOCK HEIGHT -----------
 
-    def notification_text_block_stuck(self, stuck):
+    TEXT_BLOCK_HEIGHT_CHART_TITLE = 'THORChain blocks per minute'
+    TEXT_BLOCK_HEIGHT_LEGEND_ACTUAL = 'Actual blocks/min'
+    TEXT_BLOCK_HEIGHT_LEGEND_EXPECTED = 'Expected (10 blocks/min or 6 sec/block)'
+
+    def notification_text_block_stuck(self, stuck, time_without_new_block):
         # todo!
         if stuck:
-            return 'ThorChain block height stuck!'
+            return f'ThorChain block height stuck ({self.format_time_ago(time_without_new_block)})!'
         else:
             return 'ThorChain block height is increasing once again!'
 

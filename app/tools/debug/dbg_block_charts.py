@@ -1,7 +1,10 @@
 import asyncio
 import logging
 
+from services.dialog.picture.block_height_picture import block_speed_chart
+from services.jobs.fetch.base import INotified
 from services.jobs.fetch.last_block import LastBlockFetcher
+from services.lib.date_utils import DAY
 from services.lib.utils import setup_logs
 from services.notify.types.block_notify import BlockHeightNotifier
 from tools.lib.lp_common import LpAppFramework
@@ -30,11 +33,23 @@ def my_test_smart_block_time_estimator():
     print(f'{pts = }:\nResult: {r}')
 
 
+class FooSubscribed(INotified):
+    def __init__(self, block_not: BlockHeightNotifier, loc):
+        self.block_not = block_not
+        self.loc = loc
+
+    async def on_data(self, sender, data):
+        chart = await self.block_not.get_block_time_chart(2 * DAY, convert_to_blocks_per_minute=True)
+        pic_chart = await block_speed_chart(chart, self.loc, normal_bpm=10, time_scale_mode='time')
+        pic_chart.show()
+
+
 async def my_test_block_fetch(app: LpAppFramework):
     async with app:
         lbf = LastBlockFetcher(app.deps)
         block_not = BlockHeightNotifier(app.deps)
         lbf.subscribe(block_not)
+        lbf.subscribe(FooSubscribed(block_not, app.deps.loc_man.default))
         await lbf.run()
 
 

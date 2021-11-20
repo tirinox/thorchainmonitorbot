@@ -89,7 +89,7 @@ class Cooldown:
 
 
 class CooldownBiTrigger:
-    def __init__(self, db: DB, event_name, cooldown_sec: float, switch_cooldown_sec: float = 0.0, default=None):
+    def __init__(self, db: DB, event_name, cooldown_sec: float = 1e12, switch_cooldown_sec: float = 0.0, default=None):
         self.db = db
         self.event_name = event_name
         self.cooldown_sec = cooldown_sec
