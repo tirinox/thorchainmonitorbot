@@ -849,16 +849,18 @@ class RussianLocalization(BaseLocalization):
 
     # ---------- BLOCK HEIGHT -----------
 
-    TEXT_BLOCK_HEIGHT_CHART_TITLE = 'THORChain скорость генерации блоков'
+    TEXT_BLOCK_HEIGHT_CHART_TITLE = 'THORChain блоков в минут'
     TEXT_BLOCK_HEIGHT_LEGEND_ACTUAL = 'Фактически блоков в минуту'
     TEXT_BLOCK_HEIGHT_LEGEND_EXPECTED = 'Ожидаемая (10 блоков/мин)'
 
     def notification_text_block_stuck(self, stuck, time_without_new_block):
-        # todo!
+        str_t = ital(self.seconds_human(time_without_new_block))
         if stuck:
-            return f'ThorChain block height stuck ({self.format_time_ago(time_without_new_block)})!'
+            return f'📛 {bold("THORChain высота блоков перестала увеличиваться")}!\n' \
+                   f'Новые блоки не генерируются уже {str_t}.'
         else:
-            return f'ThorChain block height is increasing once again!'
+            return f"🆗 {bold('THORChain снова генерирует блоки!')}\n" \
+                   f"Сбой длился {str_t}"
 
     # --------- MIMIR CHANGED -----------
 

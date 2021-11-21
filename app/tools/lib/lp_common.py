@@ -2,6 +2,8 @@ import asyncio
 import logging
 
 import aiohttp
+from aiogram import Bot, Dispatcher
+from aiogram.types import ParseMode
 from aiohttp import ClientTimeout
 from aiothornode.connector import ThorConnector
 
@@ -17,6 +19,7 @@ from services.lib.midgard.connector import MidgardConnector
 from services.lib.telegram import telegram_send_message_basic, TG_TEST_USER
 from services.lib.utils import setup_logs
 from services.models.mimir import MimirHolder
+from services.notify.broadcast import Broadcaster
 
 
 class LpAppFramework:
@@ -29,12 +32,18 @@ class LpAppFramework:
             d.cfg.network_id = network
         d.loc_man = LocalizationManager(d.cfg)
         d.db = DB(d.loop)
+
+        d.bot = Bot(token=d.cfg.telegram.bot.token, parse_mode=ParseMode.HTML)
+        d.dp = Dispatcher(d.bot, loop=d.loop)
+        d.broadcaster = Broadcaster(d)
+
+        d.price_pool_fetcher = PoolPriceFetcher(d)
+        d.mimir_const_fetcher = ConstMimirFetcher(d)
+        d.mimir_const_holder = MimirHolder()
+
         self.deps = d
         self.rune_yield: AsgardConsumerConnectorBase
         self.rune_yield_class = rune_yield_class
-        self.deps.price_pool_fetcher = PoolPriceFetcher(d)
-        self.deps.mimir_const_fetcher = ConstMimirFetcher(d)
-        self.deps.mimir_const_holder = MimirHolder()
 
     @property
     def tg_token(self):

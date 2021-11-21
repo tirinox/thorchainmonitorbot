@@ -1,10 +1,14 @@
 import asyncio
 import logging
 
+from localization import BaseLocalization, RussianLocalization
 from services.dialog.picture.block_height_picture import block_speed_chart
 from services.jobs.fetch.base import INotified
 from services.jobs.fetch.last_block import LastBlockFetcher
+from services.lib.constants import THOR_BLOCKS_PER_MINUTE
 from services.lib.date_utils import DAY
+from services.lib.draw_utils import img_to_bio
+from services.lib.telegram import TG_TEST_USER
 from services.lib.utils import setup_logs
 from services.notify.types.block_notify import BlockHeightNotifier
 from tools.lib.lp_common import LpAppFramework
@@ -53,13 +57,30 @@ async def my_test_block_fetch(app: LpAppFramework):
         await lbf.run()
 
 
+async def my_test_tg_message(app: LpAppFramework):
+    block_not = BlockHeightNotifier(app.deps)
+
+    for loc in (RussianLocalization(app.deps.cfg), app.deps.loc_man.default,):
+        loc: BaseLocalization
+
+        text = loc.notification_text_block_stuck(True, 10000)
+        # await app.send_test_tg_message(text)
+
+        points = await block_not.get_block_time_chart(DAY * 2, convert_to_blocks_per_minute=True)
+        chart = await block_speed_chart(points, loc, normal_bpm=THOR_BLOCKS_PER_MINUTE, time_scale_mode='time')
+        await app.deps.bot.send_photo(TG_TEST_USER, img_to_bio(chart, "block_time.png"), caption=text)
+
+        await app.send_test_tg_message(loc.notification_text_block_stuck(False, 10000))
+
+
 async def main():
     # my_test_smart_block_time_estimator()
 
     app = LpAppFramework()
 
     async with app:
-        await my_test_block_fetch(app)
+        await my_test_tg_message(app)
+        # await my_test_block_fetch(app)
 
 
 if __name__ == "__main__":

@@ -1052,11 +1052,13 @@ class BaseLocalization(ABC):  # == English
     TEXT_BLOCK_HEIGHT_LEGEND_EXPECTED = 'Expected (10 blocks/min or 6 sec/block)'
 
     def notification_text_block_stuck(self, stuck, time_without_new_block):
-        # todo!
+        str_t = ital(self.seconds_human(time_without_new_block))
         if stuck:
-            return f'ThorChain block height stuck ({self.format_time_ago(time_without_new_block)})!'
+            return f'📛 {bold("THORChain block height seems to have stopped increasing")}!\n' \
+                   f'New blocks have not been generated for {str_t}.'
         else:
-            return 'ThorChain block height is increasing once again!'
+            return f"🆗 {bold('THORChain is producing blocks again!')}\n" \
+                   f"The failure lasted {str_t}."
 
     # --------- MIMIR CHANGED -----------
 
