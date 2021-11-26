@@ -50,7 +50,7 @@ class QueueNotifier(INotified):
 
         self.logger.info(f'Avg {item_type} is {avg_value:.1f}')
 
-        cd_trigger = CooldownBiTrigger(self.deps.db, f'QueueClog-{item_type}', self.cooldown)
+        cd_trigger = CooldownBiTrigger(self.deps.db, f'QueueClog-{item_type}', self.cooldown, self.cooldown)
 
         if avg_value > self.threshold_congested:
             if await cd_trigger.turn_on():

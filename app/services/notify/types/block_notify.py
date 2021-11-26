@@ -8,7 +8,7 @@ from services.jobs.fetch.base import INotified
 from services.jobs.fetch.last_block import LastBlockFetcher
 from services.lib.config import SubConfig
 from services.lib.constants import THOR_BLOCK_SPEED, THOR_BLOCKS_PER_MINUTE
-from services.lib.cooldown import Cooldown, CooldownBiTrigger
+from services.lib.cooldown import Cooldown, CooldownBiTrigger, INFINITE_TIME
 from services.lib.date_utils import DAY, parse_timespan_to_seconds, now_ts, format_time_ago_short
 from services.lib.depcont import DepContainer
 from services.lib.texts import BoardMessage
@@ -51,6 +51,11 @@ class BlockHeightNotifier(INotified):
 
         high_speed_dev = 1 + cfg.as_float('high_block_speed_percent', 50) / 100
         self.normal_block_speed = self.normal_block_speed * high_speed_dev
+
+        self._cd_trigger = CooldownBiTrigger(self.deps.db, 'BlockHeightStuck',
+                                             cooldown_on_sec=INFINITE_TIME,
+                                             cooldown_off_sec=self.repeat_stuck_alert_cooldown_sec,
+                                             default=False)
 
         self._foo = 0
 
@@ -102,13 +107,6 @@ class BlockHeightNotifier(INotified):
 
     async def _set_block_alert_state(self, new_state):
         await self.deps.db.redis.set(self.KEY_BLOCK_SPEED_ALERT_STATE, new_state)
-
-    async def _get_stuck_alert_trigger_ts(self):
-        v = await self.deps.db.redis.get(self.KEY_STUCK_ALERT_TRIGGER_TS)
-        return float(v) if v is not None else now_ts()
-
-    async def _set_stuck_alert_trigger_ts(self):
-        await self.deps.db.redis.set(self.KEY_STUCK_ALERT_TRIGGER_TS, now_ts())
 
     @property
     def time_without_new_blocks(self):
@@ -170,15 +168,12 @@ class BlockHeightNotifier(INotified):
         first_height = chart[0][1]
         really_stuck = all(first_height == height for _, height in chart[1:])
 
-        cd_trigger = CooldownBiTrigger(self.deps.db, 'BlockHeightStuck', self.repeat_stuck_alert_cooldown_sec,
-                                       default=False)
-        if await cd_trigger.turn(really_stuck):
+        if await self._cd_trigger.turn(really_stuck):
             if really_stuck:
                 duration = self.time_without_new_blocks
-                await self._set_stuck_alert_trigger_ts()
             else:
-                last_trigger_ts = await self._get_stuck_alert_trigger_ts()
-                duration = now_ts() - last_trigger_ts
+                last_switch_ts = await self._cd_trigger.get_last_switch_ts()
+                duration = now_ts() - last_switch_ts
 
             await self._post_stuck_alert(really_stuck, duration)
 
