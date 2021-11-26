@@ -39,7 +39,7 @@ def price_graph(pool_price_df, det_price_df, cex_prices_df, loc: BaseLocalizatio
     graph.add_legend(LINE_COLOR_CEX_PRICE, loc.PRICE_GRAPH_LEGEND_CEX_PRICE)
     graph.add_legend(LINE_COLOR_DET_PRICE, loc.PRICE_GRAPH_LEGEND_DET_PRICE)
 
-    graph.y_formatter = lambda y: f'${y:.3}'
+    graph.y_formatter = lambda y: f'${y:.3f}'
     graph.x_formatter = graph.date_formatter if time_scale_mode == 'date' else graph.time_formatter
 
     return graph.finalize()

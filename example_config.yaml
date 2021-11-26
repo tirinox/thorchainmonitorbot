@@ -255,6 +255,7 @@ last_block:  # (!) new...
   stuck_alert:
     time_limit: 40s
     repeat_cooldown: 24h
+    chart_duration: 36h
   normal_block_time: 0.16666  # 1 block = 6 sec
   low_block_time: 0.08
   high_block_time: 0.3

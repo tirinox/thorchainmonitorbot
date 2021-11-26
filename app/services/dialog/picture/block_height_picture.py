@@ -1,4 +1,6 @@
 from localization import BaseLocalization
+from services.lib.date_utils import today_str
+from services.lib.draw_utils import img_to_bio
 from services.lib.plot_graph import PlotGraphLines
 from services.lib.utils import async_wrap
 
@@ -44,7 +46,8 @@ def block_speed_chart_sync(last_points, loc: BaseLocalization, normal_bpm=10, ti
     graph.add_legend(LINE_COLOR_ACTUAL, loc.TEXT_BLOCK_HEIGHT_LEGEND_ACTUAL)
     graph.add_legend(LINE_COLOR_EXPECTED, loc.TEXT_BLOCK_HEIGHT_LEGEND_EXPECTED)
 
-    graph.y_formatter = lambda y: f'{y:.3}'
+    graph.y_formatter = lambda y: f'{y:.1f}'
     graph.x_formatter = graph.date_formatter if time_scale_mode == 'date' else graph.time_formatter
 
-    return graph.finalize()
+    pic = graph.finalize()
+    return img_to_bio(pic, f'block-gen-{today_str()}.jpg')

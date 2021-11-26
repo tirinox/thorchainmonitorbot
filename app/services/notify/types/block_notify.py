@@ -3,13 +3,15 @@ from typing import Dict, Optional
 from aiothornode.types import ThorLastBlock
 
 from localization import BaseLocalization
+from services.dialog.picture.block_height_picture import block_speed_chart
 from services.jobs.fetch.base import INotified
 from services.jobs.fetch.last_block import LastBlockFetcher
 from services.lib.config import SubConfig
-from services.lib.constants import THOR_BLOCK_SPEED
+from services.lib.constants import THOR_BLOCK_SPEED, THOR_BLOCKS_PER_MINUTE
 from services.lib.cooldown import Cooldown, CooldownBiTrigger
 from services.lib.date_utils import DAY, parse_timespan_to_seconds, now_ts, format_time_ago_short
 from services.lib.depcont import DepContainer
+from services.lib.texts import BoardMessage
 from services.lib.utils import class_logger
 from services.models.time_series import TimeSeries
 
@@ -19,6 +21,7 @@ class BlockHeightNotifier(INotified):
     KEY_LAST_TIME_BLOCK_UPDATED = 'ThorBlock:LastTime'
     KEY_LAST_TIME_LAST_HEIGHT = 'ThorBlock:LastHeight'
     KEY_BLOCK_SPEED_ALERT_STATE = 'ThorBlock:BlockSpeed:AlertState'
+    KEY_STUCK_ALERT_TRIGGER_TS = 'ThorBlock:StuckAlert:Trigger:TS'
 
     StateNormal = 'normal'
     StateTooFast = 'fast'
@@ -30,6 +33,9 @@ class BlockHeightNotifier(INotified):
         self.series = TimeSeries(self.KEY_SERIES_BLOCK_HEIGHT, self.deps.db)
 
         cfg: SubConfig = self.deps.cfg.last_block
+
+        self.notification_chart_duration = parse_timespan_to_seconds(cfg.as_str('stuck_alert.chart_duration', '36h'))
+
         self.block_height_estimation_interval = parse_timespan_to_seconds(cfg.chart.estimation_interval)
         self.stuck_alert_time_limit = parse_timespan_to_seconds(cfg.stuck_alert.time_limit)
 
@@ -97,6 +103,13 @@ class BlockHeightNotifier(INotified):
     async def _set_block_alert_state(self, new_state):
         await self.deps.db.redis.set(self.KEY_BLOCK_SPEED_ALERT_STATE, new_state)
 
+    async def _get_stuck_alert_trigger_ts(self):
+        v = await self.deps.db.redis.get(self.KEY_STUCK_ALERT_TRIGGER_TS)
+        return float(v) if v is not None else now_ts()
+
+    async def _set_stuck_alert_trigger_ts(self):
+        await self.deps.db.redis.set(self.KEY_STUCK_ALERT_TRIGGER_TS, now_ts())
+
     @property
     def time_without_new_blocks(self):
         return now_ts() - self.last_thor_block_update_ts
@@ -128,8 +141,8 @@ class BlockHeightNotifier(INotified):
         #     self._foo = thor_block
         # else:
         #     thor_block = self._foo
-        self.last_thor_block_update_ts = now_ts() - 1000
-        await self._post_stuck_alert(True)
+        # self.last_thor_block_update_ts = now_ts() - 1000
+        # await self._post_stuck_alert(True)
         # ----- fixme: debug -----
 
         if thor_block <= 0 or thor_block < self.last_thor_block:
@@ -146,8 +159,6 @@ class BlockHeightNotifier(INotified):
         # todo: Block time < threshold
         # todo: Block time >= normal
 
-
-
     async def _check_blocks_stuck(self, fetcher: LastBlockFetcher):
         chart = await self.get_last_block_height_points(self.stuck_alert_time_limit)
         expected_num_of_points = self.stuck_alert_time_limit / fetcher.sleep_period
@@ -162,11 +173,28 @@ class BlockHeightNotifier(INotified):
         cd_trigger = CooldownBiTrigger(self.deps.db, 'BlockHeightStuck', self.repeat_stuck_alert_cooldown_sec,
                                        default=False)
         if await cd_trigger.turn(really_stuck):
-            await self._post_stuck_alert(really_stuck)
+            if really_stuck:
+                duration = self.time_without_new_blocks
+                await self._set_stuck_alert_trigger_ts()
+            else:
+                last_trigger_ts = await self._get_stuck_alert_trigger_ts()
+                duration = now_ts() - last_trigger_ts
+
+            await self._post_stuck_alert(really_stuck, duration)
+
             await self.stuck_alert_cd.do()
 
-    async def _post_stuck_alert(self, really_stuck):
+    async def _post_stuck_alert(self, really_stuck, time_without_new_blocks):
         self.logger.info(f'Thor Block height {really_stuck = }.')
-        await self.deps.broadcaster.notify_preconfigured_channels(
-            BaseLocalization.notification_text_block_stuck, really_stuck, self.time_without_new_blocks
-        )
+
+        user_lang_map = self.deps.broadcaster.telegram_chats_from_config(self.deps.loc_man)
+
+        points = await self.get_block_time_chart(self.notification_chart_duration, convert_to_blocks_per_minute=True)
+
+        async def price_graph_gen(chat_id):
+            loc: BaseLocalization = user_lang_map[chat_id]
+            chart = await block_speed_chart(points, loc, normal_bpm=THOR_BLOCKS_PER_MINUTE, time_scale_mode='time')
+            caption = loc.notification_text_block_stuck(really_stuck, time_without_new_blocks)
+            return BoardMessage.make_photo(chart, caption=caption)
+
+        await self.deps.broadcaster.broadcast(user_lang_map, price_graph_gen)
