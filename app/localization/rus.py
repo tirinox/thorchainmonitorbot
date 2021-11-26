@@ -854,7 +854,7 @@ class RussianLocalization(BaseLocalization):
     TEXT_BLOCK_HEIGHT_LEGEND_EXPECTED = 'Ожидаемая (10 блоков/мин)'
 
     def notification_text_block_stuck(self, stuck, time_without_new_block):
-        str_t = ital(self.seconds_human(time_without_new_block))
+        str_t = ital(self.seconds_human(time_without_new_block) if time_without_new_block > 1 else 'Н/Д')
         if stuck:
             return f'📛 {bold("THORChain высота блоков перестала увеличиваться")}!\n' \
                    f'Новые блоки не генерируются уже {str_t}.'

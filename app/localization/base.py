@@ -244,7 +244,7 @@ class BaseLocalization(ABC):  # == English
 
     def notification_text_cap_full(self, cap: ThorCapInfo):
         return (
-            '🙆‍♀️ <b>Liquidity cap has reached the limit!</b>\n'
+            '🙆‍♀️ <b>Liquidity has reached the capacity limit!</b>\n'
             'Please stop adding liquidity. '
             'You will get refunded if you provide liquidity from now on!\n'
             f'<b>{pretty_money(cap.pooled_rune)} {self.R}</b> of '
@@ -1052,7 +1052,7 @@ class BaseLocalization(ABC):  # == English
     TEXT_BLOCK_HEIGHT_LEGEND_EXPECTED = 'Expected (10 blocks/min or 6 sec/block)'
 
     def notification_text_block_stuck(self, stuck, time_without_new_block):
-        str_t = ital(self.seconds_human(time_without_new_block))
+        str_t = ital(self.seconds_human(time_without_new_block) if time_without_new_block > 1 else 'N/A')
         if stuck:
             return f'📛 {bold("THORChain block height seems to have stopped increasing")}!\n' \
                    f'New blocks have not been generated for {str_t}.'
