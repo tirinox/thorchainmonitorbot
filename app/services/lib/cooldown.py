@@ -204,7 +204,7 @@ class CooldownBiTrigger:
             r = await self.db.redis.get(self._key_last_switch_ts)
             return float(r) if r is not None else 0.0
         else:
-            return 0.0
+            raise ValueError('track_last_switch_ts is off')
 
     async def get_last_update_ts(self, state):
         r = await self.db.redis.get(self._key_last_on_ts if state else self._key_last_off_ts)

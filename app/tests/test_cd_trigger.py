@@ -3,6 +3,7 @@ import asyncio
 import pytest
 
 from services.lib.cooldown import CooldownBiTrigger
+from services.lib.date_utils import now_ts
 from services.lib.db import DB
 
 
@@ -44,7 +45,7 @@ async def test_cd_diff_cd(db):
 
 
 @pytest.mark.asyncio
-async def test_cd_trigger(db):
+async def test_cd_trigger_spam(db):
     await db.get_redis()
 
     trigger = CooldownBiTrigger(db, 'test_evt_3', 1.0, 1.0, switch_cooldown_sec=0.2)
@@ -77,3 +78,31 @@ async def test_cd_trigger(db):
     assert not await trigger.turn_on()  # early
     await asyncio.sleep(0.15)
     assert await trigger.turn_on()
+
+
+@pytest.mark.asyncio
+async def test_cd_last_switch(db):
+    await db.get_redis()
+
+    t0 = now_ts()
+    trigger = CooldownBiTrigger(db, 'test_evt_4', 0.2, 0.2, track_last_switch_ts=True)
+    await trigger.turn_on()
+    t1 = await trigger.get_last_switch_ts()
+    assert t1 - t0 < 0.1
+    await trigger.turn_off()
+
+    t0 = now_ts()
+    await asyncio.sleep(0.21)
+    await trigger.turn_on()
+    await asyncio.sleep(0.21)
+    await trigger.turn_on()
+    await asyncio.sleep(0.21)
+    await trigger.turn_on()
+    t1 = await trigger.get_last_switch_ts()
+    assert t1 > 0.0 and t1 - t0 < 0.22
+    t11 = await trigger.get_last_update_ts(state=True)
+    assert t11 > 0.0 and t11 - t0 > 0.6
+
+    await trigger.turn_off()
+    t12 = await trigger.get_last_switch_ts()
+    assert t12 > 0.0 and now_ts() - t12 < 0.1
