@@ -6,8 +6,9 @@ from aiothornode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
 from localization.base import BaseLocalization, RAIDO_GLYPH, CREATOR_TG, URL_LEADERBOARD_MCCN
+from services.dialog.picture.block_height_picture import BlockSpeed
 from services.lib.constants import Chains, thor_to_float, rune_origin
-from services.lib.date_utils import format_time_ago, seconds_human, now_ts
+from services.lib.date_utils import format_time_ago, seconds_human, now_ts, MINUTE
 from services.lib.explorers import get_explorer_url_to_address
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change, Asset, short_money
@@ -861,6 +862,20 @@ class RussianLocalization(BaseLocalization):
         else:
             return f"🆗 {bold('THORChain снова генерирует блоки!')}\n" \
                    f"Сбой длился {str_t}"
+
+    def notification_text_block_pace(self, state: str, block_speed: float):
+        if state == BlockSpeed.StateNormal:
+            phrase = '👌 Скорость генерации блоков вернулась к нормальной.'
+        elif state == BlockSpeed.StateTooSlow:
+            phrase = '🐌 Блоки производятся слишком медленно.'
+        elif state == BlockSpeed.StateTooFast:
+            phrase = '🏃 Блоки производятся слишком быстро.'
+        else:
+            return ''
+        block_per_minute = float(block_speed * MINUTE)
+        return f'<b>Обновление по скорости производства блоков THORChain</b>\n' \
+               f'{phrase}\n' \
+               f'В настоящий момент <code>{block_per_minute:.2f}</code> блоков в минуту.'
 
     # --------- MIMIR CHANGED -----------
 

@@ -6,9 +6,10 @@ from typing import List
 from aiothornode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
+from services.dialog.picture.block_height_picture import BlockSpeed
 from services.lib.config import Config
 from services.lib.constants import NetworkIdents, rune_origin, thor_to_float, THOR_BLOCK_TIME
-from services.lib.date_utils import format_time_ago, now_ts, seconds_human
+from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
     get_explorer_url_for_node
 from services.lib.money import format_percent, pretty_money, short_address, short_money, \
@@ -1059,6 +1060,20 @@ class BaseLocalization(ABC):  # == English
         else:
             return f"🆗 {bold('THORChain is producing blocks again!')}\n" \
                    f"The failure lasted {str_t}."
+
+    def notification_text_block_pace(self, state: str, block_speed: float):
+        if state == BlockSpeed.StateNormal:
+            phrase = '👌 Block speed is back to normal.'
+        elif state == BlockSpeed.StateTooSlow:
+            phrase = '🐌 Blocks are produced too slowly.'
+        elif state == BlockSpeed.StateTooFast:
+            phrase = '🏃 Blocks are produced too fast.'
+        else:
+            return ''
+        block_per_minute = float(block_speed * MINUTE)
+        return f'<b>THORChain block generation speed update.</b>\n' \
+               f'{phrase}\n' \
+               f'Presently <code>{block_per_minute:.2f}</code> blocks per minute.'
 
     # --------- MIMIR CHANGED -----------
 
