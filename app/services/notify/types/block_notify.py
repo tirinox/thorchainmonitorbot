@@ -104,7 +104,7 @@ class BlockHeightNotifier(INotified):
             block_rate = [(ts, v * 60) for ts, v in block_rate]
         return block_rate
 
-    async def get_last_block_time(self) -> Optional[float]:
+    async def get_recent_blocks_per_second(self) -> Optional[float]:
         chart = await self.get_block_time_chart(self.block_height_estimation_interval * 2)
         if chart:
             return float(chart[-1][1])
@@ -187,6 +187,8 @@ class BlockHeightNotifier(INotified):
             await self._post_stuck_alert(really_stuck, duration)
 
             await self.stuck_alert_cd.do()
+        # else:
+        #     print(f'fixme! cannot do self._cd_trigger.turn({really_stuck = })')
 
     async def _post_block_speed_pic_with_caption(self, f_caption_from_loc: callable):
         user_lang_map = self.deps.broadcaster.telegram_chats_from_config(self.deps.loc_man)
@@ -208,27 +210,38 @@ class BlockHeightNotifier(INotified):
             lambda loc: loc.notification_text_block_stuck(really_stuck, time_without_new_blocks))
 
     async def _check_block_pace(self, thor_block):
-        tm = await self.get_last_block_time()
-        self.logger.info(f'Last block #{thor_block}. Last block time = {(tm * MINUTE):.2f} blocks/minute.')
+        bps = await self.get_recent_blocks_per_second()
 
-        if tm is None or tm <= 0.0:
+        self.logger.info(f'Last block #{thor_block}')
+        if bps is None:
+            self.logger.warning('Last blocks/sec = None.')
+            return
+
+        self.logger.warning(f'Last blocks/sec = {bps:.5f}.')
+
+        if bps <= 0.0:
             return
 
         prev_state = await self._get_block_alert_state()
 
+        print(f'prev state = {prev_state}')  # fixme
+
         norm, dev = self.normal_block_speed, self.normal_block_speed_deviation
 
-        if tm < self.low_block_speed:
+        if bps < self.low_block_speed:
             curr_state = BlockSpeed.StateTooSlow
-        elif norm - dev <= tm <= norm + dev:
+        elif norm - dev <= bps <= norm + dev:
             curr_state = BlockSpeed.StateNormal
-        elif tm > self.high_speed_dev:
+        elif bps > self.high_speed_dev:
             curr_state = BlockSpeed.StateTooFast
         else:
+            print('no state change')  # fixme
             return
 
+        print(f'new state = {curr_state}')  # fixme
+
         if curr_state != prev_state:
-            await self._do_notify_pace(curr_state, tm)
+            await self._do_notify_pace(curr_state, bps)
             await self._set_block_alert_state(curr_state)
 
     async def _do_notify_pace(self, state, block_speed):

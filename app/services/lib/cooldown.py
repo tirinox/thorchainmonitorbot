@@ -221,9 +221,9 @@ class CooldownBiTrigger:
         state, last_update_ts = await asyncio.gather(self.get_state(), self.get_last_update_ts(on))
         cd_sec = self.cooldown_on_sec if on else self.cooldown_off_sec
 
+        switched = on != state
         can_do = last_update_ts + cd_sec < now_ts()
-        if can_do:
-            switched = on != state
+        if switched or can_do:
             await self.write_state(on, switched)
 
             if has_switch_cd:
