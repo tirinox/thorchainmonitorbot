@@ -29,6 +29,14 @@ class PoolInfo:
 
     status: str
 
+    asset_price_rune: float = 0.0
+    asset_price_usd: float = 0.0
+    pool_apy: float = 0.0
+    synth_supply: int = 0
+    synth_units: int = 0
+    units: int = 0  # synth + pool_units?
+    volume_24h: int = 0
+
     DEPRECATED_BOOTSTRAP = 'bootstrap'
     DEPRECATED_ENABLED = 'enabled'
     AVAILABLE = 'available'  # enabled
@@ -91,16 +99,18 @@ class PoolInfo:
         return PoolUnitsAdjustment(delta_units, new_pool_unit)
 
     @classmethod
-    def from_dict(cls, j):
+    def from_dict_brief(cls, j):
         balance_asset = int(j['balance_asset'])
         balance_rune = int(j['balance_rune'])
-        return cls(asset=j['asset'],
-                   balance_asset=balance_asset,
-                   balance_rune=balance_rune,
-                   pool_units=int(j['pool_units']),
-                   status=str(j['status']).lower())
 
-    def as_dict(self):
+        return cls(
+            asset=j['asset'],
+            balance_asset=balance_asset,
+            balance_rune=balance_rune,
+            pool_units=int(j['pool_units']),
+            status=str(j['status']).lower())
+
+    def as_dict_brief(self):
         return {
             'balance_asset': str(self.balance_asset),
             'balance_rune': str(self.balance_rune),
@@ -108,6 +118,18 @@ class PoolInfo:
             'asset': self.asset,
             'status': self.status
         }
+
+    @property
+    def rune_price(self):
+        return self.asset_price_usd / self.asset_price_rune
+
+    @property
+    def usd_volume_24h(self):
+        return thor_to_float(self.volume_24h) * self.rune_price
+
+    @property
+    def total_liquidity(self):
+        return 2.0 * thor_to_float(self.balance_rune) * self.rune_price
 
 
 @dataclass
@@ -181,3 +203,26 @@ class PoolChanges(NamedTuple):
     @property
     def any_changed(self):
         return self.pools_changed or self.pools_added or self.pools_removed
+
+
+class PoolDetailHolder:
+    def __init__(self):
+        self.pool_detail_dic: Dict[str, PoolInfo] = {}
+
+    BY_VOLUME_24h = 'volume_24h'
+    BY_DEPTH = 'rune_depth'
+    BY_APY = 'pool_apy'
+
+    def get_top_pools(self, criterion: str, active_only=True, descending=True):
+        pools = self.pool_detail_dic.values()
+        criterion = str(criterion)
+        if active_only:
+            pools = filter(lambda p: p.status.lower() == 'active', pools)
+
+        def sorter(p: PoolInfo):
+            v = getattr(p, criterion)
+            return -v if descending else v
+
+        pool_list = list(pools)
+        pool_list.sort(key=sorter)
+        return pool_list

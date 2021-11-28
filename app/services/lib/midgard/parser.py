@@ -154,13 +154,20 @@ class MidgardParserV2(MidgardParserBase):
     def parse_pool_info(self, response) -> PoolInfoMap:
         pm = {}
         for j in response:
-            asset = j['asset']
+            asset = j.get('asset')
             pm[asset] = PoolInfo(
                 asset=asset,
-                balance_asset=int(j['assetDepth']),
-                balance_rune=int(j['runeDepth']),
-                pool_units=int(j['units']),
-                status=str(j['status']).lower()
+                balance_asset=int(j.get('assetDepth', 0)),
+                balance_rune=int(j.get('runeDepth', 0)),
+                pool_units=int(j.get('liquidityUnits', 0)),  # todo: or units?
+                status=str(j.get('status', '')).lower(),
+                asset_price_rune=float(j.get('assetPrice', 0.0)),
+                asset_price_usd=float(j.get('assetPriceUSD', 0.0)),
+                pool_apy=float(j.get('poolAPY', 0.0)) * 100.0,
+                synth_supply=int(j.get('synthSupply', 0)),
+                synth_units=int(j.get('synthUnits', 0)),
+                units=int(j.get('units', 0)),
+                volume_24h=int(j.get('volume24h', 0)),  # rune(18)
             )
         return pm
 

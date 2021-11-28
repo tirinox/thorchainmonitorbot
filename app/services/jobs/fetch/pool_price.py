@@ -88,14 +88,14 @@ class PoolPriceFetcher(BaseFetcher):
     DB_KEY_POOL_INFO_HASH = 'PoolInfo:hashtable'
 
     async def _save_to_cache(self, r: Redis, subkey, pool_infos: PoolInfoMap):
-        j_pools = json.dumps({key: p.as_dict() for key, p in pool_infos.items()})
+        j_pools = json.dumps({key: p.as_dict_brief() for key, p in pool_infos.items()})
         await r.hset(self.DB_KEY_POOL_INFO_HASH, str(subkey), j_pools)
 
     async def _load_from_cache(self, r: Redis, subkey) -> PoolInfoMap:
         cached_item = await r.hget(self.DB_KEY_POOL_INFO_HASH, str(subkey))
         if cached_item:
             raw_dict = json.loads(cached_item)
-            pool_infos = {k: PoolInfo.from_dict(it) for k, it in raw_dict.items()}
+            pool_infos = {k: PoolInfo.from_dict_brief(it) for k, it in raw_dict.items()}
             return pool_infos
 
     @staticmethod
@@ -185,7 +185,6 @@ class PoolInfoFetcherMidgard(BaseFetcher):
 
     async def fetch(self):
         result = await self.get_pool_info_midgard()
-        # result = self._test_drop_one(result)  # for debug case!
         return result
 
     def _test_drop_one(self, pool_info_map: PoolInfoMap) -> PoolInfoMap:

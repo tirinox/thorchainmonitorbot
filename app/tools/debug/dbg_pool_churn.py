@@ -34,8 +34,6 @@ async def send_to_channel_test_message(d: DepContainer):
 
         # feed original pools
         await notifier_pool_churn.on_data(ppf, None)
-
-
         await notifier_pool_churn.on_data(ppf, d.price_holder.pool_info_map)  # must notify about changes above ^^^
 
         d.price_holder.pool_info_map = deepcopy(d.price_holder.pool_info_map)  # make a copy
