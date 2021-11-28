@@ -6,7 +6,6 @@ from aiothornode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
 from localization.base import BaseLocalization, RAIDO_GLYPH, CREATOR_TG, URL_LEADERBOARD_MCCN
-from services.dialog.picture.block_height_picture import BlockSpeed
 from services.lib.constants import Chains, thor_to_float, rune_origin
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts, MINUTE
 from services.lib.explorers import get_explorer_url_to_address
@@ -15,6 +14,7 @@ from services.lib.money import pretty_dollar, pretty_money, short_address, adapt
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
     up_down_arrow, plural, grouper
 from services.models.cap_info import ThorCapInfo
+from services.models.last_block import BlockSpeed
 from services.models.mimir import MimirChange, MimirHolder
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEvent
@@ -855,7 +855,8 @@ class RussianLocalization(BaseLocalization):
     TEXT_BLOCK_HEIGHT_LEGEND_EXPECTED = 'Ожидаемая (10 блоков/мин)'
 
     def notification_text_block_stuck(self, stuck, time_without_new_block):
-        str_t = ital(self.seconds_human(time_without_new_block) if time_without_new_block > 1 else 'Н/Д')
+        good_time = time_without_new_block is not None and time_without_new_block > 1
+        str_t = ital(self.seconds_human(time_without_new_block) if good_time else 'Н/Д')
         if stuck:
             return f'📛 {bold("THORChain высота блоков перестала увеличиваться")}!\n' \
                    f'Новые блоки не генерируются уже {str_t}.'

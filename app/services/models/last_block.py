@@ -7,3 +7,10 @@ class LastBlock:
     last_observed_in: int
     last_signed_out: int
     thorchain: int
+
+
+class BlockSpeed:
+    StateNormal = 'normal'
+    StateTooFast = 'fast'
+    StateTooSlow = 'slow'
+    StateIdle = 'idle'

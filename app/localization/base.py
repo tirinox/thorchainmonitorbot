@@ -6,7 +6,6 @@ from typing import List
 from aiothornode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
-from services.dialog.picture.block_height_picture import BlockSpeed
 from services.lib.config import Config
 from services.lib.constants import NetworkIdents, rune_origin, thor_to_float, THOR_BLOCK_TIME
 from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE
@@ -17,6 +16,7 @@ from services.lib.money import format_percent, pretty_money, short_address, shor
 from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
     up_down_arrow, bracketify, plural, grouper, join_as_numbered_list
 from services.models.cap_info import ThorCapInfo
+from services.models.last_block import BlockSpeed
 from services.models.mimir import MimirChange, MimirHolder, MimirEntry
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEventType, NodeEvent, \
@@ -1053,7 +1053,8 @@ class BaseLocalization(ABC):  # == English
     TEXT_BLOCK_HEIGHT_LEGEND_EXPECTED = 'Expected (10 blocks/min or 6 sec/block)'
 
     def notification_text_block_stuck(self, stuck, time_without_new_block):
-        str_t = ital(self.seconds_human(time_without_new_block) if time_without_new_block > 1 else 'N/A')
+        good_time = time_without_new_block is not None and time_without_new_block > 1
+        str_t = ital(self.seconds_human(time_without_new_block) if good_time else 'N/A')
         if stuck:
             return f'📛 {bold("THORChain block height seems to have stopped increasing")}!\n' \
                    f'New blocks have not been generated for {str_t}.'

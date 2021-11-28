@@ -286,7 +286,8 @@ class PlotGraphLines(PlotGraph):
         self.legend_x += tw + 20
 
     def _plot(self):
-        # if self.max_y <= self.min_y or self.max_x <= self.max_y:
+        if self.min_y == self.max_y or self.min_x == self.max_x:
+            return
 
         self._plot_ticks_axis(self.min_x, self.max_x, 'x', self.n_ticks_x)
         self._plot_ticks_axis(self.min_y, self.max_y, 'y', self.n_ticks_y)

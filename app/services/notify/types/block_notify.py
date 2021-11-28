@@ -3,7 +3,7 @@ from typing import Dict, Optional
 from aiothornode.types import ThorLastBlock
 
 from localization import BaseLocalization
-from services.dialog.picture.block_height_picture import block_speed_chart, BlockSpeed
+from services.dialog.picture.block_height_picture import block_speed_chart
 from services.jobs.fetch.base import INotified
 from services.jobs.fetch.last_block import LastBlockFetcher
 from services.lib.config import SubConfig
@@ -13,6 +13,7 @@ from services.lib.date_utils import DAY, parse_timespan_to_seconds, now_ts, form
 from services.lib.depcont import DepContainer
 from services.lib.texts import BoardMessage
 from services.lib.utils import class_logger
+from services.models.last_block import BlockSpeed
 from services.models.time_series import TimeSeries
 
 
@@ -27,6 +28,8 @@ class BlockHeightNotifier(INotified):
         self.deps = deps
         self.logger = class_logger(self)
         self.series = TimeSeries(self.KEY_SERIES_BLOCK_HEIGHT, self.deps.db)
+
+        self.expected_chart_points_ratio = 0.8  # 80%
 
         cfg: SubConfig = self.deps.cfg.last_block
 
@@ -58,9 +61,10 @@ class BlockHeightNotifier(INotified):
                          f'High speed > {hi:.4f} Blocks/min')
 
         self._cd_trigger = CooldownBiTrigger(self.deps.db, 'BlockHeightStuck',
-                                             cooldown_on_sec=INFINITE_TIME,
-                                             cooldown_off_sec=self.repeat_stuck_alert_cooldown_sec,
-                                             default=False)
+                                             cooldown_off_sec=INFINITE_TIME,
+                                             cooldown_on_sec=self.repeat_stuck_alert_cooldown_sec,
+                                             default=False,
+                                             track_last_switch_ts=True)
 
         self._foo = 0
 
@@ -103,7 +107,7 @@ class BlockHeightNotifier(INotified):
     async def get_last_block_time(self) -> Optional[float]:
         chart = await self.get_block_time_chart(self.block_height_estimation_interval * 2)
         if chart:
-            return chart[-1][1]
+            return float(chart[-1][1])
         else:
             return None
 
@@ -140,10 +144,12 @@ class BlockHeightNotifier(INotified):
         thor_block = max(v.thorchain for v in data.values()) if data else 0
 
         # ----- fixme: debug -----
-        # if not self._foo:
-        #     self._foo = thor_block
-        # else:
-        #     thor_block = self._foo
+        # frozen = False  # ??
+        # if frozen:
+        #     if not self._foo:
+        #         self._foo = thor_block
+        #     else:
+        #         thor_block = self._foo
         # self.last_thor_block_update_ts = now_ts() - 1000
         # await self._post_stuck_alert(True)
         # ----- fixme: debug -----
@@ -160,7 +166,7 @@ class BlockHeightNotifier(INotified):
     async def _check_blocks_stuck(self, fetcher: LastBlockFetcher):
         chart = await self.get_last_block_height_points(self.stuck_alert_time_limit)
         expected_num_of_points = self.stuck_alert_time_limit / fetcher.sleep_period
-        if len(chart) < expected_num_of_points * 0.5:
+        if len(chart) < expected_num_of_points * self.expected_chart_points_ratio:
             self.logger.warning(f'Not enough points for THOR block height dynamics evaluation; '
                                 f'{expected_num_of_points = }, in fact {len(chart) = } points.')
             return
@@ -173,7 +179,10 @@ class BlockHeightNotifier(INotified):
                 duration = self.time_without_new_blocks
             else:
                 last_switch_ts = await self._cd_trigger.get_last_switch_ts()
-                duration = now_ts() - last_switch_ts
+                if last_switch_ts < 1:
+                    duration = None
+                else:
+                    duration = now_ts() - last_switch_ts
 
             await self._post_stuck_alert(really_stuck, duration)
 
@@ -200,9 +209,9 @@ class BlockHeightNotifier(INotified):
 
     async def _check_block_pace(self, thor_block):
         tm = await self.get_last_block_time()
-        self.logger.info(f'Last block #{thor_block}. Last block time = {tm}.')
+        self.logger.info(f'Last block #{thor_block}. Last block time = {(tm * MINUTE):.2f} blocks/minute.')
 
-        if tm <= 0.0:
+        if tm is None or tm <= 0.0:
             return
 
         prev_state = await self._get_block_alert_state()
