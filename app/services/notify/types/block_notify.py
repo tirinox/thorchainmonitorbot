@@ -111,7 +111,7 @@ class BlockHeightNotifier(INotified):
         else:
             return None
 
-    async def _get_block_alert_state(self):
+    async def get_block_alert_state(self):
         return await self.deps.db.redis.get(self.KEY_BLOCK_SPEED_ALERT_STATE) or BlockSpeed.StateNormal
 
     async def _set_block_alert_state(self, new_state):
@@ -187,8 +187,6 @@ class BlockHeightNotifier(INotified):
             await self._post_stuck_alert(really_stuck, duration)
 
             await self.stuck_alert_cd.do()
-        # else:
-        #     print(f'fixme! cannot do self._cd_trigger.turn({really_stuck = })')
 
     async def _post_block_speed_pic_with_caption(self, f_caption_from_loc: callable):
         user_lang_map = self.deps.broadcaster.telegram_chats_from_config(self.deps.loc_man)
@@ -222,9 +220,7 @@ class BlockHeightNotifier(INotified):
         if bps <= 0.0:
             return
 
-        prev_state = await self._get_block_alert_state()
-
-        print(f'prev state = {prev_state}')  # fixme
+        prev_state = await self.get_block_alert_state()
 
         norm, dev = self.normal_block_speed, self.normal_block_speed_deviation
 
@@ -235,10 +231,7 @@ class BlockHeightNotifier(INotified):
         elif bps > self.high_speed_dev:
             curr_state = BlockSpeed.StateTooFast
         else:
-            print('no state change')  # fixme
             return
-
-        print(f'new state = {curr_state}')  # fixme
 
         if curr_state != prev_state:
             await self._do_notify_pace(curr_state, bps)

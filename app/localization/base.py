@@ -44,6 +44,8 @@ class BaseLocalization(ABC):  # == English
     LONG_DASH = '–'
     SUCCESS = '✅ Success!'
     ERROR = '❌ Error'
+    ND = 'N/D'
+    NA = 'N/A'
 
     SHORT_MONEY_LOC = None  # default is Eng
 
@@ -524,6 +526,7 @@ class BaseLocalization(ABC):  # == English
     BUTTON_METR_LEADERBOARD = '🏆 Leaderboard'
     BUTTON_METR_CHAINS = '⛓️ Chains'
     BUTTON_METR_MIMIR = '🎅 Mimir consts'
+    BUTTON_METR_BLOCK_TIME = '⏱️ Block time'
 
     TEXT_METRICS_INTRO = 'What metrics would you like to know?'
 
@@ -1054,7 +1057,7 @@ class BaseLocalization(ABC):  # == English
 
     def notification_text_block_stuck(self, stuck, time_without_new_block):
         good_time = time_without_new_block is not None and time_without_new_block > 1
-        str_t = ital(self.seconds_human(time_without_new_block) if good_time else 'N/A')
+        str_t = ital(self.seconds_human(time_without_new_block) if good_time else self.NA)
         if stuck:
             return f'📛 {bold("THORChain block height seems to have stopped increasing")}!\n' \
                    f'New blocks have not been generated for {str_t}.'
@@ -1062,19 +1065,41 @@ class BaseLocalization(ABC):  # == English
             return f"🆗 {bold('THORChain is producing blocks again!')}\n" \
                    f"The failure lasted {str_t}."
 
-    def notification_text_block_pace(self, state: str, block_speed: float):
+    @staticmethod
+    def get_block_time_state_string(state, state_changed):
         if state == BlockSpeed.StateNormal:
-            phrase = '👌 Block speed is back to normal.'
+            if state_changed:
+                return '👌 Block speed is back to normal.'
+            else:
+                return '👌 Block speed is normal.'
         elif state == BlockSpeed.StateTooSlow:
-            phrase = '🐌 Blocks are produced too slowly.'
+            return '🐌 Blocks are produced too slowly.'
         elif state == BlockSpeed.StateTooFast:
-            phrase = '🏃 Blocks are produced too fast.'
+            return '🏃 Blocks are produced too fast.'
         else:
             return ''
-        block_per_minute = float(block_speed * MINUTE)
+
+    def format_bps(self, bps):
+        if bps is None:
+            return self.ND
+        else:
+            return f'{float(bps * MINUTE):.2f}'
+
+    def notification_text_block_pace(self, state: str, block_speed: float):
+        phrase = self.get_block_time_state_string(state, True)
         return f'<b>THORChain block generation speed update.</b>\n' \
                f'{phrase}\n' \
-               f'Presently <code>{block_per_minute:.2f}</code> blocks per minute.'
+               f'Presently <code>{self.format_bps(block_speed)}</code> blocks per minute.'
+
+    def text_block_time_report(self, last_block, last_block_ts, recent_bps, state):
+        phrase = self.get_block_time_state_string(state, False)
+        ago = self.format_time_ago(last_block_ts)
+        block_per_minute = self.format_bps(recent_bps)
+        block_str = f"#{last_block}"
+        return f'<b>THORChain block generation speed.</b>\n' \
+               f'{phrase}\n' \
+               f'Presently <code>{block_per_minute}</code> blocks per minute.\n' \
+               f'Last THORChain block number is {code(block_str)} (updated: {ago}).'
 
     # --------- MIMIR CHANGED -----------
 

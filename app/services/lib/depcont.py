@@ -29,14 +29,15 @@ class DepContainer:
     thor_connector: Optional[ThorConnector] = None
     midgard_connector: Optional[MidgardConnector] = None
 
-    loc_man: Optional['LocalizationManager'] = None
-    broadcaster: Optional['Broadcaster'] = None
+    loc_man = None  # type: 'LocalizationManager'
+    broadcaster = None  # type: 'Broadcaster'
 
-    price_pool_fetcher: Optional['PoolPriceFetcher'] = None
-    node_info_fetcher: Optional['NodeInfoFetcher'] = None
-    mimir_const_fetcher: Optional['ConstMimirFetcher'] = None
+    price_pool_fetcher = None  # type: 'PoolPriceFetcher'
+    node_info_fetcher = None  # type: 'NodeInfoFetcher'
+    mimir_const_fetcher = None  # type: 'ConstMimirFetcher'
 
-    node_op_notifier: Optional['NodeChangePersonalNotifier'] = None
+    node_op_notifier = None  # type: 'NodeChangePersonalNotifier'
+    block_notifier = None  # type: 'BlockHeightNotifier'
 
     # shared data holders
 

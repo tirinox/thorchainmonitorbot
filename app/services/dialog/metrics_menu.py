@@ -4,16 +4,19 @@ from aiogram.utils.helper import HelperMode
 
 from localization import BaseLocalization
 from services.dialog.base import BaseDialog, message_handler
+from services.dialog.picture.block_height_picture import block_speed_chart
 from services.dialog.picture.node_geo_picture import node_geo_pic
 from services.dialog.picture.price_picture import price_graph_from_db
 from services.dialog.picture.queue_picture import queue_graph
 from services.jobs.fetch.fair_price import get_fair_rune_price_cached
 from services.jobs.fetch.node_info import NodeInfoFetcher
-from services.lib.date_utils import DAY, HOUR, parse_timespan_to_seconds, today_str
+from services.lib.constants import THOR_BLOCKS_PER_MINUTE
+from services.lib.date_utils import DAY, HOUR, parse_timespan_to_seconds, today_str, now_ts
 from services.lib.draw_utils import img_to_bio
 from services.lib.texts import kbd
 from services.models.node_info import NodeInfo
 from services.models.price import PriceReport
+from services.notify.types.block_notify import BlockHeightNotifier
 from services.notify.types.cap_notify import LiquidityCapNotifier
 from services.notify.types.price_notify import PriceNotifier
 from services.notify.types.stats_notify import NetworkStatsNotifier
@@ -36,36 +39,34 @@ class MetricsDialog(BaseDialog):
             return
         elif message.text == self.loc.BUTTON_METR_QUEUE:
             await self.ask_queue_duration(message)
+            return
         elif message.text == self.loc.BUTTON_METR_PRICE:
             await self.ask_price_info_duration(message)
+            return
         elif message.text == self.loc.BUTTON_METR_CAP:
             await self.show_cap(message)
-            await self.show_menu(message)
         elif message.text == self.loc.BUTTON_METR_STATS:
             await self.show_last_stats(message)
-            await self.show_menu(message)
         elif message.text == self.loc.BUTTON_METR_NODES:
             await self.show_node_list(message)
-            await self.show_menu(message)
         elif message.text == self.loc.BUTTON_METR_LEADERBOARD:
             await self.show_leaderboard(message)
-            await self.show_menu(message)
         elif message.text == self.loc.BUTTON_METR_CHAINS:
             await self.show_chain_info(message)
-            await self.show_menu(message)
         elif message.text == self.loc.BUTTON_METR_MIMIR:
             await self.show_mimir_info(message)
-            await self.show_menu(message)
-        else:
-            await self.show_menu(message)
+        elif message.text == self.loc.BUTTON_METR_BLOCK_TIME:
+            await self.show_block_time(message)
+
+        await self.show_menu(message)
 
     async def show_menu(self, message: Message):
         await MetricsStates.MAIN_METRICS_MENU.set()
         reply_markup = kbd([
             [self.loc.BUTTON_METR_PRICE, self.loc.BUTTON_METR_CAP, self.loc.BUTTON_METR_QUEUE],
             [self.loc.BUTTON_METR_STATS, self.loc.BUTTON_METR_NODES, self.loc.BUTTON_METR_CHAINS],
-            [self.loc.BUTTON_METR_LEADERBOARD],
-            [self.loc.BUTTON_METR_MIMIR, self.loc.BUTTON_BACK]
+            [self.loc.BUTTON_METR_LEADERBOARD, self.loc.BUTTON_METR_BLOCK_TIME, self.loc.BUTTON_METR_MIMIR],
+            [self.loc.BUTTON_BACK]
         ])
         await message.answer(self.loc.TEXT_METRICS_INTRO,
                              reply_markup=reply_markup,
@@ -217,3 +218,21 @@ class MetricsDialog(BaseDialog):
             await message.answer(text,
                                  disable_web_page_preview=True,
                                  disable_notification=True)
+
+    async def show_block_time(self, message: Message):
+        duration = 2 * DAY
+
+        block_notifier: BlockHeightNotifier = self.deps.block_notifier
+        points = await block_notifier.get_block_time_chart(duration, convert_to_blocks_per_minute=True)
+
+        chart = await block_speed_chart(points, self.loc, normal_bpm=THOR_BLOCKS_PER_MINUTE, time_scale_mode='time')
+        last_block = block_notifier.last_thor_block
+        last_block_ts = block_notifier.last_thor_block_update_ts
+
+        recent_bps = await block_notifier.get_recent_blocks_per_second()
+        state = await block_notifier.get_block_alert_state()
+
+        d = now_ts() - last_block_ts if last_block_ts else 0
+        await message.answer_photo(chart,
+                                   caption=self.loc.text_block_time_report(last_block, d, recent_bps, state),
+                                   disable_notification=True)

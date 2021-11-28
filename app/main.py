@@ -169,6 +169,7 @@ class App:
             fetcher_last_block = LastBlockFetcher(d)
             last_block_notifier = BlockHeightNotifier(d)
             fetcher_last_block.subscribe(last_block_notifier)
+            d.block_notifier = last_block_notifier
             tasks.append(fetcher_last_block)
 
         if d.cfg.get('node_info.enabled', True):

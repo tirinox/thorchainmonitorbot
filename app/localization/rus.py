@@ -27,6 +27,8 @@ from services.models.tx import ThorTxExtended, ThorTxType
 class RussianLocalization(BaseLocalization):
     LOADING = '⌛ Загрузка...'
     SUCCESS = '✅ Успех!'
+    ND = 'Неопр.'
+    NA = 'Н/Д'
 
     SHORT_MONEY_LOC = {
         'K': ' тыс',
@@ -416,6 +418,7 @@ class RussianLocalization(BaseLocalization):
     BUTTON_METR_LEADERBOARD = '🏆 Доска рекордов'
     BUTTON_METR_CHAINS = '⛓️ Блокчейны'
     BUTTON_METR_MIMIR = '🎅 Мимир'
+    BUTTON_METR_BLOCK_TIME = '⏱️ Время блоков'
 
     TEXT_METRICS_INTRO = 'Что вы хотите узнать?'
 
@@ -856,7 +859,7 @@ class RussianLocalization(BaseLocalization):
 
     def notification_text_block_stuck(self, stuck, time_without_new_block):
         good_time = time_without_new_block is not None and time_without_new_block > 1
-        str_t = ital(self.seconds_human(time_without_new_block) if good_time else 'Н/Д')
+        str_t = ital(self.seconds_human(time_without_new_block) if good_time else self.NA)
         if stuck:
             return f'📛 {bold("THORChain высота блоков перестала увеличиваться")}!\n' \
                    f'Новые блоки не генерируются уже {str_t}.'
@@ -864,19 +867,35 @@ class RussianLocalization(BaseLocalization):
             return f"🆗 {bold('THORChain снова генерирует блоки!')}\n" \
                    f"Сбой длился {str_t}"
 
-    def notification_text_block_pace(self, state: str, block_speed: float):
+    @staticmethod
+    def get_block_time_state_string(state, state_changed):
         if state == BlockSpeed.StateNormal:
-            phrase = '👌 Скорость генерации блоков вернулась к нормальной.'
+            if state_changed:
+                return '👌 Скорость генерации блоков вернулась к нормальной.'
+            else:
+                return '👌 Скорость генерации блоков в норме.'
         elif state == BlockSpeed.StateTooSlow:
-            phrase = '🐌 Блоки производятся слишком медленно.'
+            return '🐌 Блоки производятся слишком медленно.'
         elif state == BlockSpeed.StateTooFast:
-            phrase = '🏃 Блоки производятся слишком быстро.'
+            return '🏃 Блоки производятся слишком быстро.'
         else:
             return ''
+
+    def notification_text_block_pace(self, state: str, block_speed: float):
+        phrase = self.get_block_time_state_string(state, True)
         block_per_minute = float(block_speed * MINUTE)
         return f'<b>Обновление по скорости производства блоков THORChain</b>\n' \
                f'{phrase}\n' \
                f'В настоящий момент <code>{block_per_minute:.2f}</code> блоков в минуту.'
+
+    def text_block_time_report(self, last_block, last_block_ts, recent_bps, state):
+        phrase = self.get_block_time_state_string(state, False)
+        block_per_minute = float(recent_bps * MINUTE)
+        ago = self.format_time_ago(last_block_ts)
+        return f'<b>THORChain темпы производства блоков.</b>\n' \
+               f'{phrase}\n' \
+               f'В настоящее время <code>{block_per_minute:.2f}</code> блоков в минуту.\n' \
+               f'Последний номер блока THORChain: {code("#" + last_block)} (обновлено: {ago}).'
 
     # --------- MIMIR CHANGED -----------
 
