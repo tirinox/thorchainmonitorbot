@@ -17,7 +17,8 @@ from services.models.cap_info import ThorCapInfo
 from services.models.last_block import BlockSpeed
 from services.models.mimir import MimirChange, MimirHolder
 from services.models.net_stats import NetworkStats
-from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEvent
+from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEvent, EventDataSlash, \
+    NodeEventType, EventBlockHeight
 from services.models.pool_info import PoolInfo, PoolChanges
 from services.models.price import PriceReport
 from services.models.queue import QueueInfo
@@ -1094,8 +1095,44 @@ class RussianLocalization(BaseLocalization):
                f'{node_addresses_text} ({len(node_addresses)} всего).'
 
     def notification_text_for_node_op_changes(self, c: NodeEvent):
-        # todo!
-        return super().notification_text_for_node_op_changes(c)
+        message = ''
+        short_addr = self.node_link(c.address)
+        if c.type == NodeEventType.SLASHING:
+            data: EventDataSlash = c.data
+            date_str = self.seconds_human(data.interval_sec)
+            message = f'🔪 Нода {short_addr} получила штраф ' \
+                      f'на {bold(data.delta_pts)} очков ≈{date_str} ' \
+                      f'(сейчас в сумме: <i>{data.current_pts}</i> штрафных очков)!'
+        elif c.type == NodeEventType.VERSION_CHANGED:
+            old, new = c.data
+            message = f'🆙 Нода {short_addr} обновилась с версии {ital(old)} до {bold(new)}!'
+        elif c.type == NodeEventType.NEW_VERSION_DETECTED:
+            message = f'🆕 Новая версия ПО ноды обнаружена! {bold(c.data)}! Рассмотрите возможность обновиться!'
+        elif c.type == NodeEventType.IP_ADDRESS_CHANGED:
+            old, new = c.data
+            message = f'🏤 Нода {short_addr} сменила свой IP адрес с {ital(old)} на {bold(new)}!'
+        elif c.type == NodeEventType.SERVICE_ONLINE:
+            online, duration, service = c.data
+            service = bold(str(service).upper())
+            if online:
+                message = f'✅ Сервис {service} ноды {short_addr} опять вернулся в <b>онлайн</b>!'
+            else:
+                message = f'🔴 Сервис {service} ноды {short_addr} ушел в <b>оффлайн</b> ' \
+                          f'(уже как {self.seconds_human(duration)})!'
+        elif c.type == NodeEventType.CHURNING:
+            verb = 'активировалась ⬅️' if c.data else 'вышла из активного набора ➡️'
+            bond = c.node.bond
+            message = f'🌐 Нода {short_addr} ({short_money(bond)} {RAIDO_GLYPH} бонда) {bold(verb)}!'
+        elif c.type in NodeEventType.BLOCK_HEIGHT:
+            data: EventBlockHeight = c.data
+
+            if data.is_sync:
+                message = f'✅ Нода {short_addr} догнала актуальные блоки на блокчейне {pre(data.chain)}.'
+            else:
+                message = f'🔴 Нода {short_addr} на {pre(data.block_lag)} позади ' \
+                          f'на блокчейне {pre(data.chain)} (≈{self.seconds_human(data.how_long_behind)})!'
+
+        return message
 
     DATE_TRANSLATOR = {
         'just now': 'прямо сейчас',
