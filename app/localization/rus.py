@@ -883,19 +883,20 @@ class RussianLocalization(BaseLocalization):
 
     def notification_text_block_pace(self, state: str, block_speed: float):
         phrase = self.get_block_time_state_string(state, True)
-        block_per_minute = float(block_speed * MINUTE)
+        block_per_minute = self.format_bps(block_speed)
         return f'<b>Обновление по скорости производства блоков THORChain</b>\n' \
                f'{phrase}\n' \
-               f'В настоящий момент <code>{block_per_minute:.2f}</code> блоков в минуту.'
+               f'В настоящий момент <code>{block_per_minute}</code> блоков в минуту.'
 
     def text_block_time_report(self, last_block, last_block_ts, recent_bps, state):
         phrase = self.get_block_time_state_string(state, False)
-        block_per_minute = float(recent_bps * MINUTE)
+        block_per_minute = self.format_bps(recent_bps)
         ago = self.format_time_ago(last_block_ts)
+        block_str = f"#{last_block}"
         return f'<b>THORChain темпы производства блоков.</b>\n' \
                f'{phrase}\n' \
-               f'В настоящее время <code>{block_per_minute:.2f}</code> блоков в минуту.\n' \
-               f'Последний номер блока THORChain: {code("#" + last_block)} (обновлено: {ago}).'
+               f'В настоящее время <code>{block_per_minute}</code> блоков в минуту.\n' \
+               f'Последний номер блока THORChain: {code(block_str)} (обновлено: {ago}).'
 
     # --------- MIMIR CHANGED -----------
 
@@ -1105,6 +1106,7 @@ class RussianLocalization(BaseLocalization):
         'hours': 'час',
         'day': 'дн',
         'days': 'дн',
+        'ago': 'назад',
     }
 
     def format_time_ago(self, d):

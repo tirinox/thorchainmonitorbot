@@ -144,12 +144,12 @@ class BlockHeightNotifier(INotified):
         thor_block = max(v.thorchain for v in data.values()) if data else 0
 
         # ----- fixme: debug -----
-        # frozen = False  # ??
-        # if frozen:
-        #     if not self._foo:
-        #         self._foo = thor_block
-        #     else:
-        #         thor_block = self._foo
+        frozen = True  # ??
+        if frozen:
+            if not self._foo:
+                self._foo = thor_block
+            else:
+                thor_block = self._foo
         # self.last_thor_block_update_ts = now_ts() - 1000
         # await self._post_stuck_alert(True)
         # ----- fixme: debug -----
