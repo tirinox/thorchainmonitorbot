@@ -120,6 +120,12 @@ class MimirHolder:
 
         'THORNAME': 'THOR Name',
         'THORNAMES': 'THOR Names',
+
+        'STOPSOLVENCYCHECKETH': 'Stop Solvency check ETH',
+        'STOPSOLVENCYCHECKBNB': 'Stop Solvency check BNB',
+        'STOPSOLVENCYCHECKLTC': 'Stop Solvency check LTC',
+        'STOPSOLVENCYCHECKBTC': 'Stop Solvency check BTC',
+        'STOPSOLVENCYCHECKBCH': 'Stop Solvency check BCH',
     }
 
     BOOL_CONSTANTS = {
@@ -146,6 +152,11 @@ class MimirHolder:
         "STOPSOLVENCYCHECK",
         "THORNAME",
         "THORNAMES",
+        'STOPSOLVENCYCHECKETH',
+        'STOPSOLVENCYCHECKBNB',
+        'STOPSOLVENCYCHECKLTC',
+        'STOPSOLVENCYCHECKBTC',
+        'STOPSOLVENCYCHECKBCH',
     }
 
     @staticmethod

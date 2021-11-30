@@ -249,15 +249,15 @@ chain_state:
 
 last_block:  # (!) new...
   enabled: true
-  fetch_period: 10s
+  fetch_period: 30s
   chart:
     estimation_interval: 5m
   stuck_alert:
-    time_limit: 40s
+    time_limit: 120s
     repeat_cooldown: 24h
     chart_duration: 36h
   normal_block_time: 0.16666  # 1 block = 6 sec
-  normal_block_speed_deviation_percent: 5
+  normal_block_speed_deviation_percent: 15
   low_block_speed_percent: -50
   high_block_speed_percent: 50
 
