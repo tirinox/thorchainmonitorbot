@@ -38,6 +38,7 @@ class DepContainer:
 
     node_op_notifier = None  # type: 'NodeChangePersonalNotifier'
     block_notifier = None  # type: 'BlockHeightNotifier'
+    best_pools_notifier = None  # type: 'BestPoolsNotifier'
 
     # shared data holders
 

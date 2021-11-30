@@ -262,6 +262,13 @@ last_block:  # (!) new...
   high_block_speed_percent: 50
 
 
+best_pools:  # (!) new...
+  enabled: true
+  fetch_period: 30m
+  num_of_top_pools: 5
+  cooldown: 1d
+
+
 blockchain:
   block_time:  # block_time overriding... (optional)
     BTC: 10m

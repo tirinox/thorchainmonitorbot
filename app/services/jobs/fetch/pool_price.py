@@ -172,9 +172,8 @@ class PoolPriceFetcher(BaseFetcher):
 
 
 class PoolInfoFetcherMidgard(BaseFetcher):
-    def __init__(self, deps: DepContainer):
+    def __init__(self, deps: DepContainer, period):
         cfg: Config = deps.cfg
-        period = parse_timespan_to_seconds(cfg.pool_churn.fetch_period)
         super().__init__(deps, sleep_period=period)
         self.deps = deps
         self.parser = get_parser_by_network_id(self.deps.cfg.network_id)

@@ -25,6 +25,7 @@ from services.jobs.node_churn import NodeChurnDetector
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.lib.config import Config, SubConfig
 from services.lib.constants import get_thor_env_by_network_id
+from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.midgard.connector import MidgardConnector
@@ -34,6 +35,7 @@ from services.models.price import LastPriceHolder
 from services.models.tx import ThorTxType
 from services.notify.broadcast import Broadcaster
 from services.notify.personal import NodeChangePersonalNotifier
+from services.notify.types.best_pool_notify import BestPoolsNotifier
 from services.notify.types.block_notify import BlockHeightNotifier
 from services.notify.types.cap_notify import LiquidityCapNotifier
 from services.notify.types.chain_notify import TradingHaltedNotifier
@@ -198,9 +200,17 @@ class App:
             d.price_pool_fetcher.subscribe(notifier_price)
 
         if d.cfg.get('pool_churn.enabled', True):
-            fetcher_pool_info = PoolInfoFetcherMidgard(d)
+            period = parse_timespan_to_seconds(d.cfg.pool_churn.fetch_period)
+            fetcher_pool_info = PoolInfoFetcherMidgard(d, period)
             notifier_pool_churn = PoolChurnNotifier(d)
             fetcher_pool_info.subscribe(notifier_pool_churn)
+            tasks.append(fetcher_pool_info)
+
+        if d.cfg.get('best_pools.enabled', True):
+            period = parse_timespan_to_seconds(d.cfg.best_pools.fetch_period)
+            fetcher_pool_info = PoolInfoFetcherMidgard(d, period)
+            d.best_pools_notifier = BestPoolsNotifier(d)
+            fetcher_pool_info.subscribe(d.best_pools_notifier)
             tasks.append(fetcher_pool_info)
 
         if d.cfg.get('chain_state.enabled', True):
