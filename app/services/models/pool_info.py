@@ -39,6 +39,7 @@ class PoolInfo:
 
     DEPRECATED_BOOTSTRAP = 'bootstrap'
     DEPRECATED_ENABLED = 'enabled'
+    SUSPENDED = 'suspended'
     AVAILABLE = 'available'  # enabled
     STAGED = 'staged'  # bootstrap
 

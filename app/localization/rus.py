@@ -379,6 +379,7 @@ class RussianLocalization(BaseLocalization):
         ru_stat = {
             PoolInfo.DEPRECATED_ENABLED: 'включен',
             PoolInfo.AVAILABLE: 'включен',
+            PoolInfo.SUSPENDED: 'приостановлен',
 
             PoolInfo.DEPRECATED_BOOTSTRAP: 'ожидает',
             PoolInfo.STAGED: 'ожидает'
