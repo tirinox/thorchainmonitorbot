@@ -9,9 +9,10 @@ from localization import BaseLocalization
 from services.dialog.base import BaseDialog, inline_bot_handler
 # test bot: @thorchain_monitoring_test_bot ADDRESS POOL
 from services.dialog.picture.lp_picture import lp_pool_picture
+from services.dialog.picture.price_picture import price_graph_from_db
 from services.jobs.fetch.runeyield import get_rune_yield_connector
 from services.lib.config import Config
-from services.lib.date_utils import today_str, MINUTE, parse_timespan_to_seconds
+from services.lib.date_utils import today_str, MINUTE, parse_timespan_to_seconds, DAY
 from services.lib.depcont import DepContainer
 from services.lib.draw_utils import img_to_bio
 from services.lib.utils import unique_ident
@@ -49,6 +50,8 @@ class InlineBotHandlerDialog(BaseDialog):
                 await self._handle_lp_position_query(inline_query, components[1:])
             elif command == 'stats':
                 await self._handle_stats_query(inline_query)
+            elif command == 'price':
+                await self._handle_price_query(inline_query, components)
             else:
                 loc = self.get_localization()
                 await self._answer_error(inline_query, 'invalid_command',
@@ -59,6 +62,17 @@ class InlineBotHandlerDialog(BaseDialog):
         except Exception as e:
             logging.exception('Inline response generation exception')
             await self._answer_internal_error(inline_query, e)
+
+    async def _handle_price_query(self, inline_query: InlineQuery, components):
+        if len(components) == 2:
+            period = parse_timespan_to_seconds(components[1])
+            if period <= MINUTE or period >= 31 * DAY:
+                raise ValueError('Period must be >= 1m and =< 31d')
+        else:
+            period = 3 * DAY
+        ident = unique_ident([period], prec='minute')
+        graph = await price_graph_from_db(self.deps.db, self.loc, period=period)
+        await self._answer_photo(inline_query, graph, f'Price of Rune: {period}', ident)
 
     async def _handle_stats_query(self, inline_query: InlineQuery):
         nsn = NetworkStatsNotifier(self.deps)

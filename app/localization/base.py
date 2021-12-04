@@ -1413,8 +1413,8 @@ class BaseLocalization(ABC):  # == English
         '<code>@{bot} price [1h/24h/7d]</code>\n'
         '<code>@{bot} pools</code>\n'
         '<code>@{bot} stats</code>\n'
-        '<code>@{bot} blocks</code>\n'
-        '<code>@{bot} queue</code>\n'
+        # '<code>@{bot} blocks</code>\n'  # todo
+        # '<code>@{bot} queue</code>\n'  # todo
         '<code>@{bot} lp ADDRESS POOL</code>\n'
     )
 
