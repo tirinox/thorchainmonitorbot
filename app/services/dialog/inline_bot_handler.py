@@ -1,6 +1,8 @@
 import logging
+from typing import Optional
 from uuid import uuid4
 
+from aiogram.dispatcher.storage import FSMContextProxy
 from aiogram.types import InlineQuery, InputTextMessageContent, InlineQueryResultArticle, InlineQueryResultCachedPhoto
 
 from localization import BaseLocalization
@@ -9,24 +11,29 @@ from services.dialog.base import BaseDialog, inline_bot_handler
 from services.dialog.picture.lp_picture import lp_pool_picture
 from services.jobs.fetch.runeyield import get_rune_yield_connector
 from services.lib.config import Config
-from services.lib.date_utils import today_str, MINUTE
+from services.lib.date_utils import today_str, MINUTE, parse_timespan_to_seconds
+from services.lib.depcont import DepContainer
 from services.lib.draw_utils import img_to_bio
 from services.lib.utils import unique_ident
 from services.models.lp_info import LPAddress
 from services.notify.types.best_pool_notify import BestPoolsNotifier
+from services.notify.types.stats_notify import NetworkStatsNotifier
 
 
 class InlineBotHandlerDialog(BaseDialog):
-    CACHE_TIME = 5 * MINUTE  # sec
     DEFAULT_ICON = 'https://raw.githubusercontent.com/thorchain/Resources/master/logos/png/RUNE-ICON-256.png'
 
     @staticmethod
     def is_enabled(cfg: Config):
         return bool(cfg.get('telegram.inline_bot.enabled', default=True))
 
+    @staticmethod
+    def cache_time(cfg: Config):
+        return parse_timespan_to_seconds(cfg.as_str('telegram.inline_bot.cache_time', '5m'))
+
     @inline_bot_handler()
     async def handle(self, inline_query: InlineQuery):
-        if not self.is_enabled:
+        if not self.is_enabled(self.deps.cfg):
             return
 
         try:
@@ -38,11 +45,34 @@ class InlineBotHandlerDialog(BaseDialog):
             command = components[0].lower()
             if command == 'pools':
                 await self._handle_pools_query(inline_query)
+            elif command == 'lp':
+                await self._handle_lp_position_query(inline_query, components[1:])
+            elif command == 'stats':
+                await self._handle_stats_query(inline_query)
             else:
-                await self._handle_lp_position_query(inline_query, components)
+                loc = self.get_localization()
+                await self._answer_error(inline_query, 'invalid_command',
+                                         title=self.loc.INLINE_HINT_HELP_TITLE,
+                                         desc=self.loc.INLINE_HINT_HELP_DESC,
+                                         text=self.loc.INLINE_HINT_HELP_CONTENT.format(bot=loc.this_bot_name))
+
         except Exception as e:
             logging.exception('Inline response generation exception')
             await self._answer_internal_error(inline_query, e)
+
+    async def _handle_stats_query(self, inline_query: InlineQuery):
+        nsn = NetworkStatsNotifier(self.deps)
+        old_info = await nsn.get_previous_stats()
+        new_info = await nsn.get_latest_info()
+        loc: BaseLocalization = self.get_localization()
+        text = loc.notification_text_network_summary(old_info, new_info)
+        ident = unique_ident([], prec='minute')
+        await self._answer_results(inline_query, [
+            InlineQueryResultArticle(id=ident,
+                                     title=self.loc.INLINE_STATS_TITLE,
+                                     description=self.loc.INLINE_STATS_DESC,
+                                     input_message_content=InputTextMessageContent(text))
+        ])
 
     async def _handle_pools_query(self, inline_query: InlineQuery):
         notifier: BestPoolsNotifier = self.deps.best_pools_notifier
@@ -52,6 +82,7 @@ class InlineBotHandlerDialog(BaseDialog):
         await self._answer_results(inline_query, [
             InlineQueryResultArticle(id=ident,
                                      title=self.loc.INLINE_TOP_POOLS_TITLE,
+                                     description=self.loc.INLINE_TOP_POOLS_DESC,
                                      input_message_content=InputTextMessageContent(text))
         ])
 
@@ -129,7 +160,8 @@ class InlineBotHandlerDialog(BaseDialog):
         ])
 
     async def _answer_results(self, inline_query, items):
-        await self.deps.bot.answer_inline_query(inline_query.id, results=items, cache_time=self.CACHE_TIME)
+        ct = self.cache_time(self.deps.cfg)
+        await self.deps.bot.answer_inline_query(inline_query.id, results=items, cache_time=ct)
 
     async def _answer_photo(self, inline_query, photo, title, ident):
         buffer_chat_id = self.deps.cfg.telegram.buffer_chat

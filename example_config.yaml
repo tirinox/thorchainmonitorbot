@@ -49,6 +49,7 @@ telegram:
 
   inline_bot:
     enabled: true
+    cache_time: 5m
 
 
 tx:
