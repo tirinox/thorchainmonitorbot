@@ -241,7 +241,7 @@ class BaseLocalization(ABC):  # == English
             f'{arrow} <b>Pool cap {verb} from {pretty_money(old.cap)} to {pretty_money(new.cap)}!</b>\n'
             f'Currently <b>{pretty_money(new.pooled_rune)}</b> {self.R} are in the liquidity pools.\n'
             f"{self._cap_progress_bar(new)}\n"
-            f'The price of {self.R} in the pool is <code>{new.price:.3f} $</code>.\n'
+            f'The price of {self.R} in the pools is <code>{new.price:.3f} $</code>.\n'
             f'{call}'
             f'{self.thor_site()}'
         )
@@ -441,6 +441,10 @@ class BaseLocalization(ABC):  # == English
         if fp.cex_price > 0.0:
             message += f"<b>RUNE</b> price at Binance (CEX) is {code(pretty_dollar(fp.cex_price))} " \
                        f"(RUNE/USDT market).\n"
+
+            div = abs(fp.cex_price - price)
+            div_p = 100.0 * abs(1.0 - fp.cex_price / price) if price != 0 else 0.0
+            message += f"<b>Divergence</b> Native vs BEP2 is {code(pretty_dollar(div))} ({div_p:.1f}%).\n"
 
         last_ath = p.last_ath
         if last_ath is not None and ath:

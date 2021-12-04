@@ -336,6 +336,10 @@ class RussianLocalization(BaseLocalization):
         if fp.cex_price > 0.0:
             message += f"Цена <b>RUNE</b> на централизованной бирже Binance: {bold(pretty_dollar(fp.cex_price))}.\n"
 
+            div = abs(fp.cex_price - price)
+            div_p = 100.0 * abs(1.0 - fp.cex_price / price) if price != 0 else 0.0
+            message += f"<b>Расхождение</b> родной и BEP2 Руны: {code(pretty_dollar(div))} ({div_p:.1f}%).\n"
+
         last_ath = p.last_ath
         if last_ath is not None and ath:
             if isinstance(last_ath.ath_date, float):
