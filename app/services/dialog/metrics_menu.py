@@ -57,6 +57,8 @@ class MetricsDialog(BaseDialog):
             await self.show_mimir_info(message)
         elif message.text == self.loc.BUTTON_METR_BLOCK_TIME:
             await self.show_block_time(message)
+        elif message.text == self.loc.BUTTON_METR_TOP_POOLS:
+            await self.show_top_pools(message)
 
         await self.show_menu(message)
 
@@ -66,7 +68,7 @@ class MetricsDialog(BaseDialog):
             [self.loc.BUTTON_METR_PRICE, self.loc.BUTTON_METR_CAP, self.loc.BUTTON_METR_QUEUE],
             [self.loc.BUTTON_METR_STATS, self.loc.BUTTON_METR_NODES, self.loc.BUTTON_METR_CHAINS],
             [self.loc.BUTTON_METR_LEADERBOARD, self.loc.BUTTON_METR_BLOCK_TIME, self.loc.BUTTON_METR_MIMIR],
-            [self.loc.BUTTON_BACK]
+            [self.loc.BUTTON_METR_TOP_POOLS, self.loc.BUTTON_BACK],
         ])
         await message.answer(self.loc.TEXT_METRICS_INTRO,
                              reply_markup=reply_markup,
@@ -236,3 +238,9 @@ class MetricsDialog(BaseDialog):
         await message.answer_photo(chart,
                                    caption=self.loc.text_block_time_report(last_block, d, recent_bps, state),
                                    disable_notification=True)
+
+    async def show_top_pools(self, message: Message):
+        n_pools = self.deps.cfg.as_int('best_pools.num_of_top_pools', 5)
+
+        text = self.loc.notification_text_best_pools(self.deps.best_pools_notifier.last_pool_detail, n_pools)
+        await message.answer(text, disable_notification=True)

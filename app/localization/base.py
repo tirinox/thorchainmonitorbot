@@ -21,7 +21,7 @@ from services.models.mimir import MimirChange, MimirHolder, MimirEntry
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEventType, NodeEvent, \
     EventBlockHeight, EventDataSlash
-from services.models.pool_info import PoolInfo, PoolChanges
+from services.models.pool_info import PoolInfo, PoolChanges, PoolDetailHolder
 from services.models.price import PriceReport
 from services.models.queue import QueueInfo
 from services.models.tx import ThorTxExtended, ThorTxType, ThorSubTx
@@ -527,6 +527,7 @@ class BaseLocalization(ABC):  # == English
     BUTTON_METR_CHAINS = '⛓️ Chains'
     BUTTON_METR_MIMIR = '🎅 Mimir consts'
     BUTTON_METR_BLOCK_TIME = '⏱️ Block time'
+    BUTTON_METR_TOP_POOLS = '🏊 Top Pools'
 
     TEXT_METRICS_INTRO = 'What metrics would you like to know?'
 
@@ -1358,6 +1359,39 @@ class BaseLocalization(ABC):  # == English
                           f'on the {pre(data.chain)} chain (≈{self.seconds_human(data.how_long_behind)})!'
 
         return message
+
+    # ------- BEST POOLS -------
+
+    def format_pool_top(self, attr_name, pd: PoolDetailHolder, title, no_pool_text, n_pools):
+        top_pools = pd.get_top_pools(attr_name, n=n_pools)
+        text = bold(title) + '\n'
+        for i, pool in enumerate(top_pools, start=1):
+            v = pd.get_value(pool.asset, attr_name)
+            if attr_name == pd.BY_APY:
+                v = f'{v:.1f}%'
+            else:
+                v = pretty_dollar(v)
+
+            delta = pd.get_difference_percent(pool.asset, attr_name)
+            delta_p = pretty_money(delta, signed=True, postfix='%') if delta else ''
+
+            asset = Asset.from_string(pool.asset).short_str
+            url = f'https://app.thorswap.finance/pool/{pool.asset}'
+
+            text += f'#{i}. {link(url, asset)}: {code(v)} ({delta_p})\n'
+        if not top_pools:
+            text += no_pool_text
+        return text.strip()
+
+    def notification_text_best_pools(self, pd: PoolDetailHolder, n_pools):
+        no_pool_text = 'Nothing yet. Maybe still loading...'
+        text = '\n\n'.join([self.format_pool_top(top_pools, pd, title, no_pool_text, n_pools) for title, top_pools in [
+            ('💎 Best APY', pd.BY_APY),
+            ('💸 Top volume', pd.BY_VOLUME_24h),
+            ('🏊 Liquidity', pd.BY_DEPTH),
+        ]])
+
+        return text
 
     # ------- INLINE BOT (English only) -------
 

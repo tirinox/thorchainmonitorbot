@@ -64,6 +64,8 @@ class App:
         d.loop = asyncio.get_event_loop()
         d.db = DB(d.loop)
 
+        self.loading = False
+
         d.price_holder = LastPriceHolder()
 
     def create_bot_stuff(self):
@@ -223,9 +225,11 @@ class App:
             notifier_mimir_change = MimirChangedNotifier(d)
             fetcher_mimir.subscribe(notifier_mimir_change)
 
+        self.loading = False
         await asyncio.gather(*(task.run() for task in tasks))
 
     async def on_startup(self, _):
+        self.loading = True
         await self.connect_chat_storage()
 
         session_timeout = float(self.deps.cfg.get('thor.timeout', 2.0))

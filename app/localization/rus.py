@@ -421,6 +421,7 @@ class RussianLocalization(BaseLocalization):
     BUTTON_METR_CHAINS = '⛓️ Блокчейны'
     BUTTON_METR_MIMIR = '🎅 Мимир'
     BUTTON_METR_BLOCK_TIME = '⏱️ Время блоков'
+    BUTTON_METR_TOP_POOLS = '🏊 Топ Пулов'
 
     TEXT_METRICS_INTRO = 'Что вы хотите узнать?'
 

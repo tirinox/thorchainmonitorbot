@@ -207,18 +207,19 @@ class PoolChanges(NamedTuple):
 
 
 class PoolDetailHolder:
-    def __init__(self):
-        self.pool_detail_dic: Dict[str, PoolInfo] = {}
+    def __init__(self, curr: PoolInfoMap, prev: PoolInfoMap):
+        self.pool_detail_dic: PoolInfoMap = curr or {}
+        self.pool_detail_dic_prev: PoolInfoMap = prev or {}
 
-    BY_VOLUME_24h = 'volume_24h'
-    BY_DEPTH = 'rune_depth'
+    BY_VOLUME_24h = 'usd_volume_24h'
+    BY_DEPTH = 'total_liquidity'
     BY_APY = 'pool_apy'
 
-    def get_top_pools(self, criterion: str, active_only=True, descending=True):
+    def get_top_pools(self, criterion: str, n=None, active_only=True, descending=True) -> List[PoolInfo]:
         pools = self.pool_detail_dic.values()
         criterion = str(criterion)
         if active_only:
-            pools = filter(lambda p: p.status.lower() == 'active', pools)
+            pools = filter(lambda p: p.is_status_enabled, pools)
 
         def sorter(p: PoolInfo):
             v = getattr(p, criterion)
@@ -226,4 +227,31 @@ class PoolDetailHolder:
 
         pool_list = list(pools)
         pool_list.sort(key=sorter)
-        return pool_list
+        return pool_list if n is None else pool_list[:n]
+
+    def get_value(self, pool_name, attr_name):
+        if pool_name not in self.pool_detail_dic:
+            raise KeyError(f'no pool: {pool_name}')
+
+        curr_pool = self.pool_detail_dic[pool_name]
+        return float(getattr(curr_pool, attr_name))
+
+    def get_difference_percent(self, pool_name, attr_name):
+        curr_value = self.get_value(pool_name, attr_name)
+
+        prev_pool = self.pool_detail_dic_prev.get(pool_name)
+        if not prev_pool:
+            return None
+
+        prev_value = float(getattr(prev_pool, attr_name))
+        if prev_value == 0.0:
+            return None
+
+        if attr_name == self.BY_APY:
+            return curr_value - prev_value
+        else:
+            return (curr_value / prev_value - 1.0) * 100.0
+
+    @property
+    def empty(self):
+        return not self.pool_detail_dic
