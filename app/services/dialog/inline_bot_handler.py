@@ -1,4 +1,3 @@
-import hashlib
 import logging
 from uuid import uuid4
 
@@ -12,7 +11,9 @@ from services.jobs.fetch.runeyield import get_rune_yield_connector
 from services.lib.config import Config
 from services.lib.date_utils import today_str, MINUTE
 from services.lib.draw_utils import img_to_bio
+from services.lib.utils import unique_ident
 from services.models.lp_info import LPAddress
+from services.notify.types.best_pool_notify import BestPoolsNotifier
 
 
 class InlineBotHandlerDialog(BaseDialog):
@@ -30,41 +31,61 @@ class InlineBotHandlerDialog(BaseDialog):
 
         try:
             text = inline_query.query.strip()
+            components = list(map(str.strip, text.split(' ')))
+            if not components:
+                raise ValueError('invalid command format')
 
-            components = text.split(' ')
-            if len(components) < 2:
-                return await self._answer_invalid_query(inline_query)
-
-            address, pool_query, *_ = components
-
-            if not LPAddress.validate_address(address):
-                return await self._answer_invalid_address(inline_query)
-
-            pools_variants = self.deps.price_holder.pool_fuzzy_search(pool_query)
-
-            if not pools_variants:
-                return await self._answer_pool_not_found(inline_query, pool_query)
-
-            exact_pool = pools_variants[0]
-
-            # GENERATE A REPORT
-            rune_yield = get_rune_yield_connector(self.deps)
-            lp_report = await rune_yield.generate_yield_report_single_pool(address, exact_pool)
-            # todo: idea: make a gallery!
-            # summary = await rune_yield.generate_yield_summary(address, pools)
-
-            # GENERATE A PICTURE
-            picture = await lp_pool_picture(self.deps.price_holder, lp_report, self.loc, value_hidden=False)
-            picture_io = img_to_bio(picture, f'Thorchain_LP_{exact_pool}_{today_str()}.png')
-
-            # UPLOAD AND SEND RESULT
-            ident = hashlib.md5((today_str() + address + exact_pool).encode()).hexdigest()
-            loc = self.get_localization()
-            title = loc.INLINE_LP_CARD.format(address=address, exact_pool=exact_pool)
-            await self._answer_photo(inline_query, picture_io, title, ident=ident)
-        except Exception:
+            command = components[0].lower()
+            if command == 'pools':
+                await self._handle_pools_query(inline_query)
+            else:
+                await self._handle_lp_position_query(inline_query, components)
+        except Exception as e:
             logging.exception('Inline response generation exception')
-            await self._answer_internal_error(inline_query)
+            await self._answer_internal_error(inline_query, e)
+
+    async def _handle_pools_query(self, inline_query: InlineQuery):
+        notifier: BestPoolsNotifier = self.deps.best_pools_notifier
+        text = self.loc.notification_text_best_pools(notifier.last_pool_detail, notifier.n_pools)
+
+        ident = unique_ident([], prec='minute')
+        await self._answer_results(inline_query, [
+            InlineQueryResultArticle(id=ident,
+                                     title=self.loc.INLINE_TOP_POOLS_TITLE,
+                                     input_message_content=InputTextMessageContent(text))
+        ])
+
+    async def _handle_lp_position_query(self, inline_query: InlineQuery, components: list):
+        if len(components) < 2:
+            return await self._answer_invalid_query(inline_query)
+
+        address, pool_query, *_ = components
+
+        if not LPAddress.validate_address(address):
+            return await self._answer_invalid_address(inline_query)
+
+        pools_variants = self.deps.price_holder.pool_fuzzy_search(pool_query)
+
+        if not pools_variants:
+            return await self._answer_pool_not_found(inline_query, pool_query)
+
+        exact_pool = pools_variants[0]
+
+        # GENERATE A REPORT
+        rune_yield = get_rune_yield_connector(self.deps)
+        lp_report = await rune_yield.generate_yield_report_single_pool(address, exact_pool)
+        # todo: idea: make a gallery!
+        # summary = await rune_yield.generate_yield_summary(address, pools)
+
+        # GENERATE A PICTURE
+        picture = await lp_pool_picture(self.deps.price_holder, lp_report, self.loc, value_hidden=False)
+        picture_io = img_to_bio(picture, f'Thorchain_LP_{exact_pool}_{today_str()}.png')
+
+        # UPLOAD AND SEND RESULT
+        ident = unique_ident((address, exact_pool), prec='minute')
+        loc = self.get_localization()
+        title = loc.INLINE_LP_CARD.format(address=address, exact_pool=exact_pool)
+        await self._answer_photo(inline_query, picture_io, title, ident=ident)
 
     def get_localization(self) -> BaseLocalization:
         return self.deps.loc_man.default
@@ -81,11 +102,11 @@ class InlineBotHandlerDialog(BaseDialog):
                                  title=loc.INLINE_INVALID_ADDRESS_TITLE,
                                  text=loc.INLINE_INVALID_ADDRESS_TEXT)
 
-    async def _answer_internal_error(self, inline_query: InlineQuery):
+    async def _answer_internal_error(self, inline_query: InlineQuery, e: Exception):
         loc = self.get_localization()
         await self._answer_error(inline_query, 'internal_error',
                                  title=loc.INLINE_INTERNAL_ERROR_TITLE,
-                                 text=loc.INLINE_INTERNAL_ERROR_CONTENT,
+                                 text=loc.INLINE_INTERNAL_ERROR_CONTENT + f' ({e!r})',
                                  desc=loc.INLINE_INTERNAL_ERROR_CONTENT)
 
     async def _answer_invalid_query(self, inline_query: InlineQuery):

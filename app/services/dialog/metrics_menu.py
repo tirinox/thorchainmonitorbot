@@ -16,6 +16,7 @@ from services.lib.draw_utils import img_to_bio
 from services.lib.texts import kbd
 from services.models.node_info import NodeInfo
 from services.models.price import PriceReport
+from services.notify.types.best_pool_notify import BestPoolsNotifier
 from services.notify.types.block_notify import BlockHeightNotifier
 from services.notify.types.cap_notify import LiquidityCapNotifier
 from services.notify.types.price_notify import PriceNotifier
@@ -240,7 +241,6 @@ class MetricsDialog(BaseDialog):
                                    disable_notification=True)
 
     async def show_top_pools(self, message: Message):
-        n_pools = self.deps.cfg.as_int('best_pools.num_of_top_pools', 5)
-
-        text = self.loc.notification_text_best_pools(self.deps.best_pools_notifier.last_pool_detail, n_pools)
+        notifier: BestPoolsNotifier = self.deps.best_pools_notifier
+        text = self.loc.notification_text_best_pools(notifier.last_pool_detail, notifier.n_pools)
         await message.answer(text, disable_notification=True)

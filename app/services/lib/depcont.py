@@ -47,3 +47,5 @@ class DepContainer:
     mimir_const_holder: Optional[MimirHolder] = None
     halted_chains: Set[str] = field(default_factory=set)
     chain_info: Dict[str, ThorChainInfo] = field(default_factory=dict)
+
+    is_loading = True

@@ -1,5 +1,6 @@
 import asyncio
 import binascii
+import hashlib
 import logging
 import os
 import pickle
@@ -10,6 +11,8 @@ from collections import deque, Counter, defaultdict
 from functools import wraps, partial
 from itertools import tee
 from typing import List
+
+from services.lib.date_utils import today_str
 
 
 def most_common_and_other(values: list, max_categories, other_str='Others'):
@@ -238,3 +241,9 @@ def estimate_max_by_committee(data, minimal_members=3, on_fail_return_max=True):
 
     if on_fail_return_max and mc:
         return mc[0][0]
+
+
+def unique_ident(args, prec='full'):
+    items = [today_str(prec), *map(str, args)]
+    full_string = ''.join(items)
+    return hashlib.md5(full_string.encode()).hexdigest()

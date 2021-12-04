@@ -20,6 +20,7 @@ class BestPoolsNotifier(INotified):
         self._cooldown = Cooldown(self.deps.db, 'BestPools', cooldown)
         self._fetcher: PoolInfoFetcherMidgard = PoolInfoFetcherMidgard(self.deps, 1)
         self.last_pool_detail: PoolDetailHolder = PoolDetailHolder({}, {})
+        self.n_pools = deps.cfg.as_int('best_pools.num_of_top_pools', 5)
 
     DB_KEY_PREVIOUS_STATS = 'PreviousPoolsState'
 
@@ -58,7 +59,6 @@ class BestPoolsNotifier(INotified):
             await self._cooldown.do()
 
     async def _notify(self, pd: PoolDetailHolder):
-        n_pools = self.deps.cfg.as_int('best_pools.num_of_top_pools', 5)
         await self.deps.broadcaster.notify_preconfigured_channels(
             BaseLocalization.notification_text_best_pools,
-            pd, n_pools)
+            pd, self.n_pools)

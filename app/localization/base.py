@@ -47,6 +47,8 @@ class BaseLocalization(ABC):  # == English
     ND = 'N/D'
     NA = 'N/A'
 
+    BOT_LOADING = '⌛ Bot has been recently restarted and is still loading. Please try again after 1-2 minutes.'
+
     SHORT_MONEY_LOC = None  # default is Eng
 
     @property
@@ -1406,6 +1408,8 @@ class BaseLocalization(ABC):  # == English
 
     INLINE_INTERNAL_ERROR_TITLE = 'Internal error!'
     INLINE_INTERNAL_ERROR_CONTENT = f'Sorry, something went wrong! Please report it to {CREATOR_TG}.'
+
+    INLINE_TOP_POOLS_TITLE = 'THORChain Top Pools'
 
     # ---- MISC ----
 

@@ -145,9 +145,17 @@ def ts_simple_points_to_pandas(points):
     return pd.DataFrame(values, index=index)
 
 
-def today_str():
+def today_str(prec='full'):
     now = datetime.now()
-    return now.strftime("%d-%m-%Y--%H-%M-%S")
+    if prec == 'day':
+        fmt = "%d-%m-%Y"
+    elif prec == 'hour':
+        fmt = "%d-%m-%Y--%H"
+    elif prec == 'minute':
+        fmt = "%d-%m-%Y--%H-%M"
+    else:
+        fmt = "%d-%m-%Y--%H-%M-%S"
+    return now.strftime(fmt)
 
 
 def days_ago_noon(days_ago, now=None, hour=12) -> datetime:

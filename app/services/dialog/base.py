@@ -112,6 +112,12 @@ class BaseDialog(ABC):
             elif hasattr(f, 'inline_bot_stuff'):
                 cls.register_inline_bot_handler(d, f, name)
 
+    @staticmethod
+    async def if_loading_please_wait(deps: DepContainer, loc: BaseLocalization, user):
+        if deps.is_loading:
+            await deps.bot.send_message(user, loc.BOT_LOADING, disable_notification=True)
+            return True
+
     @classmethod
     def register_query_handler(cls, d: DepContainer, f, name):
         query_stuff = f.query_stuff
@@ -144,6 +150,10 @@ class BaseDialog(ABC):
                 })
 
                 loc = d.loc_man.default
+
+                if await cls.if_loading_please_wait(d, loc, inline_query.from_user.id):
+                    return
+
                 handler_class = cls(loc, None, d)
                 handler_method = getattr(handler_class, that_name)
                 return await handler_method(inline_query)
@@ -167,6 +177,10 @@ class BaseDialog(ABC):
             })
             async with state.proxy() as data:
                 loc = await d.loc_man.get_from_db(cls.user_id(message), d.db)
+
+                if await cls.if_loading_please_wait(d, loc, cls.user_id(message)):
+                    return
+
                 handler_class = cls(loc, data, d)
                 handler_method = getattr(handler_class, that_name)
                 return await handler_method(message)

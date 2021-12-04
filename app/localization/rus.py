@@ -7,7 +7,7 @@ from semver import VersionInfo
 
 from localization.base import BaseLocalization, RAIDO_GLYPH, CREATOR_TG, URL_LEADERBOARD_MCCN
 from services.lib.constants import Chains, thor_to_float, rune_origin
-from services.lib.date_utils import format_time_ago, seconds_human, now_ts, MINUTE
+from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change, Asset, short_money
@@ -30,6 +30,8 @@ class RussianLocalization(BaseLocalization):
     SUCCESS = '✅ Успех!'
     ND = 'Неопр.'
     NA = 'Н/Д'
+
+    BOT_LOADING = '⌛ Бот был недавно перезапущен и все еще загружается. Пожалуйста, повторите попытку через пару минут.'
 
     SHORT_MONEY_LOC = {
         'K': ' тыс',
