@@ -47,6 +47,7 @@ services:
     environment:
       - DOZZLE_USERNAME=${DOZZLE_USERNAME}
       - DOZZLE_PASSWORD=${DOZZLE_PASSWORD}
+      - DOZZLE_KEY=${DOZZLE_KEY}
 
 networks:
   redis-net:
