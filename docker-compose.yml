@@ -7,6 +7,7 @@ services:
     restart: always
     depends_on:
       - redis
+      - dozzle
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_HOST=${REDIS_HOST}
