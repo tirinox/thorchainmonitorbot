@@ -1380,11 +1380,12 @@ class BaseLocalization(ABC):  # == English
 
             delta = pd.get_difference_percent(pool.asset, attr_name)
             delta_p = pretty_money(delta, signed=True, postfix='%') if delta else ''
+            delta_p = f'({delta_p})' if delta_p else ''
 
             asset = Asset.from_string(pool.asset).short_str
             url = f'https://app.thorswap.finance/pool/{pool.asset}'
 
-            text += f'#{i}. {link(url, asset)}: {code(v)} ({delta_p})\n'
+            text += f'#{i}. {link(url, asset)}: {code(v)} {delta_p}\n'
         if not top_pools:
             text += no_pool_text
         return text.strip()

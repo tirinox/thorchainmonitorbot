@@ -19,7 +19,7 @@ from services.models.mimir import MimirChange, MimirHolder
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEvent, EventDataSlash, \
     NodeEventType, EventBlockHeight
-from services.models.pool_info import PoolInfo, PoolChanges
+from services.models.pool_info import PoolInfo, PoolChanges, PoolDetailHolder
 from services.models.price import PriceReport
 from services.models.queue import QueueInfo
 from services.models.tx import ThorTxExtended, ThorTxType
@@ -1141,6 +1141,20 @@ class RussianLocalization(BaseLocalization):
                           f'на блокчейне {pre(data.chain)} (≈{self.seconds_human(data.how_long_behind)})!'
 
         return message
+
+    # ------- BEST POOLS -------
+
+    def notification_text_best_pools(self, pd: PoolDetailHolder, n_pools):
+        no_pool_text = 'Пока ничего, наверное, еще грузится...'
+        text = '\n\n'.join([self.format_pool_top(top_pools, pd, title, no_pool_text, n_pools) for title, top_pools in [
+            ('💎 Лучшие годовые %', pd.BY_APY),
+            ('💸 Большие объемы', pd.BY_VOLUME_24h),
+            ('🏊 Максимальная ликвидность', pd.BY_DEPTH),
+        ]])
+
+        return text
+
+    # ------------------------------------------
 
     DATE_TRANSLATOR = {
         'just now': 'прямо сейчас',
