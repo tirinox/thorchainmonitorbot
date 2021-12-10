@@ -11,6 +11,7 @@ from aiothornode.connector import ThorConnector
 
 from localization import LocalizationManager
 from services.dialog import init_dialogs
+from services.dialog.discord.discord_bot import DiscordBot
 from services.jobs.fetch.cap import CapInfoFetcher
 from services.jobs.fetch.chains import ChainStateFetcher
 from services.jobs.fetch.const_mimir import ConstMimirFetcher
@@ -224,6 +225,11 @@ class App:
         if d.cfg.get('constants.mimir_change', True):
             notifier_mimir_change = MimirChangedNotifier(d)
             fetcher_mimir.subscribe(notifier_mimir_change)
+
+        if d.cfg.get('discord.enabled', False):
+            discord_bot = DiscordBot(d.cfg)
+            discord_bot.start_in_background()
+            d.discord_bot = discord_bot
 
         self.deps.is_loading = False
         await asyncio.gather(*(task.run() for task in tasks))

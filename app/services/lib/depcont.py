@@ -40,6 +40,8 @@ class DepContainer:
     block_notifier = None  # type: 'BlockHeightNotifier'
     best_pools_notifier = None  # type: 'BestPoolsNotifier'
 
+    discord_bot = None
+
     # shared data holders
 
     price_holder: LastPriceHolder = LastPriceHolder()
