@@ -72,8 +72,6 @@ class LiquidityCapNotifier(INotified):
 
     async def send_cap_raised_sticker(self):
         sticker = next(self.raise_sticker_iter)
-        # user_lang_map = self.deps.broadcaster.telegram_chats_from_config(self.deps.loc_man)
-        # await self.deps.broadcaster.broadcast(user_lang_map.keys(), sticker, message_type=MessageType.STICKER)
         await self.deps.broadcaster.notify_preconfigured_channels(sticker, message_type=MessageType.STICKER)
 
     # --- CAP IS FULL ---

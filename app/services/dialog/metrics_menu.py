@@ -154,7 +154,10 @@ class MetricsDialog(BaseDialog):
     async def show_queue(self, message, period):
         queue_info = self.deps.queue_holder
         plot = await queue_graph(self.deps, self.loc, duration=period)
-        await message.answer_photo(plot, caption=self.loc.queue_message(queue_info), disable_notification=True)
+        if plot is not None:
+            await message.answer_photo(plot, caption=self.loc.queue_message(queue_info), disable_notification=True)
+        else:
+            await message.answer(self.loc.queue_message(queue_info), disable_notification=True)
 
     @message_handler(state=MetricsStates.PRICE_SELECT_DURATION)
     async def on_price_duration_answered(self, message: Message):

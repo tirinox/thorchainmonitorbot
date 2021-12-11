@@ -11,11 +11,13 @@ from services.models.time_series import TimeSeries
 QUEUE_TIME_SERIES = 'thor_queue'
 RESAMPLE_TIME = '10min'
 
+MIN_POINTS = 4
+
 
 async def queue_graph(d: DepContainer, loc: BaseLocalization, duration=DAY):
     ts = TimeSeries(QUEUE_TIME_SERIES, d.db)
     points = await ts.select(*ts.range_from_ago_to_now(duration, tolerance_sec=10), count=10000)
-    if not points:
+    if not points or len(points) < MIN_POINTS:
         return None
     return await queue_graph_sync(points, loc)
 

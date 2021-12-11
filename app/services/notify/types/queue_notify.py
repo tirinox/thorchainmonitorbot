@@ -36,7 +36,7 @@ class QueueNotifier(INotified):
         async def message_gen(chat_id):
             loc: BaseLocalization = user_lang_map[chat_id]
             text = loc.notification_text_queue_update(item_type, step, value)
-            if with_picture:
+            if photo is not None:
                 return BoardMessage.make_photo(photo, text)
             else:
                 return text
