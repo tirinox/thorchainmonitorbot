@@ -53,7 +53,7 @@ class CapInfoFetcher(BaseFetcher):
             self.get_total_current_pooled_rune()
         )
 
-        # max_lp_rune = 15_807_000  # fixme: debug!! for testing
+        # max_lp_rune = 15_812_000  # fixme: debug!! for testing
         # current_lp_rune = 15_400_000  # fixme: debug!! for testing
 
         if max_lp_rune <= 1 or current_lp_rune < 0:

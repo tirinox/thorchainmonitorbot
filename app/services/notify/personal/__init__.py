@@ -142,7 +142,7 @@ class NodeChangePersonalNotifier(INotified):
                 text = '\n\n'.join(m for m in messages if m)
                 text = text.strip()
                 if text:
-                    asyncio.create_task(self.deps.broadcaster.safe_send_message(user, text))
+                    asyncio.create_task(self.deps.broadcaster.safe_send_message_tg(user, text))
 
     @staticmethod
     async def _filter_events(event_list: List[NodeEvent], user_id, settings: dict) -> List[NodeEvent]:

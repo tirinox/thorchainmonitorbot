@@ -2,13 +2,21 @@ import asyncio
 import logging
 import random
 import time
-from typing import Iterable
+from io import BytesIO
 
 from aiogram.utils import exceptions
 
 from localization import LocalizationManager
+from services.dialog.discord.discord_bot import DiscordBot
 from services.lib.depcont import DepContainer
 from services.lib.texts import MessageType, BoardMessage
+
+
+def copy_photo(p: BytesIO):
+    p.seek(0)
+    new = BytesIO(p.read())
+    new.name = p.name
+    return new
 
 
 class Broadcaster:
@@ -26,20 +34,28 @@ class Broadcaster:
         self._broadcast_lock = asyncio.Lock()
         self._rng = random.Random(time.time())
         self.logger = logging.getLogger('broadcast')
-        self.channels = self.deps.cfg.get_pure('channels')
+        self.channels = list(self.deps.cfg.get_pure('channels'))
 
     def get_channels(self, chan_type):
         return [c for c in self.channels if c['type'].lower() == chan_type]
 
+    @staticmethod
+    def get_channel_id(channel_info):
+        ident = channel_info.get('id')
+        if ident:
+            return int(ident)
+        else:
+            return channel_info.get('name')
+
     async def notify_preconfigured_channels(self, f, *args, **kwargs):
         loc_man: LocalizationManager = self.deps.loc_man
         user_lang_map = {
-            chan.get('name', chan.get('id')): loc_man.get_from_lang(chan['lang'])
+            self.get_channel_id(chan): loc_man.get_from_lang(chan['lang'])
             for chan in self.channels
         }
 
         if not callable(f):  # if constant
-            await self.broadcast(user_lang_map.keys(), f, *args, **kwargs)
+            await self.broadcast(self.channels, f, *args, **kwargs)
             return
 
         async def message_gen(chat_id):
@@ -56,7 +72,7 @@ class Broadcaster:
             else:
                 return loc_f(*call_args, **kwargs)
 
-        await self.broadcast(user_lang_map.keys(), message_gen)
+        await self.broadcast(self.channels, message_gen)
 
     @staticmethod
     def remove_bad_args(kwargs, dis_web_preview=False, dis_notification=False):
@@ -68,7 +84,7 @@ class Broadcaster:
                 del kwargs['disable_notification']
         return kwargs
 
-    async def safe_send_message(self, chat_id, text, message_type=MessageType.TEXT, *args, **kwargs) -> bool:
+    async def safe_send_message_tg(self, chat_id, text, message_type=MessageType.TEXT, *args, **kwargs) -> bool:
         try:
             bot = self.deps.bot
             if message_type == MessageType.TEXT:
@@ -86,8 +102,8 @@ class Broadcaster:
         except exceptions.RetryAfter as e:
             self.logger.error(f"Target [ID:{chat_id}]: Flood limit is exceeded. Sleep {e.timeout} seconds.")
             await asyncio.sleep(e.timeout + self.EXTRA_RETRY_DELAY)
-            return await self.safe_send_message(chat_id, text, message_type=message_type, *args,
-                                                **kwargs)  # Recursive call
+            return await self.safe_send_message_tg(chat_id, text, message_type=message_type, *args,
+                                                   **kwargs)  # Recursive call
         except exceptions.UserDeactivated:
             self.logger.error(f"Target [ID:{chat_id}]: user is deactivated")
         except exceptions.TelegramAPIError:
@@ -109,27 +125,45 @@ class Broadcaster:
 
         return non_numeric_ids + multi_chats + user_dialogs
 
-    async def broadcast(self, chat_ids: Iterable, message, delay=0.075,
+    async def safe_send_message_discord(self, chat_id, text, message_type=MessageType.TEXT, *args, **kwargs) -> bool:
+        discord: DiscordBot = self.deps.discord_bot
+        try:
+            if message_type == MessageType.TEXT:
+                await discord.send_message_to_channel(chat_id, text, need_convert=True)
+            elif message_type == MessageType.STICKER:
+                self.logger.warning('stickers not supported yet sorry')
+            elif message_type == MessageType.PHOTO:
+                photo = kwargs['photo']
+                await discord.send_message_to_channel(chat_id, text, picture=photo, need_convert=True)
+            return True
+        except Exception:
+            self.logger.exception('discord exception!')
+            return False
+
+    async def safe_send_message(self, channel_info, text, message_type=MessageType.TEXT, *args, **kwargs) -> bool:
+        chan_type = str(channel_info['type']).strip().lower()
+        chan_id = self.get_channel_id(channel_info)
+        if chan_type == self.TYPE_TELEGRAM:
+            return await self.safe_send_message_tg(chan_id, text, message_type, *args, **kwargs)
+        elif chan_type == self.TYPE_DISCORD:
+            return await self.safe_send_message_discord(chan_id, text, message_type, *args, **kwargs)
+        else:
+            self.logger.error(f'unsupported channel type: {chan_type}!')
+            return False
+
+    async def broadcast(self, channels: list, message, delay=0.075,
                         message_type=MessageType.TEXT, remove_bad_users=False,
                         *args, **kwargs) -> int:
-        """
-        Simple broadcaster
-        :param message_type: see MessageType
-        :param chat_ids: list of chat ids
-        :param message: message string or sticker id
-        :param delay: anti-spam delay
-        :param args:
-        :param kwargs:
-        :return: Count of messages sent
-        """
         async with self._broadcast_lock:
             count = 0
             bad_ones = []
 
             try:
-                chat_ids = self.sort_and_shuffle_chats(chat_ids)
+                # chat_ids = self.sort_and_shuffle_chats(chat_ids)
 
-                for chat_id in chat_ids:
+                for channel_info in channels:
+                    chat_id = self.get_channel_id(channel_info)
+
                     extra = {}
                     if isinstance(message, str):
                         text = message
@@ -138,7 +172,7 @@ class Broadcaster:
                         if isinstance(message_result, BoardMessage):
                             message_type = message_result.message_type
                             if message_result.message_type is MessageType.PHOTO:
-                                extra['photo'] = message_result.photo
+                                extra['photo'] = copy_photo(message_result.photo)
                             text = message_result.text
                         else:
                             text = message_result
@@ -146,7 +180,7 @@ class Broadcaster:
                         text = str(message)
 
                     if text or 'photo' in extra:
-                        if await self.safe_send_message(chat_id, text, message_type=message_type,
+                        if await self.safe_send_message(channel_info, text, message_type=message_type,
                                                         disable_web_page_preview=True,
                                                         disable_notification=False, **extra):
                             count += 1
@@ -157,7 +191,7 @@ class Broadcaster:
                 if remove_bad_users:
                     await self.remove_users(bad_ones)
             finally:
-                self.logger.info(f"{count} messages successful sent (of {len(chat_ids)})")
+                self.logger.info(f"{count} messages successful sent (of {len(channels)})")
 
             return count
 

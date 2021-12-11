@@ -42,6 +42,12 @@ class LiquidityCapNotifier(INotified):
 
         old_info = await self.get_last_cap()
 
+        # -------- fixme:
+        # await self.deps.broadcaster.notify_preconfigured_channels(
+        #     BaseLocalization.notification_text_cap_change,
+        #     old_info, new_info)
+        # -------
+
         if new_info.is_ok:
             if new_info.price <= 0:
                 new_info.price = old_info.price

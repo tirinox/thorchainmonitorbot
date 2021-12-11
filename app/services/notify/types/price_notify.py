@@ -96,6 +96,8 @@ class PriceNotifier(INotified):
             self.logger.info('no price change but it is long time elapsed (global cd), so notify anyway')
             send_it = True
 
+        # send_it = True # fixme!
+
         if send_it:
             await self.do_notify_price_table(market_info, hist_prices, ath=False)
 
