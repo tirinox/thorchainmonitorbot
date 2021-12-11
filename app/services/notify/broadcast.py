@@ -16,30 +16,51 @@ class Broadcaster:
 
     EXTRA_RETRY_DELAY = 0.1
 
+    TYPE_TELEGRAM = 'telegram'
+    TYPE_DISCORD = 'discord'
+    TYPE_SLACK = 'slack'
+
     def __init__(self, d: DepContainer):
         self.deps = d
 
         self._broadcast_lock = asyncio.Lock()
         self._rng = random.Random(time.time())
         self.logger = logging.getLogger('broadcast')
+        self.channels = self.deps.cfg.get_pure('channels')
+
+    def get_channels(self, chan_type):
+        return [c for c in self.channels if c['type'].lower() == chan_type]
 
     def telegram_chats_from_config(self, loc_man: LocalizationManager):
-        channels = self.deps.cfg.telegram.channels
+        tg_channels = self.get_channels(self.TYPE_TELEGRAM)
         return {
-            chan['name']: loc_man.get_from_lang(chan['lang']) for chan in channels if chan['type'] == 'telegram'
+            chan['name']: loc_man.get_from_lang(chan['lang']) for chan in tg_channels
         }
 
     async def notify_preconfigured_channels(self, f, *args, **kwargs):
         loc_man: LocalizationManager = self.deps.loc_man
-        user_lang_map = self.telegram_chats_from_config(loc_man)
+        user_lang_map = {
+            chan.get('name', chan.get('id')): loc_man.get_from_lang(chan['lang'])
+            for chan in self.channels
+        }
+
+        if not callable(f):  # if constant
+            await self.broadcast(user_lang_map.keys(), f, *args, **kwargs)
+            return
 
         async def message_gen(chat_id):
             locale = user_lang_map[chat_id]
-            loc_f = getattr(locale, f.__name__)
-            if asyncio.iscoroutinefunction(loc_f):
-                return await loc_f(*args, **kwargs)
+            if hasattr(locale, f.__name__):
+                loc_f = getattr(locale, f.__name__)
+                call_args = args
             else:
-                return loc_f(*args, **kwargs)
+                loc_f = f
+                call_args = [locale, *args]
+
+            if asyncio.iscoroutinefunction(loc_f):
+                return await loc_f(*call_args, **kwargs)
+            else:
+                return loc_f(*call_args, **kwargs)
 
         await self.broadcast(user_lang_map.keys(), message_gen)
 
@@ -71,7 +92,8 @@ class Broadcaster:
         except exceptions.RetryAfter as e:
             self.logger.error(f"Target [ID:{chat_id}]: Flood limit is exceeded. Sleep {e.timeout} seconds.")
             await asyncio.sleep(e.timeout + self.EXTRA_RETRY_DELAY)
-            return await self.safe_send_message(chat_id, text, message_type=message_type, *args, **kwargs)  # Recursive call
+            return await self.safe_send_message(chat_id, text, message_type=message_type, *args,
+                                                **kwargs)  # Recursive call
         except exceptions.UserDeactivated:
             self.logger.error(f"Target [ID:{chat_id}]: user is deactivated")
         except exceptions.TelegramAPIError:
@@ -93,8 +115,14 @@ class Broadcaster:
 
         return non_numeric_ids + multi_chats + user_dialogs
 
+    # async def broadcast_to_channels(self, message, delay=0.075,
+    #                                 message_type=MessageType.TEXT, *args, **kwargs) -> int:
+    #     tg_chans = self.get_channels(self.TYPE_TELEGRAM)
+    #     return await self.deps.broadcaster.broadcast(tg_chans, message, delay, message_type, *args, **kwargs)
+
     async def broadcast(self, chat_ids: Iterable, message, delay=0.075,
-                        message_type=MessageType.TEXT, *args, **kwargs) -> int:
+                        message_type=MessageType.TEXT, remove_bad_users=False,
+                        *args, **kwargs) -> int:
         """
         Simple broadcaster
         :param message_type: see MessageType
@@ -125,6 +153,8 @@ class Broadcaster:
                             text = message_result.text
                         else:
                             text = message_result
+                    else:
+                        text = str(message)
 
                     if text or 'photo' in extra:
                         if await self.safe_send_message(chat_id, text, message_type=message_type,
@@ -135,7 +165,8 @@ class Broadcaster:
                             bad_ones.append(chat_id)
                         await asyncio.sleep(delay)  # 10 messages per second (Limit: 30 messages per second)
 
-                await self.remove_users(bad_ones)
+                if remove_bad_users:
+                    await self.remove_users(bad_ones)
             finally:
                 self.logger.info(f"{count} messages successful sent (of {len(chat_ids)})")
 

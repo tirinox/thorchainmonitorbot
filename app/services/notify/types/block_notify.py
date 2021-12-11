@@ -189,17 +189,13 @@ class BlockHeightNotifier(INotified):
             await self.stuck_alert_cd.do()
 
     async def _post_block_speed_pic_with_caption(self, f_caption_from_loc: callable):
-        user_lang_map = self.deps.broadcaster.telegram_chats_from_config(self.deps.loc_man)
-
-        points = await self.get_block_time_chart(self.notification_chart_duration, convert_to_blocks_per_minute=True)
-
-        async def gen_fun(chat_id):
-            loc: BaseLocalization = user_lang_map[chat_id]
+        async def gen_fun(loc: BaseLocalization, points):
             chart = await block_speed_chart(points, loc, normal_bpm=THOR_BLOCKS_PER_MINUTE, time_scale_mode='time')
             caption = f_caption_from_loc(loc)
             return BoardMessage.make_photo(chart, caption=caption)
 
-        await self.deps.broadcaster.broadcast(user_lang_map, gen_fun)
+        points = await self.get_block_time_chart(self.notification_chart_duration, convert_to_blocks_per_minute=True)
+        await self.deps.broadcaster.notify_preconfigured_channels(gen_fun, points)
 
     async def _post_stuck_alert(self, really_stuck, time_without_new_blocks):
         self.logger.info(f'Thor Block height is {really_stuck = }.')

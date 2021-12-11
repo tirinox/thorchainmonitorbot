@@ -31,10 +31,6 @@ telegram:
   bot:
     token: "insert the bot token from @BotFather here"
     username: "thor_infobot"
-  channels:
-    - type: telegram
-      name: "@thorchain_alert"  # live channel
-      lang: eng
   common:
     loading_sticker: CAACAgIAAxkBAAIRx1--Tia-m6DNRIApk3yqmNWvap_sAALcAAP3AsgPUNi8Bnu98HweBA
 
@@ -50,6 +46,22 @@ telegram:
   inline_bot:
     enabled: true
     cache_time: 5m
+
+
+discord:  # (!) new!!
+  enabled: true
+  bot:
+    token: "token.for.discord.bot"
+
+
+# for message broadcasting
+channels:  # (!) new! moved from "telegram" section
+  - type: telegram
+    name: "@thorchain_alert"  # live channel
+    lang: eng
+  - type: discord
+    name: 322323232323  # channel ID
+    lang: rus
 
 
 tx:
