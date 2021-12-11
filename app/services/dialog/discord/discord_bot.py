@@ -29,12 +29,14 @@ class DiscordBot:
     def convert_text_to_discord_formatting(text):
         return markdownify(text)
 
-    async def send_message_to_channel(self, channel, text, picture=None, pic_name='pic.png', need_convert=False):
+    async def send_message_to_channel(self, channel, text: str, picture=None, pic_name='pic.png', need_convert=False):
         if not channel or not text:
             self.logger.warning('no data to send')
             return
 
         if need_convert:
+            text = text.replace('<pre>', '<code>')
+            text = text.replace('</pre>', '</code>')
             text = self.convert_text_to_discord_formatting(text)
 
         if picture:

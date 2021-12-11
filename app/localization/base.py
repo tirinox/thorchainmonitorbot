@@ -459,7 +459,7 @@ class BaseLocalization(ABC):  # == English
         for title, old_price in time_combos:
             if old_price:
                 pc = calc_percent_change(old_price, price)
-                message += pre(f"{title.rjust(4)}:{adaptive_round_to_str(pc, True).rjust(8)} % "
+                message += code(f"{title.rjust(4)}:{adaptive_round_to_str(pc, True).rjust(8)} % "
                                f"{emoji_for_percent_change(pc).ljust(4).rjust(6)}") + "\n"
 
         if fp.rank >= 1:
