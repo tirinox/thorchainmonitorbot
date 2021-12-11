@@ -1,6 +1,7 @@
 import logging
 from typing import List
 
+from localization import BaseLocalization
 from services.jobs.fetch.base import INotified
 from services.lib.config import SubConfig
 from services.lib.date_utils import parse_timespan_to_seconds
@@ -68,12 +69,9 @@ class GenericTxNotifier(INotified):
         self.logger.info(f"large_txs: {len(large_txs)}")
 
         if large_txs:
-            user_lang_map = self.deps.broadcaster.telegram_chats_from_config(self.deps.loc_man)
-
             cap_info = await LiquidityCapNotifier(self.deps).get_last_cap()
 
-            async def message_gen(chat_id):
-                loc = user_lang_map[chat_id]
+            async def message_gen(loc: BaseLocalization):
                 texts = []
                 has_liquidity = False
                 for tx in large_txs:
@@ -87,7 +85,7 @@ class GenericTxNotifier(INotified):
                     texts.append(loc.notification_text_large_tx(tx, usd_per_rune, pool_info, cap_info_last))
                 return '\n\n'.join(texts)
 
-            await self.deps.broadcaster.broadcast(user_lang_map.keys(), message_gen)
+            await self.deps.broadcaster.notify_preconfigured_channels(message_gen)
 
     def _get_min_usd_depth(self, tx: ThorTxExtended, usd_per_rune):
         pools = tx.pools or [tx.first_input_tx.first_asset]

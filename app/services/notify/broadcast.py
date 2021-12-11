@@ -31,12 +31,6 @@ class Broadcaster:
     def get_channels(self, chan_type):
         return [c for c in self.channels if c['type'].lower() == chan_type]
 
-    def telegram_chats_from_config(self, loc_man: LocalizationManager):
-        tg_channels = self.get_channels(self.TYPE_TELEGRAM)
-        return {
-            chan['name']: loc_man.get_from_lang(chan['lang']) for chan in tg_channels
-        }
-
     async def notify_preconfigured_channels(self, f, *args, **kwargs):
         loc_man: LocalizationManager = self.deps.loc_man
         user_lang_map = {
@@ -114,11 +108,6 @@ class Broadcaster:
         self._rng.shuffle(multi_chats)
 
         return non_numeric_ids + multi_chats + user_dialogs
-
-    # async def broadcast_to_channels(self, message, delay=0.075,
-    #                                 message_type=MessageType.TEXT, *args, **kwargs) -> int:
-    #     tg_chans = self.get_channels(self.TYPE_TELEGRAM)
-    #     return await self.deps.broadcaster.broadcast(tg_chans, message, delay, message_type, *args, **kwargs)
 
     async def broadcast(self, chat_ids: Iterable, message, delay=0.075,
                         message_type=MessageType.TEXT, remove_bad_users=False,

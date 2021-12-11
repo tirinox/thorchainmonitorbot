@@ -55,8 +55,7 @@ class PriceNotifier(INotified):
 
     async def send_ath_sticker(self):
         sticker = next(self.ath_sticker_iter)
-        user_lang_map = self.deps.broadcaster.telegram_chats_from_config(self.deps.loc_man)
-        await self.deps.broadcaster.broadcast(user_lang_map.keys(), sticker, message_type=MessageType.STICKER)
+        await self.deps.broadcaster.notify_preconfigured_channels(sticker, message_type=MessageType.STICKER)
 
     async def do_notify_price_table(self, market_info, hist_prices, ath, last_ath=None):
         await self.cd.do(self.CD_KEY_PRICE_NOTIFIED)
@@ -64,10 +63,7 @@ class PriceNotifier(INotified):
         btc_price = self.deps.price_holder.btc_per_rune
         report = PriceReport(*hist_prices, market_info, last_ath, btc_price)
 
-        user_lang_map = self.deps.broadcaster.telegram_chats_from_config(self.deps.loc_man)
-
-        async def price_graph_gen(chat_id):
-            loc: BaseLocalization = user_lang_map[chat_id]
+        async def price_graph_gen(loc: BaseLocalization):
             graph = await price_graph_from_db(self.deps.db, loc, self.price_graph_period)
             caption = loc.notification_text_price_update(report, ath, halted_chains=self.deps.halted_chains)
             return BoardMessage.make_photo(graph, caption=caption)
@@ -75,7 +71,7 @@ class PriceNotifier(INotified):
         if ath:
             await self.send_ath_sticker()
 
-        await self.deps.broadcaster.broadcast(user_lang_map, price_graph_gen)
+        await self.deps.broadcaster.notify_preconfigured_channels(price_graph_gen)
 
     async def handle_new_price(self, market_info: RuneMarketInfo):
         hist_prices = await self.historical_get_triplet()

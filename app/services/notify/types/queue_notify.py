@@ -26,22 +26,19 @@ class QueueNotifier(INotified):
         self.logger.info(f'config: {deps.cfg.queue}')
 
     async def notify(self, item_type, step, value, with_picture=True):
-        user_lang_map = self.deps.broadcaster.telegram_chats_from_config(self.deps.loc_man)
-
         if with_picture:
             photo = await queue_graph(self.deps, self.deps.loc_man.default)
         else:
             photo = None
 
-        async def message_gen(chat_id):
-            loc: BaseLocalization = user_lang_map[chat_id]
+        async def message_gen(loc: BaseLocalization):
             text = loc.notification_text_queue_update(item_type, step, value)
             if photo is not None:
                 return BoardMessage.make_photo(photo, text)
             else:
                 return text
 
-        await self.deps.broadcaster.broadcast(user_lang_map.keys(), message_gen)
+        await self.deps.broadcaster.notify_preconfigured_channels(message_gen)
 
     async def handle_entry(self, item_type, ts: TimeSeries):
         avg_value = await ts.average(self.avg_period, item_type)
