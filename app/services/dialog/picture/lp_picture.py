@@ -35,6 +35,7 @@ def hor_line_lp(draw, y, width=2, w=LP_PIC_WIDTH, h=LP_PIC_HEIGHT):
 
 class Resources(metaclass=Singleton):
     BASE = './data'
+    LOGO_BASE = './data/asset_logo'
     LOGO_WIDTH, LOGO_HEIGHT = 128, 128
     HIDDEN_IMG = f'{BASE}/hidden.png'
     BG_IMG = f'{BASE}/lp_bg.png'
@@ -52,7 +53,7 @@ class Resources(metaclass=Singleton):
         self.font_big = ImageFont.truetype(self.FONT_BOLD, 64)
         self.bg_image = Image.open(self.BG_IMG)
 
-        self.logo_downloader = CryptoLogoDownloader(self.BASE)
+        self.logo_downloader = CryptoLogoDownloader(self.LOGO_BASE)
 
         self.font_sum_ticks = ImageFont.truetype(self.FONT_BOLD, 24)
 

@@ -61,7 +61,11 @@ class BaseLocalization(ABC):  # == English
 
     @property
     def alert_channel_name(self):
-        return self.cfg.telegram.channels[0]['name']
+        channels = self.cfg.channels
+        for c in channels:
+            if c['type'] == 'telegram':
+                return c['name']
+        return ''
 
     @staticmethod
     def _cap_progress_bar(info: ThorCapInfo):
