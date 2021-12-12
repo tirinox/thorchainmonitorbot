@@ -12,6 +12,9 @@ from functools import wraps, partial
 from itertools import tee
 from typing import List
 
+import aiofiles
+import aiohttp
+
 from services.lib.date_utils import today_str
 
 
@@ -247,3 +250,18 @@ def unique_ident(args, prec='full'):
     items = [today_str(prec), *map(str, args)]
     full_string = ''.join(items)
     return hashlib.md5(full_string.encode()).hexdigest()
+
+
+async def download_file(url, target_path):
+    async with aiohttp.ClientSession() as session:
+        if not url:
+            raise FileNotFoundError
+
+        logging.info(f'Downloading file from {url}...')
+        async with session.get(url) as resp:
+            if resp.status == 200:
+                f = await aiofiles.open(target_path, mode='wb')
+                await f.write(await resp.read())
+                await f.close()
+
+            return resp.status

@@ -1,12 +1,14 @@
 import asyncio
 from io import BytesIO
+from typing import Optional
 
 from discord import Client, File
+from markdownify import markdownify
 
 from services.lib.config import Config
 from services.lib.draw_utils import img_to_bio
 from services.lib.utils import class_logger
-from markdownify import markdownify
+
 
 class DiscordBot:
     async def on_ready(self):
@@ -29,7 +31,8 @@ class DiscordBot:
     def convert_text_to_discord_formatting(text):
         return markdownify(text)
 
-    async def send_message_to_channel(self, channel, text: str, picture=None, pic_name='pic.png', need_convert=False):
+    async def send_message_to_channel(self, channel, text: Optional[str], picture=None, pic_name='pic.png',
+                                      need_convert=False):
         if not channel or not text:
             self.logger.warning('no data to send')
             return

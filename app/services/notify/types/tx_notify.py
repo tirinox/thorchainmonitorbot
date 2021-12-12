@@ -1,4 +1,3 @@
-import logging
 from typing import List
 
 from localization import BaseLocalization
@@ -12,8 +11,6 @@ from services.notify.types.cap_notify import LiquidityCapNotifier
 
 
 class GenericTxNotifier(INotified):
-    MAX_TX_PER_ONE_TIME = 10  # todo: move to config
-
     DEFAULT_TX_VS_DEPTH_CURVE = [
         {'depth': 10_000, 'percent': 20},  # if depth < 10_000 then 0.2
         {'depth': 100_000, 'percent': 12},  # if 10_000 <= depth < 100_000 then 0.2 ... 0.12
@@ -41,6 +38,7 @@ class GenericTxNotifier(INotified):
         self.params = params
         self.tx_types = tx_types
         self.logger = class_logger(self)
+        self.max_tx_per_single_message = deps.cfg.as_int('tx.max_tx_per_single_message', 5)
 
         self.max_age_sec = parse_timespan_to_seconds(deps.cfg.tx.max_age)
         self.min_usd_total = int(params.min_usd_total)
@@ -62,7 +60,7 @@ class GenericTxNotifier(INotified):
         min_rune_volume = self.min_usd_total / usd_per_rune
 
         large_txs = list(self._filter_large_txs(txs, min_rune_volume, usd_per_rune))
-        large_txs = large_txs[:self.MAX_TX_PER_ONE_TIME]  # limit for 1 notification
+        large_txs = large_txs[:self.max_tx_per_single_message]  # limit for 1 notification
 
         if not large_txs:
             return

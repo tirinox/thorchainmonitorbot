@@ -1,11 +1,11 @@
 import logging
 import os
+
 import sha3
-import aiofiles
-import aiohttp
 from PIL import Image
 
 from services.lib.constants import *
+from services.lib.utils import download_file
 
 logger = logging.getLogger(__name__)
 
@@ -76,17 +76,12 @@ class CryptoLogoDownloader:
         if not asset:
             raise FileNotFoundError
 
-        async with aiohttp.ClientSession() as session:
-            url = self.image_url(asset)
-            if not url:
-                raise FileNotFoundError
+        url = self.image_url(asset)
+        if not url:
+            raise FileNotFoundError
 
-            logger.info(f'Downloading logo for {asset} from {url}...')
-            async with session.get(url) as resp:
-                if resp.status == 200:
-                    f = await aiofiles.open(self.coin_path(asset), mode='wb')
-                    await f.write(await resp.read())
-                    await f.close()
+        target_path = self.coin_path(asset)
+        await download_file(url, target_path)
 
     async def get_or_download_logo_cached(self, asset):
         try:

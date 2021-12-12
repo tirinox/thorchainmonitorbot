@@ -70,6 +70,7 @@ tx:
   fetch_period: 70
   tx_per_batch: 50
   max_page_deep: 5
+  max_tx_per_single_message: 6
 
   liquidity:
     enabled: true

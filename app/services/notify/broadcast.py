@@ -9,6 +9,7 @@ from aiogram.utils import exceptions
 from localization import LocalizationManager
 from services.dialog.discord.discord_bot import DiscordBot
 from services.lib.depcont import DepContainer
+from services.lib.telegram import TelegramStickerDownloader
 from services.lib.texts import MessageType, BoardMessage
 
 
@@ -31,6 +32,7 @@ class Broadcaster:
     def __init__(self, d: DepContainer):
         self.deps = d
 
+        self._sticker_download = TelegramStickerDownloader(d.bot)
         self._broadcast_lock = asyncio.Lock()
         self._rng = random.Random(time.time())
         self.logger = logging.getLogger('broadcast')
@@ -132,12 +134,14 @@ class Broadcaster:
                 await discord.send_message_to_channel(chat_id, text, need_convert=True)
             elif message_type == MessageType.STICKER:
                 self.logger.warning('stickers not supported yet sorry')
+                sticker = await self._sticker_download.get_sticker_image(text)
+                await discord.send_message_to_channel(chat_id, ' ', picture=sticker)
             elif message_type == MessageType.PHOTO:
                 photo = kwargs['photo']
                 await discord.send_message_to_channel(chat_id, text, picture=photo, need_convert=True)
             return True
-        except Exception:
-            self.logger.exception('discord exception!')
+        except Exception as e:
+            self.logger.exception(f'discord exception {e}, {message_type = }, text = "{text}"!')
             return False
 
     async def safe_send_message(self, channel_info, text, message_type=MessageType.TEXT, *args, **kwargs) -> bool:
