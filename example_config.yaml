@@ -54,6 +54,13 @@ discord:  # (!) new!!
     token: "token.for.discord.bot"
 
 
+slack:  # (!) new!!
+  enabled: true
+  bot:
+    app_token: xapp-1234134567
+    bot_token: xoxb-57890
+
+
 # for message broadcasting
 channels:  # (!) new! moved from "telegram" section
   - type: telegram

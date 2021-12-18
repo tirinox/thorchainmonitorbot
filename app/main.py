@@ -12,6 +12,7 @@ from aiothornode.connector import ThorConnector
 from localization import LocalizationManager
 from services.dialog import init_dialogs
 from services.dialog.discord.discord_bot import DiscordBot
+from services.dialog.slack.slack_bot import SlackBot
 from services.jobs.fetch.cap import CapInfoFetcher
 from services.jobs.fetch.chains import ChainStateFetcher
 from services.jobs.fetch.const_mimir import ConstMimirFetcher
@@ -227,9 +228,12 @@ class App:
             fetcher_mimir.subscribe(notifier_mimir_change)
 
         if d.cfg.get('discord.enabled', False):
-            discord_bot = DiscordBot(d.cfg)
-            discord_bot.start_in_background()
-            d.discord_bot = discord_bot
+            d.discord_bot = DiscordBot(d.cfg)
+            d.discord_bot.start_in_background()
+
+        if d.cfg.get('slack.enabled', False):
+            d.slack_bot = SlackBot(d.cfg)
+            d.slack_bot.start_in_background()
 
         self.deps.is_loading = False
         await asyncio.gather(*(task.run() for task in tasks))

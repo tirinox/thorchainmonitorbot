@@ -8,6 +8,7 @@ from aiogram.utils import exceptions
 
 from localization import LocalizationManager
 from services.dialog.discord.discord_bot import DiscordBot
+from services.dialog.slack.slack_bot import SlackBot
 from services.lib.depcont import DepContainer
 from services.lib.telegram import TelegramStickerDownloader
 from services.lib.texts import MessageType, BoardMessage
@@ -129,11 +130,13 @@ class Broadcaster:
 
     async def safe_send_message_discord(self, chat_id, text, message_type=MessageType.TEXT, *args, **kwargs) -> bool:
         discord: DiscordBot = self.deps.discord_bot
+        if not discord:
+            self.logger.error('Discord bot is disabled!')
+            return False
         try:
             if message_type == MessageType.TEXT:
                 await discord.send_message_to_channel(chat_id, text, need_convert=True)
             elif message_type == MessageType.STICKER:
-                self.logger.warning('stickers not supported yet sorry')
                 sticker = await self._sticker_download.get_sticker_image(text)
                 await discord.send_message_to_channel(chat_id, ' ', picture=sticker)
             elif message_type == MessageType.PHOTO:
@@ -144,6 +147,28 @@ class Broadcaster:
             self.logger.exception(f'discord exception {e}, {message_type = }, text = "{text}"!')
             return False
 
+    async def safe_send_message_slack(self, chat_id, text, message_type=MessageType.TEXT, *args,
+                                      **kwargs) -> bool:
+        slack: SlackBot = self.deps.slack_bot
+        if not slack:
+            self.logger.error('Slack bot is disabled!')
+            return False
+
+        try:
+            if message_type == MessageType.TEXT:
+                await slack.send_message_to_channel(chat_id, text, need_convert=True)
+            elif message_type == MessageType.STICKER:
+                self.logger.warning('stickers not supported yet sorry')
+                sticker = await self._sticker_download.get_sticker_image(text)
+                await slack.send_message_to_channel(chat_id, ' ', picture=sticker)
+            elif message_type == MessageType.PHOTO:
+                photo = kwargs['photo']
+                await slack.send_message_to_channel(chat_id, text, picture=photo, need_convert=True)
+            return True
+        except Exception as e:
+            self.logger.exception(f'Slack exception {e}, {message_type = }, text = "{text}"!')
+            return False
+
     async def safe_send_message(self, channel_info, text, message_type=MessageType.TEXT, *args, **kwargs) -> bool:
         chan_type = str(channel_info['type']).strip().lower()
         chan_id = self.get_channel_id(channel_info)
@@ -151,6 +176,8 @@ class Broadcaster:
             return await self.safe_send_message_tg(chan_id, text, message_type, *args, **kwargs)
         elif chan_type == self.TYPE_DISCORD:
             return await self.safe_send_message_discord(chan_id, text, message_type, *args, **kwargs)
+        elif chan_type == self.TYPE_SLACK:
+            return await self.safe_send_message_slack(chan_id, text, message_type, *args, **kwargs)
         else:
             self.logger.error(f'unsupported channel type: {chan_type}!')
             return False

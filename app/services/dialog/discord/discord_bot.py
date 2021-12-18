@@ -29,6 +29,8 @@ class DiscordBot:
 
     @staticmethod
     def convert_text_to_discord_formatting(text):
+        text = text.replace('<pre>', '<code>')
+        text = text.replace('</pre>', '</code>')
         return markdownify(text)
 
     async def send_message_to_channel(self, channel, text: Optional[str], picture=None, pic_name='pic.png',
@@ -38,8 +40,6 @@ class DiscordBot:
             return
 
         if need_convert:
-            text = text.replace('<pre>', '<code>')
-            text = text.replace('</pre>', '</code>')
             text = self.convert_text_to_discord_formatting(text)
 
         if picture:

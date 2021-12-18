@@ -41,6 +41,7 @@ class DepContainer:
     best_pools_notifier = None  # type: 'BestPoolsNotifier'
 
     discord_bot = None
+    slack_bot = None
 
     # shared data holders
 
