@@ -265,3 +265,10 @@ async def download_file(url, target_path):
                 await f.close()
 
             return resp.status
+
+
+def sum_and_str(*args):
+    if not args:
+        return '0'
+    else:
+        return str(sum(int(arg) for arg in args))

@@ -4,6 +4,7 @@ from typing import List, Optional, Iterable
 
 from services.lib.constants import is_rune, RUNE_SYMBOL, Chains, NATIVE_RUNE_SYMBOL, thor_to_float
 from services.lib.money import Asset
+from services.lib.utils import sum_and_str
 from services.models.lp_info import LPAddress
 from services.models.pool_info import PoolInfo
 
@@ -32,6 +33,11 @@ class ThorCoin:
     @property
     def amount_float(self):
         return thor_to_float(self.amount)
+
+    @staticmethod
+    def merge_two(a: 'ThorCoin', b: 'ThorCoin'):
+        assert a.asset == b.asset
+        return ThorCoin(sum_and_str(a.amount, b.amount), a.asset)
 
 
 @dataclass
@@ -78,6 +84,7 @@ class ThorMetaSwap:
     network_fees: List[ThorCoin]
     trade_slip: str
     trade_target: str
+    affiliate_fee: float = 0.0
 
     @classmethod
     def parse(cls, j):
@@ -85,7 +92,7 @@ class ThorMetaSwap:
         return cls(liquidity_fee=j.get('liquidityFee', 0),
                    network_fees=fees,
                    trade_slip=j.get('swapSlip', '0'),
-                   trade_target=j.get('tradeTarget', '0'))
+                   trade_target=j.get('swapTarget', '0'))
 
     @property
     def trade_slip_percent(self):
@@ -94,6 +101,18 @@ class ThorMetaSwap:
     @property
     def liquidity_fee_rune_float(self):
         return thor_to_float(self.liquidity_fee)
+
+    @staticmethod
+    def merge_two(a: 'ThorMetaSwap', b: 'ThorMetaSwap'):
+        if a and b:
+            return ThorMetaSwap(
+                liquidity_fee=sum_and_str(a.liquidity_fee, b.liquidity_fee),
+                network_fees=a.network_fees + b.network_fees,
+                trade_slip=sum_and_str(a.trade_slip, b.trade_slip),
+                trade_target=sum_and_str(a.trade_target, b.trade_target)
+            )
+        else:
+            return a or b
 
 
 @dataclass
@@ -135,6 +154,7 @@ class ThorMetaRefund:
 @dataclass
 class ThorMetaAddLiquidity:
     liquidity_units: str
+    affiliate_fee: float = 0.0
 
     @property
     def liquidity_units_int(self):
@@ -143,6 +163,15 @@ class ThorMetaAddLiquidity:
     @classmethod
     def parse(cls, j):
         return cls(liquidity_units=j.get('liquidityUnits', '0'))
+
+    @staticmethod
+    def merge_two(a: 'ThorMetaAddLiquidity', b: 'ThorMetaAddLiquidity'):
+        if a and b:
+            return ThorMetaAddLiquidity(
+                liquidity_units=sum_and_str(a.liquidity_units, b.liquidity_units)
+            )
+        else:
+            return a or b
 
 
 SUCCESS = 'success'

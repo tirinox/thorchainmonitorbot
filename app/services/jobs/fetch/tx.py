@@ -1,4 +1,6 @@
+import logging
 import time
+from collections import defaultdict
 from typing import List, Optional
 
 from aiohttp import ContentTypeError
@@ -10,7 +12,7 @@ from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import free_url_gen
-from services.models.tx import ThorTx, ThorTxExtended
+from services.models.tx import ThorTx, ThorTxExtended, ThorCoin, ThorMetaSwap, ThorMetaAddLiquidity
 
 
 class TxFetcher(BaseFetcher):
@@ -51,8 +53,8 @@ class TxFetcher(BaseFetcher):
         types = free_url_gen.LIQUIDITY_TX_TYPES_STRING if liquidity_change_only else None
         while True:
             q_path = free_url_gen.url_for_tx(page * self.tx_per_batch, self.tx_per_batch,
-                                          types=types,
-                                          address=address)
+                                             types=types,
+                                             address=address)
 
             if not self.progress_tracker:
                 self.logger.info(f"start fetching user's tx: {q_path}")
@@ -110,6 +112,9 @@ class TxFetcher(BaseFetcher):
                 break
 
             all_txs += unseen_new_txs
+
+        all_txs = merge_affiliate_txs(all_txs)
+
         return all_txs
 
     def _filter_by_age(self, txs: List[ThorTx]):
@@ -134,3 +139,50 @@ class TxFetcher(BaseFetcher):
     async def clear_all_seen_tx(self):
         r: Redis = await self.deps.db.get_redis()
         await r.delete(self.KEY_LAST_SEEN_TX_HASH)
+
+
+def merge_same_txs(same_tx_list: List[ThorTx]) -> ThorTx:
+    result_tx: ThorTx = same_tx_list[0]
+    for other_tx in same_tx_list[1:]:
+        other_tx: ThorTx
+        if other_tx.type != result_tx.type or other_tx.pools != result_tx.pools:
+            logging.warning('Same tx data mismatch, continuing...')
+            continue
+
+        try:
+            # merge input coins
+            for in_i, other_in in enumerate(other_tx.in_tx):
+                result_coins = result_tx.in_tx[in_i].coins
+                for coin_i, other_coin in enumerate(other_in.coins):
+                    result_coins[coin_i] = ThorCoin.merge_two(result_coins[coin_i], other_coin)
+
+            # merge meta
+            result_tx.meta_swap = ThorMetaSwap.merge_two(result_tx.meta_swap, other_tx.meta_swap)
+            result_tx.meta_add = ThorMetaAddLiquidity.merge_two(result_tx.meta_add, other_tx.meta_add)
+
+        except (IndexError, TypeError, ValueError, AssertionError):
+            logging.error(f'Cannot merge: {result_tx} and {other_tx}!')
+
+    return result_tx
+
+
+def merge_affiliate_txs(txs: List[ThorTx]):
+    len_before = len(txs)
+    same_tx_id_set = defaultdict(list)
+    for tx in txs:
+        h = tx.first_input_tx_hash
+        if h:
+            same_tx_id_set[h].append(tx)
+
+    for h, same_tx_list in same_tx_id_set.items():
+        if len(same_tx_list) >= 2:
+            result_tx = merge_same_txs(same_tx_list)
+            txs = list(filter(lambda a_tx: a_tx.first_input_tx_hash != h, txs))
+            txs.append(result_tx)
+
+    txs.sort(key=lambda tx: tx.height_int, reverse=True)
+
+    if len_before > len(txs):
+        logging.info(f'Some TXS were merged: {len_before} => {len(txs)}')
+
+    return txs
