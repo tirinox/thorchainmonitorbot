@@ -1119,7 +1119,7 @@ class BaseLocalization(ABC):  # == English
             return ''
 
         text = '🔔 <b>Mimir update!</b>\n' \
-               'The team has just updated global THORChain settings:\n\n'
+               'The admin has just updated global THORChain settings:\n\n'
 
         for change in changes:
             old_value_fmt = code(self.format_mimir_value(change.old_value, change.entry))

@@ -914,7 +914,7 @@ class RussianLocalization(BaseLocalization):
             return ''
 
         text = '🔔 <b>Обновление Мимир!</b>\n' \
-               'Команда только что обновила глобальные настройки THORChain:\n\n'
+               'Администраторы только что обновили глобальные настройки THORChain:\n\n'
 
         for change in changes:
             old_value_fmt = code(self.format_mimir_value(change.old_value, change.entry))
