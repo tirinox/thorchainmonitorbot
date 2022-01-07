@@ -913,13 +913,17 @@ class RussianLocalization(BaseLocalization):
         if not changes:
             return ''
 
-        text = '🔔 <b>Обновление Мимир!</b>\n' \
-               'Администраторы только что обновили глобальные настройки THORChain:\n\n'
+        text = '🔔 <b>Обновление Мимир!</b>\n\n'
 
         for change in changes:
             old_value_fmt = code(self.format_mimir_value(change.old_value, change.entry))
             new_value_fmt = code(self.format_mimir_value(change.new_value, change.entry))
             name = code(change.entry.pretty_name if change.entry else change.name)
+
+            if change.entry.automatic:
+                text += bold('[🤖 Автоматика платежеспособности ]') + '\n'
+            else:
+                text += bold('[👩‍💻 Администраторы ]') + '\n'
 
             if change.kind == MimirChange.ADDED_MIMIR:
                 text += (
@@ -939,6 +943,8 @@ class RussianLocalization(BaseLocalization):
                     f'Старое значение: {old_value_fmt} → '
                     f'новое значение теперь: {new_value_fmt}‼️'
                 )
+                if change.entry.automatic:
+                    text += f' (на блоке #{ital(change.new_value)}).'
             text += '\n\n'
 
         text += link("https://docs.thorchain.org/how-it-works/governance#mimir", "Что такое Mimir?")

@@ -19,6 +19,7 @@ class MimirEntry:
     is_blocks: bool
     is_bool: bool
     source: str
+    automatic: bool
 
     SOURCE_CONST = 'const'
     SOURCE_MIMIR = 'mimir'
@@ -160,6 +161,16 @@ class MimirHolder:
     }
 
     @staticmethod
+    def detect_auto_solvency_checker(name: str, value):
+        name = name.upper()
+        if name.startswith('MIMIR//HALT') and (
+            name.endswith('CHAIN') or name.endswith('TRADING')
+        ):
+            if int(value) > 2:
+                return True
+        return False
+
+    @staticmethod
     def convert_name_to_mimir_key(name):
         prefix = MimirHolder.MIMIR_PREFIX
         if name.startswith(prefix):
@@ -235,7 +246,8 @@ class MimirHolder:
                                is_rune=name in self.RUNE_CONSTANTS,
                                is_blocks=name in self.BLOCK_CONSTANTS,
                                is_bool=name in self.BOOL_CONSTANTS,
-                               source=source)
+                               source=source,
+                               automatic=self.detect_auto_solvency_checker(name, value))
             self._const_map[name] = entry
             self._const_map[mimir_name] = entry
             self._all_names.add(name)
@@ -252,7 +264,8 @@ class MimirHolder:
                                is_rune=name in self._mimir_names_of_rune_constants,
                                is_blocks=name in self._mimir_names_of_block_constants,
                                is_bool=name in self._mimir_names_of_bool_constants,
-                               source=MimirEntry.SOURCE_MIMIR)
+                               source=MimirEntry.SOURCE_MIMIR,
+                               automatic=self.detect_auto_solvency_checker(name, value))
             self._const_map[name] = entry
             self._const_map[pure_name] = entry
             self._all_names.add(name)

@@ -1118,13 +1118,17 @@ class BaseLocalization(ABC):  # == English
         if not changes:
             return ''
 
-        text = '🔔 <b>Mimir update!</b>\n' \
-               'The admin has just updated global THORChain settings:\n\n'
+        text = '🔔 <b>Mimir update!</b>\n\n'
 
         for change in changes:
             old_value_fmt = code(self.format_mimir_value(change.old_value, change.entry))
             new_value_fmt = code(self.format_mimir_value(change.new_value, change.entry))
             name = code(change.entry.pretty_name if change.entry else change.name)
+
+            if change.entry.automatic:
+                text += bold('[🤖 Automatic solvency checker ]  ')
+            else:
+                text += bold('[👩‍💻 Admins ]  ')
 
             if change.kind == MimirChange.ADDED_MIMIR:
                 text += (
@@ -1132,17 +1136,17 @@ class BaseLocalization(ABC):  # == English
                     f'The default value was {old_value_fmt} → the new value is {new_value_fmt}‼️'
                 )
             elif change.kind == MimirChange.REMOVED_MIMIR:
-                text += (
-                    f"➖ Mimir's constant \"{name}\" has been deleted. It had the value: "
-                    f"{old_value_fmt} → "
-                    f"now this constant reverted to its default value: {new_value_fmt}‼️"
-                )
+                text += f"➖ Mimir's constant \"{name}\" has been deleted. It was: {old_value_fmt} before. ‼️"
+                if new_value_fmt:
+                    text += f"Now this constant reverted to its default value: {new_value_fmt}."
             else:
                 text += (
-                    f"🔄 Mimir's constant \"{name}\" has been updated from the value "
+                    f"🔄 Mimir's constant \"{name}\" has been updated from "
                     f"{old_value_fmt} → "
                     f"to {new_value_fmt}‼️"
                 )
+                if change.entry.automatic:
+                    text += f' at block #{ital(change.new_value)}.'
             text += '\n\n'
 
         text += link(self.MIMIR_DOC_LINK, "What is Mimir?")
