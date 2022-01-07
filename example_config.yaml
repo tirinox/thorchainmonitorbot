@@ -9,14 +9,14 @@ thor:
   #  "chaosnet-multi" for MCCN
   network_id: "chaosnet-multi"
 
-  midgard:  # new!
+  midgard:
     tries: 3
     use_nodes: false
     public_url: "https://midgard.thorchain.info/"
 
-  timeout: 2.0  # (sec) new!
+  timeout: 2.0
 
-  stable_coins:  # new!
+  stable_coins:
     - ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48
     - ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7
     - ETH.USDT-0XA3910454BF2CB59B8B3A401589A3BACC5CA42306  # test
@@ -34,7 +34,7 @@ telegram:
   common:
     loading_sticker: CAACAgIAAxkBAAIRx1--Tia-m6DNRIApk3yqmNWvap_sAALcAAP3AsgPUNi8Bnu98HweBA
 
-  admins: # (!) new
+  admins:
     - 12345  # List of TG admins
 
   buffer_chat: -12334  # a chat for uploading temporary photos (like photo-hosting), add this bot to it
@@ -48,7 +48,7 @@ telegram:
     cache_time: 5m
 
 
-discord:  # (!) new!!
+discord:
   enabled: true
   bot:
     token: "token.for.discord.bot"
@@ -117,7 +117,7 @@ tx:
       - depth: 10000000
         percent: 0.5
 
-  refund: # new!
+  refund:
     enabled: true
     min_usd_total: 50000
     usd_requirements_curve:
@@ -132,7 +132,7 @@ tx:
       - depth: 10000000
         percent: 1.5
 
-  switch: # new!
+  switch:
     enabled: true
     min_usd_total: 150000
 
@@ -194,6 +194,7 @@ cap:
   full:
     enabled: True
     full_limit_ratio: 0.995
+    open_up_limit_ratio: 0.97  # (!) new! when it was full, but a little space became available.
 
   raised:
     stickers:
@@ -246,7 +247,7 @@ node_info:
       enabled: true
       cooldown: 2h
 
-  personal:  # new!
+  personal:
     enabled: true
 
 
@@ -261,7 +262,7 @@ chain_state:
   fetch_period: 67s
 
 
-last_block:  # (!) new...
+last_block:
   enabled: true
   fetch_period: 30s
   chart:
@@ -276,7 +277,7 @@ last_block:  # (!) new...
   high_block_speed_percent: 50
 
 
-best_pools:  # (!) new...
+best_pools:
   enabled: true
   fetch_period: 30m
   num_of_top_pools: 5
