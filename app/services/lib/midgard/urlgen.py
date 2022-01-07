@@ -1,9 +1,5 @@
 from abc import ABC, abstractmethod
 
-from aiothornode.env import TEST_NET_ENVIRONMENT_MULTI_1, MULTICHAIN_CHAOSNET_ENVIRONMENT
-
-from services.lib.constants import NetworkIdents
-
 
 class MidgardURLGenBase(ABC):
     LIQUIDITY_TX_TYPES_STRING = ''

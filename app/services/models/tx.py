@@ -191,6 +191,10 @@ class ThorTx:
     meta_withdraw: Optional[ThorMetaWithdraw] = None
     meta_swap: Optional[ThorMetaSwap] = None
     meta_refund: Optional[ThorMetaRefund] = None
+    affiliate_fee: float = 0.0
+
+    def sort_inputs_by_first_asset(self):
+        self.in_tx.sort(key=lambda sub_tx: sub_tx.coins[0].asset)
 
     @property
     def is_success(self):
