@@ -1,5 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass
+from functools import cached_property
 from typing import List, Optional, Iterable
 
 from services.lib.constants import is_rune, RUNE_SYMBOL, Chains, NATIVE_RUNE_SYMBOL, thor_to_float
@@ -208,14 +209,14 @@ class ThorTx:
     def height_int(self):
         return int(self.height)
 
-    @property
+    @cached_property
     def tx_hash(self):
-        if self.in_tx:
-            return self.in_tx[0].tx_id
-        elif self.out_tx:
-            return self.out_tx[0].tx_id
-        else:
+        sub_tx_set = self.in_tx or self.out_tx
+        if not sub_tx_set:
             return self.date
+        hashes = [sub_tx.tx_id for sub_tx in sub_tx_set]
+        hashes.sort()
+        return hashes[0]
 
     @property
     def first_input_tx_hash(self):

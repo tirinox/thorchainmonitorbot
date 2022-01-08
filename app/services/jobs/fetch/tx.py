@@ -37,7 +37,7 @@ class TxFetcher(BaseFetcher):
         return txs
 
     async def post_action(self, txs: List[ThorTxExtended]):
-        hashes = [t.tx_hash for t in txs]
+        hashes = [self.get_seen_hash(t) for t in txs]
         await self.mark_tx_hashes_as_seen(hashes)
 
     # -----------------------
@@ -103,7 +103,7 @@ class TxFetcher(BaseFetcher):
             # filter out seen TXs
             unseen_new_txs = []
             for tx in new_txs:
-                is_seen = await self.is_seen(tx.tx_hash)
+                is_seen = await self.is_seen(self.get_seen_hash(tx))
 
                 if not is_seen:
                     unseen_new_txs.append(tx)
@@ -117,6 +117,10 @@ class TxFetcher(BaseFetcher):
         all_txs = merge_affiliate_txs(all_txs)
 
         return all_txs
+
+    @staticmethod
+    def get_seen_hash(tx: ThorTx):
+        return tx.tx_hash
 
     def _filter_by_age(self, txs: List[ThorTx]):
         now = int(time.time())
