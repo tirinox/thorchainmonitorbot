@@ -149,7 +149,7 @@ def short_address(address, begin=5, end=4, filler='...'):
         return address
 
 
-def format_percent(x, total, signed=False):
+def format_percent(x, total=1.0, signed=False):
     if total <= 0:
         s = 0
     else:

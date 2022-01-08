@@ -10,7 +10,7 @@ import time
 from collections import deque, Counter, defaultdict
 from functools import wraps, partial
 from itertools import tee
-from typing import List
+from typing import List, Iterable
 
 import aiofiles
 import aiohttp
@@ -272,3 +272,7 @@ def sum_and_str(*args):
         return '0'
     else:
         return str(sum(int(arg) for arg in args))
+
+
+def iterable_but_not_str(it):
+    return not isinstance(it, (str, bytes)) and isinstance(it, Iterable)

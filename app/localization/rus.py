@@ -10,7 +10,7 @@ from services.lib.constants import Chains, thor_to_float, rune_origin
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
-    emoji_for_percent_change, Asset, short_money
+    emoji_for_percent_change, Asset, short_money, short_dollar, format_percent
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
     up_down_arrow, plural, grouper
 from services.models.cap_info import ThorCapInfo
@@ -255,11 +255,17 @@ class RussianLocalization(BaseLocalization):
 
         content = ''
         if tx.type in (ThorTxType.TYPE_ADD_LIQUIDITY, ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_DONATE):
+            if tx.affiliate_fee > 0:
+                aff_text = f'Партнерский бонус: {bold(short_dollar(tx.get_affiliate_fee_usd(usd_per_rune)))} ' \
+                           f'({format_percent(tx.affiliate_fee)})\n'
+            else:
+                aff_text = ''
             content = (
                 f"<b>{pretty_money(tx.rune_amount)} {self.R}</b> ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
                 f"<b>{pretty_money(tx.asset_amount)} {asset}</b> "
                 f"({ap:.0f}% = {asset_side_usd_short})\n"
                 f"Всего: <code>${pretty_money(total_usd_volume)}</code> ({percent_of_pool:.2f}% от всего пула).\n"
+                f"{aff_text}"
                 f"Глубина пула сейчас: <b>${pretty_money(pool_depth_usd)}</b>.\n"
             )
         elif tx.type == ThorTxType.TYPE_SWITCH:
@@ -284,8 +290,14 @@ class RussianLocalization(BaseLocalization):
             slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
             l_fee_usd = tx.meta_swap.liquidity_fee_rune_float * usd_per_rune
 
+            if tx.affiliate_fee > 0:
+                aff_text = f'Партнерский бонус: {bold(short_dollar(tx.get_affiliate_fee_usd(usd_per_rune)))} ' \
+                           f'({format_percent(tx.affiliate_fee)})\n'
+            else:
+                aff_text = ''
+
             content += (
-                f"\n"
+                f"\n{aff_text}"
                 f"Проскальзывание: {bold(slip_str)}\n"
                 f"Комиссия пулам: {bold(pretty_dollar(l_fee_usd))}"
             )

@@ -12,7 +12,7 @@ from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINU
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
     get_explorer_url_for_node
 from services.lib.money import format_percent, pretty_money, short_address, short_money, \
-    calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset
+    calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset, short_dollar
 from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
     up_down_arrow, bracketify, plural, grouper, join_as_numbered_list
 from services.models.cap_info import ThorCapInfo
@@ -245,7 +245,7 @@ class BaseLocalization(ABC):  # == English
             f'{arrow} <b>Pool cap {verb} from {pretty_money(old.cap)} to {pretty_money(new.cap)}!</b>\n'
             f'Currently <b>{pretty_money(new.pooled_rune)}</b> {self.R} are in the liquidity pools.\n'
             f"{self._cap_progress_bar(new)}\n"
-            f'🤲🏻 You can add {bold(pretty_money(new.how_much_rune_you_can_lp) + " " + RAIDO_GLYPH)} {self.R} ' 
+            f'🤲🏻 You can add {bold(pretty_money(new.how_much_rune_you_can_lp) + " " + RAIDO_GLYPH)} {self.R} '
             f'or {bold(pretty_dollar(new.how_much_usd_you_can_lp))}.\n'
             f'The price of {self.R} in the pools is <code>{new.price:.3f} $</code>.\n'
             f'{call}'
@@ -269,7 +269,7 @@ class BaseLocalization(ABC):  # == English
             f'<i>{pretty_money(cap.pooled_rune)} {self.R}</i> of '
             f"<i>{pretty_money(cap.cap)} {self.R}</i> max pooled.\n"
             f"{self._cap_progress_bar(cap)}\n"
-            f'🤲🏻 You can add {bold(pretty_money(cap.how_much_rune_you_can_lp) + " " + RAIDO_GLYPH)} {self.R} ' 
+            f'🤲🏻 You can add {bold(pretty_money(cap.how_much_rune_you_can_lp) + " " + RAIDO_GLYPH)} {self.R} '
             f'or {bold(pretty_dollar(cap.how_much_usd_you_can_lp))}.\n👉🏻 {self.thor_site()}'
         )
 
@@ -363,11 +363,18 @@ class BaseLocalization(ABC):  # == English
 
         content = ''
         if tx.type in (ThorTxType.TYPE_ADD_LIQUIDITY, ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_DONATE):
+            if tx.affiliate_fee > 0:
+                aff_text = f'Affiliate fee: {bold(short_dollar(tx.get_affiliate_fee_usd(usd_per_rune)))} ' \
+                           f'({format_percent(tx.affiliate_fee)})\n'
+            else:
+                aff_text = ''
+
             content = (
                 f"<b>{pretty_money(tx.rune_amount)} {self.R}</b> ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
                 f"<b>{pretty_money(tx.asset_amount)} {asset}</b> "
                 f"({ap:.0f}% = {asset_side_usd_short})\n"
                 f"Total: <code>${pretty_money(total_usd_volume)}</code> ({percent_of_pool:.2f}% of the whole pool).\n"
+                f"{aff_text}"
                 f"Pool depth is <b>${pretty_money(pool_depth_usd)}</b> now."
             )
         elif tx.type == ThorTxType.TYPE_SWITCH:
@@ -389,8 +396,14 @@ class BaseLocalization(ABC):  # == English
             slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
             l_fee_usd = tx.meta_swap.liquidity_fee_rune_float * usd_per_rune
 
+            if tx.affiliate_fee > 0:
+                aff_text = f'Affiliate fee: {bold(short_dollar(tx.get_affiliate_fee_usd(usd_per_rune)))} ' \
+                           f'({format_percent(tx.affiliate_fee)})\n'
+            else:
+                aff_text = ''
+
             content += (
-                f"\n"
+                f"\n{aff_text}"
                 f"Slip: {bold(slip_str)}, "
                 f"liquidity fee: {bold(pretty_dollar(l_fee_usd))}"
             )

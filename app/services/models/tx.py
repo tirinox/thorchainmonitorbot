@@ -194,7 +194,7 @@ class ThorTx:
     affiliate_fee: float = 0.0
 
     def sort_inputs_by_first_asset(self):
-        self.in_tx.sort(key=lambda sub_tx: sub_tx.coins[0].asset)
+        self.in_tx.sort(key=lambda sub_tx: (sub_tx.coins[0].asset if sub_tx.coins else ''))
 
     @property
     def is_success(self):
@@ -453,3 +453,6 @@ class ThorTxExtended(ThorTx):
             correction = self.full_rune if self.type == ThorTxType.TYPE_WITHDRAW else 0.0
             percent_of_pool = pool_info.percent_share(self.full_rune, correction)
         return percent_of_pool
+
+    def get_affiliate_fee_usd(self, usd_per_rune):
+        return self.affiliate_fee * self.get_usd_volume(usd_per_rune)
