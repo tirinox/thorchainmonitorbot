@@ -1,7 +1,5 @@
 import json
-import logging
 
-import services.models.thormon
 from localization import BaseLocalization
 from services.jobs.fetch.base import INotified
 from services.lib.depcont import DepContainer
@@ -33,6 +31,7 @@ class LiquidityCapNotifier(INotified):
 
         self.full_notification_enabled = bool(deps.cfg.cap.full.get('enabled', default=True))
         self.full_limit_ratio = float(deps.cfg.cap.full.get('full_limit_ratio', default=0.99))
+        self.open_up_limit_ratio = float(deps.cfg.cap.full.get('open_up_limit_ratio', default=0.85))
 
     async def on_data(self, sender, data):
         new_info: ThorCapInfo = data
@@ -48,16 +47,15 @@ class LiquidityCapNotifier(INotified):
         #     old_info, new_info)
         # -------
 
-        if new_info.is_ok:
-            if new_info.price <= 0:
-                new_info.price = old_info.price
+        if new_info.price <= 0:
+            new_info.price = old_info.price
 
-            await self._save_cap_info(new_info)
+        await self._save_cap_info(new_info)
 
-            if old_info and services.models.thormon.is_ok:
-                await self._test_cap_raise(new_info, old_info)
-                if self.full_notification_enabled:
-                    await self._test_cap_limit_is_full(new_info)
+        if old_info and old_info.is_ok:
+            await self._test_cap_raise(new_info, old_info)
+            if self.full_notification_enabled:
+                await self._test_cap_limit_is_full_or_opened(new_info)
 
     async def _save_cap_info(self, cap: ThorCapInfo):
         r = await self.deps.db.get_redis()
@@ -89,9 +87,14 @@ class LiquidityCapNotifier(INotified):
         db_value = await self.deps.db.redis.get(self.KEY_FULL_NOTIFIED)
         return bool(db_value) and bool(int(db_value))
 
-    async def _test_cap_limit_is_full(self, new_info: ThorCapInfo):
+    async def _test_cap_limit_is_full_or_opened(self, new_info: ThorCapInfo):
         can_do = not (await self._get_cap_limit_reached())
         if can_do and new_info.pooled_rune >= new_info.cap * self.full_limit_ratio:
             await self.deps.broadcaster.notify_preconfigured_channels(BaseLocalization.notification_text_cap_full,
                                                                       new_info)
             await self._set_cap_limit_reached(True)
+
+        if not can_do and new_info.pooled_rune < new_info.cap * self.open_up_limit_ratio:
+            await self.deps.broadcaster.notify_preconfigured_channels(BaseLocalization.notification_text_cap_opened_up,
+                                                                      new_info)
+            await self._set_cap_limit_reached(False)

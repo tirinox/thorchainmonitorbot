@@ -130,7 +130,10 @@ def short_money(x, prefix='', postfix='', localization=None):
         key = 'T'
 
     letter = localization.get(key, key) if localization else key
-    result = f'{x:.1f}{letter}'
+    if x < 10:
+        result = f'{x:.2f}{letter}'
+    else:
+        result = f'{x:.1f}{letter}'
     return prefix + result + postfix
 
 
@@ -146,7 +149,7 @@ def short_address(address, begin=5, end=4, filler='...'):
         return address
 
 
-def format_percent(x, total, signed=False):
+def format_percent(x, total=1.0, signed=False):
     if total <= 0:
         s = 0
     else:

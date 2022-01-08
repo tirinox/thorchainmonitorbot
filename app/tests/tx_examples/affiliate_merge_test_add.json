@@ -1,0 +1,59 @@
+{
+	"actions": [
+		{
+			"date": "1641581890465046694",
+			"height": "3702245",
+			"in": [
+				{
+					"address": "0xc52575b2f8be4fd0cbc189811356ea4be2edd7f9",
+					"coins": [
+						{
+								"amount": "8167500",
+							"asset": "ETH.ETH"
+						}
+					],
+					"txID": "BDD44A28CBAAB4A2C7EC368FE992DA6F035FBD39AC87E13B418F6823DF31F20F"
+				}
+			],
+			"metadata": {
+				"addLiquidity": {
+					"liquidityUnits": "1163840567"
+				}
+			},
+			"out": [],
+			"pools": [
+				"ETH.ETH"
+			],
+			"status": "success",
+			"type": "addLiquidity"
+		},
+		{
+			"date": "1641581890465046694",
+			"height": "3702245",
+			"in": [
+				{
+					"address": "",
+					"coins": [
+						{
+							"amount": "82500",
+							"asset": "ETH.ETH"
+						}
+					],
+					"txID": "BDD44A28CBAAB4A2C7EC368FE992DA6F035FBD39AC87E13B418F6823DF31F20F"
+				}
+			],
+			"metadata": {
+				"addLiquidity": {
+					"liquidityUnits": "11756046"
+				}
+			},
+			"out": [],
+			"pools": [
+				"ETH.ETH"
+			],
+			"status": "success",
+			"type": "addLiquidity"
+		}
+	],
+	"count": "2"
+}

@@ -19,6 +19,7 @@ class MimirEntry:
     is_blocks: bool
     is_bool: bool
     source: str
+    automatic: bool
 
     SOURCE_CONST = 'const'
     SOURCE_MIMIR = 'mimir'
@@ -90,6 +91,7 @@ class MimirHolder:
         'PAUSELPBCH': 'Pause LP BCH',
         'PAUSELPBNB': 'Pause LP BNB',
         'PAUSELPBTC': 'Pause LP BTC',
+        'PAUSELPDOGE': 'Pause LP Doge',
         'PAUSELP': 'Pause all LP',
         'STOPFUNDYGGDRASIL': 'Stop Fund Yggdrasil',
         'STOPSOLVENCYCHECK': 'Stol Solvency Check',
@@ -110,6 +112,9 @@ class MimirHolder:
         'HALTLTCCHAIN': 'Halt LTC Chain',
         'HALTLTCTRADING': 'Halt LTC Trading',
 
+        'HALTDOGECHAIN': 'Halt DOGE Chain',
+        'HALTDOGETRADING': 'Halt DOGE Trading',
+
         'HALTTHORCHAIN': 'Halt ThorChain',
         'HALTTRADING': 'Halt All Trading',
 
@@ -126,6 +131,7 @@ class MimirHolder:
         'STOPSOLVENCYCHECKLTC': 'Stop Solvency check LTC',
         'STOPSOLVENCYCHECKBTC': 'Stop Solvency check BTC',
         'STOPSOLVENCYCHECKBCH': 'Stop Solvency check BCH',
+        'STOPSOLVENCYCHECKDOGE': 'Stop Solvency check DOGE',
     }
 
     BOOL_CONSTANTS = {
@@ -140,6 +146,8 @@ class MimirHolder:
         "HALTLTCCHAIN",
         "HALTLTCTRADING",
         "HALTTHORCHAIN",
+        'HALTDOGECHAIN',
+        'HALTDOGETRADING',
         "HALTTRADING",
         "MINTSYNTHS",
         "PAUSELP",
@@ -148,6 +156,7 @@ class MimirHolder:
         "PAUSELPBTC",
         "PAUSELPETH",
         "PAUSELPLTC",
+        "PAUSELPDOGE",
         "STOPFUNDYGGDRASIL",
         "STOPSOLVENCYCHECK",
         "THORNAME",
@@ -157,7 +166,18 @@ class MimirHolder:
         'STOPSOLVENCYCHECKLTC',
         'STOPSOLVENCYCHECKBTC',
         'STOPSOLVENCYCHECKBCH',
+        'STOPSOLVENCYCHECKDOGE',
     }
+
+    @staticmethod
+    def detect_auto_solvency_checker(name: str, value):
+        name = name.upper()
+        if name.startswith('MIMIR//HALT') and (
+                name.endswith('CHAIN') or name.endswith('TRADING')
+        ):
+            if int(value) > 2:
+                return True
+        return False
 
     @staticmethod
     def convert_name_to_mimir_key(name):
@@ -235,7 +255,8 @@ class MimirHolder:
                                is_rune=name in self.RUNE_CONSTANTS,
                                is_blocks=name in self.BLOCK_CONSTANTS,
                                is_bool=name in self.BOOL_CONSTANTS,
-                               source=source)
+                               source=source,
+                               automatic=self.detect_auto_solvency_checker(name, value))
             self._const_map[name] = entry
             self._const_map[mimir_name] = entry
             self._all_names.add(name)
@@ -252,7 +273,8 @@ class MimirHolder:
                                is_rune=name in self._mimir_names_of_rune_constants,
                                is_blocks=name in self._mimir_names_of_block_constants,
                                is_bool=name in self._mimir_names_of_bool_constants,
-                               source=MimirEntry.SOURCE_MIMIR)
+                               source=MimirEntry.SOURCE_MIMIR,
+                               automatic=self.detect_auto_solvency_checker(name, value))
             self._const_map[name] = entry
             self._const_map[pure_name] = entry
             self._all_names.add(name)

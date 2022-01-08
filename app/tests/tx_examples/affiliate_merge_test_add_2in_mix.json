@@ -1,0 +1,79 @@
+{
+	"actions": [
+		{
+			"date": "1641499597983802601",
+			"height": "3687901",
+			"in": [
+				{
+					"address": "0x9922879fda05581f5890db0827edfc17e623f04d",
+					"coins": [
+						{
+							"amount": "5789626",
+							"asset": "ETH.ETH"
+						}
+					],
+					"txID": "86FE89D92C2E8B82DF703B412302F2A0B9560A0F8A579C6F688291EE78B644B9"
+				},
+                {
+					"address": "thor1dxgtwlr9en2lu9nq3zgkj5u3e02y7mm0ray9y6",
+					"coins": [
+						{
+							"amount": "3168000000",
+							"asset": "THOR.RUNE"
+						}
+					],
+					"txID": "58B3D28E121A34BCE2D31018C00C660942088BC548171A427A51F6825ED77142"
+				}
+			],
+			"metadata": {
+				"addLiquidity": {
+					"liquidityUnits": "1663939934"
+				}
+			},
+			"out": [],
+			"pools": [
+				"ETH.ETH"
+			],
+			"status": "success",
+			"type": "addLiquidity"
+		},
+		{
+			"date": "1641499597983802601",
+			"height": "3687901",
+			"in": [
+				{
+					"address": "thor1a427q3v96psuj4fnughdw8glt5r7j38lj7rkp8",
+					"coins": [
+						{
+							"amount": "43421250",
+							"asset": "THOR.RUNE"
+						}
+					],
+					"txID": "58B3D28E121A34BCE2D31018C00C660942088BC548171A427A51F6825ED77142"
+				},
+				{
+					"address": "",
+					"coins": [
+						{
+							"amount": "58481",
+							"asset": "ETH.ETH"
+						}
+					],
+					"txID": "86FE89D92C2E8B82DF703B412302F2A0B9560A0F8A579C6F688291EE78B644B9"
+				}
+			],
+			"metadata": {
+				"addLiquidity": {
+					"liquidityUnits": "19804206"
+				}
+			},
+			"out": [],
+			"pools": [
+				"ETH.ETH"
+			],
+			"status": "success",
+			"type": "addLiquidity"
+		}
+	],
+	"count": "2"
+}

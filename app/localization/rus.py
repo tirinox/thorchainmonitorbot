@@ -10,7 +10,7 @@ from services.lib.constants import Chains, thor_to_float, rune_origin
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
-    emoji_for_percent_change, Asset, short_money
+    emoji_for_percent_change, Asset, short_money, short_dollar, format_percent
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
     up_down_arrow, plural, grouper
 from services.models.cap_info import ThorCapInfo
@@ -188,9 +188,31 @@ class RussianLocalization(BaseLocalization):
             f'{arrow} <b>Кап {verb} с {pretty_money(old.cap)} до {pretty_money(new.cap)}!</b>\n'
             f'Сейчас в пулы помещено <b>{pretty_money(new.pooled_rune)}</b> {self.R}.\n'
             f"{self._cap_progress_bar(new)}\n"
+            f'🤲🏻 Вы можете добавить еще {bold(pretty_money(new.how_much_rune_you_can_lp) + " " + RAIDO_GLYPH)} {self.R} '
+            f'или {bold(pretty_dollar(new.how_much_usd_you_can_lp))}.\n'
             f'Цена {self.R} в пуле <code>{new.price:.3f} $</code>.\n'
             f'{call}'
             f'{self.thor_site()}'
+        )
+
+    def notification_text_cap_full(self, cap: ThorCapInfo):
+        return (
+            '🙆‍♀️ <b>Ликвидность достигла установленного предела!</b>\n'
+            'Пожалуйста, пока что не пытайтесь ничего добавить в пулы. '
+            'Вы получите возврат ваших средств!\n'
+            f'<b>{pretty_money(cap.pooled_rune)} {self.R}</b> из '
+            f"<b>{pretty_money(cap.cap)} {self.R}</b> сейчас в пулах.\n"
+            f"{self._cap_progress_bar(cap)}\n"
+        )
+
+    def notification_text_cap_opened_up(self, cap: ThorCapInfo):
+        return (
+            '💡 <b>Освободилось место в пулах ликвидности!</b>\n'
+            f'Сейчас в пулах <i>{pretty_money(cap.pooled_rune)} {self.R}</i> из '
+            f"<i>{pretty_money(cap.cap)} {self.R}</i> максимально возможных.\n"
+            f"{self._cap_progress_bar(cap)}\n"
+            f'🤲🏻 Вы можеще еще добавить {bold(pretty_money(cap.how_much_rune_you_can_lp) + " " + RAIDO_GLYPH)} {self.R} '
+            f'или {bold(pretty_dollar(cap.how_much_usd_you_can_lp))}.\n👉🏻 {self.thor_site()}'
         )
 
     # ------ PRICE -------
@@ -233,11 +255,17 @@ class RussianLocalization(BaseLocalization):
 
         content = ''
         if tx.type in (ThorTxType.TYPE_ADD_LIQUIDITY, ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_DONATE):
+            if tx.affiliate_fee > 0:
+                aff_text = f'Партнерский бонус: {bold(short_dollar(tx.get_affiliate_fee_usd(usd_per_rune)))} ' \
+                           f'({format_percent(tx.affiliate_fee)})\n'
+            else:
+                aff_text = ''
             content = (
                 f"<b>{pretty_money(tx.rune_amount)} {self.R}</b> ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
                 f"<b>{pretty_money(tx.asset_amount)} {asset}</b> "
                 f"({ap:.0f}% = {asset_side_usd_short})\n"
                 f"Всего: <code>${pretty_money(total_usd_volume)}</code> ({percent_of_pool:.2f}% от всего пула).\n"
+                f"{aff_text}"
                 f"Глубина пула сейчас: <b>${pretty_money(pool_depth_usd)}</b>.\n"
             )
         elif tx.type == ThorTxType.TYPE_SWITCH:
@@ -262,8 +290,14 @@ class RussianLocalization(BaseLocalization):
             slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
             l_fee_usd = tx.meta_swap.liquidity_fee_rune_float * usd_per_rune
 
+            if tx.affiliate_fee > 0:
+                aff_text = f'Партнерский бонус: {bold(short_dollar(tx.get_affiliate_fee_usd(usd_per_rune)))} ' \
+                           f'({format_percent(tx.affiliate_fee)})\n'
+            else:
+                aff_text = ''
+
             content += (
-                f"\n"
+                f"\n{aff_text}"
                 f"Проскальзывание: {bold(slip_str)}\n"
                 f"Комиссия пулам: {bold(pretty_dollar(l_fee_usd))}"
             )
@@ -291,16 +325,6 @@ class RussianLocalization(BaseLocalization):
             )
 
         return msg.strip()
-
-    def notification_text_cap_full(self, cap: ThorCapInfo):
-        return (
-            '🙆‍♀️ <b>Ликвидность достигла установленного предела!</b>\n'
-            'Пожалуйста, пока что не пытайтесь ничего добавить в пулы. '
-            'Вы получите возврат ваших средств!\n'
-            f'<b>{pretty_money(cap.pooled_rune)} {self.R}</b> из '
-            f"<b>{pretty_money(cap.cap)} {self.R}</b> сейчас в пулах.\n"
-            f"{self._cap_progress_bar(cap)}\n"
-        )
 
     # ------- QUEUE -------
 
@@ -913,13 +937,17 @@ class RussianLocalization(BaseLocalization):
         if not changes:
             return ''
 
-        text = '🔔 <b>Обновление Мимир!</b>\n' \
-               'Команда только что обновила глобальные настройки THORChain:\n\n'
+        text = '🔔 <b>Обновление Мимир!</b>\n\n'
 
         for change in changes:
             old_value_fmt = code(self.format_mimir_value(change.old_value, change.entry))
             new_value_fmt = code(self.format_mimir_value(change.new_value, change.entry))
             name = code(change.entry.pretty_name if change.entry else change.name)
+
+            if change.entry.automatic:
+                text += bold('[🤖 Автоматика платежеспособности ]') + '\n'
+            else:
+                text += bold('[👩‍💻 Администраторы ]') + '\n'
 
             if change.kind == MimirChange.ADDED_MIMIR:
                 text += (
@@ -939,6 +967,8 @@ class RussianLocalization(BaseLocalization):
                     f'Старое значение: {old_value_fmt} → '
                     f'новое значение теперь: {new_value_fmt}‼️'
                 )
+                if change.entry.automatic:
+                    text += f' (на блоке #{ital(change.new_value)}).'
             text += '\n\n'
 
         text += link("https://docs.thorchain.org/how-it-works/governance#mimir", "Что такое Mimir?")

@@ -12,7 +12,7 @@ from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINU
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
     get_explorer_url_for_node
 from services.lib.money import format_percent, pretty_money, short_address, short_money, \
-    calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset
+    calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset, short_dollar
 from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
     up_down_arrow, bracketify, plural, grouper, join_as_numbered_list
 from services.models.cap_info import ThorCapInfo
@@ -245,6 +245,8 @@ class BaseLocalization(ABC):  # == English
             f'{arrow} <b>Pool cap {verb} from {pretty_money(old.cap)} to {pretty_money(new.cap)}!</b>\n'
             f'Currently <b>{pretty_money(new.pooled_rune)}</b> {self.R} are in the liquidity pools.\n'
             f"{self._cap_progress_bar(new)}\n"
+            f'🤲🏻 You can add {bold(pretty_money(new.how_much_rune_you_can_lp) + " " + RAIDO_GLYPH)} {self.R} '
+            f'or {bold(pretty_dollar(new.how_much_usd_you_can_lp))}.\n'
             f'The price of {self.R} in the pools is <code>{new.price:.3f} $</code>.\n'
             f'{call}'
             f'{self.thor_site()}'
@@ -256,9 +258,19 @@ class BaseLocalization(ABC):  # == English
             '🙆‍♀️ <b>Liquidity has reached the capacity limit!</b>\n'
             'Please stop adding liquidity. '
             'You will get refunded if you provide liquidity from now on!\n'
-            f'<b>{pretty_money(cap.pooled_rune)} {self.R}</b> of '
-            f"<b>{pretty_money(cap.cap)} {self.R}</b> pooled.\n"
+            f'Now <i>{pretty_money(cap.pooled_rune)} {self.R}</i> of '
+            f"<i>{pretty_money(cap.cap)} {self.R}</i> max pooled.\n"
             f"{self._cap_progress_bar(cap)}\n"
+        )
+
+    def notification_text_cap_opened_up(self, cap: ThorCapInfo):
+        return (
+            '💡 <b>There is free space in liquidity pools!</b>\n'
+            f'<i>{pretty_money(cap.pooled_rune)} {self.R}</i> of '
+            f"<i>{pretty_money(cap.cap)} {self.R}</i> max pooled.\n"
+            f"{self._cap_progress_bar(cap)}\n"
+            f'🤲🏻 You can add {bold(pretty_money(cap.how_much_rune_you_can_lp) + " " + RAIDO_GLYPH)} {self.R} '
+            f'or {bold(pretty_dollar(cap.how_much_usd_you_can_lp))}.\n👉🏻 {self.thor_site()}'
         )
 
     # ------ PRICE -------
@@ -351,11 +363,18 @@ class BaseLocalization(ABC):  # == English
 
         content = ''
         if tx.type in (ThorTxType.TYPE_ADD_LIQUIDITY, ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_DONATE):
+            if tx.affiliate_fee > 0:
+                aff_text = f'Affiliate fee: {bold(short_dollar(tx.get_affiliate_fee_usd(usd_per_rune)))} ' \
+                           f'({format_percent(tx.affiliate_fee)})\n'
+            else:
+                aff_text = ''
+
             content = (
                 f"<b>{pretty_money(tx.rune_amount)} {self.R}</b> ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
                 f"<b>{pretty_money(tx.asset_amount)} {asset}</b> "
                 f"({ap:.0f}% = {asset_side_usd_short})\n"
                 f"Total: <code>${pretty_money(total_usd_volume)}</code> ({percent_of_pool:.2f}% of the whole pool).\n"
+                f"{aff_text}"
                 f"Pool depth is <b>${pretty_money(pool_depth_usd)}</b> now."
             )
         elif tx.type == ThorTxType.TYPE_SWITCH:
@@ -377,8 +396,14 @@ class BaseLocalization(ABC):  # == English
             slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
             l_fee_usd = tx.meta_swap.liquidity_fee_rune_float * usd_per_rune
 
+            if tx.affiliate_fee > 0:
+                aff_text = f'Affiliate fee: {bold(short_dollar(tx.get_affiliate_fee_usd(usd_per_rune)))} ' \
+                           f'({format_percent(tx.affiliate_fee)})\n'
+            else:
+                aff_text = ''
+
             content += (
-                f"\n"
+                f"\n{aff_text}"
                 f"Slip: {bold(slip_str)}, "
                 f"liquidity fee: {bold(pretty_dollar(l_fee_usd))}"
             )
@@ -464,7 +489,7 @@ class BaseLocalization(ABC):  # == English
             if old_price:
                 pc = calc_percent_change(old_price, price)
                 message += code(f"{title.rjust(4)}:{adaptive_round_to_str(pc, True).rjust(8)} % "
-                               f"{emoji_for_percent_change(pc).ljust(4).rjust(6)}") + "\n"
+                                f"{emoji_for_percent_change(pc).ljust(4).rjust(6)}") + "\n"
 
         if fp.rank >= 1:
             message += f"Coin market cap is {bold(pretty_dollar(fp.market_cap))} (#{bold(fp.rank)})\n"
@@ -1118,13 +1143,17 @@ class BaseLocalization(ABC):  # == English
         if not changes:
             return ''
 
-        text = '🔔 <b>Mimir update!</b>\n' \
-               'The team has just updated global THORChain settings:\n\n'
+        text = '🔔 <b>Mimir update!</b>\n\n'
 
         for change in changes:
             old_value_fmt = code(self.format_mimir_value(change.old_value, change.entry))
             new_value_fmt = code(self.format_mimir_value(change.new_value, change.entry))
             name = code(change.entry.pretty_name if change.entry else change.name)
+
+            if change.entry.automatic:
+                text += bold('[🤖 Automatic solvency checker ]  ')
+            else:
+                text += bold('[👩‍💻 Admins ]  ')
 
             if change.kind == MimirChange.ADDED_MIMIR:
                 text += (
@@ -1132,17 +1161,17 @@ class BaseLocalization(ABC):  # == English
                     f'The default value was {old_value_fmt} → the new value is {new_value_fmt}‼️'
                 )
             elif change.kind == MimirChange.REMOVED_MIMIR:
-                text += (
-                    f"➖ Mimir's constant \"{name}\" has been deleted. It had the value: "
-                    f"{old_value_fmt} → "
-                    f"now this constant reverted to its default value: {new_value_fmt}‼️"
-                )
+                text += f"➖ Mimir's constant \"{name}\" has been deleted. It was: {old_value_fmt} before. ‼️"
+                if new_value_fmt:
+                    text += f"Now this constant reverted to its default value: {new_value_fmt}."
             else:
                 text += (
-                    f"🔄 Mimir's constant \"{name}\" has been updated from the value "
+                    f"🔄 Mimir's constant \"{name}\" has been updated from "
                     f"{old_value_fmt} → "
                     f"to {new_value_fmt}‼️"
                 )
+                if change.entry.automatic:
+                    text += f' at block #{ital(change.new_value)}.'
             text += '\n\n'
 
         text += link(self.MIMIR_DOC_LINK, "What is Mimir?")

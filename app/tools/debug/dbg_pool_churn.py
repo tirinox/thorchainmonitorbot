@@ -10,7 +10,7 @@ from aiothornode.connector import ThorConnector
 from localization import LocalizationManager
 from services.jobs.fetch.pool_price import PoolPriceFetcher, PoolInfoFetcherMidgard
 from services.lib.config import Config
-from services.lib.constants import get_thor_env_by_network_id
+from services.lib.constants import get_thor_env_by_network_id, DOGE_SYMBOL
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo
@@ -41,7 +41,7 @@ async def send_to_channel_test_message(d: DepContainer):
         del d.price_holder.pool_info_map['ETH.SUSHI-0X6B3595068778DD592E39A122F4F5A5CF09C90FE2']  # deleted pool
         d.price_holder.pool_info_map['BNB.AVA-645'].status = PoolInfo.STAGED
         d.price_holder.pool_info_map['BNB.FTM-A64'].status = PoolInfo.AVAILABLE
-        d.price_holder.pool_info_map['DOGE.DOGE'] = PoolInfo('BTC.BTC', 18555, 18555, 100, PoolInfo.STAGED)
+        d.price_holder.pool_info_map[DOGE_SYMBOL] = PoolInfo(DOGE_SYMBOL, 18555, 18555, 100, PoolInfo.STAGED)
 
         await notifier_pool_churn.on_data(ppf, d.price_holder.pool_info_map)  # no update at this moment!
 
