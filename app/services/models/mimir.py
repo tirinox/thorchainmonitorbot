@@ -91,6 +91,7 @@ class MimirHolder:
         'PAUSELPBCH': 'Pause LP BCH',
         'PAUSELPBNB': 'Pause LP BNB',
         'PAUSELPBTC': 'Pause LP BTC',
+        'PAUSELPDOGE': 'Pause LP Doge',
         'PAUSELP': 'Pause all LP',
         'STOPFUNDYGGDRASIL': 'Stop Fund Yggdrasil',
         'STOPSOLVENCYCHECK': 'Stol Solvency Check',
@@ -111,6 +112,9 @@ class MimirHolder:
         'HALTLTCCHAIN': 'Halt LTC Chain',
         'HALTLTCTRADING': 'Halt LTC Trading',
 
+        'HALTDOGECHAIN': 'Halt DOGE Chain',
+        'HALTDOGETRADING': 'Halt DOGE Trading',
+
         'HALTTHORCHAIN': 'Halt ThorChain',
         'HALTTRADING': 'Halt All Trading',
 
@@ -127,6 +131,7 @@ class MimirHolder:
         'STOPSOLVENCYCHECKLTC': 'Stop Solvency check LTC',
         'STOPSOLVENCYCHECKBTC': 'Stop Solvency check BTC',
         'STOPSOLVENCYCHECKBCH': 'Stop Solvency check BCH',
+        'STOPSOLVENCYCHECKDOGE': 'Stop Solvency check DOGE',
     }
 
     BOOL_CONSTANTS = {
@@ -141,6 +146,8 @@ class MimirHolder:
         "HALTLTCCHAIN",
         "HALTLTCTRADING",
         "HALTTHORCHAIN",
+        'HALTDOGECHAIN',
+        'HALTDOGETRADING',
         "HALTTRADING",
         "MINTSYNTHS",
         "PAUSELP",
@@ -149,6 +156,7 @@ class MimirHolder:
         "PAUSELPBTC",
         "PAUSELPETH",
         "PAUSELPLTC",
+        "PAUSELPDOGE",
         "STOPFUNDYGGDRASIL",
         "STOPSOLVENCYCHECK",
         "THORNAME",
@@ -158,13 +166,14 @@ class MimirHolder:
         'STOPSOLVENCYCHECKLTC',
         'STOPSOLVENCYCHECKBTC',
         'STOPSOLVENCYCHECKBCH',
+        'STOPSOLVENCYCHECKDOGE',
     }
 
     @staticmethod
     def detect_auto_solvency_checker(name: str, value):
         name = name.upper()
         if name.startswith('MIMIR//HALT') and (
-            name.endswith('CHAIN') or name.endswith('TRADING')
+                name.endswith('CHAIN') or name.endswith('TRADING')
         ):
             if int(value) > 2:
                 return True

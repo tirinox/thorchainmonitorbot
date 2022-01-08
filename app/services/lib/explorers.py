@@ -26,6 +26,8 @@ def get_explorer_url_to_address(network_id, pool_or_chain: str, address: str):
     elif chain == Chains.LTC:
         return f'https://blockchair.com/litecoin/address/{address}' if is_live else \
             f'https://tltc.bitaps.com/{address}'
+    elif chain == Chains.DOGE:
+        return f'https://dogechain.info/address/{address}'
     else:
         url = f'https://www.google.com/search?q={chain}+explorer'
         return url if is_live else f'{url}+test'
@@ -57,6 +59,8 @@ def get_explorer_url_to_tx(network_id, pool_or_chain: str, tx_id: str):
     elif chain == Chains.LTC:
         return f'https://blockchair.com/litecoin/transaction/{tx_id}' if is_live else \
             f'https://tltc.bitaps.com/{tx_id}'
+    elif chain == Chains.DOGE:
+        return f'https://dogechain.info/tx/{tx_id.lower()}'
     else:
         url = f'https://www.google.com/search?q={chain}+explorer'
         return url if is_live else f'{url}+test'
