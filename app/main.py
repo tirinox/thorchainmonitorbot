@@ -99,8 +99,16 @@ class App:
             use_nodes=bool(cfg.get('use_nodes', True))
         )
 
+    async def _some_sleep(self):
+        sleep_interval = self.deps.cfg.as_float('sleep_before_start', 0)
+        if sleep_interval > 0:
+            logging.info(f'Sleeping before start for {sleep_interval:.1f} sec..')
+            await asyncio.sleep(sleep_interval)
+
     async def _run_background_jobs(self):
         d = self.deps
+
+        await self._some_sleep()
 
         if 'REPLACE_RUNE_TIMESERIES_WITH_GECKOS' in os.environ:
             await fill_rune_price_from_gecko(d.db)

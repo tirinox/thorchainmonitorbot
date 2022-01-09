@@ -2,6 +2,7 @@
 # Rename it to "config.yaml"
 
 log_level: INFO
+sleep_before_start: 3  # (!) new
 
 
 thor:
