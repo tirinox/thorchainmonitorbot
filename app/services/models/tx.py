@@ -322,6 +322,21 @@ class ThorTx:
         else:
             return False
 
+    def deep_eq(self, other: 'ThorTx'):
+        if other != self:
+            return False
+        if len(other.in_tx) != len(self.in_tx):
+            return False
+        for in1, in2 in zip(self.in_tx, other.in_tx):
+            if in1.address != in2.address or in1.tx_id != in2.tx_id or len(in1.coins) != len(in2.coins):
+                return False
+            for c1, c2 in zip(in1.coins, in2.coins):
+                if c1.asset != c2.asset or c1.amount != c2.amount:
+                    return False
+
+        return True
+
+
 
 def final_liquidity(txs: List[ThorTx]):
     lp = 0

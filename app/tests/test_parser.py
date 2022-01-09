@@ -127,3 +127,24 @@ def test_affiliate_add_merge_dual(fn, example_tx_gen):
     assert tx.in_tx[0].coins[0].asset == 'ETH.ETH'
     assert tx.in_tx[1].coins[0].amount == '3211421250'
     assert tx.in_tx[1].coins[0].asset == NATIVE_RUNE_SYMBOL
+
+@pytest.fixture
+def v2_single_tx_gen(example_tx_gen):
+    return lambda: example_tx_gen('v2_single.json').txs[0]
+
+def test_merge_same(v2_single_tx_gen):
+    tx1 = v2_single_tx_gen()
+    tx2 = v2_single_tx_gen()  # same TX, but different objects
+
+    assert tx1.deep_eq(tx2)
+    tx1.in_tx[0].coins[0].amount = "123"
+    tx2.in_tx[0].coins[0].amount = "234"
+    assert not tx1.deep_eq(tx2)
+    r = merge_affiliate_txs([tx1, tx2])
+    assert len(r) == 1
+
+    tx1 = v2_single_tx_gen()
+    tx2 = v2_single_tx_gen()  # same TX, but different objects
+
+    r = merge_affiliate_txs([tx1, tx2])
+    assert len(r) == 2

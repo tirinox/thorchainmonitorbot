@@ -172,7 +172,12 @@ def calc_affiliate_fee_percent(tx_a: ThorTx, tx_b: ThorTx):
         return calc_affiliate_fee_from_coins(coin_a, coin_b)
 
     coin_a, coin_b = in_a.rune_coin, in_b.rune_coin
-    return calc_affiliate_fee_from_coins(coin_a, coin_b)
+    a_fee = calc_affiliate_fee_from_coins(coin_a, coin_b)
+    if a_fee > 0.15:
+        logger_aff.error(f'Affiliate fee is too big to be true: {a_fee = } > 0.15')
+        return 0.0
+    else:
+        return a_fee
 
 
 def merge_same_txs(tx1: ThorTx, tx2: ThorTx) -> ThorTx:
@@ -211,10 +216,14 @@ def merge_affiliate_txs(txs: List[ThorTx]):
             same_tx_id_set[h].append(tx)
 
     for h, same_tx_list in same_tx_id_set.items():
-        if len(same_tx_list) == 2:
-            result_tx = merge_same_txs(*same_tx_list)
-            txs = list(filter(lambda a_tx: a_tx.first_input_tx_hash != h, txs))
-            txs.append(result_tx)
+        if len(same_tx_list) == 2:  # проблема, что если например 2 одинаковых из 2 батчей и одна или более допов из афф?
+            tx1, tx2 = same_tx_list
+            if tx1.deep_eq(tx2):  # same txs => ignore
+                continue
+            else:
+                result_tx = merge_same_txs(tx1, tx2)
+                txs = list(filter(lambda a_tx: a_tx.first_input_tx_hash != h, txs))
+                txs.append(result_tx)
         elif len(same_tx_list) > 2:
             logger_aff.error(f'> 2 same hash TX ({h})! It is strange! Ignoring them all')
             continue

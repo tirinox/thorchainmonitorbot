@@ -1,0 +1,52 @@
+{
+	"actions": [
+		{
+			"date": "1641606442315008926",
+			"height": "3706538",
+			"in": [
+				{
+					"address": "bnb10gh0p6thzjz54jqy9lg0rv733fnl0vqmc789pp",
+					"coins": [
+						{
+							"amount": "3941606125058",
+							"asset": "BNB.BUSD-BD1"
+						}
+					],
+					"txID": "655046CB632A8D022D5FE655492D848CC44992A9E0B247084A97A72CA78555DB"
+				}
+			],
+			"metadata": {
+				"swap": {
+					"liquidityFee": "4507389120",
+					"networkFees": [
+						{
+							"amount": "30000",
+							"asset": "BTC.BTC"
+						}
+					],
+					"swapSlip": "68",
+					"swapTarget": "94082886"
+				}
+			},
+			"out": [
+				{
+					"address": "bc1qdxrce4ms9hvaxvh9p3rdmxfdtvvzt9y3zq829a",
+					"coins": [
+						{
+							"amount": "94838795",
+							"asset": "BTC.BTC"
+						}
+					],
+					"txID": "74E06AC8AFD0007280B4AED4632AAE3BD3207B1A9CF428FA18DF5AEF6C9C036E"
+				}
+			],
+			"pools": [
+				"BNB.BUSD-BD1",
+				"BTC.BTC"
+			],
+			"status": "success",
+			"type": "swap"
+		}
+	],
+	"count": "1"
+}
