@@ -54,7 +54,7 @@ discord:
     token: "token.for.discord.bot"
 
 
-slack:  # (!) new!!
+slack: # (!) new!!
   enabled: true
   bot:
     app_token: xapp-1234134567
@@ -62,7 +62,7 @@ slack:  # (!) new!!
 
 
 # for message broadcasting
-channels:  # (!) new! moved from "telegram" section
+channels: # (!) new! moved from "telegram" section
   - type: telegram
     name: "@thorchain_alert"  # live channel
     lang: eng
@@ -194,6 +194,12 @@ price:
       - CAACAgIAAxkBAAKYJGAxSSC1U9D67zyg-7RJfjkork8EAAKMAAMWQmsKQo7-Yhc9TeIeBA
       - CAACAgIAAxkBAAKYJmAxST6CTOiOStfQ9CH7hqLiv0iWAAL8BgACRvusBG1XSZhZ24v-HgQ
 
+
+bep2: # (!) new! bep2 rune movements
+  enabled: true
+  fetch_period: 30
+  min_usd: 300_000
+
 cap:
   enabled: true
   fetch_period: 120
@@ -292,6 +298,6 @@ best_pools:
 
 
 blockchain:
-  block_time:  # block_time overriding... (optional)
+  block_time: # block_time overriding... (optional)
     BTC: 10m
     ETH: 14s
