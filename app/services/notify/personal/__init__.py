@@ -94,7 +94,7 @@ class NodeChangePersonalNotifier(INotified):
         if not events:
             return
 
-        self.logger.info(f'Casting Node changes ({len(events)} items)')
+        self.logger.debug(f'Casting Node changes ({len(events)} items)')
 
         # 2. get list of changed nodes
         affected_node_addresses = set(c.address for c in events)

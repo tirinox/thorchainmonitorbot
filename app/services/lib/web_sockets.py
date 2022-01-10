@@ -3,7 +3,6 @@ import asyncio
 import socket
 
 import ujson
-
 import websockets
 
 from services.lib.utils import class_logger
@@ -46,7 +45,7 @@ class WSClient(abc.ABC):
                                 await asyncio.wait_for(pong, timeout=self.ping_timeout)
                                 self.logger.debug('Ping OK, keeping connection alive...')
                                 continue
-                            except:
+                            except Exception:
                                 self.logger.debug(
                                     'Ping error - retrying connection in {} sec (Ctrl-C to quit)'.format(
                                         self.sleep_time))
@@ -71,3 +70,5 @@ class WSClient(abc.ABC):
             except Exception as e:
                 self.logger.error(f'Other error: {e}')
                 await asyncio.sleep(self.sleep_time)
+
+    run = listen_forever

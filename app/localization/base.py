@@ -7,7 +7,7 @@ from aiothornode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
 from services.lib.config import Config
-from services.lib.constants import NetworkIdents, rune_origin, thor_to_float, THOR_BLOCK_TIME
+from services.lib.constants import NetworkIdents, rune_origin, thor_to_float, THOR_BLOCK_TIME, BNB_RUNE_SYMBOL
 from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
     get_explorer_url_for_node
@@ -15,6 +15,7 @@ from services.lib.money import format_percent, pretty_money, short_address, shor
     calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset, short_dollar
 from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
     up_down_arrow, bracketify, plural, grouper, join_as_numbered_list
+from services.models.bep2 import BEP2Transfer
 from services.models.cap_info import ThorCapInfo
 from services.models.last_block import BlockSpeed
 from services.models.mimir import MimirChange, MimirHolder, MimirEntry
@@ -1150,7 +1151,7 @@ class BaseLocalization(ABC):  # == English
             new_value_fmt = code(self.format_mimir_value(change.new_value, change.entry))
             name = code(change.entry.pretty_name if change.entry else change.name)
 
-            if change.entry.automatic:
+            if change.entry and change.entry.automatic:
                 text += bold('[🤖 Automatic solvency checker ]  ')
             else:
                 text += bold('[👩‍💻 Admins ]  ')
@@ -1472,3 +1473,20 @@ class BaseLocalization(ABC):  # == English
 
     def seconds_human(self, s):
         return seconds_human(s)
+
+    # ----- BEP 2 ------
+
+    def link_to_bep2(self, addr):
+        url = get_explorer_url_to_address(self.cfg.network_id, Chains.BNB, addr)
+        known_addresses = self.cfg.get_pure('bep2.known_addresses', {})
+        caption = known_addresses.get(addr, short_address(addr))
+        return link(url, caption)
+
+    def notification_text_bep2_movement(self, transfer: BEP2Transfer, rune_price: float):
+        usd_amt = transfer.amount * rune_price
+        from_link, to_link = self.link_to_bep2(transfer.from_addr), self.link_to_bep2(transfer.to_addr)
+        pf = ' ' + BNB_RUNE_SYMBOL
+        tf_link = get_explorer_url_to_tx(self.cfg.network_id, Chains.BNB, transfer.tx_hash)
+        return (f'<b>️{RAIDO_GLYPH} Large BEP2 $Rune {link(tf_link, "transfer")}</b>\n'
+                f'{pre(short_money(transfer.amount, postfix=pf))} ({ital(short_dollar(usd_amt))}) '
+                f'from {from_link} ➡️ to {to_link}.')

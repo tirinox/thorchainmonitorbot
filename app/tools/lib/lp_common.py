@@ -23,8 +23,8 @@ from services.notify.broadcast import Broadcaster
 
 
 class LpAppFramework:
-    def __init__(self, rune_yield_class=None, network=None) -> None:
-        setup_logs(logging.DEBUG)
+    def __init__(self, rune_yield_class=None, network=None, log_level=logging.DEBUG) -> None:
+        setup_logs(log_level)
         d = DepContainer()
         d.loop = asyncio.get_event_loop()
         d.cfg = Config()

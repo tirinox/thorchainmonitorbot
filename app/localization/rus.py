@@ -6,13 +6,14 @@ from aiothornode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
 from localization.base import BaseLocalization, RAIDO_GLYPH, CREATOR_TG, URL_LEADERBOARD_MCCN
-from services.lib.constants import Chains, thor_to_float, rune_origin
+from services.lib.constants import Chains, thor_to_float, rune_origin, BNB_RUNE_SYMBOL
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
-from services.lib.explorers import get_explorer_url_to_address
+from services.lib.explorers import get_explorer_url_to_address, get_explorer_url_to_tx
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change, Asset, short_money, short_dollar, format_percent
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
     up_down_arrow, plural, grouper
+from services.models.bep2 import BEP2Transfer
 from services.models.cap_info import ThorCapInfo
 from services.models.last_block import BlockSpeed
 from services.models.mimir import MimirChange, MimirHolder
@@ -1203,3 +1204,15 @@ class RussianLocalization(BaseLocalization):
 
     def seconds_human(self, s):
         return seconds_human(s, translate=self.DATE_TRANSLATOR)
+
+    # ----- BEP 2 ------
+
+    def notification_text_bep2_movement(self, transfer: BEP2Transfer, rune_price: float):
+        usd_amt = transfer.amount * rune_price
+        from_link, to_link = self.link_to_bep2(transfer.from_addr), self.link_to_bep2(transfer.to_addr)
+        pf = ' ' + BNB_RUNE_SYMBOL
+        tf_link = get_explorer_url_to_tx(self.cfg.network_id, Chains.BNB, transfer.tx_hash)
+        return (f'<b>️{RAIDO_GLYPH} Крупный {link(tf_link, "перевод")} BEP2 Rune:</b>\n'
+                f'{pre(short_money(transfer.amount, postfix=pf))} '
+                f'({ital(short_dollar(usd_amt, self.SHORT_MONEY_LOC))}) '
+                f'от {from_link} ➡️ к {to_link}.')

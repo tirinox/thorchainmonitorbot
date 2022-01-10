@@ -13,6 +13,7 @@ from localization import LocalizationManager
 from services.dialog import init_dialogs
 from services.dialog.discord.discord_bot import DiscordBot
 from services.dialog.slack.slack_bot import SlackBot
+from services.jobs.fetch.bep2_move import BinanceOrgDexWSSClient
 from services.jobs.fetch.cap import CapInfoFetcher
 from services.jobs.fetch.chains import ChainStateFetcher
 from services.jobs.fetch.const_mimir import ConstMimirFetcher
@@ -37,6 +38,7 @@ from services.models.price import LastPriceHolder
 from services.models.tx import ThorTxType
 from services.notify.broadcast import Broadcaster
 from services.notify.personal import NodeChangePersonalNotifier
+from services.notify.types.bep2_notify import BEP2MoveNotifier
 from services.notify.types.best_pool_notify import BestPoolsNotifier
 from services.notify.types.block_notify import BlockHeightNotifier
 from services.notify.types.cap_notify import LiquidityCapNotifier
@@ -242,6 +244,12 @@ class App:
         if d.cfg.get('slack.enabled', False):
             d.slack_bot = SlackBot(d.cfg)
             d.slack_bot.start_in_background()
+
+        if d.cfg.get('bep2.enabled', True):
+            fetcher_bep2 = BinanceOrgDexWSSClient()
+            notifier_beb2 = BEP2MoveNotifier(d)
+            fetcher_bep2.subscribe(notifier_beb2)
+            tasks.append(fetcher_bep2)
 
         self.deps.is_loading = False
         await asyncio.gather(*(task.run() for task in tasks))
