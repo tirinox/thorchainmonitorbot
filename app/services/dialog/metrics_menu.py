@@ -15,7 +15,8 @@ from services.lib.date_utils import DAY, HOUR, parse_timespan_to_seconds, today_
 from services.lib.draw_utils import img_to_bio
 from services.lib.texts import kbd
 from services.models.node_info import NodeInfo
-from services.models.price import PriceReport
+from services.models.price import PriceReport, RuneMarketInfo
+from services.notify.types.bep2_notify import BEP2MoveNotifier
 from services.notify.types.best_pool_notify import BestPoolsNotifier
 from services.notify.types.block_notify import BlockHeightNotifier
 from services.notify.types.cap_notify import LiquidityCapNotifier
@@ -25,6 +26,10 @@ from services.notify.types.stats_notify import NetworkStatsNotifier
 
 class MetricsStates(StatesGroup):
     mode = HelperMode.snake_case
+
+    SECTION_FINANCE = State()
+    SECTION_NET_OP = State()
+
     MAIN_METRICS_MENU = State()
     PRICE_SELECT_DURATION = State()
     QUEUE_SELECT_DURATION = State()
@@ -38,8 +43,48 @@ class MetricsDialog(BaseDialog):
         if message.text == self.loc.BUTTON_BACK:
             await self.go_back(message)
             return
-        elif message.text == self.loc.BUTTON_METR_QUEUE:
-            await self.ask_queue_duration(message)
+        elif message.text == self.loc.BUTTON_METR_S_NET_OP:
+            await self.on_menu_net_op(message)
+        elif message.text == self.loc.BUTTON_METR_S_FINANCIAL:
+            await self.on_menu_financial(message)
+        else:
+            await self.show_main_menu(message)
+
+    async def show_main_menu(self, message: Message):
+        await MetricsStates.MAIN_METRICS_MENU.set()
+        reply_markup = kbd([
+            [self.loc.BUTTON_METR_S_FINANCIAL, self.loc.BUTTON_METR_S_NET_OP],
+            [self.loc.BUTTON_BACK],
+        ])
+        await message.answer(self.loc.TEXT_METRICS_INTRO,
+                             reply_markup=reply_markup,
+                             disable_notification=True)
+
+    async def show_menu_financial(self, message: Message):
+        await MetricsStates.SECTION_FINANCE.set()
+        reply_markup = kbd([
+            [self.loc.BUTTON_METR_PRICE, self.loc.BUTTON_METR_CAP, self.loc.BUTTON_METR_STATS],
+            [self.loc.BUTTON_METR_LEADERBOARD, self.loc.BUTTON_METR_TOP_POOLS, self.loc.BUTTON_METR_CEX_FLOW],
+            [self.loc.BUTTON_BACK],
+        ])
+        await message.answer(self.loc.TEXT_METRICS_INTRO,
+                             reply_markup=reply_markup,
+                             disable_notification=True)
+
+    async def show_menu_net_op(self, message: Message):
+        await MetricsStates.SECTION_NET_OP.set()
+        reply_markup = kbd([
+            [self.loc.BUTTON_METR_NODES, self.loc.BUTTON_METR_CHAINS, self.loc.BUTTON_METR_MIMIR],
+            [self.loc.BUTTON_METR_BLOCK_TIME, self.loc.BUTTON_METR_QUEUE, self.loc.BUTTON_BACK],
+        ])
+        await message.answer(self.loc.TEXT_METRICS_INTRO,
+                             reply_markup=reply_markup,
+                             disable_notification=True)
+
+    @message_handler(state=MetricsStates.SECTION_FINANCE)
+    async def on_menu_financial(self, message: Message):
+        if message.text == self.loc.BUTTON_BACK:
+            await self.go_back(message)
             return
         elif message.text == self.loc.BUTTON_METR_PRICE:
             await self.ask_price_info_duration(message)
@@ -48,32 +93,31 @@ class MetricsDialog(BaseDialog):
             await self.show_cap(message)
         elif message.text == self.loc.BUTTON_METR_STATS:
             await self.show_last_stats(message)
-        elif message.text == self.loc.BUTTON_METR_NODES:
-            await self.show_node_list(message)
         elif message.text == self.loc.BUTTON_METR_LEADERBOARD:
             await self.show_leaderboard(message)
+        elif message.text == self.loc.BUTTON_METR_TOP_POOLS:
+            await self.show_top_pools(message)
+        elif message.text == self.loc.BUTTON_METR_CEX_FLOW:
+            await self.show_cex_flow(message)
+        await self.show_menu_financial(message)
+
+    @message_handler(state=MetricsStates.SECTION_NET_OP)
+    async def on_menu_net_op(self, message: Message):
+        if message.text == self.loc.BUTTON_BACK:
+            await self.go_back(message)
+            return
+        elif message.text == self.loc.BUTTON_METR_QUEUE:
+            await self.ask_queue_duration(message)
+            return
+        elif message.text == self.loc.BUTTON_METR_NODES:
+            await self.show_node_list(message)
         elif message.text == self.loc.BUTTON_METR_CHAINS:
             await self.show_chain_info(message)
         elif message.text == self.loc.BUTTON_METR_MIMIR:
             await self.show_mimir_info(message)
         elif message.text == self.loc.BUTTON_METR_BLOCK_TIME:
             await self.show_block_time(message)
-        elif message.text == self.loc.BUTTON_METR_TOP_POOLS:
-            await self.show_top_pools(message)
-
-        await self.show_menu(message)
-
-    async def show_menu(self, message: Message):
-        await MetricsStates.MAIN_METRICS_MENU.set()
-        reply_markup = kbd([
-            [self.loc.BUTTON_METR_PRICE, self.loc.BUTTON_METR_CAP, self.loc.BUTTON_METR_QUEUE],
-            [self.loc.BUTTON_METR_STATS, self.loc.BUTTON_METR_NODES, self.loc.BUTTON_METR_CHAINS],
-            [self.loc.BUTTON_METR_LEADERBOARD, self.loc.BUTTON_METR_BLOCK_TIME, self.loc.BUTTON_METR_MIMIR],
-            [self.loc.BUTTON_METR_TOP_POOLS, self.loc.BUTTON_BACK],
-        ])
-        await message.answer(self.loc.TEXT_METRICS_INTRO,
-                             reply_markup=reply_markup,
-                             disable_notification=True)
+        await self.show_menu_net_op(message)
 
     async def show_cap(self, message: Message):
         info = await LiquidityCapNotifier(self.deps).get_last_cap()
@@ -91,7 +135,9 @@ class MetricsDialog(BaseDialog):
         old_info = await nsn.get_previous_stats()
         new_info = await nsn.get_latest_info()
         loc: BaseLocalization = self.loc
-        await message.answer(loc.notification_text_network_summary(old_info, new_info),
+        rune_market_info: RuneMarketInfo = await get_fair_rune_price_cached(self.deps.price_holder,
+                                                                            self.deps.midgard_connector)
+        await message.answer(loc.notification_text_network_summary(old_info, new_info, rune_market_info),
                              disable_web_page_preview=True,
                              disable_notification=True)
 
@@ -246,4 +292,10 @@ class MetricsDialog(BaseDialog):
     async def show_top_pools(self, message: Message):
         notifier: BestPoolsNotifier = self.deps.best_pools_notifier
         text = self.loc.notification_text_best_pools(notifier.last_pool_detail, notifier.n_pools)
+        await message.answer(text, disable_notification=True)
+
+    async def show_cex_flow(self, message: Message):
+        notifier: BEP2MoveNotifier = self.deps.bep2_move_notifier
+        flow = await notifier.tracker.read_last24h()
+        text = self.loc.notification_text_cex_flow(flow, self.deps.price_holder.usd_per_rune)
         await message.answer(text, disable_notification=True)

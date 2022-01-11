@@ -15,7 +15,7 @@ from services.lib.money import format_percent, pretty_money, short_address, shor
     calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset, short_dollar
 from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
     up_down_arrow, bracketify, plural, grouper, join_as_numbered_list
-from services.models.bep2 import BEP2Transfer
+from services.models.bep2 import BEP2Transfer, BEP2CEXFlow
 from services.models.cap_info import ThorCapInfo
 from services.models.last_block import BlockSpeed
 from services.models.mimir import MimirChange, MimirHolder, MimirEntry
@@ -554,6 +554,9 @@ class BaseLocalization(ABC):  # == English
 
     # -------- METRICS ----------
 
+    BUTTON_METR_S_FINANCIAL = '💱 Financial'
+    BUTTON_METR_S_NET_OP = '🔩 Network operation'
+
     BUTTON_METR_CAP = '✋ Liquidity cap'
     BUTTON_METR_PRICE = f'💲 {R} price info'
     BUTTON_METR_QUEUE = f'👥 Queue'
@@ -564,6 +567,7 @@ class BaseLocalization(ABC):  # == English
     BUTTON_METR_MIMIR = '🎅 Mimir consts'
     BUTTON_METR_BLOCK_TIME = '⏱️ Block time'
     BUTTON_METR_TOP_POOLS = '🏊 Top Pools'
+    BUTTON_METR_CEX_FLOW = '🌬 CEX Flow'
 
     TEXT_METRICS_INTRO = 'What metrics would you like to know?'
 
@@ -619,6 +623,15 @@ class BaseLocalization(ABC):  # == English
     BUTTON_24_HOURS = '24 hours'
     BUTTON_1_WEEK = '1 week'
     BUTTON_30_DAYS = '30 days'
+
+    def notification_text_cex_flow(self, bep2flow: BEP2CEXFlow, rune_price: float):
+        return (f'🌬️ <b>BEP2.Rune CEX flow last 24 hours</b>\n'
+                f'Inflow: {pre(short_money(bep2flow.rune_cex_inflow, postfix=RAIDO_GLYPH))} '
+                f'({short_dollar(bep2flow.rune_cex_inflow * rune_price)})\n'
+                f'Outflow: {pre(short_money(bep2flow.rune_cex_outflow, postfix=RAIDO_GLYPH))} '
+                f'({short_dollar(bep2flow.rune_cex_outflow * rune_price)})\n'
+                f'Netflow: {pre(short_money(bep2flow.rune_cex_netflow, postfix=RAIDO_GLYPH))} '
+                f'({short_dollar(bep2flow.rune_cex_netflow * rune_price)})')
 
     # ------- AVATAR -------
 

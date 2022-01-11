@@ -39,6 +39,7 @@ class DepContainer:
     node_op_notifier = None  # type: 'NodeChangePersonalNotifier'
     block_notifier = None  # type: 'BlockHeightNotifier'
     best_pools_notifier = None  # type: 'BestPoolsNotifier'
+    bep2_move_notifier = None  # type: 'BEP2MoveNotifier'
 
     discord_bot = None
     slack_bot = None

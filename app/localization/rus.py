@@ -443,6 +443,9 @@ class RussianLocalization(BaseLocalization):
 
     # -------- METRICS ----------
 
+    BUTTON_METR_S_FINANCIAL = '💱 Финансовые'
+    BUTTON_METR_S_NET_OP = '🔩 Работа сети'
+
     BUTTON_METR_CAP = '✋ Кап ливкидности'
     BUTTON_METR_PRICE = f'💲 {BaseLocalization.R} инфо о цене'
     BUTTON_METR_QUEUE = f'👥 Очередь'
@@ -453,6 +456,7 @@ class RussianLocalization(BaseLocalization):
     BUTTON_METR_MIMIR = '🎅 Мимир'
     BUTTON_METR_BLOCK_TIME = '⏱️ Время блоков'
     BUTTON_METR_TOP_POOLS = '🏊 Топ Пулов'
+    BUTTON_METR_CEX_FLOW = '🌬 Поток бирж'
 
     TEXT_METRICS_INTRO = 'Что вы хотите узнать?'
 

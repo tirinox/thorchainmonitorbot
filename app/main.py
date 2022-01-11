@@ -247,8 +247,8 @@ class App:
 
         if d.cfg.get('bep2.enabled', True):
             fetcher_bep2 = BinanceOrgDexWSSClient()
-            notifier_beb2 = BEP2MoveNotifier(d)
-            fetcher_bep2.subscribe(notifier_beb2)
+            d.bep2_move_notifier = BEP2MoveNotifier(d)
+            fetcher_bep2.subscribe(d.bep2_move_notifier)
             tasks.append(fetcher_bep2)
 
         self.deps.is_loading = False
