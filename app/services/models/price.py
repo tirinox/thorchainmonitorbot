@@ -21,6 +21,7 @@ class RuneMarketInfo:
     tlv_usd: float = 0.0
     rank: int = 0
     total_trade_volume_usd: float = 0.0
+    total_supply: int = 500_000_000
 
     @property
     def market_cap(self):

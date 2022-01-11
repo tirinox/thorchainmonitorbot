@@ -23,7 +23,7 @@ from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEventType, NodeEvent, \
     EventBlockHeight, EventDataSlash
 from services.models.pool_info import PoolInfo, PoolChanges, PoolDetailHolder
-from services.models.price import PriceReport
+from services.models.price import PriceReport, RuneMarketInfo
 from services.models.queue import QueueInfo
 from services.models.tx import ThorTxExtended, ThorTxType, ThorSubTx
 
@@ -648,7 +648,7 @@ class BaseLocalization(ABC):  # == English
         else:
             return "🤬 INSECURE"
 
-    def notification_text_network_summary(self, old: NetworkStats, new: NetworkStats):
+    def notification_text_network_summary(self, old: NetworkStats, new: NetworkStats, market: RuneMarketInfo):
         message = bold('🌐 THORChain stats') + '\n'
 
         message += '\n'
@@ -782,7 +782,9 @@ class BaseLocalization(ABC):  # == English
             liquidity_apy_change = ''
 
         switch_rune_total_text = bold(pretty_money(new.switched_rune, prefix=RAIDO_GLYPH))
-        message += f'💎 Total Rune switched to native: {switch_rune_total_text}.\n\n'
+        message += (f'💎 Total Rune switched to native: {switch_rune_total_text} '
+                    f'({format_percent(new.switched_rune, market.total_supply)}).'
+                    f'\n\n')
 
         message += f'📈 Bonding APY is {code(pretty_money(new.bonding_apy, postfix="%"))}{bonding_apy_change} and ' \
                    f'Liquidity APY is {code(pretty_money(new.liquidity_apy, postfix="%"))}{liquidity_apy_change}.\n'

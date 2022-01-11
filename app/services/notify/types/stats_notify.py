@@ -1,12 +1,12 @@
-import logging
-
 from localization import BaseLocalization
 from services.jobs.fetch.base import INotified
+from services.jobs.fetch.fair_price import get_fair_rune_price_cached
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import DAY, parse_timespan_to_seconds, MINUTE
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
 from services.models.net_stats import NetworkStats
+from services.models.price import RuneMarketInfo
 from services.models.time_series import TimeSeries
 
 
@@ -30,7 +30,9 @@ class NetworkStatsNotifier(INotified):
 
         if await self.notify_cd.can_do():
             old_info = await self.get_previous_stats(ago=self.notify_cd.cooldown)  # since last time notified
-            await self._notify(old_info, new_info)
+            rune_market_info: RuneMarketInfo = await get_fair_rune_price_cached(self.deps.price_holder,
+                                                                                self.deps.midgard_connector)
+            await self._notify(old_info, new_info, rune_market_info)
             await self.notify_cd.do()
 
     async def clear_cd(self):
@@ -47,8 +49,8 @@ class NetworkStatsNotifier(INotified):
     async def get_latest_info(self):
         return await self.get_previous_stats(0)
 
-    async def _notify(self, old: NetworkStats, new: NetworkStats):
+    async def _notify(self, old: NetworkStats, new: NetworkStats, rune_market_info: RuneMarketInfo):
         await self.deps.broadcaster.notify_preconfigured_channels(
             BaseLocalization.notification_text_network_summary,
-            old, new
+            old, new, rune_market_info
         )

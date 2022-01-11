@@ -21,7 +21,7 @@ from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEvent, EventDataSlash, \
     NodeEventType, EventBlockHeight
 from services.models.pool_info import PoolInfo, PoolChanges, PoolDetailHolder
-from services.models.price import PriceReport
+from services.models.price import PriceReport, RuneMarketInfo
 from services.models.queue import QueueInfo
 from services.models.tx import ThorTxExtended, ThorTxType
 
@@ -525,7 +525,7 @@ class RussianLocalization(BaseLocalization):
         else:
             return "🤬 НЕБЕЗОПАСНА"
 
-    def notification_text_network_summary(self, old: NetworkStats, new: NetworkStats):
+    def notification_text_network_summary(self, old: NetworkStats, new: NetworkStats, market: RuneMarketInfo):
         message = bold('🌐 THORChain статистика') + '\n'
 
         message += '\n'
@@ -648,7 +648,9 @@ class RussianLocalization(BaseLocalization):
             liquidity_apy_change = ''
 
         switch_rune_total_text = bold(pretty_money(new.switched_rune, prefix=RAIDO_GLYPH))
-        message += f'💎 Всего Rune перевели в нативные: {switch_rune_total_text}.\n\n'
+        message += (f'💎 Всего Rune перевели в нативные: {switch_rune_total_text} '
+                    f'({format_percent(new.switched_rune, market.total_supply)}).'
+                    f'\n\n')
 
         message += f'📈 Доход от бондов в нодах, годовых: {code(pretty_money(new.bonding_apy, postfix="%"))}{bonding_apy_change} и ' \
                    f'доход от пулов в среднем, годовых: {code(pretty_money(new.liquidity_apy, postfix="%"))}{liquidity_apy_change}.\n'

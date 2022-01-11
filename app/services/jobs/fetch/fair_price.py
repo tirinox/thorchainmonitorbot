@@ -29,6 +29,7 @@ async def fetch_fair_rune_price(price_holder: LastPriceHolder, midgard: MidgardC
     )
 
     circulating = int(gecko['market_data']['circulating_supply'])
+    total_supply = int(gecko['market_data']['total_supply'])
 
     if circulating <= 0:
         raise ValueError(f"circulating is invalid ({circulating})")
@@ -53,7 +54,8 @@ async def fetch_fair_rune_price(price_holder: LastPriceHolder, midgard: MidgardC
                             cex_price=cex_price,
                             tlv_usd=tlv,
                             rank=rank,
-                            total_trade_volume_usd=trade_volume)
+                            total_trade_volume_usd=trade_volume,
+                            total_supply=total_supply)
     logger.info(result)
     return result
 
