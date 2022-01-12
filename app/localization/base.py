@@ -624,15 +624,6 @@ class BaseLocalization(ABC):  # == English
     BUTTON_1_WEEK = '1 week'
     BUTTON_30_DAYS = '30 days'
 
-    def notification_text_cex_flow(self, bep2flow: BEP2CEXFlow, rune_price: float):
-        return (f'🌬️ <b>BEP2.Rune CEX flow last 24 hours</b>\n'
-                f'Inflow: {pre(short_money(bep2flow.rune_cex_inflow, postfix=RAIDO_GLYPH))} '
-                f'({short_dollar(bep2flow.rune_cex_inflow * rune_price)})\n'
-                f'Outflow: {pre(short_money(bep2flow.rune_cex_outflow, postfix=RAIDO_GLYPH))} '
-                f'({short_dollar(bep2flow.rune_cex_outflow * rune_price)})\n'
-                f'Netflow: {pre(short_money(bep2flow.rune_cex_netflow, postfix=RAIDO_GLYPH))} '
-                f'({short_dollar(bep2flow.rune_cex_netflow * rune_price)})')
-
     # ------- AVATAR -------
 
     TEXT_AVA_WELCOME = '🖼️ Drop me a picture and I make you THORChain-styled avatar with a gradient frame. ' \
@@ -1505,3 +1496,12 @@ class BaseLocalization(ABC):  # == English
         return (f'<b>️{RAIDO_GLYPH} Large BEP2 $Rune {link(tf_link, "transfer")}</b>\n'
                 f'{pre(short_money(transfer.amount, postfix=pf))} ({ital(short_dollar(usd_amt))}) '
                 f'from {from_link} ➡️ to {to_link}.')
+
+    def notification_text_cex_flow(self, bep2flow: BEP2CEXFlow, rune_price: float):
+        return (f'🌬️ <b>BEP2.Rune CEX flow last 24 hours</b>\n'
+                f'Inflow: {pre(short_money(bep2flow.rune_cex_inflow, postfix=RAIDO_GLYPH))} '
+                f'({short_dollar(bep2flow.rune_cex_inflow * rune_price)})\n'
+                f'Outflow: {pre(short_money(bep2flow.rune_cex_outflow, postfix=RAIDO_GLYPH))} '
+                f'({short_dollar(bep2flow.rune_cex_outflow * rune_price)})\n'
+                f'Netflow: {pre(short_money(bep2flow.rune_cex_netflow, postfix=RAIDO_GLYPH))} '
+                f'({short_dollar(bep2flow.rune_cex_netflow * rune_price)})')

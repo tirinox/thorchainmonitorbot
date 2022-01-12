@@ -13,7 +13,7 @@ from services.lib.money import pretty_dollar, pretty_money, short_address, adapt
     emoji_for_percent_change, Asset, short_money, short_dollar, format_percent
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
     up_down_arrow, plural, grouper
-from services.models.bep2 import BEP2Transfer
+from services.models.bep2 import BEP2Transfer, BEP2CEXFlow
 from services.models.cap_info import ThorCapInfo
 from services.models.last_block import BlockSpeed
 from services.models.mimir import MimirChange, MimirHolder
@@ -1222,3 +1222,12 @@ class RussianLocalization(BaseLocalization):
                 f'{pre(short_money(transfer.amount, postfix=pf))} '
                 f'({ital(short_dollar(usd_amt, self.SHORT_MONEY_LOC))}) '
                 f'от {from_link} ➡️ к {to_link}.')
+
+    def notification_text_cex_flow(self, bep2flow: BEP2CEXFlow, rune_price: float):
+        return (f'🌬️ <b>BEP2.Rune потоки с централизованнвых бирж последние сутки</b>\n'
+                f'Завели: {pre(short_money(bep2flow.rune_cex_inflow, postfix=RAIDO_GLYPH))} '
+                f'({short_dollar(bep2flow.rune_cex_inflow * rune_price)})\n'
+                f'Вывели: {pre(short_money(bep2flow.rune_cex_outflow, postfix=RAIDO_GLYPH))} '
+                f'({short_dollar(bep2flow.rune_cex_outflow * rune_price)})\n'
+                f'Поток: {pre(short_money(bep2flow.rune_cex_netflow, postfix=RAIDO_GLYPH))} '
+                f'({short_dollar(bep2flow.rune_cex_netflow * rune_price)})')

@@ -16,8 +16,12 @@ class BEP2MoveNotifier(INotified):
         self.logger = class_logger(self)
         cfg = deps.cfg.get('bep2')
 
-        cd_sec = parse_timespan_to_seconds(cfg.as_str('cooldown', 1))
-        self.cd = Cooldown(self.deps.db, 'BEP2Move', cd_sec, max_times=5)
+        move_cd_sec = parse_timespan_to_seconds(cfg.as_str('cooldown', 1))
+        self.move_cd = Cooldown(self.deps.db, 'BEP2Move', move_cd_sec, max_times=5)
+
+        summary_cd_sec = parse_timespan_to_seconds(cfg.as_str('flow_summary.cooldown', 1))
+        self.summary_cd = Cooldown(self.deps.db, 'BEP2Move.Summary', summary_cd_sec)
+
         self.min_usd = cfg.as_float('min_usd', 1000)
         self.cex_list = cfg.as_list('cex_list')
         self.tracker = CEXFlowTracker(deps)
@@ -28,10 +32,21 @@ class BEP2MoveNotifier(INotified):
         asyncio.create_task(self._store_transfer(transfer))
 
         if transfer.amount * rune_price >= self.min_usd:
-            if await self.cd.can_do():
+            if await self.move_cd.can_do():
                 await self.deps.broadcaster.notify_preconfigured_channels(
                     BaseLocalization.notification_text_bep2_movement,
                     transfer, rune_price)
+                await self.move_cd.do()
+
+        if await self.summary_cd.can_do():
+            notifier: BEP2MoveNotifier = self.deps.bep2_move_notifier
+            flow = await notifier.tracker.read_last24h()
+            await self.deps.broadcaster.notify_preconfigured_channels(
+                BaseLocalization.notification_text_cex_flow,
+                flow,
+                self.deps.price_holder.usd_per_rune
+            )
+            await self.summary_cd.do()
 
     def is_cex(self, addr):
         return addr in self.cex_list
