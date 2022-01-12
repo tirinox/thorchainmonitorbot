@@ -48,7 +48,7 @@ class BinanceOrgDexWSSClient(WSClient, WithDelegates):
     async def handle_wss_message(self, j):
         for tx in j:
             if tx.get('txType') == BEP2_TRANSFER and tx.get('txAsset') == BEP2_RUNE_SYMBOL:
-                print(f'Transfer message: {tx}')
+                self.logger.info(f'Transfer message: {tx}')
                 await self.handle_data(BEP2Transfer(
                     tx.get('fromAddr'),
                     tx.get('toAddr'),
