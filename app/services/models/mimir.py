@@ -1,5 +1,6 @@
 import typing
 from dataclasses import dataclass
+from itertools import chain
 
 from aiothornode.types import ThorConstants, ThorMimir
 
@@ -13,7 +14,6 @@ class MimirEntry:
     pretty_name: str
     real_value: str
     hard_coded_value: str
-    overridden: bool
     changed_ts: int
     is_rune: bool
     is_blocks: bool
@@ -45,44 +45,71 @@ class MimirChange(BaseModelMixin):
 
 class MimirHolder:
     def __init__(self) -> None:
-        self.last_constants: ThorConstants = ThorConstants()
-        self.last_mimir: ThorMimir = ThorMimir()
-
         self.last_changes: typing.Dict[str, float] = {}
 
         self._const_map = {}
-
-        def mimirize(arr):
-            return set([self.convert_name_to_mimir_key(n) for n in arr])
-
-        self._mimir_names_of_block_constants = mimirize(self.BLOCK_CONSTANTS)
-        self._mimir_names_of_rune_constants = mimirize(self.RUNE_CONSTANTS)
-        self._mimir_names_of_bool_constants = mimirize(self.BOOL_CONSTANTS)
-
         self._all_names = set()
         self._mimir_only_names = set()
 
-    MIMIR_PREFIX = 'mimir//'
-
     BLOCK_CONSTANTS = {
-        'BlocksPerYear', 'FundMigrationInterval', 'ChurnInterval', 'ChurnRetryInterval',
-        'SigningTransactionPeriod', 'DoubleSignMaxAge', 'LiquidityLockUpBlocks',
-        'ObservationDelayFlexibility', 'YggFundRetry', 'JailTimeKeygen', 'JailTimeKeysign',
-        'NodePauseChainBlocks', 'FullImpLossProtectionBlocks', 'TxOutDelayMax', 'MaxTxOutOffset'
+        name.upper() for name in [
+            'BlocksPerYear', 'FundMigrationInterval', 'ChurnInterval', 'ChurnRetryInterval',
+            'SigningTransactionPeriod', 'DoubleSignMaxAge', 'LiquidityLockUpBlocks',
+            'ObservationDelayFlexibility', 'YggFundRetry', 'JailTimeKeygen', 'JailTimeKeysign',
+            'NodePauseChainBlocks', 'FullImpLossProtectionBlocks', 'TxOutDelayMax', 'MaxTxOutOffset',
+        ]
     }
 
     RUNE_CONSTANTS = {
-        'OutboundTransactionFee',
-        'NativeTransactionFee',
-        'StagedPoolCost',
-        'MinRunePoolDepth',
-        'MinimumBondInRune',
-        'MinTxOutVolumeThreshold',
-        'TxOutDelayRate',
-        'TNSFeePerBlock',
-        'TNSRegisterFee',
-        'MAXIMUMLIQUIDITYRUNE',
-        'MAXLIQUIDITYRUNE',
+        name.upper() for name in [
+            'OutboundTransactionFee',
+            'NativeTransactionFee',
+            'StagedPoolCost',
+            'MinRunePoolDepth',
+            'MinimumBondInRune',
+            'MinTxOutVolumeThreshold',
+            'TxOutDelayRate',
+            'TNSFeePerBlock',
+            'TNSRegisterFee',
+            'MAXIMUMLIQUIDITYRUNE',
+            'MAXLIQUIDITYRUNE',
+        ]
+    }
+
+    BOOL_CONSTANTS = {
+        "HALTBCHCHAIN",
+        "HALTBCHTRADING",
+        "HALTBNBCHAIN",
+        "HALTBNBTRADING",
+        "HALTBTCCHAIN",
+        "HALTBTCTRADING",
+        "HALTETHCHAIN",
+        "HALTETHTRADING",
+        "HALTLTCCHAIN",
+        "HALTLTCTRADING",
+        "HALTTHORCHAIN",
+        'HALTDOGECHAIN',
+        'HALTDOGETRADING',
+        "HALTTRADING",
+        "MINTSYNTHS",
+        "PAUSELP",
+        "PAUSELPBCH",
+        "PAUSELPBNB",
+        "PAUSELPBTC",
+        "PAUSELPETH",
+        "PAUSELPLTC",
+        "PAUSELPDOGE",
+        "STOPFUNDYGGDRASIL",
+        "STOPSOLVENCYCHECK",
+        "THORNAME",
+        "THORNAMES",
+        'STOPSOLVENCYCHECKETH',
+        'STOPSOLVENCYCHECKBNB',
+        'STOPSOLVENCYCHECKLTC',
+        'STOPSOLVENCYCHECKBTC',
+        'STOPSOLVENCYCHECKBCH',
+        'STOPSOLVENCYCHECKDOGE',
+        'STRICTBONDLIQUIDITYRATIO',
     }
 
     TRANSLATE_MIMIRS = {
@@ -132,158 +159,64 @@ class MimirHolder:
         'STOPSOLVENCYCHECKBTC': 'Stop Solvency check BTC',
         'STOPSOLVENCYCHECKBCH': 'Stop Solvency check BCH',
         'STOPSOLVENCYCHECKDOGE': 'Stop Solvency check DOGE',
-    }
-
-    BOOL_CONSTANTS = {
-        "HALTBCHCHAIN",
-        "HALTBCHTRADING",
-        "HALTBNBCHAIN",
-        "HALTBNBTRADING",
-        "HALTBTCCHAIN",
-        "HALTBTCTRADING",
-        "HALTETHCHAIN",
-        "HALTETHTRADING",
-        "HALTLTCCHAIN",
-        "HALTLTCTRADING",
-        "HALTTHORCHAIN",
-        'HALTDOGECHAIN',
-        'HALTDOGETRADING',
-        "HALTTRADING",
-        "MINTSYNTHS",
-        "PAUSELP",
-        "PAUSELPBCH",
-        "PAUSELPBNB",
-        "PAUSELPBTC",
-        "PAUSELPETH",
-        "PAUSELPLTC",
-        "PAUSELPDOGE",
-        "STOPFUNDYGGDRASIL",
-        "STOPSOLVENCYCHECK",
-        "THORNAME",
-        "THORNAMES",
-        'STOPSOLVENCYCHECKETH',
-        'STOPSOLVENCYCHECKBNB',
-        'STOPSOLVENCYCHECKLTC',
-        'STOPSOLVENCYCHECKBTC',
-        'STOPSOLVENCYCHECKBCH',
-        'STOPSOLVENCYCHECKDOGE',
+        'STRICTBONDLIQUIDITYRATIO': 'Strict Bond Liquidity Ratio'
     }
 
     @staticmethod
     def detect_auto_solvency_checker(name: str, value):
         name = name.upper()
-        if name.startswith('MIMIR//HALT') and (
-                name.endswith('CHAIN') or name.endswith('TRADING')
-        ):
+        if name.startswith('HALT') and (name.endswith('CHAIN') or name.endswith('TRADING')):
             if int(value) > 2:
                 return True
         return False
 
-    @staticmethod
-    def convert_name_to_mimir_key(name):
-        prefix = MimirHolder.MIMIR_PREFIX
-        if name.startswith(prefix):
-            return name
-        else:
-            return f'{prefix}{name.upper()}'
-
-    @staticmethod
-    def pure_name(name: str):
-        prefix = MimirHolder.MIMIR_PREFIX
-        if name.startswith(prefix):
-            return name[len(prefix):]
-        else:
-            return name.upper()
-
     def get_constant(self, name: str, default=0, const_type: typing.Optional[type] = int):
-        raw_hardcoded_value = self.last_constants.constants.get(name, 0)
-        hardcoded_value = const_type(raw_hardcoded_value) if const_type else raw_hardcoded_value
-
-        mimir_name = MimirHolder.convert_name_to_mimir_key(name)
-
-        if mimir_name in self.last_mimir.constants:
-            v = self.last_mimir.constants.get(mimir_name, default)
-            return const_type(v) if const_type is not None else v
-        else:
-            return hardcoded_value
+        entry = self.get_entry(name)
+        return const_type(entry.real_value) if entry else default
 
     def get_hardcoded_const(self, name: str, default=None):
-        prefix = MimirHolder.MIMIR_PREFIX
-        if name.startswith(prefix):
-            pure_name = name[len(prefix):]
-            for k, v in self.last_constants.constants.items():
-                if pure_name.upper() == k.upper():
-                    return v
-            return default
-        else:
-            return self.last_constants.constants.get(name)
+        entry = self.get_entry(name)
+        return entry.hard_coded_value if entry else default
 
     def get_entry(self, name) -> typing.Optional[MimirEntry]:
-        return self._const_map.get(name)
+        return self._const_map.get(name.upper())
 
     def update(self, constants: ThorConstants, mimir: ThorMimir):
-        consts = set(constants.constants.keys())
-        only_mimir_names = set()
-        overriden_names = set()
+        hard_coded_constants = {n.upper(): v for n, v in constants.constants.items()}
+        hard_coded_pretty_names = {
+            n.upper(): split_by_camel_case(n)
+            for n in constants.constants.keys()
+        }
+        mimir_constants = {n.upper(): v for n, v in mimir.constants.items()}
 
-        mimir_like_const_names = set(self.convert_name_to_mimir_key(n) for n in consts)
-        for mimir_name in mimir.constants.keys():
-            if mimir_name in mimir_like_const_names:
-                overriden_names.add(mimir_name)
-            else:
-                only_mimir_names.add(mimir_name)
+        const_names = set(hard_coded_constants.keys())
+        mimir_names = set(mimir_constants.keys())
+
+        self._mimir_only_names = mimir_names - const_names
+        overridden_names = mimir_names & const_names
+        self._all_names = mimir_names | const_names
 
         self._const_map = {}
-        self._all_names = set()
-        self._mimir_only_names = set()
-
-        for name, value in constants.constants.items():
-            real_value = value
-            overriden = False
-            source = MimirEntry.SOURCE_CONST
-
-            mimir_name = self.convert_name_to_mimir_key(name)
-            if mimir_name in overriden_names:
-                overriden = True
+        for name, current_value in chain(hard_coded_constants.items(), mimir_constants.items()):
+            if name in self._mimir_only_names:
+                source = MimirEntry.SOURCE_MIMIR
+            elif name in overridden_names:
                 source = MimirEntry.SOURCE_BOTH
-                real_value = mimir.constants.get(mimir_name)
+            else:
+                source = MimirEntry.SOURCE_CONST
 
+            hard_coded_value = hard_coded_constants.get(name)
             last_change_ts = self.last_changes.get(name, 0)
+            pretty_name = hard_coded_pretty_names.get(name) or self.TRANSLATE_MIMIRS.get(name, name)
+            is_automatic = self.detect_auto_solvency_checker(name, current_value)
 
-            entry = MimirEntry(name, split_by_camel_case(name),
-                               real_value, value, overriden, last_change_ts,
-                               is_rune=name in self.RUNE_CONSTANTS,
-                               is_blocks=name in self.BLOCK_CONSTANTS,
-                               is_bool=name in self.BOOL_CONSTANTS,
-                               source=source,
-                               automatic=self.detect_auto_solvency_checker(name, value))
-            self._const_map[name] = entry
-            self._const_map[mimir_name] = entry
-            self._all_names.add(name)
-
-        for name in only_mimir_names:
-            value = mimir.constants.get(name)
-
-            last_change_ts = self.last_changes.get(name, 0)
-
-            pure_name = self.pure_name(name)
-            pretty_name = self.TRANSLATE_MIMIRS.get(pure_name, pure_name)
-
-            entry = MimirEntry(name, pretty_name, value, value, True, last_change_ts,
-                               is_rune=name in self._mimir_names_of_rune_constants,
-                               is_blocks=name in self._mimir_names_of_block_constants,
-                               is_bool=name in self._mimir_names_of_bool_constants,
-                               source=MimirEntry.SOURCE_MIMIR,
-                               automatic=self.detect_auto_solvency_checker(name, value))
-            self._const_map[name] = entry
-            self._const_map[pure_name] = entry
-            self._all_names.add(name)
-            self._mimir_only_names.add(name)
-
-        if constants:
-            self.last_constants = constants
-        if mimir:
-            self.last_mimir = mimir
+            e = self._const_map[name] = MimirEntry(name, pretty_name,
+                                                   current_value, hard_coded_value, last_change_ts,
+                                                   is_rune=name in self.RUNE_CONSTANTS,
+                                                   is_blocks=name in self.BLOCK_CONSTANTS,
+                                                   is_bool=name in self.BOOL_CONSTANTS,
+                                                   source=source,
+                                                   automatic=is_automatic)
 
     @property
     def all_entries(self) -> typing.List[MimirEntry]:

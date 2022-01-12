@@ -16,9 +16,9 @@ class CapInfoFetcher(BaseFetcher):
         self.last_mimir = {}
 
     MIMIR_CAP_KEYS = [
-        "mimir//MAXIMUMLIQUIDITYRUNE",  # order
-        'mimir//MAXLIQUIDITYRUNE',
-        "mimir//MAXIMUMSTAKERUNE"
+        "MAXIMUMLIQUIDITYRUNE",  # order
+        'MAXLIQUIDITYRUNE',
+        "MAXIMUMSTAKERUNE"
     ]
 
     async def get_network_info(self):

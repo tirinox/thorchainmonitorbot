@@ -1,5 +1,4 @@
 import json
-import random
 from typing import Tuple
 
 from aiothornode.types import ThorConstants, ThorMimir

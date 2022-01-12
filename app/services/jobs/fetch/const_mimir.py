@@ -40,23 +40,23 @@ class ConstMimirFetcher(BaseFetcher):
 
     def _dbg_randomize_mimir(self, fresh_mimir: ThorMimir):
         # if random.uniform(0, 1) > 0.5:
-        #     fresh_mimir.constants['mimir//LOKI_CONST'] = "555"
+        #     fresh_mimir.constants['LOKI_CONST'] = "555"
         # if random.uniform(0, 1) > 0.3:
-        #     fresh_mimir.constants['mimir//LOKI_CONST'] = "777"
+        #     fresh_mimir.constants['LOKI_CONST'] = "777"
         # if random.uniform(0, 1) > 0.6:
-        #     fresh_mimir.constants['mimir//NativeTransactionFee'] = 300000
+        #     fresh_mimir.constants['NativeTransactionFee'] = 300000
         # if random.uniform(0, 1) > 0.3:
         #     try:
-        #         del fresh_mimir.constants['mimir//NativeTransactionFee']
+        #         del fresh_mimir.constants['NativeTransactionFee']
         #     except KeyError:
         #         pass
-        # del fresh_mimir.constants["mimir//HALTBNBTRADING"]
-        # fresh_mimir.constants["mimir//HALTETHTRADING"] = 1234568
-        # fresh_mimir.constants["mimir//HALTBNBCHAIN"] = 1233243  # 1234568
-        # del fresh_mimir.constants["mimir//EMISSIONCURVE"]
-        # fresh_mimir.constants['mimir//NATIVETRANSACTIONFEE'] = 4000000
-        # fresh_mimir.constants['mimir//MAXLIQUIDITYRUNE'] = 10000000000000 * random.randint(1, 99)
-        # fresh_mimir.constants["mimir//FULLIMPLOSSPROTECTIONBLOCKS"] = 10000 * random.randint(1, 999)
+        # del fresh_mimir.constants["HALTBNBTRADING"]
+        fresh_mimir.constants["HALTETHTRADING"] = 1234568
+        # fresh_mimir.constants["HALTBNBCHAIN"] = 1233243  # 1234568
+        # del fresh_mimir.constants["EMISSIONCURVE"]
+        # fresh_mimir.constants['NATIVETRANSACTIONFEE'] = 4000000
+        # fresh_mimir.constants['MAXLIQUIDITYRUNE'] = 10000000000000 * random.randint(1, 99)
+        # fresh_mimir.constants["FULLIMPLOSSPROTECTIONBLOCKS"] = 10000 * random.randint(1, 999)
         return fresh_mimir
 
     async def fetch(self) -> Tuple[ThorConstants, ThorMimir]:

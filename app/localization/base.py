@@ -1039,7 +1039,7 @@ class BaseLocalization(ABC):  # == English
         if m.source == m.SOURCE_MIMIR:
             mark = '🔸'
             std_value = ''
-        elif m.overridden:
+        elif m.source == m.SOURCE_BOTH:
             std_value_fmt = self.format_mimir_value(m.hard_coded_value, m)
             std_value = f'({self.MIMIR_STANDARD_VALUE} {pre(std_value_fmt)})'
             mark = '🔹'
