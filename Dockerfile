@@ -12,6 +12,6 @@ RUN apt-get update -y && \
     apt-get install build-essential cmake pkg-config -y
 
 RUN pip install --no-cache-dir -r requirements.txt
-RUN pip install ---no-deps --no-cache-dir discord.py
+RUN pip install --no-cache-dir discord.py --no-dependencies
 
 CMD [ "python", "./main.py", "/config/config.yaml" ]
