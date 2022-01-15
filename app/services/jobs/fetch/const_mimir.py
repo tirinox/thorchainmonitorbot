@@ -51,7 +51,7 @@ class ConstMimirFetcher(BaseFetcher):
         #     except KeyError:
         #         pass
         # del fresh_mimir.constants["HALTBNBTRADING"]
-        fresh_mimir.constants["HALTETHTRADING"] = 1234568
+        # fresh_mimir.constants["HALTETHTRADING"] = 0
         # fresh_mimir.constants["HALTBNBCHAIN"] = 1233243  # 1234568
         # del fresh_mimir.constants["EMISSIONCURVE"]
         # fresh_mimir.constants['NATIVETRANSACTIONFEE'] = 4000000
