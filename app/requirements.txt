@@ -39,11 +39,13 @@ semver==2.13.0
 six==1.16.0
 slack-sdk==3.13.0
 slack-bolt==1.11.1
+starlette>=0.17.1
 toml==0.10.2
 tqdm==4.62.2
 typing-extensions==3.10.0.2
 ujson==5.1.0
 urllib3==1.26.8
+uvicorn==0.17.0
 uvloop==0.16.0
 websockets==10.1
 yarl==1.6.3
