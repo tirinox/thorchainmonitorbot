@@ -17,7 +17,7 @@ class SettingsManager:
         self.token_channel_db = OneToOne(db, 'Token-Channel')
 
     def get_link(self, token):
-        return f'{self.public_url}/nodeop-setup/{token}'
+        return f'{self.public_url}/?token={token}'
 
     @staticmethod
     def db_key_settings(channel_id):

@@ -1194,6 +1194,7 @@ class BaseLocalization(ABC):  # == English
     BUTTON_NOP_ADD_NODES = '➕ Add nodes'
     BUTTON_NOP_MANAGE_NODES = '🖊️ Edit nodes'
     BUTTON_NOP_SETTINGS = '⚙️ Settings'
+    BUTTON_NOP_GET_SETTINGS_LINK = '⚙️ New! Web setup'
 
     @classmethod
     def short_node_name(cls, node_address: str, name=None):
@@ -1268,6 +1269,15 @@ class BaseLocalization(ABC):  # == English
         return f'😉 Success! You removed: {node_addresses_text} ({len(node_addresses)} nodes) from your watchlist.'
 
     TEXT_NOP_SETTINGS_TITLE = 'Tune your notifications here. Choose a topic to adjust settings.'
+
+    def text_nop_get_weblink_title(self, link):
+        return f'Your setup link is ready: {link}!\n' \
+               f'There you can select the nodes to be monitored and set up notifications.'
+
+    BUTTON_NOP_SETT_OPEN_WEB_LINK = '🌐 Open in Browser'
+    BUTTON_NOP_SETT_REVOKE_WEB_LINK = '🤜 Revoke this link'
+
+    TEXT_NOP_REVOKED_URL_SUCCESS = 'Settings URL and token were successfully revoked.'
 
     BUTTON_NOP_SETT_SLASHING = 'Slashing'
     BUTTON_NOP_SETT_VERSION = 'Version'

@@ -1,10 +1,12 @@
 import asyncio
 import logging
+import os.path
 
 import uvicorn
 from starlette.applications import Starlette
 from starlette.responses import JSONResponse
-from starlette.routing import Route
+from starlette.routing import Route, Mount
+from starlette.staticfiles import StaticFiles
 
 from services.lib.config import Config
 from services.lib.db import DB
@@ -74,10 +76,15 @@ class AppSettingsAPI:
         return JSONResponse({'channel': channel_id, 'status': 'revoked'})
 
     def _routes(self):
+        print(os.path.abspath('./data/web/settings_front_build'))
         return [
-            Route('/settings/{token}', self._get_settings, methods=['GET']),
-            Route('/settings/{token}', self._set_settings, methods=['POST']),
-            Route('/settings/{token}', self._del_settings, methods=['DELETE'])
+            Mount('/', app=StaticFiles(
+                directory=os.path.abspath('./data/web/settings_front_build'),
+                html=True,
+            ), name="frontend"),
+            Route('/api/settings/{token}', self._get_settings, methods=['GET']),
+            Route('/api/settings/{token}', self._set_settings, methods=['POST']),
+            Route('/api/settings/{token}', self._del_settings, methods=['DELETE']),
         ]
 
     def run(self):

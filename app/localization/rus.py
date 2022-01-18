@@ -987,6 +987,7 @@ class RussianLocalization(BaseLocalization):
     BUTTON_NOP_ADD_NODES = '➕ Добавь ноды'
     BUTTON_NOP_MANAGE_NODES = '🖊️ Редактировать'
     BUTTON_NOP_SETTINGS = '⚙️ Настройки'
+    BUTTON_NOP_GET_SETTINGS_LINK = '⚙️ Настройка на сайте New!'
 
     def pretty_node_desc(self, node: NodeInfo, name=None):
         addr = self.short_node_name(node.node_address, name)
@@ -1031,6 +1032,15 @@ class RussianLocalization(BaseLocalization):
     TEXT_NOP_SEARCH_VARIANTS = 'Мы нашли следующие ноды, подходящие под ваш поисковый запрос:'
 
     TEXT_NOP_SETTINGS_TITLE = 'Настройте ваши уведомления здесь. Выберите тему для настройки:'
+
+    def text_nop_get_weblink_title(self, link):
+        return f'Ваша ссылка для настройки готова: {link}!\n' \
+               f'Там вы сможете выбрать ноды для мониторинга и настроить уведомления.'
+
+    BUTTON_NOP_SETT_OPEN_WEB_LINK = '🌐 Открыть в браузере'
+    BUTTON_NOP_SETT_REVOKE_WEB_LINK = '🤜 Отозвать ссылку'
+
+    TEXT_NOP_REVOKED_URL_SUCCESS = 'Ссылка для настроек и токен были отозваны!'
 
     BUTTON_NOP_SETT_SLASHING = 'Штрафы'
     BUTTON_NOP_SETT_VERSION = 'Версии'

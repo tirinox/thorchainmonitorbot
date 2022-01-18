@@ -8,6 +8,7 @@ from aiogram.utils.helper import HelperMode
 from services.dialog.base import BaseDialog, message_handler, query_handler
 from services.jobs.node_churn import NodeStateDatabase
 from services.lib.date_utils import parse_timespan_to_seconds, HOUR
+from services.lib.nop_links import SettingsManager
 from services.lib.telegram import TelegramInlineList
 from services.lib.texts import join_as_numbered_list, grouper
 from services.lib.utils import parse_list_from_string, fuzzy_search
@@ -19,6 +20,7 @@ from services.notify.personal.helpers import NodeOpSetting, STANDARD_INTERVALS
 class NodeOpStates(StatesGroup):
     mode = HelperMode.snake_case
     MAIN_MENU = State()
+    GET_WEB_LINK = State()
     ADDING = State()
     MANAGE_MENU = State()
     SETTINGS = State()
@@ -57,6 +59,9 @@ class NodeOpDialog(BaseDialog):
                 InlineKeyboardButton(self.loc.BUTTON_NOP_MANAGE_NODES, callback_data='mm:edit')
             ],
             [
+                InlineKeyboardButton(self.loc.BUTTON_NOP_GET_SETTINGS_LINK, callback_data='mm:get-link'),
+            ],
+            [
                 InlineKeyboardButton(self.loc.BUTTON_NOP_SETTINGS, callback_data='mm:settings'),
                 InlineKeyboardButton(self.loc.BUTTON_BACK, callback_data='back')
             ]
@@ -81,10 +86,43 @@ class NodeOpDialog(BaseDialog):
             await self.on_manage_menu(query.message)
         elif query.data == 'mm:settings':
             await self.on_settings_menu(query)
+        elif query.data == 'mm:get-link':
+            await self.on_web_setup(query)
         else:
             await self.safe_delete(query.message)
             await self.go_back(query.message)  # fixme: asking lang because query message is bot's message, not user's!
         await query.answer()
+
+    # -------- WEB SETUP ---------
+
+    async def on_web_setup(self, query: CallbackQuery):
+        loc = self.loc
+        user_id = self.user_id(query.message)
+        settings = SettingsManager(self.deps.db, self.deps.cfg)
+        token = await settings.generate_new_token(user_id)
+        url = settings.get_link(token)
+
+        await NodeOpStates.GET_WEB_LINK.set()
+        await query.message.edit_text(
+            loc.text_nop_get_weblink_title(url),
+            reply_markup=InlineKeyboardMarkup(
+                inline_keyboard=[
+                    [InlineKeyboardButton(self.loc.BUTTON_NOP_SETT_OPEN_WEB_LINK, url=url)],
+                    [InlineKeyboardButton(self.loc.BUTTON_NOP_SETT_REVOKE_WEB_LINK, callback_data='setting:revoke-link')],
+                    [InlineKeyboardButton(self.loc.BUTTON_BACK, callback_data='setting:back')],
+                ]
+            ))
+
+    @query_handler(state=NodeOpStates.GET_WEB_LINK)
+    async def on_web_setup_callback(self, query: CallbackQuery):
+        if query.data == 'setting:revoke-link':
+            user_id = self.user_id(query.message)
+            settings = SettingsManager(self.deps.db, self.deps.cfg)
+            await settings.revoke_token(user_id)
+            await query.answer(self.loc.TEXT_NOP_REVOKED_URL_SUCCESS)
+        else:
+            await query.answer()
+        await self.show_main_menu(query.message)
 
     # -------- ADDING ---------
 
