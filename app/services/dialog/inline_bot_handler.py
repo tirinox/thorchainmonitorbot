@@ -1,8 +1,6 @@
 import logging
-from typing import Optional
 from uuid import uuid4
 
-from aiogram.dispatcher.storage import FSMContextProxy
 from aiogram.types import InlineQuery, InputTextMessageContent, InlineQueryResultArticle, InlineQueryResultCachedPhoto
 
 from localization import BaseLocalization
@@ -10,13 +8,14 @@ from services.dialog.base import BaseDialog, inline_bot_handler
 # test bot: @thorchain_monitoring_test_bot ADDRESS POOL
 from services.dialog.picture.lp_picture import lp_pool_picture
 from services.dialog.picture.price_picture import price_graph_from_db
+from services.jobs.fetch.fair_price import get_fair_rune_price_cached
 from services.jobs.fetch.runeyield import get_rune_yield_connector
 from services.lib.config import Config
 from services.lib.date_utils import today_str, MINUTE, parse_timespan_to_seconds, DAY
-from services.lib.depcont import DepContainer
 from services.lib.draw_utils import img_to_bio
 from services.lib.utils import unique_ident
 from services.models.lp_info import LPAddress
+from services.models.price import RuneMarketInfo
 from services.notify.types.best_pool_notify import BestPoolsNotifier
 from services.notify.types.stats_notify import NetworkStatsNotifier
 
@@ -79,7 +78,9 @@ class InlineBotHandlerDialog(BaseDialog):
         old_info = await nsn.get_previous_stats()
         new_info = await nsn.get_latest_info()
         loc: BaseLocalization = self.get_localization()
-        text = loc.notification_text_network_summary(old_info, new_info)
+        rune_market_info: RuneMarketInfo = await get_fair_rune_price_cached(self.deps.price_holder,
+                                                                            self.deps.midgard_connector)
+        text = loc.notification_text_network_summary(old_info, new_info, rune_market_info)
         ident = unique_ident([], prec='minute')
         await self._answer_results(inline_query, [
             InlineQueryResultArticle(id=ident,
