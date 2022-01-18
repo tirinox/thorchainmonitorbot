@@ -140,7 +140,10 @@ class BaseDialog(ABC):
                 loc = await d.loc_man.get_from_db(query.from_user.id, d.db)
                 handler_class = cls(loc, data, d, query.message)
                 handler_method = getattr(handler_class, that_name)
-                return await handler_method(query)
+                await handler_class.pre_action()
+                result = await handler_method(query)
+                await handler_class.post_action()
+                return result
 
     @classmethod
     def register_inline_bot_handler(cls, d: DepContainer, f, name):

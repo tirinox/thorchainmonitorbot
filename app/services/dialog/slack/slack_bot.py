@@ -12,6 +12,7 @@ from services.lib.config import Config
 from services.lib.draw_utils import img_to_bio
 from services.lib.utils import class_logger
 
+
 # example: https://github.com/slackapi/bolt-python/blob/main/examples/starlette/async_oauth_app.py
 
 
@@ -131,5 +132,5 @@ class SlackBot:
             await ack()
             logger.info(body)
 
-    async def start_in_background(self):
+    def start_in_background(self):
         ...

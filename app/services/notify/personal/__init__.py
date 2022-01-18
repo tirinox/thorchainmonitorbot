@@ -37,7 +37,7 @@ class NodeChangePersonalNotifier(INotified):
     def __init__(self, deps: DepContainer):
         self.deps = deps
         self.logger = class_logger(self)
-        self.watchers = NodeWatcherStorage(deps)
+        self.watchers = NodeWatcherStorage(deps.db)
         self.thor_mon = ThorMonWSSClient(deps.cfg.network_id)
         self.telemetry_db = NodeTelemetryDatabase(deps)
 
@@ -90,6 +90,10 @@ class NodeChangePersonalNotifier(INotified):
 
         await self._cast_messages_for_events(events)
 
+    async def _get_user_settings(self, user_id):
+        context = self.deps.dp.current_state(chat=user_id, user=user_id)
+        return await context.get_data()
+
     async def _cast_messages_for_events(self, events: List[NodeEvent]):
         if not events:
             return
@@ -124,7 +128,7 @@ class NodeChangePersonalNotifier(INotified):
         for user, event_list in user_events.items():
             loc = await loc_man.get_from_db(user, self.deps.db)
 
-            settings = await self.watchers.get_user_settings(user)
+            settings = await self._get_user_settings(user)
             if settings.get(NodeOpSetting.PAUSE_ALL_ON, False):
                 continue  # skip those who paused all the events.
 

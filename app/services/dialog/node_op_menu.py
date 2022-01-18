@@ -51,15 +51,11 @@ class NodeOpDialog(BaseDialog):
         user_id = self.user_id(self.message)
         self._settings = await self._settings_manager.get_settings(user_id)
 
-        print(self._settings)
-
     async def post_action(self):
         user_id = self.user_id(self.message)
         await self._settings_manager.set_settings(user_id, self._settings)
 
     # ----------- MAIN ------------
-
-
 
     async def show_main_menu(self, message: Message, with_welcome=True):
         await NodeOpStates.MAIN_MENU.set()
@@ -121,7 +117,8 @@ class NodeOpDialog(BaseDialog):
             reply_markup=InlineKeyboardMarkup(
                 inline_keyboard=[
                     [InlineKeyboardButton(self.loc.BUTTON_NOP_SETT_OPEN_WEB_LINK, url=url)],
-                    [InlineKeyboardButton(self.loc.BUTTON_NOP_SETT_REVOKE_WEB_LINK, callback_data='setting:revoke-link')],
+                    [InlineKeyboardButton(self.loc.BUTTON_NOP_SETT_REVOKE_WEB_LINK,
+                                          callback_data='setting:revoke-link')],
                     [InlineKeyboardButton(self.loc.BUTTON_BACK, callback_data='setting:back')],
                 ]
             ))
@@ -347,7 +344,7 @@ class NodeOpDialog(BaseDialog):
 
     async def toggle_pause_all(self, query: CallbackQuery):
         is_on = self.is_alert_on(NodeOpSetting.PAUSE_ALL_ON)
-        self.data[NodeOpSetting.PAUSE_ALL_ON] = not is_on
+        self._settings[NodeOpSetting.PAUSE_ALL_ON] = not is_on
         try:
             await query.message.edit_reply_markup(reply_markup=self.settings_kb())
         except MessageNotModified:
@@ -400,14 +397,15 @@ class NodeOpDialog(BaseDialog):
             await query.answer()
         else:
             threshold = int(query.data)
-            self.data[NodeOpSetting.SLASH_THRESHOLD] = threshold
+            self._settings[NodeOpSetting.SLASH_THRESHOLD] = threshold
             await self.ask_slash_period(query)
             await query.answer(self.loc.SUCCESS)
 
     async def ask_slash_period(self, query: CallbackQuery):
         await NodeOpStates.SETT_SLASH_PERIOD.set()
         keyboard = self.inline_keyboard_time_selector()
-        text = self.loc.text_nop_ask_slash_period(self.data.get(NodeOpSetting.SLASH_THRESHOLD, 1))
+        value = self._settings.get(NodeOpSetting.SLASH_THRESHOLD, 1)
+        text = self.loc.text_nop_ask_slash_period(value)
         await query.message.edit_text(text, reply_markup=keyboard)
 
     @query_handler(state=NodeOpStates.SETT_SLASH_PERIOD)
@@ -416,7 +414,7 @@ class NodeOpDialog(BaseDialog):
             await self.on_settings_menu(query)
             await query.answer()
         else:
-            self.data[NodeOpSetting.SLASH_PERIOD] = parse_timespan_to_seconds(query.data)
+            self._settings[NodeOpSetting.SLASH_PERIOD] = parse_timespan_to_seconds(query.data)
             await self.on_settings_menu(query)
             await query.answer(self.loc.SUCCESS)
 
@@ -482,7 +480,7 @@ class NodeOpDialog(BaseDialog):
     async def ask_offline_interval(self, query: CallbackQuery):
         await NodeOpStates.SETT_OFFLINE_INTERVAL.set()
         keyboard = self.inline_keyboard_time_selector()
-        text = self.loc.text_nop_ask_offline_period(self.data.get(NodeOpSetting.OFFLINE_INTERVAL, HOUR))
+        text = self.loc.text_nop_ask_offline_period(self._settings.get(NodeOpSetting.OFFLINE_INTERVAL, HOUR))
         await query.message.edit_text(text, reply_markup=keyboard)
 
     @query_handler(state=NodeOpStates.SETT_OFFLINE_INTERVAL)
@@ -491,7 +489,7 @@ class NodeOpDialog(BaseDialog):
             await self.on_settings_menu(query)
             await query.answer()
         else:
-            self.data[NodeOpSetting.OFFLINE_INTERVAL] = parse_timespan_to_seconds(query.data)
+            self._settings[NodeOpSetting.OFFLINE_INTERVAL] = parse_timespan_to_seconds(query.data)
             await self.on_settings_menu(query)
             await query.answer(self.loc.SUCCESS)
 
@@ -513,7 +511,7 @@ class NodeOpDialog(BaseDialog):
     async def ask_block_lag_time(self, query: CallbackQuery):
         await NodeOpStates.SETT_HEIGHT_LAG_TIME.set()
         keyboard = self.inline_keyboard_time_selector()
-        text = self.loc.text_nop_ask_chain_height_lag_time(self.data.get(NodeOpSetting.CHAIN_HEIGHT_INTERVAL, 1))
+        text = self.loc.text_nop_ask_chain_height_lag_time(self._settings.get(NodeOpSetting.CHAIN_HEIGHT_INTERVAL, 1))
         await query.message.edit_text(text, reply_markup=keyboard)
 
     @query_handler(state=NodeOpStates.SETT_HEIGHT_LAG_TIME)
@@ -523,7 +521,7 @@ class NodeOpDialog(BaseDialog):
             await query.answer()
         else:
             period = parse_timespan_to_seconds(query.data)
-            self.data[NodeOpSetting.CHAIN_HEIGHT_INTERVAL] = period
+            self._settings[NodeOpSetting.CHAIN_HEIGHT_INTERVAL] = period
             await self.on_settings_menu(query)
             await query.answer(self.loc.SUCCESS)
 
@@ -560,7 +558,7 @@ class NodeOpDialog(BaseDialog):
     # ---- UTILS ---
 
     def storage(self, user_id):
-        return NodeWatcherStorage(self.deps, user_id)
+        return NodeWatcherStorage(self.deps.db, user_id)
 
     async def get_all_nodes(self):
         return await NodeStateDatabase(self.deps).get_last_node_info_list()
@@ -608,7 +606,7 @@ class NodeOpDialog(BaseDialog):
         return bool(cfg.get('telegram.menu.node_op_tools.enabled', default=False))
 
     def is_alert_on(self, name, default=True):
-        return bool(self.data.get(name, default))
+        return bool(self._settings.get(name, default))
 
     def alert_setting_button(self, orig, setting, data=None, default=True):
         data = data or setting
@@ -637,10 +635,10 @@ class NodeOpDialog(BaseDialog):
         if query.data == 'back':
             await self.on_settings_menu(query)
         elif query.data == 'on':
-            self.data[setting] = True
+            self._settings[setting] = True
             await next_on_func(query)
         elif query.data == 'off':
-            self.data[setting] = False
+            self._settings[setting] = False
             await next_off_func(query)
         await query.answer()
 
