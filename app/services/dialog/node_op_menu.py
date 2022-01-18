@@ -1,13 +1,16 @@
-from typing import List
+from typing import List, Optional
 
 from aiogram.dispatcher.filters.state import StatesGroup, State
+from aiogram.dispatcher.storage import FSMContextProxy
 from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, ReplyKeyboardRemove
 from aiogram.utils.exceptions import MessageNotModified
 from aiogram.utils.helper import HelperMode
 
+from localization import BaseLocalization
 from services.dialog.base import BaseDialog, message_handler, query_handler
 from services.jobs.node_churn import NodeStateDatabase
 from services.lib.date_utils import parse_timespan_to_seconds, HOUR
+from services.lib.depcont import DepContainer
 from services.lib.nop_links import SettingsManager
 from services.lib.telegram import TelegramInlineList
 from services.lib.texts import join_as_numbered_list, grouper
@@ -39,14 +42,24 @@ class NodeOpStates(StatesGroup):
 
 
 class NodeOpDialog(BaseDialog):
+    def __init__(self, loc: BaseLocalization, data: Optional[FSMContextProxy], d: DepContainer, message: Message):
+        super().__init__(loc, data, d, message)
+        self._settings = {}
+        self._settings_manager = SettingsManager(self.deps.db, self.deps.cfg)
+
+    async def pre_action(self):
+        user_id = self.user_id(self.message)
+        self._settings = await self._settings_manager.get_settings(user_id)
+
+        print(self._settings)
+
+    async def post_action(self):
+        user_id = self.user_id(self.message)
+        await self._settings_manager.set_settings(user_id, self._settings)
+
     # ----------- MAIN ------------
-    # @message_handler(state=NodeOpStates.MAIN_MENU)
-    # async def on_handle_main_menu(self, message: Message):
-    #     if message.text == self.loc.BUTTON_BACK:
-    #         await self.go_back(message)
-    #     else:
-    #         return False
-    #     return True
+
+
 
     async def show_main_menu(self, message: Message, with_welcome=True):
         await NodeOpStates.MAIN_MENU.set()

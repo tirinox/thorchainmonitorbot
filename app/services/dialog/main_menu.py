@@ -34,7 +34,7 @@ class MainMenuDialog(BaseDialog):
             # deep linking
             await self._handle_start_lp_view(message, components[1])
         elif message.get_command(pure=True) == 'lang' or current_language is None:
-            await SettingsDialog(self.loc, self.data, self.deps).ask_language(message)
+            await SettingsDialog(self.loc, self.data, self.deps, self.message).ask_language(message)
         else:
             info = await LiquidityCapNotifier(self.deps).get_last_cap()
 
@@ -57,43 +57,49 @@ class MainMenuDialog(BaseDialog):
     async def _handle_start_lp_view(self, message: Message, address):
         message.text = ''
         await LPMenuStates.MAIN_MENU.set()
-        await LiquidityInfoDialog(self.loc, self.data, self.deps).show_pool_menu_for_address(message, address,
-                                                                                             edit=False,
-                                                                                             external=True)
+        await LiquidityInfoDialog(self.loc, self.data, self.deps, self.message).show_pool_menu_for_address(
+            message, address,
+            edit=False,
+            external=True)
 
     @message_handler(commands='cap', state='*')
     async def cmd_cap(self, message: Message):
-        await MetricsDialog(self.loc, self.data, self.deps).show_cap(message)
+        await MetricsDialog(self.loc, self.data, self.deps, self.message).show_cap(message)
 
     @message_handler(commands='price', state='*')
     async def cmd_price(self, message: Message):
         message.text = str(DAY)
-        await MetricsDialog(self.loc, self.data, self.deps).on_price_duration_answered(message)
+        await MetricsDialog(self.loc, self.data, self.deps, self.message).on_price_duration_answered(message)
 
     @message_handler(commands='nodes', state='*')
     async def cmd_nodes(self, message: Message):
-        await MetricsDialog(self.loc, self.data, self.deps).show_node_list(message)
+        await MetricsDialog(self.loc, self.data, self.deps, self.message).show_node_list(message)
 
     @message_handler(commands='stats', state='*')
     async def cmd_stats(self, message: Message):
-        await MetricsDialog(self.loc, self.data, self.deps).show_last_stats(message)
+        await MetricsDialog(self.loc, self.data, self.deps, self.message).show_last_stats(message)
 
     @message_handler(commands='queue', state='*')
     async def cmd_queue(self, message: Message):
-        await MetricsDialog(self.loc, self.data, self.deps).show_queue(message, DAY)
+        await MetricsDialog(self.loc, self.data, self.deps, self.message).show_queue(message, DAY)
 
     @message_handler(commands='chains', state='*')
     async def cmd_chains(self, message: Message):
-        await MetricsDialog(self.loc, self.data, self.deps).show_chain_info(message)
+        await MetricsDialog(self.loc, self.data, self.deps, self.message).show_chain_info(message)
 
     @message_handler(commands='mimir', state='*')
     async def cmd_mimir(self, message: Message):
-        await MetricsDialog(self.loc, self.data, self.deps).show_mimir_info(message)
+        await MetricsDialog(self.loc, self.data, self.deps, self.message).show_mimir_info(message)
+
+    @message_handler(commands='cexflow', state='*')
+    async def cmd_lp(self, message: Message):
+        message.text = ''
+        await MetricsDialog(self.loc, self.data, self.deps, self.message).show_cex_flow(message)
 
     @message_handler(commands='lp', state='*')
     async def cmd_lp(self, message: Message):
         message.text = ''
-        await LiquidityInfoDialog(self.loc, self.data, self.deps).on_enter(message)
+        await LiquidityInfoDialog(self.loc, self.data, self.deps, self.message).on_enter(message)
 
     @message_handler(commands='help', state='*')
     async def cmd_help(self, message: Message):
@@ -109,17 +115,17 @@ class MainMenuDialog(BaseDialog):
     async def on_main_menu(self, message: Message):
         if message.text == self.loc.BUTTON_MM_METRICS:
             message.text = ''
-            await MetricsDialog(self.loc, self.data, self.deps).on_enter(message)
+            await MetricsDialog(self.loc, self.data, self.deps, message).on_enter(message)
         elif message.text == self.loc.BUTTON_MM_MY_ADDRESS:
             message.text = ''
-            await LiquidityInfoDialog(self.loc, self.data, self.deps).on_enter(message)
+            await LiquidityInfoDialog(self.loc, self.data, self.deps, message).on_enter(message)
         elif message.text == self.loc.BUTTON_MM_SETTINGS:
             message.text = ''
-            await SettingsDialog(self.loc, self.data, self.deps).on_enter(message)
+            await SettingsDialog(self.loc, self.data, self.deps, message).on_enter(message)
         elif message.text == self.loc.BUTTON_MM_MAKE_AVATAR:
             message.text = ''
-            await AvatarDialog(self.loc, self.data, self.deps).on_enter(message)
+            await AvatarDialog(self.loc, self.data, self.deps, message).on_enter(message)
         elif message.text == self.loc.BUTTON_MM_NODE_OP and NodeOpDialog.is_enabled(self.deps.cfg):
-            await NodeOpDialog(self.loc, self.data, self.deps).show_main_menu(message)
+            await NodeOpDialog(self.loc, self.data, self.deps, message).show_main_menu(message)
         else:
             return False

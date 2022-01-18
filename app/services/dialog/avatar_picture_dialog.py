@@ -37,8 +37,8 @@ class AvatarStates(StatesGroup):
 
 
 class AvatarDialog(BaseDialog):
-    def __init__(self, loc: BaseLocalization, data: FSMContextProxy, d: DepContainer):
-        super().__init__(loc, data, d)
+    def __init__(self, loc: BaseLocalization, data: FSMContextProxy, d: DepContainer, message: Message):
+        super().__init__(loc, data, d, message)
         self._work_lock = asyncio.Lock()
 
     def menu_inline_kbd(self):

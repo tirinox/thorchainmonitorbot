@@ -21,7 +21,7 @@ async def display_error(message: Message, e: Exception):
     tag = secrets.token_hex(8)
     logger.exception(f"TAG: {tag}")
     await message.answer(code(f"Sorry! An error occurred: {str(e)}. Incident ID is {tag}.") +
-                         f"\nFeedback/support: {CREATOR_TG}.")
+                         f"\nFeedback/support: {CREATOR_TG}. To reset the bot press /start command.")
 
 
 def bot_query_error_guard(func):
@@ -92,10 +92,17 @@ class BaseDialog(ABC):
     class States(StatesGroup):
         DUMMY = State()
 
-    def __init__(self, loc: BaseLocalization, data: Optional[FSMContextProxy], d: DepContainer):
+    def __init__(self, loc: BaseLocalization, data: Optional[FSMContextProxy], d: DepContainer, message: Message):
         self.deps = d
         self.loc = loc
         self.data = data
+        self.message = message
+
+    async def pre_action(self):
+        ...
+
+    async def post_action(self):
+        ...
 
     @classmethod
     def register(cls, d: DepContainer, back_dialog=None, back_func=None):
@@ -131,7 +138,7 @@ class BaseDialog(ABC):
             })
             async with state.proxy() as data:
                 loc = await d.loc_man.get_from_db(query.from_user.id, d.db)
-                handler_class = cls(loc, data, d)
+                handler_class = cls(loc, data, d, query.message)
                 handler_method = getattr(handler_class, that_name)
                 return await handler_method(query)
 
@@ -154,9 +161,12 @@ class BaseDialog(ABC):
                 if await cls.if_loading_please_wait(d, loc, inline_query.from_user.id):
                     return
 
-                handler_class = cls(loc, None, d)
+                handler_class = cls(loc, None, d, None)
                 handler_method = getattr(handler_class, that_name)
-                return await handler_method(inline_query)
+                await handler_class.pre_action()
+                result = await handler_method(inline_query)
+                await handler_class.post_action()
+                return result
             except Exception as e:
                 logger.exception(f'Inline bot query exception! {e}')
 
@@ -181,14 +191,17 @@ class BaseDialog(ABC):
                 if await cls.if_loading_please_wait(d, loc, cls.user_id(message)):
                     return
 
-                handler_class = cls(loc, data, d)
+                handler_class = cls(loc, data, d, message)
+                await handler_class.pre_action()
                 handler_method = getattr(handler_class, that_name)
-                return await handler_method(message)
+                result = await handler_method(message)
+                await handler_class.post_action()
+                return result
 
     # noinspection PyCallingNonCallable
     async def go_back(self, message: Message):
         message.text = ''
-        obj = self.back_dialog(self.loc, self.data, self.deps)
+        obj = self.back_dialog(self.loc, self.data, self.deps, self.message)
         func = getattr(obj, self.back_func.__name__)
         await func(message)
 

@@ -42,7 +42,7 @@ class SettingsManager:
         channel = await self.token_channel_db.get(token)
         return await self.get_settings(channel)
 
-    async def set_settings(self, channel_id, settings):
+    async def set_settings(self, channel_id: str, settings):
         if not channel_id:
             return
         if not settings:
@@ -65,7 +65,8 @@ class SettingsContext:
         return self
 
     async def __aexit__(self, exc_type, exc, tb):
-        await self.manager.set_settings(self.user_id, self._curr_settings)
+        if exc_type is None:
+            await self.manager.set_settings(self.user_id, self._curr_settings)
 
     def __setitem__(self, key, item):
         self._curr_settings[key] = item

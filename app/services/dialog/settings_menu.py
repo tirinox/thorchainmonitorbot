@@ -37,7 +37,7 @@ class SettingsDialog(BaseDialog):
         await self.go_back(message)
 
     async def go_to_node_op_settings(self, message: Message):
-        await NodeOpDialog(self.loc, self.data, self.deps).show_main_menu(message)
+        await NodeOpDialog(self.loc, self.data, self.deps, self.message).show_main_menu(message)
 
     @message_handler(state=SettingsStates.MAIN_SETTINGS_MENU)
     async def on_enter(self, message: Message):
