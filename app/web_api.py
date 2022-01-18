@@ -13,6 +13,7 @@ from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.nop_links import SettingsManager
 from services.lib.utils import setup_logs
+from services.models.node_watchers import NodeWatcherStorage
 
 
 class AppSettingsAPI:
@@ -48,10 +49,13 @@ class AppSettingsAPI:
             return JSONResponse({
                 'error': 'channel not found'
             })
+
+        all_nodes = list(await NodeWatcherStorage(self.deps.db, channel_id).all_nodes_for_user())
         settings = await self.manager.get_settings(channel_id)
         return JSONResponse({
             'channel': channel_id,
             'settings': settings,
+            'nodes': all_nodes,
         })
 
     async def _set_settings(self, request):
@@ -61,9 +65,28 @@ class AppSettingsAPI:
             return JSONResponse({
                 'error': 'channel not found'
             })
-        data = await request.json()
-        await self.manager.set_settings(channel_id, data)
+        data: dict = await request.json()
+
+        if 'nodes' in data:
+            nodes = data.pop('nodes')
+            storage = NodeWatcherStorage(self.deps.db, channel_id)
+            await storage.clear_user_nodes()
+            await storage.add_user_to_node_list(nodes)
+
+        if 'settings' in data:
+            settings = data.pop('settings')
+            await self.manager.set_settings(channel_id, settings)
+            
         return JSONResponse({'channel': channel_id, 'data': data})
+
+    async def _set_node_list(self, request):
+        token = request.path_params.get('token')
+        channel_id = await self.manager.token_channel_db.get(token)
+        if not channel_id:
+            return JSONResponse({
+                'error': 'channel not found'
+            })
+        # todo!
 
     async def _del_settings(self, request):
         token = request.path_params.get('token')
@@ -76,15 +99,14 @@ class AppSettingsAPI:
         return JSONResponse({'channel': channel_id, 'status': 'revoked'})
 
     def _routes(self):
-        print(os.path.abspath('./data/web/settings_front_build'))
         return [
+            Route('/api/settings/{token}', self._get_settings, methods=['GET']),
+            Route('/api/settings/{token}', self._set_settings, methods=['POST']),
+            Route('/api/settings/{token}', self._del_settings, methods=['DELETE']),
             Mount('/', app=StaticFiles(
                 directory=os.path.abspath('./data/web/settings_front_build'),
                 html=True,
             ), name="frontend"),
-            Route('/api/settings/{token}', self._get_settings, methods=['GET']),
-            Route('/api/settings/{token}', self._set_settings, methods=['POST']),
-            Route('/api/settings/{token}', self._del_settings, methods=['DELETE']),
         ]
 
     def run(self):
