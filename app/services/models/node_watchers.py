@@ -1,8 +1,8 @@
 from dataclasses import field, dataclass
 from typing import List, Dict
 
+from services.lib.db import DB
 from services.lib.db_many2many import ManyToManySet
-from services.lib.depcont import DepContainer
 from services.models.node_info import NodeInfo
 
 
@@ -14,17 +14,17 @@ class NodeWatchInfo:
 
 
 class NodeWatcherStorage:
-    def __init__(self, d: DepContainer, user_id: str = ''):
-        self.deps = d
+    def __init__(self, db: DB, user_id: str = ''):
+        self.db = db
         self.user_id = user_id
-        self.many2many = ManyToManySet(d.db, 'UserID', 'WatchNodeIP')
+        self.many2many = ManyToManySet(db, 'UserID', 'WatchNodeIP')
 
     def key_for_node_names(self, node):
         return f'User.{self.user_id}.SetName.{node}'
 
     async def set_node_name(self, node: str, name: str):
         if node:
-            r = await self.deps.db.get_redis()
+            r = await self.db.get_redis()
             k = self.key_for_node_names(node)
             if name:
                 await r.set(k, name)
@@ -34,7 +34,7 @@ class NodeWatcherStorage:
     async def get_node_names(self, node_list: list):
         if not node_list:
             return {}
-        r = await self.deps.db.get_redis()
+        r = await self.db.get_redis()
         names = await r.mget(*map(self.key_for_node_names, node_list))
         return dict(zip(node_list, names))
 
@@ -68,7 +68,3 @@ class NodeWatcherStorage:
     async def all_nodes_with_names_for_user(self) -> Dict[str, str]:
         nodes = await self.all_nodes_for_user()
         return await self.get_node_names(nodes)
-
-    async def get_user_settings(self, user_id):
-        context = self.deps.dp.current_state(chat=user_id, user=user_id)
-        return await context.get_data()

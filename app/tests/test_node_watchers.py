@@ -18,7 +18,7 @@ def deps():
 
 @pytest.fixture(scope="function")
 def node_watcher(deps: DepContainer):
-    return NodeWatcherStorage(deps, '8888')
+    return NodeWatcherStorage(deps.db, '8888')
 
 
 @pytest.mark.asyncio
@@ -27,7 +27,7 @@ async def test_names(node_watcher: NodeWatcherStorage):
     await node_watcher.set_node_name('thorB', 'Banana')
     await node_watcher.set_node_name('thorC', 'Cucumber')
 
-    node_watcher2 = NodeWatcherStorage(node_watcher.deps, '111111')
+    node_watcher2 = NodeWatcherStorage(node_watcher.db, '111111')
     await node_watcher2.set_node_name('thorA', 'Astoria')
     await node_watcher2.set_node_name('thorB', 'Brownie')
     await node_watcher2.set_node_name('thorC', 'Cafe')
