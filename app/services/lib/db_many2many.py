@@ -95,7 +95,8 @@ class ManyToManySet:
         getter = self.all_rights_for_left_one if is_item_left else self.all_lefts_for_right_one
         all_items = await getter(item)
         other_side_key = self.left_key(item) if is_item_left else self.right_key(item)
-        await r.srem(other_side_key, *all_items)
+        if all_items:
+            await r.srem(other_side_key, *all_items)
         for other_item in all_items:
             this_side_key = self.right_key(other_item) if is_item_left else self.left_key(other_item)
             await r.srem(this_side_key, item)

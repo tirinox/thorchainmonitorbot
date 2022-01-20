@@ -67,17 +67,25 @@ class AppSettingsAPI:
             })
         data: dict = await request.json()
 
+        nodes_set = False
         if 'nodes' in data:
             nodes = data.pop('nodes')
             storage = NodeWatcherStorage(self.deps.db, channel_id)
             await storage.clear_user_nodes()
             await storage.add_user_to_node_list(nodes)
+            nodes_set = True
 
+        settings_set = False
         if 'settings' in data:
             settings = data.pop('settings')
             await self.manager.set_settings(channel_id, settings)
-            
-        return JSONResponse({'channel': channel_id, 'data': data})
+            settings_set = True
+
+        return JSONResponse({
+            'channel': channel_id,
+            'nodes_set': nodes_set,
+            'settings_set': settings_set,
+        })
 
     async def _set_node_list(self, request):
         token = request.path_params.get('token')
