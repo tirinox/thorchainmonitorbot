@@ -4,6 +4,7 @@ import os.path
 
 import uvicorn
 from starlette.applications import Starlette
+from starlette.middleware.cors import CORSMiddleware
 from starlette.responses import JSONResponse
 from starlette.routing import Route, Mount
 from starlette.staticfiles import StaticFiles
@@ -36,6 +37,12 @@ class AppSettingsAPI:
             routes=self._routes(),
             on_startup=[self._on_startup]
         )
+        self.web_app.add_middleware(
+            CORSMiddleware,
+            allow_origins='*',
+            allow_methods='*'
+        )
+
         self.manager = SettingsManager(d.db, d.cfg)
 
     async def _on_startup(self):
