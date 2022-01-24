@@ -1366,8 +1366,8 @@ class BaseLocalization(ABC):  # == English
 
     def text_nop_ask_chain_height_lag_time(self, current_lag_time):
         return 'Please select a time interval for the notification threshold. ' \
-               'If your node does not scan blocks for more than this time, ' \
-               'you will receive a notification about it.\n\n' \
+               'If your node does not scan blocks longer than this time, ' \
+               'you will get a notification about it.\n\n' \
                'If the threshold interval is less than the typical block time for the blockchain, ' \
                'it will be increased to 150% of the typical time (15 minutes for BTC).'
 

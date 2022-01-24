@@ -9,6 +9,8 @@ from services.lib.utils import class_logger, random_hex
 class SettingsManager:
     TOKEN_LEN = 16
 
+    KEY_MESSENGER = '_messenger'
+
     def __init__(self, db: DB, cfg: Config):
         self.db = db
         self.cfg = cfg

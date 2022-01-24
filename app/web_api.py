@@ -94,15 +94,6 @@ class AppSettingsAPI:
             'settings_set': settings_set,
         })
 
-    async def _set_node_list(self, request):
-        token = request.path_params.get('token')
-        channel_id = await self.manager.token_channel_db.get(token)
-        if not channel_id:
-            return JSONResponse({
-                'error': 'channel not found'
-            })
-        # todo!
-
     async def _del_settings(self, request):
         token = request.path_params.get('token')
         channel_id = await self.manager.token_channel_db.get(token)

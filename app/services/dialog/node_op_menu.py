@@ -20,6 +20,8 @@ from services.models.node_watchers import NodeWatcherStorage
 from services.notify.personal.helpers import NodeOpSetting, STANDARD_INTERVALS
 
 
+TELEGRAM_MESSENGER = 'Telegram'
+
 class NodeOpStates(StatesGroup):
     mode = HelperMode.snake_case
     MAIN_MENU = State()
@@ -109,6 +111,12 @@ class NodeOpDialog(BaseDialog):
         user_id = self.user_id(query.message)
         settings = SettingsManager(self.deps.db, self.deps.cfg)
         token = await settings.generate_new_token(user_id)
+
+        self._settings[settings.KEY_MESSENGER] = {
+            'platform': TELEGRAM_MESSENGER,
+            'username': query.from_user.username,
+            'name': query.from_user.full_name,
+        }
         url = settings.get_link(token)
 
         await NodeOpStates.GET_WEB_LINK.set()
