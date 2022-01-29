@@ -225,6 +225,18 @@ class NodeSetChanges:
         common_addresses = set(new.keys()) & set(old.keys())
         return {address: (old[address], new[address]) for address in common_addresses}
 
+    @property
+    def bond_churn_in(self):
+        return sum(node.bond for node in self.nodes_activated)
+
+    @property
+    def bond_churn_out(self):
+        return sum(node.bond for node in self.nodes_deactivated)
+
+    @property
+    def bond_churn_delta(self):
+        return self.bond_churn_in - self.bond_churn_out
+
 
 @dataclass
 class NetworkNodeIpInfo:

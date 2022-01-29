@@ -721,6 +721,11 @@ class RussianLocalization(BaseLocalization):
         return f'{bold(node_thor_link)} ({node_ip_link}, версия {node.version}) ' \
                f'с {bold(pretty_money(node.bond, postfix=RAIDO_GLYPH))} бонд {status}{extra}'.strip()
 
+    def _node_bond_change_after_churn(self, changes: NodeSetChanges):
+        bond_in, bond_out = changes.bond_churn_in, changes.bond_churn_out
+        bond_delta = bond_in - bond_out
+        return f'Изменение активного бонда: {code(short_money(bond_delta, postfix=RAIDO_GLYPH))}'
+
     def notification_text_for_node_churn(self, changes: NodeSetChanges):
         message = ''
 
@@ -731,6 +736,9 @@ class RussianLocalization(BaseLocalization):
         message += self._make_node_list(changes.nodes_activated, '➡️ Ноды активироны:')
         message += self._make_node_list(changes.nodes_deactivated, '⬅️️ Ноды деактивированы:')
         message += self._make_node_list(changes.nodes_removed, '🗑️ Ноды отключились или исчезли:', add_status=True)
+
+        if changes.nodes_activated or changes.nodes_deactivated:
+            message += self._node_bond_change_after_churn(changes)
 
         return message.rstrip()
 
