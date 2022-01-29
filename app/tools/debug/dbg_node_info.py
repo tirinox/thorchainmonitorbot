@@ -21,6 +21,7 @@ def localizations(lpgen: LpAppFramework):
     )
     return locs
 
+
 async def node_version_notification_check_progress(lpgen: LpAppFramework, data: NodeSetChanges):
     locs = localizations(lpgen)
 
@@ -105,6 +106,38 @@ async def node_version_notification_check_1(lpgen: LpAppFramework, data):
         await lpgen.send_test_tg_message(msg)
 
 
+async def node_churn_notification_test(lpgen: LpAppFramework, nodes):
+    locs = localizations(lpgen)
+
+    random.shuffle(nodes)
+
+    churn_out, churn_in = [], []
+    for n in nodes:
+        in_enough = (3 <= len(churn_in) <= 5)
+        out_enough = (3 <= len(churn_out) <= 5)
+        if in_enough and out_enough:
+            break
+
+        if n.is_active and not out_enough:
+            n.status = n.STANDBY
+            churn_out.append(n)
+        elif n.is_standby and not in_enough:
+            n.status = n.ACTIVE
+            churn_in.append(n)
+
+
+    changes = NodeSetChanges([], [], churn_in, churn_out, nodes, nodes)
+
+    await lpgen.send_test_tg_message('------------------------------------')
+    for loc in locs:
+        sep()
+        msg = loc.notification_text_for_node_churn(
+            changes
+        )
+        print(msg)
+        await lpgen.send_test_tg_message(msg)
+
+
 async def main():
     lpgen = LpAppFramework()
     async with lpgen:
@@ -112,7 +145,9 @@ async def main():
 
         data = await node_info_fetcher.fetch()
 
-        await node_version_notification_check_1(lpgen, data)
+        await node_churn_notification_test(lpgen, data)
+
+        # await node_version_notification_check_1(lpgen, data)
         # await node_version_notification_check_progress(lpgen, data)
 
 

@@ -855,7 +855,12 @@ class BaseLocalization(ABC):  # == English
             (self._format_node_text(node, add_status, extended_info) for node in nodes),
             start=start
         )
-        return message + "\n"
+        return message + "\n\n"
+
+    def _node_bond_change_after_churn(self, changes: NodeSetChanges):
+        bond_in, bond_out = changes.bond_churn_in, changes.bond_churn_out
+        bond_delta = bond_in - bond_out
+        return f'Active bond net change: {code(short_money(bond_delta, postfix=RAIDO_GLYPH))}'
 
     def notification_text_for_node_churn(self, changes: NodeSetChanges):
         message = ''
@@ -867,6 +872,9 @@ class BaseLocalization(ABC):  # == English
         message += self._make_node_list(changes.nodes_activated, '➡️ Nodes that churned in:')
         message += self._make_node_list(changes.nodes_deactivated, '⬅️️ Nodes that churned out:')
         message += self._make_node_list(changes.nodes_removed, '🗑️ Nodes that disconnected:', add_status=True)
+
+        if changes.nodes_activated or changes.nodes_deactivated:
+            message += self._node_bond_change_after_churn(changes)
 
         return message.rstrip()
 
