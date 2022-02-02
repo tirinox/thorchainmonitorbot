@@ -73,6 +73,7 @@ class MimirHolder:
             'TNSRegisterFee',
             'MAXIMUMLIQUIDITYRUNE',
             'MAXLIQUIDITYRUNE',
+            'PoolDepthForYggFundingMin',
         ]
     }
 
@@ -159,7 +160,9 @@ class MimirHolder:
         'STOPSOLVENCYCHECKBTC': 'Stop Solvency check BTC',
         'STOPSOLVENCYCHECKBCH': 'Stop Solvency check BCH',
         'STOPSOLVENCYCHECKDOGE': 'Stop Solvency check DOGE',
-        'STRICTBONDLIQUIDITYRATIO': 'Strict Bond Liquidity Ratio'
+        'STRICTBONDLIQUIDITYRATIO': 'Strict Bond Liquidity Ratio',
+
+        'POOLDEPTHFORYGGFUNDINGMIN': 'Pool Depth For Ygg Funding Min',
     }
 
     @staticmethod
