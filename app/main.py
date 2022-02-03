@@ -123,13 +123,18 @@ class App:
             logging.error("No pool data at startup! Halt it!")
             exit(-1)
 
+        fetcher_nodes = NodeInfoFetcher(d)
+        d.node_info_fetcher = fetcher_nodes
+        await fetcher_nodes.fetch()  # get nodes beforehand
+
+        # mimir uses nodes! so it goes after fetcher_nodes
         fetcher_mimir = ConstMimirFetcher(d)
         self.deps.mimir_const_fetcher = fetcher_mimir
         self.deps.mimir_const_holder = MimirHolder()
         await fetcher_mimir.fetch()  # get constants beforehand
 
         tasks = [
-            # mandatory tasks!
+            # mandatory tasks:
             d.price_pool_fetcher,
             fetcher_mimir
         ]
@@ -189,9 +194,6 @@ class App:
             tasks.append(fetcher_last_block)
 
         if d.cfg.get('node_info.enabled', True):
-            fetcher_nodes = NodeInfoFetcher(d)
-            d.node_info_fetcher = fetcher_nodes
-
             churn_detector = NodeChurnDetector(d)
             fetcher_nodes.subscribe(churn_detector)
 

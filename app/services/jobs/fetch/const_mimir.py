@@ -41,7 +41,8 @@ class ConstMimirFetcher(BaseFetcher):
 
     async def fetch_node_mimir_votes(self) -> List[MimirVote]:
         response = await self._request_public_node_client('/thorchain/mimir/nodes_all')
-        return MimirVote.from_json_array(response)
+        mimirs = response.get('mimirs', [])
+        return MimirVote.from_json_array(mimirs)
 
     async def fetch_node_mimir_results(self) -> dict:
         response = await self._request_public_node_client('/thorchain/mimir/nodes')
@@ -57,7 +58,8 @@ class ConstMimirFetcher(BaseFetcher):
 
         # last_mimir = self._dbg_randomize_mimir(last_mimir)  # fixme
 
-        self.deps.mimir_const_holder.update(constants, mimir, node_mimir, votes)
+        number_of_active_nodes = len(self.deps.node_holder.active_nodes)
+        self.deps.mimir_const_holder.update(constants, mimir, node_mimir, votes, number_of_active_nodes)
 
         self.logger.info(f'Got {len(constants.constants)} CONST entries'
                          f' and {len(mimir.constants)} MIMIR entries.')

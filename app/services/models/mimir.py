@@ -1,3 +1,5 @@
+import math
+import operator
 import typing
 from dataclasses import dataclass
 from itertools import chain
@@ -28,10 +30,69 @@ class MimirVote:
 
 
 @dataclass
-class MimirVoting:
-    key: str
+class MimirVoteOption:
     value: int
     signers: list
+    progress: float = 0.0
+    need_votes_to_pass: int = 0
+
+    @property
+    def number_votes(self):
+        return len(self.signers)
+
+
+@dataclass
+class MimirVoting:
+    key: str
+    options: typing.Dict[int, MimirVoteOption]
+    active_nodes: int
+    top_options: typing.List[MimirVoteOption]
+
+    SUPER_MAJORITY = 0.66666666
+
+    def finalize_calculations(self):
+        options = list(self.options.values())
+        options.sort(key=operator.attrgetter('number_votes'), reverse=True)
+
+        if not self.active_nodes:
+            self.active_nodes = 1  # Just to avoid division by zero
+
+        min_votes_to_pass = int(math.ceil(self.active_nodes * self.SUPER_MAJORITY))
+        for opt in options:
+            opt.progress = len(opt.signers) / self.active_nodes
+            opt.need_votes_to_pass = abs(min_votes_to_pass - opt.number_votes)
+        self.top_options = options
+
+    @property
+    def total_voters(self):
+        if not self.options:
+            return 0
+        return sum(len(opt.signers) for opt in self.options.values())
+
+    @property
+    def passed(self):
+        if not self.top_options:
+            return False
+        return self.top_options[0].progress >= 0.666666
+
+
+class MimirVoteManager:
+    def __init__(self, votes: typing.List[MimirVote], active_node_count: int):
+        self.votes = votes
+        self.active_node_count = active_node_count
+
+        self.all_voting = {}
+        for vote in votes:
+            if vote.key not in self.all_voting:
+                self.all_voting[vote.key] = MimirVoting(vote.key, {}, active_node_count, [])
+            voting = self.all_voting[vote.key]
+
+            if vote.value not in voting.options:
+                voting.options[vote.value] = MimirVoteOption(vote.value, [])
+            voting.options[vote.value].signers.append(vote.singer)
+
+        for voting in self.all_voting.values():
+            voting.finalize_calculations()
 
 
 @dataclass
@@ -88,6 +149,7 @@ class MimirHolder:
         self._mimir_only_names = set()
         self.node_mimir = {}
         self.node_mimir_votes = []
+        self.voting_manager = MimirVoteManager([], 1)
 
     BLOCK_CONSTANTS = {
         name.upper() for name in [
@@ -222,7 +284,10 @@ class MimirHolder:
     def get_entry(self, name) -> typing.Optional[MimirEntry]:
         return self._const_map.get(name.upper())
 
-    def update(self, constants: ThorConstants, mimir: ThorMimir, node_mimir, node_votes):
+    def update(self, constants: ThorConstants, mimir: ThorMimir, node_mimir, node_votes: typing.List[MimirVote],
+               number_of_active_nodes: int):
+        self.voting_manager = MimirVoteManager(node_votes, number_of_active_nodes)
+
         hard_coded_constants = {n.upper(): v for n, v in constants.constants.items()}
         hard_coded_pretty_names = {
             n.upper(): split_by_camel_case(n)

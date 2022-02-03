@@ -34,7 +34,10 @@ class NodeInfoFetcher(BaseFetcher):
         return new_nodes
 
     async def fetch(self) -> List[NodeInfo]:
-        return await self.fetch_current_node_list()
+        nodes = await self.fetch_current_node_list()
+        if nodes:
+            self.deps.node_holder.nodes = nodes
+        return nodes
 
     @staticmethod
     def _test_churn(new_nodes: List[NodeInfo]):

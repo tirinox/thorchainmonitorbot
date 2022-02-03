@@ -281,7 +281,6 @@ class MetricsDialog(BaseDialog):
                                  disable_web_page_preview=True,
                                  disable_notification=True)
 
-
     async def show_block_time(self, message: Message):
         duration = 2 * DAY
 
