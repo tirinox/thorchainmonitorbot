@@ -454,6 +454,7 @@ class RussianLocalization(BaseLocalization):
     BUTTON_METR_LEADERBOARD = '🏆 Доска рекордов'
     BUTTON_METR_CHAINS = '⛓️ Блокчейны'
     BUTTON_METR_MIMIR = '🎅 Мимир'
+    BUTTON_METR_VOTING = '🏛️ Голосование'
     BUTTON_METR_BLOCK_TIME = '⏱️ Время блоков'
     BUTTON_METR_TOP_POOLS = '🏊 Топ Пулов'
     BUTTON_METR_CEX_FLOW = '🌬 Поток бирж'
@@ -866,8 +867,9 @@ class RussianLocalization(BaseLocalization):
     # --------- MIMIR INFO ------------
 
     MIMIR_STANDARD_VALUE = "стандарт:"
-    MIMIR_OUTRO = f'\n\n🔹 – {ital("значит, что константа переопределена Мимиром.")}\n' \
-                  f'🔸 – {ital("константа определена только через Мимир.")}'
+    MIMIR_OUTRO = f'\n\n🔹 – {ital("Админ Мимир")}\n' \
+                  f'🔸 – {ital("Голосование нод")}\n' \
+                  f'▪️ – {ital("Автоматика")}'
     MIMIR_NO_DATA = 'Нет данных'
     MIMIR_BLOCKS = 'блоков'
     MIMIR_DISABLED = 'ВЫКЛЮЧЕНО'

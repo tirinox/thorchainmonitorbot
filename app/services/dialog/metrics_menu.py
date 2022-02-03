@@ -74,8 +74,9 @@ class MetricsDialog(BaseDialog):
     async def show_menu_net_op(self, message: Message):
         await MetricsStates.SECTION_NET_OP.set()
         reply_markup = kbd([
-            [self.loc.BUTTON_METR_NODES, self.loc.BUTTON_METR_CHAINS, self.loc.BUTTON_METR_MIMIR],
-            [self.loc.BUTTON_METR_BLOCK_TIME, self.loc.BUTTON_METR_QUEUE, self.loc.BUTTON_BACK],
+            [self.loc.BUTTON_METR_NODES, self.loc.BUTTON_METR_VOTING, self.loc.BUTTON_METR_MIMIR],
+            [self.loc.BUTTON_METR_BLOCK_TIME, self.loc.BUTTON_METR_QUEUE, self.loc.BUTTON_METR_CHAINS],
+            [self.loc.BUTTON_BACK],
         ])
         await message.answer(self.loc.TEXT_METRICS_INTRO,
                              reply_markup=reply_markup,
@@ -115,6 +116,8 @@ class MetricsDialog(BaseDialog):
             await self.show_chain_info(message)
         elif message.text == self.loc.BUTTON_METR_MIMIR:
             await self.show_mimir_info(message)
+        elif message.text == self.loc.BUTTON_METR_VOTING:
+            await self.show_voting_info(message)
         elif message.text == self.loc.BUTTON_METR_BLOCK_TIME:
             await self.show_block_time(message)
         await self.show_menu_net_op(message)
@@ -270,6 +273,14 @@ class MetricsDialog(BaseDialog):
             await message.answer(text,
                                  disable_web_page_preview=True,
                                  disable_notification=True)
+
+    async def show_voting_info(self, message: Message):
+        texts = self.loc.text_node_mimir_voting(self.deps.mimir_const_holder)
+        for text in texts:
+            await message.answer(text,
+                                 disable_web_page_preview=True,
+                                 disable_notification=True)
+
 
     async def show_block_time(self, message: Message):
         duration = 2 * DAY

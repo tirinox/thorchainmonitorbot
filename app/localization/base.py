@@ -565,6 +565,7 @@ class BaseLocalization(ABC):  # == English
     BUTTON_METR_LEADERBOARD = '🏆 Leaderboard'
     BUTTON_METR_CHAINS = '⛓️ Chains'
     BUTTON_METR_MIMIR = '🎅 Mimir consts'
+    BUTTON_METR_VOTING = '🏛️ Voting'
     BUTTON_METR_BLOCK_TIME = '⏱️ Block time'
     BUTTON_METR_TOP_POOLS = '🏊 Top Pools'
     BUTTON_METR_CEX_FLOW = '🌬 CEX Flow'
@@ -1004,8 +1005,9 @@ class BaseLocalization(ABC):  # == English
     MIMIR_ENTRIES_PER_MESSAGE = 20
 
     MIMIR_STANDARD_VALUE = 'default:'
-    MIMIR_OUTRO = f'\n\n🔹 – {ital("it means that the constant is redefined by Mimir.")}\n' \
-                  f'🔸 – {ital("defined only by Mimir.")}'
+    MIMIR_OUTRO = f'\n\n🔹 – {ital("Admin Mimir")}\n' \
+                  f'🔸 – {ital("Node Mimir")}\n' \
+                  f'▪️ – {ital("Automatic solvency checker")}'
     MIMIR_NO_DATA = 'No data'
     MIMIR_BLOCKS = 'blocks'
     MIMIR_DISABLED = 'DISABLED'
@@ -1022,28 +1024,33 @@ class BaseLocalization(ABC):  # == English
         if m is None:
             return v
 
-        if m.is_rune:
+        if m.units == m.UNITS_RUNES:
             return short_money(thor_to_float(v), localization=self.SHORT_MONEY_LOC, postfix=f' {self.R}')
-        elif m.is_blocks:
+        elif m.units == m.UNITS_BLOCKS:
             blocks = int(v)
             seconds = blocks * THOR_BLOCK_TIME
             time_str = self.seconds_human(seconds) if seconds != 0 else self.MIMIR_DISABLED
             return f'{time_str}, {blocks} {self.MIMIR_BLOCKS}'
-        elif m.is_bool:
+        elif m.units == m.UNITS_BOOL:
             return self.MIMIR_YES if bool(int(v)) else self.MIMIR_NO
         else:
             return v
 
     def format_mimir_entry(self, i: int, m: MimirEntry):
-        if m.source == m.SOURCE_MIMIR:
+        if m.source == m.SOURCE_ADMIN:
+            mark = '🔹'
+        elif m.source == m.SOURCE_NODE:
             mark = '🔸'
-            std_value = ''
-        elif m.source == m.SOURCE_BOTH:
+        elif m.automatic:
+            mark = '▪️'
+        else:
+            mark = ''
+
+        if m.hard_coded_value is not None:
             std_value_fmt = self.format_mimir_value(m.hard_coded_value, m)
             std_value = f'({self.MIMIR_STANDARD_VALUE} {pre(std_value_fmt)})'
-            mark = '🔹'
         else:
-            mark, std_value = '', ''
+            std_value = ''
 
         if m.changed_ts:
             str_ago = self.format_time_ago(now_ts() - m.changed_ts)
@@ -1083,6 +1090,10 @@ class BaseLocalization(ABC):  # == English
             messages = [intro + self.MIMIR_NO_DATA]
 
         return messages
+
+    def text_node_mimir_voting(self, holder: MimirHolder):
+        # todo!
+        return []
 
     # --------- TRADING HALTED ------------
 
