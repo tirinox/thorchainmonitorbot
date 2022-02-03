@@ -77,12 +77,14 @@ class MimirVoting:
 
 
 class MimirVoteManager:
-    def __init__(self, votes: typing.List[MimirVote], active_node_count: int):
+    def __init__(self, votes: typing.List[MimirVote], active_node_count: int, exclude_keys):
         self.votes = votes
         self.active_node_count = active_node_count
 
         self.all_voting = {}
         for vote in votes:
+            if vote.key in exclude_keys:
+                continue
             if vote.key not in self.all_voting:
                 self.all_voting[vote.key] = MimirVoting(vote.key, {}, active_node_count, [])
             voting = self.all_voting[vote.key]
@@ -149,7 +151,8 @@ class MimirHolder:
         self._mimir_only_names = set()
         self.node_mimir = {}
         self.node_mimir_votes = []
-        self.voting_manager = MimirVoteManager([], 1)
+        self.voting_manager = MimirVoteManager([], 1, [])
+        self.hard_coded_pretty_names = {}
 
     BLOCK_CONSTANTS = {
         name.upper() for name in [
@@ -159,6 +162,8 @@ class MimirHolder:
             'NodePauseChainBlocks', 'FullImpLossProtectionBlocks', 'TxOutDelayMax', 'MaxTxOutOffset',
         ]
     }
+
+    EXCLUDED_VOTE_KEYS = ['TEST']
 
     RUNE_CONSTANTS = {
         name.upper() for name in [
@@ -284,12 +289,15 @@ class MimirHolder:
     def get_entry(self, name) -> typing.Optional[MimirEntry]:
         return self._const_map.get(name.upper())
 
+    def pretty_name(self, name):
+        return self.TRANSLATE_MIMIRS.get(name) or self.hard_coded_pretty_names.get(name) or name
+
     def update(self, constants: ThorConstants, mimir: ThorMimir, node_mimir, node_votes: typing.List[MimirVote],
                number_of_active_nodes: int):
-        self.voting_manager = MimirVoteManager(node_votes, number_of_active_nodes)
+        self.voting_manager = MimirVoteManager(node_votes, number_of_active_nodes, self.EXCLUDED_VOTE_KEYS)
 
         hard_coded_constants = {n.upper(): v for n, v in constants.constants.items()}
-        hard_coded_pretty_names = {
+        self.hard_coded_pretty_names = {
             n.upper(): split_by_camel_case(n)
             for n in constants.constants.keys()
         }
@@ -326,8 +334,6 @@ class MimirHolder:
             hard_coded_value = hard_coded_constants.get(name)
             last_change_ts = self.last_changes.get(name, 0)
 
-            pretty_name = self.TRANSLATE_MIMIRS.get(name) or hard_coded_pretty_names.get(name) or name
-
             if name in self.RUNE_CONSTANTS:
                 units = MimirEntry.UNITS_RUNES
             elif name in self.BLOCK_CONSTANTS:
@@ -338,7 +344,8 @@ class MimirHolder:
                 units = ''
 
             self._const_map[name] = MimirEntry(
-                name, pretty_name,
+                name,
+                self.pretty_name(name),
                 current_value, hard_coded_value, last_change_ts,
                 units=units,
                 source=source

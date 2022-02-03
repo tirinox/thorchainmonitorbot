@@ -18,7 +18,7 @@ from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, i
 from services.models.bep2 import BEP2Transfer, BEP2CEXFlow
 from services.models.cap_info import ThorCapInfo
 from services.models.last_block import BlockSpeed
-from services.models.mimir import MimirChange, MimirHolder, MimirEntry
+from services.models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEventType, NodeEvent, \
     EventBlockHeight, EventDataSlash
@@ -1092,8 +1092,27 @@ class BaseLocalization(ABC):  # == English
         return messages
 
     def text_node_mimir_voting(self, holder: MimirHolder):
-        # todo!
-        return []
+        title = '🏛️' + bold('Node-Mimir voting') + '\n\n'
+        if not holder.voting_manager.all_voting:
+            title += 'No active voting yet.'
+            return [title]
+
+        messages = [title]
+        for voting in holder.voting_manager.all_voting.values():
+            voting: MimirVoting
+            name = holder.pretty_name(voting.key)
+            msg = f"{code(name)}\n"
+
+            for option in voting.top_options:
+                pb = progressbar(option.number_votes, voting.active_nodes, 12) if option.progress > 0.1 else ''
+                extra = f'{option.need_votes_to_pass} more votes to pass' if option.need_votes_to_pass <= 5 else ''
+                msg += f"= {code(option.value)} ➔ {bold(format_percent(option.number_votes, voting.active_nodes))}" \
+                       f" ({option.number_votes}/{voting.active_nodes})" \
+                       f" {pb} {extra}\n"
+
+            messages.append(msg)
+
+        return messages
 
     # --------- TRADING HALTED ------------
 
