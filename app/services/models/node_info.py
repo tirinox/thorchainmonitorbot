@@ -103,6 +103,15 @@ MapAddressToPrevAndCurrNode = Dict[str, Tuple[NodeInfo, NodeInfo]]
 
 
 @dataclass
+class NodeListHolder:
+    nodes: List[NodeInfo] = field(default_factory=list)
+
+    @property
+    def active_nodes(self):
+        return [n for n in self.nodes if n.is_active]
+
+
+@dataclass
 class NodeSetChanges:
     nodes_added: List[NodeInfo]
     nodes_removed: List[NodeInfo]

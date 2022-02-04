@@ -14,11 +14,11 @@ from services.lib.explorers import get_explorer_url_to_address, Chains, get_expl
 from services.lib.money import format_percent, pretty_money, short_address, short_money, \
     calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset, short_dollar
 from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
-    up_down_arrow, bracketify, plural, grouper, join_as_numbered_list
+    up_down_arrow, bracketify, plural, grouper, join_as_numbered_list, regroup_joining
 from services.models.bep2 import BEP2Transfer, BEP2CEXFlow
 from services.models.cap_info import ThorCapInfo
 from services.models.last_block import BlockSpeed
-from services.models.mimir import MimirChange, MimirHolder, MimirEntry
+from services.models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEventType, NodeEvent, \
     EventBlockHeight, EventDataSlash
@@ -565,6 +565,7 @@ class BaseLocalization(ABC):  # == English
     BUTTON_METR_LEADERBOARD = '🏆 Leaderboard'
     BUTTON_METR_CHAINS = '⛓️ Chains'
     BUTTON_METR_MIMIR = '🎅 Mimir consts'
+    BUTTON_METR_VOTING = '🏛️ Voting'
     BUTTON_METR_BLOCK_TIME = '⏱️ Block time'
     BUTTON_METR_TOP_POOLS = '🏊 Top Pools'
     BUTTON_METR_CEX_FLOW = '🌬 CEX Flow'
@@ -1004,8 +1005,9 @@ class BaseLocalization(ABC):  # == English
     MIMIR_ENTRIES_PER_MESSAGE = 20
 
     MIMIR_STANDARD_VALUE = 'default:'
-    MIMIR_OUTRO = f'\n\n🔹 – {ital("it means that the constant is redefined by Mimir.")}\n' \
-                  f'🔸 – {ital("defined only by Mimir.")}'
+    MIMIR_OUTRO = f'\n\n🔹 – {ital("Admin Mimir")}\n' \
+                  f'🔸 – {ital("Node Mimir")}\n' \
+                  f'▪️ – {ital("Automatic solvency checker")}'
     MIMIR_NO_DATA = 'No data'
     MIMIR_BLOCKS = 'blocks'
     MIMIR_DISABLED = 'DISABLED'
@@ -1022,28 +1024,33 @@ class BaseLocalization(ABC):  # == English
         if m is None:
             return v
 
-        if m.is_rune:
+        if m.units == m.UNITS_RUNES:
             return short_money(thor_to_float(v), localization=self.SHORT_MONEY_LOC, postfix=f' {self.R}')
-        elif m.is_blocks:
+        elif m.units == m.UNITS_BLOCKS:
             blocks = int(v)
             seconds = blocks * THOR_BLOCK_TIME
             time_str = self.seconds_human(seconds) if seconds != 0 else self.MIMIR_DISABLED
             return f'{time_str}, {blocks} {self.MIMIR_BLOCKS}'
-        elif m.is_bool:
+        elif m.units == m.UNITS_BOOL:
             return self.MIMIR_YES if bool(int(v)) else self.MIMIR_NO
         else:
             return v
 
     def format_mimir_entry(self, i: int, m: MimirEntry):
-        if m.source == m.SOURCE_MIMIR:
+        if m.source == m.SOURCE_ADMIN:
+            mark = '🔹'
+        elif m.source == m.SOURCE_NODE:
             mark = '🔸'
-            std_value = ''
-        elif m.source == m.SOURCE_BOTH:
+        elif m.automatic:
+            mark = '▪️'
+        else:
+            mark = ''
+
+        if m.hard_coded_value is not None:
             std_value_fmt = self.format_mimir_value(m.hard_coded_value, m)
             std_value = f'({self.MIMIR_STANDARD_VALUE} {pre(std_value_fmt)})'
-            mark = '🔹'
         else:
-            mark, std_value = '', ''
+            std_value = ''
 
         if m.changed_ts:
             str_ago = self.format_time_ago(now_ts() - m.changed_ts)
@@ -1083,6 +1090,30 @@ class BaseLocalization(ABC):  # == English
             messages = [intro + self.MIMIR_NO_DATA]
 
         return messages
+
+    NODE_MIMIR_VOTING_GROUP_SIZE = 2
+
+    def text_node_mimir_voting(self, holder: MimirHolder):
+        title = '🏛️' + bold('Node-Mimir voting') + '\n\n'
+        if not holder.voting_manager.all_voting:
+            title += 'No active voting yet.'
+            return [title]
+
+        messages = [title]
+        for voting in holder.voting_manager.all_voting.values():
+            voting: MimirVoting
+            name = holder.pretty_name(voting.key)
+            msg = f"{code(name)}\n"
+
+            for option in voting.top_options:
+                pb = progressbar(option.number_votes, voting.active_nodes, 12) if option.progress > 0.1 else ''
+                extra = f'{option.need_votes_to_pass} more votes to pass' if option.need_votes_to_pass <= 5 else ''
+                msg += f"➔ {code(option.value)}: {bold(format_percent(option.number_votes, voting.active_nodes))}" \
+                       f" {pb} ({option.number_votes}/{voting.active_nodes}) {extra}\n"
+
+            messages.append(msg)
+
+        return regroup_joining(self.NODE_MIMIR_VOTING_GROUP_SIZE, messages)
 
     # --------- TRADING HALTED ------------
 
@@ -1165,10 +1196,16 @@ class BaseLocalization(ABC):  # == English
             new_value_fmt = code(self.format_mimir_value(change.new_value, change.entry))
             name = code(change.entry.pretty_name if change.entry else change.name)
 
-            if change.entry and change.entry.automatic:
-                text += bold('[🤖 Automatic solvency checker ]  ')
-            else:
-                text += bold('[👩‍💻 Admins ]  ')
+            e = change.entry
+            if e:
+                if e.source == e.SOURCE_AUTO:
+                    text += bold('[🤖 Automatic solvency checker ]  ')
+                elif e.source == e.SOURCE_ADMIN:
+                    text += bold('[👩‍💻 Admins ]  ')
+                elif e.source == e.SOURCE_NODE:
+                    text += bold('[🤝 Nodes voted ]  ')
+                elif e.source == e.SOURCE_NODE_CEASED:
+                    text += bold('[💔 Node-Mimir off ]  ')
 
             if change.kind == MimirChange.ADDED_MIMIR:
                 text += (

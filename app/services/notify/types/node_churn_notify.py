@@ -38,7 +38,6 @@ class NodeChurnNotifier(INotified):
         result_network_info = await node_fetcher.get_node_list_and_geo_info(node_list=changes.nodes_all)
 
         async def node_div_pic_gen(loc: BaseLocalization):
-
             graph = await node_geo_pic(result_network_info, loc)
             bio_graph = img_to_bio(graph, "node_diversity.png")
             return BoardMessage.make_photo(bio_graph)

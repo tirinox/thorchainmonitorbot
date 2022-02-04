@@ -76,6 +76,15 @@ def grouper(n, iterable):
     return ([e for e in t if e is not None] for t in itertools.zip_longest(*args))
 
 
+def regroup_joining(n, iterable, sep='\n\n', trim=True):
+    if trim:
+        iterable = map(str.strip, iterable)
+    groups = grouper(n, iterable)
+    return [
+        sep.join(g) for g in groups
+    ]
+
+
 def kbd(buttons, resize=True, vert=False, one_time=False, row_width=3):
     if isinstance(buttons, str):
         buttons = [[buttons]]
