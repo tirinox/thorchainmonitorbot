@@ -48,7 +48,13 @@ class ConstMimirFetcher(BaseFetcher):
         response = await self._request_public_node_client('/thorchain/mimir/nodes')
         return response or {}
 
-    async def fetch(self) -> Tuple[ThorConstants, ThorMimir]:
+    @staticmethod
+    def _put_node_mimir_to_mimir(mimir: ThorMimir, node_mimir: dict):
+        for k, v in node_mimir.items():
+            mimir.constants[k] = v
+        return mimir
+
+    async def fetch(self) -> Tuple[ThorConstants, ThorMimir, dict, List[MimirVote]]:
         constants, mimir, node_mimir, votes = await asyncio.gather(
             self.fetch_constants_fallback(),
             self.fetch_mimir_fallback(),
@@ -56,14 +62,18 @@ class ConstMimirFetcher(BaseFetcher):
             self.fetch_node_mimir_votes(),
         )
 
-        # last_mimir = self._dbg_randomize_mimir(last_mimir)  # fixme
+        # # fixme: ------- 8< ---- debug ------ 8< -------
+        # mimir, node_mimir = self._dbg_randomize_mimir(mimir, node_mimir)
+        # # fixme: ------- 8< ---- debug ------ 8< -------
 
         number_of_active_nodes = len(self.deps.node_holder.active_nodes)
         self.deps.mimir_const_holder.update(constants, mimir, node_mimir, votes, number_of_active_nodes)
 
+        mimir = self._put_node_mimir_to_mimir(mimir, node_mimir)
+
         self.logger.info(f'Got {len(constants.constants)} CONST entries'
                          f' and {len(mimir.constants)} MIMIR entries.')
-        return constants, mimir
+        return constants, mimir, node_mimir, votes
 
     def _dbg_randomize_votes(self, votes: List[MimirVote]):
         return votes
@@ -71,7 +81,7 @@ class ConstMimirFetcher(BaseFetcher):
     def _dbg_randomize_node_mimir_results(self, results):
         return results
 
-    def _dbg_randomize_mimir(self, fresh_mimir: ThorMimir):
+    def _dbg_randomize_mimir(self, fresh_mimir: ThorMimir, node_mimir: dict):
         # if random.uniform(0, 1) > 0.5:
         #     fresh_mimir.constants['LOKI_CONST'] = "555"
         # if random.uniform(0, 1) > 0.3:
@@ -85,9 +95,10 @@ class ConstMimirFetcher(BaseFetcher):
         #         pass
         # del fresh_mimir.constants["HALTBNBTRADING"]
         # fresh_mimir.constants["HALTETHTRADING"] = 0
-        # fresh_mimir.constants["HALTBNBCHAIN"] = 1233243  # 1234568
+        fresh_mimir.constants["HALTBNBCHAIN"] = 1233243  # 1234568
         # del fresh_mimir.constants["EMISSIONCURVE"]
         # fresh_mimir.constants['NATIVETRANSACTIONFEE'] = 4000000
         # fresh_mimir.constants['MAXLIQUIDITYRUNE'] = 10000000000000 * random.randint(1, 99)
-        # fresh_mimir.constants["FULLIMPLOSSPROTECTIONBLOCKS"] = 10000 * random.randint(1, 999)
-        return fresh_mimir
+        fresh_mimir.constants["FULLIMPLOSSPROTECTIONBLOCKS"] = 9000
+        node_mimir["EMISSIONCURVE"] = 23
+        return fresh_mimir, node_mimir

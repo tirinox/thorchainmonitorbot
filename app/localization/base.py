@@ -1196,10 +1196,16 @@ class BaseLocalization(ABC):  # == English
             new_value_fmt = code(self.format_mimir_value(change.new_value, change.entry))
             name = code(change.entry.pretty_name if change.entry else change.name)
 
-            if change.entry and change.entry.automatic:
-                text += bold('[🤖 Automatic solvency checker ]  ')
-            else:
-                text += bold('[👩‍💻 Admins ]  ')
+            e = change.entry
+            if e:
+                if e.source == e.SOURCE_AUTO:
+                    text += bold('[🤖 Automatic solvency checker ]  ')
+                elif e.source == e.SOURCE_ADMIN:
+                    text += bold('[👩‍💻 Admins ]  ')
+                elif e.source == e.SOURCE_NODE:
+                    text += bold('[🤝 Nodes voted ]  ')
+                elif e.source == e.SOURCE_NODE_CEASED:
+                    text += bold('[💔 Node-Mimir off ]  ')
 
             if change.kind == MimirChange.ADDED_MIMIR:
                 text += (

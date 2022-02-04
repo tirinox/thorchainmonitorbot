@@ -115,6 +115,7 @@ class MimirEntry:
     SOURCE_ADMIN = 'admin'
     SOURCE_AUTO = 'auto'
     SOURCE_NODE = 'node-mimir'
+    SOURCE_NODE_CEASED = 'node-mimir-ceased'
 
     @property
     def automatic(self) -> bool:

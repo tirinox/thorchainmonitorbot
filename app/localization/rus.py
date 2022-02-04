@@ -961,10 +961,16 @@ class RussianLocalization(BaseLocalization):
             new_value_fmt = code(self.format_mimir_value(change.new_value, change.entry))
             name = code(change.entry.pretty_name if change.entry else change.name)
 
-            if change.entry.automatic:
-                text += bold('[🤖 Автоматика платежеспособности ]') + '\n'
-            else:
-                text += bold('[👩‍💻 Администраторы ]') + '\n'
+            e = change.entry
+            if e:
+                if e.source == e.SOURCE_AUTO:
+                    text += bold('[🤖 Автоматика платежеспособности ]  ')
+                elif e.source == e.SOURCE_ADMIN:
+                    text += bold('[👩‍💻 Администраторы ]  ')
+                elif e.source == e.SOURCE_NODE:
+                    text += bold('[🤝 Голосование нод ]  ')
+                elif e.source == e.SOURCE_NODE_CEASED:
+                    text += bold('[💔 Мимир нод отменен ]  ')
 
             if change.kind == MimirChange.ADDED_MIMIR:
                 text += (

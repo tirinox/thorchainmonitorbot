@@ -1,5 +1,5 @@
 import json
-from typing import Tuple
+from typing import Tuple, List
 
 from aiothornode.types import ThorConstants, ThorMimir
 
@@ -9,7 +9,7 @@ from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.lib.date_utils import now_ts
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
-from services.models.mimir import MimirChange
+from services.models.mimir import MimirChange, MimirVote
 
 
 class MimirChangedNotifier(INotified):
@@ -43,23 +43,27 @@ class MimirChangedNotifier(INotified):
                 ts = await self.last_mimir_change_date(name)
                 self.deps.mimir_const_holder.register_change_ts(name, ts)
 
-    async def on_data(self, sender: ConstMimirFetcher, data: Tuple[ThorConstants, ThorMimir]):
-        _, fresh_mimir = data
+    async def on_data(self, sender: ConstMimirFetcher, data: Tuple[ThorConstants, ThorMimir, dict, List[MimirVote]]):
+        _, fresh_mimir, node_mimir, votes = data
 
         if not fresh_mimir or not fresh_mimir.constants:
             return
 
         await self._ensure_all_last_changes_in_holder(fresh_mimir)
 
-        old_mimir = await self._get_saved_mimir_state()
-        if not old_mimir:
+        old_mimir = await self._get_saved_mimir_state(is_node_mimir=False)
+        old_node_mimir = await self._get_saved_mimir_state(is_node_mimir=True)
+        if not old_mimir or not old_node_mimir:
             self.logger.warning('Mimir has not been saved yet. Waiting for the next tick...')
-            await self._save_mimir_state(fresh_mimir)
+            await self._save_mimir_state(fresh_mimir.constants, is_node_mimir=False)
+            await self._save_mimir_state(node_mimir, is_node_mimir=True)
             return
 
         fresh_const_names = set(fresh_mimir.constants.keys())
         old_const_names = set(old_mimir.constants.keys())
         all_const_names = fresh_const_names | old_const_names
+
+        # todo: if node-mimir ceased to have effect, tell about it!
 
         changes = []
 
@@ -87,6 +91,11 @@ class MimirChangedNotifier(INotified):
 
             if change_kind is not None:
                 entry = self.deps.mimir_const_holder.get_entry(name)
+
+                node_mimir_ceased = name in old_node_mimir and name not in node_mimir
+                if node_mimir_ceased:
+                    entry.source = entry.SOURCE_NODE_CEASED
+
                 change = MimirChange(change_kind, name, old_value, new_value, entry, timestamp)
                 changes.append(change)
                 await self._save_mimir_change_date(change)
@@ -99,20 +108,24 @@ class MimirChangedNotifier(INotified):
             )
 
         if fresh_mimir and fresh_mimir.constants:
-            await self._save_mimir_state(fresh_mimir)
+            await self._save_mimir_state(fresh_mimir.constants, is_node_mimir=False)
+            await self._save_mimir_state(node_mimir, is_node_mimir=True)
 
     DB_KEY_MIMIR_LAST_STATE = 'Mimir:LastState'
+    DB_KEY_NODE_MIMIR_LAST_STATE = 'Mimir:Node:LastState'
 
-    async def _get_saved_mimir_state(self):
+    async def _get_saved_mimir_state(self, is_node_mimir: bool):
         db = await self.deps.db.get_redis()
-        raw_data = await db.get(self.DB_KEY_MIMIR_LAST_STATE)
+        key = self.DB_KEY_NODE_MIMIR_LAST_STATE if is_node_mimir else self.DB_KEY_MIMIR_LAST_STATE
+        raw_data = await db.get(key)
         try:
             j = json.loads(raw_data)
-            return ThorMimir.from_json(j)
+            return j if is_node_mimir else ThorMimir.from_json(j)
         except (TypeError, ValueError):
             return None
 
-    async def _save_mimir_state(self, c: ThorMimir):
-        data = json.dumps(c.constants)
+    async def _save_mimir_state(self, c: dict, is_node_mimir: bool):
+        data = json.dumps(c)
         db = await self.deps.db.get_redis()
-        await db.set(self.DB_KEY_MIMIR_LAST_STATE, data)
+        key = self.DB_KEY_NODE_MIMIR_LAST_STATE if is_node_mimir else self.DB_KEY_MIMIR_LAST_STATE
+        await db.set(key, data)
