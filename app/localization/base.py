@@ -14,7 +14,7 @@ from services.lib.explorers import get_explorer_url_to_address, Chains, get_expl
 from services.lib.money import format_percent, pretty_money, short_address, short_money, \
     calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset, short_dollar
 from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
-    up_down_arrow, bracketify, plural, grouper, join_as_numbered_list
+    up_down_arrow, bracketify, plural, grouper, join_as_numbered_list, regroup_joining
 from services.models.bep2 import BEP2Transfer, BEP2CEXFlow
 from services.models.cap_info import ThorCapInfo
 from services.models.last_block import BlockSpeed
@@ -1091,6 +1091,8 @@ class BaseLocalization(ABC):  # == English
 
         return messages
 
+    NODE_MIMIR_VOTING_GROUP_SIZE = 2
+
     def text_node_mimir_voting(self, holder: MimirHolder):
         title = '🏛️' + bold('Node-Mimir voting') + '\n\n'
         if not holder.voting_manager.all_voting:
@@ -1106,13 +1108,12 @@ class BaseLocalization(ABC):  # == English
             for option in voting.top_options:
                 pb = progressbar(option.number_votes, voting.active_nodes, 12) if option.progress > 0.1 else ''
                 extra = f'{option.need_votes_to_pass} more votes to pass' if option.need_votes_to_pass <= 5 else ''
-                msg += f"= {code(option.value)} ➔ {bold(format_percent(option.number_votes, voting.active_nodes))}" \
-                       f" ({option.number_votes}/{voting.active_nodes})" \
-                       f" {pb} {extra}\n"
+                msg += f"➔ {code(option.value)}: {bold(format_percent(option.number_votes, voting.active_nodes))}" \
+                       f" {pb} ({option.number_votes}/{voting.active_nodes}) {extra}\n"
 
             messages.append(msg)
 
-        return messages
+        return regroup_joining(self.NODE_MIMIR_VOTING_GROUP_SIZE, messages)
 
     # --------- TRADING HALTED ------------
 
