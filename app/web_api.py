@@ -3,12 +3,18 @@ import logging
 import os.path
 
 import uvicorn
+from slack_bolt.app.async_app import AsyncApp
+from slack_bolt.oauth.async_oauth_settings import AsyncOAuthSettings
+from slack_sdk.oauth.installation_store import FileInstallationStore
+from slack_sdk.oauth.state_store import FileOAuthStateStore
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
+from starlette.requests import Request
 from starlette.responses import JSONResponse
 from starlette.routing import Route, Mount
 from starlette.staticfiles import StaticFiles
 
+from services.dialog.slack.slack_bot import SlackBot
 from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
@@ -44,6 +50,7 @@ class AppSettingsAPI:
         )
 
         self.manager = SettingsManager(d.db, d.cfg)
+        self.slack = SlackBot(d.cfg)
 
     async def _on_startup(self):
         await self.deps.db.get_redis()
@@ -104,8 +111,15 @@ class AppSettingsAPI:
         await self.manager.revoke_token(channel_id)
         return JSONResponse({'channel': channel_id, 'status': 'revoked'})
 
+    async def _slack_handle(self, req: Request):
+        return await self.slack.slack_handler.handle(req)
+
     def _routes(self):
         return [
+            Route("/slack/events", endpoint=self._slack_handle, methods=["POST"]),
+            Route("/slack/install", endpoint=self._slack_handle, methods=["GET"]),
+            Route("/slack/oauth_redirect", endpoint=self._slack_handle, methods=["GET"]),
+
             Route('/api/settings/{token}', self._get_settings, methods=['GET']),
             Route('/api/settings/{token}', self._set_settings, methods=['POST']),
             Route('/api/settings/{token}', self._del_settings, methods=['DELETE']),

@@ -2,6 +2,7 @@ from io import BytesIO
 from typing import Optional
 
 from markdownify import markdownify
+from slack_bolt.adapter.starlette.async_handler import AsyncSlackRequestHandler
 from slack_bolt.async_app import AsyncApp
 from slack_bolt.oauth.async_oauth_settings import AsyncOAuthSettings
 from slack_sdk.oauth.installation_store import FileInstallationStore
@@ -52,8 +53,8 @@ from services.lib.utils import class_logger
 # await Event().wait()
 
 class SlackBot:
-    INSTALLATION_DIR = "./data/installations"
-    STATE_DIR = "./data/states"
+    INSTALLATION_DIR = "./data/slack_db/installations"
+    STATE_DIR = "./data/slack_db/states"
     SCOPES = [
         "channels:read",
         "chat:write", "im:history", 'reactions:write'
@@ -82,6 +83,7 @@ class SlackBot:
             signing_secret=cfg.as_str('slack.bot.singing_secret'),
             oauth_settings=oauth_settings,
         )
+        self.slack_handler = AsyncSlackRequestHandler(self.slack_app)
         self.setup_commands()
 
     async def send_message_to_channel(self, channel, text: Optional[str], picture=None, pic_name='pic.png',
