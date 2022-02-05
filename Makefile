@@ -11,7 +11,7 @@ help:
 
 build:
 	$(info Make: Building images.)
-	docker-compose build --no-cache $(BOTNAME) redis
+	docker-compose build --no-cache $(BOTNAME) api redis
 
 start:
 	$(info Make: Starting containers.)
