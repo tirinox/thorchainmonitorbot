@@ -65,7 +65,7 @@ slack: # (!) new!!
 web:  # (!) new!
   debug: false
   port: 8077
-  host: 127.0.0.1
+  host: 0.0.0.0
   public_url: https://settings.thornode.org
   #  public_url: https://test-settings.thornode.org
   serve_front_end: false  # false on production, this is work for nginx

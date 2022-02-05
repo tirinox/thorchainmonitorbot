@@ -60,7 +60,7 @@ services:
     networks:
       - redis-net
     volumes:
-      - ./web/frontend/:/staticfiles/
+      - ./web/frontend/:/web/frontend/
 #      - ./web/nginx-test.conf:/etc/nginx/nginx.conf:ro
       - ./web/nginx-test.conf:/etc/nginx/nginx.conf:ro
       - "./web/letsencrypt:/etc/letsencrypt:ro"
@@ -74,6 +74,8 @@ services:
     restart: always
     depends_on:
       - redis
+    ports:
+      - "8077:8077"
     environment:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_HOST=${REDIS_HOST}

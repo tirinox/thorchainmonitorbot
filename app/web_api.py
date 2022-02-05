@@ -136,6 +136,7 @@ class AppSettingsAPI:
         port = int(cfg.get('port', 8000))
         host = str(cfg.get('host', 'localhost'))
         # reload = bool(cfg.get('reload', False))
+        logging.info(f'THORBot Web API {host}:{port}')
         uvicorn.run(
             self.web_app, http='h11',
             loop='asyncio', port=port,
