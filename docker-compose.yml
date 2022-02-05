@@ -57,9 +57,12 @@ services:
       - "443:443"
     depends_on:
       - api
+    networks:
+      - redis-net
     volumes:
       - ./web/frontend/:/staticfiles/
-      - ./web/nginx.conf:/etc/nginx/nginx.conf:ro
+#      - ./web/nginx-test.conf:/etc/nginx/nginx.conf:ro
+      - ./web/nginx-test.conf:/etc/nginx/nginx.conf:ro
       - "./web/letsencrypt:/etc/letsencrypt:ro"
     environment:
       CERTBOT_EMAIL: developer@tirinox.ru

@@ -56,6 +56,6 @@ redis-sv-loc:
 certbot:
 	make stop
 	sudo certbot certonly --standalone -w ./web/frontend -d "${DOMAIN}"
-	sudo rm -rf "web/letsencrypt/${DOMAIN}/"
-	sudo cp -rL "/etc/letsencrypt/live/${DOMAIN}/" letsencrypt/
+	sudo rm -rf "./web/letsencrypt/${DOMAIN}/"
+	sudo cp -rL "/etc/letsencrypt/live/${DOMAIN}/" "./web/letsencrypt/"
 	make start

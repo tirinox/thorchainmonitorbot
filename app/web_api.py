@@ -3,10 +3,6 @@ import logging
 import os.path
 
 import uvicorn
-from slack_bolt.app.async_app import AsyncApp
-from slack_bolt.oauth.async_oauth_settings import AsyncOAuthSettings
-from slack_sdk.oauth.installation_store import FileInstallationStore
-from slack_sdk.oauth.state_store import FileOAuthStateStore
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
 from starlette.requests import Request
@@ -115,6 +111,15 @@ class AppSettingsAPI:
         return await self.slack.slack_handler.handle(req)
 
     def _routes(self):
+        other = []
+
+        serve_front_end = self.deps.cfg.get_pure('web.serve_front_end', False)
+        if serve_front_end:
+            other.append(Mount('/', app=StaticFiles(
+                directory=os.path.abspath('../web/frontend'),
+                html=True,
+            ), name="frontend"))
+
         return [
             Route("/slack/events", endpoint=self._slack_handle, methods=["POST"]),
             Route("/slack/install", endpoint=self._slack_handle, methods=["GET"]),
@@ -123,10 +128,7 @@ class AppSettingsAPI:
             Route('/api/settings/{token}', self._get_settings, methods=['GET']),
             Route('/api/settings/{token}', self._set_settings, methods=['POST']),
             Route('/api/settings/{token}', self._del_settings, methods=['DELETE']),
-            Mount('/', app=StaticFiles(
-                directory=os.path.abspath('../web/frontend'),
-                html=True,
-            ), name="frontend"),
+            *other,
         ]
 
     def run(self):
