@@ -71,9 +71,11 @@ class SlackBot:
         # # noinspection PyTypeChecker
         # self.client.socket_mode_request_listeners.append(self._process)
 
+        slack_client_id = cfg.as_str('slack.bot.client_id')
+        slack_client_secret = cfg.as_str('slack.bot.client_secret')
         oauth_settings = AsyncOAuthSettings(
-            client_id=cfg.as_str('slack.bot.client_id'),
-            client_secret=cfg.as_str('slack.bot.client_secret'),
+            client_id=slack_client_id,
+            client_secret=slack_client_secret,
             scopes=self.SCOPES,
             installation_store=FileInstallationStore(base_dir=self.INSTALLATION_DIR),
             state_store=FileOAuthStateStore(expiration_seconds=600, base_dir=self.STATE_DIR),

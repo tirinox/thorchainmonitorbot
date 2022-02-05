@@ -52,3 +52,10 @@ redis-cli:
 redis-sv-loc:
 	cd redis_data
 	redis-server
+
+certbot:
+	make stop
+	sudo certbot certonly --standalone -w ./web/frontend -d "${DOMAIN}"
+	sudo rm -rf "web/letsencrypt/${DOMAIN}/"
+	sudo cp -rL "/etc/letsencrypt/live/${DOMAIN}/" letsencrypt/
+	make start

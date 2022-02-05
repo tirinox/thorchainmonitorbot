@@ -124,7 +124,7 @@ class AppSettingsAPI:
             Route('/api/settings/{token}', self._set_settings, methods=['POST']),
             Route('/api/settings/{token}', self._del_settings, methods=['DELETE']),
             Mount('/', app=StaticFiles(
-                directory=os.path.abspath('./data/web/settings_front_build'),
+                directory=os.path.abspath('../web/frontend'),
                 html=True,
             ), name="frontend"),
         ]
