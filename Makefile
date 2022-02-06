@@ -30,7 +30,7 @@ restart:
 	@make -s start
 
 poke:
-	@docker-compose restart thtgbot
+	@docker-compose restart thtgbot api
 
 pull:
 	@git pull
@@ -56,6 +56,17 @@ redis-sv-loc:
 certbot:
 	make stop
 	sudo certbot certonly --standalone -w ./web/frontend -d "${DOMAIN}"
+	# todo: fix paths!
 	sudo rm -rf "./web/letsencrypt/${DOMAIN}/"
 	sudo cp -rL "/etc/letsencrypt/live/${DOMAIN}/" "./web/letsencrypt/"
 	make start
+
+NODE_OP_SETT_DIR = ./temp/nodeop-settings
+
+buildf:
+	mkdir -p ${NODE_OP_SETT_DIR}
+	cd temp; git clone https://github.com/tirinox/nodeop-settings || true
+	git pull
+	cd ${NODE_OP_SETT_DIR}; yarn install; yarn build
+	rm -rf ./web/frontend/*
+	mv ${NODE_OP_SETT_DIR}/dist/* ./web/frontend/
