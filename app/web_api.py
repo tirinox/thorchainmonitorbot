@@ -46,7 +46,7 @@ class AppSettingsAPI:
         )
 
         self.manager = SettingsManager(d.db, d.cfg)
-        self.slack = SlackBot(d.cfg)
+        self.slack = SlackBot(d.cfg, d.db)
 
     async def _on_startup(self):
         await self.deps.db.get_redis()

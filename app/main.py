@@ -244,7 +244,7 @@ class App:
             d.discord_bot.start_in_background()
 
         if d.cfg.get('slack.enabled', False):
-            d.slack_bot = SlackBot(d.cfg)
+            d.slack_bot = SlackBot(d.cfg, d.db)
             d.slack_bot.start_in_background()
 
         if d.cfg.get('bep2.enabled', True):
