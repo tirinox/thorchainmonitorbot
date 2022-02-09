@@ -305,6 +305,9 @@ node_info:
 
   personal:
     enabled: true
+    # 'most_common' or 'max' or  'max_committee' (default)
+    top_height_estimation_method: 'max_committee'
+    min_committee_members: 3
 
 
 constants:

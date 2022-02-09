@@ -86,7 +86,7 @@ class Config(SubConfig):
     def __init__(self, name=None, data=None):
         load_dotenv(self.DEFAULT_ENV_FILE)
 
-        if not data:
+        if data is None:
             if name:
                 self._config_name = name
             else:
@@ -97,5 +97,5 @@ class Config(SubConfig):
 
         super().__init__(data)
 
-        self.network_id = self.get('thor.network_id')
+        self.network_id = self.get('thor.network_id', NetworkIdents.CHAOSNET_MULTICHAIN)
         self.is_midgard_v2 = self.network_id in (NetworkIdents.TESTNET_MULTICHAIN, NetworkIdents.CHAOSNET_MULTICHAIN)

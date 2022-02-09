@@ -1,17 +1,21 @@
-from collections import defaultdict
+from collections import defaultdict, Counter
 from typing import Optional
 
 from services.lib.constants import Chains
 from services.lib.date_utils import parse_timespan_to_seconds, HOUR
 from services.lib.depcont import DepContainer
-from services.lib.utils import most_common, estimate_max_by_committee
+from services.lib.utils import most_common, estimate_max_by_committee, sep
 from services.models.node_info import NodeEvent, NodeEventType, EventBlockHeight
 from services.models.thormon import ThorMonAnswer
-from services.notify.personal.user_data import UserDataCache
 from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
+from services.notify.personal.user_data import UserDataCache
 
 
 class ChainHeightTracker(BaseChangeTracker):
+    METHOD_MOST_COMMON = 'most_common'
+    METHOD_MAXIMUM = 'max'
+    METHOD_MAX_COMMITTEE = 'max_committee'
+
     def __init__(self, deps: DepContainer):
         self.deps = deps
         self.block_times = dict(deps.cfg.get_pure('blockchain.block_time', {}))
@@ -20,6 +24,11 @@ class ChainHeightTracker(BaseChangeTracker):
 
         self.recent_max_blocks = {}
         self.cache: Optional[UserDataCache] = None
+
+        self.chain_height_method = deps.cfg.as_str('node_info.personal.top_height_estimation_method',
+                                                   self.METHOD_MAX_COMMITTEE)
+        self.min_committee = deps.cfg.as_int('node_info.personal.min_committee_members', 3)
+        self.debug = False
 
     def get_block_time(self, chain):
         return self.block_times.get(chain, Chains.block_time_default(chain))
@@ -52,29 +61,42 @@ class ChainHeightTracker(BaseChangeTracker):
     def estimate_block_height_max_by_committee(data: ThorMonAnswer, committee_members_min):
         chain_block_height = defaultdict(list)
         for node in data.nodes:
-            for name, chain_info in node.observe_chains.items():
+            for chain_name, chain_info in node.observe_chains.items():
                 if chain_info.valid:
-                    chain_block_height[name].append(chain_info.height)
+                    chain_block_height[chain_name].append(chain_info.height)
 
         return {chain: estimate_max_by_committee(
             height_list,
-            minimal_members=committee_members_min
+            minimal_members=committee_members_min,
         ) for chain, height_list in chain_block_height.items()}
 
-    def estimate_block_height(self, data: ThorMonAnswer, method='max_committee'):
-        if method == 'max':
+    def estimate_block_height(self, data: ThorMonAnswer):
+        prev_last_blocks = self.recent_max_blocks
+        method = self.chain_height_method
+        if method == self.METHOD_MAXIMUM:
             self.recent_max_blocks = self.estimate_block_height_maximum(data)
-        elif method == 'most_common':
+        elif method == self.METHOD_MOST_COMMON:
             self.recent_max_blocks = self.estimate_block_height_most_common(data)
-        elif method == 'max_committee':
-            self.recent_max_blocks = self.estimate_block_height_max_by_committee(data, committee_members_min=3)
+        elif method == self.METHOD_MAX_COMMITTEE:
+            self.recent_max_blocks = self.estimate_block_height_max_by_committee(
+                data, committee_members_min=self.min_committee)
         else:
             raise ValueError(f'unknown method: {method}')
 
-        # # fixme: debug(!) ------ 8< -------
-        # print('got height (!)', self.recent_max_blocks)  # fixme; debug (!)
-        # print('max height (!)', self.estimate_block_height_maximum(data))
-        # # fixme: debug(!) ------ 8< -------
+        if self.debug:
+            sep()
+            print('last height (!)', prev_last_blocks)
+            print('got  height (!)', self.recent_max_blocks)
+            print('max  height (!)', dict(self.estimate_block_height_maximum(data)))
+            keys = list(sorted(prev_last_blocks.keys()))
+            for k in keys:
+                variants = (t.observe_chains.get(k).height for t in data.nodes if k in t.observe_chains)
+                variants = Counter(variants)
+                old_v = prev_last_blocks.get(k)
+                new_v = self.recent_max_blocks.get(k)
+                delta = new_v - old_v if isinstance(old_v, int) and isinstance(new_v, int) else 'N/A'
+                print(f"{k}: {old_v} => {new_v}; delta = {delta}; variants = {variants}")
+            sep()
 
     KEY_SYNC_STATE = 'sync'
 
