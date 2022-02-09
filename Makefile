@@ -66,7 +66,7 @@ NODE_OP_SETT_DIR = ./temp/nodeop-settings
 buildf:
 	mkdir -p ${NODE_OP_SETT_DIR}
 	cd temp; git clone https://github.com/tirinox/nodeop-settings || true
-	git pull
+	cd ${NODE_OP_SETT_DIR}; git pull
 	cd ${NODE_OP_SETT_DIR}; yarn install; yarn build
 	rm -rf ./web/frontend/*
 	mv ${NODE_OP_SETT_DIR}/dist/* ./web/frontend/
