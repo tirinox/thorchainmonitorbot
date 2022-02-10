@@ -2,7 +2,9 @@ import asyncio
 import logging
 import random
 import time
+from dataclasses import dataclass
 from io import BytesIO
+from typing import List
 
 from aiogram.utils import exceptions
 
@@ -21,14 +23,35 @@ def copy_photo(p: BytesIO):
     return new
 
 
-class Broadcaster:
-    KEY_USERS = 'thbot_users'
+@dataclass
+class ChannelDescriptor:
+    type: str
+    name: str
+    id: int = 0
+    lang: str = 'eng'
 
-    EXTRA_RETRY_DELAY = 0.1
+    @classmethod
+    def from_json(cls, j):
+        return cls(
+            str(j.get('type')).strip().lower(),
+            j.get('name', ''),
+            int(j.get('id', 0)),
+            j.get('lang', 'eng'),
+        )
+
+    @property
+    def channel_id(self):
+        return self.id or self.name
 
     TYPE_TELEGRAM = 'telegram'
     TYPE_DISCORD = 'discord'
     TYPE_SLACK = 'slack'
+
+
+class Broadcaster:
+    KEY_USERS = 'thbot_users'
+
+    EXTRA_RETRY_DELAY = 0.1
 
     def __init__(self, d: DepContainer):
         self.deps = d
@@ -37,23 +60,15 @@ class Broadcaster:
         self._broadcast_lock = asyncio.Lock()
         self._rng = random.Random(time.time())
         self.logger = logging.getLogger('broadcast')
-        self.channels = list(self.deps.cfg.get_pure('channels'))
+        self.channels = list(ChannelDescriptor.from_json(j) for j in self.deps.cfg.get_pure('channels'))
 
     def get_channels(self, chan_type):
-        return [c for c in self.channels if c['type'].lower() == chan_type]
-
-    @staticmethod
-    def get_channel_id(channel_info):
-        ident = channel_info.get('id')
-        if ident:
-            return int(ident)
-        else:
-            return channel_info.get('name')
+        return [c for c in self.channels if c.type == chan_type]
 
     async def notify_preconfigured_channels(self, f, *args, **kwargs):
         loc_man: LocalizationManager = self.deps.loc_man
         user_lang_map = {
-            self.get_channel_id(chan): loc_man.get_from_lang(chan['lang'])
+            chan.channel_id: loc_man.get_from_lang(chan.lang)
             for chan in self.channels
         }
 
@@ -169,20 +184,20 @@ class Broadcaster:
             self.logger.exception(f'Slack exception {e}, {message_type = }, text = "{text}"!')
             return False
 
-    async def safe_send_message(self, channel_info, text, message_type=MessageType.TEXT, *args, **kwargs) -> bool:
-        chan_type = str(channel_info['type']).strip().lower()
-        chan_id = self.get_channel_id(channel_info)
-        if chan_type == self.TYPE_TELEGRAM:
+    async def safe_send_message(self, channel_info: ChannelDescriptor,
+                                text, message_type=MessageType.TEXT, *args, **kwargs) -> bool:
+        chan_id = channel_info.channel_id
+        if channel_info.type == channel_info.TYPE_TELEGRAM:
             return await self.safe_send_message_tg(chan_id, text, message_type, *args, **kwargs)
-        elif chan_type == self.TYPE_DISCORD:
+        elif channel_info.type == channel_info.TYPE_DISCORD:
             return await self.safe_send_message_discord(chan_id, text, message_type, *args, **kwargs)
-        elif chan_type == self.TYPE_SLACK:
+        elif channel_info.type == channel_info.TYPE_SLACK:
             return await self.safe_send_message_slack(chan_id, text, message_type, *args, **kwargs)
         else:
-            self.logger.error(f'unsupported channel type: {chan_type}!')
+            self.logger.error(f'unsupported channel type: {channel_info.type}!')
             return False
 
-    async def broadcast(self, channels: list, message, delay=0.075,
+    async def broadcast(self, channels: List[ChannelDescriptor], message, delay=0.075,
                         message_type=MessageType.TEXT, remove_bad_users=False,
                         *args, **kwargs) -> int:
         async with self._broadcast_lock:
@@ -193,13 +208,11 @@ class Broadcaster:
                 # chat_ids = self.sort_and_shuffle_chats(chat_ids)
 
                 for channel_info in channels:
-                    chat_id = self.get_channel_id(channel_info)
-
                     extra = {}
                     if isinstance(message, str):
                         text = message
                     elif callable(message):
-                        message_result = await message(chat_id, *args, **kwargs)
+                        message_result = await message(channel_info.channel_id, *args, **kwargs)
                         if isinstance(message_result, BoardMessage):
                             message_type = message_result.message_type
                             if message_result.message_type is MessageType.PHOTO:
@@ -216,7 +229,7 @@ class Broadcaster:
                                                         disable_notification=False, **extra):
                             count += 1
                         else:
-                            bad_ones.append(chat_id)
+                            bad_ones.append(channel_info.channel_id)
                         await asyncio.sleep(delay)  # 10 messages per second (Limit: 30 messages per second)
 
                 if remove_bad_users:

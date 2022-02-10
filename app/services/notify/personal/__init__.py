@@ -14,6 +14,7 @@ from services.lib.utils import class_logger
 from services.models.node_info import NodeSetChanges, NodeEvent
 from services.models.node_watchers import NodeWatcherStorage
 from services.models.thormon import ThorMonAnswer
+from services.notify.broadcast import ChannelDescriptor
 from services.notify.personal.bond import BondTracker
 from services.notify.personal.chain_height import ChainHeightTracker
 from services.notify.personal.churning import NodeChurnTracker
@@ -151,7 +152,12 @@ class NodeChangePersonalNotifier(INotified):
                 text = '\n\n'.join(m for m in messages if m)
                 text = text.strip()
                 if text:
-                    asyncio.create_task(self.deps.broadcaster.safe_send_message_tg(user, text))
+                    # task = self.deps.broadcaster.safe_send_message_tg(user, text)
+
+                    # todo! send to slack too
+                    chan_type = ChannelDescriptor.TYPE_TELEGRAM
+                    task = self.deps.broadcaster.safe_send_message(ChannelDescriptor(chan_type, user), text)
+                    asyncio.create_task(task)
 
     @staticmethod
     async def _filter_events(event_list: List[NodeEvent], user_id, settings: dict) -> List[NodeEvent]:

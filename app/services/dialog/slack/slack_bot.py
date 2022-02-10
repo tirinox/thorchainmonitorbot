@@ -9,7 +9,10 @@ from slack_sdk.oauth.installation_store import FileInstallationStore
 from slack_sdk.oauth.state_store import FileOAuthStateStore
 from slack_sdk.web.async_client import AsyncWebClient
 
+from localization import LocalizationManager
+from services.dialog.picture.price_picture import price_graph_from_db
 from services.lib.config import Config
+from services.lib.date_utils import DAY
 from services.lib.db import DB
 from services.lib.draw_utils import img_to_bio
 from services.lib.nop_links import SettingsManager
@@ -19,24 +22,20 @@ from services.lib.utils import class_logger
 
 SLACK_MESSENGER = 'Slack'
 
+
 class SlackBot:
     INSTALLATION_DIR = "./data/slack_db/installations"
     STATE_DIR = "./data/slack_db/states"
     SCOPES = [
         "channels:read",
-        "chat:write", "im:history", 'reactions:write'
+        "chat:write", "im:history", 'reactions:write',
+        'files:write',
     ]
 
     def __init__(self, cfg: Config, db: DB):
         self.logger = class_logger(self)
-        # self.client = SocketModeClient(
-        #     # This app-level token will be used only for establishing a connection
-        #     app_token=cfg.as_str('slack.bot.app_token'),  # xapp-A111-222-xyz
-        #     # You will be using this WebClient for performing Web API calls in listeners
-        #     web_client=AsyncWebClient(token=cfg.as_str('slack.bot.bot_token'))  # xoxb-111-222-xyz
-        # )
-        # # noinspection PyTypeChecker
-        # self.client.socket_mode_request_listeners.append(self._process)
+        self.db = db
+        self.cfg = cfg
 
         slack_client_id = cfg.as_str('slack.bot.client_id')
         slack_client_secret = cfg.as_str('slack.bot.client_secret')
@@ -58,8 +57,7 @@ class SlackBot:
 
         self._settings_manager = SettingsManager(db, cfg)
 
-
-    async def send_message_to_channel(self, channel, text: Optional[str], picture=None, pic_name='pic.png',
+    async def send_message_to_channel(self, channel, text: Optional[str] = '', picture=None, pic_name='pic.png',
                                       need_convert=True):
         if need_convert:
             text = markdownify(text)
@@ -74,10 +72,12 @@ class SlackBot:
                 channel=channel,
             )
         else:
-            response = await self.slack_app.client.chat_postMessage(channel=channel,
-                                                                    text=text)
+            response = await self.slack_app.client.chat_postMessage(
+                channel=channel,
+                text=text,
+                mrkdwn=True)
 
-        self.logger.info(f'Slack: {response.data}')
+        self.logger.info(f'Slack response: {response.data}')
 
     def setup_commands(self):
         app = self.slack_app
@@ -96,6 +96,7 @@ class SlackBot:
                 url = self._settings_manager.get_link(token)
 
                 user_id = body.get('user_id')
+                # todo: localization!
                 await ack(f"Settings for <@{user_id}> your link is {url}!")
 
         @app.command("/pause")
@@ -103,28 +104,43 @@ class SlackBot:
             user_id = body["user_id"]
             await ack(f"Pause <@{user_id}>!")
             print(body)
+            # todo
 
         @app.command("/go")
         async def go_command(ack, body):
             user_id = body["user_id"]
             await ack(f"Go <@{user_id}>!")
             print(body)
+            # todo
 
+        # fixme: debug
         @app.message("knock")
         async def ask_who(message, say):
             print(message)
             await say("_Who's there?_")
 
-        @app.event("message")
-        async def handle_message_events(body, logger, client: AsyncWebClient):
-            logger.info(body)
-            user = body.get('event', {}).get('user')
-            if user:
-                info = await client.users_profile_get(user=user, include_labels=True)
-                print('---- user: ----')
-                print(info)
-                print('---------------')
+        # fixme: debug
+        @app.message("rune price")
+        async def ask_who(message):
+            print(message)
+            channel = message['channel']
 
+            period = 7 * DAY
+            graph = await price_graph_from_db(self.db, LocalizationManager(self.cfg).default, period=period)
+
+            await self.send_message_to_channel(channel, picture=graph, text='Rune Price')
+
+        # @app.event("message")
+        # async def handle_message_events(body, logger, client: AsyncWebClient):
+        #     logger.info(body)
+        #     user = body.get('event', {}).get('user')
+        #     if user:
+        #         info = await client.users_profile_get(user=user, include_labels=True)
+        #         print('---- user: ----')
+        #         print(info)
+        #         print('---------------')
+
+        # fixme: remove?
         @app.shortcut("open_settings")
         async def handle_shortcuts(ack, body, logger):
             await ack()

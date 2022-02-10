@@ -14,6 +14,7 @@ class NodeWatchInfo:
 
 
 class NodeWatcherStorage:
+    # todo: combine user_id as actual UserID and channel type (Telegram/Slack/Discord)
     def __init__(self, db: DB, user_id: str = ''):
         self.db = db
         self.user_id = user_id
