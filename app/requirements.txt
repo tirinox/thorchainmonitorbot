@@ -15,6 +15,7 @@ charset-normalizer==2.0.6
 # discord.py==1.7.3
 idna==3.2
 iniconfig==1.1.1
+html-slacker>=0.1.6
 markdownify==0.10.1
 multidict==5.1.0
 numpy==1.21.2

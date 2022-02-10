@@ -1,7 +1,7 @@
 from io import BytesIO
 from typing import Optional
 
-from markdownify import markdownify
+from htmlslacker import HTMLSlacker
 from slack_bolt.adapter.starlette.async_handler import AsyncSlackRequestHandler
 from slack_bolt.async_app import AsyncApp
 from slack_bolt.oauth.async_oauth_settings import AsyncOAuthSettings
@@ -59,7 +59,7 @@ class SlackBot:
     async def send_message_to_channel(self, channel, text: Optional[str] = '', picture=None, pic_name='pic.png',
                                       need_convert=True):
         if need_convert:
-            text = markdownify(text)
+            text = self.convert_html_to_my_format(text)
 
         if picture:
             if not isinstance(picture, BytesIO):
@@ -74,9 +74,11 @@ class SlackBot:
             response = await self.slack_app.client.chat_postMessage(
                 channel=channel,
                 text=text,
-                mrkdwn=True)
+                mrkdwn=True,
+                unfurl_links=False
+            )
 
-        # self.logger.info(f'Slack response: {response.data}')
+        self.logger.debug(f'Slack response: {response.data}')
 
     def setup_commands(self):
         app = self.slack_app
@@ -152,3 +154,7 @@ class SlackBot:
 
     def start_in_background(self):
         ...
+
+    @staticmethod
+    def convert_html_to_my_format(text):
+        return HTMLSlacker(text).get_output()
