@@ -51,6 +51,7 @@ class SlackBot:
         self.slack_app = AsyncApp(
             signing_secret=cfg.as_str('slack.bot.singing_secret'),
             oauth_settings=oauth_settings,
+            token=cfg.as_str('slack.bot.bot_token')
         )
         self.slack_handler = AsyncSlackRequestHandler(self.slack_app)
         self.setup_commands()
@@ -128,6 +129,9 @@ class SlackBot:
         async def handle_shortcuts(ack, body, logger):
             await ack()
             logger.info(body)
+
+    async def test_send_message(self, msg='Hello *Slack*!'):
+        await self.slack_app.client.chat_postMessage(channel='C02L2AVS937', text=msg, mrkdwn=True)
 
     def start_in_background(self):
         ...

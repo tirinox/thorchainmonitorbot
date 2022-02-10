@@ -50,7 +50,6 @@ class AppSettingsAPI:
 
     async def _on_startup(self):
         await self.deps.db.get_redis()
-        # print(await self.manager.generate_new_token('test_c'))  # debug
 
     async def _get_settings(self, request):
         token = request.path_params.get('token')

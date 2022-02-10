@@ -60,6 +60,10 @@ slack: # (!) new!!
   bot:
     app_token: xapp-1234134567
     bot_token: xoxb-57890
+    client_id: "123.345"  # (!) new!
+    client_secret: 1234567890abcdef
+    singing_secret: 1234567890abcdef
+
 
 
 web:  # (!) new!
