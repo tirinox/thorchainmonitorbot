@@ -9,6 +9,7 @@ from aiogram.utils.helper import HelperMode
 from localization import BaseLocalization
 from services.dialog.base import BaseDialog, message_handler, query_handler
 from services.jobs.node_churn import NodeStateDatabase
+from services.lib.constants import Messengers
 from services.lib.date_utils import parse_timespan_to_seconds, HOUR
 from services.lib.depcont import DepContainer
 from services.lib.nop_links import SettingsManager
@@ -19,8 +20,6 @@ from services.models.node_info import NodeInfo
 from services.models.node_watchers import NodeWatcherStorage
 from services.notify.personal.helpers import NodeOpSetting, STANDARD_INTERVALS
 
-
-TELEGRAM_MESSENGER = 'Telegram'
 
 class NodeOpStates(StatesGroup):
     mode = HelperMode.snake_case
@@ -109,15 +108,14 @@ class NodeOpDialog(BaseDialog):
     async def on_web_setup(self, query: CallbackQuery):
         loc = self.loc
         user_id = self.user_id(query.message)
-        settings = SettingsManager(self.deps.db, self.deps.cfg)
-        token = await settings.generate_new_token(user_id)
+        settings_man = SettingsManager(self.deps.db, self.deps.cfg)
+        token = await settings_man.generate_new_token(user_id)
 
-        self._settings[settings.KEY_MESSENGER] = {
-            'platform': TELEGRAM_MESSENGER,
-            'username': query.from_user.username,
-            'name': query.from_user.full_name,
-        }
-        url = settings.get_link(token)
+        settings_man.set_messenger_data(self._settings,
+                                        Messengers.TELEGRAM,
+                                        query.from_user.username,
+                                        query.from_user.full_name)
+        url = settings_man.get_link(token)
 
         await NodeOpStates.GET_WEB_LINK.set()
         await query.message.edit_text(

@@ -1,6 +1,7 @@
 import ujson
 
 from services.lib.config import Config
+from services.lib.constants import Messengers
 from services.lib.db import DB
 from services.lib.db_one2one import OneToOne
 from services.lib.utils import class_logger, random_hex
@@ -39,6 +40,20 @@ class SettingsManager:
             return {}
         data = await self.db.redis.get(self.db_key_settings(channel_id))
         return ujson.loads(data) if data else {}
+
+    @classmethod
+    def set_messenger_data(cls, settings: dict, platform=Messengers.TELEGRAM, username='?', channel_name='?'):
+        settings[cls.KEY_MESSENGER] = {
+            'platform': platform,
+            'username': username,
+            'name': channel_name,
+        }
+        return settings
+
+    @classmethod
+    def get_platform(cls, settings: dict):
+        messenger = settings.get(cls.KEY_MESSENGER, {})
+        return messenger.get('platform', Messengers.TELEGRAM).lower()
 
     async def get_settings_from_token(self, token: str):
         channel = await self.token_channel_db.get(token)

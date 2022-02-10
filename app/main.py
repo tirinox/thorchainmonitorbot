@@ -37,7 +37,7 @@ from services.models.mimir import MimirHolder
 from services.models.price import LastPriceHolder
 from services.models.tx import ThorTxType
 from services.notify.broadcast import Broadcaster
-from services.notify.personal import NodeChangePersonalNotifier
+from services.notify.personal.personal_main import NodeChangePersonalNotifier
 from services.notify.types.bep2_notify import BEP2MoveNotifier
 from services.notify.types.best_pool_notify import BestPoolsNotifier
 from services.notify.types.block_notify import BlockHeightNotifier

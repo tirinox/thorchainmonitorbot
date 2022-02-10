@@ -9,6 +9,7 @@ from services.jobs.fetch.base import INotified
 from services.jobs.fetch.thormon import ThorMonWSSClient
 from services.lib.date_utils import HOUR, MINUTE
 from services.lib.depcont import DepContainer
+from services.lib.nop_links import SettingsManager
 from services.lib.texts import grouper
 from services.lib.utils import class_logger
 from services.models.node_info import NodeSetChanges, NodeEvent
@@ -97,8 +98,8 @@ class NodeChangePersonalNotifier(INotified):
         await self._cast_messages_for_events(events)
 
     async def _get_user_settings(self, user_id):
-        context = self.deps.dp.current_state(chat=user_id, user=user_id)
-        return await context.get_data()
+        manager = SettingsManager(self.deps.db, self.deps.cfg)
+        return await manager.get_settings(user_id)
 
     async def _cast_messages_for_events(self, events: List[NodeEvent]):
         if not events:
@@ -135,8 +136,11 @@ class NodeChangePersonalNotifier(INotified):
             loc = await loc_man.get_from_db(user, self.deps.db)
 
             settings = await self._get_user_settings(user)
-            if settings.get(NodeOpSetting.PAUSE_ALL_ON, False):
+
+            if bool(settings.get(NodeOpSetting.PAUSE_ALL_ON, False)):
                 continue  # skip those who paused all the events.
+
+            platform = SettingsManager.get_platform(settings)
 
             # filter changes according to the user's setting
             filtered_change_list = await self._filter_events(event_list, user, settings)
@@ -153,10 +157,7 @@ class NodeChangePersonalNotifier(INotified):
                 text = text.strip()
                 if text:
                     # task = self.deps.broadcaster.safe_send_message_tg(user, text)
-
-                    # todo! send to slack too
-                    chan_type = ChannelDescriptor.TYPE_TELEGRAM
-                    task = self.deps.broadcaster.safe_send_message(ChannelDescriptor(chan_type, user), text)
+                    task = self.deps.broadcaster.safe_send_message(ChannelDescriptor(platform, user), text)
                     asyncio.create_task(task)
 
     @staticmethod

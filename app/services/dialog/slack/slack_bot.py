@@ -7,20 +7,19 @@ from slack_bolt.async_app import AsyncApp
 from slack_bolt.oauth.async_oauth_settings import AsyncOAuthSettings
 from slack_sdk.oauth.installation_store import FileInstallationStore
 from slack_sdk.oauth.state_store import FileOAuthStateStore
-from slack_sdk.web.async_client import AsyncWebClient
 
 from localization import LocalizationManager
 from services.dialog.picture.price_picture import price_graph_from_db
 from services.lib.config import Config
+from services.lib.constants import Messengers
 from services.lib.date_utils import DAY
 from services.lib.db import DB
 from services.lib.draw_utils import img_to_bio
 from services.lib.nop_links import SettingsManager
 from services.lib.utils import class_logger
 
-# example: https://github.com/slackapi/bolt-python/blob/main/examples/starlette/async_oauth_app.py
 
-SLACK_MESSENGER = 'Slack'
+# example: https://github.com/slackapi/bolt-python/blob/main/examples/starlette/async_oauth_app.py
 
 
 class SlackBot:
@@ -77,7 +76,7 @@ class SlackBot:
                 text=text,
                 mrkdwn=True)
 
-        self.logger.info(f'Slack response: {response.data}')
+        # self.logger.info(f'Slack response: {response.data}')
 
     def setup_commands(self):
         app = self.slack_app
@@ -88,11 +87,13 @@ class SlackBot:
             async with self._settings_manager.get_context(channel_id) as settings:
                 token = await self._settings_manager.generate_new_token(channel_id)
 
-                settings[self._settings_manager.KEY_MESSENGER] = {
-                    'platform': SLACK_MESSENGER,
-                    'username': body.get('user_name', 'user'),
-                    'name': body.get('channel_name', '-'),
-                }
+                self._settings_manager.set_messenger_data(
+                    settings,
+                    platform=Messengers.SLACK,
+                    username=body.get('user_name', 'user'),
+                    channel_name=body.get('channel_name', '-'),
+                )
+
                 url = self._settings_manager.get_link(token)
 
                 user_id = body.get('user_id')

@@ -11,6 +11,7 @@ from aiogram.utils import exceptions
 from localization import LocalizationManager
 from services.dialog.discord.discord_bot import DiscordBot
 from services.dialog.slack.slack_bot import SlackBot
+from services.lib.constants import Messengers
 from services.lib.depcont import DepContainer
 from services.lib.telegram import TelegramStickerDownloader
 from services.lib.texts import MessageType, BoardMessage
@@ -42,10 +43,6 @@ class ChannelDescriptor:
     @property
     def channel_id(self):
         return self.id or self.name
-
-    TYPE_TELEGRAM = 'telegram'
-    TYPE_DISCORD = 'discord'
-    TYPE_SLACK = 'slack'
 
 
 class Broadcaster:
@@ -187,11 +184,11 @@ class Broadcaster:
     async def safe_send_message(self, channel_info: ChannelDescriptor,
                                 text, message_type=MessageType.TEXT, *args, **kwargs) -> bool:
         chan_id = channel_info.channel_id
-        if channel_info.type == channel_info.TYPE_TELEGRAM:
+        if channel_info.type == Messengers.TELEGRAM:
             return await self.safe_send_message_tg(chan_id, text, message_type, *args, **kwargs)
-        elif channel_info.type == channel_info.TYPE_DISCORD:
+        elif channel_info.type == Messengers.DISCORD:
             return await self.safe_send_message_discord(chan_id, text, message_type, *args, **kwargs)
-        elif channel_info.type == channel_info.TYPE_SLACK:
+        elif channel_info.type == Messengers.SLACK:
             return await self.safe_send_message_slack(chan_id, text, message_type, *args, **kwargs)
         else:
             self.logger.error(f'unsupported channel type: {channel_info.type}!')

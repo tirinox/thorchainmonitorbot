@@ -2,6 +2,13 @@ from aiothornode.env import TEST_NET_ENVIRONMENT_MULTI_1, MULTICHAIN_CHAOSNET_EN
 
 from services.lib.date_utils import MINUTE
 
+
+class Messengers:
+    TELEGRAM = 'telegram'
+    SLACK = 'slack'
+    DISCORD = 'discord'
+
+
 BNB_BNB_SYMBOL = 'BNB.BNB'
 
 BNB_BUSD_SYMBOL = 'BNB.BUSD-BD1'

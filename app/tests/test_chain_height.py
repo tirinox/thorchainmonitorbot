@@ -1,7 +1,7 @@
 from services.lib.config import Config
 from services.lib.depcont import DepContainer
 from services.models.thormon import ThorMonAnswer, ThorMonNode, ThorMonChainHeight
-from services.notify.personal import ChainHeightTracker
+from services.notify.personal.chain_height import ChainHeightTracker
 
 
 def make_node_h(btc, eth):
