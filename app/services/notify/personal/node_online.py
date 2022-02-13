@@ -10,7 +10,7 @@ from services.notify.personal.telemetry import NodeTelemetryDatabase
 
 TimeStampedList = List[Tuple[float, bool]]
 
-SERVICES = ['rpc', 'midgard', 'thor', 'bifrost']
+SERVICES = ['rpc', 'bifrost']
 
 
 class NodeOnlineTracker(BaseChangeTracker):
