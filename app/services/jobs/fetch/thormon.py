@@ -1,3 +1,5 @@
+import json
+import os.path
 from datetime import datetime
 from typing import NamedTuple, Optional
 
@@ -41,6 +43,9 @@ class ThorMonWSSClient(WSClient, WithDelegates):
         self.last_message_ts = now_ts()
 
         if isinstance(message, dict):
+            # self._dbg_save_to_file(message)  # fixme
+            message = self._dbg_read_from_file(data=message)  # fixme: debug
+
             answer = ThorMonAnswer.from_json(message)
             if answer.nodes:
                 self.logger.debug(f'Got WSS message. {len(answer.nodes)}, {answer.last_block = }')
@@ -54,6 +59,27 @@ class ThorMonWSSClient(WSClient, WithDelegates):
         await self.send_message({
             "command": "subscribe", "identifier": ident_encoded
         })
+
+    DBG_FILE = '../temp/thormon.json'
+
+    def _dbg_save_to_file(self, message, file=None):
+        if not message:
+            return
+        file = file or self.DBG_FILE
+        if not os.path.exists(file):
+            with open(file, 'w') as f:
+                json.dump(message, f)
+        else:
+            self.logger.warn(f'Temp "{file}" already exists.')
+
+    def _dbg_read_from_file(self, file=None, data=None):
+        try:
+            file = file or self.DBG_FILE
+            with open(file, 'r') as f:
+                result = json.load(f)
+                return result or data
+        except Exception:
+            return data
 
 
 class ThorMonSolvencyAsset(NamedTuple):
