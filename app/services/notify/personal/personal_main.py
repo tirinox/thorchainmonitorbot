@@ -77,14 +77,9 @@ class NodeChangePersonalNotifier(INotified):
             ), []
         )
 
-        # events += self._dbg_event_post()  # fixme
-
         await self._cast_messages_for_events(events)
 
         await user_cache.save(self.deps.db)
-
-    def _dbg_event_post(self):
-        return []
 
     async def _handle_node_churn_bg_job(self, node_set_change: NodeSetChanges):
         prev_and_curr_node_map = node_set_change.prev_and_curr_node_map

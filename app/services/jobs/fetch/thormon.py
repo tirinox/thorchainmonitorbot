@@ -75,8 +75,11 @@ class ThorMonWSSClient(WSClient, WithDelegates):
     def _dbg_read_from_file(self, file=None, data=None):
         try:
             file = file or self.DBG_FILE
+            self.logger.warn(f'DEBUGGING: Reading file "{file}"')
             with open(file, 'r') as f:
                 result = json.load(f)
+                nodes = len(result.get('nodes', []))
+                self.logger.warn(f'DEBUGGING: nodes = {nodes}')
                 return result or data
         except Exception:
             return data
