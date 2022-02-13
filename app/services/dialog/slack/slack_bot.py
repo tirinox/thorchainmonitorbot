@@ -156,5 +156,6 @@ class SlackBot:
         ...
 
     @staticmethod
-    def convert_html_to_my_format(text):
+    def convert_html_to_my_format(text: str):
+        text = text.replace('\n', '<br>')
         return HTMLSlacker(text).get_output()
