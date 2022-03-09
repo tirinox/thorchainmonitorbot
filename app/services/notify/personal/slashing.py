@@ -12,12 +12,15 @@ from services.notify.personal.user_data import UserDataCache
 
 
 class SlashPointTracker(BaseChangeTracker):
+    HISTORY_MAX_POINTS = 50000
+
     def __init__(self, deps: DepContainer):
         self.deps = deps
         self.series = TimeSeries('SlashPointTracker', self.deps.db)
-        self.intervals_sec = [parse_timespan_to_seconds(s) for s in STANDARD_INTERVALS]
+        self.std_intervals_sec = [parse_timespan_to_seconds(s) for s in STANDARD_INTERVALS]
         self.logger = class_logger(self)
-        self.logger.info(f'{STANDARD_INTERVALS = }')
+        intervals = list(zip(STANDARD_INTERVALS, self.std_intervals_sec))
+        self.logger.info(f'{intervals = }')
         self.cache: Optional[UserDataCache] = None
 
     @staticmethod
@@ -28,11 +31,12 @@ class SlashPointTracker(BaseChangeTracker):
         data = self._extract_slash_points(last_answer)
         if data:
             await self.series.add(**data)
+        await self.series.trim_oldest(self.HISTORY_MAX_POINTS)
 
-    async def _read_points(self):
+    async def _read_points(self, intervals):
         tasks = [
             self.series.get_best_point_ago(ago, tolerance_percent=1, tolerance_sec=20)
-            for ago in self.intervals_sec
+            for ago in intervals
         ]
         return await asyncio.gather(*tasks)
 
@@ -40,13 +44,13 @@ class SlashPointTracker(BaseChangeTracker):
         self.cache = user_cache
         await self._save_point(last_answer)
 
-        points = await self._read_points()
+        points = await self._read_points(intervals=self.std_intervals_sec)
         current_state = self._extract_slash_points(last_answer)
 
         node_map = last_answer.address_to_node_map
 
         events = []
-        for interval, (data, _) in zip(self.intervals_sec, points):
+        for interval, (data, _) in zip(self.std_intervals_sec, points):
             if data is None:
                 continue
 
@@ -75,6 +79,11 @@ class SlashPointTracker(BaseChangeTracker):
 
         if not bool(settings.get(NodeOpSetting.SLASH_ON, True)):
             return False
+
+        # fixme: ---- 8< ----
+        if event.address == 'thor1dq5tumtlgua3nyp2at0m2jw84ete6jp9ywxyf8':
+            print('??!')  # todo: test & fix Slash Tracker using the simulation file
+        # fixme: ---- 8< ----
 
         data: EventDataSlash = event.data
 

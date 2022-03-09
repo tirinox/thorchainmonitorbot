@@ -19,6 +19,12 @@ async def test_solvency():
         print(data)
 
 
+async def a_test_slack_image(lp_app: LpAppFramework):
+    slack = SlackBot(lp_app.deps.cfg, lp_app.deps.db)
+
+    await slack.send_message_to_channel('')
+
+
 async def main():
     # await test_solvency()
     await test_wss()

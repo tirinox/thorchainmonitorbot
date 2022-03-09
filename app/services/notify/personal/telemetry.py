@@ -9,9 +9,10 @@ from services.models.time_series import TimeSeries
 
 
 class NodeTelemetryDatabase:
-    def __init__(self, deps: DepContainer):
+    def __init__(self, deps: DepContainer, history_max_points=100000):
         self.deps = deps
         self.previous_nodes = {}
+        self.history_max_points = history_max_points
 
     @staticmethod
     def time_series_key(node_address: str):
@@ -25,9 +26,11 @@ class NodeTelemetryDatabase:
 
             self.previous_nodes[node.node_address] = node
 
-            await self.get_series(node.node_address).add(
+            series = self.get_series(node.node_address)
+            await series.add(
                 json=ujson.dumps(node.original_dict)
             )
+            await series.trim_oldest(self.history_max_points)
 
     def get_series(self, node_address):
         return TimeSeries(self.time_series_key(node_address), self.deps.db)
