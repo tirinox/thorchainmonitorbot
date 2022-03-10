@@ -12,11 +12,11 @@ from services.notify.personal.user_data import UserDataCache
 
 
 class SlashPointTracker(BaseChangeTracker):
-    HISTORY_MAX_POINTS = 50000
+    HISTORY_MAX_POINTS = 100_000
 
     def __init__(self, deps: DepContainer):
         self.deps = deps
-        self.series = TimeSeries('SlashPointTracker', self.deps.db)
+        self.series = TimeSeries('SlashPointTracker', self.deps.db)  # fixme! too much memory!!!
         self.std_intervals_sec = [parse_timespan_to_seconds(s) for s in STANDARD_INTERVALS]
         self.logger = class_logger(self)
         intervals = list(zip(STANDARD_INTERVALS, self.std_intervals_sec))
@@ -80,10 +80,10 @@ class SlashPointTracker(BaseChangeTracker):
         if not bool(settings.get(NodeOpSetting.SLASH_ON, True)):
             return False
 
-        # fixme: ---- 8< ----
-        if event.address == 'thor1dq5tumtlgua3nyp2at0m2jw84ete6jp9ywxyf8':
-            print('??!')  # todo: test & fix Slash Tracker using the simulation file
-        # fixme: ---- 8< ----
+        # # fixme: ---- 8< ----
+        # if event.address == 'thor1dq5tumtlgua3nyp2at0m2jw84ete6jp9ywxyf8':
+        #     print('??!')  # todo: test & fix Slash Tracker using the simulation file
+        # # fixme: ---- 8< ----
 
         data: EventDataSlash = event.data
 

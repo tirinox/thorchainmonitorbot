@@ -127,6 +127,7 @@ class TimeSeries:
     async def get_length(self):
         return int(await self.db.redis.xlen(self.stream_name))
 
+
 class PriceTimeSeries(TimeSeries):
     def __init__(self, coin: str, db: DB):
         super().__init__(f'price-{coin}', db)
