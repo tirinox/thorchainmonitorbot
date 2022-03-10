@@ -5,7 +5,9 @@ config.yaml
 redis_data/
 datavar/
 dump.rdb
-
+app/data/slack_db/
+web/frontend/
+web/letsencrypt/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
