@@ -112,11 +112,6 @@ class TimeSeries:
                 yield ts, v
                 ts0 = ts
 
-    async def trim_oldest(self, max_len=0):
-        if not max_len:
-            return
-        await self.db.redis.xtrim(self.stream_name, maxlen=max_len)
-
 
 class PriceTimeSeries(TimeSeries):
     def __init__(self, coin: str, db: DB):
