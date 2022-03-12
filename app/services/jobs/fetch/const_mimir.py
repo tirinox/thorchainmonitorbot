@@ -1,5 +1,5 @@
 import asyncio
-from typing import Tuple, List
+from typing import List, NamedTuple
 
 from aiothornode.nodeclient import ThorNodePublicClient
 from aiothornode.types import ThorConstants, ThorMimir
@@ -10,6 +10,13 @@ from services.lib.depcont import DepContainer
 from services.models.mimir import MimirVote
 
 ATTEMPTS = 5
+
+
+class MimirTuple(NamedTuple):
+    constants: ThorConstants
+    mimir: ThorMimir
+    node_mimir: dict
+    votes: List[MimirVote]
 
 
 class ConstMimirFetcher(BaseFetcher):
@@ -54,7 +61,7 @@ class ConstMimirFetcher(BaseFetcher):
             mimir.constants[k] = v
         return mimir
 
-    async def fetch(self) -> Tuple[ThorConstants, ThorMimir, dict, List[MimirVote]]:
+    async def fetch(self) -> MimirTuple:
         constants, mimir, node_mimir, votes = await asyncio.gather(
             self.fetch_constants_fallback(),
             self.fetch_mimir_fallback(),
@@ -73,7 +80,9 @@ class ConstMimirFetcher(BaseFetcher):
 
         self.logger.info(f'Got {len(constants.constants)} CONST entries'
                          f' and {len(mimir.constants)} MIMIR entries.')
-        return constants, mimir, node_mimir, votes
+        return MimirTuple(constants, mimir, node_mimir, votes)
+
+    # ----- D E B U G    S T U F F -----
 
     def _dbg_randomize_votes(self, votes: List[MimirVote]):
         return votes

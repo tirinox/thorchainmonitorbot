@@ -12,11 +12,11 @@ from services.lib.explorers import get_explorer_url_to_address, get_explorer_url
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change, Asset, short_money, short_dollar, format_percent
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
-    up_down_arrow, plural, grouper
+    up_down_arrow, plural, grouper, regroup_joining
 from services.models.bep2 import BEP2Transfer, BEP2CEXFlow
 from services.models.cap_info import ThorCapInfo
 from services.models.last_block import BlockSpeed
-from services.models.mimir import MimirChange, MimirHolder
+from services.models.mimir import MimirChange, MimirHolder, MimirVoting, MimirVoteOption
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEvent, EventDataSlash, \
     NodeEventType, EventBlockHeight
@@ -884,6 +884,42 @@ class RussianLocalization(BaseLocalization):
         what_is_mimir_link = link(self.MIMIR_DOC_LINK, "Что такое мими?")
         text += f"{what_is_mimir_link} А еще {cheatsheet_link}.\n\n"
         return text
+
+    def text_node_mimir_voting(self, holder: MimirHolder):
+        title = '🏛️' + bold('Голосование нод за Мимир') + '\n\n'
+        if not holder.voting_manager.all_voting:
+            title += 'Пока нет активных логосований.'
+            return [title]
+
+        messages = [title]
+        for voting in holder.voting_manager.all_voting.values():
+            voting: MimirVoting
+            name = holder.pretty_name(voting.key)
+            msg = f"{code(name)}\n"
+
+            for option in voting.top_options:
+                pb = progressbar(option.number_votes, voting.active_nodes, 12) if option.progress > 0.1 else ''
+                extra = f'{option.need_votes_to_pass} еще голосов, чтобы прошло' if option.need_votes_to_pass <= 5 else ''
+                msg += f"➔ чтобы стало {code(option.value)}: {bold(format_percent(option.number_votes, voting.active_nodes))}" \
+                       f" {pb} ({option.number_votes}/{voting.active_nodes}) {extra}\n"
+
+            messages.append(msg)
+
+        return regroup_joining(self.NODE_MIMIR_VOTING_GROUP_SIZE, messages)
+
+    def notification_text_mimir_voting_progress(self, holder: MimirHolder, key, prev_progress,
+                                                voting: MimirVoting,
+                                                option: MimirVoteOption):
+        message = '🏛️' + bold('Прогресс голосования нод за Мимир') + '\n\n'
+
+        name = holder.pretty_name(key)
+        message += f"{code(name)}\n"
+
+        pb = progressbar(option.number_votes, voting.active_nodes, 12) if option.progress > 0.1 else ''
+        extra = f'{option.need_votes_to_pass} еще голосов, чтобы прошло' if option.need_votes_to_pass <= 5 else ''
+        message += f"➔ чтобы стало {code(option.value)}: {bold(format_percent(option.number_votes, voting.active_nodes))}" \
+                   f" {pb} ({option.number_votes}/{voting.active_nodes}) {extra}\n"
+        return message
 
     # --------- TRADING HALTED -----------
 

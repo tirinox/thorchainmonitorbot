@@ -303,6 +303,11 @@ constants:
     enabled: true
   fetch_period: 130s
 
+  voting:
+    enabled: true
+    notification:
+      cooldown: 2h
+
 
 chain_state:
   enabled: true

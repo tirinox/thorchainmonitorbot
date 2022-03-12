@@ -18,7 +18,7 @@ from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, i
 from services.models.bep2 import BEP2Transfer, BEP2CEXFlow
 from services.models.cap_info import ThorCapInfo
 from services.models.last_block import BlockSpeed
-from services.models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting
+from services.models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting, MimirVoteOption
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEventType, NodeEvent, \
     EventBlockHeight, EventDataSlash
@@ -1108,12 +1108,26 @@ class BaseLocalization(ABC):  # == English
             for option in voting.top_options:
                 pb = progressbar(option.number_votes, voting.active_nodes, 12) if option.progress > 0.1 else ''
                 extra = f'{option.need_votes_to_pass} more votes to pass' if option.need_votes_to_pass <= 5 else ''
-                msg += f"➔ {code(option.value)}: {bold(format_percent(option.number_votes, voting.active_nodes))}" \
+                msg += f" to make it ➔ {code(option.value)}: {bold(format_percent(option.number_votes, voting.active_nodes))}" \
                        f" {pb} ({option.number_votes}/{voting.active_nodes}) {extra}\n"
 
             messages.append(msg)
 
         return regroup_joining(self.NODE_MIMIR_VOTING_GROUP_SIZE, messages)
+
+    def notification_text_mimir_voting_progress(self, holder: MimirHolder, key, prev_progress,
+                                                voting: MimirVoting,
+                                                option: MimirVoteOption):
+        message = '🏛️' + bold('Node-Mimir voting update') + '\n\n'
+
+        name = holder.pretty_name(key)
+        message += f"{code(name)}\n"
+
+        pb = progressbar(option.number_votes, voting.active_nodes, 12) if option.progress > 0.1 else ''
+        extra = f'{option.need_votes_to_pass} more votes to pass' if option.need_votes_to_pass <= 5 else ''
+        message += f" to make it ➔ {code(option.value)}: {bold(format_percent(option.number_votes, voting.active_nodes))}" \
+                   f" {pb} ({option.number_votes}/{voting.active_nodes}) {extra}\n"
+        return message
 
     # --------- TRADING HALTED ------------
 
