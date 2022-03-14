@@ -164,10 +164,7 @@ class RussianLocalization(BaseLocalization):
         pools = pre(', '.join(pools))
         explorer_links = self.explorer_links_to_thor_address(address)
 
-        balance_str = ''
-        if balances is not None:
-            bal = balances.runes_float
-            balance_str = f'Баланс аккаунта : {pre(short_money(bal, prefix=RAIDO_GLYPH))}.\n\n'
+        balance_str = self.text_balances(balances, 'Балансы аккаунта: ')
 
         return f'🛳️ {pre(address)}\n' \
                f'поставляет ликвидность в следующие пулы:\n{pools}.\n\n' \

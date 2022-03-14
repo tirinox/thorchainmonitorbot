@@ -102,6 +102,11 @@ def pretty_percent(x, limit_abs=1e7, limit_text='N/A %', signed=True):
     return pretty_money(x, postfix=' %', signed=signed)
 
 
+def round_half_up(n, decimals=0):
+    multiplier = 10 ** decimals
+    return math.floor(n * multiplier + 0.5) / multiplier
+
+
 def short_money(x, prefix='', postfix='', localization=None, signed=False):
     if x == 0:
         return f'{prefix}0.0{postfix}'
@@ -133,10 +138,16 @@ def short_money(x, prefix='', postfix='', localization=None, signed=False):
         key = 'T'
 
     letter = localization.get(key, key) if localization else key
+
+    dec = 1
     if orig_x < 10:
-        result = f'{x:.2f}{letter}'
-    else:
-        result = f'{x:.1f}{letter}'
+        for dec in range(8, 0, -1):
+            if orig_x < 10 ** (-dec):
+                dec = dec + 1
+                break
+        dec = max(dec, 1)
+
+    result = f'{round_half_up(x, dec)}{letter}'
     return f'{sign}{prefix}{result}{postfix}'
 
 
@@ -182,6 +193,7 @@ class Asset:
     chain: str = ''
     name: str = ''
     tag: str = ''
+    is_synth: bool = False
 
     @property
     def valid(self):
@@ -189,31 +201,41 @@ class Asset:
 
     def __post_init__(self):
         if self.chain and not self.name:
-            a = self.from_string(self.chain)
+            source = self.chain
+            a = self.from_string(source)
             self.chain = a.chain
             self.name = a.name
             self.tag = a.tag
+            self.is_synth = a.is_synth
 
     @classmethod
     def from_string(cls, asset: str):
         try:
-            chain, name_and_tag = asset.split('.', maxsplit=2)
-            components = name_and_tag.split('-', maxsplit=2)
-            if len(components) == 2:
-                name, tag = components
+            if asset == 'rune':
+                return cls('THOR', 'RUNE')
+            is_synth = '/' in asset
+            if is_synth:
+                chain, name = asset.split('/')
+                return cls(str(chain).upper(), str(name).upper(), is_synth=True)
             else:
-                name, tag = name_and_tag, ''
-            return cls(str(chain).upper(), str(name).upper(), str(tag).upper())
+                chain, name_and_tag = asset.split('.', maxsplit=2)
+                components = name_and_tag.split('-', maxsplit=2)
+                if len(components) == 2:
+                    name, tag = components
+                else:
+                    name, tag = name_and_tag, ''
+                return cls(str(chain).upper(), str(name).upper(), str(tag).upper())
         except (IndexError, TypeError, ValueError):
-            return cls('', asset, '')
+            return cls(name=asset)
 
     @property
     def short_str(self):
+        s = 'Synth:' if self.is_synth else ''
         if self.tag:
             short_tag = self.tag[:6]
-            return f'{self.chain}.{self.name}-{short_tag}'
+            return f'{s}{self.chain}.{self.name}-{short_tag}'
         else:
-            return f'{self.chain}.{self.name}'
+            return f'{s}{self.chain}.{self.name}'
 
     @property
     def full_name(self):
