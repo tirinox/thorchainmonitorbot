@@ -45,13 +45,10 @@ class VotingNotifier(INotified, WithDelegates):
     async def _on_progress_changed(self, key, prev_progress, voting: MimirVoting, vote_option: MimirVoteOption):
         cd = Cooldown(self.deps.db, f'VotingNotification:{key}:{vote_option.value}', self.notification_cd_time)
         if await cd.can_do():
-            # todo: ignore if voting is paaged
-
             await self.deps.broadcaster.notify_preconfigured_channels(
                 BaseLocalization.notification_text_mimir_voting_progress,
                 self.deps.mimir_const_holder,
                 key, prev_progress, voting, vote_option,
-                # params....
             )
             await cd.do()
 

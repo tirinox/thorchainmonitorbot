@@ -1,6 +1,7 @@
 import asyncio
 from typing import List, NamedTuple
 
+from aiothornode.env import MCCN
 from aiothornode.nodeclient import ThorNodePublicClient
 from aiothornode.types import ThorConstants, ThorMimir
 
@@ -29,7 +30,7 @@ class ConstMimirFetcher(BaseFetcher):
         return ThorConstants.from_json(data)
 
     async def _request_public_node_client(self, path):
-        client = ThorNodePublicClient(self.deps.session)
+        client = ThorNodePublicClient(self.deps.session, MCCN)
         for attempt in range(1, ATTEMPTS):
             response = await client.request(path)
             if response is not None:

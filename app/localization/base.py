@@ -1120,7 +1120,7 @@ class BaseLocalization(ABC):  # == English
             for option in voting.top_options:
                 pb = progressbar(option.number_votes, voting.active_nodes, 12) if option.progress > 0.1 else ''
                 extra = f'{option.need_votes_to_pass} more votes to pass' if option.need_votes_to_pass <= 5 else ''
-                msg += f" to make it ➔ {code(option.value)}: {bold(format_percent(option.number_votes, voting.active_nodes))}" \
+                msg += f" to set it ➔ {code(option.value)}: {bold(format_percent(option.number_votes, voting.active_nodes))}" \
                        f" {pb} ({option.number_votes}/{voting.active_nodes}) {extra}\n"
 
             messages.append(msg)
@@ -1137,7 +1137,7 @@ class BaseLocalization(ABC):  # == English
 
         pb = progressbar(option.number_votes, voting.active_nodes, 12) if option.progress > 0.1 else ''
         extra = f'{option.need_votes_to_pass} more votes to pass' if option.need_votes_to_pass <= 5 else ''
-        message += f" to make it ➔ {code(option.value)}: {bold(format_percent(option.number_votes, voting.active_nodes))}" \
+        message += f" to set it ➔ {code(option.value)}: {bold(format_percent(option.number_votes, voting.active_nodes))}" \
                    f" {pb} ({option.number_votes}/{voting.active_nodes}) {extra}\n"
         return message
 
