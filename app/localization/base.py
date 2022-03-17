@@ -1135,9 +1135,10 @@ class BaseLocalization(ABC):  # == English
         name = holder.pretty_name(key)
         message += f"{code(name)}\n"
 
-        pb = progressbar(option.number_votes, voting.active_nodes, 12) if option.progress > 0.1 else ''
+        pb = progressbar(option.number_votes, voting.min_votes_to_pass, 12) if option.progress > 0.1 else ''
         extra = f'{option.need_votes_to_pass} more votes to pass' if option.need_votes_to_pass <= 5 else ''
-        message += f" to set it ➔ {code(option.value)}: {bold(format_percent(option.number_votes, voting.active_nodes))}" \
+        message += f" to set it ➔ {code(option.value)}: " \
+                   f"{bold(format_percent(option.number_votes, voting.min_votes_to_pass))}" \
                    f" {pb} ({option.number_votes}/{voting.active_nodes}) {extra}\n"
         return message
 

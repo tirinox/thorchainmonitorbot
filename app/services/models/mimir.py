@@ -57,11 +57,15 @@ class MimirVoting:
         if not self.active_nodes:
             self.active_nodes = 1  # Just to avoid division by zero
 
-        min_votes_to_pass = int(math.ceil(self.active_nodes * self.SUPER_MAJORITY))
+        min_votes_to_pass = self.min_votes_to_pass
         for opt in options:
             opt.progress = len(opt.signers) / self.active_nodes
             opt.need_votes_to_pass = abs(min_votes_to_pass - opt.number_votes)
         self.top_options = options
+
+    @property
+    def min_votes_to_pass(self):
+        return int(math.ceil(self.active_nodes * self.SUPER_MAJORITY))
 
     @property
     def total_voters(self):

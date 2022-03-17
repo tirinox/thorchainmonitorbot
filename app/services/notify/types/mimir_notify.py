@@ -53,7 +53,7 @@ class MimirChangedNotifier(INotified):
 
         old_mimir = await self._get_saved_mimir_state(is_node_mimir=False)
         old_node_mimir = await self._get_saved_mimir_state(is_node_mimir=True)
-        if not old_mimir or not old_node_mimir:
+        if not old_mimir:
             self.logger.warning('Mimir has not been saved yet. Waiting for the next tick...')
             await self._save_mimir_state(fresh_mimir.constants, is_node_mimir=False)
             await self._save_mimir_state(node_mimir, is_node_mimir=True)

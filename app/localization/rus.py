@@ -878,7 +878,7 @@ class RussianLocalization(BaseLocalization):
     def text_mimir_intro(self):
         text = f'🎅 {bold("Глобальные константы и Мимир")}\n'
         cheatsheet_link = link(self.MIMIR_CHEAT_SHEET_URL, 'Описание констант')
-        what_is_mimir_link = link(self.MIMIR_DOC_LINK, "Что такое мими?")
+        what_is_mimir_link = link(self.MIMIR_DOC_LINK, "Что такое Мимир?")
         text += f"{what_is_mimir_link} А еще {cheatsheet_link}.\n\n"
         return text
 
@@ -895,9 +895,11 @@ class RussianLocalization(BaseLocalization):
             msg = f"{code(name)}\n"
 
             for option in voting.top_options:
-                pb = progressbar(option.number_votes, voting.active_nodes, 12) if option.progress > 0.1 else ''
-                extra = f'{option.need_votes_to_pass} еще голосов, чтобы прошло' if option.need_votes_to_pass <= 5 else ''
-                msg += f"➔ чтобы стало {code(option.value)}: {bold(format_percent(option.number_votes, voting.active_nodes))}" \
+                pb = progressbar(option.number_votes, voting.min_votes_to_pass, 12) if option.progress > 0.1 else ''
+                extra = f'{option.need_votes_to_pass} еще голосов, чтобы прошло' \
+                    if option.need_votes_to_pass <= 5 else ''
+                msg += f"➔ чтобы стало {code(option.value)}: " \
+                       f"{bold(format_percent(option.number_votes, voting.min_votes_to_pass))}" \
                        f" {pb} ({option.number_votes}/{voting.active_nodes}) {extra}\n"
 
             messages.append(msg)

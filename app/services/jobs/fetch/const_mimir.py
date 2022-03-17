@@ -71,6 +71,7 @@ class ConstMimirFetcher(BaseFetcher):
         )
 
         # # fixme: ------- 8< ---- debug ------ 8< -------
+        # votes = self._dbg_randomize_votes(votes)
         # mimir, node_mimir = self._dbg_randomize_mimir(mimir, node_mimir)
         # # fixme: ------- 8< ---- debug ------ 8< -------
 
@@ -86,6 +87,9 @@ class ConstMimirFetcher(BaseFetcher):
     # ----- D E B U G    S T U F F -----
 
     def _dbg_randomize_votes(self, votes: List[MimirVote]):
+        votes.append(MimirVote('MAXSYNTHASSETDEPTH', 500, 'thor1xd4j3gk9frpxh8r22runntnqy34lwzrdkazldh'))
+        votes.append(MimirVote('MAXSYNTHASSETDEPTH', 500, 'thor1wkfdzllk8ykzjmd9d7qhdqdknfxsupe9cjxcpn'))
+        votes.append(MimirVote('MAXSYNTHASSETDEPTH', 444, 'thor1nxmlh4hy2ncg585dutqwjd3d0tvjn8aqz42cak'))
         return votes
 
     def _dbg_randomize_node_mimir_results(self, results):

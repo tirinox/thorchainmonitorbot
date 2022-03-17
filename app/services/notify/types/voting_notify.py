@@ -66,10 +66,6 @@ class VotingNotifier(INotified, WithDelegates):
             for option in voting.options.values():
                 prev_progress = prev_voting.get(str(option.value))  # str(.), that's because JSON keys are strings
 
-                # # fixme: debug
-                # if voting.key == 'MAXSYNTHASSETDEPTH':
-                #     option.progress = 0.2
-
                 if prev_progress != option.progress:
                     await self._on_progress_changed(voting.key, prev_progress, voting, option)
 

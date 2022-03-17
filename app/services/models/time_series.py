@@ -122,7 +122,7 @@ class TimeSeries:
         await self.db.redis.xtrim(self.stream_name, maxlen=max_len)
         curr_len = await self.get_length()
         if curr_len != prev_len:
-            logging.info(f'Stream {self.stream_name} purged {prev_len - curr_len} old points. Now: {curr_len}.')
+            logging.debug(f'Stream {self.stream_name} purged {prev_len - curr_len} old points. Now: {curr_len}.')
 
     async def get_length(self):
         return int(await self.db.redis.xlen(self.stream_name))
