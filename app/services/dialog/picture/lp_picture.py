@@ -378,6 +378,11 @@ def lp_line_segments(draw, asset_values, asset_values_usd, y, value_hidden, colo
         asset_value = asset_values[asset]
         segments.append((asset, usd_value, asset_value))
         total_usd_value += usd_value
+
+    # fixme: quickfix
+    if total_usd_value < 0.01:
+        total_usd_value = 0.01
+
     segments.sort(key=operator.itemgetter(1), reverse=True)
 
     hp_bar_margin = 5
@@ -523,9 +528,13 @@ def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_c
     run_y += 3.3
     draw.text(pos_percent_lp(50, run_y), loc.LP_PIC_SUMMARY_HEADER, fill=FORE_COLOR, font=res.font_head, anchor='mm')
 
+    # fixme: quick fix?
+    if total_current_value_usd < 0.01:
+        total_current_value_usd = 0.01
+
     pool_percents = [
-        (Asset(r.pool.asset).name, asset_values_usd[r.pool.asset] / total_current_value_usd * 2.0 * 100.0) for r
-        in reports
+        (Asset(r.pool.asset).name, asset_values_usd[r.pool.asset] / total_current_value_usd * 2.0 * 100.0)
+        for r in reports
     ]
     # pool_percents = pool_percents * 5  # debug
     pool_percents.sort(key=operator.itemgetter(1), reverse=True)

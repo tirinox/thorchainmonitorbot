@@ -1,16 +1,23 @@
-from services.lib.money import pretty_money, short_money, number_short_with_postfix
+from services.lib.money import pretty_money, short_dollar, number_short_with_postfix
 
 
 def test_short_money():
-    s = short_money
+    s = short_dollar
 
     assert s(10) == '$10.0'
+    assert s(15) == '$15.0'
+    assert s(0.000151) == '$0.0002'
+    assert s(0.00012) == '$0.0001'
     assert s(0) == '$0.0'
+
     assert s(0.1) == '$0.1'
+    assert s(0.01) == '$0.01'
+    assert s(0.001) == '$0.001'
+
     assert s(777.777) == '$777.8'
     assert s(-1234) == '-$1.2K'
-    assert s(1_234_567_890_000) == '$1234.6B'
-    assert s(-1_234_567_890_000) == '-$1234.6B'
+    assert s(1_234_567_890_000) == '$1.2T'
+    assert s(-1_234_567_890_000) == '-$1.2T'
     assert s(10_333_777) == '$10.3M'
     assert s(-10_333_777) == '-$10.3M'
 

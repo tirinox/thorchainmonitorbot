@@ -12,6 +12,9 @@ from aiogram.types import CallbackQuery, InlineKeyboardMarkup, InlineKeyboardBut
 
 TG_TEST_USER = 192398802
 
+TELEGRAM_MAX_MESSAGE_LENGTH = 4096
+TELEGRAM_MAX_CAPTION_LENGTH = 1024
+
 
 def to_json_bool(b):
     return 'true' if b else 'false'

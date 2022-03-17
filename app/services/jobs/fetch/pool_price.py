@@ -35,6 +35,7 @@ class PoolPriceFetcher(BaseFetcher):
         self.max_attempts = MAX_ATTEMPTS_TO_FETCH_POOLS
         self.use_thor_consensus = False
         self.parser = get_parser_by_network_id(self.deps.cfg.network_id)
+        self.history_max_points = 100000
 
     async def reload_global_pools(self):
         d = self.deps
@@ -57,6 +58,7 @@ class PoolPriceFetcher(BaseFetcher):
         if price > 0:
             pool_price_series = PriceTimeSeries(RUNE_SYMBOL_POOL, d.db)
             await pool_price_series.add(price=price)
+            await pool_price_series.trim_oldest(self.history_max_points)
 
             # Pool price fill
             rune_market_info: RuneMarketInfo = await get_fair_rune_price_cached(d.price_holder, d.midgard_connector)
@@ -70,6 +72,7 @@ class PoolPriceFetcher(BaseFetcher):
             # Deterministic price fill
             deterministic_price_series = PriceTimeSeries(RUNE_SYMBOL_DET, d.db)
             await deterministic_price_series.add(price=rune_market_info.fair_price)
+            await deterministic_price_series.trim_oldest(self.history_max_points)
 
             return rune_market_info
         else:

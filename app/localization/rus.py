@@ -12,11 +12,11 @@ from services.lib.explorers import get_explorer_url_to_address, get_explorer_url
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change, Asset, short_money, short_dollar, format_percent
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
-    up_down_arrow, plural, grouper
+    up_down_arrow, plural, grouper, regroup_joining
 from services.models.bep2 import BEP2Transfer, BEP2CEXFlow
 from services.models.cap_info import ThorCapInfo
 from services.models.last_block import BlockSpeed
-from services.models.mimir import MimirChange, MimirHolder
+from services.models.mimir import MimirChange, MimirHolder, MimirVoting, MimirVoteOption
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEvent, EventDataSlash, \
     NodeEventType, EventBlockHeight
@@ -92,7 +92,7 @@ class RussianLocalization(BaseLocalization):
 
     BUTTON_SM_SUMMARY = '💲 Сводка'
 
-    BUTTON_VIEW_RUNE_DOT_YIELD = '🌎 Открыть на runeyield.info'
+    BUTTON_VIEW_RUNE_DOT_YIELD = '🌎 Открыть на THORYield'
     BUTTON_VIEW_VALUE_ON = 'Скрыть деньги: НЕТ'
     BUTTON_VIEW_VALUE_OFF = 'Скрыть деньги: ДА'
 
@@ -164,10 +164,7 @@ class RussianLocalization(BaseLocalization):
         pools = pre(', '.join(pools))
         explorer_links = self.explorer_links_to_thor_address(address)
 
-        balance_str = ''
-        if balances is not None:
-            bal = balances.runes_float
-            balance_str = f'Баланс аккаунта : {pre(short_money(bal, prefix=RAIDO_GLYPH))}.\n\n'
+        balance_str = self.text_balances(balances, 'Балансы аккаунта: ')
 
         return f'🛳️ {pre(address)}\n' \
                f'поставляет ликвидность в следующие пулы:\n{pools}.\n\n' \
@@ -881,9 +878,47 @@ class RussianLocalization(BaseLocalization):
     def text_mimir_intro(self):
         text = f'🎅 {bold("Глобальные константы и Мимир")}\n'
         cheatsheet_link = link(self.MIMIR_CHEAT_SHEET_URL, 'Описание констант')
-        what_is_mimir_link = link(self.MIMIR_DOC_LINK, "Что такое мими?")
+        what_is_mimir_link = link(self.MIMIR_DOC_LINK, "Что такое Мимир?")
         text += f"{what_is_mimir_link} А еще {cheatsheet_link}.\n\n"
         return text
+
+    def text_node_mimir_voting(self, holder: MimirHolder):
+        title = '🏛️' + bold('Голосование нод за Мимир') + '\n\n'
+        if not holder.voting_manager.all_voting:
+            title += 'Пока нет активных логосований.'
+            return [title]
+
+        messages = [title]
+        for voting in holder.voting_manager.all_voting.values():
+            voting: MimirVoting
+            name = holder.pretty_name(voting.key)
+            msg = f"{code(name)}\n"
+
+            for option in voting.top_options:
+                pb = progressbar(option.number_votes, voting.min_votes_to_pass, 12) if option.progress > 0.1 else ''
+                extra = f'{option.need_votes_to_pass} еще голосов, чтобы прошло' \
+                    if option.need_votes_to_pass <= 5 else ''
+                msg += f"➔ чтобы стало {code(option.value)}: " \
+                       f"{bold(format_percent(option.number_votes, voting.min_votes_to_pass))}" \
+                       f" {pb} ({option.number_votes}/{voting.active_nodes}) {extra}\n"
+
+            messages.append(msg)
+
+        return regroup_joining(self.NODE_MIMIR_VOTING_GROUP_SIZE, messages)
+
+    def notification_text_mimir_voting_progress(self, holder: MimirHolder, key, prev_progress,
+                                                voting: MimirVoting,
+                                                option: MimirVoteOption):
+        message = '🏛️' + bold('Прогресс голосования нод за Мимир') + '\n\n'
+
+        name = holder.pretty_name(key)
+        message += f"{code(name)}\n"
+
+        pb = progressbar(option.number_votes, voting.active_nodes, 12) if option.progress > 0.1 else ''
+        extra = f'{option.need_votes_to_pass} еще голосов, чтобы прошло' if option.need_votes_to_pass <= 5 else ''
+        message += f"➔ чтобы стало {code(option.value)}: {bold(format_percent(option.number_votes, voting.active_nodes))}" \
+                   f" {pb} ({option.number_votes}/{voting.active_nodes}) {extra}\n"
+        return message
 
     # --------- TRADING HALTED -----------
 

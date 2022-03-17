@@ -29,3 +29,21 @@ def test_asset1():
     assert a3.tag == ''
     assert str(a3) == 'BNB.BNB'
     assert a3.short_str == 'BNB.BNB'
+
+
+def test_synth_asset_name():
+    a1 = Asset("BNB/BTCB-1DE")
+    assert a1.is_synth
+    assert a1.name == 'BTCB-1DE'
+    assert a1.chain == 'BNB'
+    assert a1.short_str == 'Synth:BNB.BTCB-1DE'
+
+    a2 = Asset("btc/btc")
+    assert a2.is_synth
+    assert a2.name == 'BTC'
+    assert a2.chain == 'BTC'
+
+    a3 = Asset.from_string("BTC/btc")
+    assert a3 == a2
+    assert a3.short_str == 'Synth:BTC.BTC'
+

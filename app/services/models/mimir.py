@@ -48,7 +48,7 @@ class MimirVoting:
     active_nodes: int
     top_options: typing.List[MimirVoteOption]
 
-    SUPER_MAJORITY = 0.66666666
+    SUPER_MAJORITY = 0.66666667
 
     def finalize_calculations(self):
         options = list(self.options.values())
@@ -57,11 +57,15 @@ class MimirVoting:
         if not self.active_nodes:
             self.active_nodes = 1  # Just to avoid division by zero
 
-        min_votes_to_pass = int(math.ceil(self.active_nodes * self.SUPER_MAJORITY))
+        min_votes_to_pass = self.min_votes_to_pass
         for opt in options:
             opt.progress = len(opt.signers) / self.active_nodes
             opt.need_votes_to_pass = abs(min_votes_to_pass - opt.number_votes)
         self.top_options = options
+
+    @property
+    def min_votes_to_pass(self):
+        return int(math.ceil(self.active_nodes * self.SUPER_MAJORITY))
 
     @property
     def total_voters(self):
@@ -73,7 +77,7 @@ class MimirVoting:
     def passed(self):
         if not self.top_options:
             return False
-        return self.top_options[0].progress >= 0.666666
+        return self.top_options[0].progress >= self.SUPER_MAJORITY
 
 
 class MimirVoteManager:
@@ -95,6 +99,10 @@ class MimirVoteManager:
 
         for voting in self.all_voting.values():
             voting.finalize_calculations()
+
+    @property
+    def all_voting_list(self) -> typing.List[MimirVoting]:
+        return list(self.all_voting.values())
 
 
 @dataclass
@@ -269,6 +277,8 @@ class MimirHolder:
         'STRICTBONDLIQUIDITYRATIO': 'Strict Bond Liquidity Ratio',
 
         'POOLDEPTHFORYGGFUNDINGMIN': 'Pool Depth For Ygg Funding Min',
+
+        'MAXSYNTHASSETDEPTH': 'Max Synth Asset Depth',
     }
 
     @staticmethod

@@ -11,6 +11,8 @@ from services.models.time_series import TimeSeries
 
 
 class NetworkStatsNotifier(INotified):
+    MAX_POINTS = 10000
+
     def __init__(self, deps: DepContainer):
         self.deps = deps
         self.logger = class_logger(self)
@@ -34,6 +36,8 @@ class NetworkStatsNotifier(INotified):
                                                                                 self.deps.midgard_connector)
             await self._notify(old_info, new_info, rune_market_info)
             await self.notify_cd.do()
+
+        await self.series.trim_oldest(self.MAX_POINTS)
 
     async def clear_cd(self):
         await self.notify_cd.clear()

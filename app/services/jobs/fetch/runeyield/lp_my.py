@@ -433,6 +433,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             graph_points = []
             for day, ts, units in day_to_units:
                 that_day = now - datetime.timedelta(days=day)
+                # fixme: hard-fork?
                 height = await self.block_mapper.get_block_height_by_date(that_day.date(), self.last_block)
                 pools_at_height = await ppf.get_current_pool_data_full(height, caching=True)
                 pool_info = pools_at_height.get(pool, None)

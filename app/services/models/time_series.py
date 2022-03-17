@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import Tuple
 
 from services.lib.date_utils import now_ts, MINUTE
@@ -83,6 +84,8 @@ class TimeSeries:
 
     async def add(self, message_id=b'*', **kwargs):
         r = await self.db.get_redis()
+        # todo: MAXLEN
+        # todo: usage: XADD mystream MAXLEN ~ 1000 * ... entry fields here ...
         await r.xadd(self.stream_name, kwargs, id=message_id)
 
     async def add_as_json(self, message_id=b'*', j: dict = None):
@@ -111,6 +114,18 @@ class TimeSeries:
             if ts - ts0 > min_interval:
                 yield ts, v
                 ts0 = ts
+
+    async def trim_oldest(self, max_len):
+        if not max_len:
+            return
+        prev_len = await self.get_length()
+        await self.db.redis.xtrim(self.stream_name, maxlen=max_len)
+        curr_len = await self.get_length()
+        if curr_len != prev_len:
+            logging.debug(f'Stream {self.stream_name} purged {prev_len - curr_len} old points. Now: {curr_len}.')
+
+    async def get_length(self):
+        return int(await self.db.redis.xlen(self.stream_name))
 
 
 class PriceTimeSeries(TimeSeries):

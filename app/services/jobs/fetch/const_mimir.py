@@ -1,6 +1,7 @@
 import asyncio
-from typing import Tuple, List
+from typing import List, NamedTuple
 
+from aiothornode.env import MCCN
 from aiothornode.nodeclient import ThorNodePublicClient
 from aiothornode.types import ThorConstants, ThorMimir
 
@@ -10,6 +11,13 @@ from services.lib.depcont import DepContainer
 from services.models.mimir import MimirVote
 
 ATTEMPTS = 5
+
+
+class MimirTuple(NamedTuple):
+    constants: ThorConstants
+    mimir: ThorMimir
+    node_mimir: dict
+    votes: List[MimirVote]
 
 
 class ConstMimirFetcher(BaseFetcher):
@@ -22,7 +30,7 @@ class ConstMimirFetcher(BaseFetcher):
         return ThorConstants.from_json(data)
 
     async def _request_public_node_client(self, path):
-        client = ThorNodePublicClient(self.deps.session)
+        client = ThorNodePublicClient(self.deps.session, MCCN)
         for attempt in range(1, ATTEMPTS):
             response = await client.request(path)
             if response is not None:
@@ -54,7 +62,7 @@ class ConstMimirFetcher(BaseFetcher):
             mimir.constants[k] = v
         return mimir
 
-    async def fetch(self) -> Tuple[ThorConstants, ThorMimir, dict, List[MimirVote]]:
+    async def fetch(self) -> MimirTuple:
         constants, mimir, node_mimir, votes = await asyncio.gather(
             self.fetch_constants_fallback(),
             self.fetch_mimir_fallback(),
@@ -63,6 +71,7 @@ class ConstMimirFetcher(BaseFetcher):
         )
 
         # # fixme: ------- 8< ---- debug ------ 8< -------
+        # votes = self._dbg_randomize_votes(votes)
         # mimir, node_mimir = self._dbg_randomize_mimir(mimir, node_mimir)
         # # fixme: ------- 8< ---- debug ------ 8< -------
 
@@ -73,9 +82,14 @@ class ConstMimirFetcher(BaseFetcher):
 
         self.logger.info(f'Got {len(constants.constants)} CONST entries'
                          f' and {len(mimir.constants)} MIMIR entries.')
-        return constants, mimir, node_mimir, votes
+        return MimirTuple(constants, mimir, node_mimir, votes)
+
+    # ----- D E B U G    S T U F F -----
 
     def _dbg_randomize_votes(self, votes: List[MimirVote]):
+        votes.append(MimirVote('MAXSYNTHASSETDEPTH', 500, 'thor1xd4j3gk9frpxh8r22runntnqy34lwzrdkazldh'))
+        votes.append(MimirVote('MAXSYNTHASSETDEPTH', 500, 'thor1wkfdzllk8ykzjmd9d7qhdqdknfxsupe9cjxcpn'))
+        votes.append(MimirVote('MAXSYNTHASSETDEPTH', 444, 'thor1nxmlh4hy2ncg585dutqwjd3d0tvjn8aqz42cak'))
         return votes
 
     def _dbg_randomize_node_mimir_results(self, results):

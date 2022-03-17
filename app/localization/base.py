@@ -7,7 +7,7 @@ from aiothornode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
 from services.lib.config import Config
-from services.lib.constants import NetworkIdents, rune_origin, thor_to_float, THOR_BLOCK_TIME, BNB_RUNE_SYMBOL
+from services.lib.constants import NetworkIdents, rune_origin, thor_to_float, THOR_BLOCK_TIME, BNB_RUNE_SYMBOL, is_rune
 from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
     get_explorer_url_for_node
@@ -18,7 +18,7 @@ from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, i
 from services.models.bep2 import BEP2Transfer, BEP2CEXFlow
 from services.models.cap_info import ThorCapInfo
 from services.models.last_block import BlockSpeed
-from services.models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting
+from services.models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting, MimirVoteOption
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEventType, NodeEvent, \
     EventBlockHeight, EventDataSlash
@@ -135,7 +135,7 @@ class BaseLocalization(ABC):  # == English
 
     BUTTON_SM_SUMMARY = '💲 Summary'
 
-    BUTTON_VIEW_RUNE_DOT_YIELD = '🌎 View it on runeyield.info'
+    BUTTON_VIEW_RUNE_DOT_YIELD = '🌎 View it on THORYield'
     BUTTON_VIEW_VALUE_ON = 'Show value: ON'
     BUTTON_VIEW_VALUE_OFF = 'Show value: OFF'
 
@@ -212,15 +212,27 @@ class BaseLocalization(ABC):  # == English
         net = self.cfg.network_id
         return link_with_domain_text(get_explorer_url_to_address(net, Chains.THOR, address))
 
+    @staticmethod
+    def text_balances(balances: ThorBalances, title='Account balance:'):
+        if not balances or not len(balances.assets):
+            return ''
+        items = []
+        for coin in balances.assets:
+            postfix = ' ' + Asset(coin.asset).short_str
+            items.append(pre(short_money(coin.amount_float) + postfix))
+
+        if len(items) == 1:
+            result = f'{title} {items[0]}'
+        else:
+            result = '\n'.join([title] + items)
+        return result + '\n\n'
+
     def text_user_provides_liq_to_pools(self, address, pools, balances: ThorBalances):
         pools = pre(', '.join(pools))
 
         explorer_links = self.explorer_links_to_thor_address(address)
 
-        balance_str = ''
-        if balances is not None:
-            bal = balances.runes_float
-            balance_str = f'Account balance: {pre(short_money(bal, prefix=RAIDO_GLYPH))}.\n\n'
+        balance_str = self.text_balances(balances)
 
         return f'🛳️ {pre(address)}\nprovides liquidity to the following pools:\n' \
                f'{pools}.\n\n{balance_str}' \
@@ -1108,12 +1120,27 @@ class BaseLocalization(ABC):  # == English
             for option in voting.top_options:
                 pb = progressbar(option.number_votes, voting.active_nodes, 12) if option.progress > 0.1 else ''
                 extra = f'{option.need_votes_to_pass} more votes to pass' if option.need_votes_to_pass <= 5 else ''
-                msg += f"➔ {code(option.value)}: {bold(format_percent(option.number_votes, voting.active_nodes))}" \
+                msg += f" to set it ➔ {code(option.value)}: {bold(format_percent(option.number_votes, voting.active_nodes))}" \
                        f" {pb} ({option.number_votes}/{voting.active_nodes}) {extra}\n"
 
             messages.append(msg)
 
         return regroup_joining(self.NODE_MIMIR_VOTING_GROUP_SIZE, messages)
+
+    def notification_text_mimir_voting_progress(self, holder: MimirHolder, key, prev_progress,
+                                                voting: MimirVoting,
+                                                option: MimirVoteOption):
+        message = '🏛️' + bold('Node-Mimir voting update') + '\n\n'
+
+        name = holder.pretty_name(key)
+        message += f"{code(name)}\n"
+
+        pb = progressbar(option.number_votes, voting.min_votes_to_pass, 12) if option.progress > 0.1 else ''
+        extra = f'{option.need_votes_to_pass} more votes to pass' if option.need_votes_to_pass <= 5 else ''
+        message += f" to set it ➔ {code(option.value)}: " \
+                   f"{bold(format_percent(option.number_votes, voting.min_votes_to_pass))}" \
+                   f" {pb} ({option.number_votes}/{voting.active_nodes}) {extra}\n"
+        return message
 
     # --------- TRADING HALTED ------------
 

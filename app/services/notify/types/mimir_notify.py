@@ -5,7 +5,7 @@ from aiothornode.types import ThorConstants, ThorMimir
 
 from localization import BaseLocalization
 from services.jobs.fetch.base import INotified
-from services.jobs.fetch.const_mimir import ConstMimirFetcher
+from services.jobs.fetch.const_mimir import ConstMimirFetcher, MimirTuple
 from services.lib.date_utils import now_ts
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
@@ -43,7 +43,7 @@ class MimirChangedNotifier(INotified):
                 ts = await self.last_mimir_change_date(name)
                 self.deps.mimir_const_holder.register_change_ts(name, ts)
 
-    async def on_data(self, sender: ConstMimirFetcher, data: Tuple[ThorConstants, ThorMimir, dict, List[MimirVote]]):
+    async def on_data(self, sender: ConstMimirFetcher, data: MimirTuple):
         _, fresh_mimir, node_mimir, votes = data
 
         if not fresh_mimir or not fresh_mimir.constants:
@@ -53,7 +53,7 @@ class MimirChangedNotifier(INotified):
 
         old_mimir = await self._get_saved_mimir_state(is_node_mimir=False)
         old_node_mimir = await self._get_saved_mimir_state(is_node_mimir=True)
-        if not old_mimir or not old_node_mimir:
+        if not old_mimir:
             self.logger.warning('Mimir has not been saved yet. Waiting for the next tick...')
             await self._save_mimir_state(fresh_mimir.constants, is_node_mimir=False)
             await self._save_mimir_state(node_mimir, is_node_mimir=True)
@@ -62,8 +62,6 @@ class MimirChangedNotifier(INotified):
         fresh_const_names = set(fresh_mimir.constants.keys())
         old_const_names = set(old_mimir.constants.keys())
         all_const_names = fresh_const_names | old_const_names
-
-        # todo: if node-mimir ceased to have effect, tell about it!
 
         changes = []
 

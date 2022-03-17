@@ -170,10 +170,13 @@ class PlotBarGraph(PlotGraph):
         w = self.w - self.left - self.right
         block_width = (w - m * (n - 1)) / n
         cur_x = self.left
+
+        max_y = self.max_y if self.max_y else 1.0
+
         for x, *ys in zip(self.x_values, *y_values):
             cur_y = self.bottom
             for y, color in zip(ys, colors):
-                height = y / self.max_y * h
+                height = y / max_y * h
                 self.draw.rectangle((
                     int(cur_x), self.h - int(cur_y),
                     int(cur_x + block_width), self.h - int(cur_y + height)

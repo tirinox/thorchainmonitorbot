@@ -51,6 +51,7 @@ from services.notify.types.queue_notify import QueueNotifier
 from services.notify.types.stats_notify import NetworkStatsNotifier
 from services.notify.types.tx_notify import GenericTxNotifier, SwitchTxNotifier
 from services.notify.types.version_notify import VersionNotifier
+from services.notify.types.voting_notify import VotingNotifier
 
 
 class App:
@@ -88,6 +89,7 @@ class App:
 
     async def create_thor_node_connector(self):
         d = self.deps
+        # todo: get node connection info from the config!
         d.thor_connector = ThorConnector(get_thor_env_by_network_id(d.cfg.network_id), d.session)
         await d.thor_connector.update_nodes()
 
@@ -238,6 +240,10 @@ class App:
         if d.cfg.get('constants.mimir_change', True):
             notifier_mimir_change = MimirChangedNotifier(d)
             fetcher_mimir.subscribe(notifier_mimir_change)
+
+        if d.cfg.get('constants.voting.enabled', True):
+            voting_notifier = VotingNotifier(d)
+            fetcher_mimir.subscribe(voting_notifier)
 
         if d.cfg.get('discord.enabled', False):
             d.discord_bot = DiscordBot(d.cfg)

@@ -13,7 +13,7 @@ from services.dialog.discord.discord_bot import DiscordBot
 from services.dialog.slack.slack_bot import SlackBot
 from services.lib.constants import Messengers
 from services.lib.depcont import DepContainer
-from services.lib.telegram import TelegramStickerDownloader
+from services.lib.telegram import TelegramStickerDownloader, TELEGRAM_MAX_MESSAGE_LENGTH, TELEGRAM_MAX_CAPTION_LENGTH
 from services.lib.texts import MessageType, BoardMessage
 
 
@@ -103,13 +103,19 @@ class Broadcaster:
         try:
             bot = self.deps.bot
             if message_type == MessageType.TEXT:
-                await bot.send_message(chat_id, text, *args, **kwargs)
+                trunc_text = text[:TELEGRAM_MAX_MESSAGE_LENGTH]
+                if trunc_text != text:
+                    self.logger.error(f'Message is too long:\n{text[:10000]}\n... Sending is cancelled.')
+                await bot.send_message(chat_id, trunc_text, *args, **kwargs)
             elif message_type == MessageType.STICKER:
                 kwargs = self.remove_bad_args(kwargs, dis_web_preview=True)
                 await bot.send_sticker(chat_id, sticker=text, *args, **kwargs)
             elif message_type == MessageType.PHOTO:
                 kwargs = self.remove_bad_args(kwargs, dis_web_preview=True)
-                await bot.send_photo(chat_id, caption=text, *args, **kwargs)
+                trunc_text = text[:TELEGRAM_MAX_CAPTION_LENGTH]
+                if trunc_text != text:
+                    self.logger.error(f'Caption is too long:\n{text[:10000]}\n... Sending is cancelled.')
+                await bot.send_photo(chat_id, caption=trunc_text, *args, **kwargs)
         except exceptions.BotBlocked:
             self.logger.error(f"Target [ID:{chat_id}]: blocked by user")
         except exceptions.ChatNotFound:
@@ -124,6 +130,9 @@ class Broadcaster:
         except exceptions.TelegramAPIError:
             self.logger.exception(f"Target [ID:{chat_id}]: failed")
             return True  # tg error is not the reason to exclude the user
+        except exceptions.MessageIsTooLong:
+            self.logger.error(f'Message is too long:\n{text[:10000]}\n...')
+            return False
         else:
             self.logger.info(f"Target [ID:{chat_id}]: success")
             return True

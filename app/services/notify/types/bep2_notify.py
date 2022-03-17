@@ -61,6 +61,8 @@ class BEP2MoveNotifier(INotified):
 
 
 class CEXFlowTracker:
+    MAX_POINTS = 100000
+
     def __init__(self, deps: DepContainer):
         self.deps = deps
         self.series = TimeSeries('CEXFlow.BEP2', deps.db)
@@ -71,6 +73,8 @@ class CEXFlowTracker:
                 'in': inflow_amount,
                 'out': outflow_amount
             })
+
+        await self.series.trim_oldest(self.MAX_POINTS)
 
     async def read_last24h(self) -> BEP2CEXFlow:
         points = await self.series.get_last_values_json(DAY, max_points=100_000)
