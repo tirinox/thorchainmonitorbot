@@ -1,7 +1,6 @@
 import asyncio
 
 from services.jobs.fetch.base import BaseFetcher
-from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.lib.constants import THOR_BLOCK_TIME, thor_to_float
 from services.lib.date_utils import parse_timespan_to_seconds, now_ts
