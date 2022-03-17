@@ -135,7 +135,7 @@ class BaseLocalization(ABC):  # == English
 
     BUTTON_SM_SUMMARY = '💲 Summary'
 
-    BUTTON_VIEW_RUNE_DOT_YIELD = '🌎 View it on runeyield.info'
+    BUTTON_VIEW_RUNE_DOT_YIELD = '🌎 View it on THORYield'
     BUTTON_VIEW_VALUE_ON = 'Show value: ON'
     BUTTON_VIEW_VALUE_OFF = 'Show value: OFF'
 

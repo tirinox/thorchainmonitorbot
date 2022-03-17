@@ -17,12 +17,12 @@ from services.lib.texts import code, grouper, kbd, cut_long_text
 from services.models.lp_info import LPAddress
 
 
-def get_runeyield_info_address(network: str, address: str, chain: str = Chains.THOR):
+def get_thoryield_address(network: str, address: str, chain: str = Chains.THOR):
     if network == NetworkIdents.TESTNET_MULTICHAIN:
         return f'https://mctn.vercel.app/dashboard?{chain}={address}'
     else:
         chain = chain.lower()
-        return f'https://app.runeyield.info/dashboard?{chain}={address}'
+        return f'https://app.thoryield.com/dashboard?{chain}={address}'
 
 
 class LPMenuStates(StatesGroup):
@@ -105,7 +105,7 @@ class LiquidityInfoDialog(BaseDialog):
                 InlineKeyboardButton(self.loc.BUTTON_SM_SUMMARY,
                                      callback_data=f'{self.QUERY_SUMMARY_OF_ADDRESS}:{addr_idx}'),
                 InlineKeyboardButton(self.loc.BUTTON_VIEW_RUNE_DOT_YIELD,
-                                     url=get_runeyield_info_address(self.deps.cfg.network_id, address, chain))
+                                     url=get_thoryield_address(self.deps.cfg.network_id, address, chain))
             ]
         ]
 
