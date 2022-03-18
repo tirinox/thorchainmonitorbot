@@ -254,16 +254,27 @@ class RussianLocalization(BaseLocalization):
         content = ''
         if tx.type in (ThorTxType.TYPE_ADD_LIQUIDITY, ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_DONATE):
             if tx.affiliate_fee > 0:
-                aff_text = f'Партнерский бонус: {bold(short_dollar(tx.get_affiliate_fee_usd(usd_per_rune)))} ' \
+                aff_fee_usd = tx.get_affiliate_fee_usd(usd_per_rune)
+                mark = self._exclamation_sign(aff_fee_usd, 'fee_usd_limit')
+                aff_text = f'Партнерский бонус: {bold(short_dollar(aff_fee_usd))}{mark} ' \
                            f'({format_percent(tx.affiliate_fee)})\n'
             else:
                 aff_text = ''
+
+            ilp_rune = tx.meta_withdraw.ilp_rune if tx.meta_withdraw else 0
+            if ilp_rune > 0:
+                ilp_text = f'🛡️ Выплачено защиты от IL: {code(pretty_money(ilp_rune, postfix=self.R))} ' \
+                           f'({pretty_dollar(ilp_rune * usd_per_rune)})\n'
+            else:
+                ilp_text = ''
+
             content = (
                 f"<b>{pretty_money(tx.rune_amount)} {self.R}</b> ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
                 f"<b>{pretty_money(tx.asset_amount)} {asset}</b> "
                 f"({ap:.0f}% = {asset_side_usd_short})\n"
                 f"Всего: <code>${pretty_money(total_usd_volume)}</code> ({percent_of_pool:.2f}% от всего пула).\n"
                 f"{aff_text}"
+                f"{ilp_text}"
                 f"Глубина пула сейчас: <b>${pretty_money(pool_depth_usd)}</b>.\n"
             )
         elif tx.type == ThorTxType.TYPE_SWITCH:
@@ -273,15 +284,9 @@ class RussianLocalization(BaseLocalization):
                 origin = rune_origin(tx.first_input_tx.first_asset)
                 content = f"{bold(pretty_money(amt))} {origin} {self.R} ➡️ {bold(pretty_money(amt))} Нативных {self.R}"
         elif tx.type == ThorTxType.TYPE_REFUND:
-            inputs = tx.get_asset_summary(in_only=True, short_name=True)
-            outputs = tx.get_asset_summary(out_only=True, short_name=True)
-
-            input_str = ', '.join(f"{bold(pretty_money(amount))} {asset}" for asset, amount in inputs.items())
-            output_str = ', '.join(f"{bold(pretty_money(amount))} {asset}" for asset, amount in outputs.items())
-
             content = (
-                f"{input_str} ➡️ {output_str} ({pretty_dollar(tx.get_usd_volume(usd_per_rune))})\n"
-                f"\nПричина: {pre(tx.meta_refund.reason[:180])}"
+                    self.tx_convert_string(tx, usd_per_rune) +
+                    f"\nПричина: {pre(tx.meta_refund.reason[:180])}"
             )
         elif tx.type == ThorTxType.TYPE_SWAP:
             content = self.tx_convert_string(tx, usd_per_rune)
@@ -289,15 +294,18 @@ class RussianLocalization(BaseLocalization):
             l_fee_usd = tx.meta_swap.liquidity_fee_rune_float * usd_per_rune
 
             if tx.affiliate_fee > 0:
-                aff_text = f'Партнерский бонус: {bold(short_dollar(tx.get_affiliate_fee_usd(usd_per_rune)))} ' \
+                aff_fee_usd = tx.get_affiliate_fee_usd(usd_per_rune)
+                mark = self._exclamation_sign(aff_fee_usd, 'fee_usd_limit')
+                aff_text = f'Партнерский бонус: {bold(short_dollar(aff_fee_usd))}{mark} ' \
                            f'({format_percent(tx.affiliate_fee)})\n'
             else:
                 aff_text = ''
 
+            slip_mark = self._exclamation_sign(l_fee_usd, 'slip_usd_limit')
             content += (
                 f"\n{aff_text}"
                 f"Проскальзывание: {bold(slip_str)}\n"
-                f"Комиссия пулам: {bold(pretty_dollar(l_fee_usd))}"
+                f"Комиссия пулам: {bold(pretty_dollar(l_fee_usd))}{slip_mark}"
             )
 
         blockchain_components = [f"Пользователь: {self.link_to_explorer_user_address_for_tx(tx)}"]

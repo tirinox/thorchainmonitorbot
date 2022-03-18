@@ -7,7 +7,7 @@ from aiothornode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
 from services.lib.config import Config
-from services.lib.constants import NetworkIdents, rune_origin, thor_to_float, THOR_BLOCK_TIME, BNB_RUNE_SYMBOL, is_rune
+from services.lib.constants import NetworkIdents, rune_origin, thor_to_float, THOR_BLOCK_TIME, BNB_RUNE_SYMBOL
 from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
     get_explorer_url_for_node
@@ -352,6 +352,15 @@ class BaseLocalization(ABC):  # == English
 
         return f"{input_str} ➡️ {output_str} ({pretty_dollar(tx.get_usd_volume(usd_per_rune))})"
 
+    def _exclamation_sign(self, value, cfg_key='', ref=100):
+        exclamation_limit = self.cfg.as_float(f'tx.exclamation.{cfg_key}', 10000) if cfg_key else ref
+        if value >= exclamation_limit * 2:
+            return '‼️'
+        elif value > exclamation_limit:
+            return '❗'
+        else:
+            return ''
+
     def notification_text_large_tx(self, tx: ThorTxExtended, usd_per_rune: float,
                                    pool_info: PoolInfo,
                                    cap: ThorCapInfo = None):
@@ -377,10 +386,19 @@ class BaseLocalization(ABC):  # == English
         content = ''
         if tx.type in (ThorTxType.TYPE_ADD_LIQUIDITY, ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_DONATE):
             if tx.affiliate_fee > 0:
-                aff_text = f'Affiliate fee: {bold(short_dollar(tx.get_affiliate_fee_usd(usd_per_rune)))} ' \
+                aff_fee_usd = tx.get_affiliate_fee_usd(usd_per_rune)
+                mark = self._exclamation_sign(aff_fee_usd, 'fee_usd_limit')
+                aff_text = f'Affiliate fee: {bold(short_dollar(aff_fee_usd))}{mark} ' \
                            f'({format_percent(tx.affiliate_fee)})\n'
             else:
                 aff_text = ''
+
+            ilp_rune = tx.meta_withdraw.ilp_rune if tx.meta_withdraw else 0
+            if ilp_rune > 0:
+                ilp_text = f'🛡️ Impermanent loss protection paid: {code(pretty_money(ilp_rune, postfix=self.R))} ' \
+                           f'({pretty_dollar(ilp_rune * usd_per_rune)})\n'
+            else:
+                ilp_text = ''
 
             content = (
                 f"<b>{pretty_money(tx.rune_amount)} {self.R}</b> ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
@@ -388,6 +406,7 @@ class BaseLocalization(ABC):  # == English
                 f"({ap:.0f}% = {asset_side_usd_short})\n"
                 f"Total: <code>${pretty_money(total_usd_volume)}</code> ({percent_of_pool:.2f}% of the whole pool).\n"
                 f"{aff_text}"
+                f"{ilp_text}"
                 f"Pool depth is <b>${pretty_money(pool_depth_usd)}</b> now."
             )
         elif tx.type == ThorTxType.TYPE_SWITCH:
@@ -410,15 +429,18 @@ class BaseLocalization(ABC):  # == English
             l_fee_usd = tx.meta_swap.liquidity_fee_rune_float * usd_per_rune
 
             if tx.affiliate_fee > 0:
-                aff_text = f'Affiliate fee: {bold(short_dollar(tx.get_affiliate_fee_usd(usd_per_rune)))} ' \
+                aff_fee_usd = tx.get_affiliate_fee_usd(usd_per_rune)
+                mark = self._exclamation_sign(aff_fee_usd, 'fee_usd_limit')
+                aff_text = f'Affiliate fee: {bold(short_dollar(aff_fee_usd))}{mark} ' \
                            f'({format_percent(tx.affiliate_fee)})\n'
             else:
                 aff_text = ''
 
+            slip_mark = self._exclamation_sign(l_fee_usd, 'slip_usd_limit')
             content += (
                 f"\n{aff_text}"
                 f"Slip: {bold(slip_str)}, "
-                f"liquidity fee: {bold(pretty_dollar(l_fee_usd))}"
+                f"liquidity fee: {bold(pretty_dollar(l_fee_usd))}{slip_mark}"
             )
 
         blockchain_components = [f"User: {self.link_to_explorer_user_address_for_tx(tx)}"]

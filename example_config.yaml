@@ -80,6 +80,12 @@ tx:
   max_page_deep: 5
   max_tx_per_single_message: 6
 
+  # new (!)
+  exclamation:
+    fee_usd_limit: 3000
+    ilp_usd_limit: 5000
+    slip_usd_limit: 5000
+
   liquidity:
     enabled: true
     min_usd_total: 50000

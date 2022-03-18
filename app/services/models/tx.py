@@ -121,6 +121,7 @@ class ThorMetaWithdraw:
     basis_points: str
     liquidity_units: str
     network_fees: List[ThorCoin]
+    impermanent_loss_protection: str
 
     @property
     def basis_points_int(self):
@@ -130,13 +131,20 @@ class ThorMetaWithdraw:
     def liquidity_units_int(self):
         return int(self.liquidity_units)
 
+    @property
+    def ilp_rune(self):
+        return thor_to_float(self.impermanent_loss_protection)
+
     @classmethod
     def parse(cls, j):
         fees = [ThorCoin(**cj) for cj in j.get('networkFees', [])]
-        return cls(asymmetry=j.get('asymmetry', '0'),
-                   network_fees=fees,
-                   liquidity_units=j.get('liquidityUnits', '0'),
-                   basis_points=j.get('basisPoints', '0'))
+        return cls(
+            asymmetry=j.get('asymmetry', '0'),
+            network_fees=fees,
+            liquidity_units=j.get('liquidityUnits', '0'),
+            basis_points=j.get('basisPoints', '0'),
+            impermanent_loss_protection=j.get('impermanentLossProtection', '0')
+        )
 
 
 @dataclass
@@ -335,7 +343,6 @@ class ThorTx:
                     return False
 
         return True
-
 
 
 def final_liquidity(txs: List[ThorTx]):
