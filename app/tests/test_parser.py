@@ -4,7 +4,7 @@ import os
 import pytest
 
 from services.jobs.fetch.tx import merge_affiliate_txs, merge_same_txs
-from services.lib.constants import NetworkIdents, THOR_DIVIDER, NATIVE_RUNE_SYMBOL
+from services.lib.constants import NetworkIdents, THOR_DIVIDER, NATIVE_RUNE_SYMBOL, UST_SYMBOL
 from services.lib.midgard.parser import MidgardParserV2
 from services.models.tx import ThorCoin, ThorMetaSwap, ThorTx
 
@@ -161,3 +161,9 @@ def test_synth(example_tx_gen):
     for k, v in tx.get_asset_summary(in_only=True).items():
         assert k == 'Synth:ETH.USDC-0XA0B8'
         assert v == 0.001
+
+    assert tx.is_synth_involved
+
+    non_synth_tx = example_tx_gen('synth_swap.json').txs[2]
+    assert not non_synth_tx.is_synth_involved
+

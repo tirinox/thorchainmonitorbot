@@ -280,7 +280,7 @@ class ThorTx:
         return None, None
 
     def search_realm(self, in_only=False, out_only=False):
-        return self.in_tx if in_only else self.out_tx if out_only else in_only + out_only
+        return self.in_tx if in_only else self.out_tx if out_only else self.in_tx + self.out_tx
 
     def get_sub_tx(self, asset, in_only=False, out_only=False):
         for sub_tx in self.search_realm(in_only, out_only):
@@ -343,6 +343,14 @@ class ThorTx:
                     return False
 
         return True
+
+    @property
+    def is_synth_involved(self):
+        for sub_tx in self.search_realm():
+            for c in sub_tx.coins:
+                if '/' in c.asset:
+                    return True
+        return False
 
 
 def final_liquidity(txs: List[ThorTx]):
