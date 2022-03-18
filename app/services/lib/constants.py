@@ -38,11 +38,13 @@ ETH_USDC_SYMBOL = 'ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48'
 
 DOGE_SYMBOL = 'DOGE.DOGE'
 
+UST_SYMBOL = 'TERRA.USD'
+
 STABLE_COIN_POOLS_ALL = (
     BNB_BUSD_SYMBOL, BNB_BUSD_TEST_SYMBOL, BNB_BUSD_TEST2_SYMBOL,
     BNB_USDT_SYMBOL, BNB_USDT_TEST_SYMBOL,
     ETH_USDT_TEST_SYMBOL, ETH_USDT_SYMBOL,
-    ETH_USDC_SYMBOL
+    ETH_USDC_SYMBOL, UST_SYMBOL
 )
 
 STABLE_COIN_BNB_POOLS = (
@@ -50,6 +52,7 @@ STABLE_COIN_BNB_POOLS = (
 )
 
 STABLE_COIN_POOLS = STABLE_COIN_BNB_POOLS
+# STABLE_COIN_POOLS = STABLE_COIN_BNB_POOLS
 
 RUNE_SYMBOLS = (
     BNB_RUNE_SYMBOL,
@@ -76,7 +79,7 @@ def rune_origin(symbol):
 
 
 def is_stable_coin(pool):
-    return pool in STABLE_COIN_POOLS
+    return pool in STABLE_COIN_POOLS_ALL
 
 
 class Chains:
@@ -87,17 +90,20 @@ class Chains:
     LTC = 'LTC'
     BNB = 'BNB'
     DOGE = 'DOGE'
+    TERRA = 'TERRA'
 
     @staticmethod
-    def detect_chain(address: str) -> str:
-        address = address.lower()
+    def detect_chain(orig_address: str) -> str:
+        address = orig_address.lower()
         if address.startswith('0x'):
             return Chains.ETH
+        elif address.startswith('terra'):
+            return Chains.TERRA
         elif address.startswith('thor') or address.startswith('tthor') or address.startswith('sthor'):
             return Chains.THOR
         elif address.startswith('bnb') or address.startswith('tbnb'):
             return Chains.BNB
-        elif address.startswith('D'):
+        elif orig_address.startswith('D'):
             return Chains.DOGE
         return ''
 
@@ -115,6 +121,8 @@ class Chains:
             return THOR_BLOCK_TIME
         elif chain == Chains.DOGE:
             return MINUTE
+        elif chain == Chains.TERRA:
+            return 6.64
         return 0.01
 
 

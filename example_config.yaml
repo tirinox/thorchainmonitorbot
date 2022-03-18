@@ -26,6 +26,7 @@ thor:
     - BNB.BUSD-BD1
     - BNB.BUSD-BAF  # test
     - BNB.BUSD-74E  # test
+    - TERRA.USD
 
 
 telegram:
