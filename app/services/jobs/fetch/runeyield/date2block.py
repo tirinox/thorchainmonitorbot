@@ -32,9 +32,8 @@ class DateToBlockMapper:
         return last_block.thorchain
 
     async def get_timestamp_by_block_height(self, block_height) -> float:
-        # todo: ready for hard-fork?
         block_info = await self.deps.thor_connector.query_tendermint_block_raw(block_height)
-        if 'result' not in block_info:
+        if not block_info or 'result' not in block_info:
             return -1
 
         rfc_time = block_info['result']['block']['header']['time']
@@ -76,7 +75,8 @@ class DateToBlockMapper:
 
             if guess_ts < 0:
                 self.logger.warning(f'Probably there is no block #{estimated_block_height}.')
-                return last_block
+                # hard fork fallback
+                return estimated_block_height
 
             seconds_diff = guess_ts - ts
             if abs(seconds_diff) <= tolerance_sec or estimated_block_height == 1:
