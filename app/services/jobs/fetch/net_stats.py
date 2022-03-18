@@ -8,6 +8,7 @@ from services.lib.depcont import DepContainer
 from services.lib.midgard.urlgen import free_url_gen
 from services.models.mimir import MimirHolder
 from services.models.net_stats import NetworkStats
+from services.models.swap_history import SwapHistoryResponse
 
 
 class NetworkStatisticsFetcher(BaseFetcher):
@@ -83,13 +84,22 @@ class NetworkStatisticsFetcher(BaseFetcher):
             else:
                 ns.next_pool_to_activate = None
 
+    async def _get_swap_stats(self, ns: NetworkStats):
+        j = await self.deps.midgard_connector.request_random_midgard(free_url_gen.url_for_swap_history(days=1))
+        swap_meta = SwapHistoryResponse.from_json(j).meta
+        ns.synth_volume_24h = swap_meta.synth_mint_volume + swap_meta.synth_redeem_volume
+        ns.synth_op_count = swap_meta.synth_mint_count + swap_meta.synth_redeem_count
+        print(f'{ns.synth_volume_24h = } and {ns.synth_op_count = }')
+        print()
+
     async def fetch(self) -> NetworkStats:
         ns = NetworkStats()
         ns.usd_per_rune = self.deps.price_holder.usd_per_rune
         await asyncio.gather(
             self._get_stats(ns),
             self._get_network(ns),
-            self._get_pools(ns)
+            self._get_pools(ns),
+            self._get_swap_stats(ns)
         )
         ns.date_ts = now_ts()
         return ns

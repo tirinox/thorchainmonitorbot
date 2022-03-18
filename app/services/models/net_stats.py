@@ -46,6 +46,9 @@ class NetworkStats(BaseModelMixin):
     next_pool_activation_ts: int = 0  # network
     next_pool_to_activate: str = ''  # pools
 
+    synth_op_count: int = 0  # swap history
+    synth_volume_24h: float = 0  # swap history
+
     @property
     def total_bond_usd(self):
         return self.total_bond_rune * self.usd_per_rune
@@ -81,6 +84,10 @@ class NetworkStats(BaseModelMixin):
     @property
     def withdrawn_usd(self):
         return self.withdrawn_rune * self.usd_per_rune
+
+    @property
+    def synth_volume_24h_usd(self):
+        return self.synth_volume_24h * self.usd_per_rune
 
     @property
     def network_security_ratio(self):

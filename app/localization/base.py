@@ -775,7 +775,7 @@ class BaseLocalization(ABC):  # == English
             if swap_volume_24h_rune:
                 some_added = True
                 message += f'🔀 Rune swap volume: {swap_rune_text} ({swap_usd_text}) ' \
-                           f'by {bold(new.swaps_24h)} operations.\n'
+                           f'in {bold(new.swaps_24h)} operations.\n'
 
             if switched_24h_rune:
                 some_added = True
@@ -783,6 +783,14 @@ class BaseLocalization(ABC):  # == English
 
             if not some_added:
                 message += self.LONG_DASH + '\n'
+
+            # synthetics:
+            synth_volume_rune = code(pretty_money(new.synth_volume_24h, prefix=RAIDO_GLYPH))
+            synth_volume_usd = code(pretty_dollar(new.synth_volume_24h_usd))
+            synth_op_count = short_money(new.synth_op_count)
+
+            message += f'💊 Synth trade volume: {synth_volume_rune} ({synth_volume_usd}) ' \
+                       f'in {synth_op_count} swaps\n'
 
             message += '\n'
 

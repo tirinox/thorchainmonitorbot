@@ -626,15 +626,32 @@ class RussianLocalization(BaseLocalization):
 
             message += f'{ital("За последние 24 часа:")}\n'
 
+            some_added = False
             if added_24h_rune:
+                some_added = True
                 message += f'➕ Добавлено в пулы: {add_rune_text} ({add_usd_text}).\n'
             if withdrawn_24h_rune:
+                some_added = True
                 message += f'➖ Выведено из пулов: {withdraw_rune_text} ({withdraw_usd_text}).\n'
             if swap_volume_24h_rune:
+                some_added = True
                 message += f'🔀 Объем торгов: {swap_rune_text} ({swap_usd_text}) ' \
                            f'при {bold(new.swaps_24h)} обменов совершено.\n'
             if switched_24h_rune:
+                some_added = True
                 message += f'💎 Rune конвертировано в нативные: {switch_rune_text} ({switch_usd_text}).\n'
+
+            if not some_added:
+                message += self.LONG_DASH + '\n'
+
+            # synthetics:
+            synth_volume_rune = code(pretty_money(new.synth_volume_24h, prefix=RAIDO_GLYPH))
+            synth_volume_usd = code(pretty_dollar(new.synth_volume_24h_usd))
+            synth_op_count = short_money(new.synth_op_count)
+
+            message += f'💊 Объем торговли синтетиками: {synth_volume_rune} ({synth_volume_usd}) ' \
+                       f'путем {synth_op_count} обменов\n'
+
             message += '\n'
 
         if abs(old.bonding_apy - new.bonding_apy) > 0.01:

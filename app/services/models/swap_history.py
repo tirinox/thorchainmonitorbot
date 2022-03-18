@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import List
 
 
 @dataclass
@@ -55,28 +56,15 @@ class SwapsHistoryEntry:
             total_volume=int(j.get('totalVolume', 0)),
         )
 
-    """
-        "averageSlip": "3.924203425934144",
-		"endTime": "1647561600",
-		"runePriceUSD": "7.91035955539719",
-		"startTime": "1647475200",
-		"synthMintAverageSlip": "2.8066139468008626",
-		"synthMintCount": "1391",
-		"synthMintFees": "46439458363",
-		"synthMintVolume": "114210025633561",
-		"synthRedeemAverageSlip": "2.4380103934669637",
-		"synthRedeemCount": "1347",
-		"synthRedeemFees": "46030976508",
-		"synthRedeemVolume": "100847520551878",
-		"toAssetAverageSlip": "3.536127167630058",
-		"toAssetCount": "4152",
-		"toAssetFees": "205278090708",
-		"toAssetVolume": "168324472786321",
-		"toRuneAverageSlip": "5.104866346812885",
-		"toRuneCount": "4377",
-		"toRuneFees": "537687448776",
-		"toRuneVolume": "234700531978358",
-		"totalCount": "11267",
-		"totalFees": "835435974355",
-		"totalVolume": "618082550950118"
-    """
+
+@dataclass
+class SwapHistoryResponse:
+    intervals: List[SwapsHistoryEntry]
+    meta: SwapsHistoryEntry
+
+    @classmethod
+    def from_json(cls, j):
+        return cls(
+            meta=SwapsHistoryEntry.from_json(j.get('meta', {})),
+            intervals=[SwapsHistoryEntry.from_json(interval_j) for interval_j in j.get('intervals', [])]
+        )
