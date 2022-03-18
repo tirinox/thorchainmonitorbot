@@ -208,23 +208,23 @@ class Asset:
             self.tag = a.tag
             self.is_synth = a.is_synth
 
+    @staticmethod
+    def get_name_tag(name_and_tag_str):
+        components = name_and_tag_str.split('-', maxsplit=2)
+        if len(components) == 2:
+            return components
+        else:
+            return name_and_tag_str, ''
+
     @classmethod
     def from_string(cls, asset: str):
         try:
             if asset == 'rune':
                 return cls('THOR', 'RUNE')
             is_synth = '/' in asset
-            if is_synth:
-                chain, name = asset.split('/')
-                return cls(str(chain).upper(), str(name).upper(), is_synth=True)
-            else:
-                chain, name_and_tag = asset.split('.', maxsplit=2)
-                components = name_and_tag.split('-', maxsplit=2)
-                if len(components) == 2:
-                    name, tag = components
-                else:
-                    name, tag = name_and_tag, ''
-                return cls(str(chain).upper(), str(name).upper(), str(tag).upper())
+            chain, name_and_tag = asset.split('/' if is_synth else '.', maxsplit=2)
+            name, tag = cls.get_name_tag(name_and_tag)
+            return cls(str(chain).upper(), str(name).upper(), str(tag).upper(), is_synth)
         except (IndexError, TypeError, ValueError):
             return cls(name=asset)
 

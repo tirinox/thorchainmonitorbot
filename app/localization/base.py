@@ -344,8 +344,8 @@ class BaseLocalization(ABC):  # == English
 
     @staticmethod
     def tx_convert_string(tx: ThorTxExtended, usd_per_rune):
-        inputs = tx.get_asset_summary(in_only=True, short_name=True)
-        outputs = tx.get_asset_summary(out_only=True, short_name=True)
+        inputs = tx.get_asset_summary(in_only=True)
+        outputs = tx.get_asset_summary(out_only=True)
 
         input_str = ', '.join(f"{bold(pretty_money(amount))} {asset}" for asset, amount in inputs.items())
         output_str = ', '.join(f"{bold(pretty_money(amount))} {asset}" for asset, amount in outputs.items())

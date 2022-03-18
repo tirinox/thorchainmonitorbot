@@ -93,7 +93,7 @@ class Chains:
         address = address.lower()
         if address.startswith('0x'):
             return Chains.ETH
-        elif address.startswith('thor') or address.startswith('tthor'):
+        elif address.startswith('thor') or address.startswith('tthor') or address.startswith('sthor'):
             return Chains.THOR
         elif address.startswith('bnb') or address.startswith('tbnb'):
             return Chains.BNB

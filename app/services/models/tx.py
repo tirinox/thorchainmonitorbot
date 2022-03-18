@@ -305,7 +305,7 @@ class ThorTx:
     def sum_of_rune(self, in_only=False, out_only=False):
         return self.sum_of(lambda c: is_rune(c.asset), in_only, out_only)
 
-    def get_asset_summary(self, in_only=False, out_only=False, short_name=False):
+    def get_asset_summary(self, in_only=False, out_only=False, short_name=True):
         results = defaultdict(float)
         for coin in self.coins_of(in_only, out_only):
             name = Asset(coin.asset).short_str if short_name else coin.asset
