@@ -10,7 +10,7 @@ from aiothornode.connector import ThorConnector
 from localization import LocalizationManager
 from services.jobs.fetch.pool_price import PoolPriceFetcher, PoolInfoFetcherMidgard
 from services.lib.config import Config
-from services.lib.constants import get_thor_env_by_network_id, DOGE_SYMBOL
+from services.lib.constants import DOGE_SYMBOL
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo
@@ -23,9 +23,9 @@ async def send_to_channel_test_message(d: DepContainer):
     d.broadcaster = Broadcaster(d)
 
     async with aiohttp.ClientSession() as d.session:
-        d.thor_connector = ThorConnector(get_thor_env_by_network_id(d.cfg.network_id), d.session)
+        d.thor_connector = ThorConnector(d.cfg.get_thor_env_by_network_id(), d.session)
         d.price_holder = LastPriceHolder()
-        ppf = PoolInfoFetcherMidgard(d)
+        ppf = PoolInfoFetcherMidgard(d, 100)
         notifier_pool_churn = PoolChurnNotifier(d)
 
         ppf_old = PoolPriceFetcher(d)

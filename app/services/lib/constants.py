@@ -1,5 +1,3 @@
-from aiothornode.env import TEST_NET_ENVIRONMENT_MULTI_1, MULTICHAIN_CHAOSNET_ENVIRONMENT, ThorEnvironment
-
 from services.lib.date_utils import MINUTE
 
 BNB_BNB_SYMBOL = 'BNB.BNB'
@@ -159,12 +157,3 @@ def thor_to_float(x) -> float:
 
 def float_to_thor(x: float) -> int:
     return int(x * THOR_DIVIDER)
-
-
-def get_thor_env_by_network_id(network_id) -> ThorEnvironment:
-    if network_id == NetworkIdents.TESTNET_MULTICHAIN:
-        return TEST_NET_ENVIRONMENT_MULTI_1.copy()
-    elif network_id == NetworkIdents.CHAOSNET_MULTICHAIN:
-        return MULTICHAIN_CHAOSNET_ENVIRONMENT.copy()
-    else:
-        raise KeyError('unsupported network ID!')

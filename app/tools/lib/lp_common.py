@@ -12,7 +12,6 @@ from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.runeyield import AsgardConsumerConnectorBase, get_rune_yield_connector
 from services.lib.config import Config
-from services.lib.constants import get_thor_env_by_network_id
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.midgard.connector import MidgardConnector
@@ -55,7 +54,7 @@ class LpAppFramework:
     async def prepare(self, brief=False):
         d = self.deps
         d.session = aiohttp.ClientSession(timeout=ClientTimeout(total=2.5))
-        d.thor_connector = ThorConnector(get_thor_env_by_network_id(d.cfg.network_id), d.session)
+        d.thor_connector = ThorConnector(d.cfg.get_thor_env_by_network_id(), d.session)
 
         cfg = d.cfg.thor.midgard
         d.midgard_connector = MidgardConnector(

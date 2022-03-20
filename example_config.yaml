@@ -2,7 +2,7 @@
 # Rename it to "config.yaml"
 
 log_level: INFO
-sleep_before_start: 3  # (!) new
+sleep_before_start: 3
 
 
 thor:
@@ -10,10 +10,15 @@ thor:
   #  "chaosnet-multi" for MCCN
   network_id: "chaosnet-multi"
 
+  node: # (!) new
+    node_url: "https://thornode.ninerealms.com/"
+    rpc_node_url: "https://rpc.ninerealms.com/"
+
   midgard:
     tries: 3
     use_nodes: false
-    public_url: "https://midgard.thorchain.info/"
+    public_url: "https://midgard.ninerealms.com/"
+#    public_url: "https://midgard.thorchain.info/"
 
   timeout: 2.0
 

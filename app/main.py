@@ -27,7 +27,6 @@ from services.jobs.fetch.tx import TxFetcher
 from services.jobs.node_churn import NodeChurnDetector
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.lib.config import Config, SubConfig
-from services.lib.constants import get_thor_env_by_network_id
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
@@ -89,8 +88,7 @@ class App:
 
     async def create_thor_node_connector(self):
         d = self.deps
-        # todo: get node connection info from the config!
-        d.thor_connector = ThorConnector(get_thor_env_by_network_id(d.cfg.network_id), d.session)
+        d.thor_connector = ThorConnector(d.cfg.get_thor_env_by_network_id(), d.session)
         await d.thor_connector.update_nodes()
 
         cfg: SubConfig = d.cfg.get('thor.midgard')
@@ -99,7 +97,7 @@ class App:
             d.session,
             d.thor_connector,
             int(cfg.get_pure('tries', 3)),
-            public_url=cfg.get('public_url', ''),
+            public_url=d.thor_connector.env.midgard_url,
             use_nodes=bool(cfg.get('use_nodes', True))
         )
 
