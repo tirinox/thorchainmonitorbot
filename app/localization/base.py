@@ -785,33 +785,26 @@ class BaseLocalization(ABC):  # == English
 
             message += f'{ital("Last 24 hours:")}\n'
 
-            some_added = False
             if added_24h_rune:
-                some_added = True
                 message += f'➕ Rune added to pools: {add_rune_text} ({add_usd_text}).\n'
 
             if withdrawn_24h_rune:
-                some_added = True
                 message += f'➖ Rune withdrawn: {withdraw_rune_text} ({withdraw_usd_text}).\n'
 
             if swap_volume_24h_rune:
-                some_added = True
                 message += f'🔀 Rune swap volume: {swap_rune_text} ({swap_usd_text}) ' \
                            f'in {bold(new.swaps_24h)} operations.\n'
 
             if switched_24h_rune:
-                some_added = True
                 message += f'💎 Rune switched to native: {switch_rune_text} ({switch_usd_text}).\n'
-
-            if not some_added:
-                message += self.LONG_DASH + '\n'
 
             # synthetics:
             synth_volume_rune = code(pretty_money(new.synth_volume_24h, prefix=RAIDO_GLYPH))
             synth_volume_usd = code(pretty_dollar(new.synth_volume_24h_usd))
             synth_op_count = short_money(new.synth_op_count)
 
-            message += f'💊 Synth trade volume: {synth_volume_rune} ({synth_volume_usd}) ' \
+            # next emoji: 💊
+            message += f'🆕 Synth trade volume: {synth_volume_rune} ({synth_volume_usd}) ' \
                        f'in {synth_op_count} swaps\n'
 
             message += '\n'

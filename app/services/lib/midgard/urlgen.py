@@ -66,10 +66,10 @@ class MidgardURLGenV2(MidgardURLGenBase):
         return f"{self.base_url}/v2/history/depths/{pool}?interval=day&from={from_ts}&to={to_ts}"
 
     def url_for_swap_history(self, from_ts=0, to_ts=0, days=10) -> str:
-        if not from_ts and not to_ts:
+        if from_ts and to_ts:
             spec = f'from={from_ts}&to={to_ts}'
         else:
-            spec = f'counts={days}'
+            spec = f'count={days}'
         return f"{self.base_url}/v2/history/swaps?interval=day&{spec}"
 
     def url_for_address_pool_membership(self, address) -> str:

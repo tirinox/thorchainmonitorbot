@@ -87,10 +87,8 @@ class NetworkStatisticsFetcher(BaseFetcher):
     async def _get_swap_stats(self, ns: NetworkStats):
         j = await self.deps.midgard_connector.request_random_midgard(free_url_gen.url_for_swap_history(days=1))
         swap_meta = SwapHistoryResponse.from_json(j).meta
-        ns.synth_volume_24h = swap_meta.synth_mint_volume + swap_meta.synth_redeem_volume
+        ns.synth_volume_24h = thor_to_float(swap_meta.synth_mint_volume) + thor_to_float(swap_meta.synth_redeem_volume)
         ns.synth_op_count = swap_meta.synth_mint_count + swap_meta.synth_redeem_count
-        print(f'{ns.synth_volume_24h = } and {ns.synth_op_count = }')
-        print()
 
     async def fetch(self) -> NetworkStats:
         ns = NetworkStats()
