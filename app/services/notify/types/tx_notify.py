@@ -86,6 +86,7 @@ class GenericTxNotifier(INotified):
             await self.deps.broadcaster.notify_preconfigured_channels(message_gen)
 
     def _get_min_usd_depth(self, tx: ThorTxExtended, usd_per_rune):
+        # todo: bugfix! No pool depth for Tx (convert Synth name!!)
         pools = tx.pools or [tx.first_input_tx.first_asset]
         pool_info_list = list(filter(bool, (self.deps.price_holder.pool_info_map.get(pool) for pool in pools)))
         if not pool_info_list:

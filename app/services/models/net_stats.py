@@ -28,6 +28,7 @@ class NetworkStats(BaseModelMixin):
     withdrawn_rune: float = 0  # stats
 
     loss_protection_paid_rune: float = 0.0  # stats
+    loss_protection_paid_24h_rune: float = 0.0  # ILP tracker
 
     active_pool_count: int = 0  # pools
     pending_pool_count: int = 0  # pools

@@ -24,6 +24,7 @@ from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher, PoolInfoFetcherMidgard
 from services.jobs.fetch.queue import QueueFetcher
 from services.jobs.fetch.tx import TxFetcher
+from services.jobs.ilp_summer import ILPSummer
 from services.jobs.node_churn import NodeChurnDetector
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.lib.config import Config, SubConfig
@@ -165,6 +166,10 @@ class App:
             if d.cfg.tx.switch.get('enabled', True):
                 switch_notifier_tx = SwitchTxNotifier(d, d.cfg.tx.switch, tx_types=(ThorTxType.TYPE_SWITCH,))
                 volume_filler.subscribe(switch_notifier_tx)
+
+            # for tracking 24h ILP payouts
+            ilp_summer = ILPSummer(d)
+            fetcher_tx.subscribe(ilp_summer)
 
             tasks.append(fetcher_tx)
 

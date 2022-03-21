@@ -803,9 +803,13 @@ class BaseLocalization(ABC):  # == English
             synth_volume_usd = code(pretty_dollar(new.synth_volume_24h_usd))
             synth_op_count = short_money(new.synth_op_count)
 
-            # next emoji: 💊
-            message += f'🆕 Synth trade volume: {synth_volume_rune} ({synth_volume_usd}) ' \
-                       f'in {synth_op_count} swaps\n'
+            message += f'💊 Synth trade volume: {synth_volume_rune} ({synth_volume_usd}) ' \
+                       f'in {synth_op_count} swaps 🆕\n'
+
+            if new.loss_protection_paid_24h_rune:
+                ilp_rune_str = code(pretty_money(new.loss_protection_paid_24h_rune, prefix=RAIDO_GLYPH))
+                ilp_usd_str = code(pretty_dollar(new.loss_protection_paid_24h_rune * new.usd_per_rune))
+                message += f'🛡️ IL protection payout: {ilp_rune_str} ({ilp_usd_str}) 🆕\n'
 
             message += '\n'
 
@@ -829,7 +833,7 @@ class BaseLocalization(ABC):  # == English
         message += f'📈 Bonding APY is {code(pretty_money(new.bonding_apy, postfix="%"))}{bonding_apy_change} and ' \
                    f'Liquidity APY is {code(pretty_money(new.liquidity_apy, postfix="%"))}{liquidity_apy_change}.\n'
 
-        message += f'🛡️ Loss protection paid: {code(pretty_dollar(new.loss_protection_paid_usd))}.\n'
+        message += f'🛡️ Total Imp. Loss. Protection paid: {code(pretty_dollar(new.loss_protection_paid_usd))}.\n'
 
         daily_users_change = bracketify(up_down_arrow(old.users_daily, new.users_daily, int_delta=True))
         monthly_users_change = bracketify(up_down_arrow(old.users_monthly, new.users_monthly, int_delta=True))

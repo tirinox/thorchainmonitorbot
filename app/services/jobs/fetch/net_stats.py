@@ -2,8 +2,9 @@ import asyncio
 
 from services.jobs.fetch.base import BaseFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher
+from services.jobs.ilp_summer import ILPSummer
 from services.lib.constants import THOR_BLOCK_TIME, thor_to_float
-from services.lib.date_utils import parse_timespan_to_seconds, now_ts
+from services.lib.date_utils import parse_timespan_to_seconds, now_ts, DAY
 from services.lib.depcont import DepContainer
 from services.lib.midgard.urlgen import free_url_gen
 from services.models.mimir import MimirHolder
@@ -90,6 +91,9 @@ class NetworkStatisticsFetcher(BaseFetcher):
         ns.synth_volume_24h = thor_to_float(swap_meta.synth_mint_volume) + thor_to_float(swap_meta.synth_redeem_volume)
         ns.synth_op_count = swap_meta.synth_mint_count + swap_meta.synth_redeem_count
 
+    async def _get_ilp_24h_payouts(self, ns: NetworkStats):
+        ns.loss_protection_paid_24h_rune = await ILPSummer(self.deps).ilp_sum(period=DAY)
+
     async def fetch(self) -> NetworkStats:
         ns = NetworkStats()
         ns.usd_per_rune = self.deps.price_holder.usd_per_rune
@@ -97,7 +101,8 @@ class NetworkStatisticsFetcher(BaseFetcher):
             self._get_stats(ns),
             self._get_network(ns),
             self._get_pools(ns),
-            self._get_swap_stats(ns)
+            self._get_swap_stats(ns),
+            self._get_ilp_24h_payouts(ns)
         )
         ns.date_ts = now_ts()
         return ns
