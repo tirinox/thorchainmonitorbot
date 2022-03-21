@@ -5,6 +5,7 @@ from services.jobs.fetch.base import INotified
 from services.lib.config import SubConfig
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
+from services.lib.money import Asset
 from services.lib.utils import linear_transform, class_logger
 from services.models.tx import ThorTxExtended, ThorTxType
 from services.notify.types.cap_notify import LiquidityCapNotifier
@@ -86,8 +87,11 @@ class GenericTxNotifier(INotified):
             await self.deps.broadcaster.notify_preconfigured_channels(message_gen)
 
     def _get_min_usd_depth(self, tx: ThorTxExtended, usd_per_rune):
-        # todo: bugfix! No pool depth for Tx (convert Synth name!!)
-        pools = tx.pools or [tx.first_input_tx.first_asset]
+        pools = tx.pools
+        if not pools:
+            # in case of refund maybe
+            pools = [Asset.convert_synth_to_pool_name(tx.first_input_tx.first_asset)]
+
         pool_info_list = list(filter(bool, (self.deps.price_holder.pool_info_map.get(pool) for pool in pools)))
         if not pool_info_list:
             return 0.0

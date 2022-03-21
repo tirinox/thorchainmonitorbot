@@ -248,8 +248,16 @@ class Asset:
     def first_filled_component(self):
         return self.chain or self.name or self.tag
 
-    def __str__(self):
+    @property
+    def native_pool_name(self):
         return f'{self.chain}.{self.full_name}' if self.valid else self.name
+
+    def __str__(self):
+        return self.native_pool_name
+
+    @classmethod
+    def convert_synth_to_pool_name(cls, asset: str):
+        return cls.from_string(asset).native_pool_name
 
 
 def weighted_mean(values, weights):
