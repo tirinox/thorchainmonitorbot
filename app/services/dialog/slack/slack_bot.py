@@ -57,18 +57,21 @@ class SlackBot:
         self._settings_manager = SettingsManager(db, cfg)
 
     async def send_message_to_channel(self, channel, text: Optional[str] = '', picture=None, pic_name='pic.png',
-                                      need_convert=True):
+                                      need_convert=True, file_type='png'):
         if need_convert:
             text = self.convert_html_to_my_format(text)
 
         if picture:
             if not isinstance(picture, BytesIO):
                 picture = img_to_bio(picture, pic_name)
+            else:
+                picture = picture.read()
 
             response = await self.slack_app.client.files_upload(
                 file=picture,
                 initial_comment=text,
-                channel=channel,
+                channels=[channel],
+                filetype=file_type,
             )
         else:
             response = await self.slack_app.client.chat_postMessage(
