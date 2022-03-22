@@ -7,7 +7,7 @@ from aiothornode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
 from services.lib.config import Config
-from services.lib.constants import NetworkIdents, rune_origin, thor_to_float, THOR_BLOCK_TIME, BNB_RUNE_SYMBOL, is_rune
+from services.lib.constants import NetworkIdents, rune_origin, thor_to_float, THOR_BLOCK_TIME, BNB_RUNE_SYMBOL
 from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
     get_explorer_url_for_node
@@ -344,13 +344,22 @@ class BaseLocalization(ABC):  # == English
 
     @staticmethod
     def tx_convert_string(tx: ThorTxExtended, usd_per_rune):
-        inputs = tx.get_asset_summary(in_only=True, short_name=True)
-        outputs = tx.get_asset_summary(out_only=True, short_name=True)
+        inputs = tx.get_asset_summary(in_only=True)
+        outputs = tx.get_asset_summary(out_only=True)
 
         input_str = ', '.join(f"{bold(pretty_money(amount))} {asset}" for asset, amount in inputs.items())
         output_str = ', '.join(f"{bold(pretty_money(amount))} {asset}" for asset, amount in outputs.items())
 
         return f"{input_str} ➡️ {output_str} ({pretty_dollar(tx.get_usd_volume(usd_per_rune))})"
+
+    def _exclamation_sign(self, value, cfg_key='', ref=100):
+        exclamation_limit = self.cfg.as_float(f'tx.exclamation.{cfg_key}', 10000) if cfg_key else ref
+        if value >= exclamation_limit * 2:
+            return '‼️'
+        elif value > exclamation_limit:
+            return '❗'
+        else:
+            return ''
 
     def notification_text_large_tx(self, tx: ThorTxExtended, usd_per_rune: float,
                                    pool_info: PoolInfo,
@@ -377,10 +386,19 @@ class BaseLocalization(ABC):  # == English
         content = ''
         if tx.type in (ThorTxType.TYPE_ADD_LIQUIDITY, ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_DONATE):
             if tx.affiliate_fee > 0:
-                aff_text = f'Affiliate fee: {bold(short_dollar(tx.get_affiliate_fee_usd(usd_per_rune)))} ' \
+                aff_fee_usd = tx.get_affiliate_fee_usd(usd_per_rune)
+                mark = self._exclamation_sign(aff_fee_usd, 'fee_usd_limit')
+                aff_text = f'Affiliate fee: {bold(short_dollar(aff_fee_usd))}{mark} ' \
                            f'({format_percent(tx.affiliate_fee)})\n'
             else:
                 aff_text = ''
+
+            ilp_rune = tx.meta_withdraw.ilp_rune if tx.meta_withdraw else 0
+            if ilp_rune > 0:
+                ilp_text = f'🛡️ Impermanent loss protection paid: {code(pretty_money(ilp_rune, postfix=self.R))} ' \
+                           f'({pretty_dollar(ilp_rune * usd_per_rune)})\n'
+            else:
+                ilp_text = ''
 
             content = (
                 f"<b>{pretty_money(tx.rune_amount)} {self.R}</b> ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
@@ -388,6 +406,7 @@ class BaseLocalization(ABC):  # == English
                 f"({ap:.0f}% = {asset_side_usd_short})\n"
                 f"Total: <code>${pretty_money(total_usd_volume)}</code> ({percent_of_pool:.2f}% of the whole pool).\n"
                 f"{aff_text}"
+                f"{ilp_text}"
                 f"Pool depth is <b>${pretty_money(pool_depth_usd)}</b> now."
             )
         elif tx.type == ThorTxType.TYPE_SWITCH:
@@ -410,15 +429,18 @@ class BaseLocalization(ABC):  # == English
             l_fee_usd = tx.meta_swap.liquidity_fee_rune_float * usd_per_rune
 
             if tx.affiliate_fee > 0:
-                aff_text = f'Affiliate fee: {bold(short_dollar(tx.get_affiliate_fee_usd(usd_per_rune)))} ' \
+                aff_fee_usd = tx.get_affiliate_fee_usd(usd_per_rune)
+                mark = self._exclamation_sign(aff_fee_usd, 'fee_usd_limit')
+                aff_text = f'Affiliate fee: {bold(short_dollar(aff_fee_usd))}{mark} ' \
                            f'({format_percent(tx.affiliate_fee)})\n'
             else:
                 aff_text = ''
 
+            slip_mark = self._exclamation_sign(l_fee_usd, 'slip_usd_limit')
             content += (
                 f"\n{aff_text}"
                 f"Slip: {bold(slip_str)}, "
-                f"liquidity fee: {bold(pretty_dollar(l_fee_usd))}"
+                f"liquidity fee: {bold(pretty_dollar(l_fee_usd))}{slip_mark}"
             )
 
         blockchain_components = [f"User: {self.link_to_explorer_user_address_for_tx(tx)}"]
@@ -763,26 +785,31 @@ class BaseLocalization(ABC):  # == English
 
             message += f'{ital("Last 24 hours:")}\n'
 
-            some_added = False
             if added_24h_rune:
-                some_added = True
                 message += f'➕ Rune added to pools: {add_rune_text} ({add_usd_text}).\n'
 
             if withdrawn_24h_rune:
-                some_added = True
                 message += f'➖ Rune withdrawn: {withdraw_rune_text} ({withdraw_usd_text}).\n'
 
             if swap_volume_24h_rune:
-                some_added = True
                 message += f'🔀 Rune swap volume: {swap_rune_text} ({swap_usd_text}) ' \
-                           f'by {bold(new.swaps_24h)} operations.\n'
+                           f'in {bold(new.swaps_24h)} operations.\n'
 
             if switched_24h_rune:
-                some_added = True
                 message += f'💎 Rune switched to native: {switch_rune_text} ({switch_usd_text}).\n'
 
-            if not some_added:
-                message += self.LONG_DASH + '\n'
+            # synthetics:
+            synth_volume_rune = code(pretty_money(new.synth_volume_24h, prefix=RAIDO_GLYPH))
+            synth_volume_usd = code(pretty_dollar(new.synth_volume_24h_usd))
+            synth_op_count = short_money(new.synth_op_count)
+
+            message += f'💊 Synth trade volume: {synth_volume_rune} ({synth_volume_usd}) ' \
+                       f'in {synth_op_count} swaps 🆕\n'
+
+            if new.loss_protection_paid_24h_rune:
+                ilp_rune_str = code(pretty_money(new.loss_protection_paid_24h_rune, prefix=RAIDO_GLYPH))
+                ilp_usd_str = code(pretty_dollar(new.loss_protection_paid_24h_rune * new.usd_per_rune))
+                message += f'🛡️ IL protection payout: {ilp_rune_str} ({ilp_usd_str}) 🆕\n'
 
             message += '\n'
 
@@ -806,7 +833,7 @@ class BaseLocalization(ABC):  # == English
         message += f'📈 Bonding APY is {code(pretty_money(new.bonding_apy, postfix="%"))}{bonding_apy_change} and ' \
                    f'Liquidity APY is {code(pretty_money(new.liquidity_apy, postfix="%"))}{liquidity_apy_change}.\n'
 
-        message += f'🛡️ Loss protection paid: {code(pretty_dollar(new.loss_protection_paid_usd))}.\n'
+        message += f'🛡️ Total Imp. Loss. Protection paid: {code(pretty_dollar(new.loss_protection_paid_usd))}.\n'
 
         daily_users_change = bracketify(up_down_arrow(old.users_daily, new.users_daily, int_delta=True))
         monthly_users_change = bracketify(up_down_arrow(old.users_monthly, new.users_monthly, int_delta=True))

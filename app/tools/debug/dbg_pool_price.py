@@ -8,7 +8,7 @@ from aiothornode.connector import ThorConnector
 from localization import LocalizationManager
 from services.jobs.fetch.pool_price import PoolPriceFetcher, PoolInfoFetcherMidgard
 from services.lib.config import Config
-from services.lib.constants import NetworkIdents, BTC_SYMBOL, get_thor_env_by_network_id
+from services.lib.constants import NetworkIdents, BTC_SYMBOL
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 
@@ -30,7 +30,7 @@ async def test_prices_at_day(d: DepContainer):
 
 def set_network(d: DepContainer, network_id: str):
     d.cfg.network_id = network_id
-    d.thor_connector = ThorConnector(get_thor_env_by_network_id(d.cfg.network_id), d.session)
+    d.thor_connector = ThorConnector(d.cfg.get_thor_env_by_network_id(), d.session)
 
 
 async def test_thor_pools_caching_mctn(d: DepContainer):
@@ -52,7 +52,7 @@ async def test_pool_cache(d):
 
 async def test_price_continuously(d: DepContainer):
     ppf = PoolPriceFetcher(d)
-    d.thor_connector = ThorConnector(get_thor_env_by_network_id(d.cfg.network_id), d.session)
+    d.thor_connector = ThorConnector(d.cfg.get_thor_env_by_network_id(), d.session)
     while True:
         await ppf.fetch()
         await asyncio.sleep(2.0)

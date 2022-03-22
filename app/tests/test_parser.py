@@ -4,7 +4,7 @@ import os
 import pytest
 
 from services.jobs.fetch.tx import merge_affiliate_txs, merge_same_txs
-from services.lib.constants import NetworkIdents, THOR_DIVIDER, NATIVE_RUNE_SYMBOL
+from services.lib.constants import NetworkIdents, THOR_DIVIDER, NATIVE_RUNE_SYMBOL, UST_SYMBOL
 from services.lib.midgard.parser import MidgardParserV2
 from services.models.tx import ThorCoin, ThorMetaSwap, ThorTx
 
@@ -128,9 +128,11 @@ def test_affiliate_add_merge_dual(fn, example_tx_gen):
     assert tx.in_tx[1].coins[0].amount == '3211421250'
     assert tx.in_tx[1].coins[0].asset == NATIVE_RUNE_SYMBOL
 
+
 @pytest.fixture
 def v2_single_tx_gen(example_tx_gen):
     return lambda: example_tx_gen('v2_single.json').txs[0]
+
 
 def test_merge_same(v2_single_tx_gen):
     tx1 = v2_single_tx_gen()
@@ -148,3 +150,20 @@ def test_merge_same(v2_single_tx_gen):
 
     r = merge_affiliate_txs([tx1, tx2])
     assert len(r) == 2
+
+
+def test_synth(example_tx_gen):
+    tx = example_tx_gen('synth_swap.json').txs[0]
+    assert tx.input_thor_address == 'sthor1nudqnvdfsf03emu3mue7z6gv8ewd6y2sel6p88'
+    assert tx.not_rune_asset(in_only=True).asset == 'ETH/USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48'
+    assert tx.not_rune_asset(out_only=True).asset == 'LTC/LTC'
+
+    for k, v in tx.get_asset_summary(in_only=True).items():
+        assert k == 'Synth:ETH.USDC-0XA0B8'
+        assert v == 0.001
+
+    assert tx.is_synth_involved
+
+    non_synth_tx = example_tx_gen('synth_swap.json').txs[2]
+    assert not non_synth_tx.is_synth_involved
+

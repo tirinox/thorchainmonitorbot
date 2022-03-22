@@ -205,6 +205,7 @@ class MimirHolder:
         "HALTTHORCHAIN",
         'HALTDOGECHAIN',
         'HALTDOGETRADING',
+        'HALTCHURNING',
         "HALTTRADING",
         "MINTSYNTHS",
         "PAUSELP",
@@ -279,6 +280,7 @@ class MimirHolder:
         'POOLDEPTHFORYGGFUNDINGMIN': 'Pool Depth For Ygg Funding Min',
 
         'MAXSYNTHASSETDEPTH': 'Max Synth Asset Depth',
+        'HALTCHURNING': 'Halt Churning',
     }
 
     @staticmethod

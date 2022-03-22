@@ -208,23 +208,23 @@ class Asset:
             self.tag = a.tag
             self.is_synth = a.is_synth
 
+    @staticmethod
+    def get_name_tag(name_and_tag_str):
+        components = name_and_tag_str.split('-', maxsplit=2)
+        if len(components) == 2:
+            return components
+        else:
+            return name_and_tag_str, ''
+
     @classmethod
     def from_string(cls, asset: str):
         try:
             if asset == 'rune':
                 return cls('THOR', 'RUNE')
             is_synth = '/' in asset
-            if is_synth:
-                chain, name = asset.split('/')
-                return cls(str(chain).upper(), str(name).upper(), is_synth=True)
-            else:
-                chain, name_and_tag = asset.split('.', maxsplit=2)
-                components = name_and_tag.split('-', maxsplit=2)
-                if len(components) == 2:
-                    name, tag = components
-                else:
-                    name, tag = name_and_tag, ''
-                return cls(str(chain).upper(), str(name).upper(), str(tag).upper())
+            chain, name_and_tag = asset.split('/' if is_synth else '.', maxsplit=2)
+            name, tag = cls.get_name_tag(name_and_tag)
+            return cls(str(chain).upper(), str(name).upper(), str(tag).upper(), is_synth)
         except (IndexError, TypeError, ValueError):
             return cls(name=asset)
 
@@ -248,8 +248,16 @@ class Asset:
     def first_filled_component(self):
         return self.chain or self.name or self.tag
 
-    def __str__(self):
+    @property
+    def native_pool_name(self):
         return f'{self.chain}.{self.full_name}' if self.valid else self.name
+
+    def __str__(self):
+        return self.native_pool_name
+
+    @classmethod
+    def convert_synth_to_pool_name(cls, asset: str):
+        return cls.from_string(asset).native_pool_name
 
 
 def weighted_mean(values, weights):

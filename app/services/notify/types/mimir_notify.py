@@ -89,14 +89,14 @@ class MimirChangedNotifier(INotified):
 
             if change_kind is not None:
                 entry = self.deps.mimir_const_holder.get_entry(name)
+                if entry:
+                    node_mimir_ceased = name in old_node_mimir and name not in node_mimir
+                    if node_mimir_ceased:
+                        entry.source = entry.SOURCE_NODE_CEASED
 
-                node_mimir_ceased = name in old_node_mimir and name not in node_mimir
-                if node_mimir_ceased:
-                    entry.source = entry.SOURCE_NODE_CEASED
-
-                change = MimirChange(change_kind, name, old_value, new_value, entry, timestamp)
-                changes.append(change)
-                await self._save_mimir_change_date(change)
+                    change = MimirChange(change_kind, name, old_value, new_value, entry, timestamp)
+                    changes.append(change)
+                    await self._save_mimir_change_date(change)
 
         if changes:
             await self.deps.broadcaster.notify_preconfigured_channels(

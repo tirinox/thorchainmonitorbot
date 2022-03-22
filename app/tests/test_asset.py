@@ -34,7 +34,8 @@ def test_asset1():
 def test_synth_asset_name():
     a1 = Asset("BNB/BTCB-1DE")
     assert a1.is_synth
-    assert a1.name == 'BTCB-1DE'
+    assert a1.name == 'BTCB'
+    assert a1.tag == '1DE'
     assert a1.chain == 'BNB'
     assert a1.short_str == 'Synth:BNB.BTCB-1DE'
 
@@ -47,3 +48,16 @@ def test_synth_asset_name():
     assert a3 == a2
     assert a3.short_str == 'Synth:BTC.BTC'
 
+    a4 = Asset('ETH/USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48')
+    assert a4.tag == '0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48'
+    assert a4.chain == 'ETH'
+    assert a4.name == 'USDC'
+    assert a4.short_str == 'Synth:ETH.USDC-0XA0B8'
+
+
+def test_convert_synth():
+    p1 = Asset.convert_synth_to_pool_name('ETH/USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48')
+    assert p1 == 'ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48'
+
+    assert Asset.convert_synth_to_pool_name('ETH.ETH') == 'ETH.ETH'
+    assert Asset.convert_synth_to_pool_name('BTC/BTC') == 'BTC.BTC'

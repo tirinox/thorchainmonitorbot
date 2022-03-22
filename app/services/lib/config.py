@@ -1,6 +1,7 @@
 import sys
 
 import yaml
+from aiothornode.env import ThorEnvironment, TEST_NET_ENVIRONMENT_MULTI_1, MCCN
 from dotenv import load_dotenv
 
 from services.lib.constants import NetworkIdents
@@ -99,3 +100,27 @@ class Config(SubConfig):
 
         self.network_id = self.get('thor.network_id', NetworkIdents.CHAOSNET_MULTICHAIN)
         self.is_midgard_v2 = self.network_id in (NetworkIdents.TESTNET_MULTICHAIN, NetworkIdents.CHAOSNET_MULTICHAIN)
+
+    def get_thor_env_by_network_id(self) -> ThorEnvironment:
+        network_id = self.network_id
+
+        if network_id == NetworkIdents.TESTNET_MULTICHAIN:
+            ref_env = TEST_NET_ENVIRONMENT_MULTI_1.copy()
+        elif network_id == NetworkIdents.CHAOSNET_MULTICHAIN:
+            ref_env = MCCN.copy()
+        else:
+            raise KeyError('unsupported network ID!')
+
+        node_url = self.as_str('thor.node.node_url', '')
+        if node_url:
+            ref_env.thornode_url = node_url
+
+        rpc_url = self.as_str('thor.node.rpc_node_url', '')
+        if rpc_url:
+            ref_env.rpc_url = rpc_url
+
+        midgard_url = self.as_str('thor.midgard.public_url', '')
+        if midgard_url:
+            ref_env.midgard_url = midgard_url
+
+        return ref_env

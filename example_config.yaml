@@ -10,10 +10,15 @@ thor:
   #  "chaosnet-multi" for MCCN
   network_id: "chaosnet-multi"
 
+  node: # (!) new
+    node_url: "https://thornode.ninerealms.com/"
+    rpc_node_url: "https://rpc.ninerealms.com/"
+
   midgard:
     tries: 3
     use_nodes: false
-    public_url: "https://midgard.thorchain.info/"
+    public_url: "https://midgard.ninerealms.com/"
+#    public_url: "https://midgard.thorchain.info/"
 
   timeout: 2.0
 
@@ -26,6 +31,7 @@ thor:
     - BNB.BUSD-BD1
     - BNB.BUSD-BAF  # test
     - BNB.BUSD-74E  # test
+    - TERRA.USD
 
 
 telegram:
@@ -92,6 +98,12 @@ tx:
   tx_per_batch: 50
   max_page_deep: 5
   max_tx_per_single_message: 6
+
+  # new (!)
+  exclamation:
+    fee_usd_limit: 3000
+    ilp_usd_limit: 5000
+    slip_usd_limit: 5000
 
   liquidity:
     enabled: true

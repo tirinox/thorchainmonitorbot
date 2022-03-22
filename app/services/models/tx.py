@@ -121,6 +121,7 @@ class ThorMetaWithdraw:
     basis_points: str
     liquidity_units: str
     network_fees: List[ThorCoin]
+    impermanent_loss_protection: str
 
     @property
     def basis_points_int(self):
@@ -130,13 +131,20 @@ class ThorMetaWithdraw:
     def liquidity_units_int(self):
         return int(self.liquidity_units)
 
+    @property
+    def ilp_rune(self):
+        return thor_to_float(self.impermanent_loss_protection)
+
     @classmethod
     def parse(cls, j):
         fees = [ThorCoin(**cj) for cj in j.get('networkFees', [])]
-        return cls(asymmetry=j.get('asymmetry', '0'),
-                   network_fees=fees,
-                   liquidity_units=j.get('liquidityUnits', '0'),
-                   basis_points=j.get('basisPoints', '0'))
+        return cls(
+            asymmetry=j.get('asymmetry', '0'),
+            network_fees=fees,
+            liquidity_units=j.get('liquidityUnits', '0'),
+            basis_points=j.get('basisPoints', '0'),
+            impermanent_loss_protection=j.get('impermanentLossProtection', '0')
+        )
 
 
 @dataclass
@@ -272,7 +280,7 @@ class ThorTx:
         return None, None
 
     def search_realm(self, in_only=False, out_only=False):
-        return self.in_tx if in_only else self.out_tx if out_only else in_only + out_only
+        return self.in_tx if in_only else self.out_tx if out_only else self.in_tx + self.out_tx
 
     def get_sub_tx(self, asset, in_only=False, out_only=False):
         for sub_tx in self.search_realm(in_only, out_only):
@@ -297,7 +305,7 @@ class ThorTx:
     def sum_of_rune(self, in_only=False, out_only=False):
         return self.sum_of(lambda c: is_rune(c.asset), in_only, out_only)
 
-    def get_asset_summary(self, in_only=False, out_only=False, short_name=False):
+    def get_asset_summary(self, in_only=False, out_only=False, short_name=True):
         results = defaultdict(float)
         for coin in self.coins_of(in_only, out_only):
             name = Asset(coin.asset).short_str if short_name else coin.asset
@@ -336,6 +344,13 @@ class ThorTx:
 
         return True
 
+    @property
+    def is_synth_involved(self):
+        for sub_tx in self.search_realm():
+            for c in sub_tx.coins:
+                if '/' in c.asset:
+                    return True
+        return False
 
 
 def final_liquidity(txs: List[ThorTx]):
