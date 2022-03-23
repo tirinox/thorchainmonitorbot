@@ -1,16 +1,19 @@
 from typing import List, Tuple, Optional
 
-from services.lib.date_utils import HOUR, now_ts
+from services.lib.date_utils import HOUR, now_ts, DAY, format_time_ago
 from services.lib.depcont import DepContainer
+from services.lib.utils import class_logger
 from services.models.node_info import EventNodeOnline, NodeEvent, NodeEventType
 from services.models.thormon import ThorMonAnswer, ThorMonNode
-from services.notify.personal.user_data import UserDataCache
 from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
 from services.notify.personal.telemetry import NodeTelemetryDatabase
+from services.notify.personal.user_data import UserDataCache
 
 TimeStampedList = List[Tuple[float, bool]]
 
 SERVICES = ['rpc', 'bifrost']
+
+AGE_CUT_OFF = 30 * DAY
 
 
 class NodeOnlineTracker(BaseChangeTracker):
@@ -18,6 +21,7 @@ class NodeOnlineTracker(BaseChangeTracker):
         self.deps = deps
         self.telemetry_db = NodeTelemetryDatabase(deps)
         self.cache: Optional[UserDataCache] = None
+        self.logger = class_logger(self)
 
     KEY_LAST_ONLINE_TS = 'last_online_ts'
     KEY_ONLINE_STATE = 'online'
@@ -43,10 +47,12 @@ class NodeOnlineTracker(BaseChangeTracker):
                 if is_ok:
                     self.cache.node_service_data[address][service][self.KEY_LAST_ONLINE_TS] = ref_ts
 
+                off_time = self.get_offline_time(address, service, ref_ts)
+
                 events.append(NodeEvent(
                     address,
                     NodeEventType.SERVICE_ONLINE,
-                    EventNodeOnline(is_ok, self.get_offline_time(address, service, ref_ts), service),
+                    EventNodeOnline(is_ok, off_time, service),
                     thor_node=node,
                     tracker=self
                 ))
@@ -63,6 +69,9 @@ class NodeOnlineTracker(BaseChangeTracker):
         threshold_interval = float(settings.get(NodeOpSetting.OFFLINE_INTERVAL, HOUR))
 
         event_data: EventNodeOnline = event.data
+        if event_data.duration > AGE_CUT_OFF:
+            return False
+
         node, service = event.thor_node.node_address, event_data.service
         user_thinks_online = self.get_user_state(user_id, node, service)
 

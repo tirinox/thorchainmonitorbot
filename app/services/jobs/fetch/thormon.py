@@ -19,6 +19,9 @@ THORMON_SOLVENCY_URL = 'https://thorchain-mainnet-solvency.nexain.com/api/v1/sol
 USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) ' \
              'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36'
 
+# fixme
+DEBUG = False
+
 
 class ThorMonWSSClient(WSClient, WithDelegates):
     def __init__(self, network, reply_timeout=10, ping_timeout=5, sleep_time=5):
@@ -43,8 +46,8 @@ class ThorMonWSSClient(WSClient, WithDelegates):
         self.last_message_ts = now_ts()
 
         if isinstance(message, dict):
-            # self._dbg_save_to_file(message)  # fixme
-            message = self._dbg_read_from_file(data=message)  # fixme: debug
+            if DEBUG:
+                message = self._dbg_read_from_file(data=message)
 
             answer = ThorMonAnswer.from_json(message)
             if answer.nodes:

@@ -85,18 +85,18 @@ def parse_timespan_to_seconds(span: str):
         return result
 
 
-def format_time_ago(d, max_time=30*DAY, translate=None):
+def format_time_ago(duration_sec, max_time=30 * DAY, translate=None):
     def tr(key):
         return translate.get(key, key) if translate else key
 
-    if d is None or d == 0:
+    if duration_sec is None or duration_sec == 0:
         return tr('never')
-    elif abs(d) < 5:
+    elif abs(duration_sec) < 5:
         return tr('just now')
-    elif abs(d) > max_time:
+    elif abs(duration_sec) > max_time:
         return tr('long-long ago')
     else:
-        return f'{seconds_human(d, translate=translate)} {tr("ago")}'
+        return f'{seconds_human(duration_sec, translate=translate)} {tr("ago")}'
 
 
 def format_time_ago_short(d, now=None):
