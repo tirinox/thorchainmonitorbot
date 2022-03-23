@@ -205,6 +205,8 @@ class MimirHolder:
         "HALTTHORCHAIN",
         'HALTDOGECHAIN',
         'HALTDOGETRADING',
+        'HALTTERRACHAIN',
+        'HALTTERRATRADING',
         'HALTCHURNING',
         "HALTTRADING",
         "MINTSYNTHS",
@@ -215,6 +217,7 @@ class MimirHolder:
         "PAUSELPETH",
         "PAUSELPLTC",
         "PAUSELPDOGE",
+        'PAUSELPTERRA',
         "STOPFUNDYGGDRASIL",
         "STOPSOLVENCYCHECK",
         "THORNAME",
@@ -225,6 +228,7 @@ class MimirHolder:
         'STOPSOLVENCYCHECKBTC',
         'STOPSOLVENCYCHECKBCH',
         'STOPSOLVENCYCHECKDOGE',
+        'STOPSOLVENCYCHECKTERRA',
         'STRICTBONDLIQUIDITYRATIO',
     }
 
@@ -235,6 +239,7 @@ class MimirHolder:
         'PAUSELPBNB': 'Pause LP BNB',
         'PAUSELPBTC': 'Pause LP BTC',
         'PAUSELPDOGE': 'Pause LP Doge',
+        'PAUSELPTERRA': 'Pause LP Terra',
         'PAUSELP': 'Pause all LP',
         'STOPFUNDYGGDRASIL': 'Stop Fund Yggdrasil',
         'STOPSOLVENCYCHECK': 'Stol Solvency Check',
@@ -258,6 +263,9 @@ class MimirHolder:
         'HALTDOGECHAIN': 'Halt DOGE Chain',
         'HALTDOGETRADING': 'Halt DOGE Trading',
 
+        'HALTTERRACHAIN': 'Halt Terra Chain',
+        'HALTTERRATRADING': 'Halt Terra Trading',
+
         'HALTTHORCHAIN': 'Halt ThorChain',
         'HALTTRADING': 'Halt All Trading',
 
@@ -275,6 +283,7 @@ class MimirHolder:
         'STOPSOLVENCYCHECKBTC': 'Stop Solvency check BTC',
         'STOPSOLVENCYCHECKBCH': 'Stop Solvency check BCH',
         'STOPSOLVENCYCHECKDOGE': 'Stop Solvency check DOGE',
+        'STOPSOLVENCYCHECKTERRA': 'Stop Solvency check Terra',
         'STRICTBONDLIQUIDITYRATIO': 'Strict Bond Liquidity Ratio',
 
         'POOLDEPTHFORYGGFUNDINGMIN': 'Pool Depth For Ygg Funding Min',
