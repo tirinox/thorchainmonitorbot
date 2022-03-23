@@ -1489,6 +1489,11 @@ class BaseLocalization(ABC):  # == English
             message = f'🆙 Node {short_addr} version upgrade from {ital(old)} to {bold(new)}!'
         elif c.type == NodeEventType.NEW_VERSION_DETECTED:
             message = f'🆕 New version detected! {bold(c.data)}! Consider upgrading!'
+        elif c.type == NodeEventType.BOND:
+            old, new = c.data
+            message = f'⚖️ Node {short_addr}: bond changed ' \
+                      f'from {short_money(old, postfix=RAIDO_GLYPH)} ' \
+                      f'to {bold(short_money(new, postfix=RAIDO_GLYPH))}!'
         elif c.type == NodeEventType.IP_ADDRESS_CHANGED:
             old, new = c.data
             message = f'🏤 Node {short_addr} changed its IP address from {ital(old)} to {bold(new)}!'

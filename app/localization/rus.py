@@ -1236,6 +1236,11 @@ class RussianLocalization(BaseLocalization):
             message = f'🆙 Нода {short_addr} обновилась с версии {ital(old)} до {bold(new)}!'
         elif c.type == NodeEventType.NEW_VERSION_DETECTED:
             message = f'🆕 Новая версия ПО ноды обнаружена! {bold(c.data)}! Рассмотрите возможность обновиться!'
+        elif c.type == NodeEventType.BOND:
+            old, new = c.data
+            message = f'⚖️ Нода {short_addr}: изменение бонда с ' \
+                      f'{short_money(old, postfix=RAIDO_GLYPH)} ' \
+                      f'до {bold(short_money(new, postfix=RAIDO_GLYPH))}!'
         elif c.type == NodeEventType.IP_ADDRESS_CHANGED:
             old, new = c.data
             message = f'🏤 Нода {short_addr} сменила свой IP адрес с {ital(old)} на {bold(new)}!'

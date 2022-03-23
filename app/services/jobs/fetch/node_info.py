@@ -26,7 +26,15 @@ class NodeInfoFetcher(BaseFetcher):
 
         new_nodes = []
         for j in raw_nodes:
-            new_nodes.append(NodeInfo.from_json(j))
+            node = NodeInfo.from_json(j)
+
+            # fixme: debug
+            if node.node_address == 'thor15tjtgxq7mz3ljwk0rzw6pvj43tz3xsv9f2wfzp':
+                # node.ip_address = f'127.0.0.{random.randint(1, 255)}'
+                # node.bond = 100000 + random.randint(0, 1000000)
+                print(node.node_address, node.bond)
+
+            new_nodes.append(node)
         new_nodes.sort(key=lambda k: (k.status, -k.bond))
 
         # new_nodes = self._test_churn(new_nodes)  # fixme: debug
