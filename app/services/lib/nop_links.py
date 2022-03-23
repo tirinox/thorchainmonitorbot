@@ -5,6 +5,7 @@ from services.lib.constants import Messengers
 from services.lib.db import DB
 from services.lib.db_one2one import OneToOne
 from services.lib.utils import class_logger, random_hex
+from services.notify.personal.helpers import NodeOpSetting
 
 
 class SettingsManager:
@@ -99,3 +100,13 @@ class SettingsContext:
 
     def __delitem__(self, key):
         del self._curr_settings[key]
+
+    @property
+    def is_paused(self):
+        return bool(self._curr_settings.get(NodeOpSetting.PAUSE_ALL_ON, False))
+
+    def pause(self):
+        self[NodeOpSetting.PAUSE_ALL_ON] = True
+
+    def unpause(self):
+        self[NodeOpSetting.PAUSE_ALL_ON] = False

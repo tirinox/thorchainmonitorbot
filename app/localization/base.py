@@ -1515,6 +1515,33 @@ class BaseLocalization(ABC):  # == English
 
         return message
 
+    @staticmethod
+    def text_nop_paused_slack(paused, prev_paused, channel_name):
+        if paused:
+            if prev_paused:
+                return f'⏸️ The notification feed is already paused on the channel {channel_name}.\n' \
+                       f'Use `/go` command to start it again.'
+            else:
+                return f'⏸️ The notification feed has been paused on the channel {channel_name}.\n' \
+                       f'Use `/go` command to start it again.'
+        else:  # running
+            if prev_paused:
+                return f'▶️ The notification feed has been started on the channel {channel_name}.\n' \
+                       f'Use `/pause` command to pause it.'
+            else:
+                return f'▶️ The notification feed is already running on the channel {channel_name}.\n' \
+                       f'Use `/pause` command to pause it.'
+
+    @staticmethod
+    def text_nop_settings_link_slack(url, channel_name):
+        return f"⚙️ The settings link for the {channel_name} channel is {url}.\n" \
+               f"Once set up, you don't need to use any command to start getting notifications."
+
+    TEXT_NOP_NEED_SETUP_SLACK = (
+        f'⚠️ First you need to set up the bot. '
+        f'Please use `/settings` command to get a personal URL to the channel settings.'
+    )
+
     # ------- BEST POOLS -------
 
     def format_pool_top(self, attr_name, pd: PoolDetailHolder, title, no_pool_text, n_pools):

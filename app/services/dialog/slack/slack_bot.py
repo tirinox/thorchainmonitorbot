@@ -8,11 +8,9 @@ from slack_bolt.oauth.async_oauth_settings import AsyncOAuthSettings
 from slack_sdk.oauth.installation_store import FileInstallationStore
 from slack_sdk.oauth.state_store import FileOAuthStateStore
 
-from localization import LocalizationManager
-from services.dialog.picture.price_picture import price_graph_from_db
+from localization import LocalizationManager, BaseLocalization
 from services.lib.config import Config
 from services.lib.constants import Messengers
-from services.lib.date_utils import DAY
 from services.lib.db import DB
 from services.lib.draw_utils import img_to_bio
 from services.lib.nop_links import SettingsManager
@@ -56,6 +54,9 @@ class SlackBot:
 
         self._settings_manager = SettingsManager(db, cfg)
 
+    def get_localization(self, channel) -> BaseLocalization:
+        return LocalizationManager(self.cfg).default
+
     async def send_message_to_channel(self, channel, text: Optional[str] = '', picture=None, pic_name='pic.png',
                                       need_convert=True, file_type='png'):
         if need_convert:
@@ -83,13 +84,40 @@ class SlackBot:
 
         self.logger.debug(f'Slack response: {response.data}')
 
+    def _context(self, channel_id):
+        return self._settings_manager.get_context(channel_id)
+
+    @staticmethod
+    def _infer_channel_name(body: dict):
+        chan_name = body['channel_name']
+        user_name = body['user_name']
+        if chan_name == 'directmessage':
+            return f'DM:<@{user_name}>'
+        else:
+            return f'#{chan_name}'
+
+    async def _pause_unpause(self, body, ack, say, pause):
+        channel_id = body["channel_id"]
+
+        async with self._context(channel_id) as settings:
+            if not settings:
+                await ack(self.get_localization(channel_id).TEXT_NOP_NEED_SETUP_SLACK)
+                return
+
+            await ack()
+            settings.pause()
+
+            channel_name = self._infer_channel_name(body)
+            text = self.get_localization(channel_id).text_nop_paused_slack(pause, settings.is_paused, channel_name)
+            await say(text)
+
     def setup_commands(self):
         app = self.slack_app
 
         @app.command("/settings")
         async def settings_command(ack, body):
             channel_id = body.get('channel_id')
-            async with self._settings_manager.get_context(channel_id) as settings:
+            async with self._context(channel_id) as settings:
                 token = await self._settings_manager.generate_new_token(channel_id)
 
                 self._settings_manager.set_messenger_data(
@@ -101,62 +129,23 @@ class SlackBot:
 
                 url = self._settings_manager.get_link(token)
 
-                user_id = body.get('user_id')
-                # todo: localization!
-                await ack(f"Settings for <@{user_id}> your link is {url}!")
+                channel_name = self._infer_channel_name(body)
+                text = self.get_localization(channel_id).text_nop_settings_link_slack(url, channel_name)
+                await ack(text)
 
         @app.command("/pause")
-        async def pause_command(ack, body):
-            user_id = body["user_id"]
-            await ack(f"Pause <@{user_id}>!")
-            print(body)
-            # todo
+        async def pause_command(ack, body, say):
+            await self._pause_unpause(body, ack, say, pause=True)
 
         @app.command("/go")
-        async def go_command(ack, body):
-            user_id = body["user_id"]
-            await ack(f"Go <@{user_id}>!")
-            print(body)
-            # todo
-
-        # fixme: debug
-        @app.message("knock")
-        async def ask_who(message, say):
-            print(message)
-            await say("_Who's there?_")
-
-        # fixme: debug
-        @app.message("rune price")
-        async def ask_who(message):
-            print(message)
-            channel = message['channel']
-
-            period = 7 * DAY
-            graph = await price_graph_from_db(self.db, LocalizationManager(self.cfg).default, period=period)
-
-            await self.send_message_to_channel(channel, picture=graph, text='Rune Price')
-
-        # @app.event("message")
-        # async def handle_message_events(body, logger, client: AsyncWebClient):
-        #     logger.info(body)
-        #     user = body.get('event', {}).get('user')
-        #     if user:
-        #         info = await client.users_profile_get(user=user, include_labels=True)
-        #         print('---- user: ----')
-        #         print(info)
-        #         print('---------------')
-
-        # fixme: remove?
-        @app.shortcut("open_settings")
-        async def handle_shortcuts(ack, body, logger):
-            await ack()
-            logger.info(body)
+        async def go_command(ack, body, say):
+            await self._pause_unpause(body, ack, say, pause=False)
 
     async def test_send_message(self, msg='Hello *Slack*!'):
         await self.slack_app.client.chat_postMessage(channel='C02L2AVS937', text=msg, mrkdwn=True)
 
     def start_in_background(self):
-        ...
+        ...  # no action needed here
 
     @staticmethod
     def convert_html_to_my_format(text: str):
