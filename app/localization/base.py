@@ -1509,7 +1509,7 @@ class BaseLocalization(ABC):  # == English
             verb = 'churned in ⬅️' if c.data else 'churned out ➡️'
             bond = c.node.bond
             message = f'🌐 Node {short_addr} ({short_money(bond)} {RAIDO_GLYPH} bond) {bold(verb)}!'
-        elif c.type in NodeEventType.BLOCK_HEIGHT:
+        elif c.type == NodeEventType.BLOCK_HEIGHT:
             data: EventBlockHeight = c.data
 
             if data.is_sync:
@@ -1517,6 +1517,11 @@ class BaseLocalization(ABC):  # == English
             else:
                 message = f'🔴 Node {short_addr} is {pre(data.block_lag)} blocks behind ' \
                           f'on the {pre(data.chain)} chain (≈{self.seconds_human(data.how_long_behind)})!'
+        elif c.type == NodeEventType.PRESENCE:
+            if c.data:
+                message = f'⁉️ Node {short_addr} has disappeared from the THORChain network.'
+            else:
+                message = f'🙋 Node {short_addr} is back is the THORChain network.'
 
         return message
 

@@ -19,6 +19,7 @@ from services.notify.broadcast import ChannelDescriptor
 from services.notify.personal.bond import BondTracker
 from services.notify.personal.chain_height import ChainHeightTracker
 from services.notify.personal.churning import NodeChurnTracker
+from services.notify.personal.presence import PresenceTracker
 from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
 from services.notify.personal.ip_addr import IpAddressTracker
 from services.notify.personal.node_online import NodeOnlineTracker
@@ -51,6 +52,7 @@ class NodeChangePersonalNotifier(INotified):
         self.churn_tracker = NodeChurnTracker(deps)
         self.slash_tracker = SlashPointTracker(deps)
         self.bond_tracker = BondTracker(deps)
+        self.presence_tracker = PresenceTracker(deps)
 
     async def prepare(self):
         self.thor_mon.subscribe(self)
@@ -89,6 +91,7 @@ class NodeChangePersonalNotifier(INotified):
         events += await self.version_tracker.get_all_changes(node_set_change)
         events += await self.ip_address_tracker.get_all_changes(prev_and_curr_node_map)
         events += await self.bond_tracker.get_all_changes(prev_and_curr_node_map)
+        events += await self.presence_tracker.get_events(node_set_change)
 
         await self._cast_messages_for_events(events)
 

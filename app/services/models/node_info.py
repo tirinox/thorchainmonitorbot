@@ -340,6 +340,7 @@ class NodeEventType:
     IP_ADDRESS_CHANGED = 'ip_address'
     SERVICE_ONLINE = 'service_online'
     BLOCK_HEIGHT = 'block_height'
+    PRESENCE = 'presence'
 
 
 class NodeEvent(NamedTuple):

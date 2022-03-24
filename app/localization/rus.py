@@ -1256,7 +1256,7 @@ class RussianLocalization(BaseLocalization):
             verb = 'активировалась ⬅️' if c.data else 'вышла из активного набора ➡️'
             bond = c.node.bond
             message = f'🌐 Нода {short_addr} ({short_money(bond)} {RAIDO_GLYPH} бонда) {bold(verb)}!'
-        elif c.type in NodeEventType.BLOCK_HEIGHT:
+        elif c.type == NodeEventType.BLOCK_HEIGHT:
             data: EventBlockHeight = c.data
 
             if data.is_sync:
@@ -1264,6 +1264,11 @@ class RussianLocalization(BaseLocalization):
             else:
                 message = f'🔴 Нода {short_addr} на {pre(data.block_lag)} позади ' \
                           f'на блокчейне {pre(data.chain)} (≈{self.seconds_human(data.how_long_behind)})!'
+        elif c.type == NodeEventType.PRESENCE:
+            if c.data:
+                message = f'⁉️ Нода {short_addr} исчезла из сети THORChain!'
+            else:
+                message = f'🙋 Нода {short_addr} снова вернулась в сеть THORChain!'
 
         return message
 

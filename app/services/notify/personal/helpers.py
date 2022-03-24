@@ -33,6 +33,8 @@ class NodeOpSetting:
     SLASH_PERIOD = 'nop:slash:period'
     PAUSE_ALL_ON = 'nop:pause_all:on'
 
+    NODE_PRESENCE = 'nop:presence:on'  # new
+
 
 class BaseChangeTracker:
     async def is_event_ok(self, event: NodeEvent, user_id, settings: dict) -> bool:
