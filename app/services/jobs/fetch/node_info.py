@@ -27,18 +27,11 @@ class NodeInfoFetcher(BaseFetcher):
         new_nodes = []
         for j in raw_nodes:
             node = NodeInfo.from_json(j)
-
-            # fixme: debug
-            if node.node_address == 'thor15tjtgxq7mz3ljwk0rzw6pvj43tz3xsv9f2wfzp':
-                # node.ip_address = f'127.0.0.{random.randint(1, 255)}'
-                # node.bond = 100000 + random.randint(0, 1000000)
-                print(node.node_address, node.bond)
-
+            # node = self._dbg_node_magic(node)
             new_nodes.append(node)
         new_nodes.sort(key=lambda k: (k.status, -k.bond))
 
-        # new_nodes = self._test_churn(new_nodes)  # fixme: debug
-
+        # new_nodes = self._test_churn(new_nodes)
         return new_nodes
 
     async def fetch(self) -> List[NodeInfo]:
@@ -46,38 +39,6 @@ class NodeInfoFetcher(BaseFetcher):
         if nodes:
             self.deps.node_holder.nodes = nodes
         return nodes
-
-    @staticmethod
-    def _test_churn(new_nodes: List[NodeInfo]):
-        """
-        This is for debug purposes
-        """
-        new_nodes = list(new_nodes)
-
-        new_nodes[0].version = '0.68.6'  # version fun?
-
-        def random_node(nodes):
-            return nodes[random.randint(0, len(nodes))]
-
-        if random.uniform(0, 1) > 0.7:
-            new_nodes.remove(random_node(new_nodes))
-
-        if random.uniform(0, 1) > 0.3:
-            new_nodes.remove(random_node(new_nodes))
-
-        if random.uniform(0, 1) > 0.65:
-            node = random_node(new_nodes)
-            node.status = node.STANDBY if node.is_active else node.ACTIVE
-
-        if random.uniform(0, 1) > 0.4:
-            node = random_node(new_nodes)
-            node.status = node.STANDBY if node.is_active else node.ACTIVE
-
-        if random.uniform(0, 1) > 0.2:
-            node = random_node(new_nodes)
-            node.status = node.STANDBY if node.is_active else node.ACTIVE
-
-        return new_nodes
 
     async def get_node_list_and_geo_info(self, node_list=None):
         if node_list is None:
@@ -114,3 +75,46 @@ class NodeInfoFetcher(BaseFetcher):
         # fixme: debug(!) ------ 8< -------
 
 
+    @staticmethod
+    def _test_churn(new_nodes: List[NodeInfo]):
+        """
+        This is for debug purposes
+        """
+        new_nodes = list(new_nodes)
+
+        new_nodes[0].version = '0.68.6'  # version fun?
+
+        def random_node(nodes):
+            return nodes[random.randint(0, len(nodes))]
+
+        if random.uniform(0, 1) > 0.7:
+            new_nodes.remove(random_node(new_nodes))
+
+        if random.uniform(0, 1) > 0.3:
+            new_nodes.remove(random_node(new_nodes))
+
+        if random.uniform(0, 1) > 0.65:
+            node = random_node(new_nodes)
+            node.status = node.STANDBY if node.is_active else node.ACTIVE
+
+        if random.uniform(0, 1) > 0.4:
+            node = random_node(new_nodes)
+            node.status = node.STANDBY if node.is_active else node.ACTIVE
+
+        if random.uniform(0, 1) > 0.2:
+            node = random_node(new_nodes)
+            node.status = node.STANDBY if node.is_active else node.ACTIVE
+
+        return new_nodes
+
+    @staticmethod
+    def _dbg_node_magic(node):
+        # if node.node_address == 'thor15tjtgxq7mz3ljwk0rzw6pvj43tz3xsv9f2wfzp':
+        if node.node_address == 'thor1ya23sls96ctg7y3mfezzle5gkzyue8z5h3wde0':
+            # node.status = node.STANDBY
+            node.version = '1.85.9'
+            ...
+            # node.ip_address = f'127.0.0.{random.randint(1, 255)}'
+            # node.bond = 100000 + random.randint(0, 1000000)
+            print(node.node_address, node.bond)
+        return node

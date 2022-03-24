@@ -80,11 +80,6 @@ class SlashPointTracker(BaseChangeTracker):
         if not bool(settings.get(NodeOpSetting.SLASH_ON, True)):
             return False
 
-        # # fixme: ---- 8< ----
-        # if event.address == 'thor1dq5tumtlgua3nyp2at0m2jw84ete6jp9ywxyf8':
-        #     print('??!')  # todo: test & fix Slash Tracker using the simulation file
-        # # fixme: ---- 8< ----
-
         data: EventDataSlash = event.data
 
         interval = settings.get(NodeOpSetting.SLASH_PERIOD, 5 * MINUTE)
@@ -92,6 +87,8 @@ class SlashPointTracker(BaseChangeTracker):
             return False
 
         threshold = settings.get(NodeOpSetting.SLASH_THRESHOLD, 50)
+
+        # print(f'{user_id} ({event.thor_node.node_address}): {data.delta_pts = }')
 
         if data.delta_pts >= threshold:
             if self.cache.cooldown_can_do(user_id, event.thor_node.node_address,
