@@ -19,8 +19,8 @@ THORMON_SOLVENCY_URL = 'https://thorchain-mainnet-solvency.nexain.com/api/v1/sol
 USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) ' \
              'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/92.0.4515.159 Safari/537.36'
 
-# fixme
-DEBUG = True
+
+DEBUG = False
 
 
 class ThorMonWSSClient(WSClient, WithDelegates):

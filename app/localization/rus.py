@@ -1266,9 +1266,9 @@ class RussianLocalization(BaseLocalization):
                           f'на блокчейне {pre(data.chain)} (≈{self.seconds_human(data.how_long_behind)})!'
         elif c.type == NodeEventType.PRESENCE:
             if c.data:
-                message = f'⁉️ Нода {short_addr} исчезла из сети THORChain!'
-            else:
                 message = f'🙋 Нода {short_addr} снова вернулась в сеть THORChain!'
+            else:
+                message = f'⁉️ Нода {short_addr} исчезла из сети THORChain!'
 
         return message
 

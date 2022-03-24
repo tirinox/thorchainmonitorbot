@@ -28,6 +28,7 @@ class NodeInfoFetcher(BaseFetcher):
         for j in raw_nodes:
             node = NodeInfo.from_json(j)
             # node = self._dbg_node_magic(node)
+
             new_nodes.append(node)
         new_nodes.sort(key=lambda k: (k.status, -k.bond))
 
@@ -81,6 +82,10 @@ class NodeInfoFetcher(BaseFetcher):
         This is for debug purposes
         """
         new_nodes = list(new_nodes)
+
+        # # todo: fixme: debug
+        # if node.node_address == 'thor15tjtgxq7mz3ljwk0rzw6pvj43tz3xsv9f2wfzp':
+        #     continue
 
         new_nodes[0].version = '0.68.6'  # version fun?
 

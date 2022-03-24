@@ -1519,9 +1519,9 @@ class BaseLocalization(ABC):  # == English
                           f'on the {pre(data.chain)} chain (≈{self.seconds_human(data.how_long_behind)})!'
         elif c.type == NodeEventType.PRESENCE:
             if c.data:
-                message = f'⁉️ Node {short_addr} has disappeared from the THORChain network.'
-            else:
                 message = f'🙋 Node {short_addr} is back is the THORChain network.'
+            else:
+                message = f'⁉️ Node {short_addr} has disappeared from the THORChain network.'
 
         return message
 
