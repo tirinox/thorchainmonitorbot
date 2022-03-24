@@ -48,6 +48,7 @@ class ThorMonWSSClient(WSClient, WithDelegates):
         if isinstance(message, dict):
             if DEBUG:
                 message = self._dbg_read_from_file(data=message)
+                # self._dbg_save_to_file(message)
 
             answer = ThorMonAnswer.from_json(message)
             if answer.nodes:
