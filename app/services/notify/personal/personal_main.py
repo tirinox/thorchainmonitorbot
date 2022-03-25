@@ -19,10 +19,10 @@ from services.notify.broadcast import ChannelDescriptor
 from services.notify.personal.bond import BondTracker
 from services.notify.personal.chain_height import ChainHeightTracker
 from services.notify.personal.churning import NodeChurnTracker
-from services.notify.personal.presence import PresenceTracker
 from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
 from services.notify.personal.ip_addr import IpAddressTracker
 from services.notify.personal.node_online import NodeOnlineTracker
+from services.notify.personal.presence import PresenceTracker
 from services.notify.personal.slashing import SlashPointTracker
 from services.notify.personal.telemetry import NodeTelemetryDatabase
 from services.notify.personal.user_data import UserDataCache

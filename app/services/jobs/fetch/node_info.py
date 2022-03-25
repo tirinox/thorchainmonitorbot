@@ -1,4 +1,3 @@
-import random
 from typing import List
 
 from services.jobs.fetch.base import BaseFetcher
@@ -32,7 +31,8 @@ class NodeInfoFetcher(BaseFetcher):
             new_nodes.append(node)
         new_nodes.sort(key=lambda k: (k.status, -k.bond))
 
-        # new_nodes = self._test_churn(new_nodes)
+        # new_nodes = self._test_churn(new_nodes) # fixme: debug
+
         return new_nodes
 
     async def fetch(self) -> List[NodeInfo]:
@@ -75,42 +75,41 @@ class NodeInfoFetcher(BaseFetcher):
         # print('my height (!)', chain_block_height)
         # fixme: debug(!) ------ 8< -------
 
-
     @staticmethod
     def _test_churn(new_nodes: List[NodeInfo]):
         """
         This is for debug purposes
         """
-        new_nodes = list(new_nodes)
+        exclude = True
+        if exclude:
+            return list(filter(lambda n: n.node_address != 'thor15tjtgxq7mz3ljwk0rzw6pvj43tz3xsv9f2wfzp', new_nodes))
+        else:
+            return new_nodes
 
-        # # todo: fixme: debug
-        # if node.node_address == 'thor15tjtgxq7mz3ljwk0rzw6pvj43tz3xsv9f2wfzp':
-        #     continue
-
-        new_nodes[0].version = '0.68.6'  # version fun?
-
-        def random_node(nodes):
-            return nodes[random.randint(0, len(nodes))]
-
-        if random.uniform(0, 1) > 0.7:
-            new_nodes.remove(random_node(new_nodes))
-
-        if random.uniform(0, 1) > 0.3:
-            new_nodes.remove(random_node(new_nodes))
-
-        if random.uniform(0, 1) > 0.65:
-            node = random_node(new_nodes)
-            node.status = node.STANDBY if node.is_active else node.ACTIVE
-
-        if random.uniform(0, 1) > 0.4:
-            node = random_node(new_nodes)
-            node.status = node.STANDBY if node.is_active else node.ACTIVE
-
-        if random.uniform(0, 1) > 0.2:
-            node = random_node(new_nodes)
-            node.status = node.STANDBY if node.is_active else node.ACTIVE
-
-        return new_nodes
+        # new_nodes[0].version = '0.68.6'  # version fun?
+        #
+        # def random_node(nodes):
+        #     return nodes[random.randint(0, len(nodes))]
+        #
+        # if random.uniform(0, 1) > 0.7:
+        #     new_nodes.remove(random_node(new_nodes))
+        #
+        # if random.uniform(0, 1) > 0.3:
+        #     new_nodes.remove(random_node(new_nodes))
+        #
+        # if random.uniform(0, 1) > 0.65:
+        #     node = random_node(new_nodes)
+        #     node.status = node.STANDBY if node.is_active else node.ACTIVE
+        #
+        # if random.uniform(0, 1) > 0.4:
+        #     node = random_node(new_nodes)
+        #     node.status = node.STANDBY if node.is_active else node.ACTIVE
+        #
+        # if random.uniform(0, 1) > 0.2:
+        #     node = random_node(new_nodes)
+        #     node.status = node.STANDBY if node.is_active else node.ACTIVE
+        #
+        # return new_nodes
 
     @staticmethod
     def _dbg_node_magic(node):

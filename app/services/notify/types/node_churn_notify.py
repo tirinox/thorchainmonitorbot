@@ -42,5 +42,5 @@ class NodeChurnNotifier(INotified):
             bio_graph = img_to_bio(graph, "node_diversity.png")
             return BoardMessage.make_photo(bio_graph)
 
-        if changes.count_of_changes > 2:
+        if changes.count_of_changes > 2:  # todo: put it to config
             await self.deps.broadcaster.notify_preconfigured_channels(node_div_pic_gen)
