@@ -824,7 +824,7 @@ class RussianLocalization(BaseLocalization):
                                           old_active_ver: VersionInfo,
                                           new_active_ver: VersionInfo):
 
-        msg = bold('💫 Обовление версии протокола THORChain') + '\n\n'
+        msg = bold('💫 Обновление версии протокола THORChain') + '\n\n'
 
         def version_and_nodes(v, all=False):
             realm = data.nodes_all if all else data.active_only_nodes
