@@ -307,6 +307,9 @@ node_info:
   geo_ip:
     expire: 48h
 
+  churn: # new (!)
+    filter_nonsense: false
+
   version:
     enabled: true
     new_version_appears: # node joined/upgraded to unseen version

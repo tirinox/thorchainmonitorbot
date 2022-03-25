@@ -1,31 +1,34 @@
-import logging
-from typing import List
-
 from localization import BaseLocalization
 from services.dialog.picture.node_geo_picture import node_geo_pic
 from services.jobs.fetch.base import INotified
 from services.jobs.fetch.node_info import NodeInfoFetcher
-from services.jobs.node_churn import NodeChurnDetector
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import MINUTE
 from services.lib.depcont import DepContainer
 from services.lib.draw_utils import img_to_bio
 from services.lib.texts import BoardMessage
 from services.lib.utils import class_logger
-from services.models.node_info import NodeSetChanges, NodeInfo
+from services.models.node_info import NodeSetChanges
 
 
 class NodeChurnNotifier(INotified):
     def __init__(self, deps: DepContainer):
         self.deps = deps
         self.logger = class_logger(self)
+        self._filter_nonsense = deps.cfg.get_pure('node_info.churn.filter_nonsense', True)
         self.cd = Cooldown(self.deps.db, 'NodeChurnNotification', MINUTE * 10, 5)
 
     async def on_data(self, sender, changes: NodeSetChanges):
-        if not changes.is_empty and not changes.is_nonsense:
-            if await self.cd.can_do():
-                await self._notify_when_node_churn(changes)
-                await self.cd.do()
+        if changes.is_empty:
+            return
+
+        if self._filter_nonsense and changes.is_nonsense:
+            self.logger.warning(f'Node changes is nonsense! {changes}')
+            return
+
+        if await self.cd.can_do():
+            await self._notify_when_node_churn(changes)
+            await self.cd.do()
 
     async def _notify_when_node_churn(self, changes: NodeSetChanges):
         # TEXT
