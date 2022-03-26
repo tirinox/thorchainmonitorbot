@@ -180,7 +180,7 @@ class BaseLocalization(ABC):  # == English
     LP_PIC_FEES = 'Fees earned'
     LP_PIC_IL_PROTECTION = 'IL protection'
     LP_PIC_NO_NEED_PROTECTION = 'Not needed'
-    LP_PIC_EARLY_TO_PROTECT = 'Too early. Please wait...'
+    LP_PIC_EARLY_TO_PROTECT = 'Too early...'
     LP_PIC_PROTECTION_DISABLED = 'Disabled'
 
     LP_PIC_SUMMARY_HEADER = 'Liquidity pools summary'
