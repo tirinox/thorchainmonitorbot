@@ -9,6 +9,7 @@ from aiothornode.connector import ThorConnector
 
 from localization import LocalizationManager
 from services.jobs.fetch.const_mimir import ConstMimirFetcher
+from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.runeyield import AsgardConsumerConnectorBase, get_rune_yield_connector
 from services.lib.config import Config
@@ -53,7 +54,8 @@ class LpAppFramework:
 
     async def prepare(self, brief=False):
         d = self.deps
-        d.session = aiohttp.ClientSession(timeout=ClientTimeout(total=2.5))
+        session_timeout = float(self.deps.cfg.get('thor.timeout', 2.0))
+        d.session = aiohttp.ClientSession(timeout=ClientTimeout(total=session_timeout))
         d.thor_connector = ThorConnector(d.cfg.get_thor_env_by_network_id(), d.session)
 
         cfg = d.cfg.thor.midgard
@@ -64,6 +66,7 @@ class LpAppFramework:
             public_url=cfg.get('public_url', ''),
             use_nodes=bool(cfg.get('use_nodes', True))
         )
+        d.rune_market_fetcher = RuneMarketInfoFetcher(d)
 
         await d.db.get_redis()
 

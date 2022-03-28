@@ -33,6 +33,11 @@ thor:
     - BNB.BUSD-74E  # test
     - TERRA.USD
 
+  circulating_supply: # new (!)
+    # https://docs.etherscan.io/getting-started/creating-an-account
+    ether_scan_key: PLEASEPUTANETHERSCANKEYHERE
+    cache_time: 10m
+
 
 telegram:
   bot:
