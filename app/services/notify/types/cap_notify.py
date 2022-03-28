@@ -53,7 +53,9 @@ class LiquidityCapNotifier(INotified):
         await self._save_cap_info(new_info)
 
         if old_info and old_info.is_ok:
-            await self._test_cap_raise(new_info, old_info)
+            # no more cap raise!
+            # await self._test_cap_raise(new_info, old_info)
+
             if self.full_notification_enabled:
                 await self._test_cap_limit_is_full_or_opened(new_info)
 
