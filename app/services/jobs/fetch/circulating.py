@@ -67,7 +67,8 @@ async def get_bnb_rune_total_supply(session):
 
 async def get_erc20_rune_total_supply(session, ether_scan_api_key):
     if ether_scan_api_key:
-        async with session.get(url_etherscan_supply_erc20(RUNE_ERC20_CONTRACT_ADDRESS, ether_scan_api_key)) as resp:
+        url = url_etherscan_supply_erc20(RUNE_ERC20_CONTRACT_ADDRESS, ether_scan_api_key)
+        async with session.get(url) as resp:
             j = await resp.json()
             return int(int(j['result']) / 10 ** 18)
     else:
@@ -119,22 +120,25 @@ class RuneCirculatingSupplyFetcher:
 
     async def fetch(self):
         session = self.session
-        bep2_exclude_balance_arr = await asyncio.gather(
+        bep2_exclude_balance_group = asyncio.gather(
             *[get_bep2_address_balance(session, address) for address in BEP2_EXCLUDE_FROM_CIRCULATING_ADDRESSES],
         )
-        bep2_exclude_balance = sum(bep2_exclude_balance_arr) if bep2_exclude_balance_arr else 0
 
-        thor_exclude_balance_arr = await asyncio.gather(
+        thor_exclude_balance_group = asyncio.gather(
             *[get_thor_address_balance(session, address) for address in THOR_EXCLUDE_FROM_CIRCULATING_ADDRESSES]
         )
-        thor_exclude_balance = sum(thor_exclude_balance_arr) if thor_exclude_balance_arr else 0
 
         data = await asyncio.gather(
             get_thor_rune_total_supply(session),
             get_erc20_rune_total_supply(session, self._ether_scan_key),
             get_bnb_rune_total_supply(session),
+            bep2_exclude_balance_group,
+            thor_exclude_balance_group,
         )
-        thor_rune_supply, erc20_rune_supply, bep2_rune_supply = data
+        thor_rune_supply, erc20_rune_supply, bep2_rune_supply, bep2_exclude_balance_arr, thor_exclude_balance_arr = data
+
+        bep2_exclude_balance = sum(bep2_exclude_balance_arr) if bep2_exclude_balance_arr else 0
+        thor_exclude_balance = sum(thor_exclude_balance_arr) if thor_exclude_balance_arr else 0
 
         erc20_rune_circulating = erc20_rune_supply
         bep2_rune_circulating = bep2_rune_supply - bep2_exclude_balance
