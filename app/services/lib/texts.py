@@ -8,6 +8,8 @@ from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 
 from services.lib.money import pretty_money, format_percent
 
+CHANNEL_INACTIVE = 'channel_inactive'
+
 
 class MessageType(Enum):
     TEXT = 'text'

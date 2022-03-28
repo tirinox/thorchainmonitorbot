@@ -1,6 +1,7 @@
 from io import BytesIO
 from typing import Optional
 
+import slack_sdk.errors
 from htmlslacker import HTMLSlacker
 from slack_bolt.adapter.starlette.async_handler import AsyncSlackRequestHandler
 from slack_bolt.async_app import AsyncApp
@@ -14,6 +15,7 @@ from services.lib.constants import Messengers
 from services.lib.db import DB
 from services.lib.draw_utils import img_to_bio
 from services.lib.nop_links import SettingsManager
+from services.lib.texts import CHANNEL_INACTIVE
 from services.lib.utils import class_logger
 
 
@@ -62,27 +64,35 @@ class SlackBot:
         if need_convert:
             text = self.convert_html_to_my_format(text)
 
-        if picture:
-            if not isinstance(picture, BytesIO):
-                picture = img_to_bio(picture, pic_name)
+        try:
+            if picture:
+                if not isinstance(picture, BytesIO):
+                    picture = img_to_bio(picture, pic_name)
+                else:
+                    picture = picture.read()
+
+                response = await self.slack_app.client.files_upload(
+                    file=picture,
+                    initial_comment=text,
+                    channels=[channel],
+                    filetype=file_type,
+                )
             else:
-                picture = picture.read()
+                response = await self.slack_app.client.chat_postMessage(
+                    channel=channel,
+                    text=text,
+                    mrkdwn=True,
+                    unfurl_links=False
+                )
 
-            response = await self.slack_app.client.files_upload(
-                file=picture,
-                initial_comment=text,
-                channels=[channel],
-                filetype=file_type,
-            )
-        else:
-            response = await self.slack_app.client.chat_postMessage(
-                channel=channel,
-                text=text,
-                mrkdwn=True,
-                unfurl_links=False
-            )
-
-        self.logger.debug(f'Slack response: {response.data}')
+            self.logger.debug(f'Slack response: {response.data}')
+            return True
+        except slack_sdk.errors.SlackApiError as e:
+            self.logger.error(f'Slack error: {e}')
+            error = e.response['error']
+            if error in ('not_in_channel',):
+                return CHANNEL_INACTIVE
+            return error
 
     def _context(self, channel_id):
         return self._settings_manager.get_context(channel_id)

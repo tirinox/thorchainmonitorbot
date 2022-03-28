@@ -2,6 +2,7 @@ import asyncio
 import logging
 import random
 import time
+import typing
 from dataclasses import dataclass
 from io import BytesIO
 from typing import List
@@ -14,7 +15,7 @@ from services.dialog.slack.slack_bot import SlackBot
 from services.lib.constants import Messengers
 from services.lib.depcont import DepContainer
 from services.lib.telegram import TelegramStickerDownloader, TELEGRAM_MAX_MESSAGE_LENGTH, TELEGRAM_MAX_CAPTION_LENGTH
-from services.lib.texts import MessageType, BoardMessage
+from services.lib.texts import MessageType, BoardMessage, CHANNEL_INACTIVE
 
 
 def copy_photo(p: BytesIO):
@@ -24,8 +25,7 @@ def copy_photo(p: BytesIO):
     return new
 
 
-@dataclass
-class ChannelDescriptor:
+class ChannelDescriptor(typing.NamedTuple):
     type: str
     name: str
     id: int = 0
@@ -58,6 +58,10 @@ class Broadcaster:
         self._rng = random.Random(time.time())
         self.logger = logging.getLogger('broadcast')
         self.channels = list(ChannelDescriptor.from_json(j) for j in self.deps.cfg.get_pure('channels'))
+        self.channels_inactive = set()
+
+    def clear_channels_inactive(self):
+        self.channels_inactive.clear()
 
     def get_channels(self, chan_type):
         return [c for c in self.channels if c.type == chan_type]
@@ -176,16 +180,20 @@ class Broadcaster:
             return False
 
         try:
+            result = ''
             if message_type == MessageType.TEXT:
-                await slack.send_message_to_channel(chat_id, text, need_convert=True)
+                result = await slack.send_message_to_channel(chat_id, text, need_convert=True)
             elif message_type == MessageType.STICKER:
                 self.logger.warning('stickers not supported yet sorry')
                 sticker = await self._sticker_download.get_sticker_image(text)
-                await slack.send_message_to_channel(chat_id, ' ', picture=sticker)
+                result = await slack.send_message_to_channel(chat_id, ' ', picture=sticker)
             elif message_type == MessageType.PHOTO:
                 photo = kwargs['photo']
-                await slack.send_message_to_channel(chat_id, text, picture=photo, need_convert=True)
-            return True
+                result = await slack.send_message_to_channel(chat_id, text, picture=photo, need_convert=True)
+
+            if result:
+                self.logger.debug(f'Slack result: {result}')
+            return result
         except Exception as e:
             self.logger.exception(f'Slack exception {e}, {message_type = }, text = "{text}"!')
             return False
@@ -194,14 +202,20 @@ class Broadcaster:
                                 text, message_type=MessageType.TEXT, *args, **kwargs) -> bool:
         chan_id = channel_info.channel_id
         if channel_info.type == Messengers.TELEGRAM:
-            return await self.safe_send_message_tg(chan_id, text, message_type, *args, **kwargs)
+            result = await self.safe_send_message_tg(chan_id, text, message_type, *args, **kwargs)
         elif channel_info.type == Messengers.DISCORD:
-            return await self.safe_send_message_discord(chan_id, text, message_type, *args, **kwargs)
+            result = await self.safe_send_message_discord(chan_id, text, message_type, *args, **kwargs)
         elif channel_info.type == Messengers.SLACK:
-            return await self.safe_send_message_slack(chan_id, text, message_type, *args, **kwargs)
+            result = await self.safe_send_message_slack(chan_id, text, message_type, *args, **kwargs)
         else:
             self.logger.error(f'unsupported channel type: {channel_info.type}!')
             return False
+
+        if result == CHANNEL_INACTIVE:
+            self.logger.info(f'{channel_info} became inactive!')
+            self.channels_inactive.add(channel_info.channel_id)
+
+        return result
 
     async def broadcast(self, channels: List[ChannelDescriptor], message, delay=0.075,
                         message_type=MessageType.TEXT, remove_bad_users=False,
@@ -222,6 +236,7 @@ class Broadcaster:
                         if isinstance(message_result, BoardMessage):
                             message_type = message_result.message_type
                             if message_result.message_type is MessageType.PHOTO:
+                                # noinspection PyTypeChecker
                                 extra['photo'] = copy_photo(message_result.photo)
                             text = message_result.text
                         else:
@@ -230,12 +245,16 @@ class Broadcaster:
                         text = str(message)
 
                     if text or 'photo' in extra:
-                        if await self.safe_send_message(channel_info, text, message_type=message_type,
-                                                        disable_web_page_preview=True,
-                                                        disable_notification=False, **extra):
-                            count += 1
-                        else:
+                        send_results = await self.safe_send_message(
+                            channel_info, text, message_type=message_type,
+                            disable_web_page_preview=True,
+                            disable_notification=False, **extra)
+
+                        if send_results == CHANNEL_INACTIVE:
                             bad_ones.append(channel_info.channel_id)
+                        elif send_results is True:
+                            count += 1
+
                         await asyncio.sleep(delay)  # 10 messages per second (Limit: 30 messages per second)
 
                 if remove_bad_users:

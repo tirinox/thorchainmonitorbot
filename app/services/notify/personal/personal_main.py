@@ -43,6 +43,7 @@ class NodeChangePersonalNotifier(INotified):
         self.watchers = NodeWatcherStorage(deps.db)
         self.thor_mon = ThorMonWSSClient(deps.cfg.network_id)
         self.telemetry_db = NodeTelemetryDatabase(deps)
+        self.settings_man = SettingsManager(self.deps.db, self.deps.cfg)
 
         # trackers
         self.online_tracker = NodeOnlineTracker(deps)
@@ -95,10 +96,6 @@ class NodeChangePersonalNotifier(INotified):
 
         await self._cast_messages_for_events(events)
 
-    async def _get_user_settings(self, user_id):
-        manager = SettingsManager(self.deps.db, self.deps.cfg)
-        return await manager.get_settings(user_id)
-
     async def _cast_messages_for_events(self, events: List[NodeEvent]):
         if not events:
             return
@@ -133,7 +130,13 @@ class NodeChangePersonalNotifier(INotified):
         for user, event_list in user_events.items():
             loc = await loc_man.get_from_db(user, self.deps.db)
 
-            settings = await self._get_user_settings(user)
+            settings = await self.settings_man.get_settings(user)
+
+            if user in self.deps.broadcaster.channels_inactive:
+                settings[NodeOpSetting.PAUSE_ALL_ON] = True
+                await self.settings_man.set_settings(user, settings)
+                self.logger.warning(f'Auto-pause NodeOp alerts for {user}!')
+                continue
 
             if bool(settings.get(NodeOpSetting.PAUSE_ALL_ON, False)):
                 continue  # skip those who paused all the events.
