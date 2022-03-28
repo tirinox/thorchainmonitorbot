@@ -2,7 +2,7 @@ import asyncio
 from dataclasses import dataclass
 from typing import NamedTuple
 
-BEP2_RUNE_ASSET = 'RUNE-B1A'
+from services.lib.constants import BNB_RUNE_SYMBOL_NO_CHAIN
 
 BEP2_BURN_ADDRESS = 'bnb1e4q8whcufp6d72w8nwmpuhxd96r4n0fstegyuy'
 BEP2_OPS_ADDRESS = 'bnb13a7gyv5zl57c0rzeu0henx6d0tzspvrrakxxtv'  # about 1.2m rune
@@ -61,7 +61,7 @@ async def get_thor_rune_total_supply(session):
 async def get_bnb_rune_total_supply(session):
     async with session.get(url_bep2_token_info()) as resp:
         j = await resp.json()
-        rune_entry = next(item for item in j if item['symbol'] == BEP2_RUNE_ASSET)
+        rune_entry = next(item for item in j if item['symbol'] == BNB_RUNE_SYMBOL_NO_CHAIN)
         return int(float(rune_entry['total_supply']))
 
 
@@ -79,7 +79,7 @@ async def get_bep2_address_balance(session, address):
     async with session.get(url_bep2_get_balance(address)) as resp:
         j = await resp.json()
         for balance in j['balances']:
-            if balance['symbol'] == BEP2_RUNE_ASSET:
+            if balance['symbol'] == BNB_RUNE_SYMBOL_NO_CHAIN:
                 free = float(balance['free'])
                 frozen = float(balance['frozen'])
                 locked = float(balance['locked'])
