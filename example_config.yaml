@@ -74,7 +74,7 @@ slack: # (!) new!!
 
 
 # for message broadcasting
-channels: # (!) new! moved from "telegram" section
+channels:
   - type: telegram
     name: "@thorchain_alert"  # live channel
     lang: eng
@@ -213,7 +213,7 @@ price:
       - CAACAgIAAxkBAAKYJmAxST6CTOiOStfQ9CH7hqLiv0iWAAL8BgACRvusBG1XSZhZ24v-HgQ
 
 
-bep2: # (!) new! bep2 rune movements
+bep2:
   enabled: true
   fetch_period: 30
   min_usd: 300000
@@ -258,7 +258,7 @@ cap:
   full:
     enabled: True
     full_limit_ratio: 0.995
-    open_up_limit_ratio: 0.97  # (!) new! when it was full, but a little space became available.
+    open_up_limit_ratio: 0.97
 
   raised:
     stickers:
