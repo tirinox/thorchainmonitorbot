@@ -7,7 +7,7 @@ from services.lib.constants import THOR_DIVIDER_INV
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.midgard.urlgen import free_url_gen
-from services.lib.utils import a_result_cached, class_logger
+from services.lib.utils import a_result_cached, class_logger, retries
 from services.models.price import RuneMarketInfo
 
 RUNE_MARKET_INFO_CACHE_TIME = 120
@@ -24,7 +24,7 @@ class RuneMarketInfoFetcher:
             deps.cfg.as_str('thor.circulating_supply.cache_time', RUNE_MARKET_INFO_CACHE_TIME))
 
         # cache the method
-        self.get_rune_market_info = a_result_cached(ttl=self._cache_time)(self._get_rune_market_info)
+        self.get_rune_market_info = a_result_cached(ttl=self._cache_time)(retries(5)(self._get_rune_market_info))
 
     async def total_locked_value_all_networks(self):
         j = await self.midgard.request_random_midgard(free_url_gen.url_network())

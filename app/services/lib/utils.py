@@ -276,3 +276,27 @@ def sum_and_str(*args):
 
 def iterable_but_not_str(it):
     return not isinstance(it, (str, bytes)) and isinstance(it, Iterable)
+
+
+class TooManyTriesException(BaseException):
+    pass
+
+
+def retries(times):
+    assert times > 0
+
+    def func_wrapper(f):
+        async def wrapper(*args, **kwargs):
+            outer_exc = None
+            for time_no in range(times):
+                # noinspection PyBroadException
+                try:
+                    return await f(*args, **kwargs)
+                except Exception as exc:
+                    outer_exc = exc
+                logging.warning(f'Retrying {f} for {time_no + 1} time...')
+            raise TooManyTriesException() from outer_exc
+
+        return wrapper
+
+    return func_wrapper
