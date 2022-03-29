@@ -61,7 +61,7 @@ services:
       - redis-net
     volumes:
       - ./web/frontend/:/web/frontend/
-#      - ./web/nginx-test.conf:/etc/nginx/nginx.conf:ro
+#      - ./web/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./web/nginx-test.conf:/etc/nginx/nginx.conf:ro
       - "./web/letsencrypt:/etc/letsencrypt:ro"
     environment:
