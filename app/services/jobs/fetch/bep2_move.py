@@ -1,4 +1,5 @@
 from services.jobs.fetch.base import BaseFetcher, WithDelegates
+from services.lib.constants import BNB_RUNE_SYMBOL_NO_CHAIN
 from services.lib.date_utils import parse_timespan_to_seconds, now_ts
 from services.lib.depcont import DepContainer
 from services.lib.web_sockets import WSClient
@@ -24,7 +25,6 @@ class BEP2BlockFetcher(BaseFetcher):
 
 BEP2_DEX_WSS_ADDRESS = 'wss://explorer.binance.org/ws/tx'
 BEP2_DEX_ORIGIN = 'https://explorer.binance.org/'
-BEP2_RUNE_SYMBOL = 'RUNE-B1A'
 BEP2_TRANSFER = 'TRANSFER'
 
 
@@ -47,7 +47,7 @@ class BinanceOrgDexWSSClient(WSClient, WithDelegates):
 
     async def handle_wss_message(self, j):
         for tx in j:
-            if tx.get('txType') == BEP2_TRANSFER and tx.get('txAsset') == BEP2_RUNE_SYMBOL:
+            if tx.get('txType') == BEP2_TRANSFER and tx.get('txAsset') == BNB_RUNE_SYMBOL_NO_CHAIN:
                 self.logger.info(f'Transfer message: {tx}')
                 await self.handle_data(BEP2Transfer(
                     tx.get('fromAddr'),

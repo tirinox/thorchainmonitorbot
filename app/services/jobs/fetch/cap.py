@@ -1,5 +1,3 @@
-import asyncio
-
 from services.jobs.fetch.base import BaseFetcher
 from services.lib.constants import thor_to_float
 from services.lib.date_utils import parse_timespan_to_seconds
@@ -29,15 +27,12 @@ class CapInfoFetcher(BaseFetcher):
         self.last_mimir = await self.deps.midgard_connector.request_random_midgard(free_url_gen.url_mimir())
         return self.last_mimir
 
-    async def get_total_current_pooled_rune(self):
+    async def get_total_current_pooled_rune_and_cap(self):
         networks_resp = await self.get_network_info()
-
-        if 'totalStaked' in networks_resp:
-            lp_rune = networks_resp.get('totalStaked', 0)
-        else:
-            lp_rune = networks_resp.get('totalPooledRune', 0)
-
-        return thor_to_float(lp_rune)
+        lp_rune = networks_resp.get('totalPooledRune', 0)
+        bonds = networks_resp.get('activeBonds', [])
+        cap_eq_bond = sum(map(thor_to_float, bonds))
+        return int(thor_to_float(lp_rune)), cap_eq_bond
 
     async def get_max_possible_pooled_rune(self):
         mimir_resp = await self.get_mimir()
@@ -48,10 +43,7 @@ class CapInfoFetcher(BaseFetcher):
         return 1e-8
 
     async def fetch(self) -> ThorCapInfo:
-        max_lp_rune, current_lp_rune = await asyncio.gather(
-            self.get_max_possible_pooled_rune(),
-            self.get_total_current_pooled_rune()
-        )
+        current_lp_rune, max_lp_rune = await self.get_total_current_pooled_rune_and_cap()
 
         # max_lp_rune = 16_500_000  # fixme: debug!! for testing
         # current_lp_rune = 15_500_000  # fixme: debug!! for testing

@@ -17,6 +17,7 @@ from services.jobs.fetch.bep2_move import BinanceOrgDexWSSClient
 from services.jobs.fetch.cap import CapInfoFetcher
 from services.jobs.fetch.chains import ChainStateFetcher
 from services.jobs.fetch.const_mimir import ConstMimirFetcher
+from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
 from services.jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from services.jobs.fetch.last_block import LastBlockFetcher
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
@@ -101,6 +102,7 @@ class App:
             public_url=d.thor_connector.env.midgard_url,
             use_nodes=bool(cfg.get('use_nodes', True))
         )
+        d.rune_market_fetcher = RuneMarketInfoFetcher(d)
 
     async def _some_sleep(self):
         sleep_interval = self.deps.cfg.as_float('sleep_before_start', 0)

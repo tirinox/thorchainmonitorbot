@@ -8,7 +8,6 @@ from services.dialog.picture.block_height_picture import block_speed_chart
 from services.dialog.picture.node_geo_picture import node_geo_pic
 from services.dialog.picture.price_picture import price_graph_from_db
 from services.dialog.picture.queue_picture import queue_graph
-from services.jobs.fetch.fair_price import get_fair_rune_price_cached
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.lib.constants import THOR_BLOCKS_PER_MINUTE
 from services.lib.date_utils import DAY, HOUR, parse_timespan_to_seconds, today_str, now_ts
@@ -138,8 +137,7 @@ class MetricsDialog(BaseDialog):
         old_info = await nsn.get_previous_stats()
         new_info = await nsn.get_latest_info()
         loc: BaseLocalization = self.loc
-        rune_market_info: RuneMarketInfo = await get_fair_rune_price_cached(self.deps.price_holder,
-                                                                            self.deps.midgard_connector)
+        rune_market_info: RuneMarketInfo = await self.deps.rune_market_fetcher.get_rune_market_info()
         await message.answer(loc.notification_text_network_summary(old_info, new_info, rune_market_info),
                              disable_web_page_preview=True,
                              disable_notification=True)
@@ -228,15 +226,15 @@ class MetricsDialog(BaseDialog):
                 await message.answer(f'Error: {period}')
                 return
 
-        fp = await get_fair_rune_price_cached(self.deps.price_holder, self.deps.midgard_connector)
+        market_info = await self.deps.rune_market_fetcher.get_rune_market_info()
         pn = PriceNotifier(self.deps)
         price_1h, price_24h, price_7d = await pn.historical_get_triplet()
-        fp.pool_rune_price = self.deps.price_holder.usd_per_rune
+        market_info.pool_rune_price = self.deps.price_holder.usd_per_rune
         btc_price = self.deps.price_holder.btc_per_rune
 
         price_text = self.loc.notification_text_price_update(PriceReport(
             price_1h, price_24h, price_7d,
-            market_info=fp,
+            market_info=market_info,
             btc_pool_rune_price=btc_price),
             halted_chains=self.deps.halted_chains
         )

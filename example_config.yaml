@@ -33,6 +33,11 @@ thor:
     - BNB.BUSD-74E  # test
     - TERRA.USD
 
+  circulating_supply: # new (!)
+    # https://docs.etherscan.io/getting-started/creating-an-account
+    ether_scan_key: PLEASEPUTANETHERSCANKEYHERE
+    cache_time: 10m
+
 
 telegram:
   bot:
@@ -82,7 +87,7 @@ web:  # (!) new!
 
 
 # for message broadcasting
-channels: # (!) new! moved from "telegram" section
+channels:
   - type: telegram
     name: "@thorchain_alert"  # live channel
     lang: eng
@@ -221,7 +226,7 @@ price:
       - CAACAgIAAxkBAAKYJmAxST6CTOiOStfQ9CH7hqLiv0iWAAL8BgACRvusBG1XSZhZ24v-HgQ
 
 
-bep2: # (!) new! bep2 rune movements
+bep2:
   enabled: true
   fetch_period: 30
   min_usd: 300000

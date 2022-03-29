@@ -7,7 +7,6 @@ from typing import Optional
 from aioredis import Redis
 
 from services.jobs.fetch.base import BaseFetcher
-from services.jobs.fetch.fair_price import get_fair_rune_price_cached
 from services.lib.config import Config
 from services.lib.constants import RUNE_SYMBOL_DET, RUNE_SYMBOL_POOL, RUNE_SYMBOL_CEX
 from services.lib.date_utils import parse_timespan_to_seconds, DAY, HOUR, day_to_key
@@ -61,7 +60,7 @@ class PoolPriceFetcher(BaseFetcher):
             await pool_price_series.trim_oldest(self.history_max_points)
 
             # Pool price fill
-            rune_market_info: RuneMarketInfo = await get_fair_rune_price_cached(d.price_holder, d.midgard_connector)
+            rune_market_info: RuneMarketInfo = await self.deps.rune_market_fetcher.get_rune_market_info()
             rune_market_info.pool_rune_price = price
 
             # CEX price fill

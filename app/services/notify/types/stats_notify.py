@@ -1,6 +1,5 @@
 from localization import BaseLocalization
 from services.jobs.fetch.base import INotified
-from services.jobs.fetch.fair_price import get_fair_rune_price_cached
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import DAY, parse_timespan_to_seconds, MINUTE
 from services.lib.depcont import DepContainer
@@ -32,8 +31,7 @@ class NetworkStatsNotifier(INotified):
 
         if await self.notify_cd.can_do():
             old_info = await self.get_previous_stats(ago=self.notify_cd.cooldown)  # since last time notified
-            rune_market_info: RuneMarketInfo = await get_fair_rune_price_cached(self.deps.price_holder,
-                                                                                self.deps.midgard_connector)
+            rune_market_info: RuneMarketInfo = await self.deps.rune_market_fetcher.get_rune_market_info()
             await self._notify(old_info, new_info, rune_market_info)
             await self.notify_cd.do()
 

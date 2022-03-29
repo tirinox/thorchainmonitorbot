@@ -30,6 +30,8 @@ class DepContainer:
     thor_connector: Optional[ThorConnector] = None
     midgard_connector: Optional[MidgardConnector] = None
 
+    rune_market_fetcher = None  # type: 'RuneMarketInfoFetcher'
+
     loc_man = None  # type: 'LocalizationManager'
     broadcaster = None  # type: 'Broadcaster'
 
