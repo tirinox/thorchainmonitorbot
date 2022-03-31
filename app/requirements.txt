@@ -38,8 +38,8 @@ PyYAML==6.0
 requests==2.27.1
 semver==2.13.0
 six==1.16.0
-slack-sdk==3.13.0
-slack-bolt==1.11.1
+slack-sdk>=3.15.2
+slack-bolt>=1.13.0
 starlette>=0.17.1
 toml==0.10.2
 tqdm==4.62.2
