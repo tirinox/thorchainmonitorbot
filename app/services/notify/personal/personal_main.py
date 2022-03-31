@@ -138,6 +138,7 @@ class NodeChangePersonalNotifier(INotified):
             if user in self.deps.broadcaster.channels_inactive:
                 settings[NodeOpSetting.PAUSE_ALL_ON] = True
                 await self.settings_man.set_settings(user, settings)
+                self.deps.broadcaster.remove_me_from_inactive_channels(user)
                 self.logger.warning(f'Auto-pause NodeOp alerts for {user}!')
                 continue
 
