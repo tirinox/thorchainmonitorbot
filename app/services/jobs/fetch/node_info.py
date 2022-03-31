@@ -26,7 +26,8 @@ class NodeInfoFetcher(BaseFetcher):
         new_nodes = []
         for j in raw_nodes:
             node = NodeInfo.from_json(j)
-            # node = self._dbg_node_magic(node)
+
+            # node = self._dbg_node_magic(node)  # fixme: debug
 
             new_nodes.append(node)
         new_nodes.sort(key=lambda k: (k.status, -k.bond))
@@ -114,11 +115,11 @@ class NodeInfoFetcher(BaseFetcher):
     @staticmethod
     def _dbg_node_magic(node):
         # if node.node_address == 'thor15tjtgxq7mz3ljwk0rzw6pvj43tz3xsv9f2wfzp':
-        if node.node_address == 'thor1ya23sls96ctg7y3mfezzle5gkzyue8z5h3wde0':
+        if node.node_address == 'thor15tjtgxq7mz3ljwk0rzw6pvj43tz3xsv9f2wfzp':
             # node.status = node.STANDBY
-            node.version = '1.85.9'
+            node.version = '1.88.5'
             ...
             # node.ip_address = f'127.0.0.{random.randint(1, 255)}'
             # node.bond = 100000 + random.randint(0, 1000000)
-            print(node.node_address, node.bond)
+            print('dyatel', node.node_address, node.bond)
         return node

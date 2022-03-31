@@ -26,10 +26,13 @@ class SlackBot:
     INSTALLATION_DIR = "./data/slack_db/installations"
     STATE_DIR = "./data/slack_db/states"
     SCOPES = [
-        "channels:read",
-        "chat:write", "im:history", 'reactions:write',
+        'commands',
+        'im:history',
+        'channels:read',
+        'chat:write',
         'files:write',
     ]
+    REASONS_TO_STOP_NOTIFICATIONS = ('not_in_channel', 'invalid_auth')
 
     def __init__(self, cfg: Config, db: DB):
         self.logger = class_logger(self)
@@ -90,7 +93,7 @@ class SlackBot:
         except slack_sdk.errors.SlackApiError as e:
             self.logger.error(f'Slack error: {e}')
             error = e.response['error']
-            if error in ('not_in_channel',):
+            if error in self.REASONS_TO_STOP_NOTIFICATIONS:
                 return CHANNEL_INACTIVE
             return error
 
@@ -115,15 +118,21 @@ class SlackBot:
                 return
 
             await ack()
-            settings.pause()
+
+            prev_paused = settings.is_paused
+            if pause:
+                settings.pause()
+            else:
+                settings.unpause()
 
             channel_name = self._infer_channel_name(body)
-            text = self.get_localization(channel_id).text_nop_paused_slack(pause, settings.is_paused, channel_name)
+            text = self.get_localization(channel_id).text_nop_paused_slack(pause, prev_paused, channel_name)
             await say(text)
 
     def setup_commands(self):
         app = self.slack_app
 
+        # @app.shortcut("nop_settings")
         @app.command("/settings")
         async def settings_command(ack, body):
             channel_id = body.get('channel_id')
@@ -143,10 +152,12 @@ class SlackBot:
                 text = self.get_localization(channel_id).text_nop_settings_link_slack(url, channel_name)
                 await ack(text)
 
+        # @app.shortcut("nop_pause")
         @app.command("/pause")
         async def pause_command(ack, body, say):
             await self._pause_unpause(body, ack, say, pause=True)
 
+        # @app.shortcut("nop_go")
         @app.command("/go")
         async def go_command(ack, body, say):
             await self._pause_unpause(body, ack, say, pause=False)

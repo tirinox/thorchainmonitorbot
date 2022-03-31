@@ -15,6 +15,13 @@ class VersionTracker(BaseChangeTracker):
         changes = []
         changes += self._changes_of_version(node_set_change.prev_and_curr_node_map)
         changes += await self._changes_of_detected_new_version(node_set_change)
+
+        # # fixme: debug
+        # changes.append(NodeEvent(
+        #     'thor1tmutepp5q8cta58arlcv8mm9jer7k8xs73cd89',
+        #     NodeEventType.NEW_VERSION_DETECTED, ('1.2.3', '3.4.5'), single_per_user=True,
+        # ))
+
         return changes
 
     # todo: Event: The NodeOp majority upgraded to the new version! hurry up!

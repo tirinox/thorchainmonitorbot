@@ -68,8 +68,8 @@ class MainMenuDialog(BaseDialog):
 
     @message_handler(commands='price', state='*')
     async def cmd_price(self, message: Message):
-        message.text = str(DAY)
-        await MetricsDialog(self.loc, self.data, self.deps, self.message).on_price_duration_answered(message)
+        await MetricsDialog(self.loc, self.data, self.deps, self.message)\
+            .on_price_duration_answered(message, explicit_period=7 * DAY)
 
     @message_handler(commands='nodes', state='*')
     async def cmd_nodes(self, message: Message):

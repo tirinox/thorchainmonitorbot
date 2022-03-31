@@ -63,6 +63,10 @@ class Broadcaster:
     def clear_channels_inactive(self):
         self.channels_inactive.clear()
 
+    def remove_me_from_inactive_channels(self, ch):
+        if ch:
+            self.channels_inactive.remove(ch)
+
     def get_channels(self, chan_type):
         return [c for c in self.channels if c.type == chan_type]
 
