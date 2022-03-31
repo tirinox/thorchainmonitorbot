@@ -207,8 +207,10 @@ class MetricsDialog(BaseDialog):
             await message.answer(self.loc.queue_message(queue_info), disable_notification=True)
 
     @message_handler(state=MetricsStates.PRICE_SELECT_DURATION)
-    async def on_price_duration_answered(self, message: Message):
-        if message.text == self.loc.BUTTON_1_HOUR:
+    async def on_price_duration_answered(self, message: Message, explicit_period=0):
+        if explicit_period:
+            period = explicit_period
+        elif message.text == self.loc.BUTTON_1_HOUR:
             period = HOUR
         elif message.text == self.loc.BUTTON_24_HOURS:
             period = DAY
