@@ -26,8 +26,11 @@ class SlackBot:
     INSTALLATION_DIR = "./data/slack_db/installations"
     STATE_DIR = "./data/slack_db/states"
     SCOPES = [
-        'commands', # "im:history", "channels:read",
-        "chat:write", 'reactions:write', 'files:write',
+        'commands',
+        'im:history',
+        'channels:read',
+        'chat:write',
+        'files:write',
     ]
     REASONS_TO_STOP_NOTIFICATIONS = ('not_in_channel', 'invalid_auth')
 
