@@ -26,9 +26,8 @@ class SlackBot:
     INSTALLATION_DIR = "./data/slack_db/installations"
     STATE_DIR = "./data/slack_db/states"
     SCOPES = [
-        "channels:read",
-        "chat:write", "im:history", 'reactions:write',
-        'files:write',
+        'commands', # "im:history", "channels:read",
+        "chat:write", 'reactions:write', 'files:write',
     ]
 
     def __init__(self, cfg: Config, db: DB):
@@ -124,6 +123,7 @@ class SlackBot:
     def setup_commands(self):
         app = self.slack_app
 
+        # @app.shortcut("nop_settings")
         @app.command("/settings")
         async def settings_command(ack, body):
             channel_id = body.get('channel_id')
@@ -143,10 +143,12 @@ class SlackBot:
                 text = self.get_localization(channel_id).text_nop_settings_link_slack(url, channel_name)
                 await ack(text)
 
+        # @app.shortcut("nop_pause")
         @app.command("/pause")
         async def pause_command(ack, body, say):
             await self._pause_unpause(body, ack, say, pause=True)
 
+        # @app.shortcut("nop_go")
         @app.command("/go")
         async def go_command(ack, body, say):
             await self._pause_unpause(body, ack, say, pause=False)
