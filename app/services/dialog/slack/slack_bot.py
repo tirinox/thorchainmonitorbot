@@ -29,6 +29,7 @@ class SlackBot:
         'commands', # "im:history", "channels:read",
         "chat:write", 'reactions:write', 'files:write',
     ]
+    REASONS_TO_STOP_NOTIFICATIONS = ('not_in_channel', 'invalid_auth')
 
     def __init__(self, cfg: Config, db: DB):
         self.logger = class_logger(self)
@@ -89,7 +90,7 @@ class SlackBot:
         except slack_sdk.errors.SlackApiError as e:
             self.logger.error(f'Slack error: {e}')
             error = e.response['error']
-            if error in ('not_in_channel',):
+            if error in self.REASONS_TO_STOP_NOTIFICATIONS:
                 return CHANNEL_INACTIVE
             return error
 
