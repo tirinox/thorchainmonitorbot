@@ -114,10 +114,15 @@ class SlackBot:
                 return
 
             await ack()
-            settings.pause()
+
+            prev_paused = settings.is_paused
+            if pause:
+                settings.pause()
+            else:
+                settings.unpause()
 
             channel_name = self._infer_channel_name(body)
-            text = self.get_localization(channel_id).text_nop_paused_slack(pause, settings.is_paused, channel_name)
+            text = self.get_localization(channel_id).text_nop_paused_slack(pause, prev_paused, channel_name)
             await say(text)
 
     def setup_commands(self):
