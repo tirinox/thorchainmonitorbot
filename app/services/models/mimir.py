@@ -290,6 +290,8 @@ class MimirHolder:
 
         'MAXSYNTHASSETDEPTH': 'Max Synth Asset Depth',
         'HALTCHURNING': 'Halt Churning',
+
+        'MAXNODETOCHURNOUTFORLOWVERSION': 'Max Node To Churn Out For Low Version',
     }
 
     @staticmethod
