@@ -52,12 +52,22 @@ class SlackBot:
         self.slack_app = AsyncApp(
             signing_secret=cfg.as_str('slack.bot.singing_secret'),
             oauth_settings=oauth_settings,
-            token=cfg.as_str('slack.bot.bot_token')
         )
         self.slack_handler = AsyncSlackRequestHandler(self.slack_app)
         self.setup_commands()
 
         self._settings_manager = SettingsManager(db, cfg)
+
+    DB_KEY_SLACK_TOKENS = 'Slack:Tokens'
+
+    async def _save_token(self, channel, token):
+        if channel and token:
+            await self.db.redis.hset(self.DB_KEY_SLACK_TOKENS, str(channel), str(token))
+        else:
+            self.logger.error(f'empty data: {channel}/{token}')
+
+    async def _find_token(self, channel):
+        return await self.db.redis.hget(self.DB_KEY_SLACK_TOKENS, str(channel))
 
     def get_localization(self, channel) -> BaseLocalization:
         return LocalizationManager(self.cfg).default
@@ -68,6 +78,10 @@ class SlackBot:
             text = self.convert_html_to_my_format(text)
 
         try:
+            # what is the bot's token for this channel?
+            token = await self._find_token(channel)
+            self.slack_app.client.token = token
+
             if picture:
                 if not isinstance(picture, BytesIO):
                     picture = img_to_bio(picture, pic_name)
@@ -85,7 +99,7 @@ class SlackBot:
                     channel=channel,
                     text=text,
                     mrkdwn=True,
-                    unfurl_links=False
+                    unfurl_links=False,
                 )
 
             self.logger.debug(f'Slack response: {response.data}')
@@ -134,7 +148,8 @@ class SlackBot:
 
         # @app.shortcut("nop_settings")
         @app.command("/settings")
-        async def settings_command(ack, body):
+        async def settings_command(ack, body, client):
+            await self._register_installation_token_for_channel(body, client)
             channel_id = body.get('channel_id')
             async with self._context(channel_id) as settings:
                 token = await self._settings_manager.generate_new_token(channel_id)
@@ -154,12 +169,14 @@ class SlackBot:
 
         # @app.shortcut("nop_pause")
         @app.command("/pause")
-        async def pause_command(ack, body, say):
+        async def pause_command(ack, body, say, client):
+            await self._register_installation_token_for_channel(body, client)
             await self._pause_unpause(body, ack, say, pause=True)
 
         # @app.shortcut("nop_go")
         @app.command("/go")
-        async def go_command(ack, body, say):
+        async def go_command(ack, body, say, client):
+            await self._register_installation_token_for_channel(body, client)
             await self._pause_unpause(body, ack, say, pause=False)
 
     async def test_send_message(self, msg='Hello *Slack*!'):
@@ -167,6 +184,14 @@ class SlackBot:
 
     def start_in_background(self):
         ...  # no action needed here
+
+    async def _register_installation_token_for_channel(self, body, client):
+        # team_id = body.get('team_id', 'none')
+        # enterprise_id = body.get('enterprise_id', 'none')
+        # is_enterprise_install = body.get('is_enterprise_install', False)
+        channel_id = body.get('channel_id')
+        token = client.token
+        await self._save_token(channel_id, token)
 
     @staticmethod
     def convert_html_to_my_format(text: str):
