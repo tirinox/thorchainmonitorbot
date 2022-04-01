@@ -12,7 +12,8 @@ from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINU
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
     get_explorer_url_for_node
 from services.lib.money import format_percent, pretty_money, short_address, short_money, \
-    calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset, short_dollar
+    calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset, short_dollar, \
+    RAIDO_GLYPH, pretty_rune
 from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
     up_down_arrow, bracketify, plural, grouper, join_as_numbered_list, regroup_joining
 from services.models.bep2 import BEP2Transfer, BEP2CEXFlow
@@ -27,7 +28,6 @@ from services.models.price import PriceReport, RuneMarketInfo
 from services.models.queue import QueueInfo
 from services.models.tx import ThorTxExtended, ThorTxType, ThorSubTx
 
-RAIDO_GLYPH = 'ᚱ'
 CREATOR_TG = '@account1242'
 
 URL_THOR_SWAP = 'https://app.thorswap.finance/'
@@ -282,7 +282,7 @@ class BaseLocalization(ABC):  # == English
             f'<i>{pretty_money(cap.pooled_rune)} {self.R}</i> of '
             f"<i>{pretty_money(cap.cap)} {self.R}</i> max pooled.\n"
             f"{self._cap_progress_bar(cap)}\n"
-            f'🤲🏻 You can add {bold(pretty_money(cap.how_much_rune_you_can_lp) + " " + RAIDO_GLYPH)} {self.R} '
+            f'🤲🏻 You can add {bold(pretty_rune(cap.how_much_rune_you_can_lp))} {self.R} '
             f'or {bold(pretty_dollar(cap.how_much_usd_you_can_lp))}.\n👉🏻 {self.thor_site()}'
         )
 
@@ -506,9 +506,8 @@ class BaseLocalization(ABC):  # == English
             message += f"<b>RUNE</b> price at Binance (CEX) is {code(pretty_dollar(fp.cex_price))} " \
                        f"(RUNE/USDT market).\n"
 
-            div = abs(fp.cex_price - price)
-            div_p = 100.0 * abs(1.0 - fp.cex_price / price) if price != 0 else 0.0
-            message += f"<b>Divergence</b> Native vs BEP2 is {code(pretty_dollar(div))} ({div_p:.1f}%).\n"
+            div, div_p, exclamation = self.price_div_calc(fp)
+            message += f"<b>Divergence</b> Native vs BEP2 is {code(pretty_dollar(div))} ({div_p:.1f}%{exclamation}).\n"
 
         last_ath = p.last_ath
         if last_ath is not None and ath:
@@ -541,6 +540,26 @@ class BaseLocalization(ABC):  # == English
                         f"Speculative multiplier is {pre(x_ses(fp.fair_price, price))}\n")
 
         return message.rstrip()
+
+    def notification_text_price_divergence(self, info: RuneMarketInfo, normal: bool):
+        title = f'〰️ Low {self.R} price divergence!' if normal else f'🔺 High {self.R} price divergence!'
+
+        div, div_p, exclamation = self.price_div_calc(info)
+
+        text = (
+            f"🖖 {bold(title)}\n"
+            f"CEX (BEP2) Rune price is {code(pretty_dollar(info.cex_price))}\n"
+            f"Weighted average Rune price by liquidity pools is {code(pretty_dollar(info.pool_rune_price))}\n"
+            f"<b>Divergence</b> Native vs BEP2 is {code(pretty_dollar(div))} ({div_p:.1f}%{exclamation})."
+        )
+
+        return text
+
+    def price_div_calc(self, info):
+        div = abs(info.cex_price - info.pool_rune_price)
+        div_p = 100.0 * abs(1.0 - info.cex_price / info.pool_rune_price) if info.pool_rune_price != 0 else 0.0
+        exclamation = self._exclamation_sign(div_p, ref=10)
+        return div, div_p, exclamation
 
     # ------- POOL CHURN -------
 

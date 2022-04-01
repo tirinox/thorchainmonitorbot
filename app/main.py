@@ -47,6 +47,7 @@ from services.notify.types.chain_notify import TradingHaltedNotifier
 from services.notify.types.mimir_notify import MimirChangedNotifier
 from services.notify.types.node_churn_notify import NodeChurnNotifier
 from services.notify.types.pool_churn import PoolChurnNotifier
+from services.notify.types.price_div_notify import PriceDivergenceNotifier
 from services.notify.types.price_notify import PriceNotifier
 from services.notify.types.queue_notify import QueueNotifier
 from services.notify.types.stats_notify import NetworkStatsNotifier
@@ -221,6 +222,10 @@ class App:
         if d.cfg.get('price.enabled', True):
             notifier_price = PriceNotifier(d)
             d.price_pool_fetcher.subscribe(notifier_price)
+
+            if d.cfg.get('price.divergence.enabled', True):
+                price_div_notifier = PriceDivergenceNotifier(d)
+                d.price_pool_fetcher.subscribe(price_div_notifier)
 
         if d.cfg.get('pool_churn.enabled', True):
             period = parse_timespan_to_seconds(d.cfg.pool_churn.fetch_period)

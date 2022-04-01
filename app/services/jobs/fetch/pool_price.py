@@ -34,7 +34,7 @@ class PoolPriceFetcher(BaseFetcher):
         self.max_attempts = MAX_ATTEMPTS_TO_FETCH_POOLS
         self.use_thor_consensus = False
         self.parser = get_parser_by_network_id(self.deps.cfg.network_id)
-        self.history_max_points = 100000
+        self.history_max_points = 200000
 
     async def reload_global_pools(self):
         d = self.deps
@@ -44,15 +44,17 @@ class PoolPriceFetcher(BaseFetcher):
             d.price_holder.update(current_pools)
 
         price = d.price_holder.usd_per_rune
-        self.logger.info(f'fresh rune price is ${price:.3f}')
+        self.logger.info(f'fresh rune price is ${price:.3f}, pools = {len(current_pools)}')
 
         return current_pools
 
-    async def fetch(self):
+    async def fetch(self) -> RuneMarketInfo:
         d = self.deps
 
         await self.reload_global_pools()
         price = d.price_holder.usd_per_rune
+
+        # todo: add diagnostics
 
         if price > 0:
             pool_price_series = PriceTimeSeries(RUNE_SYMBOL_POOL, d.db)
@@ -67,6 +69,7 @@ class PoolPriceFetcher(BaseFetcher):
             cex_price_series = PriceTimeSeries(RUNE_SYMBOL_CEX, d.db)
             if rune_market_info and rune_market_info.cex_price:
                 await cex_price_series.add(price=rune_market_info.cex_price)
+                await cex_price_series.trim_oldest(self.history_max_points)
 
             # Deterministic price fill
             deterministic_price_series = PriceTimeSeries(RUNE_SYMBOL_DET, d.db)
@@ -189,7 +192,7 @@ class PoolInfoFetcherMidgard(BaseFetcher):
         result = await self.get_pool_info_midgard()
         return result
 
-    def _test_drop_one(self, pool_info_map: PoolInfoMap) -> PoolInfoMap:
+    def _dbg_test_drop_one(self, pool_info_map: PoolInfoMap) -> PoolInfoMap:
         if not pool_info_map or random() > 0.5:
             return pool_info_map
 

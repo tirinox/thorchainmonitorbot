@@ -11,6 +11,8 @@ EMOJI_SCALE = [
     (65, '🌕'), (80, '⭐'), (100, '✨'), (10000000, '🚀')
 ]
 
+RAIDO_GLYPH = 'ᚱ'
+
 
 def emoji_for_percent_change(pc):
     for threshold, emoji in EMOJI_SCALE:
@@ -35,8 +37,12 @@ def round_to_dig(x, e=2):
     return round(x, -int(floor(log10(abs(x)))) + e - 1)
 
 
-def pretty_dollar(x):
-    return pretty_money(x, '$')
+def pretty_dollar(x, signed=False, postfix='', short_form=False):
+    return pretty_money(x, prefix='$', postfix=postfix, signed=signed, short_form=short_form)
+
+
+def pretty_rune(x, signed=False, prefix='', short_form=False):
+    return pretty_money(x, postfix=RAIDO_GLYPH, signed=signed, prefix=prefix, short_form=short_form)
 
 
 def _number_short_with_postfix_step(x, up, pf, pf_next, precision):
