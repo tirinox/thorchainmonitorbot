@@ -552,7 +552,6 @@ class BaseLocalization(ABC):  # == English
             f"Weighted average Rune price by liquidity pools is {code(pretty_dollar(info.pool_rune_price))}\n"
             f"<b>Divergence</b> Native vs BEP2 is {code(pretty_dollar(div))} ({div_p:.1f}%{exclamation})."
         )
-
         return text
 
     def price_div_calc(self, info):
