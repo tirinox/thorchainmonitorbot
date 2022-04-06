@@ -292,6 +292,8 @@ class MimirHolder:
         'HALTCHURNING': 'Halt Churning',
 
         'MAXNODETOCHURNOUTFORLOWVERSION': 'Max Node To Churn Out For Low Version',
+
+        'CLOUDPROVIDERLIMIT': 'Cloud Provider Limit',
     }
 
     @staticmethod
