@@ -13,10 +13,11 @@ from services.notify.personal.user_data import UserDataCache
 
 class SlashPointTracker(BaseChangeTracker):
     HISTORY_MAX_POINTS = 100_000
+    EXTRA_COOLDOWN_MULT = 1.1
 
     def __init__(self, deps: DepContainer):
         self.deps = deps
-        self.series = TimeSeries('SlashPointTracker', self.deps.db)  # fixme! too much memory!!!
+        self.series = TimeSeries('SlashPointTracker', self.deps.db)
         self.std_intervals_sec = [parse_timespan_to_seconds(s) for s in STANDARD_INTERVALS]
         self.logger = class_logger(self)
         intervals = list(zip(STANDARD_INTERVALS, self.std_intervals_sec))
@@ -91,8 +92,9 @@ class SlashPointTracker(BaseChangeTracker):
         # print(f'{user_id} ({event.thor_node.node_address}): {data.delta_pts = }')
 
         if data.delta_pts >= threshold:
+            cd = interval * self.EXTRA_COOLDOWN_MULT
             if self.cache.cooldown_can_do(user_id, event.thor_node.node_address,
-                                          self.KEY_SERVICE, interval_sec=interval,
+                                          self.KEY_SERVICE, interval_sec=cd,
                                           do=True):
                 return True
 
