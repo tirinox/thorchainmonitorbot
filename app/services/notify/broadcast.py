@@ -124,8 +124,6 @@ class Broadcaster:
                 if trunc_text != text:
                     self.logger.error(f'Caption is too long:\n{text[:10000]}\n... Sending is cancelled.')
                 await bot.send_photo(chat_id, caption=trunc_text, *args, **kwargs)
-        except exceptions.BotBlocked:
-            self.logger.error(f"Target [ID:{chat_id}]: blocked by user")
         except exceptions.ChatNotFound:
             self.logger.error(f"Target [ID:{chat_id}]: invalid user ID")
         except exceptions.RetryAfter as e:
@@ -133,8 +131,9 @@ class Broadcaster:
             await asyncio.sleep(e.timeout + self.EXTRA_RETRY_DELAY)
             return await self.safe_send_message_tg(chat_id, text, message_type=message_type, *args,
                                                    **kwargs)  # Recursive call
-        except exceptions.UserDeactivated:
-            self.logger.error(f"Target [ID:{chat_id}]: user is deactivated")
+        except exceptions.Unauthorized as e:
+            self.logger.error(f"Target [ID:{chat_id}]: user is deactivated: {e!r}")
+            return CHANNEL_INACTIVE
         except exceptions.TelegramAPIError:
             self.logger.exception(f"Target [ID:{chat_id}]: failed")
             return True  # tg error is not the reason to exclude the user

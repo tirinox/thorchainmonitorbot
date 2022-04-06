@@ -886,9 +886,12 @@ class BaseLocalization(ABC):  # == English
     TEXT_PIC_OTHERS = 'Others'
     TEXT_PIC_UNKNOWN = 'Unknown'
 
-    def _format_node_text(self, node: NodeInfo, add_status=False, extended_info=False):
-        node_ip_link = link(f'https://www.infobyip.com/ip-{node.ip_address}.html', node.ip_address) \
-            if node.ip_address else 'No IP'
+    def _format_node_text(self, node: NodeInfo, add_status=False, extended_info=False, expand_link=False):
+        if expand_link:
+            node_ip_link = link(f'https://www.infobyip.com/ip-{node.ip_address}.html', node.ip_address) \
+                if node.ip_address else 'No IP'
+        else:
+            node_ip_link = node.ip_address or 'no IP'
         thor_explore_url = get_explorer_url_to_address(self.cfg.network_id, Chains.THOR, node.node_address)
         node_thor_link = link(thor_explore_url, short_address(node.node_address))
         extra = ''
@@ -900,9 +903,9 @@ class BaseLocalization(ABC):  # == English
                 award_text = bold(short_money(node.current_award, postfix=RAIDO_GLYPH))
                 extra += f", current award is {award_text}"
 
-        status = f', ({pre(node.status)})' if add_status else ''
-        return f'{bold(node_thor_link)} ({node_ip_link}, v. {node.version}) ' \
-               f'with {bold(short_money(node.bond, postfix=RAIDO_GLYPH))} bonded{status}{extra}'.strip()
+        status = f' ({pre(node.status)})' if add_status else ''
+        return f'{bold(node_thor_link)} ({node_ip_link} v. {node.version}) ' \
+               f'bond {bold(short_money(node.bond, postfix=RAIDO_GLYPH))} {status}{extra}'.strip()
 
     def _make_node_list(self, nodes, title, add_status=False, extended_info=False, start=1):
         if not nodes:
@@ -910,7 +913,7 @@ class BaseLocalization(ABC):  # == English
 
         message = ital(title) + "\n"
         message += join_as_numbered_list(
-            (self._format_node_text(node, add_status, extended_info) for node in nodes),
+            (self._format_node_text(node, add_status, extended_info) for node in nodes if node.node_address),
             start=start
         )
         return message + "\n\n"

@@ -32,7 +32,11 @@ class SlackBot:
         'chat:write',
         'files:write',
     ]
-    REASONS_TO_STOP_NOTIFICATIONS = ('not_in_channel', 'invalid_auth')
+    REASONS_TO_STOP_NOTIFICATIONS = (
+        'not_in_channel',
+        'invalid_auth',
+        'account_inactive',
+    )
 
     def __init__(self, cfg: Config, db: DB):
         self.logger = class_logger(self)
