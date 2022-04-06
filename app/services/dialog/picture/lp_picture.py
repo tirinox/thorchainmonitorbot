@@ -6,11 +6,10 @@ from typing import List
 from PIL import Image, ImageDraw, ImageFont
 
 from localization import BaseLocalization
-from localization.base import RAIDO_GLYPH
 from services.dialog.picture.crypto_logo import CryptoLogoDownloader
 from services.lib.constants import BNB_RUNE_SYMBOL, is_rune, RUNE_SYMBOL
 from services.lib.draw_utils import CATEGORICAL_PALETTE, pos_percent, result_color, hor_line, LIGHT_TEXT_COLOR
-from services.lib.money import pretty_money, format_percent, pretty_percent, Asset
+from services.lib.money import pretty_money, format_percent, pretty_percent, Asset, RAIDO_GLYPH, pretty_rune
 from services.lib.plot_graph import PlotBarGraph
 from services.lib.texts import grouper
 from services.lib.utils import Singleton, async_wrap
@@ -111,7 +110,7 @@ def sync_lp_pool_picture(price_holder: LastPriceHolder, report: LiquidityPoolRep
         r.put_hidden_plate(image, pos_percent_lp(left, start_y), anchor='right')
         r.put_hidden_plate(image, pos_percent_lp(right, start_y), anchor='left')
     else:
-        draw.text(pos_percent_lp(left, start_y), f'{pretty_money(report.liq.rune_added)} {RAIDO_GLYPH}', font=r.font,
+        draw.text(pos_percent_lp(left, start_y), f'{pretty_rune(report.liq.rune_added)}', font=r.font,
                   fill=FORE_COLOR,
                   anchor='rs')
         draw.text(pos_percent_lp(right, start_y), f'{pretty_money(report.liq.asset_added)}', font=r.font,

@@ -224,6 +224,12 @@ price:
       - CAACAgIAAxkBAAKYJGAxSSC1U9D67zyg-7RJfjkork8EAAKMAAMWQmsKQo7-Yhc9TeIeBA
       - CAACAgIAAxkBAAKYJmAxST6CTOiOStfQ9CH7hqLiv0iWAAL8BgACRvusBG1XSZhZ24v-HgQ
 
+  divergence: # new (!)
+    enabled: true
+    normal_is_less: 2
+    cooldown: 12h
+    div_steps:
+      - 7
 
 bep2:
   enabled: true

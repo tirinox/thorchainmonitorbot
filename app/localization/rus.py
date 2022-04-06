@@ -5,12 +5,12 @@ from typing import List
 from aiothornode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
-from localization.base import BaseLocalization, RAIDO_GLYPH, CREATOR_TG, URL_LEADERBOARD_MCCN
+from localization.base import BaseLocalization, CREATOR_TG, URL_LEADERBOARD_MCCN
 from services.lib.constants import Chains, thor_to_float, rune_origin, BNB_RUNE_SYMBOL
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address, get_explorer_url_to_tx
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
-    emoji_for_percent_change, Asset, short_money, short_dollar, format_percent
+    emoji_for_percent_change, Asset, short_money, short_dollar, format_percent, RAIDO_GLYPH, pretty_rune
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
     up_down_arrow, plural, grouper, regroup_joining
 from services.models.bep2 import BEP2Transfer, BEP2CEXFlow
@@ -403,6 +403,21 @@ class RussianLocalization(BaseLocalization):
                         f"Спекулятивый множитель: {pre(x_ses(fp.fair_price, price))}\n")
 
         return message.rstrip()
+
+    def notification_text_price_divergence(self, info: RuneMarketInfo, normal: bool):
+        title = f'〰 Низкое расхождение цены!' if normal else f'🔺 Высокое расхождение цены!'
+
+        div = abs(info.cex_price - info.pool_rune_price)
+        div_p = 100.0 * abs(1.0 - info.cex_price / info.pool_rune_price) if info.pool_rune_price != 0 else 0.0
+
+        text = (
+            f"🖖 {bold(title)}\n"
+            f"Цена BEP2 Руны (на биржах): {code(pretty_dollar(info.cex_price))}\n"
+            f"Взвешенная цена Руны в пулах: {code(pretty_dollar(info.pool_rune_price))}\n"
+            f"<b>Расхождение</b> нативной руны и BEP2 руны: {code(pretty_dollar(div))} ({div_p:.1f}%)."
+        )
+
+        return text
 
     # ------- POOL CHURN -------
 
