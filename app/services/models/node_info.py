@@ -38,7 +38,9 @@ class NodeInfo(BaseModelMixin):
     requested_to_leave: bool = False
     forced_to_leave: bool = False
     active_block_height: int = 0
+    status_since: int = 0
     observe_chains: List = field(default_factory=list)
+    jail: Dict = field(default_factory=dict)
 
     @property
     def chain_dict(self):
@@ -84,7 +86,9 @@ class NodeInfo(BaseModelMixin):
             requested_to_leave=bool(d.get('requested_to_leave', False)),
             forced_to_leave=bool(d.get('forced_to_leave', False)),
             active_block_height=int(d.get('active_block_height', 0)),
-            observe_chains=d.get('observe_chains', [])
+            status_since=int(d.get('status_since', 0)),
+            observe_chains=d.get('observe_chains', []),
+            jail=d.get('jail', {}),
         )
 
     @staticmethod

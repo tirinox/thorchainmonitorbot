@@ -14,7 +14,6 @@ from services.lib.texts import grouper
 from services.lib.utils import class_logger
 from services.models.node_info import NodeSetChanges, NodeEvent, NodeEventType
 from services.models.node_watchers import NodeWatcherStorage
-from services.models.thormon import ThorMonAnswer
 from services.notify.broadcast import ChannelDescriptor
 from services.notify.personal.bond import BondTracker
 from services.notify.personal.chain_height import ChainHeightTracker
@@ -96,30 +95,13 @@ class NodeChangePersonalNotifier(INotified):
         self._last_signal_ts = now_ts()
         if isinstance(data, NodeSetChanges):  # from Churn Fetcher
             asyncio.create_task(self._handle_node_churn_bg_job(data))  # long-running job goes to the background!
-        elif isinstance(data, ThorMonAnswer):  # from ThorMon
-            asyncio.create_task(self._handle_thormon_message_bg_job(data))  # long-running job goes to the background!
-
-    async def _handle_thormon_message_bg_job(self, data: ThorMonAnswer):
-        # await self.telemetry_db.write_telemetry(data)
-
-        self.chain_height_tracker.estimate_block_height(data)
-
-        user_cache = await UserDataCache.load(self.deps.db)
-
-        events = sum(
-            await asyncio.gather(
-                self.online_tracker.get_events(data, user_cache),
-                self.chain_height_tracker.get_events(data, user_cache),
-                self.slash_tracker.get_events(data, user_cache),
-            ), []
-        )
-
-        await self._cast_messages_for_events(events)
-
-        await user_cache.save(self.deps.db)
 
     async def _handle_node_churn_bg_job(self, node_set_change: NodeSetChanges):
         prev_and_curr_node_map = node_set_change.prev_and_curr_node_map
+
+        all_nodes = node_set_change.nodes_all
+
+        self.chain_height_tracker.estimate_block_height(all_nodes)
 
         events = []
         events += await self.churn_tracker.get_all_changes(node_set_change)
@@ -128,14 +110,19 @@ class NodeChangePersonalNotifier(INotified):
         events += await self.bond_tracker.get_all_changes(prev_and_curr_node_map)
         events += await self.presence_tracker.get_events(node_set_change)
 
-        # # fixme: debug
-        # events.append(NodeEvent(
-        #     NodeEvent.ANY,
-        #     NodeEventType.TEXT_MESSAGE,
-        #     'Hellow worold!', single_per_user=True
-        # ))
+        user_cache = await UserDataCache.load(self.deps.db)
+
+        events = sum(
+            await asyncio.gather(
+                self.online_tracker.get_events(all_nodes, user_cache),
+                self.chain_height_tracker.get_events(all_nodes, user_cache),
+                self.slash_tracker.get_events(all_nodes, user_cache),
+            ), []
+        )
 
         await self._cast_messages_for_events(events)
+
+        await user_cache.save(self.deps.db)
 
     async def _cast_messages_for_events(self, events: List[NodeEvent]):
         if not events:

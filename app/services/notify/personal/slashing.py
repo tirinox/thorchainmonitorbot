@@ -4,8 +4,7 @@ from typing import List, Optional
 from services.lib.date_utils import MINUTE, parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
-from services.models.node_info import NodeEvent, NodeEventType, EventDataSlash
-from services.models.thormon import ThorMonAnswer
+from services.models.node_info import NodeEvent, NodeEventType, EventDataSlash, NodeInfo
 from services.models.time_series import TimeSeries
 from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting, STANDARD_INTERVALS
 from services.notify.personal.user_data import UserDataCache
@@ -25,11 +24,11 @@ class SlashPointTracker(BaseChangeTracker):
         self.cache: Optional[UserDataCache] = None
 
     @staticmethod
-    def _extract_slash_points(last_answer: ThorMonAnswer):
-        return {n.node_address: n.slash_points for n in last_answer.nodes if n.node_address}
+    def _extract_slash_points(nodes: List[NodeInfo]):
+        return {n.node_address: n.slash_points for n in nodes if n.node_address}
 
-    async def _save_point(self, last_answer: ThorMonAnswer):
-        data = self._extract_slash_points(last_answer)
+    async def _save_point(self, nodes: List[NodeInfo]):
+        data = self._extract_slash_points(nodes)
         if data:
             await self.series.add(**data)
         await self.series.trim_oldest(self.HISTORY_MAX_POINTS)
@@ -41,14 +40,14 @@ class SlashPointTracker(BaseChangeTracker):
         ]
         return await asyncio.gather(*tasks)
 
-    async def get_events(self, last_answer: ThorMonAnswer, user_cache: UserDataCache) -> List[NodeEvent]:
+    async def get_events(self, nodes: List[NodeInfo], user_cache: UserDataCache) -> List[NodeEvent]:
         self.cache = user_cache
-        await self._save_point(last_answer)
+        await self._save_point(nodes)
 
         points = await self._read_points(intervals=self.std_intervals_sec)
-        current_state = self._extract_slash_points(last_answer)
+        current_state = self._extract_slash_points(nodes)
 
-        node_map = last_answer.address_to_node_map
+        node_map = {node.node_address: node for node in nodes}
 
         events = []
         for interval, (data, _) in zip(self.std_intervals_sec, points):
@@ -67,7 +66,7 @@ class SlashPointTracker(BaseChangeTracker):
                         address, NodeEventType.SLASHING,
                         EventDataSlash(slash_pts, current_slash_pts, interval),
                         tracker=self,
-                        thor_node=node
+                        node=node
                     ))
 
         return events
@@ -93,7 +92,7 @@ class SlashPointTracker(BaseChangeTracker):
 
         if data.delta_pts >= threshold:
             cd = interval * self.EXTRA_COOLDOWN_MULT
-            if self.cache.cooldown_can_do(user_id, event.thor_node.node_address,
+            if self.cache.cooldown_can_do(user_id, event.address,
                                           self.KEY_SERVICE, interval_sec=cd,
                                           do=True):
                 return True
