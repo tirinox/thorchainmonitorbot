@@ -1,6 +1,6 @@
 import asyncio
 from dataclasses import dataclass
-from typing import NamedTuple
+from typing import NamedTuple, Dict
 
 from services.lib.constants import BNB_RUNE_SYMBOL_NO_CHAIN
 
@@ -13,10 +13,6 @@ THOR_NODE_DEFAULT = 'https://thornode.ninerealms.com'
 BEP2_BURN_ADDRESS = 'bnb1e4q8whcufp6d72w8nwmpuhxd96r4n0fstegyuy'
 BEP2_OPS_ADDRESS = 'bnb13a7gyv5zl57c0rzeu0henx6d0tzspvrrakxxtv'  # about 1.2m rune
 
-BEP2_EXCLUDE_FROM_CIRCULATING_ADDRESSES = [
-    BEP2_BURN_ADDRESS,
-]
-
 RUNE_ERC20_CONTRACT_ADDRESS = '0x3155BA85D5F96b2d030a4966AF206230e46849cb'
 RUNE_ERC20_DEFAULT_SUPPLY = 9206991
 
@@ -25,17 +21,23 @@ THOR_ADDRESS_RESERVE_MODULE = 'thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt'
 THOR_ADDRESS_TEAM = 'thor1lrnrawjlfp6jyrzf39r740ymnuk9qgdgp29rqv'
 THOR_ADDRESS_SEED = 'thor16qnm285eez48r4u9whedq4qunydu2ucmzchz7p'
 
-THOR_EXCLUDE_FROM_CIRCULATING_ADDRESSES = [
-    THOR_ADDRESS_TEAM,
-    THOR_ADDRESS_SEED,
-    THOR_ADDRESS_RESERVE_MODULE,
-    THOR_ADDRESS_UNDEPLOYED_RESERVES
-]
+
+THOR_EXCLUDE_FROM_CIRCULATING_ADDRESSES = {
+    'team': THOR_ADDRESS_TEAM,
+    'seed': THOR_ADDRESS_SEED,
+    'reserves': THOR_ADDRESS_RESERVE_MODULE,
+    'undeployed_reserves': THOR_ADDRESS_UNDEPLOYED_RESERVES
+}
+
+BEP2_EXCLUDE_FROM_CIRCULATING_ADDRESSES = {
+    'preburn': BEP2_BURN_ADDRESS,
+}
 
 
 class SupplyEntry(NamedTuple):
     circulating: int
     total: int
+    locked: Dict[str, int]
 
 
 @dataclass
@@ -73,12 +75,13 @@ class RuneCirculatingSupplyFetcher:
 
     async def fetch(self):
         bep2_exclude_balance_group = asyncio.gather(
-            *[self.get_bep2_address_balance(address) for address in
-              BEP2_EXCLUDE_FROM_CIRCULATING_ADDRESSES],
+            *[self.get_bep2_address_balance(address)
+              for address in BEP2_EXCLUDE_FROM_CIRCULATING_ADDRESSES.values()],
         )
 
         thor_exclude_balance_group = asyncio.gather(
-            *[self.get_thor_address_balance(address) for address in THOR_EXCLUDE_FROM_CIRCULATING_ADDRESSES]
+            *[self.get_thor_address_balance(address)
+              for address in THOR_EXCLUDE_FROM_CIRCULATING_ADDRESSES.values()]
         )
 
         (
@@ -97,6 +100,23 @@ class RuneCirculatingSupplyFetcher:
             self.get_asgard_rune_to_burn(),
         )
 
+        bep2_locked_dict = dict((k, v) for k, v in
+                                zip(BEP2_EXCLUDE_FROM_CIRCULATING_ADDRESSES.keys(), bep2_exclude_balance_arr))
+        bep2_locked_dict['asgard'] = bep2_to_burn_asgard
+
+        thor_locked_dict = dict((k, v) for k, v in
+                                zip(THOR_EXCLUDE_FROM_CIRCULATING_ADDRESSES.keys(), thor_exclude_balance_arr))
+
+        erc20_locked_dict = {
+            'asgard': erc20_to_burn_asgard
+        }
+        overall_locked_dict = {
+            **bep2_locked_dict,
+            **erc20_locked_dict,
+            **thor_locked_dict,
+            'asgard': erc20_to_burn_asgard + bep2_to_burn_asgard
+        }
+
         # noinspection PyTypeChecker
         bep2_exclude_balance = sum(bep2_exclude_balance_arr) if bep2_exclude_balance_arr else 0
         bep2_exclude_balance += bep2_to_burn_asgard
@@ -112,10 +132,10 @@ class RuneCirculatingSupplyFetcher:
         total_circulating = erc20_rune_supply + thor_rune_circulating + bep2_rune_supply
 
         return RuneCirculatingSupply(
-            erc20_rune=SupplyEntry(erc20_rune_circulating, erc20_rune_supply),
-            bep2_rune=SupplyEntry(bep2_rune_circulating, bep2_rune_supply),
-            thor_rune=SupplyEntry(thor_rune_circulating, thor_rune_supply),
-            overall=SupplyEntry(total_circulating, total_supply)
+            erc20_rune=SupplyEntry(erc20_rune_circulating, erc20_rune_supply, erc20_locked_dict),
+            bep2_rune=SupplyEntry(bep2_rune_circulating, bep2_rune_supply, bep2_locked_dict),
+            thor_rune=SupplyEntry(thor_rune_circulating, thor_rune_supply, thor_locked_dict),
+            overall=SupplyEntry(total_circulating, total_supply, overall_locked_dict)
         )
 
     @staticmethod
