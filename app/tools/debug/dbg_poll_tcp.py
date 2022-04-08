@@ -7,7 +7,7 @@ PORT_LIST = [6040, 27147, 6041]
 
 
 async def my_test_multi_connect(pollster: TCPPollster):
-    r = await pollster.test_connectivity_multiple(IP_ADDRESS_LIST, PORT_LIST)
+    r = await pollster.test_connectivity_multiple(IP_ADDRESS_LIST, PORT_LIST, group_size=3)
     print(r)
 
 
