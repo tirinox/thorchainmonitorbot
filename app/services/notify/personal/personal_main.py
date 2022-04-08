@@ -6,13 +6,13 @@ from typing import List
 
 from localization import LocalizationManager
 from services.jobs.fetch.base import INotified
-from services.jobs.fetch.thormon import ThorMonWSSClient
-from services.lib.date_utils import HOUR, MINUTE
+# from services.jobs.fetch.thormon import ThorMonWSSClient
+from services.lib.date_utils import HOUR, MINUTE, now_ts
 from services.lib.depcont import DepContainer
 from services.lib.nop_links import SettingsManager
 from services.lib.texts import grouper
 from services.lib.utils import class_logger
-from services.models.node_info import NodeSetChanges, NodeEvent
+from services.models.node_info import NodeSetChanges, NodeEvent, NodeEventType
 from services.models.node_watchers import NodeWatcherStorage
 from services.models.thormon import ThorMonAnswer
 from services.notify.broadcast import ChannelDescriptor
@@ -28,7 +28,6 @@ from services.notify.personal.telemetry import NodeTelemetryDatabase
 from services.notify.personal.user_data import UserDataCache
 from services.notify.personal.versions import VersionTracker
 
-DEFAULT_SLASH_THRESHOLD = 5
 MAX_CHANGES_PER_MESSAGE = 10
 
 TELEMETRY_MAX_HISTORY_DURATION = HOUR
@@ -41,7 +40,7 @@ class NodeChangePersonalNotifier(INotified):
         self.deps = deps
         self.logger = class_logger(self)
         self.watchers = NodeWatcherStorage(deps.db)
-        self.thor_mon = ThorMonWSSClient(deps.cfg.network_id)
+        # self.thor_mon = ThorMonWSSClient(deps.cfg.network_id)
         self.telemetry_db = NodeTelemetryDatabase(deps)
         self.settings_man = SettingsManager(self.deps.db, self.deps.cfg)
 
@@ -54,12 +53,15 @@ class NodeChangePersonalNotifier(INotified):
         self.slash_tracker = SlashPointTracker(deps)
         self.bond_tracker = BondTracker(deps)
         self.presence_tracker = PresenceTracker(deps)
+        self._last_signal_ts = 0
 
     async def prepare(self):
-        self.thor_mon.subscribe(self)
-        asyncio.create_task(self.thor_mon.listen_forever())
+        pass
+        # self.thor_mon.subscribe(self)
+        # asyncio.create_task(self.thor_mon.listen_forever())
 
     async def on_data(self, sender, data):
+        self._last_signal_ts = now_ts()
         if isinstance(data, NodeSetChanges):  # from Churn Fetcher
             asyncio.create_task(self._handle_node_churn_bg_job(data))  # long-running job goes to the background!
         elif isinstance(data, ThorMonAnswer):  # from ThorMon
@@ -94,11 +96,20 @@ class NodeChangePersonalNotifier(INotified):
         events += await self.bond_tracker.get_all_changes(prev_and_curr_node_map)
         events += await self.presence_tracker.get_events(node_set_change)
 
+        # # fixme: debug
+        # events.append(NodeEvent(
+        #     NodeEvent.ANY,
+        #     NodeEventType.TEXT_MESSAGE,
+        #     'Hellow worold!', single_per_user=True
+        # ))
+
         await self._cast_messages_for_events(events)
 
     async def _cast_messages_for_events(self, events: List[NodeEvent]):
         if not events:
             return
+
+        broadcasting_events = [e for e in events if e.is_broad]
 
         self.logger.debug(f'Casting Node changes ({len(events)} items)')
 
@@ -107,15 +118,21 @@ class NodeChangePersonalNotifier(INotified):
 
         # 3. get list of user who watch those nodes
         node_to_user = await self.watchers.all_users_for_many_nodes(affected_node_addresses)
-        all_users = reduce(operator.or_, node_to_user.values()) if node_to_user else []
 
-        if not all_users:
+        all_affected_users = reduce(operator.or_, node_to_user.values()) if node_to_user else []
+        if not broadcasting_events and not all_affected_users:
             self.logger.info('No users to receive alerts.')
             return  # nobody is interested in those changes...
 
+        all_users = []
+        if broadcasting_events:
+            all_users = await self.watchers.all_users()
+
         user_events = defaultdict(list)
         for event in events:
-            for user in node_to_user[event.address]:
+            users_for_event = all_users if event.is_broad else node_to_user[event.address]
+
+            for user in users_for_event:
                 this_user = user_events[user]
 
                 # single_per_user: skip all events of this kind if there was one before!
@@ -166,12 +183,18 @@ class NodeChangePersonalNotifier(INotified):
     async def _filter_events(event_list: List[NodeEvent], user_id, settings: dict) -> List[NodeEvent]:
         results = []
         for event in event_list:
+            passes = True
+
             # noinspection PyTypeChecker
             tracker: BaseChangeTracker = event.tracker
-            if tracker and await tracker.is_event_ok(event, user_id, settings):
+            if tracker:
+                passes = await tracker.is_event_ok(event, user_id, settings)
+
+            if passes:
                 results.append(event)
         return results
 
     @property
     def last_signal_sec_ago(self):
-        return self.thor_mon.last_signal_sec_ago
+        # return self.thor_mon.last_signal_sec_ago
+        return now_ts() - self._last_signal_ts

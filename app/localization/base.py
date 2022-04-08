@@ -1496,6 +1496,8 @@ class BaseLocalization(ABC):  # == English
         short_addr = pre(address[-4:]) if len(address) >= 4 else 'UNKNOWN'
         return link(get_explorer_url_for_node(address), short_addr)
 
+    NODE_OP_MAX_TEXT_MESSAGE_LENGTH = 144
+
     def notification_text_for_node_op_changes(self, c: NodeEvent):
         message = ''
         short_addr = self.node_link(c.address)
@@ -1543,6 +1545,9 @@ class BaseLocalization(ABC):  # == English
                 message = f'🙋 Node {short_addr} is back is the THORChain network.'
             else:
                 message = f'⁉️ Node {short_addr} has disappeared from the THORChain network.'
+        elif c.type == NodeEventType.TEXT_MESSAGE:
+            text = str(c.data)[:self.NODE_OP_MAX_TEXT_MESSAGE_LENGTH]
+            message = f'⚠️ Message for all: {code(text)}'
 
         return message
 

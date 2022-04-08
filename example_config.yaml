@@ -231,6 +231,7 @@ price:
     div_steps:
       - 7
 
+
 bep2:
   enabled: true
   fetch_period: 30
@@ -313,7 +314,7 @@ pool_churn:
 
 node_info:
   enabled: true
-  fetch_period: 140s
+  fetch_period: 5s  # (!) for it must not be too slow for NodeOp tools accuracy
   geo_ip:
     expire: 48h
 

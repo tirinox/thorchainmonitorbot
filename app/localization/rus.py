@@ -1284,6 +1284,9 @@ class RussianLocalization(BaseLocalization):
                 message = f'🙋 Нода {short_addr} снова вернулась в сеть THORChain!'
             else:
                 message = f'⁉️ Нода {short_addr} исчезла из сети THORChain!'
+        elif c.type == NodeEventType.TEXT_MESSAGE:
+            text = str(c.data)[:self.NODE_OP_MAX_TEXT_MESSAGE_LENGTH]
+            message = f'⚠️ Сообщение всем: {code(text)}'
 
         return message
 

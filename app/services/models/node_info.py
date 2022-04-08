@@ -41,6 +41,10 @@ class NodeInfo(BaseModelMixin):
     observe_chains: List = field(default_factory=list)
 
     @property
+    def chain_dict(self):
+        return {c['chain']: c['height'] for c in self.observe_chains} if self.observe_chains else {}
+
+    @property
     def parsed_version(self) -> VersionInfo:
         try:
             return VersionInfo.parse(self.version)
@@ -342,6 +346,8 @@ class NodeEventType:
     BLOCK_HEIGHT = 'block_height'
     PRESENCE = 'presence'
 
+    TEXT_MESSAGE = 'message_txt'
+
 
 class NodeEvent(NamedTuple):
     address: str
@@ -351,3 +357,9 @@ class NodeEvent(NamedTuple):
     node: NodeInfo = None
     thor_node: ThorMonNode = None
     tracker: object = None
+
+    ANY = '*'
+
+    @property
+    def is_broad(self):
+        return self.address == self.ANY
