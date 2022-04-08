@@ -1548,6 +1548,12 @@ class BaseLocalization(ABC):  # == English
         elif c.type == NodeEventType.TEXT_MESSAGE:
             text = str(c.data)[:self.NODE_OP_MAX_TEXT_MESSAGE_LENGTH]
             message = f'⚠️ Message for all: {code(text)}'
+        elif c.type == NodeEventType.CABLE_DISCONNECT:
+            message = f'💔️ NodeOp tools service has <b>disconnected</b> from THORChain network.\n' \
+                      f'Please use an alternative service to monitor nodes until we get it fixed.'
+        elif c.type == NodeEventType.CABLE_RECONNECT:
+            message = f'💚 NodeOp tools has reconnected to THORChain network.'
+
 
         return message
 

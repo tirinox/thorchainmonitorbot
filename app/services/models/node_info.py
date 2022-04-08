@@ -346,6 +346,9 @@ class NodeEventType:
     BLOCK_HEIGHT = 'block_height'
     PRESENCE = 'presence'
 
+    CABLE_DISCONNECT = 'disconnected'
+    CABLE_RECONNECT = 'reconnected'
+
     TEXT_MESSAGE = 'message_txt'
 
 

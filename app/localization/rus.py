@@ -1287,6 +1287,12 @@ class RussianLocalization(BaseLocalization):
         elif c.type == NodeEventType.TEXT_MESSAGE:
             text = str(c.data)[:self.NODE_OP_MAX_TEXT_MESSAGE_LENGTH]
             message = f'⚠️ Сообщение всем: {code(text)}'
+        elif c.type == NodeEventType.CABLE_DISCONNECT:
+            message = f'💔️ NodeOp инструменты <b>отключились</b> от сети THORChain.\n' \
+                      f'Пожалуйста, воспользуйтсь альтернативными сервисами для мониторинга нод, ' \
+                      f'пока мы не исправим проблему.'
+        elif c.type == NodeEventType.CABLE_RECONNECT:
+            message = f'💚 NodeOp инструменты снова подключились к THORChain.'
 
         return message
 

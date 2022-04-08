@@ -7,7 +7,7 @@ from typing import List
 from localization import LocalizationManager
 from services.jobs.fetch.base import INotified
 # from services.jobs.fetch.thormon import ThorMonWSSClient
-from services.lib.date_utils import HOUR, MINUTE, now_ts
+from services.lib.date_utils import HOUR, MINUTE, now_ts, parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.nop_links import SettingsManager
 from services.lib.texts import grouper
@@ -55,10 +55,42 @@ class NodeChangePersonalNotifier(INotified):
         self.presence_tracker = PresenceTracker(deps)
         self._last_signal_ts = 0
 
+        watch_dog_cfg = self.deps.cfg.get('node_info.personal.watchdog')
+        self._watchdog_enabled = bool(watch_dog_cfg.get('enabled', False))
+        self._disconnected_cable_timeout = parse_timespan_to_seconds(
+            watch_dog_cfg.as_str('disconnected_cable_timeout', '20s')
+        )
+        self._cable_disconnected = False
+
     async def prepare(self):
-        pass
+        if self._watchdog_enabled:
+            self.logger.info(f'Starting watchdog timer: timeout = {self._disconnected_cable_timeout} sec')
+            asyncio.create_task(self._watchdog_timer())
         # self.thor_mon.subscribe(self)
         # asyncio.create_task(self.thor_mon.listen_forever())
+
+    async def _watchdog_timer(self):
+        while True:
+            try:
+                if self._last_signal_ts > 0:
+                    if not self._cable_disconnected and self.last_signal_sec_ago > self._disconnected_cable_timeout:
+                        self.logger.warning(f'Cable disconnected!')
+                        self._cable_disconnected = True
+                        await self._notify_cable_disconnected()
+                    elif self._cable_disconnected and self.last_signal_sec_ago < self._disconnected_cable_timeout:
+                        self.logger.warning(f'Cable reconnected!')
+                        self._cable_disconnected = False
+                        await self._notify_cable_disconnected()
+            except Exception:
+                self.logger.exception(f'Watchdog failed to handle its tick!', exc_info=True)
+            await asyncio.sleep(0.5)
+
+    async def _notify_cable_disconnected(self):
+        event_type = NodeEventType.CABLE_DISCONNECT if self._cable_disconnected else NodeEventType.CABLE_RECONNECT
+        events = [
+            NodeEvent(NodeEvent.ANY, event_type, self.last_signal_sec_ago, single_per_user=True)
+        ]
+        await self._cast_messages_for_events(events)
 
     async def on_data(self, sender, data):
         self._last_signal_ts = now_ts()

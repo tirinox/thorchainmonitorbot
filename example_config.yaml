@@ -339,6 +339,10 @@ node_info:
     top_height_estimation_method: 'max_committee'
     min_committee_members: 3
 
+    watchdog:  # (!) new
+      enabled: True
+      disconnected_cable_timeout: 10m
+
 
 constants:
   mimir_change:
