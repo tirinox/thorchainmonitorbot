@@ -37,6 +37,8 @@ class NodeInfoFetcher(BaseFetcher):
 
         # new_nodes = self._test_churn(new_nodes) # fixme: debug
 
+        # print(len(new_nodes), '<<<-----')
+
         return new_nodes
 
     async def fetch(self) -> List[NodeInfo]:
