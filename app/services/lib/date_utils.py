@@ -51,7 +51,6 @@ WHITE_SPACE_CHARS = [' ', ',', ';', ':', '\t', '/']
 
 def parse_timespan_to_seconds(span: str, do_float=False):
     try:
-        span = span.strip()
         return float(span) if do_float else int(span)
     except ValueError:
         result = 0

@@ -5,6 +5,7 @@ from services.jobs.node_churn import NodeStateDatabase
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.geo_ip import GeoIPManager
+from services.lib.midgard.urlgen import free_url_gen
 from services.models.node_info import NodeInfo, NetworkNodeIpInfo
 
 
@@ -14,16 +15,19 @@ class NodeInfoFetcher(BaseFetcher):
         super().__init__(deps, sleep_period)
 
     async def fetch_current_node_list(self) -> List[NodeInfo]:
-        # raw_nodes = await self.deps.midgard_connector.request_random_midgard(
-        #     free_url_gen.url_thor_nodes()
-        # )
 
         thor = self.deps.thor_connector
         # noinspection PyTypeChecker
         raw_nodes = await thor._request(thor.env.path_nodes, None)
 
         if raw_nodes is None:
-            self.logger.error('not found!')
+            self.logger.warning(f'No luck trying to access THORNode, shall I try Midgard instead?')
+            raw_nodes = await self.deps.midgard_connector.request_random_midgard(
+                free_url_gen.url_thor_nodes()
+            )
+
+        if raw_nodes is None:
+            self.logger.error('Again no luck! Failed to obtain node list!')
             raise FileNotFoundError('node_list')
 
         new_nodes = []

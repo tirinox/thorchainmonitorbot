@@ -24,9 +24,9 @@ class ChainHeightTracker(BaseChangeTracker):
         self.recent_max_blocks = {}
         self.cache: Optional[UserDataCache] = None
 
-        self.chain_height_method = deps.cfg.as_str('node_info.personal.top_height_estimation_method',
-                                                   self.METHOD_MAX_COMMITTEE)
-        self.min_committee = deps.cfg.as_int('node_info.personal.min_committee_members', 3)
+        sub_cfg = deps.cfg.get('node_op_tools.types.chain_height')
+        self.chain_height_method = sub_cfg.as_str('top_height_estimation_method', self.METHOD_MAX_COMMITTEE)
+        self.min_committee = sub_cfg.as_int('min_committee_members', 3)
         self.debug = False
 
     def get_block_time(self, chain):

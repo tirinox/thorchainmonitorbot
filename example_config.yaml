@@ -95,6 +95,22 @@ channels:
     lang: rus
 
 
+node_op_tools:  # (!) new! moved out from the "node_info" section
+  enabled: true
+
+  watchdog:  # (!) new
+    enabled: true
+    disconnected_cable_timeout: 20m
+  types:
+    chain_height:  # (!) new!
+      # 'most_common' or 'max' or  'max_committee' (default)
+      top_height_estimation_method: 'max_committee'
+      min_committee_members: 3
+    online_service:
+      tcp_timeout: 1  # sec
+      group_size: 20
+
+
 tx:
   enabled: true
   max_age: 1d
@@ -332,16 +348,6 @@ node_info:
     upgrade_progress: # if not all act. nodes run same version, show upgrade progress every cooldown
       enabled: true
       cooldown: 2h
-
-  personal:
-    enabled: true
-    # 'most_common' or 'max' or  'max_committee' (default)
-    top_height_estimation_method: 'max_committee'
-    min_committee_members: 3
-
-    watchdog:  # (!) new
-      enabled: True
-      disconnected_cable_timeout: 10m
 
 
 constants:

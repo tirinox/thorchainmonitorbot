@@ -1,32 +1,9 @@
 import asyncio
 import socket
 from collections import defaultdict
-from typing import NamedTuple
+from typing import Dict
 
 from services.lib.texts import grouper
-
-
-class THORPort:
-    class TestNet(NamedTuple):
-        RPC = 26657
-        P2P = 26656
-        BIFROST = 6040
-        BIFROST_P2P = 5040
-        NODE = 1317
-
-    class StageNet(NamedTuple):
-        RPC = 26657
-        P2P = 26656
-        BIFROST = 6040
-        BIFROST_P2P = 5040
-        NODE = 1317
-
-    class MainNet(NamedTuple):
-        RPC = 27147
-        P2P = 27146
-        BIFROST = 6040
-        BIFROST_P2P = 5040
-        NODE = 1317
 
 
 class TCPPollster:
@@ -49,7 +26,7 @@ class TCPPollster:
     async def test_connectivity(self, host, port):
         return await self.loop.run_in_executor(None, self.test_connectivity_sync, host, port, self.test_timeout)
 
-    async def _test_connectivity_multiple(self, ip_address_list: list, port_list: list):
+    async def _test_connectivity_multiple(self, ip_address_list: list, port_list: list) -> Dict[str, Dict[int, bool]]:
         results = await asyncio.gather(
             *(self.test_connectivity(host, port) for host in ip_address_list for port in port_list)
         )
@@ -60,7 +37,7 @@ class TCPPollster:
             result_dict[host][port] = result
         return result_dict
 
-    async def test_connectivity_multiple(self, ip_address_list, port_list, group_size=10):
+    async def test_connectivity_multiple(self, ip_address_list, port_list, group_size=10) -> Dict[str, Dict[int, bool]]:
         ip_address_list = list(set(ip_address_list))
         port_list = list(set(port_list))
 

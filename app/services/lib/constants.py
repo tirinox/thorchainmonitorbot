@@ -1,3 +1,5 @@
+from typing import NamedTuple
+
 from services.lib.date_utils import MINUTE
 
 
@@ -136,6 +138,8 @@ class Chains:
 class NetworkIdents:
     TESTNET_MULTICHAIN = 'testnet-multi'
     CHAOSNET_MULTICHAIN = 'chaosnet-multi'
+    MAINNET_MULTICHAIN = 'mainnet-multi'
+    STAGENET_MULTICHAIN = 'stagenet-multi'
 
     @classmethod
     def is_test(cls, network: str):
@@ -166,3 +170,37 @@ def thor_to_float(x) -> float:
 
 def float_to_thor(x: float) -> int:
     return int(x * THOR_DIVIDER)
+
+
+class THORPort:
+    class TestNet(NamedTuple):
+        RPC = 26657
+        P2P = 26656
+        BIFROST = 6040
+        BIFROST_P2P = 5040
+        NODE = 1317
+
+    class StageNet(NamedTuple):
+        RPC = 26657
+        P2P = 26656
+        BIFROST = 6040
+        BIFROST_P2P = 5040
+        NODE = 1317
+
+    class MainNet(NamedTuple):
+        RPC = 27147
+        P2P = 27146
+        BIFROST = 6040
+        BIFROST_P2P = 5040
+        NODE = 1317
+
+    FAMILIES = {
+        NetworkIdents.TESTNET_MULTICHAIN: TestNet,
+        NetworkIdents.STAGENET_MULTICHAIN: StageNet,
+        NetworkIdents.CHAOSNET_MULTICHAIN: MainNet
+    }
+
+    @classmethod
+    def get_port_family(cls, network_ident):
+        return cls.FAMILIES.get(network_ident, cls.MainNet)
+

@@ -54,7 +54,7 @@ class NodeChangePersonalNotifier(INotified):
         self.presence_tracker = PresenceTracker(deps)
         self._last_signal_ts = 0
 
-        watch_dog_cfg = self.deps.cfg.get('node_info.personal.watchdog')
+        watch_dog_cfg = self.deps.cfg.get('node_op_tools.watchdog')
         self._watchdog_enabled = bool(watch_dog_cfg.get('enabled', False))
         self._disconnected_cable_timeout = parse_timespan_to_seconds(
             watch_dog_cfg.as_str('disconnected_cable_timeout', '20s')

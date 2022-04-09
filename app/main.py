@@ -214,7 +214,7 @@ class App:
                 notifier_version = VersionNotifier(d)
                 churn_detector.subscribe(notifier_version)
 
-            if d.cfg.get('node_info.personal.enabled', True):
+            if d.cfg.get('node_op_tools.enabled', True):
                 self.deps.node_op_notifier = NodeChangePersonalNotifier(d)
                 await self.deps.node_op_notifier.prepare()
                 churn_detector.subscribe(self.deps.node_op_notifier)

@@ -1,18 +1,20 @@
 from typing import List, Tuple, Optional
 
 from services.jobs.poll_tcp import TCPPollster
-from services.lib.date_utils import HOUR, now_ts, DAY, format_time_ago
+from services.lib.constants import THORPort
+from services.lib.date_utils import HOUR, now_ts, DAY, parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
 from services.models.node_info import EventNodeOnline, NodeEvent, NodeEventType, NodeInfo
-from services.models.thormon import ThorMonAnswer, ThorMonNode
 from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
 from services.notify.personal.telemetry import NodeTelemetryDatabase
 from services.notify.personal.user_data import UserDataCache
 
 TimeStampedList = List[Tuple[float, bool]]
 
-SERVICES = ['rpc', 'bifrost']
+RPC = 'rpc'
+BIFROST = 'bifrost'
+SERVICES = [RPC, BIFROST]
 
 AGE_CUT_OFF = 30 * DAY
 
@@ -24,7 +26,10 @@ class NodeOnlineTracker(BaseChangeTracker):
         self.cache: Optional[UserDataCache] = None
         self.logger = class_logger(self)
 
-        self.pollstrer = TCPPollster(loop=deps.loop, test_timeout=timeout)
+        cfg = deps.cfg.get('node_op_tools.types.online_service')
+        timeout = parse_timespan_to_seconds(cfg.as_str('tcp_timeout', '1s'))
+        self.pollster = TCPPollster(loop=deps.loop, test_timeout=timeout)
+        self._poll_group_size = cfg.as_int('group_size', 20)
 
     KEY_LAST_ONLINE_TS = 'last_online_ts'
     KEY_ONLINE_STATE = 'online'
@@ -39,33 +44,51 @@ class NodeOnlineTracker(BaseChangeTracker):
     def set_user_state(self, user, node, service, is_ok):
         self.cache.user_node_service_data[user][node][service][self.KEY_ONLINE_STATE] = is_ok
 
-    def _update(self, nodes: List[NodeInfo], ref_ts=None):
-        ref_ts = ref_ts or now_ts()
-        events = []
-        for node in nodes:
-            address = node.node_address
-            for service in SERVICES:
-                is_ok = bool(getattr(node, service))
+    async def get_events(self, nodes: List[NodeInfo], user_cache: UserDataCache):
+        self.cache = user_cache
 
-                if is_ok:
+        port_family = THORPort.get_port_family(self.deps.cfg.network_id)
+        service_to_port = {
+            BIFROST: port_family.BIFROST,
+            RPC: port_family.RPC
+        }
+        port_to_service = {v: k for k, v in service_to_port.items()}
+
+        ip_to_node = {node.ip_address: node for node in nodes if node.ip_address}
+
+        ref_ts = now_ts()
+
+        # Structure: dict{str(IP): dict{int(port): bool(is_available)} }
+        results = await self.pollster.test_connectivity_multiple(ip_to_node.keys(),
+                                                                 port_to_service.keys(),
+                                                                 group_size=self._poll_group_size)
+
+        events = []
+        for node_ip, node_results in results.items():
+            for port, is_available in node_results.items():
+                node = ip_to_node.get(node_ip)
+                if not node:
+                    continue
+
+                service = port_to_service.get(port)
+
+                address = node.node_address
+                if is_available:
                     self.cache.node_service_data[address][service][self.KEY_LAST_ONLINE_TS] = ref_ts
 
                 off_time = self.get_offline_time(address, service, ref_ts)
+                if off_time > AGE_CUT_OFF:
+                    continue
 
                 events.append(NodeEvent(
                     address,
                     NodeEventType.SERVICE_ONLINE,
-                    EventNodeOnline(is_ok, off_time, service),
+                    EventNodeOnline(is_available, off_time, service),
                     node=node,
                     tracker=self
                 ))
-        return events
 
-    async def get_events(self, nodes: List[NodeInfo], user_cache: UserDataCache):
-        # self.cache = user_cache
-        # return self._update(last_answer.nodes, now_ts())
-        # todo! replace THORMon logic!
-        return []
+        return events
 
     async def is_event_ok(self, event: NodeEvent, user_id, settings: dict) -> bool:
         if not bool(settings.get(NodeOpSetting.OFFLINE_ON, True)):
