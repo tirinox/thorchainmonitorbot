@@ -1,8 +1,32 @@
 import asyncio
 import socket
 from collections import defaultdict
+from typing import NamedTuple
 
 from services.lib.texts import grouper
+
+
+class THORPort:
+    class TestNet(NamedTuple):
+        RPC = 26657
+        P2P = 26656
+        BIFROST = 6040
+        BIFROST_P2P = 5040
+        NODE = 1317
+
+    class StageNet(NamedTuple):
+        RPC = 26657
+        P2P = 26656
+        BIFROST = 6040
+        BIFROST_P2P = 5040
+        NODE = 1317
+
+    class MainNet(NamedTuple):
+        RPC = 27147
+        P2P = 27146
+        BIFROST = 6040
+        BIFROST_P2P = 5040
+        NODE = 1317
 
 
 class TCPPollster:

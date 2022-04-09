@@ -1,5 +1,6 @@
 from typing import List, Tuple, Optional
 
+from services.jobs.poll_tcp import TCPPollster
 from services.lib.date_utils import HOUR, now_ts, DAY, format_time_ago
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
@@ -22,6 +23,8 @@ class NodeOnlineTracker(BaseChangeTracker):
         self.telemetry_db = NodeTelemetryDatabase(deps)
         self.cache: Optional[UserDataCache] = None
         self.logger = class_logger(self)
+
+        self.pollstrer = TCPPollster(loop=deps.loop, test_timeout=timeout)
 
     KEY_LAST_ONLINE_TS = 'last_online_ts'
     KEY_ONLINE_STATE = 'online'
