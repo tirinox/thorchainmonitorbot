@@ -3,7 +3,7 @@ import asyncio
 from services.jobs.fetch.circulating import RuneCirculatingSupplyFetcher, RuneCirculatingSupply
 from services.jobs.fetch.gecko_price import get_thorchain_coin_gecko_info, gecko_market_cap_rank, gecko_ticker_price, \
     gecko_market_volume
-from services.lib.constants import THOR_DIVIDER_INV
+from services.lib.constants import thor_to_float
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.midgard.urlgen import free_url_gen
@@ -28,11 +28,10 @@ class RuneMarketInfoFetcher:
 
     async def total_locked_value_all_networks(self):
         j = await self.midgard.request_random_midgard(free_url_gen.url_network())
-        total_pooled_rune = int(j.get('totalStaked', 0))
+        total_pooled_rune = j.get('totalStaked', 0)
         if not total_pooled_rune:
-            total_pooled_rune = int(j.get('totalPooledRune', 0))
-        total_pooled_rune *= THOR_DIVIDER_INV
-        return total_pooled_rune
+            total_pooled_rune = j.get('totalPooledRune', 0)
+        return thor_to_float(total_pooled_rune)
 
     async def _get_rune_market_info(self) -> RuneMarketInfo:
         supply_fetcher = RuneCirculatingSupplyFetcher(self.deps.session,

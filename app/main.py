@@ -227,6 +227,7 @@ class App:
                 price_div_notifier = PriceDivergenceNotifier(d)
                 d.price_pool_fetcher.subscribe(price_div_notifier)
 
+        # todo: join PoolChurnNotifier with PoolInfoFetcherMidgard
         if d.cfg.get('pool_churn.enabled', True):
             period = parse_timespan_to_seconds(d.cfg.pool_churn.fetch_period)
             fetcher_pool_info = PoolInfoFetcherMidgard(d, period)

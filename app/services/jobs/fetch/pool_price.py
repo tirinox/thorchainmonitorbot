@@ -36,49 +36,54 @@ class PoolPriceFetcher(BaseFetcher):
         self.parser = get_parser_by_network_id(self.deps.cfg.network_id)
         self.history_max_points = 200000
 
-    async def reload_global_pools(self):
-        d = self.deps
-        current_pools = await self.get_current_pool_data_full()
-
-        if current_pools and d.price_holder is not None:
-            d.price_holder.update(current_pools)
-
-        price = d.price_holder.usd_per_rune
-        self.logger.info(f'fresh rune price is ${price:.3f}, pools = {len(current_pools)}')
-
-        return current_pools
-
     async def fetch(self) -> RuneMarketInfo:
         d = self.deps
 
         await self.reload_global_pools()
-        price = d.price_holder.usd_per_rune
 
-        # todo: add diagnostics
+        rune_market_info: RuneMarketInfo = await self.deps.rune_market_fetcher.get_rune_market_info()
+        rune_market_info.pool_rune_price = d.price_holder.usd_per_rune
+        await self._write_price_time_series(rune_market_info)
 
-        if price > 0:
-            pool_price_series = PriceTimeSeries(RUNE_SYMBOL_POOL, d.db)
-            await pool_price_series.add(price=price)
+        return rune_market_info
+
+    async def reload_global_pools(self):
+        d = self.deps
+        current_pools = await self.get_current_pool_data_full()
+
+        if d.price_holder is not None:
+            if current_pools:
+                d.price_holder.update(current_pools)
+
+            price = d.price_holder.usd_per_rune
+            self.logger.info(f'Fresh rune price is ${price:.3f}, {len(current_pools)} total pools')
+
+        return current_pools
+
+    async def _write_price_time_series(self, rune_market_info: RuneMarketInfo):
+        if not rune_market_info:
+            self.logger.error('No rune_market_info!')
+            return
+
+        db = self.deps.db
+
+        # Pool price fill
+        if rune_market_info.pool_rune_price > 0:
+            pool_price_series = PriceTimeSeries(RUNE_SYMBOL_POOL, db)
+            await pool_price_series.add(price=rune_market_info.pool_rune_price)
             await pool_price_series.trim_oldest(self.history_max_points)
 
-            # Pool price fill
-            rune_market_info: RuneMarketInfo = await self.deps.rune_market_fetcher.get_rune_market_info()
-            rune_market_info.pool_rune_price = price
+        # CEX price fill
+        if rune_market_info.cex_price > 0:
+            cex_price_series = PriceTimeSeries(RUNE_SYMBOL_CEX, db)
+            await cex_price_series.add(price=rune_market_info.cex_price)
+            await cex_price_series.trim_oldest(self.history_max_points)
 
-            # CEX price fill
-            cex_price_series = PriceTimeSeries(RUNE_SYMBOL_CEX, d.db)
-            if rune_market_info and rune_market_info.cex_price:
-                await cex_price_series.add(price=rune_market_info.cex_price)
-                await cex_price_series.trim_oldest(self.history_max_points)
-
-            # Deterministic price fill
-            deterministic_price_series = PriceTimeSeries(RUNE_SYMBOL_DET, d.db)
+        # Deterministic price fill
+        if rune_market_info.fair_price > 0:
+            deterministic_price_series = PriceTimeSeries(RUNE_SYMBOL_DET, db)
             await deterministic_price_series.add(price=rune_market_info.fair_price)
             await deterministic_price_series.trim_oldest(self.history_max_points)
-
-            return rune_market_info
-        else:
-            self.logger.warning(f'really ${price:.3f}? that is odd!')
 
     async def _fetch_current_pool_data_from_thornodes(self, height=None) -> PoolInfoMap:
         for attempt in range(1, self.max_attempts):
