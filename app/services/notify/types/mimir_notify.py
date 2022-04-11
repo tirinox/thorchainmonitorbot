@@ -1,7 +1,6 @@
 import json
-from typing import Tuple, List
 
-from aiothornode.types import ThorConstants, ThorMimir
+from aiothornode.types import ThorMimir
 
 from localization import BaseLocalization
 from services.jobs.fetch.base import INotified
@@ -9,7 +8,7 @@ from services.jobs.fetch.const_mimir import ConstMimirFetcher, MimirTuple
 from services.lib.date_utils import now_ts
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
-from services.models.mimir import MimirChange, MimirVote
+from services.models.mimir import MimirChange
 
 
 class MimirChangedNotifier(INotified):

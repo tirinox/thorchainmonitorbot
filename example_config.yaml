@@ -108,7 +108,7 @@ node_op_tools:  # (!) new! moved out from the "node_info" section
       min_committee_members: 3
     online_service:
       tcp_timeout: 1  # sec
-      group_size: 20
+      group_size: 60
 
 
 tx:

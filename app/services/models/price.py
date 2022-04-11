@@ -27,6 +27,10 @@ class RuneMarketInfo:
     def market_cap(self):
         return self.pool_rune_price * self.circulating
 
+    @property
+    def is_valid(self):
+        return self.circulating > 0 and self.fair_price > 0 and self.cex_price > 0 and self.pool_rune_price > 0
+
 
 REAL_REGISTERED_ATH = 20.87  # $ / Rune
 REAL_REGISTERED_ATH_DATE = 1621418550  # 19 may 2021

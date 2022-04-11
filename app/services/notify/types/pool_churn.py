@@ -1,5 +1,3 @@
-import logging
-
 from localization import BaseLocalization
 from services.jobs.fetch.base import INotified
 from services.jobs.fetch.pool_price import PoolInfoFetcherMidgard

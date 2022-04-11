@@ -37,12 +37,9 @@ class PoolPriceFetcher(BaseFetcher):
         self.history_max_points = 200000
 
     async def fetch(self) -> RuneMarketInfo:
-        d = self.deps
-
         await self.reload_global_pools()
 
-        rune_market_info: RuneMarketInfo = await self.deps.rune_market_fetcher.get_rune_market_info()
-        rune_market_info.pool_rune_price = d.price_holder.usd_per_rune
+        rune_market_info = await self.deps.rune_market_fetcher.get_rune_market_info()
         await self._write_price_time_series(rune_market_info)
 
         return rune_market_info
@@ -65,6 +62,9 @@ class PoolPriceFetcher(BaseFetcher):
             self.logger.error('No rune_market_info!')
             return
 
+        if self.deps.price_holder:
+            rune_market_info.pool_rune_price = self.deps.price_holder.usd_per_rune
+
         db = self.deps.db
 
         # Pool price fill
@@ -73,7 +73,7 @@ class PoolPriceFetcher(BaseFetcher):
             await pool_price_series.add(price=rune_market_info.pool_rune_price)
             await pool_price_series.trim_oldest(self.history_max_points)
         else:
-            self.logger.error(f'{rune_market_info.pool_rune_price = }')
+            self.logger.error(f'Odd {rune_market_info.pool_rune_price = }')
 
         # CEX price fill
         if rune_market_info.cex_price and rune_market_info.cex_price > 0:
@@ -81,7 +81,7 @@ class PoolPriceFetcher(BaseFetcher):
             await cex_price_series.add(price=rune_market_info.cex_price)
             await cex_price_series.trim_oldest(self.history_max_points)
         else:
-            self.logger.error(f'{rune_market_info.cex_price = }')
+            self.logger.error(f'Odd {rune_market_info.cex_price = }')
 
         # Deterministic price fill
         if rune_market_info.fair_price and rune_market_info.fair_price > 0:
@@ -89,7 +89,7 @@ class PoolPriceFetcher(BaseFetcher):
             await deterministic_price_series.add(price=rune_market_info.fair_price)
             await deterministic_price_series.trim_oldest(self.history_max_points)
         else:
-            self.logger.error(f'{rune_market_info.fair_price = }')
+            self.logger.error(f'Odd {rune_market_info.fair_price = }')
 
     async def _fetch_current_pool_data_from_thornodes(self, height=None) -> PoolInfoMap:
         for attempt in range(1, self.max_attempts):

@@ -2,7 +2,6 @@ import asyncio
 import logging
 
 from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
-from services.lib.utils import setup_logs
 from tools.lib.lp_common import LpAppFramework
 
 
