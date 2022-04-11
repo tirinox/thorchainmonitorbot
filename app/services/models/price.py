@@ -84,6 +84,7 @@ class LastPriceHolder:
             self.usd_per_rune = weighted_mean(prices, weights)
         else:
             logging.error(f'LastPriceHolder was unable to find any stable coin pools!')
+            exit(-1)
 
     def _calculate_btc_price(self):
         self.btc_per_rune = 0.0

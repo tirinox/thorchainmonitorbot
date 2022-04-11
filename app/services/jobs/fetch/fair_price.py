@@ -25,6 +25,7 @@ class RuneMarketInfoFetcher:
 
         # cache the method
         self.get_rune_market_info = a_result_cached(ttl=self._cache_time)(retries(5)(self._get_rune_market_info))
+        # self.get_rune_market_info = a_result_cached(ttl=self._cache_time)(self._get_rune_market_info)
 
     async def total_locked_value_all_networks(self):
         j = await self.midgard.request_random_midgard(free_url_gen.url_network())
