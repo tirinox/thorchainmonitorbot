@@ -6,7 +6,6 @@ from typing import List
 
 from localization import LocalizationManager
 from services.jobs.fetch.base import INotified
-# from services.jobs.fetch.thormon import ThorMonWSSClient
 from services.lib.date_utils import HOUR, MINUTE, now_ts, parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.nop_links import SettingsManager
@@ -39,7 +38,6 @@ class NodeChangePersonalNotifier(INotified):
         self.deps = deps
         self.logger = class_logger(self)
         self.watchers = NodeWatcherStorage(deps.db)
-        # self.thor_mon = ThorMonWSSClient(deps.cfg.network_id)
         self.telemetry_db = NodeTelemetryDatabase(deps)
         self.settings_man = SettingsManager(self.deps.db, self.deps.cfg)
 
@@ -103,22 +101,27 @@ class NodeChangePersonalNotifier(INotified):
 
         self.chain_height_tracker.estimate_block_height(all_nodes)
 
-        events = []
-        events += await self.churn_tracker.get_all_changes(node_set_change)
-        events += await self.version_tracker.get_all_changes(node_set_change)
-        events += await self.ip_address_tracker.get_all_changes(prev_and_curr_node_map)
-        events += await self.bond_tracker.get_all_changes(prev_and_curr_node_map)
-        events += await self.presence_tracker.get_events(node_set_change)
-
         user_cache = await UserDataCache.load(self.deps.db)
 
-        events = sum(
-            await asyncio.gather(
-                self.online_tracker.get_events(all_nodes, user_cache),
-                self.chain_height_tracker.get_events(all_nodes, user_cache),
-                self.slash_tracker.get_events(all_nodes, user_cache),
-            ), []
+        trackers = (
+            self.churn_tracker,
+            self.version_tracker,
+            self.ip_address_tracker,
+            self.bond_tracker,
+            self.presence_tracker,
+            self.online_tracker,
+            self.churn_tracker,
+            self.slash_tracker,
         )
+
+        events = []
+        for tracker in trackers:
+            # fill data
+            tracker.node_set_change = node_set_change
+            tracker.prev_and_curr_node_map = prev_and_curr_node_map
+            tracker.user_cache = user_cache
+            # extract events
+            events += await tracker.get_events()
 
         await self._cast_messages_for_events(events)
 

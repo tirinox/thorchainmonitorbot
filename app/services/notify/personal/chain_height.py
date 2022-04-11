@@ -16,6 +16,7 @@ class ChainHeightTracker(BaseChangeTracker):
     METHOD_MAX_COMMITTEE = 'max_committee'
 
     def __init__(self, deps: DepContainer):
+        super().__init__()
         self.deps = deps
         self.block_times = dict(deps.cfg.get_pure('blockchain.block_time', {}))
         for chain, en_time in self.block_times.items():
@@ -120,12 +121,10 @@ class ChainHeightTracker(BaseChangeTracker):
     def set_user_state(self, user, node, service, is_ok):
         self.cache.user_node_service_data[user][node][service][self.KEY_SYNC_STATE] = is_ok
 
-    async def get_events(self, nodes: List[NodeInfo], user_cache: UserDataCache):
-        self.cache = user_cache
-
+    async def get_events_unsafe(self) -> List[NodeEvent]:
         events = []
         for chain, expected_block_height in self.recent_max_blocks.items():
-            for node in nodes:
+            for node in self.node_set_change.nodes_all:
                 actual = node.chain_dict.get(chain)
                 actual_block_height = actual or 0
                 if actual_block_height == 0:

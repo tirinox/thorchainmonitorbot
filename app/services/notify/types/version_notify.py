@@ -1,5 +1,3 @@
-import logging
-import random
 from typing import List, NamedTuple
 
 from aioredis import Redis

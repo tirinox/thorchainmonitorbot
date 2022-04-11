@@ -1,18 +1,19 @@
 from typing import List
 
 from services.lib.depcont import DepContainer
-from services.models.node_info import NodeSetChanges, NodeInfo, NodeEventType, NodeEvent
+from services.models.node_info import NodeInfo, NodeEventType, NodeEvent
 from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
 
 
 class NodeChurnTracker(BaseChangeTracker):
     def __init__(self, deps: DepContainer):
+        super().__init__()
         self.deps = deps
 
-    async def get_all_changes(self, node_set_change: NodeSetChanges) -> List[NodeEvent]:
+    async def get_events_unsafe(self) -> List[NodeEvent]:
         changes = []
-        changes += self._changes_churned_nodes(node_set_change.nodes_activated, is_in=True)
-        changes += self._changes_churned_nodes(node_set_change.nodes_deactivated, is_in=False)
+        changes += self._changes_churned_nodes(self.node_set_change.nodes_activated, is_in=True)
+        changes += self._changes_churned_nodes(self.node_set_change.nodes_deactivated, is_in=False)
         return changes
 
     def _changes_churned_nodes(self, nodes: List[NodeInfo], is_in: bool) -> List[NodeEvent]:

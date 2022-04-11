@@ -1,14 +1,14 @@
-from typing import List, Tuple, Optional
+import time
+from typing import List, Tuple
 
 from services.jobs.poll_tcp import TCPPollster
 from services.lib.constants import THORPort
 from services.lib.date_utils import HOUR, now_ts, DAY, parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
-from services.models.node_info import EventNodeOnline, NodeEvent, NodeEventType, NodeInfo
+from services.models.node_info import EventNodeOnline, NodeEvent, NodeEventType
 from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
 from services.notify.personal.telemetry import NodeTelemetryDatabase
-from services.notify.personal.user_data import UserDataCache
 
 TimeStampedList = List[Tuple[float, bool]]
 
@@ -21,9 +21,10 @@ AGE_CUT_OFF = 30 * DAY
 
 class NodeOnlineTracker(BaseChangeTracker):
     def __init__(self, deps: DepContainer):
+        super().__init__()
         self.deps = deps
         self.telemetry_db = NodeTelemetryDatabase(deps)
-        self.cache: Optional[UserDataCache] = None
+
         self.logger = class_logger(self)
 
         cfg = deps.cfg.get('node_op_tools.types.online_service')
@@ -36,35 +37,36 @@ class NodeOnlineTracker(BaseChangeTracker):
 
     def get_offline_time(self, node: str, service: str, ts=None):
         ref_ts = ts or now_ts()
-        return ref_ts - self.cache.node_service_data[node][service].get(self.KEY_LAST_ONLINE_TS, 0)
+        return ref_ts - self.user_cache.node_service_data[node][service].get(self.KEY_LAST_ONLINE_TS, 0)
 
     def get_user_state(self, user, node, service):
-        return self.cache.user_node_service_data[user][node][service].get(self.KEY_ONLINE_STATE, True)
+        return self.user_cache.user_node_service_data[user][node][service].get(self.KEY_ONLINE_STATE, True)
 
     def set_user_state(self, user, node, service, is_ok):
-        self.cache.user_node_service_data[user][node][service][self.KEY_ONLINE_STATE] = is_ok
+        self.user_cache.user_node_service_data[user][node][service][self.KEY_ONLINE_STATE] = is_ok
 
-    async def get_events(self, nodes: List[NodeInfo], user_cache: UserDataCache):
-        self.cache = user_cache
-
+    async def get_events_unsafe(self) -> List[NodeEvent]:
         port_family = THORPort.get_port_family(self.deps.cfg.network_id)
+
         service_to_port = {
             BIFROST: port_family.BIFROST,
             RPC: port_family.RPC
         }
         port_to_service = {v: k for k, v in service_to_port.items()}
 
-        ip_to_node = {node.ip_address: node for node in nodes if node.ip_address}
+        ip_to_node = {node.ip_address: node for node in self.node_set_change.nodes_all if node.ip_address}
 
         ref_ts = now_ts()
 
+        t0 = time.monotonic()
         # Structure: dict{str(IP): dict{int(port): bool(is_available)} }
         results = await self.pollster.test_connectivity_multiple(ip_to_node.keys(),
                                                                  port_to_service.keys(),
                                                                  group_size=self._poll_group_size)
+        time_elapsed = time.monotonic() - t0
 
         stats = self.pollster.count_stats(results)
-        self.logger.info(f'TCP Poll results: {stats}.')
+        self.logger.info(f'TCP Poll results: {stats}, {time_elapsed = :.3f} sec')
 
         events = []
         for node_ip, node_results in results.items():
@@ -77,7 +79,7 @@ class NodeOnlineTracker(BaseChangeTracker):
 
                 address = node.node_address
                 if is_available:
-                    self.cache.node_service_data[address][service][self.KEY_LAST_ONLINE_TS] = ref_ts
+                    self.user_cache.node_service_data[address][service][self.KEY_LAST_ONLINE_TS] = ref_ts
 
                 off_time = self.get_offline_time(address, service, ref_ts)
                 if off_time > AGE_CUT_OFF:

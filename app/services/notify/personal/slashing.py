@@ -1,5 +1,5 @@
 import asyncio
-from typing import List, Optional
+from typing import List
 
 from services.lib.date_utils import MINUTE, parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
@@ -7,7 +7,6 @@ from services.lib.utils import class_logger
 from services.models.node_info import NodeEvent, NodeEventType, EventDataSlash, NodeInfo
 from services.models.time_series import TimeSeries
 from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting, STANDARD_INTERVALS
-from services.notify.personal.user_data import UserDataCache
 
 
 class SlashPointTracker(BaseChangeTracker):
@@ -15,13 +14,13 @@ class SlashPointTracker(BaseChangeTracker):
     EXTRA_COOLDOWN_MULT = 1.1
 
     def __init__(self, deps: DepContainer):
+        super().__init__()
         self.deps = deps
         self.series = TimeSeries('SlashPointTracker', self.deps.db)
         self.std_intervals_sec = [parse_timespan_to_seconds(s) for s in STANDARD_INTERVALS]
         self.logger = class_logger(self)
         intervals = list(zip(STANDARD_INTERVALS, self.std_intervals_sec))
         self.logger.info(f'{intervals = }')
-        self.cache: Optional[UserDataCache] = None
 
     @staticmethod
     def _extract_slash_points(nodes: List[NodeInfo]):
@@ -40,8 +39,9 @@ class SlashPointTracker(BaseChangeTracker):
         ]
         return await asyncio.gather(*tasks)
 
-    async def get_events(self, nodes: List[NodeInfo], user_cache: UserDataCache) -> List[NodeEvent]:
-        self.cache = user_cache
+    async def get_events_unsafe(self) -> List[NodeEvent]:
+        nodes = self.node_set_change.nodes_all
+
         await self._save_point(nodes)
 
         points = await self._read_points(intervals=self.std_intervals_sec)
@@ -74,7 +74,7 @@ class SlashPointTracker(BaseChangeTracker):
     KEY_SERVICE = 'slashing'
 
     async def is_event_ok(self, event: NodeEvent, user_id, settings: dict) -> bool:
-        if not self.cache:
+        if not self.user_cache:
             return False
 
         if not bool(settings.get(NodeOpSetting.SLASH_ON, True)):
@@ -92,9 +92,9 @@ class SlashPointTracker(BaseChangeTracker):
 
         if data.delta_pts >= threshold:
             cd = interval * self.EXTRA_COOLDOWN_MULT
-            if self.cache.cooldown_can_do(user_id, event.address,
-                                          self.KEY_SERVICE, interval_sec=cd,
-                                          do=True):
+            if self.user_cache.cooldown_can_do(user_id, event.address,
+                                               self.KEY_SERVICE, interval_sec=cd,
+                                               do=True):
                 return True
 
         return False

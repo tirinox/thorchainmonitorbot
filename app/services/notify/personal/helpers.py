@@ -1,8 +1,9 @@
-from typing import List, Any, Tuple
+from typing import List, Any, Tuple, Optional
 
 from services.lib.date_utils import now_ts
-from services.models.node_info import NodeEvent
-
+from services.lib.utils import class_logger
+from services.models.node_info import NodeEvent, MapAddressToPrevAndCurrNode, NodeSetChanges
+from services.notify.personal.user_data import UserDataCache
 
 STANDARD_INTERVALS = [
     '2m',
@@ -37,8 +38,25 @@ class NodeOpSetting:
 
 
 class BaseChangeTracker:
+    def __init__(self):
+        self.logger = class_logger(self)
+
+        self.user_cache: Optional[UserDataCache] = None
+        self.prev_and_curr_node_map: MapAddressToPrevAndCurrNode = {}
+        self.node_set_change: Optional[NodeSetChanges] = None
+
     async def is_event_ok(self, event: NodeEvent, user_id, settings: dict) -> bool:
         return True
+
+    async def get_events(self) -> List[NodeEvent]:
+        try:
+            return await self.get_events_unsafe()
+        except Exception:
+            self.logger.exception('Failed to get events!', exc_info=True)
+            return []
+
+    async def get_events_unsafe(self) -> List[NodeEvent]:
+        raise NotImplemented
 
 
 def get_points_at_time_points(data: List[Tuple[float, Any]], ago_sec_list: list):
