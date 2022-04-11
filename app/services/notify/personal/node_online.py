@@ -63,6 +63,9 @@ class NodeOnlineTracker(BaseChangeTracker):
                                                                  port_to_service.keys(),
                                                                  group_size=self._poll_group_size)
 
+        stats = self.pollster.count_stats(results)
+        self.logger.info(f'TCP Poll results: {stats}.')
+
         events = []
         for node_ip, node_results in results.items():
             for port, is_available in node_results.items():

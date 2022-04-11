@@ -19,6 +19,8 @@ async def my_test_multi_connect(pollster: TCPPollster):
 
     r = await pollster.test_connectivity_multiple(IP_ADDRESS_LIST, PORT_LIST, group_size=3)
     print(r)
+    stats = pollster.count_stats(r)
+    print(stats, len(r))
 
 
 async def my_test_single_connect(pollster):
