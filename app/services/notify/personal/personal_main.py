@@ -218,5 +218,4 @@ class NodeChangePersonalNotifier(INotified):
 
     @property
     def last_signal_sec_ago(self):
-        # return self.thor_mon.last_signal_sec_ago
         return now_ts() - self._last_signal_ts

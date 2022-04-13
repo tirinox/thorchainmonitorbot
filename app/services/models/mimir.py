@@ -245,26 +245,34 @@ class MimirHolder:
         'STOPSOLVENCYCHECK': 'Stol Solvency Check',
         'NUMBEROFNEWNODESPERCHURN': 'Number of New Nodes per Churn',
         'MINTSYNTHS': 'Mint Synths',
+
         'HALTBCHCHAIN': 'Halt BCH Chain',
         'HALTBCHTRADING': 'Halt BCH Trading',
+        'HALTSIGNINGBCH': 'Halt BCH Signing',
 
         'HALTBNBCHAIN': 'Halt BNB Chain',
         'HALTBNBTRADING': 'Halt BNB Trading',
+        'HALTSIGNINGBNB': 'Halt BNB Signing',
 
         'HALTBTCCHAIN': 'Halt BTC Chain',
         'HALTBTCTRADING': 'Halt BTC Trading',
+        'HALTSIGNINGBTC': 'Halt BTC Signing',
 
         'HALTETHCHAIN': 'Halt ETH Chain',
         'HALTETHTRADING': 'Halt ETH Trading',
+        'HALTSIGNINGETH': 'Halt ETH Signing',
 
         'HALTLTCCHAIN': 'Halt LTC Chain',
         'HALTLTCTRADING': 'Halt LTC Trading',
+        'HALTSIGNINGLTC': 'Halt LTC Signing',
 
         'HALTDOGECHAIN': 'Halt DOGE Chain',
         'HALTDOGETRADING': 'Halt DOGE Trading',
+        'HALTSIGNINGDOGE': 'Halt DOGE Signing',
 
         'HALTTERRACHAIN': 'Halt Terra Chain',
         'HALTTERRATRADING': 'Halt Terra Trading',
+        'HALTSIGNINGTERRA': 'Halt Terra Signing',
 
         'HALTTHORCHAIN': 'Halt ThorChain',
         'HALTTRADING': 'Halt All Trading',
@@ -296,10 +304,15 @@ class MimirHolder:
         'CLOUDPROVIDERLIMIT': 'Cloud Provider Limit',
     }
 
+    EXTRA_HALT_REASONS = [
+        'STOPFUNDYGGDRASIL'
+    ]
+
     @staticmethod
     def detect_auto_solvency_checker(name: str, value):
         name = name.upper()
-        if name.startswith('HALT') and (name.endswith('CHAIN') or name.endswith('TRADING')):
+        is_halt = name.startswith('HALT') and (name.endswith('CHAIN') or name.endswith('TRADING'))
+        if is_halt or name in MimirHolder.EXTRA_HALT_REASONS:
             if int(value) > 2:
                 return True
         return False
