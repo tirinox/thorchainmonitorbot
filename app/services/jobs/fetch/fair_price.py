@@ -41,7 +41,8 @@ class RuneMarketInfoFetcher:
 
     async def _get_rune_market_info(self) -> RuneMarketInfo:
         supply_fetcher = RuneCirculatingSupplyFetcher(self.deps.session,
-                                                      ether_scan_key=self._ether_scan_key)
+                                                      ether_scan_key=self._ether_scan_key,
+                                                      thor_node=self.deps.cfg.get('thor.node.node_url'))
 
         supply_info, gecko, total_locked_rune = await asyncio.gather(
             supply_fetcher.fetch(),
