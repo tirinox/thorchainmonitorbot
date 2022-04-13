@@ -284,9 +284,12 @@ class MetricsDialog(BaseDialog):
     async def show_block_time(self, message: Message):
         duration = 2 * DAY
 
+        loading_msg = await message.reply(self.loc.LOADING, disable_notification=True)
+
         block_notifier: BlockHeightNotifier = self.deps.block_notifier
         points = await block_notifier.get_block_time_chart(duration, convert_to_blocks_per_minute=True)
 
+        # SLOW?
         chart = await block_speed_chart(points, self.loc, normal_bpm=THOR_BLOCKS_PER_MINUTE, time_scale_mode='time')
         last_block = block_notifier.last_thor_block
         last_block_ts = block_notifier.last_thor_block_update_ts
@@ -295,9 +298,12 @@ class MetricsDialog(BaseDialog):
         state = await block_notifier.get_block_alert_state()
 
         d = now_ts() - last_block_ts if last_block_ts else 0
+
+        # SLOW?
         await message.answer_photo(chart,
                                    caption=self.loc.text_block_time_report(last_block, d, recent_bps, state),
                                    disable_notification=True)
+        await self.safe_delete(loading_msg)
 
     async def show_top_pools(self, message: Message):
         notifier: BestPoolsNotifier = self.deps.best_pools_notifier

@@ -10,7 +10,7 @@ from services.lib.constants import Chains, thor_to_float, rune_origin, BNB_RUNE_
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address, get_explorer_url_to_tx
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
-    emoji_for_percent_change, Asset, short_money, short_dollar, format_percent, RAIDO_GLYPH, pretty_rune
+    emoji_for_percent_change, Asset, short_money, short_dollar, format_percent, RAIDO_GLYPH
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
     up_down_arrow, plural, grouper, regroup_joining
 from services.models.bep2 import BEP2Transfer, BEP2CEXFlow
@@ -977,7 +977,7 @@ class RussianLocalization(BaseLocalization):
 
     TEXT_BLOCK_HEIGHT_CHART_TITLE = 'THORChain блоков в минут'
     TEXT_BLOCK_HEIGHT_LEGEND_ACTUAL = 'Фактически блоков в минуту'
-    TEXT_BLOCK_HEIGHT_LEGEND_EXPECTED = 'Ожидаемая (10 блоков/мин)'
+    TEXT_BLOCK_HEIGHT_LEGEND_EXPECTED = 'Ожидаемая (10 бл/мин или 6 сек на блок)'
 
     def notification_text_block_stuck(self, stuck, time_without_new_block):
         good_time = time_without_new_block is not None and time_without_new_block > 1
@@ -1006,19 +1006,26 @@ class RussianLocalization(BaseLocalization):
     def notification_text_block_pace(self, state: str, block_speed: float):
         phrase = self.get_block_time_state_string(state, True)
         block_per_minute = self.format_bps(block_speed)
-        return f'<b>Обновление по скорости производства блоков THORChain</b>\n' \
-               f'{phrase}\n' \
-               f'В настоящий момент <code>{block_per_minute}</code> блоков в минуту.'
+
+        return (
+            f'<b>Обновление по скорости производства блоков THORChain</b>\n'
+            f'{phrase}\n'
+            f'В настоящий момент <code>{block_per_minute}</code> блоков в минуту, другими словами '
+            f'нужно <code>{self.format_block_time(block_per_minute)} сек</code> на создание блока.'
+        )
 
     def text_block_time_report(self, last_block, last_block_ts, recent_bps, state):
         phrase = self.get_block_time_state_string(state, False)
         block_per_minute = self.format_bps(recent_bps)
         ago = self.format_time_ago(last_block_ts)
         block_str = f"#{last_block}"
-        return f'<b>THORChain темпы производства блоков.</b>\n' \
-               f'{phrase}\n' \
-               f'В настоящее время <code>{block_per_minute}</code> блоков в минуту.\n' \
-               f'Последний номер блока THORChain: {code(block_str)} (обновлено: {ago}).'
+        return (
+            f'<b>THORChain темпы производства блоков.</b>\n'
+            f'{phrase}\n'
+            f'В настоящее время <code>{block_per_minute}</code> блоков в минуту, другими словами'
+            f'нужно <code>{self.format_block_time(block_per_minute)} сек</code> на создание блока.\n'
+            f'Последний номер блока THORChain: {code(block_str)} (обновлено: {ago}).'
+        )
 
     # --------- MIMIR CHANGED -----------
 

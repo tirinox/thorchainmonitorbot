@@ -1208,7 +1208,7 @@ class BaseLocalization(ABC):  # == English
 
     # ---------- BLOCK HEIGHT -----------
 
-    TEXT_BLOCK_HEIGHT_CHART_TITLE = 'THORChain blocks per minute'
+    TEXT_BLOCK_HEIGHT_CHART_TITLE = 'THORChain block speed'
     TEXT_BLOCK_HEIGHT_LEGEND_ACTUAL = 'Actual blocks/min'
     TEXT_BLOCK_HEIGHT_LEGEND_EXPECTED = 'Expected (10 blocks/min or 6 sec/block)'
 
@@ -1230,9 +1230,9 @@ class BaseLocalization(ABC):  # == English
             else:
                 return '👌 Block speed is normal.'
         elif state == BlockSpeed.StateTooSlow:
-            return '🐌 Blocks are produced too slowly.'
+            return '🐌 Blocks are being produced too slowly.'
         elif state == BlockSpeed.StateTooFast:
-            return '🏃 Blocks are produced too fast.'
+            return '🏃 Blocks are being produced too fast.'
         else:
             return ''
 
@@ -1242,21 +1242,34 @@ class BaseLocalization(ABC):  # == English
         else:
             return f'{float(bps * MINUTE):.2f}'
 
+    def format_block_time(self, bps):
+        if bps is None or bps == 0:
+            return self.ND
+        else:
+            sec_per_block = 1.0 / bps
+            return f'{float(sec_per_block):.2f}'
+
     def notification_text_block_pace(self, state: str, block_speed: float):
         phrase = self.get_block_time_state_string(state, True)
-        return f'<b>THORChain block generation speed update.</b>\n' \
-               f'{phrase}\n' \
-               f'Presently <code>{self.format_bps(block_speed)}</code> blocks per minute.'
+
+        return (
+            f'<b>THORChain block generation speed update.</b>\n'
+            f'{phrase}\n'
+            f'Presently <code>{self.format_bps(block_speed)}</code> blocks per minute or '
+            f'it takes <code>{self.format_block_time(block_speed)} sec</code> to generate a new block.'
+        )
 
     def text_block_time_report(self, last_block, last_block_ts, recent_bps, state):
         phrase = self.get_block_time_state_string(state, False)
         ago = self.format_time_ago(last_block_ts)
-        block_per_minute = self.format_bps(recent_bps)
         block_str = f"#{last_block}"
-        return f'<b>THORChain block generation speed.</b>\n' \
-               f'{phrase}\n' \
-               f'Presently <code>{block_per_minute}</code> blocks per minute.\n' \
-               f'Last THORChain block number is {code(block_str)} (updated: {ago}).'
+        return (
+            f'<b>THORChain block generation speed.</b>\n'
+            f'{phrase}\n'
+            f'Presently <code>{self.format_bps(recent_bps)}</code> blocks per minute or '
+            f'it takes <code>{self.format_block_time(recent_bps)} sec</code> to generate a new block.\n'
+            f'Last THORChain block number is {code(block_str)} (updated: {ago}).'
+        )
 
     # --------- MIMIR CHANGED -----------
 
@@ -1553,7 +1566,6 @@ class BaseLocalization(ABC):  # == English
                       f'Please use an alternative service to monitor nodes until we get it fixed.'
         elif c.type == NodeEventType.CABLE_RECONNECT:
             message = f'💚 NodeOp tools has reconnected to THORChain network.'
-
 
         return message
 
