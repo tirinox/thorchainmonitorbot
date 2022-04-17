@@ -13,10 +13,11 @@ class TCPPollster:
     def __init__(self, loop=None, test_timeout=0.5):
         self.test_timeout = test_timeout
         self.loop = loop or asyncio.get_event_loop()
+        self._active_testers = 0
 
-    @staticmethod
-    def test_connectivity_sync(host, port, timeout):
+    def test_connectivity_sync(self, host, port, timeout):
         s = socket.socket()
+        self._active_testers += 1
         s.settimeout(timeout)
         try:
             s.connect((host, port))
@@ -25,6 +26,7 @@ class TCPPollster:
             return False
         finally:
             s.close()
+            self._active_testers -= 1
 
     async def test_connectivity(self, host, port):
         return await self.loop.run_in_executor(None, self.test_connectivity_sync, host, port, self.test_timeout)

@@ -29,6 +29,7 @@ class ChainHeightTracker(BaseChangeTracker):
         self.chain_height_method = sub_cfg.as_str('top_height_estimation_method', self.METHOD_MAX_COMMITTEE)
         self.min_committee = sub_cfg.as_int('min_committee_members', 3)
         self.debug = False
+        self._first_tick = True
 
     def get_block_time(self, chain):
         return self.block_times.get(chain, Chains.block_time_default(chain))
@@ -122,6 +123,12 @@ class ChainHeightTracker(BaseChangeTracker):
         self.cache.user_node_service_data[user][node][service][self.KEY_SYNC_STATE] = is_ok
 
     async def get_events_unsafe(self) -> List[NodeEvent]:
+        if self._first_tick:
+            self._first_tick = False
+            return []
+
+        total_online, total_offline = 0, 0
+
         events = []
         for chain, expected_block_height in self.recent_max_blocks.items():
             for node in self.node_set_change.nodes_all:
@@ -133,6 +140,11 @@ class ChainHeightTracker(BaseChangeTracker):
                 is_ok = actual_block_height >= expected_block_height
                 time_lag = abs(actual_block_height - expected_block_height) * self.get_block_time(chain)
 
+                if is_ok:
+                    total_online += 1
+                else:
+                    total_offline += 1
+
                 events.append(NodeEvent(
                     node.node_address, NodeEventType.BLOCK_HEIGHT,
                     EventBlockHeight(
@@ -141,6 +153,9 @@ class ChainHeightTracker(BaseChangeTracker):
                     ),
                     node=node, tracker=self
                 ))
+
+        total = total_offline + total_offline
+        self.logger.info(f'Summary: {total_offline = }, {total_online = }, {total = } blockchain clients')
 
         return events
 
