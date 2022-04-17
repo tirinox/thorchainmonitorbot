@@ -84,7 +84,7 @@ class MetricsDialog(BaseDialog):
     @message_handler(state=MetricsStates.SECTION_FINANCE)
     async def on_menu_financial(self, message: Message):
         if message.text == self.loc.BUTTON_BACK:
-            await self.go_back(message)
+            await self.show_main_menu(message)
             return
         elif message.text == self.loc.BUTTON_METR_PRICE:
             await self.ask_price_info_duration(message)
@@ -104,7 +104,7 @@ class MetricsDialog(BaseDialog):
     @message_handler(state=MetricsStates.SECTION_NET_OP)
     async def on_menu_net_op(self, message: Message):
         if message.text == self.loc.BUTTON_BACK:
-            await self.go_back(message)
+            await self.show_main_menu(message)
             return
         elif message.text == self.loc.BUTTON_METR_QUEUE:
             await self.ask_queue_duration(message)
