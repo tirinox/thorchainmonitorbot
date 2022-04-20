@@ -68,3 +68,6 @@ class NodeWatcherStorage:
     async def all_nodes_with_names_for_user(self) -> Dict[str, str]:
         nodes = await self.all_nodes_for_user()
         return await self.get_node_names(nodes)
+
+    async def all_users(self):
+        return await self.many2many.all_lefts()

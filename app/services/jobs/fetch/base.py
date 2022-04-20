@@ -1,5 +1,4 @@
 import asyncio
-import logging
 from abc import ABC, abstractmethod
 
 from services.lib.depcont import DepContainer

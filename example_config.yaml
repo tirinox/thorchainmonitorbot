@@ -95,6 +95,22 @@ channels:
     lang: rus
 
 
+node_op_tools:  # (!) new! moved out from the "node_info" section
+  enabled: true
+
+  watchdog:  # (!) new
+    enabled: true
+    disconnected_cable_timeout: 20m
+  types:
+    chain_height:  # (!) new!
+      # 'most_common' or 'max' or  'max_committee' (default)
+      top_height_estimation_method: 'max_committee'
+      min_committee_members: 3
+    online_service:
+      tcp_timeout: 1  # sec
+      group_size: 60
+
+
 tx:
   enabled: true
   max_age: 1d
@@ -231,6 +247,7 @@ price:
     div_steps:
       - 7
 
+
 bep2:
   enabled: true
   fetch_period: 30
@@ -313,7 +330,7 @@ pool_churn:
 
 node_info:
   enabled: true
-  fetch_period: 140s
+  fetch_period: 5s  # (!) for it must not be too slow for NodeOp tools accuracy
   geo_ip:
     expire: 48h
 
@@ -331,12 +348,6 @@ node_info:
     upgrade_progress: # if not all act. nodes run same version, show upgrade progress every cooldown
       enabled: true
       cooldown: 2h
-
-  personal:
-    enabled: true
-    # 'most_common' or 'max' or  'max_committee' (default)
-    top_height_estimation_method: 'max_committee'
-    min_committee_members: 3
 
 
 constants:

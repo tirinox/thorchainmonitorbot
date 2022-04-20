@@ -6,6 +6,7 @@ from typing import List
 from aiothornode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
+from services.jobs.fetch.circulating import SupplyEntry
 from services.lib.config import Config
 from services.lib.constants import NetworkIdents, rune_origin, thor_to_float, THOR_BLOCK_TIME, BNB_RUNE_SYMBOL
 from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE
@@ -621,6 +622,7 @@ class BaseLocalization(ABC):  # == English
     BUTTON_METR_BLOCK_TIME = '⏱️ Block time'
     BUTTON_METR_TOP_POOLS = '🏊 Top Pools'
     BUTTON_METR_CEX_FLOW = '🌬 CEX Flow'
+    BUTTON_METR_SUPPLY = f'🪵 Rune supply'
 
     TEXT_METRICS_INTRO = 'What metrics would you like to know?'
 
@@ -1208,7 +1210,7 @@ class BaseLocalization(ABC):  # == English
 
     # ---------- BLOCK HEIGHT -----------
 
-    TEXT_BLOCK_HEIGHT_CHART_TITLE = 'THORChain blocks per minute'
+    TEXT_BLOCK_HEIGHT_CHART_TITLE = 'THORChain block speed'
     TEXT_BLOCK_HEIGHT_LEGEND_ACTUAL = 'Actual blocks/min'
     TEXT_BLOCK_HEIGHT_LEGEND_EXPECTED = 'Expected (10 blocks/min or 6 sec/block)'
 
@@ -1230,9 +1232,9 @@ class BaseLocalization(ABC):  # == English
             else:
                 return '👌 Block speed is normal.'
         elif state == BlockSpeed.StateTooSlow:
-            return '🐌 Blocks are produced too slowly.'
+            return '🐌 Blocks are being produced too slowly.'
         elif state == BlockSpeed.StateTooFast:
-            return '🏃 Blocks are produced too fast.'
+            return '🏃 Blocks are being produced too fast.'
         else:
             return ''
 
@@ -1242,21 +1244,34 @@ class BaseLocalization(ABC):  # == English
         else:
             return f'{float(bps * MINUTE):.2f}'
 
+    def format_block_time(self, bps):
+        if bps is None or bps == 0:
+            return self.ND
+        else:
+            sec_per_block = 1.0 / bps
+            return f'{float(sec_per_block):.2f}'
+
     def notification_text_block_pace(self, state: str, block_speed: float):
         phrase = self.get_block_time_state_string(state, True)
-        return f'<b>THORChain block generation speed update.</b>\n' \
-               f'{phrase}\n' \
-               f'Presently <code>{self.format_bps(block_speed)}</code> blocks per minute.'
+
+        return (
+            f'<b>THORChain block generation speed update.</b>\n'
+            f'{phrase}\n'
+            f'Presently <code>{self.format_bps(block_speed)}</code> blocks per minute or '
+            f'it takes <code>{self.format_block_time(block_speed)} sec</code> to generate a new block.'
+        )
 
     def text_block_time_report(self, last_block, last_block_ts, recent_bps, state):
         phrase = self.get_block_time_state_string(state, False)
         ago = self.format_time_ago(last_block_ts)
-        block_per_minute = self.format_bps(recent_bps)
         block_str = f"#{last_block}"
-        return f'<b>THORChain block generation speed.</b>\n' \
-               f'{phrase}\n' \
-               f'Presently <code>{block_per_minute}</code> blocks per minute.\n' \
-               f'Last THORChain block number is {code(block_str)} (updated: {ago}).'
+        return (
+            f'<b>THORChain block generation speed.</b>\n'
+            f'{phrase}\n'
+            f'Presently <code>{self.format_bps(recent_bps)}</code> blocks per minute or '
+            f'it takes <code>{self.format_block_time(recent_bps)} sec</code> to generate a new block.\n'
+            f'Last THORChain block number is {code(block_str)} (updated: {ago}).'
+        )
 
     # --------- MIMIR CHANGED -----------
 
@@ -1496,6 +1511,8 @@ class BaseLocalization(ABC):  # == English
         short_addr = pre(address[-4:]) if len(address) >= 4 else 'UNKNOWN'
         return link(get_explorer_url_for_node(address), short_addr)
 
+    NODE_OP_MAX_TEXT_MESSAGE_LENGTH = 144
+
     def notification_text_for_node_op_changes(self, c: NodeEvent):
         message = ''
         short_addr = self.node_link(c.address)
@@ -1543,6 +1560,14 @@ class BaseLocalization(ABC):  # == English
                 message = f'🙋 Node {short_addr} is back is the THORChain network.'
             else:
                 message = f'⁉️ Node {short_addr} has disappeared from the THORChain network.'
+        elif c.type == NodeEventType.TEXT_MESSAGE:
+            text = str(c.data)[:self.NODE_OP_MAX_TEXT_MESSAGE_LENGTH]
+            message = f'⚠️ Message for all: {code(text)}'
+        elif c.type == NodeEventType.CABLE_DISCONNECT:
+            message = f'💔️ NodeOp tools service has <b>disconnected</b> from THORChain network.\n' \
+                      f'Please use an alternative service to monitor nodes until we get it fixed.'
+        elif c.type == NodeEventType.CABLE_RECONNECT:
+            message = f'💚 NodeOp tools has reconnected to THORChain network.'
 
         return message
 
@@ -1672,3 +1697,35 @@ class BaseLocalization(ABC):  # == English
                 f'({short_dollar(bep2flow.rune_cex_outflow * rune_price)})\n'
                 f'Netflow: {pre(short_money(bep2flow.rune_cex_netflow, postfix=RAIDO_GLYPH))} '
                 f'({short_dollar(bep2flow.rune_cex_netflow * rune_price)})')
+
+    # ----- SUPPLY ------
+
+    def format_supply_entry(self, name, s: SupplyEntry, total_of_total: int):
+        if s.locked and s.total != total_of_total:
+            items = '\n'.join(
+                f'∙ {pre(name.capitalize())}: {code(pretty_rune(amount))} ({format_percent(amount, total_of_total)})'
+                for name, amount in s.locked.items()
+            )
+            locked_summary = f'Locked:\n{items}\n'
+        else:
+            locked_summary = ''
+
+        return (
+            f'{bold(name)}:\n'
+            f'Circulating: {code(pretty_rune(s.circulating))} ({format_percent(s.circulating, total_of_total)})\n'
+            f'{locked_summary}'
+            f'Total: {code(pretty_rune(s.total))} ({format_percent(s.total, total_of_total)})\n\n'
+        )
+
+    def text_metrics_supply(self, market_info: RuneMarketInfo):
+        supply = market_info.supply_info
+        message = f'🪵 {bold("Rune coins supply")}\n\n'
+
+        message += self.format_supply_entry('BNB.Rune (BEP2)', supply.bep2_rune, supply.overall.total)
+        message += self.format_supply_entry('ETH.Rune (ERC20)', supply.erc20_rune, supply.overall.total)
+        message += self.format_supply_entry('Native THOR.RUNE', supply.thor_rune, supply.overall.total)
+        message += self.format_supply_entry('Overall', supply.overall, supply.overall.total)
+
+        message += f"Coin market cap of {bold(self.R)} is " \
+                   f"{bold(pretty_dollar(market_info.market_cap))} (#{bold(market_info.rank)})"
+        return message

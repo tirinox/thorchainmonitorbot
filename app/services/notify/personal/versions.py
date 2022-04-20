@@ -8,13 +8,14 @@ from services.notify.types.version_notify import KnownVersionStorage
 
 class VersionTracker(BaseChangeTracker):
     def __init__(self, deps: DepContainer):
+        super().__init__()
         self.deps = deps
         self.version_store = KnownVersionStorage(deps, context_name='personal')
 
-    async def get_all_changes(self, node_set_change: NodeSetChanges) -> List[NodeEvent]:
+    async def get_events_unsafe(self) -> List[NodeEvent]:
         changes = []
-        changes += self._changes_of_version(node_set_change.prev_and_curr_node_map)
-        changes += await self._changes_of_detected_new_version(node_set_change)
+        changes += self._changes_of_version(self.node_set_change.prev_and_curr_node_map)
+        changes += await self._changes_of_detected_new_version(self.node_set_change)
 
         # # fixme: debug
         # changes.append(NodeEvent(

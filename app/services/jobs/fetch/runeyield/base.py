@@ -1,9 +1,7 @@
-import logging
 from abc import abstractmethod
 from typing import List, NamedTuple, Dict
 
 from services.lib.depcont import DepContainer
-from services.lib.midgard.urlgen import MidgardURLGenBase, MidgardURLGenV2
 from services.lib.utils import class_logger
 from services.models.lp_info import LiquidityPoolReport, LPDailyGraphPoint
 

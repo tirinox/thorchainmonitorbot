@@ -6,6 +6,7 @@ from aiothornode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
 from localization.base import BaseLocalization, CREATOR_TG, URL_LEADERBOARD_MCCN
+from services.jobs.fetch.circulating import RuneCirculatingSupply, SupplyEntry
 from services.lib.constants import Chains, thor_to_float, rune_origin, BNB_RUNE_SYMBOL
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address, get_explorer_url_to_tx
@@ -478,6 +479,7 @@ class RussianLocalization(BaseLocalization):
     BUTTON_METR_BLOCK_TIME = '⏱️ Время блоков'
     BUTTON_METR_TOP_POOLS = '🏊 Топ Пулов'
     BUTTON_METR_CEX_FLOW = '🌬 Поток бирж'
+    BUTTON_METR_SUPPLY = f'🪵 Rune предложение'
 
     TEXT_METRICS_INTRO = 'Что вы хотите узнать?'
 
@@ -977,7 +979,7 @@ class RussianLocalization(BaseLocalization):
 
     TEXT_BLOCK_HEIGHT_CHART_TITLE = 'THORChain блоков в минут'
     TEXT_BLOCK_HEIGHT_LEGEND_ACTUAL = 'Фактически блоков в минуту'
-    TEXT_BLOCK_HEIGHT_LEGEND_EXPECTED = 'Ожидаемая (10 блоков/мин)'
+    TEXT_BLOCK_HEIGHT_LEGEND_EXPECTED = 'Ожидаемая (10 бл/мин или 6 сек на блок)'
 
     def notification_text_block_stuck(self, stuck, time_without_new_block):
         good_time = time_without_new_block is not None and time_without_new_block > 1
@@ -1006,19 +1008,26 @@ class RussianLocalization(BaseLocalization):
     def notification_text_block_pace(self, state: str, block_speed: float):
         phrase = self.get_block_time_state_string(state, True)
         block_per_minute = self.format_bps(block_speed)
-        return f'<b>Обновление по скорости производства блоков THORChain</b>\n' \
-               f'{phrase}\n' \
-               f'В настоящий момент <code>{block_per_minute}</code> блоков в минуту.'
+
+        return (
+            f'<b>Обновление по скорости производства блоков THORChain</b>\n'
+            f'{phrase}\n'
+            f'В настоящий момент <code>{block_per_minute}</code> блоков в минуту, другими словами '
+            f'нужно <code>{self.format_block_time(block_per_minute)} сек</code> на создание блока.'
+        )
 
     def text_block_time_report(self, last_block, last_block_ts, recent_bps, state):
         phrase = self.get_block_time_state_string(state, False)
         block_per_minute = self.format_bps(recent_bps)
         ago = self.format_time_ago(last_block_ts)
         block_str = f"#{last_block}"
-        return f'<b>THORChain темпы производства блоков.</b>\n' \
-               f'{phrase}\n' \
-               f'В настоящее время <code>{block_per_minute}</code> блоков в минуту.\n' \
-               f'Последний номер блока THORChain: {code(block_str)} (обновлено: {ago}).'
+        return (
+            f'<b>THORChain темпы производства блоков.</b>\n'
+            f'{phrase}\n'
+            f'В настоящее время <code>{block_per_minute}</code> блоков в минуту, другими словами'
+            f'нужно <code>{self.format_block_time(block_per_minute)} сек</code> на создание блока.\n'
+            f'Последний номер блока THORChain: {code(block_str)} (обновлено: {ago}).'
+        )
 
     # --------- MIMIR CHANGED -----------
 
@@ -1284,6 +1293,15 @@ class RussianLocalization(BaseLocalization):
                 message = f'🙋 Нода {short_addr} снова вернулась в сеть THORChain!'
             else:
                 message = f'⁉️ Нода {short_addr} исчезла из сети THORChain!'
+        elif c.type == NodeEventType.TEXT_MESSAGE:
+            text = str(c.data)[:self.NODE_OP_MAX_TEXT_MESSAGE_LENGTH]
+            message = f'⚠️ Сообщение всем: {code(text)}'
+        elif c.type == NodeEventType.CABLE_DISCONNECT:
+            message = f'💔️ NodeOp инструменты <b>отключились</b> от сети THORChain.\n' \
+                      f'Пожалуйста, воспользуйтсь альтернативными сервисами для мониторинга нод, ' \
+                      f'пока мы не исправим проблему.'
+        elif c.type == NodeEventType.CABLE_RECONNECT:
+            message = f'💚 NodeOp инструменты снова подключились к THORChain.'
 
         return message
 
@@ -1339,3 +1357,46 @@ class RussianLocalization(BaseLocalization):
                 f'({short_dollar(bep2flow.rune_cex_outflow * rune_price)})\n'
                 f'Поток: {pre(short_money(bep2flow.rune_cex_netflow, postfix=RAIDO_GLYPH))} '
                 f'({short_dollar(bep2flow.rune_cex_netflow * rune_price)})')
+
+    # ----- SUPPLY ------
+
+    SUPPLY_HELPER_TRANSLATOR = {
+        'Team': 'Команда',
+        'Seed': 'Сид-инвесторы',
+        'Reserves': 'Резервы',
+        'Undeployed reserves': 'Неразвернутые резервы',
+        'Preburn': 'Готово к сожжению',
+        'Asgard': 'Горят в Асгарде',
+    }
+
+    def format_supply_entry(self, name, s: SupplyEntry, total_of_total: int):
+        if s.locked and s.total != total_of_total:
+            items = '\n'.join(
+                f'∙ {pre(self.SUPPLY_HELPER_TRANSLATOR.get(name, name))}: '
+                f'{code(pretty_rune(amount))} ({format_percent(amount, total_of_total)})'
+                for name, amount in s.locked.items()
+            )
+            locked_summary = f'Заблокировано:\n{items}\n'
+        else:
+            locked_summary = ''
+
+        return (
+            f'{bold(name)}:\n'
+            f'Циркулирует: {code(pretty_rune(s.circulating))} ({format_percent(s.circulating, total_of_total)})\n'
+            f'{locked_summary}'
+            f'Всего монет: {code(pretty_rune(s.total))} ({format_percent(s.total, total_of_total)})\n\n'
+        )
+
+    def text_metrics_supply(self, market_info: RuneMarketInfo):
+        supply = market_info.supply_info
+        message = f'🪵 {bold("Предложение монет Rune")}\n\n'
+
+        message += self.format_supply_entry('BNB.Rune (BEP2)', supply.bep2_rune, supply.overall.total)
+        message += self.format_supply_entry('ETH.Rune (ERC20)', supply.erc20_rune, supply.overall.total)
+        message += self.format_supply_entry('Нативная THOR.RUNE', supply.thor_rune, supply.overall.total)
+        message += self.format_supply_entry('Всего всех видов', supply.overall, supply.overall.total)
+
+        message += f"Капитализация {bold(self.R)} – {bold(pretty_dollar(market_info.market_cap))} " \
+                   f"(место #{bold(market_info.rank)})"
+        return message
+

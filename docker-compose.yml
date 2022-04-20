@@ -48,6 +48,7 @@ services:
       - DOZZLE_USERNAME=${DOZZLE_USERNAME}
       - DOZZLE_PASSWORD=${DOZZLE_PASSWORD}
       - DOZZLE_KEY=${DOZZLE_KEY}
+      - DOZZLE_TAILSIZE=${DOZZLE_TAILSIZE}
 
   nginx:
     image: nginx:alpine

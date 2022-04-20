@@ -214,7 +214,7 @@ class App:
                 notifier_version = VersionNotifier(d)
                 churn_detector.subscribe(notifier_version)
 
-            if d.cfg.get('node_info.personal.enabled', True):
+            if d.cfg.get('node_op_tools.enabled', True):
                 self.deps.node_op_notifier = NodeChangePersonalNotifier(d)
                 await self.deps.node_op_notifier.prepare()
                 churn_detector.subscribe(self.deps.node_op_notifier)
@@ -227,6 +227,7 @@ class App:
                 price_div_notifier = PriceDivergenceNotifier(d)
                 d.price_pool_fetcher.subscribe(price_div_notifier)
 
+        # todo: join PoolChurnNotifier with PoolInfoFetcherMidgard
         if d.cfg.get('pool_churn.enabled', True):
             period = parse_timespan_to_seconds(d.cfg.pool_churn.fetch_period)
             fetcher_pool_info = PoolInfoFetcherMidgard(d, period)

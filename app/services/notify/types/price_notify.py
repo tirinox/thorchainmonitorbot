@@ -32,10 +32,10 @@ class PriceNotifier(INotified):
         self.ath_cooldown = parse_timespan_to_seconds(cfg.ath.cooldown)
         self.price_graph_period = parse_timespan_to_seconds(cfg.price_graph.default_period)
 
-    async def on_data(self, sender, fprice: RuneMarketInfo):
-        # fprice.pool_rune_price = 21.98  # fixme: debug! for ATH
-        if not await self.handle_ath(fprice):
-            await self.handle_new_price(fprice)
+    async def on_data(self, sender, market_info: RuneMarketInfo):
+        # market_info.pool_rune_price = 21.98  # fixme: debug! for ATH
+        if not await self.handle_ath(market_info):
+            await self.handle_new_price(market_info)
 
     # -----
 

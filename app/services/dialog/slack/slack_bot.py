@@ -36,6 +36,7 @@ class SlackBot:
         'not_in_channel',
         'invalid_auth',
         'account_inactive',
+        'not_authed',
     )
 
     def __init__(self, cfg: Config, db: DB):

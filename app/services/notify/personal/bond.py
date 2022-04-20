@@ -7,10 +7,11 @@ from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
 
 class BondTracker(BaseChangeTracker):
     def __init__(self, deps: DepContainer):
+        super().__init__()
         self.deps = deps
 
-    async def get_all_changes(self, pc_node_map: MapAddressToPrevAndCurrNode) -> List[NodeEvent]:
-        return list(self._changes_of_bond(pc_node_map))
+    async def get_events_unsafe(self) -> List[NodeEvent]:
+        return list(self._changes_of_bond(self.prev_and_curr_node_map))
 
     def _changes_of_bond(self, pc_node_map: MapAddressToPrevAndCurrNode):
         for a, (prev, curr) in pc_node_map.items():

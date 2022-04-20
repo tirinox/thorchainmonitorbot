@@ -38,7 +38,13 @@ class NodeInfo(BaseModelMixin):
     requested_to_leave: bool = False
     forced_to_leave: bool = False
     active_block_height: int = 0
+    status_since: int = 0
     observe_chains: List = field(default_factory=list)
+    jail: Dict = field(default_factory=dict)
+
+    @property
+    def chain_dict(self):
+        return {c['chain']: c['height'] for c in self.observe_chains} if self.observe_chains else {}
 
     @property
     def parsed_version(self) -> VersionInfo:
@@ -80,7 +86,9 @@ class NodeInfo(BaseModelMixin):
             requested_to_leave=bool(d.get('requested_to_leave', False)),
             forced_to_leave=bool(d.get('forced_to_leave', False)),
             active_block_height=int(d.get('active_block_height', 0)),
-            observe_chains=d.get('observe_chains', [])
+            status_since=int(d.get('status_since', 0)),
+            observe_chains=d.get('observe_chains', []),
+            jail=d.get('jail', {}),
         )
 
     @staticmethod
@@ -342,6 +350,11 @@ class NodeEventType:
     BLOCK_HEIGHT = 'block_height'
     PRESENCE = 'presence'
 
+    CABLE_DISCONNECT = 'disconnected'
+    CABLE_RECONNECT = 'reconnected'
+
+    TEXT_MESSAGE = 'message_txt'
+
 
 class NodeEvent(NamedTuple):
     address: str
@@ -351,3 +364,9 @@ class NodeEvent(NamedTuple):
     node: NodeInfo = None
     thor_node: ThorMonNode = None
     tracker: object = None
+
+    ANY = '*'
+
+    @property
+    def is_broad(self):
+        return self.address == self.ANY

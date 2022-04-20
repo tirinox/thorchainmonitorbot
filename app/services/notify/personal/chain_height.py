@@ -1,12 +1,11 @@
 from collections import defaultdict, Counter
-from typing import Optional
+from typing import Optional, List
 
 from services.lib.constants import Chains
 from services.lib.date_utils import parse_timespan_to_seconds, HOUR
 from services.lib.depcont import DepContainer
 from services.lib.utils import most_common, estimate_max_by_committee, sep
-from services.models.node_info import NodeEvent, NodeEventType, EventBlockHeight
-from services.models.thormon import ThorMonAnswer
+from services.models.node_info import NodeEvent, NodeEventType, EventBlockHeight, NodeInfo
 from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
 from services.notify.personal.user_data import UserDataCache
 
@@ -17,6 +16,7 @@ class ChainHeightTracker(BaseChangeTracker):
     METHOD_MAX_COMMITTEE = 'max_committee'
 
     def __init__(self, deps: DepContainer):
+        super().__init__()
         self.deps = deps
         self.block_times = dict(deps.cfg.get_pure('blockchain.block_time', {}))
         for chain, en_time in self.block_times.items():
@@ -25,10 +25,11 @@ class ChainHeightTracker(BaseChangeTracker):
         self.recent_max_blocks = {}
         self.cache: Optional[UserDataCache] = None
 
-        self.chain_height_method = deps.cfg.as_str('node_info.personal.top_height_estimation_method',
-                                                   self.METHOD_MAX_COMMITTEE)
-        self.min_committee = deps.cfg.as_int('node_info.personal.min_committee_members', 3)
+        sub_cfg = deps.cfg.get('node_op_tools.types.chain_height')
+        self.chain_height_method = sub_cfg.as_str('top_height_estimation_method', self.METHOD_MAX_COMMITTEE)
+        self.min_committee = sub_cfg.as_int('min_committee_members', 3)
         self.debug = False
+        self._first_tick = True
 
     def get_block_time(self, chain):
         return self.block_times.get(chain, Chains.block_time_default(chain))
@@ -37,49 +38,64 @@ class ChainHeightTracker(BaseChangeTracker):
         return seconds / self.get_block_time(chain)
 
     @staticmethod
-    def estimate_block_height_most_common(data: ThorMonAnswer):
+    def estimate_block_height_most_common(nodes: List[NodeInfo]):
         chain_block_height = defaultdict(list)
-        for node in data.nodes:
-            for name, chain_info in node.observe_chains.items():
+        for node in nodes:
+            for name, chain_info in node.chain_dict.items():
                 if chain_info.valid:
                     chain_block_height[name].append(chain_info.height)
-            # chain_block_height[Chains.THOR].append(node.active_block_height) # todo!
 
         return {chain: most_common(height_list) for chain, height_list in chain_block_height.items()}
 
     @staticmethod
-    def estimate_block_height_maximum(data: ThorMonAnswer):
+    def estimate_block_height_maximum(nodes: List[NodeInfo]):
         chain_block_height = defaultdict(int)
-        for node in data.nodes:
-            for name, chain_info in node.observe_chains.items():
+        for node in nodes:
+            for name, chain_info in node.chain_dict.items():
                 if chain_info.valid:
                     chain_block_height[name] = max(chain_block_height[name], chain_info.height)
-            # chain_block_height[Chains.THOR].append(node.active_block_height) # todo!
+
         return chain_block_height
 
     @staticmethod
-    def estimate_block_height_max_by_committee(data: ThorMonAnswer, committee_members_min):
+    def estimate_block_height_max_by_committee(nodes: List[NodeInfo], committee_members_min):
         chain_block_height = defaultdict(list)
-        for node in data.nodes:
-            for chain_name, chain_info in node.observe_chains.items():
-                if chain_info.valid:
-                    chain_block_height[chain_name].append(chain_info.height)
+        for node in nodes:
+            for chain_name, chain_height in node.chain_dict.items():
+                chain_height = int(chain_height)
+                if chain_height:
+                    chain_block_height[chain_name].append(chain_height)
 
         return {chain: estimate_max_by_committee(
             height_list,
             minimal_members=committee_members_min,
         ) for chain, height_list in chain_block_height.items()}
 
-    def estimate_block_height(self, data: ThorMonAnswer):
+    @staticmethod
+    def _add_thorchain_height(nodes: List[NodeInfo]):
+        # add THOR Chain to the Chain List
+        for node in nodes:
+            if not node.observe_chains:
+                node.observe_chains = []
+            node.observe_chains.append({
+                'chain': Chains.THOR,
+                'height': node.active_block_height
+            })
+        return nodes
+
+    def estimate_block_height(self, nodes: List[NodeInfo]):
         prev_last_blocks = self.recent_max_blocks
         method = self.chain_height_method
+
+        nodes = self._add_thorchain_height(nodes)
+
         if method == self.METHOD_MAXIMUM:
-            self.recent_max_blocks = self.estimate_block_height_maximum(data)
+            self.recent_max_blocks = self.estimate_block_height_maximum(nodes)
         elif method == self.METHOD_MOST_COMMON:
-            self.recent_max_blocks = self.estimate_block_height_most_common(data)
+            self.recent_max_blocks = self.estimate_block_height_most_common(nodes)
         elif method == self.METHOD_MAX_COMMITTEE:
             self.recent_max_blocks = self.estimate_block_height_max_by_committee(
-                data, committee_members_min=self.min_committee)
+                nodes, committee_members_min=self.min_committee)
         else:
             raise ValueError(f'unknown method: {method}')
 
@@ -87,10 +103,10 @@ class ChainHeightTracker(BaseChangeTracker):
             sep()
             print('last height (!)', prev_last_blocks)
             print('got  height (!)', self.recent_max_blocks)
-            print('max  height (!)', dict(self.estimate_block_height_maximum(data)))
+            print('max  height (!)', dict(self.estimate_block_height_maximum(nodes)))
             keys = list(sorted(prev_last_blocks.keys()))
             for k in keys:
-                variants = (t.observe_chains.get(k).height for t in data.nodes if k in t.observe_chains)
+                variants = (t.chain_dict.get(k).height for t in nodes if k in t.observe_chains)
                 variants = Counter(variants)
                 old_v = prev_last_blocks.get(k)
                 new_v = self.recent_max_blocks.get(k)
@@ -106,19 +122,28 @@ class ChainHeightTracker(BaseChangeTracker):
     def set_user_state(self, user, node, service, is_ok):
         self.cache.user_node_service_data[user][node][service][self.KEY_SYNC_STATE] = is_ok
 
-    async def get_events(self, last_answer: ThorMonAnswer, user_cache: UserDataCache):
-        self.cache = user_cache
+    async def get_events_unsafe(self) -> List[NodeEvent]:
+        if self._first_tick:
+            self._first_tick = False
+            return []
+
+        total_online, total_offline = 0, 0
 
         events = []
         for chain, expected_block_height in self.recent_max_blocks.items():
-            for node in last_answer.nodes:
-                actual = node.observe_chains.get(chain)
-                actual_block_height = actual.height if actual else 0
+            for node in self.node_set_change.nodes_all:
+                actual = node.chain_dict.get(chain)
+                actual_block_height = actual or 0
                 if actual_block_height == 0:
                     continue
 
                 is_ok = actual_block_height >= expected_block_height
                 time_lag = abs(actual_block_height - expected_block_height) * self.get_block_time(chain)
+
+                if is_ok:
+                    total_online += 1
+                else:
+                    total_offline += 1
 
                 events.append(NodeEvent(
                     node.node_address, NodeEventType.BLOCK_HEIGHT,
@@ -126,8 +151,11 @@ class ChainHeightTracker(BaseChangeTracker):
                         chain, expected_block_height, actual_block_height,
                         time_lag, is_ok
                     ),
-                    thor_node=node, tracker=self
+                    node=node, tracker=self
                 ))
+
+        total = total_offline + total_offline
+        self.logger.info(f'Summary: {total_offline = }, {total_online = }, {total = } blockchain clients')
 
         return events
 
@@ -144,7 +172,7 @@ class ChainHeightTracker(BaseChangeTracker):
         threshold_interval = float(settings.get(NodeOpSetting.CHAIN_HEIGHT_INTERVAL, HOUR))
         threshold_interval = max(threshold_interval, self.get_block_time(event_data.chain) * 1.5)
 
-        node, service = event.thor_node.node_address, self.get_service_name(event_data.chain)
+        node, service = event.node.node_address, self.get_service_name(event_data.chain)
         user_thinks_sync = self.get_user_state(user_id, node, service)
 
         if user_thinks_sync and not event_data.is_sync and event_data.how_long_behind >= threshold_interval:

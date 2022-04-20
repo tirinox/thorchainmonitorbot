@@ -19,7 +19,7 @@ class PriceDivergenceNotifier(INotified):
         self.div_steps = cfg.get_pure('div_steps', default=[5, 10, 20])
         self.div_steps = [float(x) for x in self.div_steps]
 
-        self.main_cd = parse_timespan_to_seconds(cfg.as_float('cooldown', '6h'))
+        self.main_cd = parse_timespan_to_seconds(cfg.as_str('cooldown', '6h'))
 
         self._cd_bitrig = CooldownBiTrigger(deps.db, 'PriceDivergence', self.main_cd, default=False)
 

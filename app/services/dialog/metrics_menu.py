@@ -8,6 +8,7 @@ from services.dialog.picture.block_height_picture import block_speed_chart
 from services.dialog.picture.node_geo_picture import node_geo_pic
 from services.dialog.picture.price_picture import price_graph_from_db
 from services.dialog.picture.queue_picture import queue_graph
+from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.lib.constants import THOR_BLOCKS_PER_MINUTE
 from services.lib.date_utils import DAY, HOUR, parse_timespan_to_seconds, today_str, now_ts
@@ -64,7 +65,7 @@ class MetricsDialog(BaseDialog):
         reply_markup = kbd([
             [self.loc.BUTTON_METR_PRICE, self.loc.BUTTON_METR_CAP, self.loc.BUTTON_METR_STATS],
             [self.loc.BUTTON_METR_LEADERBOARD, self.loc.BUTTON_METR_TOP_POOLS, self.loc.BUTTON_METR_CEX_FLOW],
-            [self.loc.BUTTON_BACK],
+            [self.loc.BUTTON_METR_SUPPLY, self.loc.BUTTON_BACK],
         ])
         await message.answer(self.loc.TEXT_METRICS_INTRO,
                              reply_markup=reply_markup,
@@ -84,7 +85,7 @@ class MetricsDialog(BaseDialog):
     @message_handler(state=MetricsStates.SECTION_FINANCE)
     async def on_menu_financial(self, message: Message):
         if message.text == self.loc.BUTTON_BACK:
-            await self.go_back(message)
+            await self.show_main_menu(message)
             return
         elif message.text == self.loc.BUTTON_METR_PRICE:
             await self.ask_price_info_duration(message)
@@ -99,12 +100,14 @@ class MetricsDialog(BaseDialog):
             await self.show_top_pools(message)
         elif message.text == self.loc.BUTTON_METR_CEX_FLOW:
             await self.show_cex_flow(message)
+        elif message.text == self.loc.BUTTON_METR_SUPPLY:
+            await self.show_rune_supply(message)
         await self.show_menu_financial(message)
 
     @message_handler(state=MetricsStates.SECTION_NET_OP)
     async def on_menu_net_op(self, message: Message):
         if message.text == self.loc.BUTTON_BACK:
-            await self.go_back(message)
+            await self.show_main_menu(message)
             return
         elif message.text == self.loc.BUTTON_METR_QUEUE:
             await self.ask_queue_duration(message)
@@ -143,9 +146,7 @@ class MetricsDialog(BaseDialog):
                              disable_notification=True)
 
     async def show_node_list(self, message: Message):
-        loading_message = await message.answer(self.loc.LOADING,
-                                               disable_notification=True,
-                                               disable_web_page_preview=True)
+        loading_message = await self.show_loading(message)
 
         node_fetcher = NodeInfoFetcher(self.deps)
         result_network_info = await node_fetcher.get_node_list_and_geo_info()  # todo: switch to NodeChurnDetector (DB)
@@ -284,9 +285,12 @@ class MetricsDialog(BaseDialog):
     async def show_block_time(self, message: Message):
         duration = 2 * DAY
 
+        loading_message = await self.show_loading(message)
+
         block_notifier: BlockHeightNotifier = self.deps.block_notifier
         points = await block_notifier.get_block_time_chart(duration, convert_to_blocks_per_minute=True)
 
+        # SLOW?
         chart = await block_speed_chart(points, self.loc, normal_bpm=THOR_BLOCKS_PER_MINUTE, time_scale_mode='time')
         last_block = block_notifier.last_thor_block
         last_block_ts = block_notifier.last_thor_block_update_ts
@@ -295,9 +299,12 @@ class MetricsDialog(BaseDialog):
         state = await block_notifier.get_block_alert_state()
 
         d = now_ts() - last_block_ts if last_block_ts else 0
+
+        # SLOW?
         await message.answer_photo(chart,
                                    caption=self.loc.text_block_time_report(last_block, d, recent_bps, state),
                                    disable_notification=True)
+        await self.safe_delete(loading_message)
 
     async def show_top_pools(self, message: Message):
         notifier: BestPoolsNotifier = self.deps.best_pools_notifier
@@ -309,3 +316,14 @@ class MetricsDialog(BaseDialog):
         flow = await notifier.tracker.read_last24h()
         text = self.loc.notification_text_cex_flow(flow, self.deps.price_holder.usd_per_rune)
         await message.answer(text, disable_notification=True)
+
+    async def show_rune_supply(self, message: Message):
+        market_fetcher: RuneMarketInfoFetcher = self.deps.rune_market_fetcher
+        market_info = await market_fetcher.get_rune_market_info()
+
+        loading_message = await self.show_loading(message)
+
+        text = self.loc.text_metrics_supply(market_info)
+        await message.answer(text, disable_notification=True)
+
+        await self.safe_delete(loading_message)

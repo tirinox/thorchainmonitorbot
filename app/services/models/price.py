@@ -3,6 +3,7 @@ import time
 from dataclasses import dataclass
 from typing import List
 
+from services.jobs.fetch.circulating import RuneCirculatingSupply
 from services.lib.config import Config
 from services.lib.constants import BNB_BTCB_SYMBOL, BTC_SYMBOL, STABLE_COIN_POOLS, thor_to_float
 from services.lib.money import weighted_mean
@@ -22,10 +23,15 @@ class RuneMarketInfo:
     rank: int = 0
     total_trade_volume_usd: float = 0.0
     total_supply: int = 500_000_000
+    supply_info: RuneCirculatingSupply = RuneCirculatingSupply.zero()
 
     @property
     def market_cap(self):
         return self.pool_rune_price * self.circulating
+
+    @property
+    def is_valid(self):
+        return self.circulating > 0 and self.fair_price > 0 and self.cex_price > 0 and self.pool_rune_price > 0
 
 
 REAL_REGISTERED_ATH = 20.87  # $ / Rune
@@ -84,6 +90,7 @@ class LastPriceHolder:
             self.usd_per_rune = weighted_mean(prices, weights)
         else:
             logging.error(f'LastPriceHolder was unable to find any stable coin pools!')
+            exit(-1)
 
     def _calculate_btc_price(self):
         self.btc_per_rune = 0.0

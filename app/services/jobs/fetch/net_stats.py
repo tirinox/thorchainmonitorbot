@@ -90,6 +90,7 @@ class NetworkStatisticsFetcher(BaseFetcher):
         swap_meta = SwapHistoryResponse.from_json(j).meta
         ns.synth_volume_24h = thor_to_float(swap_meta.synth_mint_volume) + thor_to_float(swap_meta.synth_redeem_volume)
         ns.synth_op_count = swap_meta.synth_mint_count + swap_meta.synth_redeem_count
+        ns.swap_volume_24h = thor_to_float(swap_meta.total_volume)
 
     async def _get_ilp_24h_payouts(self, ns: NetworkStats):
         ns.loss_protection_paid_24h_rune = await ILPSummer(self.deps).ilp_sum(period=DAY)

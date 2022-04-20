@@ -50,6 +50,8 @@ class NetworkStats(BaseModelMixin):
     synth_op_count: int = 0  # swap history
     synth_volume_24h: float = 0  # swap history
 
+    swap_volume_24h: float = 0  # swap history
+
     @property
     def total_bond_usd(self):
         return self.total_bond_rune * self.usd_per_rune
@@ -73,6 +75,10 @@ class NetworkStats(BaseModelMixin):
     @property
     def swap_volume_usd(self):
         return self.swap_volume_rune * self.usd_per_rune
+
+    @property
+    def swap_volume_usd_24h(self):
+        return self.swap_volume_24h * self.usd_per_rune
 
     @property
     def loss_protection_paid_usd(self):

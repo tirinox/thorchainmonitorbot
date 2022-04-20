@@ -15,12 +15,19 @@ class NodeInfoFetcher(BaseFetcher):
         super().__init__(deps, sleep_period)
 
     async def fetch_current_node_list(self) -> List[NodeInfo]:
-        raw_nodes = await self.deps.midgard_connector.request_random_midgard(
-            free_url_gen.url_thor_nodes()
-        )
+
+        thor = self.deps.thor_connector
+        # noinspection PyTypeChecker
+        raw_nodes = await thor._request(thor.env.path_nodes, None)
 
         if raw_nodes is None:
-            self.logger.error('not found!')
+            self.logger.warning(f'No luck trying to access THORNode, shall I try Midgard instead?')
+            raw_nodes = await self.deps.midgard_connector.request_random_midgard(
+                free_url_gen.url_thor_nodes()
+            )
+
+        if raw_nodes is None:
+            self.logger.error('Again no luck! Failed to obtain node list!')
             raise FileNotFoundError('node_list')
 
         new_nodes = []
@@ -33,6 +40,8 @@ class NodeInfoFetcher(BaseFetcher):
         new_nodes.sort(key=lambda k: (k.status, -k.bond))
 
         # new_nodes = self._test_churn(new_nodes) # fixme: debug
+
+        # print(len(new_nodes), '<<<-----')
 
         return new_nodes
 

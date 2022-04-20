@@ -1,4 +1,5 @@
 import json
+from typing import Optional
 
 from aioredis import Redis
 
@@ -18,7 +19,7 @@ class BestPoolsNotifier(INotified):
         self.logger = class_logger(self)
         cooldown = parse_timespan_to_seconds(deps.cfg.as_str('best_pools.cooldown', '5h'))
         self._cooldown = Cooldown(self.deps.db, 'BestPools', cooldown)
-        self._fetcher: PoolInfoFetcherMidgard = PoolInfoFetcherMidgard(self.deps, 1)
+        self._fetcher: Optional[PoolInfoFetcherMidgard] = None
         self.last_pool_detail: PoolDetailHolder = PoolDetailHolder({}, {})
         self.n_pools = deps.cfg.as_int('best_pools.num_of_top_pools', 5)
 

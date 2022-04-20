@@ -2,16 +2,17 @@ from typing import List
 
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
-from services.models.node_info import NodeEvent, NodeEventType, NodeSetChanges
+from services.models.node_info import NodeEvent, NodeEventType
 from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
 
 
 class PresenceTracker(BaseChangeTracker):
     def __init__(self, deps: DepContainer):
+        super().__init__()
         self.deps = deps
         self.logger = class_logger(self)
 
-    async def get_events(self, node_set_change: NodeSetChanges) -> List[NodeEvent]:
+    async def get_events_unsafe(self) -> List[NodeEvent]:
         events = []
 
         def push_events(node, is_here):
@@ -23,9 +24,9 @@ class PresenceTracker(BaseChangeTracker):
                 node=node
             ))
 
-        for added_node in node_set_change.nodes_added:
+        for added_node in self.node_set_change.nodes_added:
             push_events(added_node, is_here=True)
-        for removed_node in node_set_change.nodes_removed:
+        for removed_node in self.node_set_change.nodes_removed:
             push_events(removed_node, is_here=False)
 
         return events
