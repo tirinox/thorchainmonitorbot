@@ -21,6 +21,11 @@ class TCPPollster:
         s.settimeout(timeout)
         try:
             s.connect((host, port))
+
+            # # fixme: debug!
+            # if host == '157.90.34.75':
+            #     return False
+
             return True
         except Exception as e:
             return False

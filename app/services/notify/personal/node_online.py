@@ -39,6 +39,10 @@ class NodeOnlineTracker(BaseChangeTracker):
         ref_ts = ts or now_ts()
         return ref_ts - self.user_cache.node_service_data[node][service].get(self.KEY_LAST_ONLINE_TS, 0)
 
+    def set_offline_time(self, node: str, service: str, ts=None):
+        ref_ts = ts or now_ts()
+        self.user_cache.node_service_data[node][service][self.KEY_LAST_ONLINE_TS] = ref_ts
+
     def get_user_state(self, user, node, service):
         return self.user_cache.user_node_service_data[user][node][service].get(self.KEY_ONLINE_STATE, True)
 
@@ -56,8 +60,6 @@ class NodeOnlineTracker(BaseChangeTracker):
 
         ip_to_node = {node.ip_address: node for node in self.node_set_change.nodes_all if node.ip_address}
 
-        ref_ts = now_ts()
-
         t0 = time.monotonic()
         # Structure: dict{str(IP): dict{int(port): bool(is_available)} }
         results = await self.pollster.test_connectivity_multiple(ip_to_node.keys(),
@@ -68,6 +70,7 @@ class NodeOnlineTracker(BaseChangeTracker):
         stats = self.pollster.count_stats(results)
         self.logger.info(f'TCP Poll results: {stats}, {time_elapsed = :.3f} sec')
 
+        ref_ts = now_ts()
         events = []
         for node_ip, node_results in results.items():
             for port, is_available in node_results.items():
@@ -79,9 +82,10 @@ class NodeOnlineTracker(BaseChangeTracker):
 
                 address = node.node_address
                 if is_available:
-                    self.user_cache.node_service_data[address][service][self.KEY_LAST_ONLINE_TS] = ref_ts
+                    self.set_offline_time(address, service, ref_ts)
 
                 off_time = self.get_offline_time(address, service, ref_ts)
+
                 if off_time > AGE_CUT_OFF:
                     continue
 
@@ -107,6 +111,10 @@ class NodeOnlineTracker(BaseChangeTracker):
 
         node, service = event.node.node_address, event_data.service
         user_thinks_online = self.get_user_state(user_id, node, service)
+
+        # # fixme: debug
+        # if event.node.node_address == 'thor1krcz33mejvc5f6grj2c5w5x3kuj7mnjhgqltj8':
+        #     print(f'!!! {user_thinks_online = }, {user_id = }, {node = }, {event_data.duration = }')
 
         if user_thinks_online and not event_data.online and event_data.duration >= threshold_interval:
             self.set_user_state(user_id, node, service, False)
