@@ -23,14 +23,16 @@ THOR_ADDRESS_SEED = 'thor16qnm285eez48r4u9whedq4qunydu2ucmzchz7p'
 
 
 THOR_EXCLUDE_FROM_CIRCULATING_ADDRESSES = {
-    'team': THOR_ADDRESS_TEAM,
-    'seed': THOR_ADDRESS_SEED,
-    'reserves': THOR_ADDRESS_RESERVE_MODULE,
-    'undeployed_reserves': THOR_ADDRESS_UNDEPLOYED_RESERVES
+    'Team': THOR_ADDRESS_TEAM,
+    'Seed': THOR_ADDRESS_SEED,
+    'Reserves': THOR_ADDRESS_RESERVE_MODULE,
+    'Undeployed reserves': THOR_ADDRESS_UNDEPLOYED_RESERVES
 }
 
+KEY_ASGARD = 'Asgard'
+
 BEP2_EXCLUDE_FROM_CIRCULATING_ADDRESSES = {
-    'preburn': BEP2_BURN_ADDRESS,
+    'Preburn': BEP2_BURN_ADDRESS,
 }
 
 
@@ -38,6 +40,10 @@ class SupplyEntry(NamedTuple):
     circulating: int
     total: int
     locked: Dict[str, int]
+
+    @classmethod
+    def zero(cls):
+        return cls(0, 0, {})
 
 
 @dataclass
@@ -57,6 +63,10 @@ class RuneCirculatingSupply:
                 'overall': self.overall._asdict()
             }
         }
+
+    @classmethod
+    def zero(cls):
+        return cls(SupplyEntry.zero(), SupplyEntry.zero(), SupplyEntry.zero(), SupplyEntry.zero())
 
 
 class RuneCirculatingSupplyFetcher:
@@ -102,19 +112,19 @@ class RuneCirculatingSupplyFetcher:
 
         bep2_locked_dict = dict((k, v) for k, v in
                                 zip(BEP2_EXCLUDE_FROM_CIRCULATING_ADDRESSES.keys(), bep2_exclude_balance_arr))
-        bep2_locked_dict['asgard'] = bep2_to_burn_asgard
+        bep2_locked_dict[KEY_ASGARD] = bep2_to_burn_asgard
 
         thor_locked_dict = dict((k, v) for k, v in
                                 zip(THOR_EXCLUDE_FROM_CIRCULATING_ADDRESSES.keys(), thor_exclude_balance_arr))
 
         erc20_locked_dict = {
-            'asgard': erc20_to_burn_asgard
+            KEY_ASGARD: erc20_to_burn_asgard
         }
         overall_locked_dict = {
             **bep2_locked_dict,
             **erc20_locked_dict,
             **thor_locked_dict,
-            'asgard': erc20_to_burn_asgard + bep2_to_burn_asgard
+            KEY_ASGARD: erc20_to_burn_asgard + bep2_to_burn_asgard
         }
 
         # noinspection PyTypeChecker

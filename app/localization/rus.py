@@ -6,11 +6,12 @@ from aiothornode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
 from localization.base import BaseLocalization, CREATOR_TG, URL_LEADERBOARD_MCCN
+from services.jobs.fetch.circulating import RuneCirculatingSupply, SupplyEntry
 from services.lib.constants import Chains, thor_to_float, rune_origin, BNB_RUNE_SYMBOL
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address, get_explorer_url_to_tx
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
-    emoji_for_percent_change, Asset, short_money, short_dollar, format_percent, RAIDO_GLYPH
+    emoji_for_percent_change, Asset, short_money, short_dollar, format_percent, RAIDO_GLYPH, pretty_rune
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
     up_down_arrow, plural, grouper, regroup_joining
 from services.models.bep2 import BEP2Transfer, BEP2CEXFlow
@@ -478,6 +479,7 @@ class RussianLocalization(BaseLocalization):
     BUTTON_METR_BLOCK_TIME = '⏱️ Время блоков'
     BUTTON_METR_TOP_POOLS = '🏊 Топ Пулов'
     BUTTON_METR_CEX_FLOW = '🌬 Поток бирж'
+    BUTTON_METR_SUPPLY = f'🪵 Rune предложение'
 
     TEXT_METRICS_INTRO = 'Что вы хотите узнать?'
 
@@ -1355,3 +1357,46 @@ class RussianLocalization(BaseLocalization):
                 f'({short_dollar(bep2flow.rune_cex_outflow * rune_price)})\n'
                 f'Поток: {pre(short_money(bep2flow.rune_cex_netflow, postfix=RAIDO_GLYPH))} '
                 f'({short_dollar(bep2flow.rune_cex_netflow * rune_price)})')
+
+    # ----- SUPPLY ------
+
+    SUPPLY_HELPER_TRANSLATOR = {
+        'Team': 'Команда',
+        'Seed': 'Сид-инвесторы',
+        'Reserves': 'Резервы',
+        'Undeployed reserves': 'Неразвернутые резервы',
+        'Preburn': 'Готово к сожжению',
+        'Asgard': 'Горят в Асгарде',
+    }
+
+    def format_supply_entry(self, name, s: SupplyEntry, total_of_total: int):
+        if s.locked and s.total != total_of_total:
+            items = '\n'.join(
+                f'∙ {pre(self.SUPPLY_HELPER_TRANSLATOR.get(name, name))}: '
+                f'{code(pretty_rune(amount))} ({format_percent(amount, total_of_total)})'
+                for name, amount in s.locked.items()
+            )
+            locked_summary = f'Заблокировано:\n{items}\n'
+        else:
+            locked_summary = ''
+
+        return (
+            f'{bold(name)}:\n'
+            f'Циркулирует: {code(pretty_rune(s.circulating))} ({format_percent(s.circulating, total_of_total)})\n'
+            f'{locked_summary}'
+            f'Всего монет: {code(pretty_rune(s.total))} ({format_percent(s.total, total_of_total)})\n\n'
+        )
+
+    def text_metrics_supply(self, market_info: RuneMarketInfo):
+        supply = market_info.supply_info
+        message = f'🪵 {bold("Предложение монет Rune")}\n\n'
+
+        message += self.format_supply_entry('BNB.Rune (BEP2)', supply.bep2_rune, supply.overall.total)
+        message += self.format_supply_entry('ETH.Rune (ERC20)', supply.erc20_rune, supply.overall.total)
+        message += self.format_supply_entry('Нативная THOR.RUNE', supply.thor_rune, supply.overall.total)
+        message += self.format_supply_entry('Всего всех видов', supply.overall, supply.overall.total)
+
+        message += f"Капитализация {bold(self.R)} – {bold(pretty_dollar(market_info.market_cap))} " \
+                   f"(место #{bold(market_info.rank)})"
+        return message
+

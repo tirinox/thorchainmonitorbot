@@ -69,15 +69,18 @@ class RuneMarketInfoFetcher:
         rank = gecko_market_cap_rank(gecko)
         trade_volume = gecko_market_volume(gecko)
 
-        result = RuneMarketInfo(circulating=circulating_rune,
-                                rune_vault_locked=0,
-                                pool_rune_price=price_holder.usd_per_rune,
-                                fair_price=fair_price,
-                                cex_price=cex_price,
-                                tlv_usd=tlv,
-                                rank=rank,
-                                total_trade_volume_usd=trade_volume,
-                                total_supply=total_supply)
+        result = RuneMarketInfo(
+            circulating=circulating_rune,
+            rune_vault_locked=0,
+            pool_rune_price=price_holder.usd_per_rune,
+            fair_price=fair_price,
+            cex_price=cex_price,
+            tlv_usd=tlv,
+            rank=rank,
+            total_trade_volume_usd=trade_volume,
+            total_supply=total_supply,
+            supply_info=supply_info
+        )
         self.logger.info(result)
         return result
 

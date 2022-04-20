@@ -3,6 +3,7 @@ import time
 from dataclasses import dataclass
 from typing import List
 
+from services.jobs.fetch.circulating import RuneCirculatingSupply
 from services.lib.config import Config
 from services.lib.constants import BNB_BTCB_SYMBOL, BTC_SYMBOL, STABLE_COIN_POOLS, thor_to_float
 from services.lib.money import weighted_mean
@@ -22,6 +23,7 @@ class RuneMarketInfo:
     rank: int = 0
     total_trade_volume_usd: float = 0.0
     total_supply: int = 500_000_000
+    supply_info: RuneCirculatingSupply = RuneCirculatingSupply.zero()
 
     @property
     def market_cap(self):
