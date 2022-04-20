@@ -28,7 +28,7 @@ class NodeOnlineTracker(BaseChangeTracker):
         self.logger = class_logger(self)
 
         cfg = deps.cfg.get('node_op_tools.types.online_service')
-        timeout = parse_timespan_to_seconds(cfg.as_str('tcp_timeout', '1s'))
+        timeout = cfg.as_float('tcp_timeout', 1.0)
         self.pollster = TCPPollster(loop=deps.loop, test_timeout=timeout)
         self._poll_group_size = cfg.as_int('group_size', 20)
 
