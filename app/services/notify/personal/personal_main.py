@@ -1,5 +1,6 @@
 import asyncio
 import operator
+import time
 from collections import defaultdict
 from functools import reduce
 from typing import List
@@ -58,6 +59,7 @@ class NodeChangePersonalNotifier(INotified):
             watch_dog_cfg.as_str('disconnected_cable_timeout', '20s')
         )
         self._cable_disconnected = False
+        self._tick = 0
 
     async def prepare(self):
         if self._watchdog_enabled:
@@ -95,6 +97,10 @@ class NodeChangePersonalNotifier(INotified):
             asyncio.create_task(self._handle_node_churn_bg_job(data))  # long-running job goes to the background!
 
     async def _handle_node_churn_bg_job(self, node_set_change: NodeSetChanges):
+        self._tick += 1
+        self.logger.info(f'/#{self._tick}/ Started...')
+        t0 = time.monotonic()
+
         prev_and_curr_node_map = node_set_change.prev_and_curr_node_map
 
         all_nodes = node_set_change.nodes_all
@@ -126,6 +132,9 @@ class NodeChangePersonalNotifier(INotified):
         await self._cast_messages_for_events(events)
 
         await user_cache.save(self.deps.db)
+
+        time_elapsed = time.monotonic() - t0
+        self.logger.info(f'/#{self._tick}/ Finished! Time elapsed = {time_elapsed:.3f} sec')
 
     async def _cast_messages_for_events(self, events: List[NodeEvent]):
         if not events:
