@@ -6,7 +6,7 @@ from aiothornode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
 from localization.base import BaseLocalization, CREATOR_TG, URL_LEADERBOARD_MCCN
-from services.jobs.fetch.circulating import RuneCirculatingSupply, SupplyEntry
+from services.jobs.fetch.circulating import SupplyEntry
 from services.lib.constants import Chains, thor_to_float, rune_origin, BNB_RUNE_SYMBOL
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address, get_explorer_url_to_tx
@@ -479,7 +479,7 @@ class RussianLocalization(BaseLocalization):
     BUTTON_METR_BLOCK_TIME = '⏱️ Время блоков'
     BUTTON_METR_TOP_POOLS = '🏊 Топ Пулов'
     BUTTON_METR_CEX_FLOW = '🌬 Поток бирж'
-    BUTTON_METR_SUPPLY = f'🪵 Rune предложение'
+    BUTTON_METR_SUPPLY = f'🪙 Rune предложение'
 
     TEXT_METRICS_INTRO = 'Что вы хотите узнать?'
 
@@ -1389,7 +1389,7 @@ class RussianLocalization(BaseLocalization):
 
     def text_metrics_supply(self, market_info: RuneMarketInfo):
         supply = market_info.supply_info
-        message = f'🪵 {bold("Предложение монет Rune")}\n\n'
+        message = f'🪙 {bold("Предложение монет Rune")}\n\n'
 
         message += self.format_supply_entry('BNB.Rune (BEP2)', supply.bep2_rune, supply.overall.total)
         message += self.format_supply_entry('ETH.Rune (ERC20)', supply.erc20_rune, supply.overall.total)
@@ -1399,4 +1399,3 @@ class RussianLocalization(BaseLocalization):
         message += f"Капитализация {bold(self.R)} – {bold(pretty_dollar(market_info.market_cap))} " \
                    f"(место #{bold(market_info.rank)})"
         return message
-

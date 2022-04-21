@@ -3,7 +3,7 @@ from typing import List, Tuple
 
 from services.jobs.poll_tcp import TCPPollster
 from services.lib.constants import THORPort
-from services.lib.date_utils import HOUR, now_ts, DAY, parse_timespan_to_seconds
+from services.lib.date_utils import HOUR, now_ts, DAY
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
 from services.models.node_info import EventNodeOnline, NodeEvent, NodeEventType
