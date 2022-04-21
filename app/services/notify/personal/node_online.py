@@ -3,7 +3,7 @@ from typing import List, Tuple
 
 from services.jobs.poll_tcp import TCPPollster
 from services.lib.constants import THORPort
-from services.lib.date_utils import HOUR, now_ts, DAY, parse_timespan_to_seconds
+from services.lib.date_utils import HOUR, now_ts, DAY
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
 from services.models.node_info import EventNodeOnline, NodeEvent, NodeEventType
@@ -28,7 +28,7 @@ class NodeOnlineTracker(BaseChangeTracker):
         self.logger = class_logger(self)
 
         cfg = deps.cfg.get('node_op_tools.types.online_service')
-        timeout = parse_timespan_to_seconds(cfg.as_str('tcp_timeout', '1s'))
+        timeout = cfg.as_float('tcp_timeout', 1.0)
         self.pollster = TCPPollster(loop=deps.loop, test_timeout=timeout)
         self._poll_group_size = cfg.as_int('group_size', 20)
 

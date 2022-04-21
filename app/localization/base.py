@@ -622,7 +622,7 @@ class BaseLocalization(ABC):  # == English
     BUTTON_METR_BLOCK_TIME = '⏱️ Block time'
     BUTTON_METR_TOP_POOLS = '🏊 Top Pools'
     BUTTON_METR_CEX_FLOW = '🌬 CEX Flow'
-    BUTTON_METR_SUPPLY = f'🪵 Rune supply'
+    BUTTON_METR_SUPPLY = f'🪙 Rune supply'
 
     TEXT_METRICS_INTRO = 'What metrics would you like to know?'
 
@@ -1719,7 +1719,7 @@ class BaseLocalization(ABC):  # == English
 
     def text_metrics_supply(self, market_info: RuneMarketInfo):
         supply = market_info.supply_info
-        message = f'🪵 {bold("Rune coins supply")}\n\n'
+        message = f'🪙 {bold("Rune coins supply")}\n\n'
 
         message += self.format_supply_entry('BNB.Rune (BEP2)', supply.bep2_rune, supply.overall.total)
         message += self.format_supply_entry('ETH.Rune (ERC20)', supply.erc20_rune, supply.overall.total)

@@ -1,11 +1,14 @@
-help - this help page
-start - start/restart the bot
-lang - set the language
-cap - the current liquidity cap of Chaosnet
-price - the current Rune price
+help - This help page
+start - Start/restart the bot
+lang - Set the language
+cap - The current liquidity cap
+price - The current Rune price
 queue - TX queue info
-nodes - list of THOR Nodes
+nodes - List of THOR Nodes
 stats - THORChain stats
 chains - Connected blockchains
 mimir - Mimir global constants
-lp - check your LP yield
+pools - Top pools
+lp - Check your LP yield
+voting - Node-Mimir voting
+supply - Rune coin supply

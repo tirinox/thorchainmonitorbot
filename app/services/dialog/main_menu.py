@@ -68,7 +68,7 @@ class MainMenuDialog(BaseDialog):
 
     @message_handler(commands='price', state='*')
     async def cmd_price(self, message: Message):
-        await MetricsDialog(self.loc, self.data, self.deps, self.message)\
+        await MetricsDialog(self.loc, self.data, self.deps, self.message) \
             .on_price_duration_answered(message, explicit_period=7 * DAY)
 
     @message_handler(commands='nodes', state='*')
@@ -100,6 +100,21 @@ class MainMenuDialog(BaseDialog):
     async def cmd_lp(self, message: Message):
         message.text = ''
         await LiquidityInfoDialog(self.loc, self.data, self.deps, self.message).on_enter(message)
+
+    @message_handler(commands='supply', state='*')
+    async def cmd_supply(self, message: Message):
+        message.text = ''
+        await MetricsDialog(self.loc, self.data, self.deps, self.message).show_rune_supply(message)
+
+    @message_handler(commands='voting', state='*')
+    async def cmd_voting(self, message: Message):
+        message.text = ''
+        await MetricsDialog(self.loc, self.data, self.deps, self.message).show_voting_info(message)
+
+    @message_handler(commands='pools', state='*')
+    async def cmd_top_pools(self, message: Message):
+        message.text = ''
+        await MetricsDialog(self.loc, self.data, self.deps, self.message).show_top_pools(message)
 
     @message_handler(commands='help', state='*')
     async def cmd_help(self, message: Message):
