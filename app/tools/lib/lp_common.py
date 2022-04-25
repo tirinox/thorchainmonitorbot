@@ -54,8 +54,7 @@ class LpAppFramework:
 
     async def prepare(self, brief=False):
         d = self.deps
-        session_timeout = float(self.deps.cfg.get('thor.timeout', 2.0))
-        d.session = aiohttp.ClientSession(timeout=ClientTimeout(total=session_timeout))
+        d.make_http_session()
         d.thor_connector = ThorConnector(d.cfg.get_thor_env_by_network_id(), d.session)
 
         cfg = d.cfg.thor.midgard

@@ -275,14 +275,10 @@ class App:
 
     async def on_startup(self, _):
         self.deps.is_loading = True
+
+        self.deps.make_http_session()  # it is must be inside a coroutine!
+
         await self.connect_chat_storage()
-
-        session_timeout = float(self.deps.cfg.get('thor.timeout', 2.0))
-        self.deps.session = aiohttp.ClientSession(json_serialize=ujson.dumps,
-                                                  timeout=ClientTimeout(total=session_timeout))
-
-        logging.info(f'HTTP Session timeout is {session_timeout} sec')
-
         await self.create_thor_node_connector()
 
         asyncio.create_task(self._run_background_jobs())

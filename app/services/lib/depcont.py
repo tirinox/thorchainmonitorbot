@@ -1,9 +1,12 @@
 import asyncio
+import logging
 from dataclasses import dataclass, field
 from typing import Optional, Set, Dict
 
+import aiohttp
+import ujson
 from aiogram import Bot, Dispatcher
-from aiohttp import ClientSession
+from aiohttp import ClientSession, ClientTimeout
 from aiothornode.connector import ThorConnector
 from aiothornode.types import ThorChainInfo
 
@@ -57,3 +60,12 @@ class DepContainer:
     node_holder: NodeListHolder = NodeListHolder()
 
     is_loading = True
+
+    def make_http_session(self):
+        session_timeout = float(self.cfg.get('thor.timeout', 2.0))
+        self.session = aiohttp.ClientSession(
+            json_serialize=ujson.dumps,
+            timeout=ClientTimeout(total=session_timeout))
+        logging.info(f'HTTP Session timeout is {session_timeout} sec')
+
+

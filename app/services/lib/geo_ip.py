@@ -35,20 +35,29 @@ class GeoIPManager:
             self.logger.exception(f'GeoIP API error: {e}')
             return None
 
+    async def get_ip_info_from_cached(self, ip: str):
+        r: Redis = await self.deps.db.get_redis()
+        raw_data = await r.get(self.key(ip))
+        if raw_data:
+            return json.loads(raw_data)
+
+    async def _set_ip_info(self, ip, data):
+        r: Redis = self.deps.db.redis
+        await r.set(self.key(ip), json.dumps(data), ex=self.expire_period_sec)
+
     async def get_ip_info(self, ip: str, cached=True):
         if not ip or not isinstance(ip, str):
             return None
 
         if cached:
-            r: Redis = await self.deps.db.get_redis()
-            raw_data = await r.get(self.key(ip))
-            if raw_data:
-                return json.loads(raw_data)
+            cached_data = await self.get_ip_info_from_cached(ip)
+            if cached_data:
+                return cached_data
 
         data = await self.get_ip_info_from_external_api(ip)
 
         if cached and data:
-            await r.set(self.key(ip), json.dumps(data), ex=self.expire_period_sec)
+            await self._set_ip_info(ip, data)
 
         return data
 

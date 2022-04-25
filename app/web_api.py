@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os.path
 
+import aiohttp
 import uvicorn
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
@@ -14,6 +15,7 @@ from services.dialog.slack.slack_bot import SlackBot
 from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
+from services.lib.geo_ip import GeoIPManager
 from services.lib.nop_links import SettingsManager
 from services.lib.utils import setup_logs
 from services.models.node_watchers import NodeWatcherStorage
@@ -49,6 +51,7 @@ class AppSettingsAPI:
         self.slack = SlackBot(d.cfg, d.db)
 
     async def _on_startup(self):
+        self.deps.make_http_session()
         await self.deps.db.get_redis()
 
     async def _get_settings(self, request):
@@ -66,6 +69,17 @@ class AppSettingsAPI:
             'settings': settings,
             'nodes': all_nodes,
         })
+
+    async def _get_node_ip_info(self, request):
+        ip = str(request.path_params.get('ip')).strip()[:20]
+        geo_ip = GeoIPManager(self.deps)
+
+        info = await geo_ip.get_ip_info_from_cached(ip)
+        if not info:
+            info = {
+                'error': 'not-found'
+            }
+        return JSONResponse(info)
 
     async def _set_settings(self, request):
         token = request.path_params.get('token')
@@ -127,6 +141,7 @@ class AppSettingsAPI:
             Route('/api/settings/{token}', self._get_settings, methods=['GET']),
             Route('/api/settings/{token}', self._set_settings, methods=['POST']),
             Route('/api/settings/{token}', self._del_settings, methods=['DELETE']),
+            Route('/api/node/ip/{ip}', self._get_node_ip_info, methods=['GET']),
             *other,
         ]
 
