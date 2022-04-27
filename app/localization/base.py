@@ -1075,7 +1075,7 @@ class BaseLocalization(ABC):  # == English
     MIMIR_DISABLED = 'DISABLED'
     MIMIR_YES = 'YES'
     MIMIR_NO = 'NO'
-    MIMIR_UNDEFINED = 'Undefined'
+    MIMIR_UNDEFINED = 'undefined'
     MIMIR_LAST_CHANGE = 'Last change'
     MIMIR_CHEAT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1mc1mBBExGxtI5a85niijHhle5EtXoTR_S5Ihx808_tM/edit#gid=980980229'
 
@@ -1303,9 +1303,9 @@ class BaseLocalization(ABC):  # == English
                     f'The default value was {old_value_fmt} → the new value is {new_value_fmt}‼️'
                 )
             elif change.kind == MimirChange.REMOVED_MIMIR:
-                text += f"➖ Mimir's constant \"{name}\" has been deleted. It was: {old_value_fmt} before. ‼️"
-                if new_value_fmt:
-                    text += f"Now this constant reverted to its default value: {new_value_fmt}."
+                text += f"➖ Mimir's constant \"{name}\" has been deleted. It was {old_value_fmt} before. ‼️"
+                if change.new_value is not None:
+                    text += f" Now this constant reverted to its default value: {new_value_fmt}."
             else:
                 text += (
                     f"🔄 Mimir's constant \"{name}\" has been updated from "

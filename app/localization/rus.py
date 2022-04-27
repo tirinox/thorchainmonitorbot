@@ -911,7 +911,7 @@ class RussianLocalization(BaseLocalization):
     MIMIR_DISABLED = 'ВЫКЛЮЧЕНО'
     MIMIR_YES = 'ДА'
     MIMIR_NO = 'НЕТ'
-    MIMIR_UNDEFINED = 'Неопределено'
+    MIMIR_UNDEFINED = 'неопределено'
     MIMIR_LAST_CHANGE = 'Последнее изменение'
 
     def text_mimir_intro(self):
@@ -1060,11 +1060,9 @@ class RussianLocalization(BaseLocalization):
                     f'новое значение стало: {new_value_fmt}‼️'
                 )
             elif change.kind == MimirChange.REMOVED_MIMIR:
-                text += (
-                    f'➖ Настройка Мимира "{name}" была удалена! '
-                    f'Она имела значение: {old_value_fmt} → '
-                    f'теперь она вернулась к исходной константе: {new_value_fmt}‼️'
-                )
+                text += f'➖ Настройка Мимира "{name}" была удалена! Ранее она имела значение: {old_value_fmt}.'
+                if change.new_value is not None:
+                    text += f' Теперь она вернулась к исходной константе: {new_value_fmt}‼️'
             else:
                 text += (
                     f'🔄 Настройка Мимира "{name}" была изменена. '
