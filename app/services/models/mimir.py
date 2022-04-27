@@ -365,7 +365,7 @@ class MimirHolder:
                 source = MimirEntry.SOURCE_AUTO
             elif name in node_mimir_names:
                 source = MimirEntry.SOURCE_NODE
-            elif name in overridden_names:
+            elif name in overridden_names or name not in const_names:
                 source = MimirEntry.SOURCE_ADMIN
             else:
                 source = MimirEntry.SOURCE_CONST

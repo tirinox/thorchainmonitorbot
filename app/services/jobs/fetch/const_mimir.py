@@ -87,9 +87,7 @@ class ConstMimirFetcher(BaseFetcher):
     # ----- D E B U G    S T U F F -----
 
     def _dbg_randomize_votes(self, votes: List[MimirVote]):
-        votes.append(MimirVote('MAXSYNTHASSETDEPTH', 500, 'thor1xd4j3gk9frpxh8r22runntnqy34lwzrdkazldh'))
-        votes.append(MimirVote('MAXSYNTHASSETDEPTH', 500, 'thor1wkfdzllk8ykzjmd9d7qhdqdknfxsupe9cjxcpn'))
-        votes.append(MimirVote('MAXSYNTHASSETDEPTH', 444, 'thor1nxmlh4hy2ncg585dutqwjd3d0tvjn8aqz42cak'))
+        votes.append(MimirVote('LOVEME', 1, 'thor10vmz8d0qwvq5hw9susmf7nefka9usazzcvkeaj'))
         return votes
 
     def _dbg_randomize_node_mimir_results(self, results):
@@ -109,10 +107,10 @@ class ConstMimirFetcher(BaseFetcher):
         #         pass
         # del fresh_mimir.constants["HALTBNBTRADING"]
         # fresh_mimir.constants["HALTETHTRADING"] = 0
-        fresh_mimir.constants["HALTBNBCHAIN"] = 1233243  # 1234568
+        # fresh_mimir.constants["HALTBNBCHAIN"] = 1233243  # 1234568
         # del fresh_mimir.constants["EMISSIONCURVE"]
         # fresh_mimir.constants['NATIVETRANSACTIONFEE'] = 4000000
         # fresh_mimir.constants['MAXLIQUIDITYRUNE'] = 10000000000000 * random.randint(1, 99)
-        fresh_mimir.constants["FULLIMPLOSSPROTECTIONBLOCKS"] = 9000
-        node_mimir["EMISSIONCURVE"] = 23
+        # fresh_mimir.constants["FULLIMPLOSSPROTECTIONBLOCKS"] = 9000
+        fresh_mimir.constants["LOVEADMIN"] = 23
         return fresh_mimir, node_mimir
