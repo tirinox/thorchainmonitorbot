@@ -5,7 +5,7 @@ from services.lib.constants import Messengers
 from services.lib.db import DB
 from services.lib.db_one2one import OneToOne
 from services.lib.utils import class_logger, random_hex
-from services.notify.personal.helpers import NodeOpSetting
+from services.notify.personal.helpers import NodeOpSetting, SETTINGS_KEY_GENERAL_ALERTS
 
 
 class SettingsManager:

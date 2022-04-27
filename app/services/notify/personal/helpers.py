@@ -37,6 +37,9 @@ class NodeOpSetting:
     NODE_PRESENCE = 'nop:presence:on'  # new
 
 
+SETTINGS_KEY_GENERAL_ALERTS = 'gen:alerts'
+
+
 class BaseChangeTracker:
     def __init__(self):
         self.logger = class_logger(self)
