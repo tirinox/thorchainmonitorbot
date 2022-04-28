@@ -9,7 +9,7 @@ from localization import LocalizationManager
 from services.jobs.fetch.base import INotified
 from services.lib.date_utils import HOUR, MINUTE, now_ts, parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
-from services.lib.nop_links import SettingsManager
+from services.lib.settings_manager import SettingsManager
 from services.lib.texts import grouper
 from services.lib.utils import class_logger
 from services.models.node_info import NodeSetChanges, NodeEvent, NodeEventType

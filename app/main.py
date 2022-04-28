@@ -2,11 +2,8 @@ import asyncio
 import logging
 import os
 
-import aiohttp
-import ujson
 from aiogram import Bot, Dispatcher, executor
 from aiogram.types import *
-from aiohttp import ClientTimeout
 from aiothornode.connector import ThorConnector
 
 from localization import LocalizationManager

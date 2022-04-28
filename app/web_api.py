@@ -15,7 +15,7 @@ from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.geo_ip import GeoIPManager
-from services.lib.nop_links import SettingsManager
+from services.lib.settings_manager import SettingsManager
 from services.lib.utils import setup_logs
 from services.models.node_watchers import NodeWatcherStorage
 

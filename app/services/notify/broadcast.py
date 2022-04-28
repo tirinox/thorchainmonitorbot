@@ -2,8 +2,6 @@ import asyncio
 import logging
 import random
 import time
-import typing
-from io import BytesIO
 from typing import List
 
 from aiogram.utils import exceptions
@@ -11,42 +9,15 @@ from aiogram.utils import exceptions
 from localization import LocalizationManager
 from services.dialog.discord.discord_bot import DiscordBot
 from services.dialog.slack.slack_bot import SlackBot
-from services.lib.constants import Messengers
 from services.lib.depcont import DepContainer
 from services.lib.telegram import TelegramStickerDownloader, TELEGRAM_MAX_MESSAGE_LENGTH, TELEGRAM_MAX_CAPTION_LENGTH
 from services.lib.texts import MessageType, BoardMessage, CHANNEL_INACTIVE
-
-
-def copy_photo(p: BytesIO):
-    p.seek(0)
-    new = BytesIO(p.read())
-    new.name = p.name
-    return new
-
-
-class ChannelDescriptor(typing.NamedTuple):
-    type: str
-    name: str
-    id: int = 0
-    lang: str = 'eng'
-
-    @classmethod
-    def from_json(cls, j):
-        return cls(
-            str(j.get('type')).strip().lower(),
-            j.get('name', ''),
-            int(j.get('id', 0)),
-            j.get('lang', 'eng'),
-        )
-
-    @property
-    def channel_id(self):
-        return self.id or self.name
+from services.lib.utils import copy_photo
+from services.notify.channel import Messengers, ChannelDescriptor
+from services.notify.user_registry import UserRegistry
 
 
 class Broadcaster:
-    KEY_USERS = 'thbot_users'
-
     EXTRA_RETRY_DELAY = 0.1
 
     def __init__(self, d: DepContainer):
@@ -69,15 +40,22 @@ class Broadcaster:
     def get_channels(self, chan_type):
         return [c for c in self.channels if c.type == chan_type]
 
+    async def get_subscribed_channels(self):
+        # todo: concat Slack general alerts channels
+        return []
+
     async def notify_preconfigured_channels(self, f, *args, **kwargs):
+        subscribed_channels = await self.get_subscribed_channels()
+        channels = self.channels + subscribed_channels
+
         loc_man: LocalizationManager = self.deps.loc_man
         user_lang_map = {
-            chan.channel_id: loc_man.get_from_lang(chan.lang)
-            for chan in self.channels
+            channels.channel_id: loc_man.get_from_lang(channels.lang)
+            for channels in channels
         }
 
         if not callable(f):  # if constant
-            await self.broadcast(self.channels, f, *args, **kwargs)
+            await self.broadcast(channels, f, *args, **kwargs)
             return
 
         async def message_gen(chat_id):
@@ -94,7 +72,7 @@ class Broadcaster:
             else:
                 return loc_f(*call_args, **kwargs)
 
-        await self.broadcast(self.channels, message_gen)
+        await self.broadcast(channels, message_gen)
 
     @staticmethod
     def remove_bad_args(kwargs, dis_web_preview=False, dis_notification=False):
@@ -155,7 +133,7 @@ class Broadcaster:
 
         return non_numeric_ids + multi_chats + user_dialogs
 
-    async def safe_send_message_discord(self, chat_id, text, message_type=MessageType.TEXT, *args, **kwargs) -> bool:
+    async def safe_send_message_discord(self, chat_id, text, message_type=MessageType.TEXT, **kwargs) -> bool:
         discord: DiscordBot = self.deps.discord_bot
         if not discord:
             self.logger.error('Discord bot is disabled!')
@@ -174,7 +152,7 @@ class Broadcaster:
             self.logger.exception(f'discord exception {e}, {message_type = }, text = "{text}"!')
             return False
 
-    async def safe_send_message_slack(self, chat_id, text, message_type=MessageType.TEXT, *args,
+    async def safe_send_message_slack(self, chat_id, text, message_type=MessageType.TEXT,
                                       **kwargs) -> bool:
         slack: SlackBot = self.deps.slack_bot
         if not slack:
@@ -206,9 +184,9 @@ class Broadcaster:
         if channel_info.type == Messengers.TELEGRAM:
             result = await self.safe_send_message_tg(chan_id, text, message_type, *args, **kwargs)
         elif channel_info.type == Messengers.DISCORD:
-            result = await self.safe_send_message_discord(chan_id, text, message_type, *args, **kwargs)
+            result = await self.safe_send_message_discord(chan_id, text, message_type, **kwargs)
         elif channel_info.type == Messengers.SLACK:
-            result = await self.safe_send_message_slack(chan_id, text, message_type, *args, **kwargs)
+            result = await self.safe_send_message_slack(chan_id, text, message_type, **kwargs)
         else:
             self.logger.error(f'unsupported channel type: {channel_info.type}!')
             return False
@@ -260,24 +238,8 @@ class Broadcaster:
                         await asyncio.sleep(delay)  # 10 messages per second (Limit: 30 messages per second)
 
                 if remove_bad_users:
-                    await self.remove_users(bad_ones)
+                    await UserRegistry(self.deps.db).remove_users(bad_ones)
             finally:
                 self.logger.info(f"{count} messages successful sent (of {len(channels)})")
 
             return count
-
-    async def register_user(self, chat_id):
-        chat_id = str(int(chat_id))
-        r = await self.deps.db.get_redis()
-        await r.sadd(self.KEY_USERS, chat_id)
-
-    async def remove_users(self, idents):
-        idents = [str(int(i)) for i in idents]
-        if idents:
-            r = await self.deps.db.get_redis()
-            await r.srem(self.KEY_USERS, *idents)
-
-    async def all_users(self):
-        r = await self.deps.db.get_redis()
-        items = await r.smembers(self.KEY_USERS)
-        return [int(it) for it in items]

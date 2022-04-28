@@ -2,13 +2,6 @@ from typing import NamedTuple
 
 from services.lib.date_utils import MINUTE
 
-
-class Messengers:
-    TELEGRAM = 'telegram'
-    SLACK = 'slack'
-    DISCORD = 'discord'
-
-
 BNB_BNB_SYMBOL = 'BNB.BNB'
 
 BNB_BUSD_SYMBOL = 'BNB.BUSD-BD1'

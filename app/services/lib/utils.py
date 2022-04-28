@@ -9,6 +9,7 @@ import re
 import time
 from collections import deque, Counter, defaultdict
 from functools import wraps, partial
+from io import BytesIO
 from itertools import tee
 from typing import List, Iterable
 
@@ -300,3 +301,10 @@ def retries(times):
         return wrapper
 
     return func_wrapper
+
+
+def copy_photo(p: BytesIO):
+    p.seek(0)
+    new = BytesIO(p.read())
+    new.name = p.name
+    return new

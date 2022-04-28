@@ -1,7 +1,7 @@
 import ujson
 
 from services.lib.config import Config
-from services.lib.constants import Messengers
+from services.notify.channel import Messengers
 from services.lib.db import DB
 from services.lib.db_one2one import OneToOne
 from services.lib.utils import class_logger, random_hex
@@ -12,6 +12,8 @@ class SettingsManager:
     TOKEN_LEN = 16
 
     KEY_MESSENGER = '_messenger'
+
+    DB_KEY_GENERAL_ALERTS_SUBSCRIBERS = 'Settings:Subscribers:GeneralAlerts'
 
     def __init__(self, db: DB, cfg: Config):
         self.db = db
@@ -63,10 +65,23 @@ class SettingsManager:
     async def set_settings(self, channel_id: str, settings):
         if not channel_id:
             return
-        if not settings:
-            await self.db.redis.delete(self.db_key_settings(channel_id))
-        else:
+        if settings:
             await self.db.redis.set(self.db_key_settings(channel_id), ujson.dumps(settings))
+            await self._general_alerts_process(channel_id, settings)
+        else:
+            await self.db.redis.delete(self.db_key_settings(channel_id))
+
+    async def _general_alerts_process(self, channel_id: str, settings):
+        if not channel_id:
+            return
+
+        is_general_enabled = settings.get(SETTINGS_KEY_GENERAL_ALERTS, False)
+        r = self.db.redis
+        if is_general_enabled:
+            await r.srem(self.DB_KEY_GENERAL_ALERTS_SUBSCRIBERS, channel_id)
+        else:
+            await r.sadd(self.DB_KEY_GENERAL_ALERTS_SUBSCRIBERS, channel_id)
+
 
     def get_context(self, user_id):
         return SettingsContext(self, user_id)

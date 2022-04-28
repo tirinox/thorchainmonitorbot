@@ -11,10 +11,10 @@ from slack_sdk.oauth.state_store import FileOAuthStateStore
 
 from localization import LocalizationManager, BaseLocalization
 from services.lib.config import Config
-from services.lib.constants import Messengers
+from services.notify.channel import Messengers
 from services.lib.db import DB
 from services.lib.draw_utils import img_to_bio
-from services.lib.nop_links import SettingsManager
+from services.lib.settings_manager import SettingsManager
 from services.lib.texts import CHANNEL_INACTIVE
 from services.lib.utils import class_logger
 
