@@ -164,7 +164,6 @@ class Broadcaster:
             if message_type == MessageType.TEXT:
                 result = await slack.send_message_to_channel(chat_id, text, need_convert=True)
             elif message_type == MessageType.STICKER:
-                self.logger.warning('stickers not supported yet sorry')
                 sticker = await self._sticker_download.get_sticker_image(text)
                 result = await slack.send_message_to_channel(chat_id, ' ', picture=sticker)
             elif message_type == MessageType.PHOTO:
@@ -205,8 +204,6 @@ class Broadcaster:
             bad_ones = []
 
             try:
-                # chat_ids = self.sort_and_shuffle_chats(chat_ids)
-
                 for channel_info in channels:
                     extra = {}
                     if isinstance(message, str):

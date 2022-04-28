@@ -14,9 +14,8 @@ class Messengers:
 
 
 class ChannelDescriptor(typing.NamedTuple):
-    type: str
+    type: str  # aka Messenger
     name: str
-    id: int = 0
     lang: str = 'eng'
 
     @classmethod
@@ -27,10 +26,18 @@ class ChannelDescriptor(typing.NamedTuple):
         return cls(
             channel_type,
             j.get('name', ''),
-            int(j.get('id', 0)),
             j.get('lang', 'eng'),
         )
 
     @property
     def channel_id(self):
-        return self.id or self.name
+        return self.name
+
+    @property
+    def short_coded(self):
+        return f'{self.type}-{self.name}'
+
+    @classmethod
+    def from_short_code(cls, s: str):
+        platform, name = s.strip().split('-')
+        return cls(platform, name)

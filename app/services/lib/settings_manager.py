@@ -1,10 +1,10 @@
 import ujson
 
 from services.lib.config import Config
-from services.notify.channel import Messengers
 from services.lib.db import DB
 from services.lib.db_one2one import OneToOne
 from services.lib.utils import class_logger, random_hex
+from services.notify.channel import Messengers, ChannelDescriptor
 from services.notify.personal.helpers import NodeOpSetting, SETTINGS_KEY_GENERAL_ALERTS
 
 
@@ -71,17 +71,30 @@ class SettingsManager:
         else:
             await self.db.redis.delete(self.db_key_settings(channel_id))
 
+        # fixme: debug
+        d = await self.get_general_alerts_channels()
+        print(d)
+
     async def _general_alerts_process(self, channel_id: str, settings):
         if not channel_id:
             return
 
+        platform = self.get_platform(settings)
+        if not platform:
+            return
+
+        db_key = ChannelDescriptor(platform, channel_id).short_coded
+
         is_general_enabled = settings.get(SETTINGS_KEY_GENERAL_ALERTS, False)
         r = self.db.redis
         if is_general_enabled:
-            await r.srem(self.DB_KEY_GENERAL_ALERTS_SUBSCRIBERS, channel_id)
+            await r.sadd(self.DB_KEY_GENERAL_ALERTS_SUBSCRIBERS, db_key)
         else:
-            await r.sadd(self.DB_KEY_GENERAL_ALERTS_SUBSCRIBERS, channel_id)
+            await r.srem(self.DB_KEY_GENERAL_ALERTS_SUBSCRIBERS, db_key)
 
+    async def get_general_alerts_channels(self):
+        channels_short_codes = await self.db.redis.smembers(self.DB_KEY_GENERAL_ALERTS_SUBSCRIBERS)
+        return [ChannelDescriptor.from_short_code(code) for code in channels_short_codes]
 
     def get_context(self, user_id):
         return SettingsContext(self, user_id)
