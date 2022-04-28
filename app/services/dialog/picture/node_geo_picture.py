@@ -165,7 +165,7 @@ def node_geo_pic_sync(info: NetworkNodeIpInfo, loc: localization.BaseLocalizatio
     draw.line((0, h_line_y, w, h_line_y), '#468', 2)
 
     # 2. CHART
-    t0 = time.monotonic()
+    t0 = time.perf_counter()
 
     def one_donut(node_list, xy, big, title, palette):
         providers = info.get_providers(node_list)
@@ -212,7 +212,7 @@ def node_geo_pic_sync(info: NetworkNodeIpInfo, loc: localization.BaseLocalizatio
               loc.TEXT_PIC_STANDBY_NODES,
               palette=get_disabled_palette_color_by_index)
 
-    t1 = time.monotonic()
+    t1 = time.perf_counter()
     logging.info(f'node_geo_pic: donat chart time = {(t1 - t0):.3f} sec')
 
     # 3. LEGEND

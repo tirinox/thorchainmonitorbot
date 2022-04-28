@@ -99,7 +99,7 @@ class NodeChangePersonalNotifier(INotified):
     async def _handle_node_churn_bg_job(self, node_set_change: NodeSetChanges):
         self._tick += 1
         self.logger.info(f'/#{self._tick}/ Started...')
-        t0 = time.monotonic()
+        t0 = time.perf_counter()
 
         prev_and_curr_node_map = node_set_change.prev_and_curr_node_map
 
@@ -133,7 +133,7 @@ class NodeChangePersonalNotifier(INotified):
 
         await user_cache.save(self.deps.db)
 
-        time_elapsed = time.monotonic() - t0
+        time_elapsed = time.perf_counter() - t0
         self.logger.info(f'/#{self._tick}/ Finished! Time elapsed = {time_elapsed:.3f} sec')
 
     async def _cast_messages_for_events(self, events: List[NodeEvent]):

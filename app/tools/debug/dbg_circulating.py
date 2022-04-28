@@ -21,16 +21,16 @@ async def my_test_circulating(lp_app: LpAppFramework):
     rmf = lp_app.deps.rune_market_fetcher
     rmf: RuneMarketInfoFetcher
 
-    t0 = time.monotonic()
+    t0 = time.perf_counter()
 
     info = await rmf.get_rune_market_info()
-    t1 = time.monotonic()
+    t1 = time.perf_counter()
     print(f'[{t1 - t0}]: {info}')
     sep()
 
     print('next? ------>')
     info = await rmf.get_rune_market_info()
-    t1 = time.monotonic()
+    t1 = time.perf_counter()
     print(f'[{t1 - t0}]: {info}')
 
     print('waiting....')
@@ -39,7 +39,7 @@ async def my_test_circulating(lp_app: LpAppFramework):
 
     print('and once again! (cached data had to expire now)')
     info = await rmf.get_rune_market_info()
-    t1 = time.monotonic()
+    t1 = time.perf_counter()
     print(f'[{t1 - t0}]: {info}')
     sep()
 

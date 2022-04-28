@@ -71,14 +71,15 @@ class AppSettingsAPI:
 
     async def _get_node_ip_info(self, request):
         ip = str(request.path_params.get('ip')).strip()[:20]
-        geo_ip = GeoIPManager(self.deps)
 
-        info = await geo_ip.get_ip_info_from_cached(ip)
-        if not info:
-            info = {
+        geo_ip = GeoIPManager(self.deps)
+        info = await geo_ip.get_ip_info_from_cache(ip)
+        if info:
+            return JSONResponse(info)
+        else:
+            return JSONResponse({
                 'error': 'not-found'
-            }
-        return JSONResponse(info)
+            })
 
     async def _set_settings(self, request):
         token = request.path_params.get('token')

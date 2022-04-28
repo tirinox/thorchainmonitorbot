@@ -60,12 +60,12 @@ class NodeOnlineTracker(BaseChangeTracker):
 
         ip_to_node = {node.ip_address: node for node in self.node_set_change.nodes_all if node.ip_address}
 
-        t0 = time.monotonic()
+        t0 = time.perf_counter()
         # Structure: dict{str(IP): dict{int(port): bool(is_available)} }
         results = await self.pollster.test_connectivity_multiple(ip_to_node.keys(),
                                                                  port_to_service.keys(),
                                                                  group_size=self._poll_group_size)
-        time_elapsed = time.monotonic() - t0
+        time_elapsed = time.perf_counter() - t0
 
         stats = self.pollster.count_stats(results)
         self.logger.info(f'TCP Poll results: {stats}, {time_elapsed = :.3f} sec')

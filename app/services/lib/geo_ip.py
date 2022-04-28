@@ -24,8 +24,11 @@ class GeoIPManager:
         return f'{self.DB_KEY_IP_INFO}:{ip}'
 
     async def get_ip_info_from_external_api(self, ip: str):
-        url = self.API_URL.format(address=ip)
         try:
+            url = self.API_URL.format(address=ip)
+
+            self.logger.info(url)
+
             async with self.deps.session.get(url) as resp:
                 if resp.status == 200:
                     return await resp.json()
@@ -35,7 +38,7 @@ class GeoIPManager:
             self.logger.exception(f'GeoIP API error: {e}')
             return None
 
-    async def get_ip_info_from_cached(self, ip: str):
+    async def get_ip_info_from_cache(self, ip: str):
         r: Redis = await self.deps.db.get_redis()
         raw_data = await r.get(self.key(ip))
         if raw_data:
@@ -50,7 +53,7 @@ class GeoIPManager:
             return None
 
         if cached:
-            cached_data = await self.get_ip_info_from_cached(ip)
+            cached_data = await self.get_ip_info_from_cache(ip)
             if cached_data:
                 return cached_data
 
@@ -63,3 +66,11 @@ class GeoIPManager:
 
     async def get_ip_info_bulk(self, ip_list: List[str], cached=True):
         return await asyncio.gather(*(self.get_ip_info(ip, cached) for ip in ip_list))
+
+    async def get_ip_info_bulk_as_dict(self, ip_list: List[str], cached=True):
+        ip_set = set(ip for ip in ip_list if ip)
+        ip_keys = list(ip_set)
+        ip_info_list = await self.get_ip_info_bulk(ip_keys, cached)
+        return {
+            ip: info for ip, info in zip(ip_keys, ip_info_list)
+        }

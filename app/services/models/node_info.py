@@ -4,7 +4,7 @@ import re
 import secrets
 from collections import Counter
 from dataclasses import dataclass, field
-from typing import List, Dict, NamedTuple, Optional, Tuple, Any
+from typing import List, Dict, NamedTuple, Optional, Tuple, Any, Set
 
 from semver import VersionInfo
 
@@ -117,6 +117,9 @@ class NodeListHolder:
     @property
     def active_nodes(self):
         return [n for n in self.nodes if n.is_active]
+
+    def is_ip_nodes(self, ip_address):
+        return any(ip_address == n.ip_address for n in self.nodes)
 
 
 @dataclass
