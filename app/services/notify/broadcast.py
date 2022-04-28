@@ -10,6 +10,7 @@ from localization import LocalizationManager
 from services.dialog.discord.discord_bot import DiscordBot
 from services.dialog.slack.slack_bot import SlackBot
 from services.lib.depcont import DepContainer
+from services.lib.settings_manager import SettingsManager
 from services.lib.telegram import TelegramStickerDownloader, TELEGRAM_MAX_MESSAGE_LENGTH, TELEGRAM_MAX_CAPTION_LENGTH
 from services.lib.texts import MessageType, BoardMessage, CHANNEL_INACTIVE
 from services.lib.utils import copy_photo
@@ -41,8 +42,8 @@ class Broadcaster:
         return [c for c in self.channels if c.type == chan_type]
 
     async def get_subscribed_channels(self):
-        # todo: concat Slack general alerts channels
-        return []
+        settings_manager = SettingsManager(self.deps.db, self.deps.cfg)
+        return await settings_manager.get_general_alerts_channels()
 
     async def notify_preconfigured_channels(self, f, *args, **kwargs):
         subscribed_channels = await self.get_subscribed_channels()

@@ -71,10 +71,6 @@ class SettingsManager:
         else:
             await self.db.redis.delete(self.db_key_settings(channel_id))
 
-        # fixme: debug
-        d = await self.get_general_alerts_channels()
-        print(d)
-
     async def _general_alerts_process(self, channel_id: str, settings):
         if not channel_id:
             return
