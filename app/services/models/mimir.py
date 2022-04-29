@@ -249,30 +249,37 @@ class MimirHolder:
         'HALTBCHCHAIN': 'Halt BCH Chain',
         'HALTBCHTRADING': 'Halt BCH Trading',
         'HALTSIGNINGBCH': 'Halt BCH Signing',
+        'SOLVENCYHALTBCHCHAIN': 'Solvency Halt BCH Chain',
 
         'HALTBNBCHAIN': 'Halt BNB Chain',
         'HALTBNBTRADING': 'Halt BNB Trading',
         'HALTSIGNINGBNB': 'Halt BNB Signing',
+        'SOLVENCYHALTBNBCHAIN': 'Solvency Halt BNB Chain',
 
         'HALTBTCCHAIN': 'Halt BTC Chain',
         'HALTBTCTRADING': 'Halt BTC Trading',
         'HALTSIGNINGBTC': 'Halt BTC Signing',
+        'SOLVENCYHALTBTCCHAIN': 'Solvency Halt BTC Chain',
 
         'HALTETHCHAIN': 'Halt ETH Chain',
         'HALTETHTRADING': 'Halt ETH Trading',
         'HALTSIGNINGETH': 'Halt ETH Signing',
+        'SOLVENCYHALTETHCHAIN': 'Solvency Halt ETH Chain',
 
         'HALTLTCCHAIN': 'Halt LTC Chain',
         'HALTLTCTRADING': 'Halt LTC Trading',
         'HALTSIGNINGLTC': 'Halt LTC Signing',
+        'SOLVENCYHALTLTCCHAIN': 'Solvency Halt LTC Chain',
 
         'HALTDOGECHAIN': 'Halt DOGE Chain',
         'HALTDOGETRADING': 'Halt DOGE Trading',
         'HALTSIGNINGDOGE': 'Halt DOGE Signing',
+        'SOLVENCYHALTDOGECHAIN': 'Solvency Halt DOGE Chain',
 
         'HALTTERRACHAIN': 'Halt Terra Chain',
         'HALTTERRATRADING': 'Halt Terra Trading',
         'HALTSIGNINGTERRA': 'Halt Terra Signing',
+        'SOLVENCYHALTTERRACHAIN': 'Solvency Halt Terra Chain',
 
         'HALTTHORCHAIN': 'Halt ThorChain',
         'HALTTRADING': 'Halt All Trading',
