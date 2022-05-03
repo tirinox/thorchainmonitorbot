@@ -11,15 +11,12 @@ from slack_sdk.oauth.state_store import FileOAuthStateStore
 
 from localization import LocalizationManager, BaseLocalization
 from services.lib.config import Config
-from services.notify.channel import Messengers
 from services.lib.db import DB
 from services.lib.draw_utils import img_to_bio
 from services.lib.settings_manager import SettingsManager
 from services.lib.texts import CHANNEL_INACTIVE
 from services.lib.utils import class_logger
-
-
-# example: https://github.com/slackapi/bolt-python/blob/main/examples/starlette/async_oauth_app.py
+from services.notify.channel import Messengers
 
 
 class SlackBot:
@@ -39,7 +36,7 @@ class SlackBot:
         'not_authed',
     )
 
-    def __init__(self, cfg: Config, db: DB):
+    def __init__(self, cfg: Config, db: DB, settings_manager: SettingsManager):
         self.logger = class_logger(self)
         self.db = db
         self.cfg = cfg
@@ -61,7 +58,7 @@ class SlackBot:
         self.slack_handler = AsyncSlackRequestHandler(self.slack_app)
         self.setup_commands()
 
-        self._settings_manager = SettingsManager(db, cfg)
+        self._settings_manager = settings_manager
 
     DB_KEY_SLACK_TOKENS = 'Slack:Tokens'
 

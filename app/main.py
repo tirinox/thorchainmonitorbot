@@ -30,6 +30,7 @@ from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.midgard.connector import MidgardConnector
+from services.lib.settings_manager import SettingsManager
 from services.lib.utils import setup_logs
 from services.models.mimir import MimirHolder
 from services.models.price import LastPriceHolder
@@ -56,6 +57,8 @@ from services.notify.types.voting_notify import VotingNotifier
 class App:
     def __init__(self):
         d = self.deps = DepContainer()
+        d.is_loading = True
+
         d.cfg = Config()
 
         log_level = d.cfg.get_pure('log_level', logging.INFO)
@@ -67,10 +70,8 @@ class App:
 
         d.loop = asyncio.get_event_loop()
         d.db = DB(d.loop)
-
-        d.is_loading = True
-
         d.price_holder = LastPriceHolder()
+        d.settings_manager = SettingsManager(d.db, d.cfg)
 
     def create_bot_stuff(self):
         d = self.deps
@@ -258,7 +259,7 @@ class App:
             d.discord_bot.start_in_background()
 
         if d.cfg.get('slack.enabled', False):
-            d.slack_bot = SlackBot(d.cfg, d.db)
+            d.slack_bot = SlackBot(d.cfg, d.db, d.settings_manager)
             d.slack_bot.start_in_background()
 
         if d.cfg.get('bep2.enabled', True):

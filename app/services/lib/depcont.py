@@ -13,6 +13,7 @@ from aiothornode.types import ThorChainInfo
 from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.midgard.connector import MidgardConnector
+from services.lib.settings_manager import SettingsManager
 from services.models.mimir import MimirHolder
 from services.models.node_info import NodeListHolder
 from services.models.price import LastPriceHolder
@@ -58,6 +59,8 @@ class DepContainer:
     halted_chains: Set[str] = field(default_factory=set)
     chain_info: Dict[str, ThorChainInfo] = field(default_factory=dict)
     node_holder: NodeListHolder = NodeListHolder()
+
+    settings_manager: Optional[SettingsManager] = None
 
     is_loading = True
 

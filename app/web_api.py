@@ -46,12 +46,16 @@ class AppSettingsAPI:
             allow_methods='*'
         )
 
-        self.manager = SettingsManager(d.db, d.cfg)
-        self.slack = SlackBot(d.cfg, d.db)
+        d.settings_manager = SettingsManager(d.db, d.cfg)
+        self.slack = SlackBot(d.cfg, d.db, d.settings_manager)
 
     async def _on_startup(self):
         self.deps.make_http_session()
         await self.deps.db.get_redis()
+
+    @property
+    def manager(self):
+        return self.deps.settings_manager
 
     async def _get_settings(self, request):
         token = request.path_params.get('token')

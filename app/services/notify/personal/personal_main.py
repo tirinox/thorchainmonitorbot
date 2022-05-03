@@ -40,7 +40,7 @@ class NodeChangePersonalNotifier(INotified):
         self.logger = class_logger(self)
         self.watchers = NodeWatcherStorage(deps.db)
         self.telemetry_db = NodeTelemetryDatabase(deps)
-        self.settings_man = SettingsManager(self.deps.db, self.deps.cfg)
+        self.settings_man = self.deps.settings_manager
 
         # trackers
         self.online_tracker = NodeOnlineTracker(deps)

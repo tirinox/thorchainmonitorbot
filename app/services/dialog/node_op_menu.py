@@ -9,7 +9,6 @@ from aiogram.utils.helper import HelperMode
 from localization import BaseLocalization
 from services.dialog.base import BaseDialog, message_handler, query_handler
 from services.jobs.node_churn import NodeStateDatabase
-from services.notify.channel import Messengers
 from services.lib.date_utils import parse_timespan_to_seconds, HOUR
 from services.lib.depcont import DepContainer
 from services.lib.settings_manager import SettingsManager
@@ -18,6 +17,7 @@ from services.lib.texts import join_as_numbered_list, grouper
 from services.lib.utils import parse_list_from_string, fuzzy_search
 from services.models.node_info import NodeInfo
 from services.models.node_watchers import NodeWatcherStorage
+from services.notify.channel import Messengers
 from services.notify.personal.helpers import NodeOpSetting, STANDARD_INTERVALS
 
 
@@ -46,7 +46,7 @@ class NodeOpDialog(BaseDialog):
     def __init__(self, loc: BaseLocalization, data: Optional[FSMContextProxy], d: DepContainer, message: Message):
         super().__init__(loc, data, d, message)
         self._settings = {}
-        self._settings_manager = SettingsManager(self.deps.db, self.deps.cfg)
+        self._settings_manager = d.settings_manager
 
     async def pre_action(self):
         user_id = self.user_id(self.message)
@@ -108,13 +108,15 @@ class NodeOpDialog(BaseDialog):
     async def on_web_setup(self, query: CallbackQuery):
         loc = self.loc
         user_id = self.user_id(query.message)
-        settings_man = SettingsManager(self.deps.db, self.deps.cfg)
+        settings_man = self.deps.settings_manager
         token = await settings_man.generate_new_token(user_id)
 
-        settings_man.set_messenger_data(self._settings,
-                                        Messengers.TELEGRAM,
-                                        query.from_user.username,
-                                        query.from_user.full_name)
+        settings_man.set_messenger_data(
+            self._settings,
+            Messengers.TELEGRAM,
+            query.from_user.username,
+            query.from_user.full_name)
+
         url = settings_man.get_link(token)
 
         await NodeOpStates.GET_WEB_LINK.set()
@@ -133,8 +135,7 @@ class NodeOpDialog(BaseDialog):
     async def on_web_setup_callback(self, query: CallbackQuery):
         if query.data == 'setting:revoke-link':
             user_id = self.user_id(query.message)
-            settings = SettingsManager(self.deps.db, self.deps.cfg)
-            await settings.revoke_token(user_id)
+            await self.deps.settings_manager.revoke_token(user_id)
             await query.answer(self.loc.TEXT_NOP_REVOKED_URL_SUCCESS)
         else:
             await query.answer()

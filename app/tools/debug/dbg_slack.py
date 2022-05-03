@@ -9,7 +9,7 @@ from tools.lib.lp_common import LpAppFramework
 
 async def a_test_slack_price(lp_app: LpAppFramework):
     deps = lp_app.deps
-    slack = SlackBot(deps.cfg, deps.db)
+    slack = SlackBot(deps.cfg, deps.db, lp_app.deps.settings_manager)
 
     loc = deps.loc_man.default
     graph = await price_graph_from_db(deps.db, loc, period=14 * DAY)
@@ -19,7 +19,7 @@ async def a_test_slack_price(lp_app: LpAppFramework):
 
 async def a_test_slack_periodic_message(lp_app: LpAppFramework):
     deps = lp_app.deps
-    slack = SlackBot(deps.cfg, deps.db)
+    slack = SlackBot(deps.cfg, deps.db, lp_app.deps.settings_manager)
 
     chan = 'D032VQSEBU2'
     # chan = 'C02L7H4H27N'

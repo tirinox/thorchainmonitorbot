@@ -16,6 +16,7 @@ from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.midgard.connector import MidgardConnector
+from services.lib.settings_manager import SettingsManager
 from services.lib.telegram import telegram_send_message_basic, TG_TEST_USER
 from services.lib.utils import setup_logs
 from services.models.mimir import MimirHolder
@@ -32,6 +33,7 @@ class LpAppFramework:
             d.cfg.network_id = network
         d.loc_man = LocalizationManager(d.cfg)
         d.db = DB(d.loop)
+        d.settings_manager = SettingsManager(d.db, d.cfg)
 
         d.bot = Bot(token=d.cfg.telegram.bot.token, parse_mode=ParseMode.HTML)
         d.dp = Dispatcher(d.bot, loop=d.loop)
