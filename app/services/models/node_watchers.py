@@ -1,48 +1,14 @@
-from dataclasses import field, dataclass
 from typing import List, Dict
 
 from services.lib.db import DB
 from services.lib.db_many2many import ManyToManySet
-from services.models.node_info import NodeInfo
 
 
-@dataclass
-class NodeWatchInfo:
-    node_address: str = ''
-    last_info: NodeInfo = field(default_factory=NodeInfo)
-    last_online_ts: int = 0
-
-
-class NodeWatcherStorage:
-    def __init__(self, db: DB, user_id: str = ''):
+class UserWatchlist:
+    def __init__(self, db: DB, watch_category_name, user_id: str = ''):
         self.db = db
         self.user_id = user_id
-        self.many2many = ManyToManySet(db, 'UserID', 'WatchNodeIP')
-
-    def key_for_node_names(self, node):
-        return f'User.{self.user_id}.SetName.{node}'
-
-    async def set_node_name(self, node: str, name: str):
-        if node:
-            r = await self.db.get_redis()
-            k = self.key_for_node_names(node)
-            if name:
-                await r.set(k, name)
-            else:
-                await r.delete(k)
-
-    async def get_node_names(self, node_list: list):
-        if not node_list:
-            return {}
-        r = await self.db.get_redis()
-        names = await r.mget(*map(self.key_for_node_names, node_list))
-        return dict(zip(node_list, names))
-
-    async def add_user_to_node(self, node: str, name: str):
-        if node and self.user_id:
-            await self.many2many.associate(self.user_id, node)
-            if name:
-                await self.set_node_name(node, name)
+        self.many2many = ManyToManySet(db, 'UserID', watch_category_name)
 
     async def add_user_to_node_list(self, nodes: List[str]):
         if nodes and all(nodes) and self.user_id:
@@ -65,9 +31,40 @@ class NodeWatcherStorage:
     async def all_nodes_for_user(self) -> List[str]:
         return await self.many2many.all_rights_for_left_one(self.user_id)
 
-    async def all_nodes_with_names_for_user(self) -> Dict[str, str]:
-        nodes = await self.all_nodes_for_user()
-        return await self.get_node_names(nodes)
-
     async def all_users(self):
         return await self.many2many.all_lefts()
+
+    async def has_node(self, node):
+        rights = await self.all_nodes_for_user()
+        return node in rights
+
+
+class NamedNodeStorage:
+    def __init__(self, db: DB, user_id: str = ''):
+        self.db = db
+        self.user_id = user_id
+
+    def key_for_node_names(self, node):
+        return f'User:{self.user_id}:SetName:{node}'
+
+    async def set_node_name(self, node: str, name: str):
+        if node:
+            r = await self.db.get_redis()
+            k = self.key_for_node_names(node)
+            if name:
+                await r.set(k, name)
+            else:
+                await r.delete(k)
+
+    async def get_node_names(self, node_list: list):
+        if not node_list:
+            return {}
+        r = await self.db.get_redis()
+        names = await r.mget(*map(self.key_for_node_names, node_list))
+        return dict(zip(node_list, names))
+
+
+class NodeWatcherStorage(UserWatchlist):
+    def __init__(self, db: DB, user_id: str = ''):
+        super().__init__(db, watch_category_name='WatchNodeIP', user_id=user_id)
+        self.node_name_storage = NamedNodeStorage(db, user_id)

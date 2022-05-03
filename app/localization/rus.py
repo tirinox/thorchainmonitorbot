@@ -1090,7 +1090,7 @@ class RussianLocalization(BaseLocalization):
 
     TEXT_NOP_INTRO_HEADING = bold('Добро пожаловать в Инстременты Операторов Нод.')
 
-    def text_node_op_welcome_text_part2(self, watch_list: dict, last_signal_ago: float):
+    def text_node_op_welcome_text_part2(self, watch_list: list, last_signal_ago: float):
         text = 'Мы будем отправлять вам персонифицированные уведомления ' \
                'когда что-то важное случается с нодами, которые вы мониторите.\n\n'
         if watch_list:

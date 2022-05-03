@@ -21,6 +21,29 @@ async def prepare_simple(many2many):
 
 
 @pytest.mark.asyncio
+async def test_has(many2many: ManyToManySet):
+    assert await many2many.has_left('A', 'G1')
+    assert await many2many.has_left('B', 'G1')
+    assert await many2many.has_left('C', 'G3')
+
+    assert not await many2many.has_left('C', 'G1')
+    assert not await many2many.has_left('C', '')
+    assert not await many2many.has_left('', 'G1')
+    assert not await many2many.has_left('G1', 'A')
+    assert not await many2many.has_left('G2', 'B')
+
+    assert await many2many.has_right('A', 'G1')
+    assert await many2many.has_right('B', 'G1')
+    assert await many2many.has_right('C', 'G3')
+
+    assert not await many2many.has_right('C', 'G1')
+    assert not await many2many.has_right('C', '')
+    assert not await many2many.has_right('', 'G1')
+    assert not await many2many.has_right('G1', 'A')
+    assert not await many2many.has_right('G2', 'B')
+
+
+@pytest.mark.asyncio
 async def test_get_many_from_many(many2many: ManyToManySet):
     await prepare_simple(many2many)
     assert await many2many.all_lefts_for_many_rights(['G1', 'G3', 'G2']) == {'A', 'B', 'C'}

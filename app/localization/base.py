@@ -1347,7 +1347,7 @@ class BaseLocalization(ABC):  # == English
 
     TEXT_NOP_INTRO_HEADING = bold('Welcome to the Node Monitor tool!')
 
-    def text_node_op_welcome_text_part2(self, watch_list: dict, last_signal_ago: float):
+    def text_node_op_welcome_text_part2(self, watch_list: list, last_signal_ago: float):
         text = 'It will send you personalized notifications ' \
                'when something important happens to the nodes you are monitoring.\n\n'
         if watch_list:

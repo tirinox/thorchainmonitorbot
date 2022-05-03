@@ -45,6 +45,14 @@ class ManyToManySet:
         r = await self._redis()
         return set(await r.smembers(self.right_key(right_one)))
 
+    async def has_right(self, left_one: str, right_one: str):
+        r = await self._redis()
+        return await r.sismember(self.left_key(left_one), right_one)
+
+    async def has_left(self, left_one: str, right_one: str):
+        r = await self._redis()
+        return await r.sismember(self.right_key(right_one), left_one)
+
     @staticmethod
     async def all_items_for_many_other_side(inputs, getter: callable, flatten=True):
         inputs = set(inputs)
