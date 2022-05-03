@@ -61,7 +61,7 @@ class NodeOpDialog(BaseDialog):
     async def show_main_menu(self, message: Message, with_welcome=True):
         await NodeOpStates.MAIN_MENU.set()
 
-        watch_list = await self.storage(message.chat.id).all_nodes_with_names_for_user()
+        watch_list = await self.storage(message.chat.id).all_nodes_for_user()
 
         inline_kbd = [
             [
@@ -189,6 +189,7 @@ class NodeOpDialog(BaseDialog):
 
         tg_list = await self.all_nodes_list_maker(user_id)
         result = await tg_list.handle_query(query)
+        changed = False
 
         if result.result == result.BACK:
             await self.show_main_menu(query.message, with_welcome=False)
@@ -207,6 +208,10 @@ class NodeOpDialog(BaseDialog):
             last_nodes = await self.get_all_active_nodes()
             await self.add_nodes_for_user(query, [n.node_address for n in last_nodes], user_id)
 
+        new_tg_list = await self.all_nodes_list_maker(user_id)
+        if new_tg_list != tg_list:
+            await query.message.edit_reply_markup(new_tg_list.keyboard())
+
     async def add_nodes_for_user(self, query: CallbackQuery, node_list: list, user_id, go_back=True):
         if not node_list:
             return
@@ -218,13 +223,13 @@ class NodeOpDialog(BaseDialog):
     # -------- MANAGE ---------
 
     async def my_node_list_maker(self, user_id):
-        watch_list = await self.storage(user_id).all_nodes_with_names_for_user()
+        watch_list = await self.storage(user_id).all_nodes_for_user()
 
-        disconnected_addresses, inactive_addresses = await self.filter_user_nodes_by_category(list(watch_list.keys()))
+        disconnected_addresses, inactive_addresses = await self.filter_user_nodes_by_category(list(watch_list))
 
         my_nodes_names = [
             # add node_address as a tag
-            (self.loc.short_node_name(address, name), address) for address, name in watch_list.items()
+            (self.loc.short_node_name(address), address) for address in watch_list
         ]
 
         extra_row = []

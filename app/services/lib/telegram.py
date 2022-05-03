@@ -225,6 +225,28 @@ class TelegramInlineList:
                            selected_item_index=item_index,
                            selected_data_tag=data_tag)
 
+    def __eq__(self, other: 'TelegramInlineList'):
+        if other is self:
+            return True
+        if other.current_page != self.current_page:
+            return False
+
+        current_page = self.current_page
+        offset = current_page * self._per_page
+
+        for rows in range(self._max_rows):
+            for column in range(self._max_columns):
+                if offset == self._n:
+                    break
+                counter = offset + 1
+                text = self.get_item_display_text(offset)
+                other_text = other.get_item_display_text(offset)
+                if text != other_text:
+                    return False
+                offset += 1
+            if offset == self._n:
+                break
+        return True
 
 class TelegramStickerDownloader:
     def __init__(self, bot: Bot, base_path='./data/stickers'):
