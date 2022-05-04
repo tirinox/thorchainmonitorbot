@@ -35,6 +35,8 @@ class AppSettingsAPI:
         d.loop = asyncio.get_event_loop()
         d.db = DB(d.loop)
 
+        self._node_watcher = NodeWatcherStorage(d.db)
+
         self.web_app = Starlette(
             debug=bool(d.cfg.web.debug),
             routes=self._routes(),
@@ -65,7 +67,7 @@ class AppSettingsAPI:
                 'error': 'channel not found'
             })
 
-        all_nodes = list(await NodeWatcherStorage(self.deps.db, channel_id).all_nodes_for_user())
+        all_nodes = list(await self._node_watcher.all_nodes_for_user(channel_id))
         settings = await self.manager.get_settings(channel_id)
         return JSONResponse({
             'channel': channel_id,
@@ -97,9 +99,8 @@ class AppSettingsAPI:
         nodes_set = False
         if 'nodes' in data:
             nodes = data.pop('nodes')
-            storage = NodeWatcherStorage(self.deps.db, channel_id)
-            await storage.clear_user_nodes()
-            await storage.add_user_to_node_list(nodes)
+            await self._node_watcher.clear_user_nodes(channel_id)
+            await self._node_watcher.add_user_to_node_list(channel_id, nodes)
             nodes_set = True
 
         settings_set = False

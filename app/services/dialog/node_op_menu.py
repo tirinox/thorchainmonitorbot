@@ -11,7 +11,6 @@ from services.dialog.base import BaseDialog, message_handler, query_handler
 from services.jobs.node_churn import NodeStateDatabase
 from services.lib.date_utils import parse_timespan_to_seconds, HOUR
 from services.lib.depcont import DepContainer
-from services.lib.settings_manager import SettingsManager
 from services.lib.telegram import TelegramInlineList
 from services.lib.texts import join_as_numbered_list, grouper
 from services.lib.utils import parse_list_from_string, fuzzy_search
@@ -47,6 +46,7 @@ class NodeOpDialog(BaseDialog):
         super().__init__(loc, data, d, message)
         self._settings = {}
         self._settings_manager = d.settings_manager
+        self._node_watcher = NodeWatcherStorage(self.deps.db)
 
     async def pre_action(self):
         user_id = self.user_id(self.message)
@@ -61,7 +61,7 @@ class NodeOpDialog(BaseDialog):
     async def show_main_menu(self, message: Message, with_welcome=True):
         await NodeOpStates.MAIN_MENU.set()
 
-        watch_list = await self.storage(message.chat.id).all_nodes_for_user()
+        watch_list = await self._node_watcher.all_nodes_for_user(message.chat.id)
 
         inline_kbd = [
             [
@@ -144,7 +144,8 @@ class NodeOpDialog(BaseDialog):
     # -------- ADDING ---------
 
     async def all_nodes_list_maker(self, user_id):
-        watch_list = set(await self.storage(user_id).all_nodes_for_user())
+        watch_list = set(await self._node_watcher.all_nodes_for_user(user_id))
+
         last_nodes = await self.get_all_nodes()
         last_node_texts = [
             # add node_address as a tag
@@ -197,9 +198,10 @@ class NodeOpDialog(BaseDialog):
         elif result.result == result.SELECTED:
             node_to_add = result.selected_data_tag
 
-            current_node_set = set(await self.storage(user_id).all_nodes_for_user())
+            current_node_set = await self._node_watcher.all_nodes_for_user(user_id)
+
             if node_to_add in current_node_set:
-                await self.storage(user_id).remove_user_nodes([node_to_add])
+                await self._node_watcher.remove_user_nodes(user_id, [node_to_add])
             else:
                 await self.add_nodes_for_user(query, [node_to_add], user_id, go_back=False)
         elif query.data == 'add:all':
@@ -216,7 +218,7 @@ class NodeOpDialog(BaseDialog):
     async def add_nodes_for_user(self, query: CallbackQuery, node_list: list, user_id, go_back=True):
         if not node_list:
             return
-        await self.storage(user_id).add_user_to_node_list(node_list)
+        await self._node_watcher.add_user_to_node_list(user_id, node_list)
         await query.answer(self.loc.text_nop_success_add_banner(node_list))
         if go_back:
             await self.show_main_menu(query.message, with_welcome=False)
@@ -224,7 +226,7 @@ class NodeOpDialog(BaseDialog):
     # -------- MANAGE ---------
 
     async def my_node_list_maker(self, user_id):
-        watch_list = await self.storage(user_id).all_nodes_for_user()
+        watch_list = await self._node_watcher.all_nodes_for_user(user_id)
 
         disconnected_addresses, inactive_addresses = await self.filter_user_nodes_by_category(list(watch_list))
 
@@ -269,7 +271,7 @@ class NodeOpDialog(BaseDialog):
         tg_list = await self.my_node_list_maker(user_id)
         result = await tg_list.handle_query(query)
 
-        watch_list = await self.storage(user_id).all_nodes_for_user()
+        watch_list = await self._node_watcher.all_nodes_for_user(user_id)
         disconnected_addresses, inactive_addresses = await self.filter_user_nodes_by_category(list(watch_list))
 
         if result.result == result.BACK:
@@ -287,7 +289,7 @@ class NodeOpDialog(BaseDialog):
         if not node_list:
             return
 
-        await self.storage(user_id).remove_user_nodes(node_list)
+        await self._node_watcher.remove_user_nodes(user_id, node_list)
 
         await query.answer(self.loc.text_nop_success_remove_banner(node_list))
         if go_back:
@@ -568,9 +570,6 @@ class NodeOpDialog(BaseDialog):
                                                  self.on_settings_menu)
 
     # ---- UTILS ---
-
-    def storage(self, user_id):
-        return NodeWatcherStorage(self.deps.db, user_id)
 
     async def get_all_nodes(self):
         return await NodeStateDatabase(self.deps).get_last_node_info_list()

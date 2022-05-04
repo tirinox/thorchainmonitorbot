@@ -18,39 +18,39 @@ def deps():
 
 @pytest.fixture(scope="function")
 def node_watcher(deps: DepContainer):
-    return NodeWatcherStorage(deps.db, '8888')
+    return NodeWatcherStorage(deps.db)
 
 
 @pytest.mark.asyncio
 async def test_names(node_watcher: NodeWatcherStorage):
-    await node_watcher.set_node_name('thorA', 'Apricot')
-    await node_watcher.set_node_name('thorB', 'Banana')
-    await node_watcher.set_node_name('thorC', 'Cucumber')
+    nns = node_watcher.node_name_storage
+    await nns.set_node_name('11', 'thorA', 'Apricot')
+    await nns.set_node_name('11', 'thorB', 'Banana')
+    await nns.set_node_name('11', 'thorC', 'Cucumber')
 
-    node_watcher2 = NodeWatcherStorage(node_watcher.db, '111111')
-    await node_watcher2.set_node_name('thorA', 'Astoria')
-    await node_watcher2.set_node_name('thorB', 'Brownie')
-    await node_watcher2.set_node_name('thorC', 'Cafe')
+    await nns.set_node_name('88', 'thorA', 'Astoria')
+    await nns.set_node_name('88', 'thorB', 'Brownie')
+    await nns.set_node_name('88', 'thorC', 'Cafe')
 
-    names1 = await node_watcher.get_node_names(['thorA', 'thorB', 'thorC'])
+    names1 = await nns(['thorA', 'thorB', 'thorC'])
     assert names1 == {'thorA': 'Apricot', 'thorB': 'Banana', 'thorC': 'Cucumber'}
 
-    names11 = await node_watcher.get_node_names(['thorD', 'thorA'])
+    names11 = await nns.get_node_names(['thorD', 'thorA'])
     assert names11 == {'thorA': 'Apricot', 'thorD': None}
 
     # test: are keys overlap?
-    names2 = await node_watcher2.get_node_names(['thorA', 'thorB', 'thorC'])
+    names2 = await nns.get_node_names(['thorA', 'thorB', 'thorC'])
     assert names2 == {'thorA': 'Astoria', 'thorB': 'Brownie', 'thorC': 'Cafe'}
 
     # test: remove name
-    await node_watcher.set_node_name('thorA', None)
-    names1 = await node_watcher.get_node_names(['thorA', 'thorB', 'thorC'])
+    await nns('88', 'thorA', None)
+    names1 = await nns.get_node_names(['thorA', 'thorB', 'thorC'])
     assert names1 == {'thorA': None, 'thorB': 'Banana', 'thorC': 'Cucumber'}
 
     # test update names
-    await node_watcher.set_node_name('thorA', 'Apple')
-    await node_watcher.set_node_name('thorB', 'Burger')
-    names1 = await node_watcher.get_node_names(['thorA', 'thorB'])
+    await nns.set_node_name('11', 'thorA', 'Apple')
+    await nns.set_node_name('11', 'thorB', 'Burger')
+    names1 = await nns.get_node_names(['thorA', 'thorB'])
     assert names1 == {'thorA': 'Apple', 'thorB': 'Burger'}
 
 
