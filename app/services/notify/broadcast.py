@@ -41,20 +41,21 @@ class Broadcaster:
         return [c for c in self.channels if c.type == chan_type]
 
     async def get_subscribed_channels(self):
-        return await self.deps.settings_manager.get_general_alerts_channels()
+        return await self.deps.settings_manager.get_general_alerts_channels(self)
 
     async def notify_preconfigured_channels(self, f, *args, **kwargs):
         subscribed_channels = await self.get_subscribed_channels()
-        channels = self.channels + subscribed_channels
+        all_channels = self.channels + subscribed_channels
+        self.logger.info(f'Total channels: {len(all_channels)}: {len(self.channels)} + {len(subscribed_channels)}')
 
         loc_man: LocalizationManager = self.deps.loc_man
         user_lang_map = {
             channels.channel_id: loc_man.get_from_lang(channels.lang)
-            for channels in channels
+            for channels in all_channels
         }
 
         if not callable(f):  # if constant
-            await self.broadcast(channels, f, *args, **kwargs)
+            await self.broadcast(all_channels, f, *args, **kwargs)
             return
 
         async def message_gen(chat_id):
@@ -71,7 +72,7 @@ class Broadcaster:
             else:
                 return loc_f(*call_args, **kwargs)
 
-        await self.broadcast(channels, message_gen)
+        await self.broadcast(all_channels, message_gen)
 
     @staticmethod
     def remove_bad_args(kwargs, dis_web_preview=False, dis_notification=False):

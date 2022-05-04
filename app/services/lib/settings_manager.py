@@ -4,6 +4,7 @@ from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.db_one2one import OneToOne
 from services.lib.utils import class_logger, random_hex
+from services.models.node_watchers import AlertWatchers
 from services.notify.channel import Messengers, ChannelDescriptor
 from services.notify.personal.helpers import NodeOpSetting, SETTINGS_KEY_GENERAL_ALERTS
 
@@ -13,7 +14,7 @@ class SettingsManager:
 
     KEY_MESSENGER = '_messenger'
 
-    DB_KEY_GENERAL_ALERTS_SUBSCRIBERS = 'Settings:Subscribers:GeneralAlerts'
+    GENERAL_ALERTS = '$general_alerts'
 
     def __init__(self, db: DB, cfg: Config):
         self.db = db
@@ -21,6 +22,7 @@ class SettingsManager:
         self.public_url = cfg.as_str('web.public_url').rstrip('/')
         self.logger = class_logger(self)
         self.token_channel_db = OneToOne(db, 'Token-Channel')
+        self._alert_watcher = AlertWatchers(db)
 
     def get_link(self, token):
         return f'{self.public_url}/?token={token}'
@@ -65,6 +67,7 @@ class SettingsManager:
     async def set_settings(self, channel_id: str, settings):
         if not channel_id:
             return
+
         if settings:
             await self.db.redis.set(self.db_key_settings(channel_id), ujson.dumps(settings))
             await self._general_alerts_process(channel_id, settings)
@@ -72,28 +75,49 @@ class SettingsManager:
             await self.db.redis.delete(self.db_key_settings(channel_id))
 
     async def _general_alerts_process(self, channel_id: str, settings):
-        if not channel_id:
-            return
-
         platform = self.get_platform(settings)
         if not platform:
             return
 
-        db_key = ChannelDescriptor(platform, channel_id).short_coded
-
         is_general_enabled = settings.get(SETTINGS_KEY_GENERAL_ALERTS, False)
-        r = self.db.redis
-        if is_general_enabled:
-            await r.sadd(self.DB_KEY_GENERAL_ALERTS_SUBSCRIBERS, db_key)
-        else:
-            await r.srem(self.DB_KEY_GENERAL_ALERTS_SUBSCRIBERS, db_key)
 
-    async def get_general_alerts_channels(self):
-        channels_short_codes = await self.db.redis.smembers(self.DB_KEY_GENERAL_ALERTS_SUBSCRIBERS)
-        return [ChannelDescriptor.from_short_code(code) for code in channels_short_codes]
+        if is_general_enabled:
+            await self._alert_watcher.add_user_to_node(channel_id, self.GENERAL_ALERTS)
+        else:
+            await self._alert_watcher.remove_user_node(channel_id, self.GENERAL_ALERTS)
+
+    async def get_general_alerts_channels(self, broadcaster):
+        channels = await self._alert_watcher.all_users_for_node(self.GENERAL_ALERTS)
+        results = []
+        for channel in channels:
+            settings = await self.get_settings(channel)
+
+            if await self.handle_pause_and_auto_pause(broadcaster, channel, settings):
+                continue
+
+            if bool(settings.get(NodeOpSetting.PAUSE_ALL_ON, False)):
+                continue  # skip those who paused all the events.
+
+            platform = SettingsManager.get_platform(settings)
+            results.append(
+                ChannelDescriptor(platform, channel)
+            )
+        return results
 
     def get_context(self, user_id):
         return SettingsContext(self, user_id)
+
+    async def handle_pause_and_auto_pause(self, broadcaster, user, settings):
+        if bool(settings.get(NodeOpSetting.PAUSE_ALL_ON, False)):
+            return True  # skip those who paused all the events.
+
+        if user in broadcaster.channels_inactive:
+            settings[NodeOpSetting.PAUSE_ALL_ON] = True
+            await self.set_settings(user, settings)
+            broadcaster.remove_me_from_inactive_channels(user)
+            self.logger.warning(f'Auto-pause alerts for {user}!')
+            return True
+        return False
 
 
 class SettingsContext:

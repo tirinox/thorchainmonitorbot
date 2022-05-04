@@ -29,11 +29,13 @@ class SlackBot:
         'chat:write',
         'files:write',
     ]
+
     REASONS_TO_STOP_NOTIFICATIONS = (
         'not_in_channel',
         'invalid_auth',
         'account_inactive',
         'not_authed',
+        'channel_not_found',
     )
 
     def __init__(self, cfg: Config, db: DB, settings_manager: SettingsManager):

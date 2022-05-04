@@ -268,6 +268,11 @@ class App:
             fetcher_bep2.subscribe(d.bep2_move_notifier)
             tasks.append(fetcher_bep2)
 
+        # fixme: debug
+        # await self.deps.broadcaster.notify_preconfigured_channels('Test')
+        # await self.deps.broadcaster.notify_preconfigured_channels('Test-2')
+        # fixme: debug ---
+
         self.deps.is_loading = False
         await asyncio.gather(*(task.run() for task in tasks))
 

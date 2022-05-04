@@ -9,14 +9,21 @@ class UserWatchlist:
         self.db = db
         self.many2many = ManyToManySet(db, 'UserID', watch_category_name)
 
+    async def add_user_to_node(self, user_id, node: str):
+        if node and user_id:
+            await self.many2many.associate(user_id, node)
+
     async def add_user_to_node_list(self, user_id, nodes: List[str]):
         if nodes and all(nodes) and user_id:
             await self.many2many.associate_many([user_id], nodes)
 
+    async def remove_user_node(self, user_id, node: str):
+        if user_id and node:
+            await self.many2many.remove_one_item(user_id, node)
+
     async def remove_user_nodes(self, user_id, nodes: List[str]):
         for node in nodes:
-            if node:
-                await self.many2many.remove_one_item(user_id, node)
+            await self.remove_user_node(user_id, node)
 
     async def clear_user_nodes(self, user_id):
         await self.many2many.remove_all_rights(user_id)
@@ -67,3 +74,8 @@ class NodeWatcherStorage(UserWatchlist):
     def __init__(self, db: DB):
         super().__init__(db, watch_category_name='WatchNodeIP')
         self.node_name_storage = NamedNodeStorage(db)
+
+
+class AlertWatchers(UserWatchlist):
+    def __init__(self, db: DB):
+        super().__init__(db, watch_category_name='WatchAlerts')
