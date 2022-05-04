@@ -97,6 +97,7 @@ class SlackBot:
                     initial_comment=text,
                     channels=[channel],
                     filetype=file_type,
+                    unfurl_links=False,
                 )
             else:
                 response = await self.slack_app.client.chat_postMessage(
