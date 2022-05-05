@@ -249,7 +249,7 @@ class LiquidityPoolReport:
 
     @property
     def redeemable_rune_asset(self):
-        r, a = pool_share(self.pool.balance_rune, self.pool.balance_asset, self.liq.pool_units, self.pool.pool_units)
+        r, a = pool_share(self.pool.balance_rune, self.pool.balance_asset, self.liq.pool_units, self.pool.units)
         return thor_to_float(r), thor_to_float(a)
 
     def added_value(self, mode=USD):

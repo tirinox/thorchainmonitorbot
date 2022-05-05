@@ -34,7 +34,7 @@ class PoolInfo:
     pool_apy: float = 0.0
     synth_supply: int = 0
     synth_units: int = 0
-    units: int = 0  # synth + pool_units?
+    units: int = 0  # synth + pool_units
     volume_24h: int = 0
 
     DEPRECATED_BOOTSTRAP = 'bootstrap'
@@ -48,7 +48,7 @@ class PoolInfo:
         return runes / full_balance_rune * 100.0
 
     def get_share_rune_and_asset(self, units: int) -> (float, float):
-        r, a = pool_share(self.balance_rune, self.balance_asset, my_units=units, pool_total_units=self.pool_units)
+        r, a = pool_share(self.balance_rune, self.balance_asset, my_units=units, pool_total_units=self.units)
         return thor_to_float(r), thor_to_float(a)
 
     def total_my_capital_of_pool_in_rune(self, units: int) -> float:
@@ -94,8 +94,8 @@ class PoolInfo:
 
         slip_adjustment = 1.0 - abs((r0 * a - r * a0) / ((r + r0) * (a + a0)))
 
-        delta_units = int(self.pool_units * (a * r0 + a0 * r) / (2 * r0 * a0) * slip_adjustment)
-        new_pool_unit = delta_units + self.pool_units
+        delta_units = int(self.units * (a * r0 + a0 * r) / (2 * r0 * a0) * slip_adjustment)
+        new_pool_unit = delta_units + self.units
 
         return PoolUnitsAdjustment(delta_units, new_pool_unit)
 
@@ -109,6 +109,8 @@ class PoolInfo:
             balance_asset=balance_asset,
             balance_rune=balance_rune,
             pool_units=int(j['pool_units']),
+            units=int(j.get('units', 0)),
+            synth_units=int(j.get('synth_units', 0)),
             status=str(j['status']).lower())
 
     def as_dict_brief(self):
@@ -116,6 +118,8 @@ class PoolInfo:
             'balance_asset': str(self.balance_asset),
             'balance_rune': str(self.balance_rune),
             'pool_units': str(self.pool_units),
+            'units': str(self.units),
+            'synth_units': str(self.synth_units),
             'asset': self.asset,
             'status': self.status
         }
@@ -150,7 +154,7 @@ class LPPosition:
         return cls(
             pool=pool.asset,
             liquidity_units=my_units,
-            liquidity_total=pool.pool_units,
+            liquidity_total=pool.units,
             rune_balance=thor_to_float(pool.balance_rune),
             asset_balance=thor_to_float(pool.balance_asset),
             usd_per_rune=usd_per_rune,
@@ -183,9 +187,13 @@ PoolInfoMap = Dict[str, PoolInfo]
 
 def parse_thor_pools(thor_pools: List[ThorPool]) -> PoolInfoMap:
     return {
-        p.asset: PoolInfo(p.asset,
-                          p.balance_asset_int, p.balance_rune_int,
-                          p.pool_units_int, p.status)
+        p.asset: PoolInfo(
+            p.asset,
+            p.balance_asset_int, p.balance_rune_int,
+            int(p.lp_units), p.status,
+            synth_units=int(p.synth_units),
+            units=int(p.pool_units)
+        )
         for p in thor_pools
     }
 

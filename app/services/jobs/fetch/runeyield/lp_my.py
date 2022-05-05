@@ -479,7 +479,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
     @staticmethod
     def calculate_imp_loss(pool: PoolInfo, liquidity_units: int, r0: float, a0: float) -> float:
-        r1, a1 = pool_share(pool.balance_rune, pool.balance_asset, liquidity_units, pool.pool_units)
+        r1, a1 = pool_share(pool.balance_rune, pool.balance_asset, liquidity_units, pool.units)
         r1, a1 = thor_to_float(r1), thor_to_float(a1)
         coverage = (r0 - r1) + (a0 - a1) * r1 / a1
         return max(0.0, coverage)
@@ -488,7 +488,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
     def calculate_imp_loss_v58(pool: PoolInfo, liquidity_units: int, r0: float, a0: float) -> float:
         # https://gitlab.com/thorchain/thornode/-/blob/develop/x/thorchain/withdraw_v58.go#L176
         # https://gitlab.com/thorchain/thornode/-/merge_requests/1796
-        r1, a1 = pool_share(pool.balance_rune, pool.balance_asset, liquidity_units, pool.pool_units)
+        r1, a1 = pool_share(pool.balance_rune, pool.balance_asset, liquidity_units, pool.units)
         r1, a1 = thor_to_float(r1), thor_to_float(a1)
         if a1 != 0:
             p1 = r1 / a1
@@ -561,6 +561,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
             new_pool_info.balance_rune += float_to_thor(coverage_rune)
             new_pool_info.pool_units += pool_adj.delta_units
+            new_pool_info.units += pool_adj.delta_units
             member_extra_units = pool_adj.delta_units
 
         if member_extra_units == 0 and protection_status in ILProtectionReport.PROTECTED_STATUSES:

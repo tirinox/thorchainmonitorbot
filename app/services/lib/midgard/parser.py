@@ -159,7 +159,7 @@ class MidgardParserV2(MidgardParserBase):
                 asset=asset,
                 balance_asset=int(j.get('assetDepth', 0)),
                 balance_rune=int(j.get('runeDepth', 0)),
-                pool_units=int(j.get('liquidityUnits', 0)),  # todo: or units?
+                pool_units=int(j.get('liquidityUnits', 0)),
                 status=str(j.get('status', '')).lower(),
                 asset_price_rune=float(j.get('assetPrice', 0.0)),
                 asset_price_usd=float(j.get('assetPriceUSD', 0.0)),

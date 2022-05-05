@@ -101,7 +101,7 @@ class PoolPriceFetcher(BaseFetcher):
 
         return {}
 
-    DB_KEY_POOL_INFO_HASH = 'PoolInfo:hashtable'
+    DB_KEY_POOL_INFO_HASH = 'PoolInfo:HashTableV2'
 
     async def _save_to_cache(self, r: Redis, subkey, pool_infos: PoolInfoMap):
         j_pools = json.dumps({key: p.as_dict_brief() for key, p in pool_infos.items()})
@@ -111,8 +111,7 @@ class PoolPriceFetcher(BaseFetcher):
         cached_item = await r.hget(self.DB_KEY_POOL_INFO_HASH, str(subkey))
         if cached_item:
             raw_dict = json.loads(cached_item)
-            pool_infos = {k: PoolInfo.from_dict_brief(it) for k, it in raw_dict.items()}
-            return pool_infos
+            return {k: PoolInfo.from_dict_brief(it) for k, it in raw_dict.items()}
 
     @staticmethod
     def _hash_key_day(dt: datetime):
