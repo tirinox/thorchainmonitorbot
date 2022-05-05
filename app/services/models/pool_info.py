@@ -154,7 +154,7 @@ class LPPosition:
         return cls(
             pool=pool.asset,
             liquidity_units=my_units,
-            liquidity_total=pool.units,
+            liquidity_total=pool.units if pool.units else pool.pool_units,
             rune_balance=thor_to_float(pool.balance_rune),
             asset_balance=thor_to_float(pool.balance_asset),
             usd_per_rune=usd_per_rune,

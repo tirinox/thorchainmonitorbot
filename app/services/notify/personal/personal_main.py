@@ -180,7 +180,7 @@ class NodeChangePersonalNotifier(INotified):
 
             settings = await self.settings_man.get_settings(user)
 
-            if self.settings_man.handle_pause_and_auto_pause(self.deps.broadcaster, user, settings):
+            if await self.settings_man.handle_pause_and_auto_pause(self.deps.broadcaster, user, settings):
                 continue
 
             platform = SettingsManager.get_platform(settings)
