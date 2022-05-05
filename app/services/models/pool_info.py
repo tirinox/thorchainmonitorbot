@@ -104,14 +104,18 @@ class PoolInfo:
         balance_asset = int(j['balance_asset'])
         balance_rune = int(j['balance_rune'])
 
+        pool_units = int(j['pool_units'])
+        units = int(j.get('units', 0)) or pool_units
+
         return cls(
             asset=j['asset'],
             balance_asset=balance_asset,
             balance_rune=balance_rune,
-            pool_units=int(j['pool_units']),
-            units=int(j.get('units', 0)),
+            pool_units=pool_units,
+            units=units,
             synth_units=int(j.get('synth_units', 0)),
-            status=str(j['status']).lower())
+            status=str(j['status']).lower()
+        )
 
     def as_dict_brief(self):
         return {
@@ -170,6 +174,8 @@ class PoolInfoHistoricEntry:
     asset_price: float = 0.0
     asset_price_usd: float = 0.0
     liquidity_units: int = 0
+    synth_units: int = 0
+    units: int = 0
     timestamp: int = 0
 
     def to_pool_info(self, asset) -> PoolInfo:
@@ -178,7 +184,8 @@ class PoolInfoHistoricEntry:
             self.asset_depth,
             self.rune_depth,
             self.liquidity_units,
-            PoolInfo.DEPRECATED_ENABLED
+            PoolInfo.DEPRECATED_ENABLED,
+            units=self.liquidity_units,
         )
 
 

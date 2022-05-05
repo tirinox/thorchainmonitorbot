@@ -101,7 +101,8 @@ class PoolPriceFetcher(BaseFetcher):
 
         return {}
 
-    DB_KEY_POOL_INFO_HASH = 'PoolInfo:HashTableV2'
+    DB_KEY_POOL_INFO_HASH = 'PoolInfo:hashtable'  # holds data before hardfork
+    # DB_KEY_POOL_INFO_HASH = 'PoolInfo:HashTableV2'
 
     async def _save_to_cache(self, r: Redis, subkey, pool_infos: PoolInfoMap):
         j_pools = json.dumps({key: p.as_dict_brief() for key, p in pool_infos.items()})

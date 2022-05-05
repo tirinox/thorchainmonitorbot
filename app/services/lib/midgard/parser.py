@@ -110,7 +110,9 @@ class MidgardParserV2(MidgardParserBase):
             results.append(PoolInfoHistoricEntry(
                 asset_depth=asset_depth,
                 rune_depth=rune_depth,
-                liquidity_units=0,
+                units=int(j.get('units', 0)),  # total liquidity units!
+                synth_units=int(j.get('synthUnits', 0)),
+                liquidity_units=int(j.get('liquidityUnits', 0)),
                 asset_price=asset_price,
                 asset_price_usd=float(j.get('assetPriceUSD', '0')),
                 timestamp=int(j.get('endTime', 0))
