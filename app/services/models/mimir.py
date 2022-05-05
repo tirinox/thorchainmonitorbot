@@ -242,7 +242,7 @@ class MimirHolder:
         'PAUSELPTERRA': 'Pause LP Terra',
         'PAUSELP': 'Pause all LP',
         'STOPFUNDYGGDRASIL': 'Stop Fund Yggdrasil',
-        'STOPSOLVENCYCHECK': 'Stol Solvency Check',
+        'STOPSOLVENCYCHECK': 'Stop Solvency Check',
         'NUMBEROFNEWNODESPERCHURN': 'Number of New Nodes per Churn',
         'MINTSYNTHS': 'Mint Synths',
 
