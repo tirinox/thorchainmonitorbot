@@ -7,6 +7,8 @@ from services.lib.utils import class_logger
 
 
 class TwitterBot:
+    LIMIT_CHARACTERS = 140
+
     def __init__(self, cfg: Config):
         self.cfg = cfg
         keys = cfg.get('twitter.bot')
@@ -34,10 +36,19 @@ class TwitterBot:
     def post_sync(self, text: str):
         if not text:
             return
-        return self.api.update_status(text[:140])
+        if len(text) >= self.LIMIT_CHARACTERS:
+            self.logger.warning(f'Too long text ({len(text)} symbols): "{text}".')
+            text = text[:140]
+
+        return self.api.update_status(text)
 
     async def post(self, text: str, executor=None, loop=None):
         if not text:
             return
         loop = loop or asyncio.get_event_loop()
         return await loop.run_in_executor(executor, self.post_sync, text)
+
+
+class TwitterBotMock(TwitterBot):
+    def post_sync(self, text: str):
+        self.logger.info(f'Says "{text}".')
