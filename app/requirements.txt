@@ -43,6 +43,7 @@ slack-bolt>=1.13.0
 starlette>=0.17.1
 toml==0.10.2
 tqdm==4.62.2
+tweepy>=4.9.0
 typing-extensions==3.10.0.2
 ujson==5.1.0
 urllib3==1.26.8

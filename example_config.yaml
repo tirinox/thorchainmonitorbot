@@ -10,7 +10,7 @@ thor:
   #  "chaosnet-multi" for MCCN
   network_id: "chaosnet-multi"
 
-  node: # (!) new
+  node:
     node_url: "https://thornode.ninerealms.com/"
     rpc_node_url: "https://rpc.ninerealms.com/"
 
@@ -33,7 +33,7 @@ thor:
     - BNB.BUSD-74E  # test
     - TERRA.USD
 
-  circulating_supply: # new (!)
+  circulating_supply:
     # https://docs.etherscan.io/getting-started/creating-an-account
     ether_scan_key: PLEASEPUTANETHERSCANKEYHERE
     cache_time: 10m
@@ -66,17 +66,25 @@ discord:
     token: "token.for.discord.bot"
 
 
-slack: # (!) new!!
+slack:
   enabled: true
   bot:
     app_token: xapp-1234134567
-    client_id: "123.345"  # (!) new!
+    client_id: "123.345"
     client_secret: 1234567890abcdef
     singing_secret: 1234567890abcdef
 
 
+twitter:  # (!) new
+  enabled: true
+  bot:
+    consumer_key: "111"
+    consumer_secret: "222"
+    access_token: "333"
+    access_token_secret: "444"
 
-web:  # (!) new!
+
+web:
   debug: false
   port: 8077
   host: 0.0.0.0
@@ -95,14 +103,14 @@ channels:
     lang: rus
 
 
-node_op_tools:  # (!) new! moved out from the "node_info" section
+node_op_tools:
   enabled: true
 
-  watchdog:  # (!) new
+  watchdog:
     enabled: true
     disconnected_cable_timeout: 20m
   types:
-    chain_height:  # (!) new!
+    chain_height:
       # 'most_common' or 'max' or  'max_committee' (default)
       top_height_estimation_method: 'max_committee'
       min_committee_members: 3
@@ -119,7 +127,6 @@ tx:
   max_page_deep: 5
   max_tx_per_single_message: 6
 
-  # new (!)
   exclamation:
     fee_usd_limit: 3000
     ilp_usd_limit: 5000
@@ -240,7 +247,7 @@ price:
       - CAACAgIAAxkBAAKYJGAxSSC1U9D67zyg-7RJfjkork8EAAKMAAMWQmsKQo7-Yhc9TeIeBA
       - CAACAgIAAxkBAAKYJmAxST6CTOiOStfQ9CH7hqLiv0iWAAL8BgACRvusBG1XSZhZ24v-HgQ
 
-  divergence: # new (!)
+  divergence:
     enabled: true
     normal_is_less: 2
     cooldown: 12h
@@ -334,7 +341,7 @@ node_info:
   geo_ip:
     expire: 48h
 
-  churn: # new (!)
+  churn:
     filter_nonsense: false
 
   version:
