@@ -7,7 +7,7 @@ from services.lib.utils import class_logger
 
 
 class TwitterBot:
-    LIMIT_CHARACTERS = 140
+    LIMIT_CHARACTERS = 280
 
     def __init__(self, cfg: Config):
         self.cfg = cfg
