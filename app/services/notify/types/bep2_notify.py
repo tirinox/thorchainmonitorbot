@@ -1,7 +1,7 @@
 import asyncio
 
 from localization import BaseLocalization
-from services.jobs.fetch.base import INotified
+from services.jobs.fetch.base import INotified, WithDelegates
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds, DAY
 from services.lib.depcont import DepContainer
@@ -10,8 +10,10 @@ from services.models.bep2 import BEP2Transfer, BEP2CEXFlow
 from services.models.time_series import TimeSeries
 
 
-class BEP2MoveNotifier(INotified):
+class BEP2MoveNotifier(INotified, WithDelegates):
     def __init__(self, deps: DepContainer):
+        super().__init__()
+
         self.deps = deps
         self.logger = class_logger(self)
         cfg = deps.cfg.get('bep2')
@@ -27,26 +29,21 @@ class BEP2MoveNotifier(INotified):
         self.tracker = CEXFlowTracker(deps)
 
     async def on_data(self, sender, transfer: BEP2Transfer):
-        rune_price = self.deps.price_holder.usd_per_rune
+        transfer.usd_per_rune = usd_per_rune = self.deps.price_holder.usd_per_rune
 
         asyncio.create_task(self._store_transfer(transfer))
 
-        if transfer.amount * rune_price >= self.min_usd:
+        if transfer.amount * usd_per_rune >= self.min_usd:
             if await self.move_cd.can_do():
-                await self.deps.broadcaster.notify_preconfigured_channels(
-                    BaseLocalization.notification_text_bep2_movement,
-                    transfer, rune_price)
                 await self.move_cd.do()
+                await self.handle_data(transfer)
 
         if await self.summary_cd.can_do():
             notifier: BEP2MoveNotifier = self.deps.bep2_move_notifier
             flow = await notifier.tracker.read_last24h()
-            await self.deps.broadcaster.notify_preconfigured_channels(
-                BaseLocalization.notification_text_cex_flow,
-                flow,
-                self.deps.price_holder.usd_per_rune
-            )
+            flow.usd_per_rune = usd_per_rune
             await self.summary_cd.do()
+            await self.handle_data(flow)
 
     def is_cex(self, addr):
         return addr in self.cex_list

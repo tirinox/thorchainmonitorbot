@@ -10,7 +10,7 @@ from services.dialog.discord.discord_bot import DiscordBot
 from services.dialog.slack.slack_bot import SlackBot
 from services.dialog.telegram.sticker_downloader import TelegramStickerDownloader
 from services.dialog.telegram.telegram import TelegramBot
-from services.dialog.twitter.twitter_bot import TwitterBot
+from services.dialog.twitter.twitter_bot import TwitterBot, TwitterBotMock
 from services.jobs.fetch.bep2_move import BinanceOrgDexWSSClient
 from services.jobs.fetch.cap import CapInfoFetcher
 from services.jobs.fetch.chains import ChainStateFetcher
@@ -36,6 +36,7 @@ from services.lib.utils import setup_logs
 from services.models.mimir import MimirHolder
 from services.models.price import LastPriceHolder
 from services.models.tx import ThorTxType
+from services.notify.alert_presenter import AlertPresenter
 from services.notify.broadcast import Broadcaster
 from services.notify.personal.personal_main import NodeChangePersonalNotifier
 from services.notify.types.bep2_notify import BEP2MoveNotifier
@@ -77,6 +78,8 @@ class App:
 
         d.loc_man = LocalizationManager(d.cfg)
         d.broadcaster = Broadcaster(d)
+        d.alert_presenter = AlertPresenter(d.broadcaster)
+
         d.telegram_bot = TelegramBot(d.cfg, d.db, d.loop)
         init_dialogs(d)
 
@@ -251,6 +254,7 @@ class App:
             fetcher_bep2 = BinanceOrgDexWSSClient()
             d.bep2_move_notifier = BEP2MoveNotifier(d)
             fetcher_bep2.subscribe(d.bep2_move_notifier)
+            d.bep2_move_notifier.subscribe(d.alert_presenter)
             tasks.append(fetcher_bep2)
 
         # --- BOTS
@@ -266,7 +270,8 @@ class App:
             d.slack_bot.start_in_background()
 
         if d.cfg.get('twitter.enabled', False):
-            d.twitter_bot = TwitterBot(d.cfg)
+            # d.twitter_bot = TwitterBot(d.cfg)
+            d.twitter_bot = TwitterBotMock(d.cfg)
 
         self.deps.is_loading = False
         await asyncio.gather(*(task.run() for task in tasks))

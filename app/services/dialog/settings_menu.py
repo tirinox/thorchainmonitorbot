@@ -2,6 +2,7 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import *
 from aiogram.utils.helper import HelperMode
 
+from localization.languages import Language
 from services.dialog.node_op_menu import NodeOpDialog
 from services.lib.texts import kbd
 from services.dialog.base import BaseDialog, message_handler
@@ -26,9 +27,9 @@ class SettingsDialog(BaseDialog):
     async def on_asked_language(self, message: Message):
         t = message.text
         if t == self.loc.BUTTON_ENG:
-            lang = 'eng'
+            lang = Language.ENGLISH
         elif t == self.loc.BUTTON_RUS:
-            lang = 'rus'
+            lang = Language.RUSSIAN
         else:
             return False
 

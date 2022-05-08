@@ -19,6 +19,7 @@ from services.models.mimir import MimirHolder
 from services.models.node_info import NodeListHolder
 from services.models.price import LastPriceHolder
 from services.models.queue import QueueInfo
+from services.notify.channel import Messengers
 
 
 @dataclass
@@ -28,6 +29,7 @@ class DepContainer:
     loop: Optional[asyncio.BaseEventLoop] = None
     loc_man = None  # type: 'LocalizationManager'
     broadcaster = None  # type: 'Broadcaster'
+    alert_presenter = None
 
     session: Optional[ClientSession] = None
 
@@ -35,7 +37,6 @@ class DepContainer:
     midgard_connector: Optional[MidgardConnector] = None
 
     rune_market_fetcher = None  # type: 'RuneMarketInfoFetcher'
-
 
     price_pool_fetcher = None  # type: 'PoolPriceFetcher'
     node_info_fetcher = None  # type: 'NodeInfoFetcher'
@@ -71,4 +72,10 @@ class DepContainer:
             timeout=ClientTimeout(total=session_timeout))
         logging.info(f'HTTP Session timeout is {session_timeout} sec')
 
-
+    def get_messenger(self, t: str):
+        return {
+            Messengers.TELEGRAM: self.telegram_bot,
+            Messengers.TWITTER: self.twitter_bot,
+            Messengers.SLACK: self.slack_bot,
+            Messengers.DISCORD: self.discord_bot,
+        }.get(t)

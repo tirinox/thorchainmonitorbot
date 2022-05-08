@@ -1,12 +1,11 @@
 import asyncio
-import logging
 import random
 import time
 from typing import List
 
 from localization import LocalizationManager
 from services.lib.depcont import DepContainer
-from services.lib.utils import copy_photo
+from services.lib.utils import copy_photo, class_logger
 from services.notify.channel import Messengers, ChannelDescriptor, CHANNEL_INACTIVE, MessageType, BoardMessage
 from services.notify.user_registry import UserRegistry
 
@@ -19,7 +18,7 @@ class Broadcaster:
 
         self._broadcast_lock = asyncio.Lock()
         self._rng = random.Random(time.time())
-        self.logger = logging.getLogger('broadcast')
+        self.logger = class_logger(self)
         self.channels = list(ChannelDescriptor.from_json(j) for j in self.deps.cfg.get_pure('channels'))
         self.channels_inactive = set()
 
@@ -66,33 +65,23 @@ class Broadcaster:
 
     async def safe_send_message(self, channel_info: ChannelDescriptor,
                                 text, message_type=MessageType.TEXT, *args, **kwargs) -> bool:
-        channel_id = channel_info.channel_id
-        result = False
-        if channel_info.type == Messengers.TELEGRAM:
-            if self.deps.telegram_bot:
-                result = await self.deps.telegram_bot.safe_send_message(channel_id, text, message_type, *args, **kwargs)
-            else:
-                self.logger.error('Telegram bot is disabled!')
-        elif channel_info.type == Messengers.DISCORD:
-            if self.deps.discord_bot:
-                result = await self.deps.discord_bot.safe_send_message(channel_id, text, message_type, **kwargs)
-            else:
-                self.logger.error('Discord bot is disabled!')
-        elif channel_info.type == Messengers.SLACK:
-            if self.deps.slack_bot:
-                result = await self.deps.slack_bot.safe_send_message(channel_id, text, message_type, **kwargs)
-            else:
-                self.logger.error('Slack bot is disabled!')
-        elif channel_info.type == Messengers.TWITTER:
-            raise NotImplemented  # todo!
-        else:
+
+        if channel_info.type not in Messengers.SUPPORTED:
             self.logger.error(f'Unsupported channel type: {channel_info.type}!')
+            return False
+        else:
+            result = False
+            channel_id = channel_info.channel_id
+            messenger = self.deps.get_messenger(channel_info.type)
+            if messenger is not None:
+                result = await messenger.safe_send_message(channel_id, text, message_type, *args, **kwargs)
+                if result == CHANNEL_INACTIVE:
+                    self.logger.info(f'{channel_info} became inactive!')
+                    self.channels_inactive.add(channel_info.channel_id)
+            else:
+                self.logger.error(f'{channel_info.type} bot is disabled!')
 
-        if result == CHANNEL_INACTIVE:
-            self.logger.info(f'{channel_info} became inactive!')
-            self.channels_inactive.add(channel_info.channel_id)
-
-        return result
+            return result
 
     async def broadcast(self, channels: List[ChannelDescriptor], message, delay=0.075,
                         message_type=MessageType.TEXT, remove_bad_users=False,

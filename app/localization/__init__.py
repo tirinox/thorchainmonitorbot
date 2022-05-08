@@ -1,8 +1,10 @@
-from services.lib.config import Config
-from services.lib.db import DB
 from localization.base import BaseLocalization
 from localization.eng import EnglishLocalization
+from localization.languages import Language
 from localization.rus import RussianLocalization
+from localization.twitter_eng import TwitterEnglishLocalization
+from services.lib.config import Config
+from services.lib.db import DB
 from services.lib.utils import Singleton
 
 
@@ -11,8 +13,9 @@ class LocalizationManager(metaclass=Singleton):
         self.config = cfg
         self.default = EnglishLocalization(cfg)
         self._langs = {
-            'rus': RussianLocalization(cfg),
-            'eng': self.default
+            Language.RUSSIAN: RussianLocalization(cfg),
+            Language.ENGLISH: self.default,
+            Language.ENGLISH_TWITTER: TwitterEnglishLocalization(cfg),
         }
 
     def get_from_lang(self, lang) -> BaseLocalization:

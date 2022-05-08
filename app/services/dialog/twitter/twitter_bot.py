@@ -3,7 +3,8 @@ import asyncio
 import tweepy
 
 from services.lib.config import Config
-from services.lib.utils import class_logger
+from services.lib.utils import class_logger, sep
+from services.notify.channel import MessageType
 
 
 class TwitterBot:
@@ -38,7 +39,7 @@ class TwitterBot:
             return
         if len(text) >= self.LIMIT_CHARACTERS:
             self.logger.warning(f'Too long text ({len(text)} symbols): "{text}".')
-            text = text[:140]
+            text = text[:self.LIMIT_CHARACTERS]
 
         return self.api.update_status(text)
 
@@ -48,7 +49,17 @@ class TwitterBot:
         loop = loop or asyncio.get_event_loop()
         return await loop.run_in_executor(executor, self.post_sync, text)
 
+    async def safe_send_message(self, chat_id, text, message_type=MessageType.TEXT, **kwargs) -> bool:
+        if message_type == MessageType.TEXT:
+            await self.post(text)  # Chat_id is not supported yet... only one single channel
+        else:
+            self.logger.error('Image uploading is not implemented. Yet.')  # todo: image uploading
+            return False
+        return True
+
 
 class TwitterBotMock(TwitterBot):
     def post_sync(self, text: str):
-        self.logger.info(f'Says "{text}".')
+        sep()
+        self.logger.info(f'🐦🐦🐦 Tweets: "{text}". 🐦🐦🐦')
+        sep()

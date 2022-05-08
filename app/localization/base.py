@@ -1680,8 +1680,8 @@ class BaseLocalization(ABC):  # == English
         caption = known_addresses.get(addr, short_address(addr))
         return link(url, caption)
 
-    def notification_text_bep2_movement(self, transfer: BEP2Transfer, rune_price: float):
-        usd_amt = transfer.amount * rune_price
+    def notification_text_bep2_movement(self, transfer: BEP2Transfer):
+        usd_amt = transfer.amount * transfer.usd_per_rune
         from_link, to_link = self.link_to_bep2(transfer.from_addr), self.link_to_bep2(transfer.to_addr)
         pf = ' ' + BNB_RUNE_SYMBOL
         tf_link = get_explorer_url_to_tx(self.cfg.network_id, Chains.BNB, transfer.tx_hash)
@@ -1689,14 +1689,14 @@ class BaseLocalization(ABC):  # == English
                 f'{pre(short_money(transfer.amount, postfix=pf))} ({ital(short_dollar(usd_amt))}) '
                 f'from {from_link} ➡️ to {to_link}.')
 
-    def notification_text_cex_flow(self, bep2flow: BEP2CEXFlow, rune_price: float):
+    def notification_text_cex_flow(self, bep2flow: BEP2CEXFlow):
         return (f'🌬️ <b>BEP2.Rune CEX flow last 24 hours</b>\n'
                 f'Inflow: {pre(short_money(bep2flow.rune_cex_inflow, postfix=RAIDO_GLYPH))} '
-                f'({short_dollar(bep2flow.rune_cex_inflow * rune_price)})\n'
+                f'({short_dollar(bep2flow.in_usd)})\n'
                 f'Outflow: {pre(short_money(bep2flow.rune_cex_outflow, postfix=RAIDO_GLYPH))} '
-                f'({short_dollar(bep2flow.rune_cex_outflow * rune_price)})\n'
+                f'({short_dollar(bep2flow.out_usd)})\n'
                 f'Netflow: {pre(short_money(bep2flow.rune_cex_netflow, postfix=RAIDO_GLYPH))} '
-                f'({short_dollar(bep2flow.rune_cex_netflow * rune_price)})')
+                f'({short_dollar(bep2flow.netflow_usd)})')
 
     # ----- SUPPLY ------
 

@@ -65,26 +65,26 @@ class GenericTxNotifier(INotified):
 
         if not large_txs:
             return
+
         self.logger.info(f"large_txs: {len(large_txs)}")
 
-        if large_txs:
-            cap_info = await LiquidityCapNotifier(self.deps).get_last_cap()
+        cap_info = await LiquidityCapNotifier(self.deps).get_last_cap()
 
-            async def message_gen(loc: BaseLocalization):
-                texts = []
-                has_liquidity = False
-                for tx in large_txs:
-                    if tx.type in (ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_ADD_LIQUIDITY):
-                        has_liquidity = True
-                    pool_info = self.deps.price_holder.pool_info_map.get(tx.first_pool)
+        async def message_gen(loc: BaseLocalization):
+            texts = []
+            has_liquidity = False
+            for tx in large_txs:
+                if tx.type in (ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_ADD_LIQUIDITY):
+                    has_liquidity = True
+                pool_info = self.deps.price_holder.pool_info_map.get(tx.first_pool)
 
-                    # append it only to the last one (if has liquidity change TXS)
-                    cap_info_last = cap_info if (tx == large_txs[-1] and has_liquidity) else None
+                # append it only to the last one (if has liquidity change TXS)
+                cap_info_last = cap_info if (tx == large_txs[-1] and has_liquidity) else None
 
-                    texts.append(loc.notification_text_large_tx(tx, usd_per_rune, pool_info, cap_info_last))
-                return '\n\n'.join(texts)
+                texts.append(loc.notification_text_large_tx(tx, usd_per_rune, pool_info, cap_info_last))
+            return '\n\n'.join(texts)
 
-            await self.deps.broadcaster.notify_preconfigured_channels(message_gen)
+        await self.deps.broadcaster.notify_preconfigured_channels(message_gen)
 
     def _get_min_usd_depth(self, tx: ThorTxExtended, usd_per_rune):
         pools = tx.pools
@@ -110,6 +110,7 @@ class GenericTxNotifier(INotified):
                 min_pool_percent = self.curve_for_tx_threshold(self.curve, pool_usd_depth)
                 min_share_rune_volume = pool_usd_depth / usd_per_rune * min_pool_percent * 0.01
 
+            # todo: pass filter if big IL payout / Slip / other unusual things
             if tx.full_rune >= min_rune_volume and tx.full_rune >= min_share_rune_volume:
                 yield tx
 

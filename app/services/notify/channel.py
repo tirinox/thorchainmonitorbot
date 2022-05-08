@@ -2,6 +2,8 @@ import typing
 from dataclasses import dataclass
 from enum import Enum
 
+from localization.languages import Language
+
 CHANNEL_INACTIVE = 'channel_inactive'
 
 
@@ -39,7 +41,7 @@ class Messengers:
 class ChannelDescriptor(typing.NamedTuple):
     type: str  # aka Messenger
     name: str
-    lang: str = 'eng'
+    lang: str = Language.ENGLISH
 
     @classmethod
     def from_json(cls, j):
@@ -49,7 +51,7 @@ class ChannelDescriptor(typing.NamedTuple):
         return cls(
             channel_type,
             j.get('name', ''),
-            j.get('lang', 'eng'),
+            j.get('lang', Language.ENGLISH),
         )
 
     @property
