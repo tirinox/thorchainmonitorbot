@@ -4,7 +4,7 @@ from aiogram import Bot
 from aiogram.types import ParseMode
 
 from services.lib.config import Config
-from services.lib.telegram import TelegramStickerDownloader
+from services.dialog.telegram.sticker_downloader import TelegramStickerDownloader
 
 
 async def primitive(sticker_id, bot):

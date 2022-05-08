@@ -40,6 +40,5 @@ def init_dialogs(d: DepContainer):
         logging.info('NodeOpDialog is enabled.')
         NodeOpDialog.register(d, mm, mm.entry_point)
 
-    d.dp.register_message_handler(sticker_handler, content_types=ContentTypes.STICKER, state='*')
-
-    d.dp.register_message_handler(unhandled_handler, content_types=ContentTypes.TEXT, state='*')
+    d.telegram_bot.dp.register_message_handler(sticker_handler, content_types=ContentTypes.STICKER, state='*')
+    d.telegram_bot.dp.register_message_handler(unhandled_handler, content_types=ContentTypes.TEXT, state='*')

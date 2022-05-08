@@ -12,6 +12,8 @@ class BEP2Transfer(NamedTuple):
 class BEP2CEXFlow(NamedTuple):
     rune_cex_inflow: float
     rune_cex_outflow: float
+    total_transfers: int
+    overflow: bool = False
 
     @property
     def rune_cex_netflow(self):

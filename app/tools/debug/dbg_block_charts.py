@@ -67,7 +67,7 @@ async def my_test_tg_message(app: LpAppFramework):
 
         points = await block_not.get_block_time_chart(DAY * 2, convert_to_blocks_per_minute=True)
         chart = await block_speed_chart(points, loc, normal_bpm=THOR_BLOCKS_PER_MINUTE, time_scale_mode='time')
-        await app.deps.bot.send_photo(TG_TEST_USER, chart, caption=text)
+        await app.deps.telegram_bot.bot.send_photo(TG_TEST_USER, chart, caption=text)
 
         await app.send_test_tg_message(loc.notification_text_block_stuck(False, 10000))
 

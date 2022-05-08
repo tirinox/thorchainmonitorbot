@@ -1,13 +1,10 @@
 import asyncio
 import logging
 
-import aiohttp
-from aiogram import Bot, Dispatcher
-from aiogram.types import ParseMode
-from aiohttp import ClientTimeout
 from aiothornode.connector import ThorConnector
 
 from localization import LocalizationManager
+from services.dialog.telegram.telegram import telegram_send_message_basic, TG_TEST_USER, TelegramBot
 from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher
@@ -17,7 +14,6 @@ from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.midgard.connector import MidgardConnector
 from services.lib.settings_manager import SettingsManager
-from services.lib.telegram import telegram_send_message_basic, TG_TEST_USER
 from services.lib.utils import setup_logs
 from services.models.mimir import MimirHolder
 from services.notify.broadcast import Broadcaster
@@ -35,8 +31,7 @@ class LpAppFramework:
         d.db = DB(d.loop)
         d.settings_manager = SettingsManager(d.db, d.cfg)
 
-        d.bot = Bot(token=d.cfg.telegram.bot.token, parse_mode=ParseMode.HTML)
-        d.dp = Dispatcher(d.bot, loop=d.loop)
+        d.telegram_bot = TelegramBot(d.cfg, d.db, d.loop)
         d.broadcaster = Broadcaster(d)
 
         d.price_pool_fetcher = PoolPriceFetcher(d)

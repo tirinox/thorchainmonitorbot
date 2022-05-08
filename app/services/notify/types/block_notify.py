@@ -11,7 +11,7 @@ from services.lib.constants import THOR_BLOCK_SPEED, THOR_BLOCKS_PER_MINUTE
 from services.lib.cooldown import Cooldown, CooldownBiTrigger, INFINITE_TIME
 from services.lib.date_utils import DAY, parse_timespan_to_seconds, now_ts, format_time_ago_short, MINUTE
 from services.lib.depcont import DepContainer
-from services.lib.texts import BoardMessage
+from services.notify.channel import BoardMessage
 from services.lib.utils import class_logger
 from services.models.last_block import BlockSpeed
 from services.models.time_series import TimeSeries

@@ -1,15 +1,38 @@
 import typing
+from dataclasses import dataclass
+from enum import Enum
+
+CHANNEL_INACTIVE = 'channel_inactive'
+
+
+class MessageType(Enum):
+    TEXT = 'text'
+    STICKER = 'sticker'
+    PHOTO = 'photo'
+
+
+@dataclass
+class BoardMessage:
+    text: str
+    message_type: MessageType = MessageType.TEXT
+    photo: str = None
+
+    @classmethod
+    def make_photo(cls, photo, caption=''):
+        return cls(caption, MessageType.PHOTO, photo)
 
 
 class Messengers:
     TELEGRAM = 'telegram'
     SLACK = 'slack'
     DISCORD = 'discord'
+    TWITTER = 'twitter'
 
     SUPPORTED = [
         TELEGRAM,
         SLACK,
-        DISCORD
+        DISCORD,
+        TWITTER,
     ]
 
 

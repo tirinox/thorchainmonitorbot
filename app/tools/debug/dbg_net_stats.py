@@ -56,17 +56,6 @@ async def print_message(old_info: NetworkStats, new_info: NetworkStats, deps: De
     print('-' * 100)
     print(message)
 
-    if not DRY_RUN and post_tg:
-        deps.loop = asyncio.get_event_loop()
-        deps.bot = Bot(token=deps.cfg.telegram.bot.token, parse_mode=ParseMode.HTML)
-        deps.dp = Dispatcher(deps.bot, loop=deps.loop)
-        deps.broadcaster = Broadcaster(deps)
-
-        await deps.broadcaster.notify_preconfigured_channels(
-            loc.notification_text_network_summary,
-            old_info, new_info)
-        await asyncio.sleep(1.0)
-
 
 def get_info_pair_for_test(new_info: NetworkStats) -> (NetworkStats, NetworkStats):
     old_info = copy(new_info)

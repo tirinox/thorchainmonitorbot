@@ -122,14 +122,14 @@ class BaseDialog(ABC):
     @staticmethod
     async def if_loading_please_wait(deps: DepContainer, loc: BaseLocalization, user):
         if deps.is_loading:
-            await deps.bot.send_message(user, loc.BOT_LOADING, disable_notification=True)
+            await deps.telegram_bot.safe_send_message(user, loc.BOT_LOADING, disable_notification=True)
             return True
 
     @classmethod
     def register_query_handler(cls, d: DepContainer, f, name):
         query_stuff = f.query_stuff
 
-        @d.dp.callback_query_handler(*query_stuff['custom_filters'], state=query_stuff['state'])
+        @d.telegram_bot.dp.callback_query_handler(*query_stuff['custom_filters'], state=query_stuff['state'])
         @bot_query_error_guard
         async def handler(query: CallbackQuery, state: FSMContext, that_name=name):  # name=name important!!
             logger.info({
@@ -149,7 +149,7 @@ class BaseDialog(ABC):
     def register_inline_bot_handler(cls, d: DepContainer, f, name):
         inline_bot_stuff = f.inline_bot_stuff
 
-        @d.dp.inline_handler(*inline_bot_stuff['custom_filters'], state='*')
+        @d.telegram_bot.dp.inline_handler(*inline_bot_stuff['custom_filters'], state='*')
         async def handler(inline_query: InlineQuery, that_name=name):  # name=name important!!
             try:
                 logger.info({
@@ -174,10 +174,10 @@ class BaseDialog(ABC):
                 logger.exception(f'Inline bot query exception! {e}')
 
     @classmethod
-    def register_handler(cls, d, f, name):
+    def register_handler(cls, d: DepContainer, f, name):
         handler_stuff = f.handler_stuff
 
-        @d.dp.message_handler(*handler_stuff['custom_filters'],
+        @d.telegram_bot.dp.message_handler(*handler_stuff['custom_filters'],
                               commands=handler_stuff['commands'],
                               state=handler_stuff['state'],
                               regexp=handler_stuff['regexp'],

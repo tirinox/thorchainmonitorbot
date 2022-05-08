@@ -2,14 +2,15 @@ import asyncio
 import logging
 import os
 
-from aiogram import Bot, Dispatcher, executor
-from aiogram.types import *
 from aiothornode.connector import ThorConnector
 
 from localization import LocalizationManager
 from services.dialog import init_dialogs
 from services.dialog.discord.discord_bot import DiscordBot
 from services.dialog.slack.slack_bot import SlackBot
+from services.dialog.telegram.sticker_downloader import TelegramStickerDownloader
+from services.dialog.telegram.telegram import TelegramBot
+from services.dialog.twitter.twitter_bot import TwitterBot
 from services.jobs.fetch.bep2_move import BinanceOrgDexWSSClient
 from services.jobs.fetch.cap import CapInfoFetcher
 from services.jobs.fetch.chains import ChainStateFetcher
@@ -64,6 +65,7 @@ class App:
         log_level = d.cfg.get_pure('log_level', logging.INFO)
         setup_logs(log_level)
 
+        # todo: ART logo
         logging.info(f'Starting THORChainMonitoringBot for "{d.cfg.network_id}".')
 
         d.price_holder.load_stable_coins(d.cfg)
@@ -73,19 +75,10 @@ class App:
         d.price_holder = LastPriceHolder()
         d.settings_manager = SettingsManager(d.db, d.cfg)
 
-    def create_bot_stuff(self):
-        d = self.deps
-
-        d.bot = Bot(token=d.cfg.telegram.bot.token, parse_mode=ParseMode.HTML)
-        d.dp = Dispatcher(d.bot, loop=d.loop)
         d.loc_man = LocalizationManager(d.cfg)
         d.broadcaster = Broadcaster(d)
-
+        d.telegram_bot = TelegramBot(d.cfg, d.db, d.loop)
         init_dialogs(d)
-
-    async def connect_chat_storage(self):
-        if self.deps.dp:
-            self.deps.dp.storage = await self.deps.db.get_storage()
 
     async def create_thor_node_connector(self):
         d = self.deps
@@ -254,34 +247,32 @@ class App:
             voting_notifier = VotingNotifier(d)
             fetcher_mimir.subscribe(voting_notifier)
 
-        if d.cfg.get('discord.enabled', False):
-            d.discord_bot = DiscordBot(d.cfg)
-            d.discord_bot.start_in_background()
-
-        if d.cfg.get('slack.enabled', False):
-            d.slack_bot = SlackBot(d.cfg, d.db, d.settings_manager)
-            d.slack_bot.start_in_background()
-
         if d.cfg.get('bep2.enabled', True):
             fetcher_bep2 = BinanceOrgDexWSSClient()
             d.bep2_move_notifier = BEP2MoveNotifier(d)
             fetcher_bep2.subscribe(d.bep2_move_notifier)
             tasks.append(fetcher_bep2)
 
-        # fixme: debug
-        # await self.deps.broadcaster.notify_preconfigured_channels('Test')
-        # await self.deps.broadcaster.notify_preconfigured_channels('Test-2')
-        # fixme: debug ---
+        # --- BOTS
+
+        sticker_downloader = TelegramStickerDownloader(d.telegram_bot.dp)
+
+        if d.cfg.get('discord.enabled', False):
+            d.discord_bot = DiscordBot(d.cfg, sticker_downloader)
+            d.discord_bot.start_in_background()
+
+        if d.cfg.get('slack.enabled', False):
+            d.slack_bot = SlackBot(d.cfg, d.db, d.settings_manager, sticker_downloader)
+            d.slack_bot.start_in_background()
+
+        if d.cfg.get('twitter.enabled', False):
+            d.twitter_bot = TwitterBot(d.cfg)
 
         self.deps.is_loading = False
         await asyncio.gather(*(task.run() for task in tasks))
 
     async def on_startup(self, _):
-        self.deps.is_loading = True
-
         self.deps.make_http_session()  # it is must be inside a coroutine!
-
-        await self.connect_chat_storage()
         await self.create_thor_node_connector()
 
         asyncio.create_task(self._run_background_jobs())
@@ -290,10 +281,7 @@ class App:
         await self.deps.session.close()
 
     def run_bot(self):
-        self.create_bot_stuff()
-        executor.start_polling(self.deps.dp, skip_updates=True,
-                               on_startup=self.on_startup,
-                               on_shutdown=self.on_shutdown)
+        self.deps.telegram_bot.run(on_startup=self.on_startup, on_shutdown=self.on_shutdown)
 
 
 if __name__ == '__main__':

@@ -9,7 +9,7 @@ from services.lib.cooldown import CooldownSingle
 from services.lib.date_utils import MINUTE, HOUR, DAY, parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.money import pretty_money, calc_percent_change
-from services.lib.texts import MessageType, BoardMessage
+from services.notify.channel import MessageType, BoardMessage
 from services.lib.utils import make_stickers_iterator, class_logger
 from services.models.price import RuneMarketInfo, PriceReport, PriceATH
 from services.models.time_series import PriceTimeSeries

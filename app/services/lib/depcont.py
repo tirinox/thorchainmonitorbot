@@ -5,11 +5,12 @@ from typing import Optional, Set, Dict
 
 import aiohttp
 import ujson
-from aiogram import Bot, Dispatcher
 from aiohttp import ClientSession, ClientTimeout
 from aiothornode.connector import ThorConnector
 from aiothornode.types import ThorChainInfo
 
+from services.dialog.telegram.telegram import TelegramBot
+from services.dialog.twitter.twitter_bot import TwitterBot
 from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.midgard.connector import MidgardConnector
@@ -25,19 +26,16 @@ class DepContainer:
     cfg: Optional[Config] = None
     db: Optional[DB] = None
     loop: Optional[asyncio.BaseEventLoop] = None
+    loc_man = None  # type: 'LocalizationManager'
+    broadcaster = None  # type: 'Broadcaster'
 
     session: Optional[ClientSession] = None
-
-    bot: Optional[Bot] = None
-    dp: Optional[Dispatcher] = None
 
     thor_connector: Optional[ThorConnector] = None
     midgard_connector: Optional[MidgardConnector] = None
 
     rune_market_fetcher = None  # type: 'RuneMarketInfoFetcher'
 
-    loc_man = None  # type: 'LocalizationManager'
-    broadcaster = None  # type: 'Broadcaster'
 
     price_pool_fetcher = None  # type: 'PoolPriceFetcher'
     node_info_fetcher = None  # type: 'NodeInfoFetcher'
@@ -48,8 +46,10 @@ class DepContainer:
     best_pools_notifier = None  # type: 'BestPoolsNotifier'
     bep2_move_notifier = None  # type: 'BEP2MoveNotifier'
 
+    telegram_bot: Optional[TelegramBot] = None
     discord_bot = None
     slack_bot = None
+    twitter_bot: Optional[TwitterBot] = None
 
     # shared data holders
 
@@ -62,7 +62,7 @@ class DepContainer:
 
     settings_manager: Optional[SettingsManager] = None
 
-    is_loading = True
+    is_loading: bool = True
 
     def make_http_session(self):
         session_timeout = float(self.cfg.get('thor.timeout', 2.0))

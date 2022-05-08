@@ -7,7 +7,7 @@ from services.jobs.fetch.queue import QueueInfo
 from services.lib.cooldown import CooldownBiTrigger
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
-from services.lib.texts import BoardMessage
+from services.notify.channel import BoardMessage
 from services.lib.utils import class_logger
 from services.models.time_series import TimeSeries
 

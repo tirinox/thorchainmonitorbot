@@ -173,11 +173,11 @@ class InlineBotHandlerDialog(BaseDialog):
 
     async def _answer_results(self, inline_query, items):
         ct = self.cache_time(self.deps.cfg)
-        await self.deps.bot.answer_inline_query(inline_query.id, results=items, cache_time=ct)
+        await self.deps.telegram_bot.bot.answer_inline_query(inline_query.id, results=items, cache_time=ct)
 
     async def _answer_photo(self, inline_query, photo, title, ident):
         buffer_chat_id = self.deps.cfg.telegram.buffer_chat
-        upload = await self.deps.bot.send_photo(buffer_chat_id, photo, disable_notification=True)
+        upload = await self.deps.telegram_bot.bot.send_photo(buffer_chat_id, photo, disable_notification=True)
 
         original_id = upload.photo[-1].file_id
 

@@ -3,7 +3,7 @@ import json
 from localization import BaseLocalization
 from services.jobs.fetch.base import INotified
 from services.lib.depcont import DepContainer
-from services.lib.texts import MessageType
+from services.notify.channel import MessageType
 from services.lib.utils import make_stickers_iterator, class_logger
 from services.models.cap_info import ThorCapInfo
 
