@@ -1,3 +1,5 @@
+import asyncio
+
 from services.jobs.fetch.base import BaseFetcher, WithDelegates
 from services.lib.constants import BNB_RUNE_SYMBOL_NO_CHAIN
 from services.lib.date_utils import parse_timespan_to_seconds, now_ts
@@ -46,6 +48,8 @@ class BinanceOrgDexWSSClient(WSClient, WithDelegates):
         return now_ts() - self.last_message_ts
 
     async def handle_wss_message(self, j):
+        # await self._dbg_later()
+
         for tx in j:
             if tx.get('txType') == BEP2_TRANSFER and tx.get('txAsset') == BNB_RUNE_SYMBOL_NO_CHAIN:
                 self.logger.info(f'Transfer message: {tx}')
@@ -59,3 +63,13 @@ class BinanceOrgDexWSSClient(WSClient, WithDelegates):
 
     async def on_connected(self):
         self.logger.info('Connected to Binance.org.')
+
+    async def _dbg_later(self):
+        await self.handle_data(BEP2Transfer(
+            'bnb1u2agwjat20494fmc6jnuau0ls937cfjn4pjwtn',
+            'bnb13q87ekxvvte78t2q7z05lzfethnlht5agfh4ur',
+            10000,
+            '12345',
+            4310.0,
+            5.5,
+        ))

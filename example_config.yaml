@@ -101,6 +101,8 @@ channels:
   - type: discord
     name: 322323232323  # channel ID
     lang: rus
+  - type: twitter
+    lang: eng-tw
 
 
 node_op_tools:

@@ -1,6 +1,5 @@
 import asyncio
 
-from localization import BaseLocalization
 from services.jobs.fetch.base import INotified, WithDelegates
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds, DAY

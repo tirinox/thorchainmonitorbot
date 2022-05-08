@@ -26,8 +26,8 @@ class Broadcaster:
         if ch:
             self.channels_inactive.remove(ch)
 
-    def get_channels(self, chan_type):
-        return [c for c in self.channels if c.type == chan_type]
+    def get_channels(self, channel_type):
+        return [c for c in self.channels if c.type == channel_type]
 
     async def get_subscribed_channels(self):
         return await self.deps.settings_manager.get_general_alerts_channels(self)

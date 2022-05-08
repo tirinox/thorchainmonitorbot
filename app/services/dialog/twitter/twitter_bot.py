@@ -60,6 +60,4 @@ class TwitterBot:
 
 class TwitterBotMock(TwitterBot):
     def post_sync(self, text: str):
-        sep()
         self.logger.info(f'🐦🐦🐦 Tweets: "{text}". 🐦🐦🐦')
-        sep()
