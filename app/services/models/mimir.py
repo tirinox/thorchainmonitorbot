@@ -172,7 +172,10 @@ class MimirHolder:
         ]
     }
 
-    EXCLUDED_VOTE_KEYS = ['TEST']
+    EXCLUDED_VOTE_KEYS = [
+        'TEST',
+        'SUPPORTTHORCHAINDOTNETWORK',
+    ]
 
     RUNE_CONSTANTS = {
         name.upper() for name in [
@@ -207,6 +210,9 @@ class MimirHolder:
         'HALTDOGETRADING',
         'HALTTERRACHAIN',
         'HALTTERRATRADING',
+
+        'HALTHAVENCHAIN',
+
         'HALTCHURNING',
         "HALTTRADING",
         "MINTSYNTHS",
@@ -281,6 +287,13 @@ class MimirHolder:
         'HALTSIGNINGTERRA': 'Halt Terra Signing',
         'SOLVENCYHALTTERRACHAIN': 'Solvency Halt Terra Chain',
 
+        'HALTHAVENCHAIN': 'Halt Haven Chain',  # unconfirmed!
+
+        'HALTGAIACHAIN': 'Halt Atom Chain',
+        'HALTGAIATRADING': 'Halt Atom Trading',
+        'HALTSIGNINGGAIA': 'Halt Atom Signing',
+        'SOLVENCYHALTGAIACHAIN': 'Solvency Halt Atom Chain',
+
         'HALTTHORCHAIN': 'Halt ThorChain',
         'HALTTRADING': 'Halt All Trading',
 
@@ -309,6 +322,9 @@ class MimirHolder:
         'MAXNODETOCHURNOUTFORLOWVERSION': 'Max Node To Churn Out For Low Version',
 
         'CLOUDPROVIDERLIMIT': 'Cloud Provider Limit',
+
+        'DESIREDMAXVALIDATORSET': 'Desired Max Validator Set',
+        'DESIREDVALIDATORSET': 'Desired Validator Set',
     }
 
     EXTRA_HALT_REASONS = [
