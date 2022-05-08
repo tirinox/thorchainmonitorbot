@@ -314,7 +314,8 @@ class MetricsDialog(BaseDialog):
     async def show_cex_flow(self, message: Message):
         notifier: BEP2MoveNotifier = self.deps.bep2_move_notifier
         flow = await notifier.tracker.read_last24h()
-        text = self.loc.notification_text_cex_flow(flow, self.deps.price_holder.usd_per_rune)
+        flow.usd_per_rune = self.deps.price_holder.usd_per_rune
+        text = self.loc.notification_text_cex_flow(flow)
         await message.answer(text, disable_notification=True)
 
     async def show_rune_supply(self, message: Message):
