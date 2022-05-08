@@ -77,9 +77,10 @@ class CEXFlowTracker:
         await self.series.trim_oldest(self.MAX_POINTS)
 
     async def read_last24h(self) -> BEP2CEXFlow:
-        points = await self.series.get_last_values_json(DAY, max_points=100_000)
+        points = await self.series.get_last_values_json(DAY, max_points=self.MAX_POINTS)
         inflow, outflow = 0.0, 0.0
         for p in points:
             inflow += float(p['in'])
             outflow += float(p['out'])
-        return BEP2CEXFlow(inflow, outflow)
+        overflow = len(points) >= self.MAX_POINTS
+        return BEP2CEXFlow(inflow, outflow, len(points), overflow)
