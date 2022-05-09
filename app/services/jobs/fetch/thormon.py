@@ -52,7 +52,7 @@ class ThorMonWSSClient(WSClient, WithDelegates):
             answer = ThorMonAnswer.from_json(message)
             if answer.nodes:
                 self.logger.debug(f'Got WSS message. {len(answer.nodes)}, {answer.last_block = }')
-                await self.handle_data(answer)
+                await self.pass_data_to_listeners(answer)
         else:
             self.logger.debug(f'Other message: {message}')
 

@@ -1,5 +1,3 @@
-import asyncio
-
 from services.jobs.fetch.base import INotified, WithDelegates
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds, DAY
@@ -30,19 +28,19 @@ class BEP2MoveNotifier(INotified, WithDelegates):
     async def on_data(self, sender, transfer: BEP2Transfer):
         transfer.usd_per_rune = usd_per_rune = self.deps.price_holder.usd_per_rune
 
-        asyncio.create_task(self._store_transfer(transfer))
-
         if transfer.amount * usd_per_rune >= self.min_usd:
             if await self.move_cd.can_do():
                 await self.move_cd.do()
-                await self.handle_data(transfer)
+                await self.pass_data_to_listeners(transfer)
 
         if await self.summary_cd.can_do():
             notifier: BEP2MoveNotifier = self.deps.bep2_move_notifier
             flow = await notifier.tracker.read_last24h()
             flow.usd_per_rune = usd_per_rune
             await self.summary_cd.do()
-            await self.handle_data(flow)
+            await self.pass_data_to_listeners(flow)
+
+        await self._store_transfer(transfer)
 
     def is_cex(self, addr):
         return addr in self.cex_list

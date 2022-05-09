@@ -20,7 +20,7 @@ class VolumeFillerUpdater(WithDelegates, INotified):
         # update & fill
         await self._fill_volumes(extended_txs)
         # send to the listeners
-        await self.handle_data(extended_txs, sender=(sender, self))  # pass it to the next subscribers
+        await self.pass_data_to_listeners(extended_txs, sender=(sender, self))  # pass it to the next subscribers
 
     async def _fill_volumes(self, txs: List[ThorTxExtended]):
         if not txs:

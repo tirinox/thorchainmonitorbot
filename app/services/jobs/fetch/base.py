@@ -27,7 +27,7 @@ class WithDelegates:
         for delegate in self.delegates:
             await delegate.on_error(sender, e)
 
-    async def handle_data(self, data, sender=None):
+    async def pass_data_to_listeners(self, data, sender=None):
         if not data:
             return
         sender = sender or self
@@ -56,7 +56,7 @@ class BaseFetcher(WithDelegates, ABC):
         while True:
             try:
                 data = await self.fetch()
-                await self.handle_data(data)
+                await self.pass_data_to_listeners(data)
                 await self.post_action(data)
             except Exception as e:
                 self.logger.exception(f"task error: {e}")

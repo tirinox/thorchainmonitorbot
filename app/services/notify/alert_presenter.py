@@ -24,3 +24,4 @@ class AlertPresenter(INotified):
 
     async def _handle_bep2_flow(self, flow: BEP2CEXFlow):
         await self.broadcaster.notify_preconfigured_channels(BaseLocalization.notification_text_cex_flow, flow)
+

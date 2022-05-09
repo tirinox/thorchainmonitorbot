@@ -53,7 +53,7 @@ class BinanceOrgDexWSSClient(WSClient, WithDelegates):
         for tx in j:
             if tx.get('txType') == BEP2_TRANSFER and tx.get('txAsset') == BNB_RUNE_SYMBOL_NO_CHAIN:
                 self.logger.info(f'Transfer message: {tx}')
-                await self.handle_data(BEP2Transfer(
+                await self.pass_data_to_listeners(BEP2Transfer(
                     tx.get('fromAddr'),
                     tx.get('toAddr'),
                     tx.get('blockHeight'),
@@ -65,7 +65,7 @@ class BinanceOrgDexWSSClient(WSClient, WithDelegates):
         self.logger.info('Connected to Binance.org.')
 
     async def _dbg_later(self):
-        await self.handle_data(BEP2Transfer(
+        await self.pass_data_to_listeners(BEP2Transfer(
             'bnb1u2agwjat20494fmc6jnuau0ls937cfjn4pjwtn',
             'bnb13q87ekxvvte78t2q7z05lzfethnlht5agfh4ur',
             10000,

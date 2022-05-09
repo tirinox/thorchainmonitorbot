@@ -81,7 +81,7 @@ class NodeChurnDetector(WithDelegates, INotified):
 
         # result = self._debug_modification(result)
 
-        await self.handle_data(result, (sender, self))
+        await self.pass_data_to_listeners(result, (sender, self))
 
     # ------------------------------------------------------------------------------------------------------------------
 
