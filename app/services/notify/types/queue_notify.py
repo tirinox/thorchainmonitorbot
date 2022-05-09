@@ -45,6 +45,12 @@ class QueueNotifier(INotified):
 
     async def handle_entry(self, item_type, ts: TimeSeries):
         avg_value = await ts.average(self.avg_period, item_type)
+
+        # # fixme: debug
+        # if item_type == 'outbound':
+        #     avg_value = 1.2
+        # # fixme: debug
+
         if avg_value is None:
             return
 
