@@ -2,22 +2,19 @@ from typing import Dict, Optional
 
 from aiothornode.types import ThorLastBlock
 
-from localization import BaseLocalization
-from services.dialog.picture.block_height_picture import block_speed_chart
-from services.jobs.fetch.base import INotified
+from services.jobs.fetch.base import INotified, WithDelegates
 from services.jobs.fetch.last_block import LastBlockFetcher
 from services.lib.config import SubConfig
-from services.lib.constants import THOR_BLOCK_SPEED, THOR_BLOCKS_PER_MINUTE
+from services.lib.constants import THOR_BLOCK_SPEED
 from services.lib.cooldown import Cooldown, CooldownBiTrigger, INFINITE_TIME
 from services.lib.date_utils import DAY, parse_timespan_to_seconds, now_ts, format_time_ago_short, MINUTE
 from services.lib.depcont import DepContainer
-from services.notify.channel import BoardMessage
 from services.lib.utils import class_logger
-from services.models.last_block import BlockSpeed
+from services.models.last_block import BlockProduceState, EventBlockSpeed
 from services.models.time_series import TimeSeries
 
 
-class BlockHeightNotifier(INotified):
+class BlockHeightNotifier(INotified, WithDelegates):
     KEY_SERIES_BLOCK_HEIGHT = 'ThorBlockHeight'
     KEY_LAST_TIME_BLOCK_UPDATED = 'ThorBlock:LastTime'
     KEY_LAST_TIME_LAST_HEIGHT = 'ThorBlock:LastHeight'
@@ -25,6 +22,7 @@ class BlockHeightNotifier(INotified):
     KEY_STUCK_ALERT_TRIGGER_TS = 'ThorBlock:StuckAlert:Trigger:TS'
 
     def __init__(self, deps: DepContainer):
+        super().__init__()
         self.deps = deps
         self.logger = class_logger(self)
         self.series = TimeSeries(self.KEY_SERIES_BLOCK_HEIGHT, self.deps.db)
@@ -112,7 +110,7 @@ class BlockHeightNotifier(INotified):
             return None
 
     async def get_block_alert_state(self):
-        return await self.deps.db.redis.get(self.KEY_BLOCK_SPEED_ALERT_STATE) or BlockSpeed.StateNormal
+        return await self.deps.db.redis.get(self.KEY_BLOCK_SPEED_ALERT_STATE) or BlockProduceState.NormalPace
 
     async def _set_block_alert_state(self, new_state):
         await self.deps.db.redis.set(self.KEY_BLOCK_SPEED_ALERT_STATE, new_state)
@@ -144,14 +142,14 @@ class BlockHeightNotifier(INotified):
         thor_block = max(v.thorchain for v in data.values()) if data else 0
 
         # ----- fixme: debug -----
-        # frozen = False  # ??
-        # if frozen:
-        #     if not self._foo:
-        #         self._foo = thor_block
-        #     else:
-        #         thor_block = self._foo
-        # self.last_thor_block_update_ts = now_ts() - 1000
-        # await self._post_stuck_alert(True)
+            # frozen = False  # ??
+            # if frozen:
+            #     if not self._foo:
+            #         self._foo = thor_block
+            #     else:
+            #         thor_block = self._foo
+            # self.last_thor_block_update_ts = now_ts() - 1000
+            # await self._post_stuck_alert(True, 1000)
         # ----- fixme: debug -----
 
         if thor_block <= 0 or thor_block < self.last_thor_block:
@@ -188,20 +186,15 @@ class BlockHeightNotifier(INotified):
 
             await self.stuck_alert_cd.do()
 
-    async def _post_block_speed_pic_with_caption(self, f_caption_from_loc: callable):
-        async def gen_fun(loc: BaseLocalization, points):
-            chart = await block_speed_chart(points, loc, normal_bpm=THOR_BLOCKS_PER_MINUTE, time_scale_mode='time')
-            caption = f_caption_from_loc(loc)
-            return BoardMessage.make_photo(chart, caption=caption)
-
-        points = await self.get_block_time_chart(self.notification_chart_duration, convert_to_blocks_per_minute=True)
-        await self.deps.broadcaster.notify_preconfigured_channels(gen_fun, points)
-
     async def _post_stuck_alert(self, really_stuck, time_without_new_blocks):
         self.logger.info(f'Thor Block height is {really_stuck = }.')
-
-        await self._post_block_speed_pic_with_caption(
-            lambda loc: loc.notification_text_block_stuck(really_stuck, time_without_new_blocks))
+        points = await self.get_block_time_chart(self.notification_chart_duration, convert_to_blocks_per_minute=True)
+        await self.pass_data_to_listeners(
+            EventBlockSpeed(
+                BlockProduceState.StateStuck if really_stuck else BlockProduceState.Producing,
+                time_without_new_blocks, 0.0, points
+            )
+        )
 
     async def _check_block_pace(self, thor_block):
         bps = await self.get_recent_blocks_per_second()
@@ -221,17 +214,18 @@ class BlockHeightNotifier(INotified):
         norm, dev = self.normal_block_speed, self.normal_block_speed_deviation
 
         if bps < self.low_block_speed:
-            curr_state = BlockSpeed.StateTooSlow
+            curr_state = BlockProduceState.TooSlow
         elif norm - dev <= bps <= norm + dev:
-            curr_state = BlockSpeed.StateNormal
+            curr_state = BlockProduceState.NormalPace
         elif bps > self.high_speed_dev:
-            curr_state = BlockSpeed.StateTooFast
+            curr_state = BlockProduceState.TooFast
         else:
             return
 
         if curr_state != prev_state:
-            await self._do_notify_pace(curr_state, bps)
+            points = await self.get_block_time_chart(self.notification_chart_duration,
+                                                     convert_to_blocks_per_minute=True)
+            await self.pass_data_to_listeners(
+                EventBlockSpeed(curr_state, 0.0, bps, points)
+            )
             await self._set_block_alert_state(curr_state)
-
-    async def _do_notify_pace(self, state, block_speed):
-        await self._post_block_speed_pic_with_caption(lambda loc: loc.notification_text_block_pace(state, block_speed))

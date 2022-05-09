@@ -192,6 +192,7 @@ class App:
             fetcher_last_block = LastBlockFetcher(d)
             last_block_notifier = BlockHeightNotifier(d)
             fetcher_last_block.subscribe(last_block_notifier)
+            last_block_notifier.subscribe(d.alert_presenter)
             d.block_notifier = last_block_notifier
             tasks.append(fetcher_last_block)
 

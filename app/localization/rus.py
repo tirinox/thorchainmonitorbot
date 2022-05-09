@@ -16,7 +16,7 @@ from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, 
     up_down_arrow, plural, grouper, regroup_joining
 from services.models.bep2 import BEP2Transfer, BEP2CEXFlow
 from services.models.cap_info import ThorCapInfo
-from services.models.last_block import BlockSpeed
+from services.models.last_block import BlockProduceState, EventBlockSpeed
 from services.models.mimir import MimirChange, MimirHolder, MimirVoting, MimirVoteOption
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEvent, EventDataSlash, \
@@ -981,10 +981,10 @@ class RussianLocalization(BaseLocalization):
     TEXT_BLOCK_HEIGHT_LEGEND_ACTUAL = 'Фактически блоков в минуту'
     TEXT_BLOCK_HEIGHT_LEGEND_EXPECTED = 'Ожидаемая (10 бл/мин или 6 сек на блок)'
 
-    def notification_text_block_stuck(self, stuck, time_without_new_block):
-        good_time = time_without_new_block is not None and time_without_new_block > 1
-        str_t = ital(self.seconds_human(time_without_new_block) if good_time else self.NA)
-        if stuck:
+    def notification_text_block_stuck(self, e: EventBlockSpeed):
+        good_time = e.time_without_blocks is not None and e.time_without_blocks > 1
+        str_t = ital(self.seconds_human(e.time_without_blocks) if good_time else self.NA)
+        if e.state == BlockProduceState.StateStuck:
             return f'📛 {bold("THORChain высота блоков перестала увеличиваться")}!\n' \
                    f'Новые блоки не генерируются уже {str_t}.'
         else:
@@ -993,27 +993,27 @@ class RussianLocalization(BaseLocalization):
 
     @staticmethod
     def get_block_time_state_string(state, state_changed):
-        if state == BlockSpeed.StateNormal:
+        if state == BlockProduceState.NormalPace:
             if state_changed:
                 return '👌 Скорость генерации блоков вернулась к нормальной.'
             else:
                 return '👌 Скорость генерации блоков в норме.'
-        elif state == BlockSpeed.StateTooSlow:
+        elif state == BlockProduceState.TooSlow:
             return '🐌 Блоки производятся слишком медленно.'
-        elif state == BlockSpeed.StateTooFast:
+        elif state == BlockProduceState.TooFast:
             return '🏃 Блоки производятся слишком быстро.'
         else:
             return ''
 
-    def notification_text_block_pace(self, state: str, block_speed: float):
-        phrase = self.get_block_time_state_string(state, True)
-        block_per_minute = self.format_bps(block_speed)
+    def notification_text_block_pace(self, e: EventBlockSpeed):
+        phrase = self.get_block_time_state_string(e.state, True)
+        block_per_minute = self.format_bps(e.block_speed)
 
         return (
             f'<b>Обновление по скорости производства блоков THORChain</b>\n'
             f'{phrase}\n'
             f'В настоящий момент <code>{block_per_minute}</code> блоков в минуту, другими словами '
-            f'нужно <code>{self.format_block_time(block_per_minute)} сек</code> на создание блока.'
+            f'нужно <code>{self.format_block_time(e.block_speed)} сек</code> на создание блока.'
         )
 
     def text_block_time_report(self, last_block, last_block_ts, recent_bps, state):
