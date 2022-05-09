@@ -320,6 +320,10 @@ queue:
     congested: 20
     free: 2
   cooldown: 3600
+  watch_queues:  # (!) new
+    - outbound
+    - internal
+    - swap
 
 
 net_summary:

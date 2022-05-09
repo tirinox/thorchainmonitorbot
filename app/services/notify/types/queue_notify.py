@@ -13,6 +13,8 @@ from services.models.time_series import TimeSeries
 
 
 class QueueNotifier(INotified):
+    DEFAULT_WATCH_QUEUES = ('outbound', 'internal', 'swap')
+
     def __init__(self, deps: DepContainer):
         self.deps = deps
         self.logger = class_logger(self)
@@ -22,6 +24,7 @@ class QueueNotifier(INotified):
         self.threshold_congested = int(cfg.threshold.congested)
         self.threshold_free = int(cfg.threshold.free)
         self.avg_period = parse_timespan_to_seconds(cfg.threshold.avg_period)
+        self.watch_queues = cfg.get('watch_queues', self.DEFAULT_WATCH_QUEUES)
 
         self.logger.info(f'config: {deps.cfg.queue}')
 
@@ -47,14 +50,14 @@ class QueueNotifier(INotified):
 
         self.logger.info(f'Avg {item_type} is {avg_value:.1f}')
 
-        cd_trigger = CooldownBiTrigger(self.deps.db, f'QueueClog-{item_type}', self.cooldown, self.cooldown)
+        cd_trigger = CooldownBiTrigger(self.deps.db, f'QueueClog:{item_type}', self.cooldown, self.cooldown)
 
         if avg_value > self.threshold_congested:
             if await cd_trigger.turn_on():
                 await self.notify(item_type, self.threshold_congested, int(avg_value))
         elif avg_value < self.threshold_free:
             if await cd_trigger.turn_off():
-                await self.notify(item_type, 0, 0)
+                await self.notify(item_type, 0, avg_value)
 
     async def on_data(self, sender, data: QueueInfo):
         self.logger.info(f"got queue: {data}")
@@ -65,5 +68,5 @@ class QueueNotifier(INotified):
                      internal=data.internal)
         self.deps.queue_holder = data
 
-        for key in ('outbound', 'internal', 'swap'):
+        for key in self.watch_queues:
             await self.handle_entry(key, ts)
