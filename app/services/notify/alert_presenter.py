@@ -33,14 +33,15 @@ class AlertPresenter(INotified):
     async def _handle_bep2_flow(self, flow: BEP2CEXFlow):
         await self.broadcaster.notify_preconfigured_channels(BaseLocalization.notification_text_cex_flow, flow)
 
+    @staticmethod
+    async def _block_speed_picture_generator(loc: BaseLocalization, points, event):
+        chart = await block_speed_chart(points, loc, normal_bpm=THOR_BLOCKS_PER_MINUTE, time_scale_mode='time')
+        if event.state in (BlockProduceState.StateStuck, BlockProduceState.Producing):
+            caption = loc.notification_text_block_stuck(event)
+        else:
+            caption = loc.notification_text_block_pace(event)
+
+        return BoardMessage.make_photo(chart, caption=caption)
+
     async def _handle_block_speed(self, event: EventBlockSpeed):
-        async def gen_fun(loc: BaseLocalization, points):
-            chart = await block_speed_chart(points, loc, normal_bpm=THOR_BLOCKS_PER_MINUTE, time_scale_mode='time')
-            if event.state in (BlockProduceState.StateStuck, BlockProduceState.Producing):
-                caption = loc.notification_text_block_stuck(event)
-            else:
-                caption = loc.notification_text_block_pace(event)
-
-            return BoardMessage.make_photo(chart, caption=caption)
-
-        await self.broadcaster.notify_preconfigured_channels(gen_fun, event.points)
+        await self.broadcaster.notify_preconfigured_channels(self._block_speed_picture_generator, event.points, event)

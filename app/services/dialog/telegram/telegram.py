@@ -9,7 +9,7 @@ from aiogram.utils import exceptions, executor
 from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.utils import class_logger
-from services.notify.channel import MessageType, CHANNEL_INACTIVE
+from services.notify.channel import MessageType, CHANNEL_INACTIVE, BoardMessage
 
 TG_TEST_USER = 192398802
 
@@ -36,30 +36,31 @@ class TelegramBot:
                 del kwargs['disable_notification']
         return kwargs
 
-    async def safe_send_message(self, chat_id, text, message_type=MessageType.TEXT, *args, **kwargs) -> bool:
+    async def safe_send_message(self, chat_id, msg: BoardMessage, **kwargs) -> bool:
+        text = msg.text
         try:
             bot = self.bot
-            if message_type == MessageType.TEXT:
+            if msg.message_type == MessageType.TEXT:
                 trunc_text = text[:TELEGRAM_MAX_MESSAGE_LENGTH]
                 if trunc_text != text:
                     self.logger.error(f'Message is too long:\n{text[:10000]}\n... Sending is cancelled.')
-                await bot.send_message(chat_id, trunc_text, *args, **kwargs)
-            elif message_type == MessageType.STICKER:
+                await bot.send_message(chat_id, trunc_text, **kwargs)
+            elif msg.message_type == MessageType.STICKER:
                 kwargs = self._remove_bad_tg_args(kwargs, dis_web_preview=True)
-                await bot.send_sticker(chat_id, sticker=text, *args, **kwargs)
-            elif message_type == MessageType.PHOTO:
+                await bot.send_sticker(chat_id, sticker=text, **kwargs)
+            elif msg.message_type == MessageType.PHOTO:
                 kwargs = self._remove_bad_tg_args(kwargs, dis_web_preview=True)
                 trunc_text = text[:TELEGRAM_MAX_CAPTION_LENGTH]
                 if trunc_text != text:
                     self.logger.error(f'Caption is too long:\n{text[:10000]}\n... Sending is cancelled.')
-                await bot.send_photo(chat_id, caption=trunc_text, *args, **kwargs)
+                await bot.send_photo(chat_id, caption=trunc_text, photo=msg.photo, **kwargs)
         except exceptions.ChatNotFound:
             self.logger.error(f"Target [ID:{chat_id}]: invalid user ID")
         except exceptions.RetryAfter as e:
             self.logger.error(f"Target [ID:{chat_id}]: Flood limit is exceeded. Sleep {e.timeout} seconds.")
             await asyncio.sleep(e.timeout + self.EXTRA_RETRY_DELAY)
             # Recursive call
-            return await self.safe_send_message(chat_id, text, message_type=message_type, *args, **kwargs)
+            return await self.safe_send_message(chat_id, msg, **kwargs)
         except exceptions.Unauthorized as e:
             self.logger.error(f"Target [ID:{chat_id}]: user is deactivated: {e!r}")
             return CHANNEL_INACTIVE

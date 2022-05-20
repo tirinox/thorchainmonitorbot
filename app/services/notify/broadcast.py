@@ -64,7 +64,7 @@ class Broadcaster:
         await self.broadcast(all_channels, message_gen)
 
     async def safe_send_message(self, channel_info: ChannelDescriptor,
-                                text, message_type=MessageType.TEXT, *args, **kwargs) -> bool:
+                                message: BoardMessage, **kwargs) -> bool:
 
         if channel_info.type not in Messengers.SUPPORTED:
             self.logger.error(f'Unsupported channel type: {channel_info.type}!')
@@ -74,7 +74,7 @@ class Broadcaster:
             channel_id = channel_info.channel_id
             messenger = self.deps.get_messenger(channel_info.type)
             if messenger is not None:
-                result = await messenger.safe_send_message(channel_id, text, message_type, *args, **kwargs)
+                result = await messenger.safe_send_message(channel_id, message, **kwargs)
                 if result == CHANNEL_INACTIVE:
                     self.logger.info(f'{channel_info} became inactive!')
                     self.channels_inactive.add(channel_info.channel_id)
@@ -83,43 +83,47 @@ class Broadcaster:
 
             return result
 
+    @staticmethod
+    async def _form_message(text, channel_info: ChannelDescriptor, **kwargs) -> BoardMessage:
+        if isinstance(text, str):
+            return BoardMessage(text)
+        elif callable(text):
+            b_message = await text(channel_info.channel_id, **kwargs)
+            if isinstance(b_message, BoardMessage):
+                if b_message.message_type is MessageType.PHOTO:
+                    # noinspection PyTypeChecker
+                    b_message.photo = copy_photo(b_message.photo)
+                return b_message
+            else:
+                return BoardMessage(str(b_message))
+        else:
+            return BoardMessage(str(text))
+
     async def broadcast(self, channels: List[ChannelDescriptor], message, delay=0.075,
-                        message_type=MessageType.TEXT, remove_bad_users=False,
-                        *args, **kwargs) -> int:
+                        remove_bad_users=False,
+                        **kwargs) -> int:
         async with self._broadcast_lock:
             count = 0
             bad_ones = []
 
             try:
                 for channel_info in channels:
-                    extra = {}
-                    if isinstance(message, str):
-                        text = message
-                    elif callable(message):
-                        message_result = await message(channel_info.channel_id, *args, **kwargs)
-                        if isinstance(message_result, BoardMessage):
-                            message_type = message_result.message_type
-                            if message_result.message_type is MessageType.PHOTO:
-                                # noinspection PyTypeChecker
-                                extra['photo'] = copy_photo(message_result.photo)
-                            text = message_result.text
-                        else:
-                            text = message_result
-                    else:
-                        text = str(message)
+                    # make from any message a BoardMessage
+                    b_message = await self._form_message(message, channel_info, **kwargs)
+                    if b_message.empty:
+                        continue
 
-                    if text or 'photo' in extra:
-                        send_results = await self.safe_send_message(
-                            channel_info, text, message_type=message_type,
-                            disable_web_page_preview=True,
-                            disable_notification=False, **extra)
+                    send_results = await self.safe_send_message(
+                        channel_info, b_message,
+                        disable_web_page_preview=True,
+                        disable_notification=False, **kwargs)
 
-                        if send_results == CHANNEL_INACTIVE:
-                            bad_ones.append(channel_info.channel_id)
-                        elif send_results is True:
-                            count += 1
+                    if send_results == CHANNEL_INACTIVE:
+                        bad_ones.append(channel_info.channel_id)
+                    elif send_results is True:
+                        count += 1
 
-                        await asyncio.sleep(delay)  # 10 messages per second (Limit: 30 messages per second)
+                    await asyncio.sleep(delay)  # 10 messages per second (Limit: 30 messages per second)
 
                 if remove_bad_users:
                     await UserRegistry(self.deps.db).remove_users(bad_ones)

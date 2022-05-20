@@ -138,18 +138,22 @@ class BlockHeightNotifier(INotified, WithDelegates):
             await r.set(self.KEY_LAST_TIME_BLOCK_UPDATED, self.last_thor_block_update_ts)
             await r.set(self.KEY_LAST_TIME_LAST_HEIGHT, self.last_thor_block)
 
+    @staticmethod
+    def _estimate_last_thorblock(data: Dict[str, ThorLastBlock]):
+        return max(v.thorchain for v in data.values()) if data else 0
+
     async def on_data(self, sender: LastBlockFetcher, data: Dict[str, ThorLastBlock]):
-        thor_block = max(v.thorchain for v in data.values()) if data else 0
+        thor_block = self._estimate_last_thorblock(data)
 
         # ----- fixme: debug -----
-            # frozen = False  # ??
-            # if frozen:
-            #     if not self._foo:
-            #         self._foo = thor_block
-            #     else:
-            #         thor_block = self._foo
-            # self.last_thor_block_update_ts = now_ts() - 1000
-            # await self._post_stuck_alert(True, 1000)
+        # frozen = True  # ??
+        # if frozen:
+        #     if not self._foo:
+        #         self._foo = thor_block
+        #     else:
+        #         thor_block = self._foo
+        # self.last_thor_block_update_ts = now_ts() - 1000
+        # await self._post_stuck_alert(True, 1000)
         # ----- fixme: debug -----
 
         if thor_block <= 0 or thor_block < self.last_thor_block:

@@ -7,7 +7,7 @@ from markdownify import markdownify
 
 from services.lib.config import Config
 from services.lib.draw_utils import img_to_bio
-from services.notify.channel import MessageType
+from services.notify.channel import MessageType, BoardMessage
 from services.lib.utils import class_logger
 
 
@@ -56,17 +56,16 @@ class DiscordBot:
         channel = self.client.get_channel(channel)
         await channel.send(text, file=file)
 
-    async def safe_send_message(self, chat_id, text, message_type=MessageType.TEXT, **kwargs) -> bool:
+    async def safe_send_message(self, chat_id, msg: BoardMessage, **kwargs) -> bool:
         try:
-            if message_type == MessageType.TEXT:
-                await self.send_message_to_channel(chat_id, text, need_convert=True)
-            elif message_type == MessageType.STICKER:
-                sticker = await self._sticker_downloader.get_sticker_image(text)
+            if msg.message_type == MessageType.TEXT:
+                await self.send_message_to_channel(chat_id, msg.text, need_convert=True)
+            elif msg.message_type == MessageType.STICKER:
+                sticker = await self._sticker_downloader.get_sticker_image(msg.text)
                 await self.send_message_to_channel(chat_id, ' ', picture=sticker)
-            elif message_type == MessageType.PHOTO:
-                photo = kwargs['photo']
-                await self.send_message_to_channel(chat_id, text, picture=photo, need_convert=True)
+            elif msg.message_type == MessageType.PHOTO:
+                await self.send_message_to_channel(chat_id, msg.text, picture=msg.photo, need_convert=True)
             return True
         except Exception as e:
-            self.logger.exception(f'discord exception {e}, {message_type = }, text = "{text}"!')
+            self.logger.exception(f'discord exception {e}, {msg.message_type = }, text = "{msg.text}"!')
             return False

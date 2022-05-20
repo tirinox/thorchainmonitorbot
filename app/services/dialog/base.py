@@ -13,6 +13,7 @@ from localization import BaseLocalization
 from localization.base import CREATOR_TG
 from services.lib.depcont import DepContainer
 from services.lib.texts import code
+from services.notify.channel import BoardMessage
 
 logger = logging.getLogger('DIALOGS')
 
@@ -122,7 +123,7 @@ class BaseDialog(ABC):
     @staticmethod
     async def if_loading_please_wait(deps: DepContainer, loc: BaseLocalization, user):
         if deps.is_loading:
-            await deps.telegram_bot.safe_send_message(user, loc.BOT_LOADING, disable_notification=True)
+            await deps.telegram_bot.safe_send_message(user, BoardMessage(loc.BOT_LOADING), disable_notification=True)
             return True
 
     @classmethod

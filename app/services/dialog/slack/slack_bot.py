@@ -15,7 +15,7 @@ from services.lib.db import DB
 from services.lib.draw_utils import img_to_bio
 from services.lib.settings_manager import SettingsManager
 from services.lib.utils import class_logger
-from services.notify.channel import Messengers, CHANNEL_INACTIVE, MessageType
+from services.notify.channel import Messengers, CHANNEL_INACTIVE, MessageType, BoardMessage
 
 
 class SlackBot:
@@ -203,21 +203,20 @@ class SlackBot:
         text = text.replace('\n', '<br>')
         return HTMLSlacker(text).get_output()
 
-    async def safe_send_message(self, chat_id, text, message_type=MessageType.TEXT, **kwargs) -> bool:
+    async def safe_send_message(self, chat_id, msg: BoardMessage, **kwargs) -> bool:
         try:
             result = ''
-            if message_type == MessageType.TEXT:
-                result = await self.send_message_to_channel(chat_id, text, need_convert=True)
-            elif message_type == MessageType.STICKER:
-                sticker = await self._sticker_downloader.get_sticker_image(text)
-                result = await self.send_message_to_channel(chat_id, ' ', picture=sticker)
-            elif message_type == MessageType.PHOTO:
-                photo = kwargs['photo']
-                result = await self.send_message_to_channel(chat_id, text, picture=photo, need_convert=True)
 
+            if msg.message_type == MessageType.TEXT:
+                result = await self.send_message_to_channel(chat_id, msg.text, need_convert=True)
+            elif msg.message_type == MessageType.STICKER:
+                sticker = await self._sticker_downloader.get_sticker_image(msg.text)
+                result = await self.send_message_to_channel(chat_id, ' ', picture=sticker)
+            elif msg.message_type == MessageType.PHOTO:
+                result = await self.send_message_to_channel(chat_id, msg.text, picture=msg.photo, need_convert=True)
             if result:
                 self.logger.debug(f'Slack result: {result}')
             return result
         except Exception as e:
-            self.logger.exception(f'Slack exception {e}, {message_type = }, text = "{text}"!')
+            self.logger.exception(f'Slack exception {e}, {msg.message_type = }, text = "{msg.text}"!')
             return False

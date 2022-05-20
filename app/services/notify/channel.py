@@ -23,6 +23,10 @@ class BoardMessage:
     def make_photo(cls, photo, caption=''):
         return cls(caption, MessageType.PHOTO, photo)
 
+    @property
+    def empty(self):
+        return not self.text and not self.photo
+
 
 class Messengers:
     TELEGRAM = 'telegram'
