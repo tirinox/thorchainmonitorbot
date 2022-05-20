@@ -125,7 +125,7 @@ class MetricsDialog(BaseDialog):
         await self.show_menu_net_op(message)
 
     async def show_cap(self, message: Message):
-        info = await LiquidityCapNotifier(self.deps).get_last_cap()
+        info = await LiquidityCapNotifier.get_last_cap_from_db(self.deps.db)
         await message.answer(self.loc.cap_message(info),
                              disable_web_page_preview=True,
                              disable_notification=True)

@@ -1,17 +1,17 @@
 from typing import List
 
 from localization import BaseLocalization
-from services.jobs.fetch.base import INotified
+from services.jobs.fetch.base import INotified, WithDelegates
 from services.lib.config import SubConfig
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.money import Asset
 from services.lib.utils import linear_transform, class_logger
-from services.models.tx import ThorTxExtended, ThorTxType
+from services.models.tx import ThorTxExtended, EventLargeTXS
 from services.notify.types.cap_notify import LiquidityCapNotifier
 
 
-class GenericTxNotifier(INotified):
+class GenericTxNotifier(INotified, WithDelegates):
     DEFAULT_TX_VS_DEPTH_CURVE = [
         {'depth': 10_000, 'percent': 20},  # if depth < 10_000 then 0.2
         {'depth': 100_000, 'percent': 12},  # if 10_000 <= depth < 100_000 then 0.2 ... 0.12
@@ -35,6 +35,7 @@ class GenericTxNotifier(INotified):
         return curve[-1]['percent']
 
     def __init__(self, deps: DepContainer, params: SubConfig, tx_types):
+        super().__init__()
         self.deps = deps
         self.params = params
         self.tx_types = tx_types
@@ -48,12 +49,10 @@ class GenericTxNotifier(INotified):
 
     async def on_data(self, senders, txs: List[ThorTxExtended]):
         txs = [tx for tx in txs if tx.type in self.tx_types]  # filter my TX types
-
         if not txs:
             return
 
         usd_per_rune = self.deps.price_holder.usd_per_rune
-
         if not usd_per_rune:
             self.logger.error(f'Can not filter Txs, no USD/Rune price')
             return
@@ -66,25 +65,22 @@ class GenericTxNotifier(INotified):
         if not large_txs:
             return
 
-        self.logger.info(f"large_txs: {len(large_txs)}")
+        self.logger.info(f"Large Txs count is {len(large_txs)}.")
 
-        cap_info = await LiquidityCapNotifier(self.deps).get_last_cap()
+        cap_info = await LiquidityCapNotifier.get_last_cap_from_db(self.deps.db)
 
-        async def message_gen(loc: BaseLocalization):
-            texts = []
-            has_liquidity = False
-            for tx in large_txs:
-                if tx.type in (ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_ADD_LIQUIDITY):
-                    has_liquidity = True
-                pool_info = self.deps.price_holder.pool_info_map.get(tx.first_pool)
+        await self.pass_data_to_listeners(EventLargeTXS(
+            large_txs, usd_per_rune,
+            self.deps.price_holder.pool_info_map,
+            cap_info
+        ))
 
-                # append it only to the last one (if has liquidity change TXS)
-                cap_info_last = cap_info if (tx == large_txs[-1] and has_liquidity) else None
-
-                texts.append(loc.notification_text_large_tx(tx, usd_per_rune, pool_info, cap_info_last))
-            return '\n\n'.join(texts)
-
-        await self.deps.broadcaster.notify_preconfigured_channels(message_gen)
+        # await self.deps.broadcaster.notify_preconfigured_channels(
+        #     BaseLocalization.notification_text_large_txs,
+        #     large_txs, usd_per_rune,
+        #     self.deps.price_holder.pool_info_map,
+        #     cap_info
+        # )
 
     def _get_min_usd_depth(self, tx: ThorTxExtended, usd_per_rune):
         pools = tx.pools

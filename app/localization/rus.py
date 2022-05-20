@@ -229,10 +229,10 @@ class RussianLocalization(BaseLocalization):
     def none_str(x):
         return 'нет' if x is None else x
 
-    def notification_text_large_tx(self, tx: ThorTxExtended,
-                                   usd_per_rune: float,
-                                   pool_info: PoolInfo,
-                                   cap: ThorCapInfo = None):
+    def notification_text_large_single_tx(self, tx: ThorTxExtended,
+                                          usd_per_rune: float,
+                                          pool_info: PoolInfo,
+                                          cap: ThorCapInfo = None):
         (ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short,
          total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 

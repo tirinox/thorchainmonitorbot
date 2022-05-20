@@ -362,9 +362,26 @@ class BaseLocalization(ABC):  # == English
         else:
             return ''
 
-    def notification_text_large_tx(self, tx: ThorTxExtended, usd_per_rune: float,
-                                   pool_info: PoolInfo,
-                                   cap: ThorCapInfo = None):
+    def notification_text_large_txs(self, large_txs: List[ThorTxExtended],
+                                    usd_per_rune: float,
+                                    pool_info_map,
+                                    cap_info: ThorCapInfo = None):
+        texts = []
+        has_liquidity = False
+        for tx in large_txs:
+            if tx.type in (ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_ADD_LIQUIDITY):
+                has_liquidity = True
+            pool_info = pool_info_map.get(tx.first_pool)
+
+            # append it only to the last one (if has liquidity change TXS)
+            cap_info_last = cap_info if (tx == large_txs[-1] and has_liquidity) else None
+
+            texts.append(self.notification_text_large_single_tx(tx, usd_per_rune, pool_info, cap_info_last))
+        return '\n\n'.join(texts)
+
+    def notification_text_large_single_tx(self, tx: ThorTxExtended, usd_per_rune: float,
+                                          pool_info: PoolInfo,
+                                          cap: ThorCapInfo = None):
         (ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short,
          total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 

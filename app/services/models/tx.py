@@ -1,10 +1,11 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import List, Optional, Iterable
+from typing import List, Optional, Iterable, Dict
 
 from services.lib.constants import is_rune, RUNE_SYMBOL, Chains, NATIVE_RUNE_SYMBOL, thor_to_float
 from services.lib.money import Asset
 from services.lib.utils import sum_and_str
+from services.models.cap_info import ThorCapInfo
 from services.models.lp_info import LPAddress
 from services.models.pool_info import PoolInfo
 
@@ -486,3 +487,11 @@ class ThorTxExtended(ThorTx):
 
     def get_affiliate_fee_usd(self, usd_per_rune):
         return self.affiliate_fee * self.get_usd_volume(usd_per_rune)
+
+
+@dataclass
+class EventLargeTXS:
+    txs: List[ThorTxExtended]
+    usd_per_rune: float
+    pool_info_map: Dict[str, PoolInfo]
+    cap_info: ThorCapInfo = None

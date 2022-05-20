@@ -37,7 +37,7 @@ class MainMenuDialog(BaseDialog):
         elif message.get_command(pure=True) == 'lang' or current_language is None:
             await SettingsDialog(self.loc, self.data, self.deps, self.message).ask_language(message)
         else:
-            info = await LiquidityCapNotifier(self.deps).get_last_cap()
+            info = await LiquidityCapNotifier.get_last_cap_from_db(self.deps.db)
 
             keyboard = kbd([
                 # 1st row

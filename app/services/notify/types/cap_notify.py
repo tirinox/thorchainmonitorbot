@@ -2,24 +2,24 @@ import json
 
 from localization import BaseLocalization
 from services.jobs.fetch.base import INotified
+from services.lib.db import DB
 from services.lib.depcont import DepContainer
-from services.notify.channel import MessageType
 from services.lib.utils import make_stickers_iterator, class_logger
 from services.models.cap_info import ThorCapInfo
+from services.notify.channel import MessageType
 
 
 class LiquidityCapNotifier(INotified):
     KEY_INFO = 'ChaosnetCapInfo'
     KEY_FULL_NOTIFIED = 'Chaosnet:Cap:Full'
 
-    async def get_last_cap(self):
+    @staticmethod
+    async def get_last_cap_from_db(db: DB):
         try:
-            db = self.deps.db
-            j = await db.redis.get(self.KEY_INFO)
+            j = await db.redis.get(LiquidityCapNotifier.KEY_INFO)
             result = ThorCapInfo.from_json(j)
             return result if result else ThorCapInfo.error()
         except (TypeError, ValueError, AttributeError, json.decoder.JSONDecodeError):
-            self.logger.exception('get_old_cap error')
             return ThorCapInfo.error()
 
     def __init__(self, deps: DepContainer):
@@ -39,7 +39,7 @@ class LiquidityCapNotifier(INotified):
             self.logger.warning('no info got!')
             return
 
-        old_info = await self.get_last_cap()
+        old_info = await self.get_last_cap_from_db(self.deps.db)
 
         if new_info.price <= 0:
             new_info.price = old_info.price
