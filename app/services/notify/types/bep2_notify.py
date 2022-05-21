@@ -23,24 +23,35 @@ class BEP2MoveNotifier(INotified, WithDelegates):
 
         self.min_usd = cfg.as_float('min_usd', 1000)
         self.cex_list = cfg.as_list('cex_list')
+        self.ignore_cex2cex = bool(cfg.get('ignore_cex2cex', True))
         self.tracker = CEXFlowTracker(deps)
 
-    async def on_data(self, sender, transfer: BEP2Transfer):
-        transfer.usd_per_rune = usd_per_rune = self.deps.price_holder.usd_per_rune
+    def is_cex2cex(self, transfer: BEP2Transfer):
+        return self.is_cex(transfer.from_addr) and self.is_cex(transfer.to_addr)
 
+    async def handle_big_transfer(self, transfer: BEP2Transfer, usd_per_rune):
         if transfer.amount * usd_per_rune >= self.min_usd:
+            # ignore cex to cex transfers?
+            if self.ignore_cex2cex and self.is_cex2cex(transfer):
+                self.logger.info(f'Ignoring CEX2CEX transfer: {transfer}')
+                return
+
             if await self.move_cd.can_do():
                 await self.move_cd.do()
                 await self.pass_data_to_listeners(transfer)
 
+    async def on_data(self, sender, transfer: BEP2Transfer):
+        transfer.usd_per_rune = usd_per_rune = self.deps.price_holder.usd_per_rune
+
+        await self._store_transfer(transfer)
+
         if await self.summary_cd.can_do():
-            notifier: BEP2MoveNotifier = self.deps.bep2_move_notifier
-            flow = await notifier.tracker.read_last24h()
+            flow = await self.tracker.read_last24h()
             flow.usd_per_rune = usd_per_rune
             await self.summary_cd.do()
             await self.pass_data_to_listeners(flow)
 
-        await self._store_transfer(transfer)
+        await self.handle_big_transfer(transfer, usd_per_rune)
 
     def is_cex(self, addr):
         return addr in self.cex_list

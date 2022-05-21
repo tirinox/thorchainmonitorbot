@@ -293,6 +293,7 @@ bep2:
     - bnb165r4pxe862hetuz2l3wt4yx43uhh4ph9u0ptz6
     - bnb1pv5vycd4xe3nu0msrewgf9tmfvam8yr3x6j97q
     - bnb13q87ekxvvte78t2q7z05lzfethnlht5agfh4ur
+  ignore_cex2cex: true
 
 
 cap:
