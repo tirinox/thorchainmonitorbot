@@ -497,5 +497,5 @@ class ThorTxExtended(ThorTx):
 class EventLargeTransaction:
     transaction: ThorTxExtended
     usd_per_rune: float
-    pool_info_map: Dict[str, PoolInfo]
+    pool_info: PoolInfo
     cap_info: ThorCapInfo = None

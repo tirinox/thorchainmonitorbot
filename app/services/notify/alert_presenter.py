@@ -33,7 +33,7 @@ class AlertPresenter(INotified):
     async def _handle_large_tx(self, txs_event: EventLargeTransaction):
         await self.broadcaster.notify_preconfigured_channels(
             BaseLocalization.notification_text_large_single_tx,
-            txs_event.transaction, txs_event.usd_per_rune, txs_event.pool_info_map, txs_event.cap_info
+            txs_event.transaction, txs_event.usd_per_rune, txs_event.pool_info, txs_event.cap_info
         )
 
     async def _handle_bep2_transfer(self, transfer: BEP2Transfer):

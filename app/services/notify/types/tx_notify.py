@@ -70,9 +70,10 @@ class GenericTxNotifier(INotified, WithDelegates):
 
         for tx in large_txs:
             is_last = tx == large_txs[-1]
+            pool_info = self.deps.price_holder.pool_info_map.get(tx.first_pool)
             await self.pass_data_to_listeners(EventLargeTransaction(
                 tx, usd_per_rune,
-                self.deps.price_holder.pool_info_map,
+                pool_info,
                 cap_info=(cap_info if has_liquidity and is_last else None)
             ))
 

@@ -69,4 +69,4 @@ class TwitterBot:
 
 class TwitterBotMock(TwitterBot):
     def post_sync(self, text: str, image=None):
-        self.logger.info(f'🐦🐦🐦 Tweets: "{text}". 🐦🐦🐦 Img = {bool(image)}')
+        self.logger.info(f'🐦🐦🐦 Tweets: "\n{text}\n". 🐦🐦🐦 Img = {bool(image)}')

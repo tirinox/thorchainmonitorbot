@@ -325,7 +325,8 @@ class BaseLocalization(ABC):  # == English
             short_address(address)
         )
 
-    def lp_tx_calculations(self, usd_per_rune, pool_info: PoolInfo, tx: ThorTxExtended):
+    @staticmethod
+    def lp_tx_calculations(usd_per_rune, pool_info: PoolInfo, tx: ThorTxExtended):
         total_usd_volume = tx.full_rune * usd_per_rune
         pool_depth_usd = pool_info.usd_depth(usd_per_rune) if pool_info else 0.0
 
@@ -397,7 +398,8 @@ class BaseLocalization(ABC):  # == English
 
             ilp_rune = tx.meta_withdraw.ilp_rune if tx.meta_withdraw else 0
             if ilp_rune > 0:
-                ilp_text = f'🛡️ Impermanent loss protection paid: {code(pretty_money(ilp_rune, postfix=self.R))} ' \
+                ilp_rune_fmt = pretty_money(ilp_rune, postfix=" " + self.R)
+                ilp_text = f'🛡️ Impermanent loss protection paid: {code(ilp_rune_fmt)} ' \
                            f'({pretty_dollar(ilp_rune * usd_per_rune)})\n'
             else:
                 ilp_text = ''
