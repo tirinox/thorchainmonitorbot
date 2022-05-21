@@ -1,8 +1,10 @@
 import asyncio
 
 import tweepy
+from ratelimit import limits
 
 from services.lib.config import Config
+from services.lib.date_utils import DAY
 from services.lib.utils import class_logger, random_hex
 from services.notify.channel import MessageType, BoardMessage
 
@@ -34,6 +36,7 @@ class TwitterBot:
             self.logger.debug(f'Bad: {e!r}!')
             return False
 
+    @limits(calls=300, period=DAY)
     def post_sync(self, text: str, image=None):
         if not text:
             return
