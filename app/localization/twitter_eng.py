@@ -5,7 +5,10 @@ from semver import VersionInfo
 
 from localization.base import BaseLocalization
 from services.lib.constants import thor_to_float, rune_origin
-from services.lib.money import Asset, short_dollar, format_percent, pretty_money, pretty_dollar
+from services.lib.date_utils import now_ts
+from services.lib.money import Asset, short_dollar, format_percent, pretty_money, pretty_dollar, pretty_rune, \
+    RAIDO_GLYPH, calc_percent_change, adaptive_round_to_str, emoji_for_percent_change
+from services.lib.texts import x_ses
 from services.models.bep2 import BEP2CEXFlow, BEP2Transfer
 from services.models.cap_info import ThorCapInfo
 from services.models.last_block import EventBlockSpeed
@@ -19,10 +22,30 @@ from services.models.tx import ThorTxExtended, ThorTxType
 
 class TwitterEnglishLocalization(BaseLocalization):
     def notification_text_cap_change(self, old: ThorCapInfo, new: ThorCapInfo):
-        return ''  # todo!
+        up = old.cap < new.cap
+        verb = "has been increased" if up else "has been decreased"
+        arrow = '⬆️' if up else '⚠️ ⬇️'
+        call = "Come on, add more liquidity!\n" if up else ''
+        message = (
+            f'{arrow} Pool cap {verb} from {pretty_money(old.cap)} to {pretty_money(new.cap)}!\n'
+            f'Currently {pretty_money(new.pooled_rune)} {self.R} are in the liquidity pools.\n'
+            f"{self._cap_progress_bar(new)}\n"
+            f'🤲🏻 You can add {pretty_money(new.how_much_rune_you_can_lp) + " " + RAIDO_GLYPH} {self.R} '
+            f'or {pretty_dollar(new.how_much_usd_you_can_lp)}.\n'
+            f'The price of {self.R} in the pools is ${new.price:.3f}.\n'
+            f'{call}'
+        )
+        return message
 
     def notification_text_cap_opened_up(self, cap: ThorCapInfo):
-        return ''  # todo!
+        return (
+            '💡 There is free space in liquidity pools!\n'
+            f'{pretty_money(cap.pooled_rune)} {self.R} of '
+            f"{pretty_money(cap.cap)} {self.R} max pooled.\n"
+            f"{self._cap_progress_bar(cap)}\n"
+            f'🤲🏻 You can add {pretty_rune(cap.how_much_rune_you_can_lp)} {self.R} '
+            f'or {pretty_dollar(cap.how_much_usd_you_can_lp)}.'
+        )
 
     @staticmethod
     def tx_convert_string(tx: ThorTxExtended, usd_per_rune):
@@ -128,11 +151,70 @@ class TwitterEnglishLocalization(BaseLocalization):
             )
 
         return msg.strip()
+
     def notification_text_queue_update(self, item_type, step, value):
-        return ''  # todo!
+        if step == 0:
+            return f"☺️ Queue [{item_type}] is empty again!"
+        else:
+            return (
+                f"🤬 Attention! Queue [{item_type}] has {value} transactions!\n"
+                f"[{item_type}] transactions may be delayed."
+            )
 
     def notification_text_price_update(self, p: PriceReport, ath=False, halted_chains=None):
-        return ''  # todo!
+        title = '💲 Price update' if not ath else '🚀 A new all-time high has been achieved!'
+
+        message = f"{title}\n"
+
+        if halted_chains:
+            hc = ', '.join(halted_chains)
+            message += f"🚨 Trading is still halted on {hc}.\n"
+
+        price = p.market_info.pool_rune_price
+
+        pr_text = f"${price:.3f}"
+        btc_price = f"₿ {p.btc_pool_rune_price:.8f}"
+        message += f"RUNE price is {pr_text} ({btc_price}) now.\n"
+
+        fp = p.market_info
+
+        if fp.cex_price > 0.0:
+            message += f"RUNE price at Binance (CEX) is {pretty_dollar(fp.cex_price)} " \
+                       f"(RUNE/USDT market).\n"
+
+            div, div_p, exclamation = self.price_div_calc(fp)
+            message += f"Divergence of Native vs BEP2 is {pretty_dollar(div)} ({div_p:.1f}%{exclamation}).\n"
+
+        last_ath = p.last_ath
+        if last_ath is not None and ath:
+            last_ath_pr = f'{last_ath.ath_price:.2f}'
+            ago_str = self.format_time_ago(now_ts() - last_ath.ath_date)
+            message += f"Last ATH was ${last_ath_pr} ({ago_str}).\n"
+
+        time_combos = zip(
+            ('1h', '24h', '7d'),
+            (p.price_1h, p.price_24h, p.price_7d)
+        )
+        for title, old_price in time_combos:
+            if old_price:
+                pc = calc_percent_change(old_price, price)
+                message += f"{title.rjust(4)}:{adaptive_round_to_str(pc, True).rjust(8)} % " \
+                           f"{emoji_for_percent_change(pc).ljust(4).rjust(6)}\n"
+
+        if fp.rank >= 1:
+            message += f"Coin market cap is {pretty_dollar(fp.market_cap)} (#{fp.rank})\n"
+
+        if fp.total_trade_volume_usd > 0:
+            message += f"Total trading volume is {pretty_dollar(fp.total_trade_volume_usd)}\n"
+
+        message += '\n'
+
+        if fp.tlv_usd >= 1:
+            message += (f"TVL of non-RUNE assets: ${pretty_money(fp.tlv_usd)}\n"
+                        f"So deterministic price of RUNE is {pretty_money(fp.fair_price, prefix='$')}\n"
+                        f"Speculative multiplier is {x_ses(fp.fair_price, price)}\n")
+
+        return message.rstrip()
 
     def notification_text_price_divergence(self, info: RuneMarketInfo, normal: bool):
         return ''  # todo!

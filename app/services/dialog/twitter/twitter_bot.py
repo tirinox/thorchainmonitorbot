@@ -1,4 +1,5 @@
 import asyncio
+import logging
 
 import tweepy
 from ratelimit import limits
@@ -6,11 +7,12 @@ from ratelimit import limits
 from services.lib.config import Config
 from services.lib.date_utils import DAY
 from services.lib.utils import class_logger, random_hex
-from services.notify.channel import MessageType, BoardMessage
+from services.notify.channel import MessageType, BoardMessage, MESSAGE_SEPARATOR
 
 
 class TwitterBot:
     LIMIT_CHARACTERS = 280
+    MAX_TWEETS_PER_DAY = 300
 
     def __init__(self, cfg: Config):
         self.cfg = cfg
@@ -36,10 +38,11 @@ class TwitterBot:
             self.logger.debug(f'Bad: {e!r}!')
             return False
 
-    @limits(calls=300, period=DAY)
+    @limits(calls=MAX_TWEETS_PER_DAY, period=DAY)
     def post_sync(self, text: str, image=None):
         if not text:
             return
+
         if len(text) >= self.LIMIT_CHARACTERS:
             self.logger.warning(f'Too long text ({len(text)} symbols): "{text}".')
             text = text[:self.LIMIT_CHARACTERS]
@@ -57,16 +60,35 @@ class TwitterBot:
         if not text:
             return
         loop = loop or asyncio.get_event_loop()
-        return await loop.run_in_executor(executor, self.post_sync, text, image)
+        await loop.run_in_executor(executor, self.post_sync, text, image)
+
+    async def multi_part_post(self, text: str, image=None, executor=None, loop=None):
+        parts = text.split(MESSAGE_SEPARATOR, maxsplit=10)
+        parts = filter(bool, map(str.strip, parts))
+
+        if not parts:
+            return
+
+        loop = loop or asyncio.get_event_loop()
+
+        for part in parts:
+            await self.post(part, image, executor, loop)
+            image = None  # attach image solely to the first post, then just nullify it
 
     async def safe_send_message(self, chat_id, msg: BoardMessage, **kwargs) -> bool:
-        if msg.message_type == MessageType.TEXT:
-            await self.post(msg.text)  # Chat_id is not supported yet... only one single channel
-        elif msg.message_type == MessageType.PHOTO:
-            await self.post(msg.text, image=msg.photo)
-        return True
+        # Chat_id is not supported yet... only one single channel
+        try:
+            if msg.message_type == MessageType.TEXT:
+                await self.multi_part_post(msg.text)
+            elif msg.message_type == MessageType.PHOTO:
+                await self.multi_part_post(msg.text, image=msg.photo)
+            return True
+        except Exception:
+            logging.exception(f'Twitter exception!', stack_info=True)
+            return False
 
 
 class TwitterBotMock(TwitterBot):
     def post_sync(self, text: str, image=None):
-        self.logger.info(f'🐦🐦🐦 Tweets: "\n{text}\n". 🐦🐦🐦 Img = {bool(image)}')
+        img_tag = "with image" if bool(image) else ""
+        self.logger.info(f'🐦🐦🐦 Tweets: "\n{text}\n". 🐦🐦🐦 {img_tag}')

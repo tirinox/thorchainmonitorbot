@@ -6,6 +6,9 @@ from localization.languages import Language
 
 CHANNEL_INACTIVE = 'channel_inactive'
 
+# this string tells some messengers e.g. Twitter to split a long post into sub posts
+MESSAGE_SEPARATOR = '------'
+
 
 class MessageType(Enum):
     TEXT = 'text'

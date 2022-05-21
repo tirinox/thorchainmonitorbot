@@ -262,7 +262,7 @@ class BaseLocalization(ABC):  # == English
             f"{self._cap_progress_bar(new)}\n"
             f'🤲🏻 You can add {bold(pretty_money(new.how_much_rune_you_can_lp) + " " + RAIDO_GLYPH)} {self.R} '
             f'or {bold(pretty_dollar(new.how_much_usd_you_can_lp))}.\n'
-            f'The price of {self.R} in the pools is <code>{new.price:.3f} $</code>.\n'
+            f'The price of {self.R} in the pools is {code(pretty_dollar(new.price))}.\n'
             f'{call}'
             f'{self.thor_site()}'
         )
