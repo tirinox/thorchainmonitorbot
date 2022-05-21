@@ -353,6 +353,10 @@ class ThorTx:
                     return True
         return False
 
+    @property
+    def is_liquidity_type(self):
+        return self.type in (ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_ADD_LIQUIDITY)
+
 
 def final_liquidity(txs: List[ThorTx]):
     lp = 0
@@ -490,8 +494,8 @@ class ThorTxExtended(ThorTx):
 
 
 @dataclass
-class EventLargeTXS:
-    txs: List[ThorTxExtended]
+class EventLargeTransaction:
+    transaction: ThorTxExtended
     usd_per_rune: float
     pool_info_map: Dict[str, PoolInfo]
     cap_info: ThorCapInfo = None

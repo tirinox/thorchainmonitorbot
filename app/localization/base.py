@@ -28,6 +28,7 @@ from services.models.pool_info import PoolInfo, PoolChanges, PoolDetailHolder
 from services.models.price import PriceReport, RuneMarketInfo
 from services.models.queue import QueueInfo
 from services.models.tx import ThorTxExtended, ThorTxType, ThorSubTx
+from services.notify.channel import Messengers
 
 CREATOR_TG = '@account1242'
 
@@ -65,7 +66,7 @@ class BaseLocalization(ABC):  # == English
     def alert_channel_name(self):
         channels = self.cfg.channels
         for c in channels:
-            if c['type'] == 'telegram':
+            if c['type'] == Messengers.TELEGRAM:
                 return c['name']
         return ''
 
@@ -361,23 +362,6 @@ class BaseLocalization(ABC):  # == English
             return '❗'
         else:
             return ''
-
-    def notification_text_large_txs(self, large_txs: List[ThorTxExtended],
-                                    usd_per_rune: float,
-                                    pool_info_map,
-                                    cap_info: ThorCapInfo = None):
-        texts = []
-        has_liquidity = False
-        for tx in large_txs:
-            if tx.type in (ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_ADD_LIQUIDITY):
-                has_liquidity = True
-            pool_info = pool_info_map.get(tx.first_pool)
-
-            # append it only to the last one (if has liquidity change TXS)
-            cap_info_last = cap_info if (tx == large_txs[-1] and has_liquidity) else None
-
-            texts.append(self.notification_text_large_single_tx(tx, usd_per_rune, pool_info, cap_info_last))
-        return '\n\n'.join(texts)
 
     def notification_text_large_single_tx(self, tx: ThorTxExtended, usd_per_rune: float,
                                           pool_info: PoolInfo,

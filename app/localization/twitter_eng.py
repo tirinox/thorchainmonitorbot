@@ -22,12 +22,6 @@ class TwitterEnglishLocalization(BaseLocalization):
     def notification_text_cap_opened_up(self, cap: ThorCapInfo):
         return ''  # todo!
 
-    def notification_text_large_txs(self, large_txs: List[ThorTxExtended],
-                                    usd_per_rune: float,
-                                    pool_info_map,
-                                    cap_info: ThorCapInfo = None):
-        return ''  # todo!
-
     def notification_text_large_single_tx(self, tx: ThorTxExtended, usd_per_rune: float,
                                           pool_info: PoolInfo,
                                           cap: ThorCapInfo = None):

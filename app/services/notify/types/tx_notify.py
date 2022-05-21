@@ -1,13 +1,12 @@
 from typing import List
 
-from localization import BaseLocalization
 from services.jobs.fetch.base import INotified, WithDelegates
 from services.lib.config import SubConfig
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.money import Asset
 from services.lib.utils import linear_transform, class_logger
-from services.models.tx import ThorTxExtended, EventLargeTXS
+from services.models.tx import ThorTxExtended, EventLargeTransaction
 from services.notify.types.cap_notify import LiquidityCapNotifier
 
 
@@ -64,23 +63,18 @@ class GenericTxNotifier(INotified, WithDelegates):
 
         if not large_txs:
             return
-
         self.logger.info(f"Large Txs count is {len(large_txs)}.")
 
         cap_info = await LiquidityCapNotifier.get_last_cap_from_db(self.deps.db)
+        has_liquidity = any(tx.is_liquidity_type for tx in large_txs)
 
-        await self.pass_data_to_listeners(EventLargeTXS(
-            large_txs, usd_per_rune,
-            self.deps.price_holder.pool_info_map,
-            cap_info
-        ))
-
-        # await self.deps.broadcaster.notify_preconfigured_channels(
-        #     BaseLocalization.notification_text_large_txs,
-        #     large_txs, usd_per_rune,
-        #     self.deps.price_holder.pool_info_map,
-        #     cap_info
-        # )
+        for tx in large_txs:
+            is_last = tx == large_txs[-1]
+            await self.pass_data_to_listeners(EventLargeTransaction(
+                tx, usd_per_rune,
+                self.deps.price_holder.pool_info_map,
+                cap_info=(cap_info if has_liquidity and is_last else None)
+            ))
 
     def _get_min_usd_depth(self, tx: ThorTxExtended, usd_per_rune):
         pools = tx.pools
