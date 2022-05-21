@@ -715,7 +715,7 @@ class BaseLocalization(ABC):  # == English
 
         message += '\n'
 
-        security_pb = progressbar(new.network_security_ratio, 1.0, 10)
+        security_pb = progressbar(new.network_security_ratio, 1.0, 12)
         security_text = self.network_bond_security_text(new.network_security_ratio)
         message += f'🕸️ Network is {bold(security_text)} {security_pb}.\n'
 
@@ -985,7 +985,7 @@ class BaseLocalization(ABC):  # == English
     def notification_text_version_upgrade_progress(self,
                                                    data: NodeSetChanges,
                                                    ver_con: NodeVersionConsensus):
-        msg = bold('🕖 THORChain version upgrade progress\n\n')
+        msg = bold('🕖 THORChain version upgrade progress') + '\n\n'
 
         progress = ver_con.ratio * 100.0
         pb = progressbar(progress, 100.0, 14)

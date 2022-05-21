@@ -558,7 +558,7 @@ class RussianLocalization(BaseLocalization):
 
         message += '\n'
 
-        security_pb = progressbar(new.network_security_ratio, 1.0, 10)
+        security_pb = progressbar(new.network_security_ratio, 1.0, 12)
         security_text = self.network_bond_security_text(new.network_security_ratio)
         message += f'🕸️ Сейчас сеть {bold(security_text)} {security_pb}.\n'
 
