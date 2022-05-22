@@ -28,10 +28,10 @@ class TwitterEnglishLocalization(BaseLocalization):
         arrow = '⬆️' if up else '⚠️ ⬇️'
         call = "Come on, add more liquidity!\n" if up else ''
         message = (
-            f'{arrow} Pool cap {verb} from {pretty_money(old.cap)} to {pretty_money(new.cap)}!\n'
-            f'Currently {pretty_money(new.pooled_rune)} {self.R} are in the liquidity pools.\n'
+            f'{arrow} Pool cap {verb} from {short_money(old.cap)} to {short_money(new.cap)}!\n'
+            f'Currently {short_money(new.pooled_rune)} {self.R} are in the liquidity pools.\n'
             f"{self._cap_progress_bar(new)}\n"
-            f'🤲🏻 You can add {pretty_money(new.how_much_rune_you_can_lp) + " " + RAIDO_GLYPH} {self.R} '
+            f'🤲🏻 You can add {short_money(new.how_much_rune_you_can_lp) + " " + RAIDO_GLYPH} {self.R} '
             f'or {pretty_dollar(new.how_much_usd_you_can_lp)}.\n'
             f'The price of {self.R} in the pools is ${new.price:.3f}.\n'
             f'{call}'

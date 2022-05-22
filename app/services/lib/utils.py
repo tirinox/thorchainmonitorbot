@@ -308,3 +308,19 @@ def copy_photo(p: BytesIO):
     new = BytesIO(p.read())
     new.name = p.name
     return new
+
+
+def run_once_async(f):
+    """Runs a function (successfully) only once (async).
+    The running can be reset by setting the `has_run` attribute to False
+    """
+
+    @wraps(f)
+    async def wrapper(*args, **kwargs):
+        if not wrapper.has_run:
+            result = await f(*args, **kwargs)
+            wrapper.has_run = True
+            return result
+
+    wrapper.has_run = False
+    return wrapper

@@ -4,6 +4,7 @@ from services.jobs.fetch.base import BaseFetcher, WithDelegates
 from services.lib.constants import BNB_RUNE_SYMBOL_NO_CHAIN
 from services.lib.date_utils import parse_timespan_to_seconds, now_ts
 from services.lib.depcont import DepContainer
+from services.lib.utils import run_once_async
 from services.lib.web_sockets import WSClient
 from services.models.bep2 import BEP2Transfer
 
@@ -64,6 +65,7 @@ class BinanceOrgDexWSSClient(WSClient, WithDelegates):
     async def on_connected(self):
         self.logger.info('Connected to Binance.org.')
 
+    @run_once_async
     async def _dbg_later(self):
         await self.pass_data_to_listeners(BEP2Transfer(
             'bnb1u2agwjat20494fmc6jnuau0ls937cfjn4pjwtn',

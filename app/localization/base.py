@@ -1734,5 +1734,5 @@ class BaseLocalization(ABC):  # == English
         message += self.format_supply_entry('Overall', supply.overall, supply.overall.total)
 
         message += f"Coin market cap of {bold(self.R)} is " \
-                   f"{bold(pretty_dollar(market_info.market_cap))} (#{bold(market_info.rank)})"
+                   f"{bold(short_dollar(market_info.market_cap))} (#{bold(market_info.rank)})"
         return message
