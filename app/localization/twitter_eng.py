@@ -66,17 +66,17 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         heading = ''
         if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
-            heading = f'🐳 Whale added liquidity 🟢'
+            heading = f'🐳 Add liquidity 🟢'
         elif tx.type == ThorTxType.TYPE_WITHDRAW:
-            heading = f'🐳 Whale removed liquidity 🔴'
+            heading = f'🐳 Withdraw liquidity 🔴'
         elif tx.type == ThorTxType.TYPE_DONATE:
             heading = f'🙌 Donation to the pool'
         elif tx.type == ThorTxType.TYPE_SWAP:
-            heading = f'🐳 Large swap 🔁'
+            heading = f'🐳 Swap 🔁'
         elif tx.type == ThorTxType.TYPE_REFUND:
-            heading = f'🐳 Big refund ↩️❗'
+            heading = f'🐳 Refund ↩️❗'
         elif tx.type == ThorTxType.TYPE_SWITCH:
-            heading = f'🐳 Large Rune switch 🆙'
+            heading = f'🐳 Rune switch 🆙'
 
         asset = Asset(tx.first_pool).name
 
@@ -85,7 +85,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             if tx.affiliate_fee > 0:
                 aff_fee_usd = tx.get_affiliate_fee_usd(usd_per_rune)
                 mark = self._exclamation_sign(aff_fee_usd, 'fee_usd_limit')
-                aff_text = f'Affiliate fee: {short_dollar(aff_fee_usd)}{mark} ' \
+                aff_text = f'Aff. fee: {short_dollar(aff_fee_usd)}{mark} ' \
                            f'({format_percent(tx.affiliate_fee)})\n'
             else:
                 aff_text = ''
@@ -93,7 +93,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             ilp_rune = tx.meta_withdraw.ilp_rune if tx.meta_withdraw else 0
             if ilp_rune > 0:
                 ilp_rune_fmt = pretty_money(ilp_rune, postfix=" " + self.R)
-                ilp_text = f'🛡️ IL protection paid: {ilp_rune_fmt} ' \
+                ilp_text = f'🛡️ IL prot. paid: {ilp_rune_fmt} ' \
                            f'({pretty_dollar(ilp_rune * usd_per_rune)})\n'
             else:
                 ilp_text = ''
@@ -102,10 +102,10 @@ class TwitterEnglishLocalization(BaseLocalization):
                 f"{pretty_money(tx.rune_amount)} {self.R} ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
                 f"{pretty_money(tx.asset_amount)} {asset} "
                 f"({ap:.0f}% = {asset_side_usd_short})\n"
-                f"Total: ${pretty_money(total_usd_volume)} ({percent_of_pool:.2f}% of the whole pool).\n"
+                f"Total: ${pretty_money(total_usd_volume)} ({percent_of_pool:.2f}% of pool).\n"
                 f"{aff_text}"
                 f"{ilp_text}"
-                f"Pool depth is ${pretty_money(pool_depth_usd)} now."
+                f"The depth is ${pretty_money(pool_depth_usd)} now."
             )
         elif tx.type == ThorTxType.TYPE_SWITCH:
             # [Amt] Rune [Blockchain: ERC20/BEP2] -> [Amt] THOR Rune ($usd)
@@ -163,28 +163,26 @@ class TwitterEnglishLocalization(BaseLocalization):
             )
 
     def notification_text_price_update(self, p: PriceReport, ath=False, halted_chains=None):
-        title = '💲 Price update' if not ath else '🚀 A new all-time high has been achieved!'
+        title = '💲 Price update' if not ath else '🚀 New all-time high!'
 
         message = f"{title}\n"
 
-        if halted_chains:
-            hc = ', '.join(halted_chains)
-            message += f"🚨 Trading is still halted on {hc}.\n"
+        # if halted_chains:
+        #     hc = ', '.join(halted_chains)
+        #     message += f"🚨 Trading is still halted on {hc}.\n"
 
         price = p.market_info.pool_rune_price
 
-        pr_text = f"${price:.3f}"
         btc_price = f"₿ {p.btc_pool_rune_price:.8f}"
-        message += f"RUNE price is {pr_text} ({btc_price}) now.\n"
+        message += f"RUNE is {price:.3f} ({btc_price}) now\n"
 
         fp = p.market_info
 
         if fp.cex_price > 0.0:
-            message += f"RUNE price at Binance (CEX) is {pretty_dollar(fp.cex_price)} " \
-                       f"(RUNE/USDT market).\n"
+            message += f"RUNE/USDT Binance: {pretty_dollar(fp.cex_price)}\n"
 
-            div, div_p, exclamation = self.price_div_calc(fp)
-            message += f"Divergence of Native vs BEP2 is {pretty_dollar(div)} ({div_p:.1f}%{exclamation}).\n"
+            _, div_p, exclamation = self.price_div_calc(fp)
+            message += f"Divergence: {div_p:.1f}%{exclamation}\n"
 
         last_ath = p.last_ath
         if last_ath is not None and ath:
@@ -199,21 +197,19 @@ class TwitterEnglishLocalization(BaseLocalization):
         for title, old_price in time_combos:
             if old_price:
                 pc = calc_percent_change(old_price, price)
-                message += f"{title.rjust(4)}:{adaptive_round_to_str(pc, True).rjust(8)} % " \
-                           f"{emoji_for_percent_change(pc).ljust(4).rjust(6)}\n"
+                message += f"{title.rjust(4)}: {adaptive_round_to_str(pc, True)}% " \
+                           f"{emoji_for_percent_change(pc)}\n"
 
         if fp.rank >= 1:
-            message += f"Coin market cap is {pretty_dollar(fp.market_cap)} (#{fp.rank})\n"
+            message += f"Market cap: {pretty_dollar(fp.market_cap)} (#{fp.rank})\n"
 
         if fp.total_trade_volume_usd > 0:
-            message += f"Total trading volume is {pretty_dollar(fp.total_trade_volume_usd)}\n"
-
-        message += '\n'
+            message += f'24h volume: {pretty_dollar(fp.total_trade_volume_usd)}\n'
 
         if fp.tlv_usd >= 1:
-            message += (f"TVL of non-RUNE assets: ${pretty_money(fp.tlv_usd)}\n"
-                        f"So deterministic price of RUNE is {pretty_money(fp.fair_price, prefix='$')}\n"
-                        f"Speculative multiplier is {x_ses(fp.fair_price, price)}\n")
+            message += (
+                f"Det. price: {pretty_money(fp.fair_price, prefix='$')}\n"
+                f"Spec. mult.: {x_ses(fp.fair_price, price)}\n")
 
         return message.rstrip()
 
@@ -257,11 +253,10 @@ class TwitterEnglishLocalization(BaseLocalization):
         return message.rstrip()
 
     def notification_text_network_summary(self, old: NetworkStats, new: NetworkStats, market: RuneMarketInfo):
-        message = '🌐 THORChain stats\n\n'
+        message = '🌐 THORChain stats\n'
 
-        security_pb = progressbar(new.network_security_ratio, 1.0, 12)
         security_text = self.network_bond_security_text(new.network_security_ratio)
-        message += f'🕸️ Network is {security_text} {security_pb}.\n'
+        message += f'🕸️ Network is {security_text}.\n'
 
         active_nodes_change = bracketify(up_down_arrow(old.active_nodes, new.active_nodes, int_delta=True))
         standby_nodes_change = bracketify(up_down_arrow(old.active_nodes, new.active_nodes, int_delta=True))
@@ -555,8 +550,8 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         halted_chains = ', '.join(c.chain for c in chain_infos if c.halted)
         if halted_chains:
-            msg += f'🚨🚨🚨 Attention! Trading is halted on the {halted_chains} chains! ' \
-                   f'Refrain from using it until the trading is restarted! 🚨🚨🚨\n\n'
+            msg += f'🚨 Attention! Trading is halted on the {halted_chains} chains! ' \
+                   f'Refrain from using it until the trading is restarted! 🚨\n\n'
 
         resumed_chains = ', '.join(c.chain for c in chain_infos if not c.halted)
         if resumed_chains:

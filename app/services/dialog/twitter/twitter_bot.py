@@ -39,14 +39,21 @@ class TwitterBot:
             self.logger.debug(f'Bad: {e!r}!')
             return False
 
+    def log_tweet(self, text, image):
+        img_tag = "with image" if bool(image) else ""
+        self.logger.info(f'🐦🐦🐦 Tweets: "\n{text}\n" [{twitter_text_length(text)} symbols]. 🐦🐦🐦 {img_tag}')
+
     @limits(calls=MAX_TWEETS_PER_DAY, period=DAY)
     def post_sync(self, text: str, image=None):
         if not text:
             return
 
-        if twitter_text_length(text) >= self.LIMIT_CHARACTERS:
-            self.logger.warning(f'Too long text ({len(text)} symbols): "{text}".')
+        real_len = twitter_text_length(text)
+        if real_len >= self.LIMIT_CHARACTERS:
+            self.logger.warning(f'Too long text ({real_len} symbols): "{text}".')
             text = twitter_cut_text(text, self.LIMIT_CHARACTERS)
+
+        self.log_tweet(text, image)
 
         if image:
             name = f'image-{random_hex()}.png'
@@ -93,5 +100,4 @@ class TwitterBot:
 
 class TwitterBotMock(TwitterBot):
     def post_sync(self, text: str, image=None):
-        img_tag = "with image" if bool(image) else ""
-        self.logger.info(f'🐦🐦🐦 Tweets: "\n{text}\n". 🐦🐦🐦 {img_tag}')
+        self.log_tweet(text, image)

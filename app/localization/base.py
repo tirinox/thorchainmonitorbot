@@ -374,7 +374,7 @@ class BaseLocalization(ABC):  # == English
         if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
             heading = f'🐳 <b>Whale added liquidity</b> 🟢'
         elif tx.type == ThorTxType.TYPE_WITHDRAW:
-            heading = f'🐳 <b>Whale removed liquidity</b> 🔴'
+            heading = f'🐳 <b>Whale withdrew liquidity</b> 🔴'
         elif tx.type == ThorTxType.TYPE_DONATE:
             heading = f'🙌 <b>Donation to the pool</b>'
         elif tx.type == ThorTxType.TYPE_SWAP:
