@@ -276,8 +276,12 @@ class App:
             d.slack_bot.start_in_background()
 
         if d.cfg.get('twitter.enabled', False):
-            # d.twitter_bot = TwitterBot(d.cfg)
-            d.twitter_bot = TwitterBotMock(d.cfg)
+            if d.cfg.get('twitter.is_mock', False):
+                logging.warning('Using Twitter Mock bot! All Tweets will go only to the logs!')
+                d.twitter_bot = TwitterBotMock(d.cfg)
+            else:
+                logging.info('Using real Twitter bot.')
+                d.twitter_bot = TwitterBot(d.cfg)
 
         self.deps.is_loading = False
         await asyncio.gather(*(task.run() for task in tasks))

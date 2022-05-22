@@ -13,6 +13,7 @@ cffi==1.14.6
 chardet==4.0.0
 charset-normalizer==2.0.6
 # discord.py==1.7.3
+emoji>=1.7.0
 idna==3.2
 iniconfig==1.1.1
 html-slacker>=0.1.6

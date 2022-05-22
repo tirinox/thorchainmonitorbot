@@ -29,7 +29,8 @@ class NetworkStatsNotifier(INotified):
 
         await self.series.add(info=new_info.as_json_string)
 
-        if await self.notify_cd.can_do():
+        # if await self.notify_cd.can_do():
+        if True:  # fixme: debug
             old_info = await self.get_previous_stats(ago=self.notify_cd.cooldown)  # since last time notified
             rune_market_info: RuneMarketInfo = await self.deps.rune_market_fetcher.get_rune_market_info()
             await self._notify(old_info, new_info, rune_market_info)

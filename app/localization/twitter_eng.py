@@ -18,6 +18,7 @@ from services.models.node_info import NodeSetChanges, NodeVersionConsensus, Node
 from services.models.pool_info import PoolDetailHolder, PoolChanges, PoolInfo
 from services.models.price import RuneMarketInfo, PriceReport
 from services.models.tx import ThorTxExtended, ThorTxType
+from services.notify.channel import MESSAGE_SEPARATOR
 
 
 class TwitterEnglishLocalization(BaseLocalization):
@@ -292,6 +293,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         message += f"🔗 Total bond including standby: {current_total_bond_text}{current_total_bond_change} or " \
                    f"{current_total_bond_usd_text}{current_total_bond_usd_change}.\n"
+
         # -- POOL
 
         current_pooled_text = pretty_money(new.total_rune_pooled, postfix=RAIDO_GLYPH)
@@ -328,7 +330,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         # --- FLOWS:
 
-        message += '\n'
+        message += MESSAGE_SEPARATOR
 
         if old.is_ok:
             # 24 h Add/withdrawal
@@ -391,6 +393,8 @@ class TwitterEnglishLocalization(BaseLocalization):
         else:
             liquidity_apy_change = ''
 
+        message += MESSAGE_SEPARATOR
+
         switch_rune_total_text = pretty_money(new.switched_rune, prefix=RAIDO_GLYPH)
         message += (f'💎 Total Rune switched to native: {switch_rune_total_text} '
                     f'({format_percent(new.switched_rune, market.total_supply)}).'
@@ -399,14 +403,14 @@ class TwitterEnglishLocalization(BaseLocalization):
         message += f'📈 Bonding APY is {pretty_money(new.bonding_apy, postfix="%")}{bonding_apy_change} and ' \
                    f'Liquidity APY is {pretty_money(new.liquidity_apy, postfix="%")}{liquidity_apy_change}.\n'
 
-        message += f'🛡️ Total Imp. Loss. Protection paid: {(pretty_dollar(new.loss_protection_paid_usd))}.\n'
+        message += f'🛡 Total Imp. Loss. Protection paid: {(pretty_dollar(new.loss_protection_paid_usd))}.\n'
 
         daily_users_change = bracketify(up_down_arrow(old.users_daily, new.users_daily, int_delta=True))
         monthly_users_change = bracketify(up_down_arrow(old.users_monthly, new.users_monthly, int_delta=True))
         message += f'👥 Daily users: {new.users_daily}{daily_users_change}, ' \
                    f'monthly users: {new.users_monthly}{monthly_users_change}\n'
 
-        message += '\n'
+        message += MESSAGE_SEPARATOR
 
         active_pool_changes = bracketify(up_down_arrow(old.active_pool_count,
                                                        new.active_pool_count, int_delta=True))

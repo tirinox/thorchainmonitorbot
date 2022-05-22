@@ -4,6 +4,7 @@ import logging
 import tweepy
 from ratelimit import limits
 
+from services.dialog.twitter.text_length import twitter_text_length, twitter_cut_text
 from services.lib.config import Config
 from services.lib.date_utils import DAY
 from services.lib.utils import class_logger, random_hex
@@ -43,9 +44,9 @@ class TwitterBot:
         if not text:
             return
 
-        if len(text) >= self.LIMIT_CHARACTERS:
+        if twitter_text_length(text) >= self.LIMIT_CHARACTERS:
             self.logger.warning(f'Too long text ({len(text)} symbols): "{text}".')
-            text = text[:self.LIMIT_CHARACTERS]
+            text = twitter_cut_text(text, self.LIMIT_CHARACTERS)
 
         if image:
             name = f'image-{random_hex()}.png'
@@ -64,10 +65,12 @@ class TwitterBot:
 
     async def multi_part_post(self, text: str, image=None, executor=None, loop=None):
         parts = text.split(MESSAGE_SEPARATOR, maxsplit=10)
-        parts = filter(bool, map(str.strip, parts))
+        parts = list(filter(bool, map(str.strip, parts)))
 
         if not parts:
             return
+        elif len(parts) >= 2:
+            logging.info(f'Twitter multi part message: {len(parts) = }')
 
         loop = loop or asyncio.get_event_loop()
 
