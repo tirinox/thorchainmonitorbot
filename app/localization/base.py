@@ -1612,11 +1612,14 @@ class BaseLocalization(ABC):  # == English
             if attr_name == pd.BY_APY:
                 v = f'{v:.1f}%'
             else:
-                v = pretty_dollar(v)
+                v = short_dollar(v)
 
             delta = pd.get_difference_percent(pool.asset, attr_name)
-            delta_p = pretty_money(delta, signed=True, postfix='%') if delta else ''
-            delta_p = f'({delta_p})' if delta_p else ''
+            # cut too small APY change
+            if delta and abs(delta) < 1:
+                delta = 0
+
+            delta_p = bracketify(pretty_money(delta, signed=True, postfix='%')) if delta else ''
 
             asset = Asset.from_string(pool.asset).short_str
             url = f'https://app.thorswap.finance/pool/{pool.asset}'

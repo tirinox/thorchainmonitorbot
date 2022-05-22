@@ -129,7 +129,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             if tx.affiliate_fee > 0:
                 aff_fee_usd = tx.get_affiliate_fee_usd(usd_per_rune)
                 mark = self._exclamation_sign(aff_fee_usd, 'fee_usd_limit')
-                aff_text = f'Affiliate fee: {short_dollar(aff_fee_usd)}{mark} ' \
+                aff_text = f'Aff. fee: {short_dollar(aff_fee_usd)}{mark} ' \
                            f'({format_percent(tx.affiliate_fee)})\n'
             else:
                 aff_text = ''
@@ -138,7 +138,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             content += (
                 f"\n{aff_text}"
                 f"Slip: {slip_str}, "
-                f"liquidity fee: {pretty_dollar(l_fee_usd)}{slip_mark}"
+                f"liq. fee: {pretty_dollar(l_fee_usd)}{slip_mark}"
             )
 
         msg = f"{heading}\n{content}"
@@ -146,7 +146,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         if cap:
             msg += (
                 f"\n\n"
-                f"Liquidity cap is {self._cap_progress_bar(cap)} full now.\n"
+                f"Liq. cap is {format_percent(cap.pooled_rune, cap.cap)} full now.\n"
                 f'You can add {pretty_money(cap.how_much_rune_you_can_lp)} {self.R} '
                 f'({pretty_dollar(cap.how_much_usd_you_can_lp)}) more.\n'
             )
@@ -163,9 +163,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             )
 
     def notification_text_price_update(self, p: PriceReport, ath=False, halted_chains=None):
-        title = '💲 Price update' if not ath else '🚀 New all-time high!'
-
-        message = f"{title}\n"
+        message = '🚀 New all-time high!\n' if ath else ''
 
         # if halted_chains:
         #     hc = ', '.join(halted_chains)
@@ -174,7 +172,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         price = p.market_info.pool_rune_price
 
         btc_price = f"₿ {p.btc_pool_rune_price:.8f}"
-        message += f"RUNE is {price:.3f} ({btc_price}) now\n"
+        message += f"RUNE price is {price:.3f} ({btc_price}) now\n"
 
         fp = p.market_info
 
@@ -188,7 +186,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         if last_ath is not None and ath:
             last_ath_pr = f'{last_ath.ath_price:.2f}'
             ago_str = self.format_time_ago(now_ts() - last_ath.ath_date)
-            message += f"Last ATH was ${last_ath_pr} ({ago_str}).\n"
+            message += f"Last ATH: ${last_ath_pr} ({ago_str}).\n"
 
         time_combos = zip(
             ('1h', '24h', '7d'),
@@ -201,10 +199,10 @@ class TwitterEnglishLocalization(BaseLocalization):
                            f"{emoji_for_percent_change(pc)}\n"
 
         if fp.rank >= 1:
-            message += f"Market cap: {pretty_dollar(fp.market_cap)} (#{fp.rank})\n"
+            message += f"Mrkt. cap: {pretty_dollar(fp.market_cap)} (#{fp.rank})\n"
 
         if fp.total_trade_volume_usd > 0:
-            message += f'24h volume: {pretty_dollar(fp.total_trade_volume_usd)}\n'
+            message += f'24h vol.: {pretty_dollar(fp.total_trade_volume_usd)}\n'
 
         if fp.tlv_usd >= 1:
             message += (
@@ -221,8 +219,8 @@ class TwitterEnglishLocalization(BaseLocalization):
         text = (
             f"🖖 {title}\n"
             f"CEX (BEP2) Rune price is {pretty_dollar(info.cex_price)}\n"
-            f"Weighted average Rune price by liquidity pools is {pretty_dollar(info.pool_rune_price)}\n"
-            f"Divergence Native vs BEP2 is {pretty_dollar(div)} ({div_p:.1f}%{exclamation})."
+            f"Weighted average Rune price over liquidity pools is {pretty_dollar(info.pool_rune_price)}\n"
+            f"Divergence is {pretty_dollar(div)} ({div_p:.1f}%{exclamation})."
         )
         return text
 
@@ -423,29 +421,20 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         return message
 
-    def _format_node_text(self, node: NodeInfo, add_status=False, extended_info=False, expand_link=False):
+    def _format_node_text_plain(self, node: NodeInfo, add_status=False):
         node_ip_link = node.ip_address or 'no IP'
         node_thor_link = short_address(node.node_address)
-        extra = ''
-        if extended_info:
-            if node.slash_points:
-                extra += f', {node.slash_points} slash points'
-
-            if node.current_award:
-                award_text = short_money(node.current_award, postfix=RAIDO_GLYPH)
-                extra += f", current award is {award_text}"
-
         status = f' ({node.status})' if add_status else ''
         return f'{node_thor_link} ({node_ip_link} v. {node.version}) ' \
-               f'bond {short_money(node.bond, postfix=RAIDO_GLYPH)} {status}{extra}'.strip()
+               f'bond {short_money(node.bond, postfix=RAIDO_GLYPH)} {status}'.strip()
 
-    def _make_node_list(self, nodes, title, add_status=False, extended_info=False, start=1):
+    def _make_node_list_plain(self, nodes, title, add_status=False, start=1):
         if not nodes:
             return ''
 
         message = title + "\n"
         message += join_as_numbered_list(
-            (self._format_node_text(node, add_status, extended_info) for node in nodes if node.node_address),
+            (self._format_node_text_plain(node, add_status) for node in nodes if node.node_address),
             start=start
         )
         return message + "\n"
@@ -459,12 +448,12 @@ class TwitterEnglishLocalization(BaseLocalization):
         message = ''
 
         if changes.nodes_activated or changes.nodes_deactivated:
-            message += '♻️ Node churn' + '\n\n'
+            message += '♻️ Node churn' + '\n'
 
-        message += self._make_node_list(changes.nodes_added, '🆕 New nodes:', add_status=True)
-        message += self._make_node_list(changes.nodes_activated, '➡️ Nodes that churned in:')
-        message += self._make_node_list(changes.nodes_deactivated, '⬅️️ Nodes that churned out:')
-        message += self._make_node_list(changes.nodes_removed, '🗑️ Nodes that disconnected:', add_status=True)
+        message += self._make_node_list_plain(changes.nodes_added, '🆕 New nodes:', add_status=True)
+        message += self._make_node_list_plain(changes.nodes_activated, '➡️ Nodes churned in:')
+        message += self._make_node_list_plain(changes.nodes_deactivated, '⬅️️ Nodes churned out:')
+        message += self._make_node_list_plain(changes.nodes_removed, '🗑️ Nodes disconnected:', add_status=True)
 
         if changes.nodes_activated or changes.nodes_deactivated:
             message += self._node_bond_change_after_churn(changes)
@@ -478,7 +467,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         return f"{v} ({n_nodes} {plural(n_nodes, 'node', 'nodes')})"
 
     def notification_text_version_upgrade_progress(self, data: NodeSetChanges, ver_con: NodeVersionConsensus):
-        msg = '🕖 THORChain version upgrade progress\n\n'
+        msg = '🕖 Version upgrade progress\n\n'
 
         progress = ver_con.ratio * 100.0
         pb = progressbar(progress, 100.0, 14)
@@ -515,7 +504,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             action = 'upgraded' if new_active_ver > old_active_ver else 'downgraded'
             emoji = '🆙' if new_active_ver > old_active_ver else '⬇️'
             msg += (
-                f"{emoji} {'Attention!'} Active protocol version has been {action} "
+                f"{emoji} Attention! Active protocol version has been {action} "
                 f"from {old_active_ver} to {version_and_nodes(new_active_ver)}\n\n"
             )
 
@@ -594,7 +583,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             e = change.entry
             if e:
                 if e.source == e.SOURCE_AUTO:
-                    text += '[🤖 Automatic solvency checker ]  '
+                    text += '[🤖 Auto-solvency ]  '
                 elif e.source == e.SOURCE_ADMIN:
                     text += '[👩‍💻 Admins ]  '
                 elif e.source == e.SOURCE_NODE:
@@ -605,7 +594,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             if change.kind == MimirChange.ADDED_MIMIR:
                 text += (
                     f'➕ The constant \"{name}\" has been overridden by a new Mimir. '
-                    f'The default value was {old_value_fmt} → the new value is {new_value_fmt}‼️'
+                    f'Default: {old_value_fmt} → New: {new_value_fmt}‼️'
                 )
             elif change.kind == MimirChange.REMOVED_MIMIR:
                 text += f"➖ Mimir's constant \"{name}\" has been deleted. It was {old_value_fmt} before. ‼️"
@@ -627,19 +616,23 @@ class TwitterEnglishLocalization(BaseLocalization):
         top_pools = pd.get_top_pools(attr_name, n=n_pools)
         text = title + '\n'
         for i, pool in enumerate(top_pools, start=1):
+
             v = pd.get_value(pool.asset, attr_name)
             if attr_name == pd.BY_APY:
                 v = f'{v:.1f}%'
             else:
-                v = pretty_dollar(v)
+                v = short_dollar(v)
 
             delta = pd.get_difference_percent(pool.asset, attr_name)
-            delta_p = pretty_money(delta, signed=True, postfix='%') if delta else ''
-            delta_p = f'({delta_p})' if delta_p else ''
+            # cut too small APY change
+            if delta and abs(delta) < 1:
+                delta = 0
 
-            asset = Asset.from_string(pool.asset).short_str
+            delta_p = bracketify(format_percent(delta, 100, signed=True)) if delta else ''
 
-            text += f'#{i}. {asset}: {v} {delta_p}\n'
+            asset = Asset.from_string(pool.asset).shortest
+
+            text += f'{i}. {asset}: {v} {delta_p}\n'
         if not top_pools:
             text += no_pool_text
         return text.strip()
@@ -647,7 +640,7 @@ class TwitterEnglishLocalization(BaseLocalization):
     def notification_text_best_pools(self, pd: PoolDetailHolder, n_pools):
         n_pools = 3  # less for Twitter
         no_pool_text = 'Nothing yet. Maybe still loading...'
-        text = '\n\n'.join([self.format_pool_top(top_pools, pd, title, no_pool_text, n_pools) for title, top_pools in [
+        text = '\n'.join([self.format_pool_top(top_pools, pd, title, no_pool_text, n_pools) for title, top_pools in [
             ('💎 Best APY', pd.BY_APY),
             ('💸 Top volume', pd.BY_VOLUME_24h),
             ('🏊 Max Liquidity', pd.BY_DEPTH),

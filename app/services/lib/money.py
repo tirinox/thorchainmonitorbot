@@ -244,6 +244,10 @@ class Asset:
             return f'{s}{self.chain}.{self.name}'
 
     @property
+    def shortest(self):
+        return f'{self.chain}.{self.name}'
+
+    @property
     def full_name(self):
         if self.valid:
             return f'{self.name}-{self.tag}' if self.tag else self.name
