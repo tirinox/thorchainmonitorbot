@@ -92,6 +92,8 @@ class TwitterBot:
                 await self.multi_part_post(msg.text)
             elif msg.message_type == MessageType.PHOTO:
                 await self.multi_part_post(msg.text, image=msg.photo)
+            else:
+                logging.warning(f'Type "{msg.message_type}" is not supported for Twitter.')
             return True
         except Exception:
             logging.exception(f'Twitter exception!', stack_info=True)

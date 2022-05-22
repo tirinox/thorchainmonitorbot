@@ -85,7 +85,9 @@ class Broadcaster:
 
     @staticmethod
     async def _form_message(text, channel_info: ChannelDescriptor, **kwargs) -> BoardMessage:
-        if isinstance(text, str):
+        if isinstance(text, BoardMessage):
+            return text
+        elif isinstance(text, str):
             return BoardMessage(text)
         elif callable(text):
             b_message = await text(channel_info.channel_id, **kwargs)

@@ -9,10 +9,10 @@ from services.lib.cooldown import CooldownSingle
 from services.lib.date_utils import MINUTE, HOUR, DAY, parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.money import pretty_money, calc_percent_change
-from services.notify.channel import MessageType, BoardMessage
 from services.lib.utils import make_stickers_iterator, class_logger
 from services.models.price import RuneMarketInfo, PriceReport, PriceATH
 from services.models.time_series import PriceTimeSeries
+from services.notify.channel import MessageType, BoardMessage
 
 
 class PriceNotifier(INotified):
@@ -33,7 +33,8 @@ class PriceNotifier(INotified):
         self.price_graph_period = parse_timespan_to_seconds(cfg.price_graph.default_period)
 
     async def on_data(self, sender, market_info: RuneMarketInfo):
-        # market_info.pool_rune_price = 21.98  # fixme: debug! for ATH
+        # market_info.pool_rune_price = 50.98  # fixme: debug! for ATH
+
         if not await self.handle_ath(market_info):
             await self.handle_new_price(market_info)
 
@@ -55,7 +56,7 @@ class PriceNotifier(INotified):
 
     async def send_ath_sticker(self):
         sticker = next(self.ath_sticker_iter)
-        await self.deps.broadcaster.notify_preconfigured_channels(sticker, message_type=MessageType.STICKER)
+        await self.deps.broadcaster.notify_preconfigured_channels(BoardMessage(sticker, MessageType.STICKER))
 
     async def do_notify_price_table(self, market_info, hist_prices, ath, last_ath=None):
         await self.cd.do(self.CD_KEY_PRICE_NOTIFIED)

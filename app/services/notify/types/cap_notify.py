@@ -6,7 +6,7 @@ from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.utils import make_stickers_iterator, class_logger
 from services.models.cap_info import ThorCapInfo
-from services.notify.channel import MessageType
+from services.notify.channel import MessageType, BoardMessage
 
 
 class LiquidityCapNotifier(INotified):
@@ -72,7 +72,7 @@ class LiquidityCapNotifier(INotified):
 
     async def send_cap_raised_sticker(self):
         sticker = next(self.raise_sticker_iter)
-        await self.deps.broadcaster.notify_preconfigured_channels(sticker, message_type=MessageType.STICKER)
+        await self.deps.broadcaster.notify_preconfigured_channels(BoardMessage(sticker, MessageType.STICKER))
 
     # --- CAP IS FULL ---
 
