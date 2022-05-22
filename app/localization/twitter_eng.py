@@ -6,8 +6,8 @@ from semver import VersionInfo
 from localization.base import BaseLocalization
 from services.lib.constants import thor_to_float, rune_origin, BNB_RUNE_SYMBOL
 from services.lib.date_utils import now_ts, seconds_human
-from services.lib.money import Asset, short_dollar, format_percent, pretty_money, pretty_dollar, pretty_rune, \
-    RAIDO_GLYPH, calc_percent_change, adaptive_round_to_str, emoji_for_percent_change, short_address, short_money
+from services.lib.money import Asset, short_dollar, format_percent, pretty_money, pretty_dollar, RAIDO_GLYPH, \
+    calc_percent_change, adaptive_round_to_str, emoji_for_percent_change, short_address, short_money
 from services.lib.texts import x_ses, join_as_numbered_list, progressbar, plural, bracketify, up_down_arrow
 from services.models.bep2 import BEP2CEXFlow, BEP2Transfer
 from services.models.cap_info import ThorCapInfo
@@ -38,14 +38,22 @@ class TwitterEnglishLocalization(BaseLocalization):
         )
         return message
 
+    def notification_text_cap_full(self, cap: ThorCapInfo):
+        return (
+            '🙆‍♀️ Liquidity has reached the capacity limit!\n'
+            'Please stop adding liquidity. '
+            'You will get refunded if you provide liquidity from now on!\n'
+            f'Now {short_money(cap.pooled_rune)} {self.R} of '
+            f"{short_money(cap.cap)} {self.R} max pooled ({format_percent(cap.pooled_rune, cap.cap)})"
+        )
+
     def notification_text_cap_opened_up(self, cap: ThorCapInfo):
         return (
             '💡 There is free space in liquidity pools!\n'
-            f'{pretty_money(cap.pooled_rune)} {self.R} of '
-            f"{pretty_money(cap.cap)} {self.R} max pooled.\n"
-            f"{self._cap_progress_bar(cap)}\n"
-            f'🤲🏻 You can add {pretty_rune(cap.how_much_rune_you_can_lp)} {self.R} '
-            f'or {pretty_dollar(cap.how_much_usd_you_can_lp)}.'
+            f'{short_money(cap.pooled_rune)} {self.R} of '
+            f"{short_money(cap.cap)} {self.R} max pooled ({format_percent(cap.pooled_rune, cap.cap)})\n"
+            f'🤲🏻 You can add {short_money(cap.how_much_rune_you_can_lp)} {self.R} '
+            f'or {short_dollar(cap.how_much_usd_you_can_lp)}.'
         )
 
     @staticmethod

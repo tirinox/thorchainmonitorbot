@@ -273,18 +273,18 @@ class BaseLocalization(ABC):  # == English
             '🙆‍♀️ <b>Liquidity has reached the capacity limit!</b>\n'
             'Please stop adding liquidity. '
             'You will get refunded if you provide liquidity from now on!\n'
-            f'Now <i>{pretty_money(cap.pooled_rune)} {self.R}</i> of '
-            f"<i>{pretty_money(cap.cap)} {self.R}</i> max pooled.\n"
-            f"{self._cap_progress_bar(cap)}\n"
+            f'Now <i>{short_money(cap.pooled_rune)} {self.R}</i> of '
+            f"<i>{short_money(cap.cap)} {self.R}</i> max pooled.\n"
+            f"{self._cap_progress_bar(cap)}"
         )
 
     def notification_text_cap_opened_up(self, cap: ThorCapInfo):
         return (
             '💡 <b>There is free space in liquidity pools!</b>\n'
-            f'<i>{pretty_money(cap.pooled_rune)} {self.R}</i> of '
-            f"<i>{pretty_money(cap.cap)} {self.R}</i> max pooled.\n"
+            f'<i>{short_money(cap.pooled_rune)} {self.R}</i> of '
+            f"<i>{short_money(cap.cap)} {self.R}</i> max pooled.\n"
             f"{self._cap_progress_bar(cap)}\n"
-            f'🤲🏻 You can add {bold(pretty_rune(cap.how_much_rune_you_can_lp))} {self.R} '
+            f'🤲🏻 You can add {bold(short_money(cap.how_much_rune_you_can_lp))} {self.R} '
             f'or {bold(pretty_dollar(cap.how_much_usd_you_can_lp))}.\n👉🏻 {self.thor_site()}'
         )
 

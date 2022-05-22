@@ -49,8 +49,6 @@ class BestPoolsNotifier(INotified):
     async def on_data(self, sender: PoolInfoFetcherMidgard, data: PoolInfoMap):
         self._fetcher = sender
 
-        # await self._cooldown.clear()  # fixme (debug)
-
         prev = await self._get_previous_data()
         self.last_pool_detail = PoolDetailHolder(curr=data, prev=prev)
 
