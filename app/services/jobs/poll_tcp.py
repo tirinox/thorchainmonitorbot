@@ -20,7 +20,7 @@ class TCPPollster:
         self._active_testers += 1
         s.settimeout(timeout)
         try:
-            s.connect((host, port))
+            s.connect((host, int(port)))
 
             # # fixme: debug!
             # if host == '157.90.34.75':
