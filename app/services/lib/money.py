@@ -164,7 +164,12 @@ def short_dollar(x, localization=None):
 def short_address(address, begin=5, end=4, filler='...'):
     address = str(address)
     if len(address) > begin + end:
-        return address[:begin] + filler + (address[-end:] if end else '')
+        components = []
+        if begin:
+            components.append(address[:begin])
+        if end:
+            components.append(address[-end:])
+        return filler.join(components)
     else:
         return address
 

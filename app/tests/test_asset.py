@@ -1,4 +1,4 @@
-from services.lib.money import Asset
+from services.lib.money import Asset, short_address
 
 
 def test_asset1():
@@ -61,3 +61,9 @@ def test_convert_synth():
 
     assert Asset.convert_synth_to_pool_name('ETH.ETH') == 'ETH.ETH'
     assert Asset.convert_synth_to_pool_name('BTC/BTC') == 'BTC.BTC'
+
+
+def test_short_asset():
+    assert short_address('thor1xd4j3gk9frpxh8r22runntnqy34lwzrdkazldh') == 'thor1...zldh'
+    assert short_address('thor1xd4j3gk9frpxh8r22runntnqy34lwzrdkazldh', 0) == 'zldh'
+    assert short_address('thor1xd4j3gk9frpxh8r22runntnqy34lwzrdkazldh', end=0) == 'thor1'
