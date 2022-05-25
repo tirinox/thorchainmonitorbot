@@ -15,6 +15,7 @@ from services.lib.utils import class_logger
 from services.models.node_info import NodeSetChanges, NodeEvent, NodeEventType
 from services.models.node_watchers import NodeWatcherStorage
 from services.notify.broadcast import ChannelDescriptor
+from services.notify.channel import BoardMessage
 from services.notify.personal.bond import BondTracker
 from services.notify.personal.chain_height import ChainHeightTracker
 from services.notify.personal.churning import NodeChurnTracker
@@ -199,7 +200,10 @@ class NodeChangePersonalNotifier(INotified):
                 text = '\n\n'.join(m for m in messages if m)
                 text = text.strip()
                 if text:
-                    task = self.deps.broadcaster.safe_send_message(ChannelDescriptor(platform, user), text)
+                    task = self.deps.broadcaster.safe_send_message(
+                        ChannelDescriptor(platform, user),
+                        BoardMessage(text)
+                    )
                     asyncio.create_task(task)
 
     @staticmethod
