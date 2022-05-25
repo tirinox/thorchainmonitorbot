@@ -21,10 +21,15 @@ class PoolChurnNotifier(INotified):
             if not await self.spam_cd.can_do():
                 return
 
-            # todo: persist old_pool_data in DB!
-
             # compare starting w 2nd iteration
             pool_changes = self.compare_pool_sets(new_pool_dict)
+
+            # # fixme: debug
+            # pool_changes.pools_added.append(PoolChange('BNB.LOL-123', 'staged', 'staged'))
+            # pool_changes.pools_removed.append(PoolChange('BNB.LOL-123', 'staged', 'staged'))
+            # pool_changes.pools_changed.append(PoolChange('BNB.LOL-123', 'staged', 'available'))
+            # # fixme: debug
+
             if pool_changes.any_changed:
                 self.logger.warning(f'Pool churn changes:\n'
                                     f'{self.old_pool_dict = }\n'

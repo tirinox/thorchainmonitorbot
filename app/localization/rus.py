@@ -344,7 +344,7 @@ class RussianLocalization(BaseLocalization):
                 extra = f"\n[{item_type}] транзакции могут запаздывать."
             else:
                 extra = ''
-                
+
             return f"🤬 <b>Внимание!</b> Очередь {code(item_type)} имеет {value} транзакций!{extra}"
 
     # ------- PRICE -------

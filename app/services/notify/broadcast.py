@@ -65,6 +65,8 @@ class Broadcaster:
 
     async def safe_send_message(self, channel_info: ChannelDescriptor,
                                 message: BoardMessage, **kwargs) -> bool:
+        if isinstance(message, str):
+            message = BoardMessage(message)
 
         if channel_info.type not in Messengers.SUPPORTED:
             self.logger.error(f'Unsupported channel type: {channel_info.type}!')

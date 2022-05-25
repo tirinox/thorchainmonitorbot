@@ -576,7 +576,7 @@ class BaseLocalization(ABC):  # == English
             return f'https://chaosnet.bepswap.com/pool/{name}'
 
     def pool_link(self, pool_name):
-        return link(self.pool_url(pool_name), short_address(pool_name, 14, 4))
+        return link(self.pool_url(pool_name), Asset(pool_name).short_str)
 
     def notification_text_pool_churn(self, pc: PoolChanges):
         if pc.pools_changed:
@@ -900,7 +900,7 @@ class BaseLocalization(ABC):  # == English
         else:
             node_ip_link = node.ip_address or 'no IP'
         thor_explore_url = get_explorer_url_to_address(self.cfg.network_id, Chains.THOR, node.node_address)
-        node_thor_link = link(thor_explore_url, short_address(node.node_address))
+        node_thor_link = link(thor_explore_url, short_address(node.node_address, 0))
         extra = ''
         if extended_info:
             if node.slash_points:

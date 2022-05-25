@@ -79,15 +79,15 @@ class NodeChurnDetector(WithDelegates, INotified):
     async def on_data(self, sender, info_list: List[NodeInfo]):
         result = await self.extract_changes(info_list)
 
-        # result = self._debug_modification(result)
+        # result = self._dbg_modification(result)
 
         await self.pass_data_to_listeners(result, (sender, self))
 
     # ------------------------------------------------------------------------------------------------------------------
 
-    def _debug_modification(self, data: NodeSetChanges) -> NodeSetChanges:
+    def _dbg_modification(self, data: NodeSetChanges) -> NodeSetChanges:
         # 1. new version
-        data.nodes_all[0].version = '0.88.82'
+        # data.nodes_all[0].version = '0.88.82'
         # data.nodes_all[1].version = '0.88.5'
 
         # 2. Min versions
@@ -102,5 +102,16 @@ class NodeChurnDetector(WithDelegates, INotified):
         # for n in data.nodes_all:
         #     if random.uniform(0, 1) <= progress:
         #         n.version = '0.60.6'
+
+        # data.nodes_added.append(data.nodes_all[0])
+        data.nodes_activated.append(data.nodes_all[1])
+        # data.nodes_activated.append(data.nodes_all[2])
+        # data.nodes_activated.append(data.nodes_all[3])
+        data.nodes_deactivated.append(data.nodes_all[4])
+        # data.nodes_deactivated.append(data.nodes_all[5])
+        # data.nodes_deactivated.append(data.nodes_all[6])
+        # data.nodes_deactivated.append(data.nodes_all[7])
+        # data.nodes_deactivated.append(data.nodes_all[8])
+        # data.nodes_removed.append(data.nodes_all[9])
 
         return data

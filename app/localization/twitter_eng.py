@@ -4,6 +4,7 @@ from aiothornode.types import ThorChainInfo
 from semver import VersionInfo
 
 from localization.base import BaseLocalization
+from services.dialog.twitter.text_length import twitter_text_length, TWITTER_LIMIT_CHARACTERS
 from services.lib.constants import thor_to_float, rune_origin, BNB_RUNE_SYMBOL
 from services.lib.date_utils import now_ts, seconds_human
 from services.lib.money import Asset, short_dollar, format_percent, pretty_money, pretty_dollar, RAIDO_GLYPH, \
@@ -248,7 +249,7 @@ class TwitterEnglishLocalization(BaseLocalization):
                 if to_status is not None and status != to_status:  # fix: staged -> staged
                     extra += f' → {to_status}'
                 extra = f'({extra})'
-            return f'  • {self.pool_link(pool_name)}: {extra}'
+            return f'  • {Asset(pool_name).short_str}: {extra}'
 
         if pc.pools_added:
             message += '✅ Pools added:\n' + '\n'.join([pool_text(*a) for a in pc.pools_added]) + '\n'
@@ -431,20 +432,20 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         return message
 
-    def _format_node_text_plain(self, node: NodeInfo, add_status=False):
-        node_ip_link = node.ip_address or 'no IP'
-        node_thor_link = short_address(node.node_address)
-        status = f' ({node.status})' if add_status else ''
-        return f'{node_thor_link} ({node_ip_link} v. {node.version}) ' \
-               f'bond {short_money(node.bond, postfix=RAIDO_GLYPH)} {status}'.strip()
+    @staticmethod
+    def _format_node_text_plain(node: NodeInfo, with_ip):
+        node_ip_link = bracketify(node.ip_address or 'no IP') if with_ip else ''
+        node_thor_link = short_address(node.node_address, 0)
+        return f'{node_thor_link} {node_ip_link} ' \
+               f'bond {short_money(node.bond, postfix=RAIDO_GLYPH)}'
 
-    def _make_node_list_plain(self, nodes, title, add_status=False, start=1):
+    def _make_node_list_plain(self, nodes, title, start=1, with_ip=True):
         if not nodes:
             return ''
 
         message = title + "\n"
         message += join_as_numbered_list(
-            (self._format_node_text_plain(node, add_status) for node in nodes if node.node_address),
+            (self._format_node_text_plain(node, with_ip) for node in nodes if node.node_address),
             start=start
         )
         return message + "\n"
@@ -455,20 +456,35 @@ class TwitterEnglishLocalization(BaseLocalization):
         return f'Active bond net change: {short_money(bond_delta, postfix=RAIDO_GLYPH)}'
 
     def notification_text_for_node_churn(self, changes: NodeSetChanges):
-        message = ''
+        components = []
 
+        part1 = ''
         if changes.nodes_activated or changes.nodes_deactivated:
-            message += '♻️ Node churn' + '\n'
+            part1 += '♻️ Node churn' + '\n'
+        part1 += self._make_node_list_plain(changes.nodes_activated, '➡️ Nodes churned in:',
+                                            with_ip=(len(changes.nodes_activated) <= 4))
+        components.append(part1)
 
-        message += self._make_node_list_plain(changes.nodes_added, '🆕 New nodes:', add_status=True)
-        message += self._make_node_list_plain(changes.nodes_activated, '➡️ Nodes churned in:')
-        message += self._make_node_list_plain(changes.nodes_deactivated, '⬅️️ Nodes churned out:')
-        message += self._make_node_list_plain(changes.nodes_removed, '🗑️ Nodes disconnected:', add_status=True)
-
+        part2 = self._make_node_list_plain(changes.nodes_deactivated, '⬅️️ Nodes churned out:',
+                                           with_ip=(len(changes.nodes_deactivated) <= 4))
         if changes.nodes_activated or changes.nodes_deactivated:
-            message += self._node_bond_change_after_churn(changes)
+            part2 += self._node_bond_change_after_churn(changes)
+        components.append(part2)
 
-        return message.rstrip()
+        part3 = self._make_node_list_plain(changes.nodes_added, '🆕 New nodes:',
+                                           with_ip=(len(changes.nodes_added) <= 4))
+        components.append(part3)
+
+        part4 = self._make_node_list_plain(changes.nodes_removed, '🗑️ Nodes disconnected:',
+                                           with_ip=(len(changes.nodes_removed) <= 4))
+
+        components.append(part4)
+
+        total_length = sum(twitter_text_length(part) for part in components)
+        if total_length > TWITTER_LIMIT_CHARACTERS:
+            return MESSAGE_SEPARATOR.join(components)
+        else:
+            return ''.join(components)
 
     @staticmethod
     def node_version(v, data: NodeSetChanges, active=True):

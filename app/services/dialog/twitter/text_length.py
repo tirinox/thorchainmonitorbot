@@ -1,5 +1,7 @@
 from emoji import is_emoji
 
+TWITTER_LIMIT_CHARACTERS = 280
+
 
 def twitter_glyph_length(g):
     return 2 if is_emoji(g) else 1

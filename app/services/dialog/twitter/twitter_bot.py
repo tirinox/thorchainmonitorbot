@@ -4,7 +4,7 @@ import logging
 import tweepy
 from ratelimit import limits
 
-from services.dialog.twitter.text_length import twitter_text_length, twitter_cut_text
+from services.dialog.twitter.text_length import twitter_text_length, twitter_cut_text, TWITTER_LIMIT_CHARACTERS
 from services.lib.config import Config
 from services.lib.date_utils import DAY
 from services.lib.utils import class_logger, random_hex
@@ -12,7 +12,6 @@ from services.notify.channel import MessageType, BoardMessage, MESSAGE_SEPARATOR
 
 
 class TwitterBot:
-    LIMIT_CHARACTERS = 280
     MAX_TWEETS_PER_DAY = 300
 
     def __init__(self, cfg: Config):
@@ -49,9 +48,9 @@ class TwitterBot:
             return
 
         real_len = twitter_text_length(text)
-        if real_len >= self.LIMIT_CHARACTERS:
+        if real_len >= TWITTER_LIMIT_CHARACTERS:
             self.logger.warning(f'Too long text ({real_len} symbols): "{text}".')
-            text = twitter_cut_text(text, self.LIMIT_CHARACTERS)
+            text = twitter_cut_text(text, TWITTER_LIMIT_CHARACTERS)
 
         self.log_tweet(text, image)
 

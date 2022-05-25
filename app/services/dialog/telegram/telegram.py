@@ -37,8 +37,8 @@ class TelegramBot:
         return kwargs
 
     async def safe_send_message(self, chat_id, msg: BoardMessage, **kwargs) -> bool:
-        text = msg.text
         try:
+            text = msg.text
             bot = self.bot
             if msg.message_type == MessageType.TEXT:
                 trunc_text = text[:TELEGRAM_MAX_MESSAGE_LENGTH]
@@ -68,7 +68,7 @@ class TelegramBot:
             self.logger.exception(f"Target [ID:{chat_id}]: failed")
             return True  # tg error is not the reason to exclude the user
         except exceptions.MessageIsTooLong:
-            self.logger.error(f'Message is too long:\n{text[:4000]}\n...')
+            self.logger.error(f'Message is too long:\n{msg.text[:4000]}\n...')
             return False
         else:
             self.logger.info(f"Target [ID:{chat_id}]: success")
