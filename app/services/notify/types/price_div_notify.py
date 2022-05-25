@@ -6,9 +6,12 @@ from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
 from services.models.price import RuneMarketInfo
+from services.models.time_series import TimeSeries
 
 
 class PriceDivergenceNotifier(INotified):
+    MAX_POINTS = 20000
+
     def __init__(self, deps: DepContainer):
         self.deps = deps
         self.logger = class_logger(self)
@@ -22,6 +25,8 @@ class PriceDivergenceNotifier(INotified):
         self.main_cd = parse_timespan_to_seconds(cfg.as_str('cooldown', '6h'))
 
         self._cd_bitrig = CooldownBiTrigger(deps.db, 'PriceDivergence', self.main_cd, default=False)
+
+        self.time_series = TimeSeries('PriceDivergence', deps.db)
 
     async def on_data(self, sender, rune_market_info: RuneMarketInfo):
         # rune_market_info.pool_rune_price = 11.66  # fixme: debug
@@ -40,9 +45,15 @@ class PriceDivergenceNotifier(INotified):
             if await self._cd_bitrig.turn_on():
                 await self._notify(rune_market_info, normal=False)
 
+        await self.time_series.add(
+            abs_delta=(bep2_price - native_price),
+            rel_delta=div_p
+        )
+        await self.time_series.trim_oldest(self.MAX_POINTS)
+
     async def _notify(self, rune_market_info: RuneMarketInfo, normal):
         await self.deps.broadcaster.notify_preconfigured_channels(
             BaseLocalization.notification_text_price_divergence,
             rune_market_info,
-            normal,
+            normal
         )
