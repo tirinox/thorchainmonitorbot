@@ -336,11 +336,16 @@ class RussianLocalization(BaseLocalization):
 
     # ------- QUEUE -------
 
-    def notification_text_queue_update(self, item_type, step, value):
-        if step == 0:
+    def notification_text_queue_update(self, item_type, is_free, value):
+        if is_free:
             return f"☺️ Очередь {item_type} снова опустела!"
         else:
-            return f"🤬 <b>Внимание!</b> Очередь {code(item_type)} имеет {value} транзакций!"
+            if item_type != 'internal':
+                extra = f"\n[{item_type}] транзакции могут запаздывать."
+            else:
+                extra = ''
+                
+            return f"🤬 <b>Внимание!</b> Очередь {code(item_type)} имеет {value} транзакций!{extra}"
 
     # ------- PRICE -------
 

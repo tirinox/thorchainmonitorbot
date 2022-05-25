@@ -473,14 +473,16 @@ class BaseLocalization(ABC):  # == English
 
     # ------- QUEUE -------
 
-    def notification_text_queue_update(self, item_type, step, value):
-        if step == 0:
+    def notification_text_queue_update(self, item_type, is_free, value):
+        if is_free:
             return f"☺️ Queue {code(item_type)} is empty again!"
         else:
-            return (
-                f"🤬 <b>Attention!</b> Queue {code(item_type)} has {value} transactions!\n"
-                f"{code(item_type)} transactions may be delayed."
-            )
+            if item_type != 'internal':
+                extra = f"\n[{item_type}] transactions may be delayed."
+            else:
+                extra = ''
+
+            return f"🤬 <b>Attention!</b> Queue {code(item_type)} has {value} transactions!{extra}"
 
     # ------- PRICE -------
 

@@ -28,14 +28,14 @@ class QueueNotifier(INotified):
 
         self.logger.info(f'config: {deps.cfg.queue}')
 
-    async def notify(self, item_type, step, value, with_picture=True):
+    async def notify(self, item_type, is_free, value, with_picture=True):
         if with_picture:
             photo = await queue_graph(self.deps, self.deps.loc_man.default)
         else:
             photo = None
 
         async def message_gen(loc: BaseLocalization):
-            text = loc.notification_text_queue_update(item_type, step, value)
+            text = loc.notification_text_queue_update(item_type, is_free, value)
             if photo is not None:
                 return BoardMessage.make_photo(photo, text)
             else:
@@ -60,10 +60,10 @@ class QueueNotifier(INotified):
 
         if avg_value > self.threshold_congested:
             if await cd_trigger.turn_on():
-                await self.notify(item_type, self.threshold_congested, int(avg_value))
+                await self.notify(item_type, is_free=False, value=int(avg_value))
         elif avg_value < self.threshold_free:
             if await cd_trigger.turn_off():
-                await self.notify(item_type, 0, avg_value)
+                await self.notify(item_type, is_free=True, value=avg_value)
 
     async def on_data(self, sender, data: QueueInfo):
         self.logger.info(f"got queue: {data}")

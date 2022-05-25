@@ -161,14 +161,16 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         return msg.strip()
 
-    def notification_text_queue_update(self, item_type, step, value):
-        if step == 0:
+    def notification_text_queue_update(self, item_type, is_free, value):
+        if is_free:
             return f"☺️ Queue [{item_type}] is empty again!"
         else:
-            return (
-                f"🤬 Attention! Queue [{item_type}] has {value} transactions!\n"
-                f"[{item_type}] transactions may be delayed."
-            )
+            if item_type != 'internal':
+                extra = f"\n[{item_type}] transactions may be delayed."
+            else:
+                extra = ''
+
+            return f"🤬 Attention! Queue [{item_type}] has {value} transactions!{extra}"
 
     def notification_text_price_update(self, p: PriceReport, ath=False, halted_chains=None):
         message = '🚀 New all-time high!\n' if ath else ''
