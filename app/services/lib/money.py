@@ -161,6 +161,10 @@ def short_dollar(x, localization=None):
     return short_money(x, prefix='$', localization=localization)
 
 
+def short_rune(x, localization=None):
+    return short_money(x, postfix=RAIDO_GLYPH, localization=localization)
+
+
 def short_address(address, begin=5, end=4, filler='...'):
     address = str(address)
     if len(address) > begin + end:

@@ -8,8 +8,9 @@ from services.dialog.twitter.text_length import twitter_text_length, TWITTER_LIM
 from services.lib.constants import thor_to_float, rune_origin, BNB_RUNE_SYMBOL
 from services.lib.date_utils import now_ts, seconds_human
 from services.lib.money import Asset, short_dollar, format_percent, pretty_money, pretty_dollar, RAIDO_GLYPH, \
-    calc_percent_change, adaptive_round_to_str, emoji_for_percent_change, short_address, short_money
-from services.lib.texts import x_ses, join_as_numbered_list, progressbar, plural, bracketify, up_down_arrow
+    calc_percent_change, adaptive_round_to_str, emoji_for_percent_change, short_address, short_money, short_rune
+from services.lib.texts import x_ses, join_as_numbered_list, progressbar, plural, bracketify, up_down_arrow, \
+    bracketify_spaced
 from services.models.bep2 import BEP2CEXFlow, BEP2Transfer
 from services.models.cap_info import ThorCapInfo
 from services.models.last_block import EventBlockSpeed, BlockProduceState
@@ -33,7 +34,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             f'Currently {short_money(new.pooled_rune)} {self.R} are in the liquidity pools.\n'
             f"{self._cap_progress_bar(new)}\n"
             f'🤲🏻 You can add {short_money(new.how_much_rune_you_can_lp) + " " + RAIDO_GLYPH} {self.R} '
-            f'or {pretty_dollar(new.how_much_usd_you_can_lp)}.\n'
+            f'or {short_dollar(new.how_much_usd_you_can_lp)}.\n'
             f'The price of {self.R} in the pools is ${new.price:.3f}.\n'
             f'{call}'
         )
@@ -62,10 +63,10 @@ class TwitterEnglishLocalization(BaseLocalization):
         inputs = tx.get_asset_summary(in_only=True)
         outputs = tx.get_asset_summary(out_only=True)
 
-        input_str = ', '.join(f"{pretty_money(amount)} {asset}" for asset, amount in inputs.items())
-        output_str = ', '.join(f"{pretty_money(amount)} {asset}" for asset, amount in outputs.items())
+        input_str = ', '.join(f"{short_money(amount)} {asset}" for asset, amount in inputs.items())
+        output_str = ', '.join(f"{short_money(amount)} {asset}" for asset, amount in outputs.items())
 
-        return f"{input_str} ➡️ {output_str} ({pretty_dollar(tx.get_usd_volume(usd_per_rune))})"
+        return f"{input_str} ➡️ {output_str} ({short_dollar(tx.get_usd_volume(usd_per_rune))})"
 
     def notification_text_large_single_tx(self, tx: ThorTxExtended, usd_per_rune: float,
                                           pool_info: PoolInfo,
@@ -101,20 +102,20 @@ class TwitterEnglishLocalization(BaseLocalization):
 
             ilp_rune = tx.meta_withdraw.ilp_rune if tx.meta_withdraw else 0
             if ilp_rune > 0:
-                ilp_rune_fmt = pretty_money(ilp_rune, postfix=" " + self.R)
+                ilp_rune_fmt = short_rune(ilp_rune)
                 ilp_text = f'🛡️ IL prot. paid: {ilp_rune_fmt} ' \
-                           f'({pretty_dollar(ilp_rune * usd_per_rune)})\n'
+                           f'({short_dollar(ilp_rune * usd_per_rune)})\n'
             else:
                 ilp_text = ''
 
             content = (
-                f"{pretty_money(tx.rune_amount)} {self.R} ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
-                f"{pretty_money(tx.asset_amount)} {asset} "
+                f"{short_money(tx.rune_amount)} {self.R} ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
+                f"{short_money(tx.asset_amount)} {asset} "
                 f"({ap:.0f}% = {asset_side_usd_short})\n"
-                f"Total: ${pretty_money(total_usd_volume)} ({percent_of_pool:.2f}% of pool).\n"
+                f"Total: {short_dollar(total_usd_volume)} ({percent_of_pool:.2f}% of pool).\n"
                 f"{aff_text}"
                 f"{ilp_text}"
-                f"The depth is ${pretty_money(pool_depth_usd)} now."
+                f"The depth is {short_dollar(pool_depth_usd)} now."
             )
         elif tx.type == ThorTxType.TYPE_SWITCH:
             # [Amt] Rune [Blockchain: ERC20/BEP2] -> [Amt] THOR Rune ($usd)
@@ -122,8 +123,8 @@ class TwitterEnglishLocalization(BaseLocalization):
                 amt = thor_to_float(tx.first_input_tx.first_amount)
                 origin = rune_origin(tx.first_input_tx.first_asset)
                 content = (
-                    f"{pretty_money(amt)} {origin} {self.R} ➡️ {pretty_money(amt)} Native {self.R} "
-                    f"({pretty_dollar(tx.get_usd_volume(usd_per_rune))})"
+                    f"{short_money(amt)} {origin} {self.R} ➡️ {short_money(amt)} Native {self.R} "
+                    f"({short_dollar(tx.get_usd_volume(usd_per_rune))})"
                 )
         elif tx.type == ThorTxType.TYPE_REFUND:
             content = (
@@ -147,7 +148,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             content += (
                 f"\n{aff_text}"
                 f"Slip: {slip_str}, "
-                f"liq. fee: {pretty_dollar(l_fee_usd)}{slip_mark}"
+                f"liq. fee: {short_dollar(l_fee_usd)}{slip_mark}"
             )
 
         msg = f"{heading}\n{content}"
@@ -156,8 +157,8 @@ class TwitterEnglishLocalization(BaseLocalization):
             msg += (
                 f"\n\n"
                 f"Liq. cap is {format_percent(cap.pooled_rune, cap.cap)} full now.\n"
-                f'You can add {pretty_money(cap.how_much_rune_you_can_lp)} {self.R} '
-                f'({pretty_dollar(cap.how_much_usd_you_can_lp)}) more.\n'
+                f'You can add {short_money(cap.how_much_rune_you_can_lp)} {self.R} '
+                f'({short_dollar(cap.how_much_usd_you_can_lp)}) more.\n'
             )
 
         return msg.strip()
@@ -210,14 +211,14 @@ class TwitterEnglishLocalization(BaseLocalization):
                            f"{emoji_for_percent_change(pc)}\n"
 
         if fp.rank >= 1:
-            message += f"Mrkt. cap: {pretty_dollar(fp.market_cap)} (#{fp.rank})\n"
+            message += f"Mrkt. cap: {short_dollar(fp.market_cap)} (#{fp.rank})\n"
 
         if fp.total_trade_volume_usd > 0:
-            message += f'24h vol.: {pretty_dollar(fp.total_trade_volume_usd)}\n'
+            message += f'24h vol.: {short_dollar(fp.total_trade_volume_usd)}\n'
 
         if fp.tlv_usd >= 1:
             message += (
-                f"Det. price: {pretty_money(fp.fair_price, prefix='$')}\n"
+                f"Det. price: {pretty_dollar(fp.fair_price,)}\n"
                 f"Spec. mult.: {x_ses(fp.fair_price, price)}\n")
 
         return message.rstrip()
@@ -265,29 +266,29 @@ class TwitterEnglishLocalization(BaseLocalization):
         message = '🌐 THORChain stats\n'
 
         security_text = self.network_bond_security_text(new.network_security_ratio)
-        message += f'🕸️ Network is {security_text}.\n'
+        message += f'Network is {security_text}.\n'
 
-        active_nodes_change = bracketify(up_down_arrow(old.active_nodes, new.active_nodes, int_delta=True))
-        standby_nodes_change = bracketify(up_down_arrow(old.active_nodes, new.active_nodes, int_delta=True))
-        message += f"🖥️ {new.active_nodes} active nodes{active_nodes_change} " \
-                   f"and {new.standby_nodes} standby nodes{standby_nodes_change}.\n"
+        active_nodes_change = bracketify_spaced(up_down_arrow(old.active_nodes, new.active_nodes, int_delta=True))
+        standby_nodes_change = bracketify_spaced(up_down_arrow(old.active_nodes, new.active_nodes, int_delta=True))
+        message += f"{new.active_nodes} active nodes{active_nodes_change}" \
+                   f"and {new.standby_nodes} standby nodes{standby_nodes_change}\n"
 
         # -- BOND
 
-        current_bond_text = pretty_money(new.total_active_bond_rune, postfix=RAIDO_GLYPH)
+        current_bond_text = short_rune(new.total_active_bond_rune)
         current_bond_change = bracketify(
             up_down_arrow(old.total_active_bond_rune, new.total_active_bond_rune, money_delta=True))
 
-        current_bond_usd_text = pretty_dollar(new.total_active_bond_usd)
+        current_bond_usd_text = short_dollar(new.total_active_bond_usd)
         current_bond_usd_change = bracketify(
             up_down_arrow(old.total_active_bond_usd, new.total_active_bond_usd, money_delta=True, money_prefix='$')
         )
 
-        current_total_bond_text = pretty_money(new.total_bond_rune, postfix=RAIDO_GLYPH)
+        current_total_bond_text = short_rune(new.total_bond_rune)
         current_total_bond_change = bracketify(
             up_down_arrow(old.total_bond_rune, new.total_bond_rune, money_delta=True))
 
-        current_total_bond_usd_text = pretty_dollar(new.total_bond_usd)
+        current_total_bond_usd_text = short_dollar(new.total_bond_usd)
         current_total_bond_usd_change = bracketify(
             up_down_arrow(old.total_bond_usd, new.total_bond_usd, money_delta=True, money_prefix='$')
         )
@@ -295,16 +296,16 @@ class TwitterEnglishLocalization(BaseLocalization):
         message += f"🔗 Active bond: {current_bond_text}{current_bond_change} or " \
                    f"{current_bond_usd_text}{current_bond_usd_change}.\n"
 
-        message += f"🔗 Total bond including standby: {current_total_bond_text}{current_total_bond_change} or " \
+        message += f"Total bond: {current_total_bond_text}{current_total_bond_change} or " \
                    f"{current_total_bond_usd_text}{current_total_bond_usd_change}.\n"
 
         # -- POOL
 
-        current_pooled_text = pretty_money(new.total_rune_pooled, postfix=RAIDO_GLYPH)
+        current_pooled_text = short_rune(new.total_rune_pooled)
         current_pooled_change = bracketify(
             up_down_arrow(old.total_rune_pooled, new.total_rune_pooled, money_delta=True))
 
-        current_pooled_usd_text = pretty_dollar(new.total_pooled_usd)
+        current_pooled_usd_text = short_dollar(new.total_pooled_usd)
         current_pooled_usd_change = bracketify(
             up_down_arrow(old.total_pooled_usd, new.total_pooled_usd, money_delta=True, money_prefix='$'))
 
@@ -313,7 +314,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         # -- LIQ
 
-        current_liquidity_usd_text = pretty_dollar(new.total_liquidity_usd)
+        current_liquidity_usd_text = short_dollar(new.total_liquidity_usd)
         current_liquidity_usd_change = bracketify(
             up_down_arrow(old.total_liquidity_usd, new.total_liquidity_usd, money_delta=True, money_prefix='$'))
 
@@ -323,18 +324,19 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         tlv_change = bracketify(
             up_down_arrow(old.total_locked_usd, new.total_locked_usd, money_delta=True, money_prefix='$'))
-        message += f'🏦 TVL + Bond: {pretty_dollar(new.total_locked_usd)}{tlv_change}.\n'
+        message += f'🏦 TVL + Bond: {short_dollar(new.total_locked_usd)}{tlv_change}.\n'
 
         # -- RESERVE
 
         reserve_change = bracketify(up_down_arrow(old.reserve_rune, new.reserve_rune,
                                                   postfix=RAIDO_GLYPH, money_delta=True))
 
-        message += f'💰 Reserve: {pretty_money(new.reserve_rune, postfix=RAIDO_GLYPH)}{reserve_change}.\n'
+        message += f'💰 Reserve: {short_rune(new.reserve_rune)}{reserve_change}.\n'
+
+        # --------------------------------------------------------------------------------------------------------------
+        message += MESSAGE_SEPARATOR
 
         # --- FLOWS:
-
-        message += MESSAGE_SEPARATOR
 
         if old.is_ok:
             # 24 h Add/withdrawal
@@ -343,17 +345,17 @@ class TwitterEnglishLocalization(BaseLocalization):
             swap_volume_24h_rune = new.swap_volume_rune - old.swap_volume_rune
             switched_24h_rune = new.switched_rune - old.switched_rune
 
-            add_rune_text = pretty_money(added_24h_rune, prefix=RAIDO_GLYPH)
-            withdraw_rune_text = pretty_money(withdrawn_24h_rune, prefix=RAIDO_GLYPH)
-            swap_rune_text = pretty_money(swap_volume_24h_rune, prefix=RAIDO_GLYPH)
-            switch_rune_text = pretty_money(switched_24h_rune, prefix=RAIDO_GLYPH)
+            add_rune_text = short_rune(added_24h_rune)
+            withdraw_rune_text = short_rune(withdrawn_24h_rune)
+            swap_rune_text = short_rune(swap_volume_24h_rune)
+            switch_rune_text = short_rune(switched_24h_rune)
 
             price = new.usd_per_rune
 
-            add_usd_text = pretty_dollar(added_24h_rune * price)
-            withdraw_usd_text = pretty_dollar(withdrawn_24h_rune * price)
-            swap_usd_text = pretty_dollar(swap_volume_24h_rune * price)
-            switch_usd_text = pretty_dollar(switched_24h_rune * price)
+            add_usd_text = short_dollar(added_24h_rune * price)
+            withdraw_usd_text = short_dollar(withdrawn_24h_rune * price)
+            swap_usd_text = short_dollar(swap_volume_24h_rune * price)
+            switch_usd_text = short_dollar(switched_24h_rune * price)
 
             message += f'Last 24 hours:\n'
 
@@ -371,16 +373,16 @@ class TwitterEnglishLocalization(BaseLocalization):
                 message += f'💎 Rune switched to native: {switch_rune_text} ({switch_usd_text}).\n'
 
             # synthetics:
-            synth_volume_rune = pretty_money(new.synth_volume_24h, prefix=RAIDO_GLYPH)
-            synth_volume_usd = pretty_dollar(new.synth_volume_24h_usd)
+            synth_volume_rune = short_rune(new.synth_volume_24h)
+            synth_volume_usd = short_dollar(new.synth_volume_24h_usd)
             synth_op_count = short_money(new.synth_op_count)
 
             message += f'💊 Synth trade volume: {synth_volume_rune} ({synth_volume_usd}) ' \
                        f'in {synth_op_count} swaps 🆕\n'
 
             if new.loss_protection_paid_24h_rune:
-                ilp_rune_str = pretty_money(new.loss_protection_paid_24h_rune, prefix=RAIDO_GLYPH)
-                ilp_usd_str = pretty_dollar(new.loss_protection_paid_24h_rune * new.usd_per_rune)
+                ilp_rune_str = short_rune(new.loss_protection_paid_24h_rune)
+                ilp_usd_str = short_dollar(new.loss_protection_paid_24h_rune * new.usd_per_rune)
                 message += f'🛡️ IL protection payout: {ilp_rune_str} ({ilp_usd_str}) 🆕\n'
 
             message += '\n'
@@ -397,9 +399,10 @@ class TwitterEnglishLocalization(BaseLocalization):
         else:
             liquidity_apy_change = ''
 
+        # --------------------------------------------------------------------------------------------------------------
         message += MESSAGE_SEPARATOR
 
-        switch_rune_total_text = pretty_money(new.switched_rune, prefix=RAIDO_GLYPH)
+        switch_rune_total_text = short_rune(new.switched_rune)
         message += (f'💎 Total Rune switched to native: {switch_rune_total_text} '
                     f'({format_percent(new.switched_rune, market.total_supply)}).'
                     f'\n\n')
@@ -407,13 +410,14 @@ class TwitterEnglishLocalization(BaseLocalization):
         message += f'📈 Bonding APY is {pretty_money(new.bonding_apy, postfix="%")}{bonding_apy_change} and ' \
                    f'Liquidity APY is {pretty_money(new.liquidity_apy, postfix="%")}{liquidity_apy_change}.\n'
 
-        message += f'🛡 Total Imp. Loss. Protection paid: {(pretty_dollar(new.loss_protection_paid_usd))}.\n'
+        message += f'🛡 Total Imp. Loss. Protection paid: {(short_dollar(new.loss_protection_paid_usd))}.\n'
 
         daily_users_change = bracketify(up_down_arrow(old.users_daily, new.users_daily, int_delta=True))
         monthly_users_change = bracketify(up_down_arrow(old.users_monthly, new.users_monthly, int_delta=True))
         message += f'👥 Daily users: {new.users_daily}{daily_users_change}, ' \
                    f'monthly users: {new.users_monthly}{monthly_users_change}\n'
 
+        # --------------------------------------------------------------------------------------------------------------
         message += MESSAGE_SEPARATOR
 
         active_pool_changes = bracketify(up_down_arrow(old.active_pool_count,
@@ -427,8 +431,10 @@ class TwitterEnglishLocalization(BaseLocalization):
             next_pool_wait = seconds_human(new.next_pool_activation_ts - now_ts())
             next_pool = self.pool_link(new.next_pool_to_activate)
             message += f"Next pool is likely be activated: {next_pool} in {next_pool_wait}."
-        else:
-            message += f"There is no eligible pool to be activated yet."
+
+        # fixme: ---
+        # print(message)
+        # fixme: ---
 
         return message
 

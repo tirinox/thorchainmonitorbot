@@ -4,7 +4,7 @@ from urllib.parse import urlparse
 
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 
-from services.lib.money import pretty_money, format_percent
+from services.lib.money import pretty_money, format_percent, short_money
 
 
 def bold(text):
@@ -94,8 +94,12 @@ def cut_long_text(text: str, max_symbols=15, end='...'):
         return text
 
 
-def bracketify(item):
-    return f"({item})" if item else ''
+def bracketify(item, before='', after=''):
+    return f"{before}({item}){after}" if item else ''
+
+
+def bracketify_spaced(item):
+    return bracketify(item, ' ', ' ')
 
 
 def up_down_arrow(old_value, new_value, smiley=False, more_is_better=True, same_result='',
@@ -119,7 +123,7 @@ def up_down_arrow(old_value, new_value, smiley=False, more_is_better=True, same_
         sign = ('+' if delta >= 0 else '') if signed else ''
         delta_text = f"{sign}{int(delta)}"
     elif money_delta:
-        delta_text = pretty_money(delta, money_prefix, signed)
+        delta_text = short_money(delta, money_prefix, signed)
     elif percent_delta:
         delta_text = format_percent(delta, old_value, signed)
 

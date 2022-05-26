@@ -11,7 +11,7 @@ from services.lib.constants import Chains, thor_to_float, rune_origin, BNB_RUNE_
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address, get_explorer_url_to_tx
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
-    emoji_for_percent_change, Asset, short_money, short_dollar, format_percent, RAIDO_GLYPH, pretty_rune
+    emoji_for_percent_change, Asset, short_money, short_dollar, format_percent, RAIDO_GLYPH, pretty_rune, short_rune
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
     up_down_arrow, plural, grouper, regroup_joining
 from services.models.bep2 import BEP2Transfer, BEP2CEXFlow
@@ -574,20 +574,20 @@ class RussianLocalization(BaseLocalization):
 
         # -- BOND
 
-        current_bond_text = bold(pretty_money(new.total_active_bond_rune, postfix=RAIDO_GLYPH))
+        current_bond_text = bold(short_rune(new.total_active_bond_rune))
         current_bond_change = bracketify(
             up_down_arrow(old.total_active_bond_rune, new.total_active_bond_rune, money_delta=True))
 
-        current_bond_usd_text = bold(pretty_dollar(new.total_active_bond_usd))
+        current_bond_usd_text = bold(short_dollar(new.total_active_bond_usd))
         current_bond_usd_change = bracketify(
             up_down_arrow(old.total_active_bond_usd, new.total_active_bond_usd, money_delta=True, money_prefix='$')
         )
 
-        current_total_bond_text = bold(pretty_money(new.total_bond_rune, postfix=RAIDO_GLYPH))
+        current_total_bond_text = bold(short_rune(new.total_bond_rune))
         current_total_bond_change = bracketify(
             up_down_arrow(old.total_bond_rune, new.total_bond_rune, money_delta=True))
 
-        current_total_bond_usd_text = bold(pretty_dollar(new.total_bond_usd))
+        current_total_bond_usd_text = bold(short_dollar(new.total_bond_usd))
         current_total_bond_usd_change = bracketify(
             up_down_arrow(old.total_bond_usd, new.total_bond_usd, money_delta=True, money_prefix='$')
         )
@@ -600,11 +600,11 @@ class RussianLocalization(BaseLocalization):
 
         # -- POOL
 
-        current_pooled_text = bold(pretty_money(new.total_rune_pooled, postfix=RAIDO_GLYPH))
+        current_pooled_text = bold(short_rune(new.total_rune_pooled))
         current_pooled_change = bracketify(
             up_down_arrow(old.total_rune_pooled, new.total_rune_pooled, money_delta=True))
 
-        current_pooled_usd_text = bold(pretty_dollar(new.total_pooled_usd))
+        current_pooled_usd_text = bold(short_dollar(new.total_pooled_usd))
         current_pooled_usd_change = bracketify(
             up_down_arrow(old.total_pooled_usd, new.total_pooled_usd, money_delta=True, money_prefix='$'))
 
@@ -613,7 +613,7 @@ class RussianLocalization(BaseLocalization):
 
         # -- LIQ
 
-        current_liquidity_usd_text = bold(pretty_dollar(new.total_liquidity_usd))
+        current_liquidity_usd_text = bold(short_dollar(new.total_liquidity_usd))
         current_liquidity_usd_change = bracketify(
             up_down_arrow(old.total_liquidity_usd, new.total_liquidity_usd, money_delta=True, money_prefix='$'))
 
@@ -623,14 +623,14 @@ class RussianLocalization(BaseLocalization):
 
         tlv_change = bracketify(
             up_down_arrow(old.total_locked_usd, new.total_locked_usd, money_delta=True, money_prefix='$'))
-        message += f'🏦 TVL + бонды нод: {code(pretty_dollar(new.total_locked_usd))}{tlv_change}.\n'
+        message += f'🏦 TVL + бонды нод: {code(short_dollar(new.total_locked_usd))}{tlv_change}.\n'
 
         # -- RESERVE
 
         reserve_change = bracketify(up_down_arrow(old.reserve_rune, new.reserve_rune,
                                                   postfix=RAIDO_GLYPH, money_delta=True))
 
-        message += f'💰 Резервы: {bold(pretty_money(new.reserve_rune, postfix=RAIDO_GLYPH))}{reserve_change}.\n'
+        message += f'💰 Резервы: {bold(short_rune(new.reserve_rune))}{reserve_change}.\n'
 
         # --- FLOWS:
 
@@ -643,17 +643,17 @@ class RussianLocalization(BaseLocalization):
             swap_volume_24h_rune = new.swap_volume_rune - old.swap_volume_rune
             switched_24h_rune = new.switched_rune - old.switched_rune
 
-            add_rune_text = bold(pretty_money(added_24h_rune, prefix=RAIDO_GLYPH))
-            withdraw_rune_text = bold(pretty_money(withdrawn_24h_rune, prefix=RAIDO_GLYPH))
-            swap_rune_text = bold(pretty_money(swap_volume_24h_rune, prefix=RAIDO_GLYPH))
-            switch_rune_text = bold(pretty_money(switched_24h_rune, prefix=RAIDO_GLYPH))
+            add_rune_text = bold(short_rune(added_24h_rune))
+            withdraw_rune_text = bold(short_rune(withdrawn_24h_rune))
+            swap_rune_text = bold(short_rune(swap_volume_24h_rune))
+            switch_rune_text = bold(short_rune(switched_24h_rune))
 
             price = new.usd_per_rune
 
-            add_usd_text = pretty_dollar(added_24h_rune * price)
-            withdraw_usd_text = pretty_dollar(withdrawn_24h_rune * price)
-            swap_usd_text = pretty_dollar(swap_volume_24h_rune * price)
-            switch_usd_text = pretty_dollar(switched_24h_rune * price)
+            add_usd_text = short_dollar(added_24h_rune * price)
+            withdraw_usd_text = short_dollar(withdrawn_24h_rune * price)
+            swap_usd_text = short_dollar(swap_volume_24h_rune * price)
+            switch_usd_text = short_dollar(switched_24h_rune * price)
 
             message += f'{ital("За последние 24 часа:")}\n'
 
@@ -668,16 +668,16 @@ class RussianLocalization(BaseLocalization):
                 message += f'💎 Rune конвертировано в нативные: {switch_rune_text} ({switch_usd_text}).\n'
 
             # synthetics:
-            synth_volume_rune = code(pretty_money(new.synth_volume_24h, prefix=RAIDO_GLYPH))
-            synth_volume_usd = code(pretty_dollar(new.synth_volume_24h_usd))
+            synth_volume_rune = code(short_rune(new.synth_volume_24h))
+            synth_volume_usd = code(short_dollar(new.synth_volume_24h_usd))
             synth_op_count = short_money(new.synth_op_count)
 
             message += f'💊 Объем торговли синтетиками: {synth_volume_rune} ({synth_volume_usd}) ' \
                        f'путем {synth_op_count} обменов 🆕\n'
 
             if new.loss_protection_paid_24h_rune:
-                ilp_rune_str = code(pretty_money(new.loss_protection_paid_24h_rune, prefix=RAIDO_GLYPH))
-                ilp_usd_str = code(pretty_dollar(new.loss_protection_paid_24h_rune * new.usd_per_rune))
+                ilp_rune_str = code(short_rune(new.loss_protection_paid_24h_rune))
+                ilp_usd_str = code(short_dollar(new.loss_protection_paid_24h_rune * new.usd_per_rune))
                 message += f'🛡️ Выплачено страховки от IL сегодня: {ilp_rune_str} ({ilp_usd_str}) 🆕\n'
 
             message += '\n'
@@ -694,15 +694,22 @@ class RussianLocalization(BaseLocalization):
         else:
             liquidity_apy_change = ''
 
-        switch_rune_total_text = bold(pretty_money(new.switched_rune, prefix=RAIDO_GLYPH))
-        message += (f'💎 Всего Rune перевели в нативные: {switch_rune_total_text} '
-                    f'({format_percent(new.switched_rune, market.total_supply)}).'
-                    f'\n\n')
+        switch_rune_total_text = bold(short_rune(new.switched_rune))
+        message += (
+            f'💎 Всего Rune перевели в нативные: {switch_rune_total_text} '
+            f'({format_percent(new.switched_rune, market.total_supply)}).'
+            f'\n\n')
 
-        message += f'📈 Доход от бондов в нодах, годовых: {code(pretty_money(new.bonding_apy, postfix="%"))}{bonding_apy_change} и ' \
-                   f'доход от пулов в среднем, годовых: {code(pretty_money(new.liquidity_apy, postfix="%"))}{liquidity_apy_change}.\n'
+        message += (
+            f'📈 Доход от бондов в нодах, годовых: '
+            f'{code(pretty_money(new.bonding_apy, postfix="%"))}{bonding_apy_change} и '
+            f'доход от пулов в среднем, годовых: '
+            f'{code(pretty_money(new.liquidity_apy, postfix="%"))}{liquidity_apy_change}.\n'
+        )
 
-        message += f'🛡️ Всего выплачено страховки от IL (непостоянных потерь): {code(pretty_dollar(new.loss_protection_paid_usd))}.\n'
+        message += (
+            f'🛡️ Всего выплачено страховки от IL (непостоянных потерь): '
+            f'{code(short_dollar(new.loss_protection_paid_usd))}.\n')
 
         daily_users_change = bracketify(up_down_arrow(old.users_daily, new.users_daily, int_delta=True))
         monthly_users_change = bracketify(up_down_arrow(old.users_monthly, new.users_monthly, int_delta=True))
