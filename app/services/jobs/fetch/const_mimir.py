@@ -72,7 +72,7 @@ class ConstMimirFetcher(BaseFetcher):
 
         # # fixme: ------- 8< ---- debug ------ 8< -------
         # votes = self._dbg_randomize_votes(votes)
-        mimir, node_mimir = self._dbg_randomize_mimir(mimir, node_mimir)
+        # mimir, node_mimir = self._dbg_randomize_mimir(mimir, node_mimir)
         # # fixme: ------- 8< ---- debug ------ 8< -------
 
         number_of_active_nodes = len(self.deps.node_holder.active_nodes)

@@ -154,6 +154,10 @@ class BlockHeightNotifier(INotified, WithDelegates):
         #         thor_block = self._foo
         # self.last_thor_block_update_ts = now_ts() - 1000
         # await self._post_stuck_alert(True, 1000)
+        # ---- 2:
+        # await self._post_block_pace_update(0.1, BlockProduceState.TooSlow)
+        # await self._post_stuck_alert(True, 100)
+        # await self._post_stuck_alert(False, 0)
         # ----- fixme: debug -----
 
         if thor_block <= 0 or thor_block < self.last_thor_block:
@@ -227,9 +231,12 @@ class BlockHeightNotifier(INotified, WithDelegates):
             return
 
         if curr_state != prev_state:
-            points = await self.get_block_time_chart(self.notification_chart_duration,
-                                                     convert_to_blocks_per_minute=True)
-            await self.pass_data_to_listeners(
-                EventBlockSpeed(curr_state, 0.0, bps, points)
-            )
+            await self._post_block_pace_update(bps, curr_state)
             await self._set_block_alert_state(curr_state)
+
+    async def _post_block_pace_update(self, bps, curr_state):
+        points = await self.get_block_time_chart(self.notification_chart_duration,
+                                                 convert_to_blocks_per_minute=True)
+        await self.pass_data_to_listeners(
+            EventBlockSpeed(curr_state, 0.0, bps, points)
+        )

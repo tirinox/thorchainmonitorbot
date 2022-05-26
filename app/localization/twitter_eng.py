@@ -589,7 +589,6 @@ class TwitterEnglishLocalization(BaseLocalization):
         block_per_minute = self.format_bps(e.block_speed)
 
         return (
-            f'THORChain block generation speed update.\n'
             f'{phrase}\n'
             f'Presently {block_per_minute} blocks per minute or '
             f'it takes {self.format_block_time(e.block_speed)} seconds to generate a new block.'
@@ -634,7 +633,7 @@ class TwitterEnglishLocalization(BaseLocalization):
                 )
                 if change.entry.automatic:
                     text += f' at block #{change.new_value}.'
-            text += '\n\n'
+            text += '\n'
 
         return text.strip()
 
