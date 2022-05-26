@@ -566,7 +566,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         halted_chains = ', '.join(c.chain for c in chain_infos if c.halted)
         if halted_chains:
             msg += f'🚨 Attention! Trading is halted on the {halted_chains} chains! ' \
-                   f'Refrain from using it until the trading is restarted! 🚨\n\n'
+                   f'Refrain from using it until the trading is restarted! 🚨\n'
 
         resumed_chains = ', '.join(c.chain for c in chain_infos if not c.halted)
         if resumed_chains:
