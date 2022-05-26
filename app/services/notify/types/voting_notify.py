@@ -70,3 +70,12 @@ class VotingNotifier(INotified, WithDelegates):
                     await self._on_progress_changed(voting.key, prev_progress, voting, option)
 
         await self._save_prev_state(holder.voting_manager)
+
+    async def _dbg_notification(self, voting):
+        # fixme : debug
+        await self.deps.broadcaster.notify_preconfigured_channels(
+            BaseLocalization.notification_text_mimir_voting_progress,
+            self.deps.mimir_const_holder,
+            voting.key, 0.5, voting, voting.options[0],
+        )
+        # fixme : debug

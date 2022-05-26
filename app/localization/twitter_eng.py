@@ -548,7 +548,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
     def notification_text_mimir_voting_progress(self, holder: MimirHolder, key, prev_progress, voting: MimirVoting,
                                                 option: MimirVoteOption):
-        message = '🏛️ Node-Mimir voting update\n\n'
+        message = '🏛️ Node-Mimir voting update\n'
 
         name = holder.pretty_name(key)
         message += f"{name}\n"
