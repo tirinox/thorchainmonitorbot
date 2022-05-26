@@ -72,7 +72,7 @@ class ConstMimirFetcher(BaseFetcher):
 
         # # fixme: ------- 8< ---- debug ------ 8< -------
         # votes = self._dbg_randomize_votes(votes)
-        # mimir, node_mimir = self._dbg_randomize_mimir(mimir, node_mimir)
+        mimir, node_mimir = self._dbg_randomize_mimir(mimir, node_mimir)
         # # fixme: ------- 8< ---- debug ------ 8< -------
 
         number_of_active_nodes = len(self.deps.node_holder.active_nodes)
@@ -106,12 +106,12 @@ class ConstMimirFetcher(BaseFetcher):
         #         del fresh_mimir.constants['NativeTransactionFee']
         #     except KeyError:
         #         pass
-        # del fresh_mimir.constants["HALTBNBTRADING"]
+        del fresh_mimir.constants["HALTBNBTRADING"]
         # fresh_mimir.constants["HALTETHTRADING"] = 0
         # fresh_mimir.constants["HALTBNBCHAIN"] = 1233243  # 1234568
         # del fresh_mimir.constants["EMISSIONCURVE"]
         # fresh_mimir.constants['NATIVETRANSACTIONFEE'] = 4000000
         # fresh_mimir.constants['MAXLIQUIDITYRUNE'] = 10000000000000 * random.randint(1, 99)
-        # fresh_mimir.constants["FULLIMPLOSSPROTECTIONBLOCKS"] = 9000
+        fresh_mimir.constants["FULLIMPLOSSPROTECTIONBLOCKS"] = 9000
         fresh_mimir.constants["LOVEADMIN"] = 23
         return fresh_mimir, node_mimir
