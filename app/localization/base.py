@@ -859,10 +859,11 @@ class BaseLocalization(ABC):  # == English
 
         message += f'🛡️ Total Imp. Loss. Protection paid: {code(short_dollar(new.loss_protection_paid_usd))}.\n'
 
-        daily_users_change = bracketify(up_down_arrow(old.users_daily, new.users_daily, int_delta=True))
-        monthly_users_change = bracketify(up_down_arrow(old.users_monthly, new.users_monthly, int_delta=True))
-        message += f'👥 Daily users: {code(new.users_daily)}{daily_users_change}, ' \
-                   f'monthly users: {code(new.users_monthly)}{monthly_users_change}\n'
+        if new.users_daily or new.users_monthly:
+            daily_users_change = bracketify(up_down_arrow(old.users_daily, new.users_daily, int_delta=True))
+            monthly_users_change = bracketify(up_down_arrow(old.users_monthly, new.users_monthly, int_delta=True))
+            message += f'👥 Daily users: {code(new.users_daily)}{daily_users_change}, ' \
+                       f'monthly users: {code(new.users_monthly)}{monthly_users_change}\n'
 
         message += '\n'
 

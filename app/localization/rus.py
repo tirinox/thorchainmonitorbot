@@ -711,12 +711,12 @@ class RussianLocalization(BaseLocalization):
             f'🛡️ Всего выплачено страховки от IL (непостоянных потерь): '
             f'{code(short_dollar(new.loss_protection_paid_usd))}.\n')
 
-        daily_users_change = bracketify(up_down_arrow(old.users_daily, new.users_daily, int_delta=True))
-        monthly_users_change = bracketify(up_down_arrow(old.users_monthly, new.users_monthly, int_delta=True))
-        message += f'👥 Пользователей за день: {code(new.users_daily)}{daily_users_change}, ' \
-                   f'пользователей за месяц: {code(new.users_monthly)}{monthly_users_change}\n'
-
-        message += '\n'
+        if new.users_daily or new.users_monthly:
+            daily_users_change = bracketify(up_down_arrow(old.users_daily, new.users_daily, int_delta=True))
+            monthly_users_change = bracketify(up_down_arrow(old.users_monthly, new.users_monthly, int_delta=True))
+            message += f'👥 Пользователей за день: {code(new.users_daily)}{daily_users_change}, ' \
+                       f'пользователей за месяц: {code(new.users_monthly)}{monthly_users_change}\n'
+            message += '\n'
 
         active_pool_changes = bracketify(up_down_arrow(old.active_pool_count,
                                                        new.active_pool_count, int_delta=True))
