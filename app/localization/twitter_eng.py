@@ -4,7 +4,7 @@ from aiothornode.types import ThorChainInfo
 from semver import VersionInfo
 
 from localization.base import BaseLocalization
-from services.dialog.twitter.text_length import twitter_text_length, TWITTER_LIMIT_CHARACTERS
+from services.dialog.twitter.text_length import twitter_intelligent_text_splitter
 from services.lib.constants import thor_to_float, rune_origin, BNB_RUNE_SYMBOL
 from services.lib.date_utils import now_ts, seconds_human
 from services.lib.money import Asset, short_dollar, format_percent, pretty_money, pretty_dollar, RAIDO_GLYPH, \
@@ -218,7 +218,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         if fp.tlv_usd >= 1:
             message += (
-                f"Det. price: {pretty_dollar(fp.fair_price,)}\n"
+                f"Det. price: {pretty_dollar(fp.fair_price)}\n"
                 f"Spec. mult.: {x_ses(fp.fair_price, price)}\n")
 
         return message.rstrip()
@@ -263,6 +263,8 @@ class TwitterEnglishLocalization(BaseLocalization):
         return message.rstrip()
 
     def notification_text_network_summary(self, old: NetworkStats, new: NetworkStats, market: RuneMarketInfo):
+        parts = []
+
         message = '🌐 THORChain stats\n'
 
         security_text = self.network_bond_security_text(new.network_security_ratio)
@@ -272,6 +274,9 @@ class TwitterEnglishLocalization(BaseLocalization):
         standby_nodes_change = bracketify_spaced(up_down_arrow(old.active_nodes, new.active_nodes, int_delta=True))
         message += f"{new.active_nodes} active nodes{active_nodes_change}" \
                    f"and {new.standby_nodes} standby nodes{standby_nodes_change}\n"
+
+        parts.append(message)
+        message = ''
 
         # -- BOND
 
@@ -293,11 +298,15 @@ class TwitterEnglishLocalization(BaseLocalization):
             up_down_arrow(old.total_bond_usd, new.total_bond_usd, money_delta=True, money_prefix='$')
         )
 
-        message += f"🔗 Active bond: {current_bond_text}{current_bond_change} or " \
-                   f"{current_bond_usd_text}{current_bond_usd_change}.\n"
+        message = f"🔗 Active bond: {current_bond_text}{current_bond_change} or " \
+                  f"{current_bond_usd_text}{current_bond_usd_change}.\n"
 
-        message += f"Total bond: {current_total_bond_text}{current_total_bond_change} or " \
-                   f"{current_total_bond_usd_text}{current_total_bond_usd_change}.\n"
+        parts.append(message)
+
+        message = f"Total bond: {current_total_bond_text}{current_total_bond_change} or " \
+                  f"{current_total_bond_usd_text}{current_total_bond_usd_change}.\n"
+
+        parts.append(message)
 
         # -- POOL
 
@@ -309,10 +318,8 @@ class TwitterEnglishLocalization(BaseLocalization):
         current_pooled_usd_change = bracketify(
             up_down_arrow(old.total_pooled_usd, new.total_pooled_usd, money_delta=True, money_prefix='$'))
 
-        message += f"🏊 Total pooled: {current_pooled_text}{current_pooled_change} or " \
-                   f"{current_pooled_usd_text}{current_pooled_usd_change}.\n"
-
-        # -- LIQ
+        message = f"🏊 Total pooled: {current_pooled_text}{current_pooled_change} or " \
+                  f"{current_pooled_usd_text}{current_pooled_usd_change}.\n"
 
         current_liquidity_usd_text = short_dollar(new.total_liquidity_usd)
         current_liquidity_usd_change = bracketify(
@@ -320,21 +327,24 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         message += f"🌊 Total liquidity (TVL): {current_liquidity_usd_text}{current_liquidity_usd_change}.\n"
 
+        parts.append(message)
+
         # -- TVL
 
         tlv_change = bracketify(
             up_down_arrow(old.total_locked_usd, new.total_locked_usd, money_delta=True, money_prefix='$'))
-        message += f'🏦 TVL + Bond: {short_dollar(new.total_locked_usd)}{tlv_change}.\n'
+        message = f'🏦 TVL + Bond: {short_dollar(new.total_locked_usd)}{tlv_change}.\n'
+        parts.append(message)
 
         # -- RESERVE
 
         reserve_change = bracketify(up_down_arrow(old.reserve_rune, new.reserve_rune,
                                                   postfix=RAIDO_GLYPH, money_delta=True))
 
-        message += f'💰 Reserve: {short_rune(new.reserve_rune)}{reserve_change}.\n'
+        message = f'💰 Reserve: {short_rune(new.reserve_rune)}{reserve_change}.\n'
+        parts.append(message)
 
         # --------------------------------------------------------------------------------------------------------------
-        message += MESSAGE_SEPARATOR
 
         # --- FLOWS:
 
@@ -357,7 +367,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             swap_usd_text = short_dollar(swap_volume_24h_rune * price)
             switch_usd_text = short_dollar(switched_24h_rune * price)
 
-            message += f'Last 24 hours:\n'
+            message = ''
 
             if added_24h_rune:
                 message += f'➕ Rune added to pools: {add_rune_text} ({add_usd_text}).\n'
@@ -372,20 +382,28 @@ class TwitterEnglishLocalization(BaseLocalization):
             if switched_24h_rune:
                 message += f'💎 Rune switched to native: {switch_rune_text} ({switch_usd_text}).\n'
 
+            if message:
+                message = f'Last 24 hours:\n' + message
+
+            parts.append(message)
+
             # synthetics:
             synth_volume_rune = short_rune(new.synth_volume_24h)
             synth_volume_usd = short_dollar(new.synth_volume_24h_usd)
             synth_op_count = short_money(new.synth_op_count)
 
-            message += f'💊 Synth trade volume: {synth_volume_rune} ({synth_volume_usd}) ' \
-                       f'in {synth_op_count} swaps 🆕\n'
+            message = f'💊 Synth trade volume: {synth_volume_rune} ({synth_volume_usd}) ' \
+                      f'in {synth_op_count} swaps\n'
 
             if new.loss_protection_paid_24h_rune:
                 ilp_rune_str = short_rune(new.loss_protection_paid_24h_rune)
                 ilp_usd_str = short_dollar(new.loss_protection_paid_24h_rune * new.usd_per_rune)
-                message += f'🛡️ IL protection payout: {ilp_rune_str} ({ilp_usd_str}) 🆕\n'
+                message += f'🛡️ ILP payout last 24h: {ilp_rune_str} ({ilp_usd_str})\n'
 
-            message += '\n'
+            parts.append(message)
+
+        message = f'🛡 Total Imp. Loss. Protection paid: {(short_dollar(new.loss_protection_paid_usd))}.\n'
+        parts.append(message)
 
         if abs(old.bonding_apy - new.bonding_apy) > 0.01:
             bonding_apy_change = bracketify(
@@ -400,43 +418,47 @@ class TwitterEnglishLocalization(BaseLocalization):
             liquidity_apy_change = ''
 
         # --------------------------------------------------------------------------------------------------------------
-        message += MESSAGE_SEPARATOR
 
         switch_rune_total_text = short_rune(new.switched_rune)
-        message += (f'💎 Total Rune switched to native: {switch_rune_total_text} '
-                    f'({format_percent(new.switched_rune, market.total_supply)}).'
-                    f'\n\n')
+        message = (
+            f'💎 Total Rune switched to native: {switch_rune_total_text} '
+            f'({format_percent(new.switched_rune, market.total_supply)})\n'
+        )
 
-        message += f'📈 Bonding APY is {pretty_money(new.bonding_apy, postfix="%")}{bonding_apy_change} and ' \
-                   f'Liquidity APY is {pretty_money(new.liquidity_apy, postfix="%")}{liquidity_apy_change}.\n'
+        message += (
+            f'📈 Bonding APY is {pretty_money(new.bonding_apy, postfix="%")}{bonding_apy_change} and '
+            f'Liquidity APY is {pretty_money(new.liquidity_apy, postfix="%")}{liquidity_apy_change}.\n'
+        )
 
-        message += f'🛡 Total Imp. Loss. Protection paid: {(short_dollar(new.loss_protection_paid_usd))}.\n'
+        parts.append(message)
 
-        daily_users_change = bracketify(up_down_arrow(old.users_daily, new.users_daily, int_delta=True))
-        monthly_users_change = bracketify(up_down_arrow(old.users_monthly, new.users_monthly, int_delta=True))
-        message += f'👥 Daily users: {new.users_daily}{daily_users_change}, ' \
-                   f'monthly users: {new.users_monthly}{monthly_users_change}\n'
+        if new.users_daily or new.users_monthly:
+            daily_users_change = bracketify(up_down_arrow(old.users_daily, new.users_daily, int_delta=True))
+            monthly_users_change = bracketify(up_down_arrow(old.users_monthly, new.users_monthly, int_delta=True))
+            message = f'👥 Daily users: {new.users_daily}{daily_users_change}, ' \
+                      f'monthly users: {new.users_monthly}{monthly_users_change}\n'
+            parts.append(message)
 
         # --------------------------------------------------------------------------------------------------------------
-        message += MESSAGE_SEPARATOR
 
         active_pool_changes = bracketify(up_down_arrow(old.active_pool_count,
                                                        new.active_pool_count, int_delta=True))
         pending_pool_changes = bracketify(up_down_arrow(old.pending_pool_count,
                                                         new.pending_pool_count, int_delta=True))
-        message += f'{new.active_pool_count} active pools{active_pool_changes} and ' \
-                   f'{new.pending_pool_count} pending pools{pending_pool_changes}.\n'
+        message = f'{new.active_pool_count} active pools{active_pool_changes} and ' \
+                  f'{new.pending_pool_count} pending pools{pending_pool_changes}.\n'
 
         if new.next_pool_to_activate:
             next_pool_wait = seconds_human(new.next_pool_activation_ts - now_ts())
             next_pool = self.pool_link(new.next_pool_to_activate)
             message += f"Next pool is likely be activated: {next_pool} in {next_pool_wait}."
 
-        # fixme: ---
-        # print(message)
-        # fixme: ---
+        parts.append(message)
 
-        return message
+        # return MESSAGE_SEPARATOR.join(twitter_intelligent_text_splitter(parts))
+        r = MESSAGE_SEPARATOR.join(twitter_intelligent_text_splitter(parts))
+        print(r)
+        return r
 
     @staticmethod
     def _format_node_text_plain(node: NodeInfo, with_ip):
@@ -486,11 +508,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         components.append(part4)
 
-        total_length = sum(twitter_text_length(part) for part in components)
-        if total_length > TWITTER_LIMIT_CHARACTERS:
-            return MESSAGE_SEPARATOR.join(components)
-        else:
-            return ''.join(components)
+        return MESSAGE_SEPARATOR.join(twitter_intelligent_text_splitter(components))
 
     @staticmethod
     def node_version(v, data: NodeSetChanges, active=True):

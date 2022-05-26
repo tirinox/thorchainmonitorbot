@@ -31,6 +31,10 @@ class NetworkStatsNotifier(INotified):
 
         if await self.notify_cd.can_do():
             old_info = await self.get_previous_stats(ago=self.notify_cd.cooldown)  # since last time notified
+
+            # fixme: debug
+            # old_info = await self._dbg_get_other_info()
+
             rune_market_info: RuneMarketInfo = await self.deps.rune_market_fetcher.get_rune_market_info()
             await self._notify(old_info, new_info, rune_market_info)
             await self.notify_cd.do()
@@ -56,3 +60,10 @@ class NetworkStatsNotifier(INotified):
             BaseLocalization.notification_text_network_summary,
             old, new, rune_market_info
         )
+
+    async def _dbg_get_other_info(self):
+        r = await self.get_previous_stats(0)
+        for name, value in r.__dict__.items():
+            if isinstance(value, (int, float)):
+                r.__dict__[name] += 1
+        return r

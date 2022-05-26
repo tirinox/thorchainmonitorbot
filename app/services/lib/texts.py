@@ -95,6 +95,10 @@ def cut_long_text(text: str, max_symbols=15, end='...'):
 
 
 def bracketify(item, before='', after=''):
+    if before is True:
+        before = ' '
+    if after is True:
+        after = ' '
     return f"{before}({item}){after}" if item else ''
 
 
@@ -123,9 +127,9 @@ def up_down_arrow(old_value, new_value, smiley=False, more_is_better=True, same_
         sign = ('+' if delta >= 0 else '') if signed else ''
         delta_text = f"{sign}{int(delta)}"
     elif money_delta:
-        delta_text = short_money(delta, money_prefix, signed)
+        delta_text = short_money(delta, prefix=money_prefix, signed=signed)
     elif percent_delta:
-        delta_text = format_percent(delta, old_value, signed)
+        delta_text = format_percent(delta, old_value, signed=signed)
 
     return f"{smiley} {arrow} {delta_text}{postfix}".strip()
 

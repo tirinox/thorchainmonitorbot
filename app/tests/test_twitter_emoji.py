@@ -1,4 +1,4 @@
-from services.dialog.twitter.text_length import twitter_text_length, twitter_cut_text
+from services.dialog.twitter.text_length import twitter_text_length, twitter_cut_text, twitter_intelligent_text_splitter
 from services.lib.money import EMOJI_SCALE
 from services.lib.texts import progressbar
 
@@ -31,3 +31,15 @@ def test_twitter_cut_length():
     assert twitter_cut_text('➕🌊', 2) == '➕'
     assert twitter_cut_text('➕🌊', 3) == '➕'
     assert twitter_cut_text('➕🌊', 4) == '➕🌊'
+
+
+def test_split_message():
+    f = twitter_intelligent_text_splitter
+    assert f(['AAA', '', 'CCC', ''], 10) == ['AAACCC']
+    assert f(['AAA', 'BBB', 'CCC', 'DDD'], 10) == ['AAABBBCCC', 'DDD']
+    assert f(['A' * 20, 'BBB', 'CCC', 'DDD'], 10) == ['A' * 10, 'BBBCCCDDD']
+    assert f(['A' * 11, 'CCCC', 'B' * 20], 10) == ['A' * 10, 'CCCC', 'B' * 10]
+    assert f(['AAA', 'BBB', 'CCC', 'DDD'], 3) == ['AAA', 'BBB', 'CCC', 'DDD']
+    assert f(['AAA', 'BB', 'CC', 'DDD'], 3) == ['AAA', 'BB', 'CC', 'DDD']
+    assert f(['AAA', 'B', 'C', 'D', 'E'], 3) == ['AAA', 'BCD', 'E']
+    assert f(['AAA', 'B', 'C', 'D', 'E' * 20], 3) == ['AAA', 'BCD', 'E' * 3]
