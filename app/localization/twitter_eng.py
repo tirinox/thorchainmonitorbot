@@ -577,11 +577,12 @@ class TwitterEnglishLocalization(BaseLocalization):
         name = holder.pretty_name(key)
         message += f"{name}\n"
 
-        pb = progressbar(option.number_votes, voting.min_votes_to_pass, 12) if option.progress > 0.1 else ''
-        extra = f'{option.need_votes_to_pass} more votes to pass' if option.need_votes_to_pass <= 5 else ''
+        pb = self.make_voting_progress_bar(option, voting)
+        extra = (f'{option.need_votes_to_pass} more votes to pass'
+                 if option.need_votes_to_pass <= self.NEED_VOTES_TO_PASS_MAX else '')
         message += f" to set it ➔ {option.value}: " \
-                   f"{format_percent(option.number_votes, voting.min_votes_to_pass)}" \
-                   f" {pb} ({option.number_votes}/{voting.active_nodes}) {extra}\n"
+                   f"{format_percent(option.number_votes, voting.active_nodes)}" \
+                   f" ({option.number_votes}/{voting.active_nodes}) {pb} {extra}\n"
         return message
 
     def notification_text_trading_halted_multi(self, chain_infos: List[ThorChainInfo]):

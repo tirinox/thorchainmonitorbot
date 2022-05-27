@@ -8,6 +8,8 @@ from aiothornode.types import ThorConstants, ThorMimir
 
 from services.lib.texts import split_by_camel_case
 from services.models.base import BaseModelMixin
+from services.models.mimir_naming import TRANSLATE_MIMIRS, EXCLUDED_VOTE_KEYS, MimirUnits
+from services.models.node_info import NodeInfo
 
 
 @dataclass
@@ -81,18 +83,20 @@ class MimirVoting:
 
 
 class MimirVoteManager:
-    def __init__(self, votes: typing.List[MimirVote], active_node_count: int, exclude_keys):
-        self.votes = votes
-        self.active_node_count = active_node_count
+    def __init__(self, all_votes: typing.List[MimirVote], active_nodes: typing.List[NodeInfo], exclude_keys):
+        active_signers = [n.node_address for n in active_nodes if n.node_address and n.is_active]
+        active_votes = [vote for vote in all_votes if vote.singer in active_signers]
+
+        self.votes = active_votes
+        self.active_node_count = len(active_nodes)
 
         self.all_voting = {}
-        for vote in votes:
+        for vote in active_votes:
             if vote.key in exclude_keys:
                 continue
             if vote.key not in self.all_voting:
-                self.all_voting[vote.key] = MimirVoting(vote.key, {}, active_node_count, [])
-            voting = self.all_voting[vote.key]
-
+                self.all_voting[vote.key] = MimirVoting(vote.key, {}, self.active_node_count, [])
+            voting = self.all_voting.get(vote.key)
             if vote.value not in voting.options:
                 voting.options[vote.value] = MimirVoteOption(vote.value, [])
             voting.options[vote.value].signers.append(vote.singer)
@@ -114,10 +118,6 @@ class MimirEntry:
     changed_ts: int
     units: str
     source: str
-
-    UNITS_RUNES = 'runes'
-    UNITS_BLOCKS = 'blocks'
-    UNITS_BOOL = 'bool'
 
     SOURCE_CONST = 'const'
     SOURCE_ADMIN = 'admin'
@@ -159,175 +159,10 @@ class MimirHolder:
         self._all_names = set()
         self._mimir_only_names = set()
         self.node_mimir = {}
-        self.node_mimir_votes = []
-        self.voting_manager = MimirVoteManager([], 1, [])
+        self.voting_manager = MimirVoteManager([], [], [])
         self.hard_coded_pretty_names = {}
 
-    BLOCK_CONSTANTS = {
-        name.upper() for name in [
-            'BlocksPerYear', 'FundMigrationInterval', 'ChurnInterval', 'ChurnRetryInterval',
-            'SigningTransactionPeriod', 'DoubleSignMaxAge', 'LiquidityLockUpBlocks',
-            'ObservationDelayFlexibility', 'YggFundRetry', 'JailTimeKeygen', 'JailTimeKeysign',
-            'NodePauseChainBlocks', 'FullImpLossProtectionBlocks', 'TxOutDelayMax', 'MaxTxOutOffset',
-        ]
-    }
-
-    EXCLUDED_VOTE_KEYS = [
-        'TEST',
-        'SUPPORTTHORCHAINDOTNETWORK',
-    ]
-
-    RUNE_CONSTANTS = {
-        name.upper() for name in [
-            'OutboundTransactionFee',
-            'NativeTransactionFee',
-            'StagedPoolCost',
-            'MinRunePoolDepth',
-            'MinimumBondInRune',
-            'MinTxOutVolumeThreshold',
-            'TxOutDelayRate',
-            'TNSFeePerBlock',
-            'TNSRegisterFee',
-            'MAXIMUMLIQUIDITYRUNE',
-            'MAXLIQUIDITYRUNE',
-            'PoolDepthForYggFundingMin',
-        ]
-    }
-
-    BOOL_CONSTANTS = {
-        "HALTBCHCHAIN",
-        "HALTBCHTRADING",
-        "HALTBNBCHAIN",
-        "HALTBNBTRADING",
-        "HALTBTCCHAIN",
-        "HALTBTCTRADING",
-        "HALTETHCHAIN",
-        "HALTETHTRADING",
-        "HALTLTCCHAIN",
-        "HALTLTCTRADING",
-        "HALTTHORCHAIN",
-        'HALTDOGECHAIN',
-        'HALTDOGETRADING',
-        'HALTTERRACHAIN',
-        'HALTTERRATRADING',
-
-        'HALTHAVENCHAIN',
-
-        'HALTCHURNING',
-        "HALTTRADING",
-        "MINTSYNTHS",
-        "PAUSELP",
-        "PAUSELPBCH",
-        "PAUSELPBNB",
-        "PAUSELPBTC",
-        "PAUSELPETH",
-        "PAUSELPLTC",
-        "PAUSELPDOGE",
-        'PAUSELPTERRA',
-        "STOPFUNDYGGDRASIL",
-        "STOPSOLVENCYCHECK",
-        "THORNAME",
-        "THORNAMES",
-        'STOPSOLVENCYCHECKETH',
-        'STOPSOLVENCYCHECKBNB',
-        'STOPSOLVENCYCHECKLTC',
-        'STOPSOLVENCYCHECKBTC',
-        'STOPSOLVENCYCHECKBCH',
-        'STOPSOLVENCYCHECKDOGE',
-        'STOPSOLVENCYCHECKTERRA',
-        'STRICTBONDLIQUIDITYRATIO',
-    }
-
-    TRANSLATE_MIMIRS = {
-        'PAUSELPLTC': 'Pause LP LTC',
-        'PAUSELPETH': 'Pause LP ETH',
-        'PAUSELPBCH': 'Pause LP BCH',
-        'PAUSELPBNB': 'Pause LP BNB',
-        'PAUSELPBTC': 'Pause LP BTC',
-        'PAUSELPDOGE': 'Pause LP Doge',
-        'PAUSELPTERRA': 'Pause LP Terra',
-        'PAUSELP': 'Pause all LP',
-        'STOPFUNDYGGDRASIL': 'Stop Fund Yggdrasil',
-        'STOPSOLVENCYCHECK': 'Stop Solvency Check',
-        'NUMBEROFNEWNODESPERCHURN': 'Number of New Nodes per Churn',
-        'MINTSYNTHS': 'Mint Synths',
-
-        'HALTBCHCHAIN': 'Halt BCH Chain',
-        'HALTBCHTRADING': 'Halt BCH Trading',
-        'HALTSIGNINGBCH': 'Halt BCH Signing',
-        'SOLVENCYHALTBCHCHAIN': 'Solvency Halt BCH Chain',
-
-        'HALTBNBCHAIN': 'Halt BNB Chain',
-        'HALTBNBTRADING': 'Halt BNB Trading',
-        'HALTSIGNINGBNB': 'Halt BNB Signing',
-        'SOLVENCYHALTBNBCHAIN': 'Solvency Halt BNB Chain',
-
-        'HALTBTCCHAIN': 'Halt BTC Chain',
-        'HALTBTCTRADING': 'Halt BTC Trading',
-        'HALTSIGNINGBTC': 'Halt BTC Signing',
-        'SOLVENCYHALTBTCCHAIN': 'Solvency Halt BTC Chain',
-
-        'HALTETHCHAIN': 'Halt ETH Chain',
-        'HALTETHTRADING': 'Halt ETH Trading',
-        'HALTSIGNINGETH': 'Halt ETH Signing',
-        'SOLVENCYHALTETHCHAIN': 'Solvency Halt ETH Chain',
-
-        'HALTLTCCHAIN': 'Halt LTC Chain',
-        'HALTLTCTRADING': 'Halt LTC Trading',
-        'HALTSIGNINGLTC': 'Halt LTC Signing',
-        'SOLVENCYHALTLTCCHAIN': 'Solvency Halt LTC Chain',
-
-        'HALTDOGECHAIN': 'Halt DOGE Chain',
-        'HALTDOGETRADING': 'Halt DOGE Trading',
-        'HALTSIGNINGDOGE': 'Halt DOGE Signing',
-        'SOLVENCYHALTDOGECHAIN': 'Solvency Halt DOGE Chain',
-
-        'HALTTERRACHAIN': 'Halt Terra Chain',
-        'HALTTERRATRADING': 'Halt Terra Trading',
-        'HALTSIGNINGTERRA': 'Halt Terra Signing',
-        'SOLVENCYHALTTERRACHAIN': 'Solvency Halt Terra Chain',
-
-        'HALTHAVENCHAIN': 'Halt Haven Chain',  # unconfirmed!
-
-        'HALTGAIACHAIN': 'Halt Atom Chain',
-        'HALTGAIATRADING': 'Halt Atom Trading',
-        'HALTSIGNINGGAIA': 'Halt Atom Signing',
-        'SOLVENCYHALTGAIACHAIN': 'Solvency Halt Atom Chain',
-
-        'HALTTHORCHAIN': 'Halt ThorChain',
-        'HALTTRADING': 'Halt All Trading',
-
-        'MAXIMUMLIQUIDITYRUNE': 'Maximum Liquidity Rune',
-        'MAXLIQUIDITYRUNE': 'Max Liquidity Rune',
-
-        'MAXUTXOSTOSPEND': 'Max UTXO to Spend',
-
-        'THORNAME': 'THOR Name',
-        'THORNAMES': 'THOR Names',
-
-        'STOPSOLVENCYCHECKETH': 'Stop Solvency check ETH',
-        'STOPSOLVENCYCHECKBNB': 'Stop Solvency check BNB',
-        'STOPSOLVENCYCHECKLTC': 'Stop Solvency check LTC',
-        'STOPSOLVENCYCHECKBTC': 'Stop Solvency check BTC',
-        'STOPSOLVENCYCHECKBCH': 'Stop Solvency check BCH',
-        'STOPSOLVENCYCHECKDOGE': 'Stop Solvency check DOGE',
-        'STOPSOLVENCYCHECKTERRA': 'Stop Solvency check Terra',
-        'STRICTBONDLIQUIDITYRATIO': 'Strict Bond Liquidity Ratio',
-
-        'POOLDEPTHFORYGGFUNDINGMIN': 'Pool Depth For Ygg Funding Min',
-
-        'MAXSYNTHASSETDEPTH': 'Max Synth Asset Depth',
-        'HALTCHURNING': 'Halt Churning',
-
-        'MAXNODETOCHURNOUTFORLOWVERSION': 'Max Node To Churn Out For Low Version',
-
-        'CLOUDPROVIDERLIMIT': 'Cloud Provider Limit',
-
-        'DESIREDMAXVALIDATORSET': 'Desired Max Validator Set',
-        'DESIREDVALIDATORSET': 'Desired Validator Set',
-    }
-
-    EXTRA_HALT_REASONS = [
+    EXTRA_AUTO_SOLVENCY_MIMIRS = [
         'STOPFUNDYGGDRASIL'
     ]
 
@@ -335,7 +170,7 @@ class MimirHolder:
     def detect_auto_solvency_checker(name: str, value):
         name = name.upper()
         is_halt = name.startswith('HALT') and (name.endswith('CHAIN') or name.endswith('TRADING'))
-        if is_halt or name in MimirHolder.EXTRA_HALT_REASONS:
+        if is_halt or name in MimirHolder.EXTRA_AUTO_SOLVENCY_MIMIRS:
             if int(value) > 2:
                 return True
         return False
@@ -352,11 +187,12 @@ class MimirHolder:
         return self._const_map.get(name.upper())
 
     def pretty_name(self, name):
-        return self.TRANSLATE_MIMIRS.get(name) or self.hard_coded_pretty_names.get(name) or name
+        return TRANSLATE_MIMIRS.get(name) or self.hard_coded_pretty_names.get(name) or name
 
     def update(self, constants: ThorConstants, mimir: ThorMimir, node_mimir, node_votes: typing.List[MimirVote],
-               number_of_active_nodes: int):
-        self.voting_manager = MimirVoteManager(node_votes, number_of_active_nodes, self.EXCLUDED_VOTE_KEYS)
+               active_nodes: typing.List[NodeInfo]):
+
+        self.voting_manager = MimirVoteManager(node_votes, active_nodes, EXCLUDED_VOTE_KEYS)
 
         hard_coded_constants = {n.upper(): v for n, v in constants.constants.items()}
         self.hard_coded_pretty_names = {
@@ -372,8 +208,6 @@ class MimirHolder:
 
         if node_mimir is not None:
             self.node_mimir = node_mimir
-        if node_votes is not None:
-            self.node_mimir_votes = node_votes
 
         self._mimir_only_names = mimir_names - const_names
 
@@ -395,15 +229,7 @@ class MimirHolder:
 
             hard_coded_value = hard_coded_constants.get(name)
             last_change_ts = self.last_changes.get(name, 0)
-
-            if name in self.RUNE_CONSTANTS:
-                units = MimirEntry.UNITS_RUNES
-            elif name in self.BLOCK_CONSTANTS:
-                units = MimirEntry.UNITS_BLOCKS
-            elif name in self.BOOL_CONSTANTS:
-                units = MimirEntry.UNITS_BOOL
-            else:
-                units = ''
+            units = MimirUnits.get_mimir_units(name)
 
             self._const_map[name] = MimirEntry(
                 name,

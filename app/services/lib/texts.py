@@ -162,3 +162,7 @@ def split_by_camel_case(s: str, abbr_correction=True):
     else:
         corrected_items = items
     return ' '.join(corrected_items)
+
+
+def capitalize_each_word(s):
+    return ' '.join(map(str.capitalize, str(s).split()))

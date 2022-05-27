@@ -21,6 +21,7 @@ from services.models.bep2 import BEP2Transfer, BEP2CEXFlow
 from services.models.cap_info import ThorCapInfo
 from services.models.last_block import BlockProduceState, EventBlockSpeed
 from services.models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting, MimirVoteOption
+from services.models.mimir_naming import MimirUnits
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEventType, NodeEvent, \
     EventBlockHeight, EventDataSlash
@@ -1082,7 +1083,8 @@ class BaseLocalization(ABC):  # == English
     MIMIR_NO = 'NO'
     MIMIR_UNDEFINED = 'undefined'
     MIMIR_LAST_CHANGE = 'Last change'
-    MIMIR_CHEAT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1mc1mBBExGxtI5a85niijHhle5EtXoTR_S5Ihx808_tM/edit#gid=980980229'
+    MIMIR_CHEAT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1mc1mBBExGxtI5a85niijHhle5EtXoTR_S5Ihx808_tM/edit' \
+                            '#gid=980980229 '
 
     def format_mimir_value(self, v: str, m: MimirEntry):
         if v is None:
@@ -1091,14 +1093,14 @@ class BaseLocalization(ABC):  # == English
         if m is None:
             return v
 
-        if m.units == m.UNITS_RUNES:
+        if m.units == MimirUnits.UNITS_RUNES:
             return short_money(thor_to_float(v), localization=self.SHORT_MONEY_LOC, postfix=f' {self.R}')
-        elif m.units == m.UNITS_BLOCKS:
+        elif m.units == MimirUnits.UNITS_BLOCKS:
             blocks = int(v)
             seconds = blocks * THOR_BLOCK_TIME
             time_str = self.seconds_human(seconds) if seconds != 0 else self.MIMIR_DISABLED
             return f'{time_str}, {blocks} {self.MIMIR_BLOCKS}'
-        elif m.units == m.UNITS_BOOL:
+        elif m.units == MimirUnits.UNITS_BOOL:
             return self.MIMIR_YES if bool(int(v)) else self.MIMIR_NO
         else:
             return v
@@ -1159,6 +1161,7 @@ class BaseLocalization(ABC):  # == English
         return messages
 
     NODE_MIMIR_VOTING_GROUP_SIZE = 2
+    NEED_VOTES_TO_PASS_MAX = 7
 
     def text_node_mimir_voting(self, holder: MimirHolder):
         title = '🏛️' + bold('Node-Mimir voting') + '\n\n'
@@ -1173,10 +1176,12 @@ class BaseLocalization(ABC):  # == English
             msg = f"{code(name)}\n"
 
             for option in voting.top_options:
-                pb = progressbar(option.number_votes, voting.active_nodes, 12) if option.progress > 0.1 else ''
-                extra = f'{option.need_votes_to_pass} more votes to pass' if option.need_votes_to_pass <= 5 else ''
-                msg += f" to set it ➔ {code(option.value)}: {bold(format_percent(option.number_votes, voting.active_nodes))}" \
-                       f" {pb} ({option.number_votes}/{voting.active_nodes}) {extra}\n"
+                pb = self.make_voting_progress_bar(option, voting)
+                percent = format_percent(option.number_votes, voting.active_nodes)
+                extra = (f'{option.need_votes_to_pass} more votes to pass'
+                         if option.need_votes_to_pass <= self.NEED_VOTES_TO_PASS_MAX else '')
+                msg += f" to set it ➔ {code(option.value)}: {bold(percent)}" \
+                       f" ({option.number_votes}/{voting.active_nodes}) {pb} {extra}\n"
 
             messages.append(msg)
 
@@ -1190,12 +1195,20 @@ class BaseLocalization(ABC):  # == English
         name = holder.pretty_name(key)
         message += f"{code(name)}\n"
 
-        pb = progressbar(option.number_votes, voting.min_votes_to_pass, 12) if option.progress > 0.1 else ''
+        pb = self.make_voting_progress_bar(option, voting)
         extra = f'{option.need_votes_to_pass} more votes to pass' if option.need_votes_to_pass <= 5 else ''
         message += f" to set it ➔ {code(option.value)}: " \
-                   f"{bold(format_percent(option.number_votes, voting.min_votes_to_pass))}" \
-                   f" {pb} ({option.number_votes}/{voting.active_nodes}) {extra}\n"
+                   f"{bold(format_percent(option.number_votes, voting.active_nodes))}" \
+                   f" ({option.number_votes}/{voting.active_nodes}) {pb} {extra}\n"
         return message
+
+    @staticmethod
+    def make_voting_progress_bar(option: MimirVoteOption, voting: MimirVoting):
+        if option.progress > voting.SUPER_MAJORITY:
+            return '✅'
+        else:
+            # if "voting.min_votes_to_pass" (100% == 66.67%), otherwise use "voting.active_nodes"
+            return progressbar(option.number_votes, voting.min_votes_to_pass, 12) if option.progress > 0.12 else ''
 
     # --------- TRADING HALTED ------------
 

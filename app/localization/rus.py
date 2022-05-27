@@ -947,12 +947,12 @@ class RussianLocalization(BaseLocalization):
             msg = f"{code(name)}\n"
 
             for option in voting.top_options:
-                pb = progressbar(option.number_votes, voting.min_votes_to_pass, 12) if option.progress > 0.1 else ''
+                pb = self.make_voting_progress_bar(option, voting)
                 extra = f'{option.need_votes_to_pass} еще голосов, чтобы прошло' \
-                    if option.need_votes_to_pass <= 5 else ''
+                    if option.need_votes_to_pass <= self.NEED_VOTES_TO_PASS_MAX else ''
                 msg += f"➔ чтобы стало {code(option.value)}: " \
-                       f"{bold(format_percent(option.number_votes, voting.min_votes_to_pass))}" \
-                       f" {pb} ({option.number_votes}/{voting.active_nodes}) {extra}\n"
+                       f"{bold(format_percent(option.number_votes, voting.active_nodes))}" \
+                       f" ({option.number_votes}/{voting.active_nodes}) {pb} {extra}\n"
 
             messages.append(msg)
 
@@ -966,10 +966,12 @@ class RussianLocalization(BaseLocalization):
         name = holder.pretty_name(key)
         message += f"{code(name)}\n"
 
-        pb = progressbar(option.number_votes, voting.active_nodes, 12) if option.progress > 0.1 else ''
-        extra = f'{option.need_votes_to_pass} еще голосов, чтобы прошло' if option.need_votes_to_pass <= 5 else ''
-        message += f"➔ чтобы стало {code(option.value)}: {bold(format_percent(option.number_votes, voting.active_nodes))}" \
-                   f" {pb} ({option.number_votes}/{voting.active_nodes}) {extra}\n"
+        pb = self.make_voting_progress_bar(option, voting)
+        percent = format_percent(option.number_votes, voting.active_nodes)
+        extra = (f'{option.need_votes_to_pass} еще голосов, чтобы прошло'
+                 if option.need_votes_to_pass <= self.NEED_VOTES_TO_PASS_MAX else '')
+        message += f"➔ чтобы стало {code(option.value)}: {bold(percent)}" \
+                   f" ({option.number_votes}/{voting.active_nodes}) {pb} {extra}\n"
         return message
 
     # --------- TRADING HALTED -----------
