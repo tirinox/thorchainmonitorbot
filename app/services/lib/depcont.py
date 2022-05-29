@@ -14,7 +14,7 @@ from services.dialog.twitter.twitter_bot import TwitterBot
 from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.midgard.connector import MidgardConnector
-from services.lib.new_feature import NewFeatureManager
+from services.lib.new_feature import NewFeatureManager, Features
 from services.lib.settings_manager import SettingsManager
 from services.models.mimir import MimirHolder
 from services.models.node_info import NodeListHolder
@@ -66,7 +66,7 @@ class DepContainer:
 
     is_loading: bool = True
 
-    new_feature: NewFeatureManager = NewFeatureManager()
+    new_feature: NewFeatureManager = NewFeatureManager(Features.EXPIRE_TABLE)
 
     def make_http_session(self):
         session_timeout = float(self.cfg.get('thor.timeout', 2.0))

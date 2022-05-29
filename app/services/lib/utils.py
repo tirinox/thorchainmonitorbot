@@ -324,3 +324,6 @@ def run_once_async(f):
 
     wrapper.has_run = False
     return wrapper
+
+
+nested_dict = lambda: defaultdict(nested_dict)
