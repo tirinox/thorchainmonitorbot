@@ -1205,14 +1205,17 @@ class BaseLocalization(ABC):  # == English
             for option in voting.top_options:
                 pb = self.make_voting_progress_bar(option, voting)
                 percent = format_percent(option.number_votes, voting.active_nodes)
-                extra = (f'{option.need_votes_to_pass} more votes to pass'
-                         if option.need_votes_to_pass <= self.NEED_VOTES_TO_PASS_MAX else '')
+                extra = self._text_votes_to_pass(option)
                 msg += f" to set it ➔ {code(option.value)}: {bold(percent)}" \
                        f" ({option.number_votes}/{voting.active_nodes}) {pb} {extra}\n"
 
             messages.append(msg)
 
         return regroup_joining(self.NODE_MIMIR_VOTING_GROUP_SIZE, messages)
+
+    def _text_votes_to_pass(self, option):
+        show = 0 < option.need_votes_to_pass <= self.NEED_VOTES_TO_PASS_MAX
+        return f'{option.need_votes_to_pass} more votes to pass' if show else ''
 
     def notification_text_mimir_voting_progress(self, holder: MimirHolder, key, prev_progress,
                                                 voting: MimirVoting,
@@ -1223,7 +1226,7 @@ class BaseLocalization(ABC):  # == English
         message += f"{code(name)}\n"
 
         pb = self.make_voting_progress_bar(option, voting)
-        extra = f'{option.need_votes_to_pass} more votes to pass' if option.need_votes_to_pass <= 5 else ''
+        extra = self._text_votes_to_pass(option)
         message += f" to set it ➔ {code(option.value)}: " \
                    f"{bold(format_percent(option.number_votes, voting.active_nodes))}" \
                    f" ({option.number_votes}/{voting.active_nodes}) {pb} {extra}\n"

@@ -578,8 +578,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         message += f"{name}\n"
 
         pb = self.make_voting_progress_bar(option, voting)
-        extra = (f'{option.need_votes_to_pass} more votes to pass'
-                 if option.need_votes_to_pass <= self.NEED_VOTES_TO_PASS_MAX else '')
+        extra = self._text_votes_to_pass(option)
         message += f" to set it ➔ {option.value}: " \
                    f"{format_percent(option.number_votes, voting.active_nodes)}" \
                    f" ({option.number_votes}/{voting.active_nodes}) {pb} {extra}\n"
