@@ -97,9 +97,10 @@ class MimirVoteManager:
             if vote.key not in self.all_voting:
                 self.all_voting[vote.key] = MimirVoting(vote.key, {}, self.active_node_count, [])
             voting = self.all_voting.get(vote.key)
-            if vote.value not in voting.options:
-                voting.options[vote.value] = MimirVoteOption(vote.value, [])
-            voting.options[vote.value].signers.append(vote.singer)
+            if voting:
+                if vote.value not in voting.options:
+                    voting.options[vote.value] = MimirVoteOption(vote.value, [])
+                voting.options[vote.value].signers.append(vote.singer)
 
         for voting in self.all_voting.values():
             voting.finalize_calculations()
@@ -169,7 +170,7 @@ class MimirHolder:
     @staticmethod
     def detect_auto_solvency_checker(name: str, value):
         name = name.upper()
-        is_halt = name.startswith('HALT') and (name.endswith('CHAIN') or name.endswith('TRADING'))
+        is_halt = name.startswith('HALT') or name.startswith('SOLVENCYHALT')
         if is_halt or name in MimirHolder.EXTRA_AUTO_SOLVENCY_MIMIRS:
             if int(value) > 2:
                 return True
