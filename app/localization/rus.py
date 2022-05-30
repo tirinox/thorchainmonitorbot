@@ -411,21 +411,6 @@ class RussianLocalization(BaseLocalization):
 
         return message.rstrip()
 
-    def notification_text_price_divergence(self, info: RuneMarketInfo, normal: bool):
-        title = f'〰 Низкое расхождение цены!' if normal else f'🔺 Высокое расхождение цены!'
-
-        div = abs(info.cex_price - info.pool_rune_price)
-        div_p = 100.0 * abs(1.0 - info.cex_price / info.pool_rune_price) if info.pool_rune_price != 0 else 0.0
-
-        text = (
-            f"🖖 {bold(title)}\n"
-            f"Цена BEP2 Руны (на биржах): {code(pretty_dollar(info.cex_price))}\n"
-            f"Взвешенная цена Руны в пулах: {code(pretty_dollar(info.pool_rune_price))}\n"
-            f"<b>Расхождение</b> нативной руны и BEP2 руны: {code(pretty_dollar(div))} ({div_p:.1f}%)."
-        )
-
-        return text
-
     # ------- POOL CHURN -------
 
     def notification_text_pool_churn(self, pc: PoolChanges):
@@ -464,9 +449,58 @@ class RussianLocalization(BaseLocalization):
 
     # -------- SETTINGS --------
 
-    BUTTON_SET_LANGUAGE = '🌐 Язык'
     TEXT_SETTING_INTRO = '<b>Настройки</b>\nЧто вы хотите поменять в настройках?'
-    BUTTON_SET_NODE_OP_GOTO = 'Операторам нод'
+    BUTTON_SET_LANGUAGE = '🌐 Язык'
+    BUTTON_SET_NODE_OP_GOTO = '🖥 Операторам нод'
+    BUTTON_SET_PRICE_DIVERGENCE = '↕️ Расхождение цен'
+
+    TEXT_SETTINGS_LANGUAGE_SELECT = 'Пожалуйста, выберите язык / Please select a language'
+
+    # ------- PERSONAL PRICE DIVERGENCE -------
+
+    TEXT_PRICE_DIV_MIN_PERCENT = (
+        '↕️ Здесь вы можете настроить ваши персональные уведомления о расхождении цен BEP2 Руны и Нативной Руны.\n'
+        'Для начала введите <b>минимальный</b> процент отклонения (<i>не может быть меньше, чем 0.1</i>).\n'
+        'Если вы, не хотите получать уведомления с минимальной стороны, просто нажмите "Далее"'
+    )
+
+    BUTTON_PRICE_DIV_NEXT = 'Далее ⏭️'
+
+    TEXT_PRICE_DIV_MAX_PERCENT = (
+        'Хорошо!\n'
+        'А теперь введите <b>максимальный</b> процент отклонения (<i>не более 100%</i>).\n'
+        'Если вы не хотите уведомлений с максимальной стороны, нажмите "Далее"'
+    )
+
+    TEXT_PRICE_DIV_INVALID_NUMBER = '<code>Не правильное число!</code> Попробуйте еще раз.'
+
+    @staticmethod
+    def text_price_div_finish_setup(min_percent, max_percent):
+        message = '✔️ Готово!\n'
+        if min_percent is None and max_percent is None:
+            message += '🔘 Вы <b>не</b> будете получать уведомления о расхождении цен.'
+        else:
+            message += 'Ваши триггеры:\n'
+            if min_percent:
+                message += f'→ Расхождение цен Рун &lt;= {pretty_money(min_percent)}%\n'
+            if max_percent:
+                message += f'→ Расхождение цен Рун &gt;= {pretty_money(max_percent)}%\n'
+        return message.strip()
+
+    def notification_text_price_divergence(self, info: RuneMarketInfo, is_low: bool):
+        title = f'〰 Низкое расхождение цены!' if is_low else f'🔺 Высокое расхождение цены!'
+
+        div = abs(info.cex_price - info.pool_rune_price)
+        div_p = 100.0 * abs(1.0 - info.cex_price / info.pool_rune_price) if info.pool_rune_price != 0 else 0.0
+
+        text = (
+            f"🖖 {bold(title)}\n"
+            f"Цена BEP2 Руны (на биржах): {code(pretty_dollar(info.cex_price))}\n"
+            f"Взвешенная цена Руны в пулах: {code(pretty_dollar(info.pool_rune_price))}\n"
+            f"<b>Расхождение</b> нативной руны и BEP2 руны: {code(pretty_dollar(div))} ({div_p:.1f}%)."
+        )
+
+        return text
 
     # -------- METRICS ----------
 

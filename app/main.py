@@ -39,6 +39,7 @@ from services.models.tx import ThorTxType
 from services.notify.alert_presenter import AlertPresenter
 from services.notify.broadcast import Broadcaster
 from services.notify.personal.personal_main import NodeChangePersonalNotifier
+from services.notify.personal.price_divergence import PersonalPriceDivergenceNotifier
 from services.notify.types.bep2_notify import BEP2MoveNotifier
 from services.notify.types.best_pool_notify import BestPoolsNotifier
 from services.notify.types.block_notify import BlockHeightNotifier
@@ -226,6 +227,10 @@ class App:
             if d.cfg.get('price.divergence.enabled', True):
                 price_div_notifier = PriceDivergenceNotifier(d)
                 d.price_pool_fetcher.subscribe(price_div_notifier)
+
+            if d.cfg.get('price.divergence.personal.enabled', True):
+                personal_price_div_notifier = PersonalPriceDivergenceNotifier(d)
+                d.price_pool_fetcher.subscribe(personal_price_div_notifier)
 
         # todo: join PoolChurnNotifier with PoolInfoFetcherMidgard
         if d.cfg.get('pool_churn.enabled', True):

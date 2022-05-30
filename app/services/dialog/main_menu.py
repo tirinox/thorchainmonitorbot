@@ -10,6 +10,7 @@ from services.dialog.metrics_menu import MetricsDialog
 from services.dialog.node_op_menu import NodeOpDialog
 from services.dialog.settings_menu import SettingsDialog
 from services.lib.date_utils import DAY
+from services.lib.new_feature import Features
 from services.lib.texts import kbd
 from services.notify.types.cap_notify import LiquidityCapNotifier
 from services.notify.user_registry import UserRegistry
@@ -47,13 +48,17 @@ class MainMenuDialog(BaseDialog):
                     [self.loc.BUTTON_MM_NODE_OP] if NodeOpDialog.is_enabled(self.deps.cfg) else []
                 ),
                 # 3rd row
-                [self.loc.BUTTON_MM_SETTINGS]
+                [self.settings_button_text]
             ])
 
             await message.answer(self.loc.welcome_message(info),
                                  reply_markup=keyboard,
                                  disable_notification=True)
             await MainStates.MAIN_MENU.set()
+
+    @property
+    def settings_button_text(self):
+        return self.text_new_feature(self.loc.BUTTON_MM_SETTINGS, Features.F_SETTINGS)
 
     async def _handle_start_lp_view(self, message: Message, address):
         message.text = ''
@@ -135,7 +140,7 @@ class MainMenuDialog(BaseDialog):
         elif message.text == self.loc.BUTTON_MM_MY_ADDRESS:
             message.text = ''
             await LiquidityInfoDialog(self.loc, self.data, self.deps, message).on_enter(message)
-        elif message.text == self.loc.BUTTON_MM_SETTINGS:
+        elif message.text == self.settings_button_text:
             message.text = ''
             await SettingsDialog(self.loc, self.data, self.deps, message).on_enter(message)
         elif message.text == self.loc.BUTTON_MM_MAKE_AVATAR:

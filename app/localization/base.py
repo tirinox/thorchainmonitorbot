@@ -15,7 +15,7 @@ from services.lib.explorers import get_explorer_url_to_address, Chains, get_expl
 from services.lib.money import format_percent, pretty_money, short_address, short_money, \
     calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset, short_dollar, \
     RAIDO_GLYPH, pretty_rune, short_rune
-from services.lib.texts import progressbar, kbd, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
+from services.lib.texts import progressbar, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
     up_down_arrow, bracketify, plural, grouper, join_as_numbered_list, regroup_joining
 from services.models.bep2 import BEP2Transfer, BEP2CEXFlow
 from services.models.cap_info import ThorCapInfo
@@ -50,6 +50,9 @@ class BaseLocalization(ABC):  # == English
     ERROR = '❌ Error'
     ND = 'N/D'
     NA = 'N/A'
+
+    THORCHAIN_LINK = 'https://thorchain.org/'
+    R = 'Rune'
 
     BOT_LOADING = '⌛ Bot has been recently restarted and is still loading. Please try again after 1-2 minutes.'
 
@@ -100,19 +103,6 @@ class BaseLocalization(ABC):  # == English
             f"The {self.R} price is <code>${info.price:.3f}</code> now.\n"
             f"<b>⚠️ All notifications are forwarded to {self.alert_channel_name} channel!</b>\n"
             f"🤗 Support and feedback: {CREATOR_TG}."
-        )
-
-    BUTTON_RUS = 'Русский'
-    BUTTON_ENG = 'English'
-
-    THORCHAIN_LINK = 'https://thorchain.org/'
-
-    R = 'Rune'
-
-    def lang_help(self):
-        return (
-            f'Пожалуйста, выберите язык / Please select a language',
-            kbd([self.BUTTON_RUS, self.BUTTON_ENG], one_time=True)
         )
 
     def unknown_command(self):
@@ -547,25 +537,6 @@ class BaseLocalization(ABC):  # == English
 
         return message.rstrip()
 
-    def notification_text_price_divergence(self, info: RuneMarketInfo, normal: bool):
-        title = f'〰️ Low {self.R} price divergence!' if normal else f'🔺 High {self.R} price divergence!'
-
-        div, div_p, exclamation = self.price_div_calc(info)
-
-        text = (
-            f"🖖 {bold(title)}\n"
-            f"CEX (BEP2) Rune price is {code(pretty_dollar(info.cex_price))}\n"
-            f"Weighted average Rune price by liquidity pools is {code(pretty_dollar(info.pool_rune_price))}\n"
-            f"<b>Divergence</b> Native vs BEP2 is {code(pretty_dollar(div))} ({div_p:.1f}%{exclamation})."
-        )
-        return text
-
-    def price_div_calc(self, info):
-        div = abs(info.cex_price - info.pool_rune_price)
-        div_p = 100.0 * abs(1.0 - info.cex_price / info.pool_rune_price) if info.pool_rune_price != 0 else 0.0
-        exclamation = self._exclamation_sign(div_p, ref=10)
-        return div, div_p, exclamation
-
     # ------- POOL CHURN -------
 
     def pool_url(self, pool_name):
@@ -606,9 +577,65 @@ class BaseLocalization(ABC):  # == English
 
     # -------- SETTINGS --------
 
-    BUTTON_SET_LANGUAGE = '🌐 Language'
     TEXT_SETTING_INTRO = '<b>Settings</b>\nWhat would you like to tune?'
-    BUTTON_SET_NODE_OP_GOTO = 'NodeOp settings'
+    BUTTON_SET_LANGUAGE = '🌐 Language'
+    BUTTON_SET_NODE_OP_GOTO = '🖥️ NodeOp settings'
+    BUTTON_SET_PRICE_DIVERGENCE = '↕️ Price divergence'
+
+    BUTTON_RUS = 'Русский'
+    BUTTON_ENG = 'English'
+
+    TEXT_SETTINGS_LANGUAGE_SELECT = 'Пожалуйста, выберите язык / Please select a language'
+
+    # ------- PERSONAL PRICE DIVERGENCE -------
+
+    TEXT_PRICE_DIV_MIN_PERCENT = (
+        '↕️ Here you can customize your own personal price divergence (BEP2 Rune vs Native Rune) notifications.\n'
+        'For a start, enter a <b>minimum</b> percentage divergence (<i>cannot be less than 0.1</i>).\n'
+        'If you don\'t want to be notified on the minimum side, hit "Next"'
+    )
+
+    BUTTON_PRICE_DIV_NEXT = 'Next ⏭️'
+
+    TEXT_PRICE_DIV_MAX_PERCENT = (
+        'Good!\n'
+        'Now, enter a <b>maximum</b> percentage divergence (<i>cannot be higher than 100</i>).\n'
+        'If you don\'t want to be notified on the maximum side, hit "Next"'
+    )
+
+    TEXT_PRICE_DIV_INVALID_NUMBER = '<code>Invalid number!</code> Please try again.'
+
+    @staticmethod
+    def text_price_div_finish_setup(min_percent, max_percent):
+        message = '✔️ Done!\n'
+        if min_percent is None and max_percent is None:
+            message += '🔘 You will <b>not</b> receive any price divergence notifications.'
+        else:
+            message += 'Your triggers are\n'
+            if min_percent:
+                message += f'→ Rune price divergence &lt;= {pretty_money(min_percent)}%\n'
+            if max_percent:
+                message += f'→ Rune price divergence &gt;= {pretty_money(max_percent)}%\n'
+        return message.strip()
+
+    def notification_text_price_divergence(self, info: RuneMarketInfo, is_low: bool):
+        title = f'〰️ Low {self.R} price divergence!' if is_low else f'🔺 High {self.R} price divergence!'
+
+        div, div_p, exclamation = self.price_div_calc(info)
+
+        text = (
+            f"🖖 {bold(title)}\n"
+            f"CEX (BEP2) Rune price is {code(pretty_dollar(info.cex_price))}\n"
+            f"Weighted average Rune price by liquidity pools is {code(pretty_dollar(info.pool_rune_price))}\n"
+            f"<b>Divergence</b> Native vs BEP2 is {code(pretty_dollar(div))} ({div_p:.1f}%{exclamation})."
+        )
+        return text
+
+    def price_div_calc(self, info):
+        div = abs(info.cex_price - info.pool_rune_price)
+        div_p = 100.0 * abs(1.0 - info.cex_price / info.pool_rune_price) if info.pool_rune_price != 0 else 0.0
+        exclamation = self._exclamation_sign(div_p, ref=10)
+        return div, div_p, exclamation
 
     # -------- METRICS ----------
 

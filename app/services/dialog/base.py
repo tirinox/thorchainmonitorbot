@@ -179,10 +179,10 @@ class BaseDialog(ABC):
         handler_stuff = f.handler_stuff
 
         @d.telegram_bot.dp.message_handler(*handler_stuff['custom_filters'],
-                              commands=handler_stuff['commands'],
-                              state=handler_stuff['state'],
-                              regexp=handler_stuff['regexp'],
-                              content_types=handler_stuff['content_types'])
+                                           commands=handler_stuff['commands'],
+                                           state=handler_stuff['state'],
+                                           regexp=handler_stuff['regexp'],
+                                           content_types=handler_stuff['content_types'])
         @bot_error_guard
         async def handler(message: Message, state: FSMContext, that_name=name):  # name=name important!!
             logger.info({
@@ -229,3 +229,25 @@ class BaseDialog(ABC):
         return await message.answer(self.loc.LOADING,
                                     disable_notification=True,
                                     disable_web_page_preview=True)
+
+    def text_new_feature(self, text, key):
+        return text + self.deps.new_feature.new_sing(key)
+
+    async def update_locale(self, lang, message: Message):
+        self.data['language'] = lang
+        self.loc = await self.deps.loc_man.set_lang(self.user_id(message), lang, self.deps.db)
+
+
+class DialogWithSettings(BaseDialog):
+    def __init__(self, loc: BaseLocalization, data: Optional[FSMContextProxy], d: DepContainer, message: Message):
+        super().__init__(loc, data, d, message)
+        self._settings = {}
+        self._settings_manager = d.settings_manager
+
+    async def pre_action(self):
+        user_id = self.user_id(self.message)
+        self._settings = await self._settings_manager.get_settings(user_id)
+
+    async def post_action(self):
+        user_id = self.user_id(self.message)
+        await self._settings_manager.set_settings(user_id, self._settings)

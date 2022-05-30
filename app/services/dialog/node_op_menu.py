@@ -7,7 +7,7 @@ from aiogram.utils.exceptions import MessageNotModified
 from aiogram.utils.helper import HelperMode
 
 from localization import BaseLocalization
-from services.dialog.base import BaseDialog, message_handler, query_handler
+from services.dialog.base import BaseDialog, message_handler, query_handler, DialogWithSettings
 from services.jobs.node_churn import NodeStateDatabase
 from services.lib.date_utils import parse_timespan_to_seconds, HOUR
 from services.lib.depcont import DepContainer
@@ -41,20 +41,10 @@ class NodeOpStates(StatesGroup):
     SETT_IP_ADDRESS = State()
 
 
-class NodeOpDialog(BaseDialog):
+class NodeOpDialog(DialogWithSettings):
     def __init__(self, loc: BaseLocalization, data: Optional[FSMContextProxy], d: DepContainer, message: Message):
         super().__init__(loc, data, d, message)
-        self._settings = {}
-        self._settings_manager = d.settings_manager
         self._node_watcher = NodeWatcherStorage(self.deps.db)
-
-    async def pre_action(self):
-        user_id = self.user_id(self.message)
-        self._settings = await self._settings_manager.get_settings(user_id)
-
-    async def post_action(self):
-        user_id = self.user_id(self.message)
-        await self._settings_manager.set_settings(user_id, self._settings)
 
     # ----------- MAIN ------------
 
