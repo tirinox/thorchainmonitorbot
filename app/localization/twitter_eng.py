@@ -377,7 +377,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
             if swap_volume_24h_rune:
                 message += f'🔀 Rune swap volume: {swap_rune_text} ({swap_usd_text}) ' \
-                           f'in {new.swaps_24h} operations.\n'
+                           f'in {short_money(new.swaps_24h)} swaps.\n'
 
             if switched_24h_rune:
                 message += f'💎 Rune switched to native: {switch_rune_text} ({switch_usd_text}).\n'
