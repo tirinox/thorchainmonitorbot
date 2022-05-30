@@ -252,10 +252,14 @@ price:
 
   divergence:
     enabled: true
-    normal_is_less: 2
     cooldown: 12h
-    div_steps:
-      - 7
+
+    public:  # (!) new
+      min_percent: 1.9
+      max_percent: 5.5
+    personal:  # (!) new
+      enabled: true
+      cooldown: 30m
 
 
 bep2:
