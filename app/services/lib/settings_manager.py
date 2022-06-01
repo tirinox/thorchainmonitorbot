@@ -6,7 +6,7 @@ from services.lib.db_one2one import OneToOne
 from services.lib.utils import class_logger, random_hex
 from services.models.node_watchers import AlertWatchers
 from services.notify.channel import Messengers, ChannelDescriptor
-from services.notify.personal.helpers import NodeOpSetting, SETTINGS_KEY_GENERAL_ALERTS
+from services.notify.personal.helpers import NodeOpSetting, GeneralSettings
 
 
 class SettingsManager:
@@ -22,7 +22,7 @@ class SettingsManager:
         self.public_url = cfg.as_str('web.public_url').rstrip('/')
         self.logger = class_logger(self)
         self.token_channel_db = OneToOne(db, 'Token-Channel')
-        self._alert_watcher = AlertWatchers(db)
+        self.alert_watcher = AlertWatchers(db)
 
     def get_link(self, token):
         return f'{self.public_url}/?token={token}'
@@ -79,15 +79,15 @@ class SettingsManager:
         if not platform:
             return
 
-        is_general_enabled = settings.get(SETTINGS_KEY_GENERAL_ALERTS, False)
+        is_general_enabled = settings.get(GeneralSettings.SETTINGS_KEY_GENERAL_ALERTS, False)
 
         if is_general_enabled:
-            await self._alert_watcher.add_user_to_node(channel_id, self.GENERAL_ALERTS)
+            await self.alert_watcher.add_user_to_node(channel_id, self.GENERAL_ALERTS)
         else:
-            await self._alert_watcher.remove_user_node(channel_id, self.GENERAL_ALERTS)
+            await self.alert_watcher.remove_user_node(channel_id, self.GENERAL_ALERTS)
 
     async def get_general_alerts_channels(self, broadcaster):
-        channels = await self._alert_watcher.all_users_for_node(self.GENERAL_ALERTS)
+        channels = await self.alert_watcher.all_users_for_node(self.GENERAL_ALERTS)
         results = []
         for channel in channels:
             settings = await self.get_settings(channel)

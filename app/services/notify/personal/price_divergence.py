@@ -7,6 +7,7 @@ from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
 from services.models.price import RuneMarketInfo
 from services.notify.channel import ChannelDescriptor, BoardMessage, Messengers
+from services.notify.personal.helpers import GeneralSettings
 
 
 class PersonalPriceDivergenceNotifier(INotified):
@@ -17,8 +18,16 @@ class PersonalPriceDivergenceNotifier(INotified):
         )
         self.logger = class_logger(self)
 
+    async def remove_user_from_watchers(self, user_id):
+        ...
+
+    async def add_user_to_watchers(self, user_id):
+        ...
+
     async def on_data(self, sender, rune_market_info: RuneMarketInfo):
         # todo!
+        users = await self.deps.settings_manager.alert_watcher.all_users_for_node(
+            GeneralSettings.SETTINGS_KEY_PRICE_DIV_ALERTS)
         pass
         """
         1. get all watchers

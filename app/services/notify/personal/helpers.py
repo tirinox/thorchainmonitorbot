@@ -37,7 +37,9 @@ class NodeOpSetting:
     NODE_PRESENCE = 'nop:presence:on'  # new
 
 
-SETTINGS_KEY_GENERAL_ALERTS = 'gen:alerts'
+class GeneralSettings:
+    SETTINGS_KEY_GENERAL_ALERTS = 'gen:alerts'
+    SETTINGS_KEY_PRICE_DIV_ALERTS = 'personal:price-div'
 
 
 class BaseChangeTracker:
