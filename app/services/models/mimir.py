@@ -1,3 +1,4 @@
+import logging
 import math
 import operator
 import typing
@@ -10,6 +11,9 @@ from services.lib.texts import split_by_camel_case
 from services.models.base import BaseModelMixin
 from services.models.mimir_naming import TRANSLATE_MIMIRS, EXCLUDED_VOTE_KEYS, MimirUnits
 from services.models.node_info import NodeInfo
+
+# for automatic Mimir, when it becomes 0 -> 1 or 1 -> 0, that is Admin's actions
+ADMIN_VALUE = 1
 
 
 @dataclass
@@ -134,6 +138,16 @@ class MimirEntry:
     def hardcoded(self) -> bool:
         return self.hard_coded_value is not None
 
+    @staticmethod
+    def can_be_automatic(name: str):
+        name = name.strip().upper()
+        is_halt = name.startswith('HALT') or name.startswith('SOLVENCYHALT')
+        return is_halt or name in MimirHolder.EXTRA_AUTO_SOLVENCY_MIMIRS
+
+    @property
+    def automated(self):
+        return self.can_be_automatic(self.name)
+
 
 @dataclass
 class MimirChange(BaseModelMixin):
@@ -150,6 +164,15 @@ class MimirChange(BaseModelMixin):
 
     def __post_init__(self):
         self.timestamp = float(self.timestamp)
+        if self.kind == self.VALUE_CHANGE and self.is_automatic:
+            logging.info(f'Mimir {self.name} became automatic. Change: {self}')
+            self.entry.source = MimirEntry.SOURCE_AUTO
+
+    @property
+    def is_automatic(self):
+        o, n = int(self.old_value), int(self.new_value)
+        is_admin = (o == ADMIN_VALUE and n == 0) or (o == 0 and n == ADMIN_VALUE)
+        return self.entry.automatic and not is_admin
 
 
 class MimirHolder:
@@ -169,12 +192,7 @@ class MimirHolder:
 
     @staticmethod
     def detect_auto_solvency_checker(name: str, value):
-        name = name.upper()
-        is_halt = name.startswith('HALT') or name.startswith('SOLVENCYHALT')
-        if is_halt or name in MimirHolder.EXTRA_AUTO_SOLVENCY_MIMIRS:
-            if int(value) > 2:
-                return True
-        return False
+        return MimirEntry.can_be_automatic(name) and (value != ADMIN_VALUE and value != 0)
 
     def get_constant(self, name: str, default=0, const_type: typing.Optional[type] = int):
         entry = self.get_entry(name)

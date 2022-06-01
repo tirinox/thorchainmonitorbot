@@ -1,4 +1,5 @@
 import asyncio
+from itertools import cycle
 from typing import List, NamedTuple
 
 from aiothornode.env import MCCN
@@ -24,6 +25,8 @@ class ConstMimirFetcher(BaseFetcher):
     def __init__(self, deps: DepContainer):
         sleep_period = parse_timespan_to_seconds(deps.cfg.constants.fetch_period)
         super().__init__(deps, sleep_period)
+
+        self._dbg_wheel = cycle([0, 1, 0, 33333, 0, 55555, 1])
 
     async def fetch_constants_midgard(self) -> ThorConstants:
         data = await self.deps.midgard_connector.request_random_midgard('/thorchain/constants')
@@ -108,12 +111,16 @@ class ConstMimirFetcher(BaseFetcher):
         #         del fresh_mimir.constants['NativeTransactionFee']
         #     except KeyError:
         #         pass
-        del fresh_mimir.constants["HALTBNBTRADING"]
+        # del fresh_mimir.constants["HALTBNBTRADING"]
         # fresh_mimir.constants["HALTETHTRADING"] = 0
         # fresh_mimir.constants["HALTBNBCHAIN"] = 1233243  # 1234568
         # del fresh_mimir.constants["EMISSIONCURVE"]
         # fresh_mimir.constants['NATIVETRANSACTIONFEE'] = 4000000
         # fresh_mimir.constants['MAXLIQUIDITYRUNE'] = 10000000000000 * random.randint(1, 99)
-        fresh_mimir.constants["FULLIMPLOSSPROTECTIONBLOCKS"] = 9000
-        fresh_mimir.constants["LOVEADMIN"] = 23
+        # fresh_mimir.constants["FULLIMPLOSSPROTECTIONBLOCKS"] = 9000
+        # fresh_mimir.constants["LOVEADMIN"] = 23
+
+        curr = fresh_mimir.constants["SOLVENCYHALTTERRACHAIN"] = next(self._dbg_wheel)
+        print(f'SOLVENCYHALTTERRACHAIN = {curr}')
+
         return fresh_mimir, node_mimir
