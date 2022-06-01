@@ -175,11 +175,13 @@ class NodeChangePersonalNotifier(INotified):
 
         loc_man: LocalizationManager = self.deps.loc_man
 
+        settings_dic = await self.settings_man.get_settings_multi(user_events.keys())
+
         # for every user
         for user, event_list in user_events.items():
             loc = await loc_man.get_from_db(user, self.deps.db)
 
-            settings = await self.settings_man.get_settings(user)
+            settings = settings_dic.get(user, {})
 
             # fixme: spaghetti code!
             if await self.settings_man.handle_pause_and_auto_pause(self.deps.broadcaster, user, settings):

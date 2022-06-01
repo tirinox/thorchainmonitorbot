@@ -11,6 +11,8 @@ from services.notify.personal.helpers import GeneralSettings
 
 
 class PersonalPriceDivergenceNotifier(INotified):
+    SETTINGS_KEY = GeneralSettings.SETTINGS_KEY_PRICE_DIV_ALERTS
+
     def __init__(self, deps: DepContainer):
         self.deps = deps
         self.personal_cooldown = parse_timespan_to_seconds(
@@ -19,15 +21,15 @@ class PersonalPriceDivergenceNotifier(INotified):
         self.logger = class_logger(self)
 
     async def remove_user_from_watchers(self, user_id):
-        ...
+        await self.deps.settings_manager.alert_watcher.remove_user_node(user_id, self.SETTINGS_KEY)
 
     async def add_user_to_watchers(self, user_id):
-        ...
+        await self.deps.settings_manager.alert_watcher.add_user_to_node(user_id, self.SETTINGS_KEY)
 
     async def on_data(self, sender, rune_market_info: RuneMarketInfo):
         # todo!
         users = await self.deps.settings_manager.alert_watcher.all_users_for_node(
-            GeneralSettings.SETTINGS_KEY_PRICE_DIV_ALERTS)
+            self.SETTINGS_KEY)
         pass
         """
         1. get all watchers

@@ -14,8 +14,6 @@ class SettingsManager:
 
     KEY_MESSENGER = '_messenger'
 
-    GENERAL_ALERTS = '$general_alerts'
-
     def __init__(self, db: DB, cfg: Config):
         self.db = db
         self.cfg = cfg
@@ -45,6 +43,16 @@ class SettingsManager:
             return {}
         data = await self.db.redis.get(self.db_key_settings(channel_id))
         return ujson.loads(data) if data else {}
+
+    async def get_settings_multi(self, channels_ids):
+        channels_ids = [cid for cid in channels_ids if cid]
+        if not channels_ids:
+            return {}
+        channels_keys = [self.db_key_settings(cid) for cid in channels_ids]
+        data_chunks = await self.db.redis.mget(keys=channels_keys)
+        return {
+            cid: ujson.loads(data) for cid, data in zip(channels_ids, data_chunks)
+        }
 
     @classmethod
     def set_messenger_data(cls, settings: dict, platform=Messengers.TELEGRAM, username='?', channel_name='?'):
@@ -82,12 +90,12 @@ class SettingsManager:
         is_general_enabled = settings.get(GeneralSettings.SETTINGS_KEY_GENERAL_ALERTS, False)
 
         if is_general_enabled:
-            await self.alert_watcher.add_user_to_node(channel_id, self.GENERAL_ALERTS)
+            await self.alert_watcher.add_user_to_node(channel_id, GeneralSettings.SETTINGS_KEY_GENERAL_ALERTS)
         else:
-            await self.alert_watcher.remove_user_node(channel_id, self.GENERAL_ALERTS)
+            await self.alert_watcher.remove_user_node(channel_id, GeneralSettings.SETTINGS_KEY_GENERAL_ALERTS)
 
     async def get_general_alerts_channels(self, broadcaster):
-        channels = await self.alert_watcher.all_users_for_node(self.GENERAL_ALERTS)
+        channels = await self.alert_watcher.all_users_for_node(GeneralSettings.SETTINGS_KEY_GENERAL_ALERTS)
         results = []
         for channel in channels:
             settings = await self.get_settings(channel)
