@@ -18,6 +18,7 @@ from services.lib.new_feature import NewFeatureManager, Features
 from services.lib.settings_manager import SettingsManager
 from services.models.mimir import MimirHolder
 from services.models.node_info import NodeListHolder
+from services.models.node_watchers import AlertWatchers
 from services.models.price import LastPriceHolder
 from services.models.queue import QueueInfo
 from services.notify.channel import Messengers
@@ -49,6 +50,7 @@ class DepContainer:
     bep2_move_notifier = None  # type: 'BEP2MoveNotifier'
 
     gen_alert_settings_proc = None
+    alert_watcher: Optional[AlertWatchers] = None
 
     telegram_bot: Optional[TelegramBot] = None
     discord_bot = None

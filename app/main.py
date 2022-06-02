@@ -34,6 +34,7 @@ from services.lib.midgard.connector import MidgardConnector
 from services.lib.settings_manager import SettingsManager, SettingsProcessorGeneralAlerts
 from services.lib.utils import setup_logs
 from services.models.mimir import MimirHolder
+from services.models.node_watchers import AlertWatchers
 from services.models.price import LastPriceHolder
 from services.models.tx import ThorTxType
 from services.notify.alert_presenter import AlertPresenter
@@ -77,7 +78,8 @@ class App:
         d.price_holder = LastPriceHolder()
         d.settings_manager = SettingsManager(d.db, d.cfg)
 
-        d.gen_alert_settings_proc = SettingsProcessorGeneralAlerts(d.db)
+        d.alert_watcher = AlertWatchers(d.db)
+        d.gen_alert_settings_proc = SettingsProcessorGeneralAlerts(d.db, d.alert_watcher)
         d.settings_manager.subscribe(d.gen_alert_settings_proc)
 
         d.loc_man = LocalizationManager(d.cfg)

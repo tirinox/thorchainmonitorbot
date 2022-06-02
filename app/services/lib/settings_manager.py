@@ -144,10 +144,10 @@ class SettingsContext:
 
 
 class SettingsProcessorGeneralAlerts(INotified):
-    def __init__(self, db: DB):
+    def __init__(self, db: DB, alert_watcher: AlertWatchers):
         self.db = db
         self.logger = class_logger(self)
-        self.alert_watcher = AlertWatchers(db)
+        self.alert_watcher = alert_watcher
 
     async def on_data(self, sender: SettingsManager, data):
         channel_id, settings = data

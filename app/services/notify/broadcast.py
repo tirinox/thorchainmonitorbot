@@ -29,7 +29,7 @@ class Broadcaster:
         return [c for c in self.channels if c.type == channel_type]
 
     async def get_subscribed_channels(self):
-        return await self.deps.gen_alert_settings_proc.get_general_alerts_channels(self)
+        return await self.deps.gen_alert_settings_proc.get_general_alerts_channels(self.deps.settings_manager)
 
     async def notify_preconfigured_channels(self, f, *args, **kwargs):
         subscribed_channels = await self.get_subscribed_channels()
