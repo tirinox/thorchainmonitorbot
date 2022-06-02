@@ -212,7 +212,7 @@ class BlockHeightNotifier(INotified, WithDelegates):
             self.logger.warning('Last blocks/sec = None.')
             return
 
-        self.logger.warning(f'Last blocks/sec = {bps:.5f}.')
+        self.logger.info(f'Last blocks/sec = {bps:.5f}.')
 
         if bps <= 0.0:
             return
