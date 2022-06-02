@@ -26,7 +26,7 @@ class ConstMimirFetcher(BaseFetcher):
         sleep_period = parse_timespan_to_seconds(deps.cfg.constants.fetch_period)
         super().__init__(deps, sleep_period)
 
-        self._dbg_wheel = cycle([0, 1, 0, 33333, 0, 55555, 1])
+        self._dbg_wheel = cycle([0, 1, 0, 5825662, 0, 55555, 1])
 
     async def fetch_constants_midgard(self) -> ThorConstants:
         data = await self.deps.midgard_connector.request_random_midgard('/thorchain/constants')
@@ -120,7 +120,7 @@ class ConstMimirFetcher(BaseFetcher):
         # fresh_mimir.constants["FULLIMPLOSSPROTECTIONBLOCKS"] = 9000
         # fresh_mimir.constants["LOVEADMIN"] = 23
 
-        curr = fresh_mimir.constants["SOLVENCYHALTTERRACHAIN"] = next(self._dbg_wheel)
-        print(f'SOLVENCYHALTTERRACHAIN = {curr}')
+        curr = fresh_mimir.constants["SOLVENCYHALTETHCHAIN"] = next(self._dbg_wheel)
+        print(f'SOLVENCYHALTETHCHAIN = {curr}')
 
         return fresh_mimir, node_mimir
