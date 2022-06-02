@@ -48,6 +48,8 @@ class DepContainer:
     best_pools_notifier = None  # type: 'BestPoolsNotifier'
     bep2_move_notifier = None  # type: 'BEP2MoveNotifier'
 
+    gen_alert_settings_proc = None
+
     telegram_bot: Optional[TelegramBot] = None
     discord_bot = None
     slack_bot = None

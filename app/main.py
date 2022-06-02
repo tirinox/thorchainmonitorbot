@@ -31,7 +31,7 @@ from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.midgard.connector import MidgardConnector
-from services.lib.settings_manager import SettingsManager
+from services.lib.settings_manager import SettingsManager, SettingsProcessorGeneralAlerts
 from services.lib.utils import setup_logs
 from services.models.mimir import MimirHolder
 from services.models.price import LastPriceHolder
@@ -76,6 +76,9 @@ class App:
         d.db = DB(d.loop)
         d.price_holder = LastPriceHolder()
         d.settings_manager = SettingsManager(d.db, d.cfg)
+
+        d.gen_alert_settings_proc = SettingsProcessorGeneralAlerts(d.db)
+        d.settings_manager.subscribe(d.gen_alert_settings_proc)
 
         d.loc_man = LocalizationManager(d.cfg)
         d.broadcaster = Broadcaster(d)

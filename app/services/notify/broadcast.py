@@ -19,18 +19,17 @@ class Broadcaster:
         self._broadcast_lock = asyncio.Lock()
         self._rng = random.Random(time.time())
         self.logger = class_logger(self)
-        self.channels = list(ChannelDescriptor.from_json(j) for j in self.deps.cfg.get_pure('channels'))
-        self.channels_inactive = set()
 
-    def remove_me_from_inactive_channels(self, ch):
-        if ch:
-            self.channels_inactive.remove(ch)
+        self._user_registry = UserRegistry(self.deps.db)
+
+        # public channels
+        self.channels = list(ChannelDescriptor.from_json(j) for j in self.deps.cfg.get_pure('channels'))
 
     def get_channels(self, channel_type):
         return [c for c in self.channels if c.type == channel_type]
 
     async def get_subscribed_channels(self):
-        return await self.deps.settings_manager.get_general_alerts_channels(self)
+        return await self.deps.gen_alert_settings_proc.get_general_alerts_channels(self)
 
     async def notify_preconfigured_channels(self, f, *args, **kwargs):
         subscribed_channels = await self.get_subscribed_channels()
@@ -63,27 +62,36 @@ class Broadcaster:
 
         await self.broadcast(all_channels, message_gen)
 
+    async def _handle_bad_user(self, channel_info):
+        self.logger.info(f'{channel_info} became inactive!')
+        channel_id = channel_info.channel_id
+        if channel_id:
+            await self.deps.settings_manager.pause(channel_id)
+            await self._user_registry.remove_users(channel_id)
+
+    # noinspection PyBroadException
     async def safe_send_message(self, channel_info: ChannelDescriptor,
                                 message: BoardMessage, **kwargs) -> bool:
-        if isinstance(message, str):
-            message = BoardMessage(message)
+        result = False
+        try:
+            if isinstance(message, str):
+                message = BoardMessage(message)
 
-        if channel_info.type not in Messengers.SUPPORTED:
-            self.logger.error(f'Unsupported channel type: {channel_info.type}!')
-            return False
-        else:
-            result = False
-            channel_id = channel_info.channel_id
-            messenger = self.deps.get_messenger(channel_info.type)
-            if messenger is not None:
-                result = await messenger.safe_send_message(channel_id, message, **kwargs)
-                if result == CHANNEL_INACTIVE:
-                    self.logger.info(f'{channel_info} became inactive!')
-                    self.channels_inactive.add(channel_info.channel_id)
+            if channel_info.type not in Messengers.SUPPORTED:
+                self.logger.error(f'Unsupported channel type: {channel_info.type}!')
             else:
-                self.logger.error(f'{channel_info.type} bot is disabled!')
+                channel_id = channel_info.channel_id
+                messenger = self.deps.get_messenger(channel_info.type)
+                if messenger is not None:
+                    result = await messenger.safe_send_message(channel_id, message, **kwargs)
+                    if result == CHANNEL_INACTIVE:
+                        await self._handle_bad_user(channel_info)
+                else:
+                    self.logger.error(f'{channel_info.type} bot is disabled!')
+        except Exception:
+            self.logger.exception('We are still safe!', stack_info=True)
 
-            return result
+        return result
 
     @staticmethod
     async def _form_message(text, channel_info: ChannelDescriptor, **kwargs) -> BoardMessage:
@@ -103,12 +111,9 @@ class Broadcaster:
         else:
             return BoardMessage(str(text))
 
-    async def broadcast(self, channels: List[ChannelDescriptor], message, delay=0.075,
-                        remove_bad_users=False,
-                        **kwargs) -> int:
+    async def broadcast(self, channels: List[ChannelDescriptor], message, delay=0.075, **kwargs) -> int:
         async with self._broadcast_lock:
             count = 0
-            bad_ones = []
 
             try:
                 for channel_info in channels:
@@ -122,15 +127,10 @@ class Broadcaster:
                         disable_web_page_preview=True,
                         disable_notification=False, **kwargs)
 
-                    if send_results == CHANNEL_INACTIVE:
-                        bad_ones.append(channel_info.channel_id)
-                    elif send_results is True:
+                    if send_results is True:
                         count += 1
 
                     await asyncio.sleep(delay)  # 10 messages per second (Limit: 30 messages per second)
-
-                if remove_bad_users:
-                    await UserRegistry(self.deps.db).remove_users(bad_ones)
             finally:
                 self.logger.info(f"{count} messages successful sent (of {len(channels)})")
 

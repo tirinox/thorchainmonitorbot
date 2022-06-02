@@ -19,7 +19,7 @@ from services.notify.channel import BoardMessage
 from services.notify.personal.bond import BondTracker
 from services.notify.personal.chain_height import ChainHeightTracker
 from services.notify.personal.churning import NodeChurnTracker
-from services.notify.personal.helpers import BaseChangeTracker
+from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
 from services.notify.personal.ip_addr import IpAddressTracker
 from services.notify.personal.node_online import NodeOnlineTracker
 from services.notify.personal.presence import PresenceTracker
@@ -183,9 +183,8 @@ class NodeChangePersonalNotifier(INotified):
 
             settings = settings_dic.get(user, {})
 
-            # fixme: spaghetti code!
-            if await self.settings_man.handle_pause_and_auto_pause(self.deps.broadcaster, user, settings):
-                continue
+            if bool(settings.get(NodeOpSetting.PAUSE_ALL_ON, False)):
+                continue  # paused
 
             platform = SettingsManager.get_platform(settings)
 
