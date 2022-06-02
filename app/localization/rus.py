@@ -373,8 +373,7 @@ class RussianLocalization(BaseLocalization):
         if fp.cex_price > 0.0:
             message += f"Цена <b>RUNE</b> на централизованной бирже Binance: {bold(pretty_dollar(fp.cex_price))}.\n"
 
-            div = abs(fp.cex_price - price)
-            div_p = 100.0 * abs(1.0 - fp.cex_price / price) if price != 0 else 0.0
+            div, div_p = fp.divergence_abs, fp.divergence_percent
             message += f"<b>Расхождение</b> родной и BEP2 Руны: {code(pretty_dollar(div))} ({div_p:.1f}%).\n"
 
         last_ath = p.last_ath
@@ -490,9 +489,7 @@ class RussianLocalization(BaseLocalization):
     def notification_text_price_divergence(self, info: RuneMarketInfo, is_low: bool):
         title = f'〰 Низкое расхождение цены!' if is_low else f'🔺 Высокое расхождение цены!'
 
-        div = abs(info.cex_price - info.pool_rune_price)
-        div_p = 100.0 * abs(1.0 - info.cex_price / info.pool_rune_price) if info.pool_rune_price != 0 else 0.0
-
+        div, div_p = info.divergence_abs, info.divergence_percent
         text = (
             f"🖖 {bold(title)}\n"
             f"Цена BEP2 Руны (на биржах): {code(pretty_dollar(info.cex_price))}\n"

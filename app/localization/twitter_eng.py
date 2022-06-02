@@ -191,7 +191,8 @@ class TwitterEnglishLocalization(BaseLocalization):
         if fp.cex_price > 0.0:
             message += f"RUNE/USDT Binance: {pretty_dollar(fp.cex_price)}\n"
 
-            _, div_p, exclamation = self.price_div_calc(fp)
+            div, div_p = fp.divergence_abs, fp.divergence_percent
+            exclamation = self._exclamation_sign(div_p, ref=10)
             message += f"Divergence: {div_p:.1f}%{exclamation}\n"
 
         last_ath = p.last_ath
@@ -226,7 +227,8 @@ class TwitterEnglishLocalization(BaseLocalization):
     def notification_text_price_divergence(self, info: RuneMarketInfo, normal: bool):
         title = f'〰️ Low {self.R} price divergence!' if normal else f'🔺 High {self.R} price divergence!'
 
-        div, div_p, exclamation = self.price_div_calc(info)
+        div, div_p = info.divergence_abs, info.divergence_percent
+        exclamation = self._exclamation_sign(div_p, ref=10)
 
         text = (
             f"🖖 {title}\n"

@@ -38,8 +38,10 @@ class NodeOpSetting:
 
 
 class GeneralSettings:
-    SETTINGS_KEY_GENERAL_ALERTS = 'gen:alerts'
-    SETTINGS_KEY_PRICE_DIV_ALERTS = 'personal:price-div'
+    GENERAL_ALERTS = 'gen:alerts'
+    PRICE_DIV_ALERTS = 'personal:price-div'
+    VAR_PRICE_DIV_LAST_VALUE = 'personal:price-div:$last'
+    LANGUAGE = 'lang'
 
 
 class BaseChangeTracker:

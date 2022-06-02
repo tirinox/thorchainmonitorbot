@@ -13,6 +13,12 @@ class UserWatchlist:
         if node and user_id:
             await self.many2many.associate(user_id, node)
 
+    async def set_user_to_node(self, user_id, node: str, value: bool):
+        if value:
+            await self.add_user_to_node(user_id, node)
+        else:
+            await self.remove_user_node(user_id, node)
+
     async def add_user_to_node_list(self, user_id, nodes: List[str]):
         if nodes and all(nodes) and user_id:
             await self.many2many.associate_many([user_id], nodes)

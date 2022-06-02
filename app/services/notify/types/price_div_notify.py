@@ -31,7 +31,7 @@ class PriceDivergenceNotifier(INotified):
         if native_price == 0:
             return
 
-        div_p = 100.0 * abs(1.0 - bep2_price / native_price)
+        div_p = rune_market_info.divergence_percent
 
         if div_p < self.min_percent:
             if await self._cd_bitrig.turn_off():

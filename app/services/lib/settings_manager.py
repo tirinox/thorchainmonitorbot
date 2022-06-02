@@ -1,9 +1,9 @@
 import ujson
 
-from services.lib.delegates import INotified, WithDelegates
 from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.db_one2one import OneToOne
+from services.lib.delegates import INotified, WithDelegates
 from services.lib.utils import class_logger, random_hex
 from services.models.node_watchers import AlertWatchers
 from services.notify.channel import Messengers, ChannelDescriptor
@@ -83,11 +83,10 @@ class SettingsManager(WithDelegates):
 
         if settings:
             await self.db.redis.set(self.db_key_settings(channel_id), ujson.dumps(settings))
+            # additional processing
+            await self.pass_data_to_listeners((channel_id, settings))
         else:
             await self.db.redis.delete(self.db_key_settings(channel_id))
-
-        # additional processing
-        await self.pass_data_to_listeners((channel_id, settings))
 
     def get_context(self, user_id):
         return SettingsContext(self, user_id)
@@ -151,22 +150,19 @@ class SettingsProcessorGeneralAlerts(INotified):
 
     async def on_data(self, sender: SettingsManager, data):
         channel_id, settings = data
-        await self._general_alerts_process(sender, channel_id, settings)
+        await self._general_alerts_process(channel_id, settings)
 
-    async def _general_alerts_process(self, sender: SettingsManager, channel_id: str, settings):
+    async def _general_alerts_process(self, channel_id: str, settings):
         platform = SettingsManager.get_platform(settings)
         if not platform:
             return
 
-        is_general_enabled = settings.get(GeneralSettings.SETTINGS_KEY_GENERAL_ALERTS, False)
-
-        if is_general_enabled:
-            await self.alert_watcher.add_user_to_node(channel_id, GeneralSettings.SETTINGS_KEY_GENERAL_ALERTS)
-        else:
-            await self.alert_watcher.remove_user_node(channel_id, GeneralSettings.SETTINGS_KEY_GENERAL_ALERTS)
+        is_general_enabled = settings.get(GeneralSettings.GENERAL_ALERTS, False)
+        await self.alert_watcher.set_user_to_node(channel_id, GeneralSettings.GENERAL_ALERTS,
+                                                  value=is_general_enabled)
 
     async def get_general_alerts_channels(self, settings_man: SettingsManager):
-        channels = await self.alert_watcher.all_users_for_node(GeneralSettings.SETTINGS_KEY_GENERAL_ALERTS)
+        channels = await self.alert_watcher.all_users_for_node(GeneralSettings.GENERAL_ALERTS)
         their_settings = await settings_man.get_settings_multi(channels)
 
         results = []

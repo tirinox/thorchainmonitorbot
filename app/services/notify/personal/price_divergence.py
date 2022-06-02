@@ -1,17 +1,18 @@
 import asyncio
 
-from localization import LocalizationManager
-from services.jobs.fetch.base import INotified
 from services.lib.date_utils import parse_timespan_to_seconds
+from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
+from services.lib.settings_manager import SettingsManager
 from services.lib.utils import class_logger
+from services.models.node_watchers import AlertWatchers
 from services.models.price import RuneMarketInfo
 from services.notify.channel import ChannelDescriptor, BoardMessage, Messengers
 from services.notify.personal.helpers import GeneralSettings
 
 
 class PersonalPriceDivergenceNotifier(INotified):
-    SETTINGS_KEY = GeneralSettings.SETTINGS_KEY_PRICE_DIV_ALERTS
+    LAST_VALUE_KEY = '$PriceDivLastValue'
 
     def __init__(self, deps: DepContainer):
         self.deps = deps
@@ -20,32 +21,63 @@ class PersonalPriceDivergenceNotifier(INotified):
         )
         self.logger = class_logger(self)
 
-    async def remove_user_from_watchers(self, user_id):
-        await self.deps.settings_manager.alert_watcher.remove_user_node(user_id, self.SETTINGS_KEY)
-
-    async def add_user_to_watchers(self, user_id):
-        await self.deps.settings_manager.alert_watcher.add_user_to_node(user_id, self.SETTINGS_KEY)
-
     async def on_data(self, sender, rune_market_info: RuneMarketInfo):
-        # todo!
-        users = await self.deps.settings_manager.alert_watcher.all_users_for_node(
-            self.SETTINGS_KEY)
-        pass
-        """
-        1. get all watchers
-        2. compare with their settings
-        3. check for bi trigger and cooldown
-        4. send notifications
-        """
-        # await self._dbg_test(rune_market_info)
+        users = await self.deps.alert_watcher.all_users_for_node(GeneralSettings.PRICE_DIV_ALERTS)
+        their_settings = await self.deps.settings_manager.get_settings_multi(users)
+
+        for user in users:
+            settings_changed, normal = False, True
+            settings = their_settings.get(user, {})
+
+            min_percent = settings.get(SettingsProcessorPriceDivergence.KEY_MIN_PERCENT)
+            max_percent = settings.get(SettingsProcessorPriceDivergence.KEY_MAX_PERCENT)
+            last_value = settings.get(self.LAST_VALUE_KEY)
+
+            div_p = rune_market_info.divergence_percent
+
+            if min_percent is not None and last_value != min_percent and div_p < min_percent:
+                settings_changed, normal = True, True
+                settings[self.LAST_VALUE_KEY] = min_percent
+
+            if max_percent is not None and last_value != max_percent and div_p > max_percent:
+                settings_changed, normal = True, False
+                settings[self.LAST_VALUE_KEY] = max_percent
+
+            if settings_changed:
+                await self.deps.settings_manager.set_settings(user, settings)
+                asyncio.create_task(self._send_notification(rune_market_info, user, settings, normal))
+
+    async def _send_notification(self, rune_market_info: RuneMarketInfo, user, settings, normal):
+        loc = await self.deps.loc_man.get_from_db(user, self.deps.db)
+        text = loc.notification_text_price_divergence(rune_market_info, normal)
+        await self.deps.broadcaster.safe_send_message(
+            ChannelDescriptor(SettingsManager.get_platform(settings), user),
+            BoardMessage(text)
+        )
 
     async def _dbg_test(self, rune_market_info: RuneMarketInfo):
-        loc_man: LocalizationManager = self.deps.loc_man
-
+        loc_man = self.deps.loc_man
         text = loc_man.default.notification_text_price_divergence(rune_market_info, normal=False)
-
         task = self.deps.broadcaster.safe_send_message(
             ChannelDescriptor(Messengers.TELEGRAM, '192398802'),
             BoardMessage(text)
         )
         asyncio.create_task(task)
+
+
+class SettingsProcessorPriceDivergence(INotified):
+    # Settings Keys
+    KEY_MIN_PERCENT = 'PriceDiv.Min'
+    KEY_MAX_PERCENT = 'PriceDiv.Max'
+
+    def __init__(self, alert_watcher: AlertWatchers):
+        self.alert_watcher = alert_watcher
+
+    async def on_data(self, sender: SettingsManager, data):
+        channel_id, settings = data
+
+        min_percent = settings.get(self.KEY_MIN_PERCENT)
+        max_percent = settings.get(self.KEY_MAX_PERCENT)
+
+        is_enabled = min_percent is not None and max_percent is not None
+        await self.alert_watcher.set_user_to_node(channel_id, GeneralSettings.PRICE_DIV_ALERTS, is_enabled)

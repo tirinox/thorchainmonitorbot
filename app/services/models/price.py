@@ -33,6 +33,20 @@ class RuneMarketInfo:
     def is_valid(self):
         return self.circulating > 0 and self.fair_price > 0 and self.cex_price > 0 and self.pool_rune_price > 0
 
+    @property
+    def divergence_percent(self):
+        if self.pool_rune_price == 0:
+            return 0.0
+        return 100.0 * abs(1.0 - self.cex_price / self.pool_rune_price)
+
+    @property
+    def divergence(self):
+        return self.cex_price - self.pool_rune_price
+
+    @property
+    def divergence_abs(self):
+        return abs(self.cex_price - self.pool_rune_price)
+
 
 REAL_REGISTERED_ATH = 20.87  # $ / Rune
 REAL_REGISTERED_ATH_DATE = 1621418550  # 19 may 2021

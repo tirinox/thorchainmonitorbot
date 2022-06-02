@@ -7,6 +7,7 @@ from services.dialog.base import message_handler, DialogWithSettings
 from services.dialog.node_op_menu import NodeOpDialog
 from services.lib.new_feature import Features
 from services.lib.texts import kbd
+from services.notify.personal.price_divergence import SettingsProcessorPriceDivergence
 
 
 class SettingsStates(StatesGroup):
@@ -18,9 +19,6 @@ class SettingsStates(StatesGroup):
 
 
 class SettingsDialog(DialogWithSettings):
-    SETTING_PRICE_DIV_MIN_PERCENT = 'PriceDiv.Min'
-    SETTING_PRICE_DIV_MAX_PERCENT = 'PriceDiv.Max'
-
     # ----------- HANDLERS ------------
 
     async def ask_language(self, message: Message):
@@ -92,10 +90,10 @@ class SettingsDialog(DialogWithSettings):
             message.text = ''
             await self.on_enter(message)
         elif value == 'next':
-            self._settings[self.SETTING_PRICE_DIV_MIN_PERCENT] = None
+            self._settings[SettingsProcessorPriceDivergence.KEY_MIN_PERCENT] = None
             await self.ask_max_price_div_percent(message)
         elif value is not None:
-            self._settings[self.SETTING_PRICE_DIV_MIN_PERCENT] = value
+            self._settings[SettingsProcessorPriceDivergence.KEY_MIN_PERCENT] = value
             await self.ask_max_price_div_percent(message)
 
     async def ask_max_price_div_percent(self, message: Message):
@@ -113,8 +111,8 @@ class SettingsDialog(DialogWithSettings):
         elif value:
             if value == 'next':
                 value = None
-            max_percent = self._settings[self.SETTING_PRICE_DIV_MAX_PERCENT] = value
-            min_percent = self._settings[self.SETTING_PRICE_DIV_MIN_PERCENT]
+            max_percent = self._settings[SettingsProcessorPriceDivergence.KEY_MAX_PERCENT] = value
+            min_percent = self._settings[SettingsProcessorPriceDivergence.KEY_MIN_PERCENT]
             await message.answer(
                 self.loc.text_price_div_finish_setup(min_percent=min_percent, max_percent=max_percent),
                 disable_notification=True

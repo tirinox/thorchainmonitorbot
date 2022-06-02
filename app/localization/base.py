@@ -502,7 +502,8 @@ class BaseLocalization(ABC):  # == English
             message += f"<b>RUNE</b> price at Binance (CEX) is {code(pretty_dollar(fp.cex_price))} " \
                        f"(RUNE/USDT market).\n"
 
-            div, div_p, exclamation = self.price_div_calc(fp)
+            div, div_p = fp.divergence_abs, fp.divergence_percent
+            exclamation = self._exclamation_sign(div_p, ref=10)
             message += f"<b>Divergence</b> Native vs BEP2 is {code(pretty_dollar(div))} ({div_p:.1f}%{exclamation}).\n"
 
         last_ath = p.last_ath
@@ -621,7 +622,8 @@ class BaseLocalization(ABC):  # == English
     def notification_text_price_divergence(self, info: RuneMarketInfo, is_low: bool):
         title = f'〰️ Low {self.R} price divergence!' if is_low else f'🔺 High {self.R} price divergence!'
 
-        div, div_p, exclamation = self.price_div_calc(info)
+        div, div_p = info.divergence_abs, info.divergence_percent
+        exclamation = self._exclamation_sign(div_p, ref=10)
 
         text = (
             f"🖖 {bold(title)}\n"
@@ -630,12 +632,6 @@ class BaseLocalization(ABC):  # == English
             f"<b>Divergence</b> Native vs BEP2 is {code(pretty_dollar(div))} ({div_p:.1f}%{exclamation})."
         )
         return text
-
-    def price_div_calc(self, info):
-        div = abs(info.cex_price - info.pool_rune_price)
-        div_p = 100.0 * abs(1.0 - info.cex_price / info.pool_rune_price) if info.pool_rune_price != 0 else 0.0
-        exclamation = self._exclamation_sign(div_p, ref=10)
-        return div, div_p, exclamation
 
     # -------- METRICS ----------
 

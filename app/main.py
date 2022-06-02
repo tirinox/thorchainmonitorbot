@@ -40,7 +40,7 @@ from services.models.tx import ThorTxType
 from services.notify.alert_presenter import AlertPresenter
 from services.notify.broadcast import Broadcaster
 from services.notify.personal.personal_main import NodeChangePersonalNotifier
-from services.notify.personal.price_divergence import PersonalPriceDivergenceNotifier
+from services.notify.personal.price_divergence import PersonalPriceDivergenceNotifier, SettingsProcessorPriceDivergence
 from services.notify.types.bep2_notify import BEP2MoveNotifier
 from services.notify.types.best_pool_notify import BestPoolsNotifier
 from services.notify.types.block_notify import BlockHeightNotifier
@@ -71,21 +71,24 @@ class App:
         # todo: ART logo
         logging.info(f'Starting THORChainMonitoringBot for "{d.cfg.network_id}".')
 
-        d.price_holder.load_stable_coins(d.cfg)
-
         d.loop = asyncio.get_event_loop()
         d.db = DB(d.loop)
+
         d.price_holder = LastPriceHolder()
+        d.price_holder.load_stable_coins(d.cfg)
+
+        # settings:
         d.settings_manager = SettingsManager(d.db, d.cfg)
 
         d.alert_watcher = AlertWatchers(d.db)
         d.gen_alert_settings_proc = SettingsProcessorGeneralAlerts(d.db, d.alert_watcher)
         d.settings_manager.subscribe(d.gen_alert_settings_proc)
+        d.settings_manager.subscribe(SettingsProcessorPriceDivergence(d.alert_watcher))
 
+        # messaging:
         d.loc_man = LocalizationManager(d.cfg)
         d.broadcaster = Broadcaster(d)
         d.alert_presenter = AlertPresenter(d.broadcaster)
-
         d.telegram_bot = TelegramBot(d.cfg, d.db, d.loop)
         init_dialogs(d)
 
