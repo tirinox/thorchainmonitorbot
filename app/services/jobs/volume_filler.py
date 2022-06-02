@@ -1,6 +1,6 @@
 from typing import List
 
-from services.jobs.fetch.base import INotified, WithDelegates
+from services.lib.delegates import INotified, WithDelegates
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger

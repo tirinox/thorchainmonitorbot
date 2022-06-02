@@ -1,5 +1,5 @@
 from localization import BaseLocalization
-from services.jobs.fetch.base import INotified
+from services.lib.delegates import INotified
 from services.lib.config import SubConfig
 from services.lib.cooldown import CooldownBiTrigger
 from services.lib.date_utils import parse_timespan_to_seconds

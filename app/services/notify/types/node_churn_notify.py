@@ -1,6 +1,6 @@
 from localization import BaseLocalization
 from services.dialog.picture.node_geo_picture import node_geo_pic
-from services.jobs.fetch.base import INotified
+from services.lib.delegates import INotified
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import MINUTE

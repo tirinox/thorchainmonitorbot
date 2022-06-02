@@ -1,5 +1,5 @@
 from localization import BaseLocalization
-from services.jobs.fetch.base import INotified
+from services.lib.delegates import INotified
 from services.jobs.fetch.pool_price import PoolInfoFetcherMidgard
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds

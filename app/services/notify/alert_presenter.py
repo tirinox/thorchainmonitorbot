@@ -2,7 +2,7 @@ import asyncio
 
 from localization import BaseLocalization
 from services.dialog.picture.block_height_picture import block_speed_chart
-from services.jobs.fetch.base import INotified
+from services.lib.delegates import INotified
 from services.lib.constants import THOR_BLOCKS_PER_MINUTE
 from services.models.bep2 import BEP2CEXFlow, BEP2Transfer
 from services.models.last_block import EventBlockSpeed, BlockProduceState

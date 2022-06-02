@@ -3,7 +3,7 @@ import time
 
 from localization import BaseLocalization
 from services.dialog.picture.price_picture import price_graph_from_db
-from services.jobs.fetch.base import INotified
+from services.lib.delegates import INotified
 from services.lib.constants import RUNE_SYMBOL_POOL
 from services.lib.cooldown import CooldownSingle
 from services.lib.date_utils import MINUTE, HOUR, DAY, parse_timespan_to_seconds

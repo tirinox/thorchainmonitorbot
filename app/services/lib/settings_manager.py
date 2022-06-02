@@ -1,6 +1,6 @@
 import ujson
 
-from services.jobs.fetch.base import INotified, WithDelegates
+from services.lib.delegates import INotified, WithDelegates
 from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.db_one2one import OneToOne

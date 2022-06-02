@@ -2,7 +2,7 @@ import logging
 
 from localization import BaseLocalization
 from services.dialog.picture.queue_picture import queue_graph, QUEUE_TIME_SERIES
-from services.jobs.fetch.base import INotified
+from services.lib.delegates import INotified
 from services.jobs.fetch.queue import QueueInfo
 from services.lib.cooldown import CooldownBiTrigger
 from services.lib.date_utils import parse_timespan_to_seconds

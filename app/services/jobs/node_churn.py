@@ -2,7 +2,7 @@ import json
 from dataclasses import asdict
 from typing import List
 
-from services.jobs.fetch.base import WithDelegates, INotified
+from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
 from services.models.node_info import NodeSetChanges, NodeInfo

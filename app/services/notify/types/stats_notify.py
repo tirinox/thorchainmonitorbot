@@ -1,5 +1,5 @@
 from localization import BaseLocalization
-from services.jobs.fetch.base import INotified
+from services.lib.delegates import INotified
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import DAY, parse_timespan_to_seconds, MINUTE
 from services.lib.depcont import DepContainer

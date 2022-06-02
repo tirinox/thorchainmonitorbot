@@ -1,4 +1,4 @@
-from services.jobs.fetch.base import INotified, WithDelegates
+from services.lib.delegates import INotified, WithDelegates
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds, DAY
 from services.lib.depcont import DepContainer

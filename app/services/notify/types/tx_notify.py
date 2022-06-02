@@ -1,6 +1,6 @@
 from typing import List
 
-from services.jobs.fetch.base import INotified, WithDelegates
+from services.lib.delegates import INotified, WithDelegates
 from services.lib.config import SubConfig
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer

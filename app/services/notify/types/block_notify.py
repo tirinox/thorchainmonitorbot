@@ -2,7 +2,7 @@ from typing import Dict, Optional
 
 from aiothornode.types import ThorLastBlock
 
-from services.jobs.fetch.base import INotified, WithDelegates
+from services.lib.delegates import INotified, WithDelegates
 from services.jobs.fetch.last_block import LastBlockFetcher
 from services.lib.config import SubConfig
 from services.lib.constants import THOR_BLOCK_SPEED

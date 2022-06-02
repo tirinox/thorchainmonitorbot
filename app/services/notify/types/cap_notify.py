@@ -1,7 +1,7 @@
 import json
 
 from localization import BaseLocalization
-from services.jobs.fetch.base import INotified
+from services.lib.delegates import INotified
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.utils import make_stickers_iterator, class_logger

@@ -3,7 +3,7 @@ from typing import Dict
 
 from aiothornode.types import ThorNodeAccount
 
-from services.jobs.fetch.base import INotified
+from services.lib.delegates import INotified
 from services.jobs.fetch.thormon import ThorMonWSSClient
 from services.lib.depcont import DepContainer
 from services.lib.utils import sep

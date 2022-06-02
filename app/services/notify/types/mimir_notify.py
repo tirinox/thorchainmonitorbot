@@ -3,7 +3,7 @@ import json
 from aiothornode.types import ThorMimir
 
 from localization import BaseLocalization
-from services.jobs.fetch.base import INotified
+from services.lib.delegates import INotified
 from services.jobs.fetch.const_mimir import ConstMimirFetcher, MimirTuple
 from services.lib.date_utils import now_ts
 from services.lib.depcont import DepContainer

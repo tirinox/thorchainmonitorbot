@@ -1,6 +1,7 @@
 import asyncio
 
-from services.jobs.fetch.base import BaseFetcher, WithDelegates
+from services.jobs.fetch.base import BaseFetcher
+from services.lib.delegates import WithDelegates
 from services.lib.constants import BNB_RUNE_SYMBOL_NO_CHAIN
 from services.lib.date_utils import parse_timespan_to_seconds, now_ts
 from services.lib.depcont import DepContainer

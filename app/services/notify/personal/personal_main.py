@@ -6,7 +6,7 @@ from functools import reduce
 from typing import List
 
 from localization import LocalizationManager
-from services.jobs.fetch.base import INotified
+from services.lib.delegates import INotified
 from services.lib.date_utils import HOUR, MINUTE, now_ts, parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.settings_manager import SettingsManager
