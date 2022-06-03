@@ -8,7 +8,7 @@ from services.lib.utils import class_logger
 from services.models.node_watchers import AlertWatchers
 from services.models.price import RuneMarketInfo
 from services.notify.channel import ChannelDescriptor, BoardMessage, Messengers
-from services.notify.personal.helpers import GeneralSettings
+from services.notify.personal.helpers import GeneralSettings, NodeOpSetting
 
 
 class PersonalPriceDivergenceNotifier(INotified):
@@ -26,12 +26,16 @@ class PersonalPriceDivergenceNotifier(INotified):
         their_settings = await self.deps.settings_manager.get_settings_multi(users)
 
         for user in users:
-            settings_changed, normal = False, True
             settings = their_settings.get(user, {})
+
+            if bool(settings.get(NodeOpSetting.PAUSE_ALL_ON, False)):
+                continue  # paused
 
             min_percent = settings.get(SettingsProcessorPriceDivergence.KEY_MIN_PERCENT)
             max_percent = settings.get(SettingsProcessorPriceDivergence.KEY_MAX_PERCENT)
             last_value = settings.get(self.LAST_VALUE_KEY)
+
+            settings_changed, normal = False, True
 
             div_p = rune_market_info.divergence_percent
 

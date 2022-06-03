@@ -6,8 +6,8 @@ from functools import reduce
 from typing import List
 
 from localization import LocalizationManager
+from services.lib.date_utils import now_ts, parse_timespan_to_seconds
 from services.lib.delegates import INotified
-from services.lib.date_utils import HOUR, MINUTE, now_ts, parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.settings_manager import SettingsManager
 from services.lib.texts import grouper
@@ -29,10 +29,6 @@ from services.notify.personal.user_data import UserDataCache
 from services.notify.personal.versions import VersionTracker
 
 MAX_CHANGES_PER_MESSAGE = 10
-
-TELEMETRY_MAX_HISTORY_DURATION = HOUR
-TELEMETRY_TOLERANCE = MINUTE
-TELEMETRY_MAX_POINTS = 5_000
 
 
 class NodeChangePersonalNotifier(INotified):

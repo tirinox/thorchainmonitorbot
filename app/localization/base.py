@@ -597,6 +597,9 @@ class BaseLocalization(ABC):  # == English
     )
 
     BUTTON_PRICE_DIV_NEXT = 'Next ⏭️'
+    BUTTON_PRICE_DIV_TURN_OFF = 'Turn off 📴'
+
+    TEXT_PRICE_DIV_TURNED_OFF = 'Price divergence notifications are turned off.'
 
     TEXT_PRICE_DIV_MAX_PERCENT = (
         'Good!\n'

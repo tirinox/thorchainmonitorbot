@@ -464,6 +464,9 @@ class RussianLocalization(BaseLocalization):
     )
 
     BUTTON_PRICE_DIV_NEXT = 'Далее ⏭️'
+    BUTTON_PRICE_DIV_TURN_OFF = 'Выключить 📴'
+
+    TEXT_PRICE_DIV_TURNED_OFF = 'Уведомления о расхождении цен выключены.'
 
     TEXT_PRICE_DIV_MAX_PERCENT = (
         'Хорошо!\n'
