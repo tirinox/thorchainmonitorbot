@@ -8,7 +8,8 @@ from semver import VersionInfo
 
 from services.jobs.fetch.circulating import SupplyEntry
 from services.lib.config import Config
-from services.lib.constants import NetworkIdents, rune_origin, thor_to_float, THOR_BLOCK_TIME, BNB_RUNE_SYMBOL
+from services.lib.constants import NetworkIdents, rune_origin, thor_to_float, THOR_BLOCK_TIME, BNB_RUNE_SYMBOL, \
+    DEFAULT_CEX_NAME, DEFAULT_CEX_BASE_ASSET
 from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
     get_explorer_url_for_node
@@ -284,7 +285,7 @@ class BaseLocalization(ABC):  # == English
     PRICE_GRAPH_TITLE = f'Rune price, USD'
     PRICE_GRAPH_LEGEND_DET_PRICE = f'Deterministic {RAIDO_GLYPH} price'
     PRICE_GRAPH_LEGEND_ACTUAL_PRICE = f'Pool {RAIDO_GLYPH} price'
-    PRICE_GRAPH_LEGEND_CEX_PRICE = f'Binance {RAIDO_GLYPH} price'
+    PRICE_GRAPH_LEGEND_CEX_PRICE = f'CEX BEP2 {RAIDO_GLYPH} price'
 
     # ------- NOTIFY TXS -------
 
@@ -478,6 +479,15 @@ class BaseLocalization(ABC):  # == English
 
     DET_PRICE_HELP_PAGE = 'https://thorchain.org/rune#what-influences-it'
 
+    @property
+    def ref_cex_name(self):
+        return self.cfg.as_str('price.bep2_reference.cex', DEFAULT_CEX_NAME)
+
+    @property
+    def ref_cex_pair(self):
+        pair = self.cfg.as_str('price.bep2_reference.pair', DEFAULT_CEX_BASE_ASSET)
+        return f'RUNE/{pair}'
+
     def notification_text_price_update(self, p: PriceReport, ath=False, halted_chains=None):
         title = bold('Price update') if not ath else bold('🚀 A new all-time high has been achieved!')
 
@@ -499,8 +509,8 @@ class BaseLocalization(ABC):  # == English
         fp = p.market_info
 
         if fp.cex_price > 0.0:
-            message += f"<b>RUNE</b> price at Binance (CEX) is {code(pretty_dollar(fp.cex_price))} " \
-                       f"(RUNE/USDT market).\n"
+            message += f"<b>RUNE</b> price at {self.ref_cex_name} (CEX) is {code(pretty_dollar(fp.cex_price))} " \
+                       f"({self.ref_cex_pair} market).\n"
 
             div, div_p = fp.divergence_abs, fp.divergence_percent
             exclamation = self._exclamation_sign(div_p, ref=10)

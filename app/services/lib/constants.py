@@ -64,6 +64,9 @@ RUNE_SYMBOLS = (
     NATIVE_RUNE_SYMBOL,
 )
 
+DEFAULT_CEX_NAME = 'HitBTC'
+DEFAULT_CEX_BASE_ASSET = 'USDT'
+
 
 def is_rune(symbol):
     return symbol in RUNE_SYMBOLS
@@ -196,4 +199,3 @@ class THORPort:
     @classmethod
     def get_port_family(cls, network_ident):
         return cls.FAMILIES.get(network_ident, cls.MainNet)
-

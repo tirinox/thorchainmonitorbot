@@ -88,8 +88,6 @@ class SlashPointTracker(BaseChangeTracker):
 
         threshold = settings.get(NodeOpSetting.SLASH_THRESHOLD, 50)
 
-        # print(f'{user_id} ({event.thor_node.node_address}): {data.delta_pts = }')
-
         if data.delta_pts >= threshold:
             cd = interval * self.EXTRA_COOLDOWN_MULT
             if self.user_cache.cooldown_can_do(user_id, event.address,

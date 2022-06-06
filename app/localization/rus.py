@@ -219,7 +219,7 @@ class RussianLocalization(BaseLocalization):
     PRICE_GRAPH_TITLE = f'Цена {RAIDO_GLYPH}уны'
     PRICE_GRAPH_LEGEND_DET_PRICE = 'Детерминистская цена'
     PRICE_GRAPH_LEGEND_ACTUAL_PRICE = 'Цена пулов'
-    PRICE_GRAPH_LEGEND_CEX_PRICE = f'Binance цена'
+    PRICE_GRAPH_LEGEND_CEX_PRICE = f'CEX BEP2 цена'
 
     # ------ TXS -------
 
@@ -371,7 +371,8 @@ class RussianLocalization(BaseLocalization):
         fp = p.market_info
 
         if fp.cex_price > 0.0:
-            message += f"Цена <b>RUNE</b> на централизованной бирже Binance: {bold(pretty_dollar(fp.cex_price))}.\n"
+            message += f"Цена <b>RUNE</b> на централизованной бирже {self.ref_cex_name}: " \
+                       f"{bold(pretty_dollar(fp.cex_price))}.\n"
 
             div, div_p = fp.divergence_abs, fp.divergence_percent
             message += f"<b>Расхождение</b> родной и BEP2 Руны: {code(pretty_dollar(div))} ({div_p:.1f}%).\n"

@@ -23,7 +23,6 @@ class BEP2BlockFetcher(BaseFetcher):
             return await resp.json()
 
     async def fetch(self):
-        print('tick')
         return 1
 
 
