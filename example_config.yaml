@@ -208,6 +208,11 @@ price:
   percent_change_threshold: 5
   price_graph:
     default_period: 7d
+
+  bep2_reference: # (!) new
+    cex: hitbtc
+    pair: USDT
+
   ath:
     cooldown: 2m
     stickers:
@@ -326,7 +331,7 @@ queue:
     congested: 20
     free: 2
   cooldown: 3600
-  watch_queues:  # (!) new
+  watch_queues:
     - outbound
     - internal
     - swap
@@ -349,7 +354,7 @@ pool_churn:
 
 node_info:
   enabled: true
-  fetch_period: 5s  # (!) for it must not be too slow for NodeOp tools accuracy
+  fetch_period: 5s  # for it must not be too slow for NodeOp tools accuracy
   geo_ip:
     expire: 48h
 

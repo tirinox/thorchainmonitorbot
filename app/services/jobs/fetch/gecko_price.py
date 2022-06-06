@@ -56,9 +56,11 @@ def gecko_market_cap_rank(gecko_json):
 
 def gecko_ticker_price(gecko_json, exchange='binance', base_curr='USDT'):
     tickers = gecko_json.get('tickers', [])
+    base_curr = base_curr.lower()
+    exchange = exchange.lower()
     for t in tickers:
-        this_base_curr = t.get('target')
-        this_exchange = t.get('market', {}).get('identifier')
+        this_base_curr = t.get('target', '').lower()
+        this_exchange = t.get('market', {}).get('identifier', '').lower()
         if this_exchange == exchange and this_base_curr == base_curr:
             return float(t.get('last', 0))
 

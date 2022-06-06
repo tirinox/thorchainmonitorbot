@@ -12,8 +12,8 @@ from services.lib.utils import class_logger
 from services.models.price import RuneMarketInfo
 
 RUNE_MARKET_INFO_CACHE_TIME = 120
-CEX_NAME = 'binance'
-CEX_BASE_ASSET = 'USDT'
+DEFAULT_CEX_NAME = 'HitBTC'
+DEFAULT_CEX_BASE_ASSET = 'USDT'
 
 
 class RuneMarketInfoFetcher:
@@ -27,8 +27,12 @@ class RuneMarketInfoFetcher:
             deps.cfg.as_str('thor.circulating_supply.cache_time', RUNE_MARKET_INFO_CACHE_TIME))
         self._prev_result: Optional[RuneMarketInfo] = None
 
+        self.cex_name = deps.cfg.as_str('price.bep2_reference.cex', DEFAULT_CEX_NAME)
+        self.cex_pair = deps.cfg.as_str('price.bep2_reference.pair', DEFAULT_CEX_BASE_ASSET)
+
+        self.logger.info(f'Reference is RUNE/${self.cex_pair} at "{self.cex_name}" CEX.')
+
         # cache the method
-        # todo: disabled
         # self.get_rune_market_info = a_result_cached(ttl=self._cache_time)(retries(5)(self._get_rune_market_info))
         # self.get_rune_market_info = a_result_cached(ttl=self._cache_time)(self._get_rune_market_info)
 
@@ -65,7 +69,7 @@ class RuneMarketInfoFetcher:
 
         fair_price = 3 * tlv / circulating_rune  # The main formula of wealth!
 
-        cex_price = gecko_ticker_price(gecko, CEX_NAME, CEX_BASE_ASSET)  # RUNE/USDT @ Binance
+        cex_price = gecko_ticker_price(gecko, self.cex_name, self.cex_pair)
         rank = gecko_market_cap_rank(gecko)
         trade_volume = gecko_market_volume(gecko)
 
