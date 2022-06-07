@@ -447,15 +447,17 @@ class TwitterEnglishLocalization(BaseLocalization):
                                                        new.active_pool_count, int_delta=True))
         pending_pool_changes = bracketify(up_down_arrow(old.pending_pool_count,
                                                         new.pending_pool_count, int_delta=True))
-        message = f'{new.active_pool_count} active pools{active_pool_changes} and ' \
-                  f'{new.pending_pool_count} pending pools{pending_pool_changes}.\n'
 
+        # only if there next pool comes
         if new.next_pool_to_activate:
+            message = f'{new.active_pool_count} active pools{active_pool_changes} and ' \
+                      f'{new.pending_pool_count} pending pools{pending_pool_changes}.\n'
+
             next_pool_wait = seconds_human(new.next_pool_activation_ts - now_ts())
             next_pool = self.pool_link(new.next_pool_to_activate)
             message += f"Next pool is likely be activated: {next_pool} in {next_pool_wait}."
 
-        parts.append(message)
+            parts.append(message)
 
         # return MESSAGE_SEPARATOR.join(twitter_intelligent_text_splitter(parts))
         r = MESSAGE_SEPARATOR.join(twitter_intelligent_text_splitter(parts))
