@@ -1,9 +1,7 @@
-import asyncio
-
 from services.jobs.fetch.base import BaseFetcher
-from services.lib.delegates import WithDelegates
 from services.lib.constants import BNB_RUNE_SYMBOL_NO_CHAIN
 from services.lib.date_utils import parse_timespan_to_seconds, now_ts
+from services.lib.delegates import WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import run_once_async
 from services.lib.web_sockets import WSClient
@@ -26,7 +24,7 @@ class BEP2BlockFetcher(BaseFetcher):
         return 1
 
 
-BEP2_DEX_WSS_ADDRESS = 'wss://explorer.binance.org/ws/tx'
+BEP2_DEX_WSS_ADDRESS = 'wss://explorer.bnbchain.org/ws/tx'
 BEP2_DEX_ORIGIN = 'https://explorer.binance.org/'
 BEP2_TRANSFER = 'TRANSFER'
 
@@ -34,7 +32,7 @@ BEP2_TRANSFER = 'TRANSFER'
 class BinanceOrgDexWSSClient(WSClient, WithDelegates):
     def __init__(self, reply_timeout=10, ping_timeout=5, sleep_time=5):
         headers = {
-            'Origin': BEP2_DEX_ORIGIN,
+            # 'Origin': BEP2_DEX_ORIGIN,
             'Sec-WebSocket-Extensions': 'permessage-deflate; client_max_window_bits',
             'Cache-Control': 'no-cache',
             'Pragma': 'no-cache',
