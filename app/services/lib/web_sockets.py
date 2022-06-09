@@ -55,8 +55,8 @@ class WSClient(abc.ABC):
                         try:
                             message = ujson.loads(reply)
                             await self.handle_wss_message(message)
-                        except (ValueError, TypeError, LookupError):
-                            self.logger.error(f'Error decoding WebSocket JSON message! {reply[:1000]}...')
+                        except (ValueError, TypeError, LookupError) as e:
+                            self.logger.error(f'Error decoding WebSocket JSON message! {e} Data: {reply[:200]}...')
 
             except socket.gaierror:
                 self.logger.warn(f'Socket error - retrying connection in {self.sleep_time} sec ')

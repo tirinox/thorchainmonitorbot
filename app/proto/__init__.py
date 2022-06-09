@@ -1,5 +1,6 @@
 import base64
 import inspect
+from typing import Union
 
 import bech32
 import betterproto
@@ -26,7 +27,7 @@ def register_thorchain_messages():
 THORCHAIN_MESSAGES_MAP = register_thorchain_messages()
 
 
-def parse_thor_tx(data: bytes):
+def parse_thor_tx(data: bytes) -> Tx:
     tx = Tx().parse(data)
     messages = []
     for msg in tx.body.messages:
@@ -38,6 +39,9 @@ def parse_thor_tx(data: bytes):
     return tx
 
 
-def read_tx_from_base64(data: bytes):
+def parse_thor_tx_from_base64(data: Union[str, bytes]):
+    if isinstance(data, str):
+        data = data.encode()
+
     raw_data = base64.decodebytes(data)
     return parse_thor_tx(raw_data)

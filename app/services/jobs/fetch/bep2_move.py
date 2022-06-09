@@ -3,7 +3,7 @@ from services.lib.constants import BNB_RUNE_SYMBOL_NO_CHAIN
 from services.lib.date_utils import parse_timespan_to_seconds, now_ts
 from services.lib.delegates import WithDelegates
 from services.lib.depcont import DepContainer
-from services.lib.utils import run_once_async
+from services.lib.utils import run_once_async, class_logger
 from services.lib.web_sockets import WSClient
 from services.models.bep2 import BEP2Transfer
 
