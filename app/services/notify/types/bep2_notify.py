@@ -3,7 +3,7 @@ from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds, DAY
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
-from services.models.bep2 import BEP2Transfer, BEP2CEXFlow
+from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.time_series import TimeSeries
 
 
@@ -26,10 +26,10 @@ class BEP2MoveNotifier(INotified, WithDelegates):
         self.ignore_cex2cex = bool(cfg.get('ignore_cex2cex', True))
         self.tracker = CEXFlowTracker(deps)
 
-    def is_cex2cex(self, transfer: BEP2Transfer):
+    def is_cex2cex(self, transfer: RuneTransfer):
         return self.is_cex(transfer.from_addr) and self.is_cex(transfer.to_addr)
 
-    async def handle_big_transfer(self, transfer: BEP2Transfer, usd_per_rune):
+    async def handle_big_transfer(self, transfer: RuneTransfer, usd_per_rune):
         if transfer.amount * usd_per_rune >= self.min_usd:
             # ignore cex to cex transfers?
             if self.ignore_cex2cex and self.is_cex2cex(transfer):
@@ -40,7 +40,7 @@ class BEP2MoveNotifier(INotified, WithDelegates):
                 await self.move_cd.do()
                 await self.pass_data_to_listeners(transfer)
 
-    async def on_data(self, sender, transfer: BEP2Transfer):
+    async def on_data(self, sender, transfer: RuneTransfer):
         transfer.usd_per_rune = usd_per_rune = self.deps.price_holder.usd_per_rune
 
         await self._store_transfer(transfer)
@@ -56,7 +56,7 @@ class BEP2MoveNotifier(INotified, WithDelegates):
     def is_cex(self, addr):
         return addr in self.cex_list
 
-    async def _store_transfer(self, transfer: BEP2Transfer):
+    async def _store_transfer(self, transfer: RuneTransfer):
         inflow, outflow = 0.0, 0.0
         if self.is_cex(transfer.from_addr):
             outflow = transfer.amount
@@ -81,11 +81,11 @@ class CEXFlowTracker:
 
         await self.series.trim_oldest(self.MAX_POINTS)
 
-    async def read_last24h(self) -> BEP2CEXFlow:
+    async def read_last24h(self) -> RuneCEXFlow:
         points = await self.series.get_last_values_json(DAY, max_points=self.MAX_POINTS)
         inflow, outflow = 0.0, 0.0
         for p in points:
             inflow += float(p['in'])
             outflow += float(p['out'])
         overflow = len(points) >= self.MAX_POINTS
-        return BEP2CEXFlow(inflow, outflow, len(points), overflow)
+        return RuneCEXFlow(inflow, outflow, len(points), overflow)

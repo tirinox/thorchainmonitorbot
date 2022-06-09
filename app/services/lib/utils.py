@@ -336,3 +336,4 @@ def safe_get(dct, *keys):
         except (KeyError, TypeError):
             return None
     return dct
+

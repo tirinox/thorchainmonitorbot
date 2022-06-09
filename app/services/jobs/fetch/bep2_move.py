@@ -3,9 +3,9 @@ from services.lib.constants import BNB_RUNE_SYMBOL_NO_CHAIN
 from services.lib.date_utils import parse_timespan_to_seconds, now_ts
 from services.lib.delegates import WithDelegates
 from services.lib.depcont import DepContainer
-from services.lib.utils import run_once_async, class_logger
+from services.lib.utils import run_once_async
 from services.lib.web_sockets import WSClient
-from services.models.bep2 import BEP2Transfer
+from services.models.transfer import RuneTransfer
 
 BEP2_BLOCK_URL = 'https://api.binance.org/bc/api/v1/blocks/{block}/txs'
 
@@ -52,7 +52,7 @@ class BinanceOrgDexWSSClient(WSClient, WithDelegates):
         for tx in j:
             if tx.get('txType') == BEP2_TRANSFER and tx.get('txAsset') == BNB_RUNE_SYMBOL_NO_CHAIN:
                 self.logger.info(f'Transfer message: {tx}')
-                await self.pass_data_to_listeners(BEP2Transfer(
+                await self.pass_data_to_listeners(RuneTransfer(
                     tx.get('fromAddr'),
                     tx.get('toAddr'),
                     tx.get('blockHeight'),
@@ -65,7 +65,7 @@ class BinanceOrgDexWSSClient(WSClient, WithDelegates):
 
     @run_once_async
     async def _dbg_later(self):
-        await self.pass_data_to_listeners(BEP2Transfer(
+        await self.pass_data_to_listeners(RuneTransfer(
             'bnb1u2agwjat20494fmc6jnuau0ls937cfjn4pjwtn',
             'bnb13q87ekxvvte78t2q7z05lzfethnlht5agfh4ok',
             # 'bnb13q87ekxvvte78t2q7z05lzfethnlht5agfh4ur',

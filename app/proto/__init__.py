@@ -1,6 +1,6 @@
 import base64
+import hashlib
 import inspect
-from typing import Optional
 
 import bech32
 import betterproto
@@ -28,8 +28,9 @@ THORCHAIN_MESSAGES_MAP = register_thorchain_messages()
 
 
 class NativeThorTx:
-    def __init__(self, tx: Tx):
+    def __init__(self, tx: Tx, hash: str = ''):
         self.tx = tx
+        self.hash = hash
 
     @classmethod
     def from_bytes(cls, data: bytes):
@@ -41,7 +42,8 @@ class NativeThorTx:
                 proto_type().parse(msg.value) if proto_type else msg
             )
         tx.body.messages = messages
-        return cls(tx)
+        tx_hash = hashlib.sha256(data).hexdigest().upper()
+        return cls(tx, tx_hash)
 
     @classmethod
     def from_base64(cls, data):
@@ -53,4 +55,8 @@ class NativeThorTx:
 
     @property
     def first_message(self):
-        return self.tx.body.messages[0] if self.tx.body.messages else None
+        return self.messages[0] if self.messages else None
+
+    @property
+    def messages(self):
+        return self.tx.body.messages

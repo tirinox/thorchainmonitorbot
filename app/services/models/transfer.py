@@ -2,13 +2,19 @@ from dataclasses import dataclass
 
 
 @dataclass
-class BEP2Transfer:
+class RuneTransfer:
     from_addr: str
     to_addr: str
     block: int
     tx_hash: str
     amount: float
     usd_per_rune: float = 0.0
+    is_native: bool = False
+    asset: str = ''
+
+    @property
+    def is_synth(self):
+        return self.asset != 'rune' and '/' in self.asset
 
     @property
     def usd_amount(self):
@@ -16,7 +22,7 @@ class BEP2Transfer:
 
 
 @dataclass
-class BEP2CEXFlow:
+class RuneCEXFlow:
     rune_cex_inflow: float
     rune_cex_outflow: float
     total_transfers: int

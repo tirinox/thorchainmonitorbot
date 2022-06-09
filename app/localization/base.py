@@ -18,7 +18,7 @@ from services.lib.money import format_percent, pretty_money, short_address, shor
     RAIDO_GLYPH, pretty_rune, short_rune
 from services.lib.texts import progressbar, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
     up_down_arrow, bracketify, plural, grouper, join_as_numbered_list, regroup_joining
-from services.models.bep2 import BEP2Transfer, BEP2CEXFlow
+from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.cap_info import ThorCapInfo
 from services.models.last_block import BlockProduceState, EventBlockSpeed
 from services.models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting, MimirVoteOption
@@ -1741,7 +1741,7 @@ class BaseLocalization(ABC):  # == English
         caption = known_addresses.get(addr, short_address(addr))
         return link(url, caption)
 
-    def notification_text_bep2_movement(self, transfer: BEP2Transfer):
+    def notification_text_bep2_movement(self, transfer: RuneTransfer):
         usd_amt = transfer.amount * transfer.usd_per_rune
         from_link, to_link = self.link_to_bep2(transfer.from_addr), self.link_to_bep2(transfer.to_addr)
         pf = ' ' + BNB_RUNE_SYMBOL
@@ -1750,7 +1750,7 @@ class BaseLocalization(ABC):  # == English
                 f'{pre(short_money(transfer.amount, postfix=pf))} ({ital(short_dollar(usd_amt))}) '
                 f'from {from_link} ➡️ to {to_link}.')
 
-    def notification_text_cex_flow(self, bep2flow: BEP2CEXFlow):
+    def notification_text_cex_flow(self, bep2flow: RuneCEXFlow):
         return (f'🌬️ <b>BEP2.Rune CEX flow last 24 hours</b>\n'
                 f'Inflow: {pre(short_money(bep2flow.rune_cex_inflow, postfix=RAIDO_GLYPH))} '
                 f'({short_dollar(bep2flow.in_usd)})\n'

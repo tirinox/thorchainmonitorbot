@@ -11,7 +11,7 @@ from services.lib.money import Asset, short_dollar, format_percent, pretty_money
     calc_percent_change, adaptive_round_to_str, emoji_for_percent_change, short_address, short_money, short_rune
 from services.lib.texts import x_ses, join_as_numbered_list, progressbar, plural, bracketify, up_down_arrow, \
     bracketify_spaced
-from services.models.bep2 import BEP2CEXFlow, BEP2Transfer
+from services.models.transfer import RuneCEXFlow, RuneTransfer
 from services.models.cap_info import ThorCapInfo
 from services.models.last_block import EventBlockSpeed, BlockProduceState
 from services.models.mimir import MimirChange, MimirHolder, MimirVoting, MimirVoteOption
@@ -704,7 +704,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         known_addresses = self.cfg.get_pure('bep2.known_addresses', {})
         return known_addresses.get(addr, short_address(addr))
 
-    def notification_text_bep2_movement(self, transfer: BEP2Transfer):
+    def notification_text_bep2_movement(self, transfer: RuneTransfer):
         usd_amt = transfer.amount * transfer.usd_per_rune
         from_link, to_link = self.link_to_bep2(transfer.from_addr), self.link_to_bep2(transfer.to_addr)
         pf = ' ' + BNB_RUNE_SYMBOL
@@ -712,7 +712,7 @@ class TwitterEnglishLocalization(BaseLocalization):
                 f'{short_money(transfer.amount, postfix=pf)} ({short_dollar(usd_amt)}) '
                 f'from {from_link} ➡️ to {to_link}.')
 
-    def notification_text_cex_flow(self, bep2flow: BEP2CEXFlow):
+    def notification_text_cex_flow(self, bep2flow: RuneCEXFlow):
         return (
             f'🌬️ BEP2.Rune CEX flow last 24 hours\n'
             f'Inflow: {short_money(bep2flow.rune_cex_inflow, postfix=RAIDO_GLYPH)} '

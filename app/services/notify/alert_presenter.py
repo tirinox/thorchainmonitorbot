@@ -4,7 +4,7 @@ from localization import BaseLocalization
 from services.dialog.picture.block_height_picture import block_speed_chart
 from services.lib.delegates import INotified
 from services.lib.constants import THOR_BLOCKS_PER_MINUTE
-from services.models.bep2 import BEP2CEXFlow, BEP2Transfer
+from services.models.transfer import RuneCEXFlow, RuneTransfer
 from services.models.last_block import EventBlockSpeed, BlockProduceState
 from services.models.tx import EventLargeTransaction
 from services.notify.broadcast import Broadcaster
@@ -19,9 +19,9 @@ class AlertPresenter(INotified):
         asyncio.create_task(self._handle_async(data))
 
     async def _handle_async(self, data):
-        if isinstance(data, BEP2CEXFlow):
+        if isinstance(data, RuneCEXFlow):
             await self._handle_bep2_flow(data)
-        elif isinstance(data, BEP2Transfer):
+        elif isinstance(data, RuneTransfer):
             await self._handle_bep2_transfer(data)
         elif isinstance(data, EventBlockSpeed):
             await self._handle_block_speed(data)
@@ -36,10 +36,10 @@ class AlertPresenter(INotified):
             txs_event.transaction, txs_event.usd_per_rune, txs_event.pool_info, txs_event.cap_info
         )
 
-    async def _handle_bep2_transfer(self, transfer: BEP2Transfer):
+    async def _handle_bep2_transfer(self, transfer: RuneTransfer):
         await self.broadcaster.notify_preconfigured_channels(BaseLocalization.notification_text_bep2_movement, transfer)
 
-    async def _handle_bep2_flow(self, flow: BEP2CEXFlow):
+    async def _handle_bep2_flow(self, flow: RuneCEXFlow):
         await self.broadcaster.notify_preconfigured_channels(BaseLocalization.notification_text_cex_flow, flow)
 
     @staticmethod
