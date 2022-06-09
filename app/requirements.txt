@@ -7,6 +7,7 @@ aiothornode>=0.0.24
 async-timeout==4.0.2
 attrs==21.2.0
 Babel==2.9.1
+bech32>=1.2.0
 cchardet==2.1.7
 certifi>=2021.10.8
 cffi==1.14.6
@@ -14,6 +15,7 @@ chardet==4.0.0
 charset-normalizer==2.0.6
 # discord.py==1.7.3
 emoji>=1.7.0
+git+https://github.com/danielgtaylor/python-betterproto@v2.0.0b4#egg=betterproto
 idna==3.2
 iniconfig==1.1.1
 html-slacker>=0.1.6
