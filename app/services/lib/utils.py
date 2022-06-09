@@ -327,3 +327,12 @@ def run_once_async(f):
 
 
 nested_dict = lambda: defaultdict(nested_dict)
+
+
+def safe_get(dct, *keys):
+    for key in keys:
+        try:
+            dct = dct[key]
+        except (KeyError, TypeError):
+            return None
+    return dct

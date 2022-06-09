@@ -67,8 +67,8 @@ class WSClient(abc.ABC):
                 self.logger.debug(f'Retrying connection in {self.sleep_time}')
                 await asyncio.sleep(self.sleep_time)
                 continue
-            except Exception as e:
-                self.logger.error(f'Other error: {e}')
-                await asyncio.sleep(self.sleep_time)
+            # except Exception as e:
+            #     self.logger.error(f'Other error: {e}')
+            #     await asyncio.sleep(self.sleep_time)
 
     run = listen_forever

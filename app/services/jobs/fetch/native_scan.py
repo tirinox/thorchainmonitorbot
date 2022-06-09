@@ -1,12 +1,17 @@
 import json
 from urllib.parse import urlparse, urlunparse
 
-from proto import parse_thor_tx, parse_thor_tx_from_base64
+from proto import NativeThorTx
 from services.lib.delegates import WithDelegates
+from services.lib.utils import safe_get
 from services.lib.web_sockets import WSClient
 
 
 class NativeScanner(WSClient, WithDelegates):
+    REPLY_TIMEOUT = 20
+    PING_TIMEOUT = 6
+    SLEEP_TIME = 6
+
     def __init__(self, node_rpc_url):
         parsed = urlparse(node_rpc_url)
         wss_scheme = 'wss' if parsed.scheme == 'https' else 'ws'
@@ -17,18 +22,23 @@ class NativeScanner(WSClient, WithDelegates):
             wss_scheme, parsed.netloc, 'websocket', '', '', ''
         ))
 
-        super().__init__(wss_url, reply_timeout=20, ping_timeout=20, sleep_time=6)
+        super().__init__(wss_url,
+                         reply_timeout=self.REPLY_TIMEOUT,
+                         ping_timeout=self.PING_TIMEOUT,
+                         sleep_time=self.SLEEP_TIME)
 
     SUBSCRIBE_NEW_BLOCK = {"jsonrpc": "2.0", "method": "subscribe", "params": ["tm.event='NewBlock'"], "id": 1}
     SUBSCRIBE_NEW_TX = {"jsonrpc": "2.0", "method": "subscribe", "params": ["tm.event='Tx'"], "id": 1}
 
     async def handle_wss_message(self, reply: dict):
-        tx_obj = reply.get('result', {}).get('data', {}).get('value', {}).get('TxResult')
-
-        if tx_obj:
-            tx = parse_thor_tx_from_base64(tx_obj['tx'])
-            print(tx)
+        block = safe_get(reply, 'result', 'data', 'value', 'block')
+        raw_txs = safe_get(block, 'data', 'txs')
+        if raw_txs:
+            block_height = safe_get(block, 'header', 'height')
+            self.logger.info(f'Got block #{block_height} with {len(raw_txs)} transactions.')
+            txs = [NativeThorTx.from_base64(item) for item in raw_txs]
+            await self.pass_data_to_listeners(txs)
 
     async def on_connected(self):
         self.logger.info('Connected, subscribing to new data...')
-        await self.ws.send(json.dumps(self.SUBSCRIBE_NEW_TX))
+        await self.ws.send(json.dumps(self.SUBSCRIBE_NEW_BLOCK))
