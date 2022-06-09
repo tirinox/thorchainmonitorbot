@@ -182,6 +182,8 @@ class App:
             ilp_summer = ILPSummer(d)
             fetcher_tx.subscribe(ilp_summer)
 
+            # todo here: add daily/monthly user counter
+
             tasks.append(fetcher_tx)
 
         if d.cfg.get('cap.enabled', True):

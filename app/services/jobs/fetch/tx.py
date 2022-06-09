@@ -1,5 +1,4 @@
 import logging
-import time
 from collections import defaultdict
 from typing import List, Optional
 
@@ -9,7 +8,7 @@ from tqdm import tqdm
 
 from services.jobs.fetch.base import BaseFetcher
 from services.lib.constants import thor_to_float
-from services.lib.date_utils import parse_timespan_to_seconds
+from services.lib.date_utils import parse_timespan_to_seconds, now_ts
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import free_url_gen
@@ -123,7 +122,11 @@ class TxFetcher(BaseFetcher):
         return tx.tx_hash
 
     def _filter_by_age(self, txs: List[ThorTx]):
-        now = int(time.time())
+        # do nothing
+        if self.max_age_sec == 0:
+            return txs
+
+        now = int(now_ts())
         for tx in txs:
             if tx.date_timestamp > now - self.max_age_sec:
                 yield tx
@@ -216,7 +219,7 @@ def merge_affiliate_txs(txs: List[ThorTx]):
             same_tx_id_set[h].append(tx)
 
     for h, same_tx_list in same_tx_id_set.items():
-        if len(same_tx_list) == 2:  # проблема, что если например 2 одинаковых из 2 батчей и одна или более допов из афф?
+        if len(same_tx_list) == 2:
             tx1, tx2 = same_tx_list
             if tx1.deep_eq(tx2):  # same txs => ignore
                 continue
