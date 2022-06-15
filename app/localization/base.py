@@ -114,10 +114,10 @@ class BaseLocalization(ABC):  # == English
 
     # ----- MAIN MENU ------
 
-    BUTTON_MM_MY_ADDRESS = '🏦 My Liquidity Yield'
+    BUTTON_MM_MY_ADDRESS = '🏦 My wallets'
     BUTTON_MM_METRICS = '📐 Metrics'
     BUTTON_MM_SETTINGS = f'⚙️ Settings'
-    BUTTON_MM_MAKE_AVATAR = f'🦹‍️️ THOR Avatar'
+    BUTTON_MM_MAKE_AVATAR = f'🦹‍️️ THOR avatar'
     BUTTON_MM_NODE_OP = '🤖 NodeOp tools'
 
     # ------- MY LIQUIDITY INFO MENU -------

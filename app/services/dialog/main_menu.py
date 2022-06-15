@@ -5,7 +5,7 @@ from aiogram.utils.helper import HelperMode
 
 from services.dialog.avatar_picture_dialog import AvatarDialog
 from services.dialog.base import BaseDialog, message_handler
-from services.dialog.lp_info_dialog import LiquidityInfoDialog, LPMenuStates
+from services.dialog.lp_info_dialog import MyWalletsMenu, LPMenuStates
 from services.dialog.metrics_menu import MetricsDialog
 from services.dialog.node_op_menu import NodeOpDialog
 from services.dialog.settings_menu import SettingsDialog
@@ -63,7 +63,7 @@ class MainMenuDialog(BaseDialog):
     async def _handle_start_lp_view(self, message: Message, address):
         message.text = ''
         await LPMenuStates.MAIN_MENU.set()
-        await LiquidityInfoDialog(self.loc, self.data, self.deps, self.message).show_pool_menu_for_address(
+        await MyWalletsMenu(self.loc, self.data, self.deps, self.message).show_pool_menu_for_address(
             message, address,
             edit=False,
             external=True)
@@ -105,7 +105,7 @@ class MainMenuDialog(BaseDialog):
     @message_handler(commands='lp', state='*')
     async def cmd_lp(self, message: Message):
         message.text = ''
-        await LiquidityInfoDialog(self.loc, self.data, self.deps, self.message).on_enter(message)
+        await MyWalletsMenu(self.loc, self.data, self.deps, self.message).on_enter(message)
 
     @message_handler(commands='supply', state='*')
     async def cmd_supply(self, message: Message):
@@ -139,7 +139,7 @@ class MainMenuDialog(BaseDialog):
             await MetricsDialog(self.loc, self.data, self.deps, message).on_enter(message)
         elif message.text == self.loc.BUTTON_MM_MY_ADDRESS:
             message.text = ''
-            await LiquidityInfoDialog(self.loc, self.data, self.deps, message).on_enter(message)
+            await MyWalletsMenu(self.loc, self.data, self.deps, message).on_enter(message)
         elif message.text == self.settings_button_text:
             message.text = ''
             await SettingsDialog(self.loc, self.data, self.deps, message).on_enter(message)
