@@ -15,7 +15,7 @@ from services.lib.date_utils import today_str
 from services.lib.draw_utils import img_to_bio
 from services.lib.money import short_address
 from services.lib.new_feature import Features
-from services.lib.texts import code, grouper, kbd, cut_long_text
+from services.lib.texts import code, kbd, cut_long_text
 from services.models.lp_info import LPAddress
 
 
@@ -50,6 +50,7 @@ class MyWalletsMenu(BaseDialog):
     KEY_ACTIVE_ADDRESS_INDEX = 'active-addr-id'
     KEY_IS_EXTERNAL = 'is-external'
     KEY_MY_POOLS = 'my-pools'
+    KEY_TRACK_BALANCE = 'track-balance'
 
     # ----------- ENTER ------------
 
@@ -145,9 +146,10 @@ class MyWalletsMenu(BaseDialog):
             if edit:
                 await message.edit_text(text=self.loc.text_lp_loading_pools(address))
             else:
+                # message = await message.answer(text=self.loc.text_lp_loading_pools(address),
+                #                                reply_markup=kbd([self.loc.BUTTON_SM_BACK_MM]))
                 message = await message.answer(text=self.loc.text_lp_loading_pools(address),
-                                               reply_markup=kbd([self.loc.BUTTON_SM_BACK_MM]))
-
+                                               reply_markup=ReplyKeyboardRemove())
             try:
                 rune_yield = get_rune_yield_connector(self.deps)
                 my_pools = await rune_yield.get_my_pools(address)
@@ -160,7 +162,6 @@ class MyWalletsMenu(BaseDialog):
         await self._present_wallet_contents_menu(message, edit=edit)
 
     async def _present_wallet_contents_menu(self, message: Message, edit: bool):
-        inline_kbd = self._keyboard_inside_wallet_menu()
         address = self.data[self.KEY_ACTIVE_ADDRESS]
         my_pools = self.data[self.KEY_MY_POOLS]
 
@@ -168,6 +169,8 @@ class MyWalletsMenu(BaseDialog):
 
         text = self.loc.text_user_provides_liq_to_pools(address, my_pools, balances) if my_pools \
             else self.loc.TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS
+        tg_list = self._keyboard_inside_wallet_menu()
+        inline_kbd = tg_list.keyboard()
         if edit:
             await message.edit_text(text=text,
                                     reply_markup=inline_kbd,
@@ -178,30 +181,24 @@ class MyWalletsMenu(BaseDialog):
                                  disable_web_page_preview=True,
                                  disable_notification=True)
 
-    def _keyboard_inside_wallet_menu(self):
+    def _keyboard_inside_wallet_menu(self) -> TelegramInlineList:
         external = self.data.get(self.KEY_IS_EXTERNAL, False)
         view_value = self.data.get(self.KEY_CAN_VIEW_VALUE, True)
         lp_prot_on = self.data.get(self.KEY_ADD_LP_PROTECTION, True)
         addr_idx = int(self.data.get(self.KEY_ACTIVE_ADDRESS_INDEX, 0))
         address = self.data.get(self.KEY_ACTIVE_ADDRESS)
         my_pools = self.data.get(self.KEY_MY_POOLS, [])
+
         if my_pools is None:
             my_pools = []
-
-        inline_kbd = []
 
         chain = Chains.detect_chain(address)
         chain = chain if chain else Chains.BTC  # fixme: how about other chains?
 
-        # POOLs buttons
-        # todo: Use Tg inline list!
-        buttons = [InlineKeyboardButton(cut_long_text(pool), callback_data=f'{self.QUERY_VIEW_POOL}:{pool}')
-                   for pool in my_pools]
-        buttons = grouper(2, buttons)
-        inline_kbd += buttons
+        below_button_matrix = []
 
         # Summary + ThorYield
-        inline_kbd += [
+        below_button_matrix += [
             [
                 InlineKeyboardButton(self.loc.BUTTON_SM_SUMMARY,
                                      callback_data=f'{self.QUERY_SUMMARY_OF_ADDRESS}:{addr_idx}'),
@@ -214,7 +211,7 @@ class MyWalletsMenu(BaseDialog):
         if chain == Chains.THOR:
             text = self.loc.BUTTON_TRACK_BALANCE_ON if lp_prot_on else self.loc.BUTTON_TRACK_BALANCE_OFF
             text = self.text_new_feature(text, Features.F_PERSONAL_TRACK_BALANCE)
-            inline_kbd += [
+            below_button_matrix += [
                 [
                     InlineKeyboardButton(text, callback_data=self.QUERY_TOGGLE_BALANCE)
                 ]
@@ -231,56 +228,65 @@ class MyWalletsMenu(BaseDialog):
                 callback_data=self.QUERY_TOGGLE_LP_RPOT
             )
 
-            inline_kbd += [
+            below_button_matrix += [
                 [
                     button_toggle_show_value,
                     button_toggle_lp_prot
                 ]
             ]
 
+        pool_labels = [(cut_long_text(pool), pool) for pool in my_pools]
+
+        tg_list = TelegramInlineList(
+            pool_labels, data_proxy=self.data,
+            max_rows=3,
+            back_text='', data_prefix='pools',
+        )
+
         # Delete this address button and Back button
+        back_button = InlineKeyboardButton(self.loc.BUTTON_SM_BACK_TO_LIST, callback_data=tg_list.data_back)
         if not external:
-            inline_kbd += [
+            below_button_matrix += [
                 [
+                    back_button,
                     InlineKeyboardButton(self.loc.BUTTON_REMOVE_THIS_ADDRESS,
                                          callback_data=f'{self.QUERY_REMOVE_ADDRESS}:{addr_idx}'),
-                    InlineKeyboardButton(self.loc.BUTTON_SM_BACK_TO_LIST,
-                                         callback_data=self.QUERY_BACK_TO_ADDRESS_LIST),
                 ]
             ]
         else:
-            inline_kbd += [
-                [
-                    InlineKeyboardButton(self.loc.BUTTON_SM_BACK_TO_LIST,
-                                         callback_data=self.QUERY_BACK_TO_ADDRESS_LIST),
-                ]
-            ]
+            below_button_matrix += [[back_button]]
 
-        return InlineKeyboardMarkup(inline_keyboard=inline_kbd)
+        tg_list.set_extra_buttons_below(below_button_matrix)
+        return tg_list
 
     @query_handler(state=LPMenuStates.WALLET_MENU)
     async def on_wallet_query(self, query: CallbackQuery):
-        if query.data == self.QUERY_BACK_TO_ADDRESS_LIST:
+        result = await self._keyboard_inside_wallet_menu().handle_query(query)
+
+        if result.result == result.BACK:
             await self._show_address_selection_menu(query.message, edit=True)
+        elif result.result == result.SELECTED:
+            await self.view_pool_report(query, result.selected_data_tag)
+            await self._on_selected_address(query, result)  # fixme: invalid list here! this is pool list, need address list!
         elif query.data.startswith(f'{self.QUERY_REMOVE_ADDRESS}:'):
             _, index = query.data.split(':')
             self._remove_address(index)
             await self._show_address_selection_menu(query.message, edit=True)
         elif query.data.startswith(f'{self.QUERY_SUMMARY_OF_ADDRESS}:'):
-            await self.view_address_summary(query)
-        elif query.data.startswith(f'{self.QUERY_VIEW_POOL}:'):
-            await self.view_pool_report(query)
+            await self.view_address_summary(query)  # fixme: invalid list here! this is pool list, need address list!
         elif query.data == self.QUERY_TOGGLE_VIEW_VALUE:
             self.data[self.KEY_CAN_VIEW_VALUE] = not self.data.get(self.KEY_CAN_VIEW_VALUE, True)
             await self._present_wallet_contents_menu(query.message, edit=True)
         elif query.data == self.QUERY_TOGGLE_LP_RPOT:
             self.data[self.KEY_ADD_LP_PROTECTION] = not self.data.get(self.KEY_ADD_LP_PROTECTION, True)
             await self._present_wallet_contents_menu(query.message, edit=True)
+        elif query.data == self.QUERY_TOGGLE_BALANCE:
+            self.data[self.KEY_TRACK_BALANCE] = not self.data.get(self.KEY_TRACK_BALANCE, True)
+            await self._present_wallet_contents_menu(query.message, edit=True)
 
     # --- LP Pic generation actions:
 
-    async def view_pool_report(self, query: CallbackQuery):
-        _, pool = query.data.split(':')
+    async def view_pool_report(self, query: CallbackQuery, pool):
         address = self.data[self.KEY_ACTIVE_ADDRESS]
 
         # POST A LOADING STICKER

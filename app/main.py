@@ -39,6 +39,7 @@ from services.models.price import LastPriceHolder
 from services.models.tx import ThorTxType
 from services.notify.alert_presenter import AlertPresenter
 from services.notify.broadcast import Broadcaster
+from services.notify.personal.balance import SettingsProcessorBalanceTracker
 from services.notify.personal.personal_main import NodeChangePersonalNotifier
 from services.notify.personal.price_divergence import PersonalPriceDivergenceNotifier, SettingsProcessorPriceDivergence
 from services.notify.types.bep2_notify import BEP2MoveNotifier
@@ -84,6 +85,7 @@ class App:
         d.gen_alert_settings_proc = SettingsProcessorGeneralAlerts(d.db, d.alert_watcher)
         d.settings_manager.subscribe(d.gen_alert_settings_proc)
         d.settings_manager.subscribe(SettingsProcessorPriceDivergence(d.alert_watcher))
+        d.settings_manager.subscribe(SettingsProcessorBalanceTracker(d.alert_watcher))
 
         # messaging:
         d.loc_man = LocalizationManager(d.cfg)

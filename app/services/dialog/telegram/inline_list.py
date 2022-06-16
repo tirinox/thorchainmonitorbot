@@ -76,7 +76,7 @@ class TelegramInlineList:
         for rows in range(self._max_rows):
             row = []
             for column in range(self._max_columns):
-                if offset == self._n:
+                if offset >= self._n:
                     break
                 counter = offset + 1
                 text = self.get_item_display_text(offset)
@@ -92,25 +92,26 @@ class TelegramInlineList:
             if offset == self._n:
                 break
 
-        last_row = [
-            InlineKeyboardButton(
-                self.back_text,
-                callback_data=f'{self.data_prefix}:{InlineListResult.BACK}'
-            )
-        ]
+        last_row = []
 
-        if current_page > 0:
-            last_row.append(InlineKeyboardButton(
-                self.prev_page_text,
-                callback_data=f'{self.data_prefix}:{InlineListResult.PREV_PAGE}')
-            )
+        if self.back_text:
+            last_row.append(InlineKeyboardButton(self.back_text, callback_data=self.data_back))
 
-        if current_page < self._total_pages - 1:
-            last_row.append(InlineKeyboardButton(
-                self.next_page_text,
-                callback_data=f'{self.data_prefix}:{InlineListResult.NEXT_PAGE}'))
+        if self._n:
+            if current_page > 0:
+                last_row.append(InlineKeyboardButton(
+                    self.prev_page_text,
+                    callback_data=f'{self.data_prefix}:{InlineListResult.PREV_PAGE}')
+                )
 
-        inline_kbd.append(last_row)
+            if current_page < self._total_pages - 1:
+                last_row.append(InlineKeyboardButton(
+                    self.next_page_text,
+                    callback_data=f'{self.data_prefix}:{InlineListResult.NEXT_PAGE}')
+                )
+
+        if last_row:
+            inline_kbd.append(last_row)
 
         if self.extra_buttons_below:
             inline_kbd += self.extra_buttons_below
@@ -124,6 +125,10 @@ class TelegramInlineList:
     @property
     def data_page_key(self):
         return f"{self.data_prefix}:page"
+
+    @property
+    def data_back(self):
+        return f'{self.data_prefix}:{InlineListResult.BACK}'
 
     def reset_page(self):
         self._data[self.data_page_key] = 0
