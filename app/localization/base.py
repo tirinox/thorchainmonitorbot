@@ -136,6 +136,9 @@ class BaseLocalization(ABC):  # == English
     BUTTON_LP_PROT_ON = 'IL protection: ON'
     BUTTON_LP_PROT_OFF = 'IL protection: OFF'
 
+    BUTTON_TRACK_BALANCE_ON = 'Track balance: ON'
+    BUTTON_TRACK_BALANCE_OFF = 'Track balance: OFF'
+
     BUTTON_REMOVE_THIS_ADDRESS = '❌ Remove this address'
 
     TEXT_NO_ADDRESSES = "🔆 You have not added any addresses yet. Send me one."

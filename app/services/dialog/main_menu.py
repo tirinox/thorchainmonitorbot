@@ -42,7 +42,7 @@ class MainMenuDialog(BaseDialog):
 
             keyboard = kbd([
                 # 1st row
-                [self.loc.BUTTON_MM_MY_ADDRESS, self.loc.BUTTON_MM_METRICS],
+                [self.my_wallets_button_text, self.loc.BUTTON_MM_METRICS],
                 # 2nd row
                 [self.loc.BUTTON_MM_MAKE_AVATAR] + (
                     [self.loc.BUTTON_MM_NODE_OP] if NodeOpDialog.is_enabled(self.deps.cfg) else []
@@ -59,6 +59,10 @@ class MainMenuDialog(BaseDialog):
     @property
     def settings_button_text(self):
         return self.text_new_feature(self.loc.BUTTON_MM_SETTINGS, Features.F_SETTINGS)
+
+    @property
+    def my_wallets_button_text(self):
+        return self.text_new_feature(self.loc.BUTTON_MM_MY_ADDRESS, Features.F_MY_WALLETS)
 
     async def _handle_start_lp_view(self, message: Message, address):
         message.text = ''
@@ -137,7 +141,7 @@ class MainMenuDialog(BaseDialog):
         if message.text == self.loc.BUTTON_MM_METRICS:
             message.text = ''
             await MetricsDialog(self.loc, self.data, self.deps, message).on_enter(message)
-        elif message.text == self.loc.BUTTON_MM_MY_ADDRESS:
+        elif message.text == self.my_wallets_button_text:
             message.text = ''
             await MyWalletsMenu(self.loc, self.data, self.deps, message).on_enter(message)
         elif message.text == self.settings_button_text:

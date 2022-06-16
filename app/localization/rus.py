@@ -100,6 +100,9 @@ class RussianLocalization(BaseLocalization):
     BUTTON_LP_PROT_ON = 'IL защита: ДА'
     BUTTON_LP_PROT_OFF = 'IL защита: НЕТ'
 
+    BUTTON_TRACK_BALANCE_ON = 'Следить баланс: ON'
+    BUTTON_TRACK_BALANCE_OFF = 'Следить баланс: OFF'
+
     BUTTON_REMOVE_THIS_ADDRESS = '❌ Удалить этот адресс'
 
     TEXT_NO_ADDRESSES = "🔆 Вы еще не добавили никаких адресов. Пришлите мне адрес, чтобы добавить."

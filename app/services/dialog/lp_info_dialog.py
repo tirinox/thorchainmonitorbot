@@ -14,6 +14,7 @@ from services.lib.constants import NetworkIdents, Chains
 from services.lib.date_utils import today_str
 from services.lib.draw_utils import img_to_bio
 from services.lib.money import short_address
+from services.lib.new_feature import Features
 from services.lib.texts import code, grouper, kbd, cut_long_text
 from services.models.lp_info import LPAddress
 
@@ -40,6 +41,7 @@ class MyWalletsMenu(BaseDialog):
     QUERY_TOGGLE_VIEW_VALUE = 'toggle-view-value'
     QUERY_VIEW_POOL = 'view-pool'
     QUERY_TOGGLE_LP_RPOT = 'toggle-lp-prot'
+    QUERY_TOGGLE_BALANCE = 'toggle-balance'
 
     KEY_MY_ADDRESSES = 'my-address-list'
     KEY_CAN_VIEW_VALUE = 'can-view-value'
@@ -191,11 +193,14 @@ class MyWalletsMenu(BaseDialog):
         chain = Chains.detect_chain(address)
         chain = chain if chain else Chains.BTC  # fixme: how about other chains?
 
+        # POOLs buttons
         # todo: Use Tg inline list!
         buttons = [InlineKeyboardButton(cut_long_text(pool), callback_data=f'{self.QUERY_VIEW_POOL}:{pool}')
                    for pool in my_pools]
         buttons = grouper(2, buttons)
         inline_kbd += buttons
+
+        # Summary + ThorYield
         inline_kbd += [
             [
                 InlineKeyboardButton(self.loc.BUTTON_SM_SUMMARY,
@@ -205,6 +210,17 @@ class MyWalletsMenu(BaseDialog):
             ]
         ]
 
+        # Track native Balance
+        if chain == Chains.THOR:
+            text = self.loc.BUTTON_TRACK_BALANCE_ON if lp_prot_on else self.loc.BUTTON_TRACK_BALANCE_OFF
+            text = self.text_new_feature(text, Features.F_PERSONAL_TRACK_BALANCE)
+            inline_kbd += [
+                [
+                    InlineKeyboardButton(text, callback_data=self.QUERY_TOGGLE_BALANCE)
+                ]
+            ]
+
+        # View value + Show IL protection
         if my_pools:
             button_toggle_show_value = InlineKeyboardButton(
                 self.loc.BUTTON_VIEW_VALUE_ON if view_value else self.loc.BUTTON_VIEW_VALUE_OFF,
@@ -222,7 +238,7 @@ class MyWalletsMenu(BaseDialog):
                 ]
             ]
 
-        # back button
+        # Delete this address button and Back button
         if not external:
             inline_kbd += [
                 [
