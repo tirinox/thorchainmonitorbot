@@ -60,3 +60,30 @@ class NativeThorTx:
     @property
     def messages(self):
         return self.tx.body.messages
+
+
+def thor_decode_amount_field(string: str):
+    """ e.g. 114731984rune """
+    amt, asset = '', ''
+    still_numbers = True
+
+    for symbol in string:
+        if not str.isdigit(symbol):
+            still_numbers = False
+        if still_numbers:
+            amt += symbol
+        else:
+            asset += symbol
+
+    return (int(amt) if amt else 0), asset
+
+
+def debase64(s: str):
+    return base64.decodebytes(s.encode()).decode()
+
+
+def block_events(block):
+    try:
+        return block['data']['value']['result_end_block']['events']
+    except LookupError:
+        return []
