@@ -66,7 +66,7 @@ class Broadcaster:
         self.logger.info(f'{channel_info} became inactive!')
         channel_id = channel_info.channel_id
         if channel_id:
-            await self.deps.settings_manager.pause(channel_id)
+            await self.deps.settings_manager.make_inactive(channel_id)
             await self._user_registry.remove_users(channel_id)
 
     # noinspection PyBroadException

@@ -28,7 +28,7 @@ class PersonalPriceDivergenceNotifier(INotified):
         for user in users:
             settings = their_settings.get(user, {})
 
-            if bool(settings.get(NodeOpSetting.PAUSE_ALL_ON, False)):
+            if bool(settings.get(GeneralSettings.INACTIVE, False)):
                 continue  # paused
 
             min_percent = settings.get(SettingsProcessorPriceDivergence.KEY_MIN_PERCENT)

@@ -88,16 +88,16 @@ class SettingsManager(WithDelegates):
         else:
             await self.db.redis.delete(self.db_key_settings(channel_id))
 
-    def get_context(self, user_id):
+    def get_context(self, user_id) -> 'SettingsContext':
         return SettingsContext(self, user_id)
 
-    async def pause(self, user):
+    async def make_inactive(self, user):
         settings = await self.get_settings(user)
 
-        if bool(settings.get(NodeOpSetting.PAUSE_ALL_ON, False)):
+        if bool(settings.get(GeneralSettings.INACTIVE, False)):
             return  # skip those who paused all the events.
 
-        settings[NodeOpSetting.PAUSE_ALL_ON] = True
+        settings[GeneralSettings.INACTIVE] = True
         await self.set_settings(user, settings)
         self.logger.warning(f'Auto-paused alerts for {user}!')
 
@@ -132,14 +132,14 @@ class SettingsContext:
         del self._curr_settings[key]
 
     @property
-    def is_paused(self):
-        return bool(self._curr_settings.get(NodeOpSetting.PAUSE_ALL_ON, False))
+    def is_inactive(self):
+        return bool(self._curr_settings.get(GeneralSettings.INACTIVE, False))
 
-    def pause(self):
-        self[NodeOpSetting.PAUSE_ALL_ON] = True
+    def stop(self):
+        self[GeneralSettings.INACTIVE] = True
 
-    def unpause(self):
-        self[NodeOpSetting.PAUSE_ALL_ON] = False
+    def resume(self):
+        self[GeneralSettings.INACTIVE] = False
 
 
 class SettingsProcessorGeneralAlerts(INotified):
@@ -169,8 +169,11 @@ class SettingsProcessorGeneralAlerts(INotified):
         for channel in channels:
             settings = their_settings.get(channel, {})
 
-            if bool(settings.get(NodeOpSetting.PAUSE_ALL_ON, False)):
+            if bool(settings.get(GeneralSettings.INACTIVE, False)):
                 continue  # skip those who paused all the events.
+
+            if bool(settings.get(NodeOpSetting.PAUSE_ALL_ON, False)):
+                continue  # paused
 
             platform = SettingsManager.get_platform(settings)
             results.append(

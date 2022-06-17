@@ -38,6 +38,8 @@ class NodeOpSetting:
 
 
 class GeneralSettings:
+    INACTIVE = '_inactive'
+
     GENERAL_ALERTS = 'gen:alerts'
     PRICE_DIV_ALERTS = 'personal:price-div'
     VAR_PRICE_DIV_LAST_VALUE = 'personal:price-div:$last'

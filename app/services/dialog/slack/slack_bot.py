@@ -16,6 +16,7 @@ from services.lib.draw_utils import img_to_bio
 from services.lib.settings_manager import SettingsManager
 from services.lib.utils import class_logger
 from services.notify.channel import Messengers, CHANNEL_INACTIVE, MessageType, BoardMessage
+from services.notify.personal.helpers import NodeOpSetting, GeneralSettings
 
 
 class SlackBot:
@@ -131,18 +132,18 @@ class SlackBot:
     async def _pause_unpause(self, body, ack, say, pause):
         channel_id = body["channel_id"]
 
+        await ack()
+
         async with self._context(channel_id) as settings:
             if not settings:
                 await ack(self.get_localization(channel_id).TEXT_NOP_NEED_SETUP_SLACK)
                 return
 
-            await ack()
+            # activate the channel
+            settings.resume()
 
-            prev_paused = settings.is_paused
-            if pause:
-                settings.pause()
-            else:
-                settings.unpause()
+            prev_paused = bool(settings.get(NodeOpSetting.PAUSE_ALL_ON, False))
+            settings[NodeOpSetting.PAUSE_ALL_ON] = bool(pause)
 
             channel_name = self._infer_channel_name(body)
             text = self.get_localization(channel_id).text_nop_paused_slack(pause, prev_paused, channel_name)
@@ -165,6 +166,9 @@ class SlackBot:
                     username=body.get('user_name', 'user'),
                     channel_name=body.get('channel_name', '-'),
                 )
+
+                # activate the channel
+                settings.resume()
 
                 url = self._settings_manager.get_link(token)
 

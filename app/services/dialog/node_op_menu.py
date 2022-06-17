@@ -17,7 +17,7 @@ from services.lib.utils import parse_list_from_string, fuzzy_search
 from services.models.node_info import NodeInfo
 from services.models.node_watchers import NodeWatcherStorage
 from services.notify.channel import Messengers
-from services.notify.personal.helpers import NodeOpSetting, STANDARD_INTERVALS
+from services.notify.personal.helpers import NodeOpSetting, STANDARD_INTERVALS, GeneralSettings
 
 
 class NodeOpStates(StatesGroup):
@@ -52,6 +52,9 @@ class NodeOpDialog(DialogWithSettings):
         await NodeOpStates.MAIN_MENU.set()
 
         watch_list = await self._node_watcher.all_nodes_for_user(message.chat.id)
+
+        # activate the channel
+        self._settings[GeneralSettings.INACTIVE] = False
 
         inline_kbd = [
             [
@@ -106,6 +109,9 @@ class NodeOpDialog(DialogWithSettings):
             Messengers.TELEGRAM,
             query.from_user.username,
             query.from_user.full_name)
+
+        # activate the channel
+        self._settings[GeneralSettings.INACTIVE] = False
 
         url = settings_man.get_link(token)
 

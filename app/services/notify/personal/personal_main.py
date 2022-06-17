@@ -19,7 +19,7 @@ from services.notify.channel import BoardMessage
 from services.notify.personal.bond import BondTracker
 from services.notify.personal.chain_height import ChainHeightTracker
 from services.notify.personal.churning import NodeChurnTracker
-from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
+from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting, GeneralSettings
 from services.notify.personal.ip_addr import IpAddressTracker
 from services.notify.personal.node_online import NodeOnlineTracker
 from services.notify.personal.presence import PresenceTracker
@@ -178,6 +178,9 @@ class NodeChangePersonalNotifier(INotified):
             loc = await loc_man.get_from_db(user, self.deps.db)
 
             settings = settings_dic.get(user, {})
+
+            if bool(settings.get(GeneralSettings.INACTIVE, False)):
+                continue  # paused
 
             if bool(settings.get(NodeOpSetting.PAUSE_ALL_ON, False)):
                 continue  # paused
