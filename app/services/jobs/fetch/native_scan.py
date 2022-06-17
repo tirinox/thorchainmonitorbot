@@ -1,7 +1,7 @@
 import json
 from urllib.parse import urlparse, urlunparse
 
-from proto import NativeThorTx
+from proto import NativeThorTx, thor_decode_event
 from services.lib.delegates import WithDelegates
 from services.lib.utils import safe_get
 from services.lib.web_sockets import WSClient
@@ -27,8 +27,28 @@ class NativeScanner(WSClient, WithDelegates):
                          ping_timeout=self.PING_TIMEOUT,
                          sleep_time=self.SLEEP_TIME)
 
+
+class NativeScannerBlockEvents(NativeScanner):
     SUBSCRIBE_NEW_BLOCK = {"jsonrpc": "2.0", "method": "subscribe", "params": ["tm.event='NewBlock'"], "id": 1}
+
+    async def on_connected(self):
+        self.logger.info('Connected, subscribing to new data...')
+        await self.ws.send(json.dumps(self.SUBSCRIBE_NEW_BLOCK))
+
+    async def handle_wss_message(self, reply: dict):
+        block_events = safe_get(reply, 'result', 'data', 'value', 'result_end_block', 'events')
+
+        if block_events:
+            decoded_events = [thor_decode_event(e) for e in block_events]
+            await self.pass_data_to_listeners(decoded_events)
+
+
+class NativeScannerTX(NativeScanner):
     SUBSCRIBE_NEW_TX = {"jsonrpc": "2.0", "method": "subscribe", "params": ["tm.event='Tx'"], "id": 1}
+
+    async def on_connected(self):
+        self.logger.info('Connected, subscribing to new data...')
+        await self.ws.send(json.dumps(self.SUBSCRIBE_NEW_TX))
 
     async def handle_wss_message(self, reply: dict):
         block = safe_get(reply, 'result', 'data', 'value', 'block')
@@ -38,7 +58,3 @@ class NativeScanner(WSClient, WithDelegates):
             self.logger.info(f'Got block #{block_height} with {len(raw_txs)} transactions.')
             txs = [NativeThorTx.from_base64(item) for item in raw_txs]
             await self.pass_data_to_listeners(txs)
-
-    async def on_connected(self):
-        self.logger.info('Connected, subscribing to new data...')
-        await self.ws.send(json.dumps(self.SUBSCRIBE_NEW_BLOCK))

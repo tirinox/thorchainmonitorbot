@@ -1,6 +1,7 @@
 import base64
 import hashlib
 import inspect
+import typing
 
 import bech32
 import betterproto
@@ -87,3 +88,20 @@ def block_events(block):
         return block['data']['value']['result_end_block']['events']
     except LookupError:
         return []
+
+
+class DecodedEvent(typing.NamedTuple):
+    type: str
+    attributes: typing.Dict[str, str]
+
+
+def thor_decode_event(e) -> DecodedEvent:
+    decoded_attrs = {}
+    for attr in e['attributes']:
+        key = debase64(attr['key'])
+        value = debase64(attr['value'])
+        if key == 'amount':
+            amount, asset = thor_decode_amount_field(value)
+            value = amount, asset.upper()
+        decoded_attrs[key] = value
+    return DecodedEvent(e['type'], decoded_attrs)
