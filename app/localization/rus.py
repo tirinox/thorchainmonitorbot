@@ -159,8 +159,10 @@ class RussianLocalization(BaseLocalization):
         start_date = datetime.fromtimestamp(first_add_ts).strftime('%d.%m.%Y')
         return f'{ceil(total_days)} дн. ({start_date})'
 
+    TEXT_PLEASE_WAIT = '⏳ <b>Пожалуйста, подождите.</b>'
+
     def text_lp_loading_pools(self, address):
-        return f'⏳ <b>Пожалуйста, подождите.</b>\n' \
+        return f'{self.TEXT_PLEASE_WAIT}\n' \
                f'Идет загрузка пулов для адреса {pre(address)}...\n' \
                f'Иногда она может идти долго, если Midgard сильно нагружен.'
 

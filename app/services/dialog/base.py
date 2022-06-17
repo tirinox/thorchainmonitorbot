@@ -222,8 +222,10 @@ class BaseDialog(ABC):
         return self.deps.cfg.as_str('telegram.common.loading_sticker')
 
     async def answer_loading_sticker(self, message: Message, silent=True, remove_keyboard=False) -> Message:
-        return await message.answer_sticker(self.loading_sticker, disable_notification=silent,
-                                            reply_markup=ReplyKeyboardRemove() if remove_keyboard else None)
+        # return await message.answer_sticker(self.loading_sticker, disable_notification=silent,
+        #                                     reply_markup=ReplyKeyboardRemove() if remove_keyboard else None)
+        return await message.answer(self.loc.TEXT_PLEASE_WAIT, disable_notification=silent,
+                                    reply_markup=ReplyKeyboardRemove() if remove_keyboard else None)
 
     async def show_loading(self, message: Message):
         return await message.answer(self.loc.LOADING,

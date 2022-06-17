@@ -133,8 +133,8 @@ class BaseLocalization(ABC):  # == English
     BUTTON_VIEW_VALUE_ON = 'Show value: ON'
     BUTTON_VIEW_VALUE_OFF = 'Show value: OFF'
 
-    BUTTON_LP_PROT_ON = 'IL protection: ON'
-    BUTTON_LP_PROT_OFF = 'IL protection: OFF'
+    BUTTON_LP_PROT_ON = 'IL prot.: ON'
+    BUTTON_LP_PROT_OFF = 'IL prot.: OFF'
 
     BUTTON_TRACK_BALANCE_ON = 'Track balance: ON'
     BUTTON_TRACK_BALANCE_OFF = 'Track balance: OFF'
@@ -196,8 +196,10 @@ class BaseLocalization(ABC):  # == English
         day_count_str = 'days' if total_days >= 2 else 'day'
         return f'{ceil(total_days)} {day_count_str} ({start_date})'
 
+    TEXT_PLEASE_WAIT = '⏳ <b>Please wait...</b>'
+
     def text_lp_loading_pools(self, address):
-        return f'⏳ <b>Please wait.</b>\n' \
+        return f'{self.TEXT_PLEASE_WAIT}\n' \
                f'Loading pools information for {pre(address)}...'
 
     def address_urls(self, address):

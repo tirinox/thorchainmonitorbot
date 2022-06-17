@@ -34,12 +34,9 @@ class LPMenuStates(StatesGroup):
 
 
 class MyWalletsMenu(BaseDialog):
-    QUERY_VIEW_ADDRESS = 'view-addr'
     QUERY_REMOVE_ADDRESS = 'remove-addr'
     QUERY_SUMMARY_OF_ADDRESS = 'summary-addr'
-    QUERY_BACK_TO_ADDRESS_LIST = 'back-to-addr-list'
     QUERY_TOGGLE_VIEW_VALUE = 'toggle-view-value'
-    QUERY_VIEW_POOL = 'view-pool'
     QUERY_TOGGLE_LP_RPOT = 'toggle-lp-prot'
     QUERY_TOGGLE_BALANCE = 'toggle-balance'
 
@@ -143,12 +140,13 @@ class MyWalletsMenu(BaseDialog):
         self.data[self.KEY_IS_EXTERNAL] = external
 
         if reload_pools:
+            loading_message = None
             if edit:
                 await message.edit_text(text=self.loc.text_lp_loading_pools(address))
             else:
                 # message = await message.answer(text=self.loc.text_lp_loading_pools(address),
                 #                                reply_markup=kbd([self.loc.BUTTON_SM_BACK_MM]))
-                message = await message.answer(text=self.loc.text_lp_loading_pools(address),
+                loading_message = await message.answer(text=self.loc.text_lp_loading_pools(address),
                                                reply_markup=ReplyKeyboardRemove())
             try:
                 rune_yield = get_rune_yield_connector(self.deps)
@@ -156,6 +154,9 @@ class MyWalletsMenu(BaseDialog):
             except FileNotFoundError:
                 logging.error(f'not found pools for address {address}')
                 my_pools = []
+            finally:
+                if loading_message:
+                    await self.safe_delete(loading_message)
 
             self.data[self.KEY_MY_POOLS] = my_pools
 
@@ -184,7 +185,8 @@ class MyWalletsMenu(BaseDialog):
     def _keyboard_inside_wallet_menu(self) -> TelegramInlineList:
         external = self.data.get(self.KEY_IS_EXTERNAL, False)
         view_value = self.data.get(self.KEY_CAN_VIEW_VALUE, True)
-        lp_prot_on = self.data.get(self.KEY_ADD_LP_PROTECTION, True)
+        # lp_prot_on = self.data.get(self.KEY_ADD_LP_PROTECTION, True)
+        track_balance = self.data.get(self.KEY_TRACK_BALANCE, True)
         addr_idx = int(self.data.get(self.KEY_ACTIVE_ADDRESS_INDEX, 0))
         address = self.data.get(self.KEY_ACTIVE_ADDRESS)
         my_pools = self.data.get(self.KEY_MY_POOLS, [])
@@ -207,33 +209,25 @@ class MyWalletsMenu(BaseDialog):
             ]
         ]
 
-        # Track native Balance
-        if chain == Chains.THOR:
-            text = self.loc.BUTTON_TRACK_BALANCE_ON if lp_prot_on else self.loc.BUTTON_TRACK_BALANCE_OFF
-            text = self.text_new_feature(text, Features.F_PERSONAL_TRACK_BALANCE)
-            below_button_matrix += [
-                [
-                    InlineKeyboardButton(text, callback_data=self.QUERY_TOGGLE_BALANCE)
-                ]
-            ]
-
         # View value + Show IL protection
         if my_pools:
-            button_toggle_show_value = InlineKeyboardButton(
-                self.loc.BUTTON_VIEW_VALUE_ON if view_value else self.loc.BUTTON_VIEW_VALUE_OFF,
-                callback_data=self.QUERY_TOGGLE_VIEW_VALUE)
+            # button_toggle_lp_prot = InlineKeyboardButton(
+            #     self.loc.BUTTON_LP_PROT_ON if lp_prot_on else self.loc.BUTTON_LP_PROT_OFF,
+            #     callback_data=self.QUERY_TOGGLE_LP_RPOT
+            # )
 
-            button_toggle_lp_prot = InlineKeyboardButton(
-                self.loc.BUTTON_LP_PROT_ON if lp_prot_on else self.loc.BUTTON_LP_PROT_OFF,
-                callback_data=self.QUERY_TOGGLE_LP_RPOT
-            )
-
-            below_button_matrix += [
-                [
-                    button_toggle_show_value,
-                    button_toggle_lp_prot
-                ]
+            row = [
+                InlineKeyboardButton(
+                    self.loc.BUTTON_VIEW_VALUE_ON if view_value else self.loc.BUTTON_VIEW_VALUE_OFF,
+                    callback_data=self.QUERY_TOGGLE_VIEW_VALUE)
             ]
+
+            if chain == Chains.THOR:
+                text = self.loc.BUTTON_TRACK_BALANCE_ON if track_balance else self.loc.BUTTON_TRACK_BALANCE_OFF
+                text = self.text_new_feature(text, Features.F_PERSONAL_TRACK_BALANCE)
+                row.append(InlineKeyboardButton(text, callback_data=self.QUERY_TOGGLE_BALANCE))
+
+            below_button_matrix += [row]
 
         pool_labels = [(cut_long_text(pool), pool) for pool in my_pools]
 
@@ -267,24 +261,34 @@ class MyWalletsMenu(BaseDialog):
             await self._show_address_selection_menu(query.message, edit=True)
         elif result.result == result.SELECTED:
             await self.view_pool_report(query, result.selected_data_tag)
-            await self._on_selected_address(query, result)  # fixme: invalid list here! this is pool list, need address list!
+            await self._show_wallet_again(query)
+        elif query.data.startswith(f'{self.QUERY_SUMMARY_OF_ADDRESS}:'):
+            await self.view_address_summary(query)
+            await self._show_wallet_again(query)
         elif query.data.startswith(f'{self.QUERY_REMOVE_ADDRESS}:'):
             _, index = query.data.split(':')
             self._remove_address(index)
             await self._show_address_selection_menu(query.message, edit=True)
-        elif query.data.startswith(f'{self.QUERY_SUMMARY_OF_ADDRESS}:'):
-            await self.view_address_summary(query)  # fixme: invalid list here! this is pool list, need address list!
         elif query.data == self.QUERY_TOGGLE_VIEW_VALUE:
             self.data[self.KEY_CAN_VIEW_VALUE] = not self.data.get(self.KEY_CAN_VIEW_VALUE, True)
             await self._present_wallet_contents_menu(query.message, edit=True)
-        elif query.data == self.QUERY_TOGGLE_LP_RPOT:
-            self.data[self.KEY_ADD_LP_PROTECTION] = not self.data.get(self.KEY_ADD_LP_PROTECTION, True)
-            await self._present_wallet_contents_menu(query.message, edit=True)
+        # elif query.data == self.QUERY_TOGGLE_LP_RPOT:
+        #     self.data[self.KEY_ADD_LP_PROTECTION] = not self.data.get(self.KEY_ADD_LP_PROTECTION, True)
+        #     await self._present_wallet_contents_menu(query.message, edit=True)
         elif query.data == self.QUERY_TOGGLE_BALANCE:
             self.data[self.KEY_TRACK_BALANCE] = not self.data.get(self.KEY_TRACK_BALANCE, True)
             await self._present_wallet_contents_menu(query.message, edit=True)
 
+    async def _show_wallet_again(self, query: CallbackQuery):
+        address = self.data[self.KEY_ACTIVE_ADDRESS]
+        await self.show_pool_menu_for_address(query.message, address, edit=False)
+
     # --- LP Pic generation actions:
+
+    @property
+    def add_il_protection(self):
+        # return bool(self.data.get(self.KEY_ADD_LP_PROTECTION, True))
+        return True
 
     async def view_pool_report(self, query: CallbackQuery, pool):
         address = self.data[self.KEY_ACTIVE_ADDRESS]
@@ -294,7 +298,7 @@ class MyWalletsMenu(BaseDialog):
 
         # WORK...
         rune_yield = get_rune_yield_connector(self.deps)
-        rune_yield.add_il_protection_to_final_figures = bool(self.data.get(self.KEY_ADD_LP_PROTECTION, True))
+        rune_yield.add_il_protection_to_final_figures = self.add_il_protection
         lp_report = await rune_yield.generate_yield_report_single_pool(address, pool)
 
         # GENERATE A PICTURE
@@ -325,7 +329,7 @@ class MyWalletsMenu(BaseDialog):
 
         # WORK
         rune_yield = get_rune_yield_connector(self.deps)
-        rune_yield.add_il_protection_to_final_figures = bool(self.data.get(self.KEY_ADD_LP_PROTECTION, True))
+        rune_yield.add_il_protection_to_final_figures = self.add_il_protection
         yield_summary = await rune_yield.generate_yield_summary(address, my_pools)
 
         # GENERATE A PICTURE

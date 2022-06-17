@@ -9,6 +9,8 @@ from services.lib.constants import thor_to_float
 
 
 def pool_share(rune_depth, asset_depth, my_units, pool_total_units):
+    if not pool_total_units:
+        return 0, 0
     rune_share = (rune_depth * my_units) / pool_total_units
     asset_share = (asset_depth * my_units) / pool_total_units
     return rune_share, asset_share
