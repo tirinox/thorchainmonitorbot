@@ -13,6 +13,7 @@ from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.midgard.connector import MidgardConnector
+from services.lib.midgard.name_service import NameService
 from services.lib.settings_manager import SettingsManager
 from services.lib.utils import setup_logs
 from services.models.mimir import MimirHolder
@@ -21,6 +22,8 @@ from services.notify.broadcast import Broadcaster
 
 class LpAppFramework:
     def __init__(self, rune_yield_class=None, network=None, log_level=logging.DEBUG) -> None:
+        self.brief = None
+
         setup_logs(log_level)
         d = DepContainer()
         d.loop = asyncio.get_event_loop()
@@ -64,8 +67,11 @@ class LpAppFramework:
         )
         d.rune_market_fetcher = RuneMarketInfoFetcher(d)
 
+        d.name_service = NameService(d.db, d.cfg, d.midgard_connector)
+
         await d.db.get_redis()
 
+        brief = brief if self.brief is None else self.brief
         if brief:
             return
 
@@ -91,6 +97,10 @@ class LpAppFramework:
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         await self.close()
+
+    def __call__(self, brief=False):
+        self.brief = brief
+        return self
 
 
 class LpGenerator(LpAppFramework):

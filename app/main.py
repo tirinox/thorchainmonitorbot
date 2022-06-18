@@ -32,6 +32,7 @@ from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.midgard.connector import MidgardConnector
+from services.lib.midgard.name_service import NameService
 from services.lib.settings_manager import SettingsManager, SettingsProcessorGeneralAlerts
 from services.lib.utils import setup_logs
 from services.models.mimir import MimirHolder
@@ -111,6 +112,8 @@ class App:
             use_nodes=bool(cfg.get('use_nodes', True))
         )
         d.rune_market_fetcher = RuneMarketInfoFetcher(d)
+
+        d.name_service = NameService(d.db, d.cfg, d.midgard_connector)
 
     async def _some_sleep(self):
         sleep_interval = self.deps.cfg.as_float('sleep_before_start', 0)

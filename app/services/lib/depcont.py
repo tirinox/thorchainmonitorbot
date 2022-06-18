@@ -15,6 +15,7 @@ from services.dialog.twitter.twitter_bot import TwitterBot
 from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.midgard.connector import MidgardConnector
+from services.lib.midgard.name_service import NameService
 from services.lib.new_feature import NewFeatureManager, Features
 from services.lib.settings_manager import SettingsManager
 from services.models.mimir import MimirHolder
@@ -39,6 +40,8 @@ class DepContainer:
 
     thor_connector: Optional[ThorConnector] = None
     midgard_connector: Optional[MidgardConnector] = None
+
+    name_service: Optional[NameService] = None
 
     rune_market_fetcher = None  # type: 'RuneMarketInfoFetcher'
 

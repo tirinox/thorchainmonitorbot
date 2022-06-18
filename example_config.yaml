@@ -18,7 +18,7 @@ thor:
     tries: 3
     use_nodes: false
     public_url: "https://midgard.ninerealms.com/"
-#    public_url: "https://midgard.thorchain.info/"
+  #    public_url: "https://midgard.thorchain.info/"
 
   timeout: 2.0
 
@@ -75,7 +75,7 @@ slack:
     singing_secret: 1234567890abcdef
 
 
-twitter:  # (!) new
+twitter: # (!) new
   enabled: true
   is_mock: false
   bot:
@@ -123,10 +123,18 @@ node_op_tools:
 
 
 
-native_scanner:  # (!) new
+native_scanner: # (!) new
   enabled: true
 
-  known_addresses:
+  prohibited_addresses:
+    - "thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt"
+    - "thor17gw75axcnr8747pkanye45pnrwk7p9c3cqncsv"
+    - "thor1g98cy3n9mmjrpn0sxmn63lztelera37n8n67c0"
+
+
+names: # (!) new
+  use_thor_name: false
+  preconfig:
     "thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt": "Reserve"
     "thor17gw75axcnr8747pkanye45pnrwk7p9c3cqncsv": "Bond Module"
     "thor1lj62pg6ryxv2htekqx04nv7wd3g98qf9gfvamy": "Standby Reserve"
@@ -139,11 +147,6 @@ native_scanner:  # (!) new
     "thor1y5lk3rzatghv9y4s4j90qt9ayq83e2dpf2hvzc": "Vesting 9R"
     "thor1ty6h2ll07fqfzumphp6kq3hm4ps28xlm2l6kd6": "crypto.com"
     "thor1egxvam70a86jafa8gcg3kqfmfax3s0m2g3m754": "TreasuryLP"
-
-  prohibited_addresses:
-    - "thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt"
-    - "thor17gw75axcnr8747pkanye45pnrwk7p9c3cqncsv"
-    - "thor1g98cy3n9mmjrpn0sxmn63lztelera37n8n67c0"
 
 
 tx:
@@ -283,10 +286,10 @@ price:
     enabled: true
     cooldown: 12h
 
-    public:  # (!) new
+    public: # (!) new
       min_percent: 1.9
       max_percent: 5.5
-    personal:  # (!) new
+    personal: # (!) new
       enabled: true
       cooldown: 30m
 

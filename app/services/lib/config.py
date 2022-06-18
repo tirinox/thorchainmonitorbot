@@ -1,4 +1,5 @@
 import sys
+from typing import Any
 
 import yaml
 from aiothornode.env import ThorEnvironment, TEST_NET_ENVIRONMENT_MULTI_1, MCCN
@@ -45,7 +46,7 @@ class SubConfig:
             else:
                 raise
 
-    def get_pure(self, path=None, default=None) -> 'SubConfig':
+    def get_pure(self, path=None, default=None) -> Any:
         return self.get(path, default, pure=True)
 
     def as_int(self, path: str = None, default=None):

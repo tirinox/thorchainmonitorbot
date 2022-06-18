@@ -46,8 +46,7 @@ async def my_test_circulating(lp_app: LpAppFramework):
 
 async def main():
     lp_app = LpAppFramework(log_level=logging.INFO)
-    async with lp_app:
-        await lp_app.prepare(brief=True)
+    async with lp_app(brief=True):
         # await my_test_circulating(lp_app)
         await my_test_circulating_telegram(lp_app)
 
