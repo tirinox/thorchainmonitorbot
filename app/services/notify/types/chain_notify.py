@@ -9,6 +9,8 @@ from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
 
+EXCLUDE_CHAINS_FROM_HALTED = ('TERRA',)
+
 
 class TradingHaltedNotifier(INotified):
     def __init__(self, deps: DepContainer):
@@ -25,6 +27,9 @@ class TradingHaltedNotifier(INotified):
         # data = self._dbg_randomize_chain_dic_halted(data)
 
         changed_chains = []
+
+        # do not show Excluded chains
+        data = {chain: v for chain, v in data.items() if chain not in EXCLUDE_CHAINS_FROM_HALTED}
 
         self.deps.chain_info = data
 
@@ -50,6 +55,10 @@ class TradingHaltedNotifier(INotified):
     def _update_global_state(self, chain, is_halted):
         if chain:
             halted_set = self.deps.halted_chains
+
+            if chain in EXCLUDE_CHAINS_FROM_HALTED:
+                is_halted = False  # do not show it
+
             if is_halted:
                 halted_set.add(chain)
             elif chain in halted_set:
