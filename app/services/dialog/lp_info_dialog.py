@@ -61,11 +61,15 @@ class MyWalletsMenu(BaseDialog):
         # add an address
         address = message.text.strip()
         if address:
-            if LPAddress.validate_address(address):
-                self._add_address(address, Chains.BNB)
-            else:
-                await message.answer(code(self.loc.TEXT_INVALID_ADDRESS),
-                                     disable_notification=True)
+            if not LPAddress.validate_address(address):
+                await message.answer(self.loc.TEXT_INVALID_ADDRESS, disable_notification=True)
+                return
+
+            if address.lower() in self.prohibited_addresses:
+                await message.answer(self.loc.TEXT_CANNOT_ADD, disable_notification=True)
+                return
+
+            self._add_address(address, Chains.BNB)
 
     @property
     def my_addresses(self):
@@ -356,3 +360,8 @@ class MyWalletsMenu(BaseDialog):
                 return await self.deps.thor_connector.query_balance(address)
             except Exception:
                 pass
+
+    @property
+    def prohibited_addresses(self):
+        addresses = self.deps.cfg.get_pure('native_scanner.prohibited_addresses')
+        return addresses if isinstance(addresses, list) else []

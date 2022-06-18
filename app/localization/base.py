@@ -120,7 +120,7 @@ class BaseLocalization(ABC):  # == English
     BUTTON_MM_MAKE_AVATAR = f'🦹‍️️ THOR avatar'
     BUTTON_MM_NODE_OP = '🤖 NodeOp tools'
 
-    # ------- MY LIQUIDITY INFO MENU -------
+    # ------- MY WALLETS MENU -------
 
     BUTTON_SM_ADD_ADDRESS = '➕ Add an address'
     BUTTON_BACK = '🔙 Back'
@@ -148,6 +148,8 @@ class BaseLocalization(ABC):  # == English
     TEXT_SELECT_ADDRESS_SEND_ME = 'If you want to add one more, please send me it. 👇'
     TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS = "📪 <b>This address doesn't participate in any liquidity pools.</b> " \
                                         "Please choose another one or add new."
+
+    TEXT_CANNOT_ADD = '😐 Sorry, but you cannot add this address.'
 
     def text_lp_img_caption(self):
         bot_link = "@" + self.this_bot_name

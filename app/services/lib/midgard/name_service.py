@@ -18,7 +18,11 @@ class NameService:
         if address in self._known_address:
             return self._known_address[address]
         # todo lookup!
-        # 1)
+        # 1) read thornames from Database
+        # 2) if any and not expired => return it
+        # 3) if not or expired:
+        # 4) use thor_name_reversed_lookup => [names]
+        # 5) thor_name_lookup(names[0]) if names else None
 
     async def thor_name_lookup(self, name: str) -> Optional[THORName]:
         results = await self.midgard.request_random_midgard(f'/thorname/lookup/{name}')

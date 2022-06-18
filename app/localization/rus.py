@@ -84,7 +84,7 @@ class RussianLocalization(BaseLocalization):
     BUTTON_MM_MAKE_AVATAR = f'🦹‍️️ Сделай аву'
     BUTTON_MM_NODE_OP = '🤖 Операторам нод'
 
-    # ------ LP INFO -----
+    # ------ MY WALLETS MENU -----
 
     BUTTON_SM_ADD_ADDRESS = '➕ Добавить новый адрес'
     BUTTON_BACK = '🔙 Назад'
@@ -112,6 +112,8 @@ class RussianLocalization(BaseLocalization):
     TEXT_SELECT_ADDRESS_SEND_ME = 'Если хотите добавить адрес, пришлите его мне 👇'
     TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS = '📪 <b>На этом адресе нет пулов ликвидности.</b> ' \
                                         'Выберите другой адрес или добавьте новый.'
+
+    TEXT_CANNOT_ADD = '😐 Простите, но вы не можете добавить этот адрес.'
 
     def text_lp_img_caption(self):
         bot_link = "@" + self.this_bot_name
