@@ -7,17 +7,18 @@ from aiogram.utils.exceptions import MessageNotModified
 from aiogram.utils.helper import HelperMode
 
 from localization import BaseLocalization
-from services.dialog.base import BaseDialog, message_handler, query_handler, DialogWithSettings
+from services.dialog.base import message_handler, query_handler, DialogWithSettings
+from services.dialog.telegram.inline_list import TelegramInlineList
 from services.jobs.node_churn import NodeStateDatabase
 from services.lib.date_utils import parse_timespan_to_seconds, HOUR
 from services.lib.depcont import DepContainer
-from services.dialog.telegram.inline_list import TelegramInlineList
+from services.lib.settings_manager import SettingsContext
 from services.lib.texts import join_as_numbered_list, grouper
 from services.lib.utils import parse_list_from_string, fuzzy_search
 from services.models.node_info import NodeInfo
 from services.models.node_watchers import NodeWatcherStorage
 from services.notify.channel import Messengers
-from services.notify.personal.helpers import NodeOpSetting, STANDARD_INTERVALS, GeneralSettings
+from services.notify.personal.helpers import NodeOpSetting, STANDARD_INTERVALS
 
 
 class NodeOpStates(StatesGroup):
@@ -54,7 +55,7 @@ class NodeOpDialog(DialogWithSettings):
         watch_list = await self._node_watcher.all_nodes_for_user(message.chat.id)
 
         # activate the channel
-        self._settings[GeneralSettings.INACTIVE] = False
+        SettingsContext.resume_s(self._settings)
 
         inline_kbd = [
             [
@@ -111,7 +112,7 @@ class NodeOpDialog(DialogWithSettings):
             query.from_user.full_name)
 
         # activate the channel
-        self._settings[GeneralSettings.INACTIVE] = False
+        SettingsContext.resume_s(self._settings)
 
         url = settings_man.get_link(token)
 

@@ -92,14 +92,10 @@ class SettingsManager(WithDelegates):
         return SettingsContext(self, user_id)
 
     async def make_inactive(self, user):
-        settings = await self.get_settings(user)
-
-        if bool(settings.get(GeneralSettings.INACTIVE, False)):
-            return  # skip those who paused all the events.
-
-        settings[GeneralSettings.INACTIVE] = True
-        await self.set_settings(user, settings)
-        self.logger.warning(f'Auto-paused alerts for {user}!')
+        async with self.get_context(user) as context:
+            if not context.is_inactive:
+                context.stop()
+            self.logger.warning(f'Auto-paused alerts for {user}! It is marked as "Inactive" now!')
 
 
 class SettingsContext:
@@ -136,10 +132,18 @@ class SettingsContext:
         return bool(self._curr_settings.get(GeneralSettings.INACTIVE, False))
 
     def stop(self):
-        self[GeneralSettings.INACTIVE] = True
+        self.stop_s(self._curr_settings)
 
     def resume(self):
-        self[GeneralSettings.INACTIVE] = False
+        self.resume_s(self._curr_settings)
+
+    @staticmethod
+    def stop_s(settings):
+        settings[GeneralSettings.INACTIVE] = True
+
+    @staticmethod
+    def resume_s(settings):
+        settings[GeneralSettings.INACTIVE] = False
 
 
 class SettingsProcessorGeneralAlerts(INotified):

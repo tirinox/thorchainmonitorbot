@@ -7,8 +7,8 @@ from services.lib.settings_manager import SettingsManager
 from services.lib.utils import class_logger
 from services.models.node_watchers import AlertWatchers
 from services.models.price import RuneMarketInfo
-from services.notify.channel import ChannelDescriptor, BoardMessage, Messengers
-from services.notify.personal.helpers import GeneralSettings, NodeOpSetting
+from services.notify.channel import ChannelDescriptor, BoardMessage
+from services.notify.personal.helpers import GeneralSettings
 
 
 class PersonalPriceDivergenceNotifier(INotified):
@@ -58,15 +58,6 @@ class PersonalPriceDivergenceNotifier(INotified):
             ChannelDescriptor(SettingsManager.get_platform(settings), user),
             BoardMessage(text)
         )
-
-    async def _dbg_test(self, rune_market_info: RuneMarketInfo):
-        loc_man = self.deps.loc_man
-        text = loc_man.default.notification_text_price_divergence(rune_market_info, normal=False)
-        task = self.deps.broadcaster.safe_send_message(
-            ChannelDescriptor(Messengers.TELEGRAM, '192398802'),
-            BoardMessage(text)
-        )
-        asyncio.create_task(task)
 
 
 class SettingsProcessorPriceDivergence(INotified):

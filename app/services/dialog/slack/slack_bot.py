@@ -16,7 +16,7 @@ from services.lib.draw_utils import img_to_bio
 from services.lib.settings_manager import SettingsManager
 from services.lib.utils import class_logger
 from services.notify.channel import Messengers, CHANNEL_INACTIVE, MessageType, BoardMessage
-from services.notify.personal.helpers import NodeOpSetting, GeneralSettings
+from services.notify.personal.helpers import NodeOpSetting
 
 
 class SlackBot:
