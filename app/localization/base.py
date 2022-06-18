@@ -1371,7 +1371,7 @@ class BaseLocalization(ABC):  # == English
                     f"to {new_value_fmt}‼️"
                 )
                 if change.entry.automatic:
-                    text += f' at block #{ital(change.new_value)}.'
+                    text += f' at block #{ital(change.non_zero_value)}.'
             text += '\n\n'
 
         text += link(self.MIMIR_DOC_LINK, "What is Mimir?")

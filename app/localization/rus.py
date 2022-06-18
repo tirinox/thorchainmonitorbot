@@ -1123,7 +1123,7 @@ class RussianLocalization(BaseLocalization):
                     f'новое значение теперь: {new_value_fmt}‼️'
                 )
                 if change.entry.automatic:
-                    text += f' (на блоке #{ital(change.new_value)}).'
+                    text += f' (на блоке #{ital(change.non_zero_value)}).'
             text += '\n\n'
 
         text += link("https://docs.thorchain.org/how-it-works/governance#mimir", "Что такое Mimir?")
