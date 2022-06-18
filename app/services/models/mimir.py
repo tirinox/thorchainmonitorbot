@@ -173,7 +173,11 @@ class MimirChange(BaseModelMixin):
         o, n = int(self.old_value), int(self.new_value)
         is_admin = (o == ADMIN_VALUE and n == 0) or (o == 0 and n == ADMIN_VALUE)
         return self.entry.automated and not is_admin
-    
+
+    @property
+    def non_zero_value(self):
+        return self.new_value if self.new_value != 0 else self.old_value
+
 
 class MimirHolder:
     def __init__(self) -> None:
