@@ -4,6 +4,11 @@ from services.models.node_watchers import AlertWatchers
 from services.notify.personal.helpers import GeneralSettings
 
 
+class PersonalBalanceNotifier(INotified):
+    async def on_data(self, sender, data):
+        pass
+
+
 class SettingsProcessorBalanceTracker(INotified):
     def __init__(self, alert_watcher: AlertWatchers):
         self.alert_watcher = alert_watcher

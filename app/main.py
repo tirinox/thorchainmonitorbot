@@ -18,6 +18,7 @@ from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
 from services.jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from services.jobs.fetch.last_block import LastBlockFetcher
+from services.jobs.fetch.native_scan import NativeScannerBlockEvents
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher, PoolInfoFetcherMidgard
@@ -39,7 +40,7 @@ from services.models.price import LastPriceHolder
 from services.models.tx import ThorTxType
 from services.notify.alert_presenter import AlertPresenter
 from services.notify.broadcast import Broadcaster
-from services.notify.personal.balance import SettingsProcessorBalanceTracker
+from services.notify.personal.balance import SettingsProcessorBalanceTracker, PersonalBalanceNotifier
 from services.notify.personal.personal_main import NodeChangePersonalNotifier
 from services.notify.personal.price_divergence import PersonalPriceDivergenceNotifier, SettingsProcessorPriceDivergence
 from services.notify.types.bep2_notify import BEP2MoveNotifier
@@ -96,7 +97,8 @@ class App:
 
     async def create_thor_node_connector(self):
         d = self.deps
-        d.thor_connector = ThorConnector(d.cfg.get_thor_env_by_network_id(), d.session)
+        d.thor_env = d.cfg.get_thor_env_by_network_id()
+        d.thor_connector = ThorConnector(d.thor_env, d.session)
         await d.thor_connector.update_nodes()
 
         cfg: SubConfig = d.cfg.get('thor.midgard')
@@ -279,6 +281,12 @@ class App:
             fetcher_bep2.subscribe(d.bep2_move_notifier)
             d.bep2_move_notifier.subscribe(d.alert_presenter)
             tasks.append(fetcher_bep2)
+
+        if d.cfg.get('native_scanner.enabled', True):
+            scanner = NativeScannerBlockEvents(d.thor_env.rpc_url)
+            tasks.append(scanner)
+            balance_notifier = PersonalBalanceNotifier()
+            scanner.subscribe(balance_notifier)
 
         # --- BOTS
 

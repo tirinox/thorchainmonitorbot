@@ -7,6 +7,7 @@ import aiohttp
 import ujson
 from aiohttp import ClientSession, ClientTimeout
 from aiothornode.connector import ThorConnector
+from aiothornode.env import ThorEnvironment
 from aiothornode.types import ThorChainInfo
 
 from services.dialog.telegram.telegram import TelegramBot
@@ -32,6 +33,7 @@ class DepContainer:
     loc_man = None  # type: 'LocalizationManager'
     broadcaster = None  # type: 'Broadcaster'
     alert_presenter = None
+    thor_env: ThorEnvironment = ThorEnvironment()
 
     session: Optional[ClientSession] = None
 

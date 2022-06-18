@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 from services.jobs.fetch.native_scan import NativeScannerTX, NativeScannerBlockEvents
-from services.jobs.transfer_detector import RuneTransferDetector
+from services.jobs.transfer_detector import RuneTransferDetectorNativeTX, RuneTransferDetectorBlockEvents
 from services.lib.config import Config
 from services.lib.delegates import INotified
 from services.lib.utils import setup_logs, sep
@@ -18,7 +18,7 @@ class Receiver(INotified):
 
 async def t_tx_scanner(url):
     scanner = NativeScannerTX(url)
-    detector = RuneTransferDetector()
+    detector = RuneTransferDetectorNativeTX()
     scanner.subscribe(detector)
     detector.subscribe(Receiver())
     await scanner.run()
@@ -26,7 +26,9 @@ async def t_tx_scanner(url):
 
 async def t_block_scanner(url):
     scanner = NativeScannerBlockEvents(url)
-    scanner.subscribe(Receiver())
+    detector = RuneTransferDetectorBlockEvents()
+    scanner.subscribe(detector)
+    detector.subscribe(Receiver())
     await scanner.run()
 
 
