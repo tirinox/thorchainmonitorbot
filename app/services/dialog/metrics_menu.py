@@ -2,7 +2,7 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import *
 from aiogram.utils.helper import HelperMode
 
-from localization import BaseLocalization
+from localization.manager import BaseLocalization
 from services.dialog.base import BaseDialog, message_handler
 from services.dialog.picture.block_height_picture import block_speed_chart
 from services.dialog.picture.node_geo_picture import node_geo_pic

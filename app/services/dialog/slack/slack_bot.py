@@ -9,7 +9,7 @@ from slack_bolt.oauth.async_oauth_settings import AsyncOAuthSettings
 from slack_sdk.oauth.installation_store import FileInstallationStore
 from slack_sdk.oauth.state_store import FileOAuthStateStore
 
-from localization import LocalizationManager, BaseLocalization
+from localization.manager import LocalizationManager, BaseLocalization
 from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.draw_utils import img_to_bio

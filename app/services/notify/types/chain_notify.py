@@ -4,7 +4,7 @@ from typing import Dict
 
 from aiothornode.types import ThorChainInfo
 
-from localization import BaseLocalization
+from localization.manager import BaseLocalization
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger

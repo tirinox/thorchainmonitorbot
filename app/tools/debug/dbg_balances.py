@@ -2,7 +2,7 @@
 import asyncio
 import logging
 
-from localization import BaseLocalization
+from localization.manager import BaseLocalization
 from services.lib.utils import sep
 from tools.lib.lp_common import LpAppFramework
 

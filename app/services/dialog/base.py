@@ -9,7 +9,7 @@ from aiogram.dispatcher.storage import FSMContextProxy, FSMContext
 from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove, InlineQuery
 from aiogram.utils.exceptions import MessageCantBeDeleted, MessageToEditNotFound, MessageToDeleteNotFound
 
-from localization import BaseLocalization
+from localization.manager import BaseLocalization
 from localization.base import CREATOR_TG
 from services.lib.depcont import DepContainer
 from services.lib.texts import code

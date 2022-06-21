@@ -2,7 +2,7 @@ import json
 
 from aiothornode.types import ThorMimir
 
-from localization import BaseLocalization
+from localization.manager import BaseLocalization
 from services.lib.delegates import INotified
 from services.jobs.fetch.const_mimir import ConstMimirFetcher, MimirTuple
 from services.lib.date_utils import now_ts

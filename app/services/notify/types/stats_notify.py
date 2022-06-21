@@ -1,4 +1,4 @@
-from localization import BaseLocalization
+from localization.manager import BaseLocalization
 from services.lib.delegates import INotified
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import DAY, parse_timespan_to_seconds, MINUTE

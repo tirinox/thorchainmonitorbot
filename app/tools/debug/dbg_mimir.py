@@ -1,6 +1,6 @@
 import asyncio
 
-from localization import LocalizationManager
+from localization.manager import LocalizationManager
 from tools.lib.lp_common import LpAppFramework
 
 

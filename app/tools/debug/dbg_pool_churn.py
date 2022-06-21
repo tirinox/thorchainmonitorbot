@@ -7,7 +7,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.types import ParseMode
 from aiothornode.connector import ThorConnector
 
-from localization import LocalizationManager
+from localization.manager import LocalizationManager
 from services.jobs.fetch.pool_price import PoolPriceFetcher, PoolInfoFetcherMidgard
 from services.lib.config import Config
 from services.lib.constants import DOGE_SYMBOL

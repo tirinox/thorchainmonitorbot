@@ -6,7 +6,7 @@ from aiogram.types import Message, CallbackQuery, InlineKeyboardButton, InlineKe
 from aiogram.utils.exceptions import MessageNotModified
 from aiogram.utils.helper import HelperMode
 
-from localization import BaseLocalization
+from localization.manager import BaseLocalization
 from services.dialog.base import message_handler, query_handler, DialogWithSettings
 from services.dialog.telegram.inline_list import TelegramInlineList
 from services.jobs.node_churn import NodeStateDatabase

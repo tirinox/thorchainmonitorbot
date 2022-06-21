@@ -3,7 +3,7 @@ from typing import Optional
 
 from aioredis import Redis
 
-from localization import BaseLocalization
+from localization.manager import BaseLocalization
 from services.lib.delegates import INotified
 from services.jobs.fetch.pool_price import PoolInfoFetcherMidgard
 from services.lib.cooldown import Cooldown

@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from localization import BaseLocalization
+from localization.manager import BaseLocalization
 from services.jobs.fetch.bep2_move import BEP2BlockFetcher, BinanceOrgDexWSSClient
 from services.models.transfer import RuneTransfer
 from services.notify.types.bep2_notify import BEP2MoveNotifier

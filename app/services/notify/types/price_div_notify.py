@@ -1,4 +1,4 @@
-from localization import BaseLocalization
+from localization.manager import BaseLocalization
 from services.lib.delegates import INotified
 from services.lib.config import SubConfig
 from services.lib.cooldown import CooldownBiTrigger

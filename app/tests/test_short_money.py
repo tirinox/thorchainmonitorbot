@@ -1,4 +1,4 @@
-from localization import RussianLocalization
+from localization.manager import RussianLocalization
 from services.lib.money import short_money, short_dollar
 
 

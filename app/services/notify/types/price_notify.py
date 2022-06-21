@@ -1,7 +1,7 @@
 import asyncio
 import time
 
-from localization import BaseLocalization
+from localization.manager import BaseLocalization
 from services.dialog.picture.price_picture import price_graph_from_db
 from services.lib.constants import RUNE_SYMBOL_POOL
 from services.lib.cooldown import CooldownSingle

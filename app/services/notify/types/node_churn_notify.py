@@ -1,4 +1,4 @@
-from localization import BaseLocalization
+from localization.manager import BaseLocalization
 from services.dialog.picture.node_geo_picture import node_geo_pic
 from services.lib.delegates import INotified
 from services.jobs.fetch.node_info import NodeInfoFetcher

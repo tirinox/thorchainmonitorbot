@@ -5,7 +5,7 @@ from copy import copy
 
 from semver import VersionInfo
 
-from localization import LocalizationManager
+from localization.manager import LocalizationManager
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.lib.utils import setup_logs, sep
 from services.models.node_info import NodeSetChanges, NodeVersionConsensus

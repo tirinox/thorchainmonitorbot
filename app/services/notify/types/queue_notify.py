@@ -1,6 +1,6 @@
 import logging
 
-from localization import BaseLocalization
+from localization.manager import BaseLocalization
 from services.dialog.picture.queue_picture import queue_graph, QUEUE_TIME_SERIES
 from services.lib.delegates import INotified
 from services.jobs.fetch.queue import QueueInfo

@@ -5,7 +5,7 @@ from collections import defaultdict
 from functools import reduce
 from typing import List
 
-from localization import LocalizationManager
+from localization.manager import LocalizationManager
 from services.lib.date_utils import now_ts, parse_timespan_to_seconds
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer

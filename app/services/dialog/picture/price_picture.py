@@ -1,4 +1,4 @@
-from localization import BaseLocalization
+from localization.manager import BaseLocalization
 from services.lib.constants import RUNE_SYMBOL_DET, RUNE_SYMBOL_POOL, RUNE_SYMBOL_CEX
 from services.lib.date_utils import DAY, today_str
 from services.lib.db import DB

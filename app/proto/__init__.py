@@ -29,9 +29,9 @@ THORCHAIN_MESSAGES_MAP = register_thorchain_messages()
 
 
 class NativeThorTx:
-    def __init__(self, tx: Tx, hash: str = ''):
+    def __init__(self, tx: Tx, tx_hash: str = ''):
         self.tx = tx
-        self.hash = hash
+        self.hash = tx_hash
 
     @classmethod
     def from_bytes(cls, data: bytes):

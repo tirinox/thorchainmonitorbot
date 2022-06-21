@@ -3,7 +3,7 @@ from typing import List, NamedTuple
 from aioredis import Redis
 from semver import VersionInfo
 
-from localization import BaseLocalization
+from localization.manager import BaseLocalization
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.config import SubConfig
 from services.lib.cooldown import Cooldown

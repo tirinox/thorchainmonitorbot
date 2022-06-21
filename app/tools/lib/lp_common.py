@@ -3,7 +3,7 @@ import logging
 
 from aiothornode.connector import ThorConnector
 
-from localization import LocalizationManager
+from localization.manager import LocalizationManager
 from services.dialog.telegram.telegram import telegram_send_message_basic, TG_TEST_USER, TelegramBot
 from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.jobs.fetch.fair_price import RuneMarketInfoFetcher

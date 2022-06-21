@@ -9,7 +9,7 @@ from aiogram import Bot, Dispatcher
 from aiogram.types import ParseMode
 from aiothornode.types import ThorPool
 
-from localization import BaseLocalization
+from localization.manager import BaseLocalization
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.lib.date_utils import DAY

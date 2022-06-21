@@ -4,8 +4,8 @@ import os
 
 from aiothornode.connector import ThorConnector
 
-from localization import LocalizationManager
-from services.dialog import init_dialogs
+from localization.manager import LocalizationManager
+from services.dialog.main import init_dialogs
 from services.dialog.discord.discord_bot import DiscordBot
 from services.dialog.slack.slack_bot import SlackBot
 from services.dialog.telegram.sticker_downloader import TelegramStickerDownloader

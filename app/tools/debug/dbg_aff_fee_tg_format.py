@@ -1,7 +1,7 @@
 import asyncio
 import random
 
-from localization import BaseLocalization
+from localization.manager import BaseLocalization
 from services.jobs.fetch.tx import merge_affiliate_txs
 from services.lib.midgard.connector import MidgardConnector
 from services.lib.midgard.parser import get_parser_by_network_id

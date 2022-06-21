@@ -5,7 +5,7 @@ from typing import List
 
 from PIL import Image, ImageDraw, ImageFont
 
-from localization import BaseLocalization
+from localization.manager import BaseLocalization
 from services.dialog.picture.crypto_logo import CryptoLogoDownloader
 from services.lib.constants import BNB_RUNE_SYMBOL, is_rune, RUNE_SYMBOL
 from services.lib.draw_utils import CATEGORICAL_PALETTE, pos_percent, result_color, hor_line, LIGHT_TEXT_COLOR

@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from localization import BaseLocalization, RussianLocalization
+from localization.manager import BaseLocalization, RussianLocalization
 from services.dialog.picture.block_height_picture import block_speed_chart
 from services.lib.delegates import INotified
 from services.jobs.fetch.last_block import LastBlockFetcher

@@ -15,7 +15,7 @@ from services.lib.date_utils import today_str
 from services.lib.draw_utils import img_to_bio
 from services.lib.money import short_address
 from services.lib.new_feature import Features
-from services.lib.texts import code, kbd, cut_long_text
+from services.lib.texts import kbd, cut_long_text
 from services.models.lp_info import LPAddress
 
 

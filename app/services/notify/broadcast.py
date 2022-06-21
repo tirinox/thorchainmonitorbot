@@ -3,7 +3,7 @@ import random
 import time
 from typing import List
 
-from localization import LocalizationManager
+from localization.manager import LocalizationManager
 from services.lib.depcont import DepContainer
 from services.lib.utils import copy_photo, class_logger
 from services.notify.channel import Messengers, ChannelDescriptor, CHANNEL_INACTIVE, MessageType, BoardMessage

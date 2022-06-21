@@ -1,6 +1,6 @@
 import pandas as pd
 
-from localization import BaseLocalization
+from localization.manager import BaseLocalization
 from services.lib.draw_utils import CATEGORICAL_PALETTE, img_to_bio
 from services.lib.date_utils import ts_event_points_to_pandas, DAY, today_str
 from services.lib.depcont import DepContainer

@@ -3,7 +3,7 @@ from uuid import uuid4
 
 from aiogram.types import InlineQuery, InputTextMessageContent, InlineQueryResultArticle, InlineQueryResultCachedPhoto
 
-from localization import BaseLocalization
+from localization.manager import BaseLocalization
 from services.dialog.base import BaseDialog, inline_bot_handler
 from services.dialog.picture.lp_picture import lp_pool_picture
 from services.dialog.picture.price_picture import price_graph_from_db

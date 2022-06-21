@@ -1,6 +1,6 @@
 import json
 
-from localization import BaseLocalization
+from localization.manager import BaseLocalization
 from services.lib.delegates import INotified
 from services.lib.db import DB
 from services.lib.depcont import DepContainer

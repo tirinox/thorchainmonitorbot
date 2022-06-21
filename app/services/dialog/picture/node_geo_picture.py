@@ -5,7 +5,7 @@ from typing import List, Tuple
 
 from PIL import ImageDraw, Image, ImageFont
 
-import localization
+from localization.base import BaseLocalization
 from services.lib.draw_utils import generate_gradient, draw_arc_aa, get_palette_color_by_index, LIGHT_TEXT_COLOR, \
     hls_transform_hex
 from services.lib.plot_graph import PlotGraph
@@ -16,7 +16,7 @@ from services.models.node_info import NetworkNodeIpInfo
 NODE_GEO_PIC_WIDTH, NODE_GEO_PIC_HEIGHT = 800, 720
 
 
-async def node_geo_pic(info: NetworkNodeIpInfo, loc: localization.BaseLocalization, max_categories=5):
+async def node_geo_pic(info: NetworkNodeIpInfo, loc: BaseLocalization, max_categories=5):
     return await node_geo_pic_sync(info, loc, max_categories)
 
 
@@ -141,7 +141,7 @@ def geo_legend(draw: ImageDraw, elements: List[str], xy, font, width=400, sq_siz
 
 
 @async_wrap
-def node_geo_pic_sync(info: NetworkNodeIpInfo, loc: localization.BaseLocalization, max_categories=3):
+def node_geo_pic_sync(info: NetworkNodeIpInfo, loc: BaseLocalization, max_categories=3):
     w, h = NODE_GEO_PIC_WIDTH, NODE_GEO_PIC_HEIGHT
     image = generate_gradient(PlotGraph.GRADIENT_TOP_COLOR, PlotGraph.GRADIENT_BOTTOM_COLOR, w, h)
 

@@ -1,6 +1,6 @@
 import json
 
-from localization import BaseLocalization
+from localization.manager import BaseLocalization
 from services.lib.delegates import INotified, WithDelegates
 from services.jobs.fetch.const_mimir import ConstMimirFetcher, MimirTuple
 from services.lib.cooldown import Cooldown

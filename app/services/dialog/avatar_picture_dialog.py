@@ -10,7 +10,7 @@ from aiogram.types import Message, PhotoSize, InlineKeyboardButton, InlineKeyboa
 from aiogram.types.mixins import Downloadable
 from aiogram.utils.helper import HelperMode
 
-from localization import BaseLocalization
+from localization.manager import BaseLocalization
 from services.dialog.base import BaseDialog, message_handler, query_handler
 from services.dialog.lp_info_dialog import ContentTypes, CallbackQuery
 from services.dialog.picture.avatar import make_avatar

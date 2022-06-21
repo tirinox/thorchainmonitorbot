@@ -1,4 +1,4 @@
-from localization import BaseLocalization
+from localization.manager import BaseLocalization
 from services.lib.date_utils import today_str
 from services.lib.draw_utils import img_to_bio
 from services.lib.plot_graph import PlotGraphLines

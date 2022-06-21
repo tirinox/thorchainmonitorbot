@@ -2,7 +2,7 @@ import asyncio
 import logging
 import time
 
-from localization import BaseLocalization
+from localization.manager import BaseLocalization
 from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
 from services.lib.utils import sep
 from tools.lib.lp_common import LpAppFramework
