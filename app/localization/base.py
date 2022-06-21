@@ -558,7 +558,7 @@ class BaseLocalization(ABC):  # == English
     # ------- POOL CHURN -------
 
     def pool_url(self, pool_name):
-        if self.cfg.network_id == NetworkIdents.CHAOSNET_MULTICHAIN:
+        if self.cfg.network_id == NetworkIdents.MAINNET:
             return f'https://app.thorswap.finance/pool/{pool_name}'
         else:
             name = Asset.from_string(pool_name).full_name

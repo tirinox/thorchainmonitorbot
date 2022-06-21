@@ -2,7 +2,7 @@ import sys
 from typing import Any
 
 import yaml
-from aiothornode.env import ThorEnvironment, TEST_NET_ENVIRONMENT_MULTI_1, MCCN
+from aiothornode.env import ThorEnvironment, TEST_NET_ENVIRONMENT_MULTI_1, MCCN, MULTICHAIN_STAGENET_ENVIRONMENT
 from dotenv import load_dotenv
 
 from services.lib.constants import NetworkIdents
@@ -99,16 +99,18 @@ class Config(SubConfig):
 
         super().__init__(data)
 
-        self.network_id = self.get('thor.network_id', NetworkIdents.CHAOSNET_MULTICHAIN)
-        self.is_midgard_v2 = self.network_id in (NetworkIdents.TESTNET_MULTICHAIN, NetworkIdents.CHAOSNET_MULTICHAIN)
+        self.network_id = self.get('thor.network_id', NetworkIdents.MAINNET)
+        self.is_midgard_v2 = True
 
     def get_thor_env_by_network_id(self) -> ThorEnvironment:
         network_id = self.network_id
 
         if network_id == NetworkIdents.TESTNET_MULTICHAIN:
             ref_env = TEST_NET_ENVIRONMENT_MULTI_1.copy()
-        elif network_id == NetworkIdents.CHAOSNET_MULTICHAIN:
+        elif network_id in (NetworkIdents.CHAOSNET_MULTICHAIN, NetworkIdents.MAINNET):
             ref_env = MCCN.copy()
+        elif network_id == NetworkIdents.STAGENET_MULTICHAIN:
+            ref_env = MULTICHAIN_STAGENET_ENVIRONMENT.copy()
         else:
             raise KeyError('unsupported network ID!')
 

@@ -2,7 +2,6 @@ import logging
 from abc import ABCMeta, abstractmethod
 from typing import NamedTuple, List, Dict
 
-from services.lib.constants import NetworkIdents
 from services.models.last_block import LastBlock
 from services.models.pool_info import PoolInfoHistoricEntry, PoolInfoMap, PoolInfo
 from services.models.pool_member import PoolMemberDetails
@@ -175,7 +174,4 @@ class MidgardParserV2(MidgardParserBase):
 
 
 def get_parser_by_network_id(network_id) -> MidgardParserBase:
-    if network_id in (NetworkIdents.TESTNET_MULTICHAIN, NetworkIdents.CHAOSNET_MULTICHAIN):
-        return MidgardParserV2(network_id)
-    else:
-        raise KeyError('unsupported network ID!')
+    return MidgardParserV2(network_id)

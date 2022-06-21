@@ -6,9 +6,7 @@ sleep_before_start: 3
 
 
 thor:
-  #  "testnet-multi" for MTCN
-  #  "chaosnet-multi" for MCCN
-  network_id: "chaosnet-multi"
+  network_id: "mainnet"
 
   node:
     node_url: "https://thornode.ninerealms.com/"

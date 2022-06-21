@@ -134,7 +134,7 @@ class Chains:
 class NetworkIdents:
     TESTNET_MULTICHAIN = 'testnet-multi'
     CHAOSNET_MULTICHAIN = 'chaosnet-multi'
-    MAINNET_MULTICHAIN = 'mainnet-multi'
+    MAINNET = 'mainnet-multi'
     STAGENET_MULTICHAIN = 'stagenet-multi'
 
     @classmethod
@@ -193,7 +193,8 @@ class THORPort:
     FAMILIES = {
         NetworkIdents.TESTNET_MULTICHAIN: TestNet,
         NetworkIdents.STAGENET_MULTICHAIN: StageNet,
-        NetworkIdents.CHAOSNET_MULTICHAIN: MainNet
+        NetworkIdents.MAINNET: MainNet,
+        NetworkIdents.CHAOSNET_MULTICHAIN: MainNet,
     }
 
     @classmethod
