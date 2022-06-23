@@ -20,6 +20,9 @@ class RuneTransfer:
     def usd_amount(self):
         return self.usd_per_rune * self.amount
 
+    def is_from_or_to(self, address):
+        return address and (address == self.from_addr or address == self.to_addr)
+
 
 @dataclass
 class RuneCEXFlow:

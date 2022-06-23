@@ -5,7 +5,7 @@ from aiogram.utils.helper import HelperMode
 
 from services.dialog.avatar_picture_dialog import AvatarDialog
 from services.dialog.base import BaseDialog, message_handler
-from services.dialog.lp_info_dialog import MyWalletsMenu, LPMenuStates
+from services.dialog.my_wallets_menu import MyWalletsMenu, LPMenuStates
 from services.dialog.metrics_menu import MetricsDialog
 from services.dialog.node_op_menu import NodeOpDialog
 from services.dialog.settings_menu import SettingsDialog

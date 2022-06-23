@@ -1,20 +1,33 @@
 import asyncio
+from typing import List
 
 from localization.base import BaseLocalization
+from services.lib.db import DB
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
 from services.lib.settings_manager import SettingsManager
-from services.models.node_watchers import AlertWatchers
+from services.models.node_watchers import UserWatchlist
 from services.models.transfer import RuneTransfer
 from services.notify.channel import ChannelDescriptor, BoardMessage
-from services.notify.personal.helpers import GeneralSettings
+
+
+class WalletWatchlist(UserWatchlist):
+    def __init__(self, db: DB):
+        super().__init__(db, 'Wallet')
+
+    async def set_user_to_node(self, user_id, node: str, value: bool):
+        print(f'{user_id = }, address = {node}: {"ON" if value else "OFF"}')
+        return await super().set_user_to_node(user_id, node, value)
 
 
 class PersonalBalanceNotifier(INotified):
     def __init__(self, d: DepContainer):
         self.deps = d
+        self._watcher = WalletWatchlist(d.db)
 
-    async def on_data(self, sender, data):
+    async def on_data(self, sender, transfers: List[RuneTransfer]):
+        # for tr in transfers:
+        #     print(tr)
         pass
 
     async def _send_message(self, channel_info: ChannelDescriptor, transfer: RuneTransfer):
@@ -29,11 +42,9 @@ class PersonalBalanceNotifier(INotified):
 
 
 class SettingsProcessorBalanceTracker(INotified):
-    def __init__(self, alert_watcher: AlertWatchers):
-        self.alert_watcher = alert_watcher
+    def __init__(self, mapping: WalletWatchlist):
+        self.mapping = mapping
 
     async def on_data(self, sender: SettingsManager, data):
-        channel_id, settings = data
-        is_enabled = settings.get(GeneralSettings.BALANCE_TRACK, False)
-        # todo!
-        await self.alert_watcher.set_user_to_node(channel_id, GeneralSettings.BALANCE_TRACK, is_enabled)
+        #        channel_id, settings = data
+        pass

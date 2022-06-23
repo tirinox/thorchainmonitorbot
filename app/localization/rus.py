@@ -15,7 +15,6 @@ from services.lib.money import pretty_dollar, pretty_money, short_address, adapt
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
     up_down_arrow, plural, grouper, regroup_joining
 from services.lib.utils import shorten_text
-from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.cap_info import ThorCapInfo
 from services.models.last_block import BlockProduceState, EventBlockSpeed
 from services.models.mimir import MimirChange, MimirHolder, MimirVoting, MimirVoteOption
@@ -25,6 +24,7 @@ from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConse
 from services.models.pool_info import PoolInfo, PoolChanges, PoolDetailHolder
 from services.models.price import PriceReport, RuneMarketInfo
 from services.models.queue import QueueInfo
+from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.tx import ThorTxExtended, ThorTxType
 
 
@@ -116,9 +116,7 @@ class RussianLocalization(BaseLocalization):
     TEXT_INVALID_ADDRESS = code('⛔️ Ошибка в формате адреса!')
     TEXT_SELECT_ADDRESS_ABOVE = 'Выбери адрес выше ☝️ '
     TEXT_SELECT_ADDRESS_SEND_ME = 'Если хотите добавить адрес, пришлите его мне 👇'
-    TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS = '📪 <b>На этом адресе нет пулов ликвидности.</b> ' \
-                                        'Выберите другой адрес или добавьте новый.'
-
+    TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS = '📪 <i>На этом адресе нет пулов ликвидности.</i>'
     TEXT_CANNOT_ADD = '😐 Простите, но вы не можете добавить этот адрес.'
 
     def text_lp_img_caption(self):
@@ -175,15 +173,24 @@ class RussianLocalization(BaseLocalization):
                f'Иногда она может идти долго, если Midgard сильно нагружен.'
 
     def text_user_provides_liq_to_pools(self, address, pools, balances: ThorBalances):
-        pools = pre(', '.join(pools))
+        if pools:
+            title = '\n'
+            footer = '👇 Выберите пул, чтобы получить подробную карточку информации о ликвидности.'
+        else:
+            title = self.TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS + '\n\n'
+            footer = ''
+
         explorer_links = self.explorer_links_to_thor_address(address)
 
         balance_str = self.text_balances(balances, 'Балансы аккаунта: ')
 
-        return f'🛳️ {pre(address)}\n' \
-               f'поставляет ликвидность в следующие пулы:\n{pools}.\n\n' \
-               f"🔍 Обозреватель: {explorer_links}.\n\n{balance_str}" \
-               f'👇 Выберите пул, чтобы получить подробную карточку информаци.'
+        return (
+            f'🛳️ Аккаунт: {pre(address)}\n'
+            f'{title}'
+            f"{balance_str}\n\n"
+            f"🔍 Обозреватель: {explorer_links}.\n\n"
+            f"{footer}"
+        )
 
     def text_lp_today(self):
         today = datetime.now().strftime('%d.%m.%Y')

@@ -5,8 +5,8 @@ import os
 from aiothornode.connector import ThorConnector
 
 from localization.manager import LocalizationManager
-from services.dialog.main import init_dialogs
 from services.dialog.discord.discord_bot import DiscordBot
+from services.dialog.main import init_dialogs
 from services.dialog.slack.slack_bot import SlackBot
 from services.dialog.telegram.sticker_downloader import TelegramStickerDownloader
 from services.dialog.telegram.telegram import TelegramBot
@@ -26,6 +26,7 @@ from services.jobs.fetch.queue import QueueFetcher
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.ilp_summer import ILPSummer
 from services.jobs.node_churn import NodeChurnDetector
+from services.jobs.transfer_detector import RuneTransferDetectorBlockEvents
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.lib.config import Config, SubConfig
 from services.lib.date_utils import parse_timespan_to_seconds
@@ -41,7 +42,7 @@ from services.models.price import LastPriceHolder
 from services.models.tx import ThorTxType
 from services.notify.alert_presenter import AlertPresenter
 from services.notify.broadcast import Broadcaster
-from services.notify.personal.balance import SettingsProcessorBalanceTracker, PersonalBalanceNotifier
+from services.notify.personal.balance import PersonalBalanceNotifier
 from services.notify.personal.personal_main import NodeChangePersonalNotifier
 from services.notify.personal.price_divergence import PersonalPriceDivergenceNotifier, SettingsProcessorPriceDivergence
 from services.notify.types.bep2_notify import BEP2MoveNotifier
@@ -87,7 +88,6 @@ class App:
         d.gen_alert_settings_proc = SettingsProcessorGeneralAlerts(d.db, d.alert_watcher)
         d.settings_manager.subscribe(d.gen_alert_settings_proc)
         d.settings_manager.subscribe(SettingsProcessorPriceDivergence(d.alert_watcher))
-        d.settings_manager.subscribe(SettingsProcessorBalanceTracker(d.alert_watcher))
 
         # messaging:
         d.loc_man = LocalizationManager(d.cfg)
@@ -288,8 +288,10 @@ class App:
         if d.cfg.get('native_scanner.enabled', True):
             scanner = NativeScannerBlockEvents(d.thor_env.rpc_url)
             tasks.append(scanner)
+            decoder = RuneTransferDetectorBlockEvents()
+            scanner.subscribe(decoder)
             balance_notifier = PersonalBalanceNotifier(d)
-            scanner.subscribe(balance_notifier)
+            decoder.subscribe(balance_notifier)
 
         # --- BOTS
 

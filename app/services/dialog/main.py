@@ -7,7 +7,7 @@ from services.dialog.inline_bot_handler import InlineBotHandlerDialog
 from services.dialog.main_menu import MainMenuDialog
 from services.dialog.metrics_menu import MetricsDialog
 from services.dialog.settings_menu import SettingsDialog
-from services.dialog.lp_info_dialog import MyWalletsMenu
+from services.dialog.my_wallets_menu import MyWalletsMenu
 from services.lib.depcont import DepContainer
 from services.dialog.node_op_menu import NodeOpDialog
 

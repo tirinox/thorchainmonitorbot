@@ -1,22 +1,27 @@
 import asyncio
 import logging
 from dataclasses import asdict
+from typing import Optional
 
 from aiogram.dispatcher.filters.state import StatesGroup, State
+from aiogram.dispatcher.storage import FSMContextProxy
 from aiogram.types import *
 from aiogram.utils.helper import HelperMode
 
+from localization.base import BaseLocalization
 from services.dialog.base import BaseDialog, message_handler, query_handler
 from services.dialog.picture.lp_picture import lp_pool_picture, lp_address_summary_picture
 from services.dialog.telegram.inline_list import TelegramInlineList, InlineListResult
 from services.jobs.fetch.runeyield import get_rune_yield_connector
 from services.lib.constants import NetworkIdents, Chains
 from services.lib.date_utils import today_str
+from services.lib.depcont import DepContainer
 from services.lib.draw_utils import img_to_bio
 from services.lib.money import short_address
 from services.lib.new_feature import Features
 from services.lib.texts import kbd, cut_long_text
 from services.models.lp_info import LPAddress
+from services.notify.personal.balance import WalletWatchlist
 
 
 def get_thoryield_address(network: str, address: str, chain: str = Chains.THOR):
@@ -33,6 +38,7 @@ class LPMenuStates(StatesGroup):
     WALLET_MENU = State()
 
 
+# fixme: Use dialog with settings to store wallets in global settings!
 class MyWalletsMenu(BaseDialog):
     QUERY_REMOVE_ADDRESS = 'remove-addr'
     QUERY_SUMMARY_OF_ADDRESS = 'summary-addr'
@@ -83,8 +89,15 @@ class MyWalletsMenu(BaseDialog):
         if (chain, new_addr) not in my_unique_addr:
             self.data[self.KEY_MY_ADDRESSES] = [asdict(a) for a in current_list + [LPAddress(new_addr)]]
 
-    def _remove_address(self, index):
-        del self.data[self.KEY_MY_ADDRESSES][int(index)]
+    async def _remove_address(self, index):
+        try:
+            index = int(index)
+            address_list = self.data[self.KEY_MY_ADDRESSES]
+            address = address_list[index]
+            del address[index]
+            await self._process_wallet_balance_flag(address, is_on=False)
+        except IndexError:
+            logging.error(f'Cannot delete address at {index = },')
 
     def _make_address_keyboard_list(self):
         extra_row = []
@@ -172,8 +185,7 @@ class MyWalletsMenu(BaseDialog):
 
         balances = await self.get_balances(address)
 
-        text = self.loc.text_user_provides_liq_to_pools(address, my_pools, balances) if my_pools \
-            else self.loc.TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS
+        text = self.loc.text_user_provides_liq_to_pools(address, my_pools, balances)
         tg_list = self._keyboard_inside_wallet_menu()
         inline_kbd = tg_list.keyboard()
         if edit:
@@ -190,7 +202,7 @@ class MyWalletsMenu(BaseDialog):
         external = self.data.get(self.KEY_IS_EXTERNAL, False)
         view_value = self.data.get(self.KEY_CAN_VIEW_VALUE, True)
         # lp_prot_on = self.data.get(self.KEY_ADD_LP_PROTECTION, True)
-        track_balance = self.data.get(self.KEY_TRACK_BALANCE, True)
+        track_balance = self.data.get(self.KEY_TRACK_BALANCE, False)
         addr_idx = int(self.data.get(self.KEY_ACTIVE_ADDRESS_INDEX, 0))
         address = self.data.get(self.KEY_ACTIVE_ADDRESS)
         my_pools = self.data.get(self.KEY_MY_POOLS, [])
@@ -271,7 +283,7 @@ class MyWalletsMenu(BaseDialog):
             await self._show_wallet_again(query)
         elif query.data.startswith(f'{self.QUERY_REMOVE_ADDRESS}:'):
             _, index = query.data.split(':')
-            self._remove_address(index)
+            await self._remove_address(index)
             await self._show_address_selection_menu(query.message, edit=True)
         elif query.data == self.QUERY_TOGGLE_VIEW_VALUE:
             self.data[self.KEY_CAN_VIEW_VALUE] = not self.data.get(self.KEY_CAN_VIEW_VALUE, True)
@@ -280,7 +292,9 @@ class MyWalletsMenu(BaseDialog):
         #     self.data[self.KEY_ADD_LP_PROTECTION] = not self.data.get(self.KEY_ADD_LP_PROTECTION, True)
         #     await self._present_wallet_contents_menu(query.message, edit=True)
         elif query.data == self.QUERY_TOGGLE_BALANCE:
-            self.data[self.KEY_TRACK_BALANCE] = not self.data.get(self.KEY_TRACK_BALANCE, True)
+            is_on = self.data[self.KEY_TRACK_BALANCE] = not self.data.get(self.KEY_TRACK_BALANCE, False)
+            address = self.data[self.KEY_ACTIVE_ADDRESS]
+            await self._process_wallet_balance_flag(address, is_on)
             await self._present_wallet_contents_menu(query.message, edit=True)
 
     async def _show_wallet_again(self, query: CallbackQuery):
@@ -365,3 +379,12 @@ class MyWalletsMenu(BaseDialog):
     def prohibited_addresses(self):
         addresses = self.deps.cfg.get_pure('native_scanner.prohibited_addresses')
         return addresses if isinstance(addresses, list) else []
+
+    async def _process_wallet_balance_flag(self, address: str, is_on: bool):
+        user_id = str(self.data.fsm_context.user)
+        await self._wallet_watch.set_user_to_node(user_id, address, is_on)
+
+    def __init__(self, loc: BaseLocalization, data: Optional[FSMContextProxy], d: DepContainer, message: Message):
+        super().__init__(loc, data, d, message)
+        self._wallet_watch = WalletWatchlist(d.db)
+

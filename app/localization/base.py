@@ -19,7 +19,6 @@ from services.lib.money import format_percent, pretty_money, short_address, shor
 from services.lib.texts import progressbar, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
     up_down_arrow, bracketify, plural, grouper, join_as_numbered_list, regroup_joining
 from services.lib.utils import shorten_text
-from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.cap_info import ThorCapInfo
 from services.models.last_block import BlockProduceState, EventBlockSpeed
 from services.models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting, MimirVoteOption
@@ -30,6 +29,7 @@ from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConse
 from services.models.pool_info import PoolInfo, PoolChanges, PoolDetailHolder
 from services.models.price import PriceReport, RuneMarketInfo
 from services.models.queue import QueueInfo
+from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.tx import ThorTxExtended, ThorTxType, ThorSubTx
 from services.notify.channel import Messengers
 
@@ -152,9 +152,7 @@ class BaseLocalization(ABC):  # == English
     TEXT_INVALID_ADDRESS = code('⛔️ Invalid address!')
     TEXT_SELECT_ADDRESS_ABOVE = 'Select one from above. ☝️ '
     TEXT_SELECT_ADDRESS_SEND_ME = 'If you want to add one more, please send me it. 👇'
-    TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS = "📪 <b>This address doesn't participate in any liquidity pools.</b> " \
-                                        "Please choose another one or add new."
-
+    TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS = "📪 <i>This address doesn't participate in any liquidity pools.</i>"
     TEXT_CANNOT_ADD = '😐 Sorry, but you cannot add this address.'
 
     def text_lp_img_caption(self):
@@ -232,19 +230,27 @@ class BaseLocalization(ABC):  # == English
             result = f'{title} {items[0]}'
         else:
             result = '\n'.join([title] + items)
-        return result + '\n\n'
+        return result
 
     def text_user_provides_liq_to_pools(self, address, pools, balances: ThorBalances):
-        pools = pre(', '.join(pools))
+        if pools:
+            title = '\n'
+            footer = "👇 Click on the button to get a detailed card of LP yield."
+        else:
+            title = self.TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS + '\n\n'
+            footer = ''
 
         explorer_links = self.explorer_links_to_thor_address(address)
 
         balance_str = self.text_balances(balances)
 
-        return f'🛳️ {pre(address)}\nprovides liquidity to the following pools:\n' \
-               f'{pools}.\n\n{balance_str}' \
-               f"🔍 Explorer: {explorer_links}.\n\n" \
-               f'👇 Click on the button to get a detailed card.'
+        return (
+            f'🛳️ Account {pre(address)}\n'
+            f'{title}'
+            f'{balance_str}\n\n'
+            f"🔍 Explorer: {explorer_links}.\n\n"
+            f'{footer}'
+        )
 
     def text_lp_today(self):
         today = datetime.now().strftime('%d.%m.%Y')
