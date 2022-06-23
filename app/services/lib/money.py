@@ -126,6 +126,7 @@ def short_money(x, prefix='', postfix='', localization=None, signed=False):
         x = -x
     else:
         sign = '+' if signed and x >= 0 else ''
+
     orig_x = x
 
     if x < 1_000:
@@ -145,15 +146,21 @@ def short_money(x, prefix='', postfix='', localization=None, signed=False):
 
     letter = localization.get(key, key) if localization else key
 
-    dec = 1
-    if orig_x < 10:
-        for dec in range(8, 0, -1):
-            if orig_x < 10 ** (-dec):
-                dec = dec + 1
-                break
-        dec = max(dec, 1)
+    # dec = 1
+    # if orig_x < 10:
+    #     for dec in range(8, 0, -1):
+    #         if orig_x < 10 ** (-dec):
+    #             dec += 1
+    #             break
+    #     dec = max(dec, 1) + 1
+    #
 
-    result = f'{round_half_up(x, dec)}{letter}'
+    if orig_x < 10:
+        x = f"{x:.10f}".rstrip('0')
+    else:
+        x = round_half_up(x, 1)
+
+    result = f'{x}{letter}'
     return f'{sign}{prefix}{result}{postfix}'
 
 
@@ -281,4 +288,3 @@ class Asset:
 
 def weighted_mean(values, weights):
     return sum(values[g] * weights[g] for g in range(len(values))) / sum(weights)
-
