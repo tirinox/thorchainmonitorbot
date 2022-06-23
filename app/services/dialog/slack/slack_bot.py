@@ -207,7 +207,7 @@ class SlackBot:
         text = text.replace('\n', '<br>')
         return HTMLSlacker(text).get_output()
 
-    async def safe_send_message(self, chat_id, msg: BoardMessage, **kwargs) -> bool:
+    async def send_message(self, chat_id, msg: BoardMessage, **kwargs) -> bool:
         try:
             result = ''
 

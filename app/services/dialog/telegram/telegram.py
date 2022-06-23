@@ -36,7 +36,7 @@ class TelegramBot:
                 del kwargs['disable_notification']
         return kwargs
 
-    async def safe_send_message(self, chat_id, msg: BoardMessage, **kwargs) -> bool:
+    async def send_message(self, chat_id, msg: BoardMessage, **kwargs) -> bool:
         try:
             text = msg.text
             bot = self.bot
@@ -60,7 +60,7 @@ class TelegramBot:
             self.logger.error(f"Target [ID:{chat_id}]: Flood limit is exceeded. Sleep {e.timeout} seconds.")
             await asyncio.sleep(e.timeout + self.EXTRA_RETRY_DELAY)
             # Recursive call
-            return await self.safe_send_message(chat_id, msg, **kwargs)
+            return await self.send_message(chat_id, msg, **kwargs)
         except exceptions.Unauthorized as e:
             self.logger.error(f"Target [ID:{chat_id}]: user is deactivated: {e!r}")
             return CHANNEL_INACTIVE

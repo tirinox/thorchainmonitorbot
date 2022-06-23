@@ -84,7 +84,7 @@ class TwitterBot:
             await self.post(part, image, executor, loop)
             image = None  # attach image solely to the first post, then just nullify it
 
-    async def safe_send_message(self, chat_id, msg: BoardMessage, **kwargs) -> bool:
+    async def send_message(self, chat_id, msg: BoardMessage, **kwargs) -> bool:
         # Chat_id is not supported yet... only one single channel
         try:
             if msg.message_type == MessageType.TEXT:

@@ -83,7 +83,7 @@ class Broadcaster:
                 channel_id = channel_info.channel_id
                 messenger = self.deps.get_messenger(channel_info.type)
                 if messenger is not None:
-                    result = await messenger.safe_send_message(channel_id, message, **kwargs)
+                    result = await messenger.send_message(channel_id, message, **kwargs)
                     if result == CHANNEL_INACTIVE:
                         await self._handle_bad_user(channel_info)
                 else:
@@ -93,14 +93,20 @@ class Broadcaster:
 
         return result
 
+    async def safe_send_message_rate(self, channel_info: ChannelDescriptor,
+                                     message: BoardMessage, **kwargs) -> bool:
+        # todo: check ratelimit
+
+        return await self.safe_send_message(channel_info, message, **kwargs)
+
     @staticmethod
-    async def _form_message(text, channel_info: ChannelDescriptor, **kwargs) -> BoardMessage:
-        if isinstance(text, BoardMessage):
-            return text
-        elif isinstance(text, str):
-            return BoardMessage(text)
-        elif callable(text):
-            b_message = await text(channel_info.channel_id, **kwargs)
+    async def _form_message(data_source, channel_info: ChannelDescriptor, **kwargs) -> BoardMessage:
+        if isinstance(data_source, BoardMessage):
+            return data_source
+        elif isinstance(data_source, str):
+            return BoardMessage(data_source)
+        elif callable(data_source):
+            b_message = await data_source(channel_info.channel_id, **kwargs)
             if isinstance(b_message, BoardMessage):
                 if b_message.message_type is MessageType.PHOTO:
                     # noinspection PyTypeChecker
@@ -109,7 +115,7 @@ class Broadcaster:
             else:
                 return BoardMessage(str(b_message))
         else:
-            return BoardMessage(str(text))
+            return BoardMessage(str(data_source))
 
     async def broadcast(self, channels: List[ChannelDescriptor], message, delay=0.075, **kwargs) -> int:
         async with self._broadcast_lock:

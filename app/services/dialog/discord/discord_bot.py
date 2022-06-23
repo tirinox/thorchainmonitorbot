@@ -56,7 +56,7 @@ class DiscordBot:
         channel = self.client.get_channel(channel)
         await channel.send(text, file=file)
 
-    async def safe_send_message(self, chat_id, msg: BoardMessage, **kwargs) -> bool:
+    async def send_message(self, chat_id, msg: BoardMessage, **kwargs) -> bool:
         try:
             if msg.message_type == MessageType.TEXT:
                 await self.send_message_to_channel(chat_id, msg.text, need_convert=True)
