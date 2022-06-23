@@ -27,6 +27,9 @@ class NativeScanner(WSClient, WithDelegates):
                          ping_timeout=self.PING_TIMEOUT,
                          sleep_time=self.SLEEP_TIME)
 
+    async def handle_wss_message(self, reply: dict):
+        pass
+
 
 class NativeScannerBlockEvents(NativeScanner):
     SUBSCRIBE_NEW_BLOCK = {"jsonrpc": "2.0", "method": "subscribe", "params": ["tm.event='NewBlock'"], "id": 1}

@@ -288,7 +288,7 @@ class App:
         if d.cfg.get('native_scanner.enabled', True):
             scanner = NativeScannerBlockEvents(d.thor_env.rpc_url)
             tasks.append(scanner)
-            balance_notifier = PersonalBalanceNotifier()
+            balance_notifier = PersonalBalanceNotifier(d)
             scanner.subscribe(balance_notifier)
 
         # --- BOTS

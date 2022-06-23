@@ -1060,15 +1060,15 @@ class BaseLocalization(ABC):  # == English
                                           new_active_ver: VersionInfo):
         msg = bold('💫 THORChain protocol version update') + '\n\n'
 
-        def version_and_nodes(v, all=False):
-            realm = data.nodes_all if all else data.active_only_nodes
+        def version_and_nodes(v, v_all=False):
+            realm = data.nodes_all if v_all else data.active_only_nodes
             n_nodes = len(data.find_nodes_with_version(realm, v))
             return f"{code(v)} ({n_nodes} {plural(n_nodes, 'node', 'nodes')})"
 
         current_active_version = data.current_active_version
 
         if new_versions:
-            new_version_joined = ', '.join(version_and_nodes(v, all=True) for v in new_versions)
+            new_version_joined = ', '.join(version_and_nodes(v, v_all=True) for v in new_versions)
             msg += f"🆕 New version detected: {new_version_joined}\n\n"
 
             msg += f"⚡️ Active protocol version is {version_and_nodes(current_active_version)}\n" + \
@@ -1804,3 +1804,10 @@ class BaseLocalization(ABC):  # == English
         message += f"Coin market cap of {bold(self.R)} is " \
                    f"{bold(short_dollar(market_info.market_cap))} (#{bold(market_info.rank)})"
         return message
+
+    # ---- MY WALLET ALLERTS ----
+
+    @staticmethod
+    def notification_text_rune_transfer(t: RuneTransfer):
+        # todo! improve the text
+        return f'Transfer: {t.amount} {t.asset} from {code(t.from_addr)} to {code(t.to_addr)}.'

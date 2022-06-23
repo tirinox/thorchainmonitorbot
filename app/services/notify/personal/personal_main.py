@@ -201,7 +201,7 @@ class NodeChangePersonalNotifier(INotified):
                 text = '\n\n'.join(m for m in messages if m)
                 text = text.strip()
                 if text:
-                    task = self.deps.broadcaster.safe_send_message(
+                    task = self.deps.broadcaster.safe_send_message_rate(
                         ChannelDescriptor(platform, user),
                         BoardMessage(text)
                     )
