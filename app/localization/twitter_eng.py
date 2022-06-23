@@ -11,6 +11,7 @@ from services.lib.money import Asset, short_dollar, format_percent, pretty_money
     calc_percent_change, adaptive_round_to_str, emoji_for_percent_change, short_address, short_money, short_rune
 from services.lib.texts import x_ses, join_as_numbered_list, progressbar, plural, bracketify, up_down_arrow, \
     bracketify_spaced
+from services.lib.utils import shorten_text
 from services.models.transfer import RuneCEXFlow, RuneTransfer
 from services.models.cap_info import ThorCapInfo
 from services.models.last_block import EventBlockSpeed, BlockProduceState
@@ -127,9 +128,10 @@ class TwitterEnglishLocalization(BaseLocalization):
                     f"({short_dollar(tx.get_usd_volume(usd_per_rune))})"
                 )
         elif tx.type == ThorTxType.TYPE_REFUND:
+            reason = shorten_text(tx.meta_refund.reason, 30)
             content = (
                     self.tx_convert_string(tx, usd_per_rune) +
-                    f"\nReason: {tx.meta_refund.reason[:30]}.."
+                    f"\nReason: {reason}.."
             )
         elif tx.type == ThorTxType.TYPE_SWAP:
             content = self.tx_convert_string(tx, usd_per_rune)

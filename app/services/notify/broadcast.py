@@ -4,8 +4,10 @@ import time
 from typing import List
 
 from localization.manager import LocalizationManager
+from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
-from services.lib.utils import copy_photo, class_logger
+from services.lib.rate_limit import RateLimitCooldown
+from services.lib.utils import copy_photo, class_logger, shorten_text
 from services.notify.channel import Messengers, ChannelDescriptor, CHANNEL_INACTIVE, MessageType, BoardMessage
 from services.notify.user_registry import UserRegistry
 
@@ -24,6 +26,11 @@ class Broadcaster:
 
         # public channels
         self.channels = list(ChannelDescriptor.from_json(j) for j in self.deps.cfg.get_pure('channels'))
+
+        _rate_limit_cfg = d.cfg.get('personal.rate_limit')
+        self._limit_number = _rate_limit_cfg.as_int('number', 10)
+        self._limit_period = parse_timespan_to_seconds(_rate_limit_cfg.as_str('period', '1m'))
+        self._limit_cooldown = parse_timespan_to_seconds(_rate_limit_cfg.as_str('cooldown', '5m'))
 
     def get_channels(self, channel_type):
         return [c for c in self.channels if c.type == channel_type]
@@ -94,10 +101,26 @@ class Broadcaster:
         return result
 
     async def safe_send_message_rate(self, channel_info: ChannelDescriptor,
-                                     message: BoardMessage, **kwargs) -> bool:
-        # todo: check ratelimit
-
-        return await self.safe_send_message(channel_info, message, **kwargs)
+                                     message: BoardMessage, **kwargs) -> (bool, bool):
+        limiter = RateLimitCooldown(self.deps.db,
+                                    f'SendMessage:{channel_info.short_coded}',
+                                    self._limit_number,
+                                    self._limit_period,
+                                    self._limit_cooldown)
+        outcome = await limiter.hit()
+        send_result = None
+        if outcome == limiter.GOOD:
+            # all good: pass through
+            send_result = await self.safe_send_message(channel_info, message, **kwargs)
+        elif outcome == limiter.HIT_LIMIT:
+            # oops! just hit the limit, tell about it once
+            loc = self.deps.loc_man.get_from_lang(channel_info.lang)
+            warning_message = BoardMessage(loc.RATE_LIMIT_WARNING)
+            send_result = await self.safe_send_message(channel_info, warning_message, **kwargs)
+        else:
+            s_text = shorten_text(message.text, 200)
+            self.logger.warning(f'Rate limit for channel "{channel_info.short_coded}"! Text: "{s_text}"')
+        return outcome, send_result
 
     @staticmethod
     async def _form_message(data_source, channel_info: ChannelDescriptor, **kwargs) -> BoardMessage:

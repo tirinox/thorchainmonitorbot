@@ -18,6 +18,7 @@ from services.lib.money import format_percent, pretty_money, short_address, shor
     RAIDO_GLYPH, pretty_rune, short_rune
 from services.lib.texts import progressbar, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
     up_down_arrow, bracketify, plural, grouper, join_as_numbered_list, regroup_joining
+from services.lib.utils import shorten_text
 from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.cap_info import ThorCapInfo
 from services.models.last_block import BlockProduceState, EventBlockSpeed
@@ -56,6 +57,11 @@ class BaseLocalization(ABC):  # == English
     R = 'Rune'
 
     BOT_LOADING = '⌛ Bot has been recently restarted and is still loading. Please try again after 1-2 minutes.'
+
+    RATE_LIMIT_WARNING = '🔥 <b>Attention!</b>\n' \
+                         'You are apparently receiving too many personal notifications. ' \
+                         'You will be restricted in receiving them for some time. ' \
+                         'Check your /settings to adjust the frequency of notifications.'
 
     SHORT_MONEY_LOC = None  # default is Eng
 
@@ -421,9 +427,10 @@ class BaseLocalization(ABC):  # == English
                     f"({short_dollar(tx.get_usd_volume(usd_per_rune))})"
                 )
         elif tx.type == ThorTxType.TYPE_REFUND:
+            reason = shorten_text(tx.meta_refund.reason, 180)
             content = (
                     self.tx_convert_string(tx, usd_per_rune) +
-                    f"\nReason: {pre(tx.meta_refund.reason[:180])}"
+                    f"\nReason: {pre(reason)}"
             )
         elif tx.type == ThorTxType.TYPE_SWAP:
             content = self.tx_convert_string(tx, usd_per_rune)
@@ -1454,7 +1461,7 @@ class BaseLocalization(ABC):  # == English
 
     def text_nop_success_add_banner(self, node_addresses):
         node_addresses_text = ','.join([self.short_node_name(a) for a in node_addresses])
-        node_addresses_text = node_addresses_text[:80]  # just in case!
+        node_addresses_text = shorten_text(node_addresses_text, 80)
         message = f'😉 Success! {node_addresses_text} added to your watchlist. ' \
                   f'Expect notifications of important events.'
         return message
@@ -1465,7 +1472,7 @@ class BaseLocalization(ABC):  # == English
 
     def text_nop_success_remove_banner(self, node_addresses):
         node_addresses_text = ','.join([self.short_node_name(a) for a in node_addresses])
-        node_addresses_text = node_addresses_text[:120]  # just in case!
+        node_addresses_text = shorten_text(node_addresses_text, 120)
         return f'😉 Success! You removed: {node_addresses_text} ({len(node_addresses)} nodes) from your watchlist.'
 
     TEXT_NOP_SETTINGS_TITLE = 'Tune your notifications here. Choose a topic to adjust settings.'

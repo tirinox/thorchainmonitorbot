@@ -134,7 +134,7 @@ class Chains:
 class NetworkIdents:
     TESTNET_MULTICHAIN = 'testnet-multi'
     CHAOSNET_MULTICHAIN = 'chaosnet-multi'
-    MAINNET = 'mainnet-multi'
+    MAINNET = 'mainnet'
     STAGENET_MULTICHAIN = 'stagenet-multi'
 
     @classmethod
@@ -147,7 +147,7 @@ class NetworkIdents:
 
     @classmethod
     def is_multi(cls, network: str):
-        return 'multi' in network
+        return 'multi' in network or network == cls.MAINNET
 
 
 THOR_DIVIDER = 100_000_000.0  # 1e8

@@ -4,7 +4,7 @@ import pytest
 
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
-from services.lib.rate_limit import RateLimiter
+from services.lib.rate_limit import RateLimiter, RateLimitCooldown
 
 
 @pytest.fixture(scope="function")
@@ -17,11 +17,20 @@ def deps():
 
 LIMIT_N = 10
 LIMIT_T = 1.0
+CD_T = 0.5
 
 
 @pytest.yield_fixture()
 async def rate_limiter(deps):
     rr = RateLimiter(deps.db, 'TestRL', LIMIT_N, LIMIT_T)
+    await deps.db.get_redis()
+    yield rr
+    await rr.clear()
+
+
+@pytest.yield_fixture()
+async def rate_limiter_cd(deps):
+    rr = RateLimitCooldown(deps.db, 'TestRCD', LIMIT_N, LIMIT_T, CD_T)
     await deps.db.get_redis()
     yield rr
     await rr.clear()
@@ -54,7 +63,24 @@ async def test_rate_limit_burst_normal(rate_limiter: RateLimiter):
 async def test_rate_limit_normal_flow(rate_limiter: RateLimiter):
     lim = rate_limiter.is_limited
     pause = LIMIT_T / (LIMIT_N - 1)
-    print(f'{pause = } sec, {LIMIT_N = }, {LIMIT_T = } sec')
+    # print(f'{pause = } sec, {LIMIT_N = }, {LIMIT_T = } sec')
     for _ in range(LIMIT_N * 2):
         assert not await lim()
         await asyncio.sleep(pause)
+
+
+@pytest.mark.asyncio
+async def test_rate_limit_cooldown(rate_limiter_cd: RateLimitCooldown):
+    r = rate_limiter_cd
+
+    for i in range(LIMIT_N):
+        assert await r.hit() == r.GOOD
+
+    assert await r.hit() == r.HIT_LIMIT
+
+    assert await r.hit() == r.ON_COOLDOWN
+    assert await r.hit() == r.ON_COOLDOWN
+
+    await asyncio.sleep(CD_T + LIMIT_T)
+    assert await r.hit() == r.GOOD
+    assert await r.hit() == r.GOOD

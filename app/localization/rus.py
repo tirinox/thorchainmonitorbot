@@ -14,6 +14,7 @@ from services.lib.money import pretty_dollar, pretty_money, short_address, adapt
     emoji_for_percent_change, Asset, short_money, short_dollar, format_percent, RAIDO_GLYPH, pretty_rune, short_rune
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
     up_down_arrow, plural, grouper, regroup_joining
+from services.lib.utils import shorten_text
 from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.cap_info import ThorCapInfo
 from services.models.last_block import BlockProduceState, EventBlockSpeed
@@ -34,6 +35,11 @@ class RussianLocalization(BaseLocalization):
     NA = 'Н/Д'
 
     BOT_LOADING = '⌛ Бот был недавно перезапущен и все еще загружается. Пожалуйста, повторите попытку через пару минут.'
+
+    RATE_LIMIT_WARNING = '🔥 <b>Внимание!</b>\n' \
+                         'Кажется, вы получаете слишком много персональных уведомлений. ' \
+                         'На некоторое время получение будет ограничено. ' \
+                         'Проверьте настройки, чтобы отрегулировать частоту уведомлений.'
 
     SHORT_MONEY_LOC = {
         'K': ' тыс',
@@ -293,9 +299,10 @@ class RussianLocalization(BaseLocalization):
                 origin = rune_origin(tx.first_input_tx.first_asset)
                 content = f"{bold(pretty_money(amt))} {origin} {self.R} ➡️ {bold(pretty_money(amt))} Нативных {self.R}"
         elif tx.type == ThorTxType.TYPE_REFUND:
+            reason = shorten_text(tx.meta_refund.reason, 180)
             content = (
                     self.tx_convert_string(tx, usd_per_rune) +
-                    f"\nПричина: {pre(tx.meta_refund.reason[:180])}"
+                    f"\nПричина: {pre(reason)}"
             )
         elif tx.type == ThorTxType.TYPE_SWAP:
             content = self.tx_convert_string(tx, usd_per_rune)
@@ -1289,7 +1296,7 @@ class RussianLocalization(BaseLocalization):
 
     def text_nop_success_add_banner(self, node_addresses):
         node_addresses_text = ','.join([self.short_node_name(a) for a in node_addresses])
-        node_addresses_text = node_addresses_text[:80]  # just in case!
+        node_addresses_text = shorten_text(node_addresses_text, 80)
         message = f'😉 Успех! {node_addresses_text} добавлены в ваш список. ' \
                   f'Ожидайте уведомлений, если произойдет что-то важное!'
         return message
@@ -1300,7 +1307,7 @@ class RussianLocalization(BaseLocalization):
 
     def text_nop_success_remove_banner(self, node_addresses):
         node_addresses_text = ','.join([self.short_node_name(a) for a in node_addresses])
-        node_addresses_text = node_addresses_text[:120]  # just in case!
+        node_addresses_text = shorten_text(node_addresses_text, 120)
         return f'😉 Успех! Вы убрали ноды из вашего списка слежения: ' \
                f'{node_addresses_text} ({len(node_addresses)} всего).'
 

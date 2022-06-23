@@ -337,3 +337,11 @@ def safe_get(dct, *keys):
             return None
     return dct
 
+
+def shorten_text(text, limit=200, end='...'):
+    if not isinstance(text, str):
+        text = str(text)
+    if limit and len(text) > limit:
+        return text[:limit - len(end)] + end
+    else:
+        return text

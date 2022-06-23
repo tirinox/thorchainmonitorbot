@@ -8,7 +8,7 @@ from aiogram.utils import exceptions, executor
 
 from services.lib.config import Config
 from services.lib.db import DB
-from services.lib.utils import class_logger
+from services.lib.utils import class_logger, shorten_text
 from services.notify.channel import MessageType, CHANNEL_INACTIVE, BoardMessage
 
 TG_TEST_USER = 192398802
@@ -43,7 +43,8 @@ class TelegramBot:
             if msg.message_type == MessageType.TEXT:
                 trunc_text = text[:TELEGRAM_MAX_MESSAGE_LENGTH]
                 if trunc_text != text:
-                    self.logger.error(f'Message is too long:\n{text[:10000]}\n... Sending is cancelled.')
+                    s_text = shorten_text(text, 1000)
+                    self.logger.error(f'Message is too long:\n"{s_text}"\n... Sending is cancelled.')
                 await bot.send_message(chat_id, trunc_text, **kwargs)
             elif msg.message_type == MessageType.STICKER:
                 kwargs = self._remove_bad_tg_args(kwargs, dis_web_preview=True)
@@ -52,7 +53,8 @@ class TelegramBot:
                 kwargs = self._remove_bad_tg_args(kwargs, dis_web_preview=True)
                 trunc_text = text[:TELEGRAM_MAX_CAPTION_LENGTH]
                 if trunc_text != text:
-                    self.logger.error(f'Caption is too long:\n{text[:10000]}\n... Sending is cancelled.')
+                    s_text = shorten_text(text, 1000)
+                    self.logger.error(f'Caption is too long:\n"{s_text}"\n... Sending is cancelled.')
                 await bot.send_photo(chat_id, caption=trunc_text, photo=msg.photo, **kwargs)
         except exceptions.ChatNotFound:
             self.logger.error(f"Target [ID:{chat_id}]: invalid user ID")
@@ -68,7 +70,8 @@ class TelegramBot:
             self.logger.exception(f"Target [ID:{chat_id}]: failed")
             return True  # tg error is not the reason to exclude the user
         except exceptions.MessageIsTooLong:
-            self.logger.error(f'Message is too long:\n{msg.text[:4000]}\n...')
+            s_text = shorten_text(msg.text, 4000)
+            self.logger.error(f'Message is too long:\n"{s_text}"\n...')
             return False
         else:
             self.logger.info(f"Target [ID:{chat_id}]: success")

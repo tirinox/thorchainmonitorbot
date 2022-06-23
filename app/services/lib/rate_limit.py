@@ -1,3 +1,4 @@
+from services.lib.cooldown import Cooldown
 from services.lib.db import DB
 
 
@@ -43,3 +44,24 @@ class RateLimiter:
     @classmethod
     async def clear_s(cls, db: DB, key: str):
         await db.redis.delete(cls._full_key(key))
+
+
+class RateLimitCooldown(RateLimiter):
+    ON_COOLDOWN = 'on_cd'
+    HIT_LIMIT = 'hit_limit'
+    GOOD = 'good'
+
+    def __init__(self, db: DB, key, limit: int, period: float, cd_sec: float):
+        super().__init__(db, key, limit, period)
+        self.cd = Cooldown(db, f'RateLimitCooldown:{key}', cd_sec)
+
+    async def hit(self):
+        if not await self.cd.can_do():
+            return self.ON_COOLDOWN
+        else:
+            good = not await self.is_limited()
+            if good:
+                return self.GOOD
+            else:
+                await self.cd.do()
+                return self.HIT_LIMIT

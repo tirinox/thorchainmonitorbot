@@ -37,6 +37,13 @@ thor:
     cache_time: 10m
 
 
+personal:  # (!) new
+  rate_limit:
+    number: 50
+    period: 5m
+    cooldown: 1h
+
+
 telegram:
   bot:
     token: "insert the bot token from @BotFather here"

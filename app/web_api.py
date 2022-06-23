@@ -21,6 +21,8 @@ from services.models.node_watchers import NodeWatcherStorage
 
 
 class AppSettingsAPI:
+    IP_MAX_LEN = 20
+
     def __init__(self):
         d = self.deps = DepContainer()
         d.cfg = Config()
@@ -76,7 +78,7 @@ class AppSettingsAPI:
         })
 
     async def _get_node_ip_info(self, request):
-        ip = str(request.path_params.get('ip')).strip()[:20]
+        ip = str(request.path_params.get('ip')).strip()[:self.IP_MAX_LEN]
 
         geo_ip = GeoIPManager(self.deps)
         info = await geo_ip.get_ip_info_from_cache(ip)
