@@ -1,3 +1,5 @@
+import operator
+from functools import reduce
 from typing import List, Dict
 
 from services.lib.db import DB
@@ -49,6 +51,11 @@ class UserWatchlist:
     async def has_node(self, node, user_id):
         rights = await self.all_nodes_for_user(user_id)
         return node in rights
+
+    @staticmethod
+    def all_affected_users(item_to_user):
+        sets = [set(v) for v in item_to_user.values()]
+        return reduce(operator.or_, sets) if item_to_user else []
 
 
 class NamedNodeStorage:
