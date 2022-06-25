@@ -147,7 +147,8 @@ class NodeChangePersonalNotifier(INotified):
         # 3. get list of user who watch those nodes
         node_to_user = await self.watchers.all_users_for_many_nodes(affected_node_addresses)
 
-        all_affected_users = reduce(operator.or_, node_to_user.values()) if node_to_user else []
+        all_affected_users = self.watchers.all_affected_users(node_to_user)
+
         if not broadcasting_events and not all_affected_users:
             self.logger.info('No users to receive alerts.')
             return  # nobody is interested in those changes...

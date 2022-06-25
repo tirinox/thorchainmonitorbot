@@ -23,6 +23,10 @@ class RuneTransfer:
     def is_from_or_to(self, address):
         return address and (address == self.from_addr or address == self.to_addr)
 
+    @property
+    def is_rune(self):
+        return self.asset.lower() == 'rune'
+
 
 @dataclass
 class RuneCEXFlow:

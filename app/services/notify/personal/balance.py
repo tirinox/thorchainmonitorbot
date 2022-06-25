@@ -1,14 +1,18 @@
 import asyncio
+from collections import defaultdict
 from typing import List
 
-from localization.base import BaseLocalization
+from localization.manager import LocalizationManager
 from services.lib.db import DB
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
 from services.lib.settings_manager import SettingsManager
+from services.lib.texts import grouper
+from services.lib.utils import class_logger
 from services.models.node_watchers import UserWatchlist
 from services.models.transfer import RuneTransfer
 from services.notify.channel import ChannelDescriptor, BoardMessage
+from services.notify.personal.helpers import GeneralSettings
 
 
 class WalletWatchlist(UserWatchlist):
@@ -21,24 +25,84 @@ class WalletWatchlist(UserWatchlist):
 
 
 class PersonalBalanceNotifier(INotified):
+    MAX_TRANSFER_PER_MESSAGE = 3
+
     def __init__(self, d: DepContainer):
         self.deps = d
         self._watcher = WalletWatchlist(d.db)
+        self.logger = class_logger(self)
 
     async def on_data(self, sender, transfers: List[RuneTransfer]):
-        # for tr in transfers:
-        #     print(tr)
-        pass
+        self._fill_rune_price(transfers)
 
-    async def _send_message(self, channel_info: ChannelDescriptor, transfer: RuneTransfer):
-        loc: BaseLocalization = await self.deps.loc_man.get_from_lang(channel_info.lang)
+        addresses = set()
+        for transfer in transfers:
+            addresses.update((transfer.to_addr, transfer.from_addr))
 
-        text = loc.notification_text_rune_transfer(transfer)
-        task = self.deps.broadcaster.safe_send_message_rate(
-            channel_info,
-            BoardMessage(text)
-        )
-        asyncio.create_task(task)
+        if not addresses:
+            return
+
+        self.logger.debug(f'Casting transfer events ({len(addresses)} items)')
+
+        address_to_user = await self._watcher.all_users_for_many_nodes(addresses)
+        all_affected_users = self._watcher.all_affected_users(address_to_user)
+
+        if not all_affected_users:
+            return
+
+        user_events = defaultdict(list)
+        for transfer in transfers:
+            users_for_event = set(address_to_user.get(transfer.from_addr)) | set(address_to_user.get(transfer.to_addr))
+
+            for user in users_for_event:
+                user_events.get(user).append(transfer)
+
+        loc_man: LocalizationManager = self.deps.loc_man
+
+        settings_dic = await self.deps.settings_manager.get_settings_multi(user_events.keys())
+
+        for user, event_list in user_events.items():
+            loc = await loc_man.get_from_db(user, self.deps.db)
+
+            settings = settings_dic.get(user, {})
+
+            if bool(settings.get(GeneralSettings.INACTIVE, False)):
+                continue  # paused
+
+            platform = SettingsManager.get_platform(settings)
+
+            # filter events according to the user's setting
+            filtered_event_list = await self._filter_events(event_list, user, settings)
+
+            # split to several messages
+            groups = list(grouper(self.MAX_TRANSFER_PER_MESSAGE, filtered_event_list))
+
+            if groups:
+                self.logger.info(f'Sending personal Rune transfer notifications to user: {user}: '
+                                 f'{len(event_list)} events grouped to {len(groups)} groups...')
+
+            for group in groups:
+                self._send_message_to_group(group, loc, platform, user)
+
+    def _send_message_to_group(self, group, loc, platform, user):
+        messages = [loc.notification_text_rune_transfer(transfer) for transfer in group]
+        text = '\n\n'.join(m for m in messages if m)
+        text = text.strip()
+        if text:
+            task = self.deps.broadcaster.safe_send_message_rate(
+                ChannelDescriptor(platform, user),
+                BoardMessage(text)
+            )
+            asyncio.create_task(task)
+
+    @staticmethod
+    async def _filter_events(event_list: List[RuneTransfer], user_id, settings: dict) -> List[RuneTransfer]:
+        return event_list
+
+    def _fill_rune_price(self, transfers):
+        usd_per_rune = self.deps.price_holder.usd_per_rune
+        for tr in transfers:
+            tr.usd_per_rune = usd_per_rune
 
 
 class SettingsProcessorBalanceTracker(INotified):
