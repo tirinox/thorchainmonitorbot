@@ -4,6 +4,7 @@ from aiogram.utils.helper import HelperMode
 
 from localization.languages import Language
 from services.dialog.base import message_handler, DialogWithSettings
+from services.dialog.my_wallets_menu import MyWalletsMenu
 from services.dialog.node_op_menu import NodeOpDialog
 from services.lib.new_feature import Features
 from services.lib.texts import kbd
@@ -36,12 +37,15 @@ class SettingsDialog(DialogWithSettings):
             await self.go_to_node_op_settings(message)
         elif message.text == button_text_price_divergence:
             await self.ask_min_price_div_percent(message)
+        elif message.text == self.loc.BUTTON_MM_MY_ADDRESS:
+            await self.go_to_my_address(message)
         else:
             await SettingsStates.MAIN_SETTINGS_MENU.set()
             await message.answer(self.loc.TEXT_SETTING_INTRO, reply_markup=kbd(
                 [
                     [self.loc.BUTTON_SET_LANGUAGE, self.loc.BUTTON_SET_NODE_OP_GOTO],
-                    [button_text_price_divergence, self.loc.BUTTON_SM_BACK_MM],
+                    [button_text_price_divergence, self.loc.BUTTON_MM_MY_ADDRESS],
+                    [self.loc.BUTTON_SM_BACK_MM],
                 ], vert=True
             ))
 
@@ -51,6 +55,9 @@ class SettingsDialog(DialogWithSettings):
 
     async def go_to_node_op_settings(self, message: Message):
         await NodeOpDialog(self.loc, self.data, self.deps, self.message).show_main_menu(message)
+
+    async def go_to_my_address(self, message: Message):
+        await MyWalletsMenu(self.loc, self.data, self.deps, self.message).on_enter(message)
 
     # ----------- LANGUAGE ------------
 
