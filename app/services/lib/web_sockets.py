@@ -24,6 +24,7 @@ class WSClient(abc.ABC):
         self.logger = class_logger(self)
         self.headers = headers or {}
         self.ws: websockets.WebSocketClientProtocol = None
+        self.exception_safe = True
         super().__init__()
 
     async def send_message(self, message):
@@ -69,7 +70,10 @@ class WSClient(abc.ABC):
                 await asyncio.sleep(self.sleep_time)
                 continue
             except Exception as e:
-                self.logger.error(f'Other error: {e}')
-                await asyncio.sleep(self.sleep_time)
+                if not self.exception_safe:
+                    raise
+                else:
+                    self.logger.error(f'Other error: {e}')
+                    await asyncio.sleep(self.sleep_time)
 
     run = listen_forever
