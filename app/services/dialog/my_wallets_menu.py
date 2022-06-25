@@ -43,7 +43,7 @@ class MyWalletsMenu(BaseDialog):
     QUERY_REMOVE_ADDRESS = 'remove-addr'
     QUERY_SUMMARY_OF_ADDRESS = 'summary-addr'
     QUERY_TOGGLE_VIEW_VALUE = 'toggle-view-value'
-    QUERY_TOGGLE_LP_RPOT = 'toggle-lp-prot'
+    QUERY_TOGGLE_LP_PROT = 'toggle-lp-prot'
     QUERY_TOGGLE_BALANCE = 'toggle-balance'
 
     KEY_MY_ADDRESSES = 'my-address-list'
@@ -98,8 +98,8 @@ class MyWalletsMenu(BaseDialog):
         try:
             index = int(index)
             address_list = self.data[self.KEY_MY_ADDRESSES]
-            address = address_list[index]
-            del address[index]
+            address = address_list[index]['address']
+            del address_list[index]
             await self._process_wallet_balance_flag(address, is_on=False)
         except IndexError:
             logging.error(f'Cannot delete address at {index = },')
@@ -169,7 +169,7 @@ class MyWalletsMenu(BaseDialog):
                 # message = await message.answer(text=self.loc.text_lp_loading_pools(address),
                 #                                reply_markup=kbd([self.loc.BUTTON_SM_BACK_MM]))
                 loading_message = await message.answer(text=self.loc.text_lp_loading_pools(address),
-                                               reply_markup=ReplyKeyboardRemove())
+                                                       reply_markup=ReplyKeyboardRemove())
             try:
                 rune_yield = get_rune_yield_connector(self.deps)
                 my_pools = await rune_yield.get_my_pools(address)
@@ -218,38 +218,7 @@ class MyWalletsMenu(BaseDialog):
         chain = Chains.detect_chain(address)
         chain = chain if chain else Chains.BTC  # fixme: how about other chains?
 
-        below_button_matrix = []
-
-        # Summary + ThorYield
-        below_button_matrix += [
-            [
-                InlineKeyboardButton(self.loc.BUTTON_SM_SUMMARY,
-                                     callback_data=f'{self.QUERY_SUMMARY_OF_ADDRESS}:{addr_idx}'),
-                InlineKeyboardButton(self.loc.BUTTON_VIEW_RUNE_DOT_YIELD,
-                                     url=get_thoryield_address(self.deps.cfg.network_id, address, chain))
-            ]
-        ]
-
-        # View value + Show IL protection
-        if my_pools:
-            # button_toggle_lp_prot = InlineKeyboardButton(
-            #     self.loc.BUTTON_LP_PROT_ON if lp_prot_on else self.loc.BUTTON_LP_PROT_OFF,
-            #     callback_data=self.QUERY_TOGGLE_LP_RPOT
-            # )
-
-            row = [
-                InlineKeyboardButton(
-                    self.loc.BUTTON_VIEW_VALUE_ON if view_value else self.loc.BUTTON_VIEW_VALUE_OFF,
-                    callback_data=self.QUERY_TOGGLE_VIEW_VALUE)
-            ]
-
-            if chain == Chains.THOR:
-                text = self.loc.BUTTON_TRACK_BALANCE_ON if track_balance else self.loc.BUTTON_TRACK_BALANCE_OFF
-                text = self.text_new_feature(text, Features.F_PERSONAL_TRACK_BALANCE)
-                row.append(InlineKeyboardButton(text, callback_data=self.QUERY_TOGGLE_BALANCE))
-
-            below_button_matrix += [row]
-
+        # ---------------------------- POOLS ------------------------------
         pool_labels = [(cut_long_text(pool), pool) for pool in my_pools]
 
         tg_list = TelegramInlineList(
@@ -258,19 +227,57 @@ class MyWalletsMenu(BaseDialog):
             back_text='', data_prefix='pools',
         )
 
-        # Delete this address button and Back button
-        back_button = InlineKeyboardButton(self.loc.BUTTON_SM_BACK_TO_LIST, callback_data=tg_list.data_back)
-        if not external:
-            below_button_matrix += [
-                [
-                    back_button,
-                    InlineKeyboardButton(self.loc.BUTTON_REMOVE_THIS_ADDRESS,
-                                         callback_data=f'{self.QUERY_REMOVE_ADDRESS}:{addr_idx}'),
-                ]
-            ]
-        else:
-            below_button_matrix += [[back_button]]
+        below_button_matrix = []
 
+        # ---------------------------- ROW 1 ------------------------------
+        row1 = []
+        if my_pools:
+            # Summary button (only if there are LP pools)
+            row1.append(InlineKeyboardButton(
+                self.loc.BUTTON_SM_SUMMARY,
+                callback_data=f'{self.QUERY_SUMMARY_OF_ADDRESS}:{addr_idx}'))
+
+        # THOR YIELD button
+        row1.append(InlineKeyboardButton(
+            self.loc.BUTTON_VIEW_RUNE_DOT_YIELD,
+            url=get_thoryield_address(self.deps.cfg.network_id, address, chain)))
+
+        below_button_matrix.append(row1)
+
+        # ---------------------------- ROW 2 ------------------------------
+        row2 = []
+        if my_pools:
+            # row2.append(InlineKeyboardButton(
+            #     self.loc.BUTTON_LP_PROT_ON if lp_prot_on else self.loc.BUTTON_LP_PROT_OFF,
+            #     callback_data=self.QUERY_TOGGLE_LP_PROT))
+
+            # View value ON/OFF toggle switch
+            row2.append(InlineKeyboardButton(
+                self.loc.BUTTON_VIEW_VALUE_ON if view_value else self.loc.BUTTON_VIEW_VALUE_OFF,
+                callback_data=self.QUERY_TOGGLE_VIEW_VALUE))
+
+        if chain == Chains.THOR:
+            # Track balance ON/OFF toggle switch
+            text = self.loc.BUTTON_TRACK_BALANCE_ON if track_balance else self.loc.BUTTON_TRACK_BALANCE_OFF
+            text = self.text_new_feature(text, Features.F_PERSONAL_TRACK_BALANCE)
+            row2.append(InlineKeyboardButton(text, callback_data=self.QUERY_TOGGLE_BALANCE))
+
+        below_button_matrix.append(row2)
+
+        # ---------------------------- ROW 3 ------------------------------
+        row3 = []
+
+        if not external:
+            # Remove this address button
+            row3.append(InlineKeyboardButton(self.loc.BUTTON_REMOVE_THIS_ADDRESS,
+                                             callback_data=f'{self.QUERY_REMOVE_ADDRESS}:{addr_idx}'), )
+
+        # Back button
+        row3.append(InlineKeyboardButton(self.loc.BUTTON_SM_BACK_TO_LIST, callback_data=tg_list.data_back))
+
+        below_button_matrix.append(row3)
+
+        # install all extra buttons to the List
         tg_list.set_extra_buttons_below(below_button_matrix)
         return tg_list
 
@@ -293,7 +300,7 @@ class MyWalletsMenu(BaseDialog):
         elif query.data == self.QUERY_TOGGLE_VIEW_VALUE:
             self.data[self.KEY_CAN_VIEW_VALUE] = not self.data.get(self.KEY_CAN_VIEW_VALUE, True)
             await self._present_wallet_contents_menu(query.message, edit=True)
-        # elif query.data == self.QUERY_TOGGLE_LP_RPOT:
+        # elif query.data == self.QUERY_TOGGLE_LP_PROT:
         #     self.data[self.KEY_ADD_LP_PROTECTION] = not self.data.get(self.KEY_ADD_LP_PROTECTION, True)
         #     await self._present_wallet_contents_menu(query.message, edit=True)
         elif query.data == self.QUERY_TOGGLE_BALANCE:
@@ -392,4 +399,3 @@ class MyWalletsMenu(BaseDialog):
     def __init__(self, loc: BaseLocalization, data: Optional[FSMContextProxy], d: DepContainer, message: Message):
         super().__init__(loc, data, d, message)
         self._wallet_watch = WalletWatchlist(d.db)
-
