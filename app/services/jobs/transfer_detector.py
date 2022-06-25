@@ -47,7 +47,7 @@ class RuneTransferDetectorBlockEvents(WithDelegates, INotified):
                     event.attributes['recipient'],
                     block=0,
                     tx_hash='',
-                    amount=amount,
+                    amount=thor_to_float(amount),
                     usd_per_rune=1.0,
                     is_native=True,
                     asset=asset
