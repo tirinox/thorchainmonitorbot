@@ -41,7 +41,8 @@ class Broadcaster:
     async def notify_preconfigured_channels(self, f, *args, **kwargs):
         subscribed_channels = await self.get_subscribed_channels()
         all_channels = self.channels + subscribed_channels
-        self.logger.info(f'Total channels: {len(all_channels)}: {len(self.channels)} + {len(subscribed_channels)}')
+        self.logger.info(f'Total channels: {len(all_channels)}: '
+                         f'predefined ({len(self.channels)}( and subscribed: ({len(subscribed_channels)})')
 
         loc_man: LocalizationManager = self.deps.loc_man
         user_lang_map = {
