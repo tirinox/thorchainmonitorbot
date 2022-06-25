@@ -139,7 +139,7 @@ class MyWalletsMenu(BaseDialog):
         address = self.data[self.KEY_ACTIVE_ADDRESS] = list_result.selected_data_tag
         self.data[self.KEY_ACTIVE_ADDRESS_INDEX] = list_result.selected_item_index
 
-        await self.show_pool_menu_for_address(query.message, address, edit=False)
+        await self.show_pool_menu_for_address(query.message, address, edit=True)
 
     @query_handler(state=LPMenuStates.MAIN_MENU)
     async def on_tap_address(self, query: CallbackQuery):
@@ -286,7 +286,7 @@ class MyWalletsMenu(BaseDialog):
         result = await self._keyboard_inside_wallet_menu().handle_query(query)
 
         if result.result == result.BACK:
-            await self._show_address_selection_menu(query.message, edit=True)
+            await self._show_address_selection_menu(query.message, edit=True, show_add_more=False)
         elif result.result == result.SELECTED:
             await self.view_pool_report(query, result.selected_data_tag)
             await self._show_wallet_again(query)
@@ -296,7 +296,7 @@ class MyWalletsMenu(BaseDialog):
         elif query.data.startswith(f'{self.QUERY_REMOVE_ADDRESS}:'):
             _, index = query.data.split(':')
             await self._remove_address(index)
-            await self._show_address_selection_menu(query.message, edit=True)
+            await self._show_address_selection_menu(query.message, edit=True, show_add_more=False)
         elif query.data == self.QUERY_TOGGLE_VIEW_VALUE:
             self.data[self.KEY_CAN_VIEW_VALUE] = not self.data.get(self.KEY_CAN_VIEW_VALUE, True)
             await self._present_wallet_contents_menu(query.message, edit=True)
