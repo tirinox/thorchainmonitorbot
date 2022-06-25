@@ -19,9 +19,9 @@ class WalletWatchlist(UserWatchlist):
     def __init__(self, db: DB):
         super().__init__(db, 'Wallet')
 
-    async def set_user_to_node(self, user_id, node: str, value: bool):
-        print(f'{user_id = }, address = {node}: {"ON" if value else "OFF"}')
-        return await super().set_user_to_node(user_id, node, value)
+    # async def set_user_to_node(self, user_id, node: str, value: bool):
+    #     print(f'{user_id = }, address = {node}: {"ON" if value else "OFF"}')
+    #     return await super().set_user_to_node(user_id, node, value)
 
 
 class PersonalBalanceNotifier(INotified):
