@@ -1,8 +1,6 @@
 import asyncio
-import operator
 import time
 from collections import defaultdict
-from functools import reduce
 from typing import List
 
 from localization.manager import LocalizationManager
@@ -176,8 +174,6 @@ class NodeChangePersonalNotifier(INotified):
 
         # for every user
         for user, event_list in user_events.items():
-            loc = await loc_man.get_from_db(user, self.deps.db)
-
             settings = settings_dic.get(user, {})
 
             if bool(settings.get(GeneralSettings.INACTIVE, False)):
@@ -185,8 +181,6 @@ class NodeChangePersonalNotifier(INotified):
 
             if bool(settings.get(NodeOpSetting.PAUSE_ALL_ON, False)):
                 continue  # paused
-
-            platform = SettingsManager.get_platform(settings)
 
             # filter changes according to the user's setting
             filtered_change_list = await self._filter_events(event_list, user, settings)
@@ -197,16 +191,19 @@ class NodeChangePersonalNotifier(INotified):
                 self.logger.info(f'Sending personal notifications to user: {user}: '
                                  f'{len(event_list)} changes grouped to {len(groups)} groups...')
 
-            for group in groups:
-                messages = [loc.notification_text_for_node_op_changes(c) for c in group]
-                text = '\n\n'.join(m for m in messages if m)
-                text = text.strip()
-                if text:
-                    task = self.deps.broadcaster.safe_send_message_rate(
-                        ChannelDescriptor(platform, user),
-                        BoardMessage(text)
-                    )
-                    asyncio.create_task(task)
+                loc = await loc_man.get_from_db(user, self.deps.db)
+                platform = SettingsManager.get_platform(settings)
+
+                for group in groups:
+                    messages = [loc.notification_text_for_node_op_changes(c) for c in group]
+                    text = '\n\n'.join(m for m in messages if m)
+                    text = text.strip()
+                    if text:
+                        task = self.deps.broadcaster.safe_send_message_rate(
+                            ChannelDescriptor(platform, user),
+                            BoardMessage(text)
+                        )
+                        asyncio.create_task(task)
 
     @staticmethod
     async def _filter_events(event_list: List[NodeEvent], user_id, settings: dict) -> List[NodeEvent]:
