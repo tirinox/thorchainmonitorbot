@@ -19,6 +19,7 @@ class Broadcaster:
         self.deps = d
 
         self._broadcast_lock = asyncio.Lock()
+        self._rate_limit_lock = asyncio.Lock()
         self._rng = random.Random(time.time())
         self.logger = class_logger(self)
 
@@ -103,25 +104,26 @@ class Broadcaster:
 
     async def safe_send_message_rate(self, channel_info: ChannelDescriptor,
                                      message: BoardMessage, **kwargs) -> (bool, bool):
-        limiter = RateLimitCooldown(self.deps.db,
-                                    f'SendMessage:{channel_info.short_coded}',
-                                    self._limit_number,
-                                    self._limit_period,
-                                    self._limit_cooldown)
-        outcome = await limiter.hit()
-        send_result = None
-        if outcome == limiter.GOOD:
-            # all good: pass through
-            send_result = await self.safe_send_message(channel_info, message, **kwargs)
-        elif outcome == limiter.HIT_LIMIT:
-            # oops! just hit the limit, tell about it once
-            loc = self.deps.loc_man.get_from_lang(channel_info.lang)
-            warning_message = BoardMessage(loc.RATE_LIMIT_WARNING)
-            send_result = await self.safe_send_message(channel_info, warning_message, **kwargs)
-        else:
-            s_text = shorten_text(message.text, 200)
-            self.logger.warning(f'Rate limit for channel "{channel_info.short_coded}"! Text: "{s_text}"')
-        return outcome, send_result
+        async with self._rate_limit_lock:
+            limiter = RateLimitCooldown(self.deps.db,
+                                        f'SendMessage:{channel_info.short_coded}',
+                                        self._limit_number,
+                                        self._limit_period,
+                                        self._limit_cooldown)
+            outcome = await limiter.hit()
+            send_result = None
+            if outcome == limiter.GOOD:
+                # all good: pass through
+                send_result = await self.safe_send_message(channel_info, message, **kwargs)
+            elif outcome == limiter.HIT_LIMIT:
+                # oops! just hit the limit, tell about it once
+                loc = self.deps.loc_man.get_from_lang(channel_info.lang)
+                warning_message = BoardMessage(loc.RATE_LIMIT_WARNING)
+                send_result = await self.safe_send_message(channel_info, warning_message, **kwargs)
+            else:
+                s_text = shorten_text(message.text, 200)
+                self.logger.warning(f'Rate limit for channel "{channel_info.short_coded}"! Text: "{s_text}"')
+            return outcome, send_result
 
     @staticmethod
     async def _form_message(data_source, channel_info: ChannelDescriptor, **kwargs) -> BoardMessage:
