@@ -1816,4 +1816,9 @@ class BaseLocalization(ABC):  # == English
     @staticmethod
     def notification_text_rune_transfer(t: RuneTransfer):
         # todo! improve the text
-        return f'Transfer: {t.amount} {t.asset} from {code(t.from_addr)} to {code(t.to_addr)}.'
+        if t.is_rune:
+            amt = f' ({pretty_dollar(t.usd_amount)})'
+        else:
+            amt = ''
+
+        return f'🏦 <b>Transfer:</b> {t.amount} {t.asset}{amt} from {code(t.from_addr)} ➡️ {code(t.to_addr)}.'
