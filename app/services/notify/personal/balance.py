@@ -46,6 +46,7 @@ class PersonalBalanceNotifier(INotified):
 
         address_to_user = await self._watcher.all_users_for_many_nodes(addresses)
         all_affected_users = self._watcher.all_affected_users(address_to_user)
+        user_to_address = self._watcher.reverse(address_to_user)
 
         if not all_affected_users:
             return
@@ -55,21 +56,15 @@ class PersonalBalanceNotifier(INotified):
             users_for_event = set(address_to_user.get(transfer.from_addr)) | set(address_to_user.get(transfer.to_addr))
 
             for user in users_for_event:
-                user_events.get(user).append(transfer)
-
-        loc_man: LocalizationManager = self.deps.loc_man
+                user_events[user].append(transfer)
 
         settings_dic = await self.deps.settings_manager.get_settings_multi(user_events.keys())
 
         for user, event_list in user_events.items():
-            loc = await loc_man.get_from_db(user, self.deps.db)
-
             settings = settings_dic.get(user, {})
 
             if bool(settings.get(GeneralSettings.INACTIVE, False)):
                 continue  # paused
-
-            platform = SettingsManager.get_platform(settings)
 
             # filter events according to the user's setting
             filtered_event_list = await self._filter_events(event_list, user, settings)
@@ -81,11 +76,16 @@ class PersonalBalanceNotifier(INotified):
                 self.logger.info(f'Sending personal Rune transfer notifications to user: {user}: '
                                  f'{len(event_list)} events grouped to {len(groups)} groups...')
 
-            for group in groups:
-                self._send_message_to_group(group, loc, platform, user)
+                my_addresses = user_to_address.get(user, [])
 
-    def _send_message_to_group(self, group, loc, platform, user):
-        messages = [loc.notification_text_rune_transfer(transfer) for transfer in group]
+                for group in groups:
+                    await self._send_message_to_group(group, settings, user, my_addresses)
+
+    async def _send_message_to_group(self, group, settings, user, my_addresses):
+        loc = await self.deps.loc_man.get_from_db(user, self.deps.db)
+        platform = SettingsManager.get_platform(settings)
+
+        messages = [loc.notification_text_rune_transfer(transfer, my_addresses) for transfer in group]
         text = '\n\n'.join(m for m in messages if m)
         text = text.strip()
         if text:

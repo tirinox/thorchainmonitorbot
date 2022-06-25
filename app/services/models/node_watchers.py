@@ -1,6 +1,7 @@
 import operator
+from collections import defaultdict
 from functools import reduce
-from typing import List, Dict
+from typing import List, Dict, Set
 
 from services.lib.db import DB
 from services.lib.db_many2many import ManyToManySet
@@ -56,6 +57,14 @@ class UserWatchlist:
     def all_affected_users(item_to_user):
         sets = [set(v) for v in item_to_user.values()]
         return reduce(operator.or_, sets) if item_to_user else []
+
+    @staticmethod
+    def reverse(item_to_user: Dict[str, List[str]]) -> Dict[str, Set[str]]:
+        result = defaultdict(set)
+        for item, users in item_to_user.items():
+            for user in users:
+                result[user].add(item)
+        return result
 
 
 class NamedNodeStorage:
