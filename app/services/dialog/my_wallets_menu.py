@@ -64,18 +64,23 @@ class MyWalletsMenu(BaseDialog):
 
     @message_handler(state=LPMenuStates.MAIN_MENU)
     async def wallet_list_message_handler(self, message: Message):
-        # add an address
+        # this handler adds an address
         address = message.text.strip()
-        if address:
-            if not LPAddress.validate_address(address):
-                await message.answer(self.loc.TEXT_INVALID_ADDRESS, disable_notification=True)
-                return
+        if not address:
+            return
 
-            if address.lower() in self.prohibited_addresses:
-                await message.answer(self.loc.TEXT_CANNOT_ADD, disable_notification=True)
-                return
+        if not LPAddress.validate_address(address):
+            await message.answer(self.loc.TEXT_INVALID_ADDRESS, disable_notification=True)
+            return
 
-            self._add_address(address, Chains.BNB)
+        if address.lower() in self.prohibited_addresses:
+            await message.answer(self.loc.TEXT_CANNOT_ADD, disable_notification=True)
+            return
+
+        self._add_address(address, Chains.BNB)
+
+        # redraw menu!
+        await self._show_address_selection_menu(message)
 
     @property
     def my_addresses(self):
