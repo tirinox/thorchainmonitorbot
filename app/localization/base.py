@@ -1814,11 +1814,22 @@ class BaseLocalization(ABC):  # == English
     # ---- MY WALLET ALLERTS ----
 
     @staticmethod
-    def notification_text_rune_transfer(t: RuneTransfer):
-        # todo! improve the text
-        if t.is_rune:
-            amt = f' ({pretty_dollar(t.usd_amount)})'
-        else:
-            amt = ''
+    def _is_my_address_tag(address, my_addresses):
+        return ' ⭐' if my_addresses and address in my_addresses else ''
 
-        return f'🏦 <b>Transfer:</b> {t.amount} {t.asset}{amt} from {code(t.from_addr)} ➡️ {code(t.to_addr)}.'
+    def notification_text_rune_transfer(self, t: RuneTransfer, my_addresses):
+        # todo! improve the text
+        my_addresses = my_addresses or []
+
+        if t.is_rune:
+            usd_amt = f' ({pretty_dollar(t.usd_amount)})'
+        else:
+            usd_amt = ''
+
+        from_my = self._is_my_address_tag(t.from_addr, my_addresses)
+        to_my = self._is_my_address_tag(t.to_addr, my_addresses)
+
+        return f'🏦 <b>Transfer:</b> {short_money(t.amount)} ' \
+               f'{t.asset}{usd_amt} ' \
+               f'from {code(t.from_addr)}{from_my} ' \
+               f'➡️ {code(t.to_addr)}{to_my}.'
