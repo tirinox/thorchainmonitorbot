@@ -1,4 +1,4 @@
-from services.lib.utils import shorten_text
+from services.lib.texts import shorten_text
 
 
 def test_shorten_text_1():

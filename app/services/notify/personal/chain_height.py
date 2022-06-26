@@ -4,7 +4,8 @@ from typing import Optional, List
 from services.lib.constants import Chains
 from services.lib.date_utils import parse_timespan_to_seconds, HOUR
 from services.lib.depcont import DepContainer
-from services.lib.utils import most_common, estimate_max_by_committee, sep
+from services.lib.utils import most_common, estimate_max_by_committee
+from services.lib.texts import sep
 from services.models.node_info import NodeEvent, NodeEventType, EventBlockHeight, NodeInfo
 from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
 from services.notify.personal.user_data import UserDataCache

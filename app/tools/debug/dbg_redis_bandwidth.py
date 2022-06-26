@@ -3,7 +3,8 @@ import logging
 import random
 
 from services.lib.date_utils import now_ts
-from services.lib.utils import setup_logs, sep
+from services.lib.utils import setup_logs
+from services.lib.texts import sep
 from tools.lib.lp_common import LpAppFramework
 
 

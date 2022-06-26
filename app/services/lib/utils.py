@@ -11,7 +11,7 @@ from collections import deque, Counter, defaultdict
 from functools import wraps, partial
 from io import BytesIO
 from itertools import tee
-from typing import List, Iterable
+from typing import Iterable
 
 import aiofiles
 import aiohttp
@@ -157,14 +157,6 @@ def random_ip_address():
     return ".".join(str(random.randint(0, 255)) for _ in range(4))
 
 
-def sep(space=False):
-    if space:
-        print()
-    print('-' * 100)
-    if space:
-        print()
-
-
 def class_logger(self):
     return logging.getLogger(self.__class__.__name__)
 
@@ -181,21 +173,6 @@ def parse_list_from_string(text: str, upper=False, lower=False, strip=True):
         items = map(str.strip, items)
 
     return [x for x in items if x]
-
-
-def fuzzy_search(query: str, realm) -> List[str]:
-    if not query:
-        return []
-
-    query = query.upper()
-    if query in realm:  # perfect match
-        return [query]
-
-    variants = []
-    for name in realm:
-        if query in name:
-            variants.append(name)
-    return variants
 
 
 def turn_dic_inside_out(d: dict, factory=set, op=set.add):
@@ -268,13 +245,6 @@ async def download_file(url, target_path):
             return resp.status
 
 
-def sum_and_str(*args):
-    if not args:
-        return '0'
-    else:
-        return str(sum(int(arg) for arg in args))
-
-
 def iterable_but_not_str(it):
     return not isinstance(it, (str, bytes)) and isinstance(it, Iterable)
 
@@ -336,12 +306,3 @@ def safe_get(dct, *keys):
         except (KeyError, TypeError):
             return None
     return dct
-
-
-def shorten_text(text, limit=200, end='...'):
-    if not isinstance(text, str):
-        text = str(text)
-    if limit and len(text) > limit:
-        return text[:limit - len(end)] + end
-    else:
-        return text

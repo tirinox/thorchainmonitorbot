@@ -7,7 +7,8 @@ from semver import VersionInfo
 
 from localization.manager import LocalizationManager
 from services.jobs.fetch.node_info import NodeInfoFetcher
-from services.lib.utils import setup_logs, sep
+from services.lib.utils import setup_logs
+from services.lib.texts import sep
 from services.models.node_info import NodeSetChanges, NodeVersionConsensus
 from tools.lib.lp_common import LpAppFramework
 

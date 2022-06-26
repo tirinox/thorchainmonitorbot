@@ -17,8 +17,7 @@ from services.lib.money import format_percent, pretty_money, short_address, shor
     calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset, short_dollar, \
     RAIDO_GLYPH, pretty_rune, short_rune
 from services.lib.texts import progressbar, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
-    up_down_arrow, bracketify, plural, grouper, join_as_numbered_list, regroup_joining
-from services.lib.utils import shorten_text
+    up_down_arrow, bracketify, plural, grouper, join_as_numbered_list, regroup_joining, shorten_text
 from services.models.cap_info import ThorCapInfo
 from services.models.last_block import BlockProduceState, EventBlockSpeed
 from services.models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting, MimirVoteOption

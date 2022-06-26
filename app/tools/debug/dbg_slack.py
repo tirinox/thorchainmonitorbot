@@ -3,7 +3,7 @@ import asyncio
 from services.dialog.picture.price_picture import price_graph_from_db
 from services.dialog.slack.slack_bot import SlackBot
 from services.lib.date_utils import DAY
-from services.lib.utils import sep
+from services.lib.texts import sep
 from tools.lib.lp_common import LpAppFramework
 
 

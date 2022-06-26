@@ -8,7 +8,8 @@ from aiogram.utils import exceptions, executor
 
 from services.lib.config import Config
 from services.lib.db import DB
-from services.lib.utils import class_logger, shorten_text
+from services.lib.utils import class_logger
+from services.lib.texts import shorten_text
 from services.notify.channel import MessageType, CHANNEL_INACTIVE, BoardMessage
 
 TG_TEST_USER = 192398802

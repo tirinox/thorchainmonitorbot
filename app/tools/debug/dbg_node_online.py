@@ -6,7 +6,7 @@ from aiothornode.types import ThorNodeAccount
 from services.lib.delegates import INotified
 from services.jobs.fetch.thormon import ThorMonWSSClient
 from services.lib.depcont import DepContainer
-from services.lib.utils import sep
+from services.lib.texts import sep
 from services.models.thormon import ThorMonAnswer
 from services.notify.personal.node_online import NodeOnlineTracker
 from tools.lib.lp_common import LpAppFramework

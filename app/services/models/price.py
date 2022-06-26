@@ -7,7 +7,7 @@ from services.jobs.fetch.circulating import RuneCirculatingSupply
 from services.lib.config import Config
 from services.lib.constants import BNB_BTCB_SYMBOL, BTC_SYMBOL, STABLE_COIN_POOLS, thor_to_float
 from services.lib.money import weighted_mean
-from services.lib.utils import fuzzy_search
+from services.lib.texts import fuzzy_search
 from services.models.base import BaseModelMixin
 from services.models.pool_info import PoolInfo, PoolInfoMap
 

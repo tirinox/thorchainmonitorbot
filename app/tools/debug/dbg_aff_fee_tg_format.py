@@ -6,7 +6,7 @@ from services.jobs.fetch.tx import merge_affiliate_txs
 from services.lib.midgard.connector import MidgardConnector
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import free_url_gen
-from services.lib.utils import sep
+from services.lib.texts import sep
 from services.models.pool_info import PoolInfo
 from services.models.tx import ThorTxExtended
 from tools.lib.lp_common import LpAppFramework

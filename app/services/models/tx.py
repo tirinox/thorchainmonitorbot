@@ -4,7 +4,7 @@ from typing import List, Optional, Iterable, Dict
 
 from services.lib.constants import is_rune, RUNE_SYMBOL, Chains, NATIVE_RUNE_SYMBOL, thor_to_float
 from services.lib.money import Asset
-from services.lib.utils import sum_and_str
+from services.lib.texts import sum_and_str
 from services.models.cap_info import ThorCapInfo
 from services.models.lp_info import LPAddress
 from services.models.pool_info import PoolInfo

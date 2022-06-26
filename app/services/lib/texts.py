@@ -1,5 +1,6 @@
 import itertools
 import re
+from typing import List
 from urllib.parse import urlparse
 
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
@@ -166,3 +167,42 @@ def split_by_camel_case(s: str, abbr_correction=True):
 
 def capitalize_each_word(s):
     return ' '.join(map(str.capitalize, str(s).split()))
+
+
+def sep(space=False):
+    if space:
+        print()
+    print('-' * 100)
+    if space:
+        print()
+
+
+def fuzzy_search(query: str, realm) -> List[str]:
+    if not query:
+        return []
+
+    query = query.upper()
+    if query in realm:  # perfect match
+        return [query]
+
+    variants = []
+    for name in realm:
+        if query in name:
+            variants.append(name)
+    return variants
+
+
+def sum_and_str(*args):
+    if not args:
+        return '0'
+    else:
+        return str(sum(int(arg) for arg in args))
+
+
+def shorten_text(text, limit=200, end='...'):
+    if not isinstance(text, str):
+        text = str(text)
+    if limit and len(text) > limit:
+        return text[:limit - len(end)] + end
+    else:
+        return text

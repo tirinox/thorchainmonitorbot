@@ -13,8 +13,8 @@ from services.jobs.node_churn import NodeStateDatabase
 from services.lib.date_utils import parse_timespan_to_seconds, HOUR
 from services.lib.depcont import DepContainer
 from services.lib.settings_manager import SettingsContext
-from services.lib.texts import join_as_numbered_list, grouper
-from services.lib.utils import parse_list_from_string, fuzzy_search
+from services.lib.texts import join_as_numbered_list, grouper, fuzzy_search
+from services.lib.utils import parse_list_from_string
 from services.models.node_info import NodeInfo
 from services.models.node_watchers import NodeWatcherStorage
 from services.notify.channel import Messengers

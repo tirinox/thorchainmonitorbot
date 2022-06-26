@@ -4,7 +4,7 @@ import time
 
 from localization.manager import BaseLocalization
 from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
-from services.lib.utils import sep
+from services.lib.texts import sep
 from tools.lib.lp_common import LpAppFramework
 
 

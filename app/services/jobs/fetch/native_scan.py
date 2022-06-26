@@ -56,6 +56,7 @@ class NativeScannerTX(NativeScanner):
     async def handle_wss_message(self, reply: dict):
         block = safe_get(reply, 'result', 'data', 'value', 'block')
         raw_txs = safe_get(block, 'data', 'txs')
+
         if raw_txs:
             block_height = safe_get(block, 'header', 'height')
             self.logger.info(f'Got block #{block_height} with {len(raw_txs)} transactions.')
