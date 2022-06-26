@@ -89,4 +89,4 @@ class RuneTransferDetectorFromTxResult(WithDelegates, INotified):
 
     def __init__(self, reserve_address=''):
         super().__init__()
-        self.reserve_address = ''
+        self.reserve_address = reserve_address

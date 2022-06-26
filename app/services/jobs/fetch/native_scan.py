@@ -8,9 +8,9 @@ from services.lib.web_sockets import WSClient
 
 
 class NativeScanner(WSClient, WithDelegates):
-    REPLY_TIMEOUT = 20
-    PING_TIMEOUT = 6
-    SLEEP_TIME = 6
+    REPLY_TIMEOUT = 60.0
+    PING_TIMEOUT = 4.0
+    SLEEP_TIME = 5.0
 
     def __init__(self, node_rpc_url):
         parsed = urlparse(node_rpc_url)
