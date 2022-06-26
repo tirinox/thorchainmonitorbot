@@ -54,11 +54,22 @@ class NativeScannerTX(NativeScanner):
         await self.ws.send(json.dumps(self.SUBSCRIBE_NEW_TX))
 
     async def handle_wss_message(self, reply: dict):
-        block = safe_get(reply, 'result', 'data', 'value', 'block')
-        raw_txs = safe_get(block, 'data', 'txs')
+        tx_result = safe_get(reply, 'result', 'data', 'value', 'TxResult')
+        events = safe_get(reply, 'result', 'events')
 
-        if raw_txs:
-            block_height = safe_get(block, 'header', 'height')
-            self.logger.info(f'Got block #{block_height} with {len(raw_txs)} transactions.')
-            txs = [NativeThorTx.from_base64(item) for item in raw_txs]
-            await self.pass_data_to_listeners(txs)
+        if events:
+            height = int(events['tx.height'][0])
+            await self._push_tx((tx_result, events, height), height)
+
+    async def _push_tx(self, tx, height):
+        if tx:
+            self._buffer.append(tx)
+        if self._current_height != height:
+            await self.pass_data_to_listeners(self._buffer)
+            self._buffer = []
+            self._current_height = height
+
+    def __init__(self, node_rpc_url):
+        super().__init__(node_rpc_url)
+        self._current_height = 0
+        self._buffer = []

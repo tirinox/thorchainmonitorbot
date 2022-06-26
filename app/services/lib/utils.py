@@ -11,7 +11,7 @@ from collections import deque, Counter, defaultdict
 from functools import wraps, partial
 from io import BytesIO
 from itertools import tee
-from typing import Iterable
+from typing import Iterable, List, Any
 
 import aiofiles
 import aiohttp
@@ -306,3 +306,18 @@ def safe_get(dct, *keys):
         except (KeyError, TypeError):
             return None
     return dct
+
+
+class Buffer:
+    def __init__(self, size=10):
+        self.buffer = []
+        self.size = size
+
+    def add(self, data) -> List[Any]:
+        self.buffer.append(data)
+        if len(self.buffer) >= self.size:
+            contents = self.buffer
+            self.buffer = []
+            return contents
+        else:
+            return []

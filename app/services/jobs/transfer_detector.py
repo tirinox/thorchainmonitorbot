@@ -1,6 +1,6 @@
 from typing import List
 
-from proto import NativeThorTx, parse_thor_address, DecodedEvent
+from proto import NativeThorTx, parse_thor_address, DecodedEvent, thor_decode_amount_field
 from proto.thor_types import MsgSend
 from services.lib.constants import thor_to_float
 from services.lib.delegates import WithDelegates, INotified
@@ -53,3 +53,40 @@ class RuneTransferDetectorBlockEvents(WithDelegates, INotified):
                     asset=asset
                 ))
         await self.pass_data_to_listeners(transfers)
+
+
+class RuneTransferDetectorFromTxResult(WithDelegates, INotified):
+    async def on_data(self, sender, data: List[tuple]):
+        transfers = []
+        for tx_result, events, height in data:
+            senders = events.get('transfer.sender')
+            recipients = events.get('transfer.recipient')
+            amounts = events.get('transfer.amount')
+
+            if not all((senders, recipients, amounts)):
+                continue
+
+            tx_hash = events['tx.hash'][0]
+            for sender, recipient, amount_obj in zip(senders, recipients, amounts):
+                amount, asset = thor_decode_amount_field(amount_obj)
+
+                # ignore fee transfers
+                if self._is_fee(amount, asset, recipient):
+                    continue
+
+                transfers.append(RuneTransfer(
+                    sender, recipient,
+                    height, tx_hash,
+                    thor_to_float(amount),
+                    asset=asset,
+                    is_native=True
+                ))
+
+        await self.pass_data_to_listeners(transfers)
+
+    def _is_fee(self, amount, asset, to_addr):
+        return amount == 2000000 and asset == 'rune' and to_addr == self.reserve_address
+
+    def __init__(self, reserve_address=''):
+        super().__init__()
+        self.reserve_address = ''
