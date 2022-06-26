@@ -132,7 +132,9 @@ class VersionNotifier(INotified, WithDelegates):
         if abs(old_progress - ver_con.ratio) < 0.005:
             return  # no change
 
-        if await self.cd_upgrade.can_do():
+        more_than_one = ver_con.top_version_count > 1
+
+        if more_than_one and await self.cd_upgrade.can_do():
             await self.deps.broadcaster.notify_preconfigured_channels(
                 BaseLocalization.notification_text_version_upgrade_progress,
                 data, ver_con
