@@ -2,7 +2,6 @@ import asyncio
 from collections import defaultdict
 from typing import List
 
-from localization.manager import LocalizationManager
 from services.lib.db import DB
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
@@ -47,6 +46,9 @@ class PersonalBalanceNotifier(INotified):
         address_to_user = await self._watcher.all_users_for_many_nodes(addresses)
         all_affected_users = self._watcher.all_affected_users(address_to_user)
         user_to_address = self._watcher.reverse(address_to_user)
+
+        # for addr, users in address_to_user.items():
+        #     print(f"{addr} => {users}!")
 
         if not all_affected_users:
             return

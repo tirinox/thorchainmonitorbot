@@ -20,7 +20,7 @@ class InlineListResult(typing.NamedTuple):
 class TelegramInlineList:
     def __init__(self, items,
                  data_proxy: FSMContextProxy,
-                 max_rows=3, max_columns=2,
+                 max_rows=2, max_columns=2,
                  back_text='Back',
                  prev_page_text='«',
                  next_page_text='»',
@@ -120,7 +120,8 @@ class TelegramInlineList:
 
     @property
     def current_page(self):
-        return int(self._data.get(self.data_page_key, 0))
+        page = int(self._data.get(self.data_page_key, 0))
+        return max(0, min(page, self._total_pages - 1))
 
     @property
     def data_page_key(self):

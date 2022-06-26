@@ -148,8 +148,11 @@ class NodeOpDialog(DialogWithSettings):
             # add node_address as a tag
             (self.loc.short_node_desc(n, watching=(n.node_address in watch_list)), n.node_address) for n in last_nodes
         ]
-        return TelegramInlineList(last_node_texts, data_proxy=self.data, back_text=self.loc.BUTTON_BACK,
-                                  data_prefix='all_nodes').set_extra_buttons_above(
+        return TelegramInlineList(
+            last_node_texts, data_proxy=self.data, back_text=self.loc.BUTTON_BACK,
+            data_prefix='all_nodes',
+            max_rows=3
+        ).set_extra_buttons_above(
             [
                 [
                     InlineKeyboardButton(self.loc.BUTTON_NOP_ADD_ALL_NODES, callback_data='add:all'),

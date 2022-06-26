@@ -4,7 +4,7 @@ from dataclasses import dataclass, field
 from math import sqrt
 from typing import List, Dict
 
-from services.lib.constants import Chains, thor_to_float
+from services.lib.constants import thor_to_float
 from services.lib.date_utils import DAY
 from services.models.base import BaseModelMixin
 from services.models.pool_info import PoolInfo, LPPosition, pool_share
@@ -14,10 +14,6 @@ BECH_2_CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
 
 @dataclass
 class LPAddress(BaseModelMixin):
-    address: str = ''
-    chain: str = Chains.BNB
-    pools: list = field(default_factory=list)
-
     @classmethod
     def is_good_bnb_address(cls, addr: str):
         addr = addr.strip()
