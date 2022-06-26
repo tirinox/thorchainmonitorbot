@@ -17,7 +17,7 @@ class WSClient(abc.ABC):
     async def on_connected(self):
         ...
 
-    def __init__(self, url, reply_timeout=10, ping_timeout=5, sleep_time=5, headers=None):
+    def __init__(self, url, reply_timeout=13.3, ping_timeout=5, sleep_time=5, headers=None):
         self.url = url
         self.reply_timeout = reply_timeout
         self.ping_timeout = ping_timeout
@@ -45,10 +45,10 @@ class WSClient(abc.ABC):
                             try:
                                 pong = await self.ws.ping()
                                 await asyncio.wait_for(pong, timeout=self.ping_timeout)
-                                self.logger.debug('Ping OK, keeping connection alive...')
+                                self.logger.info('Ping OK, keeping connection alive...')
                                 continue
                             except Exception:
-                                self.logger.debug(
+                                self.logger.info(
                                     'Ping error - retrying connection in {} sec (Ctrl-C to quit)'.format(
                                         self.sleep_time))
                                 await asyncio.sleep(self.sleep_time)
@@ -59,7 +59,12 @@ class WSClient(abc.ABC):
                             await self.handle_wss_message(message)
                         except (ValueError, TypeError, LookupError) as e:
                             r = shorten_text(reply, 256)
-                            self.logger.error(f'Error decoding WebSocket JSON message! {e} Data: "{r}"')
+                            self.logger.error(f'Error decoding WebSocket JSON message! {e!r} Data: "{r}"')
+                        except Exception as e:
+                            if not self.exception_safe:
+                                raise
+                            else:
+                                self.logger.error(f'Other error: {e!r}')
 
             except socket.gaierror:
                 self.logger.warn(f'Socket error - retrying connection in {self.sleep_time} sec ')
@@ -74,7 +79,7 @@ class WSClient(abc.ABC):
                 if not self.exception_safe:
                     raise
                 else:
-                    self.logger.error(f'Other error: {e}')
+                    self.logger.error(f'Other error: {e!r}')
                     await asyncio.sleep(self.sleep_time)
 
     run = listen_forever
