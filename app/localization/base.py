@@ -1817,6 +1817,14 @@ class BaseLocalization(ABC):  # == English
     def _is_my_address_tag(address, my_addresses):
         return ' ⭐' if my_addresses and address in my_addresses else ''
 
+    def get_thor_address_link(self, address, my_addresses):
+        label = short_address(address) + self._is_my_address_tag(address, my_addresses)
+        return link(get_explorer_url_to_address(
+            self.cfg.network_id,
+            Chains.THOR,
+            address,
+        ), label)
+
     def notification_text_rune_transfer(self, t: RuneTransfer, my_addresses):
         # todo! improve the text
         my_addresses = my_addresses or []
@@ -1826,10 +1834,10 @@ class BaseLocalization(ABC):  # == English
         else:
             usd_amt = ''
 
-        from_my = self._is_my_address_tag(t.from_addr, my_addresses)
-        to_my = self._is_my_address_tag(t.to_addr, my_addresses)
+        from_my = self.get_thor_address_link(t.from_addr, my_addresses)
+        to_my = self.get_thor_address_link(t.to_addr, my_addresses)
 
         return f'🏦 <b>Transfer:</b> {short_money(t.amount)} ' \
                f'{t.asset}{usd_amt} ' \
-               f'from {code(t.from_addr)}{from_my} ' \
-               f'➡️ {code(t.to_addr)}{to_my}.'
+               f'from {t.from_addr}{from_my} ' \
+               f'➡️ {t.to_addr}{to_my}.'
