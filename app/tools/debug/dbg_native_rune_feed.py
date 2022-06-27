@@ -1,13 +1,15 @@
 import asyncio
 import logging
 
-from services.jobs.fetch.native_scan import NativeScannerTX, NativeScannerBlockEvents
-from services.jobs.transfer_detector import RuneTransferDetectorNativeTX, RuneTransferDetectorBlockEvents, \
+from services.jobs.fetch.native_scan import NativeScannerBlock
+from services.jobs.fetch.native_scan_ws import NativeScannerTX, NativeScannerBlockEvents
+from services.jobs.transfer_detector import RuneTransferDetectorBlockEvents, \
     RuneTransferDetectorFromTxResult
 from services.lib.config import Config
 from services.lib.delegates import INotified
 from services.lib.texts import sep
 from services.lib.utils import setup_logs
+from tools.lib.lp_common import LpAppFramework
 
 
 class Receiver(INotified):
@@ -38,11 +40,19 @@ async def t_block_scanner(url):
     await scanner.run()
 
 
-async def main():
+async def ws_main():
     cfg = Config()
     url = cfg.as_str('thor.node.rpc_node_url')
     reserve_address = cfg.as_str('native_scanner.reserve_address')
     await t_tx_scanner(url, reserve_address)
+
+
+async def main():
+    lp_app = LpAppFramework(log_level=logging.INFO)
+    async with lp_app(brief=True):
+        scanner = NativeScannerBlock(lp_app.deps)
+        scanner.subscribe(Receiver('TX'))
+        await scanner.run()
 
 
 if __name__ == '__main__':

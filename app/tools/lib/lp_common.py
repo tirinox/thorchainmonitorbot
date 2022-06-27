@@ -56,6 +56,7 @@ class LpAppFramework:
         d = self.deps
         d.make_http_session()
         d.thor_connector = ThorConnector(d.cfg.get_thor_env_by_network_id(), d.session)
+        d.thor_env = d.thor_connector.env
 
         cfg = d.cfg.thor.midgard
         d.midgard_connector = MidgardConnector(

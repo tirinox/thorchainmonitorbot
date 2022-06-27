@@ -131,6 +131,8 @@ node_op_tools:
 native_scanner: # (!) new
   enabled: true
 
+  reserve_address: "thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt"
+
   prohibited_addresses:
     - "thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt"
     - "thor17gw75axcnr8747pkanye45pnrwk7p9c3cqncsv"

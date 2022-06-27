@@ -18,7 +18,7 @@ from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
 from services.jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from services.jobs.fetch.last_block import LastBlockFetcher
-from services.jobs.fetch.native_scan import NativeScannerBlockEvents
+from services.jobs.fetch.native_scan_ws import NativeScannerTX
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher, PoolInfoFetcherMidgard
@@ -26,7 +26,7 @@ from services.jobs.fetch.queue import QueueFetcher
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.ilp_summer import ILPSummer
 from services.jobs.node_churn import NodeChurnDetector
-from services.jobs.transfer_detector import RuneTransferDetectorBlockEvents
+from services.jobs.transfer_detector import RuneTransferDetectorFromTxResult
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.lib.config import Config, SubConfig
 from services.lib.date_utils import parse_timespan_to_seconds
@@ -286,9 +286,10 @@ class App:
             tasks.append(fetcher_bep2)
 
         if d.cfg.get('native_scanner.enabled', True):
-            scanner = NativeScannerBlockEvents(d.thor_env.rpc_url)
+            scanner = NativeScannerTX(d.thor_env.rpc_url)
             tasks.append(scanner)
-            decoder = RuneTransferDetectorBlockEvents()
+            reserve_address = d.cfg.as_str('native_scanner.reserve_address')
+            decoder = RuneTransferDetectorFromTxResult(reserve_address)
             scanner.subscribe(decoder)
             balance_notifier = PersonalBalanceNotifier(d)
             decoder.subscribe(balance_notifier)

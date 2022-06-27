@@ -71,7 +71,7 @@ class RuneTransferDetectorFromTxResult(WithDelegates, INotified):
                 amount, asset = thor_decode_amount_field(amount_obj)
 
                 # ignore fee transfers
-                if self._is_fee(amount, asset, recipient):
+                if is_fee_tx(amount, asset, recipient, self.reserve_address):
                     continue
 
                 transfers.append(RuneTransfer(
@@ -84,9 +84,10 @@ class RuneTransferDetectorFromTxResult(WithDelegates, INotified):
 
         await self.pass_data_to_listeners(transfers)
 
-    def _is_fee(self, amount, asset, to_addr):
-        return amount == 2000000 and asset == 'rune' and to_addr == self.reserve_address
-
     def __init__(self, reserve_address=''):
         super().__init__()
         self.reserve_address = reserve_address
+
+
+def is_fee_tx(amount, asset, to_addr, reserve_address):
+    return amount == 2000000 and asset == 'rune' and to_addr == reserve_address

@@ -43,10 +43,14 @@ class WSClient(abc.ABC):
                             reply = await asyncio.wait_for(self.ws.recv(), timeout=self.reply_timeout)
                         except (asyncio.TimeoutError, websockets.ConnectionClosed):
                             try:
-                                pong = await self.ws.ping()
-                                await asyncio.wait_for(pong, timeout=self.ping_timeout)
-                                self.logger.info('Ping OK, keeping connection alive...')
-                                continue
+                                if self.ping_timeout:
+                                    pong = await self.ws.ping()
+                                    await asyncio.wait_for(pong, timeout=self.ping_timeout)
+                                    self.logger.info('Ping OK, keeping connection alive...')
+                                    continue
+                                else:
+                                    self.logger.warn('Reconnect on timeout!')
+                                    break
                             except Exception:
                                 self.logger.info(
                                     'Ping error - retrying connection in {} sec (Ctrl-C to quit)'.format(

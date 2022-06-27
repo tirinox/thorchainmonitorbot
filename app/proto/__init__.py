@@ -33,6 +33,12 @@ class NativeThorTx:
         self.tx = tx
         self.hash = tx_hash
 
+    def __repr__(self) -> str:
+        return repr(self.tx)
+
+    def __str__(self):
+        return str(self.tx)
+
     @classmethod
     def from_bytes(cls, data: bytes):
         tx = Tx().parse(data)
