@@ -50,7 +50,7 @@ async def ws_main():
 async def main():
     lp_app = LpAppFramework(log_level=logging.INFO)
     async with lp_app(brief=True):
-        scanner = NativeScannerBlock(lp_app.deps, sleep_pediod=12)
+        scanner = NativeScannerBlock(lp_app.deps, sleep_period=7)
         # scanner.subscribe(Receiver('TX'))
         await scanner.run()
 
