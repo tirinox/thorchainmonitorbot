@@ -1836,7 +1836,11 @@ class BaseLocalization(ABC):  # == English
         from_my = self.get_thor_address_link(t.from_addr, my_addresses)
         to_my = self.get_thor_address_link(t.to_addr, my_addresses)
 
+        comment = ''
+        if t.comment:
+            comment = ' ' + shorten_text(t.comment, 100)
+
         return f'🏦 <b>Transfer:</b> {short_money(t.amount)} ' \
                f'{t.asset}{usd_amt} ' \
                f'from {t.from_addr}{from_my} ' \
-               f'➡️ {t.to_addr}{to_my}.'
+               f'➡️ {t.to_addr}{to_my}{comment}.'

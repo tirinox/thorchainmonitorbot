@@ -86,6 +86,8 @@ def thor_decode_amount_field(string: str):
 
 
 def debase64(s: str):
+    if not s:
+        return b''
     return base64.decodebytes(s.encode()).decode()
 
 
@@ -104,10 +106,10 @@ class DecodedEvent(typing.NamedTuple):
 def thor_decode_event(e) -> DecodedEvent:
     decoded_attrs = {}
     for attr in e['attributes']:
-        key = debase64(attr['key'])
-        value = debase64(attr['value'])
+        key = debase64(attr.get('key'))
+        value = debase64(attr.get('value'))
         if key == 'amount':
             amount, asset = thor_decode_amount_field(value)
             value = amount, asset.upper()
         decoded_attrs[key] = value
-    return DecodedEvent(e['type'], decoded_attrs)
+    return DecodedEvent(e.get('type', ''), decoded_attrs)

@@ -1,9 +1,10 @@
 from typing import List
 
 from proto import NativeThorTx, parse_thor_address, DecodedEvent, thor_decode_amount_field
-from proto.thor_types import MsgSend
+from proto.thor_types import MsgSend, MsgDeposit
 from services.lib.constants import thor_to_float
 from services.lib.delegates import WithDelegates, INotified
+from services.lib.money import Asset
 from services.models.transfer import RuneTransfer
 
 
@@ -15,7 +16,12 @@ class RuneTransferDetectorNativeTX(WithDelegates, INotified):
     def address_parse(self, raw_address):
         return parse_thor_address(raw_address, self.address_prefix)
 
-    async def on_data(self, sender, txs: List[NativeThorTx]):
+    async def on_data(self, sender, data):
+        txs: List[NativeThorTx]
+        txs, block_no = data
+
+        if not txs:
+            return
         transfers = []
         for tx in txs:
             for message in tx.tx.body.messages:
@@ -26,18 +32,35 @@ class RuneTransferDetectorNativeTX(WithDelegates, INotified):
                         transfers.append(RuneTransfer(
                             from_addr=from_addr,
                             to_addr=to_addr,
-                            block=0,  # fixme
+                            block=block_no,
                             tx_hash=tx.hash,
                             amount=thor_to_float(coin.amount),
-                            usd_per_rune=1.0,  # where to get it?
                             is_native=True,
                             asset=coin.denom
                         ))
+                elif isinstance(message, MsgDeposit):
+                    for coin in message.coins:
+                        transfers.append(RuneTransfer(
+                            from_addr=self.address_parse(message.signer),
+                            to_addr='',
+                            block=block_no,
+                            tx_hash=tx.hash,
+                            amount=thor_to_float(coin.amount),
+                            is_native=True,
+                            asset=Asset(coin.asset.chain, coin.asset.symbol, is_synth=True).full_name
+                        ))
+
         await self.pass_data_to_listeners(transfers)
 
 
 class RuneTransferDetectorBlockEvents(WithDelegates, INotified):
-    async def on_data(self, sender, events: List[DecodedEvent]):
+    async def on_data(self, sender, data):
+        events: List[DecodedEvent]
+        events, block_no = data
+
+        if not events:
+            return
+
         transfers = []
         for event in events:
             if event.type == 'transfer':
@@ -45,7 +68,7 @@ class RuneTransferDetectorBlockEvents(WithDelegates, INotified):
                 transfers.append(RuneTransfer(
                     event.attributes['sender'],
                     event.attributes['recipient'],
-                    block=0,
+                    block=block_no,
                     tx_hash='',
                     amount=thor_to_float(amount),
                     usd_per_rune=1.0,
@@ -90,4 +113,60 @@ class RuneTransferDetectorFromTxResult(WithDelegates, INotified):
 
 
 def is_fee_tx(amount, asset, to_addr, reserve_address):
-    return amount == 2000000 and asset == 'rune' and to_addr == reserve_address
+    return amount == 2000000 and asset.lower() == 'rune' and to_addr == reserve_address
+
+
+class RuneTransferDetectorTxLogs(WithDelegates, INotified):
+    IGNORE_EVENTS = (
+        'coin_spent',
+        'coin_received',
+        'fee',
+        'transfer'
+    )
+
+    @staticmethod
+    def _parse_transfers(transfer_attributes: list):
+        d = {}
+        results = []
+        for attr in transfer_attributes:
+            key = attr.get('key')
+            value = attr.get('value')
+            d[key] = value
+            if 'recipient' in d and 'sender' in d and 'amount' in d:
+                d['amount'], d['asset'] = thor_decode_amount_field(d['amount'])
+                results.append(d)
+                d = {}
+        return results
+
+
+    def _parse_one_tx(self, tx_log):
+        ev_map = {
+            ev['type']: ev['attributes'] for ev in tx_log
+        }
+
+        interesting_names = ", ".join([name for name in ev_map.keys() if name not in self.IGNORE_EVENTS])
+
+        results = []
+        if 'transfer' in ev_map:
+            for transfer in self._parse_transfers(ev_map['transfer']):
+                return RuneTransfer()
+
+        return results
+
+    async def on_data(self, sender, data):
+        events, block_no = data
+
+        if not events:
+            return
+
+        transfers = []
+        for event in events:
+            event: dict
+            try:
+                r = self._parse_one_tx(event)
+                if r:
+                    transfers.append(r)
+            except (KeyError, ValueError):
+                continue
+
+        await self.pass_data_to_listeners(transfers)

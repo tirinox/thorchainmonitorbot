@@ -8,9 +8,10 @@ class RuneTransfer:
     block: int
     tx_hash: str
     amount: float
-    usd_per_rune: float = 0.0
+    usd_per_rune: float = 1.0
     is_native: bool = False
     asset: str = ''
+    comment: str = ''
 
     @property
     def is_synth(self):
