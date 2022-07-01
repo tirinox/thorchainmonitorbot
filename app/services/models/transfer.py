@@ -8,7 +8,7 @@ class RuneTransfer:
     block: int
     tx_hash: str
     amount: float
-    usd_per_rune: float = 1.0
+    usd_per_asset: float = 1.0
     is_native: bool = False
     asset: str = ''
     comment: str = ''
@@ -19,7 +19,7 @@ class RuneTransfer:
 
     @property
     def usd_amount(self):
-        return self.usd_per_rune * self.amount
+        return self.usd_per_asset * self.amount
 
     def is_from_or_to(self, address):
         return address and (address == self.from_addr or address == self.to_addr)

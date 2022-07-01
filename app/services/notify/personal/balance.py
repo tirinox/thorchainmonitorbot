@@ -5,6 +5,7 @@ from typing import List
 from services.lib.db import DB
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
+from services.lib.money import Asset
 from services.lib.settings_manager import SettingsManager
 from services.lib.texts import grouper
 from services.lib.utils import class_logger
@@ -32,7 +33,7 @@ class PersonalBalanceNotifier(INotified):
         self.logger = class_logger(self)
 
     async def on_data(self, sender, transfers: List[RuneTransfer]):
-        self._fill_rune_price(transfers)
+        self._fill_asset_price(transfers)
 
         addresses = set()
         for transfer in transfers:
@@ -93,7 +94,8 @@ class PersonalBalanceNotifier(INotified):
         if text:
             task = self.deps.broadcaster.safe_send_message_rate(
                 ChannelDescriptor(platform, user),
-                BoardMessage(text)
+                BoardMessage(text),
+                disable_web_page_preview=True
             )
             asyncio.create_task(task)
 
@@ -101,10 +103,15 @@ class PersonalBalanceNotifier(INotified):
     async def _filter_events(event_list: List[RuneTransfer], user_id, settings: dict) -> List[RuneTransfer]:
         return event_list
 
-    def _fill_rune_price(self, transfers):
+    def _fill_asset_price(self, transfers):
         usd_per_rune = self.deps.price_holder.usd_per_rune
         for tr in transfers:
-            tr.usd_per_rune = usd_per_rune
+            tr: RuneTransfer
+            if tr.is_rune:
+                tr.usd_per_asset = usd_per_rune
+            else:
+                pool_name = Asset.from_string(tr.asset).native_pool_name
+                tr.usd_per_asset = self.deps.price_holder.usd_per_asset(pool_name)
 
 
 class SettingsProcessorBalanceTracker(INotified):

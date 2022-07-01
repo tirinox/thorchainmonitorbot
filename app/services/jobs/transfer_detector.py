@@ -6,6 +6,7 @@ from services.jobs.fetch.native_scan import BlockResult
 from services.lib.constants import thor_to_float
 from services.lib.delegates import WithDelegates, INotified
 from services.lib.money import Asset
+from services.lib.utils import class_logger
 from services.models.transfer import RuneTransfer
 
 
@@ -72,7 +73,7 @@ class RuneTransferDetectorBlockEvents(WithDelegates, INotified):
                     block=block_no,
                     tx_hash='',
                     amount=thor_to_float(amount),
-                    usd_per_rune=1.0,
+                    usd_per_asset=1.0,
                     is_native=True,
                     asset=asset
                 ))
@@ -128,9 +129,10 @@ class RuneTransferDetectorTxLogs(WithDelegates, INotified):
 
     DEFAULT_RESERVE_ADDRESS = 'thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt'
 
-    def __init__(self, reserve_address=DEFAULT_RESERVE_ADDRESS):
+    def __init__(self, reserve_address=None):
         super().__init__()
-        self.reserve_address = reserve_address
+        self.reserve_address = reserve_address or self.DEFAULT_RESERVE_ADDRESS
+        self.logger = class_logger(self)
 
     @staticmethod
     def _parse_transfers(transfer_attributes: list):
@@ -195,4 +197,6 @@ class RuneTransferDetectorTxLogs(WithDelegates, INotified):
             return
 
         transfers = self.process_events(data.tx_logs, data.txs, data.block_no)
+        if transfers:
+            self.logger.info(f'Detected {len(transfers)} transfers at block #{data.block_no}.')
         await self.pass_data_to_listeners(transfers)
