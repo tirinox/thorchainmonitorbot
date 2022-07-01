@@ -140,7 +140,10 @@ native_scanner: # (!) new
 
 
 names: # (!) new
-  use_thor_name: false
+  thorname:
+    enabled: false
+    expire: 48h
+
   preconfig:
     "thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt": "Reserve"
     "thor17gw75axcnr8747pkanye45pnrwk7p9c3cqncsv": "Bond Module"

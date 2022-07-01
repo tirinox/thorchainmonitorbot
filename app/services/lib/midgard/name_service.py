@@ -2,8 +2,14 @@ from typing import Optional, List
 
 from proto.thor_types import THORName, THORNameAlias
 from services.lib.config import Config
+from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.db import DB
 from services.lib.midgard.connector import MidgardConnector
+
+
+# THORName: adress[owner] -> many of [name] -> many of [address (thor + chains)]
+
+#
 
 
 class NameService:
@@ -12,17 +18,32 @@ class NameService:
         self.cfg = cfg
         self.midgard = midgard
         self._known_address = {}
+        self._known_names = {}
         self._load_preconfigured_names()
 
-    async def lookup_name(self, address: str) -> Optional[THORName]:
+        self._thorname_enabled = cfg.as_str('name.thorname.enabled', True)
+        self._thorname_expire = parse_timespan_to_seconds(cfg.as_str('name.thorname.expire', '24h'))
+
+    def _key_thorname(self, name: str):
+        return f'THORName:{name}'
+
+    async def lookup_name_by_address(self, address: str) -> Optional[THORName]:
         if address in self._known_address:
             return self._known_address[address]
+        # if self._thorname_enabled:
+        #     key = self._key_thorname(address)
+        #     name = await self.db.redis.get(key)
         # todo lookup!
         # 1) read thornames from Database
         # 2) if any and not expired => return it
         # 3) if not or expired:
         # 4) use thor_name_reversed_lookup => [names]
         # 5) thor_name_lookup(names[0]) if names else None
+
+    async def lookup_address_by_name(self, name: str) -> Optional[str]:
+        name = name.strip()
+        if name in self._known_names:
+            return self._known_names[name]
 
     async def thor_name_lookup(self, name: str) -> Optional[THORName]:
         results = await self.midgard.request_random_midgard(f'/thorname/lookup/{name}')
@@ -51,3 +72,4 @@ class NameService:
                 self._known_address[address] = THORName(
                     label, 0, address.encode()
                 )
+                self._known_names[label] = address
