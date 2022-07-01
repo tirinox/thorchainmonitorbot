@@ -18,6 +18,7 @@ from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
 from services.jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from services.jobs.fetch.last_block import LastBlockFetcher
+from services.jobs.fetch.native_scan import NativeScannerBlock
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher, PoolInfoFetcherMidgard
@@ -25,6 +26,7 @@ from services.jobs.fetch.queue import QueueFetcher
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.ilp_summer import ILPSummer
 from services.jobs.node_churn import NodeChurnDetector
+from services.jobs.transfer_detector import RuneTransferDetectorTxLogs
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.lib.config import Config, SubConfig
 from services.lib.date_utils import parse_timespan_to_seconds
@@ -40,6 +42,7 @@ from services.models.price import LastPriceHolder
 from services.models.tx import ThorTxType
 from services.notify.alert_presenter import AlertPresenter
 from services.notify.broadcast import Broadcaster
+from services.notify.personal.balance import PersonalBalanceNotifier
 from services.notify.personal.personal_main import NodeChangePersonalNotifier
 from services.notify.personal.price_divergence import PersonalPriceDivergenceNotifier, SettingsProcessorPriceDivergence
 from services.notify.types.bep2_notify import BEP2MoveNotifier
@@ -283,14 +286,13 @@ class App:
             tasks.append(fetcher_bep2)
 
         if d.cfg.get('native_scanner.enabled', True):
-            pass # todo!
-            # scanner = NativeScannerTX(d.thor_env.rpc_url)
-            # tasks.append(scanner)
-            # reserve_address = d.cfg.as_str('native_scanner.reserve_address')
-            # decoder = RuneTransferDetectorFromTxResult(reserve_address)
-            # scanner.subscribe(decoder)
-            # balance_notifier = PersonalBalanceNotifier(d)
-            # decoder.subscribe(balance_notifier)
+            scanner = NativeScannerBlock(d)
+            tasks.append(scanner)
+            reserve_address = d.cfg.as_str('native_scanner.reserve_address')
+            decoder = RuneTransferDetectorTxLogs(reserve_address)
+            scanner.subscribe(decoder)
+            balance_notifier = PersonalBalanceNotifier(d)
+            decoder.subscribe(balance_notifier)
 
         # --- BOTS
 
