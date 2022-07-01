@@ -67,6 +67,7 @@ class VotingNotifier(INotified, WithDelegates):
                 prev_progress = prev_voting.get(str(option.value))  # str(.), that's because JSON keys are strings
 
                 if prev_progress != option.progress:
+                    # todo: no flood after churn
                     await self._on_progress_changed(voting.key, prev_progress, voting, option)
 
         await self._save_prev_state(holder.voting_manager)

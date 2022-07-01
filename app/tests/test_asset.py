@@ -54,6 +54,12 @@ def test_synth_asset_name():
     assert a4.name == 'USDC'
     assert a4.short_str == 'Synth:ETH.USDC-0XA0B8'
 
+    a5 = Asset('eth/yfi-0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e')
+    assert a5.tag == '0X0BC529C00C6401AEF6D220BE8C6EA1667F6AD93E'
+    assert a5.chain == 'ETH'
+    assert a5.name == 'YFI'
+    assert a5.short_str == 'Synth:ETH.YFI-0X0BC5'
+
 
 def test_convert_synth():
     p1 = Asset.convert_synth_to_pool_name('ETH/USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48')
