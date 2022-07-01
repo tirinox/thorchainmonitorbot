@@ -1,11 +1,19 @@
+import typing
+
 import ujson
 from aiothornode.nodeclient import ThorNodePublicClient
 
-from proto import NativeThorTx, thor_decode_event
+from proto import NativeThorTx
 from services.jobs.fetch.base import BaseFetcher
 from services.lib.constants import THOR_BLOCK_TIME
 from services.lib.depcont import DepContainer
 from services.lib.utils import safe_get
+
+
+class BlockResult(typing.NamedTuple):
+    block_no: int
+    txs: typing.List[NativeThorTx]
+    block_events: typing.List[dict]
 
 
 class NativeScannerBlock(BaseFetcher):
@@ -28,46 +36,11 @@ class NativeScannerBlock(BaseFetcher):
             self._last_block = last_block
             self.logger.info(f'Updated last block number: #{self._last_block}')
 
-    _job = None
-
-    async def fetch(self):
-        if not self._last_block:
-            await self._update_last_block()
-
-        if not self._last_block:
-            return
-
-        while True:
-            results = await self._job(self._last_block)
-            if results is None:
-                self.logger.info(f"No yet block: #{self._last_block}. I will try later...")
-                break
-            else:
-                await self.pass_data_to_listeners((results, self._last_block))
-            self._last_block += 1
-
-
-class NativeScannerTx(NativeScannerBlock):
-    async def fetch_block_txs(self, block_no):
-        result = await self.deps.thor_connector.query_tendermint_block_raw(block_no)
-        if result is not None:
-            raw_txs = safe_get(result, 'result', 'block', 'data', 'txs')
-            if raw_txs is not None:
-                self.logger.info(f'Block #{block_no} has {len(raw_txs)} txs.')
-                return [NativeThorTx.from_base64(raw) for raw in raw_txs]
-        else:
-            self.logger.warn(f'Error fetching block #{block_no}.')
-
-    _job = fetch_block_txs
-
-
-class NativeScannerBlockResults(NativeScannerBlock):
     @staticmethod
     def _decode_logs(tx_result):
         code = tx_result.get('code', 0)
         if code != 0:
             return
-
         return ujson.loads(tx_result.get('log'))
 
     async def fetch_block_results(self, block_no):
@@ -83,4 +56,29 @@ class NativeScannerBlockResults(NativeScannerBlock):
         else:
             self.logger.warn(f'Error fetching block txs results #{block_no}.')
 
-    _job = fetch_block_results
+    async def fetch_block_txs(self, block_no):
+        result = await self.deps.thor_connector.query_tendermint_block_raw(block_no)
+        if result is not None:
+            raw_txs = safe_get(result, 'result', 'block', 'data', 'txs')
+            if raw_txs is not None:
+                self.logger.info(f'Block #{block_no} has {len(raw_txs)} txs.')
+                return [NativeThorTx.from_base64(raw) for raw in raw_txs]
+        else:
+            self.logger.warn(f'Error fetching block #{block_no}.')
+
+    async def fetch(self):
+        if not self._last_block:
+            await self._update_last_block()
+
+        if not self._last_block:
+            return
+
+        while True:
+            results = await self.fetch_block_results(self._last_block)
+            if results is None:
+                self.logger.info(f"No yet block: #{self._last_block}. I will try later...")
+                break
+
+            txs = await self.fetch_block_txs(self._last_block)
+            await self.pass_data_to_listeners((results, txs, self._last_block))
+            self._last_block += 1

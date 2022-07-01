@@ -138,20 +138,39 @@ class RuneTransferDetectorTxLogs(WithDelegates, INotified):
                 d = {}
         return results
 
-
-    def _parse_one_tx(self, tx_log):
+    def _parse_one_tx(self, tx_log, block_no):
         ev_map = {
             ev['type']: ev['attributes'] for ev in tx_log
         }
 
-        interesting_names = ", ".join([name for name in ev_map.keys() if name not in self.IGNORE_EVENTS])
+        # join all interesting events' names
+        comment = ", ".join([name for name in ev_map.keys() if name not in self.IGNORE_EVENTS])
 
         results = []
         if 'transfer' in ev_map:
             for transfer in self._parse_transfers(ev_map['transfer']):
-                return RuneTransfer()
+                results.append(RuneTransfer(
+                    from_addr=transfer['sender'],
+                    to_addr=transfer['recipient'],
+                    block=block_no,
+                    tx_hash='',
+                    amount=thor_to_float(transfer['amount']),
+                    asset=transfer['asset'],
+                    comment=comment
+                ))
 
         return results
+
+    def process_events(self, events, block_no):
+        transfers = []
+        for raw in events:
+            try:
+                this_transfers = self._parse_one_tx(raw[0]['events'], block_no)
+                if this_transfers:
+                    transfers.extend(this_transfers)
+            except (KeyError, ValueError):
+                raise
+        return transfers
 
     async def on_data(self, sender, data):
         events, block_no = data
@@ -159,14 +178,5 @@ class RuneTransferDetectorTxLogs(WithDelegates, INotified):
         if not events:
             return
 
-        transfers = []
-        for event in events:
-            event: dict
-            try:
-                r = self._parse_one_tx(event)
-                if r:
-                    transfers.append(r)
-            except (KeyError, ValueError):
-                continue
-
+        transfers = self.process_events(events, block_no)
         await self.pass_data_to_listeners(transfers)

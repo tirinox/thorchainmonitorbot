@@ -1,11 +1,10 @@
 import asyncio
-import json
 import logging
 
-from services.jobs.fetch.native_scan import NativeScannerBlock, NativeScannerBlockResults, NativeScannerTx
+from services.jobs.fetch.native_scan import NativeScannerBlock
 from services.jobs.fetch.native_scan_ws import NativeScannerTransactionWS, NativeScannerBlockEventsWS
 from services.jobs.transfer_detector import RuneTransferDetectorBlockEvents, \
-    RuneTransferDetectorFromTxResult
+    RuneTransferDetectorFromTxResult, RuneTransferDetectorTxLogs
 from services.lib.config import Config
 from services.lib.delegates import INotified
 from services.lib.texts import sep
@@ -58,19 +57,25 @@ async def ws_active_scan(lp_app):
 
 
 async def active_one(lp_app):
-    # b = 6169406  # me send
-    b = 6187632
-    scanner = NativeScannerBlockResults(lp_app.deps)
+    # b = 6237587  # send: https://viewblock.io/thorchain/tx/34A4B4885E7E42AB2FBB7F3EA950D1795B19CB5715862487F8320E4FA1B9E61C
+    # b = 6235520  # withdraw: https://viewblock.io/thorchain/tx/16F5ABB456FEA325B47F1E2EE984FEA39344F56432F474A73BC3AC2E02E7379D
+    # b = 6187632
+    b = 6240682  # synth send
+    scanner = NativeScannerBlock(lp_app.deps)
     r = await scanner.fetch_block_results(b)
+    parser = RuneTransferDetectorTxLogs()
     if r:
-        for ev in r:
-            events = ev[0]['events']
-            # print(events)
-            n = len(events)
-            types = [e['type'] for e in events]
-            print(f'{n} events: {", ".join(types)}')
-            if n > 1:
-                print(json.dumps(events, indent=2))
+        transfers = parser.process_events(r, b)
+        for tr in transfers:
+            print(tr)
+        # for ev in r:
+        #     events = ev[0]['events']
+        #     # print(events)
+        #     n = len(events)
+        #     types = [e['type'] for e in events]
+        #     print(f'{n} events: {", ".join(types)}')
+        #     if n > 1:
+        #         print(json.dumps(events, indent=2))
 
     sep()
     #
