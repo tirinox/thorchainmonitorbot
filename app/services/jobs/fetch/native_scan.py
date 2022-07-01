@@ -13,7 +13,7 @@ from services.lib.utils import safe_get
 class BlockResult(typing.NamedTuple):
     block_no: int
     txs: typing.List[NativeThorTx]
-    block_events: typing.List[dict]
+    tx_logs: typing.List[dict]
 
 
 class NativeScannerBlock(BaseFetcher):
@@ -74,11 +74,11 @@ class NativeScannerBlock(BaseFetcher):
             return
 
         while True:
-            results = await self.fetch_block_results(self._last_block)
-            if results is None:
-                self.logger.info(f"No yet block: #{self._last_block}. I will try later...")
+            tx_logs = await self.fetch_block_results(self._last_block)
+            if tx_logs is None:
+                self.logger.debug(f"No yet block: #{self._last_block}. I will try later...")
                 break
 
             txs = await self.fetch_block_txs(self._last_block)
-            await self.pass_data_to_listeners((results, txs, self._last_block))
+            await self.pass_data_to_listeners(BlockResult(self._last_block, txs, tx_logs))
             self._last_block += 1

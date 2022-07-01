@@ -16,17 +16,16 @@ class Receiver(INotified):
     # noinspection PyTypeChecker
     async def on_data(self, sender, data):
         sep()
-        items, block_no = data
-        for tr in items:
+        for tr in data:
             if not self.filters or any(text in repr(tr) for text in self.filters):
-                print(f'{self.tag} @ {block_no}:  {tr}')
+                print(f'{self.tag}:  {tr}')
 
     def __init__(self, tag='', filters=None):
         self.tag = tag
         self.filters = filters
 
 
-async def t_tx_scanner(url, reserve_address):
+async def t_tx_scanner_ws(url, reserve_address):
     scanner = NativeScannerTransactionWS(url)
     detector = RuneTransferDetectorFromTxResult(reserve_address)
     scanner.subscribe(detector)
@@ -35,7 +34,7 @@ async def t_tx_scanner(url, reserve_address):
     await scanner.run()
 
 
-async def t_block_scanner(url):
+async def t_block_scanner_ws(url):
     scanner = NativeScannerBlockEventsWS(url)
     detector = RuneTransferDetectorBlockEvents()
     scanner.subscribe(detector)
@@ -43,17 +42,20 @@ async def t_block_scanner(url):
     await scanner.run()
 
 
+async def t_block_scanner_active(lp_app):
+    scanner = NativeScannerBlock(lp_app.deps)
+    detector = RuneTransferDetectorTxLogs()
+    scanner.subscribe(detector)
+    detector.subscribe(Receiver('Transfer'))
+    await scanner.run()
+
+
 async def ws_main():
     cfg = Config()
     url = cfg.as_str('thor.node.rpc_node_url')
     reserve_address = cfg.as_str('native_scanner.reserve_address')
-    await t_tx_scanner(url, reserve_address)
+    await t_tx_scanner_ws(url, reserve_address)
 
-
-async def ws_active_scan(lp_app):
-    scanner = NativeScannerBlock(lp_app.deps, sleep_period=7)
-    scanner.subscribe(Receiver('EV'))
-    await scanner.run()
 
 
 async def active_one(lp_app):
@@ -89,7 +91,7 @@ async def active_one(lp_app):
 async def main():
     lp_app = LpAppFramework(log_level=logging.INFO)
     async with lp_app(brief=True):
-        await active_one(lp_app)
+        await t_block_scanner_active(lp_app)
     # [
     #                          'MsgDeposit',
     #                          'MsgSend',

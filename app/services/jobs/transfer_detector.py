@@ -2,6 +2,7 @@ from typing import List
 
 from proto import NativeThorTx, parse_thor_address, DecodedEvent, thor_decode_amount_field
 from proto.thor_types import MsgSend, MsgDeposit
+from services.jobs.fetch.native_scan import BlockResult
 from services.lib.constants import thor_to_float
 from services.lib.delegates import WithDelegates, INotified
 from services.lib.money import Asset
@@ -121,8 +122,15 @@ class RuneTransferDetectorTxLogs(WithDelegates, INotified):
         'coin_spent',
         'coin_received',
         'fee',
-        'transfer'
+        'transfer',
+        'message',
     )
+
+    DEFAULT_RESERVE_ADDRESS = 'thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt'
+
+    def __init__(self, reserve_address=DEFAULT_RESERVE_ADDRESS):
+        super().__init__()
+        self.reserve_address = reserve_address
 
     @staticmethod
     def _parse_transfers(transfer_attributes: list):
@@ -138,45 +146,53 @@ class RuneTransferDetectorTxLogs(WithDelegates, INotified):
                 d = {}
         return results
 
-    def _parse_one_tx(self, tx_log, block_no):
+    def _parse_one_tx(self, tx_log, block_no, tx_hash, tx_name: str):
         ev_map = {
             ev['type']: ev['attributes'] for ev in tx_log
         }
 
         # join all interesting events' names
-        comment = ", ".join([name for name in ev_map.keys() if name not in self.IGNORE_EVENTS])
+        # comment = ", ".join([name for name in ev_map.keys() if name not in self.IGNORE_EVENTS])
+        comment = tx_name
 
         results = []
         if 'transfer' in ev_map:
             for transfer in self._parse_transfers(ev_map['transfer']):
+                amount = transfer['amount']
+                asset = transfer['asset']
+                recipient = transfer['recipient']
+                if is_fee_tx(amount, asset, recipient, self.reserve_address):
+                    # this is a fee, ignore it
+                    continue
+
                 results.append(RuneTransfer(
                     from_addr=transfer['sender'],
-                    to_addr=transfer['recipient'],
+                    to_addr=recipient,
                     block=block_no,
-                    tx_hash='',
-                    amount=thor_to_float(transfer['amount']),
-                    asset=transfer['asset'],
-                    comment=comment
+                    tx_hash=tx_hash,
+                    amount=thor_to_float(amount),
+                    asset=asset,
+                    comment=comment,
+                    is_native=True
                 ))
 
         return results
 
-    def process_events(self, events, block_no):
+    def process_events(self, tx_logs, txs: List[NativeThorTx], block_no):
         transfers = []
-        for raw in events:
+        for tx, raw_logs in zip(txs, tx_logs):
             try:
-                this_transfers = self._parse_one_tx(raw[0]['events'], block_no)
+                tx_name = (type(tx.first_message)).__name__
+                this_transfers = self._parse_one_tx(raw_logs[0]['events'], block_no, tx.hash, tx_name)
                 if this_transfers:
                     transfers.extend(this_transfers)
             except (KeyError, ValueError):
                 raise
         return transfers
 
-    async def on_data(self, sender, data):
-        events, block_no = data
-
-        if not events:
+    async def on_data(self, sender, data: BlockResult):
+        if not data.tx_logs:
             return
 
-        transfers = self.process_events(events, block_no)
+        transfers = self.process_events(data.tx_logs, data.txs, data.block_no)
         await self.pass_data_to_listeners(transfers)
