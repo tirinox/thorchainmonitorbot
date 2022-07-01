@@ -1824,23 +1824,44 @@ class BaseLocalization(ABC):  # == English
             address,
         ), label)
 
-    def notification_text_rune_transfer(self, t: RuneTransfer, my_addresses):
-        # todo! improve the text
+    def _native_transfer_prepare_stuff(self, my_addresses, t):
         my_addresses = my_addresses or []
 
-        if t.is_rune:
+        # USD value
+        if t.usd_per_asset:
             usd_amt = f' ({pretty_dollar(t.usd_amount)})'
         else:
             usd_amt = ''
 
+        # Addresses
         from_my = self.get_thor_address_link(t.from_addr, my_addresses)
         to_my = self.get_thor_address_link(t.to_addr, my_addresses)
 
+        # Comment
         comment = ''
         if t.comment:
-            comment = ' ' + shorten_text(t.comment, 100)
+            comment = shorten_text(t.comment, 100)
+            if comment.startswith('Msg'):
+                comment = comment[3:]
+            comment = f' "{pre(comment)}"'
 
-        return f'🏦 <b>Transfer:</b> {short_money(t.amount)} ' \
-               f'{t.asset}{usd_amt} ' \
-               f'from {t.from_addr}{from_my} ' \
-               f'➡️ {t.to_addr}{to_my}{comment}.'
+        # TX link
+        if t.tx_hash:
+            tx_link = ' ' + link(get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, t.tx_hash), 'TX')
+        else:
+            tx_link = ''
+
+        # Asset name
+        asset = t.asset.upper()
+        asset = short_address(asset, 12, 5)
+        return asset, comment, from_my, to_my, tx_link, usd_amt
+
+    def notification_text_rune_transfer(self, t: RuneTransfer, my_addresses):
+        asset, comment, from_my, to_my, tx_link, usd_amt = self._native_transfer_prepare_stuff(my_addresses, t)
+
+        # todo: use naming service
+        # todo: get synth price
+
+        return f'🏦 <b>Transfer:</b> {code(short_money(t.amount, postfix=" " + asset))} {usd_amt} ' \
+               f'from {from_my} ' \
+               f'➡️ {to_my}{comment}{tx_link}.'
