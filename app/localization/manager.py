@@ -21,6 +21,11 @@ class LocalizationManager(metaclass=Singleton):
     def get_from_lang(self, lang) -> BaseLocalization:
         return self._langs.get(str(lang), self.default)
 
+    def set_name_service(self, ns):
+        for loc in self._langs.values():
+            loc: BaseLocalization
+            loc.name_service = ns
+
     @staticmethod
     def lang_key(chat_id):
         return f'user:lang:{chat_id}'

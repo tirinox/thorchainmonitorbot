@@ -69,6 +69,7 @@ class LpAppFramework:
         d.rune_market_fetcher = RuneMarketInfoFetcher(d)
 
         d.name_service = NameService(d.db, d.cfg, d.midgard_connector)
+        d.loc_man.set_name_service(d.name_service)
 
         await d.db.get_redis()
 

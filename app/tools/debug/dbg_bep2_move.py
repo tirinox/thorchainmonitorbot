@@ -31,15 +31,15 @@ async def not_format_test(lp_app):
     await lp_app.send_test_tg_message(loc.notification_text_bep2_movement(RuneTransfer(
         'bnb1dtpty6hrxehwz9xew6ttj52l929cu8zehprzwj',
         'bnb136ns6lfw4zs5hg4n85vdthaad7hq5m4gtkgf24', 0, '233232',
-        100000
-    ), rune_price=5.89))
+        100000, usd_per_asset=12.0
+    )))
 
     loc: BaseLocalization = lp_app.deps.loc_man.get_from_lang('rus')
     await lp_app.send_test_tg_message(loc.notification_text_bep2_movement(RuneTransfer(
         'bnb1dtpty6hrxehwz9xew6ttj52l929cu8zehprzwj',
         'bnb136ns6lfw4zs5hg4n85vdthaad7hq5m4gtkgf24', 0, '233232',
-        100000
-    ), rune_price=5.89))
+        100000, usd_per_asset=12.0
+    )))
 
 
 if __name__ == '__main__':

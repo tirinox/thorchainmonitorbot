@@ -17,6 +17,7 @@ from services.models.pool_info import PoolInfo
 from services.models.price import LastPriceHolder
 from services.notify.broadcast import Broadcaster
 from services.notify.types.pool_churn import PoolChurnNotifier
+from tools.lib.lp_common import LpAppFramework
 
 
 async def send_to_channel_test_message(d: DepContainer):
@@ -46,20 +47,12 @@ async def send_to_channel_test_message(d: DepContainer):
         await notifier_pool_churn.on_data(ppf, d.price_holder.pool_info_map)  # no update at this moment!
 
 
-async def main(d):
-    await send_to_channel_test_message(d)
+async def main():
+    lp_app = LpAppFramework(log_level=logging.INFO)
+    async with lp_app:
+        await lp_app.prepare(brief=True)
+        await send_to_channel_test_message(lp_app.deps)
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
-
-    d = DepContainer()
-    d.loop = asyncio.get_event_loop()
-    d.cfg = Config()
-    d.db = DB(d.loop)
-
-    d.bot = Bot(token=d.cfg.telegram.bot.token, parse_mode=ParseMode.HTML)
-    d.dp = Dispatcher(d.bot, loop=d.loop)
-    d.loc_man = LocalizationManager(d.cfg)
-
-    asyncio.run(main(d))
+    asyncio.run(main())

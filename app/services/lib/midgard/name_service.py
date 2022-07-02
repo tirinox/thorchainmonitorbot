@@ -27,9 +27,14 @@ class NameService:
     def _key_thorname(self, name: str):
         return f'THORName:{name}'
 
+    def lookup_name_by_address_local(self, address: str) -> Optional[THORName]:
+        return self._known_address.get(address)
+
     async def lookup_name_by_address(self, address: str) -> Optional[THORName]:
-        if address in self._known_address:
-            return self._known_address[address]
+        local_results = self.lookup_name_by_address_local(address)
+        if local_results:
+            return local_results
+
         # if self._thorname_enabled:
         #     key = self._key_thorname(address)
         #     name = await self.db.redis.get(key)

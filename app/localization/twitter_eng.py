@@ -5,13 +5,12 @@ from semver import VersionInfo
 
 from localization.base import BaseLocalization
 from services.dialog.twitter.text_length import twitter_intelligent_text_splitter
-from services.lib.constants import thor_to_float, rune_origin, BNB_RUNE_SYMBOL
+from services.lib.constants import thor_to_float, rune_origin, BNB_RUNE_SYMBOL, Chains
 from services.lib.date_utils import now_ts, seconds_human
 from services.lib.money import Asset, short_dollar, format_percent, pretty_money, pretty_dollar, RAIDO_GLYPH, \
     calc_percent_change, adaptive_round_to_str, emoji_for_percent_change, short_address, short_money, short_rune
 from services.lib.texts import x_ses, join_as_numbered_list, progressbar, plural, bracketify, up_down_arrow, \
     bracketify_spaced, shorten_text
-from services.models.transfer import RuneCEXFlow, RuneTransfer
 from services.models.cap_info import ThorCapInfo
 from services.models.last_block import EventBlockSpeed, BlockProduceState
 from services.models.mimir import MimirChange, MimirHolder, MimirVoting, MimirVoteOption
@@ -19,6 +18,7 @@ from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeVersionConsensus, NodeInfo
 from services.models.pool_info import PoolDetailHolder, PoolChanges, PoolInfo
 from services.models.price import RuneMarketInfo, PriceReport
+from services.models.transfer import RuneCEXFlow, RuneTransfer
 from services.models.tx import ThorTxExtended, ThorTxType
 from services.notify.channel import MESSAGE_SEPARATOR
 
@@ -460,10 +460,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
             parts.append(message)
 
-        # return MESSAGE_SEPARATOR.join(twitter_intelligent_text_splitter(parts))
-        r = MESSAGE_SEPARATOR.join(twitter_intelligent_text_splitter(parts))
-        print(r)
-        return r
+        return MESSAGE_SEPARATOR.join(twitter_intelligent_text_splitter(parts))
 
     @staticmethod
     def _format_node_text_plain(node: NodeInfo, with_ip):
@@ -701,13 +698,14 @@ class TwitterEnglishLocalization(BaseLocalization):
         ]])
         return text
 
-    def link_to_bep2(self, addr):
-        known_addresses = self.cfg.get_pure('bep2.known_addresses', {})
-        return known_addresses.get(addr, short_address(addr))
+    def link_to_address(self, addr, chain=Chains.THOR):
+        name = self.name_service.lookup_name_by_address_local(addr)
+        # without a link, just a caption
+        return name.name if name else short_address(addr)
 
     def notification_text_bep2_movement(self, transfer: RuneTransfer):
-        usd_amt = transfer.amount * transfer.usd_per_rune
-        from_link, to_link = self.link_to_bep2(transfer.from_addr), self.link_to_bep2(transfer.to_addr)
+        usd_amt = transfer.amount * transfer.usd_per_asset
+        from_link, to_link = self.link_to_address(transfer.from_addr), self.link_to_address(transfer.to_addr)
         pf = ' ' + BNB_RUNE_SYMBOL
         return (f'{RAIDO_GLYPH} Large BEP2 $Rune transfer\n'
                 f'{short_money(transfer.amount, postfix=pf)} ({short_dollar(usd_amt)}) '

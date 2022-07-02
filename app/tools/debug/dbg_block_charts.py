@@ -1,14 +1,13 @@
 import asyncio
-import logging
+
+from services.lib.telegram import TG_TEST_USER
 
 from localization.manager import BaseLocalization, RussianLocalization
 from services.dialog.picture.block_height_picture import block_speed_chart
-from services.lib.delegates import INotified
 from services.jobs.fetch.last_block import LastBlockFetcher
 from services.lib.constants import THOR_BLOCKS_PER_MINUTE
 from services.lib.date_utils import DAY
-from services.lib.telegram import TG_TEST_USER
-from services.lib.utils import setup_logs
+from services.lib.delegates import INotified
 from services.notify.types.block_notify import BlockHeightNotifier
 from tools.lib.lp_common import LpAppFramework
 
@@ -74,9 +73,7 @@ async def my_test_tg_message(app: LpAppFramework):
 
 async def main():
     # my_test_smart_block_time_estimator()
-
     app = LpAppFramework()
-
     async with app:
         await my_test_tg_message(app)
         # await my_test_block_fetch(app)
@@ -84,5 +81,4 @@ async def main():
 
 if __name__ == "__main__":
     # test_upd()
-    setup_logs(logging.INFO)
     asyncio.run(main())

@@ -1,7 +1,7 @@
 from abc import ABC
 from datetime import datetime
 from math import ceil
-from typing import List
+from typing import List, Optional
 
 from aiothornode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
@@ -13,6 +13,7 @@ from services.lib.constants import NetworkIdents, rune_origin, thor_to_float, TH
 from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
     get_explorer_url_for_node
+from services.lib.midgard.name_service import NameService
 from services.lib.money import format_percent, pretty_money, short_address, short_money, \
     calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset, short_dollar, \
     RAIDO_GLYPH, pretty_rune, short_rune
@@ -42,6 +43,7 @@ URL_LEADERBOARD_MCCN = 'https://leaderboard.thornode.org/'
 class BaseLocalization(ABC):  # == English
     def __init__(self, cfg: Config):
         self.cfg = cfg
+        self.name_service: Optional[NameService] = None
 
     # ----- WELCOME ------
 
@@ -207,14 +209,9 @@ class BaseLocalization(ABC):  # == English
         return f'{self.TEXT_PLEASE_WAIT}\n' \
                f'Loading pools information for {pre(address)}...'
 
-    def address_urls(self, address):
-        thor_explore_url = get_explorer_url_to_address(self.cfg.network_id, Chains.THOR, address)
-        bnb_explore_url = get_explorer_url_to_address(self.cfg.network_id, Chains.BNB, address)
-        return thor_explore_url, bnb_explore_url
-
-    def explorer_links_to_thor_address(self, address):
+    def explorer_link_to_address_with_domain(self, address, chain=Chains.THOR):
         net = self.cfg.network_id
-        return link_with_domain_text(get_explorer_url_to_address(net, Chains.THOR, address))
+        return link_with_domain_text(get_explorer_url_to_address(net, chain, address))
 
     @staticmethod
     def text_balances(balances: ThorBalances, title='Account balance:'):
@@ -239,7 +236,7 @@ class BaseLocalization(ABC):  # == English
             title = self.TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS + '\n\n'
             footer = ''
 
-        explorer_links = self.explorer_links_to_thor_address(address)
+        explorer_links = self.explorer_link_to_address_with_domain(address)
 
         balance_str = self.text_balances(balances)
 
@@ -1754,15 +1751,16 @@ class BaseLocalization(ABC):  # == English
 
     # ----- BEP 2 ------
 
-    def link_to_bep2(self, addr):
-        url = get_explorer_url_to_address(self.cfg.network_id, Chains.BNB, addr)
-        known_addresses = self.cfg.get_pure('bep2.known_addresses', {})
-        caption = known_addresses.get(addr, short_address(addr))
+    def link_to_address(self, addr, chain=Chains.THOR):
+        url = get_explorer_url_to_address(self.cfg.network_id, chain, addr)
+        name = self.name_service.lookup_name_by_address_local(addr)
+        caption = name.name if name else short_address(addr)
         return link(url, caption)
 
     def notification_text_bep2_movement(self, transfer: RuneTransfer):
         usd_amt = transfer.amount * transfer.usd_per_asset
-        from_link, to_link = self.link_to_bep2(transfer.from_addr), self.link_to_bep2(transfer.to_addr)
+        from_link = self.link_to_address(transfer.from_addr, Chains.BNB)
+        to_link = self.link_to_address(transfer.to_addr, Chains.BNB)
         pf = ' ' + BNB_RUNE_SYMBOL
         tf_link = get_explorer_url_to_tx(self.cfg.network_id, Chains.BNB, transfer.tx_hash)
         return (f'<b>️{RAIDO_GLYPH} Large BEP2 $Rune {link(tf_link, "transfer")}</b>\n'
@@ -1810,19 +1808,11 @@ class BaseLocalization(ABC):  # == English
                    f"{bold(short_dollar(market_info.market_cap))} (#{bold(market_info.rank)})"
         return message
 
-    # ---- MY WALLET ALLERTS ----
+    # ---- MY WALLET ALERTS ----
 
     @staticmethod
     def _is_my_address_tag(address, my_addresses):
         return ' ⭐' if my_addresses and address in my_addresses else ''
-
-    def get_thor_address_link(self, address, my_addresses):
-        label = short_address(address) + self._is_my_address_tag(address, my_addresses)
-        return link(get_explorer_url_to_address(
-            self.cfg.network_id,
-            Chains.THOR,
-            address,
-        ), label)
 
     def _native_transfer_prepare_stuff(self, my_addresses, t):
         my_addresses = my_addresses or []
@@ -1834,8 +1824,8 @@ class BaseLocalization(ABC):  # == English
             usd_amt = ''
 
         # Addresses
-        from_my = self.get_thor_address_link(t.from_addr, my_addresses)
-        to_my = self.get_thor_address_link(t.to_addr, my_addresses)
+        from_my = self.link_to_address(t.from_addr) + self._is_my_address_tag(t.from_addr, my_addresses)
+        to_my = self.link_to_address(t.to_addr) + self._is_my_address_tag(t.to_addr, my_addresses)
 
         # Comment
         comment = ''
@@ -1858,9 +1848,6 @@ class BaseLocalization(ABC):  # == English
 
     def notification_text_rune_transfer(self, t: RuneTransfer, my_addresses):
         asset, comment, from_my, to_my, tx_link, usd_amt = self._native_transfer_prepare_stuff(my_addresses, t)
-
-        # todo: use naming service
-        # todo: get synth price
 
         return f'🏦 <b>Transfer:</b> {code(short_money(t.amount, postfix=" " + asset))} {usd_amt} ' \
                f'from {from_my} ' \

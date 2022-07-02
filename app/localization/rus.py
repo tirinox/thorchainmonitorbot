@@ -179,7 +179,7 @@ class RussianLocalization(BaseLocalization):
             title = self.TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS + '\n\n'
             footer = ''
 
-        explorer_links = self.explorer_links_to_thor_address(address)
+        explorer_links = self.explorer_link_to_address_with_domain(address)
 
         balance_str = self.text_balances(balances, 'Балансы аккаунта: ')
 
@@ -1412,7 +1412,8 @@ class RussianLocalization(BaseLocalization):
 
     def notification_text_bep2_movement(self, transfer: RuneTransfer):
         usd_amt = transfer.usd_amount
-        from_link, to_link = self.link_to_bep2(transfer.from_addr), self.link_to_bep2(transfer.to_addr)
+        from_link = self.link_to_address(transfer.from_addr, Chains.BNB)
+        to_link = self.link_to_address(transfer.to_addr, Chains.BNB)
         pf = ' ' + BNB_RUNE_SYMBOL
         tf_link = get_explorer_url_to_tx(self.cfg.network_id, Chains.BNB, transfer.tx_hash)
         return (f'<b>️{RAIDO_GLYPH} Крупный {link(tf_link, "перевод")} BEP2 Rune:</b>\n'
@@ -1470,3 +1471,12 @@ class RussianLocalization(BaseLocalization):
         message += f"Капитализация {bold(self.R)} – {bold(pretty_dollar(market_info.market_cap))} " \
                    f"(место #{bold(market_info.rank)})"
         return message
+
+    # ---- MY WALLET ALERTS ----
+
+    def notification_text_rune_transfer(self, t: RuneTransfer, my_addresses):
+        asset, comment, from_my, to_my, tx_link, usd_amt = self._native_transfer_prepare_stuff(my_addresses, t)
+
+        return f'🏦 <b>Перевод:</b> {code(short_money(t.amount, postfix=" " + asset))} {usd_amt} ' \
+               f'от {from_my} ' \
+               f'➡️ к {to_my}{comment}{tx_link}.'
