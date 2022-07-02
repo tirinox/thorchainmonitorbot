@@ -43,26 +43,42 @@ class NativeScannerBlock(BaseFetcher):
             return
         return ujson.loads(tx_result.get('log'))
 
+    def _get_is_error(self, result):
+        error = result.get('error')
+        if error:
+            if error.get('code') != -32603:
+                self.logger.error(f'Error: "{error}"!')
+            return True
+
     async def fetch_block_results(self, block_no):
         result = await self._thor.request(f'/block_results?height={block_no}', is_rpc=True)
         if result is not None:
-            # end_block_events
+            if self._get_is_error(result):
+                return
+
             tx_result_arr = safe_get(result, 'result', 'txs_results')
             if tx_result_arr is not None:
                 decoded_txs = [self._decode_logs(tx_result) for tx_result in tx_result_arr]
                 decoded_txs = [tx for tx in decoded_txs if tx]
                 self.logger.info(f'Block #{block_no} has {len(decoded_txs)} txs.')
                 return decoded_txs
+            else:
+                return []  # None means that an error occurred
         else:
             self.logger.warn(f'Error fetching block txs results #{block_no}.')
 
     async def fetch_block_txs(self, block_no):
         result = await self.deps.thor_connector.query_tendermint_block_raw(block_no)
         if result is not None:
+            if self._get_is_error(result):
+                return
+
             raw_txs = safe_get(result, 'result', 'block', 'data', 'txs')
             if raw_txs is not None:
-                self.logger.info(f'Block #{block_no} has {len(raw_txs)} txs.')
+                # self.logger.info(f'Block #{block_no} has {len(raw_txs)} txs.')
                 return [NativeThorTx.from_base64(raw) for raw in raw_txs]
+            else:
+                return []
         else:
             self.logger.warn(f'Error fetching block #{block_no}.')
 
@@ -71,12 +87,15 @@ class NativeScannerBlock(BaseFetcher):
             await self._update_last_block()
 
         if not self._last_block:
+            self.logger.error('Still no last_block height!')
             return
+
+        self.logger.info(f'Tick start for block #{self._last_block}.')
 
         while True:
             tx_logs = await self.fetch_block_results(self._last_block)
             if tx_logs is None:
-                self.logger.debug(f"No yet block: #{self._last_block}. I will try later...")
+                # self.logger.info(f"No yet block: #{self._last_block}. I will try later...")
                 break
 
             txs = await self.fetch_block_txs(self._last_block)

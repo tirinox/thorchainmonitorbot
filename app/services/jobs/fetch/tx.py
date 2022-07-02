@@ -32,7 +32,8 @@ class TxFetcher(BaseFetcher):
     async def fetch(self):
         await self.deps.db.get_redis()
         txs = await self._fetch_unseen_txs()
-        self.logger.info(f'New tx to analyze: {len(txs)}')
+        if txs:
+            self.logger.info(f'New tx to analyze: {len(txs)}')
         return txs
 
     async def post_action(self, txs: List[ThorTxExtended]):
