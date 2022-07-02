@@ -1818,7 +1818,7 @@ class BaseLocalization(ABC):  # == English
 
     @staticmethod
     def _is_my_address_tag(address, my_addresses):
-        return ' ⭐' if my_addresses and address in my_addresses else ''
+        return ' ★' if my_addresses and address in my_addresses else ''
 
     def _native_transfer_prepare_stuff(self, my_addresses, t):
         my_addresses = my_addresses or []
