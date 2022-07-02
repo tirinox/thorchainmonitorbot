@@ -1761,7 +1761,7 @@ class BaseLocalization(ABC):  # == English
         return link(url, caption)
 
     def notification_text_bep2_movement(self, transfer: RuneTransfer):
-        usd_amt = transfer.amount * transfer.usd_per_rune
+        usd_amt = transfer.amount * transfer.usd_per_asset
         from_link, to_link = self.link_to_bep2(transfer.from_addr), self.link_to_bep2(transfer.to_addr)
         pf = ' ' + BNB_RUNE_SYMBOL
         tf_link = get_explorer_url_to_tx(self.cfg.network_id, Chains.BNB, transfer.tx_hash)
