@@ -171,7 +171,7 @@ class RussianLocalization(BaseLocalization):
                f'Идет загрузка пулов для адреса {pre(address)}...\n' \
                f'Иногда она может идти долго, если Midgard сильно нагружен.'
 
-    def text_user_provides_liq_to_pools(self, address, pools, balances: ThorBalances):
+    def text_inside_my_wallet_title(self, address, pools, balances: ThorBalances):
         if pools:
             title = '\n'
             footer = '👇 Выберите пул, чтобы получить подробную карточку информации о ликвидности.'

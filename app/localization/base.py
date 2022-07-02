@@ -228,7 +228,7 @@ class BaseLocalization(ABC):  # == English
             result = '\n'.join([title] + items)
         return result
 
-    def text_user_provides_liq_to_pools(self, address, pools, balances: ThorBalances):
+    def text_inside_my_wallet_title(self, address, pools, balances: ThorBalances):
         if pools:
             title = '\n'
             footer = "👇 Click on the button to get a detailed card of LP yield."
@@ -240,8 +240,14 @@ class BaseLocalization(ABC):  # == English
 
         balance_str = self.text_balances(balances)
 
+        acc_caption = ''
+        # todo: dynamic!
+        addr_name = self.name_service.lookup_name_by_address_local(address)
+        if addr_name:
+            acc_caption = f' ({addr_name.name})'
+
         return (
-            f'🛳️ Account {pre(address)}\n'
+            f'🛳️ Account "{pre(address)}"{acc_caption}\n'
             f'{title}'
             f'{balance_str}\n\n'
             f"🔍 Explorer: {explorer_links}.\n\n"

@@ -85,11 +85,16 @@ class MyWalletsMenu(BaseDialog):
 
     def _make_address_keyboard_list(self, my_addresses):
         extra_row = []
+
+        def address_label(a_obj):
+            address = a_obj[self.PROP_ADDRESS]
+            # todo: await dynamical look up!
+            name = self.deps.name_service.lookup_name_by_address_local(address)
+            label = name.name if name else short_address(address, begin=10, end=7)
+            return label, address
+
         # Every button is tuple of (label, full_address)
-        short_addresses = [
-            (short_address(addr[self.PROP_ADDRESS], begin=10, end=7), addr[self.PROP_ADDRESS])
-            for addr in my_addresses
-        ]
+        short_addresses = [address_label(addr) for addr in my_addresses]
 
         return TelegramInlineList(
             short_addresses, data_proxy=self.data,
@@ -172,7 +177,7 @@ class MyWalletsMenu(BaseDialog):
 
         balances = await self.get_balances(address)
 
-        text = self.loc.text_user_provides_liq_to_pools(address, my_pools, balances)
+        text = self.loc.text_inside_my_wallet_title(address, my_pools, balances)
         tg_list = self._keyboard_inside_wallet_menu()
         inline_kbd = tg_list.keyboard()
         if edit:
