@@ -120,7 +120,7 @@ class ConstMimirFetcher(BaseFetcher):
         # fresh_mimir.constants["FULLIMPLOSSPROTECTIONBLOCKS"] = 9000
         # fresh_mimir.constants["LOVEADMIN"] = 23
 
-        curr = fresh_mimir.constants["SOLVENCYHALTETHCHAIN"] = next(self._dbg_wheel)
+        # curr = fresh_mimir.constants["SOLVENCYHALTETHCHAIN"] = next(self._dbg_wheel)
         # print(f'SOLVENCYHALTETHCHAIN = {curr}')
 
         return fresh_mimir, node_mimir

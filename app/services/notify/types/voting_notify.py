@@ -57,6 +57,7 @@ class VotingNotifier(INotified, WithDelegates):
 
         prev_state = await self._read_prev_state()
 
+        events = []
         for voting in holder.voting_manager.all_voting_list:
             prev_voting = prev_state.get(voting.key)
             if not prev_voting:  # ignore for the first time to avoid spamming
@@ -67,8 +68,15 @@ class VotingNotifier(INotified, WithDelegates):
                 prev_progress = prev_voting.get(str(option.value))  # str(.), that's because JSON keys are strings
 
                 if prev_progress != option.progress:
-                    # todo: no flood after churn
-                    await self._on_progress_changed(voting.key, prev_progress, voting, option)
+                    events.append((voting.key, prev_progress, voting, option))
+                    # await self._on_progress_changed(voting.key, prev_progress, voting, option)
+
+        # no flood after churn
+        if len(events) >= 3:
+            self.logger.warning('To many voting updates; probably after churn. Ignore them for now.')
+        else:
+            for ev in events:
+                await self._on_progress_changed(*ev)
 
         await self._save_prev_state(holder.voting_manager)
 

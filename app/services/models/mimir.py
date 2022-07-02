@@ -89,6 +89,8 @@ class MimirVoting:
 class MimirVoteManager:
     def __init__(self, all_votes: typing.List[MimirVote], active_nodes: typing.List[NodeInfo], exclude_keys):
         active_signers = [n.node_address for n in active_nodes if n.node_address and n.is_active]
+
+        # only active signer is allowed to vote
         active_votes = [vote for vote in all_votes if vote.singer in active_signers]
 
         self.votes = active_votes

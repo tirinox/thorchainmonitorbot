@@ -30,20 +30,16 @@ class NodeInfoFetcher(BaseFetcher):
             self.logger.error('Again no luck! Failed to obtain node list!')
             raise FileNotFoundError('node_list')
 
-        new_nodes = []
+        nodes = []
         for j in raw_nodes:
             node = NodeInfo.from_json(j)
-
             # node = self._dbg_node_magic(node)  # fixme: debug
+            nodes.append(node)
 
-            new_nodes.append(node)
-        new_nodes.sort(key=lambda k: (k.status, -k.bond))
+        nodes.sort(key=lambda k: (k.status, -k.bond))
 
-        # new_nodes = self._test_churn(new_nodes) # fixme: debug
-
-        # print(len(new_nodes), '<<<-----')
-
-        return new_nodes
+        # nodes = self._test_churn(nodes) # fixme: debug
+        return nodes
 
     async def fetch(self) -> List[NodeInfo]:
         nodes = await self.fetch_current_node_list()
@@ -102,11 +98,27 @@ class NodeInfoFetcher(BaseFetcher):
         """
         This is for debug purposes
         """
-        exclude = True
-        if exclude:
-            return list(filter(lambda n: n.node_address != 'thor15tjtgxq7mz3ljwk0rzw6pvj43tz3xsv9f2wfzp', new_nodes))
-        else:
-            return new_nodes
+        import random
+
+        n_changes = 0
+        for i in range(100):
+            node = new_nodes[random.randint(0, len(new_nodes))]
+            if node.status == node.ACTIVE:
+                node.status = node.STANDBY
+                n_changes += 1
+            elif node.status == node.STANDBY:
+                node.status = node.ACTIVE
+                n_changes += 1
+            if n_changes >= 5:
+                break
+
+        return new_nodes
+
+        # exclude = True
+        # if exclude:
+        #     return list(filter(lambda n: n.node_address != 'thor15tjtgxq7mz3ljwk0rzw6pvj43tz3xsv9f2wfzp', new_nodes))
+        # else:
+        #     return new_nodes
 
         # new_nodes[0].version = '0.68.6'  # version fun?
         #

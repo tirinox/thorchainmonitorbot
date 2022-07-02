@@ -18,10 +18,10 @@ ZERO_VERSION = VersionInfo(0, 0, 0)
 
 @dataclass
 class NodeInfo(BaseModelMixin):
-    ACTIVE = 'active'
-    STANDBY = 'standby'
-    WHITELISTED = 'whitelisted'
-    DISABLED = 'disabled'
+    ACTIVE = 'Active'
+    STANDBY = 'Standby'
+    WHITELISTED = 'Whitelisted'
+    DISABLED = 'Disabled'
 
     status: str = ''
 
@@ -47,6 +47,10 @@ class NodeInfo(BaseModelMixin):
         return {c['chain']: c['height'] for c in self.observe_chains} if self.observe_chains else {}
 
     @property
+    def status_capitalized(self):
+        return self.status.capitalize()
+
+    @property
     def parsed_version(self) -> VersionInfo:
         try:
             return VersionInfo.parse(self.version)
@@ -55,11 +59,11 @@ class NodeInfo(BaseModelMixin):
 
     @property
     def is_active(self):
-        return self.status.lower() == self.ACTIVE
+        return self.status_capitalized == self.ACTIVE
 
     @property
     def is_standby(self):
-        return self.status.lower() == self.STANDBY
+        return self.status_capitalized == self.STANDBY
 
     @property
     def in_strange_status(self):
