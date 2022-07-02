@@ -92,8 +92,10 @@ class ConstMimirFetcher(BaseFetcher):
     # ----- D E B U G    S T U F F -----
 
     def _dbg_randomize_votes(self, votes: List[MimirVote]):
-        votes.append(MimirVote('LOVEME', 1, 'thor10vmz8d0qwvq5hw9susmf7nefka9usazzcvkeaj'))
-        votes.append(MimirVote('LOVEME', 1, 'thor125tlvrmxqxxldu7c7j5qeg7x90dau6fga50kh9'))
+        votes.append(MimirVote('LOVEME', 2, 'thor10vmz8d0qwvq5hw9susmf7nefka9usazzcvkeaj'))
+        votes.append(MimirVote('LOVEME', 2, 'thor125tlvrmxqxxldu7c7j5qeg7x90dau6fga50kh9'))
+        votes.append(MimirVote('LOVEME', 2, 'thor10697ffyya4fddsvpwj6crfwe06pxkxkmdl8kev'))
+        votes.append(MimirVote('LOVEME', 2, 'thor12kkyw6dhtr546yfe22gaqfx9cze50dfjrvvffy'))
         return votes
 
     def _dbg_randomize_node_mimir_results(self, results):

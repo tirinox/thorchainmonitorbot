@@ -11,6 +11,8 @@ from services.models.mimir import MimirVoteManager, MimirVoteOption, MimirVoting
 
 
 class VotingNotifier(INotified, WithDelegates):
+    IGNORE_IF_THERE_ARE_MORE_UPDATES_THAN = 5
+
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
@@ -72,7 +74,7 @@ class VotingNotifier(INotified, WithDelegates):
                     # await self._on_progress_changed(voting.key, prev_progress, voting, option)
 
         # no flood after churn
-        if len(events) >= 3:
+        if len(events) > self.IGNORE_IF_THERE_ARE_MORE_UPDATES_THAN:
             self.logger.warning('To many voting updates; probably after churn. Ignore them for now.')
         else:
             for ev in events:
