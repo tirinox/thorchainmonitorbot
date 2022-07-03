@@ -1855,6 +1855,6 @@ class BaseLocalization(ABC):  # == English
     def notification_text_rune_transfer(self, t: RuneTransfer, my_addresses):
         asset, comment, from_my, to_my, tx_link, usd_amt = self._native_transfer_prepare_stuff(my_addresses, t)
 
-        return f'🏦 <b>{comment}:</b> {code(short_money(t.amount, postfix=" " + asset))} {usd_amt} ' \
+        return f'🏦 <b>{comment}</b>{tx_link}: {code(short_money(t.amount, postfix=" " + asset))} {usd_amt} ' \
                f'from {from_my} ' \
-               f'➡️ {to_my}{tx_link}.'
+               f'➡️ {to_my}.'
