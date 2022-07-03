@@ -82,7 +82,7 @@ def thor_decode_amount_field(string: str):
         else:
             asset += symbol
 
-    return (int(amt) if amt else 0), asset
+    return (int(amt) if amt else 0), asset.strip()
 
 
 def debase64(s: str):
@@ -108,8 +108,8 @@ def thor_decode_event(e) -> DecodedEvent:
     for attr in e['attributes']:
         key = debase64(attr.get('key'))
         value = debase64(attr.get('value'))
-        if key == 'amount':
-            amount, asset = thor_decode_amount_field(value)
-            value = amount, asset.upper()
         decoded_attrs[key] = value
+        if key == 'amount' or key == 'coin':
+            decoded_attrs['amount'], decoded_attrs['asset'] = thor_decode_amount_field(value)
+
     return DecodedEvent(e.get('type', ''), decoded_attrs)

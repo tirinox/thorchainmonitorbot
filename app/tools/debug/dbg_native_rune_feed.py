@@ -1,4 +1,5 @@
 import asyncio
+import json
 import logging
 
 from services.jobs.fetch.native_scan import NativeScannerBlock
@@ -62,14 +63,17 @@ async def active_one(lp_app):
     # b = 6237587  # send: https://viewblock.io/thorchain/tx/34A4B4885E7E42AB2FBB7F3EA950D1795B19CB5715862487F8320E4FA1B9E61C
     # b = 6235520  # withdraw: https://viewblock.io/thorchain/tx/16F5ABB456FEA325B47F1E2EE984FEA39344F56432F474A73BC3AC2E02E7379D
     # b = 6187632
-    b = 6240682  # synth send
+    # b = 6240682  # synth send
+    b = 6230655  # synth mint 9E7D7BE18EC0CFC13D9AC45A76EB9F5923EF4F1CC49299E2346E613EA144ADEE
     scanner = NativeScannerBlock(lp_app.deps)
     r = await scanner.fetch_block_results(b)
+    r.txs = await scanner.fetch_block_txs(b)
     parser = RuneTransferDetectorTxLogs()
-    if r:
-        transfers = parser.process_events(r, b)
-        for tr in transfers:
-            print(tr)
+    transfers = parser.process_events(r)
+
+    sep()
+    for tr in transfers:
+        print(tr)
         # for ev in r:
         #     events = ev[0]['events']
         #     # print(events)
@@ -88,16 +92,29 @@ async def active_one(lp_app):
     #         print(ev)
 
 
+async def search_out(lp_app):
+    scanner = NativeScannerBlock(lp_app.deps)
+
+    block_start = 6230655 - 2
+    search = '687522'
+
+    b = block_start
+    while True:
+        tx_logs = await scanner.fetch_block_results(b)
+        if search in json.dumps(tx_logs):
+            print(tx_logs)
+            print(f'Found a needle in block #{b}!!! ')
+            break
+        b += 1
+
+
+
 async def main():
     lp_app = LpAppFramework(log_level=logging.INFO)
     async with lp_app(brief=True):
         await t_block_scanner_active(lp_app)
-    # [
-    #                          'MsgDeposit',
-    #                          'MsgSend',
-    #                          'MsgWithdraw',
-    #                          'MsgDonate'
-    #                      ]
+        # await active_one(lp_app)
+        # await search_out(lp_app)
 
 
 if __name__ == '__main__':

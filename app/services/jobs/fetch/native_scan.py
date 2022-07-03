@@ -1,19 +1,22 @@
-import typing
+from dataclasses import dataclass
+from typing import List, NamedTuple, Optional
 
 import ujson
 from aiothornode.nodeclient import ThorNodePublicClient
 
-from proto import NativeThorTx
+from proto import NativeThorTx, thor_decode_event, DecodedEvent
 from services.jobs.fetch.base import BaseFetcher
 from services.lib.constants import THOR_BLOCK_TIME
 from services.lib.depcont import DepContainer
 from services.lib.utils import safe_get
 
 
-class BlockResult(typing.NamedTuple):
+@dataclass
+class BlockResult:
     block_no: int
-    txs: typing.List[NativeThorTx]
-    tx_logs: typing.List[dict]
+    txs: List[NativeThorTx]
+    tx_logs: List[dict]
+    end_block_events: List[DecodedEvent]
 
 
 class NativeScannerBlock(BaseFetcher):
@@ -50,35 +53,34 @@ class NativeScannerBlock(BaseFetcher):
                 self.logger.error(f'Error: "{error}"!')
             return True
 
-    async def fetch_block_results(self, block_no):
+    async def fetch_block_results(self, block_no) -> Optional[BlockResult]:
         result = await self._thor.request(f'/block_results?height={block_no}', is_rpc=True)
         if result is not None:
             if self._get_is_error(result):
                 return
 
-            tx_result_arr = safe_get(result, 'result', 'txs_results')
-            if tx_result_arr is not None:
-                decoded_txs = [self._decode_logs(tx_result) for tx_result in tx_result_arr]
-                decoded_txs = [tx for tx in decoded_txs if tx]
-                self.logger.info(f'Block #{block_no} has {len(decoded_txs)} txs.')
-                return decoded_txs
-            else:
-                return []  # None means that an error occurred
+            tx_result_arr = safe_get(result, 'result', 'txs_results') or []
+            decoded_txs = [self._decode_logs(tx_result) for tx_result in tx_result_arr]
+            decoded_txs = [tx for tx in decoded_txs if tx]
+
+            end_block_events = safe_get(result, 'result', 'end_block_events') or []
+            decoded_end_block_events = [thor_decode_event(ev) for ev in end_block_events]
+
+            self.logger.info(f'Block #{block_no} has {len(decoded_txs)} txs.')
+
+            return BlockResult(block_no, [], decoded_txs, decoded_end_block_events)
         else:
             self.logger.warn(f'Error fetching block txs results #{block_no}.')
 
-    async def fetch_block_txs(self, block_no):
+    async def fetch_block_txs(self, block_no) -> Optional[List[NativeThorTx]]:
         result = await self.deps.thor_connector.query_tendermint_block_raw(block_no)
         if result is not None:
             if self._get_is_error(result):
                 return
 
-            raw_txs = safe_get(result, 'result', 'block', 'data', 'txs')
-            if raw_txs is not None:
-                # self.logger.info(f'Block #{block_no} has {len(raw_txs)} txs.')
-                return [NativeThorTx.from_base64(raw) for raw in raw_txs]
-            else:
-                return []
+            raw_txs = safe_get(result, 'result', 'block', 'data', 'txs') or []
+            decoded_txs = [NativeThorTx.from_base64(raw) for raw in raw_txs]
+            return decoded_txs
         else:
             self.logger.warn(f'Error fetching block #{block_no}.')
 
@@ -93,11 +95,13 @@ class NativeScannerBlock(BaseFetcher):
         self.logger.info(f'Tick start for block #{self._last_block}.')
 
         while True:
-            tx_logs = await self.fetch_block_results(self._last_block)
-            if tx_logs is None:
+            block_result = await self.fetch_block_results(self._last_block)
+            if block_result is None:
                 # self.logger.info(f"No yet block: #{self._last_block}. I will try later...")
                 break
 
-            txs = await self.fetch_block_txs(self._last_block)
-            await self.pass_data_to_listeners(BlockResult(self._last_block, txs, tx_logs))
+            block_result.txs = await self.fetch_block_txs(self._last_block)
+
+            await self.pass_data_to_listeners(block_result)
+
             self._last_block += 1

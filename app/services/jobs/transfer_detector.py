@@ -180,23 +180,37 @@ class RuneTransferDetectorTxLogs(WithDelegates, INotified):
 
         return results
 
-    def process_events(self, tx_logs, txs: List[NativeThorTx], block_no):
+    def process_events(self, r: BlockResult):
         transfers = []
-        for tx, raw_logs in zip(txs, tx_logs):
+        for tx, raw_logs in zip(r.txs, r.tx_logs):
             try:
                 tx_name = (type(tx.first_message)).__name__
-                this_transfers = self._parse_one_tx(raw_logs[0]['events'], block_no, tx.hash, tx_name)
+                this_transfers = self._parse_one_tx(raw_logs[0]['events'], r.block_no, tx.hash, tx_name)
                 if this_transfers:
                     transfers.extend(this_transfers)
             except (KeyError, ValueError):
                 raise
+
+        for ev in r.end_block_events:
+            if ev.type == 'outbound' and ev.attributes.get('chain') == 'THOR':
+                transfers.append(RuneTransfer(
+                    ev.attributes['from'],
+                    ev.attributes['to'],
+                    block=r.block_no,
+                    tx_hash=ev.attributes.get('in_tx_id', ''),
+                    amount=thor_to_float(ev.attributes.get('amount', 0)),
+                    asset=ev.attributes.get('asset', ''),
+                    is_native=True,
+                    comment=ev.type,
+                ))
         return transfers
 
     async def on_data(self, sender, data: BlockResult):
         if not data.tx_logs:
             return
 
-        transfers = self.process_events(data.tx_logs, data.txs, data.block_no)
+        transfers = self.process_events(data)
+
         if transfers:
             self.logger.info(f'Detected {len(transfers)} transfers at block #{data.block_no}.')
         await self.pass_data_to_listeners(transfers)
