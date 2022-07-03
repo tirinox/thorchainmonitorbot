@@ -63,8 +63,7 @@ class MyWalletsMenu(BaseDialog):
 
     # ---- WALLET LIST ------
 
-    @message_handler(state=LPMenuStates.MAIN_MENU)
-    async def wallet_list_message_handler(self, message: Message):
+    async def _add_address_handler(self, message: Message, edit: bool):
         # this handler adds an address
         address = message.text.strip()
         if not address:
@@ -81,7 +80,11 @@ class MyWalletsMenu(BaseDialog):
         self._add_address(address, Chains.BNB)
 
         # redraw menu!
-        await self._show_address_selection_menu(message)
+        await self._show_address_selection_menu(message, edit=edit)
+
+    @message_handler(state=LPMenuStates.MAIN_MENU)
+    async def wallet_list_message_handler(self, message: Message):
+        await self._add_address_handler(message, edit=False)
 
     def _make_address_keyboard_list(self, my_addresses):
         extra_row = []
@@ -138,6 +141,10 @@ class MyWalletsMenu(BaseDialog):
             await self._on_selected_address(query, result)
 
     # ----- INSIDE WALLET MENU -----
+
+    @message_handler(state=LPMenuStates.WALLET_MENU)
+    async def inside_wallet_message_handler(self, message: Message):
+        await self._add_address_handler(message, edit=False)
 
     async def show_pool_menu_for_address(self, message: Message,
                                          address: str,
