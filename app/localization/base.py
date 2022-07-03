@@ -1839,7 +1839,7 @@ class BaseLocalization(ABC):  # == English
             comment = shorten_text(t.comment, 100)
             if comment.startswith('Msg'):
                 comment = comment[3:]
-            comment = f' "{pre(comment)}"'
+            comment = comment.capitalize()
 
         # TX link
         if t.tx_hash:
@@ -1855,6 +1855,6 @@ class BaseLocalization(ABC):  # == English
     def notification_text_rune_transfer(self, t: RuneTransfer, my_addresses):
         asset, comment, from_my, to_my, tx_link, usd_amt = self._native_transfer_prepare_stuff(my_addresses, t)
 
-        return f'🏦 <b>Transfer:</b> {code(short_money(t.amount, postfix=" " + asset))} {usd_amt} ' \
+        return f'🏦 <b>{comment}:</b> {code(short_money(t.amount, postfix=" " + asset))} {usd_amt} ' \
                f'from {from_my} ' \
-               f'➡️ {to_my}{comment}{tx_link}.'
+               f'➡️ {to_my}{tx_link}.'
