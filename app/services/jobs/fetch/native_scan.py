@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import List, NamedTuple, Optional
+from typing import List, Optional
 
 import ujson
 from aiothornode.nodeclient import ThorNodePublicClient
@@ -21,11 +21,13 @@ class BlockResult:
 
 class NativeScannerBlock(BaseFetcher):
     SLEEP_PERIOD = 5.99
+    MAX_ATTEMPTS_TO_SKIP_BLOCK = 5
 
     def __init__(self, deps: DepContainer, sleep_period=None):
         sleep_period = sleep_period or THOR_BLOCK_TIME * 0.99
         super().__init__(deps, sleep_period)
         self._last_block = 0
+        self._this_block_attempts = 0
         self._thor = ThorNodePublicClient(self.deps.session, self.deps.thor_env)
 
     async def _fetch_last_block(self):
@@ -84,6 +86,13 @@ class NativeScannerBlock(BaseFetcher):
         else:
             self.logger.warn(f'Error fetching block #{block_no}.')
 
+    def _on_error(self):
+        self._this_block_attempts += 1
+        if self._this_block_attempts >= self.MAX_ATTEMPTS_TO_SKIP_BLOCK:
+            self.logger.error(f'Too many attempts to get block #{self._last_block}. Skipping it.')
+            self._last_block += 1
+            self._this_block_attempts = 0
+
     async def fetch(self):
         if not self._last_block:
             await self._update_last_block()
@@ -97,11 +106,16 @@ class NativeScannerBlock(BaseFetcher):
         while True:
             block_result = await self.fetch_block_results(self._last_block)
             if block_result is None:
-                # self.logger.info(f"No yet block: #{self._last_block}. I will try later...")
+                self._on_error()
                 break
 
             block_result.txs = await self.fetch_block_txs(self._last_block)
+            if block_result.txs is None:
+                self.logger.error(f'Failed to get transactions of the block #{self._last_block}.')
+                self._on_error()
+                break
 
             await self.pass_data_to_listeners(block_result)
 
             self._last_block += 1
+            self._this_block_attempts = 0
