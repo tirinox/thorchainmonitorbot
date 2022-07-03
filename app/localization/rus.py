@@ -1474,9 +1474,16 @@ class RussianLocalization(BaseLocalization):
 
     # ---- MY WALLET ALERTS ----
 
+    TX_COMMENT_TABLE = {
+        'Deposit': 'Депозит',
+        'Send': 'Перевод',
+        'Outbound': 'Исходящая',
+    }
+
     def notification_text_rune_transfer(self, t: RuneTransfer, my_addresses):
         asset, comment, from_my, to_my, tx_link, usd_amt = self._native_transfer_prepare_stuff(my_addresses, t)
+        comment = self.TX_COMMENT_TABLE.get(comment, comment)
 
         return f'🏦 <b>{comment}</b>{tx_link}: {code(short_money(t.amount, postfix=" " + asset))} {usd_amt} ' \
                f'от {from_my} ' \
-               f'➡️ к {to_my}{comment}.'
+               f'➡️ к {to_my}.'
