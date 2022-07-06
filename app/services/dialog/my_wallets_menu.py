@@ -200,7 +200,6 @@ class MyWalletsMenu(BaseDialog):
     def _keyboard_inside_wallet_menu(self) -> TelegramInlineList:
         external = self.data.get(self.KEY_IS_EXTERNAL, False)
         view_value = self.data.get(self.KEY_CAN_VIEW_VALUE, True)
-        # lp_prot_on = self.data.get(self.KEY_ADD_LP_PROTECTION, True)
         my_pools = self.data.get(self.KEY_MY_POOLS, [])
 
         addr_idx = int(self.data.get(self.KEY_ACTIVE_ADDRESS_INDEX, 0))
@@ -243,10 +242,6 @@ class MyWalletsMenu(BaseDialog):
         # ---------------------------- ROW 2 ------------------------------
         row2 = []
         if my_pools:
-            # row2.append(InlineKeyboardButton(
-            #     self.loc.BUTTON_LP_PROT_ON if lp_prot_on else self.loc.BUTTON_LP_PROT_OFF,
-            #     callback_data=self.QUERY_TOGGLE_LP_PROT))
-
             # View value ON/OFF toggle switch
             row2.append(InlineKeyboardButton(
                 self.loc.BUTTON_VIEW_VALUE_ON if view_value else self.loc.BUTTON_VIEW_VALUE_OFF,
@@ -311,11 +306,6 @@ class MyWalletsMenu(BaseDialog):
 
     # --- LP Pic generation actions:
 
-    @property
-    def add_il_protection(self):
-        # return bool(self.data.get(self.KEY_ADD_LP_PROTECTION, True))
-        return True
-
     async def view_pool_report(self, query: CallbackQuery, pool):
         address = self.data[self.KEY_ACTIVE_ADDRESS]
 
@@ -324,7 +314,7 @@ class MyWalletsMenu(BaseDialog):
 
         # WORK...
         rune_yield = get_rune_yield_connector(self.deps)
-        rune_yield.add_il_protection_to_final_figures = self.add_il_protection
+        rune_yield.add_il_protection_to_final_figures = True
         lp_report = await rune_yield.generate_yield_report_single_pool(address, pool)
 
         # GENERATE A PICTURE
@@ -355,7 +345,7 @@ class MyWalletsMenu(BaseDialog):
 
         # WORK
         rune_yield = get_rune_yield_connector(self.deps)
-        rune_yield.add_il_protection_to_final_figures = self.add_il_protection
+        rune_yield.add_il_protection_to_final_figures = True
         yield_summary = await rune_yield.generate_yield_summary(address, my_pools)
 
         # GENERATE A PICTURE
