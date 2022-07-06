@@ -12,7 +12,7 @@ from services.lib.constants import NetworkIdents, rune_origin, thor_to_float, TH
     DEFAULT_CEX_NAME, DEFAULT_CEX_BASE_ASSET
 from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
-    get_explorer_url_for_node
+    get_explorer_url_for_node, get_pool_url
 from services.lib.midgard.name_service import NameService
 from services.lib.money import format_percent, pretty_money, short_address, short_money, \
     calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset, short_dollar, \
@@ -572,15 +572,9 @@ class BaseLocalization(ABC):  # == English
 
     # ------- POOL CHURN -------
 
-    def pool_url(self, pool_name):
-        if self.cfg.network_id == NetworkIdents.MAINNET:
-            return f'https://app.thorswap.finance/pool/{pool_name}'
-        else:
-            name = Asset.from_string(pool_name).full_name
-            return f'https://chaosnet.bepswap.com/pool/{name}'
-
-    def pool_link(self, pool_name):
-        return link(self.pool_url(pool_name), Asset(pool_name).short_str)
+    @staticmethod
+    def pool_link(pool_name):
+        return link(get_pool_url(pool_name), pool_name)
 
     def notification_text_pool_churn(self, pc: PoolChanges):
         if pc.pools_changed:

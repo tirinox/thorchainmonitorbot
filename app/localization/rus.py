@@ -799,7 +799,7 @@ class RussianLocalization(BaseLocalization):
     TEXT_PIC_OTHERS = 'Другие'
     TEXT_PIC_UNKNOWN = 'Не известно'
 
-    def _format_node_text(self, node: NodeInfo, add_status=False, extended_info=False):
+    def _format_node_text(self, node: NodeInfo, add_status=False, extended_info=False, expand_link=False):
         node_ip_link = link(f'https://www.infobyip.com/ip-{node.ip_address}.html', node.ip_address)
         thor_explore_url = get_explorer_url_to_address(self.cfg.network_id, Chains.THOR, node.node_address)
         node_thor_link = link(thor_explore_url, short_address(node.node_address))

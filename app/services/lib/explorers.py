@@ -72,3 +72,7 @@ def get_explorer_url_for_node(address: str):
         return f'https://testnet.thorchain.net/#/nodes/{address}'
     else:
         return f'https://thorchain.net/#/nodes/{address}'
+
+
+def get_pool_url(pool_name):
+    return f'https://app.thorswap.finance/add/{pool_name}'
