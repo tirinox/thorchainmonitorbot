@@ -1692,7 +1692,7 @@ class BaseLocalization(ABC):  # == English
             delta_p = bracketify(pretty_money(delta, signed=True, postfix='%')) if delta else ''
 
             asset = Asset.from_string(pool.asset).short_str
-            url = f'https://app.thorswap.finance/pool/{pool.asset}'
+            url = get_pool_url(pool.asset)
 
             text += f'#{i}. {link(url, asset)}: {code(v)} {delta_p}\n'
         if not top_pools:
