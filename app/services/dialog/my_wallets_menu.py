@@ -93,7 +93,7 @@ class MyWalletsMenu(BaseDialog):
             address = a_obj[self.PROP_ADDRESS]
             # todo: await dynamical look up!
             name = self.deps.name_service.lookup_name_by_address_local(address)
-            label = name.name if name else short_address(address, begin=10, end=7)
+            label = name.name if name else short_address(address, begin=7, end=4)
             return label, address
 
         # Every button is tuple of (label, full_address)
