@@ -171,7 +171,7 @@ class RussianLocalization(BaseLocalization):
                f'Идет загрузка пулов для адреса {pre(address)}...\n' \
                f'Иногда она может идти долго, если Midgard сильно нагружен.'
 
-    def text_inside_my_wallet_title(self, address, pools, balances: ThorBalances):
+    def text_inside_my_wallet_title(self, address, pools, balances: ThorBalances, min_limit: float):
         if pools:
             title = '\n'
             footer = '👇 Выберите пул, чтобы получить подробную карточку информации о ликвидности.'
@@ -737,24 +737,13 @@ class RussianLocalization(BaseLocalization):
 
             message += '\n'
 
-        if abs(old.bonding_apy - new.bonding_apy) > 0.01:
-            bonding_apy_change = bracketify(
-                up_down_arrow(old.bonding_apy, new.bonding_apy, money_delta=True, postfix='%'))
-        else:
-            bonding_apy_change = ''
-
-        if abs(old.liquidity_apy - new.liquidity_apy) > 0.01:
-            liquidity_apy_change = bracketify(
-                up_down_arrow(old.liquidity_apy, new.liquidity_apy, money_delta=True, postfix='%'))
-        else:
-            liquidity_apy_change = ''
-
         switch_rune_total_text = bold(short_rune(new.switched_rune))
         message += (
             f'💎 Всего Rune перевели в нативные: {switch_rune_total_text} '
             f'({format_percent(new.switched_rune, market.total_supply)}).'
             f'\n\n')
 
+        bonding_apy_change, liquidity_apy_change = self._extract_apy_deltas(new, old)
         message += (
             f'📈 Доход от бондов в нодах, годовых: '
             f'{code(pretty_money(new.bonding_apy, postfix="%"))}{bonding_apy_change} и '

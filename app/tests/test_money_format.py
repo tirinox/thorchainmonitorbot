@@ -1,4 +1,5 @@
 from services.lib.money import pretty_money, short_dollar, number_short_with_postfix, short_money
+from services.lib.texts import up_down_arrow
 
 
 def test_short_money():
@@ -37,6 +38,8 @@ def test_pretty_money():
     assert p(10_777_888, '$') == '$10,777,888'
     assert p(10_777_888_999, '$') == '$10,777,888,999'
 
+    assert p(0.1926640162) == '0.193'
+
 
 def test_number_short():
     assert number_short_with_postfix(10) == '10.0'
@@ -59,3 +62,7 @@ def test_number_short():
     assert number_short_with_postfix(999) == '999.0'
     assert number_short_with_postfix(999_999) == '1.0M'
     assert number_short_with_postfix(999990000000) == '1.0T'
+
+
+def test_arrow():
+    assert up_down_arrow(1.0, 1.1926640162, percent_delta=True) == '↑ +0.193%'

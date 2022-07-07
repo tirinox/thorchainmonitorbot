@@ -408,17 +408,6 @@ class TwitterEnglishLocalization(BaseLocalization):
         message = f'🛡 Total Imp. Loss. Protection paid: {(short_dollar(new.loss_protection_paid_usd))}.\n'
         parts.append(message)
 
-        if abs(old.bonding_apy - new.bonding_apy) > 0.01:
-            bonding_apy_change = bracketify(
-                up_down_arrow(old.bonding_apy, new.bonding_apy, money_delta=True, postfix='%'))
-        else:
-            bonding_apy_change = ''
-
-        if abs(old.liquidity_apy - new.liquidity_apy) > 0.01:
-            liquidity_apy_change = bracketify(
-                up_down_arrow(old.liquidity_apy, new.liquidity_apy, money_delta=True, postfix='%'))
-        else:
-            liquidity_apy_change = ''
 
         # --------------------------------------------------------------------------------------------------------------
 
@@ -427,6 +416,8 @@ class TwitterEnglishLocalization(BaseLocalization):
             f'💎 Total Rune switched to native: {switch_rune_total_text} '
             f'({format_percent(new.switched_rune, market.total_supply)})\n'
         )
+
+        bonding_apy_change, liquidity_apy_change = self._extract_apy_deltas(new, old)
 
         message += (
             f'📈 Bonding APY is {pretty_money(new.bonding_apy, postfix="%")}{bonding_apy_change} and '

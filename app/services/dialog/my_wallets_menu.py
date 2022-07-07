@@ -55,6 +55,8 @@ class MyWalletsMenu(BaseDialog):
 
     PROP_TRACK_BALANCE = 'track_balance'
     PROP_ADDRESS = 'address'
+    PROP_CHAIN = 'chain'
+    PROP_MIN_LIMIT = 'min'
 
     # ----------- ENTER ------------
 
@@ -182,9 +184,12 @@ class MyWalletsMenu(BaseDialog):
         address = self.data[self.KEY_ACTIVE_ADDRESS]
         my_pools = self.data[self.KEY_MY_POOLS]
 
+        address_obj = self._get_address_object(address)
+        min_limit = float(address_obj.get(self.PROP_MIN_LIMIT, 0))
+
         balances = await self.get_balances(address)
 
-        text = self.loc.text_inside_my_wallet_title(address, my_pools, balances)
+        text = self.loc.text_inside_my_wallet_title(address, my_pools, balances, min_limit)
         tg_list = self._keyboard_inside_wallet_menu()
         inline_kbd = tg_list.keyboard()
         if edit:
@@ -291,9 +296,6 @@ class MyWalletsMenu(BaseDialog):
         elif query.data == self.QUERY_TOGGLE_VIEW_VALUE:
             self.data[self.KEY_CAN_VIEW_VALUE] = not self.data.get(self.KEY_CAN_VIEW_VALUE, True)
             await self._present_wallet_contents_menu(query.message, edit=True)
-        # elif query.data == self.QUERY_TOGGLE_LP_PROT:
-        #     self.data[self.KEY_ADD_LP_PROTECTION] = not self.data.get(self.KEY_ADD_LP_PROTECTION, True)
-        #     await self._present_wallet_contents_menu(query.message, edit=True)
         elif query.data == self.QUERY_TOGGLE_BALANCE:
             address = self.data[self.KEY_ACTIVE_ADDRESS]
             is_on = self._toggle_address_property(address, self.PROP_TRACK_BALANCE)
@@ -377,8 +379,9 @@ class MyWalletsMenu(BaseDialog):
         if new_addr not in my_unique_addr:
             new_addr_obj = {
                 self.PROP_ADDRESS: new_addr,
-                'chain': chain,
+                self.PROP_CHAIN: chain,
                 self.PROP_TRACK_BALANCE: False,
+                self.PROP_MIN_LIMIT: 0,
             }
             current_list.append(new_addr_obj)
             self.data[self.KEY_MY_ADDRESSES] = current_list

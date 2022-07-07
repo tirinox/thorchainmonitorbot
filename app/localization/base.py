@@ -228,7 +228,7 @@ class BaseLocalization(ABC):  # == English
             result = '\n'.join([title] + items)
         return result
 
-    def text_inside_my_wallet_title(self, address, pools, balances: ThorBalances):
+    def text_inside_my_wallet_title(self, address, pools, balances: ThorBalances, min_limit: float):
         if pools:
             title = '\n'
             footer = "👇 Click on the button to get a detailed card of LP yield."
@@ -890,23 +890,12 @@ class BaseLocalization(ABC):  # == English
 
             message += '\n'
 
-        if abs(old.bonding_apy - new.bonding_apy) > 0.01:
-            bonding_apy_change = bracketify(
-                up_down_arrow(old.bonding_apy, new.bonding_apy, money_delta=True, postfix='%'))
-        else:
-            bonding_apy_change = ''
-
-        if abs(old.liquidity_apy - new.liquidity_apy) > 0.01:
-            liquidity_apy_change = bracketify(
-                up_down_arrow(old.liquidity_apy, new.liquidity_apy, money_delta=True, postfix='%'))
-        else:
-            liquidity_apy_change = ''
-
         switch_rune_total_text = bold(short_rune(new.switched_rune))
         message += (f'💎 Total Rune switched to native: {switch_rune_total_text} '
                     f'({format_percent(new.switched_rune, market.total_supply)}).'
                     f'\n\n')
 
+        bonding_apy_change, liquidity_apy_change = self._extract_apy_deltas(new, old)
         message += f'📈 Bonding APY is {code(pretty_money(new.bonding_apy, postfix="%"))}{bonding_apy_change} and ' \
                    f'Liquidity APY is {code(pretty_money(new.liquidity_apy, postfix="%"))}{liquidity_apy_change}.\n'
 
@@ -935,6 +924,21 @@ class BaseLocalization(ABC):  # == English
             message += f"There is no eligible pool to be activated yet."
 
         return message
+
+    @staticmethod
+    def _extract_apy_deltas(new, old):
+        if abs(old.bonding_apy - new.bonding_apy) > 0.01:
+            bonding_apy_change = bracketify(
+                up_down_arrow(old.bonding_apy, new.bonding_apy, percent_delta=True))
+        else:
+            bonding_apy_change = ''
+        if abs(old.liquidity_apy - new.liquidity_apy) > 0.01:
+            liquidity_apy_change = bracketify(
+                up_down_arrow(old.liquidity_apy, new.liquidity_apy, percent_delta=True))
+        else:
+            liquidity_apy_change = ''
+
+        return bonding_apy_change, liquidity_apy_change
 
     # ------- NETWORK NODES -------
 
