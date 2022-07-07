@@ -76,3 +76,11 @@ def get_explorer_url_for_node(address: str):
 
 def get_pool_url(pool_name):
     return f'https://app.thorswap.finance/add/{pool_name}'
+
+
+def get_thoryield_address(network: str, address: str, chain: str = Chains.THOR):
+    if network == NetworkIdents.TESTNET_MULTICHAIN:
+        return f'https://mctn.vercel.app/dashboard?{chain}={address}'
+    else:
+        chain = chain.lower()
+        return f'https://app.thoryield.com/accounts?{chain}={address}'

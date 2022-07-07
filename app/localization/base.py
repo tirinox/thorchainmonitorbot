@@ -8,11 +8,11 @@ from semver import VersionInfo
 
 from services.jobs.fetch.circulating import SupplyEntry
 from services.lib.config import Config
-from services.lib.constants import NetworkIdents, rune_origin, thor_to_float, THOR_BLOCK_TIME, BNB_RUNE_SYMBOL, \
+from services.lib.constants import rune_origin, thor_to_float, THOR_BLOCK_TIME, BNB_RUNE_SYMBOL, \
     DEFAULT_CEX_NAME, DEFAULT_CEX_BASE_ASSET
 from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
-    get_explorer_url_for_node, get_pool_url
+    get_explorer_url_for_node, get_pool_url, get_thoryield_address
 from services.lib.midgard.name_service import NameService
 from services.lib.money import format_percent, pretty_money, short_address, short_money, \
     calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset, short_dollar, \
@@ -146,6 +146,8 @@ class BaseLocalization(ABC):  # == English
     BUTTON_TRACK_BALANCE_ON = 'Track balance: ON'
     BUTTON_TRACK_BALANCE_OFF = 'Track balance: OFF'
 
+    BUTTON_SET_RUNE_ALERT_LIMIT = 'Set min limit'
+
     BUTTON_REMOVE_THIS_ADDRESS = '❌ Remove this address'
 
     TEXT_NO_ADDRESSES = "🔆 You have not added any addresses yet. Send me one."
@@ -155,6 +157,18 @@ class BaseLocalization(ABC):  # == English
     TEXT_SELECT_ADDRESS_SEND_ME = 'If you want to add one more, please send me it. 👇'
     TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS = "📪 <i>This address doesn't participate in any liquidity pools.</i>"
     TEXT_CANNOT_ADD = '😐 Sorry, but you cannot add this address.'
+
+    TEXT_INVALID_LIMIT = '⛔ <b>Invalid number!</b> Please enter a positive number.'
+
+    BUTTON_CANCEL = 'Cancel'
+
+    def text_set_rune_limit_threshold(self, address, curr_limit):
+        return (
+            f'🎚 Enter the minimum amount of Rune as the threshold '
+            f'for triggering transfer alerts at this address ({address}).\n'
+            f'It is now equal to {ital(short_rune(curr_limit))}.\n\n'
+            f'You can send me the number with a text message or choose one of the options on the buttons.'
+        )
 
     def text_lp_img_caption(self):
         bot_link = "@" + self.this_bot_name
@@ -226,12 +240,12 @@ class BaseLocalization(ABC):  # == English
             result = f'{title} {items[0]}'
         else:
             result = '\n'.join([title] + items)
-        return result
+        return result + '\n\n'
 
-    def text_inside_my_wallet_title(self, address, pools, balances: ThorBalances, min_limit: float):
+    def text_inside_my_wallet_title(self, address, pools, balances: ThorBalances, min_limit: float, chain):
         if pools:
             title = '\n'
-            footer = "👇 Click on the button to get a detailed card of LP yield."
+            footer = "\n\n👇 Click on the button to get a detailed card of LP yield."
         else:
             title = self.TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS + '\n\n'
             footer = ''
@@ -246,11 +260,21 @@ class BaseLocalization(ABC):  # == English
         if addr_name:
             acc_caption = f' ({addr_name.name})'
 
+        thor_yield_url = get_thoryield_address(self.cfg.network_id, address, chain)
+        thor_yield_link = link(thor_yield_url, 'THORYield')
+
+        if min_limit is not None:
+            limit_str = f'📨 Transactions ≥ {short_rune(min_limit)} are tracked.\n'
+        else:
+            limit_str = ''
+
         return (
             f'🛳️ Account "{pre(address)}"{acc_caption}\n'
             f'{title}'
-            f'{balance_str}\n\n'
-            f"🔍 Explorer: {explorer_links}.\n\n"
+            f'{balance_str}'
+            f'{limit_str}'
+            f"🔍 Explorer: {explorer_links}\n"
+            f"🌎 View it on {thor_yield_link}"
             f'{footer}'
         )
 

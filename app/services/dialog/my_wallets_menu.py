@@ -12,29 +12,22 @@ from services.dialog.base import BaseDialog, message_handler, query_handler
 from services.dialog.picture.lp_picture import lp_pool_picture, lp_address_summary_picture
 from services.dialog.telegram.inline_list import TelegramInlineList, InlineListResult
 from services.jobs.fetch.runeyield import get_rune_yield_connector
-from services.lib.constants import NetworkIdents, Chains
+from services.lib.constants import Chains
 from services.lib.date_utils import today_str
 from services.lib.depcont import DepContainer
 from services.lib.draw_utils import img_to_bio
-from services.lib.money import short_address
+from services.lib.money import short_address, short_rune
 from services.lib.new_feature import Features
-from services.lib.texts import kbd, cut_long_text
+from services.lib.texts import kbd, cut_long_text, grouper
 from services.models.lp_info import LPAddress
 from services.notify.personal.balance import WalletWatchlist
-
-
-def get_thoryield_address(network: str, address: str, chain: str = Chains.THOR):
-    if network == NetworkIdents.TESTNET_MULTICHAIN:
-        return f'https://mctn.vercel.app/dashboard?{chain}={address}'
-    else:
-        chain = chain.lower()
-        return f'https://app.thoryield.com/accounts?{chain}={address}'
 
 
 class LPMenuStates(StatesGroup):
     mode = HelperMode.snake_case
     MAIN_MENU = State()
     WALLET_MENU = State()
+    SET_LIMIT = State()
 
 
 # fixme: Use dialog with settings to store wallets in global settings!
@@ -44,6 +37,8 @@ class MyWalletsMenu(BaseDialog):
     QUERY_TOGGLE_VIEW_VALUE = 'toggle-view-value'
     QUERY_TOGGLE_LP_PROT = 'toggle-lp-prot'
     QUERY_TOGGLE_BALANCE = 'toggle-balance'
+    QUERY_SET_RUNE_LIMIT = 'set-limit'
+    QUERY_CANCEL = 'cancel'
 
     KEY_MY_ADDRESSES = 'my-address-list'
     KEY_CAN_VIEW_VALUE = 'can-view-value'
@@ -153,6 +148,8 @@ class MyWalletsMenu(BaseDialog):
                                          reload_pools=True,
                                          edit=True,
                                          external=False):
+        await LPMenuStates.WALLET_MENU.set()
+
         # external means that it is not in my list! (called from MainMenu)
         self.data[self.KEY_ACTIVE_ADDRESS] = address
         self.data[self.KEY_IS_EXTERNAL] = external
@@ -185,11 +182,15 @@ class MyWalletsMenu(BaseDialog):
         my_pools = self.data[self.KEY_MY_POOLS]
 
         address_obj = self._get_address_object(address)
+        track_balance = address_obj.get(self.PROP_TRACK_BALANCE, False)
         min_limit = float(address_obj.get(self.PROP_MIN_LIMIT, 0))
+        chain = address_obj.get(self.PROP_CHAIN, '')
 
         balances = await self.get_balances(address)
 
-        text = self.loc.text_inside_my_wallet_title(address, my_pools, balances, min_limit)
+        text = self.loc.text_inside_my_wallet_title(address, my_pools, balances,
+                                                    min_limit if track_balance else None,
+                                                    chain)
         tg_list = self._keyboard_inside_wallet_menu()
         inline_kbd = tg_list.keyboard()
         if edit:
@@ -237,41 +238,49 @@ class MyWalletsMenu(BaseDialog):
                 self.loc.BUTTON_SM_SUMMARY,
                 callback_data=f'{self.QUERY_SUMMARY_OF_ADDRESS}:{addr_idx}'))
 
-        # THOR YIELD button
-        row1.append(InlineKeyboardButton(
-            self.loc.BUTTON_VIEW_RUNE_DOT_YIELD,
-            url=get_thoryield_address(self.deps.cfg.network_id, address, chain)))
-
         below_button_matrix.append(row1)
 
         # ---------------------------- ROW 2 ------------------------------
         row2 = []
-        if my_pools:
-            # View value ON/OFF toggle switch
-            row2.append(InlineKeyboardButton(
-                self.loc.BUTTON_VIEW_VALUE_ON if view_value else self.loc.BUTTON_VIEW_VALUE_OFF,
-                callback_data=self.QUERY_TOGGLE_VIEW_VALUE))
 
-        if chain == Chains.THOR:
+        if chain == Chains.THOR and not external:
             # Track balance ON/OFF toggle switch
             text = self.loc.BUTTON_TRACK_BALANCE_ON if track_balance else self.loc.BUTTON_TRACK_BALANCE_OFF
             text = self.text_new_feature(text, Features.F_PERSONAL_TRACK_BALANCE)
             row2.append(InlineKeyboardButton(text, callback_data=self.QUERY_TOGGLE_BALANCE))
 
-        below_button_matrix.append(row2)
+            if track_balance:
+                text = self.text_new_feature(self.loc.BUTTON_SET_RUNE_ALERT_LIMIT,
+                                             Features.F_PERSONAL_TRACK_BALANCE_LIMIT)
+                row2.append(InlineKeyboardButton(text, callback_data=self.QUERY_SET_RUNE_LIMIT))
+
+        if row2:
+            below_button_matrix.append(row2)
 
         # ---------------------------- ROW 3 ------------------------------
         row3 = []
 
+        if my_pools:
+            # View value ON/OFF toggle switch
+            row3.append(InlineKeyboardButton(
+                self.loc.BUTTON_VIEW_VALUE_ON if view_value else self.loc.BUTTON_VIEW_VALUE_OFF,
+                callback_data=self.QUERY_TOGGLE_VIEW_VALUE))
+
+        if row3:
+            below_button_matrix.append(row3)
+
+        # ---------------------------- ROW 4 ------------------------------
+        row4 = []
+
         if not external:
             # Remove this address button
-            row3.append(InlineKeyboardButton(self.loc.BUTTON_REMOVE_THIS_ADDRESS,
-                                             callback_data=f'{self.QUERY_REMOVE_ADDRESS}:{addr_idx}'), )
+            row4.append(InlineKeyboardButton(self.loc.BUTTON_REMOVE_THIS_ADDRESS,
+                                             callback_data=f'{self.QUERY_REMOVE_ADDRESS}:{addr_idx}'))
 
         # Back button
-        row3.append(InlineKeyboardButton(self.loc.BUTTON_SM_BACK_TO_LIST, callback_data=tg_list.data_back))
+        row4.append(InlineKeyboardButton(self.loc.BUTTON_SM_BACK_TO_LIST, callback_data=tg_list.data_back))
 
-        below_button_matrix.append(row3)
+        below_button_matrix.append(row4)
 
         # install all extra buttons to the List
         tg_list.set_extra_buttons_below(below_button_matrix)
@@ -301,10 +310,61 @@ class MyWalletsMenu(BaseDialog):
             is_on = self._toggle_address_property(address, self.PROP_TRACK_BALANCE)
             await self._process_wallet_balance_flag(address, is_on)
             await self._present_wallet_contents_menu(query.message, edit=True)
+        elif query.data == self.QUERY_SET_RUNE_LIMIT:
+            await self._enter_set_limit(query)
 
     async def _show_wallet_again(self, query: CallbackQuery):
         address = self.data[self.KEY_ACTIVE_ADDRESS]
         await self.show_pool_menu_for_address(query.message, address, edit=False)
+
+    # ---- Limit settings
+
+    async def _enter_set_limit(self, query: CallbackQuery):
+        await LPMenuStates.SET_LIMIT.set()
+
+        address = self.data[self.KEY_ACTIVE_ADDRESS]
+        address_obj = self._get_address_object(address)
+        min_limit = float(address_obj.get(self.PROP_MIN_LIMIT, 0))
+
+        prefabs = grouper(3, [
+            0, 10, 100, 1000,
+            5_000, 10_000, 50_000,
+            100_000, 500_000
+        ])
+
+        buttons = [
+            [InlineKeyboardButton(short_rune(val), callback_data=val) for val in row]
+            for row in prefabs
+        ]
+
+        buttons.append([InlineKeyboardButton(self.loc.BUTTON_CANCEL, callback_data=self.QUERY_CANCEL)])
+        await query.message.edit_text(self.loc.text_set_rune_limit_threshold(address, min_limit),
+                                      reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
+
+    @query_handler(state=LPMenuStates.SET_LIMIT)
+    async def on_set_limit_query(self, query: CallbackQuery):
+        address = self.data[self.KEY_ACTIVE_ADDRESS]
+
+        if query.data != self.QUERY_CANCEL:
+            try:
+                self._set_address_property(address, self.PROP_MIN_LIMIT, float(query.data))
+            except ValueError:
+                return
+
+        await self.show_pool_menu_for_address(query.message, address, reload_pools=False)
+
+    @message_handler(state=LPMenuStates.SET_LIMIT)
+    async def on_message_set_limit(self, message: Message):
+        try:
+            value = float(message.text.strip())
+        except (ValueError, TypeError):
+            await message.reply(self.loc.TEXT_INVALID_LIMIT, disable_notification=True)
+            return
+
+        address = self.data[self.KEY_ACTIVE_ADDRESS]
+        self._set_address_property(address, self.PROP_MIN_LIMIT, value)
+
+        await self.show_pool_menu_for_address(message, address, reload_pools=False, edit=False)
 
     # --- LP Pic generation actions:
 
@@ -402,8 +462,16 @@ class MyWalletsMenu(BaseDialog):
             obj[prop] = not obj.get(prop, default)
             return obj[prop]
 
-    def _get_address_object(self, address):
+    def _set_address_property(self, address, prop, value):
+        obj = self._get_address_object(address)
+        if obj:
+            obj[prop] = value
+            return obj[prop]
+
+    def _get_address_object(self, address=None):
         try:
+            if not address:
+                address = self.data[self.KEY_ACTIVE_ADDRESS]
             return next(a for a in self.my_addresses if a[self.PROP_ADDRESS] == address)
         except StopIteration:
             return {}

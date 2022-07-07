@@ -7,6 +7,7 @@ class Features:
 
     F_PERSONAL_PRICE_DIV = 'Settings.PriceDivergence'
     F_PERSONAL_TRACK_BALANCE = 'MyWallets.TrackBalance'
+    F_PERSONAL_TRACK_BALANCE_LIMIT = 'MyWallets.SetLimit'
 
     F_TEST_EXPIRED = 'Test.Expired'
     F_TEST_NOT_EXPIRED = 'Test.NotExpired'
@@ -14,6 +15,7 @@ class Features:
     EXPIRE_TABLE = {
         F_PERSONAL_PRICE_DIV: datetime(2022, 8, 12),
         F_PERSONAL_TRACK_BALANCE: datetime(2022, 9, 10),
+        F_PERSONAL_TRACK_BALANCE_LIMIT: datetime(2022, 10, 10),
 
         F_TEST_EXPIRED: datetime(2022, 2, 24),
         F_TEST_NOT_EXPIRED: datetime(2042, 2, 24),

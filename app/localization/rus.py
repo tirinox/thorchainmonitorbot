@@ -9,7 +9,7 @@ from localization.base import BaseLocalization, CREATOR_TG, URL_LEADERBOARD_MCCN
 from services.jobs.fetch.circulating import SupplyEntry
 from services.lib.constants import Chains, thor_to_float, rune_origin, BNB_RUNE_SYMBOL
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
-from services.lib.explorers import get_explorer_url_to_address, get_explorer_url_to_tx
+from services.lib.explorers import get_explorer_url_to_address, get_explorer_url_to_tx, get_thoryield_address
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change, Asset, short_money, short_dollar, format_percent, RAIDO_GLYPH, pretty_rune, short_rune
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
@@ -108,7 +108,9 @@ class RussianLocalization(BaseLocalization):
     BUTTON_TRACK_BALANCE_ON = 'Следить: ДА'
     BUTTON_TRACK_BALANCE_OFF = 'Следить: НЕТ'
 
-    BUTTON_REMOVE_THIS_ADDRESS = '❌ Удалить этот адресс'
+    BUTTON_SET_RUNE_ALERT_LIMIT = 'Уст. мин. лимит R'
+
+    BUTTON_REMOVE_THIS_ADDRESS = '❌ Удалить этот адрес'
 
     TEXT_NO_ADDRESSES = "🔆 Вы еще не добавили никаких адресов. Пришлите мне адрес, чтобы добавить."
     TEXT_YOUR_ADDRESSES = '🔆 Вы добавили следующие адреса:'
@@ -117,6 +119,18 @@ class RussianLocalization(BaseLocalization):
     TEXT_SELECT_ADDRESS_SEND_ME = 'Если хотите добавить адрес, пришлите его мне 👇'
     TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS = '📪 <i>На этом адресе нет пулов ликвидности.</i>'
     TEXT_CANNOT_ADD = '😐 Простите, но вы не можете добавить этот адрес.'
+
+    TEXT_INVALID_LIMIT = '⛔ <b>Неправильное число!</b> Вам следует ввести положительное число.'
+
+    BUTTON_CANCEL = 'Отмена'
+
+    def text_set_rune_limit_threshold(self, address, curr_limit):
+        return (
+            f'🎚 Введите минимальное количество Рун '
+            f'для срабатывания уведомлений о переводах на этом адресе ({address}).\n'
+            f'Сейчас это: {ital(short_rune(curr_limit))}.\n\n'
+            f'Вы можете прислать мне число сообщением или выбрать один из вариантов на кнопках.'
+        )
 
     def text_lp_img_caption(self):
         bot_link = "@" + self.this_bot_name
@@ -171,10 +185,10 @@ class RussianLocalization(BaseLocalization):
                f'Идет загрузка пулов для адреса {pre(address)}...\n' \
                f'Иногда она может идти долго, если Midgard сильно нагружен.'
 
-    def text_inside_my_wallet_title(self, address, pools, balances: ThorBalances, min_limit: float):
+    def text_inside_my_wallet_title(self, address, pools, balances: ThorBalances, min_limit: float, chain):
         if pools:
             title = '\n'
-            footer = '👇 Выберите пул, чтобы получить подробную карточку информации о ликвидности.'
+            footer = '\n\n👇 Выберите пул, чтобы получить подробную карточку информации о ликвидности.'
         else:
             title = self.TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS + '\n\n'
             footer = ''
@@ -183,11 +197,27 @@ class RussianLocalization(BaseLocalization):
 
         balance_str = self.text_balances(balances, 'Балансы аккаунта: ')
 
+        acc_caption = ''
+        # todo: dynamic!
+        addr_name = self.name_service.lookup_name_by_address_local(address)
+        if addr_name:
+            acc_caption = f' ({addr_name.name})'
+
+        thor_yield_url = get_thoryield_address(self.cfg.network_id, address, chain)
+        thor_yield_link = link(thor_yield_url, 'THORYield')
+
+        if min_limit is not None:
+            limit_str = f'📨 Транзакции ≥ {short_rune(min_limit)} отслеживаются.\n'
+        else:
+            limit_str = ''
+
         return (
-            f'🛳️ Аккаунт: {pre(address)}\n'
+            f'🛳️ Аккаунт: "{pre(address)}"{acc_caption}\n'
             f'{title}'
-            f"{balance_str}\n\n"
-            f"🔍 Обозреватель: {explorer_links}.\n\n"
+            f"{balance_str}"
+            f'{limit_str}'
+            f"🔍 Обозреватель: {explorer_links}\n"
+            f"🌎 Посмотреть на {thor_yield_link}"
             f"{footer}"
         )
 
