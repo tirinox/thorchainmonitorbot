@@ -41,7 +41,7 @@ class BEP2MoveNotifier(INotified, WithDelegates):
                 await self.pass_data_to_listeners(transfer)
 
     async def on_data(self, sender, transfer: RuneTransfer):
-        transfer.usd_per_rune = usd_per_rune = self.deps.price_holder.usd_per_rune
+        transfer.usd_per_asset = usd_per_rune = self.deps.price_holder.usd_per_rune
 
         await self._store_transfer(transfer)
 

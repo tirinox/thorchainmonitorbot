@@ -47,7 +47,7 @@ class BinanceOrgDexWSSClient(WSClient, WithDelegates):
         return now_ts() - self.last_message_ts
 
     async def handle_wss_message(self, j):
-        # await self._dbg_later()
+        # await self._dbg_later()  # fixme!
 
         for tx in j:
             if tx.get('txType') == BEP2_TRANSFER and tx.get('txAsset') == BNB_RUNE_SYMBOL_NO_CHAIN:

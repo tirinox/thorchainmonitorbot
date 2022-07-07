@@ -695,11 +695,10 @@ class TwitterEnglishLocalization(BaseLocalization):
         return name.name if name else short_address(addr)
 
     def notification_text_bep2_movement(self, transfer: RuneTransfer):
-        usd_amt = transfer.amount * transfer.usd_per_asset
         from_link, to_link = self.link_to_address(transfer.from_addr), self.link_to_address(transfer.to_addr)
         pf = ' ' + BNB_RUNE_SYMBOL
         return (f'{RAIDO_GLYPH} Large BEP2 $Rune transfer\n'
-                f'{short_money(transfer.amount, postfix=pf)} ({short_dollar(usd_amt)}) '
+                f'{short_money(transfer.amount, postfix=pf)} ({short_dollar(transfer.usd_amount)}) '
                 f'from {from_link} ➡️ to {to_link}.')
 
     def notification_text_cex_flow(self, bep2flow: RuneCEXFlow):

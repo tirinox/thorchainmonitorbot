@@ -1400,14 +1400,13 @@ class RussianLocalization(BaseLocalization):
     # ----- BEP 2 ------
 
     def notification_text_bep2_movement(self, transfer: RuneTransfer):
-        usd_amt = transfer.usd_amount
         from_link = self.link_to_address(transfer.from_addr, Chains.BNB)
         to_link = self.link_to_address(transfer.to_addr, Chains.BNB)
         pf = ' ' + BNB_RUNE_SYMBOL
         tf_link = get_explorer_url_to_tx(self.cfg.network_id, Chains.BNB, transfer.tx_hash)
         return (f'<b>️{RAIDO_GLYPH} Крупный {link(tf_link, "перевод")} BEP2 Rune:</b>\n'
                 f'{pre(short_money(transfer.amount, postfix=pf))} '
-                f'({ital(short_dollar(usd_amt, self.SHORT_MONEY_LOC))}) '
+                f'({ital(short_dollar(transfer.usd_amount, self.SHORT_MONEY_LOC))}) '
                 f'от {from_link} ➡️ к {to_link}.')
 
     def notification_text_cex_flow(self, bep2flow: RuneCEXFlow):

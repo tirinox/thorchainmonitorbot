@@ -1762,13 +1762,12 @@ class BaseLocalization(ABC):  # == English
         return link(url, caption)
 
     def notification_text_bep2_movement(self, transfer: RuneTransfer):
-        usd_amt = transfer.amount * transfer.usd_per_asset
         from_link = self.link_to_address(transfer.from_addr, Chains.BNB)
         to_link = self.link_to_address(transfer.to_addr, Chains.BNB)
         pf = ' ' + BNB_RUNE_SYMBOL
         tf_link = get_explorer_url_to_tx(self.cfg.network_id, Chains.BNB, transfer.tx_hash)
         return (f'<b>️{RAIDO_GLYPH} Large BEP2 $Rune {link(tf_link, "transfer")}</b>\n'
-                f'{pre(short_money(transfer.amount, postfix=pf))} ({ital(short_dollar(usd_amt))}) '
+                f'{pre(short_money(transfer.amount, postfix=pf))} ({ital(short_dollar(transfer.usd_amount))}) '
                 f'from {from_link} ➡️ to {to_link}.')
 
     def notification_text_cex_flow(self, bep2flow: RuneCEXFlow):
