@@ -480,7 +480,7 @@ class RussianLocalization(BaseLocalization):
 
         def pool_text(pool_name, status, to_status=None):
             if PoolInfo.is_status_enabled(to_status):
-                extra = '🎉 ПУЛ АКТИВИРОВАН. Можете делать обмены!'
+                extra = '🎉 ПУЛ АКТИВИРОВАН!'
             else:
                 extra = ital(ru_stat[status])
                 if to_status is not None:
