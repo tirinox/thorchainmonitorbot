@@ -1,3 +1,4 @@
+import json
 import logging
 import secrets
 from abc import ABC
@@ -140,11 +141,7 @@ class BaseDialog(ABC):
             async with state.proxy() as data:
                 loc = await d.loc_man.get_from_db(query.from_user.id, d.db)
                 handler_class = cls(loc, data, d, query.message)
-                handler_method = getattr(handler_class, that_name)
-                await handler_class.pre_action()
-                result = await handler_method(query)
-                await handler_class.post_action()
-                return result
+                return await handler_class.call_in_context(that_name, query)
 
     @classmethod
     def register_inline_bot_handler(cls, d: DepContainer, f, name):
@@ -166,11 +163,7 @@ class BaseDialog(ABC):
                     return
 
                 handler_class = cls(loc, None, d, None)
-                handler_method = getattr(handler_class, that_name)
-                await handler_class.pre_action()
-                result = await handler_method(inline_query)
-                await handler_class.post_action()
-                return result
+                return await handler_class.call_in_context(that_name, inline_query)
             except Exception as e:
                 logger.exception(f'Inline bot query exception! {e}')
 
@@ -196,11 +189,7 @@ class BaseDialog(ABC):
                     return
 
                 handler_class = cls(loc, data, d, message)
-                await handler_class.pre_action()
-                handler_method = getattr(handler_class, that_name)
-                result = await handler_method(message)
-                await handler_class.post_action()
-                return result
+                return await handler_class.call_in_context(that_name)
 
     # noinspection PyCallingNonCallable
     async def go_back(self, message: Message):
@@ -239,17 +228,29 @@ class BaseDialog(ABC):
         self.data['language'] = lang
         self.loc = await self.deps.loc_man.set_lang(self.user_id(message), lang, self.deps.db)
 
+    async def call_in_context(self, method_to_call, argument=None):
+        await self.pre_action()
+        attr_name = method_to_call if isinstance(method_to_call, str) else method_to_call.__name__
+        real_method = getattr(self, attr_name)
+        result = await real_method(argument or self.message)
+        await self.post_action()
+        return result
+
+    @classmethod
+    def from_other_dialog(cls, d: 'BaseDialog'):
+        return cls(d.loc, d.data, d.deps, d.message)
+
 
 class DialogWithSettings(BaseDialog):
     def __init__(self, loc: BaseLocalization, data: Optional[FSMContextProxy], d: DepContainer, message: Message):
         super().__init__(loc, data, d, message)
-        self._settings = {}
+        self.settings = {}
         self._settings_manager = d.settings_manager
 
     async def pre_action(self):
         user_id = self.user_id(self.message)
-        self._settings = await self._settings_manager.get_settings(user_id)
+        self.settings = await self._settings_manager.get_settings(user_id)
 
     async def post_action(self):
         user_id = self.user_id(self.message)
-        await self._settings_manager.set_settings(user_id, self._settings)
+        await self._settings_manager.set_settings(user_id, self.settings)

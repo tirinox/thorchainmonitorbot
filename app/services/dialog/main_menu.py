@@ -4,9 +4,9 @@ from aiogram.types import *
 from aiogram.utils.helper import HelperMode
 
 from services.dialog.avatar_picture_dialog import AvatarDialog
-from services.dialog.base import BaseDialog, message_handler
-from services.dialog.my_wallets_menu import MyWalletsMenu, LPMenuStates
+from services.dialog.base import message_handler, BaseDialog
 from services.dialog.metrics_menu import MetricsDialog
+from services.dialog.my_wallets_menu import MyWalletsMenu, LPMenuStates
 from services.dialog.node_op_menu import NodeOpDialog
 from services.dialog.settings_menu import SettingsDialog
 from services.lib.date_utils import DAY
@@ -139,18 +139,14 @@ class MainMenuDialog(BaseDialog):
     @message_handler(state=MainStates.MAIN_MENU)
     async def on_main_menu(self, message: Message):
         if message.text == self.loc.BUTTON_MM_METRICS:
-            message.text = ''
-            await MetricsDialog(self.loc, self.data, self.deps, message).on_enter(message)
+            await MetricsDialog.from_other_dialog(self).show_main_menu(message)
         elif message.text == self.my_wallets_button_text:
-            message.text = ''
-            await MyWalletsMenu(self.loc, self.data, self.deps, message).on_enter(message)
+            await MyWalletsMenu.from_other_dialog(self).call_in_context(MyWalletsMenu.on_enter)
         elif message.text == self.settings_button_text:
-            message.text = ''
-            await SettingsDialog(self.loc, self.data, self.deps, message).on_enter(message)
+            await SettingsDialog.from_other_dialog(self).show_main_menu(message)
         elif message.text == self.loc.BUTTON_MM_MAKE_AVATAR:
-            message.text = ''
-            await AvatarDialog(self.loc, self.data, self.deps, message).on_enter(message)
+            await AvatarDialog.from_other_dialog(self).on_enter()
         elif message.text == self.loc.BUTTON_MM_NODE_OP and NodeOpDialog.is_enabled(self.deps.cfg):
-            await NodeOpDialog(self.loc, self.data, self.deps, message).show_main_menu(message)
+            await NodeOpDialog.from_other_dialog(self).show_main_menu(message)
         else:
             return False

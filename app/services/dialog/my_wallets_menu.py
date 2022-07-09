@@ -8,7 +8,7 @@ from aiogram.types import *
 from aiogram.utils.helper import HelperMode
 
 from localization.base import BaseLocalization
-from services.dialog.base import BaseDialog, message_handler, query_handler
+from services.dialog.base import message_handler, query_handler, DialogWithSettings
 from services.dialog.picture.lp_picture import lp_pool_picture, lp_address_summary_picture
 from services.dialog.telegram.inline_list import TelegramInlineList, InlineListResult
 from services.jobs.fetch.runeyield import get_rune_yield_connector
@@ -21,6 +21,7 @@ from services.lib.new_feature import Features
 from services.lib.texts import kbd, cut_long_text, grouper
 from services.models.lp_info import LPAddress
 from services.notify.personal.balance import WalletWatchlist
+from services.notify.personal.helpers import GeneralSettings
 
 
 class LPMenuStates(StatesGroup):
@@ -30,8 +31,7 @@ class LPMenuStates(StatesGroup):
     SET_LIMIT = State()
 
 
-# fixme: Use dialog with settings to store wallets in global settings!
-class MyWalletsMenu(BaseDialog):
+class MyWalletsMenu(DialogWithSettings):
     QUERY_REMOVE_ADDRESS = 'remove-addr'
     QUERY_SUMMARY_OF_ADDRESS = 'summary-addr'
     QUERY_TOGGLE_VIEW_VALUE = 'toggle-view-value'
@@ -56,6 +56,7 @@ class MyWalletsMenu(BaseDialog):
     # ----------- ENTER ------------
 
     async def on_enter(self, message: Message):
+        self._migrate_data()  # no settings here: called from mainmenu!
         await self._show_address_selection_menu(message)
 
     # ---- WALLET LIST ------
@@ -346,10 +347,7 @@ class MyWalletsMenu(BaseDialog):
         address = self.data[self.KEY_ACTIVE_ADDRESS]
 
         if query.data != self.QUERY_CANCEL:
-            try:
-                self._set_address_property(address, self.PROP_MIN_LIMIT, float(query.data))
-            except ValueError:
-                return
+            self._set_rune_limit(address, query.data)
 
         await self.show_pool_menu_for_address(query.message, address, reload_pools=False)
 
@@ -362,7 +360,7 @@ class MyWalletsMenu(BaseDialog):
             return
 
         address = self.data[self.KEY_ACTIVE_ADDRESS]
-        self._set_address_property(address, self.PROP_MIN_LIMIT, value)
+        self._set_rune_limit(address, value)
 
         await self.show_pool_menu_for_address(message, address, reload_pools=False, edit=False)
 
@@ -445,6 +443,7 @@ class MyWalletsMenu(BaseDialog):
             }
             current_list.append(new_addr_obj)
             self.data[self.KEY_MY_ADDRESSES] = current_list
+            self._set_rune_limit(new_addr, 0.0)
 
     async def _remove_address(self, index):
         try:
@@ -476,6 +475,23 @@ class MyWalletsMenu(BaseDialog):
         except StopIteration:
             return {}
 
+    def _set_rune_limit(self, address, raw_data):
+        try:
+            value = float(raw_data)
+
+            # this is only Tg context persistence
+            self._set_address_property(address, self.PROP_MIN_LIMIT, value)
+
+            # put it into the global user settings
+            self.settings.setdefault(GeneralSettings.BALANCE_TRACK, {})
+            balance_track_settings = self.settings[GeneralSettings.BALANCE_TRACK]
+            balance_track_settings.setdefault(GeneralSettings.KEY_LIMIT, {})
+            limit_settings = balance_track_settings[GeneralSettings.KEY_LIMIT]
+            limit_settings[address] = value
+        except ValueError:
+            logging.error('Failed to parse Rune limit.')
+            return
+
     # --- MISC ---
 
     async def get_balances(self, address: str):
@@ -485,11 +501,6 @@ class MyWalletsMenu(BaseDialog):
             except Exception:
                 pass
 
-    @property
-    def prohibited_addresses(self):
-        addresses = self.deps.cfg.get_pure('native_scanner.prohibited_addresses')
-        return addresses if isinstance(addresses, list) else []
-
     async def _process_wallet_balance_flag(self, address: str, is_on: bool):
         user_id = str(self.data.fsm_context.user)
         await self._wallet_watch.set_user_to_node(user_id, address, is_on)
@@ -497,3 +508,34 @@ class MyWalletsMenu(BaseDialog):
     def __init__(self, loc: BaseLocalization, data: Optional[FSMContextProxy], d: DepContainer, message: Message):
         super().__init__(loc, data, d, message)
         self._wallet_watch = WalletWatchlist(d.db)
+
+        prohibited_addresses = self.deps.cfg.get_pure('native_scanner.prohibited_addresses')
+        self.prohibited_addresses = prohibited_addresses if isinstance(prohibited_addresses, list) else []
+
+    # ---- Migration from Tg settings to common settings ----
+
+    def _migrate_data(self):
+        print('----')
+        print(self.data)
+        print('----')
+        print(self.settings)
+        print('----')
+        return
+
+        has_old_data = self.KEY_MY_ADDRESSES in self.data
+        if not has_old_data:
+            return False  # nothing to migrate
+
+        old_addresses = self.data.get(self.KEY_MY_ADDRESSES, [])
+
+        self.settings.setdefault(GeneralSettings.BALANCE_TRACK, {})
+        balance_track_settings = self.settings[GeneralSettings.BALANCE_TRACK]
+        balance_track_settings[GeneralSettings.KEY_ADDRESSES] = list(old_addresses)  # copy
+
+        # dict.pop(key, None) == try delete key if exists
+        self.data.pop(self.KEY_MY_ADDRESSES)
+
+        logging.info(f'Address data successfully migrated ({len(old_addresses)}).')
+        return True
+
+

@@ -30,6 +30,9 @@ class RuneTransfer:
     def is_rune(self):
         return self.asset == NATIVE_RUNE_SYMBOL or self.asset.lower() == 'rune'
 
+    def rune_amount(self, usd_per_rune):
+        return self.usd_amount / usd_per_rune
+
 
 @dataclass
 class RuneCEXFlow:

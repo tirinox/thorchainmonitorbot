@@ -39,7 +39,7 @@ class MetricsDialog(BaseDialog):
     # ----------- HANDLERS ------------
 
     @message_handler(state=MetricsStates.MAIN_METRICS_MENU)
-    async def on_enter(self, message: Message):
+    async def handle_main_state(self, message: Message):
         if message.text == self.loc.BUTTON_BACK:
             await self.go_back(message)
             return
@@ -189,8 +189,7 @@ class MetricsDialog(BaseDialog):
         elif message.text == self.loc.BUTTON_30_DAYS:
             period = 30 * DAY
         elif message.text == self.loc.BUTTON_BACK:
-            message.text = ''
-            await self.on_enter(message)
+            await self.show_main_menu(message)
             return
         else:
             period = parse_timespan_to_seconds(message.text.strip())
@@ -220,8 +219,7 @@ class MetricsDialog(BaseDialog):
         elif message.text == self.loc.BUTTON_30_DAYS:
             period = 30 * DAY
         elif message.text == self.loc.BUTTON_BACK:
-            message.text = ''
-            await self.on_enter(message)
+            await self.show_main_menu(message)
             return
         else:
             period = parse_timespan_to_seconds(message.text.strip())

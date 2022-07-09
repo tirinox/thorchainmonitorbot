@@ -12,6 +12,7 @@ EMOJI_SCALE = [
 ]
 
 RAIDO_GLYPH = 'ᚱ'
+ABSURDLY_LARGE_NUMBER = 1e+15
 
 
 def emoji_for_percent_change(pc):

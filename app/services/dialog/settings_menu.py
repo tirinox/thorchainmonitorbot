@@ -23,7 +23,7 @@ class SettingsDialog(DialogWithSettings):
     # ----------- MAIN SETTINGS MENU ------------
 
     @message_handler(state=SettingsStates.MAIN_SETTINGS_MENU)
-    async def on_enter(self, message: Message):
+    async def handle_main_menu_state(self, message: Message):
         button_text_price_divergence = self.text_new_feature(
             self.loc.BUTTON_SET_PRICE_DIVERGENCE,
             Features.F_PERSONAL_PRICE_DIV)
@@ -40,24 +40,28 @@ class SettingsDialog(DialogWithSettings):
         elif message.text == self.loc.BUTTON_MM_MY_ADDRESS:
             await self.go_to_my_address(message)
         else:
-            await SettingsStates.MAIN_SETTINGS_MENU.set()
-            await message.answer(self.loc.TEXT_SETTING_INTRO, reply_markup=kbd(
-                [
-                    [self.loc.BUTTON_SET_LANGUAGE, self.loc.BUTTON_SET_NODE_OP_GOTO],
-                    [button_text_price_divergence, self.loc.BUTTON_MM_MY_ADDRESS],
-                    [self.loc.BUTTON_SM_BACK_MM],
-                ], vert=True
-            ))
+            await self.show_main_menu(message)
 
-    async def reenter(self, message: Message):
-        message.text = ''
-        await self.on_enter(message)
+    async def show_main_menu(self, message: Message):
+        await SettingsStates.MAIN_SETTINGS_MENU.set()
+
+        button_text_price_divergence = self.text_new_feature(
+            self.loc.BUTTON_SET_PRICE_DIVERGENCE,
+            Features.F_PERSONAL_PRICE_DIV)
+
+        await message.answer(self.loc.TEXT_SETTING_INTRO, reply_markup=kbd(
+            [
+                [self.loc.BUTTON_SET_LANGUAGE, self.loc.BUTTON_SET_NODE_OP_GOTO],
+                [button_text_price_divergence, self.loc.BUTTON_MM_MY_ADDRESS],
+                [self.loc.BUTTON_SM_BACK_MM],
+            ], vert=True
+        ))
 
     async def go_to_node_op_settings(self, message: Message):
-        await NodeOpDialog(self.loc, self.data, self.deps, self.message).show_main_menu(message)
+        await NodeOpDialog.from_other_dialog(self).show_main_menu(message)
 
     async def go_to_my_address(self, message: Message):
-        await MyWalletsMenu(self.loc, self.data, self.deps, self.message).on_enter(message)
+        await MyWalletsMenu.from_other_dialog(self).on_enter(message)
 
     # ----------- LANGUAGE ------------
 
@@ -107,16 +111,16 @@ class SettingsDialog(DialogWithSettings):
     @message_handler(state=SettingsStates.ASK_PRICE_DIV_MIN_PERCENT)
     async def handle_min_price_div_percent(self, message: Message):
         if message.text == self.loc.BUTTON_BACK:
-            await self.reenter(message)
+            await self.show_main_menu(message)
         elif message.text == self.loc.BUTTON_PRICE_DIV_TURN_OFF:
             await self._price_div_turn_off(message)
         elif message.text == self.loc.BUTTON_PRICE_DIV_NEXT:
-            self._settings[SettingsProcessorPriceDivergence.KEY_MIN_PERCENT] = None
+            self.settings[SettingsProcessorPriceDivergence.KEY_MIN_PERCENT] = None
             await self.ask_max_price_div_percent(message)
         else:
             value = await self._try_parse_percent_value(message, is_min=True)
             if value is not None:
-                self._settings[SettingsProcessorPriceDivergence.KEY_MIN_PERCENT] = value
+                self.settings[SettingsProcessorPriceDivergence.KEY_MIN_PERCENT] = value
                 await self.ask_max_price_div_percent(message)
 
     async def ask_max_price_div_percent(self, message: Message):
@@ -139,24 +143,24 @@ class SettingsDialog(DialogWithSettings):
             if value is not None:
                 await self._confirm_price_div(message, value)
             else:
-                await self.reenter(message)
+                await self.show_main_menu(message)
 
     async def _price_div_turn_off(self, message: Message):
-        self._settings[SettingsProcessorPriceDivergence.KEY_MIN_PERCENT] = None
-        self._settings[SettingsProcessorPriceDivergence.KEY_MAX_PERCENT] = None
+        self.settings[SettingsProcessorPriceDivergence.KEY_MIN_PERCENT] = None
+        self.settings[SettingsProcessorPriceDivergence.KEY_MAX_PERCENT] = None
         await message.answer(
             self.loc.TEXT_PRICE_DIV_TURNED_OFF, disable_notification=True
         )
-        await self.reenter(message)
+        await self.show_main_menu(message)
 
     async def _confirm_price_div(self, message: Message, max_value):
-        max_percent = self._settings[SettingsProcessorPriceDivergence.KEY_MAX_PERCENT] = max_value
-        min_percent = self._settings[SettingsProcessorPriceDivergence.KEY_MIN_PERCENT]
+        max_percent = self.settings[SettingsProcessorPriceDivergence.KEY_MAX_PERCENT] = max_value
+        min_percent = self.settings[SettingsProcessorPriceDivergence.KEY_MIN_PERCENT]
         await message.answer(
             self.loc.text_price_div_finish_setup(min_percent=min_percent, max_percent=max_percent),
             disable_notification=True
         )
-        await self.reenter(message)
+        await self.show_main_menu(message)
 
     async def _try_parse_percent_value(self, message: Message, **kwargs):
         text = message.text.strip('%').strip()
