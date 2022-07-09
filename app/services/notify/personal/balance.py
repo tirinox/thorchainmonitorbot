@@ -5,10 +5,10 @@ from typing import List
 from services.lib.db import DB
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
-from services.lib.money import Asset
+from services.lib.money import Asset, ABSURDLY_LARGE_NUMBER
 from services.lib.settings_manager import SettingsManager
 from services.lib.texts import grouper
-from services.lib.utils import class_logger
+from services.lib.utils import class_logger, safe_get
 from services.models.node_watchers import UserWatchlist
 from services.models.transfer import RuneTransfer
 from services.notify.channel import ChannelDescriptor, BoardMessage
@@ -18,10 +18,6 @@ from services.notify.personal.helpers import GeneralSettings
 class WalletWatchlist(UserWatchlist):
     def __init__(self, db: DB):
         super().__init__(db, 'Wallet')
-
-    # async def set_user_to_node(self, user_id, node: str, value: bool):
-    #     print(f'{user_id = }, address = {node}: {"ON" if value else "OFF"}')
-    #     return await super().set_user_to_node(user_id, node, value)
 
 
 class PersonalBalanceNotifier(INotified):
@@ -99,10 +95,6 @@ class PersonalBalanceNotifier(INotified):
             )
             asyncio.create_task(task)
 
-    @staticmethod
-    async def _filter_events(event_list: List[RuneTransfer], user_id, settings: dict) -> List[RuneTransfer]:
-        return event_list
-
     def _fill_asset_price(self, transfers):
         usd_per_rune = self.deps.price_holder.usd_per_rune
         for tr in transfers:
@@ -112,6 +104,27 @@ class PersonalBalanceNotifier(INotified):
             else:
                 pool_name = Asset.from_string(tr.asset).native_pool_name
                 tr.usd_per_asset = self.deps.price_holder.usd_per_asset(pool_name)
+
+    async def _filter_events(self, event_list: List[RuneTransfer], user_id, settings: dict) -> List[RuneTransfer]:
+        limits = safe_get(settings, GeneralSettings.BALANCE_TRACK, GeneralSettings.KEY_LIMIT)
+        if not isinstance(limits, dict):
+            # no preferences: return all!
+            return event_list
+
+        results = []
+
+        usd_per_rune = self.deps.price_holder.usd_per_rune
+
+        for transfer in event_list:
+            min_threshold_rune = min(
+                limits.get(transfer.from_addr, ABSURDLY_LARGE_NUMBER),
+                limits.get(transfer.to_addr, ABSURDLY_LARGE_NUMBER),
+            )
+
+            if transfer.rune_amount(usd_per_rune) >= min_threshold_rune:
+                results.append(transfer)
+
+        return results
 
 
 class SettingsProcessorBalanceTracker(INotified):
