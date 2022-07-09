@@ -325,7 +325,7 @@ class MyWalletsMenu(DialogWithSettings):
 
         address = self.data[self.KEY_ACTIVE_ADDRESS]
         address_obj = self._get_address_object(address)
-        min_limit = float(address_obj.get(self.PROP_MIN_LIMIT, 0))
+        current_min_limit = float(address_obj.get(self.PROP_MIN_LIMIT, 0))
 
         prefabs = grouper(3, [
             0, 10, 100, 1000,
@@ -333,13 +333,22 @@ class MyWalletsMenu(DialogWithSettings):
             100_000, 500_000
         ])
 
+        def button_title(val):
+            if val == 0:
+                text = self.loc.TEXT_ANY
+            else:
+                text = short_rune(val)
+            if val == current_min_limit:
+                text = '✔️ ' + text
+            return text
+
         buttons = [
-            [InlineKeyboardButton(short_rune(val), callback_data=val) for val in row]
+            [InlineKeyboardButton(button_title(val), callback_data=val) for val in row]
             for row in prefabs
         ]
 
         buttons.append([InlineKeyboardButton(self.loc.BUTTON_CANCEL, callback_data=self.QUERY_CANCEL)])
-        await query.message.edit_text(self.loc.text_set_rune_limit_threshold(address, min_limit),
+        await query.message.edit_text(self.loc.text_set_rune_limit_threshold(address, current_min_limit),
                                       reply_markup=InlineKeyboardMarkup(inline_keyboard=buttons))
 
     @query_handler(state=LPMenuStates.SET_LIMIT)
@@ -537,5 +546,3 @@ class MyWalletsMenu(DialogWithSettings):
 
         logging.info(f'Address data successfully migrated ({len(old_addresses)}).')
         return True
-
-

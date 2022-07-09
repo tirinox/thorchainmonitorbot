@@ -159,6 +159,7 @@ class BaseLocalization(ABC):  # == English
     TEXT_CANNOT_ADD = '😐 Sorry, but you cannot add this address.'
 
     TEXT_INVALID_LIMIT = '⛔ <b>Invalid number!</b> Please enter a positive number.'
+    TEXT_ANY = 'Any amount'
 
     BUTTON_CANCEL = 'Cancel'
 

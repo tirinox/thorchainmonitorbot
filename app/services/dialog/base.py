@@ -1,4 +1,3 @@
-import json
 import logging
 import secrets
 from abc import ABC
@@ -10,8 +9,8 @@ from aiogram.dispatcher.storage import FSMContextProxy, FSMContext
 from aiogram.types import Message, CallbackQuery, ReplyKeyboardRemove, InlineQuery
 from aiogram.utils.exceptions import MessageCantBeDeleted, MessageToEditNotFound, MessageToDeleteNotFound
 
-from localization.manager import BaseLocalization
 from localization.base import CREATOR_TG
+from localization.manager import BaseLocalization
 from services.lib.depcont import DepContainer
 from services.lib.texts import code
 from services.notify.channel import BoardMessage
