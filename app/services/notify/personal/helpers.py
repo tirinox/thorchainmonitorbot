@@ -46,7 +46,6 @@ class GeneralSettings:
     LANGUAGE = 'lang'
     BALANCE_TRACK = 'personal:balance-track'
 
-    KEY_LIMIT = 'limit'
     KEY_ADDRESSES = 'addresses'
 
 

@@ -106,8 +106,8 @@ class PersonalBalanceNotifier(INotified):
                 tr.usd_per_asset = self.deps.price_holder.usd_per_asset(pool_name)
 
     async def _filter_events(self, event_list: List[RuneTransfer], user_id, settings: dict) -> List[RuneTransfer]:
-        limits = safe_get(settings, GeneralSettings.BALANCE_TRACK, GeneralSettings.KEY_LIMIT)
-        if not isinstance(limits, dict):
+        balance_settings = safe_get(settings, GeneralSettings.BALANCE_TRACK, GeneralSettings.KEY_ADDRESSES)
+        if not isinstance(balance_settings, dict):
             # no preferences: return all!
             return event_list
 
@@ -117,8 +117,8 @@ class PersonalBalanceNotifier(INotified):
 
         for transfer in event_list:
             min_threshold_rune = min(
-                limits.get(transfer.from_addr, ABSURDLY_LARGE_NUMBER),
-                limits.get(transfer.to_addr, ABSURDLY_LARGE_NUMBER),
+                safe_get(balance_settings, transfer.from_addr, 'min') or ABSURDLY_LARGE_NUMBER,
+                safe_get(balance_settings, transfer.to_addr, 'min') or ABSURDLY_LARGE_NUMBER,
             )
 
             if transfer.rune_amount(usd_per_rune) >= min_threshold_rune:

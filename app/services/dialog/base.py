@@ -252,4 +252,7 @@ class DialogWithSettings(BaseDialog):
 
     async def post_action(self):
         user_id = self.user_id(self.message)
-        await self._settings_manager.set_settings(user_id, self.settings)
+        if self.settings and isinstance(self.settings, dict):
+            await self._settings_manager.set_settings(user_id, self.settings)
+        else:
+            logger.error('Tried to save invalid settings. Rejected!')

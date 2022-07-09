@@ -40,7 +40,6 @@ class MyWalletsMenu(DialogWithSettings):
     QUERY_SET_RUNE_LIMIT = 'set-limit'
     QUERY_CANCEL = 'cancel'
 
-    KEY_MY_ADDRESSES = 'my-address-list'
     KEY_CAN_VIEW_VALUE = 'can-view-value'
     KEY_ADD_LP_PROTECTION = 'add-lp-prot'
     KEY_ACTIVE_ADDRESS = 'active-addr'
@@ -56,7 +55,7 @@ class MyWalletsMenu(DialogWithSettings):
     # ----------- ENTER ------------
 
     async def on_enter(self, message: Message):
-        self._migrate_data()  # no settings here: called from mainmenu!
+        self._migrate_data()
         await self._show_address_selection_menu(message)
 
     # ---- WALLET LIST ------
@@ -82,20 +81,22 @@ class MyWalletsMenu(DialogWithSettings):
 
     @message_handler(state=LPMenuStates.MAIN_MENU)
     async def wallet_list_message_handler(self, message: Message):
-        await self._add_address_handler(message, edit=False)
+        if message.text == self.loc.BUTTON_BACK:
+            await self.go_back(message)
+        else:
+            await self._add_address_handler(message, edit=False)
 
-    def _make_address_keyboard_list(self, my_addresses):
+    def _make_address_keyboard_list(self, my_addresses: dict):
         extra_row = []
 
-        def address_label(a_obj):
-            address = a_obj[self.PROP_ADDRESS]
+        def address_label(address):
             # todo: await dynamical look up!
             name = self.deps.name_service.lookup_name_by_address_local(address)
             label = name.name if name else short_address(address, begin=7, end=4)
             return label, address
 
         # Every button is tuple of (label, full_address)
-        short_addresses = [address_label(addr) for addr in my_addresses]
+        short_addresses = [address_label(addr) for addr in my_addresses.keys()]
 
         return TelegramInlineList(
             short_addresses, data_proxy=self.data,
@@ -115,9 +116,9 @@ class MyWalletsMenu(DialogWithSettings):
             if edit:
                 await message.edit_text(self.loc.TEXT_YOUR_ADDRESSES, reply_markup=keyboard)
             else:
-                await message.answer(self.loc.TEXT_YOUR_ADDRESSES, reply_markup=keyboard)
+                await message.answer(self.loc.TEXT_YOUR_ADDRESSES, reply_markup=keyboard, disable_notification=True)
 
-        if show_add_more:
+        if show_add_more and my_addresses:
             msg = self.loc.TEXT_SELECT_ADDRESS_ABOVE if my_addresses else ''
             msg += self.loc.TEXT_SELECT_ADDRESS_SEND_ME
             await message.answer(msg, reply_markup=ReplyKeyboardRemove(), disable_notification=True)
@@ -163,7 +164,8 @@ class MyWalletsMenu(DialogWithSettings):
                 # message = await message.answer(text=self.loc.text_lp_loading_pools(address),
                 #                                reply_markup=kbd([self.loc.BUTTON_SM_BACK_MM]))
                 loading_message = await message.answer(text=self.loc.text_lp_loading_pools(address),
-                                                       reply_markup=ReplyKeyboardRemove())
+                                                       reply_markup=ReplyKeyboardRemove(),
+                                                       disable_notification=True)
             try:
                 rune_yield = get_rune_yield_connector(self.deps)
                 my_pools = await rune_yield.get_my_pools(address)
@@ -192,8 +194,7 @@ class MyWalletsMenu(DialogWithSettings):
         text = self.loc.text_inside_my_wallet_title(address, my_pools, balances,
                                                     min_limit if track_balance else None,
                                                     chain)
-        tg_list = self._keyboard_inside_wallet_menu()
-        inline_kbd = tg_list.keyboard()
+        inline_kbd = self._keyboard_inside_wallet_menu().keyboard()
         if edit:
             await message.edit_text(text=text,
                                     reply_markup=inline_kbd,
@@ -406,7 +407,7 @@ class MyWalletsMenu(DialogWithSettings):
 
         my_pools = self.data[self.KEY_MY_POOLS]
         if not my_pools:
-            await query.message.answer(self.loc.TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS)
+            await query.message.answer(self.loc.TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS, disable_notification=True)
             return
 
         # POST A LOADING STICKER
@@ -436,30 +437,30 @@ class MyWalletsMenu(DialogWithSettings):
     # --- MANAGE ADDRESSES ---
 
     @property
-    def my_addresses(self):
-        return self.data.get(self.KEY_MY_ADDRESSES, [])
+    def my_addresses(self) -> dict:
+        return self.global_data.setdefault(GeneralSettings.KEY_ADDRESSES, {})
 
     def _add_address(self, new_addr, chain):
+        if not new_addr:
+            logging.error('Cannot add empty address!')
+            return
+
         new_addr = str(new_addr).strip()
-        current_list = self.my_addresses
-        my_unique_addr = set(a[self.PROP_ADDRESS] for a in current_list)
-        if new_addr not in my_unique_addr:
+
+        address_dict = self.my_addresses
+        if new_addr not in address_dict:
             new_addr_obj = {
-                self.PROP_ADDRESS: new_addr,
                 self.PROP_CHAIN: chain,
                 self.PROP_TRACK_BALANCE: False,
                 self.PROP_MIN_LIMIT: 0,
             }
-            current_list.append(new_addr_obj)
-            self.data[self.KEY_MY_ADDRESSES] = current_list
-            self._set_rune_limit(new_addr, 0.0)
+            address_dict[new_addr] = new_addr_obj
 
     async def _remove_address(self, index):
         try:
             index = int(index)
-            address_list = self.my_addresses
-            address = address_list[index][self.PROP_ADDRESS]
-            del address_list[index]
+            address = list(self.my_addresses.keys())[index]
+            self.my_addresses.pop(address)
             await self._process_wallet_balance_flag(address, is_on=False)
         except IndexError:
             logging.error(f'Cannot delete address at {index = },')
@@ -477,29 +478,22 @@ class MyWalletsMenu(DialogWithSettings):
             return obj[prop]
 
     def _get_address_object(self, address=None):
-        try:
-            if not address:
-                address = self.data[self.KEY_ACTIVE_ADDRESS]
-            return next(a for a in self.my_addresses if a[self.PROP_ADDRESS] == address)
-        except StopIteration:
-            return {}
+        if not address:
+            address = self.data[self.KEY_ACTIVE_ADDRESS]
+        return self.my_addresses.get(address, {})
 
     def _set_rune_limit(self, address, raw_data):
         try:
             value = float(raw_data)
-
-            # this is only Tg context persistence
             self._set_address_property(address, self.PROP_MIN_LIMIT, value)
-
-            # put it into the global user settings
-            self.settings.setdefault(GeneralSettings.BALANCE_TRACK, {})
-            balance_track_settings = self.settings[GeneralSettings.BALANCE_TRACK]
-            balance_track_settings.setdefault(GeneralSettings.KEY_LIMIT, {})
-            limit_settings = balance_track_settings[GeneralSettings.KEY_LIMIT]
-            limit_settings[address] = value
         except ValueError:
             logging.error('Failed to parse Rune limit.')
             return
+
+    @property
+    def global_data(self):
+        """ This used "settings" instead of Telegram context """
+        return self.settings.setdefault(GeneralSettings.BALANCE_TRACK, {})
 
     # --- MISC ---
 
@@ -523,26 +517,26 @@ class MyWalletsMenu(DialogWithSettings):
 
     # ---- Migration from Tg settings to common settings ----
 
-    def _migrate_data(self):
-        print('----')
-        print(self.data)
-        print('----')
-        print(self.settings)
-        print('----')
-        return
+    _OLD_KEY_MY_ADDRESSES = 'my-address-list'
 
-        has_old_data = self.KEY_MY_ADDRESSES in self.data
-        if not has_old_data:
+    def _migrate_data(self):
+        old_addresses = self.data.get(self._OLD_KEY_MY_ADDRESSES, [])
+        if not old_addresses:
             return False  # nothing to migrate
 
-        old_addresses = self.data.get(self.KEY_MY_ADDRESSES, [])
+        new_addresses = {}
+        for address_obj in old_addresses:
+            # make a copy and make it pretty and concise
+            address_obj = dict(address_obj)
+            address = address_obj.pop(self.PROP_ADDRESS, None)
+            if address:
+                address_obj.pop('pools', None)
+                new_addresses[address] = address_obj
 
-        self.settings.setdefault(GeneralSettings.BALANCE_TRACK, {})
-        balance_track_settings = self.settings[GeneralSettings.BALANCE_TRACK]
-        balance_track_settings[GeneralSettings.KEY_ADDRESSES] = list(old_addresses)  # copy
+        self.global_data[GeneralSettings.KEY_ADDRESSES] = new_addresses
 
         # dict.pop(key, None) == try delete key if exists
-        self.data.pop(self.KEY_MY_ADDRESSES)
+        self.data.pop(self._OLD_KEY_MY_ADDRESSES)
 
         logging.info(f'Address data successfully migrated ({len(old_addresses)}).')
         return True
