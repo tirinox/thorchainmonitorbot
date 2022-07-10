@@ -12,7 +12,7 @@ from services.lib.utils import class_logger, safe_get
 from services.models.node_watchers import UserWatchlist
 from services.models.transfer import RuneTransfer
 from services.notify.channel import ChannelDescriptor, BoardMessage
-from services.notify.personal.helpers import GeneralSettings
+from services.notify.personal.helpers import GeneralSettings, Props
 
 
 class WalletWatchlist(UserWatchlist):
@@ -105,8 +105,17 @@ class PersonalBalanceNotifier(INotified):
                 pool_name = Asset.from_string(tr.asset).native_pool_name
                 tr.usd_per_asset = self.deps.price_holder.usd_per_asset(pool_name)
 
+    @staticmethod
+    def _get_min_rune_threshold(balance_settings: dict, address):
+        if address in balance_settings:
+            add_obj = balance_settings.get(address, {})
+            if add_obj.get(Props.PROP_TRACK_BALANCE, False):
+                return float(balance_settings.get(address, {}).get(Props.PROP_MIN_LIMIT, 0.0))
+        # else:
+        return ABSURDLY_LARGE_NUMBER
+
     async def _filter_events(self, event_list: List[RuneTransfer], user_id, settings: dict) -> List[RuneTransfer]:
-        balance_settings = safe_get(settings, GeneralSettings.BALANCE_TRACK, GeneralSettings.KEY_ADDRESSES)
+        balance_settings = safe_get(settings, GeneralSettings.BALANCE_TRACK, Props.KEY_ADDRESSES)
         if not isinstance(balance_settings, dict):
             # no preferences: return all!
             return event_list
@@ -117,12 +126,14 @@ class PersonalBalanceNotifier(INotified):
 
         for transfer in event_list:
             min_threshold_rune = min(
-                safe_get(balance_settings, transfer.from_addr, 'min') or ABSURDLY_LARGE_NUMBER,
-                safe_get(balance_settings, transfer.to_addr, 'min') or ABSURDLY_LARGE_NUMBER,
+                self._get_min_rune_threshold(balance_settings, transfer.to_addr),
+                self._get_min_rune_threshold(balance_settings, transfer.from_addr)
             )
 
             if transfer.rune_amount(usd_per_rune) >= min_threshold_rune:
                 results.append(transfer)
+            else:
+                print(f'Filtered transfer: {transfer} too low')
 
         return results
 

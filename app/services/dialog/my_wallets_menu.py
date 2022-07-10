@@ -21,7 +21,7 @@ from services.lib.new_feature import Features
 from services.lib.texts import kbd, cut_long_text, grouper
 from services.models.lp_info import LPAddress
 from services.notify.personal.balance import WalletWatchlist
-from services.notify.personal.helpers import GeneralSettings
+from services.notify.personal.helpers import GeneralSettings, Props
 
 
 class LPMenuStates(StatesGroup):
@@ -46,11 +46,6 @@ class MyWalletsMenu(DialogWithSettings):
     KEY_ACTIVE_ADDRESS_INDEX = 'active-addr-id'
     KEY_IS_EXTERNAL = 'is-external'
     KEY_MY_POOLS = 'my-pools'
-
-    PROP_TRACK_BALANCE = 'track_balance'
-    PROP_ADDRESS = 'address'
-    PROP_CHAIN = 'chain'
-    PROP_MIN_LIMIT = 'min'
 
     # ----------- ENTER ------------
 
@@ -185,9 +180,9 @@ class MyWalletsMenu(DialogWithSettings):
         my_pools = self.data[self.KEY_MY_POOLS]
 
         address_obj = self._get_address_object(address)
-        track_balance = address_obj.get(self.PROP_TRACK_BALANCE, False)
-        min_limit = float(address_obj.get(self.PROP_MIN_LIMIT, 0))
-        chain = address_obj.get(self.PROP_CHAIN, '')
+        track_balance = address_obj.get(Props.PROP_TRACK_BALANCE, False)
+        min_limit = float(address_obj.get(Props.PROP_MIN_LIMIT, 0))
+        chain = address_obj.get(Props.PROP_CHAIN, '')
 
         balances = await self.get_balances(address)
 
@@ -213,7 +208,7 @@ class MyWalletsMenu(DialogWithSettings):
         addr_idx = int(self.data.get(self.KEY_ACTIVE_ADDRESS_INDEX, 0))
         address = self.data.get(self.KEY_ACTIVE_ADDRESS)
         address_obj = self._get_address_object(address)
-        track_balance = address_obj.get(self.PROP_TRACK_BALANCE, False)
+        track_balance = address_obj.get(Props.PROP_TRACK_BALANCE, False)
 
         if my_pools is None:
             my_pools = []
@@ -309,7 +304,7 @@ class MyWalletsMenu(DialogWithSettings):
             await self._present_wallet_contents_menu(query.message, edit=True)
         elif query.data == self.QUERY_TOGGLE_BALANCE:
             address = self.data[self.KEY_ACTIVE_ADDRESS]
-            is_on = self._toggle_address_property(address, self.PROP_TRACK_BALANCE)
+            is_on = self._toggle_address_property(address, Props.PROP_TRACK_BALANCE)
             await self._process_wallet_balance_flag(address, is_on)
             await self._present_wallet_contents_menu(query.message, edit=True)
         elif query.data == self.QUERY_SET_RUNE_LIMIT:
@@ -326,7 +321,7 @@ class MyWalletsMenu(DialogWithSettings):
 
         address = self.data[self.KEY_ACTIVE_ADDRESS]
         address_obj = self._get_address_object(address)
-        current_min_limit = float(address_obj.get(self.PROP_MIN_LIMIT, 0))
+        current_min_limit = float(address_obj.get(Props.PROP_MIN_LIMIT, 0))
 
         prefabs = grouper(3, [
             0, 10, 100, 1000,
@@ -438,7 +433,7 @@ class MyWalletsMenu(DialogWithSettings):
 
     @property
     def my_addresses(self) -> dict:
-        return self.global_data.setdefault(GeneralSettings.KEY_ADDRESSES, {})
+        return self.global_data.setdefault(Props.KEY_ADDRESSES, {})
 
     def _add_address(self, new_addr, chain):
         if not new_addr:
@@ -450,9 +445,9 @@ class MyWalletsMenu(DialogWithSettings):
         address_dict = self.my_addresses
         if new_addr not in address_dict:
             new_addr_obj = {
-                self.PROP_CHAIN: chain,
-                self.PROP_TRACK_BALANCE: False,
-                self.PROP_MIN_LIMIT: 0,
+                Props.PROP_CHAIN: chain,
+                Props.PROP_TRACK_BALANCE: False,
+                Props.PROP_MIN_LIMIT: 0,
             }
             address_dict[new_addr] = new_addr_obj
 
@@ -485,7 +480,7 @@ class MyWalletsMenu(DialogWithSettings):
     def _set_rune_limit(self, address, raw_data):
         try:
             value = float(raw_data)
-            self._set_address_property(address, self.PROP_MIN_LIMIT, value)
+            self._set_address_property(address, Props.PROP_MIN_LIMIT, value)
         except ValueError:
             logging.error('Failed to parse Rune limit.')
             return
@@ -528,12 +523,12 @@ class MyWalletsMenu(DialogWithSettings):
         for address_obj in old_addresses:
             # make a copy and make it pretty and concise
             address_obj = dict(address_obj)
-            address = address_obj.pop(self.PROP_ADDRESS, None)
+            address = address_obj.pop(Props.PROP_ADDRESS, None)
             if address:
                 address_obj.pop('pools', None)
                 new_addresses[address] = address_obj
 
-        self.global_data[GeneralSettings.KEY_ADDRESSES] = new_addresses
+        self.global_data[Props.KEY_ADDRESSES] = new_addresses
 
         # dict.pop(key, None) == try delete key if exists
         self.data.pop(self._OLD_KEY_MY_ADDRESSES)

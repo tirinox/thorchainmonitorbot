@@ -46,7 +46,14 @@ class GeneralSettings:
     LANGUAGE = 'lang'
     BALANCE_TRACK = 'personal:balance-track'
 
+
+class Props:
     KEY_ADDRESSES = 'addresses'
+
+    PROP_TRACK_BALANCE = 'track_balance'
+    PROP_ADDRESS = 'address'
+    PROP_CHAIN = 'chain'
+    PROP_MIN_LIMIT = 'min'
 
 
 class BaseChangeTracker:
