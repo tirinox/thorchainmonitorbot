@@ -16,6 +16,7 @@ class RuneMoveNotifier(INotified, WithDelegates):
         'outbound',
         'solvency',
         'observedtxout',
+        'observedtxin',
     )
 
     def __init__(self, deps: DepContainer):
