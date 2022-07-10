@@ -711,3 +711,10 @@ class TwitterEnglishLocalization(BaseLocalization):
             f'Netflow: {short_money(bep2flow.rune_cex_netflow, postfix=RAIDO_GLYPH)} '
             f'({short_dollar(bep2flow.netflow_usd)})'
         )
+
+    def notification_text_rune_transfer_public(self, t: RuneTransfer):
+        asset, comment, from_my, to_my, tx_link, usd_amt = self._native_transfer_prepare_stuff(None, t, tx_title='')
+
+        return f'💸 Large transfer {comment}: ' \
+               f'{(short_money(t.amount, postfix=" " + asset))} {usd_amt} ' \
+               f'from {from_my} ➡️ {to_my}.'
