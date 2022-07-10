@@ -54,6 +54,9 @@ class BaseLocalization(ABC):  # == English
     ND = 'N/D'
     NA = 'N/A'
 
+    LIST_NEXT_PAGE = 'Next page »'
+    LIST_PREV_PAGE = '« Prev. page'
+
     THORCHAIN_LINK = 'https://thorchain.org/'
     R = 'Rune'
 

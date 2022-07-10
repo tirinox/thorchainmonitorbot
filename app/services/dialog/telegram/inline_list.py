@@ -24,13 +24,14 @@ class TelegramInlineList:
                  back_text='Back',
                  prev_page_text='«',
                  next_page_text='»',
-                 data_prefix='list'):
+                 data_prefix='list',
+                 loc=None):
         assert isinstance(items, (list, tuple))
         self._items = items
         self._data = data_proxy
         self.back_text = back_text
-        self.prev_page_text = prev_page_text
-        self.next_page_text = next_page_text
+        self.prev_page_text = loc.LIST_PREV_PAGE if loc else prev_page_text
+        self.next_page_text = loc.LIST_NEXT_PAGE if loc else next_page_text
         self._max_columns = max_columns
         self._max_rows = max_rows
         self._n = len(items)

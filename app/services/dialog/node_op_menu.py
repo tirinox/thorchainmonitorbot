@@ -151,7 +151,8 @@ class NodeOpDialog(DialogWithSettings):
         return TelegramInlineList(
             last_node_texts, data_proxy=self.data, back_text=self.loc.BUTTON_BACK,
             data_prefix='all_nodes',
-            max_rows=3
+            max_rows=3,
+            loc=self.loc
         ).set_extra_buttons_above(
             [
                 [
@@ -256,7 +257,8 @@ class NodeOpDialog(DialogWithSettings):
 
         return TelegramInlineList(
             my_nodes_names, data_proxy=self.data,
-            max_rows=4, back_text=self.loc.BUTTON_BACK, data_prefix='my_nodes'
+            max_rows=4, back_text=self.loc.BUTTON_BACK, data_prefix='my_nodes',
+            loc=self.loc
         ).set_extra_buttons_above([extra_row])
 
     async def on_manage_menu(self, message: Message):

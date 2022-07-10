@@ -95,7 +95,8 @@ class MyWalletsMenu(DialogWithSettings):
 
         return TelegramInlineList(
             short_addresses, data_proxy=self.data,
-            max_rows=5, back_text=self.loc.BUTTON_BACK, data_prefix='my_addr'
+            max_rows=5, back_text=self.loc.BUTTON_BACK, data_prefix='my_addr',
+            loc=self.loc
         ).set_extra_buttons_above([extra_row])
 
     async def _show_address_selection_menu(self, message: Message, edit=False, show_add_more=True):
@@ -223,6 +224,7 @@ class MyWalletsMenu(DialogWithSettings):
             pool_labels, data_proxy=self.data,
             max_rows=3,
             back_text='', data_prefix='pools',
+            loc=self.loc
         )
 
         below_button_matrix = []
