@@ -132,8 +132,8 @@ class PersonalBalanceNotifier(INotified):
 
             if transfer.rune_amount(usd_per_rune) >= min_threshold_rune:
                 results.append(transfer)
-            else:
-                print(f'Filtered transfer: {transfer} too low')
+            # else:
+            #     print(f'Filtered transfer: {transfer} too low')
 
         return results
 
