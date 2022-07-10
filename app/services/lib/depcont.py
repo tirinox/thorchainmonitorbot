@@ -52,7 +52,7 @@ class DepContainer:
     node_op_notifier = None  # type: 'NodeChangePersonalNotifier'
     block_notifier = None  # type: 'BlockHeightNotifier'
     best_pools_notifier = None  # type: 'BestPoolsNotifier'
-    bep2_move_notifier = None  # type: 'BEP2MoveNotifier'
+    rune_move_notifier = None  # type: 'BEP2MoveNotifier'
 
     gen_alert_settings_proc = None
     alert_watcher: Optional[AlertWatchers] = None

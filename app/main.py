@@ -45,7 +45,7 @@ from services.notify.broadcast import Broadcaster
 from services.notify.personal.balance import PersonalBalanceNotifier
 from services.notify.personal.personal_main import NodeChangePersonalNotifier
 from services.notify.personal.price_divergence import PersonalPriceDivergenceNotifier, SettingsProcessorPriceDivergence
-from services.notify.types.bep2_notify import BEP2MoveNotifier
+from services.notify.types.transfer_notify import RuneMoveNotifier
 from services.notify.types.best_pool_notify import BestPoolsNotifier
 from services.notify.types.block_notify import BlockHeightNotifier
 from services.notify.types.cap_notify import LiquidityCapNotifier
@@ -279,11 +279,11 @@ class App:
             voting_notifier = VotingNotifier(d)
             fetcher_mimir.subscribe(voting_notifier)
 
-        if d.cfg.get('bep2.enabled', True):
+        if d.cfg.get('rune_transfer.enabled', True):
             fetcher_bep2 = BinanceOrgDexWSSClient()
-            d.bep2_move_notifier = BEP2MoveNotifier(d)
-            fetcher_bep2.subscribe(d.bep2_move_notifier)
-            d.bep2_move_notifier.subscribe(d.alert_presenter)
+            d.rune_move_notifier = RuneMoveNotifier(d)
+            fetcher_bep2.subscribe(d.rune_move_notifier)
+            d.rune_move_notifier.subscribe(d.alert_presenter)
             tasks.append(fetcher_bep2)
 
         if d.cfg.get('native_scanner.enabled', True):
@@ -294,6 +294,9 @@ class App:
             scanner.subscribe(decoder)
             balance_notifier = PersonalBalanceNotifier(d)
             decoder.subscribe(balance_notifier)
+
+            if d.rune_move_notifier is not None:
+                decoder.subscribe(d.rune_move_notifier)
 
         # --- BOTS
 

@@ -4,7 +4,7 @@ import logging
 from localization.manager import BaseLocalization
 from services.jobs.fetch.bep2_move import BEP2BlockFetcher, BinanceOrgDexWSSClient
 from services.models.transfer import RuneTransfer
-from services.notify.types.bep2_notify import BEP2MoveNotifier
+from services.notify.types.transfer_notify import RuneMoveNotifier
 from tools.lib.lp_common import LpAppFramework
 
 
@@ -13,7 +13,7 @@ async def main():
     async with lp_app:
         await lp_app.prepare(brief=True)
         fetcher = BEP2BlockFetcher(lp_app.deps)
-        notifier = BEP2MoveNotifier(lp_app.deps)
+        notifier = RuneMoveNotifier(lp_app.deps)
         fetcher.subscribe(notifier)
         # await fetcher.run()
 

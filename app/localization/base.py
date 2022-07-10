@@ -1789,6 +1789,7 @@ class BaseLocalization(ABC):  # == English
         caption = name.name if name else short_address(addr)
         return link(url, caption)
 
+    # fixme: do we still need this?
     def notification_text_bep2_movement(self, transfer: RuneTransfer):
         from_link = self.link_to_address(transfer.from_addr, Chains.BNB)
         to_link = self.link_to_address(transfer.to_addr, Chains.BNB)
@@ -1845,7 +1846,7 @@ class BaseLocalization(ABC):  # == English
     def _is_my_address_tag(address, my_addresses):
         return ' ★' if my_addresses and address in my_addresses else ''
 
-    def _native_transfer_prepare_stuff(self, my_addresses, t):
+    def _native_transfer_prepare_stuff(self, my_addresses, t: RuneTransfer, tx_title='TX'):
         my_addresses = my_addresses or []
 
         # USD value
@@ -1868,7 +1869,8 @@ class BaseLocalization(ABC):  # == English
 
         # TX link
         if t.tx_hash:
-            tx_link = ' ' + link(get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, t.tx_hash), 'TX')
+            tx_title = tx_title or comment
+            tx_link = ' ' + link(get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, t.tx_hash), tx_title)
         else:
             tx_link = ''
 
@@ -1883,3 +1885,10 @@ class BaseLocalization(ABC):  # == English
         return f'🏦 <b>{comment}</b>{tx_link}: {code(short_money(t.amount, postfix=" " + asset))} {usd_amt} ' \
                f'from {from_my} ' \
                f'➡️ {to_my}.'
+
+    def notification_text_rune_transfer_public(self, t: RuneTransfer):
+        asset, comment, from_my, to_my, tx_link, usd_amt = self._native_transfer_prepare_stuff(None, t, tx_title='')
+
+        return f'💸 <b>Large transfer</b> {tx_link}: ' \
+               f'{code(short_money(t.amount, postfix=" " + asset))} {usd_amt} ' \
+               f'from {from_my} ➡️ {to_my}.'

@@ -2,10 +2,10 @@ import asyncio
 
 from localization.manager import BaseLocalization
 from services.dialog.picture.block_height_picture import block_speed_chart
-from services.lib.delegates import INotified
 from services.lib.constants import THOR_BLOCKS_PER_MINUTE
-from services.models.transfer import RuneCEXFlow, RuneTransfer
+from services.lib.delegates import INotified
 from services.models.last_block import EventBlockSpeed, BlockProduceState
+from services.models.transfer import RuneCEXFlow, RuneTransfer
 from services.models.tx import EventLargeTransaction
 from services.notify.broadcast import Broadcaster
 from services.notify.channel import BoardMessage
@@ -20,9 +20,9 @@ class AlertPresenter(INotified):
 
     async def _handle_async(self, data):
         if isinstance(data, RuneCEXFlow):
-            await self._handle_bep2_flow(data)
+            await self._handle_rune_cex_flow(data)
         elif isinstance(data, RuneTransfer):
-            await self._handle_bep2_transfer(data)
+            await self._handle_rune_transfer(data)
         elif isinstance(data, EventBlockSpeed):
             await self._handle_block_speed(data)
         elif isinstance(data, EventLargeTransaction):
@@ -36,10 +36,12 @@ class AlertPresenter(INotified):
             txs_event.transaction, txs_event.usd_per_rune, txs_event.pool_info, txs_event.cap_info
         )
 
-    async def _handle_bep2_transfer(self, transfer: RuneTransfer):
-        await self.broadcaster.notify_preconfigured_channels(BaseLocalization.notification_text_bep2_movement, transfer)
+    async def _handle_rune_transfer(self, transfer: RuneTransfer):
+        await self.broadcaster.notify_preconfigured_channels(
+            BaseLocalization.notification_text_rune_transfer_public,
+            transfer)
 
-    async def _handle_bep2_flow(self, flow: RuneCEXFlow):
+    async def _handle_rune_cex_flow(self, flow: RuneCEXFlow):
         await self.broadcaster.notify_preconfigured_channels(BaseLocalization.notification_text_cex_flow, flow)
 
     @staticmethod

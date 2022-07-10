@@ -1433,6 +1433,7 @@ class RussianLocalization(BaseLocalization):
 
     # ----- BEP 2 ------
 
+    # fixme: do we still need this?
     def notification_text_bep2_movement(self, transfer: RuneTransfer):
         from_link = self.link_to_address(transfer.from_addr, Chains.BNB)
         to_link = self.link_to_address(transfer.to_addr, Chains.BNB)
@@ -1500,6 +1501,7 @@ class RussianLocalization(BaseLocalization):
         'Deposit': 'Депозит',
         'Send': 'Перевод',
         'Outbound': 'Исходящая',
+        'OutboundTx': 'Исходящая',
     }
 
     def notification_text_rune_transfer(self, t: RuneTransfer, my_addresses):
@@ -1509,3 +1511,10 @@ class RussianLocalization(BaseLocalization):
         return f'🏦 <b>{comment}</b>{tx_link}: {code(short_money(t.amount, postfix=" " + asset))} {usd_amt} ' \
                f'от {from_my} ' \
                f'➡️ к {to_my}.'
+
+    def notification_text_rune_transfer_public(self, t: RuneTransfer):
+        asset, comment, from_my, to_my, tx_link, usd_amt = self._native_transfer_prepare_stuff(None, t, tx_title='')
+
+        return f'💸 <b>Большой перевод</b> {tx_link}: ' \
+               f'{code(short_money(t.amount, postfix=" " + asset))} {usd_amt} ' \
+               f'от {from_my} ➡️ к {to_my}.'

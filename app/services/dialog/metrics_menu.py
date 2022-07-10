@@ -16,7 +16,7 @@ from services.lib.draw_utils import img_to_bio
 from services.lib.texts import kbd
 from services.models.node_info import NodeInfo
 from services.models.price import PriceReport, RuneMarketInfo
-from services.notify.types.bep2_notify import BEP2MoveNotifier
+from services.notify.types.transfer_notify import RuneMoveNotifier
 from services.notify.types.best_pool_notify import BestPoolsNotifier
 from services.notify.types.block_notify import BlockHeightNotifier
 from services.notify.types.cap_notify import LiquidityCapNotifier
@@ -310,7 +310,7 @@ class MetricsDialog(BaseDialog):
         await message.answer(text, disable_notification=True)
 
     async def show_cex_flow(self, message: Message):
-        notifier: BEP2MoveNotifier = self.deps.bep2_move_notifier
+        notifier: RuneMoveNotifier = self.deps.rune_move_notifier
         flow = await notifier.tracker.read_last24h()
         flow.usd_per_rune = self.deps.price_holder.usd_per_rune
         text = self.loc.notification_text_cex_flow(flow)

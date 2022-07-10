@@ -37,7 +37,7 @@ thor:
     cache_time: 10m
 
 
-personal:  # (!) new
+personal:
   rate_limit:
     number: 50
     period: 5m
@@ -80,7 +80,7 @@ slack:
     singing_secret: 1234567890abcdef
 
 
-twitter: # (!) new
+twitter:
   enabled: true
   is_mock: false
   bot:
@@ -128,7 +128,7 @@ node_op_tools:
 
 
 
-native_scanner: # (!) new
+native_scanner:
   enabled: true
 
   reserve_address: "thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt"
@@ -140,7 +140,7 @@ native_scanner: # (!) new
     - "thor1v8ppstuf6e3x0r4glqc68d5jqcs2tf38cg2q6y"
 
 
-names: # (!) new
+names:
   thorname:
     enabled: false
     expire: 48h
@@ -173,6 +173,7 @@ names: # (!) new
     bnb10af52w77pkehgxhnwgeca50q2t2354q4xamz5y: "MEXC"
     bnb165r4pxe862hetuz2l3wt4yx43uhh4ph9u0ptz6: "Unknown CEX"
     bnb1pv5vycd4xe3nu0msrewgf9tmfvam8yr3x6j97q: "Ascendex"
+    bnb1zp46uw7w3g5uku2tme5fvarf6ldf3j2l5g6cv2: "Ascendex 2"
     bnb1axqc2gan462z6npw3c33srp4950mr5x28uc6wu: "THORChain Community"
     bnb13a7gyv5zl57c0rzeu0henx6d0tzspvrrakxxtv: "THORChain Operational"
     bnb1e4q8whcufp6d72w8nwmpuhxd96r4n0fstegyuy: "Burn address"
@@ -265,7 +266,7 @@ price:
   price_graph:
     default_period: 7d
 
-  bep2_reference: # (!) new
+  bep2_reference:
     cex: hitbtc
     pair: USDT
 
@@ -315,18 +316,24 @@ price:
     enabled: true
     cooldown: 12h
 
-    public: # (!) new
+    public:
       min_percent: 1.9
       max_percent: 5.5
-    personal: # (!) new
+    personal:
+
       enabled: true
       cooldown: 30m
 
 
-bep2:
+rune_transfer:  # (!) new: rename from "bep2"
   enabled: true
   fetch_period: 30
-  min_usd: 300000
+
+  min_usd:  # (!) new!
+    bep2: 300000
+    native: 200000
+  cooldown: 10
+
   flow_summary:
     enabled: true
     cooldown: 1d
@@ -344,6 +351,9 @@ bep2:
     - bnb165r4pxe862hetuz2l3wt4yx43uhh4ph9u0ptz6
     - bnb1pv5vycd4xe3nu0msrewgf9tmfvam8yr3x6j97q
     - bnb13q87ekxvvte78t2q7z05lzfethnlht5agfh4ur
+    - thor1t60f02r8jvzjrhtnjgfj4ne6rs5wjnejwmj7fh
+    - thor1uz4fpyd5f5d6p9pzk8lxyj4qxnwq6f9utg0e7k
+    - thor1ty6h2ll07fqfzumphp6kq3hm4ps28xlm2l6kd6
   ignore_cex2cex: true
 
 

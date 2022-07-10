@@ -49,23 +49,27 @@ class BinanceOrgDexWSSClient(WSClient, WithDelegates):
     async def handle_wss_message(self, j):
         # await self._dbg_later()  # fixme!
 
+        transfers = []
         for tx in j:
             if tx.get('txType') == BEP2_TRANSFER and tx.get('txAsset') == BNB_RUNE_SYMBOL_NO_CHAIN:
                 self.logger.info(f'Transfer message: {tx}')
-                await self.pass_data_to_listeners(RuneTransfer(
+                transfers.append(RuneTransfer(
                     tx.get('fromAddr'),
                     tx.get('toAddr'),
                     tx.get('blockHeight'),
                     tx.get('txHash'),
                     tx.get('value'),
+                    asset='rune'
                 ))
+
+        await self.pass_data_to_listeners(transfers)
 
     async def on_connected(self):
         self.logger.info('Connected to Binance.org.')
 
     @run_once_async
     async def _dbg_later(self):
-        await self.pass_data_to_listeners(RuneTransfer(
+        await self.pass_data_to_listeners([RuneTransfer(
             'bnb1u2agwjat20494fmc6jnuau0ls937cfjn4pjwtn',
             'bnb13q87ekxvvte78t2q7z05lzfethnlht5agfh4ok',
             # 'bnb13q87ekxvvte78t2q7z05lzfethnlht5agfh4ur',
@@ -73,4 +77,4 @@ class BinanceOrgDexWSSClient(WSClient, WithDelegates):
             '12345',
             4310.0,
             5.5,
-        ))
+        )])
