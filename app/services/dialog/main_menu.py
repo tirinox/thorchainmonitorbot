@@ -109,7 +109,7 @@ class MainMenuDialog(BaseDialog):
     @message_handler(commands='lp', state='*')
     async def cmd_lp(self, message: Message):
         message.text = ''
-        await MyWalletsMenu(self.loc, self.data, self.deps, self.message).on_enter(message)
+        await MyWalletsMenu.from_other_dialog(self).call_in_context(MyWalletsMenu.on_enter)
 
     @message_handler(commands='supply', state='*')
     async def cmd_supply(self, message: Message):
