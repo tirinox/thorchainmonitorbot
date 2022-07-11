@@ -134,7 +134,7 @@ class BaseLocalization(ABC):  # == English
 
     BUTTON_SM_ADD_ADDRESS = '➕ Add an address'
     BUTTON_BACK = '🔙 Back'
-    BUTTON_SM_BACK_TO_LIST = '🔙 Back to list'
+    BUTTON_SM_BACK_TO_LIST = '🔙 Back to the list'
     BUTTON_SM_BACK_MM = '🔙 Main menu'
 
     BUTTON_SM_SUMMARY = '💲 Summary'
