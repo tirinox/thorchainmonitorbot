@@ -995,7 +995,7 @@ class BaseLocalization(ABC):  # == English
                 award_text = bold(short_money(node.current_award, postfix=RAIDO_GLYPH))
                 extra += f", current award is {award_text}"
 
-        status = f' ({pre(node.status)})' if add_status else ''
+        status = f' ({node.status})' if add_status else ''
         return f'{bold(node_thor_link)} ({node.flag_emoji}{node_ip_link} v. {node.version}) ' \
                f'bond {bold(short_money(node.bond, postfix=RAIDO_GLYPH))} {status}{extra}'.strip()
 
@@ -1006,7 +1006,7 @@ class BaseLocalization(ABC):  # == English
         message = ital(title) + "\n"
         message += join_as_numbered_list(
             (
-                self._format_node_text(node, add_status, extended_info, expand_link=True)
+                self._format_node_text(node, add_status, extended_info)
                 for node in nodes if node.node_address
             ),
             start=start

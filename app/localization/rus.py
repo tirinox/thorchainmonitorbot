@@ -850,7 +850,7 @@ class RussianLocalization(BaseLocalization):
                 award_text = bold(pretty_money(node.current_award, postfix=RAIDO_GLYPH))
                 extra += f", {award_text} награды"
 
-        status = f', ({pre(status)})' if add_status else ''
+        status = f', ({status})' if add_status else ''
         return f'{bold(node_thor_link)} ({node.flag_emoji}{node_ip_link}, версия {node.version}) ' \
                f'с {bold(pretty_money(node.bond, postfix=RAIDO_GLYPH))} бонд {status}{extra}'.strip()
 

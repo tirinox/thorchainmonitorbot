@@ -72,7 +72,7 @@ class TelegramBot:
             return True  # tg error is not the reason to exclude the user
         except exceptions.MessageIsTooLong:
             s_text = shorten_text(msg.text, 4000)
-            self.logger.error(f'Message is too long:\n"{s_text}"\n...')
+            self.logger.error(f'Message is too long ({len(msg.text)} b):\n"{s_text}"\n...')
             return False
         else:
             self.logger.info(f"Target [ID:{chat_id}]: success")
