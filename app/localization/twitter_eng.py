@@ -9,8 +9,9 @@ from services.lib.constants import thor_to_float, rune_origin, BNB_RUNE_SYMBOL, 
 from services.lib.date_utils import now_ts, seconds_human
 from services.lib.money import Asset, short_dollar, format_percent, pretty_money, pretty_dollar, RAIDO_GLYPH, \
     calc_percent_change, adaptive_round_to_str, emoji_for_percent_change, short_address, short_money, short_rune
-from services.lib.texts import x_ses, join_as_numbered_list, progressbar, plural, bracketify, up_down_arrow, \
+from services.lib.texts import x_ses, progressbar, plural, bracketify, up_down_arrow, \
     bracketify_spaced, shorten_text
+from services.lib.utils import safe_get
 from services.models.cap_info import ThorCapInfo
 from services.models.last_block import EventBlockSpeed, BlockProduceState
 from services.models.mimir import MimirChange, MimirHolder, MimirVoting, MimirVoteOption
@@ -408,7 +409,6 @@ class TwitterEnglishLocalization(BaseLocalization):
         message = f'🛡 Total Imp. Loss. Protection paid: {(short_dollar(new.loss_protection_paid_usd))}.\n'
         parts.append(message)
 
-
         # --------------------------------------------------------------------------------------------------------------
 
         switch_rune_total_text = short_rune(new.switched_rune)
@@ -453,41 +453,36 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         return MESSAGE_SEPARATOR.join(twitter_intelligent_text_splitter(parts))
 
-    @staticmethod
-    def _format_node_text_plain(node: NodeInfo):
-        node_thor_link = short_address(node.node_address, 0)
-        return f'{node_thor_link} ({short_money(node.bond, postfix=RAIDO_GLYPH)})'
-
-    def _make_node_list_plain(self, nodes, title):
-        if not nodes:
-            return ''
-        message = ', '.join(self._format_node_text_plain(node) for node in nodes if node.node_address)
-        return f'{title}\n{message}\n'
-
     def _node_bond_change_after_churn(self, changes: NodeSetChanges):
         bond_in, bond_out = changes.bond_churn_in, changes.bond_churn_out
         bond_delta = bond_in - bond_out
         return f'Active bond net change: {short_money(bond_delta, postfix=RAIDO_GLYPH)}'
 
     def notification_text_for_node_churn(self, changes: NodeSetChanges):
+        def _format_node_text_plain(node: NodeInfo):
+            node_thor_link = short_address(node.node_address, 0)
+            return f'{node.flag_emoji}{node_thor_link} ({short_money(node.bond, postfix=RAIDO_GLYPH)})'
+
+        def _make_node_list_plain(nodes, title):
+            if not nodes:
+                return ''
+            message = ', '.join(_format_node_text_plain(node) for node in nodes if node.node_address)
+            return f'{title}\n{message}\n'
+
         components = []
 
-        part1 = ''
-        if changes.nodes_activated or changes.nodes_deactivated:
-            part1 += '♻️ Node churn' + '\n'
-        part1 += self._make_node_list_plain(changes.nodes_activated, '➡️ Nodes churned in:')
+        part1 = _make_node_list_plain(changes.nodes_activated, '➡️ Nodes churned in:')
         components.append(part1)
 
-        part2 = self._make_node_list_plain(changes.nodes_deactivated, '⬅️️ Nodes churned out:')
+        part2 = _make_node_list_plain(changes.nodes_deactivated, '⬅️️ Nodes churned out:')
         if changes.nodes_activated or changes.nodes_deactivated:
             part2 += self._node_bond_change_after_churn(changes)
         components.append(part2)
 
-        part3 = self._make_node_list_plain(changes.nodes_added, '🆕 New nodes:')
+        part3 = _make_node_list_plain(changes.nodes_added, '🆕 New nodes:')
         components.append(part3)
 
-        part4 = self._make_node_list_plain(changes.nodes_removed, '🗑️ Nodes disconnected:')
-
+        part4 = _make_node_list_plain(changes.nodes_removed, '🗑️ Nodes disconnected:')
         components.append(part4)
 
         return MESSAGE_SEPARATOR.join(twitter_intelligent_text_splitter(components))
