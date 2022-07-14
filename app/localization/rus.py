@@ -9,7 +9,8 @@ from localization.base import BaseLocalization, CREATOR_TG, URL_LEADERBOARD_MCCN
 from services.jobs.fetch.circulating import SupplyEntry
 from services.lib.constants import Chains, thor_to_float, rune_origin, BNB_RUNE_SYMBOL
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
-from services.lib.explorers import get_explorer_url_to_address, get_explorer_url_to_tx, get_thoryield_address
+from services.lib.explorers import get_explorer_url_to_address, get_explorer_url_to_tx, get_thoryield_address, \
+    get_ip_info_link
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change, Asset, short_money, short_dollar, format_percent, RAIDO_GLYPH, pretty_rune, short_rune
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
@@ -823,9 +824,13 @@ class RussianLocalization(BaseLocalization):
     TEXT_PIC_UNKNOWN = 'Не известно'
 
     def _format_node_text(self, node: NodeInfo, add_status=False, extended_info=False, expand_link=False):
-        node_ip_link = link(f'https://www.infobyip.com/ip-{node.ip_address}.html', node.ip_address)
+        if expand_link:
+            node_ip_link = link(get_ip_info_link(node.ip_address), node.ip_address) if node.ip_address else 'No IP'
+        else:
+            node_ip_link = node.ip_address or 'no IP'
+
         thor_explore_url = get_explorer_url_to_address(self.cfg.network_id, Chains.THOR, node.node_address)
-        node_thor_link = link(thor_explore_url, short_address(node.node_address))
+        node_thor_link = link(thor_explore_url, short_address(node.node_address, 0))
 
         node_status = node.status.lower()
         if node_status == node.STANDBY:
@@ -846,7 +851,7 @@ class RussianLocalization(BaseLocalization):
                 extra += f", {award_text} награды"
 
         status = f', ({pre(status)})' if add_status else ''
-        return f'{bold(node_thor_link)} ({node_ip_link}, версия {node.version}) ' \
+        return f'{bold(node_thor_link)} ({node.flag_emoji}{node_ip_link}, версия {node.version}) ' \
                f'с {bold(pretty_money(node.bond, postfix=RAIDO_GLYPH))} бонд {status}{extra}'.strip()
 
     def _node_bond_change_after_churn(self, changes: NodeSetChanges):

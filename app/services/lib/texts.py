@@ -1,11 +1,12 @@
 import itertools
 import re
 from typing import List
+from unicodedata import lookup
 from urllib.parse import urlparse
 
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 
-from services.lib.money import pretty_money, format_percent, short_money
+from services.lib.money import pretty_money
 
 
 def bold(text):
@@ -206,3 +207,8 @@ def shorten_text(text, limit=200, end='...'):
         return text[:limit - len(end)] + end
     else:
         return text
+
+
+def find_country_emoji(country_code: str):
+    if len(country_code) == 2:
+        return ''.join(lookup(f'REGIONAL INDICATOR SYMBOL LETTER {symbol}') for symbol in country_code)

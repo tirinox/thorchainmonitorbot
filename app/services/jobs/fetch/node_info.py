@@ -15,6 +15,8 @@ class NodeInfoFetcher(BaseFetcher):
         sleep_period = parse_timespan_to_seconds(deps.cfg.node_info.fetch_period)
         super().__init__(deps, sleep_period)
 
+        self._geo_ip = GeoIPManager(self.deps)
+
     async def fetch_current_node_list(self) -> List[NodeInfo]:
         thor = self.deps.thor_connector
         # noinspection PyTypeChecker
@@ -48,7 +50,8 @@ class NodeInfoFetcher(BaseFetcher):
             try:
                 await self.get_node_list_and_geo_info(nodes)
             except Exception as e:
-                self.logger.error(f'get_node_list_and_geo_info failed ({e}), but it is not that bad, I will go on.')
+                self.logger.exception(
+                    f'get_node_list_and_geo_info failed ({e}), but it is not that bad, I will go on.', stack_info=True)
 
             self.deps.node_holder.nodes = nodes
 
@@ -63,11 +66,13 @@ class NodeInfoFetcher(BaseFetcher):
         t0 = perf_counter()
         self.logger.info(f'Requesting info for {len(ip_addresses)} IP addresses.')
 
-        geo_ip = GeoIPManager(self.deps)
-        ip_info_dict = await geo_ip.get_ip_info_bulk_as_dict(ip_addresses)
+        ip_info_dict = await self._geo_ip.get_ip_info_bulk_as_dict(ip_addresses)
 
         time_elapsed = perf_counter() - t0
         self.logger.info(f'Got {len(ip_info_dict)} IP address info pieces. It took: {time_elapsed:.3f} sec.')
+
+        for node in node_list:
+            node.ip_info = ip_info_dict.get(node.ip_address, {})
 
         return NetworkNodeIpInfo(
             node_list,

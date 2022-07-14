@@ -12,7 +12,7 @@ from services.lib.constants import rune_origin, thor_to_float, THOR_BLOCK_TIME, 
     DEFAULT_CEX_NAME, DEFAULT_CEX_BASE_ASSET
 from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
-    get_explorer_url_for_node, get_pool_url, get_thoryield_address
+    get_explorer_url_for_node, get_pool_url, get_thoryield_address, get_ip_info_link
 from services.lib.midgard.name_service import NameService
 from services.lib.money import format_percent, pretty_money, short_address, short_money, \
     calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset, short_dollar, \
@@ -980,10 +980,10 @@ class BaseLocalization(ABC):  # == English
 
     def _format_node_text(self, node: NodeInfo, add_status=False, extended_info=False, expand_link=False):
         if expand_link:
-            node_ip_link = link(f'https://www.infobyip.com/ip-{node.ip_address}.html', node.ip_address) \
-                if node.ip_address else 'No IP'
+            node_ip_link = link(get_ip_info_link(node.ip_address), node.ip_address) if node.ip_address else 'No IP'
         else:
             node_ip_link = node.ip_address or 'no IP'
+
         thor_explore_url = get_explorer_url_to_address(self.cfg.network_id, Chains.THOR, node.node_address)
         node_thor_link = link(thor_explore_url, short_address(node.node_address, 0))
         extra = ''
@@ -996,7 +996,7 @@ class BaseLocalization(ABC):  # == English
                 extra += f", current award is {award_text}"
 
         status = f' ({pre(node.status)})' if add_status else ''
-        return f'{bold(node_thor_link)} ({node_ip_link} v. {node.version}) ' \
+        return f'{bold(node_thor_link)} ({node.flag_emoji}{node_ip_link} v. {node.version}) ' \
                f'bond {bold(short_money(node.bond, postfix=RAIDO_GLYPH))} {status}{extra}'.strip()
 
     def _make_node_list(self, nodes, title, add_status=False, extended_info=False, start=1):
@@ -1005,7 +1005,10 @@ class BaseLocalization(ABC):  # == English
 
         message = ital(title) + "\n"
         message += join_as_numbered_list(
-            (self._format_node_text(node, add_status, extended_info) for node in nodes if node.node_address),
+            (
+                self._format_node_text(node, add_status, extended_info, expand_link=True)
+                for node in nodes if node.node_address
+            ),
             start=start
         )
         return message + "\n\n"

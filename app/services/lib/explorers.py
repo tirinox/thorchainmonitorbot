@@ -84,3 +84,7 @@ def get_thoryield_address(network: str, address: str, chain: str = Chains.THOR):
     else:
         chain = chain.lower()
         return f'https://app.thoryield.com/accounts?{chain}={address}'
+
+
+def get_ip_info_link(ip_address):
+    return f'https://www.infobyip.com/ip-{ip_address}.html'

@@ -1,6 +1,6 @@
 from services.dialog.twitter.text_length import twitter_text_length, twitter_cut_text, twitter_intelligent_text_splitter
 from services.lib.money import EMOJI_SCALE
-from services.lib.texts import progressbar
+from services.lib.texts import progressbar, find_country_emoji
 
 
 def test_emoji_text_length():
@@ -43,3 +43,12 @@ def test_split_message():
     assert f(['AAA', 'BB', 'CC', 'DDD'], 3) == ['AAA', 'BB', 'CC', 'DDD']
     assert f(['AAA', 'B', 'C', 'D', 'E'], 3) == ['AAA', 'BCD', 'E']
     assert f(['AAA', 'B', 'C', 'D', 'E' * 20], 3) == ['AAA', 'BCD', 'E' * 3]
+
+
+def test_country_codes():
+    assert find_country_emoji('ag') == '🇦🇬'
+    assert find_country_emoji('AG') == '🇦🇬'
+    assert find_country_emoji('IE') == '🇮🇪'
+    assert find_country_emoji('us') == '🇺🇸'
+    assert find_country_emoji('') is None
+    assert find_country_emoji('xxx') is None

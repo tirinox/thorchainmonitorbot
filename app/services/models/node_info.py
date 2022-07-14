@@ -4,12 +4,13 @@ import re
 import secrets
 from collections import Counter
 from dataclasses import dataclass, field
-from typing import List, Dict, NamedTuple, Optional, Tuple, Any, Set
+from typing import List, Dict, NamedTuple, Optional, Tuple, Any
 
 from semver import VersionInfo
 
 from services.lib.constants import thor_to_float
 from services.lib.date_utils import now_ts
+from services.lib.texts import find_country_emoji
 from services.models.base import BaseModelMixin
 from services.models.thormon import ThorMonNode
 
@@ -41,6 +42,8 @@ class NodeInfo(BaseModelMixin):
     status_since: int = 0
     observe_chains: List = field(default_factory=list)
     jail: Dict = field(default_factory=dict)
+
+    ip_info: Dict[str, Any] = field(default_factory=dict)
 
     @property
     def chain_dict(self):
@@ -103,6 +106,12 @@ class NodeInfo(BaseModelMixin):
         bond = bond if bond is not None else random.randint(1, 2_000_000)
         return NodeInfo(status, address, bond, ip, version, slash)
 
+    @property
+    def flag_emoji(self) -> str:
+        if self.ip_info:
+            return find_country_emoji(self.ip_info.get('country', ''))
+        return ''
+
 
 class NodeVersionConsensus(NamedTuple):
     ratio: float
@@ -128,16 +137,16 @@ class NodeListHolder:
 
 @dataclass
 class NodeSetChanges:
-    nodes_added: List[NodeInfo]
-    nodes_removed: List[NodeInfo]
-    nodes_activated: List[NodeInfo]
-    nodes_deactivated: List[NodeInfo]
-    nodes_all: List[NodeInfo]  # all current nodes
-    nodes_previous: List[NodeInfo]  # previous node set
+    nodes_added: List[NodeInfo] = field(default_factory=list)
+    nodes_removed: List[NodeInfo] = field(default_factory=list)
+    nodes_activated: List[NodeInfo] = field(default_factory=list)
+    nodes_deactivated: List[NodeInfo] = field(default_factory=list)
+    nodes_all: List[NodeInfo] = field(default_factory=list)  # all current nodes
+    nodes_previous: List[NodeInfo] = field(default_factory=list)  # previous node set
 
     @classmethod
     def empty(cls):
-        return cls([], [], [], [], [], [])
+        return cls()
 
     @property
     def is_empty(self):
@@ -158,6 +167,10 @@ class NodeSetChanges:
                 len(self.nodes_deactivated) +
                 len(self.nodes_removed)
         )
+
+    @property
+    def all_affected_nodes(self):
+        return self.nodes_added + self.nodes_removed + self.nodes_activated + self.nodes_deactivated
 
     @property
     def active_only_nodes(self) -> List[NodeInfo]:
@@ -260,6 +273,9 @@ class NodeSetChanges:
     @property
     def bond_churn_delta(self):
         return self.bond_churn_in - self.bond_churn_out
+
+    def flag_of_node(self, node: NodeInfo):
+        emojiflags.lookup(node.f)
 
 
 @dataclass

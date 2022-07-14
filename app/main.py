@@ -45,7 +45,6 @@ from services.notify.broadcast import Broadcaster
 from services.notify.personal.balance import PersonalBalanceNotifier
 from services.notify.personal.personal_main import NodeChangePersonalNotifier
 from services.notify.personal.price_divergence import PersonalPriceDivergenceNotifier, SettingsProcessorPriceDivergence
-from services.notify.types.transfer_notify import RuneMoveNotifier
 from services.notify.types.best_pool_notify import BestPoolsNotifier
 from services.notify.types.block_notify import BlockHeightNotifier
 from services.notify.types.cap_notify import LiquidityCapNotifier
@@ -57,6 +56,7 @@ from services.notify.types.price_div_notify import PriceDivergenceNotifier
 from services.notify.types.price_notify import PriceNotifier
 from services.notify.types.queue_notify import QueueNotifier
 from services.notify.types.stats_notify import NetworkStatsNotifier
+from services.notify.types.transfer_notify import RuneMoveNotifier
 from services.notify.types.tx_notify import GenericTxNotifier, SwitchTxNotifier
 from services.notify.types.version_notify import VersionNotifier
 from services.notify.types.voting_notify import VotingNotifier

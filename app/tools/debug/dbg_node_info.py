@@ -18,8 +18,8 @@ def localizations(lpgen: LpAppFramework):
     loc_man: LocalizationManager = lpgen.deps.loc_man
 
     locs = (
-        # loc_man.get_from_lang('eng'),
-        # loc_man.get_from_lang('rus'),
+        loc_man.get_from_lang('eng'),
+        loc_man.get_from_lang('rus'),
         loc_man.get_from_lang(Language.ENGLISH_TWITTER),
     )
     return locs
