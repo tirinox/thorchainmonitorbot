@@ -454,22 +454,15 @@ class TwitterEnglishLocalization(BaseLocalization):
         return MESSAGE_SEPARATOR.join(twitter_intelligent_text_splitter(parts))
 
     @staticmethod
-    def _format_node_text_plain(node: NodeInfo, with_ip):
-        node_ip_link = bracketify(node.ip_address or 'no IP') if with_ip else ''
+    def _format_node_text_plain(node: NodeInfo):
         node_thor_link = short_address(node.node_address, 0)
-        return f'{node_thor_link} {node_ip_link} ' \
-               f'bond {short_money(node.bond, postfix=RAIDO_GLYPH)}'
+        return f'{node_thor_link} ({short_money(node.bond, postfix=RAIDO_GLYPH)})'
 
-    def _make_node_list_plain(self, nodes, title, start=1, with_ip=True):
+    def _make_node_list_plain(self, nodes, title):
         if not nodes:
             return ''
-
-        message = title + "\n"
-        message += join_as_numbered_list(
-            (self._format_node_text_plain(node, with_ip) for node in nodes if node.node_address),
-            start=start
-        )
-        return message + "\n"
+        message = ', '.join(self._format_node_text_plain(node) for node in nodes if node.node_address)
+        return f'{title}\n{message}\n'
 
     def _node_bond_change_after_churn(self, changes: NodeSetChanges):
         bond_in, bond_out = changes.bond_churn_in, changes.bond_churn_out
@@ -482,22 +475,18 @@ class TwitterEnglishLocalization(BaseLocalization):
         part1 = ''
         if changes.nodes_activated or changes.nodes_deactivated:
             part1 += '♻️ Node churn' + '\n'
-        part1 += self._make_node_list_plain(changes.nodes_activated, '➡️ Nodes churned in:',
-                                            with_ip=(len(changes.nodes_activated) <= 4))
+        part1 += self._make_node_list_plain(changes.nodes_activated, '➡️ Nodes churned in:')
         components.append(part1)
 
-        part2 = self._make_node_list_plain(changes.nodes_deactivated, '⬅️️ Nodes churned out:',
-                                           with_ip=(len(changes.nodes_deactivated) <= 4))
+        part2 = self._make_node_list_plain(changes.nodes_deactivated, '⬅️️ Nodes churned out:')
         if changes.nodes_activated or changes.nodes_deactivated:
             part2 += self._node_bond_change_after_churn(changes)
         components.append(part2)
 
-        part3 = self._make_node_list_plain(changes.nodes_added, '🆕 New nodes:',
-                                           with_ip=(len(changes.nodes_added) <= 4))
+        part3 = self._make_node_list_plain(changes.nodes_added, '🆕 New nodes:')
         components.append(part3)
 
-        part4 = self._make_node_list_plain(changes.nodes_removed, '🗑️ Nodes disconnected:',
-                                           with_ip=(len(changes.nodes_removed) <= 4))
+        part4 = self._make_node_list_plain(changes.nodes_removed, '🗑️ Nodes disconnected:')
 
         components.append(part4)
 

@@ -5,10 +5,11 @@ from copy import copy
 
 from semver import VersionInfo
 
+from localization.languages import Language
 from localization.manager import LocalizationManager
 from services.jobs.fetch.node_info import NodeInfoFetcher
-from services.lib.utils import setup_logs
 from services.lib.texts import sep
+from services.lib.utils import setup_logs
 from services.models.node_info import NodeSetChanges, NodeVersionConsensus
 from tools.lib.lp_common import LpAppFramework
 
@@ -17,8 +18,9 @@ def localizations(lpgen: LpAppFramework):
     loc_man: LocalizationManager = lpgen.deps.loc_man
 
     locs = (
-        loc_man.get_from_lang('eng'),
-        loc_man.get_from_lang('rus'),
+        # loc_man.get_from_lang('eng'),
+        # loc_man.get_from_lang('rus'),
+        loc_man.get_from_lang(Language.ENGLISH_TWITTER),
     )
     return locs
 
@@ -114,8 +116,8 @@ async def node_churn_notification_test(lpgen: LpAppFramework, nodes):
 
     churn_out, churn_in = [], []
     for n in nodes:
-        in_enough = (3 <= len(churn_in) <= 5)
-        out_enough = (3 <= len(churn_out) <= 5)
+        in_enough = (4 <= len(churn_in) <= 8)
+        out_enough = (4 <= len(churn_out) <= 8)
         if in_enough and out_enough:
             break
 
@@ -126,17 +128,16 @@ async def node_churn_notification_test(lpgen: LpAppFramework, nodes):
             n.status = n.ACTIVE
             churn_in.append(n)
 
-
     changes = NodeSetChanges([], [], churn_in, churn_out, nodes, nodes)
 
-    await lpgen.send_test_tg_message('------------------------------------')
+    # await lpgen.send_test_tg_message('------------------------------------')
     for loc in locs:
         sep()
         msg = loc.notification_text_for_node_churn(
             changes
         )
         print(msg)
-        await lpgen.send_test_tg_message(msg)
+        # await lpgen.send_test_tg_message(msg)
 
 
 async def main():
