@@ -1786,10 +1786,14 @@ class BaseLocalization(ABC):  # == English
 
     # ----- BEP 2 ------
 
-    def link_to_address(self, addr, chain=Chains.THOR):
-        url = get_explorer_url_to_address(self.cfg.network_id, chain, addr)
+    def name_or_short_address(self, addr):
         name = self.name_service.lookup_name_by_address_local(addr)
         caption = name.name if name else short_address(addr)
+        return caption
+
+    def link_to_address(self, addr, chain=Chains.THOR):
+        url = get_explorer_url_to_address(self.cfg.network_id, chain, addr)
+        caption = self.name_or_short_address(addr)
         return link(url, caption)
 
     # fixme: do we still need this?

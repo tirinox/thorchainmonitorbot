@@ -11,7 +11,6 @@ from services.lib.money import Asset, short_dollar, format_percent, pretty_money
     calc_percent_change, adaptive_round_to_str, emoji_for_percent_change, short_address, short_money, short_rune
 from services.lib.texts import x_ses, progressbar, plural, bracketify, up_down_arrow, \
     bracketify_spaced, shorten_text
-from services.lib.utils import safe_get
 from services.models.cap_info import ThorCapInfo
 from services.models.last_block import EventBlockSpeed, BlockProduceState
 from services.models.mimir import MimirChange, MimirHolder, MimirVoting, MimirVoteOption
@@ -76,18 +75,20 @@ class TwitterEnglishLocalization(BaseLocalization):
          total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
         heading = ''
+
+        user_short = self.name_or_short_address(tx.sender_address)
         if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
-            heading = f'🐳 Add liquidity 🟢'
+            heading = f'🐳 {user_short} added liquidity 🟢'
         elif tx.type == ThorTxType.TYPE_WITHDRAW:
-            heading = f'🐳 Withdraw liquidity 🔴'
+            heading = f'🐳 {user_short} withdrew liquidity 🔴'
         elif tx.type == ThorTxType.TYPE_DONATE:
-            heading = f'🙌 Donation to the pool'
+            heading = f'🙌 {user_short} donated to the pool'
         elif tx.type == ThorTxType.TYPE_SWAP:
-            heading = f'🐳 Swap 🔁'
+            heading = f'🐳 {user_short} swap 🔁'
         elif tx.type == ThorTxType.TYPE_REFUND:
-            heading = f'🐳 Refund ↩️❗'
+            heading = f'🐳 {user_short} got refunded ↩️❗'
         elif tx.type == ThorTxType.TYPE_SWITCH:
-            heading = f'🐳 Rune switch 🆙'
+            heading = f'🐳 {user_short} switched Rune 🆙'
 
         asset = Asset(tx.first_pool).name
 
@@ -155,15 +156,15 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         msg = f"{heading}\n{content}"
 
-        if cap:
-            msg += (
-                f"\n\n"
-                f"Liq. cap is {format_percent(cap.pooled_rune, cap.cap)} full now.\n"
-                f'You can add {short_money(cap.how_much_rune_you_can_lp)} {self.R} '
-                f'({short_dollar(cap.how_much_usd_you_can_lp)}) more.\n'
-            )
-
         return msg.strip()
+
+    def cap_message(self, cap: ThorCapInfo):
+        return (
+            f"\n\n"
+            f"Liq. cap is {format_percent(cap.pooled_rune, cap.cap)} full now.\n"
+            f'You can add {short_money(cap.how_much_rune_you_can_lp)} {self.R} '
+            f'({short_dollar(cap.how_much_usd_you_can_lp)}) more.\n'
+        )
 
     def notification_text_queue_update(self, item_type, is_free, value):
         if is_free:
