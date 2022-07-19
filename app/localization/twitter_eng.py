@@ -76,23 +76,24 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         heading = ''
 
-        user_short = self.name_or_short_address(tx.sender_address)
         if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
-            heading = f'🐳 {user_short} added liquidity 🟢'
+            heading = f'🐳 Added liquidity 🟢'
         elif tx.type == ThorTxType.TYPE_WITHDRAW:
-            heading = f'🐳 {user_short} withdrew liquidity 🔴'
+            heading = f'🐳 Withdrew liquidity 🔴'
         elif tx.type == ThorTxType.TYPE_DONATE:
-            heading = f'🙌 {user_short} donated to the pool'
+            heading = f'🐳 Donated to the pool 🙌'
         elif tx.type == ThorTxType.TYPE_SWAP:
-            heading = f'🐳 {user_short} swap 🔁'
+            heading = f'🐳 Large swap 🔁'
         elif tx.type == ThorTxType.TYPE_REFUND:
-            heading = f'🐳 {user_short} got refunded ↩️❗'
+            heading = f'🐳 Refund ↩️❗'
         elif tx.type == ThorTxType.TYPE_SWITCH:
-            heading = f'🐳 {user_short} switched Rune 🆙'
+            heading = f'🐳 Switch 🆙'
 
         asset = Asset(tx.first_pool).name
 
-        content = ''
+        user_name = self.name_or_short_address(tx.sender_address)
+        content = f'{user_name}: '
+
         if tx.type in (ThorTxType.TYPE_ADD_LIQUIDITY, ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_DONATE):
             if tx.affiliate_fee > 0:
                 aff_fee_usd = tx.get_affiliate_fee_usd(usd_per_rune)
@@ -110,7 +111,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             else:
                 ilp_text = ''
 
-            content = (
+            content += (
                 f"{short_money(tx.rune_amount)} {self.R} ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
                 f"{short_money(tx.asset_amount)} {asset} "
                 f"({ap:.0f}% = {asset_side_usd_short})\n"
@@ -124,18 +125,18 @@ class TwitterEnglishLocalization(BaseLocalization):
             if tx.first_input_tx and tx.first_output_tx:
                 amt = thor_to_float(tx.first_input_tx.first_amount)
                 origin = rune_origin(tx.first_input_tx.first_asset)
-                content = (
+                content += (
                     f"{short_money(amt)} {origin} {self.R} ➡️ {short_money(amt)} Native {self.R} "
                     f"({short_dollar(tx.get_usd_volume(usd_per_rune))})"
                 )
         elif tx.type == ThorTxType.TYPE_REFUND:
             reason = shorten_text(tx.meta_refund.reason, 30)
-            content = (
+            content += (
                     self.tx_convert_string(tx, usd_per_rune) +
                     f"\nReason: {reason}.."
             )
         elif tx.type == ThorTxType.TYPE_SWAP:
-            content = self.tx_convert_string(tx, usd_per_rune)
+            content += self.tx_convert_string(tx, usd_per_rune)
             slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
             l_fee_usd = tx.meta_swap.liquidity_fee_rune_float * usd_per_rune
 
