@@ -114,6 +114,13 @@ def round_half_up(n, decimals=0):
     return math.floor(n * multiplier + 0.5) / multiplier
 
 
+def detect_decimal_digits(x):
+    x = abs(x)
+    if x > 1.0:
+        return 0
+    return -int(math.floor(math.log10(x)))
+
+
 def short_money(x, prefix='', postfix='', localization=None, signed=False):
     if x == 0:
         return f'{prefix}0.0{postfix}'
@@ -156,8 +163,9 @@ def short_money(x, prefix='', postfix='', localization=None, signed=False):
     #     dec = max(dec, 1) + 1
     #
 
-    if orig_x < 10:
-        x = f"{x:.10f}".rstrip('0')
+    if orig_x < 1:
+        digits = detect_decimal_digits(orig_x) + 2
+        x = f"{x:.{digits}f}".rstrip('0')
     else:
         x = round_half_up(x, 1)
 

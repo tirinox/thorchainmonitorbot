@@ -1,3 +1,5 @@
+import pytest
+
 from localization.manager import RussianLocalization
 from services.lib.money import short_money, short_dollar
 
@@ -93,3 +95,18 @@ def test_short_rus():
 
     assert short_money(-1_000_999_405_234_456, localization=rus, signed=True, prefix='Хочу ',
                        postfix=' налом') == '-Хочу 1001.0 трлн налом'
+
+
+@pytest.mark.parametrize("inp, out", [
+    (1, "1.0"),
+    (0.1, "0.1"),
+    (0.13, "0.13"),
+    (0.135, "0.135"),
+    (0.1356, "0.136"),
+    (0.042, "0.042"),
+    (0.0999, "0.0999"),
+    (0.09999, "0.1"),
+    (0.00091, "0.00091"),
+])
+def test_short_money_less_1(inp, out):
+    assert short_money(inp) == out

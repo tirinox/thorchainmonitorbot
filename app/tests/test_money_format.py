@@ -1,4 +1,6 @@
-from services.lib.money import pretty_money, short_dollar, number_short_with_postfix, short_money
+import pytest
+
+from services.lib.money import pretty_money, short_dollar, number_short_with_postfix, short_money, detect_decimal_digits
 from services.lib.texts import up_down_arrow
 
 
@@ -66,3 +68,22 @@ def test_number_short():
 
 def test_arrow():
     assert up_down_arrow(1.0, 1.1926640162, percent_delta=True) == '↑ +0.193%'
+
+
+@pytest.mark.parametrize("x, digits", [
+    (10, 0),
+    (11.1, 0),
+    (5.55, 0),
+    (1.0, 0),
+    (0.9, 1),
+    (0.11, 1),
+    (0.011, 2),
+    (0.099, 2),
+    (0.005, 3),
+    (0.000342124, 4),
+    (0.02792164, 0.028),
+    (0.316261111, 0.32),
+])
+def test_detect_decimals(x, digits):
+    assert detect_decimal_digits(x) == digits
+
