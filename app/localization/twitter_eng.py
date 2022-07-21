@@ -680,16 +680,9 @@ class TwitterEnglishLocalization(BaseLocalization):
         # without a link, just a caption
         return name.name if name else short_address(addr)
 
-    def notification_text_bep2_movement(self, transfer: RuneTransfer):
-        from_link, to_link = self.link_to_address(transfer.from_addr), self.link_to_address(transfer.to_addr)
-        pf = ' ' + BNB_RUNE_SYMBOL
-        return (f'{RAIDO_GLYPH} Large BEP2 $Rune transfer\n'
-                f'{short_money(transfer.amount, postfix=pf)} ({short_dollar(transfer.usd_amount)}) '
-                f'from {from_link} ➡️ to {to_link}.')
-
     def notification_text_cex_flow(self, bep2flow: RuneCEXFlow):
         return (
-            f'🌬️ BEP2.Rune CEX flow last 24 hours\n'
+            f'🌬️ Rune CEX flow last 24 hours\n'
             f'Inflow: {short_money(bep2flow.rune_cex_inflow, postfix=RAIDO_GLYPH)} '
             f'({short_dollar(bep2flow.in_usd)})\n'
             f'Outflow: {short_money(bep2flow.rune_cex_outflow, postfix=RAIDO_GLYPH)} '

@@ -28,14 +28,14 @@ async def wss_dex_test(lp_app):
 
 async def not_format_test(lp_app):
     loc: BaseLocalization = lp_app.deps.loc_man.default
-    await lp_app.send_test_tg_message(loc.notification_text_bep2_movement(RuneTransfer(
+    await lp_app.send_test_tg_message(loc.notification_text_rune_transfer_public(RuneTransfer(
         'bnb1dtpty6hrxehwz9xew6ttj52l929cu8zehprzwj',
         'bnb136ns6lfw4zs5hg4n85vdthaad7hq5m4gtkgf24', 0, '233232',
         100000, usd_per_asset=12.0
     )))
 
     loc: BaseLocalization = lp_app.deps.loc_man.get_from_lang('rus')
-    await lp_app.send_test_tg_message(loc.notification_text_bep2_movement(RuneTransfer(
+    await lp_app.send_test_tg_message(loc.notification_text_rune_transfer_public(RuneTransfer(
         'bnb1dtpty6hrxehwz9xew6ttj52l929cu8zehprzwj',
         'bnb136ns6lfw4zs5hg4n85vdthaad7hq5m4gtkgf24', 0, '233232',
         100000, usd_per_asset=12.0
