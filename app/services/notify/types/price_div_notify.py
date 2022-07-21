@@ -22,7 +22,7 @@ class PriceDivergenceNotifier(INotified):
 
         self.main_cd = parse_timespan_to_seconds(cfg.as_str('cooldown', '6h'))
 
-        self._cd_bitrig = CooldownBiTrigger(deps.db, 'PriceDivergence', self.main_cd, default=False)
+        self._cd_bitrig = CooldownBiTrigger(deps.db, 'PriceDivergence', self.main_cd, self.main_cd, default=False)
         self.time_series = TimeSeries('PriceDivergence', deps.db)
 
     async def on_data(self, sender, rune_market_info: RuneMarketInfo):
