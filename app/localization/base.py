@@ -79,7 +79,7 @@ class BaseLocalization(ABC):  # == English
 
     @property
     def alert_channel_name(self):
-        channels = self.cfg.channels
+        channels = self.cfg.broadcasting.channels
         for c in channels:
             if c['type'] == Messengers.TELEGRAM:
                 return c['name']

@@ -99,16 +99,18 @@ web:
   serve_front_end: false  # false on production, this is work for nginx
 
 
-# for message broadcasting
-channels:
-  - type: telegram
-    name: "@thorchain_alert"  # live channel
-    lang: eng
-  - type: discord
-    name: 322323232323  # channel ID
-    lang: rus
-  - type: twitter
-    lang: eng-tw
+broadcasting:  # (!) new
+  startup_delay: 10s  # (!) new: skip all messages during this period of time until flood settles down
+
+  channels:  # (!) new: inside the "broadcasting" section
+    - type: telegram
+      name: "@thorchain_alert"  # live channel
+      lang: eng
+    - type: discord
+      name: 322323232323  # channel ID
+      lang: rus
+    - type: twitter
+      lang: eng-tw
 
 
 node_op_tools:
@@ -125,7 +127,6 @@ node_op_tools:
     online_service:
       tcp_timeout: 1  # sec
       group_size: 60
-
 
 
 native_scanner:
@@ -393,7 +394,6 @@ net_summary:
   fetch_period: 120s
   notification:
     cooldown: 6h
-
 
 
 pool_churn:

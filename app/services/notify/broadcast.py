@@ -4,7 +4,7 @@ import time
 from typing import List
 
 from localization.manager import LocalizationManager
-from services.lib.date_utils import parse_timespan_to_seconds
+from services.lib.date_utils import parse_timespan_to_seconds, now_ts, DAY
 from services.lib.depcont import DepContainer
 from services.lib.rate_limit import RateLimitCooldown
 from services.lib.utils import copy_photo, class_logger
@@ -24,10 +24,14 @@ class Broadcaster:
         self._rng = random.Random(time.time())
         self.logger = class_logger(self)
 
-        self._user_registry = UserRegistry(self.deps.db)
+        self._user_registry = UserRegistry(d.db)
 
         # public channels
-        self.channels = list(ChannelDescriptor.from_json(j) for j in self.deps.cfg.get_pure('channels'))
+        self.channels = list(ChannelDescriptor.from_json(j) for j in d.cfg.get_pure('broadcasting.channels'))
+
+        startup_delay = parse_timespan_to_seconds(d.cfg.as_str('broadcasting.startup_delay', 0))
+        assert DAY > startup_delay >= 0
+        self._skip_all_before = now_ts() + startup_delay
 
         _rate_limit_cfg = d.cfg.get('personal.rate_limit')
         self._limit_number = _rate_limit_cfg.as_int('number', 10)
@@ -145,6 +149,10 @@ class Broadcaster:
             return BoardMessage(str(data_source))
 
     async def broadcast(self, channels: List[ChannelDescriptor], message, delay=0.075, **kwargs) -> int:
+        if now_ts() < self._skip_all_before:
+            self.logger.info('Skip message.')
+            return 0
+
         async with self._broadcast_lock:
             count = 0
 
