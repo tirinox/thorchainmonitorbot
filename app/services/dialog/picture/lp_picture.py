@@ -9,7 +9,8 @@ from localization.manager import BaseLocalization
 from services.dialog.picture.crypto_logo import CryptoLogoDownloader
 from services.lib.constants import BNB_RUNE_SYMBOL, is_rune, RUNE_SYMBOL
 from services.lib.draw_utils import CATEGORICAL_PALETTE, pos_percent, result_color, hor_line, LIGHT_TEXT_COLOR
-from services.lib.money import pretty_money, format_percent, pretty_percent, Asset, RAIDO_GLYPH, pretty_rune
+from services.lib.money import pretty_money, format_percent, pretty_percent, Asset, RAIDO_GLYPH, pretty_rune, \
+    short_dollar
 from services.lib.plot_graph import PlotBarGraph
 from services.lib.texts import grouper
 from services.lib.utils import Singleton, async_wrap
@@ -459,7 +460,7 @@ def lp_weekly_graph(w, h, weekly_charts: dict, color_map: dict, value_hidden):
     graph.n_ticks_y = 3 if value_hidden else 8
     graph.y_formatter = \
         (lambda x: '$ ???') if value_hidden else \
-            (lambda x: pretty_money(x, prefix='$', short_form=True))
+            (lambda x: short_dollar(x))
     graph.x_formatter = graph.date_formatter
     graph.n_ticks_x = 7
 

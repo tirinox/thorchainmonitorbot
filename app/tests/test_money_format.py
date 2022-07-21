@@ -1,6 +1,6 @@
 import pytest
 
-from services.lib.money import pretty_money, short_dollar, number_short_with_postfix, short_money, detect_decimal_digits
+from services.lib.money import pretty_money, short_dollar, short_money, detect_decimal_digits
 from services.lib.texts import up_down_arrow
 
 
@@ -43,29 +43,6 @@ def test_pretty_money():
     assert p(0.1926640162) == '0.193'
 
 
-def test_number_short():
-    assert number_short_with_postfix(10) == '10.0'
-    assert number_short_with_postfix(-10) == '-10.0'
-
-    assert number_short_with_postfix(999) == '999.0'
-
-    assert number_short_with_postfix(-1000) == '-1.0K'
-    assert number_short_with_postfix(-1099) == '-1.1K'
-    assert number_short_with_postfix(1234) == '1.2K'
-
-    assert number_short_with_postfix(12345) == '12.3K'
-    assert number_short_with_postfix(123456) == '123.5K'
-    assert number_short_with_postfix(1234567) == '1.2M'
-    assert number_short_with_postfix(12345678) == '12.3M'
-    assert number_short_with_postfix(123456789) == '123.5M'
-    assert number_short_with_postfix(1234567890) == '1.2B'
-    assert number_short_with_postfix(-1234567890) == '-1.2B'
-
-    assert number_short_with_postfix(999) == '999.0'
-    assert number_short_with_postfix(999_999) == '1.0M'
-    assert number_short_with_postfix(999990000000) == '1.0T'
-
-
 def test_arrow():
     assert up_down_arrow(1.0, 1.1926640162, percent_delta=True) == '↑ +0.193%'
 
@@ -86,4 +63,3 @@ def test_arrow():
 ])
 def test_detect_decimals(x, digits):
     assert detect_decimal_digits(x) == digits
-

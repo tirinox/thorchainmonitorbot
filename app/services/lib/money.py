@@ -38,46 +38,15 @@ def round_to_dig(x, e=2):
     return round(x, -int(floor(log10(abs(x)))) + e - 1)
 
 
-def pretty_dollar(x, signed=False, postfix='', short_form=False):
-    return pretty_money(x, prefix='$', postfix=postfix, signed=signed, short_form=short_form)
+def pretty_dollar(x, signed=False, postfix=''):
+    return pretty_money(x, prefix='$', postfix=postfix, signed=signed)
 
 
-def pretty_rune(x, signed=False, prefix='', short_form=False):
-    return pretty_money(x, postfix=RAIDO_GLYPH, signed=signed, prefix=prefix, short_form=short_form)
+def pretty_rune(x, signed=False, prefix=''):
+    return pretty_money(x, postfix=RAIDO_GLYPH, signed=signed, prefix=prefix)
 
 
-def _number_short_with_postfix_step(x, up, pf, pf_next, precision):
-    prec_const = 10 ** precision
-    up_exp = 10 ** up
-    y = round(x / up_exp * prec_const) / prec_const
-    if y == 1000.0:
-        return 1.0, pf_next
-    else:
-        return y, pf
-
-
-def number_short_with_postfix(x: float, precision=1):
-    x = float(x)
-    if x < 0:
-        return f'-{number_short_with_postfix(-x)}'
-
-    if x < 1e3:
-        return f'{x}'
-    elif x < 1e6:
-        x, postfix = _number_short_with_postfix_step(x, 3, 'K', 'M', precision)
-    elif x < 1e9:
-        x, postfix = _number_short_with_postfix_step(x, 6, 'M', 'B', precision)
-    elif x < 1e12:
-        x, postfix = _number_short_with_postfix_step(x, 9, 'B', 'T', precision)
-    elif x < 1e15:
-        x, postfix = _number_short_with_postfix_step(x, 12, 'T', 'Q', precision)
-    else:
-        return f'{x:.2E}'
-
-    return f'{x}{postfix}'
-
-
-def pretty_money(x, prefix='', signed=False, postfix='', short_form=False):
+def pretty_money(x, prefix='', signed=False, postfix=''):
     if x < 0:
         return f"-{prefix}{pretty_money(-x)}{postfix}"
     elif x == 0:
@@ -91,10 +60,7 @@ def pretty_money(x, prefix='', signed=False, postfix='', short_form=False):
             r = str(round_to_dig(x, 4))
         else:
             x = int(round(x))
-            if short_form:
-                r = number_short_with_postfix(x)
-            else:
-                r = number_commas(x)
+            r = number_commas(x)
     prefix = f'+{prefix}' if signed else prefix
     return f'{prefix}{r}{postfix}'
 
