@@ -70,3 +70,10 @@ buildf:
 	cd ${NODE_OP_SETT_DIR}; yarn install; yarn build
 	rm -rf ./web/frontend/*
 	mv ${NODE_OP_SETT_DIR}/dist/* ./web/frontend/
+
+test:
+	cd app && python -m pytest tests
+
+lint:
+	find ./app/services -type f -name "*.py" | xargs pylint
+	find ./app/localization -type f -name "*.py" | xargs pylint
