@@ -293,10 +293,8 @@ class MyWalletsMenu(DialogWithSettings):
             await self._show_address_selection_menu(query.message, edit=True, show_add_more=False)
         elif result.result == result.SELECTED:
             await self.view_pool_report(query, result.selected_data_tag)
-            await self._show_wallet_again(query)
         elif query.data.startswith(f'{self.QUERY_SUMMARY_OF_ADDRESS}:'):
             await self.view_address_summary(query)
-            await self._show_wallet_again(query)
         elif query.data.startswith(f'{self.QUERY_REMOVE_ADDRESS}:'):
             _, index = query.data.split(':')
             await self._remove_address(index)
@@ -391,7 +389,9 @@ class MyWalletsMenu(DialogWithSettings):
         picture_io = img_to_bio(picture, f'Thorchain_LP_{pool}_{today_str()}.png')
 
         # ANSWER
-        await self._present_wallet_contents_menu(query.message, edit=False)
+        # await self._present_wallet_contents_menu(query.message, edit=False)
+        await self._show_wallet_again(query)
+
         await query.message.answer_photo(picture_io,  # caption=self.loc.TEXT_LP_IMG_CAPTION,
                                          disable_notification=True)
 
@@ -423,7 +423,9 @@ class MyWalletsMenu(DialogWithSettings):
         picture_io = img_to_bio(picture, f'Thorchain_LP_Summary_{today_str()}.png')
 
         # ANSWER
-        await self._present_wallet_contents_menu(query.message, edit=False)
+        # await self._present_wallet_contents_menu(query.message, edit=False)
+        await self._show_wallet_again(query)
+        
         await query.message.answer_photo(picture_io,
                                          disable_notification=True)
 

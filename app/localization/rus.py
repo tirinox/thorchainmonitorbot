@@ -183,7 +183,7 @@ class RussianLocalization(BaseLocalization):
         start_date = datetime.fromtimestamp(first_add_ts).strftime('%d.%m.%Y')
         return f'{ceil(total_days)} дн. ({start_date})'
 
-    TEXT_PLEASE_WAIT = '⏳ <b>Пожалуйста, подождите.</b>'
+    TEXT_PLEASE_WAIT = '⏳ <b>Пожалуйста, подождите...</b>'
 
     def text_lp_loading_pools(self, address):
         return f'{self.TEXT_PLEASE_WAIT}\n' \
