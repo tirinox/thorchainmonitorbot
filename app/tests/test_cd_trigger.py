@@ -48,33 +48,28 @@ async def test_cd_diff_cd(db):
 async def test_cd_trigger_spam(db):
     await db.get_redis()
 
-    trigger = CooldownBiTrigger(db, 'test_evt_3', 1.0, 1.0, switch_cooldown_sec=0.2)
+    trigger = CooldownBiTrigger(db, 'test_evt_3', 0.1, 0.1, switch_cooldown_sec=0.02)
     assert await trigger.turn_on()
     assert not await trigger.turn_on()
     assert not await trigger.turn_off()
 
     # normal operation
-    print('Wait a sec!')
-    await asyncio.sleep(1.1)
+    await asyncio.sleep(0.11)
     assert await trigger.turn_off()
-    print('Wait a sec!')
-    await asyncio.sleep(1.1)
+    await asyncio.sleep(0.11)
     assert await trigger.turn_on()
-    print('OK')
 
     # fast switch
-    print('fast: OFF side')
-    await asyncio.sleep(0.1)
+    await asyncio.sleep(0.01)
     assert not await trigger.turn_off()  # early
     assert not await trigger.turn_off()  # early
-    await asyncio.sleep(0.15)
+    await asyncio.sleep(0.015)
     assert await trigger.turn_off()
 
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(0.06)
 
-    print('fast: ON side')
-    await asyncio.sleep(0.1)
-    assert not await trigger.turn_on()  # early
+    # now off
+    assert await trigger.turn_on()  # early
     assert not await trigger.turn_on()  # early
     await asyncio.sleep(0.15)
     assert await trigger.turn_on()

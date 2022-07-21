@@ -4,7 +4,7 @@ import time
 from localization.manager import BaseLocalization
 from services.dialog.picture.price_picture import price_graph_from_db
 from services.lib.constants import RUNE_SYMBOL_POOL
-from services.lib.cooldown import CooldownSingle
+from services.lib.cooldown import Cooldown
 from services.lib.date_utils import MINUTE, HOUR, DAY, parse_timespan_to_seconds
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
@@ -16,20 +16,32 @@ from services.notify.channel import MessageType, BoardMessage
 
 
 class PriceNotifier(INotified):
+    ATH_KEY = 'runeATH'
+    CD_KEY_PRICE_NOTIFIED = 'price_notified'
+    CD_KEY_PRICE_RISE_NOTIFIED = 'price_notified_rise'
+    CD_KEY_PRICE_FALL_NOTIFIED = 'price_notified_fall'
+    CD_KEY_ATH_NOTIFIED = 'ath_notified'
+
     def __init__(self, deps: DepContainer):
         self.deps = deps
         self.logger = class_logger(self)
-        self.cd = CooldownSingle(deps.db)
+
         cfg = deps.cfg.price
-        self.global_cd = parse_timespan_to_seconds(cfg.global_cd)
-        self.change_cd = parse_timespan_to_seconds(cfg.change_cd)
         self.percent_change_threshold = cfg.percent_change_threshold
+        self._global_cd = parse_timespan_to_seconds(cfg.global_cd)
+        self._change_cd = parse_timespan_to_seconds(cfg.change_cd)
+        self._ath_cd = parse_timespan_to_seconds(cfg.ath.cooldown)
+
+        self._cd_price_regular = Cooldown(deps.db, self.CD_KEY_PRICE_NOTIFIED, self._global_cd)
+        self._cd_price_rise = Cooldown(deps.db, self.CD_KEY_PRICE_RISE_NOTIFIED, self._change_cd)
+        self._cd_price_fall = Cooldown(deps.db, self.CD_KEY_PRICE_FALL_NOTIFIED, self._change_cd)
+        self._cd_price_ath = Cooldown(deps.db, self.CD_KEY_ATH_NOTIFIED, self._ath_cd)
+
         self.time_series = PriceTimeSeries(RUNE_SYMBOL_POOL, deps.db)
 
         self.ath_stickers = cfg.ath.stickers
         self.ath_sticker_iter = make_stickers_iterator(self.ath_stickers)
 
-        self.ath_cooldown = parse_timespan_to_seconds(cfg.ath.cooldown)
         self.price_graph_period = parse_timespan_to_seconds(cfg.price_graph.default_period)
 
     async def on_data(self, sender, market_info: RuneMarketInfo):
@@ -39,12 +51,6 @@ class PriceNotifier(INotified):
             await self.handle_new_price(market_info)
 
     # -----
-
-    ATH_KEY = 'runeATH'
-    CD_KEY_PRICE_NOTIFIED = 'price_notified'
-    CD_KEY_PRICE_RISE_NOTIFIED = 'price_notified_rise'
-    CD_KEY_PRICE_FALL_NOTIFIED = 'price_notified_fall'
-    CD_KEY_ATH_NOTIFIED = 'ath_notified'
 
     async def historical_get_triplet(self):
         price_1h, price_24h, price_7d = await asyncio.gather(
@@ -59,7 +65,7 @@ class PriceNotifier(INotified):
         await self.deps.broadcaster.notify_preconfigured_channels(BoardMessage(sticker, MessageType.STICKER))
 
     async def do_notify_price_table(self, market_info, hist_prices, ath, last_ath=None):
-        await self.cd.do(self.CD_KEY_PRICE_NOTIFIED)
+        await self._cd_price_regular.do()
 
         btc_price = self.deps.price_holder.btc_per_rune
         report = PriceReport(*hist_prices, market_info, last_ath, btc_price)
@@ -84,20 +90,18 @@ class PriceNotifier(INotified):
             percent_change = calc_percent_change(price_1h, price)
 
             if abs(percent_change) >= self.percent_change_threshold:  # significant price change
-                if percent_change > 0 and (await self.cd.can_do(self.CD_KEY_PRICE_RISE_NOTIFIED, self.change_cd)):
+                if percent_change > 0 and (await self._cd_price_rise.can_do()):
                     self.logger.info(f'price rise {pretty_money(percent_change)} %')
-                    await self.cd.do(self.CD_KEY_PRICE_RISE_NOTIFIED)
+                    await self._cd_price_rise.do()
                     send_it = True
-                elif percent_change < 0 and (await self.cd.can_do(self.CD_KEY_PRICE_FALL_NOTIFIED, self.change_cd)):
+                elif percent_change < 0 and (await self._cd_price_fall.can_do()):
                     self.logger.info(f'price fall {pretty_money(percent_change)} %')
-                    await self.cd.do(self.CD_KEY_PRICE_FALL_NOTIFIED)
+                    await self._cd_price_fall.do()
                     send_it = True
 
-        if not send_it and await self.cd.can_do(self.CD_KEY_PRICE_NOTIFIED, self.global_cd):
+        if not send_it and await self._cd_price_regular.can_do():
             self.logger.info('no price change but it is long time elapsed (global cd), so notify anyway')
             send_it = True
-
-        # send_it = True # fixme!
 
         if send_it:
             await self.do_notify_price_table(market_info, hist_prices, ath=False)
@@ -130,25 +134,12 @@ class PriceNotifier(INotified):
                 int(time.time()), price
             ))
 
-            if await self.cd.can_do(self.CD_KEY_ATH_NOTIFIED, self.ath_cooldown):
-                await self.cd.do(self.CD_KEY_ATH_NOTIFIED)
-                await self.cd.do(self.CD_KEY_PRICE_RISE_NOTIFIED)  # prevent 2 notifications
+            if await self._cd_price_ath.can_do():
+                await self._cd_price_ath.do()
+                await self._cd_price_rise.do()  # prevent 2 notifications
 
                 hist_prices = await self.historical_get_triplet()
                 await self.do_notify_price_table(market_info, hist_prices, ath=True, last_ath=last_ath)
                 return True
 
         return False
-
-    # ----- PRICE PEAK DETECTOR
-
-    async def price_peak(self, period_sec=HOUR):
-        points = await self.time_series.get_last_values(period_sec, tolerance_sec=period_sec / 100, with_ts=True)
-        # [ (ts, price) ]
-
-        # ----- ATH DETECTOR ----
-        # todo:
-        # 1. take a window on the timeline (e.g. 1 HOUR till now)
-        # 2. detect if it has ATH inside
-        # 3. make sure that after ATH price is less than it for some time (10min)
-        # 4. signal

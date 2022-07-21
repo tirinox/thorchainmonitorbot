@@ -1,15 +1,13 @@
-import logging
-
 from localization.manager import BaseLocalization
 from services.dialog.picture.queue_picture import queue_graph, QUEUE_TIME_SERIES
-from services.lib.delegates import INotified
 from services.jobs.fetch.queue import QueueInfo
 from services.lib.cooldown import CooldownBiTrigger
 from services.lib.date_utils import parse_timespan_to_seconds
+from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
-from services.notify.channel import BoardMessage
 from services.lib.utils import class_logger
 from services.models.time_series import TimeSeries
+from services.notify.channel import BoardMessage
 
 
 class QueueNotifier(INotified):
@@ -54,7 +52,7 @@ class QueueNotifier(INotified):
         if avg_value is None:
             return
 
-        self.logger.info(f'Avg {item_type} is {avg_value:.1f}')
+        self.logger.info(f'Avg queue {item_type} is {avg_value:.1f}')
 
         cd_trigger = CooldownBiTrigger(self.deps.db, f'QueueClog:{item_type}', self.cooldown, self.cooldown)
 

@@ -70,6 +70,6 @@ def test_convert_synth():
 
 
 def test_short_asset():
-    assert short_address('thor1xd4j3gk9frpxh8r22runntnqy34lwzrdkazldh') == 'thor1...zldh'
+    assert short_address('thor1xd4j3gk9frpxh8r22runntnqy34lwzrdkazldh') == 'thor1xd...zldh'
     assert short_address('thor1xd4j3gk9frpxh8r22runntnqy34lwzrdkazldh', 0) == 'zldh'
-    assert short_address('thor1xd4j3gk9frpxh8r22runntnqy34lwzrdkazldh', end=0) == 'thor1'
+    assert short_address('thor1xd4j3gk9frpxh8r22runntnqy34lwzrdkazldh', begin=5, end=0) == 'thor1'
