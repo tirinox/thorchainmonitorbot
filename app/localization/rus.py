@@ -335,10 +335,20 @@ class RussianLocalization(BaseLocalization):
             )
         elif tx.type == ThorTxType.TYPE_SWITCH:
             # [Amt] Rune [Blockchain: ERC20/BEP2] -> [Amt] THOR Rune ($usd)
-            if tx.first_input_tx and tx.first_output_tx:
-                amt = thor_to_float(tx.first_input_tx.first_amount)
-                origin = rune_origin(tx.first_input_tx.first_asset)
-                content = f"{bold(pretty_money(amt))} {origin} {self.R} ➡️ {bold(pretty_money(amt))} Нативных {self.R}"
+            in_rune_amt = tx.asset_amount
+            out_rune_amt = tx.rune_amount
+            killed_rune = max(0.0, in_rune_amt - out_rune_amt)
+            killed_usd_str = short_dollar(killed_rune * usd_per_rune)
+            killed_percent_str = format_percent(killed_rune, in_rune_amt)
+            origin = rune_origin(tx.first_input_tx.first_asset)
+            content = (
+                f"{bold(short_money(in_rune_amt))} {origin} {self.R} ➡️ "
+                f"{bold(short_money(out_rune_amt))} нативных {self.R} "
+                f"({short_dollar(tx.get_usd_volume(usd_per_rune))})"
+            )
+            if killed_rune > 0:
+                content += f'\n☠️ Уничтожено {bold(short_rune(killed_rune))} ' \
+                           f'({killed_percent_str} или {killed_usd_str})!'
         elif tx.type == ThorTxType.TYPE_REFUND:
             reason = shorten_text(tx.meta_refund.reason, 180)
             content = (

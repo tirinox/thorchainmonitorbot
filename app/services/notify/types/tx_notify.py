@@ -1,11 +1,13 @@
 from typing import List
 
-from services.lib.delegates import INotified, WithDelegates
 from services.lib.config import SubConfig
+from services.lib.constants import DEFAULT_KILL_RUNE_START_BLOCK, DEFAULT_KILL_RUNE_DURATION_BLOCKS
 from services.lib.date_utils import parse_timespan_to_seconds
+from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
-from services.lib.money import Asset
+from services.lib.money import Asset, clamp
 from services.lib.utils import linear_transform, class_logger
+from services.models.mimir_naming import MIMIR_KEY_KILL_SWITCH_DURATION, MIMIR_KEY_KILL_SWITCH_START
 from services.models.tx import ThorTxExtended, EventLargeTransaction
 from services.notify.types.cap_notify import LiquidityCapNotifier
 
@@ -107,8 +109,29 @@ class GenericTxNotifier(INotified, WithDelegates):
 
 
 class SwitchTxNotifier(GenericTxNotifier):
+    def calculate_killed_rune(self, in_rune: float, block: int):
+        kill_switch_start = self.deps.mimir_const_holder.get_constant(
+            MIMIR_KEY_KILL_SWITCH_START, DEFAULT_KILL_RUNE_START_BLOCK)
+        kill_switch_duration = self.deps.mimir_const_holder.get_constant(
+            MIMIR_KEY_KILL_SWITCH_DURATION, DEFAULT_KILL_RUNE_DURATION_BLOCKS)
+
+        assert kill_switch_duration > 0
+        assert kill_switch_start > 0
+
+        kill_factor = 1.0 - clamp(
+            (block - kill_switch_start) / kill_switch_duration,
+            0.0, 1.0)
+
+        return in_rune * kill_factor
+
+    def _count_correct_output_rune_value(self, tx: ThorTxExtended):
+        tx.rune_amount = self.calculate_killed_rune(tx.asset_amount, tx.height_int)
+        return tx
+
     def _filter_large_txs(self, txs, min_rune_volume, usd_per_rune):
         for tx in txs:
             tx: ThorTxExtended
-            if tx.full_rune >= min_rune_volume:
+            # asset is IOU Rune here
+            if tx.asset_amount >= min_rune_volume:
+                tx = self._count_correct_output_rune_value(tx)
                 yield tx

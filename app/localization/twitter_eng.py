@@ -129,6 +129,21 @@ class TwitterEnglishLocalization(BaseLocalization):
                     f"{short_money(amt)} {origin} {self.R} ➡️ {short_money(amt)} Native {self.R} "
                     f"({short_dollar(tx.get_usd_volume(usd_per_rune))})"
                 )
+
+            in_rune_amt = tx.asset_amount
+            out_rune_amt = tx.rune_amount
+            killed_rune = max(0.0, in_rune_amt - out_rune_amt)
+            killed_usd_str = short_dollar(killed_rune * usd_per_rune)
+            killed_percent_str = format_percent(killed_rune, in_rune_amt)
+            origin = rune_origin(tx.first_input_tx.first_asset)
+            content = (
+                f"{short_money(in_rune_amt)} {origin} {self.R} ➡️ "
+                f"{short_money(out_rune_amt)} Native {self.R} "
+                f"({short_dollar(tx.get_usd_volume(usd_per_rune))})"
+            )
+            if killed_rune > 0:
+                content += f'\n☠️ Killed {short_rune(killed_rune)} ({killed_percent_str} or {killed_usd_str})!'
+
         elif tx.type == ThorTxType.TYPE_REFUND:
             reason = shorten_text(tx.meta_refund.reason, 30)
             content += (

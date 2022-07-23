@@ -1,8 +1,8 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import List, Optional, Iterable, Dict
+from typing import List, Optional, Iterable
 
-from services.lib.constants import is_rune, RUNE_SYMBOL, Chains, NATIVE_RUNE_SYMBOL, thor_to_float
+from services.lib.constants import is_rune, RUNE_SYMBOL, Chains, thor_to_float
 from services.lib.money import Asset
 from services.lib.texts import sum_and_str
 from services.models.cap_info import ThorCapInfo
@@ -264,7 +264,7 @@ class ThorTx:
                 return tx.address
 
             for coin in tx.coins:
-                if coin.asset == NATIVE_RUNE_SYMBOL:
+                if is_rune(coin.asset):
                     return tx.address
 
     @property
@@ -395,16 +395,6 @@ class ThorTxExtended(ThorTx):
     asset_amount: float = 0.0
     rune_amount: float = 0.0
 
-    # for switch, refund, swap
-    # input_address: str = ''
-    # output_address: str = ''
-    # input_tx_hash: str = ''
-    # output_tx_hash: str = ''
-    # input_amount: float = 0.0
-    # output_amount: float = 0.0
-    # input_asset: str = ''
-    # output_asset: str = ''
-
     # filled by "calc_full_rune_amount"
     full_rune: float = 0.0  # TX volume
     asset_per_rune: float = 0.0
@@ -441,7 +431,12 @@ class ThorTxExtended(ThorTx):
             self.tx_hash_rune = out_sub_tx_rune.tx_id if out_sub_tx_rune else None
             self.tx_hash_asset = out_sub_tx_asset.tx_id if out_sub_tx_asset else None
 
-        elif t in (ThorTxType.TYPE_SWITCH, ThorTxType.TYPE_REFUND, ThorTxType.TYPE_SWAP):
+        elif t == ThorTxType.TYPE_SWITCH:
+            # rune_amount <= asset_amount when the kill switch is active!
+            self.rune_amount = self.sum_of_rune(out_only=True)
+            self.asset_amount = self.sum_of_non_rune(in_only=True)
+
+        elif t in (ThorTxType.TYPE_REFUND, ThorTxType.TYPE_SWAP):
             # only outputs
             self.rune_amount = self.sum_of_rune(out_only=True)
             self.asset_amount = self.sum_of_non_rune(out_only=True)

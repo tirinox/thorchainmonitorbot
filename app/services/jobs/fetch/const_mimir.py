@@ -33,7 +33,7 @@ class ConstMimirFetcher(BaseFetcher):
         return ThorConstants.from_json(data)
 
     async def _request_public_node_client(self, path):
-        client = ThorNodePublicClient(self.deps.session, MCCN)
+        client = ThorNodePublicClient(self.deps.session, self.deps.thor_env)
         for attempt in range(1, ATTEMPTS):
             response = await client.request(path)
             if response is not None:

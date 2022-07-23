@@ -1,9 +1,13 @@
+MIMIR_KEY_KILL_SWITCH_START = 'KILLSWITCHSTART'
+MIMIR_KEY_KILL_SWITCH_DURATION = 'KillSwitchDuration'.upper()
+
 BLOCK_CONSTANTS = {
     name.upper() for name in [
         'BlocksPerYear', 'FundMigrationInterval', 'ChurnInterval', 'ChurnRetryInterval',
         'SigningTransactionPeriod', 'DoubleSignMaxAge', 'LiquidityLockUpBlocks',
         'ObservationDelayFlexibility', 'YggFundRetry', 'JailTimeKeygen', 'JailTimeKeysign',
         'NodePauseChainBlocks', 'FullImpLossProtectionBlocks', 'TxOutDelayMax', 'MaxTxOutOffset',
+        MIMIR_KEY_KILL_SWITCH_DURATION, MIMIR_KEY_KILL_SWITCH_DURATION,
     ]
 }
 

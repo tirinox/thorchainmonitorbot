@@ -3,7 +3,7 @@ from typing import List
 from proto import NativeThorTx, parse_thor_address, DecodedEvent, thor_decode_amount_field
 from proto.thor_types import MsgSend, MsgDeposit
 from services.jobs.fetch.native_scan import BlockResult
-from services.lib.constants import thor_to_float, NATIVE_RUNE_SYMBOL
+from services.lib.constants import thor_to_float, is_rune
 from services.lib.delegates import WithDelegates, INotified
 from services.lib.money import Asset
 from services.lib.utils import class_logger
@@ -194,7 +194,7 @@ class RuneTransferDetectorTxLogs(WithDelegates, INotified):
         for ev in r.end_block_events:
             if ev.type == 'outbound' and ev.attributes.get('chain') == 'THOR':
                 asset = ev.attributes.get('asset', '')
-                if asset == NATIVE_RUNE_SYMBOL:
+                if is_rune(asset):
                     asset = 'RUNE'
                 transfers.append(RuneTransfer(
                     ev.attributes['from'],
