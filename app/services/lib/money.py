@@ -263,3 +263,7 @@ class Asset:
 
 def weighted_mean(values, weights):
     return sum(values[g] * weights[g] for g in range(len(values))) / sum(weights)
+
+
+def clamp(x, min_x, max_x):
+    return min(max(x, min_x), max_x)

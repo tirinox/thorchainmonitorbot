@@ -14,9 +14,10 @@ from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.midgard.connector import MidgardConnector
 from services.lib.midgard.name_service import NameService
-from services.lib.settings_manager import SettingsManager
+from services.lib.settings_manager import SettingsManager, SettingsProcessorGeneralAlerts
 from services.lib.utils import setup_logs
 from services.models.mimir import MimirHolder
+from services.models.node_watchers import AlertWatchers
 from services.notify.broadcast import Broadcaster
 
 
@@ -33,6 +34,9 @@ class LpAppFramework:
         d.loc_man = LocalizationManager(d.cfg)
         d.db = DB(d.loop)
         d.settings_manager = SettingsManager(d.db, d.cfg)
+
+        d.alert_watcher = AlertWatchers(d.db)
+        d.gen_alert_settings_proc = SettingsProcessorGeneralAlerts(d.db, d.alert_watcher)
 
         d.telegram_bot = TelegramBot(d.cfg, d.db, d.loop)
         d.broadcaster = Broadcaster(d)

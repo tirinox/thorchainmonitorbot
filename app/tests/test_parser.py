@@ -4,7 +4,7 @@ import os
 import pytest
 
 from services.jobs.fetch.tx import merge_affiliate_txs, merge_same_txs
-from services.lib.constants import NetworkIdents, THOR_DIVIDER, NATIVE_RUNE_SYMBOL, UST_SYMBOL
+from services.lib.constants import NetworkIdents, THOR_DIVIDER, NATIVE_RUNE_SYMBOL, UST_SYMBOL, is_rune
 from services.lib.midgard.parser import MidgardParserV2
 from services.models.tx import ThorCoin, ThorMetaSwap, ThorTx
 
@@ -41,7 +41,7 @@ def test_merge_two_coins():
     a = ThorCoin('1', NATIVE_RUNE_SYMBOL)
     b = ThorCoin('2', NATIVE_RUNE_SYMBOL)
     assert ThorCoin.merge_two(a, b).amount == '3'
-    assert ThorCoin.merge_two(a, b).asset == NATIVE_RUNE_SYMBOL
+    assert is_rune(ThorCoin.merge_two(a, b).asset)
 
     with pytest.raises(AssertionError):
         ThorCoin.merge_two(ThorCoin('1', 'ffs'), ThorCoin('2', 'abc'))
@@ -78,7 +78,7 @@ def test_affiliate_merge_simple(example_tx_gen):
     assert tm.meta_swap.liquidity_fee == '16417504333'
 
     assert len(tm.meta_swap.network_fees) == 4
-    assert tm.meta_swap.network_fees[0].asset == NATIVE_RUNE_SYMBOL
+    assert is_rune(tm.meta_swap.network_fees[0].asset)
     assert tm.meta_swap.network_fees[0].amount == '2000000'
 
     assert len(tm.in_tx) == 1
@@ -126,7 +126,7 @@ def test_affiliate_add_merge_dual(fn, example_tx_gen):
     assert tx.in_tx[0].coins[0].amount == '5848107'
     assert tx.in_tx[0].coins[0].asset == 'ETH.ETH'
     assert tx.in_tx[1].coins[0].amount == '3211421250'
-    assert tx.in_tx[1].coins[0].asset == NATIVE_RUNE_SYMBOL
+    assert is_rune(tx.in_tx[1].coins[0].asset)
 
 
 @pytest.fixture

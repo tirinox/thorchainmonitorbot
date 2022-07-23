@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from services.lib.constants import NATIVE_RUNE_SYMBOL
+from services.lib.constants import is_rune
 
 
 @dataclass
@@ -28,7 +28,7 @@ class RuneTransfer:
 
     @property
     def is_rune(self):
-        return self.asset == NATIVE_RUNE_SYMBOL or self.asset.lower() == 'rune'
+        return is_rune(self.asset) or self.asset.lower() == 'rune'
 
     def rune_amount(self, usd_per_rune):
         return self.usd_amount / usd_per_rune
