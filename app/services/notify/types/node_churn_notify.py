@@ -33,14 +33,13 @@ class NodeChurnNotifier(INotified, WithDelegates):
         if await self.cd.can_do():
             await self._notify_when_node_churn(changes)
             await self.cd.do()
+            await self.pass_data_to_listeners(changes)
 
     async def _notify_when_node_churn(self, changes: NodeSetChanges):
         # TEXT
         await self.deps.broadcaster.notify_preconfigured_channels(
             BaseLocalization.notification_text_for_node_churn,
             changes)
-
-        await self.pass_data_to_listeners(changes)
 
         # PICTURE
         node_fetcher = NodeInfoFetcher(self.deps)
@@ -49,7 +48,8 @@ class NodeChurnNotifier(INotified, WithDelegates):
         async def node_div_pic_gen(loc: BaseLocalization):
             graph = await node_geo_pic(result_network_info, loc)
             bio_graph = img_to_bio(graph, "node_diversity.png")
-            return BoardMessage.make_photo(bio_graph)
+            caption = loc.PIC_TITLE_NODE_DIVERSITY_BY_PROVIDER
+            return BoardMessage.make_photo(bio_graph, caption)
 
         if changes.count_of_changes >= self.MIN_CHANGES_TO_POST_PICTURE:
             await self.deps.broadcaster.notify_preconfigured_channels(node_div_pic_gen)

@@ -24,6 +24,8 @@ from services.notify.channel import MESSAGE_SEPARATOR
 
 
 class TwitterEnglishLocalization(BaseLocalization):
+    PIC_TITLE_NODE_DIVERSITY_BY_PROVIDER = 'The current THORChain node diversity'
+
     def notification_text_cap_change(self, old: ThorCapInfo, new: ThorCapInfo):
         up = old.cap < new.cap
         verb = "has been increased" if up else "has been decreased"

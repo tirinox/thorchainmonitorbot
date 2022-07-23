@@ -983,6 +983,8 @@ class BaseLocalization(ABC):  # == English
     TEXT_PIC_OTHERS = 'Others'
     TEXT_PIC_UNKNOWN = 'Unknown'
 
+    PIC_TITLE_NODE_DIVERSITY_BY_PROVIDER = ''
+
     def _format_node_text(self, node: NodeInfo, add_status=False, extended_info=False, expand_link=False):
         if expand_link:
             node_ip_link = link(get_ip_info_link(node.ip_address), node.ip_address) if node.ip_address else 'No IP'
