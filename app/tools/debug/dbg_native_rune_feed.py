@@ -2,14 +2,18 @@ import asyncio
 import json
 import logging
 
+from localization.base import BaseLocalization
+from localization.languages import Language
 from services.jobs.fetch.native_scan import NativeScannerBlock
 from services.jobs.fetch.native_scan_ws import NativeScannerTransactionWS, NativeScannerBlockEventsWS
 from services.jobs.transfer_detector import RuneTransferDetectorBlockEvents, \
     RuneTransferDetectorFromTxResult, RuneTransferDetectorTxLogs
 from services.lib.config import Config
 from services.lib.delegates import INotified
+from services.lib.depcont import DepContainer
 from services.lib.texts import sep
 from services.lib.utils import setup_logs
+from services.models.transfer import RuneTransfer
 from tools.lib.lp_common import LpAppFramework
 
 
@@ -24,6 +28,19 @@ class Receiver(INotified):
     def __init__(self, tag='', filters=None):
         self.tag = tag
         self.filters = filters
+
+
+class ReceiverPublicText(INotified):
+    def __init__(self, deps: DepContainer, lang=Language.ENGLISH_TWITTER):
+        self.deps = deps
+        self.loc: BaseLocalization = self.deps.loc_man.get_from_lang(lang)
+
+    # noinspection PyTypeChecker
+    async def on_data(self, sender, data):
+        for tr in data:
+            tr: RuneTransfer
+            print(self.loc.notification_text_rune_transfer_public(tr))
+            sep()
 
 
 async def t_tx_scanner_ws(url, reserve_address):
@@ -43,11 +60,13 @@ async def t_block_scanner_ws(url):
     await scanner.run()
 
 
+# sic!
 async def t_block_scanner_active(lp_app):
     scanner = NativeScannerBlock(lp_app.deps)
     detector = RuneTransferDetectorTxLogs()
     scanner.subscribe(detector)
-    detector.subscribe(Receiver('Transfer'))
+    # detector.subscribe(Receiver('Transfer'))
+    detector.subscribe(ReceiverPublicText(lp_app.deps))
     await scanner.run()
 
 
@@ -56,7 +75,6 @@ async def ws_main():
     url = cfg.as_str('thor.node.rpc_node_url')
     reserve_address = cfg.as_str('native_scanner.reserve_address')
     await t_tx_scanner_ws(url, reserve_address)
-
 
 
 async def active_one(lp_app):
@@ -74,22 +92,8 @@ async def active_one(lp_app):
     sep()
     for tr in transfers:
         print(tr)
-        # for ev in r:
-        #     events = ev[0]['events']
-        #     # print(events)
-        #     n = len(events)
-        #     types = [e['type'] for e in events]
-        #     print(f'{n} events: {", ".join(types)}')
-        #     if n > 1:
-        #         print(json.dumps(events, indent=2))
 
     sep()
-    #
-    # scanner = NativeScannerTx(lp_app.deps)
-    # r = await scanner.fetch_block_txs(b)
-    # if r:
-    #     for ev in r:
-    #         print(ev)
 
 
 async def search_out(lp_app):
@@ -106,7 +110,6 @@ async def search_out(lp_app):
             print(f'Found a needle in block #{b}!!! ')
             break
         b += 1
-
 
 
 async def main():

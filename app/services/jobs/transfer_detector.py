@@ -118,6 +118,7 @@ def is_fee_tx(amount, asset, to_addr, reserve_address):
     return amount == 2000000 and asset.lower() == 'rune' and to_addr == reserve_address
 
 
+# This one is presently used!
 class RuneTransferDetectorTxLogs(WithDelegates, INotified):
     IGNORE_EVENTS = (
         'coin_spent',
@@ -148,7 +149,7 @@ class RuneTransferDetectorTxLogs(WithDelegates, INotified):
                 d = {}
         return results
 
-    def _parse_one_tx(self, tx_log, block_no, tx_hash, tx_name: str):
+    def _parse_one_tx(self, tx_log, block_no, tx_hash, tx_name: str, tx: NativeThorTx):
         ev_map = {
             ev['type']: ev['attributes'] for ev in tx_log
         }
@@ -175,7 +176,8 @@ class RuneTransferDetectorTxLogs(WithDelegates, INotified):
                     amount=thor_to_float(amount),
                     asset=asset,
                     comment=comment,
-                    is_native=True
+                    is_native=True,
+                    memo=tx.tx.body.memo
                 ))
 
         return results
@@ -185,12 +187,13 @@ class RuneTransferDetectorTxLogs(WithDelegates, INotified):
         for tx, raw_logs in zip(r.txs, r.tx_logs):
             try:
                 tx_name = (type(tx.first_message)).__name__
-                this_transfers = self._parse_one_tx(raw_logs[0]['events'], r.block_no, tx.hash, tx_name)
+                this_transfers = self._parse_one_tx(raw_logs[0]['events'], r.block_no, tx.hash, tx_name, tx)
                 if this_transfers:
                     transfers.extend(this_transfers)
             except (KeyError, ValueError):
                 raise
 
+        # add Outbounds
         for ev in r.end_block_events:
             if ev.type == 'outbound' and ev.attributes.get('chain') == 'THOR':
                 asset = ev.attributes.get('asset', '')
@@ -206,6 +209,7 @@ class RuneTransferDetectorTxLogs(WithDelegates, INotified):
                     is_native=True,
                     comment=ev.type,
                 ))
+
         return transfers
 
     async def on_data(self, sender, data: BlockResult):

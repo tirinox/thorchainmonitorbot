@@ -8,8 +8,7 @@ from semver import VersionInfo
 
 from services.jobs.fetch.circulating import SupplyEntry
 from services.lib.config import Config
-from services.lib.constants import rune_origin, thor_to_float, THOR_BLOCK_TIME, BNB_RUNE_SYMBOL, \
-    DEFAULT_CEX_NAME, DEFAULT_CEX_BASE_ASSET
+from services.lib.constants import rune_origin, thor_to_float, THOR_BLOCK_TIME, DEFAULT_CEX_NAME, DEFAULT_CEX_BASE_ASSET
 from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
     get_explorer_url_for_node, get_pool_url, get_thoryield_address, get_ip_info_link
@@ -1880,18 +1879,24 @@ class BaseLocalization(ABC):  # == English
         # Asset name
         asset = t.asset.upper()
         asset = short_address(asset, 12, 5)
-        return asset, comment, from_my, to_my, tx_link, usd_amt
+
+        memo = ''
+        if t.memo:
+            memo = f' MEMO: "{code(shorten_text(t.memo, limit=42))}"'
+
+        return asset, comment, from_my, to_my, tx_link, usd_amt, memo
 
     def notification_text_rune_transfer(self, t: RuneTransfer, my_addresses):
-        asset, comment, from_my, to_my, tx_link, usd_amt = self._native_transfer_prepare_stuff(my_addresses, t)
+        asset, comment, from_my, to_my, tx_link, usd_amt, memo = self._native_transfer_prepare_stuff(my_addresses, t)
 
-        return f'🏦 <b>{comment}</b>{tx_link}: {code(short_money(t.amount, postfix=" " + asset))} {usd_amt} ' \
+        return f'🏦 <b>{comment}</b>{tx_link}: {code(short_money(t.amount, postfix=" " + asset))}{usd_amt} ' \
                f'from {from_my} ' \
-               f'➡️ {to_my}.'
+               f'➡️ {to_my}{memo}.'
 
     def notification_text_rune_transfer_public(self, t: RuneTransfer):
-        asset, comment, from_my, to_my, tx_link, usd_amt = self._native_transfer_prepare_stuff(None, t, tx_title='')
+        asset, comment, from_my, to_my, tx_link, usd_amt, memo = self._native_transfer_prepare_stuff(None, t,
+                                                                                                     tx_title='')
 
         return f'💸 <b>Large transfer</b> {tx_link}: ' \
-               f'{code(short_money(t.amount, postfix=" " + asset))} {usd_amt} ' \
-               f'from {from_my} ➡️ {to_my}.'
+               f'{code(short_money(t.amount, postfix=" " + asset))}{usd_amt} ' \
+               f'from {from_my} ➡️ {to_my}{memo}.'

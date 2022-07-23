@@ -14,6 +14,7 @@ class RuneTransfer:
     is_native: bool = False
     asset: str = ''
     comment: str = ''
+    memo: str = ''
 
     @property
     def is_synth(self):

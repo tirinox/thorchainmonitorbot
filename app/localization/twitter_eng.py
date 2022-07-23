@@ -5,7 +5,7 @@ from semver import VersionInfo
 
 from localization.base import BaseLocalization
 from services.dialog.twitter.text_length import twitter_intelligent_text_splitter
-from services.lib.constants import thor_to_float, rune_origin, BNB_RUNE_SYMBOL, Chains
+from services.lib.constants import thor_to_float, rune_origin, Chains
 from services.lib.date_utils import now_ts, seconds_human
 from services.lib.money import Asset, short_dollar, format_percent, pretty_money, pretty_dollar, RAIDO_GLYPH, \
     calc_percent_change, adaptive_round_to_str, emoji_for_percent_change, short_address, short_money, short_rune
@@ -707,8 +707,12 @@ class TwitterEnglishLocalization(BaseLocalization):
         )
 
     def notification_text_rune_transfer_public(self, t: RuneTransfer):
-        asset, comment, from_my, to_my, tx_link, usd_amt = self._native_transfer_prepare_stuff(None, t, tx_title='')
+        asset, comment, from_my, to_my, tx_link, usd_amt, memo = self._native_transfer_prepare_stuff(None, t,
+                                                                                                     tx_title='')
+
+        if t.memo:
+            memo = f' (MEMO: "{shorten_text(t.memo, 21)}")'
 
         return f'💸 Large transfer {comment}: ' \
-               f'{(short_money(t.amount, postfix=" " + asset))} {usd_amt} ' \
-               f'from {from_my} ➡️ {to_my}.'
+               f'{(short_money(t.amount, postfix=" " + asset))}{usd_amt} ' \
+               f'from {from_my} ➡️ {to_my}{memo}'

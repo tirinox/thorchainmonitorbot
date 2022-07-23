@@ -7,9 +7,9 @@ from semver import VersionInfo
 
 from localization.base import BaseLocalization, CREATOR_TG, URL_LEADERBOARD_MCCN
 from services.jobs.fetch.circulating import SupplyEntry
-from services.lib.constants import Chains, thor_to_float, rune_origin, BNB_RUNE_SYMBOL
+from services.lib.constants import Chains, rune_origin
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
-from services.lib.explorers import get_explorer_url_to_address, get_explorer_url_to_tx, get_thoryield_address, \
+from services.lib.explorers import get_explorer_url_to_address, get_thoryield_address, \
     get_ip_info_link
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change, Asset, short_money, short_dollar, format_percent, RAIDO_GLYPH, pretty_rune, short_rune
@@ -1509,16 +1509,17 @@ class RussianLocalization(BaseLocalization):
     }
 
     def notification_text_rune_transfer(self, t: RuneTransfer, my_addresses):
-        asset, comment, from_my, to_my, tx_link, usd_amt = self._native_transfer_prepare_stuff(my_addresses, t)
+        asset, comment, from_my, to_my, tx_link, usd_amt, memo = self._native_transfer_prepare_stuff(my_addresses, t)
         comment = self.TX_COMMENT_TABLE.get(comment, comment)
 
         return f'🏦 <b>{comment}</b>{tx_link}: {code(short_money(t.amount, postfix=" " + asset))} {usd_amt} ' \
                f'от {from_my} ' \
-               f'➡️ к {to_my}.'
+               f'➡️ к {to_my}{memo}.'
 
     def notification_text_rune_transfer_public(self, t: RuneTransfer):
-        asset, comment, from_my, to_my, tx_link, usd_amt = self._native_transfer_prepare_stuff(None, t, tx_title='')
+        asset, comment, from_my, to_my, tx_link, usd_amt, memo = self._native_transfer_prepare_stuff(None, t,
+                                                                                                     tx_title='')
 
         return f'💸 <b>Большой перевод</b> {tx_link}: ' \
-               f'{code(short_money(t.amount, postfix=" " + asset))} {usd_amt} ' \
-               f'от {from_my} ➡️ к {to_my}.'
+               f'{code(short_money(t.amount, postfix=" " + asset))}{usd_amt} ' \
+               f'от {from_my} ➡️ к {to_my}{memo}.'
