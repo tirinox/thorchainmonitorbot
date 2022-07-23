@@ -1797,7 +1797,7 @@ class BaseLocalization(ABC):  # == English
         return link(url, caption)
 
     def notification_text_cex_flow(self, bep2flow: RuneCEXFlow):
-        return (f'🌬️ <b>BEP2.Rune CEX flow last 24 hours</b>\n'
+        return (f'🌬️ <b>Rune CEX flow last 24 hours</b>\n'
                 f'Inflow: {pre(short_money(bep2flow.rune_cex_inflow, postfix=RAIDO_GLYPH))} '
                 f'({short_dollar(bep2flow.in_usd)})\n'
                 f'Outflow: {pre(short_money(bep2flow.rune_cex_outflow, postfix=RAIDO_GLYPH))} '
