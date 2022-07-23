@@ -69,7 +69,7 @@ DEFAULT_CEX_BASE_ASSET = 'USDT'
 
 
 def is_rune(symbol):
-    return symbol in RUNE_SYMBOLS
+    return symbol == NATIVE_RUNE_SYMBOL
 
 
 def rune_origin(symbol):
@@ -200,3 +200,7 @@ class THORPort:
     @classmethod
     def get_port_family(cls, network_ident):
         return cls.FAMILIES.get(network_ident, cls.MainNet)
+
+
+DEFAULT_KILL_RUNE_START_BLOCK = 6_500_000
+DEFAULT_KILL_RUNE_DURATION_BLOCKS = 5_256_000
