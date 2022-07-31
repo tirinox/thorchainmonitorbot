@@ -96,12 +96,14 @@ class Chains:
     BNB = 'BNB'
     DOGE = 'DOGE'
     TERRA = 'TERRA'
+    AVAX = 'AVAX'
+    ATOM = 'GAIA'
 
     @staticmethod
     def detect_chain(orig_address: str) -> str:
         address = orig_address.lower()
         if address.startswith('0x'):
-            return Chains.ETH
+            return Chains.ETH  # or other EVM chain??
         elif address.startswith('terra'):
             return Chains.TERRA
         elif address.startswith('thor') or address.startswith('tthor') or address.startswith('sthor'):
@@ -110,6 +112,8 @@ class Chains:
             return Chains.BNB
         elif orig_address.startswith('D'):
             return Chains.DOGE
+        elif address.startswith('cosmos'):
+            return Chains.ATOM
         return ''
 
     @staticmethod
@@ -128,6 +132,10 @@ class Chains:
             return MINUTE
         elif chain == Chains.TERRA:
             return 6.64
+        elif chain == Chains.ATOM:
+            return 6.85
+        elif chain == Chains.AVAX:
+            return 3.0
         return 0.01
 
 

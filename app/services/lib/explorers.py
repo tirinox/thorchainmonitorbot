@@ -28,6 +28,10 @@ def get_explorer_url_to_address(network_id, pool_or_chain: str, address: str):
             f'https://tltc.bitaps.com/{address}'
     elif chain == Chains.DOGE:
         return f'https://dogechain.info/address/{address}'
+    elif chain == Chains.AVAX:
+        return f'https://snowtrace.io/address/{address.lower()}'
+    elif chain == Chains.ATOM:
+        return f'https://www.mintscan.io/cosmos/account/{address.lower()}'
     else:
         url = f'https://www.google.com/search?q={chain}+explorer'
         return url if is_live else f'{url}+test'
@@ -62,6 +66,10 @@ def get_explorer_url_to_tx(network_id, pool_or_chain: str, tx_id: str):
             f'https://tltc.bitaps.com/{tx_id}'
     elif chain == Chains.DOGE:
         return f'https://dogechain.info/tx/{tx_id.lower()}'
+    elif chain == Chains.AVAX:
+        return f'https://snowtrace.io/tx/{tx_id.lower()}'
+    elif chain == Chains.ATOM:
+        return f'https://www.mintscan.io/cosmos/txs/{tx_id.upper()}'
     else:
         url = f'https://www.google.com/search?q={chain}+explorer'
         return url if is_live else f'{url}+test'
