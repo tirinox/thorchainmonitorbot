@@ -9,7 +9,7 @@ from aiothornode.types import ThorConstants, ThorMimir
 
 from services.lib.texts import split_by_camel_case
 from services.models.base import BaseModelMixin
-from services.models.mimir_naming import TRANSLATE_MIMIRS, EXCLUDED_VOTE_KEYS, MimirUnits
+from services.models.mimir_naming import TRANSLATE_MIMIRS, EXCLUDED_VOTE_KEYS, MimirUnits, try_deducting_mimir_name
 from services.models.node_info import NodeInfo
 
 # for automatic Mimir, when it becomes 0 -> 1 or 1 -> 0, that is Admin's actions
@@ -186,7 +186,7 @@ class MimirHolder:
         self.last_changes: typing.Dict[str, float] = {}
 
         self._const_map = {}
-        self._all_names = set()
+        self.all_names = set()
         self._mimir_only_names = set()
         self.node_mimir = {}
         self.voting_manager = MimirVoteManager([], [], [])
@@ -212,7 +212,11 @@ class MimirHolder:
         return self._const_map.get(name.upper())
 
     def pretty_name(self, name):
-        return TRANSLATE_MIMIRS.get(name) or self.hard_coded_pretty_names.get(name) or name
+        return (
+            TRANSLATE_MIMIRS.get(name) or
+            self.hard_coded_pretty_names.get(name) or
+            try_deducting_mimir_name(name) or name
+        )
 
     def update(self, constants: ThorConstants, mimir: ThorMimir, node_mimir, node_votes: typing.List[MimirVote],
                active_nodes: typing.List[NodeInfo]):
@@ -237,7 +241,7 @@ class MimirHolder:
         self._mimir_only_names = mimir_names - const_names
 
         overridden_names = mimir_names & const_names
-        self._all_names = mimir_names | const_names | node_mimir_names
+        self.all_names = mimir_names | const_names | node_mimir_names
 
         self._const_map = {}
         for name, current_value in chain(hard_coded_constants.items(), mimir_constants.items(), node_mimir.items()):
@@ -266,7 +270,7 @@ class MimirHolder:
 
     @property
     def all_entries(self) -> typing.List[MimirEntry]:
-        entries = [self._const_map[name] for name in self._all_names]
+        entries = [self._const_map[name] for name in self.all_names]
         entries.sort(key=lambda en: en.pretty_name)
         return entries
 

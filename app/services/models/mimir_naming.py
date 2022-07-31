@@ -192,3 +192,82 @@ class MimirUnits:
             return MimirUnits.UNITS_BOOL
         else:
             return ''
+
+
+DICT_WORDS = (
+    'stop,max,bond,providers,slash,penalty,incentive,curve,emission,default,'
+    'pool,status,pause,bond,kill,switch,'
+    'bad,validator,rate,duration,fail,key,sign,points,'
+    'minimum,permitted,asgard,size,pool,cycle,sym,withdrawal,'
+    'minimum,for,yggdrasil,tx,out,offset,virtual,mult,'
+    'synths,staged,cost,double,sign,age,per,swap,block,blocks,'
+    'unbound,delay,outbound,transaction,fee,avax,enable,'
+    'chain,observe,full,imp,loss,protection,min,burn,'
+    'operator,ragnarok,terra,jail,time,available,pools,'
+    'process,num,lp,mint,volume,threshold,support,thorchain,'
+    'dot,network,observation,flexibility,attempts,liquidity,'
+    'ygg,fund,retry,native,btf,migration,interval,remove,'
+    'snx,text,low,tns,register,period,usd,global,old,depth,'
+    'lack,penalty,chain,node,version,churn,to,provider,nodes,lock,'
+    'up,synth,in,rune,limit,gap,solvency,of,gen,year,start,asym,swtich,start,'
+    'on,halt,unbond,iteration,sale,reward,ratio,strict,maximum,churning,btc,bch,ltc,doge,terra,avax,atom,gaia,bnb,eth,'
+    'thor,utxos,check,trading,thorname,thornames,asset,signing,set,haven,spend,funding,cloud,new,number,desired,'
+    'update,memo'
+).strip(' ,')
+
+WORD_TRANSFORM = {
+    'Thorchain': 'THORChain',
+    'Thorname': 'THORName',
+    'Thornames': 'THORNames',
+    'Lp': 'LP',
+    'Usd': 'USD',
+    'Tns': 'TNS',
+    'Btc': 'BTC',
+    'Bch': 'BCH',
+    'Ltc': 'LTC',
+    'Bnb': 'BNB',
+    'Eth': 'ETH',
+    'Of': 'of',
+    'On': 'on',
+    'In': 'in',
+    'From': 'from',
+    'For': 'for',
+}
+
+DICT_WORDS_SORTED = list(sorted(map(str.upper, DICT_WORDS.split(',')), key=len, reverse=True))
+
+
+def try_deducting_mimir_name(name: str, glue=' '):
+    components = []
+    name = name.upper()
+
+    for word in DICT_WORDS_SORTED:
+        word_len = len(word)
+        while True:
+            index = name.find(word)
+            if index == -1:
+                break
+            else:
+                components.append((index, word))
+                name = name.replace(word, ' ' * word_len)
+
+    components.sort()  # sort by index
+
+    if not components:
+        return name.upper() + '?'
+
+    words = []
+    position = 0
+    for index, word in components:
+        if index > position:
+            missing_word = name[position:index]
+            words.append(missing_word.upper())
+        words.append(word.capitalize())
+        position = index + len(word)
+
+    if position < len(name):
+        words.append(name[position:].upper())
+
+    words = map(lambda w: WORD_TRANSFORM.get(w, w), words)
+
+    return glue.join(words)
