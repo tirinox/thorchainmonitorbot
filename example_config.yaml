@@ -99,10 +99,10 @@ web:
   serve_front_end: false  # false on production, this is work for nginx
 
 
-broadcasting:  # (!) new
-  startup_delay: 10s  # (!) new: skip all messages during this period of time until flood settles down
+broadcasting:
+  startup_delay: 10s  # skip all messages during this period of time until flood settles down
 
-  channels:  # (!) new: inside the "broadcasting" section
+  channels:
     - type: telegram
       name: "@thorchain_alert"  # live channel
       lang: eng
@@ -139,6 +139,12 @@ native_scanner:
     - "thor17gw75axcnr8747pkanye45pnrwk7p9c3cqncsv"
     - "thor1g98cy3n9mmjrpn0sxmn63lztelera37n8n67c0"
     - "thor1v8ppstuf6e3x0r4glqc68d5jqcs2tf38cg2q6y"
+
+
+killed_rune: # (!) new
+  enabled: true
+  period: 2h
+  api_url: "https://node-api.flipsidecrypto.com/api/v2/queries/b5f325f6-8a42-47eb-9faf-ba8b0bdf1438/data/latest"
 
 
 names:
@@ -326,11 +332,11 @@ price:
       cooldown: 30m
 
 
-rune_transfer:  # (!) new: rename from "bep2"
+rune_transfer:
   enabled: true
   fetch_period: 30
 
-  min_usd:  # (!) new!
+  min_usd:
     bep2: 300000
     native: 200000
   cooldown: 10
