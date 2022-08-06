@@ -59,7 +59,7 @@ class RussianLocalization(BaseLocalization):
             f"/help – эта помощь\n"
             f"/start – запуск и перезапуск бота\n"
             f"/lang – изменить язык\n"
-            f"/cap – текущий кап для ликвидности в пулах Chaosnet\n"
+            f"/cap – текущий кап для ликвидности в пулах THORChain\n"
             f"/price – текущая цена {self.R}\n"
             f"/queue – размер очереди транзакций\n"
             f"/nodes – список нод\n"

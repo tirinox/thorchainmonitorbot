@@ -1,3 +1,5 @@
+from typing import List
+
 from services.jobs.fetch.base import BaseFetcher
 from services.lib.constants import thor_to_float
 from services.lib.date_utils import parse_timespan_to_seconds
@@ -27,11 +29,26 @@ class CapInfoFetcher(BaseFetcher):
         self.last_mimir = await self.deps.midgard_connector.request_random_midgard(free_url_gen.url_mimir())
         return self.last_mimir
 
+    @staticmethod
+    def calculate_effective_security_bond(node_bonds: List[int]):
+        node_bonds.sort()
+        t = len(node_bonds) * 2 // 3
+        if len(node_bonds) % 3 == 0:
+            t -= 1
+
+        amt = 0
+        for i, bond in enumerate(node_bonds):
+            if i <= t:
+                amt += thor_to_float(bond)
+            else:
+                break
+        return amt
+
     async def get_total_current_pooled_rune_and_cap(self):
         networks_resp = await self.get_network_info()
         lp_rune = networks_resp.get('totalPooledRune', 0)
         bonds = networks_resp.get('activeBonds', [])
-        cap_eq_bond = sum(map(thor_to_float, bonds))
+        cap_eq_bond = self.calculate_effective_security_bond(bonds)
         return int(thor_to_float(lp_rune)), cap_eq_bond
 
     async def get_max_possible_pooled_rune(self):
