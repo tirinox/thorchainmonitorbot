@@ -12,7 +12,7 @@ async def main():
 
         killed_rune_fetcher = KilledRuneFetcher(lp_app.deps)
         r = await killed_rune_fetcher.fetch()
-        print(r)
+        print(r[0])
 
 
 if __name__ == '__main__':

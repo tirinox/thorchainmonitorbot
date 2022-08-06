@@ -17,6 +17,7 @@ from services.jobs.fetch.chains import ChainStateFetcher
 from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
 from services.jobs.fetch.gecko_price import fill_rune_price_from_gecko
+from services.jobs.fetch.killed_rune import KilledRuneFetcher, KilledRuneStore
 from services.jobs.fetch.last_block import LastBlockFetcher
 from services.jobs.fetch.native_scan import NativeScannerBlock
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
@@ -234,9 +235,15 @@ class App:
                 churn_detector.subscribe(notifier_version)
 
             if d.cfg.get('node_op_tools.enabled', True):
-                self.deps.node_op_notifier = NodeChangePersonalNotifier(d)
-                await self.deps.node_op_notifier.prepare()
-                churn_detector.subscribe(self.deps.node_op_notifier)
+                d.node_op_notifier = NodeChangePersonalNotifier(d)
+                await d.node_op_notifier.prepare()
+                churn_detector.subscribe(d.node_op_notifier)
+
+        if d.cfg.get('killed_rune.enabled', True):
+            krf = KilledRuneFetcher(d)
+            tasks.append(krf)
+            kr_store = KilledRuneStore(d)
+            krf.subscribe(kr_store)
 
         if d.cfg.get('price.enabled', True):
             notifier_price = PriceNotifier(d)

@@ -18,6 +18,7 @@ from services.lib.midgard.connector import MidgardConnector
 from services.lib.midgard.name_service import NameService
 from services.lib.new_feature import NewFeatureManager, Features
 from services.lib.settings_manager import SettingsManager
+from services.models.killed_rune import KilledRuneEntry
 from services.models.mimir import MimirHolder
 from services.models.node_info import NodeListHolder
 from services.models.node_watchers import AlertWatchers
@@ -70,6 +71,7 @@ class DepContainer:
     halted_chains: Set[str] = field(default_factory=set)
     chain_info: Dict[str, ThorChainInfo] = field(default_factory=dict)
     node_holder: NodeListHolder = NodeListHolder()
+    killed_rune: KilledRuneEntry = KilledRuneEntry()
 
     settings_manager: Optional[SettingsManager] = None
 

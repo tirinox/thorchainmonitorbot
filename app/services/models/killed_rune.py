@@ -4,12 +4,12 @@ from datetime import datetime
 
 @dataclass
 class KilledRuneEntry:
-    timestamp: float
-    block_id: int
+    timestamp: float = 0
+    block_id: int = 0
     # estimates:
-    unkilled_unswitched_rune: float
-    total_killed: float
-    killed_switched: float
+    unkilled_unswitched_rune: float = 0
+    total_killed: float = 0
+    killed_switched: float = 0
 
     @classmethod
     def from_flipside_json(cls, j):

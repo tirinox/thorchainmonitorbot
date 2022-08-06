@@ -321,3 +321,8 @@ class Buffer:
             return contents
         else:
             return []
+
+
+class WithLogger:
+    def __init__(self):
+        self.logger = class_logger(self)
