@@ -317,12 +317,12 @@ class MetricsDialog(BaseDialog):
         await message.answer(text, disable_notification=True)
 
     async def show_rune_supply(self, message: Message):
+        loading_message = await self.show_loading(message)
+
         market_fetcher: RuneMarketInfoFetcher = self.deps.rune_market_fetcher
         market_info = await market_fetcher.get_rune_market_info()
 
-        loading_message = await self.show_loading(message)
-
-        text = self.loc.text_metrics_supply(market_info)
+        text = self.loc.text_metrics_supply(market_info, self.deps.killed_rune)
         await message.answer(text, disable_notification=True)
 
         await self.safe_delete(loading_message)

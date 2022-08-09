@@ -19,6 +19,7 @@ from services.lib.money import format_percent, pretty_money, short_address, shor
 from services.lib.texts import progressbar, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
     up_down_arrow, bracketify, plural, grouper, join_as_numbered_list, regroup_joining, shorten_text
 from services.models.cap_info import ThorCapInfo
+from services.models.killed_rune import KilledRuneEntry
 from services.models.last_block import BlockProduceState, EventBlockSpeed
 from services.models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting, MimirVoteOption
 from services.models.mimir_naming import MimirUnits
@@ -1828,7 +1829,7 @@ class BaseLocalization(ABC):  # == English
     def format_supply_entry(self, name, s: SupplyEntry, total_of_total: int):
         if s.locked and s.total != total_of_total:
             items = '\n'.join(
-                f'∙ {pre(name.capitalize())}: {code(pretty_rune(amount))} ({format_percent(amount, total_of_total)})'
+                f'∙ {pre(name.capitalize())}: {code(short_rune(amount))} ({format_percent(amount, total_of_total)})'
                 for name, amount in s.locked.items()
             )
             locked_summary = f'Locked:\n{items}\n'
@@ -1837,17 +1838,28 @@ class BaseLocalization(ABC):  # == English
 
         return (
             f'{bold(name)}:\n'
-            f'Circulating: {code(pretty_rune(s.circulating))} ({format_percent(s.circulating, total_of_total)})\n'
+            f'Circulating: {code(short_rune(s.circulating))} ({format_percent(s.circulating, total_of_total)})\n'
             f'{locked_summary}'
-            f'Total: {code(pretty_rune(s.total))} ({format_percent(s.total, total_of_total)})\n\n'
+            f'Total: {code(short_rune(s.total))} ({format_percent(s.total, total_of_total)})\n\n'
         )
 
-    def text_metrics_supply(self, market_info: RuneMarketInfo):
+    def text_metrics_supply(self, market_info: RuneMarketInfo, killed_rune: KilledRuneEntry):
         supply = market_info.supply_info
         message = f'🪙 {bold("Rune coins supply")}\n\n'
 
         message += self.format_supply_entry('BNB.Rune (BEP2)', supply.bep2_rune, supply.overall.total)
         message += self.format_supply_entry('ETH.Rune (ERC20)', supply.erc20_rune, supply.overall.total)
+
+        if killed_rune.block_id:
+            switched_killed = code(short_rune(killed_rune.killed_switched))  # killed when switched
+            total_killed = code(short_rune(killed_rune.total_killed))  # potentially dead + switched killed
+            rune_left = code(short_rune(killed_rune.unkilled_unswitched_rune))
+            message += (
+                f'☠️ <b>Killed Rune when switched:</b> {switched_killed}\n'
+                f'Total (switched and unswitched) killed Rune: {total_killed}\n'
+                f'Unswitched Rune left: {rune_left}\n\n'
+            )
+
         message += self.format_supply_entry('Native THOR.RUNE', supply.thor_rune, supply.overall.total)
         message += self.format_supply_entry('Overall', supply.overall, supply.overall.total)
 

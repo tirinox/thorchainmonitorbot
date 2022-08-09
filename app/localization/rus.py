@@ -12,10 +12,11 @@ from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address, get_thoryield_address, \
     get_ip_info_link
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
-    emoji_for_percent_change, Asset, short_money, short_dollar, format_percent, RAIDO_GLYPH, pretty_rune, short_rune
+    emoji_for_percent_change, Asset, short_money, short_dollar, format_percent, RAIDO_GLYPH, short_rune
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
     up_down_arrow, plural, grouper, regroup_joining, shorten_text
 from services.models.cap_info import ThorCapInfo
+from services.models.killed_rune import KilledRuneEntry
 from services.models.last_block import BlockProduceState, EventBlockSpeed
 from services.models.mimir import MimirChange, MimirHolder, MimirVoting, MimirVoteOption
 from services.models.net_stats import NetworkStats
@@ -1488,7 +1489,7 @@ class RussianLocalization(BaseLocalization):
         if s.locked and s.total != total_of_total:
             items = '\n'.join(
                 f'∙ {pre(self.SUPPLY_HELPER_TRANSLATOR.get(name, name))}: '
-                f'{code(pretty_rune(amount))} ({format_percent(amount, total_of_total)})'
+                f'{code(short_rune(amount))} ({format_percent(amount, total_of_total)})'
                 for name, amount in s.locked.items()
             )
             locked_summary = f'Заблокировано:\n{items}\n'
@@ -1497,21 +1498,32 @@ class RussianLocalization(BaseLocalization):
 
         return (
             f'{bold(name)}:\n'
-            f'Циркулирует: {code(pretty_rune(s.circulating))} ({format_percent(s.circulating, total_of_total)})\n'
+            f'Циркулирует: {code(short_rune(s.circulating))} ({format_percent(s.circulating, total_of_total)})\n'
             f'{locked_summary}'
-            f'Всего монет: {code(pretty_rune(s.total))} ({format_percent(s.total, total_of_total)})\n\n'
+            f'Всего монет: {code(short_rune(s.total))} ({format_percent(s.total, total_of_total)})\n\n'
         )
 
-    def text_metrics_supply(self, market_info: RuneMarketInfo):
+    def text_metrics_supply(self, market_info: RuneMarketInfo, killed_rune: KilledRuneEntry):
         supply = market_info.supply_info
         message = f'🪙 {bold("Предложение монет Rune")}\n\n'
 
         message += self.format_supply_entry('BNB.Rune (BEP2)', supply.bep2_rune, supply.overall.total)
         message += self.format_supply_entry('ETH.Rune (ERC20)', supply.erc20_rune, supply.overall.total)
+
+        if killed_rune.block_id:
+            rune_left = code(short_rune(killed_rune.unkilled_unswitched_rune))
+            switched_killed = code(short_rune(killed_rune.killed_switched))  # killed when switched
+            total_killed = code(short_rune(killed_rune.total_killed))  # potentially dead + switched killed
+            message += (
+                f'☠️ <b>Убито Рун при апгрейде:</b> {switched_killed}\n'
+                f'Всего убито Рун: {total_killed}\n'
+                f'Осталось старых Рун: {rune_left}\n\n'
+            )
+
         message += self.format_supply_entry('Нативная THOR.RUNE', supply.thor_rune, supply.overall.total)
         message += self.format_supply_entry('Всего всех видов', supply.overall, supply.overall.total)
 
-        message += f"Капитализация {bold(self.R)} – {bold(pretty_dollar(market_info.market_cap))} " \
+        message += f"Капитализация {bold(self.R)}: {bold(short_dollar(market_info.market_cap))} " \
                    f"(место #{bold(market_info.rank)})"
         return message
 
