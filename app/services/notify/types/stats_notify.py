@@ -53,7 +53,9 @@ class NetworkStatsNotifier(INotified):
         return NetworkStats.from_json(data[0][1]['info'])
 
     async def get_latest_info(self):
-        return await self.get_previous_stats(0)
+        info = await self.get_previous_stats(0)
+        info.killed_rune_summary = self.deps.killed_rune
+        return info
 
     async def _notify(self, old: NetworkStats, new: NetworkStats, rune_market_info: RuneMarketInfo):
         await self.deps.broadcaster.notify_preconfigured_channels(

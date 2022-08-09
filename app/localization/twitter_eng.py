@@ -299,7 +299,6 @@ class TwitterEnglishLocalization(BaseLocalization):
                    f"and {new.standby_nodes} standby nodes{standby_nodes_change}\n"
 
         parts.append(message)
-        message = ''
 
         # -- BOND
 
@@ -436,9 +435,24 @@ class TwitterEnglishLocalization(BaseLocalization):
             f'({format_percent(new.switched_rune, market.total_supply)})\n'
         )
 
+        killed = new.killed_rune_summary
+        if killed.block_id:
+            rune_left = short_rune(killed.unkilled_unswitched_rune)
+            switched_killed = short_rune(killed.killed_switched)  # killed when switched
+            total_killed = short_rune(killed.total_killed)  # potentially dead + switched killed
+            message += (
+                f'☠️ Killed switched Rune: {switched_killed}, '
+                f'total killed Rune: {total_killed}, '
+                f'unswitched Rune left: {rune_left}🆕.\n'
+            )
+
+        parts.append(message)
+
+        # --------------------------------------------------------------------------------------------------------------
+
         bonding_apy_change, liquidity_apy_change = self._extract_apy_deltas(new, old)
 
-        message += (
+        message = (
             f'📈 Bonding APY is {pretty_money(new.bonding_apy, postfix="%")}{bonding_apy_change} and '
             f'Liquidity APY is {pretty_money(new.liquidity_apy, postfix="%")}{liquidity_apy_change}.\n'
         )

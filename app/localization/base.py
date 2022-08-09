@@ -914,12 +914,12 @@ class BaseLocalization(ABC):  # == English
             synth_op_count = short_money(new.synth_op_count)
 
             message += f'💊 Synth trade volume: {synth_volume_rune} ({synth_volume_usd}) ' \
-                       f'in {synth_op_count} swaps 🆕\n'
+                       f'in {synth_op_count} swaps.\n'
 
             if new.loss_protection_paid_24h_rune:
                 ilp_rune_str = code(short_rune(new.loss_protection_paid_24h_rune))
                 ilp_usd_str = code(short_dollar(new.loss_protection_paid_24h_rune * new.usd_per_rune))
-                message += f'🛡️ IL protection payout: {ilp_rune_str} ({ilp_usd_str}) 🆕\n'
+                message += f'🛡️ IL protection payout: {ilp_rune_str} ({ilp_usd_str}).\n'
 
             message += '\n'
 
@@ -927,6 +927,17 @@ class BaseLocalization(ABC):  # == English
         message += (f'💎 Total Rune switched to native: {switch_rune_total_text} '
                     f'({format_percent(new.switched_rune, market.total_supply)}).'
                     f'\n\n')
+
+        killed = new.killed_rune_summary
+        if killed.block_id:
+            rune_left = bold(short_rune(killed.unkilled_unswitched_rune))
+            switched_killed = bold(short_rune(killed.killed_switched))  # killed when switched
+            total_killed = bold(short_rune(killed.total_killed))  # potentially dead + switched killed
+            message += (
+                f'☠️ Killed switched Rune: {switched_killed}, '
+                f'total killed Rune: {total_killed}, '
+                f'unswitched Rune left: {rune_left}🆕.\n'
+            )
 
         bonding_apy_change, liquidity_apy_change = self._extract_apy_deltas(new, old)
         message += f'📈 Bonding APY is {code(pretty_money(new.bonding_apy, postfix="%"))}{bonding_apy_change} and ' \

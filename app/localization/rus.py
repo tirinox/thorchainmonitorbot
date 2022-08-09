@@ -663,7 +663,7 @@ class RussianLocalization(BaseLocalization):
 
         message += '\n'
 
-        security_pb = progressbar(new.network_security_ratio, 1.0, 12)
+        security_pb = progressbar(new.network_security_ratio, 1.0, 12) if new.network_security_ratio != 0 else ''
         security_text = self.network_bond_security_text(new.network_security_ratio)
         message += f'🕸️ Сейчас сеть {bold(security_text)} {security_pb}.\n'
 
@@ -782,11 +782,27 @@ class RussianLocalization(BaseLocalization):
 
             message += '\n'
 
+        # switched ----
         switch_rune_total_text = bold(short_rune(new.switched_rune))
         message += (
             f'💎 Всего Rune перевели в нативные: {switch_rune_total_text} '
-            f'({format_percent(new.switched_rune, market.total_supply)}).'
-            f'\n\n')
+            f'({format_percent(new.switched_rune, market.total_supply)}).\n'
+        )
+
+        killed = new.killed_rune_summary
+        if killed.block_id:
+            rune_left = bold(short_rune(killed.unkilled_unswitched_rune))
+            switched_killed = bold(short_rune(killed.killed_switched))  # killed when switched
+            total_killed = bold(short_rune(killed.total_killed))  # potentially dead + switched killed
+            message += (
+                f'☠️ Убито Рун при апргейде {switched_killed}, '
+                f'всего убито Рун: {total_killed}, '
+                f'неапгрейднутых Рун осталось: {rune_left}\n'
+            )
+
+        message += '\n'
+
+        # API ---
 
         bonding_apy_change, liquidity_apy_change = self._extract_apy_deltas(new, old)
         message += (

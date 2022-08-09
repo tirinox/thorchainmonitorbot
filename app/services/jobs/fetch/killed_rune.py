@@ -30,6 +30,8 @@ class KilledRuneStore(INotified):
 
     async def on_data(self, sender, data: List[KilledRuneEntry]):
         latest_one = data[0]
+        assert isinstance(latest_one, KilledRuneEntry)
+
         if latest_one.block_id > 0:
             self.deps.killed_rune = latest_one
             self.logger.info(f'Updated last killed rune: {latest_one}')

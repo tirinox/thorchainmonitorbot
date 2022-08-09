@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from services.models.base import BaseModelMixin
+from services.models.killed_rune import KilledRuneEntry
 
 
 @dataclass
@@ -51,6 +52,8 @@ class NetworkStats(BaseModelMixin):
     synth_volume_24h: float = 0  # swap history
 
     swap_volume_24h: float = 0  # swap history
+
+    killed_rune_summary: KilledRuneEntry = KilledRuneEntry()
 
     @property
     def total_bond_usd(self):

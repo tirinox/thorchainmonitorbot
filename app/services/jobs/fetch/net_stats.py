@@ -1,6 +1,7 @@
 import asyncio
 
 from services.jobs.fetch.base import BaseFetcher
+from services.jobs.fetch.killed_rune import KilledRuneFetcher, KilledRuneStore
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.ilp_summer import ILPSummer
 from services.lib.constants import THOR_BLOCK_TIME, thor_to_float
@@ -95,6 +96,14 @@ class NetworkStatisticsFetcher(BaseFetcher):
     async def _get_ilp_24h_payouts(self, ns: NetworkStats):
         ns.loss_protection_paid_24h_rune = await ILPSummer(self.deps).ilp_sum(period=DAY)
 
+    async def _get_killed_rune(self, ns: NetworkStats):
+        if not self.deps.killed_rune.block_id:
+            krf = KilledRuneFetcher(self.deps)
+            kr_store = KilledRuneStore(self.deps)
+            krf.subscribe(kr_store)
+            await krf.fetch()
+        ns.killed_rune_summary = self.deps.killed_rune
+
     async def fetch(self) -> NetworkStats:
         ns = NetworkStats()
         ns.usd_per_rune = self.deps.price_holder.usd_per_rune
@@ -103,7 +112,8 @@ class NetworkStatisticsFetcher(BaseFetcher):
             self._get_network(ns),
             self._get_pools(ns),
             self._get_swap_stats(ns),
-            self._get_ilp_24h_payouts(ns)
+            self._get_ilp_24h_payouts(ns),
+            self._get_killed_rune(ns),
         )
         ns.date_ts = now_ts()
         return ns
