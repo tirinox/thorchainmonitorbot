@@ -1,6 +1,7 @@
 import asyncio
 import binascii
 import hashlib
+import json
 import logging
 import os
 import pickle
@@ -326,3 +327,19 @@ class Buffer:
 class WithLogger:
     def __init__(self):
         self.logger = class_logger(self)
+
+
+def json_cached_to_file_async(filename):
+    def decorator(func):
+        @wraps(func)
+        async def inner(*args, **kwargs):
+            try:
+                with open(filename, 'r') as f:
+                    return json.load(f)
+            except Exception:
+                result = await func(*args, **kwargs)
+                with open(filename, 'w') as f:
+                    json.dump(result, f)
+                return result
+        return inner
+    return decorator
