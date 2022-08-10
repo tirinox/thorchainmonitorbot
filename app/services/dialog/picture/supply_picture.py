@@ -1,13 +1,12 @@
 from typing import List, NamedTuple, Tuple
 
-from PIL import ImageDraw
-
 from localization.base import BaseLocalization
+from services.dialog.picture.resources import Resources
 from services.jobs.fetch.circulating import RuneCirculatingSupply
 from services.lib.date_utils import today_str
 from services.lib.draw_utils import img_to_bio
 from services.lib.plot_graph import PlotGraph
-from services.lib.utils import async_wrap
+from services.lib.utils import async_wrap, vertical_text
 from services.models.killed_rune import KilledRuneEntry
 
 
@@ -52,6 +51,12 @@ class Rect(NamedTuple):
         return (
             self.x + self.w * 0.5,
             self.y + self.h * 0.5
+        )
+
+    def shift_from_origin(self, px, py):
+        return (
+            self.x + px,
+            self.y + py
         )
 
 
@@ -99,26 +104,44 @@ class DrawRectPacker:
                 y += advance
 
 
+class SupplyBlock(NamedTuple):
+    label: str = ''
+    alignment: str = DrawRectPacker.H
+    weight: float = 1.0
+    children: List['SupplyBlock'] = None
+
+
 class SupplyPictureGenerator:
     WIDTH = 1024
     HEIGHT = 768
 
     PALETTE = {
-        'killed': '#B22222',
-        'circulating': '#00FF7F',
-
+        'Circulating': '#00FF7F',
+        'ERC20': '#8FBC8F',
+        'BEP2': '#FFD700',
+        'Team': '#40E0D0',
+        'Seed': '#8A2BE2',
+        'Reserves': '#00FFFF',
+        'Undeployed reserves': '#2E8B57',
+        'Killed': '#B22222',
     }
 
-    @staticmethod
-    def _draw_rect(draw: ImageDraw.ImageDraw, r: Rect, color, label=''):
-        draw.rectangle(r.coordinates, color)
+    def _draw_rect(self, r: Rect, color, label=''):
+        if color:
+            self.gr.draw.rectangle(r.coordinates, color, outline='black')
         if label:
-            draw.text(r.center, label, fill='white', align='middle')
+            self.gr.draw.text(r.shift_from_origin(5, 5), label, fill='black', font=self.gr.font_ticks)
 
     def __init__(self, loc: BaseLocalization, supply: RuneCirculatingSupply, killed_rune: KilledRuneEntry):
         self.supply = supply
         self.killed = killed_rune
         self.loc = loc
+        self.data = SupplyBlock(
+            'All Rune',
+        )
+        self.font = Resources().font_small
+        self.gr = PlotGraph(self.WIDTH, self.HEIGHT)
+        self.locked_thor_rune = supply.thor_rune.locked_amount
 
     async def get_picture(self):
         return await self._get_picture_sync()
@@ -126,19 +149,91 @@ class SupplyPictureGenerator:
     @async_wrap
     def _get_picture_sync(self):
         today = today_str()
-        gr = PlotGraph(self.WIDTH, self.HEIGHT)
 
-        outer_rect = Rect.from_frame(50, 100, 50, 50, self.WIDTH, self.HEIGHT)
+        self.gr.title = 'THORChain Rune supply'  # todo: loc
+        self._plot()
+        self._add_legend()
 
-        packer = DrawRectPacker([
-            PackItem('Left', 100, 'red'),
-            PackItem('Middle', 50, '#ffaa00'),
-            PackItem('Right', 80, '#aaff11')
-        ])
+        return img_to_bio(self.gr.finalize(), f'thorchain_supply_{today}.png')
 
-        for item, r in packer.pack(outer_rect, align=packer.V):
-            self._draw_rect(gr.draw, r, item.color, item.label)
+    def _add_legend(self):
+        x = 55
+        y = self.HEIGHT - 50
+        for title, color in self.PALETTE.items():
+            dx, _ = self.gr.font_ticks.getsize(title)
+            self.gr.plot_legend_unit(x, y, color, title)
+            x += dx + 40
 
-        gr.title = 'THORChain Rune supply'  # todo: loc
+    def _pack(self, items, outer_rect, align):
+        packer = DrawRectPacker(items)
+        results = list(packer.pack(outer_rect, align))
+        for item, r in results:
+            self._draw_rect(r, item.color, item.label)
+        return results
 
-        return img_to_bio(gr.finalize(), f'thorchain_supply_{today}.png')
+    @staticmethod
+    def _fit_smaller_rect(outer_rect: Rect, outer_weight, inner_weight) -> Rect:
+        # anchor = left-bottom
+        alpha = inner_weight / outer_weight
+        f = 1.0 - 1.0 / (alpha + 1.0)
+        inner_width = outer_rect.w * f
+        inner_height = outer_rect.h * f
+        return Rect(
+            outer_rect.x,
+            outer_rect.y + outer_rect.h - inner_height,
+            inner_width,
+            inner_height
+        )
+
+    def _plot(self):
+        outer_rect = Rect.from_frame(50, 80, 50, 80, self.WIDTH, self.HEIGHT)
+
+        bep2_full = self.supply.bep2_rune.circulating
+        erc20_full = self.supply.erc20_rune.circulating
+        old_full = bep2_full + erc20_full
+
+        ((locked_item, locked_rect), (circ_item, circ_rect), (old_item, old_rect)) = self._pack([
+            PackItem('', self.supply.thor_rune.locked_amount, ''),
+            PackItem('Circulating', self.supply.thor_rune.circulating, self.PALETTE['Circulating']),
+            PackItem('', old_full, '')
+        ], outer_rect, align=DrawRectPacker.H)
+
+        self._pack([
+            PackItem(lock_type, amount, self.PALETTE.get(lock_type, 'black'))
+            for lock_type, amount in self.supply.thor_rune.locked.items()
+        ], locked_rect, align=DrawRectPacker.V)
+
+        ((erc20_item, erc20_rect), (bep2_item, bep2_rect)) = self._pack([
+            PackItem(vertical_text('ERC20'), erc20_full, self.PALETTE['ERC20']),
+            PackItem(vertical_text('BEP2'), bep2_full, self.PALETTE['BEP2']),
+        ], old_rect, align=DrawRectPacker.V)
+
+        thor_killed = self.killed.killed_switched
+        bep2_killed = self.killed.total_killed * bep2_full / old_full
+        erc20_killed = self.killed.total_killed * erc20_full / old_full
+
+        killed_color = self.PALETTE['Killed']
+
+        self._pack([
+            PackItem('', bep2_full - bep2_killed, ''),
+            PackItem('', bep2_killed, killed_color),
+        ], bep2_rect, align=DrawRectPacker.V)
+
+        self._pack([
+            PackItem('', erc20_full - erc20_killed, ''),
+            PackItem('', erc20_killed, killed_color),
+        ], erc20_rect, align=DrawRectPacker.V)
+
+        thor_killed_rect = self._fit_smaller_rect(circ_rect, self.supply.thor_rune.circulating,
+                                                  (thor_killed + self.supply.lost_forever))
+
+        self._draw_rect(thor_killed_rect, killed_color)
+
+        # print(f'{self.supply.thor_rune.circulating = }, {self.supply.lost_forever = }, {thor_killed = }')
+
+        self.gr.draw.text(
+            (thor_killed_rect.x + 5, thor_killed_rect.y - 20),
+            f'Killed switched / lost forever',
+            'black',
+            font=self.gr.font_ticks
+        )

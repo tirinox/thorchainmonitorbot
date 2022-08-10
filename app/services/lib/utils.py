@@ -341,5 +341,11 @@ def json_cached_to_file_async(filename):
                 with open(filename, 'w') as f:
                     json.dump(result, f)
                 return result
+
         return inner
+
     return decorator
+
+
+def vertical_text(t: str):
+    return '\n'.join(t)

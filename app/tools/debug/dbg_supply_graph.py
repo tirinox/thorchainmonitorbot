@@ -38,7 +38,7 @@ async def run():
 
         rune_market_info: RuneMarketInfo = await app.deps.rune_market_fetcher.get_rune_market_info()
 
-        pic_gen = SupplyPictureGenerator(loc, rune_market_info.supply_info, app.deps.killed_rune)
+        pic_gen = SupplyPictureGenerator(loc, rune_market_info.supply_info, killed_rune)
         pic: BytesIO
         pic = await pic_gen.get_picture()
 

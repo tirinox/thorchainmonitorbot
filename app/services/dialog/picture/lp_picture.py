@@ -3,17 +3,17 @@ import operator
 from collections import defaultdict
 from typing import List
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import ImageDraw
 
 from localization.manager import BaseLocalization
-from services.dialog.picture.crypto_logo import CryptoLogoDownloader
+from services.dialog.picture.resources import Resources
 from services.lib.constants import BNB_RUNE_SYMBOL, is_rune, RUNE_SYMBOL
 from services.lib.draw_utils import CATEGORICAL_PALETTE, pos_percent, result_color, hor_line, LIGHT_TEXT_COLOR
 from services.lib.money import pretty_money, format_percent, pretty_percent, Asset, RAIDO_GLYPH, pretty_rune, \
     short_dollar
 from services.lib.plot_graph import PlotBarGraph
 from services.lib.texts import grouper
-from services.lib.utils import Singleton, async_wrap
+from services.lib.utils import async_wrap
 from services.models.lp_info import LiquidityPoolReport, LPDailyGraphPoint, ILProtectionReport
 from services.models.price import LastPriceHolder
 
@@ -31,40 +31,6 @@ def pos_percent_lp(x, y, ax=0, ay=0, w=LP_PIC_WIDTH, h=LP_PIC_HEIGHT):
 
 def hor_line_lp(draw, y, width=2, w=LP_PIC_WIDTH, h=LP_PIC_HEIGHT):
     hor_line(draw, y, width, w, h)
-
-
-class Resources(metaclass=Singleton):
-    BASE = './data'
-    LOGO_BASE = './data/asset_logo'
-    LOGO_WIDTH, LOGO_HEIGHT = 128, 128
-    HIDDEN_IMG = f'{BASE}/hidden.png'
-    BG_IMG = f'{BASE}/lp_bg.png'
-
-    FONT_BOLD = f'{BASE}/my.ttf'
-
-    def __init__(self) -> None:
-        self.hidden_img = Image.open(self.HIDDEN_IMG)
-        self.hidden_img.thumbnail((200, 36))
-
-        self.font = ImageFont.truetype(self.FONT_BOLD, 40)
-        self.font_head = ImageFont.truetype(self.FONT_BOLD, 48)
-        self.font_small = ImageFont.truetype(self.FONT_BOLD, 28)
-        self.font_semi = ImageFont.truetype(self.FONT_BOLD, 36)
-        self.font_big = ImageFont.truetype(self.FONT_BOLD, 64)
-        self.bg_image = Image.open(self.BG_IMG)
-
-        self.logo_downloader = CryptoLogoDownloader(self.LOGO_BASE)
-
-        self.font_sum_ticks = ImageFont.truetype(self.FONT_BOLD, 24)
-
-    def put_hidden_plate(self, image, position, anchor='left', ey=-3):
-        x, y = position
-        if anchor == 'right':
-            x -= self.hidden_img.width
-        elif anchor == 'center':
-            x -= self.hidden_img.width // 2
-        y -= self.hidden_img.height + ey
-        image.paste(self.hidden_img, (x, y), self.hidden_img)
 
 
 async def lp_pool_picture(price_holder: LastPriceHolder, report: LiquidityPoolReport, loc: BaseLocalization,

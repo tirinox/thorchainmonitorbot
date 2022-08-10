@@ -89,6 +89,21 @@ class PlotGraph:
             cur_x += x_step
             cur_y += y_step
 
+    def plot_legend_unit(self, legend_x, legend_y, color, title, font=None):
+        font = font or self.font_ticks
+        half_square_sz = 5
+        self.draw.rectangle(
+            (
+                legend_x - half_square_sz,
+                legend_y - half_square_sz,
+                legend_x + half_square_sz,
+                legend_y + half_square_sz
+            ),
+            fill=color
+        )
+        self.draw.text((legend_x + 20 - half_square_sz, legend_y),
+                       title, fill='#fff', font=font, anchor='lm')
+
     @staticmethod
     def time_formatter(timestamp):
         return datetime.fromtimestamp(timestamp).strftime('%H:%M')
@@ -273,20 +288,9 @@ class PlotGraphLines(PlotGraph):
 
     def add_legend(self, color, title):
         tw, th = self.font_ticks.getsize(title)
-        half_square_sz = 5
-        self.draw.rectangle(
-            (
-                self.legend_x - half_square_sz,
-                self.legend_y - half_square_sz,
-                self.legend_x + half_square_sz,
-                self.legend_y + half_square_sz
-            ),
-            fill=color
-        )
-        self.legend_x += 20
-        self.draw.text((self.legend_x - half_square_sz, self.legend_y),
-                       title, fill='#fff', font=self.font_ticks, anchor='lm')
-        self.legend_x += tw + 20
+
+        self.plot_legend_unit(self.legend_x, self.legend_y, color, title)
+        self.legend_x += tw + 40
 
     def _plot(self):
         if self.min_y == self.max_y or self.min_x == self.max_x:

@@ -2,7 +2,7 @@ import asyncio
 from dataclasses import dataclass
 from typing import NamedTuple, Dict
 
-from services.lib.constants import BNB_RUNE_SYMBOL_NO_CHAIN
+from services.lib.constants import BNB_RUNE_SYMBOL_NO_CHAIN, RUNE_IDEAL_SUPPLY
 
 BEP2_RUNE_ASSET = BNB_RUNE_SYMBOL_NO_CHAIN
 BEP2_RUNE_DECIMALS = 8
@@ -20,7 +20,6 @@ THOR_ADDRESS_UNDEPLOYED_RESERVES = 'thor1lj62pg6ryxv2htekqx04nv7wd3g98qf9gfvamy'
 THOR_ADDRESS_RESERVE_MODULE = 'thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt'
 THOR_ADDRESS_TEAM = 'thor1lrnrawjlfp6jyrzf39r740ymnuk9qgdgp29rqv'
 THOR_ADDRESS_SEED = 'thor16qnm285eez48r4u9whedq4qunydu2ucmzchz7p'
-
 
 THOR_EXCLUDE_FROM_CIRCULATING_ADDRESSES = {
     'Team': THOR_ADDRESS_TEAM,
@@ -45,6 +44,10 @@ class SupplyEntry(NamedTuple):
     def zero(cls):
         return cls(0, 0, {})
 
+    @property
+    def locked_amount(self):
+        return sum(self.locked.values())
+
 
 @dataclass
 class RuneCirculatingSupply:
@@ -67,6 +70,10 @@ class RuneCirculatingSupply:
     @classmethod
     def zero(cls):
         return cls(SupplyEntry.zero(), SupplyEntry.zero(), SupplyEntry.zero(), SupplyEntry.zero())
+
+    @property
+    def lost_forever(self):
+        return RUNE_IDEAL_SUPPLY - self.thor_rune.total - self.bep2_rune.circulating - self.erc20_rune.circulating
 
 
 class RuneCirculatingSupplyFetcher:
