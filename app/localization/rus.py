@@ -1527,6 +1527,15 @@ class RussianLocalization(BaseLocalization):
                    f"(место #{bold(market_info.rank)})"
         return message
 
+    SUPPLY_PIC_TITLE = 'THORChain: запасы Руны'
+    SUPPLY_PIC_CIRCULATING = 'Циркулирующие'
+    SUPPLY_PIC_KILLED = 'Убитые'
+    SUPPLY_PIC_KILLED_LOST = 'Убитые при апгрейде и потерянные'
+    SUPPLY_PIC_TEAM = 'Команда'
+    SUPPLY_PIC_SEED = 'Сид-инвесторы'
+    SUPPLY_PIC_RESERVES = 'Резерв'
+    SUPPLY_PIC_UNDEPLOYED = 'Неразвернутый резерв'
+
     # ---- MY WALLET ALERTS ----
 
     TX_COMMENT_TABLE = {

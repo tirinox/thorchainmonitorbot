@@ -6,7 +6,7 @@ from services.jobs.fetch.circulating import RuneCirculatingSupply
 from services.lib.date_utils import today_str
 from services.lib.draw_utils import img_to_bio
 from services.lib.plot_graph import PlotGraph
-from services.lib.utils import async_wrap, vertical_text
+from services.lib.utils import async_wrap, vertical_text, WithLogger
 from services.models.killed_rune import KilledRuneEntry
 
 
@@ -111,46 +111,63 @@ class SupplyBlock(NamedTuple):
     children: List['SupplyBlock'] = None
 
 
-class SupplyPictureGenerator:
+class SupplyPictureGenerator(WithLogger):
     WIDTH = 1024
     HEIGHT = 768
 
+    CHART_TEXT_COLOR = 'white'
+
     PALETTE = {
-        'Circulating': '#00FF7F',
-        'ERC20': '#8FBC8F',
+        'Circulating': '#349eb2',
+        'ERC20': '#ecf0f1',
         'BEP2': '#FFD700',
-        'Team': '#40E0D0',
-        'Seed': '#8A2BE2',
-        'Reserves': '#00FFFF',
-        'Undeployed reserves': '#2E8B57',
-        'Killed': '#B22222',
+        'Team': '#b9d4e9',
+        'Seed': '#201660',
+        'Reserves': '#5574a6',
+        'Undeployed reserves': '#201660',
+        'Killed': '#F22222',
     }
 
-    def _draw_rect(self, r: Rect, color, label=''):
+    def _draw_rect(self, r: Rect, color, label='', outline='black'):
         if color:
-            self.gr.draw.rectangle(r.coordinates, color, outline='black')
+            self.gr.draw.rectangle(r.coordinates, color, outline=outline)
         if label:
-            self.gr.draw.text(r.shift_from_origin(5, 5), label, fill='black', font=self.gr.font_ticks)
+            self._add_text(r.shift_from_origin(5, 5), label)
+
+    def _add_text(self, xy, text):
+        self.gr.draw.text(xy, text, fill='white', font=self.gr.font_ticks, stroke_width=1,
+                          stroke_fill='black')
 
     def __init__(self, loc: BaseLocalization, supply: RuneCirculatingSupply, killed_rune: KilledRuneEntry):
+        super().__init__()
         self.supply = supply
         self.killed = killed_rune
         self.loc = loc
-        self.data = SupplyBlock(
-            'All Rune',
-        )
         self.font = Resources().font_small
         self.gr = PlotGraph(self.WIDTH, self.HEIGHT)
         self.locked_thor_rune = supply.thor_rune.locked_amount
+        self.translate = {
+            'Circulating': self.loc.SUPPLY_PIC_CIRCULATING,
+            'Team': self.loc.SUPPLY_PIC_TEAM,
+            'Seed': self.loc.SUPPLY_PIC_SEED,
+            'Reserves': self.loc.SUPPLY_PIC_RESERVES,
+            'Undeployed reserves': self.loc.SUPPLY_PIC_UNDEPLOYED,
+            'Killed': self.loc.SUPPLY_PIC_KILLED,
+        }
 
     async def get_picture(self):
-        return await self._get_picture_sync()
+        try:
+            self.logger.info('Started buinding a picture...')
+            return await self._get_picture_sync()
+        except Exception:
+            self.logger.exception('An error occurred when generating a picture!', exc_info=True)
 
     @async_wrap
     def _get_picture_sync(self):
         today = today_str()
 
-        self.gr.title = 'THORChain Rune supply'  # todo: loc
+        self.gr.title = self.loc.SUPPLY_PIC_TITLE
+        self.gr.top = 80
         self._plot()
         self._add_legend()
 
@@ -160,6 +177,7 @@ class SupplyPictureGenerator:
         x = 55
         y = self.HEIGHT - 50
         for title, color in self.PALETTE.items():
+            title = self.translate.get(title, title)
             dx, _ = self.gr.font_ticks.getsize(title)
             self.gr.plot_legend_unit(x, y, color, title)
             x += dx + 40
@@ -175,7 +193,7 @@ class SupplyPictureGenerator:
     def _fit_smaller_rect(outer_rect: Rect, outer_weight, inner_weight) -> Rect:
         # anchor = left-bottom
         alpha = inner_weight / outer_weight
-        f = 1.0 - 1.0 / (alpha + 1.0)
+        f = (1.0 - 1.0 / (alpha + 1.0)) ** 0.5
         inner_width = outer_rect.w * f
         inner_height = outer_rect.h * f
         return Rect(
@@ -194,12 +212,12 @@ class SupplyPictureGenerator:
 
         ((locked_item, locked_rect), (circ_item, circ_rect), (old_item, old_rect)) = self._pack([
             PackItem('', self.supply.thor_rune.locked_amount, ''),
-            PackItem('Circulating', self.supply.thor_rune.circulating, self.PALETTE['Circulating']),
+            PackItem(self.loc.SUPPLY_PIC_CIRCULATING, self.supply.thor_rune.circulating, self.PALETTE['Circulating']),
             PackItem('', old_full, '')
         ], outer_rect, align=DrawRectPacker.H)
 
         self._pack([
-            PackItem(lock_type, amount, self.PALETTE.get(lock_type, 'black'))
+            PackItem(self.translate.get(lock_type, lock_type), amount, self.PALETTE.get(lock_type, 'black'))
             for lock_type, amount in self.supply.thor_rune.locked.items()
         ], locked_rect, align=DrawRectPacker.V)
 
@@ -228,12 +246,4 @@ class SupplyPictureGenerator:
                                                   (thor_killed + self.supply.lost_forever))
 
         self._draw_rect(thor_killed_rect, killed_color)
-
-        # print(f'{self.supply.thor_rune.circulating = }, {self.supply.lost_forever = }, {thor_killed = }')
-
-        self.gr.draw.text(
-            (thor_killed_rect.x + 5, thor_killed_rect.y - 20),
-            f'Killed switched / lost forever',
-            'black',
-            font=self.gr.font_ticks
-        )
+        self._add_text((thor_killed_rect.x2 + 5, thor_killed_rect.y), self.loc.SUPPLY_PIC_KILLED_LOST)

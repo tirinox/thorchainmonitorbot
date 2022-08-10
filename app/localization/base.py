@@ -1867,6 +1867,16 @@ class BaseLocalization(ABC):  # == English
                    f"{bold(short_dollar(market_info.market_cap))} (#{bold(market_info.rank)})"
         return message
 
+    SUPPLY_PIC_TITLE = 'THORChain Rune supply'
+    SUPPLY_PIC_CIRCULATING = 'Circulating'
+    SUPPLY_PIC_KILLED = 'Killed'
+    SUPPLY_PIC_KILLED_LOST = 'Killed switched / lost forever'
+    SUPPLY_PIC_TEAM = 'Team'
+    SUPPLY_PIC_SEED = 'Seed'
+    SUPPLY_PIC_RESERVES = 'Reserves'
+    SUPPLY_PIC_UNDEPLOYED = 'Undeployed reserves'
+
+
     # ---- MY WALLET ALERTS ----
 
     @staticmethod

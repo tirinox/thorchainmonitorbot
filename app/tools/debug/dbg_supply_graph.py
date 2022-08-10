@@ -31,7 +31,7 @@ async def run():
     async with app:
         await app.prepare(brief=True)
         loc_man: LocalizationManager = app.deps.loc_man
-        loc = loc_man.get_from_lang(Language.ENGLISH)
+        loc = loc_man.get_from_lang(Language.RUSSIAN)
 
         data = await get_killed_rune(app)
         killed_rune = KilledRuneEntry(**data)
