@@ -17,6 +17,7 @@ class KilledRuneFetcher(BaseFetcher, WithLogger):
         super().__init__(deps, sleep_period)
 
     async def fetch(self) -> List[KilledRuneEntry]:
+        self.logger.info(f'Getting "{self.url}"...')
         async with self.deps.session.get(self.url) as resp:
             data = await resp.json()
             self.logger.info(f'Total: {len(data)} objects')

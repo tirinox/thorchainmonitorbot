@@ -8,6 +8,7 @@ from services.dialog.picture.block_height_picture import block_speed_chart
 from services.dialog.picture.node_geo_picture import node_geo_pic
 from services.dialog.picture.price_picture import price_graph_from_db
 from services.dialog.picture.queue_picture import queue_graph
+from services.dialog.picture.supply_picture import SupplyPictureGenerator
 from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.lib.constants import THOR_BLOCKS_PER_MINUTE
@@ -323,6 +324,12 @@ class MetricsDialog(BaseDialog):
         market_info = await market_fetcher.get_rune_market_info()
 
         text = self.loc.text_metrics_supply(market_info, self.deps.killed_rune)
+
         await message.answer(text, disable_notification=True)
+
+        pic_gen = SupplyPictureGenerator(self.loc, market_info.supply_info, self.deps.killed_rune)
+        pic = await pic_gen.get_picture()
+
+        await message.answer_photo(pic, disable_notification=True)
 
         await self.safe_delete(loading_message)

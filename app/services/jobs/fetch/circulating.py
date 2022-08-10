@@ -145,7 +145,8 @@ class RuneCirculatingSupplyFetcher:
         bep2_rune_circulating = bep2_rune_supply - bep2_exclude_balance
         thor_rune_circulating = thor_rune_supply - thor_exclude_balance
 
-        total_supply = erc20_rune_supply + bep2_rune_supply + thor_rune_supply
+        # total_supply = erc20_rune_supply + bep2_rune_supply + thor_rune_supply
+        total_supply = erc20_rune_circulating + bep2_rune_circulating + thor_rune_supply  # < 500m Rune
         total_circulating = erc20_rune_supply + thor_rune_circulating + bep2_rune_supply
 
         return RuneCirculatingSupply(

@@ -118,13 +118,13 @@ class SupplyPictureGenerator(WithLogger):
     CHART_TEXT_COLOR = 'white'
 
     PALETTE = {
-        'Circulating': '#349eb2',
+        'Circulating': '#34d5d0',
         'ERC20': '#ecf0f1',
         'BEP2': '#FFD700',
         'Team': '#b9d4e9',
-        'Seed': '#201660',
-        'Reserves': '#5574a6',
-        'Undeployed reserves': '#201660',
+        'Seed': '#9ac4e4',
+        'Reserves': '#5179b8',
+        'Undeployed reserves': '#382d80',
         'Killed': '#F22222',
     }
 

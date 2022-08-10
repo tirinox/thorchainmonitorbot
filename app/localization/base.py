@@ -1854,10 +1854,12 @@ class BaseLocalization(ABC):  # == English
             switched_killed = code(short_rune(killed_rune.killed_switched))  # killed when switched
             total_killed = code(short_rune(killed_rune.total_killed))  # potentially dead + switched killed
             rune_left = code(short_rune(killed_rune.unkilled_unswitched_rune))
+            lost_rune = code(short_rune(market_info.supply_info.lost_forever))
             message += (
                 f'☠️ <b>Killed Rune when switched:</b> {switched_killed}\n'
                 f'Total (switched and unswitched) killed Rune: {total_killed}\n'
-                f'Unswitched Rune left: {rune_left}\n\n'
+                f'Unswitched Rune left: {rune_left}\n'
+                f'Forever lost Rune: {lost_rune}\n\n'
             )
 
         message += self.format_supply_entry('Native THOR.RUNE', supply.thor_rune, supply.overall.total)
