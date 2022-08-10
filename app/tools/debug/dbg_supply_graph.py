@@ -28,8 +28,7 @@ async def get_rune_supply(app: LpAppFramework):
 
 async def run():
     app = LpAppFramework()
-    async with app:
-        await app.prepare(brief=True)
+    async with app(brief=True):
         loc_man: LocalizationManager = app.deps.loc_man
         loc = loc_man.get_from_lang(Language.RUSSIAN)
 

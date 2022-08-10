@@ -141,7 +141,7 @@ native_scanner:
     - "thor1v8ppstuf6e3x0r4glqc68d5jqcs2tf38cg2q6y"
 
 
-killed_rune: # (!) new
+killed_rune:
   enabled: true
   period: 2h
   api_url: "https://node-api.flipsidecrypto.com/api/v2/queries/b5f325f6-8a42-47eb-9faf-ba8b0bdf1438/data/latest"
