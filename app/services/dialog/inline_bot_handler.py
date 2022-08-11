@@ -74,13 +74,20 @@ class InlineBotHandlerDialog(BaseDialog):
     async def _handle_stats_query(self, inline_query: InlineQuery):
         nsn = NetworkStatsNotifier(self.deps)
         old_info = await nsn.get_previous_stats()
-        new_info = await nsn.get_latest_info()
+        new_info = self.deps.net_stats
+
+        q_ident = unique_ident([], prec='minute')
+
+        if not new_info.is_ok:
+            await self._answer_error(inline_query, q_ident, self.loc.ERROR, self.loc.NOT_READY, self.loc.NOT_READY)
+            return
+
         loc: BaseLocalization = self.get_localization()
         rune_market_info: RuneMarketInfo = await self.deps.rune_market_fetcher.get_rune_market_info()
-        text = loc.notification_text_network_summary(old_info, new_info, rune_market_info)
-        ident = unique_ident([], prec='minute')
+        text = loc.notification_text_network_summary(old_info, new_info, rune_market_info, self.deps.killed_rune)
+
         await self._answer_results(inline_query, [
-            InlineQueryResultArticle(id=ident,
+            InlineQueryResultArticle(id=q_ident,
                                      title=self.loc.INLINE_STATS_TITLE,
                                      description=self.loc.INLINE_STATS_DESC,
                                      input_message_content=InputTextMessageContent(text))

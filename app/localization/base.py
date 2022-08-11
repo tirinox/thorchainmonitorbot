@@ -51,6 +51,7 @@ class BaseLocalization(ABC):  # == English
     LONG_DASH = '–'
     SUCCESS = '✅ Success!'
     ERROR = '❌ Error'
+    NOT_READY = 'Sorry but the data is not ready yet.'
     ND = 'N/D'
     NA = 'N/A'
 
@@ -798,7 +799,10 @@ class BaseLocalization(ABC):  # == English
         else:
             return "🤬 INSECURE"
 
-    def notification_text_network_summary(self, old: NetworkStats, new: NetworkStats, market: RuneMarketInfo):
+    def notification_text_network_summary(self,
+                                          old: NetworkStats, new: NetworkStats,
+                                          market: RuneMarketInfo,
+                                          killed: KilledRuneEntry):
         message = bold('🌐 THORChain stats') + '\n'
 
         message += '\n'
@@ -929,7 +933,6 @@ class BaseLocalization(ABC):  # == English
                     f'({format_percent(new.switched_rune, market.total_supply)}).'
                     f'\n\n')
 
-        killed = new.killed_rune_summary
         if killed.block_id:
             rune_left = bold(short_rune(killed.unkilled_unswitched_rune))
             switched_killed = bold(short_rune(killed.killed_switched))  # killed when switched
@@ -950,7 +953,7 @@ class BaseLocalization(ABC):  # == English
             daily_users_change = bracketify(up_down_arrow(old.users_daily, new.users_daily, int_delta=True))
             monthly_users_change = bracketify(up_down_arrow(old.users_monthly, new.users_monthly, int_delta=True))
             message += f'👥 Daily users: {code(new.users_daily)}{daily_users_change}, ' \
-                       f'monthly users: {code(new.users_monthly)}{monthly_users_change}\n'
+                       f'monthly users: {code(new.users_monthly)}{monthly_users_change} 🆕\n'
 
         message += '\n'
 

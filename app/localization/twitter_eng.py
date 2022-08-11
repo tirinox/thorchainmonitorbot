@@ -12,6 +12,7 @@ from services.lib.money import Asset, short_dollar, format_percent, pretty_money
 from services.lib.texts import x_ses, progressbar, plural, bracketify, up_down_arrow, \
     bracketify_spaced, shorten_text
 from services.models.cap_info import ThorCapInfo
+from services.models.killed_rune import KilledRuneEntry
 from services.models.last_block import EventBlockSpeed, BlockProduceState
 from services.models.mimir import MimirChange, MimirHolder, MimirVoting, MimirVoteOption
 from services.models.net_stats import NetworkStats
@@ -285,7 +286,10 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         return message.rstrip()
 
-    def notification_text_network_summary(self, old: NetworkStats, new: NetworkStats, market: RuneMarketInfo):
+    def notification_text_network_summary(self,
+                                          old: NetworkStats, new: NetworkStats,
+                                          market: RuneMarketInfo,
+                                          killed: KilledRuneEntry):
         parts = []
 
         message = '🌐 THORChain stats\n'
@@ -435,7 +439,6 @@ class TwitterEnglishLocalization(BaseLocalization):
             f'({format_percent(new.switched_rune, market.total_supply)})\n'
         )
 
-        killed = new.killed_rune_summary
         if killed.block_id:
             rune_left = short_rune(killed.unkilled_unswitched_rune)
             switched_killed = short_rune(killed.killed_switched)  # killed when switched
@@ -463,7 +466,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             daily_users_change = bracketify(up_down_arrow(old.users_daily, new.users_daily, int_delta=True))
             monthly_users_change = bracketify(up_down_arrow(old.users_monthly, new.users_monthly, int_delta=True))
             message = f'👥 Daily users: {new.users_daily}{daily_users_change}, ' \
-                      f'monthly users: {new.users_monthly}{monthly_users_change}\n'
+                      f'monthly users: {new.users_monthly}{monthly_users_change} 🆕\n'
             parts.append(message)
 
         # --------------------------------------------------------------------------------------------------------------

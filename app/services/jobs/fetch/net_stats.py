@@ -1,9 +1,9 @@
 import asyncio
 
 from services.jobs.fetch.base import BaseFetcher
-from services.jobs.fetch.killed_rune import KilledRuneFetcher, KilledRuneStore
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.ilp_summer import ILPSummer
+from services.jobs.user_counter import UserCounter
 from services.lib.constants import THOR_BLOCK_TIME, thor_to_float
 from services.lib.date_utils import parse_timespan_to_seconds, now_ts, DAY
 from services.lib.depcont import DepContainer
@@ -22,9 +22,6 @@ class NetworkStatisticsFetcher(BaseFetcher):
         j = await self.deps.midgard_connector.request_random_midgard(free_url_gen.url_stats())
 
         ns.usd_per_rune = float(j.get('runePriceUSD', self.deps.price_holder.usd_per_rune))
-
-        ns.users_daily = int(j['dailyActiveUsers'])
-        ns.users_monthly = int(j['monthlyActiveUsers'])
 
         ns.add_count = int(j['addLiquidityCount'])
         ns.added_rune = thor_to_float(j['addLiquidityVolume'])
@@ -96,13 +93,11 @@ class NetworkStatisticsFetcher(BaseFetcher):
     async def _get_ilp_24h_payouts(self, ns: NetworkStats):
         ns.loss_protection_paid_24h_rune = await ILPSummer(self.deps).ilp_sum(period=DAY)
 
-    async def _get_killed_rune(self, ns: NetworkStats):
-        if not self.deps.killed_rune.block_id:
-            krf = KilledRuneFetcher(self.deps)
-            kr_store = KilledRuneStore(self.deps)
-            krf.subscribe(kr_store)
-            await krf.fetch()
-        ns.killed_rune_summary = self.deps.killed_rune
+    async def _get_user_stats(self, ns: NetworkStats):
+        counter = UserCounter(self.deps)
+        stats = await counter.get_main_stats()
+        ns.users_daily = stats.dau_yesterday
+        ns.users_monthly = stats.mau
 
     async def fetch(self) -> NetworkStats:
         ns = NetworkStats()
@@ -113,7 +108,7 @@ class NetworkStatisticsFetcher(BaseFetcher):
             self._get_pools(ns),
             self._get_swap_stats(ns),
             self._get_ilp_24h_payouts(ns),
-            self._get_killed_rune(ns),
+            self._get_user_stats(ns),
         )
         ns.date_ts = now_ts()
         return ns

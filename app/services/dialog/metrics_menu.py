@@ -17,12 +17,12 @@ from services.lib.draw_utils import img_to_bio
 from services.lib.texts import kbd
 from services.models.node_info import NodeInfo
 from services.models.price import PriceReport, RuneMarketInfo
-from services.notify.types.transfer_notify import RuneMoveNotifier
 from services.notify.types.best_pool_notify import BestPoolsNotifier
 from services.notify.types.block_notify import BlockHeightNotifier
 from services.notify.types.cap_notify import LiquidityCapNotifier
 from services.notify.types.price_notify import PriceNotifier
 from services.notify.types.stats_notify import NetworkStatsNotifier
+from services.notify.types.transfer_notify import RuneMoveNotifier
 
 
 class MetricsStates(StatesGroup):
@@ -139,12 +139,18 @@ class MetricsDialog(BaseDialog):
     async def show_last_stats(self, message: Message):
         nsn = NetworkStatsNotifier(self.deps)
         old_info = await nsn.get_previous_stats()
-        new_info = await nsn.get_latest_info()
+        new_info = self.deps.net_stats
+
         loc: BaseLocalization = self.loc
+        if not new_info.is_ok:
+            await message.answer(f"{loc.ERROR} {loc.NOT_READY}", disable_notification=True)
+            return
+
         rune_market_info: RuneMarketInfo = await self.deps.rune_market_fetcher.get_rune_market_info()
-        await message.answer(loc.notification_text_network_summary(old_info, new_info, rune_market_info),
-                             disable_web_page_preview=True,
-                             disable_notification=True)
+        await message.answer(loc.notification_text_network_summary(
+            old_info, new_info, rune_market_info, self.deps.killed_rune),
+            disable_web_page_preview=True,
+            disable_notification=True)
 
     async def show_node_list(self, message: Message):
         loading_message = await self.show_loading(message)

@@ -1,3 +1,4 @@
+import asyncio
 import typing
 from datetime import datetime
 
@@ -38,6 +39,13 @@ class ActiveUserCounter:
             await self.r.delete(*keys)
 
 
+class UserStats(typing.NamedTuple):
+    dau: int = 0
+    dau_yesterday: int = 0
+    wau: int = 0
+    mau: int = 0
+
+
 class DailyActiveUserCounter(ActiveUserCounter):
     def key_postfix(self, now: float):
         dt = datetime.fromtimestamp(now)
@@ -64,6 +72,17 @@ class DailyActiveUserCounter(ActiveUserCounter):
 
     async def get_mau(self):
         return await self.get_au_over_days(30)
+
+    async def get_stats(self) -> UserStats:
+        dau, dau_yesterday, wau, mau = await asyncio.gather(
+            self.get_dau(),
+            self.get_dau_yesterday(),
+            self.get_wau(),
+            self.get_mau()
+        )
+        return UserStats(
+            dau, dau_yesterday, wau, mau
+        )
 
 
 class ManualUserCounter:

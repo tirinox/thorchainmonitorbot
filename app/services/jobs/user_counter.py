@@ -1,5 +1,5 @@
 from services.jobs.fetch.native_scan import BlockResult
-from services.lib.active_users import DailyActiveUserCounter
+from services.lib.active_users import DailyActiveUserCounter, UserStats
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
@@ -38,3 +38,6 @@ class UserCounter(INotified, WithLogger):
         # mau = await self._counter.get_mau()
         # print(f'{dau = }, {wau = }, {mau = }')
         # ---------------------------------------------
+
+    async def get_main_stats(self) -> UserStats:
+        return await self._counter.get_stats()

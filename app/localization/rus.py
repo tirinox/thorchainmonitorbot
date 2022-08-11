@@ -659,7 +659,10 @@ class RussianLocalization(BaseLocalization):
         else:
             return "🤬 НЕБЕЗОПАСНА"
 
-    def notification_text_network_summary(self, old: NetworkStats, new: NetworkStats, market: RuneMarketInfo):
+    def notification_text_network_summary(self,
+                                          old: NetworkStats, new: NetworkStats,
+                                          market: RuneMarketInfo,
+                                          killed: KilledRuneEntry):
         message = bold('🌐 THORChain статистика') + '\n'
 
         message += '\n'
@@ -790,7 +793,6 @@ class RussianLocalization(BaseLocalization):
             f'({format_percent(new.switched_rune, market.total_supply)}).\n'
         )
 
-        killed = new.killed_rune_summary
         if killed.block_id:
             rune_left = bold(short_rune(killed.unkilled_unswitched_rune))
             switched_killed = bold(short_rune(killed.killed_switched))  # killed when switched
@@ -821,7 +823,7 @@ class RussianLocalization(BaseLocalization):
             daily_users_change = bracketify(up_down_arrow(old.users_daily, new.users_daily, int_delta=True))
             monthly_users_change = bracketify(up_down_arrow(old.users_monthly, new.users_monthly, int_delta=True))
             message += f'👥 Пользователей за день: {code(new.users_daily)}{daily_users_change}, ' \
-                       f'пользователей за месяц: {code(new.users_monthly)}{monthly_users_change}\n'
+                       f'пользователей за месяц: {code(new.users_monthly)}{monthly_users_change} 🆕\n'
             message += '\n'
 
         active_pool_changes = bracketify(up_down_arrow(old.active_pool_count,

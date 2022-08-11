@@ -20,6 +20,7 @@ from services.lib.new_feature import NewFeatureManager, Features
 from services.lib.settings_manager import SettingsManager
 from services.models.killed_rune import KilledRuneEntry
 from services.models.mimir import MimirHolder
+from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeListHolder
 from services.models.node_watchers import AlertWatchers
 from services.models.price import LastPriceHolder
@@ -71,6 +72,7 @@ class DepContainer:
     halted_chains: Set[str] = field(default_factory=set)
     chain_info: Dict[str, ThorChainInfo] = field(default_factory=dict)
     node_holder: NodeListHolder = NodeListHolder()
+    net_stats: NetworkStats = NetworkStats()
     killed_rune: KilledRuneEntry = KilledRuneEntry()
 
     settings_manager: Optional[SettingsManager] = None
