@@ -28,6 +28,7 @@ from services.jobs.fetch.tx import TxFetcher
 from services.jobs.ilp_summer import ILPSummer
 from services.jobs.node_churn import NodeChurnDetector
 from services.jobs.transfer_detector import RuneTransferDetectorTxLogs
+from services.jobs.user_counter import UserCounter
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.lib.config import Config, SubConfig
 from services.lib.date_utils import parse_timespan_to_seconds
@@ -301,6 +302,9 @@ class App:
             scanner.subscribe(decoder)
             balance_notifier = PersonalBalanceNotifier(d)
             decoder.subscribe(balance_notifier)
+
+            user_counter = UserCounter(d)
+            scanner.subscribe(user_counter)
 
             if d.rune_move_notifier is not None:
                 decoder.subscribe(d.rune_move_notifier)

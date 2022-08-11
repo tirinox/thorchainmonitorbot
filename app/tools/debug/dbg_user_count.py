@@ -4,6 +4,8 @@ import random
 
 from aioredis import Redis
 
+from services.jobs.fetch.native_scan import NativeScannerBlock
+from services.jobs.user_counter import UserCounter
 from services.lib.active_users import DailyActiveUserCounter, ManualUserCounter
 from services.lib.date_utils import DAY, now_ts
 from tools.lib.lp_common import LpAppFramework
@@ -69,12 +71,20 @@ async def auto_play_dau(app):
         print(f'{testee.__class__.__name__}: {dau = }, {wau = }, {mau = }')
 
 
+async def real_life_active_scan_user_counter(app: LpAppFramework):
+    scanner = NativeScannerBlock(app.deps)
+    user_counter = UserCounter(app.deps)
+    scanner.subscribe(user_counter)
+    await scanner.run()
+
+
 async def main():
     lp_app = LpAppFramework(log_level=logging.INFO)
     async with lp_app(brief=True):
         # await benchmark_accuracy_of_hyper_log_log(lp_app)
         # await play_dau(lp_app)
-        await auto_play_dau(lp_app)
+        # await auto_play_dau(lp_app)
+        await real_life_active_scan_user_counter(lp_app)
 
 
 if __name__ == '__main__':

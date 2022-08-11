@@ -1,3 +1,4 @@
+import typing
 from datetime import datetime
 
 from aioredis import Redis
@@ -13,9 +14,9 @@ class ActiveUserCounter:
     def _key(self, pf):
         return f'AUC:{self.name}:{pf}'
 
-    async def hit(self, *, user: str = '', users: list = None, now=None):
+    async def hit(self, *, user: str = '', users: typing.Iterable = None, now=None):
         users = users or (user,)
-        if users:
+        if users or user:
             now = now or now_ts()
             key = self._key(self.key_postfix(now))
             await self.r.pfadd(key, *users)
@@ -42,7 +43,8 @@ class DailyActiveUserCounter(ActiveUserCounter):
         dt = datetime.fromtimestamp(now)
         return dt.strftime("%Y-%m-%d")
 
-    async def get_dau(self, ts: float):
+    async def get_dau(self, ts: float = 0.0):
+        ts = ts or now_ts()
         kpf = self.key_postfix(ts)
         return await self.get_count((kpf,))
 
