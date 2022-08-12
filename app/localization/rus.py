@@ -1539,6 +1539,11 @@ class RussianLocalization(BaseLocalization):
     SUPPLY_PIC_SEED = 'Сид-инвесторы'
     SUPPLY_PIC_RESERVES = 'Резерв'
     SUPPLY_PIC_UNDEPLOYED = 'Неразвернутый резерв'
+    SUPPLY_PIC_BONDED = 'Бонд в нодах'
+    SUPPLY_PIC_POOLED = 'В пулах'
+    SUPPLY_PIC_SECTION_CIRCULATING = 'Нативные циркулируют'
+    SUPPLY_PIC_SECTION_LOCKED = 'Нативные заблокированы'
+    SUPPLY_PIC_SECTION_OLD = 'Старые'
 
     # ---- MY WALLET ALERTS ----
 

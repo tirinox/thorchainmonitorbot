@@ -1880,7 +1880,11 @@ class BaseLocalization(ABC):  # == English
     SUPPLY_PIC_SEED = 'Seed'
     SUPPLY_PIC_RESERVES = 'Reserves'
     SUPPLY_PIC_UNDEPLOYED = 'Undeployed reserves'
-
+    SUPPLY_PIC_BONDED = 'Bonded by nodes'
+    SUPPLY_PIC_POOLED = 'Pooled'
+    SUPPLY_PIC_SECTION_CIRCULATING = 'THOR.RUNE circulating'
+    SUPPLY_PIC_SECTION_LOCKED = 'THOR.RUNE locked'
+    SUPPLY_PIC_SECTION_OLD = 'Old'
 
     # ---- MY WALLET ALERTS ----
 
