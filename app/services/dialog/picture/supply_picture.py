@@ -174,7 +174,7 @@ class SupplyPictureGenerator(WithLogger):
 
     async def get_picture(self):
         try:
-            self.logger.info('Started buinding a picture...')
+            self.logger.info('Started building a picture...')
             return await self._get_picture_sync()
         except Exception:
             self.logger.exception('An error occurred when generating a picture!', exc_info=True)
