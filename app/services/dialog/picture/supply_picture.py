@@ -283,4 +283,4 @@ class SupplyPictureGenerator(WithLogger):
         self._add_text(self.circulating_rect.shift_from_origin(0, y_up),
                        self.loc.SUPPLY_PIC_SECTION_CIRCULATING, stroke_width=0)
 
-        self._add_text(self.old_rect.shift_from_origin(0, y_up), self.loc.SUPPLY_PIC_SECTION_OLD, stroke_width=0)
+        self._add_text(self.old_rect.shift_from_origin(-34, y_up), self.loc.SUPPLY_PIC_SECTION_OLD, stroke_width=0)

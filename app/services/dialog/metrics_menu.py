@@ -333,7 +333,7 @@ class MetricsDialog(BaseDialog):
 
         await message.answer(text, disable_notification=True)
 
-        pic_gen = SupplyPictureGenerator(self.loc, market_info.supply_info, self.deps.killed_rune)
+        pic_gen = SupplyPictureGenerator(self.loc, market_info.supply_info, self.deps.killed_rune, self.deps.net_stats)
         pic = await pic_gen.get_picture()
 
         await message.answer_photo(pic, disable_notification=True)

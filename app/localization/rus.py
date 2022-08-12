@@ -1543,7 +1543,7 @@ class RussianLocalization(BaseLocalization):
     SUPPLY_PIC_POOLED = 'В пулах'
     SUPPLY_PIC_SECTION_CIRCULATING = 'Нативные циркулируют'
     SUPPLY_PIC_SECTION_LOCKED = 'Нативные заблокированы'
-    SUPPLY_PIC_SECTION_OLD = 'Старые'
+    SUPPLY_PIC_SECTION_OLD = 'Устаревшие'
 
     # ---- MY WALLET ALERTS ----
 
