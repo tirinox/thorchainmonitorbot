@@ -1,5 +1,8 @@
-import ujson
 from dataclasses import dataclass, asdict
+
+import ujson
+
+from services.lib.utils import filter_kwargs_according_function_signature
 
 
 @dataclass
@@ -13,4 +16,9 @@ class BaseModelMixin:
         if not jstr:
             return None
         d = ujson.loads(jstr)
-        return cls(**d)
+        try:
+            filtered_d = filter_kwargs_according_function_signature(d, cls)
+            # noinspection PyArgumentList
+            return cls(**filtered_d)
+        except TypeError:  # Unexpected keyword
+            return cls()

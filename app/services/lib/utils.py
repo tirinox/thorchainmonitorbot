@@ -1,6 +1,7 @@
 import asyncio
 import binascii
 import hashlib
+import inspect
 import json
 import logging
 import os
@@ -349,3 +350,9 @@ def json_cached_to_file_async(filename):
 
 def vertical_text(t: str):
     return '\n'.join(t)
+
+
+def filter_kwargs_according_function_signature(dict_to_filter, thing_with_kwargs):
+    sig = inspect.signature(thing_with_kwargs)
+    filter_keys = [param.name for param in sig.parameters.values() if param.kind == param.POSITIONAL_OR_KEYWORD]
+    return {filter_key: dict_to_filter[filter_key] for filter_key in filter_keys}
