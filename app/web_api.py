@@ -11,6 +11,7 @@ from starlette.routing import Route, Mount
 from starlette.staticfiles import StaticFiles
 
 from services.dialog.slack.slack_bot import SlackBot
+from services.jobs.user_counter import UserCounter
 from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
@@ -52,6 +53,8 @@ class AppSettingsAPI:
 
         d.settings_manager = SettingsManager(d.db, d.cfg)
         self.slack = SlackBot(d.cfg, d.db, d.settings_manager)
+
+        self._user_counter = UserCounter(d)
 
     async def _on_startup(self):
         self.deps.make_http_session()
@@ -130,6 +133,10 @@ class AppSettingsAPI:
     async def _slack_handle(self, req: Request):
         return await self.slack.slack_handler.handle(req)
 
+    async def _active_users_handle(self, req: Request):
+        stats = await self._user_counter.get_main_stats()
+        return JSONResponse(stats._asdict())
+
     def _routes(self):
         other = []
 
@@ -149,6 +156,8 @@ class AppSettingsAPI:
             Route('/api/settings/{token}', self._set_settings, methods=['POST']),
             Route('/api/settings/{token}', self._del_settings, methods=['DELETE']),
             Route('/api/node/ip/{ip}', self._get_node_ip_info, methods=['GET']),
+
+            Route('/api/stats/users', self._active_users_handle, methods=['GET']),
             *other,
         ]
 

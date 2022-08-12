@@ -40,4 +40,5 @@ class UserCounter(INotified, WithLogger):
         # ---------------------------------------------
 
     async def get_main_stats(self) -> UserStats:
+        self._counter.r = self.deps.db.redis
         return await self._counter.get_stats()
