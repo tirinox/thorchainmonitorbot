@@ -157,16 +157,16 @@ class SupplyPictureGenerator(WithLogger):
         }
 
         self.PALETTE = {
-            'Circulating': '#ecf0f1',
-            'ERC20': '#bdc3c7',
-            'BEP2': '#f1c40f',
             'Team': '#2ecc71',
             'Seed': '#16a085',
             'Reserves': '#2980b9',
             'Undeployed reserves': '#2c3e50',
+            'Bonded': '#e67e22',
+            'Pooled': '#f39c12',
+            'Circulating': '#f8e287',
+            'ERC20': '#bdc3c7',
+            'BEP2': '#f1c40f',
             'Killed': '#c0392b',
-            'Bonded': '#f39c12',
-            'Pooled': '#27ae60',
         }
         self.locked_rect = Rect()
         self.circulating_rect = Rect()
@@ -198,9 +198,9 @@ class SupplyPictureGenerator(WithLogger):
             dx, _ = self.gr.font_ticks.getsize(title)
             self.gr.plot_legend_unit(x, y, color, title)
             x += dx + 40
-            if x >= self.WIDTH - 50:
+            if x >= self.WIDTH - 100:
                 x = 55
-                y += 16
+                y += 20
 
     def _pack(self, items, outer_rect, align):
         packer = DrawRectPacker(items)

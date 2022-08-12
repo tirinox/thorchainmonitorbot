@@ -20,6 +20,7 @@ THOR_ADDRESS_UNDEPLOYED_RESERVES = 'thor1lj62pg6ryxv2htekqx04nv7wd3g98qf9gfvamy'
 THOR_ADDRESS_RESERVE_MODULE = 'thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt'
 THOR_ADDRESS_TEAM = 'thor1lrnrawjlfp6jyrzf39r740ymnuk9qgdgp29rqv'
 THOR_ADDRESS_SEED = 'thor16qnm285eez48r4u9whedq4qunydu2ucmzchz7p'
+THOR_ADDRESS_SEED_2 = 'thor16vwdn4h8p5c9cplp62hw7xg4r5rszh297h96h2'  # 5m from Seed went here, 1m to bonds
 
 THOR_EXCLUDE_FROM_CIRCULATING_ADDRESSES = {
     'Team': THOR_ADDRESS_TEAM,

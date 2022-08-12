@@ -39,7 +39,7 @@ async def run():
     app = LpAppFramework()
     async with app(brief=True):
         loc_man: LocalizationManager = app.deps.loc_man
-        loc = loc_man.get_from_lang(Language.RUSSIAN)
+        loc = loc_man.get_from_lang(Language.ENGLISH)
 
         data = await get_killed_rune(app)
         killed_rune = KilledRuneEntry(**data)
