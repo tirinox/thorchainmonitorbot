@@ -60,7 +60,8 @@ class NetworkStatsNotifier(INotified):
     async def _notify(self, old: NetworkStats, new: NetworkStats, rune_market_info: RuneMarketInfo):
         await self.deps.broadcaster.notify_preconfigured_channels(
             BaseLocalization.notification_text_network_summary,
-            old, new, rune_market_info
+            old, new, rune_market_info,
+            self.deps.killed_rune
         )
 
     async def _dbg_get_other_info(self):
