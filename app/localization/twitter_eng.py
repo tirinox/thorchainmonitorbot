@@ -743,7 +743,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         locked_amount = sum(amount for _, amount in s.locked.items()) if s.locked else 0.0
 
         return (
-            f'📍 {(name)}:\n'
+            f'📍 {name}:\n'
             f'Circulating: {short_rune(s.circulating)} ({format_percent(s.circulating, total_of_total)})\n'
             f'Locked: {short_rune(locked_amount)} ({format_percent(locked_amount, total_of_total)})\n'
             f'Total: {short_rune(s.total)} ({format_percent(s.total, total_of_total)})\n\n'
@@ -765,7 +765,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             rune_left = short_rune(killed_rune.unkilled_unswitched_rune)
             lost_rune = short_rune(market_info.supply_info.lost_forever)
             parts.append(
-                f'Killed-switched Rune: {switched_killed}\n'
+                f'☠️ Killed-switched Rune: {switched_killed}\n'
                 f'Total killed Rune: {total_killed}\n'
                 f'Unswitched Rune left: {rune_left}\n'
                 f'Forever lost Rune: {lost_rune}\n'

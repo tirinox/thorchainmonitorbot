@@ -2,19 +2,29 @@ import asyncio
 import logging
 import time
 
+from localization.languages import Language
 from localization.manager import BaseLocalization
 from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
+from services.jobs.fetch.killed_rune import KilledRuneFetcher, KilledRuneStore
 from services.lib.texts import sep
 from tools.lib.lp_common import LpAppFramework
 
 
 async def my_test_circulating_telegram(lp_app: LpAppFramework):
+    krf = KilledRuneFetcher(lp_app.deps)
+    kr_store = KilledRuneStore(lp_app.deps)
+    krf.subscribe(kr_store)
+    data = await krf.fetch()
+    await krf.pass_data_to_listeners(data)
+
+    print(lp_app.deps.killed_rune)
+
     rmf = lp_app.deps.rune_market_fetcher
     rmf: RuneMarketInfoFetcher
     # todo: debug
     info = await rmf.get_rune_market_info()
-    loc: BaseLocalization = lp_app.deps.loc_man.default
-    # loc: BaseLocalization = lp_app.deps.loc_man.get_from_lang('rus')
+    # loc: BaseLocalization = lp_app.deps.loc_man.default
+    loc: BaseLocalization = lp_app.deps.loc_man.get_from_lang(Language.ENGLISH_TWITTER)
     await lp_app.send_test_tg_message(loc.text_metrics_supply(info, lp_app.deps.killed_rune))
 
 
@@ -47,7 +57,7 @@ async def my_test_circulating(lp_app: LpAppFramework):
 
 async def main():
     lp_app = LpAppFramework(log_level=logging.INFO)
-    async with lp_app(brief=True):
+    async with lp_app():
         # await my_test_circulating(lp_app)
         await my_test_circulating_telegram(lp_app)
 
