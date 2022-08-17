@@ -44,6 +44,7 @@ class BaseLocalization(ABC):  # == English
     def __init__(self, cfg: Config):
         self.cfg = cfg
         self.name_service: Optional[NameService] = None
+        self.name = self.__class__.__name__
 
     # ----- WELCOME ------
 
