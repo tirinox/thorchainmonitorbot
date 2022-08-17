@@ -11,10 +11,11 @@ from tools.lib.lp_common import LpAppFramework
 async def my_test_circulating_telegram(lp_app: LpAppFramework):
     rmf = lp_app.deps.rune_market_fetcher
     rmf: RuneMarketInfoFetcher
+    # todo: debug
     info = await rmf.get_rune_market_info()
     loc: BaseLocalization = lp_app.deps.loc_man.default
     # loc: BaseLocalization = lp_app.deps.loc_man.get_from_lang('rus')
-    await lp_app.send_test_tg_message(loc.text_metrics_supply(info))
+    await lp_app.send_test_tg_message(loc.text_metrics_supply(info, lp_app.deps.killed_rune))
 
 
 async def my_test_circulating(lp_app: LpAppFramework):

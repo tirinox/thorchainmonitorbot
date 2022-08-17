@@ -1,8 +1,10 @@
 import asyncio
+import logging
 from dataclasses import dataclass
 from typing import NamedTuple, Dict
 
 from services.lib.constants import BNB_RUNE_SYMBOL_NO_CHAIN, RUNE_IDEAL_SUPPLY
+from services.lib.utils import WithLogger
 
 BEP2_RUNE_ASSET = BNB_RUNE_SYMBOL_NO_CHAIN
 BEP2_RUNE_DECIMALS = 8
@@ -77,13 +79,10 @@ class RuneCirculatingSupply:
         return RUNE_IDEAL_SUPPLY - self.thor_rune.total - self.bep2_rune.circulating - self.erc20_rune.circulating
 
 
-class RuneCirculatingSupplyFetcher:
-    def __init__(self,
-                 session,
-                 ether_scan_key=None,
-                 bep2_exclude=None, thor_exclude=None,
-                 rune_contract=RUNE_ERC20_CONTRACT_ADDRESS,
-                 thor_node=THOR_NODE_DEFAULT):
+class RuneCirculatingSupplyFetcher(WithLogger):
+    def __init__(self, session, ether_scan_key=None, bep2_exclude=None, thor_exclude=None,
+                 rune_contract=RUNE_ERC20_CONTRACT_ADDRESS, thor_node=THOR_NODE_DEFAULT):
+        super().__init__()
         self.session = session
         self.bep2_exclude = bep2_exclude or BEP2_EXCLUDE_FROM_CIRCULATING_ADDRESSES
         self.thor_exclude = thor_exclude or THOR_EXCLUDE_FROM_CIRCULATING_ADDRESSES
@@ -170,7 +169,9 @@ class RuneCirculatingSupplyFetcher:
         return f'https://api.etherscan.io/api?module=stats&action=tokensupply&contractaddress={contract}&apikey={api_key}'
 
     async def get_bnb_rune_total_supply(self):
-        async with self.session.get(self.url_bep2_token_info()) as resp:
+        url = self.url_bep2_token_info()
+        self.logger.info(f'Get: "{url}"')
+        async with self.session.get(url) as resp:
             j = await resp.json()
             rune_entry = next(item for item in j if item['symbol'] == BEP2_RUNE_ASSET)
             return int(float(rune_entry['total_supply']))
@@ -185,7 +186,9 @@ class RuneCirculatingSupplyFetcher:
             return 9206991  # if no key use last known value
 
     async def get_bep2_address_balance(self, address):
-        async with self.session.get(self.url_bep2_get_balance(address)) as resp:
+        url = self.url_bep2_get_balance(address)
+        self.logger.info(f'Get: "{url}"')
+        async with self.session.get(url) as resp:
             j = await resp.json()
             for balance in j['balances']:
                 if balance['symbol'] == BEP2_RUNE_ASSET:
@@ -202,6 +205,7 @@ class RuneCirculatingSupplyFetcher:
 
     async def get_thor_rune_total_supply(self):
         url_supply = f'{self.thor_node}/cosmos/bank/v1beta1/supply'
+        self.logger.info(f'Get: "{url_supply}"')
         async with self.session.get(url_supply) as resp:
             j = await resp.json()
             items = j['supply']
@@ -209,12 +213,14 @@ class RuneCirculatingSupplyFetcher:
 
     async def get_thor_address_balance(self, address):
         url_balance = f'{self.thor_node}/cosmos/bank/v1beta1/balances/{address}'
+        self.logger.info(f'Get: "{url_balance}"')
         async with self.session.get(url_balance) as resp:
             j = await resp.json()
             return self.get_pure_rune_from_thor_array(j['balances'])
 
     async def get_asgard_coins(self):
         url_asgard = f'{self.thor_node}/thorchain/vaults/asgard'
+        self.logger.info(f'Get: "{url_asgard}"')
         async with self.session.get(url_asgard) as resp:
             j = await resp.json()
             compiled = {}

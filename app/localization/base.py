@@ -1853,6 +1853,8 @@ class BaseLocalization(ABC):  # == English
 
         message += self.format_supply_entry('BNB.Rune (BEP2)', supply.bep2_rune, supply.overall.total)
         message += self.format_supply_entry('ETH.Rune (ERC20)', supply.erc20_rune, supply.overall.total)
+        message += self.format_supply_entry('Native THOR.Rune', supply.thor_rune, supply.overall.total)
+        message += self.format_supply_entry('Total Rune', supply.overall, supply.overall.total)
 
         if killed_rune.block_id:
             switched_killed = code(short_rune(killed_rune.killed_switched))  # killed when switched
@@ -1865,9 +1867,6 @@ class BaseLocalization(ABC):  # == English
                 f'Unswitched Rune left: {rune_left}\n'
                 f'Forever lost Rune: {lost_rune}\n\n'
             )
-
-        message += self.format_supply_entry('Native THOR.RUNE', supply.thor_rune, supply.overall.total)
-        message += self.format_supply_entry('Overall', supply.overall, supply.overall.total)
 
         message += f"Coin market cap of {bold(self.R)} is " \
                    f"{bold(short_dollar(market_info.market_cap))} (#{bold(market_info.rank)})"

@@ -58,6 +58,7 @@ from services.notify.types.price_div_notify import PriceDivergenceNotifier
 from services.notify.types.price_notify import PriceNotifier
 from services.notify.types.queue_notify import QueueNotifier
 from services.notify.types.stats_notify import NetworkStatsNotifier
+from services.notify.types.supply_notify import SupplyNotifier
 from services.notify.types.transfer_notify import RuneMoveNotifier
 from services.notify.types.tx_notify import GenericTxNotifier, SwitchTxNotifier
 from services.notify.types.version_notify import VersionNotifier
@@ -308,6 +309,10 @@ class App:
 
             if d.rune_move_notifier is not None:
                 decoder.subscribe(d.rune_move_notifier)
+
+        if d.cfg.get('supply.enabled', True):
+            supply_notifier = SupplyNotifier(d)
+            d.price_pool_fetcher.subscribe(supply_notifier)
 
         # --- BOTS
 
