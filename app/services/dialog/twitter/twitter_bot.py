@@ -40,7 +40,7 @@ class TwitterBot:
 
     def log_tweet(self, text, image):
         img_tag = "with image" if bool(image) else ""
-        self.logger.info(f'🐦🐦🐦 Tweets: "\n{text}\n" [{twitter_text_length(text)} symbols]. 🐦🐦🐦 {img_tag}')
+        self.logger.info(f'🐦🐦🐦 Tweets [{twitter_text_length(text)} symbols]: "\n{text}\n". 🐦🐦🐦 {img_tag}')
 
     @limits(calls=MAX_TWEETS_PER_DAY, period=DAY)
     def post_sync(self, text: str, image=None):

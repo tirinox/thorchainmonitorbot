@@ -10,13 +10,15 @@ from services.lib.texts import sep
 from tools.lib.lp_common import LpAppFramework
 
 
-async def my_test_circulating_telegram(lp_app: LpAppFramework):
+async def manually_load_killed_rune(lp_app: LpAppFramework):
     krf = KilledRuneFetcher(lp_app.deps)
     kr_store = KilledRuneStore(lp_app.deps)
     krf.subscribe(kr_store)
     data = await krf.fetch()
     await krf.pass_data_to_listeners(data)
 
+
+async def my_test_circulating_telegram(lp_app: LpAppFramework):
     print(lp_app.deps.killed_rune)
 
     rmf = lp_app.deps.rune_market_fetcher

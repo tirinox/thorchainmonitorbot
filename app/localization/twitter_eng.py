@@ -757,7 +757,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         parts.append(self.format_supply_entry('BNB.Rune', supply.bep2_rune, supply.overall.total))
         parts.append(self.format_supply_entry('ETH.Rune', supply.erc20_rune, supply.overall.total))
         parts.append(self.format_supply_entry('Native RUNE', supply.thor_rune, supply.overall.total))
-        parts.append(self.format_supply_entry('Overall', supply.overall, supply.overall.total))
+        parts.append(self.format_supply_entry('Total RUNE', supply.overall, supply.overall.total))
 
         if killed_rune.block_id:
             switched_killed = short_rune(killed_rune.killed_switched)  # killed when switched
