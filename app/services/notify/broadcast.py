@@ -3,6 +3,7 @@ import random
 import time
 from typing import List
 
+from localization.base import BaseLocalization
 from localization.manager import LocalizationManager
 from services.lib.date_utils import parse_timespan_to_seconds, now_ts, DAY
 from services.lib.depcont import DepContainer
@@ -61,19 +62,32 @@ class Broadcaster:
             await self.broadcast(all_channels, f, *args, **kwargs)
             return
 
+        # not to generate same content for different channels with the same languages. test it!
+        results_cached_by_lang = {}
+
         async def message_gen(chat_id):
-            locale = user_lang_map[chat_id]
+            locale: BaseLocalization = user_lang_map[chat_id]
+
+            prev_content = results_cached_by_lang.get(locale.name)
+            if prev_content:
+                return prev_content
+
             if hasattr(locale, f.__name__):
+                # if we pass function name it like "BaseLocalization.notification_text_foo"
                 loc_f = getattr(locale, f.__name__)
                 call_args = args
             else:
+                # if it is a 3rd-party function
                 loc_f = f
                 call_args = [locale, *args]
 
             if asyncio.iscoroutinefunction(loc_f):
-                return await loc_f(*call_args, **kwargs)
+                result = await loc_f(*call_args, **kwargs)
             else:
-                return loc_f(*call_args, **kwargs)
+                result = loc_f(*call_args, **kwargs)
+
+            results_cached_by_lang[locale.name] = result
+            return result
 
         await self.broadcast(all_channels, message_gen)
 

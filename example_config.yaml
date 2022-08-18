@@ -480,3 +480,8 @@ blockchain:
   block_time: # block_time overriding... (optional)
     BTC: 10m
     ETH: 14s
+
+
+supply:  # (!) new
+  enabled: true
+  period: 7d

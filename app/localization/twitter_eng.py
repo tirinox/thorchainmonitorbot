@@ -5,6 +5,7 @@ from semver import VersionInfo
 
 from localization.base import BaseLocalization
 from services.dialog.twitter.text_length import twitter_intelligent_text_splitter
+from services.jobs.fetch.circulating import SupplyEntry
 from services.lib.constants import thor_to_float, rune_origin, Chains
 from services.lib.date_utils import now_ts, seconds_human
 from services.lib.money import Asset, short_dollar, format_percent, pretty_money, pretty_dollar, RAIDO_GLYPH, \
@@ -735,3 +736,39 @@ class TwitterEnglishLocalization(BaseLocalization):
         return f'💸 Large transfer {comment}: ' \
                f'{(short_money(t.amount, postfix=" " + asset))}{usd_amt} ' \
                f'from {from_my} ➡️ {to_my}{memo}'
+
+    # ----- SUPPLY ------
+
+    def format_supply_entry(self, name, s: SupplyEntry, total_of_total: int):
+        locked_amount = sum(amount for _, amount in s.locked.items()) if s.locked else 0.0
+
+        return (
+            f'📍 {name}:\n'
+            f'Circulating: {short_rune(s.circulating)} ({format_percent(s.circulating, total_of_total)})\n'
+            f'Locked: {short_rune(locked_amount)} ({format_percent(locked_amount, total_of_total)})\n'
+            f'Total: {short_rune(s.total)} ({format_percent(s.total, total_of_total)})\n\n'
+        )
+
+    def text_metrics_supply(self, market_info: RuneMarketInfo, killed_rune: KilledRuneEntry):
+        # todo!
+
+        parts = []
+        supply = market_info.supply_info
+        parts.append(self.format_supply_entry('BNB.Rune', supply.bep2_rune, supply.overall.total))
+        parts.append(self.format_supply_entry('ETH.Rune', supply.erc20_rune, supply.overall.total))
+        parts.append(self.format_supply_entry('Native RUNE', supply.thor_rune, supply.overall.total))
+        parts.append(self.format_supply_entry('Total RUNE', supply.overall, supply.overall.total))
+
+        if killed_rune.block_id:
+            switched_killed = short_rune(killed_rune.killed_switched)  # killed when switched
+            total_killed = short_rune(killed_rune.total_killed)  # potentially dead + switched killed
+            rune_left = short_rune(killed_rune.unkilled_unswitched_rune)
+            lost_rune = short_rune(market_info.supply_info.lost_forever)
+            parts.append(
+                f'☠️ Killed-switched Rune: {switched_killed}\n'
+                f'Total killed Rune: {total_killed}\n'
+                f'Unswitched Rune left: {rune_left}\n'
+                f'Forever lost Rune: {lost_rune}\n'
+            )
+
+        return MESSAGE_SEPARATOR.join(twitter_intelligent_text_splitter(parts))
