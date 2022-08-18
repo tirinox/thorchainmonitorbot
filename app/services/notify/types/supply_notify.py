@@ -17,6 +17,11 @@ class SupplyNotifier(INotified, WithLogger):
         self._cd = Cooldown(self.deps.db, 'SupplyNotifyPublic', cd_period)
 
     async def on_data(self, sender, market_info: RuneMarketInfo):
+        if await self._cd.can_do():
+            await self._cd.do()
+            await self._notify(market_info)
+
+    async def _notify(self, market_info: RuneMarketInfo):
         async def supply_pic_gen(loc: BaseLocalization):
             gen = SupplyPictureGenerator(loc, market_info.supply_info, self.deps.killed_rune, self.deps.net_stats)
             pic = await gen.get_picture()

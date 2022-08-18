@@ -744,8 +744,8 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         return (
             f'📍 {name}:\n'
-            f'Circulating: {short_rune(s.circulating)} ({format_percent(s.circulating, total_of_total)})\n'
-            f'Locked: {short_rune(locked_amount)} ({format_percent(locked_amount, total_of_total)})\n'
+            f'Circ.: {short_rune(s.circulating)} ({format_percent(s.circulating, total_of_total)})\n'
+            f'Lock: {short_rune(locked_amount)} ({format_percent(locked_amount, total_of_total)})\n'
             f'Total: {short_rune(s.total)} ({format_percent(s.total, total_of_total)})\n\n'
         )
 
@@ -754,9 +754,9 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         parts = []
         supply = market_info.supply_info
-        parts.append(self.format_supply_entry('BNB.Rune', supply.bep2_rune, supply.overall.total))
-        parts.append(self.format_supply_entry('ETH.Rune', supply.erc20_rune, supply.overall.total))
-        parts.append(self.format_supply_entry('Native RUNE', supply.thor_rune, supply.overall.total))
+        parts.append(self.format_supply_entry('BNB RUNE', supply.bep2_rune, supply.overall.total))
+        parts.append(self.format_supply_entry('ETH RUNE', supply.erc20_rune, supply.overall.total))
+        parts.append(self.format_supply_entry('Native Thor RUNE', supply.thor_rune, supply.overall.total))
         parts.append(self.format_supply_entry('Total RUNE', supply.overall, supply.overall.total))
 
         if killed_rune.block_id:
@@ -766,9 +766,9 @@ class TwitterEnglishLocalization(BaseLocalization):
             lost_rune = short_rune(market_info.supply_info.lost_forever)
             parts.append(
                 f'☠️ Killed-switched Rune: {switched_killed}\n'
-                f'Total killed Rune: {total_killed}\n'
-                f'Unswitched Rune left: {rune_left}\n'
-                f'Forever lost Rune: {lost_rune}\n'
+                f'Total killed: {total_killed}\n'
+                f'Unswitched left: {rune_left}\n'
+                f'Forever lost: {lost_rune}\n'
             )
 
         return MESSAGE_SEPARATOR.join(twitter_intelligent_text_splitter(parts))
