@@ -1,3 +1,5 @@
+from services.lib.utils import invert_dict
+
 MIMIR_KEY_KILL_SWITCH_START = 'KILLSWITCHSTART'
 MIMIR_KEY_KILL_SWITCH_DURATION = 'KillSwitchDuration'.upper()
 
@@ -78,6 +80,16 @@ BOOL_CONSTANTS = {
     'STOPSOLVENCYCHECKDOGE',
     'STOPSOLVENCYCHECKTERRA',
     'STRICTBONDLIQUIDITYRATIO',
+
+    'ALTGAIACHAIN',
+    'ENABLEAVAXCHAIN',
+    'ENABLEUPDATEMEMOTERRA',
+    'HALTGAIACHAIN',
+    'RAGNAROK-TERRA',
+    'RAGNAROK-TERRA-LUNA',
+    'RAGNAROK-TERRA-USD',
+    'RAGNAROK-TERRA-UST',
+    'REMOVESNXPOOL',
 }
 
 TRANSLATE_MIMIRS = {
@@ -176,20 +188,40 @@ EXCLUDED_VOTE_KEYS = [
     'SUPPORTTHORCHAINDOTNETWORK',
 ]
 
+NEXT_CHAIN_VOTING_MAP = invert_dict({
+    'DASH': 9,
+    'HAVEN': 10,
+    'ZCASH': 11,
+    'MONERO': 12,
+    'DECRED': 13,
+    'OSMOSIS': 14,
+    'MOONBEAM': 15,
+    'BNB Chain (BSC)': 16,
+    'POLYGON': 17,
+    'CARDANO': 18,
+    'JUNO': 19,
+})
+
+NEXT_CHAIN_KEY = 'NextChain'.upper()
+
 
 class MimirUnits:
     UNITS_RUNES = 'runes'
     UNITS_BLOCKS = 'blocks'
     UNITS_BOOL = 'bool'
+    UNITS_NEXT_CHAIN = 'next_chain'
 
     @staticmethod
     def get_mimir_units(name):
+        name = name.upper()
         if name in RUNE_CONSTANTS:
             return MimirUnits.UNITS_RUNES
         elif name in BLOCK_CONSTANTS:
             return MimirUnits.UNITS_BLOCKS
         elif name in BOOL_CONSTANTS:
             return MimirUnits.UNITS_BOOL
+        elif name == NEXT_CHAIN_KEY:
+            return MimirUnits.UNITS_NEXT_CHAIN
         else:
             return ''
 
@@ -212,7 +244,7 @@ DICT_WORDS = (
     'up,synth,in,rune,limit,gap,solvency,of,gen,year,start,asym,swtich,start,'
     'on,halt,unbond,iteration,sale,reward,ratio,strict,maximum,churning,btc,bch,ltc,doge,terra,avax,atom,gaia,bnb,eth,'
     'thor,utxos,check,trading,thorname,thornames,asset,signing,set,haven,spend,funding,cloud,new,number,desired,'
-    'update,memo'
+    'update,memo,next'
 ).strip(' ,')
 
 WORD_TRANSFORM = {
@@ -227,6 +259,7 @@ WORD_TRANSFORM = {
     'Ltc': 'LTC',
     'Bnb': 'BNB',
     'Eth': 'ETH',
+    'Snx': 'SNX',
     'Of': 'of',
     'On': 'on',
     'In': 'in',

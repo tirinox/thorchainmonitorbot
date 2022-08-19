@@ -177,13 +177,17 @@ def parse_list_from_string(text: str, upper=False, lower=False, strip=True):
     return [x for x in items if x]
 
 
-def turn_dic_inside_out(d: dict, factory=set, op=set.add):
+def invert_dict_of_iterables(d: dict, factory=set, op=set.add):
     result = defaultdict(factory)
     for k, v in d.items():
         for item in v:
             # noinspection PyArgumentList
             op(result[item], k)
     return dict(result)
+
+
+def invert_dict(d: dict):
+    return dict(zip(d.values(), d.keys()))
 
 
 def nested_set(dic, keys, value):

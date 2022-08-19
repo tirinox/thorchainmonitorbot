@@ -1,11 +1,11 @@
-from services.lib.utils import turn_dic_inside_out
+from services.lib.utils import invert_dict_of_iterables
 
 
 def test1():
-    assert turn_dic_inside_out({}) == {}
-    assert turn_dic_inside_out({5: {6}}) == {6: {5}}
-    assert turn_dic_inside_out({1: {10}, 2: {20}}) == {10: {1}, 20: {2}}
-    assert turn_dic_inside_out({
+    assert invert_dict_of_iterables({}) == {}
+    assert invert_dict_of_iterables({5: {6}}) == {6: {5}}
+    assert invert_dict_of_iterables({1: {10}, 2: {20}}) == {10: {1}, 20: {2}}
+    assert invert_dict_of_iterables({
         'A': {'1'},
         'B': set(),
         'C': {'1'},

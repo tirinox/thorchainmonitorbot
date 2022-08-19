@@ -22,7 +22,7 @@ from services.models.cap_info import ThorCapInfo
 from services.models.killed_rune import KilledRuneEntry
 from services.models.last_block import BlockProduceState, EventBlockSpeed
 from services.models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting, MimirVoteOption
-from services.models.mimir_naming import MimirUnits
+from services.models.mimir_naming import MimirUnits, NEXT_CHAIN_VOTING_MAP
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEventType, NodeEvent, \
     EventBlockHeight, EventDataSlash
@@ -1196,22 +1196,32 @@ class BaseLocalization(ABC):  # == English
     MIMIR_CHEAT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1mc1mBBExGxtI5a85niijHhle5EtXoTR_S5Ihx808_tM/edit' \
                             '#gid=980980229 '
 
-    def format_mimir_value(self, v: str, m: MimirEntry):
+    MIMIR_UNKNOWN_CHAIN = 'Unknown chain'
+
+    def format_mimir_value(self, name: str, v: str, units: str):
         if v is None:
             return self.MIMIR_UNDEFINED
 
-        if m is None:
+        if units is None:
             return v
 
-        if m.units == MimirUnits.UNITS_RUNES:
+        if units == MimirUnits.UNITS_RUNES:
             return short_money(thor_to_float(v), localization=self.SHORT_MONEY_LOC, postfix=f' {self.R}')
-        elif m.units == MimirUnits.UNITS_BLOCKS:
+        elif units == MimirUnits.UNITS_BLOCKS:
             blocks = int(v)
             seconds = blocks * THOR_BLOCK_TIME
             time_str = self.seconds_human(seconds) if seconds != 0 else self.MIMIR_DISABLED
             return f'{time_str}, {blocks} {self.MIMIR_BLOCKS}'
-        elif m.units == MimirUnits.UNITS_BOOL:
-            return self.MIMIR_YES if bool(int(v)) else self.MIMIR_NO
+        elif units == MimirUnits.UNITS_BOOL:
+            s = self.MIMIR_YES if bool(int(v)) else self.MIMIR_NO
+            return f'{s} ({v})'
+        elif units == MimirUnits.UNITS_NEXT_CHAIN:
+            try:
+                v = int(v)
+                chain_name = NEXT_CHAIN_VOTING_MAP.get(v, self.MIMIR_UNKNOWN_CHAIN)
+                return f'"{chain_name}" ({v})'
+            except ValueError:
+                return v
         else:
             return v
 
@@ -1226,7 +1236,7 @@ class BaseLocalization(ABC):  # == English
             mark = ''
 
         if m.hard_coded_value is not None:
-            std_value_fmt = self.format_mimir_value(m.hard_coded_value, m)
+            std_value_fmt = self.format_mimir_value(m.name, m.hard_coded_value, m.units)
             std_value = f'({self.MIMIR_STANDARD_VALUE} {pre(std_value_fmt)})'
         else:
             std_value = ''
@@ -1237,7 +1247,7 @@ class BaseLocalization(ABC):  # == English
         else:
             last_change = ''
 
-        real_value_fmt = self.format_mimir_value(m.real_value, m)
+        real_value_fmt = self.format_mimir_value(m.name, m.real_value, m.units)
         return f'{i}. {mark}{bold(m.pretty_name)} = {code(real_value_fmt)} {std_value} {last_change}'
 
     def text_mimir_intro(self):
@@ -1283,13 +1293,15 @@ class BaseLocalization(ABC):  # == English
         for voting in holder.voting_manager.all_voting.values():
             voting: MimirVoting
             name = holder.pretty_name(voting.key)
-            msg = f"{code(name)}\n"
+            msg = f"{bold(name)}\n"
 
             for option in voting.top_options:
                 pb = self.make_voting_progress_bar(option, voting)
                 percent = format_percent(option.number_votes, voting.active_nodes)
                 extra = self._text_votes_to_pass(option)
-                msg += f" to set it ➔ {code(option.value)}: {bold(percent)}" \
+                units = MimirUnits.get_mimir_units(voting.key)
+                pretty_value = self.format_mimir_value(voting.key, str(option.value), units)
+                msg += f" to set it ➔ {code(pretty_value)}: {bold(percent)}" \
                        f" ({option.number_votes}/{voting.active_nodes}) {pb} {extra}\n"
 
             messages.append(msg)
@@ -1414,8 +1426,8 @@ class BaseLocalization(ABC):  # == English
         text = '🔔 <b>Mimir update!</b>\n\n'
 
         for change in changes:
-            old_value_fmt = code(self.format_mimir_value(change.old_value, change.entry))
-            new_value_fmt = code(self.format_mimir_value(change.new_value, change.entry))
+            old_value_fmt = code(self.format_mimir_value(change.entry.name, change.old_value, change.entry.units))
+            new_value_fmt = code(self.format_mimir_value(change.entry.name, change.new_value, change.entry.units))
             name = code(change.entry.pretty_name if change.entry else change.name)
 
             e = change.entry

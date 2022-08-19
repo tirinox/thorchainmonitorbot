@@ -19,6 +19,7 @@ from services.models.cap_info import ThorCapInfo
 from services.models.killed_rune import KilledRuneEntry
 from services.models.last_block import BlockProduceState, EventBlockSpeed
 from services.models.mimir import MimirChange, MimirHolder, MimirVoting, MimirVoteOption
+from services.models.mimir_naming import MimirUnits
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEvent, EventDataSlash, \
     NodeEventType, EventBlockHeight
@@ -1038,6 +1039,7 @@ class RussianLocalization(BaseLocalization):
     MIMIR_NO = 'НЕТ'
     MIMIR_UNDEFINED = 'неопределено'
     MIMIR_LAST_CHANGE = 'Последнее изменение'
+    MIMIR_UNKNOWN_CHAIN = 'Неизв. сеть'
 
     def text_mimir_intro(self):
         text = f'🎅 {bold("Глобальные константы и Мимир")}\n'
@@ -1056,12 +1058,14 @@ class RussianLocalization(BaseLocalization):
         for voting in holder.voting_manager.all_voting.values():
             voting: MimirVoting
             name = holder.pretty_name(voting.key)
-            msg = f"{code(name)}\n"
+            msg = f"{bold(name)}\n"
 
             for option in voting.top_options:
                 pb = self.make_voting_progress_bar(option, voting)
                 extra = self._text_votes_to_pass(option)
-                msg += f"➔ чтобы стало {code(option.value)}: " \
+                units = MimirUnits.get_mimir_units(voting.key)
+                pretty_value = self.format_mimir_value(voting.key, str(option.value), units)
+                msg += f"➔ чтобы стало {code(pretty_value)}: " \
                        f"{bold(format_percent(option.number_votes, voting.active_nodes))}" \
                        f" ({option.number_votes}/{voting.active_nodes}) {pb} {extra}\n"
 
@@ -1168,8 +1172,8 @@ class RussianLocalization(BaseLocalization):
         text = '🔔 <b>Обновление Мимир!</b>\n\n'
 
         for change in changes:
-            old_value_fmt = code(self.format_mimir_value(change.old_value, change.entry))
-            new_value_fmt = code(self.format_mimir_value(change.new_value, change.entry))
+            old_value_fmt = code(self.format_mimir_value(change.entry.name, change.old_value, change.entry.units))
+            new_value_fmt = code(self.format_mimir_value(change.entry.name, change.new_value, change.entry.units))
             name = code(change.entry.pretty_name if change.entry else change.name)
 
             e = change.entry
