@@ -765,12 +765,11 @@ class TwitterEnglishLocalization(BaseLocalization):
             switched_killed = short_rune(killed_rune.killed_switched)  # killed when switched
             total_killed = short_rune(killed_rune.total_killed)  # potentially dead + switched killed
             rune_left = short_rune(killed_rune.unkilled_unswitched_rune)
-            lost_rune = short_rune(market_info.supply_info.lost_forever)
+            # lost_rune = short_rune(market_info.supply_info.lost_forever)
             parts.append(
                 f'☠️ Killed-switched Rune: {switched_killed}\n'
                 f'Total killed: {total_killed}\n'
-                f'Unswitched left: {rune_left}\n'
-                f'Forever lost: {lost_rune}\n'
+                f'Unswitched left: {rune_left}\n\n'
             )
 
         return MESSAGE_SEPARATOR.join(twitter_intelligent_text_splitter(parts))

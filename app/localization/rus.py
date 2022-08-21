@@ -1520,12 +1520,11 @@ class RussianLocalization(BaseLocalization):
             rune_left = code(short_rune(killed_rune.unkilled_unswitched_rune))
             switched_killed = code(short_rune(killed_rune.killed_switched))  # killed when switched
             total_killed = code(short_rune(killed_rune.total_killed))  # potentially dead + switched killed
-            lost_rune = code(short_rune(market_info.supply_info.lost_forever))
+            # lost_rune = code(short_rune(market_info.supply_info.lost_forever))
             message += (
                 f'☠️ <b>Убито Рун при апгрейде:</b> {switched_killed}\n'
                 f'Всего убито Рун: {total_killed}\n'
-                f'Осталось старых Рун: {rune_left}\n'
-                f'Потерянные навсегда Руны: {lost_rune}\n\n'
+                f'Осталось старых Рун: {rune_left}\n\n'
             )
 
         message += self.format_supply_entry('Нативная THOR.RUNE', supply.thor_rune, supply.overall.total)
@@ -1538,7 +1537,7 @@ class RussianLocalization(BaseLocalization):
     SUPPLY_PIC_TITLE = 'THORChain: запасы Руны'
     SUPPLY_PIC_CIRCULATING = 'Циркулирующие'
     SUPPLY_PIC_KILLED = 'Убитые'
-    SUPPLY_PIC_KILLED_LOST = 'Убитые при апгрейде и потерянные'
+    SUPPLY_PIC_KILLED_LOST = 'Убитые при апгрейде'
     SUPPLY_PIC_TEAM = 'Команда'
     SUPPLY_PIC_SEED = 'Сид-инвесторы'
     SUPPLY_PIC_RESERVES = 'Резерв'
