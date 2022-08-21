@@ -3,9 +3,9 @@ import json
 from aiothornode.types import ThorMimir
 
 from localization.manager import BaseLocalization
-from services.lib.delegates import INotified
 from services.jobs.fetch.const_mimir import ConstMimirFetcher, MimirTuple
 from services.lib.date_utils import now_ts
+from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
 from services.models.mimir import MimirChange
@@ -97,16 +97,16 @@ class MimirChangedNotifier(INotified):
                     changes.append(change)
                     await self._save_mimir_change_date(change)
 
+        if fresh_mimir and fresh_mimir.constants:
+            await self._save_mimir_state(fresh_mimir.constants, is_node_mimir=False)
+            await self._save_mimir_state(node_mimir, is_node_mimir=True)
+
         if changes:
             await self.deps.broadcaster.notify_preconfigured_channels(
                 BaseLocalization.notification_text_mimir_changed,
                 changes,
                 self.deps.mimir_const_holder,
             )
-
-        if fresh_mimir and fresh_mimir.constants:
-            await self._save_mimir_state(fresh_mimir.constants, is_node_mimir=False)
-            await self._save_mimir_state(node_mimir, is_node_mimir=True)
 
     DB_KEY_MIMIR_LAST_STATE = 'Mimir:LastState'
     DB_KEY_NODE_MIMIR_LAST_STATE = 'Mimir:Node:LastState'

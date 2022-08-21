@@ -16,6 +16,7 @@ from services.models.cap_info import ThorCapInfo
 from services.models.killed_rune import KilledRuneEntry
 from services.models.last_block import EventBlockSpeed, BlockProduceState
 from services.models.mimir import MimirChange, MimirHolder, MimirVoting, MimirVoteOption
+from services.models.mimir_naming import MimirUnits
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeVersionConsensus, NodeInfo
 from services.models.pool_info import PoolDetailHolder, PoolChanges, PoolInfo
@@ -639,8 +640,9 @@ class TwitterEnglishLocalization(BaseLocalization):
         text = '🔔 Mimir update!\n'
 
         for change in changes:
-            old_value_fmt = self.format_mimir_value(change.old_value, change.entry)
-            new_value_fmt = self.format_mimir_value(change.new_value, change.entry)
+            units = MimirUnits.get_mimir_units(change.name)
+            old_value_fmt = self.format_mimir_value(change.name, change.old_value, units)
+            new_value_fmt = self.format_mimir_value(change.name, change.new_value, units)
             name = change.entry.pretty_name if change.entry else change.name
 
             e = change.entry
