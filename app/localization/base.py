@@ -336,7 +336,7 @@ class BaseLocalization(ABC):  # == English
     PRICE_GRAPH_TITLE = f'Rune price, USD'
     PRICE_GRAPH_LEGEND_DET_PRICE = f'Deterministic {RAIDO_GLYPH} price'
     PRICE_GRAPH_LEGEND_ACTUAL_PRICE = f'Pool {RAIDO_GLYPH} price'
-    PRICE_GRAPH_LEGEND_CEX_PRICE = f'CEX BEP2 {RAIDO_GLYPH} price'
+    PRICE_GRAPH_LEGEND_CEX_PRICE = f'CEX {RAIDO_GLYPH} price'
 
     # ------- NOTIFY TXS -------
 
@@ -539,11 +539,11 @@ class BaseLocalization(ABC):  # == English
 
     @property
     def ref_cex_name(self):
-        return self.cfg.as_str('price.bep2_reference.cex', DEFAULT_CEX_NAME)
+        return self.cfg.as_str('price.cex_reference.cex', DEFAULT_CEX_NAME)
 
     @property
     def ref_cex_pair(self):
-        pair = self.cfg.as_str('price.bep2_reference.pair', DEFAULT_CEX_BASE_ASSET)
+        pair = self.cfg.as_str('price.cex_reference.pair', DEFAULT_CEX_BASE_ASSET)
         return f'RUNE/{pair}'
 
     def notification_text_price_update(self, p: PriceReport, ath=False, halted_chains=None):
@@ -572,7 +572,7 @@ class BaseLocalization(ABC):  # == English
 
             div, div_p = fp.divergence_abs, fp.divergence_percent
             exclamation = self._exclamation_sign(div_p, ref=10)
-            message += f"<b>Divergence</b> Native vs BEP2 is {code(pretty_dollar(div))} ({div_p:.1f}%{exclamation}).\n"
+            message += f"<b>Divergence</b> vs CEX is {code(pretty_dollar(div))} ({div_p:.1f}%{exclamation}).\n"
 
         last_ath = p.last_ath
         if last_ath is not None and ath:
@@ -692,9 +692,9 @@ class BaseLocalization(ABC):  # == English
 
         text = (
             f"🖖 {bold(title)}\n"
-            f"CEX (BEP2) Rune price is {code(pretty_dollar(info.cex_price))}\n"
+            f"CEX Rune price is {code(pretty_dollar(info.cex_price))}\n"
             f"Weighted average Rune price by liquidity pools is {code(pretty_dollar(info.pool_rune_price))}\n"
-            f"<b>Divergence</b> Native vs BEP2 is {code(pretty_dollar(div))} ({div_p:.1f}%{exclamation})."
+            f"<b>Divergence</b> THORChain vs CEX is {code(pretty_dollar(div))} ({div_p:.1f}%{exclamation})."
         )
         return text
 
@@ -1831,14 +1831,14 @@ class BaseLocalization(ABC):  # == English
         caption = self.name_or_short_address(addr)
         return link(url, caption)
 
-    def notification_text_cex_flow(self, bep2flow: RuneCEXFlow):
+    def notification_text_cex_flow(self, cex_flow: RuneCEXFlow):
         return (f'🌬️ <b>Rune CEX flow last 24 hours</b>\n'
-                f'Inflow: {pre(short_money(bep2flow.rune_cex_inflow, postfix=RAIDO_GLYPH))} '
-                f'({short_dollar(bep2flow.in_usd)})\n'
-                f'Outflow: {pre(short_money(bep2flow.rune_cex_outflow, postfix=RAIDO_GLYPH))} '
-                f'({short_dollar(bep2flow.out_usd)})\n'
-                f'Netflow: {pre(short_money(bep2flow.rune_cex_netflow, postfix=RAIDO_GLYPH))} '
-                f'({short_dollar(bep2flow.netflow_usd)})')
+                f'Inflow: {pre(short_money(cex_flow.rune_cex_inflow, postfix=RAIDO_GLYPH))} '
+                f'({short_dollar(cex_flow.in_usd)})\n'
+                f'Outflow: {pre(short_money(cex_flow.rune_cex_outflow, postfix=RAIDO_GLYPH))} '
+                f'({short_dollar(cex_flow.out_usd)})\n'
+                f'Netflow: {pre(short_money(cex_flow.rune_cex_netflow, postfix=RAIDO_GLYPH))} '
+                f'({short_dollar(cex_flow.netflow_usd)})')
 
     # ----- SUPPLY ------
 

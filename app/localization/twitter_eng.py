@@ -717,15 +717,15 @@ class TwitterEnglishLocalization(BaseLocalization):
         # without a link, just a caption
         return name.name if name else short_address(addr)
 
-    def notification_text_cex_flow(self, bep2flow: RuneCEXFlow):
+    def notification_text_cex_flow(self, cex_flow: RuneCEXFlow):
         return (
             f'🌬️ Rune CEX flow last 24 hours\n'
-            f'Inflow: {short_money(bep2flow.rune_cex_inflow, postfix=RAIDO_GLYPH)} '
-            f'({short_dollar(bep2flow.in_usd)})\n'
-            f'Outflow: {short_money(bep2flow.rune_cex_outflow, postfix=RAIDO_GLYPH)} '
-            f'({short_dollar(bep2flow.out_usd)})\n'
-            f'Netflow: {short_money(bep2flow.rune_cex_netflow, postfix=RAIDO_GLYPH)} '
-            f'({short_dollar(bep2flow.netflow_usd)})'
+            f'Inflow: {short_money(cex_flow.rune_cex_inflow, postfix=RAIDO_GLYPH)} '
+            f'({short_dollar(cex_flow.in_usd)})\n'
+            f'Outflow: {short_money(cex_flow.rune_cex_outflow, postfix=RAIDO_GLYPH)} '
+            f'({short_dollar(cex_flow.out_usd)})\n'
+            f'Netflow: {short_money(cex_flow.rune_cex_netflow, postfix=RAIDO_GLYPH)} '
+            f'({short_dollar(cex_flow.netflow_usd)})'
         )
 
     def notification_text_rune_transfer_public(self, t: RuneTransfer):
@@ -746,14 +746,12 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         return (
             f'📍 {name}:\n'
-            f'Circ.: {short_rune(s.circulating)} ({format_percent(s.circulating, total_of_total)})\n'
+            f'Free-fl.: {short_rune(s.circulating)} ({format_percent(s.circulating, total_of_total)})\n'
             f'Lock: {short_rune(locked_amount)} ({format_percent(locked_amount, total_of_total)})\n'
             f'Total: {short_rune(s.total)} ({format_percent(s.total, total_of_total)})\n\n'
         )
 
     def text_metrics_supply(self, market_info: RuneMarketInfo, killed_rune: KilledRuneEntry):
-        # todo!
-
         parts = []
         supply = market_info.supply_info
         parts.append(self.format_supply_entry('BNB RUNE', supply.bep2_rune, supply.overall.total))

@@ -25,8 +25,8 @@ class RuneMarketInfoFetcher:
             deps.cfg.as_str('thor.circulating_supply.cache_time', RUNE_MARKET_INFO_CACHE_TIME))
         self._prev_result: Optional[RuneMarketInfo] = None
 
-        self.cex_name = deps.cfg.as_str('price.bep2_reference.cex', DEFAULT_CEX_NAME)
-        self.cex_pair = deps.cfg.as_str('price.bep2_reference.pair', DEFAULT_CEX_BASE_ASSET)
+        self.cex_name = deps.cfg.as_str('price.cex_reference.cex', DEFAULT_CEX_NAME)
+        self.cex_pair = deps.cfg.as_str('price.cex_reference.pair', DEFAULT_CEX_BASE_ASSET)
 
         self.logger.info(f'Reference is RUNE/${self.cex_pair} at "{self.cex_name}" CEX.')
 

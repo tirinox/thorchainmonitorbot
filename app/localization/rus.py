@@ -274,8 +274,8 @@ class RussianLocalization(BaseLocalization):
 
     PRICE_GRAPH_TITLE = f'Цена {RAIDO_GLYPH}уны'
     PRICE_GRAPH_LEGEND_DET_PRICE = 'Детерминистская цена'
-    PRICE_GRAPH_LEGEND_ACTUAL_PRICE = 'Цена пулов'
-    PRICE_GRAPH_LEGEND_CEX_PRICE = f'CEX BEP2 цена'
+    PRICE_GRAPH_LEGEND_ACTUAL_PRICE = 'Цена в пухал'
+    PRICE_GRAPH_LEGEND_CEX_PRICE = f'Цена на бирже'
 
     # ------ TXS -------
 
@@ -442,7 +442,7 @@ class RussianLocalization(BaseLocalization):
                        f"{bold(pretty_dollar(fp.cex_price))}.\n"
 
             div, div_p = fp.divergence_abs, fp.divergence_percent
-            message += f"<b>Расхождение</b> родной и BEP2 Руны: {code(pretty_dollar(div))} ({div_p:.1f}%).\n"
+            message += f"<b>Расхождение</b> с центр. Биржей: {code(pretty_dollar(div))} ({div_p:.1f}%).\n"
 
         last_ath = p.last_ath
         if last_ath is not None and ath:
@@ -563,9 +563,9 @@ class RussianLocalization(BaseLocalization):
         div, div_p = info.divergence_abs, info.divergence_percent
         text = (
             f"🖖 {bold(title)}\n"
-            f"Цена BEP2 Руны (на биржах): {code(pretty_dollar(info.cex_price))}\n"
+            f"Цена Руны (на биржах): {code(pretty_dollar(info.cex_price))}\n"
             f"Взвешенная цена Руны в пулах: {code(pretty_dollar(info.pool_rune_price))}\n"
-            f"<b>Расхождение</b> нативной руны и BEP2 руны: {code(pretty_dollar(div))} ({div_p:.1f}%)."
+            f"<b>Расхождение</b> цены THORChain и биржы: {code(pretty_dollar(div))} ({div_p:.1f}%)."
         )
 
         return text
@@ -1471,14 +1471,14 @@ class RussianLocalization(BaseLocalization):
 
     # ----- RUNE FLOW ------
 
-    def notification_text_cex_flow(self, bep2flow: RuneCEXFlow):
+    def notification_text_cex_flow(self, cex_flow: RuneCEXFlow):
         return (f'🌬️ <b>Rune потоки с централизованнвых бирж последние сутки</b>\n'
-                f'Завели: {pre(short_money(bep2flow.rune_cex_inflow, postfix=RAIDO_GLYPH))} '
-                f'({short_dollar(bep2flow.in_usd)})\n'
-                f'Вывели: {pre(short_money(bep2flow.rune_cex_outflow, postfix=RAIDO_GLYPH))} '
-                f'({short_dollar(bep2flow.out_usd)})\n'
-                f'Поток: {pre(short_money(bep2flow.rune_cex_netflow, postfix=RAIDO_GLYPH))} '
-                f'({short_dollar(bep2flow.netflow_usd)})')
+                f'Завели: {pre(short_money(cex_flow.rune_cex_inflow, postfix=RAIDO_GLYPH))} '
+                f'({short_dollar(cex_flow.in_usd)})\n'
+                f'Вывели: {pre(short_money(cex_flow.rune_cex_outflow, postfix=RAIDO_GLYPH))} '
+                f'({short_dollar(cex_flow.out_usd)})\n'
+                f'Поток: {pre(short_money(cex_flow.rune_cex_netflow, postfix=RAIDO_GLYPH))} '
+                f'({short_dollar(cex_flow.netflow_usd)})')
 
     # ----- SUPPLY ------
 

@@ -280,8 +280,8 @@ price:
   price_graph:
     default_period: 7d
 
-  bep2_reference:
-    cex: hitbtc
+  cex_reference:  # (!) new: bep2_reference -> cex_reference
+    cex: binance
     pair: USDT
 
   ath:
