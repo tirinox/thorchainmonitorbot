@@ -594,7 +594,9 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         pb = self.make_voting_progress_bar(option, voting)
         extra = self._text_votes_to_pass(option)
-        message += f" to set it ➔ {option.value}: " \
+        units = MimirUnits.get_mimir_units(voting.key)
+        pretty_value = self.format_mimir_value(voting.key, str(option.value), units)
+        message += f" to set it ➔ {pretty_value}: " \
                    f"{format_percent(option.number_votes, voting.active_nodes)}" \
                    f" ({option.number_votes}/{voting.active_nodes}) {pb} {extra}\n"
         return message
