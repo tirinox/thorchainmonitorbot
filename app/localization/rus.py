@@ -1063,8 +1063,7 @@ class RussianLocalization(BaseLocalization):
             for option in voting.top_options:
                 pb = self.make_voting_progress_bar(option, voting)
                 extra = self._text_votes_to_pass(option)
-                units = MimirUnits.get_mimir_units(voting.key)
-                pretty_value = self.format_mimir_value(voting.key, str(option.value), units)
+                pretty_value = self.format_mimir_value(voting.key, str(option.value))
                 msg += f"➔ чтобы стало {code(pretty_value)}: " \
                        f"{bold(format_percent(option.number_votes, voting.active_nodes))}" \
                        f" ({option.number_votes}/{voting.active_nodes}) {pb} {extra}\n"
@@ -1089,7 +1088,8 @@ class RussianLocalization(BaseLocalization):
         percent = format_percent(option.number_votes, voting.active_nodes)
         extra = (f'{option.need_votes_to_pass} еще голосов, чтобы прошло'
                  if option.need_votes_to_pass <= self.NEED_VOTES_TO_PASS_MAX else '')
-        message += f"➔ чтобы стало {code(option.value)}: {bold(percent)}" \
+        pretty_value = self.format_mimir_value(key, option.value)
+        message += f"➔ чтобы стало {code(pretty_value)}: {bold(percent)}" \
                    f" ({option.number_votes}/{voting.active_nodes}) {pb} {extra}\n"
         return message
 

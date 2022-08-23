@@ -1198,12 +1198,14 @@ class BaseLocalization(ABC):  # == English
 
     MIMIR_UNKNOWN_CHAIN = 'Unknown chain'
 
-    def format_mimir_value(self, name: str, v: str, units: str):
+    def format_mimir_value(self, name: str, v, units: str = '') -> str:
         if v is None:
             return self.MIMIR_UNDEFINED
 
-        if units is None:
-            return v
+        if not units:
+            units = MimirUnits.get_mimir_units(name)
+            if not units:
+                return str(v)
 
         if units == MimirUnits.UNITS_RUNES:
             return short_money(thor_to_float(v), localization=self.SHORT_MONEY_LOC, postfix=f' {self.R}')
@@ -1221,9 +1223,9 @@ class BaseLocalization(ABC):  # == English
                 chain_name = NEXT_CHAIN_VOTING_MAP.get(v, self.MIMIR_UNKNOWN_CHAIN)
                 return f'"{chain_name}" ({v})'
             except ValueError:
-                return v
+                return str(v)
         else:
-            return v
+            return str(v)
 
     def format_mimir_entry(self, i: int, m: MimirEntry):
         if m.source == m.SOURCE_ADMIN:
@@ -1299,8 +1301,7 @@ class BaseLocalization(ABC):  # == English
                 pb = self.make_voting_progress_bar(option, voting)
                 percent = format_percent(option.number_votes, voting.active_nodes)
                 extra = self._text_votes_to_pass(option)
-                units = MimirUnits.get_mimir_units(voting.key)
-                pretty_value = self.format_mimir_value(voting.key, str(option.value), units)
+                pretty_value = self.format_mimir_value(voting.key, str(option.value))
                 msg += f" to set it ➔ {code(pretty_value)}: {bold(percent)}" \
                        f" ({option.number_votes}/{voting.active_nodes}) {pb} {extra}\n"
 
@@ -1322,7 +1323,8 @@ class BaseLocalization(ABC):  # == English
 
         pb = self.make_voting_progress_bar(option, voting)
         extra = self._text_votes_to_pass(option)
-        message += f" to set it ➔ {code(option.value)}: " \
+        pretty_value = self.format_mimir_value(key, option.value)
+        message += f" to set it ➔ {code(pretty_value)}: " \
                    f"{bold(format_percent(option.number_votes, voting.active_nodes))}" \
                    f" ({option.number_votes}/{voting.active_nodes}) {pb} {extra}\n"
         return message
