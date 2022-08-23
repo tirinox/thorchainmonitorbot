@@ -6,13 +6,13 @@ from localization.base import BaseLocalization
 from localization.languages import Language
 from services.jobs.fetch.native_scan import NativeScannerBlock
 from services.jobs.fetch.native_scan_ws import NativeScannerTransactionWS, NativeScannerBlockEventsWS
+from services.jobs.native_actions import NativeActionExtractor
 from services.jobs.transfer_detector import RuneTransferDetectorBlockEvents, \
     RuneTransferDetectorFromTxResult, RuneTransferDetectorTxLogs
 from services.lib.config import Config
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
 from services.lib.texts import sep
-from services.lib.utils import setup_logs
 from services.models.transfer import RuneTransfer
 from tools.lib.lp_common import LpAppFramework
 
@@ -67,6 +67,20 @@ async def t_block_scanner_active(lp_app):
     scanner.subscribe(detector)
     # detector.subscribe(Receiver('Transfer'))
     detector.subscribe(ReceiverPublicText(lp_app.deps))
+
+    action_extractor = NativeActionExtractor(lp_app.deps)
+    scanner.subscribe(action_extractor)
+
+    action_extractor.subscribe(Receiver('Action'))
+
+    await scanner.run()
+
+
+async def t_block_scanner_active_action(lp_app):
+    scanner = NativeScannerBlock(lp_app.deps)
+    action_extractor = NativeActionExtractor(lp_app.deps)
+    scanner.subscribe(action_extractor)
+    action_extractor.subscribe(Receiver('Action'))
     await scanner.run()
 
 
@@ -115,11 +129,11 @@ async def search_out(lp_app):
 async def main():
     lp_app = LpAppFramework(log_level=logging.INFO)
     async with lp_app(brief=True):
-        await t_block_scanner_active(lp_app)
+        # await t_block_scanner_active(lp_app)
+        await t_block_scanner_active_action(lp_app)
         # await active_one(lp_app)
         # await search_out(lp_app)
 
 
 if __name__ == '__main__':
-    setup_logs(logging.INFO)
     asyncio.run(main())
