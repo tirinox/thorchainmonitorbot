@@ -23,10 +23,10 @@ class NativeScannerBlock(BaseFetcher):
     SLEEP_PERIOD = 5.99
     MAX_ATTEMPTS_TO_SKIP_BLOCK = 5
 
-    def __init__(self, deps: DepContainer, sleep_period=None):
+    def __init__(self, deps: DepContainer, sleep_period=None, last_block=0):
         sleep_period = sleep_period or THOR_BLOCK_TIME * 0.99
         super().__init__(deps, sleep_period)
-        self._last_block = 0
+        self._last_block = last_block
         self._this_block_attempts = 0
         self._thor = ThorNodePublicClient(self.deps.session, self.deps.thor_env)
 

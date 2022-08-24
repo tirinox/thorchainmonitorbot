@@ -77,11 +77,16 @@ async def t_block_scanner_active(lp_app):
 
 
 async def t_block_scanner_active_action(lp_app):
-    scanner = NativeScannerBlock(lp_app.deps)
+    start = 6339868  # guaranteed to have DEX tx
+    # start = 6_999_399  # Timestamp Aug.23.2022 01:44:57
+    # start = 6999486  # little bit later
+    # scanner = NativeScannerBlock(lp_appx.deps, last_block=6_999_399)
+    scanner = NativeScannerBlock(lp_app.deps, last_block=start)
+
     action_extractor = NativeActionExtractor(lp_app.deps)
     scanner.subscribe(action_extractor)
     action_extractor.subscribe(Receiver('Action'))
-    await scanner.run()
+    await scanner.fetch()
 
 
 async def ws_main():
