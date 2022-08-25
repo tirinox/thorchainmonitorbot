@@ -274,9 +274,6 @@ class NodeSetChanges:
     def bond_churn_delta(self):
         return self.bond_churn_in - self.bond_churn_out
 
-    def flag_of_node(self, node: NodeInfo):
-        emojiflags.lookup(node.f)
-
 
 @dataclass
 class NetworkNodeIpInfo:
@@ -300,10 +297,15 @@ class NetworkNodeIpInfo:
     def select_ip_info_for_nodes(self, nodes: List[NodeInfo]) -> List[dict]:
         return [self.ip_info_dict.get(n.ip_address, None) for n in nodes]
 
-    @staticmethod
-    def get_general_provider(data: dict):
-        org = data.get('org', '')
-        components = re.split('[ -]', org)
+    def get_general_provider(self, data: dict):
+        org = data.get('org')
+        if org is None:
+            return self.UNKNOWN_PROVIDER
+        try:
+            components = re.split('[ -]', org)
+        except TypeError:
+            return self.UNKNOWN_PROVIDER
+
         if components:
             return str(components[0]).upper()
         return org

@@ -31,8 +31,8 @@ class NodeChurnNotifier(INotified, WithDelegates):
             return
 
         if await self.cd.can_do():
-            await self._notify_when_node_churn(changes)
             await self.cd.do()
+            await self._notify_when_node_churn(changes)
             await self.pass_data_to_listeners(changes)
 
     async def _notify_when_node_churn(self, changes: NodeSetChanges):
