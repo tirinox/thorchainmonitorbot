@@ -7,6 +7,7 @@ from localization.manager import LocalizationManager
 from services.dialog.telegram.telegram import telegram_send_message_basic, TG_TEST_USER, TelegramBot
 from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
+from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.runeyield import AsgardConsumerConnectorBase, get_rune_yield_connector
 from services.lib.config import Config
@@ -80,6 +81,9 @@ class LpAppFramework:
         brief = brief if self.brief is None else self.brief
         if brief:
             return
+
+        d.node_info_fetcher = NodeInfoFetcher(d)
+        await d.node_info_fetcher.fetch()  # get nodes beforehand
 
         d.mimir_const_holder = MimirHolder()
         d.mimir_const_fetcher = ConstMimirFetcher(d)

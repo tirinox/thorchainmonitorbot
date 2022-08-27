@@ -5,7 +5,7 @@ from typing import List, Tuple
 
 from PIL import ImageDraw, Image, ImageFont
 
-from localization.base import BaseLocalization
+from localization.eng_base import BaseLocalization
 from services.lib.draw_utils import generate_gradient, draw_arc_aa, get_palette_color_by_index, LIGHT_TEXT_COLOR, \
     hls_transform_hex
 from services.lib.plot_graph import PlotGraph

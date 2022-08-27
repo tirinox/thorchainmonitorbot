@@ -23,7 +23,7 @@ class VotingNotifier(INotified, WithDelegates):
 
     KEY_PREV_STATE = 'NodeMimir:Voting:PrevState'
 
-    async def _read_prev_state(self):
+    async def read_prev_state(self):
         prev_state = await self.deps.db.redis.get(self.KEY_PREV_STATE)
         try:
             return json.loads(prev_state)
@@ -57,7 +57,7 @@ class VotingNotifier(INotified, WithDelegates):
     async def on_data(self, sender: ConstMimirFetcher, data: MimirTuple):
         holder = self.deps.mimir_const_holder
 
-        prev_state = await self._read_prev_state()
+        prev_state = await self.read_prev_state()
 
         events = []
         for voting in holder.voting_manager.all_voting_list:

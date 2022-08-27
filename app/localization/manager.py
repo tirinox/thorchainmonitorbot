@@ -1,5 +1,4 @@
-from localization.base import BaseLocalization
-from localization.eng import EnglishLocalization
+from localization.eng_base import EnglishLocalization, BaseLocalization
 from localization.languages import Language
 from localization.rus import RussianLocalization
 from localization.twitter_eng import TwitterEnglishLocalization
@@ -17,6 +16,9 @@ class LocalizationManager(metaclass=Singleton):
             Language.ENGLISH: self.default,
             Language.ENGLISH_TWITTER: TwitterEnglishLocalization(cfg),
         }
+
+    def __getitem__(self, item):
+        return self.get_from_lang(item)
 
     def get_from_lang(self, lang) -> BaseLocalization:
         return self._langs.get(str(lang), self.default)

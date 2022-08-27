@@ -15,7 +15,7 @@ from services.lib.explorers import get_explorer_url_to_address, Chains, get_expl
 from services.lib.midgard.name_service import NameService
 from services.lib.money import format_percent, pretty_money, short_address, short_money, \
     calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset, short_dollar, \
-    RAIDO_GLYPH, pretty_rune, short_rune
+    RAIDO_GLYPH, short_rune
 from services.lib.texts import progressbar, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
     up_down_arrow, bracketify, plural, grouper, join_as_numbered_list, regroup_joining, shorten_text
 from services.models.cap_info import ThorCapInfo
@@ -1221,7 +1221,7 @@ class BaseLocalization(ABC):  # == English
             try:
                 v = int(v)
                 chain_name = NEXT_CHAIN_VOTING_MAP.get(v, self.MIMIR_UNKNOWN_CHAIN)
-                return f'"{chain_name}" ({v})'
+                return f'"{chain_name}"'
             except ValueError:
                 return str(v)
         else:
@@ -1303,7 +1303,7 @@ class BaseLocalization(ABC):  # == English
                 extra = self._text_votes_to_pass(option)
                 pretty_value = self.format_mimir_value(voting.key, str(option.value))
                 msg += f" to set it ➔ {code(pretty_value)}: {bold(percent)}" \
-                       f" ({option.number_votes}/{voting.active_nodes}) {pb} {extra}\n"
+                       f" ({option.number_votes}/{voting.active_nodes})\n {pb} {extra}\n"
 
             messages.append(msg)
 
@@ -1313,20 +1313,28 @@ class BaseLocalization(ABC):  # == English
         show = 0 < option.need_votes_to_pass <= self.NEED_VOTES_TO_PASS_MAX
         return f'{option.need_votes_to_pass} more votes to pass' if show else ''
 
+    TEXT_MIMIR_VOTING_PROGRESS_TITLE = '🏛 <b>Node-Mimir voting update</b>\n\n'
+    TEXT_MIMIR_VOTING_TO_SET_IT = 'to set it'
+
     def notification_text_mimir_voting_progress(self, holder: MimirHolder, key, prev_progress,
                                                 voting: MimirVoting,
-                                                option: MimirVoteOption):
-        message = '🏛️' + bold('Node-Mimir voting update') + '\n\n'
+                                                triggered_option: MimirVoteOption):
+        message = self.TEXT_MIMIR_VOTING_PROGRESS_TITLE
 
         name = holder.pretty_name(key)
-        message += f"{code(name)}\n"
 
-        pb = self.make_voting_progress_bar(option, voting)
-        extra = self._text_votes_to_pass(option)
-        pretty_value = self.format_mimir_value(key, option.value)
-        message += f" to set it ➔ {code(pretty_value)}: " \
-                   f"{bold(format_percent(option.number_votes, voting.active_nodes))}" \
-                   f" ({option.number_votes}/{voting.active_nodes}) {pb} {extra}\n"
+        # get up to 3 top options, if there are more options in the voting, add "there are N more...
+        n_options = min(3, len(voting.options))
+
+        for i, option in enumerate(voting.top_options[:n_options], start=1):
+            pb = self.make_voting_progress_bar(option, voting)
+            percent = format_percent(option.number_votes, voting.active_nodes)
+            extra = self._text_votes_to_pass(option)
+            pretty_value = self.format_mimir_value(voting.key, str(option.value))
+            mark = '👏' if option.value == triggered_option.value else ''
+            message += f"{i}. {name} ➔ {code(pretty_value)}: {bold(percent)}" \
+                       f" ({option.number_votes}/{voting.active_nodes}){mark}\n {pb} {extra}\n"
+
         return message
 
     @staticmethod
@@ -1957,3 +1965,8 @@ class BaseLocalization(ABC):  # == English
         return f'💸 <b>Large transfer</b> {tx_link}: ' \
                f'{code(short_money(t.amount, postfix=" " + asset))}{usd_amt} ' \
                f'from {from_my} ➡️ {to_my}{memo}.'
+
+
+class EnglishLocalization(BaseLocalization):
+    # it is already English!
+    ...

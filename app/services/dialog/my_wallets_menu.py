@@ -7,7 +7,7 @@ from aiogram.dispatcher.storage import FSMContextProxy
 from aiogram.types import *
 from aiogram.utils.helper import HelperMode
 
-from localization.base import BaseLocalization
+from localization.eng_base import BaseLocalization
 from services.dialog.base import message_handler, query_handler, DialogWithSettings
 from services.dialog.picture.lp_picture import lp_pool_picture, lp_address_summary_picture
 from services.dialog.telegram.inline_list import TelegramInlineList, InlineListResult

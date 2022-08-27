@@ -52,3 +52,14 @@ def test_country_codes():
     assert find_country_emoji('us') == '🇺🇸'
     assert find_country_emoji('') is None
     assert find_country_emoji('xxx') is None
+
+
+def test_tw1():
+    text = """🏛 Node-Mimir voting update
+
+1. Next Chain ➔ "HAVEN": 32.6 % (31/95)
+ ▰▰▰▰▰▰▱▱▱▱▱▱ 
+2. Next Chain ➔ "BNB Chain (BSC)": 21.1 % (20/95)
+ ▰▰▰▰▱▱▱▱▱▱▱▱ 
+3. Next Chain ➔ "DASH": 10.5 % (10/95)👏"""
+    assert twitter_text_length(text) == 189

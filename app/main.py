@@ -146,15 +146,15 @@ class App:
         await fetcher_nodes.fetch()  # get nodes beforehand
 
         # mimir uses nodes! so it goes after fetcher_nodes
-        fetcher_mimir = ConstMimirFetcher(d)
-        self.deps.mimir_const_fetcher = fetcher_mimir
+        mimir_const_fetcher = ConstMimirFetcher(d)
+        self.deps.mimir_const_fetcher = mimir_const_fetcher
         self.deps.mimir_const_holder = MimirHolder()
-        await fetcher_mimir.fetch()  # get constants beforehand
+        await mimir_const_fetcher.fetch()  # get constants beforehand
 
         tasks = [
             # mandatory tasks:
             d.price_pool_fetcher,
-            fetcher_mimir
+            mimir_const_fetcher
         ]
 
         if d.cfg.get('tx.enabled', True):
@@ -279,11 +279,11 @@ class App:
 
         if d.cfg.get('constants.mimir_change', True):
             notifier_mimir_change = MimirChangedNotifier(d)
-            fetcher_mimir.subscribe(notifier_mimir_change)
+            mimir_const_fetcher.subscribe(notifier_mimir_change)
 
         if d.cfg.get('constants.voting.enabled', True):
             voting_notifier = VotingNotifier(d)
-            fetcher_mimir.subscribe(voting_notifier)
+            mimir_const_fetcher.subscribe(voting_notifier)
 
         if d.cfg.get('rune_transfer.enabled', True):
             fetcher_bep2 = BinanceOrgDexWSSClient()

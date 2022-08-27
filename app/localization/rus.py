@@ -5,7 +5,7 @@ from typing import List
 from aiothornode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
-from localization.base import BaseLocalization, CREATOR_TG, URL_LEADERBOARD_MCCN
+from localization.eng_base import BaseLocalization, CREATOR_TG, URL_LEADERBOARD_MCCN
 from services.jobs.fetch.circulating import SupplyEntry
 from services.lib.constants import Chains, rune_origin
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
@@ -1066,7 +1066,7 @@ class RussianLocalization(BaseLocalization):
                 pretty_value = self.format_mimir_value(voting.key, str(option.value))
                 msg += f"➔ чтобы стало {code(pretty_value)}: " \
                        f"{bold(format_percent(option.number_votes, voting.active_nodes))}" \
-                       f" ({option.number_votes}/{voting.active_nodes}) {pb} {extra}\n"
+                       f" ({option.number_votes}/{voting.active_nodes})\n {pb} {extra}\n"
 
             messages.append(msg)
 
@@ -1076,22 +1076,8 @@ class RussianLocalization(BaseLocalization):
         show = 0 < option.need_votes_to_pass <= self.NEED_VOTES_TO_PASS_MAX
         return f'{option.need_votes_to_pass} еще голосов, чтобы прошло' if show else ''
 
-    def notification_text_mimir_voting_progress(self, holder: MimirHolder, key, prev_progress,
-                                                voting: MimirVoting,
-                                                option: MimirVoteOption):
-        message = '🏛️' + bold('Прогресс голосования нод за Мимир') + '\n\n'
-
-        name = holder.pretty_name(key)
-        message += f"{code(name)}\n"
-
-        pb = self.make_voting_progress_bar(option, voting)
-        percent = format_percent(option.number_votes, voting.active_nodes)
-        extra = (f'{option.need_votes_to_pass} еще голосов, чтобы прошло'
-                 if option.need_votes_to_pass <= self.NEED_VOTES_TO_PASS_MAX else '')
-        pretty_value = self.format_mimir_value(key, option.value)
-        message += f"➔ чтобы стало {code(pretty_value)}: {bold(percent)}" \
-                   f" ({option.number_votes}/{voting.active_nodes}) {pb} {extra}\n"
-        return message
+    TEXT_MIMIR_VOTING_PROGRESS_TITLE = '🏛 <b>Прогресс голосования нод за Мимир</b>\n\n'
+    TEXT_MIMIR_VOTING_TO_SET_IT = 'чтобы стало'
 
     # --------- TRADING HALTED -----------
 

@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 
-from localization.base import BaseLocalization
+from localization.eng_base import BaseLocalization
 from localization.languages import Language
 from services.jobs.fetch.native_scan import NativeScannerBlock
 from services.jobs.fetch.native_scan_ws import NativeScannerTransactionWS, NativeScannerBlockEventsWS

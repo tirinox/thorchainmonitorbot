@@ -1,4 +1,4 @@
-from localization.base import BaseLocalization
+from localization.eng_base import BaseLocalization
 from services.dialog.picture.supply_picture import SupplyPictureGenerator
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds

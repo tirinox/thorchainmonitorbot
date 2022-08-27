@@ -1,6 +1,6 @@
 from typing import List, NamedTuple, Tuple
 
-from localization.base import BaseLocalization
+from localization.eng_base import BaseLocalization
 from services.dialog.picture.resources import Resources
 from services.jobs.fetch.circulating import RuneCirculatingSupply
 from services.lib.date_utils import today_str

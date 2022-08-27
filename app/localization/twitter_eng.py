@@ -3,7 +3,7 @@ from typing import List
 from aiothornode.types import ThorChainInfo
 from semver import VersionInfo
 
-from localization.base import BaseLocalization
+from localization.eng_base import BaseLocalization
 from services.dialog.twitter.text_length import twitter_intelligent_text_splitter
 from services.jobs.fetch.circulating import SupplyEntry
 from services.lib.constants import thor_to_float, rune_origin, Chains
@@ -585,19 +585,27 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         return msg
 
-    def notification_text_mimir_voting_progress(self, holder: MimirHolder, key, prev_progress, voting: MimirVoting,
-                                                option: MimirVoteOption):
-        message = '🏛️ Node-Mimir voting update\n'
+    TEXT_MIMIR_VOTING_PROGRESS_TITLE = '🏛 Node-Mimir voting update\n\n'
+
+    def notification_text_mimir_voting_progress(self, holder: MimirHolder, key, prev_progress,
+                                                voting: MimirVoting,
+                                                triggered_option: MimirVoteOption):
+        message = self.TEXT_MIMIR_VOTING_PROGRESS_TITLE
 
         name = holder.pretty_name(key)
-        message += f"{name}\n"
 
-        pb = self.make_voting_progress_bar(option, voting)
-        extra = self._text_votes_to_pass(option)
-        pretty_value = self.format_mimir_value(voting.key, str(option.value))
-        message += f" to set it ➔ {pretty_value}: " \
-                   f"{format_percent(option.number_votes, voting.active_nodes)}" \
-                   f" ({option.number_votes}/{voting.active_nodes}) {pb} {extra}\n"
+        # get up to 3 top options, if there are more options in the voting, add "there are N more...
+        n_options = min(3, len(voting.options))
+
+        for i, option in enumerate(voting.top_options[:n_options], start=1):
+            pb = self.make_voting_progress_bar(option, voting)
+            percent = format_percent(option.number_votes, voting.active_nodes)
+            extra = self._text_votes_to_pass(option)
+            pretty_value = self.format_mimir_value(voting.key, str(option.value))
+            mark = '👏' if option.value == triggered_option.value else ''
+            message += f"{i}. {name} ➔ {pretty_value}: {percent}" \
+                       f" ({option.number_votes}/{voting.active_nodes}){mark}\n {pb} {extra}\n"
+
         return message
 
     def notification_text_trading_halted_multi(self, chain_infos: List[ThorChainInfo]):

@@ -3,7 +3,7 @@ import random
 import time
 from typing import List
 
-from localization.base import BaseLocalization
+from localization.eng_base import BaseLocalization
 from localization.manager import LocalizationManager
 from services.lib.date_utils import parse_timespan_to_seconds, now_ts, DAY
 from services.lib.depcont import DepContainer

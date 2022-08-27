@@ -1,17 +1,45 @@
 import asyncio
 
-from localization.manager import LocalizationManager
+from localization.eng_base import BaseLocalization
+from localization.languages import Language
+from services.models.mimir_naming import NEXT_CHAIN_KEY
+from services.notify.types.voting_notify import VotingNotifier
 from tools.lib.lp_common import LpAppFramework
+
+
+def print_mimir(loc, app):
+    texts = loc.text_mimir_info(app.deps.mimir_const_holder)
+    for text in texts:
+        print(text)
 
 
 async def run():
     app = LpAppFramework()
     await app.prepare()
-    loc_man: LocalizationManager = app.deps.loc_man
-    loc = loc_man.default
-    texts = loc.text_mimir_info(app.deps.mimir_const_holder)
-    for text in texts:
-        print(text)
+
+    voting = app.deps.mimir_const_holder.voting_manager.find_voting(NEXT_CHAIN_KEY)
+    prev_state = await VotingNotifier(app.deps).read_prev_state()
+    prev_voting = prev_state.get(voting.key)
+    option = next(iter(voting.options.values()))
+    prev_progress = prev_voting.get(str(option.value))  # str(.), that's because JSON keys are strings
+
+    # loc: BaseLocalization = app.deps.loc_man.default
+
+    for language in (Language.ENGLISH, Language.ENGLISH_TWITTER, Language.RUSSIAN):
+    # for language in (Language.ENGLISH_TWITTER,):
+        loc: BaseLocalization = app.deps.loc_man[language]
+        await app.send_test_tg_message(loc.notification_text_mimir_voting_progress(
+            app.deps.mimir_const_holder,
+            NEXT_CHAIN_KEY, prev_progress, voting, option,
+        ))
+
+    # await app.deps.broadcaster.notify_preconfigured_channels(
+    #     BaseLocalization.notification_text_mimir_voting_progress,
+    #     app.deps.mimir_const_holder,
+    #     NEXT_CHAIN_KEY, prev_progress, voting, option,
+    # )
+
+    # print(loc, app)
 
 
 if __name__ == '__main__':

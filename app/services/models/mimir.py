@@ -115,6 +115,9 @@ class MimirVoteManager:
     def all_voting_list(self) -> typing.List[MimirVoting]:
         return list(self.all_voting.values())
 
+    def find_voting(self, const_name):
+        return next((v for v in self.all_voting.values() if v.key == const_name), None)
+
 
 @dataclass
 class MimirEntry:
@@ -213,9 +216,9 @@ class MimirHolder:
 
     def pretty_name(self, name):
         return (
-            TRANSLATE_MIMIRS.get(name) or
-            self.hard_coded_pretty_names.get(name) or
-            try_deducting_mimir_name(name) or name
+                TRANSLATE_MIMIRS.get(name) or
+                self.hard_coded_pretty_names.get(name) or
+                try_deducting_mimir_name(name) or name
         )
 
     def update(self, constants: ThorConstants, mimir: ThorMimir, node_mimir, node_votes: typing.List[MimirVote],

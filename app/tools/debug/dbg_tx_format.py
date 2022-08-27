@@ -1,7 +1,6 @@
 import asyncio
 import random
 
-from localization.languages import Language
 from localization.manager import BaseLocalization
 from services.jobs.fetch.tx import merge_affiliate_txs
 from services.lib.delegates import INotified
