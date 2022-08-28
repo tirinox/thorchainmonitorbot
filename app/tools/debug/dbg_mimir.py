@@ -17,7 +17,10 @@ async def run():
     app = LpAppFramework()
     await app.prepare()
 
-    voting = app.deps.mimir_const_holder.voting_manager.find_voting(NEXT_CHAIN_KEY)
+    mimir_to_test = 'MaxSynthPerAssetDepth'.upper()
+    # mimir_to_test = NEXT_CHAIN_KEY
+
+    voting = app.deps.mimir_const_holder.voting_manager.find_voting(mimir_to_test)
     prev_state = await VotingNotifier(app.deps).read_prev_state()
     prev_voting = prev_state.get(voting.key)
     option = next(iter(voting.options.values()))
@@ -30,7 +33,7 @@ async def run():
         loc: BaseLocalization = app.deps.loc_man[language]
         await app.send_test_tg_message(loc.notification_text_mimir_voting_progress(
             app.deps.mimir_const_holder,
-            NEXT_CHAIN_KEY, prev_progress, voting, option,
+            mimir_to_test, prev_progress, voting, option,
         ))
 
     # await app.deps.broadcaster.notify_preconfigured_channels(

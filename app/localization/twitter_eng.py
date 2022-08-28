@@ -15,7 +15,7 @@ from services.lib.texts import x_ses, progressbar, plural, bracketify, up_down_a
 from services.models.cap_info import ThorCapInfo
 from services.models.killed_rune import KilledRuneEntry
 from services.models.last_block import EventBlockSpeed, BlockProduceState
-from services.models.mimir import MimirChange, MimirHolder, MimirVoting, MimirVoteOption
+from services.models.mimir import MimirChange, MimirHolder
 from services.models.mimir_naming import MimirUnits
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeVersionConsensus, NodeInfo
@@ -27,6 +27,8 @@ from services.notify.channel import MESSAGE_SEPARATOR
 
 
 class TwitterEnglishLocalization(BaseLocalization):
+    TEXT_DECORATION_ENABLED = False
+
     PIC_TITLE_NODE_DIVERSITY_BY_PROVIDER = 'The current THORChain node diversity'
 
     def notification_text_cap_change(self, old: ThorCapInfo, new: ThorCapInfo):
@@ -586,27 +588,6 @@ class TwitterEnglishLocalization(BaseLocalization):
         return msg
 
     TEXT_MIMIR_VOTING_PROGRESS_TITLE = '🏛 Node-Mimir voting update\n\n'
-
-    def notification_text_mimir_voting_progress(self, holder: MimirHolder, key, prev_progress,
-                                                voting: MimirVoting,
-                                                triggered_option: MimirVoteOption):
-        message = self.TEXT_MIMIR_VOTING_PROGRESS_TITLE
-
-        name = holder.pretty_name(key)
-
-        # get up to 3 top options, if there are more options in the voting, add "there are N more...
-        n_options = min(3, len(voting.options))
-
-        for i, option in enumerate(voting.top_options[:n_options], start=1):
-            pb = self.make_voting_progress_bar(option, voting)
-            percent = format_percent(option.number_votes, voting.active_nodes)
-            extra = self._text_votes_to_pass(option)
-            pretty_value = self.format_mimir_value(voting.key, str(option.value))
-            mark = '👏' if option.value == triggered_option.value else ''
-            message += f"{i}. {name} ➔ {pretty_value}: {percent}" \
-                       f" ({option.number_votes}/{voting.active_nodes}){mark}\n {pb} {extra}\n"
-
-        return message
 
     def notification_text_trading_halted_multi(self, chain_infos: List[ThorChainInfo]):
         msg = ''

@@ -14,12 +14,11 @@ from services.lib.explorers import get_explorer_url_to_address, get_thoryield_ad
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change, Asset, short_money, short_dollar, format_percent, RAIDO_GLYPH, short_rune
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
-    up_down_arrow, plural, grouper, regroup_joining, shorten_text
+    up_down_arrow, plural, grouper, shorten_text
 from services.models.cap_info import ThorCapInfo
 from services.models.killed_rune import KilledRuneEntry
 from services.models.last_block import BlockProduceState, EventBlockSpeed
-from services.models.mimir import MimirChange, MimirHolder, MimirVoting, MimirVoteOption
-from services.models.mimir_naming import MimirUnits
+from services.models.mimir import MimirChange, MimirHolder
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEvent, EventDataSlash, \
     NodeEventType, EventBlockHeight
@@ -1048,29 +1047,8 @@ class RussianLocalization(BaseLocalization):
         text += f"{what_is_mimir_link} А еще {cheatsheet_link}.\n\n"
         return text
 
-    def text_node_mimir_voting(self, holder: MimirHolder):
-        title = '🏛️' + bold('Голосование нод за Мимир') + '\n\n'
-        if not holder.voting_manager.all_voting:
-            title += 'Пока нет активных логосований.'
-            return [title]
-
-        messages = [title]
-        for voting in holder.voting_manager.all_voting.values():
-            voting: MimirVoting
-            name = holder.pretty_name(voting.key)
-            msg = f"{bold(name)}\n"
-
-            for option in voting.top_options:
-                pb = self.make_voting_progress_bar(option, voting)
-                extra = self._text_votes_to_pass(option)
-                pretty_value = self.format_mimir_value(voting.key, str(option.value))
-                msg += f"➔ чтобы стало {code(pretty_value)}: " \
-                       f"{bold(format_percent(option.number_votes, voting.active_nodes))}" \
-                       f" ({option.number_votes}/{voting.active_nodes})\n {pb} {extra}\n"
-
-            messages.append(msg)
-
-        return regroup_joining(self.NODE_MIMIR_VOTING_GROUP_SIZE, messages)
+    TEXT_NODE_MIMIR_VOTING_TITLE = '🏛️ <b>Голосование нод за Мимир</b>\n\n'
+    TEXT_NODE_MIMIR_VOTING_NOTHING_YET = 'Пока нет активных логосований.'
 
     def _text_votes_to_pass(self, option):
         show = 0 < option.need_votes_to_pass <= self.NEED_VOTES_TO_PASS_MAX
