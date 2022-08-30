@@ -911,7 +911,7 @@ class BaseLocalization(ABC):  # == English
 
             if swap_volume_24h_rune:
                 message += f'🔀 Rune swap volume: {swap_rune_text} ({swap_usd_text}) ' \
-                           f'in {bold(new.swaps_24h)} operations.\n'
+                           f'in {bold(short_money(new.swaps_24h))} operations.\n'
 
             if switched_24h_rune:
                 message += f'💎 Rune switched to native: {switch_rune_text} ({switch_usd_text}).\n'

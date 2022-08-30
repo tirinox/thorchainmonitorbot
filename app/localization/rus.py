@@ -767,7 +767,7 @@ class RussianLocalization(BaseLocalization):
                 message += f'➖ Выведено из пулов: {withdraw_rune_text} ({withdraw_usd_text}).\n'
             if swap_volume_24h_rune:
                 message += f'🔀 Объем торгов: {swap_rune_text} ({swap_usd_text}) ' \
-                           f'при {bold(new.swaps_24h)} обменов совершено.\n'
+                           f'при {bold(short_money(new.swaps_24h))} обменов совершено.\n'
             if switched_24h_rune:
                 message += f'💎 Rune конвертировано в нативные: {switch_rune_text} ({switch_usd_text}).\n'
 
