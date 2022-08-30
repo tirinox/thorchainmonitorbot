@@ -61,6 +61,9 @@ class SubConfig:
     def as_list(self, path: str = None, default=None):
         return list(self.get(path, default)._root_config)
 
+    def as_interval(self, path: str = None, default=None):
+        return parse_timespan_to_seconds(self.as_str(path, default))
+
     @property
     def as_seconds(self):
         return parse_timespan_to_seconds(self._root_config)

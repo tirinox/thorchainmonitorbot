@@ -1,18 +1,17 @@
 from typing import List
 
-from services.lib.delegates import INotified, WithDelegates
 from services.jobs.fetch.pool_price import PoolPriceFetcher
+from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
-from services.lib.utils import class_logger
+from services.lib.utils import WithLogger
 from services.models.pool_info import PoolInfo
 from services.models.tx import ThorTxExtended, ThorTx
 
 
-class VolumeFillerUpdater(WithDelegates, INotified):
+class VolumeFillerUpdater(WithDelegates, INotified, WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
-        self.logger = class_logger(self)
 
     async def on_data(self, sender, txs: List[ThorTx]):
         # transform

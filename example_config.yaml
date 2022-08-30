@@ -334,9 +334,12 @@ price:
       min_percent: 1.9
       max_percent: 5.5
     personal:
-
       enabled: true
       cooldown: 30m
+
+  volume: # (!) new
+    record_tolerance: 1h
+
 
 
 rune_transfer:

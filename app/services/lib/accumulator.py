@@ -1,11 +1,11 @@
 import asyncio
 
-from services.lib.date_utils import HOUR, now_ts
+from services.lib.date_utils import now_ts
 from services.lib.db import DB
 
 
 class Accumulator:
-    def __init__(self, name, db: DB, tolerance=HOUR):
+    def __init__(self, name, db: DB, tolerance: float):
         self.name = name
         self.db = db
         self.tolerance = tolerance
@@ -24,6 +24,11 @@ class Accumulator:
 
     async def add_now(self, **kwargs):
         await self.add(now_ts(), **kwargs)
+
+    async def set(self, ts, **kwargs):
+        accum_key = self.key_from_ts(ts)
+        for k, v in kwargs.items():
+            await self.db.redis.hset(accum_key, k, v)
 
     async def get(self, timestamp=None):
         timestamp = timestamp or now_ts()
