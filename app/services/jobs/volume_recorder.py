@@ -13,7 +13,7 @@ class VolumeRecorder(WithDelegates, INotified, WithLogger):
         super().__init__()
         self.deps = deps
         t = deps.cfg.as_interval('price.volume.record_tolerance', HOUR)
-        self._accum = Accumulator('Volume', deps.db, tolerance=t)
+        self._accumulator = Accumulator('Volume', deps.db, tolerance=t)
 
     async def on_data(self, sender, txs: List[ThorTxExtended]):
         current_price = self.deps.price_holder.usd_per_rune or 0.01
@@ -25,19 +25,30 @@ class VolumeRecorder(WithDelegates, INotified, WithLogger):
                 swap = volume if tx.type == ThorTxType.TYPE_SWAP else 0.0
                 add = volume if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY else 0.0
                 withdraw = volume if tx.type == ThorTxType.TYPE_WITHDRAW else 0.0
-                await self._accum.add(
+                await self._accumulator.add(
                     tx.date_timestamp,
                     synth=synth,
                     swap=swap,
                     add=add,
                     withdraw=withdraw,
                 )
-                await self._accum.set(
+                total_volume += volume
+                await self._accumulator.set(
                     tx.date_timestamp,
                     price=current_price,  # it is better to get price at the tx's block!
                 )
-                total_volume += volume
 
         print('-------')
         print(f'{total_volume = }')
-        print(await self._accum.get())
+        # print(await self._accumulator.get())
+        print(await self.get_data_range_ago_n(HOUR * 3, 2))
+        # await self._accumulator.get_range_n()
+
+    async def get_data_instant(self, ts=None):
+        return await self._accumulator.get(ts)
+
+    async def get_data_range_ago(self, ago):
+        return await self._accumulator.get_range(-ago)
+
+    async def get_data_range_ago_n(self, ago, n=30):
+        return await self._accumulator.get_range_n(-ago, n=n)

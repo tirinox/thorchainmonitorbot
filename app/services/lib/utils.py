@@ -9,6 +9,7 @@ import pickle
 import random
 import re
 import time
+from bisect import bisect_left
 from collections import deque, Counter, defaultdict
 from functools import wraps, partial
 from io import BytesIO
@@ -360,3 +361,19 @@ def filter_kwargs_according_function_signature(dict_to_filter, thing_with_kwargs
     sig = inspect.signature(thing_with_kwargs)
     filter_keys = [param.name for param in sig.parameters.values() if param.kind == param.POSITIONAL_OR_KEYWORD]
     return {filter_key: dict_to_filter[filter_key] for filter_key in filter_keys}
+
+
+def take_closest(sorted_list, target):
+    """
+    Assumes sorted_list is sorted. Returns closest value to target.
+
+    If two numbers are equally close, return the smallest number.
+    """
+    pos = bisect_left(sorted_list, target)
+    if pos == 0:
+        return sorted_list[0]
+    if pos == len(sorted_list):
+        return sorted_list[-1]
+    before = sorted_list[pos - 1]
+    after = sorted_list[pos]
+    return after if after - sorted_list < sorted_list - before else before
