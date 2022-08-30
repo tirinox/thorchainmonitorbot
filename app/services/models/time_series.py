@@ -5,6 +5,10 @@ from typing import Tuple
 from services.lib.date_utils import now_ts, MINUTE
 from services.lib.db import DB
 
+MAX_POINTS_DEFAULT = 10000
+TOLERANCE_DEFAULT = 10  # sec
+MS = 1000  # milliseconds in 1 second
+
 
 class TimeSeries:
     def __init__(self, name: str, db: DB):
@@ -19,16 +23,16 @@ class TimeSeries:
     def range_ago(ago_sec, tolerance_sec=10):
         now_sec = now_ts()
         return (
-            int((now_sec - ago_sec - tolerance_sec) * 1000),
-            int((now_sec - ago_sec + tolerance_sec) * 1000)
+            int((now_sec - ago_sec - tolerance_sec) * MS),
+            int((now_sec - ago_sec + tolerance_sec) * MS)
         )
 
     @staticmethod
-    def range_from_ago_to_now(ago_sec, tolerance_sec=10):
+    def range_from_ago_to_now(ago_sec, tolerance_sec=TOLERANCE_DEFAULT):
         now_sec = now_ts()
         return (
-            int((now_sec - ago_sec - tolerance_sec) * 1000),
-            int((now_sec + tolerance_sec) * 1000)
+            int((now_sec - ago_sec - tolerance_sec) * MS),
+            int((now_sec + tolerance_sec) * MS)
         )
 
     @staticmethod
@@ -36,13 +40,13 @@ class TimeSeries:
         s = index.split('-')
         return int(s[0]) / 1_000
 
-    async def get_last_points(self, period_sec, max_points=10000, tolerance_sec=10):
+    async def get_last_points(self, period_sec, max_points=MAX_POINTS_DEFAULT, tolerance_sec=TOLERANCE_DEFAULT):
         points = await self.select(*self.range_from_ago_to_now(period_sec, tolerance_sec=tolerance_sec),
                                    count=max_points)
         return points
 
     async def get_best_point_ago(self, ago_sec: float,
-                                 tolerance_sec=10, tolerance_percent=None,
+                                 tolerance_sec=TOLERANCE_DEFAULT, tolerance_percent=None,
                                  ref_ts=None) -> Tuple[dict, float]:
         ref_ts = ref_ts or now_ts()
         exact_point = ref_ts - ago_sec
@@ -58,7 +62,10 @@ class TimeSeries:
                 best_point, best_diff = data, diff
         return best_point, best_diff
 
-    async def get_last_values(self, period_sec, key, max_points=10000, tolerance_sec=10, with_ts=False,
+    async def get_last_values(self, period_sec, key,
+                              max_points=MAX_POINTS_DEFAULT,
+                              tolerance_sec=TOLERANCE_DEFAULT,
+                              with_ts=False,
                               decoder=float):
         points = await self.get_last_points(period_sec, max_points, tolerance_sec)
 
@@ -70,15 +77,18 @@ class TimeSeries:
         return values
 
     # noinspection PyTypeChecker
-    async def get_last_values_json(self, period_sec, max_points=10000, tolerance_sec=10, with_ts=False):
+    async def get_last_values_json(self, period_sec,
+                                   max_points=MAX_POINTS_DEFAULT,
+                                   tolerance_sec=TOLERANCE_DEFAULT,
+                                   with_ts=False):
         return await self.get_last_values(period_sec, 'json', max_points, tolerance_sec, with_ts, decoder=json.loads)
 
-    async def average(self, period_sec, key, max_points=10000, tolerance_sec=10):
+    async def average(self, period_sec, key, max_points=MAX_POINTS_DEFAULT, tolerance_sec=10):
         values = await self.get_last_values(period_sec, key, max_points, tolerance_sec)
         n = len(values)
         return sum(values) / n if n else None
 
-    async def sum(self, period_sec, key, max_points=10000, tolerance_sec=10):
+    async def sum(self, period_sec, key, max_points=MAX_POINTS_DEFAULT, tolerance_sec=TOLERANCE_DEFAULT):
         values = await self.get_last_values(period_sec, key, max_points, tolerance_sec)
         return sum(values)
 
@@ -147,7 +157,12 @@ class PriceTimeSeries(TimeSeries):
         else:
             return 0
 
-    async def get_last_values(self, period_sec, key=None, max_points=10000, tolerance_sec=10, with_ts=False,
+    async def get_last_values(self,
+                              period_sec,
+                              key=None,
+                              max_points=MAX_POINTS_DEFAULT,
+                              tolerance_sec=TOLERANCE_DEFAULT,
+                              with_ts=False,
                               decoder=float):
         key = key or self.KEY
         return await super().get_last_values(period_sec, key, max_points, tolerance_sec, with_ts)
