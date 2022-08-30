@@ -69,20 +69,19 @@ class Accumulator:
         start_ts, end_ts = self._prepare_ts(start_ts, end_ts)
 
         points = await self.get_range(start_ts, end_ts, conv_to_float)
-        real_time_points = list(points.keys())
+        real_time_points = list(sorted(points.keys()))
         dt = (end_ts - start_ts) / (n - 1)
 
         results = []
 
         for step in range(n):
             ts = start_ts + dt * step
-            closest_ts = take_closest(real_time_points, ts)
-            results.append(
-                (ts, points[closest_ts])
-            )
+            closest_ts = take_closest(real_time_points, ts, ignore_outliers=True)
+            # print(ts, closest_ts, (ts - closest_ts) if closest_ts else '???')
+            item = points[closest_ts] if closest_ts else {}
+            results.append((ts, item))
 
         return results
-
 
     @staticmethod
     def _convert_values_to_float(r: dict):
