@@ -21,7 +21,6 @@ async def continuous_volume_recording(lp_app):
     volume_filler.subscribe(volume_recorder)
 
     async def on_data(sender: VolumeRecorder, data):
-        print('-------')
         print(await sender.get_data_range_ago_n(HOUR * 3, 10))
 
     volume_recorder.subscribe(Receiver(callback=on_data))
@@ -31,7 +30,8 @@ async def continuous_volume_recording(lp_app):
 
 async def show_price_graph(lp_app):
     await fill_rune_price_from_gecko(lp_app.deps.db, include_fake_det=True)
-    graph = await price_graph_from_db(lp_app.deps, lp_app.deps.loc_man.default)
+    loc = lp_app.deps.loc_man.default
+    graph = await price_graph_from_db(lp_app.deps, loc)
     with open('../temp/price_gr.png', 'wb') as f:
         f.write(graph.getbuffer())
         os.system(f'open "../temp/price_gr.png"')

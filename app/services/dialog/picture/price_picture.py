@@ -17,6 +17,8 @@ LINE_COLOR_DET_PRICE = '#FF8673'
 
 BAR_COLOR_SWAP = '#0b735b'
 BAR_COLOR_SWAP_SYNTH = '#118f89'
+BAR_COLOR_ADD = '#04cf4e'
+BAR_COLOR_WITHDRAW = '#cf0448'
 
 VOLUME_N_POINTS = 58
 
@@ -33,20 +35,31 @@ def price_graph(pool_price_df, det_price_df, cex_prices_df, volumes, loc: BaseLo
     graph.add_series(cex_prices_df, LINE_COLOR_CEX_PRICE)
     graph.add_series(det_price_df, LINE_COLOR_DET_PRICE)
 
-    graph.bar_thickness = 8
-    graph.bar_height_limit = 200
-    graph.add_series_bars(pluck_from_series(volumes, 'swap'), BAR_COLOR_SWAP)
-    graph.add_series_bars(pluck_from_series(volumes, 'synth'), BAR_COLOR_SWAP_SYNTH)
+    graph.legend_x = 20
 
-    # todo: add "add/withdraw", move left/right, thinner bar...
+    graph.add_legend(LINE_COLOR_POOL_PRICE, loc.PRICE_GRAPH_LEGEND_ACTUAL_PRICE)
+    graph.add_legend(LINE_COLOR_CEX_PRICE, loc.PRICE_GRAPH_LEGEND_CEX_PRICE)
+    graph.add_legend(LINE_COLOR_DET_PRICE, loc.PRICE_GRAPH_LEGEND_DET_PRICE)
+
+    graph.bar_height_limit = 200
+    graph.add_series_bars(pluck_from_series(volumes, VolumeRecorder.KEY_SWAP), BAR_COLOR_SWAP, 8)
+    graph.add_series_bars(pluck_from_series(volumes, VolumeRecorder.KEY_SWAP_SYNTH), BAR_COLOR_SWAP_SYNTH, 8)
+    graph.add_series_bars(pluck_from_series(volumes, VolumeRecorder.KEY_ADD_LIQUIDITY), BAR_COLOR_ADD, 2, -3)
+    graph.add_series_bars(pluck_from_series(volumes, VolumeRecorder.KEY_WITHDRAW_LIQUIDITY), BAR_COLOR_WITHDRAW, 2, 3)
+
+    graph.add_legend(BAR_COLOR_SWAP, loc.PRICE_GRAPH_VOLUME_SWAP_NORMAL)
+    graph.add_legend(BAR_COLOR_SWAP_SYNTH, loc.PRICE_GRAPH_VOLUME_SWAP_SYNTH)
+    graph.add_legend(BAR_COLOR_ADD, loc.PRICE_GRAPH_VOLUME_SWAP_ADD)
+    graph.add_legend(BAR_COLOR_WITHDRAW, loc.PRICE_GRAPH_VOLUME_SWAP_WITHDRAW)
+
     """
-    like this:
+    Volume bar looks like this:
      ___
-    |___|
-    |   |
+    |___| L1 swap
+    |   | Synth swap
+    |A  | A = Add liq.
     |A  |
-    |A  |
-    |A W|
+    |A W| W = Withdraw liq.
     |A W|
     |A W|
     """
@@ -60,13 +73,6 @@ def price_graph(pool_price_df, det_price_df, cex_prices_df, volumes, loc: BaseLo
     graph.line_width = 2
 
     graph.add_title(loc.PRICE_GRAPH_TITLE)
-
-    graph.add_legend(LINE_COLOR_POOL_PRICE, loc.PRICE_GRAPH_LEGEND_ACTUAL_PRICE)
-    graph.add_legend(LINE_COLOR_CEX_PRICE, loc.PRICE_GRAPH_LEGEND_CEX_PRICE)
-    graph.add_legend(LINE_COLOR_DET_PRICE, loc.PRICE_GRAPH_LEGEND_DET_PRICE)
-
-    graph.add_legend(BAR_COLOR_SWAP, loc.PRICE_GRAPH_VOLUME_SWAP_NORMAL)
-    graph.add_legend(BAR_COLOR_SWAP_SYNTH, loc.PRICE_GRAPH_VOLUME_SWAP_SYNTH)
 
     graph.y_formatter = lambda y: f'${y:.3f}'
     graph.x_formatter = graph.date_formatter if time_scale_mode == 'date' else graph.time_formatter

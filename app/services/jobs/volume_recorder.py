@@ -9,6 +9,11 @@ from services.models.tx import ThorTxExtended, ThorTxType
 
 
 class VolumeRecorder(WithDelegates, INotified, WithLogger):
+    KEY_SWAP = 'swap'
+    KEY_SWAP_SYNTH = 'synth'
+    KEY_ADD_LIQUIDITY = 'add'
+    KEY_WITHDRAW_LIQUIDITY = 'withdraw'
+
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
@@ -27,10 +32,12 @@ class VolumeRecorder(WithDelegates, INotified, WithLogger):
                 withdraw = volume if tx.type == ThorTxType.TYPE_WITHDRAW else 0.0
                 await self._accumulator.add(
                     tx.date_timestamp,
-                    synth=synth,
-                    swap=swap,
-                    add=add,
-                    withdraw=withdraw,
+                    **{
+                        self.KEY_SWAP: swap,
+                        self.KEY_SWAP_SYNTH: synth,
+                        self.KEY_ADD_LIQUIDITY: add,
+                        self.KEY_WITHDRAW_LIQUIDITY: withdraw,
+                    }
                 )
                 total_volume += volume
                 await self._accumulator.set(

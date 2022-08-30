@@ -251,7 +251,6 @@ class PlotGraphLines(PlotGraph):
 
         self.bar_series = []
         self.bar_height_limit = 144
-        self.bar_thickness = 10
 
         self.bar_max = -BIG_NUMBER
         self.bar_min = BIG_NUMBER
@@ -289,10 +288,12 @@ class PlotGraphLines(PlotGraph):
             'color': color
         })
 
-    def add_series_bars(self, list_of_points, color):
+    def add_series_bars(self, list_of_points, color, thickness=10, x_shift=0):
         self.bar_series.append({
             'pts': list_of_points,
-            'color': color
+            'color': color,
+            'thickness': thickness,
+            'x_shift': x_shift
         })
 
     def _plot_ticks_axis(self, v_min, v_max, axis, n_ticks):
@@ -381,7 +382,6 @@ class PlotGraphLines(PlotGraph):
 
     def _plot_bars(self):
         ox, oy, plot_w, plot_h = self.plot_rect()
-        bh2 = self.bar_thickness * 0.5
 
         bar_normal_height = self.bar_height_limit / max(abs(self.bar_min), abs(self.bar_max))
 
@@ -391,6 +391,8 @@ class PlotGraphLines(PlotGraph):
                 continue
 
             color = line_desc['color']
+            bh2 = line_desc['thickness'] * 0.5
+            x_shift = line_desc['x_shift']
 
             for x, y in points:
                 x, _ = self.convert_coords(x, y, ox, oy, plot_w, plot_h)
@@ -398,6 +400,6 @@ class PlotGraphLines(PlotGraph):
                 bar_height = bar_normal_height * y
 
                 self.draw.rectangle((
-                    int(x - bh2), int(oy),
-                    int(x + bh2), int(oy - bar_height)
+                    int(x - bh2 + x_shift), int(oy),
+                    int(x + bh2 + x_shift), int(oy - bar_height)
                 ), fill=color)
