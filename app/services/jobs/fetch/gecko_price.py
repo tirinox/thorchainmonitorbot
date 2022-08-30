@@ -1,10 +1,11 @@
 import logging
+import random
 
 import aiohttp
 import aioredis
 from tqdm import tqdm
 
-from services.lib.constants import RUNE_SYMBOL_DET, RUNE_SYMBOL_POOL
+from services.lib.constants import RUNE_SYMBOL_DET, RUNE_SYMBOL_POOL, RUNE_SYMBOL_CEX
 from services.models.time_series import PriceTimeSeries
 
 COIN_CHART_GECKO = "https://api.coingecko.com/api/v3/coins/thorchain/market_chart?vs_currency=usd&days={days}"
@@ -24,11 +25,18 @@ async def fill_rune_price_from_gecko(db, include_fake_det=False, fake_value=0.2)
     gecko_data8 = await get_rune_chart(8)
     gecko_data1 = await get_rune_chart(1)
 
+    if not gecko_data1 or not gecko_data8:
+        logging.error('no gecko data!')
+        return
+
     price_chart = gecko_data8 + gecko_data1
     price_chart.sort(key=lambda p: p[0])
 
     series = PriceTimeSeries(RUNE_SYMBOL_POOL, db)
     await series.clear()
+
+    cex_series = PriceTimeSeries(RUNE_SYMBOL_CEX, db)
+    await cex_series.clear()
 
     det_series = PriceTimeSeries(RUNE_SYMBOL_DET, db)
     if include_fake_det:
@@ -38,8 +46,11 @@ async def fill_rune_price_from_gecko(db, include_fake_det=False, fake_value=0.2)
         ident = f'{ts}-0'
         try:
             await series.add(message_id=ident, price=price)
+            cex_price = price * random.uniform(0.95, 1.05)
+            await cex_series.add(message_id=ident, price=cex_price)
             if include_fake_det:
-                await det_series.add(message_id=ident, price=fake_value)
+                det_price = price / random.uniform(2.8, 3.1)
+                await det_series.add(message_id=ident, price=det_price)
         except aioredis.ResponseError:
             pass
 

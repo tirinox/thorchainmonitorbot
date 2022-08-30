@@ -14,20 +14,7 @@ from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
 from services.lib.texts import sep
 from services.models.transfer import RuneTransfer
-from tools.lib.lp_common import LpAppFramework
-
-
-class Receiver(INotified):
-    # noinspection PyTypeChecker
-    async def on_data(self, sender, data):
-        sep()
-        for tr in data:
-            if not self.filters or any(text in repr(tr) for text in self.filters):
-                print(f'{self.tag}:  {tr}')
-
-    def __init__(self, tag='', filters=None):
-        self.tag = tag
-        self.filters = filters
+from tools.lib.lp_common import LpAppFramework, Receiver
 
 
 class ReceiverPublicText(INotified):

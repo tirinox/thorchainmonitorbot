@@ -55,6 +55,7 @@ class DepContainer:
     block_notifier = None  # type: 'BlockHeightNotifier'
     best_pools_notifier = None  # type: 'BestPoolsNotifier'
     rune_move_notifier = None  # type: 'BEP2MoveNotifier'
+    volume_recorder = None  # type: 'VolumeRecorder'
 
     gen_alert_settings_proc = None
     alert_watcher: Optional[AlertWatchers] = None

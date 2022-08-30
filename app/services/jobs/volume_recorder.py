@@ -38,11 +38,7 @@ class VolumeRecorder(WithDelegates, INotified, WithLogger):
                     price=current_price,  # it is better to get price at the tx's block!
                 )
 
-        print('-------')
-        print(f'{total_volume = }')
-        # print(await self._accumulator.get())
-        print(await self.get_data_range_ago_n(HOUR * 3, 2))
-        # await self._accumulator.get_range_n()
+        await self.pass_data_to_listeners(total_volume, self)
 
     async def get_data_instant(self, ts=None):
         return await self._accumulator.get(ts)

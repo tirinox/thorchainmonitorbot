@@ -13,10 +13,12 @@ from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.runeyield import AsgardConsumerConnectorBase, get_rune_yield_connector
 from services.lib.config import Config
 from services.lib.db import DB
+from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
 from services.lib.midgard.connector import MidgardConnector
 from services.lib.midgard.name_service import NameService
 from services.lib.settings_manager import SettingsManager, SettingsProcessorGeneralAlerts
+from services.lib.texts import sep
 from services.lib.utils import setup_logs
 from services.models.mimir import MimirHolder
 from services.models.node_watchers import AlertWatchers
@@ -150,3 +152,23 @@ class LpGenerator(LpAppFramework):
     async def test_summary(self, address):
         lp_reports, weekly_charts = await self.rune_yield.generate_yield_summary(address, [])
         return lp_reports, weekly_charts
+
+
+class Receiver(INotified):
+    # noinspection PyTypeChecker
+    async def on_data(self, sender, data):
+        sep()
+        if self.callback:
+            await self.callback(sender, data)
+        else:
+            if isinstance(data, (list, tuple)):
+                for tr in data:
+                    if not self.filters or any(text in repr(tr) for text in self.filters):
+                        print(f'{self.tag}:  {tr}')
+            else:
+                print(f'{self.tag}:  {data}')
+
+    def __init__(self, tag='', filters=None, callback=None):
+        self.tag = tag
+        self.filters = filters
+        self.callback = callback

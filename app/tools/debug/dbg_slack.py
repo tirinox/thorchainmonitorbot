@@ -12,7 +12,7 @@ async def a_test_slack_price(lp_app: LpAppFramework):
     slack = SlackBot(deps.cfg, deps.db, lp_app.deps.settings_manager)
 
     loc = deps.loc_man.default
-    graph = await price_graph_from_db(deps.db, loc, period=14 * DAY)
+    graph = await price_graph_from_db(deps, loc, period=14 * DAY)
 
     await slack.send_message_to_channel('C02L2AVS937', 'How are you?', picture=graph, pic_name='price.png')
 

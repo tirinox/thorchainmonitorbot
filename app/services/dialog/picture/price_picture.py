@@ -1,37 +1,63 @@
 from localization.manager import BaseLocalization
+from services.jobs.volume_recorder import VolumeRecorder
 from services.lib.constants import RUNE_SYMBOL_DET, RUNE_SYMBOL_POOL, RUNE_SYMBOL_CEX
 from services.lib.date_utils import DAY, today_str
-from services.lib.db import DB
+from services.lib.depcont import DepContainer
 from services.lib.draw_utils import img_to_bio
 from services.lib.plot_graph import PlotGraphLines
-from services.lib.utils import async_wrap
+from services.lib.utils import async_wrap, pluck_from_series
 from services.models.time_series import PriceTimeSeries
 
-PRICE_GRAPH_WIDTH = 640
-PRICE_GRAPH_HEIGHT = 480
+PRICE_GRAPH_WIDTH = 1024
+PRICE_GRAPH_HEIGHT = 768
 
 LINE_COLOR_POOL_PRICE = '#FFD573'
 LINE_COLOR_CEX_PRICE = '#61B7CF'
 LINE_COLOR_DET_PRICE = '#FF8673'
 
+BAR_COLOR_SWAP = '#0b735b'
+BAR_COLOR_SWAP_SYNTH = '#118f89'
+
+VOLUME_N_POINTS = 58
+
 
 @async_wrap
-def price_graph(pool_price_df, det_price_df, cex_prices_df, loc: BaseLocalization, time_scale_mode='date'):
+def price_graph(pool_price_df, det_price_df, cex_prices_df, volumes, loc: BaseLocalization, time_scale_mode='date'):
     graph = PlotGraphLines(PRICE_GRAPH_WIDTH, PRICE_GRAPH_HEIGHT)
     graph.show_min_max = True
     graph.left = 80
     graph.legend_x = 95
     graph.bottom = 100
+
     graph.add_series(pool_price_df, LINE_COLOR_POOL_PRICE)
     graph.add_series(cex_prices_df, LINE_COLOR_CEX_PRICE)
     graph.add_series(det_price_df, LINE_COLOR_DET_PRICE)
+
+    graph.bar_thickness = 8
+    graph.bar_height_limit = 200
+    graph.add_series_bars(pluck_from_series(volumes, 'swap'), BAR_COLOR_SWAP)
+    graph.add_series_bars(pluck_from_series(volumes, 'synth'), BAR_COLOR_SWAP_SYNTH)
+
+    # todo: add "add/withdraw", move left/right, thinner bar...
+    """
+    like this:
+     ___
+    |___|
+    |   |
+    |A  |
+    |A  |
+    |A W|
+    |A W|
+    |A W|
+    """
+
     graph.update_bounds()
     graph.min_y = 0.0
     graph.max_y *= 1.1
     graph.n_ticks_x = 8
     graph.n_ticks_y = 8
     graph.grid_lines = True
-    graph.line_width = 1
+    graph.line_width = 2
 
     graph.add_title(loc.PRICE_GRAPH_TITLE)
 
@@ -39,16 +65,20 @@ def price_graph(pool_price_df, det_price_df, cex_prices_df, loc: BaseLocalizatio
     graph.add_legend(LINE_COLOR_CEX_PRICE, loc.PRICE_GRAPH_LEGEND_CEX_PRICE)
     graph.add_legend(LINE_COLOR_DET_PRICE, loc.PRICE_GRAPH_LEGEND_DET_PRICE)
 
+    graph.add_legend(BAR_COLOR_SWAP, loc.PRICE_GRAPH_VOLUME_SWAP_NORMAL)
+    graph.add_legend(BAR_COLOR_SWAP_SYNTH, loc.PRICE_GRAPH_VOLUME_SWAP_SYNTH)
+
     graph.y_formatter = lambda y: f'${y:.3f}'
     graph.x_formatter = graph.date_formatter if time_scale_mode == 'date' else graph.time_formatter
 
     return graph.finalize()
 
 
-async def price_graph_from_db(db: DB, loc: BaseLocalization, period=DAY):
-    series = PriceTimeSeries(RUNE_SYMBOL_POOL, db)
-    det_series = PriceTimeSeries(RUNE_SYMBOL_DET, db)
-    cex_price_series = PriceTimeSeries(RUNE_SYMBOL_CEX, db)
+async def price_graph_from_db(deps: DepContainer, loc: BaseLocalization, period=DAY):
+    series = PriceTimeSeries(RUNE_SYMBOL_POOL, deps.db)
+    det_series = PriceTimeSeries(RUNE_SYMBOL_DET, deps.db)
+    cex_price_series = PriceTimeSeries(RUNE_SYMBOL_CEX, deps.db)
+    volume_recorder = VolumeRecorder(deps)
 
     max_points = 10_000
     if period >= 7 * DAY:
@@ -57,8 +87,9 @@ async def price_graph_from_db(db: DB, loc: BaseLocalization, period=DAY):
     prices = await series.get_last_values(period, with_ts=True, max_points=max_points)
     det_prices = await det_series.get_last_values(period, with_ts=True, max_points=max_points)
     cex_prices = await cex_price_series.get_last_values(period, with_ts=True, max_points=max_points)
+    volumes = await volume_recorder.get_data_range_ago_n(period, n=VOLUME_N_POINTS)
 
     time_scale_mode = 'time' if period <= DAY else 'date'
 
-    img = await price_graph(prices, det_prices, cex_prices, loc, time_scale_mode=time_scale_mode)
+    img = await price_graph(prices, det_prices, cex_prices, volumes, loc, time_scale_mode=time_scale_mode)
     return img_to_bio(img, f'price-{today_str()}.jpg')

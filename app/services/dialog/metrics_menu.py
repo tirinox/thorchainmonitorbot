@@ -247,7 +247,7 @@ class MetricsDialog(BaseDialog):
             halted_chains=self.deps.halted_chains
         )
 
-        graph = await price_graph_from_db(self.deps.db, self.loc, period=period)
+        graph = await price_graph_from_db(self.deps, self.loc, period=period)
         await message.answer_photo(graph)
         await message.answer(price_text,
                              disable_web_page_preview=True,

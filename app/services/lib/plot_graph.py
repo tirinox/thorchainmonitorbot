@@ -6,6 +6,8 @@ from PIL import ImageDraw, ImageFont
 
 from services.lib.draw_utils import generate_gradient, LIGHT_TEXT_COLOR
 
+BIG_NUMBER = 1e20
+
 
 class PlotGraph:
     GRADIENT_TOP_COLOR = '#3d5975'
@@ -157,8 +159,8 @@ class PlotBarGraph(PlotGraph):
             self.series.append((list(series), color))
 
     def update_bounds_y(self):
-        self.min_y = 1e100
-        self.max_y = -1e100
+        self.min_y = BIG_NUMBER
+        self.max_y = -BIG_NUMBER
 
         y_values = [s[0] for s in self.series]
         for x, *ys in zip(self.x_values, *y_values):
@@ -240,15 +242,23 @@ class PlotGraphLines(PlotGraph):
     def __init__(self, w=800, h=600, bg='gradient'):
         super().__init__(w, h, bg)
         self.series = []
+
         self.min_x = self.max_x = 0.0
         self.line_width = 3
         self.legend_x = self.left
         self.legend_y = self.h - self.bottom * 0.5
         self.show_min_max = False
 
-    def update_bounds(self):
-        self.min_x = self.min_y = 1e10
-        self.max_x = self.max_y = -1e10
+        self.bar_series = []
+        self.bar_height_limit = 144
+        self.bar_thickness = 10
+
+        self.bar_max = -BIG_NUMBER
+        self.bar_min = BIG_NUMBER
+
+    def update_line_bounds(self):
+        self.min_x = self.min_y = BIG_NUMBER
+        self.max_x = self.max_y = -BIG_NUMBER
         for line_desc in self.series:
             points = line_desc['pts']
             for x, y in points:
@@ -257,8 +267,30 @@ class PlotGraphLines(PlotGraph):
                 self.max_x = max(self.max_x, x)
                 self.max_y = max(self.max_y, y)
 
+    def update_bar_bounds(self):
+        self.bar_max = -BIG_NUMBER
+        self.bar_min = BIG_NUMBER
+
+        for line_desc in self.bar_series:
+            points = line_desc['pts']
+            for x, y in points:
+                self.min_x = min(self.min_x, x)
+                self.max_x = max(self.max_x, x)
+                self.bar_max = max(self.bar_max, y)
+                self.bar_min = min(self.bar_min, y)
+
+    def update_bounds(self):
+        self.update_line_bounds()
+        self.update_bar_bounds()
+
     def add_series(self, list_of_points, color):
         self.series.append({
+            'pts': list_of_points,
+            'color': color
+        })
+
+    def add_series_bars(self, list_of_points, color):
+        self.bar_series.append({
             'pts': list_of_points,
             'color': color
         })
@@ -298,6 +330,8 @@ class PlotGraphLines(PlotGraph):
 
         self._plot_ticks_axis(self.min_x, self.max_x, 'x', self.n_ticks_x)
         self._plot_ticks_axis(self.min_y, self.max_y, 'y', self.n_ticks_y)
+
+        self._plot_bars()
 
         ox, oy, plot_w, plot_h = self.plot_rect()
 
@@ -344,3 +378,26 @@ class PlotGraphLines(PlotGraph):
                            anchor='mm')
             self.draw.text((max_px + 6, max_py - 10), self.y_formatter(float(max_y)), color, self.font_ticks,
                            anchor='mm')
+
+    def _plot_bars(self):
+        ox, oy, plot_w, plot_h = self.plot_rect()
+        bh2 = self.bar_thickness * 0.5
+
+        bar_normal_height = self.bar_height_limit / max(abs(self.bar_min), abs(self.bar_max))
+
+        for line_desc in self.bar_series:
+            points = line_desc['pts']
+            if not points:
+                continue
+
+            color = line_desc['color']
+
+            for x, y in points:
+                x, _ = self.convert_coords(x, y, ox, oy, plot_w, plot_h)
+
+                bar_height = bar_normal_height * y
+
+                self.draw.rectangle((
+                    int(x - bh2), int(oy),
+                    int(x + bh2), int(oy - bar_height)
+                ), fill=color)

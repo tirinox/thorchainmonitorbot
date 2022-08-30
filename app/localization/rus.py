@@ -271,10 +271,14 @@ class RussianLocalization(BaseLocalization):
 
     # ------ PRICE -------
 
-    PRICE_GRAPH_TITLE = f'Цена {RAIDO_GLYPH}уны'
+    PRICE_GRAPH_TITLE = f'THORChain {RAIDO_GLYPH}une цена'
     PRICE_GRAPH_LEGEND_DET_PRICE = 'Детерминистская цена'
     PRICE_GRAPH_LEGEND_ACTUAL_PRICE = 'Цена в пухал'
     PRICE_GRAPH_LEGEND_CEX_PRICE = f'Цена на бирже'
+    PRICE_GRAPH_VOLUME_SWAP_NORMAL = 'Объем обменов'
+    PRICE_GRAPH_VOLUME_SWAP_SYNTH = 'Объем синтетиков'
+    PRICE_GRAPH_VOLUME_SWAP_ADD = 'Объем добавления'
+    PRICE_GRAPH_VOLUME_SWAP_WITHDRAW = 'Объем изъятия'
 
     # ------ TXS -------
 

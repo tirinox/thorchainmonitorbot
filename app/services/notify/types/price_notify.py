@@ -71,7 +71,7 @@ class PriceNotifier(INotified):
         report = PriceReport(*hist_prices, market_info, last_ath, btc_price)
 
         async def price_graph_gen(loc: BaseLocalization):
-            graph = await price_graph_from_db(self.deps.db, loc, self.price_graph_period)
+            graph = await price_graph_from_db(self.deps, loc, self.price_graph_period)
             caption = loc.notification_text_price_update(report, ath, halted_chains=self.deps.halted_chains)
             return BoardMessage.make_photo(graph, caption=caption)
 

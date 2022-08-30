@@ -68,7 +68,7 @@ class InlineBotHandlerDialog(BaseDialog):
         else:
             period = 3 * DAY
         ident = unique_ident([period], prec='minute')
-        graph = await price_graph_from_db(self.deps.db, self.loc, period=period)
+        graph = await price_graph_from_db(self.deps, self.loc, period=period)
         await self._answer_photo(inline_query, graph, f'Price of Rune: {period}', ident)
 
     async def _handle_stats_query(self, inline_query: InlineQuery):

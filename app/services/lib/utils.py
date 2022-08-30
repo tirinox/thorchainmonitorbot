@@ -363,12 +363,19 @@ def filter_kwargs_according_function_signature(dict_to_filter, thing_with_kwargs
     return {filter_key: dict_to_filter[filter_key] for filter_key in filter_keys}
 
 
-def take_closest(sorted_list, target):
+def take_closest(sorted_list, target, ignore_outliers=False):
     """
     Assumes sorted_list is sorted. Returns closest value to target.
 
     If two numbers are equally close, return the smallest number.
     """
+    if not sorted_list:
+        return
+
+    if ignore_outliers:
+        if target < sorted_list[0] or target > sorted_list[-1]:
+            return
+
     pos = bisect_left(sorted_list, target)
     if pos == 0:
         return sorted_list[0]
@@ -376,4 +383,14 @@ def take_closest(sorted_list, target):
         return sorted_list[-1]
     before = sorted_list[pos - 1]
     after = sorted_list[pos]
-    return after if after - sorted_list < sorted_list - before else before
+    return after if after - target < target - before else before
+
+
+def pluck(list_of_dict, key, default=0.0):
+    return [item.get(key, default) for item in list_of_dict]
+
+
+def pluck_from_series(series, key, default=0.0):
+    return [
+        (ts, dic.get(key, default) if dic else default) for ts, dic in series
+    ]
