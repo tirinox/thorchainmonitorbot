@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 
 from aiothornode.connector import ThorConnector
 
@@ -25,6 +26,12 @@ from services.notify.broadcast import Broadcaster
 class LpAppFramework:
     def __init__(self, rune_yield_class=None, network=None, log_level=logging.DEBUG) -> None:
         self.brief = None
+
+        cwd = os.getcwd()
+        if cwd.endswith('/tools/debug'):
+            os.chdir(cwd.replace('/tools/debug', ''))
+            cwd_new = os.getcwd()
+            print(f'Hey! Auto changed directory. "{cwd}" -> "{cwd_new}"!')
 
         setup_logs(log_level)
         d = DepContainer()
