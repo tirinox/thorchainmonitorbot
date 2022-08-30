@@ -30,6 +30,7 @@ from services.jobs.node_churn import NodeChurnDetector
 from services.jobs.transfer_detector import RuneTransferDetectorTxLogs
 from services.jobs.user_counter import UserCounter
 from services.jobs.volume_filler import VolumeFillerUpdater
+from services.jobs.volume_recorder import VolumeRecorder
 from services.lib.config import Config, SubConfig
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.db import DB
@@ -162,6 +163,9 @@ class App:
 
             volume_filler = VolumeFillerUpdater(d)
             fetcher_tx.subscribe(volume_filler)
+
+            d.volume_recorder = VolumeRecorder(d)
+            volume_filler.subscribe(d.volume_recorder)
 
             if d.cfg.tx.liquidity.get('enabled', True):
                 liq_notifier_tx = GenericTxNotifier(d, d.cfg.tx.liquidity,
