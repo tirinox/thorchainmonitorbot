@@ -2,7 +2,6 @@ import asyncio
 from itertools import cycle
 from typing import List, NamedTuple
 
-from aiothornode.env import MCCN
 from aiothornode.nodeclient import ThorNodePublicClient
 from aiothornode.types import ThorConstants, ThorMimir
 

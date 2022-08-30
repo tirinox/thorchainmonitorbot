@@ -101,6 +101,11 @@ class TimeSeries:
     async def add_as_json(self, message_id=b'*', j: dict = None):
         await self.add(message_id, json=json.dumps(j))
 
+    @staticmethod
+    def discrete_message_id(timestamp, tolerance=TOLERANCE_DEFAULT):
+        timestamp_bucket = timestamp // tolerance * tolerance
+        return f'{timestamp_bucket}-0'
+
     async def select(self, start, end, count=100):
         r = await self.db.get_redis()
         data = await r.xrange(self.stream_name, start, end, count=count)
