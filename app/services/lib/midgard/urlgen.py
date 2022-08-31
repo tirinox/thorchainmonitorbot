@@ -47,7 +47,7 @@ class MidgardURLGenBase(ABC):
 
 
 class MidgardURLGenV2(MidgardURLGenBase):
-    LIQUIDITY_TX_TYPES_STRING = 'withdraw,addLiquidity'
+    LIQUIDITY_TX_TYPES_STRING = 'withdraw,addLiquidity,donate'
 
     def url_for_tx(self, offset=0, count=50, address=None, types=None, txid=None) -> str:
         url = f'{self.base_url}/v2/actions?offset={offset}&limit={count}'
