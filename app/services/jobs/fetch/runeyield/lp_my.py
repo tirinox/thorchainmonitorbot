@@ -269,10 +269,8 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         if prices:
             return weighted_mean(prices, weights)
         elif use_default_price:
-            self.logger.warning('No USD price can be extract. Perhaps USD pools are missing at that point')
+            self.logger.warning('No USD price can be extracted. Perhaps USD pools are missing at that point')
             return DEFAULT_RUNE_PRICE  # todo: get rune price somewhere else!
-
-        self.logger.error('No USD price can be extract. Perhaps USD pools are missing at that point!')
 
     def _get_earliest_prices(self, txs: List[ThorTx], pool_historic: HeightToAllPools) \
             -> Tuple[Optional[float], Optional[float]]:

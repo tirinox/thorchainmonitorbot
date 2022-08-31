@@ -223,13 +223,19 @@ def sync_lp_pool_picture(price_holder: LastPriceHolder, report: LiquidityPoolRep
                 draw.text(pos_percent_lp(x, rows_y[6]), f'{pretty_money(price_change, signed=True)}%', font=r.font_semi,
                           fill=result_color(price_change), anchor='ms')
                 if column == report.ASSET:
-                    price_text = pretty_money(report.usd_per_asset, prefix='$')
+                    last_price = short_dollar(report.usd_per_asset_start)
+                    curr_price = short_dollar(report.usd_per_asset)
+                    price_text = f'({last_price}→{curr_price})'
                 elif column == report.RUNE:
-                    price_text = pretty_money(report.usd_per_rune, prefix='$')
+                    last_price = short_dollar(report.usd_per_rune_start)
+                    curr_price = short_dollar(report.usd_per_rune)
+                    price_text = f'({last_price}→{curr_price})'
                 else:
                     price_text = loc.LONG_DASH
+
+                # actual price
                 draw.text(pos_percent_lp(x, rows_y[6] + 2.5),
-                          f"({price_text})",
+                          price_text,
                           fill=FORE_COLOR,
                           font=r.font_small,
                           anchor='ms')

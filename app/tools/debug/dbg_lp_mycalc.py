@@ -1,11 +1,10 @@
 import asyncio
-import logging
 from datetime import date
 
+from services.dialog.picture.lp_picture import lp_pool_picture
 from services.jobs.fetch.runeyield.date2block import DateToBlockMapper
 from services.jobs.fetch.runeyield.lp_my import HomebrewLPConnector
 from services.jobs.fetch.tx import TxFetcher
-from services.lib.utils import setup_logs
 from tools.lib.lp_common import LpAppFramework
 
 
@@ -16,12 +15,10 @@ async def my_test_get_user_lp_actions(lpgen: LpAppFramework):
         print(tx, end='\n-----\n')
 
 
-ADDR = 'bnb1v9jldefnx0mngfetkwuczzxerrgw6ncvlukad5'
-POOL = 'BNB.USDT-6D8'
-# POOL = 'BNB.ETHBULL-D33'
-
-ADDR_MCTN = 'tthor1erl5a09ahua0umwcxp536cad7snerxt4eflyq0'
-POOL_MCTN = ''
+ADDR = 'thor1egxvam70a86jafa8gcg3kqfmfax3s0m2g3m754'
+# POOL = 'BNB.TWT-8C2'
+# POOL = 'BNB.BTCB-1DE'
+POOL = 'BNB.BUSD-BD1'
 
 
 async def my_test_summary_of_all_pools(lpgen: LpAppFramework):
@@ -35,6 +32,10 @@ async def my_test_summary_of_all_pools(lpgen: LpAppFramework):
 async def my_test_1_pool(lpgen: LpAppFramework):
     report = await lpgen.rune_yield.generate_yield_report_single_pool(ADDR, POOL)
     print(report)
+
+    loc = lpgen.deps.loc_man.default
+    picture = await lp_pool_picture(lpgen.deps.price_holder, report, loc)
+    picture.show()
 
 
 async def my_test_block_calibration(lpgen: LpAppFramework):
@@ -64,15 +65,13 @@ async def clear_date2block(lpgen: LpAppFramework):
 async def main():
     lpgen = LpAppFramework(HomebrewLPConnector)
     async with lpgen:
-        # await test_1_pool(lpgen)
+        await my_test_1_pool(lpgen)
         # await test_charts(lpgen, address='bnb1snqqjdvcqjf76fdztxrtwgv0ws9hsvvfsjv02z')  # mccn (bnb only)
         # await test_charts(lpgen, address='0x52e07b963ab0f525b15e281b3b42d55e8048f027')  # mccn (many pools + withdraw)
         # await test_block_calibration(lpgen)
-        await clear_date2block(lpgen)
-        await my_test_block_by_date(lpgen)
+        # await clear_date2block(lpgen)
+        # await my_test_block_by_date(lpgen)
 
 
 if __name__ == "__main__":
-    setup_logs(logging.INFO)
-    # asyncio.run(show_me_example_liquidity())
     asyncio.run(main())
