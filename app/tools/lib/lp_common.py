@@ -1,63 +1,53 @@
-import asyncio
 import logging
 import os
 
-from aiothornode.connector import ThorConnector
-
-from localization.manager import LocalizationManager
-from services.dialog.telegram.telegram import telegram_send_message_basic, TG_TEST_USER, TelegramBot
+from main import App
+from services.dialog.telegram.telegram import telegram_send_message_basic, TG_TEST_USER
 from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.runeyield import AsgardConsumerConnectorBase, get_rune_yield_connector
-from services.lib.config import Config
-from services.lib.db import DB
 from services.lib.delegates import INotified
-from services.lib.depcont import DepContainer
-from services.lib.midgard.connector import MidgardConnector
 from services.lib.midgard.name_service import NameService
-from services.lib.settings_manager import SettingsManager, SettingsProcessorGeneralAlerts
 from services.lib.texts import sep
-from services.lib.utils import setup_logs
 from services.models.mimir import MimirHolder
-from services.models.node_watchers import AlertWatchers
-from services.notify.broadcast import Broadcaster
 
 
-class LpAppFramework:
+class LpAppFramework(App):
     def __init__(self, rune_yield_class=None, network=None, log_level=logging.DEBUG) -> None:
+        self._solve_working_dir_mess()  # first of all!
+
+        super().__init__(log_level)
         self.brief = None
 
+        d = self.deps
+
+        if network:
+            d.cfg.network_id = network
+
+        d.price_pool_fetcher = PoolPriceFetcher(d)
+        d.mimir_const_fetcher = ConstMimirFetcher(d)
+        d.mimir_const_holder = MimirHolder()
+        d.rune_market_fetcher = RuneMarketInfoFetcher(d)
+        d.name_service = NameService(d.db, d.cfg, d.midgard_connector)
+        d.loc_man.set_name_service(d.name_service)
+
+        self.rune_yield: AsgardConsumerConnectorBase
+        self.rune_yield_class = rune_yield_class
+
+        if self.rune_yield_class:
+            self.rune_yield = self.rune_yield_class(d)
+        else:
+            self.rune_yield = get_rune_yield_connector(d)
+
+    @staticmethod
+    def _solve_working_dir_mess():
         cwd = os.getcwd()
         if cwd.endswith('/tools/debug'):
             os.chdir(cwd.replace('/tools/debug', ''))
             cwd_new = os.getcwd()
             print(f'Hey! Auto changed directory. "{cwd}" -> "{cwd_new}"!')
-
-        setup_logs(log_level)
-        d = DepContainer()
-        d.loop = asyncio.get_event_loop()
-        d.cfg = Config()
-        if network:
-            d.cfg.network_id = network
-        d.loc_man = LocalizationManager(d.cfg)
-        d.db = DB(d.loop)
-        d.settings_manager = SettingsManager(d.db, d.cfg)
-
-        d.alert_watcher = AlertWatchers(d.db)
-        d.gen_alert_settings_proc = SettingsProcessorGeneralAlerts(d.db, d.alert_watcher)
-
-        d.telegram_bot = TelegramBot(d.cfg, d.db, d.loop)
-        d.broadcaster = Broadcaster(d)
-
-        d.price_pool_fetcher = PoolPriceFetcher(d)
-        d.mimir_const_fetcher = ConstMimirFetcher(d)
-        d.mimir_const_holder = MimirHolder()
-
-        self.deps = d
-        self.rune_yield: AsgardConsumerConnectorBase
-        self.rune_yield_class = rune_yield_class
 
     @property
     def tg_token(self):
@@ -69,23 +59,9 @@ class LpAppFramework:
     async def prepare(self, brief=False):
         d = self.deps
         d.make_http_session()
-        d.thor_connector = ThorConnector(d.cfg.get_thor_env_by_network_id(), d.session)
-        d.thor_env = d.thor_connector.env
-
-        cfg = d.cfg.thor.midgard
-        d.midgard_connector = MidgardConnector(
-            d.session,
-            d.thor_connector,
-            int(cfg.get_pure('tries', 3)),
-            public_url=cfg.get('public_url', ''),
-            use_nodes=bool(cfg.get('use_nodes', True))
-        )
-        d.rune_market_fetcher = RuneMarketInfoFetcher(d)
-
-        d.name_service = NameService(d.db, d.cfg, d.midgard_connector)
-        d.loc_man.set_name_service(d.name_service)
 
         await d.db.get_redis()
+        await self.create_thor_node_connector()
 
         brief = brief if self.brief is None else self.brief
         if brief:
@@ -99,12 +75,6 @@ class LpAppFramework:
         await d.mimir_const_fetcher.fetch()  # get constants beforehand
 
         d.price_pool_fetcher = PoolPriceFetcher(d)
-
-        if self.rune_yield_class:
-            self.rune_yield = self.rune_yield_class(d)
-        else:
-            self.rune_yield = get_rune_yield_connector(d)
-
         await d.price_pool_fetcher.fetch()
 
     async def close(self):
