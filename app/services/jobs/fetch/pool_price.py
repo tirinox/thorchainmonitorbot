@@ -95,6 +95,8 @@ class PoolPriceFetcher(BaseFetcher):
         for attempt in range(1, self.max_attempts):
             try:
                 thor_pools = await self.deps.thor_connector.query_pools(height, consensus=self.use_thor_consensus)
+                if not thor_pools:
+                    thor_pools = await self.deps.thor_connector_backup.query_pools(height, consensus=False)
                 return parse_thor_pools(thor_pools)
             except (TypeError, IndexError) as e:
                 self.logger.error(f'thor_connector.query_pools failed! Attempt: #{attempt}, err: {e}')

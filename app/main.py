@@ -41,7 +41,6 @@ from services.lib.settings_manager import SettingsManager, SettingsProcessorGene
 from services.lib.utils import setup_logs
 from services.models.mimir import MimirHolder
 from services.models.node_watchers import AlertWatchers
-from services.models.price import LastPriceHolder
 from services.models.tx import ThorTxType
 from services.notify.alert_presenter import AlertPresenter
 from services.notify.broadcast import Broadcaster
@@ -67,13 +66,18 @@ from services.notify.types.voting_notify import VotingNotifier
 
 
 class App:
-    def __init__(self):
+    def __init__(self, log_level=None):
         d = self.deps = DepContainer()
         d.is_loading = True
 
+        self._init_configuration(d, log_level)
+        self._init_settings(d)
+        self._init_messaging(d)
+
+    def _init_configuration(self, d, log_level=None):
         d.cfg = Config()
 
-        log_level = d.cfg.get_pure('log_level', logging.INFO)
+        log_level = log_level or d.cfg.get_pure('log_level', logging.INFO)
         setup_logs(log_level)
 
         # todo: ART logo
@@ -81,19 +85,17 @@ class App:
 
         d.loop = asyncio.get_event_loop()
         d.db = DB(d.loop)
-
-        d.price_holder = LastPriceHolder()
         d.price_holder.load_stable_coins(d.cfg)
 
+    def _init_settings(self, d):
         # settings:
         d.settings_manager = SettingsManager(d.db, d.cfg)
-
         d.alert_watcher = AlertWatchers(d.db)
         d.gen_alert_settings_proc = SettingsProcessorGeneralAlerts(d.db, d.alert_watcher)
         d.settings_manager.subscribe(d.gen_alert_settings_proc)
         d.settings_manager.subscribe(SettingsProcessorPriceDivergence(d.alert_watcher))
 
-        # messaging:
+    def _init_messaging(self, d):
         d.loc_man = LocalizationManager(d.cfg)
         d.broadcaster = Broadcaster(d)
         d.alert_presenter = AlertPresenter(d.broadcaster)
@@ -104,10 +106,14 @@ class App:
         d = self.deps
         d.thor_env = d.cfg.get_thor_env_by_network_id()
         d.thor_connector = ThorConnector(d.thor_env, d.session)
+
+        # now it is used mostly for historical pool state retrieval
+        thor_env_backup = d.cfg.get_thor_env_by_network_id(backup=True)
+        d.thor_connector_backup = ThorConnector(thor_env_backup, d.session)
+
         await d.thor_connector.update_nodes()
 
         cfg: SubConfig = d.cfg.get('thor.midgard')
-
         d.midgard_connector = MidgardConnector(
             d.session,
             d.thor_connector,

@@ -105,7 +105,7 @@ class Config(SubConfig):
         self.network_id = self.get('thor.network_id', NetworkIdents.MAINNET)
         self.is_midgard_v2 = True
 
-    def get_thor_env_by_network_id(self) -> ThorEnvironment:
+    def get_thor_env_by_network_id(self, backup=False) -> ThorEnvironment:
         network_id = self.network_id
 
         if network_id == NetworkIdents.TESTNET_MULTICHAIN:
@@ -117,7 +117,8 @@ class Config(SubConfig):
         else:
             raise KeyError('unsupported network ID!')
 
-        node_url = self.as_str('thor.node.node_url', '')
+        node_key = 'thor.node.backup_node_url' if backup else 'thor.node.node_url'
+        node_url = self.as_str(node_key, '')
         if node_url:
             ref_env.thornode_url = node_url
 

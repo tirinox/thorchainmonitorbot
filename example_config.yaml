@@ -11,6 +11,7 @@ thor:
   node:
     node_url: "https://thornode.ninerealms.com/"
     rpc_node_url: "https://rpc.ninerealms.com/"
+    backup_node_url: "https://thornode-archive.ninerealms.com"  # (!) new
 
   midgard:
     tries: 3
