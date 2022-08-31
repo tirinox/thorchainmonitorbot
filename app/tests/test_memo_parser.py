@@ -13,3 +13,9 @@ def test_memo1():
     assert m.final_asset_address == '0xd533a949740bb3306d119cc777fa900ba034cd52'
     assert m.affiliate_fee == 0
     assert m.affiliate_address == None
+
+
+def test_memo2():
+    memo = 's:e:bob::::822:D1C:1'
+    m = THORMemoParsed.parse_memo(memo)
+    print(m)

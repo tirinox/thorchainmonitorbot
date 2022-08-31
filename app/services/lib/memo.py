@@ -39,7 +39,7 @@ class THORMemoParsed:
         components = [it for it in memo.split(':')]
         action = cls.ith_or_default(components, 0).lower()
 
-        if action == ThorTxType.TYPE_SWAP or action == '=':
+        if action == ThorTxType.TYPE_SWAP or action == '=' or action == 's':
             return cls(
                 ThorTxType.TYPE_SWAP,
                 asset=cls.ith_or_default(components, 1),
