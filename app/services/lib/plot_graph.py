@@ -399,7 +399,8 @@ class PlotGraphLines(PlotGraph):
 
                 bar_height = bar_normal_height * y
 
-                self.draw.rectangle((
-                    int(x - bh2 + x_shift), int(oy),
-                    int(x + bh2 + x_shift), int(oy - bar_height)
-                ), fill=color)
+                if bar_height > 0.1:
+                    self.draw.rectangle((
+                        int(x - bh2 + x_shift), int(oy),
+                        int(x + bh2 + x_shift), int(oy - bar_height)
+                    ), fill=color)
