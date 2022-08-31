@@ -1,3 +1,5 @@
+import re
+
 from emoji import is_emoji
 
 TWITTER_LIMIT_CHARACTERS = 280
@@ -45,3 +47,14 @@ def twitter_intelligent_text_splitter(parts, max_len=TWITTER_LIMIT_CHARACTERS):
         messages.append(this_message_text)
 
     return messages
+
+
+re_english_words = re.compile(r"[a-zA-Z]{5,10}")
+
+
+def abbreviate_some_long_words(text: str, regular_expression=re_english_words):
+    def replacer(match: re.Match):
+        b, e = match.regs[0]
+        return match.string[b:e][:4] + '.'
+
+    return regular_expression.sub(replacer, text)

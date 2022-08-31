@@ -1,4 +1,5 @@
-from services.dialog.twitter.text_length import twitter_text_length, twitter_cut_text, twitter_intelligent_text_splitter
+from services.dialog.twitter.text_length import twitter_text_length, twitter_cut_text, \
+    twitter_intelligent_text_splitter, abbreviate_some_long_words
 from services.lib.money import EMOJI_SCALE
 from services.lib.texts import progressbar, find_country_emoji
 
@@ -63,3 +64,16 @@ def test_tw1():
  ▰▰▰▰▱▱▱▱▱▱▱▱ 
 3. Next Chain ➔ "DASH": 10.5 % (10/95)👏"""
     assert twitter_text_length(text) == 189
+
+
+def test_abbreviate():
+    text = """💎 Total Rune switched to native: 484.3Mᚱ (97.0 %)
+☠️ Killed switched Rune: 393.2Kᚱ, total killed Rune: 2.1Mᚱ, unswitched Rune left: 13.5Mᚱ🆕.
+📈 Bonding APY is 8.62%(↑ +0.0184%) and Liquidity APY is 14.1%(↓ -0.0563%).
+👥 Daily users: 405(↓ -2), monthly users: 3965(↑ +299) 🆕"""
+    original_length = twitter_text_length(text)
+    shortened_text = abbreviate_some_long_words(text)
+
+    print(shortened_text)
+
+    assert twitter_text_length(shortened_text) < original_length

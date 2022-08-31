@@ -4,7 +4,8 @@ import logging
 import tweepy
 from ratelimit import limits
 
-from services.dialog.twitter.text_length import twitter_text_length, twitter_cut_text, TWITTER_LIMIT_CHARACTERS
+from services.dialog.twitter.text_length import twitter_text_length, twitter_cut_text, TWITTER_LIMIT_CHARACTERS, \
+    abbreviate_some_long_words
 from services.lib.config import Config
 from services.lib.date_utils import DAY
 from services.lib.utils import class_logger, random_hex
@@ -84,7 +85,7 @@ class TwitterBot:
             await self.post(part, image, executor, loop)
             image = None  # attach image solely to the first post, then just nullify it
 
-    async def send_message(self, chat_id, msg: BoardMessage, **kwargs) -> bool:
+    async def send_message(self, chat_id, msg: BoardMessage, _retrying=False, **kwargs) -> bool:
         # Chat_id is not supported yet... only one single channel
         try:
             if msg.message_type == MessageType.TEXT:
@@ -94,6 +95,18 @@ class TwitterBot:
             else:
                 logging.warning(f'Type "{msg.message_type}" is not supported for Twitter.')
             return True
+        except tweepy.errors.Forbidden as e:
+            if _retrying:
+                logging.exception('Tried to resend Twitter message making it shorter. '
+                                  'Failed again. It must me something else.')
+                return False
+            else:
+                logging.warning(f'There is an exception: {e!r}. But I will try to abbreviate the message and resend.')
+
+                msg.text = abbreviate_some_long_words(msg.text)
+                self.log_tweet(msg.text, None)
+
+                return await self.send_message(chat_id, msg, _retrying=True, **kwargs)
         except Exception:
             logging.exception(f'Twitter exception!', stack_info=True)
             return False

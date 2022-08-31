@@ -439,7 +439,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         switch_rune_total_text = short_rune(new.switched_rune)
         message = (
-            f'💎 Total Rune switched to native: {switch_rune_total_text} '
+            f'💎 Total Rune switched: {switch_rune_total_text} '
             f'({format_percent(new.switched_rune, market.total_supply)})\n'
         )
 
@@ -448,9 +448,9 @@ class TwitterEnglishLocalization(BaseLocalization):
             switched_killed = short_rune(killed.killed_switched)  # killed when switched
             total_killed = short_rune(killed.total_killed)  # potentially dead + switched killed
             message += (
-                f'☠️ Killed switched Rune: {switched_killed}, '
-                f'total killed Rune: {total_killed}, '
-                f'unswitched Rune left: {rune_left}🆕.\n'
+                f'☠️ Killed switched: {switched_killed}, '
+                f'Total killed: {total_killed}, '
+                f'Unswitched Rune left: {rune_left}🆕.\n'
             )
 
         parts.append(message)
