@@ -1,4 +1,5 @@
-from typing import Optional, List
+import asyncio
+from typing import Optional, List, Iterable, Dict
 
 from proto.thor_types import THORName, THORNameAlias
 from services.lib.config import Config
@@ -7,10 +8,7 @@ from services.lib.db import DB
 from services.lib.midgard.connector import MidgardConnector
 
 
-# THORName: adress[owner] -> many of [name] -> many of [address (thor + chains)]
-
-#
-
+# THORName: address[owner] -> many of [name] -> many of [address (thor + chains)]
 
 class NameService:
     def __init__(self, db: DB, cfg: Config, midgard: MidgardConnector):
@@ -45,11 +43,18 @@ class NameService:
         # 4) use thor_name_reversed_lookup => [names]
         # 5) thor_name_lookup(names[0]) if names else None
 
+    async def lookup_multiple_names_by_addresses(self, addresses: Iterable) -> Dict[str, THORName]:
+        thor_names = await asyncio.gather(
+            *[(address, self.lookup_name_by_address(address)) for address in addresses]
+        )
+        return dict(thor_names)
+
     async def lookup_address_by_name(self, name: str) -> Optional[str]:
         name = name.strip()
         if name in self._known_names:
             return self._known_names[name]
 
+    # name -> [address]
     async def thor_name_lookup(self, name: str) -> Optional[THORName]:
         results = await self.midgard.request_random_midgard(f'/thorname/lookup/{name}')
         if results:
@@ -62,6 +67,7 @@ class NameService:
                 ]
             )
 
+    # address -> [name as str]
     async def thor_name_reversed_lookup(self, address: str) -> List[str]:
         results = await self.midgard.request_random_midgard(f'/thorname/rlookup/{address}')
         return results or []
