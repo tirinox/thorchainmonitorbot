@@ -48,13 +48,16 @@ class TxFetcher(BaseFetcher):
                 self.progress_tracker.total = total
             self.progress_tracker.update(new_txs)
 
-    async def fetch_all_tx(self, address=None, liquidity_change_only=False, max_pages=None) -> List[ThorTx]:
+    async def _fetch_all_tx_of_type(self,
+                                    address=None,
+                                    tx_type=None,
+                                    max_pages=None) -> List[ThorTx]:
         page = 0
         txs = []
-        types = free_url_gen.LIQUIDITY_TX_TYPES_STRING if liquidity_change_only else None
+
         while True:
             q_path = free_url_gen.url_for_tx(page * self.tx_per_batch, self.tx_per_batch,
-                                             types=types,
+                                             tx_type=tx_type,
                                              address=address)
 
             if not self.progress_tracker:
@@ -73,6 +76,18 @@ class TxFetcher(BaseFetcher):
             if max_pages and page >= max_pages:
                 self.logger.info(f'Max pages {max_pages} reached.')
                 break
+
+        return txs
+
+    async def fetch_all_tx(self, address=None, liquidity_change_only=False, max_pages=None) -> List[ThorTx]:
+        tx_types = free_url_gen.LIQUIDITY_TX_TYPES if liquidity_change_only else [None]
+
+        txs = []
+        for tx_type in tx_types:
+            this_type_txs = await self._fetch_all_tx_of_type(address, tx_type, max_pages)
+            txs.extend(this_type_txs)
+
+        txs.sort(key=lambda tx: tx.height_int)
         self.logger.info(f'User {address = } has {len(txs)} tx ({liquidity_change_only = }).')
         return txs
 
