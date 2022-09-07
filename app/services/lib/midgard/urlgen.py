@@ -51,7 +51,7 @@ class MidgardURLGenV2(MidgardURLGenBase):
         url = f'{self.base_url}/v2/actions?offset={offset}&limit={count}'
         if address:
             url += f'&address={address}'
-        if type:
+        if tx_type:
             url += f'&type={tx_type}'
         if txid:
             url += f'&txid={txid}'
