@@ -386,13 +386,12 @@ class MyWalletsMenu(DialogWithSettings):
         value_hidden = not self.data.get(self.KEY_CAN_VIEW_VALUE, True)
 
         picture = await lp_pool_picture(self.deps.price_holder, lp_report, self.loc, value_hidden=value_hidden)
-        picture_io = img_to_bio(picture, f'Thorchain_LP_{pool}_{today_str()}.png')
+        picture_bio = img_to_bio(picture, f'Thorchain_LP_{pool}_{today_str()}.png')
 
         # ANSWER
-        # await self._present_wallet_contents_menu(query.message, edit=False)
         await self._show_wallet_again(query)
 
-        await query.message.answer_photo(picture_io,  # caption=self.loc.TEXT_LP_IMG_CAPTION,
+        await query.message.answer_photo(picture_bio,
                                          disable_notification=True)
 
         # CLEAN UP
@@ -420,13 +419,12 @@ class MyWalletsMenu(DialogWithSettings):
         picture = await lp_address_summary_picture(list(yield_summary.reports),
                                                    yield_summary.charts,
                                                    self.loc, value_hidden=value_hidden)
-        picture_io = img_to_bio(picture, f'Thorchain_LP_Summary_{today_str()}.png')
+        picture_bio = img_to_bio(picture, f'Thorchain_LP_Summary_{today_str()}.png')
 
         # ANSWER
-        # await self._present_wallet_contents_menu(query.message, edit=False)
         await self._show_wallet_again(query)
         
-        await query.message.answer_photo(picture_io,
+        await query.message.answer_photo(picture_bio,
                                          disable_notification=True)
 
         # CLEAN UP

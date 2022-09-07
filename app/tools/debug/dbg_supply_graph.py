@@ -8,6 +8,7 @@ from localization.manager import LocalizationManager
 from services.dialog.picture.supply_picture import SupplyPictureGenerator
 from services.jobs.fetch.killed_rune import KilledRuneFetcher
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
+from services.lib.draw_utils import img_to_bio
 from services.lib.utils import json_cached_to_file_async
 from services.models.killed_rune import KilledRuneEntry
 from services.models.net_stats import NetworkStats
@@ -52,13 +53,13 @@ async def run():
         ns = NetworkStats(**ns_raw)
 
         pic_gen = SupplyPictureGenerator(loc, rune_market_info.supply_info, killed_rune, ns)
-        pic: BytesIO
-        pic = await pic_gen.get_picture()
+
+        pic, pic_name = await pic_gen.get_picture()
+        pic_bio = img_to_bio(pic, pic_name)
 
         filepath = '../temp/supply.png'
         with open(filepath, 'wb') as f:
-            # noinspection PyTypeChecker
-            f.write(pic.getbuffer())
+            f.write(pic_bio.getbuffer())
 
         os.system(f'open "{filepath}"')
 

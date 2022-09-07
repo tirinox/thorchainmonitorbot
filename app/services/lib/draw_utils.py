@@ -1,9 +1,11 @@
+import logging
 import os
 import tempfile
 from colorsys import rgb_to_hls, hls_to_rgb
 from io import BytesIO
 from time import sleep
 
+import PIL.Image
 from PIL import Image, ImageDraw, ImageColor
 
 LINE_COLOR = '#356'
@@ -105,7 +107,11 @@ def draw_arc_aa(image, bounds, start, end, width=1, outline='white', antialias=4
     image.paste(outline, mask=mask)
 
 
-def img_to_bio(image, name):
+def img_to_bio(image: PIL.Image.Image, name):
+    if isinstance(image, BytesIO):
+        logging.warning('Got BytesIO. Suppossed to be PIL.Image')
+        return image
+
     bio = BytesIO()
     bio.name = name
     image.save(bio, 'PNG')

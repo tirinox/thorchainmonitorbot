@@ -207,9 +207,10 @@ class MetricsDialog(BaseDialog):
 
     async def show_queue(self, message, period):
         queue_info = self.deps.queue_holder
-        plot = await queue_graph(self.deps, self.loc, duration=period)
+        plot, plot_name = await queue_graph(self.deps, self.loc, duration=period)
         if plot is not None:
-            await message.answer_photo(plot, caption=self.loc.queue_message(queue_info), disable_notification=True)
+            plot_bio = img_to_bio(plot, plot_name)
+            await message.answer_photo(plot_bio, caption=self.loc.queue_message(queue_info), disable_notification=True)
         else:
             await message.answer(self.loc.queue_message(queue_info), disable_notification=True)
 
@@ -247,8 +248,9 @@ class MetricsDialog(BaseDialog):
             halted_chains=self.deps.halted_chains
         )
 
-        graph = await price_graph_from_db(self.deps, self.loc, period=period)
-        await message.answer_photo(graph)
+        graph, graph_name = await price_graph_from_db(self.deps, self.loc, period=period)
+        await message.answer_photo(img_to_bio(graph, graph_name),
+                                   disable_notification=True)
         await message.answer(price_text,
                              disable_web_page_preview=True,
                              disable_notification=True)
@@ -296,7 +298,8 @@ class MetricsDialog(BaseDialog):
         points = await block_notifier.get_block_time_chart(duration, convert_to_blocks_per_minute=True)
 
         # SLOW?
-        chart = await block_speed_chart(points, self.loc, normal_bpm=THOR_BLOCKS_PER_MINUTE, time_scale_mode='time')
+        chart, chart_name = await block_speed_chart(points, self.loc, normal_bpm=THOR_BLOCKS_PER_MINUTE,
+                                                    time_scale_mode='time')
         last_block = block_notifier.last_thor_block
         last_block_ts = block_notifier.last_thor_block_update_ts
 
@@ -306,7 +309,7 @@ class MetricsDialog(BaseDialog):
         d = now_ts() - last_block_ts if last_block_ts else 0
 
         # SLOW?
-        await message.answer_photo(chart,
+        await message.answer_photo(img_to_bio(chart, chart_name),
                                    caption=self.loc.text_block_time_report(last_block, d, recent_bps, state),
                                    disable_notification=True)
         await self.safe_delete(loading_message)
@@ -334,8 +337,8 @@ class MetricsDialog(BaseDialog):
         await message.answer(text, disable_notification=True)
 
         pic_gen = SupplyPictureGenerator(self.loc, market_info.supply_info, self.deps.killed_rune, self.deps.net_stats)
-        pic = await pic_gen.get_picture()
+        pic, pic_name = await pic_gen.get_picture()
 
-        await message.answer_photo(pic, disable_notification=True)
+        await message.answer_photo(img_to_bio(pic, pic_name), disable_notification=True)
 
         await self.safe_delete(loading_message)

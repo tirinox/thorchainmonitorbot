@@ -8,6 +8,7 @@ from services.dialog.twitter.text_length import twitter_text_length, twitter_cut
     abbreviate_some_long_words
 from services.lib.config import Config
 from services.lib.date_utils import DAY
+from services.lib.draw_utils import img_to_bio
 from services.lib.utils import class_logger, random_hex
 from services.notify.channel import MessageType, BoardMessage, MESSAGE_SEPARATOR
 
@@ -57,7 +58,8 @@ class TwitterBot:
 
         if image:
             name = f'image-{random_hex()}.png'
-            ret = self.api.media_upload(filename=name, file=image)
+            image_bio = img_to_bio(image, name)
+            ret = self.api.media_upload(filename=name, file=image_bio)
 
             # Attach media to tweet
             return self.api.update_status(media_ids=[ret.media_id_string], status=text)

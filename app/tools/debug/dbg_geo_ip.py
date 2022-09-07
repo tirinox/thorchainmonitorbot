@@ -2,7 +2,7 @@ import asyncio
 import logging
 from collections import Counter
 
-import localization
+from localization.eng_base import BaseLocalization
 from services.dialog.picture.node_geo_picture import node_geo_pic, make_donut_chart
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.lib.geo_ip import GeoIPManager
@@ -80,7 +80,7 @@ async def test_geo_ip_thor_2():
         c = Counter(providers.values())
         print(c)
 
-        pic = await node_geo_pic(ip_infos, localization.BaseLocalization(None))
+        pic = await node_geo_pic(ip_infos, lp_app.deps.loc_man.default)
         pic.show()
 
 
@@ -93,7 +93,7 @@ async def test_donuts():
 
 async def test_geo_chart():
     infos = await get_ip_infos_pickled()
-    pic = await node_geo_pic(infos, localization.BaseLocalization(None))
+    pic = await node_geo_pic(infos, BaseLocalization(None))
     pic.show()
 
 
@@ -102,6 +102,7 @@ async def main():
     # await test_geo_ip_thor_2()
     # await test_donuts()
     await test_geo_chart()
+
 
 if __name__ == "__main__":
     setup_logs(logging.INFO)

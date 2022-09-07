@@ -1,14 +1,12 @@
 import asyncio
-from io import BytesIO
 from typing import Optional
 
 from discord import Client, File
 from markdownify import markdownify
 
 from services.lib.config import Config
-from services.lib.draw_utils import img_to_bio
-from services.notify.channel import MessageType, BoardMessage
 from services.lib.utils import class_logger
+from services.notify.channel import MessageType, BoardMessage
 
 
 class DiscordBot:
@@ -35,7 +33,7 @@ class DiscordBot:
         text = text.replace('</pre>', '</code>')
         return markdownify(text)
 
-    async def send_message_to_channel(self, channel, text: Optional[str], picture=None, pic_name='pic.png',
+    async def send_message_to_channel(self, channel, text: Optional[str], pic_bio=None,
                                       need_convert=False):
         if not channel or not text:
             self.logger.warning('no data to send')
@@ -44,14 +42,7 @@ class DiscordBot:
         if need_convert:
             text = self.convert_text_to_discord_formatting(text)
 
-        if picture:
-            if not isinstance(picture, BytesIO):
-                picture = img_to_bio(picture, pic_name)
-
-            picture.seek(0)
-            file = File(picture)
-        else:
-            file = None
+        file = File(pic_bio) if pic_bio else None
 
         channel = self.client.get_channel(channel)
         await channel.send(text, file=file)
@@ -61,10 +52,11 @@ class DiscordBot:
             if msg.message_type == MessageType.TEXT:
                 await self.send_message_to_channel(chat_id, msg.text, need_convert=True)
             elif msg.message_type == MessageType.STICKER:
-                sticker = await self._sticker_downloader.get_sticker_image(msg.text)
-                await self.send_message_to_channel(chat_id, ' ', picture=sticker)
+                sticker_bio = await self._sticker_downloader.get_sticker_image_bio(msg.text)
+                await self.send_message_to_channel(chat_id, ' ', pic_bio=sticker_bio)
             elif msg.message_type == MessageType.PHOTO:
-                await self.send_message_to_channel(chat_id, msg.text, picture=msg.photo, need_convert=True)
+                pic_bio = msg.get_bio()
+                await self.send_message_to_channel(chat_id, msg.text, pic_bio=pic_bio, need_convert=True)
             return True
         except Exception as e:
             self.logger.exception(f'discord exception {e}, {msg.message_type = }, text = "{msg.text}"!')

@@ -4,6 +4,8 @@ import sha3
 from PIL import Image
 from aiogram import Bot
 
+from services.lib.draw_utils import img_to_bio
+
 
 class TelegramStickerDownloader:
     def __init__(self, bot: Bot, base_path='./data/stickers'):
@@ -27,3 +29,7 @@ class TelegramStickerDownloader:
             await self._download_sticker(sticker_id, local_path)
         sticker = Image.open(local_path).convert("RGBA")
         return sticker
+
+    async def get_sticker_image_bio(self, sticker_id, filename='sticker.png') -> Image.Image:
+        sticker = await self.get_sticker_image(sticker_id)
+        return img_to_bio(sticker, filename)

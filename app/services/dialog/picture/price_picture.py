@@ -1,9 +1,12 @@
+from typing import Tuple
+
+import PIL
+
 from localization.manager import BaseLocalization
 from services.jobs.volume_recorder import VolumeRecorder
 from services.lib.constants import RUNE_SYMBOL_DET, RUNE_SYMBOL_POOL, RUNE_SYMBOL_CEX
 from services.lib.date_utils import DAY, today_str
 from services.lib.depcont import DepContainer
-from services.lib.draw_utils import img_to_bio
 from services.lib.plot_graph import PlotGraphLines
 from services.lib.utils import async_wrap, pluck_from_series
 from services.models.time_series import PriceTimeSeries
@@ -80,7 +83,7 @@ def price_graph(pool_price_df, det_price_df, cex_prices_df, volumes, loc: BaseLo
     return graph.finalize()
 
 
-async def price_graph_from_db(deps: DepContainer, loc: BaseLocalization, period=DAY):
+async def price_graph_from_db(deps: DepContainer, loc: BaseLocalization, period=DAY) -> Tuple[PIL.Image.Image, str]:
     series = PriceTimeSeries(RUNE_SYMBOL_POOL, deps.db)
     det_series = PriceTimeSeries(RUNE_SYMBOL_DET, deps.db)
     cex_price_series = PriceTimeSeries(RUNE_SYMBOL_CEX, deps.db)
@@ -98,4 +101,4 @@ async def price_graph_from_db(deps: DepContainer, loc: BaseLocalization, period=
     time_scale_mode = 'time' if period <= DAY else 'date'
 
     img = await price_graph(prices, det_prices, cex_prices, volumes, loc, time_scale_mode=time_scale_mode)
-    return img_to_bio(img, f'price-{today_str()}.jpg')
+    return img, f'price-{today_str()}.jpg'

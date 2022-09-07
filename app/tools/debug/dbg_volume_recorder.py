@@ -8,6 +8,7 @@ from services.jobs.fetch.tx import TxFetcher
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.jobs.volume_recorder import VolumeRecorder
 from services.lib.date_utils import HOUR
+from services.lib.draw_utils import img_to_bio
 from tools.lib.lp_common import LpAppFramework, Receiver
 
 
@@ -31,9 +32,9 @@ async def continuous_volume_recording(lp_app):
 async def show_price_graph(lp_app):
     await fill_rune_price_from_gecko(lp_app.deps.db, include_fake_det=True)
     loc = lp_app.deps.loc_man.default
-    graph = await price_graph_from_db(lp_app.deps, loc)
+    graph, graph_name = await price_graph_from_db(lp_app.deps, loc)
     with open('../temp/price_gr.png', 'wb') as f:
-        f.write(graph.getbuffer())
+        f.write(img_to_bio(graph, graph_name).getbuffer())
         os.system(f'open "../temp/price_gr.png"')
 
 

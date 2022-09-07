@@ -68,8 +68,9 @@ class InlineBotHandlerDialog(BaseDialog):
         else:
             period = 3 * DAY
         ident = unique_ident([period], prec='minute')
-        graph = await price_graph_from_db(self.deps, self.loc, period=period)
-        await self._answer_photo(inline_query, graph, f'Price of Rune: {period}', ident)
+        graph, graph_name = await price_graph_from_db(self.deps, self.loc, period=period)
+        graph_bio = img_to_bio(graph, graph_name)
+        await self._answer_photo(inline_query, graph_bio, f'Price of Rune: {period}', ident)
 
     async def _handle_stats_query(self, inline_query: InlineQuery):
         nsn = NetworkStatsNotifier(self.deps)
@@ -129,13 +130,13 @@ class InlineBotHandlerDialog(BaseDialog):
 
         # GENERATE A PICTURE
         picture = await lp_pool_picture(self.deps.price_holder, lp_report, self.loc, value_hidden=False)
-        picture_io = img_to_bio(picture, f'Thorchain_LP_{exact_pool}_{today_str()}.png')
+        picture_bio = img_to_bio(picture, f'Thorchain_LP_{exact_pool}_{today_str()}.png')
 
         # UPLOAD AND SEND RESULT
         ident = unique_ident((address, exact_pool), prec='minute')
         loc = self.get_localization()
         title = loc.INLINE_LP_CARD.format(address=address, exact_pool=exact_pool)
-        await self._answer_photo(inline_query, picture_io, title, ident=ident)
+        await self._answer_photo(inline_query, picture_bio, title, ident=ident)
 
     def get_localization(self) -> BaseLocalization:
         return self.deps.loc_man.default

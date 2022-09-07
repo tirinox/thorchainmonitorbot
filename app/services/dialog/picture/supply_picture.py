@@ -1,5 +1,7 @@
 from typing import List, NamedTuple, Tuple
 
+import PIL
+
 from localization.eng_base import BaseLocalization
 from services.dialog.picture.resources import Resources
 from services.jobs.fetch.circulating import RuneCirculatingSupply
@@ -172,7 +174,7 @@ class SupplyPictureGenerator(WithLogger):
         self.circulating_rect = Rect()
         self.old_rect = Rect()
 
-    async def get_picture(self):
+    async def get_picture(self) -> Tuple[PIL.Image.Image, str]:
         try:
             self.logger.info('Started building a picture...')
             return await self._get_picture_sync()
@@ -188,7 +190,7 @@ class SupplyPictureGenerator(WithLogger):
         self._plot()
         self._add_legend()
 
-        return img_to_bio(self.gr.finalize(), f'thorchain_supply_{today}.png')
+        return self.gr.finalize(), f'thorchain_supply_{today}.png'
 
     def _add_legend(self):
         x = 55

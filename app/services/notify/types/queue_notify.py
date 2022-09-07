@@ -27,15 +27,16 @@ class QueueNotifier(INotified):
         self.logger.info(f'config: {deps.cfg.queue}')
 
     async def notify(self, item_type, is_free, value, with_picture=True):
+        photo_name = ''
         if with_picture:
-            photo = await queue_graph(self.deps, self.deps.loc_man.default)
+            photo, photo_name = await queue_graph(self.deps, self.deps.loc_man.default)
         else:
             photo = None
 
         async def message_gen(loc: BaseLocalization):
             text = loc.notification_text_queue_update(item_type, is_free, value)
             if photo is not None:
-                return BoardMessage.make_photo(photo, text)
+                return BoardMessage.make_photo(photo, text, photo_name)
             else:
                 return text
 

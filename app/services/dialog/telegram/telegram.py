@@ -8,8 +8,8 @@ from aiogram.utils import exceptions, executor
 
 from services.lib.config import Config
 from services.lib.db import DB
-from services.lib.utils import class_logger
 from services.lib.texts import shorten_text
+from services.lib.utils import class_logger
 from services.notify.channel import MessageType, CHANNEL_INACTIVE, BoardMessage
 
 TG_TEST_USER = 192398802
@@ -56,7 +56,9 @@ class TelegramBot:
                 if trunc_text != text:
                     s_text = shorten_text(text, 1000)
                     self.logger.error(f'Caption is too long:\n"{s_text}"\n... Sending is cancelled.')
-                await bot.send_photo(chat_id, caption=trunc_text, photo=msg.photo, **kwargs)
+
+                image = msg.get_bio()
+                await bot.send_photo(chat_id, caption=trunc_text, photo=image, **kwargs)
         except exceptions.ChatNotFound:
             self.logger.error(f"Target [ID:{chat_id}]: invalid user ID")
         except exceptions.RetryAfter as e:

@@ -1,4 +1,3 @@
-from io import BytesIO
 from typing import Optional
 
 import slack_sdk.errors
@@ -88,13 +87,10 @@ class SlackBot:
             self.slack_app.client.token = token
 
             if picture:
-                if not isinstance(picture, BytesIO):
-                    picture = img_to_bio(picture, pic_name)
-                else:
-                    picture = picture.read()
+                picture_raw_bytes = img_to_bio(picture, pic_name).read()
 
                 response = await self.slack_app.client.files_upload(
-                    file=picture,
+                    file=picture_raw_bytes,
                     initial_comment=text,
                     channels=[channel],
                     filetype=file_type,

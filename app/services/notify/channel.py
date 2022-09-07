@@ -2,7 +2,10 @@ import typing
 from dataclasses import dataclass
 from enum import Enum
 
+import PIL
+
 from localization.languages import Language
+from services.lib.draw_utils import img_to_bio
 
 CHANNEL_INACTIVE = 'channel_inactive'
 
@@ -20,15 +23,19 @@ class MessageType(Enum):
 class BoardMessage:
     text: str
     message_type: MessageType = MessageType.TEXT
-    photo: str = None
+    photo: PIL.Image.Image = None
+    photo_file_name: str = 'photo.png'
 
     @classmethod
-    def make_photo(cls, photo, caption=''):
-        return cls(caption, MessageType.PHOTO, photo)
+    def make_photo(cls, photo, caption='', photo_file_name='photo.png'):
+        return cls(caption, MessageType.PHOTO, photo, photo_file_name)
 
     @property
     def empty(self):
         return not self.text and not self.photo
+
+    def get_bio(self):
+        return img_to_bio(self.photo, self.photo_file_name)
 
 
 class Messengers:

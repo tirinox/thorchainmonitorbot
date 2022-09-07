@@ -105,14 +105,14 @@ class NodeChurnDetector(WithDelegates, INotified):
         #         n.version = '0.60.6'
 
         # data.nodes_added.append(data.nodes_all[0])
-        # data.nodes_activated.append(data.nodes_all[1])
-        # data.nodes_activated.append(data.nodes_all[2])
-        # data.nodes_activated.append(data.nodes_all[3])
-        # data.nodes_deactivated.append(data.nodes_all[4])
-        # data.nodes_deactivated.append(data.nodes_all[5])
-        # data.nodes_deactivated.append(data.nodes_all[6])
-        # data.nodes_deactivated.append(data.nodes_all[7])
-        # data.nodes_deactivated.append(data.nodes_all[8])
+        data.nodes_activated.append(data.nodes_all[1])
+        data.nodes_activated.append(data.nodes_all[2])
+        data.nodes_activated.append(data.nodes_all[3])
+        data.nodes_deactivated.append(data.nodes_all[4])
+        data.nodes_deactivated.append(data.nodes_all[5])
+        data.nodes_deactivated.append(data.nodes_all[6])
+        data.nodes_deactivated.append(data.nodes_all[7])
+        data.nodes_deactivated.append(data.nodes_all[8])
         # data.nodes_removed.append(data.nodes_all[9])
 
         return data

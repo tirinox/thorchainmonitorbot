@@ -154,9 +154,6 @@ class Broadcaster:
         elif callable(data_source):
             b_message = await data_source(channel_info.channel_id, **kwargs)
             if isinstance(b_message, BoardMessage):
-                if b_message.message_type is MessageType.PHOTO:
-                    # noinspection PyTypeChecker
-                    b_message.photo = copy_photo(b_message.photo)
                 return b_message
             else:
                 return BoardMessage(str(b_message))
