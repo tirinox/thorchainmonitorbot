@@ -731,6 +731,8 @@ class TwitterEnglishLocalization(BaseLocalization):
 
     # ----- SUPPLY ------
 
+    SUPPLY_PIC_CAPTION = 'THORChain Rune supply chart'
+
     def format_supply_entry(self, name, s: SupplyEntry, total_of_total: int):
         locked_amount = sum(amount for _, amount in s.locked.items()) if s.locked else 0.0
 

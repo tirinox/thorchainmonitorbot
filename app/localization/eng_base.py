@@ -1923,6 +1923,8 @@ class BaseLocalization(ABC):  # == English
     SUPPLY_PIC_SECTION_LOCKED = 'THOR.RUNE locked'
     SUPPLY_PIC_SECTION_OLD = 'Obsolete'
 
+    SUPPLY_PIC_CAPTION = ''
+
     # ---- MY WALLET ALERTS ----
 
     @staticmethod

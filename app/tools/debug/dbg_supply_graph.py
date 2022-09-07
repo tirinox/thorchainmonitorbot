@@ -1,7 +1,6 @@
 import asyncio
 import dataclasses
 import os
-from io import BytesIO
 
 from localization.languages import Language
 from localization.manager import LocalizationManager
@@ -36,32 +35,39 @@ async def get_network_stats(app: LpAppFramework):
     return dataclasses.asdict(data)
 
 
+async def get_supply_pic(app):
+    loc_man: LocalizationManager = app.deps.loc_man
+    loc = loc_man.get_from_lang(Language.ENGLISH)
+
+    data = await get_killed_rune(app)
+    killed_rune = KilledRuneEntry(**data)
+
+    await app.deps.price_pool_fetcher.fetch()
+
+    rune_market_info: RuneMarketInfo = await app.deps.rune_market_fetcher.get_rune_market_info()
+
+    ns_raw = await get_network_stats(app)
+    ns = NetworkStats(**ns_raw)
+
+    pic_gen = SupplyPictureGenerator(loc, rune_market_info.supply_info, killed_rune, ns)
+
+    return await pic_gen.get_picture()
+
+
+def save_and_show_supply_pic(pic):
+    filepath = '../temp/supply.png'
+    with open(filepath, 'wb') as f:
+        pic_bio = img_to_bio(pic, os.path.basename(filepath))
+        f.write(pic_bio.getbuffer())
+
+    os.system(f'open "{filepath}"')
+
+
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
-        loc_man: LocalizationManager = app.deps.loc_man
-        loc = loc_man.get_from_lang(Language.ENGLISH)
-
-        data = await get_killed_rune(app)
-        killed_rune = KilledRuneEntry(**data)
-
-        await app.deps.price_pool_fetcher.fetch()
-
-        rune_market_info: RuneMarketInfo = await app.deps.rune_market_fetcher.get_rune_market_info()
-
-        ns_raw = await get_network_stats(app)
-        ns = NetworkStats(**ns_raw)
-
-        pic_gen = SupplyPictureGenerator(loc, rune_market_info.supply_info, killed_rune, ns)
-
-        pic, pic_name = await pic_gen.get_picture()
-        pic_bio = img_to_bio(pic, pic_name)
-
-        filepath = '../temp/supply.png'
-        with open(filepath, 'wb') as f:
-            f.write(pic_bio.getbuffer())
-
-        os.system(f'open "{filepath}"')
+        pic, _ = await get_supply_pic(app)
+        save_and_show_supply_pic(pic)
 
 
 if __name__ == '__main__':

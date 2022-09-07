@@ -1,35 +1,46 @@
 import asyncio
 import logging
+import os
 
-from services.dialog.twitter.text_length import twitter_text_length
-from services.dialog.twitter.twitter_bot import TwitterBot
+from localization.languages import Language
+from services.dialog.twitter.twitter_bot import TwitterBot, TwitterBotMock
 from services.lib.config import Config
 from services.lib.utils import setup_logs
+from services.notify.channel import BoardMessage, ChannelDescriptor
+from tools.debug.dbg_supply_graph import get_supply_pic, save_and_show_supply_pic
+from tools.lib.lp_common import LpAppFramework
+
+MOCK = True
+
+
+async def twitter_post_supply(bot: TwitterBot):
+    app = LpAppFramework()
+    async with app(brief=True):
+        # configure
+        app.deps.twitter_bot = bot
+        app.deps.broadcaster.channels = [
+            ChannelDescriptor('twitter', '', Language.ENGLISH_TWITTER)
+        ]
+
+        pic, pic_name = await get_supply_pic(app)
+        save_and_show_supply_pic(pic)
+
+        loc = app.deps.loc_man[Language.ENGLISH_TWITTER]
+        b_message = BoardMessage.make_photo(pic, loc.SUPPLY_PIC_CAPTION)
+
+        await app.deps.broadcaster.notify_preconfigured_channels(b_message)
 
 
 async def main():
     setup_logs(logging.INFO)
-    cfg = Config()
-    # twitter_bot = TwitterBotMock(cfg)
-    twitter_bot = TwitterBot(cfg)
-    await twitter_bot.post('Integrating the code...')
+    print(os.getcwd())
+    cfg = Config('../../../temp/twitter.yaml')
+    twitter_bot = TwitterBotMock(cfg) if MOCK else TwitterBot(cfg)
 
+    await twitter_post_supply(twitter_bot)
 
-MSG = """📍 BNB.Rune:
-Circulating: 11.2Mᚱ (2.24 %)
-Locked: 25.9Mᚱ (5.19 %)
-Total: 37.1Mᚱ (7.43 %)
+    # await twitter_bot.post('Integrating the code...')
 
-📍 ETH.Rune:
-Circulating: 4.6Mᚱ (0.914 %)
-Locked: 62.0ᚱ (0.0000 %)
-Total: 4.6Mᚱ (0.914 %)
-
-📍 Native RUNE:
-Circulating: 304.8Mᚱ (61.0 %)
-Locked: 179.0Mᚱ (35.8 %)
-Total: 483.8Mᚱ (96.8 %)"""
 
 if __name__ == '__main__':
-    print(twitter_text_length(MSG))
     asyncio.run(main())

@@ -1,7 +1,7 @@
 from localization.eng_base import BaseLocalization
 from services.dialog.picture.supply_picture import SupplyPictureGenerator
 from services.lib.cooldown import Cooldown
-from services.lib.date_utils import parse_timespan_to_seconds
+from services.lib.date_utils import parse_timespan_to_seconds, today_str
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
@@ -25,7 +25,7 @@ class SupplyNotifier(INotified, WithLogger):
         async def supply_pic_gen(loc: BaseLocalization):
             gen = SupplyPictureGenerator(loc, market_info.supply_info, self.deps.killed_rune, self.deps.net_stats)
             pic = await gen.get_picture()
-            return BoardMessage.make_photo(pic)
+            return BoardMessage.make_photo(pic, loc.SUPPLY_PIC_CAPTION, f'rune_supply_{today_str()}.png')
 
         await self.deps.broadcaster.notify_preconfigured_channels(BaseLocalization.text_metrics_supply,
                                                                   market_info, self.deps.killed_rune)

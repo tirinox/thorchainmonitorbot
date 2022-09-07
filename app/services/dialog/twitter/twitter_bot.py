@@ -77,9 +77,10 @@ class TwitterBot:
         parts = list(filter(bool, map(str.strip, parts)))
 
         if not parts:
+            logging.warning('Oops? The message has zero parts. Did nothing.')
             return
         elif len(parts) >= 2:
-            logging.info(f'Twitter multi part message: {len(parts) = }')
+            logging.info(f'Sending Twitter multi-part message: {len(parts) = }')
 
         loop = loop or asyncio.get_event_loop()
 
