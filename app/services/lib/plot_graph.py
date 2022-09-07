@@ -383,7 +383,11 @@ class PlotGraphLines(PlotGraph):
     def _plot_bars(self):
         ox, oy, plot_w, plot_h = self.plot_rect()
 
-        bar_normal_height = self.bar_height_limit / max(abs(self.bar_min), abs(self.bar_max))
+        bar_div = max(abs(self.bar_min), abs(self.bar_max))
+        if bar_div == 0:  # hot fix
+            return
+
+        bar_normal_height = self.bar_height_limit / bar_div
 
         for line_desc in self.bar_series:
             points = line_desc['pts']
