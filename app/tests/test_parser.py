@@ -8,7 +8,7 @@ from services.lib.constants import NetworkIdents, THOR_DIVIDER, NATIVE_RUNE_SYMB
 from services.lib.midgard.parser import MidgardParserV2
 from services.models.tx import ThorCoin, ThorMetaSwap, ThorTx
 
-PATH = './tx_examples'
+PATH = './sample_data'
 DIV = THOR_DIVIDER
 
 

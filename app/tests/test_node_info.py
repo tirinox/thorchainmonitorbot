@@ -1,4 +1,7 @@
+import json
 import random
+
+import pytest
 
 from services.lib.utils import random_hex, random_ip_address
 from services.models.node_info import NodeSetChanges, NodeInfo
@@ -14,7 +17,7 @@ def node_random(status=NodeInfo.ACTIVE) -> NodeInfo:
         random.randint(0, 1000),
         random.randint(0, 1000),
         False, False, 123456,
-        []
+        100, []
     )
 
 
@@ -54,3 +57,31 @@ def test_nonsense():
 
     assert not c_non_5.is_empty
     assert not c_non_5.is_nonsense
+
+
+@pytest.fixture
+def load_node_info_from_file():
+    def loader(file='./sample_data/nodes_7_9_22.json'):
+        with open(file, 'r') as f:
+            data = json.load(f)
+        return [NodeInfo.from_json(piece) for piece in data]
+
+    return loader
+
+
+def test_loader(load_node_info_from_file):
+    nodes = load_node_info_from_file()
+    assert len(nodes) == 180
+    assert len([n for n in nodes if n.is_active]) == 95
+
+
+def test_active_version(load_node_info_from_file):
+    nodes = load_node_info_from_file()
+    node_changes = NodeSetChanges(
+        [], [], [], [], nodes, nodes
+    )
+
+    assert any(n for n in nodes if n.version == '1.95.1')
+
+    assert node_changes.max_active_version == '1.96.0'
+    assert node_changes.current_active_version == '1.95.0'

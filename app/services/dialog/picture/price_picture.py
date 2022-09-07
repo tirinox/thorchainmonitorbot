@@ -34,8 +34,8 @@ def price_graph(pool_price_df, det_price_df, cex_prices_df, volumes, loc: BaseLo
     graph.legend_x = 95
     graph.bottom = 100
 
-    graph.add_series(pool_price_df, LINE_COLOR_POOL_PRICE)
     graph.add_series(cex_prices_df, LINE_COLOR_CEX_PRICE)
+    graph.add_series(pool_price_df, LINE_COLOR_POOL_PRICE)  # pool price's line is on top of CEX line
     graph.add_series(det_price_df, LINE_COLOR_DET_PRICE)
 
     graph.legend_x = 20

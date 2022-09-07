@@ -44,5 +44,6 @@ async def main():
         # await continuous_volume_recording(lp_app)
         await show_price_graph(lp_app)
 
+
 if __name__ == '__main__':
     asyncio.run(main())
