@@ -81,7 +81,7 @@ class TwitterBot:
 
         loop = loop or asyncio.get_event_loop()
 
-        for part in parts:
+        for part in reversed(parts):  # post in reversed order to make it look logical
             await self.post(part, image, executor, loop)
             image = None  # attach image solely to the first post, then just nullify it
 
