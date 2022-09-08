@@ -5,7 +5,6 @@ import os
 from localization.eng_base import BaseLocalization
 from localization.languages import Language
 from localization.manager import LocalizationManager
-from services.dialog.discord.discord_bot import DiscordBot
 from services.dialog.picture.supply_picture import SupplyPictureGenerator
 from services.jobs.fetch.killed_rune import KilledRuneFetcher
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
@@ -15,7 +14,8 @@ from services.lib.utils import json_cached_to_file_async
 from services.models.killed_rune import KilledRuneEntry
 from services.models.net_stats import NetworkStats
 from services.models.price import RuneMarketInfo
-from services.notify.channel import ChannelDescriptor, BoardMessage
+from services.notify.channel import BoardMessage
+from tools.debug.dbg_discord import debug_prepare_discord_bot
 from tools.lib.lp_common import LpAppFramework
 
 
@@ -43,19 +43,21 @@ async def get_supply_pic(app):
     loc_man: LocalizationManager = app.deps.loc_man
     loc = loc_man.get_from_lang(Language.ENGLISH)
 
-    data = await get_killed_rune(app)
-    killed_rune = KilledRuneEntry(**data)
+    killed_rune, net_stats, rune_market_info = await debug_get_rune_market_data(app)
 
-    await app.deps.price_pool_fetcher.fetch()
-
-    rune_market_info: RuneMarketInfo = await app.deps.rune_market_fetcher.get_rune_market_info()
-
-    ns_raw = await get_network_stats(app)
-    ns = NetworkStats(**ns_raw)
-
-    pic_gen = SupplyPictureGenerator(loc, rune_market_info.supply_info, killed_rune, ns)
+    pic_gen = SupplyPictureGenerator(loc, rune_market_info.supply_info, killed_rune, net_stats)
 
     return await pic_gen.get_picture()
+
+
+async def debug_get_rune_market_data(app):
+    data = await get_killed_rune(app)
+    killed_rune = KilledRuneEntry(**data)
+    await app.deps.price_pool_fetcher.fetch()
+    rune_market_info: RuneMarketInfo = await app.deps.rune_market_fetcher.get_rune_market_info()
+    ns_raw = await get_network_stats(app)
+    ns = NetworkStats(**ns_raw)
+    return killed_rune, ns, rune_market_info
 
 
 def save_and_show_supply_pic(pic, show=True):
@@ -69,14 +71,7 @@ def save_and_show_supply_pic(pic, show=True):
 
 
 async def post_supply_to_discord(app: LpAppFramework, pic):
-    app.deps.discord_bot = DiscordBot(app.deps.cfg, None)
-    app.deps.discord_bot.start_in_background()
-
-    await asyncio.sleep(2.5)
-
-    app.deps.broadcaster.channels = [
-        ChannelDescriptor('discord', 918447226232139776, Language.ENGLISH)
-    ]
+    await debug_prepare_discord_bot(app)
 
     async def supply_pic_gen(loc: BaseLocalization):
         return BoardMessage.make_photo(pic, loc.SUPPLY_PIC_CAPTION, f'rune_supply_{today_str()}.png')

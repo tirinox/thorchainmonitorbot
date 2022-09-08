@@ -8,9 +8,9 @@ from localization.manager import LocalizationManager
 from services.lib.date_utils import parse_timespan_to_seconds, now_ts, DAY
 from services.lib.depcont import DepContainer
 from services.lib.rate_limit import RateLimitCooldown
-from services.lib.utils import copy_photo, class_logger
 from services.lib.texts import shorten_text
-from services.notify.channel import Messengers, ChannelDescriptor, CHANNEL_INACTIVE, MessageType, BoardMessage
+from services.lib.utils import class_logger
+from services.notify.channel import Messengers, ChannelDescriptor, CHANNEL_INACTIVE, BoardMessage
 from services.notify.user_registry import UserRegistry
 
 

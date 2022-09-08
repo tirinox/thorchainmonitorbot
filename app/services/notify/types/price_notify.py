@@ -1,11 +1,10 @@
 import asyncio
-import time
 
 from localization.manager import BaseLocalization
 from services.dialog.picture.price_picture import price_graph_from_db
 from services.lib.constants import RUNE_SYMBOL_POOL
 from services.lib.cooldown import Cooldown
-from services.lib.date_utils import MINUTE, HOUR, DAY, parse_timespan_to_seconds
+from services.lib.date_utils import MINUTE, HOUR, DAY, parse_timespan_to_seconds, now_ts
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
 from services.lib.money import pretty_money, calc_percent_change
@@ -65,8 +64,6 @@ class PriceNotifier(INotified):
         await self.deps.broadcaster.notify_preconfigured_channels(BoardMessage(sticker, MessageType.STICKER))
 
     async def do_notify_price_table(self, market_info, hist_prices, ath, last_ath=None):
-        await self._cd_price_regular.do()
-
         btc_price = self.deps.price_holder.btc_per_rune
         report = PriceReport(*hist_prices, market_info, last_ath, btc_price)
 
@@ -104,6 +101,7 @@ class PriceNotifier(INotified):
             send_it = True
 
         if send_it:
+            await self._cd_price_regular.do()
             await self.do_notify_price_table(market_info, hist_prices, ath=False)
 
     async def get_prev_ath(self) -> PriceATH:
@@ -131,7 +129,7 @@ class PriceNotifier(INotified):
 
         if last_ath.is_new_ath(price):
             await self.update_ath(PriceATH(
-                int(time.time()), price
+                int(now_ts()), price
             ))
 
             if await self._cd_price_ath.can_do():
@@ -139,6 +137,7 @@ class PriceNotifier(INotified):
                 await self._cd_price_rise.do()  # prevent 2 notifications
 
                 hist_prices = await self.historical_get_triplet()
+                await self._cd_price_regular.do()
                 await self.do_notify_price_table(market_info, hist_prices, ath=True, last_ath=last_ath)
                 return True
 
