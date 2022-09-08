@@ -44,7 +44,8 @@ class DiscordBot:
 
         file = File(pic_bio) if pic_bio else None
 
-        channel = self.client.get_channel(channel)
+        # int(channel) is important! otherwise it will fail
+        channel = self.client.get_channel(int(channel))
         await channel.send(text, file=file)
 
     async def send_message(self, chat_id, msg: BoardMessage, **kwargs) -> bool:
