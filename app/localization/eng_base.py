@@ -1005,7 +1005,7 @@ class BaseLocalization(ABC):  # == English
     TEXT_PIC_OTHERS = 'Others'
     TEXT_PIC_UNKNOWN = 'Unknown'
 
-    PIC_TITLE_NODE_DIVERSITY_BY_PROVIDER = ''
+    PIC_NODE_DIVERSITY_BY_PROVIDER_CAPTION = ital('THORChain nodes')
 
     def _format_node_text(self, node: NodeInfo, add_status=False, extended_info=False, expand_link=False):
         if expand_link:
@@ -1923,7 +1923,7 @@ class BaseLocalization(ABC):  # == English
     SUPPLY_PIC_SECTION_LOCKED = 'THOR.RUNE locked'
     SUPPLY_PIC_SECTION_OLD = 'Obsolete'
 
-    SUPPLY_PIC_CAPTION = 'THORChain Rune supply chart'
+    SUPPLY_PIC_CAPTION = ital('THORChain Rune supply chart')
 
     # ---- MY WALLET ALERTS ----
 

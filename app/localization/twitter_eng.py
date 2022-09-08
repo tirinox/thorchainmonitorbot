@@ -29,7 +29,7 @@ from services.notify.channel import MESSAGE_SEPARATOR
 class TwitterEnglishLocalization(BaseLocalization):
     TEXT_DECORATION_ENABLED = False
 
-    PIC_TITLE_NODE_DIVERSITY_BY_PROVIDER = 'The current THORChain node diversity'
+    PIC_NODE_DIVERSITY_BY_PROVIDER_CAPTION = 'THORChain nodes'
 
     def notification_text_cap_change(self, old: ThorCapInfo, new: ThorCapInfo):
         up = old.cap < new.cap
