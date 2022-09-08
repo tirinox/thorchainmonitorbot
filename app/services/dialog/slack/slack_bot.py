@@ -94,14 +94,14 @@ class SlackBot:
                     initial_comment=text,
                     channels=[channel],
                     filetype=file_type,
-                    unfurl_links=False,
+                    # unfurl_links=0,
                 )
             else:
                 response = await self.slack_app.client.chat_postMessage(
                     channel=channel,
                     text=text,
                     mrkdwn=True,
-                    unfurl_links=False,
+                    # unfurl_links=False,
                 )
 
             self.logger.debug(f'Slack response: {response.data}')

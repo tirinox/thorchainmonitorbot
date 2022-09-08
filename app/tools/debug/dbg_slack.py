@@ -32,9 +32,9 @@ async def a_test_slack_periodic_message(lp_app: LpAppFramework):
 
 async def main():
     lp_app = LpAppFramework()
-    # await a_test_slack_price(lp_app)
-    await lp_app.deps.db.get_redis()
-    await a_test_slack_periodic_message(lp_app)
+    await a_test_slack_price(lp_app)
+    # await lp_app.deps.db.get_redis()
+    # await a_test_slack_periodic_message(lp_app)
 
 
 if __name__ == '__main__':
