@@ -1032,7 +1032,9 @@ class BaseLocalization(ABC):  # == English
         if not nodes:
             return ''
 
-        message = ital(title) + "\n"
+        message = ''
+        if title:
+            message += ital(title) + "\n"
         message += join_as_numbered_list(
             (
                 self._format_node_text(node, add_status, extended_info)

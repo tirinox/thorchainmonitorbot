@@ -166,7 +166,8 @@ class MetricsDialog(BaseDialog):
         await self.safe_delete(loading_message)
 
         for message_text in (active_node_messages + standby_node_messages + other_node_messages):
-            await message.answer(message_text, disable_web_page_preview=True, disable_notification=True)
+            if message_text:
+                await message.answer(message_text, disable_web_page_preview=True, disable_notification=True)
 
         pic = await node_geo_pic(result_network_info, self.loc)
         await message.answer_photo(img_to_bio(pic, f'NodeDiversity-{today_str()}.png'), disable_notification=True)
