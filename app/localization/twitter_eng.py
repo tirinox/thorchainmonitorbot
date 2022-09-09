@@ -695,7 +695,8 @@ class TwitterEnglishLocalization(BaseLocalization):
     def notification_text_best_pools(self, pd: PoolDetailHolder, n_pools):
         n_pools = 3  # less for Twitter
         no_pool_text = 'Nothing yet. Maybe still loading...'
-        text = '\n'.join([self.format_pool_top(top_pools, pd, title, no_pool_text, n_pools) for title, top_pools in [
+        text = '\n'.join([self.format_pool_top(top_pools, pd, title, no_pool_text, n_pools)
+                          for title, top_pools in [
             ('💎 Best APY', pd.BY_APY),
             ('💸 Top volume', pd.BY_VOLUME_24h),
             ('🏊 Max Liquidity', pd.BY_DEPTH),

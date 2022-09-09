@@ -1,7 +1,7 @@
 from localization.eng_base import BaseLocalization
 from services.dialog.picture.supply_picture import SupplyPictureGenerator
 from services.lib.cooldown import Cooldown
-from services.lib.date_utils import parse_timespan_to_seconds, today_str
+from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger

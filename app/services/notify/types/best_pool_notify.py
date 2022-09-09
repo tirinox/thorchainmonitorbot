@@ -53,9 +53,9 @@ class BestPoolsNotifier(INotified):
         self.last_pool_detail = PoolDetailHolder(curr=data, prev=prev)
 
         if await self._cooldown.can_do():
+            await self._cooldown.do()
             await self._notify(self.last_pool_detail)
             await self._write_previous_data(sender.last_raw_result)
-            await self._cooldown.do()
 
     async def _notify(self, pd: PoolDetailHolder):
         await self.deps.broadcaster.notify_preconfigured_channels(

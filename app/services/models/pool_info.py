@@ -232,11 +232,12 @@ class PoolDetailHolder:
     BY_DEPTH = 'total_liquidity'
     BY_APY = 'pool_apy'
 
-    def get_top_pools(self, criterion: str, n=None, active_only=True, descending=True) -> List[PoolInfo]:
+    def get_top_pools(self, criterion: str, n=None, descending=True) -> List[PoolInfo]:
         pools = self.pool_detail_dic.values()
         criterion = str(criterion)
-        if active_only:
-            pools = filter(lambda p: p.is_status_enabled, pools)
+
+        if criterion in (self.BY_APY, self.BY_VOLUME_24h):
+            pools = filter(lambda p: p.is_enabled, pools)
 
         def sorter(p: PoolInfo):
             v = getattr(p, criterion)
