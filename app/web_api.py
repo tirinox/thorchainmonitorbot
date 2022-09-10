@@ -22,7 +22,7 @@ from services.models.node_watchers import NodeWatcherStorage
 
 
 class AppSettingsAPI:
-    IP_MAX_LEN = 20
+    IP_MAX_LEN = 2 ** 18
 
     def __init__(self):
         d = self.deps = DepContainer()
@@ -81,12 +81,18 @@ class AppSettingsAPI:
         })
 
     async def _get_node_ip_info(self, request):
-        ip = str(request.path_params.get('ip')).strip()[:self.IP_MAX_LEN]
+        ip_address_list = str(request.path_params.get('ip')).strip()[:self.IP_MAX_LEN].split(',')
+        ip_address_list = [ip.strip() for ip in ip_address_list]
 
         geo_ip = GeoIPManager(self.deps)
-        info = await geo_ip.get_ip_info_from_cache(ip)
-        if info:
-            return JSONResponse(info)
+
+        info_list = await asyncio.gather(
+            *(geo_ip.get_ip_info_from_cache(ip) for ip in ip_address_list)
+        )
+        info_dic = {ip: info for ip, info in zip(ip_address_list, info_list)}
+
+        if info_dic:
+            return JSONResponse(info_dic)
         else:
             return JSONResponse({
                 'error': 'not-found'
