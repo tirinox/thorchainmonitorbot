@@ -21,6 +21,7 @@ ZERO_VERSION = VersionInfo(0, 0, 0)
 class NodeInfo(BaseModelMixin):
     ACTIVE = 'Active'
     STANDBY = 'Standby'
+    READY = 'Ready'
     WHITELISTED = 'Whitelisted'
     DISABLED = 'Disabled'
 
@@ -66,7 +67,7 @@ class NodeInfo(BaseModelMixin):
 
     @property
     def is_standby(self):
-        return self.status_capitalized == self.STANDBY
+        return self.status_capitalized == self.STANDBY or self.status_capitalized == self.READY
 
     @property
     def in_strange_status(self):
