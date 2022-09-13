@@ -4,10 +4,10 @@ from aioredis import Redis
 from semver import VersionInfo
 
 from localization.manager import BaseLocalization
-from services.lib.delegates import INotified, WithDelegates
 from services.lib.config import SubConfig
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds
+from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
 from services.models.node_info import NodeSetChanges, ZERO_VERSION
@@ -69,6 +69,9 @@ class VersionNotifier(INotified, WithDelegates):
         cd_upgrade_progress_sec = parse_timespan_to_seconds(str(cfg.get('upgrade_progress.cooldown', '2h')))
         self.cd_upgrade = Cooldown(deps.db, 'upgrade_progress', cd_upgrade_progress_sec)
 
+        self.min_nodes_for_upgrade = cfg.as_int('upgrade_progress.minimum_nodes', 1)
+        self.min_step_for_upgrade = cfg.as_int('upgrade_progress.minimum_progress_step_percent', 5) * 0.01
+
     async def _find_new_versions(self, data: NodeSetChanges) -> List[VersionInfo]:
         new_versions = data.new_versions
         if not new_versions:
@@ -129,19 +132,20 @@ class VersionNotifier(INotified, WithDelegates):
             return  # not interfere with _handle_active_version_change when progress == 100%!
 
         old_progress = await self.store.get_upgrade_progress()
-        if abs(old_progress - ver_con.ratio) < 0.005:
+
+        if abs(old_progress - ver_con.ratio) < self.min_step_for_upgrade:
             return  # no change
 
-        more_than_one = ver_con.top_version_count > 1
+        more_than_min = ver_con.top_version_count >= self.min_nodes_for_upgrade
 
-        if more_than_one and await self.cd_upgrade.can_do():
+        if more_than_min and await self.cd_upgrade.can_do():
+            await self.cd_upgrade.do()
+            await self.store.set_upgrade_progress(ver_con.ratio)
             await self.deps.broadcaster.notify_preconfigured_channels(
                 BaseLocalization.notification_text_version_upgrade_progress,
                 data, ver_con
             )
-            await self.store.set_upgrade_progress(ver_con.ratio)
-            await self.cd_upgrade.do()
-
+            
     async def on_data(self, sender, changes: NodeSetChanges):
         if self.is_new_version_enabled:
             await self._handle_new_versions(changes)

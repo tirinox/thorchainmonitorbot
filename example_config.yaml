@@ -440,6 +440,8 @@ node_info:
     upgrade_progress: # if not all act. nodes run same version, show upgrade progress every cooldown
       enabled: true
       cooldown: 2h
+      minimum_nodes: 4  # (!) new
+      minimum_progress_step_percent: 5  # (!) new
 
 
 constants:
