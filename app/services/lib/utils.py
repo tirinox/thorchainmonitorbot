@@ -394,3 +394,12 @@ def pluck_from_series(series, key, default=0.0):
     return [
         (ts, dic.get(key, default) if dic else default) for ts, dic in series
     ]
+
+
+def paste_at_beginning_of_dict(d: dict, k, v):
+    if k in d:
+        del d[k]
+    return {
+        **{k: v},
+        **d
+    }

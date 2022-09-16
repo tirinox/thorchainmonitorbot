@@ -20,6 +20,7 @@ from services.lib.midgard.name_service import add_thor_suffix
 from services.lib.money import short_address, short_rune
 from services.lib.new_feature import Features
 from services.lib.texts import kbd, cut_long_text, grouper
+from services.lib.utils import paste_at_beginning_of_dict
 from services.models.lp_info import LPAddress
 from services.notify.personal.balance import WalletWatchlist
 from services.notify.personal.helpers import GeneralSettings, Props
@@ -64,7 +65,7 @@ class MyWalletsMenu(DialogWithSettings):
 
         chain = Chains.BNB
 
-        thor_name = await self.deps.name_service.lookup_thorname_by_name(address.lower())
+        thor_name = await self.deps.name_service.lookup_thorname_by_name(address.lower(), forced=True)
         if thor_name:
             logging.info(f'Whoa! A user adds THORName "{thor_name.name}"!')
             address = self.deps.name_service.get_thor_address_of_thorname(thor_name)
@@ -458,13 +459,14 @@ class MyWalletsMenu(DialogWithSettings):
         new_addr = str(new_addr).strip()
 
         address_dict = self.my_addresses
-        if new_addr not in address_dict:
-            new_addr_obj = {
-                Props.PROP_CHAIN: chain,
-                Props.PROP_TRACK_BALANCE: False,
-                Props.PROP_MIN_LIMIT: 0,
-            }
-            address_dict[new_addr] = new_addr_obj
+        new_addr_obj = {
+            Props.PROP_CHAIN: chain,
+            Props.PROP_TRACK_BALANCE: False,
+            Props.PROP_MIN_LIMIT: 0,
+        }
+
+        # As the dict is ordered, we add new obj at the beginning in a fishy way
+        self.global_data[Props.KEY_ADDRESSES] = paste_at_beginning_of_dict(address_dict, new_addr, new_addr_obj)
 
     async def _remove_address(self, index):
         try:

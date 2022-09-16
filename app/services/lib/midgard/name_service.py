@@ -56,6 +56,7 @@ class NameService(WithLogger):
         if not names:
             return
 
+        # todo: find a THORName locally or pick any of this list
         name = names[0]
         if len(names) > 1:
             self.logger.warning(f'Address {address} resolves to more than 1 THORNames: "{names}". '
@@ -73,7 +74,7 @@ class NameService(WithLogger):
         entries = [(address, thor_name) for address, thor_name in zip(addresses, thor_names)]
         return dict(entries)
 
-    async def lookup_thorname_by_name(self, name: str) -> Optional[THORName]:
+    async def lookup_thorname_by_name(self, name: str, forced=False) -> Optional[THORName]:
         name = name.strip()
         if name in self._known_names:
             return self._known_names[name]
@@ -81,12 +82,12 @@ class NameService(WithLogger):
         if not self._thorname_enabled:
             return
 
-        thorname = await self._cache_load_thor_name(name)
-        if thorname == self.NO_VALUE:
-            return
-        elif not thorname:
+        if forced or not (thorname := await self._cache_load_thor_name(name)):
             thorname = await self.call_api_thorname_lookup(name)
             await self._cache_save_thor_name(name, thorname)  # save anyway, even if there is not THORName!
+
+            if forced and thorname:
+                await self._cache_save_name_list(self.get_thor_address_of_thorname(thorname), [thorname.name])
 
         return thorname
 
@@ -140,7 +141,7 @@ class NameService(WithLogger):
 
         value = thorname.to_json() if thorname else self.NO_VALUE
         await self.db.redis.set(
-            self._key_thorname_to_addresses(thorname.name),
+            self._key_thorname_to_addresses(name),
             value=value,
             ex=self._thorname_expire
         )
