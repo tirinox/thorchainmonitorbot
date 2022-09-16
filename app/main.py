@@ -95,10 +95,11 @@ class App:
         d.settings_manager.subscribe(d.gen_alert_settings_proc)
         d.settings_manager.subscribe(SettingsProcessorPriceDivergence(d.alert_watcher))
 
-    def _init_messaging(self, d):
+    @staticmethod
+    def _init_messaging(d):
         d.loc_man = LocalizationManager(d.cfg)
         d.broadcaster = Broadcaster(d)
-        d.alert_presenter = AlertPresenter(d.broadcaster)
+        d.alert_presenter = AlertPresenter(d.broadcaster, d.name_service)
         d.telegram_bot = TelegramBot(d.cfg, d.db, d.loop)
         init_dialogs(d)
 
