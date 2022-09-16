@@ -1,11 +1,12 @@
 from datetime import datetime
 from math import ceil
-from typing import List
+from typing import List, Optional
 
 from aiothornode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
 from localization.eng_base import BaseLocalization, CREATOR_TG, URL_LEADERBOARD_MCCN
+from proto.thor_types import THORName
 from services.jobs.fetch.circulating import SupplyEntry, ThorRealms
 from services.lib.constants import Chains, rune_origin
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
@@ -191,7 +192,8 @@ class RussianLocalization(BaseLocalization):
                f'Идет загрузка пулов для адреса {pre(address)}...\n' \
                f'Иногда она может идти долго, если Midgard сильно нагружен.'
 
-    def text_inside_my_wallet_title(self, address, pools, balances: ThorBalances, min_limit: float, chain):
+    def text_inside_my_wallet_title(self, address, pools, balances: ThorBalances, min_limit: float, chain,
+                                    thor_name: Optional[THORName]):
         if pools:
             title = '\n'
             footer = '\n\n👇 Выберите пул, чтобы получить подробную карточку информации о ликвидности.'
@@ -204,10 +206,9 @@ class RussianLocalization(BaseLocalization):
         balance_str = self.text_balances(balances, 'Балансы аккаунта: ')
 
         acc_caption = ''
-        # todo: dynamic!
-        addr_name = self.name_service.lookup_name_by_address_local(address)
-        if addr_name:
-            acc_caption = f' ({addr_name.name})'
+        if thor_name:
+            name = f'{thor_name.name}.thor'
+            acc_caption = f' (THORName: {code(name)})'
 
         thor_yield_url = get_thoryield_address(self.cfg.network_id, address, chain)
         thor_yield_link = link(thor_yield_url, 'THORYield')

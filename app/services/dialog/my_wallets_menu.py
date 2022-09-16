@@ -81,17 +81,17 @@ class MyWalletsMenu(DialogWithSettings):
         else:
             await self._add_address_handler(message, edit=False)
 
-    def _make_address_keyboard_list(self, my_addresses: dict):
+    async def _make_address_keyboard_list(self, my_addresses: dict):
         extra_row = []
 
-        def address_label(address):
-            # todo: await dynamical look up!
-            name = self.deps.name_service.lookup_name_by_address_local(address)
-            label = name.name if name else short_address(address, begin=7, end=4)
+        async def address_label(address):
+            thor_name = await self.deps.name_service.lookup_name_by_address(address)
+            name = thor_name.name if thor_name else address
+            label = short_address(f'{name}.thor', 8, 5)
             return label, address
 
         # Every button is tuple of (label, full_address)
-        short_addresses = [address_label(addr) for addr in my_addresses.keys()]
+        short_addresses = await asyncio.gather(*[address_label(addr) for addr in my_addresses.keys()])
 
         return TelegramInlineList(
             short_addresses, data_proxy=self.data,
@@ -108,7 +108,8 @@ class MyWalletsMenu(DialogWithSettings):
                                  reply_markup=kbd([self.loc.BUTTON_BACK]),
                                  disable_notification=True)
         else:
-            keyboard = self._make_address_keyboard_list(my_addresses).keyboard()
+            tg_list = await self._make_address_keyboard_list(my_addresses)
+            keyboard = tg_list.keyboard()
             if edit:
                 await message.edit_text(self.loc.TEXT_YOUR_ADDRESSES, reply_markup=keyboard)
             else:
@@ -128,7 +129,8 @@ class MyWalletsMenu(DialogWithSettings):
 
     @query_handler(state=LPMenuStates.MAIN_MENU)
     async def on_tap_address(self, query: CallbackQuery):
-        result = await self._make_address_keyboard_list(self.my_addresses).handle_query(query)
+        keyboard = await self._make_address_keyboard_list(self.my_addresses)
+        result = await keyboard.handle_query(query)
 
         if result.result == result.BACK:
             await self.go_back(query.message)
@@ -187,9 +189,11 @@ class MyWalletsMenu(DialogWithSettings):
 
         balances = await self.get_balances(address)
 
+        thor_name = await self.deps.name_service.lookup_name_by_address(address)
+
         text = self.loc.text_inside_my_wallet_title(address, my_pools, balances,
                                                     min_limit if track_balance else None,
-                                                    chain)
+                                                    chain, thor_name)
         inline_kbd = self._keyboard_inside_wallet_menu().keyboard()
         if edit:
             await message.edit_text(text=text,

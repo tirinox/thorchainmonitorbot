@@ -108,7 +108,10 @@ class NameService(WithLogger):
         for address, label in name_dic.items():
             if address and label:
                 self._known_address[address] = THORName(
-                    label, 0, address.encode()
+                    label, 0, address.encode(),
+                    aliases=[
+                        THORNameAlias(Chains.detect_chain(address), address)
+                    ]
                 )
                 self._known_names[label] = address
 

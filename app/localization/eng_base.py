@@ -6,6 +6,7 @@ from typing import List, Optional
 from aiothornode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
+from proto.thor_types import THORName
 from services.jobs.fetch.circulating import SupplyEntry, ThorRealms
 from services.lib.config import Config
 from services.lib.constants import rune_origin, thor_to_float, THOR_BLOCK_TIME, DEFAULT_CEX_NAME, DEFAULT_CEX_BASE_ASSET
@@ -250,7 +251,8 @@ class BaseLocalization(ABC):  # == English
             result = '\n'.join([title] + items)
         return result + '\n\n'
 
-    def text_inside_my_wallet_title(self, address, pools, balances: ThorBalances, min_limit: float, chain):
+    def text_inside_my_wallet_title(self, address, pools, balances: ThorBalances, min_limit: float, chain,
+                                    thor_name: Optional[THORName]):
         if pools:
             title = '\n'
             footer = "\n\n👇 Click on the button to get a detailed card of LP yield."
@@ -263,10 +265,9 @@ class BaseLocalization(ABC):  # == English
         balance_str = self.text_balances(balances)
 
         acc_caption = ''
-        # todo: dynamic!
-        addr_name = self.name_service.lookup_name_by_address_local(address)
-        if addr_name:
-            acc_caption = f' ({addr_name.name})'
+        if thor_name:
+            name = f'{thor_name.name}.thor'
+            acc_caption = f' (THORName: {code(name)})'
 
         thor_yield_url = get_thoryield_address(self.cfg.network_id, address, chain)
         thor_yield_link = link(thor_yield_url, 'THORYield')
