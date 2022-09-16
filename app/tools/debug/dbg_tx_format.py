@@ -39,7 +39,7 @@ async def midgard_test_kill_switch(lp_app, mdg):
         async def on_data(self, sender, data):
             print(data)
 
-    alert_presenter = AlertPresenter(lp_app.deps.broadcaster)
+    alert_presenter = AlertPresenter(lp_app.deps.broadcaster, lp_app.deps.name_service)
 
     switch_helper.subscribe(Fake())
     switch_helper.subscribe(alert_presenter)

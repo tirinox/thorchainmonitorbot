@@ -5,6 +5,7 @@ from typing import List
 from services.lib.db import DB
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
+from services.lib.midgard.name_service import NameMap
 from services.lib.money import Asset, ABSURDLY_LARGE_NUMBER
 from services.lib.settings_manager import SettingsManager
 from services.lib.texts import grouper
@@ -59,6 +60,9 @@ class PersonalBalanceNotifier(INotified):
 
         settings_dic = await self.deps.settings_manager.get_settings_multi(user_events.keys())
 
+        # load THORNames
+        name_map = await self._load_thornames_from_events(user_events)
+
         for user, event_list in user_events.items():
             settings = settings_dic.get(user, {})
 
@@ -78,13 +82,13 @@ class PersonalBalanceNotifier(INotified):
                 my_addresses = user_to_address.get(user, [])
 
                 for group in groups:
-                    await self._send_message_to_group(group, settings, user, my_addresses)
+                    await self._send_message_to_group(group, settings, user, my_addresses, name_map)
 
-    async def _send_message_to_group(self, group, settings, user, my_addresses):
+    async def _send_message_to_group(self, group, settings, user, my_addresses, name_map):
         loc = await self.deps.loc_man.get_from_db(user, self.deps.db)
         platform = SettingsManager.get_platform(settings)
 
-        messages = [loc.notification_text_rune_transfer(transfer, my_addresses) for transfer in group]
+        messages = [loc.notification_text_rune_transfer(transfer, my_addresses, name_map) for transfer in group]
         text = '\n\n'.join(m for m in messages if m)
         text = text.strip()
         if text:
@@ -94,6 +98,14 @@ class PersonalBalanceNotifier(INotified):
                 disable_web_page_preview=True
             )
             asyncio.create_task(task)
+
+    async def _load_thornames_from_events(self, user_events: dict) -> NameMap:
+        all_addresses = set()
+        for user_event_list in user_events.values():
+            for event in user_event_list:
+                event: RuneTransfer
+                all_addresses.update((event.from_addr, event.to_addr))
+        return await self.deps.name_service.safely_load_thornames_from_address_set(all_addresses)
 
     def _fill_asset_price(self, transfers):
         usd_per_rune = self.deps.price_holder.usd_per_rune

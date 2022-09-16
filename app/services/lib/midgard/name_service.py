@@ -1,7 +1,7 @@
 import asyncio
 import json
 import struct
-from typing import Optional, List, Iterable, Dict
+from typing import Optional, List, Iterable, Dict, NamedTuple
 
 from proto.thor_types import THORName, THORNameAlias
 from services.lib.config import Config
@@ -10,6 +10,11 @@ from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.db import DB
 from services.lib.midgard.connector import MidgardConnector
 from services.lib.utils import WithLogger
+
+
+class NameMap(NamedTuple):
+    by_name: Dict[str, THORName]
+    by_address: Dict[str, THORName]
 
 
 # THORName: address[owner] -> many of [name] -> many of [address (thor + chains)]
@@ -31,11 +36,25 @@ class NameService(WithLogger):
         if self._thorname_enabled:
             self.logger.info(f'THORName is enabled with expire time of {self._thorname_expire} sec.')
 
-    async def safely_load_thornames_from_address_set(self, addresses: Iterable):
+    async def safely_load_thornames_from_address_set(self, addresses: Iterable) -> NameMap:
         try:
-            return await self.lookup_multiple_names_by_addresses(addresses)
+            addresses = list(set(addresses))  # make it unique and strictly ordered
+
+            thorname_by_name = await self.lookup_multiple_names_by_addresses(addresses)
+
+            thorname_by_address = {}
+            for address in addresses:
+                for thorname in thorname_by_name.values():
+                    if thorname:
+                        for alias in thorname.aliases:
+                            if alias.address == address:
+                                thorname_by_address[address] = thorname
+                                break
+
+            return NameMap(thorname_by_name, thorname_by_address)
         except Exception:
             self.logger.exception(f'Something went wrong. That is OK', exc_info=True)
+            return NameMap({}, {})
 
     async def lookup_name_by_address(self, address: str) -> Optional[THORName]:
         if not address:

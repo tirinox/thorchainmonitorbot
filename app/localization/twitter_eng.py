@@ -8,6 +8,7 @@ from services.dialog.twitter.text_length import twitter_intelligent_text_splitte
 from services.jobs.fetch.circulating import SupplyEntry
 from services.lib.constants import thor_to_float, rune_origin, Chains
 from services.lib.date_utils import now_ts, seconds_human
+from services.lib.midgard.name_service import NameMap
 from services.lib.money import Asset, short_dollar, format_percent, pretty_money, pretty_dollar, RAIDO_GLYPH, \
     calc_percent_change, adaptive_round_to_str, emoji_for_percent_change, short_address, short_money, short_rune
 from services.lib.texts import x_ses, progressbar, plural, bracketify, up_down_arrow, \
@@ -77,7 +78,8 @@ class TwitterEnglishLocalization(BaseLocalization):
 
     def notification_text_large_single_tx(self, tx: ThorTxExtended, usd_per_rune: float,
                                           pool_info: PoolInfo,
-                                          cap: ThorCapInfo = None):
+                                          cap: ThorCapInfo = None,
+                                          name_map: NameMap = None):
         (ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short,
          total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
@@ -98,7 +100,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         asset = Asset(tx.first_pool).name
 
-        user_name = self.name_or_short_address(tx.sender_address)
+        user_name = name_map.by_address.get(tx.sender_address, short_address(tx.sender_address))
         content = f'{user_name}: '
 
         if tx.type in (ThorTxType.TYPE_ADD_LIQUIDITY, ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_DONATE):
@@ -697,16 +699,17 @@ class TwitterEnglishLocalization(BaseLocalization):
         no_pool_text = 'Nothing yet. Maybe still loading...'
         text = '\n'.join([self.format_pool_top(top_pools, pd, title, no_pool_text, n_pools)
                           for title, top_pools in [
-            ('💎 Best APY', pd.BY_APY),
-            ('💸 Top volume', pd.BY_VOLUME_24h),
-            ('🏊 Max Liquidity', pd.BY_DEPTH),
-        ]])
+                              ('💎 Best APY', pd.BY_APY),
+                              ('💸 Top volume', pd.BY_VOLUME_24h),
+                              ('🏊 Max Liquidity', pd.BY_DEPTH),
+                          ]])
         return text
 
-    def link_to_address(self, addr, chain=Chains.THOR):
-        name = self.name_service.lookup_name_by_address_local(addr)
+    def link_to_address(self, addr, chain=Chains.THOR, name_map=None):
         # without a link, just a caption
-        return name.name if name else short_address(addr)
+        name = name_map.by_address.get(addr)
+        caption = name.name if name else short_address(addr)
+        return caption
 
     def notification_text_cex_flow(self, cex_flow: RuneCEXFlow):
         return (
@@ -719,9 +722,12 @@ class TwitterEnglishLocalization(BaseLocalization):
             f'({short_dollar(cex_flow.netflow_usd)})'
         )
 
-    def notification_text_rune_transfer_public(self, t: RuneTransfer):
-        asset, comment, from_my, to_my, tx_link, usd_amt, memo = self._native_transfer_prepare_stuff(None, t,
-                                                                                                     tx_title='')
+    def notification_text_rune_transfer_public(self, t: RuneTransfer, name_map):
+        asset, comment, from_my, to_my, tx_link, usd_amt, memo = self._native_transfer_prepare_stuff(
+            None, t,
+            tx_title='',
+            name_map=name_map
+        )
 
         if t.memo:
             memo = f' (MEMO: "{shorten_text(t.memo, 21)}")'

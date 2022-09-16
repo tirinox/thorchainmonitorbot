@@ -26,7 +26,7 @@ class ReceiverPublicText(INotified):
     async def on_data(self, sender, data):
         for tr in data:
             tr: RuneTransfer
-            print(self.loc.notification_text_rune_transfer_public(tr))
+            print(self.loc.notification_text_rune_transfer_public(tr, {}))
             sep()
 
 

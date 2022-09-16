@@ -12,7 +12,7 @@ from services.lib.constants import Chains, rune_origin
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address, get_thoryield_address, \
     get_ip_info_link
-from services.lib.midgard.name_service import add_thor_suffix
+from services.lib.midgard.name_service import add_thor_suffix, NameMap
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change, Asset, short_money, short_dollar, format_percent, RAIDO_GLYPH, short_rune
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
@@ -292,7 +292,8 @@ class RussianLocalization(BaseLocalization):
     def notification_text_large_single_tx(self, tx: ThorTxExtended,
                                           usd_per_rune: float,
                                           pool_info: PoolInfo,
-                                          cap: ThorCapInfo = None):
+                                          cap: ThorCapInfo = None,
+                                          name_map: NameMap = None):
         (ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short,
          total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
@@ -1528,17 +1529,23 @@ class RussianLocalization(BaseLocalization):
         'OutboundTx': 'Исходящая',
     }
 
-    def notification_text_rune_transfer(self, t: RuneTransfer, my_addresses):
-        asset, comment, from_my, to_my, tx_link, usd_amt, memo = self._native_transfer_prepare_stuff(my_addresses, t)
+    def notification_text_rune_transfer(self, t: RuneTransfer, my_addresses, name_map):
+        asset, comment, from_my, to_my, tx_link, usd_amt, memo = self._native_transfer_prepare_stuff(
+            my_addresses, t,
+            name_map=name_map
+        )
         comment = self.TX_COMMENT_TABLE.get(comment, comment)
 
         return f'🏦 <b>{comment}</b>{tx_link}: {code(short_money(t.amount, postfix=" " + asset))} {usd_amt} ' \
                f'от {from_my} ' \
                f'➡️ к {to_my}{memo}.'
 
-    def notification_text_rune_transfer_public(self, t: RuneTransfer):
-        asset, comment, from_my, to_my, tx_link, usd_amt, memo = self._native_transfer_prepare_stuff(None, t,
-                                                                                                     tx_title='')
+    def notification_text_rune_transfer_public(self, t: RuneTransfer, name_map):
+        asset, comment, from_my, to_my, tx_link, usd_amt, memo = self._native_transfer_prepare_stuff(
+            None, t,
+            tx_title='',
+            name_map=name_map
+        )
 
         return f'💸 <b>Большой перевод</b> {tx_link}: ' \
                f'{code(short_money(t.amount, postfix=" " + asset))}{usd_amt} ' \

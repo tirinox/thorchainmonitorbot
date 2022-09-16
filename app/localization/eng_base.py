@@ -13,7 +13,7 @@ from services.lib.constants import rune_origin, thor_to_float, THOR_BLOCK_TIME, 
 from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
     get_explorer_url_for_node, get_pool_url, get_thoryield_address, get_ip_info_link
-from services.lib.midgard.name_service import NameService, add_thor_suffix
+from services.lib.midgard.name_service import NameService, add_thor_suffix, NameMap
 from services.lib.money import format_percent, pretty_money, short_address, short_money, \
     calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset, short_dollar, \
     RAIDO_GLYPH, short_rune
@@ -413,9 +413,11 @@ class BaseLocalization(ABC):  # == English
         else:
             return ''
 
-    def notification_text_large_single_tx(self, tx: ThorTxExtended, usd_per_rune: float,
+    def notification_text_large_single_tx(self, tx: ThorTxExtended,
+                                          usd_per_rune: float,
                                           pool_info: PoolInfo,
-                                          cap: ThorCapInfo = None):
+                                          cap: ThorCapInfo = None,
+                                          name_map: NameMap = None):
         (ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short,
          total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
@@ -1847,17 +1849,7 @@ class BaseLocalization(ABC):  # == English
     def seconds_human(self, s):
         return seconds_human(s)
 
-    # ----- BEP 2 ------
-
-    def name_or_short_address(self, addr):
-        name = self.name_service.lookup_name_by_address_local(addr)
-        caption = name.name if name else short_address(addr)
-        return caption
-
-    def link_to_address(self, addr, chain=Chains.THOR):
-        url = get_explorer_url_to_address(self.cfg.network_id, chain, addr)
-        caption = self.name_or_short_address(addr)
-        return link(url, caption)
+    # ----- FLOW ------
 
     def notification_text_cex_flow(self, cex_flow: RuneCEXFlow):
         return (f'🌬️ <b>Rune CEX flow last 24 hours</b>\n'
@@ -1934,8 +1926,15 @@ class BaseLocalization(ABC):  # == English
     def _is_my_address_tag(address, my_addresses):
         return ' ★' if my_addresses and address in my_addresses else ''
 
-    def _native_transfer_prepare_stuff(self, my_addresses, t: RuneTransfer, tx_title='TX'):
+    def link_to_address(self, addr, chain=Chains.THOR, name_map=None):
+        url = get_explorer_url_to_address(self.cfg.network_id, chain, addr)
+        name = name_map.by_address.get(addr)
+        caption = name.name if name else short_address(addr)
+        return link(url, caption)
+
+    def _native_transfer_prepare_stuff(self, my_addresses, t: RuneTransfer, tx_title='TX', name_map=None):
         my_addresses = my_addresses or []
+        name_map = name_map or {}
 
         # USD value
         if t.usd_per_asset:
@@ -1944,8 +1943,9 @@ class BaseLocalization(ABC):  # == English
             usd_amt = ''
 
         # Addresses
-        from_my = self.link_to_address(t.from_addr) + self._is_my_address_tag(t.from_addr, my_addresses)
-        to_my = self.link_to_address(t.to_addr) + self._is_my_address_tag(t.to_addr, my_addresses)
+        from_my = self.link_to_address(t.from_addr, name_map=name_map) + self._is_my_address_tag(t.from_addr,
+                                                                                                 my_addresses)
+        to_my = self.link_to_address(t.to_addr, name_map=name_map) + self._is_my_address_tag(t.to_addr, my_addresses)
 
         # Comment
         comment = ''
@@ -1972,16 +1972,22 @@ class BaseLocalization(ABC):  # == English
 
         return asset, comment, from_my, to_my, tx_link, usd_amt, memo
 
-    def notification_text_rune_transfer(self, t: RuneTransfer, my_addresses):
-        asset, comment, from_my, to_my, tx_link, usd_amt, memo = self._native_transfer_prepare_stuff(my_addresses, t)
+    def notification_text_rune_transfer(self, t: RuneTransfer, my_addresses, name_map):
+        asset, comment, from_my, to_my, tx_link, usd_amt, memo = self._native_transfer_prepare_stuff(
+            my_addresses, t,
+            name_map=name_map
+        )
 
         return f'🏦 <b>{comment}</b>{tx_link}: {code(short_money(t.amount, postfix=" " + asset))}{usd_amt} ' \
                f'from {from_my} ' \
                f'➡️ {to_my}{memo}.'
 
-    def notification_text_rune_transfer_public(self, t: RuneTransfer):
-        asset, comment, from_my, to_my, tx_link, usd_amt, memo = self._native_transfer_prepare_stuff(None, t,
-                                                                                                     tx_title='')
+    def notification_text_rune_transfer_public(self, t: RuneTransfer, name_map):
+        asset, comment, from_my, to_my, tx_link, usd_amt, memo = self._native_transfer_prepare_stuff(
+            None, t,
+            tx_title='',
+            name_map=name_map
+        )
 
         return f'💸 <b>Large transfer</b> {tx_link}: ' \
                f'{code(short_money(t.amount, postfix=" " + asset))}{usd_amt} ' \

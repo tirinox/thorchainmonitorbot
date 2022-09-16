@@ -125,6 +125,7 @@ class App:
         d.rune_market_fetcher = RuneMarketInfoFetcher(d)
 
         d.name_service = NameService(d.db, d.cfg, d.midgard_connector)
+        d.alert_presenter.name_service = d.name_service
         d.loc_man.set_name_service(d.name_service)
 
     async def _some_sleep(self):

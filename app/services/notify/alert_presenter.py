@@ -4,6 +4,7 @@ from localization.manager import BaseLocalization
 from services.dialog.picture.block_height_picture import block_speed_chart
 from services.lib.constants import THOR_BLOCKS_PER_MINUTE
 from services.lib.delegates import INotified
+from services.lib.midgard.name_service import NameService
 from services.models.last_block import EventBlockSpeed, BlockProduceState
 from services.models.transfer import RuneCEXFlow, RuneTransfer
 from services.models.tx import EventLargeTransaction
@@ -12,8 +13,9 @@ from services.notify.channel import BoardMessage
 
 
 class AlertPresenter(INotified):
-    def __init__(self, broadcaster: Broadcaster):
+    def __init__(self, broadcaster: Broadcaster, name_service: NameService):
         self.broadcaster = broadcaster
+        self.name_service = name_service
 
     async def on_data(self, sender, data):
         asyncio.create_task(self._handle_async(data))
@@ -31,15 +33,24 @@ class AlertPresenter(INotified):
     # ---- PARTICULARLY ----
 
     async def _handle_large_tx(self, txs_event: EventLargeTransaction):
+        name_map = await self.name_service.safely_load_thornames_from_address_set([
+            txs_event.transaction.sender_address
+        ])
+
         await self.broadcaster.notify_preconfigured_channels(
             BaseLocalization.notification_text_large_single_tx,
-            txs_event.transaction, txs_event.usd_per_rune, txs_event.pool_info, txs_event.cap_info
+            txs_event.transaction, txs_event.usd_per_rune, txs_event.pool_info, txs_event.cap_info,
+            name_map
         )
 
     async def _handle_rune_transfer(self, transfer: RuneTransfer):
+        name_map = await self.name_service.safely_load_thornames_from_address_set([
+            transfer.from_addr, transfer.to_addr
+        ])
+
         await self.broadcaster.notify_preconfigured_channels(
             BaseLocalization.notification_text_rune_transfer_public,
-            transfer)
+            transfer, name_map)
 
     async def _handle_rune_cex_flow(self, flow: RuneCEXFlow):
         await self.broadcaster.notify_preconfigured_channels(BaseLocalization.notification_text_cex_flow, flow)
