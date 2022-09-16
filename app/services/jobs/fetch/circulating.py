@@ -20,20 +20,39 @@ RUNE_ERC20_DEFAULT_SUPPLY = 9206991
 THOR_ADDRESS_UNDEPLOYED_RESERVES = 'thor1lj62pg6ryxv2htekqx04nv7wd3g98qf9gfvamy'
 THOR_ADDRESS_RESERVE_MODULE = 'thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt'
 THOR_ADDRESS_TEAM = 'thor1lrnrawjlfp6jyrzf39r740ymnuk9qgdgp29rqv'
+THOR_ADDRESS_VESTED_9R = 'thor1y5lk3rzatghv9y4s4j90qt9ayq83e2dpf2hvzc'
 THOR_ADDRESS_SEED = 'thor16qnm285eez48r4u9whedq4qunydu2ucmzchz7p'
 THOR_ADDRESS_SEED_2 = 'thor16vwdn4h8p5c9cplp62hw7xg4r5rszh297h96h2'  # 5m from Seed went here, 1m to bonds
 
+
+class ThorRealms:
+    TEAM = 'Team'
+    SEED = 'Seed'
+    VESTING_9R = 'Vesting 9R'
+    RESERVES = 'Reserves'
+    UNDEPLOYED_RESERVES = 'Undeployed reserves'
+
+    PREBURN = 'Preburn'
+    ASGARD = 'Asgard'
+
+    BONDED = 'Bonded'
+    POOLED = 'Pooled'
+    CIRCULATING = 'Circulating'
+    ERC20 = 'ERC20'
+    BEP2 = 'BEP2'
+    KILLED = 'Killed'
+
+
 THOR_EXCLUDE_FROM_CIRCULATING_ADDRESSES = {
-    'Team': THOR_ADDRESS_TEAM,
-    'Seed': THOR_ADDRESS_SEED,
-    'Reserves': THOR_ADDRESS_RESERVE_MODULE,
-    'Undeployed reserves': THOR_ADDRESS_UNDEPLOYED_RESERVES
+    ThorRealms.TEAM: THOR_ADDRESS_TEAM,
+    ThorRealms.SEED: THOR_ADDRESS_SEED,
+    ThorRealms.VESTING_9R: THOR_ADDRESS_VESTED_9R,
+    ThorRealms.RESERVES: THOR_ADDRESS_RESERVE_MODULE,
+    ThorRealms.UNDEPLOYED_RESERVES: THOR_ADDRESS_UNDEPLOYED_RESERVES
 }
 
-KEY_ASGARD = 'Asgard'
-
 BEP2_EXCLUDE_FROM_CIRCULATING_ADDRESSES = {
-    'Preburn': BEP2_BURN_ADDRESS,
+    ThorRealms.PREBURN: BEP2_BURN_ADDRESS,
 }
 
 
@@ -118,19 +137,19 @@ class RuneCirculatingSupplyFetcher(WithLogger):
 
         bep2_locked_dict = dict((k, v) for k, v in
                                 zip(BEP2_EXCLUDE_FROM_CIRCULATING_ADDRESSES.keys(), bep2_exclude_balance_arr))
-        bep2_locked_dict[KEY_ASGARD] = bep2_to_burn_asgard
+        bep2_locked_dict[ThorRealms.ASGARD] = bep2_to_burn_asgard
 
         thor_locked_dict = dict((k, v) for k, v in
                                 zip(THOR_EXCLUDE_FROM_CIRCULATING_ADDRESSES.keys(), thor_exclude_balance_arr))
 
         erc20_locked_dict = {
-            KEY_ASGARD: erc20_to_burn_asgard
+            ThorRealms.ASGARD: erc20_to_burn_asgard
         }
         overall_locked_dict = {
             **bep2_locked_dict,
             **erc20_locked_dict,
             **thor_locked_dict,
-            KEY_ASGARD: erc20_to_burn_asgard + bep2_to_burn_asgard
+            ThorRealms.ASGARD: erc20_to_burn_asgard + bep2_to_burn_asgard
         }
 
         # noinspection PyTypeChecker

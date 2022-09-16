@@ -6,7 +6,7 @@ from aiothornode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
 from localization.eng_base import BaseLocalization, CREATOR_TG, URL_LEADERBOARD_MCCN
-from services.jobs.fetch.circulating import SupplyEntry
+from services.jobs.fetch.circulating import SupplyEntry, ThorRealms
 from services.lib.constants import Chains, rune_origin
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address, get_thoryield_address, \
@@ -1451,12 +1451,13 @@ class RussianLocalization(BaseLocalization):
     # ----- SUPPLY ------
 
     SUPPLY_HELPER_TRANSLATOR = {
-        'Team': 'Команда',
-        'Seed': 'Сид-инвесторы',
-        'Reserves': 'Резервы',
-        'Undeployed reserves': 'Неразвернутые резервы',
-        'Preburn': 'Готово к сожжению',
-        'Asgard': 'Горят в Асгарде',
+        ThorRealms.TEAM: 'Команда',
+        ThorRealms.SEED: 'Сид-инвесторы',
+        ThorRealms.RESERVES: 'Резервы',
+        ThorRealms.VESTING_9R: 'NineRealms',
+        ThorRealms.UNDEPLOYED_RESERVES: 'Неразвернутые резервы',
+        ThorRealms.PREBURN: 'Готово к сожжению',
+        ThorRealms.ASGARD: 'Горят в Асгарде',
     }
 
     def format_supply_entry(self, name, s: SupplyEntry, total_of_total: int):
@@ -1508,6 +1509,7 @@ class RussianLocalization(BaseLocalization):
     SUPPLY_PIC_KILLED_LOST = 'Убитые при апгрейде'
     SUPPLY_PIC_TEAM = 'Команда'
     SUPPLY_PIC_SEED = 'Сид-инвесторы'
+    SUPPLY_PIC_VESTING_9R = 'NineRealms вестинг'
     SUPPLY_PIC_RESERVES = 'Резерв'
     SUPPLY_PIC_UNDEPLOYED = 'Неразвернутый резерв'
     SUPPLY_PIC_BONDED = 'Бонд в нодах'

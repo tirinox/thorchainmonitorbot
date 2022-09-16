@@ -4,9 +4,8 @@ import PIL
 
 from localization.eng_base import BaseLocalization
 from services.dialog.picture.resources import Resources
-from services.jobs.fetch.circulating import RuneCirculatingSupply
+from services.jobs.fetch.circulating import RuneCirculatingSupply, ThorRealms
 from services.lib.date_utils import today_str
-from services.lib.draw_utils import img_to_bio
 from services.lib.plot_graph import PlotGraph
 from services.lib.utils import async_wrap, vertical_text, WithLogger
 from services.models.killed_rune import KilledRuneEntry
@@ -148,27 +147,29 @@ class SupplyPictureGenerator(WithLogger):
         self.gr = PlotGraph(self.WIDTH, self.HEIGHT)
         self.locked_thor_rune = supply.thor_rune.locked_amount
         self.translate = {
-            'Circulating': self.loc.SUPPLY_PIC_CIRCULATING,
-            'Team': self.loc.SUPPLY_PIC_TEAM,
-            'Seed': self.loc.SUPPLY_PIC_SEED,
-            'Reserves': self.loc.SUPPLY_PIC_RESERVES,
-            'Undeployed reserves': self.loc.SUPPLY_PIC_UNDEPLOYED,
-            'Killed': self.loc.SUPPLY_PIC_KILLED,
-            'Bonded': self.loc.SUPPLY_PIC_BONDED,
-            'Pooled': self.loc.SUPPLY_PIC_POOLED,
+            ThorRealms.CIRCULATING: self.loc.SUPPLY_PIC_CIRCULATING,
+            ThorRealms.TEAM: self.loc.SUPPLY_PIC_TEAM,
+            ThorRealms.SEED: self.loc.SUPPLY_PIC_SEED,
+            ThorRealms.VESTING_9R: self.loc.SUPPLY_PIC_VESTING_9R,
+            ThorRealms.RESERVES: self.loc.SUPPLY_PIC_RESERVES,
+            ThorRealms.UNDEPLOYED_RESERVES: self.loc.SUPPLY_PIC_UNDEPLOYED,
+            ThorRealms.KILLED: self.loc.SUPPLY_PIC_KILLED,
+            ThorRealms.BONDED: self.loc.SUPPLY_PIC_BONDED,
+            ThorRealms.POOLED: self.loc.SUPPLY_PIC_POOLED,
         }
 
         self.PALETTE = {
-            'Team': '#2ecc71',
-            'Seed': '#16a085',
-            'Reserves': '#2980b9',
-            'Undeployed reserves': '#2c3e50',
-            'Bonded': '#e67e22',
-            'Pooled': '#f39c12',
-            'Circulating': '#f8e287',
-            'ERC20': '#bdc3c7',
-            'BEP2': '#f1c40f',
-            'Killed': '#c0392b',
+            ThorRealms.TEAM: '#2ecc71',
+            ThorRealms.SEED: '#16a085',
+            ThorRealms.VESTING_9R: '#5522e0',
+            ThorRealms.RESERVES: '#2980b9',
+            ThorRealms.UNDEPLOYED_RESERVES: '#2c3e50',
+            ThorRealms.BONDED: '#e67e22',
+            ThorRealms.POOLED: '#f39c12',
+            ThorRealms.CIRCULATING: '#f8e287',
+            ThorRealms.ERC20: '#bdc3c7',
+            ThorRealms.BEP2: '#f1c40f',
+            ThorRealms.KILLED: '#c0392b',
         }
         self.locked_rect = Rect()
         self.circulating_rect = Rect()
@@ -248,21 +249,21 @@ class SupplyPictureGenerator(WithLogger):
         free_circulating = self.supply.thor_rune.circulating - bonded - pooled
 
         self._pack([
-            PackItem(self.loc.SUPPLY_PIC_BONDED, bonded, self.PALETTE['Bonded']),
-            PackItem(self.loc.SUPPLY_PIC_POOLED, pooled, self.PALETTE['Pooled']),
-            PackItem(self.loc.SUPPLY_PIC_CIRCULATING, free_circulating, self.PALETTE['Circulating']),
+            PackItem(self.loc.SUPPLY_PIC_BONDED, bonded, self.PALETTE[ThorRealms.BONDED]),
+            PackItem(self.loc.SUPPLY_PIC_POOLED, pooled, self.PALETTE[ThorRealms.POOLED]),
+            PackItem(self.loc.SUPPLY_PIC_CIRCULATING, free_circulating, self.PALETTE[ThorRealms.CIRCULATING]),
         ], self.circulating_rect, align=DrawRectPacker.V)
 
         ((erc20_item, erc20_rect), (bep2_item, bep2_rect)) = self._pack([
-            PackItem(vertical_text('ERC20'), erc20_full, self.PALETTE['ERC20']),
-            PackItem(vertical_text('BEP2'), bep2_full, self.PALETTE['BEP2']),
+            PackItem(vertical_text(ThorRealms.ERC20), erc20_full, self.PALETTE[ThorRealms.ERC20]),
+            PackItem(vertical_text(ThorRealms.BEP2), bep2_full, self.PALETTE[ThorRealms.BEP2]),
         ], self.old_rect, align=DrawRectPacker.V)
 
         thor_killed = self.killed.killed_switched
         bep2_killed = self.killed.total_killed * bep2_full / old_full
         erc20_killed = self.killed.total_killed * erc20_full / old_full
 
-        killed_color = self.PALETTE['Killed']
+        killed_color = self.PALETTE[ThorRealms.KILLED]
 
         self._pack([
             PackItem('', bep2_full - bep2_killed, ''),

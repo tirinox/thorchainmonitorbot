@@ -6,7 +6,7 @@ from typing import List, Optional
 from aiothornode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
-from services.jobs.fetch.circulating import SupplyEntry
+from services.jobs.fetch.circulating import SupplyEntry, ThorRealms
 from services.lib.config import Config
 from services.lib.constants import rune_origin, thor_to_float, THOR_BLOCK_TIME, DEFAULT_CEX_NAME, DEFAULT_CEX_BASE_ASSET
 from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE
@@ -1912,15 +1912,16 @@ class BaseLocalization(ABC):  # == English
         return message
 
     SUPPLY_PIC_TITLE = 'THORChain Rune supply'
-    SUPPLY_PIC_CIRCULATING = 'Circulating'
-    SUPPLY_PIC_KILLED = 'Killed'
+    SUPPLY_PIC_CIRCULATING = ThorRealms.CIRCULATING
+    SUPPLY_PIC_KILLED = ThorRealms.KILLED
     SUPPLY_PIC_KILLED_LOST = 'Killed switched'
-    SUPPLY_PIC_TEAM = 'Team'
-    SUPPLY_PIC_SEED = 'Seed'
-    SUPPLY_PIC_RESERVES = 'Reserves'
-    SUPPLY_PIC_UNDEPLOYED = 'Undeployed reserves'
+    SUPPLY_PIC_TEAM = ThorRealms.TEAM
+    SUPPLY_PIC_SEED = ThorRealms.SEED
+    SUPPLY_PIC_VESTING_9R = ThorRealms.VESTING_9R
+    SUPPLY_PIC_RESERVES = ThorRealms.RESERVES
+    SUPPLY_PIC_UNDEPLOYED = ThorRealms.UNDEPLOYED_RESERVES
     SUPPLY_PIC_BONDED = 'Bonded by nodes'
-    SUPPLY_PIC_POOLED = 'Pooled'
+    SUPPLY_PIC_POOLED = ThorRealms.POOLED
     SUPPLY_PIC_SECTION_CIRCULATING = 'THOR.RUNE circulating'
     SUPPLY_PIC_SECTION_LOCKED = 'THOR.RUNE locked'
     SUPPLY_PIC_SECTION_OLD = 'Obsolete'
