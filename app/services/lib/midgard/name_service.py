@@ -52,8 +52,9 @@ class NameService(WithLogger):
         if names is None:
             names = await self.call_api_thorname_reversed_lookup(address)
             await self._cache_save_name_list(address, names)
-            if not names:
-                return
+
+        if not names:
+            return
 
         name = names[0]
         if len(names) > 1:
@@ -81,13 +82,11 @@ class NameService(WithLogger):
             return
 
         thorname = await self._cache_load_thor_name(name)
-        if not thorname:
+        if thorname == self.NO_VALUE:
+            return
+        elif not thorname:
             thorname = await self.call_api_thorname_lookup(name)
-            if thorname:
-                await self._cache_save_thor_name(thorname)
-            else:
-                self.logger.warning(f'THORName "{name}" failed to be loaded!')
-                return
+            await self._cache_save_thor_name(name, thorname)  # save anyway, even if there is not THORName!
 
         return thorname
 
@@ -130,12 +129,16 @@ class NameService(WithLogger):
         data = await self.db.redis.get(self._key_address_to_names(address))
         return json.loads(data) if data else None
 
-    async def _cache_save_thor_name(self, thorname: THORName):
-        if not thorname:
+    NO_VALUE = 'no_value'
+
+    async def _cache_save_thor_name(self, name, thorname: THORName):
+        if not name:
             return
+
+        value = thorname.to_json() if thorname else self.NO_VALUE
         await self.db.redis.set(
             self._key_thorname_to_addresses(thorname.name),
-            value=thorname.to_json(),
+            value=value,
             ex=self._thorname_expire
         )
 
@@ -148,7 +151,10 @@ class NameService(WithLogger):
             return
 
         try:
-            return THORName().from_json(data)
+            if data == self.NO_VALUE:
+                return data
+            else:
+                return THORName().from_json(data)
         except (TypeError, struct.error):
             return
 
@@ -174,8 +180,6 @@ class NameService(WithLogger):
                     THORNameAlias(alias['chain'], alias['address']) for alias in results['entries']
                 ]
             )
-
-        # address -> [name as str]
 
     async def call_api_thorname_reversed_lookup(self, address: str) -> List[str]:
         """

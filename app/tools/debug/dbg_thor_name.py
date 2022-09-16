@@ -1,5 +1,6 @@
 import asyncio
 
+from services.lib.midgard.name_service import NameService
 from tools.lib.lp_common import LpAppFramework
 
 NAMES = {
@@ -21,15 +22,27 @@ async def t_names1(lp_app: LpAppFramework):
     print(n)
 
 
+async def t_exists(ns: NameService):
+    r = await ns.safely_load_thornames_from_address_set([NAMES['vitalik']])
+    print(r)
+    r1 = await ns.lookup_name_by_address('thor1e5qhhm93j380xksqpamh74mva2ee6c3wmmrrz4')
+    print(r1)
+
+
+async def t_not_exists(ns: NameService):
+    # r = await ns.safely_load_thornames_from_address_set(['fljlfjwljweobo', 'lkelejljjwejlweqq'])
+    # print(r)
+
+    r1 = await ns.lookup_name_by_address('thorNOADDRESS')
+    print(r1)
+
+
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
         ns = app.deps.name_service
-
-        r = await ns.safely_load_thornames_from_address_set([NAMES['vitalik']])
-        print(r)
-        r1 = await ns.lookup_name_by_address('thor1e5qhhm93j380xksqpamh74mva2ee6c3wmmrrz4')
-        print(r1)
+        # await t_exists(ns)
+        await t_not_exists(ns)
 
 
 if __name__ == '__main__':
