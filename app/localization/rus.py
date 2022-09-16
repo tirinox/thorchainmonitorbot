@@ -12,6 +12,7 @@ from services.lib.constants import Chains, rune_origin
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address, get_thoryield_address, \
     get_ip_info_link
+from services.lib.midgard.name_service import add_thor_suffix
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change, Asset, short_money, short_dollar, format_percent, RAIDO_GLYPH, short_rune
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
@@ -207,8 +208,7 @@ class RussianLocalization(BaseLocalization):
 
         acc_caption = ''
         if thor_name:
-            name = f'{thor_name.name}.thor'
-            acc_caption = f' (THORName: {code(name)})'
+            acc_caption = f' (THORName: {code(add_thor_suffix(thor_name))})'
 
         thor_yield_url = get_thoryield_address(self.cfg.network_id, address, chain)
         thor_yield_link = link(thor_yield_url, 'THORYield')

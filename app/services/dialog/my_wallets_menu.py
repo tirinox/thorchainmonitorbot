@@ -16,6 +16,7 @@ from services.lib.constants import Chains
 from services.lib.date_utils import today_str
 from services.lib.depcont import DepContainer
 from services.lib.draw_utils import img_to_bio
+from services.lib.midgard.name_service import add_thor_suffix
 from services.lib.money import short_address, short_rune
 from services.lib.new_feature import Features
 from services.lib.texts import kbd, cut_long_text, grouper
@@ -61,6 +62,14 @@ class MyWalletsMenu(DialogWithSettings):
         if not address:
             return
 
+        chain = Chains.BNB
+
+        thor_name = await self.deps.name_service.lookup_thorname_by_name(address.lower())
+        if thor_name:
+            logging.info(f'Whoa! A user adds THORName "{thor_name.name}"!')
+            address = self.deps.name_service.get_thor_address_of_thorname(thor_name)
+            chain = Chains.THOR
+
         if not LPAddress.validate_address(address):
             await message.answer(self.loc.TEXT_INVALID_ADDRESS, disable_notification=True)
             return
@@ -69,7 +78,7 @@ class MyWalletsMenu(DialogWithSettings):
             await message.answer(self.loc.TEXT_CANNOT_ADD, disable_notification=True)
             return
 
-        self._add_address(address, Chains.BNB)
+        self._add_address(address, chain)
 
         # redraw menu!
         await self._show_address_selection_menu(message, edit=edit)
@@ -86,8 +95,8 @@ class MyWalletsMenu(DialogWithSettings):
 
         async def address_label(address):
             thor_name = await self.deps.name_service.lookup_name_by_address(address)
-            name = thor_name.name if thor_name else address
-            label = short_address(f'{name}.thor', 8, 5)
+            name = add_thor_suffix(thor_name) if thor_name else address
+            label = short_address(name, 10, 5, filler='..')
             return label, address
 
         # Every button is tuple of (label, full_address)

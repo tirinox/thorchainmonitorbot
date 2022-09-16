@@ -13,7 +13,7 @@ from services.lib.constants import rune_origin, thor_to_float, THOR_BLOCK_TIME, 
 from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
     get_explorer_url_for_node, get_pool_url, get_thoryield_address, get_ip_info_link
-from services.lib.midgard.name_service import NameService
+from services.lib.midgard.name_service import NameService, add_thor_suffix
 from services.lib.money import format_percent, pretty_money, short_address, short_money, \
     calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset, short_dollar, \
     RAIDO_GLYPH, short_rune
@@ -266,8 +266,7 @@ class BaseLocalization(ABC):  # == English
 
         acc_caption = ''
         if thor_name:
-            name = f'{thor_name.name}.thor'
-            acc_caption = f' (THORName: {code(name)})'
+            acc_caption = f' (THORName: {code(add_thor_suffix(thor_name))})'
 
         thor_yield_url = get_thoryield_address(self.cfg.network_id, address, chain)
         thor_yield_link = link(thor_yield_url, 'THORYield')

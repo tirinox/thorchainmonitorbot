@@ -198,3 +198,10 @@ class NameService(WithLogger):
         """
         results = await self.midgard.request_random_midgard(f'/v2/thorname/owner/{thor_address}')
         return results or []
+
+
+def add_thor_suffix(thor_name: THORName):
+    if thor_name.expire_block_height:
+        return f'{thor_name.name}.thor'
+    else:
+        return thor_name.name
