@@ -145,7 +145,7 @@ class VersionNotifier(INotified, WithDelegates):
                 BaseLocalization.notification_text_version_upgrade_progress,
                 data, ver_con
             )
-            
+
     async def on_data(self, sender, changes: NodeSetChanges):
         if self.is_new_version_enabled:
             await self._handle_new_versions(changes)

@@ -85,8 +85,8 @@ async def run():
     app = LpAppFramework()
     async with app(brief=True):
         pic, _ = await get_supply_pic(app)
-        save_and_show_supply_pic(pic, show=False)
-        await post_supply_to_discord(app, pic)
+        save_and_show_supply_pic(pic, show=True)
+        # await post_supply_to_discord(app, pic)
 
 
 if __name__ == '__main__':
