@@ -16,20 +16,17 @@ class NativeActionExtractor(WithDelegates, INotified, WithLogger):
             if tx.memo.count(':') >= 5:
                 memo = THORMemoParsed.parse_memo(tx.memo)
                 if memo and memo.dex_aggregator_address:
-                    print(f'Swap memo: {tx.memo}')
-                    print(memo)
+                    self.logger(f'Swap memo: {tx.memo}')
 
         for tx in block.txs:
             if isinstance(tx.first_message, MsgSwap):
                 msg: MsgSwap = tx.first_message
                 if msg.aggregator:
-                    print(f'Swap Aggr: {msg}')
+                    self.logger.info(f'Swap Aggr: {msg}')
                 check_memo(msg.tx)
             elif isinstance(tx.first_message, MsgObservedTxIn):
                 for subtx in tx.first_message.txs:
                     subtx: ObservedTx
                     if subtx.aggregator:
-                        print(f'Observed Tx Aggr: {subtx}')
+                        self.logger.info(f'Observed Tx Aggr: {subtx}')
                     check_memo(subtx.tx)
-
-

@@ -266,7 +266,7 @@ class BaseLocalization(ABC):  # == English
 
         acc_caption = ''
         if thor_name:
-            acc_caption = f' (THORName: {code(add_thor_suffix(thor_name))})'
+            acc_caption = f' (THORName: {pre(add_thor_suffix(thor_name))})'
 
         thor_yield_url = get_thoryield_address(self.cfg.network_id, address, chain)
         thor_yield_link = link(thor_yield_url, 'THORYield')
@@ -277,7 +277,7 @@ class BaseLocalization(ABC):  # == English
             limit_str = ''
 
         return (
-            f'🛳️ Account "{pre(address)}"{acc_caption}\n'
+            f'🛳️ Account "{code(address)}"{acc_caption}\n'
             f'{title}'
             f'{balance_str}'
             f'{limit_str}'
@@ -1929,7 +1929,7 @@ class BaseLocalization(ABC):  # == English
     def link_to_address(self, addr, chain=Chains.THOR, name_map=None):
         url = get_explorer_url_to_address(self.cfg.network_id, chain, addr)
         name = name_map.by_address.get(addr)
-        caption = name.name if name else short_address(addr)
+        caption = add_thor_suffix(name) if name else short_address(addr)
         return link(url, caption)
 
     def _native_transfer_prepare_stuff(self, my_addresses, t: RuneTransfer, tx_title='TX', name_map=None):

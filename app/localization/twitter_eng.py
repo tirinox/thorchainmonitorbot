@@ -8,7 +8,7 @@ from services.dialog.twitter.text_length import twitter_intelligent_text_splitte
 from services.jobs.fetch.circulating import SupplyEntry
 from services.lib.constants import thor_to_float, rune_origin, Chains
 from services.lib.date_utils import now_ts, seconds_human
-from services.lib.midgard.name_service import NameMap
+from services.lib.midgard.name_service import NameMap, add_thor_suffix
 from services.lib.money import Asset, short_dollar, format_percent, pretty_money, pretty_dollar, RAIDO_GLYPH, \
     calc_percent_change, adaptive_round_to_str, emoji_for_percent_change, short_address, short_money, short_rune
 from services.lib.texts import x_ses, progressbar, plural, bracketify, up_down_arrow, \
@@ -708,7 +708,7 @@ class TwitterEnglishLocalization(BaseLocalization):
     def link_to_address(self, addr, chain=Chains.THOR, name_map=None):
         # without a link, just a caption
         name = name_map.by_address.get(addr)
-        caption = name.name if name else short_address(addr)
+        caption = add_thor_suffix(name) if name else short_address(addr)
         return caption
 
     def notification_text_cex_flow(self, cex_flow: RuneCEXFlow):
