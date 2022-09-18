@@ -101,7 +101,10 @@ class NativeScannerBlock(BaseFetcher):
             self.logger.error('Still no last_block height!')
             return
 
-        self.logger.info(f'Tick start for block #{self._last_block}.')
+        if self._last_block % 10 == 0:
+            self.logger.info(f'Tick start for block #{self._last_block}.')
+        else:
+            self.logger.debug(f'Tick start for block #{self._last_block}.')
 
         while True:
             block_result = await self.fetch_block_results(self._last_block)
