@@ -109,7 +109,10 @@ class TxFetcher(BaseFetcher):
             results = await self._fetch_one_batch(page)
 
             if results is None:
-                continue
+                # try again once
+                results = await self._fetch_one_batch(page)
+                if results is None:
+                    continue
 
             new_txs = results.txs
             new_txs = [tx for tx in new_txs if tx.is_success]  # filter success
