@@ -188,7 +188,7 @@ class RuneCirculatingSupplyFetcher(WithLogger):
 
     async def get_bnb_rune_total_supply(self):
         url = self.url_bep2_token_info()
-        self.logger.info(f'Get: "{url}"')
+        self.logger.debug(f'Get: "{url}"')
         async with self.session.get(url) as resp:
             j = await resp.json()
             rune_entry = next(item for item in j if item['symbol'] == BEP2_RUNE_ASSET)
@@ -205,7 +205,7 @@ class RuneCirculatingSupplyFetcher(WithLogger):
 
     async def get_bep2_address_balance(self, address):
         url = self.url_bep2_get_balance(address)
-        self.logger.info(f'Get: "{url}"')
+        self.logger.debug(f'Get: "{url}"')
         async with self.session.get(url) as resp:
             j = await resp.json()
             for balance in j['balances']:
@@ -231,14 +231,14 @@ class RuneCirculatingSupplyFetcher(WithLogger):
 
     async def get_thor_address_balance(self, address):
         url_balance = f'{self.thor_node}/cosmos/bank/v1beta1/balances/{address}'
-        self.logger.info(f'Get: "{url_balance}"')
+        self.logger.debug(f'Get: "{url_balance}"')
         async with self.session.get(url_balance) as resp:
             j = await resp.json()
             return self.get_pure_rune_from_thor_array(j['balances'])
 
     async def get_asgard_coins(self):
         url_asgard = f'{self.thor_node}/thorchain/vaults/asgard'
-        self.logger.info(f'Get: "{url_asgard}"')
+        self.logger.debug(f'Get: "{url_asgard}"')
         async with self.session.get(url_asgard) as resp:
             j = await resp.json()
             compiled = {}
