@@ -44,7 +44,7 @@ class MidgardConnector:
                         answer = resp.content[:200]
                     except TypeError:
                         answer = 'unknown'
-                    self.logger.warning(f'Midgard ({ip_address}) BAD response {resp.status = }, "{answer}"!')
+                    self.logger.warning(f'Midgard ({full_url}) BAD response {resp.status = }, "{answer}"!')
                     return self.ERROR_RESPONSE
                 j = await resp.json()
                 return j

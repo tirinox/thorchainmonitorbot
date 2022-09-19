@@ -223,7 +223,7 @@ class RuneCirculatingSupplyFetcher(WithLogger):
 
     async def get_thor_rune_total_supply(self):
         url_supply = f'{self.thor_node}/cosmos/bank/v1beta1/supply'
-        self.logger.info(f'Get: "{url_supply}"')
+        self.logger.debug(f'Get: "{url_supply}"')
         async with self.session.get(url_supply) as resp:
             j = await resp.json()
             items = j['supply']
