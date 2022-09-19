@@ -827,8 +827,8 @@ class BaseLocalization(ABC):  # == English
 
         # -- BOND
 
-        current_bond_text = bold(short_rune(new.total_active_bond_rune))
-        current_bond_change = bracketify(
+        current_active_bond_text = bold(short_rune(new.total_active_bond_rune))
+        current_active_bond_change = bracketify(
             up_down_arrow(old.total_active_bond_rune, new.total_active_bond_rune, money_delta=True))
 
         current_bond_usd_text = bold(short_dollar(new.total_active_bond_usd))
@@ -845,7 +845,7 @@ class BaseLocalization(ABC):  # == English
             up_down_arrow(old.total_bond_usd, new.total_bond_usd, money_delta=True, money_prefix='$')
         )
 
-        message += f"🔗 Active bond: {current_bond_text}{current_bond_change} or " \
+        message += f"🔗 Active bond: {current_active_bond_text}{current_active_bond_change} or " \
                    f"{current_bond_usd_text}{current_bond_usd_change}.\n"
 
         message += f"🔗 Total bond including standby: {current_total_bond_text}{current_total_bond_change} or " \
