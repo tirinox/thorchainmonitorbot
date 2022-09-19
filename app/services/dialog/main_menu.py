@@ -145,7 +145,7 @@ class MainMenuDialog(BaseDialog):
         elif message.text == self.settings_button_text:
             await SettingsDialog.from_other_dialog(self).show_main_menu(message)
         elif message.text == self.loc.BUTTON_MM_MAKE_AVATAR:
-            await AvatarDialog.from_other_dialog(self).on_enter()
+            await AvatarDialog.from_other_dialog(self).on_enter(message)
         elif message.text == self.loc.BUTTON_MM_NODE_OP and NodeOpDialog.is_enabled(self.deps.cfg):
             await NodeOpDialog.from_other_dialog(self).show_main_menu(message)
         else:
