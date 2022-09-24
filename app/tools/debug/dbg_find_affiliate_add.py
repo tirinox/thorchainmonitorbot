@@ -1,6 +1,6 @@
 import asyncio
 
-from services.jobs.fetch.tx import merge_affiliate_txs
+from services.jobs.affiliate_merge import merge_affiliate_txs
 from services.lib.midgard.connector import MidgardConnector
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import free_url_gen

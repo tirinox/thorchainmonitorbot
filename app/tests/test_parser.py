@@ -3,8 +3,8 @@ import os
 
 import pytest
 
-from services.jobs.fetch.tx import merge_affiliate_txs, merge_same_txs
-from services.lib.constants import NetworkIdents, THOR_DIVIDER, NATIVE_RUNE_SYMBOL, UST_SYMBOL, is_rune
+from services.jobs.affiliate_merge import AffiliateTXMerger
+from services.lib.constants import NetworkIdents, THOR_DIVIDER, NATIVE_RUNE_SYMBOL, is_rune
 from services.lib.midgard.parser import MidgardParserV2
 from services.models.tx import ThorCoin, ThorMetaSwap, ThorTx
 
@@ -72,7 +72,8 @@ def test_affiliate_merge_simple(example_tx_gen):
     t0, t1 = affiliate_tx_examples[:2]
     t0: ThorTx
     t1: ThorTx
-    tm = merge_same_txs(t0, t1)
+    merger = AffiliateTXMerger()
+    tm = merger.merge_same_txs(t0, t1)
     assert tm.meta_swap.trade_slip == '123'
     assert tm.meta_swap.trade_target == '1312542530351'
     assert tm.meta_swap.liquidity_fee == '16417504333'
@@ -96,7 +97,7 @@ def test_affiliate_merge_simple(example_tx_gen):
 def test_affiliate_merge(example_tx_gen):
     affiliate_tx_examples = example_tx_gen('affiliate_merge_test.json').txs
 
-    merged_txs = merge_affiliate_txs(affiliate_tx_examples)
+    merged_txs = AffiliateTXMerger().merge_affiliate_txs(affiliate_tx_examples)
     assert len(merged_txs) > 0
     assert len(merged_txs) < len(affiliate_tx_examples)  # merged
     assert len(merged_txs) == 15
@@ -104,7 +105,7 @@ def test_affiliate_merge(example_tx_gen):
 
 def test_affiliate_add_merge_single(example_tx_gen):
     affiliate_tx_examples_add = example_tx_gen('affiliate_merge_test_add.json').txs
-    merged_txs = merge_affiliate_txs(affiliate_tx_examples_add)
+    merged_txs = AffiliateTXMerger().merge_affiliate_txs(affiliate_tx_examples_add)
     assert len(affiliate_tx_examples_add) == 2
     assert len(merged_txs) == 1
     tx = merged_txs[0]
@@ -117,7 +118,7 @@ def test_affiliate_add_merge_single(example_tx_gen):
 ])
 def test_affiliate_add_merge_dual(fn, example_tx_gen):
     affiliate_tx_examples_add = example_tx_gen(fn).txs
-    merged_txs = merge_affiliate_txs(affiliate_tx_examples_add)
+    merged_txs = AffiliateTXMerger().merge_affiliate_txs(affiliate_tx_examples_add)
     assert len(affiliate_tx_examples_add) == 2
     assert len(merged_txs) == 1
     tx = merged_txs[0]
@@ -142,13 +143,13 @@ def test_merge_same(v2_single_tx_gen):
     tx1.in_tx[0].coins[0].amount = "123"
     tx2.in_tx[0].coins[0].amount = "234"
     assert not tx1.deep_eq(tx2)
-    r = merge_affiliate_txs([tx1, tx2])
+    r = AffiliateTXMerger().merge_affiliate_txs([tx1, tx2])
     assert len(r) == 1
 
     tx1 = v2_single_tx_gen()
     tx2 = v2_single_tx_gen()  # same TX, but different objects
 
-    r = merge_affiliate_txs([tx1, tx2])
+    r = AffiliateTXMerger().merge_affiliate_txs([tx1, tx2])
     assert len(r) == 2
 
 

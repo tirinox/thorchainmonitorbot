@@ -210,6 +210,10 @@ class ThorTx:
         return self.status == SUCCESS
 
     @property
+    def is_pending(self):
+        return self.status == PENDING
+
+    @property
     def date_timestamp(self):
         return int(int(self.date) * 1e-9)
 

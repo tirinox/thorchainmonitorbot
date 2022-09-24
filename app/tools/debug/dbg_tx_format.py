@@ -2,7 +2,7 @@ import asyncio
 import random
 
 from localization.manager import BaseLocalization
-from services.jobs.fetch.tx import merge_affiliate_txs
+from services.jobs.affiliate_merge import AffiliateTXMerger
 from services.lib.delegates import INotified
 from services.lib.midgard.connector import MidgardConnector
 from services.lib.midgard.parser import get_parser_by_network_id
@@ -85,7 +85,7 @@ async def load_tx(lp_app, mdg, q_path, find_aff=False):
     tx_parser = get_parser_by_network_id(lp_app.deps.cfg.network_id)
     j = await mdg.request_random_midgard(q_path)
     txs = tx_parser.parse_tx_response(j).txs
-    txs_merged = merge_affiliate_txs(txs)
+    txs_merged = AffiliateTXMerger().merge_affiliate_txs(txs)
     tx = next(tx for tx in txs_merged if tx.affiliate_fee > 0) if find_aff else txs_merged[0]
     ex_tx = ThorTxExtended.load_from_thor_tx(tx)
     return ex_tx
