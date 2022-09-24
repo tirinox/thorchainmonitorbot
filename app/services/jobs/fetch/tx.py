@@ -8,7 +8,7 @@ from services.jobs.affiliate_merge import AffiliateTXMerger
 from services.jobs.fetch.base import BaseFetcher
 from services.lib.date_utils import parse_timespan_to_seconds, now_ts
 from services.lib.depcont import DepContainer
-from services.lib.midgard.parser import get_parser_by_network_id
+from services.lib.midgard.parser import get_parser_by_network_id, TxParseResult
 from services.lib.midgard.urlgen import free_url_gen
 from services.models.tx import ThorTx, ThorTxExtended
 
@@ -22,6 +22,7 @@ class TxFetcher(BaseFetcher):
         self.tx_per_batch = int(s_cfg.tx_per_batch)
         self.max_page_deep = int(s_cfg.max_page_deep)
         self.max_age_sec = parse_timespan_to_seconds(s_cfg.max_age)
+        self.announce_pending_after_blocks = int(s_cfg.announce_pending_after_blocks)
 
         self.tx_parser = get_parser_by_network_id(deps.cfg.network_id)
         self.tx_merger = AffiliateTXMerger()
@@ -92,7 +93,7 @@ class TxFetcher(BaseFetcher):
 
     # -------
 
-    async def _fetch_one_batch(self, page):
+    async def _fetch_one_batch(self, page) -> Optional[TxParseResult]:
         q_path = free_url_gen.url_for_tx(page * self.tx_per_batch, self.tx_per_batch)
 
         try:
@@ -104,6 +105,9 @@ class TxFetcher(BaseFetcher):
     async def _fetch_unseen_txs(self):
         all_txs = []
         await self.deps.db.get_redis()
+
+        top_block_height = 0
+
         for page in range(self.max_page_deep):
             results = await self._fetch_one_batch(page)
 
@@ -115,14 +119,24 @@ class TxFetcher(BaseFetcher):
 
             new_txs = results.txs
 
-            pending_txs = [tx for tx in new_txs if tx.is_pending]
-            if pending_txs:
-                self.logger.debug(f'Pending TXs: {len(pending_txs)}.')
+            # estimate "top_block_height"
+            if results:
+                top_block_height = max(top_block_height, max(tx.height_int for tx in new_txs))
 
-            new_txs = [tx for tx in new_txs if tx.is_success]  # filter success
-            new_txs = list(self._filter_by_age(new_txs))  # filter out old TXs
+            # filter out old really TXs
+            new_txs = list(self._filter_by_age(new_txs))
 
-            # filter out seen TXs
+            # filter success
+            new_txs = [tx for tx in new_txs if tx.is_success]
+
+            # tx which are in pending state for quite a long time deserve to be announced with a corresponding mark
+            block_height_threshold = top_block_height - self.announce_pending_after_blocks
+            pending_old_txs = [tx for tx in new_txs if tx.is_pending if tx.height_int < block_height_threshold]
+            if pending_old_txs:
+                self.logger.debug(f'Pending old TXs are accounted too: {len(pending_old_txs)}.')
+                new_txs += pending_old_txs
+
+            # filter out TXs that have been seen already
             unseen_new_txs = []
             for tx in new_txs:
                 is_seen = await self.is_seen(self.get_seen_hash(tx))

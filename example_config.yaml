@@ -203,6 +203,8 @@ tx:
   max_page_deep: 5
   max_tx_per_single_message: 6
 
+  announce_pending_after_blocks: 500  # (!) new
+
   exclamation:
     fee_usd_limit: 3000
     ilp_usd_limit: 5000
