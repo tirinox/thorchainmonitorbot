@@ -435,6 +435,9 @@ class BaseLocalization(ABC):  # == English
         elif tx.type == ThorTxType.TYPE_SWITCH:
             heading = f'🐳 <b>Large Rune switch</b> 🆙'
 
+        if tx.is_pending:
+            heading += ' [Pending]'
+
         asset = Asset(tx.first_pool).name
 
         content = ''
@@ -516,7 +519,10 @@ class BaseLocalization(ABC):  # == English
             if out_links:
                 blockchain_components.append('Outputs: ' + out_links)
 
-        msg = f"{heading}\n{content}\n" + " / ".join(blockchain_components)
+        comp_joined = " / ".join(blockchain_components)
+        msg = f"{heading}\n" \
+              f"{content}\n" \
+              f"{comp_joined}"
 
         if cap:
             msg += (

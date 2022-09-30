@@ -98,6 +98,9 @@ class TwitterEnglishLocalization(BaseLocalization):
         elif tx.type == ThorTxType.TYPE_SWITCH:
             heading = f'🐳 Switch 🆙'
 
+        if tx.is_pending:
+            heading += ' [Pending]'
+
         asset = Asset(tx.first_pool).name
 
         user_name = name_map.by_address.get(tx.sender_address, short_address(tx.sender_address))

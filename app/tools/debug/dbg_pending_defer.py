@@ -16,10 +16,31 @@ async def continuous_pending_scan(app):
     volume_filler = VolumeFillerUpdater(app.deps)
     fetcher_tx.subscribe(volume_filler)
 
+    pending_set = set()
+    block_height = {}
+
     async def on_data(sender: VolumeRecorder, data: List[ThorTx]):
-        n_success = sum(1 for tx in data if tx.is_success)
-        n_pending = sum(1 for tx in data if tx.is_pending)
-        print(f'{n_pending = }, {n_success = }.')
+        for tx in data:
+            h = tx.tx_hash
+            if h:
+                if h in block_height:
+                    print(f'Alarm! Block height changed for "{h}"!!!')
+                else:
+                    block_height[h] = tx.height_int
+
+        succeed = [tx for tx in data if tx.is_success]
+        pending = [tx for tx in data if tx.is_pending]
+        pending_hashes = {tx.tx_hash for tx in pending}
+
+        pending_set.update(pending_hashes)
+        print(f'Pending hashes: {pending_hashes}')
+        print(f'{ len(pending) = }, { len(succeed) = }.')
+
+        for tx in succeed:
+            h = tx.tx_hash
+            if h in pending_set:
+                pending.remove(h)
+                print(f'Previously pending Tx {h} became Success!')
 
     volume_filler.subscribe(Receiver(callback=on_data))
 
@@ -27,7 +48,7 @@ async def continuous_pending_scan(app):
 
 
 async def main():
-    app = LpAppFramework(log_level=logging.INFO)
+    app = LpAppFramework(log_level=logging.DEBUG)
     async with app(brief=True):
         await continuous_pending_scan(app)
 

@@ -311,6 +311,9 @@ class RussianLocalization(BaseLocalization):
         elif tx.type == ThorTxType.TYPE_SWITCH:
             heading = f'🐳 <b>Крупный апгрейд {self.R}</b> 🆙'
 
+        if tx.is_pending:
+            heading += ' [Ожидает]'
+
         asset = Asset(tx.first_pool).name
 
         content = ''

@@ -1,3 +1,4 @@
+import asyncio
 from typing import List, Optional
 
 from aiohttp import ContentTypeError
@@ -14,6 +15,8 @@ from services.models.tx import ThorTx, ThorTxExtended
 
 
 class TxFetcher(BaseFetcher):
+    PAGE_IN_GROUP = 3
+
     def __init__(self, deps: DepContainer):
         s_cfg = deps.cfg.tx
         sleep_period = parse_timespan_to_seconds(s_cfg.fetch_period)
@@ -102,43 +105,55 @@ class TxFetcher(BaseFetcher):
         except (ContentTypeError, AttributeError):
             return None
 
+    async def _fetch_one_batch_tries(self, page, tries) -> Optional[TxParseResult]:
+        for _ in range(tries):
+            data = await self._fetch_one_batch(page)
+            if data:
+                return data
+            else:
+                self.logger.warning('retry?')
+        self.logger.warning('gave up!')
+
     async def _fetch_unseen_txs(self):
         all_txs = []
-        await self.deps.db.get_redis()
 
         top_block_height = 0
 
-        for page in range(self.max_page_deep):
-            results = await self._fetch_one_batch(page)
+        futures = [
+            self._fetch_one_batch_tries(page, tries=2) for page in range(self.max_page_deep)
+        ]
 
-            if results is None:
-                # try again once
-                results = await self._fetch_one_batch(page)
-                if results is None:
-                    continue
+        pending_txs = []
 
-            new_txs = results.txs
+        for future in asyncio.as_completed(futures):
+            results = await future
 
             # estimate "top_block_height"
             if results:
-                top_block_height = max(top_block_height, max(tx.height_int for tx in new_txs))
+                top_block_height = max(top_block_height, max(tx.height_int for tx in results.txs))
 
             # filter out old really TXs
-            new_txs = list(self._filter_by_age(new_txs))
+            txs = list(self._filter_by_age(results.txs))
 
             # filter success
-            new_txs = [tx for tx in new_txs if tx.is_success]
+            selected_txs = [tx for tx in txs if tx.is_success]
 
             # tx which are in pending state for quite a long time deserve to be announced with a corresponding mark
             block_height_threshold = top_block_height - self.announce_pending_after_blocks
-            pending_old_txs = [tx for tx in new_txs if tx.is_pending if tx.height_int < block_height_threshold]
+            this_batch_pending = [tx for tx in txs if tx.is_pending]
+            pending_old_txs = [tx for tx in this_batch_pending if tx.height_int < block_height_threshold]
             if pending_old_txs:
-                self.logger.debug(f'Pending old TXs are accounted too: {len(pending_old_txs)}.')
-                new_txs += pending_old_txs
+                self.logger.info(f'Pending old TXs are accounted too: {len(pending_old_txs)}.')
+                selected_txs += pending_old_txs
+
+            pending_txs += this_batch_pending
+            for tx in this_batch_pending:
+                h = top_block_height - tx.height_int
+                print(f'{tx.tx_hash}: {h} blocks age')
 
             # filter out TXs that have been seen already
             unseen_new_txs = []
-            for tx in new_txs:
+            for tx in selected_txs:
                 is_seen = await self.is_seen(self.get_seen_hash(tx))
 
                 if not is_seen:
@@ -151,6 +166,9 @@ class TxFetcher(BaseFetcher):
             all_txs += unseen_new_txs
 
         all_txs = self.tx_merger.merge_affiliate_txs(all_txs)
+
+        # fixme: remove
+        self.logger.info(f'Pending: {len(pending_txs)}')
 
         return all_txs
 
