@@ -86,6 +86,7 @@ class ThorMetaSwap:
     trade_slip: str
     trade_target: str
     affiliate_fee: float = 0.0
+    # todo: add aff address
 
     @classmethod
     def parse(cls, j):

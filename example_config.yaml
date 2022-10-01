@@ -5,6 +5,10 @@ log_level: INFO
 sleep_before_start: 3
 
 
+infura:
+  key: 1234abdc9876610efef  # (!) new
+
+
 thor:
   network_id: "mainnet"
 

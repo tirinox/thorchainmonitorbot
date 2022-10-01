@@ -11,6 +11,7 @@ class INotified(ABC):
 
 class WithDelegates:
     def __init__(self):
+        super().__init__()
         self.delegates = []  # list for fixed order
 
     def subscribe(self, delegate: INotified):

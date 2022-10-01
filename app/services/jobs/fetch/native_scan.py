@@ -107,14 +107,8 @@ class NativeScannerBlock(BaseFetcher):
             self.logger.debug(f'Tick start for block #{self._last_block}.')
 
         while True:
-            block_result = await self.fetch_block_results(self._last_block)
+            block_result = await self.fetch_one_block(self._last_block)
             if block_result is None:
-                self._on_error()
-                break
-
-            block_result.txs = await self.fetch_block_txs(self._last_block)
-            if block_result.txs is None:
-                self.logger.error(f'Failed to get transactions of the block #{self._last_block}.')
                 self._on_error()
                 break
 
@@ -122,3 +116,15 @@ class NativeScannerBlock(BaseFetcher):
 
             self._last_block += 1
             self._this_block_attempts = 0
+
+    async def fetch_one_block(self, block_index):
+        block_result = await self.fetch_block_results(block_index)
+        if block_result is None:
+            return
+
+        block_result.txs = await self.fetch_block_txs(block_index)
+        if block_result.txs is None:
+            self.logger.error(f'Failed to get transactions of the block #{block_index}.')
+            return
+
+        return block_result

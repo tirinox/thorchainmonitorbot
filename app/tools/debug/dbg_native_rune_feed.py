@@ -1,6 +1,7 @@
 import asyncio
 import json
 import logging
+from collections import Counter
 
 from localization.eng_base import BaseLocalization
 from localization.languages import Language
@@ -52,8 +53,8 @@ async def t_block_scanner_active(lp_app):
     scanner = NativeScannerBlock(lp_app.deps)
     detector = RuneTransferDetectorTxLogs()
     scanner.subscribe(detector)
-    # detector.subscribe(Receiver('Transfer'))
-    detector.subscribe(ReceiverPublicText(lp_app.deps))
+    detector.subscribe(Receiver('Transfer'))
+    # detector.subscribe(ReceiverPublicText(lp_app.deps))
 
     action_extractor = NativeActionExtractor(lp_app.deps)
     scanner.subscribe(action_extractor)
@@ -63,17 +64,39 @@ async def t_block_scanner_active(lp_app):
     await scanner.run()
 
 
-async def t_block_scanner_active_action(lp_app):
-    start = 6339868  # guaranteed to have DEX tx
-    # start = 6_999_399  # Timestamp Aug.23.2022 01:44:57
-    # start = 6999486  # little bit later
-    # scanner = NativeScannerBlock(lp_appx.deps, last_block=6_999_399)
-    scanner = NativeScannerBlock(lp_app.deps, last_block=start)
+
+
+async def t_block_scanner_once(lp_app):
+    # block_index = 7276413  # guaranteed to have DEX tx
+    block_index = 7326235  # guaranteed to have Swap In
+    # block_index = 6_999_399  # Timestamp Aug.23.2022 01:44:57
+    # block_index = 6999486  # little bit later
+
+    scanner = NativeScannerBlock(lp_app.deps)
 
     action_extractor = NativeActionExtractor(lp_app.deps)
     scanner.subscribe(action_extractor)
     action_extractor.subscribe(Receiver('Action'))
-    await scanner.fetch()
+
+    block = await scanner.fetch_one_block(block_index)
+
+    c = Counter([
+        tx.first_message.__class__.__name__ for tx in block.txs
+    ])
+
+    print(c)
+
+    watch_cache = {
+        '05E35D53F0AD7C56CCB0CDA353CA3F46D5789D81DDCD42ED26716DFDC5B64EF9',
+        'D45F100F3F48C786720167F5705B9D6736C195F028B5293FE93159DF923DE7C7',
+        '16F31635F6AF333ACE4F4BF5931674CCC35A3D5332CD03223B95897E1F537195',
+    }
+
+    for tx in block.txs:
+        if tx.hash in watch_cache:
+            print(f"{tx.hash} => {tx}")
+
+    await action_extractor.on_data(scanner, block)
 
 
 async def ws_main():
@@ -83,7 +106,7 @@ async def ws_main():
     await t_tx_scanner_ws(url, reserve_address)
 
 
-async def active_one(lp_app):
+async def rune_transfers_once(lp_app):
     # b = 6237587  # send: https://viewblock.io/thorchain/tx/34A4B4885E7E42AB2FBB7F3EA950D1795B19CB5715862487F8320E4FA1B9E61C
     # b = 6235520  # withdraw: https://viewblock.io/thorchain/tx/16F5ABB456FEA325B47F1E2EE984FEA39344F56432F474A73BC3AC2E02E7379D
     # b = 6187632
@@ -122,7 +145,7 @@ async def main():
     lp_app = LpAppFramework(log_level=logging.INFO)
     async with lp_app(brief=True):
         # await t_block_scanner_active(lp_app)
-        await t_block_scanner_active_action(lp_app)
+        await t_block_scanner_once(lp_app)
         # await active_one(lp_app)
         # await search_out(lp_app)
 
