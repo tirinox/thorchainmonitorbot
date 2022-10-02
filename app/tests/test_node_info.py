@@ -3,7 +3,7 @@ import random
 
 import pytest
 
-from services.lib.utils import random_hex, random_ip_address
+from services.lib.utils import random_hex, random_ip_address, load_json
 from services.models.node_info import NodeSetChanges, NodeInfo
 
 
@@ -62,8 +62,7 @@ def test_nonsense():
 @pytest.fixture
 def load_node_info_from_file():
     def loader(file='./sample_data/nodes_7_9_22.json'):
-        with open(file, 'r') as f:
-            data = json.load(f)
+        data = load_json(file)
         return [NodeInfo.from_json(piece) for piece in data]
 
     return loader

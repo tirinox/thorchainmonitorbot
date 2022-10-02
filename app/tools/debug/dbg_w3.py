@@ -8,6 +8,7 @@ from tools.lib.lp_common import LpAppFramework
 async def get_abi(app: LpAppFramework, contract):
     api_key = app.deps.cfg.get('thor.circulating_supply.ether_scan_key')
     url = f'https://api.etherscan.io/api?module=contract&action=getabi&address={contract}&apikey={api_key}'
+    print(url)
     async with app.deps.session.get(url) as reps:
         j = await reps.json()
         return j.get('result') if j.get('status') else None
@@ -16,7 +17,8 @@ async def get_abi(app: LpAppFramework, contract):
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
-        w3 = Web3(Web3.HTTPProvider('https://mainnet.infura.io/v3/373b36ac9b994ef9b72f4309a038ccef'))
+        key = app.deps.cfg.as_str('infura.key')
+        w3 = Web3(Web3.HTTPProvider(f'https://mainnet.infura.io/v3/{key}'))
         # good = w3.isConnected()
         # print(f'{good = }')
         tx = w3.eth.get_transaction('0xD45F100F3F48C786720167F5705B9D6736C195F028B5293FE93159DF923DE7C7')
@@ -37,7 +39,7 @@ async def run():
         2. load aggr ABI and cache it!
         3. decode tx input => detect swap in
         
-        SwapOut dectection!
+        SwapOut detection!
         1. Midgard -> actions -> swap -> meta -> memo -> parse
         2. load dest_token from Infura/local token list
         3.

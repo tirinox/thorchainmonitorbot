@@ -1,4 +1,3 @@
-import json
 import os
 
 import pytest
@@ -6,6 +5,7 @@ import pytest
 from services.jobs.affiliate_merge import AffiliateTXMerger
 from services.lib.constants import NetworkIdents, THOR_DIVIDER, NATIVE_RUNE_SYMBOL, is_rune
 from services.lib.midgard.parser import MidgardParserV2
+from services.lib.utils import load_json
 from services.models.tx import ThorCoin, ThorMetaSwap, ThorTx
 
 PATH = './sample_data'
@@ -13,10 +13,9 @@ DIV = THOR_DIVIDER
 
 
 def inner_example_tx_gen(name):
-    with open(os.path.join(PATH, name), 'r') as f:
-        data = json.load(f)
-        p = MidgardParserV2(network_id=NetworkIdents.CHAOSNET_MULTICHAIN)
-        return p.parse_tx_response(data)
+    data = load_json(os.path.join(PATH, name))
+    p = MidgardParserV2(network_id=NetworkIdents.CHAOSNET_MULTICHAIN)
+    return p.parse_tx_response(data)
 
 
 @pytest.fixture

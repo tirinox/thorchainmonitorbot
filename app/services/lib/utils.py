@@ -353,6 +353,11 @@ def json_cached_to_file_async(filename):
     return decorator
 
 
+def load_json(filepath):
+    with open(filepath, 'r') as fp:
+        return json.load(fp)
+
+
 def vertical_text(t: str):
     return '\n'.join(t)
 
