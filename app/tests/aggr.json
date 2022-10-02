@@ -1,0 +1,92 @@
+{
+    "0xd31f7e39afECEc4855fecc51b693F9A0Cec49fd2": [
+        "0xd31f7e39afECEc4855fecc51b693F9A0Cec49fd2",
+        "ETH",
+        "TSAggregatorGeneric"
+    ],
+    "0x7C38b8B2efF28511ECc14a621e263857Fb5771d3": [
+        "0x7C38b8B2efF28511ECc14a621e263857Fb5771d3",
+        "AVAX",
+        "TSAggregatorAvaxGeneric"
+    ],
+    "0x0747c681e5ADa7936Ad915CcfF6cD3bd71DBF121": [
+        "0x0747c681e5ADa7936Ad915CcfF6cD3bd71DBF121",
+        "ETH",
+        "TSAggregatorUniswapV3 500 - legacy notation"
+    ],
+    "0xd1ea5F7cE9dA98D0bd7B1F4e3E05985E88b1EF10": [
+        "0xd1ea5F7cE9dA98D0bd7B1F4e3E05985E88b1EF10",
+        "ETH",
+        "TSAggregatorUniswapV3 3000 - legacy notation"
+    ],
+    "0x94a852F0a21E473078846cf88382dd8d15bD1Dfb": [
+        "0x94a852F0a21E473078846cf88382dd8d15bD1Dfb",
+        "ETH",
+        "TSAggregatorUniswapV3 10000 - legacy notation"
+    ],
+    "0x3660dE6C56cFD31998397652941ECe42118375DA": [
+        "0x3660dE6C56cFD31998397652941ECe42118375DA",
+        "ETH",
+        "TSAggregator2LegUniswapV2 USDC"
+    ],
+    "0x0F2CD5dF82959e00BE7AfeeF8245900FC4414199": [
+        "0x0F2CD5dF82959e00BE7AfeeF8245900FC4414199",
+        "ETH",
+        "TSAggregator Sushiswap - legacy notation"
+    ],
+    "0x2a7813412b8da8d18Ce56FE763B9eb264D8e28a8": [
+        "0x2a7813412b8da8d18Ce56FE763B9eb264D8e28a8",
+        "ETH",
+        "RangoThorchainOutputAggUniV2"
+    ],
+    "0xbB8De86F3b041B3C084431dcf3159fE4827c5F0D": [
+        "0xbB8De86F3b041B3C084431dcf3159fE4827c5F0D",
+        "ETH",
+        "RangoThorchainOutputAggUniV3"
+    ],
+    "0x7a68c37D8AFA3078f3Ad51D98eA23Fe57a8Ae21a": [
+        "0x7a68c37D8AFA3078f3Ad51D98eA23Fe57a8Ae21a",
+        "AVAX",
+        "PangolinAggregator"
+    ],
+    "0x86904eb2b3c743400d03f929f2246efa80b91215": [
+        "0x86904eb2b3c743400d03f929f2246efa80b91215",
+        "ETH",
+        "TSAggregatorUniswapV2 - short notation"
+    ],
+    "0xbf365e79aa44a2164da135100c57fdb6635ae870": [
+        "0xbf365e79aa44a2164da135100c57fdb6635ae870",
+        "ETH",
+        "TSAggregatorSushiswap - short notation"
+    ],
+    "0xbd68cbe6c247e2c3a0e36b8f0e24964914f26ee8": [
+        "0xbd68cbe6c247e2c3a0e36b8f0e24964914f26ee8",
+        "ETH",
+        "TSAggregatorUniswapV3 100 - short notation"
+    ],
+    "0xe4ddca21881bac219af7f217703db0475d2a9f02": [
+        "0xe4ddca21881bac219af7f217703db0475d2a9f02",
+        "ETH",
+        "TSAggregatorUniswapV3 500 - short notation"
+    ],
+    "0x11733abf0cdb43298f7e949c930188451a9a9ef2": [
+        "0x11733abf0cdb43298f7e949c930188451a9a9ef2",
+        "ETH",
+        "TSAggregatorUniswapV3 3000 - short notation"
+    ],
+    "0xb33874810e5395eb49d8bd7e912631db115d5a03": [
+        "0xb33874810e5395eb49d8bd7e912631db115d5a03",
+        "ETH",
+        "TSAggregatorUniswapV3 10000 - short notation"
+    ],
+    "0x942c6dA485FD6cEf255853ef83a149d43A73F18a": [
+        "0x942c6dA485FD6cEf255853ef83a149d43A73F18a",
+        "AVAX",
+        "TSAggregatorPangolin"
+    ],
+    "0x3b7DbdD635B99cEa39D3d95Dbd0217F05e55B212": [
+        "0x3b7DbdD635B99cEa39D3d95Dbd0217F05e55B212",
+        "AVAX",
+        "TSAggregatorTraderJoe"
+    ]
+}

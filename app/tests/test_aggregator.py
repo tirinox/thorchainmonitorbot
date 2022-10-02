@@ -1,7 +1,19 @@
 import pytest
 
+from services.lib.aggregator import AggregatorResolver
 from services.lib.constants import Chains
-from services.lib.memo import AggregatorResolver
+from services.lib.web3_helper import TokenList
+
+
+@pytest.fixture(scope='module')
+def aggr() -> AggregatorResolver:
+    return AggregatorResolver('../data/token_list/aggregator_list.txt')
+
+
+def test_loading(aggr):
+    assert len(aggr) == 18
+    assert len(aggr.by_chain) == 2
+    assert set(aggr.by_chain.keys()) == {Chains.ETH, Chains.AVAX}
 
 
 @pytest.mark.parametrize(('address', 'name'), [
@@ -16,11 +28,23 @@ from services.lib.memo import AggregatorResolver
     ('xyz', None),
     ('0x35919b3929De1319', None),
 ])
-def test_aggregator_fuzzy_search(address, name):
-    result = AggregatorResolver.search_aggregator_address(address)
+def test_aggregator_fuzzy_search(address, name, aggr):
+    result = aggr.search_aggregator_address(address)
     if name is None:
         assert result is None
     else:
+        assert result
         found_name, chain, found_address = result
         assert chain == Chains.ETH
         assert found_name == name
+
+
+def test_token_list():
+    t_avax = TokenList(TokenList.DEFAULT_TOKEN_LIST_AVAX_PATH[3:], Chains.AVAX)
+    assert len(t_avax) > 0
+
+    t_eth = TokenList(TokenList.DEFAULT_TOKEN_LIST_ETH_PATH[3:], Chains.ETH)
+    assert len(t_eth) > 0
+
+    assert t_eth['0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c'].name == 'yearnCurve.fiyDAIyUSDCyUSDTyTUSD'
+    assert t_eth['0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c'].symbol == 'yUSD'
