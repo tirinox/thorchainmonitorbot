@@ -178,11 +178,12 @@ def sep(space=False):
         print()
 
 
-def fuzzy_search(query: str, realm) -> List[str]:
+def fuzzy_search(query: str, realm, f=str.upper) -> List[str]:
     if not query:
         return []
 
-    query = query.upper()
+    # noinspection PyArgumentList
+    query = f(query) if f else query
     if query in realm:  # perfect match
         return [query]
 
