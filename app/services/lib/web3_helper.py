@@ -1,16 +1,41 @@
+import asyncio
 from typing import NamedTuple, Optional
 
 from web3 import Web3
+from web3.eth import AsyncEth
 
 from services.lib.config import Config
-from services.lib.utils import WithLogger, load_json
+from services.lib.texts import fuzzy_search
+from services.lib.utils import WithLogger, load_json, async_wrap
 
 
 class Web3Helper(WithLogger):
     def __init__(self, cfg: Config):
         super().__init__()
-        key = cfg.as_str('infura.key')
-        self.w3 = Web3(Web3.AsyncHTTPProvider(f'https://mainnet.infura.io/v3/{key}'))
+        key = cfg.as_str('infura.key', '-')
+        self.cache_expire = cfg.as_interval('infura.cache_expire', '30d')
+        self._retries = cfg.as_int('infura.retries', 3)
+        self._retry_wait = cfg.as_interval('infura.retry_wait', '3s')
+        self.w3 = Web3(Web3.HTTPProvider(f'https://mainnet.infura.io/v3/{key}'))
+
+    @async_wrap
+    def _get_transaction(self, tx_id):
+        return self.w3.eth.get_transaction(tx_id)
+
+    async def get_transaction(self, tx_id):
+        for _ in range(self._retries):
+            try:
+                return await self._get_transaction(tx_id)
+            except Exception:
+                self.logger.exception('failed to get tx', exc_info=True)
+                if self._retry_wait > 0:
+                    await asyncio.sleep(self._retry_wait)
+
+    """
+    Tasks:
+        1. TX to aggregator => decode asset, amount
+        2. get token name by token address
+    """
 
 
 class TokenRecord(NamedTuple):
@@ -48,3 +73,7 @@ class TokenList:
 
     def __getitem__(self, item) -> Optional[TokenRecord]:
         return self.tokens[str(item).lower()]
+
+    def fuzzy_search(self, query):
+        variants = fuzzy_search(query, self.tokens.keys(), f=str.lower)
+        return [self.tokens.get(v) for v in variants]

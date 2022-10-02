@@ -2,9 +2,10 @@ import re
 from typing import NamedTuple, Union, List
 
 from services.lib.texts import fuzzy_search
-
-
 # Use that source: https://gitlab.com/thorchain/thornode/-/blob/develop/x/thorchain/aggregators/dex_mainnet.go
+from services.lib.utils import load_json
+from services.lib.web3_helper import Web3Helper
+
 
 class AggregatorRecord(NamedTuple):
     address: str
@@ -55,7 +56,7 @@ class AggregatorResolver:
 
     @staticmethod
     def _search(query, keys, dic, ambiguity) -> AggregatorSearchResult:
-        variants = fuzzy_search(query, keys)
+        variants = fuzzy_search(query, keys, f=str.lower)
         if not variants:
             return None
 
@@ -72,3 +73,37 @@ class AggregatorResolver:
 
     def __getitem__(self, item):
         return self._table.get(item)
+
+
+class SwapInArgs(NamedTuple):
+    tc_router: str
+    tc_vault: str
+    tc_memo: str
+    target_token: str
+    amount: int
+    amount_out_min: int
+    deadline: int
+
+
+class AggregatorContract:
+    DATA_PATH = '../../data/token_list'
+    DEFAULT_ABI_AGGREGATOR = f'{DATA_PATH}/aggregator.abi.json'
+
+    def __init__(self, helper: Web3Helper):
+        self.helper = Web3Helper
+        self._aggregator_contract = helper.w3.eth.contract(abi=load_json(self.DEFAULT_ABI_AGGREGATOR))
+
+    def decode_input(self, input_str):
+        func, args_dic = self._aggregator_contract.decode_function_input(input_str)
+        args = None
+        if func.fn_name == 'swapIn':
+            args = SwapInArgs(
+                tc_router=args_dic.get('tcRouter'),
+                tc_vault=args_dic.get('tcVault'),
+                tc_memo=args_dic.get('tcMemo'),
+                target_token=args_dic.get('token'),
+                amount=args_dic.get('amount'),
+                amount_out_min=args_dic.get('amountOutMin'),
+                deadline=args_dic.get('deadline'),
+            )
+        return func.fn_name, args

@@ -5,8 +5,11 @@ log_level: INFO
 sleep_before_start: 3
 
 
-infura:
-  key: 1234abdc9876610efef  # (!) new
+infura: # (!) new
+  key: 1234abdc9876610efef
+  cache_expire: 30d
+  retries: 3
+  retry_wait: 2s
 
 
 thor:
@@ -288,7 +291,7 @@ price:
   price_graph:
     default_period: 7d
 
-  cex_reference:  # (!) new: bep2_reference -> cex_reference
+  cex_reference: # (!) new: bep2_reference -> cex_reference
     cex: binance
     pair: USDT
 
@@ -496,6 +499,6 @@ blockchain:
     ETH: 14s
 
 
-supply:  # (!) new
+supply: # (!) new
   enabled: true
   period: 7d
