@@ -2,7 +2,6 @@ import asyncio
 from typing import NamedTuple, Optional
 
 from web3 import Web3
-from web3.eth import AsyncEth
 
 from services.lib.config import Config
 from services.lib.texts import fuzzy_search
@@ -47,9 +46,12 @@ class TokenRecord(NamedTuple):
     logoURI: str
 
 
+CONTRACT_DATA_BASE_PATH = '../../data/token_list'
+
+
 class TokenList:
-    DEFAULT_TOKEN_LIST_ETH_PATH = '../../data/token_list/eth_mainnet_V97.json'
-    DEFAULT_TOKEN_LIST_AVAX_PATH = '../../data/token_list/avax_mainnet_V95.json'
+    DEFAULT_TOKEN_LIST_ETH_PATH = f'{CONTRACT_DATA_BASE_PATH}/eth_mainnet_V97.json'
+    DEFAULT_TOKEN_LIST_AVAX_PATH = f'{CONTRACT_DATA_BASE_PATH}/avax_mainnet_V95.json'
 
     def __init__(self, filename, chain):
         self.chain = chain
