@@ -266,7 +266,7 @@ def retries(times):
     def func_wrapper(f):
         async def wrapper(*args, **kwargs):
             outer_exc = None
-            for time_no in range(times):
+            for time_no in range(wrapper.times):
                 # noinspection PyBroadException
                 try:
                     return await f(*args, **kwargs)
@@ -275,6 +275,7 @@ def retries(times):
                 logging.warning(f'Retrying {f} for {time_no + 1} time...')
             raise TooManyTriesException() from outer_exc
 
+        wrapper.times = times
         return wrapper
 
     return func_wrapper
