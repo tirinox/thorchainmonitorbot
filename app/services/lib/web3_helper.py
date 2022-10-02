@@ -1,4 +1,4 @@
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 from web3 import Web3
 
@@ -46,5 +46,5 @@ class TokenList:
     def __len__(self):
         return len(self.tokens)
 
-    def __getitem__(self, item):
+    def __getitem__(self, item) -> Optional[TokenRecord]:
         return self.tokens[str(item).lower()]

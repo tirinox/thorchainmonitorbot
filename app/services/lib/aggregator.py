@@ -53,7 +53,8 @@ class AggregatorResolver:
     def search_by_name(self, query, ambiguity=False) -> AggregatorSearchResult:
         return self._search(query, self.by_name.keys(), self.by_name, ambiguity)
 
-    def _search(self, query, keys, dic, ambiguity) -> AggregatorSearchResult:
+    @staticmethod
+    def _search(query, keys, dic, ambiguity) -> AggregatorSearchResult:
         variants = fuzzy_search(query, keys)
         if not variants:
             return None

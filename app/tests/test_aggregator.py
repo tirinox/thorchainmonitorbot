@@ -43,6 +43,12 @@ def test_token_list():
     t_avax = TokenList(TokenList.DEFAULT_TOKEN_LIST_AVAX_PATH[3:], Chains.AVAX)
     assert len(t_avax) > 0
 
+    t1 = t_avax['0x152b9d0FdC40C096757F570A51E494bd4b943E50']
+    assert t1.logoURI == 'https://raw.githubusercontent.com/traderjoe-xyz/joe-tokenlists/main/logos/0x152b9d0FdC40C096757F570A51E494bd4b943E50/logo.png'
+    assert t1.decimals == 8
+    assert t1.name == 'Bitcoin'
+    assert all((t.chain_id == 43114 or t.chain_id == 4) for t in t_avax.tokens.values())
+
     t_eth = TokenList(TokenList.DEFAULT_TOKEN_LIST_ETH_PATH[3:], Chains.ETH)
     assert len(t_eth) > 0
 
