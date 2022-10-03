@@ -41,7 +41,7 @@ def test_aggregator_fuzzy_search(address, name, aggr):
 
 
 def test_token_list():
-    t_avax = TokenList(TokenList.DEFAULT_TOKEN_LIST_AVAX_PATH[3:], Chains.AVAX)
+    t_avax = TokenList(TokenList.DEFAULT_TOKEN_LIST_AVAX_PATH, Chains.AVAX)
     assert len(t_avax) > 0
 
     t1 = t_avax['0x152b9d0FdC40C096757F570A51E494bd4b943E50']
@@ -79,8 +79,6 @@ def w3_helper():
 
 @pytest.mark.asyncio
 async def test_decode_input_swap_in(w3_helper):
-    AggregatorContract.DEFAULT_ABI_AGGREGATOR = AggregatorContract.DEFAULT_ABI_AGGREGATOR[3:]  # fix ../
-
     aggc = AggregatorContract(w3_helper)
     func, args = aggc.decode_input(SWAP_IN_EXAMPLE_INPUT)
 
@@ -92,10 +90,14 @@ async def test_decode_input_swap_in(w3_helper):
     assert args.target_token == '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'
     assert args.amount == 23151348
 
+    with pytest.raises(ValueError):
+        # error, incorrect contract
+        aggc.decode_input(SWAP_OUT_EXAMPLE_INPUT)
+
 
 @pytest.mark.asyncio
 async def test_decode_input_swap_out(w3_helper):
-    TCRouterContract.DEFAULT_ABI_ROUTER = TCRouterContract.DEFAULT_ABI_ROUTER[3:]  # fix ../
+    # TCRouterContract.DEFAULT_ABI_ROUTER = TCRouterContract.DEFAULT_ABI_ROUTER[3:]  # fix ../
 
     aggc = TCRouterContract(w3_helper)
     func, args = aggc.decode_input(SWAP_OUT_EXAMPLE_INPUT)
@@ -105,3 +107,6 @@ async def test_decode_input_swap_out(w3_helper):
     assert args.target_token == '0xa5f2211B9b8170F694421f2046281775E8468044'
     assert args.to_address == '0x1e240F76bcf08219E70B2c3C20F20f5EC4b43585'
     assert args.amount_out_min == 17596390360380000000000
+
+    with pytest.raises(ValueError):
+        aggc.decode_input('0xbeef4039fd4b0000000000000000000000000f2cd5d')

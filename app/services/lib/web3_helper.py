@@ -2,6 +2,7 @@ import asyncio
 from typing import NamedTuple, Optional
 
 from web3 import Web3
+from web3.contract import Contract
 
 from services.lib.config import Config
 from services.lib.texts import fuzzy_search
@@ -46,7 +47,7 @@ class TokenRecord(NamedTuple):
     logoURI: str
 
 
-CONTRACT_DATA_BASE_PATH = '../../data/token_list'
+CONTRACT_DATA_BASE_PATH = './data/token_list'
 
 
 class TokenList:
