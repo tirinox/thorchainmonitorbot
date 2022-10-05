@@ -1,10 +1,11 @@
 import pytest
-
-from services.lib.aggregator import AggregatorResolver, TCRouterContract
-from services.lib.w3.aggr_contract import AggregatorContract
 from services.lib.config import Config
 from services.lib.constants import Chains
-from services.lib.web3_helper import TokenList, Web3Helper
+from services.lib.w3.aggr_contract import AggregatorContract
+from services.lib.w3.aggregator import AggregatorResolver
+from services.lib.w3.router_contract import TCRouterContract
+from services.lib.w3.token_list import StaticTokenList
+from services.lib.w3.web3_helper import Web3Helper
 
 
 @pytest.fixture(scope='module')
@@ -42,7 +43,7 @@ def test_aggregator_fuzzy_search(address, name, aggr):
 
 
 def test_token_list():
-    t_avax = TokenList(TokenList.DEFAULT_TOKEN_LIST_AVAX_PATH, Chains.AVAX)
+    t_avax = StaticTokenList(StaticTokenList.DEFAULT_TOKEN_LIST_AVAX_PATH, Chains.AVAX)
     assert len(t_avax) > 0
 
     t1 = t_avax['0x152b9d0FdC40C096757F570A51E494bd4b943E50']
@@ -51,7 +52,7 @@ def test_token_list():
     assert t1.name == 'Bitcoin'
     assert all((t.chain_id == 43114 or t.chain_id == 4) for t in t_avax.tokens.values())
 
-    t_eth = TokenList(TokenList.DEFAULT_TOKEN_LIST_ETH_PATH[3:], Chains.ETH)
+    t_eth = StaticTokenList(StaticTokenList.DEFAULT_TOKEN_LIST_ETH_PATH[3:], Chains.ETH)
     assert len(t_eth) > 0
 
     assert t_eth['0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c'].name == 'yearnCurve.fiyDAIyUSDCyUSDTyTUSD'
@@ -104,7 +105,7 @@ async def test_decode_input_swap_out(w3_helper):
 
     assert args.fn_name == 'transferOutAndCall'
     assert args.tc_aggregator == '0x0F2CD5dF82959e00BE7AfeeF8245900FC4414199'
-    assert args.from_token == '0xa5f2211B9b8170F694421f2046281775E8468044'
+    assert args.target_token == '0xa5f2211B9b8170F694421f2046281775E8468044'
     assert args.to_address == '0x1e240F76bcf08219E70B2c3C20F20f5EC4b43585'
     assert args.amount_out_min == 17596390360380000000000
 

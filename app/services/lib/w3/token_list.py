@@ -1,25 +1,17 @@
-from typing import NamedTuple, Optional
+import json
+from typing import Optional
 
+import web3
+
+from services.lib.db import DB
 from services.lib.texts import fuzzy_search
 from services.lib.utils import load_json
-
-ETH_CHAIN_ID = 0x1
-AVAX_CHAIN_ID = 43114
-
-
-class TokenRecord(NamedTuple):
-    address: str
-    chain_id: int
-    decimals: int
-    name: str
-    symbol: str
-    logoURI: str
+from services.lib.w3.erc20_contract import ERC20Contract
+from services.lib.w3.token_record import TokenRecord, CONTRACT_DATA_BASE_PATH
+from services.lib.w3.web3_helper import Web3Helper
 
 
-CONTRACT_DATA_BASE_PATH = './data/token_list'
-
-
-class TokenList:
+class StaticTokenList:
     DEFAULT_TOKEN_LIST_ETH_PATH = f'{CONTRACT_DATA_BASE_PATH}/eth_mainnet_V97.json'
     DEFAULT_TOKEN_LIST_AVAX_PATH = f'{CONTRACT_DATA_BASE_PATH}/avax_mainnet_V95.json'
 
@@ -49,3 +41,41 @@ class TokenList:
     def fuzzy_search(self, query):
         variants = fuzzy_search(query, self.tokens.keys(), f=str.lower)
         return [self.tokens.get(v) for v in variants]
+
+
+class TokenListCached:
+    def __init__(self, db: DB, w3: Web3Helper, static_list: StaticTokenList):
+        self.static_list = static_list
+        self.db = db
+        self.w3 = w3
+
+    DB_KEY_TOKEN_CACHE = 'Tokens:Cache'
+
+    async def resolve_token(self, address: str) -> Optional[TokenRecord]:
+        results = self.static_list.fuzzy_search(address)
+        if len(results) >= 1:
+            return results[0]
+
+        if not web3.Web3.isAddress(address):
+            return
+
+        existing_data = await self.db.redis.hget(self.DB_KEY_TOKEN_CACHE, address)
+        if existing_data:
+            try:
+                return TokenRecord(**json.loads(existing_data))
+            except TypeError:
+                # apparently the format has changed, so reload and save it again
+                pass
+
+        erc20 = ERC20Contract(self.w3, address, self.static_list.chain)
+        info = await erc20.get_token_info()
+
+        if info:
+            # noinspection PyProtectedMember
+            raw_data = json.dumps(info._asdict())
+            await self.db.redis.hset(self.DB_KEY_TOKEN_CACHE, address, raw_data)
+
+        return info
+
+    async def clear_cache(self):
+        await self.db.redis.delete(self.DB_KEY_TOKEN_CACHE)
