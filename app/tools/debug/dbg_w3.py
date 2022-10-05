@@ -1,10 +1,9 @@
 import asyncio
 
+from services.lib.w3.aggr_contract import AggregatorContract
 from services.lib.w3.erc20_contract import ERC20Contract
 from services.lib.w3.router_contract import TCRouterContract
 from services.lib.w3.web3_helper import Web3Helper
-from web3 import Web3
-
 from tools.lib.lp_common import LpAppFramework
 
 
@@ -23,24 +22,43 @@ async def my_test_erc20(w3):
     print(info)
 
 
+async def demo_process_events(w3):
+    router = TCRouterContract(w3)
+
+    # how to process events:
+    receipt = await w3.get_transaction_receipt('0xD45F100F3F48C786720167F5705B9D6736C195F028B5293FE93159DF923DE7C7')
+    r = router.contract.events.Deposit().processReceipt(receipt)
+    print(r)
+
+
+async def demo_decode_swap_in(w3, tx_hash):
+    tx = await w3.get_transaction(tx_hash)
+    aggr = AggregatorContract(w3)
+    swap_in_call = aggr.decode_input(tx.input)
+    print('----- swap in ------')
+    print(swap_in_call)
+
+    token = ERC20Contract(w3, swap_in_call.from_token)
+    token_info = await token.get_token_info()
+
+    print(f'{token_info = }')
+
+    # now the current task is to make a class that aggregates token list and cached token info from the block chain!
+
+
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
         w3 = Web3Helper(app.deps.cfg)
+
+        # await demo_process_events(w3)
+        await demo_decode_swap_in(w3, '0xD45F100F3F48C786720167F5705B9D6736C195F028B5293FE93159DF923DE7C7')
+
         # swap in: '0xD45F100F3F48C786720167F5705B9D6736C195F028B5293FE93159DF923DE7C7'
-        # tx = await w3.get_transaction_receipt('0xD45F100F3F48C786720167F5705B9D6736C195F028B5293FE93159DF923DE7C7')
         # tx = await w3.get_transaction('0x926BC5212732BB863EE77D40A504BCA9583CF6D2F07090E2A3C468CFE6947357')
-        router = TCRouterContract(w3)
-        r = router.contract.decode_function_input('0x00000000000000000000000000000000000000000000000029001122097e3444000000000000000000000000000000000000000000000000000000000000004000000000000000000000000000000000000000000000000000000000000000413d3a4254432e4254433a62633171363966796e636639783873706371637376747135656b37346a7973796535646a347a67366c383a32323631353235363a743a3000000000000000000000000000000000000000000000000000000000000000')
-
-        print(r)
-
         # print(Web3.toJSON(tx))
-
         # await my_test_erc20(w3)
-
         # dex_aggr = Web3.toChecksumAddress('0x0f2cd5df82959e00be7afeef8245900fc4414199')
-
         # abi = await get_abi(app, dex_aggr)
         # print(abi)
 
@@ -58,7 +76,6 @@ async def run():
         1. Midgard -> actions -> swap -> meta -> memo -> parse
         2. load dest_token from Infura/local token list
         3.
-        
         """
 
 

@@ -81,14 +81,13 @@ def w3_helper():
 @pytest.mark.asyncio
 async def test_decode_input_swap_in(w3_helper):
     aggc = AggregatorContract(w3_helper)
-    func, args = aggc.decode_input(SWAP_IN_EXAMPLE_INPUT)
+    args = aggc.decode_input(SWAP_IN_EXAMPLE_INPUT)
 
-    assert func == 'swapIn'
-
+    assert args.fn_name == 'swapIn'
     assert args.tc_router == '0xD37BbE5744D730a1d98d8DC97c42F0Ca46aD7146'
     assert args.tc_vault == '0xBD0030184a4f177b0B0AD7da32Fa1868bbf364d1'
     assert args.tc_memo == '=:BTC.BTC:bc1q69fyncf9x8spcqcsvtq5ek74jysye5dj4zg6l8:22615256:t:0'
-    assert args.target_token == '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'
+    assert args.from_token == '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599'
     assert args.amount == 23151348
 
     with pytest.raises(ValueError):
@@ -101,11 +100,11 @@ async def test_decode_input_swap_out(w3_helper):
     # TCRouterContract.DEFAULT_ABI_ROUTER = TCRouterContract.DEFAULT_ABI_ROUTER[3:]  # fix ../
 
     aggc = TCRouterContract(w3_helper)
-    func, args = aggc.decode_input(SWAP_OUT_EXAMPLE_INPUT)
+    args = aggc.decode_input(SWAP_OUT_EXAMPLE_INPUT)
 
-    assert func == 'transferOutAndCall'
+    assert args.fn_name == 'transferOutAndCall'
     assert args.tc_aggregator == '0x0F2CD5dF82959e00BE7AfeeF8245900FC4414199'
-    assert args.target_token == '0xa5f2211B9b8170F694421f2046281775E8468044'
+    assert args.from_token == '0xa5f2211B9b8170F694421f2046281775E8468044'
     assert args.to_address == '0x1e240F76bcf08219E70B2c3C20F20f5EC4b43585'
     assert args.amount_out_min == 17596390360380000000000
 

@@ -3,6 +3,9 @@ from typing import NamedTuple, Optional
 from services.lib.texts import fuzzy_search
 from services.lib.utils import load_json
 
+ETH_CHAIN_ID = 0x1
+AVAX_CHAIN_ID = 43114
+
 
 class TokenRecord(NamedTuple):
     address: str
