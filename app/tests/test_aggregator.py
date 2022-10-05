@@ -1,6 +1,7 @@
 import pytest
 
-from services.lib.aggregator import AggregatorResolver, AggregatorContract, TCRouterContract
+from services.lib.aggregator import AggregatorResolver, TCRouterContract
+from services.lib.w3.aggr_contract import AggregatorContract
 from services.lib.config import Config
 from services.lib.constants import Chains
 from services.lib.web3_helper import TokenList, Web3Helper
