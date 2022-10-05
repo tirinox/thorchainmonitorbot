@@ -184,6 +184,11 @@ names:
     "thor1egxvam70a86jafa8gcg3kqfmfax3s0m2g3m754": "TreasuryLP"
     "thor1v8ppstuf6e3x0r4glqc68d5jqcs2tf38cg2q6y": "Synth Minter"
 
+    "thor1jw0nhlmj4lv83dwhfknqnw6tmlvgw4xyf6rgd7": "KuCoin Hot"
+    "thor1hy2ka6xmqjfcwagtplyttayug4eqpqhu0sdu6r": "KuCoin Cold"
+    "thor15h7uv2339vdzt2a6qsjf6uh5zc06sed7szvze5": "Ascendex"
+    "thor1nm0rrq86ucezaf8uj35pq9fpwr5r82clphp95t": "Kraken"
+
     bnb1jzdy3vy3h0ux0j7qqcutfnsjm2xnsa5mru7gtj: "FTX"
     bnb142q467df6jun6rt5u2ar58sp47hm5f9wvz2cvg: "Binance 1"
     bnb1u2agwjat20494fmc6jnuau0ls937cfjn4pjwtn: "Binance 2"
@@ -382,7 +387,12 @@ rune_transfer:
     - thor1t60f02r8jvzjrhtnjgfj4ne6rs5wjnejwmj7fh
     - thor1uz4fpyd5f5d6p9pzk8lxyj4qxnwq6f9utg0e7k
     - thor1ty6h2ll07fqfzumphp6kq3hm4ps28xlm2l6kd6
-    - thor1cqg8pyxnq03d88cl3xfn5wzjkguw5kh9enwte4`
+    - thor1cqg8pyxnq03d88cl3xfn5wzjkguw5kh9enwte4
+    - thor1jw0nhlmj4lv83dwhfknqnw6tmlvgw4xyf6rgd7  # (!) new
+    - thor1hy2ka6xmqjfcwagtplyttayug4eqpqhu0sdu6r
+    - thor15nzfs98pz8qsuvpuvq4eepe9n4rhsp4pp0g84g
+    - thor15h7uv2339vdzt2a6qsjf6uh5zc06sed7szvze5
+
   ignore_cex2cex: true
 
 
