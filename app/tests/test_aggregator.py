@@ -1,6 +1,8 @@
 import pytest
+
 from services.lib.config import Config
 from services.lib.constants import Chains
+from services.lib.utils import str_to_bytes
 from services.lib.w3.aggr_contract import AggregatorContract
 from services.lib.w3.aggregator import AggregatorResolver
 from services.lib.w3.router_contract import TCRouterContract
@@ -111,3 +113,14 @@ async def test_decode_input_swap_out(w3_helper):
 
     with pytest.raises(ValueError):
         aggc.decode_input('0xbeef4039fd4b0000000000000000000000000f2cd5d')
+
+
+def test_str_to_hex():
+    assert str_to_bytes('') == b''
+    assert str_to_bytes('0x') == b''
+    assert str_to_bytes('0X') == b''
+
+    assert str_to_bytes('0xDEADBEEF') == b'\xDE\xAD\xBE\xEF'
+    assert str_to_bytes('0XDEADBEEF') == b'\xDE\xAD\xBE\xEF'
+    assert str_to_bytes('DEADBEEF') == b'\xDE\xAD\xBE\xEF'
+    assert str_to_bytes('deADbEEf') == b'\xDE\xAD\xBE\xEF'

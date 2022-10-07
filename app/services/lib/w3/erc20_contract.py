@@ -3,7 +3,7 @@ from typing import Optional
 from web3 import Web3
 from web3._utils.events import EventLogErrorFlags
 
-from services.lib.utils import load_json, async_wrap
+from services.lib.utils import load_json, async_wrap, str_to_bytes
 from services.lib.w3.token_record import TokenRecord, CONTRACT_DATA_BASE_PATH
 from services.lib.w3.web3_helper import Web3Helper
 
@@ -35,23 +35,24 @@ class ERC20Contract:
         # throws: BadFunctionCallOutput
         return await self._get_token_info()
 
+    @staticmethod
+    def restore_receipt_data(receipt_data: dict):
+        if not receipt_data:
+            return
+
+        def restore(d, k):
+            if not isinstance(d[k], bytes):
+                d[k] = str_to_bytes(d[k])
+
+        restore(receipt_data, 'blockHash')
+        for log in receipt_data['logs']:
+            restore(log, 'blockHash')
+            topics = log['topics']
+            for i in range(len(topics)):
+                restore(topics, i)
+
     def get_transfer_events_from_receipt(self, receipt_data, filter_by_receiver=None):
-        # fixme: it needs HexBytes inside the logs, bot str
-        """
-        AttributeDict({
-            'address': '0xa5f2211B9b8170F694421f2046281775E8468044',
-  -->          'blockHash': HexBytes('0x9b3dff70b45533efc147bded4d397cbe0acedcdafdf4b700892d76417ec69b24'),
-            'blockNumber': 15440224,
-            'data': '0x0000000000000000000000000000000000000000000003c5ba751b73fe6d3203',
-            'logIndex': 36,
-            'removed': False,
-            'topics': [
-  -->          HexBytes('0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'),
-  -->          HexBytes('0x0000000000000000000000003d3f13f2529ec3c84b2940155effbf9b39a8f3ec'),
-  -->          HexBytes('0x0000000000000000000000001e240f76bcf08219e70b2c3c20f20f5ec4b43585')],
-  -->          'transactionHash': HexBytes('0x926bc5212732bb863ee77d40a504bca9583cf6d2f07090e2a3c468cfe6947357'),
-            'transactionIndex': 12})
-        """
+        self.restore_receipt_data(receipt_data)
 
         transfers = self.contract.events.Transfer().processReceipt(receipt_data, EventLogErrorFlags.Discard)
         if filter_by_receiver:

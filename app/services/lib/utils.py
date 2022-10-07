@@ -409,3 +409,9 @@ def paste_at_beginning_of_dict(d: dict, k, v):
         **{k: v},
         **d
     }
+
+
+def str_to_bytes(s: str):
+    if s.startswith('0x') or s.startswith('0X'):
+        s = s[2:]
+    return bytes.fromhex(s)

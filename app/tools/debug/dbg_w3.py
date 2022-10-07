@@ -1,7 +1,6 @@
 import asyncio
 
 import web3
-from web3.datastructures import AttributeDict
 
 from services.lib.w3.aggr_contract import AggregatorContract
 from services.lib.w3.erc20_contract import ERC20Contract
@@ -71,10 +70,9 @@ async def demo_decode_swap_out(w3, db, tx_hash):
     token = ERC20Contract(w3, swap_out_call.target_token, ETH_CHAIN_ID)
     transfers = token.get_transfer_events_from_receipt(receipt_data, filter_by_receiver=swap_out_call.to_address)
 
-
     final_transfer = transfers[0]
 
-    print(web3.Web3.toJSON(final_transfer))
+    # print(web3.Web3.toJSON(final_transfer))
 
     amount = final_transfer['args']['value']
 
