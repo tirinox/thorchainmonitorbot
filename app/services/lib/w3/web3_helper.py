@@ -1,6 +1,7 @@
 import asyncio
 
 from web3 import Web3
+from web3.exceptions import TransactionNotFound
 from web3.types import TxData, TxReceipt
 
 from services.lib.cache import Cache
@@ -22,6 +23,8 @@ class Web3Helper(WithLogger):
         for _ in range(self._retries):
             try:
                 return await coroutine
+            except TransactionNotFound:
+                raise
             except Exception:
                 self.logger.exception(f'failed to load WEB3 data for {coroutine}', exc_info=True)
                 if self._retry_wait > 0:

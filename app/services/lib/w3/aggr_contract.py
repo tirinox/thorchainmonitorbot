@@ -24,10 +24,13 @@ class AggregatorContract:
         self.contract = helper.w3.eth.contract(abi=load_json(self.DEFAULT_ABI_AGGREGATOR))
 
     def decode_input(self, input_str) -> Optional[SwapInArgs]:
-        func, args_dic = self.contract.decode_function_input(input_str)
-        args = None
+        try:
+            func, args_dic = self.contract.decode_function_input(input_str)
+        except ValueError:
+            return
+
         if func.fn_name == 'swapIn':
-            args = SwapInArgs(
+            return SwapInArgs(
                 fn_name=func.fn_name,
                 tc_router=args_dic.get('tcRouter'),
                 tc_vault=args_dic.get('tcVault'),
@@ -37,4 +40,3 @@ class AggregatorContract:
                 amount_out_min=args_dic.get('amountOutMin'),
                 deadline=args_dic.get('deadline'),
             )
-        return args

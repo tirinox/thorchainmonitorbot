@@ -1,7 +1,6 @@
 import asyncio
 
 from services.lib.constants import Chains
-from services.lib.texts import sep
 from services.lib.w3.aggregator import AggregatorDataExtractor
 from services.lib.w3.erc20_contract import ERC20Contract
 from services.lib.w3.router_contract import TCRouterContract
@@ -96,11 +95,17 @@ async def run():
 
         await my_test_caching_token_list(app.deps.db, w3)
 
-        # await demo_process_events(w3)
-        sep()
-        await demo_decode_swap_in(app.deps, '0xD45F100F3F48C786720167F5705B9D6736C195F028B5293FE93159DF923DE7C7')
-        sep()
-        await demo_decode_swap_out(app.deps, '0x926BC5212732BB863EE77D40A504BCA9583CF6D2F07090E2A3C468CFE6947357')
+        aggr = AggregatorDataExtractor(app.deps)
+
+        r = await aggr.decode_swap_in_out('0xD45F100F3F48C786720167F5705B9D6736C195F028B5293FE93159DF923DE7C7',
+                                          Chains.ETH)
+        # swap in
+        print(f'Swap In? {r}')
+
+        r = await aggr.decode_swap_in_out('0x926BC5212732BB863EE77D40A504BCA9583CF6D2F07090E2A3C468CFE6947357',
+                                          Chains.ETH)
+        # swap out
+        print(f'Swap Out? {r}')
 
         """
         SwapIN detection!
@@ -113,8 +118,7 @@ async def run():
         2. load dest_token from Infura/local token list
         3.
         
-        Now. Given a Tx Id
-        
+        Now. Given a Tx Id, tell if it is swap in or out or both or not.
         
         """
 

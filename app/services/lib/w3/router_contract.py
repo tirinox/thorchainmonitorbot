@@ -22,10 +22,12 @@ class TCRouterContract:
         self.contract = helper.w3.eth.contract(abi=load_json(self.DEFAULT_ABI_ROUTER))
 
     def decode_input(self, input_str) -> Optional[SwapOutArgs]:
-        func, args_dic = self.contract.decode_function_input(input_str)
-        args = None
+        try:
+            func, args_dic = self.contract.decode_function_input(input_str)
+        except ValueError:
+            return
         if func.fn_name == 'transferOutAndCall':
-            args = SwapOutArgs(
+            return SwapOutArgs(
                 fn_name=func.fn_name,
                 tc_aggregator=args_dic.get('aggregator'),
                 target_token=args_dic.get('finalToken'),
@@ -33,4 +35,3 @@ class TCRouterContract:
                 amount_out_min=args_dic.get('amountOutMin'),
                 tc_memo=args_dic.get('memo'),
             )
-        return args
