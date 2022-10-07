@@ -2,7 +2,7 @@ from typing import Optional, NamedTuple
 
 from web3.exceptions import TransactionNotFound
 
-from services.lib.constants import Chains
+from services.lib.constants import Chains, ETH_SYMBOL, AVAX_SYMBOL
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 from services.lib.w3.aggr_contract import AggregatorContract
@@ -19,11 +19,13 @@ class AmountToken(NamedTuple):
 
 
 class SwapInOut(NamedTuple):
-    swap_in: Optional[AmountToken]
-    swap_out: Optional[AmountToken]
+    swap_in: Optional[AmountToken] = None
+    swap_out: Optional[AmountToken] = None
 
 
 class AggregatorDataExtractor(WithLogger):
+    SUITABLE_L1_TOKENS = (ETH_SYMBOL, AVAX_SYMBOL)
+
     def create_token_list(self, static_list_path, chain_id) -> TokenListCached:
         static_list = StaticTokenList(static_list_path, chain_id)
         return TokenListCached(self.deps.db, self.w3, static_list)

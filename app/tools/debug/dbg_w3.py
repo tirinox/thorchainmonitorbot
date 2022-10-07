@@ -107,18 +107,28 @@ async def run():
         # swap out
         print(f'Swap Out? {r}')
 
-        """
-        SwapIN detection!
-        1. aggr list => config
-        2. load aggr ABI and cache it!
-        3. decode tx input => detect swap in
-        
+        """        
         SwapOut detection!
-        1. Midgard -> actions -> swap -> meta -> memo -> parse
-        2. load dest_token from Infura/local token list
-        3.
+        1. Midgard -> actions -> swap
+        2. If "input.tx_id" is in (ETH, AVAX) or "output.tx_id" is in (ETH, AVAX)
+        3. Call aggregator->decode_swap_in_out 
+        4. If any => add info to TxAction
         
-        Now. Given a Tx Id, tell if it is swap in or out or both or not.
+        [v] Now. Given a Tx Id, tell if it is swap in or out or both or not.
+        
+        
+Algo:
+1. block scanner sees inbound ETH/AVAX swap
+2. web3->get tx->decode -> get input amount and asset
+3. Save to DB: Tx.hash =>  { dex: true, amount, inputAsset }
+
+Midgard scanner:
+1. scans sees new Action Swap
+2. decode Memo
+3. detect swap out
+4. web3->get tx->decode -> get output amount and asset
+5. get from DB: input_Tx.hash => { dex? amount? inputAsset? }
+6. announce: SwapIn / SwapOut items
         
         """
 

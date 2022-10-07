@@ -37,9 +37,10 @@ class TxFetcher(BaseFetcher):
         txs = await self._fetch_unseen_txs()
         if txs:
             self.logger.info(f'New tx to analyze: {len(txs)}')
-        return txs
 
-    async def post_action(self, txs: List[ThorTxExtended]):
+        return [ThorTxExtended.load_from_thor_tx(tx) for tx in txs]
+
+    async def post_action(self, txs: List[ThorTx]):
         hashes = [self.get_seen_hash(t) for t in txs]
         await self.mark_tx_hashes_as_seen(hashes)
 
@@ -147,9 +148,6 @@ class TxFetcher(BaseFetcher):
                 selected_txs += pending_old_txs
 
             pending_txs += this_batch_pending
-            for tx in this_batch_pending:
-                h = top_block_height - tx.height_int
-                print(f'{tx.tx_hash}: {h} blocks age')
 
             # filter out TXs that have been seen already
             unseen_new_txs = []

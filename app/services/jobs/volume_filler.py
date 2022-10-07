@@ -13,9 +13,7 @@ class VolumeFillerUpdater(WithDelegates, INotified, WithLogger):
         super().__init__()
         self.deps = deps
 
-    async def on_data(self, sender, txs: List[ThorTx]):
-        # transform
-        extended_txs = [ThorTxExtended.load_from_thor_tx(tx) for tx in txs]
+    async def on_data(self, sender, extended_txs: List[ThorTxExtended]):
         # update & fill
         await self._fill_volumes(extended_txs)
         # send to the listeners

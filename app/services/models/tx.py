@@ -5,6 +5,7 @@ from typing import List, Optional, Iterable
 from services.lib.constants import is_rune, RUNE_SYMBOL, Chains, thor_to_float
 from services.lib.money import Asset
 from services.lib.texts import sum_and_str
+from services.lib.w3.aggregator import SwapInOut
 from services.models.cap_info import ThorCapInfo
 from services.models.lp_info import LPAddress
 from services.models.pool_info import PoolInfo
@@ -403,6 +404,8 @@ class ThorTxExtended(ThorTx):
     # filled by "calc_full_rune_amount"
     full_rune: float = 0.0  # TX volume
     asset_per_rune: float = 0.0
+
+    dex_info: SwapInOut = SwapInOut()
 
     @classmethod
     def load_from_thor_tx(cls, tx: ThorTx):
