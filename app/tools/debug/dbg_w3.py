@@ -1,11 +1,14 @@
 import asyncio
 
+import web3
+from web3.datastructures import AttributeDict
+
 from services.lib.w3.aggr_contract import AggregatorContract
 from services.lib.w3.erc20_contract import ERC20Contract
 from services.lib.w3.router_contract import TCRouterContract
 from services.lib.w3.token_list import TokenListCached, StaticTokenList
 from services.lib.w3.token_record import ETH_CHAIN_ID
-from services.lib.w3.web3_helper import Web3Helper
+from services.lib.w3.web3_helper import Web3HelperCached
 from tools.lib.lp_common import LpAppFramework
 
 
@@ -36,7 +39,7 @@ async def demo_process_events(w3):
 async def demo_decode_swap_in(w3, tx_hash):
     tx = await w3.get_transaction(tx_hash)
     aggr = AggregatorContract(w3)
-    swap_in_call = aggr.decode_input(tx.input)
+    swap_in_call = aggr.decode_input(tx['input'])
     print('----- swap in ------')
     print(swap_in_call)
 
@@ -45,12 +48,43 @@ async def demo_decode_swap_in(w3, tx_hash):
 
     print(f'{token_info = }')
 
-    # now the current task is to make a class that aggregates token list and cached token info from the block chain!
+
+def get_eth_token_list():
+    return StaticTokenList(StaticTokenList.DEFAULT_TOKEN_LIST_ETH_PATH, ETH_CHAIN_ID)
+
+
+async def demo_decode_swap_out(w3, db, tx_hash):
+    tx = await w3.get_transaction(tx_hash)
+    router = TCRouterContract(w3)
+    swap_out_call = router.decode_input(tx['input'])  # cache returns dict
+    print('----- swap out ------')
+    print(swap_out_call)
+    # target token is in $swap_out_call
+    print(f'{swap_out_call.target_token = }')
+
+    token_list = TokenListCached(db, w3, get_eth_token_list())
+    token_info = await token_list.resolve_token(swap_out_call.target_token)
+    print(f'{token_info = }')
+
+    receipt_data = await w3.get_transaction_receipt(tx_hash)
+
+    token = ERC20Contract(w3, swap_out_call.target_token, ETH_CHAIN_ID)
+    transfers = token.get_transfer_events_from_receipt(receipt_data, filter_by_receiver=swap_out_call.to_address)
+
+
+    final_transfer = transfers[0]
+
+    print(web3.Web3.toJSON(final_transfer))
+
+    amount = final_transfer['args']['value']
+
+    print(f'out {amount / 10 ** token_info.decimals} {token_info.symbol}')
+
+    # todo: extract event which determines how much of asset is out:
 
 
 async def my_test_caching_token_list(db, w3):
-    static_list = StaticTokenList(StaticTokenList.DEFAULT_TOKEN_LIST_ETH_PATH, ETH_CHAIN_ID)
-    tl = TokenListCached(db, w3, static_list)
+    tl = TokenListCached(db, w3, get_eth_token_list())
 
     chi = await tl.resolve_token('0000494')
 
@@ -69,6 +103,10 @@ async def my_test_caching_token_list(db, w3):
     print(wbtc)
     assert wbtc.symbol == 'WBTC' and wbtc.decimals == 8 and wbtc.name == 'WrappedBTC'
 
+    thor = await tl.resolve_token('5e8468044')
+    print(thor)
+    assert thor.symbol == 'THOR'
+
     # not in the list
 
     fold = await tl.resolve_token('0xd084944d3c05cd115c09d072b9f44ba3e0e45921')
@@ -79,24 +117,15 @@ async def my_test_caching_token_list(db, w3):
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
-        w3 = Web3Helper(app.deps.cfg)
+        w3 = Web3HelperCached(app.deps.cfg, app.deps.db)
 
         await my_test_caching_token_list(app.deps.db, w3)
 
         # await demo_process_events(w3)
         # await demo_decode_swap_in(w3, '0xD45F100F3F48C786720167F5705B9D6736C195F028B5293FE93159DF923DE7C7')
 
-        # swap in: '0xD45F100F3F48C786720167F5705B9D6736C195F028B5293FE93159DF923DE7C7'
-        # tx = await w3.get_transaction('0x926BC5212732BB863EE77D40A504BCA9583CF6D2F07090E2A3C468CFE6947357')
-        # print(Web3.toJSON(tx))
-        # await my_test_erc20(w3)
-        # dex_aggr = Web3.toChecksumAddress('0x0f2cd5df82959e00be7afeef8245900fc4414199')
-        # abi = await get_abi(app, dex_aggr)
-        # print(abi)
-
-        # contract = w3.eth.contract(address=dex_aggr, abi=abi)
-        # input = contract.decode_function_input(tx.input)
-        # print(input)
+        await demo_decode_swap_out(w3, app.deps.db,
+                                   '0x926BC5212732BB863EE77D40A504BCA9583CF6D2F07090E2A3C468CFE6947357')
 
         """
         SwapIN detection!

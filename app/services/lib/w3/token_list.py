@@ -1,8 +1,8 @@
-import json
 from typing import Optional
 
 import web3
 
+from services.lib.cache import CacheNamedTuple
 from services.lib.db import DB
 from services.lib.texts import fuzzy_search
 from services.lib.utils import load_json
@@ -48,6 +48,7 @@ class TokenListCached:
         self.static_list = static_list
         self.db = db
         self.w3 = w3
+        self._cache = CacheNamedTuple(db, self.DB_KEY_TOKEN_CACHE, TokenRecord)
 
     DB_KEY_TOKEN_CACHE = 'Tokens:Cache'
 
@@ -59,23 +60,17 @@ class TokenListCached:
         if not web3.Web3.isAddress(address):
             return
 
-        existing_data = await self.db.redis.hget(self.DB_KEY_TOKEN_CACHE, address)
+        existing_data = await self._cache.load(address)
         if existing_data:
-            try:
-                return TokenRecord(**json.loads(existing_data))
-            except TypeError:
-                # apparently the format has changed, so reload and save it again
-                pass
+            return existing_data
 
         erc20 = ERC20Contract(self.w3, address, self.static_list.chain)
         info = await erc20.get_token_info()
 
         if info:
-            # noinspection PyProtectedMember
-            raw_data = json.dumps(info._asdict())
-            await self.db.redis.hset(self.DB_KEY_TOKEN_CACHE, address, raw_data)
+            await self._cache.store(address, info)
 
         return info
 
     async def clear_cache(self):
-        await self.db.redis.delete(self.DB_KEY_TOKEN_CACHE)
+        await self._cache.clear()
