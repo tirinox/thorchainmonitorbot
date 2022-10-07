@@ -5,7 +5,7 @@ from typing import List, Optional, Iterable
 from services.lib.constants import is_rune, RUNE_SYMBOL, Chains, thor_to_float
 from services.lib.money import Asset
 from services.lib.texts import sum_and_str
-from services.lib.w3.aggregator import SwapInOut
+from services.lib.w3.token_record import SwapInOut
 from services.models.cap_info import ThorCapInfo
 from services.models.lp_info import LPAddress
 from services.models.pool_info import PoolInfo

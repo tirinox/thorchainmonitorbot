@@ -39,6 +39,7 @@ from services.lib.midgard.connector import MidgardConnector
 from services.lib.midgard.name_service import NameService
 from services.lib.settings_manager import SettingsManager, SettingsProcessorGeneralAlerts
 from services.lib.utils import setup_logs
+from services.lib.w3.aggregator import AggregatorDataExtractor
 from services.models.mimir import MimirHolder
 from services.models.node_watchers import AlertWatchers
 from services.models.tx import ThorTxType
@@ -169,8 +170,11 @@ class App:
         if d.cfg.get('tx.enabled', True):
             fetcher_tx = TxFetcher(d)
 
+            aggregator = AggregatorDataExtractor(d)
+            fetcher_tx.subscribe(aggregator)
+
             volume_filler = VolumeFillerUpdater(d)
-            fetcher_tx.subscribe(volume_filler)
+            aggregator.subscribe(volume_filler)
 
             d.volume_recorder = VolumeRecorder(d)
             volume_filler.subscribe(d.volume_recorder)

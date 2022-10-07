@@ -5,7 +5,7 @@ from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 from services.models.pool_info import PoolInfo
-from services.models.tx import ThorTxExtended, ThorTx
+from services.models.tx import ThorTxExtended
 
 
 class VolumeFillerUpdater(WithDelegates, INotified, WithLogger):

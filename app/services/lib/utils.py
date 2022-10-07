@@ -333,6 +333,7 @@ class Buffer:
 
 class WithLogger:
     def __init__(self):
+        super(WithLogger, self).__init__()
         self.logger = class_logger(self)
 
 

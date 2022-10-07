@@ -1,29 +1,21 @@
-from typing import Optional, NamedTuple
+from typing import Optional, List
 
 from web3.exceptions import TransactionNotFound
 
 from services.lib.constants import Chains, ETH_SYMBOL, AVAX_SYMBOL
+from services.lib.delegates import WithDelegates, INotified
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 from services.lib.w3.aggr_contract import AggregatorContract
 from services.lib.w3.erc20_contract import ERC20Contract
 from services.lib.w3.router_contract import TCRouterContract
 from services.lib.w3.token_list import StaticTokenList, TokenListCached
-from services.lib.w3.token_record import AVAX_CHAIN_ID, ETH_CHAIN_ID, TokenRecord
+from services.lib.w3.token_record import AVAX_CHAIN_ID, ETH_CHAIN_ID, TokenRecord, AmountToken, SwapInOut
 from services.lib.w3.web3_helper import Web3HelperCached
+from services.models.tx import ThorTxExtended
 
 
-class AmountToken(NamedTuple):
-    amount: float
-    token: TokenRecord
-
-
-class SwapInOut(NamedTuple):
-    swap_in: Optional[AmountToken] = None
-    swap_out: Optional[AmountToken] = None
-
-
-class AggregatorDataExtractor(WithLogger):
+class AggregatorDataExtractor(WithLogger, INotified, WithDelegates):
     SUITABLE_L1_TOKENS = (ETH_SYMBOL, AVAX_SYMBOL)
 
     def create_token_list(self, static_list_path, chain_id) -> TokenListCached:
@@ -97,3 +89,7 @@ class AggregatorDataExtractor(WithLogger):
             self.logger.exception(f'Error decoding Swap Out @ {tx_hash} ({chain})')
 
         return SwapInOut(swap_in, swap_out)
+
+    async def on_data(self, sender, txs: List[ThorTxExtended]):
+        # todo: check if dex-aggr is possible, and if so, then load the additional datum
+        await self.pass_data_to_listeners(txs, sender)  # pass through
