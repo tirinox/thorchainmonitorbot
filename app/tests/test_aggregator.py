@@ -4,7 +4,7 @@ from services.lib.config import Config
 from services.lib.constants import Chains
 from services.lib.utils import str_to_bytes
 from services.lib.w3.aggr_contract import AggregatorContract
-from services.lib.w3.aggregator import AggregatorResolver
+from services.lib.w3.resolver import AggregatorResolver
 from services.lib.w3.router_contract import TCRouterContract
 from services.lib.w3.token_list import StaticTokenList
 from services.lib.w3.web3_helper import Web3Helper

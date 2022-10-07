@@ -1,6 +1,8 @@
 import asyncio
 
-from services.lib.w3.aggr_contract import AggregatorContract
+from services.lib.constants import Chains
+from services.lib.texts import sep
+from services.lib.w3.aggregator import AggregatorDataExtractor
 from services.lib.w3.erc20_contract import ERC20Contract
 from services.lib.w3.router_contract import TCRouterContract
 from services.lib.w3.token_list import TokenListCached, StaticTokenList
@@ -33,17 +35,11 @@ async def demo_process_events(w3):
     print(r)
 
 
-async def demo_decode_swap_in(w3, db, tx_hash):
-    tx = await w3.get_transaction(tx_hash)
-    aggr = AggregatorContract(w3)
-    swap_in_call = aggr.decode_input(tx['input'])
-    print('----- swap in ------')
-    print(swap_in_call)
+async def demo_decode_swap_in(deps, tx_hash):
+    aggr = AggregatorDataExtractor(deps)
 
-    token_info = await get_eth_token_info(swap_in_call.from_token, db, w3)
-    print(f'{token_info = }')
-
-    print(f'Swap {swap_in_call.amount / (10 ** token_info.decimals)} {token_info.symbol}')
+    amt = await aggr.decode_swap_in(tx_hash, Chains.ETH)
+    print(f'Swap IN: {amt}')
 
 
 def get_eth_token_list():
@@ -55,32 +51,11 @@ async def get_eth_token_info(contract_address, db, w3):
     return await token_list.resolve_token(contract_address)
 
 
-async def demo_decode_swap_out(w3, db, tx_hash):
-    tx = await w3.get_transaction(tx_hash)
-    router = TCRouterContract(w3)
-    swap_out_call = router.decode_input(tx['input'])  # cache returns dict
-    print('----- swap out ------')
-    print(swap_out_call)
-    # target token is in $swap_out_call
-    print(f'{swap_out_call.target_token = }')
+async def demo_decode_swap_out(deps, tx_hash):
+    aggr = AggregatorDataExtractor(deps)
+    amt = await aggr.decode_swap_out(tx_hash, Chains.ETH)
 
-    token_info = await get_eth_token_info(swap_out_call.target_token, db, w3)
-    print(f'{token_info = }')
-
-    receipt_data = await w3.get_transaction_receipt(tx_hash)
-
-    token = ERC20Contract(w3, swap_out_call.target_token, ETH_CHAIN_ID)
-    transfers = token.get_transfer_events_from_receipt(receipt_data, filter_by_receiver=swap_out_call.to_address)
-
-    final_transfer = transfers[0]
-
-    # print(web3.Web3.toJSON(final_transfer))
-
-    amount = final_transfer['args']['value']
-
-    print(f'out {amount / 10 ** token_info.decimals} {token_info.symbol}')
-
-    # todo: extract event which determines how much of asset is out:
+    print(f'Swap OUT: {amt}')
 
 
 async def my_test_caching_token_list(db, w3):
@@ -122,11 +97,10 @@ async def run():
         await my_test_caching_token_list(app.deps.db, w3)
 
         # await demo_process_events(w3)
-        await demo_decode_swap_in(w3, app.deps.db,
-                                  '0xD45F100F3F48C786720167F5705B9D6736C195F028B5293FE93159DF923DE7C7')
-
-        # await demo_decode_swap_out(w3, app.deps.db,
-        #                            '0x926BC5212732BB863EE77D40A504BCA9583CF6D2F07090E2A3C468CFE6947357')
+        sep()
+        await demo_decode_swap_in(app.deps, '0xD45F100F3F48C786720167F5705B9D6736C195F028B5293FE93159DF923DE7C7')
+        sep()
+        await demo_decode_swap_out(app.deps, '0x926BC5212732BB863EE77D40A504BCA9583CF6D2F07090E2A3C468CFE6947357')
 
         """
         SwapIN detection!
@@ -138,6 +112,10 @@ async def run():
         1. Midgard -> actions -> swap -> meta -> memo -> parse
         2. load dest_token from Infura/local token list
         3.
+        
+        Now. Given a Tx Id
+        
+        
         """
 
 

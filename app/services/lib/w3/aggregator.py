@@ -1,73 +1,66 @@
-import re
-from typing import NamedTuple, Union, List
+import typing
+from typing import Optional
 
-from services.lib.texts import fuzzy_search
-
-
-class AggregatorRecord(NamedTuple):
-    address: str
-    chain: str
-    name: str
-
-
-AggregatorSearchResult = Union[AggregatorRecord, List[AggregatorRecord], None]
+from services.lib.constants import Chains
+from services.lib.depcont import DepContainer
+from services.lib.w3.aggr_contract import AggregatorContract
+from services.lib.w3.erc20_contract import ERC20Contract
+from services.lib.w3.router_contract import TCRouterContract
+from services.lib.w3.token_list import StaticTokenList, TokenListCached
+from services.lib.w3.token_record import AVAX_CHAIN_ID, ETH_CHAIN_ID, TokenRecord
+from services.lib.w3.web3_helper import Web3HelperCached
 
 
-# Use that source: https://gitlab.com/thorchain/thornode/-/blob/develop/x/thorchain/aggregators/dex_mainnet.go
-class AggregatorResolver:
-    def __init__(self, filename, data=None):
-        self.filename = filename
-        self._table = {}
-        self.by_chain = {}
-        self.by_name = {}
+class AmountToken(typing.NamedTuple):
+    amount: float
+    token: TokenRecord
 
-        if filename:
-            with open(self.filename, 'r') as fp:
-                data = fp.read()
-        self._load(data)
 
-    def _load(self, data):
-        lines = [line.strip() for line in data.split('\n')]
-        lines = filter(bool, lines)
-        aggr_name = ''
-        for line in lines:
-            if line.startswith('//'):  # comment line contains names
-                aggr_name = line[2:].strip()
-            elif line.startswith('{'):  # datum line contains chain and address
-                addresses = re.findall(r'`(.+?)`', line)
-                chains = re.findall(r'common\.(.+?)Chain', line)
-                if addresses and chains:
-                    chain = chains[0]
-                    aggr_address = addresses[0]
-                    record = AggregatorRecord(aggr_address, chain, aggr_name)
-                    if chain not in self.by_chain:
-                        self.by_chain[chain] = {}
-                    self.by_chain[chain][aggr_address] = record
-                    self.by_name[aggr_name] = record
-                    self._table[aggr_address] = record
+class AggregatorDataExtractor:
+    def create_token_list(self, static_list_path, chain_id) -> TokenListCached:
+        static_list = StaticTokenList(static_list_path, chain_id)
+        return TokenListCached(self.deps.db, self.w3, static_list)
 
-    def search_aggregator_address(self, query: str, ambiguity=False) -> AggregatorSearchResult:
-        return self._search(query, self._table.keys(), self._table, ambiguity)
+    def __init__(self, deps: DepContainer):
+        self.deps = deps
+        self.w3 = Web3HelperCached(deps.cfg, deps.db)
 
-    def search_by_name(self, query, ambiguity=False) -> AggregatorSearchResult:
-        return self._search(query, self.by_name.keys(), self.by_name, ambiguity)
+        self.token_lists = {
+            Chains.AVAX: self.create_token_list(StaticTokenList.DEFAULT_TOKEN_LIST_AVAX_PATH, AVAX_CHAIN_ID),
+            Chains.ETH: self.create_token_list(StaticTokenList.DEFAULT_TOKEN_LIST_ETH_PATH, ETH_CHAIN_ID),
+            # todo: add more lists in the future here
+        }
+
+        self.router = TCRouterContract(self.w3)
+        self.aggregator = AggregatorContract(self.w3)
 
     @staticmethod
-    def _search(query, keys, dic, ambiguity) -> AggregatorSearchResult:
-        variants = fuzzy_search(query, keys, f=str.lower)
-        if not variants:
-            return None
+    def make_pair(amount, token_info: TokenRecord):
+        return AmountToken(
+            amount / 10 ** token_info.decimals,
+            token_info,
+        )
 
-        if len(variants) > 1:
-            if ambiguity:
-                raise ValueError('Aggregator search ambiguity!')
-            else:
-                return [dic.get(v) for v in variants]
-        else:
-            return dic.get(variants[0])
+    async def decode_swap_out(self, tx_hash, chain: str) -> Optional[AmountToken]:
+        tx = await self.w3.get_transaction(tx_hash)
 
-    def __len__(self):
-        return len(self._table)
+        swap_out_call = self.router.decode_input(tx['input'])
 
-    def __getitem__(self, item):
-        return self._table.get(item)
+        token_list: TokenListCached = self.token_lists[chain]
+
+        receipt_data = await self.w3.get_transaction_receipt(tx_hash)
+        token = ERC20Contract(self.w3, swap_out_call.target_token, token_list.chain_id)
+        transfers = token.get_transfer_events_from_receipt(receipt_data, filter_by_receiver=swap_out_call.to_address)
+        final_transfer = transfers[0]
+        amount = final_transfer['args']['value']
+
+        token_info = await token_list.resolve_token(swap_out_call.target_token)
+        return self.make_pair(amount, token_info)
+
+    async def decode_swap_in(self, tx_hash, chain: str) -> Optional[AmountToken]:
+        tx = await self.w3.get_transaction(tx_hash)
+        swap_in_call = self.aggregator.decode_input(tx['input'])
+
+        token_list: TokenListCached = self.token_lists[chain]
+        token_info = await token_list.resolve_token(swap_in_call.from_token)
+        return self.make_pair(swap_in_call.amount, token_info)

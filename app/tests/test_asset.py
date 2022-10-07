@@ -17,7 +17,7 @@ def test_asset1():
     a2 = Asset.from_string('ETH.DODO-0X43DFC4159D86F3A37A5A4B3D4580B888AD7D4DDD')
     a2s = Asset.from_string('eTh.dODo-0X43dFC4159D86F3A37A5A4b3d4580B888AD7D4DDD')
     assert a2 == a2s
-    assert a2s.chain == 'ETH'
+    assert a2s.chain_id == 'ETH'
     assert a2s.name == 'DODO'
     assert a2s.tag == '0X43DFC4159D86F3A37A5A4B3D4580B888AD7D4DDD'
 

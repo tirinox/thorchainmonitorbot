@@ -15,8 +15,8 @@ class StaticTokenList:
     DEFAULT_TOKEN_LIST_ETH_PATH = f'{CONTRACT_DATA_BASE_PATH}/eth_mainnet_V97.json'
     DEFAULT_TOKEN_LIST_AVAX_PATH = f'{CONTRACT_DATA_BASE_PATH}/avax_mainnet_V95.json'
 
-    def __init__(self, filename, chain):
-        self.chain = chain
+    def __init__(self, filename, chain_id):
+        self.chain_id = chain_id
         data = load_json(filename)
         tokens = [
             TokenRecord(
@@ -50,6 +50,10 @@ class TokenListCached:
         self.w3 = w3
         self._cache = CacheNamedTuple(db, self.DB_KEY_TOKEN_CACHE, TokenRecord)
 
+    @property
+    def chain_id(self):
+        return self.static_list.chain_id
+
     DB_KEY_TOKEN_CACHE = 'Tokens:Cache'
 
     async def resolve_token(self, address: str) -> Optional[TokenRecord]:
@@ -64,7 +68,7 @@ class TokenListCached:
         if existing_data:
             return existing_data
 
-        erc20 = ERC20Contract(self.w3, address, self.static_list.chain)
+        erc20 = ERC20Contract(self.w3, address, self.static_list.chain_id)
         info = await erc20.get_token_info()
 
         if info:
