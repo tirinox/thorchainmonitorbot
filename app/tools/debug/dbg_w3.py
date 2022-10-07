@@ -1,7 +1,5 @@
 import asyncio
 
-import web3
-
 from services.lib.w3.aggr_contract import AggregatorContract
 from services.lib.w3.erc20_contract import ERC20Contract
 from services.lib.w3.router_contract import TCRouterContract
@@ -35,21 +33,26 @@ async def demo_process_events(w3):
     print(r)
 
 
-async def demo_decode_swap_in(w3, tx_hash):
+async def demo_decode_swap_in(w3, db, tx_hash):
     tx = await w3.get_transaction(tx_hash)
     aggr = AggregatorContract(w3)
     swap_in_call = aggr.decode_input(tx['input'])
     print('----- swap in ------')
     print(swap_in_call)
 
-    token = ERC20Contract(w3, swap_in_call.from_token, ETH_CHAIN_ID)
-    token_info = await token.get_token_info()
-
+    token_info = await get_eth_token_info(swap_in_call.from_token, db, w3)
     print(f'{token_info = }')
+
+    print(f'Swap {swap_in_call.amount / (10 ** token_info.decimals)} {token_info.symbol}')
 
 
 def get_eth_token_list():
     return StaticTokenList(StaticTokenList.DEFAULT_TOKEN_LIST_ETH_PATH, ETH_CHAIN_ID)
+
+
+async def get_eth_token_info(contract_address, db, w3):
+    token_list = TokenListCached(db, w3, get_eth_token_list())
+    return await token_list.resolve_token(contract_address)
 
 
 async def demo_decode_swap_out(w3, db, tx_hash):
@@ -61,8 +64,7 @@ async def demo_decode_swap_out(w3, db, tx_hash):
     # target token is in $swap_out_call
     print(f'{swap_out_call.target_token = }')
 
-    token_list = TokenListCached(db, w3, get_eth_token_list())
-    token_info = await token_list.resolve_token(swap_out_call.target_token)
+    token_info = await get_eth_token_info(swap_out_call.target_token, db, w3)
     print(f'{token_info = }')
 
     receipt_data = await w3.get_transaction_receipt(tx_hash)
@@ -120,10 +122,11 @@ async def run():
         await my_test_caching_token_list(app.deps.db, w3)
 
         # await demo_process_events(w3)
-        # await demo_decode_swap_in(w3, '0xD45F100F3F48C786720167F5705B9D6736C195F028B5293FE93159DF923DE7C7')
+        await demo_decode_swap_in(w3, app.deps.db,
+                                  '0xD45F100F3F48C786720167F5705B9D6736C195F028B5293FE93159DF923DE7C7')
 
-        await demo_decode_swap_out(w3, app.deps.db,
-                                   '0x926BC5212732BB863EE77D40A504BCA9583CF6D2F07090E2A3C468CFE6947357')
+        # await demo_decode_swap_out(w3, app.deps.db,
+        #                            '0x926BC5212732BB863EE77D40A504BCA9583CF6D2F07090E2A3C468CFE6947357')
 
         """
         SwapIN detection!
