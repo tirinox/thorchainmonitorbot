@@ -79,7 +79,7 @@ async def demo_decoder(app: LpAppFramework):
     # await my_test_caching_token_list(app.deps.db, w3)
 
     aggr = AggregatorDataExtractor(app.deps)
-    aggr_eth = aggr.asset_to_aggr[Chains.l1_asset(Chains.ETH)]
+    aggr_eth = aggr.get_by_chain(Chains.ETH)
 
     r = await aggr_eth.decode_swap_in('0xD45F100F3F48C786720167F5705B9D6736C195F028B5293FE93159DF923DE7C7')
     # swap in
@@ -88,6 +88,12 @@ async def demo_decoder(app: LpAppFramework):
     r = await aggr_eth.decode_swap_out('0x926BC5212732BB863EE77D40A504BCA9583CF6D2F07090E2A3C468CFE6947357')
     # swap out
     print(f'Swap Out? {r}')
+
+    aggr_avax = aggr.get_by_chain(Chains.AVAX)
+
+    r = await aggr_avax.decode_swap_in('0xc2483005204f9b4d41d15024913807bc8d2a1714c55fae0b5f23b1d71d6affe3')
+    # swap in
+    print(f'Swap In? {r}')
 
 
 async def demo_avax(app: LpAppFramework):

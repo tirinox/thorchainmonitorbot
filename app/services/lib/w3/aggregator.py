@@ -26,7 +26,7 @@ class AggregatorSingleChain:
         chain_id = Chains.web3_chain_id(chain)
         assert chain_id > 0
         static_list = StaticTokenList(StaticTokenList.DEFAULT_LISTS[chain], chain_id)
-        self.w3 = Web3HelperCached(Chains.ETH, deps.cfg, deps.db)
+        self.w3 = Web3HelperCached(chain, deps.cfg, deps.db)
         self.token_list = TokenListCached(self.deps.db, self.w3, static_list)
         self.router = TCRouterContract(self.w3)
         self.aggregator = AggregatorContract(self.w3)
@@ -117,3 +117,6 @@ class AggregatorDataExtractor(WithLogger, INotified, WithDelegates):
                 tx.dex_info = SwapInOut(in_amount, out_amount)
 
         await self.pass_data_to_listeners(txs, sender)  # pass through
+
+    def get_by_chain(self, chain: str) -> Optional[AggregatorSingleChain]:
+        return self.asset_to_aggr.get(Chains.l1_asset(chain))
