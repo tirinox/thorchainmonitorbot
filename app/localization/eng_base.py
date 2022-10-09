@@ -356,9 +356,10 @@ class BaseLocalization(ABC):  # == English
             if tx_id:
                 a = Asset(tx.first_asset)
                 chain = a.chain if a.chain else Chains.THOR
+                if a.is_synth:
+                    chain = Chains.THOR
                 url = get_explorer_url_to_tx(net, chain, tx_id)
-                label = 'RUNE' if (chain == Chains.THOR) else a.chain
-                items.append(link(url, label))
+                items.append(link(url, text=a.chain))
 
         result = ', '.join(items)
 
