@@ -312,7 +312,7 @@ class RussianLocalization(BaseLocalization):
             heading = f'🐳 <b>Крупный апгрейд {self.R}</b> 🆙'
 
         if tx.is_pending:
-            heading += ' [Ожидает]'
+            heading += ital(' [Ожидает]')
 
         asset = Asset(tx.first_pool).name
 

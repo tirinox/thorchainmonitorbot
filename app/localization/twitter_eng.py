@@ -67,14 +67,8 @@ class TwitterEnglishLocalization(BaseLocalization):
         )
 
     @staticmethod
-    def tx_convert_string(tx: ThorTxExtended, usd_per_rune):
-        inputs = tx.get_asset_summary(in_only=True)
-        outputs = tx.get_asset_summary(out_only=True)
-
-        input_str = ', '.join(f"{short_money(amount)} {asset}" for asset, amount in inputs.items())
-        output_str = ', '.join(f"{short_money(amount)} {asset}" for asset, amount in outputs.items())
-
-        return f"{input_str} ➡️ {output_str} ({short_dollar(tx.get_usd_volume(usd_per_rune))})"
+    def format_op_amount(amt):
+        return short_money(amt)
 
     def notification_text_large_single_tx(self, tx: ThorTxExtended, usd_per_rune: float,
                                           pool_info: PoolInfo,

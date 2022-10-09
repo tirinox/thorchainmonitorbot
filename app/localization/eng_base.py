@@ -19,6 +19,7 @@ from services.lib.money import format_percent, pretty_money, short_address, shor
     RAIDO_GLYPH, short_rune
 from services.lib.texts import progressbar, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
     up_down_arrow, bracketify, plural, grouper, join_as_numbered_list, regroup_joining, shorten_text
+from services.lib.w3.token_record import AmountToken
 from services.models.cap_info import ThorCapInfo
 from services.models.killed_rune import KilledRuneEntry
 from services.models.last_block import BlockProduceState, EventBlockSpeed
@@ -396,14 +397,39 @@ class BaseLocalization(ABC):  # == English
         )
 
     @staticmethod
-    def tx_convert_string(tx: ThorTxExtended, usd_per_rune):
+    def format_op_amount(amt):
+        return bold(short_money(amt))
+
+    def format_aggregator(self, a: AmountToken):
+        aggr_name = f' via {a.aggr_name}' if a.aggr_name else ''
+        chain = ''
+        if a.token.chain_id == Chains.web3_chain_id(Chains.ETH):
+            chain = Chains.ETH
+        elif a.token.chain_id == Chains.web3_chain_id(Chains.AVAX):
+            chain = Chains.AVAX
+        return f'{self.format_op_amount(a.amount)} {chain}.{a.token.symbol}{aggr_name}'
+
+    def tx_convert_string(self, tx: ThorTxExtended, usd_per_rune):
         inputs = tx.get_asset_summary(in_only=True)
         outputs = tx.get_asset_summary(out_only=True)
 
-        input_str = ', '.join(f"{bold(short_money(amount))} {asset}" for asset, amount in inputs.items())
-        output_str = ', '.join(f"{bold(short_money(amount))} {asset}" for asset, amount in outputs.items())
+        input_str = ', '.join(f"{self.format_op_amount(amount)} {asset}" for asset, amount in inputs.items())
+        output_str = ', '.join(f"{self.format_op_amount(amount)} {asset}" for asset, amount in outputs.items())
 
-        return f"{input_str} ➡️ {output_str} ({short_dollar(tx.get_usd_volume(usd_per_rune))})"
+        route_components = []
+        dex = tx.dex_info
+
+        if dex.swap_in:
+            route_components.append(self.format_aggregator(dex.swap_in))
+
+        route_components.extend((input_str, output_str))
+
+        if dex.swap_out:
+            route_components.append(self.format_aggregator(dex.swap_out))
+
+        route_str = ' ➡️ '.join(route_components)
+
+        return f"{route_str} ({short_dollar(tx.get_usd_volume(usd_per_rune))})"
 
     def _exclamation_sign(self, value, cfg_key='', ref=100):
         exclamation_limit = self.cfg.as_float(f'tx.exclamation.{cfg_key}', 10000) if cfg_key else ref
@@ -437,7 +463,7 @@ class BaseLocalization(ABC):  # == English
             heading = f'🐳 <b>Large Rune switch</b> 🆙'
 
         if tx.is_pending:
-            heading += ' [Pending]'
+            heading += ital(' [Pending]')
 
         asset = Asset(tx.first_pool).name
 
