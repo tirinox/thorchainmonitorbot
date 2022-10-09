@@ -87,6 +87,8 @@ class AggregatorDataExtractor(WithLogger, INotified, WithDelegates):
         return None, ''
 
     async def _try_detect_aggregator(self, tx: ThorSubTx, is_in):
+        if not tx:
+            return 
         tx_hash, chain = '??', '??'
         tag = 'In' if is_in else 'Out'
         try:
