@@ -160,8 +160,8 @@ def random_ip_address():
     return ".".join(str(random.randint(0, 255)) for _ in range(4))
 
 
-def class_logger(self):
-    return logging.getLogger(self.__class__.__name__)
+def class_logger(self, prefix=''):
+    return logging.getLogger(prefix + self.__class__.__name__)
 
 
 def parse_list_from_string(text: str, upper=False, lower=False, strip=True):
@@ -332,9 +332,13 @@ class Buffer:
 
 
 class WithLogger:
+    @property
+    def logger_prefix(self):
+        return ''
+
     def __init__(self):
         super(WithLogger, self).__init__()
-        self.logger = class_logger(self)
+        self.logger = class_logger(self, self.logger_prefix)
 
 
 def json_cached_to_file_async(filename):
