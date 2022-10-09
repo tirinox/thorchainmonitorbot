@@ -1,38 +1,33 @@
-from typing import Optional, List
+from typing import Optional, List, Tuple
 
 from web3.exceptions import TransactionNotFound
 
-from services.lib.constants import Chains, ETH_SYMBOL, AVAX_SYMBOL
+from services.lib.constants import Chains
 from services.lib.delegates import WithDelegates, INotified
 from services.lib.depcont import DepContainer
+from services.lib.money import Asset
 from services.lib.utils import WithLogger
 from services.lib.w3.aggr_contract import AggregatorContract
 from services.lib.w3.erc20_contract import ERC20Contract
 from services.lib.w3.router_contract import TCRouterContract
 from services.lib.w3.token_list import StaticTokenList, TokenListCached
-from services.lib.w3.token_record import AVAX_CHAIN_ID, ETH_CHAIN_ID, TokenRecord, AmountToken, SwapInOut
+from services.lib.w3.token_record import TokenRecord, AmountToken, SwapInOut
 from services.lib.w3.web3_helper import Web3HelperCached
-from services.models.tx import ThorTxExtended
+from services.models.tx import ThorTxExtended, ThorSubTx, ThorTxType
 
 
-class AggregatorDataExtractor(WithLogger, INotified, WithDelegates):
-    SUITABLE_L1_TOKENS = (ETH_SYMBOL, AVAX_SYMBOL)
-
-    def create_token_list(self, static_list_path, chain_id) -> TokenListCached:
-        static_list = StaticTokenList(static_list_path, chain_id)
-        return TokenListCached(self.deps.db, self.w3, static_list)
-
-    def __init__(self, deps: DepContainer):
-        super().__init__()
+class AggregatorSingleChain:
+    def __init__(self, deps: DepContainer, chain: str):
         self.deps = deps
-        self.w3 = Web3HelperCached(deps.cfg, deps.db)
 
-        self.token_lists = {
-            Chains.AVAX: self.create_token_list(StaticTokenList.DEFAULT_TOKEN_LIST_AVAX_PATH, AVAX_CHAIN_ID),
-            Chains.ETH: self.create_token_list(StaticTokenList.DEFAULT_TOKEN_LIST_ETH_PATH, ETH_CHAIN_ID),
-            # todo: add more lists in the future here
-        }
+        self.chain = chain
+        self.l1_asset = Chains.l1_asset(chain)
 
+        chain_id = Chains.web3_chain_id(chain)
+        assert chain_id > 0
+        static_list = StaticTokenList(StaticTokenList.DEFAULT_LISTS[chain], chain_id)
+        self.w3 = Web3HelperCached(Chains.ETH, deps.cfg, deps.db)
+        self.token_list = TokenListCached(self.deps.db, self.w3, static_list)
         self.router = TCRouterContract(self.w3)
         self.aggregator = AggregatorContract(self.w3)
 
@@ -50,15 +45,14 @@ class AggregatorDataExtractor(WithLogger, INotified, WithDelegates):
         if not swap_out_call:
             raise TransactionNotFound('this is not swap out')
 
-        token_list: TokenListCached = self.token_lists[chain]
-        token = ERC20Contract(self.w3, swap_out_call.target_token, token_list.chain_id)
+        token = ERC20Contract(self.w3, swap_out_call.target_token, self.token_list.chain_id)
 
         receipt_data = await self.w3.get_transaction_receipt(tx_hash)
         transfers = token.get_transfer_events_from_receipt(receipt_data, filter_by_receiver=swap_out_call.to_address)
         final_transfer = transfers[0]
         amount = final_transfer['args']['value']
 
-        token_info = await token_list.resolve_token(swap_out_call.target_token)
+        token_info = await self.token_list.resolve_token(swap_out_call.target_token)
         return self.make_pair(amount, token_info)
 
     async def decode_swap_in(self, tx_hash, chain: str) -> Optional[AmountToken]:
@@ -67,29 +61,59 @@ class AggregatorDataExtractor(WithLogger, INotified, WithDelegates):
         if not swap_in_call:
             raise TransactionNotFound('this is not swap in')
 
-        token_list: TokenListCached = self.token_lists[chain]
-        token_info = await token_list.resolve_token(swap_in_call.from_token)
+        token_info = await self.token_list.resolve_token(swap_in_call.from_token)
         return self.make_pair(swap_in_call.amount, token_info)
 
-    async def decode_swap_in_out(self, tx_hash, chain: str) -> SwapInOut:
-        swap_in, swap_out = None, None
 
+class AggregatorDataExtractor(WithLogger, INotified, WithDelegates):
+    DEFAULT_CHAINS = (Chains.ETH, Chains.AVAX)
+
+    def __init__(self, deps: DepContainer, suitable_chains=DEFAULT_CHAINS):
+        super().__init__()
+        self.deps = deps
+        self.asset_to_aggr = {
+            Chains.l1_asset(chain): AggregatorSingleChain(deps, chain) for chain in suitable_chains
+        }
+
+    @staticmethod
+    def chain_from_l1_asset(asset: str):
+        return Asset.from_string(asset).chain
+
+    def get_suitable_sub_tx_hash(self, tx: ThorSubTx) -> Tuple[Optional[AggregatorSingleChain], str]:
+        for c in tx.coins:
+            aggr = self.asset_to_aggr.get(c.asset)
+            if aggr:
+                return aggr, tx.tx_id
+        return None, ''
+
+    async def _try_detect_aggregator(self, tx: ThorSubTx, is_in):
+        tx_hash, chain = '??', '??'
+        tag = 'In' if is_in else 'Out'
         try:
-            swap_in = await self.decode_swap_in(tx_hash, chain)
-        except TransactionNotFound:
-            self.logger.info(f'{tx_hash} ({chain}) is not Swap In.')
-        except (ValueError, AttributeError, TypeError, LookupError):
-            self.logger.exception(f'Error decoding Swap In @ {tx_hash} ({chain})')
+            aggr, tx_hash = self.get_suitable_sub_tx_hash(tx)
+            if not aggr:
+                return
+            if not tx_hash:
+                self.logger.warning('No TX hash!')
+                return
 
-        try:
-            swap_out = await self.decode_swap_out(tx_hash, chain)
+            chain = aggr.chain
+            if is_in:
+                return await aggr.decode_swap_in(tx_hash, chain)
+            else:
+                return await aggr.decode_swap_out(tx_hash, chain)
         except TransactionNotFound:
-            self.logger.info(f'{tx_hash} ({chain}) is not Swap Out.')
+            self.logger.info(f'{tx_hash} ({chain}) is not Swap {tag}.')
         except (ValueError, AttributeError, TypeError, LookupError):
-            self.logger.exception(f'Error decoding Swap Out @ {tx_hash} ({chain})')
-
-        return SwapInOut(swap_in, swap_out)
+            self.logger.exception(f'Error decoding Swap {tag} @ {tx_hash} ({chain})')
 
     async def on_data(self, sender, txs: List[ThorTxExtended]):
-        # todo: check if dex-aggr is possible, and if so, then load the additional datum
+        for tx in txs:
+            if tx.type == ThorTxType.TYPE_SWAP:
+                in_amount = await self._try_detect_aggregator(tx.first_input_tx, is_in=True)
+                out_amount = await self._try_detect_aggregator(tx.first_output_tx, is_in=False)
+                if in_amount or out_amount:
+                    self.logger.info(f'DEX aggregator detected: IN({in_amount}), OUT({out_amount})')
+                tx.dex_info = SwapInOut(in_amount, out_amount)
+
         await self.pass_data_to_listeners(txs, sender)  # pass through

@@ -3,6 +3,7 @@ from typing import Optional
 import web3
 
 from services.lib.cache import CacheNamedTuple
+from services.lib.constants import Chains
 from services.lib.db import DB
 from services.lib.texts import fuzzy_search
 from services.lib.utils import load_json
@@ -12,8 +13,10 @@ from services.lib.w3.web3_helper import Web3Helper
 
 
 class StaticTokenList:
-    DEFAULT_TOKEN_LIST_ETH_PATH = f'{CONTRACT_DATA_BASE_PATH}/eth_mainnet_V97.json'
-    DEFAULT_TOKEN_LIST_AVAX_PATH = f'{CONTRACT_DATA_BASE_PATH}/avax_mainnet_V95.json'
+    DEFAULT_LISTS = {
+        Chains.ETH: f'{CONTRACT_DATA_BASE_PATH}/eth_mainnet_V97.json',
+        Chains.AVAX: f'{CONTRACT_DATA_BASE_PATH}/avax_mainnet_V95.json',
+    }
 
     def __init__(self, filename, chain_id):
         self.chain_id = chain_id

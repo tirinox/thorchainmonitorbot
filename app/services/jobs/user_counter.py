@@ -27,7 +27,8 @@ class UserCounter(INotified, WithLogger):
                     users.add(value)
 
         users -= self._excluded_addresses
-        self.logger.info(f'Adding {len(users)} unique users at this tick.')
+        if users:
+            self.logger.info(f'Adding {len(users)} unique users at this tick.')
 
         await self._counter.hit(users=users)
 

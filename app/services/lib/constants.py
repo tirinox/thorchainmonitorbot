@@ -98,9 +98,11 @@ class Chains:
     LTC = 'LTC'
     BNB = 'BNB'
     DOGE = 'DOGE'
-    TERRA = 'TERRA'
+    TERRA = 'TERRA'  # bye-bye
     AVAX = 'AVAX'
     ATOM = 'GAIA'
+
+    META_ALL = (THOR, ETH, BTC, BCH, LTC, BNB, DOGE, AVAX, ATOM)
 
     @staticmethod
     def detect_chain(orig_address: str) -> str:
@@ -140,6 +142,18 @@ class Chains:
         elif chain == Chains.AVAX:
             return 3.0
         return 0.01
+
+    @staticmethod
+    def web3_chain_id(chain: str) -> int:
+        if chain == Chains.ETH:
+            return 0x1
+        elif chain == Chains.AVAX:
+            return 43114
+
+    @staticmethod
+    def l1_asset(chain: str) -> str:
+        assert chain in Chains.META_ALL
+        return f'{chain}.{chain}'
 
 
 class NetworkIdents:

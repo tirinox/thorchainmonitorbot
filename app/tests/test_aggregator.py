@@ -45,7 +45,7 @@ def test_aggregator_fuzzy_search(address, name, aggr):
 
 
 def test_token_list():
-    t_avax = StaticTokenList(StaticTokenList.DEFAULT_TOKEN_LIST_AVAX_PATH, Chains.AVAX)
+    t_avax = StaticTokenList(StaticTokenList.DEFAULT_LISTS[Chains.AVAX], Chains.AVAX)
     assert len(t_avax) > 0
 
     t1 = t_avax['0x152b9d0FdC40C096757F570A51E494bd4b943E50']
@@ -54,7 +54,7 @@ def test_token_list():
     assert t1.name == 'Bitcoin'
     assert all((t.chain_id == 43114 or t.chain_id == 4) for t in t_avax.tokens.values())
 
-    t_eth = StaticTokenList(StaticTokenList.DEFAULT_TOKEN_LIST_ETH_PATH[3:], Chains.ETH)
+    t_eth = StaticTokenList(StaticTokenList.DEFAULT_LISTS[Chains.ETH][3:], Chains.ETH)
     assert len(t_eth) > 0
 
     assert t_eth['0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c'].name == 'yearnCurve.fiyDAIyUSDCyUSDTyTUSD'

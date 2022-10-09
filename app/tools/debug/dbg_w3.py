@@ -1,11 +1,12 @@
 import asyncio
 
+from web3 import Web3
+
 from services.lib.constants import Chains
 from services.lib.w3.aggregator import AggregatorDataExtractor
 from services.lib.w3.erc20_contract import ERC20Contract
 from services.lib.w3.router_contract import TCRouterContract
 from services.lib.w3.token_list import TokenListCached, StaticTokenList
-from services.lib.w3.token_record import ETH_CHAIN_ID
 from services.lib.w3.web3_helper import Web3HelperCached
 from tools.lib.lp_common import LpAppFramework
 
@@ -20,7 +21,7 @@ async def get_abi(app: LpAppFramework, contract):
 
 
 async def my_test_erc20(w3):
-    token = ERC20Contract(w3, '0x584bc13c7d411c00c01a62e8019472de68768430', chain_id=ETH_CHAIN_ID)
+    token = ERC20Contract(w3, '0x584bc13c7d411c00c01a62e8019472de68768430', chain_id=Chains.web3_chain_id(Chains.ETH))
     info = await token.get_token_info()
     print(info)
 
@@ -42,7 +43,7 @@ async def demo_decode_swap_in(deps, tx_hash):
 
 
 def get_eth_token_list():
-    return StaticTokenList(StaticTokenList.DEFAULT_TOKEN_LIST_ETH_PATH, ETH_CHAIN_ID)
+    return StaticTokenList(StaticTokenList.DEFAULT_LISTS[Chains.ETH], Chains.web3_chain_id(Chains.ETH))
 
 
 async def get_eth_token_info(contract_address, db, w3):
@@ -65,7 +66,7 @@ async def my_test_caching_token_list(db, w3):
     # from the list!
 
     print(chi)
-    assert chi.symbol == 'CHI' and chi.decimals == 0 and chi.chain_id == ETH_CHAIN_ID and \
+    assert chi.symbol == 'CHI' and chi.decimals == 0 and chi.chain_id == Chains.web3_chain_id(Chains.ETH) and \
            chi.address == '0x0000000000004946c0e9F43F4Dee607b0eF1fA1c'
 
     hegic = await tl.resolve_token('d411C')
@@ -88,49 +89,34 @@ async def my_test_caching_token_list(db, w3):
     assert fold and fold.symbol == 'FOLD' and fold.name == 'Manifold Finance'
 
 
+async def demo_decoder(app: LpAppFramework):
+    w3 = Web3HelperCached(app.deps.cfg, app.deps.db)
+
+    await my_test_caching_token_list(app.deps.db, w3)
+
+    aggr = AggregatorDataExtractor(app.deps)
+
+    r = await aggr.decode_swap_in('0xD45F100F3F48C786720167F5705B9D6736C195F028B5293FE93159DF923DE7C7',
+                                  Chains.ETH)
+    # swap in
+    print(f'Swap In? {r}')
+
+    r = await aggr.decode_swap_out('0x926BC5212732BB863EE77D40A504BCA9583CF6D2F07090E2A3C468CFE6947357',
+                                   Chains.ETH)
+    # swap out
+    print(f'Swap Out? {r}')
+
+
+async def demo_avax(app: LpAppFramework):
+    # https://api.avax.network/ext/bc/C/rpc
+    w3 = Web3(Web3.HTTPProvider(f'https://api.avax.network/ext/bc/C/rpc'))
+    print(w3.isConnected())
+
+
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
-        w3 = Web3HelperCached(app.deps.cfg, app.deps.db)
-
-        await my_test_caching_token_list(app.deps.db, w3)
-
-        aggr = AggregatorDataExtractor(app.deps)
-
-        r = await aggr.decode_swap_in_out('0xD45F100F3F48C786720167F5705B9D6736C195F028B5293FE93159DF923DE7C7',
-                                          Chains.ETH)
-        # swap in
-        print(f'Swap In? {r}')
-
-        r = await aggr.decode_swap_in_out('0x926BC5212732BB863EE77D40A504BCA9583CF6D2F07090E2A3C468CFE6947357',
-                                          Chains.ETH)
-        # swap out
-        print(f'Swap Out? {r}')
-
-        """        
-        SwapOut detection!
-        1. Midgard -> actions -> swap
-        2. If "input.tx_id" is in (ETH, AVAX) or "output.tx_id" is in (ETH, AVAX)
-        3. Call aggregator->decode_swap_in_out 
-        4. If any => add info to TxAction
-        
-        [v] Now. Given a Tx Id, tell if it is swap in or out or both or not.
-        
-        
-Algo:
-1. block scanner sees inbound ETH/AVAX swap
-2. web3->get tx->decode -> get input amount and asset
-3. Save to DB: Tx.hash =>  { dex: true, amount, inputAsset }
-
-Midgard scanner:
-1. scans sees new Action Swap
-2. decode Memo
-3. detect swap out
-4. web3->get tx->decode -> get output amount and asset
-5. get from DB: input_Tx.hash => { dex? amount? inputAsset? }
-6. announce: SwapIn / SwapOut items
-        
-        """
+        await demo_avax(app)
 
 
 if __name__ == '__main__':

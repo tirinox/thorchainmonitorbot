@@ -1,8 +1,5 @@
 from typing import NamedTuple, Optional
 
-ETH_CHAIN_ID = 0x1
-AVAX_CHAIN_ID = 43114
-
 
 class TokenRecord(NamedTuple):
     address: str
@@ -24,4 +21,3 @@ class AmountToken(NamedTuple):
 class SwapInOut(NamedTuple):
     swap_in: Optional[AmountToken] = None
     swap_out: Optional[AmountToken] = None
-

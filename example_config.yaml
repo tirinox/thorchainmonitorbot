@@ -5,8 +5,11 @@ log_level: INFO
 sleep_before_start: 3
 
 
-infura: # (!) new
-  key: 1234abdc9876610efef
+web3: # (!) new
+  ETH:
+    rpc: "https://mainnet.infura.io/v3/1234abdc9876610efef"
+  AVAX:
+    rpc: "https://api.avax.network/ext/bc/C/rpc"
   cache_expire: 30d
   retries: 3
   retry_wait: 2s

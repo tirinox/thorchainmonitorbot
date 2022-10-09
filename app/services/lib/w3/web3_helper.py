@@ -11,13 +11,20 @@ from services.lib.utils import WithLogger, async_wrap
 
 
 class Web3Helper(WithLogger):
-    def __init__(self, cfg: Config):
+    @property
+    def logger_prefix(self):
+        return f'[{self.chain}] '
+
+    def __init__(self, cfg: Config, chain: str):
         super().__init__()
-        key = cfg.as_str('infura.key', '-')
-        self.cache_expire = cfg.as_interval('infura.cache_expire', '30d')
-        self._retries = cfg.as_int('infura.retries', 3)
-        self._retry_wait = cfg.as_interval('infura.retry_wait', '3s')
-        self.w3 = Web3(Web3.HTTPProvider(f'https://mainnet.infura.io/v3/{key}'))
+        self.chain = chain
+        self.cache_expire = cfg.as_interval('web3.cache_expire', '30d')
+        self._retries = cfg.as_int('web3.retries', 3)
+        self._retry_wait = cfg.as_interval('web3.retry_wait', '3s')
+
+        rpc_url = cfg.as_str(f'web3.{chain}.rpc')
+        self.logger.info(f'Init Web3 for {chain} @ "{rpc_url}".')
+        self.w3 = Web3(Web3.HTTPProvider(rpc_url))
 
     async def _retry_action(self, coroutine):
         for _ in range(self._retries):
@@ -46,8 +53,8 @@ class Web3Helper(WithLogger):
 
 
 class Web3HelperCached(Web3Helper):
-    def __init__(self, cfg: Config, db: DB):
-        super().__init__(cfg)
+    def __init__(self, chain, cfg: Config, db: DB):
+        super().__init__(cfg, chain)
         self.db = db
         self._tx_cache = Cache(db, 'W3:Cache:TX')
         self._tx_receipt_cache = Cache(db, 'W3:Cache:TXReceipt')
