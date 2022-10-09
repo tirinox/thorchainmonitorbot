@@ -23,7 +23,9 @@ class GenericTxNotifier(INotified, WithDelegates):
 
     @staticmethod
     def curve_for_tx_threshold(curve, depth):
-        curve = curve or GenericTxNotifier.DEFAULT_TX_VS_DEPTH_CURVE
+        if not curve:
+            return 0.0
+        # curve = curve or GenericTxNotifier.DEFAULT_TX_VS_DEPTH_CURVE
         lower_bound = 0
         lower_percent = curve[0]['percent']
         for curve_entry in curve:
