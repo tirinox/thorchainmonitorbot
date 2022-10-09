@@ -183,27 +183,27 @@ class App:
                 liq_notifier_tx = GenericTxNotifier(d, d.cfg.tx.liquidity,
                                                     tx_types=(ThorTxType.TYPE_ADD_LIQUIDITY, ThorTxType.TYPE_WITHDRAW))
                 volume_filler.subscribe(liq_notifier_tx)
-                liq_notifier_tx.subscribe(self.deps.alert_presenter)
+                liq_notifier_tx.subscribe(d.alert_presenter)
 
             if d.cfg.tx.donate.get('enabled', True):
                 donate_notifier_tx = GenericTxNotifier(d, d.cfg.tx.donate, tx_types=(ThorTxType.TYPE_DONATE,))
                 volume_filler.subscribe(donate_notifier_tx)
-                donate_notifier_tx.subscribe(self.deps.alert_presenter)
+                donate_notifier_tx.subscribe(d.alert_presenter)
 
             if d.cfg.tx.swap.get('enabled', True):
                 swap_notifier_tx = GenericTxNotifier(d, d.cfg.tx.swap, tx_types=(ThorTxType.TYPE_SWAP,))
                 volume_filler.subscribe(swap_notifier_tx)
-                swap_notifier_tx.subscribe(self.deps.alert_presenter)
+                swap_notifier_tx.subscribe(d.alert_presenter)
 
             if d.cfg.tx.refund.get('enabled', True):
                 refund_notifier_tx = GenericTxNotifier(d, d.cfg.tx.refund, tx_types=(ThorTxType.TYPE_REFUND,))
                 volume_filler.subscribe(refund_notifier_tx)
-                refund_notifier_tx.subscribe(self.deps.alert_presenter)
+                refund_notifier_tx.subscribe(d.alert_presenter)
 
             if d.cfg.tx.switch.get('enabled', True):
                 switch_notifier_tx = SwitchTxNotifier(d, d.cfg.tx.switch, tx_types=(ThorTxType.TYPE_SWITCH,))
                 volume_filler.subscribe(switch_notifier_tx)
-                switch_notifier_tx.subscribe(self.deps.alert_presenter)
+                switch_notifier_tx.subscribe(d.alert_presenter)
 
             # for tracking 24h ILP payouts
             ilp_summer = ILPSummer(d)
