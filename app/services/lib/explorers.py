@@ -37,6 +37,12 @@ def get_explorer_url_to_address(network_id, pool_or_chain: str, address: str):
         return url if is_live else f'{url}+test'
 
 
+def add_0x(tx_id: str):
+    if not tx_id.startswith('0x') and not tx_id.startswith('0X'):
+        tx_id = '0x' + tx_id
+    return tx_id
+
+
 def get_explorer_url_to_tx(network_id, pool_or_chain: str, tx_id: str):
     chain = Asset(pool_or_chain).first_filled_component
 
@@ -51,8 +57,7 @@ def get_explorer_url_to_tx(network_id, pool_or_chain: str, tx_id: str):
         return f'https://explorer.binance.org/tx/{tx_id}' if is_live else \
             f'https://testnet-explorer.binance.org/tx/{tx_id}'
     elif chain == Chains.ETH:
-        if not tx_id.startswith('0x') and not tx_id.startswith('0X'):
-            tx_id = '0x' + tx_id
+        tx_id = add_0x(tx_id)
         return f'https://etherscan.io/tx/{tx_id}' if is_live else \
             f'https://ropsten.etherscan.io/tx/{tx_id}'
     elif chain == Chains.BTC:
@@ -67,7 +72,8 @@ def get_explorer_url_to_tx(network_id, pool_or_chain: str, tx_id: str):
     elif chain == Chains.DOGE:
         return f'https://dogechain.info/tx/{tx_id.lower()}'
     elif chain == Chains.AVAX:
-        return f'https://snowtrace.io/tx/{tx_id.lower()}'
+        tx_id = add_0x(tx_id.lower())
+        return f'https://snowtrace.io/tx/{tx_id}'
     elif chain == Chains.ATOM:
         return f'https://www.mintscan.io/cosmos/txs/{tx_id.upper()}'
     else:
