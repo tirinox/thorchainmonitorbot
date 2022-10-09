@@ -1,16 +1,19 @@
 import asyncio
+from typing import List
 
 from web3 import Web3
 
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.volume_filler import VolumeFillerUpdater
-from services.jobs.volume_recorder import VolumeRecorder
-from services.lib.constants import Chains
+from services.lib.constants import Chains, ETH_SYMBOL, AVAX_SYMBOL, NetworkIdents
+from services.lib.delegates import WithDelegates, INotified
+from services.lib.midgard.parser import MidgardParserV2
+from services.lib.utils import load_json
 from services.lib.w3.aggregator import AggregatorDataExtractor
 from services.lib.w3.erc20_contract import ERC20Contract
 from services.lib.w3.router_contract import TCRouterContract
 from services.lib.w3.token_list import TokenListCached, StaticTokenList
-from services.models.tx import ThorTxType
+from services.models.tx import ThorTxType, ThorTxExtended
 from services.notify.types.tx_notify import GenericTxNotifier
 from tools.lib.lp_common import LpAppFramework
 
@@ -105,6 +108,30 @@ async def demo_decoder(app: LpAppFramework):
     #  3) full debug pipeline => Midgard => Detector => Notifier => TG message test
 
 
+class FilterTxMiddleware(WithDelegates, INotified):
+    @staticmethod
+    def is_ok_tx(tx: ThorTxExtended):
+        assets = (ETH_SYMBOL, AVAX_SYMBOL)
+        if inp := tx.first_input_tx:
+            if inp.first_asset in assets:
+                return True
+        if outp := tx.first_output_tx:
+            if outp.first_asset in assets:
+                return True
+        return False
+
+    async def on_data(self, sender, txs: List[ThorTxExtended]):
+        txs = [tx for tx in txs if self.is_ok_tx(tx)]
+        await self.pass_data_to_listeners(txs, sender)
+
+
+def load_sample_txs(name):
+    data = load_json(name)
+    parser = MidgardParserV2(network_id=NetworkIdents.MAINNET)
+    r = parser.parse_tx_response(data)
+    return [ThorTxExtended.load_from_thor_tx(tx) for tx in r.txs]
+
+
 async def demo_full_tx_pipeline(app: LpAppFramework):
     d = app.deps
 
@@ -116,14 +143,22 @@ async def demo_full_tx_pipeline(app: LpAppFramework):
     volume_filler = VolumeFillerUpdater(d)
     aggregator.subscribe(volume_filler)
 
+    filter_middleware = FilterTxMiddleware()
+    volume_filler.subscribe(filter_middleware)
+
     swap_notifier_tx = GenericTxNotifier(d, d.cfg.tx.swap, tx_types=(ThorTxType.TYPE_SWAP,))
     swap_notifier_tx.curve = None
     swap_notifier_tx.min_usd_total = 0.0
-    volume_filler.subscribe(swap_notifier_tx)
+    filter_middleware.subscribe(swap_notifier_tx)
+
     swap_notifier_tx.subscribe(d.alert_presenter)
 
     # run the pipeline!
-    await fetcher_tx.run()
+    # await fetcher_tx.run()
+
+    txs = load_sample_txs('tests/sample_data/example_avax_swap_in.json')
+    await fetcher_tx.pass_data_to_listeners(txs, fetcher_tx)
+    await asyncio.sleep(10)
 
 
 async def demo_avax(app: LpAppFramework):

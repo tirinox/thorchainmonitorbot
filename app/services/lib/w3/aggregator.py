@@ -9,6 +9,7 @@ from services.lib.money import Asset
 from services.lib.utils import WithLogger
 from services.lib.w3.aggr_contract import AggregatorContract
 from services.lib.w3.erc20_contract import ERC20Contract
+from services.lib.w3.resolver import AggregatorResolver, DEFAULT_AGGREGATOR_RESOLVER_PATH
 from services.lib.w3.router_contract import TCRouterContract
 from services.lib.w3.token_list import StaticTokenList, TokenListCached
 from services.lib.w3.token_record import TokenRecord, AmountToken, SwapInOut
@@ -30,12 +31,14 @@ class AggregatorSingleChain:
         self.token_list = TokenListCached(self.deps.db, self.w3, static_list)
         self.router = TCRouterContract(self.w3)
         self.aggregator = AggregatorContract(self.w3)
+        self.aggregator_resolver = AggregatorResolver(DEFAULT_AGGREGATOR_RESOLVER_PATH)
 
     @staticmethod
-    def make_pair(amount, token_info: TokenRecord):
+    def make_pair(amount, token_info: TokenRecord, aggr_name):
         return AmountToken(
             amount / 10 ** token_info.decimals,
             token_info,
+            aggr_name
         )
 
     async def decode_swap_out(self, tx_hash) -> Optional[AmountToken]:
@@ -53,7 +56,7 @@ class AggregatorSingleChain:
         amount = final_transfer['args']['value']
 
         token_info = await self.token_list.resolve_token(swap_out_call.target_token)
-        return self.make_pair(amount, token_info)
+        return self.make_pair(amount, token_info, '')
 
     async def decode_swap_in(self, tx_hash) -> Optional[AmountToken]:
         tx = await self.w3.get_transaction(tx_hash)
@@ -62,7 +65,7 @@ class AggregatorSingleChain:
             raise TransactionNotFound('this is not swap in')
 
         token_info = await self.token_list.resolve_token(swap_in_call.from_token)
-        return self.make_pair(swap_in_call.amount, token_info)
+        return self.make_pair(swap_in_call.amount, token_info, '')
 
 
 class AggregatorDataExtractor(WithLogger, INotified, WithDelegates):
@@ -74,6 +77,10 @@ class AggregatorDataExtractor(WithLogger, INotified, WithDelegates):
         self.asset_to_aggr = {
             Chains.l1_asset(chain): AggregatorSingleChain(deps, chain) for chain in suitable_chains
         }
+
+    @property
+    def assets_to_trigger(self):
+        return list(self.asset_to_aggr.keys())
 
     @staticmethod
     def chain_from_l1_asset(asset: str):
@@ -88,7 +95,7 @@ class AggregatorDataExtractor(WithLogger, INotified, WithDelegates):
 
     async def _try_detect_aggregator(self, tx: ThorSubTx, is_in):
         if not tx:
-            return 
+            return
         tx_hash, chain = '??', '??'
         tag = 'In' if is_in else 'Out'
         try:

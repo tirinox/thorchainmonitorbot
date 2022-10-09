@@ -16,6 +16,7 @@ CONTRACT_DATA_BASE_PATH = './data/token_list'
 class AmountToken(NamedTuple):
     amount: float
     token: TokenRecord
+    aggr_name: str = ''
 
 
 class SwapInOut(NamedTuple):

@@ -1,0 +1,54 @@
+{
+	"actions": [
+		{
+			"date": "1661860282048211843",
+			"height": "7110802",
+			"in": [
+				{
+					"address": "thor16c8rdla92cw0ptxg8g3hpslmapgp45eklu0x9d",
+					"coins": [
+						{
+							"amount": "200000000000",
+							"asset": "THOR.RUNE"
+						}
+					],
+					"txID": "298B902CE5E9C5C1CCDE2D7F12487BBE2388A19360BDA014D316C2F4AEFC58F3"
+				}
+			],
+			"metadata": {
+				"swap": {
+					"affiliateAddress": "5e8468044",
+					"affiliateFee": "0",
+					"liquidityFee": "67404453",
+					"memo": "=:ETH.ETH:0x1e240f76bcf08219e70b2c3c20f20f5ec4b43585::::FC4414199:5e8468044:17596390360380000000000",
+					"networkFees": [
+						{
+							"amount": "720000",
+							"asset": "ETH.ETH"
+						}
+					],
+					"swapSlip": "3",
+					"swapTarget": "0"
+				}
+			},
+			"out": [
+				{
+					"address": "0x1e240f76bcf08219e70b2c3c20f20f5ec4b43585",
+					"coins": [
+						{
+							"amount": "247612375",
+							"asset": "ETH.ETH"
+						}
+					],
+					"txID": "926BC5212732BB863EE77D40A504BCA9583CF6D2F07090E2A3C468CFE6947357"
+				}
+			],
+			"pools": [
+				"ETH.ETH"
+			],
+			"status": "success",
+			"type": "swap"
+		}
+	],
+	"count": "1"
+}

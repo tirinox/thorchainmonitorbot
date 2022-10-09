@@ -12,8 +12,8 @@ PATH = './sample_data'
 DIV = THOR_DIVIDER
 
 
-def inner_example_tx_gen(name):
-    data = load_json(os.path.join(PATH, name))
+def inner_example_tx_gen(name, directory=PATH):
+    data = load_json(os.path.join(directory, name))
     p = MidgardParserV2(network_id=NetworkIdents.CHAOSNET_MULTICHAIN)
     return p.parse_tx_response(data)
 
@@ -166,4 +166,3 @@ def test_synth(example_tx_gen):
 
     non_synth_tx = example_tx_gen('synth_swap.json').txs[2]
     assert not non_synth_tx.is_synth_involved
-

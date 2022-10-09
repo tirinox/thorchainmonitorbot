@@ -12,6 +12,8 @@ class AggregatorRecord(NamedTuple):
 
 AggregatorSearchResult = Union[AggregatorRecord, List[AggregatorRecord], None]
 
+DEFAULT_AGGREGATOR_RESOLVER_PATH = './data/token_list/aggregator_list.txt'
+
 
 # Use that source: https://gitlab.com/thorchain/thornode/-/blob/develop/x/thorchain/aggregators/dex_mainnet.go
 class AggregatorResolver:

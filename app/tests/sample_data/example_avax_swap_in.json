@@ -1,0 +1,54 @@
+{
+	"actions": [
+		{
+			"date": "1665168850066048793",
+			"height": "7676960",
+			"in": [
+				{
+					"address": "0xfb30febb4a9fa5801ada640e6b14bd56d0a5457e",
+					"coins": [
+						{
+							"amount": "18990758",
+							"asset": "AVAX.AVAX"
+						}
+					],
+					"txID": "C2483005204F9B4D41D15024913807BC8D2A1714C55FAE0B5F23B1D71D6AFFE3"
+				}
+			],
+			"metadata": {
+				"swap": {
+					"affiliateAddress": "t",
+					"affiliateFee": "0",
+					"liquidityFee": "3264",
+					"memo": "=:THOR.RUNE:thor1w2p7nya3880s04adt7d4498lsz6762lg2vuke5:177582863:t:0",
+					"networkFees": [
+						{
+							"amount": "2000000",
+							"asset": "THOR.RUNE"
+						}
+					],
+					"swapSlip": "0",
+					"swapTarget": "177582863"
+				}
+			},
+			"out": [
+				{
+					"address": "thor1w2p7nya3880s04adt7d4498lsz6762lg2vuke5",
+					"coins": [
+						{
+							"amount": "200668983",
+							"asset": "THOR.RUNE"
+						}
+					],
+					"txID": ""
+				}
+			],
+			"pools": [
+				"AVAX.AVAX"
+			],
+			"status": "success",
+			"type": "swap"
+		}
+	],
+	"count": "1"
+}

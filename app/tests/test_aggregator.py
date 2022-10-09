@@ -4,7 +4,7 @@ from services.lib.config import Config
 from services.lib.constants import Chains
 from services.lib.utils import str_to_bytes
 from services.lib.w3.aggr_contract import AggregatorContract
-from services.lib.w3.resolver import AggregatorResolver
+from services.lib.w3.resolver import AggregatorResolver, DEFAULT_AGGREGATOR_RESOLVER_PATH
 from services.lib.w3.router_contract import TCRouterContract
 from services.lib.w3.token_list import StaticTokenList
 from services.lib.w3.web3_helper import Web3Helper
@@ -12,7 +12,7 @@ from services.lib.w3.web3_helper import Web3Helper
 
 @pytest.fixture(scope='module')
 def aggr() -> AggregatorResolver:
-    return AggregatorResolver('../data/token_list/aggregator_list.txt')
+    return AggregatorResolver('.' + DEFAULT_AGGREGATOR_RESOLVER_PATH)
 
 
 def test_loading(aggr):
