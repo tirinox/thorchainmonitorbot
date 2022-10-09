@@ -2,12 +2,16 @@ import asyncio
 
 from web3 import Web3
 
+from services.jobs.fetch.tx import TxFetcher
+from services.jobs.volume_filler import VolumeFillerUpdater
+from services.jobs.volume_recorder import VolumeRecorder
 from services.lib.constants import Chains
 from services.lib.w3.aggregator import AggregatorDataExtractor
 from services.lib.w3.erc20_contract import ERC20Contract
 from services.lib.w3.router_contract import TCRouterContract
 from services.lib.w3.token_list import TokenListCached, StaticTokenList
-from services.lib.w3.web3_helper import Web3HelperCached
+from services.models.tx import ThorTxType
+from services.notify.types.tx_notify import GenericTxNotifier
 from tools.lib.lp_common import LpAppFramework
 
 
@@ -95,9 +99,34 @@ async def demo_decoder(app: LpAppFramework):
     # swap in
     print(f'Swap In? {r}')
 
+    # todo:
+    #  1) make Swap out using Avax => get tx id => test it here
+    #  2) edit notificaiton text
+    #  3) full debug pipeline => Midgard => Detector => Notifier => TG message test
+
+
+async def demo_full_tx_pipeline(app: LpAppFramework):
+    d = app.deps
+
+    fetcher_tx = TxFetcher(d)
+
+    aggregator = AggregatorDataExtractor(d)
+    fetcher_tx.subscribe(aggregator)
+
+    volume_filler = VolumeFillerUpdater(d)
+    aggregator.subscribe(volume_filler)
+
+    swap_notifier_tx = GenericTxNotifier(d, d.cfg.tx.swap, tx_types=(ThorTxType.TYPE_SWAP,))
+    swap_notifier_tx.curve = None
+    swap_notifier_tx.min_usd_total = 0.0
+    volume_filler.subscribe(swap_notifier_tx)
+    swap_notifier_tx.subscribe(d.alert_presenter)
+
+    # run the pipeline!
+    await fetcher_tx.run()
+
 
 async def demo_avax(app: LpAppFramework):
-    # https://api.avax.network/ext/bc/C/rpc
     w3 = Web3(Web3.HTTPProvider(f'https://api.avax.network/ext/bc/C/rpc'))
     print(w3.isConnected())
 
@@ -109,7 +138,8 @@ async def run():
     app = LpAppFramework()
     async with app(brief=True):
         # await demo_avax(app)
-        await demo_decoder(app)
+        # await demo_decoder(app)
+        await demo_full_tx_pipeline(app)
 
 
 if __name__ == '__main__':
