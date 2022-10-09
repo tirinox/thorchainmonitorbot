@@ -35,13 +35,6 @@ async def demo_process_events(w3):
     print(r)
 
 
-async def demo_decode_swap_in(deps, tx_hash):
-    aggr = AggregatorDataExtractor(deps)
-
-    amt = await aggr.decode_swap_in(tx_hash, Chains.ETH)
-    print(f'Swap IN: {amt}')
-
-
 def get_eth_token_list():
     return StaticTokenList(StaticTokenList.DEFAULT_LISTS[Chains.ETH], Chains.web3_chain_id(Chains.ETH))
 
@@ -49,13 +42,6 @@ def get_eth_token_list():
 async def get_eth_token_info(contract_address, db, w3):
     token_list = TokenListCached(db, w3, get_eth_token_list())
     return await token_list.resolve_token(contract_address)
-
-
-async def demo_decode_swap_out(deps, tx_hash):
-    aggr = AggregatorDataExtractor(deps)
-    amt = await aggr.decode_swap_out(tx_hash, Chains.ETH)
-
-    print(f'Swap OUT: {amt}')
 
 
 async def my_test_caching_token_list(db, w3):
@@ -90,19 +76,16 @@ async def my_test_caching_token_list(db, w3):
 
 
 async def demo_decoder(app: LpAppFramework):
-    w3 = Web3HelperCached(app.deps.cfg, app.deps.db)
-
-    await my_test_caching_token_list(app.deps.db, w3)
+    # await my_test_caching_token_list(app.deps.db, w3)
 
     aggr = AggregatorDataExtractor(app.deps)
+    aggr_eth = aggr.asset_to_aggr[Chains.l1_asset(Chains.ETH)]
 
-    r = await aggr.decode_swap_in('0xD45F100F3F48C786720167F5705B9D6736C195F028B5293FE93159DF923DE7C7',
-                                  Chains.ETH)
+    r = await aggr_eth.decode_swap_in('0xD45F100F3F48C786720167F5705B9D6736C195F028B5293FE93159DF923DE7C7')
     # swap in
     print(f'Swap In? {r}')
 
-    r = await aggr.decode_swap_out('0x926BC5212732BB863EE77D40A504BCA9583CF6D2F07090E2A3C468CFE6947357',
-                                   Chains.ETH)
+    r = await aggr_eth.decode_swap_out('0x926BC5212732BB863EE77D40A504BCA9583CF6D2F07090E2A3C468CFE6947357')
     # swap out
     print(f'Swap Out? {r}')
 
@@ -112,11 +95,15 @@ async def demo_avax(app: LpAppFramework):
     w3 = Web3(Web3.HTTPProvider(f'https://api.avax.network/ext/bc/C/rpc'))
     print(w3.isConnected())
 
+    tx = w3.eth.get_transaction('0xc2483005204f9b4d41d15024913807bc8d2a1714c55fae0b5f23b1d71d6affe3')
+    print(tx)
+
 
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
-        await demo_avax(app)
+        # await demo_avax(app)
+        await demo_decoder(app)
 
 
 if __name__ == '__main__':

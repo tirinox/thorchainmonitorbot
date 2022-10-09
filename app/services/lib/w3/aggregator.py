@@ -38,7 +38,7 @@ class AggregatorSingleChain:
             token_info,
         )
 
-    async def decode_swap_out(self, tx_hash, chain: str) -> Optional[AmountToken]:
+    async def decode_swap_out(self, tx_hash) -> Optional[AmountToken]:
         tx = await self.w3.get_transaction(tx_hash)
 
         swap_out_call = self.router.decode_input(tx['input'])
@@ -55,7 +55,7 @@ class AggregatorSingleChain:
         token_info = await self.token_list.resolve_token(swap_out_call.target_token)
         return self.make_pair(amount, token_info)
 
-    async def decode_swap_in(self, tx_hash, chain: str) -> Optional[AmountToken]:
+    async def decode_swap_in(self, tx_hash) -> Optional[AmountToken]:
         tx = await self.w3.get_transaction(tx_hash)
         swap_in_call = self.aggregator.decode_input(tx['input'])
         if not swap_in_call:
@@ -99,9 +99,9 @@ class AggregatorDataExtractor(WithLogger, INotified, WithDelegates):
 
             chain = aggr.chain
             if is_in:
-                return await aggr.decode_swap_in(tx_hash, chain)
+                return await aggr.decode_swap_in(tx_hash)
             else:
-                return await aggr.decode_swap_out(tx_hash, chain)
+                return await aggr.decode_swap_out(tx_hash)
         except TransactionNotFound:
             self.logger.info(f'{tx_hash} ({chain}) is not Swap {tag}.')
         except (ValueError, AttributeError, TypeError, LookupError):

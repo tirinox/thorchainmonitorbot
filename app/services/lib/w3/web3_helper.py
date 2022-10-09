@@ -16,8 +16,9 @@ class Web3Helper(WithLogger):
         return f'[{self.chain}] '
 
     def __init__(self, cfg: Config, chain: str):
-        super().__init__()
         self.chain = chain
+        super().__init__()
+
         self.cache_expire = cfg.as_interval('web3.cache_expire', '30d')
         self._retries = cfg.as_int('web3.retries', 3)
         self._retry_wait = cfg.as_interval('web3.retry_wait', '3s')
@@ -56,8 +57,8 @@ class Web3HelperCached(Web3Helper):
     def __init__(self, chain, cfg: Config, db: DB):
         super().__init__(cfg, chain)
         self.db = db
-        self._tx_cache = Cache(db, 'W3:Cache:TX')
-        self._tx_receipt_cache = Cache(db, 'W3:Cache:TXReceipt')
+        self._tx_cache = Cache(db, f'W3:Cache:{chain}:TX')
+        self._tx_receipt_cache = Cache(db, f'W3:Cache:{chain}:TXReceipt')
 
     async def get_transaction(self, tx_id):
         if previous := await self._tx_cache.load(tx_id):
