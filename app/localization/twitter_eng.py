@@ -97,8 +97,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         asset = Asset(tx.first_pool).name
 
-        user_name = name_map.by_address.get(tx.sender_address, short_address(tx.sender_address))
-        content = f'{user_name}: '
+        content = f'{self.link_to_address(tx.sender_address, name_map)}: '
 
         if tx.type in (ThorTxType.TYPE_ADD_LIQUIDITY, ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_DONATE):
             if tx.affiliate_fee > 0:
@@ -702,7 +701,7 @@ class TwitterEnglishLocalization(BaseLocalization):
                           ]])
         return text
 
-    def link_to_address(self, addr, chain=Chains.THOR, name_map=None):
+    def link_to_address(self, addr, name_map, chain=Chains.THOR):
         # without a link, just a caption
         name = name_map.by_address.get(addr)
         caption = add_thor_suffix(name) if name else short_address(addr)

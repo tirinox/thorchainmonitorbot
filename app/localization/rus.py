@@ -316,8 +316,7 @@ class RussianLocalization(BaseLocalization):
 
         asset = Asset(tx.first_pool).name
 
-        user_name = name_map.by_address.get(tx.sender_address, short_address(tx.sender_address))
-        content = f'{user_name}: '
+        content = f''
 
         if tx.type in (ThorTxType.TYPE_ADD_LIQUIDITY, ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_DONATE):
             if tx.affiliate_fee > 0:
@@ -387,7 +386,7 @@ class RussianLocalization(BaseLocalization):
                 f"Комиссия пулам: {bold(pretty_dollar(l_fee_usd))}{slip_mark}"
             )
 
-        blockchain_components = [f"Пользователь: {self.link_to_explorer_user_address_for_tx(tx)}"]
+        blockchain_components = [f"Пользователь: {self.link_to_explorer_user_address_for_tx(tx, name_map)}"]
 
         if tx.in_tx:
             in_links = self.links_to_txs(tx.in_tx, tx.tx_hash)

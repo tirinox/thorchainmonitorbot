@@ -3,6 +3,7 @@ import os
 
 from main import App
 from services.dialog.telegram.telegram import telegram_send_message_basic, TG_TEST_USER
+from services.dialog.twitter.twitter_bot import TwitterBotMock
 from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
 from services.jobs.fetch.node_info import NodeInfoFetcher
@@ -32,6 +33,7 @@ class LpAppFramework(App):
         d.rune_market_fetcher = RuneMarketInfoFetcher(d)
         d.name_service = NameService(d.db, d.cfg, d.midgard_connector)
         d.loc_man.set_name_service(d.name_service)
+        d.twitter_bot = TwitterBotMock(d.cfg)
 
         self.rune_yield: AsgardConsumerConnectorBase
         self.rune_yield_class = rune_yield_class

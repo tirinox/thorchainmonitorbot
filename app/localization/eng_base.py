@@ -369,12 +369,9 @@ class BaseLocalization(ABC):  # == English
             result += self.TEXT_MORE_TXS.format(n=extra_n)
         return result
 
-    def link_to_explorer_user_address_for_tx(self, tx: ThorTxExtended):
+    def link_to_explorer_user_address_for_tx(self, tx: ThorTxExtended, name_map):
         address, _ = tx.sender_address_and_chain
-        return link(
-            get_explorer_url_to_address(self.cfg.network_id, Chains.THOR, address),
-            short_address(address)
-        )
+        return self.link_to_address(tx.sender_address, name_map)  # Chains.THOR is always here, that is deliberate!
 
     @staticmethod
     def lp_tx_calculations(usd_per_rune, pool_info: PoolInfo, tx: ThorTxExtended):
@@ -470,8 +467,7 @@ class BaseLocalization(ABC):  # == English
 
         asset = Asset(tx.first_pool).name
 
-        user_name = name_map.by_address.get(tx.sender_address, short_address(tx.sender_address))
-        content = f'{user_name}: '
+        content = f''
 
         if tx.type in (ThorTxType.TYPE_ADD_LIQUIDITY, ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_DONATE):
             if tx.affiliate_fee > 0:
@@ -539,7 +535,7 @@ class BaseLocalization(ABC):  # == English
                 f"liquidity fee: {bold(short_dollar(l_fee_usd))}{slip_mark}"
             )
 
-        blockchain_components = [f"User: {self.link_to_explorer_user_address_for_tx(tx)}"]
+        blockchain_components = [f"User: {self.link_to_explorer_user_address_for_tx(tx, name_map)}"]
 
         if tx.in_tx:
             in_links = self.links_to_txs(tx.in_tx, tx.tx_hash)
@@ -1964,7 +1960,7 @@ class BaseLocalization(ABC):  # == English
     def _is_my_address_tag(address, my_addresses):
         return ' ★' if my_addresses and address in my_addresses else ''
 
-    def link_to_address(self, addr, chain=Chains.THOR, name_map=None):
+    def link_to_address(self, addr, name_map, chain=Chains.THOR):
         url = get_explorer_url_to_address(self.cfg.network_id, chain, addr)
         name = name_map.by_address.get(addr)
         caption = add_thor_suffix(name) if name else short_address(addr)
@@ -1981,9 +1977,8 @@ class BaseLocalization(ABC):  # == English
             usd_amt = ''
 
         # Addresses
-        from_my = self.link_to_address(t.from_addr, name_map=name_map) + self._is_my_address_tag(t.from_addr,
-                                                                                                 my_addresses)
-        to_my = self.link_to_address(t.to_addr, name_map=name_map) + self._is_my_address_tag(t.to_addr, my_addresses)
+        from_my = self.link_to_address(t.from_addr, name_map) + self._is_my_address_tag(t.from_addr, my_addresses)
+        to_my = self.link_to_address(t.to_addr, name_map) + self._is_my_address_tag(t.to_addr, my_addresses)
 
         # Comment
         comment = ''
