@@ -46,22 +46,22 @@ class AggregatorResolver:
                         self.by_chain[chain] = {}
                     self.by_chain[chain][aggr_address] = record
                     self.by_name[aggr_name] = record
-                    self._table[aggr_address] = record
+                    self._table[aggr_address.lower()] = record
 
     def search_aggregator_address(self, query: str, ambiguity=False) -> AggregatorSearchResult:
-        return self._search(query, self._table.keys(), self._table, ambiguity)
+        return self._search(query, self._table, ambiguity)
 
     def search_by_name(self, query, ambiguity=False) -> AggregatorSearchResult:
-        return self._search(query, self.by_name.keys(), self.by_name, ambiguity)
+        return self._search(query, self.by_name, ambiguity)
 
     @staticmethod
-    def _search(query, keys, dic, ambiguity) -> AggregatorSearchResult:
-        variants = fuzzy_search(query, keys, f=str.lower)
+    def _search(query, dic, ambiguity_check) -> AggregatorSearchResult:
+        variants = fuzzy_search(query, dic.keys(), f=str.lower)
         if not variants:
             return None
 
         if len(variants) > 1:
-            if ambiguity:
+            if ambiguity_check:
                 raise ValueError('Aggregator search ambiguity!')
             else:
                 return [dic.get(v) for v in variants]
