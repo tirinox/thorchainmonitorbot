@@ -316,7 +316,9 @@ class RussianLocalization(BaseLocalization):
 
         asset = Asset(tx.first_pool).name
 
-        content = ''
+        user_name = name_map.by_address.get(tx.sender_address, short_address(tx.sender_address))
+        content = f'{user_name}: '
+
         if tx.type in (ThorTxType.TYPE_ADD_LIQUIDITY, ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_DONATE):
             if tx.affiliate_fee > 0:
                 aff_fee_usd = tx.get_affiliate_fee_usd(usd_per_rune)
@@ -361,12 +363,12 @@ class RussianLocalization(BaseLocalization):
                            f'({killed_percent_str} или {killed_usd_str})!'
         elif tx.type == ThorTxType.TYPE_REFUND:
             reason = shorten_text(tx.meta_refund.reason, 180)
-            content = (
-                    self.tx_convert_string(tx, usd_per_rune) +
+            content += (
+                    self.format_swap_route(tx, usd_per_rune) +
                     f"\nПричина: {pre(reason)}"
             )
         elif tx.type == ThorTxType.TYPE_SWAP:
-            content = self.tx_convert_string(tx, usd_per_rune)
+            content += self.format_swap_route(tx, usd_per_rune)
             slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
             l_fee_usd = tx.meta_swap.liquidity_fee_rune_float * usd_per_rune
 

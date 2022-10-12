@@ -153,11 +153,11 @@ class TwitterEnglishLocalization(BaseLocalization):
         elif tx.type == ThorTxType.TYPE_REFUND:
             reason = shorten_text(tx.meta_refund.reason, 30)
             content += (
-                    self.tx_convert_string(tx, usd_per_rune) +
+                    self.format_swap_route(tx, usd_per_rune) +
                     f"\nReason: {reason}.."
             )
         elif tx.type == ThorTxType.TYPE_SWAP:
-            content += self.tx_convert_string(tx, usd_per_rune)
+            content += self.format_swap_route(tx, usd_per_rune)
             slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
             l_fee_usd = tx.meta_swap.liquidity_fee_rune_float * usd_per_rune
 

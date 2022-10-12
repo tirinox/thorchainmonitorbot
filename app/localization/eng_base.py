@@ -401,15 +401,14 @@ class BaseLocalization(ABC):  # == English
         return bold(short_money(amt))
 
     def format_aggregator(self, a: AmountToken):
-        aggr_name = f' via {a.aggr_name}' if a.aggr_name else ''
         chain = ''
         if a.token.chain_id == Chains.web3_chain_id(Chains.ETH):
             chain = Chains.ETH
         elif a.token.chain_id == Chains.web3_chain_id(Chains.AVAX):
             chain = Chains.AVAX
-        return f'{self.format_op_amount(a.amount)} {chain}.{a.token.symbol}{aggr_name}'
+        return f'{self.format_op_amount(a.amount)} {chain}.{a.token.symbol}'
 
-    def tx_convert_string(self, tx: ThorTxExtended, usd_per_rune):
+    def format_swap_route(self, tx: ThorTxExtended, usd_per_rune):
         inputs = tx.get_asset_summary(in_only=True)
         outputs = tx.get_asset_summary(out_only=True)
 
@@ -421,13 +420,17 @@ class BaseLocalization(ABC):  # == English
 
         if dex.swap_in:
             route_components.append(self.format_aggregator(dex.swap_in))
+            if dex.swap_in.aggr_name:
+                route_components.append(dex.swap_in.aggr_name)
 
-        route_components.extend((input_str, output_str))
+        route_components.extend((input_str, '⚡', output_str))
 
         if dex.swap_out:
+            if dex.swap_out.aggr_name:
+                route_components.append(dex.swap_out.aggr_name)
             route_components.append(self.format_aggregator(dex.swap_out))
 
-        route_str = ' ➡️ '.join(route_components)
+        route_str = ' → '.join(route_components)
 
         return f"{route_str} ({short_dollar(tx.get_usd_volume(usd_per_rune))})"
 
@@ -467,7 +470,9 @@ class BaseLocalization(ABC):  # == English
 
         asset = Asset(tx.first_pool).name
 
-        content = ''
+        user_name = name_map.by_address.get(tx.sender_address, short_address(tx.sender_address))
+        content = f'{user_name}: '
+
         if tx.type in (ThorTxType.TYPE_ADD_LIQUIDITY, ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_DONATE):
             if tx.affiliate_fee > 0:
                 aff_fee_usd = tx.get_affiliate_fee_usd(usd_per_rune)
@@ -511,11 +516,11 @@ class BaseLocalization(ABC):  # == English
         elif tx.type == ThorTxType.TYPE_REFUND:
             reason = shorten_text(tx.meta_refund.reason, 180)
             content = (
-                    self.tx_convert_string(tx, usd_per_rune) +
+                    self.format_swap_route(tx, usd_per_rune) +
                     f"\nReason: {pre(reason)}"
             )
         elif tx.type == ThorTxType.TYPE_SWAP:
-            content = self.tx_convert_string(tx, usd_per_rune)
+            content = self.format_swap_route(tx, usd_per_rune)
             slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
             l_fee_usd = tx.meta_swap.liquidity_fee_rune_float * usd_per_rune
 
