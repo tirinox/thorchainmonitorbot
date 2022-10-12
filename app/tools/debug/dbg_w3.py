@@ -158,6 +158,10 @@ async def demo_full_tx_pipeline(app: LpAppFramework):
 
     txs = load_sample_txs('tests/sample_data/example_avax_swap_in.json')
     await fetcher_tx.pass_data_to_listeners(txs, fetcher_tx)
+
+    txs = load_sample_txs('tests/sample_data/example_eth_swap_out.json')
+    await fetcher_tx.pass_data_to_listeners(txs, fetcher_tx)
+
     await asyncio.sleep(10)
 
 

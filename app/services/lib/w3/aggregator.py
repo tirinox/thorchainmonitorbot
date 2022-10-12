@@ -50,13 +50,19 @@ class AggregatorSingleChain:
 
         token = ERC20Contract(self.w3, swap_out_call.target_token, self.token_list.chain_id)
 
+        aggr_name = ''
+        if swap_out_call.tc_aggregator:
+            record = self.aggregator_resolver.search_aggregator_address(swap_out_call.tc_aggregator)
+            if record:
+                aggr_name = record.name
+
         receipt_data = await self.w3.get_transaction_receipt(tx_hash)
         transfers = token.get_transfer_events_from_receipt(receipt_data, filter_by_receiver=swap_out_call.to_address)
         final_transfer = transfers[0]
         amount = final_transfer['args']['value']
 
         token_info = await self.token_list.resolve_token(swap_out_call.target_token)
-        return self.make_pair(amount, token_info, '')
+        return self.make_pair(amount, token_info, aggr_name)
 
     async def decode_swap_in(self, tx_hash) -> Optional[AmountToken]:
         tx = await self.w3.get_transaction(tx_hash)
@@ -64,8 +70,15 @@ class AggregatorSingleChain:
         if not swap_in_call:
             raise TransactionNotFound('this is not swap in')
 
+        aggr_name = ''
+        tx_to = tx.get('to')
+        if tx_to:
+            record = self.aggregator_resolver.search_aggregator_address(tx_to)
+            if record:
+                aggr_name = record.name
+
         token_info = await self.token_list.resolve_token(swap_in_call.from_token)
-        return self.make_pair(swap_in_call.amount, token_info, '')
+        return self.make_pair(swap_in_call.amount, token_info, aggr_name)
 
 
 class AggregatorDataExtractor(WithLogger, INotified, WithDelegates):
