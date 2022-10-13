@@ -21,7 +21,7 @@ thor:
   node:
     node_url: "https://thornode.ninerealms.com/"
     rpc_node_url: "https://rpc.ninerealms.com/"
-    backup_node_url: "https://thornode-archive.ninerealms.com"  # (!) new
+    backup_node_url: "https://thornode-archive.ninerealms.com"
 
   midgard:
     tries: 3
@@ -151,7 +151,7 @@ native_scanner:
     - "thor1g98cy3n9mmjrpn0sxmn63lztelera37n8n67c0"
     - "thor1v8ppstuf6e3x0r4glqc68d5jqcs2tf38cg2q6y"
 
-  user_counting: # (!) new
+  user_counting:
     exclude_addresses:
       - "thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt"
       - "thor17gw75axcnr8747pkanye45pnrwk7p9c3cqncsv"
@@ -218,7 +218,7 @@ tx:
   max_page_deep: 5
   max_tx_per_single_message: 6
 
-  announce_pending_after_blocks: 500  # (!) new
+  announce_pending_after_blocks: 500
 
   exclamation:
     fee_usd_limit: 3000
@@ -299,7 +299,7 @@ price:
   price_graph:
     default_period: 7d
 
-  cex_reference: # (!) new: bep2_reference -> cex_reference
+  cex_reference:
     cex: binance
     pair: USDT
 
@@ -356,7 +356,7 @@ price:
       enabled: true
       cooldown: 30m
 
-  volume: # (!) new
+  volume:
     record_tolerance: 1h
 
 
@@ -391,7 +391,7 @@ rune_transfer:
     - thor1uz4fpyd5f5d6p9pzk8lxyj4qxnwq6f9utg0e7k
     - thor1ty6h2ll07fqfzumphp6kq3hm4ps28xlm2l6kd6
     - thor1cqg8pyxnq03d88cl3xfn5wzjkguw5kh9enwte4
-    - thor1jw0nhlmj4lv83dwhfknqnw6tmlvgw4xyf6rgd7  # (!) new
+    - thor1jw0nhlmj4lv83dwhfknqnw6tmlvgw4xyf6rgd7
     - thor1hy2ka6xmqjfcwagtplyttayug4eqpqhu0sdu6r
     - thor15nzfs98pz8qsuvpuvq4eepe9n4rhsp4pp0g84g
     - thor15h7uv2339vdzt2a6qsjf6uh5zc06sed7szvze5
@@ -464,8 +464,8 @@ node_info:
     upgrade_progress: # if not all act. nodes run same version, show upgrade progress every cooldown
       enabled: true
       cooldown: 2h
-      minimum_nodes: 4  # (!) new
-      minimum_progress_step_percent: 5  # (!) new
+      minimum_nodes: 4
+      minimum_progress_step_percent: 5
 
 
 constants:
@@ -512,6 +512,6 @@ blockchain:
     ETH: 14s
 
 
-supply: # (!) new
+supply:
   enabled: true
   period: 7d
