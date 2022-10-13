@@ -1,7 +1,7 @@
 import asyncio
 from typing import Optional
 
-from discord import Client, File
+from discord import Client, File, Intents
 from markdownify import markdownify
 
 from services.lib.config import Config
@@ -17,7 +17,10 @@ class DiscordBot:
         self.logger.info(repr(message))
 
     def __init__(self, cfg: Config, sticker_downloader):
-        self.client = Client()
+        intents = Intents.default()
+        intents.typing = False
+
+        self.client = Client(intents=intents)
         self.client.event(self.on_ready)
         self.client.event(self.on_message)
         self.logger = class_logger(self)
