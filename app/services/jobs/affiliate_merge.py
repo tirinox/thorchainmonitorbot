@@ -43,7 +43,7 @@ class AffiliateTXMerger(WithLogger):
             return a_fee
 
     def merge_same_txs(self, tx1: ThorTx, tx2: ThorTx) -> ThorTx:
-        if tx1.type != tx2.type or tx1.pools != tx2.pools:
+        if tx1.type != tx2.type:
             self.logger.warning('Same tx data mismatch, continuing...')
             return tx1
 
@@ -57,6 +57,8 @@ class AffiliateTXMerger(WithLogger):
                 result_coins = result_tx.in_tx[in_i].coins
                 for coin_i, other_coin in enumerate(other_in.coins):
                     result_coins[coin_i] = ThorCoin.merge_two(result_coins[coin_i], other_coin)
+
+            result_tx.pools = result_tx.pools if len(result_tx.pools) > len(other_tx.pools) else other_tx.pools
 
             # merge meta
             result_tx.meta_swap = ThorMetaSwap.merge_two(result_tx.meta_swap, other_tx.meta_swap)

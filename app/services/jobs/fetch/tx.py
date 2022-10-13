@@ -32,9 +32,13 @@ class TxFetcher(BaseFetcher):
 
         self.progress_tracker: Optional[tqdm] = None
 
+
     async def fetch(self):
         await self.deps.db.get_redis()
         txs = await self._fetch_unseen_txs()
+
+        txs = self.tx_merger.merge_affiliate_txs(txs)
+
         if txs:
             self.logger.info(f'New tx to analyze: {len(txs)}')
 
@@ -163,10 +167,8 @@ class TxFetcher(BaseFetcher):
 
             all_txs += unseen_new_txs
 
-        all_txs = self.tx_merger.merge_affiliate_txs(all_txs)
-
-        # fixme: remove
-        self.logger.info(f'Pending: {len(pending_txs)}')
+        if pending_txs:
+            self.logger.info(f'Pending: {len(pending_txs)}')
 
         return all_txs
 

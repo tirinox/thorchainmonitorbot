@@ -8,7 +8,7 @@ from services.lib.texts import sum_and_str
 from services.lib.w3.token_record import SwapInOut
 from services.models.cap_info import ThorCapInfo
 from services.models.lp_info import LPAddress
-from services.models.pool_info import PoolInfo
+from services.models.pool_info import PoolInfo, PoolInfoMap
 
 
 class ThorTxType:
@@ -87,6 +87,7 @@ class ThorMetaSwap:
     trade_slip: str
     trade_target: str
     affiliate_fee: float = 0.0
+
     # todo: add aff address
 
     @classmethod
@@ -464,22 +465,35 @@ class ThorTxExtended(ThorTx):
         else:
             return self.rune_amount * f, self.asset_amount / self.asset_per_rune * f
 
-    def calc_full_rune_amount(self, asset_per_rune):
+    def calc_output_amount(self, pool_map: PoolInfoMap):
+        rune_sum = 0.0
+        for tx in self.out_tx:
+            for coin in tx.coins:
+                if is_rune(coin.asset):
+                    rune_sum += coin.amount_float
+                else:
+                    pool_info = pool_map.get(coin.asset)
+                    if pool_info:
+                        rune_sum += pool_info.runes_per_asset * coin.amount_float
+
+        return rune_sum
+
+    def calc_full_rune_amount(self, pool_map: PoolInfoMap = None):
         if self.type == ThorTxType.TYPE_SWITCH:
-            self.full_rune = self.rune_amount
+            r = self.rune_amount
         else:
+            pool_info: PoolInfo = pool_map.get(self.first_pool)
+            asset_per_rune = pool_info.asset_per_rune if pool_info else 0.0
+
             if self.type == ThorTxType.TYPE_SWAP:
-                if len(self.pools) == 1:  # simple swap
-                    self.full_rune = max(self.sum_of_rune(in_only=True), self.sum_of_rune(out_only=True))
-                else:  # double swap
-                    #  asset_per_rune = for 1st pool
-                    self.full_rune = self.sum_of_non_rune(in_only=True) / asset_per_rune if asset_per_rune else 0.0
+                r = self.calc_output_amount(pool_map)
             else:
                 if asset_per_rune == 0.0:
-                    self.full_rune = self.rune_amount
+                    r = self.rune_amount
                 else:
-                    self.full_rune = self.asset_amount / asset_per_rune + self.rune_amount
+                    r = self.asset_amount / asset_per_rune + self.rune_amount
             self.asset_per_rune = asset_per_rune
+        self.full_rune = r
         return self.full_rune
 
     def get_usd_volume(self, usd_per_rune):

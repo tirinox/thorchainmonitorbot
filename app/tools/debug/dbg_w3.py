@@ -155,14 +155,23 @@ async def demo_full_tx_pipeline(app: LpAppFramework):
 
     # run the pipeline!
     # await fetcher_tx.run()
+    #
+    # txs = load_sample_txs('tests/sample_data/example_avax_swap_in.json')
+    # await fetcher_tx.pass_data_to_listeners(txs, fetcher_tx)
+    #
+    # txs = load_sample_txs('tests/sample_data/example_eth_swap_out.json')
+    # await fetcher_tx.pass_data_to_listeners(txs, fetcher_tx)
 
-    txs = load_sample_txs('tests/sample_data/example_avax_swap_in.json')
-    await fetcher_tx.pass_data_to_listeners(txs, fetcher_tx)
-
-    txs = load_sample_txs('tests/sample_data/example_eth_swap_out.json')
-    await fetcher_tx.pass_data_to_listeners(txs, fetcher_tx)
+    await demo_run_example_file(fetcher_tx, 'example_swap_in_with_aff.json')
 
     await asyncio.sleep(10)
+
+
+async def demo_run_example_file(fetcher_tx, filename):
+    txs = load_sample_txs(f'tests/sample_data/{filename}')
+    txs = fetcher_tx.tx_merger.merge_affiliate_txs(txs)
+    txs = [ThorTxExtended.load_from_thor_tx(tx) for tx in txs]
+    await fetcher_tx.pass_data_to_listeners(txs, fetcher_tx)
 
 
 async def demo_avax(app: LpAppFramework):

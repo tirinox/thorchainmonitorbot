@@ -1,0 +1,118 @@
+{
+	"actions": [
+		{
+			"date": "1665634636331892944",
+			"height": "7757079",
+			"in": [
+				{
+					"address": "0x61e268135980c57160edb7fd98d40e1a61ab51aa",
+					"coins": [
+						{
+							"amount": "2933227",
+							"asset": "ETH.ETH"
+						}
+					],
+					"txID": "0A06E67BC6CFA7AF8DCA1A93A7DA0957C38E8F1028983E4586CCC99C2F436C18"
+				}
+			],
+			"metadata": {
+				"swap": {
+					"affiliateAddress": "t",
+					"affiliateFee": "30",
+					"liquidityFee": "11864",
+					"memo": "=:BTC.BTC:3PnAWrDDgQ8isDWL7L6MsiWx9aCXVHHaW7:64630211:t:30",
+					"networkFees": [
+						{
+							"amount": "2000000",
+							"asset": "THOR.RUNE"
+						}
+					],
+					"swapSlip": "0",
+					"swapTarget": "0"
+				}
+			},
+			"out": [
+				{
+					"address": "thor160yye65pf9rzwrgqmtgav69n6zlsyfpgm9a7xk",
+					"coins": [
+						{
+							"amount": "2554370565",
+							"asset": "THOR.RUNE"
+						}
+					],
+					"txID": ""
+				},
+				{
+					"address": "3PnAWrDDgQ8isDWL7L6MsiWx9aCXVHHaW7",
+					"coins": [
+						{
+							"amount": "65304276",
+							"asset": "BTC.BTC"
+						}
+					],
+					"txID": "55C3717D12AC52E107EAFA8C5A626DB8AF8FD7B589B38F440C733061379A7EEE"
+				}
+			],
+			"pools": [
+				"ETH.ETH"
+			],
+			"status": "success",
+			"type": "swap"
+		},
+		{
+			"date": "1665634607108038824",
+			"height": "7757074",
+			"in": [
+				{
+					"address": "0x61e268135980c57160edb7fd98d40e1a61ab51aa",
+					"coins": [
+						{
+							"amount": "974808948",
+							"asset": "ETH.ETH"
+						}
+					],
+					"txID": "0A06E67BC6CFA7AF8DCA1A93A7DA0957C38E8F1028983E4586CCC99C2F436C18"
+				}
+			],
+			"metadata": {
+				"swap": {
+					"affiliateAddress": "t",
+					"affiliateFee": "30",
+					"liquidityFee": "2079192644",
+					"memo": "=:BTC.BTC:3PnAWrDDgQ8isDWL7L6MsiWx9aCXVHHaW7:64630211:t:30",
+					"networkFees": [
+						{
+							"amount": "12000",
+							"asset": "BTC.BTC"
+						},
+						{
+							"amount": "2000000",
+							"asset": "THOR.RUNE"
+						}
+					],
+					"swapSlip": "24",
+					"swapTarget": "64630211"
+				}
+			},
+			"out": [
+				{
+					"address": "3PnAWrDDgQ8isDWL7L6MsiWx9aCXVHHaW7",
+					"coins": [
+						{
+							"amount": "65304276",
+							"asset": "BTC.BTC"
+						}
+					],
+					"txID": "55C3717D12AC52E107EAFA8C5A626DB8AF8FD7B589B38F440C733061379A7EEE"
+				}
+			],
+			"pools": [
+				"ETH.ETH",
+				"BTC.BTC"
+			],
+			"status": "success",
+			"type": "swap"
+		}
+	],
+	"count": "2"
+}

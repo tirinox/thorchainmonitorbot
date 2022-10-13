@@ -28,7 +28,4 @@ class VolumeFillerUpdater(WithDelegates, INotified, WithLogger):
         pool_info_map = await ppf.reload_global_pools()
 
         for tx in txs:
-            pool_info: PoolInfo = pool_info_map.get(tx.first_pool)
-
-            asset_per_rune = pool_info.asset_per_rune if pool_info else 0.0
-            tx.calc_full_rune_amount(asset_per_rune)
+            tx.calc_full_rune_amount(pool_info_map)
