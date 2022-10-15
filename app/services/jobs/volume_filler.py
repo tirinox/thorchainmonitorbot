@@ -15,11 +15,11 @@ class VolumeFillerUpdater(WithDelegates, INotified, WithLogger):
 
     async def on_data(self, sender, extended_txs: List[ThorTxExtended]):
         # update & fill
-        await self._fill_volumes(extended_txs)
+        await self.fill_volumes(extended_txs)
         # send to the listeners
         await self.pass_data_to_listeners(extended_txs, sender=(sender, self))  # pass it to the next subscribers
 
-    async def _fill_volumes(self, txs: List[ThorTxExtended]):
+    async def fill_volumes(self, txs: List[ThorTxExtended]):
         if not txs:
             return
 
@@ -29,3 +29,5 @@ class VolumeFillerUpdater(WithDelegates, INotified, WithLogger):
 
         for tx in txs:
             tx.calc_full_rune_amount(pool_info_map)
+            if tx.full_rune == 0.0:
+                self.logger.warning(f'Full Rune == 0 R for {tx = }')

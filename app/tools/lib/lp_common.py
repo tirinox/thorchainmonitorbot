@@ -9,10 +9,14 @@ from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.runeyield import AsgardConsumerConnectorBase, get_rune_yield_connector
+from services.lib.constants import NetworkIdents
 from services.lib.delegates import INotified
 from services.lib.midgard.name_service import NameService
+from services.lib.midgard.parser import MidgardParserV2
 from services.lib.texts import sep
+from services.lib.utils import load_json
 from services.models.mimir import MimirHolder
+from services.models.tx import ThorTxExtended
 
 
 class LpAppFramework(App):
@@ -144,3 +148,10 @@ class Receiver(INotified):
         self.tag = tag
         self.filters = filters
         self.callback = callback
+
+
+def load_sample_txs(name):
+    data = load_json(name)
+    parser = MidgardParserV2(network_id=NetworkIdents.MAINNET)
+    r = parser.parse_tx_response(data)
+    return [ThorTxExtended.load_from_thor_tx(tx) for tx in r.txs]

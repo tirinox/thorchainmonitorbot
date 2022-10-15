@@ -1,8 +1,10 @@
 import asyncio
+import os
 import random
 
 from localization.manager import BaseLocalization
 from services.jobs.affiliate_merge import AffiliateTXMerger
+from services.jobs.volume_filler import VolumeFillerUpdater
 from services.lib.delegates import INotified
 from services.lib.midgard.connector import MidgardConnector
 from services.lib.midgard.parser import get_parser_by_network_id
@@ -12,18 +14,18 @@ from services.models.pool_info import PoolInfo
 from services.models.tx import ThorTxExtended, ThorTxType
 from services.notify.alert_presenter import AlertPresenter
 from services.notify.types.tx_notify import SwitchTxNotifier
-from tools.lib.lp_common import LpAppFramework
+from tools.lib.lp_common import LpAppFramework, load_sample_txs
 
 
 async def main():
     lp_app = LpAppFramework()
-    async with lp_app:
-        await lp_app.prepare(brief=True)
-        mdg: MidgardConnector = lp_app.deps.midgard_connector
+    await lp_app.prepare(brief=True)
+    mdg: MidgardConnector = lp_app.deps.midgard_connector
 
-        # await midgard_test_donate(lp_app, mdg, tx_parser)
-        # await midgard_test_1(lp_app, mdg, tx_parser)
-        await midgard_test_kill_switch(lp_app, mdg)
+    # await midgard_test_donate(lp_app, mdg, tx_parser)
+    # await midgard_test_1(lp_app, mdg, tx_parser)
+    # await midgard_test_kill_switch(lp_app, mdg)
+    await refund_full_rune(lp_app)
 
 
 async def midgard_test_kill_switch(lp_app, mdg):
@@ -102,6 +104,12 @@ async def send_tx_notification(lp_app, ex_tx, loc: BaseLocalization = None):
     loc = loc or lp_app.deps.loc_man.default
     await lp_app.send_test_tg_message(loc.notification_text_large_single_tx(ex_tx, rune_price, pool_info))
     sep()
+
+
+async def refund_full_rune(app):
+    txs = load_sample_txs('./tests/sample_data/refunds.json')
+    volume_filler = VolumeFillerUpdater(app.deps)
+    await volume_filler.fill_volumes(txs)
 
 
 if __name__ == '__main__':

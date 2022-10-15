@@ -13,16 +13,9 @@ from services.models.pool_info import PoolInfo, PoolInfoMap
 
 class ThorTxType:
     TYPE_ADD_LIQUIDITY = 'addLiquidity'
-
     TYPE_SWAP = 'swap'
-    OLD_TYPE_DOUBLE_SWAP = 'doubleSwap'  # deprecated (only for v1 parsing)
-
     TYPE_WITHDRAW = 'withdraw'
-
-    OLD_TYPE_ADD = 'add'  # deprecated (only for v1 parsing)
-
     TYPE_DONATE = 'donate'
-
     TYPE_REFUND = 'refund'
     TYPE_SWITCH = 'switch'  # BNB/ETH Rune => Native RUNE
 
@@ -465,9 +458,10 @@ class ThorTxExtended(ThorTx):
         else:
             return self.rune_amount * f, self.asset_amount / self.asset_per_rune * f
 
-    def calc_output_amount(self, pool_map: PoolInfoMap):
+    @staticmethod
+    def calc_amount(pool_map: PoolInfoMap, realm):
         rune_sum = 0.0
-        for tx in self.out_tx:
+        for tx in realm:
             for coin in tx.coins:
                 if is_rune(coin.asset):
                     rune_sum += coin.amount_float
@@ -484,16 +478,13 @@ class ThorTxExtended(ThorTx):
             r = self.rune_amount
         else:
             pool_info: PoolInfo = pool_map.get(self.first_pool)
-            asset_per_rune = pool_info.asset_per_rune if pool_info else 0.0
+            self.asset_per_rune = pool_info.asset_per_rune if pool_info else 0.0
 
-            if self.type == ThorTxType.TYPE_SWAP:
-                r = self.calc_output_amount(pool_map)
+            if self.type in (ThorTxType.TYPE_SWAP, ThorTxType.TYPE_WITHDRAW):
+                r = self.calc_amount(pool_map, self.search_realm(out_only=True))
             else:
-                if asset_per_rune == 0.0:
-                    r = self.rune_amount
-                else:
-                    r = self.asset_amount / asset_per_rune + self.rune_amount
-            self.asset_per_rune = asset_per_rune
+                # add, donate, refund
+                r = self.calc_amount(pool_map, self.search_realm(in_only=True))
         self.full_rune = r
         return self.full_rune
 

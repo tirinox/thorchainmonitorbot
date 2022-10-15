@@ -5,17 +5,15 @@ from web3 import Web3
 
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.volume_filler import VolumeFillerUpdater
-from services.lib.constants import Chains, ETH_SYMBOL, AVAX_SYMBOL, NetworkIdents
+from services.lib.constants import Chains, ETH_SYMBOL, AVAX_SYMBOL
 from services.lib.delegates import WithDelegates, INotified
-from services.lib.midgard.parser import MidgardParserV2
-from services.lib.utils import load_json
 from services.lib.w3.aggregator import AggregatorDataExtractor
 from services.lib.w3.erc20_contract import ERC20Contract
 from services.lib.w3.router_contract import TCRouterContract
 from services.lib.w3.token_list import TokenListCached, StaticTokenList
 from services.models.tx import ThorTxType, ThorTxExtended
 from services.notify.types.tx_notify import GenericTxNotifier
-from tools.lib.lp_common import LpAppFramework
+from tools.lib.lp_common import LpAppFramework, load_sample_txs
 
 
 async def get_abi(app: LpAppFramework, contract):
@@ -123,13 +121,6 @@ class FilterTxMiddleware(WithDelegates, INotified):
     async def on_data(self, sender, txs: List[ThorTxExtended]):
         txs = [tx for tx in txs if self.is_ok_tx(tx)]
         await self.pass_data_to_listeners(txs, sender)
-
-
-def load_sample_txs(name):
-    data = load_json(name)
-    parser = MidgardParserV2(network_id=NetworkIdents.MAINNET)
-    r = parser.parse_tx_response(data)
-    return [ThorTxExtended.load_from_thor_tx(tx) for tx in r.txs]
 
 
 async def demo_full_tx_pipeline(app: LpAppFramework):

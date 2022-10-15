@@ -32,7 +32,6 @@ class TxFetcher(BaseFetcher):
 
         self.progress_tracker: Optional[tqdm] = None
 
-
     async def fetch(self):
         await self.deps.db.get_redis()
         txs = await self._fetch_unseen_txs()

@@ -84,8 +84,7 @@ class GenericTxNotifier(INotified, WithDelegates):
         if tx.full_rune >= min_rune_volume and tx.full_rune >= min_share_rune_volume:
             return True
 
-        # print(f'{tx.type}: {tx.full_rune = }, {min_rune_volume = } R, {min_share_rune_volume = } R, '
-        #       f'{pool_usd_depth = } $')
+        # print(f'{tx.type}: {tx.full_rune = }, {min_rune_volume = } R, {min_share_rune_volume = } R, {pool_usd_depth = } $')
 
 
 class SwitchTxNotifier(GenericTxNotifier):
