@@ -5,39 +5,15 @@ from services.lib.constants import DEFAULT_KILL_RUNE_START_BLOCK, DEFAULT_KILL_R
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
-from services.lib.money import Asset, clamp
-from services.lib.utils import linear_transform, class_logger
+from services.lib.money import Asset, clamp, DepthCurve
+from services.lib.utils import class_logger
 from services.models.mimir_naming import MIMIR_KEY_KILL_SWITCH_DURATION, MIMIR_KEY_KILL_SWITCH_START
 from services.models.tx import ThorTxExtended, EventLargeTransaction
 from services.notify.types.cap_notify import LiquidityCapNotifier
 
 
 class GenericTxNotifier(INotified, WithDelegates):
-    DEFAULT_TX_VS_DEPTH_CURVE = [
-        {'depth': 10_000, 'percent': 20},  # if depth < 10_000 then 0.2
-        {'depth': 100_000, 'percent': 12},  # if 10_000 <= depth < 100_000 then 0.2 ... 0.12
-        {'depth': 500_000, 'percent': 8},  # if 100_000 <= depth < 500_000 then 0.12 ... 0.08
-        {'depth': 1_000_000, 'percent': 5},  # and so on...
-        {'depth': 10_000_000, 'percent': 1.5},
-    ]
-
-    @staticmethod
-    def curve_for_tx_threshold(curve, depth):
-        if not curve:
-            return 0.0
-        # curve = curve or GenericTxNotifier.DEFAULT_TX_VS_DEPTH_CURVE
-        lower_bound = 0
-        lower_percent = curve[0]['percent']
-        for curve_entry in curve:
-            upper_bound = curve_entry['depth']
-            upper_percent = curve_entry['percent']
-            if depth < upper_bound:
-                return linear_transform(depth, lower_bound, upper_bound, lower_percent, upper_percent)
-            lower_percent = upper_percent
-            lower_bound = upper_bound
-        return curve[-1]['percent']
-
-    def __init__(self, deps: DepContainer, params: SubConfig, tx_types):
+    def __init__(self, deps: DepContainer, params: SubConfig, tx_types, curve: DepthCurve):
         super().__init__()
         self.deps = deps
         self.params = params
@@ -45,10 +21,11 @@ class GenericTxNotifier(INotified, WithDelegates):
         self.logger = class_logger(self)
         self.max_tx_per_single_message = deps.cfg.as_int('tx.max_tx_per_single_message', 5)
 
+        self.curve = curve
+        self.curve_mult = params.as_float('curve_mult', 1.0)
+
         self.max_age_sec = parse_timespan_to_seconds(deps.cfg.tx.max_age)
         self.min_usd_total = int(params.min_usd_total)
-
-        self.curve = params.get_pure('usd_requirements_curve', self.DEFAULT_TX_VS_DEPTH_CURVE)
 
     async def on_data(self, senders, txs: List[ThorTxExtended]):
         txs = [tx for tx in txs if tx.type in self.tx_types]  # filter my TX types
@@ -62,11 +39,12 @@ class GenericTxNotifier(INotified, WithDelegates):
 
         min_rune_volume = self.min_usd_total / usd_per_rune
 
-        large_txs = list(self._filter_large_txs(txs, min_rune_volume, usd_per_rune))
+        large_txs = [tx for tx in txs if self.is_tx_suitable(tx, min_rune_volume, usd_per_rune)]
         large_txs = large_txs[:self.max_tx_per_single_message]  # limit for 1 notification
 
         if not large_txs:
             return
+
         self.logger.info(f"Large Txs count is {len(large_txs)}.")
 
         cap_info = await LiquidityCapNotifier.get_last_cap_from_db(self.deps.db)
@@ -93,21 +71,21 @@ class GenericTxNotifier(INotified, WithDelegates):
         min_pool_depth = min(p.usd_depth(usd_per_rune) for p in pool_info_list)
         return min_pool_depth
 
-    def _filter_large_txs(self, txs, min_rune_volume, usd_per_rune):
-        for tx in txs:
-            tx: ThorTxExtended
+    def is_tx_suitable(self, tx: ThorTxExtended, min_rune_volume, usd_per_rune):
+        pool_usd_depth = self._get_min_usd_depth(tx, usd_per_rune)
+        if pool_usd_depth == 0.0:
+            self.logger.warning(f'No pool depth for Tx: {tx}.')
+            min_share_rune_volume = 0.0
+        else:
+            min_pool_share = self.curve.evaluate(pool_usd_depth) * self.curve_mult
+            min_share_rune_volume = pool_usd_depth / usd_per_rune * min_pool_share
 
-            pool_usd_depth = self._get_min_usd_depth(tx, usd_per_rune)
-            if pool_usd_depth == 0.0:
-                self.logger.warning(f'No pool depth for Tx: {tx}.')
-                min_share_rune_volume = 0.0
-            else:
-                min_pool_percent = self.curve_for_tx_threshold(self.curve, pool_usd_depth)
-                min_share_rune_volume = pool_usd_depth / usd_per_rune * min_pool_percent * 0.01
+        # todo: pass filter if big IL payout / Slip / Dex aggr / other unusual things
+        if tx.full_rune >= min_rune_volume and tx.full_rune >= min_share_rune_volume:
+            return True
 
-            # todo: pass filter if big IL payout / Slip / other unusual things
-            if tx.full_rune >= min_rune_volume and tx.full_rune >= min_share_rune_volume:
-                yield tx
+        # print(f'{tx.type}: {tx.full_rune = }, {min_rune_volume = } R, {min_share_rune_volume = } R, '
+        #       f'{pool_usd_depth = } $')
 
 
 class SwitchTxNotifier(GenericTxNotifier):
@@ -130,10 +108,7 @@ class SwitchTxNotifier(GenericTxNotifier):
         tx.rune_amount = self.calculate_killed_rune(tx.asset_amount, tx.height_int)
         return tx
 
-    def _filter_large_txs(self, txs, min_rune_volume, usd_per_rune):
-        for tx in txs:
-            tx: ThorTxExtended
-            # asset is IOU Rune here
-            if tx.asset_amount >= min_rune_volume:
-                tx = self._count_correct_output_rune_value(tx)
-                yield tx
+    def is_tx_suitable(self, tx: ThorTxExtended, min_rune_volume, usd_per_rune):
+        if tx.asset_amount >= min_rune_volume:
+            self._count_correct_output_rune_value(tx)
+            return True

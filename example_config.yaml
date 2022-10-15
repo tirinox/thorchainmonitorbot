@@ -225,65 +225,35 @@ tx:
     ilp_usd_limit: 5000
     slip_usd_limit: 5000
 
+  curve:  # (!) new
+    - depth: 10k
+      percent: 12
+    - depth: 100k
+      percent: 8
+    - depth: 1m
+      percent: 4
+    - depth: 10m
+      percent: 2
+
   liquidity:
     enabled: true
     min_usd_total: 50000
-    usd_requirements_curve:
-      - depth: 10000
-        percent: 20
-      - depth: 100000
-        percent: 12
-      - depth: 500000
-        percent: 8
-      - depth: 1000000
-        percent: 5
-      - depth: 10000000
-        percent: 1.5
+    curve_mult: 0.8  # (!) new
 
   swap:
     enabled: true
     min_usd_total: 5000
-    usd_requirements_curve:
-      - depth: 10000
-        percent: 20
-      - depth: 100000
-        percent: 10
-      - depth: 500000
-        percent: 7
-      - depth: 1000000
-        percent: 4
-      - depth: 10000000
-        percent: 1.5
+    curve_mult: 0.3
 
   donate:
     enabled: true
     min_usd_total: 1000
-    usd_requirements_curve:
-      - depth: 10000
-        percent: 10
-      - depth: 100000
-        percent: 5
-      - depth: 500000
-        percent: 2.5
-      - depth: 1000000
-        percent: 1
-      - depth: 10000000
-        percent: 0.5
+    curve_mult: 0.075
 
   refund:
     enabled: true
     min_usd_total: 50000
-    usd_requirements_curve:
-      - depth: 20000
-        percent: 15  # if depth < 10_000 then
-      - depth: 100000
-        percent: 10  # if 10_000 <= depth < 100_000 then
-      - depth: 500000
-        percent: 8  # and so on...
-      - depth: 1000000
-        percent: 5
-      - depth: 10000000
-        percent: 1.5
+    curve_mult: 0.1
 
   switch:
     enabled: true

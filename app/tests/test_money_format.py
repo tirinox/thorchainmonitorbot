@@ -1,6 +1,7 @@
 import pytest
 
-from services.lib.money import pretty_money, short_dollar, short_money, detect_decimal_digits, format_percent
+from services.lib.money import pretty_money, short_dollar, short_money, detect_decimal_digits, format_percent, \
+    parse_short_number
 from services.lib.texts import up_down_arrow
 
 
@@ -74,3 +75,17 @@ def test_detect_decimals(x, digits):
 ])
 def test_percent(x, total, out, threshold):
     assert format_percent(x, total, threshold=threshold) == out
+
+
+@pytest.mark.parametrize("x, y", [
+    ("0", 0),
+    ("   1 \t ", 1),
+    ("0.0991", 0.0991),
+    ("500_000.123", 500_000.123),
+    ("1k", 1000),
+    (" 5K", 5000),
+    ("3.3M", 3_300_000),
+    ("5.25b", 5_250_000_000),
+])
+def test_parse_short_number(x, y):
+    assert parse_short_number(x) == y

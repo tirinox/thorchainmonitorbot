@@ -1,6 +1,9 @@
 import math
 from dataclasses import dataclass
 from math import floor, log10
+from typing import List
+
+from services.lib.utils import linear_transform
 
 EMOJI_SCALE = [
     # negative
@@ -270,3 +273,57 @@ def weighted_mean(values, weights):
 
 def clamp(x, min_x, max_x):
     return min(max(x, min_x), max_x)
+
+
+POSTFIX_MULTIPLITER = {
+    'k': 10 ** 3,
+    'm': 10 ** 6,
+    'b': 10 ** 9,
+    'q': 10 ** 12
+}
+
+
+def parse_short_number(n: str):
+    n = str(n).strip().lower()
+    if not n:
+        return 0.0
+    mult = POSTFIX_MULTIPLITER.get(n[-1], 1)
+    if mult > 1:
+        n = n[:-1]
+    return float(n) * mult
+
+
+class DepthCurve:
+    DEPTH = 'depth'
+    PERCENT = 'percent'
+    SHARE = 'share'
+
+    DEFAULT_TX_VS_DEPTH_CURVE = [
+        {DEPTH: 10_000, PERCENT: 12},  # if depth < 10_000 then 0.2
+        {DEPTH: 100_000, PERCENT: 8},  # if 10_000 <= depth < 100_000 then 0.2 ... 0.12
+        {DEPTH: 1_000_000, PERCENT: 4},  # and so on...
+        {DEPTH: 10_000_000, PERCENT: 2},
+    ]
+
+    def __init__(self, points: List[dict]):
+        self.points = points
+        for p in self.points:
+            p[self.DEPTH] = parse_short_number(p[self.DEPTH])
+            p[self.SHARE] = 0.01 * p[self.PERCENT]
+
+    def evaluate(self, x):
+        curve = self.points
+
+        if not curve:
+            return 0.0
+
+        lower_bound = 0
+        lower_percent = curve[0][self.SHARE]
+        for curve_entry in curve:
+            upper_bound = curve_entry[self.DEPTH]
+            upper_percent = curve_entry[self.SHARE]
+            if x < upper_bound:
+                return linear_transform(x, lower_bound, upper_bound, lower_percent, upper_percent)
+            lower_percent = upper_percent
+            lower_bound = upper_bound
+        return curve[-1][self.SHARE]

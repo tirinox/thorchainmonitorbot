@@ -37,6 +37,7 @@ from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.midgard.connector import MidgardConnector
 from services.lib.midgard.name_service import NameService
+from services.lib.money import DepthCurve
 from services.lib.settings_manager import SettingsManager, SettingsProcessorGeneralAlerts
 from services.lib.utils import setup_logs
 from services.lib.w3.aggregator import AggregatorDataExtractor
@@ -179,29 +180,36 @@ class App:
             d.volume_recorder = VolumeRecorder(d)
             volume_filler.subscribe(d.volume_recorder)
 
+            curve_pts = d.cfg.get_pure('tx.curve', default=DepthCurve.DEFAULT_TX_VS_DEPTH_CURVE)
+            curve = DepthCurve(curve_pts)
+
             if d.cfg.tx.liquidity.get('enabled', True):
                 liq_notifier_tx = GenericTxNotifier(d, d.cfg.tx.liquidity,
-                                                    tx_types=(ThorTxType.TYPE_ADD_LIQUIDITY, ThorTxType.TYPE_WITHDRAW))
+                                                    tx_types=(ThorTxType.TYPE_ADD_LIQUIDITY, ThorTxType.TYPE_WITHDRAW),
+                                                    curve=curve)
                 volume_filler.subscribe(liq_notifier_tx)
                 liq_notifier_tx.subscribe(d.alert_presenter)
 
             if d.cfg.tx.donate.get('enabled', True):
-                donate_notifier_tx = GenericTxNotifier(d, d.cfg.tx.donate, tx_types=(ThorTxType.TYPE_DONATE,))
+                donate_notifier_tx = GenericTxNotifier(d, d.cfg.tx.donate, tx_types=(ThorTxType.TYPE_DONATE,),
+                                                       curve=curve)
                 volume_filler.subscribe(donate_notifier_tx)
                 donate_notifier_tx.subscribe(d.alert_presenter)
 
             if d.cfg.tx.swap.get('enabled', True):
-                swap_notifier_tx = GenericTxNotifier(d, d.cfg.tx.swap, tx_types=(ThorTxType.TYPE_SWAP,))
+                swap_notifier_tx = GenericTxNotifier(d, d.cfg.tx.swap, tx_types=(ThorTxType.TYPE_SWAP,), curve=curve)
                 volume_filler.subscribe(swap_notifier_tx)
                 swap_notifier_tx.subscribe(d.alert_presenter)
 
             if d.cfg.tx.refund.get('enabled', True):
-                refund_notifier_tx = GenericTxNotifier(d, d.cfg.tx.refund, tx_types=(ThorTxType.TYPE_REFUND,))
+                refund_notifier_tx = GenericTxNotifier(d, d.cfg.tx.refund, tx_types=(ThorTxType.TYPE_REFUND,),
+                                                       curve=curve)
                 volume_filler.subscribe(refund_notifier_tx)
                 refund_notifier_tx.subscribe(d.alert_presenter)
 
             if d.cfg.tx.switch.get('enabled', True):
-                switch_notifier_tx = SwitchTxNotifier(d, d.cfg.tx.switch, tx_types=(ThorTxType.TYPE_SWITCH,))
+                switch_notifier_tx = SwitchTxNotifier(d, d.cfg.tx.switch, tx_types=(ThorTxType.TYPE_SWITCH,),
+                                                      curve=curve)
                 volume_filler.subscribe(switch_notifier_tx)
                 switch_notifier_tx.subscribe(d.alert_presenter)
 
