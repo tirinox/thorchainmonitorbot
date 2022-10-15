@@ -472,7 +472,8 @@ class ThorTxExtended(ThorTx):
                 if is_rune(coin.asset):
                     rune_sum += coin.amount_float
                 else:
-                    pool_info = pool_map.get(coin.asset)
+                    pool_name = Asset.convert_synth_to_pool_name(coin.asset)
+                    pool_info = pool_map.get(pool_name)
                     if pool_info:
                         rune_sum += pool_info.runes_per_asset * coin.amount_float
 
