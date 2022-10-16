@@ -299,17 +299,17 @@ class RussianLocalization(BaseLocalization):
 
         heading = ''
         if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
-            heading = f'🐳 <b>Кит добавил ликвидности</b> 🟢'
+            heading = f'🐳 <b>Добавлена ликвидности</b> 🟢'
         elif tx.type == ThorTxType.TYPE_WITHDRAW:
-            heading = f'🐳 <b>Кит вывел ликвидность</b> 🔴'
+            heading = f'🐳 <b>Выведена ликвидность</b> 🔴'
         elif tx.type == ThorTxType.TYPE_DONATE:
             heading = f'🙌 <b>Безвозмездное добавление в пул</b>'
         elif tx.type == ThorTxType.TYPE_SWAP:
             heading = f'🐳 <b>Крупный обмен</b> 🔁'
         elif tx.type == ThorTxType.TYPE_REFUND:
-            heading = f'🐳️ <b>Большой возврат средств</b> ↩️❗'
+            heading = f'🐳️ <b>Возврат средств</b> ↩️❗'
         elif tx.type == ThorTxType.TYPE_SWITCH:
-            heading = f'🐳 <b>Крупный апгрейд {self.R}</b> 🆙'
+            heading = f'🐳 <b>Апгрейд {self.R}</b> 🆙'
 
         if tx.is_pending:
             heading += ital(' [Ожидает]')

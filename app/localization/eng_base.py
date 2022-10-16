@@ -450,17 +450,17 @@ class BaseLocalization(ABC):  # == English
 
         heading = ''
         if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
-            heading = f'🐳 <b>Whale added liquidity</b> 🟢'
+            heading = f'🐳 <b>Added liquidity</b> 🟢'
         elif tx.type == ThorTxType.TYPE_WITHDRAW:
-            heading = f'🐳 <b>Whale withdrew liquidity</b> 🔴'
+            heading = f'🐳 <b>Withdrew liquidity</b> 🔴'
         elif tx.type == ThorTxType.TYPE_DONATE:
             heading = f'🙌 <b>Donation to the pool</b>'
         elif tx.type == ThorTxType.TYPE_SWAP:
-            heading = f'🐳 <b>Large swap</b> 🔁'
+            heading = f'🐳 <b>Swap</b> 🔁'
         elif tx.type == ThorTxType.TYPE_REFUND:
-            heading = f'🐳 <b>Big refund</b> ↩️❗'
+            heading = f'🐳 <b>Refund</b> ↩️❗'
         elif tx.type == ThorTxType.TYPE_SWITCH:
-            heading = f'🐳 <b>Large Rune switch</b> 🆙'
+            heading = f'🐳 <b>Rune switch</b> 🆙'
 
         if tx.is_pending:
             heading += ital(' [Pending]')

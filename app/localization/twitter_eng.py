@@ -86,7 +86,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         elif tx.type == ThorTxType.TYPE_DONATE:
             heading = f'🐳 Donated to the pool 🙌'
         elif tx.type == ThorTxType.TYPE_SWAP:
-            heading = f'🐳 Large swap 🔁'
+            heading = f'🐳 Swap 🔁'
         elif tx.type == ThorTxType.TYPE_REFUND:
             heading = f'🐳 Refund ↩️❗'
         elif tx.type == ThorTxType.TYPE_SWITCH:
