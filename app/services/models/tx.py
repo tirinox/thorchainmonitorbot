@@ -501,6 +501,10 @@ class ThorTxExtended(ThorTx):
     def get_affiliate_fee_usd(self, usd_per_rune):
         return self.affiliate_fee * self.get_usd_volume(usd_per_rune)
 
+    @property
+    def dex_aggregator_used(self):
+        return bool(self.dex_info.swap_in) or bool(self.dex_info.swap_out)
+
 
 @dataclass
 class EventLargeTransaction:

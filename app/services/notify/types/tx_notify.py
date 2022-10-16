@@ -8,7 +8,7 @@ from services.lib.depcont import DepContainer
 from services.lib.money import Asset, clamp, DepthCurve
 from services.lib.utils import class_logger
 from services.models.mimir_naming import MIMIR_KEY_KILL_SWITCH_DURATION, MIMIR_KEY_KILL_SWITCH_START
-from services.models.tx import ThorTxExtended, EventLargeTransaction
+from services.models.tx import ThorTxExtended, EventLargeTransaction, ThorTxType
 from services.notify.types.cap_notify import LiquidityCapNotifier
 
 
@@ -80,7 +80,6 @@ class GenericTxNotifier(INotified, WithDelegates):
             min_pool_share = self.curve.evaluate(pool_usd_depth) * self.curve_mult
             min_share_rune_volume = pool_usd_depth / usd_per_rune * min_pool_share
 
-        # todo: pass filter if big IL payout / Slip / Dex aggr / other unusual things
         if tx.full_rune >= min_rune_volume and tx.full_rune >= min_share_rune_volume:
             return True
 
@@ -111,3 +110,31 @@ class SwitchTxNotifier(GenericTxNotifier):
         if tx.asset_amount >= min_rune_volume:
             self._count_correct_output_rune_value(tx)
             return True
+
+
+class LiquidityTxNotifier(GenericTxNotifier):
+    def __init__(self, deps: DepContainer, params: SubConfig, curve: DepthCurve):
+        super().__init__(deps, params, (ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_ADD_LIQUIDITY), curve)
+        self.ilp_paid_min_usd = params.as_float('also_trigger_when.ilp_paid_min_usd', 6000)
+
+    def is_tx_suitable(self, tx: ThorTxExtended, min_rune_volume, usd_per_rune):
+        if tx.meta_withdraw.ilp_rune >= self.ilp_paid_min_usd / usd_per_rune:
+            return True
+
+        return super().is_tx_suitable(tx, min_rune_volume, usd_per_rune)
+
+
+class SwapTxNotifier(GenericTxNotifier):
+    def __init__(self, deps: DepContainer, params: SubConfig, curve: DepthCurve):
+        super().__init__(deps, params, (ThorTxType.TYPE_SWAP,), curve)
+        self.dex_min_usd = params.as_float('also_trigger_when.dex_aggregator_used.min_usd_total', 500)
+        self.aff_fee_min_usd = params.as_float('also_trigger_when.affiliate_fee_usd_greater', 500)
+
+    def is_tx_suitable(self, tx: ThorTxExtended, min_rune_volume, usd_per_rune):
+        if tx.meta_swap.affiliate_fee >= self.aff_fee_min_usd / usd_per_rune:
+            return True
+
+        if tx.dex_aggregator_used and tx.full_rune >= self.dex_min_usd / usd_per_rune:
+            return True
+
+        return super().is_tx_suitable(tx, min_rune_volume, usd_per_rune)

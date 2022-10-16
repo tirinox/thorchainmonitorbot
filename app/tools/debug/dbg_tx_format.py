@@ -1,35 +1,38 @@
 import asyncio
-import os
 import random
 
 from localization.manager import BaseLocalization
 from services.jobs.affiliate_merge import AffiliateTXMerger
+from services.jobs.fetch.tx import TxFetcher
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.lib.delegates import INotified
-from services.lib.midgard.connector import MidgardConnector
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import free_url_gen
+from services.lib.money import DepthCurve
 from services.lib.texts import sep
+from services.lib.w3.aggregator import AggregatorDataExtractor
 from services.models.pool_info import PoolInfo
 from services.models.tx import ThorTxExtended, ThorTxType
 from services.notify.alert_presenter import AlertPresenter
-from services.notify.types.tx_notify import SwitchTxNotifier
-from tools.lib.lp_common import LpAppFramework, load_sample_txs
+from services.notify.types.tx_notify import SwitchTxNotifier, GenericTxNotifier
+from tools.debug.dbg_w3 import FilterTxMiddleware
+from tools.lib.lp_common import LpAppFramework, load_sample_txs, Receiver
 
 
 async def main():
     lp_app = LpAppFramework()
     await lp_app.prepare(brief=True)
-    mdg: MidgardConnector = lp_app.deps.midgard_connector
 
     # await midgard_test_donate(lp_app, mdg, tx_parser)
     # await midgard_test_1(lp_app, mdg, tx_parser)
     # await midgard_test_kill_switch(lp_app, mdg)
-    await refund_full_rune(lp_app)
+    # await refund_full_rune(lp_app)
+    await demo_full_tx_pipeline(lp_app)
 
 
 async def midgard_test_kill_switch(lp_app, mdg):
-    switch_helper = SwitchTxNotifier(lp_app.deps, lp_app.deps.cfg.tx.switch, tx_types=(ThorTxType.TYPE_SWITCH,))
+    switch_helper = SwitchTxNotifier(lp_app.deps, lp_app.deps.cfg.tx.switch, tx_types=(ThorTxType.TYPE_SWITCH,),
+                                     curve=DepthCurve.default())
 
     q_path = free_url_gen.url_for_tx(0, 50,
                                      types='switch',
@@ -110,6 +113,29 @@ async def refund_full_rune(app):
     txs = load_sample_txs('./tests/sample_data/refunds.json')
     volume_filler = VolumeFillerUpdater(app.deps)
     await volume_filler.fill_volumes(txs)
+
+
+async def demo_full_tx_pipeline(app: LpAppFramework):
+    d = app.deps
+
+    fetcher_tx = TxFetcher(d)
+
+    aggregator = AggregatorDataExtractor(d)
+    fetcher_tx.subscribe(aggregator)
+
+    volume_filler = VolumeFillerUpdater(d)
+    aggregator.subscribe(volume_filler)
+
+    curve = DepthCurve.default()
+    swap_notifier_tx = GenericTxNotifier(d, d.cfg.tx.swap, tx_types=(ThorTxType.TYPE_SWAP,), curve=curve)
+    swap_notifier_tx.curve_mult = 0.0
+    swap_notifier_tx.min_usd_total = 0.0
+    volume_filler.subscribe(swap_notifier_tx)
+
+    swap_notifier_tx.subscribe(Receiver('TX'))
+
+    # run the pipeline!
+    await fetcher_tx.run()
 
 
 if __name__ == '__main__':

@@ -62,7 +62,7 @@ from services.notify.types.queue_notify import QueueNotifier
 from services.notify.types.stats_notify import NetworkStatsNotifier
 from services.notify.types.supply_notify import SupplyNotifier
 from services.notify.types.transfer_notify import RuneMoveNotifier
-from services.notify.types.tx_notify import GenericTxNotifier, SwitchTxNotifier
+from services.notify.types.tx_notify import GenericTxNotifier, SwitchTxNotifier, SwapTxNotifier, LiquidityTxNotifier
 from services.notify.types.version_notify import VersionNotifier
 from services.notify.types.voting_notify import VotingNotifier
 
@@ -184,31 +184,32 @@ class App:
             curve = DepthCurve(curve_pts)
 
             if d.cfg.tx.liquidity.get('enabled', True):
-                liq_notifier_tx = GenericTxNotifier(d, d.cfg.tx.liquidity,
-                                                    tx_types=(ThorTxType.TYPE_ADD_LIQUIDITY, ThorTxType.TYPE_WITHDRAW),
-                                                    curve=curve)
+                liq_notifier_tx = LiquidityTxNotifier(d, d.cfg.tx.liquidity, curve=curve)
                 volume_filler.subscribe(liq_notifier_tx)
                 liq_notifier_tx.subscribe(d.alert_presenter)
 
             if d.cfg.tx.donate.get('enabled', True):
-                donate_notifier_tx = GenericTxNotifier(d, d.cfg.tx.donate, tx_types=(ThorTxType.TYPE_DONATE,),
+                donate_notifier_tx = GenericTxNotifier(d, d.cfg.tx.donate,
+                                                       tx_types=(ThorTxType.TYPE_DONATE,),
                                                        curve=curve)
                 volume_filler.subscribe(donate_notifier_tx)
                 donate_notifier_tx.subscribe(d.alert_presenter)
 
             if d.cfg.tx.swap.get('enabled', True):
-                swap_notifier_tx = GenericTxNotifier(d, d.cfg.tx.swap, tx_types=(ThorTxType.TYPE_SWAP,), curve=curve)
+                swap_notifier_tx = SwapTxNotifier(d, d.cfg.tx.swap, curve=curve)
                 volume_filler.subscribe(swap_notifier_tx)
                 swap_notifier_tx.subscribe(d.alert_presenter)
 
             if d.cfg.tx.refund.get('enabled', True):
-                refund_notifier_tx = GenericTxNotifier(d, d.cfg.tx.refund, tx_types=(ThorTxType.TYPE_REFUND,),
+                refund_notifier_tx = GenericTxNotifier(d, d.cfg.tx.refund,
+                                                       tx_types=(ThorTxType.TYPE_REFUND,),
                                                        curve=curve)
                 volume_filler.subscribe(refund_notifier_tx)
                 refund_notifier_tx.subscribe(d.alert_presenter)
 
             if d.cfg.tx.switch.get('enabled', True):
-                switch_notifier_tx = SwitchTxNotifier(d, d.cfg.tx.switch, tx_types=(ThorTxType.TYPE_SWITCH,),
+                switch_notifier_tx = SwitchTxNotifier(d, d.cfg.tx.switch,
+                                                      tx_types=(ThorTxType.TYPE_SWITCH,),
                                                       curve=curve)
                 volume_filler.subscribe(switch_notifier_tx)
                 switch_notifier_tx.subscribe(d.alert_presenter)

@@ -225,7 +225,7 @@ tx:
     ilp_usd_limit: 5000
     slip_usd_limit: 5000
 
-  curve:  # (!) new
+  curve:
     - depth: 10k
       percent: 12
     - depth: 100k
@@ -238,12 +238,21 @@ tx:
   liquidity:
     enabled: true
     min_usd_total: 50000
-    curve_mult: 0.8  # (!) new
+    curve_mult: 0.8
+
+    also_trigger_when:  # (!) new
+      ilp_paid_usd_greater: 5000
+      affiliate_fee_usd_greater: 1000
 
   swap:
     enabled: true
     min_usd_total: 5000
     curve_mult: 0.3
+
+    also_trigger_when:  # (!) new
+      dex_aggregator_used:
+        min_usd_total: 1000
+      affiliate_fee_usd_greater: 1000
 
   donate:
     enabled: true

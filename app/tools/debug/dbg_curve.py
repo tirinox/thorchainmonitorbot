@@ -47,7 +47,7 @@ def curve_chart(pts):
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
-        curve = DepthCurve(DepthCurve.DEFAULT_TX_VS_DEPTH_CURVE)
+        curve = DepthCurve.default()
 
         mult = 0.5
         max_d = 100e6

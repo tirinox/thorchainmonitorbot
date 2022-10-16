@@ -7,6 +7,7 @@ from services.jobs.fetch.tx import TxFetcher
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.lib.constants import Chains, ETH_SYMBOL, AVAX_SYMBOL
 from services.lib.delegates import WithDelegates, INotified
+from services.lib.money import DepthCurve
 from services.lib.w3.aggregator import AggregatorDataExtractor
 from services.lib.w3.erc20_contract import ERC20Contract
 from services.lib.w3.router_contract import TCRouterContract
@@ -137,7 +138,8 @@ async def demo_full_tx_pipeline(app: LpAppFramework):
     filter_middleware = FilterTxMiddleware()
     volume_filler.subscribe(filter_middleware)
 
-    swap_notifier_tx = GenericTxNotifier(d, d.cfg.tx.swap, tx_types=(ThorTxType.TYPE_SWAP,))
+    curve = DepthCurve.default()
+    swap_notifier_tx = GenericTxNotifier(d, d.cfg.tx.swap, tx_types=(ThorTxType.TYPE_SWAP,), curve=curve)
     swap_notifier_tx.curve = None
     swap_notifier_tx.min_usd_total = 0.0
     filter_middleware.subscribe(swap_notifier_tx)

@@ -133,10 +133,10 @@ class LpGenerator(LpAppFramework):
 class Receiver(INotified):
     # noinspection PyTypeChecker
     async def on_data(self, sender, data):
-        sep()
         if self.callback:
             await self.callback(sender, data)
         else:
+            sep()
             if isinstance(data, (list, tuple)):
                 for tr in data:
                     if not self.filters or any(text in repr(tr) for text in self.filters):

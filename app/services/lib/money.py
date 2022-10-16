@@ -305,6 +305,10 @@ class DepthCurve:
         {DEPTH: 10_000_000, PERCENT: 2},
     ]
 
+    @classmethod
+    def default(cls):
+        return cls(cls.DEFAULT_TX_VS_DEPTH_CURVE)
+
     def __init__(self, points: List[dict]):
         self.points = points
         for p in self.points:
