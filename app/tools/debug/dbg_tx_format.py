@@ -14,9 +14,9 @@ from services.lib.w3.aggregator import AggregatorDataExtractor
 from services.models.pool_info import PoolInfo
 from services.models.tx import ThorTxExtended, ThorTxType
 from services.notify.alert_presenter import AlertPresenter
-from services.notify.types.tx_notify import SwitchTxNotifier, GenericTxNotifier
+from services.notify.types.tx_notify import SwitchTxNotifier, GenericTxNotifier, SwapTxNotifier, LiquidityTxNotifier
 from tools.debug.dbg_w3 import FilterTxMiddleware
-from tools.lib.lp_common import LpAppFramework, load_sample_txs, Receiver
+from tools.lib.lp_common import LpAppFramework, load_sample_txs, Receiver, demo_run_txs_example_file
 
 
 async def main():
@@ -127,15 +127,25 @@ async def demo_full_tx_pipeline(app: LpAppFramework):
     aggregator.subscribe(volume_filler)
 
     curve = DepthCurve.default()
-    swap_notifier_tx = GenericTxNotifier(d, d.cfg.tx.swap, tx_types=(ThorTxType.TYPE_SWAP,), curve=curve)
-    swap_notifier_tx.curve_mult = 0.0
+    swap_notifier_tx = SwapTxNotifier(d, d.cfg.tx.swap, curve=curve)
+    swap_notifier_tx.curve_mult = 1000.0
     swap_notifier_tx.min_usd_total = 0.0
+    swap_notifier_tx.aff_fee_min_usd = 0.3
     volume_filler.subscribe(swap_notifier_tx)
 
-    swap_notifier_tx.subscribe(Receiver('TX'))
+    liq_notifier_tx = LiquidityTxNotifier(d, d.cfg.tx.liquidity, curve=curve)
+    liq_notifier_tx.curve_mult = 1000.0
+    liq_notifier_tx.ilp_paid_min_usd = 10.0
+    volume_filler.subscribe(liq_notifier_tx)
+
+    swap_notifier_tx.subscribe(Receiver('Swap TX'))
+    liq_notifier_tx.subscribe(Receiver('Liq TX'))
 
     # run the pipeline!
-    await fetcher_tx.run()
+    # await fetcher_tx.run()
+
+    # await demo_run_txs_example_file(fetcher_tx, 'swap_with_aff_new.json')
+    await demo_run_txs_example_file(fetcher_tx, 'withdraw_ilp.json')
 
 
 if __name__ == '__main__':

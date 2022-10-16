@@ -89,7 +89,8 @@ class ThorMetaSwap:
         return cls(liquidity_fee=j.get('liquidityFee', 0),
                    network_fees=fees,
                    trade_slip=j.get('swapSlip', '0'),
-                   trade_target=j.get('swapTarget', '0'))
+                   trade_target=j.get('swapTarget', '0'),
+                   affiliate_fee=float(j.get('affiliateFee', 0)))
 
     @property
     def trade_slip_percent(self):

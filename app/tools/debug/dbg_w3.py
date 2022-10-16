@@ -12,9 +12,9 @@ from services.lib.w3.aggregator import AggregatorDataExtractor
 from services.lib.w3.erc20_contract import ERC20Contract
 from services.lib.w3.router_contract import TCRouterContract
 from services.lib.w3.token_list import TokenListCached, StaticTokenList
-from services.models.tx import ThorTxType, ThorTxExtended
-from services.notify.types.tx_notify import GenericTxNotifier
-from tools.lib.lp_common import LpAppFramework, load_sample_txs
+from services.models.tx import ThorTxExtended
+from services.notify.types.tx_notify import SwapTxNotifier
+from tools.lib.lp_common import LpAppFramework, demo_run_txs_example_file
 
 
 async def get_abi(app: LpAppFramework, contract):
@@ -139,7 +139,7 @@ async def demo_full_tx_pipeline(app: LpAppFramework):
     volume_filler.subscribe(filter_middleware)
 
     curve = DepthCurve.default()
-    swap_notifier_tx = GenericTxNotifier(d, d.cfg.tx.swap, tx_types=(ThorTxType.TYPE_SWAP,), curve=curve)
+    swap_notifier_tx = SwapTxNotifier(d, d.cfg.tx.swap, curve=curve)
     swap_notifier_tx.curve = None
     swap_notifier_tx.min_usd_total = 0.0
     filter_middleware.subscribe(swap_notifier_tx)
@@ -155,16 +155,10 @@ async def demo_full_tx_pipeline(app: LpAppFramework):
     # txs = load_sample_txs('tests/sample_data/example_eth_swap_out.json')
     # await fetcher_tx.pass_data_to_listeners(txs, fetcher_tx)
 
-    await demo_run_example_file(fetcher_tx, 'example_swap_in_with_aff.json')
+    await demo_run_txs_example_file(fetcher_tx, 'example_swap_in_with_aff.json')
 
     await asyncio.sleep(10)
 
-
-async def demo_run_example_file(fetcher_tx, filename):
-    txs = load_sample_txs(f'tests/sample_data/{filename}')
-    txs = fetcher_tx.tx_merger.merge_affiliate_txs(txs)
-    txs = [ThorTxExtended.load_from_thor_tx(tx) for tx in txs]
-    await fetcher_tx.pass_data_to_listeners(txs, fetcher_tx)
 
 
 async def demo_avax(app: LpAppFramework):

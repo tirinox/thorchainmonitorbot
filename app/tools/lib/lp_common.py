@@ -155,3 +155,10 @@ def load_sample_txs(name):
     parser = MidgardParserV2(network_id=NetworkIdents.MAINNET)
     r = parser.parse_tx_response(data)
     return [ThorTxExtended.load_from_thor_tx(tx) for tx in r.txs]
+
+
+async def demo_run_txs_example_file(fetcher_tx, filename):
+    txs = load_sample_txs(f'tests/sample_data/{filename}')
+    txs = fetcher_tx.tx_merger.merge_affiliate_txs(txs)
+    txs = [ThorTxExtended.load_from_thor_tx(tx) for tx in txs]
+    await fetcher_tx.pass_data_to_listeners(txs, fetcher_tx)

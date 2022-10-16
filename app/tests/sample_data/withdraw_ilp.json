@@ -1,0 +1,62 @@
+{
+	"actions": [
+		{
+			"date": "1665589137116993371",
+			"height": "7749254",
+			"in": [
+				{
+					"address": "thor12tq6ea2yr3fmm8hw3tuvvx0lxf2rpfkvxp06ak",
+					"coins": [],
+					"txID": "D7DC3552F161E32C9076FBA6044C1F86D752CF71003F61ED71615B965DCBD176"
+				}
+			],
+			"metadata": {
+				"withdraw": {
+					"asymmetry": "0",
+					"basisPoints": "10000",
+					"impermanentLossProtection": "3208330966",
+					"liquidityUnits": "-23975995706",
+					"memo": "-:BNB.BNB:10000",
+					"networkFees": [
+						{
+							"amount": "369262",
+							"asset": "BNB.BNB"
+						},
+						{
+							"amount": "2000000",
+							"asset": "THOR.RUNE"
+						}
+					]
+				}
+			},
+			"out": [
+				{
+					"address": "thor12tq6ea2yr3fmm8hw3tuvvx0lxf2rpfkvxp06ak",
+					"coins": [
+						{
+							"amount": "70885926559",
+							"asset": "THOR.RUNE"
+						}
+					],
+					"txID": ""
+				},
+				{
+					"address": "bnb1s02g8fwdg6cecgsshv7d9j3tjrmmt2shc395d6",
+					"coins": [
+						{
+							"amount": "395049967",
+							"asset": "BNB.BNB"
+						}
+					],
+					"txID": "7185D385BFFA6A706A69921649676BBCCF65225C92C0D946291763375231321A"
+				}
+			],
+			"pools": [
+				"BNB.BNB"
+			],
+			"status": "success",
+			"type": "withdraw"
+		}
+	],
+	"count": "1"
+}
