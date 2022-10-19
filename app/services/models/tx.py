@@ -80,6 +80,7 @@ class ThorMetaSwap:
     trade_slip: str
     trade_target: str
     affiliate_fee: float = 0.0
+    memo: str = ''
 
     # todo: add aff address
 
@@ -90,7 +91,8 @@ class ThorMetaSwap:
                    network_fees=fees,
                    trade_slip=j.get('swapSlip', '0'),
                    trade_target=j.get('swapTarget', '0'),
-                   affiliate_fee=float(j.get('affiliateFee', 0)))
+                   affiliate_fee=float(j.get('affiliateFee', 0)),
+                   memo=j.get('memo', ''))
 
     @property
     def trade_slip_percent(self):

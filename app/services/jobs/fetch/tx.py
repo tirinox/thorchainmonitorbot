@@ -100,7 +100,7 @@ class TxFetcher(BaseFetcher):
 
     # -------
 
-    async def _fetch_one_batch(self, page) -> Optional[TxParseResult]:
+    async def fetch_one_batch(self, page) -> Optional[TxParseResult]:
         q_path = free_url_gen.url_for_tx(page * self.tx_per_batch, self.tx_per_batch)
 
         try:
@@ -111,7 +111,7 @@ class TxFetcher(BaseFetcher):
 
     async def _fetch_one_batch_tries(self, page, tries) -> Optional[TxParseResult]:
         for _ in range(tries):
-            data = await self._fetch_one_batch(page)
+            data = await self.fetch_one_batch(page)
             if data:
                 return data
             else:

@@ -7,14 +7,15 @@ from services.jobs.fetch.tx import TxFetcher
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.lib.constants import Chains, ETH_SYMBOL, AVAX_SYMBOL
 from services.lib.delegates import WithDelegates, INotified
+from services.lib.memo import THORMemoParsed
 from services.lib.money import DepthCurve
 from services.lib.w3.aggregator import AggregatorDataExtractor
 from services.lib.w3.erc20_contract import ERC20Contract
 from services.lib.w3.router_contract import TCRouterContract
 from services.lib.w3.token_list import TokenListCached, StaticTokenList
-from services.models.tx import ThorTxExtended
+from services.models.tx import ThorTxExtended, ThorTxType
 from services.notify.types.tx_notify import SwapTxNotifier
-from tools.lib.lp_common import LpAppFramework, demo_run_txs_example_file
+from tools.lib.lp_common import LpAppFramework
 
 
 async def get_abi(app: LpAppFramework, contract):
@@ -124,6 +125,28 @@ class FilterTxMiddleware(WithDelegates, INotified):
         await self.pass_data_to_listeners(txs, sender)
 
 
+async def demo_find_aff(app: LpAppFramework):
+    d = app.deps
+
+    fetcher_tx = TxFetcher(d)
+
+    page = 0
+    while True:
+        batch = await fetcher_tx.fetch_one_batch(page)
+        if batch:
+            txs = fetcher_tx.tx_merger.merge_affiliate_txs(batch.txs)
+            txs = [ThorTxExtended.load_from_thor_tx(tx) for tx in txs]
+
+            for tx in txs:
+                if tx.type == ThorTxType.TYPE_SWAP:
+                    memo = tx.meta_swap.memo
+                    if memo:
+                        m = THORMemoParsed.parse_memo(memo)
+                        if m.dex_aggregator_address:
+                            print(m)
+        page += 1
+
+
 async def demo_full_tx_pipeline(app: LpAppFramework):
     d = app.deps
 
@@ -155,10 +178,9 @@ async def demo_full_tx_pipeline(app: LpAppFramework):
     # txs = load_sample_txs('tests/sample_data/example_eth_swap_out.json')
     # await fetcher_tx.pass_data_to_listeners(txs, fetcher_tx)
 
-    await demo_run_txs_example_file(fetcher_tx, 'example_swap_in_with_aff.json')
+    # await demo_run_txs_example_file(fetcher_tx, 'example_swap_in_with_aff.json')
 
-    await asyncio.sleep(10)
-
+    # await asyncio.sleep(10)
 
 
 async def demo_avax(app: LpAppFramework):
@@ -174,7 +196,8 @@ async def run():
     async with app(brief=True):
         # await demo_avax(app)
         # await demo_decoder(app)
-        await demo_full_tx_pipeline(app)
+        # await demo_full_tx_pipeline(app)
+        await demo_find_aff(app)
 
 
 if __name__ == '__main__':
