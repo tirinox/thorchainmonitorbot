@@ -4,7 +4,6 @@ from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
-from services.models.pool_info import PoolInfo
 from services.models.tx import ThorTxExtended
 
 
@@ -12,6 +11,7 @@ class VolumeFillerUpdater(WithDelegates, INotified, WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
+        self.update_pools_each_time = True
 
     async def on_data(self, sender, extended_txs: List[ThorTxExtended]):
         # update & fill
@@ -24,8 +24,12 @@ class VolumeFillerUpdater(WithDelegates, INotified, WithLogger):
             return
 
         ppf: PoolPriceFetcher = self.deps.price_pool_fetcher
-        # we need here most relevant pool state to estimate % of pool after TX
-        pool_info_map = await ppf.reload_global_pools()
+
+        if self.update_pools_each_time:
+            # we need here most relevant pool state to estimate % of pool after TX
+            pool_info_map = await ppf.reload_global_pools()
+        else:
+            pool_info_map = self.deps.price_holder.pool_info_map
 
         for tx in txs:
             tx.calc_full_rune_amount(pool_info_map)

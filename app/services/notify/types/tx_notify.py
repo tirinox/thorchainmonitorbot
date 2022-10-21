@@ -118,7 +118,7 @@ class LiquidityTxNotifier(GenericTxNotifier):
         self.ilp_paid_min_usd = params.as_float('also_trigger_when.ilp_paid_min_usd', 6000)
 
     def is_tx_suitable(self, tx: ThorTxExtended, min_rune_volume, usd_per_rune):
-        if tx.meta_withdraw.ilp_rune >= self.ilp_paid_min_usd / usd_per_rune:
+        if tx.meta_withdraw and (tx.meta_withdraw.ilp_rune >= self.ilp_paid_min_usd / usd_per_rune):
             return True
 
         return super().is_tx_suitable(tx, min_rune_volume, usd_per_rune)

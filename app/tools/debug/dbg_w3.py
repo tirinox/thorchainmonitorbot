@@ -1,4 +1,5 @@
 import asyncio
+import os
 from typing import List
 
 from web3 import Web3
@@ -129,22 +130,39 @@ async def demo_find_aff(app: LpAppFramework):
     d = app.deps
 
     fetcher_tx = TxFetcher(d)
+    dex_ex = AggregatorDataExtractor(d)
+    vf = VolumeFillerUpdater(d)
+    vf.update_pools_each_time = False
+    await app.deps.price_pool_fetcher.reload_global_pools()
+
+    print(os.getcwd())
+    f = open('../temp/dex.txt', 'w')
 
     page = 0
-    while True:
-        batch = await fetcher_tx.fetch_one_batch(page)
-        if batch:
-            txs = fetcher_tx.tx_merger.merge_affiliate_txs(batch.txs)
-            txs = [ThorTxExtended.load_from_thor_tx(tx) for tx in txs]
+    try:
+        while True:
+            batch = await fetcher_tx.fetch_one_batch(page)
+            if batch:
+                txs = fetcher_tx.tx_merger.merge_affiliate_txs(batch.txs)
+                txs = [ThorTxExtended.load_from_thor_tx(tx) for tx in txs]
+                await vf.on_data(None, txs)
 
-            for tx in txs:
-                if tx.type == ThorTxType.TYPE_SWAP:
-                    memo = tx.meta_swap.memo
-                    if memo:
-                        m = THORMemoParsed.parse_memo(memo)
-                        if m.dex_aggregator_address:
-                            print(m)
-        page += 1
+                await dex_ex.on_data(None, txs)
+
+                for tx in txs:
+                    if tx.type == ThorTxType.TYPE_SWAP:
+                        if tx.dex_aggregator_used:
+                            print(tx.tx_hash, f' = {tx.full_rune:.1f} Rune; ', tx.dex_info, tx, file=f)
+                            print(tx.tx_hash, tx.full_rune, 'Rune')
+                            f.flush()
+                        # memo = tx.meta_swap.memo
+                        # if memo:
+                        #     m = THORMemoParsed.parse_memo(memo)
+                        #     if m.dex_aggregator_address:
+                        #         print(m)
+            page += 1
+    finally:
+        f.close()
 
 
 async def demo_full_tx_pipeline(app: LpAppFramework):
