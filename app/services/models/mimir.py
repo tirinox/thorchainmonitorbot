@@ -199,13 +199,19 @@ class MimirHolder:
         'STOPFUNDYGGDRASIL'
     ]
 
+    @property
+    def is_loaded(self):
+        return bool(self._const_map)
+
     @staticmethod
     def detect_auto_solvency_checker(name: str, value):
         return MimirEntry.can_be_automatic(name) and (value != ADMIN_VALUE and value != 0)
 
     def get_constant(self, name: str, default=0, const_type: typing.Optional[type] = int):
         entry = self.get_entry(name)
-        return const_type(entry.real_value) if entry else default
+        if not entry:
+            return default
+        return const_type(entry.real_value) if const_type else entry.real_value
 
     def get_hardcoded_const(self, name: str, default=None):
         entry = self.get_entry(name)

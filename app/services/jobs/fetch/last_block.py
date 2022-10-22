@@ -13,6 +13,5 @@ class LastBlockFetcher(BaseFetcher):
         super().__init__(deps, sleep_period)
 
     async def fetch(self) -> Dict[str, ThorLastBlock]:
-        data = await self.deps.midgard_connector.request_random_midgard('v2/thorchain/lastblock')
-        last_blocks = [ThorLastBlock.from_json(j) for j in data]
+        last_blocks = await self.deps.thor_connector.query_last_blocks()
         return {last_block.chain: last_block for last_block in last_blocks}

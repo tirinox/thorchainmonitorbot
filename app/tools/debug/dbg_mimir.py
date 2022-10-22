@@ -2,7 +2,7 @@ import asyncio
 
 from localization.eng_base import BaseLocalization
 from localization.languages import Language
-from services.models.mimir_naming import NEXT_CHAIN_KEY
+from services.jobs.fetch.cap import CapInfoFetcher
 from services.notify.types.voting_notify import VotingNotifier
 from tools.lib.lp_common import LpAppFramework
 
@@ -13,9 +13,18 @@ def print_mimir(loc, app):
         print(text)
 
 
+async def demo_cap_test(app: LpAppFramework):
+    cap_fetcher = CapInfoFetcher(app.deps)
+    r = await cap_fetcher.fetch()
+    print(r)
+
+
 async def run():
     app = LpAppFramework()
-    await app.prepare()
+    await app.prepare(brief=True)
+
+    await demo_cap_test(app)
+    return
 
     mimir_to_test = 'MaxSynthPerAssetDepth'.upper()
     # mimir_to_test = NEXT_CHAIN_KEY
@@ -29,7 +38,7 @@ async def run():
     # loc: BaseLocalization = app.deps.loc_man.default
 
     for language in (Language.ENGLISH, Language.ENGLISH_TWITTER, Language.RUSSIAN):
-    # for language in (Language.ENGLISH_TWITTER,):
+        # for language in (Language.ENGLISH_TWITTER,):
         loc: BaseLocalization = app.deps.loc_man[language]
         await app.send_test_tg_message(loc.notification_text_mimir_voting_progress(
             app.deps.mimir_const_holder,

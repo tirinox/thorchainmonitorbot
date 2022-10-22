@@ -20,23 +20,11 @@ class MidgardURLGenBase(ABC):
         ...
 
     @abstractmethod
-    def url_mimir(self):
-        ...
-
-    @abstractmethod
     def url_network(self):
         ...
 
     @abstractmethod
-    def url_last_block(self):
-        ...
-
-    @abstractmethod
     def url_stats(self):
-        ...
-
-    @abstractmethod
-    def url_thor_nodes(self):
         ...
 
     @abstractmethod
@@ -71,20 +59,11 @@ class MidgardURLGenV2(MidgardURLGenBase):
     def url_for_address_pool_membership(self, address) -> str:
         return f"{self.base_url}/v2/member/{address}"
 
-    def url_mimir(self):
-        return f'{self.base_url}/v2/thorchain/mimir'
-
     def url_network(self):
         return f'{self.base_url}/v2/network'
 
-    def url_last_block(self):
-        return f'{self.base_url}/v2/thorchain/lastblock'
-
     def url_stats(self):
         return f'{self.base_url}/v2/stats'
-
-    def url_thor_nodes(self):
-        return f'{self.base_url}/v2/thorchain/nodes'
 
     def url_pool_info(self):
         return f'{self.base_url}/v2/pools'

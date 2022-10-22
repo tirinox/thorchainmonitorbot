@@ -51,6 +51,7 @@ class DepContainer:
     price_pool_fetcher = None  # type: 'PoolPriceFetcher'
     node_info_fetcher = None  # type: 'NodeInfoFetcher'
     mimir_const_fetcher = None  # type: 'ConstMimirFetcher'
+    last_block_fetcher = None  # type: 'LastBlockFetcher'
 
     node_op_notifier = None  # type: 'NodeChangePersonalNotifier'
     block_notifier = None  # type: 'BlockHeightNotifier'

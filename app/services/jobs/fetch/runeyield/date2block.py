@@ -2,14 +2,13 @@ from datetime import date, datetime, timedelta
 from typing import Dict
 
 from aioredis import Redis
+from aiothornode.types import ThorLastBlock
 
 from services.lib.constants import THOR_BLOCK_TIME
 from services.lib.date_utils import day_to_key, days_ago_noon, date_parse_rfc
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
-from services.lib.midgard.urlgen import free_url_gen
 from services.lib.utils import class_logger
-from services.models.last_block import LastBlock
 
 
 class DateToBlockMapper:
@@ -21,14 +20,12 @@ class DateToBlockMapper:
         self.iterative_algo_max_steps = 10
         self.iterative_algo_tolerance = THOR_BLOCK_TIME * 1.6
 
-    async def get_last_blocks(self) -> Dict[str, LastBlock]:
-        raw_data = await self.deps.midgard_connector.request_random_midgard(free_url_gen.url_last_block())
-        last_blocks = self.midgard_parser.parse_last_block(raw_data)
-        return last_blocks
+    async def get_last_blocks(self) -> Dict[str, ThorLastBlock]:
+        return await self.deps.last_block_fetcher.fetch()
 
     async def get_last_thorchain_block(self) -> int:
         last_blocks = await self.get_last_blocks()
-        last_block: LastBlock = list(last_blocks.values())[0]
+        last_block: ThorLastBlock = list(last_blocks.values())[0]
         return last_block.thorchain
 
     async def get_timestamp_by_block_height(self, block_height) -> float:

@@ -25,10 +25,6 @@ class CapInfoFetcher(BaseFetcher):
         self.last_network_info = await self.deps.midgard_connector.request_random_midgard(free_url_gen.url_network())
         return self.last_network_info
 
-    async def get_mimir(self):
-        self.last_mimir = await self.deps.midgard_connector.request_random_midgard(free_url_gen.url_mimir())
-        return self.last_mimir
-
     @staticmethod
     def calculate_effective_security_bond(node_bonds: List[int]):
         node_bonds.sort()
@@ -50,14 +46,6 @@ class CapInfoFetcher(BaseFetcher):
         bonds = networks_resp.get('activeBonds', [])
         cap_eq_bond = self.calculate_effective_security_bond(bonds)
         return int(thor_to_float(lp_rune)), cap_eq_bond
-
-    async def get_max_possible_pooled_rune(self):
-        mimir_resp = await self.get_mimir()
-
-        for key in self.MIMIR_CAP_KEYS:
-            if key in mimir_resp:
-                return thor_to_float(mimir_resp[key])
-        return 1e-8
 
     async def fetch(self) -> ThorCapInfo:
         current_lp_rune, max_lp_rune = await self.get_total_current_pooled_rune_and_cap()

@@ -238,12 +238,12 @@ class App:
             tasks.append(fetcher_stats)
 
         if d.cfg.get('last_block.enabled', True):
-            fetcher_last_block = LastBlockFetcher(d)
+            d.last_block_fetcher = LastBlockFetcher(d)
             last_block_notifier = BlockHeightNotifier(d)
-            fetcher_last_block.subscribe(last_block_notifier)
+            d.last_block_fetcher.subscribe(last_block_notifier)
             last_block_notifier.subscribe(d.alert_presenter)
             d.block_notifier = last_block_notifier
-            tasks.append(fetcher_last_block)
+            tasks.append(d.last_block_fetcher)
 
         if d.cfg.get('node_info.enabled', True):
             churn_detector = NodeChurnDetector(d)

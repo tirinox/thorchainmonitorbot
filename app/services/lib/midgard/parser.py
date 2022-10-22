@@ -1,8 +1,7 @@
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import NamedTuple, List, Dict
+from typing import NamedTuple, List
 
-from services.models.last_block import LastBlock
 from services.models.pool_info import PoolInfoHistoricEntry, PoolInfoMap, PoolInfo
 from services.models.pool_member import PoolMemberDetails
 from services.models.tx import ThorTx, ThorTxType, ThorSubTx, ThorMetaSwap, ThorMetaRefund, ThorMetaWithdraw, \
@@ -52,10 +51,6 @@ class MidgardParserBase(metaclass=ABCMeta):
 
     @abstractmethod
     def parse_pool_membership(self, response) -> List[str]:
-        ...
-
-    @abstractmethod
-    def parse_last_block(self, response) -> Dict[str, LastBlock]:
         ...
 
     @abstractmethod
@@ -140,17 +135,6 @@ class MidgardParserV2(MidgardParserBase):
             return []
         pools = response.get('pools', [])
         return [p['pool'] for p in pools if 'pool' in p]
-
-    def parse_last_block(self, response) -> Dict[str, LastBlock]:
-        last_blocks = []
-        for j in response:
-            last_blocks.append(LastBlock(
-                chain=j.get('chain', ''),
-                last_observed_in=int(j.get('last_observed_in', 0)),
-                last_signed_out=int(j.get('last_signed_out', 0)),
-                thorchain=int(j.get('thorchain', 0))
-            ))
-        return {b.chain: b for b in last_blocks}
 
     def parse_pool_info(self, response) -> PoolInfoMap:
         pm = {}

@@ -50,7 +50,7 @@ async def my_test_block_calibration(lpgen: LpAppFramework):
 
 async def my_test_block_by_date(lpgen: LpAppFramework):
     dbm = DateToBlockMapper(lpgen.deps)
-    d = date(2021, 11, 13)
+    d = date(2022, 10, 13)
 
     last_block = await dbm.get_last_thorchain_block()
     r = await dbm.get_block_height_by_date(d, last_block)
@@ -65,12 +65,12 @@ async def clear_date2block(lpgen: LpAppFramework):
 async def main():
     lpgen = LpAppFramework(HomebrewLPConnector)
     async with lpgen:
-        await my_test_1_pool(lpgen)
+        # await my_test_1_pool(lpgen)
         # await test_charts(lpgen, address='bnb1snqqjdvcqjf76fdztxrtwgv0ws9hsvvfsjv02z')  # mccn (bnb only)
         # await test_charts(lpgen, address='0x52e07b963ab0f525b15e281b3b42d55e8048f027')  # mccn (many pools + withdraw)
         # await test_block_calibration(lpgen)
         # await clear_date2block(lpgen)
-        # await my_test_block_by_date(lpgen)
+        await my_test_block_by_date(lpgen)
 
 
 if __name__ == "__main__":
