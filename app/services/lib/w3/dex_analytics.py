@@ -23,6 +23,18 @@ class DexReport(NamedTuple):
     swap_ins: DexReportEntry
     swap_outs: DexReportEntry
 
+    @staticmethod
+    def _top_by_category(cat: Dict[str, DexReportEntry]):
+        name_to_vol = [(e.rune_volume, name) for name, e in cat.items()]
+        name_to_vol.sort(reverse=True)
+        return name_to_vol
+
+    def top_popular_assets(self):
+        return self._top_by_category(self.by_outer_asset)
+
+    def top_popular_aggregators(self):
+        return self._top_by_category(self.by_aggregator)
+
 
 class DexTxPoint(NamedTuple):
     hash: str

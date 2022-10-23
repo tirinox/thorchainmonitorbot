@@ -9,6 +9,7 @@ from services.jobs.volume_filler import VolumeFillerUpdater
 from services.lib.constants import Chains, ETH_SYMBOL, AVAX_SYMBOL
 from services.lib.delegates import WithDelegates, INotified
 from services.lib.money import DepthCurve
+from services.lib.texts import sep
 from services.lib.w3.aggregator import AggregatorDataExtractor
 from services.lib.w3.dex_analytics import DexAnalyticsCollector
 from services.lib.w3.erc20_contract import ERC20Contract
@@ -244,6 +245,10 @@ async def show_dex_report(app: LpAppFramework):
     dex_analytics = DexAnalyticsCollector(app.deps)
     report = await dex_analytics.get_analytics()
     print(report)
+    sep()
+    print(report.top_popular_assets())
+    sep()
+    print(report.top_popular_aggregators())
 
 
 async def run():
