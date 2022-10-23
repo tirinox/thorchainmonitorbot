@@ -16,7 +16,7 @@ from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo
 from services.models.price import LastPriceHolder
 from services.notify.broadcast import Broadcaster
-from services.notify.types.pool_churn import PoolChurnNotifier
+from services.notify.types.pool_churn_notify import PoolChurnNotifier
 from tools.lib.lp_common import LpAppFramework
 
 
