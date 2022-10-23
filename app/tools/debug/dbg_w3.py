@@ -8,9 +8,9 @@ from services.jobs.fetch.tx import TxFetcher
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.lib.constants import Chains, ETH_SYMBOL, AVAX_SYMBOL
 from services.lib.delegates import WithDelegates, INotified
-from services.lib.memo import THORMemoParsed
 from services.lib.money import DepthCurve
 from services.lib.w3.aggregator import AggregatorDataExtractor
+from services.lib.w3.dex_analytics import DexAnalyticsCollector
 from services.lib.w3.erc20_contract import ERC20Contract
 from services.lib.w3.router_contract import TCRouterContract
 from services.lib.w3.token_list import TokenListCached, StaticTokenList
@@ -126,6 +126,36 @@ class FilterTxMiddleware(WithDelegates, INotified):
         await self.pass_data_to_listeners(txs, sender)
 
 
+async def load_dex_txs(app: LpAppFramework):
+    with open('../temp/dex.txt', 'r') as f:
+        lines = f.readlines()
+    tx_hashes = [line.split(' ')[0] for line in lines]
+
+    d = app.deps
+
+    fetcher_tx = TxFetcher(d)
+
+    aggregator = AggregatorDataExtractor(d)
+    fetcher_tx.subscribe(aggregator)
+
+    # VVV
+
+    vf = VolumeFillerUpdater(d)
+    vf.update_pools_each_time = False
+    await app.deps.price_pool_fetcher.reload_global_pools()
+    aggregator.subscribe(vf)
+
+    # VVV
+
+    dex_analytics = DexAnalyticsCollector(d)
+    vf.subscribe(dex_analytics)
+
+    for tx_hash in tx_hashes:
+        r = await fetcher_tx.fetch_one_batch(0, tx_hash)
+        txs = fetcher_tx.convert_and_merge_simple_txs(r.txs)
+        await fetcher_tx.pass_data_to_listeners(txs, fetcher_tx)
+
+
 async def demo_find_aff(app: LpAppFramework):
     d = app.deps
 
@@ -135,6 +165,9 @@ async def demo_find_aff(app: LpAppFramework):
     vf.update_pools_each_time = False
     await app.deps.price_pool_fetcher.reload_global_pools()
 
+    dex_analytics = DexAnalyticsCollector(d)
+    vf.subscribe(dex_analytics)
+
     print(os.getcwd())
     f = open('../temp/dex.txt', 'w')
 
@@ -143,8 +176,7 @@ async def demo_find_aff(app: LpAppFramework):
         while True:
             batch = await fetcher_tx.fetch_one_batch(page)
             if batch:
-                txs = fetcher_tx.tx_merger.merge_affiliate_txs(batch.txs)
-                txs = [ThorTxExtended.load_from_thor_tx(tx) for tx in txs]
+                txs = fetcher_tx.convert_and_merge_simple_txs(batch.txs)
                 await vf.on_data(None, txs)
 
                 await dex_ex.on_data(None, txs)
@@ -155,11 +187,10 @@ async def demo_find_aff(app: LpAppFramework):
                             print(tx.tx_hash, f' = {tx.full_rune:.1f} Rune; ', tx.dex_info, tx, file=f)
                             print(tx.tx_hash, tx.full_rune, 'Rune')
                             f.flush()
-                        # memo = tx.meta_swap.memo
-                        # if memo:
-                        #     m = THORMemoParsed.parse_memo(memo)
-                        #     if m.dex_aggregator_address:
-                        #         print(m)
+
+                            r = await dex_analytics.get_analytics()
+                            print(r)
+
             page += 1
     finally:
         f.close()
@@ -209,13 +240,21 @@ async def demo_avax(app: LpAppFramework):
     print(tx)
 
 
+async def show_dex_report(app: LpAppFramework):
+    dex_analytics = DexAnalyticsCollector(app.deps)
+    report = await dex_analytics.get_analytics()
+    print(report)
+
+
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
         # await demo_avax(app)
         # await demo_decoder(app)
         # await demo_full_tx_pipeline(app)
-        await demo_find_aff(app)
+        # await demo_find_aff(app)
+        # await load_dex_txs(app)
+        await show_dex_report(app)
 
 
 if __name__ == '__main__':

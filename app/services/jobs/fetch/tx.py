@@ -34,14 +34,12 @@ class TxFetcher(BaseFetcher):
 
     async def fetch(self):
         await self.deps.db.get_redis()
+
         txs = await self._fetch_unseen_txs()
-
-        txs = self.tx_merger.merge_affiliate_txs(txs)
-
+        txs = self.convert_and_merge_simple_txs(txs)
         if txs:
             self.logger.info(f'New tx to analyze: {len(txs)}')
-
-        return [ThorTxExtended.load_from_thor_tx(tx) for tx in txs]
+        return txs
 
     async def post_action(self, txs: List[ThorTx]):
         hashes = [self.get_seen_hash(t) for t in txs]
@@ -98,10 +96,15 @@ class TxFetcher(BaseFetcher):
         self.logger.info(f'User {address = } has {len(txs)} tx ({liquidity_change_only = }).')
         return txs
 
+    def convert_and_merge_simple_txs(self, txs) -> List[ThorTxExtended]:
+        txs = self.tx_merger.merge_affiliate_txs(txs)
+        txs = [ThorTxExtended.load_from_thor_tx(tx) for tx in txs]
+        return txs
+
     # -------
 
-    async def fetch_one_batch(self, page) -> Optional[TxParseResult]:
-        q_path = free_url_gen.url_for_tx(page * self.tx_per_batch, self.tx_per_batch)
+    async def fetch_one_batch(self, page, txid=None) -> Optional[TxParseResult]:
+        q_path = free_url_gen.url_for_tx(page * self.tx_per_batch, self.tx_per_batch, txid=txid)
 
         try:
             j = await self.deps.midgard_connector.request_random_midgard(q_path)

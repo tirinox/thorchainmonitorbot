@@ -10,6 +10,7 @@ from services.jobs.fetch.last_block import LastBlockFetcher
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.runeyield import AsgardConsumerConnectorBase, get_rune_yield_connector
+from services.jobs.fetch.tx import TxFetcher
 from services.lib.constants import NetworkIdents
 from services.lib.delegates import INotified
 from services.lib.midgard.name_service import NameService
@@ -159,8 +160,7 @@ def load_sample_txs(name):
     return [ThorTxExtended.load_from_thor_tx(tx) for tx in r.txs]
 
 
-async def demo_run_txs_example_file(fetcher_tx, filename):
+async def demo_run_txs_example_file(fetcher_tx: TxFetcher, filename):
     txs = load_sample_txs(f'tests/sample_data/{filename}')
-    txs = fetcher_tx.tx_merger.merge_affiliate_txs(txs)
-    txs = [ThorTxExtended.load_from_thor_tx(tx) for tx in txs]
+    txs = fetcher_tx.convert_and_merge_simple_txs(txs)
     await fetcher_tx.pass_data_to_listeners(txs, fetcher_tx)

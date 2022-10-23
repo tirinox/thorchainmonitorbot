@@ -41,6 +41,7 @@ from services.lib.money import DepthCurve
 from services.lib.settings_manager import SettingsManager, SettingsProcessorGeneralAlerts
 from services.lib.utils import setup_logs
 from services.lib.w3.aggregator import AggregatorDataExtractor
+from services.lib.w3.dex_analytics import DexAnalyticsCollector
 from services.models.mimir import MimirHolder
 from services.models.node_watchers import AlertWatchers
 from services.models.tx import ThorTxType
@@ -176,6 +177,9 @@ class App:
 
             volume_filler = VolumeFillerUpdater(d)
             aggregator.subscribe(volume_filler)
+
+            dex_analytics = DexAnalyticsCollector(d)
+            aggregator.subscribe(dex_analytics)
 
             d.volume_recorder = VolumeRecorder(d)
             volume_filler.subscribe(d.volume_recorder)
