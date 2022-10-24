@@ -2056,9 +2056,9 @@ class BaseLocalization(ABC):  # == English
 
         return (
             f'🤹🏻‍♂️ <b>DEX aggregator usage last {period_str}</b>\n\n'
-            f'∑ Total: {self.format_dex_entry(r.total, r)}\n'
             f'→ Swap In: {self.format_dex_entry(r.swap_ins, r)}\n'
-            f'← Swap Out: {self.format_dex_entry(r.swap_outs, r)}\n\n'
+            f'← Swap Out: {self.format_dex_entry(r.swap_outs, r)}\n'
+            f'∑ Total: {self.format_dex_entry(r.total, r)}\n\n'
             f'Popular aggregators:\n{top_aggr_str}\n'
             f'Popular assets:\n{top_asset_str}'
         ).strip()

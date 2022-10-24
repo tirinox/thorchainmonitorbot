@@ -7,12 +7,13 @@ from localization.eng_base import BaseLocalization
 from services.dialog.twitter.text_length import twitter_intelligent_text_splitter
 from services.jobs.fetch.circulating import SupplyEntry
 from services.lib.constants import thor_to_float, rune_origin, Chains
-from services.lib.date_utils import now_ts, seconds_human
+from services.lib.date_utils import now_ts, seconds_human, DAY, format_time_ago_short
 from services.lib.midgard.name_service import NameMap, add_thor_suffix
 from services.lib.money import Asset, short_dollar, format_percent, pretty_money, pretty_dollar, RAIDO_GLYPH, \
     calc_percent_change, adaptive_round_to_str, emoji_for_percent_change, short_address, short_money, short_rune
 from services.lib.texts import x_ses, progressbar, plural, bracketify, up_down_arrow, \
     bracketify_spaced, shorten_text
+from services.lib.w3.dex_analytics import DexReportEntry, DexReport
 from services.models.cap_info import ThorCapInfo
 from services.models.killed_rune import KilledRuneEntry
 from services.models.last_block import EventBlockSpeed, BlockProduceState
@@ -766,3 +767,39 @@ class TwitterEnglishLocalization(BaseLocalization):
             )
 
         return MESSAGE_SEPARATOR.join(twitter_intelligent_text_splitter(parts))
+
+    @staticmethod
+    def format_dex_entry(e: DexReportEntry, r):
+        n = e.count
+        txs = 'tx' if n == 1 else 'txs'
+        return (
+            f'{n} {txs} '
+            f'({short_rune(e.rune_volume)} or '
+            f'{short_dollar(e.rune_volume * r.usd_per_rune)})')
+
+    def notification_text_dex_report(self, r: DexReport):
+        if r.period_sec == DAY:
+            period_str = '24h'
+        else:
+            period_str = format_time_ago_short(r.period_sec, now=0)
+
+        top_aggr = r.top_popular_aggregators()[:3]
+        top_aggr_str = ''
+        for i, (_, e) in enumerate(top_aggr, start=1):
+            e: DexReportEntry
+            top_aggr_str += f'{i}. {e.name}: {self.format_dex_entry(e, r)} \n'
+
+        top_asset_str = ''
+        top_asset = r.top_popular_assets()[:3]
+        for i, (_, e) in enumerate(top_asset, start=1):
+            e: DexReportEntry
+            top_asset_str += f'{i}. {e.name}: {self.format_dex_entry(e, r)} \n'
+
+        return (
+            f'🤹🏻‍♂️ DEX aggregator usage last {period_str}\n\n'
+            f'→ Swap In: {self.format_dex_entry(r.swap_ins, r)}\n'
+            f'← Swap Out: {self.format_dex_entry(r.swap_outs, r)}\n'
+            f'∑ Total: {self.format_dex_entry(r.total, r)}\n\n'
+            f'Popular aggregators:\n{top_aggr_str}\n'
+            f'Popular assets:\n{top_asset_str}'
+        ).strip()
