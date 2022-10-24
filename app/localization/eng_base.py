@@ -2029,8 +2029,10 @@ class BaseLocalization(ABC):  # == English
 
     @staticmethod
     def format_dex_entry(e: DexReportEntry, r):
+        n = e.count
+        txs = 'tx' if n == 1 else 'txs'
         return (
-            f'{bold(e.count)} '
+            f'{bold(n)} {txs} '
             f'({pre(short_rune(e.rune_volume))} or '
             f'{pre(short_dollar(e.rune_volume * r.usd_per_rune))})')
 
@@ -2054,7 +2056,7 @@ class BaseLocalization(ABC):  # == English
 
         return (
             f'🤹🏻‍♂️ <b>DEX aggregator usage last {period_str}</b>\n\n'
-            f'∑ Total transactions: {self.format_dex_entry(r.total, r)}\n'
+            f'∑ Total: {self.format_dex_entry(r.total, r)}\n'
             f'→ Swap In: {self.format_dex_entry(r.swap_ins, r)}\n'
             f'← Swap Out: {self.format_dex_entry(r.swap_outs, r)}\n\n'
             f'Popular aggregators:\n{top_aggr_str}\n'
