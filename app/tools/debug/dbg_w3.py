@@ -4,9 +4,11 @@ from typing import List
 
 from web3 import Web3
 
+from localization.eng_base import BaseLocalization
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.lib.constants import Chains, ETH_SYMBOL, AVAX_SYMBOL
+from services.lib.date_utils import DAY
 from services.lib.delegates import WithDelegates, INotified
 from services.lib.money import DepthCurve
 from services.lib.texts import sep
@@ -243,12 +245,14 @@ async def demo_avax(app: LpAppFramework):
 
 async def show_dex_report(app: LpAppFramework):
     dex_analytics = DexAnalyticsCollector(app.deps)
-    report = await dex_analytics.get_analytics()
+    report = await dex_analytics.get_analytics(DAY)
     print(report)
     sep()
     print(report.top_popular_assets())
     sep()
     print(report.top_popular_aggregators())
+    report = report._replace(usd_per_rune=1.5)
+    await app.send_test_tg_message(txt=app.deps.loc_man.default.notification_text_dex_report(report))
 
 
 async def run():

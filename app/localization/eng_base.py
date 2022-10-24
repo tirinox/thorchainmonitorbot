@@ -10,7 +10,7 @@ from proto.thor_types import THORName
 from services.jobs.fetch.circulating import SupplyEntry, ThorRealms
 from services.lib.config import Config
 from services.lib.constants import rune_origin, thor_to_float, THOR_BLOCK_TIME, DEFAULT_CEX_NAME, DEFAULT_CEX_BASE_ASSET
-from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE
+from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE, format_time_ago_short, DAY
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
     get_explorer_url_for_node, get_pool_url, get_thoryield_address, get_ip_info_link
 from services.lib.midgard.name_service import NameService, add_thor_suffix, NameMap
@@ -19,6 +19,7 @@ from services.lib.money import format_percent, pretty_money, short_address, shor
     RAIDO_GLYPH, short_rune
 from services.lib.texts import progressbar, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
     up_down_arrow, bracketify, plural, grouper, join_as_numbered_list, regroup_joining, shorten_text
+from services.lib.w3.dex_analytics import DexReport, DexReportEntry
 from services.lib.w3.token_record import AmountToken
 from services.models.cap_info import ThorCapInfo
 from services.models.killed_rune import KilledRuneEntry
@@ -2025,6 +2026,40 @@ class BaseLocalization(ABC):  # == English
         return f'💸 <b>Large transfer</b> {tx_link}: ' \
                f'{code(short_money(t.amount, postfix=" " + asset))}{usd_amt} ' \
                f'from {from_my} ➡️ {to_my}{memo}.'
+
+    @staticmethod
+    def format_dex_entry(e: DexReportEntry, r):
+        return (
+            f'{bold(e.count)} '
+            f'({pre(short_rune(e.rune_volume))} or '
+            f'{pre(short_dollar(e.rune_volume * r.usd_per_rune))})')
+
+    def notification_text_dex_report(self, r: DexReport):
+        if r.period_sec == DAY:
+            period_str = '24h'
+        else:
+            period_str = format_time_ago_short(r.period_sec, now=0)
+
+        top_aggr = r.top_popular_aggregators()[:3]
+        top_aggr_str = ''
+        for i, (_, e) in enumerate(top_aggr, start=1):
+            e: DexReportEntry
+            top_aggr_str += f'{i}. {code(e.name)}: {self.format_dex_entry(e, r)} \n'
+
+        top_asset_str = ''
+        top_asset = r.top_popular_assets()[:3]
+        for i, (_, e) in enumerate(top_asset, start=1):
+            e: DexReportEntry
+            top_asset_str += f'{i}. {code(e.name)}: {self.format_dex_entry(e, r)} \n'
+
+        return (
+            f'🤹🏻‍♂️ <b>DEX aggregator usage last {period_str}</b>\n\n'
+            f'∑ Total transactions: {self.format_dex_entry(r.total, r)}\n'
+            f'→ Swap In: {self.format_dex_entry(r.swap_ins, r)}\n'
+            f'← Swap Out: {self.format_dex_entry(r.swap_outs, r)}\n\n'
+            f'Popular aggregators:\n{top_aggr_str}\n'
+            f'Popular assets:\n{top_asset_str}'
+        ).strip()
 
 
 class EnglishLocalization(BaseLocalization):

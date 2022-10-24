@@ -54,6 +54,7 @@ from services.notify.types.best_pool_notify import BestPoolsNotifier
 from services.notify.types.block_notify import BlockHeightNotifier
 from services.notify.types.cap_notify import LiquidityCapNotifier
 from services.notify.types.chain_notify import TradingHaltedNotifier
+from services.notify.types.dex_report_notify import DexReportNotifier
 from services.notify.types.mimir_notify import MimirChangedNotifier
 from services.notify.types.node_churn_notify import NodeChurnNotifier
 from services.notify.types.pool_churn_notify import PoolChurnNotifier
@@ -183,6 +184,11 @@ class App:
 
             d.volume_recorder = VolumeRecorder(d)
             volume_filler.subscribe(d.volume_recorder)
+
+            if d.cfg.tx.dex_aggregator_update.get('enabled', True):
+                dex_report_notifier = DexReportNotifier(d, dex_analytics)
+                volume_filler.subscribe(dex_report_notifier)
+                dex_report_notifier.subscribe(d.alert_presenter)
 
             curve_pts = d.cfg.get_pure('tx.curve', default=DepthCurve.DEFAULT_TX_VS_DEPTH_CURVE)
             curve = DepthCurve(curve_pts)

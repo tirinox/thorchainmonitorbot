@@ -22,10 +22,12 @@ class DexReport(NamedTuple):
     by_aggregator: Dict[str, DexReportEntry]
     swap_ins: DexReportEntry
     swap_outs: DexReportEntry
+    period_sec: float
+    usd_per_rune: float
 
     @staticmethod
     def _top_by_category(cat: Dict[str, DexReportEntry]):
-        name_to_vol = [(e.rune_volume, name) for name, e in cat.items()]
+        name_to_vol = [(e.rune_volume, e) for name, e in cat.items()]
         name_to_vol.sort(reverse=True)
         return name_to_vol
 
@@ -137,4 +139,6 @@ class DexAnalyticsCollector(WithLogger, INotified):
             by_aggregator=by_aggregator,
             swap_ins=swap_in_report,
             swap_outs=swap_out_report,
+            period_sec=period,
+            usd_per_rune=self.deps.price_holder.usd_per_rune
         )

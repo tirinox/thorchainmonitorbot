@@ -240,7 +240,7 @@ tx:
     min_usd_total: 50000
     curve_mult: 0.8
 
-    also_trigger_when:  # (!) new
+    also_trigger_when:
       ilp_paid_usd_greater: 5000
       affiliate_fee_usd_greater: 1000
 
@@ -249,7 +249,7 @@ tx:
     min_usd_total: 5000
     curve_mult: 0.3
 
-    also_trigger_when:  # (!) new
+    also_trigger_when:
       dex_aggregator_used:
         min_usd_total: 1000
       affiliate_fee_usd_greater: 1000
@@ -267,6 +267,10 @@ tx:
   switch:
     enabled: true
     min_usd_total: 150000
+
+  dex_aggregator_update:  # (!) new
+    enabled: true
+    cooldown: 4d
 
 
 price:

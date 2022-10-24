@@ -5,6 +5,7 @@ from services.dialog.picture.block_height_picture import block_speed_chart
 from services.lib.constants import THOR_BLOCKS_PER_MINUTE
 from services.lib.delegates import INotified
 from services.lib.midgard.name_service import NameService
+from services.lib.w3.dex_analytics import DexReport
 from services.models.last_block import EventBlockSpeed, BlockProduceState
 from services.models.transfer import RuneCEXFlow, RuneTransfer
 from services.models.tx import EventLargeTransaction
@@ -29,6 +30,8 @@ class AlertPresenter(INotified):
             await self._handle_block_speed(data)
         elif isinstance(data, EventLargeTransaction):
             await self._handle_large_tx(data)
+        elif isinstance(data, DexReport):
+            await self._handle_dex_report(data)
 
     # ---- PARTICULARLY ----
 
@@ -69,3 +72,8 @@ class AlertPresenter(INotified):
 
     async def _handle_block_speed(self, event: EventBlockSpeed):
         await self.broadcaster.notify_preconfigured_channels(self._block_speed_picture_generator, event.points, event)
+
+    async def _handle_dex_report(self, event: DexReport):
+        await self.broadcaster.notify_preconfigured_channels(
+            event
+        )

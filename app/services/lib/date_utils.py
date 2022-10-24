@@ -103,7 +103,7 @@ def format_time_ago(duration_sec, max_time=30 * DAY, translate=None):
 
 
 def format_time_ago_short(d, now=None):
-    now = now or now_ts()
+    now = now if now is not None else now_ts()
     seconds = int(d - now)
     if seconds < 0:
         return "-" + format_time_ago_short(now, d)
@@ -112,8 +112,8 @@ def format_time_ago_short(d, now=None):
     hours = minutes // 60
     days = hours // 24
     days = f'{days}d ' if days else ''
-    minutes = minutes % 60
-    hours = hours % 24
+    minutes %= 60
+    hours %= 24
     return f'{days}{hours:02}:{minutes:02}'
 
 
