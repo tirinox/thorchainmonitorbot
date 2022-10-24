@@ -75,5 +75,6 @@ class AlertPresenter(INotified):
 
     async def _handle_dex_report(self, event: DexReport):
         await self.broadcaster.notify_preconfigured_channels(
+            BaseLocalization.notification_text_dex_report,
             event
         )

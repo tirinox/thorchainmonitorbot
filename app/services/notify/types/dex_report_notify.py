@@ -15,7 +15,7 @@ class DexReportNotifier(WithDelegates, INotified, WithLogger):
         self.spam_cd = Cooldown(self.deps.db, 'DexReport', cd)
 
     async def on_data(self, sender, data):
-        if self.spam_cd.can_do():
+        if await self.spam_cd.can_do():
             await self.spam_cd.do()
             report = await self.dex_analytics.get_analytics(self.spam_cd.cooldown)
             # only if there is some data
