@@ -69,12 +69,19 @@ class TimeSeries:
                               decoder=float):
         points = await self.get_last_points(period_sec, max_points, tolerance_sec)
 
-        if with_ts:
-            values = [(self.get_ts_from_index(p[0]), decoder(p[1][key])) for p in points if key in p[1]]
-        else:
-            values = [decoder(p[1][key]) for p in points if key in p[1]]
+        def get_data(p):
+            data = p[1]
+            if key:
+                data = data.get(key)
+                if decoder:
+                    data = decoder(data)
 
-        return values
+            if with_ts:
+                return self.get_ts_from_index(p[0]), data
+            else:
+                return data
+
+        return [get_data(p) for p in points]
 
     # noinspection PyTypeChecker
     async def get_last_values_json(self, period_sec,

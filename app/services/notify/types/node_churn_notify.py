@@ -1,3 +1,5 @@
+import typing
+
 from localization.manager import BaseLocalization
 from services.dialog.picture.node_geo_picture import node_geo_pic
 from services.jobs.fetch.node_info import NodeInfoFetcher
@@ -6,10 +8,39 @@ from services.lib.date_utils import MINUTE
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.draw_utils import img_to_bio
-from services.lib.utils import class_logger, WithLogger
+from services.lib.utils import WithLogger
 from services.models.node_info import NodeSetChanges, NetworkNodeIpInfo
 from services.models.time_series import TimeSeries
 from services.notify.channel import BoardMessage
+
+
+class NodeStatsItem(typing.NamedTuple):
+    ts: float
+    bond_min: float
+    bond_median: float
+    bond_max: float
+    bond_active_total: float
+    bond_total: float
+    n_nodes: float
+    n_active_nodes: float
+
+    @classmethod
+    def from_json(cls, j):
+        ts, data = j
+        return cls(
+            ts=ts,
+            bond_min=float(data.get('bond_min', 0.0)),
+            bond_median=float(data.get('bond_med', 0.0)),
+            bond_max=float(data.get('bond_max', 0.0)),
+            bond_active_total=float(data.get('bond_active_total', 0.0)),
+            bond_total=float(data.get('bond_total', 0.0)),
+            n_nodes=int(data.get('n_nodes', 0)),
+            n_active_nodes=int(data.get('n_active_nodes', 0)),
+        )
+
+    @property
+    def is_valid(self):
+        return self.n_active_nodes > 0 and self.bond_active_total > 0
 
 
 class NodeChurnNotifier(INotified, WithDelegates, WithLogger):
@@ -75,3 +106,7 @@ class NodeChurnNotifier(INotified, WithDelegates, WithLogger):
             n_nodes=n_nodes,
             n_active_nodes=n_active_nodes,
         )
+
+    async def load_last_statistics(self, period_sec) -> typing.List[NodeStatsItem]:
+        points = await self._node_stats_ts.get_last_values(period_sec, key=None, with_ts=True)
+        return [NodeStatsItem.from_json(p) for p in points]

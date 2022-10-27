@@ -2,6 +2,8 @@ import asyncio
 import logging
 from collections import Counter
 
+from eth_utils.humanize import WEEK
+
 from localization.eng_base import BaseLocalization
 from services.dialog.picture.node_geo_picture import node_geo_pic, make_donut_chart
 from services.dialog.picture.nodes_pictures import NodePictureGenerator
@@ -9,6 +11,7 @@ from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.lib.geo_ip import GeoIPManager
 from services.lib.utils import setup_logs, load_pickle, save_pickle
 from services.models.node_info import NetworkNodeIpInfo
+from services.notify.types.node_churn_notify import NodeChurnNotifier
 from tools.lib.lp_common import LpAppFramework
 
 
@@ -51,6 +54,14 @@ async def get_ip_infos_pickled() -> NetworkNodeIpInfo:
             if result_network_info:
                 save_pickle(path, result_network_info)
     return result_network_info
+
+
+async def demo_get_node_stats():
+    lp_app = LpAppFramework()
+    async with lp_app:
+        obj = NodeChurnNotifier(lp_app.deps)
+        r = await obj.load_last_statistics(WEEK * 2)
+        print(r)
 
 
 async def demo_test_geo_ip_thor_2():
@@ -110,7 +121,8 @@ async def main():
     # await test_geo_ip_google()
     # await test_geo_ip_thor_2()
     # await test_donuts()
-    await demo_test_new_geo_chart()
+    await demo_get_node_stats()
+    # await demo_test_new_geo_chart()
 
 
 if __name__ == "__main__":
