@@ -4,6 +4,7 @@ from collections import Counter
 
 from localization.eng_base import BaseLocalization
 from services.dialog.picture.node_geo_picture import node_geo_pic, make_donut_chart
+from services.dialog.picture.nodes_pictures import NodePictureGenerator
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.lib.geo_ip import GeoIPManager
 from services.lib.utils import setup_logs, load_pickle, save_pickle
@@ -11,7 +12,7 @@ from services.models.node_info import NetworkNodeIpInfo
 from tools.lib.lp_common import LpAppFramework
 
 
-async def test_geo_ip_google():
+async def demo_test_geo_ip_google():
     lp_app = LpAppFramework()
     async with lp_app:
         geo_ip = GeoIPManager(lp_app.deps)
@@ -52,7 +53,7 @@ async def get_ip_infos_pickled() -> NetworkNodeIpInfo:
     return result_network_info
 
 
-async def test_geo_ip_thor_2():
+async def demo_test_geo_ip_thor_2():
     lp_app = LpAppFramework()
     async with lp_app:
         geo_ip = GeoIPManager(lp_app.deps)
@@ -84,16 +85,24 @@ async def test_geo_ip_thor_2():
         pic.show()
 
 
-async def test_donuts():
+async def demo_test_donuts():
     # real_data = [('AMAZON', 24), ('DIGITALOCEAN', 10), ('MICROSOFT', 2), ('Others', 3)]
     fake_data_1 = [('AMAZON', 100), ('DIGITALOCEAN', 50), ('MICROSOFT', 20), ('Others', 1)]
     donut = make_donut_chart(fake_data_1, width=400, margin=104, line_width=60, gap=2, label_r=120)
     donut.show()
 
 
-async def test_geo_chart():
+async def demo_test_geo_chart():
     infos = await get_ip_infos_pickled()
     pic = await node_geo_pic(infos, BaseLocalization(None))
+    pic.show()
+
+
+async def demo_test_new_geo_chart():
+    infos = await get_ip_infos_pickled()
+    gen = NodePictureGenerator(infos, BaseLocalization(None))
+
+    pic = await gen.generate()
     pic.show()
 
 
@@ -101,7 +110,7 @@ async def main():
     # await test_geo_ip_google()
     # await test_geo_ip_thor_2()
     # await test_donuts()
-    await test_geo_chart()
+    await demo_test_new_geo_chart()
 
 
 if __name__ == "__main__":

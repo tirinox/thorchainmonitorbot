@@ -4,6 +4,7 @@ import re
 import secrets
 from collections import Counter
 from dataclasses import dataclass, field
+from statistics import median
 from typing import List, Dict, NamedTuple, Optional, Tuple, Any
 
 from semver import VersionInfo
@@ -45,6 +46,10 @@ class NodeInfo(BaseModelMixin):
     jail: Dict = field(default_factory=dict)
 
     ip_info: Dict[str, Any] = field(default_factory=dict)
+
+    @property
+    def rune_bond_float(self):
+        return thor_to_float(self.bond)
 
     @property
     def chain_dict(self):
@@ -324,6 +329,13 @@ class NetworkNodeIpInfo:
                 providers.append(self.UNKNOWN_PROVIDER)
 
         return providers
+
+    @staticmethod
+    def get_min_median_max_bond(nodes: List[NodeInfo]) -> Tuple[float, float, float]:
+        if not nodes:
+            return 0, 0, 0
+        bonds = [n.rune_bond_float for n in nodes]
+        return min(bonds), median(bonds), max(bonds)
 
 
 class EventNodeOnline(NamedTuple):
