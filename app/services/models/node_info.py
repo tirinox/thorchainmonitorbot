@@ -29,7 +29,7 @@ class NodeInfo(BaseModelMixin):
     status: str = ''
 
     node_address: str = ''
-    bond: int = 0
+    bond: float = 0.0
     ip_address: str = ''
 
     version: str = ''
@@ -46,10 +46,6 @@ class NodeInfo(BaseModelMixin):
     jail: Dict = field(default_factory=dict)
 
     ip_info: Dict[str, Any] = field(default_factory=dict)
-
-    @property
-    def rune_bond_float(self):
-        return thor_to_float(self.bond)
 
     @property
     def chain_dict(self):
@@ -91,7 +87,7 @@ class NodeInfo(BaseModelMixin):
         return cls(
             status=d.get('status', NodeInfo.DISABLED),
             node_address=d.get('node_address', ''),
-            bond=int(thor_to_float(d.get('bond', 0))),
+            bond=float(thor_to_float(d.get('bond', 0))),
             ip_address=d.get('ip_address', ''),
             version=d.get('version', ''),
             slash_points=int(d.get('slash_points', 0)),
@@ -331,11 +327,11 @@ class NetworkNodeIpInfo:
         return providers
 
     @staticmethod
-    def get_min_median_max_bond(nodes: List[NodeInfo]) -> Tuple[float, float, float]:
+    def get_min_median_max_total_bond(nodes: List[NodeInfo]) -> Tuple[float, float, float, float]:
         if not nodes:
-            return 0, 0, 0
-        bonds = [n.rune_bond_float for n in nodes]
-        return min(bonds), median(bonds), max(bonds)
+            return 0, 0, 0, 0
+        bonds = [n.bond for n in nodes]
+        return min(bonds), median(bonds), max(bonds), sum(bonds)
 
 
 class EventNodeOnline(NamedTuple):

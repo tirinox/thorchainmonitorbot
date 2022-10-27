@@ -6,25 +6,28 @@ from services.lib.date_utils import MINUTE
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.draw_utils import img_to_bio
-from services.lib.utils import class_logger
-from services.models.node_info import NodeSetChanges
+from services.lib.utils import class_logger, WithLogger
+from services.models.node_info import NodeSetChanges, NetworkNodeIpInfo
+from services.models.time_series import TimeSeries
 from services.notify.channel import BoardMessage
 
 
-class NodeChurnNotifier(INotified, WithDelegates):
-    # todo: put it to config
-    MIN_CHANGES_TO_POST_PICTURE = 3
-
+class NodeChurnNotifier(INotified, WithDelegates, WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
-        self.logger = class_logger(self)
+
+        self._min_changes_to_post_picture = deps.cfg.as_int('node_info.churn.min_changes_to_post_picture', 4)
         self._filter_nonsense = deps.cfg.get_pure('node_info.churn.filter_nonsense', True)
         self.cd = Cooldown(self.deps.db, 'NodeChurnNotification', MINUTE * 10, 5)
+        self._node_stats_ts = TimeSeries('NodeMetrics', self.deps.db)
 
     async def on_data(self, sender, changes: NodeSetChanges):
         if changes.is_empty:
             return
+
+        # only if there are some changes
+        await self._record_statistics(changes)
 
         if self._filter_nonsense and changes.is_nonsense:
             self.logger.warning(f'Node changes is nonsense! {changes}')
@@ -51,5 +54,24 @@ class NodeChurnNotifier(INotified, WithDelegates):
             caption = loc.PIC_NODE_DIVERSITY_BY_PROVIDER_CAPTION
             return BoardMessage.make_photo(bio_graph, caption)
 
-        if changes.count_of_changes >= self.MIN_CHANGES_TO_POST_PICTURE:
+        if changes.count_of_changes >= self._min_changes_to_post_picture:
             await self.deps.broadcaster.notify_preconfigured_channels(node_div_pic_gen)
+
+    async def _record_statistics(self, changes: NodeSetChanges):
+        node_set = NetworkNodeIpInfo(changes.nodes_all)
+
+        active_nodes = node_set.active_nodes
+        n_active_nodes = len(active_nodes)
+        n_nodes = len(node_set.node_info_list)
+        bond_min, bond_med, bond_max, bond_active_total = node_set.get_min_median_max_total_bond(active_nodes)
+        bond_total = sum(n.bond for n in node_set.node_info_list)
+
+        await self._node_stats_ts.add(
+            bond_min=bond_min,
+            bond_med=bond_med,
+            bond_max=bond_max,
+            bond_active_total=bond_active_total,
+            bond_total=bond_total,
+            n_nodes=n_nodes,
+            n_active_nodes=n_active_nodes,
+        )
