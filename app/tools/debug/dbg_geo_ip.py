@@ -117,12 +117,20 @@ async def demo_test_new_geo_chart():
     pic.show()
 
 
+async def demo_last_block():
+    lp_app = LpAppFramework()
+    async with lp_app:
+        r = await lp_app.deps.thor_connector.query_last_blocks()
+        print(r)
+
+
 async def main():
     # await test_geo_ip_google()
     # await test_geo_ip_thor_2()
     # await test_donuts()
-    await demo_get_node_stats()
+    # await demo_get_node_stats()
     # await demo_test_new_geo_chart()
+    await demo_last_block()
 
 
 if __name__ == "__main__":
