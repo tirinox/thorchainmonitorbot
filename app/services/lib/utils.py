@@ -152,8 +152,9 @@ def save_pickle(path, data):
             logging.info(f'Saving pickle to "{path}" done!')
 
 
-def random_hex(length=12):
-    return binascii.b2a_hex(os.urandom(length))
+def random_hex(length=12, sharp=False):
+    r = binascii.hexlify(os.urandom(length))
+    return f'#{r.decode()}' if sharp else r
 
 
 def random_ip_address():

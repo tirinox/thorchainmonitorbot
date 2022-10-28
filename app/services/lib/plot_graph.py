@@ -4,14 +4,12 @@ import pandas as pd
 from PIL import Image
 from PIL import ImageDraw, ImageFont
 
-from services.lib.draw_utils import generate_gradient, LIGHT_TEXT_COLOR
+from services.lib.draw_utils import LIGHT_TEXT_COLOR, default_gradient
 
 BIG_NUMBER = 1e20
 
 
 class PlotGraph:
-    GRADIENT_TOP_COLOR = '#3d5975'
-    GRADIENT_BOTTOM_COLOR = '#121a23'
     PLOT_COLOR = '#62d0e3'
     PLOT_COLOR_2 = '#52c0d3'
     TICK_COLOR = '#555577'
@@ -23,7 +21,7 @@ class PlotGraph:
         self.w = w
         self.h = h
         if bg == 'gradient':
-            self.image = generate_gradient(self.GRADIENT_TOP_COLOR, self.GRADIENT_BOTTOM_COLOR, w, h)
+            self.image = default_gradient(w, h)
         else:
             self.image = Image.new('RGBA', (w, h), bg)
         self.draw = ImageDraw.Draw(self.image)

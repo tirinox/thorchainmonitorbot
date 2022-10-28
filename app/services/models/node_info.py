@@ -333,6 +333,9 @@ class NetworkNodeIpInfo:
         bonds = [n.bond for n in nodes]
         return min(bonds), median(bonds), max(bonds), sum(bonds)
 
+    def sort_by_status(self):
+        self.node_info_list.sort(key=lambda n: n.status, reverse=True)
+
 
 class EventNodeOnline(NamedTuple):
     online: bool

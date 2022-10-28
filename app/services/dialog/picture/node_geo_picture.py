@@ -6,9 +6,8 @@ from typing import List, Tuple
 from PIL import ImageDraw, Image, ImageFont
 
 from localization.eng_base import BaseLocalization
-from services.lib.draw_utils import generate_gradient, draw_arc_aa, get_palette_color_by_index, LIGHT_TEXT_COLOR, \
-    hls_transform_hex
-from services.lib.plot_graph import PlotGraph
+from services.lib.draw_utils import draw_arc_aa, get_palette_color_by_index, LIGHT_TEXT_COLOR, \
+    hls_transform_hex, default_gradient
 from services.lib.texts import grouper
 from services.lib.utils import async_wrap, Singleton, most_common_and_other
 from services.models.node_info import NetworkNodeIpInfo
@@ -143,7 +142,7 @@ def geo_legend(draw: ImageDraw, elements: List[str], xy, font, width=400, sq_siz
 @async_wrap
 def node_geo_pic_sync(info: NetworkNodeIpInfo, loc: BaseLocalization, max_categories=3):
     w, h = NODE_GEO_PIC_WIDTH, NODE_GEO_PIC_HEIGHT
-    image = generate_gradient(PlotGraph.GRADIENT_TOP_COLOR, PlotGraph.GRADIENT_BOTTOM_COLOR, w, h)
+    image = default_gradient(w, h)
 
     r = Resources()
     draw = ImageDraw.Draw(image)

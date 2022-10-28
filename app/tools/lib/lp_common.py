@@ -23,7 +23,7 @@ from services.models.tx import ThorTxExtended
 
 class LpAppFramework(App):
     def __init__(self, rune_yield_class=None, network=None, log_level=logging.DEBUG) -> None:
-        self._solve_working_dir_mess()  # first of all!
+        self.solve_working_dir_mess()  # first of all!
 
         super().__init__(log_level)
         self.brief = None
@@ -51,7 +51,7 @@ class LpAppFramework(App):
             self.rune_yield = get_rune_yield_connector(d)
 
     @staticmethod
-    def _solve_working_dir_mess():
+    def solve_working_dir_mess():
         cwd = os.getcwd()
         if cwd.endswith('/tools/debug'):
             os.chdir(cwd.replace('/tools/debug', ''))

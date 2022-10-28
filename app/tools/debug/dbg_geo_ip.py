@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 from collections import Counter
 
 from eth_utils.humanize import WEEK
@@ -110,6 +111,8 @@ async def demo_test_geo_chart():
 
 
 async def demo_test_new_geo_chart():
+    LpAppFramework.solve_working_dir_mess()
+
     infos = await get_ip_infos_pickled()
     gen = NodePictureGenerator(infos, BaseLocalization(None))
 
@@ -129,8 +132,8 @@ async def main():
     # await test_geo_ip_thor_2()
     # await test_donuts()
     # await demo_get_node_stats()
-    # await demo_test_new_geo_chart()
-    await demo_last_block()
+    await demo_test_new_geo_chart()
+    # await demo_last_block()
 
 
 if __name__ == "__main__":
