@@ -283,6 +283,7 @@ class NetworkNodeIpInfo:
 
     node_info_list: List[NodeInfo] = field(default_factory=list)
     ip_info_dict: Dict[str, dict] = field(default_factory=dict)  # IP -> Geo Info
+    total_rune_supply: float = 301e6  # todo: set it correctly dynamically
 
     @property
     def standby_nodes(self):
@@ -335,6 +336,10 @@ class NetworkNodeIpInfo:
 
     def sort_by_status(self):
         self.node_info_list.sort(key=lambda n: n.status, reverse=True)
+
+    @property
+    def total_bond(self):
+        return sum(n.bond for n in self.node_info_list)
 
 
 class EventNodeOnline(NamedTuple):

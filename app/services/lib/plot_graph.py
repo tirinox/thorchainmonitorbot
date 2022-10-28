@@ -1,10 +1,11 @@
 from datetime import datetime
+from typing import List
 
 import pandas as pd
 from PIL import Image
 from PIL import ImageDraw, ImageFont
 
-from services.lib.draw_utils import LIGHT_TEXT_COLOR, default_gradient
+from services.lib.draw_utils import LIGHT_TEXT_COLOR, default_gradient, get_palette_color_by_index
 
 BIG_NUMBER = 1e20
 
@@ -406,3 +407,36 @@ class PlotGraphLines(PlotGraph):
                         int(x - bh2 + x_shift), int(oy),
                         int(x + bh2 + x_shift), int(oy - bar_height)
                     ), fill=color)
+
+
+def plot_legend(draw: ImageDraw, elements: List[str], xy,
+                font: ImageFont,
+                sq_size=0, x_step=14, y_step=0,
+                max_width=1000,
+                label_shift_x=5, is_circle=True):
+    current_x, current_y = x, y = xy
+
+    brush = draw.ellipse if is_circle else draw.rectangle
+
+    for i, label in enumerate(elements):
+        w, h = font.getsize(label)
+
+        y_step = y_step or int(h * 1.2)
+        sq_size = sq_size or h
+
+        full_item_width = w + label_shift_x + sq_size + x_step
+
+        if current_x - x + full_item_width > max_width:
+            current_x = x
+            current_y += y_step
+
+        color = get_palette_color_by_index(i)
+
+        brush((
+            (current_x, current_y),
+            (current_x + sq_size, current_y + sq_size)
+        ), fill=color)
+        draw.text((current_x + sq_size + label_shift_x, current_y + sq_size // 2),
+                  label, LIGHT_TEXT_COLOR, font=font, anchor='lm')
+
+        current_x += full_item_width

@@ -1,13 +1,20 @@
 import logging
+import math
 import os
 import tempfile
 from colorsys import rgb_to_hls, hls_to_rgb
 from io import BytesIO
 from time import sleep
+from typing import List, Tuple
 
 import PIL.Image
 import numpy as np
 from PIL import Image, ImageDraw, ImageColor
+
+TC_LIGHTNING_BLUE = '#00CCFF'
+TC_YGGDRASIL_GREEN = '#33FF99'
+TC_MIDGARD_TURQOISE = '#23DCC8'
+TC_NIGHT_BLACK = '#101921'
 
 TC_BG_COLOR = '#131920'
 
@@ -40,13 +47,9 @@ GRADIENT_TOP_COLOR = '#0b1c27'
 GRADIENT_BOTTOM_COLOR = '#11354b'
 
 
-# old
-# GRADIENT_TOP_COLOR = '#3d5975'
-# GRADIENT_BOTTOM_COLOR = '#121a23'
-
-
-def get_palette_color_by_index(i):
-    return PALETTE[int(i) % len(PALETTE)]
+def get_palette_color_by_index(i, palette=None):
+    palette = palette or PALETTE
+    return palette[int(i) % len(palette)]
 
 
 def hls_transform_hex(color_hex, transformer: callable):
@@ -236,3 +239,96 @@ def default_gradient(w, h):
 
 def default_background(w, h):
     return Image.new('RGBA', (w, h), color=TC_BG_COLOR)
+
+
+class CacheGrid:
+    def __init__(self, scale_x=10, scale_y=10):
+        self.scale_x = scale_x
+        self.scale_y = scale_y
+        self._s = set()
+
+    def key(self, x, y):
+        x /= self.scale_x
+        y /= self.scale_y
+
+        return f'{int(x)}-{int(y)}'
+
+    def is_occupied(self, x, y):
+        return self.key(x, y) in self._s
+
+    def set(self, x, y, v=True):
+        k = self.key(x, y)
+        if v:
+            self._s.add(k)
+        elif k in self._s:
+            self._s.remove(k)
+
+
+def radial_pos_int(cx, cy, r, angle_deg):
+    a = angle_deg / 180 * math.pi
+    x = cx + r * math.cos(a)
+    y = cy + r * math.sin(a)
+    return int(x), int(y)
+
+
+def make_donut_chart(elements: List[Tuple[str, int]],
+                     width=400, margin=4, line_width=40, gap=1, label_r=0,
+                     title_color=LIGHT_TEXT_COLOR,
+                     font_middle=None,
+                     font_abs_count=None,
+                     font_percent=None,
+                     palette=None,
+                     title=None,
+                     bg_color=(0, 0, 0, 0)):
+    image = Image.new('RGBA', (width, width), bg_color)
+    draw = ImageDraw.Draw(image)
+
+    elements = [item for item in elements if item[1] > 0]  # filter out bad values
+    total_count = sum(item[1] for item in elements)
+    if not total_count:
+        return image  # nothing to plot!
+
+    cx = cy = width // 2
+
+    half_line_width = line_width // 2
+    ellipse_bbox = [
+        margin + half_line_width,
+        margin + half_line_width,
+        width - margin - half_line_width,
+        width - margin - half_line_width
+    ]
+
+    gap *= 0.5
+
+    current = 0
+    deg_per_one = 360 / total_count
+    for i, (label, value) in enumerate(elements):
+        arc_len = deg_per_one * value
+
+        color = palette(i) if palette else get_palette_color_by_index(i)
+
+        arc_start = current + gap
+        arc_end = current + arc_len - gap
+        if arc_start < arc_end:
+            draw_arc_aa(image, ellipse_bbox,
+                        arc_start, arc_end,
+                        line_width, color)
+
+        if font_abs_count:
+            r = label_r if label_r else (margin + line_width)
+            x, y = radial_pos_int(cx, cy, r, current + arc_len / 2)
+            draw.text((x, y),
+                      str(value),
+                      font=font_abs_count, fill=color, anchor='mm')
+
+        if font_percent:
+            x, y = radial_pos_int(cx, cy, width // 2 - margin - line_width * 0.6, current + arc_len / 2)
+            draw.text((x, y), f"{int(value / total_count * 100.)}%", color, font=font_percent, anchor='mm')
+
+        current += arc_len
+
+    if title_color and font_middle:
+        title = title or str(total_count)
+        draw.text((cx, cy), title, fill=title_color, font=font_middle, anchor='mm')
+
+    return image

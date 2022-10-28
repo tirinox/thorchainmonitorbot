@@ -35,13 +35,6 @@ class Resources(metaclass=Singleton):
         self.font_norm = ImageFont.truetype(self.FONT_BOLD, 28)
 
 
-def radial_pos_int(cx, cy, r, angle_deg):
-    a = angle_deg / 180 * math.pi
-    x = cx + r * math.cos(a)
-    y = cy + r * math.sin(a)
-    return int(x), int(y)
-
-
 SegmentDesc = Tuple[str, int, bool]  # Name, Value, isEmpty?
 
 
