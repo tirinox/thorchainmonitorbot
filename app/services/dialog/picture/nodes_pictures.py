@@ -4,7 +4,7 @@ import random
 from PIL import ImageFont, Image, ImageDraw
 
 from localization.eng_base import BaseLocalization
-from services.lib.draw_utils import default_gradient, default_background
+from services.lib.draw_utils import default_background
 from services.lib.money import clamp
 from services.lib.utils import async_wrap, Singleton
 from services.models.node_info import NetworkNodeIpInfo
@@ -13,7 +13,7 @@ from services.models.node_info import NetworkNodeIpInfo
 class Resources(metaclass=Singleton):
     BASE = './data'
     # WORLD_FILE = f'{BASE}/8081_earthmap2k.jpg'
-    WORLD_FILE = f'{BASE}/outline_earthmap2k.png'
+    WORLD_FILE = f'{BASE}/earth-bg.png'
     LOGO_FILE = f'{BASE}/tc_logo.png'
     CIRCLE_FILE = f'{BASE}/circle_new.png'
     CIRCLE_DIM_FILE = f'{BASE}/circle-dim.png'
@@ -110,12 +110,12 @@ class NodePictureGenerator:
         w, h = self.PIC_WIDTH, self.PIC_HEIGHT
         image = default_background(w, h)
 
-        image.paste(r.tc_logo, ((w - r.tc_logo.size[0]) // 2, 10))
-
         world = WorldMap()
         big_map = world.draw(self.data)
 
         big_map.thumbnail((w, h), Image.ANTIALIAS)
-        image.paste(big_map, (0, 100))
+        image.paste(big_map, (0, 80))
+
+        image.paste(r.tc_logo, ((w - r.tc_logo.size[0]) // 2, 10))
 
         return image
