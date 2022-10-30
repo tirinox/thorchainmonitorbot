@@ -6,6 +6,7 @@ from localization.eng_base import BaseLocalization
 from services.dialog.picture.resources import Resources
 from services.jobs.fetch.circulating import RuneCirculatingSupply, ThorRealms
 from services.lib.date_utils import today_str
+from services.lib.draw_utils import TC_WHITE
 from services.lib.plot_graph import PlotGraph
 from services.lib.utils import async_wrap, vertical_text, WithLogger
 from services.models.killed_rune import KilledRuneEntry
@@ -65,7 +66,7 @@ class Rect(NamedTuple):
 class PackItem(NamedTuple):
     label: str
     weight: float = 1
-    color: str = '#FFFFFF'
+    color: str = TC_WHITE
 
 
 class DrawRectPacker:

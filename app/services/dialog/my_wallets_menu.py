@@ -19,8 +19,8 @@ from services.lib.draw_utils import img_to_bio
 from services.lib.midgard.name_service import add_thor_suffix
 from services.lib.money import short_address, short_rune
 from services.lib.new_feature import Features
-from services.lib.texts import kbd, cut_long_text, grouper
-from services.lib.utils import paste_at_beginning_of_dict
+from services.lib.texts import kbd, cut_long_text
+from services.lib.utils import paste_at_beginning_of_dict, grouper
 from services.models.lp_info import LPAddress
 from services.notify.personal.balance import WalletWatchlist
 from services.notify.personal.helpers import GeneralSettings, Props

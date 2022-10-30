@@ -1,4 +1,3 @@
-import itertools
 import re
 from typing import List
 from unicodedata import lookup
@@ -7,6 +6,7 @@ from urllib.parse import urlparse
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
 
 from services.lib.money import pretty_money, short_money
+from services.lib.utils import grouper
 
 
 def bold(text):
@@ -52,11 +52,6 @@ def progressbar(x, total, symbol_width=10):
     s = max(0, s)
     s = min(symbol_width, s)
     return '▰' * s + '▱' * (symbol_width - s)
-
-
-def grouper(n, iterable):
-    args = [iter(iterable)] * n
-    return ([e for e in t if e is not None] for t in itertools.zip_longest(*args))
 
 
 def regroup_joining(n, iterable, sep='\n\n', trim=True):

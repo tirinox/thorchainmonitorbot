@@ -5,7 +5,7 @@ import pandas as pd
 from PIL import Image
 from PIL import ImageDraw, ImageFont
 
-from services.lib.draw_utils import LIGHT_TEXT_COLOR, default_gradient, get_palette_color_by_index
+from services.lib.draw_utils import LIGHT_TEXT_COLOR, default_gradient, get_palette_color_by_index, TC_WHITE
 
 BIG_NUMBER = 1e20
 
@@ -41,7 +41,7 @@ class PlotGraph:
         self.font_ticks = ImageFont.truetype(self.FONT_BOLD, 15)
         self.font_title = ImageFont.truetype(self.FONT_BOLD, 35)
         self.tick_size = 4
-        self.axis_text_color = '#ffffff'
+        self.axis_text_color = TC_WHITE
         self.grid_lines = False
         self.tick_color = self.TICK_COLOR
 
@@ -103,7 +103,7 @@ class PlotGraph:
             fill=color
         )
         self.draw.text((legend_x + 20 - half_square_sz, legend_y),
-                       title, fill='#fff', font=font, anchor='lm')
+                       title, fill=TC_WHITE, font=font, anchor='lm')
 
     @staticmethod
     def time_formatter(timestamp):

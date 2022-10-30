@@ -2,6 +2,7 @@ import asyncio
 import binascii
 import hashlib
 import inspect
+import itertools
 import json
 import logging
 import os
@@ -421,3 +422,22 @@ def str_to_bytes(s: str):
     if s.startswith('0x') or s.startswith('0X'):
         s = s[2:]
     return bytes.fromhex(s)
+
+
+async def parallel_run_in_groups(tasks, group_size=10, delay=0.0):
+    if not tasks:
+        return []
+    groups = grouper(group_size, tasks)
+    results = []
+    for group in groups:
+        results.extend(
+            await asyncio.gather(*group)
+        )
+        if delay > 0:
+            await asyncio.sleep(delay)
+    return results
+
+
+def grouper(n, iterable):
+    args = [iter(iterable)] * n
+    return ([e for e in t if e is not None] for t in itertools.zip_longest(*args))

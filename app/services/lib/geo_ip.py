@@ -7,12 +7,13 @@ from aioredis import Redis
 
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
-from services.lib.utils import class_logger
+from services.lib.utils import class_logger, parallel_run_in_groups, grouper
 
 
 class GeoIPManager:
     DB_KEY_IP_INFO = 'NodeIpGeoInfo'
     API_URL = 'https://ipapi.co/{address}/json/'
+    PARALLEL_FETCH_GROUP_SIZE = 8
 
     def __init__(self, deps: DepContainer):
         self.deps = deps
@@ -39,10 +40,17 @@ class GeoIPManager:
             return None
 
     async def get_ip_info_from_cache(self, ip: str):
+        if not ip:
+            return
         r: Redis = await self.deps.db.get_redis()
         raw_data = await r.get(self.key(ip))
         if raw_data:
             return json.loads(raw_data)
+
+    async def clear_info(self, ip: str):
+        if not ip:
+            return
+        await self.deps.db.redis.delete(self.key(ip))
 
     async def _set_ip_info(self, ip, data):
         r: Redis = self.deps.db.redis
@@ -65,7 +73,8 @@ class GeoIPManager:
         return data
 
     async def get_ip_info_bulk(self, ip_list: List[str], cached=True):
-        return await asyncio.gather(*(self.get_ip_info(ip, cached) for ip in ip_list))
+        tasks = [self.get_ip_info(ip, cached) for ip in ip_list]
+        return await parallel_run_in_groups(tasks, group_size=self.PARALLEL_FETCH_GROUP_SIZE)
 
     async def get_ip_info_bulk_as_dict(self, ip_list: List[str], cached=True):
         ip_set = set(ip for ip in ip_list if ip)

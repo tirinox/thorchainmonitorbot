@@ -8,8 +8,7 @@ from services.lib.date_utils import now_ts, parse_timespan_to_seconds
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
 from services.lib.settings_manager import SettingsManager
-from services.lib.texts import grouper
-from services.lib.utils import class_logger
+from services.lib.utils import class_logger, grouper
 from services.models.node_info import NodeSetChanges, NodeEvent, NodeEventType
 from services.models.node_watchers import NodeWatcherStorage
 from services.notify.broadcast import ChannelDescriptor

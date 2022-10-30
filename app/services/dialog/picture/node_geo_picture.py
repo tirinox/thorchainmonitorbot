@@ -8,8 +8,7 @@ from PIL import ImageDraw, Image, ImageFont
 from localization.eng_base import BaseLocalization
 from services.lib.draw_utils import draw_arc_aa, get_palette_color_by_index, LIGHT_TEXT_COLOR, \
     hls_transform_hex, default_gradient
-from services.lib.texts import grouper
-from services.lib.utils import async_wrap, Singleton, most_common_and_other
+from services.lib.utils import async_wrap, Singleton, most_common_and_other, grouper
 from services.models.node_info import NetworkNodeIpInfo
 
 NODE_GEO_PIC_WIDTH, NODE_GEO_PIC_HEIGHT = 800, 720

@@ -12,8 +12,7 @@ from services.lib.draw_utils import CATEGORICAL_PALETTE, pos_percent, result_col
 from services.lib.money import pretty_money, format_percent, pretty_percent, Asset, RAIDO_GLYPH, pretty_rune, \
     short_dollar
 from services.lib.plot_graph import PlotBarGraph
-from services.lib.texts import grouper
-from services.lib.utils import async_wrap
+from services.lib.utils import async_wrap, grouper
 from services.models.lp_info import LiquidityPoolReport, LPDailyGraphPoint, ILProtectionReport
 from services.models.price import LastPriceHolder
 

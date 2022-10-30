@@ -3,8 +3,7 @@ import socket
 from collections import defaultdict
 from typing import Dict
 
-from services.lib.texts import grouper
-
+from services.lib.utils import grouper
 
 TCPPollResults = Dict[str, Dict[int, bool]]
 

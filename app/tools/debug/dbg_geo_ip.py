@@ -27,10 +27,12 @@ async def demo_test_geo_ip_google():
         assert result['country'] == 'US'
 
 
-async def get_ip_infos_pickled() -> NetworkNodeIpInfo:
-    path = '../../tmp/node_geo_new_full.pickle'
-
-    result_network_info = load_pickle(path)
+async def get_ip_infos_pickled(path='node_geo_new_full.pickle') -> NetworkNodeIpInfo:
+    if path:
+        path = os.path.join('../../tmp/', path)
+        result_network_info = load_pickle(path)
+    else:
+        result_network_info = None
 
     if not result_network_info:
         lp_app = LpAppFramework()
@@ -52,7 +54,7 @@ async def get_ip_infos_pickled() -> NetworkNodeIpInfo:
                 ip_info_dict
             )
 
-            if result_network_info:
+            if result_network_info and path:
                 save_pickle(path, result_network_info)
     return result_network_info
 
@@ -97,6 +99,26 @@ async def demo_test_geo_ip_thor_2():
         pic.show()
 
 
+async def demo_test_parallel_fetch():
+    lp_app = LpAppFramework()
+    async with lp_app:
+        geo_ip = GeoIPManager(lp_app.deps)
+
+        node_info_fetcher = NodeInfoFetcher(lp_app.deps)
+        result = await node_info_fetcher.fetch_current_node_list()
+
+        ip_addresses = [node.ip_address for node in result if node.ip_address]
+
+        for ip in ip_addresses:
+            await geo_ip.clear_info(ip)
+
+        print('IP addresses = ')
+        print(*ip_addresses, sep=', ')
+
+        ip_infos = await geo_ip.get_ip_info_bulk(ip_addresses)
+        print(ip_infos)
+
+
 async def demo_test_donuts():
     # real_data = [('AMAZON', 24), ('DIGITALOCEAN', 10), ('MICROSOFT', 2), ('Others', 3)]
     fake_data_1 = [('AMAZON', 100), ('DIGITALOCEAN', 50), ('MICROSOFT', 20), ('Others', 1)]
@@ -113,7 +135,7 @@ async def demo_test_geo_chart():
 async def demo_test_new_geo_chart():
     LpAppFramework.solve_working_dir_mess()
 
-    infos = await get_ip_infos_pickled()
+    infos = await get_ip_infos_pickled('nodes_new_2.pickle')
     gen = NodePictureGenerator(infos, BaseLocalization(None))
 
     pic = await gen.generate()
@@ -132,8 +154,9 @@ async def main():
     # await test_geo_ip_thor_2()
     # await test_donuts()
     # await demo_get_node_stats()
-    await demo_test_new_geo_chart()
+    # await demo_test_new_geo_chart()
     # await demo_last_block()
+    await demo_test_parallel_fetch()
 
 
 if __name__ == "__main__":

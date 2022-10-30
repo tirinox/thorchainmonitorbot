@@ -20,12 +20,14 @@ TC_NIGHT_BLACK = '#101921'
 
 TC_BG_COLOR = '#131920'
 
+TC_WHITE = '#f0f0f0'
+
 LINE_COLOR = '#356'
 
 COLOR_OF_PROFIT = '#00f2c3'
 COLOR_OF_LOSS = '#e22222'
 
-LIGHT_TEXT_COLOR = 'white'
+LIGHT_TEXT_COLOR = TC_WHITE
 
 CATEGORICAL_PALETTE = [
     '#648FFF', '#785EF0',
@@ -60,6 +62,18 @@ NEW_PALETTE = [
     rgb(143, 227, 207),
 ]
 
+TC_PALETTE = [
+    TC_YGGDRASIL_GREEN,
+    TC_LIGHTNING_BLUE,
+    TC_MIDGARD_TURQOISE
+]
+
+
+def hex_to_rgb(value):
+    value = value.lstrip('#')
+    lv = len(value)
+    return tuple(int(value[i:i + lv // 3], 16) for i in range(0, lv, lv // 3))
+
 
 def get_palette_color_by_index_new(i, palette, step=0.5):
     n = len(palette)
@@ -67,7 +81,13 @@ def get_palette_color_by_index_new(i, palette, step=0.5):
     index = int(location) % n
     t = location - index
     next_index = (index + 1) % n
-    r, g, b = [int(linear_transform(t, 0.0, 1.0, palette[index][i], palette[next_index][i]))
+    c1 = palette[index]
+    c2 = palette[next_index]
+    if isinstance(c1, str):
+        c1 = hex_to_rgb(c1)
+    if isinstance(c2, str):
+        c2 = hex_to_rgb(c2)
+    r, g, b = [int(linear_transform(t, 0.0, 1.0, c1[i], c2[i]))
                for i in range(3)]
     return r, g, b
 
@@ -122,7 +142,7 @@ def generate_gradient(
     return base
 
 
-def draw_arc_aa(image, bounds, start, end, width=1, outline='white', antialias=4):
+def draw_arc_aa(image, bounds, start, end, width=1, outline=TC_WHITE, antialias=4):
     """Improved ellipse drawing function, based on PIL.ImageDraw."""
 
     # Use a single channel image (mode='L') as mask.

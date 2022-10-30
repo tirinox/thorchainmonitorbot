@@ -18,7 +18,8 @@ from services.lib.money import format_percent, pretty_money, short_address, shor
     calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset, short_dollar, \
     RAIDO_GLYPH, short_rune
 from services.lib.texts import progressbar, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
-    up_down_arrow, bracketify, plural, grouper, join_as_numbered_list, regroup_joining, shorten_text
+    up_down_arrow, bracketify, plural, join_as_numbered_list, regroup_joining, shorten_text
+from services.lib.utils import grouper
 from services.lib.w3.dex_analytics import DexReport, DexReportEntry
 from services.lib.w3.token_record import AmountToken
 from services.models.cap_info import ThorCapInfo

@@ -8,8 +8,7 @@ from services.lib.depcont import DepContainer
 from services.lib.midgard.name_service import NameMap
 from services.lib.money import Asset, ABSURDLY_LARGE_NUMBER
 from services.lib.settings_manager import SettingsManager
-from services.lib.texts import grouper
-from services.lib.utils import class_logger, safe_get
+from services.lib.utils import class_logger, safe_get, grouper
 from services.models.node_watchers import UserWatchlist
 from services.models.transfer import RuneTransfer
 from services.notify.channel import ChannelDescriptor, BoardMessage

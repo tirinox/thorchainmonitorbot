@@ -6,7 +6,7 @@ from PIL import ImageFont, Image, ImageDraw
 from localization.eng_base import BaseLocalization
 from services.lib.draw_utils import default_background, CacheGrid, TC_YGGDRASIL_GREEN, \
     make_donut_chart, get_palette_color_by_index, TC_MIDGARD_TURQOISE, TC_NIGHT_BLACK, get_palette_color_by_index_new, \
-    NEW_PALETTE
+    NEW_PALETTE, TC_PALETTE, TC_WHITE
 from services.lib.money import clamp, short_rune, format_percent
 from services.lib.plot_graph import plot_legend
 from services.lib.texts import bracketify
@@ -41,6 +41,7 @@ class WorldMap:
     def __init__(self, loc: BaseLocalization):
         self.r = Resources()
         self.w, self.h = self.r.world_map.size
+        self.loc = loc
 
     def convert_coord_to_xy(self, long, lat):
         x = (long + 180.0) / 360.0 * self.w
@@ -109,7 +110,7 @@ class WorldMap:
             x, y = int(x), int(y)
             # pic.paste(point_image, (x - point_size_half, y - point_size_half), point_image)
 
-            color = color_map.get(node.ip_address, (0, 'white'))[1]
+            color = color_map.get(node.ip_address, (0, TC_WHITE))[1]
 
             point_size_half = int(point_size_half * 0.7)
             draw.ellipse((
@@ -121,7 +122,7 @@ class WorldMap:
         if n_unknown_nodes:
             x, y = self.convert_coord_to_xy(unk_long, unk_lat)
             draw.text((x + label_x_shift, y),
-                      f'Unknown location ({n_unknown_nodes})',
+                      f'Unknown location ({n_unknown_nodes})',  # todo: localize
                       fill='#005566',
                       font=self.r.font_small, anchor='lm')
 
@@ -138,7 +139,7 @@ class WorldMap:
             # right position
             box = (sx + label_x_shift, sy - h // 2), (sx + label_x_shift + w, sy + h // 2)
             if not name_grid.is_box_occupied(box):
-                draw.text((sx + label_x_shift, sy), text, fill=TC_MIDGARD_TURQOISE,
+                draw.text((sx + label_x_shift, sy), text, fill=TC_WHITE,
                           font=self.r.font_small, anchor='lm', stroke_width=2, stroke_fill=TC_NIGHT_BLACK)
                 name_grid.fill_box(box)
             else:
@@ -175,7 +176,7 @@ class NodePictureGenerator:
 
     @staticmethod
     def index_to_color(i):
-        return get_palette_color_by_index_new(i, NEW_PALETTE[::-1], step=0.5)
+        return get_palette_color_by_index_new(i, TC_PALETTE, step=0.5)
 
     @async_wrap
     def generate(self):
@@ -231,7 +232,7 @@ class NodePictureGenerator:
         bond_min, bond_med, bond_max, bond_total = self.data.get_min_median_max_total_bond(self.data.active_nodes)
 
         def render_text(title, value, value2, _x, _y):
-            draw.text((_x, _y), title, font=r.font_small, fill='white', anchor='lt')
+            draw.text((_x, _y), title, font=r.font_small, fill=TC_WHITE, anchor='lt')
             draw.text((_x, _y + 33), value, font=r.font_subtitle, fill=TC_YGGDRASIL_GREEN, anchor='lt')
             if value2:
                 draw.text((_x, _y + 72), value2, font=r.font_small, fill="#bfd", anchor='lt')
