@@ -5,8 +5,8 @@ from PIL import ImageFont, Image, ImageDraw
 
 from localization.eng_base import BaseLocalization
 from services.lib.draw_utils import default_background, CacheGrid, TC_YGGDRASIL_GREEN, \
-    make_donut_chart, get_palette_color_by_index, TC_MIDGARD_TURQOISE, TC_NIGHT_BLACK, get_palette_color_by_index_new, \
-    NEW_PALETTE, TC_PALETTE, TC_WHITE
+    make_donut_chart, TC_MIDGARD_TURQOISE, TC_NIGHT_BLACK, get_palette_color_by_index_new, \
+    TC_PALETTE, TC_WHITE
 from services.lib.money import clamp, short_rune, format_percent
 from services.lib.plot_graph import plot_legend
 from services.lib.texts import bracketify

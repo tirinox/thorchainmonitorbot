@@ -440,6 +440,6 @@ def plot_legend(draw: ImageDraw, elements: List[str], xy,
         ), fill=color)
         final_text_color = color if label_color == 'auto' else label_color
         draw.text((current_x + sq_size + label_shift_x, current_y + sq_size // 2),
-                  label, final_text_color, font=font, anchor='lm',)
+                  label, final_text_color, font=font, anchor='lm', )
 
         current_x += full_item_width

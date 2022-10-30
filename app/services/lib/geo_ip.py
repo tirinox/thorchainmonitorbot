@@ -1,4 +1,3 @@
-import asyncio
 import json
 from typing import List
 
@@ -7,7 +6,7 @@ from aioredis import Redis
 
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
-from services.lib.utils import class_logger, parallel_run_in_groups, grouper
+from services.lib.utils import class_logger, parallel_run_in_groups
 
 
 class GeoIPManager:
