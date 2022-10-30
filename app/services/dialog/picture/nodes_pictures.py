@@ -4,8 +4,8 @@ import random
 from PIL import ImageFont, Image, ImageDraw
 
 from localization.eng_base import BaseLocalization
-from services.lib.draw_utils import default_background, CacheGrid, TC_LIGHTNING_BLUE, TC_YGGDRASIL_GREEN, \
-    make_donut_chart, get_palette_color_by_index, TC_MIDGARD_TURQOISE
+from services.lib.draw_utils import default_background, CacheGrid, TC_YGGDRASIL_GREEN, \
+    make_donut_chart, get_palette_color_by_index, TC_MIDGARD_TURQOISE, TC_NIGHT_BLACK
 from services.lib.money import clamp, short_rune, format_percent
 from services.lib.plot_graph import plot_legend
 from services.lib.texts import bracketify
@@ -54,14 +54,15 @@ class WorldMap:
 
         draw = ImageDraw.Draw(pic)
 
-        cache = set()
+        coord_cache = set()
+        lable_cache = set()
 
-        randomize_factor = 0.005
+        randomize_factor = 0.0025
         max_point_size = 50
         min_point_size = 1
         n_unknown_nodes = 0
 
-        name_grid = CacheGrid(120, 60)
+        name_grid = CacheGrid(40, 60)
 
         unk_lat, unk_long = -60, 0
         name_grid.set(*self.convert_coord_to_xy(unk_long, unk_lat))
@@ -87,13 +88,13 @@ class WorldMap:
 
             x, y = self.convert_coord_to_xy(long, lat)
             key = f'{x}-{y}'
-            if key in cache:
+            if key in coord_cache:
                 x += w * random.uniform(-randomize_factor, randomize_factor)
                 y += h * random.uniform(-randomize_factor, randomize_factor)
             else:
                 labels.append((x, y, city))
 
-            cache.add(key)
+            coord_cache.add(key)
 
             point_size = node.bond / 1e6 * max_point_size
             point_size = int(math.ceil(clamp(point_size, min_point_size, max_point_size)))
@@ -123,18 +124,37 @@ class WorldMap:
                       fill='#005566',
                       font=self.r.font_small, anchor='lm')
 
+        font = self.r.font_small
         for sx, sy, city in labels:
-            if not name_grid.is_occupied(sx, sy):
-                draw.text((sx + label_x_shift, sy), f'{city}', fill=TC_MIDGARD_TURQOISE,
-                          font=self.r.font_small, anchor='lm')
-                name_grid.set(sx, sy)
+            text = f'{city}'
+
+            if text in lable_cache:
+                continue
+            else:
+                lable_cache.add(text)
+
+            w, h = font.getsize(text)
+            # right position
+            box = (sx + label_x_shift, sy - h // 2), (sx + label_x_shift + w, sy + h // 2)
+            if not name_grid.is_box_occupied(box):
+                draw.text((sx + label_x_shift, sy), text, fill=TC_MIDGARD_TURQOISE,
+                          font=self.r.font_small, anchor='lm', stroke_width=2, stroke_fill=TC_NIGHT_BLACK)
+                name_grid.fill_box(box)
+            else:
+                # left position
+                box = (sx - label_x_shift - w, sy - h // 2), (sx - label_x_shift, sy + h // 2)
+                if not name_grid.is_box_occupied(box):
+                    draw.text((sx - label_x_shift, sy), text, fill=TC_MIDGARD_TURQOISE,
+                              font=self.r.font_small, anchor='rm', stroke_width=2, stroke_fill=TC_NIGHT_BLACK)
+                    name_grid.fill_box(box)
+
 
         return pic
 
 
 class NodePictureGenerator:
-    PIC_WIDTH = 2048
-    PIC_HEIGHT = 1536
+    PIC_WIDTH = 2000
+    PIC_HEIGHT = 1600
 
     def __init__(self, data: NetworkNodeIpInfo, loc: BaseLocalization):
         self.data = data
@@ -143,29 +163,41 @@ class NodePictureGenerator:
 
     @async_wrap
     def generate(self):
+        providers = self.data.get_providers(self.data.active_nodes)
+        # localization
+        providers = [(self.loc.TEXT_PIC_UNKNOWN if p == NetworkNodeIpInfo.UNKNOWN_PROVIDER else p) for p in providers]
+
+        # [(PROVIDER, count)]
+        counted_providers = most_common_and_other(providers, self.max_categories, self.category_other)
+
+        # {IP: (Provider, color)}
+        color_map = {}
+        colors = {prov_name: get_palette_color_by_index(i) for i, (prov_name, _) in enumerate(counted_providers)}
+        for prov_name, node in zip(providers, self.data.active_nodes):
+            if node.ip_address:
+                color_map[node.ip_address] = (prov_name, colors.get(prov_name, colors.get(self.category_other)))
+
+        # build the image
         r = Resources()
         w, h = self.PIC_WIDTH, self.PIC_HEIGHT
         image = default_background(w, h)
         draw = ImageDraw.Draw(image)
 
-        providers = self.data.get_providers(self.data.active_nodes)
-        providers_counted = self._make_donut_provider(image, draw, r, providers)  # [(PROVIDER, count)]
-        colors = {prov_name: get_palette_color_by_index(i) for i, (prov_name, _) in enumerate(providers_counted)}
-
-        color_map = {}
-        for prov_name, node in zip(providers, self.data.active_nodes):
-            if node.ip_address:
-                color_map[node.ip_address] = (prov_name, colors.get(prov_name, colors.get(self.category_other)))
-
+        # world map
         world = WorldMap(self.loc)
         big_map = world.draw(self.data, color_map)
-
         big_map.thumbnail((w, h), Image.ANTIALIAS)
         image.paste(big_map, (0, 80))
 
-        self._make_node_stats(draw, r, 20, 400, 80)
+        # Cloud distribution of active nodeds
+        donut = self._make_donut_provider(r, counted_providers, 400)
+        image.paste(donut, (400, 1020), donut)
+        plot_legend(draw, [e[0] for e in counted_providers], (400, 1440), font=r.font_small, max_width=440)
 
-        # logo
+        # Stats
+        self._make_node_stats(draw, r, 40, 1050, 90)
+
+        # TC Logo
         image.paste(r.tc_logo, ((w - r.tc_logo.size[0]) // 2, 10))
 
         return image
@@ -175,9 +207,9 @@ class NodePictureGenerator:
 
         def render_text(title, value, value2, _x, _y):
             draw.text((_x, _y), title, font=r.font_small, fill='white', anchor='lt')
-            draw.text((_x, _y + 30), value, font=r.font_subtitle, fill=TC_YGGDRASIL_GREEN, anchor='lt')
+            draw.text((_x, _y + 33), value, font=r.font_subtitle, fill=TC_YGGDRASIL_GREEN, anchor='lt')
             if value2:
-                draw.text((_x, _y + 68), value2, font=r.font_small, fill=TC_YGGDRASIL_GREEN, anchor='lt')
+                draw.text((_x, _y + 72), value2, font=r.font_small, fill="#bfd", anchor='lt')
 
         render_text(f'Minimum bond', short_rune(bond_min), None, x, y)
         y += dy
@@ -200,13 +232,7 @@ class NodePictureGenerator:
     def category_other(self):
         return self.loc.TEXT_PIC_OTHERS
 
-    def _make_donut_provider(self, image, draw, r, providers, width=400):
-        providers = [(self.loc.TEXT_PIC_UNKNOWN if p == NetworkNodeIpInfo.UNKNOWN_PROVIDER else p)
-                     for p in providers]
-        elements = most_common_and_other(providers,
-                                         self.max_categories,
-                                         self.category_other)
-
+    def _make_donut_provider(self, r, elements, width):
         donut1 = make_donut_chart(elements,
                                   line_width=200,
                                   font_abs_count=r.font_norm,
@@ -215,10 +241,4 @@ class NodePictureGenerator:
                                   margin=44,
                                   title_color='white', font_middle=r.font_subtitle, title='Cloud')
 
-        image.paste(donut1, (1000, 1100), donut1)
-
-        plot_legend(draw, [e[0] for e in elements],
-                    (1430, 1200),
-                    font=r.font_small, max_width=width)
-
-        return elements
+        return donut1

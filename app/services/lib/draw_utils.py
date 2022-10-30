@@ -247,11 +247,13 @@ class CacheGrid:
         self.scale_y = scale_y
         self._s = set()
 
+    def clear(self):
+        self._s.clear()
+
     def key(self, x, y):
         x /= self.scale_x
         y /= self.scale_y
-
-        return f'{int(x)}-{int(y)}'
+        return int(x), int(y)
 
     def is_occupied(self, x, y):
         return self.key(x, y) in self._s
@@ -262,6 +264,26 @@ class CacheGrid:
             self._s.add(k)
         elif k in self._s:
             self._s.remove(k)
+
+    def box_guts(self, xy):
+        (x1, y1), (x2, y2) = xy
+        if x2 <= x1 or y2 <= y1:
+            return
+
+        y = y1
+        while y < y2:
+            x = x1
+            while x < x2:
+                yield x, y
+                x += self.scale_x
+            y += self.scale_y
+
+    def fill_box(self, xy, v=True):
+        for x, y in self.box_guts(xy):
+            self.set(x, y, v)
+
+    def is_box_occupied(self, xy):
+        return any(self.is_occupied(x, y) for x, y in self.box_guts(xy))
 
 
 def radial_pos_int(cx, cy, r, angle_deg):

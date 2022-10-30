@@ -413,7 +413,8 @@ def plot_legend(draw: ImageDraw, elements: List[str], xy,
                 font: ImageFont,
                 sq_size=0, x_step=14, y_step=0,
                 max_width=1000,
-                label_shift_x=5, is_circle=True):
+                label_shift_x=5, is_circle=True,
+                label_color='auto'):
     current_x, current_y = x, y = xy
 
     brush = draw.ellipse if is_circle else draw.rectangle
@@ -421,7 +422,7 @@ def plot_legend(draw: ImageDraw, elements: List[str], xy,
     for i, label in enumerate(elements):
         w, h = font.getsize(label)
 
-        y_step = y_step or int(h * 1.2)
+        y_step = y_step or int(h * 1.24)
         sq_size = sq_size or h
 
         full_item_width = w + label_shift_x + sq_size + x_step
@@ -436,7 +437,8 @@ def plot_legend(draw: ImageDraw, elements: List[str], xy,
             (current_x, current_y),
             (current_x + sq_size, current_y + sq_size)
         ), fill=color)
+        final_text_color = color if label_color == 'auto' else label_color
         draw.text((current_x + sq_size + label_shift_x, current_y + sq_size // 2),
-                  label, LIGHT_TEXT_COLOR, font=font, anchor='lm')
+                  label, final_text_color, font=font, anchor='lm',)
 
         current_x += full_item_width
