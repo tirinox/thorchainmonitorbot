@@ -5,12 +5,12 @@ from PIL import ImageFont, Image, ImageDraw
 
 from localization.eng_base import BaseLocalization
 from services.lib.draw_utils import default_background, CacheGrid, TC_YGGDRASIL_GREEN, \
-    make_donut_chart, TC_MIDGARD_TURQOISE, TC_NIGHT_BLACK, get_palette_color_by_index_new, \
+    make_donut_chart, TC_NIGHT_BLACK, get_palette_color_by_index_new, \
     TC_PALETTE, TC_WHITE
 from services.lib.money import clamp, short_rune, format_percent
 from services.lib.plot_graph import plot_legend
 from services.lib.texts import bracketify
-from services.lib.utils import async_wrap, Singleton, most_common_and_other
+from services.lib.utils import async_wrap, Singleton, most_common_and_other, linear_transform
 from services.models.node_info import NetworkNodeIpInfo
 
 
@@ -42,6 +42,7 @@ class WorldMap:
         self.r = Resources()
         self.w, self.h = self.r.world_map.size
         self.loc = loc
+        self.lable_color = TC_WHITE
 
     def convert_coord_to_xy(self, long, lat):
         x = (long + 180.0) / 360.0 * self.w
@@ -98,7 +99,7 @@ class WorldMap:
 
             coord_cache.add(key)
 
-            point_size = node.bond / 1e6 * max_point_size
+            point_size = ((node.bond / 1e6) ** 2) * max_point_size
             point_size = int(math.ceil(clamp(point_size, min_point_size, max_point_size)))
             point_size_half = point_size // 2
 
@@ -139,23 +140,72 @@ class WorldMap:
             # right position
             box = (sx + label_x_shift, sy - h // 2), (sx + label_x_shift + w, sy + h // 2)
             if not name_grid.is_box_occupied(box):
-                draw.text((sx + label_x_shift, sy), text, fill=TC_WHITE,
-                          font=self.r.font_small, anchor='lm', stroke_width=2, stroke_fill=TC_NIGHT_BLACK)
+                draw.text((sx + label_x_shift, sy),
+                          text,
+                          fill=self.lable_color,
+                          font=self.r.font_small,
+                          anchor='lm',
+                          stroke_width=2,
+                          stroke_fill=TC_NIGHT_BLACK)
                 name_grid.fill_box(box)
             else:
                 # left position
                 box = (sx - label_x_shift - w, sy - h // 2), (sx - label_x_shift, sy + h // 2)
                 if not name_grid.is_box_occupied(box):
-                    draw.text((sx - label_x_shift, sy), text, fill=TC_MIDGARD_TURQOISE,
-                              font=self.r.font_small, anchor='rm', stroke_width=2, stroke_fill=TC_NIGHT_BLACK)
+                    draw.text((sx - label_x_shift, sy),
+                              text,
+                              fill=self.lable_color,
+                              font=self.r.font_small,
+                              anchor='rm',
+                              stroke_width=1,
+                              stroke_fill=TC_NIGHT_BLACK)
                     name_grid.fill_box(box)
 
         return pic
 
 
+class BondRuler:
+    def __init__(self, data: NetworkNodeIpInfo, width=800):
+        self.data = data
+        self.width = width
+
+    def generate(self, d: ImageDraw, x, y):
+        bond_min, bond_med, bond_max, bond_total = self.data.get_min_median_max_total_bond(self.data.active_nodes)
+        bond_upper_bound = math.ceil(bond_max / 1e6) * 1e6 + 0.1e6
+        bond_lower_bound = 0.3e6
+        color = '#147e73'
+        w = self.width
+        line_width = 3
+        r = Resources()
+
+        d.line(((x, y), (x + w, y)), fill=color, width=line_width)
+
+        def x_coord(bond):
+            return linear_transform(bond, bond_lower_bound, bond_upper_bound, x, x + w)
+
+        notches = [
+            (bond_lower_bound, 20, 'mm', ''),
+            (bond_min, 17, 'mm', 'Min bond'),
+            (bond_med, 17, 'mm', 'Median'),
+            (bond_max, 17, 'mm', 'Max'),
+            (bond_upper_bound, 20, 'mm', '')
+        ]
+        for bond, h_n, anch, label in notches:
+            x_n = x_coord(bond)
+            d.line(((x_n, y - h_n), (x_n, y + h_n)), fill=color, width=line_width)
+            d.text((x_n, y + 48), short_rune(bond), font=r.font_small, fill=TC_YGGDRASIL_GREEN, anchor=anch)
+            if label:
+                d.text((x_n, y - 44), label, font=r.font_norm, fill=TC_WHITE, anchor='mm')
+
+        d.rectangle([
+            (x_coord(bond_min), y - 6),
+            (x_coord(bond_max), y + 6)
+        ], fill=color)
+
+
 class NodePictureGenerator:
     PIC_WIDTH = 2000
-    PIC_HEIGHT = 1600
+    PIC_HEIGHT = 1800
 
     def __init__(self, data: NetworkNodeIpInfo, loc: BaseLocalization):
         self.data = data
@@ -176,7 +226,7 @@ class NodePictureGenerator:
 
     @staticmethod
     def index_to_color(i):
-        return get_palette_color_by_index_new(i, TC_PALETTE, step=0.5)
+        return get_palette_color_by_index_new(i, TC_PALETTE, step=1.0)
 
     @async_wrap
     def generate(self):
@@ -223,6 +273,11 @@ class NodePictureGenerator:
         # Stats
         self._make_node_stats(draw, r, 800, 1050, 90)
 
+        # Ruler
+        ruler_margin = 142
+        br = BondRuler(self.data, self.PIC_WIDTH - ruler_margin * 2)
+        br.generate(draw, ruler_margin, 1680)
+
         # TC Logo
         image.paste(r.tc_logo, ((w - r.tc_logo.size[0]) // 2, 10))
 
@@ -232,24 +287,20 @@ class NodePictureGenerator:
         bond_min, bond_med, bond_max, bond_total = self.data.get_min_median_max_total_bond(self.data.active_nodes)
 
         def render_text(title, value, value2, _x, _y):
-            draw.text((_x, _y), title, font=r.font_small, fill=TC_WHITE, anchor='lt')
-            draw.text((_x, _y + 33), value, font=r.font_subtitle, fill=TC_YGGDRASIL_GREEN, anchor='lt')
+            draw.text((_x, _y), str(title), font=r.font_small, fill=TC_WHITE, anchor='lt')
+            draw.text((_x, _y + 33), str(value), font=r.font_subtitle, fill=TC_YGGDRASIL_GREEN, anchor='lt')
             if value2:
-                draw.text((_x, _y + 72), value2, font=r.font_small, fill="#bfd", anchor='lt')
-
-        render_text(f'Minimum bond', short_rune(bond_min), None, x, y)
-        y += dy
-        render_text(f'Median bond', short_rune(bond_med), None, x, y)
-        y += dy
-        render_text(f'Maximum bond', short_rune(bond_max), None, x, y)
-        y += dy
+                draw.text((_x, _y + 72), str(value2), font=r.font_small, fill="#bfd", anchor='lt')
 
         bond_percent_str = bracketify(format_percent(bond_total, self.data.total_rune_supply))
-        render_text(f'Total active bond', short_rune(bond_total), bond_percent_str, x, y)
+        render_text(f'Active bond', short_rune(bond_total), bond_percent_str, x, y)
 
         bond_all_total = self.data.total_bond
         bond_percent_str = bracketify(format_percent(bond_all_total, self.data.total_rune_supply))
-        render_text(f'Total bond', short_rune(bond_all_total), bond_percent_str, x, y + dy * 1.5)
+        render_text(f'Total bond', short_rune(bond_all_total), bond_percent_str, x + 260, y)
+
+        render_text('Active nodes', len(self.data.active_nodes), None, x + 0, y + 150)
+        render_text('Total nodes', len(self.data.node_info_list), None, x + 260, y + 150)
 
     @property
     def category_other(self):

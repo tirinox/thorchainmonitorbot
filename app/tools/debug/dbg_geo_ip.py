@@ -154,9 +154,9 @@ async def main():
     # await test_geo_ip_thor_2()
     # await test_donuts()
     # await demo_get_node_stats()
-    # await demo_test_new_geo_chart()
+    await demo_test_new_geo_chart()
     # await demo_last_block()
-    await demo_test_parallel_fetch()
+    # await demo_test_parallel_fetch()
 
 
 if __name__ == "__main__":
