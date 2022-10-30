@@ -1,5 +1,4 @@
 import logging
-import math
 import time
 from typing import List, Tuple
 
@@ -7,7 +6,7 @@ from PIL import ImageDraw, Image, ImageFont
 
 from localization.eng_base import BaseLocalization
 from services.lib.draw_utils import draw_arc_aa, get_palette_color_by_index, LIGHT_TEXT_COLOR, \
-    hls_transform_hex, default_gradient
+    hls_transform_hex, default_gradient, radial_pos_int
 from services.lib.utils import async_wrap, Singleton, most_common_and_other, grouper
 from services.models.node_info import NetworkNodeIpInfo
 

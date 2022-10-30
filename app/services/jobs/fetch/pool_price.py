@@ -196,8 +196,10 @@ class PoolInfoFetcherMidgard(BaseFetcher):
         self.parser = get_parser_by_network_id(self.deps.cfg.network_id)
         self.last_raw_result = None
 
-    async def get_pool_info_midgard(self) -> PoolInfoMap:
+    async def get_pool_info_midgard(self) -> Optional[PoolInfoMap]:
         raw_data = await self.deps.midgard_connector.request_random_midgard(free_url_gen.url_pool_info())
+        if not raw_data:
+            return
         self.last_raw_result = raw_data
         return self.parser.parse_pool_info(raw_data)
 
