@@ -414,7 +414,8 @@ def plot_legend(draw: ImageDraw, elements: List[str], xy,
                 sq_size=0, x_step=14, y_step=0,
                 max_width=1000,
                 label_shift_x=5, is_circle=True,
-                label_color='auto'):
+                label_color='auto',
+                palette=get_palette_color_by_index):
     current_x, current_y = x, y = xy
 
     brush = draw.ellipse if is_circle else draw.rectangle
@@ -431,7 +432,7 @@ def plot_legend(draw: ImageDraw, elements: List[str], xy,
             current_x = x
             current_y += y_step
 
-        color = get_palette_color_by_index(i)
+        color = palette(i)
 
         brush((
             (current_x, current_y),

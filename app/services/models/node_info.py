@@ -313,19 +313,25 @@ class NetworkNodeIpInfo:
             return str(components[0]).upper()
         return org
 
-    def get_providers(self, nodes: List[NodeInfo] = None) -> List[str]:
+    def get_feature_by_f(self, f, nodes: List[NodeInfo] = None, unknown=UNKNOWN_PROVIDER) -> List[str]:
         if not nodes:
             nodes = self.node_info_list  # all nodes from this class
 
-        providers = []
+        collection = []
         for node in nodes:
             ip_info = self.ip_info_dict.get(node.ip_address, None)
             if ip_info:
-                providers.append(self.get_general_provider(ip_info))
+                collection.append(f(ip_info) if f else ip_info)
             else:
-                providers.append(self.UNKNOWN_PROVIDER)
+                collection.append(unknown)
 
-        return providers
+        return collection
+
+    def get_providers(self, nodes: List[NodeInfo] = None, unknown=UNKNOWN_PROVIDER) -> List[str]:
+        return self.get_feature_by_f(self.get_general_provider, nodes, unknown)
+
+    def get_countries(self, nodes: List[NodeInfo] = None, unknown=UNKNOWN_PROVIDER) -> List[str]:
+        return self.get_feature_by_f(lambda info: info.get('country_name', self.UNKNOWN_PROVIDER), nodes, unknown)
 
     @staticmethod
     def get_min_median_max_total_bond(nodes: List[NodeInfo]) -> Tuple[float, float, float, float]:

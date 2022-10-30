@@ -11,6 +11,8 @@ import PIL.Image
 import numpy as np
 from PIL import Image, ImageDraw, ImageColor
 
+from services.lib.utils import linear_transform
+
 TC_LIGHTNING_BLUE = '#00CCFF'
 TC_YGGDRASIL_GREEN = '#33FF99'
 TC_MIDGARD_TURQOISE = '#23DCC8'
@@ -45,6 +47,29 @@ PALETTE = [
 
 GRADIENT_TOP_COLOR = '#0b1c27'
 GRADIENT_BOTTOM_COLOR = '#11354b'
+
+
+def rgb(r, g, b):
+    return r, g, b
+
+
+NEW_PALETTE = [
+    rgb(0, 43, 91),
+    rgb(43, 72, 101),
+    rgb(37, 109, 133),
+    rgb(143, 227, 207),
+]
+
+
+def get_palette_color_by_index_new(i, palette, step=0.5):
+    n = len(palette)
+    location = i * step
+    index = int(location) % n
+    t = location - index
+    next_index = (index + 1) % n
+    r, g, b = [int(linear_transform(t, 0.0, 1.0, palette[index][i], palette[next_index][i]))
+               for i in range(3)]
+    return r, g, b
 
 
 def get_palette_color_by_index(i, palette=None):
@@ -299,7 +324,7 @@ def make_donut_chart(elements: List[Tuple[str, int]],
                      font_middle=None,
                      font_abs_count=None,
                      font_percent=None,
-                     palette=None,
+                     palette=get_palette_color_by_index,
                      title=None,
                      bg_color=(0, 0, 0, 0)):
     image = Image.new('RGBA', (width, width), bg_color)
@@ -327,7 +352,7 @@ def make_donut_chart(elements: List[Tuple[str, int]],
     for i, (label, value) in enumerate(elements):
         arc_len = deg_per_one * value
 
-        color = palette(i) if palette else get_palette_color_by_index(i)
+        color = palette(i)
 
         arc_start = current + gap
         arc_end = current + arc_len - gap

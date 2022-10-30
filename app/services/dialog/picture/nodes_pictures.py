@@ -5,7 +5,8 @@ from PIL import ImageFont, Image, ImageDraw
 
 from localization.eng_base import BaseLocalization
 from services.lib.draw_utils import default_background, CacheGrid, TC_YGGDRASIL_GREEN, \
-    make_donut_chart, get_palette_color_by_index, TC_MIDGARD_TURQOISE, TC_NIGHT_BLACK
+    make_donut_chart, get_palette_color_by_index, TC_MIDGARD_TURQOISE, TC_NIGHT_BLACK, get_palette_color_by_index_new, \
+    NEW_PALETTE
 from services.lib.money import clamp, short_rune, format_percent
 from services.lib.plot_graph import plot_legend
 from services.lib.texts import bracketify
@@ -148,7 +149,6 @@ class WorldMap:
                               font=self.r.font_small, anchor='rm', stroke_width=2, stroke_fill=TC_NIGHT_BLACK)
                     name_grid.fill_box(box)
 
-
         return pic
 
 
@@ -161,21 +161,30 @@ class NodePictureGenerator:
         self.loc = loc
         self.max_categories = 5
 
-    @async_wrap
-    def generate(self):
-        providers = self.data.get_providers(self.data.active_nodes)
-        # localization
-        providers = [(self.loc.TEXT_PIC_UNKNOWN if p == NetworkNodeIpInfo.UNKNOWN_PROVIDER else p) for p in providers]
+    def _categorize(self, items, active_nodes):
+        # [(NAME, count)]
+        counted_items = most_common_and_other(items, self.max_categories, self.category_other)
 
-        # [(PROVIDER, count)]
-        counted_providers = most_common_and_other(providers, self.max_categories, self.category_other)
-
-        # {IP: (Provider, color)}
+        # {IP: (NAME, color)}
         color_map = {}
-        colors = {prov_name: get_palette_color_by_index(i) for i, (prov_name, _) in enumerate(counted_providers)}
-        for prov_name, node in zip(providers, self.data.active_nodes):
+        colors = {prov_name: self.index_to_color(i) for i, (prov_name, _) in enumerate(counted_items)}
+        for prov_name, node in zip(items, active_nodes):
             if node.ip_address:
                 color_map[node.ip_address] = (prov_name, colors.get(prov_name, colors.get(self.category_other)))
+        return color_map, counted_items
+
+    @staticmethod
+    def index_to_color(i):
+        return get_palette_color_by_index_new(i, NEW_PALETTE[::-1], step=0.5)
+
+    @async_wrap
+    def generate(self):
+        active_nodes = self.data.active_nodes
+        providers = self.data.get_providers(active_nodes, unknown=self.loc.TEXT_PIC_UNKNOWN)
+        countries = self.data.get_countries(active_nodes, unknown=self.loc.TEXT_PIC_UNKNOWN)
+
+        color_map_providers, counted_providers = self._categorize(providers, active_nodes)
+        color_map_countries, counted_countries = self._categorize(countries, active_nodes)
 
         # build the image
         r = Resources()
@@ -185,17 +194,33 @@ class NodePictureGenerator:
 
         # world map
         world = WorldMap(self.loc)
-        big_map = world.draw(self.data, color_map)
+        big_map = world.draw(self.data, color_map_providers)
         big_map.thumbnail((w, h), Image.ANTIALIAS)
         image.paste(big_map, (0, 80))
 
-        # Cloud distribution of active nodeds
-        donut = self._make_donut_provider(r, counted_providers, 400)
-        image.paste(donut, (400, 1020), donut)
-        plot_legend(draw, [e[0] for e in counted_providers], (400, 1440), font=r.font_small, max_width=440)
+        donut_y = 1020
+        legend_y = 1440
+        donut_cloud_x = 60
+        donut_country_x = 1560
+
+        # Cloud distribution of active nodes
+        donut_cloud = self._make_donut(r, counted_providers, 400, 'Cloud')
+        image.paste(donut_cloud, (donut_cloud_x, donut_y), donut_cloud)
+        plot_legend(draw,
+                    [e[0] for e in counted_providers],
+                    (donut_cloud_x, legend_y),
+                    font=r.font_small, max_width=440, palette=self.index_to_color)
+
+        # Countries distribution of active nodes
+        donut_country = self._make_donut(r, counted_countries, 400, 'Country')
+        image.paste(donut_country, (donut_country_x, donut_y), donut_country)
+        plot_legend(draw,
+                    [e[0] for e in counted_countries],
+                    (donut_country_x, legend_y),
+                    font=r.font_small, max_width=440, palette=self.index_to_color)
 
         # Stats
-        self._make_node_stats(draw, r, 40, 1050, 90)
+        self._make_node_stats(draw, r, 800, 1050, 90)
 
         # TC Logo
         image.paste(r.tc_logo, ((w - r.tc_logo.size[0]) // 2, 10))
@@ -225,20 +250,17 @@ class NodePictureGenerator:
         bond_percent_str = bracketify(format_percent(bond_all_total, self.data.total_rune_supply))
         render_text(f'Total bond', short_rune(bond_all_total), bond_percent_str, x, y + dy * 1.5)
 
-    def _make_donut_country(self):
-        ...
-
     @property
     def category_other(self):
         return self.loc.TEXT_PIC_OTHERS
 
-    def _make_donut_provider(self, r, elements, width):
+    def _make_donut(self, r, elements, width, title):
         donut1 = make_donut_chart(elements,
                                   line_width=200,
                                   font_abs_count=r.font_norm,
-                                  label_r=180,
+                                  label_r=184,
                                   width=width,
                                   margin=44,
-                                  title_color='white', font_middle=r.font_subtitle, title='Cloud')
-
+                                  palette=self.index_to_color,
+                                  title_color='white', font_middle=r.font_subtitle, title=title)
         return donut1
