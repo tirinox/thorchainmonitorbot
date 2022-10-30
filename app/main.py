@@ -247,8 +247,9 @@ class App:
             fetcher_stats.subscribe(notifier_stats)
             tasks.append(fetcher_stats)
 
+        d.last_block_fetcher = LastBlockFetcher(d)
+
         if d.cfg.get('last_block.enabled', True):
-            d.last_block_fetcher = LastBlockFetcher(d)
             last_block_notifier = BlockHeightNotifier(d)
             d.last_block_fetcher.subscribe(last_block_notifier)
             last_block_notifier.subscribe(d.alert_presenter)
