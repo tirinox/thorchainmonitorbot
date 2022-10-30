@@ -1,14 +1,16 @@
 import math
 import random
 
+import pandas as pd
 from PIL import ImageFont, Image, ImageDraw
 
 from localization.eng_base import BaseLocalization
+from services.lib.date_utils import ts_event_points_to_pandas, DAY, now_ts
 from services.lib.draw_utils import default_background, CacheGrid, TC_YGGDRASIL_GREEN, \
     make_donut_chart, TC_NIGHT_BLACK, get_palette_color_by_index_new, \
     TC_PALETTE, TC_WHITE
 from services.lib.money import clamp, short_rune, format_percent
-from services.lib.plot_graph import plot_legend
+from services.lib.plot_graph import plot_legend, PlotBarGraph
 from services.lib.texts import bracketify
 from services.lib.utils import async_wrap, Singleton, most_common_and_other, linear_transform
 from services.models.node_info import NetworkNodeIpInfo
@@ -29,7 +31,7 @@ class Resources(metaclass=Singleton):
         self.font_norm = ImageFont.truetype(self.FONT_BOLD, 34)
         self.font_large = ImageFont.truetype(self.FONT_BOLD, 40)
         self.font_subtitle = ImageFont.truetype(self.FONT_BOLD, 44)
-        self.font_head = ImageFont.truetype(self.FONT_BOLD, 60)
+        self.font_head = ImageFont.truetype(self.FONT_BOLD, 80)
 
         self.world_map = Image.open(self.WORLD_FILE)
         self.tc_logo = Image.open(self.LOGO_FILE)
@@ -67,7 +69,7 @@ class WorldMap:
 
         name_grid = CacheGrid(40, 60)
 
-        unk_lat, unk_long = -60, 0
+        unk_lat, unk_long = -60, -140
         name_grid.set(*self.convert_coord_to_xy(unk_long, unk_lat))
 
         countries = []
@@ -122,10 +124,10 @@ class WorldMap:
         label_x_shift = 30
         if n_unknown_nodes:
             x, y = self.convert_coord_to_xy(unk_long, unk_lat)
-            draw.text((x + label_x_shift, y),
+            draw.text((x + label_x_shift, y + 24),
                       f'Unknown location ({n_unknown_nodes})',  # todo: localize
                       fill='#005566',
-                      font=self.r.font_small, anchor='lm')
+                      font=self.r.font_small, anchor='mt')
 
         font = self.r.font_small
         for sx, sy, city in labels:
@@ -192,25 +194,29 @@ class BondRuler:
         ]
         for bond, h_n, anch, label in notches:
             x_n = x_coord(bond)
-            d.line(((x_n, y - h_n), (x_n, y + h_n)), fill=color, width=line_width)
-            d.text((x_n, y + 48), short_rune(bond), font=r.font_small, fill=TC_YGGDRASIL_GREEN, anchor=anch)
+            line_color = color if not label else TC_YGGDRASIL_GREEN
+            d.line(((x_n, y - h_n), (x_n, y + h_n)), fill=line_color, width=line_width)
+            d.text((x_n, y + 48), short_rune(bond), font=r.font_small, fill=line_color, anchor=anch)
             if label:
                 d.text((x_n, y - 44), label, font=r.font_norm, fill=TC_WHITE, anchor='mm')
 
         d.rectangle([
             (x_coord(bond_min), y - 6),
             (x_coord(bond_max), y + 6)
-        ], fill=color)
+        ], fill=TC_YGGDRASIL_GREEN)
 
 
 class NodePictureGenerator:
+    # todo: twitter aspect must be 16:9
     PIC_WIDTH = 2000
     PIC_HEIGHT = 1800
+    RESAMPLE_TIME = '1d'
+    MAX_CATEGORIES = 5
 
-    def __init__(self, data: NetworkNodeIpInfo, loc: BaseLocalization):
+    def __init__(self, data: NetworkNodeIpInfo, loc: BaseLocalization, max_categories=MAX_CATEGORIES):
         self.data = data
         self.loc = loc
-        self.max_categories = 5
+        self.max_categories = max_categories
 
     def _categorize(self, items, active_nodes):
         # [(NAME, count)]
@@ -271,7 +277,7 @@ class NodePictureGenerator:
                     font=r.font_small, max_width=440, palette=self.index_to_color)
 
         # Stats
-        self._make_node_stats(draw, r, 800, 1050, 90)
+        self._make_node_stats(draw, r, 600, 1050)
 
         # Ruler
         ruler_margin = 142
@@ -281,26 +287,34 @@ class NodePictureGenerator:
         # TC Logo
         image.paste(r.tc_logo, ((w - r.tc_logo.size[0]) // 2, 10))
 
+        # Chart
+        chart = self._make_bond_chart(r, 900, 450)
+        image.paste(chart, (580, 1150), chart)
+
         return image
 
-    def _make_node_stats(self, draw, r, x, y, dy):
+    def _make_node_stats(self, draw, r, x, y):
         bond_min, bond_med, bond_max, bond_total = self.data.get_min_median_max_total_bond(self.data.active_nodes)
 
-        def render_text(title, value, value2, _x, _y):
-            draw.text((_x, _y), str(title), font=r.font_small, fill=TC_WHITE, anchor='lt')
-            draw.text((_x, _y + 33), str(value), font=r.font_subtitle, fill=TC_YGGDRASIL_GREEN, anchor='lt')
+        def render_text(title, value, value2, _x, _y, big):
+            draw.text((_x, _y), str(title), font=r.font_norm, fill=TC_WHITE, anchor='lt')
+            f = r.font_head if big else r.font_subtitle
+            draw.text((_x, _y + 33), str(value), font=f, fill=TC_YGGDRASIL_GREEN, anchor='lt')
             if value2:
                 draw.text((_x, _y + 72), str(value2), font=r.font_small, fill="#bfd", anchor='lt')
 
+        dx = 240
+
+        render_text('Active nodes', len(self.data.active_nodes), None, x + dx * 0, y, True)
+
         bond_percent_str = bracketify(format_percent(bond_total, self.data.total_rune_supply))
-        render_text(f'Active bond', short_rune(bond_total), bond_percent_str, x, y)
+        render_text('Active bond', short_rune(bond_total), bond_percent_str, x + dx * 1, y, False)
 
         bond_all_total = self.data.total_bond
         bond_percent_str = bracketify(format_percent(bond_all_total, self.data.total_rune_supply))
-        render_text(f'Total bond', short_rune(bond_all_total), bond_percent_str, x + 260, y)
 
-        render_text('Active nodes', len(self.data.active_nodes), None, x + 0, y + 150)
-        render_text('Total nodes', len(self.data.node_info_list), None, x + 260, y + 150)
+        render_text('Total nodes', len(self.data.node_info_list), None, x + dx * 2, y, True)
+        render_text('Total bond', short_rune(bond_all_total), bond_percent_str, x + dx * 3, y, False)
 
     @property
     def category_other(self):
@@ -316,3 +330,39 @@ class NodePictureGenerator:
                                   palette=self.index_to_color,
                                   title_color='white', font_middle=r.font_subtitle, title=title)
         return donut1
+
+    def _make_bond_chart(self, r, w, h, period=DAY * 14):
+        event_points = self.EXAMPLE_BOND
+
+        # todo: add last point: current state
+
+        gr = PlotBarGraph(w, h, bg=(0, 0, 0, 0))
+        gr.x_formatter = gr.date_formatter
+        gr.y_formatter = short_rune
+        gr.n_ticks_y = 4
+        gr.n_ticks_x = 6
+        gr.margin = 20
+        gr.left = 180
+        gr.font_ticks = r.font_small
+
+        if event_points:
+            df = ts_event_points_to_pandas(event_points, shift_time=False)
+            df["t"] = pd.to_datetime(df["t"], unit='s')
+            df = df.resample(self.RESAMPLE_TIME, on='t').sum()
+            gr.plot_bars(df, 'bond_active_total', gr.PLOT_COLOR)
+            gr.plot_bars(df, 'n_active_nodes', gr.PLOT_COLOR_2)
+
+        gr.update_bounds_y()
+        gr.min_x = now_ts() - period
+        gr.max_x = now_ts()
+        gr.max_y = max(gr.max_y, 20)
+        return gr.finalize()
+
+    EXAMPLE_BOND = [
+        ('1666741086044-1', {'bond_active_total': 64e6, 'n_active_nodes': 70}),
+        ('1666741086344-1', {'bond_active_total': 65e6, 'n_active_nodes': 70}),
+        ('1666841086244-1', {'bond_active_total': 67e6, 'n_active_nodes': 72}),
+        ('1666941086144-1', {'bond_active_total': 63e6, 'n_active_nodes': 73}),
+        ('1667041086644-1', {'bond_active_total': 63.5e6, 'n_active_nodes': 71}),
+        ('1667159256644-1', {'bond_active_total': 70.1e6, 'n_active_nodes': 75}),
+    ]
