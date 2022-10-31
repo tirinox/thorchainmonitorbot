@@ -19,6 +19,7 @@ TC_MIDGARD_TURQOISE = '#23DCC8'
 TC_NIGHT_BLACK = '#101921'
 
 MY_PURPLE = '#6d3bdf'
+MY_PURPLE_2 = '#af2fcc'
 
 TC_BG_COLOR = '#131920'
 
@@ -72,6 +73,8 @@ TC_PALETTE = [
     TC_YGGDRASIL_GREEN,
     TC_MIDGARD_TURQOISE,
     MY_PURPLE,
+    MY_PURPLE_2,
+    '#dbc221',
 ]
 
 
@@ -85,7 +88,7 @@ def get_palette_color_by_index_new(i, palette, step=0.5):
     n = len(palette)
     location = i * step
     index = int(location) % n
-    t = location - index
+    t = location - int(location)
     next_index = (index + 1) % n
     c1 = palette[index]
     c2 = palette[next_index]

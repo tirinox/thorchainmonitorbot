@@ -50,7 +50,7 @@ class PlotGraph:
         height = self.h - self.top - self.bottom
         return self.left, self.h - self.bottom, width, height
 
-    def _plot_ticks(self, ticks, axis='x'):
+    def _plot_ticks(self, ticks, axis='xy?'):
         if not ticks:
             return
         n_ticks = len(ticks)
@@ -59,24 +59,24 @@ class PlotGraph:
 
         if axis == 'x':
             cur_x = self.left
-            cur_y = self.h - self.bottom * 0.7
+            cur_y = self.h - self.bottom + 10
             x_step = width / (n_ticks - 1)
             y_step = 0
-            anchor = 'mm'
+            anchor = 'mt'
             self.draw.line((int(ox), int(oy),
                             int(self.left + width), int(self.h - self.bottom)),
                            self.tick_color, width=1)
         else:
-            cur_x = self.left * 0.8
+            cur_x = self.left - 10
             cur_y = self.h - self.bottom
             y_step = -height / (n_ticks - 1)
             x_step = 0
-            anchor = 'rm'
+            anchor = 'rb'
             self.draw.line((int(ox), int(cur_y),
                             int(ox), int(self.top)),
                            self.tick_color, width=1)
 
-        for t in ticks:
+        for i, t in enumerate(ticks):
             x, y = int(cur_x), int(cur_y)
             self.draw.text((x, y), t, anchor=anchor, fill=self.axis_text_color,
                            font=self.font_ticks)
@@ -248,6 +248,8 @@ class PlotGraphLines(PlotGraph):
         self.legend_y = self.h - self.bottom * 0.5
         self.show_min_max = False
 
+        self.font_bars = None
+
         self.bar_series = []
         self.bar_height_limit = 144
 
@@ -287,12 +289,13 @@ class PlotGraphLines(PlotGraph):
             'color': color
         })
 
-    def add_series_bars(self, list_of_points, color, thickness=10, x_shift=0):
+    def add_series_bars(self, list_of_points, color, thickness=10, x_shift=0, show_values=False):
         self.bar_series.append({
             'pts': list_of_points,
             'color': color,
             'thickness': thickness,
-            'x_shift': x_shift
+            'x_shift': x_shift,
+            'show_values': show_values,
         })
 
     def _plot_ticks_axis(self, v_min, v_max, axis, n_ticks):
@@ -396,6 +399,7 @@ class PlotGraphLines(PlotGraph):
             color = line_desc['color']
             bh2 = line_desc['thickness'] * 0.5
             x_shift = line_desc['x_shift']
+            show_values = line_desc['show_values']
 
             for x, y in points:
                 x, _ = self.convert_coords(x, y, ox, oy, plot_w, plot_h)
@@ -407,6 +411,16 @@ class PlotGraphLines(PlotGraph):
                         int(x - bh2 + x_shift), int(oy),
                         int(x + bh2 + x_shift), int(oy - bar_height)
                     ), fill=color)
+
+                if show_values:
+                    font = self.font_bars or self.font_ticks
+                    self.draw.text(
+                        (int(x + x_shift), int(oy - bar_height - 10)),
+                        str(y),
+                        anchor='ms',
+                        fill=color,
+                        font=font,
+                    )
 
 
 def plot_legend(draw: ImageDraw, elements: List[str], xy,

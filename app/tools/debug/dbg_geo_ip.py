@@ -135,7 +135,7 @@ async def demo_test_geo_chart():
 async def demo_test_new_geo_chart():
     LpAppFramework.solve_working_dir_mess()
 
-    infos = await get_ip_infos_pickled('nodes_new_2.pickle')
+    infos = await get_ip_infos_pickled('nodes_new_3.pickle')
     gen = NodePictureGenerator(infos, BaseLocalization(None))
 
     pic = await gen.generate()

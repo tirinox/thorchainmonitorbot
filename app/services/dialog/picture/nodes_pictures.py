@@ -1,19 +1,20 @@
 import math
 import random
+from collections import defaultdict
 
-import pandas as pd
 from PIL import ImageFont, Image, ImageDraw
 
 from localization.eng_base import BaseLocalization
-from services.lib.date_utils import ts_event_points_to_pandas, DAY, now_ts
+from services.lib.date_utils import DAY, now_ts
 from services.lib.draw_utils import default_background, CacheGrid, TC_YGGDRASIL_GREEN, \
     make_donut_chart, TC_NIGHT_BLACK, get_palette_color_by_index_new, \
-    TC_PALETTE, TC_WHITE
+    TC_PALETTE, TC_WHITE, TC_LIGHTNING_BLUE, get_palette_color_by_index
 from services.lib.money import clamp, short_rune, format_percent
-from services.lib.plot_graph import plot_legend, PlotBarGraph
+from services.lib.plot_graph import plot_legend, PlotGraphLines
 from services.lib.texts import bracketify
 from services.lib.utils import async_wrap, Singleton, most_common_and_other, linear_transform
 from services.models.node_info import NetworkNodeIpInfo
+from services.models.time_series import TimeSeries
 
 
 class Resources(metaclass=Singleton):
@@ -27,6 +28,7 @@ class Resources(metaclass=Singleton):
     FONT_BOLD = f'{BASE}/my.ttf'
 
     def __init__(self) -> None:
+        self.font_xs = ImageFont.truetype(self.FONT_BOLD, 24)
         self.font_small = ImageFont.truetype(self.FONT_BOLD, 30)
         self.font_norm = ImageFont.truetype(self.FONT_BOLD, 34)
         self.font_large = ImageFont.truetype(self.FONT_BOLD, 40)
@@ -40,11 +42,16 @@ class Resources(metaclass=Singleton):
 
 
 class WorldMap:
+    MANUAL_COORDS = {
+        # City: (lat, long)
+        'Karuwisi': (-5.1333, 119.4167),
+    }
+
     def __init__(self, loc: BaseLocalization):
         self.r = Resources()
         self.w, self.h = self.r.world_map.size
         self.loc = loc
-        self.lable_color = TC_WHITE
+        self.label_color = '#ddd'
 
     def convert_coord_to_xy(self, long, lat):
         x = (long + 180.0) / 360.0 * self.w
@@ -55,15 +62,16 @@ class WorldMap:
         # color_map: ip_address => (prov_name, color)
         data.sort_by_status()
         pic = self.r.world_map.copy()
-        w, h = pic.size
 
         draw = ImageDraw.Draw(pic)
-
-        coord_cache = set()
-        lable_cache = set()
-
         randomize_factor = 0.0025
-        max_point_size = 50
+        w, h = pic.size
+
+        node_counters = defaultdict(int)
+        coord_cache = {}
+        label_cache = set()
+
+        max_point_size = 100
         min_point_size = 1
         n_unknown_nodes = 0
 
@@ -85,6 +93,9 @@ class WorldMap:
                 countries.append(country)
 
             if not lat or not long:
+                lat, long = self.MANUAL_COORDS.get(city, (None, None))
+
+            if not lat or not long:
                 if node.is_active:
                     lat, long = unk_lat, unk_long
                     n_unknown_nodes += 1
@@ -93,13 +104,14 @@ class WorldMap:
 
             x, y = self.convert_coord_to_xy(long, lat)
             key = f'{x}-{y}'
-            if key in coord_cache:
+            coord_cache[key] = (x, y)
+            if key in node_counters:
                 x += w * random.uniform(-randomize_factor, randomize_factor)
                 y += h * random.uniform(-randomize_factor, randomize_factor)
             else:
                 labels.append((x, y, city))
 
-            coord_cache.add(key)
+            node_counters[key] += 1
 
             point_size = ((node.bond / 1e6) ** 2) * max_point_size
             point_size = int(math.ceil(clamp(point_size, min_point_size, max_point_size)))
@@ -110,33 +122,53 @@ class WorldMap:
             point_image = source_image.copy()
             point_image.thumbnail((point_size, point_size), Image.ANTIALIAS)
 
+            # if city == 'Taipei':
+            #     print('!!')
+
             x, y = int(x), int(y)
             # pic.paste(point_image, (x - point_size_half, y - point_size_half), point_image)
 
             color = color_map.get(node.ip_address, (0, TC_WHITE))[1]
 
-            point_size_half = int(point_size_half * 0.7)
+            point_size_half = int(point_size_half * 0.5)
             draw.ellipse((
                 (x - point_size_half, y - point_size_half),
                 (x + point_size_half, y + point_size_half),
             ), fill=color, outline='#000')
 
+            if (n := node_counters[key]) > 1:
+                draw.text((x, y), str(n),
+                          fill=TC_WHITE,
+                          font=self.r.font_xs,
+                          anchor='mm',
+                          stroke_fill=TC_NIGHT_BLACK, stroke_width=1)
+
+        # Node count
+        # for k, count in node_counters.items():
+        #     x, y = coord_cache[k]
+        #     draw.text((x, y), str(count),
+        #               fill=TC_WHITE,
+        #               font=self.r.font_xs,
+        #               anchor='mm',
+        #               stroke_fill=TC_NIGHT_BLACK, stroke_width=1)
+
         label_x_shift = 30
         if n_unknown_nodes:
             x, y = self.convert_coord_to_xy(unk_long, unk_lat)
-            draw.text((x + label_x_shift, y + 24),
+            draw.text((x + label_x_shift, y + 30),
                       f'Unknown location ({n_unknown_nodes})',  # todo: localize
                       fill='#005566',
                       font=self.r.font_small, anchor='mt')
 
+        # City names
         font = self.r.font_small
         for sx, sy, city in labels:
             text = f'{city}'
 
-            if text in lable_cache:
+            if text in label_cache:
                 continue
             else:
-                lable_cache.add(text)
+                label_cache.add(text)
 
             w, h = font.getsize(text)
             # right position
@@ -144,11 +176,12 @@ class WorldMap:
             if not name_grid.is_box_occupied(box):
                 draw.text((sx + label_x_shift, sy),
                           text,
-                          fill=self.lable_color,
-                          font=self.r.font_small,
+                          fill=self.label_color,
+                          font=self.r.font_xs,
                           anchor='lm',
-                          stroke_width=2,
-                          stroke_fill=TC_NIGHT_BLACK)
+                          # stroke_width=2,
+                          # stroke_fill=TC_NIGHT_BLACK
+                          )
                 name_grid.fill_box(box)
             else:
                 # left position
@@ -156,11 +189,12 @@ class WorldMap:
                 if not name_grid.is_box_occupied(box):
                     draw.text((sx - label_x_shift, sy),
                               text,
-                              fill=self.lable_color,
-                              font=self.r.font_small,
+                              fill=self.label_color,
+                              font=self.r.font_xs,
                               anchor='rm',
-                              stroke_width=1,
-                              stroke_fill=TC_NIGHT_BLACK)
+                              # stroke_width=1,
+                              # stroke_fill=TC_NIGHT_BLACK
+                              )
                     name_grid.fill_box(box)
 
         return pic
@@ -232,15 +266,17 @@ class NodePictureGenerator:
 
     @staticmethod
     def index_to_color(i):
-        return get_palette_color_by_index_new(i, TC_PALETTE, step=1.0)
+        return get_palette_color_by_index(i, TC_PALETTE)
 
     @async_wrap
     def generate(self):
         active_nodes = self.data.active_nodes
+        providers_all = self.data.get_providers(self.data.node_info_list, unknown=self.loc.TEXT_PIC_UNKNOWN)
         providers = self.data.get_providers(active_nodes, unknown=self.loc.TEXT_PIC_UNKNOWN)
         countries = self.data.get_countries(active_nodes, unknown=self.loc.TEXT_PIC_UNKNOWN)
 
-        color_map_providers, counted_providers = self._categorize(providers, active_nodes)
+        _, counted_providers = self._categorize(providers, active_nodes)
+        color_map_providers, _ = self._categorize(providers_all, self.data.node_info_list)
         color_map_countries, counted_countries = self._categorize(countries, active_nodes)
 
         # build the image
@@ -299,9 +335,9 @@ class NodePictureGenerator:
         def render_text(title, value, value2, _x, _y, big):
             draw.text((_x, _y), str(title), font=r.font_norm, fill=TC_WHITE, anchor='lt')
             f = r.font_head if big else r.font_subtitle
-            draw.text((_x, _y + 33), str(value), font=f, fill=TC_YGGDRASIL_GREEN, anchor='lt')
+            draw.text((_x, _y + 40), str(value), font=f, fill=TC_YGGDRASIL_GREEN, anchor='lt')
             if value2:
-                draw.text((_x, _y + 72), str(value2), font=r.font_small, fill="#bfd", anchor='lt')
+                draw.text((_x, _y + 80), str(value2), font=r.font_small, fill="#bfd", anchor='lt')
 
         dx = 240
 
@@ -332,30 +368,33 @@ class NodePictureGenerator:
         return donut1
 
     def _make_bond_chart(self, r, w, h, period=DAY * 14):
+        # todo: get from actual data
         event_points = self.EXAMPLE_BOND
 
-        # todo: add last point: current state
-
-        gr = PlotBarGraph(w, h, bg=(0, 0, 0, 0))
+        gr = PlotGraphLines(w, h, bg=(0, 0, 0, 0))
         gr.x_formatter = gr.date_formatter
         gr.y_formatter = short_rune
         gr.n_ticks_y = 4
         gr.n_ticks_x = 6
+        gr.axis_text_color = '#888'
         gr.margin = 20
-        gr.left = 180
+        gr.left = 120
         gr.font_ticks = r.font_small
+        gr.grid_lines = True
 
         if event_points:
-            df = ts_event_points_to_pandas(event_points, shift_time=False)
-            df["t"] = pd.to_datetime(df["t"], unit='s')
-            df = df.resample(self.RESAMPLE_TIME, on='t').sum()
-            gr.plot_bars(df, 'bond_active_total', gr.PLOT_COLOR)
-            gr.plot_bars(df, 'n_active_nodes', gr.PLOT_COLOR_2)
+            bond_points = [(TimeSeries.get_ts_from_index(k), float(d['bond_active_total'])) for k, d in event_points]
+            node_points = [(TimeSeries.get_ts_from_index(k), int(d['n_active_nodes'])) for k, d in event_points]
 
-        gr.update_bounds_y()
+            gr.add_series(bond_points, TC_YGGDRASIL_GREEN)
+            # gr.add_series(node_points, TC_LIGHTNING_BLUE)
+            gr.add_series_bars(node_points, TC_LIGHTNING_BLUE, 20, show_values=True)
+            gr.update_bounds()
+            gr.min_y = 0.0
+            gr.max_y *= 1.1
+
         gr.min_x = now_ts() - period
         gr.max_x = now_ts()
-        gr.max_y = max(gr.max_y, 20)
         return gr.finalize()
 
     EXAMPLE_BOND = [
@@ -365,4 +404,5 @@ class NodePictureGenerator:
         ('1666941086144-1', {'bond_active_total': 63e6, 'n_active_nodes': 73}),
         ('1667041086644-1', {'bond_active_total': 63.5e6, 'n_active_nodes': 71}),
         ('1667159256644-1', {'bond_active_total': 70.1e6, 'n_active_nodes': 75}),
+        ('1667252170644-1', {'bond_active_total': 74.1e6, 'n_active_nodes': 88}),
     ]
