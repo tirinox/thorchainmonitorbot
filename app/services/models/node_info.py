@@ -2,6 +2,7 @@ import json
 import random
 import re
 import secrets
+import typing
 from collections import Counter
 from dataclasses import dataclass, field
 from statistics import median
@@ -16,6 +17,11 @@ from services.models.base import BaseModelMixin
 from services.models.thormon import ThorMonNode
 
 ZERO_VERSION = VersionInfo(0, 0, 0)
+
+
+class BondProvider(typing.NamedTuple):
+    address: str
+    rune_bond: float
 
 
 @dataclass
@@ -36,6 +42,8 @@ class NodeInfo(BaseModelMixin):
     slash_points: int = 0
 
     current_award: float = 0.0
+
+    bond_providers: List[BondProvider] = field(default_factory=list)
 
     # new fields
     requested_to_leave: bool = False
@@ -98,6 +106,12 @@ class NodeInfo(BaseModelMixin):
             status_since=int(d.get('status_since', 0)),
             observe_chains=d.get('observe_chains', []),
             jail=d.get('jail', {}),
+            bond_providers=[
+                BondProvider(
+                    address=prov.get('bond_address'),
+                    rune_bond=thor_to_float(prov.get('bond', 0))
+                ) for prov in (d.get('bond_providers', {}).get('providers') or [])
+            ]
         )
 
     @staticmethod
