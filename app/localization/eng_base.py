@@ -1043,6 +1043,16 @@ class BaseLocalization(ABC):  # == English
     TEXT_PIC_OTHERS = 'Others'
     TEXT_PIC_UNKNOWN = 'Unknown'
 
+    TEXT_PIC_UNKNOWN_LOCATION = 'Unknown location'
+    TEXT_PIC_CLOUD = 'Cloud'
+    TEXT_PIC_COUNTRY = 'Country'
+    TEXT_PIC_ACTIVE_BOND = 'Active bond'
+    TEXT_PIC_TOTAL_NODES = 'Total nodes'
+    TEXT_PIC_TOTAL_BOND = 'Total bond'
+    TEXT_PIC_MIN_BOND = 'Min bond'
+    TEXT_PIC_MEDIAN_BOND = 'Median'
+    TEXT_PIC_MAX_BOND = 'Max'
+
     PIC_NODE_DIVERSITY_BY_PROVIDER_CAPTION = ital('THORChain nodes')
 
     def _format_node_text(self, node: NodeInfo, add_status=False, extended_info=False, expand_link=False):

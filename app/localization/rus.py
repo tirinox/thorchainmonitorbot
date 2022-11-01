@@ -864,6 +864,16 @@ class RussianLocalization(BaseLocalization):
     TEXT_PIC_OTHERS = 'Другие'
     TEXT_PIC_UNKNOWN = 'Не известно'
 
+    TEXT_PIC_UNKNOWN_LOCATION = 'Неизвестное положение'
+    TEXT_PIC_CLOUD = 'Облако'
+    TEXT_PIC_COUNTRY = 'Страна'
+    TEXT_PIC_ACTIVE_BOND = 'Активный бонд'
+    TEXT_PIC_TOTAL_NODES = 'Всего нод'
+    TEXT_PIC_TOTAL_BOND = 'Общий бонд'
+    TEXT_PIC_MIN_BOND = 'Мин. бонд'
+    TEXT_PIC_MEDIAN_BOND = 'Медиана'
+    TEXT_PIC_MAX_BOND = 'Макс'
+
     def _format_node_text(self, node: NodeInfo, add_status=False, extended_info=False, expand_link=False):
         if expand_link:
             node_ip_link = link(get_ip_info_link(node.ip_address), node.ip_address) if node.ip_address else 'No IP'

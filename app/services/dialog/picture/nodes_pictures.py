@@ -144,7 +144,7 @@ class WorldMap:
         if n_unknown_nodes:
             x, y = self.convert_coord_to_xy(unk_long, unk_lat)
             draw.text((x + label_x_shift, y + 30),
-                      f'Unknown location ({n_unknown_nodes})',  # todo: localize
+                      f'{self.loc.TEXT_PIC_UNKNOWN_LOCATION} ({n_unknown_nodes})',
                       fill='#005566',
                       font=self.r.font_small, anchor='mt')
 
@@ -186,9 +186,10 @@ class WorldMap:
 
 
 class BondRuler:
-    def __init__(self, data: NetworkNodeIpInfo, width=800):
+    def __init__(self, loc: BaseLocalization, data: NetworkNodeIpInfo, width=800):
         self.data = data
         self.width = width
+        self.loc = loc
 
     def generate(self, d: ImageDraw, x, y):
         bond_min, bond_med, bond_max, bond_total = self.data.get_min_median_max_total_bond(self.data.active_nodes)
@@ -204,11 +205,13 @@ class BondRuler:
         def x_coord(bond):
             return linear_transform(bond, bond_lower_bound, bond_upper_bound, x, x + w)
 
+        loc = self.loc
+
         notches = [
             (bond_lower_bound, 20, 'mm', ''),
-            (bond_min, 17, 'mm', 'Min bond'),
-            (bond_med, 17, 'mm', 'Median'),
-            (bond_max, 17, 'mm', 'Max'),
+            (bond_min, 17, 'mm', loc.TEXT_PIC_MIN_BOND),
+            (bond_med, 17, 'mm', loc.TEXT_PIC_MEDIAN_BOND),
+            (bond_max, 17, 'mm', loc.TEXT_PIC_MAX_BOND),
             (bond_upper_bound, 20, 'mm', '')
         ]
         for bond, h_n, anch, label in notches:
@@ -226,7 +229,7 @@ class BondRuler:
 
 
 class NodePictureGenerator:
-    # todo: twitter aspect must be 16:9
+    # todo: twitter aspect must be 16:9?
     PIC_WIDTH = 2000
     PIC_HEIGHT = 1800
     RESAMPLE_TIME = '1d'
@@ -282,7 +285,7 @@ class NodePictureGenerator:
         donut_country_x = 1560
 
         # Cloud distribution of active nodes
-        donut_cloud = self._make_donut(r, counted_providers, 400, 'Cloud')
+        donut_cloud = self._make_donut(r, counted_providers, 400, self.loc.TEXT_PIC_CLOUD)
         image.paste(donut_cloud, (donut_cloud_x, donut_y), donut_cloud)
         plot_legend(draw,
                     [e[0] for e in counted_providers],
@@ -290,7 +293,7 @@ class NodePictureGenerator:
                     font=r.font_small, max_width=440, palette=self.index_to_color)
 
         # Countries distribution of active nodes
-        donut_country = self._make_donut(r, counted_countries, 400, 'Country')
+        donut_country = self._make_donut(r, counted_countries, 400, self.loc.TEXT_PIC_COUNTRY)
         image.paste(donut_country, (donut_country_x, donut_y), donut_country)
         plot_legend(draw,
                     [e[0] for e in counted_countries],
@@ -302,7 +305,7 @@ class NodePictureGenerator:
 
         # Ruler
         ruler_margin = 142
-        br = BondRuler(self.data, self.PIC_WIDTH - ruler_margin * 2)
+        br = BondRuler(self.loc, self.data, self.PIC_WIDTH - ruler_margin * 2)
         br.generate(draw, ruler_margin, 1680)
 
         # TC Logo
@@ -326,16 +329,16 @@ class NodePictureGenerator:
 
         dx = 240
 
-        render_text('Active nodes', len(self.data.active_nodes), None, x + dx * 0, y, True)
+        render_text(self.loc.TEXT_PIC_ACTIVE_NODES, len(self.data.active_nodes), None, x + dx * 0, y, True)
 
         bond_percent_str = bracketify(format_percent(bond_total, self.data.total_rune_supply))
-        render_text('Active bond', short_rune(bond_total), bond_percent_str, x + dx * 1, y, False)
+        render_text(self.loc.TEXT_PIC_ACTIVE_BOND, short_rune(bond_total), bond_percent_str, x + dx * 1, y, False)
 
         bond_all_total = self.data.total_bond
         bond_percent_str = bracketify(format_percent(bond_all_total, self.data.total_rune_supply))
 
-        render_text('Total nodes', len(self.data.node_info_list), None, x + dx * 2, y, True)
-        render_text('Total bond', short_rune(bond_all_total), bond_percent_str, x + dx * 3, y, False)
+        render_text(self.loc.TEXT_PIC_TOTAL_NODES, len(self.data.node_info_list), None, x + dx * 2, y, True)
+        render_text(self.loc.TEXT_PIC_TOTAL_BOND, short_rune(bond_all_total), bond_percent_str, x + dx * 3, y, False)
 
     @property
     def category_other(self):
