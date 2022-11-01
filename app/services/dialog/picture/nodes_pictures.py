@@ -72,10 +72,10 @@ class WorldMap:
         label_cache = set()
 
         max_point_size = 100
-        min_point_size = 1
+        min_point_size = 10
         n_unknown_nodes = 0
 
-        name_grid = CacheGrid(40, 60)
+        name_grid = CacheGrid(20, 40)
 
         unk_lat, unk_long = -60, -140
         name_grid.set(*self.convert_coord_to_xy(unk_long, unk_lat))
@@ -122,19 +122,18 @@ class WorldMap:
             point_image = source_image.copy()
             point_image.thumbnail((point_size, point_size), Image.ANTIALIAS)
 
-            # if city == 'Taipei':
-            #     print('!!')
-
             x, y = int(x), int(y)
-            # pic.paste(point_image, (x - point_size_half, y - point_size_half), point_image)
 
             color = color_map.get(node.ip_address, (0, TC_WHITE))[1]
 
             point_size_half = int(point_size_half * 0.5)
-            draw.ellipse((
+            ellipse_box = (
                 (x - point_size_half, y - point_size_half),
                 (x + point_size_half, y + point_size_half),
-            ), fill=color, outline='#000')
+            )
+            draw.ellipse(ellipse_box, fill=color, outline='#000')
+
+            name_grid.set(x, y)
 
             if (n := node_counters[key]) > 1:
                 draw.text((x, y), str(n),
@@ -142,15 +141,6 @@ class WorldMap:
                           font=self.r.font_xs,
                           anchor='mm',
                           stroke_fill=TC_NIGHT_BLACK, stroke_width=1)
-
-        # Node count
-        # for k, count in node_counters.items():
-        #     x, y = coord_cache[k]
-        #     draw.text((x, y), str(count),
-        #               fill=TC_WHITE,
-        #               font=self.r.font_xs,
-        #               anchor='mm',
-        #               stroke_fill=TC_NIGHT_BLACK, stroke_width=1)
 
         label_x_shift = 30
         if n_unknown_nodes:
@@ -161,6 +151,26 @@ class WorldMap:
                       font=self.r.font_small, anchor='mt')
 
         # City names
+        def plot_city(name, position, sx, sy, w, h):
+            if position == 'left':
+                x_start = sx - label_x_shift - w
+                text_x = x_end = sx - label_x_shift
+            else:
+                text_x = x_start = sx + label_x_shift
+                x_end = sx + label_x_shift + w
+
+            box = (x_start, sy - h // 2), (x_end, sy + h // 2)
+            if not name_grid.is_box_occupied(box):
+                draw.text((text_x, sy), name,
+                          fill=self.label_color,
+                          font=self.r.font_xs,
+                          anchor='lm' if position == 'right' else 'rm',
+                          # stroke_width=2,
+                          # stroke_fill=TC_NIGHT_BLACK
+                          )
+                name_grid.fill_box(box)
+                return True
+
         font = self.r.font_small
         for sx, sy, city in labels:
             text = f'{city}'
@@ -170,32 +180,9 @@ class WorldMap:
             else:
                 label_cache.add(text)
 
-            w, h = font.getsize(text)
-            # right position
-            box = (sx + label_x_shift, sy - h // 2), (sx + label_x_shift + w, sy + h // 2)
-            if not name_grid.is_box_occupied(box):
-                draw.text((sx + label_x_shift, sy),
-                          text,
-                          fill=self.label_color,
-                          font=self.r.font_xs,
-                          anchor='lm',
-                          # stroke_width=2,
-                          # stroke_fill=TC_NIGHT_BLACK
-                          )
-                name_grid.fill_box(box)
-            else:
-                # left position
-                box = (sx - label_x_shift - w, sy - h // 2), (sx - label_x_shift, sy + h // 2)
-                if not name_grid.is_box_occupied(box):
-                    draw.text((sx - label_x_shift, sy),
-                              text,
-                              fill=self.label_color,
-                              font=self.r.font_xs,
-                              anchor='rm',
-                              # stroke_width=1,
-                              # stroke_fill=TC_NIGHT_BLACK
-                              )
-                    name_grid.fill_box(box)
+            text_w, text_h = font.getsize(text)
+            if not plot_city(text, 'right', sx, sy, text_w, text_h):
+                plot_city(text, 'left', sx, sy, text_w, text_h)
 
         return pic
 
