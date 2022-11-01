@@ -7,8 +7,7 @@ from PIL import ImageFont, Image, ImageDraw
 from localization.eng_base import BaseLocalization
 from services.lib.date_utils import DAY, now_ts
 from services.lib.draw_utils import default_background, CacheGrid, TC_YGGDRASIL_GREEN, \
-    make_donut_chart, TC_NIGHT_BLACK, get_palette_color_by_index_new, \
-    TC_PALETTE, TC_WHITE, TC_LIGHTNING_BLUE, get_palette_color_by_index
+    make_donut_chart, TC_NIGHT_BLACK, TC_PALETTE, TC_WHITE, TC_LIGHTNING_BLUE, get_palette_color_by_index
 from services.lib.money import clamp, short_rune, format_percent
 from services.lib.plot_graph import plot_legend, PlotGraphLines
 from services.lib.texts import bracketify
@@ -19,7 +18,6 @@ from services.models.time_series import TimeSeries
 
 class Resources(metaclass=Singleton):
     BASE = './data'
-    # WORLD_FILE = f'{BASE}/8081_earthmap2k.jpg'
     WORLD_FILE = f'{BASE}/earth-bg.png'
     LOGO_FILE = f'{BASE}/tc_logo.png'
     CIRCLE_FILE = f'{BASE}/circle_new.png'

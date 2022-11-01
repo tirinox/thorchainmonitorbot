@@ -140,6 +140,7 @@ async def demo_test_new_geo_chart():
 
     pic = await gen.generate()
     pic.show()
+    pic.save('../temp/new_node_pic.png')
 
 
 async def demo_last_block():
