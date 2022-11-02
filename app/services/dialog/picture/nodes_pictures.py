@@ -1,6 +1,7 @@
 import math
 import random
 from collections import defaultdict
+from typing import List
 
 from PIL import ImageFont, Image, ImageDraw
 
@@ -12,7 +13,7 @@ from services.lib.money import clamp, short_rune, format_percent
 from services.lib.plot_graph import plot_legend, PlotGraphLines
 from services.lib.texts import bracketify
 from services.lib.utils import async_wrap, Singleton, most_common_and_other, linear_transform
-from services.models.node_info import NetworkNodeIpInfo
+from services.models.node_info import NetworkNodeIpInfo, NodeStatsItem
 from services.models.time_series import TimeSeries
 
 
@@ -234,9 +235,12 @@ class NodePictureGenerator:
     PIC_HEIGHT = 1800
     RESAMPLE_TIME = '1d'
     MAX_CATEGORIES = 5
+    CHART_PERIOD = 30 * DAY
 
-    def __init__(self, data: NetworkNodeIpInfo, loc: BaseLocalization, max_categories=MAX_CATEGORIES):
+    def __init__(self, data: NetworkNodeIpInfo, node_stats_points: List[NodeStatsItem],
+                 loc: BaseLocalization, max_categories=MAX_CATEGORIES):
         self.data = data
+        self.node_stats_points = node_stats_points
         self.loc = loc
         self.max_categories = max_categories
 
@@ -312,7 +316,7 @@ class NodePictureGenerator:
         image.paste(r.tc_logo, ((w - r.tc_logo.size[0]) // 2, 10))
 
         # Chart
-        chart = self._make_bond_chart(r, 900, 450)
+        chart = self._make_bond_chart(self.node_stats_points, r, 900, 450, period=self.CHART_PERIOD)
         image.paste(chart, (580, 1150), chart)
 
         return image
@@ -355,10 +359,7 @@ class NodePictureGenerator:
                                   title_color='white', font_middle=r.font_subtitle, title=title)
         return donut1
 
-    def _make_bond_chart(self, r, w, h, period=DAY * 14):
-        # todo: get from actual data
-        event_points = self.EXAMPLE_BOND
-
+    def _make_bond_chart(self, pts: List[NodeStatsItem], r, w, h, period=DAY * 14):
         gr = PlotGraphLines(w, h, bg=(0, 0, 0, 0))
         gr.x_formatter = gr.date_formatter
         gr.y_formatter = short_rune
@@ -370,13 +371,13 @@ class NodePictureGenerator:
         gr.font_ticks = r.font_small
         gr.grid_lines = True
 
-        if event_points:
-            bond_points = [(TimeSeries.get_ts_from_index(k), float(d['bond_active_total'])) for k, d in event_points]
-            node_points = [(TimeSeries.get_ts_from_index(k), int(d['n_active_nodes'])) for k, d in event_points]
+        if pts:
+            bond_points = [(p.ts, p.bond_active_total) for p in pts]
+            node_points = [(p.ts, p.n_active_nodes) for p in pts]
 
             gr.add_series(bond_points, TC_YGGDRASIL_GREEN)
             # gr.add_series(node_points, TC_LIGHTNING_BLUE)
-            gr.add_series_bars(node_points, TC_LIGHTNING_BLUE, 20, show_values=True)
+            gr.add_series_bars(node_points, TC_LIGHTNING_BLUE, 12, show_values='on_change')
             gr.update_bounds()
             gr.min_y = 0.0
             gr.max_y *= 1.1
@@ -384,13 +385,3 @@ class NodePictureGenerator:
         gr.min_x = now_ts() - period
         gr.max_x = now_ts()
         return gr.finalize()
-
-    EXAMPLE_BOND = [
-        ('1666741086044-1', {'bond_active_total': 64e6, 'n_active_nodes': 70}),
-        ('1666741086344-1', {'bond_active_total': 65e6, 'n_active_nodes': 70}),
-        ('1666841086244-1', {'bond_active_total': 67e6, 'n_active_nodes': 72}),
-        ('1666941086144-1', {'bond_active_total': 63e6, 'n_active_nodes': 73}),
-        ('1667041086644-1', {'bond_active_total': 63.5e6, 'n_active_nodes': 71}),
-        ('1667159256644-1', {'bond_active_total': 70.1e6, 'n_active_nodes': 75}),
-        ('1667252170644-1', {'bond_active_total': 74.1e6, 'n_active_nodes': 88}),
-    ]

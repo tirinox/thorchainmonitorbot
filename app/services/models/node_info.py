@@ -432,3 +432,32 @@ class NodeEvent(NamedTuple):
     @property
     def is_broad(self):
         return self.address == self.ANY
+
+
+class NodeStatsItem(typing.NamedTuple):
+    ts: float
+    bond_min: float
+    bond_median: float
+    bond_max: float
+    bond_active_total: float
+    bond_total: float
+    n_nodes: float
+    n_active_nodes: float
+
+    @classmethod
+    def from_json(cls, j):
+        ts, data = j
+        return cls(
+            ts=ts,
+            bond_min=float(data.get('bond_min', 0.0)),
+            bond_median=float(data.get('bond_med', 0.0)),
+            bond_max=float(data.get('bond_max', 0.0)),
+            bond_active_total=float(data.get('bond_active_total', 0.0)),
+            bond_total=float(data.get('bond_total', 0.0)),
+            n_nodes=int(data.get('n_nodes', 0)),
+            n_active_nodes=int(data.get('n_active_nodes', 0)),
+        )
+
+    @property
+    def is_valid(self):
+        return self.n_active_nodes > 0 and self.bond_active_total > 0

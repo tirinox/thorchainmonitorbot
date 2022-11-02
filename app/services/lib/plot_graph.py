@@ -289,7 +289,7 @@ class PlotGraphLines(PlotGraph):
             'color': color
         })
 
-    def add_series_bars(self, list_of_points, color, thickness=10, x_shift=0, show_values=False):
+    def add_series_bars(self, list_of_points, color, thickness=10, x_shift=0, show_values=0):
         self.bar_series.append({
             'pts': list_of_points,
             'color': color,
@@ -389,6 +389,8 @@ class PlotGraphLines(PlotGraph):
         if bar_div == 0:  # hot fix
             return
 
+        font_value = self.font_bars or self.font_ticks
+
         bar_normal_height = self.bar_height_limit / bar_div
 
         for line_desc in self.bar_series:
@@ -401,7 +403,8 @@ class PlotGraphLines(PlotGraph):
             x_shift = line_desc['x_shift']
             show_values = line_desc['show_values']
 
-            for x, y in points:
+            last_value = None
+            for i, (x, y) in enumerate(points):
                 x, _ = self.convert_coords(x, y, ox, oy, plot_w, plot_h)
 
                 bar_height = bar_normal_height * y
@@ -413,14 +416,21 @@ class PlotGraphLines(PlotGraph):
                     ), fill=color)
 
                 if show_values:
-                    font = self.font_bars or self.font_ticks
-                    self.draw.text(
-                        (int(x + x_shift), int(oy - bar_height - 10)),
-                        str(y),
-                        anchor='ms',
-                        fill=color,
-                        font=font,
-                    )
+                    do_it = False
+                    if show_values == 'on_change':
+                        if y != last_value:
+                            do_it = True
+                    elif i % show_values == 0:
+                        do_it = True
+                    if do_it:
+                        self.draw.text(
+                            (int(x + x_shift), int(oy - bar_height - 10)),
+                            str(y),
+                            anchor='ms',
+                            fill=color,
+                            font=font_value,
+                        )
+                last_value = y
 
 
 def plot_legend(draw: ImageDraw, elements: List[str], xy,
