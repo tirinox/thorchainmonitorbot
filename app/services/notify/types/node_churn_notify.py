@@ -4,7 +4,7 @@ from localization.manager import BaseLocalization
 from services.dialog.picture.node_geo_picture import node_geo_pic
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.lib.cooldown import Cooldown
-from services.lib.date_utils import MINUTE
+from services.lib.date_utils import DAY
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.draw_utils import img_to_bio
@@ -44,28 +44,33 @@ class NodeStatsItem(typing.NamedTuple):
 
 
 class NodeChurnNotifier(INotified, WithDelegates, WithLogger):
+    STATS_RECORD_INTERVAL = DAY
+
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
 
         self._min_changes_to_post_picture = deps.cfg.as_int('node_info.churn.min_changes_to_post_picture', 4)
         self._filter_nonsense = deps.cfg.get_pure('node_info.churn.filter_nonsense', True)
-        self.cd = Cooldown(self.deps.db, 'NodeChurnNotification', MINUTE * 10, 5)
+        notify_cooldown = deps.cfg.as_interval('node_info.churn.cooldown', '10m')
+
+        self._notify_cd = Cooldown(self.deps.db, 'NodeChurn:Notification', notify_cooldown, 5)
+        self._record_metrics_cd = Cooldown(self.deps.db, 'NodeChurn:Metrics', self.STATS_RECORD_INTERVAL)
+
         self._node_stats_ts = TimeSeries('NodeMetrics', self.deps.db)
 
     async def on_data(self, sender, changes: NodeSetChanges):
+        await self._record_statistics(changes)
+
         if changes.is_empty:
             return
-
-        # only if there are some changes
-        await self._record_statistics(changes)
 
         if self._filter_nonsense and changes.is_nonsense:
             self.logger.warning(f'Node changes is nonsense! {changes}')
             return
 
-        if await self.cd.can_do():
-            await self.cd.do()
+        if await self._notify_cd.can_do():
+            await self._notify_cd.do()
             await self._notify_when_node_churn(changes)
             await self.pass_data_to_listeners(changes)
 
@@ -89,6 +94,9 @@ class NodeChurnNotifier(INotified, WithDelegates, WithLogger):
             await self.deps.broadcaster.notify_preconfigured_channels(node_div_pic_gen)
 
     async def _record_statistics(self, changes: NodeSetChanges):
+        if not await self._record_metrics_cd.can_do():
+            return
+
         node_set = NetworkNodeIpInfo(changes.nodes_all)
 
         active_nodes = node_set.active_nodes
@@ -106,6 +114,8 @@ class NodeChurnNotifier(INotified, WithDelegates, WithLogger):
             n_nodes=n_nodes,
             n_active_nodes=n_active_nodes,
         )
+
+        await self._record_metrics_cd.do()
 
     async def load_last_statistics(self, period_sec) -> typing.List[NodeStatsItem]:
         points = await self._node_stats_ts.get_last_values(period_sec, key=None, with_ts=True)
