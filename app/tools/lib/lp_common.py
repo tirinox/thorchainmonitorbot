@@ -36,7 +36,6 @@ class LpAppFramework(App):
         d.price_pool_fetcher = PoolPriceFetcher(d)
         d.mimir_const_fetcher = ConstMimirFetcher(d)
         d.mimir_const_holder = MimirHolder()
-        d.rune_market_fetcher = RuneMarketInfoFetcher(d)
         d.name_service = NameService(d.db, d.cfg, d.midgard_connector)
         d.loc_man.set_name_service(d.name_service)
         d.twitter_bot = TwitterBotMock(d.cfg)

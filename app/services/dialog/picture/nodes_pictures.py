@@ -8,7 +8,8 @@ from PIL import ImageFont, Image, ImageDraw
 from localization.eng_base import BaseLocalization
 from services.lib.date_utils import DAY, now_ts
 from services.lib.draw_utils import default_background, CacheGrid, TC_YGGDRASIL_GREEN, \
-    make_donut_chart, TC_NIGHT_BLACK, TC_PALETTE, TC_WHITE, TC_LIGHTNING_BLUE, get_palette_color_by_index
+    make_donut_chart, TC_NIGHT_BLACK, TC_PALETTE, TC_WHITE, TC_LIGHTNING_BLUE, get_palette_color_by_index, \
+    TC_MIDGARD_TURQOISE
 from services.lib.money import clamp, short_rune, format_percent
 from services.lib.plot_graph import plot_legend, PlotGraphLines
 from services.lib.texts import bracketify
@@ -324,25 +325,29 @@ class NodePictureGenerator:
     def _make_node_stats(self, draw, r, x, y):
         bond_min, bond_med, bond_max, bond_total = self.data.get_min_median_max_total_bond(self.data.active_nodes)
 
-        def render_text(title, value, value2, _x, _y, big):
+        def render_text(title, value, value2, _x, _y, big, color):
             draw.text((_x, _y), str(title), font=r.font_norm, fill=TC_WHITE, anchor='lt')
             f = r.font_head if big else r.font_subtitle
-            draw.text((_x, _y + 40), str(value), font=f, fill=TC_YGGDRASIL_GREEN, anchor='lt')
+            draw.text((_x, _y + 40), str(value), font=f, fill=color, anchor='lt')
             if value2:
                 draw.text((_x, _y + 80), str(value2), font=r.font_small, fill="#bfd", anchor='lt')
 
         dx = 240
 
-        render_text(self.loc.TEXT_PIC_ACTIVE_NODES, len(self.data.active_nodes), None, x + dx * 0, y, True)
+        render_text(self.loc.TEXT_PIC_ACTIVE_NODES, len(self.data.active_nodes),
+                    None, x + dx * 0, y, True, TC_LIGHTNING_BLUE)
 
         bond_percent_str = bracketify(format_percent(bond_total, self.data.total_rune_supply))
-        render_text(self.loc.TEXT_PIC_ACTIVE_BOND, short_rune(bond_total), bond_percent_str, x + dx * 1, y, False)
+        render_text(self.loc.TEXT_PIC_ACTIVE_BOND, short_rune(bond_total), bond_percent_str, x + dx * 1, y, False,
+                    TC_YGGDRASIL_GREEN)
 
         bond_all_total = self.data.total_bond
         bond_percent_str = bracketify(format_percent(bond_all_total, self.data.total_rune_supply))
 
-        render_text(self.loc.TEXT_PIC_TOTAL_NODES, len(self.data.node_info_list), None, x + dx * 2, y, True)
-        render_text(self.loc.TEXT_PIC_TOTAL_BOND, short_rune(bond_all_total), bond_percent_str, x + dx * 3, y, False)
+        render_text(self.loc.TEXT_PIC_TOTAL_NODES, len(self.data.node_info_list), None, x + dx * 2, y, True,
+                    TC_LIGHTNING_BLUE)
+        render_text(self.loc.TEXT_PIC_TOTAL_BOND, short_rune(bond_all_total), bond_percent_str, x + dx * 3, y, False,
+                    TC_YGGDRASIL_GREEN)
 
     @property
     def category_other(self):
@@ -370,6 +375,7 @@ class NodePictureGenerator:
         gr.left = 120
         gr.font_ticks = r.font_small
         gr.grid_lines = True
+        gr.bar_height_limit = 142
 
         if pts:
             bond_points = [(p.ts, p.bond_active_total) for p in pts]
@@ -377,7 +383,7 @@ class NodePictureGenerator:
 
             gr.add_series(bond_points, TC_YGGDRASIL_GREEN)
             # gr.add_series(node_points, TC_LIGHTNING_BLUE)
-            gr.add_series_bars(node_points, TC_LIGHTNING_BLUE, 12, show_values='on_change')
+            gr.add_series_bars(node_points, TC_MIDGARD_TURQOISE, 6, show_values='on_change')
             gr.update_bounds()
             gr.min_y = 0.0
             gr.max_y *= 1.1

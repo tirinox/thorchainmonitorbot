@@ -418,7 +418,7 @@ class PlotGraphLines(PlotGraph):
                 if show_values:
                     do_it = False
                     if show_values == 'on_change':
-                        if y != last_value:
+                        if last_value and y != last_value:
                             do_it = True
                     elif i % show_values == 0:
                         do_it = True
