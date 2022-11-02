@@ -15,7 +15,6 @@ from services.lib.plot_graph import plot_legend, PlotGraphLines
 from services.lib.texts import bracketify
 from services.lib.utils import async_wrap, Singleton, most_common_and_other, linear_transform
 from services.models.node_info import NetworkNodeIpInfo, NodeStatsItem
-from services.models.time_series import TimeSeries
 
 
 class Resources(metaclass=Singleton):
@@ -306,7 +305,7 @@ class NodePictureGenerator:
                     font=r.font_small, max_width=440, palette=self.index_to_color)
 
         # Stats
-        self._make_node_stats(draw, r, 600, 1050)
+        self._make_node_stats(draw, r, 700, 1050)
 
         # Ruler
         ruler_margin = 142
@@ -314,7 +313,7 @@ class NodePictureGenerator:
         br.generate(draw, ruler_margin, 1680)
 
         # TC Logo
-        image.paste(r.tc_logo, ((w - r.tc_logo.size[0]) // 2, 10))
+        image.paste(r.tc_logo, ((w - r.tc_logo.size[0]) // 2, 20))
 
         # Chart
         chart = self._make_bond_chart(self.node_stats_points, r, 900, 450, period=self.CHART_PERIOD)
@@ -325,21 +324,26 @@ class NodePictureGenerator:
     def _make_node_stats(self, draw, r, x, y):
         bond_min, bond_med, bond_max, bond_total = self.data.get_min_median_max_total_bond(self.data.active_nodes)
 
-        def render_text(title, value, value2, _x, _y, big, color):
-            draw.text((_x, _y), str(title), font=r.font_norm, fill=TC_WHITE, anchor='lt')
+        anchor = 'mt'
+
+        def render_text(title, value, value2, _x, _y, big, color, stroke=False):
+            stroke_width = 1 if stroke else 0
+            draw.text((_x, _y), str(title), font=r.font_norm, fill=TC_WHITE, anchor=anchor)
             f = r.font_head if big else r.font_subtitle
-            draw.text((_x, _y + 40), str(value), font=f, fill=color, anchor='lt')
+            draw.text((_x, _y + 40), str(value), font=f, fill=color, anchor=anchor,
+                      stroke_width=stroke_width, stroke_fill=TC_MIDGARD_TURQOISE)
             if value2:
-                draw.text((_x, _y + 80), str(value2), font=r.font_small, fill="#bfd", anchor='lt')
+                draw.text((_x, _y + 80), str(value2), font=r.font_small, fill="#bfd", anchor=anchor,
+                          stroke_width=stroke_width, stroke_fill=TC_MIDGARD_TURQOISE)
 
         dx = 240
 
         render_text(self.loc.TEXT_PIC_ACTIVE_NODES, len(self.data.active_nodes),
-                    None, x + dx * 0, y, True, TC_LIGHTNING_BLUE)
+                    None, x + dx * 0, y, True, TC_LIGHTNING_BLUE, stroke=True)
 
         bond_percent_str = bracketify(format_percent(bond_total, self.data.total_rune_supply))
         render_text(self.loc.TEXT_PIC_ACTIVE_BOND, short_rune(bond_total), bond_percent_str, x + dx * 1, y, False,
-                    TC_YGGDRASIL_GREEN)
+                    TC_YGGDRASIL_GREEN, stroke=True)
 
         bond_all_total = self.data.total_bond
         bond_percent_str = bracketify(format_percent(bond_all_total, self.data.total_rune_supply))
@@ -383,7 +387,8 @@ class NodePictureGenerator:
 
             gr.add_series(bond_points, TC_YGGDRASIL_GREEN)
             # gr.add_series(node_points, TC_LIGHTNING_BLUE)
-            gr.add_series_bars(node_points, TC_MIDGARD_TURQOISE, 6, show_values='on_change')
+            # TC_MIDGARD_TURQOISE
+            gr.add_series_bars(node_points, TC_LIGHTNING_BLUE, 6, show_values='on_change')
             gr.update_bounds()
             gr.min_y = 0.0
             gr.max_y *= 1.1
