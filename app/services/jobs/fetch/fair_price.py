@@ -40,7 +40,7 @@ class RuneMarketInfoFetcher(WithLogger):
             total_pooled_rune = j.get('totalPooledRune', 0)
         return thor_to_float(total_pooled_rune)
 
-    async def _get_rune_market_info(self) -> RuneMarketInfo:
+    async def get_rune_market_info_from_api(self) -> RuneMarketInfo:
         supply_fetcher = RuneCirculatingSupplyFetcher(self.deps.session,
                                                       ether_scan_key=self._ether_scan_key,
                                                       thor_node=self.deps.cfg.get('thor.node.node_url'))
@@ -88,7 +88,7 @@ class RuneMarketInfoFetcher(WithLogger):
     @a_result_cached(RUNE_MARKET_INFO_CACHE_TIME)
     async def get_rune_market_info(self) -> RuneMarketInfo:
         try:
-            result = await self._get_rune_market_info()
+            result = await self.get_rune_market_info_from_api()
             if result.is_valid:
                 self._prev_result = result
             return result
