@@ -75,6 +75,12 @@ class App:
         d.is_loading = True
 
         self._init_configuration(d, log_level)
+
+        d.node_info_fetcher = NodeInfoFetcher(d)
+        d.mimir_const_fetcher = ConstMimirFetcher(d)
+        d.mimir_const_holder = MimirHolder()
+        d.price_pool_fetcher = PoolPriceFetcher(d)
+
         self._init_settings(d)
         self._init_messaging(d)
 
@@ -146,28 +152,19 @@ class App:
         if 'REPLACE_RUNE_TIMESERIES_WITH_GECKOS' in os.environ:
             await fill_rune_price_from_gecko(d.db)
 
-        d.price_pool_fetcher = PoolPriceFetcher(d)
-
         # update pools for bootstrap (other components need them)
         current_pools = await d.price_pool_fetcher.reload_global_pools()
         if not current_pools:
             logging.error("No pool data at startup! Halt it!")
             exit(-1)
 
-        fetcher_nodes = NodeInfoFetcher(d)
-        d.node_info_fetcher = fetcher_nodes
-        await fetcher_nodes.fetch()  # get nodes beforehand
-
-        # mimir uses nodes! so it goes after fetcher_nodes
-        mimir_const_fetcher = ConstMimirFetcher(d)
-        self.deps.mimir_const_fetcher = mimir_const_fetcher
-        self.deps.mimir_const_holder = MimirHolder()
-        await mimir_const_fetcher.fetch()  # get constants beforehand
+        await d.node_info_fetcher.fetch()  # get nodes beforehand
+        await d.mimir_const_fetcher.fetch()  # get constants beforehand
 
         tasks = [
             # mandatory tasks:
             d.price_pool_fetcher,
-            mimir_const_fetcher
+            d.mimir_const_fetcher
         ]
 
         if d.cfg.get('tx.enabled', True):
@@ -258,12 +255,12 @@ class App:
 
         if d.cfg.get('node_info.enabled', True):
             churn_detector = NodeChurnDetector(d)
-            fetcher_nodes.subscribe(churn_detector)
+            d.node_info_fetcher.subscribe(churn_detector)
 
             notifier_nodes = NodeChurnNotifier(d)
             churn_detector.subscribe(notifier_nodes)
 
-            tasks.append(fetcher_nodes)
+            tasks.append(d.node_info_fetcher)
 
             if d.cfg.get('node_info.version.enabled', True):
                 notifier_version = VersionNotifier(d)
@@ -315,11 +312,11 @@ class App:
 
         if d.cfg.get('constants.mimir_change', True):
             notifier_mimir_change = MimirChangedNotifier(d)
-            mimir_const_fetcher.subscribe(notifier_mimir_change)
+            d.mimir_const_fetcher.subscribe(notifier_mimir_change)
 
         if d.cfg.get('constants.voting.enabled', True):
             voting_notifier = VotingNotifier(d)
-            mimir_const_fetcher.subscribe(voting_notifier)
+            d.mimir_const_fetcher.subscribe(voting_notifier)
 
         if d.cfg.get('rune_transfer.enabled', True):
             fetcher_bep2 = BinanceOrgDexWSSClient()

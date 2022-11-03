@@ -33,10 +33,6 @@ class LpAppFramework(App):
         if network:
             d.cfg.network_id = network
 
-        d.price_pool_fetcher = PoolPriceFetcher(d)
-        d.mimir_const_fetcher = ConstMimirFetcher(d)
-        d.mimir_const_holder = MimirHolder()
-        d.name_service = NameService(d.db, d.cfg, d.midgard_connector)
         d.loc_man.set_name_service(d.name_service)
         d.twitter_bot = TwitterBotMock(d.cfg)
         d.last_block_fetcher = LastBlockFetcher(d)
@@ -75,14 +71,8 @@ class LpAppFramework(App):
         if brief:
             return
 
-        d.node_info_fetcher = NodeInfoFetcher(d)
         await d.node_info_fetcher.fetch()  # get nodes beforehand
-
-        d.mimir_const_holder = MimirHolder()
-        d.mimir_const_fetcher = ConstMimirFetcher(d)
         await d.mimir_const_fetcher.fetch()  # get constants beforehand
-
-        d.price_pool_fetcher = PoolPriceFetcher(d)
         await d.price_pool_fetcher.fetch()
 
     async def close(self):
