@@ -5,24 +5,22 @@ from services.jobs.fetch.circulating import RuneCirculatingSupplyFetcher, RuneCi
 from services.jobs.fetch.gecko_price import get_thorchain_coin_gecko_info, gecko_market_cap_rank, gecko_ticker_price, \
     gecko_market_volume
 from services.lib.constants import thor_to_float, DEFAULT_CEX_NAME, DEFAULT_CEX_BASE_ASSET
-from services.lib.date_utils import parse_timespan_to_seconds
+from services.lib.date_utils import MINUTE
 from services.lib.depcont import DepContainer
 from services.lib.midgard.urlgen import free_url_gen
-from services.lib.utils import class_logger
+from services.lib.utils import a_result_cached, WithLogger
 from services.models.price import RuneMarketInfo
 
-RUNE_MARKET_INFO_CACHE_TIME = 120
+RUNE_MARKET_INFO_CACHE_TIME = 10 * MINUTE
 
 
-class RuneMarketInfoFetcher:
+class RuneMarketInfoFetcher(WithLogger):
     def __init__(self, deps: DepContainer):
+        super().__init__()
         self.deps = deps
-        self.logger = class_logger(self)
         self.price_holder = deps.price_holder
         self.midgard = deps.midgard_connector
         self._ether_scan_key = deps.cfg.get('thor.circulating_supply.ether_scan_key', '')
-        self._cache_time = parse_timespan_to_seconds(
-            deps.cfg.as_str('thor.circulating_supply.cache_time', RUNE_MARKET_INFO_CACHE_TIME))
         self._prev_result: Optional[RuneMarketInfo] = None
 
         self.cex_name = deps.cfg.as_str('price.cex_reference.cex', DEFAULT_CEX_NAME)
@@ -31,8 +29,9 @@ class RuneMarketInfoFetcher:
         self.logger.info(f'Reference is RUNE/${self.cex_pair} at "{self.cex_name}" CEX.')
 
         # cache the method
+
         # self.get_rune_market_info = a_result_cached(ttl=self._cache_time)(retries(5)(self._get_rune_market_info))
-        # self.get_rune_market_info = a_result_cached(ttl=self._cache_time)(self._get_rune_market_info)
+        # self.get_rune_market_info = a_result_cached(ttl=self._cache_time)(self.get_rune_market_info)
 
     async def total_locked_value_all_networks(self):
         j = await self.midgard.request_random_midgard(free_url_gen.url_network())
@@ -86,6 +85,7 @@ class RuneMarketInfoFetcher:
         self.logger.info(result)
         return result
 
+    @a_result_cached(RUNE_MARKET_INFO_CACHE_TIME)
     async def get_rune_market_info(self) -> RuneMarketInfo:
         try:
             result = await self._get_rune_market_info()
