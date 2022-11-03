@@ -12,10 +12,12 @@ COIN_CHART_GECKO = "https://api.coingecko.com/api/v3/coins/thorchain/market_char
 COIN_RANK_GECKO = "https://api.coingecko.com/api/v3/coins/thorchain?" \
                   "market_data=true&community_data=false&developer_data=false"
 
+GECKO_TIMEOUT = aiohttp.ClientTimeout(total=25)  # sec
+
 
 async def get_rune_chart(days):
     async with aiohttp.ClientSession() as session:
-        async with session.get(COIN_CHART_GECKO.format(days=days)) as resp:
+        async with session.get(COIN_CHART_GECKO.format(days=days), timeout=GECKO_TIMEOUT) as resp:
             j = await resp.json()
             return j['prices']
 
@@ -56,7 +58,7 @@ async def fill_rune_price_from_gecko(db, include_fake_det=False, fake_value=0.2)
 
 
 async def get_thorchain_coin_gecko_info(session):
-    async with session.get(COIN_RANK_GECKO) as resp:
+    async with session.get(COIN_RANK_GECKO, timeout=GECKO_TIMEOUT) as resp:
         j = await resp.json()
         return j
 
