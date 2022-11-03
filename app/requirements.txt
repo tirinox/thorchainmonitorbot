@@ -26,6 +26,7 @@ semver
 slack-sdk
 slack-bolt
 starlette
+sentry-sdk
 tqdm
 tweepy
 ujson

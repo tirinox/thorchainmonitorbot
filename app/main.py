@@ -87,6 +87,14 @@ class App:
     def _init_configuration(self, d, log_level=None):
         d.cfg = Config()
 
+        sentry_url = d.cfg.as_str('sentry.url')
+        if sentry_url:
+            import sentry_sdk
+            sentry_sdk.init(
+                dsn=sentry_url,
+                traces_sample_rate=1.0
+            )
+
         log_level = log_level or d.cfg.get_pure('log_level', logging.INFO)
         setup_logs(log_level)
 
