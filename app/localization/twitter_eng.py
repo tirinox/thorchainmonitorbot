@@ -705,8 +705,8 @@ class TwitterEnglishLocalization(BaseLocalization):
     def link_to_address(self, addr, name_map, chain=Chains.THOR):
         # without a link, just a caption
         name = name_map.by_address.get(addr)
-        caption = add_thor_suffix(name) if name else short_address(addr)
-        return caption
+        caption = add_thor_suffix(name) if name else short_address(addr, 0, 4)
+        return f'[{caption}]'
 
     def notification_text_cex_flow(self, cex_flow: RuneCEXFlow):
         return (
