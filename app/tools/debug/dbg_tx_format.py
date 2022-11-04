@@ -128,7 +128,7 @@ async def demo_full_tx_pipeline(app: LpAppFramework):
 
     curve = DepthCurve.default()
     swap_notifier_tx = SwapTxNotifier(d, d.cfg.tx.swap, curve=curve)
-    swap_notifier_tx.curve_mult = 1000.0
+    swap_notifier_tx.curve_mult = 0.00001
     swap_notifier_tx.min_usd_total = 0.0
     swap_notifier_tx.aff_fee_min_usd = 0.3
     volume_filler.subscribe(swap_notifier_tx)
@@ -141,11 +141,17 @@ async def demo_full_tx_pipeline(app: LpAppFramework):
     swap_notifier_tx.subscribe(Receiver('Swap TX'))
     liq_notifier_tx.subscribe(Receiver('Liq TX'))
 
+    swap_notifier_tx.subscribe(app.deps.alert_presenter)
+    liq_notifier_tx.subscribe(app.deps.alert_presenter)
+
     # run the pipeline!
     # await fetcher_tx.run()
 
     # await demo_run_txs_example_file(fetcher_tx, 'swap_with_aff_new.json')
-    await demo_run_txs_example_file(fetcher_tx, 'withdraw_ilp.json')
+    # await demo_run_txs_example_file(fetcher_tx, 'withdraw_ilp.json')
+    # await demo_run_txs_example_file(fetcher_tx, 'swap_synth_synth.json')
+    await demo_run_txs_example_file(fetcher_tx, 'add_withdraw_big.json')
+    await asyncio.sleep(10.0)
 
 
 if __name__ == '__main__':

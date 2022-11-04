@@ -1,0 +1,55 @@
+{
+	"actions": [
+		{
+			"date": "1667413140205789425",
+			"height": "8049683",
+			"in": [
+				{
+					"address": "thor1ukwhpglu7yh2g2rw8h7jvee2r0fv0e90nyxv6v",
+					"coins": [
+						{
+							"amount": "5448000",
+							"asset": "BTC/BTC"
+						}
+					],
+					"txID": "5073F1564BF1B5A1EBC13B3E49AFC8DA40A01772D9025E3EE74F0504F5F9E549"
+				}
+			],
+			"metadata": {
+				"swap": {
+					"affiliateAddress": "",
+					"affiliateFee": "0",
+					"liquidityFee": "22266907",
+					"memo": "SWAP:BNB/BUSD-BD1:thor1ukwhpglu7yh2g2rw8h7jvee2r0fv0e90nyxv6v:101337572448",
+					"networkFees": [
+						{
+							"amount": "3043821",
+							"asset": "BNB/BUSD-BD1"
+						}
+					],
+					"swapSlip": "3",
+					"swapTarget": "101337572448"
+				}
+			},
+			"out": [
+				{
+					"address": "thor1ukwhpglu7yh2g2rw8h7jvee2r0fv0e90nyxv6v",
+					"coins": [
+						{
+							"amount": "112639199679",
+							"asset": "BNB/BUSD-BD1"
+						}
+					],
+					"txID": ""
+				}
+			],
+			"pools": [
+				"BTC.BTC",
+				"BNB.BUSD-BD1"
+			],
+			"status": "success",
+			"type": "swap"
+		}
+	],
+	"count": "1"
+}
