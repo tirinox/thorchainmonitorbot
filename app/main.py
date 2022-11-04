@@ -74,17 +74,18 @@ class App:
         d = self.deps = DepContainer()
         d.is_loading = True
 
-        self._init_configuration(d, log_level)
+        self._init_configuration(log_level)
 
         d.node_info_fetcher = NodeInfoFetcher(d)
         d.mimir_const_fetcher = ConstMimirFetcher(d)
         d.mimir_const_holder = MimirHolder()
         d.price_pool_fetcher = PoolPriceFetcher(d)
 
-        self._init_settings(d)
-        self._init_messaging(d)
+        self._init_settings()
+        self._init_messaging()
 
-    def _init_configuration(self, d, log_level=None):
+    def _init_configuration(self, log_level=None):
+        d = self.deps
         d.cfg = Config()
 
         sentry_url = d.cfg.as_str('sentry.url')
@@ -105,16 +106,16 @@ class App:
         d.db = DB(d.loop)
         d.price_holder.load_stable_coins(d.cfg)
 
-    def _init_settings(self, d):
-        # settings:
+    def _init_settings(self):
+        d = self.deps
         d.settings_manager = SettingsManager(d.db, d.cfg)
         d.alert_watcher = AlertWatchers(d.db)
         d.gen_alert_settings_proc = SettingsProcessorGeneralAlerts(d.db, d.alert_watcher)
         d.settings_manager.subscribe(d.gen_alert_settings_proc)
         d.settings_manager.subscribe(SettingsProcessorPriceDivergence(d.alert_watcher))
 
-    @staticmethod
-    def _init_messaging(d):
+    def _init_messaging(self):
+        d = self.deps
         d.loc_man = LocalizationManager(d.cfg)
         d.broadcaster = Broadcaster(d)
         d.alert_presenter = AlertPresenter(d.broadcaster, d.name_service)
