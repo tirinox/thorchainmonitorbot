@@ -290,6 +290,23 @@ def copy_photo(p: BytesIO):
     return new
 
 
+def run_once(f):
+    """Runs a function (successfully) only once.
+    The running can be reset by setting the `has_run` attribute to False
+    """
+
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        if not wrapper.has_run:
+            wrapper._f_res = f(*args, **kwargs)
+            wrapper.has_run = True
+        return wrapper._f_res
+
+    wrapper.has_run = False
+    wrapper._f_res = None
+    return wrapper
+
+
 def run_once_async(f):
     """Runs a function (successfully) only once (async).
     The running can be reset by setting the `has_run` attribute to False
@@ -298,10 +315,11 @@ def run_once_async(f):
     @wraps(f)
     async def wrapper(*args, **kwargs):
         if not wrapper.has_run:
-            result = await f(*args, **kwargs)
+            wrapper._f_res = await f(*args, **kwargs)
             wrapper.has_run = True
-            return result
+            return wrapper._f_res
 
+    wrapper._f_res = None
     wrapper.has_run = False
     return wrapper
 
