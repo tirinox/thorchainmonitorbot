@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import List, Optional, Iterable
 
 from services.lib.constants import is_rune, RUNE_SYMBOL, Chains, thor_to_float
+from services.lib.date_utils import now_ts
 from services.lib.money import Asset
 from services.lib.texts import sum_and_str
 from services.lib.w3.token_record import SwapInOut
@@ -215,6 +216,10 @@ class ThorTx:
     @property
     def date_timestamp(self):
         return int(int(self.date) * 1e-9)
+
+    @property
+    def age_sec(self):
+        return now_ts() - self.date_timestamp
 
     @property
     def height_int(self):

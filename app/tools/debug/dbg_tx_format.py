@@ -134,7 +134,7 @@ async def demo_full_tx_pipeline(app: LpAppFramework):
     volume_filler.subscribe(swap_notifier_tx)
 
     liq_notifier_tx = LiquidityTxNotifier(d, d.cfg.tx.liquidity, curve=curve)
-    liq_notifier_tx.curve_mult = 1000.0
+    liq_notifier_tx.curve_mult = 0.1
     liq_notifier_tx.ilp_paid_min_usd = 10.0
     volume_filler.subscribe(liq_notifier_tx)
 

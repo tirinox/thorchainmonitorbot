@@ -223,6 +223,8 @@ tx:
 
   announce_pending_after_blocks: 500
 
+  add_date_if_older_than: 2h  # (!) new
+
   exclamation:
     fee_usd_limit: 3000
     ilp_usd_limit: 5000

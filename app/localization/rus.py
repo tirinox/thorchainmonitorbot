@@ -316,6 +316,10 @@ class RussianLocalization(BaseLocalization):
         if tx.is_pending:
             heading += ital(' [Ожидает]')
 
+        # it is old
+        if date_text := self.tx_date(tx):
+            heading += ital(f' {date_text}')
+
         asset = Asset(tx.first_pool).name
 
         content = f''

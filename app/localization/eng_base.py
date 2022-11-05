@@ -19,7 +19,7 @@ from services.lib.money import format_percent, pretty_money, short_address, shor
     RAIDO_GLYPH, short_rune
 from services.lib.texts import progressbar, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
     up_down_arrow, bracketify, plural, join_as_numbered_list, regroup_joining, shorten_text
-from services.lib.utils import grouper
+from services.lib.utils import grouper, run_once
 from services.lib.w3.dex_analytics import DexReport, DexReportEntry
 from services.lib.w3.token_record import AmountToken
 from services.models.cap_info import ThorCapInfo
@@ -442,6 +442,15 @@ class BaseLocalization(ABC):  # == English
         else:
             return ''
 
+    @run_once
+    def tx_add_date_if_older_than(self):
+        return self.cfg.as_interval('tx.add_date_if_older_than', '3h')
+
+    def tx_date(self, tx: ThorTxExtended):
+        now = now_ts()
+        if tx.date_timestamp < now - self.tx_add_date_if_older_than():
+            return self.format_time_ago(now - tx.date_timestamp)
+
     def notification_text_large_single_tx(self, tx: ThorTxExtended,
                                           usd_per_rune: float,
                                           pool_info: PoolInfo,
@@ -466,6 +475,10 @@ class BaseLocalization(ABC):  # == English
 
         if tx.is_pending:
             heading += ital(' [Pending]')
+
+        # it is old
+        if date_text := self.tx_date(tx):
+            heading += ital(f' {date_text}')
 
         asset = Asset(tx.first_pool).name
 

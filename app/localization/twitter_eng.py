@@ -96,6 +96,10 @@ class TwitterEnglishLocalization(BaseLocalization):
         if tx.is_pending:
             heading += ' [Pending]'
 
+        # it is old
+        if date_text := self.tx_date(tx):
+            heading += f' {date_text}'
+
         asset = Asset(tx.first_pool).name
 
         content = f'{self.link_to_address(tx.sender_address, name_map)}: '
