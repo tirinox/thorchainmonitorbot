@@ -1,7 +1,7 @@
 import typing
 
 from localization.manager import BaseLocalization
-from services.dialog.picture.node_geo_picture import node_geo_pic
+from services.dialog.picture.nodes_pictures import NodePictureGenerator
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import DAY
@@ -56,8 +56,10 @@ class NodeChurnNotifier(INotified, WithDelegates, WithLogger):
         result_network_info = await node_fetcher.get_node_list_and_geo_info(node_list=changes.nodes_all)
 
         async def node_div_pic_gen(loc: BaseLocalization):
-            graph = await node_geo_pic(result_network_info, loc)
-            bio_graph = img_to_bio(graph, "node_diversity.png")
+            chart_pts = await NodeChurnNotifier(self.deps).load_last_statistics(NodePictureGenerator.CHART_PERIOD)
+            gen = NodePictureGenerator(result_network_info, chart_pts, loc)
+            pic = await gen.generate()
+            bio_graph = img_to_bio(pic, gen.proper_name())
             caption = loc.PIC_NODE_DIVERSITY_BY_PROVIDER_CAPTION
             return BoardMessage.make_photo(bio_graph, caption)
 

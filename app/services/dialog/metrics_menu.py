@@ -5,14 +5,14 @@ from aiogram.utils.helper import HelperMode
 from localization.manager import BaseLocalization
 from services.dialog.base import BaseDialog, message_handler
 from services.dialog.picture.block_height_picture import block_speed_chart
-from services.dialog.picture.node_geo_picture import node_geo_pic
+from services.dialog.picture.nodes_pictures import NodePictureGenerator
 from services.dialog.picture.price_picture import price_graph_from_db
 from services.dialog.picture.queue_picture import queue_graph
 from services.dialog.picture.supply_picture import SupplyPictureGenerator
 from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.lib.constants import THOR_BLOCKS_PER_MINUTE
-from services.lib.date_utils import DAY, HOUR, parse_timespan_to_seconds, today_str, now_ts
+from services.lib.date_utils import DAY, HOUR, parse_timespan_to_seconds, now_ts
 from services.lib.draw_utils import img_to_bio
 from services.lib.texts import kbd
 from services.models.node_info import NodeInfo
@@ -20,6 +20,7 @@ from services.models.price import PriceReport, RuneMarketInfo
 from services.notify.types.best_pool_notify import BestPoolsNotifier
 from services.notify.types.block_notify import BlockHeightNotifier
 from services.notify.types.cap_notify import LiquidityCapNotifier
+from services.notify.types.node_churn_notify import NodeChurnNotifier
 from services.notify.types.price_notify import PriceNotifier
 from services.notify.types.stats_notify import NetworkStatsNotifier
 from services.notify.types.transfer_notify import RuneMoveNotifier
@@ -169,8 +170,12 @@ class MetricsDialog(BaseDialog):
             if message_text:
                 await message.answer(message_text, disable_web_page_preview=True, disable_notification=True)
 
-        pic = await node_geo_pic(result_network_info, self.loc)
-        await message.answer_photo(img_to_bio(pic, f'NodeDiversity-{today_str()}.png'), disable_notification=True)
+        # generate a beautiful masterpiece :)
+        chart_pts = await NodeChurnNotifier(self.deps).load_last_statistics(NodePictureGenerator.CHART_PERIOD)
+        gen = NodePictureGenerator(result_network_info, chart_pts, self.loc)
+        pic = await gen.generate()
+
+        await message.answer_photo(img_to_bio(pic, gen.proper_name()), disable_notification=True)
 
     async def ask_queue_duration(self, message: Message):
         await message.answer(self.loc.TEXT_PRICE_INFO_ASK_DURATION, reply_markup=kbd([

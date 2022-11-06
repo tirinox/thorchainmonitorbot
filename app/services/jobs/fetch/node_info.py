@@ -50,7 +50,7 @@ class NodeInfoFetcher(BaseFetcher):
 
         return nodes
 
-    async def get_node_list_and_geo_info(self, node_list=None):
+    async def get_node_list_and_geo_info(self, node_list=None) -> NetworkNodeIpInfo:
         if node_list is None:
             node_list = await self.fetch_current_node_list()
 

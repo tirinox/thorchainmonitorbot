@@ -2,12 +2,10 @@ import asyncio
 import logging
 import os
 import random
-from collections import Counter
 
 from eth_utils.humanize import WEEK
 
-from localization.eng_base import BaseLocalization
-from services.dialog.picture.node_geo_picture import node_geo_pic, make_donut_chart
+from services.dialog.picture.node_geo_picture import make_donut_chart
 from services.dialog.picture.nodes_pictures import NodePictureGenerator
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.lib.date_utils import now_ts, DAY, HOUR
@@ -67,38 +65,6 @@ async def demo_get_node_stats():
         print(r)
 
 
-async def demo_test_geo_ip_thor_2():
-    lp_app = LpAppFramework()
-    async with lp_app:
-        geo_ip = GeoIPManager(lp_app.deps)
-
-        node_info_fetcher = NodeInfoFetcher(lp_app.deps)
-        result = await node_info_fetcher.fetch_current_node_list()
-
-        ip_addresses = [node.ip_address for node in result if node.ip_address]
-        print('IP addresses = ')
-        print(*ip_addresses, sep=', ')
-
-        ip_infos = await geo_ip.get_ip_info_bulk(ip_addresses)
-
-        organizations = {}
-        providers = {}
-        for info in ip_infos:
-            if info:
-                ip = info['ip']
-                organizations[ip] = info['org']
-
-        print(organizations)
-        print('----')
-        print(providers)
-
-        c = Counter(providers.values())
-        print(c)
-
-        pic = await node_geo_pic(ip_infos, lp_app.deps.loc_man.default)
-        pic.show()
-
-
 async def demo_test_parallel_fetch():
     lp_app = LpAppFramework()
     async with lp_app:
@@ -124,12 +90,6 @@ async def demo_test_donuts():
     fake_data_1 = [('AMAZON', 100), ('DIGITALOCEAN', 50), ('MICROSOFT', 20), ('Others', 1)]
     donut = make_donut_chart(fake_data_1, width=400, margin=104, line_width=60, gap=2, label_r=120)
     donut.show()
-
-
-async def demo_test_geo_chart():
-    infos = await get_ip_infos_pickled()
-    pic = await node_geo_pic(infos, BaseLocalization(None))
-    pic.show()
 
 
 def dbg_bond_stat_entry(day, shift, nodes_active, bond_millions):
@@ -182,6 +142,16 @@ async def demo_test_new_geo_chart(app: LpAppFramework):
     pic = await gen.generate()
     pic.show()
     pic.save('../temp/new_node_pic.png')
+
+    # usage
+    """
+    node_set_info: NetworkNodeIpInfo
+    churn_notifier: NodeChurnNotifier
+    loc: BasrLocalisation
+    chart_pts = await churn_notifier.load_last_statistics(NodePictureGenerator.CHART_PERIOD)
+    gen = NodePictureGenerator(node_set_info, chart_pts, loc)
+    pic = await gen.generate()
+    """
 
 
 async def demo_last_block():
