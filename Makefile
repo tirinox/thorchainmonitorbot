@@ -31,6 +31,7 @@ restart:
 
 poke:
 	@docker-compose restart thtgbot api
+	@make -s logs
 
 pull:
 	@git pull
