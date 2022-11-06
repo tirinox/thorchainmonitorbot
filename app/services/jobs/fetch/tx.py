@@ -17,10 +17,12 @@ from services.models.tx import ThorTx, ThorTxExtended
 class TxFetcher(BaseFetcher):
     PAGE_IN_GROUP = 3
 
-    def __init__(self, deps: DepContainer):
+    def __init__(self, deps: DepContainer, tx_types=None):
         s_cfg = deps.cfg.tx
         sleep_period = parse_timespan_to_seconds(s_cfg.fetch_period)
         super().__init__(deps, sleep_period=sleep_period)
+
+        self.tx_types = tx_types
 
         self.tx_per_batch = int(s_cfg.tx_per_batch)
         self.max_page_deep = int(s_cfg.max_page_deep)
@@ -103,8 +105,8 @@ class TxFetcher(BaseFetcher):
 
     # -------
 
-    async def fetch_one_batch(self, page, txid=None) -> Optional[TxParseResult]:
-        q_path = free_url_gen.url_for_tx(page * self.tx_per_batch, self.tx_per_batch, txid=txid)
+    async def fetch_one_batch(self, page, txid=None, tx_types=None) -> Optional[TxParseResult]:
+        q_path = free_url_gen.url_for_tx(page * self.tx_per_batch, self.tx_per_batch, txid=txid, tx_type=tx_types)
 
         try:
             j = await self.deps.midgard_connector.request_random_midgard(q_path)
@@ -114,7 +116,7 @@ class TxFetcher(BaseFetcher):
 
     async def _fetch_one_batch_tries(self, page, tries) -> Optional[TxParseResult]:
         for _ in range(tries):
-            data = await self.fetch_one_batch(page)
+            data = await self.fetch_one_batch(page, tx_types=self.tx_types)
             if data:
                 return data
             else:

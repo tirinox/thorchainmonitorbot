@@ -40,6 +40,8 @@ class MidgardURLGenV2(MidgardURLGenBase):
         if address:
             url += f'&address={address}'
         if tx_type:
+            if isinstance(tx_type, (list, tuple)):
+                tx_type = ','.join(tx_type)
             url += f'&type={tx_type}'
         if txid:
             url += f'&txid={txid}'
