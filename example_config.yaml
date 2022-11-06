@@ -249,6 +249,11 @@ tx:
       ilp_paid_usd_greater: 5000
       affiliate_fee_usd_greater: 1000
 
+    dedicated_fetcher:  # (!) new
+      enabled: True
+      period: 10m
+
+
   swap:
     enabled: true
     min_usd_total: 5000

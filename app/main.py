@@ -204,6 +204,15 @@ class App:
                 volume_filler.subscribe(liq_notifier_tx)
                 liq_notifier_tx.subscribe(d.alert_presenter)
 
+                if d.cfg.tx.liquidity.dedicated_fetcher.get('enabled', False):
+                    logging.info('Dedicated TX fetcher is enabled')
+                    dedicated_fetcher_tx = TxFetcher(d,
+                                                     tx_types=(ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_ADD_LIQUIDITY))
+                    dedicated_fetcher_tx.sleep_period = d.cfg.tx.liquidity.dedicated_fetcher.as_interval(
+                        'period', '20m')
+                    dedicated_fetcher_tx.subscribe(aggregator)
+                    tasks.append(dedicated_fetcher_tx)
+
             if d.cfg.tx.donate.get('enabled', True):
                 donate_notifier_tx = GenericTxNotifier(d, d.cfg.tx.donate,
                                                        tx_types=(ThorTxType.TYPE_DONATE,),

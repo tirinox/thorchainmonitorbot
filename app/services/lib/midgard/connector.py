@@ -36,9 +36,10 @@ class MidgardConnector:
             port = DEFAULT_MIDGARD_PORT
             full_url = f'http://{ip_address}:{port}/{path}'
 
-        self.logger.debug(f"Getting Midgard endpoint: {full_url}")
+        self.logger.info(f"Getting Midgard endpoint: {full_url}")
         try:
             async with self.session.get(full_url) as resp:
+                self.logger.debug(f'Midgard "{full_url}"; result code = {resp.status}.')
                 if resp.status != 200:
                     try:
                         answer = resp.content[:200]
