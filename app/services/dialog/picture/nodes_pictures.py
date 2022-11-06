@@ -6,10 +6,9 @@ from typing import List
 from PIL import ImageFont, Image, ImageDraw
 
 from localization.eng_base import BaseLocalization
-from services.lib.date_utils import DAY, now_ts
+from services.lib.date_utils import DAY, now_ts, today_str
 from services.lib.draw_utils import default_background, CacheGrid, TC_YGGDRASIL_GREEN, \
-    make_donut_chart, TC_NIGHT_BLACK, TC_PALETTE, TC_WHITE, TC_LIGHTNING_BLUE, get_palette_color_by_index, \
-    TC_MIDGARD_TURQOISE
+    make_donut_chart, TC_NIGHT_BLACK, TC_PALETTE, TC_WHITE, TC_LIGHTNING_BLUE, get_palette_color_by_index
 from services.lib.money import clamp, short_rune, format_percent
 from services.lib.plot_graph import plot_legend, PlotGraphLines
 from services.lib.texts import bracketify
@@ -246,6 +245,10 @@ class NodePictureGenerator:
     MAX_CATEGORIES = 5
     CHART_PERIOD = 30 * DAY
 
+    @staticmethod
+    def proper_name():
+        return f'THORChain-world-{today_str()}.png'
+
     def __init__(self, data: NetworkNodeIpInfo, node_stats_points: List[NodeStatsItem],
                  loc: BaseLocalization, max_categories=MAX_CATEGORIES):
         self.data = data
@@ -340,10 +343,10 @@ class NodePictureGenerator:
             draw.text((_x, _y), str(title), font=r.font_norm, fill=TC_WHITE, anchor=anchor)
             f = r.font_head if big else r.font_subtitle
             draw.text((_x, _y + 40), str(value), font=f, fill=color, anchor=anchor,
-                      stroke_width=stroke_width, stroke_fill=TC_MIDGARD_TURQOISE)
+                      stroke_fill=TC_WHITE, stroke_width=stroke_width)
             if value2:
                 draw.text((_x, _y + 80), str(value2), font=r.font_small, fill="#bfd", anchor=anchor,
-                          stroke_width=stroke_width, stroke_fill=TC_MIDGARD_TURQOISE)
+                          )
 
         dx = 240
 
@@ -377,6 +380,17 @@ class NodePictureGenerator:
                                   title_color='white', font_middle=r.font_subtitle, title=title)
         return donut1
 
+    @staticmethod
+    def sparse_points(pts, interval=DAY):
+        results = []
+        last_ts = None
+        for p in reversed(pts):
+            if last_ts is None or abs(p.ts - last_ts) >= interval:
+                results.append(p)
+                last_ts = p.ts
+
+        return list(reversed(results))
+
     def _make_bond_chart(self, pts: List[NodeStatsItem], r, w, h, period=DAY * 14):
         gr = PlotGraphLines(w, h, bg=(0, 0, 0, 0))
         gr.x_formatter = gr.date_formatter
@@ -391,6 +405,7 @@ class NodePictureGenerator:
         gr.bar_height_limit = 142
 
         if pts:
+            pts = self.sparse_points(pts)
             bond_points = [(p.ts, p.bond_active_total) for p in pts]
             node_points = [(p.ts, p.n_active_nodes) for p in pts]
 
