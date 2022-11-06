@@ -131,7 +131,7 @@ class SwapTxNotifier(GenericTxNotifier):
         self.aff_fee_min_usd = params.as_float('also_trigger_when.affiliate_fee_usd_greater', 500)
 
     def is_tx_suitable(self, tx: ThorTxExtended, min_rune_volume, usd_per_rune):
-        affiliate_fee_rune = tx.meta_swap.affiliate_fee / 10_000.0 * tx.full_rune
+        affiliate_fee_rune = tx.meta_swap.affiliate_fee * tx.full_rune
 
         if affiliate_fee_rune >= self.aff_fee_min_usd / usd_per_rune:
             return True

@@ -2,7 +2,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import List, Optional, Iterable
 
-from services.lib.constants import is_rune, RUNE_SYMBOL, Chains, thor_to_float
+from services.lib.constants import is_rune, RUNE_SYMBOL, Chains, thor_to_float, THOR_BASIS_POINT_MAX
 from services.lib.date_utils import now_ts
 from services.lib.money import Asset
 from services.lib.texts import sum_and_str
@@ -80,7 +80,7 @@ class ThorMetaSwap:
     network_fees: List[ThorCoin]
     trade_slip: str
     trade_target: str
-    affiliate_fee: float = 0.0
+    affiliate_fee: float = 0.0  # (0..1) range
     memo: str = ''
 
     # todo: add aff address
@@ -92,7 +92,7 @@ class ThorMetaSwap:
                    network_fees=fees,
                    trade_slip=j.get('swapSlip', '0'),
                    trade_target=j.get('swapTarget', '0'),
-                   affiliate_fee=float(j.get('affiliateFee', 0)),
+                   affiliate_fee=float(j.get('affiliateFee', 0)) / THOR_BASIS_POINT_MAX,
                    memo=j.get('memo', ''))
 
     @property
@@ -110,7 +110,9 @@ class ThorMetaSwap:
                 liquidity_fee=sum_and_str(a.liquidity_fee, b.liquidity_fee),
                 network_fees=a.network_fees + b.network_fees,
                 trade_slip=sum_and_str(a.trade_slip, b.trade_slip),
-                trade_target=sum_and_str(a.trade_target, b.trade_target)
+                trade_target=sum_and_str(a.trade_target, b.trade_target),
+                affiliate_fee=max(a.affiliate_fee, b.affiliate_fee),
+                memo=a.memo if a.memo else b.memo,
             )
         else:
             return a or b
@@ -163,7 +165,6 @@ class ThorMetaRefund:
 @dataclass
 class ThorMetaAddLiquidity:
     liquidity_units: str
-    affiliate_fee: float = 0.0
 
     @property
     def liquidity_units_int(self):
@@ -200,7 +201,7 @@ class ThorTx:
     meta_withdraw: Optional[ThorMetaWithdraw] = None
     meta_swap: Optional[ThorMetaSwap] = None
     meta_refund: Optional[ThorMetaRefund] = None
-    affiliate_fee: float = 0.0
+    affiliate_fee: float = 0.0  # (0..1) range
 
     def sort_inputs_by_first_asset(self):
         self.in_tx.sort(key=lambda sub_tx: (sub_tx.coins[0].asset if sub_tx.coins else ''))
@@ -409,6 +410,8 @@ class ThorTxExtended(ThorTx):
 
     dex_info: SwapInOut = SwapInOut()
 
+    is_savings: bool = False
+
     @classmethod
     def load_from_thor_tx(cls, tx: ThorTx):
         return cls(**tx.__dict__)
@@ -451,6 +454,11 @@ class ThorTxExtended(ThorTx):
             self.rune_amount = self.sum_of_rune(out_only=True)
             self.asset_amount = self.sum_of_non_rune(out_only=True)
 
+            if t == ThorTxType.TYPE_SWAP:
+                self.affiliate_fee = self.meta_swap.affiliate_fee
+
+        self.is_savings = any(True for asset in self.pools if Asset.from_string(asset).is_synth)
+
     def asymmetry(self, force_abs=False):
         rune_asset_amount = self.asset_amount * self.asset_per_rune
         factor = (self.rune_amount / (rune_asset_amount + self.rune_amount) - 0.5) * 200.0  # -100 % ... + 100 %
@@ -485,7 +493,9 @@ class ThorTxExtended(ThorTx):
         if self.type == ThorTxType.TYPE_SWITCH:
             r = self.rune_amount
         else:
-            pool_info: PoolInfo = pool_map.get(self.first_pool)
+            # We take price in from the L1 pool, that's why convert_synth_to_pool_name is used
+            pool_info: PoolInfo = pool_map.get(Asset.convert_synth_to_pool_name(self.first_pool))
+
             self.asset_per_rune = pool_info.asset_per_rune if pool_info else 0.0
 
             if self.type in (ThorTxType.TYPE_SWAP, ThorTxType.TYPE_WITHDRAW):

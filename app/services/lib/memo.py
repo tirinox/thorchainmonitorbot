@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Union
 
+from services.lib.constants import THOR_BASIS_POINT_MAX
 from services.models.tx import ThorTxType
 
 
@@ -11,7 +12,7 @@ class THORMemoParsed:
     dest_address: str = ''
     limit: int = 0
     affiliate_address: str = ''
-    affiliate_fee: float = 0.0
+    affiliate_fee: float = 0.0  # (0..1) range
     dex_aggregator_address: str = ''
     final_asset_address: str = ''
     min_amount_out: int = 0
@@ -44,7 +45,7 @@ class THORMemoParsed:
                 dest_address=cls.ith_or_default(components, 2),
                 limit=cls.ith_or_default(components, 3, 0, dtype=int),
                 affiliate_address=cls.ith_or_default(components, 4),
-                affiliate_fee=cls.ith_or_default(components, 5, 0, dtype=int) / 10_000.0,
+                affiliate_fee=cls.ith_or_default(components, 5, 0, dtype=int) / THOR_BASIS_POINT_MAX,
                 dex_aggregator_address=cls.ith_or_default(components, 6),
                 final_asset_address=cls.ith_or_default(components, 7),
                 min_amount_out=cls.ith_or_default(components, 8, 0, dtype=int)

@@ -118,7 +118,7 @@ async def refund_full_rune(app):
 async def demo_full_tx_pipeline(app: LpAppFramework):
     d = app.deps
 
-    fetcher_tx = TxFetcher(d)
+    fetcher_tx = TxFetcher(d, tx_types=(ThorTxType.TYPE_ADD_LIQUIDITY,))
 
     aggregator = AggregatorDataExtractor(d)
     fetcher_tx.subscribe(aggregator)
@@ -145,7 +145,7 @@ async def demo_full_tx_pipeline(app: LpAppFramework):
     liq_notifier_tx.subscribe(app.deps.alert_presenter)
 
     # run the pipeline!
-    # await fetcher_tx.run()
+    await fetcher_tx.run()
 
     # await demo_run_txs_example_file(fetcher_tx, 'swap_with_aff_new.json')
     # await demo_run_txs_example_file(fetcher_tx, 'withdraw_ilp.json')

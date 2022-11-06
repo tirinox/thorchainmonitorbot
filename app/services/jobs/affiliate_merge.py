@@ -4,38 +4,48 @@ from typing import List
 
 from services.lib.constants import thor_to_float
 from services.lib.utils import WithLogger
-from services.models.tx import ThorCoin, ThorTx, ThorMetaSwap, ThorMetaAddLiquidity
+from services.models.tx import ThorCoin, ThorTx, ThorMetaSwap, ThorMetaAddLiquidity, ThorSubTx
 
 
 class AffiliateTXMerger(WithLogger):
     def __init__(self):
         super().__init__()
 
-    MAX_ALLOWED_AFFILIATE_FEE_RATIO = 0.15
+    MAX_ALLOWED_AFFILIATE_FEE_RATIO = 0.2  # in fact, 0.15 but we take extra
 
-    def calc_affiliate_fee_from_coins(self, a: ThorCoin, b: ThorCoin):
-        amount_a, amount_b = thor_to_float(a.amount), thor_to_float(b.amount)
+    def calc_affiliate_fee_floats(self, amount_a, amount_b):
         if amount_a == amount_b == 0.0:
             self.logger.error(f'Both amounts are zero!')
             return 0.0
         return min(amount_a, amount_b) / max(amount_a, amount_b)
 
-    def calc_affiliate_fee_percent(self, tx_a: ThorTx, tx_b: ThorTx):
-        in_a, in_b = tx_a.first_input_tx, tx_b.first_input_tx
-        if not in_a or not in_b or not in_a.coins or not in_b.coins:
-            self.logger.error(f'Empty input Txs or no coins')
-            return 0.0
+    def calc_affiliate_fee_from_coins(self, a: ThorCoin, b: ThorCoin):
+        amount_a, amount_b = thor_to_float(a.amount), thor_to_float(b.amount)
+        return self.calc_affiliate_fee_floats(amount_a, amount_b)
 
-        coins_a, coins_b = in_a.none_rune_coins, in_b.none_rune_coins
-        if coins_a and coins_b:
-            coin_a, coin_b = coins_a[0], coins_b[0]
-            if coin_a.asset != coin_b.asset:
-                self.logger.error(f'Coin asset mismatch: {coin_a.asset} vs {coin_b.asset}!')
+    def calc_affiliate_fee_rate(self, tx_a: ThorTx, tx_b: ThorTx):
+        if tx_a.meta_add and tx_b.meta_add:
+            a_fee = self.calc_affiliate_fee_floats(tx_a.meta_add.liquidity_units_int, tx_b.meta_add.liquidity_units_int)
+        elif tx_a.meta_swap and tx_b.meta_swap:
+            a_fee = max(tx_a.meta_swap.affiliate_fee, tx_b.meta_swap.affiliate_fee)
+        else:
+            # old method
+            in_a, in_b = tx_a.first_input_tx, tx_b.first_input_tx
+            if not in_a or not in_b or not in_a.coins or not in_b.coins:
+                self.logger.error(f'Empty input Txs or no coins')
                 return 0.0
-            return self.calc_affiliate_fee_from_coins(coin_a, coin_b)
 
-        coin_a, coin_b = in_a.rune_coin, in_b.rune_coin
-        a_fee = self.calc_affiliate_fee_from_coins(coin_a, coin_b)
+            coins_a, coins_b = in_a.none_rune_coins, in_b.none_rune_coins
+            if coins_a and coins_b:
+                coin_a, coin_b = coins_a[0], coins_b[0]
+                if coin_a.asset != coin_b.asset:
+                    self.logger.error(f'Coin asset mismatch: {coin_a.asset} vs {coin_b.asset}!')
+                    return 0.0
+                return self.calc_affiliate_fee_from_coins(coin_a, coin_b)
+
+            coin_a, coin_b = in_a.rune_coin, in_b.rune_coin
+            a_fee = self.calc_affiliate_fee_from_coins(coin_a, coin_b)
+
         if a_fee > self.MAX_ALLOWED_AFFILIATE_FEE_RATIO:
             self.logger.error(f'Affiliate fee is too big to be true: {a_fee = } > 0.15')
             return 0.0
@@ -50,13 +60,41 @@ class AffiliateTXMerger(WithLogger):
         result_tx, other_tx = tx1, tx2
 
         try:
-            result_tx.affiliate_fee = self.calc_affiliate_fee_percent(result_tx, other_tx)
+            result_tx.affiliate_fee = self.calc_affiliate_fee_rate(result_tx, other_tx)
 
-            # merge input coins
-            for in_i, other_in in enumerate(other_tx.in_tx):
-                result_coins = result_tx.in_tx[in_i].coins
-                for coin_i, other_coin in enumerate(other_in.coins):
-                    result_coins[coin_i] = ThorCoin.merge_two(result_coins[coin_i], other_coin)
+            # collect (TXID, address) for each input asset name for both Txs
+            hash_addr_tracker = {}
+            for tx in [*result_tx.in_tx, *other_tx.in_tx]:
+                for coin in tx.coins:
+                    if coin.asset not in hash_addr_tracker:
+                        hash_addr_tracker[coin.asset] = tx.tx_id, tx.address
+                    else:
+                        old_id, old_address = hash_addr_tracker[coin.asset]
+                        hash_addr_tracker[coin.asset] = (old_id or tx.tx_id), (old_address or tx.address)
+
+            # merge all same coins and put them in the dictionary using asset-name as key
+            merge_coins_dic = {}
+            all_coins = [
+                *(c for tx in result_tx.in_tx for c in tx.coins),
+                *(c for tx in other_tx.in_tx for c in tx.coins)
+            ]
+            for coin in all_coins:
+                coin: ThorCoin
+                if coin.asset not in merge_coins_dic:
+                    merge_coins_dic[coin.asset] = coin
+                else:
+                    merge_coins_dic[coin.asset] = ThorCoin.merge_two(merge_coins_dic[coin.asset], coin)
+
+            # reconstruct inputs list
+            new_input_transactions = []
+            for asset, (tx_id, address) in hash_addr_tracker.items():
+                coin = merge_coins_dic[asset]
+                new_input_transactions.append(
+                    ThorSubTx(
+                        address, [coin], tx_id
+                    )
+                )
+            result_tx.in_tx = new_input_transactions
 
             result_tx.pools = result_tx.pools if len(result_tx.pools) > len(other_tx.pools) else other_tx.pools
 

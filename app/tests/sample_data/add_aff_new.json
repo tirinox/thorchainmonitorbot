@@ -1,0 +1,69 @@
+{
+	"actions": [
+		{
+			"date": "1667616739362834975",
+			"height": "8084125",
+			"in": [
+				{
+					"address": "",
+					"coins": [
+						{
+							"amount": "783",
+							"asset": "BTC.BTC"
+						}
+					],
+					"txID": "B84ECCAED2B2D27CE86B7C0D9EF9CE6B18722584D393B0078590172FAD564AC5"
+				}
+			],
+			"metadata": {
+				"addLiquidity": {
+					"liquidityUnits": "2570860"
+				}
+			},
+			"out": [],
+			"pools": [
+				"BTC.BTC"
+			],
+			"status": "success",
+			"type": "addLiquidity"
+		},
+		{
+			"date": "1667616739362834975",
+			"height": "8084125",
+			"in": [
+				{
+					"address": "thor1akth4h8lmawgz933795klfvkvmkej8ldmx6aq9",
+					"coins": [
+						{
+							"amount": "990000000",
+							"asset": "THOR.RUNE"
+						}
+					],
+					"txID": "7E29318D580F7F5E97D93BCB6F0115B0723FE30CE477662608F25CECD45D7B01"
+				},
+				{
+					"address": "bc1qtrjyuht0pyggve5lk5k4pheusfpmqh2dzngkwf",
+					"coins": [
+						{
+							"amount": "77515",
+							"asset": "BTC.BTC"
+						}
+					],
+					"txID": "B84ECCAED2B2D27CE86B7C0D9EF9CE6B18722584D393B0078590172FAD564AC5"
+				}
+			],
+			"metadata": {
+				"addLiquidity": {
+					"liquidityUnits": "508786857"
+				}
+			},
+			"out": [],
+			"pools": [
+				"BTC.BTC"
+			],
+			"status": "success",
+			"type": "addLiquidity"
+		}
+	],
+	"count": "2"
+}

@@ -6,7 +6,7 @@ from services.jobs.affiliate_merge import AffiliateTXMerger
 from services.lib.constants import NetworkIdents, THOR_DIVIDER, NATIVE_RUNE_SYMBOL, is_rune
 from services.lib.midgard.parser import MidgardParserV2
 from services.lib.utils import load_json
-from services.models.tx import ThorCoin, ThorMetaSwap, ThorTx
+from services.models.tx import ThorCoin, ThorMetaSwap, ThorTx, ThorSubTx
 
 PATH = './sample_data'
 DIV = THOR_DIVIDER
@@ -108,7 +108,25 @@ def test_affiliate_add_merge_single(example_tx_gen):
     assert len(affiliate_tx_examples_add) == 2
     assert len(merged_txs) == 1
     tx = merged_txs[0]
-    assert tx.affiliate_fee == pytest.approx(0.010101, 0.001)
+    assert tx.affiliate_fee == pytest.approx(0.0119, 0.001)
+
+
+def test_affiliate_merge_new_add(example_tx_gen):
+    affiliate_tx_examples_add = example_tx_gen('add_aff_new.json').txs
+    merged_txs = AffiliateTXMerger().merge_affiliate_txs(affiliate_tx_examples_add)
+    assert len(merged_txs) == 1
+
+    tx = merged_txs[0]
+    assert len(tx.in_tx) == 2
+
+    assert tx.in_tx[0] == ThorSubTx('bc1qtrjyuht0pyggve5lk5k4pheusfpmqh2dzngkwf', [
+        ThorCoin(str(77515 + 783), 'BTC.BTC')
+    ], 'B84ECCAED2B2D27CE86B7C0D9EF9CE6B18722584D393B0078590172FAD564AC5')
+
+    assert tx.in_tx[1] == ThorSubTx('thor1akth4h8lmawgz933795klfvkvmkej8ldmx6aq9', [
+        ThorCoin("990000000", 'THOR.RUNE')
+    ], '7E29318D580F7F5E97D93BCB6F0115B0723FE30CE477662608F25CECD45D7B01')
+
 
 
 @pytest.mark.parametrize('fn', [
@@ -134,7 +152,7 @@ def v2_single_tx_gen(example_tx_gen):
     return lambda: example_tx_gen('v2_single.json').txs[0]
 
 
-def test_merge_same(v2_single_tx_gen):
+def test_merge_same_1(v2_single_tx_gen):
     tx1 = v2_single_tx_gen()
     tx2 = v2_single_tx_gen()  # same TX, but different objects
 
