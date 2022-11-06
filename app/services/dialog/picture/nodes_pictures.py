@@ -75,12 +75,14 @@ class WorldMap:
         n_unknown_nodes = 0
 
         name_grid = CacheGrid(20, 40)
+        n_grid = CacheGrid(30, 30)
 
         unk_lat, unk_long = -60, -140
         name_grid.set(*self.convert_coord_to_xy(unk_long, unk_lat))
 
         countries = []
         labels = []
+        remember_clusters = {}
 
         for node in data.node_info_list:
             geo = data.ip_info_dict.get(node.ip_address, {})
@@ -134,12 +136,9 @@ class WorldMap:
 
             name_grid.set(x, y)
 
-            if (n := node_counters[key]) > 1:
-                draw.text((x, y), str(n),
-                          fill=TC_WHITE,
-                          font=self.r.font_xs,
-                          anchor='mm',
-                          stroke_fill=TC_NIGHT_BLACK, stroke_width=1)
+            # count label:
+            k = n_grid.inc(x, y)
+            remember_clusters[k] = (x, y)
 
         label_x_shift = 30
         if n_unknown_nodes:
@@ -148,6 +147,16 @@ class WorldMap:
                       f'{self.loc.TEXT_PIC_UNKNOWN_LOCATION} ({n_unknown_nodes})',
                       fill='#005566',
                       font=self.r.font_small, anchor='mt')
+
+        # Cluster node counts
+        for k, (x, y) in remember_clusters.items():
+            if (n := int(n_grid[k])) > 1:
+                draw.text((x, y), str(n),
+                          fill=TC_WHITE,
+                          font=self.r.font_xs,
+                          anchor='mm',
+                          stroke_fill=TC_NIGHT_BLACK,
+                          stroke_width=1)
 
         # City names
         def plot_city(name, position, sx, sy, w, h):
@@ -164,8 +173,8 @@ class WorldMap:
                           fill=self.label_color,
                           font=self.r.font_xs,
                           anchor='lm' if position == 'right' else 'rm',
-                          # stroke_width=2,
-                          # stroke_fill=TC_NIGHT_BLACK
+                          stroke_width=1,
+                          stroke_fill=TC_NIGHT_BLACK
                           )
                 name_grid.fill_box(box)
                 return True

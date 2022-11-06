@@ -171,10 +171,10 @@ def make_random_node_chart(days=31, reverse=True):
 async def demo_test_new_geo_chart(app: LpAppFramework):
     LpAppFramework.solve_working_dir_mess()
 
-    # chart_pts = await NodeChurnNotifier(app.deps).load_last_statistics(NodePictureGenerator.CHART_PERIOD)
-    chart_pts = EXAMPLE_CHAR_PTS
+    chart_pts = await NodeChurnNotifier(app.deps).load_last_statistics(NodePictureGenerator.CHART_PERIOD)
+    # chart_pts = EXAMPLE_CHAR_PTS
     # chart_pts = EXAMPLE_CHAR_PTS[5:7]
-    chart_pts = list(make_random_node_chart())
+    # chart_pts = list(make_random_node_chart())
 
     infos = await get_ip_infos_pickled('nodes_new_3.pickle')
     gen = NodePictureGenerator(infos, chart_pts, app.deps.loc_man.default)

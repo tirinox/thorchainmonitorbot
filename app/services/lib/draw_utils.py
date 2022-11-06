@@ -2,6 +2,7 @@ import logging
 import math
 import os
 import tempfile
+from collections import defaultdict
 from colorsys import rgb_to_hls, hls_to_rgb
 from io import BytesIO
 from time import sleep
@@ -299,7 +300,7 @@ class CacheGrid:
     def __init__(self, scale_x=10, scale_y=10):
         self.scale_x = scale_x
         self.scale_y = scale_y
-        self._s = set()
+        self._s = defaultdict(float)
 
     def clear(self):
         self._s.clear()
@@ -314,10 +315,22 @@ class CacheGrid:
 
     def set(self, x, y, v=True):
         k = self.key(x, y)
-        if v:
-            self._s.add(k)
+        if v is not None:
+            self._s[k] = v
         elif k in self._s:
-            self._s.remove(k)
+            del self._s[k]
+        return k
+
+    def inc(self, x, y, v=1.0):
+        k = self.key(x, y)
+        self._s[k] += v
+        return k
+
+    def __getitem__(self, item):
+        return self._s[item]
+
+    def get(self, x, y):
+        return self._s.get(self.key(x, y))
 
     def box_guts(self, xy):
         (x1, y1), (x2, y2) = xy
