@@ -1,0 +1,12 @@
+To Restore Midgard
+
+After make recover-ninerealms
+
+You should do
+
+make update-trust-state
+make install
+make restart # select midgard
+
+More info is here:
+https://gitlab.com/thorchain/devops/node-launcher/-/blob/master/docs/Thornode-Snapshot-Recovery-and-Storage-Management.md#1-recover-nine-realms-statesync-pruned-snapshot/
