@@ -603,6 +603,7 @@ class RussianLocalization(BaseLocalization):
     BUTTON_METR_TOP_POOLS = '🏊 Топ Пулов'
     BUTTON_METR_CEX_FLOW = '🌬 Поток бирж'
     BUTTON_METR_SUPPLY = f'🪙 Rune предложение'
+    BUTTON_METR_DEX_STATS = f'🤹 DEX Агр. статы'
 
     TEXT_METRICS_INTRO = 'Что вы хотите узнать?'
 
@@ -1579,6 +1580,8 @@ class RussianLocalization(BaseLocalization):
             f'{bold(n)} {txs} '
             f'({pre(short_rune(e.rune_volume))} или '
             f'{pre(short_dollar(e.rune_volume * r.usd_per_rune))})')
+
+    TEXT_DEX_AGGR_ASK_DURATION = 'За какой период времени выдать информацию о DEX агрегаторах?'
 
     def notification_text_dex_report(self, r: DexReport):
         if r.period_sec == DAY:

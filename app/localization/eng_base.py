@@ -773,6 +773,7 @@ class BaseLocalization(ABC):  # == English
     BUTTON_METR_TOP_POOLS = '🏊 Top Pools'
     BUTTON_METR_CEX_FLOW = '🌬 CEX Flow'
     BUTTON_METR_SUPPLY = f'🪙 Rune supply'
+    BUTTON_METR_DEX_STATS = f'🤹 DEX Aggr. Stats'
 
     TEXT_METRICS_INTRO = 'What metrics would you like to know?'
 
@@ -2059,6 +2060,8 @@ class BaseLocalization(ABC):  # == English
             f'{bold(n)} {txs} '
             f'({pre(short_rune(e.rune_volume))} or '
             f'{pre(short_dollar(e.rune_volume * r.usd_per_rune))})')
+
+    TEXT_DEX_AGGR_ASK_DURATION = 'For what period of time to output the information?'
 
     def notification_text_dex_report(self, r: DexReport):
         if r.period_sec == DAY:

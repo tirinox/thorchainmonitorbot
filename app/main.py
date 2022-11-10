@@ -185,14 +185,14 @@ class App:
             volume_filler = VolumeFillerUpdater(d)
             aggregator.subscribe(volume_filler)
 
-            dex_analytics = DexAnalyticsCollector(d)
-            aggregator.subscribe(dex_analytics)
+            d.dex_analytics = DexAnalyticsCollector(d)
+            aggregator.subscribe(d.dex_analytics)
 
             d.volume_recorder = VolumeRecorder(d)
             volume_filler.subscribe(d.volume_recorder)
 
             if d.cfg.tx.dex_aggregator_update.get('enabled', True):
-                dex_report_notifier = DexReportNotifier(d, dex_analytics)
+                dex_report_notifier = DexReportNotifier(d, d.dex_analytics)
                 volume_filler.subscribe(dex_report_notifier)
                 dex_report_notifier.subscribe(d.alert_presenter)
 

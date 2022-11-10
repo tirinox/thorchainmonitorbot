@@ -59,6 +59,8 @@ class DepContainer:
     rune_move_notifier = None  # type: 'BEP2MoveNotifier'
     volume_recorder = None  # type: 'VolumeRecorder'
 
+    dex_analytics = None
+
     gen_alert_settings_proc = None
     alert_watcher: Optional[AlertWatchers] = None
 
