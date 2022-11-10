@@ -16,31 +16,46 @@ def seconds_diff(t1: datetime, t2: datetime) -> float:
     return (t1 - t2).total_seconds()
 
 
-def seconds_human(seconds, translate=None) -> str:
+def append_if_not_zero(acc, val, denom, translate, plural=True):
+    if not val:
+        return acc
+    else:
+        denom = (denom if val == 1 else f'{denom}s') if plural else denom
+        denom = translate(denom)
+        return "{} {} {}".format(acc, val, denom)
+
+
+def seconds_human(seconds, translate=None, max_step=0) -> str:
     seconds = int(seconds)
 
     def tr(key):
         return translate.get(key, key) if translate else key
 
-    def append_if_not_zero(acc, val, time_type):
-        return acc if val == 0 else "{} {} {}".format(acc, val, time_type)
-
     if seconds == 0:
         return tr('just now')
-    else:
-        minutes = seconds // 60
-        hours = minutes // 60
-        days = hours // 24
 
-        s = ''
-        s = append_if_not_zero(s, days, tr('day') if days == 1 else tr('days'))
-        if days <= 31:
-            s = append_if_not_zero(s, hours % 24, tr('hour') if hours == 1 else tr('hours'))
-        if not days:
-            s = append_if_not_zero(s, minutes % 60, tr('min'))
-        if not hours:
-            s = append_if_not_zero(s, seconds % 60, tr('sec'))
-        return s.strip()
+    if seconds < 0:
+        return '-' + seconds_human(-seconds, translate, max_step)
+
+    if max_step:
+        seconds = seconds // max_step * max_step
+
+    minutes = (seconds // 60)
+    hours = (minutes // 60)
+    days = (hours // 24)
+    months = (days // 30)
+    years = days // 365
+
+    s = append_if_not_zero('', years, 'year', tr)
+    s = append_if_not_zero(s, months % 12, 'month', tr)
+    s = append_if_not_zero(s, (days % 365) % 30, 'day', tr)
+    if not months:
+        s = append_if_not_zero(s, hours % 24, 'hour', tr)
+    if not days:
+        s = append_if_not_zero(s, minutes % 60, 'min', tr, plural=False)
+    if not hours:
+        s = append_if_not_zero(s, seconds % 60, 'sec', tr, plural=False)
+    return s.strip()
 
 
 LONG_AGO = datetime(1980, 1, 1)

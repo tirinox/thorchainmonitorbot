@@ -1584,7 +1584,7 @@ class RussianLocalization(BaseLocalization):
         if r.period_sec == DAY:
             period_str = '24h'
         else:
-            period_str = format_time_ago_short(r.period_sec, now=0)
+            period_str = seconds_human(r.period_sec)
 
         top_aggr = r.top_popular_aggregators()[:3]
         top_aggr_str = ''
