@@ -46,8 +46,8 @@ async def midgard_test_kill_switch(lp_app, mdg):
 
     alert_presenter = AlertPresenter(lp_app.deps.broadcaster, lp_app.deps.name_service)
 
-    switch_helper.subscribe(Fake())
-    switch_helper.subscribe(alert_presenter)
+    switch_helper.add_subscriber(Fake())
+    switch_helper.add_subscriber(alert_presenter)
 
     await switch_helper.on_data(switch_helper, [ex_tx])
     sep()
@@ -121,28 +121,28 @@ async def demo_full_tx_pipeline(app: LpAppFramework):
     fetcher_tx = TxFetcher(d, tx_types=(ThorTxType.TYPE_ADD_LIQUIDITY,))
 
     aggregator = AggregatorDataExtractor(d)
-    fetcher_tx.subscribe(aggregator)
+    fetcher_tx.add_subscriber(aggregator)
 
     volume_filler = VolumeFillerUpdater(d)
-    aggregator.subscribe(volume_filler)
+    aggregator.add_subscriber(volume_filler)
 
     curve = DepthCurve.default()
     swap_notifier_tx = SwapTxNotifier(d, d.cfg.tx.swap, curve=curve)
     swap_notifier_tx.curve_mult = 0.00001
     swap_notifier_tx.min_usd_total = 0.0
     swap_notifier_tx.aff_fee_min_usd = 0.3
-    volume_filler.subscribe(swap_notifier_tx)
+    volume_filler.add_subscriber(swap_notifier_tx)
 
     liq_notifier_tx = LiquidityTxNotifier(d, d.cfg.tx.liquidity, curve=curve)
     liq_notifier_tx.curve_mult = 0.1
     liq_notifier_tx.ilp_paid_min_usd = 10.0
-    volume_filler.subscribe(liq_notifier_tx)
+    volume_filler.add_subscriber(liq_notifier_tx)
 
-    swap_notifier_tx.subscribe(Receiver('Swap TX'))
-    liq_notifier_tx.subscribe(Receiver('Liq TX'))
+    swap_notifier_tx.add_subscriber(Receiver('Swap TX'))
+    liq_notifier_tx.add_subscriber(Receiver('Liq TX'))
 
-    swap_notifier_tx.subscribe(app.deps.alert_presenter)
-    liq_notifier_tx.subscribe(app.deps.alert_presenter)
+    swap_notifier_tx.add_subscriber(app.deps.alert_presenter)
+    liq_notifier_tx.add_subscriber(app.deps.alert_presenter)
 
     # run the pipeline!
     await fetcher_tx.run()

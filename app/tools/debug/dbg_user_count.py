@@ -74,7 +74,7 @@ async def auto_play_dau(app):
 async def real_life_active_scan_user_counter(app: LpAppFramework):
     scanner = NativeScannerBlock(app.deps)
     user_counter = UserCounter(app.deps)
-    scanner.subscribe(user_counter)
+    scanner.add_subscriber(user_counter)
     await scanner.run()
 
 

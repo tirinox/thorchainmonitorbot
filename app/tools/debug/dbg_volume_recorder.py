@@ -19,15 +19,15 @@ async def continuous_volume_recording(lp_app):
     fetcher_tx = TxFetcher(lp_app.deps)
 
     volume_filler = VolumeFillerUpdater(lp_app.deps)
-    fetcher_tx.subscribe(volume_filler)
+    fetcher_tx.add_subscriber(volume_filler)
 
     volume_recorder = VolumeRecorder(lp_app.deps)
-    volume_filler.subscribe(volume_recorder)
+    volume_filler.add_subscriber(volume_recorder)
 
     async def on_data(sender: VolumeRecorder, data):
         print(await sender.get_data_range_ago_n(HOUR * 3, 10))
 
-    volume_recorder.subscribe(Receiver(callback=on_data))
+    volume_recorder.add_subscriber(Receiver(callback=on_data))
 
     await fetcher_tx.run()
 

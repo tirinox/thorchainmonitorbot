@@ -97,7 +97,7 @@ async def run():
         d = app.deps
         d.last_block_fetcher = LastBlockFetcher(d)
         d.last_block_store = LastBlockStore(d)
-        d.last_block_fetcher.subscribe(d.last_block_store)
+        d.last_block_fetcher.add_subscriber(d.last_block_store)
         await d.last_block_fetcher.run_once()
 
         await d.mimir_const_fetcher.fetch()  # get constants beforehand

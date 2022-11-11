@@ -34,17 +34,17 @@ class ReceiverPublicText(INotified):
 async def t_tx_scanner_ws(url, reserve_address):
     scanner = NativeScannerTransactionWS(url)
     detector = RuneTransferDetectorFromTxResult(reserve_address)
-    scanner.subscribe(detector)
+    scanner.add_subscriber(detector)
     # scanner.subscribe(Receiver('TX'))
-    detector.subscribe(Receiver('Transfer'))
+    detector.add_subscriber(Receiver('Transfer'))
     await scanner.run()
 
 
 async def t_block_scanner_ws(url):
     scanner = NativeScannerBlockEventsWS(url)
     detector = RuneTransferDetectorBlockEvents()
-    scanner.subscribe(detector)
-    detector.subscribe(Receiver())
+    scanner.add_subscriber(detector)
+    detector.add_subscriber(Receiver())
     await scanner.run()
 
 
@@ -52,14 +52,14 @@ async def t_block_scanner_ws(url):
 async def t_block_scanner_active(lp_app):
     scanner = NativeScannerBlock(lp_app.deps)
     detector = RuneTransferDetectorTxLogs()
-    scanner.subscribe(detector)
-    detector.subscribe(Receiver('Transfer'))
+    scanner.add_subscriber(detector)
+    detector.add_subscriber(Receiver('Transfer'))
     # detector.subscribe(ReceiverPublicText(lp_app.deps))
 
     action_extractor = NativeActionExtractor(lp_app.deps)
-    scanner.subscribe(action_extractor)
+    scanner.add_subscriber(action_extractor)
 
-    action_extractor.subscribe(Receiver('Action'))
+    action_extractor.add_subscriber(Receiver('Action'))
 
     await scanner.run()
 
@@ -75,8 +75,8 @@ async def t_block_scanner_once(lp_app):
     scanner = NativeScannerBlock(lp_app.deps)
 
     action_extractor = NativeActionExtractor(lp_app.deps)
-    scanner.subscribe(action_extractor)
-    action_extractor.subscribe(Receiver('Action'))
+    scanner.add_subscriber(action_extractor)
+    action_extractor.add_subscriber(Receiver('Action'))
 
     block = await scanner.fetch_one_block(block_index)
 

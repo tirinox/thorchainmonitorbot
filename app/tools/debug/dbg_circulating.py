@@ -13,7 +13,7 @@ from tools.lib.lp_common import LpAppFramework
 async def manually_load_killed_rune(lp_app: LpAppFramework):
     krf = KilledRuneFetcher(lp_app.deps)
     kr_store = KilledRuneStore(lp_app.deps)
-    krf.subscribe(kr_store)
+    krf.add_subscriber(kr_store)
     data = await krf.fetch()
     await krf.pass_data_to_listeners(data)
 

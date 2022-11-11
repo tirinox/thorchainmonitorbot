@@ -14,7 +14,7 @@ async def main():
         await lp_app.prepare(brief=True)
         fetcher = BEP2BlockFetcher(lp_app.deps)
         notifier = RuneMoveNotifier(lp_app.deps)
-        fetcher.subscribe(notifier)
+        fetcher.add_subscriber(notifier)
         # await fetcher.run()
 
         await not_format_test(lp_app)

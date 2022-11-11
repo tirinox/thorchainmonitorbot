@@ -14,7 +14,7 @@ class WithDelegates:
         super().__init__()
         self.delegates = []  # list for fixed order
 
-    def subscribe(self, delegate: INotified):
+    def add_subscriber(self, delegate: INotified):
         if delegate not in self.delegates:
             self.delegates.append(delegate)
         return self

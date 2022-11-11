@@ -48,8 +48,8 @@ async def my_test_block_fetch(app: LpAppFramework):
     async with app:
         lbf = LastBlockFetcher(app.deps)
         block_not = BlockHeightNotifier(app.deps)
-        lbf.subscribe(block_not)
-        lbf.subscribe(FooSubscribed(block_not, app.deps.loc_man.default))
+        lbf.add_subscriber(block_not)
+        lbf.add_subscriber(FooSubscribed(block_not, app.deps.loc_man.default))
         await lbf.run()
 
 #

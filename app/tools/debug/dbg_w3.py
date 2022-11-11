@@ -140,19 +140,19 @@ async def load_dex_txs(app: LpAppFramework):
     fetcher_tx = TxFetcher(d)
 
     aggregator = AggregatorDataExtractor(d)
-    fetcher_tx.subscribe(aggregator)
+    fetcher_tx.add_subscriber(aggregator)
 
     # VVV
 
     vf = VolumeFillerUpdater(d)
     vf.update_pools_each_time = False
     await app.deps.price_pool_fetcher.reload_global_pools()
-    aggregator.subscribe(vf)
+    aggregator.add_subscriber(vf)
 
     # VVV
 
     dex_analytics = DexAnalyticsCollector(d)
-    vf.subscribe(dex_analytics)
+    vf.add_subscriber(dex_analytics)
 
     for tx_hash in tx_hashes:
         r = await fetcher_tx.fetch_one_batch(0, tx_hash)
@@ -170,7 +170,7 @@ async def demo_find_aff(app: LpAppFramework):
     await app.deps.price_pool_fetcher.reload_global_pools()
 
     dex_analytics = DexAnalyticsCollector(d)
-    vf.subscribe(dex_analytics)
+    vf.add_subscriber(dex_analytics)
 
     print(os.getcwd())
     f = open('../temp/dex.txt', 'w')
@@ -206,21 +206,21 @@ async def demo_full_tx_pipeline(app: LpAppFramework):
     fetcher_tx = TxFetcher(d)
 
     aggregator = AggregatorDataExtractor(d)
-    fetcher_tx.subscribe(aggregator)
+    fetcher_tx.add_subscriber(aggregator)
 
     volume_filler = VolumeFillerUpdater(d)
-    aggregator.subscribe(volume_filler)
+    aggregator.add_subscriber(volume_filler)
 
     filter_middleware = FilterTxMiddleware()
-    volume_filler.subscribe(filter_middleware)
+    volume_filler.add_subscriber(filter_middleware)
 
     curve = DepthCurve.default()
     swap_notifier_tx = SwapTxNotifier(d, d.cfg.tx.swap, curve=curve)
     swap_notifier_tx.curve = None
     swap_notifier_tx.min_usd_total = 0.0
-    filter_middleware.subscribe(swap_notifier_tx)
+    filter_middleware.add_subscriber(swap_notifier_tx)
 
-    swap_notifier_tx.subscribe(d.alert_presenter)
+    swap_notifier_tx.add_subscriber(d.alert_presenter)
 
     # run the pipeline!
     # await fetcher_tx.run()

@@ -14,7 +14,7 @@ async def continuous_pending_scan(app):
     fetcher_tx = TxFetcher(app.deps)
 
     volume_filler = VolumeFillerUpdater(app.deps)
-    fetcher_tx.subscribe(volume_filler)
+    fetcher_tx.add_subscriber(volume_filler)
 
     pending_set = set()
     block_height = {}
@@ -42,7 +42,7 @@ async def continuous_pending_scan(app):
                 pending.remove(h)
                 print(f'Previously pending Tx {h} became Success!')
 
-    volume_filler.subscribe(Receiver(callback=on_data))
+    volume_filler.add_subscriber(Receiver(callback=on_data))
 
     await fetcher_tx.run()
 
