@@ -10,8 +10,6 @@ from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.models.mimir import MimirVote
 
-ATTEMPTS = 5
-
 
 class MimirTuple(NamedTuple):
     constants: ThorConstants
@@ -21,6 +19,8 @@ class MimirTuple(NamedTuple):
 
 
 class ConstMimirFetcher(BaseFetcher):
+    ATTEMPTS = 5
+
     def __init__(self, deps: DepContainer):
         sleep_period = parse_timespan_to_seconds(deps.cfg.constants.fetch_period)
         super().__init__(deps, sleep_period)
@@ -33,7 +33,7 @@ class ConstMimirFetcher(BaseFetcher):
 
     async def _request_public_node_client(self, path):
         client = ThorNodePublicClient(self.deps.session, self.deps.thor_env)
-        for attempt in range(1, ATTEMPTS):
+        for attempt in range(1, self.ATTEMPTS):
             response = await client.request(path)
             if response is not None:
                 return response
@@ -77,12 +77,12 @@ class ConstMimirFetcher(BaseFetcher):
         # mimir, node_mimir = self._dbg_randomize_mimir(mimir, node_mimir)
         # # fixme: ------- 8< ---- debug ------ 8< -------
 
+        mimir = self._put_node_mimir_to_mimir(mimir, node_mimir)  # before?
+
         self.deps.mimir_const_holder.update(
             constants, mimir, node_mimir, votes,
             self.deps.node_holder.active_nodes
         )
-
-        mimir = self._put_node_mimir_to_mimir(mimir, node_mimir)
 
         self.logger.info(f'Got {len(constants.constants)} CONST entries'
                          f' and {len(mimir.constants)} MIMIR entries.')
