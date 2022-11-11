@@ -51,7 +51,7 @@ from services.notify.personal.balance import PersonalBalanceNotifier
 from services.notify.personal.personal_main import NodeChangePersonalNotifier
 from services.notify.personal.price_divergence import PersonalPriceDivergenceNotifier, SettingsProcessorPriceDivergence
 from services.notify.types.best_pool_notify import BestPoolsNotifier
-from services.notify.types.block_notify import BlockHeightNotifier
+from services.notify.types.block_notify import BlockHeightNotifier, LastBlockStore
 from services.notify.types.cap_notify import LiquidityCapNotifier
 from services.notify.types.chain_notify import TradingHaltedNotifier
 from services.notify.types.dex_report_notify import DexReportNotifier
@@ -266,13 +266,15 @@ class App:
             tasks.append(fetcher_stats)
 
         d.last_block_fetcher = LastBlockFetcher(d)
+        tasks.append(d.last_block_fetcher)
+
+        d.last_block_store = LastBlockStore(d)
+        d.last_block_fetcher.subscribe(d.last_block_store)
 
         if d.cfg.get('last_block.enabled', True):
-            last_block_notifier = BlockHeightNotifier(d)
-            d.last_block_fetcher.subscribe(last_block_notifier)
-            last_block_notifier.subscribe(d.alert_presenter)
-            d.block_notifier = last_block_notifier
-            tasks.append(d.last_block_fetcher)
+            d.block_notifier = BlockHeightNotifier(d)
+            d.last_block_store.subscribe(d.block_notifier)
+            d.block_notifier.subscribe(d.alert_presenter)
 
         if d.cfg.get('node_info.enabled', True):
             churn_detector = NodeChurnDetector(d)

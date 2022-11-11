@@ -79,6 +79,7 @@ class DepContainer:
     node_holder: NodeListHolder = NodeListHolder()
     net_stats: NetworkStats = NetworkStats()
     killed_rune: KilledRuneEntry = KilledRuneEntry()
+    last_block_store = None
 
     settings_manager: Optional[SettingsManager] = None
 

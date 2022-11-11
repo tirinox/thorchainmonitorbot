@@ -2,19 +2,48 @@ from typing import Dict, Optional
 
 from aiothornode.types import ThorLastBlock
 
-from services.lib.delegates import INotified, WithDelegates
 from services.jobs.fetch.last_block import LastBlockFetcher
 from services.lib.config import SubConfig
 from services.lib.constants import THOR_BLOCK_SPEED
 from services.lib.cooldown import Cooldown, CooldownBiTrigger, INFINITE_TIME
 from services.lib.date_utils import DAY, parse_timespan_to_seconds, now_ts, format_time_ago_short, MINUTE
+from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
-from services.lib.utils import class_logger
+from services.lib.utils import class_logger, WithLogger
 from services.models.last_block import BlockProduceState, EventBlockSpeed
 from services.models.time_series import TimeSeries
 
 
-class BlockHeightNotifier(INotified, WithDelegates):
+class LastBlockStore(INotified, WithDelegates, WithLogger):
+    KEY_SERIES_BLOCK_HEIGHT = 'ThorBlockHeight'
+
+    def __init__(self, deps: DepContainer):
+        super().__init__()
+        self.deps = deps
+        self.series = TimeSeries(self.KEY_SERIES_BLOCK_HEIGHT, self.deps.db)
+        self.last_thor_block = 0
+        self.sleep_period = deps.last_block_fetcher.sleep_period
+
+    @staticmethod
+    def _estimate_last_thor_block(data: Dict[str, ThorLastBlock]):
+        return max(v.thorchain for v in data.values()) if data else 0
+
+    async def on_data(self, sender: LastBlockFetcher, data: Dict[str, ThorLastBlock]):
+        thor_block = self._estimate_last_thor_block(data)
+
+        if thor_block <= 0 or thor_block < self.last_thor_block:
+            return
+
+        self.sleep_period = sender.sleep_period
+
+        await self.series.add(thor_block=thor_block)
+        await self.pass_data_to_listeners(thor_block)
+
+    async def get_last_block_height_points(self, duration_sec=DAY):
+        return await self.series.get_last_values(duration_sec, key='thor_block', with_ts=True, decoder=int)
+
+
+class BlockHeightNotifier(INotified, WithDelegates, WithLogger):
     KEY_SERIES_BLOCK_HEIGHT = 'ThorBlockHeight'
     KEY_LAST_TIME_BLOCK_UPDATED = 'ThorBlock:LastTime'
     KEY_LAST_TIME_LAST_HEIGHT = 'ThorBlock:LastHeight'
@@ -25,7 +54,6 @@ class BlockHeightNotifier(INotified, WithDelegates):
         super().__init__()
         self.deps = deps
         self.logger = class_logger(self)
-        self.series = TimeSeries(self.KEY_SERIES_BLOCK_HEIGHT, self.deps.db)
 
         self.expected_chart_points_ratio = 0.8  # 80%
 
@@ -88,11 +116,8 @@ class BlockHeightNotifier(INotified, WithDelegates):
         results.reverse()
         return results
 
-    async def get_last_block_height_points(self, duration_sec=DAY):
-        return await self.series.get_last_values(duration_sec, key='thor_block', with_ts=True, decoder=int)
-
     async def get_block_time_chart(self, duration_sec=DAY, convert_to_blocks_per_minute=False):
-        points = await self.get_last_block_height_points(duration_sec)
+        points = await self.deps.last_block_store.get_last_block_height_points(duration_sec)
 
         if len(points) <= 1:
             return []
@@ -138,13 +163,7 @@ class BlockHeightNotifier(INotified, WithDelegates):
             await r.set(self.KEY_LAST_TIME_BLOCK_UPDATED, self.last_thor_block_update_ts)
             await r.set(self.KEY_LAST_TIME_LAST_HEIGHT, self.last_thor_block)
 
-    @staticmethod
-    def _estimate_last_thorblock(data: Dict[str, ThorLastBlock]):
-        return max(v.thorchain for v in data.values()) if data else 0
-
-    async def on_data(self, sender: LastBlockFetcher, data: Dict[str, ThorLastBlock]):
-        thor_block = self._estimate_last_thorblock(data)
-
+    async def on_data(self, sender: LastBlockStore, thor_block: int):
         # ----- fixme: debug -----
         # frozen = True  # ??
         # if frozen:
@@ -164,14 +183,12 @@ class BlockHeightNotifier(INotified, WithDelegates):
             return
 
         await self._update_block_ts(thor_block)
-        await self.series.add(thor_block=thor_block)
-
         await self._check_blocks_stuck(sender)
         await self._check_block_pace(thor_block)
 
-    async def _check_blocks_stuck(self, fetcher: LastBlockFetcher):
-        chart = await self.get_last_block_height_points(self.stuck_alert_time_limit)
-        expected_num_of_points = self.stuck_alert_time_limit / fetcher.sleep_period
+    async def _check_blocks_stuck(self, store: LastBlockStore):
+        chart = await store.get_last_block_height_points(self.stuck_alert_time_limit)
+        expected_num_of_points = self.stuck_alert_time_limit / store.sleep_period
         if len(chart) < expected_num_of_points * self.expected_chart_points_ratio:
             self.logger.warning(f'Not enough points for THOR block height dynamics evaluation; '
                                 f'{expected_num_of_points = }, in fact {len(chart) = } points.')
