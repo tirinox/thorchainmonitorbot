@@ -1512,7 +1512,6 @@ class RussianLocalization(BaseLocalization):
             rune_left = code(short_rune(killed_rune.unkilled_unswitched_rune))
             switched_killed = code(short_rune(killed_rune.killed_switched))  # killed when switched
             total_killed = code(short_rune(killed_rune.total_killed))  # potentially dead + switched killed
-            # lost_rune = code(short_rune(market_info.supply_info.lost_forever))
             message += (
                 f'☠️ <b>Убито Рун при апгрейде:</b> {switched_killed}\n'
                 f'Всего убито Рун: {total_killed}\n'

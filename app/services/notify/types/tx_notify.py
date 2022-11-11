@@ -1,13 +1,11 @@
 from typing import List
 
 from services.lib.config import SubConfig
-from services.lib.constants import DEFAULT_KILL_RUNE_START_BLOCK, DEFAULT_KILL_RUNE_DURATION_BLOCKS
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
-from services.lib.money import Asset, clamp, DepthCurve
+from services.lib.money import Asset, DepthCurve
 from services.lib.utils import class_logger
-from services.models.mimir_naming import MIMIR_KEY_KILL_SWITCH_DURATION, MIMIR_KEY_KILL_SWITCH_START
 from services.models.tx import ThorTxExtended, EventLargeTransaction, ThorTxType
 from services.notify.types.cap_notify import LiquidityCapNotifier
 
@@ -88,18 +86,7 @@ class GenericTxNotifier(INotified, WithDelegates):
 
 class SwitchTxNotifier(GenericTxNotifier):
     def calculate_killed_rune(self, in_rune: float, block: int):
-        kill_switch_start = self.deps.mimir_const_holder.get_constant(
-            MIMIR_KEY_KILL_SWITCH_START, DEFAULT_KILL_RUNE_START_BLOCK)
-        kill_switch_duration = self.deps.mimir_const_holder.get_constant(
-            MIMIR_KEY_KILL_SWITCH_DURATION, DEFAULT_KILL_RUNE_DURATION_BLOCKS)
-
-        assert kill_switch_duration > 0
-        assert kill_switch_start > 0
-
-        kill_factor = 1.0 - clamp(
-            (block - kill_switch_start) / kill_switch_duration,
-            0.0, 1.0)
-
+        kill_factor = self.deps.mimir_const_holder.current_old_rune_kill_progress(block)
         return in_rune * kill_factor
 
     def _count_correct_output_rune_value(self, tx: ThorTxExtended):

@@ -1952,7 +1952,6 @@ class BaseLocalization(ABC):  # == English
             switched_killed = code(short_rune(killed_rune.killed_switched))  # killed when switched
             total_killed = code(short_rune(killed_rune.total_killed))  # potentially dead + switched killed
             rune_left = code(short_rune(killed_rune.unkilled_unswitched_rune))
-            # lost_rune = code(short_rune(market_info.supply_info.lost_forever))
             message += (
                 f'☠️ <b>Killed Rune when switched:</b> {switched_killed}\n'
                 f'Total (switched and unswitched) killed Rune: {total_killed}\n'

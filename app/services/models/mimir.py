@@ -7,9 +7,12 @@ from itertools import chain
 
 from aiothornode.types import ThorConstants, ThorMimir
 
+from services.lib.constants import DEFAULT_KILL_RUNE_START_BLOCK, DEFAULT_KILL_RUNE_DURATION_BLOCKS
+from services.lib.money import clamp
 from services.lib.texts import split_by_camel_case
 from services.models.base import BaseModelMixin
-from services.models.mimir_naming import TRANSLATE_MIMIRS, EXCLUDED_VOTE_KEYS, MimirUnits, try_deducting_mimir_name
+from services.models.mimir_naming import TRANSLATE_MIMIRS, EXCLUDED_VOTE_KEYS, MimirUnits, try_deducting_mimir_name, \
+    MIMIR_KEY_KILL_SWITCH_START, MIMIR_KEY_KILL_SWITCH_DURATION
 from services.models.node_info import NodeInfo
 
 # for automatic Mimir, when it becomes 0 -> 1 or 1 -> 0, that is Admin's actions
@@ -289,3 +292,13 @@ class MimirHolder:
             entry: MimirEntry = self._const_map.get(name)
             if entry and ts > 0:
                 entry.changed_ts = ts
+
+    def current_old_rune_kill_progress(self, current_block):
+        kill_switch_start = self.get_constant(MIMIR_KEY_KILL_SWITCH_START, DEFAULT_KILL_RUNE_START_BLOCK)
+        kill_switch_duration = self.get_constant(MIMIR_KEY_KILL_SWITCH_DURATION, DEFAULT_KILL_RUNE_DURATION_BLOCKS)
+
+        assert kill_switch_duration > 0
+        assert kill_switch_start > 0
+
+        kill_factor = 1.0 - clamp((current_block - kill_switch_start) / kill_switch_duration, 0.0, 1.0)
+        return kill_factor

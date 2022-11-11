@@ -108,7 +108,11 @@ class RuneCirculatingSupplyFetcher(WithLogger):
         self.thor_node = thor_node
         self._ether_scan_key = ether_scan_key
 
-    async def fetch(self):
+    async def fetch(self, survive_progress=1.0) -> RuneCirculatingSupply:
+        """
+        @param survive_progress: float 0.0-1.0, 0.0 when the kill switch is finished,
+        @return: RuneCirculatingSupply
+        """
         bep2_exclude_balance_group = asyncio.gather(
             *[self.get_bep2_address_balance(address)
               for address in BEP2_EXCLUDE_FROM_CIRCULATING_ADDRESSES.values()],
@@ -164,8 +168,10 @@ class RuneCirculatingSupplyFetcher(WithLogger):
         thor_rune_circulating = thor_rune_supply - thor_exclude_balance
 
         # total_supply = erc20_rune_supply + bep2_rune_supply + thor_rune_supply
-        total_supply = erc20_rune_circulating + bep2_rune_circulating + thor_rune_supply  # < 500m Rune
-        total_circulating = erc20_rune_supply + thor_rune_circulating + bep2_rune_supply
+
+        # < 500m Rune
+        total_supply = (erc20_rune_circulating + bep2_rune_circulating) * survive_progress + thor_rune_supply
+        total_circulating = (erc20_rune_supply + bep2_rune_supply) * survive_progress + thor_rune_circulating
 
         return RuneCirculatingSupply(
             erc20_rune=SupplyEntry(erc20_rune_circulating, erc20_rune_supply, erc20_locked_dict),

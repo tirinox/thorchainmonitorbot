@@ -6,6 +6,7 @@ from localization.eng_base import BaseLocalization
 from localization.languages import Language
 from localization.manager import LocalizationManager
 from services.dialog.picture.supply_picture import SupplyPictureGenerator
+from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
 from services.jobs.fetch.killed_rune import KilledRuneFetcher
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
 from services.lib.date_utils import today_str
@@ -81,12 +82,20 @@ async def post_supply_to_discord(app: LpAppFramework, pic):
     await asyncio.sleep(10)
 
 
+async def my_demo_market_info(app: LpAppFramework):
+    rmif = RuneMarketInfoFetcher(app.deps)
+    info = await rmif.get_rune_market_info()
+    print(info)
+
+
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
-        pic, _ = await get_supply_pic(app)
-        save_and_show_supply_pic(pic, show=True)
+        await app.deps.price_pool_fetcher.fetch()
+        # pic, _ = await get_supply_pic(app)
+        # save_and_show_supply_pic(pic, show=True)
         # await post_supply_to_discord(app, pic)
+        await my_demo_market_info(app)
 
 
 if __name__ == '__main__':
