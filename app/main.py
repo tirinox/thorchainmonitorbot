@@ -60,7 +60,7 @@ from services.notify.types.node_churn_notify import NodeChurnNotifier
 from services.notify.types.pool_churn_notify import PoolChurnNotifier
 from services.notify.types.price_div_notify import PriceDivergenceNotifier
 from services.notify.types.price_notify import PriceNotifier
-from services.notify.types.queue_notify import QueueNotifier
+from services.notify.types.queue_notify import QueueNotifier, QueueStoreMetrics
 from services.notify.types.stats_notify import NetworkStatsNotifier
 from services.notify.types.supply_notify import SupplyNotifier
 from services.notify.types.transfer_notify import RuneMoveNotifier
@@ -250,11 +250,14 @@ class App:
             fetcher_cap.subscribe(notifier_cap)
             tasks.append(fetcher_cap)
 
+        fetcher_queue = QueueFetcher(d)
+        tasks.append(fetcher_queue)
+        store_queue = QueueStoreMetrics(d)
+        fetcher_queue.subscribe(store_queue)
+
         if d.cfg.get('queue.enabled', True):
-            fetcher_queue = QueueFetcher(d)
             notifier_queue = QueueNotifier(d)
-            fetcher_queue.subscribe(notifier_queue)
-            tasks.append(fetcher_queue)
+            store_queue.subscribe(notifier_queue)
 
         if d.cfg.get('net_summary.enabled', True):
             fetcher_stats = NetworkStatisticsFetcher(d)

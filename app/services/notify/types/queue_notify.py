@@ -3,7 +3,7 @@ from services.dialog.picture.queue_picture import queue_graph, QUEUE_TIME_SERIES
 from services.jobs.fetch.queue import QueueInfo
 from services.lib.cooldown import CooldownBiTrigger
 from services.lib.date_utils import parse_timespan_to_seconds
-from services.lib.delegates import INotified
+from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
 from services.models.time_series import TimeSeries
@@ -64,14 +64,31 @@ class QueueNotifier(INotified):
             if await cd_trigger.turn_off():
                 await self.notify(item_type, is_free=True, value=avg_value)
 
-    async def on_data(self, sender, data: QueueInfo):
-        self.logger.info(f"got queue: {data}")
-
+    async def store_queue_info(self, data: QueueInfo) -> TimeSeries:
         ts = TimeSeries(QUEUE_TIME_SERIES, self.deps.db)
         await ts.add(swap=data.swap,
                      outbound=data.outbound,
                      internal=data.internal)
+        return ts
+
+    async def on_data(self, sender: 'QueueStoreMetrics', data: QueueInfo):
+        for key in self.watch_queues:
+            await self.handle_entry(key, sender.ts)
+
+
+class QueueStoreMetrics(INotified, WithDelegates):
+    def __init__(self, deps: DepContainer):
+        super().__init__()
+        self.deps = deps
+        self.ts = TimeSeries(QUEUE_TIME_SERIES, deps.db)
+
+    async def store_queue_info(self, data: QueueInfo):
         self.deps.queue_holder = data
 
-        for key in self.watch_queues:
-            await self.handle_entry(key, ts)
+        await self.ts.add(swap=data.swap,
+                          outbound=data.outbound,
+                          internal=data.internal)
+
+    async def on_data(self, sender, data):
+        await self.store_queue_info(data)
+        await self.pass_data_to_listeners(data, self)

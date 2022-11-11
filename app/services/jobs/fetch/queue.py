@@ -22,4 +22,7 @@ class QueueFetcher(BaseFetcher):
             int(resp.outbound),
             int(resp.internal)
         )
+
+        self.logger.info(f"Got queue: {q}")
+
         return q

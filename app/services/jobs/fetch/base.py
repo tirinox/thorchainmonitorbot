@@ -12,6 +12,7 @@ class BaseFetcher(WithDelegates, ABC):
         self.deps = deps
         self.name = self.__class__.__qualname__
         self.sleep_period = sleep_period
+        self.initial_sleep = 1.0
         self.logger = class_logger(self)
 
     async def post_action(self, data):
@@ -22,7 +23,11 @@ class BaseFetcher(WithDelegates, ABC):
         ...
 
     async def run(self):
-        await asyncio.sleep(1)
+        if self.sleep_period < 0:
+            self.logger.info('This fetcher is disabled.')
+            return
+
+        await asyncio.sleep(self.initial_sleep)
         while True:
             try:
                 data = await self.fetch()
