@@ -8,6 +8,7 @@ from localization.manager import LocalizationManager
 from services.dialog.picture.supply_picture import SupplyPictureGenerator
 from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
 from services.jobs.fetch.killed_rune import KilledRuneFetcher
+from services.jobs.fetch.last_block import LastBlockFetcher
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
 from services.lib.date_utils import today_str
 from services.lib.draw_utils import img_to_bio
@@ -16,6 +17,7 @@ from services.models.killed_rune import KilledRuneEntry
 from services.models.net_stats import NetworkStats
 from services.models.price import RuneMarketInfo
 from services.notify.channel import BoardMessage
+from services.notify.types.block_notify import LastBlockStore
 from tools.debug.dbg_discord import debug_prepare_discord_bot
 from tools.lib.lp_common import LpAppFramework
 
@@ -83,6 +85,7 @@ async def post_supply_to_discord(app: LpAppFramework, pic):
 
 
 async def my_demo_market_info(app: LpAppFramework):
+
     rmif = RuneMarketInfoFetcher(app.deps)
     info = await rmif.get_rune_market_info()
     print(info)
@@ -91,7 +94,16 @@ async def my_demo_market_info(app: LpAppFramework):
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
+        d = app.deps
+        d.last_block_fetcher = LastBlockFetcher(d)
+        d.last_block_store = LastBlockStore(d)
+        d.last_block_fetcher.subscribe(d.last_block_store)
+        await d.last_block_fetcher.run_once()
+
+        await d.mimir_const_fetcher.fetch()  # get constants beforehand
+
         await app.deps.price_pool_fetcher.fetch()
+
         # pic, _ = await get_supply_pic(app)
         # save_and_show_supply_pic(pic, show=True)
         # await post_supply_to_discord(app, pic)

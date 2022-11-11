@@ -34,7 +34,7 @@ class LastBlockStore(INotified, WithDelegates, WithLogger):
         if thor_block <= 0 or thor_block < self.last_thor_block:
             return
 
-        self.sleep_period = sender.sleep_period
+        self.last_thor_block = thor_block
 
         await self.series.add(thor_block=thor_block)
         await self.pass_data_to_listeners(thor_block)

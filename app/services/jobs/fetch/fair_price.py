@@ -33,7 +33,7 @@ class RuneMarketInfoFetcher(WithLogger):
         # self.get_rune_market_info = a_result_cached(ttl=self._cache_time)(retries(5)(self._get_rune_market_info))
         # self.get_rune_market_info = a_result_cached(ttl=self._cache_time)(self.get_rune_market_info)
 
-    async def total_locked_value_all_networks(self):
+    async def total_pooled_rune(self):
         j = await self.midgard.request_random_midgard(free_url_gen.url_network())
         total_pooled_rune = j.get('totalStaked', 0)
         if not total_pooled_rune:
@@ -45,10 +45,13 @@ class RuneMarketInfoFetcher(WithLogger):
                                                       ether_scan_key=self._ether_scan_key,
                                                       thor_node=self.deps.cfg.get('thor.node.node_url'))
 
-        supply_info, gecko, total_locked_rune = await asyncio.gather(
-            supply_fetcher.fetch(),
+        current_block = self.deps.last_block_store.last_thor_block
+        kill_factor = self.deps.mimir_const_holder.current_old_rune_kill_progress(current_block)
+
+        supply_info, gecko, total_pulled_rune = await asyncio.gather(
+            supply_fetcher.fetch(1.0 - kill_factor),
             get_thorchain_coin_gecko_info(self.deps.session),
-            self.total_locked_value_all_networks()
+            self.total_pooled_rune()
         )
 
         supply_info: RuneCirculatingSupply
@@ -62,9 +65,9 @@ class RuneMarketInfoFetcher(WithLogger):
         if not price_holder.pool_info_map or not price_holder.usd_per_rune:
             raise ValueError(f"pool_info_map is empty!")
 
-        tlv = total_locked_rune * price_holder.usd_per_rune  # == tlv of non-rune assets
+        tlv_usd = total_pulled_rune * price_holder.usd_per_rune  # == tlv of non-rune assets
 
-        fair_price = 3 * tlv / circulating_rune  # The main formula of wealth!
+        fair_price = 3 * tlv_usd / circulating_rune  # The main formula of wealth!
 
         cex_price = gecko_ticker_price(gecko, self.cex_name, self.cex_pair)
         rank = gecko_market_cap_rank(gecko)
@@ -76,7 +79,7 @@ class RuneMarketInfoFetcher(WithLogger):
             pool_rune_price=price_holder.usd_per_rune,
             fair_price=fair_price,
             cex_price=cex_price,
-            tlv_usd=tlv,
+            tlv_usd=tlv_usd,
             rank=rank,
             total_trade_volume_usd=trade_volume,
             total_supply=total_supply,
