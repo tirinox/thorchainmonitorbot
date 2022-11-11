@@ -409,6 +409,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         return day_to_units
 
     async def get_last_thorchain_block(self):
+        # todo: use last_block_fetcher from deps
         if self.last_block == 0:
             self.last_block = await self.block_mapper.get_last_thorchain_block()
         return self.last_block

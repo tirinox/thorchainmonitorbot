@@ -86,8 +86,8 @@ class GenericTxNotifier(INotified, WithDelegates):
 
 class SwitchTxNotifier(GenericTxNotifier):
     def calculate_killed_rune(self, in_rune: float, block: int):
-        kill_factor = self.deps.mimir_const_holder.current_old_rune_kill_progress(block)
-        return in_rune * kill_factor
+        survive_rate = 1.0 - self.deps.mimir_const_holder.current_old_rune_kill_progress(block)
+        return in_rune * survive_rate
 
     def _count_correct_output_rune_value(self, tx: ThorTxExtended):
         tx.rune_amount = self.calculate_killed_rune(tx.asset_amount, tx.height_int)

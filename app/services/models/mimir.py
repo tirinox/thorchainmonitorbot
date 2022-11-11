@@ -300,5 +300,5 @@ class MimirHolder:
         assert kill_switch_duration > 0
         assert kill_switch_start > 0
 
-        kill_factor = 1.0 - clamp((current_block - kill_switch_start) / kill_switch_duration, 0.0, 1.0)
+        kill_factor = clamp((current_block - kill_switch_start) / kill_switch_duration, 0.0, 1.0)
         return kill_factor
