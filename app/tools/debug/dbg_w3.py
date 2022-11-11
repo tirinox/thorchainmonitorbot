@@ -5,6 +5,7 @@ from typing import List
 from web3 import Web3
 
 from localization.eng_base import BaseLocalization
+from localization.languages import Language
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.lib.constants import Chains, ETH_SYMBOL, AVAX_SYMBOL
@@ -245,14 +246,18 @@ async def demo_avax(app: LpAppFramework):
 
 async def show_dex_report(app: LpAppFramework):
     dex_analytics = DexAnalyticsCollector(app.deps)
-    report = await dex_analytics.get_analytics(DAY)
+    report = await dex_analytics.get_analytics(DAY * 30)
     print(report)
     sep()
     print(report.top_popular_assets())
     sep()
     print(report.top_popular_aggregators())
     report = report._replace(usd_per_rune=1.5)
-    await app.send_test_tg_message(txt=app.deps.loc_man.default.notification_text_dex_report(report))
+
+    twitter_text = app.deps.loc_man[Language.ENGLISH_TWITTER].notification_text_dex_report(report)
+    print(twitter_text)
+
+    # await app.send_test_tg_message(txt=app.deps.loc_man.default.notification_text_dex_report(report))
 
 
 async def run():

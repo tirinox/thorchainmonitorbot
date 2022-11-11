@@ -7,7 +7,7 @@ from localization.eng_base import BaseLocalization
 from services.dialog.twitter.text_length import twitter_intelligent_text_splitter
 from services.jobs.fetch.circulating import SupplyEntry
 from services.lib.constants import thor_to_float, rune_origin, Chains
-from services.lib.date_utils import now_ts, seconds_human, DAY, format_time_ago_short
+from services.lib.date_utils import now_ts, seconds_human, DAY
 from services.lib.midgard.name_service import NameMap, add_thor_suffix
 from services.lib.money import Asset, short_dollar, format_percent, pretty_money, pretty_dollar, RAIDO_GLYPH, \
     calc_percent_change, adaptive_round_to_str, emoji_for_percent_change, short_address, short_money, short_rune
@@ -30,6 +30,11 @@ from services.notify.channel import MESSAGE_SEPARATOR
 
 class TwitterEnglishLocalization(BaseLocalization):
     TEXT_DECORATION_ENABLED = False
+
+    @classmethod
+    def smart_split(cls, parts):
+        parts = twitter_intelligent_text_splitter(parts)
+        return MESSAGE_SEPARATOR.join(parts)
 
     PIC_NODE_DIVERSITY_BY_PROVIDER_CAPTION = 'THORChain nodes'
 
@@ -494,7 +499,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
             parts.append(message)
 
-        return MESSAGE_SEPARATOR.join(twitter_intelligent_text_splitter(parts))
+        return self.smart_split(parts)
 
     def _node_bond_change_after_churn(self, changes: NodeSetChanges):
         bond_in, bond_out = changes.bond_churn_in, changes.bond_churn_out
@@ -528,7 +533,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         part4 = _make_node_list_plain(changes.nodes_removed, '🗑️ Nodes disconnected:')
         components.append(part4)
 
-        return MESSAGE_SEPARATOR.join(twitter_intelligent_text_splitter(components))
+        return self.smart_split(components)
 
     @staticmethod
     def node_version(v, data: NodeSetChanges, active=True):
@@ -770,16 +775,16 @@ class TwitterEnglishLocalization(BaseLocalization):
                 f'Unswitched left: {rune_left}\n\n'
             )
 
-        return MESSAGE_SEPARATOR.join(twitter_intelligent_text_splitter(parts))
+        return self.smart_split(parts)
 
     @staticmethod
     def format_dex_entry(e: DexReportEntry, r):
         n = e.count
         txs = 'tx' if n == 1 else 'txs'
+        usd = e.rune_volume * r.usd_per_rune
         return (
-            f'{n} {txs} '
-            f'({short_rune(e.rune_volume)} or '
-            f'{short_dollar(e.rune_volume * r.usd_per_rune)})')
+            f'{n} {txs} | {short_rune(e.rune_volume)} | {short_dollar(usd)}'
+        )
 
     def notification_text_dex_report(self, r: DexReport):
         if r.period_sec == DAY:
@@ -799,11 +804,15 @@ class TwitterEnglishLocalization(BaseLocalization):
             e: DexReportEntry
             top_asset_str += f'{i}. {e.name}: {self.format_dex_entry(e, r)} \n'
 
-        return (
-            f'🤹🏻‍♂️ DEX aggregator usage last {period_str}\n\n'
-            f'→ Swap In: {self.format_dex_entry(r.swap_ins, r)}\n'
-            f'← Swap Out: {self.format_dex_entry(r.swap_outs, r)}\n'
-            f'∑ Total: {self.format_dex_entry(r.total, r)}\n\n'
-            f'Popular aggregators:\n{top_aggr_str}\n'
-            f'Popular assets:\n{top_asset_str}'
-        ).strip()
+        parts = [
+            (
+                f'🤹🏻‍ DEX aggregator last {period_str}\n\n'
+                f'→ Swap In: {self.format_dex_entry(r.swap_ins, r)}\n'
+                f'← Swap Out: {self.format_dex_entry(r.swap_outs, r)}\n'
+                f'∑ Total: {self.format_dex_entry(r.total, r)}\n\n'
+            ),
+            f'Top DEX aggregators:\n{top_aggr_str}\n',
+            f'Top DEX assets:\n{top_asset_str}'
+        ]
+
+        return self.smart_split(parts)
