@@ -412,7 +412,7 @@ class NodePictureGenerator:
             gr.add_series(bond_points, TC_YGGDRASIL_GREEN)
             # gr.add_series(node_points, TC_LIGHTNING_BLUE)
             # TC_MIDGARD_TURQOISE
-            gr.add_series_bars(node_points, TC_LIGHTNING_BLUE, 6, show_values='on_change')
+            gr.add_series_bars(node_points, TC_LIGHTNING_BLUE, 6, show_values=PlotGraphLines.BAR_LABEL_MODE_ON_CHANGE)
             gr.update_bounds()
             gr.min_y = 0.0
             gr.max_y *= 1.1

@@ -1,3 +1,4 @@
+import operator
 from datetime import datetime
 from typing import List
 
@@ -382,6 +383,8 @@ class PlotGraphLines(PlotGraph):
             self.draw.text((max_px + 6, max_py - 10), self.y_formatter(float(max_y)), color, self.font_ticks,
                            anchor='mm')
 
+    BAR_LABEL_MODE_ON_CHANGE = 'on_change'
+    BAR_LABEL_MODE_MIN_MAX = 'min_max'
     def _plot_bars(self):
         ox, oy, plot_w, plot_h = self.plot_rect()
 
@@ -403,6 +406,10 @@ class PlotGraphLines(PlotGraph):
             x_shift = line_desc['x_shift']
             show_values = line_desc['show_values']
 
+            min_y = min(p[1] for p in points)
+            max_y = max(p[1] for p in points)
+            min_y_shown, max_y_shown = False, False
+
             last_value = None
             for i, (x, y) in enumerate(points):
                 x, _ = self.convert_coords(x, y, ox, oy, plot_w, plot_h)
@@ -417,9 +424,16 @@ class PlotGraphLines(PlotGraph):
 
                 if show_values:
                     do_it = False
-                    if show_values == 'on_change':
+                    if show_values == self.BAR_LABEL_MODE_ON_CHANGE:
                         if last_value and y != last_value:
                             do_it = True
+                    elif show_values == self.BAR_LABEL_MODE_MIN_MAX:
+                        if y == min_y and not min_y_shown:
+                            do_it = True
+                            min_y_shown = True
+                        elif y == max_y and not max_y_shown:
+                            do_it = True
+                            max_y_shown = True
                     elif i % show_values == 0:
                         do_it = True
                     if do_it:
