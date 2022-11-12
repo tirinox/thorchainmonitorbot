@@ -1303,7 +1303,7 @@ class BaseLocalization(ABC):  # == English
         if m.source == m.SOURCE_ADMIN:
             mark = '🔹'
         elif m.source == m.SOURCE_NODE:
-            mark = '🔸'
+            mark = '🔸 (consensus)'
         elif m.automatic:
             mark = '▪️'
         else:
@@ -1360,6 +1360,8 @@ class BaseLocalization(ABC):  # == English
     TEXT_NODE_MIMIR_VOTING_TITLE = '🏛️ <b>Node-Mimir voting</b>\n\n'
     TEXT_NODE_MIMIR_VOTING_NOTHING_YET = 'No active voting yet.'
 
+    TEXT_NODE_MIMIR_ALREADY_CONSENSUS = ' ✅ already consensus'
+
     def _text_mimir_voting_options(self, holder: MimirHolder,
                                    voting: MimirVoting, options,
                                    triggered_option_value=None):
@@ -1367,21 +1369,28 @@ class BaseLocalization(ABC):  # == English
         name = holder.pretty_name(voting.key)
 
         n_options = len(options)
+        entry = holder.get_entry(voting.key)
 
         for i, option in enumerate(options, start=1):
+            already_consensus = entry and entry.real_value == option.value and entry.source == entry.SOURCE_NODE
+
             pb = self.make_voting_progress_bar(option, voting)
-            percent = format_percent(option.number_votes, voting.active_nodes)
-            extra = self._text_votes_to_pass(option)
+
+            extra = f' {pb}{self._text_votes_to_pass(option)}' \
+                if not already_consensus else self.TEXT_NODE_MIMIR_ALREADY_CONSENSUS
+
             pretty_value = self.format_mimir_value(voting.key, str(option.value))
             mark = '👏' if option.value == triggered_option_value else ''
             counter = f"{i}. " if n_options > 1 else ''
+
             item_name = name
+            percent = format_percent(option.number_votes, voting.active_nodes)
             if self.TEXT_DECORATION_ENABLED:
                 pretty_value = code(pretty_value)
                 percent = bold(percent)
                 item_name = bold(name) if i == 1 else name
             message += f"{counter}{item_name} ➔ {pretty_value}: {percent}" \
-                       f" ({option.number_votes}/{voting.active_nodes}){mark}{pb} {extra}\n"
+                       f" ({option.number_votes}/{voting.active_nodes}){mark}{extra}\n"
         return message
 
     def text_node_mimir_voting(self, holder: MimirHolder):
@@ -1410,7 +1419,7 @@ class BaseLocalization(ABC):  # == English
                                                 triggered_option: MimirVoteOption):
         message = self.TEXT_MIMIR_VOTING_PROGRESS_TITLE
 
-        # get up to 3 top options, if there are more options in the voting, add "there are N more...
+        # get up to 3 top options, if there are more options in the voting, add "there are N more..."
         n_options = min(3, len(voting.options))
         message += self._text_mimir_voting_options(holder, voting, voting.top_options[:n_options],
                                                    triggered_option.value if triggered_option else None)

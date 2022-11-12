@@ -25,8 +25,6 @@ class ConstMimirFetcher(BaseFetcher):
         sleep_period = parse_timespan_to_seconds(deps.cfg.constants.fetch_period)
         super().__init__(deps, sleep_period)
 
-        self._dbg_wheel = cycle([0, 1, 0, 5825662, 0, 55555, 1])
-
     async def fetch_constants_midgard(self) -> ThorConstants:
         data = await self.deps.midgard_connector.request_random_midgard('/thorchain/constants')
         return ThorConstants.from_json(data)
@@ -58,12 +56,6 @@ class ConstMimirFetcher(BaseFetcher):
         response = await self._request_public_node_client('/thorchain/mimir/nodes')
         return response or {}
 
-    @staticmethod
-    def _put_node_mimir_to_mimir(mimir: ThorMimir, node_mimir: dict):
-        for k, v in node_mimir.items():
-            mimir.constants[k] = v
-        return mimir
-
     async def fetch(self) -> MimirTuple:
         constants, mimir, node_mimir, votes = await asyncio.gather(
             self.fetch_constants_fallback(),
@@ -77,8 +69,6 @@ class ConstMimirFetcher(BaseFetcher):
         # mimir, node_mimir = self._dbg_randomize_mimir(mimir, node_mimir)
         # # fixme: ------- 8< ---- debug ------ 8< -------
 
-        mimir = self._put_node_mimir_to_mimir(mimir, node_mimir)  # before?
-
         self.deps.mimir_const_holder.update(
             constants, mimir, node_mimir, votes,
             self.deps.node_holder.active_nodes
@@ -91,14 +81,18 @@ class ConstMimirFetcher(BaseFetcher):
     # ----- D E B U G    S T U F F -----
 
     def _dbg_randomize_votes(self, votes: List[MimirVote]):
-        votes.append(MimirVote('LOVEME', 2, 'thor10vmz8d0qwvq5hw9susmf7nefka9usazzcvkeaj'))
-        votes.append(MimirVote('LOVEME', 2, 'thor125tlvrmxqxxldu7c7j5qeg7x90dau6fga50kh9'))
-        votes.append(MimirVote('LOVEME', 2, 'thor10697ffyya4fddsvpwj6crfwe06pxkxkmdl8kev'))
-        votes.append(MimirVote('LOVEME', 2, 'thor12kkyw6dhtr546yfe22gaqfx9cze50dfjrvvffy'))
+        # votes.append(MimirVote('LOVEME', 2, 'thor10vmz8d0qwvq5hw9susmf7nefka9usazzcvkeaj'))
+        # votes.append(MimirVote('LOVEME', 2, 'thor125tlvrmxqxxldu7c7j5qeg7x90dau6fga50kh9'))
+        # votes.append(MimirVote('LOVEME', 2, 'thor10697ffyya4fddsvpwj6crfwe06pxkxkmdl8kev'))
+        votes.append(MimirVote('ENABLESAVINGSVAULTS', 3, 'thor10f40m6nv7ulc0fvhmt07szn3n7ajd7e8xhghc3'))
+        votes.append(MimirVote('ENABLESAVINGSVAULTS', 2, 'thor10smhtnkaju9ng0cag5p986czp6vmqvnmnl90wh'))
+        votes.append(MimirVote('ENABLESAVINGSVAULTS', 2, 'thor12espg8k5fxqmclx9vyte7cducmmvrtxll40q7z'))
         return votes
 
     def _dbg_randomize_node_mimir_results(self, results):
         return results
+
+    _dbg_wheel = cycle([0, 1, 0, 5825662, 0, 55555, 1])
 
     def _dbg_randomize_mimir(self, fresh_mimir: ThorMimir, node_mimir: dict):
         # if random.uniform(0, 1) > 0.5:

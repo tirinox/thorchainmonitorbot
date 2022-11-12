@@ -1076,7 +1076,8 @@ class RussianLocalization(BaseLocalization):
         return text
 
     TEXT_NODE_MIMIR_VOTING_TITLE = '🏛️ <b>Голосование нод за Мимир</b>\n\n'
-    TEXT_NODE_MIMIR_VOTING_NOTHING_YET = 'Пока нет активных логосований.'
+    TEXT_NODE_MIMIR_VOTING_NOTHING_YET = 'Пока нет активных голосований.'
+    TEXT_NODE_MIMIR_ALREADY_CONSENSUS = '✅ уже консенсус'
 
     def _text_votes_to_pass(self, option):
         show = 0 < option.need_votes_to_pass <= self.NEED_VOTES_TO_PASS_MAX

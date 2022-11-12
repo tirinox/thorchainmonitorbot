@@ -19,13 +19,11 @@ async def demo_cap_test(app: LpAppFramework):
     print(r)
 
 
-async def run():
-    app = LpAppFramework()
-    await app.prepare(brief=True)
+async def demo_mimir_consensus(app: LpAppFramework):
+    await app.deps.mimir_const_fetcher.run_once()
 
-    await demo_cap_test(app)
-    return
 
+async def demo_voting(app: LpAppFramework):
     mimir_to_test = 'MaxSynthPerAssetDepth'.upper()
     # mimir_to_test = NEXT_CHAIN_KEY
 
@@ -52,6 +50,14 @@ async def run():
     # )
 
     # print(loc, app)
+
+
+async def run():
+    app = LpAppFramework()
+    await app.prepare(brief=True)
+
+    # await demo_cap_test(app)
+    await demo_mimir_consensus(app)
 
 
 if __name__ == '__main__':
