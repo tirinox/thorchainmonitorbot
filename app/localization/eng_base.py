@@ -1591,7 +1591,7 @@ class BaseLocalization(ABC):  # == English
         else:
             text += f'You did not add anything to the watch list. Click {ital(self.BUTTON_NOP_ADD_NODES)} first 👇.'
 
-        text += f'\n\nLast signal from ThorMon was {ital(format_time_ago(last_signal_ago))} '
+        text += f'\n\nLast signal from the network was {ital(format_time_ago(last_signal_ago))} '
         if last_signal_ago > 60:
             text += '🔴'
         elif last_signal_ago > 20:
@@ -1913,13 +1913,19 @@ class BaseLocalization(ABC):  # == English
 
     # ----- FLOW ------
 
+    @staticmethod
+    def cex_flow_emoji(cex_flow: RuneCEXFlow):
+        limit = 1000.0
+        return '🟢' if cex_flow.netflow_usd < -limit else ('🔴' if cex_flow.netflow_usd > limit else '⚪️')
+
     def notification_text_cex_flow(self, cex_flow: RuneCEXFlow):
+        emoji = self.cex_flow_emoji(cex_flow)
         return (f'🌬️ <b>Rune CEX flow last 24 hours</b>\n'
-                f'Inflow: {pre(short_money(cex_flow.rune_cex_inflow, postfix=RAIDO_GLYPH))} '
+                f'➡️ Inflow: {pre(short_money(cex_flow.rune_cex_inflow, postfix=RAIDO_GLYPH))} '
                 f'({short_dollar(cex_flow.in_usd)})\n'
-                f'Outflow: {pre(short_money(cex_flow.rune_cex_outflow, postfix=RAIDO_GLYPH))} '
+                f'⬅️ Outflow: {pre(short_money(cex_flow.rune_cex_outflow, postfix=RAIDO_GLYPH))} '
                 f'({short_dollar(cex_flow.out_usd)})\n'
-                f'Netflow: {pre(short_money(cex_flow.rune_cex_netflow, postfix=RAIDO_GLYPH))} '
+                f'{emoji} Netflow: {pre(short_money(cex_flow.rune_cex_netflow, postfix=RAIDO_GLYPH, signed=True))} '
                 f'({short_dollar(cex_flow.netflow_usd)})')
 
     # ----- SUPPLY ------

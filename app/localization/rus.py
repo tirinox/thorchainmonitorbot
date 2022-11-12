@@ -1464,13 +1464,17 @@ class RussianLocalization(BaseLocalization):
     # ----- RUNE FLOW ------
 
     def notification_text_cex_flow(self, cex_flow: RuneCEXFlow):
-        return (f'🌬️ <b>Rune потоки с централизованнвых бирж последние сутки</b>\n'
-                f'Завели: {pre(short_money(cex_flow.rune_cex_inflow, postfix=RAIDO_GLYPH))} '
-                f'({short_dollar(cex_flow.in_usd)})\n'
-                f'Вывели: {pre(short_money(cex_flow.rune_cex_outflow, postfix=RAIDO_GLYPH))} '
-                f'({short_dollar(cex_flow.out_usd)})\n'
-                f'Поток: {pre(short_money(cex_flow.rune_cex_netflow, postfix=RAIDO_GLYPH))} '
-                f'({short_dollar(cex_flow.netflow_usd)})')
+        emoji = self.cex_flow_emoji(cex_flow)
+        return (
+            f'🌬️ <b>Rune потоки с централизованнвых бирж последние сутки</b>\n'
+            f'➡️ Завели: {pre(short_money(cex_flow.rune_cex_inflow, postfix=RAIDO_GLYPH))} '
+            f'({short_dollar(cex_flow.in_usd)})\n'
+            f'⬅️ Вывели: {pre(short_money(cex_flow.rune_cex_outflow, postfix=RAIDO_GLYPH))} '
+            f'({short_dollar(cex_flow.out_usd)})\n'
+            f'{emoji} Поток на биржи: '
+            f'{pre(short_money(cex_flow.rune_cex_netflow, postfix=RAIDO_GLYPH, signed=True))} '
+            f'({short_dollar(cex_flow.netflow_usd)})'
+        )
 
     # ----- SUPPLY ------
 
