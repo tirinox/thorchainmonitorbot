@@ -120,9 +120,11 @@ class TwitterEnglishLocalization(BaseLocalization):
 
             ilp_rune = tx.meta_withdraw.ilp_rune if tx.meta_withdraw else 0
             if ilp_rune > 0:
+                ilp_usd = ilp_rune * usd_per_rune
                 ilp_rune_fmt = short_rune(ilp_rune)
-                ilp_text = f'🛡️ IL prot. paid: {ilp_rune_fmt} ' \
-                           f'({short_dollar(ilp_rune * usd_per_rune)})\n'
+                mark = self._exclamation_sign(ilp_usd, 'ilp_usd_limit')
+                ilp_text = f'🛡️ IL prot. paid: {ilp_rune_fmt}{mark} ' \
+                           f'({short_dollar(ilp_usd)})\n'
             else:
                 ilp_text = ''
 

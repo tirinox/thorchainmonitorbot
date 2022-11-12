@@ -335,9 +335,10 @@ class RussianLocalization(BaseLocalization):
 
             ilp_rune = tx.meta_withdraw.ilp_rune if tx.meta_withdraw else 0
             if ilp_rune > 0:
-                ilp_rune_fmt = pretty_money(ilp_rune, postfix=" " + self.R)
-                ilp_text = f'🛡️ Выплачено защиты от IL: {code(ilp_rune_fmt)} ' \
-                           f'({pretty_dollar(ilp_rune * usd_per_rune)})\n'
+                ilp_usd = ilp_rune * usd_per_rune
+                mark = self._exclamation_sign(ilp_usd, 'ilp_usd_limit')
+                ilp_text = f'🛡️ Выплачено защиты от IL: {code(short_rune(ilp_rune))}{mark} ' \
+                           f'({pretty_dollar(ilp_usd)})\n'
             else:
                 ilp_text = ''
 

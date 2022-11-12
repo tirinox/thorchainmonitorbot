@@ -6,6 +6,7 @@ from services.jobs.affiliate_merge import AffiliateTXMerger
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.lib.delegates import INotified
+from services.lib.midgard.name_service import NameMap
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import free_url_gen
 from services.lib.money import DepthCurve
@@ -17,17 +18,6 @@ from services.notify.alert_presenter import AlertPresenter
 from services.notify.types.tx_notify import SwitchTxNotifier, GenericTxNotifier, SwapTxNotifier, LiquidityTxNotifier
 from tools.debug.dbg_w3 import FilterTxMiddleware
 from tools.lib.lp_common import LpAppFramework, load_sample_txs, Receiver, demo_run_txs_example_file
-
-
-async def main():
-    lp_app = LpAppFramework()
-    await lp_app.prepare(brief=True)
-
-    # await midgard_test_donate(lp_app, mdg, tx_parser)
-    # await midgard_test_1(lp_app, mdg, tx_parser)
-    # await midgard_test_kill_switch(lp_app, mdg)
-    # await refund_full_rune(lp_app)
-    await demo_full_tx_pipeline(lp_app)
 
 
 async def midgard_test_kill_switch(lp_app, mdg):
@@ -62,16 +52,23 @@ async def midgard_test_kill_switch(lp_app, mdg):
 
 async def midgard_test_1(lp_app, mdg):
     q_path = free_url_gen.url_for_tx(0, 50,
-                                     types='addLiquidity',
+                                     tx_type=ThorTxType.TYPE_ADD_LIQUIDITY,
                                      txid='58B3D28E121A34BCE2D31018C00C660942088BC548171A427A51F6825ED77142')
     await present_one_aff_tx(lp_app, mdg, q_path)
     q_path = free_url_gen.url_for_tx(0, 50,
-                                     types='swap',
+                                     tx_type=ThorTxType.TYPE_SWAP,
                                      txid='7F98B4867018DC97C1DC8A6C34E1E597641FC306093B70AB41F156C85D0CD01E')
     await present_one_aff_tx(lp_app, mdg, q_path)
     q_path = free_url_gen.url_for_tx(0, 50,
                                      address='bnb10gh0p6thzjz54jqy9lg0rv733fnl0vqmc789pp')
     await present_one_aff_tx(lp_app, mdg, q_path, find_aff=True)
+
+
+async def demo_midgard_test_large_ilp(app, mdg):
+    q_path = free_url_gen.url_for_tx(0, 50,
+                                     tx_type=ThorTxType.TYPE_WITHDRAW,
+                                     txid='C3BC98CB15022DBA8C5BAEC3C3637FD0BBD55CB7F7000BB62594C234C219E798')
+    await present_one_aff_tx(app, mdg, q_path)
 
 
 async def midgard_test_donate(lp_app, mdg, tx_parser):
@@ -97,15 +94,16 @@ async def load_tx(lp_app, mdg, q_path, find_aff=False):
 
 
 async def send_tx_notification(lp_app, ex_tx, loc: BaseLocalization = None):
+    await lp_app.deps.price_pool_fetcher.run_once()
     pool_info: PoolInfo = lp_app.deps.price_holder.pool_info_map.get(ex_tx.first_pool)
-    asset_per_rune = pool_info.asset_per_rune if pool_info else 0.0
-    full_rune = ex_tx.calc_full_rune_amount(asset_per_rune)
+    full_rune = ex_tx.calc_full_rune_amount(lp_app.deps.price_holder.pool_info_map)
     print(f'{ex_tx.affiliate_fee = }')
     rune_price = lp_app.deps.price_holder.usd_per_rune
     print(f'{ex_tx.get_affiliate_fee_usd(rune_price) = } $')
     print(f'{full_rune = } R')
     loc = loc or lp_app.deps.loc_man.default
-    await lp_app.send_test_tg_message(loc.notification_text_large_single_tx(ex_tx, rune_price, pool_info))
+    await lp_app.send_test_tg_message(loc.notification_text_large_single_tx(ex_tx, rune_price, pool_info,
+                                                                            name_map=NameMap({}, {})))
     sep()
 
 
@@ -152,6 +150,18 @@ async def demo_full_tx_pipeline(app: LpAppFramework):
     # await demo_run_txs_example_file(fetcher_tx, 'swap_synth_synth.json')
     await demo_run_txs_example_file(fetcher_tx, 'add_withdraw_big.json')
     await asyncio.sleep(10.0)
+
+
+async def main():
+    lp_app = LpAppFramework()
+    await lp_app.prepare(brief=True)
+
+    # await midgard_test_donate(lp_app, mdg, tx_parser)
+    # await midgard_test_1(lp_app, mdg, tx_parser)
+    # await midgard_test_kill_switch(lp_app, mdg)
+    # await refund_full_rune(lp_app)
+    await demo_midgard_test_large_ilp(lp_app, lp_app.deps.midgard_connector)
+    # await demo_full_tx_pipeline(lp_app)
 
 
 if __name__ == '__main__':

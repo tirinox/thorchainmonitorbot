@@ -495,8 +495,10 @@ class BaseLocalization(ABC):  # == English
 
             ilp_rune = tx.meta_withdraw.ilp_rune if tx.meta_withdraw else 0
             if ilp_rune > 0:
-                ilp_text = f'🛡️ Impermanent loss protection paid: {code(short_rune(ilp_rune))} ' \
-                           f'({short_dollar(ilp_rune * usd_per_rune)})\n'
+                ilp_usd = ilp_rune * usd_per_rune
+                mark = self._exclamation_sign(ilp_usd, 'ilp_usd_limit')
+                ilp_text = f'🛡️ Impermanent loss protection paid: {code(short_rune(ilp_rune))}{mark} ' \
+                           f'({short_dollar(ilp_usd)})\n'
             else:
                 ilp_text = ''
 
