@@ -62,39 +62,8 @@ class AffiliateTXMerger(WithLogger):
         try:
             result_tx.affiliate_fee = self.calc_affiliate_fee_rate(result_tx, other_tx)
 
-            # collect (TXID, address) for each input asset name for both Txs
-            hash_addr_tracker = {}
-            for tx in [*result_tx.in_tx, *other_tx.in_tx]:
-                for coin in tx.coins:
-                    if coin.asset not in hash_addr_tracker:
-                        hash_addr_tracker[coin.asset] = tx.tx_id, tx.address
-                    else:
-                        old_id, old_address = hash_addr_tracker[coin.asset]
-                        hash_addr_tracker[coin.asset] = (old_id or tx.tx_id), (old_address or tx.address)
-
-            # merge all same coins and put them in the dictionary using asset-name as key
-            merge_coins_dic = {}
-            all_coins = [
-                *(c for tx in result_tx.in_tx for c in tx.coins),
-                *(c for tx in other_tx.in_tx for c in tx.coins)
-            ]
-            for coin in all_coins:
-                coin: ThorCoin
-                if coin.asset not in merge_coins_dic:
-                    merge_coins_dic[coin.asset] = coin
-                else:
-                    merge_coins_dic[coin.asset] = ThorCoin.merge_two(merge_coins_dic[coin.asset], coin)
-
-            # reconstruct inputs list
-            new_input_transactions = []
-            for asset, (tx_id, address) in hash_addr_tracker.items():
-                coin = merge_coins_dic[asset]
-                new_input_transactions.append(
-                    ThorSubTx(
-                        address, [coin], tx_id
-                    )
-                )
-            result_tx.in_tx = new_input_transactions
+            result_tx.in_tx = self.merge_sub_txs(other_tx.in_tx, result_tx.in_tx)
+            result_tx.out_tx = self.merge_sub_txs(other_tx.out_tx, result_tx.out_tx)
 
             result_tx.pools = result_tx.pools if len(result_tx.pools) > len(other_tx.pools) else other_tx.pools
 
@@ -106,6 +75,42 @@ class AffiliateTXMerger(WithLogger):
             logging.error(f'Cannot merge: {result_tx} and {other_tx}!')
 
         return result_tx
+
+    @staticmethod
+    def merge_sub_txs(other_tx: List[ThorSubTx], result_tx: List[ThorSubTx]) -> List[ThorSubTx]:
+        # collect (TXID, address) for each input asset name for both Txs
+        hash_addr_tracker = {}
+        for tx in [*result_tx, *other_tx]:
+            for coin in tx.coins:
+                if coin.asset not in hash_addr_tracker:
+                    hash_addr_tracker[coin.asset] = tx.tx_id, tx.address
+                else:
+                    old_id, old_address = hash_addr_tracker[coin.asset]
+                    hash_addr_tracker[coin.asset] = (old_id or tx.tx_id), (old_address or tx.address)
+
+        # merge all same coins and put them in the dictionary using asset-name as key
+        merge_coins_dic = {}
+        all_coins = [
+            *(c for tx in result_tx for c in tx.coins),
+            *(c for tx in other_tx for c in tx.coins)
+        ]
+        for coin in all_coins:
+            coin: ThorCoin
+            if coin.asset not in merge_coins_dic:
+                merge_coins_dic[coin.asset] = coin
+            else:
+                merge_coins_dic[coin.asset] = ThorCoin.merge_two(merge_coins_dic[coin.asset], coin)
+
+        # reconstruct inputs list
+        new_input_transactions = []
+        for asset, (tx_id, address) in hash_addr_tracker.items():
+            coin = merge_coins_dic[asset]
+            new_input_transactions.append(
+                ThorSubTx(
+                    address, [coin], tx_id
+                )
+            )
+        return new_input_transactions
 
     def merge_affiliate_txs(self, txs: List[ThorTx]):
         len_before = len(txs)
