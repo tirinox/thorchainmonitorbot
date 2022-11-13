@@ -384,8 +384,8 @@ class BaseLocalization(ABC):  # == English
         rp, ap = tx.symmetry_rune_vs_asset()
         rune_side_usd = tx.rune_amount * usd_per_rune
 
-        rune_side_usd_short = short_money(rune_side_usd)
-        asset_side_usd_short = short_money(total_usd_volume - rune_side_usd)
+        rune_side_usd_short = short_dollar(rune_side_usd)
+        asset_side_usd_short = short_dollar(total_usd_volume - rune_side_usd)
 
         chain = Asset(tx.first_pool).chain
 
@@ -461,9 +461,15 @@ class BaseLocalization(ABC):  # == English
 
         heading = ''
         if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
-            heading = f'🐳 <b>Added liquidity</b> 🟢'
+            if tx.is_savings:
+                heading = f'🐳→💰 <b>Add to savings vault</b>'
+            else:
+                heading = f'🐳→⚡ <b>Add liquidity</b> '
         elif tx.type == ThorTxType.TYPE_WITHDRAW:
-            heading = f'🐳 <b>Withdrew liquidity</b> 🔴'
+            if tx.is_savings:
+                heading = f'🐳←💰 <b>Withdraw from savings vault</b>'
+            else:
+                heading = f'🐳←⚡ <b>Withdraw liquidity</b>'
         elif tx.type == ThorTxType.TYPE_DONATE:
             heading = f'🙌 <b>Donation to the pool</b>'
         elif tx.type == ThorTxType.TYPE_SWAP:
@@ -502,11 +508,16 @@ class BaseLocalization(ABC):  # == English
             else:
                 ilp_text = ''
 
+            if tx.is_savings:
+                rune_part = ''
+                asset_part = f"{bold(short_money(tx.asset_amount))} {asset}"
+            else:
+                rune_part = f"{bold(short_money(tx.rune_amount))} {self.R} ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
+                asset_part = f"{bold(short_money(tx.asset_amount))} {asset} ({ap:.0f}% = {asset_side_usd_short})"
+
             content = (
-                f"{bold(short_money(tx.rune_amount))} {self.R} ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
-                f"{bold(short_money(tx.asset_amount))} {asset} "
-                f"({ap:.0f}% = {asset_side_usd_short})\n"
-                f"Total: {code(short_dollar(total_usd_volume))} ({percent_of_pool:.2f}% of the whole pool).\n"
+                f"{rune_part}{asset_part}\n"
+                f"Total: {code(short_dollar(total_usd_volume))} ({percent_of_pool:.2f}% of the whole pool)\n"
                 f"{aff_text}"
                 f"{ilp_text}"
                 f"Pool depth is {bold(short_dollar(pool_depth_usd))} now."

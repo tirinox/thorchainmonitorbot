@@ -301,11 +301,17 @@ class RussianLocalization(BaseLocalization):
 
         heading = ''
         if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
-            heading = f'🐳 <b>Добавлена ликвидности</b> 🟢'
+            if tx.is_savings:
+                heading = f'🐳→💰 <b>Добавлено на сберегательный счет</b>'
+            else:
+                heading = f'🐳→⚡ <b>Добавлена ликвидности</b> '
         elif tx.type == ThorTxType.TYPE_WITHDRAW:
-            heading = f'🐳 <b>Выведена ликвидность</b> 🔴'
+            if tx.is_savings:
+                heading = f'🐳←💰 <b>Выведено со сберегательного счета</b>'
+            else:
+                heading = f'🐳←⚡ <b>Выведена ликвидность</b>'
         elif tx.type == ThorTxType.TYPE_DONATE:
-            heading = f'🙌 <b>Безвозмездное добавление в пул</b>'
+            heading = f'🙌 <b>Пожертвование в пул</b>'
         elif tx.type == ThorTxType.TYPE_SWAP:
             heading = f'🐳 <b>Крупный обмен</b> 🔁'
         elif tx.type == ThorTxType.TYPE_REFUND:
@@ -342,11 +348,16 @@ class RussianLocalization(BaseLocalization):
             else:
                 ilp_text = ''
 
+            if tx.is_savings:
+                rune_part = ''
+                asset_part = f"{bold(short_money(tx.asset_amount))} {asset}"
+            else:
+                rune_part = f"{bold(short_money(tx.rune_amount))} {self.R} ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
+                asset_part = f"{bold(short_money(tx.asset_amount))} {asset} ({ap:.0f}% = {asset_side_usd_short})"
+
             content = (
-                f"<b>{pretty_money(tx.rune_amount)} {self.R}</b> ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
-                f"<b>{pretty_money(tx.asset_amount)} {asset}</b> "
-                f"({ap:.0f}% = {asset_side_usd_short})\n"
-                f"Всего: <code>${pretty_money(total_usd_volume)}</code> ({percent_of_pool:.2f}% от всего пула).\n"
+                f"{rune_part}{asset_part}\n"
+                f"Всего: <code>${pretty_money(total_usd_volume)}</code> ({percent_of_pool:.2f}% от всего пула)\n"
                 f"{aff_text}"
                 f"{ilp_text}"
                 f"Глубина пула сейчас: <b>${pretty_money(pool_depth_usd)}</b>.\n"

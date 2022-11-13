@@ -86,11 +86,17 @@ class TwitterEnglishLocalization(BaseLocalization):
         heading = ''
 
         if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
-            heading = f'🐳 Added liquidity 🟢'
+            if tx.is_savings:
+                heading = f'🐳→💰 Add to savings vault'
+            else:
+                heading = f'🐳→⚡ Add liquidity'
         elif tx.type == ThorTxType.TYPE_WITHDRAW:
-            heading = f'🐳 Withdrew liquidity 🔴'
+            if tx.is_savings:
+                heading = f'🐳←💰 Withdraw from savings vault'
+            else:
+                heading = f'🐳←⚡ Withdraw liquidity'
         elif tx.type == ThorTxType.TYPE_DONATE:
-            heading = f'🐳 Donated to the pool 🙌'
+            heading = f'🐳 Donation to the pool 🙌'
         elif tx.type == ThorTxType.TYPE_SWAP:
             heading = f'🐳 Swap 🔁'
         elif tx.type == ThorTxType.TYPE_REFUND:
@@ -128,11 +134,16 @@ class TwitterEnglishLocalization(BaseLocalization):
             else:
                 ilp_text = ''
 
+            if tx.is_savings:
+                rune_part = ''
+                asset_part = f"{short_money(tx.asset_amount)} {asset}"
+            else:
+                rune_part = f"{short_money(tx.rune_amount)} {self.R} ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
+                asset_part = f"{short_money(tx.asset_amount)} {asset} ({ap:.0f}% = {asset_side_usd_short})"
+
             content += (
-                f"{short_money(tx.rune_amount)} {self.R} ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
-                f"{short_money(tx.asset_amount)} {asset} "
-                f"({ap:.0f}% = {asset_side_usd_short})\n"
-                f"Total: {short_dollar(total_usd_volume)} ({percent_of_pool:.2f}% of pool).\n"
+                f"{rune_part}{asset_part}\n"
+                f"Total: {short_dollar(total_usd_volume)} ({percent_of_pool:.2f}% of pool)\n"
                 f"{aff_text}"
                 f"{ilp_text}"
                 f"The depth is {short_dollar(pool_depth_usd)} now."

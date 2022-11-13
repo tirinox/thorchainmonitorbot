@@ -39,6 +39,9 @@ class PoolInfo:
     units: int = 0  # synth + pool_units
     volume_24h: int = 0
 
+    savers_depth: int = 0
+    savers_units: int = 0
+
     DEPRECATED_BOOTSTRAP = 'bootstrap'
     DEPRECATED_ENABLED = 'enabled'
     SUSPENDED = 'suspended'
@@ -116,7 +119,9 @@ class PoolInfo:
             pool_units=pool_units,
             units=units,
             synth_units=int(j.get('synth_units', 0)),
-            status=str(j['status']).lower()
+            status=str(j['status']).lower(),
+            savers_units=int(j.get('savers_units', 0)),
+            savers_depth=int(j.get('savers_depth', 0)),
         )
 
     def as_dict_brief(self):
@@ -127,7 +132,9 @@ class PoolInfo:
             'units': str(self.units),
             'synth_units': str(self.synth_units),
             'asset': self.asset,
-            'status': self.status
+            'status': self.status,
+            'savers_units': str(self.savers_units),
+            'savers_depth': str(self.savers_depth),
         }
 
     @property
