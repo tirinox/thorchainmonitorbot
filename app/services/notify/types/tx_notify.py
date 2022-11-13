@@ -6,7 +6,7 @@ from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.money import Asset, DepthCurve
 from services.lib.utils import class_logger
-from services.models.tx import ThorTxExtended, EventLargeTransaction, ThorTxType
+from services.models.tx import ThorTx, EventLargeTransaction, ThorTxType
 from services.notify.types.cap_notify import LiquidityCapNotifier
 
 
@@ -25,7 +25,7 @@ class GenericTxNotifier(INotified, WithDelegates):
         self.max_age_sec = parse_timespan_to_seconds(deps.cfg.tx.max_age)
         self.min_usd_total = int(params.min_usd_total)
 
-    async def on_data(self, senders, txs: List[ThorTxExtended]):
+    async def on_data(self, senders, txs: List[ThorTx]):
         txs = [tx for tx in txs if tx.type in self.tx_types]  # filter my TX types
         if not txs:
             return
@@ -57,7 +57,7 @@ class GenericTxNotifier(INotified, WithDelegates):
                 cap_info=(cap_info if has_liquidity and is_last else None)
             ))
 
-    def _get_min_usd_depth(self, tx: ThorTxExtended, usd_per_rune):
+    def _get_min_usd_depth(self, tx: ThorTx, usd_per_rune):
         pools = tx.pools
         if not pools:
             # in case of refund maybe
@@ -69,7 +69,7 @@ class GenericTxNotifier(INotified, WithDelegates):
         min_pool_depth = min(p.usd_depth(usd_per_rune) for p in pool_info_list)
         return min_pool_depth
 
-    def is_tx_suitable(self, tx: ThorTxExtended, min_rune_volume, usd_per_rune):
+    def is_tx_suitable(self, tx: ThorTx, min_rune_volume, usd_per_rune):
         pool_usd_depth = self._get_min_usd_depth(tx, usd_per_rune)
         if pool_usd_depth == 0.0:
             self.logger.warning(f'No pool depth for Tx: {tx}.')
@@ -81,19 +81,17 @@ class GenericTxNotifier(INotified, WithDelegates):
         if tx.full_rune >= min_rune_volume and tx.full_rune >= min_share_rune_volume:
             return True
 
-        # print(f'{tx.type}: {tx.full_rune = }, {min_rune_volume = } R, {min_share_rune_volume = } R, {pool_usd_depth = } $')
-
 
 class SwitchTxNotifier(GenericTxNotifier):
     def calculate_killed_rune(self, in_rune: float, block: int):
         survive_rate = 1.0 - self.deps.mimir_const_holder.current_old_rune_kill_progress(block)
         return in_rune * survive_rate
 
-    def _count_correct_output_rune_value(self, tx: ThorTxExtended):
+    def _count_correct_output_rune_value(self, tx: ThorTx):
         tx.rune_amount = self.calculate_killed_rune(tx.asset_amount, tx.height_int)
         return tx
 
-    def is_tx_suitable(self, tx: ThorTxExtended, min_rune_volume, usd_per_rune):
+    def is_tx_suitable(self, tx: ThorTx, min_rune_volume, usd_per_rune):
         if tx.asset_amount >= min_rune_volume:
             self._count_correct_output_rune_value(tx)
             return True
@@ -104,7 +102,7 @@ class LiquidityTxNotifier(GenericTxNotifier):
         super().__init__(deps, params, (ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_ADD_LIQUIDITY), curve)
         self.ilp_paid_min_usd = params.as_float('also_trigger_when.ilp_paid_min_usd', 6000)
 
-    def is_tx_suitable(self, tx: ThorTxExtended, min_rune_volume, usd_per_rune):
+    def is_tx_suitable(self, tx: ThorTx, min_rune_volume, usd_per_rune):
         if tx.meta_withdraw and (tx.meta_withdraw.ilp_rune >= self.ilp_paid_min_usd / usd_per_rune):
             return True
 
@@ -117,7 +115,7 @@ class SwapTxNotifier(GenericTxNotifier):
         self.dex_min_usd = params.as_float('also_trigger_when.dex_aggregator_used.min_usd_total', 500)
         self.aff_fee_min_usd = params.as_float('also_trigger_when.affiliate_fee_usd_greater', 500)
 
-    def is_tx_suitable(self, tx: ThorTxExtended, min_rune_volume, usd_per_rune):
+    def is_tx_suitable(self, tx: ThorTx, min_rune_volume, usd_per_rune):
         affiliate_fee_rune = tx.meta_swap.affiliate_fee * tx.full_rune
 
         if affiliate_fee_rune >= self.aff_fee_min_usd / usd_per_rune:

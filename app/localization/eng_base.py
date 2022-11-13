@@ -34,7 +34,7 @@ from services.models.pool_info import PoolInfo, PoolChanges, PoolDetailHolder
 from services.models.price import PriceReport, RuneMarketInfo
 from services.models.queue import QueueInfo
 from services.models.transfer import RuneTransfer, RuneCEXFlow
-from services.models.tx import ThorTxExtended, ThorTxType, ThorSubTx
+from services.models.tx import ThorTx, ThorTxType, ThorSubTx
 from services.notify.channel import Messengers
 
 CREATOR_TG = '@account1242'
@@ -371,12 +371,12 @@ class BaseLocalization(ABC):  # == English
             result += self.TEXT_MORE_TXS.format(n=extra_n)
         return result
 
-    def link_to_explorer_user_address_for_tx(self, tx: ThorTxExtended, name_map):
+    def link_to_explorer_user_address_for_tx(self, tx: ThorTx, name_map):
         address, _ = tx.sender_address_and_chain
         return self.link_to_address(tx.sender_address, name_map)  # Chains.THOR is always here, that is deliberate!
 
     @staticmethod
-    def lp_tx_calculations(usd_per_rune, pool_info: PoolInfo, tx: ThorTxExtended):
+    def lp_tx_calculations(usd_per_rune, pool_info: PoolInfo, tx: ThorTx):
         total_usd_volume = tx.full_rune * usd_per_rune
         pool_depth_usd = pool_info.usd_depth(usd_per_rune) if pool_info else 0.0
 
@@ -407,7 +407,7 @@ class BaseLocalization(ABC):  # == English
             chain = Chains.AVAX
         return f'{self.format_op_amount(a.amount)} {chain}.{a.token.symbol}'
 
-    def format_swap_route(self, tx: ThorTxExtended, usd_per_rune):
+    def format_swap_route(self, tx: ThorTx, usd_per_rune):
         inputs = tx.get_asset_summary(in_only=True)
         outputs = tx.get_asset_summary(out_only=True)
 
@@ -446,12 +446,12 @@ class BaseLocalization(ABC):  # == English
     def tx_add_date_if_older_than(self):
         return self.cfg.as_interval('tx.add_date_if_older_than', '3h')
 
-    def tx_date(self, tx: ThorTxExtended):
+    def tx_date(self, tx: ThorTx):
         now = now_ts()
         if tx.date_timestamp < now - self.tx_add_date_if_older_than():
             return self.format_time_ago(now - tx.date_timestamp)
 
-    def notification_text_large_single_tx(self, tx: ThorTxExtended,
+    def notification_text_large_single_tx(self, tx: ThorTx,
                                           usd_per_rune: float,
                                           pool_info: PoolInfo,
                                           cap: ThorCapInfo = None,

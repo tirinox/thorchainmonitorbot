@@ -24,7 +24,7 @@ from services.models.node_info import NodeSetChanges, NodeVersionConsensus, Node
 from services.models.pool_info import PoolDetailHolder, PoolChanges, PoolInfo
 from services.models.price import RuneMarketInfo, PriceReport
 from services.models.transfer import RuneCEXFlow, RuneTransfer
-from services.models.tx import ThorTxExtended, ThorTxType
+from services.models.tx import ThorTx, ThorTxType
 from services.notify.channel import MESSAGE_SEPARATOR
 
 
@@ -76,7 +76,7 @@ class TwitterEnglishLocalization(BaseLocalization):
     def format_op_amount(amt):
         return short_money(amt)
 
-    def notification_text_large_single_tx(self, tx: ThorTxExtended, usd_per_rune: float,
+    def notification_text_large_single_tx(self, tx: ThorTx, usd_per_rune: float,
                                           pool_info: PoolInfo,
                                           cap: ThorCapInfo = None,
                                           name_map: NameMap = None):

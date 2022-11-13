@@ -30,7 +30,7 @@ from services.models.pool_info import PoolInfo, PoolChanges, PoolDetailHolder
 from services.models.price import PriceReport, RuneMarketInfo
 from services.models.queue import QueueInfo
 from services.models.transfer import RuneTransfer, RuneCEXFlow
-from services.models.tx import ThorTxExtended, ThorTxType
+from services.models.tx import ThorTx, ThorTxType
 
 
 class RussianLocalization(BaseLocalization):
@@ -291,7 +291,7 @@ class RussianLocalization(BaseLocalization):
     def none_str(x):
         return 'нет' if x is None else x
 
-    def notification_text_large_single_tx(self, tx: ThorTxExtended,
+    def notification_text_large_single_tx(self, tx: ThorTx,
                                           usd_per_rune: float,
                                           pool_info: PoolInfo,
                                           cap: ThorCapInfo = None,

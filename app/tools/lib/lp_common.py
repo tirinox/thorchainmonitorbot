@@ -12,7 +12,7 @@ from services.lib.delegates import INotified
 from services.lib.midgard.parser import MidgardParserV2
 from services.lib.texts import sep
 from services.lib.utils import load_json
-from services.models.tx import ThorTxExtended
+from services.models.tx import ThorTx
 from services.notify.types.block_notify import LastBlockStore
 
 
@@ -143,10 +143,10 @@ def load_sample_txs(name):
     data = load_json(name)
     parser = MidgardParserV2(network_id=NetworkIdents.MAINNET)
     r = parser.parse_tx_response(data)
-    return [ThorTxExtended.load_from_thor_tx(tx) for tx in r.txs]
+    return r.txs
 
 
 async def demo_run_txs_example_file(fetcher_tx: TxFetcher, filename):
     txs = load_sample_txs(f'tests/sample_data/{filename}')
-    txs = fetcher_tx.convert_and_merge_simple_txs(txs)
+    txs = fetcher_tx.merge_related_txs(txs)
     await fetcher_tx.pass_data_to_listeners(txs, fetcher_tx)

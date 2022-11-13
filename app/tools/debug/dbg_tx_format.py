@@ -13,10 +13,9 @@ from services.lib.money import DepthCurve
 from services.lib.texts import sep
 from services.lib.w3.aggregator import AggregatorDataExtractor
 from services.models.pool_info import PoolInfo
-from services.models.tx import ThorTxExtended, ThorTxType
+from services.models.tx import ThorTxType
 from services.notify.alert_presenter import AlertPresenter
-from services.notify.types.tx_notify import SwitchTxNotifier, GenericTxNotifier, SwapTxNotifier, LiquidityTxNotifier
-from tools.debug.dbg_w3 import FilterTxMiddleware
+from services.notify.types.tx_notify import SwitchTxNotifier, SwapTxNotifier, LiquidityTxNotifier
 from tools.lib.lp_common import LpAppFramework, load_sample_txs, Receiver, demo_run_txs_example_file
 
 
@@ -89,8 +88,7 @@ async def load_tx(lp_app, mdg, q_path, find_aff=False):
     txs = tx_parser.parse_tx_response(j).txs
     txs_merged = AffiliateTXMerger().merge_affiliate_txs(txs)
     tx = next(tx for tx in txs_merged if tx.affiliate_fee > 0) if find_aff else txs_merged[0]
-    ex_tx = ThorTxExtended.load_from_thor_tx(tx)
-    return ex_tx
+    return tx
 
 
 async def send_tx_notification(lp_app, ex_tx, loc: BaseLocalization = None):
