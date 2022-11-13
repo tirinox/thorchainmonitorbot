@@ -72,7 +72,8 @@ class GenericTxNotifier(INotified, WithDelegates):
     def is_tx_suitable(self, tx: ThorTx, min_rune_volume, usd_per_rune):
         pool_usd_depth = self._get_min_usd_depth(tx, usd_per_rune)
         if pool_usd_depth == 0.0:
-            self.logger.warning(f'No pool depth for Tx: {tx}.')
+            if tx.type != ThorTxType.TYPE_REFUND:
+                self.logger.warning(f'No pool depth for Tx: {tx}.')
             min_share_rune_volume = 0.0
         else:
             min_pool_share = self.curve.evaluate(pool_usd_depth) * self.curve_mult
