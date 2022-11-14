@@ -131,14 +131,14 @@ class App:
         thor_env_backup = d.cfg.get_thor_env_by_network_id(backup=True)
         d.thor_connector_backup = ThorConnector(thor_env_backup, d.session)
 
-        await d.thor_connector.update_nodes()
+        await d.thor_connector.update_nodes()  # fixme
 
         cfg: SubConfig = d.cfg.get('thor.midgard')
         d.midgard_connector = MidgardConnector(
             d.session,
             d.thor_connector,
             int(cfg.get_pure('tries', 3)),
-            public_url=d.thor_connector.env.midgard_url,
+            public_url=d.thor_env.midgard_url,
             use_nodes=bool(cfg.get('use_nodes', True))
         )
         d.rune_market_fetcher = RuneMarketInfoFetcher(d)

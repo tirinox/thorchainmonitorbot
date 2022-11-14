@@ -349,6 +349,10 @@ class ThorTx:
     def first_pool(self):
         return self.pools[0] if self.pools else None
 
+    @property
+    def first_pool_l1(self):
+        return Asset.to_L1_pool_name(self.first_pool)
+
     def __hash__(self) -> int:
         return int(self.tx_hash, 16)
 
@@ -451,7 +455,7 @@ class ThorTx:
                 if is_rune(coin.asset):
                     rune_sum += coin.amount_float
                 else:
-                    pool_name = Asset.convert_synth_to_pool_name(coin.asset)
+                    pool_name = Asset.to_L1_pool_name(coin.asset)
                     pool_info = pool_map.get(pool_name)
                     if pool_info:
                         rune_sum += pool_info.runes_per_asset * coin.amount_float
@@ -463,7 +467,7 @@ class ThorTx:
             r = self.rune_amount
         else:
             # We take price in from the L1 pool, that's why convert_synth_to_pool_name is used
-            pool_info: PoolInfo = pool_map.get(Asset.convert_synth_to_pool_name(self.first_pool))
+            pool_info: PoolInfo = pool_map.get(self.first_pool_l1)
 
             self.asset_per_rune = pool_info.asset_per_rune if pool_info else 0.0
 

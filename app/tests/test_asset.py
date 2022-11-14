@@ -62,11 +62,11 @@ def test_synth_asset_name():
 
 
 def test_convert_synth():
-    p1 = Asset.convert_synth_to_pool_name('ETH/USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48')
+    p1 = Asset.to_L1_pool_name('ETH/USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48')
     assert p1 == 'ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48'
 
-    assert Asset.convert_synth_to_pool_name('ETH.ETH') == 'ETH.ETH'
-    assert Asset.convert_synth_to_pool_name('BTC/BTC') == 'BTC.BTC'
+    assert Asset.to_L1_pool_name('ETH.ETH') == 'ETH.ETH'
+    assert Asset.to_L1_pool_name('BTC/BTC') == 'BTC.BTC'
 
 
 def test_short_asset():

@@ -205,10 +205,11 @@ def parse_thor_pools(thor_pools: List[ThorPool]) -> PoolInfoMap:
     return {
         p.asset: PoolInfo(
             p.asset,
-            p.balance_asset_int, p.balance_rune_int,
+            p.balance_asset_int, p.balance_rune_int,  # fixme: no more _int suffix!
             int(p.lp_units), p.status,
             synth_units=int(p.synth_units),
-            units=int(p.pool_units)
+            units=int(p.pool_units),
+            # todo: parse savers and other things here
         )
         for p in thor_pools
     }

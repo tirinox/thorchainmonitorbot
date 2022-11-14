@@ -29,7 +29,7 @@ class ConstMimirFetcher(BaseFetcher):
         data = await self.deps.midgard_connector.request_random_midgard('/thorchain/constants')
         return ThorConstants.from_json(data)
 
-    async def _request_public_node_client(self, path):
+    async def _request_public_node_client(self, path):  # fixme: adopt aiothornode v0.1
         client = ThorNodePublicClient(self.deps.session, self.deps.thor_env)
         for attempt in range(1, self.ATTEMPTS):
             response = await client.request(path)
