@@ -203,6 +203,24 @@ class ThorTx:
     meta_refund: Optional[ThorMetaRefund] = None
     affiliate_fee: float = 0.0  # (0..1) range
 
+    # extended properties
+
+    # for add, withdraw, donate
+    address_rune: str = ''
+    address_asset: str = ''
+    tx_hash_rune: str = ''
+    tx_hash_asset: str = ''
+    asset_amount: float = 0.0
+    rune_amount: float = 0.0
+
+    # filled by "calc_full_rune_amount"
+    full_rune: float = 0.0  # TX volume
+    asset_per_rune: float = 0.0
+
+    dex_info: SwapInOut = SwapInOut()
+
+    is_savings: bool = False
+
     def sort_inputs_by_first_asset(self):
         self.in_tx.sort(key=lambda sub_tx: (sub_tx.coins[0].asset if sub_tx.coins else ''))
 
@@ -366,56 +384,7 @@ class ThorTx:
     def is_liquidity_type(self):
         return self.type in (ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_ADD_LIQUIDITY)
 
-
-def final_liquidity(txs: List[ThorTx]):
-    lp = 0
-    for tx in txs:
-        if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
-            lp += tx.meta_add.liquidity_units_int
-        elif tx.type == ThorTxType.TYPE_WITHDRAW:
-            lp += tx.meta_withdraw.liquidity_units_int
-    return lp
-
-
-def cut_txs_before_previous_full_withdraw(txs: List[ThorTx]):
-    lp = 0
-    new_txs = []
-    for tx in txs:
-        if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
-            lp += tx.meta_add.liquidity_units_int
-        elif tx.type == ThorTxType.TYPE_WITHDRAW:
-            lp += tx.meta_withdraw.liquidity_units_int
-
-        new_txs.append(tx)
-
-        if lp <= 0:
-            # oops! user has withdrawn all funds completely: resetting the accumulator!
-            new_txs = []
-    return new_txs
-
-
-@dataclass
-class ThorTxExtended(ThorTx):
-    # for add, withdraw, donate
-    address_rune: str = ''
-    address_asset: str = ''
-    tx_hash_rune: str = ''
-    tx_hash_asset: str = ''
-    asset_amount: float = 0.0
-    rune_amount: float = 0.0
-
-    # filled by "calc_full_rune_amount"
-    full_rune: float = 0.0  # TX volume
-    asset_per_rune: float = 0.0
-
-    dex_info: SwapInOut = SwapInOut()
-
-    is_savings: bool = False
-
-    @classmethod
-    def load_from_thor_tx(cls, tx: ThorTx):
-        return cls(**tx.__dict__)
-
+    # extended methods and properties
     def __post_init__(self):
         t = self.type
         if t == ThorTxType.TYPE_ADD_LIQUIDITY or t == ThorTxType.TYPE_DONATE:
@@ -524,9 +493,36 @@ class ThorTxExtended(ThorTx):
         return bool(self.dex_info.swap_in) or bool(self.dex_info.swap_out)
 
 
+def final_liquidity(txs: List[ThorTx]):
+    lp = 0
+    for tx in txs:
+        if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
+            lp += tx.meta_add.liquidity_units_int
+        elif tx.type == ThorTxType.TYPE_WITHDRAW:
+            lp += tx.meta_withdraw.liquidity_units_int
+    return lp
+
+
+def cut_txs_before_previous_full_withdraw(txs: List[ThorTx]):
+    lp = 0
+    new_txs = []
+    for tx in txs:
+        if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
+            lp += tx.meta_add.liquidity_units_int
+        elif tx.type == ThorTxType.TYPE_WITHDRAW:
+            lp += tx.meta_withdraw.liquidity_units_int
+
+        new_txs.append(tx)
+
+        if lp <= 0:
+            # oops! user has withdrawn all funds completely: resetting the accumulator!
+            new_txs = []
+    return new_txs
+
+
 @dataclass
 class EventLargeTransaction:
-    transaction: ThorTxExtended
+    transaction: ThorTx
     usd_per_rune: float
     pool_info: PoolInfo
     cap_info: ThorCapInfo = None

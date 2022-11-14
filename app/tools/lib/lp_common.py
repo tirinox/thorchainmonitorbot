@@ -4,21 +4,16 @@ import os
 from main import App
 from services.dialog.telegram.telegram import telegram_send_message_basic, TG_TEST_USER
 from services.dialog.twitter.twitter_bot import TwitterBotMock
-from services.jobs.fetch.const_mimir import ConstMimirFetcher
-from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
 from services.jobs.fetch.last_block import LastBlockFetcher
-from services.jobs.fetch.node_info import NodeInfoFetcher
-from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.jobs.fetch.runeyield import AsgardConsumerConnectorBase, get_rune_yield_connector
 from services.jobs.fetch.tx import TxFetcher
 from services.lib.constants import NetworkIdents
 from services.lib.delegates import INotified
-from services.lib.midgard.name_service import NameService
 from services.lib.midgard.parser import MidgardParserV2
 from services.lib.texts import sep
 from services.lib.utils import load_json
-from services.models.mimir import MimirHolder
-from services.models.tx import ThorTxExtended
+from services.models.tx import ThorTx
+from services.notify.types.block_notify import LastBlockStore
 
 
 class LpAppFramework(App):
@@ -36,6 +31,7 @@ class LpAppFramework(App):
         d.loc_man.set_name_service(d.name_service)
         d.twitter_bot = TwitterBotMock(d.cfg)
         d.last_block_fetcher = LastBlockFetcher(d)
+        d.last_block_store = LastBlockStore(d)
 
         self.rune_yield: AsgardConsumerConnectorBase
         self.rune_yield_class = rune_yield_class
@@ -71,6 +67,7 @@ class LpAppFramework(App):
         if brief:
             return
 
+        await d.last_block_fetcher.run_once()
         await d.node_info_fetcher.fetch()  # get nodes beforehand
         await d.mimir_const_fetcher.fetch()  # get constants beforehand
         await d.price_pool_fetcher.fetch()
@@ -146,10 +143,10 @@ def load_sample_txs(name):
     data = load_json(name)
     parser = MidgardParserV2(network_id=NetworkIdents.MAINNET)
     r = parser.parse_tx_response(data)
-    return [ThorTxExtended.load_from_thor_tx(tx) for tx in r.txs]
+    return r.txs
 
 
 async def demo_run_txs_example_file(fetcher_tx: TxFetcher, filename):
     txs = load_sample_txs(f'tests/sample_data/{filename}')
-    txs = fetcher_tx.convert_and_merge_simple_txs(txs)
+    txs = fetcher_tx.merge_related_txs(txs)
     await fetcher_tx.pass_data_to_listeners(txs, fetcher_tx)

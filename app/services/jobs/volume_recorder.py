@@ -5,7 +5,7 @@ from services.lib.date_utils import HOUR
 from services.lib.delegates import WithDelegates, INotified
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
-from services.models.tx import ThorTxExtended, ThorTxType
+from services.models.tx import ThorTx, ThorTxType
 
 
 class VolumeRecorder(WithDelegates, INotified, WithLogger):
@@ -20,7 +20,7 @@ class VolumeRecorder(WithDelegates, INotified, WithLogger):
         t = deps.cfg.as_interval('price.volume.record_tolerance', HOUR)
         self._accumulator = Accumulator('Volume', deps.db, tolerance=t)
 
-    async def on_data(self, sender, txs: List[ThorTxExtended]):
+    async def on_data(self, sender, txs: List[ThorTx]):
         current_price = self.deps.price_holder.usd_per_rune or 0.01
         total_volume = 0.0
         for tx in txs:

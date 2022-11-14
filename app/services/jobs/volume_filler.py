@@ -4,7 +4,7 @@ from services.jobs.fetch.pool_price import PoolPriceFetcher
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
-from services.models.tx import ThorTxExtended
+from services.models.tx import ThorTx
 
 
 class VolumeFillerUpdater(WithDelegates, INotified, WithLogger):
@@ -13,13 +13,13 @@ class VolumeFillerUpdater(WithDelegates, INotified, WithLogger):
         self.deps = deps
         self.update_pools_each_time = True
 
-    async def on_data(self, sender, extended_txs: List[ThorTxExtended]):
+    async def on_data(self, sender, extended_txs: List[ThorTx]):
         # update & fill
         await self.fill_volumes(extended_txs)
         # send to the listeners
         await self.pass_data_to_listeners(extended_txs, sender=(sender, self))  # pass it to the next subscribers
 
-    async def fill_volumes(self, txs: List[ThorTxExtended]):
+    async def fill_volumes(self, txs: List[ThorTx]):
         if not txs:
             return
 

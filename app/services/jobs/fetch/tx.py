@@ -11,7 +11,7 @@ from services.lib.date_utils import parse_timespan_to_seconds, now_ts
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id, TxParseResult
 from services.lib.midgard.urlgen import free_url_gen
-from services.models.tx import ThorTx, ThorTxExtended
+from services.models.tx import ThorTx
 
 
 class TxFetcher(BaseFetcher):
@@ -38,7 +38,7 @@ class TxFetcher(BaseFetcher):
         await self.deps.db.get_redis()
 
         txs = await self._fetch_unseen_txs()
-        txs = self.convert_and_merge_simple_txs(txs)
+        txs = self.merge_related_txs(txs)
         if txs:
             self.logger.info(f'New tx to analyze: {len(txs)}')
         return txs
@@ -98,9 +98,8 @@ class TxFetcher(BaseFetcher):
         self.logger.info(f'User {address = } has {len(txs)} tx ({liquidity_change_only = }).')
         return txs
 
-    def convert_and_merge_simple_txs(self, txs) -> List[ThorTxExtended]:
+    def merge_related_txs(self, txs) -> List[ThorTx]:
         txs = self.tx_merger.merge_affiliate_txs(txs)
-        txs = [ThorTxExtended.load_from_thor_tx(tx) for tx in txs]
         return txs
 
     # -------

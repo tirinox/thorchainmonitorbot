@@ -230,7 +230,11 @@ class MimirHolder:
                 try_deducting_mimir_name(name) or name
         )
 
-    def update(self, constants: ThorConstants, mimir: ThorMimir, node_mimir, node_votes: typing.List[MimirVote],
+    def update(self,
+               constants: ThorConstants,
+               mimir: ThorMimir,
+               node_mimir: typing.Dict[str, str],
+               node_votes: typing.List[MimirVote],
                active_nodes: typing.List[NodeInfo]):
 
         self.voting_manager = MimirVoteManager(node_votes, active_nodes, EXCLUDED_VOTE_KEYS)

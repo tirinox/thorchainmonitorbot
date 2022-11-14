@@ -30,7 +30,7 @@ from services.models.pool_info import PoolInfo, PoolChanges, PoolDetailHolder
 from services.models.price import PriceReport, RuneMarketInfo
 from services.models.queue import QueueInfo
 from services.models.transfer import RuneTransfer, RuneCEXFlow
-from services.models.tx import ThorTxExtended, ThorTxType
+from services.models.tx import ThorTx, ThorTxType
 
 
 class RussianLocalization(BaseLocalization):
@@ -291,7 +291,7 @@ class RussianLocalization(BaseLocalization):
     def none_str(x):
         return 'нет' if x is None else x
 
-    def notification_text_large_single_tx(self, tx: ThorTxExtended,
+    def notification_text_large_single_tx(self, tx: ThorTx,
                                           usd_per_rune: float,
                                           pool_info: PoolInfo,
                                           cap: ThorCapInfo = None,
@@ -301,11 +301,17 @@ class RussianLocalization(BaseLocalization):
 
         heading = ''
         if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
-            heading = f'🐳 <b>Добавлена ликвидности</b> 🟢'
+            if tx.is_savings:
+                heading = f'🐳→💰 <b>Добавлено на сберегательный счет</b>'
+            else:
+                heading = f'🐳→⚡ <b>Добавлена ликвидности</b> '
         elif tx.type == ThorTxType.TYPE_WITHDRAW:
-            heading = f'🐳 <b>Выведена ликвидность</b> 🔴'
+            if tx.is_savings:
+                heading = f'🐳←💰 <b>Выведено со сберегательного счета</b>'
+            else:
+                heading = f'🐳←⚡ <b>Выведена ликвидность</b>'
         elif tx.type == ThorTxType.TYPE_DONATE:
-            heading = f'🙌 <b>Безвозмездное добавление в пул</b>'
+            heading = f'🙌 <b>Пожертвование в пул</b>'
         elif tx.type == ThorTxType.TYPE_SWAP:
             heading = f'🐳 <b>Крупный обмен</b> 🔁'
         elif tx.type == ThorTxType.TYPE_REFUND:
@@ -342,11 +348,18 @@ class RussianLocalization(BaseLocalization):
             else:
                 ilp_text = ''
 
+            if tx.is_savings:
+                rune_part = ''
+                asset_part = f"Односторонне {bold(short_money(tx.asset_amount))} {asset}"
+            else:
+                rune_part = f"{bold(short_money(tx.rune_amount))} {self.R} ({rune_side_usd_short}) ↔️ "
+                asset_part = f"{bold(short_money(tx.asset_amount))} {asset} ({asset_side_usd_short})"
+
+            pool_part = f" ({percent_of_pool:.2f}% от всего пула)" if percent_of_pool > 0.01 else ''
+
             content = (
-                f"<b>{pretty_money(tx.rune_amount)} {self.R}</b> ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
-                f"<b>{pretty_money(tx.asset_amount)} {asset}</b> "
-                f"({ap:.0f}% = {asset_side_usd_short})\n"
-                f"Всего: <code>${pretty_money(total_usd_volume)}</code> ({percent_of_pool:.2f}% от всего пула).\n"
+                f"{rune_part}{asset_part}\n"
+                f"Всего: <code>${pretty_money(total_usd_volume)}</code>{pool_part}\n"
                 f"{aff_text}"
                 f"{ilp_text}"
                 f"Глубина пула сейчас: <b>${pretty_money(pool_depth_usd)}</b>.\n"
@@ -1076,7 +1089,8 @@ class RussianLocalization(BaseLocalization):
         return text
 
     TEXT_NODE_MIMIR_VOTING_TITLE = '🏛️ <b>Голосование нод за Мимир</b>\n\n'
-    TEXT_NODE_MIMIR_VOTING_NOTHING_YET = 'Пока нет активных логосований.'
+    TEXT_NODE_MIMIR_VOTING_NOTHING_YET = 'Пока нет активных голосований.'
+    TEXT_NODE_MIMIR_ALREADY_CONSENSUS = '✅ уже консенсус'
 
     def _text_votes_to_pass(self, option):
         show = 0 < option.need_votes_to_pass <= self.NEED_VOTES_TO_PASS_MAX
@@ -1464,13 +1478,17 @@ class RussianLocalization(BaseLocalization):
     # ----- RUNE FLOW ------
 
     def notification_text_cex_flow(self, cex_flow: RuneCEXFlow):
-        return (f'🌬️ <b>Rune потоки с централизованнвых бирж последние сутки</b>\n'
-                f'Завели: {pre(short_money(cex_flow.rune_cex_inflow, postfix=RAIDO_GLYPH))} '
-                f'({short_dollar(cex_flow.in_usd)})\n'
-                f'Вывели: {pre(short_money(cex_flow.rune_cex_outflow, postfix=RAIDO_GLYPH))} '
-                f'({short_dollar(cex_flow.out_usd)})\n'
-                f'Поток: {pre(short_money(cex_flow.rune_cex_netflow, postfix=RAIDO_GLYPH))} '
-                f'({short_dollar(cex_flow.netflow_usd)})')
+        emoji = self.cex_flow_emoji(cex_flow)
+        return (
+            f'🌬️ <b>Rune потоки с централизованнвых бирж последние сутки</b>\n'
+            f'➡️ Завели: {pre(short_money(cex_flow.rune_cex_inflow, postfix=RAIDO_GLYPH))} '
+            f'({short_dollar(cex_flow.in_usd)})\n'
+            f'⬅️ Вывели: {pre(short_money(cex_flow.rune_cex_outflow, postfix=RAIDO_GLYPH))} '
+            f'({short_dollar(cex_flow.out_usd)})\n'
+            f'{emoji} Поток на биржи: '
+            f'{pre(short_money(cex_flow.rune_cex_netflow, postfix=RAIDO_GLYPH, signed=True))} '
+            f'({short_dollar(cex_flow.netflow_usd)})'
+        )
 
     # ----- SUPPLY ------
 

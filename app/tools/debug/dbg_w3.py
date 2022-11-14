@@ -18,7 +18,7 @@ from services.lib.w3.dex_analytics import DexAnalyticsCollector
 from services.lib.w3.erc20_contract import ERC20Contract
 from services.lib.w3.router_contract import TCRouterContract
 from services.lib.w3.token_list import TokenListCached, StaticTokenList
-from services.models.tx import ThorTxExtended, ThorTxType
+from services.models.tx import ThorTx, ThorTxType
 from services.notify.types.tx_notify import SwapTxNotifier
 from tools.lib.lp_common import LpAppFramework
 
@@ -115,7 +115,7 @@ async def demo_decoder(app: LpAppFramework):
 
 class FilterTxMiddleware(WithDelegates, INotified):
     @staticmethod
-    def is_ok_tx(tx: ThorTxExtended):
+    def is_ok_tx(tx: ThorTx):
         assets = (ETH_SYMBOL, AVAX_SYMBOL)
         if inp := tx.first_input_tx:
             if inp.first_asset in assets:
@@ -125,7 +125,7 @@ class FilterTxMiddleware(WithDelegates, INotified):
                 return True
         return False
 
-    async def on_data(self, sender, txs: List[ThorTxExtended]):
+    async def on_data(self, sender, txs: List[ThorTx]):
         txs = [tx for tx in txs if self.is_ok_tx(tx)]
         await self.pass_data_to_listeners(txs, sender)
 
@@ -156,7 +156,7 @@ async def load_dex_txs(app: LpAppFramework):
 
     for tx_hash in tx_hashes:
         r = await fetcher_tx.fetch_one_batch(0, tx_hash)
-        txs = fetcher_tx.convert_and_merge_simple_txs(r.txs)
+        txs = fetcher_tx.merge_related_txs(r.txs)
         await fetcher_tx.pass_data_to_listeners(txs, fetcher_tx)
 
 
@@ -180,7 +180,7 @@ async def demo_find_aff(app: LpAppFramework):
         while True:
             batch = await fetcher_tx.fetch_one_batch(page)
             if batch:
-                txs = fetcher_tx.convert_and_merge_simple_txs(batch.txs)
+                txs = fetcher_tx.merge_related_txs(batch.txs)
                 await vf.on_data(None, txs)
 
                 await dex_ex.on_data(None, txs)

@@ -14,7 +14,7 @@ from services.lib.w3.router_contract import TCRouterContract
 from services.lib.w3.token_list import StaticTokenList, TokenListCached
 from services.lib.w3.token_record import TokenRecord, AmountToken, SwapInOut
 from services.lib.w3.web3_helper import Web3HelperCached
-from services.models.tx import ThorTxExtended, ThorSubTx, ThorTxType
+from services.models.tx import ThorTx, ThorSubTx, ThorTxType
 
 
 class AggregatorSingleChain:
@@ -129,7 +129,7 @@ class AggregatorDataExtractor(WithLogger, INotified, WithDelegates):
         except (ValueError, AttributeError, TypeError, LookupError):
             self.logger.exception(f'Error decoding Swap {tag} @ {tx_hash} ({chain})')
 
-    async def on_data(self, sender, txs: List[ThorTxExtended]):
+    async def on_data(self, sender, txs: List[ThorTx]):
         for tx in txs:
             if tx.type == ThorTxType.TYPE_SWAP:
                 in_amount = await self._try_detect_aggregator(tx.first_input_tx, is_in=True)

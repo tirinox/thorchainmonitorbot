@@ -24,7 +24,7 @@ from services.models.node_info import NodeSetChanges, NodeVersionConsensus, Node
 from services.models.pool_info import PoolDetailHolder, PoolChanges, PoolInfo
 from services.models.price import RuneMarketInfo, PriceReport
 from services.models.transfer import RuneCEXFlow, RuneTransfer
-from services.models.tx import ThorTxExtended, ThorTxType
+from services.models.tx import ThorTx, ThorTxType
 from services.notify.channel import MESSAGE_SEPARATOR
 
 
@@ -76,7 +76,7 @@ class TwitterEnglishLocalization(BaseLocalization):
     def format_op_amount(amt):
         return short_money(amt)
 
-    def notification_text_large_single_tx(self, tx: ThorTxExtended, usd_per_rune: float,
+    def notification_text_large_single_tx(self, tx: ThorTx, usd_per_rune: float,
                                           pool_info: PoolInfo,
                                           cap: ThorCapInfo = None,
                                           name_map: NameMap = None):
@@ -86,11 +86,17 @@ class TwitterEnglishLocalization(BaseLocalization):
         heading = ''
 
         if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
-            heading = f'🐳 Added liquidity 🟢'
+            if tx.is_savings:
+                heading = f'🐳→💰 Add to savings vault'
+            else:
+                heading = f'🐳→⚡ Add liquidity'
         elif tx.type == ThorTxType.TYPE_WITHDRAW:
-            heading = f'🐳 Withdrew liquidity 🔴'
+            if tx.is_savings:
+                heading = f'🐳←💰 Withdraw from savings vault'
+            else:
+                heading = f'🐳←⚡ Withdraw liquidity'
         elif tx.type == ThorTxType.TYPE_DONATE:
-            heading = f'🐳 Donated to the pool 🙌'
+            heading = f'🐳 Donation to the pool 🙌'
         elif tx.type == ThorTxType.TYPE_SWAP:
             heading = f'🐳 Swap 🔁'
         elif tx.type == ThorTxType.TYPE_REFUND:
@@ -128,11 +134,18 @@ class TwitterEnglishLocalization(BaseLocalization):
             else:
                 ilp_text = ''
 
+            if tx.is_savings:
+                rune_part = ''
+                asset_part = f"Single-sided {short_money(tx.asset_amount)} {asset}"
+            else:
+                rune_part = f"{short_money(tx.rune_amount)} {self.R} ({rune_side_usd_short}) ↔️ "
+                asset_part = f"{short_money(tx.asset_amount)} {asset} ({asset_side_usd_short})"
+
+            pool_part = f" ({percent_of_pool:.2f}% of pool)" if percent_of_pool > 0.01 else ''
+
             content += (
-                f"{short_money(tx.rune_amount)} {self.R} ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
-                f"{short_money(tx.asset_amount)} {asset} "
-                f"({ap:.0f}% = {asset_side_usd_short})\n"
-                f"Total: {short_dollar(total_usd_volume)} ({percent_of_pool:.2f}% of pool).\n"
+                f"{rune_part}{asset_part}\n"
+                f"Total: {short_dollar(total_usd_volume)}{pool_part}\n"
                 f"{aff_text}"
                 f"{ilp_text}"
                 f"The depth is {short_dollar(pool_depth_usd)} now."
@@ -720,13 +733,14 @@ class TwitterEnglishLocalization(BaseLocalization):
         return f'[{caption}]'
 
     def notification_text_cex_flow(self, cex_flow: RuneCEXFlow):
+        emoji = self.cex_flow_emoji(cex_flow)
         return (
             f'🌬️ Rune CEX flow last 24 hours\n'
-            f'Inflow: {short_money(cex_flow.rune_cex_inflow, postfix=RAIDO_GLYPH)} '
+            f'➡️ Inflow: {short_money(cex_flow.rune_cex_inflow, postfix=RAIDO_GLYPH)} '
             f'({short_dollar(cex_flow.in_usd)})\n'
-            f'Outflow: {short_money(cex_flow.rune_cex_outflow, postfix=RAIDO_GLYPH)} '
+            f'⬅️ Outflow: {short_money(cex_flow.rune_cex_outflow, postfix=RAIDO_GLYPH)} '
             f'({short_dollar(cex_flow.out_usd)})\n'
-            f'Netflow: {short_money(cex_flow.rune_cex_netflow, postfix=RAIDO_GLYPH)} '
+            f'{emoji} Netflow: {short_money(cex_flow.rune_cex_netflow, postfix=RAIDO_GLYPH, signed=True)} '
             f'({short_dollar(cex_flow.netflow_usd)})'
         )
 

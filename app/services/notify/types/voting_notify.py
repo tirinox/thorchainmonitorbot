@@ -11,7 +11,7 @@ from services.models.mimir import MimirVoteManager, MimirVoteOption, MimirVoting
 
 
 class VotingNotifier(INotified, WithDelegates):
-    IGNORE_IF_THERE_ARE_MORE_UPDATES_THAN = 5
+    IGNORE_IF_THERE_ARE_MORE_UPDATES_THAN = 6
 
     def __init__(self, deps: DepContainer):
         super().__init__()
@@ -64,8 +64,8 @@ class VotingNotifier(INotified, WithDelegates):
             prev_voting = prev_state.get(voting.key)
             if not prev_voting:  # ignore for the first time to avoid spamming
                 continue
-            if voting.passed:
-                continue  # do not show progress on the voting which has already passed and adopted
+            # if voting.passed:
+            #     continue  # do not show progress on the voting which has already passed and adopted
             for option in voting.options.values():
                 prev_progress = prev_voting.get(str(option.value))  # str(.), that's because JSON keys are strings
 

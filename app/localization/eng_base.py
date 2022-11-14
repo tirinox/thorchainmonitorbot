@@ -34,7 +34,7 @@ from services.models.pool_info import PoolInfo, PoolChanges, PoolDetailHolder
 from services.models.price import PriceReport, RuneMarketInfo
 from services.models.queue import QueueInfo
 from services.models.transfer import RuneTransfer, RuneCEXFlow
-from services.models.tx import ThorTxExtended, ThorTxType, ThorSubTx
+from services.models.tx import ThorTx, ThorTxType, ThorSubTx
 from services.notify.channel import Messengers
 
 CREATOR_TG = '@account1242'
@@ -371,12 +371,12 @@ class BaseLocalization(ABC):  # == English
             result += self.TEXT_MORE_TXS.format(n=extra_n)
         return result
 
-    def link_to_explorer_user_address_for_tx(self, tx: ThorTxExtended, name_map):
+    def link_to_explorer_user_address_for_tx(self, tx: ThorTx, name_map):
         address, _ = tx.sender_address_and_chain
         return self.link_to_address(tx.sender_address, name_map)  # Chains.THOR is always here, that is deliberate!
 
     @staticmethod
-    def lp_tx_calculations(usd_per_rune, pool_info: PoolInfo, tx: ThorTxExtended):
+    def lp_tx_calculations(usd_per_rune, pool_info: PoolInfo, tx: ThorTx):
         total_usd_volume = tx.full_rune * usd_per_rune
         pool_depth_usd = pool_info.usd_depth(usd_per_rune) if pool_info else 0.0
 
@@ -384,8 +384,8 @@ class BaseLocalization(ABC):  # == English
         rp, ap = tx.symmetry_rune_vs_asset()
         rune_side_usd = tx.rune_amount * usd_per_rune
 
-        rune_side_usd_short = short_money(rune_side_usd)
-        asset_side_usd_short = short_money(total_usd_volume - rune_side_usd)
+        rune_side_usd_short = short_dollar(rune_side_usd)
+        asset_side_usd_short = short_dollar(total_usd_volume - rune_side_usd)
 
         chain = Asset(tx.first_pool).chain
 
@@ -407,7 +407,7 @@ class BaseLocalization(ABC):  # == English
             chain = Chains.AVAX
         return f'{self.format_op_amount(a.amount)} {chain}.{a.token.symbol}'
 
-    def format_swap_route(self, tx: ThorTxExtended, usd_per_rune):
+    def format_swap_route(self, tx: ThorTx, usd_per_rune):
         inputs = tx.get_asset_summary(in_only=True)
         outputs = tx.get_asset_summary(out_only=True)
 
@@ -446,12 +446,12 @@ class BaseLocalization(ABC):  # == English
     def tx_add_date_if_older_than(self):
         return self.cfg.as_interval('tx.add_date_if_older_than', '3h')
 
-    def tx_date(self, tx: ThorTxExtended):
+    def tx_date(self, tx: ThorTx):
         now = now_ts()
         if tx.date_timestamp < now - self.tx_add_date_if_older_than():
             return self.format_time_ago(now - tx.date_timestamp)
 
-    def notification_text_large_single_tx(self, tx: ThorTxExtended,
+    def notification_text_large_single_tx(self, tx: ThorTx,
                                           usd_per_rune: float,
                                           pool_info: PoolInfo,
                                           cap: ThorCapInfo = None,
@@ -461,9 +461,15 @@ class BaseLocalization(ABC):  # == English
 
         heading = ''
         if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
-            heading = f'🐳 <b>Added liquidity</b> 🟢'
+            if tx.is_savings:
+                heading = f'🐳→💰 <b>Add to savings vault</b>'
+            else:
+                heading = f'🐳→⚡ <b>Add liquidity</b> '
         elif tx.type == ThorTxType.TYPE_WITHDRAW:
-            heading = f'🐳 <b>Withdrew liquidity</b> 🔴'
+            if tx.is_savings:
+                heading = f'🐳←💰 <b>Withdraw from savings vault</b>'
+            else:
+                heading = f'🐳←⚡ <b>Withdraw liquidity</b>'
         elif tx.type == ThorTxType.TYPE_DONATE:
             heading = f'🙌 <b>Donation to the pool</b>'
         elif tx.type == ThorTxType.TYPE_SWAP:
@@ -502,11 +508,18 @@ class BaseLocalization(ABC):  # == English
             else:
                 ilp_text = ''
 
+            if tx.is_savings:
+                rune_part = ''
+                asset_part = f"Single-sided {bold(short_money(tx.asset_amount))} {asset}"
+            else:
+                rune_part = f"{bold(short_money(tx.rune_amount))} {self.R} ({rune_side_usd_short}) ↔️ "
+                asset_part = f"{bold(short_money(tx.asset_amount))} {asset} ({asset_side_usd_short})"
+
+            pool_part = f" ({percent_of_pool:.2f}% of pool)" if percent_of_pool > 0.01 else ''
+
             content = (
-                f"{bold(short_money(tx.rune_amount))} {self.R} ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
-                f"{bold(short_money(tx.asset_amount))} {asset} "
-                f"({ap:.0f}% = {asset_side_usd_short})\n"
-                f"Total: {code(short_dollar(total_usd_volume))} ({percent_of_pool:.2f}% of the whole pool).\n"
+                f"{rune_part}{asset_part}\n"
+                f"Total: {code(short_dollar(total_usd_volume))}{pool_part}\n"
                 f"{aff_text}"
                 f"{ilp_text}"
                 f"Pool depth is {bold(short_dollar(pool_depth_usd))} now."
@@ -1303,7 +1316,7 @@ class BaseLocalization(ABC):  # == English
         if m.source == m.SOURCE_ADMIN:
             mark = '🔹'
         elif m.source == m.SOURCE_NODE:
-            mark = '🔸'
+            mark = '🔸 (consensus)'
         elif m.automatic:
             mark = '▪️'
         else:
@@ -1360,6 +1373,8 @@ class BaseLocalization(ABC):  # == English
     TEXT_NODE_MIMIR_VOTING_TITLE = '🏛️ <b>Node-Mimir voting</b>\n\n'
     TEXT_NODE_MIMIR_VOTING_NOTHING_YET = 'No active voting yet.'
 
+    TEXT_NODE_MIMIR_ALREADY_CONSENSUS = ' ✅ already consensus'
+
     def _text_mimir_voting_options(self, holder: MimirHolder,
                                    voting: MimirVoting, options,
                                    triggered_option_value=None):
@@ -1367,21 +1382,28 @@ class BaseLocalization(ABC):  # == English
         name = holder.pretty_name(voting.key)
 
         n_options = len(options)
+        entry = holder.get_entry(voting.key)
 
         for i, option in enumerate(options, start=1):
+            already_consensus = entry and entry.real_value == option.value and entry.source == entry.SOURCE_NODE
+
             pb = self.make_voting_progress_bar(option, voting)
-            percent = format_percent(option.number_votes, voting.active_nodes)
-            extra = self._text_votes_to_pass(option)
+
+            extra = f' {pb}{self._text_votes_to_pass(option)}' \
+                if not already_consensus else self.TEXT_NODE_MIMIR_ALREADY_CONSENSUS
+
             pretty_value = self.format_mimir_value(voting.key, str(option.value))
             mark = '👏' if option.value == triggered_option_value else ''
             counter = f"{i}. " if n_options > 1 else ''
+
             item_name = name
+            percent = format_percent(option.number_votes, voting.active_nodes)
             if self.TEXT_DECORATION_ENABLED:
                 pretty_value = code(pretty_value)
                 percent = bold(percent)
                 item_name = bold(name) if i == 1 else name
             message += f"{counter}{item_name} ➔ {pretty_value}: {percent}" \
-                       f" ({option.number_votes}/{voting.active_nodes}){mark}{pb} {extra}\n"
+                       f" ({option.number_votes}/{voting.active_nodes}){mark}{extra}\n"
         return message
 
     def text_node_mimir_voting(self, holder: MimirHolder):
@@ -1410,7 +1432,7 @@ class BaseLocalization(ABC):  # == English
                                                 triggered_option: MimirVoteOption):
         message = self.TEXT_MIMIR_VOTING_PROGRESS_TITLE
 
-        # get up to 3 top options, if there are more options in the voting, add "there are N more...
+        # get up to 3 top options, if there are more options in the voting, add "there are N more..."
         n_options = min(3, len(voting.options))
         message += self._text_mimir_voting_options(holder, voting, voting.top_options[:n_options],
                                                    triggered_option.value if triggered_option else None)
@@ -1591,7 +1613,7 @@ class BaseLocalization(ABC):  # == English
         else:
             text += f'You did not add anything to the watch list. Click {ital(self.BUTTON_NOP_ADD_NODES)} first 👇.'
 
-        text += f'\n\nLast signal from ThorMon was {ital(format_time_ago(last_signal_ago))} '
+        text += f'\n\nLast signal from the network was {ital(format_time_ago(last_signal_ago))} '
         if last_signal_ago > 60:
             text += '🔴'
         elif last_signal_ago > 20:
@@ -1913,13 +1935,19 @@ class BaseLocalization(ABC):  # == English
 
     # ----- FLOW ------
 
+    @staticmethod
+    def cex_flow_emoji(cex_flow: RuneCEXFlow):
+        limit = 1000.0
+        return '🟢' if cex_flow.netflow_usd < -limit else ('🔴' if cex_flow.netflow_usd > limit else '⚪️')
+
     def notification_text_cex_flow(self, cex_flow: RuneCEXFlow):
+        emoji = self.cex_flow_emoji(cex_flow)
         return (f'🌬️ <b>Rune CEX flow last 24 hours</b>\n'
-                f'Inflow: {pre(short_money(cex_flow.rune_cex_inflow, postfix=RAIDO_GLYPH))} '
+                f'➡️ Inflow: {pre(short_money(cex_flow.rune_cex_inflow, postfix=RAIDO_GLYPH))} '
                 f'({short_dollar(cex_flow.in_usd)})\n'
-                f'Outflow: {pre(short_money(cex_flow.rune_cex_outflow, postfix=RAIDO_GLYPH))} '
+                f'⬅️ Outflow: {pre(short_money(cex_flow.rune_cex_outflow, postfix=RAIDO_GLYPH))} '
                 f'({short_dollar(cex_flow.out_usd)})\n'
-                f'Netflow: {pre(short_money(cex_flow.rune_cex_netflow, postfix=RAIDO_GLYPH))} '
+                f'{emoji} Netflow: {pre(short_money(cex_flow.rune_cex_netflow, postfix=RAIDO_GLYPH, signed=True))} '
                 f'({short_dollar(cex_flow.netflow_usd)})')
 
     # ----- SUPPLY ------

@@ -4,7 +4,7 @@
 log_level: INFO
 sleep_before_start: 3
 
-sentry:  # (!) new
+sentry:
   url: ""
 
 
@@ -223,7 +223,7 @@ tx:
 
   announce_pending_after_blocks: 500
 
-  add_date_if_older_than: 2h  # (!) new
+  add_date_if_older_than: 2h
 
   exclamation:
     fee_usd_limit: 3000
@@ -249,10 +249,14 @@ tx:
       ilp_paid_usd_greater: 5000
       affiliate_fee_usd_greater: 1000
 
-    dedicated_fetcher:  # (!) new
+    dedicated_fetcher:
       enabled: True
       period: 10m
 
+    savers: # (!) new
+      enabled: true
+      min_usd_total: 100
+      curve_mult: 0.00008
 
   swap:
     enabled: true

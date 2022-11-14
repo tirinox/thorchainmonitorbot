@@ -7,7 +7,7 @@ from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 from services.lib.w3.token_record import AmountToken
 from services.models.time_series import TimeSeries
-from services.models.tx import ThorTxExtended
+from services.models.tx import ThorTx
 
 
 class DexReportEntry(NamedTuple):
@@ -64,7 +64,7 @@ class DexAnalyticsCollector(WithLogger, INotified):
         if tx_hash:
             await self.deps.db.redis.sadd(self.KEY_DEX_COUNTED_TX_SET, tx_hash)
 
-    async def on_data(self, sender, extended_txs: List[ThorTxExtended]):
+    async def on_data(self, sender, extended_txs: List[ThorTx]):
         for tx in extended_txs:
             if tx.dex_aggregator_used and tx.full_rune > 0:
                 tx_hash = tx.tx_hash
