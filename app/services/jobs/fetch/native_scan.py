@@ -28,9 +28,9 @@ class NativeScannerBlock(BaseFetcher):
         super().__init__(deps, sleep_period)
         self._last_block = last_block
         self._this_block_attempts = 0
-        self._thor = ThorNodePublicClient(self.deps.session, self.deps.thor_env)
+        self._thor = ThorNodePublicClient(self.deps.session, self.deps.thor_env)  # fixme: adopt aiothornode v.0.1
 
-    async def _fetch_last_block(self):
+    async def _fetch_last_block(self):  # fixme
         result = await self._thor.request('/status?', is_rpc=True)
         if result:
             return int(safe_get(result, 'result', 'sync_info', 'latest_block_height'))
@@ -56,7 +56,7 @@ class NativeScannerBlock(BaseFetcher):
             return True
 
     async def fetch_block_results(self, block_no) -> Optional[BlockResult]:
-        result = await self._thor.request(f'/block_results?height={block_no}', is_rpc=True)
+        result = await self._thor.request(f'/block_results?height={block_no}', is_rpc=True)  # fixme
         if result is not None:
             if self._get_is_error(result):
                 return
@@ -75,7 +75,7 @@ class NativeScannerBlock(BaseFetcher):
             self.logger.warn(f'Error fetching block txs results #{block_no}.')
 
     async def fetch_block_txs(self, block_no) -> Optional[List[NativeThorTx]]:
-        result = await self.deps.thor_connector.query_tendermint_block_raw(block_no)
+        result = await self.deps.thor_connector.query_tendermint_block_raw(block_no)  # fixme??1
         if result is not None:
             if self._get_is_error(result):
                 return

@@ -94,9 +94,9 @@ class PoolPriceFetcher(BaseFetcher):
     async def _fetch_current_pool_data_from_thornodes(self, height=None) -> PoolInfoMap:
         for attempt in range(1, self.max_attempts):
             try:
-                thor_pools = await self.deps.thor_connector.query_pools(height, consensus=self.use_thor_consensus)
+                thor_pools = await self.deps.thor_connector.query_pools(height)  # fixme
                 if not thor_pools:
-                    thor_pools = await self.deps.thor_connector_backup.query_pools(height, consensus=False)
+                    thor_pools = await self.deps.thor_connector_backup.query_pools(height)
                 return parse_thor_pools(thor_pools)
             except (TypeError, IndexError) as e:
                 self.logger.error(f'thor_connector.query_pools failed! Attempt: #{attempt}, err: {e}')
