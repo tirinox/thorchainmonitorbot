@@ -263,7 +263,7 @@ class Asset:
         return self.native_pool_name
 
     @classmethod
-    def convert_synth_to_pool_name(cls, asset: str):
+    def to_L1_pool_name(cls, asset: str):
         return cls.from_string(asset).native_pool_name
 
 
