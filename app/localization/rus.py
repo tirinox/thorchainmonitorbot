@@ -350,14 +350,16 @@ class RussianLocalization(BaseLocalization):
 
             if tx.is_savings:
                 rune_part = ''
-                asset_part = f"{bold(short_money(tx.asset_amount))} {asset}"
+                asset_part = f"Односторонне {bold(short_money(tx.asset_amount))} {asset}"
             else:
-                rune_part = f"{bold(short_money(tx.rune_amount))} {self.R} ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
-                asset_part = f"{bold(short_money(tx.asset_amount))} {asset} ({ap:.0f}% = {asset_side_usd_short})"
+                rune_part = f"{bold(short_money(tx.rune_amount))} {self.R} ({rune_side_usd_short}) ↔️ "
+                asset_part = f"{bold(short_money(tx.asset_amount))} {asset} ({asset_side_usd_short})"
+
+            pool_part = f" ({percent_of_pool:.2f}% от всего пула)" if percent_of_pool > 0.01 else ''
 
             content = (
                 f"{rune_part}{asset_part}\n"
-                f"Всего: <code>${pretty_money(total_usd_volume)}</code> ({percent_of_pool:.2f}% от всего пула)\n"
+                f"Всего: <code>${pretty_money(total_usd_volume)}</code>{pool_part}\n"
                 f"{aff_text}"
                 f"{ilp_text}"
                 f"Глубина пула сейчас: <b>${pretty_money(pool_depth_usd)}</b>.\n"

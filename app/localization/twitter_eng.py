@@ -136,14 +136,16 @@ class TwitterEnglishLocalization(BaseLocalization):
 
             if tx.is_savings:
                 rune_part = ''
-                asset_part = f"{short_money(tx.asset_amount)} {asset}"
+                asset_part = f"Single-sided {short_money(tx.asset_amount)} {asset}"
             else:
-                rune_part = f"{short_money(tx.rune_amount)} {self.R} ({rp:.0f}% = {rune_side_usd_short}) ↔️ "
-                asset_part = f"{short_money(tx.asset_amount)} {asset} ({ap:.0f}% = {asset_side_usd_short})"
+                rune_part = f"{short_money(tx.rune_amount)} {self.R} ({rune_side_usd_short}) ↔️ "
+                asset_part = f"{short_money(tx.asset_amount)} {asset} ({asset_side_usd_short})"
+
+            pool_part = f" ({percent_of_pool:.2f}% of pool)" if percent_of_pool > 0.01 else ''
 
             content += (
                 f"{rune_part}{asset_part}\n"
-                f"Total: {short_dollar(total_usd_volume)} ({percent_of_pool:.2f}% of pool)\n"
+                f"Total: {short_dollar(total_usd_volume)}{pool_part}\n"
                 f"{aff_text}"
                 f"{ilp_text}"
                 f"The depth is {short_dollar(pool_depth_usd)} now."
