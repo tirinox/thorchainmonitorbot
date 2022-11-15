@@ -88,6 +88,10 @@ async def demo_aggr_aff(app):
     q_path = free_url_gen.url_for_tx(0, 50,
                                      txid='A3C95CE6146AA7A4651F34E12E1DAAB65AF399563CA7CBB3DC51EF5B623B0270')
     await present_one_aff_tx(app, q_path)
+async def demo_test_2(app):
+    q_path = free_url_gen.url_for_tx(0, 50,
+                                     txid='7D72CBE466F8E817B700D11D0EDB8FE6183B8DD13912F0810FFD87BE708363E9')
+    await present_one_aff_tx(app, q_path)
 
 
 async def midgard_test_donate(lp_app, mdg, tx_parser):
@@ -191,6 +195,7 @@ async def main():
     # await demo_test_savers_vaults(lp_app)
     # await demo_aggr_aff(lp_app)
     await demo_test_aff_add_liq(lp_app)
+    await demo_test_2(lp_app)
 
 
 if __name__ == '__main__':

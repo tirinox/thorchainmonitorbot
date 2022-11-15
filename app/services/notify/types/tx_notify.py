@@ -62,7 +62,9 @@ class GenericTxNotifier(INotified, WithDelegates):
         pools = tx.pools
         if not pools:
             # in case of refund maybe
-            pools = [Asset.to_L1_pool_name(tx.first_input_tx.first_asset)]
+            pools = [tx.first_input_tx.first_asset]
+
+        pools = [Asset.to_L1_pool_name(p) for p in pools]
 
         pool_info_list = list(filter(bool, (self.deps.price_holder.pool_info_map.get(pool) for pool in pools)))
         if not pool_info_list:
