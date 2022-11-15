@@ -50,4 +50,4 @@ class MidgardConnector:
             return self.ERROR_RESPONSE
 
     async def request(self, path: str):
-        return self._request_json_from_midgard_by_ip(self.public_url, path)
+        return await self._request_json_from_midgard_by_ip(self.public_url, path)

@@ -209,7 +209,10 @@ class NameService(WithLogger):
         Returns an array of THORNames associated with the given address
         """
         results = await self.midgard.request(f'/v2/thorname/rlookup/{address}')
-        return results or []
+        if results == self.midgard.ERROR_RESPONSE or not results:
+            return []
+        else:
+            return results
 
     async def call_api_get_thornames_owned_by_address(self, thor_address: str):
         """
