@@ -155,7 +155,7 @@ class PoolInfo:
     def how_much_savings_you_can_add(self, max_synth_per_asset_ratio=0.3):
         cap = self.get_synth_cap_in_asset(max_synth_per_asset_ratio)
         filled = self.savers_depth / cap
-        return filled * self.balance_asset
+        return thor_to_float(filled * self.balance_asset)
 
 
 @dataclass

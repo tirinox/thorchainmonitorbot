@@ -514,7 +514,7 @@ class BaseLocalization(ABC):  # == English
                 asset_part = f"Single-sided {bold(short_money(tx.asset_amount))} {asset}"
                 amount_more, asset_more, saver_pb = self.get_savers_limits(pool_info, usd_per_rune, mimir)
                 pool_depth_part = f'Savers cap is {saver_pb} full. ' \
-                                  f'You can add {pre(amount_more)} {pre(asset_more)} more.'
+                                  f'You can add {pre(short_money(amount_more))} {pre(asset_more)} more.'
                 cap = None  # it will stop standard LP cap from being shown
             else:
                 rune_part = f"{bold(short_money(tx.rune_amount))} {self.R} ({rune_side_usd_short}) ↔️ "
