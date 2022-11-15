@@ -2,7 +2,7 @@ import sys
 from typing import Any
 
 import yaml
-from aiothornode.env import ThorEnvironment, TEST_NET_ENVIRONMENT_MULTI_1, MCCN, MULTICHAIN_STAGENET_ENVIRONMENT
+from aiothornode.env import ThorEnvironment, MAINNET, MULTICHAIN_STAGENET_ENVIRONMENT
 from dotenv import load_dotenv
 
 from services.lib.constants import NetworkIdents
@@ -109,9 +109,9 @@ class Config(SubConfig):
         network_id = self.network_id
 
         if network_id == NetworkIdents.TESTNET_MULTICHAIN:
-            ref_env = TEST_NET_ENVIRONMENT_MULTI_1.copy()
+            raise Exception('No more Testnet! Please use the Stagenet')
         elif network_id in (NetworkIdents.CHAOSNET_MULTICHAIN, NetworkIdents.MAINNET):
-            ref_env = MCCN.copy()
+            ref_env = MAINNET.copy()
         elif network_id == NetworkIdents.STAGENET_MULTICHAIN:
             ref_env = MULTICHAIN_STAGENET_ENVIRONMENT.copy()
         else:

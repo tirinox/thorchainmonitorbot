@@ -149,6 +149,14 @@ class PoolInfo:
     def total_liquidity(self):
         return 2.0 * thor_to_float(self.balance_rune) * self.rune_price
 
+    def get_synth_cap_in_asset(self, max_synth_per_asset_ratio=0.3):
+        return self.balance_asset * max_synth_per_asset_ratio
+
+    def how_much_savings_you_can_add(self, max_synth_per_asset_ratio=0.3):
+        cap = self.get_synth_cap_in_asset(max_synth_per_asset_ratio)
+        filled = self.savers_depth / cap
+        return thor_to_float(filled * self.balance_asset)
+
 
 @dataclass
 class LPPosition:
@@ -205,11 +213,12 @@ def parse_thor_pools(thor_pools: List[ThorPool]) -> PoolInfoMap:
     return {
         p.asset: PoolInfo(
             p.asset,
-            p.balance_asset_int, p.balance_rune_int,  # fixme: no more _int suffix!
+            p.balance_asset, p.balance_rune,
             int(p.lp_units), p.status,
             synth_units=int(p.synth_units),
             units=int(p.pool_units),
-            # todo: parse savers and other things here
+            savers_depth=p.savers_depth,
+            savers_units=p.savers_units,
         )
         for p in thor_pools
     }

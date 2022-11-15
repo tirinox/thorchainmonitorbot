@@ -10,7 +10,7 @@ from proto.thor_types import THORName
 from services.jobs.fetch.circulating import SupplyEntry, ThorRealms
 from services.lib.config import Config
 from services.lib.constants import rune_origin, thor_to_float, THOR_BLOCK_TIME, DEFAULT_CEX_NAME, DEFAULT_CEX_BASE_ASSET
-from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE, format_time_ago_short, DAY
+from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE, DAY
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
     get_explorer_url_for_node, get_pool_url, get_thoryield_address, get_ip_info_link
 from services.lib.midgard.name_service import NameService, add_thor_suffix, NameMap
@@ -455,7 +455,8 @@ class BaseLocalization(ABC):  # == English
                                           usd_per_rune: float,
                                           pool_info: PoolInfo,
                                           cap: ThorCapInfo = None,
-                                          name_map: NameMap = None):
+                                          name_map: NameMap = None,
+                                          mimir: MimirHolder = None):
         (ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short,
          total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
@@ -511,9 +512,14 @@ class BaseLocalization(ABC):  # == English
             if tx.is_savings:
                 rune_part = ''
                 asset_part = f"Single-sided {bold(short_money(tx.asset_amount))} {asset}"
+                amount_more, asset_more, saver_pb = self.get_savers_limits(pool_info, usd_per_rune, mimir)
+                pool_depth_part = f'Savers cap is {saver_pb} full. ' \
+                                  f'You can add {pre(short_money(amount_more))} {pre(asset_more)} more.'
+                cap = None  # it will stop standard LP cap from being shown
             else:
                 rune_part = f"{bold(short_money(tx.rune_amount))} {self.R} ({rune_side_usd_short}) ↔️ "
                 asset_part = f"{bold(short_money(tx.asset_amount))} {asset} ({asset_side_usd_short})"
+                pool_depth_part = f'Pool depth is {bold(short_dollar(pool_depth_usd))} now.'
 
             pool_part = f" ({percent_of_pool:.2f}% of pool)" if percent_of_pool > 0.01 else ''
 
@@ -522,7 +528,7 @@ class BaseLocalization(ABC):  # == English
                 f"Total: {code(short_dollar(total_usd_volume))}{pool_part}\n"
                 f"{aff_text}"
                 f"{ilp_text}"
-                f"Pool depth is {bold(short_dollar(pool_depth_usd))} now."
+                f"{pool_depth_part}"
             )
         elif tx.type == ThorTxType.TYPE_SWITCH:
             # [Amt] Rune [Blockchain: ERC20/BEP2] -> [Amt] THOR Rune ($usd)
@@ -577,10 +583,10 @@ class BaseLocalization(ABC):  # == English
             if out_links:
                 blockchain_components.append('Outputs: ' + out_links)
 
-        comp_joined = " / ".join(blockchain_components)
+        blockchain_components_str = " / ".join(blockchain_components)
         msg = f"{heading}\n" \
-              f"{content}\n" \
-              f"{comp_joined}"
+              f"{blockchain_components_str}\n" \
+              f"{content}"
 
         if cap:
             msg += (
@@ -591,6 +597,13 @@ class BaseLocalization(ABC):  # == English
             )
 
         return msg.strip()
+
+    def get_savers_limits(self, pool: PoolInfo, usd_per_rune, mimir: MimirHolder):
+        max_synth_per_asset_ratio = mimir.get_max_synth_per_asset_depth()
+        cap = pool.get_synth_cap_in_asset(max_synth_per_asset_ratio)
+        amount_more = pool.how_much_savings_you_can_add(max_synth_per_asset_ratio)
+        saver_pb = self._cap_progress_bar(ThorCapInfo(cap, pool.savers_depth, usd_per_rune))
+        return amount_more, Asset(pool.asset).name, saver_pb
 
     # ------- QUEUE -------
 
@@ -1316,7 +1329,7 @@ class BaseLocalization(ABC):  # == English
         if m.source == m.SOURCE_ADMIN:
             mark = '🔹'
         elif m.source == m.SOURCE_NODE:
-            mark = '🔸 (consensus)'
+            mark = '🔸 (consensus) '
         elif m.automatic:
             mark = '▪️'
         else:

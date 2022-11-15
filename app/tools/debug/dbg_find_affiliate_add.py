@@ -18,7 +18,7 @@ async def my_test_midgard1():
         txs = []
         for page in range(10):
             q_path = free_url_gen.url_for_tx(page * 50, 50, types='addLiquidity')
-            j = await mdg.request_random_midgard(q_path)
+            j = await mdg.request(q_path)
             txs += tx_parser.parse_tx_response(j).txs
 
         txs_merged = merge_affiliate_txs(txs)

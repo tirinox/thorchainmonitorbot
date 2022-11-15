@@ -77,6 +77,12 @@ async def demo_test_savers_vaults(app):
                                      txid='190E56A5818FFF01035F28985E369669822CF56DAF95815212BB42BDB3306813')
     await present_one_aff_tx(app, q_path, find_aff=False)
 
+async def demo_test_aff_add_liq(app):
+    q_path = free_url_gen.url_for_tx(0, 50,
+                                     tx_type=ThorTxType.TYPE_ADD_LIQUIDITY,
+                                     txid='CBC44B4E2A6332692BD1A3CCE7817F0CBE8AB2CFDC10470327B3057FA1CD8017')
+    await present_one_aff_tx(app, q_path)
+
 
 async def demo_aggr_aff(app):
     q_path = free_url_gen.url_for_tx(0, 50,
@@ -86,7 +92,7 @@ async def demo_aggr_aff(app):
 
 async def midgard_test_donate(lp_app, mdg, tx_parser):
     q_path = free_url_gen.url_for_tx(0, 10, types='donate')
-    j = await mdg.request_random_midgard(q_path)
+    j = await mdg.request(q_path)
     txs = tx_parser.parse_tx_response(j).txs
     await send_tx_notification(lp_app, random.sample(txs, 1)[0])
 
@@ -99,7 +105,7 @@ async def present_one_aff_tx(lp_app, q_path, find_aff=False):
 
 async def load_tx(lp_app, mdg, q_path, find_aff=False):
     tx_parser = get_parser_by_network_id(lp_app.deps.cfg.network_id)
-    j = await mdg.request_random_midgard(q_path)
+    j = await mdg.request(q_path)
     txs = tx_parser.parse_tx_response(j).txs
     txs_merged = AffiliateTXMerger().merge_affiliate_txs(txs)
     tx = next(tx for tx in txs_merged if tx.affiliate_fee > 0) if find_aff else txs_merged[0]
@@ -118,10 +124,13 @@ async def send_tx_notification(lp_app, ex_tx, loc: BaseLocalization = None):
     loc = loc or lp_app.deps.loc_man.default
     nm = NameMap({}, {})
     await lp_app.send_test_tg_message(loc.notification_text_large_single_tx(ex_tx, rune_price, pool_info,
-                                                                            name_map=nm))
+                                                                            name_map=nm,
+                                                                            mimir=lp_app.deps.mimir_const_holder))
     sep()
     tw_loc: BaseLocalization = lp_app.deps.loc_man[Language.ENGLISH_TWITTER]
-    print(tw_loc.notification_text_large_single_tx(ex_tx, rune_price, pool_info, name_map=nm))
+    print(tw_loc.notification_text_large_single_tx(ex_tx, rune_price, pool_info,
+                                                   name_map=nm,
+                                                   mimir=lp_app.deps.mimir_const_holder))
 
 
 async def refund_full_rune(app):
@@ -179,8 +188,9 @@ async def main():
     # await refund_full_rune(lp_app)
     # await demo_midgard_test_large_ilp(lp_app)
     # await demo_full_tx_pipeline(lp_app)
-    await demo_test_savers_vaults(lp_app)
+    # await demo_test_savers_vaults(lp_app)
     # await demo_aggr_aff(lp_app)
+    await demo_test_aff_add_liq(lp_app)
 
 
 if __name__ == '__main__':

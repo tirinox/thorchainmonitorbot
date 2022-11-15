@@ -2,7 +2,6 @@ import asyncio
 from itertools import cycle
 from typing import List, NamedTuple
 
-from aiothornode.nodeclient import ThorNodePublicClient
 from aiothornode.types import ThorConstants, ThorMimir
 
 from services.jobs.fetch.base import BaseFetcher
@@ -26,13 +25,13 @@ class ConstMimirFetcher(BaseFetcher):
         super().__init__(deps, sleep_period)
 
     async def fetch_constants_midgard(self) -> ThorConstants:
-        data = await self.deps.midgard_connector.request_random_midgard('/thorchain/constants')
+        data = await self.deps.midgard_connector.request('/thorchain/constants')
         return ThorConstants.from_json(data)
 
-    async def _request_public_node_client(self, path):  # fixme: adopt aiothornode v0.1
-        client = ThorNodePublicClient(self.deps.session, self.deps.thor_env)
+    async def _request_public_node_client(self, path):
+        # todo: move attempt logic to aiothornode!
         for attempt in range(1, self.ATTEMPTS):
-            response = await client.request(path)
+            response = await self.deps.thor_connector.pub_client.request(path)
             if response is not None:
                 return response
             else:

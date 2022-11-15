@@ -22,7 +22,7 @@ class CapInfoFetcher(BaseFetcher):
     ]
 
     async def get_network_info(self):
-        self.last_network_info = await self.deps.midgard_connector.request_random_midgard(free_url_gen.url_network())
+        self.last_network_info = await self.deps.midgard_connector.request(free_url_gen.url_network())
         return self.last_network_info
 
     @staticmethod

@@ -19,7 +19,7 @@ class NetworkStatisticsFetcher(BaseFetcher):
         super().__init__(deps, sleep_period)
 
     async def _get_stats(self, ns: NetworkStats):
-        j = await self.deps.midgard_connector.request_random_midgard(free_url_gen.url_stats())
+        j = await self.deps.midgard_connector.request(free_url_gen.url_stats())
 
         ns.usd_per_rune = float(j.get('runePriceUSD', self.deps.price_holder.usd_per_rune))
 
@@ -40,7 +40,7 @@ class NetworkStatisticsFetcher(BaseFetcher):
         ns.total_rune_pooled = thor_to_float(j['runeDepth'])
 
     async def _get_network(self, ns: NetworkStats):
-        j = await self.deps.midgard_connector.request_random_midgard(free_url_gen.url_network())
+        j = await self.deps.midgard_connector.request(free_url_gen.url_network())
 
         ns.active_nodes = int(j['activeNodeCount'])
         ns.standby_nodes = int(j['standbyNodeCount'])
@@ -84,7 +84,7 @@ class NetworkStatisticsFetcher(BaseFetcher):
                 ns.next_pool_to_activate = None
 
     async def _get_swap_stats(self, ns: NetworkStats):
-        j = await self.deps.midgard_connector.request_random_midgard(free_url_gen.url_for_swap_history(days=1))
+        j = await self.deps.midgard_connector.request(free_url_gen.url_for_swap_history(days=1))
         swap_meta = SwapHistoryResponse.from_json(j).meta
         ns.synth_volume_24h = thor_to_float(swap_meta.synth_mint_volume) + thor_to_float(swap_meta.synth_redeem_volume)
         ns.synth_op_count = swap_meta.synth_mint_count + swap_meta.synth_redeem_count

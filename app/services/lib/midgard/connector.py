@@ -1,9 +1,5 @@
-import asyncio
-from typing import List
-
 import aiohttp
 from aiothornode.connector import ThorConnector
-from aiothornode.nodeclient import ThorNodeClient
 
 from services.lib.utils import class_logger
 
@@ -53,25 +49,5 @@ class MidgardConnector:
             self.logger.error(f'Midgard ({ip_address}/{path}) exception: {e!r}.')
             return self.ERROR_RESPONSE
 
-    async def request_random_midgard(self, path: str):
-        clients: List[ThorNodeClient] = await self.thor.get_random_clients(self.retries)
-        if not clients and not self.public_url:
-            self.logger.error(f'No THOR clients connected for path "{path}"')
-            return None
-
-        tasks = []
-        if self.use_nodes:
-            tasks += [self._request_json_from_midgard_by_ip(c.node_ip, path) for c in clients]
-        if self.public_url:
-            tasks += [self._request_json_from_midgard_by_ip(self.public_url, path)]
-
-        if not tasks:
-            raise FileNotFoundError('no Midgard data source defined!')
-
-        for f in asyncio.as_completed(tasks):
-            result = await f
-            if result and result != self.ERROR_RESPONSE:
-                return result
-
-        self.logger.error(f'No good response for path "{path}"')
-        return None
+    async def request(self, path: str):
+        return await self._request_json_from_midgard_by_ip(self.public_url, path)

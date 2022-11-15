@@ -94,7 +94,7 @@ class PoolPriceFetcher(BaseFetcher):
     async def _fetch_current_pool_data_from_thornodes(self, height=None) -> PoolInfoMap:
         for attempt in range(1, self.max_attempts):
             try:
-                thor_pools = await self.deps.thor_connector.query_pools(height)  # fixme
+                thor_pools = await self.deps.thor_connector.query_pools(height)
                 if not thor_pools:
                     thor_pools = await self.deps.thor_connector_backup.query_pools(height)
                 return parse_thor_pools(thor_pools)
@@ -169,7 +169,7 @@ class PoolPriceFetcher(BaseFetcher):
 
         timestamp = calendar.timegm(day.timetuple())
         q_path = self.path_for_historical_pool_state(pool, timestamp)
-        raw_data = await self.deps.midgard_connector.request_random_midgard(q_path)
+        raw_data = await self.deps.midgard_connector.request(q_path)
 
         pools_info = self.parser.parse_historic_pool_items(raw_data)
         if not pools_info:
@@ -197,7 +197,7 @@ class PoolInfoFetcherMidgard(BaseFetcher):
         self.last_raw_result = None
 
     async def get_pool_info_midgard(self) -> Optional[PoolInfoMap]:
-        raw_data = await self.deps.midgard_connector.request_random_midgard(free_url_gen.url_pool_info())
+        raw_data = await self.deps.midgard_connector.request(free_url_gen.url_pool_info())
         if not raw_data:
             return
         self.last_raw_result = raw_data

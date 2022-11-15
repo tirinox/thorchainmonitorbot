@@ -34,7 +34,7 @@ class RuneMarketInfoFetcher(WithLogger):
         # self.get_rune_market_info = a_result_cached(ttl=self._cache_time)(self.get_rune_market_info)
 
     async def total_pooled_rune(self):
-        j = await self.midgard.request_random_midgard(free_url_gen.url_network())
+        j = await self.midgard.request(free_url_gen.url_network())
         total_pooled_rune = j.get('totalStaked', 0)
         if not total_pooled_rune:
             total_pooled_rune = j.get('totalPooledRune', 0)

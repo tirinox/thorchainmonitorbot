@@ -295,7 +295,8 @@ class RussianLocalization(BaseLocalization):
                                           usd_per_rune: float,
                                           pool_info: PoolInfo,
                                           cap: ThorCapInfo = None,
-                                          name_map: NameMap = None):
+                                          name_map: NameMap = None,
+                                          mimir: MimirHolder = None):
         (ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short,
          total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
@@ -351,9 +352,14 @@ class RussianLocalization(BaseLocalization):
             if tx.is_savings:
                 rune_part = ''
                 asset_part = f"Односторонне {bold(short_money(tx.asset_amount))} {asset}"
+                amount_more, asset_more, saver_pb = self.get_savers_limits(pool_info, usd_per_rune, mimir)
+                pool_depth_part = f'Сберегательные хранилища заполнены на {saver_pb}. ' \
+                                  f'Вы можете добавить {pre(short_money(amount_more))} {pre(asset_more)} еще.'
+                cap = None  # it will stop standard LP cap from being shown
             else:
                 rune_part = f"{bold(short_money(tx.rune_amount))} {self.R} ({rune_side_usd_short}) ↔️ "
                 asset_part = f"{bold(short_money(tx.asset_amount))} {asset} ({asset_side_usd_short})"
+                pool_depth_part = f'Глубина пула {bold(short_dollar(pool_depth_usd))} сейчас.'
 
             pool_part = f" ({percent_of_pool:.2f}% от всего пула)" if percent_of_pool > 0.01 else ''
 
@@ -362,7 +368,7 @@ class RussianLocalization(BaseLocalization):
                 f"Всего: <code>${pretty_money(total_usd_volume)}</code>{pool_part}\n"
                 f"{aff_text}"
                 f"{ilp_text}"
-                f"Глубина пула сейчас: <b>${pretty_money(pool_depth_usd)}</b>.\n"
+                f"{pool_depth_part}\n"
             )
         elif tx.type == ThorTxType.TYPE_SWITCH:
             # [Amt] Rune [Blockchain: ERC20/BEP2] -> [Amt] THOR Rune ($usd)
@@ -418,7 +424,10 @@ class RussianLocalization(BaseLocalization):
             if out_links:
                 blockchain_components.append('Выходы: ' + out_links)
 
-        msg = f"{heading}\n{content}\n" + " / ".join(blockchain_components)
+        blockchain_components_str = " / ".join(blockchain_components)
+        msg = f"{heading}\n" \
+              f"{blockchain_components_str}\n" \
+              f"{content}"
 
         if cap:
             msg += (

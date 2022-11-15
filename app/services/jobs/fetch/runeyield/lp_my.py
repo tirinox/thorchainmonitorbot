@@ -117,7 +117,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         return liq_report
 
     async def get_my_pools(self, address) -> List[str]:
-        j = await self.deps.midgard_connector.request_random_midgard(
+        j = await self.deps.midgard_connector.request(
             free_url_gen.url_for_address_pool_membership(address)
         )
         if j == self.deps.midgard_connector.ERROR_RESPONSE:
@@ -177,11 +177,6 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
     async def _fetch_historical_pool_states(self, txs: List[ThorTx]) -> HeightToAllPools:
         heights = list(set(tx.height_int for tx in txs))
-        thor_conn = self.deps.thor_connector
-
-        # make sure, that connections are fresh, in order not to update it at all the height simultaneously
-        await thor_conn.get_random_clients()
-
         ppf = self.deps.price_pool_fetcher
         tasks = [ppf.get_current_pool_data_full(h, caching=True) for h in heights]
         pool_states = await asyncio.gather(*tasks)

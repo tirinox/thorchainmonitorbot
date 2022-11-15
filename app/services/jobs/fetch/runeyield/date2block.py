@@ -20,16 +20,12 @@ class DateToBlockMapper:
         self.iterative_algo_max_steps = 10
         self.iterative_algo_tolerance = THOR_BLOCK_TIME * 1.6
 
-    async def get_last_blocks(self) -> Dict[str, ThorLastBlock]:
-        return await self.deps.last_block_fetcher.fetch()
-
     async def get_last_thorchain_block(self) -> int:
-        last_blocks = await self.get_last_blocks()
+        last_blocks = await self.deps.last_block_fetcher.fetch()
         last_block: ThorLastBlock = list(last_blocks.values())[0]
         return last_block.thorchain
 
     async def get_timestamp_by_block_height(self, block_height) -> float:
-        # fixme: use ThorNodePublicClient
         block_info = await self.deps.thor_connector.query_tendermint_block_raw(block_height)
         if not block_info or 'result' not in block_info:
             return -1

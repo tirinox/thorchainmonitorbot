@@ -193,7 +193,7 @@ class NameService(WithLogger):
         """
         Returns an array of chains and their addresses associated with the given THORName
         """
-        results = await self.midgard.request_random_midgard(f'/v2/thorname/lookup/{name}')
+        results = await self.midgard.request(f'/v2/thorname/lookup/{name}')
         if results:
             return THORName(
                 name=name,
@@ -208,15 +208,18 @@ class NameService(WithLogger):
         """
         Returns an array of THORNames associated with the given address
         """
-        results = await self.midgard.request_random_midgard(f'/v2/thorname/rlookup/{address}')
-        return results or []
+        results = await self.midgard.request(f'/v2/thorname/rlookup/{address}')
+        if results == self.midgard.ERROR_RESPONSE or not results:
+            return []
+        else:
+            return results
 
     async def call_api_get_thornames_owned_by_address(self, thor_address: str):
         """
         Returns an array of THORNames owned by the address.
         The address is not necessarily an associated address for those thornames.
         """
-        results = await self.midgard.request_random_midgard(f'/v2/thorname/owner/{thor_address}')
+        results = await self.midgard.request(f'/v2/thorname/owner/{thor_address}')
         return results or []
 
 

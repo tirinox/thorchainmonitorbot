@@ -3,18 +3,11 @@ import logging
 from copy import deepcopy
 
 import aiohttp
-from aiogram import Bot, Dispatcher
-from aiogram.types import ParseMode
-from aiothornode.connector import ThorConnector
 
-from localization.manager import LocalizationManager
 from services.jobs.fetch.pool_price import PoolPriceFetcher, PoolInfoFetcherMidgard
-from services.lib.config import Config
 from services.lib.constants import DOGE_SYMBOL
-from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo
-from services.models.price import LastPriceHolder
 from services.notify.broadcast import Broadcaster
 from services.notify.types.pool_churn_notify import PoolChurnNotifier
 from tools.lib.lp_common import LpAppFramework
@@ -24,8 +17,6 @@ async def send_to_channel_test_message(d: DepContainer):
     d.broadcaster = Broadcaster(d)
 
     async with aiohttp.ClientSession() as d.session:
-        d.thor_connector = ThorConnector(d.cfg.get_thor_env_by_network_id(), d.session)
-        d.price_holder = LastPriceHolder()
         ppf = PoolInfoFetcherMidgard(d, 100)
         notifier_pool_churn = PoolChurnNotifier(d)
 

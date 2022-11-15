@@ -76,10 +76,12 @@ class TwitterEnglishLocalization(BaseLocalization):
     def format_op_amount(amt):
         return short_money(amt)
 
-    def notification_text_large_single_tx(self, tx: ThorTx, usd_per_rune: float,
+    def notification_text_large_single_tx(self, tx: ThorTx,
+                                          usd_per_rune: float,
                                           pool_info: PoolInfo,
                                           cap: ThorCapInfo = None,
-                                          name_map: NameMap = None):
+                                          name_map: NameMap = None,
+                                          mimir: MimirHolder = None):
         (ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short,
          total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
@@ -137,9 +139,13 @@ class TwitterEnglishLocalization(BaseLocalization):
             if tx.is_savings:
                 rune_part = ''
                 asset_part = f"Single-sided {short_money(tx.asset_amount)} {asset}"
+                amount_more, asset_more, saver_pb = self.get_savers_limits(pool_info, usd_per_rune, mimir)
+                pool_depth_part = f'Savers cap is {saver_pb} full. ' \
+                                  f'You can add {short_money(amount_more)} {asset_more} more.'
             else:
                 rune_part = f"{short_money(tx.rune_amount)} {self.R} ({rune_side_usd_short}) ↔️ "
                 asset_part = f"{short_money(tx.asset_amount)} {asset} ({asset_side_usd_short})"
+                pool_depth_part = f'Pool depth is {short_dollar(pool_depth_usd)} now.'
 
             pool_part = f" ({percent_of_pool:.2f}% of pool)" if percent_of_pool > 0.01 else ''
 
@@ -148,7 +154,7 @@ class TwitterEnglishLocalization(BaseLocalization):
                 f"Total: {short_dollar(total_usd_volume)}{pool_part}\n"
                 f"{aff_text}"
                 f"{ilp_text}"
-                f"The depth is {short_dollar(pool_depth_usd)} now."
+                f"{pool_depth_part}"
             )
         elif tx.type == ThorTxType.TYPE_SWITCH:
             # [Amt] Rune [Blockchain: ERC20/BEP2] -> [Amt] THOR Rune ($usd)
@@ -200,7 +206,8 @@ class TwitterEnglishLocalization(BaseLocalization):
                 f"liq. fee: {short_dollar(l_fee_usd)}{slip_mark}"
             )
 
-        msg = f"{heading}\n{content}"
+        msg = f"{heading}\n" \
+              f"{content}"
 
         return msg.strip()
 
