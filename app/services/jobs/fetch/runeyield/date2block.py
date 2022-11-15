@@ -29,7 +29,6 @@ class DateToBlockMapper:
         return last_block.thorchain
 
     async def get_timestamp_by_block_height(self, block_height) -> float:
-        # fixme: use ThorNodePublicClient
         block_info = await self.deps.thor_connector.query_tendermint_block_raw(block_height)
         if not block_info or 'result' not in block_info:
             return -1

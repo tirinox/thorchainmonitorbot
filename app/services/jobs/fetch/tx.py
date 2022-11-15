@@ -70,7 +70,7 @@ class TxFetcher(BaseFetcher):
             if not self.progress_tracker:
                 self.logger.info(f"start fetching user's tx: {q_path}")
 
-            j = await self.deps.midgard_connector.request_random_midgard(q_path)
+            j = await self.deps.midgard_connector.request(q_path)
             new_txs = self.tx_parser.parse_tx_response(j)
 
             self._update_progress(new_txs.tx_count, new_txs.total_count)
@@ -108,7 +108,7 @@ class TxFetcher(BaseFetcher):
         q_path = free_url_gen.url_for_tx(page * self.tx_per_batch, self.tx_per_batch, txid=txid, tx_type=tx_types)
 
         try:
-            j = await self.deps.midgard_connector.request_random_midgard(q_path)
+            j = await self.deps.midgard_connector.request(q_path)
             return self.tx_parser.parse_tx_response(j)
         except (ContentTypeError, AttributeError):
             return None

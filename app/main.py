@@ -131,8 +131,6 @@ class App:
         thor_env_backup = d.cfg.get_thor_env_by_network_id(backup=True)
         d.thor_connector_backup = ThorConnector(thor_env_backup, d.session)
 
-        await d.thor_connector.update_nodes()  # fixme
-
         cfg: SubConfig = d.cfg.get('thor.midgard')
         d.midgard_connector = MidgardConnector(
             d.session,

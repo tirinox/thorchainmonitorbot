@@ -86,7 +86,7 @@ async def demo_aggr_aff(app):
 
 async def midgard_test_donate(lp_app, mdg, tx_parser):
     q_path = free_url_gen.url_for_tx(0, 10, types='donate')
-    j = await mdg.request_random_midgard(q_path)
+    j = await mdg.request(q_path)
     txs = tx_parser.parse_tx_response(j).txs
     await send_tx_notification(lp_app, random.sample(txs, 1)[0])
 
@@ -99,7 +99,7 @@ async def present_one_aff_tx(lp_app, q_path, find_aff=False):
 
 async def load_tx(lp_app, mdg, q_path, find_aff=False):
     tx_parser = get_parser_by_network_id(lp_app.deps.cfg.network_id)
-    j = await mdg.request_random_midgard(q_path)
+    j = await mdg.request(q_path)
     txs = tx_parser.parse_tx_response(j).txs
     txs_merged = AffiliateTXMerger().merge_affiliate_txs(txs)
     tx = next(tx for tx in txs_merged if tx.affiliate_fee > 0) if find_aff else txs_merged[0]
