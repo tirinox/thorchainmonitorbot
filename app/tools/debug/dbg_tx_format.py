@@ -77,6 +77,12 @@ async def demo_test_savers_vaults(app):
                                      txid='190E56A5818FFF01035F28985E369669822CF56DAF95815212BB42BDB3306813')
     await present_one_aff_tx(app, q_path, find_aff=False)
 
+async def demo_test_aff_add_liq(app):
+    q_path = free_url_gen.url_for_tx(0, 50,
+                                     tx_type=ThorTxType.TYPE_ADD_LIQUIDITY,
+                                     txid='CBC44B4E2A6332692BD1A3CCE7817F0CBE8AB2CFDC10470327B3057FA1CD8017')
+    await present_one_aff_tx(app, q_path)
+
 
 async def demo_aggr_aff(app):
     q_path = free_url_gen.url_for_tx(0, 50,
@@ -182,8 +188,9 @@ async def main():
     # await refund_full_rune(lp_app)
     # await demo_midgard_test_large_ilp(lp_app)
     # await demo_full_tx_pipeline(lp_app)
-    await demo_test_savers_vaults(lp_app)
+    # await demo_test_savers_vaults(lp_app)
     # await demo_aggr_aff(lp_app)
+    await demo_test_aff_add_liq(lp_app)
 
 
 if __name__ == '__main__':

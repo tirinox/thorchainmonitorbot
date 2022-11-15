@@ -71,6 +71,8 @@ class AffiliateTXMerger(WithLogger):
             result_tx.meta_swap = ThorMetaSwap.merge_two(result_tx.meta_swap, other_tx.meta_swap)
             result_tx.meta_add = ThorMetaAddLiquidity.merge_two(result_tx.meta_add, other_tx.meta_add)
 
+            result_tx.__post_init__()  # explicit call to refresh computed fields
+
         except (IndexError, TypeError, ValueError, AssertionError):
             logging.error(f'Cannot merge: {result_tx} and {other_tx}!')
 
