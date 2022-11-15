@@ -206,7 +206,8 @@ class TwitterEnglishLocalization(BaseLocalization):
                 f"liq. fee: {short_dollar(l_fee_usd)}{slip_mark}"
             )
 
-        msg = f"{heading}\n{content}"
+        msg = f"{heading}\n" \
+              f"{content}"
 
         return msg.strip()
 

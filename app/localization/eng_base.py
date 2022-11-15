@@ -583,10 +583,10 @@ class BaseLocalization(ABC):  # == English
             if out_links:
                 blockchain_components.append('Outputs: ' + out_links)
 
-        comp_joined = " / ".join(blockchain_components)
+        blockchain_components_str = " / ".join(blockchain_components)
         msg = f"{heading}\n" \
-              f"{content}\n" \
-              f"{comp_joined}"
+              f"{blockchain_components_str}\n" \
+              f"{content}"
 
         if cap:
             msg += (
