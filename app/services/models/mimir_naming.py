@@ -3,6 +3,8 @@ from services.lib.utils import invert_dict
 MIMIR_KEY_KILL_SWITCH_START = 'KILLSWITCHSTART'
 MIMIR_KEY_KILL_SWITCH_DURATION = 'KillSwitchDuration'.upper()
 
+MIMIR_KEY_MAX_SYNTH_PER_ASSET_DEPTH = 'MAXSYNTHPERASSETDEPTH'
+
 BLOCK_CONSTANTS = {
     name.upper() for name in [
         'BlocksPerYear', 'FundMigrationInterval', 'ChurnInterval', 'ChurnRetryInterval',

@@ -149,8 +149,13 @@ class PoolInfo:
     def total_liquidity(self):
         return 2.0 * thor_to_float(self.balance_rune) * self.rune_price
 
-    def get_synth_cap_in_asset(self, max_synth_per_asset_ratio):
+    def get_synth_cap_in_asset(self, max_synth_per_asset_ratio=0.3):
         return self.balance_asset * max_synth_per_asset_ratio
+
+    def how_much_savings_you_can_add(self, max_synth_per_asset_ratio=0.3):
+        cap = self.get_synth_cap_in_asset(max_synth_per_asset_ratio)
+        filled = self.savers_depth / cap
+        return filled * self.balance_asset
 
 
 @dataclass

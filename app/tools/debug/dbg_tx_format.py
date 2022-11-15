@@ -118,10 +118,13 @@ async def send_tx_notification(lp_app, ex_tx, loc: BaseLocalization = None):
     loc = loc or lp_app.deps.loc_man.default
     nm = NameMap({}, {})
     await lp_app.send_test_tg_message(loc.notification_text_large_single_tx(ex_tx, rune_price, pool_info,
-                                                                            name_map=nm))
+                                                                            name_map=nm,
+                                                                            mimir=lp_app.deps.mimir_const_holder))
     sep()
     tw_loc: BaseLocalization = lp_app.deps.loc_man[Language.ENGLISH_TWITTER]
-    print(tw_loc.notification_text_large_single_tx(ex_tx, rune_price, pool_info, name_map=nm))
+    print(tw_loc.notification_text_large_single_tx(ex_tx, rune_price, pool_info,
+                                                   name_map=nm,
+                                                   mimir=lp_app.deps.mimir_const_holder))
 
 
 async def refund_full_rune(app):

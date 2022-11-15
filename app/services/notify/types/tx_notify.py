@@ -54,7 +54,8 @@ class GenericTxNotifier(INotified, WithDelegates):
             await self.pass_data_to_listeners(EventLargeTransaction(
                 tx, usd_per_rune,
                 pool_info,
-                cap_info=(cap_info if has_liquidity and is_last else None)
+                cap_info=(cap_info if has_liquidity and is_last else None),
+                mimir=self.deps.mimir_const_holder
             ))
 
     def _get_min_usd_depth(self, tx: ThorTx, usd_per_rune):

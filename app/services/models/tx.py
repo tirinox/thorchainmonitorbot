@@ -9,6 +9,7 @@ from services.lib.texts import sum_and_str
 from services.lib.w3.token_record import SwapInOut
 from services.models.cap_info import ThorCapInfo
 from services.models.lp_info import LPAddress
+from services.models.mimir import MimirHolder
 from services.models.pool_info import PoolInfo, PoolInfoMap
 
 
@@ -530,3 +531,4 @@ class EventLargeTransaction:
     usd_per_rune: float
     pool_info: PoolInfo
     cap_info: ThorCapInfo = None
+    mimir: MimirHolder = None

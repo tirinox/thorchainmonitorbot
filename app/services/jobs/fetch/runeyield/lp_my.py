@@ -177,8 +177,6 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
     async def _fetch_historical_pool_states(self, txs: List[ThorTx]) -> HeightToAllPools:
         heights = list(set(tx.height_int for tx in txs))
-        thor_conn = self.deps.thor_connector
-
         ppf = self.deps.price_pool_fetcher
         tasks = [ppf.get_current_pool_data_full(h, caching=True) for h in heights]
         pool_states = await asyncio.gather(*tasks)
