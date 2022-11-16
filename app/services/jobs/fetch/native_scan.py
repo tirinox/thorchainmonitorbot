@@ -29,7 +29,7 @@ class NativeScannerBlock(BaseFetcher):
         self._this_block_attempts = 0
 
     async def _fetch_last_block(self):
-        result = await self.deps.thor_connector.pub_client.request('/status?', is_rpc=True)
+        result = await self.deps.thor_connector.query_native_status_raw()
         if result:
             return int(safe_get(result, 'result', 'sync_info', 'latest_block_height'))
 
@@ -54,7 +54,7 @@ class NativeScannerBlock(BaseFetcher):
             return True
 
     async def fetch_block_results(self, block_no) -> Optional[BlockResult]:
-        result = await self.deps.thor_connector.pub_client.request(f'/block_results?height={block_no}', is_rpc=True)
+        result = await self.deps.thor_connector.query_native_block_results_raw(block_no)
         if result is not None:
             if self._get_is_error(result):
                 return
