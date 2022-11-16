@@ -61,6 +61,7 @@ from services.notify.types.pool_churn_notify import PoolChurnNotifier
 from services.notify.types.price_div_notify import PriceDivergenceNotifier
 from services.notify.types.price_notify import PriceNotifier
 from services.notify.types.queue_notify import QueueNotifier, QueueStoreMetrics
+from services.notify.types.savers_stats_notify import SaversStatsNotifier
 from services.notify.types.stats_notify import NetworkStatsNotifier
 from services.notify.types.supply_notify import SupplyNotifier
 from services.notify.types.transfer_notify import RuneMoveNotifier
@@ -315,6 +316,7 @@ class App:
             d.pool_fetcher.add_subscriber(notifier_pool_churn)
 
         if d.cfg.get('best_pools.enabled', True):
+            # note: we don't use "pool_fetcher" here since PoolInfoFetcherMidgard gives richer info including APY
             period = parse_timespan_to_seconds(d.cfg.best_pools.fetch_period)
             fetcher_pool_info = PoolInfoFetcherMidgard(d, period)
             d.best_pools_notifier = BestPoolsNotifier(d)
@@ -360,6 +362,10 @@ class App:
         if d.cfg.get('supply.enabled', True):
             supply_notifier = SupplyNotifier(d)
             d.pool_fetcher.add_subscriber(supply_notifier)
+
+        if d.cfg.get('saver_stats.enabled', True):
+            ssc = SaversStatsNotifier(d)
+            d.pool_fetcher.add_subscriber(ssc)
 
         # --- BOTS
 
