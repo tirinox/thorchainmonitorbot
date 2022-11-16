@@ -86,7 +86,7 @@ async def test_pool_consistency():
 
     async with lpgen:
         # 1. new_info is from JSON file (contains just pool list)
-        ppf_mock = lpgen.deps.price_pool_fetcher = MockPPF(lpgen.deps)
+        ppf_mock = lpgen.deps.pool_fetcher = MockPPF(lpgen.deps)
         nsf = NetworkStatisticsFetcher(lpgen.deps)
         new_info = await nsf.fetch()
 
@@ -110,7 +110,7 @@ async def test_generic_pool_message():
 
     if not new_info:
         async with lpgen:
-            lpgen.deps.price_pool_fetcher = MockPPF(lpgen.deps)
+            lpgen.deps.pool_fetcher = MockPPF(lpgen.deps)
             nsf = NetworkStatisticsFetcher(lpgen.deps)
             new_info = await nsf.fetch()
 

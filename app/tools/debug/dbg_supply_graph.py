@@ -56,7 +56,7 @@ async def get_supply_pic(app):
 async def debug_get_rune_market_data(app):
     data = await get_killed_rune(app)
     killed_rune = KilledRuneEntry(**data)
-    await app.deps.price_pool_fetcher.fetch()
+    await app.deps.pool_fetcher.fetch()
     rune_market_info: RuneMarketInfo = await app.deps.rune_market_fetcher.get_rune_market_info()
     ns_raw = await get_network_stats(app)
     ns = NetworkStats(**ns_raw)
@@ -102,7 +102,7 @@ async def run():
 
         await d.mimir_const_fetcher.fetch()  # get constants beforehand
 
-        await app.deps.price_pool_fetcher.fetch()
+        await app.deps.pool_fetcher.fetch()
 
         # pic, _ = await get_supply_pic(app)
         # save_and_show_supply_pic(pic, show=True)

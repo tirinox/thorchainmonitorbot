@@ -120,7 +120,7 @@ async def load_tx(lp_app, mdg, q_path, find_aff=False):
 
 
 async def send_tx_notification(lp_app, ex_tx, loc: BaseLocalization = None):
-    await lp_app.deps.price_pool_fetcher.run_once()
+    await lp_app.deps.pool_fetcher.run_once()
     pool = ex_tx.first_pool_l1
     pool_info: PoolInfo = lp_app.deps.price_holder.pool_info_map.get(pool)
     full_rune = ex_tx.calc_full_rune_amount(lp_app.deps.price_holder.pool_info_map)

@@ -177,7 +177,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
     async def _fetch_historical_pool_states(self, txs: List[ThorTx]) -> HeightToAllPools:
         heights = list(set(tx.height_int for tx in txs))
-        ppf = self.deps.price_pool_fetcher
+        ppf = self.deps.pool_fetcher
         tasks = [ppf.get_current_pool_data_full(h, caching=True) for h in heights]
         pool_states = await asyncio.gather(*tasks)
         return dict(zip(heights, pool_states))
@@ -420,7 +420,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         self.last_block = await self.get_last_thorchain_block()
         results = {}
         now = datetime.datetime.now()
-        ppf = self.deps.price_pool_fetcher
+        ppf = self.deps.pool_fetcher
         for pool, pool_txs in tx_by_pool_map.items():
             day_to_units = self._pool_units_by_day(pool_txs, days=days)  # List of (day_no, timestamp, units)
 

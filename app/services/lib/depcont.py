@@ -48,7 +48,7 @@ class DepContainer:
 
     rune_market_fetcher = None  # type: 'RuneMarketInfoFetcher'
 
-    price_pool_fetcher = None  # type: 'PoolFetcher'
+    pool_fetcher = None  # type: 'PoolFetcher'
     node_info_fetcher = None  # type: 'NodeInfoFetcher'
     mimir_const_fetcher = None  # type: 'ConstMimirFetcher'
     last_block_fetcher = None  # type: 'LastBlockFetcher'

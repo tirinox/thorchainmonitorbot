@@ -79,7 +79,7 @@ class App:
         d.node_info_fetcher = NodeInfoFetcher(d)
         d.mimir_const_fetcher = ConstMimirFetcher(d)
         d.mimir_const_holder = MimirHolder()
-        d.price_pool_fetcher = PoolFetcher(d)
+        d.pool_fetcher = PoolFetcher(d)
 
         self._init_settings()
         self._init_messaging()
@@ -160,7 +160,7 @@ class App:
             await fill_rune_price_from_gecko(d.db)
 
         # update pools for bootstrap (other components need them)
-        current_pools = await d.price_pool_fetcher.reload_global_pools()
+        current_pools = await d.pool_fetcher.reload_global_pools()
         if not current_pools:
             logging.error("No pool data at startup! Halt it!")
             exit(-1)
@@ -170,7 +170,7 @@ class App:
 
         tasks = [
             # mandatory tasks:
-            d.price_pool_fetcher,
+            d.pool_fetcher,
             d.mimir_const_fetcher
         ]
 
@@ -300,15 +300,15 @@ class App:
 
         if d.cfg.get('price.enabled', True):
             notifier_price = PriceNotifier(d)
-            d.price_pool_fetcher.add_subscriber(notifier_price)
+            d.pool_fetcher.add_subscriber(notifier_price)
 
             if d.cfg.get('price.divergence.enabled', True):
                 price_div_notifier = PriceDivergenceNotifier(d)
-                d.price_pool_fetcher.add_subscriber(price_div_notifier)
+                d.pool_fetcher.add_subscriber(price_div_notifier)
 
             if d.cfg.get('price.divergence.personal.enabled', True):
                 personal_price_div_notifier = PersonalPriceDivergenceNotifier(d)
-                d.price_pool_fetcher.add_subscriber(personal_price_div_notifier)
+                d.pool_fetcher.add_subscriber(personal_price_div_notifier)
 
         # todo: join PoolChurnNotifier with PoolInfoFetcherMidgard
         if d.cfg.get('pool_churn.enabled', True):
@@ -363,7 +363,7 @@ class App:
 
         if d.cfg.get('supply.enabled', True):
             supply_notifier = SupplyNotifier(d)
-            d.price_pool_fetcher.add_subscriber(supply_notifier)
+            d.pool_fetcher.add_subscriber(supply_notifier)
 
         # --- BOTS
 

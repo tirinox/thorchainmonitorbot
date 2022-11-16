@@ -70,7 +70,7 @@ class LpAppFramework(App):
         await d.last_block_fetcher.run_once()
         await d.node_info_fetcher.fetch()  # get nodes beforehand
         await d.mimir_const_fetcher.fetch()  # get constants beforehand
-        await d.price_pool_fetcher.fetch()
+        await d.pool_fetcher.fetch()
 
     async def close(self):
         await self.deps.session.close()
