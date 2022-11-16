@@ -451,6 +451,8 @@ class BaseLocalization(ABC):  # == English
         if tx.date_timestamp < now - self.tx_add_date_if_older_than():
             return self.format_time_ago(now - tx.date_timestamp)
 
+    MIN_PERCENT_TO_SHOW = 0.01
+
     def notification_text_large_single_tx(self, tx: ThorTx,
                                           usd_per_rune: float,
                                           pool_info: PoolInfo,
@@ -516,16 +518,19 @@ class BaseLocalization(ABC):  # == English
                 pool_depth_part = f'Savers cap is {saver_pb} full. ' \
                                   f'You can add {pre(short_money(amount_more))} {pre(asset_more)} more.'
                 cap = None  # it will stop standard LP cap from being shown
+                saver_percent = tx.asset_amount / pool_info.savers_depth_float
+                pool_percent_part = f" ({saver_percent:.2f}% of vault)" if saver_percent > self.MIN_PERCENT_TO_SHOW \
+                    else ''
             else:
                 rune_part = f"{bold(short_money(tx.rune_amount))} {self.R} ({rune_side_usd_short}) ↔️ "
                 asset_part = f"{bold(short_money(tx.asset_amount))} {asset} ({asset_side_usd_short})"
                 pool_depth_part = f'Pool depth is {bold(short_dollar(pool_depth_usd))} now.'
-
-            pool_part = f" ({percent_of_pool:.2f}% of pool)" if percent_of_pool > 0.01 else ''
+                pool_percent_part = f" ({percent_of_pool:.2f}% of pool)" if percent_of_pool > self.MIN_PERCENT_TO_SHOW \
+                    else ''
 
             content = (
                 f"{rune_part}{asset_part}\n"
-                f"Total: {code(short_dollar(total_usd_volume))}{pool_part}\n"
+                f"Total: {code(short_dollar(total_usd_volume))}{pool_percent_part}\n"
                 f"{aff_text}"
                 f"{ilp_text}"
                 f"{pool_depth_part}"

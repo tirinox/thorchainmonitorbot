@@ -157,6 +157,10 @@ class PoolInfo:
         filled = self.savers_depth / cap
         return thor_to_float(filled * self.balance_asset)
 
+    @property
+    def savers_depth_float(self):
+        return thor_to_float(self.savers_depth)
+
 
 @dataclass
 class LPPosition:
