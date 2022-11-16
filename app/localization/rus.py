@@ -26,7 +26,7 @@ from services.models.mimir import MimirChange, MimirHolder
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEvent, EventDataSlash, \
     NodeEventType, EventBlockHeight
-from services.models.pool_info import PoolInfo, PoolChanges, PoolDetailHolder
+from services.models.pool_info import PoolInfo, PoolChanges, PoolMapPair
 from services.models.price import PriceReport, RuneMarketInfo
 from services.models.queue import QueueInfo
 from services.models.transfer import RuneTransfer, RuneCEXFlow
@@ -1457,7 +1457,7 @@ class RussianLocalization(BaseLocalization):
 
     # ------- BEST POOLS -------
 
-    def notification_text_best_pools(self, pd: PoolDetailHolder, n_pools):
+    def notification_text_best_pools(self, pd: PoolMapPair, n_pools):
         no_pool_text = 'Пока ничего, наверное, еще грузится...'
         text = '\n\n'.join([self.format_pool_top(top_pools, pd, title, no_pool_text, n_pools) for title, top_pools in [
             ('💎 Лучшие годовые %', pd.BY_APY),

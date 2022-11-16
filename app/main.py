@@ -316,7 +316,7 @@ class App:
 
         if d.cfg.get('best_pools.enabled', True):
             period = parse_timespan_to_seconds(d.cfg.best_pools.fetch_period)
-            fetcher_pool_info = PoolInfoFetcherMidgard(d, period)  # fixme: why create new one? Answer: APY, volume!!
+            fetcher_pool_info = PoolInfoFetcherMidgard(d, period)
             d.best_pools_notifier = BestPoolsNotifier(d)
             fetcher_pool_info.add_subscriber(d.best_pools_notifier)
             tasks.append(fetcher_pool_info)

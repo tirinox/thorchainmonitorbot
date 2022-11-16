@@ -250,7 +250,7 @@ class PoolChanges(NamedTuple):
         return self.pools_changed or self.pools_added or self.pools_removed
 
 
-class PoolDetailHolder:
+class PoolMapPair:
     def __init__(self, curr: PoolInfoMap, prev: PoolInfoMap):
         self.pool_detail_dic: PoolInfoMap = curr or {}
         self.pool_detail_dic_prev: PoolInfoMap = prev or {}

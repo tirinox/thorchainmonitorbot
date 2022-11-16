@@ -10,7 +10,7 @@ from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
-from services.models.pool_info import PoolInfoMap, PoolDetailHolder
+from services.models.pool_info import PoolInfoMap, PoolMapPair
 
 
 class BestPoolsNotifier(INotified):
@@ -20,7 +20,7 @@ class BestPoolsNotifier(INotified):
         cooldown = parse_timespan_to_seconds(deps.cfg.as_str('best_pools.cooldown', '5h'))
         self._cooldown = Cooldown(self.deps.db, 'BestPools', cooldown)
         self._fetcher: Optional[PoolInfoFetcherMidgard] = None
-        self.last_pool_detail: PoolDetailHolder = PoolDetailHolder({}, {})
+        self.last_pool_detail = PoolMapPair({}, {})
         self.n_pools = deps.cfg.as_int('best_pools.num_of_top_pools', 5)
 
     DB_KEY_PREVIOUS_STATS = 'PreviousPoolsState'
@@ -50,14 +50,14 @@ class BestPoolsNotifier(INotified):
         self._fetcher = sender
 
         prev = await self._get_previous_data()
-        self.last_pool_detail = PoolDetailHolder(curr=data, prev=prev)
+        self.last_pool_detail = PoolMapPair(curr=data, prev=prev)
 
         if await self._cooldown.can_do():
             await self._cooldown.do()
             await self._notify(self.last_pool_detail)
             await self._write_previous_data(sender.last_raw_result)
 
-    async def _notify(self, pd: PoolDetailHolder):
+    async def _notify(self, pd: PoolMapPair):
         await self.deps.broadcaster.notify_preconfigured_channels(
             BaseLocalization.notification_text_best_pools,
             pd, self.n_pools)

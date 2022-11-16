@@ -21,7 +21,7 @@ from services.models.mimir import MimirChange, MimirHolder
 from services.models.mimir_naming import MimirUnits
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeVersionConsensus, NodeInfo
-from services.models.pool_info import PoolDetailHolder, PoolChanges, PoolInfo
+from services.models.pool_info import PoolMapPair, PoolChanges, PoolInfo
 from services.models.price import RuneMarketInfo, PriceReport
 from services.models.transfer import RuneCEXFlow, RuneTransfer
 from services.models.tx import ThorTx, ThorTxType
@@ -699,7 +699,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         return text.strip()
 
-    def format_pool_top(self, attr_name, pd: PoolDetailHolder, title, no_pool_text, n_pools):
+    def format_pool_top(self, attr_name, pd: PoolMapPair, title, no_pool_text, n_pools):
         top_pools = pd.get_top_pools(attr_name, n=n_pools)
         text = title + '\n'
         for i, pool in enumerate(top_pools, start=1):
@@ -724,7 +724,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             text += no_pool_text
         return text.strip()
 
-    def notification_text_best_pools(self, pd: PoolDetailHolder, n_pools):
+    def notification_text_best_pools(self, pd: PoolMapPair, n_pools):
         n_pools = 3  # less for Twitter
         no_pool_text = 'Nothing yet. Maybe still loading...'
         text = '\n'.join([self.format_pool_top(top_pools, pd, title, no_pool_text, n_pools)

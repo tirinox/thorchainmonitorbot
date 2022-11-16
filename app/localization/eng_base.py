@@ -30,7 +30,7 @@ from services.models.mimir_naming import MimirUnits, NEXT_CHAIN_VOTING_MAP
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEventType, NodeEvent, \
     EventBlockHeight, EventDataSlash
-from services.models.pool_info import PoolInfo, PoolChanges, PoolDetailHolder
+from services.models.pool_info import PoolInfo, PoolChanges, PoolMapPair
 from services.models.price import PriceReport, RuneMarketInfo
 from services.models.queue import QueueInfo
 from services.models.transfer import RuneTransfer, RuneCEXFlow
@@ -1876,7 +1876,7 @@ class BaseLocalization(ABC):  # == English
 
     # ------- BEST POOLS -------
 
-    def format_pool_top(self, attr_name, pd: PoolDetailHolder, title, no_pool_text, n_pools):
+    def format_pool_top(self, attr_name, pd: PoolMapPair, title, no_pool_text, n_pools):
         top_pools = pd.get_top_pools(attr_name, n=n_pools)
         text = bold(title) + '\n'
         for i, pool in enumerate(top_pools, start=1):
@@ -1901,7 +1901,7 @@ class BaseLocalization(ABC):  # == English
             text += no_pool_text
         return text.strip()
 
-    def notification_text_best_pools(self, pd: PoolDetailHolder, n_pools):
+    def notification_text_best_pools(self, pd: PoolMapPair, n_pools):
         no_pool_text = 'Nothing yet. Maybe still loading...'
         text = '\n\n'.join([self.format_pool_top(top_pools, pd, title, no_pool_text, n_pools) for title, top_pools in [
             ('💎 Best APY', pd.BY_APY),
