@@ -1440,7 +1440,7 @@ class BaseLocalization(ABC):  # == English
 
     def _text_votes_to_pass(self, option):
         show = 0 < option.need_votes_to_pass <= self.NEED_VOTES_TO_PASS_MAX
-        return f'{option.need_votes_to_pass} more votes to pass' if show else ''
+        return f' {option.need_votes_to_pass} more votes to pass' if show else ''
 
     TEXT_MIMIR_VOTING_PROGRESS_TITLE = '🏛 <b>Node-Mimir voting update</b>\n\n'
     TEXT_MIMIR_VOTING_TO_SET_IT = 'to set it'
