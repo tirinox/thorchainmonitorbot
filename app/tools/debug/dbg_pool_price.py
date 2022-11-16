@@ -11,6 +11,7 @@ from services.lib.config import Config
 from services.lib.constants import NetworkIdents, BTC_SYMBOL
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
+from tools.lib.lp_common import LpAppFramework
 
 
 def set_network(d: DepContainer, network_id: str):
@@ -18,7 +19,7 @@ def set_network(d: DepContainer, network_id: str):
     d.thor_connector = ThorConnector(d.cfg.get_thor_env_by_network_id(), d.session)
 
 
-async def test_thor_pools_caching_mctn(d: DepContainer):
+async def demo_thor_pools_caching_mctn(d: DepContainer):
     set_network(d, NetworkIdents.TESTNET_MULTICHAIN)
 
     ppf = PoolFetcher(d)
@@ -26,7 +27,7 @@ async def test_thor_pools_caching_mctn(d: DepContainer):
     print(pp)
 
 
-async def test_price_continuously(d: DepContainer):
+async def demo_price_continuously(d: DepContainer):
     ppf = PoolFetcher(d)
     d.thor_connector = ThorConnector(d.cfg.get_thor_env_by_network_id(), d.session)
     while True:
@@ -34,29 +35,33 @@ async def test_price_continuously(d: DepContainer):
         await asyncio.sleep(2.0)
 
 
-async def test_get_pool_info_midgard(d: DepContainer):
+async def demo_get_pool_info_midgard(d: DepContainer):
     ppf = PoolInfoFetcherMidgard(d, 10)
     pool_map = await ppf.fetch()
     print(pool_map)
 
 
-async def main(d: DepContainer):
-    async with aiohttp.ClientSession() as d.session:
-        await d.db.get_redis()
+async def demo_cache_blocks(app: LpAppFramework):
+    await app.deps.last_block_fetcher.run_once()
+    last_block = app.deps.last_block_store.last_thor_block
+    print(last_block)
 
-        # await test_prices(d)
-        # await test_pool_cache(d)
-        # await test_thor_pools_caching(d)
-        # await test_price_continuously(d)
-        await test_get_pool_info_midgard(d)
+    pf: PoolFetcher = app.deps.pool_fetcher
+    pools = await pf.load_pools(7_000_000, caching=True)
+    print(pools)
+
+    pools = await pf.load_pools(8_200_134, caching=True)
+    print(pools)
+
+    pools = await pf.load_pools(8_200_136, caching=True)
+    print(pools)
+
+
+async def main():
+    app = LpAppFramework()
+    async with app(brief=True):
+        await demo_cache_blocks(app)
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
-    d = DepContainer()
-    d.loop = asyncio.get_event_loop()
-    d.cfg = Config()
-    d.loc_man = LocalizationManager(d.cfg)
-    d.db = DB(d.loop)
-
-    d.loop.run_until_complete(main(d))
+    asyncio.run(main())

@@ -1,11 +1,12 @@
 import copy
+import dataclasses
 import logging
 from dataclasses import dataclass
 from typing import List, Dict, NamedTuple
 
 from aiothornode.types import ThorPool
 
-from services.lib.constants import thor_to_float
+from services.lib.constants import thor_to_float, BLOCKS_PER_YEAR, SAVERS_BEGIN_BLOCK
 
 
 def pool_share(rune_depth, asset_depth, my_units, pool_total_units):
@@ -106,36 +107,13 @@ class PoolInfo:
 
     @classmethod
     def from_dict_brief(cls, j):
-        balance_asset = int(j['balance_asset'])
-        balance_rune = int(j['balance_rune'])
-
-        pool_units = int(j['pool_units'])
-        units = int(j.get('units', 0)) or pool_units
-
-        return cls(
-            asset=j['asset'],
-            balance_asset=balance_asset,
-            balance_rune=balance_rune,
-            pool_units=pool_units,
-            units=units,
-            synth_units=int(j.get('synth_units', 0)),
-            status=str(j['status']).lower(),
-            savers_units=int(j.get('savers_units', 0)),
-            savers_depth=int(j.get('savers_depth', 0)),
-        )
+        try:
+            return cls(**j)
+        except TypeError:
+            pass
 
     def as_dict_brief(self):
-        return {
-            'balance_asset': str(self.balance_asset),
-            'balance_rune': str(self.balance_rune),
-            'pool_units': str(self.pool_units),
-            'units': str(self.units),
-            'synth_units': str(self.synth_units),
-            'asset': self.asset,
-            'status': self.status,
-            'savers_units': str(self.savers_units),
-            'savers_depth': str(self.savers_depth),
-        }
+        return dataclasses.asdict(self)
 
     @property
     def rune_price(self):
@@ -160,6 +138,13 @@ class PoolInfo:
     @property
     def savers_depth_float(self):
         return thor_to_float(self.savers_depth)
+
+    def get_savers_arp(self, block_no, blocks_per_year=BLOCKS_PER_YEAR) -> float:
+        if not self.savers_units:
+            return 0.0
+        saver_growth = (self.savers_depth - self.savers_units) / self.savers_depth
+        return (saver_growth / (block_no - SAVERS_BEGIN_BLOCK)) * blocks_per_year
+
 
 
 @dataclass

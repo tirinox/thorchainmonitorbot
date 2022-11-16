@@ -105,36 +105,36 @@ class PoolFetcher(BaseFetcher):
 
         return {}
 
-    DB_KEY_POOL_INFO_HASH = 'PoolInfo:hashtable'  # holds data before hardfork
+    DB_KEY_POOL_INFO_HASH = 'PoolInfo:hashtable_v2'
 
-    # DB_KEY_POOL_INFO_HASH = 'PoolInfo:HashTableV2'
-
-    async def _save_to_cache(self, r: Redis, subkey, pool_infos: PoolInfoMap):
-        j_pools = json.dumps({key: p.as_dict_brief() for key, p in pool_infos.items()})
+    async def _save_to_cache(self, r: Redis, subkey, pool_map: PoolInfoMap):
+        j_pools = json.dumps({key: p.as_dict_brief() for key, p in pool_map.items()})
         await r.hset(self.DB_KEY_POOL_INFO_HASH, str(subkey), j_pools)
 
-    async def _load_from_cache(self, r: Redis, subkey) -> PoolInfoMap:
+    async def _load_from_cache(self, r: Redis, subkey) -> Optional[PoolInfoMap]:
         cached_item = await r.hget(self.DB_KEY_POOL_INFO_HASH, str(subkey))
         if cached_item:
             raw_dict = json.loads(cached_item)
-            return {k: PoolInfo.from_dict_brief(it) for k, it in raw_dict.items()}
+            pool_map = {k: PoolInfo.from_dict_brief(it) for k, it in raw_dict.items()}
+            if all(p is not None for p in pool_map.values()):
+                return pool_map
 
     @staticmethod
     def _hash_key_day(dt: datetime):
         return day_to_key(dt.date(), 'ByDay')
 
-    async def load_pools(self, height=None, caching=False) -> PoolInfoMap:
+    async def load_pools(self, height=None, caching=True) -> PoolInfoMap:
         if caching:
             r: Redis = await self.deps.db.get_redis()
 
             cache_key = height if height else self._hash_key_day(datetime.now())
-            pool_infos = await self._load_from_cache(r, cache_key)
+            pool_map = await self._load_from_cache(r, cache_key)
 
-            if not pool_infos:
-                pool_infos = await self._fetch_current_pool_data_from_thornode(height)
-                await self._save_to_cache(r, cache_key, pool_infos)
+            if not pool_map:
+                pool_map = await self._fetch_current_pool_data_from_thornode(height)
+                await self._save_to_cache(r, cache_key, pool_map)
 
-            return pool_infos
+            return pool_map
         else:
             return await self._fetch_current_pool_data_from_thornode(height)
 

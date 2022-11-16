@@ -63,6 +63,8 @@ class LpAppFramework(App):
         await d.db.get_redis()
         await self.create_thor_node_connector()
 
+        d.last_block_fetcher.add_subscriber(d.last_block_store)
+
         brief = brief if self.brief is None else self.brief
         if brief:
             return
