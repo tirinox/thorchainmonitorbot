@@ -6,6 +6,7 @@ from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 from services.models.pool_info import PoolInfoMap, PoolChanges, PoolChange
+from services.models.price import RuneMarketInfo
 
 
 class PoolChurnNotifier(INotified, WithLogger):
@@ -16,29 +17,23 @@ class PoolChurnNotifier(INotified, WithLogger):
         cooldown_sec = parse_timespan_to_seconds(deps.cfg.pool_churn.notification.cooldown)
         self.spam_cd = Cooldown(self.deps.db, 'PoolChurnNotifier-spam', cooldown_sec)
 
-    async def on_data(self, sender: PoolInfoFetcherMidgard, new_pool_dict: PoolInfoMap):
-        if self.old_pool_dict:
-            if not await self.spam_cd.can_do():
-                return
+    async def on_data(self, sender: PoolInfoFetcherMidgard, data: RuneMarketInfo):
+        # compare starting w 2nd iteration
+        if not self.old_pool_dict:
+            self.old_pool_dict = data.pools
+            return
 
-            # compare starting w 2nd iteration
-            pool_changes = self.compare_pool_sets(new_pool_dict)
+        pool_changes = self.compare_pool_sets(data.pools)
 
-            # # fixme: debug
-            # pool_changes.pools_added.append(PoolChange('BNB.LOL-123', 'staged', 'staged'))
-            # pool_changes.pools_removed.append(PoolChange('BNB.LOL-123', 'staged', 'staged'))
-            # pool_changes.pools_changed.append(PoolChange('BNB.LOL-123', 'staged', 'available'))
-            # # fixme: debug
-
-            if pool_changes.any_changed:
-                self.logger.warning(f'Pool churn changes:\n'
-                                    f'{self.old_pool_dict = }\n'
-                                    f'{new_pool_dict = }!')
-                await self.deps.broadcaster.notify_preconfigured_channels(BaseLocalization.notification_text_pool_churn,
-                                                                          pool_changes)
+        if pool_changes.any_changed:
+            self.logger.info(f'Pool changes detected: {pool_changes}!')
+            if await self.spam_cd.can_do():
+                await self.deps.broadcaster.notify_preconfigured_channels(
+                    BaseLocalization.notification_text_pool_churn,
+                    pool_changes)
                 await self.spam_cd.do()
 
-        self.old_pool_dict = new_pool_dict
+        self.old_pool_dict = data.pools
 
     @staticmethod
     def split_pools_by_status(pim: PoolInfoMap):
@@ -68,3 +63,10 @@ class PoolChurnNotifier(INotified, WithLogger):
                 removed_pools.append(PoolChange(name, status, status))
 
         return PoolChanges(added_pools, removed_pools, changed_status_pools)
+
+    @staticmethod
+    def _dbg_pool_changes(pool_changes):
+        pool_changes.pools_added.append(PoolChange('BNB.LOL-123', 'staged', 'staged'))
+        pool_changes.pools_removed.append(PoolChange('BNB.LOL-123', 'staged', 'staged'))
+        pool_changes.pools_changed.append(PoolChange('BNB.LOL-123', 'staged', 'available'))
+        return pool_changes

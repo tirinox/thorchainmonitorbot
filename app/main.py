@@ -311,18 +311,15 @@ class App:
                 d.pool_fetcher.add_subscriber(personal_price_div_notifier)
 
         if d.cfg.get('pool_churn.enabled', True):
-            period = parse_timespan_to_seconds(d.cfg.pool_churn.fetch_period)
-            fetcher_pool_info = PoolInfoFetcherMidgard(d, period)  # fixme: why create new one?
             notifier_pool_churn = PoolChurnNotifier(d)
-            fetcher_pool_info.add_subscriber(notifier_pool_churn)
-            tasks.append(fetcher_pool_info)  # fixme: why create new one?
+            d.pool_fetcher.add_subscriber(notifier_pool_churn)
 
         if d.cfg.get('best_pools.enabled', True):
             period = parse_timespan_to_seconds(d.cfg.best_pools.fetch_period)
-            fetcher_pool_info = PoolInfoFetcherMidgard(d, period)  # fixme: why create new one?
+            fetcher_pool_info = PoolInfoFetcherMidgard(d, period)  # fixme: why create new one? Answer: APY, volume!!
             d.best_pools_notifier = BestPoolsNotifier(d)
             fetcher_pool_info.add_subscriber(d.best_pools_notifier)
-            tasks.append(fetcher_pool_info)  # fixme: why create new one?
+            tasks.append(fetcher_pool_info)
 
         if d.cfg.get('chain_state.enabled', True):
             fetcher_chain_state = ChainStateFetcher(d)

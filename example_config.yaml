@@ -438,7 +438,6 @@ pool_churn:
   enabled: true
   notification:
     cooldown: 1h
-  fetch_period: 135s
 
 
 node_info:
@@ -498,9 +497,9 @@ last_block:
 
 best_pools:
   enabled: true
-  fetch_period: 30m
   num_of_top_pools: 5
   cooldown: 1d
+  fetch_period: 10m
 
 
 blockchain:
