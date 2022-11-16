@@ -93,7 +93,7 @@ class PoolFetcher(BaseFetcher):
         else:
             self.logger.error(f'Odd {rune_market_info.fair_price = }')
 
-    async def _fetch_current_pool_data_from_thornodes(self, height=None) -> PoolInfoMap:
+    async def _fetch_current_pool_data_from_thornode(self, height=None) -> PoolInfoMap:
         for attempt in range(1, self.max_attempts):
             try:
                 thor_pools = await self.deps.thor_connector.query_pools(height)
@@ -131,12 +131,12 @@ class PoolFetcher(BaseFetcher):
             pool_infos = await self._load_from_cache(r, cache_key)
 
             if not pool_infos:
-                pool_infos = await self._fetch_current_pool_data_from_thornodes(height)
+                pool_infos = await self._fetch_current_pool_data_from_thornode(height)
                 await self._save_to_cache(r, cache_key, pool_infos)
 
             return pool_infos
         else:
-            return await self._fetch_current_pool_data_from_thornodes(height)
+            return await self._fetch_current_pool_data_from_thornode(height)
 
     async def purge_pool_height_cache(self):
         r: Redis = await self.deps.db.get_redis()
