@@ -152,7 +152,9 @@ class MidgardParserV2(MidgardParserBase):
                 synth_supply=int(j.get('synthSupply', 0)),
                 synth_units=int(j.get('synthUnits', 0)),
                 units=int(j.get('units', 0)),
-                volume_24h=int(j.get('volume24h', 0)),  # rune(18)
+                volume_24h=int(j.get('volume24h', 0)),
+                savers_units=int(j.get('saversUnits', 0)),
+                savers_depth=int(j.get('saversDepth', 0)),
             )
         return pm
 

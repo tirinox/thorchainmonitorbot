@@ -214,6 +214,12 @@ PoolInfoMap = Dict[str, PoolInfo]
 
 
 def parse_thor_pools(thor_pools: List[ThorPool]) -> PoolInfoMap:
+    """
+    Converts a list of ThorPool from THORNode to PoolInfoMap
+    @attention ThorPool is missing some high-level stats like APY
+    @param thor_pools:
+    @return:
+    """
     return {
         p.asset: PoolInfo(
             p.asset,
