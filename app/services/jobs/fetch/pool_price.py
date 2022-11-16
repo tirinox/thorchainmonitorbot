@@ -1,6 +1,5 @@
-import calendar
 import json
-from datetime import date, datetime
+from datetime import datetime
 from random import random
 from typing import Optional
 
@@ -9,22 +8,22 @@ from aioredis import Redis
 from services.jobs.fetch.base import BaseFetcher
 from services.lib.config import Config
 from services.lib.constants import RUNE_SYMBOL_DET, RUNE_SYMBOL_POOL, RUNE_SYMBOL_CEX
-from services.lib.date_utils import parse_timespan_to_seconds, DAY, HOUR, day_to_key
+from services.lib.date_utils import parse_timespan_to_seconds, day_to_key
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import free_url_gen
-from services.models.pool_info import PoolInfoHistoricEntry, parse_thor_pools, PoolInfo, PoolInfoMap
+from services.models.pool_info import parse_thor_pools, PoolInfo, PoolInfoMap
 from services.models.price import RuneMarketInfo
 from services.models.time_series import PriceTimeSeries
 
-MAX_ATTEMPTS_TO_FETCH_POOLS = 5
 
-
-# todo: split this class: 1) PoolFetcher 2) PoolDataCache 3) RuneMarketInfoFetcher
 class PoolFetcher(BaseFetcher):
     """
     This class queries Midgard and THORNodes to get current and historical pool prices and depths
     """
+
+    # todo: split this class: 1) PoolFetcher 2) PoolDataCache 3) RuneMarketInfoFetcher
+    MAX_ATTEMPTS_TO_FETCH_POOLS = 5
 
     def __init__(self, deps: DepContainer):
         assert deps
@@ -32,15 +31,16 @@ class PoolFetcher(BaseFetcher):
         period = parse_timespan_to_seconds(cfg.price.fetch_period)
         super().__init__(deps, sleep_period=period)
         self.deps = deps
-        self.max_attempts = MAX_ATTEMPTS_TO_FETCH_POOLS
+        self.max_attempts = self.MAX_ATTEMPTS_TO_FETCH_POOLS
         self.use_thor_consensus = False
         self.parser = get_parser_by_network_id(self.deps.cfg.network_id)
         self.history_max_points = 200000
 
     async def fetch(self) -> RuneMarketInfo:
-        await self.reload_global_pools()
+        current_pools = await self.reload_global_pools()
 
-        rune_market_info = await self.deps.rune_market_fetcher.get_rune_market_info()
+        rune_market_info: RuneMarketInfo = await self.deps.rune_market_fetcher.get_rune_market_info()
+        rune_market_info.pools = current_pools
         await self._write_price_time_series(rune_market_info)
 
         return rune_market_info
@@ -106,6 +106,7 @@ class PoolFetcher(BaseFetcher):
         return {}
 
     DB_KEY_POOL_INFO_HASH = 'PoolInfo:hashtable'  # holds data before hardfork
+
     # DB_KEY_POOL_INFO_HASH = 'PoolInfo:HashTableV2'
 
     async def _save_to_cache(self, r: Redis, subkey, pool_infos: PoolInfoMap):
@@ -140,55 +141,6 @@ class PoolFetcher(BaseFetcher):
     async def purge_pool_height_cache(self):
         r: Redis = await self.deps.db.get_redis()
         await r.delete(self.DB_KEY_POOL_INFO_HASH)
-
-    @staticmethod
-    def path_for_historical_pool_state(pool, ts):
-        from_ts = int(ts - HOUR)
-        to_ts = int(ts + DAY + HOUR)
-        return free_url_gen.url_for_pool_depth_history(pool, from_ts, to_ts)
-
-    async def get_asset_per_rune_of_pool_by_day(self, pool: str, day: date, caching=True):
-        info: PoolInfoHistoricEntry = await self.get_pool_info_by_day(pool, day, caching)
-        return info.to_pool_info(pool).asset_per_rune if info else 0.0
-
-    DB_KEY_HISTORIC_POOL = 'MidgardPoolInfoHistoric'
-
-    async def purge_historic_midgard_pool_cache(self):
-        r: Redis = await self.deps.db.get_redis()
-        await r.delete(self.DB_KEY_HISTORIC_POOL)
-
-    async def get_pool_info_by_day(self, pool: str, day: date, caching=True) -> Optional[PoolInfoHistoricEntry]:
-        hash_key = ''
-        if caching:
-            hash_key = day_to_key(day, prefix=pool)
-            cached_raw = await self.deps.db.redis.hget(self.DB_KEY_HISTORIC_POOL, hash_key)
-            if cached_raw:
-                try:
-                    j = json.loads(cached_raw)
-                    return self.parser.parse_historic_pool_items(j)[0]
-                except ValueError:
-                    pass
-
-        timestamp = calendar.timegm(day.timetuple())
-        q_path = self.path_for_historical_pool_state(pool, timestamp)
-        raw_data = await self.deps.midgard_connector.request(q_path)
-
-        pools_info = self.parser.parse_historic_pool_items(raw_data)
-        if not pools_info:
-            self.logger.error(f'there were no historical data returned!')
-            return None
-        else:
-            if caching and raw_data:
-                await self.deps.db.redis.hset(self.DB_KEY_HISTORIC_POOL, hash_key, json.dumps(raw_data))
-            pool_info = pools_info[0]
-            return pool_info
-
-    async def get_usd_price_of_rune_and_asset_by_day(self, pool, day: date, caching=True):
-        info = await self.get_pool_info_by_day(pool, day, caching)
-        usd_per_asset = info.asset_price_usd
-        asset_per_rune = info.asset_depth / info.rune_depth
-        usd_per_rune = asset_per_rune * usd_per_asset
-        return usd_per_rune, usd_per_asset
 
 
 class PoolInfoFetcherMidgard(BaseFetcher):

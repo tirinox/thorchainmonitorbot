@@ -24,6 +24,7 @@ class RuneMarketInfo:
     total_trade_volume_usd: float = 0.0
     total_supply: int = 500_000_000
     supply_info: RuneCirculatingSupply = RuneCirculatingSupply.zero()
+    pools: PoolInfoMap = None
 
     @property
     def market_cap(self):

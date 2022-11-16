@@ -13,21 +13,6 @@ from services.lib.db import DB
 from services.lib.depcont import DepContainer
 
 
-async def test_prices_at_day_mctn(d: DepContainer, day2ago):
-    cfg: Config = d.cfg
-
-    cfg.network_id = NetworkIdents.TESTNET_MULTICHAIN
-    ppf = PoolFetcher(d)
-    usd_per_rune, usd_per_asset = await ppf.get_usd_price_of_rune_and_asset_by_day(BTC_SYMBOL, day2ago)
-    print(f'Test net MC: {usd_per_rune=}, ({BTC_SYMBOL}) {usd_per_asset=} ')
-
-
-async def test_prices_at_day(d: DepContainer):
-    day2ago = datetime.date(2021, 4, 11)
-
-    await test_prices_at_day_mctn(d, day2ago)
-
-
 def set_network(d: DepContainer, network_id: str):
     d.cfg.network_id = network_id
     d.thor_connector = ThorConnector(d.cfg.get_thor_env_by_network_id(), d.session)
@@ -41,15 +26,6 @@ async def test_thor_pools_caching_mctn(d: DepContainer):
     print(pp)
 
 
-async def test_pool_cache(d):
-    d.cfg.network_id = NetworkIdents.TESTNET_MULTICHAIN
-    ppf = PoolFetcher(d)
-    day2ago = datetime.date(2021, 3, 31)
-
-    pool_info = await ppf.get_pool_info_by_day(BTC_SYMBOL, day2ago, caching=True)
-    print(pool_info)
-
-
 async def test_price_continuously(d: DepContainer):
     ppf = PoolFetcher(d)
     d.thor_connector = ThorConnector(d.cfg.get_thor_env_by_network_id(), d.session)
@@ -59,7 +35,7 @@ async def test_price_continuously(d: DepContainer):
 
 
 async def test_get_pool_info_midgard(d: DepContainer):
-    ppf = PoolInfoFetcherMidgard(d)
+    ppf = PoolInfoFetcherMidgard(d, 10)
     pool_map = await ppf.fetch()
     print(pool_map)
 

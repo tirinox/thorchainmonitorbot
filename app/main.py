@@ -310,20 +310,19 @@ class App:
                 personal_price_div_notifier = PersonalPriceDivergenceNotifier(d)
                 d.pool_fetcher.add_subscriber(personal_price_div_notifier)
 
-        # todo: join PoolChurnNotifier with PoolInfoFetcherMidgard
         if d.cfg.get('pool_churn.enabled', True):
             period = parse_timespan_to_seconds(d.cfg.pool_churn.fetch_period)
-            fetcher_pool_info = PoolInfoFetcherMidgard(d, period)
+            fetcher_pool_info = PoolInfoFetcherMidgard(d, period)  # fixme: why create new one?
             notifier_pool_churn = PoolChurnNotifier(d)
             fetcher_pool_info.add_subscriber(notifier_pool_churn)
-            tasks.append(fetcher_pool_info)
+            tasks.append(fetcher_pool_info)  # fixme: why create new one?
 
         if d.cfg.get('best_pools.enabled', True):
             period = parse_timespan_to_seconds(d.cfg.best_pools.fetch_period)
-            fetcher_pool_info = PoolInfoFetcherMidgard(d, period)
+            fetcher_pool_info = PoolInfoFetcherMidgard(d, period)  # fixme: why create new one?
             d.best_pools_notifier = BestPoolsNotifier(d)
             fetcher_pool_info.add_subscriber(d.best_pools_notifier)
-            tasks.append(fetcher_pool_info)
+            tasks.append(fetcher_pool_info)  # fixme: why create new one?
 
         if d.cfg.get('chain_state.enabled', True):
             fetcher_chain_state = ChainStateFetcher(d)
@@ -389,7 +388,7 @@ class App:
         await asyncio.gather(*(task.run() for task in tasks))
 
     async def on_startup(self, _):
-        self.deps.make_http_session()  # it is must be inside a coroutine!
+        self.deps.make_http_session()  # it must be inside a coroutine!
         await self.create_thor_node_connector()
 
         asyncio.create_task(self._run_background_jobs())
