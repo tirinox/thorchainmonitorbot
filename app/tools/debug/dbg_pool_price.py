@@ -6,7 +6,7 @@ import aiohttp
 from aiothornode.connector import ThorConnector
 
 from localization.manager import LocalizationManager
-from services.jobs.fetch.pool_price import PoolPriceFetcher, PoolInfoFetcherMidgard
+from services.jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
 from services.lib.config import Config
 from services.lib.constants import NetworkIdents, BTC_SYMBOL
 from services.lib.db import DB
@@ -17,7 +17,7 @@ async def test_prices_at_day_mctn(d: DepContainer, day2ago):
     cfg: Config = d.cfg
 
     cfg.network_id = NetworkIdents.TESTNET_MULTICHAIN
-    ppf = PoolPriceFetcher(d)
+    ppf = PoolFetcher(d)
     usd_per_rune, usd_per_asset = await ppf.get_usd_price_of_rune_and_asset_by_day(BTC_SYMBOL, day2ago)
     print(f'Test net MC: {usd_per_rune=}, ({BTC_SYMBOL}) {usd_per_asset=} ')
 
@@ -36,14 +36,14 @@ def set_network(d: DepContainer, network_id: str):
 async def test_thor_pools_caching_mctn(d: DepContainer):
     set_network(d, NetworkIdents.TESTNET_MULTICHAIN)
 
-    ppf = PoolPriceFetcher(d)
+    ppf = PoolFetcher(d)
     pp = await ppf.get_current_pool_data_full(caching=True, height=501)
     print(pp)
 
 
 async def test_pool_cache(d):
     d.cfg.network_id = NetworkIdents.TESTNET_MULTICHAIN
-    ppf = PoolPriceFetcher(d)
+    ppf = PoolFetcher(d)
     day2ago = datetime.date(2021, 3, 31)
 
     pool_info = await ppf.get_pool_info_by_day(BTC_SYMBOL, day2ago, caching=True)
@@ -51,7 +51,7 @@ async def test_pool_cache(d):
 
 
 async def test_price_continuously(d: DepContainer):
-    ppf = PoolPriceFetcher(d)
+    ppf = PoolFetcher(d)
     d.thor_connector = ThorConnector(d.cfg.get_thor_env_by_network_id(), d.session)
     while True:
         await ppf.fetch()

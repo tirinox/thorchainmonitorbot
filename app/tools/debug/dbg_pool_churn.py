@@ -4,7 +4,7 @@ from copy import deepcopy
 
 import aiohttp
 
-from services.jobs.fetch.pool_price import PoolPriceFetcher, PoolInfoFetcherMidgard
+from services.jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
 from services.lib.constants import DOGE_SYMBOL
 from services.lib.depcont import DepContainer
 from services.models.pool_info import PoolInfo
@@ -20,7 +20,7 @@ async def send_to_channel_test_message(d: DepContainer):
         ppf = PoolInfoFetcherMidgard(d, 100)
         notifier_pool_churn = PoolChurnNotifier(d)
 
-        ppf_old = PoolPriceFetcher(d)
+        ppf_old = PoolFetcher(d)
         d.price_holder.pool_info_map = await ppf_old.get_current_pool_data_full()
         await ppf.get_pool_info_midgard()
 

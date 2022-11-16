@@ -11,7 +11,7 @@ from aiothornode.types import ThorPool
 
 from localization.manager import BaseLocalization
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
-from services.jobs.fetch.pool_price import PoolPriceFetcher
+from services.jobs.fetch.pool_price import PoolFetcher
 from services.lib.date_utils import DAY
 from services.lib.depcont import DepContainer
 from services.lib.texts import up_down_arrow
@@ -65,7 +65,7 @@ def get_info_pair_for_test(new_info: NetworkStats) -> (NetworkStats, NetworkStat
     return old_info, new_info
 
 
-class MockPPF(PoolPriceFetcher):
+class MockPPF(PoolFetcher):
     def __init__(self, deps: DepContainer):
         super().__init__(deps)
         self.pool_name_to_delete = ''

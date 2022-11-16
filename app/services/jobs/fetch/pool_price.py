@@ -20,7 +20,7 @@ from services.models.time_series import PriceTimeSeries
 MAX_ATTEMPTS_TO_FETCH_POOLS = 5
 
 
-class PoolPriceFetcher(BaseFetcher):
+class PoolFetcher(BaseFetcher):
     """
     This class queries Midgard and THORNodes to get current and historical pool prices and depths
     """

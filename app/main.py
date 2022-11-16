@@ -22,7 +22,7 @@ from services.jobs.fetch.last_block import LastBlockFetcher
 from services.jobs.fetch.native_scan import NativeScannerBlock
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
 from services.jobs.fetch.node_info import NodeInfoFetcher
-from services.jobs.fetch.pool_price import PoolPriceFetcher, PoolInfoFetcherMidgard
+from services.jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
 from services.jobs.fetch.queue import QueueFetcher
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.ilp_summer import ILPSummer
@@ -79,7 +79,7 @@ class App:
         d.node_info_fetcher = NodeInfoFetcher(d)
         d.mimir_const_fetcher = ConstMimirFetcher(d)
         d.mimir_const_holder = MimirHolder()
-        d.price_pool_fetcher = PoolPriceFetcher(d)
+        d.price_pool_fetcher = PoolFetcher(d)
 
         self._init_settings()
         self._init_messaging()

@@ -1,7 +1,7 @@
 import asyncio
 
 from services.jobs.fetch.base import BaseFetcher
-from services.jobs.fetch.pool_price import PoolPriceFetcher
+from services.jobs.fetch.pool_price import PoolFetcher
 from services.jobs.ilp_summer import ILPSummer
 from services.jobs.user_counter import UserCounter
 from services.lib.constants import THOR_BLOCK_TIME, thor_to_float
@@ -63,7 +63,7 @@ class NetworkStatisticsFetcher(BaseFetcher):
     KEY_CONST_MIN_RUNE_POOL_DEPTH = 'MinRunePoolDepth'
 
     async def _get_pools(self, ns: NetworkStats):
-        ppf: PoolPriceFetcher = self.deps.price_pool_fetcher
+        ppf: PoolFetcher = self.deps.price_pool_fetcher
         cmf: MimirHolder = self.deps.mimir_const_holder
 
         pools = await ppf.get_current_pool_data_full()
