@@ -10,8 +10,8 @@ from services.notify.channel import MessageType, BoardMessage
 
 
 class LiquidityCapNotifier(INotified):
-    KEY_INFO = 'ChaosnetCapInfo'
-    KEY_FULL_NOTIFIED = 'Chaosnet:Cap:Full'
+    KEY_INFO = 'Cap:Info'
+    KEY_FULL_NOTIFIED = 'Cap:Full'
 
     @staticmethod
     async def get_last_cap_from_db(db: DB):
