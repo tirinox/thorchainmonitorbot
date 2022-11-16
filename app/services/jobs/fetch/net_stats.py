@@ -63,17 +63,14 @@ class NetworkStatisticsFetcher(BaseFetcher):
     KEY_CONST_MIN_RUNE_POOL_DEPTH = 'MinRunePoolDepth'
 
     async def _get_pools(self, ns: NetworkStats):
-        ppf: PoolFetcher = self.deps.pool_fetcher
-        cmf: MimirHolder = self.deps.mimir_const_holder
-
-        pools = await ppf.get_current_pool_data_full()
+        pools = await self.deps.pool_fetcher.load_pools()
 
         active_pools = [p for p in pools.values() if p.is_enabled]
         pending_pools = [p for p in pools.values() if not p.is_enabled]
         ns.active_pool_count = len(active_pools)
         ns.pending_pool_count = len(pending_pools)
 
-        min_pool_depth_rune = cmf.get_constant(self.KEY_CONST_MIN_RUNE_POOL_DEPTH)
+        min_pool_depth_rune = self.deps.mimir_const_holder.get_constant(self.KEY_CONST_MIN_RUNE_POOL_DEPTH)
 
         pending_pools = list(sorted(pending_pools, key=lambda p: p.balance_rune, reverse=True))
         if pending_pools:

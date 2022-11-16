@@ -20,6 +20,7 @@ from services.models.time_series import PriceTimeSeries
 MAX_ATTEMPTS_TO_FETCH_POOLS = 5
 
 
+# todo: split this class: 1) PoolFetcher 2) PoolDataCache 3) RuneMarketInfoFetcher
 class PoolFetcher(BaseFetcher):
     """
     This class queries Midgard and THORNodes to get current and historical pool prices and depths
@@ -46,9 +47,10 @@ class PoolFetcher(BaseFetcher):
 
     async def reload_global_pools(self) -> PoolInfoMap:
         d = self.deps
-        current_pools = await self.get_current_pool_data_full()
+        current_pools = await self.load_pools()
 
         if d.price_holder is not None:
+            # store into the global state
             if current_pools:
                 d.price_holder.update(current_pools)
 
@@ -120,7 +122,7 @@ class PoolFetcher(BaseFetcher):
     def _hash_key_day(dt: datetime):
         return day_to_key(dt.date(), 'ByDay')
 
-    async def get_current_pool_data_full(self, height=None, caching=False) -> PoolInfoMap:
+    async def load_pools(self, height=None, caching=False) -> PoolInfoMap:
         if caching:
             r: Redis = await self.deps.db.get_redis()
 

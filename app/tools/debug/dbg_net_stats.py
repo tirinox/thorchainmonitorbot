@@ -70,7 +70,7 @@ class MockPPF(PoolFetcher):
         super().__init__(deps)
         self.pool_name_to_delete = ''
 
-    async def get_current_pool_data_full(self, height=None, caching=False) -> PoolInfoMap:
+    async def load_pools(self, height=None, caching=False) -> PoolInfoMap:
         with open('tools/debug/example_pools.json', 'r') as f:
             data = json.load(f)
             pool_map = parse_thor_pools([ThorPool.from_json(p) for p in data])

@@ -37,7 +37,7 @@ async def test_thor_pools_caching_mctn(d: DepContainer):
     set_network(d, NetworkIdents.TESTNET_MULTICHAIN)
 
     ppf = PoolFetcher(d)
-    pp = await ppf.get_current_pool_data_full(caching=True, height=501)
+    pp = await ppf.load_pools(caching=True, height=501)
     print(pp)
 
 
