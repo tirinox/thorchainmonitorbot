@@ -7,7 +7,7 @@ from services.models.base import BaseModelMixin
 class ThorCapInfo(BaseModelMixin):
     cap: int
     pooled_rune: int
-    price: float
+    price: float = 1.0
 
     MAX_ALLOWED_RATIO = 1.0  # 100 %
 

@@ -105,7 +105,7 @@ class TimeSeries:
         # todo: usage: XADD mystream MAXLEN ~ 1000 * ... entry fields here ...
         await r.xadd(self.stream_name, kwargs, id=message_id)
 
-    async def add_as_json(self, message_id=b'*', j: dict = None):
+    async def add_as_json(self, j: dict = None, message_id=b'*'):
         await self.add(message_id, json=json.dumps(j))
 
     @staticmethod

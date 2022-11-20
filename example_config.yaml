@@ -510,3 +510,9 @@ blockchain:
 supply:
   enabled: true
   period: 7d
+
+
+saver_stats:  # (!) new
+  enabled: true
+  period: 3d
+  save_stats_period: 1h

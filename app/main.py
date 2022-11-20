@@ -369,6 +369,7 @@ class App:
         if d.cfg.get('saver_stats.enabled', True):
             ssc = SaversStatsNotifier(d)
             d.pool_fetcher.add_subscriber(ssc)
+            ssc.add_subscriber(d.alert_presenter)
 
         # --- BOTS
 

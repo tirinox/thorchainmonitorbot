@@ -36,6 +36,7 @@ from services.models.queue import QueueInfo
 from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.tx import ThorTx, ThorTxType, ThorSubTx
 from services.notify.channel import Messengers
+from services.notify.types.savers_stats_notify import EventSaverStats
 
 CREATOR_TG = '@account1242'
 
@@ -2136,6 +2137,58 @@ class BaseLocalization(ABC):  # == English
             f'Popular aggregators:\n{top_aggr_str}\n'
             f'Popular assets:\n{top_asset_str}'
         ).strip()
+
+    def notification_text_saver_stats(self, event: EventSaverStats):
+        # todo: infographic
+        message = f'💰 <b>THORChain Savers Vaults summary</b>\n\n'
+
+        savers, prev = event.current_stats, event.previous_stats
+
+        max_arp = savers.max_arp
+
+        for i, pool in enumerate(savers.get_top_vaults('total_asset_as_usd'), start=1):
+            asset = " " + Asset.from_string(pool.asset).name
+            if pool.total_asset_saved >= pool.asset_cap * 0.99:
+                pb = ', FULL 💯'
+            elif pool.total_asset_saved < pool.asset_cap * 0.01:
+                pb = ''
+            else:
+                pb = f', {pool.percent_of_cap_filled:.0f}% filled'
+
+            if pool.arp == max_arp:
+                smile = '💡'
+            else:
+                smile = ''
+
+            clarification = f'({short_dollar(pool.total_asset_as_usd)}{ital(pb)})'
+
+            message += (
+                f'{code(short_money(pool.total_asset_saved, postfix=asset))} '
+                f'{clarification} '
+                f'| {bold(pool.number_of_savers)} savers | '
+                f'ARP: {code(short_money(pool.arp, postfix="%"))}{smile}\n')
+
+        if prev:
+            saver_number_change = bracketify(up_down_arrow(
+                prev.total_unique_savers, savers.total_unique_savers, int_delta=True))
+            total_usd_change = bracketify(up_down_arrow(
+                prev.total_usd_saved, savers.total_usd_saved, money_delta=True, money_prefix='$'))
+            avg_arp_change = bracketify(up_down_arrow(
+                prev.average_arp, savers.average_arp, money_delta=True, postfix='%'
+            ))
+        else:
+            saver_number_change = ''
+            total_usd_change = ''
+            avg_arp_change = ''
+
+        message += (
+            f'\n'
+            f'Total {bold(savers.total_unique_savers)}{saver_number_change} savers '
+            f'with {bold(short_dollar(savers.total_usd_saved))}{total_usd_change} saved.\n'
+            f'<b>Average ARP</b> is {pre(pretty_money(savers.average_arp))}%{avg_arp_change}.'
+        )
+
+        return message
 
 
 class EnglishLocalization(BaseLocalization):

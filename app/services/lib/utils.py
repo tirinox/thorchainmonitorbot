@@ -33,7 +33,8 @@ def most_common_and_other(values: list, max_categories, other_str='Others'):
     elements = provider_counter.most_common(max_categories)
     total_most_common = sum(item[1] for item in elements)
     others_sum = total - total_most_common
-    elements.append((other_str, others_sum))
+    if other_str:
+        elements.append((other_str, others_sum))
     return elements
 
 

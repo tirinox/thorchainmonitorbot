@@ -26,6 +26,7 @@ from services.models.price import RuneMarketInfo, PriceReport
 from services.models.transfer import RuneCEXFlow, RuneTransfer
 from services.models.tx import ThorTx, ThorTxType
 from services.notify.channel import MESSAGE_SEPARATOR
+from services.notify.types.savers_stats_notify import EventSaverStats
 
 
 class TwitterEnglishLocalization(BaseLocalization):
@@ -840,3 +841,55 @@ class TwitterEnglishLocalization(BaseLocalization):
         ]
 
         return self.smart_split(parts)
+
+    def notification_text_saver_stats(self, event: EventSaverStats):
+        parts = [f'💰 THORChain Savers Vaults\n']
+
+        savers, prev = event.current_stats, event.previous_stats
+
+        if prev:
+            saver_number_change = bracketify(up_down_arrow(
+                prev.total_unique_savers, savers.total_unique_savers, int_delta=True))
+            total_usd_change = bracketify(up_down_arrow(
+                prev.total_usd_saved, savers.total_usd_saved, money_delta=True, money_prefix='$'))
+            avg_arp_change = bracketify(up_down_arrow(
+                prev.average_arp, savers.average_arp, money_delta=True, postfix='%'
+            ))
+        else:
+            saver_number_change = ''
+            total_usd_change = ''
+            avg_arp_change = ''
+
+        parts.append(
+            f'\n'
+            f'Total {savers.total_unique_savers}{saver_number_change} savers '
+            f'with {(short_dollar(savers.total_usd_saved))}{total_usd_change} saved.\n'
+            f'Avg. ARP is {(pretty_money(savers.average_arp))}%{avg_arp_change}.\n\n'
+        )
+
+        max_arp = savers.max_arp
+
+        for i, pool in enumerate(savers.get_top_vaults('total_asset_as_usd'), start=1):
+            asset = " " + Asset.from_string(pool.asset).name
+            if pool.total_asset_saved >= pool.asset_cap * 0.99:
+                pb = ', FULL 💯'
+            elif pool.total_asset_saved < pool.asset_cap * 0.01:
+                pb = ''
+            else:
+                pb = f', {pool.percent_of_cap_filled:.0f}% filled'
+
+            if pool.arp == max_arp:
+                smile = '💡'
+            else:
+                smile = ''
+
+            clarification = f'({short_dollar(pool.total_asset_as_usd)}{pb})'
+
+            parts.append(
+                f'{(short_money(pool.total_asset_saved, postfix=asset))} '
+                f'{clarification} '
+                f'| {pool.number_of_savers} savers | '
+                f'ARP: {(short_money(pool.arp, postfix="%"))}{smile}\n'
+            )
+
+        return self.smart_split(parts).strip()

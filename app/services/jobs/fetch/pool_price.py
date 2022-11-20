@@ -40,8 +40,9 @@ class PoolFetcher(BaseFetcher):
         current_pools = await self.reload_global_pools()
 
         rune_market_info: RuneMarketInfo = await self.deps.rune_market_fetcher.get_rune_market_info()
-        rune_market_info.pools = current_pools
-        await self._write_price_time_series(rune_market_info)
+        if rune_market_info:
+            rune_market_info.pools = current_pools
+            await self._write_price_time_series(rune_market_info)
 
         return rune_market_info
 

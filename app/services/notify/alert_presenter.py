@@ -11,6 +11,7 @@ from services.models.transfer import RuneCEXFlow, RuneTransfer
 from services.models.tx import EventLargeTransaction
 from services.notify.broadcast import Broadcaster
 from services.notify.channel import BoardMessage
+from services.notify.types.savers_stats_notify import EventSaverStats
 
 
 class AlertPresenter(INotified):
@@ -32,6 +33,8 @@ class AlertPresenter(INotified):
             await self._handle_large_tx(data)
         elif isinstance(data, DexReport):
             await self._handle_dex_report(data)
+        elif isinstance(data, EventSaverStats):
+            await self._handle_saver_stats(data)
 
     # ---- PARTICULARLY ----
 
@@ -61,7 +64,8 @@ class AlertPresenter(INotified):
 
     @staticmethod
     async def _block_speed_picture_generator(loc: BaseLocalization, points, event):
-        chart, chart_name = await block_speed_chart(points, loc, normal_bpm=THOR_BLOCKS_PER_MINUTE,
+        chart, chart_name = await block_speed_chart(points, loc,
+                                                    normal_bpm=THOR_BLOCKS_PER_MINUTE,
                                                     time_scale_mode='time')
 
         if event.state in (BlockProduceState.StateStuck, BlockProduceState.Producing):
@@ -77,5 +81,11 @@ class AlertPresenter(INotified):
     async def _handle_dex_report(self, event: DexReport):
         await self.broadcaster.notify_preconfigured_channels(
             BaseLocalization.notification_text_dex_report,
+            event
+        )
+
+    async def _handle_saver_stats(self, event: EventSaverStats):
+        await self.broadcaster.notify_preconfigured_channels(
+            BaseLocalization.notification_text_saver_stats,
             event
         )
