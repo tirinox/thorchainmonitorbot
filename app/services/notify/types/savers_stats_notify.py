@@ -23,10 +23,19 @@ class SaverVault(NamedTuple):
     total_asset_as_rune: float
     arp: float
     asset_cap: float
+    runes_earned: float
 
     @property
     def percent_of_cap_filled(self):
         return self.total_asset_saved / self.asset_cap * 100.0 if self.asset_cap else 0.0
+
+    @property
+    def usd_per_rune(self):
+        return self.total_asset_as_usd / self.total_asset_as_rune
+
+    @property
+    def usd_per_asset(self):
+        return self.total_asset_as_usd / self.total_asset_saved
 
 
 class AllSavers(NamedTuple):
@@ -88,10 +97,21 @@ class AllSavers(NamedTuple):
         vault_list.sort(key=attrgetter(criterion), reverse=descending)
         return vault_list if n is None else vault_list[:n]
 
+    @property
+    def total_rune_earned(self):
+        return sum(p.runes_earned for p in self.pools)
+
+    @property
+    def overall_fill_cap_percent(self):
+        overall_saved = sum(p.total_asset_saved * p.usd_per_asset for p in self.pools)
+        overall_cap = sum(p.asset_cap * p.usd_per_asset for p in self.pools)
+        return overall_saved / overall_cap * 100.0
+
 
 class EventSaverStats(NamedTuple):
     previous_stats: Optional[AllSavers]
     current_stats: AllSavers
+    usd_per_rune: float
 
 
 class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
@@ -129,6 +149,7 @@ class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
                 pool.savers_depth_float * pool.runes_per_asset,
                 arp=pool.get_savers_arp(block_no) * 100.0,
                 asset_cap=thor_to_float(pool.get_synth_cap_in_asset(max_synth_per_asset_ratio)),
+                runes_earned=pool.saver_growth_rune
             ) for pool, members in zip(active_pools, per_pool_members)]
         )
         savers.sort_pools()
@@ -147,7 +168,8 @@ class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
     async def do_notification(self, current_savers: AllSavers):
         previous_savers = await self.get_previous_saver_stats(self.cd_notify.cooldown)
         await self.pass_data_to_listeners(EventSaverStats(
-            previous_savers, current_savers
+            previous_savers, current_savers,
+            usd_per_rune=self.deps.price_holder.usd_per_rune
         ))
 
     async def on_data(self, sender, rune_market: RuneMarketInfo):

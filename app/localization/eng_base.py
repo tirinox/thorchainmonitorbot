@@ -2138,6 +2138,8 @@ class BaseLocalization(ABC):  # == English
             f'Popular assets:\n{top_asset_str}'
         ).strip()
 
+    MIN_PERCENT_TO_SHOW_VAULT_FILL = 10
+
     def notification_text_saver_stats(self, event: EventSaverStats):
         # todo: infographic
         message = f'💰 <b>THORChain Savers Vaults summary</b>\n\n'
@@ -2150,7 +2152,7 @@ class BaseLocalization(ABC):  # == English
             asset = " " + Asset.from_string(pool.asset).name
             if pool.total_asset_saved >= pool.asset_cap * 0.99:
                 pb = ', FULL 💯'
-            elif pool.total_asset_saved < pool.asset_cap * 0.01:
+            elif pool.total_asset_saved < pool.asset_cap * self.MIN_PERCENT_TO_SHOW_VAULT_FILL * 0.01:
                 pb = ''
             else:
                 pb = f', {pool.percent_of_cap_filled:.0f}% filled'
@@ -2185,7 +2187,8 @@ class BaseLocalization(ABC):  # == English
             f'\n'
             f'Total {bold(savers.total_unique_savers)}{saver_number_change} savers '
             f'with {bold(short_dollar(savers.total_usd_saved))}{total_usd_change} saved.\n'
-            f'<b>Average ARP</b> is {pre(pretty_money(savers.average_arp))}%{avg_arp_change}.'
+            f'<b>Average ARP</b> is {pre(pretty_money(savers.average_arp))}%{avg_arp_change}.\n'
+            f'Total earned: {bold(pretty_dollar(savers.total_rune_earned * event.usd_per_rune))}.'
         )
 
         return message

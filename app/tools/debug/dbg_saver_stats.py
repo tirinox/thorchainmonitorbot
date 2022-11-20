@@ -47,7 +47,7 @@ async def demo_show_notification(app: LpAppFramework):
         ) for p in c_data.pools]
     )
 
-    event = EventSaverStats(p_data, c_data)
+    event = EventSaverStats(p_data, c_data, 1.2)
 
     loc: BaseLocalization = app.deps.loc_man[Language.RUSSIAN]
     await app.send_test_tg_message(loc.notification_text_saver_stats(event))

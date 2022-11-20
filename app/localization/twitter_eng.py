@@ -843,7 +843,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         return self.smart_split(parts)
 
     def notification_text_saver_stats(self, event: EventSaverStats):
-        parts = [f'💰 THORChain Savers Vaults\n']
+        parts = [f'💰 THORChain Savers\n']
 
         savers, prev = event.current_stats, event.previous_stats
 
@@ -862,21 +862,24 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         parts.append(
             f'\n'
-            f'Total {savers.total_unique_savers}{saver_number_change} savers '
-            f'with {(short_dollar(savers.total_usd_saved))}{total_usd_change} saved.\n'
-            f'Avg. ARP is {(pretty_money(savers.average_arp))}%{avg_arp_change}.\n\n'
+            f'{savers.total_unique_savers}{saver_number_change} savers '
+            f'| {(short_dollar(savers.total_usd_saved))}{total_usd_change}.\n'
+            f'Avg. ARP is {(pretty_money(savers.average_arp))}%{avg_arp_change}.\n'
+            f'Earned: {pretty_dollar(savers.total_rune_earned * event.usd_per_rune)}.\n'
+            f'Vault filled: {savers.overall_fill_cap_percent:.1f}%\n\n'
         )
 
         max_arp = savers.max_arp
 
         for i, pool in enumerate(savers.get_top_vaults('total_asset_as_usd'), start=1):
             asset = " " + Asset.from_string(pool.asset).name
-            if pool.total_asset_saved >= pool.asset_cap * 0.99:
-                pb = ', FULL 💯'
-            elif pool.total_asset_saved < pool.asset_cap * 0.01:
-                pb = ''
-            else:
-                pb = f', {pool.percent_of_cap_filled:.0f}% filled'
+            # if pool.total_asset_saved >= pool.asset_cap * 0.99:
+            #     pb = ', FULL 💯'
+            # elif pool.total_asset_saved < pool.asset_cap * 0.01:
+            #     pb = ''
+            # else:
+            #     pb = f', {pool.percent_of_cap_filled:.0f}% filled'
+            pb = ''
 
             if pool.arp == max_arp:
                 smile = '💡'

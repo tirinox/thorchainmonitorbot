@@ -1652,7 +1652,7 @@ class RussianLocalization(BaseLocalization):
             asset = " " + Asset.from_string(pool.asset).name
             if pool.total_asset_saved >= pool.asset_cap * 0.99:
                 pb = ', ЗАПОЛНЕНО 💯'
-            elif pool.total_asset_saved < pool.asset_cap * 0.01:
+            elif pool.total_asset_saved < pool.asset_cap * self.MIN_PERCENT_TO_SHOW_VAULT_FILL * 0.01:
                 pb = ''
             else:
                 pb = f', {pool.percent_of_cap_filled:.0f}% занято'
@@ -1687,7 +1687,8 @@ class RussianLocalization(BaseLocalization):
             f'\n'
             f'Всего {bold(savers.total_unique_savers)}{saver_number_change} сберегателей '
             f'в сумме с капиталом {bold(short_dollar(savers.total_usd_saved))}{total_usd_change}.\n'
-            f'<b>Средние годовые:</b> {pre(pretty_money(savers.average_arp))}%{avg_arp_change}.'
+            f'<b>Средние годовые:</b> {pre(pretty_money(savers.average_arp))}%{avg_arp_change}.\n'
+            f'Всего заработано: {bold(pretty_dollar(savers.total_rune_earned * event.usd_per_rune))}.'
         )
 
         return message
