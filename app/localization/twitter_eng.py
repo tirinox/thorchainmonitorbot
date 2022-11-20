@@ -852,24 +852,24 @@ class TwitterEnglishLocalization(BaseLocalization):
                 prev.total_unique_savers, savers.total_unique_savers, int_delta=True))
             total_usd_change = bracketify(up_down_arrow(
                 prev.total_usd_saved, savers.total_usd_saved, money_delta=True, money_prefix='$'))
-            avg_arp_change = bracketify(up_down_arrow(
-                prev.average_arp, savers.average_arp, money_delta=True, postfix='%'
+            avg_apr_change = bracketify(up_down_arrow(
+                prev.average_apr, savers.average_apr, money_delta=True, postfix='%'
             ))
         else:
             saver_number_change = ''
             total_usd_change = ''
-            avg_arp_change = ''
+            avg_apr_change = ''
 
         parts.append(
             f'\n'
             f'{savers.total_unique_savers}{saver_number_change} savers '
             f'| {(short_dollar(savers.total_usd_saved))}{total_usd_change}.\n'
-            f'Avg. ARP is {(pretty_money(savers.average_arp))}%{avg_arp_change}.\n'
+            f'Avg. APR is {(pretty_money(savers.average_apr))}%{avg_apr_change}.\n'
             f'Earned: {pretty_dollar(savers.total_rune_earned * event.usd_per_rune)}.\n'
             f'Vault filled: {savers.overall_fill_cap_percent:.1f}%\n\n'
         )
 
-        max_arp = savers.max_arp
+        max_apr = savers.max_apr
 
         for i, pool in enumerate(savers.get_top_vaults('total_asset_as_usd'), start=1):
             asset = " " + Asset.from_string(pool.asset).name
@@ -881,7 +881,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             #     pb = f', {pool.percent_of_cap_filled:.0f}% filled'
             pb = ''
 
-            if pool.arp == max_arp:
+            if pool.apr == max_apr:
                 smile = '💡'
             else:
                 smile = ''
@@ -892,7 +892,7 @@ class TwitterEnglishLocalization(BaseLocalization):
                 f'{(short_money(pool.total_asset_saved, postfix=asset))} '
                 f'{clarification} '
                 f'| {pool.number_of_savers} savers | '
-                f'ARP: {(short_money(pool.arp, postfix="%"))}{smile}\n'
+                f'APR: {(short_money(pool.apr, postfix="%"))}{smile}\n'
             )
 
         return self.smart_split(parts).strip()

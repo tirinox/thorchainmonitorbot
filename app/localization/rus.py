@@ -1646,7 +1646,7 @@ class RussianLocalization(BaseLocalization):
 
         savers, prev = event.current_stats, event.previous_stats
 
-        max_arp = savers.max_arp
+        max_apr = savers.max_apr
 
         for i, pool in enumerate(savers.get_top_vaults('total_asset_as_usd'), start=1):
             asset = " " + Asset.from_string(pool.asset).name
@@ -1657,7 +1657,7 @@ class RussianLocalization(BaseLocalization):
             else:
                 pb = f', {pool.percent_of_cap_filled:.0f}% занято'
 
-            if pool.arp == max_arp:
+            if pool.apr == max_apr:
                 smile = '💡'
             else:
                 smile = ''
@@ -1668,26 +1668,26 @@ class RussianLocalization(BaseLocalization):
                 f'{code(short_money(pool.total_asset_saved, postfix=asset))} '
                 f'{clarification} '
                 f'| {bold(pool.number_of_savers)} участников | '
-                f'Годовые: {code(short_money(pool.arp, postfix="%"))}{smile}\n')
+                f'Годовые: {code(short_money(pool.apr, postfix="%"))}{smile}\n')
 
         if prev:
             saver_number_change = bracketify(up_down_arrow(
                 prev.total_unique_savers, savers.total_unique_savers, int_delta=True))
             total_usd_change = bracketify(up_down_arrow(
                 prev.total_usd_saved, savers.total_usd_saved, money_delta=True, money_prefix='$'))
-            avg_arp_change = bracketify(up_down_arrow(
-                prev.average_arp, savers.average_arp, money_delta=True, postfix='%'
+            avg_apr_change = bracketify(up_down_arrow(
+                prev.average_apr, savers.average_apr, money_delta=True, postfix='%'
             ))
         else:
             saver_number_change = ''
             total_usd_change = ''
-            avg_arp_change = ''
+            avg_apr_change = ''
 
         message += (
             f'\n'
             f'Всего {bold(savers.total_unique_savers)}{saver_number_change} сберегателей '
             f'в сумме с капиталом {bold(short_dollar(savers.total_usd_saved))}{total_usd_change}.\n'
-            f'<b>Средние годовые:</b> {pre(pretty_money(savers.average_arp))}%{avg_arp_change}.\n'
+            f'<b>Средние годовые:</b> {pre(pretty_money(savers.average_apr))}%{avg_apr_change}.\n'
             f'Всего заработано: {bold(pretty_dollar(savers.total_rune_earned * event.usd_per_rune))}.'
         )
 

@@ -21,7 +21,7 @@ class SaverVault(NamedTuple):
     total_asset_saved: float
     total_asset_as_usd: float
     total_asset_as_rune: float
-    arp: float
+    apr: float
     asset_cap: float
     runes_earned: float
 
@@ -51,22 +51,22 @@ class AllSavers(NamedTuple):
         return sum(s.total_asset_as_rune for s in self.pools)
 
     @property
-    def arp_list(self):
-        return [s.arp for s in self.pools]
+    def apr_list(self):
+        return [s.apr for s in self.pools]
 
     @property
-    def average_arp(self) -> float:
+    def average_apr(self) -> float:
         if not self.pools:
             return 0.0
-        return sum(self.arp_list) / len(self.pools)
+        return sum(self.apr_list) / len(self.pools)
 
     @property
-    def min_arp(self):
-        return min(self.arp_list)
+    def min_apr(self):
+        return min(self.apr_list)
 
     @property
-    def max_arp(self):
-        return max(self.arp_list)
+    def max_apr(self):
+        return max(self.apr_list)
 
     @property
     def as_dict(self):
@@ -88,7 +88,7 @@ class AllSavers(NamedTuple):
         except TypeError:
             return
 
-    def sort_pools(self, key='arp'):
+    def sort_pools(self, key='apr'):
         self.pools.sort(key=attrgetter(key))
         return self
 
@@ -147,7 +147,7 @@ class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
                 pool.savers_depth_float,
                 pool.savers_depth_float * pool.runes_per_asset * usd_per_rune,
                 pool.savers_depth_float * pool.runes_per_asset,
-                arp=pool.get_savers_arp(block_no) * 100.0,
+                apr=pool.get_savers_apr(block_no) * 100.0,
                 asset_cap=thor_to_float(pool.get_synth_cap_in_asset(max_synth_per_asset_ratio)),
                 runes_earned=pool.saver_growth_rune
             ) for pool, members in zip(active_pools, per_pool_members)]
@@ -181,7 +181,7 @@ class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
 
             self.logger.info(f'Finished loading saver stats: '
                              f'{savers.total_unique_savers} total savers, '
-                             f'avg ARP = {100 * savers.average_arp:.02f}% '
+                             f'avg APR = {100 * savers.average_apr:.02f}% '
                              f'total saved = {short_dollar(savers.total_usd_saved)}')
             await self.save_savers(savers)
             await self.cd_write_stats.do()

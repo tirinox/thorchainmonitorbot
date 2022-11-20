@@ -41,7 +41,7 @@ async def demo_show_notification(app: LpAppFramework):
     )
     p_data = p_data._replace(
         pools=[p._replace(
-            arp=r(p.arp),
+            apr=r(p.apr),
             total_asset_saved=r(p.total_asset_saved),
             total_asset_as_usd=r(p.total_asset_as_usd)
         ) for p in c_data.pools]

@@ -2146,7 +2146,7 @@ class BaseLocalization(ABC):  # == English
 
         savers, prev = event.current_stats, event.previous_stats
 
-        max_arp = savers.max_arp
+        max_apr = savers.max_apr
 
         for i, pool in enumerate(savers.get_top_vaults('total_asset_as_usd'), start=1):
             asset = " " + Asset.from_string(pool.asset).name
@@ -2157,7 +2157,7 @@ class BaseLocalization(ABC):  # == English
             else:
                 pb = f', {pool.percent_of_cap_filled:.0f}% filled'
 
-            if pool.arp == max_arp:
+            if pool.apr == max_apr:
                 smile = '💡'
             else:
                 smile = ''
@@ -2168,26 +2168,26 @@ class BaseLocalization(ABC):  # == English
                 f'{code(short_money(pool.total_asset_saved, postfix=asset))} '
                 f'{clarification} '
                 f'| {bold(pool.number_of_savers)} savers | '
-                f'ARP: {code(short_money(pool.arp, postfix="%"))}{smile}\n')
+                f'APR: {code(short_money(pool.apr, postfix="%"))}{smile}\n')
 
         if prev:
             saver_number_change = bracketify(up_down_arrow(
                 prev.total_unique_savers, savers.total_unique_savers, int_delta=True))
             total_usd_change = bracketify(up_down_arrow(
                 prev.total_usd_saved, savers.total_usd_saved, money_delta=True, money_prefix='$'))
-            avg_arp_change = bracketify(up_down_arrow(
-                prev.average_arp, savers.average_arp, money_delta=True, postfix='%'
+            avg_apr_change = bracketify(up_down_arrow(
+                prev.average_apr, savers.average_apr, money_delta=True, postfix='%'
             ))
         else:
             saver_number_change = ''
             total_usd_change = ''
-            avg_arp_change = ''
+            avg_apr_change = ''
 
         message += (
             f'\n'
             f'Total {bold(savers.total_unique_savers)}{saver_number_change} savers '
             f'with {bold(short_dollar(savers.total_usd_saved))}{total_usd_change} saved.\n'
-            f'<b>Average ARP</b> is {pre(pretty_money(savers.average_arp))}%{avg_arp_change}.\n'
+            f'<b>Average APR</b> is {pre(pretty_money(savers.average_apr))}%{avg_apr_change}.\n'
             f'Total earned: {bold(pretty_dollar(savers.total_rune_earned * event.usd_per_rune))}.'
         )
 

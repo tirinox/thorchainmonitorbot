@@ -144,7 +144,7 @@ class PoolInfo:
     def saver_growth_rune(self):
         return thor_to_float((self.savers_depth - self.savers_units) * self.runes_per_asset)
 
-    def get_savers_arp(self, block_no, blocks_per_year=BLOCKS_PER_YEAR) -> float:
+    def get_savers_apr(self, block_no, blocks_per_year=BLOCKS_PER_YEAR) -> float:
         if not self.savers_units:
             return 0.0
         saver_growth = (self.savers_depth - self.savers_units) / self.savers_depth
