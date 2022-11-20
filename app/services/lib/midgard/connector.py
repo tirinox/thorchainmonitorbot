@@ -1,6 +1,8 @@
 import aiohttp
 from aiothornode.connector import ThorConnector
+from aiothornode.nodeclient import ThorNodeClient
 
+from services.lib.constants import HTTP_CLIENT_ID
 from services.lib.utils import class_logger
 
 DEFAULT_MIDGARD_PORT = 8080
@@ -13,12 +15,10 @@ class MidgardConnector:
     def __init__(self, session: aiohttp.ClientSession,
                  thor: ThorConnector,
                  retry_number=3,
-                 public_url='',
-                 use_nodes=True):
+                 public_url=''):
         self.logger = class_logger(self)
         self.thor = thor
         self.public_url = public_url.rstrip('/')
-        self.use_nodes = use_nodes
         self.session = session
         self.retries = retry_number
         self.session = session or aiohttp.ClientSession()
@@ -34,7 +34,8 @@ class MidgardConnector:
 
         self.logger.info(f"Getting Midgard endpoint: {full_url}")
         try:
-            async with self.session.get(full_url) as resp:
+            headers = {ThorNodeClient.HEADER_CLIENT_ID: HTTP_CLIENT_ID}
+            async with self.session.get(full_url, headers=headers) as resp:
                 self.logger.debug(f'Midgard "{full_url}"; result code = {resp.status}.')
                 if resp.status != 200:
                     try:

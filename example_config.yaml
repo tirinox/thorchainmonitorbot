@@ -28,7 +28,6 @@ thor:
 
   midgard:
     tries: 3
-    use_nodes: false
     public_url: "https://midgard.ninerealms.com/"
   #    public_url: "https://midgard.thorchain.info/"
 
