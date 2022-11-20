@@ -2,6 +2,7 @@ import copy
 import dataclasses
 import logging
 from dataclasses import dataclass
+from operator import attrgetter
 from typing import List, Dict, NamedTuple
 
 from aiothornode.types import ThorPool
@@ -139,6 +140,10 @@ class PoolInfo:
     def savers_depth_float(self):
         return thor_to_float(self.savers_depth)
 
+    @property
+    def saver_growth_rune(self):
+        return thor_to_float((self.savers_depth - self.savers_units) * self.runes_per_asset)
+
     def get_savers_arp(self, block_no, blocks_per_year=BLOCKS_PER_YEAR) -> float:
         if not self.savers_units:
             return 0.0
@@ -251,12 +256,8 @@ class PoolMapPair:
         if criterion in (self.BY_APY, self.BY_VOLUME_24h):
             pools = filter(lambda p: p.is_enabled, pools)
 
-        def sorter(p: PoolInfo):
-            v = getattr(p, criterion)
-            return -v if descending else v
-
         pool_list = list(pools)
-        pool_list.sort(key=sorter)
+        pool_list.sort(key=attrgetter(criterion), reverse=descending)
         return pool_list if n is None else pool_list[:n]
 
     def get_value(self, pool_name, attr_name):
