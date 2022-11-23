@@ -1021,21 +1021,6 @@ class BaseLocalization(ABC):  # == English
 
             message += '\n'
 
-        switch_rune_total_text = bold(short_rune(new.switched_rune))
-        message += (f'💎 Total Rune switched to native: {switch_rune_total_text} '
-                    f'({format_percent(new.switched_rune, market.total_supply)}).'
-                    f'\n\n')
-
-        if killed.block_id:
-            rune_left = bold(short_rune(killed.unkilled_unswitched_rune))
-            switched_killed = bold(short_rune(killed.killed_switched))  # killed when switched
-            total_killed = bold(short_rune(killed.total_killed))  # potentially dead + switched killed
-            message += (
-                f'☠️ Killed switched Rune: {switched_killed}, '
-                f'total killed Rune: {total_killed}, '
-                f'unswitched Rune left: {rune_left}🆕.\n'
-            )
-
         bonding_apy_change, liquidity_apy_change = self._extract_apy_deltas(new, old)
         message += f'📈 Bonding APY is {code(pretty_money(new.bonding_apy, postfix="%"))}{bonding_apy_change} and ' \
                    f'Liquidity APY is {code(pretty_money(new.liquidity_apy, postfix="%"))}{liquidity_apy_change}.\n'

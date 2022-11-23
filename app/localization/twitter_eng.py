@@ -470,26 +470,6 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         # --------------------------------------------------------------------------------------------------------------
 
-        switch_rune_total_text = short_rune(new.switched_rune)
-        message = (
-            f'💎 Total Rune switched: {switch_rune_total_text} '
-            f'({format_percent(new.switched_rune, market.total_supply)})\n'
-        )
-
-        if killed.block_id:
-            rune_left = short_rune(killed.unkilled_unswitched_rune)
-            switched_killed = short_rune(killed.killed_switched)  # killed when switched
-            total_killed = short_rune(killed.total_killed)  # potentially dead + switched killed
-            message += (
-                f'☠️ Killed switched: {switched_killed}, '
-                f'Total killed: {total_killed}, '
-                f'Unswitched Rune left: {rune_left}🆕.\n'
-            )
-
-        parts.append(message)
-
-        # --------------------------------------------------------------------------------------------------------------
-
         bonding_apy_change, liquidity_apy_change = self._extract_apy_deltas(new, old)
 
         message = (
