@@ -128,7 +128,6 @@ def test_affiliate_merge_new_add(example_tx_gen):
     ], '7E29318D580F7F5E97D93BCB6F0115B0723FE30CE477662608F25CECD45D7B01')
 
 
-
 @pytest.mark.parametrize('fn', [
     'affiliate_merge_test_add_2in.json',
     'affiliate_merge_test_add_2in_mix.json'
@@ -157,8 +156,8 @@ def test_merge_same_1(v2_single_tx_gen):
     tx2 = v2_single_tx_gen()  # same TX, but different objects
 
     assert tx1.deep_eq(tx2)
-    tx1.in_tx[0].coins[0].amount = "123"
-    tx2.in_tx[0].coins[0].amount = "234"
+    tx1.in_tx[0].coins[0] = ThorCoin('123', tx1.in_tx[0].coins[0].asset)
+    tx2.in_tx[0].coins[0] = ThorCoin('234', tx2.in_tx[0].coins[0].asset)
     assert not tx1.deep_eq(tx2)
     r = AffiliateTXMerger().merge_affiliate_txs([tx1, tx2])
     assert len(r) == 1
@@ -184,3 +183,18 @@ def test_synth(example_tx_gen):
 
     non_synth_tx = example_tx_gen('synth_swap.json').txs[2]
     assert not non_synth_tx.is_synth_involved
+
+
+def test_thor_coin():
+    c1 = ThorCoin('10', 'FOO')
+    c2 = ThorCoin('10', 'FOO')
+    c3 = ThorCoin('6', 'FOO')
+    c4 = ThorCoin('10', 'TEST')
+    assert c1 == c2
+    assert {c1, c2} == {c1} == {c2}
+
+    assert c1 != c3 != c4 != c2
+
+    assert ThorCoin(**{
+        'asset': 'BIRD', 'amount': '1234567'
+    }) == ThorCoin('1234567', 'BIRD')

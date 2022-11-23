@@ -81,14 +81,14 @@ class AffiliateTXMerger(WithLogger):
     @staticmethod
     def merge_sub_txs(other_tx: List[ThorSubTx], result_tx: List[ThorSubTx]) -> List[ThorSubTx]:
         # collect (TXID, address) for each input asset name for both Txs
-        hash_addr_tracker = {}
+        asset_to_hash_and_addr = {}
         for tx in [*result_tx, *other_tx]:
             for coin in tx.coins:
-                if coin.asset not in hash_addr_tracker:
-                    hash_addr_tracker[coin.asset] = tx.tx_id, tx.address
+                if coin.asset not in asset_to_hash_and_addr:
+                    asset_to_hash_and_addr[coin.asset] = tx.tx_id, tx.address
                 else:
-                    old_id, old_address = hash_addr_tracker[coin.asset]
-                    hash_addr_tracker[coin.asset] = (old_id or tx.tx_id), (old_address or tx.address)
+                    old_id, old_address = asset_to_hash_and_addr[coin.asset]
+                    asset_to_hash_and_addr[coin.asset] = (old_id or tx.tx_id), (old_address or tx.address)
 
         # merge all same coins and put them in the dictionary using asset-name as key
         merge_coins_dic = {}
@@ -96,16 +96,22 @@ class AffiliateTXMerger(WithLogger):
             *(c for tx in result_tx for c in tx.coins),
             *(c for tx in other_tx for c in tx.coins)
         ]
+
+        # important! if coins are absolutely same, we do not sum them! it is impossible to have 50% affiliate fee
+        # just take one
+        all_coins = set(all_coins)
+
         for coin in all_coins:
             coin: ThorCoin
-            if coin.asset not in merge_coins_dic:
+            old_coin = merge_coins_dic.get(coin.asset)
+            if not old_coin:
                 merge_coins_dic[coin.asset] = coin
             else:
-                merge_coins_dic[coin.asset] = ThorCoin.merge_two(merge_coins_dic[coin.asset], coin)
+                merge_coins_dic[coin.asset] = ThorCoin.merge_two(old_coin, coin)
 
         # reconstruct inputs list
         new_input_transactions = []
-        for asset, (tx_id, address) in hash_addr_tracker.items():
+        for asset, (tx_id, address) in asset_to_hash_and_addr.items():
             coin = merge_coins_dic[asset]
             new_input_transactions.append(
                 ThorSubTx(

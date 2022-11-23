@@ -59,8 +59,7 @@ async def midgard_test_1(lp_app):
                                      tx_type=ThorTxType.TYPE_SWAP,
                                      txid='7F98B4867018DC97C1DC8A6C34E1E597641FC306093B70AB41F156C85D0CD01E')
     await present_one_aff_tx(lp_app, q_path)
-    q_path = free_url_gen.url_for_tx(0, 50,
-                                     address='bnb10gh0p6thzjz54jqy9lg0rv733fnl0vqmc789pp')
+    q_path = free_url_gen.url_for_tx(0, 50, address='bnb10gh0p6thzjz54jqy9lg0rv733fnl0vqmc789pp')
     await present_one_aff_tx(lp_app, q_path, find_aff=True)
 
 
@@ -72,9 +71,7 @@ async def demo_midgard_test_large_ilp(app):
 
 
 async def demo_test_savers_vaults(app):
-    q_path = free_url_gen.url_for_tx(0, 50,
-                                     # tx_type=ThorTxType.TYPE_ADD_LIQUIDITY,
-                                     txid='4C76DC9DFE4EE4C615C2C07A69CFCB35DD9720A4FE5181841A09BA5D09B5F5DC')
+    q_path = free_url_gen.url_for_tx(0, 50, txid='4C76DC9DFE4EE4C615C2C07A69CFCB35DD9720A4FE5181841A09BA5D09B5F5DC')
     await present_one_aff_tx(app, q_path, find_aff=False)
 
 
@@ -86,14 +83,18 @@ async def demo_test_aff_add_liq(app):
 
 
 async def demo_aggr_aff(app):
-    q_path = free_url_gen.url_for_tx(0, 50,
-                                     txid='A3C95CE6146AA7A4651F34E12E1DAAB65AF399563CA7CBB3DC51EF5B623B0270')
+    q_path = free_url_gen.url_for_tx(0, 50, txid='A3C95CE6146AA7A4651F34E12E1DAAB65AF399563CA7CBB3DC51EF5B623B0270')
     await present_one_aff_tx(app, q_path)
 
 
 async def demo_test_2(app):
-    q_path = free_url_gen.url_for_tx(0, 50,
-                                     txid='7D72CBE466F8E817B700D11D0EDB8FE6183B8DD13912F0810FFD87BE708363E9')
+    q_path = free_url_gen.url_for_tx(0, 50, txid='7D72CBE466F8E817B700D11D0EDB8FE6183B8DD13912F0810FFD87BE708363E9')
+    await present_one_aff_tx(app, q_path)
+
+
+async def demo_same_merge_swap(app):
+    # 4931F82A96196AD5393BB27A32F9EF98B7D80E46035EC6700E4BADF1B75129AC
+    q_path = free_url_gen.url_for_tx(0, 50, txid='4931F82A96196AD5393BB27A32F9EF98B7D80E46035EC6700E4BADF1B75129AC')
     await present_one_aff_tx(app, q_path)
 
 
@@ -195,10 +196,11 @@ async def main():
     # await refund_full_rune(lp_app)
     # await demo_midgard_test_large_ilp(lp_app)
     # await demo_full_tx_pipeline(lp_app)
-    await demo_test_savers_vaults(lp_app)
-    # await demo_aggr_aff(lp_app)
+    # await demo_test_savers_vaults(lp_app)
+    await demo_aggr_aff(lp_app)
     # await demo_test_aff_add_liq(lp_app)
     # await demo_test_2(lp_app)
+    await demo_same_merge_swap(lp_app)
 
 
 if __name__ == '__main__':
