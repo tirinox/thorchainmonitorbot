@@ -194,7 +194,7 @@ class NameService(WithLogger):
         Returns an array of chains and their addresses associated with the given THORName
         """
         results = await self.midgard.request(f'/v2/thorname/lookup/{name}')
-        if results:
+        if results and results != self.midgard.ERROR_RESPONSE:
             return THORName(
                 name=name,
                 expire_block_height=int(results['expire']),

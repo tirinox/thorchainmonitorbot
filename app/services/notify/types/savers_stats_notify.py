@@ -181,7 +181,7 @@ class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
 
             self.logger.info(f'Finished loading saver stats: '
                              f'{savers.total_unique_savers} total savers, '
-                             f'avg APR = {100 * savers.average_apr:.02f}% '
+                             f'avg APR = {savers.average_apr:.02f}% '
                              f'total saved = {short_dollar(savers.total_usd_saved)}')
             await self.save_savers(savers)
             await self.cd_write_stats.do()
