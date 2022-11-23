@@ -14,7 +14,7 @@ markdownify
 multidict
 numpy
 pandas
-Pillow
+Pillow>=9.3.0
 pysha3
 pytest
 pytest-asyncio
