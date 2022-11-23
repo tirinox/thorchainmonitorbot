@@ -21,7 +21,7 @@ async def send_to_channel_test_message(d: DepContainer):
         notifier_pool_churn = PoolChurnNotifier(d)
 
         ppf_old = PoolFetcher(d)
-        d.price_holder.pool_info_map = await ppf_old.load_pools()
+        d.price_holder.pool_info_map = await ppf_old.load_pools(caching=False)
         await ppf.get_pool_info_midgard()
 
         # feed original pools

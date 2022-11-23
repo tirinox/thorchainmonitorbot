@@ -24,6 +24,7 @@ class PoolFetcher(BaseFetcher):
 
     # todo: split this class: 1) PoolFetcher 2) PoolDataCache 3) RuneMarketInfoFetcher
     MAX_ATTEMPTS_TO_FETCH_POOLS = 5
+    CACHE_TOLERANCE = 60
 
     def __init__(self, deps: DepContainer):
         assert deps
@@ -120,9 +121,8 @@ class PoolFetcher(BaseFetcher):
             if all(p is not None for p in pool_map.values()):
                 return pool_map
 
-    @staticmethod
-    def _hash_key_day(dt: datetime):
-        return day_to_key(dt.date(), 'ByDay')
+    def _hash_key_day(self, dt: datetime):
+        return str(int(dt.timestamp()) // self.CACHE_TOLERANCE * self.CACHE_TOLERANCE)
 
     async def load_pools(self, height=None, caching=True) -> PoolInfoMap:
         if caching:
