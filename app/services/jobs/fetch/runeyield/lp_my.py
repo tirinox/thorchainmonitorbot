@@ -101,7 +101,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
         # add protection to final APY, LPvsHodl, % and so on!
         if self.add_il_protection_to_final_figures:
-            cur_liq.pool_units = protection_report.member_extra_units + cur_liq.pool_units
+            cur_liq.pool_units += protection_report.member_extra_units
             pool_info = protection_report.corrected_pool or pool_info
 
         self.logger.info(f'{protection_report=}')
@@ -124,7 +124,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             return await get_user_pools_from_thoryield(self.deps.session, address)
         return self.parser.parse_pool_membership(j)
 
-        # ------------------------------------------------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------------------------------------------
 
     @staticmethod
     def _find_thor_address_in_tx_list(txs: List[ThorTx]) -> str:
@@ -404,8 +404,8 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         return day_to_units
 
     async def get_last_thorchain_block(self):
-        # todo: use last_block_fetcher from deps
-        if self.last_block == 0:
+        self.last_block = self.deps.last_block_store.last_thor_block
+        if not self.last_block:
             self.last_block = await self.block_mapper.get_last_thorchain_block()
         return self.last_block
 
