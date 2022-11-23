@@ -1,6 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import List, Optional, Iterable
+from typing import List, Optional, Iterable, NamedTuple
 
 from services.lib.constants import is_rune, RUNE_SYMBOL, Chains, thor_to_float, THOR_BASIS_POINT_MAX
 from services.lib.date_utils import now_ts
@@ -22,8 +22,7 @@ class ThorTxType:
     TYPE_SWITCH = 'switch'  # BNB/ETH Rune => Native RUNE
 
 
-@dataclass
-class ThorCoin:
+class ThorCoin(NamedTuple):
     amount: str = '0'
     asset: str = ''
 
@@ -57,14 +56,6 @@ class ThorSubTx:
     @property
     def first_amount(self):
         return self.coins[0].amount if self.coins else None
-
-    @classmethod
-    def join_coins(cls, tx_list: Iterable):
-        coin_dict = defaultdict(int)
-        for tx in tx_list:
-            for coin in tx.coins:
-                coin_dict[coin.asset] += int(coin.amount)
-        return cls(address='', coins=[ThorCoin(str(amount), asset) for asset, amount in coin_dict.items()], tx_id='')
 
     @property
     def rune_coin(self):
