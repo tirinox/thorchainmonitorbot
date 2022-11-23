@@ -9,7 +9,7 @@ from services.jobs.fetch.runeyield.base import YieldSummary
 from services.jobs.fetch.runeyield.date2block import DateToBlockMapper
 from services.jobs.fetch.runeyield.external import get_user_pools_from_thoryield
 from services.jobs.fetch.tx import TxFetcher
-from services.lib.constants import NetworkIdents, thor_to_float, float_to_thor, Chains
+from services.lib.constants import thor_to_float, float_to_thor, Chains
 from services.lib.date_utils import days_ago_noon, now_ts
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
@@ -23,7 +23,7 @@ from services.models.tx import ThorTx, ThorTxType, final_liquidity
 
 HeightToAllPools = Dict[int, PoolInfoMap]
 
-DEFAULT_RUNE_PRICE = 10.0  # USD
+DEFAULT_RUNE_PRICE = 1.0  # USD
 
 
 class HomebrewLPConnector(AsgardConsumerConnectorBase):
@@ -51,8 +51,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
         user_txs = await self._get_user_tx_actions(address)
 
-        # On Midgard V1 we must manually get list of Lpools
-        if not NetworkIdents.is_multi(self.deps.cfg.network_id) and not pools:
+        if not pools:
             pools = await self.get_my_pools(address)
 
         historic_all_pool_states = await self._fetch_historical_pool_states(user_txs)
@@ -78,7 +77,8 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         historic_all_pool_states = await self._fetch_historical_pool_states(user_txs)
         return await self._create_lp_report_for_one_pool(historic_all_pool_states, pool_name, user_txs)
 
-    async def _create_lp_report_for_one_pool(self, historic_all_pool_states,
+    async def _create_lp_report_for_one_pool(self,
+                                             historic_all_pool_states: HeightToAllPools,
                                              pool_name: str,
                                              user_txs: List[ThorTx]) -> LiquidityPoolReport:
         # todo: idea: check date_last_added, if it is not changed - get user_txs from local cache
