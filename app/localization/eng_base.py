@@ -1128,7 +1128,7 @@ class BaseLocalization(ABC):  # == English
     def _node_bond_change_after_churn(self, changes: NodeSetChanges):
         bond_in, bond_out = changes.bond_churn_in, changes.bond_churn_out
         bond_delta = bond_in - bond_out
-        return f'Active bond net change: {code(short_money(bond_delta, postfix=RAIDO_GLYPH))}'
+        return f'Active bond net change: {code(short_money(bond_delta, postfix=RAIDO_GLYPH, signed=True))}'
 
     def notification_text_for_node_churn(self, changes: NodeSetChanges):
         message = ''
