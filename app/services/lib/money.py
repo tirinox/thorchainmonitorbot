@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from math import floor, log10
 from typing import List
 
+from services.lib.constants import Chains
 from services.lib.utils import linear_transform
 
 EMOJI_SCALE = [
@@ -265,6 +266,13 @@ class Asset:
     @classmethod
     def to_L1_pool_name(cls, asset: str):
         return cls.from_string(asset).native_pool_name
+
+    @property
+    def is_gas_asset(self):
+        return not self.tag and (
+                self.chain == self.name or
+                (self.chain == Chains.ATOM and self.name == 'ATOM')
+        )
 
 
 def weighted_mean(values, weights):

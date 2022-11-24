@@ -7,8 +7,8 @@ from services.dialog.twitter.twitter_bot import TwitterBot, TwitterBotMock
 from services.lib.config import Config
 from services.lib.utils import setup_logs
 from services.notify.channel import BoardMessage, ChannelDescriptor
-from tools.debug.dbg_supply_graph import get_supply_pic, save_and_show_supply_pic
-from tools.lib.lp_common import LpAppFramework
+from tools.debug.dbg_supply_graph import get_supply_pic
+from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
 MOCK = True
 
@@ -23,7 +23,7 @@ async def twitter_post_supply(bot: TwitterBot):
         ]
 
         pic, pic_name = await get_supply_pic(app)
-        save_and_show_supply_pic(pic)
+        save_and_show_pic(pic, name='supply')
 
         loc = app.deps.loc_man[Language.ENGLISH_TWITTER]
         b_message = BoardMessage.make_photo(pic, loc.SUPPLY_PIC_CAPTION)

@@ -5,6 +5,7 @@ import sha3
 from PIL import Image
 
 from services.lib.constants import *
+from services.lib.money import Asset
 from services.lib.utils import download_file
 
 logger = logging.getLogger(__name__)
@@ -29,6 +30,8 @@ class CryptoLogoDownloader:
     COIN_BASE_URL = 'https://raw.githubusercontent.com/trustwallet/assets/master/blockchains'
     UNKNOWN_LOGO = f'unknown.png'
 
+    CONTRACT = 'contract'
+
     CHAIN_TO_NAME = {
         Chains.BNB: 'binance',
         Chains.BTC: 'bitcoin',
@@ -36,6 +39,9 @@ class CryptoLogoDownloader:
         Chains.BCH: 'bitcoincash',
         Chains.ETH: 'ethereum',
         Chains.DOGE: 'doge',
+        Chains.AVAX: 'avalanchex',
+        Chains.AVAX + CONTRACT: 'avalanchec',
+        Chains.ATOM: 'cosmos',
     }
 
     TEST_ASSET_MAPPING = {
@@ -60,14 +66,22 @@ class CryptoLogoDownloader:
         if asset in cls.TEST_ASSET_MAPPING:  # fix for unknown test assets
             asset = cls.TEST_ASSET_MAPPING[asset]
 
-        chain, asset, *_ = asset.split('.')
+        a = Asset.from_string(asset)
 
-        chain_name = cls.CHAIN_TO_NAME.get(chain)
-        if asset == chain:  # e.g. BNB.BNB, BTC.BTC
+        chain_name = ''
+        if a.tag:
+            chain_name = cls.CHAIN_TO_NAME.get(a.chain + cls.CONTRACT)
+
+        if not chain_name:
+            chain_name = cls.CHAIN_TO_NAME.get(a.chain)
+
+        if a.is_gas_asset:  # e.g. BNB.BNB, BTC.BTC, GAIA.ATOM
             path = f'{chain_name}/info/logo.png'
         else:
-            name, address = asset.split('-')[:2]
-            address = convert_eth_address_to_case_checksum(address)  # fix for CaSe checksum
+            if a.chain != Chains.BNB:
+                address = convert_eth_address_to_case_checksum(a.tag)  # fix for CaSe checksum
+            else:
+                address = a.full_name
             path = f'{chain_name}/assets/{address}/logo.png'
 
         return f'{cls.COIN_BASE_URL}/{path}'
@@ -83,14 +97,22 @@ class CryptoLogoDownloader:
         target_path = self.coin_path(asset)
         await download_file(url, target_path)
 
-    async def get_or_download_logo_cached(self, asset):
+        # thumbnail
+        logo = Image.open(target_path).convert("RGBA")
+        logo.thumbnail((self.LOGO_WIDTH, self.LOGO_HEIGHT))
+        with open(target_path, 'wb') as f:
+            logo.save(f, 'png')
+
+    async def get_or_download_logo_cached(self, asset, forced=False):
         try:
             local_path = self.coin_path(asset)
-            if not os.path.exists(local_path):
+            if forced or not os.path.exists(local_path):
                 await self._download_logo(asset)
             logo = Image.open(local_path).convert("RGBA")
         except Exception as e:
             logo = Image.open(self.get_full_path(self.UNKNOWN_LOGO))
             logger.error(f'error ({e}) loading logo for "{asset}". using the default one...')
-        logo.thumbnail((self.LOGO_WIDTH, self.LOGO_HEIGHT))  # fixme: move thumbnail to download_logo
+
+        if logo.size != (self.LOGO_WIDTH, self.LOGO_HEIGHT):
+            logo.thumbnail((self.LOGO_WIDTH, self.LOGO_HEIGHT))
         return logo
