@@ -1,6 +1,6 @@
 from typing import List, NamedTuple, Tuple
 
-import PIL
+import PIL.Image
 
 from localization.eng_base import BaseLocalization
 from services.dialog.picture.resources import Resources

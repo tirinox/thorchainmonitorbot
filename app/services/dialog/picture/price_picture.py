@@ -1,6 +1,6 @@
 from typing import Tuple
 
-import PIL
+import PIL.Image
 
 from localization.manager import BaseLocalization
 from services.jobs.volume_recorder import VolumeRecorder

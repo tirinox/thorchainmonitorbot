@@ -2,7 +2,7 @@ import typing
 from dataclasses import dataclass
 from enum import Enum
 
-import PIL
+import PIL.Image
 
 from localization.languages import Language
 from services.lib.draw_utils import img_to_bio

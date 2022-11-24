@@ -1,6 +1,6 @@
 from typing import Tuple
 
-import PIL
+import PIL.Image
 import pandas as pd
 
 from localization.manager import BaseLocalization

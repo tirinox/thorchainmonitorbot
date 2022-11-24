@@ -1,6 +1,6 @@
 from typing import Tuple
 
-import PIL
+import PIL.Image
 
 from localization.manager import BaseLocalization
 from services.lib.date_utils import today_str
