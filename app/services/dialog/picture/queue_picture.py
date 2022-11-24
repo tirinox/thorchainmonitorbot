@@ -1,9 +1,7 @@
-from typing import Tuple
-
-import PIL.Image
 import pandas as pd
 
 from localization.manager import BaseLocalization
+from services.dialog.picture.common import PictureAndName
 from services.lib.date_utils import ts_event_points_to_pandas, DAY, today_str
 from services.lib.depcont import DepContainer
 from services.lib.draw_utils import CATEGORICAL_PALETTE
@@ -17,7 +15,7 @@ RESAMPLE_TIME = '10min'
 MIN_POINTS = 4
 
 
-async def queue_graph(d: DepContainer, loc: BaseLocalization, duration=DAY) -> Tuple[PIL.Image.Image, str]:
+async def queue_graph(d: DepContainer, loc: BaseLocalization, duration=DAY) -> PictureAndName:
     ts = TimeSeries(QUEUE_TIME_SERIES, d.db)
     points = await ts.select(*ts.range_from_ago_to_now(duration, tolerance_sec=10), count=10000)
     if not points or len(points) < MIN_POINTS:

@@ -1,8 +1,5 @@
-from typing import Tuple
-
-import PIL.Image
-
 from localization.manager import BaseLocalization
+from services.dialog.picture.common import PictureAndName
 from services.jobs.volume_recorder import VolumeRecorder
 from services.lib.constants import RUNE_SYMBOL_DET, RUNE_SYMBOL_POOL, RUNE_SYMBOL_CEX
 from services.lib.date_utils import DAY, today_str
@@ -83,7 +80,7 @@ def price_graph(pool_price_df, det_price_df, cex_prices_df, volumes, loc: BaseLo
     return graph.finalize()
 
 
-async def price_graph_from_db(deps: DepContainer, loc: BaseLocalization, period=DAY) -> Tuple[PIL.Image.Image, str]:
+async def price_graph_from_db(deps: DepContainer, loc: BaseLocalization, period=DAY) -> PictureAndName:
     series = PriceTimeSeries(RUNE_SYMBOL_POOL, deps.db)
     det_series = PriceTimeSeries(RUNE_SYMBOL_DET, deps.db)
     cex_price_series = PriceTimeSeries(RUNE_SYMBOL_CEX, deps.db)

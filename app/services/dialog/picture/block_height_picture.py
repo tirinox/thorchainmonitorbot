@@ -3,6 +3,7 @@ from typing import Tuple
 import PIL.Image
 
 from localization.manager import BaseLocalization
+from services.dialog.picture.common import PictureAndName
 from services.lib.date_utils import today_str
 from services.lib.plot_graph import PlotGraphLines
 from services.lib.utils import async_wrap
@@ -14,8 +15,8 @@ LINE_COLOR_ACTUAL = '#FFD573'
 LINE_COLOR_EXPECTED = '#61B7CF'
 
 
-async def block_speed_chart(last_points, loc: BaseLocalization, normal_bpm=10, time_scale_mode='date') \
-        -> Tuple[PIL.Image.Image, str]:
+async def block_speed_chart(
+        last_points, loc: BaseLocalization, normal_bpm=10, time_scale_mode='date') -> PictureAndName:
     return await block_speed_chart_sync(last_points, loc, normal_bpm, time_scale_mode)
 
 
