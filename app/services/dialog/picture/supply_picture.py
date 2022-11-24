@@ -31,9 +31,15 @@ class SupplyPictureGenerator(BasePictureGenerator):
             self.gr.draw.rectangle(r.coordinates, item.color, outline=outline)
         if item.label:
             self._add_text(r.shift_from_origin(10, 8), item.label)
-        if item.meta_data:
-            self._add_text(r.center, item.meta_data, anchor='mm', font=self.font_amount,
-                           fill=item.color or 'white', stroke_width=2)
+        meta = item.meta_data
+        if meta:
+            font = self.res.get_font(20) if item.weight < 6e6 else self.res.get_font(34)
+            text = short_rune(item.weight)
+
+            self._add_text(r.center, text,
+                           anchor='mm',
+                           font=font,
+                           fill=item.color or 'white')
 
     def _add_text(self, xy, text, fill='white', stroke_fill='black', stroke_width=1, anchor=None, font=None):
         self.gr.draw.text(xy, text,
@@ -53,8 +59,10 @@ class SupplyPictureGenerator(BasePictureGenerator):
         self.killed = killed_rune
         self.net_stats = net_stats
 
-        self.font = Resources().font_small
-        self.font_amount = Resources().font_sum_ticks
+        self.res = Resources()
+
+        self.font = self.res.font_small
+
         self.gr = PlotGraph(self.WIDTH, self.HEIGHT)
         self.locked_thor_rune = supply.thor_rune.locked_amount
         self.translate = {
@@ -148,7 +156,7 @@ class SupplyPictureGenerator(BasePictureGenerator):
                 self.translate.get(lock_type, lock_type),
                 amount,
                 self.PALETTE.get(lock_type, 'black'),
-                short_rune(amount) if amount > MIN_AMOUNT_FOR_LABEL else '')
+                amount if amount > MIN_AMOUNT_FOR_LABEL else '')
             for lock_type, amount in self.supply.thor_rune.locked.items()
         ], self.locked_rect, align=DrawRectPacker.V)
 
@@ -157,10 +165,9 @@ class SupplyPictureGenerator(BasePictureGenerator):
         free_circulating = self.supply.thor_rune.circulating - bonded - pooled
 
         self._pack([
-            PackItem(self.loc.SUPPLY_PIC_BONDED, bonded, self.PALETTE[ThorRealms.BONDED], short_rune(bonded)),
-            PackItem(self.loc.SUPPLY_PIC_POOLED, pooled, self.PALETTE[ThorRealms.POOLED], short_rune(pooled)),
-            PackItem(self.loc.SUPPLY_PIC_CIRCULATING, free_circulating, self.PALETTE[ThorRealms.CIRCULATING],
-                     short_rune(free_circulating)),
+            PackItem(self.loc.SUPPLY_PIC_BONDED, bonded, self.PALETTE[ThorRealms.BONDED], 'y'),
+            PackItem(self.loc.SUPPLY_PIC_POOLED, pooled, self.PALETTE[ThorRealms.POOLED], 'y'),
+            PackItem(self.loc.SUPPLY_PIC_CIRCULATING, free_circulating, self.PALETTE[ThorRealms.CIRCULATING], 'y'),
         ], self.circulating_rect, align=DrawRectPacker.V)
 
         ((erc20_item, erc20_rect), (bep2_item, bep2_rect)) = self._pack([
@@ -176,21 +183,22 @@ class SupplyPictureGenerator(BasePictureGenerator):
 
         bep2_left = bep2_full - bep2_killed
         self._pack([
-            PackItem(vertical_text(ThorRealms.BEP2), bep2_left, self.PALETTE[ThorRealms.BEP2], short_rune(bep2_left)),
-            PackItem('', bep2_killed, killed_color, short_rune(bep2_killed)),
+            PackItem(vertical_text(ThorRealms.BEP2), bep2_left, self.PALETTE[ThorRealms.BEP2], 'y'),
+            PackItem('', bep2_killed, killed_color, 'y'),
         ], bep2_rect, align=DrawRectPacker.V)
 
         erc20_left = erc20_full - erc20_killed
         self._pack([
-            PackItem(vertical_text(ThorRealms.ERC20), erc20_left, self.PALETTE[ThorRealms.ERC20], short_rune(erc20_left)),
-            PackItem('', erc20_killed, killed_color, short_rune(erc20_killed)),
+            PackItem(vertical_text(ThorRealms.ERC20), erc20_left, self.PALETTE[ThorRealms.ERC20], 'y'),
+            PackItem('', erc20_killed, killed_color, 'y'),
         ], erc20_rect, align=DrawRectPacker.V)
 
+        kiled_and_lost = thor_killed + self.supply.lost_forever
         thor_killed_rect = self._fit_smaller_rect(self.circulating_rect, self.supply.thor_rune.circulating,
-                                                  (thor_killed + self.supply.lost_forever))
+                                                  kiled_and_lost)
 
-        self._draw_rect(thor_killed_rect, PackItem('', 1, color=killed_color,
-                                                   meta_data=short_rune(self.killed.killed_switched)))
+        self._draw_rect(thor_killed_rect, PackItem('', kiled_and_lost, color=killed_color,
+                                                   meta_data='y'))
         self._add_text((thor_killed_rect.x + 5, thor_killed_rect.y - 20), self.loc.SUPPLY_PIC_KILLED_LOST)
 
         y_up = -22

@@ -140,6 +140,7 @@ class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
         max_synth_per_asset_ratio = self.deps.mimir_const_holder.get_max_synth_per_asset_depth()
 
         savers = AllSavers(
+            # none?
             total_unique_savers=len(set(chain(*per_pool_members))),
             pools=[SaverVault(
                 pool.asset,

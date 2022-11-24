@@ -17,16 +17,24 @@ class Resources(metaclass=Singleton):
         self.hidden_img = Image.open(self.HIDDEN_IMG)
         self.hidden_img.thumbnail((200, 36))
 
-        self.font = ImageFont.truetype(self.FONT_BOLD, 40)
-        self.font_head = ImageFont.truetype(self.FONT_BOLD, 48)
-        self.font_small = ImageFont.truetype(self.FONT_BOLD, 28)
-        self.font_semi = ImageFont.truetype(self.FONT_BOLD, 36)
-        self.font_big = ImageFont.truetype(self.FONT_BOLD, 64)
+        self._fonts_by_size = {}
+
+        self.font_sum_ticks = self.get_font(24)
+        self.font_small = self.get_font(28)
+        self.font_semi = self.get_font(36)
+        self.font = self.get_font(40)
+        self.font_head = self.get_font(48)
+        self.font_big = self.get_font(64)
+
         self.bg_image = Image.open(self.BG_IMG)
 
         self.logo_downloader = CryptoLogoDownloader(self.LOGO_BASE)
 
-        self.font_sum_ticks = ImageFont.truetype(self.FONT_BOLD, 24)
+    def get_font(self, size: int):
+        f = self._fonts_by_size.get(size)
+        if not f:
+            f = self._fonts_by_size[size] = ImageFont.truetype(self.FONT_BOLD, size)
+        return f
 
     def put_hidden_plate(self, image, position, anchor='left', ey=-3):
         x, y = position

@@ -1,4 +1,3 @@
-import operator
 from datetime import datetime
 from typing import List
 
@@ -385,6 +384,7 @@ class PlotGraphLines(PlotGraph):
 
     BAR_LABEL_MODE_ON_CHANGE = 'on_change'
     BAR_LABEL_MODE_MIN_MAX = 'min_max'
+
     def _plot_bars(self):
         ox, oy, plot_w, plot_h = self.plot_rect()
 
