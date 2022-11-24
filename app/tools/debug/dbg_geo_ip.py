@@ -5,10 +5,10 @@ import random
 
 from eth_utils.humanize import WEEK
 
-from services.dialog.picture.node_geo_picture import make_donut_chart
 from services.dialog.picture.nodes_pictures import NodePictureGenerator
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.lib.date_utils import now_ts, DAY, HOUR
+from services.lib.draw_utils import make_donut_chart
 from services.lib.geo_ip import GeoIPManager
 from services.lib.utils import setup_logs, load_pickle, save_pickle
 from services.models.node_info import NetworkNodeIpInfo, NodeStatsItem
