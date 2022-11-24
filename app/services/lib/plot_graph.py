@@ -93,7 +93,7 @@ class PlotGraph:
 
     def plot_legend_unit(self, legend_x, legend_y, color, title, font=None):
         font = font or self.font_ticks
-        half_square_sz = 5
+        half_square_sz = 7
         self.draw.rectangle(
             (
                 legend_x - half_square_sz,
@@ -101,7 +101,7 @@ class PlotGraph:
                 legend_x + half_square_sz,
                 legend_y + half_square_sz
             ),
-            fill=color
+            fill=color, outline='black'
         )
         self.draw.text((legend_x + 20 - half_square_sz, legend_y),
                        title, fill=TC_WHITE, font=font, anchor='lm')
