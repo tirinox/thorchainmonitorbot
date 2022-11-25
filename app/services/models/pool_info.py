@@ -151,7 +151,6 @@ class PoolInfo:
         return (saver_growth / (block_no - SAVERS_BEGIN_BLOCK)) * blocks_per_year
 
 
-
 @dataclass
 class LPPosition:
     pool: str

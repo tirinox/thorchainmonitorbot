@@ -140,10 +140,10 @@ class TwitterEnglishLocalization(BaseLocalization):
             if tx.is_savings:
                 rune_part = ''
                 asset_part = f"Single-sided {short_money(tx.asset_amount)} {asset}"
-                amount_more, asset_more, saver_pb = self.get_savers_limits(pool_info, usd_per_rune, mimir)
+                amount_more, asset_more, saver_pb, saver_cap = self.get_savers_limits(pool_info, usd_per_rune, mimir)
                 pool_depth_part = f'Savers cap is {saver_pb} full. ' \
                                   f'You can add {short_money(amount_more)} {asset_more} more.'
-                saver_percent = tx.asset_amount / pool_info.savers_depth_float
+                saver_percent = tx.asset_amount / saver_cap * 100.0
                 pool_percent_part = f" ({saver_percent:.2f}% of vault)" if saver_percent > self.MIN_PERCENT_TO_SHOW \
                     else ''
             else:
