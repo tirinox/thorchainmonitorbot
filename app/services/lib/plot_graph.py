@@ -5,6 +5,7 @@ import pandas as pd
 from PIL import Image
 from PIL import ImageDraw, ImageFont
 
+from services.dialog.picture.resources import Resources
 from services.lib.draw_utils import LIGHT_TEXT_COLOR, default_gradient, get_palette_color_by_index, TC_WHITE
 
 BIG_NUMBER = 1e20
@@ -14,9 +15,6 @@ class PlotGraph:
     PLOT_COLOR = '#62d0e3'
     PLOT_COLOR_2 = '#52c0d3'
     TICK_COLOR = '#555577'
-
-    BASE = './data'
-    FONT_BOLD = f'{BASE}/my.ttf'
 
     def __init__(self, w=800, h=600, bg='gradient'):
         self.w = w
@@ -38,8 +36,10 @@ class PlotGraph:
         self.y_formatter = self.int_formatter
         self.n_ticks_x = 11
         self.n_ticks_y = 20
-        self.font_ticks = ImageFont.truetype(self.FONT_BOLD, 15)
-        self.font_title = ImageFont.truetype(self.FONT_BOLD, 35)
+
+        r = Resources()
+        self.font_ticks = r.fonts.get_font(15)
+        self.font_title = r.fonts.get_font(35)
         self.tick_size = 4
         self.axis_text_color = TC_WHITE
         self.grid_lines = False

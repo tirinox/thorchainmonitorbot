@@ -6,7 +6,7 @@ from typing import List
 from PIL import Image, ImageDraw
 
 from localization.eng_base import BaseLocalization
-from services.dialog.picture.resources import FontCache
+from services.dialog.picture.resources import FontCache, Resources
 from services.lib.date_utils import DAY, now_ts, today_str
 from services.lib.draw_utils import default_background, CacheGrid, TC_YGGDRASIL_GREEN, \
     make_donut_chart, TC_NIGHT_BLACK, TC_PALETTE, TC_WHITE, TC_LIGHTNING_BLUE, get_palette_color_by_index
@@ -17,17 +17,17 @@ from services.lib.utils import async_wrap, Singleton, most_common_and_other, lin
 from services.models.node_info import NetworkNodeIpInfo, NodeStatsItem
 
 
-class Resources(metaclass=Singleton):
-    BASE = './data'
+class ResourcesNodePic(metaclass=Singleton):
+    BASE = Resources.BASE
     WORLD_FILE = f'{BASE}/earth-bg.png'
     LOGO_FILE = f'{BASE}/tc_logo.png'
     CIRCLE_FILE = f'{BASE}/circle_new.png'
     CIRCLE_DIM_FILE = f'{BASE}/circle-dim.png'
 
-    FONT_BOLD = f'{BASE}/my.ttf'
-
     def __init__(self) -> None:
-        self.fonts = FontCache(self.BASE)
+        r = Resources()
+
+        self.fonts = r.fonts
         self.font_xs = self.fonts.get_font(24)
         self.font_small = self.fonts.get_font(30)
         self.font_norm = self.fonts.get_font(34)
@@ -36,7 +36,7 @@ class Resources(metaclass=Singleton):
         self.font_head = self.fonts.get_font(80)
 
         self.world_map = Image.open(self.WORLD_FILE)
-        self.tc_logo = Image.open(self.LOGO_FILE)
+        self.tc_logo = r.tc_logo
         self.circle = Image.open(self.CIRCLE_FILE)
         self.circle_dim = Image.open(self.CIRCLE_DIM_FILE)
 
@@ -49,7 +49,7 @@ class WorldMap:
     }
 
     def __init__(self, loc: BaseLocalization):
-        self.r = Resources()
+        self.r = ResourcesNodePic()
         self.w, self.h = self.r.world_map.size
         self.loc = loc
         self.label_color = '#ddd'
@@ -210,7 +210,7 @@ class BondRuler:
         color = '#147e73'
         w = self.width
         line_width = 3
-        r = Resources()
+        r = ResourcesNodePic()
 
         d.line(((x, y), (x + w, y)), fill=color, width=line_width)
 
@@ -287,7 +287,7 @@ class NodePictureGenerator:
         color_map_countries, counted_countries = self._categorize(countries, active_nodes)
 
         # build the image
-        r = Resources()
+        r = ResourcesNodePic()
         w, h = self.PIC_WIDTH, self.PIC_HEIGHT
         image = default_background(w, h)
         draw = ImageDraw.Draw(image)
@@ -328,7 +328,10 @@ class NodePictureGenerator:
         br.generate(draw, ruler_margin, 1680)
 
         # TC Logo
-        image.paste(r.tc_logo, ((w - r.tc_logo.size[0]) // 2, 20))
+        logo_x, logo_y = 30, 22
+        image.paste(r.tc_logo, (logo_x, logo_y))
+        draw.text((logo_x + 10 + r.tc_logo.width, 79),
+                  'nodes', fill=TC_WHITE, font=r.font_subtitle, anchor='lb')  # todo: loc
 
         # Chart
         chart = self._make_bond_chart(self.node_stats_points, r, 900, 450, period=self.CHART_PERIOD)

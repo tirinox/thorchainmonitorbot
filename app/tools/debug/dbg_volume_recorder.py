@@ -56,12 +56,17 @@ async def debug_post_price_graph_to_discord(app: LpAppFramework):
     await sender.do_notify_price_table(market_info, hist_prices, ath=False)
 
 
+async def demo_show_price_graph(app: LpAppFramework):
+    graph, graph_name = await make_price_graph(app)
+    save_and_show_price_graph(graph, graph_name)
+
+
 async def main():
     app = LpAppFramework(log_level=logging.INFO)
     async with app(brief=True):
         # await continuous_volume_recording(app)
-        # await show_price_graph(app)
-        await debug_post_price_graph_to_discord(app)
+        await demo_show_price_graph(app)
+        # await debug_post_price_graph_to_discord(app)
 
 
 if __name__ == '__main__':

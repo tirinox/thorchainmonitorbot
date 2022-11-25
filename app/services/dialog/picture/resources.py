@@ -7,14 +7,14 @@ from services.lib.utils import Singleton
 
 
 class FontCache(metaclass=Singleton):
-    FONT_BOLD = f'my.ttf'
+    FONT_STD = f'Exo2-Regular-Rune.ttf'
 
     def __init__(self, base_dir):
         self._cache = {}
         self._base_dir = base_dir
 
     def get_font(self, size: int, font=None):
-        font = font or self.FONT_BOLD
+        font = font or self.FONT_STD
         key = f'{font}/{size}'
         f = self._cache.get(key)
         if not f:
@@ -30,7 +30,7 @@ class Resources(metaclass=Singleton):
     HIDDEN_IMG = f'{BASE}/hidden.png'
     BG_IMG = f'{BASE}/lp_bg.png'
 
-    FONT_BOLD = f'{BASE}/my.ttf'
+    LOGO_FILE = f'{BASE}/tc_logo.png'
 
     def __init__(self) -> None:
         self.fonts = FontCache(self.BASE)
@@ -47,6 +47,8 @@ class Resources(metaclass=Singleton):
         self.font_big = self.fonts.get_font(64)
 
         self.bg_image = Image.open(self.BG_IMG)
+
+        self.tc_logo = Image.open(self.LOGO_FILE)
 
         self.logo_downloader = CryptoLogoDownloader(self.LOGO_BASE)
 
