@@ -515,11 +515,12 @@ class BaseLocalization(ABC):  # == English
             if tx.is_savings:
                 rune_part = ''
                 asset_part = f"Single-sided {bold(short_money(tx.asset_amount))} {asset}"
-                amount_more, asset_more, saver_pb = self.get_savers_limits(pool_info, usd_per_rune, mimir)
+                amount_more, asset_more, saver_pb, saver_cap = \
+                    self.get_savers_limits(pool_info, usd_per_rune, mimir)
                 pool_depth_part = f'Savers cap is {saver_pb} full. ' \
                                   f'You can add {pre(short_money(amount_more))} {pre(asset_more)} more.'
                 cap = None  # it will stop standard LP cap from being shown
-                saver_percent = tx.asset_amount / pool_info.savers_depth_float
+                saver_percent = tx.asset_amount / saver_cap * 100.0
                 pool_percent_part = f" ({saver_percent:.2f}% of vault)" if saver_percent > self.MIN_PERCENT_TO_SHOW \
                     else ''
             else:
@@ -609,7 +610,7 @@ class BaseLocalization(ABC):  # == English
         cap = pool.get_synth_cap_in_asset(max_synth_per_asset_ratio)
         amount_more = pool.how_much_savings_you_can_add(max_synth_per_asset_ratio)
         saver_pb = self._cap_progress_bar(ThorCapInfo(cap, pool.savers_depth, usd_per_rune))
-        return amount_more, Asset(pool.asset).name, saver_pb
+        return amount_more, Asset(pool.asset).name, saver_pb, thor_to_float(cap)
 
     # ------- QUEUE -------
 

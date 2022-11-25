@@ -353,11 +353,11 @@ class RussianLocalization(BaseLocalization):
             if tx.is_savings:
                 rune_part = ''
                 asset_part = f"Односторонне {bold(short_money(tx.asset_amount))} {asset}"
-                amount_more, asset_more, saver_pb = self.get_savers_limits(pool_info, usd_per_rune, mimir)
+                amount_more, asset_more, saver_pb, saver_cap = self.get_savers_limits(pool_info, usd_per_rune, mimir)
                 pool_depth_part = f'Сберегательные хранилища заполнены на {saver_pb}. ' \
                                   f'Вы можете добавить {pre(short_money(amount_more))} {pre(asset_more)} еще.'
                 cap = None  # it will stop standard LP cap from being shown
-                saver_percent = tx.asset_amount / pool_info.savers_depth_float
+                saver_percent = tx.asset_amount / saver_cap * 100.0
                 pool_percent_part = f" ({saver_percent:.2f}% от хранилища)" \
                     if saver_percent > self.MIN_PERCENT_TO_SHOW else ''
             else:
