@@ -339,7 +339,7 @@ class BaseLocalization(ABC):  # == English
 
     # ------ PRICE -------
 
-    PRICE_GRAPH_TITLE = f'ThORChain Rune price, USD'
+    PRICE_GRAPH_TITLE = f'THORChain Rune price, USD'
     PRICE_GRAPH_LEGEND_DET_PRICE = f'Deterministic {RAIDO_GLYPH} price'
     PRICE_GRAPH_LEGEND_ACTUAL_PRICE = f'Pool {RAIDO_GLYPH} price'
     PRICE_GRAPH_LEGEND_CEX_PRICE = f'CEX {RAIDO_GLYPH} price'
