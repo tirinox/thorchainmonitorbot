@@ -113,7 +113,9 @@ async def demo_show_savers_pic(app: LpAppFramework):
     loc_man: LocalizationManager = app.deps.loc_man
     loc = loc_man.get_from_lang(Language.ENGLISH)
 
-    pic_gen = SaversPictureGenerator(loc, c_data)
+    pic_gen = SaversPictureGenerator(loc, EventSaverStats(
+        None, c_data, app.deps.price_holder.usd_per_rune
+    ))
     pic, name = await pic_gen.get_picture()
 
     print(name)

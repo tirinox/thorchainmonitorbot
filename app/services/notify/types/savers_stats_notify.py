@@ -88,8 +88,8 @@ class AllSavers(NamedTuple):
         except TypeError:
             return
 
-    def sort_pools(self, key='apr'):
-        self.pools.sort(key=attrgetter(key))
+    def sort_pools(self, key='apr', reverse=False):
+        self.pools.sort(key=attrgetter(key), reverse=reverse)
         return self
 
     def get_top_vaults(self, criterion: str, n=None, descending=True) -> List[SaverVault]:

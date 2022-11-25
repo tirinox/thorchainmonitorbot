@@ -34,7 +34,7 @@ class BasePictureGenerator(WithLogger, abc.ABC):
             return None, ""
 
     def generate_picture_filename(self):
-        return f'{self.FILENAME_PREFIX}{today_str()}.png'
+        return f'{self.FILENAME_PREFIX}-{today_str()}.png'
 
     @async_wrap
     def _get_picture_sync(self):
