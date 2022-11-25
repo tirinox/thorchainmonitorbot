@@ -20,9 +20,13 @@ class BasePictureGenerator(WithLogger, abc.ABC):
         super().__init__()
         self.loc = loc
 
+    async def prepare(self):
+        ...
+
     async def get_picture(self) -> PictureAndName:
         try:
             self.logger.info('Started building a picture...')
+            await self.prepare()
             pic = await self._get_picture_sync()
             return pic, self.generate_picture_filename()
         except Exception:

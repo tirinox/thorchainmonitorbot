@@ -3,9 +3,10 @@ import random
 from collections import defaultdict
 from typing import List
 
-from PIL import ImageFont, Image, ImageDraw
+from PIL import Image, ImageDraw
 
 from localization.eng_base import BaseLocalization
+from services.dialog.picture.resources import FontCache
 from services.lib.date_utils import DAY, now_ts, today_str
 from services.lib.draw_utils import default_background, CacheGrid, TC_YGGDRASIL_GREEN, \
     make_donut_chart, TC_NIGHT_BLACK, TC_PALETTE, TC_WHITE, TC_LIGHTNING_BLUE, get_palette_color_by_index
@@ -26,12 +27,13 @@ class Resources(metaclass=Singleton):
     FONT_BOLD = f'{BASE}/my.ttf'
 
     def __init__(self) -> None:
-        self.font_xs = ImageFont.truetype(self.FONT_BOLD, 24)
-        self.font_small = ImageFont.truetype(self.FONT_BOLD, 30)
-        self.font_norm = ImageFont.truetype(self.FONT_BOLD, 34)
-        self.font_large = ImageFont.truetype(self.FONT_BOLD, 40)
-        self.font_subtitle = ImageFont.truetype(self.FONT_BOLD, 44)
-        self.font_head = ImageFont.truetype(self.FONT_BOLD, 80)
+        self.fonts = FontCache(self.BASE)
+        self.font_xs = self.fonts.get_font(24)
+        self.font_small = self.fonts.get_font(30)
+        self.font_norm = self.fonts.get_font(34)
+        self.font_large = self.fonts.get_font(40)
+        self.font_subtitle = self.fonts.get_font(44)
+        self.font_head = self.fonts.get_font(80)
 
         self.world_map = Image.open(self.WORLD_FILE)
         self.tc_logo = Image.open(self.LOGO_FILE)
@@ -40,6 +42,7 @@ class Resources(metaclass=Singleton):
 
 
 class WorldMap:
+    # todo: move this to config
     MANUAL_COORDS = {
         # City: (lat, long)
         'Karuwisi': (-5.1333, 119.4167),

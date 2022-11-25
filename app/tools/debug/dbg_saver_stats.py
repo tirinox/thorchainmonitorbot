@@ -3,11 +3,14 @@ import random
 
 from localization.eng_base import BaseLocalization
 from localization.languages import Language
+from localization.manager import LocalizationManager
+from services.dialog.picture.crypto_logo import CryptoLogoDownloader
+from services.dialog.picture.resources import Resources
+from services.dialog.picture.savers_picture import SaversPictureGenerator
 from services.jobs.fetch.pool_price import PoolFetcher
-from services.lib.date_utils import MINUTE
 from services.lib.texts import sep
 from services.notify.types.savers_stats_notify import SaversStatsNotifier, EventSaverStats
-from tools.lib.lp_common import LpAppFramework
+from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
 
 async def demo_collect_stat(app: LpAppFramework):
@@ -61,13 +64,70 @@ async def demo_show_notification(app: LpAppFramework):
     print(tw_loc.notification_text_saver_stats(event))
 
 
+async def demo_logo_download(app: LpAppFramework):
+    logo_downloader = CryptoLogoDownloader(Resources().LOGO_BASE)
+
+    assets = [
+        'GAIA.ATOM',
+        'BNB.AVA-645',
+        'BNB.BCH-1FD',
+        'BNB.BNB',
+        'BNB.BTCB-1DE',
+        'BNB.BUSD-BD1',
+        'BNB.ETH-1C9',
+        'BNB.TWT-8C2',
+        'BNB.USDT-6D8',
+        'BNB.XRP-BF2',
+        'AVAX.USDC-0xa7d7079b0fead91f3e65f86e8915cb59c1a4c664'.upper(),
+        'AVAX.AVAX',
+        'DOGE.DOGE',
+        'BCH.BCH',
+        'BTC.BTC',
+        'ETH.AAVE-0X7FC66500C84A76AD7E9C93437BFC5AC33E2DDAE9',
+        'ETH.ALPHA-0XA1FAA113CBE53436DF28FF0AEE54275C13B40975',
+        'ETH.ETH',
+        'ETH.KYL-0X67B6D479C7BB412C54E03DCA8E1BC6740CE6B99C',
+        'ETH.SNX-0XC011A73EE8576FB46F5E1C5751CA3B9FE0AF2A6F',
+        'ETH.SUSHI-0X6B3595068778DD592E39A122F4F5A5CF09C90FE2',
+        'ETH.THOR-0X3155BA85D5F96B2D030A4966AF206230E46849CB',
+        'ETH.THOR-0XA5F2211B9B8170F694421F2046281775E8468044',
+        'ETH.USDT-0X62E273709DA575835C7F6AEF4A31140CA5B1D190',
+        'ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7',
+        'ETH.XRUNE-0X69FA0FEE221AD11012BAB0FDB45D444D3D2CE71C',
+        'ETH.YFI-0X0BC529C00C6401AEF6D220BE8C6EA1667F6AD93E',
+        'LTC.LTC',
+    ]
+
+    for asset in assets:
+        await logo_downloader.get_or_download_logo_cached(asset)
+
+
+async def demo_show_savers_pic(app: LpAppFramework):
+    ssn = SaversStatsNotifier(app.deps)
+    c_data = await ssn.get_previous_saver_stats(0)
+
+    if not c_data:
+        print('No data! Run "demo_collect_stat" first.')
+        return 'error'
+
+    loc_man: LocalizationManager = app.deps.loc_man
+    loc = loc_man.get_from_lang(Language.ENGLISH)
+
+    pic_gen = SaversPictureGenerator(loc, c_data)
+    pic, name = await pic_gen.get_picture()
+
+    print(name)
+
+    save_and_show_pic(pic, 'savers')
+
+
 async def main():
     app = LpAppFramework()
     async with app(brief=True):
         # await demo_collect_stat(app)
-        if await demo_show_notification(app) == 'error':
+        if await demo_show_savers_pic(app) == 'error':
             await demo_collect_stat(app)
-            await demo_show_notification(app)
+            await demo_show_savers_pic(app)
 
 
 if __name__ == '__main__':
