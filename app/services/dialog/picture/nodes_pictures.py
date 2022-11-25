@@ -331,7 +331,7 @@ class NodePictureGenerator:
         logo_x, logo_y = 30, 22
         image.paste(r.tc_logo, (logo_x, logo_y))
         draw.text((logo_x + 10 + r.tc_logo.width, 79),
-                  'nodes', fill=TC_WHITE, font=r.font_subtitle, anchor='lb')  # todo: loc
+                  self.loc.TEXT_PIC_NODES, fill=TC_WHITE, font=r.font_subtitle, anchor='lb')
 
         # Chart
         chart = self._make_bond_chart(self.node_stats_points, r, 900, 450, period=self.CHART_PERIOD)
