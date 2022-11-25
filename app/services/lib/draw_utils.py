@@ -12,6 +12,7 @@ import PIL.Image
 import numpy as np
 from PIL import Image, ImageDraw, ImageColor
 
+from services.lib.money import clamp
 from services.lib.utils import linear_transform
 
 TC_LIGHTNING_BLUE = '#00CCFF'
@@ -421,3 +422,21 @@ def make_donut_chart(elements: List[Tuple[str, int]],
         draw.text((cx, cy), title, fill=title_color, font=font_middle, anchor='mm')
 
     return image
+
+
+def line_progress_bar(draw: ImageDraw,
+                      value: float, xy, line_width=1, gap=1,
+                      color_filled='#fff', color_unfilled='#777'):
+    (x_start, y), (w, h) = xy
+    if w <= 0 or h <= 0:
+        return
+    x = x_start
+    x_end = x + w
+    y_end = y + h
+    value = clamp(value, 0.0, 1.0)
+
+    while x <= x_end:
+        progress = (x - x_start) / w
+        color = color_filled if progress <= value else color_unfilled
+        draw.line(((x, y), (x, y_end)), width=line_width, fill=color)
+        x += line_width + gap

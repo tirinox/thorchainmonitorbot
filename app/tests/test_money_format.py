@@ -27,9 +27,26 @@ def test_short_money():
 
     assert short_money(0.0000095) == '0.0000095'
     assert short_money(0.012) == '0.012'
-    assert short_money(1) == '1.'
-    assert short_money(2) == '2.'
-    assert short_money(1.456) == '1.456'
+    assert short_money(1) == '1.0'
+    assert short_money(2) == '2.0'
+    assert short_money(1.456) == '1.5'
+
+
+@pytest.mark.parametrize("x, y", [
+    (0, '0'),
+    (0.01, '0.01'),
+    (2, '2'),
+    (55, '55'),
+    (1000, '1K'),
+    (1200, '1K'),
+    (1900, '1K'),
+    (2000, '2K'),
+    (2001, '2K'),
+    (2e6 + 333888, '2M'),
+])
+def test_short_money_int(x, y):
+    assert short_money(x, integer=True) == y
+    assert short_money(x, prefix='$', postfix='Y', integer=True) == f'${y}Y'
 
 
 def test_pretty_money():

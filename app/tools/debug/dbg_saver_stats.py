@@ -9,7 +9,7 @@ from services.dialog.picture.resources import Resources
 from services.dialog.picture.savers_picture import SaversPictureGenerator
 from services.jobs.fetch.pool_price import PoolFetcher
 from services.lib.texts import sep
-from services.notify.types.savers_stats_notify import SaversStatsNotifier, EventSaverStats
+from services.notify.types.savers_stats_notify import SaversStatsNotifier, EventSaverStats, AllSavers
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
 
@@ -28,15 +28,8 @@ async def demo_collect_stat(app: LpAppFramework):
     assert data == p_data
 
 
-async def demo_show_notification(app: LpAppFramework):
-    ssn = SaversStatsNotifier(app.deps)
-    c_data = await ssn.get_previous_saver_stats(0)
-
-    if not c_data:
-        print('No data! Run "demo_collect_stat" first.')
-        return 'error'
-
-    def r(x, scatter=0.2):
+def randomize_savers_data(c_data: AllSavers, sc=0.2):
+    def r(x, scatter=sc):
         return x * random.uniform(1.0 - scatter, 1.0 + scatter)
 
     p_data = c_data._replace(
@@ -49,6 +42,18 @@ async def demo_show_notification(app: LpAppFramework):
             total_asset_as_usd=r(p.total_asset_as_usd)
         ) for p in c_data.pools]
     )
+    return p_data
+
+
+async def demo_show_notification(app: LpAppFramework):
+    ssn = SaversStatsNotifier(app.deps)
+    c_data = await ssn.get_previous_saver_stats(0)
+
+    if not c_data:
+        print('No data! Run "demo_collect_stat" first.')
+        return 'error'
+
+    p_data = randomize_savers_data(c_data)
 
     event = EventSaverStats(p_data, c_data, 1.2)
 
@@ -113,8 +118,10 @@ async def demo_show_savers_pic(app: LpAppFramework):
     loc_man: LocalizationManager = app.deps.loc_man
     loc = loc_man.get_from_lang(Language.ENGLISH)
 
+    p_data = randomize_savers_data(c_data)
+
     pic_gen = SaversPictureGenerator(loc, EventSaverStats(
-        None, c_data, app.deps.price_holder.usd_per_rune
+        p_data, c_data, app.deps.price_holder.usd_per_rune
     ))
     pic, name = await pic_gen.get_picture()
 

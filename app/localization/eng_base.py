@@ -1069,6 +1069,7 @@ class BaseLocalization(ABC):  # == English
 
     # ------- NETWORK NODES -------
 
+    TEXT_PIC_NODES = 'nodes'
     TEXT_PIC_ACTIVE_NODES = 'Active nodes'
     TEXT_PIC_STANDBY_NODES = 'Standby nodes'
     TEXT_PIC_ALL_NODES = 'All nodes'
@@ -2178,6 +2179,8 @@ class BaseLocalization(ABC):  # == English
         )
 
         return message
+
+    TEXT_PIC_SAVERS_VAULTS = 'savers vaults'
 
 
 class EnglishLocalization(BaseLocalization):

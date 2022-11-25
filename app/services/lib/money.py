@@ -91,9 +91,10 @@ def detect_decimal_digits(x):
     return -int(math.floor(math.log10(x)))
 
 
-def short_money(x, prefix='', postfix='', localization=None, signed=False):
+def short_money(x, prefix='', postfix='', localization=None, signed=False, integer=False):
     if x == 0:
-        return f'{prefix}0.0{postfix}'
+        zero = '0' if integer else '0.0'
+        return f'{prefix}{zero}{postfix}'
 
     if hasattr(localization, 'SHORT_MONEY_LOC'):
         localization = localization.SHORT_MONEY_LOC
@@ -124,20 +125,14 @@ def short_money(x, prefix='', postfix='', localization=None, signed=False):
 
     letter = localization.get(key, key) if localization else key
 
-    # dec = 1
-    # if orig_x < 10:
-    #     for dec in range(8, 0, -1):
-    #         if orig_x < 10 ** (-dec):
-    #             dec += 1
-    #             break
-    #     dec = max(dec, 1) + 1
-    #
-
     if orig_x < 1:
         digits = detect_decimal_digits(orig_x) + 2
         x = f"{x:.{digits}f}".rstrip('0')
     else:
-        x = round_half_up(x, 1)
+        if integer:
+            x = int(x)
+        else:
+            x = round_half_up(x, 1)
 
     result = f'{x}{letter}'
     return f'{sign}{prefix}{result}{postfix}'

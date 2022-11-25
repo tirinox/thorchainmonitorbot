@@ -869,6 +869,7 @@ class RussianLocalization(BaseLocalization):
 
     # ------- NETWORK NODES -------
 
+    TEXT_PIC_NODES = 'ноды'
     TEXT_PIC_ACTIVE_NODES = 'Активные'
     TEXT_PIC_STANDBY_NODES = 'Ожидающие'
     TEXT_PIC_ALL_NODES = 'Все ноды'
@@ -1673,3 +1674,5 @@ class RussianLocalization(BaseLocalization):
         )
 
         return message
+
+    TEXT_PIC_SAVERS_VAULTS = 'хранилища сбережений'
