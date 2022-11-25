@@ -4,7 +4,7 @@ from localization.eng_base import BaseLocalization
 from services.dialog.picture.common import BasePictureGenerator, DrawRectPacker, Rect, PackItem
 from services.dialog.picture.resources import Resources
 from services.jobs.fetch.circulating import RuneCirculatingSupply, ThorRealms
-from services.lib.money import short_rune
+from services.lib.money import short_money
 from services.lib.plot_graph import PlotGraph
 from services.lib.utils import async_wrap, vertical_text
 from services.models.killed_rune import KilledRuneEntry
@@ -33,8 +33,8 @@ class SupplyPictureGenerator(BasePictureGenerator):
             self._add_text(r.shift_from_origin(10, 8), item.label)
         meta = item.meta_data
         if meta:
-            font = self.res.get_font(20) if item.weight < 6e6 else self.res.get_font(34)
-            text = short_rune(item.weight)
+            font = self.res.fonts.get_font(20) if item.weight < 6e6 else self.res.fonts.get_font(34)
+            text = short_money(item.weight)
 
             self._add_text(r.center, text,
                            anchor='mm',
