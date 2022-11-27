@@ -28,6 +28,7 @@ class PoolChurnNotifier(INotified, WithLogger):
         if pool_changes.any_changed:
             self.logger.info(f'Pool changes detected: {pool_changes}!')
             if await self.spam_cd.can_do():
+                # todo: connect to AlertPresenter!
                 await self.deps.broadcaster.notify_preconfigured_channels(
                     BaseLocalization.notification_text_pool_churn,
                     pool_changes)
