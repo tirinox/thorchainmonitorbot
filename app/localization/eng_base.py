@@ -702,6 +702,7 @@ class BaseLocalization(ABC):  # == English
 
     @staticmethod
     def pool_link(pool_name):
+        pool_name = Asset.from_string(pool_name).short_str
         return link(get_pool_url(pool_name), pool_name)
 
     def notification_text_pool_churn(self, pc: PoolChanges):

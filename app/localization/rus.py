@@ -541,7 +541,7 @@ class RussianLocalization(BaseLocalization):
             if PoolInfo.is_status_enabled(to_status):
                 extra = '🎉 ПУЛ АКТИВИРОВАН!'
             else:
-                extra = ital(ru_stat[status])
+                extra = ital(ru_stat.get(str(status).lower(), ''))
                 if to_status is not None:
                     extra += f' → {ital(ru_stat[to_status])}'
                 extra = f'({extra})'
