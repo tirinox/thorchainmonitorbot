@@ -246,8 +246,8 @@ class RussianLocalization(BaseLocalization):
             f'{arrow} <b>Кап {verb} с {pretty_money(old.cap)} до {pretty_money(new.cap)}!</b>\n'
             f'Сейчас в пулы помещено <b>{pretty_money(new.pooled_rune)}</b> {self.R}.\n'
             f"{self._cap_progress_bar(new)}\n"
-            f'🤲🏻 Вы можете добавить еще {bold(pretty_money(new.how_much_rune_you_can_lp) + " " + RAIDO_GLYPH)} {self.R} '
-            f'или {bold(pretty_dollar(new.how_much_usd_you_can_lp))}.\n'
+            f'🤲🏻 Вы можете добавить еще {bold(short_rune(new.how_much_rune_you_can_lp))} {self.R} '
+            f'или {bold(short_dollar(new.how_much_usd_you_can_lp))}.\n'
             f'Цена {self.R} в пуле <code>{new.price:.3f} $</code>.\n'
             f'{call}'
             f'{self.thor_site()}'
@@ -266,10 +266,10 @@ class RussianLocalization(BaseLocalization):
     def notification_text_cap_opened_up(self, cap: ThorCapInfo):
         return (
             '💡 <b>Освободилось место в пулах ликвидности!</b>\n'
-            f'Сейчас в пулах <i>{pretty_money(cap.pooled_rune)} {self.R}</i> из '
+            f'Сейчас в пулах <i>{short_rune(cap.pooled_rune)} {self.R}</i> из '
             f"<i>{pretty_money(cap.cap)} {self.R}</i> максимально возможных.\n"
             f"{self._cap_progress_bar(cap)}\n"
-            f'🤲🏻 Вы можеще еще добавить {bold(pretty_money(cap.how_much_rune_you_can_lp) + " " + RAIDO_GLYPH)} {self.R} '
+            f'🤲🏻 Вы можеще еще добавить {bold(short_rune(cap.how_much_rune_you_can_lp))} {self.R} '
             f'или {bold(pretty_dollar(cap.how_much_usd_you_can_lp))}.\n👉🏻 {self.thor_site()}'
         )
 
@@ -443,8 +443,8 @@ class RussianLocalization(BaseLocalization):
             msg += (
                 f"\n"
                 f"Кап ликвидности {self._cap_progress_bar(cap)}.\n"
-                f'Вы можете добавить еще {code(pretty_money(cap.how_much_rune_you_can_lp))} {bold(self.R)} '
-                f'({pretty_dollar(cap.how_much_usd_you_can_lp)}).'
+                f'Вы можете добавить еще {code(short_rune(cap.how_much_rune_you_can_lp))} {bold(self.R)} '
+                f'({short_dollar(cap.how_much_usd_you_can_lp)}).'
             )
 
         return msg.strip()
