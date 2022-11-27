@@ -37,6 +37,12 @@ class SaverVault(NamedTuple):
     def usd_per_asset(self):
         return self.total_asset_as_usd / self.total_asset_saved
 
+    def calc_asset_earned(self, pool_map: PoolInfoMap):
+        if pool_map and (pool := pool_map.get(self.asset)):
+            return pool.asset_per_rune * self.runes_earned
+        else:
+            return 0.0
+
 
 class AllSavers(NamedTuple):
     total_unique_savers: int

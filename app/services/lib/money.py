@@ -138,8 +138,8 @@ def short_money(x, prefix='', postfix='', localization=None, signed=False, integ
     return f'{sign}{prefix}{result}{postfix}'
 
 
-def short_dollar(x, localization=None):
-    return short_money(x, prefix='$', localization=localization)
+def short_dollar(x, localization=None, signed=False):
+    return short_money(x, prefix='$', localization=localization, signed=signed)
 
 
 def short_rune(x, localization=None):

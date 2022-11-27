@@ -7,14 +7,15 @@ from services.lib.utils import Singleton
 
 
 class FontCache(metaclass=Singleton):
-    FONT_STD = f'Exo2-Regular-Rune.ttf'
+    FONT_REGULAR = f'Exo2-Regular-Rune.ttf'
+    FONT_BOLD = f'Exo2-Bold-Rune.ttf'
 
     def __init__(self, base_dir):
         self._cache = {}
         self._base_dir = base_dir
 
     def get_font(self, size: int, font=None):
-        font = font or self.FONT_STD
+        font = font or self.FONT_REGULAR
         key = f'{font}/{size}'
         f = self._cache.get(key)
         if not f:

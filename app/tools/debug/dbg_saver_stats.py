@@ -28,8 +28,10 @@ async def demo_collect_stat(app: LpAppFramework):
     assert data == p_data
 
 
-def randomize_savers_data(c_data: AllSavers, sc=0.2):
-    def r(x, scatter=sc):
+def randomize_savers_data(c_data: AllSavers, sc=0.2, fail_chance=0.3):
+    def r(x, scatter=sc, no_change_chance=fail_chance):
+        if random.uniform(0, 1) < no_change_chance:
+            return x
         return x * random.uniform(1.0 - scatter, 1.0 + scatter)
 
     p_data = c_data._replace(
@@ -39,7 +41,10 @@ def randomize_savers_data(c_data: AllSavers, sc=0.2):
         pools=[p._replace(
             apr=r(p.apr),
             total_asset_saved=r(p.total_asset_saved),
-            total_asset_as_usd=r(p.total_asset_as_usd)
+            total_asset_as_usd=r(p.total_asset_as_usd),
+            runes_earned=r(p.runes_earned),
+            asset_cap=r(p.asset_cap),
+            number_of_savers=int(r(p.number_of_savers)),
         ) for p in c_data.pools]
     )
     return p_data
@@ -118,11 +123,12 @@ async def demo_show_savers_pic(app: LpAppFramework):
     loc_man: LocalizationManager = app.deps.loc_man
     loc = loc_man.get_from_lang(Language.ENGLISH)
 
-    p_data = randomize_savers_data(c_data)
+    p_data = randomize_savers_data(c_data, fail_chance=0.8)
+    # p_data = None
 
     pic_gen = SaversPictureGenerator(loc, EventSaverStats(
         p_data, c_data, app.deps.price_holder.usd_per_rune
-    ))
+    ), pool_map=app.deps.price_holder.pool_info_map)
     pic, name = await pic_gen.get_picture()
 
     print(name)
@@ -134,6 +140,7 @@ async def main():
     app = LpAppFramework()
     async with app(brief=True):
         # await demo_collect_stat(app)
+        await app.deps.pool_fetcher.run_once()
         if await demo_show_savers_pic(app) == 'error':
             await demo_collect_stat(app)
             await demo_show_savers_pic(app)
