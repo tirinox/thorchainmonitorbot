@@ -468,7 +468,7 @@ class BaseLocalization(ABC):  # == English
             if tx.is_savings:
                 heading = f'🐳→💰 <b>Add to savings vault</b>'
             else:
-                heading = f'🐳→⚡ <b>Add liquidity</b> '
+                heading = f'🐳→⚡ <b>Add liquidity</b>'
         elif tx.type == ThorTxType.TYPE_WITHDRAW:
             if tx.is_savings:
                 heading = f'🐳←💰 <b>Withdraw from savings vault</b>'
@@ -513,16 +513,24 @@ class BaseLocalization(ABC):  # == English
                 ilp_text = ''
 
             if tx.is_savings:
-                rune_part = ''
-                asset_part = f"Single-sided {bold(short_money(tx.asset_amount))} {asset}"
-                amount_more, asset_more, saver_pb, saver_cap = \
-                    self.get_savers_limits(pool_info, usd_per_rune, mimir)
-                pool_depth_part = f'Savers cap is {saver_pb} full. ' \
-                                  f'You can add {pre(short_money(amount_more))} {pre(asset_more)} more.'
                 cap = None  # it will stop standard LP cap from being shown
-                saver_percent = tx.asset_amount / saver_cap * 100.0
-                pool_percent_part = f" ({saver_percent:.2f}% of vault)" if saver_percent > self.MIN_PERCENT_TO_SHOW \
+
+                amount_more, asset_more, saver_pb, saver_cap, saver_percent = \
+                    self.get_savers_limits(pool_info, usd_per_rune, mimir, tx.asset_amount)
+                saver_cap_part = f'Savers cap is {saver_pb} full. ' \
+                                 f'You can add {pre(short_money(amount_more))} {pre(asset_more)} more.'
+
+                vault_percent_part = f", {saver_percent:.2f}% of vault" if saver_percent > self.MIN_PERCENT_TO_SHOW \
                     else ''
+                asset_part = f"{bold(short_money(tx.asset_amount))} {asset}"
+
+                content = (
+                    f"{asset_part} ({code(short_dollar(total_usd_volume))}{vault_percent_part})\n"
+                    f"{aff_text}"
+                    f"{ilp_text}"
+                    f"{saver_cap_part}"
+                )
+
             else:
                 rune_part = f"{bold(short_money(tx.rune_amount))} {self.R} ({rune_side_usd_short}) ↔️ "
                 asset_part = f"{bold(short_money(tx.asset_amount))} {asset} ({asset_side_usd_short})"
@@ -530,13 +538,13 @@ class BaseLocalization(ABC):  # == English
                 pool_percent_part = f" ({percent_of_pool:.2f}% of pool)" if percent_of_pool > self.MIN_PERCENT_TO_SHOW \
                     else ''
 
-            content = (
-                f"{rune_part}{asset_part}\n"
-                f"Total: {code(short_dollar(total_usd_volume))}{pool_percent_part}\n"
-                f"{aff_text}"
-                f"{ilp_text}"
-                f"{pool_depth_part}"
-            )
+                content = (
+                    f"{rune_part}{asset_part}\n"
+                    f"Total: {code(short_dollar(total_usd_volume))}{pool_percent_part}\n"
+                    f"{aff_text}"
+                    f"{ilp_text}"
+                    f"{pool_depth_part}"
+                )
         elif tx.type == ThorTxType.TYPE_SWITCH:
             # [Amt] Rune [Blockchain: ERC20/BEP2] -> [Amt] THOR Rune ($usd)
             in_rune_amt = tx.asset_amount
@@ -605,12 +613,13 @@ class BaseLocalization(ABC):  # == English
 
         return msg.strip()
 
-    def get_savers_limits(self, pool: PoolInfo, usd_per_rune, mimir: MimirHolder):
+    def get_savers_limits(self, pool: PoolInfo, usd_per_rune, mimir: MimirHolder, asset_amount):
         max_synth_per_asset_ratio = mimir.get_max_synth_per_asset_depth()
         cap = pool.get_synth_cap_in_asset(max_synth_per_asset_ratio)
         amount_more = pool.how_much_savings_you_can_add(max_synth_per_asset_ratio)
         saver_pb = self._cap_progress_bar(ThorCapInfo(cap, pool.savers_depth, usd_per_rune))
-        return amount_more, Asset(pool.asset).name, saver_pb, thor_to_float(cap)
+        saver_pct = asset_amount / pool.savers_depth_float * 100.0 if pool.savers_depth else 100
+        return amount_more, Asset(pool.asset).name, saver_pb, thor_to_float(cap), saver_pct
 
     # ------- QUEUE -------
 

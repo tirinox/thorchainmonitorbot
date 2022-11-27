@@ -129,16 +129,17 @@ async def send_tx_notification(lp_app, ex_tx, loc: BaseLocalization = None):
     rune_price = lp_app.deps.price_holder.usd_per_rune
     print(f'{ex_tx.get_affiliate_fee_usd(rune_price) = } $')
     print(f'{full_rune = } R')
-    loc = loc or lp_app.deps.loc_man.default
+
     nm = NameMap({}, {})
-    await lp_app.send_test_tg_message(loc.notification_text_large_single_tx(ex_tx, rune_price, pool_info,
-                                                                            name_map=nm,
-                                                                            mimir=lp_app.deps.mimir_const_holder))
-    sep()
-    tw_loc: BaseLocalization = lp_app.deps.loc_man[Language.ENGLISH_TWITTER]
-    print(tw_loc.notification_text_large_single_tx(ex_tx, rune_price, pool_info,
-                                                   name_map=nm,
-                                                   mimir=lp_app.deps.mimir_const_holder))
+
+    for lang in [Language.RUSSIAN, Language.ENGLISH, Language.ENGLISH_TWITTER]:
+        loc = lp_app.deps.loc_man[lang]
+        text = loc.notification_text_large_single_tx(ex_tx, rune_price, pool_info,
+                                                     name_map=nm,
+                                                     mimir=lp_app.deps.mimir_const_holder)
+        await lp_app.send_test_tg_message(text)
+        sep()
+        print(text)
 
 
 async def refund_full_rune(app):
@@ -196,11 +197,11 @@ async def main():
     # await refund_full_rune(lp_app)
     # await demo_midgard_test_large_ilp(lp_app)
     # await demo_full_tx_pipeline(lp_app)
-    # await demo_test_savers_vaults(lp_app)
-    await demo_aggr_aff(lp_app)
-    # await demo_test_aff_add_liq(lp_app)
+    await demo_test_savers_vaults(lp_app)
+    # await demo_aggr_aff(lp_app)
+    await demo_test_aff_add_liq(lp_app)
     # await demo_test_2(lp_app)
-    await demo_same_merge_swap(lp_app)
+    # await demo_same_merge_swap(lp_app)
 
 
 if __name__ == '__main__':

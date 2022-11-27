@@ -306,7 +306,7 @@ class RussianLocalization(BaseLocalization):
             if tx.is_savings:
                 heading = f'🐳→💰 <b>Добавлено на сберегательный счет</b>'
             else:
-                heading = f'🐳→⚡ <b>Добавлена ликвидности</b> '
+                heading = f'🐳→⚡ <b>Добавлена ликвидности</b>'
         elif tx.type == ThorTxType.TYPE_WITHDRAW:
             if tx.is_savings:
                 heading = f'🐳←💰 <b>Выведено со сберегательного счета</b>'
@@ -351,15 +351,21 @@ class RussianLocalization(BaseLocalization):
                 ilp_text = ''
 
             if tx.is_savings:
-                rune_part = ''
-                asset_part = f"Односторонне {bold(short_money(tx.asset_amount))} {asset}"
-                amount_more, asset_more, saver_pb, saver_cap = self.get_savers_limits(pool_info, usd_per_rune, mimir)
-                pool_depth_part = f'Сберегательные хранилища заполнены на {saver_pb}. ' \
-                                  f'Вы можете добавить {pre(short_money(amount_more))} {pre(asset_more)} еще.'
-                cap = None  # it will stop standard LP cap from being shown
-                saver_percent = tx.asset_amount / saver_cap * 100.0
-                pool_percent_part = f" ({saver_percent:.2f}% от хранилища)" \
+                amount_more, asset_more, saver_pb, saver_cap, saver_percent = \
+                    self.get_savers_limits(pool_info, usd_per_rune, mimir, tx.asset_amount)
+                saver_cap_part = f'Кап сбережений {saver_pb}. ' \
+                                 f'Вы можете добавить еще {pre(short_money(amount_more))} {pre(asset_more)}.'
+
+                vault_percent_part = f", {saver_percent:.2f}% от хранилища" \
                     if saver_percent > self.MIN_PERCENT_TO_SHOW else ''
+                asset_part = f"{bold(short_money(tx.asset_amount))} {asset}"
+
+                content = (
+                    f"{asset_part} ({code(short_dollar(total_usd_volume))}{vault_percent_part})\n"
+                    f"{aff_text}"
+                    f"{ilp_text}"
+                    f"{saver_cap_part}"
+                )
             else:
                 rune_part = f"{bold(short_money(tx.rune_amount))} {self.R} ({rune_side_usd_short}) ↔️ "
                 asset_part = f"{bold(short_money(tx.asset_amount))} {asset} ({asset_side_usd_short})"
@@ -367,13 +373,13 @@ class RussianLocalization(BaseLocalization):
                 pool_percent_part = f" ({percent_of_pool:.2f}% от всего пула)" \
                     if percent_of_pool > self.MIN_PERCENT_TO_SHOW else ''
 
-            content = (
-                f"{rune_part}{asset_part}\n"
-                f"Всего: <code>${pretty_money(total_usd_volume)}</code>{pool_percent_part}\n"
-                f"{aff_text}"
-                f"{ilp_text}"
-                f"{pool_depth_part}\n"
-            )
+                content = (
+                    f"{rune_part}{asset_part}\n"
+                    f"Всего: <code>${pretty_money(total_usd_volume)}</code>{pool_percent_part}\n"
+                    f"{aff_text}"
+                    f"{ilp_text}"
+                    f"{pool_depth_part}\n"
+                )
         elif tx.type == ThorTxType.TYPE_SWITCH:
             # [Amt] Rune [Blockchain: ERC20/BEP2] -> [Amt] THOR Rune ($usd)
             in_rune_amt = tx.asset_amount
@@ -435,7 +441,7 @@ class RussianLocalization(BaseLocalization):
 
         if cap:
             msg += (
-                f"\n\n"
+                f"\n"
                 f"Кап ликвидности {self._cap_progress_bar(cap)}.\n"
                 f'Вы можете добавить еще {code(pretty_money(cap.how_much_rune_you_can_lp))} {bold(self.R)} '
                 f'({pretty_dollar(cap.how_much_usd_you_can_lp)}).'

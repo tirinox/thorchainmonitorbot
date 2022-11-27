@@ -116,7 +116,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         asset = Asset(tx.first_pool).name
 
-        content = f'{self.link_to_address(tx.sender_address, name_map)}: '
+        content = f'👤{self.link_to_address(tx.sender_address, name_map)}: '
 
         if tx.type in (ThorTxType.TYPE_ADD_LIQUIDITY, ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_DONATE):
             if tx.affiliate_fee > 0:
@@ -139,11 +139,11 @@ class TwitterEnglishLocalization(BaseLocalization):
 
             if tx.is_savings:
                 rune_part = ''
-                asset_part = f"Single-sided {short_money(tx.asset_amount)} {asset}"
-                amount_more, asset_more, saver_pb, saver_cap = self.get_savers_limits(pool_info, usd_per_rune, mimir)
+                asset_part = f"{short_money(tx.asset_amount)} {asset}"
+                amount_more, asset_more, saver_pb, saver_cap, saver_percent = \
+                    self.get_savers_limits(pool_info, usd_per_rune, mimir, tx.asset_amount)
                 pool_depth_part = f'Savers cap is {saver_pb} full. ' \
                                   f'You can add {short_money(amount_more)} {asset_more} more.'
-                saver_percent = tx.asset_amount / saver_cap * 100.0
                 pool_percent_part = f" ({saver_percent:.2f}% of vault)" if saver_percent > self.MIN_PERCENT_TO_SHOW \
                     else ''
             else:
