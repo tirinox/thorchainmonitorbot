@@ -6,7 +6,7 @@ from typing import List
 from PIL import Image, ImageDraw
 
 from localization.eng_base import BaseLocalization
-from services.dialog.picture.resources import FontCache, Resources
+from services.dialog.picture.resources import Resources
 from services.lib.date_utils import DAY, now_ts, today_str
 from services.lib.draw_utils import default_background, CacheGrid, TC_YGGDRASIL_GREEN, \
     make_donut_chart, TC_NIGHT_BLACK, TC_PALETTE, TC_WHITE, TC_LIGHTNING_BLUE, get_palette_color_by_index
@@ -27,13 +27,13 @@ class ResourcesNodePic(metaclass=Singleton):
     def __init__(self) -> None:
         r = Resources()
 
-        self.fonts = r.fonts
-        self.font_xs = self.fonts.get_font(24)
-        self.font_small = self.fonts.get_font(30)
-        self.font_norm = self.fonts.get_font(34)
-        self.font_large = self.fonts.get_font(40)
-        self.font_subtitle = self.fonts.get_font(44)
-        self.font_head = self.fonts.get_font(80)
+        f = self.fonts = r.fonts
+        self.font_xs = f.get_font(24)
+        self.font_small = f.get_font(30)
+        self.font_norm = f.get_font(34)
+        self.font_large = f.get_font(40)
+        self.font_subtitle = f.get_font(44, f.FONT_BOLD)
+        self.font_head = f.get_font(80)
 
         self.world_map = Image.open(self.WORLD_FILE)
         self.tc_logo = r.tc_logo
@@ -330,8 +330,9 @@ class NodePictureGenerator:
         # TC Logo
         logo_x, logo_y = 30, 22
         image.paste(r.tc_logo, (logo_x, logo_y))
-        draw.text((logo_x + 10 + r.tc_logo.width, 79),
-                  self.loc.TEXT_PIC_NODES, fill=TC_WHITE, font=r.font_subtitle, anchor='lb')
+        draw.text((logo_x + 10 + r.tc_logo.width, 81),
+                  self.loc.TEXT_PIC_NODES, fill=TC_WHITE,
+                  font=r.fonts.get_font(44), anchor='lb')
 
         # Chart
         chart = self._make_bond_chart(self.node_stats_points, r, 900, 450, period=self.CHART_PERIOD)
@@ -339,17 +340,24 @@ class NodePictureGenerator:
 
         return image
 
-    def _make_node_stats(self, draw, r, x, y):
+    def _make_node_stats(self, draw, r: ResourcesNodePic, x, y):
         bond_min, bond_med, bond_max, bond_total = self.data.get_min_median_max_total_bond(self.data.active_nodes)
 
         anchor = 'mt'
 
+        font_subtitle = r.fonts.get_font(44)
+        font_subtitle_bold = r.fonts.get_font(44, r.fonts.FONT_BOLD)
+        font_head = r.fonts.get_font(80)
+        font_head_bold = r.fonts.get_font(80, r.fonts.FONT_BOLD)
+
         def render_text(title, value, value2, _x, _y, big, color, stroke=False):
-            stroke_width = 1 if stroke else 0
             draw.text((_x, _y), str(title), font=r.font_norm, fill=TC_WHITE, anchor=anchor)
-            f = r.font_head if big else r.font_subtitle
+            if stroke:
+                f = font_head_bold if big else font_subtitle_bold
+            else:
+                f = font_head if big else font_subtitle
             draw.text((_x, _y + 40), str(value), font=f, fill=color, anchor=anchor,
-                      stroke_fill=TC_WHITE, stroke_width=stroke_width)
+                      stroke_fill=TC_WHITE)
             if value2:
                 draw.text((_x, _y + 80), str(value2), font=r.font_small, fill="#bfd", anchor=anchor,
                           )
