@@ -351,6 +351,7 @@ class RussianLocalization(BaseLocalization):
                 ilp_text = ''
 
             if tx.is_savings:
+                cap = None  # it will stop standard LP cap from being shown
                 amount_more, asset_more, saver_pb, saver_cap, saver_percent = \
                     self.get_savers_limits(pool_info, usd_per_rune, mimir, tx.asset_amount)
                 saver_cap_part = f'Кап сбережений {saver_pb}. ' \
