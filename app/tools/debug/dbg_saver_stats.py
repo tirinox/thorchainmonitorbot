@@ -64,7 +64,6 @@ async def demo_show_notification(app: LpAppFramework):
 
     event = EventSaverStats(p_data, c_data, 1.2)
 
-
     loc: BaseLocalization = app.deps.loc_man[Language.RUSSIAN]
     await app.send_test_tg_message(loc.notification_text_saver_stats(event))
 
@@ -145,7 +144,7 @@ async def main():
         await app.deps.pool_fetcher.run_once()
         await demo_collect_stat(app)
         await demo_show_savers_pic(app)
-        await demo_show_notification(app)
+        # await demo_show_notification(app)
 
 
 if __name__ == '__main__':

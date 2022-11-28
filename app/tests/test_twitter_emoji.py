@@ -1,5 +1,5 @@
 from services.dialog.twitter.text_length import twitter_text_length, twitter_cut_text, \
-    twitter_intelligent_text_splitter, abbreviate_some_long_words
+    twitter_intelligent_text_splitter, abbreviate_some_long_words, TWITTER_T_CO_LENGTH, TWITTER_T_CO_EXAMPLE
 from services.lib.money import EMOJI_SCALE
 from services.lib.texts import progressbar, find_country_emoji
 
@@ -15,6 +15,17 @@ def test_emoji_text_length():
         assert twitter_text_length(emo) == 2
 
     assert twitter_text_length(progressbar(20, 30, 15)) == 15
+
+
+def test_twitter_text_length_url():
+    assert twitter_text_length(
+        'https://stackoverflow.com/questions/11331982/how-to-remove-any-url-within-a-string-in-python') \
+           == TWITTER_T_CO_LENGTH
+    assert twitter_text_length(TWITTER_T_CO_EXAMPLE) == TWITTER_T_CO_LENGTH
+    assert twitter_text_length(
+        "Hello https://www.duolingo.com/learn and https://etherscan.io/gastracker\nhttps://etherscan.io/gastracker#gassender") \
+           == len(f"Hello {TWITTER_T_CO_EXAMPLE} and {TWITTER_T_CO_EXAMPLE}\n"
+                  f"{TWITTER_T_CO_EXAMPLE}")
 
 
 def test_twitter_cut_length():
