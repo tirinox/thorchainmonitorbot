@@ -826,26 +826,16 @@ class TwitterEnglishLocalization(BaseLocalization):
         parts = [f'💰 THORChain Savers\n']
 
         savers, prev = event.current_stats, event.previous_stats
-
-        if prev:
-            saver_number_change = bracketify(up_down_arrow(
-                prev.total_unique_savers, savers.total_unique_savers, int_delta=True))
-            total_usd_change = bracketify(up_down_arrow(
-                prev.total_usd_saved, savers.total_usd_saved, money_delta=True, money_prefix='$'))
-            avg_apr_change = bracketify(up_down_arrow(
-                prev.average_apr, savers.average_apr, money_delta=True, postfix='%'
-            ))
-        else:
-            saver_number_change = ''
-            total_usd_change = ''
-            avg_apr_change = ''
+        total_earned_usd = savers.total_rune_earned * event.usd_per_rune
+        avg_apr_change, saver_number_change, total_earned_change_usd, total_usd_change = \
+            self.get_savers_stat_changed_metrics_as_str(event, prev, savers, total_earned_usd)
 
         parts.append(
             f'\n'
             f'{savers.total_unique_savers}{saver_number_change} savers '
-            f'| {(short_dollar(savers.total_usd_saved))}{total_usd_change}.\n'
-            f'Avg. APR is {(pretty_money(savers.average_apr))}%{avg_apr_change}.\n'
-            f'Earned: {pretty_dollar(savers.total_rune_earned * event.usd_per_rune)}.\n'
+            f'| {(short_dollar(savers.total_usd_saved))}{total_usd_change}\n'
+            f'Avg. APR is {(pretty_money(savers.average_apr))}%{avg_apr_change}\n'
+            f'Earned: {pretty_dollar(total_earned_usd)}{total_earned_change_usd}\n'
             f'Vault filled: {savers.overall_fill_cap_percent:.1f}%\n\n'
         )
 
@@ -853,20 +843,13 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         for i, pool in enumerate(savers.get_top_vaults('total_asset_as_usd'), start=1):
             asset = " " + Asset.from_string(pool.asset).name
-            # if pool.total_asset_saved >= pool.asset_cap * 0.99:
-            #     pb = ', FULL 💯'
-            # elif pool.total_asset_saved < pool.asset_cap * 0.01:
-            #     pb = ''
-            # else:
-            #     pb = f', {pool.percent_of_cap_filled:.0f}% filled'
-            pb = ''
 
             if pool.apr == max_apr:
                 smile = '💡'
             else:
                 smile = ''
 
-            clarification = f'({short_dollar(pool.total_asset_as_usd)}{pb})'
+            clarification = f'({short_dollar(pool.total_asset_as_usd)})'
 
             parts.append(
                 f'{(short_money(pool.total_asset_saved, postfix=asset))} '

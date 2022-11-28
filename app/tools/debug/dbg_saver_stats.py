@@ -51,6 +51,8 @@ def randomize_savers_data(c_data: AllSavers, sc=0.2, fail_chance=0.3):
 
 
 async def demo_show_notification(app: LpAppFramework):
+    await app.send_test_tg_message('----- S T A R T -----')
+
     ssn = SaversStatsNotifier(app.deps)
     c_data = await ssn.get_previous_saver_stats(0)
 
@@ -58,9 +60,10 @@ async def demo_show_notification(app: LpAppFramework):
         print('No data! Run "demo_collect_stat" first.')
         return 'error'
 
-    p_data = randomize_savers_data(c_data)
+    p_data = randomize_savers_data(c_data, fail_chance=0.0)
 
     event = EventSaverStats(p_data, c_data, 1.2)
+
 
     loc: BaseLocalization = app.deps.loc_man[Language.RUSSIAN]
     await app.send_test_tg_message(loc.notification_text_saver_stats(event))
@@ -139,11 +142,10 @@ async def demo_show_savers_pic(app: LpAppFramework):
 async def main():
     app = LpAppFramework()
     async with app(brief=True):
-        # await demo_collect_stat(app)
         await app.deps.pool_fetcher.run_once()
-        if await demo_show_savers_pic(app) == 'error':
-            await demo_collect_stat(app)
-            await demo_show_savers_pic(app)
+        await demo_collect_stat(app)
+        await demo_show_savers_pic(app)
+        await demo_show_notification(app)
 
 
 if __name__ == '__main__':

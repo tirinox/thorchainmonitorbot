@@ -2167,28 +2167,40 @@ class BaseLocalization(ABC):  # == English
                 f'| {bold(pool.number_of_savers)} savers | '
                 f'APR: {code(short_money(pool.apr, postfix="%"))}{smile}\n')
 
-        if prev:
-            saver_number_change = bracketify(up_down_arrow(
-                prev.total_unique_savers, savers.total_unique_savers, int_delta=True))
-            total_usd_change = bracketify(up_down_arrow(
-                prev.total_usd_saved, savers.total_usd_saved, money_delta=True, money_prefix='$'))
-            avg_apr_change = bracketify(up_down_arrow(
-                prev.average_apr, savers.average_apr, money_delta=True, postfix='%'
-            ))
-        else:
-            saver_number_change = ''
-            total_usd_change = ''
-            avg_apr_change = ''
+        total_earned_usd = savers.total_rune_earned * event.usd_per_rune
+        avg_apr_change, saver_number_change, total_earned_change_usd, total_usd_change = \
+            self.get_savers_stat_changed_metrics_as_str(event, prev, savers, total_earned_usd)
 
         message += (
             f'\n'
             f'Total {bold(savers.total_unique_savers)}{saver_number_change} savers '
             f'with {bold(short_dollar(savers.total_usd_saved))}{total_usd_change} saved.\n'
             f'<b>Average APR</b> is {pre(pretty_money(savers.average_apr))}%{avg_apr_change}.\n'
-            f'Total earned: {bold(pretty_dollar(savers.total_rune_earned * event.usd_per_rune))}.'
+            f'Total earned: {bold(pretty_dollar(total_earned_usd))}{total_earned_change_usd}.'
         )
 
         return message
+
+    @staticmethod
+    def get_savers_stat_changed_metrics_as_str(event, prev, savers, total_earned_usd):
+        if prev:
+            saver_number_change = bracketify(up_down_arrow(
+                prev.total_unique_savers, savers.total_unique_savers, int_delta=True), before=' ')
+            total_usd_change = bracketify(up_down_arrow(
+                prev.total_usd_saved, savers.total_usd_saved, money_delta=True, money_prefix='$'), before=' ')
+            avg_apr_change = bracketify(up_down_arrow(
+                prev.average_apr, savers.average_apr, money_delta=True, postfix='%'
+            ), before=' ')
+            prev_total_earned_usd = prev.total_rune_earned * event.usd_per_rune
+            total_earned_change_usd = bracketify(up_down_arrow(
+                prev_total_earned_usd, total_earned_usd, money_delta=True, money_prefix='$'
+            ), before=' ')
+        else:
+            saver_number_change = ''
+            total_usd_change = ''
+            avg_apr_change = ''
+            total_earned_change_usd = ''
+        return avg_apr_change, saver_number_change, total_earned_change_usd, total_usd_change
 
     TEXT_PIC_SAVERS_VAULTS = 'savers vaults'
 

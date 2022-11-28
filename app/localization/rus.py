@@ -1659,25 +1659,16 @@ class RussianLocalization(BaseLocalization):
                 f'| {bold(pool.number_of_savers)} участников | '
                 f'Годовые: {code(short_money(pool.apr, postfix="%"))}{smile}\n')
 
-        if prev:
-            saver_number_change = bracketify(up_down_arrow(
-                prev.total_unique_savers, savers.total_unique_savers, int_delta=True))
-            total_usd_change = bracketify(up_down_arrow(
-                prev.total_usd_saved, savers.total_usd_saved, money_delta=True, money_prefix='$'))
-            avg_apr_change = bracketify(up_down_arrow(
-                prev.average_apr, savers.average_apr, money_delta=True, postfix='%'
-            ))
-        else:
-            saver_number_change = ''
-            total_usd_change = ''
-            avg_apr_change = ''
+        total_earned_usd = savers.total_rune_earned * event.usd_per_rune
+        avg_apr_change, saver_number_change, total_earned_change_usd, total_usd_change = \
+            self.get_savers_stat_changed_metrics_as_str(event, prev, savers, total_earned_usd)
 
         message += (
             f'\n'
             f'Всего {bold(savers.total_unique_savers)}{saver_number_change} сберегателей '
             f'в сумме с капиталом {bold(short_dollar(savers.total_usd_saved))}{total_usd_change}.\n'
             f'<b>Средние годовые:</b> {pre(pretty_money(savers.average_apr))}%{avg_apr_change}.\n'
-            f'Всего заработано: {bold(pretty_dollar(savers.total_rune_earned * event.usd_per_rune))}.'
+            f'Всего заработано: {bold(pretty_dollar(total_earned_usd))}{total_earned_change_usd}.'
         )
 
         return message
