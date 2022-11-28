@@ -384,7 +384,7 @@ class ThorTx:
     def __post_init__(self):
         t = self.type
         if t == ThorTxType.TYPE_ADD_LIQUIDITY or t == ThorTxType.TYPE_DONATE:
-            pool = self.first_pool
+            pool = self.first_pool  # add maybe both synth (means savers) or l1 (normal liquidity)
             self.rune_amount = self.sum_of_rune(in_only=True)
             self.asset_amount = self.sum_of_asset(pool, in_only=True)
 
@@ -397,7 +397,7 @@ class ThorTx:
             self.tx_hash_asset = asset_sub_tx.tx_id if asset_sub_tx else None
 
         elif t == ThorTxType.TYPE_WITHDRAW:
-            pool = self.first_pool
+            pool = self.first_pool_l1  # withdraw always l1 no matter it was savers or normal liquidity
             self.rune_amount = self.sum_of_rune(out_only=True)
             self.asset_amount = self.sum_of_asset(pool, out_only=True)
 
