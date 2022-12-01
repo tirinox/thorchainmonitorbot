@@ -62,7 +62,7 @@ async def demo_show_notification(app: LpAppFramework):
 
     p_data = randomize_savers_data(c_data, fail_chance=0.0)
 
-    event = EventSaverStats(p_data, c_data, 1.2)
+    event = EventSaverStats(p_data, c_data, app.deps.price_holder)
 
     loc: BaseLocalization = app.deps.loc_man[Language.RUSSIAN]
     await app.send_test_tg_message(loc.notification_text_saver_stats(event))
@@ -129,8 +129,8 @@ async def demo_show_savers_pic(app: LpAppFramework):
     # p_data = None
 
     pic_gen = SaversPictureGenerator(loc, EventSaverStats(
-        p_data, c_data, app.deps.price_holder.usd_per_rune
-    ), pool_map=app.deps.price_holder.pool_info_map)
+        p_data, c_data, app.deps.price_holder
+    ))
     pic, name = await pic_gen.get_picture()
 
     print(name)

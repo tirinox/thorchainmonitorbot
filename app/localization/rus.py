@@ -630,6 +630,7 @@ class RussianLocalization(BaseLocalization):
     BUTTON_METR_STATS = f'📊 Статистика'
     BUTTON_METR_NODES = '🖥 Ноды (узлы)'
     BUTTON_METR_LEADERBOARD = '🏆 Доска рекордов'
+    BUTTON_METR_SAVERS = '💰 Сбережения'
     BUTTON_METR_CHAINS = '⛓️ Блокчейны'
     BUTTON_METR_MIMIR = '🎅 Мимир'
     BUTTON_METR_VOTING = '🏛️ Голосование'
@@ -1631,46 +1632,36 @@ class RussianLocalization(BaseLocalization):
         ).strip()
 
     def notification_text_saver_stats(self, event: EventSaverStats):
-        message = f'💰 <b>Сбер.THORChain</b>\n\n'
+        message = f'💰 <b>THORChain сбережения</b>\n\n'
 
         savers, prev = event.current_stats, event.previous_stats
 
-        max_apr = savers.max_apr
-
-        for i, pool in enumerate(savers.get_top_vaults('total_asset_as_usd'), start=1):
-            asset = " " + Asset.from_string(pool.asset).name
-            if pool.total_asset_saved >= pool.asset_cap * 0.99:
-                pb = ', ЗАПОЛНЕНО 💯'
-            elif pool.total_asset_saved < pool.asset_cap * self.MIN_PERCENT_TO_SHOW_VAULT_FILL * 0.01:
-                pb = ''
-            else:
-                pb = f', {pool.percent_of_cap_filled:.0f}% занято'
-
-            if pool.apr == max_apr:
-                smile = '💡'
-            else:
-                smile = ''
-
-            clarification = f'({short_dollar(pool.total_asset_as_usd)}{ital(pb)})'
-
-            message += (
-                f'{code(short_money(pool.total_asset_saved, postfix=asset))} '
-                f'{clarification} '
-                f'| {bold(pool.number_of_savers)} участников | '
-                f'Годовые: {code(short_money(pool.apr, postfix="%"))}{smile}\n')
-
-        total_earned_usd = savers.total_rune_earned * event.usd_per_rune
+        total_earned_usd = savers.total_rune_earned * event.price_holder.usd_per_rune
         avg_apr_change, saver_number_change, total_earned_change_usd, total_usd_change = \
             self.get_savers_stat_changed_metrics_as_str(event, prev, savers, total_earned_usd)
 
         message += (
-            f'\n'
-            f'Всего {bold(savers.total_unique_savers)}{saver_number_change} сберегателей '
-            f'в сумме с капиталом {bold(short_dollar(savers.total_usd_saved))}{total_usd_change}.\n'
+            f'Всего {code(savers.total_unique_savers)}{saver_number_change} вкладчиков '
+            f'в сумме с капиталом {code(short_dollar(savers.total_usd_saved))}{total_usd_change}.\n'
             f'<b>Средние годовые:</b> {pre(pretty_money(savers.average_apr))}%{avg_apr_change}.\n'
-            f'Всего заработано: {bold(pretty_dollar(total_earned_usd))}{total_earned_change_usd}.'
+            f'Всего заработано: {pre(pretty_dollar(total_earned_usd))}{total_earned_change_usd}.\n'
+            f'Общая заполняемость: {savers.overall_fill_cap_percent:.1f}%'
         )
 
         return message
 
     TEXT_PIC_SAVERS_VAULTS = 'хранилища сбережений'
+    TEXT_PIC_SAVERS_TOTAL_SAVERS = 'Всего участников'
+    TEXT_PIC_SAVERS_TOTAL_SAVED_VALUE = 'Всего вложено'
+    TEXT_PIC_SAVERS_TOTAL_EARNED = 'Всего заработано'
+    TEXT_PIC_SAVERS_APR_MEAN = 'Годовые в среднем'
+    TEXT_PIC_SAVERS_TOTAL_FILLED = 'Заполняемость'
+    TEXT_PIC_SAVERS_OR = ' или '
+    TEXT_PIC_SAVERS_ASSET = 'Актив'
+    TEXT_PIC_SAVERS_USD = 'USD'
+    TEXT_PIC_SAVERS_APR = 'Годовые'
+    TEXT_PIC_SAVERS = 'Адреса'
+    TEXT_PIC_SAVERS_FILLED = 'Заполнение'
+    TEXT_PIC_SAVERS_EARNED = 'Заработано'
+
+    TEXT_SAVERS_NO_DATA = 'Простите, у нас пока нет никаких данных о статистике сбережений.'

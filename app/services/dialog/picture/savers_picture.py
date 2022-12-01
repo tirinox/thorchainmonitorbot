@@ -6,7 +6,6 @@ from services.dialog.picture.resources import Resources
 from services.lib.draw_utils import TC_WHITE, line_progress_bar, result_color
 from services.lib.money import Asset, short_money, short_dollar
 from services.lib.utils import async_wrap
-from services.models.pool_info import PoolInfoMap
 from services.notify.types.savers_stats_notify import EventSaverStats
 
 
@@ -17,12 +16,11 @@ class SaversPictureGenerator(BasePictureGenerator):
     LINE_COLOR = '#41484d'
     COLUMN_COLOR = '#eee'
 
-    def __init__(self, loc: BaseLocalization, event: EventSaverStats, pool_map: PoolInfoMap):
+    def __init__(self, loc: BaseLocalization, event: EventSaverStats):
         super().__init__(loc)
         self.bg = Image.open(self.BG_FILE)
         self.event = event
         self.logos = {}
-        self.pool_map = pool_map
 
     FILENAME_PREFIX = 'thorchain_savers'
 
@@ -44,9 +42,9 @@ class SaversPictureGenerator(BasePictureGenerator):
         draw = ImageDraw.Draw(image)
 
         # title
-        draw.text((388, 69),
+        draw.text((388, 56),
                   self.loc.TEXT_PIC_SAVERS_VAULTS,
-                  fill=TC_WHITE, anchor='lb',
+                  fill=TC_WHITE, anchor='lm',
                   font=r.fonts.get_font(32))
 
         # key metrics:
@@ -81,13 +79,14 @@ class SaversPictureGenerator(BasePictureGenerator):
                               fill=result_color(delta),
                               anchor='mm')
 
-        draw_key_metric(1, 'Total Savers', 'total_unique_savers', short_money, integer=True)
-        draw_key_metric(2, 'Total Saved Value', 'total_usd_saved', short_dollar)
-        draw_key_metric(3, 'Total Earned', 'total_rune_earned',
-                        formatter=lambda x, signed=False: short_dollar(x * self.event.usd_per_rune, signed=signed))
+        draw_key_metric(1, self.loc.TEXT_PIC_SAVERS_TOTAL_SAVERS, 'total_unique_savers', short_money, integer=True)
+        draw_key_metric(2, self.loc.TEXT_PIC_SAVERS_TOTAL_SAVED_VALUE, 'total_usd_saved', short_dollar)
+        draw_key_metric(3, self.loc.TEXT_PIC_SAVERS_TOTAL_EARNED, 'total_rune_earned',
+                        formatter=lambda x, signed=False: short_dollar(x * self.event.price_holder.usd_per_rune,
+                                                                       signed=signed))
 
-        draw_key_metric(4, 'APR Mean', 'average_apr', short_money, postfix='%')
-        draw_key_metric(5, 'Total Filled', 'overall_fill_cap_percent', short_money, postfix='%')
+        draw_key_metric(4, self.loc.TEXT_PIC_SAVERS_APR_MEAN, 'average_apr', short_money, postfix='%')
+        draw_key_metric(5, self.loc.TEXT_PIC_SAVERS_TOTAL_FILLED, 'overall_fill_cap_percent', short_money, postfix='%')
 
         # table:
 
@@ -105,12 +104,18 @@ class SaversPictureGenerator(BasePictureGenerator):
 
         column_y = y_start - 30
 
-        draw.text((asset_x, column_y), 'Asset', fill=self.COLUMN_COLOR, font=font_column, anchor='lb')
-        draw.text((dollar_x, column_y), 'USD', fill=self.COLUMN_COLOR, font=font_column, anchor='lb')
-        draw.text((apr_x, column_y), 'APR', fill=self.COLUMN_COLOR, font=font_column, anchor='lb')
-        draw.text((savers_n_x, column_y), 'Savers', fill=self.COLUMN_COLOR, font=font_column, anchor='lb')
-        draw.text((filled_x, column_y), 'Savers filled', fill=self.COLUMN_COLOR, font=font_column, anchor='lb')
-        draw.text((earned_x, column_y), 'Earned', fill=self.COLUMN_COLOR, font=font_column, anchor='lb')
+        draw.text((asset_x, column_y), self.loc.TEXT_PIC_SAVERS_ASSET,
+                  fill=self.COLUMN_COLOR, font=font_column, anchor='lb')
+        draw.text((dollar_x, column_y), self.loc.TEXT_PIC_SAVERS_USD,
+                  fill=self.COLUMN_COLOR, font=font_column, anchor='lb')
+        draw.text((apr_x, column_y), self.loc.TEXT_PIC_SAVERS_APR,
+                  fill=self.COLUMN_COLOR, font=font_column, anchor='lb')
+        draw.text((savers_n_x, column_y), self.loc.TEXT_PIC_SAVERS,
+                  fill=self.COLUMN_COLOR, font=font_column, anchor='lb')
+        draw.text((filled_x, column_y), self.loc.TEXT_PIC_SAVERS_FILLED,
+                  fill=self.COLUMN_COLOR, font=font_column, anchor='lb')
+        draw.text((earned_x, column_y), self.loc.TEXT_PIC_SAVERS_EARNED,
+                  fill=self.COLUMN_COLOR, font=font_column, anchor='lb')
 
         cur_data.sort_pools(key='total_asset_as_usd', reverse=True)
 
@@ -183,10 +188,10 @@ class SaversPictureGenerator(BasePictureGenerator):
             line_progress_bar(draw, vault.percent_of_cap_filled / 100.0,
                               ((filled_x, y - 7), (fill_pb_width, 14)), line_width=2, gap=2)
 
-            asset_earned = vault.calc_asset_earned(self.pool_map)
-            usd_earned = vault.runes_earned * self.event.usd_per_rune
+            asset_earned = vault.calc_asset_earned(self.event.price_holder.pool_info_map)
+            usd_earned = vault.runes_earned * self.event.price_holder.usd_per_rune
             draw.text((earned_x, y),
-                      f"{short_money(asset_earned)} {a.name} or "
+                      f"{short_money(asset_earned)} {a.name} {self.loc.TEXT_PIC_SAVERS_OR} "
                       f"{short_dollar(usd_earned)}",
                       fill=TC_WHITE, font=font_asset_regular, anchor='lm')
 
@@ -202,5 +207,4 @@ class SaversPictureGenerator(BasePictureGenerator):
             x = v_line_x - 17
             draw.line((x, y_v_line_start, x, y_end), fill=self.LINE_COLOR, width=v_line_width)
 
-        # todo
         return image

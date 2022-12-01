@@ -11,7 +11,7 @@ from services.lib.depcont import DepContainer
 from services.lib.money import short_dollar
 from services.lib.utils import WithLogger
 from services.models.pool_info import PoolInfoMap
-from services.models.price import RuneMarketInfo
+from services.models.price import RuneMarketInfo, LastPriceHolder
 from services.models.time_series import TimeSeries
 
 
@@ -117,7 +117,7 @@ class AllSavers(NamedTuple):
 class EventSaverStats(NamedTuple):
     previous_stats: Optional[AllSavers]
     current_stats: AllSavers
-    usd_per_rune: float
+    price_holder: LastPriceHolder
 
 
 class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
@@ -176,7 +176,7 @@ class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
         previous_savers = await self.get_previous_saver_stats(self.cd_notify.cooldown)
         await self.pass_data_to_listeners(EventSaverStats(
             previous_savers, current_savers,
-            usd_per_rune=self.deps.price_holder.usd_per_rune
+            self.deps.price_holder
         ))
 
     async def on_data(self, sender, rune_market: RuneMarketInfo):

@@ -811,6 +811,7 @@ class BaseLocalization(ABC):  # == English
     BUTTON_METR_STATS = '📊 Stats'
     BUTTON_METR_NODES = '🖥 Nodes'
     BUTTON_METR_LEADERBOARD = '🏆 Leaderboard'
+    BUTTON_METR_SAVERS = '💰 Savers'
     BUTTON_METR_CHAINS = '⛓️ Chains'
     BUTTON_METR_MIMIR = '🎅 Mimir consts'
     BUTTON_METR_VOTING = '🏛️ Voting'
@@ -2138,51 +2139,27 @@ class BaseLocalization(ABC):  # == English
     MIN_PERCENT_TO_SHOW_VAULT_FILL = 10
 
     def notification_text_saver_stats(self, event: EventSaverStats):
-        # todo: infographic
-        message = f'💰 <b>THORChain Savers Vaults summary</b>\n\n'
+        message = f'💰 <b>THORChain Savers Vaults summary</b>\n'
 
         savers, prev = event.current_stats, event.previous_stats
 
-        max_apr = savers.max_apr
-
-        for i, pool in enumerate(savers.get_top_vaults('total_asset_as_usd'), start=1):
-            asset = " " + Asset.from_string(pool.asset).name
-            if pool.total_asset_saved >= pool.asset_cap * 0.99:
-                pb = ', FULL 💯'
-            elif pool.total_asset_saved < pool.asset_cap * self.MIN_PERCENT_TO_SHOW_VAULT_FILL * 0.01:
-                pb = ''
-            else:
-                pb = f', {pool.percent_of_cap_filled:.0f}% filled'
-
-            if pool.apr == max_apr:
-                smile = '💡'
-            else:
-                smile = ''
-
-            clarification = f'({short_dollar(pool.total_asset_as_usd)}{ital(pb)})'
-
-            message += (
-                f'{code(short_money(pool.total_asset_saved, postfix=asset))} '
-                f'{clarification} '
-                f'| {bold(pool.number_of_savers)} savers | '
-                f'APR: {code(short_money(pool.apr, postfix="%"))}{smile}\n')
-
-        total_earned_usd = savers.total_rune_earned * event.usd_per_rune
+        total_earned_usd = savers.total_rune_earned * event.price_holder.usd_per_rune
         avg_apr_change, saver_number_change, total_earned_change_usd, total_usd_change = \
             self.get_savers_stat_changed_metrics_as_str(event, prev, savers, total_earned_usd)
 
         message += (
             f'\n'
-            f'Total {bold(savers.total_unique_savers)}{saver_number_change} savers '
-            f'with {bold(short_dollar(savers.total_usd_saved))}{total_usd_change} saved.\n'
+            f'Total {code(savers.total_unique_savers)}{saver_number_change} savers '
+            f'with {code(short_dollar(savers.total_usd_saved))}{total_usd_change} saved.\n'
             f'<b>Average APR</b> is {pre(pretty_money(savers.average_apr))}%{avg_apr_change}.\n'
-            f'Total earned: {bold(pretty_dollar(total_earned_usd))}{total_earned_change_usd}.'
+            f'Total earned: {pre(pretty_dollar(total_earned_usd))}{total_earned_change_usd}.\n'
+            f'Total filled: {savers.overall_fill_cap_percent:.1f}%'
         )
 
         return message
 
     @staticmethod
-    def get_savers_stat_changed_metrics_as_str(event, prev, savers, total_earned_usd):
+    def get_savers_stat_changed_metrics_as_str(event: EventSaverStats, prev, savers, total_earned_usd):
         if prev:
             saver_number_change = bracketify(up_down_arrow(
                 prev.total_unique_savers, savers.total_unique_savers, int_delta=True), before=' ')
@@ -2191,7 +2168,7 @@ class BaseLocalization(ABC):  # == English
             avg_apr_change = bracketify(up_down_arrow(
                 prev.average_apr, savers.average_apr, money_delta=True, postfix='%'
             ), before=' ')
-            prev_total_earned_usd = prev.total_rune_earned * event.usd_per_rune
+            prev_total_earned_usd = prev.total_rune_earned * event.price_holder.usd_per_rune
             total_earned_change_usd = bracketify(up_down_arrow(
                 prev_total_earned_usd, total_earned_usd, money_delta=True, money_prefix='$'
             ), before=' ')
@@ -2203,6 +2180,20 @@ class BaseLocalization(ABC):  # == English
         return avg_apr_change, saver_number_change, total_earned_change_usd, total_usd_change
 
     TEXT_PIC_SAVERS_VAULTS = 'savers vaults'
+    TEXT_PIC_SAVERS_TOTAL_SAVERS = 'Total Savers'
+    TEXT_PIC_SAVERS_TOTAL_SAVED_VALUE = 'Total Saved Value'
+    TEXT_PIC_SAVERS_TOTAL_EARNED = 'Total Earned'
+    TEXT_PIC_SAVERS_APR_MEAN = 'APR Mean'
+    TEXT_PIC_SAVERS_TOTAL_FILLED = 'Total Filled'
+    TEXT_PIC_SAVERS_OR = ' or '
+    TEXT_PIC_SAVERS_ASSET = 'Asset'
+    TEXT_PIC_SAVERS_USD = 'USD'
+    TEXT_PIC_SAVERS_APR = 'APR'
+    TEXT_PIC_SAVERS = 'Savers'
+    TEXT_PIC_SAVERS_FILLED = 'Savers filled'
+    TEXT_PIC_SAVERS_EARNED = 'Earned'
+
+    TEXT_SAVERS_NO_DATA = 'Sorry. We have not gotten any data for Savers Vaults yet.'
 
 
 class EnglishLocalization(BaseLocalization):

@@ -8,6 +8,7 @@ from services.dialog.picture.block_height_picture import block_speed_chart
 from services.dialog.picture.nodes_pictures import NodePictureGenerator
 from services.dialog.picture.price_picture import price_graph_from_db
 from services.dialog.picture.queue_picture import queue_graph
+from services.dialog.picture.savers_picture import SaversPictureGenerator
 from services.dialog.picture.supply_picture import SupplyPictureGenerator
 from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
 from services.jobs.fetch.node_info import NodeInfoFetcher
@@ -22,6 +23,7 @@ from services.notify.types.block_notify import BlockHeightNotifier
 from services.notify.types.cap_notify import LiquidityCapNotifier
 from services.notify.types.node_churn_notify import NodeChurnNotifier
 from services.notify.types.price_notify import PriceNotifier
+from services.notify.types.savers_stats_notify import EventSaverStats, SaversStatsNotifier
 from services.notify.types.stats_notify import NetworkStatsNotifier
 from services.notify.types.transfer_notify import RuneMoveNotifier
 
@@ -67,7 +69,7 @@ class MetricsDialog(BaseDialog):
         await MetricsStates.SECTION_FINANCE.set()
         reply_markup = kbd([
             [self.loc.BUTTON_METR_PRICE, self.loc.BUTTON_METR_CAP, self.loc.BUTTON_METR_STATS],
-            [self.loc.BUTTON_METR_LEADERBOARD, self.loc.BUTTON_METR_TOP_POOLS, self.loc.BUTTON_METR_CEX_FLOW],
+            [self.loc.BUTTON_METR_SAVERS, self.loc.BUTTON_METR_TOP_POOLS, self.loc.BUTTON_METR_CEX_FLOW],
             [self.loc.BUTTON_METR_SUPPLY, self.loc.BUTTON_METR_DEX_STATS, self.loc.BUTTON_BACK],
         ])
         await message.answer(self.loc.TEXT_METRICS_INTRO,
@@ -97,8 +99,8 @@ class MetricsDialog(BaseDialog):
             await self.show_cap(message)
         elif message.text == self.loc.BUTTON_METR_STATS:
             await self.show_last_stats(message)
-        elif message.text == self.loc.BUTTON_METR_LEADERBOARD:
-            await self.show_leaderboard(message)
+        elif message.text == self.loc.BUTTON_METR_SAVERS:
+            await self.show_savers(message)
         elif message.text == self.loc.BUTTON_METR_TOP_POOLS:
             await self.show_top_pools(message)
         elif message.text == self.loc.BUTTON_METR_CEX_FLOW:
@@ -136,10 +138,30 @@ class MetricsDialog(BaseDialog):
                              disable_web_page_preview=True,
                              disable_notification=True)
 
-    async def show_leaderboard(self, message: Message):
-        await message.answer(self.loc.text_leaderboard_info(),
-                             disable_notification=True,
-                             disable_web_page_preview=True)
+    async def show_savers(self, message: Message):
+        loading_message = await self.show_loading(message)
+
+        ssn = SaversStatsNotifier(self.deps)
+        c_data = await ssn.get_previous_saver_stats(0)
+
+        if not c_data:
+            await message.answer(self.loc.TEXT_SAVERS_NO_DATA,
+                                 disable_notification=True)
+            return
+
+        prev_data = await ssn.get_previous_saver_stats(DAY)
+        event = EventSaverStats(
+            prev_data, c_data, self.deps.price_holder
+        )
+
+        pic_gen = SaversPictureGenerator(self.loc, event)
+        pic, name = await pic_gen.get_picture()
+
+        await message.answer_photo(img_to_bio(pic, name),
+                                   caption=self.loc.notification_text_saver_stats(event),
+                                   disable_notification=True)
+
+        await self.safe_delete(loading_message)
 
     async def show_last_stats(self, message: Message):
         nsn = NetworkStatsNotifier(self.deps)

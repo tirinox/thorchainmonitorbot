@@ -826,7 +826,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         parts = [f'💰 THORChain Savers\n']
 
         savers, prev = event.current_stats, event.previous_stats
-        total_earned_usd = savers.total_rune_earned * event.usd_per_rune
+        total_earned_usd = savers.total_rune_earned * event.price_holder.usd_per_rune
         avg_apr_change, saver_number_change, total_earned_change_usd, total_usd_change = \
             self.get_savers_stat_changed_metrics_as_str(event, prev, savers, total_earned_usd)
 
@@ -834,28 +834,15 @@ class TwitterEnglishLocalization(BaseLocalization):
             f'\n'
             f'{savers.total_unique_savers}{saver_number_change} savers '
             f'| {(short_dollar(savers.total_usd_saved))}{total_usd_change}\n'
-            f'Avg. APR is {(pretty_money(savers.average_apr))}%{avg_apr_change}\n'
-            f'Earned: {pretty_dollar(total_earned_usd)}{total_earned_change_usd}\n'
-            f'Vault filled: {savers.overall_fill_cap_percent:.1f}%\n\n'
         )
-
-        max_apr = savers.max_apr
-
-        for i, pool in enumerate(savers.get_top_vaults('total_asset_as_usd'), start=1):
-            asset = " " + Asset.from_string(pool.asset).name
-
-            if pool.apr == max_apr:
-                smile = '💡'
-            else:
-                smile = ''
-
-            clarification = f'({short_dollar(pool.total_asset_as_usd)})'
-
-            parts.append(
-                f'{(short_money(pool.total_asset_saved, postfix=asset))} '
-                f'{clarification} '
-                f'| {pool.number_of_savers} savers | '
-                f'APR: {(short_money(pool.apr, postfix="%"))}{smile}\n'
-            )
+        parts.append(
+            f'Avg. APR is {(pretty_money(savers.average_apr))}%{avg_apr_change}\n'
+        )
+        parts.append(
+            f'Earned: {pretty_dollar(total_earned_usd)}{total_earned_change_usd}\n'
+        )
+        parts.append(
+            f'Total filled: {savers.overall_fill_cap_percent:.1f}%\n\n'
+        )
 
         return self.smart_split(parts).strip()

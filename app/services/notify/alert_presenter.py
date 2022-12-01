@@ -2,6 +2,7 @@ import asyncio
 
 from localization.manager import BaseLocalization
 from services.dialog.picture.block_height_picture import block_speed_chart
+from services.dialog.picture.savers_picture import SaversPictureGenerator
 from services.lib.constants import THOR_BLOCKS_PER_MINUTE
 from services.lib.delegates import INotified
 from services.lib.midgard.name_service import NameService
@@ -85,7 +86,11 @@ class AlertPresenter(INotified):
         )
 
     async def _handle_saver_stats(self, event: EventSaverStats):
-        await self.broadcaster.notify_preconfigured_channels(
-            BaseLocalization.notification_text_saver_stats,
-            event
-        )
+        async def _gen(loc: BaseLocalization, event):
+            pic_gen = SaversPictureGenerator(loc, event)
+            pic, pic_name = await pic_gen.get_picture()
+
+            caption = loc.notification_text_saver_stats(event)
+            return BoardMessage.make_photo(pic, caption=caption, photo_file_name=pic_name)
+
+        await self.broadcaster.notify_preconfigured_channels(_gen, event)
