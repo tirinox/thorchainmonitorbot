@@ -15,10 +15,13 @@ async def my_test_get_user_lp_actions(lpgen: LpAppFramework):
         print(tx, end='\n-----\n')
 
 
-ADDR = 'thor1egxvam70a86jafa8gcg3kqfmfax3s0m2g3m754'
+ADDR = 'thor1a8ydprhkk5u032r277nzs4vw5khnnl3ya9xnvs'
+POOL = 'ETH.ETH'
+
+
 # POOL = 'BNB.TWT-8C2'
 # POOL = 'BNB.BTCB-1DE'
-POOL = 'BNB.BUSD-BD1'
+# POOL = 'BNB.BUSD-BD1'
 
 
 async def my_test_summary_of_all_pools(lpgen: LpAppFramework):
@@ -65,12 +68,10 @@ async def clear_date2block(lpgen: LpAppFramework):
 async def main():
     lpgen = LpAppFramework(HomebrewLPConnector)
     async with lpgen:
-        # await my_test_1_pool(lpgen)
-        # await test_charts(lpgen, address='bnb1snqqjdvcqjf76fdztxrtwgv0ws9hsvvfsjv02z')  # mccn (bnb only)
-        # await test_charts(lpgen, address='0x52e07b963ab0f525b15e281b3b42d55e8048f027')  # mccn (many pools + withdraw)
+        await my_test_1_pool(lpgen)
         # await test_block_calibration(lpgen)
         # await clear_date2block(lpgen)
-        await my_test_block_by_date(lpgen)
+        # await my_test_block_by_date(lpgen)
 
 
 if __name__ == "__main__":
