@@ -358,7 +358,7 @@ class RussianLocalization(BaseLocalization):
                                  f'Вы можете добавить еще {pre(short_money(amount_more))} {pre(asset_more)}.'
 
                 vault_percent_part = f", {saver_percent:.2f}% от хранилища" \
-                    if saver_percent > self.MIN_PERCENT_TO_SHOW else ''
+                    if saver_percent >= self.MIN_PERCENT_TO_SHOW else ''
                 asset_part = f"{bold(short_money(tx.asset_amount))} {asset}"
 
                 content = (
@@ -372,7 +372,7 @@ class RussianLocalization(BaseLocalization):
                 asset_part = f"{bold(short_money(tx.asset_amount))} {asset} ({asset_side_usd_short})"
                 pool_depth_part = f'Глубина пула {bold(short_dollar(pool_depth_usd))} сейчас.'
                 pool_percent_part = f" ({percent_of_pool:.2f}% от всего пула)" \
-                    if percent_of_pool > self.MIN_PERCENT_TO_SHOW else ''
+                    if percent_of_pool >= self.MIN_PERCENT_TO_SHOW else ''
 
                 content = (
                     f"{rune_part}{asset_part}\n"
