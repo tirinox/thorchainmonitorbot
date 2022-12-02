@@ -1,6 +1,5 @@
 import asyncio
 import logging
-import os
 
 from services.dialog.picture.price_picture import price_graph_from_db
 from services.jobs.fetch.gecko_price import fill_rune_price_from_gecko
@@ -8,7 +7,7 @@ from services.jobs.fetch.tx import TxFetcher
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.jobs.volume_recorder import VolumeRecorder
 from services.lib.date_utils import HOUR
-from services.lib.draw_utils import img_to_bio
+from services.lib.draw_utils import save_image_and_show
 from services.notify.types.price_notify import PriceNotifier
 from tools.debug.dbg_discord import debug_prepare_discord_bot
 from tools.debug.dbg_supply_graph import debug_get_rune_market_data
@@ -25,23 +24,20 @@ async def continuous_volume_recording(lp_app):
     volume_filler.add_subscriber(volume_recorder)
 
     async def on_data(sender: VolumeRecorder, data):
-        print(await sender.get_data_range_ago_n(HOUR * 3, 10))
+        last_data = await sender.get_data_instant()
+        print(last_data)
+        # print(await sender.get_data_range_ago_n(HOUR * 3, 10))
 
     volume_recorder.add_subscriber(Receiver(callback=on_data))
 
     await fetcher_tx.run()
 
 
-async def make_price_graph(lp_app):
-    await fill_rune_price_from_gecko(lp_app.deps.db, include_fake_det=True)
+async def make_price_graph(lp_app, fill=False):
+    if fill:
+        await fill_rune_price_from_gecko(lp_app.deps.db, include_fake_det=True)
     loc = lp_app.deps.loc_man.default
     return await price_graph_from_db(lp_app.deps, loc)
-
-
-def save_and_show_price_graph(graph, graph_name):
-    with open('../temp/price_gr.png', 'wb') as f:
-        f.write(img_to_bio(graph, graph_name).getbuffer())
-        os.system(f'open "../temp/price_gr.png"')
 
 
 async def debug_post_price_graph_to_discord(app: LpAppFramework):
@@ -58,7 +54,7 @@ async def debug_post_price_graph_to_discord(app: LpAppFramework):
 
 async def demo_show_price_graph(app: LpAppFramework):
     graph, graph_name = await make_price_graph(app)
-    save_and_show_price_graph(graph, graph_name)
+    save_image_and_show(graph, '../temp/price_gr.png')
 
 
 async def main():

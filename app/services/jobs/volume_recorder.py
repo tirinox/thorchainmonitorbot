@@ -26,8 +26,12 @@ class VolumeRecorder(WithDelegates, INotified, WithLogger):
         for tx in txs:
             volume = tx.full_rune
             if volume > 0:
-                synth = volume if tx.is_synth_involved else 0.0
-                swap = volume if tx.type == ThorTxType.TYPE_SWAP else 0.0
+                swap, synth = 0.0, 0.0
+                if tx.type == ThorTxType.TYPE_SWAP:
+                    swap = volume
+                    if tx.is_synth_involved:
+                        synth = volume
+
                 add = volume if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY else 0.0
                 withdraw = volume if tx.type == ThorTxType.TYPE_WITHDRAW else 0.0
                 await self._accumulator.add(

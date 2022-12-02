@@ -42,6 +42,8 @@ def price_graph(pool_price_df, det_price_df, cex_prices_df, volumes, loc: BaseLo
     graph.add_legend(LINE_COLOR_DET_PRICE, loc.PRICE_GRAPH_LEGEND_DET_PRICE)
 
     graph.bar_height_limit = 200
+
+    # In the series, swaps = L1 swaps + synths swaps. So this is the tall bar behind "only synth" swaps
     graph.add_series_bars(pluck_from_series(volumes, VolumeRecorder.KEY_SWAP), BAR_COLOR_SWAP, 8)
     graph.add_series_bars(pluck_from_series(volumes, VolumeRecorder.KEY_SWAP_SYNTH), BAR_COLOR_SWAP_SYNTH, 8)
     graph.add_series_bars(pluck_from_series(volumes, VolumeRecorder.KEY_ADD_LIQUIDITY), BAR_COLOR_ADD, 2, -3)
