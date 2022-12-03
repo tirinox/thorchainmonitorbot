@@ -9,7 +9,7 @@ from aiogram.utils.helper import HelperMode
 
 from localization.eng_base import BaseLocalization
 from services.dialog.base import message_handler, query_handler, DialogWithSettings
-from services.dialog.picture.lp_picture import lp_pool_picture, lp_address_summary_picture
+from services.dialog.picture.lp_picture import generate_yield_picture, lp_address_summary_picture
 from services.dialog.telegram.inline_list import TelegramInlineList, InlineListResult
 from services.jobs.fetch.runeyield import get_rune_yield_connector
 from services.lib.constants import Chains
@@ -399,7 +399,7 @@ class MyWalletsMenu(DialogWithSettings):
         # GENERATE A PICTURE
         value_hidden = not self.data.get(self.KEY_CAN_VIEW_VALUE, True)
 
-        picture = await lp_pool_picture(self.deps.price_holder, lp_report, self.loc, value_hidden=value_hidden)
+        picture = await generate_yield_picture(self.deps.price_holder, lp_report, self.loc, value_hidden=value_hidden)
         picture_bio = img_to_bio(picture, f'Thorchain_LP_{pool}_{today_str()}.png')
 
         # ANSWER

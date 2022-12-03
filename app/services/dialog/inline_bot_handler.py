@@ -5,7 +5,7 @@ from aiogram.types import InlineQuery, InputTextMessageContent, InlineQueryResul
 
 from localization.manager import BaseLocalization
 from services.dialog.base import BaseDialog, inline_bot_handler
-from services.dialog.picture.lp_picture import lp_pool_picture
+from services.dialog.picture.lp_picture import generate_yield_picture
 from services.dialog.picture.price_picture import price_graph_from_db
 from services.jobs.fetch.runeyield import get_rune_yield_connector
 from services.lib.config import Config
@@ -129,7 +129,7 @@ class InlineBotHandlerDialog(BaseDialog):
         # summary = await rune_yield.generate_yield_summary(address, pools)
 
         # GENERATE A PICTURE
-        picture = await lp_pool_picture(self.deps.price_holder, lp_report, self.loc, value_hidden=False)
+        picture = await generate_yield_picture(self.deps.price_holder, lp_report, self.loc, value_hidden=False)
         picture_bio = img_to_bio(picture, f'Thorchain_LP_{exact_pool}_{today_str()}.png')
 
         # UPLOAD AND SEND RESULT

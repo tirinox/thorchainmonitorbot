@@ -148,6 +148,7 @@ class RussianLocalization(BaseLocalization):
         start_me = self.url_start_me
         return f'Сгенерировано: {link(start_me, bot_link)}'
 
+    LP_PIC_TITLE = 'ликвидность'
     LP_PIC_POOL = 'ПУЛ'
     LP_PIC_RUNE = 'RUNE'
     LP_PIC_ADDED = 'Добавлено'
@@ -1665,3 +1666,5 @@ class RussianLocalization(BaseLocalization):
     TEXT_PIC_SAVERS_EARNED = 'Заработано'
 
     TEXT_SAVERS_NO_DATA = 'Простите, у нас пока нет никаких данных о статистике сбережений.'
+
+    SV_PIC_TITLE = 'сбережения'

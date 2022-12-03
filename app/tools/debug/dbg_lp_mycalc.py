@@ -2,13 +2,12 @@ import asyncio
 import logging
 from datetime import date
 
-from services.dialog.picture.lp_picture import lp_pool_picture
+from services.dialog.picture.lp_picture import generate_yield_picture, savings_pool_picture
 from services.jobs.fetch.runeyield.date2block import DateToBlockMapper
 from services.jobs.fetch.runeyield.lp_my import HomebrewLPConnector
 from services.jobs.fetch.tx import TxFetcher
 from services.lib.money import Asset
 from services.lib.texts import sep
-from services.lib.utils import setup_logs
 from services.models.tx import cut_off_previous_lp_sessions
 from tools.lib.lp_common import LpAppFramework
 
@@ -38,11 +37,12 @@ async def demo_report_for_single_pool(lpgen: LpAppFramework, addr, pool):
     if is_savers:
         report = await lpgen.rune_yield.generate_savers_report(addr, pool)
         print(report)
-        return
+        picture = await savings_pool_picture(lpgen.deps.price_holder, report, loc)
+        picture.show()
     else:
         report = await lpgen.rune_yield.generate_yield_report_single_pool(addr, pool)
         print(report)
-        picture = await lp_pool_picture(lpgen.deps.price_holder, report, loc)
+        picture = await generate_yield_picture(lpgen.deps.price_holder, report, loc)
         picture.show()
 
 

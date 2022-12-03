@@ -23,6 +23,9 @@ class FontCache(metaclass=Singleton):
             f = self._cache[key] = ImageFont.truetype(font_path, size)
         return f
 
+    def get_font_bold(self, size: int):
+        return self.get_font(size, self.FONT_BOLD)
+
 
 class Resources(metaclass=Singleton):
     BASE = './data'
@@ -42,10 +45,8 @@ class Resources(metaclass=Singleton):
 
         self.font_sum_ticks = self.fonts.get_font(24)
         self.font_small = self.fonts.get_font(28)
-        self.font_semi = self.fonts.get_font(36)
         self.font = self.fonts.get_font(40)
         self.font_head = self.fonts.get_font(48)
-        self.font_big = self.fonts.get_font(64)
 
         self.bg_image = Image.open(self.BG_IMG)
 

@@ -8,7 +8,7 @@ from PIL import ImageDraw
 from localization.manager import BaseLocalization
 from services.dialog.picture.resources import Resources
 from services.lib.constants import BNB_RUNE_SYMBOL, is_rune, RUNE_SYMBOL
-from services.lib.draw_utils import CATEGORICAL_PALETTE, pos_percent, result_color, hor_line, LIGHT_TEXT_COLOR
+from services.lib.draw_utils import CATEGORICAL_PALETTE, pos_percent, result_color, hor_line, LIGHT_TEXT_COLOR, TC_WHITE
 from services.lib.money import pretty_money, format_percent, pretty_percent, Asset, RAIDO_GLYPH, pretty_rune, \
     short_dollar
 from services.lib.plot_graph import PlotBarGraph
@@ -32,23 +32,39 @@ def hor_line_lp(draw, y, width=2, w=LP_PIC_WIDTH, h=LP_PIC_HEIGHT):
     hor_line(draw, y, width, w, h)
 
 
-async def lp_pool_picture(price_holder: LastPriceHolder, report: LiquidityPoolReport, loc: BaseLocalization,
-                          value_hidden=False):
+async def generate_yield_picture(price_holder: LastPriceHolder,
+                                 report: LiquidityPoolReport,
+                                 loc: BaseLocalization,
+                                 value_hidden=False):
     r = Resources()
     asset = report.pool.asset
-    rune_image, asset_image = await asyncio.gather(
-        r.logo_downloader.get_or_download_logo_cached(BNB_RUNE_SYMBOL),
-        r.logo_downloader.get_or_download_logo_cached(asset)
-    )
-    return await sync_lp_pool_picture(price_holder, report, loc, rune_image, asset_image, value_hidden)
+
+    if Asset.from_string(asset).is_synth:
+        # savings position
+        asset_image = await r.logo_downloader.get_or_download_logo_cached(asset)
+        return await _generate_savings_picture(price_holder, report, loc, asset_image, value_hidden)
+    else:
+        # LP position
+        rune_image, asset_image = await asyncio.gather(
+            r.logo_downloader.get_or_download_logo_cached(BNB_RUNE_SYMBOL),
+            r.logo_downloader.get_or_download_logo_cached(asset)
+        )
+        return await _generate_lp_pool_picture(price_holder, report, loc, rune_image, asset_image, value_hidden)
 
 
 @async_wrap
-def sync_lp_pool_picture(price_holder: LastPriceHolder, report: LiquidityPoolReport, loc: BaseLocalization, rune_image,
-                         asset_image, value_hidden):
+def _generate_lp_pool_picture(price_holder: LastPriceHolder,
+                              report: LiquidityPoolReport,
+                              loc: BaseLocalization,
+                              rune_image, asset_image,
+                              value_hidden: bool):
     asset = report.pool.asset
 
     r = Resources()
+    font_n = r.fonts.get_font_bold(40)
+    # font_t = r.fonts.get_font(40)
+    font_sn = r.fonts.get_font_bold(36)
+    font_big = r.fonts.get_font_bold(64)
 
     image = r.bg_image.copy()
     draw = ImageDraw.Draw(image)
@@ -58,6 +74,9 @@ def sync_lp_pool_picture(price_holder: LastPriceHolder, report: LiquidityPoolRep
     dy = 4.5
     logo_y = 82
     start_y = head_y + dy
+
+    # TITLE
+    draw.text(pos_percent_lp(59, 5.8), loc.LP_PIC_TITLE, fill=TC_WHITE, anchor='lm', font=r.fonts.get_font(62))
 
     # HEADER
     short_asset = Asset(asset).name
@@ -76,10 +95,10 @@ def sync_lp_pool_picture(price_holder: LastPriceHolder, report: LiquidityPoolRep
         r.put_hidden_plate(image, pos_percent_lp(left, start_y), anchor='right')
         r.put_hidden_plate(image, pos_percent_lp(right, start_y), anchor='left')
     else:
-        draw.text(pos_percent_lp(left, start_y), f'{pretty_rune(report.liq.rune_added)}', font=r.font,
+        draw.text(pos_percent_lp(left, start_y), f'{pretty_rune(report.liq.rune_added)}', font=font_n,
                   fill=FORE_COLOR,
                   anchor='rs')
-        draw.text(pos_percent_lp(right, start_y), f'{pretty_money(report.liq.asset_added)}', font=r.font,
+        draw.text(pos_percent_lp(right, start_y), f'{pretty_money(report.liq.asset_added)}', font=font_n,
                   fill=FORE_COLOR,
                   anchor='ls')
     start_y += dy
@@ -91,10 +110,10 @@ def sync_lp_pool_picture(price_holder: LastPriceHolder, report: LiquidityPoolRep
         r.put_hidden_plate(image, pos_percent_lp(right, start_y), anchor='left')
     else:
         draw.text(pos_percent_lp(left, start_y), f'{pretty_money(report.liq.rune_withdrawn)} {RAIDO_GLYPH}',
-                  font=r.font,
+                  font=font_n,
                   fill=FORE_COLOR,
                   anchor='rs')
-        draw.text(pos_percent_lp(right, start_y), f'{pretty_money(report.liq.asset_withdrawn)}', font=r.font,
+        draw.text(pos_percent_lp(right, start_y), f'{pretty_money(report.liq.asset_withdrawn)}', font=font_n,
                   fill=FORE_COLOR,
                   anchor='ls')
     start_y += dy
@@ -106,10 +125,10 @@ def sync_lp_pool_picture(price_holder: LastPriceHolder, report: LiquidityPoolRep
         r.put_hidden_plate(image, pos_percent_lp(left, start_y), anchor='right')
         r.put_hidden_plate(image, pos_percent_lp(right, start_y), anchor='left')
     else:
-        draw.text(pos_percent_lp(left, start_y), f'{pretty_money(redeem_rune)} {RAIDO_GLYPH}', font=r.font,
+        draw.text(pos_percent_lp(left, start_y), f'{pretty_money(redeem_rune)} {RAIDO_GLYPH}', font=font_n,
                   fill=FORE_COLOR,
                   anchor='rs')
-        draw.text(pos_percent_lp(right, start_y), f'{pretty_money(redeem_asset)}', font=r.font, fill=FORE_COLOR,
+        draw.text(pos_percent_lp(right, start_y), f'{pretty_money(redeem_asset)}', font=font_n, fill=FORE_COLOR,
                   anchor='ls')
     start_y += dy
 
@@ -117,10 +136,10 @@ def sync_lp_pool_picture(price_holder: LastPriceHolder, report: LiquidityPoolRep
     draw.text(pos_percent_lp(center, start_y), loc.LP_PIC_GAIN_LOSS, font=r.font, fill=FADE_COLOR, anchor='ms')
     gl_rune, gl_rune_per, gl_asset, gl_asset_per = report.gain_loss_raw
     if not value_hidden:
-        draw.text(pos_percent_lp(left, start_y), f'{pretty_money(gl_rune, signed=True)} {RAIDO_GLYPH}', font=r.font,
+        draw.text(pos_percent_lp(left, start_y), f'{pretty_money(gl_rune, signed=True)} {RAIDO_GLYPH}', font=font_n,
                   fill=result_color(gl_rune),
                   anchor='rs')
-        draw.text(pos_percent_lp(right, start_y), f'{pretty_money(gl_asset, signed=True)}', font=r.font,
+        draw.text(pos_percent_lp(right, start_y), f'{pretty_money(gl_asset, signed=True)}', font=font_n,
                   fill=result_color(gl_asset),
                   anchor='ls')
     start_y += 4
@@ -129,17 +148,17 @@ def sync_lp_pool_picture(price_holder: LastPriceHolder, report: LiquidityPoolRep
     gl_usd, gl_usd_p = report.gain_loss(report.USD)
 
     draw.text(pos_percent_lp(center, start_y), f'{pretty_money(gl_usd_p, signed=True)}% {loc.LP_PIC_IN_USD}',
-              font=r.font_head if value_hidden else r.font,
+              font=r.font_head if value_hidden else font_n,
               fill=result_color(gl_usd_p),
               anchor='ms')
 
     ey = -2 if value_hidden else 0
     draw.text(pos_percent_lp(left, start_y + ey), f'{pretty_money(gl_rune_per, signed=True)}%',
-              font=r.font_head if value_hidden else r.font,
+              font=r.font_head if value_hidden else font_n,
               fill=result_color(gl_rune_per),
               anchor='rs')
     draw.text(pos_percent_lp(right, start_y + ey), f'{pretty_money(gl_asset_per, signed=True)}%',
-              font=r.font_head if value_hidden else r.font,
+              font=r.font_head if value_hidden else font_n,
               fill=result_color(gl_asset_per),
               anchor='ls')
     start_y += 3
@@ -182,19 +201,19 @@ def sync_lp_pool_picture(price_holder: LastPriceHolder, report: LiquidityPoolRep
 
             fee_text = pretty_money(fee_value)
 
-            draw.text(pos_percent_lp(x, rows_y[0]), pretty_money(added), font=r.font_semi, fill=FORE_COLOR, anchor='ms')
-            draw.text(pos_percent_lp(x, rows_y[1]), pretty_money(withdrawn), font=r.font_semi, fill=FORE_COLOR,
+            draw.text(pos_percent_lp(x, rows_y[0]), pretty_money(added), font=font_sn, fill=FORE_COLOR, anchor='ms')
+            draw.text(pos_percent_lp(x, rows_y[1]), pretty_money(withdrawn), font=font_sn, fill=FORE_COLOR,
                       anchor='ms')
-            draw.text(pos_percent_lp(x, rows_y[2]), pretty_money(current), font=r.font_semi, fill=FORE_COLOR,
+            draw.text(pos_percent_lp(x, rows_y[2]), pretty_money(current), font=font_sn, fill=FORE_COLOR,
                       anchor='ms')
-            draw.text(pos_percent_lp(x, rows_y[3]), fee_text, font=r.font_semi, fill=result_color(fee_value),
+            draw.text(pos_percent_lp(x, rows_y[3]), fee_text, font=font_sn, fill=result_color(fee_value),
                       anchor='ms')
-            draw.text(pos_percent_lp(x, rows_y[4]), pretty_money(gl, signed=True), font=r.font_semi,
+            draw.text(pos_percent_lp(x, rows_y[4]), pretty_money(gl, signed=True), font=font_sn,
                       fill=result_color(gl),
                       anchor='ms')
 
             if is_il_protected:
-                draw.text(pos_percent_lp(x, rows_y[5]), pretty_money(il_prot, signed=True), font=r.font_semi,
+                draw.text(pos_percent_lp(x, rows_y[5]), pretty_money(il_prot, signed=True), font=font_sn,
                           fill=result_color(il_prot),
                           anchor='ms')
 
@@ -205,21 +224,21 @@ def sync_lp_pool_picture(price_holder: LastPriceHolder, report: LiquidityPoolRep
             r.put_hidden_plate(image, pos_percent_lp(x, rows_y[0]), anchor='center')
             r.put_hidden_plate(image, pos_percent_lp(x, rows_y[1]), anchor='center')
             r.put_hidden_plate(image, pos_percent_lp(x, rows_y[2]), anchor='center')
-            draw.text(pos_percent_lp(x, rows_y[3]), fee_text, font=r.font_semi, fill=result_color(fee_value),
+            draw.text(pos_percent_lp(x, rows_y[3]), fee_text, font=font_sn, fill=result_color(fee_value),
                       anchor='ms')
             r.put_hidden_plate(image, pos_percent_lp(x, rows_y[4]), anchor='center')
 
             if is_il_protected:
-                draw.text(pos_percent_lp(x, rows_y[5]), il_prot_text, font=r.font_semi,
+                draw.text(pos_percent_lp(x, rows_y[5]), il_prot_text, font=font_sn,
                           fill=LIGHT_TEXT_COLOR, anchor='ms')
 
         if report.usd_per_asset_start is not None and report.usd_per_rune_start is not None:
             price_change = report.price_change(column)
 
             is_stable = column == report.USD or (
-                        column == report.ASSET and price_holder.is_stable_coin(report.pool.asset))
+                    column == report.ASSET and price_holder.is_stable_coin(report.pool.asset))
             if not is_stable:
-                draw.text(pos_percent_lp(x, rows_y[6]), f'{pretty_money(price_change, signed=True)}%', font=r.font_semi,
+                draw.text(pos_percent_lp(x, rows_y[6]), f'{pretty_money(price_change, signed=True)}%', font=font_sn,
                           fill=result_color(price_change), anchor='ms')
                 if column == report.ASSET:
                     last_price = short_dollar(report.usd_per_asset_start)
@@ -239,10 +258,10 @@ def sync_lp_pool_picture(price_holder: LastPriceHolder, report: LiquidityPoolRep
                           font=r.font_small,
                           anchor='ms')
             else:
-                draw.text(pos_percent_lp(x, rows_y[6]), loc.LONG_DASH, font=r.font_semi,
+                draw.text(pos_percent_lp(x, rows_y[6]), loc.LONG_DASH, font=font_sn,
                           fill=FADE_COLOR, anchor='ms')
         else:
-            draw.text(pos_percent_lp(x, rows_y[5]), loc.LONG_DASH, font=r.font_semi,
+            draw.text(pos_percent_lp(x, rows_y[5]), loc.LONG_DASH, font=font_sn,
                       fill=FADE_COLOR, anchor='ms')
 
     if not is_il_protected:
@@ -254,11 +273,11 @@ def sync_lp_pool_picture(price_holder: LastPriceHolder, report: LiquidityPoolRep
             il_prot_text = loc.LP_PIC_EARLY_TO_PROTECT
         else:
             il_prot_text = 'Unknown status.'
-        draw.text(pos_percent_lp(columns_x[0], rows_y[5]), il_prot_text, font=r.font_semi,
+        draw.text(pos_percent_lp(columns_x[0], rows_y[5]), il_prot_text, font=font_sn,
                   fill=LIGHT_TEXT_COLOR,
                   anchor='ms')
         for col in range(1, len(columns)):
-            draw.text(pos_percent_lp(columns_x[col], rows_y[5]), loc.LONG_DASH, font=r.font_semi,
+            draw.text(pos_percent_lp(columns_x[col], rows_y[5]), loc.LONG_DASH, font=font_sn,
                       fill=LIGHT_TEXT_COLOR,
                       anchor='ms')
 
@@ -276,7 +295,7 @@ def sync_lp_pool_picture(price_holder: LastPriceHolder, report: LiquidityPoolRep
     draw.text(pos_percent_lp(50, 92),
               loc.pic_lping_days(report.total_days, report.liq.first_add_ts),
               anchor='ms', fill=FORE_COLOR,
-              font=r.font)
+              font=font_n)
 
     draw.text(pos_percent_lp(50, 95),
               loc.text_lp_today(),
@@ -296,10 +315,11 @@ def sync_lp_pool_picture(price_holder: LastPriceHolder, report: LiquidityPoolRep
     lp_abs, lp_per = report.lp_vs_hold
     apy = report.lp_vs_hold_apy
 
-    draw.text(pos_percent_lp(20, logo_y), loc.LP_PIC_LP_VS_HOLD, anchor='ms', font=r.font_big, fill=FORE_COLOR)
-    draw.text(pos_percent_lp(80, logo_y), loc.LP_PIC_LP_APY, anchor='ms', font=r.font_big, fill=FORE_COLOR)
+    font_big_n = r.fonts.get_font(64)
+    draw.text(pos_percent_lp(20, logo_y), loc.LP_PIC_LP_VS_HOLD, anchor='ms', font=font_big_n, fill=FORE_COLOR)
+    draw.text(pos_percent_lp(80, logo_y), loc.LP_PIC_LP_APY, anchor='ms', font=font_big_n, fill=FORE_COLOR)
 
-    lp_font = r.font_big if abs(lp_per) < 1e5 else r.font
+    lp_font = font_big if abs(lp_per) < 1e5 else font_n
     draw.text(pos_percent_lp(20, logo_y + 6),
               pretty_percent(lp_per, limit_text=loc.LP_PIC_LP_APY_OVER_LIMIT),
               anchor='ms',
@@ -309,10 +329,10 @@ def sync_lp_pool_picture(price_holder: LastPriceHolder, report: LiquidityPoolRep
     if not value_hidden:
         draw.text(pos_percent_lp(20, logo_y + 10), f'({pretty_money(lp_abs, signed=True, prefix="$")})', anchor='ms',
                   fill=result_color(lp_abs),
-                  font=r.font)
+                  font=font_n)
 
     if report.total_days >= 2:
-        apy_font = r.font_big if abs(apy) < 1e5 else r.font
+        apy_font = font_big if abs(apy) < 1e5 else font_n
         draw.text(pos_percent_lp(80, logo_y + 7),
                   pretty_percent(apy, limit_text=loc.LP_PIC_LP_APY_OVER_LIMIT),
                   anchor='ms',
@@ -637,5 +657,35 @@ def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_c
     else:
         draw.text(pos_percent_lp(50, 90), loc.LP_PIC_SUMMARY_NO_WEEKLY_CHART, fill=FADE_COLOR,
                   font=res.font_head, anchor='mm')
+
+    return image
+
+
+async def savings_pool_picture(price_holder: LastPriceHolder,
+                               report: LiquidityPoolReport,
+                               loc: BaseLocalization,
+                               value_hidden=False):
+    r = Resources()
+    asset = report.pool.asset
+    asset_image = await r.logo_downloader.get_or_download_logo_cached(asset)
+    return await _generate_savings_picture(price_holder, report, loc, asset_image, value_hidden)
+
+
+@async_wrap
+def _generate_savings_picture(price_holder: LastPriceHolder,
+                              report: LiquidityPoolReport,
+                              loc: BaseLocalization,
+                              asset_image,
+                              value_hidden: bool):
+    asset = report.pool.asset
+
+    r = Resources()
+
+    image = r.bg_image.copy()
+    draw = ImageDraw.Draw(image)
+
+    # TITLE
+    draw.text(pos_percent_lp(59, 5.8), loc.SV_PIC_TITLE, fill=TC_WHITE, anchor='lm', font=r.fonts.get_font(62))
+
 
     return image
