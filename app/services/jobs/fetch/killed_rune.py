@@ -21,7 +21,9 @@ class KilledRuneFetcher(BaseFetcher, WithLogger):
         async with self.deps.session.get(self.url) as resp:
             data = await resp.json()
             self.logger.info(f'Total: {len(data)} objects')
-            return [KilledRuneEntry.from_flipside_json(item) for item in data]
+            entries = [KilledRuneEntry.from_flipside_json(item) for item in data]
+            entries = [e for e in entries if e is not None]
+            return entries
 
 
 class KilledRuneStore(INotified):
