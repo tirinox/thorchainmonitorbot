@@ -10,7 +10,7 @@ def get_explorer_url_to_address(network_id, pool_or_chain: str, address: str):
         if network_id == NetworkIdents.TESTNET_MULTICHAIN:
             return f"https://main.d2rtjbuh4gx2cf.amplifyapp.com/#/address/{address}"
         elif network_id in (NetworkIdents.MAINNET, NetworkIdents.CHAOSNET_MULTICHAIN):
-            return f"https://v2.viewblock.io/thorchain/address/{address}"
+            return f"https://viewblock.io/thorchain/address/{address}"
     elif chain == Chains.BNB:
         return f'https://explorer.binance.org/address/{address}' if is_live else \
             f'https://testnet-explorer.binance.org/address/{address}'
@@ -52,7 +52,7 @@ def get_explorer_url_to_tx(network_id, pool_or_chain: str, tx_id: str):
             return f"https://main.d2rtjbuh4gx2cf.amplifyapp.com/#/txs/{tx_id}"
         elif network_id in (NetworkIdents.MAINNET, NetworkIdents.CHAOSNET_MULTICHAIN):
             # return f"https://www.thorchain.net/#/txs/{tx_id}"
-            return f"https://v2.viewblock.io/thorchain/tx/{tx_id}"
+            return f"https://viewblock.io/thorchain/tx/{tx_id}"
     elif chain == Chains.BNB:
         return f'https://explorer.binance.org/tx/{tx_id}' if is_live else \
             f'https://testnet-explorer.binance.org/tx/{tx_id}'
