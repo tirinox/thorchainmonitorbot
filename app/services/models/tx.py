@@ -1,6 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import List, Optional, Iterable, NamedTuple
+from typing import List, Optional, Iterable, NamedTuple, Tuple
 
 from services.lib.constants import is_rune, RUNE_SYMBOL, Chains, thor_to_float, THOR_BASIS_POINT_MAX
 from services.lib.date_utils import now_ts
@@ -499,7 +499,7 @@ def final_liquidity(txs: List[ThorTx]):
     return lp
 
 
-def cut_txs_before_previous_full_withdraw(txs: List[ThorTx]):
+def cut_off_previous_lp_sessions(txs: List[ThorTx]):
     lp = 0
     new_txs = []
     for tx in txs:

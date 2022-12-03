@@ -19,7 +19,7 @@ from services.lib.utils import pairwise
 from services.models.lp_info import LiquidityPoolReport, CurrentLiquidity, FeeReport, ReturnMetrics, \
     LPDailyGraphPoint, LPDailyChartByPoolDict, ILProtectionReport
 from services.models.pool_info import LPPosition, PoolInfoMap, PoolInfo, pool_share
-from services.models.tx import ThorTx, ThorTxType, final_liquidity
+from services.models.tx import ThorTx, ThorTxType, final_liquidity, cut_off_previous_lp_sessions
 
 HeightToAllPools = Dict[int, PoolInfoMap]
 
@@ -80,12 +80,21 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
                                               withdraw_fee_rune=self.withdraw_fee_rune,
                                               is_savings=True)
 
-        # todo
+        usd_per_asset_start, usd_per_rune_start = self._get_earliest_prices(user_txs, historic_all_pool_states)
 
+        l1_pool = Asset.to_L1_pool_name(cur_liq.pool)
 
+        pool_info = self.deps.price_holder.pool_info_map.get(l1_pool)
 
-        print(cur_liq)
-
+        liq_report = LiquidityPoolReport(
+            self.deps.price_holder.usd_per_asset(l1_pool),
+            self.deps.price_holder.usd_per_rune,
+            usd_per_asset_start, usd_per_rune_start,
+            cur_liq, fees=FeeReport(),
+            pool=pool_info,
+            protection=ILProtectionReport()
+        )
+        return liq_report
 
     async def get_my_pools(self, address, show_savers=False) -> List[str]:
         j = await self.deps.midgard_connector.request(
@@ -190,6 +199,16 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
                 self.logger.info(f'Not found THOR address for "{address}".')
 
         txs.sort(key=operator.attrgetter('height_int'))
+
+        # if the used withdrew 100% of liquidity, we ignore this history.
+        # so accounting starts only with the most recent addition
+        full_tx_count = len(txs)
+        txs = cut_off_previous_lp_sessions(txs)
+        last_session_tx_count = len(txs)
+        if last_session_tx_count != full_tx_count:
+            self.logger.warning(f'[{address}]@[POOL:{pool_filter}] has interrupted session: '
+                                f'{last_session_tx_count} of {full_tx_count} txs will be processed.')
+
         return txs
 
     async def _fetch_historical_pool_states(self, txs: List[ThorTx]) -> HeightToAllPools:
@@ -241,7 +260,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             else:
                 if is_savings:
                     runes = 0
-                    assets = tx.sum_of_asset(pool_name, out_only=True)
+                    assets = tx.sum_of_asset(pool_name, out_only=True) + tx.sum_of_asset(l1_pool_name, out_only=True)
                 else:
                     half_fee = withdraw_fee_rune * 0.5
                     runes = tx.sum_of_rune(out_only=True) + half_fee
@@ -271,7 +290,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             total_withdrawn_as_asset=total_withdrawn_as_asset,
             total_withdrawn_as_rune=total_withdrawn_as_rune,
             total_withdrawn_as_usd=total_withdrawn_as_usd,
-            first_add_ts=int(first_add_date),
+            first_add_ts=first_add_date,
             last_add_ts=int(last_add_date),
         )
 

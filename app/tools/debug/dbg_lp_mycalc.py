@@ -8,6 +8,8 @@ from services.jobs.fetch.runeyield.lp_my import HomebrewLPConnector
 from services.jobs.fetch.tx import TxFetcher
 from services.lib.money import Asset
 from services.lib.texts import sep
+from services.lib.utils import setup_logs
+from services.models.tx import cut_off_previous_lp_sessions
 from tools.lib.lp_common import LpAppFramework
 
 
@@ -78,10 +80,10 @@ async def get_members_for_saving_pool(app: LpAppFramework, pool: str):
     return await app.deps.midgard_connector.request(f'v2/members?pool={pool}')
 
 
-async def get_number_of_savers_txs(app: LpAppFramework, pool, member) -> int:
+async def get_savers_txs(app: LpAppFramework, pool, member):
     txs = await app.rune_yield.tx_fetcher.fetch_all_tx(member, liquidity_change_only=True)
     txs = [tx for tx in txs if pool == tx.first_pool]
-    return len(txs)
+    return txs
 
 
 async def demo_find_interesting_savers(app: LpAppFramework):
@@ -90,9 +92,13 @@ async def demo_find_interesting_savers(app: LpAppFramework):
         members = await get_members_for_saving_pool(app, pool)
         print(f'{pool = }; {len(members) = }')
         for i, member in enumerate(members, start=1):
-            n = await get_number_of_savers_txs(app, pool, member)
+            txs = await get_savers_txs(app, pool, member)
+            n = len(txs)
             exclamation = '!' * min(10, n // 3)
             print(f'[{i:4}/{len(members):4}]{pool = } and {member =} =>> has {n} savings txs {exclamation}')
+
+            if (n_this_session := len(cut_off_previous_lp_sessions(txs))) != n:
+                print(f'interrupted sessions detected: {n_this_session = } but {n = } !!!')
 
 
 async def main():
@@ -102,7 +108,11 @@ async def main():
         # await demo_get_my_pools(app, 'bc1q0jmh2ht08zha0vajx0kq87vxtyspak45xywf2p')
         # await demo_report_for_single_pool(app, 'thor1a8ydprhkk5u032r277nzs4vw5khnnl3ya9xnvs', 'ETH.ETH')
         # await demo_report_for_single_pool(app, 'bc1q0jmh2ht08zha0vajx0kq87vxtyspak45xywf2p', 'BTC/BTC')  # only 1 add
-        await demo_report_for_single_pool(app, '0x8745be2c582bcfc50acf9d2c61caded65a4e3825', 'ETH/ETH')  # many a/w
+        # await demo_report_for_single_pool(app, '0x8745be2c582bcfc50acf9d2c61caded65a4e3825', 'ETH/ETH')  # many a/w
+
+        # await demo_report_for_single_pool(app, '0x8745be2c582bcfc50acf9d2c61caded65a4e3825', 'ETH/ETH')  # interrupted
+        await demo_report_for_single_pool(app, 'ltc1q67tf8ryuggvetakwz5flex5ydhyvn7rp0y8kx3', 'LTC/LTC')  # interrupted
+
         # await test_block_calibration(app)
         # await clear_date2block(app)
         # await my_test_block_by_date(app)
