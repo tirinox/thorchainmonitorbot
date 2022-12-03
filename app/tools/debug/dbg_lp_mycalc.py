@@ -1,10 +1,13 @@
 import asyncio
+import logging
 from datetime import date
 
 from services.dialog.picture.lp_picture import lp_pool_picture
 from services.jobs.fetch.runeyield.date2block import DateToBlockMapper
 from services.jobs.fetch.runeyield.lp_my import HomebrewLPConnector
 from services.jobs.fetch.tx import TxFetcher
+from services.lib.money import Asset
+from services.lib.texts import sep
 from tools.lib.lp_common import LpAppFramework
 
 
@@ -15,30 +18,30 @@ async def my_test_get_user_lp_actions(lpgen: LpAppFramework):
         print(tx, end='\n-----\n')
 
 
-ADDR = 'thor1a8ydprhkk5u032r277nzs4vw5khnnl3ya9xnvs'
-POOL = 'ETH.ETH'
-
-
-# POOL = 'BNB.TWT-8C2'
-# POOL = 'BNB.BTCB-1DE'
-# POOL = 'BNB.BUSD-BD1'
-
-
-async def my_test_summary_of_all_pools(lpgen: LpAppFramework):
-    pools = await lpgen.rune_yield.get_my_pools(ADDR)
-    yield_report = await lpgen.rune_yield.generate_yield_summary(ADDR, pools)
+async def my_test_summary_of_all_pools(lpgen: LpAppFramework, addr):
+    pools = await lpgen.rune_yield.get_my_pools(addr)
+    yield_report = await lpgen.rune_yield.generate_yield_summary(addr, pools)
     for r in yield_report.reports:
         print(r.fees)
         print('------')
 
 
-async def my_test_1_pool(lpgen: LpAppFramework):
-    report = await lpgen.rune_yield.generate_yield_report_single_pool(ADDR, POOL)
-    print(report)
+async def demo_report_for_single_pool(lpgen: LpAppFramework, addr, pool):
+    is_savers = Asset.from_string(pool).is_synth
+    sep()
+    print(f'{addr = }, {pool = }, {is_savers = }')
+    sep()
 
     loc = lpgen.deps.loc_man.default
-    picture = await lp_pool_picture(lpgen.deps.price_holder, report, loc)
-    picture.show()
+    if is_savers:
+        report = await lpgen.rune_yield.generate_savers_report(addr, pool)
+        print(report)
+        return
+    else:
+        report = await lpgen.rune_yield.generate_yield_report_single_pool(addr, pool)
+        print(report)
+        picture = await lp_pool_picture(lpgen.deps.price_holder, report, loc)
+        picture.show()
 
 
 async def my_test_block_calibration(lpgen: LpAppFramework):
@@ -65,13 +68,44 @@ async def clear_date2block(lpgen: LpAppFramework):
     await dbm.clear()
 
 
+async def demo_get_my_pools(app: LpAppFramework, address):
+    pools = await app.rune_yield.get_my_pools(address, show_savers=True)
+    print(f'{address = } => {pools = }')
+
+
+async def get_members_for_saving_pool(app: LpAppFramework, pool: str):
+    assert '/' in pool
+    return await app.deps.midgard_connector.request(f'v2/members?pool={pool}')
+
+
+async def get_number_of_savers_txs(app: LpAppFramework, pool, member) -> int:
+    txs = await app.rune_yield.tx_fetcher.fetch_all_tx(member, liquidity_change_only=True)
+    txs = [tx for tx in txs if pool == tx.first_pool]
+    return len(txs)
+
+
+async def demo_find_interesting_savers(app: LpAppFramework):
+    savers_pools = ['ETH/ETH', 'BTC/BTC', 'BNB/BNB', 'LTC/LTC']
+    for pool in savers_pools:
+        members = await get_members_for_saving_pool(app, pool)
+        print(f'{pool = }; {len(members) = }')
+        for i, member in enumerate(members, start=1):
+            n = await get_number_of_savers_txs(app, pool, member)
+            exclamation = '!' * min(10, n // 3)
+            print(f'[{i:4}/{len(members):4}]{pool = } and {member =} =>> has {n} savings txs {exclamation}')
+
+
 async def main():
-    lpgen = LpAppFramework(HomebrewLPConnector)
-    async with lpgen:
-        await my_test_1_pool(lpgen)
-        # await test_block_calibration(lpgen)
-        # await clear_date2block(lpgen)
-        # await my_test_block_by_date(lpgen)
+    app = LpAppFramework(HomebrewLPConnector, log_level=logging.INFO)
+    async with app:
+        # await demo_find_interesting_savers(app)
+        # await demo_get_my_pools(app, 'bc1q0jmh2ht08zha0vajx0kq87vxtyspak45xywf2p')
+        # await demo_report_for_single_pool(app, 'thor1a8ydprhkk5u032r277nzs4vw5khnnl3ya9xnvs', 'ETH.ETH')
+        # await demo_report_for_single_pool(app, 'bc1q0jmh2ht08zha0vajx0kq87vxtyspak45xywf2p', 'BTC/BTC')  # only 1 add
+        await demo_report_for_single_pool(app, '0x8745be2c582bcfc50acf9d2c61caded65a4e3825', 'ETH/ETH')  # many a/w
+        # await test_block_calibration(app)
+        # await clear_date2block(app)
+        # await my_test_block_by_date(app)
 
 
 if __name__ == "__main__":

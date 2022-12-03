@@ -58,12 +58,12 @@ class CurrentLiquidity(BaseModelMixin):
     pool_units: int
     asset_withdrawn: float
     rune_withdrawn: float
-    total_added_asset: float
-    total_added_rune: float
-    total_added_usd: float
-    total_withdrawn_asset: float
-    total_withdrawn_rune: float
-    total_withdrawn_usd: float
+    total_added_as_asset: float
+    total_added_as_rune: float
+    total_added_as_usd: float
+    total_withdrawn_as_asset: float
+    total_withdrawn_as_rune: float
+    total_withdrawn_as_usd: float
     first_add_ts: int
     last_add_ts: int
 
@@ -250,19 +250,19 @@ class LiquidityPoolReport:
 
     def added_value(self, mode=USD):
         if mode == self.USD:
-            return self.liq.total_added_usd
+            return self.liq.total_added_as_usd
         elif mode == self.RUNE:
-            return self.liq.total_added_rune
+            return self.liq.total_added_as_rune
         elif mode == self.ASSET:
-            return self.liq.total_added_asset
+            return self.liq.total_added_as_asset
 
     def withdrawn_value(self, mode=USD):
         if mode == self.USD:
-            return self.liq.total_withdrawn_usd
+            return self.liq.total_withdrawn_as_usd
         elif mode == self.RUNE:
-            return self.liq.total_withdrawn_rune
+            return self.liq.total_withdrawn_as_rune
         elif mode == self.ASSET:
-            return self.liq.total_withdrawn_asset
+            return self.liq.total_withdrawn_as_asset
 
     def current_value(self, mode=USD):
         r, a = self.redeemable_rune_asset

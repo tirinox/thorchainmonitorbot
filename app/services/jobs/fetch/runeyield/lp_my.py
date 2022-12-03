@@ -14,7 +14,7 @@ from services.lib.date_utils import days_ago_noon, now_ts
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import free_url_gen
-from services.lib.money import weighted_mean
+from services.lib.money import weighted_mean, Asset
 from services.lib.utils import pairwise
 from services.models.lp_info import LiquidityPoolReport, CurrentLiquidity, FeeReport, ReturnMetrics, \
     LPDailyGraphPoint, LPDailyChartByPoolDict, ILProtectionReport
@@ -38,13 +38,6 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         self.withdraw_fee_rune = 2.0
         self.last_block = 0
         self.add_il_protection_to_final_figures = True
-
-    KEY_CONST_FEE_OUTBOUND = 'OutboundTransactionFee'
-    KEY_CONST_FULL_IL_PROTECTION_BLOCKS = 'FullImpLossProtectionBlocks'
-
-    def update_fees(self):
-        withdraw_fee_rune = self.deps.mimir_const_holder.get_constant(self.KEY_CONST_FEE_OUTBOUND, default=2000000)
-        self.withdraw_fee_rune = thor_to_float(int(withdraw_fee_rune))
 
     async def generate_yield_summary(self, address, pools: List[str]) -> Tuple[dict, List[LiquidityPoolReport]]:
         self.update_fees()
@@ -76,6 +69,40 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         user_txs = await self._get_user_tx_actions(address, pool_name) if not user_txs else user_txs
         historic_all_pool_states = await self._fetch_historical_pool_states(user_txs)
         return await self._create_lp_report_for_one_pool(historic_all_pool_states, pool_name, user_txs)
+
+    async def generate_savers_report(self, address, pool, user_txs=None) -> LiquidityPoolReport:
+        self.update_fees()
+
+        user_txs = await self._get_user_tx_actions(address, pool) if not user_txs else user_txs
+        historic_all_pool_states = await self._fetch_historical_pool_states(user_txs)
+
+        cur_liq = self._get_current_liquidity(user_txs, pool, historic_all_pool_states,
+                                              withdraw_fee_rune=self.withdraw_fee_rune,
+                                              is_savings=True)
+
+        # todo
+
+
+
+        print(cur_liq)
+
+
+    async def get_my_pools(self, address, show_savers=False) -> List[str]:
+        j = await self.deps.midgard_connector.request(
+            free_url_gen.url_for_address_pool_membership(address, show_savers)
+        )
+        if j == self.deps.midgard_connector.ERROR_RESPONSE:
+            return await get_user_pools_from_thoryield(self.deps.session, address)
+        return self.parser.parse_pool_membership(j)
+
+    # ------------------------------------------------------------------------------------------------------------------
+
+    KEY_CONST_FEE_OUTBOUND = 'OutboundTransactionFee'
+    KEY_CONST_FULL_IL_PROTECTION_BLOCKS = 'FullImpLossProtectionBlocks'
+
+    def update_fees(self):
+        withdraw_fee_rune = self.deps.mimir_const_holder.get_constant(self.KEY_CONST_FEE_OUTBOUND, default=2000000)
+        self.withdraw_fee_rune = thor_to_float(int(withdraw_fee_rune))
 
     async def _create_lp_report_for_one_pool(self,
                                              historic_all_pool_states: HeightToAllPools,
@@ -115,16 +142,6 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             protection=protection_report
         )
         return liq_report
-
-    async def get_my_pools(self, address) -> List[str]:
-        j = await self.deps.midgard_connector.request(
-            free_url_gen.url_for_address_pool_membership(address)
-        )
-        if j == self.deps.midgard_connector.ERROR_RESPONSE:
-            return await get_user_pools_from_thoryield(self.deps.session, address)
-        return self.parser.parse_pool_membership(j)
-
-    # ------------------------------------------------------------------------------------------------------------------
 
     @staticmethod
     def _find_thor_address_in_tx_list(txs: List[ThorTx]) -> str:
@@ -185,14 +202,17 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
     def _get_current_liquidity(self, txs: List[ThorTx],
                                pool_name,
                                pool_historic: HeightToAllPools,
-                               withdraw_fee_rune) -> CurrentLiquidity:
+                               withdraw_fee_rune,
+                               is_savings=False) -> CurrentLiquidity:
         first_add_date, last_add_date = 0, 0
-        total_added_rune, total_withdrawn_rune = 0.0, 0.0
-        total_added_usd, total_withdrawn_usd = 0.0, 0.0
-        total_added_asset, total_withdrawn_asset = 0.0, 0.0
+        total_added_as_rune, total_withdrawn_as_rune = 0.0, 0.0
+        total_added_as_usd, total_withdrawn_as_usd = 0.0, 0.0
+        total_added_as_asset, total_withdrawn_as_asset = 0.0, 0.0
 
         asset_added, asset_withdrawn = 0.0, 0.0
         rune_added, rune_withdrawn = 0.0, 0.0
+
+        l1_pool_name = Asset.to_L1_pool_name(pool_name)
 
         for tx in txs:
             tx_timestamp = tx.date_timestamp
@@ -200,14 +220,14 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             last_add_date = max(last_add_date, tx_timestamp) if last_add_date else tx_timestamp
 
             pools_info: PoolInfoMap = pool_historic[tx.height_int]
-            this_asset_pool_info = self._get_pool(pool_historic, tx.height_int, pool_name)
-            # fixme: block has final state after all TX settled. this_asset_pool_info may be None!
-            # fixme: this_asset_pool_info is a real object, but 1/1:1 values inside.
-
             usd_per_rune = self._calculate_weighted_rune_price_in_usd(pools_info, use_default_price=True)
 
+            # fixme: block has final state after all TX settled. this_asset_pool_info may be None!
+            # so this_asset_pool_info is a real object, but 1/1:1 values inside.
+            this_asset_pool_info = self._get_pool(pool_historic, tx.height_int, l1_pool_name)
+
             if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
-                runes = tx.sum_of_rune(in_only=True)
+                runes = tx.sum_of_rune(in_only=True) if not is_savings else 0
                 assets = tx.sum_of_asset(pool_name, in_only=True)
 
                 asset_added += assets
@@ -215,22 +235,26 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
                 total_this_runes = runes + this_asset_pool_info.runes_per_asset * assets
 
-                total_added_rune += total_this_runes
-                total_added_usd += total_this_runes * usd_per_rune
-                total_added_asset += assets + this_asset_pool_info.asset_per_rune * runes
+                total_added_as_rune += total_this_runes
+                total_added_as_usd += total_this_runes * usd_per_rune
+                total_added_as_asset += assets + this_asset_pool_info.asset_per_rune * runes
             else:
-                half_fee = withdraw_fee_rune * 0.5
-                runes = tx.sum_of_rune(out_only=True) + half_fee
-                assets = tx.sum_of_asset(pool_name, out_only=True) + half_fee * this_asset_pool_info.asset_per_rune
+                if is_savings:
+                    runes = 0
+                    assets = tx.sum_of_asset(pool_name, out_only=True)
+                else:
+                    half_fee = withdraw_fee_rune * 0.5
+                    runes = tx.sum_of_rune(out_only=True) + half_fee
+                    assets = tx.sum_of_asset(pool_name, out_only=True) + half_fee * this_asset_pool_info.asset_per_rune
 
                 asset_withdrawn += assets
                 rune_withdrawn += runes
 
                 total_this_runes = runes + this_asset_pool_info.runes_per_asset * assets
 
-                total_withdrawn_rune += total_this_runes
-                total_withdrawn_usd += total_this_runes * usd_per_rune
-                total_withdrawn_asset += assets + this_asset_pool_info.asset_per_rune * runes
+                total_withdrawn_as_rune += total_this_runes
+                total_withdrawn_as_usd += total_this_runes * usd_per_rune
+                total_withdrawn_as_asset += assets + this_asset_pool_info.asset_per_rune * runes
 
         liquidity_units = final_liquidity(txs)
 
@@ -241,12 +265,12 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             pool_units=liquidity_units,
             asset_withdrawn=asset_withdrawn,
             rune_withdrawn=rune_withdrawn,
-            total_added_asset=total_added_asset,
-            total_added_rune=total_added_rune,
-            total_added_usd=total_added_usd,
-            total_withdrawn_asset=total_withdrawn_asset,
-            total_withdrawn_rune=total_withdrawn_rune,
-            total_withdrawn_usd=total_withdrawn_usd,
+            total_added_as_asset=total_added_as_asset,
+            total_added_as_rune=total_added_as_rune,
+            total_added_as_usd=total_added_as_usd,
+            total_withdrawn_as_asset=total_withdrawn_as_asset,
+            total_withdrawn_as_rune=total_withdrawn_as_rune,
+            total_withdrawn_as_usd=total_withdrawn_as_usd,
             first_add_ts=int(first_add_date),
             last_add_ts=int(last_add_date),
         )

@@ -16,7 +16,7 @@ class MidgardURLGenBase(ABC):
         ...
 
     @abstractmethod
-    def url_for_address_pool_membership(self, address) -> str:
+    def url_for_address_pool_membership(self, address, show_savers=False) -> str:
         ...
 
     @abstractmethod
@@ -48,6 +48,10 @@ class MidgardURLGenV2(MidgardURLGenBase):
 
         return url
 
+    @staticmethod
+    def bool_flag(b: bool):
+        return 'true' if b else 'false'
+
     def url_for_pool_depth_history(self, pool, from_ts, to_ts) -> str:
         return f"{self.base_url}/v2/history/depths/{pool}?interval=day&from={from_ts}&to={to_ts}"
 
@@ -58,8 +62,8 @@ class MidgardURLGenV2(MidgardURLGenBase):
             spec = f'count={days}'
         return f"{self.base_url}/v2/history/swaps?interval=day&{spec}"
 
-    def url_for_address_pool_membership(self, address) -> str:
-        return f"{self.base_url}/v2/member/{address}"
+    def url_for_address_pool_membership(self, address, show_savers=False) -> str:
+        return f"{self.base_url}/v2/member/{address}?showSavers={self.bool_flag(show_savers)}"
 
     def url_network(self):
         return f'{self.base_url}/v2/network'
