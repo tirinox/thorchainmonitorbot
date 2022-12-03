@@ -8,6 +8,7 @@ from services.dialog.twitter.text_length import twitter_intelligent_text_splitte
 from services.jobs.fetch.circulating import SupplyEntry
 from services.lib.constants import thor_to_float, rune_origin, Chains
 from services.lib.date_utils import now_ts, seconds_human, DAY
+from services.lib.explorers import get_explorer_url_to_tx
 from services.lib.midgard.name_service import NameMap, add_thor_suffix
 from services.lib.money import Asset, short_dollar, format_percent, pretty_money, pretty_dollar, RAIDO_GLYPH, \
     calc_percent_change, adaptive_round_to_str, emoji_for_percent_change, short_address, short_money, short_rune
@@ -209,8 +210,12 @@ class TwitterEnglishLocalization(BaseLocalization):
                 f"liq. fee: {short_dollar(l_fee_usd)}{slip_mark}"
             )
 
+        link = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, tx.first_input_tx_hash) \
+            if tx and tx.first_input_tx_hash else ''
+
         msg = f"{heading}\n" \
-              f"{content}"
+              f"{content}\n" \
+              f"{link}"
 
         return msg.strip()
 
@@ -320,6 +325,8 @@ class TwitterEnglishLocalization(BaseLocalization):
                         + '\n')
         if pc.pools_changed:
             message += '🔄 Pools changed:\n' + '\n'.join([pool_text(*a) for a in pc.pools_changed]) + '\n'
+
+        message += 'https://thorchain.net/pools/'
 
         return message.rstrip()
 
@@ -744,9 +751,12 @@ class TwitterEnglishLocalization(BaseLocalization):
         if t.memo:
             memo = f' (MEMO: "{shorten_text(t.memo, 21)}")'
 
-        return f'💸 Large transfer {comment}: ' \
+        link = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, t.tx_hash) if t and t.tx_hash else ''
+
+        return f'💸 Large transfer{comment}: ' \
                f'{(short_money(t.amount, postfix=" " + asset))}{usd_amt} ' \
-               f'from {from_my} ➡️ {to_my}{memo}'
+               f'from {from_my} ➡️ {to_my}{memo}\n' \
+               f'{link}'.strip()
 
     # ----- SUPPLY ------
 

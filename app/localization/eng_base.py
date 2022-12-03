@@ -1890,7 +1890,10 @@ class BaseLocalization(ABC):  # == English
             if delta and abs(delta) < 1:
                 delta = 0
 
-            delta_p = bracketify(pretty_money(delta, signed=True, postfix='%')) if delta else ''
+            try:
+                delta_p = bracketify(pretty_money(delta, signed=True, postfix='%')) if delta else ''
+            except ValueError:
+                delta_p = ''
 
             asset = Asset.from_string(pool.asset).short_str
             url = get_pool_url(pool.asset)
@@ -2058,7 +2061,7 @@ class BaseLocalization(ABC):  # == English
             comment = shorten_text(t.comment, 100)
             if comment.startswith('Msg'):
                 comment = comment[3:]
-            comment = comment.capitalize()
+            comment = ' ' + comment.capitalize()
 
         # TX link
         if t.tx_hash:
