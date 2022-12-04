@@ -142,7 +142,8 @@ async def main():
         # await my_test_block_by_date(app)
 
         # await demo_summary_all_pools(app, 'thor1gzautydm2mrpcuj36drqyzuuzqw4w8cp8zjj2c')  # 3 classic LP
-        await demo_summary_all_pools(app, 'bc1qcsmgsvfpp4w6dmlwwdf4s87ngh8trz8yuwsfy0')  # savers
+        # await demo_summary_all_pools(app, 'bc1qcsmgsvfpp4w6dmlwwdf4s87ngh8trz8yuwsfy0')  # savers
+        await demo_summary_all_pools(app, 'ltc1q67tf8ryuggvetakwz5flex5ydhyvn7rp0y8kx3')
 
 
 if __name__ == "__main__":
