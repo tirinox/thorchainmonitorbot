@@ -68,34 +68,13 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
         user_txs = await self._get_user_tx_actions(address, pool_name) if not user_txs else user_txs
         historic_all_pool_states = await self._fetch_historical_pool_states(user_txs)
-        return await self._create_lp_report_for_one_pool(historic_all_pool_states, pool_name, user_txs)
 
-    async def generate_savers_report(self, address, pool, user_txs=None) -> LiquidityPoolReport:
-        self.update_fees()
-
-        user_txs = await self._get_user_tx_actions(address, pool) if not user_txs else user_txs
-        historic_all_pool_states = await self._fetch_historical_pool_states(user_txs)
-
-        cur_liq = self._get_current_liquidity(user_txs, pool, historic_all_pool_states,
-                                              withdraw_fee_rune=self.withdraw_fee_rune,
-                                              is_savings=True)
-
-        usd_per_asset_start, usd_per_rune_start = self._get_earliest_prices(user_txs, historic_all_pool_states)
-
-        l1_pool = Asset.to_L1_pool_name(cur_liq.pool)
-
-        pool_info = self.deps.price_holder.pool_info_map.get(l1_pool)
-
-        liq_report = LiquidityPoolReport(
-            self.deps.price_holder.usd_per_asset(l1_pool),
-            self.deps.price_holder.usd_per_rune,
-            usd_per_asset_start, usd_per_rune_start,
-            cur_liq, fees=FeeReport(),
-            pool=pool_info,
-            protection=ILProtectionReport(),
-            is_savers=True
-        )
-        return liq_report
+        if Asset.from_string(pool_name).is_synth:
+            # Savers position
+            return await self._get_savers_position(historic_all_pool_states, pool_name, user_txs)
+        else:
+            # Normal liquidity position
+            return await self._create_lp_report_for_one_pool(historic_all_pool_states, pool_name, user_txs)
 
     async def get_my_pools(self, address, show_savers=False) -> List[str]:
         j = await self.deps.midgard_connector.request(
@@ -150,6 +129,26 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             cur_liq, fees=fees,
             pool=pool_info,
             protection=protection_report
+        )
+        return liq_report
+
+    async def _get_savers_position(self, historic_all_pool_states, pool, user_txs):
+        cur_liq = self._get_current_liquidity(user_txs, pool, historic_all_pool_states,
+                                              withdraw_fee_rune=self.withdraw_fee_rune,
+                                              is_savings=True)
+        usd_per_asset_start, usd_per_rune_start = self._get_earliest_prices(user_txs, historic_all_pool_states)
+
+        l1_pool = Asset.to_L1_pool_name(cur_liq.pool)
+        pool_info = self.deps.price_holder.pool_info_map.get(l1_pool)
+
+        liq_report = LiquidityPoolReport(
+            self.deps.price_holder.usd_per_asset(l1_pool),
+            self.deps.price_holder.usd_per_rune,
+            usd_per_asset_start, usd_per_rune_start,
+            cur_liq, fees=FeeReport(),
+            pool=pool_info,
+            protection=ILProtectionReport(),
+            is_savers=True
         )
         return liq_report
 

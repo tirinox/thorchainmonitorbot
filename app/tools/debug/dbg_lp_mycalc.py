@@ -30,23 +30,21 @@ async def my_test_summary_of_all_pools(lpgen: LpAppFramework, addr):
         print('------')
 
 
-async def demo_report_for_single_pool(lpgen: LpAppFramework, addr, pool):
+async def demo_report_for_single_pool(lpgen: LpAppFramework, addr, pool, hidden=True):
     is_savers = Asset.from_string(pool).is_synth
     sep()
     print(f'{addr = }, {pool = }, {is_savers = }')
     sep()
 
     loc = lpgen.deps.loc_man[LANG]
+    report = await lpgen.rune_yield.generate_yield_report_single_pool(addr, pool)
+    print(report)
     if is_savers:
-        report = await lpgen.rune_yield.generate_savers_report(addr, pool)
-        print(report)
-        picture = await savings_pool_picture(lpgen.deps.price_holder, report, loc)
-        picture.show()
+        picture = await savings_pool_picture(lpgen.deps.price_holder, report, loc, hidden)
     else:
-        report = await lpgen.rune_yield.generate_yield_report_single_pool(addr, pool)
-        print(report)
-        picture = await generate_yield_picture(lpgen.deps.price_holder, report, loc)
-        picture.show()
+        picture = await generate_yield_picture(lpgen.deps.price_holder, report, loc, hidden)
+    picture.show()
+
 
 
 async def my_test_block_calibration(lpgen: LpAppFramework):
@@ -113,11 +111,18 @@ async def main():
         # await demo_get_my_pools(app, 'bc1q0jmh2ht08zha0vajx0kq87vxtyspak45xywf2p')
         # await demo_report_for_single_pool(app, 'thor1a8ydprhkk5u032r277nzs4vw5khnnl3ya9xnvs', 'ETH.ETH')
         # await demo_report_for_single_pool(app, 'bc1q0jmh2ht08zha0vajx0kq87vxtyspak45xywf2p', 'BTC/BTC')  # only 1 add
-        # await demo_report_for_single_pool(app, '0x8745be2c582bcfc50acf9d2c61caded65a4e3825', 'ETH/ETH')  # many a/w, small
 
-        # await demo_report_for_single_pool(app, '0xe93b5b56bddccaab6d396b7d4058f50acd4ae5d0', 'ETH/ETH')  # interrupted
-        await demo_report_for_single_pool(app, 'bc1qcsmgsvfpp4w6dmlwwdf4s87ngh8trz8yuwsfy0', 'BTC/BTC')  # 11 add?
-        # await demo_report_for_single_pool(app, 'ltc1q67tf8ryuggvetakwz5flex5ydhyvn7rp0y8kx3', 'LTC/LTC')  # interrupted
+        # many a/w, small
+        # await demo_report_for_single_pool(app, '0x8745be2c582bcfc50acf9d2c61caded65a4e3825', 'ETH/ETH')
+
+        # interrupted
+        # await demo_report_for_single_pool(app, '0xe93b5b56bddccaab6d396b7d4058f50acd4ae5d0', 'ETH/ETH')
+
+        # 11 add?
+        await demo_report_for_single_pool(app, 'bc1qcsmgsvfpp4w6dmlwwdf4s87ngh8trz8yuwsfy0', 'BTC/BTC', hidden=False)
+
+        # interrupted
+        # await demo_report_for_single_pool(app, 'ltc1q67tf8ryuggvetakwz5flex5ydhyvn7rp0y8kx3', 'LTC/LTC', hidden=False)
 
         # await test_block_calibration(app)
         # await clear_date2block(app)

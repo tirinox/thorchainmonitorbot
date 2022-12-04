@@ -275,7 +275,7 @@ class LiquidityPoolReport:
             r, a = pool_share(self.pool.balance_rune, self.pool.balance_asset, self.liq.pool_units, self.pool.units)
         return thor_to_float(r), thor_to_float(a)
 
-    def added_value(self, mode=USD):
+    def added_value(self, mode):
         if mode == self.USD:
             return self.liq.total_added_as_usd
         elif mode == self.RUNE:
@@ -283,7 +283,7 @@ class LiquidityPoolReport:
         elif mode == self.ASSET:
             return self.liq.total_added_as_asset
 
-    def withdrawn_value(self, mode=USD):
+    def withdrawn_value(self, mode):
         if mode == self.USD:
             return self.liq.total_withdrawn_as_usd
         elif mode == self.RUNE:
@@ -291,7 +291,7 @@ class LiquidityPoolReport:
         elif mode == self.ASSET:
             return self.liq.total_withdrawn_as_asset
 
-    def current_value(self, mode=USD):
+    def current_value(self, mode):
         r, a = self.redeemable_rune_asset
         usd_value = r * self.usd_per_rune + a * self.usd_per_asset
         if mode == self.USD:
