@@ -17,7 +17,7 @@ from services.lib.date_utils import today_str
 from services.lib.depcont import DepContainer
 from services.lib.draw_utils import img_to_bio
 from services.lib.midgard.name_service import add_thor_suffix
-from services.lib.money import short_address, short_rune
+from services.lib.money import short_address, short_rune, Asset
 from services.lib.new_feature import Features
 from services.lib.texts import kbd, cut_long_text
 from services.lib.utils import paste_at_beginning_of_dict, grouper
@@ -176,7 +176,7 @@ class MyWalletsMenu(DialogWithSettings):
                                                        disable_notification=True)
             try:
                 rune_yield = get_rune_yield_connector(self.deps)
-                my_pools = await rune_yield.get_my_pools(address)
+                my_pools = await rune_yield.get_my_pools(address, show_savers=True)
             except FileNotFoundError:
                 logging.error(f'not found pools for address {address}')
                 my_pools = []
@@ -215,6 +215,14 @@ class MyWalletsMenu(DialogWithSettings):
                                  disable_web_page_preview=True,
                                  disable_notification=True)
 
+    @staticmethod
+    def pool_label(pool_name):
+        short_name = cut_long_text(pool_name)
+        if Asset(pool_name).is_synth:
+            return 'Sv:' + short_name
+        else:
+            return 'LP:' + short_name
+
     def _keyboard_inside_wallet_menu(self) -> TelegramInlineList:
         external = self.data.get(self.KEY_IS_EXTERNAL, False)
         view_value = self.data.get(self.KEY_CAN_VIEW_VALUE, True)
@@ -232,7 +240,7 @@ class MyWalletsMenu(DialogWithSettings):
         chain = chain if chain else Chains.BTC  # fixme: how about other chains?
 
         # ---------------------------- POOLS ------------------------------
-        pool_labels = [(cut_long_text(pool), pool) for pool in my_pools]
+        pool_labels = [(self.pool_label(pool), pool) for pool in my_pools]
 
         tg_list = TelegramInlineList(
             pool_labels, data_proxy=self.data,
