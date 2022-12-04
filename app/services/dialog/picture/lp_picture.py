@@ -41,7 +41,7 @@ async def generate_yield_picture(price_holder: LastPriceHolder,
     r = Resources()
     asset = report.pool.asset
 
-    if Asset.from_string(asset).is_synth:
+    if report.is_savers:
         # savings position
         asset_image = await r.logo_downloader.get_or_download_logo_cached(asset)
         return await _generate_savings_picture(price_holder, report, loc, asset_image, value_hidden)
@@ -690,7 +690,7 @@ def _generate_savings_picture(price_holder: LastPriceHolder,
     line_color = LINE_COLOR
     caption_x, asset_row_x, usd_row_x = 29, 51, 80
     middle_row_x = 0.5 * (asset_row_x + usd_row_x)
-    start_table_y = table_y = 23
+    start_table_y = table_y = 26
     delta_y = 8
 
     r = Resources()
@@ -700,6 +700,10 @@ def _generate_savings_picture(price_holder: LastPriceHolder,
     def h_line():
         y = table_y - delta_y * 0.5
         draw.line((pos_percent_lp(0, y), pos_percent_lp(100, y)), fill=line_color, width=2)
+
+    def put_hidden_plate():
+        r.put_hidden_plate(image, pos_percent_lp(asset_row_x, table_y), anchor='center', ey=-18)
+        r.put_hidden_plate(image, pos_percent_lp(usd_row_x, table_y), anchor='center', ey=-18)
 
     # TITLE
     put_title(draw, loc.SV_PIC_TITLE, r.fonts)
@@ -717,28 +721,37 @@ def _generate_savings_picture(price_holder: LastPriceHolder,
 
     # --- ADD ---
     draw.text(pos_percent_lp(caption_x, table_y), loc.SV_PIC_ADDED, anchor='rm', fill=FADE_COLOR, font=font_t)
-    draw.text(pos_percent_lp(asset_row_x, table_y), short_money(report.added_value(report.ASSET)),
-              anchor='mm', fill=FORE_COLOR, font=font_n)
-    draw.text(pos_percent_lp(usd_row_x, table_y), short_dollar(report.added_value(report.USD)),
-              anchor='mm', fill=FORE_COLOR, font=font_n)
+    if value_hidden:
+        put_hidden_plate()
+    else:
+        draw.text(pos_percent_lp(asset_row_x, table_y), short_money(report.added_value(report.ASSET)),
+                  anchor='mm', fill=FORE_COLOR, font=font_n)
+        draw.text(pos_percent_lp(usd_row_x, table_y), short_dollar(report.added_value(report.USD)),
+                  anchor='mm', fill=FORE_COLOR, font=font_n)
     table_y += delta_y
     h_line()
 
     # --- WITHDRAW ---
     draw.text(pos_percent_lp(caption_x, table_y), loc.SV_PIC_WITHDRAWN, anchor='rm', fill=FADE_COLOR, font=font_t)
-    draw.text(pos_percent_lp(asset_row_x, table_y), short_money(report.withdrawn_value(report.ASSET)),
-              anchor='mm', fill=FORE_COLOR, font=font_n)
-    draw.text(pos_percent_lp(usd_row_x, table_y), short_dollar(report.withdrawn_value(report.USD)),
-              anchor='mm', fill=FORE_COLOR, font=font_n)
+    if value_hidden:
+        put_hidden_plate()
+    else:
+        draw.text(pos_percent_lp(asset_row_x, table_y), short_money(report.withdrawn_value(report.ASSET)),
+                  anchor='mm', fill=FORE_COLOR, font=font_n)
+        draw.text(pos_percent_lp(usd_row_x, table_y), short_dollar(report.withdrawn_value(report.USD)),
+                  anchor='mm', fill=FORE_COLOR, font=font_n)
     table_y += delta_y
     h_line()
 
     # --- REDEEMABLE ---
     draw.text(pos_percent_lp(caption_x, table_y), loc.SV_PIC_REDEEMABLE, anchor='rm', fill=FADE_COLOR, font=font_t)
-    draw.text(pos_percent_lp(asset_row_x, table_y), short_money(report.current_value(report.ASSET)),
-              anchor='mm', fill=FORE_COLOR, font=font_n)
-    draw.text(pos_percent_lp(usd_row_x, table_y), short_dollar(report.current_value(report.USD)),
-              anchor='mm', fill=FORE_COLOR, font=font_n)
+    if value_hidden:
+        put_hidden_plate()
+    else:
+        draw.text(pos_percent_lp(asset_row_x, table_y), short_money(report.current_value(report.ASSET)),
+                  anchor='mm', fill=FORE_COLOR, font=font_n)
+        draw.text(pos_percent_lp(usd_row_x, table_y), short_dollar(report.current_value(report.USD)),
+                  anchor='mm', fill=FORE_COLOR, font=font_n)
     table_y += delta_y
     h_line()
 
@@ -754,7 +767,7 @@ def _generate_savings_picture(price_holder: LastPriceHolder,
         price_text = f'{last_price} → {curr_price} {price_change_percent_str}'
         draw.text(pos_percent_lp(middle_row_x, table_y),
                   price_text,
-                  fill=result_color(price_change, min_ch=min_change_rel * report.usd_per_asset),
+                  fill=result_color(price_change, min_ch=min_change_rel * 100.0),
                   font=font_small_t, anchor='mm')
 
     table_y += delta_y
@@ -766,10 +779,13 @@ def _generate_savings_picture(price_holder: LastPriceHolder,
     gain_usd, gain_usd_percent = report.gain_loss(report.USD)
     gain_asset, gain_asset_percent = report.gain_loss(report.ASSET)
 
-    draw.text(pos_percent_lp(asset_row_x, table_y), short_money(gain_asset, signed=True),
-              anchor='mm', fill=result_color(gain_asset), font=font_n)
-    draw.text(pos_percent_lp(usd_row_x, table_y), short_dollar(gain_usd, signed=True),
-              anchor='mm', fill=result_color(gain_usd), font=font_n)
+    if value_hidden:
+        put_hidden_plate()
+    else:
+        draw.text(pos_percent_lp(asset_row_x, table_y), short_money(gain_asset, signed=True),
+                  anchor='mm', fill=result_color(gain_asset), font=font_n)
+        draw.text(pos_percent_lp(usd_row_x, table_y), short_dollar(gain_usd, signed=True),
+                  anchor='mm', fill=result_color(gain_usd), font=font_n)
 
     dy_per = 3.5
 
@@ -805,8 +821,8 @@ def _generate_savings_picture(price_holder: LastPriceHolder,
     # v line
     v_line_x = caption_x + 3.5
     draw.line((
-        pos_percent_lp(v_line_x, start_table_y + delta_y * 0.5),
-        pos_percent_lp(v_line_x, table_y - delta_y * 2)),
+        pos_percent_lp(v_line_x, start_table_y - delta_y * 0.5),
+        pos_percent_lp(v_line_x, table_y - delta_y * 1.5)),
         fill=line_color, width=1)
 
     return image
