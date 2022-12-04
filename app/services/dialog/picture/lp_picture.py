@@ -8,10 +8,12 @@ from PIL import ImageDraw
 from localization.manager import BaseLocalization
 from services.dialog.picture.resources import Resources
 from services.lib.constants import BNB_RUNE_SYMBOL, is_rune, RUNE_SYMBOL
-from services.lib.draw_utils import CATEGORICAL_PALETTE, pos_percent, result_color, hor_line, LIGHT_TEXT_COLOR, TC_WHITE
+from services.lib.draw_utils import CATEGORICAL_PALETTE, pos_percent, result_color, hor_line, LIGHT_TEXT_COLOR, \
+    TC_WHITE, paste_image_masked
 from services.lib.money import pretty_money, format_percent, pretty_percent, Asset, RAIDO_GLYPH, pretty_rune, \
-    short_dollar
+    short_dollar, short_money
 from services.lib.plot_graph import PlotBarGraph
+from services.lib.texts import bracketify
 from services.lib.utils import async_wrap, grouper
 from services.models.lp_info import LiquidityPoolReport, LPDailyGraphPoint, ILProtectionReport
 from services.models.price import LastPriceHolder
@@ -677,7 +679,8 @@ def _generate_savings_picture(price_holder: LastPriceHolder,
                               loc: BaseLocalization,
                               asset_image,
                               value_hidden: bool):
-    asset = report.pool.asset
+    full_asset = report.pool.asset
+    asset = str(Asset(full_asset).name)
 
     r = Resources()
 
@@ -687,5 +690,101 @@ def _generate_savings_picture(price_holder: LastPriceHolder,
     # TITLE
     draw.text(pos_percent_lp(59, 5.8), loc.SV_PIC_TITLE, fill=TC_WHITE, anchor='lm', font=r.fonts.get_font(62))
 
+    # image.paste(asset_image, pos_percent_lp(13, 20), asset_image)
+
+    paste_image_masked(image, asset_image, pos_percent_lp(13, 20), anchor='rm')
+    draw.text(pos_percent_lp(15, 20), asset, font=r.fonts.get_font(64), anchor='lm', fill=TC_WHITE)
+
+    caption_x, asset_row_x, usd_row_x = 29, 53, 78
+    table_y = 30
+    delta_y = 6.5
+
+    font_t = r.fonts.get_font(53)
+    font_n = r.fonts.get_font_bold(56)
+
+    # --- COLUMNS ---
+    draw.text(pos_percent_lp(asset_row_x, table_y), str(asset), anchor='mm', fill=FORE_COLOR, font=font_t)
+    draw.text(pos_percent_lp(usd_row_x, table_y), 'USD', anchor='mm', fill=FORE_COLOR, font=font_t)
+    table_y += delta_y
+
+    # --- ADD ---
+    draw.text(pos_percent_lp(caption_x, table_y), 'Added', anchor='rm', fill=FADE_COLOR, font=font_t)
+    draw.text(pos_percent_lp(asset_row_x, table_y), short_money(report.added_value(report.ASSET)),
+              anchor='mm', fill=FORE_COLOR, font=font_n)
+    draw.text(pos_percent_lp(usd_row_x, table_y), short_dollar(report.added_value(report.USD)),
+              anchor='mm', fill=FORE_COLOR, font=font_n)
+    table_y += delta_y
+
+    # --- WITHDRAW ---
+    draw.text(pos_percent_lp(caption_x, table_y), 'Withdrawn', anchor='rm', fill=FADE_COLOR, font=font_t)
+    draw.text(pos_percent_lp(asset_row_x, table_y), short_money(report.withdrawn_value(report.ASSET)),
+              anchor='mm', fill=FORE_COLOR, font=font_n)
+    draw.text(pos_percent_lp(usd_row_x, table_y), short_dollar(report.withdrawn_value(report.USD)),
+              anchor='mm', fill=FORE_COLOR, font=font_n)
+    table_y += delta_y
+
+    # --- REDEEMABLE ---
+    draw.text(pos_percent_lp(caption_x, table_y), 'Redeemable', anchor='rm', fill=FADE_COLOR, font=font_t)
+    draw.text(pos_percent_lp(asset_row_x, table_y), short_money(report.current_value(report.ASSET)),
+              anchor='mm', fill=FORE_COLOR, font=font_n)
+    draw.text(pos_percent_lp(usd_row_x, table_y), short_dollar(report.current_value(report.USD)),
+              anchor='mm', fill=FORE_COLOR, font=font_n)
+    table_y += delta_y
+
+    # --- PRICE ---
+    draw.text(pos_percent_lp(caption_x, table_y), 'Price', anchor='rm', fill=FADE_COLOR, font=font_t)
+    font_small_n = r.fonts.get_font_bold(48)
+    if report.usd_per_asset_start is not None:
+        last_price = short_dollar(report.usd_per_asset_start)
+        curr_price = short_dollar(report.usd_per_asset)
+        price_text = f'{last_price} → {curr_price}'
+        draw.text(pos_percent_lp(asset_row_x, table_y), price_text, fill=FORE_COLOR, font=font_small_n, anchor='mm')
+
+        price_change = report.price_change(report.ASSET)
+        price_change_percent_str = bracketify(short_money(price_change, signed=True, postfix='%'))
+        draw.text(pos_percent_lp(usd_row_x, table_y), price_change_percent_str,
+                  fill=result_color(price_change), font=font_small_n, anchor='mm')
+
+    table_y += delta_y
+
+    # --- EARNED ---
+    draw.text(pos_percent_lp(caption_x, table_y), 'Earned', anchor='rm', fill=FADE_COLOR, font=font_t)
+
+    gain_usd, gain_usd_percent = report.gain_loss(report.USD)
+    gain_asset, gain_asset_percent = report.gain_loss(report.ASSET)
+
+    draw.text(pos_percent_lp(asset_row_x, table_y), short_money(gain_asset),
+              anchor='mm', fill=result_color(gain_asset), font=font_n)
+    draw.text(pos_percent_lp(usd_row_x, table_y), short_dollar(gain_usd),
+              anchor='mm', fill=result_color(gain_usd), font=font_n)
+
+    dy_per = 3.5
+
+    draw.text(pos_percent_lp(asset_row_x, table_y + dy_per), bracketify(short_money(gain_asset_percent, postfix='%')),
+              anchor='mm', fill=result_color(gain_asset_percent), font=font_small_n)
+    draw.text(pos_percent_lp(usd_row_x, table_y + dy_per), bracketify(short_money(gain_usd_percent, postfix='%')),
+              anchor='mm', fill=result_color(gain_usd_percent), font=font_small_n)
+
+    table_y += delta_y + dy_per
+
+    # --- ARP ---
+    table_y += 2
+    font_big_n = r.fonts.get_font_bold(72)
+    draw.text(pos_percent_lp(caption_x, table_y), 'APR', anchor='rm', fill=FADE_COLOR, font=r.fonts.get_font(66))
+
+    if report.total_lping_sec > 10:
+        apr_asset = report.savers_apr
+        apr_usd = report.savers_usd_apr
+
+        draw.text(pos_percent_lp(asset_row_x, table_y), short_money(apr_asset, postfix='%'),
+                  anchor='mm', fill=result_color(apr_asset), font=font_big_n)
+        draw.text(pos_percent_lp(usd_row_x, table_y), short_money(apr_usd, postfix='%'),
+                  anchor='mm', fill=result_color(apr_usd), font=font_big_n)
+    table_y += delta_y * 2
+
+    # ---- ELAPSED ----
+    elapsed_days = loc.pic_lping_days(report.total_days, report.liq.first_add_ts, 'elapsed since addition')
+    draw.text(pos_percent_lp(caption_x, table_y), elapsed_days,
+              font=r.fonts.get_font(40), anchor='lm', fill=FADE_COLOR)
 
     return image

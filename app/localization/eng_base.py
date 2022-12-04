@@ -226,10 +226,11 @@ class BaseLocalization(ABC):  # == English
     LP_PIC_SUMMARY_TOTAL_LP_VS_HOLD = 'Total LP vs Hold $'
     LP_PIC_SUMMARY_NO_WEEKLY_CHART = "No weekly chart, sorry"
 
-    def pic_lping_days(self, total_days, first_add_ts):
+    def pic_lping_days(self, total_days, first_add_ts, extra=''):
         start_date = datetime.fromtimestamp(first_add_ts).strftime('%d.%m.%Y')
-        day_count_str = 'days' if total_days >= 2 else 'day'
-        return f'{ceil(total_days)} {day_count_str} ({start_date})'
+        day_count_str = plural(total_days, 'day', 'days')
+        extra = ' ' + extra if extra else ''
+        return f'{ceil(total_days)} {day_count_str}{extra} ({start_date})'
 
     TEXT_PLEASE_WAIT = '⏳ <b>Please wait...</b>'
 

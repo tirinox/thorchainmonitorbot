@@ -440,3 +440,30 @@ def line_progress_bar(draw: ImageDraw,
         color = color_filled if progress <= value else color_unfilled
         draw.line(((x, y), (x, y_end)), width=line_width, fill=color)
         x += line_width + gap
+
+
+def paste_image_masked(destination, source, xy, anchor='mm'):
+    x_anchor, y_anchor = anchor.lower()
+    w, h = source.width, source.height
+    ox, oy = xy
+
+    if x_anchor == 'm':
+        x = ox - w // 2
+    elif x_anchor == 'l':
+        x = ox
+    elif x_anchor == 'r':
+        x = ox - w
+    else:
+        raise ValueError(f'unknown X anchor "{x_anchor}"')
+
+    if y_anchor == 'm':
+        y = oy - h // 2
+    elif y_anchor == 't':
+        y = oy
+    elif y_anchor == 'b':
+        y = oy - h
+    else:
+        raise ValueError(f'unknown Y anchor "{y_anchor}"')
+
+    destination.paste(source, (x, y), source)
+    return destination

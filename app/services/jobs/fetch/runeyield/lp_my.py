@@ -92,7 +92,8 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             usd_per_asset_start, usd_per_rune_start,
             cur_liq, fees=FeeReport(),
             pool=pool_info,
-            protection=ILProtectionReport()
+            protection=ILProtectionReport(),
+            is_savers=True
         )
         return liq_report
 
@@ -324,7 +325,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
         usd_per_rune = self._calculate_weighted_rune_price_in_usd(earliest_pools, use_default_price=True)
 
-        this_pool = earliest_pools.get(earliest_tx.first_pool)
+        this_pool = earliest_pools.get(Asset.to_L1_pool_name(earliest_tx.first_pool))
 
         if this_pool is None:
             return None, None

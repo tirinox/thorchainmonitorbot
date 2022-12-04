@@ -12,6 +12,10 @@ from services.models.pool_info import PoolInfo, LPPosition, pool_share
 BECH_2_CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
 
 
+def change_ratio_to_apy(ch, days):
+    return 100.0 * ((1.0 + (ch / days)) ** 365 - 1.0)
+
+
 @dataclass
 class LPAddress(BaseModelMixin):
     @classmethod
@@ -176,6 +180,8 @@ class LiquidityPoolReport:
     pool: PoolInfo
     protection: ILProtectionReport
 
+    is_savers: bool = False
+
     ASSET = 'asset'
     RUNE = 'rune'
     USD = 'usd'
@@ -187,6 +193,9 @@ class LiquidityPoolReport:
             return (self.usd_per_rune / self.usd_per_rune_start - 1) * 100.0
         elif mode == self.ASSET:
             return (self.usd_per_asset / self.usd_per_asset_start - 1) * 100.0
+
+    def apy_from_change(self, ch):
+        return change_ratio_to_apy(ch, self.total_days)
 
     @property
     def lp_vs_hold(self) -> (float, float):
@@ -208,6 +217,21 @@ class LiquidityPoolReport:
         return lp_vs_hold_abs, lp_vs_hold_percent
 
     @property
+    def savers_apr(self):
+        _, a = self.redeemable_rune_asset
+        asset_change = a + self.liq.asset_withdrawn - self.liq.asset_added
+        asset_change_r = asset_change / a
+        return self.apy_from_change(asset_change_r)
+
+    @property
+    def savers_usd_apr(self):
+        first_usd_value = self.usd_per_asset_start * self.liq.asset_added
+        _, a = self.redeemable_rune_asset
+        current_usd_value = a * self.usd_per_asset
+        usd_change_r = current_usd_value / first_usd_value - 1.0
+        return self.apy_from_change(usd_change_r)
+
+    @property
     def total_days(self):
         total_days = self.total_lping_sec / DAY
         return total_days
@@ -216,8 +240,7 @@ class LiquidityPoolReport:
     def lp_vs_hold_apy(self) -> float:
         _, lp_vs_hold_percent = self.lp_vs_hold
         lp_vs_hold_percent /= 100.0
-        apy = (1 + lp_vs_hold_percent / self.total_days) ** 365 - 1
-        return apy * 100.0
+        return self.apy_from_change(lp_vs_hold_percent)
 
     def gain_loss(self, mode=USD) -> (float, float):
         cur_val = self.current_value(mode)
@@ -245,7 +268,11 @@ class LiquidityPoolReport:
 
     @property
     def redeemable_rune_asset(self):
-        r, a = pool_share(self.pool.balance_rune, self.pool.balance_asset, self.liq.pool_units, self.pool.units)
+        if self.is_savers:
+            r = 0
+            a = self.pool.savers_depth_float / thor_to_float(self.pool.savers_units) * self.liq.pool_units
+        else:
+            r, a = pool_share(self.pool.balance_rune, self.pool.balance_asset, self.liq.pool_units, self.pool.units)
         return thor_to_float(r), thor_to_float(a)
 
     def added_value(self, mode=USD):
