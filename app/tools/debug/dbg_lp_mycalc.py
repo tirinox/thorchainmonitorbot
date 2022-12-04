@@ -3,7 +3,7 @@ import logging
 from datetime import date
 
 from localization.languages import Language
-from services.dialog.picture.lp_picture import generate_yield_picture, savings_pool_picture
+from services.dialog.picture.lp_picture import generate_yield_picture, savings_pool_picture, lp_address_summary_picture
 from services.jobs.fetch.runeyield.date2block import DateToBlockMapper
 from services.jobs.fetch.runeyield.lp_my import HomebrewLPConnector
 from services.jobs.fetch.tx import TxFetcher
@@ -45,6 +45,19 @@ async def demo_report_for_single_pool(lpgen: LpAppFramework, addr, pool, hidden=
         picture = await generate_yield_picture(lpgen.deps.price_holder, report, loc, hidden)
     picture.show()
 
+
+async def demo_summary_all_pools(lpgen: LpAppFramework, addr, hidden=False):
+    loc = lpgen.deps.loc_man[LANG]
+    lpgen.rune_yield.add_il_protection_to_final_figures = True
+    pools = await lpgen.rune_yield.get_my_pools(addr, show_savers=True)
+    print(f'{addr} has {pools = }')
+    yield_summary = await lpgen.rune_yield.generate_yield_summary(addr, pools)
+
+    # GENERATE A PICTURE
+    picture = await lp_address_summary_picture(list(yield_summary.reports),
+                                               yield_summary.charts,
+                                               loc, value_hidden=hidden)
+    picture.show()
 
 
 async def my_test_block_calibration(lpgen: LpAppFramework):
@@ -119,7 +132,7 @@ async def main():
         # await demo_report_for_single_pool(app, '0xe93b5b56bddccaab6d396b7d4058f50acd4ae5d0', 'ETH/ETH')
 
         # 11 add?
-        await demo_report_for_single_pool(app, 'bc1qcsmgsvfpp4w6dmlwwdf4s87ngh8trz8yuwsfy0', 'BTC/BTC', hidden=False)
+        # await demo_report_for_single_pool(app, 'bc1qcsmgsvfpp4w6dmlwwdf4s87ngh8trz8yuwsfy0', 'BTC/BTC', hidden=False)
 
         # interrupted
         # await demo_report_for_single_pool(app, 'ltc1q67tf8ryuggvetakwz5flex5ydhyvn7rp0y8kx3', 'LTC/LTC', hidden=False)
@@ -127,6 +140,9 @@ async def main():
         # await test_block_calibration(app)
         # await clear_date2block(app)
         # await my_test_block_by_date(app)
+
+        # await demo_summary_all_pools(app, 'thor1gzautydm2mrpcuj36drqyzuuzqw4w8cp8zjj2c')  # 3 classic LP
+        await demo_summary_all_pools(app, 'bc1qcsmgsvfpp4w6dmlwwdf4s87ngh8trz8yuwsfy0')  # savers
 
 
 if __name__ == "__main__":

@@ -22,6 +22,8 @@ class PlotGraph:
         if bg == 'gradient':
             self.image = default_gradient(w, h)
         else:
+            if bg is None:
+                bg = (0, 0, 0, 0)
             self.image = Image.new('RGBA', (w, h), bg)
         self.draw = ImageDraw.Draw(self.image)
         self.margin = 2  # px

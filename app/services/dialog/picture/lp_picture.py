@@ -431,8 +431,8 @@ def lp_line_segments(draw, asset_values, asset_values_usd, y, value_hidden, colo
 
 
 def lp_weekly_graph(w, h, weekly_charts: dict, color_map: dict, value_hidden):
-    graph = PlotBarGraph(w, h, bg=BG_COLOR)
-    graph.margin = 10
+    graph = PlotBarGraph(w, h, bg=None)
+    graph.margin = 5
 
     colors = []
     dates = []
@@ -453,7 +453,7 @@ def lp_weekly_graph(w, h, weekly_charts: dict, color_map: dict, value_hidden):
 
     graph.left = 152
     graph.right = 90
-    graph.top = 10
+    graph.top = 19
     graph.n_ticks_y = 3 if value_hidden else 8
     graph.y_formatter = \
         (lambda x: '$ ???') if value_hidden else \
@@ -473,7 +473,15 @@ def lp_weekly_graph(w, h, weekly_charts: dict, color_map: dict, value_hidden):
 @async_wrap
 def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_charts, loc: BaseLocalization,
                                     value_hidden):
-    total_added_value_usd = sum(r.added_value(r.USD) for r in reports)
+
+    r = Resources()
+    image = r.bg_image.copy()
+    draw = ImageDraw.Draw(image)
+
+    if not reports:
+        return image
+
+    total_added_value_usd = sum(rp.added_value(rp.USD) for rp in reports)
     total_added_value_rune = sum(r.added_value(r.RUNE) for r in reports)
 
     total_withdrawn_value_usd = sum(r.withdrawn_value(r.USD) for r in reports)
@@ -489,20 +497,28 @@ def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_c
     total_lp_vs_hold_abs = 0.0
     total_fees_usd = 0.0
     total_fees_rune = 0.0
-    for r in reports:
-        asset_values[r.pool.asset] += r.current_value(r.ASSET) * 0.5
-        asset_values[RUNE_SYMBOL] += r.current_value(r.RUNE) * 0.5
+    for report in reports:
+        if report.is_savers:
+            runes, r_usd = 0.0, 0.0
+            assets = report.current_value(report.ASSET)
+            a_usd = report.current_value(report.USD)
+        else:
+            runes = report.current_value(report.RUNE) * 0.5
+            assets = report.current_value(report.ASSET) * 0.5
+            r_usd = a_usd = report.current_value(report.USD) * 0.5
 
-        asset_usd_value = r.current_value(r.USD) * 0.5
-        asset_values_usd[r.pool.asset] += asset_usd_value
-        asset_values_usd[RUNE_SYMBOL] += asset_usd_value
+        asset_values[report.pool.asset] += assets
+        asset_values[RUNE_SYMBOL] += runes
 
-        total_lp_vs_hold_abs += r.lp_vs_hold[0]
+        asset_values_usd[report.pool.asset] += a_usd
+        asset_values_usd[RUNE_SYMBOL] += r_usd
 
-        total_gain_loss_usd += r.gain_loss(r.USD)[0]
-        total_gain_loss_rune += r.gain_loss(r.RUNE)[0]
-        total_fees_usd += r.fees.fee_usd
-        total_fees_rune += r.fees.fee_rune
+        total_lp_vs_hold_abs += report.lp_vs_hold[0]
+
+        total_gain_loss_usd += report.gain_loss(report.USD)[0]
+        total_gain_loss_rune += report.gain_loss(report.RUNE)[0]
+        total_fees_usd += report.fees.fee_usd
+        total_fees_rune += report.fees.fee_rune
 
     total_fees_rune *= 2.0  # we show full rune fees because there is no split rune/asset
 
@@ -510,28 +526,30 @@ def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_c
     total_gain_loss_rune_p = total_gain_loss_rune / total_added_value_rune * 100.0
     total_lp_vs_hold_percent = total_lp_vs_hold_abs / total_added_value_usd * 100.0
 
-    res = Resources()
-    image = res.bg_image.copy()
-    draw = ImageDraw.Draw(image)
-
     color_map = generate_color_map(asset for asset in asset_values.keys())
 
+    font_n = r.fonts.get_font_bold(40)
+    font_t = r.fonts.get_font(40)
+
     # ------------------------------------------------------------------------------------------------
+
+    # 0. title
+    put_title(draw, loc.LP_PIC_TITLE, r.fonts)
 
     # 1. Header
     run_y = 12
     hor_line_lp(draw, run_y)
 
     run_y += 3.3
-    draw.text(pos_percent_lp(50, run_y), loc.LP_PIC_SUMMARY_HEADER, fill=FORE_COLOR, font=res.font_head, anchor='mm')
+    draw.text(pos_percent_lp(50, run_y), loc.LP_PIC_SUMMARY_HEADER, fill=FORE_COLOR, font=r.font_head, anchor='mm')
 
     # fixme: quick fix?
     if total_current_value_usd < 0.01:
         total_current_value_usd = 0.01
 
     pool_percents = [
-        (Asset(r.pool.asset).name, asset_values_usd[r.pool.asset] / total_current_value_usd * 2.0 * 100.0)
-        for r in reports
+        (Asset(rp.pool.asset).name, asset_values_usd[rp.pool.asset] / total_current_value_usd * 2.0 * 100.0)
+        for rp in reports
     ]
     # pool_percents = pool_percents * 5  # debug
     pool_percents.sort(key=operator.itemgetter(1), reverse=True)
@@ -542,7 +560,7 @@ def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_c
     ) + '.'
 
     run_y += 4.7
-    draw.text(pos_percent_lp(50, run_y), pool_dist_str, fill=FADE_COLOR, font=res.font_small, anchor='mm')
+    draw.text(pos_percent_lp(50, run_y), pool_dist_str, fill=FADE_COLOR, font=r.font_small, anchor='mm')
 
     # ------------------------------------------------------------------------------------------------
     # 2. Line segments
@@ -609,15 +627,18 @@ def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_c
             else:
                 color = FORE_COLOR
 
+            is_number_cell = ic > 0 and ir > 0
+
             pos = pos_percent_lp(column_xs[ic], row_y)
-            if value_hidden and ic > 0 and ir > 0 and ir != 4 and ir != 6:  # all except first column and fees row
-                res.put_hidden_plate(image, pos, 'center', ey=-20)
+            if value_hidden and is_number_cell and ir != 4 and ir != 6:  # all except first column and fees row
+                r.put_hidden_plate(image, pos, 'center', ey=-20)
             else:
+                font = font_n if is_number_cell else font_t
                 draw.text(
                     pos,
                     text,
                     fill=color,
-                    font=res.font,
+                    font=font,
                     anchor='mm' if ic else 'rm'
                 )
             row_y += row_step
@@ -630,25 +651,27 @@ def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_c
     draw.text(pos_percent_lp(50, run_y),
               loc.LP_PIC_SUMMARY_TOTAL_LP_VS_HOLD,
               fill=FORE_COLOR,
-              font=res.font_head,
+              font=r.font_head,
               anchor='mm')
+
+    font_results = r.fonts.get_font_bold(50)
 
     run_y += 5.0
     lp_vs_hold_y = run_y
     draw.text(pos_percent_lp(33.3, lp_vs_hold_y),
               pretty_money(total_lp_vs_hold_percent, signed=True) + '%',
               fill=result_color(total_lp_vs_hold_percent),
-              font=res.font_head, anchor='mm')
+              font=font_results, anchor='mm')
 
-    draw.text(pos_percent_lp(50, lp_vs_hold_y), '|', fill=FADE_COLOR, font=res.font_head, anchor='mm')
+    draw.text(pos_percent_lp(50, lp_vs_hold_y), '|', fill=FADE_COLOR, font=r.font_head, anchor='mm')
 
     if value_hidden:
-        res.put_hidden_plate(image, pos_percent_lp(66.6, lp_vs_hold_y), anchor='center', ey=-18)
+        r.put_hidden_plate(image, pos_percent_lp(66.6, lp_vs_hold_y), anchor='center', ey=-18)
     else:
         draw.text(pos_percent_lp(66.6, lp_vs_hold_y),
                   pretty_money(total_lp_vs_hold_abs, signed=True, prefix='$'),
                   fill=result_color(total_lp_vs_hold_abs),
-                  font=res.font_head, anchor='mm')
+                  font=font_results, anchor='mm')
     run_y += 3.0
 
     # 5. Graph
@@ -659,10 +682,10 @@ def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_c
 
     if weekly_charts:
         graph_img = lp_weekly_graph(graph_width, graph_height, weekly_charts, color_map, value_hidden)
-        image.paste(graph_img, pos_percent_lp(graph_margin_x, run_y - graph_margin_y))
+        image.paste(graph_img, pos_percent_lp(graph_margin_x, run_y - graph_margin_y), graph_img)
     else:
         draw.text(pos_percent_lp(50, 90), loc.LP_PIC_SUMMARY_NO_WEEKLY_CHART, fill=FADE_COLOR,
-                  font=res.font_head, anchor='mm')
+                  font=r.font_head, anchor='mm')
 
     return image
 

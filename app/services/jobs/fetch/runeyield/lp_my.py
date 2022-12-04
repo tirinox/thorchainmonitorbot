@@ -32,7 +32,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         self.tx_fetcher = TxFetcher(deps)
         self.parser = get_parser_by_network_id(deps.cfg.network_id)
         self.use_thor_consensus = False
-        self.days_for_chart = 14
+        self.days_for_chart = 30
         self.max_attempts = 5
         self.block_mapper = DateToBlockMapper(deps)
         self.withdraw_fee_rune = 2.0
@@ -53,11 +53,13 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         for pool_name in pools:
             this_pool_txs = [tx for tx in user_txs if tx.first_pool == pool_name]
 
-            liq_report = await self._create_lp_report_for_one_pool(
-                historic_all_pool_states,
-                pool_name,
-                this_pool_txs
-            )
+            if Asset.from_string(pool_name).is_synth:
+                # Savers position
+                liq_report = await self._get_savers_position(historic_all_pool_states, pool_name, this_pool_txs)
+            else:
+                # Normal liquidity position
+                liq_report = await self._create_lp_report_single(historic_all_pool_states, pool_name, this_pool_txs)
+
             reports.append(liq_report)
 
         weekly_charts = await self._get_charts(user_txs, days=self.days_for_chart)
@@ -74,9 +76,9 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             return await self._get_savers_position(historic_all_pool_states, pool_name, user_txs)
         else:
             # Normal liquidity position
-            return await self._create_lp_report_for_one_pool(historic_all_pool_states, pool_name, user_txs)
+            return await self._create_lp_report_single(historic_all_pool_states, pool_name, user_txs)
 
-    async def get_my_pools(self, address, show_savers=False) -> List[str]:
+    async def get_my_pools(self, address, show_savers=True) -> List[str]:
         j = await self.deps.midgard_connector.request(
             free_url_gen.url_for_address_pool_membership(address, show_savers)
         )
@@ -93,10 +95,10 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         withdraw_fee_rune = self.deps.mimir_const_holder.get_constant(self.KEY_CONST_FEE_OUTBOUND, default=2000000)
         self.withdraw_fee_rune = thor_to_float(int(withdraw_fee_rune))
 
-    async def _create_lp_report_for_one_pool(self,
-                                             historic_all_pool_states: HeightToAllPools,
-                                             pool_name: str,
-                                             user_txs: List[ThorTx]) -> LiquidityPoolReport:
+    async def _create_lp_report_single(self,
+                                       historic_all_pool_states: HeightToAllPools,
+                                       pool_name: str,
+                                       user_txs: List[ThorTx]) -> LiquidityPoolReport:
         # todo: idea: check date_last_added, if it is not changed - get user_txs from local cache
         # todo: or you can compare current liq_units! if it has changed, you reload tx! (unsafe)
 
