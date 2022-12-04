@@ -128,10 +128,10 @@ def pos_percent(x, y, ax=0, ay=0, w=1000, h=1000):
     return int(x / 100 * w + ax), int(y / 100 * h + ay)
 
 
-def result_color(v):
-    if v == 0.0:
+def result_color(v, min_ch=0.000001):
+    if abs(v) <= min_ch:
         return LIGHT_TEXT_COLOR
-    return COLOR_OF_LOSS if v < 0 else COLOR_OF_PROFIT
+    return COLOR_OF_LOSS if v < min_ch else COLOR_OF_PROFIT
 
 
 def hor_line(draw, y, width=2, w=1000, h=1000, color=LINE_COLOR):

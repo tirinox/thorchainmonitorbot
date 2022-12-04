@@ -2,6 +2,7 @@ import asyncio
 import logging
 from datetime import date
 
+from localization.languages import Language
 from services.dialog.picture.lp_picture import generate_yield_picture, savings_pool_picture
 from services.jobs.fetch.runeyield.date2block import DateToBlockMapper
 from services.jobs.fetch.runeyield.lp_my import HomebrewLPConnector
@@ -10,6 +11,8 @@ from services.lib.money import Asset
 from services.lib.texts import sep
 from services.models.tx import cut_off_previous_lp_sessions
 from tools.lib.lp_common import LpAppFramework
+
+LANG = Language.RUSSIAN
 
 
 async def my_test_get_user_lp_actions(lpgen: LpAppFramework):
@@ -33,7 +36,7 @@ async def demo_report_for_single_pool(lpgen: LpAppFramework, addr, pool):
     print(f'{addr = }, {pool = }, {is_savers = }')
     sep()
 
-    loc = lpgen.deps.loc_man.default
+    loc = lpgen.deps.loc_man[LANG]
     if is_savers:
         report = await lpgen.rune_yield.generate_savers_report(addr, pool)
         print(report)
@@ -104,6 +107,8 @@ async def demo_find_interesting_savers(app: LpAppFramework):
 async def main():
     app = LpAppFramework(HomebrewLPConnector, log_level=logging.INFO)
     async with app:
+        global LANG
+        LANG = Language.ENGLISH
         # await demo_find_interesting_savers(app)
         # await demo_get_my_pools(app, 'bc1q0jmh2ht08zha0vajx0kq87vxtyspak45xywf2p')
         # await demo_report_for_single_pool(app, 'thor1a8ydprhkk5u032r277nzs4vw5khnnl3ya9xnvs', 'ETH.ETH')

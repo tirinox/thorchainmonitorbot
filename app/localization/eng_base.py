@@ -2201,6 +2201,14 @@ class BaseLocalization(ABC):  # == English
     TEXT_SAVERS_NO_DATA = 'Sorry. We have not gotten any data for Savers Vaults yet.'
 
     SV_PIC_TITLE = 'savings'
+    SV_PIC_APR = 'APR'
+    SV_PIC_USD = 'USD'
+    SV_PIC_ADDED = 'Added'
+    SV_PIC_WITHDRAWN = 'Withdrawn'
+    SV_PIC_REDEEMABLE = 'Redeemable'
+    SV_PIC_PRICE = 'Price'
+    SV_PIC_EARNED = 'Earned'
+    SV_PIC_ELAPSED = 'elapsed since addition'
 
 
 class EnglishLocalization(BaseLocalization):

@@ -186,9 +186,10 @@ class RussianLocalization(BaseLocalization):
     LP_PIC_SUMMARY_TOTAL_LP_VS_HOLD = 'Итого холд против пулов, $'
     LP_PIC_SUMMARY_NO_WEEKLY_CHART = "Нет недельного графика, извините..."
 
-    def pic_lping_days(self, total_days, first_add_ts):
+    def pic_lping_days(self, total_days, first_add_ts, extra=''):
         start_date = datetime.fromtimestamp(first_add_ts).strftime('%d.%m.%Y')
-        return f'{ceil(total_days)} дн. ({start_date})'
+        extra = ' ' + extra if extra else ''
+        return f'{ceil(total_days)} дн.{extra} ({start_date})'
 
     TEXT_PLEASE_WAIT = '⏳ <b>Пожалуйста, подождите...</b>'
 
@@ -1668,3 +1669,11 @@ class RussianLocalization(BaseLocalization):
     TEXT_SAVERS_NO_DATA = 'Простите, у нас пока нет никаких данных о статистике сбережений.'
 
     SV_PIC_TITLE = 'сбережения'
+    SV_PIC_APR = 'Годовые'
+    SV_PIC_USD = 'USD'
+    SV_PIC_ADDED = 'Добавили'
+    SV_PIC_WITHDRAWN = 'Вывели'
+    SV_PIC_REDEEMABLE = 'Доступно'
+    SV_PIC_PRICE = 'Цена'
+    SV_PIC_EARNED = 'Заработано'
+    SV_PIC_ELAPSED = 'дней прошло с добавления'
