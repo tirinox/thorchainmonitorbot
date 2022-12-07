@@ -72,7 +72,7 @@ class PoolInfo:
         return copy.copy(self)
 
     def fill_usd_per_asset(self, usd_per_rune):
-        self.usd_per_asset = self.runes_per_asset / usd_per_rune if usd_per_rune else 0.0
+        self.usd_per_asset = usd_per_rune * self.runes_per_asset
 
     @property
     def asset_per_rune(self):
@@ -308,7 +308,7 @@ class SaverVault(NamedTuple):
     total_asset_saved: float
     total_asset_saved_usd: float
     apr: float
-    asset_cap: float  # == 2 * pool.asset_balance
+    asset_cap: float
     runes_earned: float
     synth_supply: float
 
