@@ -150,8 +150,10 @@ class MetricsDialog(BaseDialog):
             return
 
         prev_data = await ssn.get_previous_saver_stats(DAY)
+        synth_supply = await ssn.get_synth_supply()
+
         event = EventSaverStats(
-            prev_data, c_data, self.deps.price_holder
+            prev_data, c_data, self.deps.price_holder, synth_supply
         )
 
         pic_gen = SaversPictureGenerator(self.loc, event)

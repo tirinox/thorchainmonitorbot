@@ -51,6 +51,8 @@ def pretty_rune(x, signed=False, prefix=''):
 
 
 def pretty_money(x, prefix='', signed=False, postfix=''):
+    if math.isnan(x):
+        return str(x)
     if x < 0:
         return f"-{prefix}{pretty_money(-x)}{postfix}"
     elif x == 0:
@@ -92,6 +94,9 @@ def detect_decimal_digits(x):
 
 
 def short_money(x, prefix='', postfix='', localization=None, signed=False, integer=False):
+    if math.isnan(x):
+        return str(x)
+
     if x == 0:
         zero = '0' if integer else '0.0'
         return f'{prefix}{zero}{postfix}'

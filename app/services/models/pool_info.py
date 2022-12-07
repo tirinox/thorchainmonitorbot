@@ -1,9 +1,12 @@
 import copy
 import dataclasses
+import json
 import logging
+import math
+from _operator import attrgetter
 from dataclasses import dataclass
 from operator import attrgetter
-from typing import List, Dict, NamedTuple
+from typing import List, Dict, NamedTuple, Optional
 
 from aiothornode.types import ThorPool
 
@@ -33,8 +36,7 @@ class PoolInfo:
 
     status: str
 
-    asset_price_rune: float = 0.0
-    asset_price_usd: float = 0.0
+    usd_per_asset: float = 0.0
     pool_apy: float = 0.0
     synth_supply: int = 0
     synth_units: int = 0
@@ -68,6 +70,9 @@ class PoolInfo:
 
     def copy(self):
         return copy.copy(self)
+
+    def fill_usd_per_asset(self, usd_per_rune):
+        self.usd_per_asset = self.runes_per_asset / usd_per_rune if usd_per_rune else 0.0
 
     @property
     def asset_per_rune(self):
@@ -118,23 +123,24 @@ class PoolInfo:
 
     @property
     def rune_price(self):
-        return self.asset_price_usd / self.asset_price_rune
+        return self.usd_per_asset / self.runes_per_asset
 
     @property
     def usd_volume_24h(self):
+        """ Used for top_pools """
         return thor_to_float(self.volume_24h) * self.rune_price
 
     @property
     def total_liquidity(self):
+        """ Used for top_pools """
         return 2.0 * thor_to_float(self.balance_rune) * self.rune_price
 
-    def get_synth_cap_in_asset(self, max_synth_per_asset_ratio=0.3):
-        return self.balance_asset * max_synth_per_asset_ratio
+    def get_synth_cap_in_asset_float(self, max_synth_per_pool_depth=0.15):
+        return thor_to_float(self.balance_asset * max_synth_per_pool_depth * 2.0)
 
-    def how_much_savings_you_can_add(self, max_synth_per_asset_ratio=0.3):
-        cap = self.get_synth_cap_in_asset(max_synth_per_asset_ratio)
-        filled = self.savers_depth / cap
-        return thor_to_float(filled * self.balance_asset)
+    def how_much_savings_you_can_add(self, pool_synth_supply, max_synth_per_asset_ratio=0.3):
+        cap = self.get_synth_cap_in_asset_float(max_synth_per_asset_ratio)
+        return max(0.0, cap - pool_synth_supply)
 
     @property
     def savers_depth_float(self):
@@ -248,12 +254,17 @@ class PoolMapPair:
     BY_DEPTH = 'total_liquidity'
     BY_APY = 'pool_apy'
 
+    @staticmethod
+    def bad_value(x: float):
+        return math.isinf(x) or math.isnan(x)
+
     def get_top_pools(self, criterion: str, n=None, descending=True) -> List[PoolInfo]:
         pools = self.pool_detail_dic.values()
         criterion = str(criterion)
 
         if criterion in (self.BY_APY, self.BY_VOLUME_24h):
             pools = filter(lambda p: p.is_enabled, pools)
+        pools = filter(lambda p: not self.bad_value(getattr(p, criterion)), pools)
 
         pool_list = list(pools)
         pool_list.sort(key=attrgetter(criterion), reverse=descending)
@@ -285,3 +296,112 @@ class PoolMapPair:
     @property
     def empty(self):
         return not self.pool_detail_dic
+
+
+class SaverVault(NamedTuple):
+    asset: str
+    number_of_savers: int
+    total_asset_saved: float
+    total_asset_saved_usd: float
+    apr: float
+    asset_cap: float  # == 2 * pool.asset_balance
+    runes_earned: float
+    synth_supply: float
+
+    @property
+    def percent_of_cap_filled(self):
+        return self.synth_supply / self.asset_cap * 100.0 if self.asset_cap else 0.0
+
+    @property
+    def usd_per_asset(self):
+        return self.total_asset_saved_usd / self.total_asset_saved
+
+    def calc_asset_earned(self, pool_map: PoolInfoMap):
+        if pool_map and (pool := pool_map.get(self.asset)):
+            return pool.asset_per_rune * self.runes_earned
+        else:
+            return 0.0
+
+    @staticmethod
+    def calc_total_saved_usd(asset, total_asset_saved, pool_map: PoolInfoMap):
+        if pool_map and (pool := pool_map.get(asset)):
+            price = pool.usd_per_asset
+            result = total_asset_saved * price if price else 0.0
+        else:
+            result = 0.0
+        return result
+
+
+@dataclass
+class AllSavers:
+    total_unique_savers: int
+    vaults: List[SaverVault]
+
+    def fill_total_usd(self, pool_map: PoolInfoMap):
+        self.vaults = [
+            v._replace(total_asset_saved_usd=v.calc_total_saved_usd(v.asset, v.total_asset_saved, pool_map))
+            for v in self.vaults
+        ]
+
+    @property
+    def total_usd_saved(self) -> float:
+        return sum(s.total_asset_saved_usd for s in self.vaults)
+
+    @property
+    def apr_list(self):
+        return [s.apr for s in self.vaults]
+
+    @property
+    def average_apr(self) -> float:
+        if not self.vaults:
+            return 0.0
+        return sum(self.apr_list) / len(self.vaults)
+
+    @property
+    def min_apr(self):
+        return min(self.apr_list)
+
+    @property
+    def max_apr(self):
+        return max(self.apr_list)
+
+    @property
+    def as_dict(self):
+        d = dataclasses.asdict(self)
+        d['vaults'] = [v._asdict() for v in self.vaults]
+        return d
+
+    @classmethod
+    def load_from_ts_points(cls, point) -> Optional['AllSavers']:
+        try:
+            j = json.loads(point['json'])
+        except (json.JSONDecodeError, KeyError, TypeError):
+            return
+
+        try:
+            savers = cls(**j)
+            # noinspection PyArgumentList
+            savers.vaults = [SaverVault(**v) for v in savers.vaults]
+            return savers
+        except TypeError:
+            return
+
+    def sort_vaults(self, key='apr', reverse=False):
+        self.vaults.sort(key=attrgetter(key), reverse=reverse)
+        return self
+
+    def get_top_vaults(self, criterion: str, n=None, descending=True) -> List[SaverVault]:
+        vault_list = list(self.vaults)
+        vault_list.sort(key=attrgetter(criterion), reverse=descending)
+        return vault_list if n is None else vault_list[:n]
+
+    @property
+    def total_rune_earned(self):
+        return sum(p.runes_earned for p in self.vaults)
+
+    @property
+    def overall_fill_cap_percent(self):
+        # fixme
+        overall_saved = sum(p.total_asset_saved * p.usd_per_asset for p in self.vaults)
+        overall_cap = sum(p.asset_cap * p.usd_per_asset for p in self.vaults)
+        return overall_saved / overall_cap * 100.0 if overall_cap else 0.0

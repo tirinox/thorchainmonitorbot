@@ -331,8 +331,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         if this_pool is None:
             return None, None
 
-        rune_per_asset = this_pool.runes_per_asset
-        usd_per_asset = usd_per_rune * rune_per_asset
+        usd_per_asset = usd_per_rune * this_pool.runes_per_asset
 
         return usd_per_asset, usd_per_rune
 

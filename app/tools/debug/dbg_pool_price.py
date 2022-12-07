@@ -1,16 +1,11 @@
 import asyncio
-import datetime
-import logging
 
-import aiohttp
 from aiothornode.connector import ThorConnector
 
-from localization.manager import LocalizationManager
 from services.jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
-from services.lib.config import Config
-from services.lib.constants import NetworkIdents, BTC_SYMBOL
-from services.lib.db import DB
+from services.lib.constants import NetworkIdents
 from services.lib.depcont import DepContainer
+from services.notify.types.best_pool_notify import BestPoolsNotifier
 from tools.lib.lp_common import LpAppFramework
 
 
@@ -57,10 +52,20 @@ async def demo_cache_blocks(app: LpAppFramework):
     print(pools)
 
 
+async def demo_top_pools(app: LpAppFramework):
+    d = app.deps
+    fetcher_pool_info = PoolInfoFetcherMidgard(d, 1)
+    d.best_pools_notifier = BestPoolsNotifier(d)
+    await d.best_pools_notifier._cooldown.clear()
+    fetcher_pool_info.add_subscriber(d.best_pools_notifier)
+    await fetcher_pool_info.run_once()
+
+
 async def main():
     app = LpAppFramework()
     async with app(brief=True):
-        await demo_cache_blocks(app)
+        # await demo_cache_blocks(app)
+        await demo_top_pools(app)
 
 
 if __name__ == '__main__':

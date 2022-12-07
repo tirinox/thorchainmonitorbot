@@ -47,6 +47,7 @@ class BestPoolsNotifier(INotified):
             return result
 
     async def on_data(self, sender: PoolInfoFetcherMidgard, data: PoolInfoMap):
+        # We use PoolInfoFetcherMidgard because it has "last_raw_result" and asset prices
         self._fetcher = sender
 
         prev = await self._get_previous_data()

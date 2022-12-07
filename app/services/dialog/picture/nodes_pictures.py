@@ -87,7 +87,7 @@ class WorldMap:
         remember_clusters = {}
 
         for node in data.node_info_list:
-            geo = data.ip_info_dict.get(node.ip_address, {})
+            geo = data.ip_info_dict.get(node.ip_address) or {}
             lat, long = geo.get('latitude'), geo.get('longitude')
 
             country = geo.get('country_name')

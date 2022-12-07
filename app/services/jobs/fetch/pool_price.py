@@ -8,7 +8,7 @@ from aioredis import Redis
 from services.jobs.fetch.base import BaseFetcher
 from services.lib.config import Config
 from services.lib.constants import RUNE_SYMBOL_DET, RUNE_SYMBOL_POOL, RUNE_SYMBOL_CEX
-from services.lib.date_utils import parse_timespan_to_seconds, day_to_key
+from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import free_url_gen
@@ -48,18 +48,20 @@ class PoolFetcher(BaseFetcher):
         return rune_market_info
 
     async def reload_global_pools(self) -> PoolInfoMap:
-        d = self.deps
+        price_holder = self.deps.price_holder
+
         current_pools = await self.load_pools()
 
-        if d.price_holder is not None:
-            # store into the global state
-            if current_pools:
-                d.price_holder.update(current_pools)
+        assert price_holder is not None
 
-            price = d.price_holder.usd_per_rune
-            self.logger.info(f'Fresh rune price is ${price:.3f}, {len(current_pools)} total pools')
+        # store into the global state
+        if current_pools:
+            price_holder.update(current_pools)
 
-        return current_pools
+        price = price_holder.usd_per_rune
+        self.logger.info(f'Fresh rune price is ${price:.3f}, {len(current_pools)} total pools')
+
+        return price_holder.pool_info_map
 
     async def _write_price_time_series(self, rune_market_info: RuneMarketInfo):
         if not rune_market_info:
@@ -114,12 +116,16 @@ class PoolFetcher(BaseFetcher):
         await r.hset(self.DB_KEY_POOL_INFO_HASH, str(subkey), j_pools)
 
     async def _load_from_cache(self, r: Redis, subkey) -> Optional[PoolInfoMap]:
-        cached_item = await r.hget(self.DB_KEY_POOL_INFO_HASH, str(subkey))
-        if cached_item:
-            raw_dict = json.loads(cached_item)
-            pool_map = {k: PoolInfo.from_dict_brief(it) for k, it in raw_dict.items()}
-            if all(p is not None for p in pool_map.values()):
-                return pool_map
+        try:
+            cached_item = await r.hget(self.DB_KEY_POOL_INFO_HASH, str(subkey))
+            if cached_item:
+                raw_dict = json.loads(cached_item)
+                pool_map = {k: PoolInfo.from_dict_brief(it) for k, it in raw_dict.items()}
+                if all(p is not None for p in pool_map.values()):
+                    return pool_map
+        except (TypeError, ValueError):
+            self.logger.warning(f'Failed to load PoolInfoMap from the cache ({subkey = })')
+            return
 
     def _hash_key_day(self, dt: datetime):
         return str(int(dt.timestamp()) // self.CACHE_TOLERANCE * self.CACHE_TOLERANCE)

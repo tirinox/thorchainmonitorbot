@@ -116,10 +116,19 @@ class LastPriceHolder:
                 self.btc_per_rune = pool.asset_per_rune
                 return
 
+    def _fill_asset_price(self):
+        if not self.usd_per_rune:
+            logging.warning(f'Cannot fill asset_price_usd because {self.usd_per_rune = }')
+            return
+        for pool in self.pool_info_map.values():
+            pool: PoolInfo
+            pool.fill_usd_per_asset(self.usd_per_rune)
+
     def update(self, new_pool_info_map: PoolInfoMap):
         self.pool_info_map = new_pool_info_map.copy()
         self._calculate_weighted_rune_price()
         self._calculate_btc_price()
+        self._fill_asset_price()
         self.last_update_ts = time.time()
 
     @property

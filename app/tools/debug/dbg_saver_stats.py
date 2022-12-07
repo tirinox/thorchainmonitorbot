@@ -1,4 +1,5 @@
 import asyncio
+import dataclasses
 import random
 
 from localization.eng_base import BaseLocalization
@@ -9,7 +10,8 @@ from services.dialog.picture.resources import Resources
 from services.dialog.picture.savers_picture import SaversPictureGenerator
 from services.jobs.fetch.pool_price import PoolFetcher
 from services.lib.texts import sep
-from services.notify.types.savers_stats_notify import SaversStatsNotifier, EventSaverStats, AllSavers
+from services.notify.types.savers_stats_notify import SaversStatsNotifier, EventSaverStats
+from services.models.pool_info import AllSavers
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
 
@@ -23,9 +25,9 @@ async def demo_collect_stat(app: LpAppFramework):
     await ssn.save_savers(data)
     print(data)
 
-    p_data = await ssn.get_previous_saver_stats(0)
-    print(p_data)
-    assert data == p_data
+    # p_data = await ssn.get_previous_saver_stats(0)
+    # print(p_data)
+    # assert data == p_data
 
 
 def randomize_savers_data(c_data: AllSavers, sc=0.2, fail_chance=0.3):
@@ -34,19 +36,17 @@ def randomize_savers_data(c_data: AllSavers, sc=0.2, fail_chance=0.3):
             return x
         return x * random.uniform(1.0 - scatter, 1.0 + scatter)
 
-    p_data = c_data._replace(
-        total_unique_savers=int(r(c_data.total_unique_savers))
-    )
-    p_data = p_data._replace(
-        pools=[p._replace(
-            apr=r(p.apr),
-            total_asset_saved=r(p.total_asset_saved),
-            total_asset_as_usd=r(p.total_asset_as_usd),
-            runes_earned=r(p.runes_earned),
-            asset_cap=r(p.asset_cap),
-            number_of_savers=int(r(p.number_of_savers)),
-        ) for p in c_data.pools]
-    )
+    p_data = dataclasses.replace(c_data,
+                                 total_unique_savers=int(r(c_data.total_unique_savers))
+                                 )
+    p_data.vaults = [p._replace(
+        apr=r(p.apr),
+        total_asset_saved=r(p.total_asset_saved),
+        runes_earned=r(p.runes_earned),
+        asset_cap=r(p.asset_cap),
+        number_of_savers=int(r(p.number_of_savers)),
+    ) for p in c_data.vaults]
+
     return p_data
 
 
@@ -62,7 +62,8 @@ async def demo_show_notification(app: LpAppFramework):
 
     p_data = randomize_savers_data(c_data, fail_chance=0.0)
 
-    event = EventSaverStats(p_data, c_data, app.deps.price_holder)
+    synth_supply = await ssn.get_synth_supply()
+    event = EventSaverStats(p_data, c_data, app.deps.price_holder, synth_supply)
 
     loc: BaseLocalization = app.deps.loc_man[Language.RUSSIAN]
     await app.send_test_tg_message(loc.notification_text_saver_stats(event))
@@ -128,8 +129,10 @@ async def demo_show_savers_pic(app: LpAppFramework):
     p_data = randomize_savers_data(c_data, fail_chance=0.8)
     # p_data = None
 
+    synth_supply = await ssn.get_synth_supply()
+
     pic_gen = SaversPictureGenerator(loc, EventSaverStats(
-        p_data, c_data, app.deps.price_holder
+        p_data, c_data, app.deps.price_holder, synth_supply
     ))
     pic, name = await pic_gen.get_picture()
 

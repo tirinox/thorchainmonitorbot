@@ -27,16 +27,19 @@ class SaversPictureGenerator(BasePictureGenerator):
     async def prepare(self):
         r = Resources()
 
-        for vault in self.event.current_stats.pools:
+        for vault in self.event.current_stats.vaults:
             logo = await r.logo_downloader.get_or_download_logo_cached(vault.asset)
             self.logos[vault.asset] = logo
 
     @async_wrap
     def _get_picture_sync(self):
-        # prepare
+        # prepare data
         cur_data = self.event.current_stats
         prev_data = self.event.previous_stats
 
+        cur_data.sort_vaults(key='total_asset_saved_usd', reverse=True)
+
+        # prepare painting stuff
         r = Resources()
         image = self.bg.copy()
         draw = ImageDraw.Draw(image)
@@ -117,8 +120,6 @@ class SaversPictureGenerator(BasePictureGenerator):
         draw.text((earned_x, column_y), self.loc.TEXT_PIC_SAVERS_EARNED,
                   fill=self.COLUMN_COLOR, font=font_column, anchor='lb')
 
-        cur_data.sort_pools(key='total_asset_as_usd', reverse=True)
-
         h_line_width, v_line_width = 1, 1
         fill_pb_width = 100
 
@@ -126,10 +127,10 @@ class SaversPictureGenerator(BasePictureGenerator):
             draw.line((table_x, y - dy // 2, self.WIDTH - table_x, y - dy // 2), fill=self.LINE_COLOR,
                       width=h_line_width)
 
-        prev_pools = {p.asset: p for p in prev_data.pools} if prev_data else {}
+        prev_vaults = {p.asset: p for p in prev_data.vaults} if prev_data else {}
 
         def get_delta(key, v):
-            prev_pool = prev_pools.get(v.asset)
+            prev_pool = prev_vaults.get(v.asset)
             if prev_pool:
                 return getattr(v, key) - getattr(prev_pool, key)
 
@@ -151,7 +152,7 @@ class SaversPictureGenerator(BasePictureGenerator):
                           formatter(_delta, signed=True, **kwargs),
                           fill=result_color(_delta), font=changed_font, anchor='lm')
 
-        for vault in cur_data.pools:
+        for vault in cur_data.vaults:
             logo = self.logos.get(vault.asset)
             if logo:
                 logo = logo.copy()
@@ -172,7 +173,7 @@ class SaversPictureGenerator(BasePictureGenerator):
             draw_metric(asset_x, y, 'total_asset_saved', vault,
                         formatter=short_money, postfix=f' {a.name}')
 
-            draw_metric(dollar_x, y, 'total_asset_as_usd', vault,
+            draw_metric(dollar_x, y, 'total_asset_saved_usd', vault,
                         formatter=short_dollar)
 
             draw_metric(apr_x, y, 'apr', vault,
