@@ -96,7 +96,6 @@ class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
         if await self.cd_write_stats.can_do():
             self.logger.info('Start loading saver stats...')
 
-
             savers = await self.get_all_savers(rune_market.pools,
                                                self.deps.last_block_store.last_thor_block)
 
