@@ -66,9 +66,6 @@ class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
             vaults=pep_pool_savers
         )
 
-        pool_map = self.deps.price_holder.pool_info_map
-        savers.fill_total_usd(pool_map)
-
         savers.sort_vaults()
         return savers
 

@@ -6,6 +6,7 @@ from services.dialog.picture.resources import Resources
 from services.lib.draw_utils import TC_WHITE, line_progress_bar, result_color
 from services.lib.money import Asset, short_money, short_dollar
 from services.lib.utils import async_wrap
+from services.models.pool_info import SaverVault
 from services.notify.types.savers_stats_notify import EventSaverStats
 
 
@@ -142,19 +143,14 @@ class SaversPictureGenerator(BasePictureGenerator):
 
         prev_vaults = {p.asset: p for p in prev_data.vaults} if prev_data else {}
 
-        def get_delta(key, v):
-            prev_pool = prev_vaults.get(v.asset)
-            if prev_pool:
-                return getattr(v, key) - getattr(prev_pool, key)
-
         def draw_metric(_x, _y, key, _vault, formatter, **kwargs):
-            _delta = get_delta(key, _vault)
-
+            _prev_vault: SaverVault = prev_vaults.get(_vault.asset)
             v = getattr(_vault, key)
+            _delta = (v - getattr(_prev_vault, key)) if _prev_vault else None
+
             significant = _delta and (abs(_delta) > abs(v) * 0.01)  # if change > 1%
 
             _dy = -9 if significant else 0
-
             font = font_asset_bold if kwargs.get('bold', True) else font_asset_regular
             draw.text((_x, _y + _dy),
                       formatter(v, **kwargs),
@@ -174,15 +170,6 @@ class SaversPictureGenerator(BasePictureGenerator):
 
             a = Asset.from_string(vault.asset)
 
-            #
-            # draw.text((asset_x, y),
-            #           f"{short_money(vault.total_asset_saved)} {a.name}",
-            #           fill=TC_WHITE, font=font_asset, anchor='lm')
-            # if delta := get_delta('total_asset_saved', vault):
-            #     draw.text((asset_x, y + 10),
-            #               f"{short_money(delta)} {a.name}",
-            #               fill=result_color(delta), font=changed_font, anchor='lm')
-            #
             draw_metric(asset_x, y, 'total_asset_saved', vault,
                         formatter=short_money, postfix=f' {a.name}')
 

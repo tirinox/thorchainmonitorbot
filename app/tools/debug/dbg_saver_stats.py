@@ -42,6 +42,7 @@ def randomize_savers_data(c_data: AllSavers, sc=0.2, fail_chance=0.3):
     p_data.vaults = [p._replace(
         apr=r(p.apr),
         total_asset_saved=r(p.total_asset_saved),
+        total_asset_saved_usd=r(p.total_asset_saved_usd),
         runes_earned=r(p.runes_earned),
         asset_cap=r(p.asset_cap),
         number_of_savers=int(r(p.number_of_savers)),
@@ -125,7 +126,7 @@ async def demo_show_savers_pic(app: LpAppFramework):
     loc_man: LocalizationManager = app.deps.loc_man
     loc = loc_man.get_from_lang(Language.ENGLISH)
 
-    p_data = randomize_savers_data(c_data, fail_chance=0.3)
+    p_data = randomize_savers_data(c_data, fail_chance=0.1)
     # p_data = None
 
     pic_gen = SaversPictureGenerator(loc, EventSaverStats(
