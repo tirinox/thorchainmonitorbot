@@ -83,8 +83,7 @@ class TwitterEnglishLocalization(BaseLocalization):
                                           pool_info: PoolInfo,
                                           cap: ThorCapInfo = None,
                                           name_map: NameMap = None,
-                                          mimir: MimirHolder = None,
-                                          synth_supply=None):
+                                          mimir: MimirHolder = None):
         (ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short,
          total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
@@ -143,7 +142,7 @@ class TwitterEnglishLocalization(BaseLocalization):
                 rune_part = ''
                 asset_part = f"{short_money(tx.asset_amount)} {asset}"
                 amount_more, asset_more, saver_pb, saver_cap, saver_percent = \
-                    self.get_savers_limits(pool_info, usd_per_rune, mimir, tx.asset_amount, synth_supply)
+                    self.get_savers_limits(pool_info, usd_per_rune, mimir, tx.asset_amount)
                 pool_depth_part = f'Savers cap is {saver_pb} full. ' \
                                   f'You can add {short_money(amount_more)} {asset_more} more.'
                 pool_percent_part = f" ({saver_percent:.2f}% of vault)" if saver_percent > self.MIN_PERCENT_TO_SHOW \
@@ -840,6 +839,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         total_earned_usd = savers.total_rune_earned * event.price_holder.usd_per_rune
         avg_apr_change, saver_number_change, total_earned_change_usd, total_usd_change = \
             self.get_savers_stat_changed_metrics_as_str(event, prev, savers, total_earned_usd)
+        fill_cap = savers.overall_fill_cap_percent(event.price_holder.pool_info_map)
 
         parts.append(
             f'\n'
@@ -853,7 +853,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             f'Earned: {pretty_dollar(total_earned_usd)}{total_earned_change_usd}\n'
         )
         parts.append(
-            f'Total filled: {savers.overall_fill_cap_percent:.1f}%\n\n'
+            f'Total filled: {fill_cap:.1f}%\n\n'
         )
 
         return self.smart_split(parts).strip()

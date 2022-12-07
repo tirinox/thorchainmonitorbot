@@ -20,8 +20,7 @@ async def demo_collect_stat(app: LpAppFramework):
     await app.deps.last_block_fetcher.run_once()
     pool_map = await pf.reload_global_pools()
     ssn = SaversStatsNotifier(app.deps)
-    synth_supply = await ssn.get_synth_supply()
-    data = await ssn.get_all_savers(pool_map, synth_supply,
+    data = await ssn.get_all_savers(pool_map,
                                     app.deps.last_block_store.last_thor_block)
     await ssn.save_savers(data)
     print(data)
@@ -63,7 +62,6 @@ async def demo_show_notification(app: LpAppFramework):
 
     p_data = randomize_savers_data(c_data, fail_chance=0.0)
 
-    app.deps.price_holder.synth_supply = await ssn.get_synth_supply()
     event = EventSaverStats(p_data, c_data, app.deps.price_holder)
 
     loc: BaseLocalization = app.deps.loc_man[Language.RUSSIAN]
@@ -129,9 +127,6 @@ async def demo_show_savers_pic(app: LpAppFramework):
 
     p_data = randomize_savers_data(c_data, fail_chance=0.3)
     # p_data = None
-
-    if not app.deps.price_holder.synth_supply:
-        app.deps.price_holder.synth_supply = await ssn.get_synth_supply()
 
     pic_gen = SaversPictureGenerator(loc, EventSaverStats(
         p_data, c_data, app.deps.price_holder

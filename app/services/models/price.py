@@ -84,7 +84,6 @@ class LastPriceHolder:
         self.pool_info_map: PoolInfoMap = {}
         self.last_update_ts = 0
         self.stable_coins = STABLE_COIN_POOLS
-        self.synth_supply = {}
 
     def is_stable_coin(self, c):
         return c in self.stable_coins
@@ -154,3 +153,10 @@ class LastPriceHolder:
 
     def pool_fuzzy_search(self, query: str) -> List[str]:
         return fuzzy_search(query, self.pool_names)
+
+    def total_synth_supply_in_usd(self):
+        accum = 0.0
+        for p in self.pool_info_map.values():
+            if p.synth_supply:
+                accum += p.synth_supply * p.usd_per_asset
+        return accum

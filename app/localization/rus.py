@@ -299,8 +299,7 @@ class RussianLocalization(BaseLocalization):
                                           pool_info: PoolInfo,
                                           cap: ThorCapInfo = None,
                                           name_map: NameMap = None,
-                                          mimir: MimirHolder = None,
-                                          synth_supply=None):
+                                          mimir: MimirHolder = None):
         (ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short,
          total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
@@ -356,7 +355,7 @@ class RussianLocalization(BaseLocalization):
             if tx.is_savings:
                 cap = None  # it will stop standard LP cap from being shown
                 amount_more, asset_more, saver_pb, saver_cap, saver_percent = \
-                    self.get_savers_limits(pool_info, usd_per_rune, mimir, tx.asset_amount, synth_supply)
+                    self.get_savers_limits(pool_info, usd_per_rune, mimir, tx.asset_amount)
                 saver_cap_part = f'Кап сбережений {saver_pb}. ' \
                                  f'Вы можете добавить еще {pre(short_money(amount_more))} {pre(asset_more)}.'
 
@@ -1643,12 +1642,14 @@ class RussianLocalization(BaseLocalization):
         avg_apr_change, saver_number_change, total_earned_change_usd, total_usd_change = \
             self.get_savers_stat_changed_metrics_as_str(event, prev, savers, total_earned_usd)
 
+        fill_cap = savers.overall_fill_cap_percent(event.price_holder.pool_info_map)
+
         message += (
             f'Всего {code(savers.total_unique_savers)}{saver_number_change} вкладчиков '
             f'в сумме с капиталом {code(short_dollar(savers.total_usd_saved))}{total_usd_change}.\n'
             f'<b>Средние годовые:</b> {pre(pretty_money(savers.average_apr))}%{avg_apr_change}.\n'
             f'Всего заработано: {pre(pretty_dollar(total_earned_usd))}{total_earned_change_usd}.\n'
-            f'Общая заполняемость: {savers.overall_fill_cap_percent:.1f}%'
+            f'Общая заполняемость: {fill_cap:.1f}%'
         )
 
         return message

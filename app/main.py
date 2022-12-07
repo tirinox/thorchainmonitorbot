@@ -172,10 +172,6 @@ class App:
         await d.node_info_fetcher.fetch()  # get nodes beforehand
         await d.mimir_const_fetcher.fetch()  # get constants beforehand
 
-        # get synth supply beforehand! (at least once)
-        ssc = SaversStatsNotifier(d)
-        d.price_holder.synth_supply = await ssc.get_synth_supply()
-
         tasks = [
             # mandatory tasks:
             d.pool_fetcher,
@@ -371,6 +367,7 @@ class App:
             d.pool_fetcher.add_subscriber(supply_notifier)
 
         if d.cfg.get('saver_stats.enabled', True):
+            ssc = SaversStatsNotifier(d)
             d.pool_fetcher.add_subscriber(ssc)
             ssc.add_subscriber(d.alert_presenter)
 

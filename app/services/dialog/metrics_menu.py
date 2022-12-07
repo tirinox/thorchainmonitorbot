@@ -151,9 +151,6 @@ class MetricsDialog(BaseDialog):
 
         prev_data = await ssn.get_previous_saver_stats(DAY)
 
-        if self.deps.price_holder.synth_supply:
-            self.deps.price_holder.synth_supply = await ssn.get_synth_supply()
-
         event = EventSaverStats(
             prev_data, c_data, self.deps.price_holder
         )

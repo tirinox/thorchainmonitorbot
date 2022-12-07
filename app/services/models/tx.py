@@ -523,4 +523,4 @@ class EventLargeTransaction:
     pool_info: PoolInfo
     cap_info: ThorCapInfo = None
     mimir: MimirHolder = None
-    synth_supply: dict = None
+

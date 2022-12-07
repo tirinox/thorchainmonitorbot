@@ -130,7 +130,6 @@ async def load_tx(app, mdg, q_path, find_aff=False):
 
 async def send_tx_notification(app, ex_tx, loc: BaseLocalization = None):
     await app.deps.pool_fetcher.run_once()
-    app.deps.price_holder.synth_supply = await SaversStatsNotifier(app.deps).get_synth_supply()
     pool = ex_tx.first_pool_l1
     pool_info: PoolInfo = app.deps.price_holder.pool_info_map.get(pool)
     full_rune = ex_tx.calc_full_rune_amount(app.deps.price_holder.pool_info_map)
@@ -145,8 +144,7 @@ async def send_tx_notification(app, ex_tx, loc: BaseLocalization = None):
         loc = app.deps.loc_man[lang]
         text = loc.notification_text_large_single_tx(ex_tx, rune_price, pool_info,
                                                      name_map=nm,
-                                                     mimir=app.deps.mimir_const_holder,
-                                                     synth_supply=app.deps.price_holder.synth_supply)
+                                                     mimir=app.deps.mimir_const_holder)
         await app.send_test_tg_message(text)
         sep()
         print(text)

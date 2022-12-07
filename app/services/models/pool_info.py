@@ -160,6 +160,10 @@ class PoolInfo:
     def synth_asset_name(self):
         return self.asset.replace('.', '/')
 
+    @property
+    def synth_supply_float(self):
+        return thor_to_float(self.synth_supply)
+
 
 @dataclass
 class LPPosition:
@@ -228,6 +232,7 @@ def parse_thor_pools(thor_pools: List[ThorPool]) -> PoolInfoMap:
             units=int(p.pool_units),
             savers_depth=p.savers_depth,
             savers_units=p.savers_units,
+            synth_supply=p.synth_supply,
         )
         for p in thor_pools
     }
@@ -403,9 +408,23 @@ class AllSavers:
     def total_rune_earned(self):
         return sum(p.runes_earned for p in self.vaults)
 
-    @property
-    def overall_fill_cap_percent(self):
-        # fixme
-        overall_saved = sum(p.total_asset_saved * p.usd_per_asset for p in self.vaults)
-        overall_cap = sum(p.asset_cap * p.usd_per_asset for p in self.vaults)
-        return overall_saved / overall_cap * 100.0 if overall_cap else 0.0
+    def calculate_synth_minted_usd(self, pool_map: PoolInfoMap):
+        accum = 0.0
+        for vault in self.vaults:
+            pool = pool_map.get(vault.asset)
+            if pool:
+                accum += pool.synth_supply_float * pool.usd_per_asset
+        return accum
+
+    def calculate_synth_possible_usd(self, pool_map: PoolInfoMap):
+        accum = 0.0
+        for vault in self.vaults:
+            pool = pool_map.get(vault.asset)
+            if pool:
+                accum += vault.asset_cap * pool.usd_per_asset
+        return accum
+
+    def overall_fill_cap_percent(self, pool_map: PoolInfoMap):
+        synth_minted_usd = self.calculate_synth_minted_usd(pool_map)
+        synth_possible_usd = self.calculate_synth_possible_usd(pool_map)
+        return synth_minted_usd / synth_possible_usd * 100.0 if synth_possible_usd else 0.0

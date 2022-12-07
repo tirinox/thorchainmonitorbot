@@ -461,8 +461,7 @@ class BaseLocalization(ABC):  # == English
                                           pool_info: PoolInfo,
                                           cap: ThorCapInfo = None,
                                           name_map: NameMap = None,
-                                          mimir: MimirHolder = None,
-                                          synth_supply=None):
+                                          mimir: MimirHolder = None):
         (ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short,
          total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
@@ -519,7 +518,7 @@ class BaseLocalization(ABC):  # == English
                 cap = None  # it will stop standard LP cap from being shown
 
                 amount_more, asset_more, saver_pb, saver_cap, saver_percent = \
-                    self.get_savers_limits(pool_info, usd_per_rune, mimir, tx.asset_amount, synth_supply)
+                    self.get_savers_limits(pool_info, usd_per_rune, mimir, tx.asset_amount)
                 saver_cap_part = f'Savers cap is {saver_pb} full. ' \
                                  f'You can add {pre(short_money(amount_more))} {pre(asset_more)} more.'
 
@@ -616,13 +615,11 @@ class BaseLocalization(ABC):  # == English
 
         return msg.strip()
 
-    def get_savers_limits(self, pool: PoolInfo, usd_per_rune, mimir: MimirHolder, asset_amount, synth_supply):
+    def get_savers_limits(self, pool: PoolInfo, usd_per_rune, mimir: MimirHolder, asset_amount):
         max_synth_per_asset_ratio = mimir.get_max_synth_per_pool_depth()
         cap = pool.get_synth_cap_in_asset_float(max_synth_per_asset_ratio)
-        pool_synth_supply = synth_supply.get(pool.synth_asset_name, 0) or pool.savers_depth_float
-        amount_more = pool.how_much_savings_you_can_add(pool_synth_supply, max_synth_per_asset_ratio)
-        # noinspection PyTypeChecker
-        saver_pb = self._cap_progress_bar(ThorCapInfo(cap, pool_synth_supply, usd_per_rune))
+        amount_more = pool.how_much_savings_you_can_add(pool.synth_supply_float, max_synth_per_asset_ratio)
+        saver_pb = self._cap_progress_bar(ThorCapInfo(cap, pool.synth_supply_float, usd_per_rune))
         saver_pct = asset_amount / pool.savers_depth_float * 100.0 if pool.savers_depth else 100
         return amount_more, Asset(pool.asset).name, saver_pb, thor_to_float(cap), saver_pct
 
@@ -2155,13 +2152,15 @@ class BaseLocalization(ABC):  # == English
         avg_apr_change, saver_number_change, total_earned_change_usd, total_usd_change = \
             self.get_savers_stat_changed_metrics_as_str(event, prev, savers, total_earned_usd)
 
+        fill_cap = savers.overall_fill_cap_percent(event.price_holder.pool_info_map)
+
         message += (
             f'\n'
             f'Total {code(savers.total_unique_savers)}{saver_number_change} savers '
             f'with {code(short_dollar(savers.total_usd_saved))}{total_usd_change} saved.\n'
             f'<b>Average APR</b> is {pre(pretty_money(savers.average_apr))}%{avg_apr_change}.\n'
             f'Total earned: {pre(pretty_dollar(total_earned_usd))}{total_earned_change_usd}.\n'
-            f'Total filled: {savers.overall_fill_cap_percent:.1f}%'
+            f'Total filled: {fill_cap:.1f}%'
         )
 
         return message

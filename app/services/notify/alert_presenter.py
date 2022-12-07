@@ -49,7 +49,6 @@ class AlertPresenter(INotified):
             txs_event.transaction, txs_event.usd_per_rune, txs_event.pool_info, txs_event.cap_info,
             name_map,
             txs_event.mimir,
-            txs_event.synth_supply,
         )
 
     async def _handle_rune_transfer(self, transfer: RuneTransfer):
