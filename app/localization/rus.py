@@ -299,7 +299,8 @@ class RussianLocalization(BaseLocalization):
                                           pool_info: PoolInfo,
                                           cap: ThorCapInfo = None,
                                           name_map: NameMap = None,
-                                          mimir: MimirHolder = None):
+                                          mimir: MimirHolder = None,
+                                          synth_supply=None):
         (ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short,
          total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
@@ -355,7 +356,7 @@ class RussianLocalization(BaseLocalization):
             if tx.is_savings:
                 cap = None  # it will stop standard LP cap from being shown
                 amount_more, asset_more, saver_pb, saver_cap, saver_percent = \
-                    self.get_savers_limits(pool_info, usd_per_rune, mimir, tx.asset_amount)
+                    self.get_savers_limits(pool_info, usd_per_rune, mimir, tx.asset_amount, synth_supply)
                 saver_cap_part = f'Кап сбережений {saver_pb}. ' \
                                  f'Вы можете добавить еще {pre(short_money(amount_more))} {pre(asset_more)}.'
 

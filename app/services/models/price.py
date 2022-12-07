@@ -84,6 +84,7 @@ class LastPriceHolder:
         self.pool_info_map: PoolInfoMap = {}
         self.last_update_ts = 0
         self.stable_coins = STABLE_COIN_POOLS
+        self.synth_supply = {}
 
     def is_stable_coin(self, c):
         return c in self.stable_coins

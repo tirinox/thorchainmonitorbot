@@ -20,7 +20,8 @@ async def demo_collect_stat(app: LpAppFramework):
     await app.deps.last_block_fetcher.run_once()
     pool_map = await pf.reload_global_pools()
     ssn = SaversStatsNotifier(app.deps)
-    data = await ssn.get_all_savers(pool_map, app.deps.price_holder.usd_per_rune,
+    synth_supply = await ssn.get_synth_supply()
+    data = await ssn.get_all_savers(pool_map, synth_supply,
                                     app.deps.last_block_store.last_thor_block)
     await ssn.save_savers(data)
     print(data)
@@ -37,7 +38,7 @@ def randomize_savers_data(c_data: AllSavers, sc=0.2, fail_chance=0.3):
         return x * random.uniform(1.0 - scatter, 1.0 + scatter)
 
     p_data = dataclasses.replace(c_data,
-                                 total_unique_savers=int(r(c_data.total_unique_savers))
+                                 total_unique_savers=int(r(c_data.total_unique_savers, no_change_chance=0.1))
                                  )
     p_data.vaults = [p._replace(
         apr=r(p.apr),
@@ -62,8 +63,8 @@ async def demo_show_notification(app: LpAppFramework):
 
     p_data = randomize_savers_data(c_data, fail_chance=0.0)
 
-    synth_supply = await ssn.get_synth_supply()
-    event = EventSaverStats(p_data, c_data, app.deps.price_holder, synth_supply)
+    app.deps.price_holder.synth_supply = await ssn.get_synth_supply()
+    event = EventSaverStats(p_data, c_data, app.deps.price_holder)
 
     loc: BaseLocalization = app.deps.loc_man[Language.RUSSIAN]
     await app.send_test_tg_message(loc.notification_text_saver_stats(event))
@@ -126,13 +127,14 @@ async def demo_show_savers_pic(app: LpAppFramework):
     loc_man: LocalizationManager = app.deps.loc_man
     loc = loc_man.get_from_lang(Language.ENGLISH)
 
-    p_data = randomize_savers_data(c_data, fail_chance=0.8)
+    p_data = randomize_savers_data(c_data, fail_chance=0.3)
     # p_data = None
 
-    synth_supply = await ssn.get_synth_supply()
+    if not app.deps.price_holder.synth_supply:
+        app.deps.price_holder.synth_supply = await ssn.get_synth_supply()
 
     pic_gen = SaversPictureGenerator(loc, EventSaverStats(
-        p_data, c_data, app.deps.price_holder, synth_supply
+        p_data, c_data, app.deps.price_holder
     ))
     pic, name = await pic_gen.get_picture()
 

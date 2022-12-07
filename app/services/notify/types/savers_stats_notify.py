@@ -1,6 +1,6 @@
 import asyncio
 from itertools import chain
-from typing import NamedTuple, Optional, Dict
+from typing import NamedTuple, Optional
 
 from services.lib.constants import thor_to_float
 from services.lib.cooldown import Cooldown
@@ -17,7 +17,6 @@ class EventSaverStats(NamedTuple):
     previous_stats: Optional[AllSavers]
     current_stats: AllSavers
     price_holder: LastPriceHolder
-    synth_supply: Dict[str, float]
 
 
 class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
@@ -48,12 +47,11 @@ class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
             r[denom] = thor_to_float(entry.get('amount', 0))
         return r
 
-    async def get_all_savers(self, pool_map: PoolInfoMap, usd_per_rune, block_no):
+    async def get_all_savers(self, pool_map: PoolInfoMap, synth_supply, block_no):
         active_pools = [p for p in pool_map.values() if p.is_enabled and p.savers_units > 0]
         per_pool_members = await asyncio.gather(
             *(self.get_one_pool_members(p.asset) for p in active_pools)
         )
-        supply_dict = await self.get_synth_supply()
 
         max_synth_per_pool_depth = self.deps.mimir_const_holder.get_max_synth_per_pool_depth()
 
@@ -62,7 +60,7 @@ class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
         for pool, members in zip(active_pools, per_pool_members):
             synth_cap = pool.get_synth_cap_in_asset_float(max_synth_per_pool_depth)
 
-            synth_supply = supply_dict.get(pool.asset.replace('.', '/'), 0) or pool.savers_depth_float
+            this_synth_supply = synth_supply.get(pool.synth_asset_name, 0) or pool.savers_depth_float
 
             pep_pool_savers.append(SaverVault(
                 pool.asset,
@@ -72,7 +70,7 @@ class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
                 apr=pool.get_savers_apr(block_no) * 100.0,
                 asset_cap=synth_cap,
                 runes_earned=pool.saver_growth_rune,
-                synth_supply=synth_supply,
+                synth_supply=this_synth_supply,
             ))
 
         savers = AllSavers(
@@ -102,21 +100,24 @@ class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
 
         return savers
 
-    async def do_notification(self, current_savers: AllSavers, synth_supply):
+    async def do_notification(self, current_savers: AllSavers):
         previous_savers = await self.get_previous_saver_stats(self.cd_notify.cooldown)
         await self.pass_data_to_listeners(EventSaverStats(
             previous_savers, current_savers,
             self.deps.price_holder,
-            synth_supply
         ))
 
     async def on_data(self, sender, rune_market: RuneMarketInfo):
         if await self.cd_write_stats.can_do():
             self.logger.info('Start loading saver stats...')
-            savers = await self.get_all_savers(
-                rune_market.pools,
-                self.deps.price_holder.usd_per_rune,
-                self.deps.last_block_store.last_thor_block)
+
+            # todo: move to a middleware
+            synth_supply = await self.get_synth_supply()
+            if self.deps.price_holder:
+                self.deps.price_holder.synth_supply = synth_supply
+
+            savers = await self.get_all_savers(rune_market.pools, synth_supply,
+                                               self.deps.last_block_store.last_thor_block)
 
             self.logger.info(f'Finished loading saver stats: '
                              f'{savers.total_unique_savers} total savers, '

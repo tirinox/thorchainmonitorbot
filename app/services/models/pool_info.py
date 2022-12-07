@@ -156,6 +156,10 @@ class PoolInfo:
         saver_growth = (self.savers_depth - self.savers_units) / self.savers_depth
         return (saver_growth / (block_no - SAVERS_BEGIN_BLOCK)) * blocks_per_year
 
+    @property
+    def synth_asset_name(self):
+        return self.asset.replace('.', '/')
+
 
 @dataclass
 class LPPosition:

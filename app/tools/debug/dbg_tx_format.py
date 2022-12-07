@@ -16,6 +16,7 @@ from services.lib.w3.aggregator import AggregatorDataExtractor
 from services.models.pool_info import PoolInfo
 from services.models.tx import ThorTxType
 from services.notify.alert_presenter import AlertPresenter
+from services.notify.types.savers_stats_notify import SaversStatsNotifier
 from services.notify.types.tx_notify import SwitchTxNotifier, SwapTxNotifier, LiquidityTxNotifier
 from tools.lib.lp_common import LpAppFramework, load_sample_txs, Receiver, demo_run_txs_example_file
 
@@ -71,7 +72,7 @@ async def demo_midgard_test_large_ilp(app):
 
 
 async def demo_test_savers_vaults(app):
-    q_path = free_url_gen.url_for_tx(0, 50, txid='4C76DC9DFE4EE4C615C2C07A69CFCB35DD9720A4FE5181841A09BA5D09B5F5DC')
+    q_path = free_url_gen.url_for_tx(0, 50, txid='050000225130CE9C5DBDDF0D1821036FC1CB7473A01EA41BB4F1EB5E3431A036')
     await present_one_aff_tx(app, q_path, find_aff=False)
 
 
@@ -129,6 +130,7 @@ async def load_tx(app, mdg, q_path, find_aff=False):
 
 async def send_tx_notification(app, ex_tx, loc: BaseLocalization = None):
     await app.deps.pool_fetcher.run_once()
+    app.deps.price_holder.synth_supply = await SaversStatsNotifier(app.deps).get_synth_supply()
     pool = ex_tx.first_pool_l1
     pool_info: PoolInfo = app.deps.price_holder.pool_info_map.get(pool)
     full_rune = ex_tx.calc_full_rune_amount(app.deps.price_holder.pool_info_map)
@@ -143,7 +145,8 @@ async def send_tx_notification(app, ex_tx, loc: BaseLocalization = None):
         loc = app.deps.loc_man[lang]
         text = loc.notification_text_large_single_tx(ex_tx, rune_price, pool_info,
                                                      name_map=nm,
-                                                     mimir=app.deps.mimir_const_holder)
+                                                     mimir=app.deps.mimir_const_holder,
+                                                     synth_supply=app.deps.price_holder.synth_supply)
         await app.send_test_tg_message(text)
         sep()
         print(text)
@@ -204,12 +207,12 @@ async def main():
     # await refund_full_rune(app)
     # await demo_midgard_test_large_ilp(app)
     # await demo_full_tx_pipeline(app)
-    # await demo_test_savers_vaults(app)
+    await demo_test_savers_vaults(app)
     # await demo_aggr_aff(app)
-    await demo_test_aff_add_liq(app)
+    # await demo_test_aff_add_liq(app)
     # await demo_test_2(app)
     # await demo_same_merge_swap(app)
-    await demo_withdraw_savers(app)
+    # await demo_withdraw_savers(app)
 
 
 if __name__ == '__main__':
