@@ -6,7 +6,9 @@ from localization.manager import BaseLocalization
 from services.jobs.affiliate_merge import AffiliateTXMerger
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.volume_filler import VolumeFillerUpdater
+from services.lib.constants import Chains, thor_to_float
 from services.lib.delegates import INotified
+from services.lib.explorers import get_explorer_url_to_address
 from services.lib.midgard.name_service import NameMap
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import free_url_gen
@@ -119,6 +121,25 @@ async def present_one_aff_tx(app, q_path, find_aff=False):
     await send_tx_notification(app, ex_tx)
 
 
+async def demo_find_last_savers_additions(app: LpAppFramework):
+    d = app.deps
+    fetcher_tx = TxFetcher(d, tx_types=(ThorTxType.TYPE_ADD_LIQUIDITY,))
+
+    aggregator = AggregatorDataExtractor(d)
+    fetcher_tx.add_subscriber(aggregator)
+
+    volume_filler = VolumeFillerUpdater(d)
+    aggregator.add_subscriber(volume_filler)
+
+    txs = await fetcher_tx.fetch_all_tx(liquidity_change_only=True, max_pages=5)
+    for tx in txs:
+        if tx.first_pool == 'BTC/BTC':
+            url = get_explorer_url_to_address(d.cfg.network_id, Chains.THOR, tx.sender_address)
+            amt = thor_to_float(tx.first_input_tx.first_amount)
+            print(f'{tx.first_pool} ({url}) amount = {amt} {tx.first_input_tx.first_asset}')
+            sep()
+
+
 async def load_tx(app, mdg, q_path, find_aff=False):
     tx_parser = get_parser_by_network_id(app.deps.cfg.network_id)
     j = await mdg.request(q_path)
@@ -205,12 +226,13 @@ async def main():
     # await refund_full_rune(app)
     # await demo_midgard_test_large_ilp(app)
     # await demo_full_tx_pipeline(app)
-    await demo_test_savers_vaults(app)
+    # await demo_test_savers_vaults(app)
     # await demo_aggr_aff(app)
     # await demo_test_aff_add_liq(app)
     # await demo_test_2(app)
     # await demo_same_merge_swap(app)
     # await demo_withdraw_savers(app)
+    await demo_find_last_savers_additions(app)
 
 
 if __name__ == '__main__':
