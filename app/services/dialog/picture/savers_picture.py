@@ -75,7 +75,7 @@ class SaversPictureGenerator(BasePictureGenerator):
                       font=key_metrics_v_font, fill=TC_WHITE, anchor='mm')
             if prev_data:
                 delta = current_value - getattr(prev_data, key)
-                if delta != 0:
+                if abs(delta) > 0.001:
                     draw.text(key_metric_xy(index, dy=46),
                               formatter(delta, signed=True, **kwargs),
                               font=changed_font,
@@ -88,7 +88,7 @@ class SaversPictureGenerator(BasePictureGenerator):
                         formatter=lambda x, signed=False: short_dollar(x * self.event.price_holder.usd_per_rune,
                                                                        signed=signed))
 
-        draw_key_metric(4, self.loc.TEXT_PIC_SAVERS_APR_MEAN, 'average_apr', short_money, postfix='%')
+        draw_key_metric(4, self.loc.TEXT_PIC_SAVERS_APR_MEAN, 'average_apr', lambda x, **kwars: f'{x:+.2f}%')
         draw_key_metric(5, self.loc.TEXT_PIC_SAVERS_TOTAL_FILLED, 'overall_fill_cap_percent', short_money, postfix='%')
 
         # table:

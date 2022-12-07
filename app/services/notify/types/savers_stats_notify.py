@@ -95,8 +95,9 @@ class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
         point, _ = await self.ts.get_best_point_ago(ago_sec, tolerance)
         savers = AllSavers.load_from_ts_points(point)
 
-        pool_map = self.deps.price_holder.pool_info_map
-        savers.fill_total_usd(pool_map)
+        if savers:
+            pool_map = self.deps.price_holder.pool_info_map
+            savers.fill_total_usd(pool_map)
 
         return savers
 
