@@ -1,6 +1,6 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from typing import List, Optional, Iterable, NamedTuple, Tuple
+from typing import List, Optional, NamedTuple
 
 from services.lib.constants import is_rune, RUNE_SYMBOL, Chains, thor_to_float, THOR_BASIS_POINT_MAX
 from services.lib.date_utils import now_ts
@@ -446,7 +446,7 @@ class ThorTx:
         @param pool_map: Pool map
         @param realm: List of ThorSubTx
         @param filter_unknown_runes: forces it to not count Rune-coins if tx_id is empty.
-        This is needed to fit Midgard's peculiarity for savers withdrawals. See the example:
+        This is needed to fit Midgard peculiarity for savers withdrawals. See the example:
         https://midgard.ninerealms.com/v2/actions?txid=C24DF9D0A379519EBEEF2DBD50F5AD85AB7A5B75A2F3C571E185202EE2E9876F
         @return: float
         """
@@ -535,4 +535,3 @@ class EventLargeTransaction:
     pool_info: PoolInfo
     cap_info: ThorCapInfo = None
     mimir: MimirHolder = None
-

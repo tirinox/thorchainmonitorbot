@@ -92,20 +92,26 @@ class LastPriceHolder:
         self.stable_coins = cfg.get('thor.stable_coins', default=STABLE_COIN_POOLS)
         logging.info(f'Stable coins are {", ".join(self.stable_coins)}')
 
-    def _calculate_weighted_rune_price(self):
+    @staticmethod
+    def calculate_rune_price(stable_coins, pool_map: PoolInfoMap) -> float:
         prices, weights = [], []
-        stable_coins = self.stable_coins
+        stable_coins = stable_coins
         for stable_symbol in stable_coins:
-            pool_info = self.pool_info_map.get(stable_symbol)
+            pool_info = pool_map.get(stable_symbol)
             if pool_info and pool_info.balance_rune > 0 and pool_info.asset_per_rune > 0:
                 prices.append(pool_info.asset_per_rune)
                 weights.append(pool_info.balance_rune)
 
         if prices:
-            self.usd_per_rune = weighted_mean(prices, weights)
+            return weighted_mean(prices, weights)
+
+    def _calculate_weighted_rune_price(self):
+        usd_per_rune = self.calculate_rune_price(self.stable_coins, self.pool_info_map)
+
+        if usd_per_rune:
+            self.usd_per_rune = usd_per_rune
         else:
             logging.error(f'LastPriceHolder was unable to find any stable coin pools!')
-            exit(-1)
 
     def _calculate_btc_price(self):
         self.btc_per_rune = 0.0

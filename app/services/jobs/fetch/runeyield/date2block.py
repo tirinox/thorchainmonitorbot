@@ -1,5 +1,4 @@
 from datetime import date, datetime, timedelta
-from typing import Dict
 
 from aioredis import Redis
 from aiothornode.types import ThorLastBlock

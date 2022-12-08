@@ -11,7 +11,7 @@ from services.dialog.picture.savers_picture import SaversPictureGenerator
 from services.jobs.fetch.pool_price import PoolFetcher
 from services.lib.texts import sep
 from services.notify.types.savers_stats_notify import SaversStatsNotifier, EventSaverStats
-from services.models.pool_info import AllSavers
+from services.models.savers import AllSavers
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
 
@@ -137,6 +137,19 @@ async def demo_show_savers_pic(app: LpAppFramework):
     print(name)
 
     save_and_show_pic(pic, 'savers')
+
+
+async def demo_savers_delta_without_timeseries(app):
+    ssn = SaversStatsNotifier(app.deps)
+
+    await app.deps.last_block_fetcher.run_once()
+
+    pf: PoolFetcher = app.deps.pool_fetcher
+    curr_pools = await pf.reload_global_pools()
+
+    curr_saver = await ssn.get_all_savers(curr_pools, app.deps.last_block_store.last_thor_block)
+
+    prev_pools = await pf.load_pools(h)
 
 
 async def main():

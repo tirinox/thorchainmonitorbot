@@ -14,11 +14,11 @@ from services.lib.date_utils import days_ago_noon, now_ts
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import free_url_gen
-from services.lib.money import weighted_mean, Asset
+from services.lib.money import Asset
 from services.lib.utils import pairwise
 from services.models.lp_info import LiquidityPoolReport, CurrentLiquidity, FeeReport, ReturnMetrics, \
-    LPDailyGraphPoint, LPDailyChartByPoolDict, ILProtectionReport
-from services.models.pool_info import LPPosition, PoolInfoMap, PoolInfo, pool_share
+    LPDailyGraphPoint, LPDailyChartByPoolDict, ILProtectionReport, LPPosition
+from services.models.pool_info import PoolInfoMap, PoolInfo, pool_share
 from services.models.tx import ThorTx, ThorTxType, final_liquidity, cut_off_previous_lp_sessions
 
 HeightToAllPools = Dict[int, PoolInfoMap]
@@ -299,15 +299,9 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         return results
 
     def _calculate_weighted_rune_price_in_usd(self, pool_map: PoolInfoMap, use_default_price=False) -> Optional[float]:
-        prices, weights = [], []
-        for stable_symbol in self.deps.price_holder.stable_coins:
-            pool_info = pool_map.get(stable_symbol)
-            if pool_info and pool_info.balance_rune > 0 and pool_info.asset_per_rune > 0:
-                prices.append(pool_info.asset_per_rune)
-                weights.append(pool_info.balance_rune)
-
-        if prices:
-            return weighted_mean(prices, weights)
+        price = self.deps.price_holder.calculate_rune_price(self.deps.price_holder.stable_coins, pool_map)
+        if price:
+            return price
         elif use_default_price:
             self.logger.warning('No USD price can be extracted. Perhaps USD pools are missing at that point')
             return DEFAULT_RUNE_PRICE  # todo: get rune price somewhere else!

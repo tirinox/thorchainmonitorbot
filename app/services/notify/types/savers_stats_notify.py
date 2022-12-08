@@ -7,7 +7,8 @@ from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.money import short_dollar
 from services.lib.utils import WithLogger
-from services.models.pool_info import PoolInfoMap, SaverVault, AllSavers
+from services.models.pool_info import PoolInfoMap
+from services.models.savers import SaverVault, AllSavers, get_savers_apr
 from services.models.price import RuneMarketInfo, LastPriceHolder
 from services.models.time_series import TimeSeries
 
@@ -39,7 +40,7 @@ class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
     async def get_all_savers(self, pool_map: PoolInfoMap, block_no):
         active_pools = [p for p in pool_map.values() if p.is_enabled and p.savers_units > 0]
         per_pool_members = await asyncio.gather(
-            *(self.get_one_pool_members(p.asset) for p in active_pools)
+            *(self.get_one_pool_members(p.asset, block_no) for p in active_pools)
         )
 
         max_synth_per_pool_depth = self.deps.mimir_const_holder.get_max_synth_per_pool_depth()
@@ -54,7 +55,7 @@ class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
                 len(members),
                 total_asset_saved=pool.savers_depth_float,
                 total_asset_saved_usd=SaverVault.calc_total_saved_usd(pool.asset, pool.savers_depth_float, pool_map),
-                apr=pool.get_savers_apr(block_no) * 100.0,
+                apr=get_savers_apr(pool, block_no) * 100.0,
                 asset_cap=synth_cap,
                 runes_earned=pool.saver_growth_rune,
                 synth_supply=pool.synth_supply_float,

@@ -7,7 +7,7 @@ from typing import List, Dict
 from services.lib.constants import thor_to_float
 from services.lib.date_utils import DAY
 from services.models.base import BaseModelMixin
-from services.models.pool_info import PoolInfo, LPPosition, pool_share
+from services.models.pool_info import PoolInfo, pool_share
 
 BECH_2_CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
 
@@ -43,6 +43,32 @@ class LPAddress(BaseModelMixin):
             return False
 
         return addr.isalnum()
+
+
+@dataclass
+class LPPosition:
+    pool: str
+    liquidity_units: int
+    liquidity_total: int
+    rune_balance: float
+    asset_balance: float
+    usd_per_rune: float
+    usd_per_asset: float
+    total_usd_balance: float
+
+    @classmethod
+    def create(cls, pool: PoolInfo, my_units: int, usd_per_rune: float):
+        usd_per_asset = usd_per_rune / pool.asset_per_rune
+        return cls(
+            pool=pool.asset,
+            liquidity_units=my_units,
+            liquidity_total=pool.units if pool.units else pool.pool_units,
+            rune_balance=thor_to_float(pool.balance_rune),
+            asset_balance=thor_to_float(pool.balance_asset),
+            usd_per_rune=usd_per_rune,
+            usd_per_asset=usd_per_asset,
+            total_usd_balance=thor_to_float(pool.balance_rune) * usd_per_rune * 2.0
+        )
 
 
 @dataclass
