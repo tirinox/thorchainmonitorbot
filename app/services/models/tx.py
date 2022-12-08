@@ -440,11 +440,22 @@ class ThorTx:
             return self.rune_amount * f, self.asset_amount / self.asset_per_rune * f
 
     @staticmethod
-    def calc_amount(pool_map: PoolInfoMap, realm):
+    def calc_amount(pool_map: PoolInfoMap, realm, filter_unknown_runes=False):
+        """
+        Full Rune volume of the TX
+        @param pool_map: Pool map
+        @param realm: List of ThorSubTx
+        @param filter_unknown_runes: forces it to not count Rune-coins if tx_id is empty.
+        This is needed to fit Midgard's peculiarity for savers withdrawals. See the example:
+        https://midgard.ninerealms.com/v2/actions?txid=C24DF9D0A379519EBEEF2DBD50F5AD85AB7A5B75A2F3C571E185202EE2E9876F
+        @return: float
+        """
         rune_sum = 0.0
         for tx in realm:
             for coin in tx.coins:
                 if is_rune(coin.asset):
+                    if filter_unknown_runes and not tx.tx_id:
+                        continue
                     rune_sum += coin.amount_float
                 else:
                     pool_name = Asset.to_L1_pool_name(coin.asset)
@@ -464,7 +475,8 @@ class ThorTx:
             self.asset_per_rune = pool_info.asset_per_rune if pool_info else 0.0
 
             if self.type in (ThorTxType.TYPE_SWAP, ThorTxType.TYPE_WITHDRAW):
-                r = self.calc_amount(pool_map, self.search_realm(out_only=True))
+                r = self.calc_amount(pool_map, self.search_realm(out_only=True),
+                                     filter_unknown_runes=self.is_savings)
             else:
                 # add, donate, refund
                 r = self.calc_amount(pool_map, self.search_realm(in_only=True))
