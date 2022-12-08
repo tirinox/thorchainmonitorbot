@@ -95,7 +95,7 @@ class NodeInfo(BaseModelMixin):
         return cls(
             status=d.get('status', NodeInfo.DISABLED),
             node_address=d.get('node_address', ''),
-            bond=float(thor_to_float(d.get('bond', 0))),
+            bond=float(thor_to_float(d.get('total_bond', 0))),
             ip_address=d.get('ip_address', ''),
             version=d.get('version', ''),
             slash_points=int(d.get('slash_points', 0)),
