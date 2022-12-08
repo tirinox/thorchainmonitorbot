@@ -9,6 +9,8 @@ from services.dialog.picture.crypto_logo import CryptoLogoDownloader
 from services.dialog.picture.resources import Resources
 from services.dialog.picture.savers_picture import SaversPictureGenerator
 from services.jobs.fetch.pool_price import PoolFetcher
+from services.lib.constants import THOR_BLOCK_TIME
+from services.lib.date_utils import DAY
 from services.lib.texts import sep
 from services.notify.types.savers_stats_notify import SaversStatsNotifier, EventSaverStats
 from services.models.savers import AllSavers
@@ -147,18 +149,37 @@ async def demo_savers_delta_without_timeseries(app):
     pf: PoolFetcher = app.deps.pool_fetcher
     curr_pools = await pf.reload_global_pools()
 
-    curr_saver = await ssn.get_all_savers(curr_pools, app.deps.last_block_store.last_thor_block)
+    last_block = app.deps.last_block_store.last_thor_block
 
-    prev_pools = await pf.load_pools(h)
+    curr_saver = await ssn.get_all_savers(curr_pools, last_block)
+
+    prev_block = int(last_block - 7 * DAY / THOR_BLOCK_TIME)
+    prev_pools = await pf.load_pools(height=prev_block)
+    prev_saver = await ssn.get_all_savers(prev_pools, prev_block)
+
+    print(prev_saver)
+    sep()
+    print(curr_saver)
+
+    loc = app.deps.loc_man[Language.ENGLISH]
+    pic_gen = SaversPictureGenerator(loc, EventSaverStats(
+        prev_saver, curr_saver, app.deps.price_holder
+    ))
+    pic, name = await pic_gen.get_picture()
+
+    print(name)
+
+    save_and_show_pic(pic, 'savers-dynamic')
 
 
 async def main():
     app = LpAppFramework()
     async with app(brief=True):
-        await app.deps.pool_fetcher.run_once()
-        await demo_collect_stat(app)
-        await demo_show_savers_pic(app)
+        # await app.deps.pool_fetcher.run_once()
+        # await demo_collect_stat(app)
+        # await demo_show_savers_pic(app)
         # await demo_show_notification(app)
+        await demo_savers_delta_without_timeseries(app)
 
 
 if __name__ == '__main__':
