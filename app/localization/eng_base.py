@@ -55,7 +55,7 @@ class BaseLocalization(ABC):  # == English
 
     TEXT_DECORATION_ENABLED = True
 
-    LOADING = '⌛ Loading...'
+    LOADING = '⌛ <i>Loading...</i>'
     LONG_DASH = '–'
     SUCCESS = '✅ Success!'
     ERROR = '❌ Error'

@@ -35,7 +35,7 @@ from services.notify.types.savers_stats_notify import EventSaverStats
 
 
 class RussianLocalization(BaseLocalization):
-    LOADING = '⌛ Загрузка...'
+    LOADING = '⌛ <i>Загрузка...</i>'
     SUCCESS = '✅ Успех!'
     ND = 'Неопр.'
     NA = 'Н/Д'
