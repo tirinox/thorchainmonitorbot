@@ -2,14 +2,15 @@ import asyncio
 from itertools import chain
 from typing import NamedTuple, Optional
 
+from services.jobs.fetch.pool_price import PoolFetcher
 from services.lib.cooldown import Cooldown
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.money import short_dollar
 from services.lib.utils import WithLogger
 from services.models.pool_info import PoolInfoMap
-from services.models.savers import SaverVault, AllSavers, get_savers_apr
 from services.models.price import RuneMarketInfo, LastPriceHolder
+from services.models.savers import SaverVault, AllSavers, get_savers_apr
 from services.models.time_series import TimeSeries
 
 
@@ -49,12 +50,12 @@ class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
 
         for pool, members in zip(active_pools, per_pool_members):
             synth_cap = pool.get_synth_cap_in_asset_float(max_synth_per_pool_depth)
-
+            total_usd = SaverVault.calc_total_saved_usd(pool.asset, pool.savers_depth_float, pool_map)
             pep_pool_savers.append(SaverVault(
                 pool.asset,
                 len(members),
                 total_asset_saved=pool.savers_depth_float,
-                total_asset_saved_usd=SaverVault.calc_total_saved_usd(pool.asset, pool.savers_depth_float, pool_map),
+                total_asset_saved_usd=total_usd,
                 apr=get_savers_apr(pool, block_no) * 100.0,
                 asset_cap=synth_cap,
                 runes_earned=pool.saver_growth_rune,
@@ -85,6 +86,27 @@ class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
             savers.fill_total_usd(pool_map)
 
         return savers
+
+    async def get_savers_event_dynamically(self, delta_sec) -> EventSaverStats:
+        usd_per_rune = self.deps.price_holder.usd_per_rune
+
+        pf: PoolFetcher = self.deps.pool_fetcher
+        curr_pools = await pf.load_pools(usd_per_rune=usd_per_rune)
+
+        last_block = self.deps.last_block_store.last_thor_block
+
+        curr_saver = await self.get_all_savers(curr_pools, last_block)
+
+        prev_saver = None
+        if delta_sec:
+            prev_block = self.deps.last_block_store.block_time_ago(delta_sec)
+            prev_pools = await pf.load_pools(height=prev_block, usd_per_rune=usd_per_rune)
+            if prev_pools:
+                prev_saver = await self.get_all_savers(prev_pools, prev_block)
+
+        return EventSaverStats(
+            prev_saver, curr_saver, self.deps.price_holder
+        )
 
     async def do_notification(self, current_savers: AllSavers):
         previous_savers = await self.get_previous_saver_stats(self.cd_notify.cooldown)

@@ -9,11 +9,11 @@ from services.dialog.picture.crypto_logo import CryptoLogoDownloader
 from services.dialog.picture.resources import Resources
 from services.dialog.picture.savers_picture import SaversPictureGenerator
 from services.jobs.fetch.pool_price import PoolFetcher
-from services.lib.constants import THOR_BLOCK_TIME
 from services.lib.date_utils import DAY
 from services.lib.texts import sep
-from services.notify.types.savers_stats_notify import SaversStatsNotifier, EventSaverStats
+from services.models.pool_info import PoolInfo
 from services.models.savers import AllSavers
+from services.notify.types.savers_stats_notify import SaversStatsNotifier, EventSaverStats
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
 
@@ -146,6 +146,8 @@ async def demo_savers_delta_without_timeseries(app):
 
     await app.deps.last_block_fetcher.run_once()
 
+    usd_per_rune = app.deps.price_holder.usd_per_rune
+
     pf: PoolFetcher = app.deps.pool_fetcher
     curr_pools = await pf.reload_global_pools()
 
@@ -153,8 +155,13 @@ async def demo_savers_delta_without_timeseries(app):
 
     curr_saver = await ssn.get_all_savers(curr_pools, last_block)
 
-    prev_block = int(last_block - 7 * DAY / THOR_BLOCK_TIME)
+    prev_block = app.deps.last_block_store.block_time_ago(DAY)
     prev_pools = await pf.load_pools(height=prev_block)
+
+    for pool in prev_pools.values():
+        pool: PoolInfo
+        pool.fill_usd_per_asset(usd_per_rune)
+
     prev_saver = await ssn.get_all_savers(prev_pools, prev_block)
 
     print(prev_saver)

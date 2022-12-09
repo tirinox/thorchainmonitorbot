@@ -130,7 +130,7 @@ class PoolFetcher(BaseFetcher):
     def _hash_key_day(self, dt: datetime):
         return str(int(dt.timestamp()) // self.CACHE_TOLERANCE * self.CACHE_TOLERANCE)
 
-    async def load_pools(self, height=None, caching=True) -> PoolInfoMap:
+    async def load_pools(self, height=None, caching=True, usd_per_rune=None) -> PoolInfoMap:
         if caching:
             r: Redis = await self.deps.db.get_redis()
 
@@ -140,10 +140,15 @@ class PoolFetcher(BaseFetcher):
             if not pool_map:
                 pool_map = await self._fetch_current_pool_data_from_thornode(height)
                 await self._save_to_cache(r, cache_key, pool_map)
-
-            return pool_map
         else:
-            return await self._fetch_current_pool_data_from_thornode(height)
+            pool_map = await self._fetch_current_pool_data_from_thornode(height)
+
+        if pool_map and usd_per_rune:
+            for pool in pool_map.values():
+                pool: PoolInfo
+                pool.fill_usd_per_asset(usd_per_rune)
+
+        return pool_map
 
     async def purge_pool_height_cache(self):
         r: Redis = await self.deps.db.get_redis()

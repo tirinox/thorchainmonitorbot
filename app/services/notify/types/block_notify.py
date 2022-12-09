@@ -4,7 +4,7 @@ from aiothornode.types import ThorLastBlock
 
 from services.jobs.fetch.last_block import LastBlockFetcher
 from services.lib.config import SubConfig
-from services.lib.constants import THOR_BLOCK_SPEED
+from services.lib.constants import THOR_BLOCK_SPEED, THOR_BLOCK_TIME
 from services.lib.cooldown import Cooldown, CooldownBiTrigger, INFINITE_TIME
 from services.lib.date_utils import DAY, parse_timespan_to_seconds, now_ts, format_time_ago_short, MINUTE
 from services.lib.delegates import INotified, WithDelegates
@@ -23,6 +23,9 @@ class LastBlockStore(INotified, WithDelegates, WithLogger):
         self.series = TimeSeries(self.KEY_SERIES_BLOCK_HEIGHT, self.deps.db)
         self.last_thor_block = 0
         self.sleep_period = deps.last_block_fetcher.sleep_period
+
+    def block_time_ago(self, seconds):
+        return int(self.last_thor_block - seconds / THOR_BLOCK_TIME)
 
     @staticmethod
     def _estimate_last_thor_block(data: Dict[str, ThorLastBlock]):
