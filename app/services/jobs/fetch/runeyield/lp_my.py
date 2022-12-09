@@ -299,7 +299,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         return results
 
     def _calculate_weighted_rune_price_in_usd(self, pool_map: PoolInfoMap, use_default_price=False) -> Optional[float]:
-        price = self.deps.price_holder.calculate_rune_price(self.deps.price_holder.stable_coins, pool_map)
+        price = self.deps.price_holder.calculate_rune_price_here(pool_map)
         if price:
             return price
         elif use_default_price:

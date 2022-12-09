@@ -143,12 +143,15 @@ class PoolFetcher(BaseFetcher):
         else:
             pool_map = await self._fetch_current_pool_data_from_thornode(height)
 
+        self.fill_usd_in_pools(pool_map, usd_per_rune)
+        return pool_map
+
+    @staticmethod
+    def fill_usd_in_pools(pool_map: PoolInfoMap, usd_per_rune):
         if pool_map and usd_per_rune:
             for pool in pool_map.values():
                 pool: PoolInfo
                 pool.fill_usd_per_asset(usd_per_rune)
-
-        return pool_map
 
     async def purge_pool_height_cache(self):
         r: Redis = await self.deps.db.get_redis()
