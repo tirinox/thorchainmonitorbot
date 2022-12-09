@@ -8,7 +8,7 @@ from services.lib.date_utils import DAY
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.money import short_dollar
-from services.lib.utils import WithLogger
+from services.lib.utils import WithLogger, a_result_cached
 from services.models.pool_info import PoolInfoMap
 from services.models.price import RuneMarketInfo, LastPriceHolder
 from services.models.savers import SaverVault, AllSavers, get_savers_apr
@@ -119,6 +119,14 @@ class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
         return EventSaverStats(
             prev_saver, curr_saver, price_holder
         )
+
+    CACHE_TTL = 60
+
+    @a_result_cached(CACHE_TTL)
+    async def get_savers_event_dynamically_cached(self, period,
+                                                  apr_period=7 * DAY,
+                                                  usd_per_rune=None, last_block_no=None) -> EventSaverStats:
+        return await self.get_savers_event_dynamically(period, apr_period, usd_per_rune, last_block_no)
 
     async def on_data(self, sender, rune_market: RuneMarketInfo):
         if await self.cd_notify.can_do():
