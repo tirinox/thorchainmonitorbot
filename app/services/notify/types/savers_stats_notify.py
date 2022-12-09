@@ -4,6 +4,7 @@ from typing import NamedTuple, Optional
 
 from services.jobs.fetch.pool_price import PoolFetcher
 from services.lib.cooldown import Cooldown
+from services.lib.date_utils import DAY
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.money import short_dollar
@@ -90,7 +91,8 @@ class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
     async def on_data(self, sender, rune_market: RuneMarketInfo):
         if await self.cd_notify.can_do():
 
-            event = await self.get_savers_event_dynamically(self.cd_notify.cooldown)
+            period = max(DAY, self.cd_notify.cooldown)
+            event = await self.get_savers_event_dynamically(period)
             if not event:
                 self.logger.warning('Failed to load Savers data!')
                 return
