@@ -38,6 +38,9 @@ class SaversPictureGenerator(BasePictureGenerator):
         cur_data = self.event.current_stats
         prev_data = self.event.previous_stats
 
+        pool_map = self.event.price_holder.pool_info_map
+        usd_per_rune = self.event.price_holder.usd_per_rune
+
         cur_data.sort_vaults(key='total_asset_saved_usd', reverse=True)
 
         # prepare painting stuff
@@ -96,15 +99,13 @@ class SaversPictureGenerator(BasePictureGenerator):
         draw_key_metric(1, self.loc.TEXT_PIC_SAVERS_TOTAL_SAVERS, 'total_unique_savers', short_money, integer=True)
         draw_key_metric(2, self.loc.TEXT_PIC_SAVERS_TOTAL_SAVED_VALUE, 'total_usd_saved', short_dollar)
         draw_key_metric(3, self.loc.TEXT_PIC_SAVERS_TOTAL_EARNED, 'total_rune_earned',
-                        formatter=lambda x, signed=False: short_dollar(x * self.event.price_holder.usd_per_rune,
-                                                                       signed=signed))
-
+                        formatter=lambda x, signed=False: short_dollar(x * usd_per_rune, signed=signed))
         draw_key_metric(4, self.loc.TEXT_PIC_SAVERS_APR_MEAN, 'average_apr', lambda x, **kwars: f'{x:+.2f}%')
 
         # fixme!
         draw_key_metric(5, self.loc.TEXT_PIC_SAVERS_TOTAL_FILLED, 'overall_fill_cap_percent', short_money,
                         postfix='%',
-                        args=[self.event.price_holder.pool_info_map])
+                        args=[pool_map])
 
         # table:
         table_x = 46
@@ -189,8 +190,8 @@ class SaversPictureGenerator(BasePictureGenerator):
             line_progress_bar(draw, vault.percent_of_cap_filled / 100.0,
                               ((filled_x, y - 7), (fill_pb_width, 14)), line_width=2, gap=2)
 
-            asset_earned = vault.calc_asset_earned(self.event.price_holder.pool_info_map)
-            usd_earned = vault.runes_earned * self.event.price_holder.usd_per_rune
+            asset_earned = vault.calc_asset_earned(pool_map)
+            usd_earned = vault.runes_earned * usd_per_rune
             draw.text((earned_x, y),
                       f"{short_money(asset_earned)} {a.name} {self.loc.TEXT_PIC_SAVERS_OR} "
                       f"{short_dollar(usd_earned)}",

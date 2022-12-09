@@ -1,15 +1,13 @@
-import dataclasses
-import json
 from _operator import attrgetter
 from dataclasses import dataclass
-from typing import NamedTuple, List, Optional
+from typing import List
 
 from services.lib.constants import BLOCKS_PER_YEAR, SAVERS_BEGIN_BLOCK
-from services.lib.date_utils import DAY
 from services.models.pool_info import PoolInfoMap, PoolInfo
 
 
-class SaverVault(NamedTuple):
+@dataclass
+class SaverVault:
     asset: str
     number_of_savers: int
     total_asset_saved: float
@@ -42,13 +40,6 @@ class SaverVault(NamedTuple):
             result = 0.0
         return result
 
-    def correct_apr_from_previous_state(self, prev_vault: 'SaverVault', period_ago=7 * DAY) -> 'SaverVault':
-        if not prev_vault or not prev_vault.runes_earned:
-            return self
-
-        new_apr = (self.runes_earned - prev_vault.runes_earned) / prev_vault.runes_earned * 365 * DAY / period_ago
-        return self._replace(apr=new_apr)
-
 
 @dataclass
 class AllSavers:
@@ -56,10 +47,8 @@ class AllSavers:
     vaults: List[SaverVault]
 
     def fill_total_usd(self, pool_map: PoolInfoMap):
-        self.vaults = [
-            v._replace(total_asset_saved_usd=v.calc_total_saved_usd(v.asset, v.total_asset_saved, pool_map))
-            for v in self.vaults
-        ]
+        for v in self.vaults:
+            v.total_asset_saved_usd = v.calc_total_saved_usd(v.asset, v.total_asset_saved, pool_map)
 
     @property
     def total_usd_saved(self) -> float:
@@ -82,27 +71,6 @@ class AllSavers:
     @property
     def max_apr(self):
         return max(self.apr_list)
-
-    @property
-    def as_dict(self):
-        d = dataclasses.asdict(self)
-        d['vaults'] = [v._asdict() for v in self.vaults]
-        return d
-
-    @classmethod
-    def load_from_ts_points(cls, point) -> Optional['AllSavers']:
-        try:
-            j = json.loads(point['json'])
-        except (json.JSONDecodeError, KeyError, TypeError):
-            return
-
-        try:
-            savers = cls(**j)
-            # noinspection PyArgumentList
-            savers.vaults = [SaverVault(**v) for v in savers.vaults]
-            return savers
-        except TypeError:
-            return
 
     def sort_vaults(self, key='apr', reverse=False):
         self.vaults.sort(key=attrgetter(key), reverse=reverse)

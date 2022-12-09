@@ -150,6 +150,10 @@ class PoolInfo:
         return thor_to_float((self.savers_depth - self.savers_units) * self.runes_per_asset)
 
     @property
+    def saver_growth(self):
+        return self.savers_depth / self.savers_units if self.savers_units else 0.0
+
+    @property
     def synth_asset_name(self):
         return self.asset.replace('.', '/')
 

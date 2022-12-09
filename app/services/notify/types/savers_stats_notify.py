@@ -12,6 +12,7 @@ from services.lib.utils import WithLogger
 from services.models.pool_info import PoolInfoMap
 from services.models.price import RuneMarketInfo, LastPriceHolder
 from services.models.savers import SaverVault, AllSavers, get_savers_apr
+from services.notify.types.block_notify import LastBlockStore
 
 
 class EventSaverStats(NamedTuple):
@@ -66,26 +67,57 @@ class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
         savers.sort_vaults()
         return savers
 
-    async def get_savers_event_dynamically(self, delta_sec, usd_per_rune=None, last_block_no=None) -> EventSaverStats:
+    async def get_savers_event_dynamically(self, period,
+                                           apr_period=7 * DAY,
+                                           usd_per_rune=None, last_block_no=None) -> EventSaverStats:
         pf: PoolFetcher = self.deps.pool_fetcher
-        curr_pools = await pf.load_pools()
+        block_store: LastBlockStore = self.deps.last_block_store
+        shared_price_holder = self.deps.price_holder
 
-        usd_per_rune = usd_per_rune or self.deps.price_holder.calculate_rune_price_here(curr_pools)
+        # Load the current state
+        curr_pools = await pf.load_pools(height=last_block_no)
+
+        usd_per_rune = usd_per_rune or shared_price_holder.calculate_rune_price_here(curr_pools)
         pf.fill_usd_in_pools(curr_pools, usd_per_rune)
 
-        last_block = last_block_no or self.deps.last_block_store.last_thor_block
+        price_holder = LastPriceHolder(shared_price_holder.stable_coins)
+        price_holder.usd_per_rune = usd_per_rune
+        price_holder.pool_info_map = curr_pools
 
-        curr_saver = await self.get_all_savers(curr_pools, last_block)
+        last_block_no = last_block_no or block_store.last_thor_block
 
-        prev_saver = None
-        if delta_sec:
-            prev_block = self.deps.last_block_store.block_time_ago(delta_sec)
+        curr_saver = await self.get_all_savers(curr_pools, last_block_no)
+
+        # Load previous state to compare
+        prev_saver, prev_pools = None, None
+        if period:
+            prev_block = block_store.block_time_ago(period, last_block=last_block_no)
             prev_pools = await pf.load_pools(height=prev_block, usd_per_rune=usd_per_rune)
             if prev_pools:
                 prev_saver = await self.get_all_savers(prev_pools, prev_block)
 
+        # Calculate current APR
+        if apr_period == period:
+            old_pools = prev_pools
+        else:
+            height_before = block_store.block_time_ago(apr_period, last_block=last_block_no)
+            old_pools = await pf.load_pools(height=height_before)
+
+        period_multiplier = 365 * DAY / apr_period
+        for vault in curr_saver.vaults:
+            pool = curr_pools.get(vault.asset)
+            old_pool = old_pools.get(vault.asset)
+
+            if not pool or not old_pool:
+                continue
+
+            saver_growth = pool.saver_growth
+            saver_growth_before = old_pool.saver_growth
+            saver_return = (saver_growth - saver_growth_before) / saver_growth_before * period_multiplier
+            vault.apr = saver_return * 100.0
+
         return EventSaverStats(
-            prev_saver, curr_saver, self.deps.price_holder
+            prev_saver, curr_saver, price_holder
         )
 
     async def on_data(self, sender, rune_market: RuneMarketInfo):

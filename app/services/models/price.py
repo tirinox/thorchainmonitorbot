@@ -78,12 +78,12 @@ class PriceReport:
 
 
 class LastPriceHolder:
-    def __init__(self):
+    def __init__(self, stable_coins=None):
         self.usd_per_rune = 1.0  # weighted across multiple stable coin pools
         self.btc_per_rune = 0.000001
         self.pool_info_map: PoolInfoMap = {}
         self.last_update_ts = 0
-        self.stable_coins = STABLE_COIN_POOLS
+        self.stable_coins = stable_coins or STABLE_COIN_POOLS
 
     def is_stable_coin(self, c):
         return c in self.stable_coins

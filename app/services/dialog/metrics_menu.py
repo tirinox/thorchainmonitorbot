@@ -142,7 +142,7 @@ class MetricsDialog(BaseDialog):
         loading_message = await self.show_loading(message)
 
         ssn = SaversStatsNotifier(self.deps)
-        event = await ssn.get_savers_event_dynamically(delta_sec=DAY)
+        event = await ssn.get_savers_event_dynamically(period=DAY)
 
         if not event or not event.current_stats:
             await message.answer(self.loc.TEXT_SAVERS_NO_DATA,

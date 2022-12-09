@@ -4,31 +4,14 @@ import random
 
 from localization.eng_base import BaseLocalization
 from localization.languages import Language
-from localization.manager import LocalizationManager
 from services.dialog.picture.crypto_logo import CryptoLogoDownloader
 from services.dialog.picture.resources import Resources
 from services.dialog.picture.savers_picture import SaversPictureGenerator
-from services.jobs.fetch.pool_price import PoolFetcher
 from services.lib.date_utils import DAY
 from services.lib.texts import sep
 from services.models.savers import AllSavers
-from services.notify.types.savers_stats_notify import SaversStatsNotifier, EventSaverStats
+from services.notify.types.savers_stats_notify import SaversStatsNotifier
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
-
-
-async def demo_collect_stat(app: LpAppFramework):
-    pf: PoolFetcher = app.deps.pool_fetcher
-    await app.deps.last_block_fetcher.run_once()
-    pool_map = await pf.reload_global_pools()
-    ssn = SaversStatsNotifier(app.deps)
-    data = await ssn.get_all_savers(pool_map,
-                                    app.deps.last_block_store.last_thor_block)
-    await ssn.save_savers(data)
-    print(data)
-
-    # p_data = await ssn.get_previous_saver_stats(0)
-    # print(p_data)
-    # assert data == p_data
 
 
 def randomize_savers_data(c_data: AllSavers, sc=0.2, fail_chance=0.3):
@@ -40,7 +23,8 @@ def randomize_savers_data(c_data: AllSavers, sc=0.2, fail_chance=0.3):
     p_data = dataclasses.replace(c_data,
                                  total_unique_savers=int(r(c_data.total_unique_savers, no_change_chance=0.1))
                                  )
-    p_data.vaults = [p._replace(
+    p_data.vaults = [dataclasses.replace(
+        p,
         apr=r(p.apr),
         total_asset_saved=r(p.total_asset_saved),
         total_asset_saved_usd=r(p.total_asset_saved_usd),
@@ -56,15 +40,8 @@ async def demo_show_notification(app: LpAppFramework):
     await app.send_test_tg_message('----- S T A R T -----')
 
     ssn = SaversStatsNotifier(app.deps)
-    c_data = await ssn.get_previous_saver_stats(0)
 
-    if not c_data:
-        print('No data! Run "demo_collect_stat" first.')
-        return 'error'
-
-    p_data = randomize_savers_data(c_data, fail_chance=0.0)
-
-    event = EventSaverStats(p_data, c_data, app.deps.price_holder)
+    event = await ssn.get_savers_event_dynamically(period=DAY)
 
     loc: BaseLocalization = app.deps.loc_man[Language.RUSSIAN]
     await app.send_test_tg_message(loc.notification_text_saver_stats(event))
@@ -117,34 +94,10 @@ async def demo_logo_download(app: LpAppFramework):
 
 
 async def demo_show_savers_pic(app: LpAppFramework):
-    ssn = SaversStatsNotifier(app.deps)
-    c_data = await ssn.get_previous_saver_stats(0)
-
-    if not c_data:
-        print('No data! Run "demo_collect_stat" first.')
-        return 'error'
-
-    loc_man: LocalizationManager = app.deps.loc_man
-    loc = loc_man.get_from_lang(Language.ENGLISH)
-
-    p_data = randomize_savers_data(c_data, fail_chance=0.1)
-    # p_data = None
-
-    pic_gen = SaversPictureGenerator(loc, EventSaverStats(
-        p_data, c_data, app.deps.price_holder
-    ))
-    pic, name = await pic_gen.get_picture()
-
-    print(name)
-
-    save_and_show_pic(pic, 'savers')
-
-
-async def demo_savers_delta_without_timeseries(app):
     await app.deps.last_block_fetcher.run_once()
 
     ssn = SaversStatsNotifier(app.deps)
-    event = await ssn.get_savers_event_dynamically(DAY)
+    event = await ssn.get_savers_event_dynamically(7 * DAY)
 
     loc = app.deps.loc_man[Language.ENGLISH]
     pic_gen = SaversPictureGenerator(loc, event)
@@ -159,10 +112,8 @@ async def main():
     app = LpAppFramework()
     async with app(brief=True):
         # await app.deps.pool_fetcher.run_once()
-        # await demo_collect_stat(app)
-        # await demo_show_savers_pic(app)
+        await demo_show_savers_pic(app)
         # await demo_show_notification(app)
-        await demo_savers_delta_without_timeseries(app)
 
 
 if __name__ == '__main__':
