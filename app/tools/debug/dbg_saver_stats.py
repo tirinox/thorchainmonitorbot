@@ -11,7 +11,6 @@ from services.dialog.picture.savers_picture import SaversPictureGenerator
 from services.jobs.fetch.pool_price import PoolFetcher
 from services.lib.date_utils import DAY
 from services.lib.texts import sep
-from services.models.pool_info import PoolInfo
 from services.models.savers import AllSavers
 from services.notify.types.savers_stats_notify import SaversStatsNotifier, EventSaverStats
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
@@ -142,36 +141,13 @@ async def demo_show_savers_pic(app: LpAppFramework):
 
 
 async def demo_savers_delta_without_timeseries(app):
-    ssn = SaversStatsNotifier(app.deps)
-
     await app.deps.last_block_fetcher.run_once()
 
-    usd_per_rune = app.deps.price_holder.usd_per_rune
-
-    pf: PoolFetcher = app.deps.pool_fetcher
-    curr_pools = await pf.reload_global_pools()
-
-    last_block = app.deps.last_block_store.last_thor_block
-
-    curr_saver = await ssn.get_all_savers(curr_pools, last_block)
-
-    prev_block = app.deps.last_block_store.block_time_ago(DAY)
-    prev_pools = await pf.load_pools(height=prev_block)
-
-    for pool in prev_pools.values():
-        pool: PoolInfo
-        pool.fill_usd_per_asset(usd_per_rune)
-
-    prev_saver = await ssn.get_all_savers(prev_pools, prev_block)
-
-    print(prev_saver)
-    sep()
-    print(curr_saver)
+    ssn = SaversStatsNotifier(app.deps)
+    event = await ssn.get_savers_event_dynamically(DAY)
 
     loc = app.deps.loc_man[Language.ENGLISH]
-    pic_gen = SaversPictureGenerator(loc, EventSaverStats(
-        prev_saver, curr_saver, app.deps.price_holder
-    ))
+    pic_gen = SaversPictureGenerator(loc, event)
     pic, name = await pic_gen.get_picture()
 
     print(name)

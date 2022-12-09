@@ -85,7 +85,6 @@ async def post_supply_to_discord(app: LpAppFramework, pic):
 
 
 async def my_demo_market_info(app: LpAppFramework):
-
     rmif = RuneMarketInfoFetcher(app.deps)
     info = await rmif.get_rune_market_info()
     print(info)

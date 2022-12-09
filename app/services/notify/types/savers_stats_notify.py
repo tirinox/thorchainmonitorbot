@@ -11,7 +11,6 @@ from services.lib.utils import WithLogger
 from services.models.pool_info import PoolInfoMap
 from services.models.price import RuneMarketInfo, LastPriceHolder
 from services.models.savers import SaverVault, AllSavers, get_savers_apr
-from services.models.time_series import TimeSeries
 
 
 class EventSaverStats(NamedTuple):
@@ -21,16 +20,11 @@ class EventSaverStats(NamedTuple):
 
 
 class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
-    MAX_POINTS = 10_000
 
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
 
-        self.ts = TimeSeries('SaverStats_v2', deps.db)
-
-        cd_write = deps.cfg.as_interval('saver_stats.save_stats_period', '1h')
-        self.cd_write_stats = Cooldown(deps.db, 'SaverStats:Write', cd_write)
         cd_notify = deps.cfg.as_interval('saver_stats.period', '7d')
         self.cd_notify = Cooldown(deps.db, 'SaverStats:Notify', cd_notify)
 
@@ -71,29 +65,14 @@ class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
         savers.sort_vaults()
         return savers
 
-    async def save_savers(self, savers: AllSavers):
-        d = savers.as_dict
-        await self.ts.add_as_json(d)
-        await self.ts.trim_oldest(self.MAX_POINTS)
-
-    async def get_previous_saver_stats(self, ago_sec: float) -> Optional[AllSavers]:
-        tolerance = self.cd_write_stats.cooldown * 1.5
-        point, _ = await self.ts.get_best_point_ago(ago_sec, tolerance)
-        savers = AllSavers.load_from_ts_points(point)
-
-        if savers:
-            pool_map = self.deps.price_holder.pool_info_map
-            savers.fill_total_usd(pool_map)
-
-        return savers
-
-    async def get_savers_event_dynamically(self, delta_sec) -> EventSaverStats:
-        usd_per_rune = self.deps.price_holder.usd_per_rune
-
+    async def get_savers_event_dynamically(self, delta_sec, usd_per_rune=None, last_block_no=None) -> EventSaverStats:
         pf: PoolFetcher = self.deps.pool_fetcher
-        curr_pools = await pf.load_pools(usd_per_rune=usd_per_rune)
+        curr_pools = await pf.load_pools()
 
-        last_block = self.deps.last_block_store.last_thor_block
+        usd_per_rune = usd_per_rune or self.deps.price_holder.calculate_rune_price_here(curr_pools)
+        pf.fill_usd_in_pools(curr_pools, usd_per_rune)
+
+        last_block = last_block_no or self.deps.last_block_store.last_thor_block
 
         curr_saver = await self.get_all_savers(curr_pools, last_block)
 
@@ -108,27 +87,19 @@ class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
             prev_saver, curr_saver, self.deps.price_holder
         )
 
-    async def do_notification(self, current_savers: AllSavers):
-        previous_savers = await self.get_previous_saver_stats(self.cd_notify.cooldown)
-        await self.pass_data_to_listeners(EventSaverStats(
-            previous_savers, current_savers,
-            self.deps.price_holder,
-        ))
-
     async def on_data(self, sender, rune_market: RuneMarketInfo):
-        if await self.cd_write_stats.can_do():
-            self.logger.info('Start loading saver stats...')
+        if await self.cd_notify.can_do():
 
-            savers = await self.get_all_savers(rune_market.pools,
-                                               self.deps.last_block_store.last_thor_block)
+            event = await self.get_savers_event_dynamically(self.cd_notify.cooldown)
+            if not event:
+                self.logger.warning('Failed to load Savers data!')
+                return
 
+            savers = event.current_stats
             self.logger.info(f'Finished loading saver stats: '
                              f'{savers.total_unique_savers} total savers, '
                              f'avg APR = {savers.average_apr:.02f}% '
                              f'total saved = {short_dollar(savers.total_usd_saved)}')
-            await self.save_savers(savers)
-            await self.cd_write_stats.do()
 
-            if await self.cd_notify.can_do():
-                await self.do_notification(savers)
-                await self.cd_notify.do()
+            await self.pass_data_to_listeners(event)
+            await self.cd_notify.do()

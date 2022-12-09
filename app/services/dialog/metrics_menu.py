@@ -23,7 +23,7 @@ from services.notify.types.block_notify import BlockHeightNotifier
 from services.notify.types.cap_notify import LiquidityCapNotifier
 from services.notify.types.node_churn_notify import NodeChurnNotifier
 from services.notify.types.price_notify import PriceNotifier
-from services.notify.types.savers_stats_notify import EventSaverStats, SaversStatsNotifier
+from services.notify.types.savers_stats_notify import SaversStatsNotifier
 from services.notify.types.stats_notify import NetworkStatsNotifier
 from services.notify.types.transfer_notify import RuneMoveNotifier
 
@@ -142,18 +142,12 @@ class MetricsDialog(BaseDialog):
         loading_message = await self.show_loading(message)
 
         ssn = SaversStatsNotifier(self.deps)
-        c_data = await ssn.get_previous_saver_stats(0)
+        event = await ssn.get_savers_event_dynamically(delta_sec=DAY)
 
-        if not c_data:
+        if not event or not event.current_stats:
             await message.answer(self.loc.TEXT_SAVERS_NO_DATA,
                                  disable_notification=True)
             return
-
-        prev_data = await ssn.get_previous_saver_stats(DAY)
-
-        event = EventSaverStats(
-            prev_data, c_data, self.deps.price_holder
-        )
 
         pic_gen = SaversPictureGenerator(self.loc, event)
         pic, name = await pic_gen.get_picture()
