@@ -182,7 +182,7 @@ class SaversPictureGenerator(BasePictureGenerator):
             draw_metric(savers_n_x, y, 'number_of_savers', vault,
                         formatter=short_money, integer=True)
 
-            draw.text((filled_x + fill_pb_width + 20, y),
+            draw.text((filled_x + fill_pb_width + 17, y - 2),
                       f"{short_money(vault.percent_of_cap_filled, integer=True)}%",
                       fill=TC_WHITE, font=font_asset_bold, anchor='lm')
 
