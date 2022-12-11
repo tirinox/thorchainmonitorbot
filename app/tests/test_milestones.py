@@ -17,7 +17,7 @@ m = Milestones()
     (1001, 2000),
 ])
 def test_next(x, expected):
-    assert m.milestone_next(x) == expected
+    assert m.next(x) == expected
 
 
 @pytest.mark.parametrize('x, expected', [
@@ -32,4 +32,4 @@ def test_next(x, expected):
     (1e6, 1e6),
 ])
 def test_prev(x, expected):
-    assert m.milestone_prev(x) == expected
+    assert m.previous(x) == expected
