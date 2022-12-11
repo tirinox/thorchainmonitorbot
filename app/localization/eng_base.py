@@ -33,6 +33,7 @@ from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConse
 from services.models.pool_info import PoolInfo, PoolChanges, PoolMapPair
 from services.models.price import PriceReport, RuneMarketInfo
 from services.models.queue import QueueInfo
+from services.models.savers import how_much_savings_you_can_add
 from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.tx import ThorTx, ThorTxType, ThorSubTx
 from services.notify.channel import Messengers
@@ -616,9 +617,10 @@ class BaseLocalization(ABC):  # == English
         return msg.strip()
 
     def get_savers_limits(self, pool: PoolInfo, usd_per_rune, mimir: MimirHolder, asset_amount):
-        max_synth_per_asset_ratio = mimir.get_max_synth_per_pool_depth()
+        max_synth_per_asset_ratio = mimir.get_max_synth_per_pool_depth()  # normally: 0.15
+
         cap = pool.get_synth_cap_in_asset_float(max_synth_per_asset_ratio)
-        amount_more = pool.how_much_savings_you_can_add(pool.synth_supply_float, max_synth_per_asset_ratio)
+        amount_more = how_much_savings_you_can_add(pool, max_synth_per_asset_ratio)
         saver_pb = self._cap_progress_bar(ThorCapInfo(cap, pool.synth_supply_float, usd_per_rune))
         saver_pct = asset_amount / pool.savers_depth_float * 100.0 if pool.savers_depth else 100
         return amount_more, Asset(pool.asset).name, saver_pb, thor_to_float(cap), saver_pct

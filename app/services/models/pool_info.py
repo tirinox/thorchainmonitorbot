@@ -137,10 +137,6 @@ class PoolInfo:
     def get_synth_cap_in_asset_float(self, max_synth_per_pool_depth=0.15):
         return thor_to_float(self.balance_asset * max_synth_per_pool_depth * 2.0)
 
-    def how_much_savings_you_can_add(self, pool_synth_supply, max_synth_per_asset_ratio=0.3):
-        cap = self.get_synth_cap_in_asset_float(max_synth_per_asset_ratio)
-        return max(0.0, cap - pool_synth_supply)
-
     @property
     def savers_depth_float(self):
         return thor_to_float(self.savers_depth)

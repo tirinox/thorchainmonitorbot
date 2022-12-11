@@ -9,7 +9,8 @@ from services.dialog.picture.resources import Resources
 from services.dialog.picture.savers_picture import SaversPictureGenerator
 from services.lib.date_utils import DAY
 from services.lib.texts import sep
-from services.models.savers import AllSavers
+from services.models.pool_info import PoolInfo
+from services.models.savers import AllSavers, how_much_savings_you_can_add
 from services.notify.types.savers_stats_notify import SaversStatsNotifier
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
@@ -108,12 +109,25 @@ async def demo_show_savers_pic(app: LpAppFramework):
     save_and_show_pic(pic, 'savers-dynamic')
 
 
+async def demo_new_method_to_reach_fullness(app: LpAppFramework):
+    pools = await app.deps.pool_fetcher.load_pools()
+    max_synth_per_pool_depth = app.deps.mimir_const_holder.get_max_synth_per_pool_depth()
+    for pool in pools.values():
+        pool: PoolInfo
+        if not pool.savers_units:
+            continue
+
+        can_add = how_much_savings_you_can_add(pool, max_synth_per_pool_depth)
+        print(f'{pool.asset} - {can_add} {pool.asset}')
+
+
 async def main():
     app = LpAppFramework()
     async with app(brief=True):
         # await app.deps.pool_fetcher.run_once()
         await demo_show_savers_pic(app)
         # await demo_show_notification(app)
+        # await demo_new_method_to_reach_fullness(app)
 
 
 if __name__ == '__main__':

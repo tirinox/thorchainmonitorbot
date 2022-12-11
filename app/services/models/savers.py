@@ -2,8 +2,10 @@ from _operator import attrgetter
 from dataclasses import dataclass
 from typing import List
 
-from services.lib.constants import BLOCKS_PER_YEAR, SAVERS_BEGIN_BLOCK
+from services.lib.constants import BLOCKS_PER_YEAR, SAVERS_BEGIN_BLOCK, thor_to_float
 from services.models.pool_info import PoolInfoMap, PoolInfo
+
+TYPICAL_REBALANCE_RATIO = 0.5
 
 
 @dataclass
@@ -112,3 +114,10 @@ def get_savers_apr(pool: PoolInfo, block_no, blocks_per_year=BLOCKS_PER_YEAR) ->
         return 0.0
     saver_growth = (pool.savers_depth - pool.savers_units) / pool.savers_depth
     return (saver_growth / (block_no - SAVERS_BEGIN_BLOCK)) * blocks_per_year
+
+
+def how_much_savings_you_can_add(pool: PoolInfo, max_synth_per_pool_depth=0.15,
+                                 rebalance_ratio=TYPICAL_REBALANCE_RATIO):
+    m = max_synth_per_pool_depth * 2.0
+    x = (pool.balance_asset * m - pool.synth_supply) / (1.0 - rebalance_ratio * m)
+    return max(0.0, thor_to_float(x))

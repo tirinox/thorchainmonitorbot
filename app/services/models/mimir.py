@@ -308,6 +308,6 @@ class MimirHolder:
         kill_factor = clamp((current_block - kill_switch_start) / kill_switch_duration, 0.0, 1.0)
         return kill_factor
 
-    def get_max_synth_per_pool_depth(self):
+    def get_max_synth_per_pool_depth(self) -> float:
         value = self.get_constant(MIMIR_KEY_MAX_SYNTH_PER_POOL_DEPTH, 1500)
         return value / THOR_BASIS_POINT_MAX
