@@ -12,6 +12,9 @@ from services.models.net_stats import NetworkStats
 
 
 class Achievement(Enum):
+    # note: str(Achievement) is name "TEST" not "__test"
+    TEST = '__test'
+
     DAU = 'dau'
     MAU = 'mau'
     WALLET_COUNT = 'wallet_count'
@@ -64,7 +67,8 @@ class Milestones:
 class AchievementRecord(NamedTuple):
     key: str
     value: int
-    previous_value: int
+    milestone: int
+    prev_milestone: int
     last_ts: float
 
 
@@ -84,14 +88,14 @@ class AchievementsTracker(WithLogger):
     async def feed_data(self, name: Achievement, value: int) -> Optional[EventAchievement]:
         assert name
         record = await self.get_achievement_record(name)
+        current_milestone = self.milestones.previous(value)
         if record is None:
-            record = AchievementRecord(str(name), value, 0, now_ts())
+            record = AchievementRecord(str(name), value, current_milestone, 0, now_ts())
             await self.set_achievement_record(record)
             self.logger.info(f'New achievement record created {record}')
         else:
-            value_milestone = self.milestones.previous(value)
-            if value_milestone > record.value:
-                record = AchievementRecord(str(name), value_milestone, record.value, now_ts())
+            if current_milestone > record.value:
+                record = AchievementRecord(str(name), value, current_milestone, record.milestone, now_ts())
                 await self.set_achievement_record(record)
                 self.logger.info(f'Achievement record updated {record}')
                 return EventAchievement(record)
@@ -109,12 +113,24 @@ class AchievementsTracker(WithLogger):
         await self.db.redis.set(key, json.dumps(record._asdict()))
 
 
+class AchievementTest(NamedTuple):
+    value: int
+
+
 class AchievementsNotifier(WithLogger, WithDelegates, INotified):
     async def on_data(self, sender, data):
         if isinstance(data, NetworkStats):
-            await self.on_network_stats(data)
+            kv_events = await self.on_network_stats(data)
+        elif isinstance(data, AchievementTest):
+            kv_events = [(Achievement.TEST, data.value)]
         else:
             self.logger.warning(f'Unknown data type {type(data)}. Dont know how to handle it.')
+            return
+
+        for key, value in kv_events:
+            event = await self.tracker.feed_data(key, value)
+            if event:
+                await self.pass_data_to_listeners(event)
 
     def __init__(self, deps: DepContainer):
         super().__init__()
@@ -127,8 +143,4 @@ class AchievementsNotifier(WithLogger, WithDelegates, INotified):
             (Achievement.MAU, data.users_monthly),
             # todo: add more
         ]
-
-        for key, value in achievements:
-            event = await self.tracker.feed_data(key, value)
-            if event:
-                await self.pass_data_to_listeners(event)
+        return achievements

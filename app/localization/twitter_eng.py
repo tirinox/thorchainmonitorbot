@@ -3,9 +3,11 @@ from typing import List
 from aiothornode.types import ThorChainInfo
 from semver import VersionInfo
 
+from localization.achievements.ach_tw_eng import AchievementsTwitterEnglishLocalization
 from localization.eng_base import BaseLocalization
 from services.dialog.twitter.text_length import twitter_intelligent_text_splitter
 from services.jobs.fetch.circulating import SupplyEntry
+from services.lib.config import Config
 from services.lib.constants import thor_to_float, rune_origin, Chains
 from services.lib.date_utils import now_ts, seconds_human, DAY
 from services.lib.explorers import get_explorer_url_to_tx
@@ -31,6 +33,10 @@ from services.notify.types.savers_stats_notify import EventSaverStats
 
 
 class TwitterEnglishLocalization(BaseLocalization):
+    def __init__(self, cfg: Config):
+        super().__init__(cfg)
+        self.ach = AchievementsTwitterEnglishLocalization()
+
     TEXT_DECORATION_ENABLED = False
 
     @classmethod

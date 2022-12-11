@@ -5,9 +5,11 @@ from typing import List, Optional
 from aiothornode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
+from localization.achievements.ach_rus import AchievementsRussianLocalization
 from localization.eng_base import BaseLocalization, CREATOR_TG, URL_LEADERBOARD_MCCN
 from proto.thor_types import THORName
 from services.jobs.fetch.circulating import SupplyEntry, ThorRealms
+from services.lib.config import Config
 from services.lib.constants import Chains, rune_origin
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts, DAY
 from services.lib.explorers import get_explorer_url_to_address, get_thoryield_address, \
@@ -35,6 +37,10 @@ from services.notify.types.savers_stats_notify import EventSaverStats
 
 
 class RussianLocalization(BaseLocalization):
+    def __init__(self, cfg: Config):
+        super().__init__(cfg)
+        self.ach = AchievementsRussianLocalization()
+
     LOADING = '⌛ <i>Загрузка...</i>'
     SUCCESS = '✅ Успех!'
     ND = 'Неопр.'

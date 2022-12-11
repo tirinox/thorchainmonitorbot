@@ -6,6 +6,7 @@ from typing import List, Optional
 from aiothornode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
+from localization.achievements.ach_eng import AchievementsEnglishLocalization
 from proto.thor_types import THORName
 from services.jobs.fetch.circulating import SupplyEntry, ThorRealms
 from services.lib.config import Config
@@ -51,6 +52,7 @@ class BaseLocalization(ABC):  # == English
         self.cfg = cfg
         self.name_service: Optional[NameService] = None
         self.name = self.__class__.__name__
+        self.ach = AchievementsEnglishLocalization()
 
     # ----- WELCOME ------
 

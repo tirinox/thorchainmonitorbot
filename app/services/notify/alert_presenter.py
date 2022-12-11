@@ -99,8 +99,7 @@ class AlertPresenter(INotified):
         await self.broadcaster.notify_preconfigured_channels(_gen, event)
 
     async def _handle_achievement(self, event: EventAchievement):
-        pass  # todo
-        # await self.broadcaster.notify_preconfigured_channels(
-        #     BaseLocalization.ach.notification_text_achievement,
-        #     event
-        # )
+        async def _gen(loc: BaseLocalization, event):
+            return loc.ach.notification_achievement_unlocked(event)
+
+        await self.broadcaster.notify_preconfigured_channels(_gen, event)

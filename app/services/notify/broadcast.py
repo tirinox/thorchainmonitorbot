@@ -68,8 +68,7 @@ class Broadcaster:
         async def message_gen(chat_id):
             locale: BaseLocalization = user_lang_map[chat_id]
 
-            prev_content = results_cached_by_lang.get(locale.name)
-            if prev_content:
+            if prev_content := results_cached_by_lang.get(locale.name):
                 return prev_content
 
             if hasattr(locale, f.__name__):
