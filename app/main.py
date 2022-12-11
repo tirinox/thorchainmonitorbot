@@ -11,6 +11,7 @@ from services.dialog.slack.slack_bot import SlackBot
 from services.dialog.telegram.sticker_downloader import TelegramStickerDownloader
 from services.dialog.telegram.telegram import TelegramBot
 from services.dialog.twitter.twitter_bot import TwitterBot, TwitterBotMock
+from services.jobs.achievements import AchievementsTracker
 from services.jobs.fetch.bep2_move import BinanceOrgDexWSSClient
 from services.jobs.fetch.cap import CapInfoFetcher
 from services.jobs.fetch.chains import ChainStateFetcher
@@ -370,6 +371,13 @@ class App:
             ssc = SaversStatsNotifier(d)
             d.pool_fetcher.add_subscriber(ssc)
             ssc.add_subscriber(d.alert_presenter)
+
+        if d.cfg.get('achievements.enabled', True):
+            achievements = AchievementsTracker(d)
+            d.pool_fetcher.add_subscriber(achievements)
+            achievements.add_subscriber(d.alert_presenter)
+
+
 
         # --- BOTS
 

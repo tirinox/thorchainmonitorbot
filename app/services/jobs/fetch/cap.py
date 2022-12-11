@@ -54,7 +54,6 @@ class CapInfoFetcher(BaseFetcher):
         # current_lp_rune = 15_500_000  # fixme: debug!! for testing
 
         if max_lp_rune <= 1 or current_lp_rune < 0:
-            self.logger.error(f"{max_lp_rune = } and {current_lp_rune = } which seems like an error")
             return ThorCapInfo.error()
 
         price = self.deps.price_holder.usd_per_rune
