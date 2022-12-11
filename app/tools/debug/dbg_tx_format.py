@@ -72,6 +72,14 @@ async def demo_midgard_test_large_ilp(app):
     await present_one_aff_tx(app, q_path)
 
 
+async def demo_savers_add(app):
+    q_path = free_url_gen.url_for_tx(0, 50,
+                                     tx_type=ThorTxType.TYPE_ADD_LIQUIDITY,
+                                     txid='B380846D04AFB83961D2728177B10D593E1C144A534A21A443366D233971A135')
+                                     # txid='413768826A02E8EA4068A2F35A7941008A15A18F7E76E49B8602BD99D840B721')
+    await present_one_aff_tx(app, q_path)
+
+
 async def demo_test_savers_vaults(app):
     q_path = free_url_gen.url_for_tx(0, 50, txid='050000225130CE9C5DBDDF0D1821036FC1CB7473A01EA41BB4F1EB5E3431A036')
     await present_one_aff_tx(app, q_path, find_aff=False)
@@ -232,8 +240,9 @@ async def main():
     # await demo_test_2(app)
     # await demo_same_merge_swap(app)
     # await demo_withdraw_savers(app)
-    await demo_find_last_savers_additions(app)
-    await demo_midgard_test_large_ilp(app)
+    # await demo_find_last_savers_additions(app)
+    # await demo_midgard_test_large_ilp(app)
+    await demo_savers_add(app)
 
 
 if __name__ == '__main__':

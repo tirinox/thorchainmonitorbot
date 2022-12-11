@@ -143,8 +143,9 @@ class TwitterEnglishLocalization(BaseLocalization):
                 asset_part = f"{short_money(tx.asset_amount)} {asset}"
                 amount_more, asset_more, saver_pb, saver_cap, saver_percent = \
                     self.get_savers_limits(pool_info, usd_per_rune, mimir, tx.asset_amount)
-                pool_depth_part = f'Savers cap is {saver_pb} full. ' \
-                                  f'You can add {short_money(amount_more)} {asset_more} more.'
+                pool_depth_part = f'Savers cap is {saver_pb} full. '
+                if amount_more > 0:
+                    pool_depth_part += f'You can add {short_money(amount_more)} {asset_more} more.'
                 pool_percent_part = f" ({saver_percent:.2f}% of vault)" if saver_percent > self.MIN_PERCENT_TO_SHOW \
                     else ''
             else:

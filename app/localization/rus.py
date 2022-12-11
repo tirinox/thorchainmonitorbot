@@ -356,8 +356,9 @@ class RussianLocalization(BaseLocalization):
                 cap = None  # it will stop standard LP cap from being shown
                 amount_more, asset_more, saver_pb, saver_cap, saver_percent = \
                     self.get_savers_limits(pool_info, usd_per_rune, mimir, tx.asset_amount)
-                saver_cap_part = f'Кап сбережений {saver_pb}. ' \
-                                 f'Вы можете добавить еще {pre(short_money(amount_more))} {pre(asset_more)}.'
+                saver_cap_part = f'Кап сбережений {saver_pb}. '
+                if amount_more > 0:
+                    saver_cap_part += f'Вы можете добавить еще {pre(short_money(amount_more))} {pre(asset_more)}.'
 
                 vault_percent_part = f", {saver_percent:.2f}% от хранилища" \
                     if saver_percent >= self.MIN_PERCENT_TO_SHOW else ''

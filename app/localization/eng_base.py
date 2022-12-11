@@ -520,8 +520,9 @@ class BaseLocalization(ABC):  # == English
 
                 amount_more, asset_more, saver_pb, saver_cap, saver_percent = \
                     self.get_savers_limits(pool_info, usd_per_rune, mimir, tx.asset_amount)
-                saver_cap_part = f'Savers cap is {saver_pb} full. ' \
-                                 f'You can add {pre(short_money(amount_more))} {pre(asset_more)} more.'
+                saver_cap_part = f'Savers cap is {saver_pb} full. '
+                if amount_more > 0:
+                    saver_cap_part += f'You can add {pre(short_money(amount_more))} {pre(asset_more)} more.'
 
                 vault_percent_part = f", {saver_percent:.2f}% of vault" if saver_percent >= self.MIN_PERCENT_TO_SHOW \
                     else ''
