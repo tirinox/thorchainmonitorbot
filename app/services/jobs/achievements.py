@@ -113,6 +113,8 @@ class AchievementsNotifier(WithLogger, WithDelegates, INotified):
     async def on_data(self, sender, data):
         if isinstance(data, NetworkStats):
             await self.on_network_stats(data)
+        else:
+            self.logger.warning(f'Unknown data type {type(data)}. Dont know how to handle it.')
 
     def __init__(self, deps: DepContainer):
         super().__init__()

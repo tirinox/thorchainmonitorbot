@@ -460,3 +460,7 @@ async def parallel_run_in_groups(tasks, group_size=10, delay=0.0):
 def grouper(n, iterable):
     args = [iter(iterable)] * n
     return ([e for e in t if e is not None] for t in itertools.zip_longest(*args))
+
+
+def is_list_of_type(lst, type_):
+    return lst and all(isinstance(item, type_) for item in lst)

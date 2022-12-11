@@ -3,6 +3,7 @@ import asyncio
 from localization.manager import BaseLocalization
 from services.dialog.picture.block_height_picture import block_speed_chart
 from services.dialog.picture.savers_picture import SaversPictureGenerator
+from services.jobs.achievements import EventAchievement
 from services.lib.constants import THOR_BLOCKS_PER_MINUTE
 from services.lib.delegates import INotified
 from services.lib.midgard.name_service import NameService
@@ -36,6 +37,8 @@ class AlertPresenter(INotified):
             await self._handle_dex_report(data)
         elif isinstance(data, EventSaverStats):
             await self._handle_saver_stats(data)
+        elif isinstance(data, EventAchievement):
+            await self._handle_achievement(data)
 
     # ---- PARTICULARLY ----
 
@@ -94,3 +97,10 @@ class AlertPresenter(INotified):
             return BoardMessage.make_photo(pic, caption=caption, photo_file_name=pic_name)
 
         await self.broadcaster.notify_preconfigured_channels(_gen, event)
+
+    async def _handle_achievement(self, event: EventAchievement):
+        pass  # todo
+        # await self.broadcaster.notify_preconfigured_channels(
+        #     BaseLocalization.ach.notification_text_achievement,
+        #     event
+        # )

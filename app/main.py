@@ -11,7 +11,7 @@ from services.dialog.slack.slack_bot import SlackBot
 from services.dialog.telegram.sticker_downloader import TelegramStickerDownloader
 from services.dialog.telegram.telegram import TelegramBot
 from services.dialog.twitter.twitter_bot import TwitterBot, TwitterBotMock
-from services.jobs.achievements import AchievementsTracker
+from services.jobs.achievements import AchievementsNotifier
 from services.jobs.fetch.bep2_move import BinanceOrgDexWSSClient
 from services.jobs.fetch.cap import CapInfoFetcher
 from services.jobs.fetch.chains import ChainStateFetcher
@@ -258,6 +258,11 @@ class App:
         store_queue = QueueStoreMetrics(d)
         fetcher_queue.add_subscriber(store_queue)
 
+        achievements = AchievementsNotifier(d)
+        if d.cfg.get('achievements.enabled', True):
+            achievements.add_subscriber(d.alert_presenter)
+            # achievements will subscribe to other components later in this method
+
         if d.cfg.get('queue.enabled', True):
             notifier_queue = QueueNotifier(d)
             store_queue.add_subscriber(notifier_queue)
@@ -268,11 +273,14 @@ class App:
             fetcher_stats.add_subscriber(notifier_stats)
             tasks.append(fetcher_stats)
 
+            fetcher_stats.add_subscriber(achievements)
+
         d.last_block_fetcher = LastBlockFetcher(d)
         tasks.append(d.last_block_fetcher)
 
         d.last_block_store = LastBlockStore(d)
         d.last_block_fetcher.add_subscriber(d.last_block_store)
+        d.last_block_fetcher.add_subscriber(achievements)
 
         if d.cfg.get('last_block.enabled', True):
             d.block_notifier = BlockHeightNotifier(d)
@@ -285,6 +293,7 @@ class App:
 
             notifier_nodes = NodeChurnNotifier(d)
             churn_detector.add_subscriber(notifier_nodes)
+            churn_detector.add_subscriber(achievements)
 
             tasks.append(d.node_info_fetcher)
 
@@ -298,14 +307,17 @@ class App:
                 churn_detector.add_subscriber(d.node_op_notifier)
 
         if d.cfg.get('killed_rune.enabled', True):
-            krf = KilledRuneFetcher(d)
+            krf = KilledRuneFetcher(d)  # provides List[KilledRuneEntry]
             tasks.append(krf)
             kr_store = KilledRuneStore(d)
             krf.add_subscriber(kr_store)
+            krf.add_subscriber(achievements)
 
         if d.cfg.get('price.enabled', True):
+            # handles RuneMarketInfo
             notifier_price = PriceNotifier(d)
             d.pool_fetcher.add_subscriber(notifier_price)
+            d.pool_fetcher.add_subscriber(achievements)
 
             if d.cfg.get('price.divergence.enabled', True):
                 price_div_notifier = PriceDivergenceNotifier(d)
@@ -340,6 +352,7 @@ class App:
         if d.cfg.get('constants.voting.enabled', True):
             voting_notifier = VotingNotifier(d)
             d.mimir_const_fetcher.add_subscriber(voting_notifier)
+            d.mimir_const_fetcher.add_subscriber(achievements)
 
         if d.cfg.get('rune_transfer.enabled', True):
             fetcher_bep2 = BinanceOrgDexWSSClient()
@@ -371,13 +384,6 @@ class App:
             ssc = SaversStatsNotifier(d)
             d.pool_fetcher.add_subscriber(ssc)
             ssc.add_subscriber(d.alert_presenter)
-
-        if d.cfg.get('achievements.enabled', True):
-            achievements = AchievementsTracker(d)
-            d.pool_fetcher.add_subscriber(achievements)
-            achievements.add_subscriber(d.alert_presenter)
-
-
 
         # --- BOTS
 
