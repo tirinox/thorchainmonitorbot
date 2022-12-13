@@ -1,9 +1,8 @@
 import json
 import math
-from enum import Enum
 from typing import NamedTuple, Optional
 
-from services.lib.date_utils import now_ts
+from services.lib.date_utils import now_ts, YEAR
 from services.lib.db import DB
 from services.lib.delegates import WithDelegates, INotified
 from services.lib.depcont import DepContainer
@@ -11,8 +10,7 @@ from services.lib.utils import WithLogger
 from services.models.net_stats import NetworkStats
 
 
-class Achievement(Enum):
-    # note: str(Achievement) is name "TEST" not "__test"
+class Achievement:
     TEST = '__test'
 
     DAU = 'dau'
@@ -20,6 +18,29 @@ class Achievement(Enum):
     WALLET_COUNT = 'wallet_count'
     DAILY_TX_COUNT = 'daily_tx_count'
     DAILY_VOLUME = 'daily_volume'
+    BLOCK_NUMBER = 'block_number'
+    ANNIVERSARY = 'anniversary'
+
+    # every single digit is a milestone
+    GROUP_EVERY_1 = {
+        BLOCK_NUMBER,
+        ANNIVERSARY,
+    }
+
+    # this metrics require a bit more complex logic to transform value to milestone
+    GROUP_SPECIAL_TRANSFORM = {
+        ANNIVERSARY: {
+            'forward': lambda x: math.floor(x / YEAR),
+            'backward': lambda x: x * YEAR,
+        }
+    }
+
+    # this metrics only trigger when greater than their minimums
+    GROUP_MINIMALS = {
+        DAU: 300,
+        MAU: 6500,
+        WALLET_COUNT: 61000,
+    }
 
 
 class Milestones:
@@ -66,10 +87,11 @@ class Milestones:
 
 class AchievementRecord(NamedTuple):
     key: str
-    value: int
-    milestone: int
+    value: int  # real current value
+    milestone: int  # current milestone
+    timestamp: float
     prev_milestone: int
-    last_ts: float
+    previous_ts: float
 
 
 class EventAchievement(NamedTuple):
@@ -81,21 +103,54 @@ class AchievementsTracker(WithLogger):
         super().__init__()
         self.db = db
         self.milestones = Milestones()
+        self.milestones_every = Milestones(list(range(1, 10)))
 
     def key(self, name):
         return f'Achievements:{name}'
 
-    async def feed_data(self, name: Achievement, value: int) -> Optional[EventAchievement]:
+    @staticmethod
+    def transform_value(key, value, backward=False):
+        transform = Achievement.GROUP_SPECIAL_TRANSFORM.get(key)
+        if transform:
+            return transform['backward' if backward else 'forward'](value)
+        return value
+
+    @staticmethod
+    def get_minimum(key):
+        return Achievement.GROUP_MINIMALS.get(key, 0)
+
+    def get_previous_milestone(self, key, value):
+        if key in Achievement.GROUP_EVERY_1:
+            v = self.milestones_every.previous(value)
+        else:
+            v = self.milestones.previous(value)
+
+        return v
+
+    async def feed_data(self, name: str, value: int) -> Optional[EventAchievement]:
         assert name
+
+        value = self.transform_value(name, value)
+
+        if value < self.get_minimum(name):
+            return None
+
         record = await self.get_achievement_record(name)
-        current_milestone = self.milestones.previous(value)
+        current_milestone = self.get_previous_milestone(name, value)
         if record is None:
-            record = AchievementRecord(str(name), value, current_milestone, 0, now_ts())
+            # first time, just write and return
+            record = AchievementRecord(
+                str(name), value, current_milestone, now_ts(), 0, 0
+            )
             await self.set_achievement_record(record)
             self.logger.info(f'New achievement record created {record}')
         else:
+            # check if we need to update
             if current_milestone > record.value:
-                record = AchievementRecord(str(name), value, current_milestone, record.milestone, now_ts())
+                record = AchievementRecord(
+                    str(name), value, current_milestone, now_ts(),
+                    prev_milestone=record.milestone, previous_ts=record.timestamp
+                )
                 await self.set_achievement_record(record)
                 self.logger.info(f'Achievement record updated {record}')
                 return EventAchievement(record)
@@ -118,14 +173,27 @@ class AchievementTest(NamedTuple):
 
 
 class AchievementsNotifier(WithLogger, WithDelegates, INotified):
-    async def on_data(self, sender, data):
+    async def extract_events_by_type(self, data):
         if isinstance(data, NetworkStats):
             kv_events = await self.on_network_stats(data)
         elif isinstance(data, AchievementTest):
             kv_events = [(Achievement.TEST, data.value)]
         else:
             self.logger.warning(f'Unknown data type {type(data)}. Dont know how to handle it.')
-            return
+            kv_events = []
+        return kv_events
+
+    @staticmethod
+    async def on_network_stats(data: NetworkStats):
+        achievements = [
+            (Achievement.DAU, data.users_daily),
+            (Achievement.MAU, data.users_monthly),
+            # todo: add more handlers
+        ]
+        return achievements
+
+    async def on_data(self, sender, data):
+        kv_events = await self.extract_events_by_type(data)
 
         for key, value in kv_events:
             event = await self.tracker.feed_data(key, value)
@@ -136,11 +204,3 @@ class AchievementsNotifier(WithLogger, WithDelegates, INotified):
         super().__init__()
         self.deps = deps
         self.tracker = AchievementsTracker(deps.db)
-
-    async def on_network_stats(self, data: NetworkStats):
-        achievements = [
-            (Achievement.DAU, data.users_daily),
-            (Achievement.MAU, data.users_monthly),
-            # todo: add more
-        ]
-        return achievements

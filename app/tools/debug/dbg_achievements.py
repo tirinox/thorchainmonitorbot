@@ -19,7 +19,7 @@ class DebugAchievementsFetcher(BaseFetcher):
 
     async def fetch(self):
         r = random.randint(1, self.limit)
-        self.limit = int(self.limit * random.uniform(1.1, 2.3))
+        self.limit = int(self.limit * random.uniform(1.1, 1.5))
         self.logger.info(f'Generated achievement "test" event with value {r}')
         return AchievementTest(r)
 
