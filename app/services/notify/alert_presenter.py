@@ -1,6 +1,7 @@
 import asyncio
 
 from localization.manager import BaseLocalization
+from services.dialog.picture.achievement_picture import AchievementPictureGenerator
 from services.dialog.picture.block_height_picture import block_speed_chart
 from services.dialog.picture.savers_picture import SaversPictureGenerator
 from services.jobs.achievements import EventAchievement
@@ -99,7 +100,10 @@ class AlertPresenter(INotified):
         await self.broadcaster.notify_preconfigured_channels(_gen, event)
 
     async def _handle_achievement(self, event: EventAchievement):
-        async def _gen(loc: BaseLocalization, event):
-            return loc.ach.notification_achievement_unlocked(event)
+        async def _gen(loc: BaseLocalization, _e: EventAchievement):
+            pic_gen = AchievementPictureGenerator(loc.ach, _e.achievement)
+            pic, pic_name = await pic_gen.get_picture()
+            caption = loc.ach.notification_achievement_unlocked(event)
+            return BoardMessage.make_photo(pic, caption=caption, photo_file_name=pic_name)
 
         await self.broadcaster.notify_preconfigured_channels(_gen, event)

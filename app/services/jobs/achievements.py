@@ -167,6 +167,10 @@ class AchievementsTracker(WithLogger):
         key = self.key(record.key)
         await self.db.redis.set(key, json.dumps(record._asdict()))
 
+    async def delete_achievement_record(self, key):
+        key = self.key(key)
+        await self.db.redis.delete(key)
+
 
 class AchievementTest(NamedTuple):
     value: int
