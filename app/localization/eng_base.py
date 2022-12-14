@@ -10,7 +10,8 @@ from localization.achievements.ach_eng import AchievementsEnglishLocalization
 from proto.thor_types import THORName
 from services.jobs.fetch.circulating import SupplyEntry, ThorRealms
 from services.lib.config import Config
-from services.lib.constants import rune_origin, thor_to_float, THOR_BLOCK_TIME, DEFAULT_CEX_NAME, DEFAULT_CEX_BASE_ASSET
+from services.lib.constants import rune_origin, thor_to_float, THOR_BLOCK_TIME, DEFAULT_CEX_NAME, \
+    DEFAULT_CEX_BASE_ASSET, THOR_BASIS_POINT_MAX
 from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE, DAY
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
     get_explorer_url_for_node, get_pool_url, get_thoryield_address, get_ip_info_link
@@ -61,7 +62,7 @@ class BaseLocalization(ABC):  # == English
     LOADING = '⌛ <i>Loading...</i>'
     LONG_DASH = '–'
     SUCCESS = '✅ Success!'
-    ERROR = '❌ Error'
+    ERROR = '❌ Error!'
     NOT_READY = 'Sorry but the data is not ready yet.'
     ND = 'N/D'
     NA = 'N/A'
@@ -1333,6 +1334,11 @@ class BaseLocalization(ABC):  # == English
                 return f'"{chain_name}"'
             except ValueError:
                 return str(v)
+        elif units == MimirUnits.UNITS_USD:
+            return short_dollar(thor_to_float(v))
+        elif units == MimirUnits.UNITS_BASE_POINTS:
+            p = int(v) / THOR_BASIS_POINT_MAX * 100.0
+            return f'{p:.02f}% ({int(v)} bp)'
         else:
             return str(v)
 
