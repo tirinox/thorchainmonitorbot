@@ -94,6 +94,16 @@ BOOL_CONSTANTS = {
     'REMOVESNXPOOL',
 }
 
+DOLLAR_CONSTANTS = {
+    'MINIMUML1OUTBOUNDFEEUSD',
+}
+
+BASE_POINTS_CONSTANTS = {
+    'MAXSYNTHPERASSETDEPTH',
+    'MAXSYNTHPERPOOLDEPTH',
+    'CLOUDPROVIDERLIMIT',
+}
+
 TRANSLATE_MIMIRS = {
     'PAUSELPLTC': 'Pause LP LTC',
     'PAUSELPETH': 'Pause LP ETH',
@@ -212,6 +222,8 @@ class MimirUnits:
     UNITS_BLOCKS = 'blocks'
     UNITS_BOOL = 'bool'
     UNITS_NEXT_CHAIN = 'next_chain'
+    UNITS_USD = 'usd'
+    UNITS_BASE_POINTS = 'base_points'
 
     @staticmethod
     def get_mimir_units(name):
@@ -222,8 +234,12 @@ class MimirUnits:
             return MimirUnits.UNITS_BLOCKS
         elif name in BOOL_CONSTANTS:
             return MimirUnits.UNITS_BOOL
+        elif name in DOLLAR_CONSTANTS:
+            return MimirUnits.UNITS_USD
         elif name == NEXT_CHAIN_KEY:
             return MimirUnits.UNITS_NEXT_CHAIN
+        elif name in BASE_POINTS_CONSTANTS:
+            return MimirUnits.UNITS_BASE_POINTS
         else:
             return ''
 
