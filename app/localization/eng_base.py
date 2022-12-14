@@ -60,7 +60,7 @@ class BaseLocalization(ABC):  # == English
     LOADING = '⌛ <i>Loading...</i>'
     LONG_DASH = '–'
     SUCCESS = '✅ Success!'
-    ERROR = '❌ Error'
+    ERROR = '❌ Error!'
     NOT_READY = 'Sorry but the data is not ready yet.'
     ND = 'N/D'
     NA = 'N/A'
