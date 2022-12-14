@@ -1,14 +1,12 @@
 import asyncio
 
 from services.jobs.fetch.base import BaseFetcher
-from services.jobs.fetch.pool_price import PoolFetcher
 from services.jobs.ilp_summer import ILPSummer
 from services.jobs.user_counter import UserCounter
 from services.lib.constants import THOR_BLOCK_TIME, thor_to_float
 from services.lib.date_utils import parse_timespan_to_seconds, now_ts, DAY
 from services.lib.depcont import DepContainer
 from services.lib.midgard.urlgen import free_url_gen
-from services.models.mimir import MimirHolder
 from services.models.net_stats import NetworkStats
 from services.models.swap_history import SwapHistoryResponse
 
@@ -54,9 +52,7 @@ class NetworkStatisticsFetcher(BaseFetcher):
         ns.next_pool_activation_ts = now_ts() + THOR_BLOCK_TIME * next_cool_cd
 
         bonding_metrics = j['bondMetrics']
-
         ns.total_active_bond_rune = thor_to_float(bonding_metrics['totalActiveBond'])
-
         stand_by_bond = thor_to_float(bonding_metrics['totalStandbyBond'])
         ns.total_bond_rune = ns.total_active_bond_rune + stand_by_bond
 

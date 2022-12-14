@@ -107,4 +107,5 @@ class NetworkStats(BaseModelMixin):
 
     @property
     def is_ok(self):
-        return self.total_rune_pooled > 0 and self.active_pool_count > 0 and self.active_nodes > 0
+        return self.total_rune_pooled > 0 and self.active_pool_count > 0 \
+               and self.active_nodes > 0 and self.total_active_bond_rune > 0
