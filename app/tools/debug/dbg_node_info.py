@@ -8,9 +8,10 @@ from semver import VersionInfo
 from localization.languages import Language
 from localization.manager import LocalizationManager
 from services.jobs.fetch.node_info import NodeInfoFetcher
+from services.jobs.node_churn import NodeChurnDetector
 from services.lib.texts import sep
 from services.lib.utils import setup_logs
-from services.models.node_info import NodeSetChanges, NodeVersionConsensus
+from services.models.node_info import NodeSetChanges, NodeVersionConsensus, NodeInfo
 from tools.lib.lp_common import LpAppFramework
 
 
@@ -140,6 +141,29 @@ async def node_churn_notification_test(lpgen: LpAppFramework, nodes):
         # await lpgen.send_test_tg_message(msg)
 
 
+def make_node(is_active=True):
+    n = NodeInfo(
+        version='1.101.1',
+        bond=random.randint(1, 1000000),
+        node_address='thor1' + ''.join(random.choices('0123456789abcdef', k=40)),
+    )
+    n.status = n.ACTIVE if is_active else n.STANDBY
+    return n
+
+
+async def demo_churn_test(app: LpAppFramework):
+    det = NodeChurnDetector(app.deps)
+
+    prev_list = [
+        make_node(is_active=random.uniform(0, 1) > 0.5) for _ in range(10)
+    ]
+
+    new_list = list(prev_list) + [make_node()]
+
+    changes = det.extract_changes(new_list, prev_list)
+    print(changes)
+
+
 async def main():
     lpgen = LpAppFramework()
     async with lpgen:
@@ -147,10 +171,11 @@ async def main():
 
         data = await node_info_fetcher.fetch()
 
-        await node_churn_notification_test(lpgen, data)
+        # await node_churn_notification_test(lpgen, data)
 
         # await node_version_notification_check_1(lpgen, data)
         # await node_version_notification_check_progress(lpgen, data)
+        await demo_churn_test(lpgen)
 
 
 if __name__ == "__main__":

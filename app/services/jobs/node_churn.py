@@ -42,8 +42,12 @@ class NodeChurnDetector(WithDelegates, INotified):
     async def get_last_node_info(self) -> List[NodeInfo]:
         return await NodeStateDatabase(self.deps).get_last_node_info_list()
 
-    async def extract_changes(self, new_nodes: List[NodeInfo]) -> NodeSetChanges:
+    async def compare_with_new_nodes(self, new_nodes: List[NodeInfo]) -> NodeSetChanges:
         old_nodes = await self.get_last_node_info()
+        return self.extract_changes(new_nodes, old_nodes)
+
+    @staticmethod
+    def extract_changes(new_nodes: List[NodeInfo], old_nodes: List[NodeInfo]) -> NodeSetChanges:
         if not old_nodes:
             return NodeSetChanges.empty()
 
@@ -77,7 +81,7 @@ class NodeChurnDetector(WithDelegates, INotified):
                               nodes_previous=old_nodes)
 
     async def on_data(self, sender, info_list: List[NodeInfo]):
-        result = await self.extract_changes(info_list)
+        result = await self.compare_with_new_nodes(info_list)
 
         # result = self._dbg_modification(result)
 

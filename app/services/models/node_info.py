@@ -173,7 +173,11 @@ class NodeSetChanges:
         all_add_removed_are_strange = all(
             node.in_strange_status for node in (self.nodes_added + self.nodes_removed)
         )
-        return not self.nodes_activated and not self.nodes_deactivated and all_add_removed_are_strange
+        return not self.has_churn_happened and all_add_removed_are_strange
+
+    @property
+    def has_churn_happened(self):
+        return self.nodes_activated or self.nodes_deactivated
 
     @property
     def count_of_changes(self):
