@@ -120,14 +120,6 @@ def is_fee_tx(amount, asset, to_addr, reserve_address):
 
 # This one is presently used!
 class RuneTransferDetectorTxLogs(WithDelegates, INotified):
-    IGNORE_EVENTS = (
-        'coin_spent',
-        'coin_received',
-        'fee',
-        'transfer',
-        'message',
-    )
-
     DEFAULT_RESERVE_ADDRESS = 'thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt'
 
     def __init__(self, reserve_address=None):
@@ -154,8 +146,6 @@ class RuneTransferDetectorTxLogs(WithDelegates, INotified):
             ev['type']: ev['attributes'] for ev in tx_log
         }
 
-        # join all interesting events' names
-        # comment = ", ".join([name for name in ev_map.keys() if name not in self.IGNORE_EVENTS])
         comment = tx_name
 
         results = []
