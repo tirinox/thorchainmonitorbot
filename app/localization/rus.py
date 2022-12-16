@@ -559,7 +559,8 @@ class RussianLocalization(BaseLocalization):
             else:
                 extra = ital(ru_stat.get(str(status).lower(), ''))
                 if to_status is not None:
-                    extra += f' → {ital(ru_stat[to_status])}'
+                    to_stat_str = ital(ru_stat.get(str(to_status).lower(), ''))
+                    extra += f' → {to_stat_str}'
                 extra = f'({extra})'
             return f'  • {self.pool_link(pool_name)}: {extra}'
 
