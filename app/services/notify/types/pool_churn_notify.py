@@ -1,15 +1,14 @@
-from localization.manager import BaseLocalization
 from services.jobs.fetch.pool_price import PoolInfoFetcherMidgard
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds
-from services.lib.delegates import INotified
+from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 from services.models.pool_info import PoolInfoMap, PoolChanges, PoolChange
 from services.models.price import RuneMarketInfo
 
 
-class PoolChurnNotifier(INotified, WithLogger):
+class PoolChurnNotifier(INotified, WithDelegates, WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
@@ -25,13 +24,12 @@ class PoolChurnNotifier(INotified, WithLogger):
 
         pool_changes = self.compare_pool_sets(data.pools)
 
+        # self._dbg_pool_changes(pool_changes) # fixme: debug (!)
+
         if pool_changes.any_changed:
             self.logger.info(f'Pool changes detected: {pool_changes}!')
             if await self.spam_cd.can_do():
-                # todo: connect to AlertPresenter!
-                await self.deps.broadcaster.notify_preconfigured_channels(
-                    BaseLocalization.notification_text_pool_churn,
-                    pool_changes)
+                await self.pass_data_to_listeners(pool_changes)
                 await self.spam_cd.do()
 
         self.old_pool_dict = data.pools
@@ -67,7 +65,11 @@ class PoolChurnNotifier(INotified, WithLogger):
 
     @staticmethod
     def _dbg_pool_changes(pool_changes):
-        pool_changes.pools_added.append(PoolChange('BNB.LOL-123', 'staged', 'staged'))
-        pool_changes.pools_removed.append(PoolChange('BNB.LOL-123', 'staged', 'staged'))
-        pool_changes.pools_changed.append(PoolChange('BNB.LOL-123', 'staged', 'available'))
+        import random
+        def rnd_status():
+            return random.choice(['staged', 'available', 'Staged', 'Available', 'STAGED', 'AVAILABLE'])
+
+        pool_changes.pools_added.append(PoolChange('BNB.LOL-123', rnd_status(), rnd_status()))
+        pool_changes.pools_removed.append(PoolChange('BNB.LOL-123', rnd_status(), rnd_status()))
+        pool_changes.pools_changed.append(PoolChange('BNB.LOL-123', rnd_status(), rnd_status()))
         return pool_changes

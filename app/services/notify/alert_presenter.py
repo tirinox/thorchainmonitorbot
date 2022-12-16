@@ -10,6 +10,7 @@ from services.lib.delegates import INotified
 from services.lib.midgard.name_service import NameService
 from services.lib.w3.dex_analytics import DexReport
 from services.models.last_block import EventBlockSpeed, BlockProduceState
+from services.models.pool_info import PoolChanges
 from services.models.transfer import RuneCEXFlow, RuneTransfer
 from services.models.tx import EventLargeTransaction
 from services.notify.broadcast import Broadcaster
@@ -38,6 +39,8 @@ class AlertPresenter(INotified):
             await self._handle_dex_report(data)
         elif isinstance(data, EventSaverStats):
             await self._handle_saver_stats(data)
+        elif isinstance(data, PoolChanges):
+            await self._handle_pool_churn(data)
         elif isinstance(data, EventAchievement):
             await self._handle_achievement(data)
 
@@ -98,6 +101,9 @@ class AlertPresenter(INotified):
             return BoardMessage.make_photo(pic, caption=caption, photo_file_name=pic_name)
 
         await self.broadcaster.notify_preconfigured_channels(_gen, event)
+
+    async def _handle_pool_churn(self, event: PoolChanges):
+        await self.broadcaster.notify_preconfigured_channels(BaseLocalization.notification_text_pool_churn, event)
 
     async def _handle_achievement(self, event: EventAchievement):
         async def _gen(loc: BaseLocalization, _e: EventAchievement):

@@ -338,6 +338,7 @@ class App:
         if d.cfg.get('pool_churn.enabled', True):
             notifier_pool_churn = PoolChurnNotifier(d)
             d.pool_fetcher.add_subscriber(notifier_pool_churn)
+            notifier_pool_churn.add_subscriber(d.alert_presenter)
 
         if d.cfg.get('best_pools.enabled', True):
             # note: we don't use "pool_fetcher" here since PoolInfoFetcherMidgard gives richer info including APY
