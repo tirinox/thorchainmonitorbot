@@ -10,6 +10,7 @@ class AchievementDescription(NamedTuple):
     description: str
     postfix: str = ''
     prefix: str = ''
+    url: str = ''  # url to the dashboard
 
     @property
     def image(self):

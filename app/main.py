@@ -258,10 +258,12 @@ class App:
         store_queue = QueueStoreMetrics(d)
         fetcher_queue.add_subscriber(store_queue)
 
+        achievements_enabled = d.cfg.get('achievements.enabled', True)
         achievements = AchievementsNotifier(d)
-        if d.cfg.get('achievements.enabled', True):
-            achievements.add_subscriber(d.alert_presenter)
+        if achievements_enabled:
             # achievements will subscribe to other components later in this method
+            achievements.add_subscriber(d.alert_presenter)
+            # todo: add wallet counter to achievements
 
         if d.cfg.get('queue.enabled', True):
             notifier_queue = QueueNotifier(d)
@@ -273,14 +275,17 @@ class App:
             fetcher_stats.add_subscriber(notifier_stats)
             tasks.append(fetcher_stats)
 
-            fetcher_stats.add_subscriber(achievements)
+            if achievements_enabled:
+                fetcher_stats.add_subscriber(achievements)
 
         d.last_block_fetcher = LastBlockFetcher(d)
         tasks.append(d.last_block_fetcher)
 
         d.last_block_store = LastBlockStore(d)
         d.last_block_fetcher.add_subscriber(d.last_block_store)
-        d.last_block_fetcher.add_subscriber(achievements)
+
+        if achievements_enabled:
+            d.last_block_fetcher.add_subscriber(achievements)
 
         if d.cfg.get('last_block.enabled', True):
             d.block_notifier = BlockHeightNotifier(d)
@@ -311,13 +316,16 @@ class App:
             tasks.append(krf)
             kr_store = KilledRuneStore(d)
             krf.add_subscriber(kr_store)
-            krf.add_subscriber(achievements)
+            if achievements_enabled:
+                krf.add_subscriber(achievements)
 
         if d.cfg.get('price.enabled', True):
             # handles RuneMarketInfo
             notifier_price = PriceNotifier(d)
             d.pool_fetcher.add_subscriber(notifier_price)
-            d.pool_fetcher.add_subscriber(achievements)
+
+            if achievements_enabled:
+                d.pool_fetcher.add_subscriber(achievements)
 
             if d.cfg.get('price.divergence.enabled', True):
                 price_div_notifier = PriceDivergenceNotifier(d)
@@ -352,7 +360,8 @@ class App:
         if d.cfg.get('constants.voting.enabled', True):
             voting_notifier = VotingNotifier(d)
             d.mimir_const_fetcher.add_subscriber(voting_notifier)
-            d.mimir_const_fetcher.add_subscriber(achievements)
+            if achievements_enabled:
+                d.mimir_const_fetcher.add_subscriber(achievements)
 
         if d.cfg.get('rune_transfer.enabled', True):
             fetcher_bep2 = BinanceOrgDexWSSClient()
