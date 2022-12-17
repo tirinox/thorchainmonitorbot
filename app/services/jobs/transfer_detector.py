@@ -1,4 +1,3 @@
-from collections import Counter
 from typing import List
 
 from proto import NativeThorTx, parse_thor_address, DecodedEvent, thor_decode_amount_field
@@ -7,7 +6,7 @@ from services.jobs.fetch.native_scan import BlockResult
 from services.lib.constants import thor_to_float, is_rune
 from services.lib.delegates import WithDelegates, INotified
 from services.lib.money import Asset
-from services.lib.utils import class_logger
+from services.lib.utils import WithLogger
 from services.models.transfer import RuneTransfer
 
 DEFAULT_RUNE_FEE = 2000000
@@ -21,15 +20,14 @@ class RuneTransferDetectorNativeTX(WithDelegates, INotified):
     def address_parse(self, raw_address):
         return parse_thor_address(raw_address, self.address_prefix)
 
-    async def on_data(self, sender, data):
-        txs: List[NativeThorTx]
-        txs, block_no = data
-
+    def process_block(self, txs: List[NativeThorTx], block_no):
         if not txs:
-            return
+            return []
         transfers = []
         for tx in txs:
+            memo = tx.tx.body.memo
             for message in tx.tx.body.messages:
+                comment = (type(message)).__name__
                 if isinstance(message, MsgSend):
                     from_addr = self.address_parse(message.from_address)
                     to_addr = self.address_parse(message.to_address)
@@ -41,7 +39,9 @@ class RuneTransferDetectorNativeTX(WithDelegates, INotified):
                             tx_hash=tx.hash,
                             amount=thor_to_float(coin.amount),
                             is_native=True,
-                            asset=coin.denom
+                            asset=coin.denom,
+                            comment=comment,
+                            memo=memo,
                         ))
                 elif isinstance(message, MsgDeposit):
                     for coin in message.coins:
@@ -52,9 +52,16 @@ class RuneTransferDetectorNativeTX(WithDelegates, INotified):
                             tx_hash=tx.hash,
                             amount=thor_to_float(coin.amount),
                             is_native=True,
-                            asset=Asset(coin.asset.chain, coin.asset.symbol, is_synth=True).full_name
+                            asset=Asset(coin.asset.chain, coin.asset.symbol, is_synth=True).full_name,
+                            comment=comment,
+                            memo=memo,
                         ))
+        return transfers
 
+    async def on_data(self, sender, data):
+        txs: List[NativeThorTx]
+        txs, block_no = data
+        transfers = self.process_block(txs, block_no)
         await self.pass_data_to_listeners(transfers)
 
 
@@ -122,13 +129,13 @@ def is_fee_tx(amount, asset, to_addr, reserve_address):
 
 
 # This one is presently used!
-class RuneTransferDetectorTxLogs(WithDelegates, INotified):
+class RuneTransferDetectorTxLogs(WithDelegates, INotified, WithLogger):
     DEFAULT_RESERVE_ADDRESS = 'thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt'
 
     def __init__(self, reserve_address=None):
         super().__init__()
         self.reserve_address = reserve_address or self.DEFAULT_RESERVE_ADDRESS
-        self.logger = class_logger(self)
+        self.tx_proc = RuneTransferDetectorNativeTX()
 
     @staticmethod
     def _parse_transfers(transfer_attributes: list):
@@ -184,17 +191,19 @@ class RuneTransferDetectorTxLogs(WithDelegates, INotified):
 
     def process_events(self, r: BlockResult):
         transfers = []
+
+        transfers += self.tx_proc.process_block(r.txs, r.block_no)
+
         # fixme: problem r.txs does not map to r.tx_logs!! txs != tx_logs, sometimes len(txs) > len(tx_logs)
-
-        for tx, raw_logs in zip(r.txs, r.tx_logs):
-            try:
-                tx: NativeThorTx
-
-                this_transfers = self._parse_one_tx(raw_logs[0]['events'], r.block_no, tx)
-                if this_transfers:
-                    transfers.extend(this_transfers)
-            except (KeyError, ValueError):
-                raise
+        # for tx, raw_logs in zip(r.txs, r.tx_logs):
+        #     try:
+        #         tx: NativeThorTx
+        #
+        #         this_transfers = self._parse_one_tx(raw_logs[0]['events'], r.block_no, tx)
+        #         if this_transfers:
+        #             transfers.extend(this_transfers)
+        #     except (KeyError, ValueError):
+        #         raise
 
         # add Outbounds
         for ev in r.end_block_events:
