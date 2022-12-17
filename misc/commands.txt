@@ -1,14 +1,13 @@
-help - This help page
 start - Start/restart the bot
-lang - Set the language
-cap - The current liquidity cap
-price - The current Rune price
-queue - TX queue info
-nodes - List of THOR Nodes
+lp - Track LP/Savings yield
+price - Rune price chart
 stats - THORChain stats
+savings - Savings vaults stats
+supply - Rune supply chart
+queue - TX queue info
+nodes - List of THORNodes
 chains - Connected blockchains
 mimir - Mimir global constants
 pools - Top pools
-lp - Check your LP yield
 voting - Node-Mimir voting
-supply - Rune coin supply
+lang - Set the language

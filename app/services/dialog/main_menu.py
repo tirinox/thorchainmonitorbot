@@ -116,6 +116,11 @@ class MainMenuDialog(BaseDialog):
         message.text = ''
         await MetricsDialog(self.loc, self.data, self.deps, self.message).show_rune_supply(message)
 
+    @message_handler(commands='savings', state='*')
+    async def cmd_savings(self, message: Message):
+        message.text = ''
+        await MetricsDialog(self.loc, self.data, self.deps, self.message).show_savers(message)
+
     @message_handler(commands='voting', state='*')
     async def cmd_voting(self, message: Message):
         message.text = ''
