@@ -1045,7 +1045,7 @@ class BaseLocalization(ABC):  # == English
         message += f'📈 Bonding APY is {code(pretty_money(new.bonding_apy, postfix="%"))}{bonding_apy_change} and ' \
                    f'Liquidity APY is {code(pretty_money(new.liquidity_apy, postfix="%"))}{liquidity_apy_change}.\n'
 
-        message += f'🛡️ Total Imp. Loss. Protection paid: {code(short_dollar(new.loss_protection_paid_usd))}.\n'
+        message += f'🛡️ Total Imp. Loss Protection paid: {code(short_dollar(new.loss_protection_paid_usd))}.\n'
 
         if new.users_daily or new.users_monthly:
             daily_users_change = bracketify(up_down_arrow(old.users_daily, new.users_daily, int_delta=True))

@@ -479,7 +479,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
             parts.append(message)
 
-        message = f'🛡 Total Imp. Loss. Protection paid: {(short_dollar(new.loss_protection_paid_usd))}.\n'
+        message = f'🛡 Total Imp. Loss Protection paid: {(short_dollar(new.loss_protection_paid_usd))}.\n'
         parts.append(message)
 
         # --------------------------------------------------------------------------------------------------------------
