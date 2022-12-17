@@ -44,10 +44,14 @@ class LpAppFramework(App):
     @staticmethod
     def solve_working_dir_mess():
         cwd = os.getcwd()
-        if cwd.endswith('/tools/debug'):
-            os.chdir(cwd.replace('/tools/debug', ''))
-            cwd_new = os.getcwd()
-            print(f'Hey! Auto changed directory. "{cwd}" -> "{cwd_new}"!')
+
+        for replacement in ['/tools/debug', '/tests']:
+            if cwd.endswith(replacement):
+                cwd_new = cwd.replace(replacement, '')
+                os.chdir(cwd_new)
+                cwd_new = os.getcwd()
+                print(f'Hey! Auto changed directory. "{cwd}" -> "{cwd_new}"!')
+                break
 
     @property
     def tg_token(self):

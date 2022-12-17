@@ -95,7 +95,10 @@ class Config(SubConfig):
             if name:
                 self._config_name = name
             else:
-                self._config_name = sys.argv[1] if len(sys.argv) >= 2 else self.DEFAULT
+                if len(sys.argv) >= 2 and 'pytest' not in sys.argv[0]:
+                    self._config_name = sys.argv[1]
+                else:
+                    self._config_name = self.DEFAULT
 
             with open(self._config_name, 'r') as f:
                 data = yaml.load(f, Loader=yaml.SafeLoader)
