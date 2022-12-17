@@ -1,13 +1,13 @@
 from typing import List
 
-from services.lib.delegates import INotified, WithDelegates
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds, DAY
+from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.money import Asset
 from services.lib.utils import class_logger
-from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.time_series import TimeSeries
+from services.models.transfer import RuneTransfer, RuneCEXFlow
 
 
 class RuneMoveNotifier(INotified, WithDelegates):
@@ -57,8 +57,10 @@ class RuneMoveNotifier(INotified, WithDelegates):
 
     def _is_to_be_ignored(self, transfer: RuneTransfer):
         if transfer.comment:
-            if any(1 for ignored_text in self.IGNORE_COMMENTS if ignored_text in transfer.comment.lower()):
-                return True
+            comment = transfer.comment.lower()
+            for ignore_comment in self.IGNORE_COMMENTS:
+                if ignore_comment in comment:
+                    return True
 
         return False
 
@@ -87,7 +89,11 @@ class RuneMoveNotifier(INotified, WithDelegates):
             await self.handle_big_transfer(transfer, usd_per_rune)
             await self._store_transfer(transfer)
 
-        if transfers and await self.summary_cd.can_do():
+        if transfers:
+            await self._notify_cex_flow(usd_per_rune)
+
+    async def _notify_cex_flow(self, usd_per_rune):
+        if await self.summary_cd.can_do():
             flow = await self.tracker.read_last24h()
             flow.usd_per_rune = usd_per_rune
             await self.summary_cd.do()

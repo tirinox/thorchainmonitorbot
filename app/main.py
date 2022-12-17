@@ -368,6 +368,7 @@ class App:
             fetcher_bep2 = BinanceOrgDexWSSClient()
             d.rune_move_notifier = RuneMoveNotifier(d)
             fetcher_bep2.add_subscriber(d.rune_move_notifier)
+            # Public BEP2 rune transfers:
             d.rune_move_notifier.add_subscriber(d.alert_presenter)
             tasks.append(fetcher_bep2)
 
@@ -383,6 +384,7 @@ class App:
             user_counter = UserCounter(d)
             scanner.add_subscriber(user_counter)
 
+            # Public: THOR.Rune transfer
             if d.rune_move_notifier is not None:
                 decoder.add_subscriber(d.rune_move_notifier)
 

@@ -1,3 +1,4 @@
+from collections import Counter
 from typing import List
 
 from proto import NativeThorTx, parse_thor_address, DecodedEvent, thor_decode_amount_field
@@ -8,6 +9,8 @@ from services.lib.delegates import WithDelegates, INotified
 from services.lib.money import Asset
 from services.lib.utils import class_logger
 from services.models.transfer import RuneTransfer
+
+DEFAULT_RUNE_FEE = 2000000
 
 
 class RuneTransferDetectorNativeTX(WithDelegates, INotified):
@@ -115,7 +118,7 @@ class RuneTransferDetectorFromTxResult(WithDelegates, INotified):
 
 
 def is_fee_tx(amount, asset, to_addr, reserve_address):
-    return amount == 2000000 and asset.lower() == 'rune' and to_addr == reserve_address
+    return amount == DEFAULT_RUNE_FEE and asset.lower() == 'rune' and to_addr == reserve_address
 
 
 # This one is presently used!
@@ -141,12 +144,13 @@ class RuneTransferDetectorTxLogs(WithDelegates, INotified):
                 d = {}
         return results
 
-    def _parse_one_tx(self, tx_log, block_no, tx_hash, tx_name: str, tx: NativeThorTx):
+    def _parse_one_tx(self, tx_log, block_no, tx: NativeThorTx):
+        comment = (type(tx.first_message)).__name__
+        tx_hash = tx.hash
+
         ev_map = {
             ev['type']: ev['attributes'] for ev in tx_log
         }
-
-        comment = tx_name
 
         results = []
         if 'transfer' in ev_map:
@@ -158,6 +162,12 @@ class RuneTransferDetectorTxLogs(WithDelegates, INotified):
                     # this is a fee, ignore it
                     continue
 
+                memo = ''
+                try:
+                    memo = tx.tx.body.memo or tx.first_message.memo
+                except AttributeError:
+                    pass
+
                 results.append(RuneTransfer(
                     from_addr=transfer['sender'],
                     to_addr=recipient,
@@ -167,17 +177,20 @@ class RuneTransferDetectorTxLogs(WithDelegates, INotified):
                     asset=asset,
                     comment=comment,
                     is_native=True,
-                    memo=tx.tx.body.memo
+                    memo=memo
                 ))
 
         return results
 
     def process_events(self, r: BlockResult):
         transfers = []
+        # fixme: problem r.txs does not map to r.tx_logs!! txs != tx_logs, sometimes len(txs) > len(tx_logs)
+
         for tx, raw_logs in zip(r.txs, r.tx_logs):
             try:
-                tx_name = (type(tx.first_message)).__name__
-                this_transfers = self._parse_one_tx(raw_logs[0]['events'], r.block_no, tx.hash, tx_name, tx)
+                tx: NativeThorTx
+
+                this_transfers = self._parse_one_tx(raw_logs[0]['events'], r.block_no, tx)
                 if this_transfers:
                     transfers.extend(this_transfers)
             except (KeyError, ValueError):
