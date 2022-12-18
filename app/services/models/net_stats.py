@@ -19,6 +19,7 @@ class NetworkStats(BaseModelMixin):
     swaps_total: int = 0  # stats
     swaps_24h: int = 0  # stats
     swaps_30d: int = 0  # stats
+    unique_swapper_count: int = 0  # stats
 
     switched_rune: float = 0  # stats
 
