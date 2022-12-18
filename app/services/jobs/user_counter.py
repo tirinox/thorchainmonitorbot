@@ -1,3 +1,4 @@
+from proto.thor_types import MsgObservedTxIn
 from services.jobs.fetch.native_scan import BlockResult
 from services.lib.active_users import DailyActiveUserCounter, UserStats
 from services.lib.delegates import INotified
@@ -18,7 +19,7 @@ class UserCounter(INotified, WithLogger):
         'from', 'to', 'sender', 'recipient'
     ]
 
-    async def on_data(self, sender, data: BlockResult):
+    def get_unique_users(self, data: BlockResult):
         users = set()
         for ev in data.end_block_events:
             for field in self.USER_FIELDS:
@@ -26,10 +27,20 @@ class UserCounter(INotified, WithLogger):
                 if value and value:
                     users.add(value)
 
+        for tx in data.txs:
+            if msg := tx.first_message:
+                if isinstance(msg, MsgObservedTxIn):
+                    for observed_tx in msg.txs:
+                        if observed_tx and observed_tx.tx and observed_tx.tx.from_address:
+                            users.add(observed_tx.tx.from_address)
+
         users -= self._excluded_addresses
+        return users
+
+    async def on_data(self, sender, data: BlockResult):
+        users = self.get_unique_users(data)
         if users:
             self.logger.info(f'Adding {len(users)} unique users at this tick.')
-
         await self._counter.hit(users=users)
 
         # Example of usage:

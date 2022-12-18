@@ -78,13 +78,32 @@ async def real_life_active_scan_user_counter(app: LpAppFramework):
     await scanner.run()
 
 
+async def demo_unique_users_of_block(app: LpAppFramework):
+    user_counter = UserCounter(app.deps)
+    scanner = NativeScannerBlock(app.deps)
+
+    r = await scanner.fetch_one_block(7499377)  # donate
+    print('donate:', user_counter.get_unique_users(r))
+
+    r = await scanner.fetch_one_block(8700682)  # has 3 observed BTC tx ins
+    print('observed_in:', user_counter.get_unique_users(r))
+
+    r = await scanner.fetch_one_block(8700092)  # switch
+    print('switch:', user_counter.get_unique_users(r))
+
+    r = await scanner.fetch_one_block(8701069)  # synth
+    print('synth:', user_counter.get_unique_users(r))
+
+
+
 async def main():
     lp_app = LpAppFramework(log_level=logging.INFO)
     async with lp_app(brief=True):
         # await benchmark_accuracy_of_hyper_log_log(lp_app)
         # await play_dau(lp_app)
         # await auto_play_dau(lp_app)
-        await real_life_active_scan_user_counter(lp_app)
+        # await real_life_active_scan_user_counter(lp_app)
+        await demo_unique_users_of_block(lp_app)
 
 
 if __name__ == '__main__':
