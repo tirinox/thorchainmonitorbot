@@ -8,6 +8,10 @@ from services.lib.delegates import WithDelegates, INotified
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 from services.models.net_stats import NetworkStats
+from services.models.node_info import NodeSetChanges
+from services.notify.types.block_notify import LastBlockStore
+
+THORCHAIN_BIRTHDAY = 1618058210955  # 2021-04-10T12:36:50.955991742Z
 
 
 class Achievement:
@@ -15,11 +19,28 @@ class Achievement:
 
     DAU = 'dau'
     MAU = 'mau'
-    WALLET_COUNT = 'wallet_count'
-    DAILY_TX_COUNT = 'daily_tx_count'
-    DAILY_VOLUME = 'daily_volume'
+    WALLET_COUNT = 'wallet_count'  # todo
+
+    DAILY_TX_COUNT = 'daily_tx_count'  # todo
+    DAILY_VOLUME = 'daily_volume'  # todo
     BLOCK_NUMBER = 'block_number'
-    ANNIVERSARY = 'anniversary'
+    ANNIVERSARY = 'anniversary'  # todo
+
+    SWAP_COUNT_TOTAL = 'swap_count_total'
+    SWAP_COUNT_24H = 'swap_count_24h'
+    SWAP_COUNT_30D = 'swap_count_30d'
+    SWAP_UNIQUE_COUNT = 'swap_unique_count'
+
+    ADD_LIQUIDITY_COUNT_TOTAL = 'add_liquidity_count_total'
+    ADD_LIQUIDITY_VOLUME_TOTAL = 'add_liquidity_volume_total'
+
+    ILP_PAID_TOTAL = 'ilp_paid_total'
+
+    NODE_COUNT = 'node_count'
+    ACTIVE_NODE_COUNT = 'active_node_count'
+    TOTAL_ACTIVE_BOND = 'total_active_bond'
+    TOTAL_BOND = 'total_bond'
+    CHURNED_IN_BOND = 'churned_in_bond'
 
     # every single digit is a milestone
     GROUP_EVERY_1 = {
@@ -27,20 +48,19 @@ class Achievement:
         ANNIVERSARY,
     }
 
-    # this metrics require a bit more complex logic to transform value to milestone
-    GROUP_SPECIAL_TRANSFORM = {
-        ANNIVERSARY: {
-            'forward': lambda x: math.floor(x / YEAR),
-            'backward': lambda x: x * YEAR,
-        }
-    }
-
     # this metrics only trigger when greater than their minimums
     GROUP_MINIMALS = {
         DAU: 300,
         MAU: 6500,
         WALLET_COUNT: 61000,
+        BLOCK_NUMBER: 7_000_000,
+        ANNIVERSARY: 1,
     }
+
+    @classmethod
+    def all_keys(cls):
+        return [getattr(cls, k) for k in cls.__dict__
+                if not k.startswith('_') and not k.startswith('GROUP') and k.upper() == k]
 
 
 class Milestones:
@@ -109,13 +129,6 @@ class AchievementsTracker(WithLogger):
         return f'Achievements:{name}'
 
     @staticmethod
-    def transform_value(key, value, backward=False):
-        transform = Achievement.GROUP_SPECIAL_TRANSFORM.get(key)
-        if transform:
-            return transform['backward' if backward else 'forward'](value)
-        return value
-
-    @staticmethod
     def get_minimum(key):
         return Achievement.GROUP_MINIMALS.get(key, 0)
 
@@ -129,8 +142,6 @@ class AchievementsTracker(WithLogger):
 
     async def feed_data(self, name: str, value: int) -> Optional[EventAchievement]:
         assert name
-
-        value = self.transform_value(name, value)
 
         if value < self.get_minimum(name):
             return None
@@ -177,9 +188,13 @@ class AchievementTest(NamedTuple):
 
 
 class AchievementsNotifier(WithLogger, WithDelegates, INotified):
-    async def extract_events_by_type(self, data):
+    async def extract_events_by_type(self, sender, data):
         if isinstance(data, NetworkStats):
-            kv_events = await self.on_network_stats(data)
+            kv_events = self.on_network_stats(data)
+        elif isinstance(sender, LastBlockStore):
+            kv_events = self.on_block(sender)
+        elif isinstance(sender, NodeSetChanges):
+            kv_events = self.on_node_changes(data)
         elif isinstance(data, AchievementTest):
             kv_events = [(Achievement.TEST, data.value)]
         else:
@@ -188,21 +203,53 @@ class AchievementsNotifier(WithLogger, WithDelegates, INotified):
         return kv_events
 
     @staticmethod
-    async def on_network_stats(data: NetworkStats):
+    def on_network_stats(data: NetworkStats):
         achievements = [
             (Achievement.DAU, data.users_daily),
             (Achievement.MAU, data.users_monthly),
-            # todo: add more handlers
+            (Achievement.SWAP_COUNT_TOTAL, data.swaps_total),
+            (Achievement.SWAP_COUNT_24H, data.swaps_24h),
+            (Achievement.SWAP_COUNT_30D, data.swaps_30d),
+            (Achievement.SWAP_UNIQUE_COUNT, data.unique_swapper_count),
+            (Achievement.ADD_LIQUIDITY_COUNT_TOTAL, data.add_count),
+            (Achievement.ADD_LIQUIDITY_VOLUME_TOTAL, data.added_rune),
+            (Achievement.ILP_PAID_TOTAL, data.loss_protection_paid_rune),
+
+            (Achievement.TOTAL_ACTIVE_BOND, data.total_active_bond_rune),
+            (Achievement.TOTAL_BOND, data.total_bond_rune),
+        ]
+        return achievements
+
+    @staticmethod
+    def on_block(sender: LastBlockStore):
+        years_old = int((now_ts() - THORCHAIN_BIRTHDAY * 0.001) / YEAR)
+        achievements = [
+            (Achievement.BLOCK_NUMBER, int(sender.last_thor_block)),
+            (Achievement.ANNIVERSARY, years_old),
+        ]
+        return achievements
+
+    @staticmethod
+    def on_node_changes(data: NodeSetChanges):
+        achievements = [
+            (Achievement.CHURNED_IN_BOND, data.bond_churn_in),
+            (Achievement.NODE_COUNT, len(data.nodes_all)),
+            (Achievement.ACTIVE_NODE_COUNT, len(data.active_only_nodes)),
         ]
         return achievements
 
     async def on_data(self, sender, data):
-        kv_events = await self.extract_events_by_type(data)
+        try:
+            kv_events = await self.extract_events_by_type(sender, data)
 
-        for key, value in kv_events:
-            event = await self.tracker.feed_data(key, value)
-            if event:
-                await self.pass_data_to_listeners(event)
+            for key, value in kv_events:
+                event = await self.tracker.feed_data(key, value)
+                if event:
+                    self.logger.info(f'Achievement even occurred {event}!')
+                    await self.pass_data_to_listeners(event)
+        except Exception as e:
+            # we don't let this exception in the Achievements module to break the whole system
+            self.logger.exception(f'Error while processing data {type(data)} from {type(sender)}: {e}', exc_info=True)
 
     def __init__(self, deps: DepContainer):
         super().__init__()
