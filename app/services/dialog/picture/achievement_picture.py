@@ -45,7 +45,7 @@ class AchievementPictureGenerator(BasePictureGenerator):
 
         r = Resources()
         text = short_money(self.rec.milestone, integer=True)
-        main_font = r.fonts.get_font_bold(90)
+        main_font = r.fonts.get_font_bold(200)
         draw.text(self.pos_percent(50, 50), text, fill=TC_WHITE, font=main_font, anchor='mm')
 
         font_desc = r.fonts.get_font(52)
