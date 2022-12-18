@@ -45,13 +45,29 @@ class AchievementPictureGenerator(BasePictureGenerator):
 
         r = Resources()
         text = short_money(self.rec.milestone, integer=True)
-        main_font = r.fonts.get_font_bold(200)
-        draw.text(self.pos_percent(50, 50), text, fill=TC_WHITE, font=main_font, anchor='mm')
+        main_font = self.detect_font_size(r.fonts.get_font_bold, text, 512, 240)
+        draw.text(self.pos_percent(50, 42), text, fill=TC_WHITE, font=main_font, anchor='mm')
 
-        font_desc = r.fonts.get_font(52)
-        draw.text(self.pos_percent(50, 80), str(self.rec.key), fill=TC_WHITE, font=font_desc, anchor='mm')
+        # pillow get font size from bounding box
+
+        desc_text = self.rec.key
+        font_desc = self.detect_font_size(r.fonts.get_font_bold, desc_text, 400, 120)
+        draw.text(self.pos_percent(50, 77), str(self.rec.key), fill=TC_WHITE, font=font_desc, anchor='mm')
 
         return image
+
+    def detect_font_size(self, font_getter, text, max_width, max_height, current_font_size=None, f=0.92):
+        current_font_size = current_font_size or min(max_width, max_height)
+
+        if current_font_size < 4:
+            return None
+
+        font = font_getter(int(current_font_size))
+        w, h = font.getsize(text)
+        if w > max_width or h > max_height:
+            return self.detect_font_size(font_getter, text, max_width, max_height, current_font_size * f)
+
+        return font
 
     async def prepare(self):
         return await super().prepare()
