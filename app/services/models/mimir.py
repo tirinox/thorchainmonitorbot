@@ -5,7 +5,7 @@ import typing
 from dataclasses import dataclass
 from itertools import chain
 
-from aiothornode.types import ThorConstants, ThorMimir
+from aiothornode.types import ThorConstants, ThorMimir, ThorMimirVote
 
 from services.lib.constants import DEFAULT_KILL_RUNE_START_BLOCK, DEFAULT_KILL_RUNE_DURATION_BLOCKS, \
     THOR_BASIS_POINT_MAX
@@ -18,25 +18,6 @@ from services.models.node_info import NodeInfo
 
 # for automatic Mimir, when it becomes 0 -> 1 or 1 -> 0, that is Admin's actions
 ADMIN_VALUE = 1
-
-
-@dataclass
-class MimirVote:
-    key: str
-    value: int
-    singer: str
-
-    @classmethod
-    def from_json(cls, j):
-        return cls(
-            key=j.get('key', ''),
-            value=int(j.get('value', 0)),
-            singer=j.get('signer', '')
-        )
-
-    @classmethod
-    def from_json_array(cls, j):
-        return [cls.from_json(item) for item in j] if j else []
 
 
 @dataclass
@@ -91,7 +72,7 @@ class MimirVoting:
 
 
 class MimirVoteManager:
-    def __init__(self, all_votes: typing.List[MimirVote], active_nodes: typing.List[NodeInfo], exclude_keys):
+    def __init__(self, all_votes: typing.List[ThorMimirVote], active_nodes: typing.List[NodeInfo], exclude_keys):
         active_signers = [n.node_address for n in active_nodes if n.node_address and n.is_active]
 
         # only active signer is allowed to vote
@@ -235,7 +216,7 @@ class MimirHolder:
                constants: ThorConstants,
                mimir: ThorMimir,
                node_mimir: typing.Dict[str, str],
-               node_votes: typing.List[MimirVote],
+               node_votes: typing.List[ThorMimirVote],
                active_nodes: typing.List[NodeInfo]):
 
         self.voting_manager = MimirVoteManager(node_votes, active_nodes, EXCLUDED_VOTE_KEYS)

@@ -18,14 +18,7 @@ class NodeInfoFetcher(BaseFetcher):
 
     async def fetch_current_node_list(self) -> List[NodeInfo]:
         thor = self.deps.thor_connector
-
-        raw_nodes = await thor.pub_client.request(thor.env.path_nodes)
-
-        if not raw_nodes:
-            raw_nodes = await self.deps.thor_connector_backup.pub_client.request(thor.env.path_nodes)
-            if raw_nodes is None:
-                self.logger.error('Again no luck! Failed to obtain node list!')
-                raise FileNotFoundError('node_list')
+        raw_nodes = await thor.query_raw(thor.env.path_nodes)
 
         nodes = []
         for j in raw_nodes:

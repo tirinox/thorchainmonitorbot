@@ -128,14 +128,11 @@ class App:
     async def create_thor_node_connector(self):
         d = self.deps
         d.thor_env = d.cfg.get_thor_env_by_network_id()
-        d.thor_connector = ThorConnector(d.thor_env, d.session)
-        d.thor_connector.pub_client.set_client_id_header(HTTP_CLIENT_ID)
-
-        # now it is used mostly for historical pool state retrieval
-        # todo: make automatic server switching for all requests
         thor_env_backup = d.cfg.get_thor_env_by_network_id(backup=True)
-        d.thor_connector_backup = ThorConnector(thor_env_backup, d.session)
-        d.thor_connector_backup.pub_client.set_client_id_header(HTTP_CLIENT_ID)
+        d.thor_connector = ThorConnector(d.thor_env, d.session, additional_envs=[
+            thor_env_backup
+        ])
+        d.thor_connector.set_client_id_for_all(HTTP_CLIENT_ID)
 
         cfg: SubConfig = d.cfg.get('thor.midgard')
         d.midgard_connector = MidgardConnector(

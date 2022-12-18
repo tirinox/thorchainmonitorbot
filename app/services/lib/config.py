@@ -106,7 +106,6 @@ class Config(SubConfig):
         super().__init__(data)
 
         self.network_id = self.get('thor.network_id', NetworkIdents.MAINNET)
-        self.is_midgard_v2 = True
 
     def get_thor_env_by_network_id(self, backup=False) -> ThorEnvironment:
         network_id = self.network_id
