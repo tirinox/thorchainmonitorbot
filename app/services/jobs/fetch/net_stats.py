@@ -32,7 +32,7 @@ class NetworkStatisticsFetcher(BaseFetcher):
         ns.swaps_total = int(j['swapCount'])
         ns.swaps_24h = int(j['swapCount24h'])
         ns.swaps_30d = int(j['swapCount30d'])
-        ns.unique_swapper_count = int(j['uniqueSwapperCount'])
+        ns.unique_swapper_count = int(j['uniqueSwapperCount'])  # fixme: zero for Midgard 2.12.2
         ns.swap_volume_rune = thor_to_float(j['swapVolume'])
 
         ns.switched_rune = thor_to_float(j['switchedRune'])

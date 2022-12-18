@@ -24,7 +24,7 @@ class Achievement:
     DAILY_TX_COUNT = 'daily_tx_count'  # todo
     DAILY_VOLUME = 'daily_volume'  # todo
     BLOCK_NUMBER = 'block_number'
-    ANNIVERSARY = 'anniversary'  # todo
+    ANNIVERSARY = 'anniversary'
 
     SWAP_COUNT_TOTAL = 'swap_count_total'
     SWAP_COUNT_24H = 'swap_count_24h'
@@ -130,7 +130,7 @@ class AchievementsTracker(WithLogger):
 
     @staticmethod
     def get_minimum(key):
-        return Achievement.GROUP_MINIMALS.get(key, 0)
+        return Achievement.GROUP_MINIMALS.get(key, 1)
 
     def get_previous_milestone(self, key, value):
         if key in Achievement.GROUP_EVERY_1:
@@ -193,7 +193,7 @@ class AchievementsNotifier(WithLogger, WithDelegates, INotified):
             kv_events = self.on_network_stats(data)
         elif isinstance(sender, LastBlockStore):
             kv_events = self.on_block(sender)
-        elif isinstance(sender, NodeSetChanges):
+        elif isinstance(data, NodeSetChanges):
             kv_events = self.on_node_changes(data)
         elif isinstance(data, AchievementTest):
             kv_events = [(Achievement.TEST, data.value)]
