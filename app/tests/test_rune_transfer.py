@@ -44,7 +44,8 @@ def find_transfer(transfers: List[RuneTransfer],
 
 
 @pytest.mark.asyncio
-async def test_8686879_transfer_swap(fixture_app: LpAppFramework):
+async def test_8686879(fixture_app: LpAppFramework):
+    # this block contains a simple send
     async with fixture_app:
         transfers = await get_transfers_from_block(fixture_app, 8686879)
         assert len(transfers)
@@ -56,3 +57,18 @@ async def test_8686879_transfer_swap(fixture_app: LpAppFramework):
                            to_addr='thor1uz4fpyd5f5d6p9pzk8lxyj4qxnwq6f9utg0e7k',
                            comment='MsgSend')
         assert len(t0) == 1
+
+
+@pytest.mark.asyncio
+async def test_8686955_transfer_bond(fixture_app: LpAppFramework):
+    # this block contains bond
+    async with fixture_app:
+        transfers = await get_transfers_from_block(fixture_app, 8686955)
+        assert len(transfers)
+        t_bond = find_transfer(transfers,
+                               rune_amount=108125,
+                               from_addr='thor12msae5csjsvcd985n9nnp0xh7r6k8xm3xj69qe',
+                               tx_hash='D4D45BB58292D47669ACECC43F8A90CF8EDD5E5F54629A80708248A9DD3712C2',
+                               memo='BOND:thor12msae5csjsvcd985n9nnp0xh7r6k8xm3xj69qe:thor12msae5csjsvcd985n9nnp0xh7r6k8xm3xj69qe',
+                               comment='MsgDeposit')
+        assert len(t_bond) == 1
