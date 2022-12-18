@@ -282,7 +282,7 @@ class App:
         d.last_block_fetcher.add_subscriber(d.last_block_store)
 
         if achievements_enabled:
-            d.last_block_fetcher.add_subscriber(achievements)
+            d.last_block_store.add_subscriber(achievements)
 
         if d.cfg.get('last_block.enabled', True):
             d.block_notifier = BlockHeightNotifier(d)
@@ -295,7 +295,9 @@ class App:
 
             notifier_nodes = NodeChurnNotifier(d)
             churn_detector.add_subscriber(notifier_nodes)
-            churn_detector.add_subscriber(achievements)
+
+            if achievements_enabled:
+                churn_detector.add_subscriber(achievements)
 
             tasks.append(d.node_info_fetcher)
 
