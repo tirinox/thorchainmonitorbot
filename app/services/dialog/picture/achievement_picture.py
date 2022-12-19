@@ -1,3 +1,6 @@
+import datetime
+import os.path
+
 from PIL import Image, ImageDraw
 
 from localization.achievements.ach_eng import AchievementsEnglishLocalization
@@ -14,6 +17,8 @@ class AchievementPictureGenerator(BasePictureGenerator):
     BASE = './data'
     WIDTH = 512
     HEIGHT = 512
+
+    BG = 'tc-achievement-bg-1.png'
 
     def generate_picture_filename(self):
         return f'thorchain-ach-{self.rec.key}-{today_str()}.png'
@@ -39,20 +44,25 @@ class AchievementPictureGenerator(BasePictureGenerator):
         w, h = self.WIDTH, self.HEIGHT
         bg_color = (0, 0, 0, 255)
 
-        image = Image.new('RGBA', (w, h), bg_color)
+        # image = Image.new('RGBA', (w, h), bg_color)
+        image = Image.open(os.path.join(self.BASE, self.BG))
 
         draw = ImageDraw.Draw(image)
 
         r = Resources()
         text = short_money(self.rec.milestone, integer=True)
-        main_font = self.detect_font_size(r.fonts.get_font_bold, text, 460, 240)
-        draw.text(self.pos_percent(50, 42), text, fill=TC_WHITE, font=main_font, anchor='mm')
+        main_font, mw, mh = self.detect_font_size(r.fonts.get_font_bold, text, 460, 240)
+        mx, my = self.pos_percent(50, 45)
+        draw.text((mx, my), text, fill=TC_WHITE, font=main_font, anchor='mm')
 
         # pillow get font size from bounding box
 
         desc_text = self.loc.get_achievement_description(self.rec.key).description
-        font_desc = self.detect_font_size(r.fonts.get_font_bold, desc_text, 400, 120)
-        draw.text(self.pos_percent(50, 77), str(desc_text), fill=TC_WHITE, font=font_desc, anchor='mm')
+        font_desc, *_ = self.detect_font_size(r.fonts.get_font, desc_text, 400, 120)
+        draw.text((mx, my + mh // 2 + 20), str(desc_text), fill=TC_WHITE, font=font_desc, anchor='mt')
+
+        date_str = datetime.datetime.fromtimestamp(self.rec.timestamp).strftime('%B %d, %Y')
+        draw.text(self.pos_percent(50, 94), date_str, fill=TC_WHITE, font=r.fonts.get_font(30), anchor='mm')
 
         return image
 
@@ -67,7 +77,7 @@ class AchievementPictureGenerator(BasePictureGenerator):
         if w > max_width or h > max_height:
             return self.detect_font_size(font_getter, text, max_width, max_height, current_font_size * f)
 
-        return font
+        return font, w, h
 
     async def prepare(self):
         return await super().prepare()
