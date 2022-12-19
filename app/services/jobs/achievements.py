@@ -46,6 +46,10 @@ class Achievement:
 
     TOTAL_MIMIR_VOTES = 'total_mimir_votes'
 
+    MARKET_CAP_USD = 'market_cap_usd'
+    TOTAL_POOLS = 'total_pools'
+    TOTAL_ACTIVE_POOLS = 'total_active_pools'
+
     # every single digit is a milestone
     GROUP_EVERY_1 = {
         BLOCK_NUMBER,
@@ -257,7 +261,10 @@ class AchievementsNotifier(WithLogger, WithDelegates, INotified):
     @staticmethod
     def on_rune_market_info(data: RuneMarketInfo):
         achievements = [
-            # todo 1) market cap 2) pool count 3) active pool count 4) rank (reversed)
+            (Achievement.MARKET_CAP_USD, data.market_cap),
+            (Achievement.TOTAL_POOLS, data.total_pools),
+            (Achievement.TOTAL_ACTIVE_POOLS, data.total_active_pools),
+            # todo  4) rank (reversed)
         ]
         return achievements
 
