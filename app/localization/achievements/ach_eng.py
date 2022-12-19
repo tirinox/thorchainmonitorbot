@@ -38,6 +38,7 @@ ACHIEVEMENT_DESC_LIST = [
     AchievementDescription(Achievement.ANNIVERSARY, 'Anniversary'),
     AchievementDescription(Achievement.BLOCK_NUMBER, 'Blocks generated'),
     AchievementDescription(Achievement.DAILY_TX_COUNT, 'Daily TX count'),
+    AchievementDescription(Achievement.TOTAL_MIMIR_VOTES, 'Total Mimir votes'),
 ]
 
 ACHIEVEMENT_DESC_MAP = {a.key: a for a in ACHIEVEMENT_DESC_LIST}
@@ -55,8 +56,16 @@ check_if_all_achievements_have_description()
 
 class AchievementsEnglishLocalization:
     @staticmethod
-    def notification_achievement_unlocked(e: EventAchievement):
+    def get_achievement_description(achievement: str) -> AchievementDescription:
+        return ACHIEVEMENT_DESC_MAP[achievement]
+
+    @classmethod
+    def notification_achievement_unlocked(cls, e: EventAchievement):
         a = e.achievement
+
+        desc = cls.get_achievement_description(a.key)
+
         ago = seconds_human(a.timestamp - a.previous_ts)
         return f'<b>You have unlocked achievement "{a.key}"!</b> ' \
-               f'{code(a.key)} is over {a.milestone} ({pre(a.value)})\n (was {a.prev_milestone} {ago})'
+               f'{code(a.key)} is over {a.milestone} ({pre(a.value)})\n ' \
+               f'(previous {pre(a.prev_milestone)} {ago} ago)'

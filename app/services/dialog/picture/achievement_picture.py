@@ -45,14 +45,14 @@ class AchievementPictureGenerator(BasePictureGenerator):
 
         r = Resources()
         text = short_money(self.rec.milestone, integer=True)
-        main_font = self.detect_font_size(r.fonts.get_font_bold, text, 512, 240)
+        main_font = self.detect_font_size(r.fonts.get_font_bold, text, 460, 240)
         draw.text(self.pos_percent(50, 42), text, fill=TC_WHITE, font=main_font, anchor='mm')
 
         # pillow get font size from bounding box
 
-        desc_text = self.rec.key
+        desc_text = self.loc.get_achievement_description(self.rec.key).description
         font_desc = self.detect_font_size(r.fonts.get_font_bold, desc_text, 400, 120)
-        draw.text(self.pos_percent(50, 77), str(self.rec.key), fill=TC_WHITE, font=font_desc, anchor='mm')
+        draw.text(self.pos_percent(50, 77), str(desc_text), fill=TC_WHITE, font=font_desc, anchor='mm')
 
         return image
 

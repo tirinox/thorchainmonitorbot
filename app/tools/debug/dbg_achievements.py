@@ -1,10 +1,10 @@
 import asyncio
 import random
 
-from localization.achievements.ach_eng import AchievementsEnglishLocalization
+from localization.achievements.ach_eng import AchievementsEnglishLocalization, ACHIEVEMENT_DESC_LIST
 from services.dialog.picture.achievement_picture import AchievementPictureGenerator
 from services.jobs.achievements import AchievementsTracker, AchievementsNotifier, AchievementTest, Achievement, \
-    AchievementRecord, EventAchievement
+    AchievementRecord, EventAchievement, Milestones
 from services.jobs.fetch.base import BaseFetcher
 from services.lib.date_utils import now_ts, DAY
 from services.lib.depcont import DepContainer
@@ -42,8 +42,15 @@ async def demo_debug_logic(app: LpAppFramework):
 
 
 async def demo_achievements_picture():
+    milestones = Milestones()
+    value = random.randint(1, random.randint(1, 1_000_000_000))
+    prev_milestone = milestones.previous(value)
+
     # subject to change
-    rec = AchievementRecord(Achievement.ANNIVERSARY, 3, 3, now_ts(), 2, now_ts() - random.randint(1, int(100 * DAY)))
+    random_achievement = random.choice(ACHIEVEMENT_DESC_LIST).key
+    # random_achievement = Achievement.ANNIVERSARY
+    rec = AchievementRecord(random_achievement, value, prev_milestone,
+                            now_ts(), 2, now_ts() - random.randint(1, int(100 * DAY)))
 
     loc = AchievementsEnglishLocalization()
     gen = AchievementPictureGenerator(loc, rec)
@@ -54,6 +61,7 @@ async def demo_achievements_picture():
     sep()
     print(text)
     sep()
+
 
 async def demo_run_pipeline(app: LpAppFramework):
     ach_fet = DebugAchievementsFetcher(app.deps.db)

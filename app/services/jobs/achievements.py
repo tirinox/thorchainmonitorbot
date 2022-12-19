@@ -2,6 +2,7 @@ import json
 import math
 from typing import NamedTuple, Optional
 
+from services.jobs.fetch.const_mimir import MimirTuple
 from services.lib.date_utils import now_ts, YEAR
 from services.lib.db import DB
 from services.lib.delegates import WithDelegates, INotified
@@ -9,6 +10,7 @@ from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges
+from services.models.price import RuneMarketInfo
 from services.notify.types.block_notify import LastBlockStore
 
 THORCHAIN_BIRTHDAY = 1618058210955  # 2021-04-10T12:36:50.955991742Z
@@ -41,6 +43,8 @@ class Achievement:
     TOTAL_ACTIVE_BOND = 'total_active_bond'
     TOTAL_BOND = 'total_bond'
     CHURNED_IN_BOND = 'churned_in_bond'
+
+    TOTAL_MIMIR_VOTES = 'total_mimir_votes'
 
     # every single digit is a milestone
     GROUP_EVERY_1 = {
@@ -192,9 +196,13 @@ class AchievementsNotifier(WithLogger, WithDelegates, INotified):
         if isinstance(data, NetworkStats):
             kv_events = self.on_network_stats(data)
         elif isinstance(sender, LastBlockStore):
-            kv_events = self.on_block(sender)
+            kv_events = self.on_block(sender)  # sender not data!
         elif isinstance(data, NodeSetChanges):
             kv_events = self.on_node_changes(data)
+        elif isinstance(data, MimirTuple):
+            kv_events = self.on_mimir(data)
+        elif isinstance(data, RuneMarketInfo):
+            kv_events = self.on_rune_market_info(data)
         elif isinstance(data, AchievementTest):
             kv_events = [(Achievement.TEST, data.value)]
         else:
@@ -238,6 +246,21 @@ class AchievementsNotifier(WithLogger, WithDelegates, INotified):
         ]
         return achievements
 
+    @staticmethod
+    def on_mimir(data: MimirTuple):
+        achievements = [
+            # todo
+            (Achievement.TOTAL_MIMIR_VOTES, len(data.votes)),
+        ]
+        return achievements
+
+    @staticmethod
+    def on_rune_market_info(data: RuneMarketInfo):
+        achievements = [
+            # todo 1) market cap 2) pool count 3) active pool count 4) rank (reversed)
+        ]
+        return achievements
+
     async def on_data(self, sender, data):
         try:
             kv_events = await self.extract_events_by_type(sender, data)
@@ -248,7 +271,7 @@ class AchievementsNotifier(WithLogger, WithDelegates, INotified):
                     self.logger.info(f'Achievement even occurred {event}!')
                     await self.pass_data_to_listeners(event)
         except Exception as e:
-            # we don't let this exception in the Achievements module to break the whole system
+            # we don't let any exception in the Achievements module to break the whole system
             self.logger.exception(f'Error while processing data {type(data)} from {type(sender)}: {e}', exc_info=True)
 
     def __init__(self, deps: DepContainer):
