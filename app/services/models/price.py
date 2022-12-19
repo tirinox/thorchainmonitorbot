@@ -48,6 +48,14 @@ class RuneMarketInfo:
     def divergence_abs(self):
         return abs(self.cex_price - self.pool_rune_price)
 
+    @property
+    def total_pools(self):
+        return len(self.pools)
+
+    @property
+    def total_active_pools(self):
+        return len([p for p in self.pools.values() if p.is_enabled])
+
 
 REAL_REGISTERED_ATH = 20.87  # $ / Rune
 REAL_REGISTERED_ATH_DATE = 1621418550  # 19 may 2021
