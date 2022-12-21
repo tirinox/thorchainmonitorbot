@@ -3,7 +3,7 @@ import random
 
 from localization.languages import Language
 from localization.manager import BaseLocalization
-from services.jobs.affiliate_merge import AffiliateTXMerger
+from services.jobs.affiliate_merge import AffiliateTXMerger, ZERO_HASH
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.lib.constants import Chains, thor_to_float
@@ -76,7 +76,7 @@ async def demo_savers_add(app):
     q_path = free_url_gen.url_for_tx(0, 50,
                                      tx_type=ThorTxType.TYPE_ADD_LIQUIDITY,
                                      txid='B380846D04AFB83961D2728177B10D593E1C144A534A21A443366D233971A135')
-                                     # txid='413768826A02E8EA4068A2F35A7941008A15A18F7E76E49B8602BD99D840B721')
+    # txid='413768826A02E8EA4068A2F35A7941008A15A18F7E76E49B8602BD99D840B721')
     await present_one_aff_tx(app, q_path)
 
 
@@ -224,6 +224,45 @@ async def demo_full_tx_pipeline(app: LpAppFramework):
     await asyncio.sleep(10.0)
 
 
+async def demo_verify_tx_scanner_in_the_past(app: LpAppFramework):
+    d = app.deps
+
+    fetcher_tx = TxFetcher(d)
+
+    aggregator = AggregatorDataExtractor(d)
+    fetcher_tx.add_subscriber(aggregator)
+
+    volume_filler = VolumeFillerUpdater(d)
+    aggregator.add_subscriber(volume_filler)
+
+    seen_txs = set()
+    page = 0
+
+    accumulated_txs = []
+
+    n_zeros = 0
+
+    while True:
+        batch_txs = await fetcher_tx.fetch_one_batch(page, tx_types=ThorTxType.all_except_donate())
+        accumulated_txs += batch_txs.txs
+        accumulated_txs = accumulated_txs[-1000:]  # trim
+
+        package_txs = fetcher_tx.merge_related_txs(accumulated_txs)
+        for tx in package_txs:
+            if tx.tx_hash == ZERO_HASH:
+                n_zeros += 1
+
+            if tx.tx_hash not in seen_txs:
+                seen_txs.add(tx.tx_hash)
+                print(f'New tx: {tx.tx_hash} ({tx.type})')
+
+        print(f'{len(seen_txs)} txs seen, {n_zeros} zeros')
+
+        # print(batch_txs)
+
+        page += 1
+
+
 async def main():
     app = LpAppFramework()
     await app.prepare(brief=True)
@@ -242,7 +281,8 @@ async def main():
     # await demo_withdraw_savers(app)
     # await demo_find_last_savers_additions(app)
     # await demo_midgard_test_large_ilp(app)
-    await demo_savers_add(app)
+    # await demo_savers_add(app)
+    await demo_verify_tx_scanner_in_the_past(app)
 
 
 if __name__ == '__main__':

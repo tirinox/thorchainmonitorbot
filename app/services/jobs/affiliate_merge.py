@@ -6,6 +6,8 @@ from services.lib.constants import thor_to_float
 from services.lib.utils import WithLogger
 from services.models.tx import ThorCoin, ThorTx, ThorMetaSwap, ThorMetaAddLiquidity, ThorSubTx
 
+ZERO_HASH = '0000000000000000000000000000000000000000000000000000000000000000'
+
 
 class AffiliateTXMerger(WithLogger):
     def __init__(self):
@@ -138,7 +140,7 @@ class AffiliateTXMerger(WithLogger):
                     result_tx = self.merge_same_txs(tx1, tx2)
                     txs = list(filter(lambda a_tx: a_tx.first_input_tx_hash != h, txs))
                     txs.append(result_tx)
-            elif len(same_tx_list) > 2:
+            elif len(same_tx_list) > 2 and h != ZERO_HASH:
                 self.logger.error(f'> 2 same hash TX ({h})! It is strange! Ignoring them all')
                 continue
 
