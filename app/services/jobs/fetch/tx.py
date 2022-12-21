@@ -133,7 +133,7 @@ class TxFetcher(BaseFetcher):
             self._fetch_one_batch_tries(page, tries=2) for page in range(self.max_page_deep)
         ]
 
-        pending_txs = []
+        number_of_pending_txs_this_tick = 0
 
         for future in asyncio.as_completed(futures):
             results = await future
@@ -145,18 +145,18 @@ class TxFetcher(BaseFetcher):
             # filter out old really TXs
             txs = list(self._filter_by_age(results.txs))
 
-            # filter success
+            # first, we select only successful TXs
             selected_txs = [tx for tx in txs if tx.is_success]
 
-            # tx which are in pending state for quite a long time deserve to be announced with a corresponding mark
+            # TXs which are in pending state for quite a long time deserve to be announced with a corresponding mark
             block_height_threshold = top_block_height - self.announce_pending_after_blocks
             this_batch_pending = [tx for tx in txs if tx.is_pending]
             pending_old_txs = [tx for tx in this_batch_pending if tx.height_int < block_height_threshold]
             if pending_old_txs:
-                self.logger.info(f'Pending old TXs are accounted too: {len(pending_old_txs)}.')
+                # second, we select additionally OLD enough pending TXs
                 selected_txs += pending_old_txs
 
-            pending_txs += this_batch_pending
+            number_of_pending_txs_this_tick += len(this_batch_pending)
 
             # filter out TXs that have been seen already
             unseen_new_txs = []
@@ -172,8 +172,12 @@ class TxFetcher(BaseFetcher):
 
             all_txs += unseen_new_txs
 
-        if pending_txs:
-            self.logger.info(f'Pending: {len(pending_txs)}')
+        if number_of_pending_txs_this_tick:
+            self.logger.info(f'Pending TXs this tick: {number_of_pending_txs_this_tick}.')
+
+        n_accounted_pending = sum(1 for t in all_txs if t.is_pending)
+        if n_accounted_pending:
+            self.logger.info(f'Pending TXs {n_accounted_pending} are old enough to be counted and announced.')
 
         return all_txs
 
