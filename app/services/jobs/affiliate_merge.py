@@ -4,7 +4,7 @@ from typing import List
 
 from services.lib.constants import thor_to_float
 from services.lib.utils import WithLogger
-from services.models.tx import ThorCoin, ThorTx, ThorMetaSwap, ThorMetaAddLiquidity, ThorSubTx
+from services.models.tx import ThorCoin, ThorTx, ThorMetaSwap, ThorMetaAddLiquidity, ThorSubTx, ThorTxType
 
 ZERO_HASH = '0000000000000000000000000000000000000000000000000000000000000000'
 
@@ -56,6 +56,12 @@ class AffiliateTXMerger(WithLogger):
 
     def merge_same_txs(self, tx1: ThorTx, tx2: ThorTx) -> ThorTx:
         if tx1.type != tx2.type:
+            # add/withdraw savers is a combination of forever pending swap and add/withdraw
+            if tx1.type == ThorTxType.TYPE_SWAP and tx2.type in ThorTxType.GROUP_ADD_WITHDRAW:
+                return tx2
+            elif tx2.type == ThorTxType.TYPE_SWAP and tx1.type in ThorTxType.GROUP_ADD_WITHDRAW:
+                return tx1
+
             self.logger.warning('Same tx data mismatch, continuing...')
             return tx1
 
