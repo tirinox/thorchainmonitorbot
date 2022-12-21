@@ -41,16 +41,22 @@ async def demo_debug_logic(app: LpAppFramework):
         print(f'Event: {r}')
 
 
-async def demo_achievements_picture():
+def random_achievement():
     milestones = Milestones()
     value = random.randint(1, random.randint(1, 1_000_000_000))
-    prev_milestone = milestones.previous(value)
+    milestone = milestones.previous(value)
 
-    # subject to change
-    random_achievement = random.choice(ACHIEVEMENT_DESC_LIST).key
-    # random_achievement = Achievement.ANNIVERSARY
-    rec = AchievementRecord(random_achievement, value, prev_milestone,
-                            now_ts(), 2, now_ts() - random.randint(1, int(100 * DAY)))
+    random_achievement_key = random.choice(ACHIEVEMENT_DESC_LIST).key
+    rec = AchievementRecord(random_achievement_key, value,
+                            milestone, now_ts(),
+                            2, now_ts() - random.randint(1, int(100 * DAY)))
+    return rec
+
+
+async def demo_achievements_picture():
+
+    # rec = random_achievement()
+    rec = AchievementRecord(Achievement.MARKET_CAP_USD, 500_000_000, 501_344_119, now_ts(), 0, 0)
 
     loc = AchievementsEnglishLocalization()
     gen = AchievementPictureGenerator(loc, rec)

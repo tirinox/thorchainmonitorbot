@@ -8,8 +8,7 @@ from services.dialog.picture.common import BasePictureGenerator
 from services.dialog.picture.resources import Resources
 from services.jobs.achievements import AchievementRecord
 from services.lib.date_utils import today_str
-from services.lib.draw_utils import pos_percent, TC_WHITE
-from services.lib.money import short_money
+from services.lib.draw_utils import pos_percent, TC_MIDGARD_TURQOISE
 from services.lib.utils import async_wrap
 
 
@@ -36,33 +35,35 @@ class AchievementPictureGenerator(BasePictureGenerator):
 
     @async_wrap
     def _get_picture_sync(self):
-        # steps:
-        # 1. make background
-        # 2. format the number (proper size, etc)
-        # 3. format the explanatory text (proper size, etc)
-        # 5. date and time elapsed from the past milestone
-        w, h = self.WIDTH, self.HEIGHT
-        bg_color = (0, 0, 0, 255)
-
+        # w, h = self.WIDTH, self.HEIGHT
+        # bg_color = (0, 0, 0, 255)
         # image = Image.new('RGBA', (w, h), bg_color)
-        image = Image.open(os.path.join(self.BASE, self.BG))
 
+        # ---- Canvas ----
+        r = Resources()
+        image = Image.open(os.path.join(self.BASE, self.BG))
         draw = ImageDraw.Draw(image)
 
-        r = Resources()
-        text = short_money(self.rec.milestone, integer=True)
-        main_font, mw, mh = self.detect_font_size(r.fonts.get_font_bold, text, 460, 240)
-        mx, my = self.pos_percent(50, 45)
-        draw.text((mx, my), text, fill=TC_WHITE, font=main_font, anchor='mm')
+        # ---- Main number ----
+        achievement_desc = self.loc.get_achievement_description(self.rec.key)
 
+        text = achievement_desc.format_value(self.rec.milestone)
+        main_font, mw, mh = self.detect_font_size(r.fonts.get_font_norse_bold, text, 350, 200)
+        mx, my = self.pos_percent(50, 46)
+
+        # or maybe? TC_YGGDRASIL_GREEN, TC_LIGHTNING_BLUE, GOLD_COLOR = (255, 215, 0)
+        draw.text((mx, my), text, fill=TC_MIDGARD_TURQOISE,
+                  font=main_font, anchor='mm', stroke_fill='#333', stroke_width=4)
+
+        # ---- Description ----
         # pillow get font size from bounding box
+        desc_text = achievement_desc.description
+        font_desc, *_ = self.detect_font_size(r.fonts.get_font_norse, desc_text, 400, 120)
+        draw.text((mx, my + mh // 2 + 32), str(desc_text), fill=(255, 215, 0), font=font_desc, anchor='mt')
 
-        desc_text = self.loc.get_achievement_description(self.rec.key).description
-        font_desc, *_ = self.detect_font_size(r.fonts.get_font, desc_text, 400, 120)
-        draw.text((mx, my + mh // 2 + 20), str(desc_text), fill=TC_WHITE, font=font_desc, anchor='mt')
-
+        # ---- Date ----
         date_str = datetime.datetime.fromtimestamp(self.rec.timestamp).strftime('%B %d, %Y')
-        draw.text(self.pos_percent(50, 94), date_str, fill=TC_WHITE, font=r.fonts.get_font(30), anchor='mm')
+        draw.text(self.pos_percent(50, 91), date_str, fill='#ccc', font=r.fonts.get_font_norse(28), anchor='mm')
 
         return image
 

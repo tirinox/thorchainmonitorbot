@@ -9,6 +9,8 @@ from services.lib.utils import Singleton
 class FontCache(metaclass=Singleton):
     FONT_REGULAR = f'Exo2-Regular-Rune.ttf'
     FONT_BOLD = f'Exo2-Bold-Rune.ttf'
+    FONT_NORSE = 'Norse.otf'
+    FONT_NORSE_BOLD = 'NorseBold.otf'
 
     def __init__(self, base_dir):
         self._cache = {}
@@ -25,6 +27,12 @@ class FontCache(metaclass=Singleton):
 
     def get_font_bold(self, size: int):
         return self.get_font(size, self.FONT_BOLD)
+
+    def get_font_norse(self, size: int):
+        return self.get_font(size, self.FONT_NORSE)
+
+    def get_font_norse_bold(self, size: int):
+        return self.get_font(size, self.FONT_NORSE_BOLD)
 
 
 class Resources(metaclass=Singleton):
