@@ -34,6 +34,8 @@ class TxFetcher(BaseFetcher):
 
         self.progress_tracker: Optional[tqdm] = None
 
+        self.logger.info(f'New TX fetcher is created for {self.tx_types}')
+
     async def fetch(self):
         await self.deps.db.get_redis()
 

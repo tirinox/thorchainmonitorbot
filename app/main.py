@@ -177,7 +177,25 @@ class App:
         ]
 
         if d.cfg.get('tx.enabled', True):
-            fetcher_tx = TxFetcher(d)
+            dedicated_tx_fetcher_enabled = d.cfg.tx.liquidity.dedicated_fetcher.get('enabled', True)
+
+            main_tx_types = [
+                ThorTxType.TYPE_SWITCH,
+                ThorTxType.TYPE_SWAP,
+                ThorTxType.TYPE_REFUND,
+            ]
+
+            if not dedicated_tx_fetcher_enabled:
+                main_tx_types += [
+                    ThorTxType.TYPE_ADD_LIQUIDITY,
+                    ThorTxType.TYPE_WITHDRAW,
+                ]
+
+            ignore_donates = d.cfg.get('tx.ignore_donates', True)
+            if not ignore_donates:
+                main_tx_types.append(ThorTxType.TYPE_DONATE)
+
+            fetcher_tx = TxFetcher(d, tx_types=main_tx_types)
 
             aggregator = AggregatorDataExtractor(d)
             fetcher_tx.add_subscriber(aggregator)
@@ -204,10 +222,8 @@ class App:
                 volume_filler.add_subscriber(liq_notifier_tx)
                 liq_notifier_tx.add_subscriber(d.alert_presenter)
 
-                if d.cfg.tx.liquidity.dedicated_fetcher.get('enabled', False):
-                    logging.info('Dedicated TX fetcher is enabled')
-                    dedicated_fetcher_tx = TxFetcher(d,
-                                                     tx_types=(ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_ADD_LIQUIDITY))
+                if dedicated_tx_fetcher_enabled:
+                    dedicated_fetcher_tx = TxFetcher(d, tx_types=ThorTxType.GROUP_ADD_WITHDRAW)
                     dedicated_fetcher_tx.sleep_period = d.cfg.tx.liquidity.dedicated_fetcher.as_interval(
                         'period', '20m')
                     dedicated_fetcher_tx.add_subscriber(aggregator)

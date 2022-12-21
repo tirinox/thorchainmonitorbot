@@ -222,6 +222,8 @@ tx:
   max_page_deep: 5
   max_tx_per_single_message: 6
 
+  ignore_donates: true  # (!) new
+
   announce_pending_after_blocks: 500
 
   add_date_if_older_than: 2h

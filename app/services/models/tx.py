@@ -21,6 +21,12 @@ class ThorTxType:
     TYPE_REFUND = 'refund'
     TYPE_SWITCH = 'switch'  # BNB/ETH Rune => Native RUNE
 
+    @classmethod
+    def all_except_donate(cls):
+        return [cls.TYPE_ADD_LIQUIDITY, cls.TYPE_SWAP, cls.TYPE_WITHDRAW, cls.TYPE_REFUND, cls.TYPE_SWITCH]
+
+    GROUP_ADD_WITHDRAW = TYPE_WITHDRAW, TYPE_ADD_LIQUIDITY
+
 
 class ThorCoin(NamedTuple):
     amount: str = '0'
