@@ -235,30 +235,22 @@ async def demo_verify_tx_scanner_in_the_past(app: LpAppFramework):
     volume_filler = VolumeFillerUpdater(d)
     aggregator.add_subscriber(volume_filler)
 
-    seen_txs = set()
     page = 0
-
-    accumulated_txs = []
 
     n_zeros = 0
 
     while True:
         batch_txs = await fetcher_tx.fetch_one_batch(page, tx_types=ThorTxType.all_except_donate())
-        accumulated_txs += batch_txs.txs
-        accumulated_txs = accumulated_txs[-1000:]  # trim
-
-        package_txs = fetcher_tx.merge_related_txs(accumulated_txs)
-        for tx in package_txs:
+        batch_txs = batch_txs.txs
+        batch_txs = fetcher_tx.merge_related_txs(batch_txs)
+        for tx in batch_txs:
             if tx.tx_hash == ZERO_HASH:
                 n_zeros += 1
+                continue
 
-            if tx.tx_hash not in seen_txs:
-                seen_txs.add(tx.tx_hash)
-                print(f'New tx: {tx.tx_hash} ({tx.type})')
+        print(f'TX hash => {n_zeros} zeros')
 
-        print(f'{len(seen_txs)} txs seen, {n_zeros} zeros')
-
-        # print(batch_txs)
+        await volume_filler.on_data(fetcher_tx, batch_txs)
 
         page += 1
 

@@ -481,7 +481,12 @@ class ThorTx:
             self.asset_per_rune = pool_info.asset_per_rune if pool_info else 0.0
 
             if self.type in (ThorTxType.TYPE_SWAP, ThorTxType.TYPE_WITHDRAW):
-                r = self.calc_amount(pool_map, self.search_realm(out_only=True),
+                if self.is_pending and not self.out_tx:
+                    # pending txs have no out_tx, so we use in_tx
+                    realm = self.search_realm(in_only=True)
+                else:
+                    realm = self.search_realm(out_only=True)
+                r = self.calc_amount(pool_map, realm,
                                      filter_unknown_runes=self.is_savings)
             else:
                 # add, donate, refund
