@@ -37,7 +37,7 @@ def test_synth_asset_name():
     assert a1.name == 'BTCB'
     assert a1.tag == '1DE'
     assert a1.chain == 'BNB'
-    assert a1.short_str == 'Synth:BNB.BTCB-1DE'
+    assert a1.short_str == '💊BNB/BTCB-1DE'
 
     a2 = Asset("btc/btc")
     assert a2.is_synth
@@ -46,19 +46,19 @@ def test_synth_asset_name():
 
     a3 = Asset.from_string("BTC/btc")
     assert a3 == a2
-    assert a3.short_str == 'Synth:BTC.BTC'
+    assert a3.short_str == '💊BTC/BTC'
 
     a4 = Asset('ETH/USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48')
     assert a4.tag == '0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48'
     assert a4.chain == 'ETH'
     assert a4.name == 'USDC'
-    assert a4.short_str == 'Synth:ETH.USDC-0XA0B8'
+    assert a4.short_str == '💊ETH/USDC-0XA0B8'
 
     a5 = Asset('eth/yfi-0x0bc529c00c6401aef6d220be8c6ea1667f6ad93e')
     assert a5.tag == '0X0BC529C00C6401AEF6D220BE8C6EA1667F6AD93E'
     assert a5.chain == 'ETH'
     assert a5.name == 'YFI'
-    assert a5.short_str == 'Synth:ETH.YFI-0X0BC5'
+    assert a5.short_str == '💊ETH/YFI-0X0BC5'
 
 
 def test_convert_synth():

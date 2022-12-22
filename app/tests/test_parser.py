@@ -176,7 +176,7 @@ def test_synth(example_tx_gen):
     assert tx.not_rune_asset(out_only=True).asset == 'LTC/LTC'
 
     for k, v in tx.get_asset_summary(in_only=True).items():
-        assert k == 'Synth:ETH.USDC-0XA0B8'
+        assert k == '💊:ETH/USDC-0XA0B8'
         assert v == 0.001
 
     assert tx.is_synth_involved

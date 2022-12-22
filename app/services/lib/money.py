@@ -234,12 +234,14 @@ class Asset:
 
     @property
     def short_str(self):
-        s = 'Synth:' if self.is_synth else ''
+        s = '💊' if self.is_synth else ''
+        sep = '/' if self.is_synth else '.'
+        result = f'{s}{self.chain}{sep}{self.name}'
         if self.tag:
             short_tag = self.tag[:6]
-            return f'{s}{self.chain}.{self.name}-{short_tag}'
+            return f'{result}-{short_tag}'
         else:
-            return f'{s}{self.chain}.{self.name}'
+            return result
 
     @property
     def shortest(self):
