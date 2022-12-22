@@ -1,5 +1,6 @@
 import asyncio
 import random
+from typing import List
 
 from localization.languages import Language
 from localization.manager import BaseLocalization
@@ -16,10 +17,10 @@ from services.lib.money import DepthCurve
 from services.lib.texts import sep
 from services.lib.w3.aggregator import AggregatorDataExtractor
 from services.models.pool_info import PoolInfo
-from services.models.tx import ThorTxType
+from services.models.tx import ThorTxType, ThorTx
 from services.notify.alert_presenter import AlertPresenter
 from services.notify.types.tx_notify import SwitchTxNotifier, SwapTxNotifier, LiquidityTxNotifier
-from tools.lib.lp_common import LpAppFramework, load_sample_txs, Receiver, demo_run_txs_example_file
+from tools.lib.lp_common import LpAppFramework, load_sample_txs, Receiver
 
 
 async def midgard_test_kill_switch(app, mdg):
@@ -185,10 +186,10 @@ async def refund_full_rune(app):
     await volume_filler.fill_volumes(txs)
 
 
-async def demo_full_tx_pipeline(app: LpAppFramework):
+async def demo_full_tx_pipeline(app: LpAppFramework, announce=True):
     d = app.deps
 
-    fetcher_tx = TxFetcher(d, tx_types=(ThorTxType.TYPE_ADD_LIQUIDITY,))
+    fetcher_tx = TxFetcher(d, tx_types=(ThorTxType.TYPE_ADD_LIQUIDITY, ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_SWAP))
 
     aggregator = AggregatorDataExtractor(d)
     fetcher_tx.add_subscriber(aggregator)
@@ -196,23 +197,41 @@ async def demo_full_tx_pipeline(app: LpAppFramework):
     volume_filler = VolumeFillerUpdater(d)
     aggregator.add_subscriber(volume_filler)
 
-    curve = DepthCurve.default()
-    swap_notifier_tx = SwapTxNotifier(d, d.cfg.tx.swap, curve=curve)
-    swap_notifier_tx.curve_mult = 0.00001
-    swap_notifier_tx.min_usd_total = 0.0
-    swap_notifier_tx.aff_fee_min_usd = 0.3
-    volume_filler.add_subscriber(swap_notifier_tx)
+    all_accepted_tx_hashes = set()
 
-    liq_notifier_tx = LiquidityTxNotifier(d, d.cfg.tx.liquidity, curve=curve)
-    liq_notifier_tx.curve_mult = 0.1
-    liq_notifier_tx.ilp_paid_min_usd = 10.0
-    volume_filler.add_subscriber(liq_notifier_tx)
+    async def print_hashes(_, txs: List[ThorTx]):
+        hashes = {tx.tx_hash for tx in txs}
+        sep()
+        print('Accepted hashes =', hashes)
+        print('Pending hashes =', fetcher_tx.pending_hashes)
 
-    swap_notifier_tx.add_subscriber(Receiver('Swap TX'))
-    liq_notifier_tx.add_subscriber(Receiver('Liq TX'))
+        if hashes & all_accepted_tx_hashes:
+            sep()
+            print('Attention! Duplicates found!')
+            print('Duplicates found: ', hashes & all_accepted_tx_hashes)
+            sep()
+        all_accepted_tx_hashes.update(hashes)
 
-    swap_notifier_tx.add_subscriber(app.deps.alert_presenter)
-    liq_notifier_tx.add_subscriber(app.deps.alert_presenter)
+    aggregator.add_subscriber(Receiver(callback=print_hashes))
+
+    if announce:
+        curve = DepthCurve.default()
+        swap_notifier_tx = SwapTxNotifier(d, d.cfg.tx.swap, curve=curve)
+        swap_notifier_tx.curve_mult = 0.00001
+        swap_notifier_tx.min_usd_total = 5000.0
+        swap_notifier_tx.aff_fee_min_usd = 0.3
+        volume_filler.add_subscriber(swap_notifier_tx)
+        swap_notifier_tx.add_subscriber(app.deps.alert_presenter)
+
+        liq_notifier_tx = LiquidityTxNotifier(d, d.cfg.tx.liquidity, curve=curve)
+        liq_notifier_tx.curve_mult = 0.1
+        liq_notifier_tx.min_usd_total = 50.0
+        liq_notifier_tx.ilp_paid_min_usd = 10.0
+        volume_filler.add_subscriber(liq_notifier_tx)
+        liq_notifier_tx.add_subscriber(app.deps.alert_presenter)
+
+        # swap_notifier_tx.add_subscriber(Receiver('Swap TX'))
+        # liq_notifier_tx.add_subscriber(Receiver('Liq TX'))
 
     # run the pipeline!
     await fetcher_tx.run()
@@ -220,7 +239,7 @@ async def demo_full_tx_pipeline(app: LpAppFramework):
     # await demo_run_txs_example_file(fetcher_tx, 'swap_with_aff_new.json')
     # await demo_run_txs_example_file(fetcher_tx, 'withdraw_ilp.json')
     # await demo_run_txs_example_file(fetcher_tx, 'swap_synth_synth.json')
-    await demo_run_txs_example_file(fetcher_tx, 'add_withdraw_big.json')
+    # await demo_run_txs_example_file(fetcher_tx, 'add_withdraw_big.json')
     await asyncio.sleep(10.0)
 
 
@@ -264,7 +283,7 @@ async def main():
     # await midgard_test_kill_switch(app)
     # await refund_full_rune(app)
     # await demo_midgard_test_large_ilp(app)
-    # await demo_full_tx_pipeline(app)
+    await demo_full_tx_pipeline(app, announce=True)
     # await demo_test_savers_vaults(app)
     # await demo_aggr_aff(app)
     # await demo_test_aff_add_liq(app)
@@ -274,7 +293,7 @@ async def main():
     # await demo_find_last_savers_additions(app)
     # await demo_midgard_test_large_ilp(app)
     # await demo_savers_add(app)
-    await demo_verify_tx_scanner_in_the_past(app)
+    # await demo_verify_tx_scanner_in_the_past(app)
 
 
 if __name__ == '__main__':

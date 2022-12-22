@@ -33,6 +33,7 @@ class TxFetcher(BaseFetcher):
         self.tx_merger = AffiliateTXMerger()
 
         self.progress_tracker: Optional[tqdm] = None
+        self.pending_hashes = set()
 
         self.logger.info(f'New TX fetcher is created for {self.tx_types}')
 
@@ -134,6 +135,7 @@ class TxFetcher(BaseFetcher):
         ]
 
         number_of_pending_txs_this_tick = 0
+        cleared_pending_hashes = set()
 
         for future in asyncio.as_completed(futures):
             results = await future
@@ -158,13 +160,18 @@ class TxFetcher(BaseFetcher):
 
             number_of_pending_txs_this_tick += len(this_batch_pending)
 
+            self.pending_hashes.update(tx.tx_hash for tx in this_batch_pending)
+
             # filter out TXs that have been seen already
             unseen_new_txs = []
             for tx in selected_txs:
                 is_seen = await self.is_seen(self.get_seen_hash(tx))
-
                 if not is_seen:
                     unseen_new_txs.append(tx)
+
+                    if (h := tx.tx_hash) in self.pending_hashes:
+                        self.pending_hashes.discard(h)
+                        cleared_pending_hashes.add(h)
 
             if not results.txs:
                 self.logger.info(f"no more tx: got {len(all_txs)}")
@@ -178,6 +185,9 @@ class TxFetcher(BaseFetcher):
         n_accounted_pending = sum(1 for t in all_txs if t.is_pending)
         if n_accounted_pending:
             self.logger.info(f'Pending TXs {n_accounted_pending} are old enough to be counted and announced.')
+
+        if cleared_pending_hashes:
+            self.logger.info(f'Pending TXs {cleared_pending_hashes} ({len(cleared_pending_hashes)}) are cleared.')
 
         return all_txs
 
