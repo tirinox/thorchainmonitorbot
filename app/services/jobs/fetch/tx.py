@@ -15,7 +15,7 @@ from services.models.tx import ThorTx
 
 
 class TxFetcher(BaseFetcher):
-    PAGE_IN_GROUP = 3
+    RETRY_COUNT = 3
 
     def __init__(self, deps: DepContainer, tx_types=None):
         s_cfg = deps.cfg.tx
@@ -33,7 +33,8 @@ class TxFetcher(BaseFetcher):
         self.tx_merger = AffiliateTXMerger()
 
         self.progress_tracker: Optional[tqdm] = None
-        self.pending_hashes = set()
+
+        self.pending_hash_to_height = {}
 
         self.logger.info(f'New TX fetcher is created for {self.tx_types}')
 
@@ -122,27 +123,50 @@ class TxFetcher(BaseFetcher):
             if data:
                 return data
             else:
-                self.logger.warning('retry?')
-        self.logger.warning('gave up!')
+                self.logger.warning('Retry?')
+        self.logger.error('Gave up!')
+
+    @staticmethod
+    def _estimate_min_max_height(results, deepest_block_height, top_block_height):
+        if results and results.txs:
+            deepest_block_height = min(deepest_block_height, min(tx.height_int for tx in results.txs))
+            top_block_height = max(top_block_height, max(tx.height_int for tx in results.txs))
+        return deepest_block_height, top_block_height
+
+    def _update_pending_txs_here(self, this_batch_pending):
+        for tx in this_batch_pending:
+            self.pending_hash_to_height[tx.tx_hash] = tx.height_int
+
+    def _select_old_pending_txs(self, top_block_height, this_batch_pending):
+        block_height_threshold = top_block_height - self.announce_pending_after_blocks
+        pending_old_txs = [tx for tx in this_batch_pending if tx.height_int < block_height_threshold]
+        return pending_old_txs
+
+    def get_pending_hashes_prior_to(self, block_height):
+        return [(tx_hash, tx_height)
+                for tx_hash, tx_height in self.pending_hash_to_height.items()
+                if tx_height < block_height]
 
     async def _fetch_unseen_txs(self):
         all_txs = []
 
+        deepest_block_height = 1_000_000_000_000_000
         top_block_height = 0
 
         futures = [
-            self._fetch_one_batch_tries(page, tries=2) for page in range(self.max_page_deep)
+            self._fetch_one_batch_tries(page, tries=self.RETRY_COUNT) for page in range(self.max_page_deep)
         ]
 
         number_of_pending_txs_this_tick = 0
         cleared_pending_hashes = set()
 
         for future in asyncio.as_completed(futures):
+            # get a batch of TXs
             results = await future
 
             # estimate "top_block_height"
-            if results:
-                top_block_height = max(top_block_height, max(tx.height_int for tx in results.txs))
+            deepest_block_height, top_block_height = self._estimate_min_max_height(
+                results, deepest_block_height, top_block_height)
 
             # filter out old really TXs
             txs = list(self._filter_by_age(results.txs))
@@ -150,35 +174,37 @@ class TxFetcher(BaseFetcher):
             # first, we select only successful TXs
             selected_txs = [tx for tx in txs if tx.is_success]
 
-            # TXs which are in pending state for quite a long time deserve to be announced with a corresponding mark
-            block_height_threshold = top_block_height - self.announce_pending_after_blocks
+            # then handle pending TXs
             this_batch_pending = [tx for tx in txs if tx.is_pending]
-            pending_old_txs = [tx for tx in this_batch_pending if tx.height_int < block_height_threshold]
+            self._update_pending_txs_here(this_batch_pending)
+            number_of_pending_txs_this_tick += len(this_batch_pending)
+
+            # TXs which are in pending state for quite a long time deserve to be announced with a corresponding mark
+            pending_old_txs = self._select_old_pending_txs(top_block_height, this_batch_pending)
             if pending_old_txs:
                 # second, we select additionally OLD enough pending TXs
                 selected_txs += pending_old_txs
 
-            number_of_pending_txs_this_tick += len(this_batch_pending)
-
-            self.pending_hashes.update(tx.tx_hash for tx in this_batch_pending)
-
-            # filter out TXs that have been seen already
+            # filter out TXs from "selected_txs" that have been seen already
             unseen_new_txs = []
             for tx in selected_txs:
                 is_seen = await self.is_seen(self.get_seen_hash(tx))
                 if not is_seen:
                     unseen_new_txs.append(tx)
 
-                    if (h := tx.tx_hash) in self.pending_hashes:
-                        self.pending_hashes.discard(h)
-                        cleared_pending_hashes.add(h)
-
-            if not results.txs:
-                self.logger.info(f"no more tx: got {len(all_txs)}")
-                break
+                    # It was previously pending, but now it's successful
+                    if (tx_hash := tx.tx_hash) in self.pending_hash_to_height:
+                        del self.pending_hash_to_height[tx_hash]
+                        cleared_pending_hashes.add(tx_hash)
 
             all_txs += unseen_new_txs
 
+        # Take care of pending TXs that were not seen for a long time
+        pending_out_of_scope = self.get_pending_hashes_prior_to(deepest_block_height)
+        for tx_hash, tx_height in pending_out_of_scope:
+            self.logger.warning(f'Pending TX {tx_hash} (Blk #{tx_height}) is out of scope.')
+
+        # Log some stats
         if number_of_pending_txs_this_tick:
             self.logger.info(f'Pending TXs this tick: {number_of_pending_txs_this_tick}.')
 

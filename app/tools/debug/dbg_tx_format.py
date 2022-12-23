@@ -189,6 +189,8 @@ async def refund_full_rune(app):
 async def demo_full_tx_pipeline(app: LpAppFramework, announce=True):
     d = app.deps
 
+    await d.mimir_const_fetcher.run_once()
+
     fetcher_tx = TxFetcher(d, tx_types=(ThorTxType.TYPE_ADD_LIQUIDITY, ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_SWAP))
 
     aggregator = AggregatorDataExtractor(d)
@@ -202,8 +204,8 @@ async def demo_full_tx_pipeline(app: LpAppFramework, announce=True):
     async def print_hashes(_, txs: List[ThorTx]):
         hashes = {tx.tx_hash for tx in txs}
         sep()
-        print('Accepted hashes =', hashes)
-        print('Pending hashes =', fetcher_tx.pending_hashes)
+        print('Accepted hashes = ', hashes)
+        print(f'Pending hashes = ({len(fetcher_tx.pending_hash_to_height)}) {fetcher_tx.pending_hash_to_height}')
 
         if hashes & all_accepted_tx_hashes:
             sep()
