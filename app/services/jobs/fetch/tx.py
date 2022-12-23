@@ -135,7 +135,8 @@ class TxFetcher(BaseFetcher):
 
     def _update_pending_txs_here(self, this_batch_pending):
         for tx in this_batch_pending:
-            self.pending_hash_to_height[tx.tx_hash] = tx.height_int
+            if tx and (tx_hash := tx.tx_hash):
+                self.pending_hash_to_height[tx_hash] = tx.height_int
 
     def _select_old_pending_txs(self, top_block_height, this_batch_pending):
         block_height_threshold = top_block_height - self.announce_pending_after_blocks
@@ -146,6 +147,26 @@ class TxFetcher(BaseFetcher):
         return [(tx_hash, tx_height)
                 for tx_hash, tx_height in self.pending_hash_to_height.items()
                 if tx_height < block_height]
+
+    async def try_to_recover_old_txs(self, deepest_block_height):
+        try:
+            pending_out_of_scope = self.get_pending_hashes_prior_to(deepest_block_height)
+
+            all_txs = []
+            for tx_hash, tx_height in pending_out_of_scope:
+                self.logger.warning(f'TX {tx_hash} (Blk #{tx_height}) is out of scope. Check it again.')
+                tx_results = await self.fetch_one_batch(0, txid=tx_hash)
+                if tx_results and (txs := tx_results.txs):
+                    self.logger.info(f'Recovered TXs: {txs}')
+                    all_txs.extend(txs)
+
+                    if any(t for t in txs if t.is_success):
+                        self.logger.info(f'Recovered pending TX {tx_hash} (Blk #{tx_height})')
+                        self.pending_hash_to_height.pop(tx_hash)  # remove from pending
+            return all_txs
+        except Exception as e:
+            self.logger.exception(f'Failed to recover old TXs ({e})', stack_info=True)
+            return []
 
     async def _fetch_unseen_txs(self):
         all_txs = []
@@ -200,9 +221,8 @@ class TxFetcher(BaseFetcher):
             all_txs += unseen_new_txs
 
         # Take care of pending TXs that were not seen for a long time
-        pending_out_of_scope = self.get_pending_hashes_prior_to(deepest_block_height)
-        for tx_hash, tx_height in pending_out_of_scope:
-            self.logger.warning(f'Pending TX {tx_hash} (Blk #{tx_height}) is out of scope.')
+        # extra_txs = await self.try_to_recover_old_txs(deepest_block_height)
+        # all_txs.extend(extra_txs)
 
         # Log some stats
         if number_of_pending_txs_this_tick:
