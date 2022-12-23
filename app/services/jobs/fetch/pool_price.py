@@ -157,6 +157,23 @@ class PoolFetcher(BaseFetcher):
         r: Redis = await self.deps.db.get_redis()
         await r.delete(self.DB_KEY_POOL_INFO_HASH)
 
+    _dbg_flag = 1
+
+    @classmethod
+    def _dbg_add_thor_pools(cls, current_pools: PoolInfoMap):
+        if cls._dbg_flag < 3:
+            cls._dbg_flag += 1
+            return
+
+        p1 = current_pools.get('BNB.BNB').copy()
+        p1.asset = 'THOR.BNB'
+        p2 = current_pools.get('BTC.BTC').copy()
+        p2.asset = 'THOR.BTC'
+        p3 = current_pools.get('ETH.ETH').copy()
+        p3.asset = 'THOR.ETH'
+        for p in (p1, p2, p3):
+            current_pools[p.asset] = p
+
 
 class PoolInfoFetcherMidgard(BaseFetcher):
     def __init__(self, deps: DepContainer, period):
