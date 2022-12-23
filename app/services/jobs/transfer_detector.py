@@ -25,7 +25,11 @@ class RuneTransferDetectorNativeTX(WithDelegates, INotified):
             return []
         transfers = []
         for tx in txs:
+            # find out memo
             memo = tx.tx.body.memo
+            if not memo and hasattr(tx.first_message, 'memo'):
+                memo = tx.first_message.memo
+
             for message in tx.tx.body.messages:
                 comment = (type(message)).__name__
                 if isinstance(message, MsgSend):

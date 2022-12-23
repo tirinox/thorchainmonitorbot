@@ -110,6 +110,7 @@ class NativeScannerBlock(BaseFetcher):
                 self._on_error()
                 break
 
+            # fixme: bad design?
             await self.pass_data_to_listeners(block_result)
 
             self._last_block += 1
