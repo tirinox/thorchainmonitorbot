@@ -80,11 +80,18 @@ async def get_transfers_from_block(app, block_index):
 
 
 async def demo_test_rune_detector(app):
+    # ----- memo mess -----
+    transfers = await get_transfers_from_block(app, 8217619)
+    print(transfers)
+    sep()
+
+    # ----- swap has memo -----
     transfers = await get_transfers_from_block(app, 8792580)
     assert find_transfer(transfers,
                          tx_hash='CEDB9FD8755ABA68C9DF46203E53834B49C644FCF01405EB1F1C0255070FB10C',
                          memo='SWAP:gaia/atom:thor1t2pfscuq3ctgtf5h3x7p6zrjd7e0jcvuszyvt5:5816028866')
 
+    # ----- simple transfer -----
     transfers = await get_transfers_from_block(app, 8686879)
     assert find_transfer(transfers, rune_amount=100000)
 
