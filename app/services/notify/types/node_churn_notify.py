@@ -36,8 +36,8 @@ class NodeChurnNotifier(INotified, WithDelegates, WithLogger):
         if changes.is_empty:
             return
 
-        if self._filter_nonsense and changes.is_nonsense:
-            self.logger.warning(f'Node changes is nonsense! {changes}')
+        if self._filter_nonsense and not changes.has_churn_happened:
+            self.logger.warning(f'Node changes are insignificant: {changes} Ignore.')
             return
 
         if await self._notify_cd.can_do():
