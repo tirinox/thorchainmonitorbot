@@ -29,19 +29,29 @@ async def get_transfers_from_block(app, block_index):
 def find_transfer(transfers: List[RuneTransfer],
                   from_addr=None,
                   to_addr=None, rune_amount=None, memo=None,
+                  asset=None,
                   tx_hash=None, comment=None, print_it=False):
     if from_addr is not None:
         transfers = [t for t in transfers if t.from_addr == from_addr]
+        assert transfers, f"No transfers from {from_addr}"
     if to_addr is not None:
         transfers = [t for t in transfers if t.to_addr == to_addr]
+        assert transfers, f"No transfers to {to_addr}"
     if rune_amount is not None:
         transfers = [t for t in transfers if int(t.amount) == int(rune_amount)]
+        assert transfers, f"No transfers with amount {rune_amount}"
     if memo is not None:
         transfers = [t for t in transfers if t.memo == memo]
+        assert transfers, f"No transfers with memo {memo}"
     if tx_hash is not None:
         transfers = [t for t in transfers if t.tx_hash == tx_hash]
+        assert transfers, f"No transfers with tx_hash {tx_hash}"
     if comment is not None:
         transfers = [t for t in transfers if t.comment == comment]
+        assert transfers, f"No transfers with comment {comment}"
+    if asset is not None:
+        transfers = [t for t in transfers if t.asset == asset]
+        assert transfers, f"No transfers with asset {asset}"
 
     if print_it:
         sep()
@@ -95,15 +105,22 @@ async def test_8783469_transfer_unbond(fixture_app: LpAppFramework):
 
 
 @pytest.mark.asyncio
+async def test_8793017_swap_from_rune(fixture_app: LpAppFramework):
+    async with fixture_app:
+        transfers = await get_transfers_from_block(fixture_app, 8793017)
+        assert len(transfers)
+        assert find_transfer(transfers,
+                             rune_amount=3.059683,
+                             from_addr='thor1dp6mdtrr54zs4us2nglkvelrsl7l2fdwe74wef',
+                             tx_hash='D74DAC3110AD6B42A5F4AEDF74677C8AB9B778EBF035528CDCBFEEC4CDA9D70E',
+                             )
+
+
+@pytest.mark.asyncio
 async def test_8217619_transfer_big_simple(fixture_app: LpAppFramework):
     # many txs, there was a mess
     async with fixture_app:
         transfers = await get_transfers_from_block(fixture_app, 8217619)
-
-        sep()
-        for t in transfers:
-            print(t)
-        sep()
 
         assert len(transfers)
 
@@ -118,3 +135,31 @@ async def test_8217619_transfer_big_simple(fixture_app: LpAppFramework):
                              from_addr='thor1v8ppstuf6e3x0r4glqc68d5jqcs2tf38cg2q6y',
                              to_addr='thor1t2pfscuq3ctgtf5h3x7p6zrjd7e0jcvuszyvt5',
                              memo='OUT:ABDBC4B3F261A419E00D620B2574118574D543BF7288A783DCFBF882603BA558')
+
+
+@pytest.mark.asyncio
+async def test_8793184_swap_to_rune(fixture_app: LpAppFramework):
+    async with fixture_app:
+        transfers = await get_transfers_from_block(fixture_app, 8793184)
+        assert len(transfers)
+
+        # swap to rune is outbound comment
+        assert find_transfer(transfers,
+                             rune_amount=2_855.49,
+                             to_addr='thor1t3mkwu79rftp4uqf3xrpf5qwczp97jg9jul53p'
+                             )
+
+
+@pytest.mark.asyncio
+async def test_8788705_send_synth(fixture_app: LpAppFramework):
+    async with fixture_app:
+        transfers = await get_transfers_from_block(fixture_app, 8788705)
+        assert len(transfers)
+
+        # swap to rune is outbound comment
+        assert find_transfer(transfers,
+                             rune_amount=0.000272,
+                             asset='BTC/BTC',
+                             from_addr='thor1julaxd5473t0nvhj7uwvcts4806uvx0huxz0g3',
+                             to_addr='thor1yqerp6r3wasqy20r6qsk9fpkg8pu8p6ctek7z3'
+                             )

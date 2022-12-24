@@ -43,7 +43,7 @@ class RuneTransferDetectorNativeTX(WithDelegates, INotified):
                             tx_hash=tx.hash,
                             amount=thor_to_float(coin.amount),
                             is_native=True,
-                            asset=coin.denom,
+                            asset=str(coin.denom).upper(),
                             comment=comment,
                             memo=memo,
                         ))
@@ -89,7 +89,7 @@ class RuneTransferDetectorBlockEvents(WithDelegates, INotified):
                     amount=thor_to_float(amount),
                     usd_per_asset=1.0,
                     is_native=True,
-                    asset=asset
+                    asset=asset.upper()
                 ))
         await self.pass_data_to_listeners(transfers)
 

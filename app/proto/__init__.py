@@ -82,7 +82,7 @@ def thor_decode_amount_field(string: str):
         else:
             asset += symbol
 
-    return (int(amt) if amt else 0), asset.strip()
+    return (int(amt) if amt else 0), asset.strip().upper()
 
 
 def debase64(s: str):
