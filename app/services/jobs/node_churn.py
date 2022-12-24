@@ -109,6 +109,8 @@ class NodeChurnDetector(WithDelegates, INotified):
         #         n.version = '0.60.6'
 
         # data.nodes_added.append(data.nodes_all[0])
+
+        # simulate churn
         data.nodes_activated.append(data.nodes_all[1])
         data.nodes_activated.append(data.nodes_all[2])
         data.nodes_activated.append(data.nodes_all[3])
@@ -117,6 +119,12 @@ class NodeChurnDetector(WithDelegates, INotified):
         data.nodes_deactivated.append(data.nodes_all[6])
         data.nodes_deactivated.append(data.nodes_all[7])
         data.nodes_deactivated.append(data.nodes_all[8])
-        # data.nodes_removed.append(data.nodes_all[9])
+        data.nodes_removed.append(data.nodes_all[9])
 
         return data
+
+    # fixme: remove
+    # standby_nodes = [n for n in info_list if n.is_standby and n.bond > 10000]
+    # if standby_nodes:
+    #     info_list.remove(standby_nodes[2])
+    # fixme: remove

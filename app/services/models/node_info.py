@@ -294,6 +294,13 @@ class NodeSetChanges:
     def bond_churn_delta(self):
         return self.bond_churn_in - self.bond_churn_out
 
+    def __str__(self) -> str:
+        return (f"NodeSetChanges("
+                f"added={len(self.nodes_added)}, "
+                f"removed={len(self.nodes_removed)}, "
+                f"activated={len(self.nodes_activated)}, "
+                f"deactivated={len(self.nodes_deactivated)})")
+
 
 @dataclass
 class NetworkNodeIpInfo:
