@@ -1599,7 +1599,7 @@ class RussianLocalization(BaseLocalization):
             name_map=name_map
         )
 
-        return f'💸 <b>Большой перевод</b> {tx_link}: ' \
+        return f'💸 <b>Большой перевод</b>{tx_link}: ' \
                f'{code(short_money(t.amount, postfix=" " + asset))}{usd_amt} ' \
                f'от {from_my} ➡️ к {to_my}{memo}.'
 

@@ -2074,7 +2074,7 @@ class BaseLocalization(ABC):  # == English
             comment = shorten_text(t.comment, 100)
             if comment.startswith('Msg'):
                 comment = comment[3:]
-            comment = ' ' + comment.capitalize()
+            comment = f' "{comment.capitalize()}"'
 
         # TX link
         if t.tx_hash:
@@ -2088,7 +2088,7 @@ class BaseLocalization(ABC):  # == English
         asset = short_address(asset, 12, 5)
 
         memo = ''
-        if t.memo:
+        if t.memo and not t.memo.startswith('OUT:'):
             memo = f' MEMO: "{code(shorten_text(t.memo, limit=42))}"'
 
         return asset, comment, from_my, to_my, tx_link, usd_amt, memo
@@ -2110,7 +2110,7 @@ class BaseLocalization(ABC):  # == English
             name_map=name_map
         )
 
-        return f'💸 <b>Large transfer</b> {tx_link}: ' \
+        return f'💸 <b>Large transfer</b>{tx_link}: ' \
                f'{code(short_money(t.amount, postfix=" " + asset))}{usd_amt} ' \
                f'from {from_my} ➡️ {to_my}{memo}.'
 

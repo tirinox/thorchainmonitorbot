@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import List
 
 from proto import NativeThorTx, parse_thor_address, DecodedEvent, thor_decode_amount_field
@@ -10,6 +11,10 @@ from services.lib.utils import WithLogger
 from services.models.transfer import RuneTransfer
 
 DEFAULT_RUNE_FEE = 2000000
+
+DEFAULT_RESERVE_ADDRESS = 'thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt'
+BOND_MODULE = 'thor17gw75axcnr8747pkanye45pnrwk7p9c3cqncsv'
+POOL_MODULE = 'thor1g98cy3n9mmjrpn0sxmn63lztelera37n8n67c0'
 
 
 class RuneTransferDetectorNativeTX(WithDelegates, INotified):
@@ -134,13 +139,10 @@ def is_fee_tx(amount, asset, to_addr, reserve_address):
 
 # This one is presently used!
 class RuneTransferDetectorTxLogs(WithDelegates, INotified, WithLogger):
-    DEFAULT_RESERVE_ADDRESS = 'thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt'
-
     def __init__(self, reserve_address=None):
         super().__init__()
-        self.reserve_address = reserve_address or self.DEFAULT_RESERVE_ADDRESS
+        self.reserve_address = reserve_address or DEFAULT_RESERVE_ADDRESS
         self.tx_proc = RuneTransferDetectorNativeTX()
-
 
     @staticmethod
     def _build_transfer_from_event(ev: DecodedEvent, block_no):
@@ -194,6 +196,12 @@ class RuneTransferDetectorTxLogs(WithDelegates, INotified, WithLogger):
         except (TypeError, KeyError, ValueError) as e:
             self.logger.exception(f'Error processing tx logs {e}', stack_info=True)
 
+        # Fourth, merge some same TXs
+        try:
+            transfers = self.connect_transactions_together(transfers)
+        except (TypeError, KeyError, ValueError) as e:
+            self.logger.exception(f'Error merging transfers {e}', stack_info=True)
+
         return transfers
 
     async def on_data(self, sender, data: BlockResult):
@@ -205,3 +213,37 @@ class RuneTransferDetectorTxLogs(WithDelegates, INotified, WithLogger):
         if transfers:
             self.logger.info(f'Detected {len(transfers)} transfers at block #{data.block_no}.')
         await self.pass_data_to_listeners(transfers)
+
+    @classmethod
+    def connect_transactions_together(cls, transfers: List[RuneTransfer]):
+        hash_map = defaultdict(list)
+        for tr in transfers:
+            if tr.tx_hash:
+                hash_map[tr.tx_hash].append(tr)
+
+        for same_hash_transfers in hash_map.values():
+            cls.make_connection(same_hash_transfers)
+
+        return transfers
+
+    @staticmethod
+    def set_comment(transfers: List[RuneTransfer], comment):
+        for t in transfers:
+            t.comment = comment
+
+    @classmethod
+    def make_connection(cls, transfers: List[RuneTransfer]):
+        # some special cases
+        if any(t.memo.lower().startswith('unbond:') for t in transfers):
+            cls.set_comment(transfers, 'unbond')
+            for t in transfers:
+                if not t.from_addr:
+                    t.from_addr = BOND_MODULE
+
+        if any(t.memo.lower().startswith('bond:') for t in transfers):
+            cls.set_comment(transfers, 'bond')
+            for t in transfers:
+                if not t.to_addr:
+                    t.to_addr = BOND_MODULE
+
+
