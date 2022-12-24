@@ -14,7 +14,6 @@ from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
 from services.lib.texts import sep
 from services.models.transfer import RuneTransfer
-from tests.test_rune_transfer import find_transfer
 from tools.lib.lp_common import LpAppFramework, Receiver
 
 
@@ -48,19 +47,23 @@ async def t_block_scanner_ws(url):
     await scanner.run()
 
 
-# sic!
-async def t_block_scanner_active(lp_app):
+async def demo_native_block_action_detectro(lp_app):
     scanner = NativeScannerBlock(lp_app.deps)
     detector = RuneTransferDetectorTxLogs()
     scanner.add_subscriber(detector)
     detector.add_subscriber(Receiver('Transfer'))
-    # detector.subscribe(ReceiverPublicText(lp_app.deps))
-
     action_extractor = NativeActionExtractor(lp_app.deps)
     scanner.add_subscriber(action_extractor)
-
     action_extractor.add_subscriber(Receiver('Action'))
+    await scanner.run()
 
+
+# sic!
+async def demo_block_scanner_active(lp_app):
+    scanner = NativeScannerBlock(lp_app.deps)
+    detector = RuneTransferDetectorTxLogs()
+    scanner.add_subscriber(detector)
+    detector.add_subscriber(Receiver('Transfer'))
     await scanner.run()
 
 
@@ -79,32 +82,7 @@ async def get_transfers_from_block(app, block_index):
     return transfers
 
 
-async def demo_test_rune_detector(app):
-    # ----- memo mess -----
-    transfers = await get_transfers_from_block(app, 8217619)
-    print(transfers)
-    sep()
-
-    # ----- swap has memo -----
-    transfers = await get_transfers_from_block(app, 8792580)
-    assert find_transfer(transfers,
-                         tx_hash='CEDB9FD8755ABA68C9DF46203E53834B49C644FCF01405EB1F1C0255070FB10C',
-                         memo='SWAP:gaia/atom:thor1t2pfscuq3ctgtf5h3x7p6zrjd7e0jcvuszyvt5:5816028866')
-
-    # ----- simple transfer -----
-    transfers = await get_transfers_from_block(app, 8686879)
-    assert find_transfer(transfers, rune_amount=100000)
-
-
 async def demo_rune_transfers_once(lp_app):
-    # b = 6237587  # send: https://viewblock.io/thorchain/tx/34A4B4885E7E42AB2FBB7F3EA950D1795B19CB5715862487F8320E4FA1B9E61C
-    # b = 6235520  # withdraw: https://viewblock.io/thorchain/tx/16F5ABB456FEA325B47F1E2EE984FEA39344F56432F474A73BC3AC2E02E7379D
-    # b = 6187632
-    # b = 6240682  # synth send
-    # b = 6230655  # synth mint 9E7D7BE18EC0CFC13D9AC45A76EB9F5923EF4F1CC49299E2346E613EA144ADEE
-    # b = 8665175  # bond
-    # b = 8217619  # memo mess
-    # b = 8685981  # memo mess 2
     b = 8686879  # send with memo
     transfers = await get_transfers_from_block(lp_app, b)
 
@@ -137,11 +115,11 @@ async def search_out(lp_app):
 async def main():
     lp_app = LpAppFramework(log_level=logging.INFO)
     async with lp_app(brief=True):
-        # await t_block_scanner_active(lp_app)
+        await demo_block_scanner_active(lp_app)
         # await active_one(lp_app)
         # await search_out(lp_app)
         # await demo_rune_transfers_once(lp_app)
-        await demo_test_rune_detector(lp_app)
+        # await demo_test_rune_detector(lp_app)
 
 
 if __name__ == '__main__':

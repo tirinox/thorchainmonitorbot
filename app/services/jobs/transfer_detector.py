@@ -175,24 +175,15 @@ class RuneTransferDetectorTxLogs(WithDelegates, INotified, WithLogger):
     def process_events(self, r: BlockResult):
         transfers = []
 
+        # First, Get transfers from incoming transactions
         transfers += self.tx_proc.process_block(r.txs, r.block_no)
 
-        # fixme: problem r.txs does not map to r.tx_logs!! txs != tx_logs, sometimes len(txs) > len(tx_logs)
-        # for tx, raw_logs in zip(r.txs, r.tx_logs):
-        #     try:
-        #         tx: NativeThorTx
-        #
-        #         this_transfers = self._parse_one_tx(raw_logs[0]['events'], r.block_no, tx)
-        #         if this_transfers:
-        #             transfers.extend(this_transfers)
-        #     except (KeyError, ValueError):
-        #         raise
-
-        # add Outbounds
+        # Second, add Protocol's Outbounds
         for ev in r.end_block_events:
             if t := self._build_transfer_from_event(ev, r.block_no):
                 transfers.append(t)
 
+        # Third, add inbound transfers from the Protocol from the TX logs
         try:
             for logs in r.tx_logs:
                 for log in logs:
