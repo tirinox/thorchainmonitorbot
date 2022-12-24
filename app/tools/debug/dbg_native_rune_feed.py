@@ -88,7 +88,7 @@ async def get_transfers_from_block(app, block_index):
 
 
 async def demo_rune_transfers_once(lp_app):
-    b = 8783469  # unbond
+    # b = 8783469  # unbond
     b = 8686955  # bond
     transfers = await get_transfers_from_block(lp_app, b)
 
@@ -123,8 +123,8 @@ async def search_out(lp_app):
 async def main():
     lp_app = LpAppFramework(log_level=logging.INFO)
     async with lp_app(brief=True):
-        # await demo_rune_transfers_once(lp_app)
-        await demo_block_scanner_active(lp_app, send_alerts=True)
+        await demo_rune_transfers_once(lp_app)
+        # await demo_block_scanner_active(lp_app, send_alerts=True)
         # await active_one(lp_app)
         # await search_out(lp_app)
         # await demo_rune_transfers_once(lp_app)

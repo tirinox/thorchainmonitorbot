@@ -102,7 +102,7 @@ class PoolFetcher(BaseFetcher):
             try:
                 thor_pools = await self.deps.thor_connector.query_pools(height)
                 if not thor_pools:
-                    thor_pools = await self.deps.thor_connector_backup.query_pools(height)
+                    thor_pools = await self.deps.thor_connector.query_pools(height)
                 return parse_thor_pools(thor_pools)
             except (TypeError, IndexError) as e:
                 self.logger.error(f'thor_connector.query_pools failed! Attempt: #{attempt}, err: {e}')
