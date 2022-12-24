@@ -23,7 +23,6 @@ class PoolFetcher(BaseFetcher):
     """
 
     # todo: split this class: 1) PoolFetcher 2) PoolDataCache 3) RuneMarketInfoFetcher
-    MAX_ATTEMPTS_TO_FETCH_POOLS = 5
     CACHE_TOLERANCE = 60
 
     def __init__(self, deps: DepContainer):
@@ -32,7 +31,6 @@ class PoolFetcher(BaseFetcher):
         period = parse_timespan_to_seconds(cfg.price.fetch_period)
         super().__init__(deps, sleep_period=period)
         self.deps = deps
-        self.max_attempts = self.MAX_ATTEMPTS_TO_FETCH_POOLS
         self.use_thor_consensus = False
         self.parser = get_parser_by_network_id(self.deps.cfg.network_id)
         self.history_max_points = 200000
@@ -98,14 +96,11 @@ class PoolFetcher(BaseFetcher):
             self.logger.error(f'Odd {rune_market_info.fair_price = }')
 
     async def _fetch_current_pool_data_from_thornode(self, height=None) -> PoolInfoMap:
-        for attempt in range(1, self.max_attempts):
-            try:
-                thor_pools = await self.deps.thor_connector.query_pools(height)
-                if not thor_pools:
-                    thor_pools = await self.deps.thor_connector.query_pools(height)
-                return parse_thor_pools(thor_pools)
-            except (TypeError, IndexError) as e:
-                self.logger.error(f'thor_connector.query_pools failed! Attempt: #{attempt}, err: {e}')
+        try:
+            thor_pools = await self.deps.thor_connector.query_pools(height)
+            return parse_thor_pools(thor_pools)
+        except (TypeError, IndexError) as e:
+            self.logger.error(f'thor_connector.query_pools failed! Err: {e}')
 
         return {}
 
