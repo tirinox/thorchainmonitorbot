@@ -177,3 +177,10 @@ async def test_8788705_send_synth(fixture_app: LpAppFramework):
                              from_addr='thor1julaxd5473t0nvhj7uwvcts4806uvx0huxz0g3',
                              to_addr='thor1yqerp6r3wasqy20r6qsk9fpkg8pu8p6ctek7z3'
                              )
+
+
+@pytest.mark.asyncio
+async def test_8801498_debug_exc(fixture_app: LpAppFramework):
+    async with fixture_app:
+        transfers = await get_transfers_from_block(fixture_app, 8801498)
+        assert len(transfers)

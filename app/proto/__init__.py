@@ -106,7 +106,7 @@ class DecodedEvent(typing.NamedTuple):
     def from_dict(cls, d):
         return cls(
             type=d['type'],
-            attributes={attr['key']: attr['value'] for attr in d['attributes']}
+            attributes={attr['key']: attr.get('value') for attr in d['attributes']}
         )
 
 
