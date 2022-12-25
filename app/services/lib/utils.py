@@ -389,10 +389,10 @@ def vertical_text(t: str):
     return '\n'.join(t)
 
 
-def filter_kwargs_according_function_signature(dict_to_filter, thing_with_kwargs):
+def filter_kwargs_according_function_signature(dict_to_filter, thing_with_kwargs, default=None):
     sig = inspect.signature(thing_with_kwargs)
     filter_keys = [param.name for param in sig.parameters.values() if param.kind == param.POSITIONAL_OR_KEYWORD]
-    return {filter_key: dict_to_filter[filter_key] for filter_key in filter_keys}
+    return {filter_key: dict_to_filter.get(filter_key, default) for filter_key in filter_keys}
 
 
 def take_closest(sorted_list, target, ignore_outliers=False):
