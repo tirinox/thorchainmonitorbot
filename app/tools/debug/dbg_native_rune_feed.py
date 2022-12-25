@@ -89,7 +89,8 @@ async def get_transfers_from_block(app, block_index):
 
 async def demo_rune_transfers_once(lp_app):
     # b = 8783469  # unbond
-    b = 8686955  # bond
+    # b = 8686955  # bond
+    b = 8815564  # crash
     transfers = await get_transfers_from_block(lp_app, b)
 
     sep()

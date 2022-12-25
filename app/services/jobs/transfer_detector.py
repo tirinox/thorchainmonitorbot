@@ -54,6 +54,7 @@ class RuneTransferDetectorNativeTX(WithDelegates, INotified):
                         ))
                 elif isinstance(message, MsgDeposit):
                     for coin in message.coins:
+                        asset = Asset.from_coin(coin)
                         transfers.append(RuneTransfer(
                             from_addr=self.address_parse(message.signer),
                             to_addr='',
@@ -61,7 +62,7 @@ class RuneTransferDetectorNativeTX(WithDelegates, INotified):
                             tx_hash=tx.hash,
                             amount=thor_to_float(coin.amount),
                             is_native=True,
-                            asset=Asset(coin.asset.chain, coin.asset.symbol, is_synth=True).full_name,
+                            asset=asset.to_canonical,
                             comment=comment,
                             memo=memo,
                         ))

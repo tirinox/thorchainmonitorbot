@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from math import floor, log10
 from typing import List
 
+from proto.common import Coin
 from services.lib.constants import Chains
 from services.lib.utils import linear_transform
 
@@ -232,11 +233,18 @@ class Asset:
         except (IndexError, TypeError, ValueError):
             return cls(name=asset)
 
+    @classmethod
+    def from_coin(cls, coin: Coin):
+        template = f'{coin.asset.chain}.{coin.asset.symbol}'
+        a = cls.from_string(template)
+        a.is_synth = bool(coin.asset.synth)
+        return a
+
     @property
     def short_str(self):
+        # todo: rename to "pretty_str"
         s = '💊' if self.is_synth else ''
-        sep = '/' if self.is_synth else '.'
-        result = f'{s}{self.chain}{sep}{self.name}'
+        result = f'{s}{self.chain}{self.separator_symbol}{self.name}'
         if self.tag:
             short_tag = self.tag[:6]
             return f'{result}-{short_tag}'
@@ -255,6 +263,14 @@ class Asset:
             return self.name
 
     @property
+    def separator_symbol(self):
+        return '/' if self.is_synth else '.'
+
+    @property
+    def to_canonical(self):
+        return f'{self.chain}{self.separator_symbol}{self.full_name}'
+
+    @property
     def first_filled_component(self):
         return self.chain or self.name or self.tag
 
@@ -263,7 +279,7 @@ class Asset:
         return f'{self.chain}.{self.full_name}' if self.valid else self.name
 
     def __str__(self):
-        return self.native_pool_name
+        return self.to_canonical
 
     @classmethod
     def to_L1_pool_name(cls, asset: str):

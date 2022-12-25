@@ -114,7 +114,7 @@ class PersonalBalanceNotifier(INotified):
                 tr.usd_per_asset = usd_per_rune
             else:
                 pool_name = Asset.from_string(tr.asset).native_pool_name
-                tr.usd_per_asset = self.deps.price_holder.usd_per_asset(pool_name)
+                tr.usd_per_asset = self.deps.price_holder.usd_per_asset(pool_name) or 0.0
 
     @staticmethod
     def _get_min_rune_threshold(balance_settings: dict, address):
