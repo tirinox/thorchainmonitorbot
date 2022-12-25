@@ -41,7 +41,7 @@ class PlotGraph:
 
         r = Resources()
         self.font_ticks = r.fonts.get_font(15)
-        self.font_title = r.fonts.get_font(35)
+        self.font_title = r.fonts.get_font_bold(35)
         self.tick_size = 4
         self.axis_text_color = TC_WHITE
         self.grid_lines = False
