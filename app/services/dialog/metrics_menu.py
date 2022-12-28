@@ -35,9 +35,8 @@ class MetricsStates(StatesGroup):
     SECTION_NET_OP = State()
 
     MAIN_METRICS_MENU = State()
-    PRICE_SELECT_DURATION = State()
-    QUEUE_SELECT_DURATION = State()
-    DEX_AGGR_SELECT_DURATION = State()
+
+    GENERIC_DURATION = State()
 
 
 class MetricsDialog(BaseDialog):
@@ -89,36 +88,40 @@ class MetricsDialog(BaseDialog):
 
     @message_handler(state=MetricsStates.SECTION_FINANCE)
     async def on_menu_financial(self, message: Message):
+        back_state = 'financial'
         if message.text == self.loc.BUTTON_BACK:
             await self.show_main_menu(message)
             return
         elif message.text == self.loc.BUTTON_METR_PRICE:
-            await self.ask_price_info_duration(message)
+            await self.ask_generic_duration(message, 'price', back_state)
             return
         elif message.text == self.loc.BUTTON_METR_CAP:
             await self.show_cap(message)
         elif message.text == self.loc.BUTTON_METR_STATS:
             await self.show_last_stats(message)
         elif message.text == self.loc.BUTTON_METR_SAVERS:
-            await self.show_savers(message)
+            await self.ask_generic_duration(message, 'savers', back_state)
+            return
         elif message.text == self.loc.BUTTON_METR_TOP_POOLS:
             await self.show_top_pools(message)
         elif message.text == self.loc.BUTTON_METR_CEX_FLOW:
-            await self.show_cex_flow(message)
+            await self.ask_generic_duration(message, 'cex_flow', back_state)
+            return
         elif message.text == self.loc.BUTTON_METR_SUPPLY:
             await self.show_rune_supply(message)
         elif message.text == self.loc.BUTTON_METR_DEX_STATS:
-            await self.ask_dex_aggr_duration(message)
+            await self.ask_generic_duration(message, 'dex_aggr', back_state)
             return
         await self.show_menu_financial(message)
 
     @message_handler(state=MetricsStates.SECTION_NET_OP)
     async def on_menu_net_op(self, message: Message):
+        back_state = 'net_op'
         if message.text == self.loc.BUTTON_BACK:
             await self.show_main_menu(message)
             return
         elif message.text == self.loc.BUTTON_METR_QUEUE:
-            await self.ask_queue_duration(message)
+            await self.ask_generic_duration(message, 'queue', back_state)
             return
         elif message.text == self.loc.BUTTON_METR_NODES:
             await self.show_node_list(message)
@@ -129,7 +132,8 @@ class MetricsDialog(BaseDialog):
         elif message.text == self.loc.BUTTON_METR_VOTING:
             await self.show_voting_info(message)
         elif message.text == self.loc.BUTTON_METR_BLOCK_TIME:
-            await self.show_block_time(message)
+            await self.ask_generic_duration(message, 'block_time', back_state)
+            return
         await self.show_menu_net_op(message)
 
     async def show_cap(self, message: Message):
@@ -138,11 +142,11 @@ class MetricsDialog(BaseDialog):
                              disable_web_page_preview=True,
                              disable_notification=True)
 
-    async def show_savers(self, message: Message):
+    async def show_savers(self, message: Message, period=DAY):
         loading_message = await self.show_loading(message)
 
         ssn = SaversStatsNotifier(self.deps)
-        event = await ssn.get_savers_event_dynamically_cached(period=DAY)
+        event = await ssn.get_savers_event_dynamically_cached(period=period)
 
         if not event or not event.current_stats:
             await message.answer(self.loc.TEXT_SAVERS_NO_DATA,
@@ -198,46 +202,6 @@ class MetricsDialog(BaseDialog):
 
         await message.answer_photo(img_to_bio(pic, gen.proper_name()), disable_notification=True)
 
-    async def ask_queue_duration(self, message: Message):
-        await message.answer(self.loc.TEXT_PRICE_INFO_ASK_DURATION, reply_markup=kbd([
-            [
-                self.loc.BUTTON_1_HOUR,
-                self.loc.BUTTON_24_HOURS,
-                self.loc.BUTTON_1_WEEK,
-                self.loc.BUTTON_30_DAYS,
-            ],
-            [
-                self.loc.BUTTON_BACK
-            ]
-        ]))
-        await MetricsStates.QUEUE_SELECT_DURATION.set()
-
-    def parse_duration_response(self, message: Message):
-        if message.text == self.loc.BUTTON_1_HOUR:
-            return HOUR
-        elif message.text == self.loc.BUTTON_24_HOURS:
-            return DAY
-        elif message.text == self.loc.BUTTON_1_WEEK:
-            return 7 * DAY
-        elif message.text == self.loc.BUTTON_30_DAYS:
-            return 30 * DAY
-        elif message.text == self.loc.BUTTON_BACK:
-            return  # back
-        else:
-            period = parse_timespan_to_seconds(message.text.strip())
-            return period
-
-    @message_handler(state=MetricsStates.QUEUE_SELECT_DURATION)
-    async def on_queue_duration_answered(self, message: Message):
-        period = self.parse_duration_response(message)
-        if isinstance(period, str):
-            await message.reply(period)
-            return
-        if not period:
-            await self.show_menu_net_op(message)
-            return
-        await self.show_queue(message, period)
-
     async def show_queue(self, message, period):
         queue_info = self.deps.queue_holder
         plot, plot_name = await queue_graph(self.deps, self.loc, duration=period)
@@ -247,18 +211,7 @@ class MetricsDialog(BaseDialog):
         else:
             await message.answer(self.loc.queue_message(queue_info), disable_notification=True)
 
-    @message_handler(state=MetricsStates.PRICE_SELECT_DURATION)
-    async def on_price_duration_answered(self, message: Message, explicit_period=0):
-        period = explicit_period or self.parse_duration_response(message)
-
-        if not period:
-            await self.show_menu_financial(message)
-            return
-
-        if isinstance(period, str):
-            await message.reply(period)
-            return
-
+    async def show_price(self, message, period):
         market_info = await self.deps.rune_market_fetcher.get_rune_market_info()
         pn = PriceNotifier(self.deps)
         price_1h, price_24h, price_7d = await pn.historical_get_triplet()
@@ -278,20 +231,6 @@ class MetricsDialog(BaseDialog):
         await message.answer(price_text,
                              disable_web_page_preview=True,
                              disable_notification=True)
-
-    async def ask_price_info_duration(self, message: Message):
-        await message.answer(self.loc.TEXT_PRICE_INFO_ASK_DURATION, reply_markup=kbd([
-            [
-                self.loc.BUTTON_1_HOUR,
-                self.loc.BUTTON_24_HOURS,
-                self.loc.BUTTON_1_WEEK,
-                self.loc.BUTTON_30_DAYS,
-            ],
-            [
-                self.loc.BUTTON_BACK
-            ]
-        ]))
-        await MetricsStates.PRICE_SELECT_DURATION.set()
 
     async def show_chain_info(self, message: Message):
         text = self.loc.text_chain_info(list(self.deps.chain_info.values()))
@@ -313,13 +252,11 @@ class MetricsDialog(BaseDialog):
                                  disable_web_page_preview=True,
                                  disable_notification=True)
 
-    async def show_block_time(self, message: Message):
-        duration = 2 * DAY
-
+    async def show_block_time(self, message: Message, period=2 * DAY):
         loading_message = await self.show_loading(message)
 
         block_notifier: BlockHeightNotifier = self.deps.block_notifier
-        points = await block_notifier.get_block_time_chart(duration, convert_to_blocks_per_minute=True)
+        points = await block_notifier.get_block_time_chart(period, convert_to_blocks_per_minute=True)
 
         # SLOW?
         chart, chart_name = await block_speed_chart(points, self.loc, normal_bpm=THOR_BLOCKS_PER_MINUTE,
@@ -343,9 +280,9 @@ class MetricsDialog(BaseDialog):
         text = self.loc.notification_text_best_pools(notifier.last_pool_detail, notifier.n_pools)
         await message.answer(text, disable_notification=True, disable_web_page_preview=True)
 
-    async def show_cex_flow(self, message: Message):
+    async def show_cex_flow(self, message: Message, period=DAY):
         notifier: RuneMoveNotifier = self.deps.rune_move_notifier
-        flow = await notifier.tracker.read_last24h()
+        flow = await notifier.tracker.read_within_period(period=period)
         flow.usd_per_rune = self.deps.price_holder.usd_per_rune
         text = self.loc.notification_text_cex_flow(flow)
         await message.answer(text, disable_notification=True)
@@ -367,8 +304,35 @@ class MetricsDialog(BaseDialog):
 
         await self.safe_delete(loading_message)
 
-    async def ask_dex_aggr_duration(self, message: Message):
-        await message.answer(self.loc.TEXT_DEX_AGGR_ASK_DURATION, reply_markup=kbd([
+    async def show_dex_aggr(self, message: Message, period=DAY):
+        report = await self.deps.dex_analytics.get_analytics(period)
+        text = self.loc.notification_text_dex_report(report)
+        await message.answer(text,
+                             disable_web_page_preview=True,
+                             disable_notification=True)
+
+    # ---- Ask for duration (universal)
+
+    def parse_duration_response(self, message: Message):
+        if message.text == self.loc.BUTTON_1_HOUR:
+            return HOUR
+        elif message.text == self.loc.BUTTON_24_HOURS:
+            return DAY
+        elif message.text == self.loc.BUTTON_1_WEEK:
+            return 7 * DAY
+        elif message.text == self.loc.BUTTON_30_DAYS:
+            return 30 * DAY
+        elif message.text == self.loc.BUTTON_BACK:
+            return  # back
+        else:
+            period = parse_timespan_to_seconds(message.text.strip())
+            return period
+
+    KEY_NEXT_ACTION = '_metrics_ask_next_action'
+    KEY_BACK_SUBMENU = '_metrics_back_submenu'
+
+    async def ask_generic_duration(self, message: Message, next_state, back_state):
+        await message.answer(self.loc.TEXT_PRICE_INFO_ASK_DURATION, reply_markup=kbd([
             [
                 self.loc.BUTTON_1_HOUR,
                 self.loc.BUTTON_24_HOURS,
@@ -379,22 +343,45 @@ class MetricsDialog(BaseDialog):
                 self.loc.BUTTON_BACK
             ]
         ]))
-        await MetricsStates.DEX_AGGR_SELECT_DURATION.set()
 
-    @message_handler(state=MetricsStates.DEX_AGGR_SELECT_DURATION)
-    async def on_dex_aggr_duration_answered(self, message: Message, explicit_period=0):
-        period = explicit_period or self.parse_duration_response(message)
+        self.data[self.KEY_NEXT_ACTION] = next_state
+        self.data[self.KEY_BACK_SUBMENU] = back_state
 
-        if not period:
-            await self.show_menu_financial(message)
-            return
+        await MetricsStates.GENERIC_DURATION.set()
 
+    @message_handler(state=MetricsStates.GENERIC_DURATION)
+    async def on_generic_duration_reply(self, message: Message):
+        next_state = self.data.get(self.KEY_NEXT_ACTION, '')
+        back_state = self.data.get(self.KEY_BACK_SUBMENU, '')
+
+        period = self.parse_duration_response(message)
         if isinstance(period, str):
+            # error
             await message.reply(period)
             return
 
-        report = await self.deps.dex_analytics.get_analytics(period)
-        text = self.loc.notification_text_dex_report(report)
-        await message.answer(text,
-                             disable_web_page_preview=True,
-                             disable_notification=True)
+        if not period:
+            # go back
+            if back_state == 'net_op':
+                await self.show_menu_net_op(message)
+            elif back_state == 'financial':
+                await self.show_menu_financial(message)
+            else:
+                await self.show_main_menu(message)
+            return
+
+        # action
+        if next_state == 'price':
+            await self.show_price(message, period)
+        elif next_state == 'queue':
+            await self.show_queue(message, period)
+        elif next_state == 'savers':
+            await self.show_savers(message, period)
+        elif next_state == 'cex_flow':
+            await self.show_cex_flow(message, period)
+        elif next_state == 'dex_aggr':
+            await self.show_dex_aggr(message, period)
+        elif next_state == 'block_time':
+            await self.show_block_time(message, period)
+        else:
+            raise Exception(f'Unknown next state: "{next_state}"!')

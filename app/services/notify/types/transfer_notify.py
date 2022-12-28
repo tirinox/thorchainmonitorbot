@@ -94,7 +94,7 @@ class RuneMoveNotifier(INotified, WithDelegates):
 
     async def _notify_cex_flow(self, usd_per_rune):
         if await self.summary_cd.can_do():
-            flow = await self.tracker.read_last24h()
+            flow = await self.tracker.read_within_period(period=DAY)
             flow.usd_per_rune = usd_per_rune
             await self.summary_cd.do()
             await self.pass_data_to_listeners(flow)
@@ -130,8 +130,8 @@ class CEXFlowTracker:
 
         await self.series.trim_oldest(self.MAX_POINTS)
 
-    async def read_last24h(self) -> RuneCEXFlow:
-        points = await self.series.get_last_values_json(DAY, max_points=self.MAX_POINTS)
+    async def read_within_period(self, period=DAY) -> RuneCEXFlow:
+        points = await self.series.get_last_values_json(period, max_points=self.MAX_POINTS)
         inflow, outflow = 0.0, 0.0
         for p in points:
             inflow += float(p['in'])
