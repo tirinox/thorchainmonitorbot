@@ -52,7 +52,7 @@ def pretty_rune(x, signed=False, prefix=''):
 
 
 def pretty_money(x, prefix='', signed=False, postfix=''):
-    if math.isnan(x):
+    if math.isnan(x) or math.isinf(x):
         return str(x)
     if x < 0:
         return f"-{prefix}{pretty_money(-x)}{postfix}"
