@@ -137,4 +137,6 @@ class CEXFlowTracker:
             inflow += float(p['in'])
             outflow += float(p['out'])
         overflow = len(points) >= self.MAX_POINTS
-        return RuneCEXFlow(inflow, outflow, len(points), overflow)
+        return RuneCEXFlow(inflow, outflow, len(points), overflow,
+                           usd_per_rune=self.deps.price_holder.usd_per_rune,
+                           period_sec=period)

@@ -685,7 +685,7 @@ class RussianLocalization(BaseLocalization):
                    if queue_info.is_full else ''
                )
 
-    TEXT_PRICE_INFO_ASK_DURATION = 'За какой период времени вы хотите получить график?'
+    TEXT_ASK_DURATION = 'За какой период времени вы хотите получить данные?'
 
     BUTTON_1_HOUR = '1 часов'
     BUTTON_24_HOURS = '24 часа'
@@ -1492,8 +1492,9 @@ class RussianLocalization(BaseLocalization):
 
     def notification_text_cex_flow(self, cex_flow: RuneCEXFlow):
         emoji = self.cex_flow_emoji(cex_flow)
+        period_string = self.format_period(cex_flow.period_sec)
         return (
-            f'🌬️ <b>Rune потоки с централизованнвых бирж последние сутки</b>\n'
+            f'🌬️ <b>Rune потоки с централизованнвых бирж последние {period_string}</b>\n'
             f'➡️ Завели: {pre(short_money(cex_flow.rune_cex_inflow, postfix=RAIDO_GLYPH))} '
             f'({short_dollar(cex_flow.in_usd)})\n'
             f'⬅️ Вывели: {pre(short_money(cex_flow.rune_cex_outflow, postfix=RAIDO_GLYPH))} '
@@ -1612,13 +1613,10 @@ class RussianLocalization(BaseLocalization):
             f'({pre(short_rune(e.rune_volume))} или '
             f'{pre(short_dollar(e.rune_volume * r.usd_per_rune))})')
 
-    TEXT_DEX_AGGR_ASK_DURATION = 'За какой период времени выдать информацию о DEX агрегаторах?'
+    STR_24_HOUR = '24 часа'
 
     def notification_text_dex_report(self, r: DexReport):
-        if r.period_sec == DAY:
-            period_str = '24h'
-        else:
-            period_str = seconds_human(r.period_sec)
+        period_str = self.format_period(r.period_sec)
 
         top_aggr = r.top_popular_aggregators()[:3]
         top_aggr_str = ''

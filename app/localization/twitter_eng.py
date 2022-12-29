@@ -738,8 +738,9 @@ class TwitterEnglishLocalization(BaseLocalization):
 
     def notification_text_cex_flow(self, cex_flow: RuneCEXFlow):
         emoji = self.cex_flow_emoji(cex_flow)
+        period_string = self.format_period(cex_flow.period_sec)
         return (
-            f'🌬️ Rune CEX flow last 24 hours\n'
+            f'🌬️ Rune CEX flow last {period_string}\n'
             f'➡️ Inflow: {short_money(cex_flow.rune_cex_inflow, postfix=RAIDO_GLYPH)} '
             f'({short_dollar(cex_flow.in_usd)})\n'
             f'⬅️ Outflow: {short_money(cex_flow.rune_cex_outflow, postfix=RAIDO_GLYPH)} '
@@ -809,10 +810,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         )
 
     def notification_text_dex_report(self, r: DexReport):
-        if r.period_sec == DAY:
-            period_str = '24h'
-        else:
-            period_str = seconds_human(r.period_sec)
+        period_str = self.format_period(r.period_sec)
 
         top_aggr = r.top_popular_aggregators()[:3]
         top_aggr_str = ''

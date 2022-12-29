@@ -332,7 +332,7 @@ class MetricsDialog(BaseDialog):
     KEY_BACK_SUBMENU = '_metrics_back_submenu'
 
     async def ask_generic_duration(self, message: Message, next_state, back_state):
-        await message.answer(self.loc.TEXT_PRICE_INFO_ASK_DURATION, reply_markup=kbd([
+        await message.answer(self.loc.TEXT_ASK_DURATION, reply_markup=kbd([
             [
                 self.loc.BUTTON_1_HOUR,
                 self.loc.BUTTON_24_HOURS,

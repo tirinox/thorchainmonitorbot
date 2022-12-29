@@ -877,7 +877,7 @@ class BaseLocalization(ABC):  # == English
         elif n <= 100:
             return '🤬!!'
 
-    TEXT_PRICE_INFO_ASK_DURATION = 'For what period of time do you want to get a graph?'
+    TEXT_ASK_DURATION = 'For what period of time do you want to get the data?'
 
     BUTTON_1_HOUR = '1 hour'
     BUTTON_24_HOURS = '24 hours'
@@ -1975,7 +1975,8 @@ class BaseLocalization(ABC):  # == English
 
     def notification_text_cex_flow(self, cex_flow: RuneCEXFlow):
         emoji = self.cex_flow_emoji(cex_flow)
-        return (f'🌬️ <b>Rune CEX flow last 24 hours</b>\n'
+        period_string = self.format_period(cex_flow.period_sec)
+        return (f'🌬️ <b>Rune CEX flow last {period_string}</b>\n'
                 f'➡️ Inflow: {pre(short_money(cex_flow.rune_cex_inflow, postfix=RAIDO_GLYPH))} '
                 f'({short_dollar(cex_flow.in_usd)})\n'
                 f'⬅️ Outflow: {pre(short_money(cex_flow.rune_cex_outflow, postfix=RAIDO_GLYPH))} '
@@ -2123,13 +2124,17 @@ class BaseLocalization(ABC):  # == English
             f'({pre(short_rune(e.rune_volume))} or '
             f'{pre(short_dollar(e.rune_volume * r.usd_per_rune))})')
 
-    TEXT_DEX_AGGR_ASK_DURATION = 'For what period of time to output the information?'
+    STR_24_HOUR = '24h'
+
+    def format_period(self, period: float):
+        period = float(period)
+        if period == DAY:
+            return self.STR_24_HOUR
+        else:
+            return self.seconds_human(period)
 
     def notification_text_dex_report(self, r: DexReport):
-        if r.period_sec == DAY:
-            period_str = '24h'
-        else:
-            period_str = seconds_human(r.period_sec)
+        period_str = self.format_period(r.period_sec)
 
         top_aggr = r.top_popular_aggregators()[:3]
         top_aggr_str = ''

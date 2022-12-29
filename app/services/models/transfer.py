@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 
 from services.lib.constants import is_rune
+from services.lib.date_utils import DAY
 
 
 @dataclass
@@ -42,6 +43,7 @@ class RuneCEXFlow:
     total_transfers: int
     overflow: bool = False
     usd_per_rune: float = 0.0
+    period_sec: float = DAY
 
     @property
     def rune_cex_netflow(self):
