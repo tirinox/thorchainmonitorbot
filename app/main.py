@@ -412,6 +412,8 @@ class App:
             ssc = SaversStatsNotifier(d)
             d.pool_fetcher.add_subscriber(ssc)
             ssc.add_subscriber(d.alert_presenter)
+            if achievements_enabled:
+                ssc.add_subscriber(achievements)
 
         if d.cfg.get('wallet_counter.enabled', True) and achievements_enabled:  # only used for achievements
             wallet_counter = AccountNumberFetcher(d)
