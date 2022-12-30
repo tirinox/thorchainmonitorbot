@@ -12,6 +12,7 @@ from services.dialog.telegram.sticker_downloader import TelegramStickerDownloade
 from services.dialog.telegram.telegram import TelegramBot
 from services.dialog.twitter.twitter_bot import TwitterBot, TwitterBotMock
 from services.jobs.achievements import AchievementsNotifier
+from services.jobs.fetch.account_number import AccountNumberFetcher
 from services.jobs.fetch.bep2_move import BinanceOrgDexWSSClient
 from services.jobs.fetch.cap import CapInfoFetcher
 from services.jobs.fetch.chains import ChainStateFetcher
@@ -411,6 +412,12 @@ class App:
             ssc = SaversStatsNotifier(d)
             d.pool_fetcher.add_subscriber(ssc)
             ssc.add_subscriber(d.alert_presenter)
+
+        if d.cfg.get('wallet_counter.enabled', True) and achievements_enabled:  # only used for achievements
+            wallet_counter = AccountNumberFetcher(d)
+            tasks.append(wallet_counter)
+            if achievements_enabled:
+                wallet_counter.add_subscriber(achievements)
 
         # --- BOTS
 
