@@ -3,6 +3,7 @@ from itertools import chain
 from typing import NamedTuple, Optional
 
 from services.jobs.fetch.pool_price import PoolFetcher
+from services.lib.async_cache import AsyncTTL
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import DAY
 from services.lib.delegates import INotified, WithDelegates
@@ -122,7 +123,8 @@ class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
 
     CACHE_TTL = 60
 
-    @a_result_cached(CACHE_TTL)
+    # @a_result_cached(CACHE_TTL)
+    @AsyncTTL(time_to_live=CACHE_TTL)
     async def get_savers_event_dynamically_cached(self, period,
                                                   apr_period=7 * DAY,
                                                   usd_per_rune=None, last_block_no=None) -> EventSaverStats:
