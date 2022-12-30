@@ -74,19 +74,21 @@ class AchievementsEnglishLocalization:
 
     @classmethod
     def notification_achievement_unlocked(cls, e: EventAchievement):
-        a = e.achievement
-
-        desc = cls.get_achievement_description(a.key)
-
-        emoji = random.choice(cls.CELEBRATION_EMOJIES)
-        ago = seconds_human(a.timestamp - a.previous_ts)
-
-        milestone_str = desc.format_value(a.milestone)
-        value_str = desc.format_value(a.value)
-        prev_milestone_str = desc.format_value(a.prev_milestone)
+        ago, desc, emoji, milestone_str, prev_milestone_str, value_str = cls._prepare_achievement_data(e)
 
         return (
             f'{emoji} <b>A new achievement has been unlocked</b>\n'
             f'{pre(desc.description)} is now over {code(milestone_str)} ({pre(value_str)})!\n '
             f'Previously value: {pre(prev_milestone_str)} ({ago} ago)'
         )
+
+    @classmethod
+    def _prepare_achievement_data(cls, e: EventAchievement):
+        a = e.achievement
+        desc = cls.get_achievement_description(a.key)
+        emoji = random.choice(cls.CELEBRATION_EMOJIES)
+        ago = seconds_human(a.timestamp - a.previous_ts)
+        milestone_str = desc.format_value(a.milestone)
+        value_str = desc.format_value(a.value)
+        prev_milestone_str = desc.format_value(a.prev_milestone)
+        return ago, desc, emoji, milestone_str, prev_milestone_str, value_str
