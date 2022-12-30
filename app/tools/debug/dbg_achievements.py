@@ -84,9 +84,9 @@ async def main():
     app = LpAppFramework()
     async with app(brief=True):
         # await demo_debug_logic(app)
-        # await demo_run_pipeline(app)
+        await demo_run_pipeline(app)
 
-        await demo_achievements_picture()
+        # await demo_achievements_picture()
 
 
 if __name__ == '__main__':

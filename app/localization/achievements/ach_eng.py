@@ -88,5 +88,5 @@ class AchievementsEnglishLocalization:
         return (
             f'{emoji} <b>A new achievement has been unlocked</b>\n'
             f'{pre(desc.description)} is now over {code(milestone_str)} ({pre(value_str)})!\n '
-            f'(Previously {pre(prev_milestone_str)} {ago} ago)'
+            f'Previously value: {pre(prev_milestone_str)} ({ago} ago)'
         )

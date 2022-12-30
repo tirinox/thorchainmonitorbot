@@ -222,7 +222,7 @@ tx:
   max_page_deep: 5
   max_tx_per_single_message: 6
 
-  ignore_donates: true  # (!) new
+  ignore_donates: true
 
   announce_pending_after_blocks: 500
 
@@ -256,7 +256,7 @@ tx:
       enabled: True
       period: 10m
 
-    savers: # (!) new
+    savers:
       enabled: true
       min_usd_total: 100
       curve_mult: 0.00008
@@ -516,6 +516,15 @@ supply:
   period: 7d
 
 
-saver_stats:  # (!) new
+saver_stats:
   enabled: true
   period: 3d
+
+
+achievements: # (!) new
+  enabled: true
+
+  cooldown: # (!) new
+    hits_before_cd: 5
+    period: 15m
+

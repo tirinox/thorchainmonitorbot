@@ -2,7 +2,9 @@ import json
 import math
 from typing import NamedTuple, Optional
 
+from services.jobs.fetch.account_number import AccountNumberFetcher
 from services.jobs.fetch.const_mimir import MimirTuple
+from services.lib.cooldown import Cooldown
 from services.lib.date_utils import now_ts, YEAR
 from services.lib.db import DB
 from services.lib.delegates import WithDelegates, INotified
@@ -54,6 +56,7 @@ class Achievement:
     GROUP_EVERY_1 = {
         BLOCK_NUMBER,
         ANNIVERSARY,
+        WALLET_COUNT,  # ok?
     }
 
     # this metrics only trigger when greater than their minimums
@@ -207,6 +210,8 @@ class AchievementsNotifier(WithLogger, WithDelegates, INotified):
             kv_events = self.on_mimir(data)
         elif isinstance(data, RuneMarketInfo):
             kv_events = self.on_rune_market_info(data)
+        elif isinstance(sender, AccountNumberFetcher):
+            kv_events = [(Achievement.WALLET_COUNT, int(data))]
         elif isinstance(data, AchievementTest):
             kv_events = [(Achievement.TEST, data.value)]
         else:
@@ -276,7 +281,13 @@ class AchievementsNotifier(WithLogger, WithDelegates, INotified):
                 event = await self.tracker.feed_data(key, value)
                 if event:
                     self.logger.info(f'Achievement even occurred {event}!')
-                    await self.pass_data_to_listeners(event)
+
+                    if await self.cd.can_do():
+                        await self.cd.do()
+                        await self.pass_data_to_listeners(event)
+                    else:
+                        self.logger.warning(f'Cooldown is active. Skipping achievement event {event}')
+
         except Exception as e:
             # we don't let any exception in the Achievements module to break the whole system
             self.logger.exception(f'Error while processing data {type(data)} from {type(sender)}: {e}', exc_info=True)
@@ -285,3 +296,7 @@ class AchievementsNotifier(WithLogger, WithDelegates, INotified):
         super().__init__()
         self.deps = deps
         self.tracker = AchievementsTracker(deps.db)
+
+        cd = deps.cfg.as_interval('achievements.cooldown.period', '10m')
+        max_times = deps.cfg.as_int('achievements.cooldown.hits_before_cd', 3)
+        self.cd = Cooldown(self.deps.db, 'Achievements:Notification', cd, max_times)
