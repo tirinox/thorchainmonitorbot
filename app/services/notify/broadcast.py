@@ -11,7 +11,6 @@ from services.lib.rate_limit import RateLimitCooldown
 from services.lib.texts import shorten_text
 from services.lib.utils import class_logger
 from services.notify.channel import Messengers, ChannelDescriptor, CHANNEL_INACTIVE, BoardMessage
-from services.notify.user_registry import UserRegistry
 
 
 class Broadcaster:
@@ -24,8 +23,6 @@ class Broadcaster:
         self._rate_limit_lock = asyncio.Lock()
         self._rng = random.Random(time.time())
         self.logger = class_logger(self)
-
-        self._user_registry = UserRegistry(d.db)
 
         # public channels
         self.channels = list(ChannelDescriptor.from_json(j) for j in d.cfg.get_pure('broadcasting.channels'))
@@ -95,7 +92,6 @@ class Broadcaster:
         channel_id = channel_info.channel_id
         if channel_id:
             await self.deps.settings_manager.make_inactive(channel_id)
-            await self._user_registry.remove_users(channel_id)
 
     # noinspection PyBroadException
     async def safe_send_message(self, channel_info: ChannelDescriptor,
