@@ -33,7 +33,7 @@ from services.models.price import PriceReport, RuneMarketInfo
 from services.models.queue import QueueInfo
 from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.tx import ThorTx, ThorTxType
-from services.notify.types.savers_stats_notify import EventSaverStats
+from services.models.savers import EventSaverStats
 
 
 class RussianLocalization(BaseLocalization):

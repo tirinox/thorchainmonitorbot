@@ -35,11 +35,11 @@ from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConse
 from services.models.pool_info import PoolInfo, PoolChanges, PoolMapPair
 from services.models.price import PriceReport, RuneMarketInfo
 from services.models.queue import QueueInfo
-from services.models.savers import how_much_savings_you_can_add
+from services.models.savers import how_much_savings_you_can_add, EventSaverStats
 from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.tx import ThorTx, ThorTxType, ThorSubTx
 from services.notify.channel import Messengers
-from services.notify.types.savers_stats_notify import EventSaverStats
+
 
 CREATOR_TG = '@account1242'
 

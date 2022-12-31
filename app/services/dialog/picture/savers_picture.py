@@ -6,8 +6,7 @@ from services.dialog.picture.resources import Resources
 from services.lib.draw_utils import TC_WHITE, line_progress_bar, result_color
 from services.lib.money import Asset, short_money, short_dollar
 from services.lib.utils import async_wrap
-from services.models.savers import SaverVault
-from services.notify.types.savers_stats_notify import EventSaverStats
+from services.models.savers import SaverVault, EventSaverStats
 
 
 class SaversPictureGenerator(BasePictureGenerator):

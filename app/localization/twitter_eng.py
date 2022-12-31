@@ -29,7 +29,7 @@ from services.models.price import RuneMarketInfo, PriceReport
 from services.models.transfer import RuneCEXFlow, RuneTransfer
 from services.models.tx import ThorTx, ThorTxType
 from services.notify.channel import MESSAGE_SEPARATOR
-from services.notify.types.savers_stats_notify import EventSaverStats
+from services.models.savers import EventSaverStats
 
 
 class TwitterEnglishLocalization(BaseLocalization):
