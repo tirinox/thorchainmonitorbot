@@ -12,6 +12,7 @@ from services.dialog.picture.savers_picture import SaversPictureGenerator
 from services.dialog.picture.supply_picture import SupplyPictureGenerator
 from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
 from services.jobs.fetch.node_info import NodeInfoFetcher
+from services.jobs.fetch.savers import SaversStatsFetcher
 from services.lib.constants import THOR_BLOCKS_PER_MINUTE
 from services.lib.date_utils import DAY, HOUR, parse_timespan_to_seconds, now_ts
 from services.lib.draw_utils import img_to_bio
@@ -23,7 +24,6 @@ from services.notify.types.block_notify import BlockHeightNotifier
 from services.notify.types.cap_notify import LiquidityCapNotifier
 from services.notify.types.node_churn_notify import NodeChurnNotifier
 from services.notify.types.price_notify import PriceNotifier
-from services.notify.types.savers_stats_notify import SaversStatsNotifier
 from services.notify.types.stats_notify import NetworkStatsNotifier
 from services.notify.types.transfer_notify import RuneMoveNotifier
 
@@ -145,8 +145,8 @@ class MetricsDialog(BaseDialog):
     async def show_savers(self, message: Message, period=DAY):
         loading_message = await self.show_loading(message)
 
-        ssn = SaversStatsNotifier(self.deps)
-        event = await ssn.get_savers_event_dynamically_cached(period=period)
+        ssf = SaversStatsFetcher(self.deps)
+        event = await ssf.get_savers_event_dynamically_cached(period=period)
 
         if not event or not event.current_stats:
             await message.answer(self.loc.TEXT_SAVERS_NO_DATA,

@@ -11,11 +11,11 @@ from services.lib.midgard.name_service import NameService
 from services.lib.w3.dex_analytics import DexReport
 from services.models.last_block import EventBlockSpeed, BlockProduceState
 from services.models.pool_info import PoolChanges
+from services.models.savers import EventSaverStats
 from services.models.transfer import RuneCEXFlow, RuneTransfer
 from services.models.tx import EventLargeTransaction
 from services.notify.broadcast import Broadcaster
 from services.notify.channel import BoardMessage
-from services.notify.types.savers_stats_notify import EventSaverStats
 
 
 class AlertPresenter(INotified):

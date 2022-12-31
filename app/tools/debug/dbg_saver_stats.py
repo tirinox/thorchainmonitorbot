@@ -40,9 +40,9 @@ def randomize_savers_data(c_data: AllSavers, sc=0.2, fail_chance=0.3):
 async def demo_show_notification(app: LpAppFramework):
     await app.send_test_tg_message('----- S T A R T -----')
 
-    ssn = SaversStatsNotifier(app.deps)
+    ssn = SaversStatsNotifier(app.deps, None)
 
-    event = await ssn.get_savers_event_dynamically(period=DAY)
+    event = await ssn.data_source.get_savers_event_dynamically(period=DAY)
 
     loc: BaseLocalization = app.deps.loc_man[Language.RUSSIAN]
     await app.send_test_tg_message(loc.notification_text_saver_stats(event))
@@ -97,8 +97,8 @@ async def demo_logo_download(app: LpAppFramework):
 async def demo_show_savers_pic(app: LpAppFramework):
     await app.deps.last_block_fetcher.run_once()
 
-    ssn = SaversStatsNotifier(app.deps)
-    event = await ssn.get_savers_event_dynamically(7 * DAY)
+    ssn = SaversStatsNotifier(app.deps, None)
+    event = await ssn.data_source.get_savers_event_dynamically(7 * DAY)
 
     loc = app.deps.loc_man[Language.ENGLISH]
     pic_gen = SaversPictureGenerator(loc, event)
