@@ -1,7 +1,7 @@
 import random
 from typing import NamedTuple
 
-from services.jobs.achievements import EventAchievement, Achievement
+from services.jobs.achievements import Achievement
 from services.lib.date_utils import seconds_human
 from services.lib.money import short_money
 from services.lib.texts import code, pre
@@ -19,8 +19,19 @@ class AchievementDescription(NamedTuple):
     def image(self):
         return f'ach_{self.key}.png'
 
-    def format_value(self, value):
-        return short_money(value, prefix=self.prefix, postfix=self.postfix, integer=True, signed=self.signed)
+    @staticmethod
+    def space_before_non_empty(s):
+        return f' {s}' if s else ''
+
+    @classmethod
+    def _do_substitutions(cls, achievement: Achievement, text: str) -> str:
+        return text.replace(META_KEY_SPEC, achievement.specialization)
+
+    def format_value(self, value, ach: Achievement):
+        return short_money(value,
+                           prefix=self.space_before_non_empty(self._do_substitutions(ach, self.prefix)),
+                           postfix=self.space_before_non_empty(self._do_substitutions(ach, self.postfix)),
+                           integer=True, signed=self.signed)
 
 
 A = Achievement
@@ -31,6 +42,7 @@ META_KEY_SPEC = '::asset::'
 
 ACHIEVEMENT_DESC_LIST = [
     ADesc(A.TEST, 'Test metric'),
+    ADesc(A.TEST_SPEC, 'Test metric', postfix=META_KEY_SPEC),
     ADesc(A.DAU, 'Daily active users'),
     ADesc(A.MAU, 'Monthly active users'),
     ADesc(A.WALLET_COUNT, 'Wallets count'),
@@ -86,8 +98,8 @@ class AchievementsEnglishLocalization:
         return ACHIEVEMENT_DESC_MAP.get(achievement, 'Unknown achievement. Please contact support')
 
     @classmethod
-    def notification_achievement_unlocked(cls, e: EventAchievement):
-        ago, desc, emoji, milestone_str, prev_milestone_str, value_str = cls._prepare_achievement_data(e)
+    def notification_achievement_unlocked(cls, a: Achievement):
+        ago, desc, emoji, milestone_str, prev_milestone_str, value_str = cls._prepare_achievement_data(a)
 
         return (
             f'{emoji} <b>THORChain has accomplished a new achievement!</b>\n'
@@ -96,14 +108,18 @@ class AchievementsEnglishLocalization:
         )
 
     @classmethod
-    def _prepare_achievement_data(cls, e: EventAchievement):
-        a = e.achievement
+    def _do_substitutions(cls, achievement: Achievement, text: str) -> str:
+        return text.replace(META_KEY_SPEC, achievement.specialization)
+
+    @classmethod
+    def _prepare_achievement_data(cls, a: Achievement):
         desc = cls.get_achievement_description(a.key)
         emoji = random.choice(cls.CELEBRATION_EMOJIES)
         ago = seconds_human(a.timestamp - a.previous_ts)
-        milestone_str = desc.format_value(a.milestone)
-        value_str = desc.format_value(a.value)
-        prev_milestone_str = desc.format_value(a.prev_milestone)
+        milestone_str = desc.format_value(a.milestone, a)
+        value_str = desc.format_value(a.value, a)
+        prev_milestone_str = desc.format_value(a.prev_milestone, a)
         desc_text = desc.description
-        desc_text = desc_text.replace(META_KEY_SPEC, a.specialization)
+        desc_text = cls._do_substitutions(a, desc_text)
+        value_str = cls._do_substitutions(a, value_str)
         return ago, desc_text, emoji, milestone_str, prev_milestone_str, value_str

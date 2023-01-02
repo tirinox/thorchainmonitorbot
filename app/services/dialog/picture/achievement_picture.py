@@ -6,7 +6,7 @@ from PIL import Image, ImageDraw
 from localization.achievements.ach_eng import AchievementsEnglishLocalization
 from services.dialog.picture.common import BasePictureGenerator
 from services.dialog.picture.resources import Resources
-from services.jobs.achievements import AchievementRecord
+from services.jobs.achievements import Achievement
 from services.lib.date_utils import today_str
 from services.lib.draw_utils import pos_percent, TC_MIDGARD_TURQOISE
 from services.lib.utils import async_wrap
@@ -20,13 +20,13 @@ class AchievementPictureGenerator(BasePictureGenerator):
     BG = 'tc-achievement-bg-1.png'
 
     def generate_picture_filename(self):
-        return f'thorchain-ach-{self.rec.key}-{today_str()}.png'
+        return f'thorchain-ach-{self.ach.key}-{today_str()}.png'
 
-    def __init__(self, loc: AchievementsEnglishLocalization, rec: AchievementRecord):
+    def __init__(self, loc: AchievementsEnglishLocalization, a: Achievement):
         # noinspection PyTypeChecker
         super().__init__(loc)
         self.loc = loc
-        self.rec = rec
+        self.ach = a
         self.w = self.WIDTH
         self.h = self.HEIGHT
 
@@ -45,9 +45,9 @@ class AchievementPictureGenerator(BasePictureGenerator):
         draw = ImageDraw.Draw(image)
 
         # ---- Main number ----
-        achievement_desc = self.loc.get_achievement_description(self.rec.key)
+        achievement_desc = self.loc.get_achievement_description(self.ach.key)
 
-        text = achievement_desc.format_value(self.rec.milestone)
+        text = achievement_desc.format_value(self.ach.milestone, self.ach)
         main_font, mw, mh = self.detect_font_size(r.fonts.get_font_norse_bold, text, 350, 200)
         mx, my = self.pos_percent(50, 46)
 
@@ -62,7 +62,7 @@ class AchievementPictureGenerator(BasePictureGenerator):
         draw.text((mx, my + mh // 2 + 32), str(desc_text), fill=(255, 215, 0), font=font_desc, anchor='mt')
 
         # ---- Date ----
-        date_str = datetime.datetime.fromtimestamp(self.rec.timestamp).strftime('%B %d, %Y')
+        date_str = datetime.datetime.fromtimestamp(self.ach.timestamp).strftime('%B %d, %Y')
         draw.text(self.pos_percent(50, 91), date_str, fill='#ccc', font=r.fonts.get_font_norse(28), anchor='mm')
 
         return image

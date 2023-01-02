@@ -4,7 +4,7 @@ import random
 from localization.achievements.ach_eng import AchievementsEnglishLocalization, ACHIEVEMENT_DESC_LIST
 from services.dialog.picture.achievement_picture import AchievementPictureGenerator
 from services.jobs.achievements import AchievementsTracker, AchievementsNotifier, AchievementTest, Achievement, \
-    AchievementRecord, EventAchievement, Milestones
+    Milestones
 from services.jobs.fetch.base import BaseFetcher
 from services.lib.date_utils import now_ts, DAY
 from services.lib.depcont import DepContainer
@@ -48,7 +48,7 @@ def random_achievement():
     milestone = milestones.previous(value)
 
     random_achievement_key = random.choice(ACHIEVEMENT_DESC_LIST).key
-    rec = AchievementRecord(random_achievement_key, value,
+    rec = Achievement(random_achievement_key, value,
                             milestone, now_ts(),
                             2, now_ts() - random.randint(1, int(100 * DAY)))
     return rec
@@ -56,21 +56,21 @@ def random_achievement():
 
 async def demo_achievements_picture():
     # rec = random_achievement()
-    rec = AchievementRecord(Achievement.MARKET_CAP_USD, 500_000_000, 501_344_119, now_ts(), 0, 0)
+    rec = Achievement(Achievement.MARKET_CAP_USD, 500_000_000, 501_344_119, now_ts(), 0, 0)
 
     loc = AchievementsEnglishLocalization()
     gen = AchievementPictureGenerator(loc, rec)
     pic, pic_name = await gen.get_picture()
     save_and_show_pic(pic, name=pic_name)
 
-    text = loc.notification_achievement_unlocked(EventAchievement(rec))
+    text = loc.notification_achievement_unlocked(Achievement(rec))
     sep()
     print(text)
     sep()
 
 
 async def demo_run_pipeline(app: LpAppFramework):
-    ach_fet = DebugAchievementsFetcher(app.deps.db)
+    ach_fet = DebugAchievementsFetcher(app.deps.db, specialization='BTC')
     ach_not = AchievementsNotifier(app.deps)
     ach_fet.add_subscriber(ach_not)
     ach_not.add_subscriber(app.deps.alert_presenter)

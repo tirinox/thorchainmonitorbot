@@ -1,5 +1,5 @@
 from localization.achievements.ach_eng import AchievementsEnglishLocalization
-from services.jobs.achievements import EventAchievement
+from services.jobs.achievements import Achievement
 from services.lib.texts import code, pre
 
 
@@ -7,8 +7,8 @@ from services.lib.texts import code, pre
 
 class AchievementsRussianLocalization(AchievementsEnglishLocalization):
     @classmethod
-    def notification_achievement_unlocked(cls, e: EventAchievement):
-        ago, desc, emoji, milestone_str, prev_milestone_str, value_str = cls._prepare_achievement_data(e)
+    def notification_achievement_unlocked(cls, a: Achievement):
+        ago, desc, emoji, milestone_str, prev_milestone_str, value_str = cls._prepare_achievement_data(a)
 
         return (
             f'{emoji} <b>THORChain совершил новое достижение!</b>\n'

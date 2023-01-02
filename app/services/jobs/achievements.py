@@ -9,6 +9,7 @@ from services.lib.date_utils import now_ts, YEAR
 from services.lib.db import DB
 from services.lib.delegates import WithDelegates, INotified
 from services.lib.depcont import DepContainer
+from services.lib.money import Asset
 from services.lib.utils import WithLogger
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges
@@ -20,11 +21,16 @@ THORCHAIN_BIRTHDAY = 1618058210955  # 2021-04-10T12:36:50.955991742Z
 
 
 class Achievement(NamedTuple):
-    metric_name: str
-    value: float
+    key: str
+    value: int  # real current value
+    milestone: int = 0  # current milestone
+    timestamp: float = 0
+    prev_milestone: int = 0
+    previous_ts: float = 0
     specialization: str = ''
 
     TEST = '__test'
+    TEST_SPEC = '__test_sp'
 
     DAU = 'dau'
     MAU = 'mau'
@@ -133,20 +139,6 @@ class Milestones:
         return self.milestone_nearest(x, before=True)
 
 
-class AchievementRecord(NamedTuple):
-    key: str
-    value: int  # real current value
-    milestone: int  # current milestone
-    timestamp: float
-    prev_milestone: int
-    previous_ts: float
-    specialization: str = ''
-
-
-class EventAchievement(NamedTuple):
-    achievement: AchievementRecord
-
-
 class AchievementsTracker(WithLogger):
     def __init__(self, db: DB):
         super().__init__()
@@ -173,8 +165,8 @@ class AchievementsTracker(WithLogger):
 
         return v
 
-    async def feed_data(self, event: Achievement) -> Optional[EventAchievement]:
-        name, value = event.metric_name, event.value
+    async def feed_data(self, event: Achievement) -> Optional[Achievement]:
+        name, value = event.key, event.value
         assert name
 
         if value < self.get_minimum(name):
@@ -184,8 +176,8 @@ class AchievementsTracker(WithLogger):
         current_milestone = self.get_previous_milestone(name, value)
         if record is None:
             # first time, just write and return
-            record = AchievementRecord(
-                str(name), int(value), current_milestone, now_ts(), 0, 0,
+            record = Achievement(
+                str(name), int(value), current_milestone, now_ts(),
                 specialization=event.specialization
             )
             await self.set_achievement_record(record)
@@ -193,24 +185,24 @@ class AchievementsTracker(WithLogger):
         else:
             # check if we need to update
             if current_milestone > record.value:
-                record = AchievementRecord(
+                record = Achievement(
                     str(name), int(value), current_milestone, now_ts(),
                     prev_milestone=record.milestone, previous_ts=record.timestamp,
                     specialization=event.specialization,
                 )
                 await self.set_achievement_record(record)
                 self.logger.info(f'Achievement record updated {record}')
-                return EventAchievement(record)
+                return record
 
-    async def get_achievement_record(self, key, specialization) -> Optional[AchievementRecord]:
+    async def get_achievement_record(self, key, specialization) -> Optional[Achievement]:
         key = self.key(key, specialization)
         data = await self.db.redis.get(key)
         try:
-            return AchievementRecord(**json.loads(data))
+            return Achievement(**json.loads(data))
         except (TypeError, json.JSONDecodeError):
             return None
 
-    async def set_achievement_record(self, record: AchievementRecord):
+    async def set_achievement_record(self, record: Achievement):
         key = self.key(record.key, record.specialization)
         await self.db.redis.set(key, json.dumps(record._asdict()))
 
@@ -241,7 +233,10 @@ class AchievementsNotifier(WithLogger, WithDelegates, INotified):
         elif isinstance(sender, AccountNumberFetcher):
             kv_events = [A(A.WALLET_COUNT, int(data))]
         elif isinstance(data, AchievementTest):
-            kv_events = [A(A.TEST, data.value)]
+            if data.specialization:
+                kv_events = [A(A.TEST_SPEC, data.value, specialization=data.specialization)]
+            else:
+                kv_events = [A(A.TEST, data.value)]
         else:
             self.logger.warning(f'Unknown data type {type(data)}. Dont know how to handle it.')
             kv_events = []
@@ -257,11 +252,11 @@ class AchievementsNotifier(WithLogger, WithDelegates, INotified):
             A(A.SWAP_COUNT_30D, data.swaps_30d),
             A(A.SWAP_UNIQUE_COUNT, data.unique_swapper_count),
             A(A.ADD_LIQUIDITY_COUNT_TOTAL, data.add_count),
-            A(A.ADD_LIQUIDITY_VOLUME_TOTAL, data.added_rune),
-            A(A.ILP_PAID_TOTAL, data.loss_protection_paid_rune),
+            A(A.ADD_LIQUIDITY_VOLUME_TOTAL, int(data.added_rune)),
+            A(A.ILP_PAID_TOTAL, int(data.loss_protection_paid_rune)),
 
-            A(A.TOTAL_ACTIVE_BOND, data.total_active_bond_rune),
-            A(A.TOTAL_BOND, data.total_bond_rune),
+            A(A.TOTAL_ACTIVE_BOND, int(data.total_active_bond_rune)),
+            A(A.TOTAL_BOND, int(data.total_bond_rune)),
         ]
         return achievements
 
@@ -305,16 +300,16 @@ class AchievementsNotifier(WithLogger, WithDelegates, INotified):
         rune_price = price_holder.usd_per_rune or 0.0
         achievements = [
             A(A.TOTAL_UNIQUE_SAVERS, data.total_unique_savers),
-            A(A.TOTAL_SAVED_USD, data.total_usd_saved),
+            A(A.TOTAL_SAVED_USD, int(data.total_usd_saved)),
             A(A.TOTAL_SAVERS_EARNED_USD, data.total_rune_earned * rune_price),
         ]
         for vault in data.vaults:
-            asset = vault.asset
-            achievements.append(A(A.SAVER_VAULT_MEMBERS, vault.number_of_savers, asset))
-            achievements.append(A(A.SAVER_VAULT_SAVED_USD, vault.total_asset_saved_usd, asset))
-            achievements.append(A(A.SAVER_VAULT_SAVED_ASSET, vault.total_asset_saved, asset))
+            asset = Asset.from_string(vault.asset).name[:10]
+            achievements.append(A(A.SAVER_VAULT_MEMBERS, vault.number_of_savers, specialization=asset))
+            achievements.append(A(A.SAVER_VAULT_SAVED_USD, int(vault.total_asset_saved_usd), specialization=asset))
+            achievements.append(A(A.SAVER_VAULT_SAVED_ASSET, int(vault.total_asset_saved), specialization=asset))
             achievements.append(A(A.SAVER_VAULT_EARNED_ASSET,
-                                  vault.calc_asset_earned(price_holder.pool_info_map), asset))
+                                  vault.calc_asset_earned(price_holder.pool_info_map), specialization=asset))
 
         return achievements
 
