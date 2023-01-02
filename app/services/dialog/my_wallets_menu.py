@@ -82,7 +82,8 @@ class MyWalletsMenu(DialogWithSettings):
         self._add_address(address, chain)
 
         # redraw menu!
-        await self._show_address_selection_menu(message, edit=edit)
+        await self._on_selected_address(message, address, 0, edit=False)
+        # await self._show_address_selection_menu(message, edit=edit)
 
     @message_handler(state=LPMenuStates.MAIN_MENU)
     async def wallet_list_message_handler(self, message: Message):
@@ -130,12 +131,12 @@ class MyWalletsMenu(DialogWithSettings):
             msg += self.loc.TEXT_SELECT_ADDRESS_SEND_ME
             await message.answer(msg, reply_markup=ReplyKeyboardRemove(), disable_notification=True)
 
-    async def _on_selected_address(self, query: CallbackQuery, list_result: InlineListResult):
+    async def _on_selected_address(self, message: Message, address, index, edit=True):
         await LPMenuStates.WALLET_MENU.set()
-        address = self.data[self.KEY_ACTIVE_ADDRESS] = list_result.selected_data_tag
-        self.data[self.KEY_ACTIVE_ADDRESS_INDEX] = list_result.selected_item_index
+        address = self.data[self.KEY_ACTIVE_ADDRESS] = address
+        self.data[self.KEY_ACTIVE_ADDRESS_INDEX] = index
 
-        await self.show_pool_menu_for_address(query.message, address, edit=True)
+        await self.show_pool_menu_for_address(message, address, edit=edit)
 
     @query_handler(state=LPMenuStates.MAIN_MENU)
     async def on_tap_address(self, query: CallbackQuery):
@@ -145,7 +146,8 @@ class MyWalletsMenu(DialogWithSettings):
         if result.result == result.BACK:
             await self.go_back(query.message)
         elif result.result == result.SELECTED:
-            await self._on_selected_address(query, result)
+            await self._on_selected_address(query.message,
+                                            result.selected_data_tag, result.selected_item_index)
 
     # ----- INSIDE WALLET MENU -----
 
