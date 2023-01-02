@@ -17,16 +17,17 @@ async def demo_show_notification(app: LpAppFramework):
 
 
 class DebugAchievementsFetcher(BaseFetcher):
-    def __init__(self, deps: DepContainer):
+    def __init__(self, deps: DepContainer, specialization: str = ''):
         super().__init__(deps, 1)
         self.deps = deps
         self.limit = 3
+        self.specialization = specialization
 
     async def fetch(self):
         r = random.randint(1, self.limit)
         self.limit = int(self.limit * random.uniform(1.1, 1.5))
         self.logger.info(f'Generated achievement "test" event with value {r} ({self.limit = })')
-        return AchievementTest(r)
+        return AchievementTest(r, self.specialization)
 
 
 async def demo_debug_logic(app: LpAppFramework):
@@ -37,7 +38,7 @@ async def demo_debug_logic(app: LpAppFramework):
             break
         event, value = event.split()
         value = int(value)
-        r = await at.feed_data(event, value)
+        r = await at.feed_data(Achievement(event, value))
         print(f'Event: {r}')
 
 
@@ -54,7 +55,6 @@ def random_achievement():
 
 
 async def demo_achievements_picture():
-
     # rec = random_achievement()
     rec = AchievementRecord(Achievement.MARKET_CAP_USD, 500_000_000, 501_344_119, now_ts(), 0, 0)
 

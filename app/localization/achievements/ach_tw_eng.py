@@ -9,7 +9,7 @@ class AchievementsTwitterEnglishLocalization(AchievementsEnglishLocalization):
         ago, desc, emoji, milestone_str, prev_milestone_str, value_str = cls._prepare_achievement_data(e)
 
         return (
-            f'{emoji} A new achievement has been unlocked\n'
-            f'{desc.description} is now over {milestone_str} ({value_str})!\n '
-            f'Previously value: {prev_milestone_str} ({ago} ago)'
+            f'{emoji} @THORChain has accomplished a new achievement!\n'
+            f'"{desc}" is now over {milestone_str} ({value_str})!\n'
+            f'Previous milestone was {prev_milestone_str} ({ago} ago)'
         )
