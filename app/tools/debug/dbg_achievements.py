@@ -76,6 +76,7 @@ async def demo_run_pipeline(app: LpAppFramework):
     ach_not.add_subscriber(app.deps.alert_presenter)
 
     await ach_not.tracker.delete_achievement_record(Achievement.TEST)
+    await ach_not.tracker.delete_achievement_record(Achievement.TEST_SPEC)
 
     await ach_fet.run()
 

@@ -10,7 +10,7 @@ from aiogram.utils.helper import HelperMode
 from localization.eng_base import BaseLocalization
 from services.dialog.base import message_handler, query_handler, DialogWithSettings
 from services.dialog.picture.lp_picture import generate_yield_picture, lp_address_summary_picture
-from services.dialog.telegram.inline_list import TelegramInlineList, InlineListResult
+from services.dialog.telegram.inline_list import TelegramInlineList
 from services.jobs.fetch.runeyield import get_rune_yield_connector
 from services.lib.constants import Chains
 from services.lib.date_utils import today_str
@@ -447,7 +447,7 @@ class MyWalletsMenu(DialogWithSettings):
 
         # ANSWER
         await self._show_wallet_again(query)
-        
+
         await query.message.answer_photo(picture_bio,
                                          disable_notification=True)
 
