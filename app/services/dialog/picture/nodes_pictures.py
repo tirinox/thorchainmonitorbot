@@ -205,8 +205,8 @@ class BondRuler:
 
     def generate(self, d: ImageDraw, x, y):
         bond_min, bond_med, bond_max, bond_total = self.data.get_min_median_max_total_bond(self.data.active_nodes)
-        bond_upper_bound = math.ceil(bond_max / 1e6) * 1e6 + 0.1e6
-        bond_lower_bound = 0.3e6
+        bond_upper_bound = math.ceil(bond_max / 500_000) * 500_000 + 100_000
+        bond_lower_bound = 300_000 if bond_min > 300_000 else 0
         color = '#147e73'
         w = self.width
         line_width = 3
