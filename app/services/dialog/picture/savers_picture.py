@@ -73,16 +73,12 @@ class SaversPictureGenerator(BasePictureGenerator):
             current_value = getattr(data, key)
             return current_value(*args) if callable(current_value) else current_value
 
-        def draw_key_metric(index, name, key, formatter, **kwargs):
-            extra_args = kwargs.get('args')
-            if extra_args:
-                del kwargs['args']
-
+        def draw_key_metric(index, name, key, formatter, extra_args=None):
             current_value = extract_value(cur_data, key, extra_args)
 
             draw.text(key_metric_xy(index), name, font=key_metrics_font, fill='#aaa', anchor='mm')
             draw.text(key_metric_xy(index, dy=23),
-                      formatter(current_value, **kwargs),
+                      formatter(current_value),
                       font=key_metrics_v_font, fill=TC_WHITE, anchor='mm')
 
             if prev_data:
@@ -90,21 +86,20 @@ class SaversPictureGenerator(BasePictureGenerator):
                 delta = current_value - prev_value
                 if abs(delta) > 0.001:
                     draw.text(key_metric_xy(index, dy=46),
-                              formatter(delta, signed=True, **kwargs),
+                              formatter(delta, signed=True),
                               font=changed_font,
                               fill=result_color(delta),
                               anchor='mm')
 
-        draw_key_metric(1, self.loc.TEXT_PIC_SAVERS_TOTAL_SAVERS, 'total_unique_savers', short_money, integer=True)
+        draw_key_metric(1, self.loc.TEXT_PIC_SAVERS_TOTAL_SAVERS, 'total_unique_savers', short_money)
         draw_key_metric(2, self.loc.TEXT_PIC_SAVERS_TOTAL_SAVED_VALUE, 'total_usd_saved', short_dollar)
         draw_key_metric(3, self.loc.TEXT_PIC_SAVERS_TOTAL_EARNED, 'total_rune_earned',
-                        formatter=lambda x, signed=False: short_dollar(x * usd_per_rune, signed=signed))
-        draw_key_metric(4, self.loc.TEXT_PIC_SAVERS_APR_MEAN, 'average_apr', lambda x, **kwars: f'{x:+.2f}%')
-
-        # fixme!
-        draw_key_metric(5, self.loc.TEXT_PIC_SAVERS_TOTAL_FILLED, 'overall_fill_cap_percent', short_money,
-                        postfix='%',
-                        args=[pool_map])
+                        formatter=lambda x, **_: short_dollar(x * usd_per_rune, signed=True))
+        draw_key_metric(4, self.loc.TEXT_PIC_SAVERS_APR_MEAN, 'average_apr',
+                        formatter=lambda x, **_: f'{x:+.2f}%')
+        draw_key_metric(5, self.loc.TEXT_PIC_SAVERS_TOTAL_FILLED, 'overall_fill_cap_percent',
+                        formatter=lambda x, **_: short_money(x, postfix='%'),
+                        extra_args=[pool_map])
 
         # table:
         table_x = 46
