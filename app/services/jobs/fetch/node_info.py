@@ -93,17 +93,17 @@ class NodeInfoFetcher(BaseFetcher):
         """
         import random
 
-        n_changes = 0
-        for i in range(100):
-            node = new_nodes[random.randint(0, len(new_nodes))]
-            if node.status == node.ACTIVE:
-                node.status = node.STANDBY
-                n_changes += 1
-            elif node.status == node.STANDBY:
-                node.status = node.ACTIVE
-                n_changes += 1
-            if n_changes >= 5:
-                break
+        active_nodes = [n for n in new_nodes if n.is_active]
+        ready_nodes = [n for n in new_nodes if n.is_standby and n.bond > 10_000]
+
+        n_activate = random.randint(1, min(7, len(ready_nodes)))
+        n_off = random.randint(1, min(7, len(active_nodes)))
+        nodes_off = random.sample(active_nodes, n_off)
+        nodes_on = random.sample(ready_nodes, n_activate)
+        for n in nodes_off:
+            n.status = NodeInfo.STANDBY
+        for n in nodes_on:
+            n.status = NodeInfo.ACTIVE
 
         return new_nodes
 
