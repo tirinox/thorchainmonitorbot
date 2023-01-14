@@ -56,14 +56,14 @@ def random_achievement():
 
 async def demo_achievements_picture():
     # rec = random_achievement()
-    rec = Achievement(Achievement.MARKET_CAP_USD, 500_000_000, 501_344_119, now_ts(), 0, 0)
+    rec = Achievement(Achievement.MARKET_CAP_USD, 501_344_119, 500_000_000, now_ts(), 0, 0)
 
     loc = AchievementsEnglishLocalization()
     gen = AchievementPictureGenerator(loc, rec)
     pic, pic_name = await gen.get_picture()
     save_and_show_pic(pic, name=pic_name)
 
-    text = loc.notification_achievement_unlocked(Achievement(rec))
+    text = loc.notification_achievement_unlocked(rec)
     sep()
     print(text)
     sep()
@@ -85,9 +85,8 @@ async def main():
     app = LpAppFramework()
     async with app(brief=True):
         # await demo_debug_logic(app)
-        await demo_run_pipeline(app)
-
-        # await demo_achievements_picture()
+        # await demo_run_pipeline(app)
+        await demo_achievements_picture()
 
 
 if __name__ == '__main__':

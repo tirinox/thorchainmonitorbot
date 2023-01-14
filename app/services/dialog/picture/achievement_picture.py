@@ -43,12 +43,14 @@ class AchievementPictureGenerator(BasePictureGenerator):
         r = Resources()
         image = Image.open(os.path.join(self.BASE, self.BG))
         draw = ImageDraw.Draw(image)
+        font_getter = r.fonts.get_font
+        font_getter_bold = r.fonts.get_font_bold
 
         # ---- Main number ----
         achievement_desc = self.loc.get_achievement_description(self.ach.key)
 
         text = achievement_desc.format_value(self.ach.milestone, self.ach)
-        main_font, mw, mh = self.detect_font_size(r.fonts.get_font_norse_bold, text, 350, 200)
+        main_font, mw, mh = self.detect_font_size(font_getter_bold, text, 350, 200)
         mx, my = self.pos_percent(50, 46)
 
         # or maybe? TC_YGGDRASIL_GREEN, TC_LIGHTNING_BLUE, GOLD_COLOR = (255, 215, 0)
@@ -58,12 +60,12 @@ class AchievementPictureGenerator(BasePictureGenerator):
         # ---- Description ----
         # pillow get font size from bounding box
         desc_text = achievement_desc.description
-        font_desc, *_ = self.detect_font_size(r.fonts.get_font_norse, desc_text, 400, 120)
+        font_desc, *_ = self.detect_font_size(font_getter, desc_text, 400, 120)
         draw.text((mx, my + mh // 2 + 32), str(desc_text), fill=(255, 215, 0), font=font_desc, anchor='mt')
 
         # ---- Date ----
         date_str = datetime.datetime.fromtimestamp(self.ach.timestamp).strftime('%B %d, %Y')
-        draw.text(self.pos_percent(50, 91), date_str, fill='#ccc', font=r.fonts.get_font_norse(28), anchor='mm')
+        draw.text(self.pos_percent(50, 91), date_str, fill='#ccc', font=font_getter(28), anchor='mm')
 
         return image
 
