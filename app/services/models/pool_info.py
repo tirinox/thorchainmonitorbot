@@ -10,6 +10,7 @@ from typing import List, Dict, NamedTuple
 from aiothornode.types import ThorPool
 
 from services.lib.constants import thor_to_float
+from services.lib.money import Asset
 
 
 def pool_share(rune_depth, asset_depth, my_units, pool_total_units):
@@ -44,6 +45,8 @@ class PoolInfo:
 
     savers_depth: int = 0
     savers_units: int = 0
+
+    is_virtual: bool = False
 
     DEPRECATED_BOOTSTRAP = 'bootstrap'
     DEPRECATED_ENABLED = 'enabled'
@@ -156,6 +159,9 @@ class PoolInfo:
     @property
     def synth_supply_float(self):
         return thor_to_float(self.synth_supply)
+
+    def __post_init__(self):
+        self.is_virtual = Asset(self.asset).is_virtual
 
 
 @dataclass

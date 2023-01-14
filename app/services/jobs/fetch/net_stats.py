@@ -7,6 +7,7 @@ from services.lib.constants import THOR_BLOCK_TIME, thor_to_float
 from services.lib.date_utils import parse_timespan_to_seconds, now_ts, DAY
 from services.lib.depcont import DepContainer
 from services.lib.midgard.urlgen import free_url_gen
+from services.lib.money import Asset
 from services.models.net_stats import NetworkStats
 from services.models.swap_history import SwapHistoryResponse
 
@@ -69,13 +70,11 @@ class NetworkStatisticsFetcher(BaseFetcher):
 
         min_pool_depth_rune = self.deps.mimir_const_holder.get_constant(self.KEY_CONST_MIN_RUNE_POOL_DEPTH)
 
-        pending_pools = list(sorted(pending_pools, key=lambda p: p.balance_rune, reverse=True))
         if pending_pools:
-            best_pool = pending_pools[0]
-            if best_pool.balance_rune >= min_pool_depth_rune:
-                ns.next_pool_to_activate = pending_pools[0].asset
-            else:
-                ns.next_pool_to_activate = None
+            pending_pools = [p for p in pending_pools if
+                             not p.is_virtual and p.balance_rune >= min_pool_depth_rune]
+            pending_pools = list(sorted(pending_pools, key=lambda p: p.balance_rune, reverse=True))
+            ns.next_pool_to_activate = pending_pools[0].asset if pending_pools else None
 
     async def _get_swap_stats(self, ns: NetworkStats):
         j = await self.deps.midgard_connector.request(free_url_gen.url_for_swap_history(days=1))

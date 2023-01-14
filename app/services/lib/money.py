@@ -199,6 +199,7 @@ class Asset:
     name: str = ''
     tag: str = ''
     is_synth: bool = False
+    is_virtual: bool = False
 
     @property
     def valid(self):
@@ -212,6 +213,7 @@ class Asset:
             self.name = a.name
             self.tag = a.tag
             self.is_synth = a.is_synth
+            self.is_virtual = a.is_virtual
 
     @staticmethod
     def get_name_tag(name_and_tag_str):
@@ -229,7 +231,11 @@ class Asset:
             is_synth = '/' in asset
             chain, name_and_tag = asset.split('/' if is_synth else '.', maxsplit=2)
             name, tag = cls.get_name_tag(name_and_tag)
-            return cls(str(chain).upper(), str(name).upper(), str(tag).upper(), is_synth)
+            chain = str(chain).upper()
+            name = str(name).upper()
+            tag = str(tag).upper()
+            is_virtual = chain == 'THOR' and name != 'RUNE'
+            return cls(chain, name, tag, is_synth, is_virtual)
         except (IndexError, TypeError, ValueError):
             return cls(name=asset)
 
