@@ -1,5 +1,6 @@
-from localization.achievements.ach_eng import AchievementsEnglishLocalization, META_KEY_SPEC, ADesc, POSTFIX_RUNE
-from services.jobs.achievements import Achievement, A
+from localization.achievements.ach_eng import AchievementsEnglishLocalization
+from localization.achievements.common import A, ADesc, POSTFIX_RUNE, META_KEY_SPEC
+from services.jobs.achievements import Achievement
 from services.lib.texts import code, pre
 
 
@@ -23,7 +24,7 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
         ADesc(A.NODE_COUNT, 'Всего нод в сети', postfix=POSTFIX_RUNE),
         ADesc(A.ACTIVE_NODE_COUNT, 'Число активных нод'),
         ADesc(A.CHURNED_IN_BOND, 'Втекший бонд', postfix=POSTFIX_RUNE),
-        ADesc(A.ANNIVERSARY, 'День Рождения'),  # todo: special emoji
+        ADesc(A.ANNIVERSARY, 'День Рождения'),
         ADesc(A.BLOCK_NUMBER, 'Сгенерировано блоков'),
         ADesc(A.DAILY_TX_COUNT, 'Количество транзакций за день'),
         ADesc(A.TOTAL_MIMIR_VOTES, 'Всего голосов за Mimir'),
@@ -41,9 +42,8 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
         ADesc(A.SAVER_VAULT_EARNED_ASSET, 'Сберегатели заработали ::asset::'),
     ]
 
-    @classmethod
-    def notification_achievement_unlocked(cls, a: Achievement):
-        ago, desc, emoji, milestone_str, prev_milestone_str, value_str = cls.prepare_achievement_data(a)
+    def notification_achievement_unlocked(self, a: Achievement):
+        ago, desc, emoji, milestone_str, prev_milestone_str, value_str = self.prepare_achievement_data(a)
 
         msg = (
             f'{emoji} <b>THORChain совершил новое достижение!</b>\n'
@@ -54,6 +54,3 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
             msg += f'\nПредыдущая веха: {pre(prev_milestone_str)} ({ago} назад)'
 
         return msg
-
-
-AchievementsRussianLocalization.check_if_all_achievements_have_description()

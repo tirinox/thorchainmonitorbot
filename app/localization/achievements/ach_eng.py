@@ -1,47 +1,10 @@
-import random
-from typing import NamedTuple
-
+from localization.achievements.common import A, ADesc, POSTFIX_RUNE, META_KEY_SPEC, \
+    AchievementsLocalizationBase
 from services.jobs.achievements import Achievement
-from services.lib.date_utils import seconds_human
-from services.lib.money import short_money
 from services.lib.texts import code, pre
 
 
-class AchievementDescription(NamedTuple):
-    key: str
-    description: str
-    postfix: str = ''
-    prefix: str = ''
-    url: str = ''  # url to the dashboard
-    signed: bool = False
-
-    @property
-    def image(self):
-        return f'ach_{self.key}.png'
-
-    @staticmethod
-    def space_before_non_empty(s):
-        return f' {s}' if s else ''
-
-    @classmethod
-    def _do_substitutions(cls, achievement: Achievement, text: str) -> str:
-        return text.replace(META_KEY_SPEC, achievement.specialization)
-
-    def format_value(self, value, ach: Achievement):
-        return short_money(value,
-                           prefix=self._do_substitutions(ach, self.prefix),
-                           postfix=self.space_before_non_empty(self._do_substitutions(ach, self.postfix)),
-                           integer=True, signed=self.signed)
-
-
-A = Achievement
-ADesc = AchievementDescription
-POSTFIX_RUNE = ' R'
-
-META_KEY_SPEC = '::asset::'
-
-
-class AchievementsEnglishLocalization:
+class AchievementsEnglishLocalization(AchievementsLocalizationBase):
     ACHIEVEMENT_DESC_LIST = [
         ADesc(A.TEST, 'Test metric'),
         ADesc(A.TEST_SPEC, 'Test metric', postfix=META_KEY_SPEC),
@@ -78,24 +41,11 @@ class AchievementsEnglishLocalization:
         ADesc(A.SAVER_VAULT_MEMBERS, '::asset:: Savers vault members'),
         ADesc(A.SAVER_VAULT_EARNED_ASSET, 'Savers earned ::asset::'),
     ]
-    ACHIEVEMENT_DESC_MAP = {a.key: a for a in ACHIEVEMENT_DESC_LIST}
-
-    @classmethod
-    def check_if_all_achievements_have_description(cls):
-        all_achievements = set(A.all_keys())
-        all_achievements_with_desc = set(cls.ACHIEVEMENT_DESC_MAP.keys())
-        assert all_achievements == all_achievements_with_desc, \
-            f'Not all achievements have description. Missing: {all_achievements - all_achievements_with_desc}'
 
     CELEBRATION_EMOJIES = "🎉🎊🥳🙌🥂🪅🎆"
 
-    @classmethod
-    def get_achievement_description(cls, achievement: str) -> AchievementDescription:
-        return cls.ACHIEVEMENT_DESC_MAP.get(achievement, 'Unknown achievement. Please contact support')
-
-    @classmethod
-    def notification_achievement_unlocked(cls, a: Achievement):
-        ago, desc, emoji, milestone_str, prev_milestone_str, value_str = cls.prepare_achievement_data(a)
+    def notification_achievement_unlocked(self, a: Achievement):
+        ago, desc, emoji, milestone_str, prev_milestone_str, value_str = self.prepare_achievement_data(a)
 
         msg = (
             f'{emoji} <b>THORChain has accomplished a new achievement!</b>\n'
@@ -106,23 +56,3 @@ class AchievementsEnglishLocalization:
             msg += f'\nPrevious milestone was {pre(prev_milestone_str)} ({ago} ago)'
 
         return msg
-
-    @classmethod
-    def _do_substitutions(cls, achievement: Achievement, text: str) -> str:
-        return text.replace(META_KEY_SPEC, achievement.specialization)
-
-    @classmethod
-    def prepare_achievement_data(cls, a: Achievement):
-        desc = cls.get_achievement_description(a.key)
-        emoji = random.choice(cls.CELEBRATION_EMOJIES)
-        ago = seconds_human(a.timestamp - a.previous_ts)
-        milestone_str = desc.format_value(a.milestone, a)
-        value_str = desc.format_value(a.value, a)
-        prev_milestone_str = desc.format_value(a.prev_milestone, a)
-        desc_text = desc.description
-        desc_text = cls._do_substitutions(a, desc_text)
-        value_str = cls._do_substitutions(a, value_str)
-        return ago, desc_text, emoji, milestone_str, prev_milestone_str, value_str
-
-
-AchievementsEnglishLocalization.check_if_all_achievements_have_description()

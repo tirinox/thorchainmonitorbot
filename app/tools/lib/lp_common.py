@@ -159,9 +159,17 @@ async def demo_run_txs_example_file(fetcher_tx: TxFetcher, filename):
 
 
 def save_and_show_pic(pic, show=True, name='pic'):
+    if not pic:
+        return
+
     filepath = f'../temp/{name}.png'
+
     with open(filepath, 'wb') as f:
         pic_bio = img_to_bio(pic, os.path.basename(filepath))
         f.write(pic_bio.getbuffer())
+
+    print(f'Pic saved to "{filepath}"')
+
     if show:
         os.system(f'open "{filepath}"')
+

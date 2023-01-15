@@ -4,9 +4,8 @@ from services.jobs.achievements import Achievement
 
 
 class AchievementsTwitterEnglishLocalization(AchievementsEnglishLocalization):
-    @classmethod
-    def notification_achievement_unlocked(cls, a: Achievement):
-        ago, desc, emoji, milestone_str, prev_milestone_str, value_str = cls.prepare_achievement_data(a)
+    def notification_achievement_unlocked(self, a: Achievement):
+        ago, desc, emoji, milestone_str, prev_milestone_str, value_str = self.prepare_achievement_data(a)
 
         msg = (
             f'{emoji} @THORChain has accomplished a new achievement!\n'

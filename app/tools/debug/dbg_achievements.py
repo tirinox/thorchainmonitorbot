@@ -1,5 +1,7 @@
 import asyncio
+import os
 import random
+import time
 
 from localization.achievements.ach_eng import AchievementsEnglishLocalization
 from localization.achievements.ach_rus import AchievementsRussianLocalization
@@ -50,15 +52,15 @@ def random_achievement():
 
     random_achievement_key = random.choice(AchievementsEnglishLocalization.ACHIEVEMENT_DESC_LIST).key
     rec = Achievement(random_achievement_key, value,
-                            milestone, now_ts(),
-                            2, now_ts() - random.randint(1, int(100 * DAY)))
+                      milestone, now_ts(),
+                      2, now_ts() - random.randint(1, int(100 * DAY)))
     return rec
 
 
-async def demo_achievements_picture():
+async def demo_achievements_picture(a=None):
     # rec = random_achievement()
     # rec = Achievement(Achievement.MARKET_CAP_USD, 501_344_119, 500_000_000, now_ts(), 0, 0)
-    rec = Achievement(Achievement.SAVER_VAULT_EARNED_ASSET, 501_344_119, 500_000_000, now_ts(), 0, 0, 'BNB')
+    rec = Achievement(a or Achievement.SAVER_VAULT_EARNED_ASSET, 501_344_119, 500_000_000, now_ts(), 0, 0, 'BNB')
 
     # loc = AchievementsEnglishLocalization()
     loc = AchievementsRussianLocalization()
@@ -70,6 +72,36 @@ async def demo_achievements_picture():
     sep()
     print(text)
     sep()
+
+
+async def demo_all_achievements():
+    loc_en = AchievementsEnglishLocalization()
+    loc_ru = AchievementsRussianLocalization()
+
+    os.makedirs('../temp/a', exist_ok=True)
+    show = False
+
+    for loc in [loc_en, loc_ru]:
+        print(loc.__class__.__name__)
+
+        for ach_key in loc.desc_map:
+            spec = random.choice(['BNB', 'BTC', 'ETH', 'LTC', 'DOGE'])
+            rec = Achievement(ach_key, 501_344, 500_000, now_ts(), 200_000,
+                              now_ts() - random.randint(1, 30 * DAY), spec)
+
+            # loc = AchievementsEnglishLocalization()
+            gen = AchievementPictureGenerator(loc, rec)
+            pic, pic_name = await gen.get_picture()
+            save_and_show_pic(pic, name=f'a/{pic_name}', show=show)
+
+            text = loc.notification_achievement_unlocked(rec)
+            sep()
+            print(text)
+            sep()
+
+        sep()
+        print()
+        sep()
 
 
 async def demo_run_pipeline(app: LpAppFramework):
@@ -89,7 +121,8 @@ async def main():
     async with app(brief=True):
         # await demo_debug_logic(app)
         # await demo_run_pipeline(app)
-        await demo_achievements_picture()
+        # await demo_achievements_picture(Achievement.CHURNED_IN_BOND)
+        await demo_all_achievements()
 
 
 if __name__ == '__main__':

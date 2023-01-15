@@ -49,7 +49,6 @@ class AchievementPictureGenerator(BasePictureGenerator):
         font_getter_bold = r.fonts.get_font_bold
 
         # ---- Main number ----
-        # achievement_desc = self.loc.get_achievement_description(self.ach.key)
 
         # text = achievement_desc.format_value(self.ach.milestone, self.ach)
         main_font, mw, mh = self.detect_font_size(font_getter_bold, milestone_str, 350, 200)
@@ -67,7 +66,7 @@ class AchievementPictureGenerator(BasePictureGenerator):
 
         # ---- Date ----
         date_str = datetime.datetime.fromtimestamp(self.ach.timestamp).strftime('%B %d, %Y')
-        draw.text(self.pos_percent(50, 83), date_str, fill='#ccc', font=font_getter(28), anchor='mm')
+        draw.text(self.pos_percent(50, 85), date_str, fill='#ccc', font=font_getter(28), anchor='mm')
 
         return image
 

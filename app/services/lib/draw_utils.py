@@ -178,6 +178,10 @@ def draw_arc_aa(image, bounds, start, end, width=1, outline=TC_WHITE, antialias=
 
 
 def img_to_bio(image: PIL.Image.Image, name):
+    if not image:
+        logging.error('Nothing to save!')
+        return
+
     if isinstance(image, BytesIO):
         logging.warning('Got BytesIO. Suppossed to be PIL.Image')
         return image
