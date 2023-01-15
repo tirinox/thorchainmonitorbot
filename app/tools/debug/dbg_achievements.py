@@ -56,7 +56,8 @@ def random_achievement():
 
 async def demo_achievements_picture():
     # rec = random_achievement()
-    rec = Achievement(Achievement.MARKET_CAP_USD, 501_344_119, 500_000_000, now_ts(), 0, 0)
+    # rec = Achievement(Achievement.MARKET_CAP_USD, 501_344_119, 500_000_000, now_ts(), 0, 0)
+    rec = Achievement(Achievement.SAVER_VAULT_EARNED_ASSET, 501_344_119, 500_000_000, now_ts(), 0, 0, 'BNB')
 
     loc = AchievementsEnglishLocalization()
     gen = AchievementPictureGenerator(loc, rec)

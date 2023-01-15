@@ -29,7 +29,7 @@ class AchievementDescription(NamedTuple):
 
     def format_value(self, value, ach: Achievement):
         return short_money(value,
-                           prefix=self.space_before_non_empty(self._do_substitutions(ach, self.prefix)),
+                           prefix=self._do_substitutions(ach, self.prefix),
                            postfix=self.space_before_non_empty(self._do_substitutions(ach, self.postfix)),
                            integer=True, signed=self.signed)
 
@@ -59,7 +59,7 @@ ACHIEVEMENT_DESC_LIST = [
     ADesc(A.NODE_COUNT, 'Total nodes count', postfix=POSTFIX_RUNE),
     ADesc(A.ACTIVE_NODE_COUNT, 'Active nodes count'),
     ADesc(A.CHURNED_IN_BOND, 'Churned in bond', postfix=POSTFIX_RUNE),
-    ADesc(A.ANNIVERSARY, 'Anniversary'),
+    ADesc(A.ANNIVERSARY, 'Anniversary'),  # todo: special emoji
     ADesc(A.BLOCK_NUMBER, 'Blocks generated'),
     ADesc(A.DAILY_TX_COUNT, 'Daily TX count'),
     ADesc(A.TOTAL_MIMIR_VOTES, 'Total Mimir votes'),
@@ -71,10 +71,10 @@ ACHIEVEMENT_DESC_LIST = [
     ADesc(A.TOTAL_SAVED_USD, 'Total USD saved', prefix='$'),
     ADesc(A.TOTAL_SAVERS_EARNED_USD, 'Total USD earned', prefix='$'),
 
-    ADesc(A.SAVER_VAULT_SAVED_ASSET, 'Total saved', postfix=META_KEY_SPEC),
-    ADesc(A.SAVER_VAULT_SAVED_USD, 'Total saved in USD', prefix='$'),
-    ADesc(A.SAVER_VAULT_MEMBERS, 'Savers vault members'),
-    ADesc(A.SAVER_VAULT_EARNED_ASSET, 'Total earned by savers', postfix=META_KEY_SPEC),
+    ADesc(A.SAVER_VAULT_SAVED_ASSET, 'Total saved ::asset::'),
+    ADesc(A.SAVER_VAULT_SAVED_USD, 'Savers vault ::asset::: total saved USD', prefix='$'),
+    ADesc(A.SAVER_VAULT_MEMBERS, '::asset:: Savers vault members'),
+    ADesc(A.SAVER_VAULT_EARNED_ASSET, 'Savers earned ::asset::'),
 ]
 
 ACHIEVEMENT_DESC_MAP = {a.key: a for a in ACHIEVEMENT_DESC_LIST}
@@ -99,20 +99,24 @@ class AchievementsEnglishLocalization:
 
     @classmethod
     def notification_achievement_unlocked(cls, a: Achievement):
-        ago, desc, emoji, milestone_str, prev_milestone_str, value_str = cls._prepare_achievement_data(a)
+        ago, desc, emoji, milestone_str, prev_milestone_str, value_str = cls.prepare_achievement_data(a)
 
-        return (
+        msg = (
             f'{emoji} <b>THORChain has accomplished a new achievement!</b>\n'
-            f'{pre(desc)} is now over {code(milestone_str)} ({pre(value_str)})!\n'
-            f'Previous milestone was {pre(prev_milestone_str)} ({ago} ago)'
+            f'{pre(desc)} is now over {code(milestone_str)} ({pre(value_str)})!'
         )
+
+        if a.has_previous:
+            msg += f'\nPrevious milestone was {pre(prev_milestone_str)} ({ago} ago)'
+
+        return msg
 
     @classmethod
     def _do_substitutions(cls, achievement: Achievement, text: str) -> str:
         return text.replace(META_KEY_SPEC, achievement.specialization)
 
     @classmethod
-    def _prepare_achievement_data(cls, a: Achievement):
+    def prepare_achievement_data(cls, a: Achievement):
         desc = cls.get_achievement_description(a.key)
         emoji = random.choice(cls.CELEBRATION_EMOJIES)
         ago = seconds_human(a.timestamp - a.previous_ts)

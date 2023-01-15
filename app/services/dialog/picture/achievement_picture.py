@@ -39,6 +39,8 @@ class AchievementPictureGenerator(BasePictureGenerator):
         # bg_color = (0, 0, 0, 255)
         # image = Image.new('RGBA', (w, h), bg_color)
 
+        ago, desc, emoji, milestone_str, prev_milestone_str, value_str = self.loc.prepare_achievement_data(self.ach)
+
         # ---- Canvas ----
         r = Resources()
         image = Image.open(os.path.join(self.BASE, self.BG))
@@ -47,25 +49,25 @@ class AchievementPictureGenerator(BasePictureGenerator):
         font_getter_bold = r.fonts.get_font_bold
 
         # ---- Main number ----
-        achievement_desc = self.loc.get_achievement_description(self.ach.key)
+        # achievement_desc = self.loc.get_achievement_description(self.ach.key)
 
-        text = achievement_desc.format_value(self.ach.milestone, self.ach)
-        main_font, mw, mh = self.detect_font_size(font_getter_bold, text, 350, 200)
+        # text = achievement_desc.format_value(self.ach.milestone, self.ach)
+        main_font, mw, mh = self.detect_font_size(font_getter_bold, milestone_str, 350, 200)
         mx, my = self.pos_percent(50, 46)
 
         # or maybe? TC_YGGDRASIL_GREEN, TC_LIGHTNING_BLUE, GOLD_COLOR = (255, 215, 0)
-        draw.text((mx, my), text, fill=TC_MIDGARD_TURQOISE,
+        draw.text((mx, my), milestone_str, fill=TC_MIDGARD_TURQOISE,
                   font=main_font, anchor='mm', stroke_fill='#333', stroke_width=4)
 
         # ---- Description ----
         # pillow get font size from bounding box
-        desc_text = achievement_desc.description
-        font_desc, *_ = self.detect_font_size(font_getter, desc_text, 400, 120)
-        draw.text((mx, my + mh // 2 + 32), str(desc_text), fill=(255, 215, 0), font=font_desc, anchor='mt')
+
+        font_desc, *_ = self.detect_font_size(font_getter, desc, 400, 120)
+        draw.text((mx, my + mh // 2 + 32), str(desc), fill=(255, 215, 0), font=font_desc, anchor='mt')
 
         # ---- Date ----
         date_str = datetime.datetime.fromtimestamp(self.ach.timestamp).strftime('%B %d, %Y')
-        draw.text(self.pos_percent(50, 91), date_str, fill='#ccc', font=font_getter(28), anchor='mm')
+        draw.text(self.pos_percent(50, 83), date_str, fill='#ccc', font=font_getter(28), anchor='mm')
 
         return image
 

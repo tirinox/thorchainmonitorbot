@@ -77,6 +77,10 @@ class Achievement(NamedTuple):
         return [getattr(cls, k) for k in cls.__dict__
                 if not k.startswith('_') and k.upper() == k]
 
+    @property
+    def has_previous(self):
+        return self.prev_milestone > 0 and self.previous_ts > 0
+
 
 A = Achievement
 
