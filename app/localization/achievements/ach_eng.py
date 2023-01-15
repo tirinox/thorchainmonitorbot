@@ -40,62 +40,58 @@ POSTFIX_RUNE = ' R'
 
 META_KEY_SPEC = '::asset::'
 
-ACHIEVEMENT_DESC_LIST = [
-    ADesc(A.TEST, 'Test metric'),
-    ADesc(A.TEST_SPEC, 'Test metric', postfix=META_KEY_SPEC),
-    ADesc(A.DAU, 'Daily active users'),
-    ADesc(A.MAU, 'Monthly active users'),
-    ADesc(A.WALLET_COUNT, 'Wallets count'),
-    ADesc(A.SWAP_COUNT_TOTAL, 'Total swaps count'),
-    ADesc(A.SWAP_COUNT_24H, '24h swaps count'),
-    ADesc(A.SWAP_COUNT_30D, 'Monthly swap count'),
-    ADesc(A.SWAP_UNIQUE_COUNT, 'Unique swappers'),
-    ADesc(A.ADD_LIQUIDITY_COUNT_TOTAL, 'Total add liquidity count'),
-    ADesc(A.ADD_LIQUIDITY_VOLUME_TOTAL, 'Total add liquidity volume'),
-    ADesc(A.DAILY_VOLUME, 'Daily volume', prefix='$'),
-    ADesc(A.ILP_PAID_TOTAL, 'Total ILP paid', postfix=POSTFIX_RUNE),
-    ADesc(A.TOTAL_ACTIVE_BOND, 'Total active bond'),
-    ADesc(A.TOTAL_BOND, 'Total bond', postfix=POSTFIX_RUNE),
-    ADesc(A.NODE_COUNT, 'Total nodes count', postfix=POSTFIX_RUNE),
-    ADesc(A.ACTIVE_NODE_COUNT, 'Active nodes count'),
-    ADesc(A.CHURNED_IN_BOND, 'Churned in bond', postfix=POSTFIX_RUNE),
-    ADesc(A.ANNIVERSARY, 'Anniversary'),  # todo: special emoji
-    ADesc(A.BLOCK_NUMBER, 'Blocks generated'),
-    ADesc(A.DAILY_TX_COUNT, 'Daily TX count'),
-    ADesc(A.TOTAL_MIMIR_VOTES, 'Total Mimir votes'),
-    ADesc(A.MARKET_CAP_USD, 'Rune Total Market Cap', prefix='$'),
-    ADesc(A.TOTAL_POOLS, 'Total pools'),
-    ADesc(A.TOTAL_ACTIVE_POOLS, 'Active pools'),
-
-    ADesc(A.TOTAL_UNIQUE_SAVERS, 'Total unique savers'),
-    ADesc(A.TOTAL_SAVED_USD, 'Total USD saved', prefix='$'),
-    ADesc(A.TOTAL_SAVERS_EARNED_USD, 'Total USD earned', prefix='$'),
-
-    ADesc(A.SAVER_VAULT_SAVED_ASSET, 'Total saved ::asset::'),
-    ADesc(A.SAVER_VAULT_SAVED_USD, 'Savers vault ::asset::: total saved USD', prefix='$'),
-    ADesc(A.SAVER_VAULT_MEMBERS, '::asset:: Savers vault members'),
-    ADesc(A.SAVER_VAULT_EARNED_ASSET, 'Savers earned ::asset::'),
-]
-
-ACHIEVEMENT_DESC_MAP = {a.key: a for a in ACHIEVEMENT_DESC_LIST}
-
-
-def check_if_all_achievements_have_description():
-    all_achievements = set(A.all_keys())
-    all_achievements_with_desc = set(ACHIEVEMENT_DESC_MAP.keys())
-    assert all_achievements == all_achievements_with_desc, \
-        f'Not all achievements have description. Missing: {all_achievements - all_achievements_with_desc}'
-
-
-check_if_all_achievements_have_description()
-
 
 class AchievementsEnglishLocalization:
+    ACHIEVEMENT_DESC_LIST = [
+        ADesc(A.TEST, 'Test metric'),
+        ADesc(A.TEST_SPEC, 'Test metric', postfix=META_KEY_SPEC),
+        ADesc(A.DAU, 'Daily active users'),
+        ADesc(A.MAU, 'Monthly active users'),
+        ADesc(A.WALLET_COUNT, 'Wallets count'),
+        ADesc(A.SWAP_COUNT_TOTAL, 'Total swaps count'),
+        ADesc(A.SWAP_COUNT_24H, '24h swaps count'),
+        ADesc(A.SWAP_COUNT_30D, 'Monthly swap count'),
+        ADesc(A.SWAP_UNIQUE_COUNT, 'Unique swappers'),
+        ADesc(A.ADD_LIQUIDITY_COUNT_TOTAL, 'Total add liquidity count'),
+        ADesc(A.ADD_LIQUIDITY_VOLUME_TOTAL, 'Total add liquidity volume'),
+        ADesc(A.DAILY_VOLUME, 'Daily volume', prefix='$'),
+        ADesc(A.ILP_PAID_TOTAL, 'Total ILP paid', postfix=POSTFIX_RUNE),
+        ADesc(A.TOTAL_ACTIVE_BOND, 'Total active bond'),
+        ADesc(A.TOTAL_BOND, 'Total bond', postfix=POSTFIX_RUNE),
+        ADesc(A.NODE_COUNT, 'Total nodes count', postfix=POSTFIX_RUNE),
+        ADesc(A.ACTIVE_NODE_COUNT, 'Active nodes count'),
+        ADesc(A.CHURNED_IN_BOND, 'Churned in bond', postfix=POSTFIX_RUNE),
+        ADesc(A.ANNIVERSARY, 'Anniversary'),  # todo: special emoji
+        ADesc(A.BLOCK_NUMBER, 'Blocks generated'),
+        ADesc(A.DAILY_TX_COUNT, 'Daily TX count'),
+        ADesc(A.TOTAL_MIMIR_VOTES, 'Total Mimir votes'),
+        ADesc(A.MARKET_CAP_USD, 'Rune Total Market Cap', prefix='$'),
+        ADesc(A.TOTAL_POOLS, 'Total pools'),
+        ADesc(A.TOTAL_ACTIVE_POOLS, 'Active pools'),
+
+        ADesc(A.TOTAL_UNIQUE_SAVERS, 'Total unique savers'),
+        ADesc(A.TOTAL_SAVED_USD, 'Total USD saved', prefix='$'),
+        ADesc(A.TOTAL_SAVERS_EARNED_USD, 'Total USD earned', prefix='$'),
+
+        ADesc(A.SAVER_VAULT_SAVED_ASSET, 'Total saved ::asset::'),
+        ADesc(A.SAVER_VAULT_SAVED_USD, 'Savers vault ::asset::: total saved USD', prefix='$'),
+        ADesc(A.SAVER_VAULT_MEMBERS, '::asset:: Savers vault members'),
+        ADesc(A.SAVER_VAULT_EARNED_ASSET, 'Savers earned ::asset::'),
+    ]
+    ACHIEVEMENT_DESC_MAP = {a.key: a for a in ACHIEVEMENT_DESC_LIST}
+
+    @classmethod
+    def check_if_all_achievements_have_description(cls):
+        all_achievements = set(A.all_keys())
+        all_achievements_with_desc = set(cls.ACHIEVEMENT_DESC_MAP.keys())
+        assert all_achievements == all_achievements_with_desc, \
+            f'Not all achievements have description. Missing: {all_achievements - all_achievements_with_desc}'
+
     CELEBRATION_EMOJIES = "🎉🎊🥳🙌🥂🪅🎆"
 
-    @staticmethod
-    def get_achievement_description(achievement: str) -> AchievementDescription:
-        return ACHIEVEMENT_DESC_MAP.get(achievement, 'Unknown achievement. Please contact support')
+    @classmethod
+    def get_achievement_description(cls, achievement: str) -> AchievementDescription:
+        return cls.ACHIEVEMENT_DESC_MAP.get(achievement, 'Unknown achievement. Please contact support')
 
     @classmethod
     def notification_achievement_unlocked(cls, a: Achievement):
@@ -127,3 +123,6 @@ class AchievementsEnglishLocalization:
         desc_text = cls._do_substitutions(a, desc_text)
         value_str = cls._do_substitutions(a, value_str)
         return ago, desc_text, emoji, milestone_str, prev_milestone_str, value_str
+
+
+AchievementsEnglishLocalization.check_if_all_achievements_have_description()

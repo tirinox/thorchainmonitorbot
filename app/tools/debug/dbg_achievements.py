@@ -1,7 +1,8 @@
 import asyncio
 import random
 
-from localization.achievements.ach_eng import AchievementsEnglishLocalization, ACHIEVEMENT_DESC_LIST
+from localization.achievements.ach_eng import AchievementsEnglishLocalization
+from localization.achievements.ach_rus import AchievementsRussianLocalization
 from services.dialog.picture.achievement_picture import AchievementPictureGenerator
 from services.jobs.achievements import AchievementsTracker, AchievementsNotifier, AchievementTest, Achievement, \
     Milestones
@@ -47,7 +48,7 @@ def random_achievement():
     value = random.randint(1, random.randint(1, 1_000_000_000))
     milestone = milestones.previous(value)
 
-    random_achievement_key = random.choice(ACHIEVEMENT_DESC_LIST).key
+    random_achievement_key = random.choice(AchievementsEnglishLocalization.ACHIEVEMENT_DESC_LIST).key
     rec = Achievement(random_achievement_key, value,
                             milestone, now_ts(),
                             2, now_ts() - random.randint(1, int(100 * DAY)))
@@ -59,7 +60,8 @@ async def demo_achievements_picture():
     # rec = Achievement(Achievement.MARKET_CAP_USD, 501_344_119, 500_000_000, now_ts(), 0, 0)
     rec = Achievement(Achievement.SAVER_VAULT_EARNED_ASSET, 501_344_119, 500_000_000, now_ts(), 0, 0, 'BNB')
 
-    loc = AchievementsEnglishLocalization()
+    # loc = AchievementsEnglishLocalization()
+    loc = AchievementsRussianLocalization()
     gen = AchievementPictureGenerator(loc, rec)
     pic, pic_name = await gen.get_picture()
     save_and_show_pic(pic, name=pic_name)
