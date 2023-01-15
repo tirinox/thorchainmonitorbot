@@ -47,9 +47,12 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
     def notification_achievement_unlocked(self, a: Achievement):
         ago, desc, emoji, milestone_str, prev_milestone_str, value_str = self.prepare_achievement_data(a)
 
+        if value_str:
+            value_str = f' ({pre(value_str)})'
+
         msg = (
             f'{emoji} <b>THORChain has accomplished a new achievement!</b>\n'
-            f'{pre(desc)} is now over {code(milestone_str)} ({pre(value_str)})!'
+            f'{pre(desc)} is now over {code(milestone_str)}{value_str}!'
         )
 
         if a.has_previous:

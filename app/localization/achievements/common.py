@@ -62,13 +62,19 @@ class AchievementsLocalizationBase:
         emoji = random.choice(self.CELEBRATION_EMOJIES)
         ago = seconds_human(a.timestamp - a.previous_ts)
         milestone_str = desc.format_value(a.milestone, a)
-        value_str = desc.format_value(a.value, a)
         prev_milestone_str = desc.format_value(a.prev_milestone, a)
+
         desc_text = desc.description
         desc_text = self._do_substitutions(a, desc_text)
         if not newlines:
             desc_text = desc_text.replace('\n', ' ')
+
+        if a.value and abs(a.value - a.milestone) < 0.01 * a.milestone:
+            value_str = ''
+        else:
+            value_str = desc.format_value(a.value, a)
         value_str = self._do_substitutions(a, value_str)
+
         return ago, desc_text, emoji, milestone_str, prev_milestone_str, value_str
 
     def __init__(self):
