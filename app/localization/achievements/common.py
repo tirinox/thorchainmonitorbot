@@ -57,7 +57,7 @@ class AchievementsLocalizationBase:
     def _do_substitutions(cls, achievement: Achievement, text: str) -> str:
         return text.replace(META_KEY_SPEC, achievement.specialization)
 
-    def prepare_achievement_data(self, a: Achievement):
+    def prepare_achievement_data(self, a: Achievement, newlines=False):
         desc = self.get_achievement_description(a.key)
         emoji = random.choice(self.CELEBRATION_EMOJIES)
         ago = seconds_human(a.timestamp - a.previous_ts)
@@ -66,6 +66,8 @@ class AchievementsLocalizationBase:
         prev_milestone_str = desc.format_value(a.prev_milestone, a)
         desc_text = desc.description
         desc_text = self._do_substitutions(a, desc_text)
+        if not newlines:
+            desc_text = desc_text.replace('\n', ' ')
         value_str = self._do_substitutions(a, value_str)
         return ago, desc_text, emoji, milestone_str, prev_milestone_str, value_str
 

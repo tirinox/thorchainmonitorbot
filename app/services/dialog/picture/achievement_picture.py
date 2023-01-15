@@ -39,7 +39,10 @@ class AchievementPictureGenerator(BasePictureGenerator):
         # bg_color = (0, 0, 0, 255)
         # image = Image.new('RGBA', (w, h), bg_color)
 
-        ago, desc, emoji, milestone_str, prev_milestone_str, value_str = self.loc.prepare_achievement_data(self.ach)
+        ago, desc, emoji, milestone_str, prev_milestone_str, value_str = self.loc.prepare_achievement_data(
+            self.ach,
+            newlines=True,
+        )
 
         # ---- Canvas ----
         r = Resources()
@@ -61,8 +64,8 @@ class AchievementPictureGenerator(BasePictureGenerator):
         # ---- Description ----
         # pillow get font size from bounding box
 
-        font_desc, *_ = self.detect_font_size(font_getter, desc, 400, 120)
-        draw.text((mx, my + mh // 2 + 32), str(desc), fill=(255, 215, 0), font=font_desc, anchor='mt')
+        font_desc, *_ = self.detect_font_size(font_getter, desc, 420, 200)
+        draw.text((mx, my + mh // 2 + 42), str(desc), fill=(255, 215, 0), font=font_desc, anchor='mm', align='center')
 
         # ---- Date ----
         date_str = datetime.datetime.fromtimestamp(self.ach.timestamp).strftime('%B %d, %Y')

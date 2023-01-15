@@ -5,6 +5,7 @@ import time
 
 from localization.achievements.ach_eng import AchievementsEnglishLocalization
 from localization.achievements.ach_rus import AchievementsRussianLocalization
+from localization.languages import Language
 from services.dialog.picture.achievement_picture import AchievementPictureGenerator
 from services.jobs.achievements import AchievementsTracker, AchievementsNotifier, AchievementTest, Achievement, \
     Milestones
@@ -57,13 +58,13 @@ def random_achievement():
     return rec
 
 
-async def demo_achievements_picture(a=None):
+async def demo_achievements_picture(lang=None, a=None):
     # rec = random_achievement()
     # rec = Achievement(Achievement.MARKET_CAP_USD, 501_344_119, 500_000_000, now_ts(), 0, 0)
     rec = Achievement(a or Achievement.SAVER_VAULT_EARNED_ASSET, 501_344_119, 500_000_000, now_ts(), 0, 0, 'BNB')
+    lang = lang or Language.ENGLISH
 
-    # loc = AchievementsEnglishLocalization()
-    loc = AchievementsRussianLocalization()
+    loc = AchievementsRussianLocalization() if lang == Language.RUSSIAN else AchievementsEnglishLocalization()
     gen = AchievementPictureGenerator(loc, rec)
     pic, pic_name = await gen.get_picture()
     save_and_show_pic(pic, name=pic_name)
@@ -121,8 +122,9 @@ async def main():
     async with app(brief=True):
         # await demo_debug_logic(app)
         # await demo_run_pipeline(app)
-        # await demo_achievements_picture(Achievement.CHURNED_IN_BOND)
-        await demo_all_achievements()
+        await demo_achievements_picture(Language.ENGLISH, Achievement.SAVER_VAULT_MEMBERS)
+        # await demo_achievements_picture(Language.ENGLISH, Achievement.SAVER_VAULT_MEMBERS)
+        # await demo_all_achievements()
 
 
 if __name__ == '__main__':

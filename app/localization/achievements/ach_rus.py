@@ -37,8 +37,8 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
         ADesc(A.TOTAL_SAVERS_EARNED_USD, 'Всего заработано на сбережениях', prefix='$'),
 
         ADesc(A.SAVER_VAULT_SAVED_ASSET, 'Всего в хранилище ::asset::'),
-        ADesc(A.SAVER_VAULT_SAVED_USD, 'Всего в хранилище ::asset::: вложено USD', prefix='$'),
-        ADesc(A.SAVER_VAULT_MEMBERS, '::asset:: хранилище: количество участников'),
+        ADesc(A.SAVER_VAULT_SAVED_USD, 'Всего в хранилище ::asset:::\nвложено USD', prefix='$'),
+        ADesc(A.SAVER_VAULT_MEMBERS, '::asset:: хранилище\nКоличество участников'),
         ADesc(A.SAVER_VAULT_EARNED_ASSET, 'Сберегатели заработали ::asset::'),
     ]
 
