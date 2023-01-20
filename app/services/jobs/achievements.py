@@ -17,7 +17,7 @@ from services.models.price import RuneMarketInfo, LastPriceHolder
 from services.models.savers import AllSavers
 from services.notify.types.block_notify import LastBlockStore
 
-THORCHAIN_BIRTHDAY = 1618058210955  # 2021-04-10T12:36:50.955991742Z
+THORCHAIN_BIRTHDAY = 1618058210955 * 0.001  # 2021-04-10T12:36:50.955991742Z
 
 
 class Achievement(NamedTuple):
@@ -34,7 +34,7 @@ class Achievement(NamedTuple):
 
     DAU = 'dau'
     MAU = 'mau'
-    WALLET_COUNT = 'wallet_count'  # todo
+    WALLET_COUNT = 'wallet_count'
 
     DAILY_TX_COUNT = 'daily_tx_count'  # todo
     DAILY_VOLUME = 'daily_volume'  # todo
@@ -266,7 +266,7 @@ class AchievementsNotifier(WithLogger, WithDelegates, INotified):
 
     @staticmethod
     def on_block(sender: LastBlockStore):
-        years_old = int((now_ts() - THORCHAIN_BIRTHDAY * 0.001) / YEAR)
+        years_old = int((now_ts() - THORCHAIN_BIRTHDAY) / YEAR)
         achievements = [
             A(A.BLOCK_NUMBER, int(sender.last_thor_block)),
             A(A.ANNIVERSARY, years_old),
@@ -279,6 +279,7 @@ class AchievementsNotifier(WithLogger, WithDelegates, INotified):
             A(A.CHURNED_IN_BOND, data.bond_churn_in),
             A(A.NODE_COUNT, len(data.nodes_all)),
             A(A.ACTIVE_NODE_COUNT, len(data.active_only_nodes)),
+            # todo: total countries
         ]
         return achievements
 

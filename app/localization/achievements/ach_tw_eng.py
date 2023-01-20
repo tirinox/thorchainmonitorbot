@@ -10,12 +10,15 @@ class AchievementsTwitterEnglishLocalization(AchievementsEnglishLocalization):
         if value_str:
             value_str = f' ({value_str})'
 
-        msg = (
-            f'{emoji} @THORChain has accomplished a new achievement!\n'
-            f'"{desc}" is now over {milestone_str}{value_str}!'
-        )
+        msg = f'{emoji} <b>@THORChain has accomplished a new achievement!</b>\n'
 
-        if a.has_previous:
-            msg += f'\nPrevious milestone was {prev_milestone_str} ({ago} ago)'
+        if a.key == a.ANNIVERSARY:
+            # special case for anniversary
+            msg += f"Happy Birthday! It's been {milestone_str} years since the first block!"
+        else:
+            # default case
+            msg += f'{desc} is now over {milestone_str}{value_str}!'
+            if a.has_previous:
+                msg += f'\nPrevious milestone was {prev_milestone_str} ({ago} ago)'
 
         return msg

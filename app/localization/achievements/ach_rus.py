@@ -48,12 +48,14 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
         if value_str:
             value_str = f' ({pre(value_str)})'
 
-        msg = (
-            f'{emoji} <b>THORChain совершил новое достижение!</b>\n'
-            f'{pre(desc)} теперь больше, чем {code(milestone_str)}{value_str}!'
-        )
-
-        if a.has_previous:
-            msg += f'\nПредыдущая веха: {pre(prev_milestone_str)} ({ago} назад)'
+        msg = f'{emoji} <b>THORChain совершил новое достижение!</b>\n'
+        if a.key == a.ANNIVERSARY:
+            # special case for anniversary
+            msg += f"Happy Birthday! It's been {milestone_str} years since the first block!"
+        else:
+            # default case
+            msg += f'{pre(desc)} теперь больше, чем {code(milestone_str)}{value_str}!'
+            if a.has_previous:
+                msg += f'\nПредыдущая веха: {pre(prev_milestone_str)} ({ago} назад)'
 
         return msg

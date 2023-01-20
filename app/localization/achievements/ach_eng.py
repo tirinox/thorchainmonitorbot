@@ -50,12 +50,15 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
         if value_str:
             value_str = f' ({pre(value_str)})'
 
-        msg = (
-            f'{emoji} <b>THORChain has accomplished a new achievement!</b>\n'
-            f'{pre(desc)} is now over {code(milestone_str)}{value_str}!'
-        )
+        msg = f'{emoji} <b>THORChain has accomplished a new achievement!</b>\n'
 
-        if a.has_previous:
-            msg += f'\nPrevious milestone was {pre(prev_milestone_str)} ({ago} ago)'
+        if a.key == a.ANNIVERSARY:
+            # special case for anniversary
+            msg += f"Happy Birthday! It's been {milestone_str} years since the first block!"
+        else:
+            # default case
+            msg += f'{pre(desc)} is now over {code(milestone_str)}{value_str}!'
+            if a.has_previous:
+                msg += f'\nPrevious milestone was {pre(prev_milestone_str)} ({ago} ago)'
 
         return msg
