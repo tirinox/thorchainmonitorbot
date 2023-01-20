@@ -58,10 +58,12 @@ def random_achievement():
     return rec
 
 
-async def demo_achievements_picture(lang=None, a=None):
+async def demo_achievements_picture(lang=None, a=None, v=None, milestone=None):
     # rec = random_achievement()
     # rec = Achievement(Achievement.MARKET_CAP_USD, 501_344_119, 500_000_000, now_ts(), 0, 0)
-    rec = Achievement(a or Achievement.SAVER_VAULT_EARNED_ASSET, 501_344_119, 500_000_000, now_ts(), 0, 0, 'BNB')
+    v = v or 501_344_119
+    milestone = milestone or 500_000_000
+    rec = Achievement(a or Achievement.SAVER_VAULT_EARNED_ASSET, v, milestone, now_ts(), 0, 0, 'BNB')
     lang = lang or Language.ENGLISH
 
     loc = AchievementsRussianLocalization() if lang == Language.RUSSIAN else AchievementsEnglishLocalization()
@@ -86,8 +88,11 @@ async def demo_all_achievements():
         print(loc.__class__.__name__)
 
         for ach_key in loc.desc_map:
+            v = random.randint(1, 1_000_000)
+            ml = Milestones().previous(v)
+
             spec = random.choice(['BNB', 'BTC', 'ETH', 'LTC', 'DOGE'])
-            rec = Achievement(ach_key, 501_344, 500_000, now_ts(), 200_000,
+            rec = Achievement(ach_key, v, ml, now_ts(), 200_000,
                               now_ts() - random.randint(1, 30 * DAY), spec)
 
             # loc = AchievementsEnglishLocalization()
@@ -122,9 +127,9 @@ async def main():
     async with app(brief=True):
         # await demo_debug_logic(app)
         # await demo_run_pipeline(app)
-        await demo_achievements_picture(Language.ENGLISH, Achievement.SAVER_VAULT_MEMBERS)
+        # await demo_achievements_picture(Language.ENGLISH, Achievement.ANNIVERSARY, 1, 1)
         # await demo_achievements_picture(Language.ENGLISH, Achievement.SAVER_VAULT_MEMBERS)
-        # await demo_all_achievements()
+        await demo_all_achievements()
 
 
 if __name__ == '__main__':

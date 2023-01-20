@@ -162,6 +162,9 @@ def save_and_show_pic(pic, show=True, name='pic'):
     if not pic:
         return
 
+    if name.lower().endswith('.png'):
+        name = name[:-4]
+
     filepath = f'../temp/{name}.png'
 
     with open(filepath, 'wb') as f:
