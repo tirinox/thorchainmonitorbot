@@ -43,6 +43,7 @@ class Resources(metaclass=Singleton):
     BG_IMG = f'{BASE}/lp_bg.png'
 
     LOGO_FILE = f'{BASE}/tc_logo.png'
+    LOGO_FILE_TRANSPARENT = f'{BASE}/tc_logo_transparent.png'
 
     def __init__(self) -> None:
         self.fonts = FontCache(self.BASE)
@@ -59,6 +60,7 @@ class Resources(metaclass=Singleton):
         self.bg_image = Image.open(self.BG_IMG)
 
         self.tc_logo = Image.open(self.LOGO_FILE)
+        self.tc_logo_transparent = Image.open(self.LOGO_FILE_TRANSPARENT)
 
         self.logo_downloader = CryptoLogoDownloader(self.LOGO_BASE)
 

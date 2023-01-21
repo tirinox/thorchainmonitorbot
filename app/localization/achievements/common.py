@@ -75,7 +75,7 @@ class AchievementsLocalizationBase:
             value_str = desc.format_value(a.value, a)
         value_str = self._do_substitutions(a, value_str)
 
-        return ago, desc_text, emoji, milestone_str, prev_milestone_str, value_str
+        return desc, ago, desc_text, emoji, milestone_str, prev_milestone_str, value_str
 
     def __init__(self):
         self.desc_map = {a.key: a for a in self.ACHIEVEMENT_DESC_LIST}

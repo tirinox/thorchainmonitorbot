@@ -45,10 +45,8 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
     CELEBRATION_EMOJIES = "🎉🎊🥳🙌🥂🪅🎆"
 
     def notification_achievement_unlocked(self, a: Achievement):
-        ago, desc, emoji, milestone_str, prev_milestone_str, value_str = self.prepare_achievement_data(a)
-
-        if value_str:
-            value_str = f' ({pre(value_str)})'
+        desc, ago, desc, emoji, milestone_str, prev_milestone_str, value_str = self.prepare_achievement_data(a)
+        desc: ADesc
 
         msg = f'{emoji} <b>THORChain has accomplished a new achievement!</b>\n'
 
@@ -57,8 +55,13 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
             msg += f"Happy Birthday! It's been {milestone_str} years since the first block!"
         else:
             # default case
+            if value_str:
+                value_str = f' ({pre(value_str)})'
             msg += f'{pre(desc)} is now over {code(milestone_str)}{value_str}!'
             if a.has_previous:
                 msg += f'\nPrevious milestone was {pre(prev_milestone_str)} ({ago} ago)'
+
+        if desc.url:
+            msg += f'\n{desc.url}'
 
         return msg

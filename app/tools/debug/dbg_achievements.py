@@ -127,9 +127,9 @@ async def main():
     async with app(brief=True):
         # await demo_debug_logic(app)
         # await demo_run_pipeline(app)
-        # await demo_achievements_picture(Language.ENGLISH, Achievement.ANNIVERSARY, 1, 1)
-        # await demo_achievements_picture(Language.ENGLISH, Achievement.SAVER_VAULT_MEMBERS)
-        await demo_all_achievements()
+        await demo_achievements_picture(Language.ENGLISH, Achievement.ANNIVERSARY, 1, 1)
+        await demo_achievements_picture(Language.ENGLISH, Achievement.SAVER_VAULT_MEMBERS, 202, 200)
+        # await demo_all_achievements()
 
 
 if __name__ == '__main__':

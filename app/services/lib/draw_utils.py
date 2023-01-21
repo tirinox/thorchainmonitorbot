@@ -120,6 +120,7 @@ def round_corner(radius, fill, bg):
     """Draw a round corner"""
     corner = Image.new('RGB', (radius, radius), bg)
     draw = ImageDraw.Draw(corner)
+    # noinspection PyTypeChecker
     draw.pieslice((0, 0, radius * 2, radius * 2), 180, 270, fill=fill)
     return corner
 
@@ -146,8 +147,9 @@ def generate_gradient(
     mask = Image.new('L', (width, height))
     mask_data = []
     for y in range(height):
+        v = int(255 * (y / height))
         for x in range(width):
-            mask_data.append(int(255 * (y / height)))
+            mask_data.append(v)
     mask.putdata(mask_data)
     base.paste(top, (0, 0), mask)
     return base
@@ -471,3 +473,17 @@ def paste_image_masked(destination, source, xy, anchor='mm'):
 
     destination.paste(source, (x, y), source)
     return destination
+
+
+def measure_font_to_fit_in_box(font_getter, text, max_width, max_height, current_font_size=None, f=0.92):
+    current_font_size = current_font_size or min(max_width, max_height)
+
+    if current_font_size < 4:
+        return None
+
+    font = font_getter(int(current_font_size))
+    w, h = font.getsize(text)
+    if w > max_width or h > max_height:
+        return measure_font_to_fit_in_box(font_getter, text, max_width, max_height, current_font_size * f)
+
+    return font, w, h
