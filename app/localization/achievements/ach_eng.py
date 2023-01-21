@@ -10,7 +10,7 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
         ADesc(A.TEST_SPEC, 'Test metric', postfix=META_KEY_SPEC),
         ADesc(A.DAU, 'Daily active users'),
         ADesc(A.MAU, 'Monthly active users'),
-        ADesc(A.WALLET_COUNT, 'Wallets count'),
+        ADesc(A.WALLET_COUNT, 'Number of wallets'),
         ADesc(A.SWAP_COUNT_TOTAL, 'Total swaps count'),
         ADesc(A.SWAP_COUNT_24H, '24h swaps count'),
         ADesc(A.SWAP_COUNT_30D, 'Monthly swap count'),
@@ -24,7 +24,7 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
         ADesc(A.NODE_COUNT, 'Total nodes count', postfix=POSTFIX_RUNE),
         ADesc(A.ACTIVE_NODE_COUNT, 'Active nodes count'),
         ADesc(A.CHURNED_IN_BOND, 'Churned in bond', postfix=POSTFIX_RUNE),
-        ADesc(A.ANNIVERSARY, 'Anniversary'),  # todo: special emoji
+        ADesc(A.ANNIVERSARY, 'Anniversary'),
         ADesc(A.BLOCK_NUMBER, 'Blocks generated'),
         ADesc(A.DAILY_TX_COUNT, 'Daily TX count'),
         ADesc(A.TOTAL_MIMIR_VOTES, 'Total Mimir votes'),
@@ -36,16 +36,16 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
         ADesc(A.TOTAL_SAVED_USD, 'Total USD saved', prefix='$'),
         ADesc(A.TOTAL_SAVERS_EARNED_USD, 'Total USD earned', prefix='$'),
 
-        ADesc(A.SAVER_VAULT_SAVED_ASSET, 'Total saved ::asset::'),
-        ADesc(A.SAVER_VAULT_SAVED_USD, 'Savers vault ::asset:::\ntotal saved USD', prefix='$'),
-        ADesc(A.SAVER_VAULT_MEMBERS, '::asset:: savers vault members'),
+        ADesc(A.SAVER_VAULT_SAVED_ASSET, 'Savers depth ::asset::'),
+        ADesc(A.SAVER_VAULT_SAVED_USD, 'Savers depha ::asset:::\nin USD', prefix='$'),
+        ADesc(A.SAVER_VAULT_MEMBERS, '::asset:: savers count'),
         ADesc(A.SAVER_VAULT_EARNED_ASSET, 'Savers earned ::asset::'),
     ]
 
     CELEBRATION_EMOJIES = "🎉🎊🥳🙌🥂🪅🎆"
 
     def notification_achievement_unlocked(self, a: Achievement):
-        desc, ago, desc, emoji, milestone_str, prev_milestone_str, value_str = self.prepare_achievement_data(a)
+        desc, ago, desc_str, emoji, milestone_str, prev_milestone_str, value_str = self.prepare_achievement_data(a)
         desc: ADesc
 
         msg = f'{emoji} <b>THORChain has accomplished a new achievement!</b>\n'
@@ -57,7 +57,7 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
             # default case
             if value_str:
                 value_str = f' ({pre(value_str)})'
-            msg += f'{pre(desc)} is now over {code(milestone_str)}{value_str}!'
+            msg += f'{pre(desc_str)} is now over {code(milestone_str)}{value_str}!'
             if a.has_previous:
                 msg += f'\nPrevious milestone was {pre(prev_milestone_str)} ({ago} ago)'
 

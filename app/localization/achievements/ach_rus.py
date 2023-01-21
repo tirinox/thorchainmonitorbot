@@ -36,14 +36,14 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
         ADesc(A.TOTAL_SAVED_USD, 'Всего вложено в сберегательные хранилища', prefix='$'),
         ADesc(A.TOTAL_SAVERS_EARNED_USD, 'Всего заработано на сбережениях', prefix='$'),
 
-        ADesc(A.SAVER_VAULT_SAVED_ASSET, 'Всего в хранилище ::asset::'),
-        ADesc(A.SAVER_VAULT_SAVED_USD, 'Всего в хранилище ::asset:::\nвложено USD', prefix='$'),
+        ADesc(A.SAVER_VAULT_SAVED_ASSET, 'Глубина \nхранилища ::asset::'),
+        ADesc(A.SAVER_VAULT_SAVED_USD, 'Глубина сберегательного\nхранилища ::asset:: в USD', prefix='$'),
         ADesc(A.SAVER_VAULT_MEMBERS, '::asset:: хранилище\nКоличество участников'),
         ADesc(A.SAVER_VAULT_EARNED_ASSET, 'Сберегатели заработали ::asset::'),
     ]
 
     def notification_achievement_unlocked(self, a: Achievement):
-        desc, ago, desc, emoji, milestone_str, prev_milestone_str, value_str = self.prepare_achievement_data(a)
+        desc, ago, desc_str, emoji, milestone_str, prev_milestone_str, value_str = self.prepare_achievement_data(a)
 
         msg = f'{emoji} <b>THORChain совершил новое достижение!</b>\n'
         if a.key == a.ANNIVERSARY:
@@ -53,7 +53,7 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
             # default case
             if value_str:
                 value_str = f' ({pre(value_str)})'
-            msg += f'{pre(desc)} теперь больше, чем {code(milestone_str)}{value_str}!'
+            msg += f'{pre(desc_str)} теперь больше, чем {code(milestone_str)}{value_str}!'
             if a.has_previous:
                 msg += f'\nПредыдущая веха: {pre(prev_milestone_str)} ({ago} назад)'
 

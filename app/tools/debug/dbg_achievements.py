@@ -1,4 +1,5 @@
 import asyncio
+import datetime
 import os
 import random
 import time
@@ -88,12 +89,19 @@ async def demo_all_achievements():
         print(loc.__class__.__name__)
 
         for ach_key in loc.desc_map:
-            v = random.randint(1, 1_000_000)
+            if ach_key == Achievement.ANNIVERSARY:
+                v = random.randint(1, 10)
+            else:
+                v = random.randint(1, 1_000_000)
             ml = Milestones().previous(v)
 
+            ts = now_ts() - random.randint(1, 30 * DAY)
+            ts_prev = ts - random.randint(1, 30 * DAY)
             spec = random.choice(['BNB', 'BTC', 'ETH', 'LTC', 'DOGE'])
-            rec = Achievement(ach_key, v, ml, now_ts(), 200_000,
-                              now_ts() - random.randint(1, 30 * DAY), spec)
+            rec = Achievement(ach_key, v, ml, ts, 200_000,
+                              ts_prev, spec)
+
+            print('TS: ', ts, datetime.datetime.fromtimestamp(rec.timestamp).strftime('%B %d, %Y'))
 
             # loc = AchievementsEnglishLocalization()
             gen = AchievementPictureGenerator(loc, rec)
@@ -127,8 +135,9 @@ async def main():
     async with app(brief=True):
         # await demo_debug_logic(app)
         # await demo_run_pipeline(app)
-        await demo_achievements_picture(Language.ENGLISH, Achievement.ANNIVERSARY, 1, 1)
-        await demo_achievements_picture(Language.ENGLISH, Achievement.SAVER_VAULT_MEMBERS, 202, 200)
+        await demo_achievements_picture(Language.ENGLISH, Achievement.ANNIVERSARY, 2, 2)
+        await demo_achievements_picture(Language.RUSSIAN, Achievement.ANNIVERSARY, 2, 2)
+        # await demo_achievements_picture(Language.ENGLISH, Achievement.SAVER_VAULT_MEMBERS, 202, 200)
         # await demo_all_achievements()
 
 
