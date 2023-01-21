@@ -5,6 +5,7 @@ from PIL import Image, ImageDraw
 
 from localization.achievements.ach_eng import AchievementsEnglishLocalization
 from services.dialog.picture.common import BasePictureGenerator
+from services.dialog.picture.sprite_font import SpriteFont
 from services.dialog.picture.resources import Resources
 from services.jobs.achievements import Achievement
 from services.lib.date_utils import today_str
@@ -54,7 +55,7 @@ class AchievementPictureGenerator(BasePictureGenerator):
         draw = ImageDraw.Draw(image)
         font_getter = r.fonts.get_font
         font_getter_bold = r.fonts.get_font_bold
-        font_getter_main = self.main_number_font_getter(r)
+        font_main = self.main_number_font_getter(r)
 
         logo_y = 6
         main_number_y = 46
@@ -71,18 +72,22 @@ class AchievementPictureGenerator(BasePictureGenerator):
 
         # text = achievement_desc.format_value(self.ach.milestone, self.ach)
 
-        main_font, mw, mh = measure_font_to_fit_in_box(font_getter_main, milestone_str, 270, 280)
+        # main_font, mw, mh = measure_font_to_fit_in_box(font_getter_main, milestone_str, 270, 280)
         mx, my = self.pos_percent(50, main_number_y)
 
-        fill_color = main_colors[0]
-        main_colors = main_colors[1:]
-        start_stroke = (len(main_colors)) * stroke_step
-        for outline_color, stroke in zip(reversed(main_colors), range(start_stroke, 0, -stroke_step)):
-            draw.text((mx, my), milestone_str, fill=fill_color,
-                      font=main_font, anchor='mm', stroke_fill=outline_color, stroke_width=stroke)
+        main_number_label = font_main.render_string(milestone_str)
+        main_number_label.thumbnail((290, 280))
+        paste_image_masked(image, main_number_label, (mx, my))
+
+        # fill_color = main_colors[0]
+        # main_colors = main_colors[1:]
+        # start_stroke = (len(main_colors)) * stroke_step
+        # for outline_color, stroke in zip(reversed(main_colors), range(start_stroke, 0, -stroke_step)):
+        #     draw.text((mx, my), milestone_str, fill=fill_color,
+        #               font=main_font, anchor='mm', stroke_fill=outline_color, stroke_width=stroke)
 
         # ---- Description ----
-        desc_color = '#fff'
+        desc_color = '#b5f8ea'
         font_desc, *_ = measure_font_to_fit_in_box(font_getter_bold, desc_text, 890, 172, current_font_size=80)
 
         draw.text(self.pos_percent(50, desc_y), desc_text,
@@ -111,8 +116,8 @@ class AchievementPictureGenerator(BasePictureGenerator):
         else:
             return ['#ecfffc', '#1f756a', '#82e6d1']
 
-    def main_number_font_getter(self, r):
+    def main_number_font_getter(self, r) -> SpriteFont:
         if self.ach.key == Achievement.ANNIVERSARY:
-            return r.fonts.get_font_bold
+            return r.custom_font_runic
         else:
-            return r.fonts.get_font_norse_bold
+            return r.custom_font_runic

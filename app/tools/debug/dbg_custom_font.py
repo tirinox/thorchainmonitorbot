@@ -1,17 +1,18 @@
-from services.dialog.picture.custom_numbers import CustomNumbersFont
+from services.dialog.picture.sprite_font import SpriteFont
 from tools.lib.lp_common import save_and_show_pic, LpAppFramework
 
 
 def main():
     LpAppFramework.solve_working_dir_mess()
-    font = CustomNumbersFont('./data/achievement/numbers_runic')
+    font = SpriteFont('./data/achievement/numbers_runic')
 
     examples = [
         '$20K',
         '5',
         '100K R',
         '20M R',
-        '500'
+        '500',
+        'ETH', 'BNB', 'ATOM', 'DOGE', 'BTC', 'LTC', 'BCH', 'AVAX'
     ]
 
     for example in examples:

@@ -3,12 +3,14 @@ import os
 from PIL import Image
 
 from services.lib.draw_utils import paste_image_masked
+from services.lib.money import RAIDO_GLYPH
 
 
-class CustomNumbersFont:
-    AVAILABLE_SYMBOLS = '1234567890RKM$ '
+class SpriteFont:
+    AVAILABLE_SYMBOLS = f'1234567890ABCDEGKLMNTHROVX${RAIDO_GLYPH} '
     SYMBOLS_SPECIAL_NAMES = {
-        '$': 'USD'
+        '$': 'USD',
+        RAIDO_GLYPH: 'R',
     }
 
     def symbol_to_image(self, symbol: str) -> Image:
@@ -26,6 +28,10 @@ class CustomNumbersFont:
         self.symbols = {s: self.symbol_to_image(s) for s in self.AVAILABLE_SYMBOLS}
 
     def render_string(self, string):
+        for s in string:
+            if s not in self.symbols:
+                raise ValueError(f'Unknown symbol "{s}" in the string "{string}"!')
+
         images = [self.symbols.get(s) for s in string]
         if not images:
             return None

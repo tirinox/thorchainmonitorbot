@@ -3,6 +3,7 @@ import os.path
 from PIL import Image, ImageFont
 
 from services.dialog.picture.crypto_logo import CryptoLogoDownloader
+from services.dialog.picture.sprite_font import SpriteFont
 from services.lib.utils import Singleton
 
 
@@ -37,13 +38,15 @@ class FontCache(metaclass=Singleton):
 
 class Resources(metaclass=Singleton):
     BASE = './data'
-    LOGO_BASE = './data/asset_logo'
+    LOGO_BASE = f'{BASE}/asset_logo'
     LOGO_WIDTH, LOGO_HEIGHT = 128, 128
     HIDDEN_IMG = f'{BASE}/hidden.png'
     BG_IMG = f'{BASE}/lp_bg.png'
 
     LOGO_FILE = f'{BASE}/tc_logo.png'
     LOGO_FILE_TRANSPARENT = f'{BASE}/tc_logo_transparent.png'
+
+    CUSTOM_FONT_RUNIC = f'{BASE}/achievement/numbers_runic'
 
     def __init__(self) -> None:
         self.fonts = FontCache(self.BASE)
@@ -63,6 +66,8 @@ class Resources(metaclass=Singleton):
         self.tc_logo_transparent = Image.open(self.LOGO_FILE_TRANSPARENT)
 
         self.logo_downloader = CryptoLogoDownloader(self.LOGO_BASE)
+
+        self.custom_font_runic = SpriteFont(self.CUSTOM_FONT_RUNIC)
 
     def put_hidden_plate(self, image, position, anchor='left', ey=-3):
         x, y = position

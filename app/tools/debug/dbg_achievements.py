@@ -2,7 +2,6 @@ import asyncio
 import datetime
 import os
 import random
-import time
 
 from localization.achievements.ach_eng import AchievementsEnglishLocalization
 from localization.achievements.ach_rus import AchievementsRussianLocalization
@@ -137,7 +136,7 @@ async def main():
         # await demo_run_pipeline(app)
         await demo_achievements_picture(Language.ENGLISH, Achievement.ANNIVERSARY, 2, 2)
         await demo_achievements_picture(Language.RUSSIAN, Achievement.ANNIVERSARY, 2, 2)
-        # await demo_achievements_picture(Language.ENGLISH, Achievement.SAVER_VAULT_MEMBERS, 202, 200)
+        await demo_achievements_picture(Language.ENGLISH, Achievement.SAVER_VAULT_MEMBERS, 202, 200)
         # await demo_all_achievements()
 
 
