@@ -134,9 +134,9 @@ async def main():
     async with app(brief=True):
         # await demo_debug_logic(app)
         # await demo_run_pipeline(app)
-        await demo_achievements_picture(Language.ENGLISH, Achievement.ANNIVERSARY, 2, 2)
+        await demo_achievements_picture(Language.ENGLISH, Achievement.ANNIVERSARY, 3, 3)
         await demo_achievements_picture(Language.RUSSIAN, Achievement.ANNIVERSARY, 2, 2)
-        await demo_achievements_picture(Language.ENGLISH, Achievement.SAVER_VAULT_MEMBERS, 202, 200)
+        # await demo_achievements_picture(Language.ENGLISH, Achievement.SAVER_VAULT_MEMBERS, 202, 200)
         # await demo_all_achievements()
 
 

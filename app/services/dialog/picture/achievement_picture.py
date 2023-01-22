@@ -5,7 +5,6 @@ from PIL import Image, ImageDraw
 
 from localization.achievements.ach_eng import AchievementsEnglishLocalization
 from services.dialog.picture.common import BasePictureGenerator
-from services.dialog.picture.sprite_font import SpriteFont
 from services.dialog.picture.resources import Resources
 from services.jobs.achievements import Achievement
 from services.lib.date_utils import today_str
@@ -17,11 +16,6 @@ class AchievementPictureGenerator(BasePictureGenerator):
     BASE = './data/achievement'
     WIDTH = 1024
     HEIGHT = 1024
-
-    BG_DEFAULT = 'nn_wreath_2.png'
-    BG_SPECIAL = {
-        Achievement.ANNIVERSARY: 'nn_wreath_ann_2.png',
-    }
 
     def generate_picture_filename(self):
         return f'thorchain-ach-{self.ach.key}-{today_str()}.png'
@@ -37,9 +31,10 @@ class AchievementPictureGenerator(BasePictureGenerator):
     def pos_percent(self, px, py):
         return pos_percent(px, py, w=self.w, h=self.h)
 
-    def get_bg(self):
-        name = self.BG_SPECIAL.get(self.ach.key, self.BG_DEFAULT)
-        return os.path.join(self.BASE, name)
+    def get_bg(self, attributes):
+        path = os.path.join(self.BASE, attributes['background'])
+        image = Image.open(path)
+        return image
 
     @async_wrap
     def _get_picture_sync(self):
@@ -51,18 +46,15 @@ class AchievementPictureGenerator(BasePictureGenerator):
 
         # ---- Canvas ----
         r = Resources()
-        image = Image.open(self.get_bg())
+        attributes = self.custom_attributes(r)  # for this kind of achievement
+        image = self.get_bg(attributes)
         draw = ImageDraw.Draw(image)
         font_getter = r.fonts.get_font
         font_getter_bold = r.fonts.get_font_bold
-        font_main = self.main_number_font_getter(r)
 
         logo_y = 6
         main_number_y = 46
         desc_y = 89
-
-        main_colors = self.main_colors()
-        stroke_step = 4
 
         # ---- Logo ----
         paste_image_masked(image, r.tc_logo_transparent, self.pos_percent(50, logo_y), 'mm')
@@ -70,54 +62,54 @@ class AchievementPictureGenerator(BasePictureGenerator):
 
         # ---- Main number ----
 
-        # text = achievement_desc.format_value(self.ach.milestone, self.ach)
-
-        # main_font, mw, mh = measure_font_to_fit_in_box(font_getter_main, milestone_str, 270, 280)
         mx, my = self.pos_percent(50, main_number_y)
 
-        main_number_label = font_main.render_string(milestone_str)
+        main_number_label = attributes['main_font'].render_string(milestone_str)
         main_number_label.thumbnail((290, 280))
         paste_image_masked(image, main_number_label, (mx, my))
 
-        # fill_color = main_colors[0]
-        # main_colors = main_colors[1:]
-        # start_stroke = (len(main_colors)) * stroke_step
-        # for outline_color, stroke in zip(reversed(main_colors), range(start_stroke, 0, -stroke_step)):
-        #     draw.text((mx, my), milestone_str, fill=fill_color,
-        #               font=main_font, anchor='mm', stroke_fill=outline_color, stroke_width=stroke)
-
         # ---- Description ----
-        desc_color = '#b5f8ea'
+        desc_color = attributes['desc_color']
         font_desc, *_ = measure_font_to_fit_in_box(font_getter_bold, desc_text, 890, 172, current_font_size=80)
 
         draw.text(self.pos_percent(50, desc_y), desc_text,
                   fill=desc_color,
                   font=font_desc,
                   # stroke_fill='#000',
-                  stroke_fill='#1f756a',
+                  stroke_fill=attributes['desc_stroke'],
                   stroke_width=2,
                   anchor='mm', align='center')
 
         # ---- Date ----
         date_str = datetime.datetime.fromtimestamp(self.ach.timestamp).strftime('%B %d, %Y')
         date_str = date_str.upper()
-        draw.text(self.pos_percent(50, 99), date_str, fill='#aaa', font=font_getter(28), anchor='mb',
-                  # stroke_fill=main_outlines[0], stroke_width=2
-                  )
+        draw.text(self.pos_percent(50, 99), date_str,
+                  fill='#aaa', font=font_getter(28), anchor='mb')
 
         return image
 
     async def prepare(self):
         return await super().prepare()
 
-    def main_colors(self):
+    def custom_attributes(self, r):
         if self.ach.key == Achievement.ANNIVERSARY:
-            return ['#fff5b5', '#f211be', '#83acea']
+            bg = 'nn_wreath_ann_2.png'
+            main_font = r.custom_font_balloon
+            main_colors = ['#fff5b5', '#f211be', '#83acea']
+            desc_color = '#f4e18d'
+            desc_stroke = '#954c07'
+            # desc_stroke = '#ff6680'
         else:
-            return ['#ecfffc', '#1f756a', '#82e6d1']
+            bg = 'nn_wreath_ann_2.png'
+            main_font = r.custom_font_runic
+            main_colors = ['#ecfffc', '#1f756a', '#82e6d1']
+            desc_color = '#1f756a'
+            desc_stroke = '#1f756a'
 
-    def main_number_font_getter(self, r) -> SpriteFont:
-        if self.ach.key == Achievement.ANNIVERSARY:
-            return r.custom_font_runic
-        else:
-            return r.custom_font_runic
+        return {
+            'main_font': main_font,
+            'main_colors': main_colors,
+            'background': bg,
+            'desc_color': desc_color,
+            'desc_stroke': desc_stroke,
+        }
