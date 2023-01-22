@@ -8,11 +8,12 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
     ACHIEVEMENT_DESC_LIST = [
         ADesc(A.TEST, 'Test metric'),
         ADesc(A.TEST_SPEC, 'Test metric', postfix=META_KEY_SPEC),
+
         ADesc(A.DAU, 'Daily active users'),
         ADesc(A.MAU, 'Monthly active users'),
         ADesc(A.WALLET_COUNT, 'Number of wallets'),
-        ADesc(A.SWAP_COUNT_TOTAL, 'Total swaps count'),
-        ADesc(A.SWAP_COUNT_24H, '24h swaps count'),
+        ADesc(A.SWAP_COUNT_TOTAL, 'Total swap count'),
+        ADesc(A.SWAP_COUNT_24H, '24h swap count'),
         ADesc(A.SWAP_COUNT_30D, 'Monthly swap count'),
         ADesc(A.SWAP_UNIQUE_COUNT, 'Unique swappers'),
         ADesc(A.ADD_LIQUIDITY_COUNT_TOTAL, 'Total add liquidity count'),
@@ -23,7 +24,7 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
         ADesc(A.TOTAL_BOND, 'Total bond', postfix=POSTFIX_RUNE),
         ADesc(A.NODE_COUNT, 'Total nodes count', postfix=POSTFIX_RUNE),
         ADesc(A.ACTIVE_NODE_COUNT, 'Active nodes count'),
-        ADesc(A.CHURNED_IN_BOND, 'Churned in bond', postfix=POSTFIX_RUNE),
+
         ADesc(A.ANNIVERSARY, 'Anniversary'),
         ADesc(A.BLOCK_NUMBER, 'Blocks generated'),
         ADesc(A.DAILY_TX_COUNT, 'Daily TX count'),
@@ -37,7 +38,7 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
         ADesc(A.TOTAL_SAVERS_EARNED_USD, 'Total USD earned', prefix='$'),
 
         ADesc(A.SAVER_VAULT_SAVED_ASSET, 'Savers depth ::asset::'),
-        ADesc(A.SAVER_VAULT_SAVED_USD, 'Savers depha ::asset:::\nin USD', prefix='$'),
+        ADesc(A.SAVER_VAULT_SAVED_USD, 'Savers depth ::asset::: in USD', prefix='$'),
         ADesc(A.SAVER_VAULT_MEMBERS, '::asset:: savers count'),
         ADesc(A.SAVER_VAULT_EARNED_ASSET, 'Savers earned ::asset::'),
     ]

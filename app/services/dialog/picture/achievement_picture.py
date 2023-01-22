@@ -1,5 +1,6 @@
 import datetime
 import os.path
+import random
 
 from PIL import Image, ImageDraw
 
@@ -65,17 +66,23 @@ class AchievementPictureGenerator(BasePictureGenerator):
         mx, my = self.pos_percent(50, main_number_y)
 
         main_number_label = attributes['main_font'].render_string(milestone_str)
-        main_number_label.thumbnail((290, 280))
+        main_number_label.thumbnail(attributes['main_area'])
         paste_image_masked(image, main_number_label, (mx, my))
 
         # ---- Description ----
         desc_color = attributes['desc_color']
         font_desc, *_ = measure_font_to_fit_in_box(font_getter_bold, desc_text, 890, 172, current_font_size=80)
 
-        draw.text(self.pos_percent(50, desc_y), desc_text,
+        desc_pos = self.pos_percent(50, desc_y)
+        draw.text(desc_pos, desc_text,
                   fill=desc_color,
                   font=font_desc,
-                  # stroke_fill='#000',
+                  stroke_fill='#000',
+                  stroke_width=10,
+                  anchor='mm', align='center')
+        draw.text(desc_pos, desc_text,
+                  fill=desc_color,
+                  font=font_desc,
                   stroke_fill=attributes['desc_stroke'],
                   stroke_width=2,
                   anchor='mm', align='center')
@@ -98,13 +105,17 @@ class AchievementPictureGenerator(BasePictureGenerator):
             main_colors = ['#fff5b5', '#f211be', '#83acea']
             desc_color = '#f4e18d'
             desc_stroke = '#954c07'
-            # desc_stroke = '#ff6680'
+            main_area = (320, 320)
         else:
-            bg = 'nn_wreath_ann_2.png'
+            bg = random.choice([
+                'nn_wreath_1.png',
+                'nn_wreath_2.png',
+            ])
             main_font = r.custom_font_runic
             main_colors = ['#ecfffc', '#1f756a', '#82e6d1']
-            desc_color = '#1f756a'
+            desc_color = '#fff'
             desc_stroke = '#1f756a'
+            main_area = (290, 280)
 
         return {
             'main_font': main_font,
@@ -112,4 +123,5 @@ class AchievementPictureGenerator(BasePictureGenerator):
             'background': bg,
             'desc_color': desc_color,
             'desc_stroke': desc_stroke,
+            'main_area': main_area,
         }

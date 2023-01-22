@@ -55,7 +55,6 @@ class Achievement(NamedTuple):
     ACTIVE_NODE_COUNT = 'active_node_count'
     TOTAL_ACTIVE_BOND = 'total_active_bond'
     TOTAL_BOND = 'total_bond'
-    CHURNED_IN_BOND = 'churned_in_bond'
 
     TOTAL_MIMIR_VOTES = 'total_mimir_votes'
 
@@ -276,7 +275,6 @@ class AchievementsNotifier(WithLogger, WithDelegates, INotified):
     @staticmethod
     def on_node_changes(data: NodeSetChanges):
         achievements = [
-            A(A.CHURNED_IN_BOND, data.bond_churn_in),
             A(A.NODE_COUNT, len(data.nodes_all)),
             A(A.ACTIVE_NODE_COUNT, len(data.active_only_nodes)),
             # todo: total countries
