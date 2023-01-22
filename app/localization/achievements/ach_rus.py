@@ -48,7 +48,8 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
         msg = f'{emoji} <b>THORChain совершил новое достижение!</b>\n'
         if a.key == a.ANNIVERSARY:
             # special case for anniversary
-            msg += f"Happy Birthday! It's been {milestone_str} years since the first block!"
+            years_str = self._years_string(a.milestone)
+            msg += f"С Днем рождения! Уже {a.milestone} {years_str} с первого блока!"
         else:
             # default case
             if value_str:
@@ -61,3 +62,11 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
             msg += f'\n{desc.url}'
 
         return msg
+
+    @staticmethod
+    def _years_string(years: int) -> str:
+        if years == 1:
+            return 'год'
+        if years < 5:
+            return 'года'
+        return 'лет'
