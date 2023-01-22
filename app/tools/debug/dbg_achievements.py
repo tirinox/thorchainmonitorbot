@@ -91,7 +91,8 @@ async def demo_all_achievements():
             if ach_key == Achievement.ANNIVERSARY:
                 v = random.randint(1, 10)
             else:
-                v = random.randint(1, 1_000_000)
+                power = random.randint(1, 8)
+                v = random.randint(1, 10 ** power)
             ml = Milestones().previous(v)
 
             ts = now_ts() - random.randint(1, 30 * DAY)

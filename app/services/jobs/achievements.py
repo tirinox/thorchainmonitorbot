@@ -45,6 +45,7 @@ class Achievement(NamedTuple):
     SWAP_COUNT_24H = 'swap_count_24h'
     SWAP_COUNT_30D = 'swap_count_30d'
     SWAP_UNIQUE_COUNT = 'swap_unique_count'
+    SWAP_VOLUME_TOTAL_RUNE = 'swap_volume_total_rune'
 
     ADD_LIQUIDITY_COUNT_TOTAL = 'add_liquidity_count_total'
     ADD_LIQUIDITY_VOLUME_TOTAL = 'add_liquidity_volume_total'
@@ -260,6 +261,8 @@ class AchievementsNotifier(WithLogger, WithDelegates, INotified):
 
             A(A.TOTAL_ACTIVE_BOND, int(data.total_active_bond_rune)),
             A(A.TOTAL_BOND, int(data.total_bond_rune)),
+
+            A(A.SWAP_VOLUME_TOTAL_RUNE, int(data.swap_volume_rune)),
         ]
         return achievements
 
