@@ -13,6 +13,20 @@ def now_ts() -> float:
     return datetime.now().timestamp()  # don't use utcnow() since timestamp() does this conversion
 
 
+def now_ts_utc() -> float:
+    return datetime.utcnow().timestamp()
+
+
+def full_years_old_ts(birth_ts, today_ts=None) -> int:
+    today_ts = today_ts or now_ts_utc()
+    today = datetime.utcfromtimestamp(today_ts)
+    birth_date = datetime.utcfromtimestamp(birth_ts)
+    today_tuple = (today.month, today.day, today.hour, today.minute)
+    birth_tuple = (birth_date.month, birth_date.day, birth_date.hour, birth_date.minute)
+    yo = today.year - birth_date.year - int(today_tuple < birth_tuple)
+    return max(0, yo)
+
+
 def seconds_diff(t1: datetime, t2: datetime) -> float:
     return (t1 - t2).total_seconds()
 

@@ -5,7 +5,7 @@ from typing import NamedTuple, Optional, List
 from services.jobs.fetch.account_number import AccountNumberFetcher
 from services.jobs.fetch.const_mimir import MimirTuple
 from services.lib.cooldown import Cooldown
-from services.lib.date_utils import now_ts, YEAR
+from services.lib.date_utils import now_ts, full_years_old_ts
 from services.lib.db import DB
 from services.lib.delegates import WithDelegates, INotified
 from services.lib.depcont import DepContainer
@@ -265,7 +265,7 @@ class AchievementsNotifier(WithLogger, WithDelegates, INotified):
 
     @staticmethod
     def on_block(sender: LastBlockStore):
-        years_old = int((now_ts() - THORCHAIN_BIRTHDAY) / YEAR)
+        years_old = full_years_old_ts(THORCHAIN_BIRTHDAY)
         achievements = [
             A(A.BLOCK_NUMBER, int(sender.last_thor_block)),
             A(A.ANNIVERSARY, years_old),
