@@ -7,7 +7,7 @@ from services.lib.texts import code, pre
 class AchievementsEnglishLocalization(AchievementsLocalizationBase):
     ACHIEVEMENT_DESC_LIST = [
         ADesc(A.TEST, 'Test metric'),
-        ADesc(A.TEST_SPEC, 'Test metric', postfix=META_KEY_SPEC),
+        ADesc(A.TEST_SPEC, 'Test metric', postfix=POSTFIX_RUNE),
 
         ADesc(A.DAU, 'Daily active users'),
         ADesc(A.MAU, 'Monthly active users'),
@@ -37,8 +37,8 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
         ADesc(A.TOTAL_SAVED_USD, 'Total USD saved', prefix='$'),
         ADesc(A.TOTAL_SAVERS_EARNED_USD, 'Total USD earned', prefix='$'),
 
-        ADesc(A.SAVER_VAULT_SAVED_ASSET, 'Savers depth ::asset::'),
-        ADesc(A.SAVER_VAULT_SAVED_USD, 'Savers depth ::asset::: in USD', prefix='$'),
+        ADesc(A.SAVER_VAULT_SAVED_ASSET, '::asset:: Savers depth'),
+        ADesc(A.SAVER_VAULT_SAVED_USD, '::asset:: Savers depth in USD', prefix='$'),
         ADesc(A.SAVER_VAULT_MEMBERS, '::asset:: savers count'),
         ADesc(A.SAVER_VAULT_EARNED_ASSET, 'Savers earned ::asset::'),
     ]

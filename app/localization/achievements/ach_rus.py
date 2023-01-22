@@ -7,7 +7,7 @@ from services.lib.texts import code, pre
 class AchievementsRussianLocalization(AchievementsEnglishLocalization):
     ACHIEVEMENT_DESC_LIST = [
         ADesc(A.TEST, 'Тест метрика'),
-        ADesc(A.TEST_SPEC, 'Тест метрика', postfix=META_KEY_SPEC),
+        ADesc(A.TEST_SPEC, 'Тест метрика', postfix=POSTFIX_RUNE),
 
         ADesc(A.DAU, 'Активных пользователей ежедневно'),
         ADesc(A.MAU, 'Активных пользователей ежемесячно'),
