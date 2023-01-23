@@ -521,6 +521,11 @@ saver_stats:
   period: 3d
 
 
+wallet_counter: # (!) new
+  enabled: true
+  fetch_period: 1h
+
+
 achievements: # (!) new
   enabled: true
 
