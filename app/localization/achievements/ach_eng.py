@@ -51,7 +51,7 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
         desc, ago, desc_str, emoji, milestone_str, prev_milestone_str, value_str = self.prepare_achievement_data(a)
         desc: ADesc
 
-        msg = f'{emoji} <b>THORChain has accomplished a new achievement!</b>\n'
+        msg = f'{emoji} <b>THORChain has reached a new milestone!</b>\n'
 
         if a.key == a.ANNIVERSARY:
             # special case for anniversary

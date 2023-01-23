@@ -48,7 +48,7 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
     def notification_achievement_unlocked(self, a: Achievement):
         desc, ago, desc_str, emoji, milestone_str, prev_milestone_str, value_str = self.prepare_achievement_data(a)
 
-        msg = f'{emoji} <b>THORChain совершил новое достижение!</b>\n'
+        msg = f'{emoji} <b>THORChain достиг нового рубежа!</b>\n'
         if a.key == a.ANNIVERSARY:
             # special case for anniversary
             years_str = self._years_string(a.milestone)
