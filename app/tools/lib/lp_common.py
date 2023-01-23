@@ -29,7 +29,7 @@ class LpAppFramework(App):
             d.cfg.network_id = network
 
         d.loc_man.set_name_service(d.name_service)
-        d.twitter_bot = TwitterBotMock(d.cfg)
+        d.twitter_bot = TwitterBotMock(d.cfg, exceptions=True)
         d.last_block_fetcher = LastBlockFetcher(d)
         d.last_block_store = LastBlockStore(d)
 
@@ -175,4 +175,3 @@ def save_and_show_pic(pic, show=True, name='pic'):
 
     if show:
         os.system(f'open "{filepath}"')
-

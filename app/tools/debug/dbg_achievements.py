@@ -124,6 +124,8 @@ async def demo_run_pipeline(app: LpAppFramework):
     ach_fet.add_subscriber(ach_not)
     ach_not.add_subscriber(app.deps.alert_presenter)
 
+    # reset and clear
+    await ach_not.cd.clear()
     await ach_not.tracker.delete_achievement_record(Achievement.TEST)
     await ach_not.tracker.delete_achievement_record(Achievement.TEST_SPEC)
 
@@ -134,11 +136,11 @@ async def main():
     app = LpAppFramework()
     async with app(brief=True):
         # await demo_debug_logic(app)
-        # await demo_run_pipeline(app)
+        await demo_run_pipeline(app)
         # await demo_achievements_picture(Language.ENGLISH, Achievement.ANNIVERSARY, 3, 3)
         # await demo_achievements_picture(Language.RUSSIAN, Achievement.ANNIVERSARY, 2, 2)
         # await demo_achievements_picture(Language.ENGLISH, Achievement.SAVER_VAULT_MEMBERS, 202, 200)
-        await demo_all_achievements()
+        # await demo_all_achievements()
 
 
 if __name__ == '__main__':

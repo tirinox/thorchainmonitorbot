@@ -116,5 +116,11 @@ class TwitterBot:
 
 
 class TwitterBotMock(TwitterBot):
+    def __init__(self, cfg: Config, exceptions=False):
+        super().__init__(cfg)
+        self.exceptions = exceptions
+
     def post_sync(self, text: str, image=None):
         self.log_tweet(text, image)
+        if self.exceptions:
+            raise Exception('Alas! Mock exception!')
