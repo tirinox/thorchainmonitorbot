@@ -80,18 +80,20 @@ class ThorMetaSwap:
     trade_target: str
     affiliate_fee: float = 0.0  # (0..1) range
     memo: str = ''
-
-    # todo: add aff address
+    affiliate_address: str = ''  # highly likely to be a THORName
 
     @classmethod
     def parse(cls, j):
         fees = [ThorCoin(**cj) for cj in j.get('networkFees', [])]
-        return cls(liquidity_fee=j.get('liquidityFee', 0),
-                   network_fees=fees,
-                   trade_slip=j.get('swapSlip', '0'),
-                   trade_target=j.get('swapTarget', '0'),
-                   affiliate_fee=float(j.get('affiliateFee', 0)) / THOR_BASIS_POINT_MAX,
-                   memo=j.get('memo', ''))
+        return cls(
+            liquidity_fee=j.get('liquidityFee', 0),
+            network_fees=fees,
+            trade_slip=j.get('swapSlip', '0'),
+            trade_target=j.get('swapTarget', '0'),
+            affiliate_fee=float(j.get('affiliateFee', 0)) / THOR_BASIS_POINT_MAX,
+            memo=j.get('memo', ''),
+            affiliate_address=j.get('affiliateAddress', '')
+        )
 
     @property
     def trade_slip_percent(self):
