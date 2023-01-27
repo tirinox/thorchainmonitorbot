@@ -98,6 +98,15 @@ async def demo_aggr_aff(app):
     await present_one_aff_tx(app, q_path)
 
 
+async def demo_aggr_aff_2(app):
+    """
+    Midgard URL: https://midgard.ninerealms.com/v2/actions?txid=E6885BE2566B5D6BF49532CE97E65F1BBA3C9EDCA1BD95B9D34F3619AA41F656
+    Viewblock URL: https://viewblock.io/thorchain/tx/E6885BE2566B5D6BF49532CE97E65F1BBA3C9EDCA1BD95B9D34F3619AA41F656
+    """
+    q_path = free_url_gen.url_for_tx(0, 50, txid='E6885BE2566B5D6BF49532CE97E65F1BBA3C9EDCA1BD95B9D34F3619AA41F656')
+    await present_one_aff_tx(app, q_path)
+
+
 async def demo_test_2(app):
     q_path = free_url_gen.url_for_tx(0, 50, txid='7D72CBE466F8E817B700D11D0EDB8FE6183B8DD13912F0810FFD87BE708363E9')
     await present_one_aff_tx(app, q_path)
@@ -276,6 +285,22 @@ async def demo_verify_tx_scanner_in_the_past(app: LpAppFramework):
         page += 1
 
 
+async def find_affiliate_txs(app: LpAppFramework, desired_count=5, tx_types=None):
+    d = app.deps
+    fetcher_tx = TxFetcher(d)
+
+    interesting_txs = []
+    page = 0
+    tx_types = tx_types or (ThorTxType.TYPE_ADD_LIQUIDITY, ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_SWAP)
+    while len(interesting_txs) < desired_count:
+        page_results = await fetcher_tx.fetch_one_batch(page, tx_types=tx_types)
+        for tx in page_results.txs:
+            if tx.meta_swap and tx.meta_swap.affiliate_address:
+                interesting_txs.append(tx)
+                print(f'Found interesting tx: {tx}')
+        page += 1
+
+
 async def main():
     app = LpAppFramework()
     await app.prepare(brief=True)
@@ -285,9 +310,9 @@ async def main():
     # await midgard_test_kill_switch(app)
     # await refund_full_rune(app)
     # await demo_midgard_test_large_ilp(app)
-    await demo_full_tx_pipeline(app, announce=True)
+    # await demo_full_tx_pipeline(app, announce=True)
     # await demo_test_savers_vaults(app)
-    # await demo_aggr_aff(app)
+    # await demo_aggr_aff_2(app)
     # await demo_test_aff_add_liq(app)
     # await demo_test_2(app)
     # await demo_same_merge_swap(app)
@@ -296,6 +321,7 @@ async def main():
     # await demo_midgard_test_large_ilp(app)
     # await demo_savers_add(app)
     # await demo_verify_tx_scanner_in_the_past(app)
+    await find_affiliate_txs(app, 1, (ThorTxType.TYPE_SWAP,))
 
 
 if __name__ == '__main__':
