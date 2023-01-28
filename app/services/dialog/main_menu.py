@@ -39,6 +39,7 @@ class MainMenuDialog(BaseDialog):
             await SettingsDialog(self.loc, self.data, self.deps, self.message).ask_language(message)
         else:
             info = await LiquidityCapNotifier.get_last_cap_from_db(self.deps.db)
+            info.price = self.deps.price_holder.usd_per_rune
 
             keyboard = kbd([
                 # 1st row
@@ -78,8 +79,7 @@ class MainMenuDialog(BaseDialog):
 
     @message_handler(commands='price', state='*')
     async def cmd_price(self, message: Message):
-        await MetricsDialog(self.loc, self.data, self.deps, self.message) \
-            .on_price_duration_answered(message, explicit_period=7 * DAY)
+        await MetricsDialog(self.loc, self.data, self.deps, self.message).show_price(message, 7 * DAY)
 
     @message_handler(commands='nodes', state='*')
     async def cmd_nodes(self, message: Message):
