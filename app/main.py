@@ -159,6 +159,8 @@ class App:
     async def _run_background_jobs(self):
         d = self.deps
 
+        # ----- PREPARE TASKS -----
+
         await self._some_sleep()
 
         if 'REPLACE_RUNE_TIMESERIES_WITH_GECKOS' in os.environ:
@@ -177,22 +179,38 @@ class App:
         await d.node_info_fetcher.fetch()  # get nodes beforehand
         await d.mimir_const_fetcher.fetch()  # get constants beforehand
 
+        # ----- MANDATORY TASKS -----
+
+        fetcher_queue = QueueFetcher(d)
+        store_queue = QueueStoreMetrics(d)
+        fetcher_queue.add_subscriber(store_queue)
+
         tasks = [
             # mandatory tasks:
             d.pool_fetcher,
             d.mimir_const_fetcher,
             d.last_block_fetcher,
+            fetcher_queue,
         ]
 
-        if d.cfg.get('tx.enabled', True):
-            dedicated_tx_fetcher_enabled = d.cfg.tx.liquidity.dedicated_fetcher.get('enabled', True)
+        # ----- OPTIONAL TASKS -----
 
+        achievements_enabled = d.cfg.get('achievements.enabled', True)
+        achievements = AchievementsNotifier(d)
+        if achievements_enabled:
+            achievements.add_subscriber(d.alert_presenter)
+
+            # achievements will subscribe to other components later in this method
+            d.last_block_store.add_subscriber(achievements)
+
+        if d.cfg.get('tx.enabled', True):
             main_tx_types = [
                 ThorTxType.TYPE_SWITCH,
                 ThorTxType.TYPE_SWAP,
                 ThorTxType.TYPE_REFUND,
             ]
 
+            dedicated_tx_fetcher_enabled = d.cfg.tx.liquidity.dedicated_fetcher.get('enabled', True)
             if not dedicated_tx_fetcher_enabled:
                 main_tx_types += [
                     ThorTxType.TYPE_ADD_LIQUIDITY,
@@ -216,6 +234,9 @@ class App:
 
             d.volume_recorder = VolumeRecorder(d)
             volume_filler.add_subscriber(d.volume_recorder)
+
+            if achievements_enabled:
+                volume_filler.add_subscriber(achievements)
 
             if d.cfg.tx.dex_aggregator_update.get('enabled', True):
                 dex_report_notifier = DexReportNotifier(d, d.dex_analytics)
@@ -274,18 +295,6 @@ class App:
             fetcher_cap.add_subscriber(notifier_cap)
             tasks.append(fetcher_cap)
 
-        fetcher_queue = QueueFetcher(d)
-        tasks.append(fetcher_queue)
-        store_queue = QueueStoreMetrics(d)
-        fetcher_queue.add_subscriber(store_queue)
-
-        achievements_enabled = d.cfg.get('achievements.enabled', True)
-        achievements = AchievementsNotifier(d)
-        if achievements_enabled:
-            # achievements will subscribe to other components later in this method
-            achievements.add_subscriber(d.alert_presenter)
-            # todo: add wallet counter to achievements
-
         if d.cfg.get('queue.enabled', True):
             notifier_queue = QueueNotifier(d)
             store_queue.add_subscriber(notifier_queue)
@@ -298,9 +307,6 @@ class App:
 
             if achievements_enabled:
                 fetcher_stats.add_subscriber(achievements)
-
-        if achievements_enabled:
-            d.last_block_store.add_subscriber(achievements)
 
         if d.cfg.get('last_block.enabled', True):
             d.block_notifier = BlockHeightNotifier(d)
@@ -419,13 +425,13 @@ class App:
                 d.pool_fetcher.add_subscriber(ssf)
                 ssf.add_subscriber(achievements)
 
-        if d.cfg.get('wallet_counter.enabled', True) and achievements_enabled:  # only used for achievements
+        if d.cfg.get('wallet_counter.enabled', True) and achievements_enabled:  # only used along with achievements
             wallet_counter = AccountNumberFetcher(d)
             tasks.append(wallet_counter)
             if achievements_enabled:
                 wallet_counter.add_subscriber(achievements)
 
-        # --- BOTS
+        # ------- BOTS -------
 
         sticker_downloader = TelegramStickerDownloader(d.telegram_bot.dp)
 
@@ -445,7 +451,12 @@ class App:
                 logging.info('Using real Twitter bot.')
                 d.twitter_bot = TwitterBot(d.cfg)
 
+        # ------- END INIT -------
+
         self.deps.is_loading = False
+        logging.info('Loading finished. Starting background jobs...')
+
+        # start background jobs
         await asyncio.gather(*(task.run() for task in tasks))
 
     async def on_startup(self, _):
