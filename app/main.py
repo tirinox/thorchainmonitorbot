@@ -85,6 +85,7 @@ class App:
         d.mimir_const_fetcher = ConstMimirFetcher(d)
         d.mimir_const_holder = MimirHolder()
         d.pool_fetcher = PoolFetcher(d)
+        d.last_block_fetcher = LastBlockFetcher(d)
 
         self._init_settings()
         self._init_messaging()
@@ -169,13 +170,18 @@ class App:
             logging.error("No pool data at startup! Halt it!")
             exit(-1)
 
+        d.last_block_store = LastBlockStore(d)
+        d.last_block_fetcher.add_subscriber(d.last_block_store)
+
+        await d.last_block_fetcher.run_once()
         await d.node_info_fetcher.fetch()  # get nodes beforehand
         await d.mimir_const_fetcher.fetch()  # get constants beforehand
 
         tasks = [
             # mandatory tasks:
             d.pool_fetcher,
-            d.mimir_const_fetcher
+            d.mimir_const_fetcher,
+            d.last_block_fetcher,
         ]
 
         if d.cfg.get('tx.enabled', True):
@@ -292,12 +298,6 @@ class App:
 
             if achievements_enabled:
                 fetcher_stats.add_subscriber(achievements)
-
-        d.last_block_fetcher = LastBlockFetcher(d)
-        tasks.append(d.last_block_fetcher)
-
-        d.last_block_store = LastBlockStore(d)
-        d.last_block_fetcher.add_subscriber(d.last_block_store)
 
         if achievements_enabled:
             d.last_block_store.add_subscriber(achievements)
