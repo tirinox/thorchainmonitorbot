@@ -655,6 +655,8 @@ class BaseLocalization(ABC):  # == English
         pair = self.cfg.as_str('price.cex_reference.pair', DEFAULT_CEX_BASE_ASSET)
         return f'RUNE/{pair}'
 
+    TEXT_PRICE_NO_DATA = 'Sorry. No price data available yet. Please try again later.'
+
     def notification_text_price_update(self, p: PriceReport, ath=False, halted_chains=None):
         title = bold('Price update') if not ath else bold('🚀 A new all-time high has been achieved!')
 

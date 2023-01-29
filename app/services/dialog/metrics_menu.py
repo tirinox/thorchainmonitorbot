@@ -213,6 +213,11 @@ class MetricsDialog(BaseDialog):
 
     async def show_price(self, message, period):
         market_info = await self.deps.rune_market_fetcher.get_rune_market_info()
+
+        if not market_info:
+            await message.answer(self.loc.TEXT_PRICE_NO_DATA, disable_notification=True)
+            return
+
         pn = PriceNotifier(self.deps)
         price_1h, price_24h, price_7d = await pn.historical_get_triplet()
         market_info.pool_rune_price = self.deps.price_holder.usd_per_rune

@@ -474,6 +474,8 @@ class RussianLocalization(BaseLocalization):
 
     # ------- PRICE -------
 
+    TEXT_PRICE_NO_DATA = 'Извините. Пока что нет данных о цене. Попробуйте позже.'
+
     def notification_text_price_update(self, p: PriceReport, ath=False, halted_chains=None):
         title = bold('Обновление цены') if not ath else bold('🚀 Достигнуть новый исторический максимум!')
 
