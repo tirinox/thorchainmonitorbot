@@ -55,8 +55,10 @@ class AchievementsTracker(WithLogger):
             # check if we need to update
             if current_milestone > record.value:
                 new_record = Achievement(
-                    str(name), int(value), current_milestone, now_ts(),
-                    prev_milestone=record.milestone, previous_ts=record.timestamp,
+                    str(name), int(value), current_milestone,
+                    timestamp=now_ts(),
+                    prev_milestone=record.milestone,
+                    previous_ts=record.timestamp,  # fixme: mistake here! ignore previous_ts
                     specialization=event.specialization,
                 )
                 await self.set_achievement_record(new_record)
