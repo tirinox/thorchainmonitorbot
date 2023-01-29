@@ -4,6 +4,7 @@ from typing import NamedTuple, Optional, List
 
 from services.jobs.fetch.account_number import AccountNumberFetcher
 from services.jobs.fetch.const_mimir import MimirTuple
+from services.lib.constants import THORCHAIN_BIRTHDAY
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import now_ts, full_years_old_ts
 from services.lib.db import DB
@@ -16,8 +17,6 @@ from services.models.node_info import NodeSetChanges
 from services.models.price import RuneMarketInfo, LastPriceHolder
 from services.models.savers import AllSavers
 from services.notify.types.block_notify import LastBlockStore
-
-THORCHAIN_BIRTHDAY = 1618058210955 * 0.001  # 2021-04-10T12:36:50.955991742Z
 
 
 class Achievement(NamedTuple):
