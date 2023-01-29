@@ -1,6 +1,6 @@
 import pytest
 
-from services.jobs.achievements import Milestones
+from services.jobs.achievement.milestones import Milestones
 
 m = Milestones()
 

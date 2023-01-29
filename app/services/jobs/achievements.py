@@ -1,7 +1,8 @@
 import json
-import math
 from typing import NamedTuple, Optional, List
 
+from services.jobs.achievement.ach_list import Achievement, A, GROUP_EVERY_1, GROUP_MINIMALS
+from services.jobs.achievement.milestones import Milestones
 from services.jobs.fetch.account_number import AccountNumberFetcher
 from services.jobs.fetch.const_mimir import MimirTuple
 from services.lib.constants import THORCHAIN_BIRTHDAY
@@ -11,135 +12,13 @@ from services.lib.db import DB
 from services.lib.delegates import WithDelegates, INotified
 from services.lib.depcont import DepContainer
 from services.lib.money import Asset
-from services.lib.utils import WithLogger
+from services.lib.utils import WithLogger, is_list_of_type
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges
 from services.models.price import RuneMarketInfo, LastPriceHolder
 from services.models.savers import AllSavers
+from services.models.tx import ThorTx
 from services.notify.types.block_notify import LastBlockStore
-
-
-class Achievement(NamedTuple):
-    key: str
-    value: int  # real current value
-    milestone: int = 0  # current milestone
-    timestamp: float = 0
-    prev_milestone: int = 0
-    previous_ts: float = 0
-    specialization: str = ''
-
-    TEST = '__test'
-    TEST_SPEC = '__test_sp'
-
-    DAU = 'dau'
-    MAU = 'mau'
-    WALLET_COUNT = 'wallet_count'
-
-    DAILY_TX_COUNT = 'daily_tx_count'  # todo
-    DAILY_VOLUME = 'daily_volume'  # todo
-    BLOCK_NUMBER = 'block_number'
-    ANNIVERSARY = 'anniversary'
-
-    SWAP_COUNT_TOTAL = 'swap_count_total'
-    SWAP_COUNT_24H = 'swap_count_24h'
-    SWAP_COUNT_30D = 'swap_count_30d'
-    SWAP_UNIQUE_COUNT = 'swap_unique_count'
-    SWAP_VOLUME_TOTAL_RUNE = 'swap_volume_total_rune'
-
-    ADD_LIQUIDITY_COUNT_TOTAL = 'add_liquidity_count_total'
-    ADD_LIQUIDITY_VOLUME_TOTAL = 'add_liquidity_volume_total'
-
-    ILP_PAID_TOTAL = 'ilp_paid_total'
-
-    NODE_COUNT = 'node_count'
-    ACTIVE_NODE_COUNT = 'active_node_count'
-    TOTAL_ACTIVE_BOND = 'total_active_bond'
-    TOTAL_BOND = 'total_bond'
-
-    TOTAL_MIMIR_VOTES = 'total_mimir_votes'
-
-    MARKET_CAP_USD = 'market_cap_usd'
-    TOTAL_POOLS = 'total_pools'
-    TOTAL_ACTIVE_POOLS = 'total_active_pools'
-
-    TOTAL_UNIQUE_SAVERS = 'total_unique_savers'
-    TOTAL_SAVED_USD = 'total_saved_usd'
-    TOTAL_SAVERS_EARNED_USD = 'total_savers_earned_usd'
-
-    SAVER_VAULT_SAVED_USD = 'saver_vault_saved_usd'
-    SAVER_VAULT_SAVED_ASSET = 'saver_vault_saved_asset'
-    SAVER_VAULT_MEMBERS = 'saver_vault_members'
-    SAVER_VAULT_EARNED_ASSET = 'saver_vault_earned_asset'
-
-    @classmethod
-    def all_keys(cls):
-        return [getattr(cls, k) for k in cls.__dict__
-                if not k.startswith('_') and k.upper() == k]
-
-    @property
-    def has_previous(self):
-        return self.prev_milestone > 0 and self.previous_ts > 0
-
-
-A = Achievement
-
-# every single digit is a milestone
-GROUP_EVERY_1 = {
-    A.BLOCK_NUMBER,
-    A.ANNIVERSARY,
-    A.WALLET_COUNT,  # ok?
-}
-
-# this metrics only trigger when greater than their minimums
-GROUP_MINIMALS = {
-    A.DAU: 300,
-    A.MAU: 6500,
-    A.WALLET_COUNT: 61000,
-    A.BLOCK_NUMBER: 7_000_000,
-    A.ANNIVERSARY: 1,
-}
-
-
-class Milestones:
-    MILESTONE_DEFAULT_PROGRESSION = [1, 2, 5]
-
-    def __init__(self, progression=None):
-        self.progression = progression or self.MILESTONE_DEFAULT_PROGRESSION
-
-    def milestone_nearest(self, x, before: bool):
-        progress = self.progression
-        x = int(x)
-        if x <= 0:
-            return self.progression[0]
-
-        mag = 10 ** int(math.log10(x))
-        if before:
-            delta = -1
-            mag *= 10
-        else:
-            delta = 1
-        i = 0
-
-        while True:
-            step = progress[i]
-            y = step * mag
-            if before and x >= y:
-                return y
-            if not before and x < y:
-                return y
-            i += delta
-            if i < 0:
-                i = len(progress) - 1
-                mag //= 10
-            elif i >= len(progress):
-                i = 0
-                mag *= 10
-
-    def next(self, x):
-        return self.milestone_nearest(x, before=False)
-
-    def previous(self, x):
-        return self.milestone_nearest(x, before=True)
 
 
 class AchievementsTracker(WithLogger):
@@ -235,6 +114,8 @@ class AchievementsNotifier(WithLogger, WithDelegates, INotified):
             kv_events = self.on_savers(data, self.deps.price_holder)
         elif isinstance(sender, AccountNumberFetcher):
             kv_events = [A(A.WALLET_COUNT, int(data))]
+        elif is_list_of_type(data, ThorTx):
+            kv_events = self.on_thor_tx_list(data)
         elif isinstance(data, AchievementTest):
             if data.specialization:
                 kv_events = [A(A.TEST_SPEC, data.value, specialization=data.specialization)]
@@ -318,6 +199,11 @@ class AchievementsNotifier(WithLogger, WithDelegates, INotified):
 
         return achievements
 
+    @staticmethod
+    def on_thor_tx_list(txs: List[ThorTx]):
+        achievements = []
+        return achievements
+
     async def on_data(self, sender, data):
         try:
             kv_events = await self.extract_events_by_type(sender, data)
@@ -342,6 +228,6 @@ class AchievementsNotifier(WithLogger, WithDelegates, INotified):
         self.deps = deps
         self.tracker = AchievementsTracker(deps.db)
 
-        cd = deps.cfg.as_interval('achievements.cooldown.period', '10m')
-        max_times = deps.cfg.as_int('achievements.cooldown.hits_before_cd', 3)
+        cd = deps.cfg.as_interval('achievement.cooldown.period', '10m')
+        max_times = deps.cfg.as_int('achievement.cooldown.hits_before_cd', 3)
         self.cd = Cooldown(self.deps.db, 'Achievements:Notification', cd, max_times)

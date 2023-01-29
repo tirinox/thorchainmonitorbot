@@ -1,7 +1,7 @@
 import random
 from typing import NamedTuple
 
-from services.jobs.achievements import Achievement
+from services.jobs.achievement.ach_list import Achievement
 from services.lib.date_utils import seconds_human
 from services.lib.money import short_money, RAIDO_GLYPH
 

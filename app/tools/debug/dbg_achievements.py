@@ -7,8 +7,8 @@ from localization.achievements.ach_eng import AchievementsEnglishLocalization
 from localization.achievements.ach_rus import AchievementsRussianLocalization
 from localization.languages import Language
 from services.dialog.picture.achievement_picture import AchievementPictureGenerator
-from services.jobs.achievements import AchievementsTracker, AchievementsNotifier, AchievementTest, Achievement, \
-    Milestones
+from services.jobs.achievements import AchievementsTracker, AchievementsNotifier, AchievementTest, Milestones
+from services.jobs.achievement.ach_list import Achievement
 from services.jobs.fetch.base import BaseFetcher
 from services.lib.date_utils import now_ts, DAY
 from services.lib.depcont import DepContainer

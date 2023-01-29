@@ -7,7 +7,7 @@ from PIL import Image, ImageDraw
 from localization.achievements.ach_eng import AchievementsEnglishLocalization
 from services.dialog.picture.common import BasePictureGenerator
 from services.dialog.picture.resources import Resources
-from services.jobs.achievements import Achievement
+from services.jobs.achievement.ach_list import Achievement
 from services.lib.date_utils import today_str
 from services.lib.draw_utils import pos_percent, paste_image_masked, measure_font_to_fit_in_box
 from services.lib.utils import async_wrap

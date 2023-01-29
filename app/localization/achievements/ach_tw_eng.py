@@ -1,6 +1,6 @@
 from localization.achievements.ach_eng import AchievementsEnglishLocalization
 
-from services.jobs.achievements import Achievement
+from services.jobs.achievement.ach_list import Achievement
 
 
 class AchievementsTwitterEnglishLocalization(AchievementsEnglishLocalization):
