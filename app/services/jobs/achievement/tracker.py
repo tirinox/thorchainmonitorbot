@@ -46,7 +46,8 @@ class AchievementsTracker(WithLogger):
         if record is None:
             # first time, just write and return
             record = Achievement(
-                str(name), int(value), current_milestone, now_ts(),
+                str(name), int(value), current_milestone,
+                timestamp=0,
                 specialization=event.specialization
             )
             await self.set_achievement_record(record)
@@ -58,7 +59,7 @@ class AchievementsTracker(WithLogger):
                     str(name), int(value), current_milestone,
                     timestamp=now_ts(),
                     prev_milestone=record.milestone,
-                    previous_ts=record.timestamp,  # fixme: mistake here! ignore previous_ts
+                    previous_ts=record.timestamp,
                     specialization=event.specialization,
                 )
                 await self.set_achievement_record(new_record)
