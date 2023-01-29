@@ -189,14 +189,14 @@ class AchievementsTracker(WithLogger):
         else:
             # check if we need to update
             if current_milestone > record.value:
-                record = Achievement(
+                new_record = Achievement(
                     str(name), int(value), current_milestone, now_ts(),
                     prev_milestone=record.milestone, previous_ts=record.timestamp,
                     specialization=event.specialization,
                 )
-                await self.set_achievement_record(record)
-                self.logger.info(f'Achievement record updated {record}')
-                return record
+                await self.set_achievement_record(new_record)
+                self.logger.info(f'Achievement record updated {new_record}')
+                return new_record
 
     async def get_achievement_record(self, key, specialization) -> Optional[Achievement]:
         key = self.key(key, specialization)
@@ -242,7 +242,7 @@ class AchievementsNotifier(WithLogger, WithDelegates, INotified):
             else:
                 kv_events = [A(A.TEST, data.value)]
         else:
-            self.logger.warning(f'Unknown data type {type(data)}. Dont know how to handle it.')
+            self.logger.warning(f'Unknown data type {type(data)} from {sender}. Dont know how to handle it.')
             kv_events = []
         return kv_events
 
