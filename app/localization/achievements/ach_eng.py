@@ -34,7 +34,7 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
 
         ADesc(A.TOTAL_UNIQUE_SAVERS, 'Total unique savers'),
         ADesc(A.TOTAL_SAVED_USD, 'Total USD saved', prefix='$'),
-        ADesc(A.TOTAL_SAVERS_EARNED_USD, 'Total USD earned', prefix='$'),
+        ADesc(A.TOTAL_SAVERS_EARNED_USD, 'Savers: Total USD earned', prefix='$'),
 
         ADesc(A.SAVER_VAULT_SAVED_ASSET, '::asset:: Savers depth'),
         ADesc(A.SAVER_VAULT_SAVED_USD, '::asset:: Savers depth in USD', prefix='$'),
