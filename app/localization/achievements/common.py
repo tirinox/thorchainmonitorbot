@@ -60,7 +60,7 @@ class AchievementsLocalizationBase:
     def prepare_achievement_data(self, a: Achievement, newlines=False):
         desc = self.get_achievement_description(a.key)
         emoji = random.choice(self.CELEBRATION_EMOJIES)
-        ago = seconds_human(a.timestamp - a.previous_ts) if a.previous_ts else ''
+        ago = seconds_human(a.timestamp - a.previous_ts) if a.previous_ts and a.has_previous else ''
         milestone_str = desc.format_value(a.milestone, a)
         prev_milestone_str = desc.format_value(a.prev_milestone, a)
 

@@ -1,5 +1,7 @@
 from typing import NamedTuple
 
+ACH_CUT_OFF_TS = 1674473134.216954
+
 
 class Achievement(NamedTuple):
     key: str
@@ -67,7 +69,7 @@ class Achievement(NamedTuple):
 
     @property
     def has_previous(self):
-        return self.prev_milestone > 0 and self.previous_ts > 0
+        return self.prev_milestone > 0 and self.previous_ts > ACH_CUT_OFF_TS
 
 
 A = Achievement
@@ -76,7 +78,8 @@ A = Achievement
 GROUP_EVERY_1 = {
     A.BLOCK_NUMBER,
     A.ANNIVERSARY,
-    A.WALLET_COUNT,  # ok?
+    A.WALLET_COUNT,
+    # A.COIN_MARKET_CAP_RANK,
 }
 
 # this metrics only trigger when greater than their minimums
@@ -87,6 +90,7 @@ GROUP_MINIMALS = {
     A.BLOCK_NUMBER: 7_000_000,
     A.ANNIVERSARY: 1,
     A.MAX_SWAP_AMOUNT_USD: 1_329_208.3072876,
+    # A.COIN_MARKET_CAP_RANK: 42,
 }
 
 
