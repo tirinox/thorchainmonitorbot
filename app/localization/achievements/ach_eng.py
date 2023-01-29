@@ -42,6 +42,8 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
         ADesc(A.SAVER_VAULT_EARNED_ASSET, 'Savers earned ::asset::'),
 
         ADesc(A.SWAP_VOLUME_TOTAL_RUNE, 'Total swap volume', postfix=POSTFIX_RUNE),
+
+        ADesc(A.MAX_SWAP_AMOUNT_USD, 'Maximum swap volume', prefix='$'),
     ]
 
     CELEBRATION_EMOJIES = "🎉🎊🥳🙌🥂🪅🎆"

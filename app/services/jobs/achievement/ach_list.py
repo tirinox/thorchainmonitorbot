@@ -56,7 +56,7 @@ class Achievement(NamedTuple):
     SAVER_VAULT_MEMBERS = 'saver_vault_members'
     SAVER_VAULT_EARNED_ASSET = 'saver_vault_earned_asset'
 
-    COIN_MARKET_CAP_RANK = 'coin_market_cap_rank'
+    # COIN_MARKET_CAP_RANK = 'coin_market_cap_rank'
 
     MAX_SWAP_AMOUNT_USD = 'max_swap_amount_usd'
 
@@ -86,6 +86,7 @@ GROUP_MINIMALS = {
     A.WALLET_COUNT: 61000,
     A.BLOCK_NUMBER: 7_000_000,
     A.ANNIVERSARY: 1,
+    A.MAX_SWAP_AMOUNT_USD: 1_329_208.3072876
 }
 
 

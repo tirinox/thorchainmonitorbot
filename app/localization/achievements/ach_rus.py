@@ -43,6 +43,8 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
         ADesc(A.SAVER_VAULT_EARNED_ASSET, 'Сберегатели заработали ::asset::'),
 
         ADesc(A.SWAP_VOLUME_TOTAL_RUNE, 'Общий объем свопов в RUNE', postfix=POSTFIX_RUNE),
+
+        ADesc(A.MAX_SWAP_AMOUNT_USD, 'Максимальный объем обмена', prefix='$'),
     ]
 
     def notification_achievement_unlocked(self, a: Achievement):

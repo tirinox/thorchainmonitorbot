@@ -121,7 +121,12 @@ class AchievementsExtractor(WithLogger):
 
         return achievements
 
-    @staticmethod
-    def on_thor_tx_list(txs: List[ThorTx]):
-        achievements = []
-        return achievements
+    def on_thor_tx_list(self, txs: List[ThorTx]):
+        max_volume = 0
+        price = self.deps.price_holder.usd_per_rune or 0.0
+        for tx in txs:
+            this_volume = tx.get_usd_volume(price)
+            max_volume = max(max_volume, this_volume)
+        return [
+            A(A.MAX_SWAP_AMOUNT_USD, max_volume),
+        ]
