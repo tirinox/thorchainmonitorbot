@@ -87,3 +87,8 @@ GROUP_MINIMALS = {
     A.BLOCK_NUMBER: 7_000_000,
     A.ANNIVERSARY: 1,
 }
+
+
+class AchievementTest(NamedTuple):
+    value: int
+    specialization: str = ''

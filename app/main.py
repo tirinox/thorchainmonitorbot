@@ -11,7 +11,7 @@ from services.dialog.slack.slack_bot import SlackBot
 from services.dialog.telegram.sticker_downloader import TelegramStickerDownloader
 from services.dialog.telegram.telegram import TelegramBot
 from services.dialog.twitter.twitter_bot import TwitterBot, TwitterBotMock
-from services.jobs.achievements import AchievementsNotifier
+from services.jobs.achievement.notifier import AchievementsNotifier
 from services.jobs.fetch.account_number import AccountNumberFetcher
 from services.jobs.fetch.bep2_move import BinanceOrgDexWSSClient
 from services.jobs.fetch.cap import CapInfoFetcher

@@ -1,5 +1,4 @@
-from localization.achievements.common import A, ADesc, POSTFIX_RUNE, META_KEY_SPEC, \
-    AchievementsLocalizationBase
+from localization.achievements.common import A, ADesc, POSTFIX_RUNE, AchievementsLocalizationBase
 from services.jobs.achievement.ach_list import Achievement
 from services.lib.texts import code, pre
 
