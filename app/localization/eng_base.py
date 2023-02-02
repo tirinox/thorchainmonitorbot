@@ -166,6 +166,12 @@ class BaseLocalization(ABC):  # == English
 
     BUTTON_REMOVE_THIS_ADDRESS = '❌ Remove this address'
 
+    BUTTON_LP_SUBSCRIBE = '🔔 Subscribe'
+    BUTTON_LP_UNSUBSCRIBE = '🔕 Unsubscribe'
+    BUTTON_LP_PERIOD_1D = 'Every day'
+    BUTTON_LP_PERIOD_1W = 'Every week'
+    BUTTON_LP_PERIOD_1M = 'Every month'
+
     TEXT_NO_ADDRESSES = "🔆 You have not added any addresses yet. Send me one."
     TEXT_YOUR_ADDRESSES = '🔆 You added addresses:'
     TEXT_INVALID_ADDRESS = code('⛔️ Invalid address!')

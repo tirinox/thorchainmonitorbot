@@ -128,6 +128,12 @@ class RussianLocalization(BaseLocalization):
 
     BUTTON_REMOVE_THIS_ADDRESS = '❌ Удалить этот адрес'
 
+    BUTTON_LP_SUBSCRIBE = '🔔 Подписаться'
+    BUTTON_LP_UNSUBSCRIBE = '🔕 Отписаться'
+    BUTTON_LP_PERIOD_1D = 'Каждый день'
+    BUTTON_LP_PERIOD_1W = 'Каждую неделю'
+    BUTTON_LP_PERIOD_1M = 'Каждый месяц'
+
     TEXT_NO_ADDRESSES = "🔆 Вы еще не добавили никаких адресов. Пришлите мне адрес, чтобы добавить."
     TEXT_YOUR_ADDRESSES = '🔆 Вы добавили следующие адреса:'
     TEXT_INVALID_ADDRESS = code('⛔️ Ошибка в формате адреса!')
