@@ -12,6 +12,7 @@ from aiothornode.types import ThorChainInfo
 
 from services.dialog.telegram.telegram import TelegramBot
 from services.dialog.twitter.twitter_bot import TwitterBot
+from services.jobs.scheduler import Scheduler
 from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.midgard.connector import MidgardConnector
@@ -59,6 +60,8 @@ class DepContainer:
     volume_recorder = None  # type: 'VolumeRecorder'
 
     dex_analytics = None
+
+    scheduler: Optional[Scheduler] = None
 
     gen_alert_settings_proc = None
     alert_watcher: Optional[AlertWatchers] = None

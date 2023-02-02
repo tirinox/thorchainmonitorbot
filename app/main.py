@@ -30,6 +30,7 @@ from services.jobs.fetch.savers import SaversStatsFetcher
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.ilp_summer import ILPSummer
 from services.jobs.node_churn import NodeChurnDetector
+from services.jobs.scheduler import Scheduler
 from services.jobs.transfer_detector import RuneTransferDetectorTxLogs
 from services.jobs.user_counter import UserCounter
 from services.jobs.volume_filler import VolumeFillerUpdater
@@ -430,6 +431,15 @@ class App:
             tasks.append(wallet_counter)
             if achievements_enabled:
                 wallet_counter.add_subscriber(achievements)
+
+        # -------- SCHEDULER --------
+
+        scheduler_cfg = d.cfg.get('personal.scheduler')
+        if scheduler_cfg.get('enabled', True):
+            poll_interval = parse_timespan_to_seconds(scheduler_cfg.get_pure('poll_interval', '1m'))
+            d.scheduler = Scheduler(d.db.redis, 'PersonalLPReports', poll_interval)
+            tasks.append(d.scheduler)
+            # todo: add subscribers here
 
         # ------- BOTS -------
 

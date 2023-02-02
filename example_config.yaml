@@ -56,6 +56,10 @@ personal:
     period: 5m
     cooldown: 1h
 
+  scheduler:  # (!) new
+    enabled: true
+    poll_interval: 10s
+
 
 telegram:
   bot:
@@ -521,15 +525,15 @@ saver_stats:
   period: 3d
 
 
-wallet_counter: # (!) new
+wallet_counter:
   enabled: true
   fetch_period: 1h
 
 
-achievements: # (!) new
+achievements:
   enabled: true
 
-  cooldown: # (!) new
+  cooldown:
     hits_before_cd: 5
     period: 15m
 
