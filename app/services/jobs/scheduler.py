@@ -4,16 +4,16 @@ import json
 from aioredis import Redis
 
 from services.lib.date_utils import now_ts
+from services.lib.delegates import WithDelegates
 from services.lib.utils import WithLogger
 
 
-class Scheduler(WithLogger):
-    def __init__(self, r: Redis, name, poll_interval: float = 10, handler=None):
+class Scheduler(WithLogger, WithDelegates):
+    def __init__(self, r: Redis, name, poll_interval: float = 10):
         assert name
         super().__init__()
         self.name = name
         self._poll_interval = poll_interval
-        self.handler = handler
         self._r = r
         self._running = False
 
@@ -30,14 +30,11 @@ class Scheduler(WithLogger):
 
     async def _run_handler(self, name, ev):
         try:
-            if callable(self.handler):
-                delay = now_ts() - ev[1]
-                self.logger.debug(f'Running scheduler handler: {name}, delay: {delay:.3f} sec')
-                data = json.loads(ev[0])
-                await self.handler(data)
-                self.logger.debug(f'Finished scheduler handler: {name}')
-            else:
-                self.logger.warning(f'Event fired but no valid handler defined for scheduler {self.name!r}!')
+            delay = now_ts() - ev[1]
+            self.logger.debug(f'Running scheduler handler: {name}, delay: {delay:.3f} sec')
+            data = json.loads(ev[0])
+            await self.pass_data_to_listeners(data)
+            self.logger.debug(f'Finished scheduler handler: {name}')
         except Exception as e:
             self.logger.exception(f'Error in scheduler handler: {e}', stack_info=True)
 
