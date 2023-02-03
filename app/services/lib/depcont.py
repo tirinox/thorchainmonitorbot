@@ -12,12 +12,12 @@ from aiothornode.types import ThorChainInfo
 
 from services.dialog.telegram.telegram import TelegramBot
 from services.dialog.twitter.twitter_bot import TwitterBot
-from services.jobs.scheduler import Scheduler
 from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.midgard.connector import MidgardConnector
 from services.lib.midgard.name_service import NameService
 from services.lib.new_feature import NewFeatureManager, Features
+from services.lib.scheduler import Scheduler
 from services.lib.settings_manager import SettingsManager
 from services.models.killed_rune import KilledRuneEntry
 from services.models.mimir import MimirHolder

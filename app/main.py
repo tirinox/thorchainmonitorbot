@@ -30,7 +30,6 @@ from services.jobs.fetch.savers import SaversStatsFetcher
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.ilp_summer import ILPSummer
 from services.jobs.node_churn import NodeChurnDetector
-from services.jobs.scheduler import Scheduler
 from services.jobs.transfer_detector import RuneTransferDetectorTxLogs
 from services.jobs.user_counter import UserCounter
 from services.jobs.volume_filler import VolumeFillerUpdater
@@ -43,6 +42,7 @@ from services.lib.depcont import DepContainer
 from services.lib.midgard.connector import MidgardConnector
 from services.lib.midgard.name_service import NameService
 from services.lib.money import DepthCurve
+from services.lib.scheduler import Scheduler
 from services.lib.settings_manager import SettingsManager, SettingsProcessorGeneralAlerts
 from services.lib.utils import setup_logs
 from services.lib.w3.aggregator import AggregatorDataExtractor
@@ -55,6 +55,7 @@ from services.notify.broadcast import Broadcaster
 from services.notify.personal.balance import PersonalBalanceNotifier
 from services.notify.personal.personal_main import NodeChangePersonalNotifier
 from services.notify.personal.price_divergence import PersonalPriceDivergenceNotifier, SettingsProcessorPriceDivergence
+from services.notify.personal.scheduled import PersonalPeriodicNotificationService
 from services.notify.types.best_pool_notify import BestPoolsNotifier
 from services.notify.types.block_notify import BlockHeightNotifier, LastBlockStore
 from services.notify.types.cap_notify import LiquidityCapNotifier
@@ -439,7 +440,9 @@ class App:
             poll_interval = parse_timespan_to_seconds(scheduler_cfg.get_pure('poll_interval', '1m'))
             d.scheduler = Scheduler(d.db.redis, 'PersonalLPReports', poll_interval)
             tasks.append(d.scheduler)
-            # todo: add subscribers here
+
+            personal_lp_notifier = PersonalPeriodicNotificationService(d)
+            d.scheduler.add_subscriber(personal_lp_notifier)
 
         # ------- BOTS -------
 
