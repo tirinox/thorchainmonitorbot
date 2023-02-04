@@ -143,6 +143,7 @@ class RussianLocalization(BaseLocalization):
     def text_subscribed_to_lp(period):
         next_ts = now_ts() + period
         next_date = datetime.utcfromtimestamp(next_ts).strftime('%d.%m.%Y %H:%M:%S')
+        next_date += ' UTC'
         return f'🔔 <b>Поздравляем!</b> Вы подписались на уведомления о доходности по данной позиции.\n' \
                f'Ближайшее обновление поступит вам {ital(next_date)}.'
 

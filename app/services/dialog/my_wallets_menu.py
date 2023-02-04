@@ -568,7 +568,7 @@ class MyWalletsMenu(DialogWithSettings):
 
     @property
     def global_data(self):
-        """ This used "settings" instead of Telegram context """
+        """ This uses "settings" instead of Telegram context """
         return self.settings.setdefault(GeneralSettings.BALANCE_TRACK, {})
 
     # --- MISC ---

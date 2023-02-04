@@ -181,6 +181,7 @@ class BaseLocalization(ABC):  # == English
     def text_subscribed_to_lp(period):
         next_ts = now_ts() + period
         next_date = datetime.utcfromtimestamp(next_ts).strftime('%Y-%m-%d %H:%M:%S')
+        next_date += ' UTC'
         return f'🔔 <b>Congratulations!</b> You have successfully subscribed.\n' \
                f'The next update will come to you on {ital(next_date)}.'
 
