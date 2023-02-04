@@ -136,6 +136,15 @@ class RussianLocalization(BaseLocalization):
     BUTTON_LP_PERIOD_1D = 'Каждый день'
     BUTTON_LP_PERIOD_1W = 'Каждую неделю'
     BUTTON_LP_PERIOD_1M = 'Каждый месяц'
+    ALERT_SUBSCRIBED_TO_LP = '🔔 Вы подписались'
+    ALERT_UNSUBSCRIBED_FROM_LP = '🔕 Вы отписались'
+
+    @staticmethod
+    def text_subscribed_to_lp(period):
+        next_ts = now_ts() + period
+        next_date = datetime.utcfromtimestamp(next_ts).strftime('%d.%m.%Y %H:%M:%S')
+        return f'🔔 <b>Поздравляем!</b> Вы подписались на уведомления о доходности по данной позиции.\n' \
+               f'Ближайшее обновление поступит вам {ital(next_date)}.'
 
     TEXT_NO_ADDRESSES = "🔆 Вы еще не добавили никаких адресов. Пришлите мне адрес, чтобы добавить."
     TEXT_YOUR_ADDRESSES = '🔆 Вы добавили следующие адреса:'

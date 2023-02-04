@@ -174,6 +174,15 @@ class BaseLocalization(ABC):  # == English
     BUTTON_LP_PERIOD_1D = 'Every day'
     BUTTON_LP_PERIOD_1W = 'Every week'
     BUTTON_LP_PERIOD_1M = 'Every month'
+    ALERT_SUBSCRIBED_TO_LP = '🔔 You have subscribed!'
+    ALERT_UNSUBSCRIBED_FROM_LP = '🔕 You have unsubscribed!'
+
+    @staticmethod
+    def text_subscribed_to_lp(period):
+        next_ts = now_ts() + period
+        next_date = datetime.utcfromtimestamp(next_ts).strftime('%Y-%m-%d %H:%M:%S')
+        return f'🔔 <b>Congratulations!</b> You have successfully subscribed.\n' \
+               f'The next update will come to you on {ital(next_date)}.'
 
     TEXT_NO_ADDRESSES = "🔆 You have not added any addresses yet. Send me one."
     TEXT_YOUR_ADDRESSES = '🔆 You added addresses:'
@@ -868,14 +877,14 @@ class BaseLocalization(ABC):  # == English
 
     def queue_message(self, queue_info: QueueInfo):
         return (
-                   f"<b>Queue info:</b>\n"
-                   f"- <b>Outbound</b>: {code(queue_info.outbound)} txs {self.queue_to_smile(queue_info.outbound)}\n"
-                   f"- <b>Swap</b>: {code(queue_info.swap)} txs {self.queue_to_smile(queue_info.swap)}\n"
-                   f"- <b>Internal</b>: {code(queue_info.internal)} txs {self.queue_to_smile(queue_info.internal)}\n"
-               ) + (
-                   f"If there are many transactions in the queue, your operations may take much longer than usual."
-                   if queue_info.is_full else ''
-               )
+            f"<b>Queue info:</b>\n"
+            f"- <b>Outbound</b>: {code(queue_info.outbound)} txs {self.queue_to_smile(queue_info.outbound)}\n"
+            f"- <b>Swap</b>: {code(queue_info.swap)} txs {self.queue_to_smile(queue_info.swap)}\n"
+            f"- <b>Internal</b>: {code(queue_info.internal)} txs {self.queue_to_smile(queue_info.internal)}\n"
+        ) + (
+            f"If there are many transactions in the queue, your operations may take much longer than usual."
+            if queue_info.is_full else ''
+        )
 
     @staticmethod
     def queue_to_smile(n):

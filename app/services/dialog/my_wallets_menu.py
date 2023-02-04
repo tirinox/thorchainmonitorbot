@@ -362,23 +362,27 @@ class MyWalletsMenu(DialogWithSettings):
         elif query.data == '1m':
             period = DAY * 30
         else:
-            # todo: restore previous state
-            return
+            period = False
 
         address = self.data[self.KEY_ACTIVE_ADDRESS]
         user_id = str(query.message.chat.id)
 
-        await self._subscribers.subscribe(user_id, address, pool, period)
-
-        kb = await self._get_picture_bottom_keyboard(query, address, pool)
         try:
-            text = 'Congratulations! You have successfully subscribed.'  # todo!
+            if period:
+                alert = self.loc.ALERT_SUBSCRIBED_TO_LP
+                text = self.loc.text_subscribed_to_lp(period)
+
+                await self._subscribers.subscribe(user_id, address, pool, period)
+            else:
+                text = ''
+                alert = ''
+
+            kb = await self._get_picture_bottom_keyboard(query, address, pool)
             await query.message.edit_caption(text, reply_markup=kb)
 
-        except Exception:
-            logging.exception('Failed to edit message.', exc_info=True)
-
-        await query.answer('Ok', show_alert=False)  # fixme
+            await query.answer(alert, show_alert=False)
+        except Exception as e:
+            logging.exception(f'Failed to edit message {e}.')
 
     # ---- Limit settings
 
@@ -628,7 +632,7 @@ class MyWalletsMenu(DialogWithSettings):
             await self._subscribers.unsubscribe(user_id, address, pool)
             kb = await self._get_picture_bottom_keyboard(query, address, pool)
             await query.message.edit_caption('', reply_markup=kb)
-            await query.answer('Unsubscribed!')
+            await query.answer(self.loc.ALERT_UNSUBSCRIBED_FROM_LP)
         else:
             await LPMenuStates.SET_PERIOD.set()
             kb = InlineKeyboardMarkup(inline_keyboard=[
