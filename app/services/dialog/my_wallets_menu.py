@@ -13,7 +13,7 @@ from services.dialog.picture.lp_picture import generate_yield_picture, lp_addres
 from services.dialog.telegram.inline_list import TelegramInlineList
 from services.jobs.fetch.runeyield import get_rune_yield_connector
 from services.lib.constants import Chains
-from services.lib.date_utils import today_str
+from services.lib.date_utils import today_str, DAY
 from services.lib.depcont import DepContainer
 from services.lib.draw_utils import img_to_bio
 from services.lib.midgard.name_service import add_thor_suffix
@@ -24,6 +24,7 @@ from services.lib.utils import paste_at_beginning_of_dict, grouper
 from services.models.lp_info import LPAddress
 from services.notify.personal.balance import WalletWatchlist
 from services.notify.personal.helpers import GeneralSettings, Props
+from services.notify.personal.scheduled import PersonalPeriodicNotificationService
 
 
 class LPMenuStates(StatesGroup):
@@ -31,6 +32,7 @@ class LPMenuStates(StatesGroup):
     MAIN_MENU = State()
     WALLET_MENU = State()
     SET_LIMIT = State()
+    SET_PERIOD = State()
 
 
 class MyWalletsMenu(DialogWithSettings):
@@ -41,6 +43,10 @@ class MyWalletsMenu(DialogWithSettings):
     QUERY_TOGGLE_BALANCE = 'toggle-balance'
     QUERY_SET_RUNE_LIMIT = 'set-limit'
     QUERY_CANCEL = 'cancel'
+    QUERY_SUBSCRIBE = 'subscribe'
+    QUERY_1D = '1d'
+    QUERY_7D = '7d'
+    QUERY_30D = '30d'
 
     KEY_CAN_VIEW_VALUE = 'can-view-value'
     KEY_ADD_LP_PROTECTION = 'add-lp-prot'
@@ -48,6 +54,7 @@ class MyWalletsMenu(DialogWithSettings):
     KEY_ACTIVE_ADDRESS_INDEX = 'active-addr-id'
     KEY_IS_EXTERNAL = 'is-external'
     KEY_MY_POOLS = 'my-pools'
+    KEY_LAST_POOL = 'last-pool'
 
     # ----------- ENTER ------------
 
@@ -316,7 +323,7 @@ class MyWalletsMenu(DialogWithSettings):
         if result.result == result.BACK:
             await self._show_address_selection_menu(query.message, edit=True, show_add_more=False)
         elif result.result == result.SELECTED:
-            await self.view_pool_report(query, result.selected_data_tag)
+            await self.view_pool_report(query, result.selected_data_tag, allow_subscribe=True)
         elif query.data.startswith(f'{self.QUERY_SUMMARY_OF_ADDRESS}:'):
             await self.view_address_summary(query)
         elif query.data.startswith(f'{self.QUERY_REMOVE_ADDRESS}:'):
@@ -333,10 +340,45 @@ class MyWalletsMenu(DialogWithSettings):
             await self._present_wallet_contents_menu(query.message, edit=True)
         elif query.data == self.QUERY_SET_RUNE_LIMIT:
             await self._enter_set_limit(query)
+        elif query.data == self.QUERY_SUBSCRIBE:
+            await self._toggle_subscription(query)
 
     async def _show_wallet_again(self, query: CallbackQuery):
         address = self.data[self.KEY_ACTIVE_ADDRESS]
         await self.show_pool_menu_for_address(query.message, address, edit=False)
+
+    @query_handler(state=LPMenuStates.SET_PERIOD)
+    async def on_period_selected(self, query: CallbackQuery):
+        pool = self.data.get(self.KEY_LAST_POOL)
+        if not pool:
+            return
+
+        await LPMenuStates.WALLET_MENU.set()
+
+        if query.data == '1d':
+            period = DAY
+        elif query.data == '1w':
+            period = DAY * 7
+        elif query.data == '1m':
+            period = DAY * 30
+        else:
+            # todo: restore previous state
+            return
+
+        address = self.data[self.KEY_ACTIVE_ADDRESS]
+        user_id = str(query.message.chat.id)
+
+        await self._subscribers.subscribe(user_id, address, pool, period)
+
+        kb = await self._get_picture_bottom_keyboard(query, address, pool)
+        try:
+            text = 'Congratulations! You have successfully subscribed.'  # todo!
+            await query.message.edit_caption(text, reply_markup=kb)
+
+        except Exception:
+            logging.exception('Failed to edit message.', exc_info=True)
+
+        await query.answer('Ok', show_alert=False)  # fixme
 
     # ---- Limit settings
 
@@ -395,8 +437,10 @@ class MyWalletsMenu(DialogWithSettings):
 
     # --- LP Pic generation actions:
 
-    async def view_pool_report(self, query: CallbackQuery, pool):
+    async def view_pool_report(self, query: CallbackQuery, pool, allow_subscribe=False):
         address = self.data[self.KEY_ACTIVE_ADDRESS]
+
+        self.data[self.KEY_LAST_POOL] = pool
 
         # POST A LOADING STICKER
         sticker = await self.answer_loading_sticker(query.message)
@@ -415,8 +459,14 @@ class MyWalletsMenu(DialogWithSettings):
         # ANSWER
         await self._show_wallet_again(query)
 
+        if allow_subscribe:
+            picture_kb = await self._get_picture_bottom_keyboard(query, address, pool)
+        else:
+            picture_kb = None
+
         await query.message.answer_photo(picture_bio,
-                                         disable_notification=True)
+                                         disable_notification=True,
+                                         reply_markup=picture_kb)
 
         # CLEAN UP
         await asyncio.gather(self.safe_delete(query.message),
@@ -533,6 +583,7 @@ class MyWalletsMenu(DialogWithSettings):
     def __init__(self, loc: BaseLocalization, data: Optional[FSMContextProxy], d: DepContainer, message: Message):
         super().__init__(loc, data, d, message)
         self._wallet_watch = WalletWatchlist(d.db)
+        self._subscribers = PersonalPeriodicNotificationService(d)
 
         prohibited_addresses = self.deps.cfg.get_pure('native_scanner.prohibited_addresses')
         self.prohibited_addresses = prohibited_addresses if isinstance(prohibited_addresses, list) else []
@@ -562,3 +613,50 @@ class MyWalletsMenu(DialogWithSettings):
 
         logging.info(f'Address data successfully migrated ({len(old_addresses)}).')
         return True
+
+    async def _toggle_subscription(self, query: CallbackQuery):
+        pool = self.data.get(self.KEY_LAST_POOL)
+        if not pool:
+            return
+
+        address = self.data[self.KEY_ACTIVE_ADDRESS]
+        user_id = str(query.message.chat.id)
+
+        is_subscribed = await self._is_subscribed(user_id, address, pool)
+        is_subscribed = not is_subscribed
+        if not is_subscribed:
+            await self._subscribers.unsubscribe(user_id, address, pool)
+            kb = await self._get_picture_bottom_keyboard(query, address, pool)
+            await query.message.edit_caption('', reply_markup=kb)
+            await query.answer('Unsubscribed!')
+        else:
+            await LPMenuStates.SET_PERIOD.set()
+            kb = InlineKeyboardMarkup(inline_keyboard=[
+                [
+                    InlineKeyboardButton(self.loc.BUTTON_LP_PERIOD_1D, callback_data='1d'),
+                    InlineKeyboardButton(self.loc.BUTTON_LP_PERIOD_1W, callback_data='1w'),
+                    InlineKeyboardButton(self.loc.BUTTON_LP_PERIOD_1M, callback_data='1m'),
+                ],
+                [
+                    InlineKeyboardButton(self.loc.BUTTON_CANCEL, callback_data=self.QUERY_CANCEL),
+                ]
+            ])
+            await query.message.edit_caption(self.loc.TEXT_SUBSCRIBE_TO_LP, reply_markup=kb)
+            await query.answer()
+
+    async def _is_subscribed(self, user_id, address, pool):
+        return await self._subscribers.when_next(user_id, address, pool) is not None
+
+    async def _get_picture_bottom_keyboard(self, query: CallbackQuery, address, pool):
+        user_id = str(query.message.chat.id)
+
+        is_subscribed = await self._is_subscribed(user_id, address, pool)
+        picture_kb = InlineKeyboardMarkup(inline_keyboard=[
+            [
+                InlineKeyboardButton(
+                    self.loc.BUTTON_LP_UNSUBSCRIBE if is_subscribed else self.loc.BUTTON_LP_SUBSCRIBE,
+                    callback_data=self.QUERY_SUBSCRIBE
+                )
+            ],
+        ])
+        return picture_kb

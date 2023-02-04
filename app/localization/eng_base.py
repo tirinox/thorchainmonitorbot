@@ -40,7 +40,6 @@ from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.tx import ThorTx, ThorTxType, ThorSubTx
 from services.notify.channel import Messengers
 
-
 CREATOR_TG = '@account1242'
 
 URL_THOR_SWAP = 'https://app.thorswap.finance/'
@@ -168,6 +167,10 @@ class BaseLocalization(ABC):  # == English
 
     BUTTON_LP_SUBSCRIBE = '🔔 Subscribe'
     BUTTON_LP_UNSUBSCRIBE = '🔕 Unsubscribe'
+    TEXT_SUBSCRIBE_TO_LP = '🔔 Would you like to sign up for automatic notifications for this position?' \
+                           'You\'ll be receiving LP/Savers yield report at the same time ' \
+                           'every other day, week, or month.'
+    BUTTON_LP_UNSUBSCRIBE_ALL = '🔕 Unsubscribe from all'
     BUTTON_LP_PERIOD_1D = 'Every day'
     BUTTON_LP_PERIOD_1W = 'Every week'
     BUTTON_LP_PERIOD_1M = 'Every month'

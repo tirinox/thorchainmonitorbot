@@ -41,6 +41,13 @@ class Scheduler(WithLogger, WithDelegates):
     def ev_desc(self, ident):
         return f'"{self.name}:{ident}"'
 
+    async def get_period(self, ident):
+        return await self._r.get(self.key_period(ident))
+
+    async def get_next_timestamp(self, ident):
+        score = await self._r.zscore(self.key_timeline(), ident)
+        return float(score) if score else None
+
     async def _run_handler(self, ev):
         try:
             now = now_ts()
@@ -54,7 +61,7 @@ class Scheduler(WithLogger, WithDelegates):
 
             self.logger.debug(f'Running scheduler handler: {ev_desc}, delay: {delay:.3f} sec')
 
-            period = await self._r.get(self.key_period(ident))
+            period = await self.get_period(ident)
             if period:
                 try:
                     period = float(period)
@@ -87,6 +94,7 @@ class Scheduler(WithLogger, WithDelegates):
         keys = await self.all_periodic_events(ident)
         if keys:
             await self._r.delete(*keys)
+            await self._r.zrem(self.key_timeline(), *keys)
 
     async def _process(self):
         now = now_ts()

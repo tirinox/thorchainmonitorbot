@@ -44,9 +44,6 @@ class PersonalBalanceNotifier(INotified):
         all_affected_users = self._watcher.all_affected_users(address_to_user)
         user_to_address = self._watcher.reverse(address_to_user)
 
-        # for addr, users in address_to_user.items():
-        #     print(f"{addr} => {users}!")
-
         if not all_affected_users:
             return
 

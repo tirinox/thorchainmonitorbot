@@ -11,7 +11,7 @@ from proto.thor_types import THORName
 from services.jobs.fetch.circulating import SupplyEntry, ThorRealms
 from services.lib.config import Config
 from services.lib.constants import Chains, rune_origin
-from services.lib.date_utils import format_time_ago, seconds_human, now_ts, DAY
+from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address, get_thoryield_address, \
     get_ip_info_link
 from services.lib.midgard.name_service import add_thor_suffix, NameMap
@@ -31,9 +31,9 @@ from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConse
 from services.models.pool_info import PoolInfo, PoolChanges, PoolMapPair
 from services.models.price import PriceReport, RuneMarketInfo
 from services.models.queue import QueueInfo
+from services.models.savers import EventSaverStats
 from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.tx import ThorTx, ThorTxType
-from services.models.savers import EventSaverStats
 
 
 class RussianLocalization(BaseLocalization):
@@ -129,7 +129,10 @@ class RussianLocalization(BaseLocalization):
     BUTTON_REMOVE_THIS_ADDRESS = '❌ Удалить этот адрес'
 
     BUTTON_LP_SUBSCRIBE = '🔔 Подписаться'
+    TEXT_SUBSCRIBE_TO_LP = '🔔 Подписаться на автоматические уведомления о данной позиции? ' \
+                           'Вы будете получать отчеты о доходности в это же время через день, неделю или месяц.'
     BUTTON_LP_UNSUBSCRIBE = '🔕 Отписаться'
+    BUTTON_LP_UNSUBSCRIBE_ALL = '🔕 Отписаться от всех'
     BUTTON_LP_PERIOD_1D = 'Каждый день'
     BUTTON_LP_PERIOD_1W = 'Каждую неделю'
     BUTTON_LP_PERIOD_1M = 'Каждый месяц'
@@ -684,14 +687,14 @@ class RussianLocalization(BaseLocalization):
 
     def queue_message(self, queue_info: QueueInfo):
         return (
-                   f"<b>Информация об очередях:</b>\n"
-                   f"Исходящие транзакции (outbound): {code(queue_info.outbound)} шт.\n"
-                   f"Очередь обменов (swap): {code(queue_info.swap)} шт.\n"
-                   f"Внутренняя очередь (internal): {code(queue_info.internal)} шт.\n"
-               ) + (
-                   f"Если в очереди много транзакций, ваши операции могут занять гораздо больше времени, чем обычно."
-                   if queue_info.is_full else ''
-               )
+            f"<b>Информация об очередях:</b>\n"
+            f"Исходящие транзакции (outbound): {code(queue_info.outbound)} шт.\n"
+            f"Очередь обменов (swap): {code(queue_info.swap)} шт.\n"
+            f"Внутренняя очередь (internal): {code(queue_info.internal)} шт.\n"
+        ) + (
+            f"Если в очереди много транзакций, ваши операции могут занять гораздо больше времени, чем обычно."
+            if queue_info.is_full else ''
+        )
 
     TEXT_ASK_DURATION = 'За какой период времени вы хотите получить данные?'
 
