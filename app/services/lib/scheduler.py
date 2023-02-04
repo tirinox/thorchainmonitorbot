@@ -23,7 +23,7 @@ class Scheduler(WithLogger, WithDelegates):
         ev_desc = self.ev_desc(ident)
         now = now_ts()
         if not timestamp:
-            timestamp = now
+            timestamp = now + period
         elif timestamp < now:
             self.logger.warning(f'Scheduling: {ev_desc} at {timestamp} (before now!)')
             return
