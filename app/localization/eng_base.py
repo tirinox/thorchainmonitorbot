@@ -167,7 +167,7 @@ class BaseLocalization(ABC):  # == English
 
     BUTTON_LP_SUBSCRIBE = '🔔 Subscribe'
     BUTTON_LP_UNSUBSCRIBE = '🔕 Unsubscribe'
-    TEXT_SUBSCRIBE_TO_LP = '🔔 Would you like to sign up for automatic notifications for this position?' \
+    TEXT_SUBSCRIBE_TO_LP = '🔔 Would you like to sign up for automatic notifications for this position? ' \
                            'You\'ll be receiving LP/Savers yield report at the same time ' \
                            'every other day, week, or month.'
     BUTTON_LP_UNSUBSCRIBE_ALL = '🔕 Unsubscribe from all'
