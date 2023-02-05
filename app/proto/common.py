@@ -45,3 +45,8 @@ class Tx(betterproto.Message):
 class Fee(betterproto.Message):
     coins: List["Coin"] = betterproto.message_field(1)
     pool_deduct: str = betterproto.string_field(2)
+
+
+@dataclass
+class ProtoUint(betterproto.Message):
+    value: str = betterproto.string_field(1)

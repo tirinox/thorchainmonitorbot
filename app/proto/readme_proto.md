@@ -1,3 +1,4 @@
+
 # How to generate Protobuf interface for Python.
 We are going to use Betterproto library because it is modern and cool.
 https://github.com/danielgtaylor/python-betterproto
@@ -13,8 +14,10 @@ Download THORChain source code (https://gitlab.com/thorchain/thornode/) and swit
 Note: use the "release-vxxx" branch. For instance: https://gitlab.com/thorchain/thornode/-/tree/release-1.95.0
 
 Command to generate Python files:
-`mkdir -p pylib`
-`python -m grpc_tools.protoc -I "proto" -I "third_party/proto" --python_betterproto_out=pylib proto/thorchain/v1/x/thorchain/types/*.proto`
+```mkdir -p pylib
+python -m pip install grpcio
+python -m pip install grpcio-tools
+python -m grpc_tools.protoc -I "proto" -I "third_party/proto" --python_betterproto_out=pylib proto/thorchain/v1/x/thorchain/types/*.proto```
 
 Under the "pylib" directory you will find "types.py", move it here and rename to "thor_types.py" 
 

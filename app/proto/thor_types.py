@@ -54,6 +54,11 @@ class BondType(betterproto.Enum):
     bond_cost = 3
 
 
+class MintBurnSupplyType(betterproto.Enum):
+    mint = 0
+    burn = 1
+
+
 class NodeStatus(betterproto.Enum):
     Unknown = 0
     Whitelisted = 1
@@ -100,6 +105,11 @@ class ProtoAccAddresses(betterproto.Message):
 @dataclass
 class ProtoStrings(betterproto.Message):
     value: List[str] = betterproto.string_field(1)
+
+
+@dataclass
+class ProtoBools(betterproto.Message):
+    value: List[bool] = betterproto.bool_field(1)
 
 
 @dataclass
@@ -498,6 +508,13 @@ class PoolMod(betterproto.Message):
 
 
 @dataclass
+class EventLimitOrder(betterproto.Message):
+    source: common.Coin = betterproto.message_field(1)
+    target: common.Coin = betterproto.message_field(2)
+    tx_id: str = betterproto.string_field(3)
+
+
+@dataclass
 class EventSwap(betterproto.Message):
     pool: common.Asset = betterproto.message_field(1)
     swap_target: str = betterproto.string_field(2)
@@ -680,6 +697,14 @@ class EventSwitchV87(betterproto.Message):
     burn: common.Coin = betterproto.message_field(3)
     tx_id: str = betterproto.string_field(4)
     mint: str = betterproto.string_field(5)
+
+
+@dataclass
+class EventMintBurn(betterproto.Message):
+    supply: "MintBurnSupplyType" = betterproto.enum_field(1)
+    denom: str = betterproto.string_field(2)
+    amount: str = betterproto.string_field(3)
+    reason: str = betterproto.string_field(4)
 
 
 @dataclass
