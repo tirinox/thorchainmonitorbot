@@ -79,10 +79,16 @@ class NativeScannerBlock(BaseFetcher):
                 return
 
             raw_txs = safe_get(result, 'result', 'block', 'data', 'txs') or []
-            decoded_txs = [NativeThorTx.from_base64(raw) for raw in raw_txs]
-            return decoded_txs
+            decoded_txs = [self._decode_one_tx(raw) for raw in raw_txs]
+            return list(filter(bool, decoded_txs))
         else:
             self.logger.warn(f'Error fetching block #{block_no}.')
+
+    def _decode_one_tx(self, raw):
+        try:
+            return NativeThorTx.from_base64(raw)
+        except Exception as e:
+            self.logger.error(f'Error decoding tx: {e}')
 
     def _on_error(self):
         self._this_block_attempts += 1
@@ -105,12 +111,16 @@ class NativeScannerBlock(BaseFetcher):
             self.logger.debug(f'Tick start for block #{self._last_block}.')
 
         while True:
-            block_result = await self.fetch_one_block(self._last_block)
-            if block_result is None:
+            try:
+                block_result = await self.fetch_one_block(self._last_block)
+                if block_result is None:
+                    self._on_error()
+                    break
+            except Exception as e:
+                self.logger.error(f'Error while fetching block #{self._last_block}: {e}')
                 self._on_error()
                 break
 
-            # fixme: bad design?
             await self.pass_data_to_listeners(block_result)
 
             self._last_block += 1

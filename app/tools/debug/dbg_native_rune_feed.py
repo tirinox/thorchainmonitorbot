@@ -49,7 +49,7 @@ async def t_block_scanner_ws(url):
 
 
 async def demo_native_block_action_detectro(lp_app):
-    scanner = NativeScannerBlock(lp_app.deps)
+    scanner = NativeScannerBlock(lp_app.deps, last_block=9402898)
     detector = RuneTransferDetectorTxLogs()
     scanner.add_subscriber(detector)
     detector.add_subscriber(Receiver('Transfer'))
@@ -124,12 +124,13 @@ async def search_out(lp_app):
 async def main():
     lp_app = LpAppFramework(log_level=logging.INFO)
     async with lp_app(brief=True):
-        await demo_rune_transfers_once(lp_app)
+        # await demo_rune_transfers_once(lp_app)
         # await demo_block_scanner_active(lp_app, send_alerts=True)
         # await active_one(lp_app)
         # await search_out(lp_app)
         # await demo_rune_transfers_once(lp_app)
         # await demo_test_rune_detector(lp_app)
+        await demo_native_block_action_detectro(lp_app)
 
 
 if __name__ == '__main__':
