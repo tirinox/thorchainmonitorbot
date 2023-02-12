@@ -18,6 +18,16 @@ class AchievementPictureGenerator(BasePictureGenerator):
     WIDTH = 1024
     HEIGHT = 1024
 
+    PICTURE_BACKGROUNDS = [
+        'nn_wreath_1.png',
+        'nn_wreath_2.png',
+        'nn_wreath_3.png',
+        'nn_wreath_4.png',
+        'nn_wreath_5.png',
+    ]
+
+    PICTURE_BACKGROUND_ANNIVERSARY = 'nn_wreath_ann_2.png'
+
     def generate_picture_filename(self):
         return f'thorchain-ach-{self.ach.key}-{today_str()}.png'
 
@@ -100,17 +110,14 @@ class AchievementPictureGenerator(BasePictureGenerator):
 
     def custom_attributes(self, r):
         if self.ach.key == Achievement.ANNIVERSARY:
-            bg = 'nn_wreath_ann_2.png'
+            bg = self.PICTURE_BACKGROUND_ANNIVERSARY
             main_font = r.custom_font_balloon
             main_colors = ['#fff5b5', '#f211be', '#83acea']
             desc_color = '#f4e18d'
             desc_stroke = '#954c07'
             main_area = (320, 320)
         else:
-            bg = random.choice([
-                'nn_wreath_1.png',
-                'nn_wreath_2.png',
-            ])
+            bg = random.choice(self.PICTURE_BACKGROUNDS)
             main_font = r.custom_font_runic
             main_colors = ['#ecfffc', '#1f756a', '#82e6d1']
             desc_color = '#fff'
