@@ -7,6 +7,7 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
     ACHIEVEMENT_DESC_LIST = [
         ADesc(A.TEST, 'Test metric'),
         ADesc(A.TEST_SPEC, 'Test metric', postfix=POSTFIX_RUNE),
+        ADesc(A.TEST_DESCENDING, 'Test descending'),
 
         ADesc(A.DAU, 'Daily active users'),
         ADesc(A.MAU, 'Monthly active users'),
@@ -44,6 +45,11 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
         ADesc(A.SWAP_VOLUME_TOTAL_RUNE, 'Total swap volume', postfix=POSTFIX_RUNE),
 
         ADesc(A.MAX_SWAP_AMOUNT_USD, 'Maximum swap volume', prefix='$'),
+        ADesc(A.MAX_ADD_AMOUNT_USD, 'Maximum add liquidity volume', prefix='$'),
+
+        ADesc(A.MAX_ADD_AMOUNT_USD_PER_POOL, 'Added ::asset:: in a single TX', prefix='$'),
+
+        ADesc(A.COIN_MARKET_CAP_RANK, 'Market cap rank'),
     ]
 
     CELEBRATION_EMOJIES = "🎉🎊🥳🙌🥂🪅🎆"

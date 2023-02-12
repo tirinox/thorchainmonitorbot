@@ -17,6 +17,7 @@ class Achievement(NamedTuple):
 
     TEST = '__test'
     TEST_SPEC = '__test_sp'
+    TEST_DESCENDING = '__test_desc'
 
     DAU = 'dau'
     MAU = 'mau'
@@ -58,7 +59,7 @@ class Achievement(NamedTuple):
     SAVER_VAULT_MEMBERS = 'saver_vault_members'
     SAVER_VAULT_EARNED_ASSET = 'saver_vault_earned_asset'
 
-    # COIN_MARKET_CAP_RANK = 'coin_market_cap_rank'
+    COIN_MARKET_CAP_RANK = 'coin_market_cap_rank'
 
     MAX_SWAP_AMOUNT_USD = 'max_swap_amount_usd'
     MAX_ADD_AMOUNT_USD = 'max_add_amount_usd'
@@ -157,12 +158,14 @@ GROUP_MINIMALS = {
         'BNB.SLV-986': 10.6133958,
         'BNB.AWC-986': 9.511880672,
         'ETH.CRV-0XD533A949740BB3306D119CC777FA900BA034CD52': 7.87088,
-    }
+    },
 
-    # A.COIN_MARKET_CAP_RANK: 42,
+    A.COIN_MARKET_CAP_RANK: 42,
+    A.SWAP_UNIQUE_COUNT: 0,
 }
 
 
 class AchievementTest(NamedTuple):
     value: int
     specialization: str = ''
+    descending: bool = False

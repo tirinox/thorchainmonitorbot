@@ -8,6 +8,7 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
     ACHIEVEMENT_DESC_LIST = [
         ADesc(A.TEST, 'Тест метрика'),
         ADesc(A.TEST_SPEC, 'Тест метрика', postfix=POSTFIX_RUNE),
+        ADesc(A.TEST_DESCENDING, 'Тест наоборот'),
 
         ADesc(A.DAU, 'Активных пользователей ежедневно'),
         ADesc(A.MAU, 'Активных пользователей ежемесячно'),
@@ -45,6 +46,11 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
         ADesc(A.SWAP_VOLUME_TOTAL_RUNE, 'Общий объем свопов в RUNE', postfix=POSTFIX_RUNE),
 
         ADesc(A.MAX_SWAP_AMOUNT_USD, 'Максимальный объем обмена', prefix='$'),
+        ADesc(A.MAX_ADD_AMOUNT_USD, 'Максимальный объем добавления', prefix='$'),
+
+        ADesc(A.MAX_ADD_AMOUNT_USD_PER_POOL, 'Добавлено ::asset:: в пул за раз', prefix='$'),
+
+        ADesc(A.COIN_MARKET_CAP_RANK, 'Место в топе по капитализации'),
     ]
 
     def notification_achievement_unlocked(self, a: Achievement):
