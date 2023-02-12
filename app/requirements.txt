@@ -8,7 +8,7 @@ async-timeout
 bech32
 # discord.py==1.7.3
 emoji
-git+https://github.com/danielgtaylor/python-betterproto@v2.0.0b4#egg=betterproto
+git+https://github.com/danielgtaylor/python-betterproto@v2.0.0b5#egg=betterproto
 html-slacker
 markdownify
 multidict
