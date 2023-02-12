@@ -23,17 +23,23 @@ async def demo_show_notification(app: LpAppFramework):
 
 
 class DebugAchievementsFetcher(BaseFetcher):
-    def __init__(self, deps: DepContainer, specialization: str = ''):
+    def __init__(self, deps: DepContainer, specialization: str = '', descending=False):
         super().__init__(deps, 1)
         self.deps = deps
-        self.limit = 3
+        self.descending = descending
         self.specialization = specialization
+        self.current = 300 if descending else 3
 
     async def fetch(self):
-        r = random.randint(1, self.limit)
-        self.limit = int(self.limit * random.uniform(1.1, 1.5))
-        self.logger.info(f'Generated achievement "test" event with value {r} ({self.limit = })')
-        return AchievementTest(r, self.specialization)
+        old = self.current
+        if self.descending:
+            self.current *= random.uniform(0.7, 0.99)
+            self.current = max(1, int(self.current))
+        else:
+            self.current = int(self.current * random.uniform(1.1, 1.5))
+
+        self.logger.info(f'Generated achievement "test": ({old} -> {self.current} new!)')
+        return AchievementTest(self.current, self.specialization, self.descending)
 
 
 async def demo_debug_logic(app: LpAppFramework):
@@ -120,9 +126,8 @@ async def demo_all_achievements():
         sep()
 
 
-async def demo_run_pipeline(app: LpAppFramework):
-    spec = 'BTC'
-    ach_fet = DebugAchievementsFetcher(app.deps.db, specialization=spec)
+async def demo_run_pipeline(app: LpAppFramework, descending=False, spec=''):
+    ach_fet = DebugAchievementsFetcher(app.deps.db, specialization=spec, descending=descending)
     ach_not = AchievementsNotifier(app.deps)
     ach_fet.add_subscriber(ach_not)
     ach_not.add_subscriber(app.deps.alert_presenter)
@@ -131,6 +136,7 @@ async def demo_run_pipeline(app: LpAppFramework):
     await ach_not.cd.clear()
     await ach_not.tracker.delete_achievement_record(Achievement.TEST)
     await ach_not.tracker.delete_achievement_record(Achievement.TEST_SPEC, specialization=spec)
+    await ach_not.tracker.delete_achievement_record(Achievement.TEST_DESCENDING)
 
     await ach_fet.run()
 
@@ -139,7 +145,7 @@ async def main():
     app = LpAppFramework()
     async with app(brief=True):
         # await demo_debug_logic(app)
-        await demo_run_pipeline(app)
+        await demo_run_pipeline(app, descending=True, spec='')
         # await demo_achievements_picture(Language.ENGLISH, Achievement.ANNIVERSARY, 3, 3)
         # await demo_achievements_picture(Language.RUSSIAN, Achievement.ANNIVERSARY, 2, 2)
         # await demo_achievements_picture(Language.ENGLISH, Achievement.SAVER_VAULT_MEMBERS, 202, 200)

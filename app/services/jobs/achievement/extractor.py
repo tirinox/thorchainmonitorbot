@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import List
 
 from services.jobs.achievement.ach_list import A, AchievementTest
@@ -12,7 +13,7 @@ from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges
 from services.models.price import RuneMarketInfo, LastPriceHolder
 from services.models.savers import AllSavers
-from services.models.tx import ThorTx
+from services.models.tx import ThorTx, ThorTxType
 from services.notify.types.block_notify import LastBlockStore
 
 
@@ -39,14 +40,20 @@ class AchievementsExtractor(WithLogger):
         elif is_list_of_type(data, ThorTx):
             kv_events = self.on_thor_tx_list(data)
         elif isinstance(data, AchievementTest):
-            if data.specialization:
-                kv_events = [A(A.TEST_SPEC, data.value, specialization=data.specialization)]
-            else:
-                kv_events = [A(A.TEST, data.value)]
+            kv_events = self.on_test_event(data)
         else:
             self.logger.warning(f'Unknown data type {type(data)} from {sender}. Dont know how to handle it.')
             kv_events = []
         return kv_events
+
+    @staticmethod
+    def on_test_event(data: AchievementTest):
+        if data.specialization:
+            return [A(A.TEST_SPEC, data.value, specialization=data.specialization)]
+        elif data.descending:
+            return [A(A.TEST_DESCENDING, data.value, descending=True)]
+        else:
+            return [A(A.TEST, data.value)]
 
     @staticmethod
     def on_network_stats(data: NetworkStats):
@@ -122,11 +129,20 @@ class AchievementsExtractor(WithLogger):
         return achievements
 
     def on_thor_tx_list(self, txs: List[ThorTx]):
-        max_volume = 0
+        results = defaultdict(float)
+
+        def update(key, value, spec=''):
+            results[(key, spec)] = max(results[(key, spec)], value)
+
         price = self.deps.price_holder.usd_per_rune or 0.0
+
         for tx in txs:
             this_volume = tx.get_usd_volume(price)
-            max_volume = max(max_volume, this_volume)
+            if tx.type == ThorTxType.TYPE_SWAP:
+                update(A.MAX_SWAP_AMOUNT_USD, this_volume)
+            elif tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
+                update(A.MAX_ADD_AMOUNT_USD, this_volume)
+
         return [
-            A(A.MAX_SWAP_AMOUNT_USD, max_volume),
+            A(key, int(value), specialization=spec) for (key, spec), value in results.items()
         ]

@@ -23,48 +23,62 @@ class AchievementsTracker(WithLogger):
             return f'Achievements:{name}'
 
     @staticmethod
-    def get_minimum(key, spec=None, default=1):
-        result = GROUP_MINIMALS.get(key)
-        if spec and isinstance(result, dict):
-            return result.get(spec, default)
+    def meet_threshold(key, value, spec=None, descending=False):
+        threshold = GROUP_MINIMALS.get(key)
+        if spec and isinstance(threshold, dict):
+            threshold = threshold.get(spec)
+        if threshold is None:
+            return True
         else:
-            return result or default
+            if descending:
+                return value <= threshold
+            else:
+                return value >= threshold
 
-    def get_previous_milestone(self, key, value):
+    def get_previous_milestone(self, key, value, descending=False):
         if key in GROUP_EVERY_1:
-            v = self.milestones_every.previous(value)
+            provider = self.milestones_every
         else:
-            v = self.milestones.previous(value)
+            provider = self.milestones
+
+        if descending:
+            v = provider.next(value)
+        else:
+            v = provider.previous(value)
 
         return v
 
     async def feed_data(self, event: Achievement) -> Optional[Achievement]:
-        name, value = event.key, event.value
+        name, value, descending = event.key, event.value, event.descending
         assert name
 
-        if value < self.get_minimum(name):
-            return None
+        if not self.meet_threshold(name, value, event.specialization, descending):
+            return
+
+        current_milestone = self.get_previous_milestone(name, value, descending)
 
         record = await self.get_achievement_record(name, event.specialization)
-        current_milestone = self.get_previous_milestone(name, value)
         if record is None:
             # first time, just write and return
             record = Achievement(
                 str(name), int(value), current_milestone,
                 timestamp=0,
-                specialization=event.specialization
+                specialization=event.specialization,
+                descending=descending,
             )
             await self.set_achievement_record(record)
             self.logger.info(f'New achievement record created {record}')
         else:
             # check if we need to update
-            if current_milestone > record.value:
+            if (not event.descending and current_milestone > record.value) or (
+                    event.descending and current_milestone < record.value):
                 new_record = Achievement(
                     str(name), int(value), current_milestone,
                     timestamp=now_ts(),
                     prev_milestone=record.milestone,
                     previous_ts=record.timestamp,
                     specialization=event.specialization,
+                    descending=descending,
                 )
                 await self.set_achievement_record(new_record)
                 self.logger.info(f'Achievement record updated {new_record}')
