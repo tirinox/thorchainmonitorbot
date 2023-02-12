@@ -23,8 +23,12 @@ class AchievementsTracker(WithLogger):
             return f'Achievements:{name}'
 
     @staticmethod
-    def get_minimum(key):
-        return GROUP_MINIMALS.get(key, 1)
+    def get_minimum(key, spec=None, default=1):
+        result = GROUP_MINIMALS.get(key)
+        if spec and isinstance(result, dict):
+            return result.get(spec, default)
+        else:
+            return result or default
 
     def get_previous_milestone(self, key, value):
         if key in GROUP_EVERY_1:
