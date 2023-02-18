@@ -171,13 +171,13 @@ async def main():
     app = LpAppFramework()
     async with app(brief=True):
         # await demo_debug_logic(app)
-        # await demo_run_pipeline_test(app, descending=True, spec='')
         # await demo_achievements_picture(Language.ENGLISH, A.ANNIVERSARY, 3, 3)
         # await demo_achievements_picture(Language.RUSSIAN, A.ANNIVERSARY, 2, 2)
         # await demo_achievements_picture(Language.ENGLISH, A.COIN_MARKET_CAP_RANK, 10, 11, descending=True)
         # await demo_achievements_picture(Language.RUSSIAN, A.COIN_MARKET_CAP_RANK, 10, 11, descending=True)
         # await demo_all_achievements()
-        await demo_run_pipeline_coin_rank(app)
+        # await demo_run_pipeline_coin_rank(app)
+        await demo_run_pipeline_test(app, spec='')
 
 
 if __name__ == '__main__':
