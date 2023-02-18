@@ -50,7 +50,7 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
 
         ADesc(A.MAX_ADD_AMOUNT_USD_PER_POOL, 'Добавлено ::asset:: в пул за раз', prefix='$'),
 
-        ADesc(A.COIN_MARKET_CAP_RANK, 'Место в топе по капитализации'),
+        ADesc(A.COIN_MARKET_CAP_RANK, 'Место по капитализации'),
     ]
 
     def notification_achievement_unlocked(self, a: Achievement):
