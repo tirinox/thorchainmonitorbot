@@ -1,8 +1,7 @@
 import json
 from typing import Optional
 
-from services.jobs.achievement.ach_list import GROUP_MINIMALS, GROUP_EVERY_1, Achievement
-from services.jobs.achievement.milestones import Milestones
+from services.jobs.achievement.ach_list import GROUP_MINIMALS, Achievement
 from services.lib.date_utils import now_ts
 from services.lib.db import DB
 from services.lib.utils import WithLogger
@@ -12,8 +11,6 @@ class AchievementsTracker(WithLogger):
     def __init__(self, db: DB):
         super().__init__()
         self.db = db
-        self.milestones = Milestones()
-        self.milestones_every = Milestones(Milestones.EVERY_DIGIT_PROGRESSION)
 
     @staticmethod
     def key(name, specialization=''):
@@ -35,31 +32,22 @@ class AchievementsTracker(WithLogger):
             else:
                 return value >= threshold
 
-    def get_previous_milestone(self, key, value, descending=False):
-        if key in GROUP_EVERY_1:
-            provider = self.milestones_every
-        else:
-            provider = self.milestones
-
-        if descending:
-            v = provider.next(value)
-        else:
-            v = provider.previous(value)
-
-        return v
-
     async def feed_data(self, event: Achievement) -> Optional[Achievement]:
-        if not event.value:
-            self.logger.warning(f'Achievement {event.key} has 0 value! Skip it.')
+        if not event:
+            self.logger.error(f'No event!')
             return
 
         name, value, descending = event.key, event.value, event.descending
         assert name
 
+        if not value:
+            self.logger.warning(f'Achievement {name} has 0 value! Skip it.')
+            return
+
         if not self.meet_threshold(name, value, event.specialization, descending):
             return
 
-        current_milestone = self.get_previous_milestone(name, value, descending)
+        current_milestone = event.get_previous_milestone()
 
         record = await self.get_achievement_record(name, event.specialization)
         if record is None:

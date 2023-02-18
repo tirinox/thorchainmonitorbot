@@ -1,5 +1,7 @@
 from typing import NamedTuple
 
+from services.jobs.achievement.milestones import Milestones, MilestonesEveryInt
+
 ACH_CUT_OFF_TS = 1674473134.216954
 
 
@@ -63,6 +65,21 @@ class AchievementName:
                 if not k.startswith('_') and k.upper() == k]
 
 
+A = AchievementName
+
+MILESTONES_NORMAL = Milestones()
+MILESTONES_EVERY_DIGIT = Milestones(Milestones.EVERY_DIGIT_PROGRESSION)
+MILESTONES_EVERY_INT = MilestonesEveryInt()
+
+# special groups
+GROUP_MILESTONES = {
+    A.BLOCK_NUMBER: MILESTONES_EVERY_DIGIT,
+    A.ANNIVERSARY: MILESTONES_EVERY_INT,
+    A.WALLET_COUNT: MILESTONES_EVERY_DIGIT,
+    A.COIN_MARKET_CAP_RANK: MILESTONES_EVERY_INT,
+}
+
+
 class Achievement(NamedTuple):
     key: str
     value: int  # real current value
@@ -77,16 +94,16 @@ class Achievement(NamedTuple):
     def has_previous(self):
         return self.prev_milestone > 0 and self.previous_ts > ACH_CUT_OFF_TS
 
+    def get_previous_milestone(self):
+        provider = GROUP_MILESTONES.get(self.key, MILESTONES_NORMAL)
 
-A = AchievementName
+        if self.descending:
+            v = provider.next(self.value)
+        else:
+            v = provider.previous(self.value)
 
-# every single digit is a milestone
-GROUP_EVERY_1 = {
-    A.BLOCK_NUMBER,
-    A.ANNIVERSARY,
-    A.WALLET_COUNT,
-    A.COIN_MARKET_CAP_RANK,
-}
+        return v
+
 
 # this metrics only trigger when greater than their historic maximums
 GROUP_MINIMALS = {
@@ -162,9 +179,7 @@ GROUP_MINIMALS = {
         'ETH.CRV-0XD533A949740BB3306D119CC777FA900BA034CD52': 7.87088,
     },
 
-    # A.COIN_MARKET_CAP_RANK: 42,
-    A.COIN_MARKET_CAP_RANK: 4200,  # fixme: debug
-    # A.SWAP_UNIQUE_COUNT: 0,
+    A.COIN_MARKET_CAP_RANK: 42,
 }
 
 
