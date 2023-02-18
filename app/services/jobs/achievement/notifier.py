@@ -35,6 +35,6 @@ class AchievementsNotifier(WithLogger, WithDelegates, INotified):
         self.tracker = AchievementsTracker(deps.db)
         self.extractor = AchievementsExtractor(deps)
 
-        cd = deps.cfg.as_interval('achievement.cooldown.period', '10m')
-        max_times = deps.cfg.as_int('achievement.cooldown.hits_before_cd', 3)
+        cd = deps.cfg.as_interval('achievements.cooldown.period', '10m')
+        max_times = deps.cfg.as_int('achievements.cooldown.hits_before_cd', 3)
         self.cd = Cooldown(self.deps.db, 'Achievements:Notification', cd, max_times)
