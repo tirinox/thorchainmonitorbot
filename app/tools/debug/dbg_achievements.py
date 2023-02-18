@@ -15,11 +15,8 @@ from services.jobs.fetch.base import BaseFetcher
 from services.lib.date_utils import now_ts, DAY
 from services.lib.depcont import DepContainer
 from services.lib.texts import sep
+from services.models.price import RuneMarketInfo
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
-
-
-async def demo_show_notification(app: LpAppFramework):
-    ...
 
 
 class DebugAchievementsFetcher(BaseFetcher):
@@ -40,6 +37,21 @@ class DebugAchievementsFetcher(BaseFetcher):
 
         self.logger.info(f'Generated achievement "test": ({old} -> {self.current} new!)')
         return AchievementTest(self.current, self.specialization, self.descending)
+
+
+class DebugAchievementRank(BaseFetcher):
+    def __init__(self, deps: DepContainer, sleep_period=1, specialization='', start=44):
+        super().__init__(deps, sleep_period)
+        self.rank = start
+        self.specialization = specialization
+
+    async def fetch(self):
+        self.rank = max(1, self.rank - random.randint(1, 4))
+        print('❤️❤️❤️RUNE RANK!!!: ', self.rank)
+        return RuneMarketInfo(
+            rank=self.rank,
+            pools={}
+        )
 
 
 async def demo_debug_logic(app: LpAppFramework):
@@ -129,8 +141,7 @@ async def demo_all_achievements():
         sep()
 
 
-async def demo_run_pipeline(app: LpAppFramework, descending=False, spec=''):
-    ach_fet = DebugAchievementsFetcher(app.deps.db, specialization=spec, descending=descending)
+async def demo_run_pipeline(app: LpAppFramework, ach_fet, spec_key_clear=None):
     ach_not = AchievementsNotifier(app.deps)
     ach_fet.add_subscriber(ach_not)
     ach_not.add_subscriber(app.deps.alert_presenter)
@@ -138,22 +149,35 @@ async def demo_run_pipeline(app: LpAppFramework, descending=False, spec=''):
     # reset and clear
     await ach_not.cd.clear()
     await ach_not.tracker.delete_achievement_record(A.TEST)
-    await ach_not.tracker.delete_achievement_record(A.TEST_SPEC, specialization=spec)
+    await ach_not.tracker.delete_achievement_record(A.TEST_SPEC, specialization=ach_fet.specialization)
     await ach_not.tracker.delete_achievement_record(A.TEST_DESCENDING)
+    if spec_key_clear:
+        await ach_not.tracker.delete_achievement_record(spec_key_clear)
 
     await ach_fet.run()
+
+
+async def demo_run_pipeline_test(app: LpAppFramework, descending=False, spec=''):
+    ach_fet = DebugAchievementsFetcher(app.deps.db, specialization=spec, descending=descending)
+    await demo_run_pipeline(app, ach_fet)
+
+
+async def demo_run_pipeline_coin_rank(app: LpAppFramework):
+    ach_fet = DebugAchievementRank(app.deps, start=45, sleep_period=5)
+    await demo_run_pipeline(app, ach_fet, spec_key_clear=A.COIN_MARKET_CAP_RANK)
 
 
 async def main():
     app = LpAppFramework()
     async with app(brief=True):
         # await demo_debug_logic(app)
-        # await demo_run_pipeline(app, descending=True, spec='')
+        # await demo_run_pipeline_test(app, descending=True, spec='')
         # await demo_achievements_picture(Language.ENGLISH, A.ANNIVERSARY, 3, 3)
         # await demo_achievements_picture(Language.RUSSIAN, A.ANNIVERSARY, 2, 2)
-        await demo_achievements_picture(Language.ENGLISH, A.COIN_MARKET_CAP_RANK, 10, 11, descending=True)
-        await demo_achievements_picture(Language.RUSSIAN, A.COIN_MARKET_CAP_RANK, 10, 11, descending=True)
+        # await demo_achievements_picture(Language.ENGLISH, A.COIN_MARKET_CAP_RANK, 10, 11, descending=True)
+        # await demo_achievements_picture(Language.RUSSIAN, A.COIN_MARKET_CAP_RANK, 10, 11, descending=True)
         # await demo_all_achievements()
+        await demo_run_pipeline_coin_rank(app)
 
 
 if __name__ == '__main__':

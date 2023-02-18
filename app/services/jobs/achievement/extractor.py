@@ -23,7 +23,7 @@ class AchievementsExtractor(WithLogger):
         super().__init__()
         self.deps = deps
 
-    async def extract_events_by_type(self, sender, data) -> List[A]:
+    async def extract_events_by_type(self, sender, data) -> List[Achievement]:
         if isinstance(data, NetworkStats):
             kv_events = self.on_network_stats(data)
         elif isinstance(sender, LastBlockStore):
@@ -100,8 +100,6 @@ class AchievementsExtractor(WithLogger):
             Achievement(A.TOTAL_MIMIR_VOTES, len(data.votes)),
         ]
         return achievements
-
-    r = 100
 
     @staticmethod
     def on_rune_market_info(data: RuneMarketInfo):
