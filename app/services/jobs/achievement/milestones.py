@@ -3,6 +3,7 @@ import math
 
 class Milestones:
     MILESTONE_DEFAULT_PROGRESSION = [1, 2, 5]
+    EVERY_DIGIT_PROGRESSION = list(range(1, 10))  # 1..9, 10, 20 ... 90, 100, 200, ...
 
     def __init__(self, progression=None):
         self.progression = progression or self.MILESTONE_DEFAULT_PROGRESSION
@@ -41,3 +42,12 @@ class Milestones:
 
     def previous(self, x):
         return self.milestone_nearest(x, before=True)
+
+
+class MilestonesEveryInt(Milestones):
+    def milestone_nearest(self, x, before: bool):
+        x = int(x)
+        if before:
+            return x
+        else:
+            return x + 1
