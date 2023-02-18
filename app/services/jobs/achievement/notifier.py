@@ -12,6 +12,9 @@ class AchievementsNotifier(WithLogger, WithDelegates, INotified):
             kv_events = await self.extractor.extract_events_by_type(sender, data)
 
             for event in kv_events:
+                if not event:
+                    continue
+
                 event = await self.tracker.feed_data(event)
                 if event:
                     self.logger.info(f'Achievement event occurred {event}!')
