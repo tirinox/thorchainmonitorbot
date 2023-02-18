@@ -7,7 +7,7 @@ from PIL import Image, ImageDraw
 from localization.achievements.ach_eng import AchievementsEnglishLocalization
 from services.dialog.picture.common import BasePictureGenerator
 from services.dialog.picture.resources import Resources
-from services.jobs.achievement.ach_list import Achievement
+from services.jobs.achievement.ach_list import Achievement, A
 from services.lib.date_utils import today_str
 from services.lib.draw_utils import pos_percent, paste_image_masked, measure_font_to_fit_in_box, convert_indexed_png
 from services.lib.utils import async_wrap
@@ -72,7 +72,6 @@ class AchievementPictureGenerator(BasePictureGenerator):
         # paste_image_masked(image, r.tc_logo_transparent, self.pos_percent(2, 2), 'lt')
 
         # ---- Main number ----
-
         mx, my = self.pos_percent(50, main_number_y)
 
         main_number_label = attributes['main_font'].render_string(milestone_str)
@@ -109,7 +108,7 @@ class AchievementPictureGenerator(BasePictureGenerator):
         return await super().prepare()
 
     def custom_attributes(self, r):
-        if self.ach.key == Achievement.ANNIVERSARY:
+        if self.ach.key == A.ANNIVERSARY:
             bg = self.PICTURE_BACKGROUND_ANNIVERSARY
             main_font = r.custom_font_balloon
             main_colors = ['#fff5b5', '#f211be', '#83acea']
@@ -117,7 +116,7 @@ class AchievementPictureGenerator(BasePictureGenerator):
             desc_stroke = '#954c07'
             main_area = (320, 320)
         else:
-            bg = random.choice(self.PICTURE_BACKGROUNDS)
+            bg = random.choice(self.PICTURE_BACKGROUNDS)  # todo: maybe BGs[hash(key) % max]?
             main_font = r.custom_font_runic
             main_colors = ['#ecfffc', '#1f756a', '#82e6d1']
             desc_color = '#fff'
