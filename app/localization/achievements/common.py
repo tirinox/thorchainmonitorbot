@@ -41,6 +41,7 @@ META_KEY_SPEC = '::asset::'
 class AchievementsLocalizationBase:
     ACHIEVEMENT_DESC_LIST = []
     CELEBRATION_EMOJIES = "🎉🎊🥳🙌🥂🪅🎆"
+    DEVIAION_TO_SHOW_VALUE_PCT = 10
 
     @classmethod
     def check_if_all_achievements_have_description(cls):
@@ -60,6 +61,8 @@ class AchievementsLocalizationBase:
         desc = self.get_achievement_description(a.key)
         emoji = random.choice(self.CELEBRATION_EMOJIES)
         ago = seconds_human(a.timestamp - a.previous_ts) if a.previous_ts and a.has_previous else ''
+
+        # fixme: invalid for descending Achievement e.g. "Coin market cap rank"
         milestone_str = desc.format_value(a.milestone, a)
         prev_milestone_str = desc.format_value(a.prev_milestone, a)
 
@@ -68,7 +71,7 @@ class AchievementsLocalizationBase:
         if not newlines:
             desc_text = desc_text.replace('\n', ' ')
 
-        if a.value and abs(a.value - a.milestone) < 0.01 * a.milestone:
+        if a.value and abs(a.value - a.milestone) < 0.01 * self.DEVIAION_TO_SHOW_VALUE_PCT * a.milestone:
             value_str = ''
         else:
             value_str = desc.format_value(a.value, a)
