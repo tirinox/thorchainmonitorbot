@@ -1,6 +1,6 @@
 from localization.achievements.ach_eng import AchievementsEnglishLocalization
 
-from services.jobs.achievement.ach_list import Achievement
+from services.jobs.achievement.ach_list import Achievement, A
 
 
 class AchievementsTwitterEnglishLocalization(AchievementsEnglishLocalization):
@@ -9,7 +9,7 @@ class AchievementsTwitterEnglishLocalization(AchievementsEnglishLocalization):
 
         msg = f'{emoji} @THORChain has reached a new milestone!\n'
 
-        if a.key == a.ANNIVERSARY:
+        if a.key == A.ANNIVERSARY:
             # special case for anniversary
             msg += f"Happy Birthday! It's been {milestone_str} years since the first block!"
         else:
