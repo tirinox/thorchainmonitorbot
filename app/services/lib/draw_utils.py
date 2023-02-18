@@ -487,3 +487,21 @@ def measure_font_to_fit_in_box(font_getter, text, max_width, max_height, current
         return measure_font_to_fit_in_box(font_getter, text, max_width, max_height, current_font_size * f)
 
     return font, w, h
+
+
+def convert_indexed_png(indexed):
+    if indexed.mode == "P":
+        # check if transparent
+        is_transparent = indexed.info.get("transparency", False)
+
+        if is_transparent is False:
+            # if not transparent, convert indexed image to RGB
+            return indexed.convert("RGB")
+        else:
+            # convert indexed image to RGBA
+            return indexed.convert("RGBA")
+    elif indexed.mode == 'PA':
+        return indexed.convert("RGBA")
+    else:
+        # the mode is not indexed
+        return indexed

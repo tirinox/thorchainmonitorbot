@@ -9,7 +9,7 @@ from services.dialog.picture.common import BasePictureGenerator
 from services.dialog.picture.resources import Resources
 from services.jobs.achievement.ach_list import Achievement
 from services.lib.date_utils import today_str
-from services.lib.draw_utils import pos_percent, paste_image_masked, measure_font_to_fit_in_box
+from services.lib.draw_utils import pos_percent, paste_image_masked, measure_font_to_fit_in_box, convert_indexed_png
 from services.lib.utils import async_wrap
 
 
@@ -45,7 +45,7 @@ class AchievementPictureGenerator(BasePictureGenerator):
     def get_bg(self, attributes):
         path = os.path.join(self.BASE, attributes['background'])
         image = Image.open(path)
-        return image
+        return convert_indexed_png(image)
 
     @async_wrap
     def _get_picture_sync(self):
