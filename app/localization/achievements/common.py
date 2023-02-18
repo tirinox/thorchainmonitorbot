@@ -62,20 +62,29 @@ class AchievementsLocalizationBase:
         emoji = random.choice(self.CELEBRATION_EMOJIES)
         ago = seconds_human(a.timestamp - a.previous_ts) if a.previous_ts and a.has_previous else ''
 
-        # fixme: invalid for descending Achievement e.g. "Coin market cap rank"
-        milestone_str = desc.format_value(a.milestone, a)
+        # Milestone string is used as the main number on the picture
+        if a.descending:
+            # show the real value for descending sequences
+            milestone_str = desc.format_value(a.value, a)
+        else:
+            milestone_str = desc.format_value(a.milestone, a)
+
         prev_milestone_str = desc.format_value(a.prev_milestone, a)
 
+        # Description
         desc_text = desc.description
         desc_text = self._do_substitutions(a, desc_text)
         if not newlines:
             desc_text = desc_text.replace('\n', ' ')
 
-        if a.value and abs(a.value - a.milestone) < 0.01 * self.DEVIAION_TO_SHOW_VALUE_PCT * a.milestone:
-            value_str = ''
-        else:
-            value_str = desc.format_value(a.value, a)
-        value_str = self._do_substitutions(a, value_str)
+        # Value string (goes in parentheses after the milestone_str)
+        value_str = ''
+        if a.value and not a.descending:
+            if abs(a.value - a.milestone) < 0.01 * self.DEVIAION_TO_SHOW_VALUE_PCT * a.milestone:
+                value_str = ''
+            else:
+                value_str = desc.format_value(a.value, a)
+            value_str = self._do_substitutions(a, value_str)
 
         return desc, ago, desc_text, emoji, milestone_str, prev_milestone_str, value_str
 
