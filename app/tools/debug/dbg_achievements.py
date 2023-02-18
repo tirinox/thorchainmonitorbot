@@ -7,7 +7,7 @@ from localization.achievements.ach_eng import AchievementsEnglishLocalization
 from localization.achievements.ach_rus import AchievementsRussianLocalization
 from localization.languages import Language
 from services.dialog.picture.achievement_picture import AchievementPictureGenerator
-from services.jobs.achievement.ach_list import Achievement, AchievementTest
+from services.jobs.achievement.ach_list import Achievement, AchievementTest, A
 from services.jobs.achievement.milestones import Milestones
 from services.jobs.achievement.notifier import AchievementsNotifier
 from services.jobs.achievement.tracker import AchievementsTracker
@@ -66,12 +66,15 @@ def random_achievement():
     return rec
 
 
-async def demo_achievements_picture(lang=None, a=None, v=None, milestone=None):
+async def demo_achievements_picture(lang=None, a=None, v=None, milestone=None, descending=False):
     # rec = random_achievement()
     # rec = Achievement(Achievement.MARKET_CAP_USD, 501_344_119, 500_000_000, now_ts(), 0, 0)
     v = v or 501_344_119
     milestone = milestone or 500_000_000
-    rec = Achievement(a or Achievement.SAVER_VAULT_EARNED_ASSET, v, milestone, now_ts(), 0, 0, 'BNB')
+    prev_milestone = 666
+    previous_ts = now_ts() - random.randint(1, 30) * DAY
+    rec = Achievement(a or A.SAVER_VAULT_EARNED_ASSET, v, milestone, now_ts(), prev_milestone,
+                      previous_ts, 'BNB', descending=descending)
     lang = lang or Language.ENGLISH
 
     loc = AchievementsRussianLocalization() if lang == Language.RUSSIAN else AchievementsEnglishLocalization()
@@ -96,7 +99,7 @@ async def demo_all_achievements():
         print(loc.__class__.__name__)
 
         for ach_key in loc.desc_map:
-            if ach_key == Achievement.ANNIVERSARY:
+            if ach_key == A.ANNIVERSARY:
                 v = random.randint(1, 10)
             else:
                 power = random.randint(1, 8)
@@ -134,9 +137,9 @@ async def demo_run_pipeline(app: LpAppFramework, descending=False, spec=''):
 
     # reset and clear
     await ach_not.cd.clear()
-    await ach_not.tracker.delete_achievement_record(Achievement.TEST)
-    await ach_not.tracker.delete_achievement_record(Achievement.TEST_SPEC, specialization=spec)
-    await ach_not.tracker.delete_achievement_record(Achievement.TEST_DESCENDING)
+    await ach_not.tracker.delete_achievement_record(A.TEST)
+    await ach_not.tracker.delete_achievement_record(A.TEST_SPEC, specialization=spec)
+    await ach_not.tracker.delete_achievement_record(A.TEST_DESCENDING)
 
     await ach_fet.run()
 
@@ -146,10 +149,11 @@ async def main():
     async with app(brief=True):
         # await demo_debug_logic(app)
         # await demo_run_pipeline(app, descending=True, spec='')
-        # await demo_achievements_picture(Language.ENGLISH, Achievement.ANNIVERSARY, 3, 3)
-        # await demo_achievements_picture(Language.RUSSIAN, Achievement.ANNIVERSARY, 2, 2)
-        # await demo_achievements_picture(Language.ENGLISH, Achievement.SAVER_VAULT_MEMBERS, 202, 200)
-        await demo_all_achievements()
+        # await demo_achievements_picture(Language.ENGLISH, A.ANNIVERSARY, 3, 3)
+        # await demo_achievements_picture(Language.RUSSIAN, A.ANNIVERSARY, 2, 2)
+        await demo_achievements_picture(Language.ENGLISH, A.COIN_MARKET_CAP_RANK, 10, 11, descending=True)
+        await demo_achievements_picture(Language.RUSSIAN, A.COIN_MARKET_CAP_RANK, 10, 11, descending=True)
+        # await demo_all_achievements()
 
 
 if __name__ == '__main__':

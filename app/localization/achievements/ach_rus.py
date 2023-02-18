@@ -61,11 +61,18 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
             # special case for anniversary
             years_str = self._years_string(a.milestone)
             msg += f"С Днем рождения! Уже {a.milestone} {years_str} с первого блока!"
+        elif a.key == A.COIN_MARKET_CAP_RANK:
+            msg += f"THORChain Rune заняла <b>#{milestone_str}</b> место по капитализации!"
+            if a.has_previous:
+                msg += f'\nПредыдущее место: {pre(prev_milestone_str)} ({ago} назад)'
         else:
             # default case
             if value_str:
                 value_str = f' ({pre(value_str)})'
-            msg += f'{pre(desc_str)} теперь больше, чем {code(milestone_str)}{value_str}!'
+
+            relation_str = 'теперь меньше, чем' if a.descending else 'теперь больше, чем'
+
+            msg += f'{pre(desc_str)} {relation_str} {code(milestone_str)}{value_str}!'
             if a.has_previous:
                 msg += f'\nПредыдущая веха: {pre(prev_milestone_str)} ({ago} назад)'
 

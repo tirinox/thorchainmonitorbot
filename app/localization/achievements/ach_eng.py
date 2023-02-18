@@ -63,11 +63,18 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
         if a.key == A.ANNIVERSARY:
             # special case for anniversary
             msg += f"Happy Birthday! It's been {milestone_str} years since the first block!"
+        elif a.key == A.COIN_MARKET_CAP_RANK:
+            msg += f"THORChain Rune is <b>#{milestone_str}</b> largest coin my market cap!"
+            if a.has_previous:
+                msg += f'\nPreviously #{prev_milestone_str} ({ago} ago)'
         else:
             # default case
             if value_str:
                 value_str = f' ({pre(value_str)})'
-            msg += f'{pre(desc_str)} is now over {code(milestone_str)}{value_str}!'
+
+            relation_str = 'is now less than' if a.descending else 'is now over'
+
+            msg += f'{pre(desc_str)} {relation_str} {code(milestone_str)}{value_str}!'
             if a.has_previous:
                 msg += f'\nPrevious milestone was {pre(prev_milestone_str)} ({ago} ago)'
 
