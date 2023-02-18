@@ -3,16 +3,7 @@ from typing import NamedTuple
 ACH_CUT_OFF_TS = 1674473134.216954
 
 
-class Achievement(NamedTuple):
-    key: str
-    value: int  # real current value
-    milestone: int = 0  # current milestone
-    timestamp: float = 0
-    prev_milestone: int = 0
-    previous_ts: float = 0
-    specialization: str = ''
-    descending: bool = False  # if True, then we need to check if value is less than milestone
-
+class AchievementName:
     # --- KEYS ---
 
     TEST = '__test'
@@ -71,19 +62,30 @@ class Achievement(NamedTuple):
         return [getattr(cls, k) for k in cls.__dict__
                 if not k.startswith('_') and k.upper() == k]
 
+
+class Achievement(NamedTuple):
+    key: str
+    value: int  # real current value
+    milestone: int = 0  # current milestone
+    timestamp: float = 0
+    prev_milestone: int = 0
+    previous_ts: float = 0
+    specialization: str = ''
+    descending: bool = False  # if True, then we need to check if value is less than milestone
+
     @property
     def has_previous(self):
         return self.prev_milestone > 0 and self.previous_ts > ACH_CUT_OFF_TS
 
 
-A = Achievement
+A = AchievementName
 
 # every single digit is a milestone
 GROUP_EVERY_1 = {
     A.BLOCK_NUMBER,
     A.ANNIVERSARY,
     A.WALLET_COUNT,
-    # A.COIN_MARKET_CAP_RANK,
+    A.COIN_MARKET_CAP_RANK,
 }
 
 # this metrics only trigger when greater than their historic maximums
@@ -160,8 +162,9 @@ GROUP_MINIMALS = {
         'ETH.CRV-0XD533A949740BB3306D119CC777FA900BA034CD52': 7.87088,
     },
 
-    A.COIN_MARKET_CAP_RANK: 42,
-    A.SWAP_UNIQUE_COUNT: 0,
+    # A.COIN_MARKET_CAP_RANK: 42,
+    A.COIN_MARKET_CAP_RANK: 4200,  # fixme: debug
+    # A.SWAP_UNIQUE_COUNT: 0,
 }
 
 

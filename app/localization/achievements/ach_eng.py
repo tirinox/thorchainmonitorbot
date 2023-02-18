@@ -1,5 +1,5 @@
-from localization.achievements.common import A, ADesc, POSTFIX_RUNE, AchievementsLocalizationBase
-from services.jobs.achievement.ach_list import Achievement
+from localization.achievements.common import ADesc, POSTFIX_RUNE, AchievementsLocalizationBase
+from services.jobs.achievement.ach_list import Achievement, A
 from services.lib.texts import code, pre
 
 
@@ -60,7 +60,7 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
 
         msg = f'{emoji} <b>THORChain has reached a new milestone!</b>\n'
 
-        if a.key == a.ANNIVERSARY:
+        if a.key == A.ANNIVERSARY:
             # special case for anniversary
             msg += f"Happy Birthday! It's been {milestone_str} years since the first block!"
         else:

@@ -13,7 +13,7 @@ class AchievementsTracker(WithLogger):
         super().__init__()
         self.db = db
         self.milestones = Milestones()
-        self.milestones_every = Milestones(list(range(1, 10)))
+        self.milestones_every = Milestones(Milestones.EVERY_DIGIT_PROGRESSION)
 
     @staticmethod
     def key(name, specialization=''):
@@ -49,6 +49,10 @@ class AchievementsTracker(WithLogger):
         return v
 
     async def feed_data(self, event: Achievement) -> Optional[Achievement]:
+        if not event.value:
+            self.logger.warning(f'Achievement {event.key} has 0 value! Skip it.')
+            return
+
         name, value, descending = event.key, event.value, event.descending
         assert name
 

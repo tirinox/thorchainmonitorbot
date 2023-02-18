@@ -1,6 +1,6 @@
 from localization.achievements.ach_eng import AchievementsEnglishLocalization
-from localization.achievements.common import A, ADesc, POSTFIX_RUNE
-from services.jobs.achievement.ach_list import Achievement
+from localization.achievements.common import ADesc, POSTFIX_RUNE
+from services.jobs.achievement.ach_list import Achievement, A
 from services.lib.texts import code, pre
 
 
@@ -57,7 +57,7 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
         desc, ago, desc_str, emoji, milestone_str, prev_milestone_str, value_str = self.prepare_achievement_data(a)
 
         msg = f'{emoji} <b>THORChain достиг нового рубежа!</b>\n'
-        if a.key == a.ANNIVERSARY:
+        if a.key == A.ANNIVERSARY:
             # special case for anniversary
             years_str = self._years_string(a.milestone)
             msg += f"С Днем рождения! Уже {a.milestone} {years_str} с первого блока!"

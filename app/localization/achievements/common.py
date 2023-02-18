@@ -1,7 +1,7 @@
 import random
 from typing import NamedTuple
 
-from services.jobs.achievement.ach_list import Achievement
+from services.jobs.achievement.ach_list import Achievement, A
 from services.lib.date_utils import seconds_human
 from services.lib.money import short_money, RAIDO_GLYPH
 
@@ -33,7 +33,6 @@ class AchievementDescription(NamedTuple):
                            integer=True, signed=self.signed)
 
 
-A = Achievement
 ADesc = AchievementDescription
 POSTFIX_RUNE = RAIDO_GLYPH
 META_KEY_SPEC = '::asset::'
