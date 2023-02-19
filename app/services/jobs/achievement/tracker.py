@@ -32,6 +32,7 @@ class AchievementsTracker(WithLogger):
             else:
                 return value >= threshold
 
+
     async def feed_data(self, event: Achievement) -> Optional[Achievement]:
         if not event:
             self.logger.error(f'No event!')
