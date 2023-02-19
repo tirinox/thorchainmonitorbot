@@ -1,4 +1,3 @@
-import random
 from collections import defaultdict
 from typing import List
 
@@ -79,6 +78,7 @@ class AchievementsExtractor(WithLogger):
     @staticmethod
     def on_block(sender: LastBlockStore):
         years_old = full_years_old_ts(THORCHAIN_BIRTHDAY)
+
         achievements = [
             Achievement(A.BLOCK_NUMBER, int(sender.last_thor_block)),
             Achievement(A.ANNIVERSARY, years_old),

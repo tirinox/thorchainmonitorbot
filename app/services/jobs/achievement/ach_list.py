@@ -18,6 +18,7 @@ class AchievementName:
 
     DAILY_TX_COUNT = 'daily_tx_count'  # todo
     DAILY_VOLUME = 'daily_volume'  # todo
+
     BLOCK_NUMBER = 'block_number'
     ANNIVERSARY = 'anniversary'
 

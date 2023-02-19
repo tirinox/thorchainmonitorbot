@@ -98,7 +98,7 @@ class TwitterBot:
             else:
                 logging.warning(f'Type "{msg.message_type}" is not supported for Twitter.')
             return True
-        except tweepy.errors.Forbidden as e:
+        except tweepy.errors.Forbidden as e:  # todo: check the error code before shortening the message!
             if _retrying:
                 logging.exception('Tried to resend Twitter message making it shorter. '
                                   'Failed again. It must me something else.')

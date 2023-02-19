@@ -175,9 +175,9 @@ async def main():
         # await demo_achievements_picture(Language.RUSSIAN, A.ANNIVERSARY, 2, 2)
         # await demo_achievements_picture(Language.ENGLISH, A.COIN_MARKET_CAP_RANK, 10, 11, descending=True)
         # await demo_achievements_picture(Language.RUSSIAN, A.COIN_MARKET_CAP_RANK, 10, 11, descending=True)
-        # await demo_all_achievements()
+        await demo_all_achievements()
         # await demo_run_pipeline_coin_rank(app)
-        await demo_run_pipeline_test(app, spec='')
+        await demo_run_pipeline_test(app, spec='BTC.BTC')
 
 
 if __name__ == '__main__':
