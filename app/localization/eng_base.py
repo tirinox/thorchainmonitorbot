@@ -271,7 +271,7 @@ class BaseLocalization(ABC):  # == English
             return ''
         items = []
         for coin in balances.assets:
-            postfix = ' ' + Asset(coin.asset).short_str
+            postfix = ' ' + Asset(coin.asset).pretty_str
             items.append(pre(short_money(coin.amount_float) + postfix))
 
         if len(items) == 1:
@@ -388,7 +388,7 @@ class BaseLocalization(ABC):  # == English
                 if a.is_synth:
                     chain = Chains.THOR
                 url = get_explorer_url_to_tx(net, chain, tx_id)
-                items.append(link(url, text=a.chain))
+                items.append(link(url, text=a.pretty_str))
 
         result = ', '.join(items)
 
@@ -740,7 +740,7 @@ class BaseLocalization(ABC):  # == English
 
     @staticmethod
     def pool_link(pool_name):
-        pool_name = Asset.from_string(pool_name).short_str
+        pool_name = Asset.from_string(pool_name).pretty_str
         return link(get_pool_url(pool_name), pool_name)
 
     def notification_text_pool_churn(self, pc: PoolChanges):
@@ -1929,7 +1929,7 @@ class BaseLocalization(ABC):  # == English
             except ValueError:
                 delta_p = ''
 
-            asset = Asset.from_string(pool.asset).short_str
+            asset = Asset.from_string(pool.asset).pretty_str
             url = get_pool_url(pool.asset)
 
             text += f'#{i}. {link(url, asset)}: {code(v)} {delta_p}\n'

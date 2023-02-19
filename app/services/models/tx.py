@@ -336,7 +336,7 @@ class ThorTx:
     def get_asset_summary(self, in_only=False, out_only=False, short_name=True):
         results = defaultdict(float)
         for coin in self.coins_of(in_only, out_only):
-            name = Asset(coin.asset).short_str if short_name else coin.asset
+            name = Asset(coin.asset).pretty_str if short_name else coin.asset
             results[name] += coin.amount_float
         return results
 

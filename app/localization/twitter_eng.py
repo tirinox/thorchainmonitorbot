@@ -323,7 +323,7 @@ class TwitterEnglishLocalization(BaseLocalization):
                 if to_status is not None and status != to_status:  # fix: staged -> staged
                     extra += f' → {to_status}'
                 extra = f'({extra})'
-            return f'  • {Asset(pool_name).short_str}: {extra}'
+            return f'  • {Asset(pool_name).pretty_str}: {extra}'
 
         if pc.pools_added:
             message += '✅ Pools added:\n' + '\n'.join([pool_text(*a) for a in pc.pools_added]) + '\n'

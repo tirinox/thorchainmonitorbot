@@ -247,8 +247,7 @@ class Asset:
         return a
 
     @property
-    def short_str(self):
-        # todo: rename to "pretty_str"
+    def pretty_str(self):
         s = '💊' if self.is_synth else ''
         result = f'{s}{self.chain}{self.separator_symbol}{self.name}'
         if self.tag:
