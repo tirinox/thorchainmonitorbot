@@ -3,7 +3,7 @@ aiofiles
 aiogram
 aiohttp
 aioredis
-aiothornode>=0.1.5
+aiothornode>=0.1.6
 async-timeout
 bech32
 # discord.py==1.7.3
