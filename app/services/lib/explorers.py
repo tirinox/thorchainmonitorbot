@@ -97,7 +97,7 @@ def get_thoryield_address(network: str, address: str, chain: str = Chains.THOR):
         return f'https://mctn.vercel.app/dashboard?{chain}={address}'
     else:
         chain = chain.lower()
-        return f'https://app.thoryield.com/accounts?{chain}={address}'
+        return f'https://app.thoryield.com/lp?{chain}={address}'
 
 
 def get_ip_info_link(ip_address):
