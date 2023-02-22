@@ -120,6 +120,8 @@ class Broadcaster:
     async def safe_send_message_rate(self, channel_info: ChannelDescriptor,
                                      message: BoardMessage, **kwargs) -> (bool, bool):
         async with self._rate_limit_lock:
+            message = await self._form_message(message, channel_info)
+
             limiter = RateLimitCooldown(self.deps.db,
                                         f'SendMessage:{channel_info.short_coded}',
                                         self._limit_number,

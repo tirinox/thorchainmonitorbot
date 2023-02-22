@@ -24,6 +24,7 @@ from services.lib.w3.dex_analytics import DexReportEntry, DexReport
 from services.models.cap_info import ThorCapInfo
 from services.models.killed_rune import KilledRuneEntry
 from services.models.last_block import BlockProduceState, EventBlockSpeed
+from services.models.lp_info import LiquidityPoolReport
 from services.models.mimir import MimirChange, MimirHolder
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEvent, EventDataSlash, \
@@ -1624,6 +1625,19 @@ class RussianLocalization(BaseLocalization):
         return f'💸 <b>Большой перевод</b>{tx_link}: ' \
                f'{code(short_money(t.amount, postfix=" " + asset))}{usd_amt} ' \
                f'от {from_my} ➡️ к {to_my}{memo}.'
+
+    def notification_text_regular_lp_report(self, user, address, pool, lp_report: LiquidityPoolReport):
+        pretty_pool = Asset(pool).pretty_str
+        explorer_url = get_explorer_url_to_address(self.cfg.network_id, Chains.THOR, address)
+        explorer_link = link(explorer_url, short_address(address, 10, 5))
+
+        thor_yield_url = get_thoryield_address(self.cfg.network_id, address)
+        thor_yield_link = link(thor_yield_url, 'THORYield')
+
+        return (
+            f'Ваш отчет для адреса {explorer_link} в пуле {pre(pretty_pool)} готов.\n'
+            f'{thor_yield_link}.'
+        )
 
     @staticmethod
     def format_dex_entry(e: DexReportEntry, r):

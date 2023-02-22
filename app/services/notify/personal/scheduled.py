@@ -69,18 +69,19 @@ class PersonalPeriodicNotificationService(WithLogger, INotified):
         lp_report = await rune_yield.generate_yield_report_single_pool(address, pool)
 
         # Convert it to a picture
-        value_hidden = False  # todo: keep in the settings not in the FSM context
+        value_hidden = False
         loc = await self.deps.loc_man.get_from_db(user, self.deps.db)
 
         picture = await generate_yield_picture(self.deps.price_holder, lp_report, loc, value_hidden=value_hidden)
         picture_bio = img_to_bio(picture, f'Thorchain_LP_{pool}_{today_str()}.png')
+        caption = loc.notification_text_regular_lp_report(user, address, pool, lp_report)
 
         # Send it to the user
         settings = await self.deps.settings_manager.get_settings(user)
         platform = SettingsManager.get_platform(settings)
         await self.deps.broadcaster.safe_send_message_rate(
             ChannelDescriptor(platform, user),
-            BoardMessage.make_photo(picture_bio),
+            BoardMessage.make_photo(picture_bio, caption=caption),
             disable_web_page_preview=True
         )
         self.logger.info(f'Report for {user}/{address}/{pool} sent successfully.')

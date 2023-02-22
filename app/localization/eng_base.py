@@ -27,6 +27,7 @@ from services.lib.w3.token_record import AmountToken
 from services.models.cap_info import ThorCapInfo
 from services.models.killed_rune import KilledRuneEntry
 from services.models.last_block import BlockProduceState, EventBlockSpeed
+from services.models.lp_info import LiquidityPoolReport
 from services.models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting, MimirVoteOption
 from services.models.mimir_naming import MimirUnits, NEXT_CHAIN_VOTING_MAP
 from services.models.net_stats import NetworkStats
@@ -2135,6 +2136,21 @@ class BaseLocalization(ABC):  # == English
         return f'💸 <b>Large transfer</b>{tx_link}: ' \
                f'{code(short_money(t.amount, postfix=" " + asset))}{usd_amt} ' \
                f'from {from_my} ➡️ {to_my}{memo}.'
+
+    def notification_text_regular_lp_report(self, user, address, pool, lp_report: LiquidityPoolReport):
+        pretty_pool = Asset(pool).pretty_str
+        explorer_url = get_explorer_url_to_address(self.cfg.network_id, Chains.THOR, address)
+        explorer_link = link(explorer_url, short_address(address, 10, 5))
+
+        thor_yield_url = get_thoryield_address(self.cfg.network_id, address)
+        thor_yield_link = link(thor_yield_url, 'THORYield')
+
+        return (
+            f'Your LP/Savers position report {explorer_link} in the pool {pre(pretty_pool)} is ready.\n'
+            f'{thor_yield_link}.'
+        )
+
+    # ------ DEX -------
 
     @staticmethod
     def format_dex_entry(e: DexReportEntry, r):
