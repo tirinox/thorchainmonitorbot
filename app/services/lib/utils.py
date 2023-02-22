@@ -1,5 +1,6 @@
 import asyncio
 import binascii
+import dataclasses
 import hashlib
 import inspect
 import itertools
@@ -10,6 +11,7 @@ import pickle
 import random
 import re
 import time
+import typing
 from bisect import bisect_left
 from collections import deque, Counter, defaultdict
 from functools import wraps, partial
@@ -464,3 +466,25 @@ def grouper(n, iterable):
 
 def is_list_of_type(lst, type_):
     return lst and all(isinstance(item, type_) for item in lst)
+
+
+def is_named_tuple_instance(x):
+    t = type(x)
+    b = t.__bases__
+    if len(b) != 1 or b[0] != tuple:
+        return False
+    f = getattr(t, '_fields', None)
+    if not isinstance(f, tuple):
+        return False
+    return all(type(n) == str for n in f)
+
+
+def recursive_asdict(j):
+    if is_named_tuple_instance(j):
+        return {k: recursive_asdict(v) for k, v in j._asdict().items()}
+    elif dataclasses.is_dataclass(j):
+        return {k: recursive_asdict(v) for k, v in dataclasses.asdict(j).items()}
+    elif isinstance(j, (list, tuple)):
+        return [recursive_asdict(v) for v in j]
+    else:
+        return j

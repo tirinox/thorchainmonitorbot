@@ -18,7 +18,7 @@ from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.geo_ip import GeoIPManager
 from services.lib.settings_manager import SettingsManager
-from services.lib.utils import setup_logs
+from services.lib.utils import setup_logs, recursive_asdict
 from services.lib.w3.dex_analytics import DexAnalyticsCollector
 from services.models.node_watchers import NodeWatcherStorage
 
@@ -152,7 +152,7 @@ class AppSettingsAPI:
 
         source = DexAnalyticsCollector(self.deps)
         report = await source.get_analytics(duration)
-        return JSONResponse(report._asdict())
+        return JSONResponse(recursive_asdict(report))
 
     def _routes(self):
         other = []
