@@ -15,7 +15,7 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
         ADesc(A.SWAP_COUNT_TOTAL, 'Total swap count'),
         ADesc(A.SWAP_COUNT_24H, '24h swap count'),
         ADesc(A.SWAP_COUNT_30D, 'Monthly swap count'),
-        ADesc(A.SWAP_UNIQUE_COUNT, 'Unique swappers'),
+        # ADesc(A.SWAP_UNIQUE_COUNT, 'Unique swappers'),
         ADesc(A.ADD_LIQUIDITY_COUNT_TOTAL, 'Total add liquidity count'),
         ADesc(A.ADD_LIQUIDITY_VOLUME_TOTAL, 'Total add liquidity volume'),
         ADesc(A.DAILY_VOLUME, 'Daily volume', prefix='$'),

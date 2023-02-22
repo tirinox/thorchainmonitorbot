@@ -25,7 +25,7 @@ class AchievementName:
     SWAP_COUNT_TOTAL = 'swap_count_total'
     SWAP_COUNT_24H = 'swap_count_24h'
     SWAP_COUNT_30D = 'swap_count_30d'
-    SWAP_UNIQUE_COUNT = 'swap_unique_count'
+    # SWAP_UNIQUE_COUNT = 'swap_unique_count'  (0)
     SWAP_VOLUME_TOTAL_RUNE = 'swap_volume_total_rune'
 
     ADD_LIQUIDITY_COUNT_TOTAL = 'add_liquidity_count_total'

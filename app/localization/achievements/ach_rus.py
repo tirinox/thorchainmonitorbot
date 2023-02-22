@@ -16,7 +16,7 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
         ADesc(A.SWAP_COUNT_TOTAL, 'Общее количество свопов'),
         ADesc(A.SWAP_COUNT_24H, 'Количество свопов за 24 часа'),
         ADesc(A.SWAP_COUNT_30D, 'Количество свопов за 30 дней'),
-        ADesc(A.SWAP_UNIQUE_COUNT, 'Уникальных своперов'),
+        # ADesc(A.SWAP_UNIQUE_COUNT, 'Уникальных своперов'),
         ADesc(A.ADD_LIQUIDITY_COUNT_TOTAL, 'Общее количество добавлений ликвидности'),
         ADesc(A.ADD_LIQUIDITY_VOLUME_TOTAL, 'Общий объем добавленной ликвидности'),
         ADesc(A.DAILY_VOLUME, 'Ежедневный объем', prefix='$'),
