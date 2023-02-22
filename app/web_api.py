@@ -13,11 +13,13 @@ from starlette.staticfiles import StaticFiles
 from services.dialog.slack.slack_bot import SlackBot
 from services.jobs.user_counter import UserCounter
 from services.lib.config import Config
+from services.lib.date_utils import parse_timespan_to_seconds, DAY
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.geo_ip import GeoIPManager
 from services.lib.settings_manager import SettingsManager
 from services.lib.utils import setup_logs
+from services.lib.w3.dex_analytics import DexAnalyticsCollector
 from services.models.node_watchers import NodeWatcherStorage
 
 
@@ -104,7 +106,7 @@ class AppSettingsAPI:
         if not channel_id:
             return JSONResponse({
                 'error': 'channel not found'
-            })
+            }, 404)
         data: dict = await request.json()
 
         nodes_set = False
@@ -132,7 +134,7 @@ class AppSettingsAPI:
         if not channel_id:
             return JSONResponse({
                 'error': 'channel not found'
-            })
+            }, 404)
         await self.manager.revoke_token(channel_id)
         return JSONResponse({'channel': channel_id, 'status': 'revoked'})
 
@@ -142,6 +144,15 @@ class AppSettingsAPI:
     async def _active_users_handle(self, req: Request):
         stats = await self._user_counter.get_main_stats()
         return JSONResponse(stats._asdict())
+
+    async def _get_dex_aggregator_stats(self, req: Request):
+        duration = parse_timespan_to_seconds(req.query_params.get('duration', '1d'))
+        if duration > 90 * DAY:
+            return JSONResponse({'error': 'Max duration 90 Days'}, 400)
+
+        source = DexAnalyticsCollector(self.deps)
+        report = await source.get_analytics(duration)
+        return JSONResponse(report._asdict())
 
     def _routes(self):
         other = []
@@ -164,6 +175,7 @@ class AppSettingsAPI:
             Route('/api/node/ip/{ip}', self._get_node_ip_info, methods=['GET']),
 
             Route('/api/stats/users', self._active_users_handle, methods=['GET']),
+            Route('/api/stats/dex', self._get_dex_aggregator_stats, methods=['GET']),
             *other,
         ]
 

@@ -16,6 +16,14 @@ class DexReportEntry(NamedTuple):
     count: int
 
 
+class DexTxPoint(NamedTuple):
+    hash: str
+    rune_volume: float
+    swap_in: AmountToken
+    swap_out: AmountToken
+    timestamp: float = 0
+
+
 class DexReport(NamedTuple):
     total: DexReportEntry
     by_outer_asset: Dict[str, DexReportEntry]
@@ -24,6 +32,7 @@ class DexReport(NamedTuple):
     swap_outs: DexReportEntry
     period_sec: float
     usd_per_rune: float
+    points: List[DexTxPoint]
 
     @staticmethod
     def _top_by_category(cat: Dict[str, DexReportEntry]):
@@ -36,13 +45,6 @@ class DexReport(NamedTuple):
 
     def top_popular_aggregators(self):
         return self._top_by_category(self.by_aggregator)
-
-
-class DexTxPoint(NamedTuple):
-    hash: str
-    rune_volume: float
-    swap_in: AmountToken
-    swap_out: AmountToken
 
 
 class DexAnalyticsCollector(WithLogger, INotified):
@@ -93,14 +95,14 @@ class DexAnalyticsCollector(WithLogger, INotified):
 
     async def get_analytics(self, period=DAY) -> DexReport:
         def cvt_point(point) -> DexTxPoint:
-            d = point[1]  # discard timestamps
+            ts, d = point
             swap_in = AmountToken.from_json(d.get('swap_in'))
             swap_out = AmountToken.from_json(d.get('swap_out'))
             try:
                 volume = float(d['volume'])
             except ValueError:
                 volume = 0.0
-            return DexTxPoint(d.get('hash'), volume, swap_in, swap_out)
+            return DexTxPoint(d.get('hash'), volume, swap_in, swap_out, timestamp=ts)
 
         all_points = await self.series.get_last_points(period, max_points=self.MAX_POINTS)
         all_points = [cvt_point(p) for p in all_points]
@@ -140,5 +142,6 @@ class DexAnalyticsCollector(WithLogger, INotified):
             swap_ins=swap_in_report,
             swap_outs=swap_out_report,
             period_sec=period,
-            usd_per_rune=self.deps.price_holder.usd_per_rune
+            usd_per_rune=self.deps.price_holder.usd_per_rune,
+            points=all_points,
         )
