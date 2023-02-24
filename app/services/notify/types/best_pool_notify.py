@@ -3,14 +3,16 @@ from typing import Optional
 
 from aioredis import Redis
 
+from localization.languages import Language
 from localization.manager import BaseLocalization
-from services.lib.delegates import INotified
 from services.jobs.fetch.pool_price import PoolInfoFetcherMidgard
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds
+from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
 from services.models.pool_info import PoolInfoMap, PoolMapPair
+from services.notify.channel import BoardMessage
 
 
 class BestPoolsNotifier(INotified):
@@ -62,3 +64,9 @@ class BestPoolsNotifier(INotified):
         await self.deps.broadcaster.notify_preconfigured_channels(
             BaseLocalization.notification_text_best_pools,
             pd, self.n_pools)
+
+    async def _debug_twitter(self):
+        notifier: BestPoolsNotifier = self.deps.best_pools_notifier
+        loc = self.deps.loc_man[Language.ENGLISH_TWITTER]
+        text = loc.notification_text_best_pools(notifier.last_pool_detail, notifier.n_pools)
+        await self.deps.twitter_bot.send_message('', BoardMessage(text))

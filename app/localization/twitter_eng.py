@@ -713,7 +713,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
             delta_p = bracketify(format_percent(delta, 100, signed=True)) if delta else ''
 
-            asset = Asset.from_string(pool.asset).shortest
+            asset = '$' + Asset.from_string(pool.asset).name  # mention in Twitter
 
             text += f'{i}. {asset}: {v} {delta_p}\n'
         if not top_pools:
@@ -721,9 +721,11 @@ class TwitterEnglishLocalization(BaseLocalization):
         return text.strip()
 
     def notification_text_best_pools(self, pd: PoolMapPair, n_pools):
+        if pd.empty:
+            return ''
+
         n_pools = 3  # less for Twitter
-        no_pool_text = 'Nothing yet. Maybe still loading...'
-        text = '\n'.join([self.format_pool_top(top_pools, pd, title, no_pool_text, n_pools)
+        text = '\n'.join([self.format_pool_top(top_pools, pd, title, '', n_pools)
                           for title, top_pools in [
                               ('💎 Best APY', pd.BY_APY),
                               ('💸 Top volume', pd.BY_VOLUME_24h),
@@ -741,7 +743,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         emoji = self.cex_flow_emoji(cex_flow)
         period_string = self.format_period(cex_flow.period_sec)
         return (
-            f'🌬️ Rune CEX flow last {period_string}\n'
+            f'🌬️ $Rune CEX flow last {period_string}\n'
             f'➡️ Inflow: {short_money(cex_flow.rune_cex_inflow, postfix=RAIDO_GLYPH)} '
             f'({short_dollar(cex_flow.in_usd)})\n'
             f'⬅️ Outflow: {short_money(cex_flow.rune_cex_outflow, postfix=RAIDO_GLYPH)} '
