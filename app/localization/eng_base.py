@@ -437,9 +437,17 @@ class BaseLocalization(ABC):  # == English
             chain = Chains.AVAX
         return f'{self.format_op_amount(a.amount)} {chain}.{a.token.symbol}'
 
-    def format_swap_route(self, tx: ThorTx, usd_per_rune):
+    def format_swap_route(self, tx: ThorTx, usd_per_rune, dollar_assets=False):
         inputs = tx.get_asset_summary(in_only=True)
         outputs = tx.get_asset_summary(out_only=True)
+
+        if dollar_assets:
+            def convert_assets(d):
+                # mention in Twitter
+                return {('$' + Asset(a).name): v for a, v in d.items()}
+
+            inputs = convert_assets(inputs)
+            outputs = convert_assets(outputs)
 
         input_str = ', '.join(f"{self.format_op_amount(amount)} {asset}" for asset, amount in inputs.items())
         output_str = ', '.join(f"{self.format_op_amount(amount)} {asset}" for asset, amount in outputs.items())
