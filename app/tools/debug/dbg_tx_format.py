@@ -126,6 +126,13 @@ async def demo_withdraw_savers(app):
     await present_one_aff_tx(app, q_path)
 
 
+async def demo_add_savers(app):
+    q_path = free_url_gen.url_for_tx(0, 50,
+                                     txid='2A36FD67A32D47C9B7B1821197A8EF9F3C688CAB8979C43F235B8664563009CF',
+                                     tx_type=ThorTxType.TYPE_ADD_LIQUIDITY)
+    await present_one_aff_tx(app, q_path)
+
+
 async def midgard_test_donate(app, mdg, tx_parser):
     q_path = free_url_gen.url_for_tx(0, 10, types='donate')
     j = await mdg.request(q_path)
@@ -317,11 +324,12 @@ async def main():
     # await demo_test_2(app)
     # await demo_same_merge_swap(app)
     # await demo_withdraw_savers(app)
+    await demo_add_savers(app)
     # await demo_find_last_savers_additions(app)
     # await demo_midgard_test_large_ilp(app)
     # await demo_savers_add(app)
     # await demo_verify_tx_scanner_in_the_past(app)
-    await find_affiliate_txs(app, 1, (ThorTxType.TYPE_SWAP,))
+    # await find_affiliate_txs(app, 1, (ThorTxType.TYPE_SWAP,))
 
 
 if __name__ == '__main__':

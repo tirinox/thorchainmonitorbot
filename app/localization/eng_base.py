@@ -378,13 +378,16 @@ class BaseLocalization(ABC):  # == English
 
     TEXT_MORE_TXS = ' and {n} more'
 
-    def links_to_txs(self, txs: List[ThorSubTx], main_run_txid='', max_n=2):
+    def links_to_txs(self, txs: List[ThorSubTx], main_run_txid='', max_n=2, only_native_pools=False):
         net = self.cfg.network_id
         items = []
         for tx in txs[:max_n]:
             tx_id = tx.tx_id or main_run_txid
             if tx_id:
-                a = Asset(tx.first_asset)
+                if only_native_pools:
+                    a = Asset(tx.first_asset)
+                else:
+                    a = Asset(Asset.to_L1_pool_name(tx.first_asset))
                 chain = a.chain if a.chain else Chains.THOR
                 if a.is_synth:
                     chain = Chains.THOR
@@ -613,19 +616,8 @@ class BaseLocalization(ABC):  # == English
                 f"liquidity fee: {bold(short_dollar(l_fee_usd))}{slip_mark}"
             )
 
-        blockchain_components = [f"User: {self.link_to_explorer_user_address_for_tx(tx, name_map)}"]
+        blockchain_components_str = self._add_input_output_links(tx, name_map, 'Input: ', 'Output: ', 'User: ')
 
-        if tx.in_tx:
-            in_links = self.links_to_txs(tx.in_tx, tx.tx_hash)
-            if in_links:
-                blockchain_components.append('Inputs: ' + in_links)
-
-        if tx.out_tx:
-            out_links = self.links_to_txs(tx.out_tx, tx.tx_hash)
-            if out_links:
-                blockchain_components.append('Outputs: ' + out_links)
-
-        blockchain_components_str = " / ".join(blockchain_components)
         msg = f"{heading}\n" \
               f"{blockchain_components_str}\n" \
               f"{content}"
@@ -639,6 +631,20 @@ class BaseLocalization(ABC):  # == English
             )
 
         return msg.strip()
+
+    def _add_input_output_links(self, tx, name_map, text_inputs, text_outputs, text_user):
+        blockchain_components = [f"{text_user}{self.link_to_explorer_user_address_for_tx(tx, name_map)}"]
+
+        if tx.in_tx:
+            in_links = self.links_to_txs(tx.in_tx, tx.tx_hash)
+            if in_links:
+                blockchain_components.append(text_inputs + in_links)
+        if tx.out_tx:
+            out_links = self.links_to_txs(tx.out_tx, tx.tx_hash)
+            if out_links:
+                blockchain_components.append(text_outputs + out_links)
+
+        return " / ".join(blockchain_components)
 
     def get_savers_limits(self, pool: PoolInfo, usd_per_rune, mimir: MimirHolder, asset_amount):
         max_synth_per_asset_ratio = mimir.get_max_synth_per_pool_depth()  # normally: 0.15

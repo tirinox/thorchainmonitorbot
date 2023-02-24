@@ -9,7 +9,7 @@ from services.dialog.twitter.text_length import twitter_intelligent_text_splitte
 from services.jobs.fetch.circulating import SupplyEntry
 from services.lib.config import Config
 from services.lib.constants import thor_to_float, rune_origin, Chains
-from services.lib.date_utils import now_ts, seconds_human, DAY
+from services.lib.date_utils import now_ts, seconds_human
 from services.lib.explorers import get_explorer_url_to_tx
 from services.lib.midgard.name_service import NameMap, add_thor_suffix
 from services.lib.money import Asset, short_dollar, format_percent, pretty_money, pretty_dollar, RAIDO_GLYPH, \
@@ -26,10 +26,10 @@ from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeVersionConsensus, NodeInfo
 from services.models.pool_info import PoolMapPair, PoolChanges, PoolInfo
 from services.models.price import RuneMarketInfo, PriceReport
+from services.models.savers import EventSaverStats
 from services.models.transfer import RuneCEXFlow, RuneTransfer
 from services.models.tx import ThorTx, ThorTxType
 from services.notify.channel import MESSAGE_SEPARATOR
-from services.models.savers import EventSaverStats
 
 
 class TwitterEnglishLocalization(BaseLocalization):
@@ -121,7 +121,8 @@ class TwitterEnglishLocalization(BaseLocalization):
         if date_text := self.tx_date(tx):
             heading += f' {date_text}'
 
-        asset = Asset(tx.first_pool).name
+        # we add '$' before assets to mention the asset name in Twitter
+        asset = '$' + Asset(tx.first_pool).name
 
         content = f'👤{self.link_to_address(tx.sender_address, name_map)}: '
 

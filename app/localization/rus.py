@@ -452,19 +452,8 @@ class RussianLocalization(BaseLocalization):
                 f"Комиссия пулам: {bold(pretty_dollar(l_fee_usd))}{slip_mark}"
             )
 
-        blockchain_components = [f"Пользователь: {self.link_to_explorer_user_address_for_tx(tx, name_map)}"]
+        blockchain_components_str = self._add_input_output_links(tx, name_map, 'Входы: ', 'Выходы: ', 'Пользователь: ')
 
-        if tx.in_tx:
-            in_links = self.links_to_txs(tx.in_tx, tx.tx_hash)
-            if in_links:
-                blockchain_components.append('Входы: ' + in_links)
-
-        if tx.out_tx:
-            out_links = self.links_to_txs(tx.out_tx, tx.tx_hash)
-            if out_links:
-                blockchain_components.append('Выходы: ' + out_links)
-
-        blockchain_components_str = " / ".join(blockchain_components)
         msg = f"{heading}\n" \
               f"{blockchain_components_str}\n" \
               f"{content}"
