@@ -822,12 +822,14 @@ class TwitterEnglishLocalization(BaseLocalization):
         for i, (_, e) in enumerate(top_aggr, start=1):
             e: DexReportEntry
             top_aggr_str += f'{i}. {e.name}: {self.format_dex_entry(e, r)} \n'
+        top_aggr_str = top_aggr_str or '-'
 
         top_asset_str = ''
         top_asset = r.top_popular_assets()[:3]
         for i, (_, e) in enumerate(top_asset, start=1):
             e: DexReportEntry
             top_asset_str += f'{i}. {e.name}: {self.format_dex_entry(e, r)} \n'
+        top_asset_str = top_asset_str or '-'
 
         parts = [
             (
