@@ -8,7 +8,7 @@ from localization.languages import Language
 from services.dialog.picture.crypto_logo import CryptoLogoDownloader
 from services.dialog.picture.resources import Resources
 from services.dialog.picture.savers_picture import SaversPictureGenerator
-from services.jobs.fetch.savers import SaversStatsFetcher
+from services.jobs.fetch.savers_vnx import VNXSaversStatsFetcher
 from services.lib.date_utils import DAY
 from services.lib.texts import sep
 from services.models.pool_info import PoolInfo
@@ -96,21 +96,23 @@ async def demo_logo_download(app: LpAppFramework):
         await logo_downloader.get_or_download_logo_cached(asset)
 
 
-async def demo_flip(app: LpAppFramework):
-    ssf = SaversStatsFetcher(app.deps)
-    r = await ssf.load_real_yield_flipside()
+async def demo_vnx(app: LpAppFramework):
+    ssf = VNXSaversStatsFetcher(app.deps)
+    vs = await ssf.load_real_yield_vanaheimex()
+    r = ssf.make_bank(vs)
     pprint(r)
-    r7 = ssf.get_savers_yield_days_ago(r, 7)
-    sep()
-    pprint(r7)
 
 
 async def demo_show_savers_pic(app: LpAppFramework):
+    await app.deps.pool_fetcher.run_once()
     await app.deps.last_block_fetcher.run_once()
     await app.deps.mimir_const_fetcher.run_once()
 
-    ssn = SaversStatsNotifier(app.deps, None)
-    event = await ssn.data_source.get_savers_event_dynamically(7 * DAY)
+    # ssn = SaversStatsNotifier(app.deps, None)
+    # event = await ssn.data_source.get_savers_event_dynamically(7 * DAY)
+
+    source = VNXSaversStatsFetcher(app.deps)
+    event = await source.get_savers_event()
 
     loc = app.deps.loc_man[Language.ENGLISH]
     pic_gen = SaversPictureGenerator(loc, event)
@@ -137,10 +139,10 @@ async def main():
     app = LpAppFramework()
     async with app(brief=True):
         # await app.deps.pool_fetcher.run_once()
-        # await demo_show_savers_pic(app)
+        await demo_show_savers_pic(app)
         # await demo_show_notification(app)
         # await demo_new_method_to_reach_fullness(app)
-        await demo_flip(app)
+        # await demo_vnx(app)
 
 
 if __name__ == '__main__':

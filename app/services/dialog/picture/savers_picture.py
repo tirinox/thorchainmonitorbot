@@ -138,12 +138,12 @@ class SaversPictureGenerator(BasePictureGenerator):
 
         prev_vaults = {p.asset: p for p in prev_data.vaults} if prev_data else {}
 
-        def draw_metric(_x, _y, key, _vault, formatter, **kwargs):
+        def draw_metric(_x, _y, key, _vault, formatter, tolerance, **kwargs):
             _prev_vault: SaverVault = prev_vaults.get(_vault.asset)
             v = getattr(_vault, key)
             _delta = (v - getattr(_prev_vault, key)) if _prev_vault else None
 
-            significant = _delta and (abs(_delta) > abs(v) * 0.01)  # if change > 1%
+            significant = _delta and (abs(_delta) > abs(v) * tolerance * 0.01)  # if change > tolerance %
 
             _dy = -9 if significant else 0
             font = font_asset_bold if kwargs.get('bold', True) else font_asset_regular
@@ -166,16 +166,19 @@ class SaversPictureGenerator(BasePictureGenerator):
             a = Asset.from_string(vault.asset)
 
             draw_metric(asset_x, y, 'total_asset_saved', vault,
-                        formatter=short_money, postfix=f' {a.name}')
+                        formatter=short_money, tolerance=0.1,
+                        postfix=f' {a.name}')
 
             draw_metric(dollar_x, y, 'total_asset_saved_usd', vault,
-                        formatter=short_dollar)
+                        formatter=short_dollar, tolerance=0.5)
 
             draw_metric(apr_x, y, 'apr', vault,
-                        formatter=short_money, postfix='%')
+                        formatter=short_money, tolerance=1.0,
+                        postfix='%')
 
             draw_metric(savers_n_x, y, 'number_of_savers', vault,
-                        formatter=short_money, integer=True)
+                        formatter=short_money, tolerance=0.0,
+                        integer=True)
 
             draw.text((filled_x + fill_pb_width + 17, y - 2),
                       f"{short_money(vault.percent_of_cap_filled, integer=True)}%",

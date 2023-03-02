@@ -1,8 +1,6 @@
 import asyncio
-from collections import defaultdict
 from datetime import datetime, timedelta
 from itertools import chain
-from typing import NamedTuple, Dict
 
 from services.jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
 from services.lib.async_cache import AsyncTTL
@@ -15,21 +13,6 @@ from services.models.savers import SaverVault, SaversBank, get_savers_apr, Event
 from services.notify.types.block_notify import LastBlockStore
 
 
-class FSSaversYield(NamedTuple):
-    date: str
-    pool: str
-    day_yield: float
-    cumulative_yield: float
-
-    @classmethod
-    def from_json(cls, j):
-        date = j.get('DATE')
-        pool = j.get('SYNTH')
-        day_minted = float(j.get('DAY_SYNTH_MINTED'))
-        cumulative_minted = float(j.get('CUMULATIVE_SYNTH_MINTED'))
-        return cls(date, pool, day_minted, cumulative_minted)
-
-
 class SaversStatsFetcher(INotified, WithDelegates, WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
@@ -38,23 +21,6 @@ class SaversStatsFetcher(INotified, WithDelegates, WithLogger):
 
     async def get_one_pool_members(self, asset, height=0):
         return await self.deps.thor_connector.query_savers(asset, height=height)
-
-    FLIPSIDE_URL_REAL_YIELD = 'https://node-api.flipsidecrypto.com/api/v2/queries/f4eaccd3-788e-44ac-87ad-d6b208ac68ca/data/latest'
-
-    async def load_real_yield_flipside(self) -> Dict[str, Dict[str, FSSaversYield]]:
-        async with self.deps.session.get(self.FLIPSIDE_URL_REAL_YIELD) as resp:
-            j = await resp.json()
-            results = defaultdict(dict)
-            for line in j:
-                entry = FSSaversYield.from_json(line)
-                results[entry.date].setdefault(entry.pool, entry)
-            return results
-
-    @staticmethod
-    def get_savers_yield_days_ago(savers_yield_dic, ago_days):
-        d = datetime.today() - timedelta(days=ago_days)
-        key = d.strftime('%Y-%m-%d')
-        return savers_yield_dic.get(key)
 
     async def get_all_savers(self, pool_map: PoolInfoMap, block_no=0) -> SaversBank:
         block_no = block_no or self.deps.last_block_store.last_thor_block
