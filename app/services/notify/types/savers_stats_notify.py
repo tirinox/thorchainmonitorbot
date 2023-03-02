@@ -1,17 +1,17 @@
-from typing import Optional
+from typing import Optional, Union
 
 from services.jobs.fetch.savers import SaversStatsFetcher
+from services.jobs.fetch.savers_vnx import VNXSaversStatsFetcher
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import DAY
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.money import short_dollar
 from services.lib.utils import WithLogger
-from services.models.price import RuneMarketInfo
 
 
 class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
-    def __init__(self, deps: DepContainer, ssf: Optional[SaversStatsFetcher]):
+    def __init__(self, deps: DepContainer, ssf: Optional[Union[SaversStatsFetcher, VNXSaversStatsFetcher]]):
         super().__init__()
         self.deps = deps
 
@@ -20,12 +20,12 @@ class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
 
         self.data_source = ssf or SaversStatsFetcher(deps)
 
-    async def on_data(self, sender, rune_market: RuneMarketInfo):
+    async def on_data(self, sender, _):
         if await self.cd_notify.can_do():
             await self.cd_notify.do()
 
             period = max(DAY, self.cd_notify.cooldown)
-            event = await self.data_source.get_savers_event_dynamically(period)
+            event = await self.data_source.get_savers_event(period)
             if not event:
                 self.logger.warning('Failed to load Savers data!')
                 return

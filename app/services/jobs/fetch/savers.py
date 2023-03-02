@@ -1,5 +1,4 @@
 import asyncio
-from datetime import datetime, timedelta
 from itertools import chain
 
 from services.jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
@@ -60,8 +59,7 @@ class SaversStatsFetcher(INotified, WithDelegates, WithLogger):
         savers.sort_vaults()
         return savers
 
-    async def get_savers_event_dynamically(self, period,
-                                           usd_per_rune=None) -> EventSaverStats:
+    async def get_savers_event(self, period, usd_per_rune=None) -> EventSaverStats:
         pf: PoolFetcher = self.deps.pool_fetcher
         block_store: LastBlockStore = self.deps.last_block_store
         shared_price_holder = self.deps.price_holder
@@ -99,9 +97,8 @@ class SaversStatsFetcher(INotified, WithDelegates, WithLogger):
     CACHE_TTL = 60
 
     @AsyncTTL(time_to_live=CACHE_TTL)
-    async def get_savers_event_dynamically_cached(self, period,
-                                                  usd_per_rune=None) -> EventSaverStats:
-        return await self.get_savers_event_dynamically(period, usd_per_rune)
+    async def get_savers_event_cached(self, period, usd_per_rune=None) -> EventSaverStats:
+        return await self.get_savers_event(period, usd_per_rune)
 
     async def on_data(self, sender, data):
         data = await self.get_all_savers(self.deps.price_holder.pool_info_map)

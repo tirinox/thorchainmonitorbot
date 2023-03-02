@@ -27,6 +27,7 @@ from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
 from services.jobs.fetch.queue import QueueFetcher
 from services.jobs.fetch.savers import SaversStatsFetcher
+from services.jobs.fetch.savers_vnx import VNXSaversStatsFetcher
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.ilp_summer import ILPSummer
 from services.jobs.node_churn import NodeChurnDetector
@@ -419,16 +420,19 @@ class App:
 
         if d.cfg.get('saver_stats.enabled', True):
             # pool -- SaversStatsNotifier -------------------- alert_presenter
-            #     \-- SaversStatsFetcher -- Achievements -/
+            #     \-- SaversStatsFetcher -- Achievements ----/
 
-            ssf = SaversStatsFetcher(d)
-            ssc = SaversStatsNotifier(d, ssf)
+            # SaversStatsFetcher: any => SaversBank => [Achievements] ==> [alert_presenter]
+            # SaversStatsNotifier: any => EventSaverStats  ==> [alert_presenter]
+
+            d.saver_stats_fetcher = VNXSaversStatsFetcher(d)
+            ssc = SaversStatsNotifier(d, d.saver_stats_fetcher)
             d.pool_fetcher.add_subscriber(ssc)
             ssc.add_subscriber(d.alert_presenter)
 
             if achievements_enabled:
-                d.pool_fetcher.add_subscriber(ssf)
-                ssf.add_subscriber(achievements)
+                d.pool_fetcher.add_subscriber(d.saver_stats_fetcher)
+                d.saver_stats_fetcher.add_subscriber(achievements)
 
         if d.cfg.get('wallet_counter.enabled', True) and achievements_enabled:  # only used along with achievements
             wallet_counter = AccountNumberFetcher(d)
