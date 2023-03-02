@@ -155,6 +155,7 @@ class MidgardParserV2(MidgardParserBase):
                 volume_24h=int(j.get('volume24h', 0)),
                 savers_units=int(j.get('saversUnits', 0)),
                 savers_depth=int(j.get('saversDepth', 0)),
+                savers_apr=float(j.get('saversAPR', 0)),
             )
         return pm
 

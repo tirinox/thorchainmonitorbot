@@ -418,6 +418,9 @@ class App:
             d.pool_fetcher.add_subscriber(supply_notifier)
 
         if d.cfg.get('saver_stats.enabled', True):
+            # pool -- SaversStatsNotifier -------------------- alert_presenter
+            #     \-- SaversStatsFetcher -- Achievements -/
+
             ssf = SaversStatsFetcher(d)
             ssc = SaversStatsNotifier(d, ssf)
             d.pool_fetcher.add_subscriber(ssc)

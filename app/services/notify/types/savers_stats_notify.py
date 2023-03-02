@@ -22,7 +22,6 @@ class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
 
     async def on_data(self, sender, rune_market: RuneMarketInfo):
         if await self.cd_notify.can_do():
-
             period = max(DAY, self.cd_notify.cooldown)
             event = await self.data_source.get_savers_event_dynamically(period)
             if not event:

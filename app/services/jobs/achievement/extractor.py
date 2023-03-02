@@ -12,7 +12,7 @@ from services.lib.utils import is_list_of_type, WithLogger
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges
 from services.models.price import RuneMarketInfo, LastPriceHolder
-from services.models.savers import AllSavers
+from services.models.savers import SaversBank
 from services.models.tx import ThorTx, ThorTxType
 from services.notify.types.block_notify import LastBlockStore
 
@@ -33,7 +33,7 @@ class AchievementsExtractor(WithLogger):
             kv_events = self.on_mimir(data)
         elif isinstance(data, RuneMarketInfo):
             kv_events = self.on_rune_market_info(data)
-        elif isinstance(data, AllSavers):
+        elif isinstance(data, SaversBank):
             kv_events = self.on_savers(data, self.deps.price_holder)
         elif isinstance(sender, AccountNumberFetcher):
             kv_events = [Achievement(A.WALLET_COUNT, int(data))]
@@ -111,7 +111,7 @@ class AchievementsExtractor(WithLogger):
         return events
 
     @staticmethod
-    def on_savers(data: AllSavers, price_holder: LastPriceHolder):
+    def on_savers(data: SaversBank, price_holder: LastPriceHolder):
         rune_price = price_holder.usd_per_rune or 0.0
         evenets = [
             Achievement(A.TOTAL_UNIQUE_SAVERS, data.total_unique_savers),

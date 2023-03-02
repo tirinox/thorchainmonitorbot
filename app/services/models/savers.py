@@ -45,7 +45,7 @@ class SaverVault:
 
 
 @dataclass
-class AllSavers:
+class SaversBank:
     total_unique_savers: int
     vaults: List[SaverVault]
 
@@ -111,6 +111,7 @@ class AllSavers:
 
 
 def get_savers_apr(pool: PoolInfo, block_no, blocks_per_year=BLOCKS_PER_YEAR) -> float:
+    # todo: this formula is no longer correct
     if not pool.savers_units:
         return 0.0
     saver_growth = (pool.savers_depth - pool.savers_units) / pool.savers_depth
@@ -125,6 +126,6 @@ def how_much_savings_you_can_add(pool: PoolInfo, max_synth_per_pool_depth=0.15,
 
 
 class EventSaverStats(NamedTuple):
-    previous_stats: Optional[AllSavers]
-    current_stats: AllSavers
+    previous_stats: Optional[SaversBank]
+    current_stats: SaversBank
     price_holder: LastPriceHolder

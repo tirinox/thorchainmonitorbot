@@ -45,6 +45,7 @@ class PoolInfo:
 
     savers_depth: int = 0
     savers_units: int = 0
+    savers_apr: float = 0.0
 
     is_virtual: bool = False
 

@@ -1,21 +1,23 @@
 import asyncio
 import dataclasses
 import random
+from pprint import pprint
 
 from localization.eng_base import BaseLocalization
 from localization.languages import Language
 from services.dialog.picture.crypto_logo import CryptoLogoDownloader
 from services.dialog.picture.resources import Resources
 from services.dialog.picture.savers_picture import SaversPictureGenerator
+from services.jobs.fetch.savers import SaversStatsFetcher
 from services.lib.date_utils import DAY
 from services.lib.texts import sep
 from services.models.pool_info import PoolInfo
-from services.models.savers import AllSavers, how_much_savings_you_can_add
+from services.models.savers import SaversBank, how_much_savings_you_can_add
 from services.notify.types.savers_stats_notify import SaversStatsNotifier
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
 
-def randomize_savers_data(c_data: AllSavers, sc=0.2, fail_chance=0.3):
+def randomize_savers_data(c_data: SaversBank, sc=0.2, fail_chance=0.3):
     def r(x, scatter=sc, no_change_chance=fail_chance):
         if random.uniform(0, 1) < no_change_chance:
             return x
@@ -94,8 +96,18 @@ async def demo_logo_download(app: LpAppFramework):
         await logo_downloader.get_or_download_logo_cached(asset)
 
 
+async def demo_flip(app: LpAppFramework):
+    ssf = SaversStatsFetcher(app.deps)
+    r = await ssf.load_real_yield_flipside()
+    pprint(r)
+    r7 = ssf.get_savers_yield_days_ago(r, 7)
+    sep()
+    pprint(r7)
+
+
 async def demo_show_savers_pic(app: LpAppFramework):
     await app.deps.last_block_fetcher.run_once()
+    await app.deps.mimir_const_fetcher.run_once()
 
     ssn = SaversStatsNotifier(app.deps, None)
     event = await ssn.data_source.get_savers_event_dynamically(7 * DAY)
@@ -125,9 +137,10 @@ async def main():
     app = LpAppFramework()
     async with app(brief=True):
         # await app.deps.pool_fetcher.run_once()
-        await demo_show_savers_pic(app)
+        # await demo_show_savers_pic(app)
         # await demo_show_notification(app)
         # await demo_new_method_to_reach_fullness(app)
+        await demo_flip(app)
 
 
 if __name__ == '__main__':
