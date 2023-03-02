@@ -3,6 +3,7 @@ import asyncio
 from localization.manager import BaseLocalization
 from services.dialog.picture.achievement_picture import AchievementPictureGenerator
 from services.dialog.picture.block_height_picture import block_speed_chart
+from services.dialog.picture.pol_picture import POLPictureGenerator
 from services.dialog.picture.savers_picture import SaversPictureGenerator
 from services.jobs.achievement.ach_list import Achievement
 from services.lib.constants import THOR_BLOCKS_PER_MINUTE
@@ -10,6 +11,7 @@ from services.lib.delegates import INotified
 from services.lib.midgard.name_service import NameService
 from services.lib.w3.dex_analytics import DexReport
 from services.models.last_block import EventBlockSpeed, BlockProduceState
+from services.models.pol import EventPOL
 from services.models.pool_info import PoolChanges
 from services.models.savers import EventSaverStats
 from services.models.transfer import RuneCEXFlow, RuneTransfer
@@ -110,6 +112,15 @@ class AlertPresenter(INotified):
             pic_gen = AchievementPictureGenerator(loc.ach, _a)
             pic, pic_name = await pic_gen.get_picture()
             caption = loc.ach.notification_achievement_unlocked(event)
+            return BoardMessage.make_photo(pic, caption=caption, photo_file_name=pic_name)
+
+        await self.broadcaster.notify_preconfigured_channels(_gen, event)
+
+    async def _handle_pol(self, event: EventPOL):
+        async def _gen(loc: BaseLocalization, _a: Achievement):
+            pic_gen = POLPictureGenerator(loc.ach, _a)
+            pic, pic_name = await pic_gen.get_picture()
+            caption = loc.ach.notification_pol_stats(event)
             return BoardMessage.make_photo(pic, caption=caption, photo_file_name=pic_name)
 
         await self.broadcaster.notify_preconfigured_channels(_gen, event)

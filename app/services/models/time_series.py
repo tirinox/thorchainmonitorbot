@@ -47,7 +47,7 @@ class TimeSeries:
 
     async def get_best_point_ago(self, ago_sec: float,
                                  tolerance_sec=TOLERANCE_DEFAULT, tolerance_percent=None,
-                                 ref_ts=None) -> Tuple[dict, float]:
+                                 ref_ts=None, is_json=False) -> Tuple[dict, float]:
         ref_ts = ref_ts or now_ts()
         exact_point = ref_ts - ago_sec
         if tolerance_percent is not None:
@@ -60,6 +60,10 @@ class TimeSeries:
             diff = abs(exact_point - ts)
             if diff < best_diff:
                 best_point, best_diff = data, diff
+
+        if best_point and is_json:
+            best_point = json.loads(best_point['json'])
+
         return best_point, best_diff
 
     async def get_last_values(self, period_sec, key,
