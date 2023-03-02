@@ -13,6 +13,7 @@ from services.dialog.picture.supply_picture import SupplyPictureGenerator
 from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.jobs.fetch.savers import SaversStatsFetcher
+from services.jobs.fetch.savers_vnx import VNXSaversStatsFetcher
 from services.lib.constants import THOR_BLOCKS_PER_MINUTE
 from services.lib.date_utils import DAY, HOUR, parse_timespan_to_seconds, now_ts
 from services.lib.draw_utils import img_to_bio
@@ -100,8 +101,9 @@ class MetricsDialog(BaseDialog):
         elif message.text == self.loc.BUTTON_METR_STATS:
             await self.show_last_stats(message)
         elif message.text == self.loc.BUTTON_METR_SAVERS:
-            await self.ask_generic_duration(message, 'savers', back_state)
-            return
+            # await self.ask_generic_duration(message, 'savers', back_state)
+            # return
+            await self.show_savers(message)
         elif message.text == self.loc.BUTTON_METR_TOP_POOLS:
             await self.show_top_pools(message)
         elif message.text == self.loc.BUTTON_METR_CEX_FLOW:
@@ -145,8 +147,11 @@ class MetricsDialog(BaseDialog):
     async def show_savers(self, message: Message, period=DAY):
         loading_message = await self.show_loading(message)
 
-        ssf = SaversStatsFetcher(self.deps)
-        event = await ssf.get_savers_event_dynamically_cached(period=period)
+        # ssf = SaversStatsFetcher(self.deps)
+        # event = await ssf.get_savers_event_dynamically_cached(period=period)
+
+        ssf = VNXSaversStatsFetcher(self.deps)
+        event = await ssf.get_savers_event_cached()
 
         if not event or not event.current_stats:
             await message.answer(self.loc.TEXT_SAVERS_NO_DATA,
