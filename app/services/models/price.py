@@ -177,3 +177,7 @@ class LastPriceHolder:
             if p.synth_supply:
                 accum += p.synth_supply * p.usd_per_asset
         return accum
+
+    @property
+    def savers_pools(self):
+        return [p.asset for p in self.pool_info_map.values() if p.savers_depth > 0]

@@ -24,9 +24,9 @@ from services.jobs.fetch.last_block import LastBlockFetcher
 from services.jobs.fetch.native_scan import NativeScannerBlock
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
 from services.jobs.fetch.node_info import NodeInfoFetcher
+from services.jobs.fetch.pol import POLFetcher
 from services.jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
 from services.jobs.fetch.queue import QueueFetcher
-from services.jobs.fetch.savers import SaversStatsFetcher
 from services.jobs.fetch.savers_vnx import VNXSaversStatsFetcher
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.ilp_summer import ILPSummer
@@ -439,6 +439,11 @@ class App:
             tasks.append(wallet_counter)
             if achievements_enabled:
                 wallet_counter.add_subscriber(achievements)
+
+        if d.cfg.get('pol.enabled', True):
+            pol_fetcher = POLFetcher(d)
+            tasks.append(pol_fetcher)
+            # todo: add achievements
 
         # -------- SCHEDULER --------
 
