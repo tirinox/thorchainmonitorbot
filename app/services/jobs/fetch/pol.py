@@ -1,22 +1,20 @@
 import asyncio
 from typing import List
 
-from aiothornode.types import ThorPOL
-
 from services.jobs.fetch.base import BaseFetcher
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import free_url_gen
+from services.models.pol import EventPOL
 from services.models.pool_member import PoolMemberDetails
 
 
 class POLFetcher(BaseFetcher):
-    def __init__(self, deps: DepContainer):
+    def __init__(self, deps: DepContainer, reserve_address=None):
         period = parse_timespan_to_seconds(deps.cfg.pol.fetch_period)
         super().__init__(deps, period)
-        self.reserve_address = deps.cfg.native_scanner.reserve_address
-        # Stagenet reserve: sthor1dheycdevq39qlkxs2a6wuuzyn4aqxhvepe6as4
+        self.reserve_address = reserve_address or deps.cfg.native_scanner.reserve_address
         self.midgard_parser = get_parser_by_network_id(deps.cfg.network_id)
 
     async def get_reserve_membership(self, reserve=None) -> List[PoolMemberDetails]:
@@ -26,15 +24,12 @@ class POLFetcher(BaseFetcher):
         details = self.midgard_parser.parse_pool_member_details(member_details, reserve)
         return details
 
-    async def fetch(self) -> ThorPOL:
+    async def fetch(self) -> EventPOL:
         pol, membership = await asyncio.gather(
             self.deps.thor_connector.query_pol(),
             self.get_reserve_membership(self.reserve_address)
         )
-
-        print(membership)
-
-        # todo: get reserve's membership in pools
-
         self.logger.info(f"Got POL: {pol}")
-        return pol
+        return EventPOL(
+            pol, membership
+        )

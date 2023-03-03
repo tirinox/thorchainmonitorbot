@@ -64,6 +64,7 @@ from services.notify.types.chain_notify import TradingHaltedNotifier
 from services.notify.types.dex_report_notify import DexReportNotifier
 from services.notify.types.mimir_notify import MimirChangedNotifier
 from services.notify.types.node_churn_notify import NodeChurnNotifier
+from services.notify.types.pol_notify import POLNotifier
 from services.notify.types.pool_churn_notify import PoolChurnNotifier
 from services.notify.types.price_div_notify import PriceDivergenceNotifier
 from services.notify.types.price_notify import PriceNotifier
@@ -131,10 +132,12 @@ class App:
         d.telegram_bot = TelegramBot(d.cfg, d.db, d.loop)
         init_dialogs(d)
 
-    async def create_thor_node_connector(self):
+    async def create_thor_node_connector(self, thor_env=None):
         d = self.deps
-        d.thor_env = d.cfg.get_thor_env_by_network_id()
-        thor_env_backup = d.cfg.get_thor_env_by_network_id(backup=True)
+
+        d.thor_env = thor_env or d.cfg.get_thor_env_by_network_id()
+        thor_env_backup = thor_env or d.cfg.get_thor_env_by_network_id(backup=True)
+
         d.thor_connector = ThorConnector(d.thor_env, d.session, additional_envs=[
             thor_env_backup
         ])
@@ -147,7 +150,6 @@ class App:
             int(cfg.get_pure('tries', 3)),
             public_url=d.thor_env.midgard_url
         )
-        d.rune_market_fetcher = RuneMarketInfoFetcher(d)
 
         d.name_service = NameService(d.db, d.cfg, d.midgard_connector)
         d.alert_presenter.name_service = d.name_service
@@ -168,6 +170,8 @@ class App:
 
         if 'REPLACE_RUNE_TIMESERIES_WITH_GECKOS' in os.environ:
             await fill_rune_price_from_gecko(d.db)
+
+        d.rune_market_fetcher = RuneMarketInfoFetcher(d)
 
         # update pools for bootstrap (other components need them)
         current_pools = await d.pool_fetcher.reload_global_pools()
@@ -443,7 +447,10 @@ class App:
         if d.cfg.get('pol.enabled', True):
             pol_fetcher = POLFetcher(d)
             tasks.append(pol_fetcher)
-            # todo: add achievements
+            pol_notifier = POLNotifier(d)
+            pol_fetcher.add_subscriber(pol_notifier)
+            if achievements_enabled:
+                pol_fetcher.add_subscriber(achievements)
 
         # -------- SCHEDULER --------
 

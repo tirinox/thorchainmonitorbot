@@ -7,6 +7,7 @@ from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
+from services.models.pol import EventPOL
 from services.models.time_series import TimeSeries
 
 
@@ -23,8 +24,8 @@ class POLNotifier(WithDelegates, INotified, WithLogger):
         # noinspection PyArgumentList
         return ThorPOL(**data[0]) if data[0] else None
 
-    async def on_data(self, sender, data: ThorPOL):
-        await self.ts.add_as_json(data._asdict())
+    async def on_data(self, sender, data: EventPOL):
+        await self.ts.add_as_json(data.current._asdict())
 
         r = await self.find_stats_ago(30)
         print(r)
