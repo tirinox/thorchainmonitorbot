@@ -4,6 +4,7 @@ import os
 from main import App
 from services.dialog.telegram.telegram import telegram_send_message_basic, TG_TEST_USER
 from services.dialog.twitter.twitter_bot import TwitterBotMock
+from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
 from services.jobs.fetch.last_block import LastBlockFetcher
 from services.jobs.fetch.runeyield import AsgardConsumerConnectorBase, get_rune_yield_connector
 from services.jobs.fetch.tx import TxFetcher
@@ -65,7 +66,10 @@ class LpAppFramework(App):
         d.make_http_session()
 
         await d.db.get_redis()
+
         await self.create_thor_node_connector()
+
+        d.rune_market_fetcher = RuneMarketInfoFetcher(d)
 
         d.last_block_fetcher.add_subscriber(d.last_block_store)
 

@@ -114,11 +114,15 @@ class Config(SubConfig):
             raise Exception('No more Testnet! Please use the Stagenet')
         elif network_id in (NetworkIdents.CHAOSNET_MULTICHAIN, NetworkIdents.MAINNET):
             ref_env = MAINNET.copy()
+            ref_env = self._load_custom_urls(ref_env, backup)
         elif network_id == NetworkIdents.STAGENET_MULTICHAIN:
             ref_env = MULTICHAIN_STAGENET_ENVIRONMENT.copy()
         else:
             raise KeyError('unsupported network ID!')
 
+        return ref_env
+
+    def _load_custom_urls(self, ref_env, backup):
         node_key = 'thor.node.backup_node_url' if backup else 'thor.node.node_url'
         node_url = self.as_str(node_key, '')
         if node_url:
@@ -131,5 +135,4 @@ class Config(SubConfig):
         midgard_url = self.as_str('thor.midgard.public_url', '')
         if midgard_url:
             ref_env.midgard_url = midgard_url
-
         return ref_env

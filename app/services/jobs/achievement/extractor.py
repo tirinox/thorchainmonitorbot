@@ -11,6 +11,7 @@ from services.lib.money import Asset
 from services.lib.utils import is_list_of_type, WithLogger
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges
+from services.models.pol import EventPOL
 from services.models.price import RuneMarketInfo, LastPriceHolder
 from services.models.savers import SaversBank
 from services.models.tx import ThorTx, ThorTxType
@@ -39,6 +40,8 @@ class AchievementsExtractor(WithLogger):
             kv_events = [Achievement(A.WALLET_COUNT, int(data))]
         elif is_list_of_type(data, ThorTx):
             kv_events = self.on_thor_tx_list(data)
+        elif isinstance(data, EventPOL):
+            kv_events = self.on_thor_pol(data)
         elif isinstance(data, AchievementTest):
             kv_events = self.on_test_event(data)
         else:
@@ -146,3 +149,6 @@ class AchievementsExtractor(WithLogger):
         return [
             Achievement(key, int(value), specialization=spec) for (key, spec), value in results.items()
         ]
+
+    def on_thor_pol(self, pol: EventPOL):
+        return []  # todo!
