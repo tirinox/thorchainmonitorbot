@@ -1,35 +1,32 @@
 from services.lib.utils import invert_dict
 
 MIMIR_KEY_KILL_SWITCH_START = 'KILLSWITCHSTART'
-MIMIR_KEY_KILL_SWITCH_DURATION = 'KillSwitchDuration'.upper()
+MIMIR_KEY_KILL_SWITCH_DURATION = 'KILLSWITCHDURATION'
 
 MIMIR_KEY_MAX_SYNTH_PER_POOL_DEPTH = 'MAXSYNTHPERPOOLDEPTH'
 
 BLOCK_CONSTANTS = {
-    name.upper() for name in [
-        'BlocksPerYear', 'FundMigrationInterval', 'ChurnInterval', 'ChurnRetryInterval',
-        'SigningTransactionPeriod', 'DoubleSignMaxAge', 'LiquidityLockUpBlocks',
-        'ObservationDelayFlexibility', 'YggFundRetry', 'JailTimeKeygen', 'JailTimeKeysign',
-        'NodePauseChainBlocks', 'FullImpLossProtectionBlocks', 'TxOutDelayMax', 'MaxTxOutOffset',
-        MIMIR_KEY_KILL_SWITCH_DURATION, MIMIR_KEY_KILL_SWITCH_DURATION,
-    ]
+    'BLOCKSPERYEAR', 'FUNDMIGRATIONINTERVAL', 'CHURNINTERVAL', 'CHURNRETRYINTERVAL',
+    'SIGNINGTRANSACTIONPERIOD', 'DOUBLESIGNMAXAGE', 'LIQUIDITYLOCKUPBLOCKS',
+    'OBSERVATIONDELAYFLEXIBILITY', 'YGGFUNDRETRY', 'JAILTIMEKEYGEN', 'JAILTIMEKEYSIGN',
+    'NODEPAUSECHAINBLOCKS', 'FULLIMPLOSSPROTECTIONBLOCKS', 'TXOUTDELAYMAX', 'MAXTXOUTOFFSET',
+    MIMIR_KEY_KILL_SWITCH_DURATION, MIMIR_KEY_KILL_SWITCH_DURATION,
 }
 
 RUNE_CONSTANTS = {
-    name.upper() for name in [
-        'OutboundTransactionFee',
-        'NativeTransactionFee',
-        'StagedPoolCost',
-        'MinRunePoolDepth',
-        'MinimumBondInRune',
-        'MinTxOutVolumeThreshold',
-        'TxOutDelayRate',
-        'TNSFeePerBlock',
-        'TNSRegisterFee',
-        'MAXIMUMLIQUIDITYRUNE',
-        'MAXLIQUIDITYRUNE',
-        'PoolDepthForYggFundingMin',
-    ]
+    'OUTBOUNDTRANSACTIONFEE',
+    'NATIVETRANSACTIONFEE',
+    'STAGEDPOOLCOST',
+    'MINRUNEPOOLDEPTH',
+    'MINIMUMBONDINRUNE',
+    'MINTXOUTVOLUMETHRESHOLD',
+    'TXOUTDELAYRATE',
+    'TNSFEEPERBLOCK',
+    'TNSREGISTERFEE',
+    'MAXIMUMLIQUIDITYRUNE',
+    'MAXLIQUIDITYRUNE',
+    'POOLDEPTHFORYGGFUNDINGMIN',
+    'POLMAXNETWORKDEPOSIT',
 }
 
 BOOL_CONSTANTS = {
@@ -92,16 +89,23 @@ BOOL_CONSTANTS = {
     'RAGNAROK-TERRA-USD',
     'RAGNAROK-TERRA-UST',
     'REMOVESNXPOOL',
+
+    "POL-ETH-ETH",
+    "POL-BTC-BTC",
+    "POL-BNB-BNB",
 }
 
 DOLLAR_CONSTANTS = {
     'MINIMUML1OUTBOUNDFEEUSD',
 }
 
-BASE_POINTS_CONSTANTS = {
+BASIS_POINTS_CONSTANTS = {
     'MAXSYNTHPERASSETDEPTH',
     'MAXSYNTHPERPOOLDEPTH',
     'CLOUDPROVIDERLIMIT',
+    'POLMAXPOOLMOVEMENT',
+    'POLTARGETSYNTHPERPOOLDEPTH',
+    'POLBUFFER',
 }
 
 TRANSLATE_MIMIRS = {
@@ -193,6 +197,14 @@ TRANSLATE_MIMIRS = {
     'DESIREDVALIDATORSET': 'Desired Validator Set',
 
     'ENABLEUPDATEMEMOTERRA': 'Enable Update Memo Terra',
+
+    "POL-ETH-ETH": "POL ETH.ETH",
+    "POL-BTC-BTC": "POL BTC.BTC",
+    "POL-BNB-BNB": "POL BNB-BNB",
+    "POLBUFFER": "POL Buffer",
+    "POLMAXNETWORKDEPOSIT": "POL Max Network Deposit",
+    "POLMAXPOOLMOVEMENT": "POL Max Pool Movement",
+    "POLSYNTHUTILIZATION": "POL Synth Utilization",  # unused?
 }
 
 EXCLUDED_VOTE_KEYS = [
@@ -223,7 +235,7 @@ class MimirUnits:
     UNITS_BOOL = 'bool'
     UNITS_NEXT_CHAIN = 'next_chain'
     UNITS_USD = 'usd'
-    UNITS_BASE_POINTS = 'base_points'
+    UNITS_BASIS_POINTS = 'basis_points'
 
     @staticmethod
     def get_mimir_units(name):
@@ -238,8 +250,8 @@ class MimirUnits:
             return MimirUnits.UNITS_USD
         elif name == NEXT_CHAIN_KEY:
             return MimirUnits.UNITS_NEXT_CHAIN
-        elif name in BASE_POINTS_CONSTANTS:
-            return MimirUnits.UNITS_BASE_POINTS
+        elif name in BASIS_POINTS_CONSTANTS:
+            return MimirUnits.UNITS_BASIS_POINTS
         else:
             return ''
 
@@ -262,7 +274,7 @@ DICT_WORDS = (
     'up,synth,in,rune,limit,gap,solvency,of,gen,year,start,asym,swtich,start,'
     'on,halt,unbond,iteration,sale,reward,ratio,strict,maximum,churning,btc,bch,ltc,doge,terra,avax,atom,gaia,bnb,eth,'
     'thor,utxos,check,trading,thorname,thornames,asset,signing,set,haven,spend,funding,cloud,new,number,desired,'
-    'update,memo,next,saving,savings,vaults,vault,bsc,ilp,deprecate'
+    'update,memo,next,saving,savings,vaults,vault,bsc,ilp,deprecate,pol,buffer,deposit,movement,utilization'
 ).strip(' ,')
 
 WORD_TRANSFORM = {
@@ -285,6 +297,7 @@ WORD_TRANSFORM = {
     'For': 'for',
     'Bsc': 'BSC',
     'Ilp': 'ILP',
+    'Pol': 'POL',
 }
 
 DICT_WORDS_SORTED = list(sorted(map(str.upper, DICT_WORDS.split(',')), key=len, reverse=True))
