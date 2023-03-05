@@ -129,7 +129,7 @@ class MidgardParserV2(MidgardParserBase):
                 pool=j.get('pool', ''),
                 rune_added=int(j.get('runeAdded', 0)),
                 rune_withdrawn=int(j.get('runeWithdrawn', 0)),
-                run_address=j.get('runeAddress', '')
+                rune_address=j.get('runeAddress', '')
             ))
         return results
 

@@ -9,7 +9,7 @@ class PoolMemberDetails:
 
     rune_added: int = 0
     rune_withdrawn: int = 0
-    run_address: str = ''
+    rune_address: str = ''
 
     date_first_added: int = 0
     date_last_added: int = 0

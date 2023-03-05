@@ -19,6 +19,13 @@ EMOJI_SCALE = [
 RAIDO_GLYPH = 'ᚱ'
 ABSURDLY_LARGE_NUMBER = 1e+15
 
+CHART_UP = '📈'
+CHART_DOWN = '📉'
+
+
+def chart_emoji(x):
+    return CHART_UP if x >= 0 else CHART_DOWN
+
 
 def emoji_for_percent_change(pc):
     for threshold, emoji in EMOJI_SCALE:

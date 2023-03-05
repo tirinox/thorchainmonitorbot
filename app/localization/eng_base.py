@@ -19,7 +19,7 @@ from services.lib.explorers import get_explorer_url_to_address, Chains, get_expl
 from services.lib.midgard.name_service import NameService, add_thor_suffix, NameMap
 from services.lib.money import format_percent, pretty_money, short_address, short_money, \
     calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset, short_dollar, \
-    RAIDO_GLYPH, short_rune
+    RAIDO_GLYPH, short_rune, pretty_percent, chart_emoji
 from services.lib.texts import progressbar, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
     up_down_arrow, bracketify, plural, join_as_numbered_list, regroup_joining, shorten_text
 from services.lib.utils import grouper, run_once
@@ -2290,7 +2290,25 @@ class BaseLocalization(ABC):  # == English
     def notification_text_pol_utilization(self, event: EventPOL):
         text = '🥃 <b>Protocol Owned Liquidity</b>\n\n'
 
-        text += pre(str(event))
+        pol = event.current
+        pol_progress = progressbar(event.rune_value_float, event.mimir_max_deposit, 10)
+        text += (
+            f"Current POL value: {pre(short_rune(thor_to_float(pol.value)))} ({short_dollar(event.usd_value)}).\n"
+            f"POL utilization: {pre(pretty_percent(event.pol_utilization_percent, signed=False))} {pre(pol_progress)}\n"
+            f"Rune deposited: {pre(short_rune(thor_to_float(pol.rune_deposited)))}, "
+            f"withdrawn: {pre(short_rune(thor_to_float(pol.rune_withdrawn)))}\n"
+            f"Profit and Loss: {code(pretty_percent(event.pnl_percent))} {chart_emoji(event.pnl_percent)}"
+        )
+
+        """
+        membership=[
+            PoolMemberDetails(
+                asset_added=0, asset_withdrawn=0, asset_address='', 
+                rune_added=4870755372, rune_withdrawn=0, 
+                run_address='sthor1dheycdevq39qlkxs2a6wuuzyn4aqxhvepe6as4', 
+                date_first_added=1664908464, 
+                date_last_added=1664909285, liquidity_units=579813336, pool='ETH.ETH')], previous=None)
+        """
 
         return text
 
