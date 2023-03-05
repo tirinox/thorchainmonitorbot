@@ -24,6 +24,9 @@ async def demo_pol_pipeline(app: LpAppFramework):
     pol_fetcher = POLFetcher(app.deps, reserve_address=get_reserve_address(app))
     pol_notifier = POLNotifier(app.deps)
     pol_fetcher.add_subscriber(pol_notifier)
+    pol_fetcher.add_subscriber(pol_notifier)
+
+    pol_notifier.add_subscriber(app.deps.alert_presenter)
 
     await pol_fetcher.run()
 

@@ -2290,7 +2290,7 @@ class BaseLocalization(ABC):  # == English
     def notification_text_pol_utilization(self, event: EventPOL):
         text = '🥃 <b>Protocol Owned Liquidity</b>\n\n'
 
-        text += json.dumps(event)
+        text += pre(str(event))
 
         return text
 

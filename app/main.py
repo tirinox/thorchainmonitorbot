@@ -449,6 +449,7 @@ class App:
             tasks.append(pol_fetcher)
             pol_notifier = POLNotifier(d)
             pol_fetcher.add_subscriber(pol_notifier)
+            pol_notifier.add_subscriber(d.alert_presenter)
             if achievements_enabled:
                 pol_fetcher.add_subscriber(achievements)
 

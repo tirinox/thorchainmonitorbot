@@ -43,6 +43,8 @@ class AlertPresenter(INotified):
             await self._handle_saver_stats(data)
         elif isinstance(data, PoolChanges):
             await self._handle_pool_churn(data)
+        elif isinstance(data, EventPOL):
+            await self._handle_pol(data)
         elif isinstance(data, Achievement):
             await self._handle_achievement(data)
 
@@ -117,10 +119,14 @@ class AlertPresenter(INotified):
         await self.broadcaster.notify_preconfigured_channels(_gen, event)
 
     async def _handle_pol(self, event: EventPOL):
-        async def _gen(loc: BaseLocalization, _a: Achievement):
-            pic_gen = POLPictureGenerator(loc.ach, _a)
-            pic, pic_name = await pic_gen.get_picture()
-            caption = loc.ach.notification_pol_stats(event)
-            return BoardMessage.make_photo(pic, caption=caption, photo_file_name=pic_name)
+        # async def _gen(loc: BaseLocalization, _a: EventPOL):
+        #     pic_gen = POLPictureGenerator(loc.ach, _a)
+        #     pic, pic_name = await pic_gen.get_picture()
+        #     caption = loc.ach.notification_pol_stats(event)
+        #     return BoardMessage.make_photo(pic, caption=caption, photo_file_name=pic_name)
+        # await self.broadcaster.notify_preconfigured_channels(_gen, event)
 
-        await self.broadcaster.notify_preconfigured_channels(_gen, event)
+        # simple text so far
+        await self.broadcaster.notify_preconfigured_channels(
+            BaseLocalization.notification_text_pol_utilization, event
+        )
