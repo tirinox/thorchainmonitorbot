@@ -85,7 +85,7 @@ class VNXSaversStatsFetcher(INotified, WithDelegates, WithLogger):
             n += v.number_of_savers
         return SaversBank(n, vaults)
 
-    async def get_savers_event(self) -> EventSaverStats:
+    async def get_savers_event(self, *args) -> EventSaverStats:
         savers_stats_new, savers_stats_old = await asyncio.gather(
             self.load_real_yield_vanaheimex(),
             self.load_real_yield_vanaheimex(old=True)
