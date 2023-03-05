@@ -115,6 +115,9 @@ class MidgardParserV2(MidgardParserBase):
 
     def parse_pool_member_details(self, response, address='') -> List[PoolMemberDetails]:
         results = []
+        if isinstance(response, str):
+            return results
+
         for j in response.get('pools', []):
             results.append(PoolMemberDetails(
                 asset_added=int(j.get('assetAdded', 0)),

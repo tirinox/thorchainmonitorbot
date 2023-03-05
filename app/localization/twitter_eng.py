@@ -24,6 +24,7 @@ from services.models.mimir import MimirChange, MimirHolder
 from services.models.mimir_naming import MimirUnits
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeVersionConsensus, NodeInfo
+from services.models.pol import EventPOL
 from services.models.pool_info import PoolMapPair, PoolChanges, PoolInfo
 from services.models.price import RuneMarketInfo, PriceReport
 from services.models.savers import EventSaverStats
@@ -869,3 +870,8 @@ class TwitterEnglishLocalization(BaseLocalization):
         )
 
         return self.smart_split(parts).strip()
+
+    # ------ POL -------
+
+    def notification_text_pol_utilization(self, event: EventPOL):
+        return ''  # todo

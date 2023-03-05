@@ -29,6 +29,7 @@ from services.models.mimir import MimirChange, MimirHolder
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEvent, EventDataSlash, \
     NodeEventType, EventBlockHeight
+from services.models.pol import EventPOL
 from services.models.pool_info import PoolInfo, PoolChanges, PoolMapPair
 from services.models.price import PriceReport, RuneMarketInfo
 from services.models.queue import QueueInfo
@@ -1711,3 +1712,8 @@ class RussianLocalization(BaseLocalization):
     SV_PIC_PRICE = 'Цена'
     SV_PIC_EARNED = 'Заработано'
     SV_PIC_ELAPSED = 'дней прошло с добавления'
+
+    # ------ POL -------
+
+    def notification_text_pol_utilization(self, event: EventPOL):
+        return ''  # todo

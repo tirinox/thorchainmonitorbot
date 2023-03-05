@@ -1,3 +1,4 @@
+import json
 from abc import ABC
 from datetime import datetime
 from math import ceil
@@ -33,6 +34,7 @@ from services.models.mimir_naming import MimirUnits, NEXT_CHAIN_VOTING_MAP
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEventType, NodeEvent, \
     EventBlockHeight, EventDataSlash
+from services.models.pol import EventPOL
 from services.models.pool_info import PoolInfo, PoolChanges, PoolMapPair
 from services.models.price import PriceReport, RuneMarketInfo
 from services.models.queue import QueueInfo
@@ -1372,7 +1374,7 @@ class BaseLocalization(ABC):  # == English
                 return str(v)
         elif units == MimirUnits.UNITS_USD:
             return short_dollar(thor_to_float(v))
-        elif units == MimirUnits.UNITS_BASE_POINTS:
+        elif units == MimirUnits.UNITS_BASIS_POINTS:
             p = int(v) / THOR_BASIS_POINT_MAX * 100.0
             return f'{p:.02f}% ({int(v)} bp)'
         else:
@@ -2210,6 +2212,8 @@ class BaseLocalization(ABC):  # == English
             f'Popular assets:\n{top_asset_str}'
         ).strip()
 
+    # ------ SAVERS -------
+
     MIN_PERCENT_TO_SHOW_VAULT_FILL = 10
 
     def notification_text_saver_stats(self, event: EventSaverStats):
@@ -2280,6 +2284,15 @@ class BaseLocalization(ABC):  # == English
     SV_PIC_PRICE = 'Price'
     SV_PIC_EARNED = 'Earned'
     SV_PIC_ELAPSED = 'elapsed since addition'
+
+    # ------ POL -------
+
+    def notification_text_pol_utilization(self, event: EventPOL):
+        text = '🥃 <b>Protocol Owned Liquidity</b>\n\n'
+
+        text += json.dumps(event)
+
+        return text
 
 
 class EnglishLocalization(BaseLocalization):

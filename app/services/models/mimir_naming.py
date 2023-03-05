@@ -5,6 +5,33 @@ MIMIR_KEY_KILL_SWITCH_DURATION = 'KILLSWITCHDURATION'
 
 MIMIR_KEY_MAX_SYNTH_PER_POOL_DEPTH = 'MAXSYNTHPERPOOLDEPTH'
 
+# target synth per pool depth for POL (basis points)
+MIMIR_KEY_POL_TARGET_SYNTH_PER_POOL_DEPTH = 'POLTARGETSYNTHPERPOOLDEPTH'
+"""
+if POLTargetSynthPerPoolDepth == 4500:
+    POL will continue adding RUNE to a pool until the synth depth of that pool is 45%.
+"""
+
+# buffer around the POL synth utilization (basis points added to/subtracted from POLTargetSynthPerPoolDepth basis pts)
+MIMIR_KEY_POL_BUFFER = "POLBUFFER"
+"""
+if POLBUFFER == 500:
+    Synth utilization must be >5% from the target synth per pool depth in order to add liquidity / remove liquidity. 
+    In this context, liquidity will be withdrawn below 40% synth utilization and deposited above 50% synth utilization.
+"""
+
+# Maximum amount of rune deposited into the pools
+MIMIR_KEY_POL_MAX_NETWORK_DEPOSIT = "POLMAXNETWORKDEPOSIT"
+
+# Maximum amount of rune to enter/exit a pool per iteration. This is in basis points of the pool rune depth
+MIMIR_KEY_POL_MAX_POOL_MOVEMENT = "POLMAXPOOLMOVEMENT"
+"""
+if POLMaxPoolMovement == 1:
+    POL will move the pool price at most 0.01% in one block
+"""
+
+MIMIR_KEY_POL_SYNTH_UTILIZATION = "POLSYNTHUTILIZATION"
+
 BLOCK_CONSTANTS = {
     'BLOCKSPERYEAR', 'FUNDMIGRATIONINTERVAL', 'CHURNINTERVAL', 'CHURNRETRYINTERVAL',
     'SIGNINGTRANSACTIONPERIOD', 'DOUBLESIGNMAXAGE', 'LIQUIDITYLOCKUPBLOCKS',
@@ -205,6 +232,7 @@ TRANSLATE_MIMIRS = {
     "POLMAXNETWORKDEPOSIT": "POL Max Network Deposit",
     "POLMAXPOOLMOVEMENT": "POL Max Pool Movement",
     "POLSYNTHUTILIZATION": "POL Synth Utilization",  # unused?
+    "POLTARGETSYNTHPERPOOLDEPTH": "POL Target Synth Per Pool Depth",
 }
 
 EXCLUDED_VOTE_KEYS = [

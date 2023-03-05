@@ -3,7 +3,7 @@ from typing import Optional
 from aiothornode.types import ThorPOL
 
 from services.lib.cooldown import Cooldown
-from services.lib.date_utils import parse_timespan_to_seconds
+from services.lib.date_utils import parse_timespan_to_seconds, DAY
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
@@ -24,13 +24,16 @@ class POLNotifier(WithDelegates, INotified, WithLogger):
         # noinspection PyArgumentList
         return ThorPOL(**data[0]) if data[0] else None
 
-    async def on_data(self, sender, data: EventPOL):
-        await self.ts.add_as_json(data.current._asdict())
+    async def _record_pol(self, event: EventPOL):
+        data = event.current._asdict()
+        await self.ts.add_as_json(data)
 
-        r = await self.find_stats_ago(30)
-        print(r)
-
+    async def on_data(self, sender, event: EventPOL):
         if await self.spam_cd.can_do():
             await self.spam_cd.do()
 
-            # await self.pass_data_to_listeners(report)
+            ago_seconds = max(self.spam_cd.cooldown, DAY)
+            previous_data = await self.find_stats_ago(ago_seconds)
+            event = event._replace(previous=previous_data)
+
+            await self.pass_data_to_listeners(event)
