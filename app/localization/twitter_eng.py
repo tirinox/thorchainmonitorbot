@@ -122,8 +122,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         if date_text := self.tx_date(tx):
             heading += f' {date_text}'
 
-        # we add '$' before assets to mention the asset name in Twitter
-        asset = '$' + Asset(tx.first_pool).name
+        asset = self.pretty_asset(tx.first_pool)
 
         content = f'👤{self.link_to_address(tx.sender_address, name_map)}: '
 
@@ -714,7 +713,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
             delta_p = bracketify(format_percent(delta, 100, signed=True)) if delta else ''
 
-            asset = '$' + Asset.from_string(pool.asset).name  # mention in Twitter
+            asset = self.pretty_asset(pool.asset)
 
             text += f'{i}. {asset}: {v} {delta_p}\n'
         if not top_pools:
@@ -760,7 +759,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             name_map=name_map
         )
 
-        asset = '$' + asset  # to ge mention in Twitter
+        asset = self.pretty_asset(asset)
 
         if t.memo:
             memo = f' (MEMO: "{shorten_text(t.memo, 21)}")'
@@ -872,6 +871,11 @@ class TwitterEnglishLocalization(BaseLocalization):
         return self.smart_split(parts).strip()
 
     # ------ POL -------
+
+    @staticmethod
+    def pretty_asset(name):
+        # we add '$' before assets to mention the asset name in Twitter
+        return '$' + Asset(name).name
 
     def notification_text_pol_utilization(self, event: EventPOL):
         return ''  # todo
