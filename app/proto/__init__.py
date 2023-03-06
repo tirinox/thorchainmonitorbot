@@ -11,6 +11,9 @@ from proto.cosmos.tx.v1beta1 import Tx
 
 
 def parse_thor_address(addr: bytes, prefix='thor') -> str:
+    if isinstance(addr, bytes) and addr.startswith(prefix.encode('utf-8')):
+        return addr.decode('utf-8')
+
     good_bits = bech32.convertbits(list(addr), 8, 5, False)
     return bech32.bech32_encode(prefix, good_bits)
 
