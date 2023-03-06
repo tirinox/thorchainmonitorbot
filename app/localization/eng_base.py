@@ -1,4 +1,3 @@
-import json
 from abc import ABC
 from datetime import datetime
 from math import ceil
@@ -2299,18 +2298,18 @@ class BaseLocalization(ABC):  # == English
             f"withdrawn: {pre(short_rune(thor_to_float(pol.rune_withdrawn)))}\n"
             f"Profit and Loss: {code(pretty_percent(event.pnl_percent))} {chart_emoji(event.pnl_percent)}"
         )
+        # todo: add delta
 
-        """
-        membership=[
-            PoolMemberDetails(
-                asset_added=0, asset_withdrawn=0, asset_address='', 
-                rune_added=4870755372, rune_withdrawn=0, 
-                run_address='sthor1dheycdevq39qlkxs2a6wuuzyn4aqxhvepe6as4', 
-                date_first_added=1664908464, 
-                date_last_added=1664909285, liquidity_units=579813336, pool='ETH.ETH')], previous=None)
-        """
+        # POL pool membership
+        if event.membership:
+            text += "\n\n<b>Pool membership:</b>\n"
+            for i, details in enumerate(event.membership, start=1):
+                pool: PoolInfo = event.prices.find_pool(details.pool)
+                rune = pool.total_my_capital_of_pool_in_rune(details.liquidity_units)
+                usd = rune * event.prices.usd_per_rune
+                text += f'{details.pool}: {pre(short_rune(rune))} ({short_dollar(usd)})\n'
 
-        return text
+        return text.strip()
 
 
 class EnglishLocalization(BaseLocalization):

@@ -27,6 +27,7 @@ class POLNotifier(WithDelegates, INotified, WithLogger):
 
     async def _record_pol(self, event: EventPOL):
         data = event.current._asdict()
+        # todo: add pool membership!
         await self.ts.add_as_json(data)
 
     async def _enrich_data(self, event: EventPOL):
