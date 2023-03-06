@@ -2286,28 +2286,51 @@ class BaseLocalization(ABC):  # == English
 
     # ------ POL -------
 
+    @staticmethod
+    def pretty_asset(name):
+        return Asset(name).pretty_str
+
+    def _format_pol_membership(self, event: EventPOL, of_pool):
+        text = ''
+        for i, details in enumerate(event.membership, start=1):
+            pool: PoolInfo = event.prices.find_pool(details.pool)
+            rune = pool.total_my_capital_of_pool_in_rune(details.liquidity_units)
+            share = pool.percent_share(rune)
+            usd = rune * event.prices.usd_per_rune
+            asset = self.pretty_asset(details.pool)
+            text += (
+                f'‣ {asset}: {pre(short_rune(rune))} ({short_dollar(usd)}),'
+                f' {pretty_percent(share)} {of_pool}\n'
+            )
+        return text.strip()
+
     def notification_text_pol_utilization(self, event: EventPOL):
         text = '🥃 <b>Protocol Owned Liquidity</b>\n\n'
 
-        pol = event.current
-        pol_progress = progressbar(event.rune_value_float, event.mimir_max_deposit, 10)
+        curr, prev = event.current, event.previous
+        pol_progress = progressbar(curr.rune_withdrawn, event.mimir_max_deposit, 10)
+
+        str_value_delta_pct, str_value_delta_abs = '', ''
+        if prev:
+            str_value_delta_pct = up_down_arrow(prev.rune_value, curr.rune_value, percent_delta=True)
+            str_value_delta_abs = up_down_arrow(prev.rune_value, curr.rune_value, money_delta=True, postfix=RAIDO_GLYPH)
+
+        pnl_pct = curr.pnl_percent
         text += (
-            f"Current POL value: {pre(short_rune(thor_to_float(pol.value)))} ({short_dollar(event.usd_value)}).\n"
-            f"POL utilization: {pre(pretty_percent(event.pol_utilization_percent, signed=False))} {pre(pol_progress)}\n"
-            f"Rune deposited: {pre(short_rune(thor_to_float(pol.rune_deposited)))}, "
-            f"withdrawn: {pre(short_rune(thor_to_float(pol.rune_withdrawn)))}\n"
-            f"Profit and Loss: {code(pretty_percent(event.pnl_percent))} {chart_emoji(event.pnl_percent)}"
+            f"Current POL value: {code(short_rune(curr.rune_value))} or "
+            f" {code(short_dollar(curr.usd_value))} ({str_value_delta_pct})\n"
+            f"POL utilization: {pre(pretty_percent(event.pol_utilization, signed=False))} {pre(pol_progress)} "
+            f" of {short_rune(event.mimir_max_deposit)} maximum.\n"
+            f"Rune deposited: {pre(short_rune(curr.rune_deposited))}, "
+            f"withdrawn: {pre(short_rune(curr.rune_withdrawn))}\n"
+            f"Profit and Loss: {pre(pretty_percent(pnl_pct))} {chart_emoji(pnl_pct)}"
         )
-        # todo: add delta
 
         # POL pool membership
         if event.membership:
             text += "\n\n<b>Pool membership:</b>\n"
-            for i, details in enumerate(event.membership, start=1):
-                pool: PoolInfo = event.prices.find_pool(details.pool)
-                rune = pool.total_my_capital_of_pool_in_rune(details.liquidity_units)
-                usd = rune * event.prices.usd_per_rune
-                text += f'{details.pool}: {pre(short_rune(rune))} ({short_dollar(usd)})\n'
+            text += self._format_pol_membership(event,
+                                                of_pool='of pool')
 
         return text.strip()
 

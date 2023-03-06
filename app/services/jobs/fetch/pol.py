@@ -6,7 +6,7 @@ from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import free_url_gen
-from services.models.pol import EventPOL
+from services.models.pol import EventPOL, POLState
 from services.models.pool_member import PoolMemberDetails
 
 
@@ -32,5 +32,6 @@ class POLFetcher(BaseFetcher):
         )
         self.logger.info(f"Got POL: {pol}")
         return EventPOL(
-            pol, membership
+            POLState(self.deps.price_holder.usd_per_rune, pol),
+            membership
         )

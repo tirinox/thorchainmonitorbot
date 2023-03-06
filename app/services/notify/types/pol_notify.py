@@ -8,7 +8,7 @@ from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 from services.models.mimir_naming import MIMIR_KEY_POL_MAX_NETWORK_DEPOSIT, MIMIR_KEY_POL_TARGET_SYNTH_PER_POOL_DEPTH
-from services.models.pol import EventPOL
+from services.models.pol import EventPOL, POLState
 from services.models.time_series import TimeSeries
 
 
@@ -17,10 +17,11 @@ class POLNotifier(WithDelegates, INotified, WithLogger):
         super().__init__()
         self.deps = deps
         cd = parse_timespan_to_seconds(deps.cfg.pol.notification.cooldown)
-        self.spam_cd = Cooldown(self.deps.db, 'POLReport', cd)
+        self.spam_cd = Cooldown(self.deps.db, 'POL', cd)
         self.ts = TimeSeries('POL', self.deps.db)
 
-    async def find_stats_ago(self, period_ago) -> Optional[ThorPOL]:
+    async def find_stats_ago(self, period_ago) -> Optional[POLState]:
+        # todo!
         data = await self.ts.get_best_point_ago(period_ago, tolerance_percent=1.0, is_json=True)
         # noinspection PyArgumentList
         return ThorPOL(**data[0]) if data[0] else None
