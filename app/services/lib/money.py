@@ -1,4 +1,5 @@
 import math
+import random
 from dataclasses import dataclass
 from math import floor, log10
 from typing import List
@@ -369,3 +370,9 @@ class DepthCurve:
             lower_percent = upper_percent
             lower_bound = upper_bound
         return curve[-1][self.SHARE]
+
+
+def distort_randomly(x, dev=10, up_only=False):
+    low_bound = 0 if up_only else -1
+    new_x = x + random.uniform(low_bound, 1) * abs(x / 100.0 * dev)
+    return int(new_x) if isinstance(x, int) else new_x
