@@ -766,10 +766,12 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         link = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, t.tx_hash) if t and t.tx_hash else ''
 
-        return f'💸 Large transfer{comment}: ' \
-               f'{(short_money(t.amount, postfix=" " + asset))}{usd_amt} ' \
-               f'from {from_my} ➡️ {to_my}{memo}\n' \
-               f'{link}'.strip()
+        return (
+            f'💸 Large transfer{comment}: '
+            f'{short_money(t.amount)} {asset} {usd_amt} '
+            f'from {from_my} ➡️ {to_my}{memo}\n'
+            f'{link}'.strip()
+        )
 
     # ----- SUPPLY ------
 
