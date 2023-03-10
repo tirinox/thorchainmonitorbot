@@ -543,3 +543,4 @@ pol: # (!) new
   fetch_period: 30m
   notification:
     cooldown: 1d
+    allow_when_zero: false

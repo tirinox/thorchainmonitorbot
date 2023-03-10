@@ -46,7 +46,7 @@ class LpAppFramework(App):
     def solve_working_dir_mess():
         cwd = os.getcwd()
 
-        for replacement in ['/tools/debug', '/tests']:
+        for replacement in ['/tools/debug', '/tests', '/tools']:
             if cwd.endswith(replacement):
                 cwd_new = cwd.replace(replacement, '')
                 os.chdir(cwd_new)
