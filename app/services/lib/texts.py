@@ -105,13 +105,15 @@ def bracketify_spaced(item):
 
 def up_down_arrow(old_value, new_value, smiley=False, more_is_better=True, same_result='',
                   int_delta=False, money_delta=False, percent_delta=False, signed=True,
-                  money_prefix='', ignore_on_no_old=True, postfix=''):
+                  money_prefix='', ignore_on_no_old=True, postfix='', threshold_pct=0.0):
     if ignore_on_no_old and not old_value:
         return same_result
 
     delta = new_value - old_value
 
-    if delta == 0:
+    max_val = max(new_value, old_value)
+    pct_change = threshold_pct + 1 if max_val == 0 else abs(delta) / max_val * 100.0
+    if pct_change < threshold_pct:
         return same_result
 
     better = delta > 0 if more_is_better else delta < 0
@@ -126,7 +128,7 @@ def up_down_arrow(old_value, new_value, smiley=False, more_is_better=True, same_
     elif money_delta:
         delta_text = short_money(delta, prefix=money_prefix, signed=signed)
     elif percent_delta:
-        delta_text = pretty_money(delta / old_value, postfix='%', signed=signed)
+        delta_text = pretty_money(100.0 * delta / old_value, postfix='%', signed=signed)
 
     return f"{smiley} {arrow} {delta_text}{postfix}".strip()
 
