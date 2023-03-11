@@ -2316,14 +2316,15 @@ class BaseLocalization(ABC):  # == English
 
         str_value_delta_pct, str_value_delta_abs = '', ''
         if prev:
-            str_value_delta_pct = up_down_arrow(prev.rune_value, curr.rune_value, percent_delta=True)
+            str_value_delta_pct = up_down_arrow(prev.rune_value, curr.rune_value, percent_delta=True, brackets=True,
+                                                threshold_pct=0.5)
             # str_value_delta_abs = up_down_arrow(
             # prev.rune_value, curr.rune_value, money_delta=True, postfix=RAIDO_GLYPH)
 
         pnl_pct = curr.pnl_percent
         text += (
             f"Current POL value: {code(short_rune(curr.rune_value))} or "
-            f" {code(short_dollar(curr.usd_value))} ({str_value_delta_pct})\n"
+            f" {code(short_dollar(curr.usd_value))} {str_value_delta_pct}\n"
             f"POL utilization: {pre(pretty_percent(event.pol_utilization, signed=False))} {pre(pol_progress)} "
             f" of {short_rune(event.mimir_max_deposit)} maximum.\n"
             f"Rune deposited: {pre(short_rune(curr.rune_deposited))}, "

@@ -105,7 +105,8 @@ def bracketify_spaced(item):
 
 def up_down_arrow(old_value, new_value, smiley=False, more_is_better=True, same_result='',
                   int_delta=False, money_delta=False, percent_delta=False, signed=True,
-                  money_prefix='', ignore_on_no_old=True, postfix='', threshold_pct=0.0):
+                  money_prefix='', ignore_on_no_old=True, postfix='', threshold_pct=0.0,
+                  brackets=False):
     if ignore_on_no_old and not old_value:
         return same_result
 
@@ -130,7 +131,10 @@ def up_down_arrow(old_value, new_value, smiley=False, more_is_better=True, same_
     elif percent_delta:
         delta_text = pretty_money(100.0 * delta / old_value, postfix='%', signed=signed)
 
-    return f"{smiley} {arrow} {delta_text}{postfix}".strip()
+    result = f"{smiley} {arrow} {delta_text}{postfix}".strip()
+    if brackets:
+        result = bracketify(result)
+    return result
 
 
 def plural(n: int, one_thing, many_things):
