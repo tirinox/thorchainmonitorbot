@@ -851,6 +851,7 @@ class BaseLocalization(ABC):  # == English
     BUTTON_METR_S_NET_OP = '🔩 Network operation'
 
     BUTTON_METR_CAP = '✋ Liquidity cap'
+    BUTTON_METR_POL = '🥃 POL'
     BUTTON_METR_PRICE = f'💲 {R} price info'
     BUTTON_METR_QUEUE = f'👥 Queue'
     BUTTON_METR_STATS = '📊 Stats'

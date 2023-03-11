@@ -66,7 +66,7 @@ class MetricsDialog(BaseDialog):
     async def show_menu_financial(self, message: Message):
         await MetricsStates.SECTION_FINANCE.set()
         reply_markup = kbd([
-            [self.loc.BUTTON_METR_PRICE, self.loc.BUTTON_METR_CAP, self.loc.BUTTON_METR_STATS],
+            [self.loc.BUTTON_METR_PRICE, self.loc.BUTTON_METR_POL, self.loc.BUTTON_METR_STATS],
             [self.loc.BUTTON_METR_SAVERS, self.loc.BUTTON_METR_TOP_POOLS, self.loc.BUTTON_METR_CEX_FLOW],
             [self.loc.BUTTON_METR_SUPPLY, self.loc.BUTTON_METR_DEX_STATS, self.loc.BUTTON_BACK],
         ])
@@ -94,8 +94,8 @@ class MetricsDialog(BaseDialog):
         elif message.text == self.loc.BUTTON_METR_PRICE:
             await self.ask_generic_duration(message, 'price', back_state)
             return
-        elif message.text == self.loc.BUTTON_METR_CAP:
-            await self.show_cap(message)
+        elif message.text == self.loc.BUTTON_METR_POL:
+            await self.show_pol(message)
         elif message.text == self.loc.BUTTON_METR_STATS:
             await self.show_last_stats(message)
         elif message.text == self.loc.BUTTON_METR_SAVERS:
@@ -311,6 +311,13 @@ class MetricsDialog(BaseDialog):
     async def show_dex_aggr(self, message: Message, period=DAY):
         report = await self.deps.dex_analytics.get_analytics(period)
         text = self.loc.notification_text_dex_report(report)
+        await message.answer(text,
+                             disable_web_page_preview=True,
+                             disable_notification=True)
+
+    async def show_pol(self, message: Message):
+        report = self.deps.pol_notifier.last_event
+        text = self.loc.notification_text_pol_utilization(report)
         await message.answer(text,
                              disable_web_page_preview=True,
                              disable_notification=True)

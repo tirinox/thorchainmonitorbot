@@ -447,9 +447,9 @@ class App:
         if d.cfg.get('pol.enabled', True):
             pol_fetcher = POLFetcher(d)
             tasks.append(pol_fetcher)
-            pol_notifier = POLNotifier(d)
-            pol_fetcher.add_subscriber(pol_notifier)
-            pol_notifier.add_subscriber(d.alert_presenter)
+            d.pol_notifier = POLNotifier(d)
+            pol_fetcher.add_subscriber(d.pol_notifier)
+            d.pol_notifier.add_subscriber(d.alert_presenter)
             if achievements_enabled:
                 pol_fetcher.add_subscriber(achievements)
 
