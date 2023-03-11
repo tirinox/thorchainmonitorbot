@@ -7,8 +7,9 @@ from aiothornode.types import ThorPOL
 
 from services.jobs.fetch.pol import POLFetcher
 from services.lib.constants import NetworkIdents, STAGENET_RESERVE_ADDRESS
+from services.lib.date_utils import DAY
 from services.lib.money import distort_randomly
-from services.models.pol import POLState
+from services.models.pol import POLState, EventPOL
 from services.notify.types.pol_notify import POLNotifier
 from tools.lib.lp_common import LpAppFramework
 
@@ -26,8 +27,8 @@ async def demo_pol_1(app: LpAppFramework):
 
 
 class DbgPOLNotifier(POLNotifier):
-    async def find_stats_ago(self, period_ago) -> Optional[POLState]:
-        return POLState(
+    async def find_stats_ago(self, period_ago) -> Optional[EventPOL]:
+        pol_state = POLState(
             usd_per_rune=1.5,
             value=ThorPOL(
                 current_deposit=distort_randomly(5028203433),  # = rune_deposited - rune_withdrawn
@@ -36,6 +37,10 @@ class DbgPOLNotifier(POLNotifier):
                 rune_withdrawn=distort_randomly(4904703055, up_only=True),
                 value=distort_randomly(6100055164, up_only=True),
             ))
+        return EventPOL(
+            current=pol_state,
+            membership=[],
+        )
 
 
 async def demo_pol_pipeline(app: LpAppFramework):
@@ -48,12 +53,19 @@ async def demo_pol_pipeline(app: LpAppFramework):
     await pol_fetcher.run()
 
 
+async def demo_pol_history(app: LpAppFramework):
+    pol_notifier = DbgPOLNotifier(app.deps)
+    history = await pol_notifier.last_points(DAY)
+    print(history)
+
+
 async def main():
     app = LpAppFramework(log_level=logging.INFO, network=NetworkIdents.STAGENET_MULTICHAIN)
 
     async with app:
         # await demo_pol_1(app)
-        await demo_pol_pipeline(app)
+        # await demo_pol_pipeline(app)
+        await demo_pol_history(app)
 
 
 if __name__ == '__main__':

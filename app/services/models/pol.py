@@ -1,3 +1,4 @@
+import dataclasses
 from typing import NamedTuple, List, Optional
 
 from aiothornode.types import ThorPOL, thor_to_float
@@ -50,3 +51,23 @@ class EventPOL(NamedTuple):
     @property
     def pol_utilization(self):
         return self.current.pol_utilization_percent(self.mimir_max_deposit)
+
+    @classmethod
+    def load_from_series(cls, j):
+        usd_per_rune = float(j.get('usd_per_rune', 1.0))
+        pol = POLState(usd_per_rune, ThorPOL(**j.get('pol')))
+        membership = [PoolMemberDetails(**it) for it in j.get('membership', [])]
+        return cls(
+            current=pol,
+            membership=membership,
+        )
+
+    @property
+    def to_json_for_series(self):
+        return {
+            'pol': self.current.value._asdict(),
+            'membership': [
+                dataclasses.asdict(m) for m in self.membership
+            ],
+            'usd_per_rune': self.current.usd_per_rune,
+        }
