@@ -2290,7 +2290,7 @@ class BaseLocalization(ABC):  # == English
     def pretty_asset(name):
         return Asset(name).pretty_str
 
-    def _format_pol_membership(self, event: EventPOL, of_pool):
+    def _format_pol_membership(self, event: EventPOL, of_pool, decor=True):
         text = ''
         for i, details in enumerate(event.membership, start=1):
             pool: PoolInfo = event.prices.find_pool(details.pool)
@@ -2298,9 +2298,13 @@ class BaseLocalization(ABC):  # == English
             share = pool.percent_share(rune)
             usd = rune * event.prices.usd_per_rune
             asset = self.pretty_asset(details.pool)
+            val = short_rune(rune)
+            pool_pct = pretty_percent(share, signed=False)
+            if decor:
+                val = pre(val)
             text += (
-                f'‣ {asset}: {pre(short_rune(rune))} ({short_dollar(usd)}),'
-                f' {pretty_percent(share)} {of_pool}\n'
+                f'‣ {asset}: {val} ({short_dollar(usd)}),'
+                f' {pool_pct} {of_pool}\n'
             )
         return text.strip()
 
@@ -2313,7 +2317,8 @@ class BaseLocalization(ABC):  # == English
         str_value_delta_pct, str_value_delta_abs = '', ''
         if prev:
             str_value_delta_pct = up_down_arrow(prev.rune_value, curr.rune_value, percent_delta=True)
-            str_value_delta_abs = up_down_arrow(prev.rune_value, curr.rune_value, money_delta=True, postfix=RAIDO_GLYPH)
+            # str_value_delta_abs = up_down_arrow(
+            # prev.rune_value, curr.rune_value, money_delta=True, postfix=RAIDO_GLYPH)
 
         pnl_pct = curr.pnl_percent
         text += (
@@ -2329,8 +2334,7 @@ class BaseLocalization(ABC):  # == English
         # POL pool membership
         if event.membership:
             text += "\n\n<b>Pool membership:</b>\n"
-            text += self._format_pol_membership(event,
-                                                of_pool='of pool')
+            text += self._format_pol_membership(event, of_pool='of pool')
 
         return text.strip()
 

@@ -13,7 +13,8 @@ from services.lib.date_utils import now_ts, seconds_human
 from services.lib.explorers import get_explorer_url_to_tx
 from services.lib.midgard.name_service import NameMap, add_thor_suffix
 from services.lib.money import Asset, short_dollar, format_percent, pretty_money, pretty_dollar, RAIDO_GLYPH, \
-    calc_percent_change, adaptive_round_to_str, emoji_for_percent_change, short_address, short_money, short_rune
+    calc_percent_change, adaptive_round_to_str, emoji_for_percent_change, short_address, short_money, short_rune, \
+    pretty_percent, chart_emoji
 from services.lib.texts import x_ses, progressbar, plural, bracketify, up_down_arrow, \
     bracketify_spaced, shorten_text
 from services.lib.w3.dex_analytics import DexReportEntry, DexReport
@@ -43,7 +44,7 @@ class TwitterEnglishLocalization(BaseLocalization):
     @classmethod
     def smart_split(cls, parts):
         parts = twitter_intelligent_text_splitter(parts)
-        return MESSAGE_SEPARATOR.join(parts)
+        return MESSAGE_SEPARATOR.join(parts).strip()
 
     PIC_NODE_DIVERSITY_BY_PROVIDER_CAPTION = 'THORChain nodes'
 
@@ -870,7 +871,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             f'Total filled: {fill_cap:.1f}%\n\n'
         )
 
-        return self.smart_split(parts).strip()
+        return self.smart_split(parts)
 
     # ------ POL -------
 
@@ -880,4 +881,33 @@ class TwitterEnglishLocalization(BaseLocalization):
         return '$' + Asset(name).name
 
     def notification_text_pol_utilization(self, event: EventPOL):
-        return ''  # todo
+        text = '🥃 Protocol Owned Liquidity\n\n'
+
+        curr, prev = event.current, event.previous
+        pol_progress = progressbar(curr.rune_withdrawn, event.mimir_max_deposit, 10)
+
+        str_value_delta_pct, str_value_delta_abs = '', ''
+        if prev:
+            str_value_delta_pct = up_down_arrow(prev.rune_value, curr.rune_value, percent_delta=True)
+            # str_value_delta_abs = up_down_arrow(
+            # prev.rune_value, curr.rune_value, money_delta=True, postfix=RAIDO_GLYPH)
+
+        pnl_pct = curr.pnl_percent
+
+        parts = [(
+            f'🥃 Protocol Owned Liquidity\n\n'
+            f"Current value: {short_rune(curr.rune_value)} or "
+            f"{short_dollar(curr.usd_value)} ({str_value_delta_pct})\n"
+            f"Utilization: {pretty_percent(event.pol_utilization, signed=False)} {pol_progress} "
+            f" of {short_rune(event.mimir_max_deposit)} maximum.\n"
+            f"Rune deposited: {short_rune(curr.rune_deposited)}, "
+            f"withdrawn: {short_rune(curr.rune_withdrawn)}\n"
+            f"PnL: {pretty_percent(pnl_pct)} {chart_emoji(pnl_pct)}"
+        )]
+
+        # POL pool membership
+        if event.membership:
+            text = "\nPools:\n" + self._format_pol_membership(event, of_pool='of pool', decor=False)
+            parts.append(text)
+
+        return self.smart_split(parts)

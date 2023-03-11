@@ -16,7 +16,8 @@ from services.lib.explorers import get_explorer_url_to_address, get_thoryield_ad
     get_ip_info_link
 from services.lib.midgard.name_service import add_thor_suffix, NameMap
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
-    emoji_for_percent_change, Asset, short_money, short_dollar, format_percent, RAIDO_GLYPH, short_rune
+    emoji_for_percent_change, Asset, short_money, short_dollar, format_percent, RAIDO_GLYPH, short_rune, pretty_percent, \
+    chart_emoji
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
     up_down_arrow, plural, shorten_text
 from services.lib.utils import grouper
@@ -1716,4 +1717,31 @@ class RussianLocalization(BaseLocalization):
     # ------ POL -------
 
     def notification_text_pol_utilization(self, event: EventPOL):
-        return ''  # todo
+        text = '🥃 <b>POL: ликвидность от самого протокола</b>\n\n'
+
+        curr, prev = event.current, event.previous
+        pol_progress = progressbar(curr.rune_withdrawn, event.mimir_max_deposit, 10)
+
+        str_value_delta_pct, str_value_delta_abs = '', ''
+        if prev:
+            str_value_delta_pct = up_down_arrow(prev.rune_value, curr.rune_value, percent_delta=True)
+            # str_value_delta_abs = up_down_arrow(
+            # prev.rune_value, curr.rune_value, money_delta=True, postfix=RAIDO_GLYPH)
+
+        pnl_pct = curr.pnl_percent
+        text += (
+            f"Текущея POL ликвидность: {code(short_rune(curr.rune_value))} или "
+            f" {code(short_dollar(curr.usd_value))} ({str_value_delta_pct})\n"
+            f"Использование: {pre(pretty_percent(event.pol_utilization, signed=False))} {pre(pol_progress)} "
+            f" из {short_rune(event.mimir_max_deposit)} максимум.\n"
+            f"Rune депонировано: {pre(short_rune(curr.rune_deposited))} "
+            f"и выведено: {pre(short_rune(curr.rune_withdrawn))}\n"
+            f"Доходы/убытки: {pre(pretty_percent(pnl_pct))} {chart_emoji(pnl_pct)}"
+        )
+
+        # POL pool membership
+        if event.membership:
+            text += "\n\n<b>Членство в пулах:</b>\n"
+            text += self._format_pol_membership(event, of_pool='от пула')
+
+        return text.strip()
