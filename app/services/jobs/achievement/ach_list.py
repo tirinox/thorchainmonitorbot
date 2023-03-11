@@ -58,6 +58,8 @@ class AchievementName:
     MAX_SWAP_AMOUNT_USD = 'max_swap_amount_usd'
     MAX_ADD_AMOUNT_USD = 'max_add_amount_usd'
 
+    POL_VALUE_RUNE = 'pol_value_rune'
+
     MAX_ADD_AMOUNT_USD_PER_POOL = 'max_add_amount_usd_per_pool'
 
     @classmethod

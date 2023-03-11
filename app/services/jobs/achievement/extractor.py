@@ -151,4 +151,6 @@ class AchievementsExtractor(WithLogger):
         ]
 
     def on_thor_pol(self, pol: EventPOL):
-        return []  # todo!
+        return [
+            Achievement(A.POL_VALUE_RUNE, int(pol.current.rune_value))
+        ]

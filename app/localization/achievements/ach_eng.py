@@ -50,6 +50,8 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
         ADesc(A.MAX_ADD_AMOUNT_USD_PER_POOL, 'Added ::asset:: in a single TX', prefix='$'),
 
         ADesc(A.COIN_MARKET_CAP_RANK, 'Market cap rank'),
+
+        ADesc(A.POL_VALUE_RUNE, 'POL maximum value'),
     ]
 
     CELEBRATION_EMOJIES = "🎉🎊🥳🙌🥂🪅🎆"

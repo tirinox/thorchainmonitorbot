@@ -3,7 +3,7 @@ from typing import Optional, List, Tuple
 from aiothornode.types import thor_to_float, THOR_BASIS_POINT_MAX
 
 from services.lib.cooldown import Cooldown
-from services.lib.date_utils import parse_timespan_to_seconds, DAY, MINUTE
+from services.lib.date_utils import parse_timespan_to_seconds, MINUTE
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
