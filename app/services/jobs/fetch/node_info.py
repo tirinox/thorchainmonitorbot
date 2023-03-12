@@ -46,7 +46,7 @@ class NodeInfoFetcher(BaseFetcher):
 
             self.deps.node_holder.nodes = nodes
 
-        self.thor_network = self.deps.thor_connector.query_network()
+        self.thor_network = await self.deps.thor_connector.query_network()
         if self.thor_network:
             self.logger.info(f"ThorNetwork = {self.thor_network}")
 
