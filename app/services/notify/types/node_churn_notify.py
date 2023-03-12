@@ -4,7 +4,7 @@ from localization.manager import BaseLocalization
 from services.dialog.picture.nodes_pictures import NodePictureGenerator
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.lib.cooldown import Cooldown
-from services.lib.date_utils import DAY
+from services.lib.date_utils import HOUR
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.draw_utils import img_to_bio
@@ -15,7 +15,7 @@ from services.notify.channel import BoardMessage
 
 
 class NodeChurnNotifier(INotified, WithDelegates, WithLogger):
-    STATS_RECORD_INTERVAL = DAY
+    STATS_RECORD_INTERVAL = 1 * HOUR
 
     def __init__(self, deps: DepContainer):
         super().__init__()

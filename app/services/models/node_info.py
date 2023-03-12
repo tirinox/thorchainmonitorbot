@@ -160,6 +160,9 @@ class NodeSetChanges:
     nodes_all: List[NodeInfo] = field(default_factory=list)  # all current nodes
     nodes_previous: List[NodeInfo] = field(default_factory=list)  # previous node set
 
+    vault_migrating: bool = False
+    block_no: int = 0
+
     @classmethod
     def empty(cls):
         return cls()

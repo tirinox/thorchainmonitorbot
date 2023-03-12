@@ -1,11 +1,13 @@
 from time import perf_counter
-from typing import List
+from typing import List, Optional
+
+from aiothornode.types import ThorNetwork
 
 from services.jobs.fetch.base import BaseFetcher
-from services.jobs.node_churn import NodeStateDatabase
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.geo_ip import GeoIPManager
+from services.models.node_db import NodeStateDatabase
 from services.models.node_info import NodeInfo, NetworkNodeIpInfo
 
 
@@ -15,6 +17,7 @@ class NodeInfoFetcher(BaseFetcher):
         super().__init__(deps, sleep_period)
 
         self._geo_ip = GeoIPManager(self.deps)
+        self.thor_network: Optional[ThorNetwork] = None
 
     async def fetch_current_node_list(self) -> List[NodeInfo]:
         thor = self.deps.thor_connector
@@ -42,6 +45,10 @@ class NodeInfoFetcher(BaseFetcher):
                     f'get_node_list_and_geo_info failed ({e}), but it is not that bad, I will go on.', stack_info=True)
 
             self.deps.node_holder.nodes = nodes
+
+        self.thor_network = self.deps.thor_connector.query_network()
+        if self.thor_network:
+            self.logger.info(f"ThorNetwork = {self.thor_network}")
 
         return nodes
 

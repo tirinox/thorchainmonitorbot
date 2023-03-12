@@ -7,11 +7,14 @@ from semver import VersionInfo
 
 from localization.languages import Language
 from localization.manager import LocalizationManager
+from services.jobs.achievement.notifier import AchievementsNotifier
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.jobs.node_churn import NodeChurnDetector
 from services.lib.texts import sep
 from services.lib.utils import setup_logs
 from services.models.node_info import NodeSetChanges, NodeVersionConsensus, NodeInfo
+from services.notify.types.node_churn_notify import NodeChurnNotifier
+from services.notify.types.version_notify import VersionNotifier
 from tools.lib.lp_common import LpAppFramework
 
 
@@ -164,18 +167,40 @@ async def demo_churn_test(app: LpAppFramework):
     print(changes)
 
 
+async def demo_churn_pipeline(app: LpAppFramework):
+    d = app.deps
+    churn_detector = NodeChurnDetector(d)
+    d.node_info_fetcher.add_subscriber(churn_detector)
+
+    notifier_nodes = NodeChurnNotifier(d)
+    churn_detector.add_subscriber(notifier_nodes)
+
+    # notifier_nodes.add_subscriber(d.alert_presenter)  # not ready yet
+
+    achievements = AchievementsNotifier(d)
+    achievements.add_subscriber(d.alert_presenter)
+
+    churn_detector.add_subscriber(app.deps.achie)
+
+    notifier_version = VersionNotifier(d)
+    churn_detector.add_subscriber(notifier_version)
+
+    await d.node_info_fetcher.run()
+
+
+async def demo_once(app: LpAppFramework):
+    node_info_fetcher = NodeInfoFetcher(app.deps)
+    data = await node_info_fetcher.fetch()
+    await node_churn_notification_test(app, data)
+    # await node_version_notification_check_1(lpgen, data)
+    # await node_version_notification_check_progress(lpgen, data)
+
+
 async def main():
-    lpgen = LpAppFramework()
-    async with lpgen:
-        node_info_fetcher = NodeInfoFetcher(lpgen.deps)
-
-        data = await node_info_fetcher.fetch()
-
-        # await node_churn_notification_test(lpgen, data)
-
-        # await node_version_notification_check_1(lpgen, data)
-        # await node_version_notification_check_progress(lpgen, data)
-        await demo_churn_test(lpgen)
+    app = LpAppFramework()
+    async with app:
+        await demo_churn_pipeline(app)
+        # await demo_churn_test(app)
 
 
 if __name__ == "__main__":

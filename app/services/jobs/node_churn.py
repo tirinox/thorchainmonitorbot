@@ -1,36 +1,11 @@
-import json
-from dataclasses import asdict
 from typing import List
 
+from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
+from services.models.node_db import NodeStateDatabase
 from services.models.node_info import NodeSetChanges, NodeInfo
-
-
-class NodeStateDatabase:
-    DB_KEY_OLD_NODE_LIST = 'PreviousNodeInfo'
-
-    def __init__(self, deps: DepContainer):
-        self.logger = class_logger(self)
-        self.deps = deps
-
-    async def get_last_node_info_list(self) -> List[NodeInfo]:
-        try:
-            db = self.deps.db
-            j = await db.redis.get(self.DB_KEY_OLD_NODE_LIST)
-            raw_data_list = json.loads(j)
-            return [NodeInfo(**d) for d in raw_data_list]
-        except (TypeError, ValueError, AttributeError, json.decoder.JSONDecodeError):
-            self.logger.exception('get_last_node_info db error')
-            return []
-
-    async def save_node_info_list(self, info_list: List[NodeInfo]):
-        if not info_list:
-            return
-        r = await self.deps.db.get_redis()
-        data = [asdict(item) for item in info_list]
-        await r.set(self.DB_KEY_OLD_NODE_LIST, json.dumps(data))
 
 
 class NodeChurnDetector(WithDelegates, INotified):
@@ -44,7 +19,13 @@ class NodeChurnDetector(WithDelegates, INotified):
 
     async def compare_with_new_nodes(self, new_nodes: List[NodeInfo]) -> NodeSetChanges:
         old_nodes = await self.get_last_node_info()
-        return self.extract_changes(new_nodes, old_nodes)
+        changes = self.extract_changes(new_nodes, old_nodes)
+
+        # Fill out some additional data
+        changes.block_no = self.deps.last_block_store.last_thor_block
+        changes.vault_migrating = False  # todo!!!
+
+        return changes
 
     @staticmethod
     def extract_changes(new_nodes: List[NodeInfo], old_nodes: List[NodeInfo]) -> NodeSetChanges:
@@ -73,15 +54,22 @@ class NodeChurnDetector(WithDelegates, INotified):
             if old_n.ident not in new_node_ids:
                 nodes_removed.append(old_n)
 
-        return NodeSetChanges(nodes_added,
-                              nodes_removed,
-                              nodes_activated,
-                              nodes_deactivated,
-                              nodes_all=new_nodes,
-                              nodes_previous=old_nodes)
+        return NodeSetChanges(
+            nodes_added,
+            nodes_removed,
+            nodes_activated,
+            nodes_deactivated,
+            nodes_all=new_nodes,
+            nodes_previous=old_nodes
+        )
 
-    async def on_data(self, sender, info_list: List[NodeInfo]):
+    async def on_data(self, sender: NodeInfoFetcher, info_list: List[NodeInfo]):
         result = await self.compare_with_new_nodes(info_list)
+
+        try:
+            result.vault_migrating = sender.thor_network.vaults_migrating
+        except AttributeError:
+            self.logger.error(f'Cannot get vault_migrating from {sender}')
 
         # result = self._dbg_modification(result)
 
