@@ -180,8 +180,6 @@ async def demo_churn_pipeline(app: LpAppFramework):
     achievements = AchievementsNotifier(d)
     achievements.add_subscriber(d.alert_presenter)
 
-    churn_detector.add_subscriber(app.deps.achie)
-
     notifier_version = VersionNotifier(d)
     churn_detector.add_subscriber(notifier_version)
 
