@@ -4,7 +4,7 @@ from localization.manager import BaseLocalization
 from services.dialog.picture.nodes_pictures import NodePictureGenerator
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.lib.cooldown import Cooldown
-from services.lib.date_utils import HOUR
+from services.lib.date_utils import HOUR, now_ts
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.draw_utils import img_to_bio
@@ -25,10 +25,12 @@ class NodeChurnNotifier(INotified, WithDelegates, WithLogger):
         self._filter_nonsense = deps.cfg.get_pure('node_info.churn.filter_nonsense', True)
         notify_cooldown = deps.cfg.as_interval('node_info.churn.cooldown', '10m')
 
-        self._notify_cd = Cooldown(self.deps.db, 'NodeChurn:Notification', notify_cooldown, 5)
+        self._notify_cd = Cooldown(self.deps.db, 'NodeChurn:Notification', notify_cooldown, 10)
         self._record_metrics_cd = Cooldown(self.deps.db, 'NodeChurn:Metrics', self.STATS_RECORD_INTERVAL)
 
         self._node_stats_ts = TimeSeries('NodeMetrics', self.deps.db)
+        self._last_node_change_data = None
+        self._churn_started_ts = 0.0
 
     async def on_data(self, sender, changes: NodeSetChanges):
         await self._record_statistics(changes)
@@ -42,10 +44,29 @@ class NodeChurnNotifier(INotified, WithDelegates, WithLogger):
 
         if await self._notify_cd.can_do():
             await self._notify_cd.do()
-            await self._notify_when_node_churn(changes)
+            await self._notify_when_node_churn_finished(changes)
             await self.pass_data_to_listeners(changes)
 
-    async def _notify_when_node_churn(self, changes: NodeSetChanges):
+    async def _notify(self, changes: NodeSetChanges):
+        if changes.vault_migrating:
+            await self._notify_when_node_churn_started(changes)
+            # todo: persist NodeSetChanges in the DB
+            self._last_node_change_data = changes
+            self._churn_started_ts = now_ts()
+        else:
+            # todo: load from the DB
+            event = self._last_node_change_data or changes
+            event.churn_duration = now_ts() - self._churn_started_ts
+            await self._notify_when_node_churn_finished(event)
+            self._last_node_change_data = None
+
+    async def _notify_when_node_churn_started(self, changes: NodeSetChanges):
+        await self.deps.broadcaster.notify_preconfigured_channels(
+            BaseLocalization.notification_churn_started,
+            changes
+        )
+
+    async def _notify_when_node_churn_finished(self, changes: NodeSetChanges):
         # TEXT
         await self.deps.broadcaster.notify_preconfigured_channels(
             BaseLocalization.notification_text_for_node_churn,

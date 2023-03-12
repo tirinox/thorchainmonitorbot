@@ -1212,9 +1212,9 @@ class BaseLocalization(ABC):  # == English
 
         return message.rstrip()
 
-    def notification_churn_started(self, change: NodeSetChanges):
+    def notification_churn_started(self, changes: NodeSetChanges):
         text = '♻️ <b>Node churn have started.</b>'
-        if change.vault_migrating:
+        if changes.vault_migrating:
             text += '\nVaults are migrating.'
         return text
 

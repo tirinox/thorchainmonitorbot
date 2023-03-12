@@ -20,11 +20,6 @@ class NodeChurnDetector(WithDelegates, INotified):
     async def compare_with_new_nodes(self, new_nodes: List[NodeInfo]) -> NodeSetChanges:
         old_nodes = await self.get_last_node_info()
         changes = self.extract_changes(new_nodes, old_nodes)
-
-        # Fill out some additional data
-        changes.block_no = self.deps.last_block_store.last_thor_block
-        changes.vault_migrating = False  # todo!!!
-
         return changes
 
     @staticmethod
@@ -67,6 +62,8 @@ class NodeChurnDetector(WithDelegates, INotified):
         result = await self.compare_with_new_nodes(info_list)
 
         try:
+            # Fill out some additional data
+            result.block_no = self.deps.last_block_store.last_thor_block
             result.vault_migrating = sender.thor_network.vaults_migrating
         except AttributeError:
             self.logger.error(f'Cannot get vault_migrating from {sender}')

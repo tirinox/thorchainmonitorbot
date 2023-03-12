@@ -162,6 +162,7 @@ class NodeSetChanges:
 
     vault_migrating: bool = False
     block_no: int = 0
+    churn_duration: float = 0.0
 
     @classmethod
     def empty(cls):

@@ -556,9 +556,9 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         return self.smart_split(components)
 
-    def notification_churn_started(self, change: NodeSetChanges):
+    def notification_churn_started(self, changes: NodeSetChanges):
         text = '♻️ Node churn have started.'
-        if change.vault_migrating:
+        if changes.vault_migrating:
             text += '\nVaults are migrating.'
         return text
 

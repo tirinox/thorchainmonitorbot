@@ -972,9 +972,9 @@ class RussianLocalization(BaseLocalization):
 
         return message.rstrip()
 
-    def notification_churn_started(self, change: NodeSetChanges):
+    def notification_churn_started(self, changes: NodeSetChanges):
         text = '♻️ <b>Процесс перемешивания нод начался</b>'
-        if change.vault_migrating:
+        if changes.vault_migrating:
             text += '\nХранилища мигрируют.'
         return text
 
