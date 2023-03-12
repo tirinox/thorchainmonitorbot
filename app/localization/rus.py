@@ -947,7 +947,8 @@ class RussianLocalization(BaseLocalization):
                 extra += f", {award_text} награды"
 
         status = f', ({status})' if add_status else ''
-        return f'{bold(node_thor_link)} ({node.flag_emoji}{node_ip_link}, версия {node.version}) ' \
+        version_str = f", v. {node.version}" if extended_info else ''
+        return f'{bold(node_thor_link)} ({node.flag_emoji}{node_ip_link}{version_str}) ' \
                f'с {bold(pretty_money(node.bond, postfix=RAIDO_GLYPH))} бонд {status}{extra}'.strip()
 
     def _node_bond_change_after_churn(self, changes: NodeSetChanges):
@@ -970,6 +971,12 @@ class RussianLocalization(BaseLocalization):
             message += self._node_bond_change_after_churn(changes)
 
         return message.rstrip()
+
+    def notification_churn_started(self, change: NodeSetChanges):
+        text = '♻️ <b>Процесс перемешивания нод начался</b>'
+        if change.vault_migrating:
+            text += '\nХранилища мигрируют.'
+        return text
 
     def node_list_text(self, nodes: List[NodeInfo], status, items_per_chunk=12):
         add_status = False

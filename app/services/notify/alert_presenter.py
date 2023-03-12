@@ -3,7 +3,6 @@ import asyncio
 from localization.manager import BaseLocalization
 from services.dialog.picture.achievement_picture import AchievementPictureGenerator
 from services.dialog.picture.block_height_picture import block_speed_chart
-from services.dialog.picture.pol_picture import POLPictureGenerator
 from services.dialog.picture.savers_picture import SaversPictureGenerator
 from services.jobs.achievement.ach_list import Achievement
 from services.lib.constants import THOR_BLOCKS_PER_MINUTE
@@ -11,6 +10,7 @@ from services.lib.delegates import INotified
 from services.lib.midgard.name_service import NameService
 from services.lib.w3.dex_analytics import DexReport
 from services.models.last_block import EventBlockSpeed, BlockProduceState
+from services.models.node_info import NodeSetChanges
 from services.models.pol import EventPOL
 from services.models.pool_info import PoolChanges
 from services.models.savers import EventSaverStats
@@ -47,6 +47,8 @@ class AlertPresenter(INotified):
             await self._handle_pol(data)
         elif isinstance(data, Achievement):
             await self._handle_achievement(data)
+        elif isinstance(data, NodeSetChanges):
+            await self._handle_node_churn(data)
 
     # ---- PARTICULARLY ----
 
@@ -130,3 +132,9 @@ class AlertPresenter(INotified):
         await self.broadcaster.notify_preconfigured_channels(
             BaseLocalization.notification_text_pol_utilization, event
         )
+
+    async def _handle_node_churn(self, event: NodeSetChanges):
+        # TEXT
+        await self.broadcaster.notify_preconfigured_channels(
+            BaseLocalization.notification_text_for_node_churn,
+            event)

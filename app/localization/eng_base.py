@@ -1126,6 +1126,12 @@ class BaseLocalization(ABC):  # == English
 
     # ------- NETWORK NODES -------
 
+    def notification_node_churn_started(self):
+        # todo!
+        block_no = 0
+        text = f'Node churn started at block #{block_no}'
+        ...
+
     TEXT_PIC_NODES = 'nodes'
     TEXT_PIC_ACTIVE_NODES = 'Active nodes'
     TEXT_PIC_STANDBY_NODES = 'Standby nodes'
@@ -1165,7 +1171,8 @@ class BaseLocalization(ABC):  # == English
                 extra += f", current award is {award_text}"
 
         status = f' ({node.status})' if add_status else ''
-        return f'{bold(node_thor_link)} ({node.flag_emoji}{node_ip_link} v. {node.version}) ' \
+        version_str = f", v. {node.version}" if extended_info else ''
+        return f'{bold(node_thor_link)} ({node.flag_emoji}{node_ip_link}{version_str}) ' \
                f'bond {bold(short_money(node.bond, postfix=RAIDO_GLYPH))} {status}{extra}'.strip()
 
     def _make_node_list(self, nodes, title, add_status=False, extended_info=False, start=1):
@@ -1204,6 +1211,12 @@ class BaseLocalization(ABC):  # == English
             message += self._node_bond_change_after_churn(changes)
 
         return message.rstrip()
+
+    def notification_churn_started(self, change: NodeSetChanges):
+        text = '♻️ <b>Node churn have started.</b>'
+        if change.vault_migrating:
+            text += '\nVaults are migrating.'
+        return text
 
     def node_list_text(self, nodes: List[NodeInfo], status, items_per_chunk=12):
         add_status = False
