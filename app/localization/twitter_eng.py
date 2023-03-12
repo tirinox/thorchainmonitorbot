@@ -538,15 +538,24 @@ class TwitterEnglishLocalization(BaseLocalization):
             message = ', '.join(_format_node_text_plain(node) for node in nodes if node.node_address)
             return f'{title}\n{message}\n'
 
-        components = []
+        components = [
+            '♻️ Node churn is complete'
+        ]
 
-        part1 = _make_node_list_plain(changes.nodes_activated, '➡️ Nodes churned in:')
+        part1 = _make_node_list_plain(changes.nodes_activated, '➡️ Churned in:')
         components.append(part1)
 
-        part2 = _make_node_list_plain(changes.nodes_deactivated, '⬅️️ Nodes churned out:')
+        part2 = _make_node_list_plain(changes.nodes_deactivated, '⬅️️ Churned out:')
+
+        # bond
         if changes.nodes_activated or changes.nodes_deactivated:
             part2 += self._node_bond_change_after_churn(changes)
         components.append(part2)
+
+        if changes.churn_duration:
+            components.append(
+                f'\nChurn duration: {seconds_human(changes.churn_duration)}'
+            )
 
         part3 = _make_node_list_plain(changes.nodes_added, '🆕 New nodes:')
         components.append(part3)

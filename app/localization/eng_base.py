@@ -1200,7 +1200,7 @@ class BaseLocalization(ABC):  # == English
         message = ''
 
         if changes.nodes_activated or changes.nodes_deactivated:
-            message += bold('♻️ Node churn') + '\n\n'
+            message += bold('♻️ Node churn is complete') + '\n\n'
 
         message += self._make_node_list(changes.nodes_added, '🆕 New nodes:', add_status=True)
         message += self._make_node_list(changes.nodes_activated, '➡️ Nodes that churned in:')
@@ -1210,7 +1210,10 @@ class BaseLocalization(ABC):  # == English
         if changes.nodes_activated or changes.nodes_deactivated:
             message += self._node_bond_change_after_churn(changes)
 
-        return message.rstrip()
+        if changes.churn_duration:
+            message += f'\nChurn duration: {seconds_human(changes.churn_duration)}'
+
+        return message.strip()
 
     def notification_churn_started(self, changes: NodeSetChanges):
         text = '♻️ <b>Node churn have started.</b>'

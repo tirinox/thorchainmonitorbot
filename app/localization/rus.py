@@ -960,7 +960,7 @@ class RussianLocalization(BaseLocalization):
         message = ''
 
         if changes.nodes_activated or changes.nodes_deactivated:
-            message += bold('♻️ Перемешивание нод') + '\n\n'
+            message += bold('♻️ Перемешивание нод завершено') + '\n\n'
 
         message += self._make_node_list(changes.nodes_added, '🆕 Новые ноды появились:', add_status=True)
         message += self._make_node_list(changes.nodes_activated, '➡️ Ноды активироны:')
@@ -970,7 +970,10 @@ class RussianLocalization(BaseLocalization):
         if changes.nodes_activated or changes.nodes_deactivated:
             message += self._node_bond_change_after_churn(changes)
 
-        return message.rstrip()
+        if changes.churn_duration:
+            message += f'\nПродолжительность: {seconds_human(changes.churn_duration)}'
+
+        return message.strip()
 
     def notification_churn_started(self, changes: NodeSetChanges):
         text = '♻️ <b>Процесс перемешивания нод начался</b>'
