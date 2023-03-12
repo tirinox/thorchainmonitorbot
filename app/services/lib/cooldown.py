@@ -1,7 +1,6 @@
 import asyncio
 import json
 from dataclasses import dataclass
-from time import time
 
 from services.lib.date_utils import DAY, now_ts
 from services.lib.db import DB
@@ -17,12 +16,13 @@ class CooldownRecord:
     def can_do(self, cooldown):
         if not isinstance(self.time, (float, int)):
             return True
-        return time() - cooldown > self.time
+        return now_ts() - cooldown > self.time
 
-    def increment_count(self, max_count):
+    def increment_count(self, max_count, cd):
         self.count += 1
         if self.count >= max_count:
-            self.time = time()
+            # todo: if waited too long since last event, do not start it again
+            self.time = now_ts()
             self.count = 0
 
 
@@ -58,7 +58,7 @@ class Cooldown:
         cd = await self.read(self.event_name)
         if not cd.can_do(self.cooldown):
             return
-        cd.increment_count(self.max_times)
+        cd.increment_count(self.max_times, self.cooldown)
         await self.write(self.event_name, cd)
 
     async def clear(self, event_name=None):

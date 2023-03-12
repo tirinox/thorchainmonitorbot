@@ -1,11 +1,11 @@
 import logging
-import time
 from dataclasses import dataclass
 from typing import List
 
 from services.jobs.fetch.circulating import RuneCirculatingSupply
 from services.lib.config import Config
 from services.lib.constants import BNB_BTCB_SYMBOL, BTC_SYMBOL, STABLE_COIN_POOLS, thor_to_float
+from services.lib.date_utils import now_ts
 from services.lib.money import weighted_mean
 from services.lib.texts import fuzzy_search
 from services.models.base import BaseModelMixin
@@ -146,7 +146,7 @@ class LastPriceHolder:
         self._calculate_weighted_rune_price()
         self._calculate_btc_price()
         self._fill_asset_price()
-        self.last_update_ts = time.time()
+        self.last_update_ts = now_ts()
 
     @property
     def pool_names(self):

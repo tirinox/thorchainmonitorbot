@@ -1,11 +1,10 @@
 import string
-import time
 from dataclasses import dataclass, field
 from math import sqrt
 from typing import List, Dict
 
 from services.lib.constants import thor_to_float
-from services.lib.date_utils import DAY
+from services.lib.date_utils import DAY, now_ts
 from services.models.base import BaseModelMixin
 from services.models.pool_info import PoolInfo, pool_share
 
@@ -329,7 +328,7 @@ class LiquidityPoolReport:
 
     @property
     def total_lping_sec(self):
-        return int(time.time()) - self.liq.first_add_ts
+        return int(now_ts()) - self.liq.first_add_ts
 
     def fee_value(self, mode=USD):
         if mode == self.USD:

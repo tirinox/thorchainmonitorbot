@@ -1,6 +1,5 @@
 import asyncio
 import random
-import time
 from typing import List
 
 from localization.eng_base import BaseLocalization
@@ -21,7 +20,7 @@ class Broadcaster:
 
         self._broadcast_lock = asyncio.Lock()
         self._rate_limit_lock = asyncio.Lock()
-        self._rng = random.Random(time.time())
+        self._rng = random.Random(now_ts())
         self.logger = class_logger(self)
 
         # public channels
