@@ -539,7 +539,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             return f'{title}\n{message}\n'
 
         components = [
-            '♻️ Node churn is complete'
+            '♻️ Node churn is complete\n\n'
         ]
 
         part1 = _make_node_list_plain(changes.nodes_activated, '➡️ Churned in:')
@@ -566,7 +566,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         return self.smart_split(components)
 
     def notification_churn_started(self, changes: NodeSetChanges):
-        text = '♻️ Node churn have started.'
+        text = f'♻️ Node churn have started at block #{changes.block_no}'
         if changes.vault_migrating:
             text += '\nVaults are migrating.'
         return text
