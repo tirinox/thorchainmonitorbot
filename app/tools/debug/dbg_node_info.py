@@ -2,14 +2,18 @@ import asyncio
 import logging
 import random
 from copy import copy
+from typing import Optional, List
 
+from aiothornode.types import ThorNetwork
 from semver import VersionInfo
 
 from localization.languages import Language
 from localization.manager import LocalizationManager
 from services.jobs.achievement.notifier import AchievementsNotifier
+from services.jobs.fetch.base import BaseFetcher
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.jobs.node_churn import NodeChurnDetector
+from services.lib.depcont import DepContainer
 from services.lib.texts import sep
 from services.lib.utils import setup_logs
 from services.models.node_info import NodeSetChanges, NodeVersionConsensus, NodeInfo
@@ -113,15 +117,12 @@ async def node_version_notification_check_1(lpgen: LpAppFramework, data):
         await lpgen.send_test_tg_message(msg)
 
 
-async def node_churn_notification_test(lpgen: LpAppFramework, nodes):
-    locs = localizations(lpgen)
-
-    random.shuffle(nodes)
-
+def toss_nodes(nodes, min_n=3, max_n=9):
     churn_out, churn_in = [], []
+    random.shuffle(nodes)
     for n in nodes:
-        in_enough = (4 <= len(churn_in) <= 8)
-        out_enough = (4 <= len(churn_out) <= 8)
+        in_enough = (min_n <= len(churn_in) <= max_n)
+        out_enough = (min_n <= len(churn_out) <= max_n)
         if in_enough and out_enough:
             break
 
@@ -132,6 +133,13 @@ async def node_churn_notification_test(lpgen: LpAppFramework, nodes):
             n.status = n.ACTIVE
             churn_in.append(n)
 
+    return churn_in, churn_out
+
+
+async def node_churn_notification_test(lpgen: LpAppFramework, nodes):
+    locs = localizations(lpgen)
+
+    churn_in, churn_out = toss_nodes(nodes)
     changes = NodeSetChanges([], [], churn_in, churn_out, nodes, nodes)
 
     # await lpgen.send_test_tg_message('------------------------------------')
@@ -186,6 +194,75 @@ async def demo_churn_pipeline(app: LpAppFramework):
     await d.node_info_fetcher.run()
 
 
+class NodeFetcherSimulator(BaseFetcher):
+    def __init__(self, deps: DepContainer, nodes: List[NodeInfo], sleep_period=5):
+        super().__init__(deps, sleep_period)
+        self.thor_network: Optional[ThorNetwork] = None
+        self.status = 'wait'
+        self._i = 0
+        self.nodes = nodes
+
+    def set_thor_network(self, thor_network: ThorNetwork, migrating=False):
+        self.thor_network = thor_network._replace(vaults_migrating=migrating)
+        print(f"Set ThorNetwork is {self.thor_network}")
+
+    def set_migration(self, m):
+        self.set_thor_network(self.thor_network, m)
+
+    async def fetch(self):
+        nodes = self.nodes
+        if self.status == 'wait':
+            self._i += 1
+            if self._i > 2:
+                self._i = 0
+                self.status = 'start'
+                c_in, c_out = toss_nodes(self.nodes)
+                print(f'Churn nodes: {len(c_in) = }, {len(c_out) = }')
+                self.set_migration(True)
+        elif self.status == 'start':
+            self._i += 1
+            if self._i > 3:
+                self.status = 'done'
+                self.set_migration(False)
+                self._i = 0
+        elif self.status == 'done':
+            print('Churn simulation is done. You can stop the process now!')
+        else:
+            exit(-255)
+        self.nodes = nodes
+        return nodes
+
+
+async def demo_churn_simulator(app: LpAppFramework):
+    d = app.deps
+
+    await d.node_info_fetcher.run_once()
+    print(f"There are {len(d.node_holder.nodes)} nodes")
+
+    # simulator
+    node_fetcher_simulator = NodeFetcherSimulator(d, d.node_holder.nodes)
+    node_fetcher_simulator.set_thor_network(d.node_info_fetcher.thor_network)
+
+    # churn_detector
+    churn_detector = NodeChurnDetector(d)
+    node_fetcher_simulator.add_subscriber(churn_detector)
+
+    # notifier module
+    notifier_nodes = NodeChurnNotifier(d)
+    churn_detector.add_subscriber(notifier_nodes)
+
+    # notifier_nodes.add_subscriber(d.alert_presenter)  # not ready yet
+
+    # the rest of stuff
+    achievements = AchievementsNotifier(d)
+    achievements.add_subscriber(d.alert_presenter)
+
+    notifier_version = VersionNotifier(d)
+    churn_detector.add_subscriber(notifier_version)
+
+    await node_fetcher_simulator.run()
+
+
 async def demo_once(app: LpAppFramework):
     node_info_fetcher = NodeInfoFetcher(app.deps)
     data = await node_info_fetcher.fetch()
@@ -197,8 +274,9 @@ async def demo_once(app: LpAppFramework):
 async def main():
     app = LpAppFramework()
     async with app:
-        await demo_churn_pipeline(app)
+        # await demo_churn_pipeline(app)
         # await demo_churn_test(app)
+        await demo_churn_simulator(app)
 
 
 if __name__ == "__main__":
