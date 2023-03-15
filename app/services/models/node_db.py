@@ -8,16 +8,17 @@ from services.models.node_info import NodeInfo
 
 
 class NodeStateDatabase:
-    DB_KEY_OLD_NODE_LIST = 'PreviousNodeInfo'
+    DB_KEY_OLD_NODE_LIST = 'NodeChurn:PreviousNodeInfo'
 
-    def __init__(self, deps: DepContainer):
+    def __init__(self, deps: DepContainer, key=None):
         self.logger = class_logger(self)
         self.deps = deps
+        self.key = key or self.DB_KEY_OLD_NODE_LIST
 
     async def get_last_node_info_list(self) -> List[NodeInfo]:
         try:
             db = self.deps.db
-            j = await db.redis.get(self.DB_KEY_OLD_NODE_LIST)
+            j = await db.redis.get(self.key)
             raw_data_list = json.loads(j)
             return [NodeInfo(**d) for d in raw_data_list]
         except (TypeError, ValueError, AttributeError, json.decoder.JSONDecodeError):
@@ -29,4 +30,4 @@ class NodeStateDatabase:
             return
         r = await self.deps.db.get_redis()
         data = [asdict(item) for item in info_list]
-        await r.set(self.DB_KEY_OLD_NODE_LIST, json.dumps(data))
+        await r.set(self.key, json.dumps(data))
