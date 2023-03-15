@@ -47,6 +47,15 @@ class NodeChurnNotifier(INotified, WithDelegates, WithLogger):
             await self._notify_when_node_churn_finished(changes)
             await self.pass_data_to_listeners(changes)
 
+    DB_KEY_CHURN_START_TS = 'NodeChurn:LastChurnTS'
+
+    async def _set_last_churn_ts(self):
+        await self.deps.db.redis.set(self.DB_KEY_CHURN_START_TS, now_ts())
+
+    async def get_last_churn_ts(self):
+        v = await self.deps.db.redis.get(self.DB_KEY_CHURN_START_TS)
+        return float(v) or None
+
     async def _notify(self, changes: NodeSetChanges):
         if changes.vault_migrating:
             await self._notify_when_node_churn_started(changes)
