@@ -13,9 +13,10 @@ class NodeChurnDetector(WithDelegates, INotified):
         super().__init__()
         self.logger = class_logger(self)
         self.deps = deps
+        self._node_db = NodeStateDatabase(self.deps)
 
     async def get_last_node_info(self) -> List[NodeInfo]:
-        return await NodeStateDatabase(self.deps).get_last_node_info_list()
+        return await self._node_db.get_last_node_info_list()
 
     async def compare_with_new_nodes(self, new_nodes: List[NodeInfo]) -> NodeSetChanges:
         old_nodes = await self.get_last_node_info()
@@ -60,6 +61,9 @@ class NodeChurnDetector(WithDelegates, INotified):
 
     async def on_data(self, sender: NodeInfoFetcher, info_list: List[NodeInfo]):
         result = await self.compare_with_new_nodes(info_list)
+
+        await self._node_db.save_node_info_list(info_list)
+        self.logger.info(f'Saved previous state of {len(info_list)} nodes.')
 
         try:
             # Fill out some additional data

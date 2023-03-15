@@ -7,7 +7,6 @@ from services.jobs.fetch.base import BaseFetcher
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.geo_ip import GeoIPManager
-from services.models.node_db import NodeStateDatabase
 from services.models.node_info import NodeInfo, NetworkNodeIpInfo
 
 
@@ -26,12 +25,12 @@ class NodeInfoFetcher(BaseFetcher):
         nodes = []
         for j in raw_nodes:
             node = NodeInfo.from_json(j)
-            # node = self._dbg_node_magic(node)  # fixme: debug
+            # node = self._dbg_node_magic(node)
             nodes.append(node)
 
         nodes.sort(key=lambda k: (k.status, -k.bond))
 
-        # nodes = self._dbg_test_churn(nodes)  # fixme: debug
+        # nodes = self._dbg_test_churn(nodes)
         return nodes
 
     async def fetch(self) -> List[NodeInfo]:
@@ -76,25 +75,6 @@ class NodeInfoFetcher(BaseFetcher):
             node_list,
             ip_info_dict
         )
-
-    async def post_action(self, info_list: List[NodeInfo]):
-        await NodeStateDatabase(self.deps).save_node_info_list(info_list)
-        self.logger.info(f'Saved previous state of {len(info_list)} nodes.')
-
-        # fixme: debug(!) ------ 8< -------
-        # from collections import defaultdict
-        # chain_block_height = defaultdict(int)
-        # for node in info_list:
-        #     if not node.observe_chains:
-        #         continue
-        #     for chain_info in node.observe_chains:
-        #         chain = chain_info['chain']
-        #         height = int(chain_info['height'])
-        #         if chain and height:
-        #             chain_block_height[chain] = max(chain_block_height[chain], height)
-        #     # chain_block_height[Chains.THOR].append(node.active_block_height) # todo!
-        # print('my height (!)', chain_block_height)
-        # fixme: debug(!) ------ 8< -------
 
     @staticmethod
     def _dbg_test_churn(new_nodes: List[NodeInfo]):
