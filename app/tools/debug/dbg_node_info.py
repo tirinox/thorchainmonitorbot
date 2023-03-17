@@ -239,6 +239,8 @@ async def demo_churn_simulator(app: LpAppFramework):
     await d.node_info_fetcher.run_once()
     print(f"There are {len(d.node_holder.nodes)} nodes")
 
+    await d.broadcaster.notify_preconfigured_channels('---------')
+
     # simulator
     node_fetcher_simulator = NodeFetcherSimulator(d, d.node_holder.nodes)
     node_fetcher_simulator.set_thor_network(d.node_info_fetcher.thor_network)
