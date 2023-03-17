@@ -1126,12 +1126,6 @@ class BaseLocalization(ABC):  # == English
 
     # ------- NETWORK NODES -------
 
-    def notification_churn_started(self, changes: NodeSetChanges):
-        text = f'♻️ <b>Node churn started at block #{changes.block_no}</b>'
-        if changes.vault_migrating:
-            text += '\nVaults are migrating.'
-        return text
-
     TEXT_PIC_NODES = 'nodes'
     TEXT_PIC_ACTIVE_NODES = 'Active nodes'
     TEXT_PIC_STANDBY_NODES = 'Standby nodes'
@@ -1216,7 +1210,7 @@ class BaseLocalization(ABC):  # == English
         return message.strip()
 
     def notification_churn_started(self, changes: NodeSetChanges):
-        text = '♻️ <b>Node churn have started.</b>'
+        text = f'♻️ <b>Node churn started at block #{changes.block_no}</b>'
         if changes.vault_migrating:
             text += '\nVaults are migrating.'
         return text
