@@ -22,6 +22,7 @@ python-dateutil
 python-dotenv
 PyYAML
 ratelimit
+redis[hiredis]
 semver
 slack-sdk
 slack-bolt
