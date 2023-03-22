@@ -538,9 +538,15 @@ achievements:
     period: 15m
 
 
-pol: # (!) new
+pol:
   enabled: true
   fetch_period: 30m
   notification:
     cooldown: 1d
     allow_when_zero: false
+
+
+key_metrics: # (!) new
+  enabled: true
+  notification:
+    cooldown: 7d

@@ -1124,6 +1124,9 @@ class BaseLocalization(ABC):  # == English
 
         return bonding_apy_change, liquidity_apy_change
 
+    def notification_text_key_metrics(self):
+        return '// todo'
+
     # ------- NETWORK NODES -------
 
     TEXT_PIC_NODES = 'nodes'

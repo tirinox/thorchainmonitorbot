@@ -19,6 +19,7 @@ from services.jobs.fetch.chains import ChainStateFetcher
 from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
 from services.jobs.fetch.gecko_price import fill_rune_price_from_gecko
+from services.jobs.fetch.key_stats import KeyStatsFetcher
 from services.jobs.fetch.killed_rune import KilledRuneFetcher, KilledRuneStore
 from services.jobs.fetch.last_block import LastBlockFetcher
 from services.jobs.fetch.native_scan import NativeScannerBlock
@@ -62,6 +63,7 @@ from services.notify.types.block_notify import BlockHeightNotifier, LastBlockSto
 from services.notify.types.cap_notify import LiquidityCapNotifier
 from services.notify.types.chain_notify import TradingHaltedNotifier
 from services.notify.types.dex_report_notify import DexReportNotifier
+from services.notify.types.key_metrics_notify import KeyMetricsNotifier
 from services.notify.types.mimir_notify import MimirChangedNotifier
 from services.notify.types.node_churn_notify import NodeChurnNotifier
 from services.notify.types.pol_notify import POLNotifier
@@ -454,6 +456,15 @@ class App:
             d.pol_notifier.add_subscriber(d.alert_presenter)
             if achievements_enabled:
                 pol_fetcher.add_subscriber(achievements)
+
+        if d.cfg.get('key_metrics.enabled', True):
+            metrics_fetcher = KeyStatsFetcher(d)
+            tasks.append(metrics_fetcher)
+            metrics_notifier = KeyMetricsNotifier(d)
+            metrics_fetcher.add_subscriber(metrics_notifier)
+            metrics_notifier.add_subscriber(d.alert_presenter)
+            if achievements_enabled:
+                metrics_fetcher.add_subscriber(achievements)
 
         # -------- SCHEDULER --------
 
