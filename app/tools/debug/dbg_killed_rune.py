@@ -2,15 +2,26 @@ import asyncio
 import logging
 
 from services.jobs.fetch.flipside import FlipSideConnector
-from services.jobs.fetch.killed_rune import KilledRuneFetcher, DEFAULT_API_URL
+from services.jobs.fetch.killed_rune import KilledRuneFetcher, DEFAULT_API_URL, KilledRuneStore
+from services.notify.types.supply_notify import SupplyNotifier
 from tools.lib.lp_common import LpAppFramework
 
 
 async def simple_fetch(app):
-    killed_rune_fetcher = KilledRuneFetcher(app.deps)
-    r = await killed_rune_fetcher.fetch()
-    print(r[0])
-    print(r[1])
+    d = app.deps
+    killed_rune_fetcher = KilledRuneFetcher(d)
+
+    kr_store = KilledRuneStore(d)
+    killed_rune_fetcher.add_subscriber(kr_store)
+
+    await killed_rune_fetcher.run_once()
+    print(d.killed_rune)
+
+    supply_notifier = SupplyNotifier(d)
+    await supply_notifier._cd.clear()
+    d.pool_fetcher.add_subscriber(supply_notifier)
+    await d.pool_fetcher.run_once()
+    await asyncio.sleep(5)
 
 
 async def flipside_test(app):
