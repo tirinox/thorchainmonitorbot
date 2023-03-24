@@ -5,10 +5,10 @@ import aiohttp
 
 from services.lib.date_utils import now_ts, DAY, discard_time
 from services.lib.utils import WithLogger
+from services.models.flipside import KEY_DATETIME, KEY_TS
 
 
 class FSList(dict):
-    KEY_TS = '__ts'
 
     @staticmethod
     def parse_date(string_date):
@@ -30,8 +30,8 @@ class FSList(dict):
         grouped_by = defaultdict(list)
         for item in data:
             if str_date := self.get_date(item):
-                date = self.parse_date(str_date)
-                ts = item[self.KEY_TS] = date.timestamp()
+                date = item[KEY_DATETIME] = self.parse_date(str_date)
+                ts = item[KEY_TS] = date.timestamp()
                 self.latest_date = max(self.latest_date, date)
                 self.latest_timestamp = max(self.latest_timestamp, ts)
                 grouped_by[date].append(item)
