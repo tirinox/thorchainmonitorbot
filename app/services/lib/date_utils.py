@@ -212,3 +212,7 @@ def date_parse_rfc(s: str):
     s = s.rstrip('Z')
     s = s[:-3]
     return datetime.strptime(s, "%Y-%m-%dT%H:%M:%S.%f")
+
+
+def discard_time(dt: datetime):
+    return dt.replace(hour=0, minute=0, second=0, microsecond=0)

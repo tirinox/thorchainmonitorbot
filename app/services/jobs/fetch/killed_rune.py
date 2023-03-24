@@ -1,6 +1,7 @@
 from typing import List
 
 from services.jobs.fetch.base import BaseFetcher
+from services.jobs.fetch.flipside import FlipSideConnector
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
@@ -15,15 +16,12 @@ class KilledRuneFetcher(BaseFetcher, WithLogger):
         sleep_period = parse_timespan_to_seconds(deps.cfg.killed_rune.fetch_period)
         self.url = deps.cfg.as_str('killed_rune.api_url', DEFAULT_API_URL)
         super().__init__(deps, sleep_period)
+        self._fs_connector = FlipSideConnector(deps.session)
 
     async def fetch(self) -> List[KilledRuneEntry]:
-        self.logger.info(f'Getting "{self.url}"...')
-        async with self.deps.session.get(self.url) as resp:
-            data = await resp.json()
-            self.logger.info(f'Total: {len(data)} objects')
-            entries = [KilledRuneEntry.from_flipside_json(item) for item in data]
-            entries = [e for e in entries if e is not None]
-            return entries
+        data = await self._fs_connector.request_daily_series(self.url)
+        entries = list(filter(bool, (KilledRuneEntry.from_flipside_json(item[0]) for item in data.values())))
+        return entries
 
 
 class KilledRuneStore(INotified):
