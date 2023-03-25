@@ -6,7 +6,7 @@ from services.lib.date_utils import parse_timespan_to_seconds, DAY, now_ts
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
-from services.models.flipside import FSFees, FSLockedValue, FSSwapCount, FSSwapVolume, KeyStatsDelta
+from services.models.flipside import FSFees, FSLockedValue, FSSwapCount, FSSwapVolume, KeyStatsDelta, KeyStats
 from services.models.time_series import TimeSeries
 
 
@@ -35,6 +35,10 @@ class KeyMetricsNotifier(INotified, WithDelegates):
     def is_fresh_enough(self, data: FSList):
         return data and now_ts() - data.latest_date.timestamp() < self.data_max_age
 
+    def convert_to_key_stats(self, data: list) -> KeyStats:
+        return KeyStats()
+
+
     async def on_data(self, sender, data: FSList):
         data = data.remove_incomplete_rows((FSFees, FSSwapCount, FSLockedValue, FSSwapVolume))
 
@@ -44,9 +48,12 @@ class KeyMetricsNotifier(INotified, WithDelegates):
 
         last_date = data.latest_date
         previous_date = last_date - timedelta(days=self.window_in_days)
+
+        # list of FSxxx objects
         previous_data = data.get(previous_date, [])
         self.logger.info(f'Previous date is {previous_date}; data has {len(previous_data)} entries.')
 
+        # list of FSxxx objects
         current_data = data.most_recent
         self.logger.info(f'Current date is {last_date}; data has {len(current_data)} entries.')
 

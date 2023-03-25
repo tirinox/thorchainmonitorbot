@@ -38,6 +38,10 @@ class FSList(dict):
         self.update(grouped_by)
         return self
 
+    def __init__(self, *args, **kwargs) -> None:
+        super().__init__(*args, **kwargs)
+        self.klass = dict
+
     @property
     def latest_date(self):
         return max(self.keys()) if self else datetime(1990, 1, 1)
@@ -69,6 +73,7 @@ class FSList(dict):
                 klass.from_json(piece) for piece in v
             ]) for k, v in self.items()
         ])
+        result.klass = klass
         return result
 
     @property
@@ -84,18 +89,14 @@ class FSList(dict):
         for fs_list in lists:
             fs_list: FSList
             for date, v in fs_list.items():
-                if date in results:
-                    results[date].extend(v)
-                else:
-                    results[date] = v
+                if date not in results:
+                    results[date] = defaultdict(list)
+                results[date][fs_list.klass].extend(v)
         return results
 
     @staticmethod
-    def has_class(row, klass):
-        return any(isinstance(item, klass) for item in row)
-
-    def has_classes(self, row, class_list):
-        return all(self.has_class(row, klass) for klass in class_list)
+    def has_classes(row, class_list):
+        return all(klass in row for klass in class_list)
 
     def remove_incomplete_rows(self, class_list) -> 'FSList':
         result = FSList(self)
@@ -107,6 +108,7 @@ class FSList(dict):
             if not result.has_classes(row, class_list):
                 del result[date]
         return result
+
 
 class FlipSideConnector(WithLogger):
     def __init__(self, session: aiohttp.ClientSession):

@@ -1,5 +1,7 @@
 from datetime import datetime
-from typing import NamedTuple
+from typing import NamedTuple, Dict, List
+
+from services.models.pool_info import PoolInfo
 
 KEY_TS = '__ts'
 KEY_DATETIME = '__dt'
@@ -125,13 +127,39 @@ class FSAffiliateCollectors(NamedTuple):
         )
 
 
+class FSSwapRoutes(NamedTuple):
+    date: datetime
+    assets: str
+    asset_from: str
+    asset_to: str
+    swap_count: int
+    swap_volume: float
+    usd_per_swap: float
+    fee_per_swap: float
+
+    @classmethod
+    def from_json(cls, j):
+        assets = j.get('ASSETS')
+        asset_from, asset_to = assets.split(' to ', 2) if assets else ('', '')
+
+        return cls(
+            j.get(KEY_DATETIME),
+            assets, asset_from, asset_to,
+            int(j.get('SWAP_COUNT', 0)),
+            float(j.get('SWAP_VOLUME', 0.0)),
+            float(j.get('USD_PER_SWAP', 0.0)),
+            float(j.get('FEE_PER_SWAP', 0.0)),
+        )
+
+
 class KeyStats(NamedTuple):
     date: datetime
-    affiliates: FSAffiliateCollectors
+    affiliates: List[FSAffiliateCollectors]
     fees: FSFees
     swappers: FSSwapCount
     volume: FSSwapVolume
     locked: FSLockedValue
+    pools: Dict[str, PoolInfo]
 
 
 class KeyStatsDelta(NamedTuple):
