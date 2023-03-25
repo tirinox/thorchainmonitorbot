@@ -25,6 +25,7 @@ from services.lib.utils import grouper, run_once
 from services.lib.w3.dex_analytics import DexReport, DexReportEntry
 from services.lib.w3.token_record import AmountToken
 from services.models.cap_info import ThorCapInfo
+from services.models.flipside import KeyStatsDelta
 from services.models.killed_rune import KilledRuneEntry
 from services.models.last_block import BlockProduceState, EventBlockSpeed
 from services.models.lp_info import LiquidityPoolReport
@@ -1124,8 +1125,8 @@ class BaseLocalization(ABC):  # == English
 
         return bonding_apy_change, liquidity_apy_change
 
-    def notification_text_key_metrics(self):
-        return '// todo'
+    def notification_text_key_metrics_caption(self, data: KeyStatsDelta):
+        return 'THORChain weekly stats'
 
     # ------- NETWORK NODES -------
 

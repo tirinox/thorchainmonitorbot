@@ -3,12 +3,14 @@ import asyncio
 from localization.manager import BaseLocalization
 from services.dialog.picture.achievement_picture import AchievementPictureGenerator
 from services.dialog.picture.block_height_picture import block_speed_chart
+from services.dialog.picture.key_stats_picture import KeyStatsPictureGenerator
 from services.dialog.picture.savers_picture import SaversPictureGenerator
 from services.jobs.achievement.ach_list import Achievement
 from services.lib.constants import THOR_BLOCKS_PER_MINUTE
 from services.lib.delegates import INotified
 from services.lib.midgard.name_service import NameService
 from services.lib.w3.dex_analytics import DexReport
+from services.models.flipside import KeyStatsDelta
 from services.models.last_block import EventBlockSpeed, BlockProduceState
 from services.models.node_info import NodeSetChanges
 from services.models.pol import EventPOL
@@ -49,6 +51,8 @@ class AlertPresenter(INotified):
             await self._handle_achievement(data)
         elif isinstance(data, NodeSetChanges):
             await self._handle_node_churn(data)
+        elif isinstance(data, KeyStatsDelta):
+            await self._handle_key_stats(data)
 
     # ---- PARTICULARLY ----
 
@@ -138,3 +142,13 @@ class AlertPresenter(INotified):
         await self.broadcaster.notify_preconfigured_channels(
             BaseLocalization.notification_text_for_node_churn,
             event)
+
+    async def _handle_key_stats(self, event: KeyStatsDelta):
+        # PICTURE
+        async def _gen(loc: BaseLocalization, _a: KeyStatsDelta):
+            pic_gen = KeyStatsPictureGenerator(loc.ach, _a)
+            pic, pic_name = await pic_gen.get_picture()
+            caption = loc.notification_text_key_metrics_caption(event)
+            return BoardMessage.make_photo(pic, caption=caption, photo_file_name=pic_name)
+
+        await self.broadcaster.notify_preconfigured_channels(_gen, event)

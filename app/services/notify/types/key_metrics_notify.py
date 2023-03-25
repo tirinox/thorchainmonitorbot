@@ -1,13 +1,12 @@
 from datetime import timedelta
 
-from localization.manager import BaseLocalization
 from services.jobs.fetch.flipside import FSList
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds, DAY, now_ts
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
-from services.models.flipside import FSFees, FSLockedValue, FSSwapCount, FSSwapVolume
+from services.models.flipside import FSFees, FSLockedValue, FSSwapCount, FSSwapVolume, KeyStatsDelta
 from services.models.time_series import TimeSeries
 
 
@@ -43,11 +42,21 @@ class KeyMetricsNotifier(INotified, WithDelegates):
             self.logger.error(f'Network data is too old! The most recent date is {data.latest_date}!')
             return
 
-        previous_date = data.latest_date - timedelta(days=self.window_in_days)
+        last_date = data.latest_date
+        previous_date = last_date - timedelta(days=self.window_in_days)
         previous_data = data.get(previous_date, [])
-        self.logger.info(f'Previous date is {previous_date}; data has {len(previous_data)} entries')
+        self.logger.info(f'Previous date is {previous_date}; data has {len(previous_data)} entries.')
 
-        await self._notify()  # fixme: debug. add cool down period1!
+        current_data = data.most_recent
+        self.logger.info(f'Current date is {last_date}; data has {len(current_data)} entries.')
+
+        event = KeyStatsDelta(
+            current_data,
+            previous_data,
+            self.window_in_days
+        )
+
+        await self._notify(event)  # fixme: debug. add cool down period1!
 
         # if await self.notify_cd.can_do():
         #     await self._notify()
@@ -59,8 +68,5 @@ class KeyMetricsNotifier(INotified, WithDelegates):
     async def clear_cd(self):
         await self.notify_cd.clear()
 
-    async def _notify(self):
-        await self.deps.broadcaster.notify_preconfigured_channels(
-            BaseLocalization.notification_text_key_metrics,
-            # todo!
-        )
+    async def _notify(self, event):
+        await self.pass_data_to_listeners(event)

@@ -132,3 +132,9 @@ class KeyStats(NamedTuple):
     swappers: FSSwapCount
     volume: FSSwapVolume
     locked: FSLockedValue
+
+
+class KeyStatsDelta(NamedTuple):
+    current: KeyStats
+    previous: KeyStats
+    days: int = 7

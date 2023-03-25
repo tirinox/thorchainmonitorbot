@@ -13,9 +13,11 @@ async def demo_load(app: LpAppFramework):
 
 async def demo_analyse(app: LpAppFramework):
     f = KeyStatsFetcher(app.deps)
-    dummy = KeyMetricsNotifier(app.deps)
-    f.add_subscriber(dummy)
+    noter = KeyMetricsNotifier(app.deps)
+    f.add_subscriber(noter)
+    noter.add_subscriber(app.deps.alert_presenter)
     await f.run_once()
+    await asyncio.sleep(5)  # let them send the picture
 
 
 async def main():
