@@ -9,7 +9,6 @@ from services.models.flipside import KEY_DATETIME, KEY_TS
 
 
 class FSList(dict):
-
     @staticmethod
     def parse_date(string_date):
         return datetime.strptime(string_date, '%Y-%m-%d')
@@ -19,10 +18,9 @@ class FSList(dict):
         if obj:
             return obj.get('DAY') or obj.get('DATE')
 
-    def __init__(self, data):
-        super().__init__()
-        self.latest_timestamp = 0
-        self.latest_date = datetime(1991, 1, 1)
+    @classmethod
+    def from_server(cls, data, max_days=0):
+        self = cls()
 
         if not data:
             return
@@ -31,11 +29,18 @@ class FSList(dict):
         for item in data:
             if str_date := self.get_date(item):
                 date = item[KEY_DATETIME] = self.parse_date(str_date)
-                ts = item[KEY_TS] = date.timestamp()
-                self.latest_date = max(self.latest_date, date)
-                self.latest_timestamp = max(self.latest_timestamp, ts)
+                item[KEY_TS] = date.timestamp()
                 grouped_by[date].append(item)
+
+            if max_days and len(grouped_by) >= max_days:
+                break
+
         self.update(grouped_by)
+        return self
+
+    @property
+    def latest_date(self):
+        return max(self.keys()) if self else datetime(1990, 1, 1)
 
     @property
     def most_recent(self):
@@ -56,8 +61,52 @@ class FSList(dict):
 
     @property
     def min_age(self):
-        return now_ts() - self.latest_timestamp
+        return now_ts() - self.latest_date.timestamp()
 
+    def transform_from_json(self, klass):
+        result = FSList([
+            (k, [
+                klass.from_json(piece) for piece in v
+            ]) for k, v in self.items()
+        ])
+        return result
+
+    @property
+    def all_dates_set(self):
+        return set(self.keys())
+
+    def all_pieces_of_type_to_date(self, date, klass):
+        return [piece for piece in self.get(date, []) if isinstance(piece, klass)]
+
+    @classmethod
+    def combine(cls, *lists):
+        results = cls()
+        for fs_list in lists:
+            fs_list: FSList
+            for date, v in fs_list.items():
+                if date in results:
+                    results[date].extend(v)
+                else:
+                    results[date] = v
+        return results
+
+    @staticmethod
+    def has_class(row, klass):
+        return any(isinstance(item, klass) for item in row)
+
+    def has_classes(self, row, class_list):
+        return all(self.has_class(row, klass) for klass in class_list)
+
+    def remove_incomplete_rows(self, class_list) -> 'FSList':
+        result = FSList(self)
+        if not class_list:
+            return result
+
+        for date in sorted(result.keys(), reverse=True):
+            row = result[date]
+            if not result.has_classes(row, class_list):
+                del result[date]
+        return result
 
 class FlipSideConnector(WithLogger):
     def __init__(self, session: aiohttp.ClientSession):
@@ -76,6 +125,6 @@ class FlipSideConnector(WithLogger):
                 self.logger.info(f'"{url}" returned object of type "{type(data)}"')
             return data
 
-    async def request_daily_series(self, url):
+    async def request_daily_series(self, url, max_days=0):
         data = await self.request(url)
-        return FSList(data)
+        return FSList.from_server(data, max_days)

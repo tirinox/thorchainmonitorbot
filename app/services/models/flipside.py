@@ -123,3 +123,12 @@ class FSAffiliateCollectors(NamedTuple):
             float(j.get('FEE_RUNE', 0.0)),
             float(j.get('CUMULATIVE_FEE_RUNE', 0.0)),
         )
+
+
+class KeyStats(NamedTuple):
+    date: datetime
+    affiliates: FSAffiliateCollectors
+    fees: FSFees
+    swappers: FSSwapCount
+    volume: FSSwapVolume
+    locked: FSLockedValue

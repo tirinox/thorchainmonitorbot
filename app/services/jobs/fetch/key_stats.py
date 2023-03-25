@@ -1,7 +1,7 @@
 import asyncio
 
 from services.jobs.fetch.base import BaseFetcher
-from services.jobs.fetch.flipside import FlipSideConnector
+from services.jobs.fetch.flipside import FlipSideConnector, FSList
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
@@ -19,6 +19,7 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         sleep_period = parse_timespan_to_seconds(deps.cfg.key_metrics.fetch_period)
         super().__init__(deps, sleep_period)
         self._fs = FlipSideConnector(deps.session)
+        self.trim_max_days = deps.cfg.as_int('key_metrics.trim_max_days', 11)
 
     @staticmethod
     def _load_models(batch, klass):
@@ -33,27 +34,15 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
             (URL_FS_SWAP_VOL, FSSwapVolume),
         ]
 
-        pieces = await asyncio.gather(
-            *[self._fs.request_daily_series(url) for url, klass in loaders]
+        data_chunks = await asyncio.gather(
+            *[self._fs.request_daily_series(url, max_days=self.trim_max_days) for url, klass in loaders]
         )
 
-        print('---')
-
-        (
-            affiliate_agents,
-            rune_earning,
-            unique_swappers,
-            bond,
-            swap_volume
-        ) = [
-            [klass.from_json(obj) for sub_arr in batch.values() for obj in sub_arr]
-            for batch, (_, klass) in zip(pieces, loaders)
+        transformed_data_chunks = [
+            batch.transform_from_json(klass)
+            for batch, (_, klass) in zip(data_chunks, loaders)
         ]
 
-        print(len(affiliate_agents))
-        print(len(rune_earning))
-        print(len(unique_swappers))
-        print(len(bond))
-        print(len(swap_volume))
+        result = FSList.combine(*transformed_data_chunks)
 
-        pass
+        return result
