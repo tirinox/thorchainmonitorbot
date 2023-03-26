@@ -1,11 +1,8 @@
 from datetime import datetime
 from typing import NamedTuple, Dict, List
 
-from services.jobs.fetch.flipside import FSList
+from services.jobs.fetch.flipside import FSList, KEY_DATETIME
 from services.models.pool_info import PoolInfo
-
-KEY_TS = '__ts'
-KEY_DATETIME = '__dt'
 
 
 class FSSwapVolume(NamedTuple):

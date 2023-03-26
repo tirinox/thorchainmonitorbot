@@ -5,7 +5,9 @@ import aiohttp
 
 from services.lib.date_utils import now_ts, DAY, discard_time
 from services.lib.utils import WithLogger
-from services.models.flipside import KEY_DATETIME, KEY_TS
+
+KEY_TS = '__ts'
+KEY_DATETIME = '__dt'
 
 
 class FSList(dict):
@@ -117,7 +119,6 @@ class FSList(dict):
             for item in self[date]:
                 summed += getattr(item, attribute)
         return summed
-
 
 
 class FlipSideConnector(WithLogger):
