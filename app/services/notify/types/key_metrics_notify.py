@@ -39,31 +39,37 @@ class KeyMetricsNotifier(INotified, WithDelegates):
         return KeyStats()
 
 
-    async def on_data(self, sender, data: FSList):
-        data = data.remove_incomplete_rows((FSFees, FSSwapCount, FSLockedValue, FSSwapVolume))
+    async def on_data(self, sender, all_data):
+        fs_data, prev_pools, current_pools = all_data
 
-        if not self.is_fresh_enough(data):
-            self.logger.error(f'Network data is too old! The most recent date is {data.latest_date}!')
+        if not prev_pools or not current_pools:
+            self.logger.error(f'No pool data! Aborting.')
             return
 
-        last_date = data.latest_date
+        fs_data = fs_data.remove_incomplete_rows((FSFees, FSSwapCount, FSLockedValue, FSSwapVolume))
+
+        if not self.is_fresh_enough(fs_data):
+            self.logger.error(f'Network data is too old! The most recent date is {fs_data.latest_date}!')
+            return
+
+        last_date = fs_data.latest_date
         previous_date = last_date - timedelta(days=self.window_in_days)
 
         # list of FSxxx objects
-        previous_data = data.get(previous_date, [])
+        previous_data = fs_data.get(previous_date, [])
         self.logger.info(f'Previous date is {previous_date}; data has {len(previous_data)} entries.')
 
         # list of FSxxx objects
-        current_data = data.most_recent
+        current_data = fs_data.most_recent
         self.logger.info(f'Current date is {last_date}; data has {len(current_data)} entries.')
 
-        event = KeyStatsDelta(
-            current_data,
-            previous_data,
-            self.window_in_days
-        )
-
-        await self._notify(event)  # fixme: debug. add cool down period1!
+        # event = KeyStatsDelta(
+        #     current_data,
+        #     previous_data,
+        #     self.window_in_days
+        # )
+        #
+        # await self._notify(event)  # fixme: debug. add cool down period1!
 
         # if await self.notify_cd.can_do():
         #     await self._notify()

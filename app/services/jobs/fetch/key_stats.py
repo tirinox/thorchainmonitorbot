@@ -2,7 +2,8 @@ import asyncio
 
 from services.jobs.fetch.base import BaseFetcher
 from services.jobs.fetch.flipside import FlipSideConnector, FSList
-from services.lib.date_utils import parse_timespan_to_seconds
+from services.jobs.fetch.pool_price import PoolFetcher
+from services.lib.date_utils import parse_timespan_to_seconds, DAY
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 from services.models.flipside import FSAffiliateCollectors, FSFees, FSSwapCount, FSLockedValue, FSSwapVolume, \
@@ -21,7 +22,8 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         sleep_period = parse_timespan_to_seconds(deps.cfg.key_metrics.fetch_period)
         super().__init__(deps, sleep_period)
         self._fs = FlipSideConnector(deps.session)
-        self.trim_max_days = deps.cfg.as_int('key_metrics.trim_max_days', 11)
+        self.tally_days_period = deps.cfg.as_int('key_metrics.tally_period_days', 7)
+        self.trim_max_days = deps.cfg.as_int('key_metrics.trim_max_days', self.tally_days_period * 2)
 
     @staticmethod
     def _load_models(batch, klass):
@@ -41,6 +43,13 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
             *[self._fs.request_daily_series(url, max_days=self.trim_max_days) for url, klass in loaders]
         )
 
+        pf: PoolFetcher = self.deps.pool_fetcher
+        previous_block = self.deps.last_block_store.block_time_ago(self.tally_days_period * DAY)
+        fresh_pools, old_pools = await asyncio.gather(
+            pf.load_pools(),
+            pf.load_pools(height=previous_block)
+        )
+
         transformed_data_chunks = [
             batch.transform_from_json(klass)
             for batch, (_, klass) in zip(data_chunks, loaders)
@@ -48,4 +57,4 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
 
         result = FSList.combine(*transformed_data_chunks)
 
-        return result
+        return result, fresh_pools, old_pools
