@@ -1125,6 +1125,10 @@ class BaseLocalization(ABC):  # == English
 
         return bonding_apy_change, liquidity_apy_change
 
+    TEXT_PIC_STATS_NATIVE_ASSET_VAULTS = "Native asset vaults"
+    TEXT_PIC_STATS_WEEKLY_REVENUE = "Weekly protocol revenue"
+    TEXT_PIC_STATS_SWAP_INFO = "Weekly swap info"
+
     def notification_text_key_metrics_caption(self, data: EventKeyStats):
         return 'THORChain weekly stats'
 

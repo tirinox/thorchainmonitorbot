@@ -44,7 +44,7 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         ...
 
         # prepare painting stuff
-        r = self.r
+        r, loc = self.r, self.loc
         image = self.bg.copy()
         draw = ImageDraw.Draw(image)
 
@@ -52,7 +52,19 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         days = 7
 
         draw.text((1862, 236), self.format_period_dates_string(end_date, days=days),
-                  fill='#fff', font=r.fonts.get_font(72),
+                  fill='#fff', font=r.fonts.get_font_bold(62),
                   anchor='rm')
+
+        subtitle_font = r.fonts.get_font_bold(40)
+        for x, caption in [
+            (378, loc.TEXT_PIC_STATS_NATIVE_ASSET_VAULTS),
+            (1024, loc.TEXT_PIC_STATS_WEEKLY_REVENUE),
+            (2048 - 378, loc.TEXT_PIC_STATS_SWAP_INFO)
+        ]:
+            draw.text((x, 362),
+                      caption, fill='#fff', font=subtitle_font,
+                      anchor='ms')  # s stands for "Baseline"
+
+
 
         return image
