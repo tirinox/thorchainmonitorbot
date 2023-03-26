@@ -8,17 +8,17 @@ from services.dialog.picture.common import BasePictureGenerator
 from services.dialog.picture.resources import Resources
 from services.lib.constants import BTC_SYMBOL, ETH_SYMBOL
 from services.lib.utils import async_wrap
-from services.models.flipside import KeyStatsDelta
+from services.models.flipside import EventKeyStats
 
 
 class KeyStatsPictureGenerator(BasePictureGenerator):
     BASE = './data'
     BG_FILE = f'{BASE}/key_weekly_stats_bg.png'
 
-    def __init__(self, loc: BaseLocalization, data: KeyStatsDelta):
+    def __init__(self, loc: BaseLocalization, event: EventKeyStats):
         super().__init__(loc)
         self.bg = Image.open(self.BG_FILE)
-        self.event = data
+        self.event = event
         self.logos = {}
         self.r = Resources()
         self.btc_logo = None

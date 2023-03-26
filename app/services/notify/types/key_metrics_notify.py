@@ -6,7 +6,7 @@ from services.lib.date_utils import parse_timespan_to_seconds, DAY, now_ts
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
-from services.models.flipside import FSFees, FSLockedValue, FSSwapCount, FSSwapVolume, KeyStats, KeyStatsDelta
+from services.models.flipside import FSFees, FSLockedValue, FSSwapCount, FSSwapVolume, EventKeyStats
 from services.models.time_series import TimeSeries
 
 
@@ -35,45 +35,32 @@ class KeyMetricsNotifier(INotified, WithDelegates):
     def is_fresh_enough(self, data: FSList):
         return data and now_ts() - data.latest_date.timestamp() < self.data_max_age
 
-    def convert_to_key_stats(self, data: list) -> KeyStats:
-        return KeyStats()
-
-
-    async def on_data(self, sender, all_data):
-        fs_data, prev_pools, current_pools = all_data
-
-        if not prev_pools or not current_pools:
+    async def on_data(self, sender, e: EventKeyStats):
+        if not e.current_pools:
             self.logger.error(f'No pool data! Aborting.')
             return
 
-        fs_data = fs_data.remove_incomplete_rows((FSFees, FSSwapCount, FSLockedValue, FSSwapVolume))
+        if not e.previous_pools:
+            self.logger.warn(f'No previous pool data! Go on')
 
-        if not self.is_fresh_enough(fs_data):
-            self.logger.error(f'Network data is too old! The most recent date is {fs_data.latest_date}!')
+        e = e._replace(series=e.series.remove_incomplete_rows((FSFees, FSSwapCount, FSLockedValue, FSSwapVolume)))
+
+        if not self.is_fresh_enough(e.series):
+            self.logger.error(f'Network data is too old! The most recent date is {e.series.latest_date}!')
             return
 
-        last_date = fs_data.latest_date
+        last_date = e.series.latest_date
         previous_date = last_date - timedelta(days=self.window_in_days)
 
-        # list of FSxxx objects
-        previous_data = fs_data.get(previous_date, [])
+        previous_data = e.series.get(previous_date, [])
         self.logger.info(f'Previous date is {previous_date}; data has {len(previous_data)} entries.')
 
-        # list of FSxxx objects
-        current_data = fs_data.most_recent
+        current_data = e.series.most_recent
         self.logger.info(f'Current date is {last_date}; data has {len(current_data)} entries.')
 
-        event = KeyStatsDelta(
-            current_data,
-            previous_data,
-            self.window_in_days
-        )
-
-        await self._notify(event)  # fixme: debug. add cool down period1!
-
-        # if await self.notify_cd.can_do():
-        #     await self._notify()
-        #     await self.notify_cd.do()
+        if await self.notify_cd.can_do():
+            await self._notify(e)
+            await self.notify_cd.do()
 
         # await self.series.add(info=new_info.as_json_string)
         # await self.series.trim_oldest(self.MAX_POINTS)

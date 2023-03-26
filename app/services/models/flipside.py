@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import NamedTuple, Dict, List
 
+from services.jobs.fetch.flipside import FSList
 from services.models.pool_info import PoolInfo
 
 KEY_TS = '__ts'
@@ -162,7 +163,12 @@ class KeyStats(NamedTuple):
     pools: Dict[str, PoolInfo]
 
 
-class KeyStatsDelta(NamedTuple):
-    current: KeyStats
-    previous: KeyStats
+class EventKeyStats(NamedTuple):
+    series: FSList
+    previous_pools: List[PoolInfo]
+    current_pools: List[PoolInfo]
     days: int = 7
+
+    @property
+    def end_date(self):
+        return self.series.latest_date

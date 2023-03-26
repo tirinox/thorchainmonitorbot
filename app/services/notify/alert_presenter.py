@@ -10,7 +10,7 @@ from services.lib.constants import THOR_BLOCKS_PER_MINUTE
 from services.lib.delegates import INotified
 from services.lib.midgard.name_service import NameService
 from services.lib.w3.dex_analytics import DexReport
-from services.models.flipside import KeyStatsDelta
+from services.models.flipside import EventKeyStats
 from services.models.last_block import EventBlockSpeed, BlockProduceState
 from services.models.node_info import NodeSetChanges
 from services.models.pol import EventPOL
@@ -51,7 +51,7 @@ class AlertPresenter(INotified):
             await self._handle_achievement(data)
         elif isinstance(data, NodeSetChanges):
             await self._handle_node_churn(data)
-        elif isinstance(data, KeyStatsDelta):
+        elif isinstance(data, EventKeyStats):
             await self._handle_key_stats(data)
 
     # ---- PARTICULARLY ----
@@ -143,9 +143,9 @@ class AlertPresenter(INotified):
             BaseLocalization.notification_text_for_node_churn,
             event)
 
-    async def _handle_key_stats(self, event: KeyStatsDelta):
+    async def _handle_key_stats(self, event: EventKeyStats):
         # PICTURE
-        async def _gen(loc: BaseLocalization, _a: KeyStatsDelta):
+        async def _gen(loc: BaseLocalization, _a: EventKeyStats):
             pic_gen = KeyStatsPictureGenerator(loc.ach, _a)
             pic, pic_name = await pic_gen.get_picture()
             caption = loc.notification_text_key_metrics_caption(event)
