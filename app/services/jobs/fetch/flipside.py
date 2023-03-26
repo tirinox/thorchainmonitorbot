@@ -11,7 +11,7 @@ from services.models.flipside import KEY_DATETIME, KEY_TS
 class FSList(dict):
     @staticmethod
     def parse_date(string_date):
-        return datetime.strptime(string_date, '%Y-%m-%d')
+        return datetime.strptime(string_date, '%Y-%m-%d') if string_date else None
 
     @staticmethod
     def get_date(obj: dict):
@@ -109,6 +109,16 @@ class FSList(dict):
                 del result[date]
         return result
 
+    def sum_attribute(self, attribute: str, max_days=-1):
+        summed = 0
+        for day_no, date in enumerate(sorted(self.values(), reverse=True)):
+            if 0 < max_days <= day_no:
+                break
+            for item in self[date]:
+                summed += getattr(item, attribute)
+        return summed
+
+
 
 class FlipSideConnector(WithLogger):
     def __init__(self, session: aiohttp.ClientSession):
@@ -119,14 +129,14 @@ class FlipSideConnector(WithLogger):
         self.logger.info(f'Getting "{url}"...')
         async with self.session.get(url) as resp:
             data = await resp.json()
-            if hasattr(data, '__len__'):
-                self.logger.info(f'"{url}" returned total {len(data)} objects')
-            elif not data:
+            if not data:
                 self.logger.error(f'No data for URL: "{url}"')
-            else:
-                self.logger.info(f'"{url}" returned object of type "{type(data)}"')
+            elif not hasattr(data, '__len__'):
+                self.logger.info(f'"{url}" returned object of type "{type(data)}" (no __len__)')
             return data
 
     async def request_daily_series(self, url, max_days=0):
         data = await self.request(url)
-        return FSList.from_server(data, max_days)
+        fs_list = FSList.from_server(data, max_days)
+        self.logger.info(f'"{url}" returned total {len(data)} objects; latest date is {fs_list.latest_date}')
+        return fs_list
