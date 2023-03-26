@@ -6,7 +6,7 @@ from services.lib.date_utils import parse_timespan_to_seconds, DAY, now_ts
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
-from services.models.flipside import FSFees, FSLockedValue, FSSwapCount, FSSwapVolume, KeyStatsDelta, KeyStats
+from services.models.flipside import FSFees, FSLockedValue, FSSwapCount, FSSwapVolume, KeyStats, KeyStatsDelta
 from services.models.time_series import TimeSeries
 
 
@@ -63,13 +63,13 @@ class KeyMetricsNotifier(INotified, WithDelegates):
         current_data = fs_data.most_recent
         self.logger.info(f'Current date is {last_date}; data has {len(current_data)} entries.')
 
-        # event = KeyStatsDelta(
-        #     current_data,
-        #     previous_data,
-        #     self.window_in_days
-        # )
-        #
-        # await self._notify(event)  # fixme: debug. add cool down period1!
+        event = KeyStatsDelta(
+            current_data,
+            previous_data,
+            self.window_in_days
+        )
+
+        await self._notify(event)  # fixme: debug. add cool down period1!
 
         # if await self.notify_cd.can_do():
         #     await self._notify()
