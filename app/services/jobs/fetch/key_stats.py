@@ -60,6 +60,9 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
             pf.load_pools(height=previous_block)
         )
 
+        fresh_pools = pf.convert_pool_list_to_dict(fresh_pools)
+        old_pools = pf.convert_pool_list_to_dict(old_pools)
+
         # Done. Construct the resulting event
         return EventKeyStats(
             result, old_pools, fresh_pools, days=self.tally_days_period

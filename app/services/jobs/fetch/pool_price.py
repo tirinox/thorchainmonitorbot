@@ -1,7 +1,7 @@
 import json
 from datetime import datetime
 from random import random
-from typing import Optional
+from typing import Optional, List, Dict
 
 from aioredis import Redis
 
@@ -168,6 +168,10 @@ class PoolFetcher(BaseFetcher):
         p3.asset = 'THOR.ETH'
         for p in (p1, p2, p3):
             current_pools[p.asset] = p
+
+    @staticmethod
+    def convert_pool_list_to_dict(l: List[PoolInfo]) -> Dict[str, PoolInfo]:
+        return {p.asset: p for p in l} if l else None
 
 
 class PoolInfoFetcherMidgard(BaseFetcher):

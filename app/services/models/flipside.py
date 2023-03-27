@@ -1,8 +1,9 @@
 from datetime import datetime
-from typing import NamedTuple, Dict, List
+from typing import NamedTuple, List
 
 from services.jobs.fetch.flipside import FSList, KEY_DATETIME
-from services.models.pool_info import PoolInfo
+from services.lib.constants import STABLE_COIN_POOLS_ALL, thor_to_float
+from services.models.pool_info import PoolInfoMap
 
 
 class FSSwapVolume(NamedTuple):
@@ -157,15 +158,28 @@ class KeyStats(NamedTuple):
     swappers: FSSwapCount
     volume: FSSwapVolume
     locked: FSLockedValue
-    pools: Dict[str, PoolInfo]
+    pools: PoolInfoMap
 
 
 class EventKeyStats(NamedTuple):
     series: FSList
-    previous_pools: List[PoolInfo]
-    current_pools: List[PoolInfo]
+    previous_pools: PoolInfoMap
+    current_pools: PoolInfoMap
     days: int = 7
 
     @property
     def end_date(self):
         return self.series.latest_date
+
+    def get_stables_sum(self, previous=False):
+        return self.get_sum(STABLE_COIN_POOLS_ALL, previous)
+
+    def get_sum(self, coin_list, previous=False):
+        source = self.previous_pools if previous else self.current_pools
+        running_sum = 0.0
+
+        for symbol in coin_list:
+            pool = source.get(symbol)
+            if pool:
+                running_sum += pool.balance_asset
+        return thor_to_float(running_sum)

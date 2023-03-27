@@ -1129,6 +1129,8 @@ class BaseLocalization(ABC):  # == English
     TEXT_PIC_STATS_WEEKLY_REVENUE = "Weekly protocol revenue"
     TEXT_PIC_STATS_SWAP_INFO = "Weekly swap info"
 
+    TEXT_PIC_STATS_STABLES = 'Stable coins'
+
     def notification_text_key_metrics_caption(self, data: EventKeyStats):
         return 'THORChain weekly stats'
 

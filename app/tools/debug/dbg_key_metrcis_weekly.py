@@ -5,6 +5,7 @@ import pickle
 from services.dialog.picture.key_stats_picture import KeyStatsPictureGenerator
 from services.jobs.fetch.key_stats import KeyStatsFetcher
 from services.lib.delegates import INotified
+from services.lib.texts import sep
 from services.notify.types.key_metrics_notify import KeyMetricsNotifier
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
@@ -47,8 +48,14 @@ async def demo_analyse(app: LpAppFramework):
 
 
 async def demo_picture(app: LpAppFramework):
+    sep()
+    print('Start')
+
     loader = FlipSideSaver()
     data = loader.load_data()
+
+    sep()
+    print('Data loaded')
 
     pic_gen = KeyStatsPictureGenerator(app.deps.loc_man.default, data)
     pic, name = await pic_gen.get_picture()
@@ -58,7 +65,7 @@ async def demo_picture(app: LpAppFramework):
 async def main():
     lp_app = LpAppFramework(log_level=logging.INFO)
     async with lp_app:
-        await lp_app.prepare(brief=True)
+        # await lp_app.prepare(brief=True)
 
         # await demo_analyse(lp_app)
         await demo_picture(lp_app)
