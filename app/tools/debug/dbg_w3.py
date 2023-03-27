@@ -11,6 +11,7 @@ from services.jobs.volume_filler import VolumeFillerUpdater
 from services.lib.constants import Chains, ETH_SYMBOL, AVAX_SYMBOL
 from services.lib.date_utils import DAY
 from services.lib.delegates import WithDelegates, INotified
+from services.lib.midgard.urlgen import free_url_gen
 from services.lib.money import DepthCurve
 from services.lib.texts import sep
 from services.lib.w3.aggregator import AggregatorDataExtractor
@@ -20,6 +21,7 @@ from services.lib.w3.router_contract import TCRouterContract
 from services.lib.w3.token_list import TokenListCached, StaticTokenList
 from services.models.tx import ThorTx, ThorTxType
 from services.notify.types.tx_notify import SwapTxNotifier
+from tools.debug.dbg_tx_format import load_tx
 from tools.lib.lp_common import LpAppFramework
 
 
@@ -236,9 +238,20 @@ async def demo_full_tx_pipeline(app: LpAppFramework):
     # await asyncio.sleep(10)
 
 
+async def demo_find_aggregator_error(app: LpAppFramework):
+    tx_hash = '9CEB127E1A3A9BC3047F3B3299F12FE5DE9E2FD87D9C8421ED4A5B01E0899F92'
+    q_path = free_url_gen.url_for_tx(0, 50, txid=tx_hash)
+    ex_tx = await load_tx(app, app.deps.midgard_connector, q_path)
+    print(ex_tx)
+    sep()
+    aggregator = AggregatorDataExtractor(app.deps)
+    r = await aggregator.on_data(None, [ex_tx])
+    print(r)
+
+
 async def demo_avax(app: LpAppFramework):
     w3 = Web3(Web3.HTTPProvider(f'https://api.avax.network/ext/bc/C/rpc'))
-    print(w3.isConnected())
+    print(w3.is_connected())
 
     tx = w3.eth.get_transaction('0xc2483005204f9b4d41d15024913807bc8d2a1714c55fae0b5f23b1d71d6affe3')
     print(tx)
@@ -264,11 +277,11 @@ async def run():
     app = LpAppFramework()
     async with app(brief=True):
         # await demo_avax(app)
-        # await demo_decoder(app)
+        await demo_decoder(app)
         # await demo_full_tx_pipeline(app)
         # await demo_find_aff(app)
         # await load_dex_txs(app)
-        await show_dex_report(app)
+        # await show_dex_report(app)
 
 
 if __name__ == '__main__':

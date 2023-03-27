@@ -332,6 +332,7 @@ async def main():
     # await demo_savers_add(app)
     # await demo_verify_tx_scanner_in_the_past(app)
     # await find_affiliate_txs(app, 1, (ThorTxType.TYPE_SWAP,))
+    # await demo_find_aggregator_error(app)
 
 
 if __name__ == '__main__':

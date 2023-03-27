@@ -16,7 +16,7 @@ class ERC20Contract:
         self.address = address
         self.chain_id = chain_id
         self.contract = helper.w3.eth.contract(
-            address=Web3.toChecksumAddress(address),
+            address=Web3.to_checksum_address(address),
             abi=load_json(self.DEFAULT_ABI_ERC20)
         )
 
@@ -54,7 +54,7 @@ class ERC20Contract:
     def get_transfer_events_from_receipt(self, receipt_data, filter_by_receiver=None):
         self.restore_receipt_data(receipt_data)
 
-        transfers = self.contract.events.Transfer().processReceipt(receipt_data, EventLogErrorFlags.Discard)
+        transfers = self.contract.events.Transfer().process_receipt(receipt_data, EventLogErrorFlags.Discard)
         if filter_by_receiver:
             filter_by_receiver = str(filter_by_receiver).lower()
             transfers = [t for t in transfers if t['args']['to'].lower() == filter_by_receiver]
