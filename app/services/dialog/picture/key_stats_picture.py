@@ -11,15 +11,15 @@ from services.dialog.picture.resources import Resources
 from services.lib.constants import BTC_SYMBOL, ETH_SYMBOL, BNB_BUSD_SYMBOL, ETH_USDC_SYMBOL, ETH_USDT_SYMBOL
 from services.lib.draw_utils import paste_image_masked, result_color, TC_LIGHTNING_BLUE, TC_YGGDRASIL_GREEN, \
     dual_side_rect
-from services.lib.money import pretty_money, short_dollar, short_money, format_percent
+from services.lib.money import pretty_money, short_dollar, short_money, format_percent, Asset
 from services.lib.texts import bracketify
 from services.lib.utils import async_wrap
 from services.models.flipside import EventKeyStats, FSLockedValue, FSFees, FSAffiliateCollectors, FSSwapVolume, \
     FSSwapCount, FSSwapRoutes
 
 
-def sum_by_attribute(daily_list, attr_name, klass=None):
-    return sum(
+def sum_by_attribute(daily_list, attr_name, klass=None, f_sum=sum):
+    return f_sum(
         getattr(obj, attr_name)
         for objects_for_day in daily_list
         for objects in objects_for_day.values()
@@ -28,10 +28,10 @@ def sum_by_attribute(daily_list, attr_name, klass=None):
     )
 
 
-def sum_by_attribute_pair(first_list, second_list, attr_name, klass=None):
+def sum_by_attribute_pair(first_list, second_list, attr_name, klass=None, f_sum=sum):
     return (
-        sum_by_attribute(first_list, attr_name, klass),
-        sum_by_attribute(second_list, attr_name, klass)
+        sum_by_attribute(first_list, attr_name, klass, f_sum),
+        sum_by_attribute(second_list, attr_name, klass, f_sum)
     )
 
 
@@ -131,6 +131,9 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         swap_count, prev_swap_count = sum_by_attribute_pair(curr_data, prev_data, 'swap_count', FSSwapCount)
         usd_volume, prev_usd_volume = sum_by_attribute_pair(curr_data, prev_data, 'swap_volume_usd', FSSwapVolume)
 
+        unique_swap, prev_unique_swap = sum_by_attribute_pair(curr_data, prev_data, 'unique_swapper_count',
+                                                              FSSwapCount, max)
+
         swap_routes = self._get_to_swap_routes(curr_data)
 
         # prepare painting stuff
@@ -188,62 +191,57 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
             self.text_and_change(old_v, new_v, draw, text_x, y,
                                  text, coin_font, font_small_n)
 
+        # helper:
+
+        def _indicator(_x, _y, name, text_value, old_value, new_value, _margin=72):
+            draw.text((_x, _y),
+                      name,
+                      anchor='lt', fill='#fff',
+                      font=font_indicator_name)
+
+            if text_value:
+                self.text_and_change(
+                    old_value, new_value,
+                    draw, _x, _y + _margin,
+                    text_value,
+                    coin_font, font_small_n
+                )
+
         # ------- total native asset pooled -------
 
         margin, delta_y = 78, 154
         y = 880
 
-        draw.text((100, y),
-                  loc.TEXT_PIC_STATS_NATIVE_ASSET_POOLED,
-                  anchor='lt', fill='#fff',
-                  font=font_indicator_name)
-
-        self.text_and_change(prev_lock.total_value_pooled_usd, curr_lock.total_value_pooled_usd,
-                             draw, 100, y + margin,
-                             short_dollar(curr_lock.total_value_pooled_usd),
-                             coin_font, font_small_n)
+        _indicator(100, y, loc.TEXT_PIC_STATS_NATIVE_ASSET_POOLED,
+                   short_dollar(curr_lock.total_value_pooled_usd),
+                   prev_lock.total_value_pooled_usd, curr_lock.total_value_pooled_usd)
 
         # ------- total network security usd -------
 
-        draw.text((100, y + delta_y),
-                  loc.TEXT_PIC_STATS_NETWORK_SECURITY,
-                  anchor='lt', fill='#fff',
-                  font=font_indicator_name)
-
-        self.text_and_change(prev_lock.total_value_bonded_usd, curr_lock.total_value_bonded_usd,
-                             draw, 100, y + margin + delta_y,
-                             short_dollar(curr_lock.total_value_bonded_usd),
-                             coin_font, font_small_n)
+        _indicator(100, y + delta_y, loc.TEXT_PIC_STATS_NETWORK_SECURITY,
+                   short_dollar(curr_lock.total_value_bonded_usd),
+                   prev_lock.total_value_bonded_usd, curr_lock.total_value_bonded_usd)
 
         # 2. Block
 
         # -------- protocol revenue -----
 
         x = 769
-        y_margin = 100
         y_protocol_revenue = 442
         y_aff_fee = 630
-        y_top_aff = 800
+        y_top_aff = 780
 
-        draw.text((x, y_protocol_revenue),
-                  loc.TEXT_PIC_STATS_PROTOCOL_REVENUE,
-                  fill='#fff',
-                  font=font_indicator_name)
+        _indicator(x, y_protocol_revenue,
+                   loc.TEXT_PIC_STATS_PROTOCOL_REVENUE,
+                   short_dollar(total_revenue_usd),
+                   prev_total_revenue_usd, total_revenue_usd)
 
-        self.text_and_change(prev_total_revenue_usd, total_revenue_usd,
-                             draw, x, y_protocol_revenue + y_margin,
-                             short_dollar(total_revenue_usd),
-                             coin_font, font_small_n)
+        _indicator(x, y_aff_fee,
+                   loc.TEXT_PIC_STATS_AFFILIATE_REVENUE,
+                   short_dollar(aff_fee_usd),
+                   prev_aff_fee_usd, aff_fee_usd)
 
-        draw.text((x, y_aff_fee),
-                  loc.TEXT_PIC_STATS_AFFILIATE_REVENUE,
-                  fill='#fff',
-                  font=font_indicator_name)
-
-        self.text_and_change(prev_aff_fee_usd, aff_fee_usd,
-                             draw, x, y_aff_fee + y_margin,
-                             short_dollar(aff_fee_usd),
-                             coin_font, font_small_n)
+        # ----- top 3 affiliates table -----
 
         draw.text((x, y_top_aff),
                   loc.TEXT_PIC_STATS_TOP_AFFILIATE,
@@ -297,7 +295,66 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
                   anchor='rm',
                   fill=TC_LIGHTNING_BLUE)
 
-
         # 3. Block
+
+        x = 1423
+        y = 442
+        y_margin = 100
+
+        # ---- unique swappers -----
+
+        _indicator(x, y,
+                   loc.TEXT_PIC_STATS_UNIQUE_SWAPPERS,
+                   pretty_money(unique_swap),
+                   prev_unique_swap, unique_swap)
+
+        # ---- count of swaps ----
+
+        y += 150
+
+        _indicator(x, y,
+                   loc.TEXT_PIC_STATS_NUMBER_OF_SWAPS,
+                   pretty_money(swap_count),
+                   prev_swap_count, swap_count)
+
+        # ---- swap volume -----
+
+        y += 150
+
+        _indicator(x, y,
+                   loc.TEXT_PIC_STATS_USD_VOLUME,
+                   short_dollar(usd_volume),
+                   prev_usd_volume, usd_volume)
+
+        # ---- routes ----
+
+        y += 150
+
+        draw.text((x, y),
+                  loc.TEXT_PIC_STATS_TOP_SWAP_ROUTES,
+                  fill='#fff',
+                  font=font_indicator_name)
+
+        y += 66
+        y_margin = 60
+
+        font_routes = r.fonts.get_font_bold(40)
+        for i, (label, count) in zip(range(1, n_max + 1), swap_routes):
+            left, right = str(label).split(' to ')
+            l_asset, r_asset = Asset(left), Asset(right)
+
+            text = f'{i}. {l_asset.name} → {r_asset.name}'
+            draw.text((x, y),
+                      text,
+                      font=font_routes,
+                      fill='#fff')
+            w, _ = draw.textsize(text, font=font_routes)
+
+            draw.text((x + w + 20, y + 6),
+                      bracketify(pretty_money(count)),
+                      fill='#ccc',
+                      font=font_small_n)
+
+            y += y_margin
 
         return image

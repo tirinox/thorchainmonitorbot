@@ -1136,7 +1136,7 @@ class BaseLocalization(ABC):  # == English
     TEXT_PIC_STATS_TOP_AFFILIATE = 'Top 3 Affiliates'
     TEXT_PIC_STATS_UNIQUE_SWAPPERS = 'Unique Swappers'
     TEXT_PIC_STATS_NUMBER_OF_SWAPS = 'Number of Swaps'
-    TEXT_PIC_STATS_USD_VOLUME = 'USD Volume'
+    TEXT_PIC_STATS_USD_VOLUME = 'Swap Volume'
     TEXT_PIC_STATS_TOP_SWAP_ROUTES = 'Top 3 Swap Routes'
     TEXT_PIC_STATS_ORGANIC_VS_BLOCK_REWARDS = 'Organic Fees vs Block Rewards'
 
