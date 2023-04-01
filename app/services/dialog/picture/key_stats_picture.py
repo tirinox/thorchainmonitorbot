@@ -7,10 +7,21 @@ from localization.manager import BaseLocalization
 from services.dialog.picture.common import BasePictureGenerator
 from services.dialog.picture.resources import Resources
 from services.lib.constants import BTC_SYMBOL, ETH_SYMBOL, BNB_BUSD_SYMBOL, ETH_USDC_SYMBOL, ETH_USDT_SYMBOL
-from services.lib.draw_utils import paste_image_masked
-from services.lib.money import pretty_money, short_dollar
+from services.lib.draw_utils import paste_image_masked, result_color
+from services.lib.money import pretty_money, short_dollar, short_money
+from services.lib.texts import bracketify
 from services.lib.utils import async_wrap
-from services.models.flipside import EventKeyStats
+from services.models.flipside import EventKeyStats, FSLockedValue, FSFees, FSAffiliateCollectors
+
+
+def sum_by_attribute(daily_list, attr_name, klass=None):
+    return sum(
+        getattr(obj, attr_name)
+        for objects_for_day in daily_list
+        for objects in objects_for_day.values()
+        for obj in objects
+        if not klass or isinstance(obj, klass)
+    )
 
 
 class KeyStatsPictureGenerator(BasePictureGenerator):
@@ -48,13 +59,38 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         date_format = '%d %B %Y'
         return f'{start_date.strftime(date_format)} – {end_date.strftime(date_format)}'
 
+    @staticmethod
+    def percent_change(old_v, new_v):
+        return (new_v - old_v) / old_v * 100.0 if old_v else 0.0
+
+    def text_and_change(self, old_v, new_v, draw, x, y, text, font_main, font_second, fill='#fff',
+                        x_shift=20, y_shift=6):
+        draw.text((x, y), text, font=font_main, fill=fill, anchor='lm')
+
+        percent = self.percent_change(old_v, new_v)
+
+        size_x, _ = draw.textsize(text, font=font_main)
+        draw.text((x + size_x + x_shift, y + y_shift),
+                  bracketify(short_money(percent, postfix='%', signed=True)),
+                  anchor='lm', fill=result_color(percent), font=font_second)
+
     @async_wrap
     def _get_picture_sync(self):
         # prepare data
-        ...
+        r, loc, e = self.r, self.loc, self.event
+        prev_lock, curr_lock = e.series.get_prev_and_curr(e.days, FSLockedValue)
+        prev_lock: FSLockedValue = prev_lock[0] if prev_lock else None
+        curr_lock: FSLockedValue = curr_lock[0] if curr_lock else None
+
+        curr_data, prev_data = e.series.get_current_and_previous_range(e.days)
+
+        total_revenue_usd = sum_by_attribute(curr_data, 'total_earnings_usd', FSFees)
+        prev_total_revenue_usd = sum_by_attribute(prev_data, 'total_earnings_usd', FSFees)
+
+        aff_fee_usd = sum_by_attribute(curr_data, 'fee_usd', FSAffiliateCollectors)
+        prev_aff_fee_usd = sum_by_attribute(prev_data, 'fee_usd', FSAffiliateCollectors)
 
         # prepare painting stuff
-        r, loc, e = self.r, self.loc, self.event
         image = self.bg.copy()
         draw = ImageDraw.Draw(image)
 
@@ -71,48 +107,74 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
             (2048 - 378, loc.TEXT_PIC_STATS_SWAP_INFO)
         ]:
             draw.text((x, 362),
-                      caption, fill='#fff', font=subtitle_font,
+                      caption, fill='#c6c6c6', font=subtitle_font,
                       anchor='ms')  # s stands for "Baseline"
 
         # ----- Block vaults -----
 
+        font_small_n = r.fonts.get_font(34)
+
         coin_x = 151
+        values = [
+            (e.get_sum((BTC_SYMBOL,), previous=True), e.get_sum((BTC_SYMBOL,))),
+            (e.get_sum((ETH_SYMBOL,), previous=True), e.get_sum((ETH_SYMBOL,))),
+            (e.get_stables_sum(previous=True), e.get_stables_sum()),
+        ]
+        vaults_y = [473, 622, 771]
+        postfixes = [' ₿', ' Ξ', 'usd']
+        stable_y = vaults_y[2]
 
         paste_image_masked(image, self.btc_logo, (coin_x, 473))
         paste_image_masked(image, self.eth_logo, (coin_x, 622))
 
-        stable_y = 622 - 473 + 622
         paste_image_masked(image, self.busd_logo, (coin_x - 30, stable_y))
         paste_image_masked(image, self.usdt_logo, (coin_x, stable_y))
         paste_image_masked(image, self.usdc_logo, (coin_x + 30, stable_y))
 
         coin_font = r.fonts.get_font_bold(54)
 
-        btc_new = e.get_sum((BTC_SYMBOL,))
-        btc_old = e.get_sum((BTC_SYMBOL,), previous=True)
+        for postfix, y, (old_v, new_v) in zip(postfixes, vaults_y, values):
+            if postfix == 'usd':
+                text = short_dollar(new_v)
+            else:
+                text = pretty_money(new_v, postfix=postfix)
 
-        draw.text(
-            (coin_x + 100, 473), pretty_money(btc_new, postfix=' ₿'),
-            font=coin_font,
-            fill='#fff', anchor='lm'
-        )
+            text_x = coin_x + 110
 
-        eth_new = e.get_sum((ETH_SYMBOL,))
-        eth_old = e.get_sum((ETH_SYMBOL,), previous=True)
+            self.text_and_change(old_v, new_v, draw, text_x, y,
+                                 text, coin_font, font_small_n)
 
-        draw.text(
-            (coin_x + 100, 622), pretty_money(eth_new, postfix=' Ξ'),
-            font=coin_font,
-            fill='#fff', anchor='lm'
-        )
+        # ------- total native asset pooled -------
 
-        usd_new = e.get_stables_sum()
-        usd_old = e.get_stables_sum(previous=True)
+        margin, delta_y = 78, 154
+        y = 880
 
-        draw.text(
-            (coin_x + 100, stable_y), short_dollar(usd_new),
-            font=coin_font,
-            fill='#fff', anchor='lm'
-        )
+        draw.text((100, y),
+                  loc.TEXT_PIC_STATS_NATIVE_ASSET_POOLED,
+                  anchor='lt', fill='#fff',
+                  font=r.fonts.get_font(42))
+
+        self.text_and_change(prev_lock.total_value_pooled_usd, curr_lock.total_value_pooled_usd,
+                             draw, 100, y + margin,
+                             short_dollar(curr_lock.total_value_pooled_usd),
+                             coin_font, font_small_n)
+
+        # ------- total network security usd -------
+
+        draw.text((100, y + delta_y),
+                  loc.TEXT_PIC_STATS_NETWORK_SECURITY,
+                  anchor='lt', fill='#fff',
+                  font=r.fonts.get_font(42))
+
+        self.text_and_change(prev_lock.total_value_bonded_usd, curr_lock.total_value_bonded_usd,
+                             draw, 100, y + margin + delta_y,
+                             short_dollar(curr_lock.total_value_bonded_usd),
+                             coin_font, font_small_n)
+
+        # 2. Block
+
+        # -------- protocol revenue -----
+
+        print()
 
         return image

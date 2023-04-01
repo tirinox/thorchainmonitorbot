@@ -24,8 +24,8 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         self._fs = FlipSideConnector(deps.session)
         self.tally_days_period = deps.cfg.as_int('key_metrics.tally_period_days', 7)
 
-        # x2 days
-        self.trim_max_days = deps.cfg.as_int('key_metrics.trim_max_days', self.tally_days_period * 2)
+        # x3 days (this week + previous week + spare days)
+        self.trim_max_days = deps.cfg.as_int('key_metrics.trim_max_days', self.tally_days_period * 3)
 
     async def fetch(self) -> EventKeyStats:
         # Load all FlipSideCrypto data

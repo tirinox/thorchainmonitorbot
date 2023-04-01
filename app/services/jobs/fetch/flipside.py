@@ -1,5 +1,5 @@
 from collections import defaultdict
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import aiohttp
 
@@ -56,14 +56,37 @@ class FSList(dict):
     def most_recent_one(self):
         return self.most_recent[0]
 
-    def get_data_days_ago(self, days, single=False):
-        then = datetime.fromtimestamp(now_ts() - days * DAY)
-        then = discard_time(then)
+    def get_data_from_day(self, dt, klass=None):
+        then = discard_time(dt)
         data_then = self.get(then)
-        if single:
-            return data_then[0] if data_then else None
-        else:
-            return data_then or []
+        if data_then:
+            return data_then.get(klass) if klass else data_then
+
+    def get_data_days_ago(self, days, klass=None):
+        then = datetime.fromtimestamp(now_ts() - days * DAY)
+        return self.get_data_from_day(then, klass)
+
+    def get_prev_and_curr(self, days, klass=None):
+        last = self.latest_date
+        curr = self.get_data_from_day(last, klass)
+        prev = self.get_data_from_day(last - timedelta(days=days), klass)
+        return prev, curr
+
+    def get_range(self, days, klass=None, start_dt=None):
+        accum = []
+        dt = start_dt or self.latest_date
+        for _ in range(days):
+            data = self.get_data_from_day(dt, klass)
+            if data:
+                accum.append(data)
+            dt -= timedelta(days=1)
+        return accum
+
+    def get_current_and_previous_range(self, days, klass=None):
+        curr_fees_tally = self.get_range(days, klass=klass)
+        prev_week_end = self.latest_date - timedelta(days=days)
+        prev_fees_tally = self.get_range(days, klass=klass, start_dt=prev_week_end)
+        return curr_fees_tally, prev_fees_tally
 
     @property
     def min_age(self):
