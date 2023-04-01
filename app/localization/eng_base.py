@@ -1125,12 +1125,21 @@ class BaseLocalization(ABC):  # == English
 
         return bonding_apy_change, liquidity_apy_change
 
-    TEXT_PIC_STATS_NATIVE_ASSET_VAULTS = "Native asset vaults"
-    TEXT_PIC_STATS_WEEKLY_REVENUE = "Weekly protocol revenue"
-    TEXT_PIC_STATS_SWAP_INFO = "Weekly swap info"
+    TEXT_PIC_STATS_NATIVE_ASSET_VAULTS = "Native Asset Vaults"
+    TEXT_PIC_STATS_WEEKLY_REVENUE = "Weekly Protocol Revenue"
+    TEXT_PIC_STATS_SWAP_INFO = "Weekly Swap Info"
 
     TEXT_PIC_STATS_NATIVE_ASSET_POOLED = 'Native Assets Pooled'
     TEXT_PIC_STATS_NETWORK_SECURITY = 'Network Security'
+    TEXT_PIC_STATS_PROTOCOL_REVENUE = 'Protocol Revenue'
+    TEXT_PIC_STATS_AFFILIATE_REVENUE = 'Affiliate Revenue'
+    TEXT_PIC_STATS_TOP_AFFILIATE = 'Top 3 Affiliates'
+    TEXT_PIC_STATS_UNIQUE_SWAPPERS = 'Unique Swappers'
+    TEXT_PIC_STATS_NUMBER_OF_SWAPS = 'Number of Swaps'
+    TEXT_PIC_STATS_USD_VOLUME = 'USD Volume'
+    TEXT_PIC_STATS_TOP_SWAP_ROUTES = 'Top 3 Swap Routes'
+    TEXT_PIC_STATS_ORGANIC_VS_BLOCK_REWARDS = 'Organic Fees vs Block Rewards'
+
 
     def notification_text_key_metrics_caption(self, data: EventKeyStats):
         return 'THORChain weekly stats'

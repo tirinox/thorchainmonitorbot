@@ -505,3 +505,17 @@ def convert_indexed_png(indexed):
     else:
         # the mode is not indexed
         return indexed
+
+
+def dual_side_rect(draw: ImageDraw, x1, y1, x2, y2, a, b, a_color='#0f0', b_color='#00f'):
+    s = a + b
+    if s == 0:
+        return
+    w = x2 - x1
+    x_mid = int(w * a / s)
+    draw.rectangle(
+        (x1, y1, x_mid + x1, y2), fill=a_color
+    )
+    draw.rectangle(
+        (x_mid + x1, y1, x2, y2), fill=b_color
+    )

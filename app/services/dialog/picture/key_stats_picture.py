@@ -1,4 +1,6 @@
 import asyncio
+import operator
+from collections import defaultdict
 from datetime import datetime, timedelta
 
 from PIL import Image, ImageDraw
@@ -7,11 +9,13 @@ from localization.manager import BaseLocalization
 from services.dialog.picture.common import BasePictureGenerator
 from services.dialog.picture.resources import Resources
 from services.lib.constants import BTC_SYMBOL, ETH_SYMBOL, BNB_BUSD_SYMBOL, ETH_USDC_SYMBOL, ETH_USDT_SYMBOL
-from services.lib.draw_utils import paste_image_masked, result_color
-from services.lib.money import pretty_money, short_dollar, short_money
+from services.lib.draw_utils import paste_image_masked, result_color, TC_LIGHTNING_BLUE, TC_YGGDRASIL_GREEN, \
+    dual_side_rect
+from services.lib.money import pretty_money, short_dollar, short_money, format_percent
 from services.lib.texts import bracketify
 from services.lib.utils import async_wrap
-from services.models.flipside import EventKeyStats, FSLockedValue, FSFees, FSAffiliateCollectors
+from services.models.flipside import EventKeyStats, FSLockedValue, FSFees, FSAffiliateCollectors, FSSwapVolume, \
+    FSSwapCount, FSSwapRoutes
 
 
 def sum_by_attribute(daily_list, attr_name, klass=None):
@@ -21,6 +25,13 @@ def sum_by_attribute(daily_list, attr_name, klass=None):
         for objects in objects_for_day.values()
         for obj in objects
         if not klass or isinstance(obj, klass)
+    )
+
+
+def sum_by_attribute_pair(first_list, second_list, attr_name, klass=None):
+    return (
+        sum_by_attribute(first_list, attr_name, klass),
+        sum_by_attribute(second_list, attr_name, klass)
     )
 
 
@@ -74,6 +85,28 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
                   bracketify(short_money(percent, postfix='%', signed=True)),
                   anchor='lm', fill=result_color(percent), font=font_second)
 
+    @staticmethod
+    def _get_top_affiliate(daily_list):
+        collectors = defaultdict(float)
+        for objects_for_day in daily_list:
+            for objects in objects_for_day.values():
+                for obj in objects:
+                    if isinstance(obj, FSAffiliateCollectors):
+                        if obj.label:
+                            collectors[obj.label] += obj.fee_usd
+        return list(sorted(collectors.items(), key=operator.itemgetter(1), reverse=True))
+
+    @staticmethod
+    def _get_to_swap_routes(daily_list):
+        collectors = defaultdict(int)
+        for objects_for_day in daily_list:
+            for objects in objects_for_day.values():
+                for obj in objects:
+                    if isinstance(obj, FSSwapRoutes):
+                        if obj.assets:
+                            collectors[obj.assets] += obj.swap_count
+        return list(sorted(collectors.items(), key=operator.itemgetter(1), reverse=True))
+
     @async_wrap
     def _get_picture_sync(self):
         # prepare data
@@ -83,12 +116,22 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         curr_lock: FSLockedValue = curr_lock[0] if curr_lock else None
 
         curr_data, prev_data = e.series.get_current_and_previous_range(e.days)
+        total_revenue_usd, prev_total_revenue_usd = sum_by_attribute_pair(
+            curr_data, prev_data, 'total_earnings_usd', FSFees)
+        block_rewards_usd, prev_block_rewards_usd = sum_by_attribute_pair(
+            curr_data, prev_data, 'block_rewards_usd', FSFees)
+        liq_fee_usd, prev_liq_fee_usd = sum_by_attribute_pair(curr_data, prev_data, 'liquidity_fees_usd', FSFees)
+        aff_fee_usd, prev_aff_fee_usd = sum_by_attribute_pair(curr_data, prev_data, 'fee_usd', FSAffiliateCollectors)
 
-        total_revenue_usd = sum_by_attribute(curr_data, 'total_earnings_usd', FSFees)
-        prev_total_revenue_usd = sum_by_attribute(prev_data, 'total_earnings_usd', FSFees)
+        block_ratio = block_rewards_usd / total_revenue_usd if total_revenue_usd else 100.0
+        organic_ratio = liq_fee_usd / total_revenue_usd if total_revenue_usd else 100.0
 
-        aff_fee_usd = sum_by_attribute(curr_data, 'fee_usd', FSAffiliateCollectors)
-        prev_aff_fee_usd = sum_by_attribute(prev_data, 'fee_usd', FSAffiliateCollectors)
+        aff_collectors = self._get_top_affiliate(curr_data)
+
+        swap_count, prev_swap_count = sum_by_attribute_pair(curr_data, prev_data, 'swap_count', FSSwapCount)
+        usd_volume, prev_usd_volume = sum_by_attribute_pair(curr_data, prev_data, 'swap_volume_usd', FSSwapVolume)
+
+        swap_routes = self._get_to_swap_routes(curr_data)
 
         # prepare painting stuff
         image = self.bg.copy()
@@ -96,7 +139,7 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
 
         # Week dates
         draw.text((1862, 236), self.format_period_dates_string(self.event.end_date, days=self.event.days),
-                  fill='#fff', font=r.fonts.get_font_bold(62),
+                  fill='#fff', font=r.fonts.get_font_bold(52),
                   anchor='rm')
 
         # Block subtitles
@@ -113,6 +156,7 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         # ----- Block vaults -----
 
         font_small_n = r.fonts.get_font(34)
+        font_indicator_name = r.fonts.get_font(42)
 
         coin_x = 151
         values = [
@@ -152,7 +196,7 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         draw.text((100, y),
                   loc.TEXT_PIC_STATS_NATIVE_ASSET_POOLED,
                   anchor='lt', fill='#fff',
-                  font=r.fonts.get_font(42))
+                  font=font_indicator_name)
 
         self.text_and_change(prev_lock.total_value_pooled_usd, curr_lock.total_value_pooled_usd,
                              draw, 100, y + margin,
@@ -164,7 +208,7 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         draw.text((100, y + delta_y),
                   loc.TEXT_PIC_STATS_NETWORK_SECURITY,
                   anchor='lt', fill='#fff',
-                  font=r.fonts.get_font(42))
+                  font=font_indicator_name)
 
         self.text_and_change(prev_lock.total_value_bonded_usd, curr_lock.total_value_bonded_usd,
                              draw, 100, y + margin + delta_y,
@@ -175,6 +219,85 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
 
         # -------- protocol revenue -----
 
-        print()
+        x = 769
+        y_margin = 100
+        y_protocol_revenue = 442
+        y_aff_fee = 630
+        y_top_aff = 800
+
+        draw.text((x, y_protocol_revenue),
+                  loc.TEXT_PIC_STATS_PROTOCOL_REVENUE,
+                  fill='#fff',
+                  font=font_indicator_name)
+
+        self.text_and_change(prev_total_revenue_usd, total_revenue_usd,
+                             draw, x, y_protocol_revenue + y_margin,
+                             short_dollar(total_revenue_usd),
+                             coin_font, font_small_n)
+
+        draw.text((x, y_aff_fee),
+                  loc.TEXT_PIC_STATS_AFFILIATE_REVENUE,
+                  fill='#fff',
+                  font=font_indicator_name)
+
+        self.text_and_change(prev_aff_fee_usd, aff_fee_usd,
+                             draw, x, y_aff_fee + y_margin,
+                             short_dollar(aff_fee_usd),
+                             coin_font, font_small_n)
+
+        draw.text((x, y_top_aff),
+                  loc.TEXT_PIC_STATS_TOP_AFFILIATE,
+                  fill='#fff',
+                  font=font_indicator_name)
+
+        n_max = 3
+        y = y_top_aff + 64
+        y_margin = 60
+        font_aff = r.fonts.get_font_bold(40)
+        for i, (label, fee_usd) in zip(range(1, n_max + 1), aff_collectors):
+            text = f'{i}. {label}'
+            draw.text((x, y),
+                      text,
+                      font=font_aff,
+                      fill='#fff')
+            w, _ = draw.textsize(text, font=font_aff)
+
+            draw.text((x + w + 20, y + 6),
+                      bracketify(short_dollar(fee_usd)),
+                      fill='#afa',
+                      font=font_small_n)
+
+            y += y_margin
+
+        # ----- organic fees vs block rewards
+
+        draw.text((x, 1050),
+                  loc.TEXT_PIC_STATS_ORGANIC_VS_BLOCK_REWARDS,
+                  fill='#fff',
+                  font=r.fonts.get_font(37))
+
+        font_fee = r.fonts.get_font_bold(32)
+        x_right = 1283
+
+        y_p, y_bar = 1142, 1105
+
+        dual_side_rect(draw, x, y_bar, x_right, y_bar + 14,
+                       liq_fee_usd, block_rewards_usd,
+                       TC_YGGDRASIL_GREEN, TC_LIGHTNING_BLUE)
+
+        draw.text((x, y_p),
+                  format_percent(organic_ratio, threshold=0.0),
+                  font=font_fee,
+                  anchor='lm',
+                  fill=TC_YGGDRASIL_GREEN)
+
+        draw.text((x_right, y_p),
+                  format_percent(block_ratio, threshold=0.0),
+                  font=font_fee,
+                  anchor='rm',
+                  fill=TC_LIGHTNING_BLUE)
+
+
+        # 3. Block
 
         return image
