@@ -28,6 +28,17 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         self.trim_max_days = deps.cfg.as_int('key_metrics.trim_max_days', self.tally_days_period * 3)
 
     async def fetch(self) -> EventKeyStats:
+        # Load pool data for BTC/ETH value in the pools
+        pf: PoolFetcher = self.deps.pool_fetcher
+        previous_block = self.deps.last_block_store.block_time_ago(self.tally_days_period * DAY)
+        fresh_pools, old_pools = await asyncio.gather(
+            pf.load_pools(),
+            pf.load_pools(height=previous_block)
+        )
+
+        fresh_pools = pf.convert_pool_list_to_dict(fresh_pools.values())
+        old_pools = pf.convert_pool_list_to_dict(old_pools.values())
+
         # Load all FlipSideCrypto data
         loaders = [
             (URL_FS_AFFILIATE_AGENTS, FSAffiliateCollectors),
@@ -51,17 +62,6 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
 
         # Merge data streams
         result = FSList.combine(*transformed_data_chunks)
-
-        # Load pool data for BTC/ETH value in the pools
-        pf: PoolFetcher = self.deps.pool_fetcher
-        previous_block = self.deps.last_block_store.block_time_ago(self.tally_days_period * DAY)
-        fresh_pools, old_pools = await asyncio.gather(
-            pf.load_pools(),
-            pf.load_pools(height=previous_block)
-        )
-
-        fresh_pools = pf.convert_pool_list_to_dict(fresh_pools)
-        old_pools = pf.convert_pool_list_to_dict(old_pools)
 
         # Done. Construct the resulting event
         return EventKeyStats(

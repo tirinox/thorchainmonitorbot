@@ -146,7 +146,7 @@ class AlertPresenter(INotified):
     async def _handle_key_stats(self, event: EventKeyStats):
         # PICTURE
         async def _gen(loc: BaseLocalization, _a: EventKeyStats):
-            pic_gen = KeyStatsPictureGenerator(loc.ach, _a)
+            pic_gen = KeyStatsPictureGenerator(loc, _a)
             pic, pic_name = await pic_gen.get_picture()
             caption = loc.notification_text_key_metrics_caption(event)
             return BoardMessage.make_photo(pic, caption=caption, photo_file_name=pic_name)

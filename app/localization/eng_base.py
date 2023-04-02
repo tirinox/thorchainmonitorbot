@@ -1140,7 +1140,6 @@ class BaseLocalization(ABC):  # == English
     TEXT_PIC_STATS_TOP_SWAP_ROUTES = 'Top 3 Swap Routes'
     TEXT_PIC_STATS_ORGANIC_VS_BLOCK_REWARDS = 'Organic Fees vs Block Rewards'
 
-
     def notification_text_key_metrics_caption(self, data: EventKeyStats):
         return 'THORChain weekly stats'
 

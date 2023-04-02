@@ -10,7 +10,7 @@ from services.dialog.picture.common import BasePictureGenerator
 from services.dialog.picture.resources import Resources
 from services.lib.constants import BTC_SYMBOL, ETH_SYMBOL, BNB_BUSD_SYMBOL, ETH_USDC_SYMBOL, ETH_USDT_SYMBOL
 from services.lib.draw_utils import paste_image_masked, result_color, TC_LIGHTNING_BLUE, TC_YGGDRASIL_GREEN, \
-    dual_side_rect
+    dual_side_rect, COLOR_OF_PROFIT
 from services.lib.money import pretty_money, short_dollar, short_money, format_percent, Asset
 from services.lib.texts import bracketify
 from services.lib.utils import async_wrap
@@ -81,9 +81,12 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         percent = self.percent_change(old_v, new_v)
 
         size_x, _ = draw.textsize(text, font=font_main)
-        draw.text((x + size_x + x_shift, y + y_shift),
-                  bracketify(short_money(percent, postfix='%', signed=True)),
-                  anchor='lm', fill=result_color(percent), font=font_second)
+        if abs(percent) > 0.1:
+            draw.text(
+                (x + size_x + x_shift, y + y_shift),
+                bracketify(short_money(percent, postfix='%', signed=True)),
+                anchor='lm', fill=result_color(percent), font=font_second
+            )
 
     @staticmethod
     def _get_top_affiliate(daily_list):
@@ -227,29 +230,27 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         # -------- protocol revenue -----
 
         x = 769
-        y_protocol_revenue = 442
-        y_aff_fee = 630
         y_top_aff = 780
 
-        _indicator(x, y_protocol_revenue,
+        _indicator(x, 442,
                    loc.TEXT_PIC_STATS_PROTOCOL_REVENUE,
                    short_dollar(total_revenue_usd),
                    prev_total_revenue_usd, total_revenue_usd)
 
-        _indicator(x, y_aff_fee,
+        _indicator(x, 623,
                    loc.TEXT_PIC_STATS_AFFILIATE_REVENUE,
                    short_dollar(aff_fee_usd),
                    prev_aff_fee_usd, aff_fee_usd)
 
         # ----- top 3 affiliates table -----
 
-        draw.text((x, y_top_aff),
+        draw.text((x, 780),
                   loc.TEXT_PIC_STATS_TOP_AFFILIATE,
                   fill='#fff',
                   font=font_indicator_name)
 
         n_max = 3
-        y = y_top_aff + 64
+        y = 844
         y_margin = 60
         font_aff = r.fonts.get_font_bold(40)
         for i, (label, fee_usd) in zip(range(1, n_max + 1), aff_collectors):
@@ -262,7 +263,8 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
 
             draw.text((x + w + 20, y + 6),
                       bracketify(short_dollar(fee_usd)),
-                      fill='#afa',
+                      # fill='#afa',
+                      fill=COLOR_OF_PROFIT,
                       font=font_small_n)
 
             y += y_margin
