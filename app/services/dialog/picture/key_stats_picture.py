@@ -212,8 +212,8 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
 
         # ------- total native asset pooled -------
 
-        margin, delta_y = 78, 154
-        y = 880
+        margin, delta_y = 78, 160
+        y = 888
 
         _indicator(100, y, loc.TEXT_PIC_STATS_NATIVE_ASSET_POOLED,
                    short_dollar(curr_lock.total_value_pooled_usd),
@@ -226,11 +226,9 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
                    prev_lock.total_value_bonded_usd, curr_lock.total_value_bonded_usd)
 
         # 2. Block
-
         # -------- protocol revenue -----
 
         x = 769
-        y_top_aff = 780
 
         _indicator(x, 442,
                    loc.TEXT_PIC_STATS_PROTOCOL_REVENUE,
@@ -299,9 +297,7 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
 
         # 3. Block
 
-        x = 1423
-        y = 442
-        y_margin = 100
+        x, y = 1423, 442
 
         # ---- unique swappers -----
 
@@ -312,7 +308,7 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
 
         # ---- count of swaps ----
 
-        y += 150
+        y += 159
 
         _indicator(x, y,
                    loc.TEXT_PIC_STATS_NUMBER_OF_SWAPS,
@@ -321,7 +317,7 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
 
         # ---- swap volume -----
 
-        y += 150
+        y += 159
 
         _indicator(x, y,
                    loc.TEXT_PIC_STATS_USD_VOLUME,
@@ -330,14 +326,14 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
 
         # ---- routes ----
 
-        y += 150
+        y += 159
 
         draw.text((x, y),
                   loc.TEXT_PIC_STATS_TOP_SWAP_ROUTES,
                   fill='#fff',
                   font=font_indicator_name)
 
-        y += 66
+        y += 60
         y_margin = 60
 
         font_routes = r.fonts.get_font_bold(40)
