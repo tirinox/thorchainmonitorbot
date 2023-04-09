@@ -17,7 +17,12 @@ URL_FS_SWAP_VOL = 'https://api.flipsidecrypto.com/api/v2/queries/ee1f4915-988d-4
 URL_FS_ROUTES = 'https://api.flipsidecrypto.com/api/v2/queries/e999ee41-f72b-4ce8-8ab1-ff2f36545d2a/data/latest'
 
 URL_FS_ROUTES_V2 = 'https://api.flipsidecrypto.com/api/v2/queries/9084fde5-1019-479d-bd2c-77d482e9febb/data/latest'
+
+# by total liquidity fees
 URL_FS_AFFILIATES_V2 = 'https://api.flipsidecrypto.com/api/v2/queries/1b2bb8d7-3b9a-4e05-9a8b-f558807ef3bc/data/latest'
+URL_FS_AFFILIATES_V2_PREV = (
+    'https://api.flipsidecrypto.com/api/v2/queries/1581bc7e-eae9-4eec-a238-6c20203944c4/data/latest'
+)
 
 
 class KeyStatsFetcher(BaseFetcher, WithLogger):
@@ -48,6 +53,7 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
             (URL_FS_UNIQUE_SWAPPERS, FSSwapCount, None),
             (URL_FS_LOCKED_VALUE, FSLockedValue, None),
             (URL_FS_SWAP_VOL, FSSwapVolume, None),
+            # (URL_FS_AFFILIATE_AGENTS, FSAffiliateCollectors, None),
         ]
 
         # Actual API requests
@@ -65,16 +71,18 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         result = FSList.combine(*transformed_data_chunks)
 
         # Routes/Affiliates
-        raw_routes, raw_affiliates = await asyncio.gather(
+        raw_routes, raw_affiliates, raw_affiliates_prev = await asyncio.gather(
             self._fs.request(URL_FS_ROUTES_V2),
             self._fs.request(URL_FS_AFFILIATES_V2),
+            self._fs.request(URL_FS_AFFILIATES_V2_PREV),
         )
         routes = [FSSwapRoutes.from_json_v2(x) for x in raw_routes]
         affiliates = [FSAffiliateCollectors.from_json_v2(x) for x in raw_affiliates]
+        prev_affiliates = [FSAffiliateCollectors.from_json_v2(x) for x in raw_affiliates_prev]
 
         # Done. Construct the resulting event
         return EventKeyStats(
             result, old_pools, fresh_pools,
-            routes, affiliates,
+            routes, affiliates, prev_affiliates,
             days=self.tally_days_period
         )

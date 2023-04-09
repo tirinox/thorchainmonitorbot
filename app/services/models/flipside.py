@@ -193,6 +193,7 @@ class EventKeyStats(NamedTuple):
 
     routes: List[FSSwapRoutes]
     affiliates: List[FSAffiliateCollectors]
+    prev_affiliates: List[FSAffiliateCollectors]
 
     days: int = 7
 

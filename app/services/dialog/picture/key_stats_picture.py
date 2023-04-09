@@ -124,7 +124,7 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
 
         # aff_fee_usd, prev_aff_fee_usd = sum_by_attribute_pair(curr_data, prev_data, 'fee_usd', FSAffiliateCollectors)
         aff_fee_usd = self._total_affiliate_revenue(e.affiliates)
-        prev_aff_fee_usd = aff_fee_usd  # todo!
+        prev_aff_fee_usd = self._total_affiliate_revenue(e.prev_affiliates)
 
         block_ratio = block_rewards_usd / total_revenue_usd if total_revenue_usd else 100.0
         organic_ratio = liq_fee_usd / total_revenue_usd if total_revenue_usd else 100.0
