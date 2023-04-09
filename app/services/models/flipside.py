@@ -125,6 +125,16 @@ class FSAffiliateCollectors(NamedTuple):
             float(j.get('CUMULATIVE_FEE_RUNE', 0.0)),
         )
 
+    @classmethod
+    def from_json_v2(cls, j):
+        """[{"AFFILIATE":"TrustWallet","TOTAL_VOLUME_USD":7629531.47796143,"DAY":"2023-04-06"},...]"""
+        return cls(
+            j.get(KEY_DATETIME),
+            j.get('AFFILIATE', ''),
+            float(j.get('TOTAL_LIQUIDITY_FEES_USD', 0.0)),
+            0, 0, 0
+        )
+
 
 class FSSwapRoutes(NamedTuple):
     date: datetime
@@ -150,6 +160,21 @@ class FSSwapRoutes(NamedTuple):
             float(j.get('FEE_PER_SWAP', 0.0)),
         )
 
+    @classmethod
+    def from_json_v2(cls, j):
+        """[{"SWAP_PATH":"BTC.BTC <-> THOR.RUNE","TOTAL_VOLUME_USD":20045361.3515259,"DAY":"2023-04-06"},...]"""
+        assets = j.get('SWAP_PATH')
+        asset_from, asset_to = assets.split(' <-> ', 2) if assets else ('', '')
+
+        return cls(
+            j.get(KEY_DATETIME),
+            assets, asset_from, asset_to,
+            0,
+            float(j.get('TOTAL_VOLUME_USD', 0.0)),
+            0,
+            0,
+        )
+
 
 class KeyStats(NamedTuple):
     date: datetime
@@ -165,6 +190,10 @@ class EventKeyStats(NamedTuple):
     series: FSList
     previous_pools: PoolInfoMap
     current_pools: PoolInfoMap
+
+    routes: List[FSSwapRoutes]
+    affiliates: List[FSAffiliateCollectors]
+
     days: int = 7
 
     @property

@@ -92,10 +92,11 @@ class FSList(dict):
     def min_age(self):
         return now_ts() - self.latest_date.timestamp()
 
-    def transform_from_json(self, klass):
+    def transform_from_json(self, klass, f='from_json'):
+        loader = getattr(klass, f)
         result = FSList([
             (k, [
-                klass.from_json(piece) for piece in v
+                loader(piece) for piece in v
             ]) for k, v in self.items()
         ])
         result.klass = klass
