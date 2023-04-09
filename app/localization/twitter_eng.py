@@ -19,6 +19,7 @@ from services.lib.texts import x_ses, progressbar, plural, bracketify, up_down_a
     bracketify_spaced, shorten_text
 from services.lib.w3.dex_analytics import DexReportEntry, DexReport
 from services.models.cap_info import ThorCapInfo
+from services.models.flipside import EventKeyStats
 from services.models.killed_rune import KilledRuneEntry
 from services.models.last_block import EventBlockSpeed, BlockProduceState
 from services.models.mimir import MimirChange, MimirHolder
@@ -925,3 +926,6 @@ class TwitterEnglishLocalization(BaseLocalization):
             parts.append(text)
 
         return self.smart_split(parts)
+
+    def notification_text_key_metrics_caption(self, data: EventKeyStats):
+        return '@THORChain weekly stats $RUNE'
