@@ -1133,7 +1133,7 @@ class BaseLocalization(ABC):  # == English
     TEXT_PIC_STATS_NETWORK_SECURITY = 'Network Security'
     TEXT_PIC_STATS_PROTOCOL_REVENUE = 'Protocol Revenue'
     TEXT_PIC_STATS_AFFILIATE_REVENUE = 'Affiliate Revenue'
-    TEXT_PIC_STATS_TOP_AFFILIATE = 'Top 3 Affiliates'
+    TEXT_PIC_STATS_TOP_AFFILIATE = 'Top 3 Affiliates by Revenue'
     TEXT_PIC_STATS_UNIQUE_SWAPPERS = 'Unique Swappers'
     TEXT_PIC_STATS_NUMBER_OF_SWAPS = 'Number of Swaps'
     TEXT_PIC_STATS_USD_VOLUME = 'Swap Volume'

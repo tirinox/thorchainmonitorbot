@@ -97,6 +97,18 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         return list(sorted(collectors.items(), key=operator.itemgetter(1), reverse=True))
 
     @staticmethod
+    def _get_top_affiliate_daily(daily_list):
+        collectors = defaultdict(float)
+
+        for objects_for_day in daily_list:
+            for objects in objects_for_day.values():
+                for obj in objects:
+                    if isinstance(obj, FSAffiliateCollectors):
+                        if obj.label:
+                            collectors[obj.label] += obj.fee_usd
+        return list(sorted(collectors.items(), key=operator.itemgetter(1), reverse=True))
+
+    @staticmethod
     def _get_to_swap_routes(e: EventKeyStats):
         collectors = defaultdict(float)
         for obj in e.routes:
@@ -122,14 +134,15 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
             curr_data, prev_data, 'block_rewards_usd', FSFees)
         liq_fee_usd, prev_liq_fee_usd = sum_by_attribute_pair(curr_data, prev_data, 'liquidity_fees_usd', FSFees)
 
-        # aff_fee_usd, prev_aff_fee_usd = sum_by_attribute_pair(curr_data, prev_data, 'fee_usd', FSAffiliateCollectors)
-        aff_fee_usd = self._total_affiliate_revenue(e.affiliates)
-        prev_aff_fee_usd = self._total_affiliate_revenue(e.prev_affiliates)
+        aff_fee_usd, prev_aff_fee_usd = sum_by_attribute_pair(curr_data, prev_data, 'fee_usd', FSAffiliateCollectors)
+        # aff_fee_usd = self._total_affiliate_revenue(e.affiliates)
+        # prev_aff_fee_usd = self._total_affiliate_revenue(e.prev_affiliates)
 
         block_ratio = block_rewards_usd / total_revenue_usd if total_revenue_usd else 100.0
         organic_ratio = liq_fee_usd / total_revenue_usd if total_revenue_usd else 100.0
 
-        aff_collectors = self._get_top_affiliate(e)
+        # aff_collectors = self._get_top_affiliate(e)
+        aff_collectors = self._get_top_affiliate_daily(curr_data)
 
         swap_count, prev_swap_count = sum_by_attribute_pair(curr_data, prev_data, 'swap_count', FSSwapCount)
         usd_volume, prev_usd_volume = sum_by_attribute_pair(curr_data, prev_data, 'swap_volume_usd', FSSwapVolume)

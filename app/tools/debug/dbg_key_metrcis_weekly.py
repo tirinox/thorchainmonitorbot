@@ -67,7 +67,7 @@ async def main():
     async with lp_app:
         # await lp_app.prepare(brief=True)
 
-        await demo_analyse(lp_app)
+        # await demo_analyse(lp_app)
         await demo_picture(lp_app)
 
 

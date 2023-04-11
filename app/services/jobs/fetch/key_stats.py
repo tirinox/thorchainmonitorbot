@@ -53,7 +53,7 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
             (URL_FS_UNIQUE_SWAPPERS, FSSwapCount, None),
             (URL_FS_LOCKED_VALUE, FSLockedValue, None),
             (URL_FS_SWAP_VOL, FSSwapVolume, None),
-            # (URL_FS_AFFILIATE_AGENTS, FSAffiliateCollectors, None),
+            (URL_FS_AFFILIATE_AGENTS, FSAffiliateCollectors, None),
         ]
 
         # Actual API requests
@@ -71,18 +71,21 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         result = FSList.combine(*transformed_data_chunks)
 
         # Routes/Affiliates
-        raw_routes, raw_affiliates, raw_affiliates_prev = await asyncio.gather(
-            self._fs.request(URL_FS_ROUTES_V2),
-            self._fs.request(URL_FS_AFFILIATES_V2),
-            self._fs.request(URL_FS_AFFILIATES_V2_PREV),
-        )
+        # raw_routes, raw_affiliates, raw_affiliates_prev = await asyncio.gather(
+        #     self._fs.request(URL_FS_ROUTES_V2),
+        #     self._fs.request(URL_FS_AFFILIATES_V2),
+        #     self._fs.request(URL_FS_AFFILIATES_V2_PREV),
+        # )
+
+        raw_routes = await self._fs.request(URL_FS_ROUTES_V2)
+
         routes = [FSSwapRoutes.from_json_v2(x) for x in raw_routes]
-        affiliates = [FSAffiliateCollectors.from_json_v2(x) for x in raw_affiliates]
-        prev_affiliates = [FSAffiliateCollectors.from_json_v2(x) for x in raw_affiliates_prev]
+        # affiliates = [FSAffiliateCollectors.from_json_v2(x) for x in raw_affiliates]
+        # prev_affiliates = [FSAffiliateCollectors.from_json_v2(x) for x in raw_affiliates_prev]
 
         # Done. Construct the resulting event
         return EventKeyStats(
             result, old_pools, fresh_pools,
-            routes, affiliates, prev_affiliates,
+            routes, [], [],
             days=self.tally_days_period
         )
