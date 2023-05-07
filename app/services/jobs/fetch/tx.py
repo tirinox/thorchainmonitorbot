@@ -62,8 +62,9 @@ class TxFetcher(BaseFetcher):
     async def _fetch_all_tx_of_type(self,
                                     address=None,
                                     tx_type=None,
-                                    max_pages=None) -> List[ThorTx]:
-        page = 0
+                                    max_pages=None,
+                                    start_page=0) -> List[ThorTx]:
+        page = start_page
         txs = []
 
         while True:
@@ -90,12 +91,13 @@ class TxFetcher(BaseFetcher):
 
         return txs
 
-    async def fetch_all_tx(self, address=None, liquidity_change_only=False, max_pages=None) -> List[ThorTx]:
+    async def fetch_all_tx(self, address=None, liquidity_change_only=False,
+                           max_pages=None, start_page=0) -> List[ThorTx]:
         tx_types = free_url_gen.LIQUIDITY_TX_TYPES if liquidity_change_only else [None]
 
         txs = []
         for tx_type in tx_types:
-            this_type_txs = await self._fetch_all_tx_of_type(address, tx_type, max_pages)
+            this_type_txs = await self._fetch_all_tx_of_type(address, tx_type, max_pages, start_page=start_page)
             txs.extend(this_type_txs)
 
         txs.sort(key=lambda tx: tx.height_int)

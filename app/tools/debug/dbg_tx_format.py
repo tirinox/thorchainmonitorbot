@@ -9,7 +9,7 @@ from services.jobs.fetch.tx import TxFetcher
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.lib.constants import Chains, thor_to_float
 from services.lib.delegates import INotified
-from services.lib.explorers import get_explorer_url_to_address
+from services.lib.explorers import get_explorer_url_to_address, get_explorer_url_to_tx
 from services.lib.midgard.name_service import NameMap
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import free_url_gen
@@ -309,6 +309,29 @@ async def find_affiliate_txs(app: LpAppFramework, desired_count=5, tx_types=None
         page += 1
 
 
+
+async def demo_find_missed_txs_swap(app: LpAppFramework):
+    d = app.deps
+    fetcher_tx = TxFetcher(d, tx_types=(ThorTxType.TYPE_SWAP,))
+
+    aggregator = AggregatorDataExtractor(d)
+    fetcher_tx.add_subscriber(aggregator)
+
+    volume_filler = VolumeFillerUpdater(d)
+    aggregator.add_subscriber(volume_filler)
+
+    page = 50
+    while True:
+        txs = await fetcher_tx.fetch_one_batch(page, tx_types=(ThorTxType.TYPE_SWAP,))
+        for tx in txs.txs:
+            if 'ETH.ETH' in tx.pools and tx.rune_amount > 100_000:
+                url = get_explorer_url_to_tx(d.cfg.network_id, Chains.THOR, tx.tx_hash)
+                amt = thor_to_float(tx.first_input_tx.first_amount)
+                print(f'{tx.first_pool} ({url}) amount = {amt} {tx.first_input_tx.first_asset}')
+                sep()
+        page += 1
+
+
 async def main():
     app = LpAppFramework()
     await app.prepare(brief=True)
@@ -323,7 +346,7 @@ async def main():
     # await demo_aggr_aff_2(app)
     # await demo_test_aff_add_liq(app)
     # await demo_test_2(app)
-    await demo_aggr_aff(app)
+    # await demo_aggr_aff(app)
     # await demo_same_merge_swap(app)
     # await demo_withdraw_savers(app)
     # await demo_add_savers(app)
@@ -333,6 +356,7 @@ async def main():
     # await demo_verify_tx_scanner_in_the_past(app)
     # await find_affiliate_txs(app, 1, (ThorTxType.TYPE_SWAP,))
     # await demo_find_aggregator_error(app)
+    await demo_find_missed_txs_swap(app)
 
 
 if __name__ == '__main__':

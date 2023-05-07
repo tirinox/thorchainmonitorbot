@@ -303,7 +303,7 @@ DICT_WORDS = (
     'on,halt,unbond,iteration,sale,reward,ratio,strict,maximum,churning,btc,bch,ltc,doge,terra,avax,atom,gaia,bnb,eth,'
     'thor,utxos,check,trading,thorname,thornames,asset,signing,set,haven,spend,funding,cloud,new,number,desired,'
     'update,memo,next,saving,savings,vaults,vault,bsc,ilp,deprecate,pol,buffer,deposit,movement,utilization,'
-    'thor,anchor,multiple,basis'
+    'thor,anchor,multiple,basis,dofm'
 ).strip(' ,')
 
 WORD_TRANSFORM = {
@@ -327,6 +327,7 @@ WORD_TRANSFORM = {
     'Bsc': 'BSC',
     'Ilp': 'ILP',
     'Pol': 'POL',
+    'Dofm': 'Dynamic Outbound Fee Multiplier',
 }
 
 DICT_WORDS_SORTED = list(sorted(map(str.upper, DICT_WORDS.split(',')), key=len, reverse=True))
