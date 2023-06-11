@@ -104,11 +104,13 @@ class TwitterBot:
                                   'Failed again. It must me something else.')
                 return False
             else:
-                logging.warning(f'There is an exception: {e!r}. But I will try to abbreviate the message and resend.')
+                # logging.warning(f'There is an exception: {e!r}. But I will try to abbreviate the message and resend.')
+                #
+                # msg.text = abbreviate_some_long_words(msg.text)
+                # self.log_tweet(msg.text, None)
 
-                msg.text = abbreviate_some_long_words(msg.text)
-                self.log_tweet(msg.text, None)
-
+                logging.warning(f'There is an exception: {e!r}. But I will try to resend the message as is.')
+                await asyncio.sleep(15)
                 return await self.send_message(chat_id, msg, _retrying=True, **kwargs)
         except Exception:
             logging.exception(f'Twitter exception!', stack_info=True)
