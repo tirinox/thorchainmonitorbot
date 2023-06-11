@@ -1,6 +1,8 @@
 import asyncio
 from typing import List
 
+from aiothornode.types import ThorPOL
+
 from services.jobs.fetch.base import BaseFetcher
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
@@ -25,9 +27,16 @@ class POLFetcher(BaseFetcher):
         details.sort(key=lambda d: d.pool)
         return details
 
+    async def _load_pol_custom(self):
+        thor = self.deps.thor_connector
+        url = thor.env.path_pol.format(height=0).replace('?height=0', '')
+        data = await thor.query_raw(url)
+        if data:
+            return ThorPOL.from_json(data)
+
     async def fetch(self) -> EventPOL:
         pol, membership = await asyncio.gather(
-            self.deps.thor_connector.query_pol(),
+            self._load_pol_custom(),
             self.get_reserve_membership(self.reserve_address)
         )
         self.logger.info(f"Got POL: {pol}")

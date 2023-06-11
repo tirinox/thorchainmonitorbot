@@ -83,12 +83,13 @@ async def demo_pol_history(app: LpAppFramework):
 
 
 async def main():
-    app = LpAppFramework(log_level=logging.INFO, network=NetworkIdents.STAGENET_MULTICHAIN)
+    # app = LpAppFramework(log_level=logging.INFO, network=NetworkIdents.STAGENET_MULTICHAIN)
+    app = LpAppFramework(log_level=logging.INFO)
 
     async with app:
         # await demo_pol_1(app)
-        await demo_pol_pipeline(app)
-        # await demo_pol_history(app)
+        # await demo_pol_pipeline(app)
+        await demo_pol_history(app)
 
 
 if __name__ == '__main__':
