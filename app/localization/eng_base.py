@@ -2342,7 +2342,7 @@ class BaseLocalization(ABC):  # == English
         text = '🥃 <b>Protocol Owned Liquidity</b>\n\n'
 
         curr, prev = event.current, event.previous
-        pol_progress = progressbar(curr.rune_withdrawn, event.mimir_max_deposit, 10)
+        pol_progress = progressbar(curr.rune_value, event.mimir_max_deposit, 10)
 
         str_value_delta_pct, str_value_delta_abs = '', ''
         if prev:
