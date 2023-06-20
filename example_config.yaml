@@ -293,6 +293,8 @@ tx:
     enabled: true
     cooldown: 4d
 
+  show_add_more: false # (!) new
+
 
 price:
   enabled: true
