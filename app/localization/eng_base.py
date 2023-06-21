@@ -636,13 +636,13 @@ class BaseLocalization(ABC):  # == English
               f"{blockchain_components_str}\n" \
               f"{content}"
 
-        if cap:
-            msg += (
-                f"\n\n"
-                f"Liquidity cap is {self._cap_progress_bar(cap)} full now.\n"
-                f'You can add {code(short_rune(cap.how_much_rune_you_can_lp))} '
-                f'({short_dollar(cap.how_much_usd_you_can_lp)}) more.\n'
-            )
+        # if cap:
+        #     msg += (
+        #         f"\n\n"
+        #         f"Liquidity cap is {self._cap_progress_bar(cap)} full now.\n"
+        #         f'You can add {code(short_rune(cap.how_much_rune_you_can_lp))} '
+        #         f'({short_dollar(cap.how_much_usd_you_can_lp)}) more.\n'
+        #     )
 
         return msg.strip()
 

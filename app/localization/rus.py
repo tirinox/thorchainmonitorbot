@@ -460,13 +460,13 @@ class RussianLocalization(BaseLocalization):
               f"{blockchain_components_str}\n" \
               f"{content}"
 
-        if cap:
-            msg += (
-                f"\n"
-                f"Кап ликвидности {self._cap_progress_bar(cap)}.\n"
-                f'Вы можете добавить еще {code(short_rune(cap.how_much_rune_you_can_lp))} {bold(self.R)} '
-                f'({short_dollar(cap.how_much_usd_you_can_lp)}).'
-            )
+        # if cap:
+        #     msg += (
+        #         f"\n"
+        #         f"Кап ликвидности {self._cap_progress_bar(cap)}.\n"
+        #         f'Вы можете добавить еще {code(short_rune(cap.how_much_rune_you_can_lp))} {bold(self.R)} '
+        #         f'({short_dollar(cap.how_much_usd_you_can_lp)}).'
+        #     )
 
         return msg.strip()
 
