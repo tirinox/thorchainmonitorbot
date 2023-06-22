@@ -60,6 +60,7 @@ class LiquidityCapNotifier(INotified):
     # --- RAISE CAPS ---
 
     async def _test_cap_raise(self, new: ThorCapInfo, old: ThorCapInfo):
+        # deprecated...
         if new.cap != old.cap:
             if new.cap > old.cap:
                 await self.send_cap_raised_sticker()

@@ -267,6 +267,15 @@ class RussianLocalization(BaseLocalization):
 
     # ----- CAP ------
 
+    def can_add_more_lp_text(self, cap: ThorCapInfo):
+        if cap.can_add_liquidity:
+            return (
+                f'🤲🏻 Вы можете добавить еще {bold(short_rune(cap.how_much_rune_you_can_lp))} {self.R} '
+                f'или {bold(short_dollar(cap.how_much_usd_you_can_lp))}.'
+            )
+        else:
+            return f"🚫 Вы не можете добавить больше ликвидности. Достигнут предел!"
+
     def notification_text_cap_change(self, old: ThorCapInfo, new: ThorCapInfo):
         up = old.cap < new.cap
         verb = "подрос" if up else "упал"
@@ -276,8 +285,7 @@ class RussianLocalization(BaseLocalization):
             f'{arrow} <b>Кап {verb} с {pretty_money(old.cap)} до {pretty_money(new.cap)}!</b>\n'
             f'Сейчас в пулы помещено <b>{pretty_money(new.pooled_rune)}</b> {self.R}.\n'
             f"{self._cap_progress_bar(new)}\n"
-            f'🤲🏻 Вы можете добавить еще {bold(short_rune(new.how_much_rune_you_can_lp))} {self.R} '
-            f'или {bold(short_dollar(new.how_much_usd_you_can_lp))}.\n'
+            f"{self.can_add_more_lp_text(new)}\n"
             f'Цена {self.R} в пуле <code>{new.price:.3f} $</code>.\n'
             f'{call}'
             f'{self.thor_site()}'
@@ -385,6 +393,8 @@ class RussianLocalization(BaseLocalization):
                 amount_more, asset_more, saver_pb, saver_cap, saver_percent = \
                     self.get_savers_limits(pool_info, usd_per_rune, mimir, tx.asset_amount)
                 saver_cap_part = f'Кап сбережений {saver_pb}. '
+
+                # todo
                 if self.show_add_more and amount_more > 0:
                     saver_cap_part += f'Вы можете добавить еще {pre(short_money(amount_more))} {pre(asset_more)}.'
 
@@ -460,6 +470,7 @@ class RussianLocalization(BaseLocalization):
               f"{blockchain_components_str}\n" \
               f"{content}"
 
+        # todo: cap info
         # if cap:
         #     msg += (
         #         f"\n"
@@ -666,19 +677,11 @@ class RussianLocalization(BaseLocalization):
     TEXT_METRICS_INTRO = 'Что вы хотите узнать?'
 
     def cap_message(self, info: ThorCapInfo):
-        if info.can_add_liquidity:
-            rune_vacant = info.how_much_rune_you_can_lp
-            usd_vacant = rune_vacant * info.price
-            more_info = f'🤲🏻 Можно добавить еще {bold(pretty_money(rune_vacant) + " " + RAIDO_GLYPH)} {self.R} ' \
-                        f'или {bold(pretty_dollar(usd_vacant))}.\n👉🏻 {self.thor_site()}'
-        else:
-            more_info = '🛑 Вы не можете добавлять ликвидность сейчас. Дождитесь уведомления о поднятии капы!'
-
         return (
             f"<b>{pretty_money(info.pooled_rune)} {RAIDO_GLYPH} {self.R}</b> монет из "
             f"<b>{pretty_money(info.cap)} {RAIDO_GLYPH} {self.R}</b> сейчас в пулах.\n"
             f"{self._cap_progress_bar(info)}\n"
-            f"{more_info}\n"
+            f"{self.can_add_more_lp_text(info)}\n"
             f"Цена {bold(self.R)} сейчас <code>{info.price:.3f} $</code>.\n"
         )
 

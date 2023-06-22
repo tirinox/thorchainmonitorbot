@@ -333,19 +333,25 @@ class BaseLocalization(ABC):  # == English
     def show_add_more(self):
         return self.cfg.get('tx.show_add_more', True)
 
+    def can_add_more_lp_text(self, cap: ThorCapInfo):
+        if cap.can_add_liquidity:
+            return (
+                f'🤲🏻 You can add {bold(short_rune(cap.how_much_rune_you_can_lp))} {self.R} '
+                f'or {bold(short_dollar(cap.how_much_usd_you_can_lp))} more liquidity.'
+            )
+        else:
+            return f"🚫 You can't add more liquidity. The cap is reached."
+
     def notification_text_cap_change(self, old: ThorCapInfo, new: ThorCapInfo):
         up = old.cap < new.cap
         verb = "has been increased" if up else "has been decreased"
         arrow = '⬆️' if up else '⚠️ ⬇️'
-        call = "Come on, add more liquidity!\n" if up else ''
         message = (
             f'{arrow} <b>Pool cap {verb} from {short_money(old.cap)} to {short_money(new.cap)}!</b>\n'
             f'Currently <b>{short_money(new.pooled_rune)}</b> {self.R} are in the liquidity pools.\n'
-            f"{self._cap_progress_bar(new)}\n"
-            f'🤲🏻 You can add {bold(short_rune(new.how_much_rune_you_can_lp))} {self.R} '
-            f'or {bold(short_dollar(new.how_much_usd_you_can_lp))}.\n'
+            f'{self._cap_progress_bar(new)}\n'
+            f'{self.can_add_more_lp_text(new)}\n'
             f'The price of {self.R} in the pools is {code(pretty_dollar(new.price))}.\n'
-            f'{call}'
             f'{self.thor_site()}'
         )
         return message
@@ -562,6 +568,8 @@ class BaseLocalization(ABC):  # == English
                 amount_more, asset_more, saver_pb, saver_cap, saver_percent = \
                     self.get_savers_limits(pool_info, usd_per_rune, mimir, tx.asset_amount)
                 saver_cap_part = f'Savers cap is {saver_pb} full. '
+
+                # todo
                 if self.show_add_more and amount_more > 0:
                     saver_cap_part += f'You can add {pre(short_money(amount_more))} {pre(asset_more)} more.'
 
@@ -637,6 +645,7 @@ class BaseLocalization(ABC):  # == English
               f"{blockchain_components_str}\n" \
               f"{content}"
 
+        # todo! cap info
         # if cap:
         #     msg += (
         #         f"\n\n"
@@ -878,19 +887,11 @@ class BaseLocalization(ABC):  # == English
     TEXT_QUEUE_PLOT_TITLE = 'THORChain Queue'
 
     def cap_message(self, info: ThorCapInfo):
-        if info.can_add_liquidity:
-            rune_vacant = info.how_much_rune_you_can_lp
-            usd_vacant = rune_vacant * info.price
-            more_info = f'🤲🏻 You can add {bold(short_rune(rune_vacant))} ' \
-                        f'or {bold(short_dollar(usd_vacant))}.\n👉🏻 {self.thor_site()}'
-        else:
-            more_info = '🛑 You cannot add liquidity at this time. Please wait to be notified. #RAISETHECAPS'
-
         return (
             f"Hello! <b>{short_money(info.pooled_rune)} {self.R}</b> of "
             f"<b>{short_money(info.cap)} {self.R}</b> pooled.\n"
             f"{self._cap_progress_bar(info)}\n"
-            f"{more_info}\n"
+            f"{self.can_add_more_lp_text(info)}\n"
             f"The {bold(self.R)} price is <code>${info.price:.3f}</code> now.\n"
         )
 

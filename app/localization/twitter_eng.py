@@ -53,15 +53,12 @@ class TwitterEnglishLocalization(BaseLocalization):
         up = old.cap < new.cap
         verb = "has been increased" if up else "has been decreased"
         arrow = '⬆️' if up else '⚠️ ⬇️'
-        call = "Come on, add more liquidity!\n" if up else ''
         message = (
             f'{arrow} Pool cap {verb} from {short_money(old.cap)} to {short_money(new.cap)}!\n'
             f'Currently {short_money(new.pooled_rune)} {self.R} are in the liquidity pools.\n'
-            f"{self._cap_progress_bar(new)}\n"
-            f'🤲🏻 You can add {short_money(new.how_much_rune_you_can_lp) + " " + RAIDO_GLYPH} {self.R} '
-            f'or {short_dollar(new.how_much_usd_you_can_lp)}.\n'
-            f'The price of {self.R} in the pools is ${new.price:.3f}.\n'
-            f'{call}'
+            f'{self._cap_progress_bar(new)}\n'
+            f'{self.can_add_more_lp_text(new)}\n'
+            f'The price of {self.R} in the pools is ${new.price:.3f}.'
         )
         return message
 
@@ -78,9 +75,8 @@ class TwitterEnglishLocalization(BaseLocalization):
         return (
             '💡 There is free space in liquidity pools!\n'
             f'{short_money(cap.pooled_rune)} {self.R} of '
-            f"{short_money(cap.cap)} {self.R} max pooled ({format_percent(cap.pooled_rune, cap.cap)})\n"
-            f'🤲🏻 You can add {short_money(cap.how_much_rune_you_can_lp)} {self.R} '
-            f'or {short_dollar(cap.how_much_usd_you_can_lp)}.'
+            f'{short_money(cap.cap)} {self.R} max pooled ({format_percent(cap.pooled_rune, cap.cap)})\n'
+            f'{self.can_add_more_lp_text(cap)}'
         )
 
     @staticmethod
@@ -153,8 +149,11 @@ class TwitterEnglishLocalization(BaseLocalization):
                 amount_more, asset_more, saver_pb, saver_cap, saver_percent = \
                     self.get_savers_limits(pool_info, usd_per_rune, mimir, tx.asset_amount)
                 pool_depth_part = f'Savers cap is {saver_pb} full. '
+
+                # todo
                 if self.show_add_more and amount_more > 0:
                     pool_depth_part += f'You can add {short_money(amount_more)} {asset_more} more.'
+
                 pool_percent_part = f" ({saver_percent:.2f}% of vault)" if saver_percent > self.MIN_PERCENT_TO_SHOW \
                     else ''
             else:
@@ -228,14 +227,6 @@ class TwitterEnglishLocalization(BaseLocalization):
               f"{link}"
 
         return msg.strip()
-
-    def cap_message(self, cap: ThorCapInfo):
-        return (
-            f"\n\n"
-            f"Liq. cap is {format_percent(cap.pooled_rune, cap.cap)} full now.\n"
-            f'You can add {short_money(cap.how_much_rune_you_can_lp)} {self.R} '
-            f'({short_dollar(cap.how_much_usd_you_can_lp)}) more.\n'
-        )
 
     def notification_text_queue_update(self, item_type, is_free, value):
         if is_free:
