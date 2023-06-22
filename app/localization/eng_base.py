@@ -954,7 +954,7 @@ class BaseLocalization(ABC):  # == English
         elif network_security_ratio == 0.0:
             return '🚧 DATA NOT AVAILABLE...'
         else:
-            return "🤬 INSECURE"  # more Rune in pools than bonded
+            return "🤬 POTENTIALLY INSECURE"  # more Rune in pools than bonded
 
     @staticmethod
     def get_network_security_ratio(stats: NetworkStats, nodes: List[NodeInfo]) -> float:
@@ -978,9 +978,9 @@ class BaseLocalization(ABC):  # == English
 
         sec_ratio = self.get_network_security_ratio(new, nodes)
         if sec_ratio > 0:
-            security_pb = progressbar(sec_ratio, 1.0, 12)
+            # security_pb = progressbar(sec_ratio, 1.0, 12)
             security_text = self.network_bond_security_text(sec_ratio)
-            message += f'🕸️ Network is {bold(security_text)} {security_pb}.\n'
+            message += f'🕸️ Network is {bold(security_text)}.\n'
 
         active_nodes_change = bracketify(up_down_arrow(old.active_nodes, new.active_nodes, int_delta=True))
         standby_nodes_change = bracketify(up_down_arrow(old.active_nodes, new.active_nodes, int_delta=True))

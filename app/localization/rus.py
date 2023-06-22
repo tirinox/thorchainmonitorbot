@@ -732,7 +732,7 @@ class RussianLocalization(BaseLocalization):
         elif network_security_ratio == 0:
             return '🚧 ДАННЫЕ НЕ ПОЛУЧЕНЫ...'
         else:
-            return "🤬 НЕБЕЗОПАСНА"
+            return "🤬 ПОТЕНЦИАЛЬНО НЕБЕЗОПАСНА"
 
     def notification_text_network_summary(self,
                                           old: NetworkStats, new: NetworkStats,
@@ -745,9 +745,9 @@ class RussianLocalization(BaseLocalization):
 
         sec_ratio = self.get_network_security_ratio(new, nodes)
         if sec_ratio > 0:
-            security_pb = progressbar(sec_ratio, 1.0, 12)
-            security_text = self.network_bond_security_text(security_pb)
-            message += f'🕸️ Сейчас сеть {bold(security_text)} {security_pb}.\n'
+            # security_pb = progressbar(sec_ratio, 1.0, 12)
+            security_text = self.network_bond_security_text(sec_ratio)
+            message += f'🕸️ Сейчас сеть {bold(security_text)}.\n'
 
         active_nodes_change = bracketify(up_down_arrow(old.active_nodes, new.active_nodes, int_delta=True))
         standby_nodes_change = bracketify(up_down_arrow(old.active_nodes, new.active_nodes, int_delta=True))
