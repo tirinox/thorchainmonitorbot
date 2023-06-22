@@ -959,7 +959,8 @@ class BaseLocalization(ABC):  # == English
 
     @staticmethod
     def get_network_security_ratio(stats: NetworkStats, nodes: List[NodeInfo]) -> float:
-        security_cap = calculate_security_cap_rune(nodes)
+        security_cap = calculate_security_cap_rune(nodes, full=True)
+
         if not security_cap:
             logging.warning('Security cap is zero!')
             return 0
@@ -981,7 +982,7 @@ class BaseLocalization(ABC):  # == English
         if sec_ratio > 0:
             # security_pb = progressbar(sec_ratio, 1.0, 12)
             security_text = self.network_bond_security_text(sec_ratio)
-            message += f'🕸️ Network is {bold(security_text)}.\n'
+            message += f'🕸️ Network is now {bold(security_text)}.\n'
 
         active_nodes_change = bracketify(up_down_arrow(old.active_nodes, new.active_nodes, int_delta=True))
         standby_nodes_change = bracketify(up_down_arrow(old.active_nodes, new.active_nodes, int_delta=True))

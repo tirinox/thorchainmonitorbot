@@ -152,10 +152,12 @@ class NodeListHolder:
         return any(ip_address == n.ip_address for n in self.nodes)
 
 
-def calculate_security_cap_rune(nodes: List[NodeInfo]):
-    cap = get_effective_security_bond(
-        [float_to_thor(node.bond) for node in nodes if node.is_active]
-    )
+def calculate_security_cap_rune(nodes: List[NodeInfo], full=False):
+    active_bonds = [float_to_thor(node.bond) for node in nodes if node.is_active]
+    if full:
+        cap = sum(active_bonds)
+    else:
+        cap = get_effective_security_bond(active_bonds)
     return thor_to_float(cap)
 
 
