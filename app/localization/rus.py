@@ -737,14 +737,17 @@ class RussianLocalization(BaseLocalization):
     def notification_text_network_summary(self,
                                           old: NetworkStats, new: NetworkStats,
                                           market: RuneMarketInfo,
-                                          killed: KilledRuneEntry):
+                                          killed: KilledRuneEntry,
+                                          nodes: List[NodeInfo]):
         message = bold('🌐 THORChain статистика') + '\n'
 
         message += '\n'
 
-        security_pb = progressbar(new.network_security_ratio, 1.0, 12) if new.network_security_ratio != 0 else ''
-        security_text = self.network_bond_security_text(new.network_security_ratio)
-        message += f'🕸️ Сейчас сеть {bold(security_text)} {security_pb}.\n'
+        sec_ratio = self.get_network_security_ratio(new, nodes)
+        if sec_ratio > 0:
+            security_pb = progressbar(sec_ratio, 1.0, 12)
+            security_text = self.network_bond_security_text(security_pb)
+            message += f'🕸️ Сейчас сеть {bold(security_text)} {security_pb}.\n'
 
         active_nodes_change = bracketify(up_down_arrow(old.active_nodes, new.active_nodes, int_delta=True))
         standby_nodes_change = bracketify(up_down_arrow(old.active_nodes, new.active_nodes, int_delta=True))

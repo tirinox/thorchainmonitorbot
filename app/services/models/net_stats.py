@@ -98,15 +98,10 @@ class NetworkStats(BaseModelMixin):
         return self.synth_volume_24h * self.usd_per_rune
 
     @property
-    def network_security_ratio(self):
-        divisor = self.total_active_bond_rune + self.total_rune_pooled
-        return self.total_active_bond_rune / divisor if divisor else 0.0
-
-    @property
     def total_nodes(self):
         return self.active_nodes + self.standby_nodes
 
     @property
     def is_ok(self):
         return self.total_rune_pooled > 0 and self.active_pool_count > 0 \
-               and self.active_nodes > 0 and self.total_active_bond_rune > 0
+            and self.active_nodes > 0 and self.total_active_bond_rune > 0

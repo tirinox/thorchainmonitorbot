@@ -1,7 +1,7 @@
 from localization.manager import BaseLocalization
-from services.lib.delegates import INotified
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import DAY, parse_timespan_to_seconds, MINUTE
+from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
 from services.models.net_stats import NetworkStats
@@ -32,16 +32,19 @@ class NetworkStatsNotifier(INotified):
         await self.series.add(info=new_info.as_json_string)
 
         if await self.notify_cd.can_do():
-            old_info = await self.get_previous_stats(ago=self.notify_cd.cooldown)  # since last time notified
-
-            # fixme: debug
-            # old_info = await self._dbg_get_other_info()
-
-            rune_market_info: RuneMarketInfo = await self.deps.rune_market_fetcher.get_rune_market_info()
-            await self._notify(old_info, new_info, rune_market_info)
+            await self.notify_right_now(new_info)
             await self.notify_cd.do()
 
         await self.series.trim_oldest(self.MAX_POINTS)
+
+    async def notify_right_now(self, new_info: NetworkStats):
+        old_info = await self.get_previous_stats(ago=self.notify_cd.cooldown)  # since last time notified
+
+        # fixme: debug
+        # old_info = await self._dbg_get_other_info()
+
+        rune_market_info: RuneMarketInfo = await self.deps.rune_market_fetcher.get_rune_market_info()
+        await self._notify(old_info, new_info, rune_market_info)
 
     async def clear_cd(self):
         await self.notify_cd.clear()
@@ -61,7 +64,8 @@ class NetworkStatsNotifier(INotified):
         await self.deps.broadcaster.notify_preconfigured_channels(
             BaseLocalization.notification_text_network_summary,
             old, new, rune_market_info,
-            self.deps.killed_rune
+            self.deps.killed_rune,
+            self.deps.node_holder.active_nodes
         )
 
     async def _dbg_get_other_info(self):

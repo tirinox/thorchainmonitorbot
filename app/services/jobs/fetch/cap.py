@@ -1,10 +1,9 @@
-from typing import List
-
 from services.jobs.fetch.base import BaseFetcher
 from services.lib.constants import thor_to_float
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.midgard.urlgen import free_url_gen
+from services.lib.thor_logic import get_effective_security_bond
 from services.models.cap_info import ThorCapInfo
 
 
@@ -25,27 +24,15 @@ class CapInfoFetcher(BaseFetcher):
         self.last_network_info = await self.deps.midgard_connector.request(free_url_gen.url_network())
         return self.last_network_info
 
-    @staticmethod
-    def calculate_effective_security_bond(node_bonds: List[int]):
-        node_bonds.sort()
-        t = len(node_bonds) * 2 // 3
-        if len(node_bonds) % 3 == 0:
-            t -= 1
-
-        amt = 0
-        for i, bond in enumerate(node_bonds):
-            if i <= t:
-                amt += thor_to_float(bond)
-            else:
-                break
-        return amt
-
     async def get_total_current_pooled_rune_and_cap(self):
         networks_resp = await self.get_network_info()
         lp_rune = networks_resp.get('totalPooledRune', 0)
         bonds = networks_resp.get('activeBonds', [])
-        cap_eq_bond = self.calculate_effective_security_bond(bonds)
-        return int(thor_to_float(lp_rune)), cap_eq_bond
+        cap_eq_bond = get_effective_security_bond(bonds)
+        return (
+            int(thor_to_float(lp_rune)),
+            int(thor_to_float(cap_eq_bond))
+        )
 
     async def fetch(self) -> ThorCapInfo:
         current_lp_rune, max_lp_rune = await self.get_total_current_pooled_rune_and_cap()
@@ -58,6 +45,10 @@ class CapInfoFetcher(BaseFetcher):
 
         price = self.deps.price_holder.usd_per_rune
 
-        r = ThorCapInfo(cap=max_lp_rune, pooled_rune=current_lp_rune, price=price)
+        r = ThorCapInfo(
+            cap=int(max_lp_rune),
+            pooled_rune=current_lp_rune,
+            price=price
+        )
         self.logger.info(f"ThorInfo got the following {r}")
         return r

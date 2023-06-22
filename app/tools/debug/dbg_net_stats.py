@@ -16,6 +16,7 @@ from services.lib.texts import up_down_arrow
 from services.lib.utils import setup_logs, load_pickle, save_pickle
 from services.models.net_stats import NetworkStats
 from services.models.pool_info import PoolInfoMap, parse_thor_pools
+from services.notify.types.stats_notify import NetworkStatsNotifier
 from tools.lib.lp_common import LpAppFramework
 
 CACHE_NET_STATS = True
@@ -39,7 +40,8 @@ def randomize_all_fields(old: NetworkStats, dev=10):
 
 async def print_message(old_info: NetworkStats, new_info: NetworkStats, deps: DepContainer, post_tg=True, loc=None):
     loc: BaseLocalization = loc or deps.loc_man.default
-    message = loc.notification_text_network_summary(old_info, new_info, deps.killed_rune)
+    message = loc.notification_text_network_summary(old_info, new_info, deps.killed_rune,
+                                                    deps.node_holder.active_nodes)
     print('OLD:')
     print(old_info)
     print('-' * 100)
@@ -73,7 +75,7 @@ class MockPPF(PoolFetcher):
             return pool_map
 
 
-async def test_pool_consistency():
+async def demo_pool_consistency():
     lpgen = LpAppFramework()
 
     async with lpgen:
@@ -95,7 +97,7 @@ async def test_pool_consistency():
     # await print_message(old_info, new_info, lpgen.deps, post_tg=False, loc=lpgen.deps.loc_man.get_from_lang('eng'))
 
 
-async def test_generic_pool_message():
+async def demo_generic_pool_message():
     lpgen = LpAppFramework()
 
     new_info = load_pickle(CACHE_NET_STATS_FILE) if CACHE_NET_STATS else None
@@ -122,7 +124,7 @@ def upd(old_value, new_value, smiley=False, more_is_better=True, same_result='',
         f'{old_value=}, {new_value=}, "{up_down_arrow(old_value, new_value, smiley, more_is_better, same_result, int_delta, money_delta, percent_delta, signed, money_prefix)}"')
 
 
-def test_upd():
+def demo_upd():
     upd(10, 10)
     upd(10, 15, int_delta=True, smiley=True)
     upd(10, 15, int_delta=True)
@@ -136,11 +138,24 @@ def test_upd():
     upd(0, 10, int_delta=True, more_is_better=False, signed=False)  # no old = ignore
 
 
+async def demo_pool_stats():
+    lpgen = LpAppFramework()
+
+    async with lpgen:
+        fetcher_stats = NetworkStatisticsFetcher(lpgen.deps)
+        new_info = await fetcher_stats.fetch()
+
+        notifier_stats = NetworkStatsNotifier(lpgen.deps)
+
+        await notifier_stats.notify_right_now(new_info)
+
+
 async def main():
-    await test_generic_pool_message()
+    # await demo_generic_pool_message()
+    await demo_pool_stats()
 
 
 if __name__ == "__main__":
-    # test_upd()
+    # demo_upd()
     setup_logs(logging.INFO)
     asyncio.run(main())

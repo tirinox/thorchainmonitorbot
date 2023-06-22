@@ -172,10 +172,16 @@ class MetricsDialog(BaseDialog):
             return
 
         rune_market_info: RuneMarketInfo = await self.deps.rune_market_fetcher.get_rune_market_info()
-        await message.answer(loc.notification_text_network_summary(
-            old_info, new_info, rune_market_info, self.deps.killed_rune),
+        await message.answer(
+            loc.notification_text_network_summary(
+                old_info, new_info,
+                rune_market_info,
+                self.deps.killed_rune,
+                self.deps.node_holder.active_nodes
+            ),
             disable_web_page_preview=True,
-            disable_notification=True)
+            disable_notification=True
+        )
 
     async def show_node_list(self, message: Message):
         loading_message = await self.show_loading(message)

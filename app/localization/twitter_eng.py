@@ -343,13 +343,16 @@ class TwitterEnglishLocalization(BaseLocalization):
     def notification_text_network_summary(self,
                                           old: NetworkStats, new: NetworkStats,
                                           market: RuneMarketInfo,
-                                          killed: KilledRuneEntry):
+                                          killed: KilledRuneEntry,
+                                          nodes: List[NodeInfo]):
         parts = []
 
         message = '🌐 THORChain stats\n'
 
-        security_text = self.network_bond_security_text(new.network_security_ratio)
-        message += f'Network is {security_text}.\n'
+        sec_ratio = self.get_network_security_ratio(new, nodes)
+        if sec_ratio > 0:
+            security_text = self.network_bond_security_text(sec_ratio)
+            message += f'Network is {security_text}.\n'
 
         active_nodes_change = bracketify_spaced(up_down_arrow(old.active_nodes, new.active_nodes, int_delta=True))
         standby_nodes_change = bracketify_spaced(up_down_arrow(old.active_nodes, new.active_nodes, int_delta=True))

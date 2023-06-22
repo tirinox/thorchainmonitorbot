@@ -1,3 +1,4 @@
+import logging
 from abc import ABC
 from datetime import datetime
 from math import ceil
@@ -33,7 +34,7 @@ from services.models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVot
 from services.models.mimir_naming import MimirUnits, NEXT_CHAIN_VOTING_MAP
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEventType, NodeEvent, \
-    EventBlockHeight, EventDataSlash
+    EventBlockHeight, EventDataSlash, calculate_security_cap_rune
 from services.models.pol import EventPOL
 from services.models.pool_info import PoolInfo, PoolChanges, PoolMapPair
 from services.models.price import PriceReport, RuneMarketInfo
@@ -942,30 +943,44 @@ class BaseLocalization(ABC):  # == English
     # ------- NETWORK SUMMARY -------
 
     def network_bond_security_text(self, network_security_ratio):
-        if network_security_ratio > 0.9:
+        if network_security_ratio > 0.9:  # almost no Rune in pools
             return "🥱 INEFFICIENT"
         elif 0.9 >= network_security_ratio > 0.75:
             return "🥸 OVERBONDED"
         elif 0.75 >= network_security_ratio >= 0.6:
             return "⚡ OPTIMAL"
-        elif 0.6 > network_security_ratio >= 0.5:
+        elif 0.6 > network_security_ratio >= 0.5:  # 0.5 = the same amount of Rune in pools and bonded
             return "🤢 UNDERBONDED"
         elif network_security_ratio == 0.0:
             return '🚧 DATA NOT AVAILABLE...'
         else:
-            return "🤬 INSECURE"
+            return "🤬 INSECURE"  # more Rune in pools than bonded
+
+    @staticmethod
+    def get_network_security_ratio(stats: NetworkStats, nodes: List[NodeInfo]) -> float:
+        security_cap = calculate_security_cap_rune(nodes)
+        if not security_cap:
+            logging.warning('Security cap is zero!')
+            return 0
+
+        divisor = security_cap + stats.total_rune_pooled
+
+        return security_cap / divisor if divisor else 0
 
     def notification_text_network_summary(self,
                                           old: NetworkStats, new: NetworkStats,
                                           market: RuneMarketInfo,
-                                          killed: KilledRuneEntry):
+                                          killed: KilledRuneEntry,
+                                          nodes: List[NodeInfo]):
         message = bold('🌐 THORChain stats') + '\n'
 
         message += '\n'
 
-        security_pb = progressbar(new.network_security_ratio, 1.0, 12)
-        security_text = self.network_bond_security_text(new.network_security_ratio)
-        message += f'🕸️ Network is {bold(security_text)} {security_pb}.\n'
+        sec_ratio = self.get_network_security_ratio(new, nodes)
+        if sec_ratio > 0:
+            security_pb = progressbar(sec_ratio, 1.0, 12)
+            security_text = self.network_bond_security_text(sec_ratio)
+            message += f'🕸️ Network is {bold(security_text)} {security_pb}.\n'
 
         active_nodes_change = bracketify(up_down_arrow(old.active_nodes, new.active_nodes, int_delta=True))
         standby_nodes_change = bracketify(up_down_arrow(old.active_nodes, new.active_nodes, int_delta=True))

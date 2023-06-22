@@ -85,7 +85,11 @@ class InlineBotHandlerDialog(BaseDialog):
 
         loc: BaseLocalization = self.get_localization()
         rune_market_info: RuneMarketInfo = await self.deps.rune_market_fetcher.get_rune_market_info()
-        text = loc.notification_text_network_summary(old_info, new_info, rune_market_info, self.deps.killed_rune)
+        text = loc.notification_text_network_summary(
+            old_info, new_info,
+            rune_market_info, self.deps.killed_rune,
+            self.deps.node_holder.active_nodes
+        )
 
         await self._answer_results(inline_query, [
             InlineQueryResultArticle(id=q_ident,

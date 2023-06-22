@@ -10,9 +10,10 @@ from typing import List, Dict, NamedTuple, Optional, Tuple, Any
 
 from semver import VersionInfo
 
-from services.lib.constants import thor_to_float
+from services.lib.constants import thor_to_float, float_to_thor
 from services.lib.date_utils import now_ts
 from services.lib.texts import find_country_emoji
+from services.lib.thor_logic import get_effective_security_bond
 from services.models.base import BaseModelMixin
 from services.models.thormon import ThorMonNode
 
@@ -149,6 +150,13 @@ class NodeListHolder:
 
     def is_ip_nodes(self, ip_address):
         return any(ip_address == n.ip_address for n in self.nodes)
+
+
+def calculate_security_cap_rune(nodes: List[NodeInfo]):
+    cap = get_effective_security_bond(
+        [float_to_thor(node.bond) for node in nodes if node.is_active]
+    )
+    return thor_to_float(cap)
 
 
 @dataclass
