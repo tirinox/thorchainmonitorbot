@@ -68,9 +68,9 @@ class SaversPictureGenerator(BasePictureGenerator):
         font_asset_regular = r.fonts.get_font(40)
         font_column = r.fonts.get_font(36)
 
-        key_metrics_font = r.fonts.get_font(36)
+        key_metrics_font = r.fonts.get_font(39)
         key_metrics_v_font = r.fonts.get_font(48, r.fonts.FONT_BOLD)
-        changed_font = r.fonts.get_font(32)
+        changed_font = r.fonts.get_font(27)
 
         def extract_value(data, key, args):
             current_value = getattr(data, key)
@@ -80,7 +80,7 @@ class SaversPictureGenerator(BasePictureGenerator):
             current_value = extract_value(cur_data, key, extra_args)
 
             draw.text(key_metric_xy(index), name, font=key_metrics_font, fill='#aaa', anchor='mm')
-            draw.text(key_metric_xy(index, dy=23 * 2),
+            draw.text(key_metric_xy(index, dy=46),
                       formatter(current_value),
                       font=key_metrics_v_font, fill=TC_WHITE, anchor='mm')
 
@@ -88,7 +88,7 @@ class SaversPictureGenerator(BasePictureGenerator):
                 prev_value = extract_value(prev_data, key, extra_args)
                 delta = current_value - prev_value
                 if abs(delta) > 0.001:
-                    draw.text(key_metric_xy(index, dy=46 * 2),
+                    draw.text(key_metric_xy(index, dy=92),
                               formatter(delta, signed=True),
                               font=changed_font,
                               fill=result_color(delta),
@@ -155,7 +155,7 @@ class SaversPictureGenerator(BasePictureGenerator):
                       fill=TC_WHITE, font=font, anchor='lm')
 
             if significant:
-                draw.text((_x, _y + 26),
+                draw.text((_x, _y + 23),
                           formatter(_delta, signed=True, **kwargs),
                           fill=result_color(_delta), font=changed_font, anchor='lm')
 
