@@ -16,6 +16,9 @@ class SaversPictureGenerator(BasePictureGenerator):
     LINE_COLOR = '#41484d'
     COLUMN_COLOR = '#eee'
 
+    WIDTH = 2048
+    HEIGHT = 1200
+
     def __init__(self, loc: BaseLocalization, event: EventSaverStats):
         super().__init__(loc)
         self.bg = Image.open(self.BG_FILE)
@@ -48,26 +51,26 @@ class SaversPictureGenerator(BasePictureGenerator):
         draw = ImageDraw.Draw(image)
 
         # title
-        draw.text((388, 56),
+        draw.text((388 * 2, 56 * 2),
                   self.loc.TEXT_PIC_SAVERS_VAULTS,
                   fill=TC_WHITE, anchor='lm',
-                  font=r.fonts.get_font(32))
+                  font=r.fonts.get_font(64))
 
         # key metrics:
 
-        key_metrics_y = 115
+        key_metrics_y = 115 * 2
         n_key_metrics = 5
 
         def key_metric_xy(i, dx=0, dy=0):
             return dx + self.WIDTH / (n_key_metrics + 1) * i, dy + key_metrics_y
 
-        font_asset_bold = r.fonts.get_font(20, r.fonts.FONT_BOLD)
-        font_asset_regular = r.fonts.get_font(20)
-        font_column = r.fonts.get_font(18)
+        font_asset_bold = r.fonts.get_font(40, r.fonts.FONT_BOLD)
+        font_asset_regular = r.fonts.get_font(40)
+        font_column = r.fonts.get_font(36)
 
-        key_metrics_font = r.fonts.get_font(18)
-        key_metrics_v_font = r.fonts.get_font(24, r.fonts.FONT_BOLD)
-        changed_font = r.fonts.get_font(16)
+        key_metrics_font = r.fonts.get_font(36)
+        key_metrics_v_font = r.fonts.get_font(48, r.fonts.FONT_BOLD)
+        changed_font = r.fonts.get_font(32)
 
         def extract_value(data, key, args):
             current_value = getattr(data, key)
@@ -77,7 +80,7 @@ class SaversPictureGenerator(BasePictureGenerator):
             current_value = extract_value(cur_data, key, extra_args)
 
             draw.text(key_metric_xy(index), name, font=key_metrics_font, fill='#aaa', anchor='mm')
-            draw.text(key_metric_xy(index, dy=23),
+            draw.text(key_metric_xy(index, dy=23 * 2),
                       formatter(current_value),
                       font=key_metrics_v_font, fill=TC_WHITE, anchor='mm')
 
@@ -85,7 +88,7 @@ class SaversPictureGenerator(BasePictureGenerator):
                 prev_value = extract_value(prev_data, key, extra_args)
                 delta = current_value - prev_value
                 if abs(delta) > 0.001:
-                    draw.text(key_metric_xy(index, dy=46),
+                    draw.text(key_metric_xy(index, dy=46 * 2),
                               formatter(delta, signed=True),
                               font=changed_font,
                               fill=result_color(delta),
@@ -102,19 +105,19 @@ class SaversPictureGenerator(BasePictureGenerator):
                         extra_args=[pool_map])
 
         # table:
-        table_x = 46
-        y, dy = 242, 44
+        table_x = 46 * 2
+        y, dy = 242 * 2, 44 * 2
         y_start = y
-        logo_size = 32
+        logo_size = 32 * 2
 
-        asset_x = 42 + table_x
-        dollar_x = 200 + table_x
-        apr_x = 300 + table_x
-        savers_n_x = 400 + table_x
-        filled_x = 480 + table_x
-        earned_x = 680 + table_x
+        asset_x = 42 * 2 + table_x
+        dollar_x = 200 * 2 + table_x
+        apr_x = 300 * 2 + table_x
+        savers_n_x = 400 * 2 + table_x
+        filled_x = 480 * 2 + table_x
+        earned_x = 680 * 2 + table_x
 
-        column_y = y_start - 30
+        column_y = y_start - 60
 
         draw.text((asset_x, column_y), self.loc.TEXT_PIC_SAVERS_ASSET,
                   fill=self.COLUMN_COLOR, font=font_column, anchor='lb')
@@ -130,7 +133,7 @@ class SaversPictureGenerator(BasePictureGenerator):
                   fill=self.COLUMN_COLOR, font=font_column, anchor='lb')
 
         h_line_width, v_line_width = 1, 1
-        fill_pb_width = 100
+        fill_pb_width = 200
 
         def draw_h_line():
             draw.line((table_x, y - dy // 2, self.WIDTH - table_x, y - dy // 2), fill=self.LINE_COLOR,
@@ -145,14 +148,14 @@ class SaversPictureGenerator(BasePictureGenerator):
 
             significant = _delta and (abs(_delta) > abs(v) * tolerance * 0.01)  # if change > tolerance %
 
-            _dy = -9 if significant else 0
+            _dy = -18 if significant else 0
             font = font_asset_bold if kwargs.get('bold', True) else font_asset_regular
             draw.text((_x, _y + _dy),
                       formatter(v, **kwargs),
                       fill=TC_WHITE, font=font, anchor='lm')
 
             if significant:
-                draw.text((_x, _y + 13),
+                draw.text((_x, _y + 26),
                           formatter(_delta, signed=True, **kwargs),
                           fill=result_color(_delta), font=changed_font, anchor='lm')
 
@@ -180,12 +183,12 @@ class SaversPictureGenerator(BasePictureGenerator):
                         formatter=short_money, tolerance=0.0,
                         integer=True)
 
-            draw.text((filled_x + fill_pb_width + 17, y - 2),
+            draw.text((filled_x + fill_pb_width + 34, y - 4),
                       f"{short_money(vault.percent_of_cap_filled, integer=True)}%",
                       fill=TC_WHITE, font=font_asset_bold, anchor='lm')
 
             line_progress_bar(draw, vault.percent_of_cap_filled / 100.0,
-                              ((filled_x, y - 7), (fill_pb_width, 14)), line_width=2, gap=2)
+                              ((filled_x, y - 14), (fill_pb_width, 28)), line_width=2, gap=2)
 
             asset_earned = vault.calc_asset_earned(pool_map)
             usd_earned = vault.runes_earned * usd_per_rune
@@ -203,7 +206,7 @@ class SaversPictureGenerator(BasePictureGenerator):
         y_v_line_start = y_start - dy // 2
         y_end = y - dy // 2
         for v_line_x in [dollar_x, apr_x, savers_n_x, filled_x, earned_x]:
-            x = v_line_x - 17
+            x = v_line_x - 34
             draw.line((x, y_v_line_start, x, y_end), fill=self.LINE_COLOR, width=v_line_width)
 
         return image
