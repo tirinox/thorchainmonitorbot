@@ -183,9 +183,17 @@ class TxFetcher(BaseFetcher):
         number_of_pending_txs_this_tick = 0
         cleared_pending_hashes = set()
 
-        for future in asyncio.as_completed(futures):
+        # future_tasks = asyncio.as_completed(futures)  # parallel
+        # fixme: as we use 9R servers, we have to run sequential fetching in order to avoid 503 errors
+        future_tasks = futures  # sequential
+
+        for future in future_tasks:
             # get a batch of TXs
             results = await future
+
+            if results is None:
+                self.logger.warning('Got None from Midgard. For now, we just skip it.')
+                continue
 
             # estimate "top_block_height"
             deepest_block_height, top_block_height = self._estimate_min_max_height(

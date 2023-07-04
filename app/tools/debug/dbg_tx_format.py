@@ -341,7 +341,7 @@ async def main():
     # await midgard_test_kill_switch(app)
     # await refund_full_rune(app)
     # await demo_midgard_test_large_ilp(app)
-    # await demo_full_tx_pipeline(app, announce=True)
+    await demo_full_tx_pipeline(app, announce=True)
     # await demo_test_savers_vaults(app)
     # await demo_aggr_aff_2(app)
     # await demo_test_aff_add_liq(app)
@@ -356,7 +356,7 @@ async def main():
     # await demo_verify_tx_scanner_in_the_past(app)
     # await find_affiliate_txs(app, 1, (ThorTxType.TYPE_SWAP,))
     # await demo_find_aggregator_error(app)
-    await demo_find_missed_txs_swap(app)
+    # await demo_find_missed_txs_swap(app)
 
 
 if __name__ == '__main__':
