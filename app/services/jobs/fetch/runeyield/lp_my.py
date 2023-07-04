@@ -25,6 +25,8 @@ HeightToAllPools = Dict[int, PoolInfoMap]
 
 DEFAULT_RUNE_PRICE = 1.0  # USD
 
+BLOCK_ILP_DEPRECATION = 9_450_000
+
 
 class HomebrewLPConnector(AsgardConsumerConnectorBase):
     def __init__(self, deps: DepContainer):
@@ -162,6 +164,15 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             top = counter.most_common(1)[0][0]
             return top
         return ''
+
+    @staticmethod
+    def is_lp_grandfathered(txs: List[ThorTx], pool: str = '') -> bool:
+        for tx in txs:
+            if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
+                if pool and tx.first_pool == pool:
+                    if tx.height_int >= BLOCK_ILP_DEPRECATION:
+                        return True
+        return False
 
     @staticmethod
     def _apply_pool_filter(txs: List[ThorTx], pool_filter=None) -> List[ThorTx]:
@@ -571,7 +582,10 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         last_deposit_height = self._get_last_deposit_height(txs)
 
         if last_deposit_height <= 0 and pool.is_enabled:
-            return ILProtectionReport()
+            return ILProtectionReport(corrected_pool=pool)
+
+        if self.is_lp_grandfathered(txs, pool.asset):
+            return ILProtectionReport(status=ILProtectionReport.STATUS_DISABLED, corrected_pool=pool)
 
         protection_progress, protection_status = self.get_il_protection_progress(last_block, last_deposit_height)
 
