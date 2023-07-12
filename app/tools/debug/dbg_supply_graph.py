@@ -103,10 +103,11 @@ async def run():
 
         await app.deps.pool_fetcher.fetch()
 
-        pic, _ = await get_supply_pic(app)
-        save_and_show_pic(pic, show=True, name='supply')
+        # pic, _ = await get_supply_pic(app)
+        # save_and_show_pic(pic, show=True, name='supply')
         # await post_supply_to_discord(app, pic)
         # await my_demo_market_info(app)
+        await debug_get_rune_market_data(app)
 
 
 if __name__ == '__main__':

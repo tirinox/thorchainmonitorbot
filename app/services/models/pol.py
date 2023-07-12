@@ -13,6 +13,9 @@ class POLState(NamedTuple):
 
     @property
     def is_zero(self):
+        if not self.value:
+            return True
+
         return (not self.value.value or self.rune_value == 0) and \
             (self.rune_deposited == 0 and self.rune_withdrawn == 0)
 

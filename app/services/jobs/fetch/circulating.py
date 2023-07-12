@@ -224,8 +224,11 @@ class RuneCirculatingSupplyFetcher(WithLogger):
 
     @staticmethod
     def get_pure_rune_from_thor_array(arr):
-        thor_rune = next(item['amount'] for item in arr if item['denom'] == 'rune')
-        return int(int(thor_rune) / 10 ** BEP2_RUNE_DECIMALS)
+        if arr:
+            thor_rune = next(item['amount'] for item in arr if item['denom'] == 'rune')
+            return int(int(thor_rune) / 10 ** BEP2_RUNE_DECIMALS)
+        else:
+            return 0
 
     async def get_thor_rune_total_supply(self):
         url_supply = f'{self.thor_node}/cosmos/bank/v1beta1/supply'
