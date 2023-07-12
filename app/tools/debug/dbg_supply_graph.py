@@ -23,14 +23,14 @@ from tools.debug.dbg_discord import debug_prepare_discord_bot
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
 
-@json_cached_to_file_async("../temp/killed_rune.json")
+@json_cached_to_file_async("../temp/killed_rune_2.json")
 async def get_killed_rune(app: LpAppFramework):
     krf = KilledRuneFetcher(app.deps)
     data = await krf.fetch()
     return data[0].__dict__
 
 
-@json_cached_to_file_async("../temp/supply_info.json")
+@json_cached_to_file_async("../temp/supply_info_2.json")
 async def get_rune_supply(app: LpAppFramework):
     rune_market_info: RuneMarketInfo = await app.deps.rune_market_fetcher.get_rune_market_info()
     return dataclasses.asdict(rune_market_info.supply_info)
@@ -104,10 +104,13 @@ async def run():
 
         await app.deps.pool_fetcher.fetch()
 
-        # pic, _ = await get_supply_pic(app)
-        # save_and_show_pic(pic, show=True, name='supply')
+        pic, _ = await get_supply_pic(app)
+        save_and_show_pic(pic, show=True, name='supply')
+
         # await post_supply_to_discord(app, pic)
-        await my_demo_market_info(app)
+
+        # await my_demo_market_info(app)
+
         # await debug_get_rune_market_data(app)
 
 

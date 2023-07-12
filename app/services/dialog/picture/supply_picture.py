@@ -139,8 +139,8 @@ class SupplyPictureGenerator(BasePictureGenerator):
     def _plot(self):
         outer_rect = Rect.from_frame(50, 110, 50, 80, self.WIDTH, self.HEIGHT)
 
-        bep2_full = self.supply.bep2_rune.circulating
-        erc20_full = self.supply.erc20_rune.circulating
+        bep2_full = self.supply.bep2_rune.total
+        erc20_full = self.supply.erc20_rune.total
         old_full = bep2_full + erc20_full
 
         ((locked_item, self.locked_rect), (circ_item, self.circulating_rect), (old_item, self.old_rect)) = self._pack([
@@ -182,12 +182,14 @@ class SupplyPictureGenerator(BasePictureGenerator):
         killed_color = self.PALETTE[ThorRealms.KILLED]
 
         bep2_left = bep2_full - bep2_killed
+        bep2_left = max(0.0, bep2_left)
         self._pack([
             PackItem(vertical_text(ThorRealms.BEP2), bep2_left, self.PALETTE[ThorRealms.BEP2], 'y'),
             PackItem('', bep2_killed, killed_color, 'y'),
         ], bep2_rect, align=DrawRectPacker.V)
 
         erc20_left = erc20_full - erc20_killed
+        erc20_left = max(0.0, erc20_left)
         self._pack([
             PackItem(vertical_text(ThorRealms.ERC20), erc20_left, self.PALETTE[ThorRealms.ERC20], 'y'),
             PackItem('', erc20_killed, killed_color, 'y'),
