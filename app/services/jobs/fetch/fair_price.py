@@ -95,6 +95,6 @@ class RuneMarketInfoFetcher(WithLogger):
             if result.is_valid:
                 self._prev_result = result
             return result
-        except Exception:
-            self.logger.exception('Failed to get fresh Rune market info!', exc_info=True)
+        except Exception as e:
+            self.logger.exception(f'Failed to get fresh Rune market info! {e!r}', exc_info=True)
             return self._prev_result

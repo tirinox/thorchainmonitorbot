@@ -1,6 +1,7 @@
 import asyncio
 import dataclasses
 import os
+from pprint import pprint
 
 from localization.eng_base import BaseLocalization
 from localization.languages import Language
@@ -87,7 +88,7 @@ async def post_supply_to_discord(app: LpAppFramework, pic):
 async def my_demo_market_info(app: LpAppFramework):
     rmif = RuneMarketInfoFetcher(app.deps)
     info = await rmif.get_rune_market_info()
-    print(info)
+    pprint(info)
 
 
 async def run():
@@ -106,8 +107,8 @@ async def run():
         # pic, _ = await get_supply_pic(app)
         # save_and_show_pic(pic, show=True, name='supply')
         # await post_supply_to_discord(app, pic)
-        # await my_demo_market_info(app)
-        await debug_get_rune_market_data(app)
+        await my_demo_market_info(app)
+        # await debug_get_rune_market_data(app)
 
 
 if __name__ == '__main__':

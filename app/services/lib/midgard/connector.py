@@ -51,4 +51,9 @@ class MidgardConnector:
             return self.ERROR_RESPONSE
 
     async def request(self, path: str):
-        return await self._request_json_from_midgard_by_ip(self.public_url, path)
+        result = await self._request_json_from_midgard_by_ip(self.public_url, path)
+        if isinstance(result, str):
+            self.logger.error(f'Probably there is an issue. Midgard has returned a plain string: {result!r} '
+                              f'for the path {path!r}')
+        else:
+            return result

@@ -32,7 +32,14 @@ class RuneMarketInfo:
 
     @property
     def is_valid(self):
-        return self.circulating > 0 and self.fair_price > 0 and self.cex_price > 0 and self.pool_rune_price > 0
+        return (self.circulating > 0
+                and self.fair_price > 0
+                and self.cex_price > 0
+                and self.pool_rune_price > 0
+                and self.pools
+                and self.supply_info
+                and self.supply_info.overall.total > 0
+                )
 
     @property
     def divergence_percent(self):
