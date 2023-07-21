@@ -16,9 +16,9 @@ def aggr() -> AggregatorResolver:
 
 
 def test_loading(aggr):
-    assert len(aggr) == 18
-    assert len(aggr.by_chain) == 2
-    assert set(aggr.by_chain.keys()) == {Chains.ETH, Chains.AVAX}
+    assert len(aggr) == 40
+    assert len(aggr.by_chain) == 3
+    assert set(aggr.by_chain.keys()) == {Chains.ETH, Chains.AVAX, Chains.BSC}
 
 
 @pytest.mark.parametrize(('address', 'name'), [
