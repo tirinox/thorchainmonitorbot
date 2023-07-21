@@ -39,6 +39,7 @@ ETH_USDT_SYMBOL = 'ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7'
 ETH_USDC_SYMBOL = 'ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48'
 ETH_DAI_SYMBOL = 'ETH.DAI-0X6B175474E89094C44DA98B954EEDEAC495271D0F'
 AVAX_USDC_SYMBOL = 'AVAX.USDC-0XB97EF9EF8734C71904D8002F8B6BC66DD9C48A6E'
+BSC_BUSD_SYMBOL = 'BSC.BUSD-0XE9E7CEA3DEDCA5984780BAFC599BD69ADD087D56'
 
 DOGE_SYMBOL = 'DOGE.DOGE'
 
@@ -48,7 +49,7 @@ STABLE_COIN_POOLS_ALL = (
     BNB_BUSD_SYMBOL, BNB_BUSD_TEST_SYMBOL, BNB_BUSD_TEST2_SYMBOL,
     BNB_USDT_SYMBOL, BNB_USDT_TEST_SYMBOL,
     ETH_USDT_TEST_SYMBOL, ETH_USDT_SYMBOL, ETH_DAI_SYMBOL,
-    ETH_USDC_SYMBOL, AVAX_USDC_SYMBOL,
+    ETH_USDC_SYMBOL, AVAX_USDC_SYMBOL, BSC_BUSD_SYMBOL,
 )
 
 STABLE_COIN_BNB_POOLS = (
@@ -100,8 +101,9 @@ class Chains:
     TERRA = 'TERRA'  # bye-bye
     AVAX = 'AVAX'
     ATOM = 'GAIA'
+    BSC = 'BSC'
 
-    META_ALL = (THOR, ETH, BTC, BCH, LTC, BNB, DOGE, AVAX, ATOM)
+    META_ALL = (THOR, ETH, BTC, BCH, LTC, BNB, DOGE, AVAX, ATOM, BSC)
 
     @staticmethod
     def detect_chain(orig_address: str) -> str:
@@ -140,6 +142,8 @@ class Chains:
             return 6.85
         elif chain == Chains.AVAX:
             return 3.0
+        elif chain == Chains.BSC:
+            return 3.0
         return 0.01
 
     @staticmethod
@@ -148,6 +152,8 @@ class Chains:
             return 0x1
         elif chain == Chains.AVAX:
             return 43114
+        elif chain == Chains.BSC:
+            return 56
 
     @staticmethod
     def l1_asset(chain: str) -> str:
