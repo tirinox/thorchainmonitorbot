@@ -9,6 +9,22 @@
   },
   "tokens": [
     {
+      "chainId": 43114,
+      "address": "0x9C9e5fD8bbc25984B178FdCE6117Defa39d2db39",
+      "decimals": 18,
+      "name": "BUSD Token",
+      "symbol": "BUSD",
+      "logoURI": "https://snowtrace.io/token/images/busdnew_32.png"
+    },
+    {
+      "chainId": 43114,
+      "address": "0x19860CCB0A68fd4213aB9D8266F7bBf05A8dDe98",
+      "decimals": 18,
+      "name": "Binance USD",
+      "symbol": "BUSD.e",
+      "logoURI": "https://snowtrace.io/token/images/busd_32.png"
+    },
+    {
       "chainId": 4,
       "address": "0xce347E069B68C53A9ED5e7DA5952529cAF8ACCd4",
       "decimals": 18,

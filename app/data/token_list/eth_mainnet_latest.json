@@ -5,6 +5,22 @@
   "keywords": ["1inch", "default", "list"],
   "tokens": [
     {
+      "address": "0x249cA82617eC3DfB2589c4c17ab7EC9765350a18",
+      "chainId": 1,
+      "name": "Verse",
+      "symbol": "VERSE",
+      "decimals": 18,
+      "logoURI": "https://assets.coingecko.com/coins/images/13072/small/bAe1G-lD_400x400.png?1654056255"
+    },
+    {
+      "address": "0xd794DD1CAda4cf79C9EebaAb8327a1B0507ef7d4",
+      "chainId": 1,
+      "name": "Hyve",
+      "symbol": "HYVE",
+      "decimals": 18,
+      "logoURI": "https://assets.coingecko.com/coins/images/13072/small/bAe1G-lD_400x400.png?1654056255"
+    },
+    {
       "address": "0x5Eaa69B29f99C84Fe5dE8200340b4e9b4Ab38EaC",
       "chainId": 1,
       "name": "RazeNetwork",
@@ -7938,6 +7954,14 @@
       "symbol": "XDEFI",
       "decimals": 18,
       "logoURI": "https://raw.githubusercontent.com/sushiswap/assets/master/blockchains/ethereum/assets/0x72B886d09C117654aB7dA13A14d603001dE0B777/logo.png"
+    },
+    {
+      "address": "0x75231F58b43240C9718Dd58B4967c5114342a86c",
+      "chainId": 1,
+      "name": "OKB",
+      "symbol": "OKB",
+      "decimals": 18,
+      "logoURI": "https://static.coinall.ltd/cdn/wallet/logo/okb.png"
     }
   ],
   "logoURI": "https://1inch.exchange/assets/images/logo.png"
