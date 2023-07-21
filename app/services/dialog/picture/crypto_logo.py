@@ -42,6 +42,7 @@ class CryptoLogoDownloader:
         Chains.AVAX: 'avalanchex',
         Chains.AVAX + CONTRACT: 'avalanchec',
         Chains.ATOM: 'cosmos',
+        Chains.BSC: 'smartchain',
     }
 
     TEST_ASSET_MAPPING = {
