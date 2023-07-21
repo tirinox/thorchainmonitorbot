@@ -225,7 +225,7 @@ async def demo_full_tx_pipeline(app: LpAppFramework):
     swap_notifier_tx.add_subscriber(d.alert_presenter)
 
     # run the pipeline!
-    # await fetcher_tx.run()
+    await fetcher_tx.run()
     #
     # txs = load_sample_txs('tests/sample_data/example_avax_swap_in.json')
     # await fetcher_tx.pass_data_to_listeners(txs, fetcher_tx)
@@ -235,7 +235,7 @@ async def demo_full_tx_pipeline(app: LpAppFramework):
 
     # await demo_run_txs_example_file(fetcher_tx, 'example_swap_in_with_aff.json')
 
-    # await asyncio.sleep(10)
+    await asyncio.sleep(10)
 
 
 async def demo_find_aggregator_error(app: LpAppFramework):
@@ -277,8 +277,8 @@ async def run():
     app = LpAppFramework()
     async with app(brief=True):
         # await demo_avax(app)
-        await demo_decoder(app)
-        # await demo_full_tx_pipeline(app)
+        # await demo_decoder(app)
+        await demo_full_tx_pipeline(app)
         # await demo_find_aff(app)
         # await load_dex_txs(app)
         # await show_dex_report(app)

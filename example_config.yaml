@@ -13,6 +13,8 @@ web3:
     rpc: "https://mainnet.infura.io/v3/1234abdc9876610efef"
   AVAX:
     rpc: "https://api.avax.network/ext/bc/C/rpc"
+  BSC:
+    rpc: "https://bscrpc.com"
   cache_expire: 30d
   retries: 3
   retry_wait: 2s
