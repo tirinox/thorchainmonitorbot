@@ -79,9 +79,12 @@ class GenericTxNotifier(INotified, WithDelegates):
                 self.logger.warning(f'No pool depth for Tx: {tx}.')
             min_share_rune_volume = 0.0
         else:
-            curve_mult = curve_mult or self.curve_mult
-            min_pool_share = self.curve.evaluate(pool_usd_depth) * curve_mult
-            min_share_rune_volume = pool_usd_depth / usd_per_rune * min_pool_share
+            if self.curve:
+                curve_mult = curve_mult or self.curve_mult
+                min_pool_share = self.curve.evaluate(pool_usd_depth) * curve_mult
+                min_share_rune_volume = pool_usd_depth / usd_per_rune * min_pool_share
+            else:
+                min_share_rune_volume = 0.0
 
         if tx.full_rune >= min_rune_volume and tx.full_rune >= min_share_rune_volume:
             return True
