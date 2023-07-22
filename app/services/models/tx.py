@@ -514,33 +514,6 @@ class ThorTx:
         return bool(self.dex_info.swap_in) or bool(self.dex_info.swap_out)
 
 
-def final_liquidity(txs: List[ThorTx]):
-    lp = 0
-    for tx in txs:
-        if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
-            lp += tx.meta_add.liquidity_units_int
-        elif tx.type == ThorTxType.TYPE_WITHDRAW:
-            lp += tx.meta_withdraw.liquidity_units_int
-    return lp
-
-
-def cut_off_previous_lp_sessions(txs: List[ThorTx]):
-    lp = 0
-    new_txs = []
-    for tx in txs:
-        if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
-            lp += tx.meta_add.liquidity_units_int
-        elif tx.type == ThorTxType.TYPE_WITHDRAW:
-            lp += tx.meta_withdraw.liquidity_units_int
-
-        new_txs.append(tx)
-
-        if lp <= 0:
-            # oops! user has withdrawn all funds completely: resetting the accumulator!
-            new_txs = []
-    return new_txs
-
-
 @dataclass
 class EventLargeTransaction:
     transaction: ThorTx

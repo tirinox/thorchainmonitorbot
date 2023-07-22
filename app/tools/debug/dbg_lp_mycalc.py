@@ -5,11 +5,10 @@ from datetime import date
 from localization.languages import Language
 from services.dialog.picture.lp_picture import generate_yield_picture, savings_pool_picture, lp_address_summary_picture
 from services.jobs.fetch.runeyield.date2block import DateToBlockMapper
-from services.jobs.fetch.runeyield.lp_my import HomebrewLPConnector
+from services.jobs.fetch.runeyield.lp_my import HomebrewLPConnector, cut_off_previous_lp_sessions
 from services.jobs.fetch.tx import TxFetcher
 from services.lib.money import Asset
 from services.lib.texts import sep
-from services.models.tx import cut_off_previous_lp_sessions
 from tools.lib.lp_common import LpAppFramework
 
 LANG = Language.RUSSIAN
