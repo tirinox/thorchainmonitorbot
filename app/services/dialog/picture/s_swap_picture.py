@@ -5,6 +5,8 @@ from services.dialog.picture.common import BasePictureGenerator
 from services.dialog.picture.resources import Resources
 from services.lib.utils import async_wrap
 from services.models.pol import EventPOL
+from services.models.s_swap import StreamSwap
+from services.models.tx import ThorTx
 
 
 class StreamingSwapPictureGenerator(BasePictureGenerator):
@@ -14,13 +16,14 @@ class StreamingSwapPictureGenerator(BasePictureGenerator):
     LINE_COLOR = '#41484d'
     COLUMN_COLOR = '#eee'
 
-    def __init__(self, loc: BaseLocalization, event: EventPOL):
+    def __init__(self, loc: BaseLocalization, tx: ThorTx, s_swap: StreamSwap):
         super().__init__(loc)
         self.bg = Image.open(self.BG_FILE)
-        self.event = event
+        self.tx = tx
+        self.s_swap = s_swap
         self.logos = {}
 
-    FILENAME_PREFIX = 'thorchain_POL'
+    FILENAME_PREFIX = 'thorchain_streaming_swap'
 
     async def prepare(self):
         pass
@@ -36,5 +39,5 @@ class StreamingSwapPictureGenerator(BasePictureGenerator):
         # prepare painting stuff
         r = Resources()
         image = self.bg.copy()
-        # draw = ImageDraw.Draw(image)
+        draw = ImageDraw.Draw(image)
         return image
