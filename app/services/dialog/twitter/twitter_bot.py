@@ -26,18 +26,22 @@ class TwitterBot:
         access_token_secret = keys.as_str('access_token_secret')
         assert consumer_key and consumer_secret and access_token and access_token_secret
 
+        # self.auth = tweepy.OAuth2BearerHandler(bearer_token)
         self.auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
         self.auth.set_access_token(access_token, access_token_secret)
         self.api = tweepy.API(self.auth)
+        self.client = tweepy.Client(consumer_key=consumer_key, consumer_secret=consumer_secret,
+                                    access_token=access_token, access_token_secret=access_token_secret)
         self.logger = class_logger(self)
 
-    def verify_credentials(self):
+    async def verify_credentials(self, loop=None):
         try:
-            self.api.verify_credentials()
+            loop = loop or asyncio.get_event_loop()
+            await loop.run_in_executor(None, self.api.verify_credentials)
             self.logger.debug('Good!')
             return True
         except Exception as e:
-            self.logger.debug(f'Bad: {e!r}!')
+            self.logger.error(f'Bad: {e!r}!')
             return False
 
     def log_tweet(self, text, image):
@@ -62,9 +66,12 @@ class TwitterBot:
             ret = self.api.media_upload(filename=name, file=image_bio)
 
             # Attach media to tweet
-            return self.api.update_status(media_ids=[ret.media_id_string], status=text)
+            # return self.api.update_status(media_ids=[ret.media_id_string], status=text)
+
+            return self.client.create_tweet(text=text, media_ids=[ret.media_id_string])
         else:
-            return self.api.update_status(text)
+            return self.client.create_tweet(text=text)
+            # return self.api.update_status(text)
 
     async def post(self, text: str, image=None, executor=None, loop=None):
         if not text:
