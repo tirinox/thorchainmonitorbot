@@ -1,6 +1,7 @@
 from typing import NamedTuple
 
 from services.lib.date_utils import MINUTE
+from services.lib.money import Asset
 
 BNB_BNB_SYMBOL = 'BNB.BNB'
 
