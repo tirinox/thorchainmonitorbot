@@ -29,13 +29,13 @@ async def twitter_post_price(app: LpAppFramework):
     loc = app.deps.loc_man.default
     graph, graph_name = await price_graph_from_db(app.deps, loc, period=14 * DAY)
 
-    # await app.deps.broadcaster.notify_preconfigured_channels(
-    #     BoardMessage.make_photo(graph, caption='Rune price', photo_file_name=graph_name)
-    # )
-
     await app.deps.broadcaster.notify_preconfigured_channels(
-        BoardMessage('Test Twitter API v2')
+        BoardMessage.make_photo(graph, caption='Rune price', photo_file_name=graph_name)
     )
+
+    # await app.deps.broadcaster.notify_preconfigured_channels(
+    #     BoardMessage('Test Twitter API v2')
+    # )
 
 
 async def main():
