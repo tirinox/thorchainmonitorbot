@@ -2,11 +2,13 @@ import asyncio
 
 from aiothornode.connector import ThorConnector
 
+from services.dialog.picture.price_picture import price_graph_from_db
+from services.jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from services.jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
 from services.lib.constants import NetworkIdents
 from services.lib.depcont import DepContainer
 from services.notify.types.best_pool_notify import BestPoolsNotifier
-from tools.lib.lp_common import LpAppFramework
+from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
 
 def set_network(d: DepContainer, network_id: str):
@@ -61,11 +63,29 @@ async def demo_top_pools(app: LpAppFramework):
     await fetcher_pool_info.run_once()
 
 
+async def demo_price_graph(app, fill=False):
+    if fill:
+        await fill_rune_price_from_gecko(app.deps.db, include_fake_det=True)
+    loc = app.deps.loc_man.default
+    graph, graph_name = await price_graph_from_db(app.deps, loc)
+
+    # sender = PriceNotifier(app.deps)
+    # hist_prices = await sender.historical_get_triplet()
+    #
+    # net_stats, market_info = await debug_get_rune_market_data(app)
+    #
+    # report = PriceReport(*hist_prices, market_info, last_ath, btc_price)
+    # caption = loc.notification_text_price_update(report, ath, halted_chains=self.deps.halted_chains)
+    #
+    save_and_show_pic(graph, graph_name)
+
+
 async def main():
     app = LpAppFramework()
     async with app(brief=True):
         # await demo_cache_blocks(app)
-        await demo_top_pools(app)
+        # await demo_top_pools(app)
+        await demo_price_graph(app)
 
 
 if __name__ == '__main__':

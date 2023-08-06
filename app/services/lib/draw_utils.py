@@ -482,7 +482,8 @@ def measure_font_to_fit_in_box(font_getter, text, max_width, max_height, current
         return None
 
     font = font_getter(int(current_font_size))
-    w, h = font.getsize(text)
+    w, h = font_estimate_size(font, text)
+
     if w > max_width or h > max_height:
         return measure_font_to_fit_in_box(font_getter, text, max_width, max_height, current_font_size * f)
 
@@ -519,3 +520,12 @@ def dual_side_rect(draw: ImageDraw, x1, y1, x2, y2, a, b, a_color='#0f0', b_colo
     draw.rectangle(
         (x_mid + x1 + gap, y1, x2, y2), fill=b_color
     )
+
+
+def font_estimate_size(font, text):
+    if hasattr(font, 'getsize'):
+        tw, th = font.getsize(text)
+        return tw, th
+    else:
+        left, top, right, bottom = font.getbbox(text)
+        return right - left, bottom - top

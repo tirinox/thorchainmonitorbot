@@ -9,7 +9,8 @@ from localization.eng_base import BaseLocalization
 from services.dialog.picture.resources import Resources
 from services.lib.date_utils import DAY, now_ts, today_str
 from services.lib.draw_utils import default_background, CacheGrid, TC_YGGDRASIL_GREEN, \
-    make_donut_chart, TC_NIGHT_BLACK, TC_PALETTE, TC_WHITE, TC_LIGHTNING_BLUE, get_palette_color_by_index
+    make_donut_chart, TC_NIGHT_BLACK, TC_PALETTE, TC_WHITE, TC_LIGHTNING_BLUE, get_palette_color_by_index, \
+    font_estimate_size
 from services.lib.money import clamp, short_rune, format_percent
 from services.lib.plot_graph import plot_legend, PlotGraphLines
 from services.lib.texts import bracketify
@@ -190,7 +191,7 @@ class WorldMap:
             else:
                 label_cache.add(text)
 
-            text_w, text_h = font.getsize(text)
+            text_w, text_h = font_estimate_size(font, text)
             if not plot_city(text, 'right', sx, sy, text_w, text_h):
                 plot_city(text, 'left', sx, sy, text_w, text_h)
 

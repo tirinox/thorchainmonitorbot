@@ -6,7 +6,8 @@ from PIL import Image
 from PIL import ImageDraw, ImageFont
 
 from services.dialog.picture.resources import Resources
-from services.lib.draw_utils import LIGHT_TEXT_COLOR, default_gradient, get_palette_color_by_index, TC_WHITE
+from services.lib.draw_utils import LIGHT_TEXT_COLOR, default_gradient, get_palette_color_by_index, TC_WHITE, \
+    font_estimate_size
 
 BIG_NUMBER = 1e20
 
@@ -324,7 +325,7 @@ class PlotGraphLines(PlotGraph):
         return int(ox + norm_x * w), int(oy - norm_y * h)
 
     def add_legend(self, color, title):
-        tw, th = self.font_ticks.getsize(title)
+        tw, th = font_estimate_size(self.font_ticks, title)
 
         self.plot_legend_unit(self.legend_x, self.legend_y, color, title)
         self.legend_x += tw + 40
@@ -420,8 +421,8 @@ class PlotGraphLines(PlotGraph):
 
                 if bar_height > 0.1:
                     self.draw.rectangle((
-                        int(x - bh2 + x_shift), int(oy),
-                        int(x + bh2 + x_shift), int(oy - bar_height)
+                        int(x - bh2 + x_shift), int(oy - bar_height),
+                        int(x + bh2 + x_shift), int(oy),
                     ), fill=color)
 
                 if show_values:
@@ -461,7 +462,7 @@ def plot_legend(draw: ImageDraw, elements: List[str], xy,
     brush = draw.ellipse if is_circle else draw.rectangle
 
     for i, label in enumerate(elements):
-        w, h = font.getsize(label)
+        w, h = font_estimate_size(font, label)
 
         y_step = y_step or int(h * 1.24)
         sq_size = sq_size or h

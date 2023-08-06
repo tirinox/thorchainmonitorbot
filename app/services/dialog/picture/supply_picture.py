@@ -4,6 +4,7 @@ from localization.eng_base import BaseLocalization
 from services.dialog.picture.common import BasePictureGenerator, DrawRectPacker, Rect, PackItem
 from services.dialog.picture.resources import Resources
 from services.jobs.fetch.circulating import RuneCirculatingSupply, ThorRealms
+from services.lib.draw_utils import font_estimate_size
 from services.lib.money import short_money
 from services.lib.plot_graph import PlotGraph
 from services.lib.utils import async_wrap
@@ -102,7 +103,7 @@ class SupplyPictureGenerator(BasePictureGenerator):
         y = self.HEIGHT - 55
         for title, color in self.PALETTE.items():
             title = self.translate.get(title, title)
-            dx, _ = self.gr.font_ticks.getsize(title)
+            dx, _ = font_estimate_size(self.gr.font_ticks, title)
             self.gr.plot_legend_unit(x, y, color, title)
             x += dx + 40
             if x >= self.WIDTH - 100:
