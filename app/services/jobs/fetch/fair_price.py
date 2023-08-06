@@ -11,7 +11,7 @@ from services.lib.midgard.urlgen import free_url_gen
 from services.lib.utils import a_result_cached, WithLogger
 from services.models.price import RuneMarketInfo
 
-RUNE_MARKET_INFO_CACHE_TIME = 10 * MINUTE
+RUNE_MARKET_INFO_CACHE_TIME = 3 * MINUTE
 
 
 class RuneMarketInfoFetcher(WithLogger):
