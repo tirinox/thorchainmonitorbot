@@ -124,7 +124,7 @@ class WorldMap:
             source_image = self.r.circle if node.is_active else self.r.circle_dim
 
             point_image = source_image.copy()
-            point_image.thumbnail((point_size, point_size), Image.ANTIALIAS)
+            point_image.thumbnail((point_size, point_size), Image.LANCZOS)
 
             x, y = int(x), int(y)
 
@@ -296,7 +296,7 @@ class NodePictureGenerator:
         # world map
         world = WorldMap(self.loc)
         big_map = world.draw(self.data, color_map_providers)
-        big_map.thumbnail((w, h), Image.ANTIALIAS)
+        big_map.thumbnail((w, h), Image.LANCZOS)
         image.paste(big_map, (0, 80))
 
         donut_y = 1020

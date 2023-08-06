@@ -161,6 +161,7 @@ def draw_arc_aa(image, bounds, start, end, width=1, outline=TC_WHITE, antialias=
     # Use a single channel image (mode='L') as mask.
     # The size of the mask can be increased relative to the imput image
     # to get smoother looking results.
+    # noinspection PyTypeChecker
     mask = Image.new(
         size=[int(dim * antialias) for dim in image.size],
         mode='L', color='black')
@@ -170,6 +171,12 @@ def draw_arc_aa(image, bounds, start, end, width=1, outline=TC_WHITE, antialias=
     for offset, fill in (width / -2.0, 'white'), (width / 2.0, 'black'):
         left, top = [(value + offset) * antialias for value in bounds[:2]]
         right, bottom = [(value - offset) * antialias for value in bounds[2:]]
+
+        if left > right:
+            left, right = right, left
+        if top > bottom:
+            top, bottom = bottom, top
+
         draw.arc([left, top, right, bottom], start, end, fill=fill, width=width)
 
     # downsample the mask using PIL.Image.LANCZOS

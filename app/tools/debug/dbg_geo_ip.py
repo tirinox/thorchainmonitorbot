@@ -13,7 +13,7 @@ from services.lib.geo_ip import GeoIPManager
 from services.lib.utils import setup_logs, load_pickle, save_pickle
 from services.models.node_info import NetworkNodeIpInfo, NodeStatsItem
 from services.notify.types.node_churn_notify import NodeChurnNotifier
-from tools.lib.lp_common import LpAppFramework
+from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
 
 async def demo_test_geo_ip_google():
@@ -140,8 +140,8 @@ async def demo_test_new_geo_chart(app: LpAppFramework):
     gen = NodePictureGenerator(infos, chart_pts, app.deps.loc_man.default)
 
     pic = await gen.generate()
-    pic.show()
-    pic.save('../temp/new_node_pic.png')
+
+    save_and_show_pic(pic, name='new_node_pic.png')
 
     # usage
     """
