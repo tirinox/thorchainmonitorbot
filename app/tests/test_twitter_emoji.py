@@ -79,7 +79,6 @@ def test_tw1():
 
 def test_abbreviate():
     text = """💎 Total Rune switched to native: 484.3Mᚱ (97.0 %)
-☠️ Killed switched Rune: 393.2Kᚱ, total killed Rune: 2.1Mᚱ, unswitched Rune left: 13.5Mᚱ🆕.
 📈 Bonding APY is 8.62%(↑ +0.0184%) and Liquidity APY is 14.1%(↓ -0.0563%).
 👥 Daily users: 405(↓ -2), monthly users: 3965(↑ +299) 🆕"""
     original_length = twitter_text_length(text)

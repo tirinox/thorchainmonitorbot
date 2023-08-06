@@ -27,7 +27,6 @@ from services.lib.w3.dex_analytics import DexReport, DexReportEntry
 from services.lib.w3.token_record import AmountToken
 from services.models.cap_info import ThorCapInfo
 from services.models.flipside import EventKeyStats
-from services.models.killed_rune import KilledRuneEntry
 from services.models.last_block import BlockProduceState, EventBlockSpeed
 from services.models.lp_info import LiquidityPoolReport
 from services.models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting, MimirVoteOption
@@ -974,7 +973,6 @@ class BaseLocalization(ABC):  # == English
     def notification_text_network_summary(self,
                                           old: NetworkStats, new: NetworkStats,
                                           market: RuneMarketInfo,
-                                          killed: KilledRuneEntry,
                                           nodes: List[NodeInfo]):
         message = bold('🌐 THORChain stats') + '\n'
 
@@ -2093,24 +2091,11 @@ class BaseLocalization(ABC):  # == English
             f'Total: {code(short_rune(s.total))} ({format_percent(s.total, total_of_total)})\n\n'
         )
 
-    def text_metrics_supply(self, market_info: RuneMarketInfo, killed_rune: KilledRuneEntry):
+    def text_metrics_supply(self, market_info: RuneMarketInfo):
         supply = market_info.supply_info
         message = f'🪙 {bold("Rune coins supply")}\n\n'
 
-        message += self.format_supply_entry('BNB.Rune (BEP2)', supply.bep2_rune, supply.overall.total)
-        message += self.format_supply_entry('ETH.Rune (ERC20)', supply.erc20_rune, supply.overall.total)
         message += self.format_supply_entry('Native THOR.Rune', supply.thor_rune, supply.overall.total)
-        message += self.format_supply_entry('Total Rune', supply.overall, supply.overall.total)
-
-        if killed_rune.block_id:
-            switched_killed = code(short_rune(killed_rune.killed_switched))  # killed when switched
-            total_killed = code(short_rune(killed_rune.total_killed))  # potentially dead + switched killed
-            rune_left = code(short_rune(killed_rune.unkilled_unswitched_rune))
-            message += (
-                f'☠️ <b>Killed Rune when switched:</b> {switched_killed}\n'
-                f'Total (switched and unswitched) killed Rune: {total_killed}\n'
-                f'Unswitched Rune left: {rune_left}\n\n'
-            )
 
         message += f"Coin market cap of {bold(self.R)} is " \
                    f"{bold(short_dollar(market_info.market_cap))} (#{bold(market_info.rank)})"
@@ -2118,8 +2103,6 @@ class BaseLocalization(ABC):  # == English
 
     SUPPLY_PIC_TITLE = 'THORChain Rune supply'
     SUPPLY_PIC_CIRCULATING = ThorRealms.CIRCULATING
-    SUPPLY_PIC_KILLED = ThorRealms.KILLED
-    SUPPLY_PIC_KILLED_LOST = 'Killed switched'
     SUPPLY_PIC_TEAM = ThorRealms.TEAM
     SUPPLY_PIC_SEED = ThorRealms.SEED
     SUPPLY_PIC_VESTING_9R = ThorRealms.VESTING_9R

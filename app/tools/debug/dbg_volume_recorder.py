@@ -47,7 +47,7 @@ async def debug_post_price_graph_to_discord(app: LpAppFramework):
     sender = PriceNotifier(app.deps)
     hist_prices = await sender.historical_get_triplet()
 
-    killed_rune, net_stats, market_info = await debug_get_rune_market_data(app)
+    net_stats, market_info = await debug_get_rune_market_data(app)
 
     await sender.do_notify_price_table(market_info, hist_prices, ath=False)
 

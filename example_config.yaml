@@ -169,11 +169,6 @@ native_scanner:
       - "thor1g98cy3n9mmjrpn0sxmn63lztelera37n8n67c0"
 
 
-killed_rune:
-  enabled: true
-  period: 2h
-  api_url: "https://node-api.flipsidecrypto.com/api/v2/queries/b5f325f6-8a42-47eb-9faf-ba8b0bdf1438/data/latest"
-
 
 names:
   thorname:

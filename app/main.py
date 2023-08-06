@@ -20,7 +20,6 @@ from services.jobs.fetch.const_mimir import ConstMimirFetcher
 from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
 from services.jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from services.jobs.fetch.key_stats import KeyStatsFetcher
-from services.jobs.fetch.killed_rune import KilledRuneFetcher, KilledRuneStore
 from services.jobs.fetch.last_block import LastBlockFetcher
 from services.jobs.fetch.native_scan import NativeScannerBlock
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
@@ -344,14 +343,6 @@ class App:
                 d.node_op_notifier = NodeChangePersonalNotifier(d)
                 await d.node_op_notifier.prepare()
                 churn_detector.add_subscriber(d.node_op_notifier)
-
-        if d.cfg.get('killed_rune.enabled', True):
-            krf = KilledRuneFetcher(d)  # provides List[KilledRuneEntry]
-            tasks.append(krf)
-            kr_store = KilledRuneStore(d)
-            krf.add_subscriber(kr_store)
-            if achievements_enabled:
-                krf.add_subscriber(achievements)
 
         if d.cfg.get('price.enabled', True):
             # handles RuneMarketInfo

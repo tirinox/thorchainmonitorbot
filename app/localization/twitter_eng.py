@@ -20,7 +20,6 @@ from services.lib.texts import x_ses, progressbar, plural, bracketify, up_down_a
 from services.lib.w3.dex_analytics import DexReportEntry, DexReport
 from services.models.cap_info import ThorCapInfo
 from services.models.flipside import EventKeyStats
-from services.models.killed_rune import KilledRuneEntry
 from services.models.last_block import EventBlockSpeed, BlockProduceState
 from services.models.mimir import MimirChange, MimirHolder
 from services.models.mimir_naming import MimirUnits
@@ -334,7 +333,6 @@ class TwitterEnglishLocalization(BaseLocalization):
     def notification_text_network_summary(self,
                                           old: NetworkStats, new: NetworkStats,
                                           market: RuneMarketInfo,
-                                          killed: KilledRuneEntry,
                                           nodes: List[NodeInfo]):
         parts = []
 
@@ -798,24 +796,10 @@ class TwitterEnglishLocalization(BaseLocalization):
             f'Total: {short_rune(s.total)} ({format_percent(s.total, total_of_total)})\n\n'
         )
 
-    def text_metrics_supply(self, market_info: RuneMarketInfo, killed_rune: KilledRuneEntry):
+    def text_metrics_supply(self, market_info: RuneMarketInfo):
         parts = []
         supply = market_info.supply_info
-        parts.append(self.format_supply_entry('BNB RUNE', supply.bep2_rune, supply.overall.total))
-        parts.append(self.format_supply_entry('ETH RUNE', supply.erc20_rune, supply.overall.total))
         parts.append(self.format_supply_entry('Native Thor RUNE', supply.thor_rune, supply.overall.total))
-        parts.append(self.format_supply_entry('Total RUNE', supply.overall, supply.overall.total))
-
-        if killed_rune.block_id:
-            switched_killed = short_rune(killed_rune.killed_switched)  # killed when switched
-            total_killed = short_rune(killed_rune.total_killed)  # potentially dead + switched killed
-            rune_left = short_rune(killed_rune.unkilled_unswitched_rune)
-            parts.append(
-                f'☠️ Killed-switched Rune: {switched_killed}\n'
-                f'Total killed: {total_killed}\n'
-                f'Unswitched left: {rune_left}\n\n'
-            )
-
         return self.smart_split(parts)
 
     @staticmethod

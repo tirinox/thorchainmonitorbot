@@ -40,7 +40,7 @@ def randomize_all_fields(old: NetworkStats, dev=10):
 
 async def print_message(old_info: NetworkStats, new_info: NetworkStats, deps: DepContainer, post_tg=True, loc=None):
     loc: BaseLocalization = loc or deps.loc_man.default
-    message = loc.notification_text_network_summary(old_info, new_info, deps.killed_rune,
+    message = loc.notification_text_network_summary(old_info, new_info,
                                                     deps.node_holder.active_nodes)
     print('OLD:')
     print(old_info)

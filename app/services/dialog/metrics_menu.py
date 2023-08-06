@@ -176,7 +176,6 @@ class MetricsDialog(BaseDialog):
             loc.notification_text_network_summary(
                 old_info, new_info,
                 rune_market_info,
-                self.deps.killed_rune,
                 self.deps.node_holder.active_nodes
             ),
             disable_web_page_preview=True,
@@ -303,11 +302,11 @@ class MetricsDialog(BaseDialog):
         market_fetcher: RuneMarketInfoFetcher = self.deps.rune_market_fetcher
         market_info = await market_fetcher.get_rune_market_info()
 
-        text = self.loc.text_metrics_supply(market_info, self.deps.killed_rune)
+        text = self.loc.text_metrics_supply(market_info)
 
         await message.answer(text, disable_notification=True)
 
-        pic_gen = SupplyPictureGenerator(self.loc, market_info.supply_info, self.deps.killed_rune, self.deps.net_stats)
+        pic_gen = SupplyPictureGenerator(self.loc, market_info.supply_info, self.deps.net_stats)
         pic, pic_name = await pic_gen.get_picture()
 
         await message.answer_photo(img_to_bio(pic, pic_name), disable_notification=True)

@@ -23,7 +23,6 @@ from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, 
 from services.lib.utils import grouper
 from services.lib.w3.dex_analytics import DexReportEntry, DexReport
 from services.models.cap_info import ThorCapInfo
-from services.models.killed_rune import KilledRuneEntry
 from services.models.last_block import BlockProduceState, EventBlockSpeed
 from services.models.lp_info import LiquidityPoolReport
 from services.models.mimir import MimirChange, MimirHolder
@@ -740,7 +739,6 @@ class RussianLocalization(BaseLocalization):
     def notification_text_network_summary(self,
                                           old: NetworkStats, new: NetworkStats,
                                           market: RuneMarketInfo,
-                                          killed: KilledRuneEntry,
                                           nodes: List[NodeInfo]):
         message = bold('🌐 THORChain статистика') + '\n'
 
@@ -1563,34 +1561,16 @@ class RussianLocalization(BaseLocalization):
             f'Всего монет: {code(short_rune(s.total))} ({format_percent(s.total, total_of_total)})\n\n'
         )
 
-    def text_metrics_supply(self, market_info: RuneMarketInfo, killed_rune: KilledRuneEntry):
+    def text_metrics_supply(self, market_info: RuneMarketInfo):
         supply = market_info.supply_info
         message = f'🪙 {bold("Предложение монет Rune")}\n\n'
-
-        message += self.format_supply_entry('BNB.Rune (BEP2)', supply.bep2_rune, supply.overall.total)
-        message += self.format_supply_entry('ETH.Rune (ERC20)', supply.erc20_rune, supply.overall.total)
-
-        if killed_rune.block_id:
-            rune_left = code(short_rune(killed_rune.unkilled_unswitched_rune))
-            switched_killed = code(short_rune(killed_rune.killed_switched))  # killed when switched
-            total_killed = code(short_rune(killed_rune.total_killed))  # potentially dead + switched killed
-            message += (
-                f'☠️ <b>Убито Рун при апгрейде:</b> {switched_killed}\n'
-                f'Всего убито Рун: {total_killed}\n'
-                f'Осталось старых Рун: {rune_left}\n\n'
-            )
-
         message += self.format_supply_entry('Нативная THOR.RUNE', supply.thor_rune, supply.overall.total)
-        message += self.format_supply_entry('Всего всех видов', supply.overall, supply.overall.total)
-
         message += f"Капитализация {bold(self.R)}: {bold(short_dollar(market_info.market_cap))} " \
                    f"(место #{bold(market_info.rank)})"
         return message
 
     SUPPLY_PIC_TITLE = 'THORChain: запасы Руны'
     SUPPLY_PIC_CIRCULATING = 'Циркулирующие'
-    SUPPLY_PIC_KILLED = 'Убитые'
-    SUPPLY_PIC_KILLED_LOST = 'Убитые при апгрейде'
     SUPPLY_PIC_TEAM = 'Команда'
     SUPPLY_PIC_SEED = 'Сид-инвесторы'
     SUPPLY_PIC_VESTING_9R = 'NineRealms вестинг'

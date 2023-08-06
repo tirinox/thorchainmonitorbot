@@ -64,7 +64,6 @@ class NetworkStatsNotifier(INotified):
         await self.deps.broadcaster.notify_preconfigured_channels(
             BaseLocalization.notification_text_network_summary,
             old, new, rune_market_info,
-            self.deps.killed_rune,
             self.deps.node_holder.active_nodes
         )
 

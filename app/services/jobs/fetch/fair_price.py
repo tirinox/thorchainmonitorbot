@@ -42,7 +42,6 @@ class RuneMarketInfoFetcher(WithLogger):
 
     async def get_rune_market_info_from_api(self) -> RuneMarketInfo:
         supply_fetcher = RuneCirculatingSupplyFetcher(self.deps.session,
-                                                      ether_scan_key=self._ether_scan_key,
                                                       thor_node=self.deps.cfg.get('thor.node.node_url'))
 
         current_block = self.deps.last_block_store.last_thor_block

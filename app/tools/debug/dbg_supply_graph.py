@@ -8,26 +8,17 @@ from localization.languages import Language
 from localization.manager import LocalizationManager
 from services.dialog.picture.supply_picture import SupplyPictureGenerator
 from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
-from services.jobs.fetch.killed_rune import KilledRuneFetcher
 from services.jobs.fetch.last_block import LastBlockFetcher
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
 from services.lib.date_utils import today_str
 from services.lib.draw_utils import img_to_bio
 from services.lib.utils import json_cached_to_file_async
-from services.models.killed_rune import KilledRuneEntry
 from services.models.net_stats import NetworkStats
 from services.models.price import RuneMarketInfo
 from services.notify.channel import BoardMessage
 from services.notify.types.block_notify import LastBlockStore
 from tools.debug.dbg_discord import debug_prepare_discord_bot
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
-
-
-@json_cached_to_file_async("../temp/killed_rune_2.json")
-async def get_killed_rune(app: LpAppFramework):
-    krf = KilledRuneFetcher(app.deps)
-    data = await krf.fetch()
-    return data[0].__dict__
 
 
 @json_cached_to_file_async("../temp/supply_info_2.json")
@@ -47,21 +38,19 @@ async def get_supply_pic(app):
     loc_man: LocalizationManager = app.deps.loc_man
     loc = loc_man.get_from_lang(Language.ENGLISH)
 
-    killed_rune, net_stats, rune_market_info = await debug_get_rune_market_data(app)
+    net_stats, rune_market_info = await debug_get_rune_market_data(app)
 
-    pic_gen = SupplyPictureGenerator(loc, rune_market_info.supply_info, killed_rune, net_stats)
+    pic_gen = SupplyPictureGenerator(loc, rune_market_info.supply_info, net_stats)
 
     return await pic_gen.get_picture()
 
 
 async def debug_get_rune_market_data(app):
-    data = await get_killed_rune(app)
-    killed_rune = KilledRuneEntry(**data)
     await app.deps.pool_fetcher.fetch()
     rune_market_info: RuneMarketInfo = await app.deps.rune_market_fetcher.get_rune_market_info()
     ns_raw = await get_network_stats(app)
     ns = NetworkStats(**ns_raw)
-    return killed_rune, ns, rune_market_info
+    return ns, rune_market_info
 
 
 def save_and_show_supply_pic(pic, show=True):

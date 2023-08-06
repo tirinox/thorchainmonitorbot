@@ -19,7 +19,6 @@ from services.lib.midgard.name_service import NameService
 from services.lib.new_feature import NewFeatureManager, Features
 from services.lib.scheduler import Scheduler
 from services.lib.settings_manager import SettingsManager
-from services.models.killed_rune import KilledRuneEntry
 from services.models.mimir import MimirHolder
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeListHolder
@@ -82,7 +81,6 @@ class DepContainer:
     chain_info: Dict[str, ThorChainInfo] = field(default_factory=dict)
     node_holder: NodeListHolder = NodeListHolder()
     net_stats: NetworkStats = NetworkStats()
-    killed_rune: KilledRuneEntry = KilledRuneEntry()
     last_block_store = None
 
     settings_manager: Optional[SettingsManager] = None

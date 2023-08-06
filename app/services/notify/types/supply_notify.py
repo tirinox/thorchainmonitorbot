@@ -23,10 +23,10 @@ class SupplyNotifier(INotified, WithLogger):
 
     async def _notify(self, market_info: RuneMarketInfo):
         async def supply_pic_gen(loc: BaseLocalization):
-            gen = SupplyPictureGenerator(loc, market_info.supply_info, self.deps.killed_rune, self.deps.net_stats)
+            gen = SupplyPictureGenerator(loc, market_info.supply_info, self.deps.net_stats)
             pic, pic_name = await gen.get_picture()
             return BoardMessage.make_photo(pic, loc.SUPPLY_PIC_CAPTION, pic_name)
 
         await self.deps.broadcaster.notify_preconfigured_channels(BaseLocalization.text_metrics_supply,
-                                                                  market_info, self.deps.killed_rune)
+                                                                  market_info)
         await self.deps.broadcaster.notify_preconfigured_channels(supply_pic_gen)

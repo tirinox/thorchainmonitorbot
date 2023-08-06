@@ -280,14 +280,7 @@ class MimirHolder:
                 entry.changed_ts = ts
 
     def current_old_rune_kill_progress(self, current_block):
-        kill_switch_start = self.get_constant(MIMIR_KEY_KILL_SWITCH_START, DEFAULT_KILL_RUNE_START_BLOCK)
-        kill_switch_duration = self.get_constant(MIMIR_KEY_KILL_SWITCH_DURATION, DEFAULT_KILL_RUNE_DURATION_BLOCKS)
-
-        assert kill_switch_duration > 0
-        assert kill_switch_start > 0
-
-        kill_factor = clamp((current_block - kill_switch_start) / kill_switch_duration, 0.0, 1.0)
-        return kill_factor
+        return 1.0
 
     def get_max_synth_per_pool_depth(self) -> float:
         value = self.get_constant(MIMIR_KEY_MAX_SYNTH_PER_POOL_DEPTH, 1500)
