@@ -5,7 +5,7 @@ from math import floor, log10
 from typing import List
 
 from proto.common import Coin
-from services.lib.constants import Chains
+from services.lib.constants import Chains, NATIVE_RUNE_SYMBOL
 from services.lib.utils import linear_transform
 
 EMOJI_SCALE = [
@@ -304,6 +304,9 @@ class Asset:
                 self.chain == self.name or
                 (self.chain == Chains.ATOM and self.name == 'ATOM')
         )
+
+
+AssetRUNE = Asset.from_string(NATIVE_RUNE_SYMBOL)
 
 
 def weighted_mean(values, weights):
