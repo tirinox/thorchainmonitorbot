@@ -19,6 +19,12 @@ class BlockResult:
     end_block_events: List[DecodedEvent]
     error: bool = False
 
+    def find_events_by_type(self, ev_type: str):
+        return filter(lambda ev: ev.type == ev_type, self.end_block_events)
+
+    TYPE_SWAP = 'swap'
+    TYPE_SCHEDULED_OUT = 'scheduled_outbound'
+
 
 class NativeScannerBlock(BaseFetcher):
     SLEEP_PERIOD = 5.99

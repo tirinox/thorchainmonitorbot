@@ -100,6 +100,7 @@ class RuneTransferDetectorBlockEvents(WithDelegates, INotified):
         await self.pass_data_to_listeners(transfers)
 
 
+# this one is not used
 class RuneTransferDetectorFromTxResult(WithDelegates, INotified):
     async def on_data(self, sender, data: List[tuple]):
         transfers = []
@@ -246,5 +247,3 @@ class RuneTransferDetectorTxLogs(WithDelegates, INotified, WithLogger):
             for t in transfers:
                 if not t.to_addr:
                     t.to_addr = BOND_MODULE
-
-

@@ -48,8 +48,8 @@ async def t_block_scanner_ws(url):
     await scanner.run()
 
 
-async def demo_native_block_action_detector(lp_app):
-    scanner = NativeScannerBlock(lp_app.deps, last_block=9836485)
+async def demo_native_block_action_detector(lp_app, start=12033185):
+    scanner = NativeScannerBlock(lp_app.deps, last_block=start)
     detector = RuneTransferDetectorTxLogs()
     scanner.add_subscriber(detector)
     detector.add_subscriber(Receiver('Transfer'))
