@@ -94,22 +94,16 @@ class RuneCirculatingSupplyFetcher(WithLogger):
         self.thor_exclude = thor_exclude or THOR_EXCLUDE_FROM_CIRCULATING_ADDRESSES
         self.thor_node = thor_node
 
-    async def fetch(self, survive_progress=1.0) -> RuneCirculatingSupply:
+    async def fetch(self) -> RuneCirculatingSupply:
         """
-        @param survive_progress: float 0.0-1.0, 0.0 when the kill switch is finished,
         @return: RuneCirculatingSupply
         """
-
-        thor_exclude_balance_group = asyncio.gather(
-            *[self.get_thor_address_balance(address) for address in THOR_EXCLUDE_FROM_CIRCULATING_ADDRESSES.values()]
-        )
-
         (
             thor_rune_supply,
-            thor_exclude_balance_arr,
+            *thor_exclude_balance_arr,
         ) = await asyncio.gather(
             self.get_thor_rune_total_supply(),
-            thor_exclude_balance_group,
+            *[self.get_thor_address_balance(address) for address in THOR_EXCLUDE_FROM_CIRCULATING_ADDRESSES.values()]
         )
 
         thor_locked_dict = dict((k, v) for k, v in

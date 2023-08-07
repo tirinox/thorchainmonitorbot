@@ -8,7 +8,7 @@ from services.lib.constants import thor_to_float, DEFAULT_CEX_NAME, DEFAULT_CEX_
 from services.lib.date_utils import MINUTE
 from services.lib.depcont import DepContainer
 from services.lib.midgard.urlgen import free_url_gen
-from services.lib.utils import a_result_cached, WithLogger
+from services.lib.utils import a_result_cached, WithLogger, retries
 from services.models.price import RuneMarketInfo
 
 RUNE_MARKET_INFO_CACHE_TIME = 3 * MINUTE
@@ -28,11 +28,6 @@ class RuneMarketInfoFetcher(WithLogger):
 
         self.logger.info(f'Reference is RUNE/${self.cex_pair} at "{self.cex_name}" CEX.')
 
-        # cache the method
-
-        # self.get_rune_market_info = a_result_cached(ttl=self._cache_time)(retries(5)(self._get_rune_market_info))
-        # self.get_rune_market_info = a_result_cached(ttl=self._cache_time)(self.get_rune_market_info)
-
     async def total_pooled_rune(self):
         j = await self.midgard.request(free_url_gen.url_network())
         total_pooled_rune = j.get('totalStaked', 0)
@@ -40,15 +35,16 @@ class RuneMarketInfoFetcher(WithLogger):
             total_pooled_rune = j.get('totalPooledRune', 0)
         return thor_to_float(total_pooled_rune)
 
-    async def get_rune_market_info_from_api(self) -> RuneMarketInfo:
+    @retries(5)
+    async def _get_circulating_supply(self) -> RuneCirculatingSupply:
         supply_fetcher = RuneCirculatingSupplyFetcher(self.deps.session,
                                                       thor_node=self.deps.cfg.get('thor.node.node_url'))
 
-        current_block = self.deps.last_block_store.last_thor_block
-        kill_factor = self.deps.mimir_const_holder.current_old_rune_kill_progress(current_block)
+        return await supply_fetcher.fetch()
 
+    async def get_rune_market_info_from_api(self) -> RuneMarketInfo:
         supply_info, gecko, total_pulled_rune = await asyncio.gather(
-            supply_fetcher.fetch(1.0 - kill_factor),
+            self._get_circulating_supply(),
             get_thorchain_coin_gecko_info(self.deps.session),
             self.total_pooled_rune()
         )
