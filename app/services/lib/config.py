@@ -136,3 +136,7 @@ class Config(SubConfig):
         if midgard_url:
             ref_env.midgard_url = midgard_url
         return ref_env
+
+    @property
+    def first_admin_id(self):
+        return self.get('telegram.admins')[0]

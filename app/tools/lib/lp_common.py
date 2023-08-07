@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import os
 
@@ -66,12 +67,13 @@ class LpAppFramework(App):
         d.make_http_session()
 
         await d.db.get_redis()
-
         await self.create_thor_node_connector()
 
         d.rune_market_fetcher = RuneMarketInfoFetcher(d)
 
         d.last_block_fetcher.add_subscriber(d.last_block_store)
+
+        asyncio.create_task(d.emergency.run_worker())
 
         brief = brief if self.brief is None else self.brief
         if brief:

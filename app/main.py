@@ -40,6 +40,7 @@ from services.lib.constants import HTTP_CLIENT_ID
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
+from services.lib.emergency import EmergencyReport
 from services.lib.midgard.connector import MidgardConnector
 from services.lib.midgard.name_service import NameService
 from services.lib.money import DepthCurve
@@ -94,6 +95,8 @@ class App:
 
         self._init_settings()
         self._init_messaging()
+
+        d.emergency = EmergencyReport(d.cfg.first_admin_id, d.telegram_bot.bot)
 
     def _init_configuration(self, log_level=None):
         d = self.deps
@@ -199,6 +202,7 @@ class App:
             d.mimir_const_fetcher,
             d.last_block_fetcher,
             fetcher_queue,
+            d.emergency,
         ]
 
         # ----- OPTIONAL TASKS -----

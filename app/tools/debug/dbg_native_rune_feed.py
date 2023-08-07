@@ -124,6 +124,7 @@ async def search_out(lp_app):
 async def main():
     lp_app = LpAppFramework()
     async with lp_app(brief=True):
+
         # await demo_rune_transfers_once(lp_app)
         # await demo_block_scanner_active(lp_app, send_alerts=True)
         # await active_one(lp_app)

@@ -24,6 +24,8 @@ class NativeScannerBlock(BaseFetcher):
     SLEEP_PERIOD = 5.99
     MAX_ATTEMPTS_TO_SKIP_BLOCK = 5
 
+    NAME = 'block_scanner'
+
     def __init__(self, deps: DepContainer, sleep_period=None, last_block=0):
         sleep_period = sleep_period or THOR_BLOCK_TIME * 0.99
         super().__init__(deps, sleep_period)
@@ -93,6 +95,7 @@ class NativeScannerBlock(BaseFetcher):
             return list(filter(bool, decoded_txs))
         else:
             self.logger.warn(f'Error fetching block #{block_no}.')
+            self.deps.emergency.report(self.NAME, 'Error fetching block', block_no=block_no)
 
     def _decode_one_tx(self, raw):
         try:
@@ -130,6 +133,9 @@ class NativeScannerBlock(BaseFetcher):
                 if block_result.error and block_result.block_no > self._last_block:
                     self.logger.warning(f'It seems that no blocks available before {block_result.block_no}. '
                                         f'Jumping to it!')
+                    self.deps.emergency.report(self.NAME, 'Jump block',
+                                               from_block=self._last_block,
+                                               to_block=block_result.block_no)
                     self._last_block = block_result.block_no
                     self._this_block_attempts = 0
                     break

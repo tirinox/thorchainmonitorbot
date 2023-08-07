@@ -14,6 +14,7 @@ from services.dialog.telegram.telegram import TelegramBot
 from services.dialog.twitter.twitter_bot import TwitterBot
 from services.lib.config import Config
 from services.lib.db import DB
+from services.lib.emergency import EmergencyReport
 from services.lib.midgard.connector import MidgardConnector
 from services.lib.midgard.name_service import NameService
 from services.lib.new_feature import NewFeatureManager, Features
@@ -82,6 +83,8 @@ class DepContainer:
     node_holder: NodeListHolder = NodeListHolder()
     net_stats: NetworkStats = NetworkStats()
     last_block_store = None
+
+    emergency: Optional[EmergencyReport] = None
 
     settings_manager: Optional[SettingsManager] = None
 
