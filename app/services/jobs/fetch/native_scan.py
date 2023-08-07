@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 from typing import List, Optional
 
@@ -16,6 +17,7 @@ class BlockResult:
     txs: List[NativeThorTx]
     tx_logs: List[dict]
     end_block_events: List[DecodedEvent]
+    error: bool = False
 
 
 class NativeScannerBlock(BaseFetcher):
@@ -49,15 +51,23 @@ class NativeScannerBlock(BaseFetcher):
     def _get_is_error(self, result):
         error = result.get('error')
         if error:
-            if error.get('code') != -32603:
+            code = error.get('code')
+            if code != -32603:
                 self.logger.error(f'Error: "{error}"!')
-            return True
+                return BlockResult(code, [], [], [], error=True)
+            else:
+                # must be that no all blocks are present, try to extract the last available block no from the error msg
+                data = str(error.get('data', ''))
+                match = re.findall(r'\d+', data)
+                if match:
+                    last_available_block = int(match[-1])
+                    return BlockResult(last_available_block, [], [], [], error=True)
 
     async def fetch_block_results(self, block_no) -> Optional[BlockResult]:
         result = await self.deps.thor_connector.query_native_block_results_raw(block_no)
         if result is not None:
-            if self._get_is_error(result):
-                return
+            if err := self._get_is_error(result):
+                return err
 
             tx_result_arr = safe_get(result, 'result', 'txs_results') or []
             decoded_txs = [self._decode_logs(tx_result) for tx_result in tx_result_arr]
@@ -116,6 +126,14 @@ class NativeScannerBlock(BaseFetcher):
                 if block_result is None:
                     self._on_error()
                     break
+
+                if block_result.error and block_result.block_no > self._last_block:
+                    self.logger.warning(f'It seems that no blocks available before {block_result.block_no}. '
+                                        f'Jumping to it!')
+                    self._last_block = block_result.block_no
+                    self._this_block_attempts = 0
+                    break
+
             except Exception as e:
                 self.logger.error(f'Error while fetching block #{self._last_block}: {e}')
                 self._on_error()
@@ -126,10 +144,13 @@ class NativeScannerBlock(BaseFetcher):
             self._last_block += 1
             self._this_block_attempts = 0
 
-    async def fetch_one_block(self, block_index):
+    async def fetch_one_block(self, block_index) -> Optional[BlockResult]:
         block_result = await self.fetch_block_results(block_index)
         if block_result is None:
             return
+
+        if block_result.error:
+            return block_result
 
         block_result.txs = await self.fetch_block_txs(block_index)
         if block_result.txs is None:

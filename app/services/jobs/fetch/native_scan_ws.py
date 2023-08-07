@@ -7,6 +7,7 @@ from services.lib.utils import safe_get
 from services.lib.web_sockets import WSClient
 
 
+# not used yet
 class NativeScannerWS(WSClient, WithDelegates):
     REPLY_TIMEOUT = 20.0
     PING_TIMEOUT = 0  # will reconnect on timeout, without pinging
@@ -31,6 +32,7 @@ class NativeScannerWS(WSClient, WithDelegates):
         pass
 
 
+# not used yet
 class NativeScannerBlockEventsWS(NativeScannerWS):
     SUBSCRIBE_NEW_BLOCK = {"jsonrpc": "2.0", "method": "subscribe", "params": ["tm.event='NewBlock'"], "id": 1}
 
@@ -46,6 +48,7 @@ class NativeScannerBlockEventsWS(NativeScannerWS):
             await self.pass_data_to_listeners(decoded_events)
 
 
+# not used yet
 class NativeScannerTransactionWS(NativeScannerWS):
     SUBSCRIBE_NEW_TX = {"jsonrpc": "2.0", "method": "subscribe", "params": ["tm.event='Tx'"], "id": 1}
 
