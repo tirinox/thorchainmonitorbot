@@ -1,4 +1,4 @@
-from typing import NamedTuple
+from typing import NamedTuple, List
 
 from services.lib.constants import THOR_BLOCK_TIME
 
@@ -31,6 +31,12 @@ class StreamSwap(NamedTuple):
     # the amount of output tokens that have been swapped so far
     out_amt: int
 
+    # the list of swap indexes that failed
+    failed_swaps: List[int]
+
+    # the list of reasons that sub-swaps have failed
+    failed_swap_reasons: List[str]
+
     @property
     def progress_on_amount(self):
         """
@@ -61,6 +67,8 @@ class StreamSwap(NamedTuple):
             int(j.get('deposit', 0)),
             int(j.get('in', 0)),
             int(j.get('out', 0)),
+            j.get('failed_swaps', []),
+            j.get('failed_swap_reasons', []),
         )
 
     @property
