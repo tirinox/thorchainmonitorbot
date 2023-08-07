@@ -18,11 +18,11 @@ from services.notify.types.block_notify import LastBlockStore
 
 
 class LpAppFramework(App):
-    def __init__(self, rune_yield_class=None, network=None, log_level=logging.DEBUG) -> None:
+    def __init__(self, rune_yield_class=None, network=None, log_level=logging.DEBUG, brief=None) -> None:
         self.solve_working_dir_mess()  # first of all!
 
         super().__init__(log_level)
-        self.brief = None
+        self.brief = brief
 
         d = self.deps
 
