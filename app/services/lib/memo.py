@@ -6,7 +6,7 @@ from services.models.tx import ThorTxType
 
 
 @dataclass
-class THORMemoParsed:
+class THORMemo:
     action: str
     asset: str
     dest_address: str = ''

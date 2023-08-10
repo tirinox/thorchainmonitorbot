@@ -1,9 +1,11 @@
+from contextlib import suppress
 from typing import List
 
 from services.lib.config import SubConfig
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
+from services.lib.memo import THORMemo
 from services.lib.money import Asset, DepthCurve
 from services.lib.utils import class_logger
 from services.models.tx import ThorTx, EventLargeTransaction, ThorTxType
@@ -131,9 +133,16 @@ class SwapTxNotifier(GenericTxNotifier):
         super().__init__(deps, params, (ThorTxType.TYPE_SWAP,), curve)
         self.dex_min_usd = params.as_float('also_trigger_when.dex_aggregator_used.min_usd_total', 500)
         self.aff_fee_min_usd = params.as_float('also_trigger_when.affiliate_fee_usd_greater', 500)
+        self.filter_ss = params.get_pure('filter_ss', False)
 
     def is_tx_suitable(self, tx: ThorTx, min_rune_volume, usd_per_rune, curve_mult=None):
         affiliate_fee_rune = tx.meta_swap.affiliate_fee * tx.full_rune
+
+        if self.filter_ss and tx.meta_swap:
+            with suppress(Exception):
+                memo = THORMemo.parse_memo(tx.meta_swap.memo)
+                if memo.is_streaming:
+                    return False
 
         if affiliate_fee_rune >= self.aff_fee_min_usd / usd_per_rune:
             return True

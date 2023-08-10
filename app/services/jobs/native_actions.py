@@ -2,7 +2,7 @@ from proto.thor_types import MsgSwap, MsgObservedTxIn, ObservedTx, MsgDeposit
 from services.jobs.fetch.native_scan import BlockResult
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
-from services.lib.memo import THORMemoParsed
+from services.lib.memo import THORMemo
 from services.lib.utils import WithLogger
 
 
@@ -13,7 +13,7 @@ class NativeActionExtractor(WithDelegates, INotified, WithLogger):
 
     def check_memo(self, tx):
         if tx.memo.count(':') >= 5:
-            memo = THORMemoParsed.parse_memo(tx.memo)
+            memo = THORMemo.parse_memo(tx.memo)
             if memo and memo.dex_aggregator_address:
                 self.logger.info(f'Swap memo: {tx.memo} => {memo}')
                 print(tx)
