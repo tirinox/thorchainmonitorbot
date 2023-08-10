@@ -1,5 +1,3 @@
-from collections import Counter
-
 from proto.thor_types import MsgSwap, MsgObservedTxIn, ObservedTx, MsgDeposit
 from services.jobs.fetch.native_scan import BlockResult
 from services.lib.delegates import INotified, WithDelegates
@@ -21,9 +19,7 @@ class NativeActionExtractor(WithDelegates, INotified, WithLogger):
                 print(tx)
 
     async def on_data(self, sender, block: BlockResult):
-
         for tx in block.txs:
-
             if len(tx.messages) > 1:
                 print(f'{tx.hash} has {len(tx.messages)} messages')
 
