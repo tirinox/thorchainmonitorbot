@@ -487,3 +487,7 @@ def recursive_asdict(j):
         return [recursive_asdict(v) for v in j]
     else:
         return j
+
+
+def strip_trailing_slash(s: str):
+    return s.rstrip('/')

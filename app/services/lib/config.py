@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 
 from services.lib.constants import NetworkIdents
 from services.lib.date_utils import parse_timespan_to_seconds
+from services.lib.utils import strip_trailing_slash
 
 
 class SubConfig:
@@ -126,15 +127,15 @@ class Config(SubConfig):
         node_key = 'thor.node.backup_node_url' if backup else 'thor.node.node_url'
         node_url = self.as_str(node_key, '')
         if node_url:
-            ref_env.thornode_url = node_url
+            ref_env.thornode_url = strip_trailing_slash(node_url)
 
         rpc_url = self.as_str('thor.node.rpc_node_url', '')
         if rpc_url:
-            ref_env.rpc_url = rpc_url
+            ref_env.rpc_url = strip_trailing_slash(rpc_url)
 
         midgard_url = self.as_str('thor.midgard.public_url', '')
         if midgard_url:
-            ref_env.midgard_url = midgard_url
+            ref_env.midgard_url = strip_trailing_slash(midgard_url)
         return ref_env
 
     @property
