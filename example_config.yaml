@@ -60,7 +60,7 @@ personal:
     period: 5m
     cooldown: 1h
 
-  scheduler: # (!) new
+  scheduler:
     enabled: true
     poll_interval: 10s
 
@@ -293,7 +293,14 @@ tx:
     enabled: true
     cooldown: 4d
 
-  show_add_more: false # (!) new
+  show_add_more: false
+
+
+streaming_swaps: # (!) new
+  enabled: True
+  min_usd_total: 10
+  period: 60
+  notify_start: true
 
 
 price:
@@ -364,7 +371,6 @@ price:
 
   volume:
     record_tolerance: 1h
-
 
 
 rune_transfer:
@@ -548,7 +554,7 @@ pol:
     allow_when_zero: false
 
 
-key_metrics: # (!) new
+key_metrics:
   enabled: true
   fetch_period: 10m
   data_max_age: 36h
