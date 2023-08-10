@@ -3,7 +3,7 @@ from typing import NamedTuple, List
 from services.lib.constants import THOR_BLOCK_TIME
 
 
-class StreamSwap(NamedTuple):
+class StreamingSwap(NamedTuple):
     # the hash of a transaction
     tx_id: str
 

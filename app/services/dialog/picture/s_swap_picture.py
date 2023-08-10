@@ -5,7 +5,7 @@ from services.dialog.picture.common import BasePictureGenerator
 from services.dialog.picture.resources import Resources
 from services.lib.utils import async_wrap
 from services.models.pol import EventPOL
-from services.models.s_swap import StreamSwap
+from services.models.s_swap import StreamingSwap
 from services.models.tx import ThorTx
 
 
@@ -16,7 +16,7 @@ class StreamingSwapPictureGenerator(BasePictureGenerator):
     LINE_COLOR = '#41484d'
     COLUMN_COLOR = '#eee'
 
-    def __init__(self, loc: BaseLocalization, tx: ThorTx, s_swap: StreamSwap):
+    def __init__(self, loc: BaseLocalization, tx: ThorTx, s_swap: StreamingSwap):
         super().__init__(loc)
         self.bg = Image.open(self.BG_FILE)
         self.tx = tx
