@@ -1,9 +1,31 @@
-import math
+from typing import List
 
+from services.jobs.fetch.base import BaseFetcher
 from services.lib.constants import Chains, float_to_thor, thor_to_float, THOR_BLOCK_TIME, THOR_BASIS_POINT_MAX
+from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.money import Asset, AssetRUNE
 from services.lib.utils import WithLogger
+from services.models.s_swap import StreamingSwap
+
+
+class StreamingSwapFechter(BaseFetcher, WithLogger):
+    PATH = '/thorchain/swaps/streaming'
+
+    def __init__(self, deps: DepContainer):
+        sleep_period = parse_timespan_to_seconds(deps.cfg.streaming_swaps.fetch_period)
+        super().__init__(deps, sleep_period)
+
+    async def fetch(self) -> List[StreamingSwap]:
+        # I've got to dig in the guts because aiothornode treats null response as a fail and retries
+        client = self.deps.thor_connector._clients[0]  # Get the primary client
+        resp = await client.request(self.PATH)
+        if not isinstance(resp, list):
+            return []
+
+        swaps = [StreamingSwap.from_json(ss) for ss in resp]  # Load models
+        return swaps
+
 
 
 class StreamingSwapQuote(WithLogger):
@@ -75,5 +97,3 @@ class StreamingSwapQuote(WithLogger):
 
         full_swaps, reminder_swap = divmod(asset_depth, two_bps_depth)
         full_swaps = int(full_swaps)
-
-

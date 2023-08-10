@@ -1,0 +1,54 @@
+[
+  {
+    "tx_id": "5539A1DA09BB7C012FE4AF8AD40838C989FB597A67211FE8123C98C211599BCC",
+    "interval": 9,
+    "quantity": 9,
+    "count": 6,
+    "last_height": 12088880,
+    "trade_target": "872613318706",
+    "deposit": "29910000",
+    "in": "19939998",
+    "out": "584237702800"
+  },
+  {
+    "tx_id": "6A097A776CD5623905AF2FC3D630FF7D6E19B01E89E13EA4E1FAF1629DE1F1B4",
+    "interval": 9,
+    "quantity": 9,
+    "count": 6,
+    "last_height": 12088880,
+    "trade_target": "8556953182050",
+    "deposit": "309070000",
+    "in": "206046666",
+    "out": "5862965173691"
+  },
+  {
+    "tx_id": "9038A8B9DE1FEA9EA65D8E9932F842DDF47BA871AD5C5C7A60D85FF8D3962F98",
+    "interval": 9,
+    "quantity": 9,
+    "count": 6,
+    "last_height": 12088880,
+    "trade_target": "874353325324",
+    "deposit": "29910000",
+    "in": "13293332",
+    "out": "389290885300",
+    "failed_swaps": [
+      4,
+      6
+    ],
+    "failed_swap_reasons": [
+      "emit asset 96911673100 less than price limit 97056302402",
+      "emit asset 96784613400 less than price limit 97012470490"
+    ]
+  },
+  {
+    "tx_id": "ECDA27CD326D54975C35F7856E15941F6B17F8141CCB3D8ABC8CBB5CD3B15A1F",
+    "interval": 9,
+    "quantity": 9,
+    "count": 1,
+    "last_height": 12088881,
+    "trade_target": "1462559006766",
+    "deposit": "49850000",
+    "in": "5538888",
+    "out": "162954034800"
+  }
+]

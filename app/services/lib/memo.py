@@ -35,6 +35,10 @@ class THORMemoParsed:
         else:
             return default
 
+    @property
+    def is_streaming(self):
+        return self.s_swap_quantity > 1
+
     @classmethod
     def parse_memo(cls, memo: str):
         components = [it for it in memo.split(':')]
