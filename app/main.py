@@ -71,7 +71,6 @@ from services.notify.types.pool_churn_notify import PoolChurnNotifier
 from services.notify.types.price_div_notify import PriceDivergenceNotifier
 from services.notify.types.price_notify import PriceNotifier
 from services.notify.types.queue_notify import QueueNotifier, QueueStoreMetrics
-from services.notify.types.s_swap_notify import StreamingSwapTxNotifier
 from services.notify.types.savers_stats_notify import SaversStatsNotifier
 from services.notify.types.stats_notify import NetworkStatsNotifier
 from services.notify.types.supply_notify import SupplyNotifier
@@ -216,6 +215,8 @@ class App:
             # achievements will subscribe to other components later in this method
             d.last_block_store.add_subscriber(achievements)
 
+        # ------ TXS from Midgard ------
+
         if d.cfg.get('tx.enabled', True):
             main_tx_types = [
                 ThorTxType.TYPE_SWITCH,
@@ -225,6 +226,7 @@ class App:
 
             dedicated_tx_fetcher_enabled = d.cfg.tx.liquidity.dedicated_fetcher.get('enabled', True)
             if not dedicated_tx_fetcher_enabled:
+                # all job will be done by a single worker
                 main_tx_types += [
                     ThorTxType.TYPE_ADD_LIQUIDITY,
                     ThorTxType.TYPE_WITHDRAW,
@@ -235,6 +237,10 @@ class App:
                 main_tx_types.append(ThorTxType.TYPE_DONATE)
 
             fetcher_tx = TxFetcher(d, tx_types=main_tx_types)
+
+            # for tracking 24h ILP payouts
+            ilp_summer = ILPSummer(d)
+            fetcher_tx.add_subscriber(ilp_summer)
 
             aggregator = AggregatorDataExtractor(d)
             fetcher_tx.add_subscriber(aggregator)
@@ -269,6 +275,7 @@ class App:
                     dedicated_fetcher_tx.sleep_period = d.cfg.tx.liquidity.dedicated_fetcher.as_interval(
                         'period', '20m')
                     dedicated_fetcher_tx.add_subscriber(aggregator)
+                    dedicated_fetcher_tx.add_subscriber(ilp_summer)
                     tasks.append(dedicated_fetcher_tx)
 
             if d.cfg.tx.donate.get('enabled', True):
@@ -282,12 +289,6 @@ class App:
                 swap_notifier_tx = SwapTxNotifier(d, d.cfg.tx.swap, curve=curve)
                 volume_filler.add_subscriber(swap_notifier_tx)
                 swap_notifier_tx.add_subscriber(d.alert_presenter)
-
-            # new
-            if d.cfg.tx.streaming_swap.get('enabled', True):
-                stream_swap_notifer = StreamingSwapTxNotifier(d, d.cfg.tx.streaming_swap, curve)
-                volume_filler.add_subscriber(stream_swap_notifer)
-                stream_swap_notifer.add_subscriber(d.alert_presenter)
 
             if d.cfg.tx.refund.get('enabled', True):
                 refund_notifier_tx = GenericTxNotifier(d, d.cfg.tx.refund,
@@ -303,9 +304,6 @@ class App:
                 volume_filler.add_subscriber(switch_notifier_tx)
                 switch_notifier_tx.add_subscriber(d.alert_presenter)
 
-            # for tracking 24h ILP payouts
-            ilp_summer = ILPSummer(d)
-            fetcher_tx.add_subscriber(ilp_summer)
             tasks.append(fetcher_tx)
 
         if d.cfg.get('cap.enabled', True):
@@ -409,7 +407,9 @@ class App:
             tasks.append(fetcher_bep2)
 
         if d.cfg.get('native_scanner.enabled', True):
-            scanner = NativeScannerBlock(d)
+            max_attempts = d.cfg.as_int('native_scanner.max_attempts_per_block', 5)
+
+            scanner = NativeScannerBlock(d, max_attempts=max_attempts)
             tasks.append(scanner)
             reserve_address = d.cfg.as_str('native_scanner.reserve_address')
             decoder = RuneTransferDetectorTxLogs(reserve_address)
@@ -467,6 +467,17 @@ class App:
             metrics_notifier.add_subscriber(d.alert_presenter)
             if achievements_enabled:
                 metrics_fetcher.add_subscriber(achievements)
+
+        # --- steaming swaps ----
+
+        # todo: here!
+        # Do not forget to wire up: AggregatorDataExtractor, VolumeFillerUpdater, DexAnalyticsCollector
+
+        # new
+        # if d.cfg.tx.streaming_swap.get('enabled', True):
+        #     stream_swap_notifer = StreamingSwapTxNotifier(d, d.cfg.tx.streaming_swap, curve)
+        #     volume_filler.add_subscriber(stream_swap_notifer)
+        #     stream_swap_notifer.add_subscriber(d.alert_presenter)
 
         # -------- SCHEDULER --------
 
