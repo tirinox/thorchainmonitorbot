@@ -2,7 +2,6 @@ from dataclasses import dataclass
 from typing import Union
 
 from services.lib.constants import THOR_BASIS_POINT_MAX
-from services.models.tx import ThorTxType
 
 
 @dataclass
@@ -51,9 +50,9 @@ class THORMemo:
         s_swap_interval = cls.ith_or_default(s_swap_components, 1, 0, int)
         s_swap_quantity = cls.ith_or_default(s_swap_components, 2, 0, int)
 
-        if action == ThorTxType.TYPE_SWAP or action == '=' or action == 's':
+        if action == 'swap' or action == '=' or action == 's':
             return cls(
-                ThorTxType.TYPE_SWAP,
+                'swap',
                 asset=cls.ith_or_default(components, 1),
                 dest_address=cls.ith_or_default(components, 2),
                 limit=limit,
