@@ -237,8 +237,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         target_asset_str = Asset(e.out_asset).pretty_str
         total_duration_str = self.seconds_human(e.ss.total_duration)
         return (
-            '🔁 Streaming swap has started\n'
-            f'User: {user_link}\n'
+            f'🔁 Streaming swap has started {user_link}\n'
             f'{amount_str} {asset_str} → ⚡ → {target_asset_str} ({short_dollar(e.volume_usd)})\n'
             f'{e.ss.quantity} swaps every {e.ss.interval} blocks, '
             f'full duration is about {total_duration_str} + out. delay\n'
