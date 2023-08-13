@@ -276,6 +276,7 @@ tx:
       affiliate_fee_usd_greater: 1000
       steaming_swap: # (!) new
         volume_greater: 2500
+        notify_start: true
 
   donate:
     enabled: true

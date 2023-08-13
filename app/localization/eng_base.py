@@ -641,19 +641,21 @@ class BaseLocalization(ABC):  # == English
                 f"liquidity fee: {bold(short_dollar(l_fee_usd))}{slip_mark}"
             )
 
+            if tx.meta_swap.streaming:
+                ...
+                # todo! support streaming swaps
+                """  extra data:
+                ⏱️ Time elapsed: 25 minutes
+                Success: 35% (35/100)
+                Liq. fee: $3.0K❗
+                Est. Savings vs CEX: $96,54   
+                """
+
         blockchain_components_str = self._add_input_output_links(tx, name_map, 'Input: ', 'Output: ', 'User: ')
 
         msg = f"{heading}\n" \
               f"{blockchain_components_str}\n" \
               f"{content}"
-
-        # todo! support streaming swaps
-        """  extra data:
-        ⏱️ Time elapsed: 25 minutes
-        Success: 35% (35/100)
-        Liq. fee: $3.0K❗
-        Est. Savings vs CEX: $96,54   
-        """
 
         # todo! cap info
         # if cap:
@@ -699,8 +701,8 @@ class BaseLocalization(ABC):  # == English
         target_asset_str = Asset(e.out_asset).pretty_str
         total_duration_str = self.seconds_human(e.ss.total_duration)
         return (
-            '🔁 <b>Streaming swap started</b>\n\n' +
-            f'User: {user_link} / {tx_link}\n',
+            f'🔁 <b>Streaming swap has started</b>\n'
+            f'User: {user_link} / {tx_link}\n'
             f'{amount_str} {asset_str} → ⚡ → {target_asset_str} ({short_dollar(e.volume_usd)})\n'
             f'{e.ss.quantity} swaps every {e.ss.interval} blocks, full duration: {total_duration_str}'
         )

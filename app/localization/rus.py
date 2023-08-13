@@ -491,8 +491,8 @@ class RussianLocalization(BaseLocalization):
         target_asset_str = Asset(e.out_asset).pretty_str
         total_duration_str = self.seconds_human(e.ss.total_duration)
         return (
-            '🔁 <b>Потоковый обмен начался</b>\n\n' +
-            f'Пользователь: {user_link} / {tx_link}\n',
+            '🔁 <b>Потоковый обмен начался</b>\n'
+            f'Пользователь: {user_link} / {tx_link}\n'
             f'{amount_str} {asset_str} → ⚡ → {target_asset_str} ({short_dollar(e.volume_usd)})\n'
             f'{e.ss.quantity} обменов каждые {e.ss.interval} блоков, полная длительность: {total_duration_str}'
         )

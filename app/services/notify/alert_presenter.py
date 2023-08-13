@@ -15,6 +15,7 @@ from services.models.last_block import EventBlockSpeed, BlockProduceState
 from services.models.node_info import NodeSetChanges
 from services.models.pol import EventPOL
 from services.models.pool_info import PoolChanges
+from services.models.s_swap import EventStreamingSwapStart
 from services.models.savers import EventSaverStats
 from services.models.transfer import RuneCEXFlow, RuneTransfer
 from services.models.tx import EventLargeTransaction
@@ -53,6 +54,8 @@ class AlertPresenter(INotified):
             await self._handle_node_churn(data)
         elif isinstance(data, EventKeyStats):
             await self._handle_key_stats(data)
+        elif isinstance(data, EventStreamingSwapStart):
+            await self._handle_streaming_swap_start(data)
 
     # ---- PARTICULARLY ----
 
@@ -152,3 +155,13 @@ class AlertPresenter(INotified):
             return BoardMessage.make_photo(pic, caption=caption, photo_file_name=pic_name)
 
         await self.broadcaster.notify_preconfigured_channels(_gen, event)
+
+    async def _handle_streaming_swap_start(self, event: EventStreamingSwapStart):
+        name_map = await self.name_service.safely_load_thornames_from_address_set([
+            event.from_address
+        ])
+
+        await self.broadcaster.notify_preconfigured_channels(
+            BaseLocalization.notification_text_streaming_swap_started,
+            event, name_map
+        )
