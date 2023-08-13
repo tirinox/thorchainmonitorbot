@@ -11,7 +11,7 @@ from services.dialog.picture.common import BasePictureGenerator
 from services.dialog.picture.resources import Resources
 from services.lib.constants import BTC_SYMBOL, ETH_SYMBOL, BNB_BUSD_SYMBOL, ETH_USDC_SYMBOL, ETH_USDT_SYMBOL
 from services.lib.draw_utils import paste_image_masked, result_color, TC_LIGHTNING_BLUE, TC_YGGDRASIL_GREEN, \
-    dual_side_rect, COLOR_OF_PROFIT
+    dual_side_rect, COLOR_OF_PROFIT, font_estimate_size
 from services.lib.money import pretty_money, short_dollar, short_money, format_percent, Asset
 from services.lib.texts import bracketify
 from services.lib.utils import async_wrap
@@ -81,7 +81,7 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
 
         percent = self.percent_change(old_v, new_v)
 
-        size_x, _ = draw.textsize(text, font=font_main)
+        size_x, _ = font_estimate_size(font_main, text)
         if abs(percent) > 0.1:
             draw.text(
                 (x + size_x + x_shift, y + y_shift),
@@ -270,7 +270,7 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
                       text,
                       font=font_aff,
                       fill='#fff')
-            w, _ = draw.textsize(text, font=font_aff)
+            w, _ = font_estimate_size(font_aff, text)
 
             draw.text((x + w + 20, y + 6),
                       bracketify(short_dollar(fee_usd)),
@@ -360,7 +360,8 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
                       text,
                       font=font_routes,
                       fill='#fff')
-            w, _ = draw.textsize(text, font=font_routes)
+
+            w, _ = font_estimate_size(font_routes, text)
 
             draw.text((x + w + 20, y + 6),
                       bracketify(short_dollar(count)),
