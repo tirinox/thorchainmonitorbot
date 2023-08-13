@@ -16,7 +16,7 @@ async def demo_load(app: LpAppFramework):
 
 
 class FlipSideSaver(INotified):
-    DEFAULT_FILENAME = '../temp/fs_key_metrics_1.pickle'
+    DEFAULT_FILENAME = '../temp/fs_key_metrics_2.pickle'
 
     def __init__(self, filename=DEFAULT_FILENAME) -> None:
         super().__init__()
@@ -30,8 +30,11 @@ class FlipSideSaver(INotified):
             print(f'DATA SAVED to {self.filename}')
 
     def load_data(self):
-        with open(self.filename, 'rb') as f:
-            return pickle.load(f)
+        try:
+            with open(self.filename, 'rb') as f:
+                return pickle.load(f)
+        except Exception:
+            pass
 
 
 async def demo_analyse(app: LpAppFramework):
@@ -53,6 +56,9 @@ async def demo_picture(app: LpAppFramework):
 
     loader = FlipSideSaver()
     data = loader.load_data()
+    if not data:
+        await demo_analyse(app)
+        data = loader.load_data()
 
     sep()
     print('Data loaded')
