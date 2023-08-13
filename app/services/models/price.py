@@ -176,13 +176,29 @@ class LastPriceHolder:
         return tlv
 
     def pool_fuzzy_search(self, query: str) -> List[str]:
+
         if (q := query.lower()) in Asset.SHORT_NAMES:
+            # See: https://dev.thorchain.org/thorchain-dev/concepts/memos#shortened-asset-names
             return [Asset.SHORT_NAMES[q]]
         return fuzzy_search(query, self.pool_names)
 
     def pool_fuzzy_first(self, query: str) -> str:
+        # See: https://dev.thorchain.org/thorchain-dev/concepts/memos#asset-abbreviations
         candidates = self.pool_fuzzy_search(query)
-        return candidates[0] if candidates else ''
+        if not candidates:
+            return ''
+        elif len(candidates) == 1:
+            return candidates[0]
+        else:
+            # If there are conflicts then the deepest pool is matched. (To prevent attacks).
+            deepest_pool, deepest_rune = None, 0
+            for candidate in candidates:
+                pool = self.find_pool(candidate)
+                if pool.balance_rune > deepest_rune:
+                    deepest_rune = pool.balance_rune
+                    deepest_pool = candidate
+
+            return deepest_pool
 
     def total_synth_supply_in_usd(self):
         accum = 0.0

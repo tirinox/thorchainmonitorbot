@@ -203,7 +203,7 @@ async def debug_detect_start_on_external_tx(app: LpAppFramework):
 
     sep('BLOCK 12132229')
 
-    blk = await scanner.fetch_one_block(12132223) 
+    blk = await scanner.fetch_one_block(12132223)
     deposits = list(blk.find_tx_by_type(MsgObservedTxIn))
     results = sss.handle_observed_txs(deposits)
     print(results)
@@ -214,6 +214,9 @@ async def run():
     app = LpAppFramework()
     async with app(brief=True):
         await app.deps.pool_fetcher.reload_global_pools()
+
+        print(app.deps.price_holder.pool_fuzzy_first('ETH.Usd'))
+
         # await debug_fetch_ss(app)
         # await debug_block_analyse(app)
         await debug_full_pipeline(app, start=12132219)
