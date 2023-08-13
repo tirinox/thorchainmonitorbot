@@ -1,7 +1,7 @@
 import asyncio
 from pprint import pprint
 
-from proto.types import MsgDeposit
+from proto.types import MsgDeposit, MsgObservedTxIn
 from services.jobs.fetch.native_scan import NativeScannerBlock
 from services.jobs.fetch.streaming_swaps import StreamingSwapFechter
 from services.jobs.fetch.tx import TxFetcher
@@ -40,7 +40,11 @@ SS_EXAMPLE_BLOCK = 12079656
 
 # 3)
 #  026170F3A6E8EA8A9BA1DDBB106536390C086B64D8E157F31E65789A31841284
-# BTC.BTC => BNB
+# BTC.BTC => BNB (12132219, obs 1)
+
+# 4) rare!!
+# https://viewblock.io/thorchain/tx/1E67334A573AC5AA87084836E7CAEC77CC9716A6A39C03A462DC623322E0E3E5
+# This is streaming swap of synth!
 
 async def debug_fetch_ss(app: LpAppFramework):
     ssf = StreamingSwapFechter(app.deps)
@@ -152,6 +156,7 @@ async def debug_full_pipeline(app, start=None):
     stream_swap_notifier = StreamingSwapStartTxNotifier(d)
     d.block_scanner.add_subscriber(stream_swap_notifier)
     stream_swap_notifier.add_subscriber(d.alert_presenter)
+    await stream_swap_notifier.clear_seen_cache()
 
     # Run all together
     while True:
@@ -169,7 +174,7 @@ async def debug_detect_start_on_deposit_rune(app):
     print(results)
 
 
-async def debug_detect_start_on_deposit_synth(app: LpAppFramework):
+async def demo_search_for_deposit_streaming_synth(app):
 
     tx_fetcher = TxFetcher(app.deps, tx_types=(ThorTxType.TYPE_SWAP,))
     txs = await tx_fetcher.fetch_one_batch(tx_types=tx_fetcher.tx_types)
@@ -182,9 +187,6 @@ async def debug_detect_start_on_deposit_synth(app: LpAppFramework):
         for tx in txs.txs:
             if not tx.meta_swap:
                 continue
-
-            # print(f"{tx.tx_hash} => {tx.meta_swap.memo}")
-
             tx: ThorTx
             if Asset(tx.first_input_tx.first_asset).is_synth:
                 if tx.meta_swap.parsed_memo.is_streaming:
@@ -193,15 +195,31 @@ async def debug_detect_start_on_deposit_synth(app: LpAppFramework):
 
 
 
+async def debug_detect_start_on_external_tx(app: LpAppFramework):
+    scanner = NativeScannerBlock(app.deps)
+    sss = StreamingSwapStartTxNotifier(app.deps)
+
+    # 12132229 vs 12136527
+
+    sep('BLOCK 12132229')
+
+    blk = await scanner.fetch_one_block(12132229)  # ETH => ETH.XDEFI
+    deposits = list(blk.find_tx_by_type(MsgObservedTxIn))
+    results = sss.handle_observed_txs(deposits)
+    print(results)
+
+    sep()
+
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
         await app.deps.pool_fetcher.reload_global_pools()
         # await debug_fetch_ss(app)
         # await debug_block_analyse(app)
-        # await debug_full_pipeline(app)
-        await debug_detect_start_on_deposit_rune(app)
-        # await debug_detect_start_on_deposit_synth(app)
+        await debug_full_pipeline(app, start=12132219)
+
+        # await debug_detect_start_on_deposit_rune(app)
+        # await debug_detect_start_on_external_tx(app)
 
 
 if __name__ == '__main__':

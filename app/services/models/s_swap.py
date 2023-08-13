@@ -73,7 +73,7 @@ class StreamingSwap(NamedTuple):
 
     @property
     def blocks_to_wait(self):
-        return self.quantity - self.count
+        return (self.quantity - self.count) * self.interval
 
     @property
     def second_to_wait(self):
@@ -81,7 +81,7 @@ class StreamingSwap(NamedTuple):
 
     @property
     def total_duration(self):
-        return self.quantity * THOR_BLOCK_TIME
+        return self.quantity * self.interval * THOR_BLOCK_TIME
 
 
 class EventStreamingSwapStart(NamedTuple):

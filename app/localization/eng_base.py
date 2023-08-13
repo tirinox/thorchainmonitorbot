@@ -704,7 +704,8 @@ class BaseLocalization(ABC):  # == English
             f'🔁 <b>Streaming swap has started</b>\n'
             f'User: {user_link} / {tx_link}\n'
             f'{amount_str} {asset_str} → ⚡ → {target_asset_str} ({short_dollar(e.volume_usd)})\n'
-            f'{e.ss.quantity} swaps every {e.ss.interval} blocks, full duration: {total_duration_str}'
+            f'{e.ss.quantity} swaps every {e.ss.interval} blocks, '
+            f'full duration is about {total_duration_str} + out. delay'
         )
 
     # ------- QUEUE -------

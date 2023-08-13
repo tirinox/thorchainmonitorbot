@@ -494,7 +494,8 @@ class RussianLocalization(BaseLocalization):
             '🔁 <b>Потоковый обмен начался</b>\n'
             f'Пользователь: {user_link} / {tx_link}\n'
             f'{amount_str} {asset_str} → ⚡ → {target_asset_str} ({short_dollar(e.volume_usd)})\n'
-            f'{e.ss.quantity} обменов каждые {e.ss.interval} блоков, полная длительность: {total_duration_str}'
+            f'{e.ss.quantity} обменов каждые {e.ss.interval} блоков, '
+            f'полная длительность: {total_duration_str} + задержка'
         )
 
     # ------- QUEUE -------
