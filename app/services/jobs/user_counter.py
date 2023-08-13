@@ -1,4 +1,4 @@
-from proto.thor_types import MsgObservedTxIn
+from proto.types import MsgObservedTxIn
 from services.jobs.fetch.native_scan import BlockResult
 from services.lib.active_users import DailyActiveUserCounter, UserStats
 from services.lib.delegates import INotified

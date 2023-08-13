@@ -1,6 +1,5 @@
 import asyncio
 import json
-import logging
 
 from localization.eng_base import BaseLocalization
 from localization.languages import Language
@@ -48,27 +47,27 @@ async def t_block_scanner_ws(url):
     await scanner.run()
 
 
-async def demo_native_block_action_detector(lp_app, start=12033185):
-    scanner = NativeScannerBlock(lp_app.deps, last_block=start)
+async def demo_native_block_action_detector(app, start=12033185):
+    scanner = NativeScannerBlock(app.deps, last_block=start)
     detector = RuneTransferDetectorTxLogs()
     scanner.add_subscriber(detector)
     detector.add_subscriber(Receiver('Transfer'))
-    action_extractor = NativeActionExtractor(lp_app.deps)
+    action_extractor = NativeActionExtractor(app.deps)
     scanner.add_subscriber(action_extractor)
     action_extractor.add_subscriber(Receiver('Action'))
     await scanner.run()
 
 
 # sic!
-async def demo_block_scanner_active(lp_app, send_alerts=False):
-    scanner = NativeScannerBlock(lp_app.deps)
+async def demo_block_scanner_active(app, send_alerts=False):
+    scanner = NativeScannerBlock(app.deps)
     detector = RuneTransferDetectorTxLogs()
     scanner.add_subscriber(detector)
     detector.add_subscriber(Receiver('Transfer'))
     if send_alerts:
-        notifier = RuneMoveNotifier(lp_app.deps)
+        notifier = RuneMoveNotifier(app.deps)
         detector.add_subscriber(notifier)
-        notifier.add_subscriber(lp_app.deps.alert_presenter)
+        notifier.add_subscriber(app.deps.alert_presenter)
     await scanner.run()
 
 
@@ -87,26 +86,26 @@ async def get_transfers_from_block(app, block_index):
     return transfers
 
 
-async def demo_rune_transfers_once(lp_app):
+async def demo_rune_transfers_once(app):
     # b = 8783469  # unbond
     # b = 8686955  # bond
     b = 8815564  # crash
-    transfers = await get_transfers_from_block(lp_app, b)
+    transfers = await get_transfers_from_block(app, b)
 
     sep()
     for tr in transfers:
         print(tr)
     sep()
 
-    notifier = RuneMoveNotifier(lp_app.deps)
-    notifier.add_subscriber(lp_app.deps.alert_presenter)
+    notifier = RuneMoveNotifier(app.deps)
+    notifier.add_subscriber(app.deps.alert_presenter)
     await notifier.on_data(None, transfers)
 
     await asyncio.sleep(3.0)
 
 
-async def search_out(lp_app):
-    scanner = NativeScannerBlock(lp_app.deps)
+async def search_out(app):
+    scanner = NativeScannerBlock(app.deps)
 
     block_start = 6230655 - 2
     search = '687522'
@@ -121,17 +120,24 @@ async def search_out(lp_app):
         b += 1
 
 
-async def main():
-    lp_app = LpAppFramework()
-    async with lp_app(brief=True):
+async def debug_block_scan_for_swaps(app, start=12033185):
+    scanner = NativeScannerBlock(app.deps, last_block=start)
+    # await scanner.run()
+    blk = await scanner.fetch_one_block(12090456)
+    print(blk)
 
-        # await demo_rune_transfers_once(lp_app)
-        # await demo_block_scanner_active(lp_app, send_alerts=True)
-        # await active_one(lp_app)
-        # await search_out(lp_app)
-        # await demo_rune_transfers_once(lp_app)
-        # await demo_test_rune_detector(lp_app)
-        await demo_native_block_action_detector(lp_app)
+
+async def main():
+    app = LpAppFramework()
+    async with app(brief=True):
+        # await demo_rune_transfers_once(app)
+        # await demo_block_scanner_active(app, send_alerts=True)
+        # await active_one(app)
+        # await search_out(app)
+        # await demo_rune_transfers_once(app)
+        # await demo_test_rune_detector(app)
+        # await demo_native_block_action_detector(app)
+        await debug_block_scan_for_swaps(app)
 
 
 if __name__ == '__main__':

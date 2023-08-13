@@ -8,7 +8,7 @@ from aiothornode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
 from localization.achievements.ach_eng import AchievementsEnglishLocalization
-from proto.thor_types import THORName
+from proto.types import ThorName
 from services.jobs.fetch.circulating import SupplyEntry, ThorRealms
 from services.lib.config import Config
 from services.lib.constants import rune_origin, thor_to_float, THOR_BLOCK_TIME, DEFAULT_CEX_NAME, \
@@ -285,7 +285,7 @@ class BaseLocalization(ABC):  # == English
         return result + '\n\n'
 
     def text_inside_my_wallet_title(self, address, pools, balances: ThorBalances, min_limit: float, chain,
-                                    thor_name: Optional[THORName]):
+                                    thor_name: Optional[ThorName]):
         if pools:
             title = '\n'
             footer = "\n\n👇 Click on the button to get a detailed card of LP yield."

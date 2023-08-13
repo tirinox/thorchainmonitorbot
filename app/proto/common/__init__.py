@@ -7,7 +7,7 @@ from typing import List
 import betterproto
 
 
-@dataclass
+@dataclass(eq=False, repr=False)
 class Asset(betterproto.Message):
     chain: str = betterproto.string_field(1)
     symbol: str = betterproto.string_field(2)
@@ -15,22 +15,22 @@ class Asset(betterproto.Message):
     synth: bool = betterproto.bool_field(4)
 
 
-@dataclass
+@dataclass(eq=False, repr=False)
 class Coin(betterproto.Message):
     asset: "Asset" = betterproto.message_field(1)
     amount: str = betterproto.string_field(2)
     decimals: int = betterproto.int64_field(3)
 
 
-@dataclass
+@dataclass(eq=False, repr=False)
 class PubKeySet(betterproto.Message):
     """PubKeySet contains two pub keys , secp256k1 and ed25519"""
 
-    secp256k1: str = betterproto.string_field(1)
+    secp256_k1: str = betterproto.string_field(1)
     ed25519: str = betterproto.string_field(2)
 
 
-@dataclass
+@dataclass(eq=False, repr=False)
 class Tx(betterproto.Message):
     id: str = betterproto.string_field(1)
     chain: str = betterproto.string_field(2)
@@ -41,12 +41,12 @@ class Tx(betterproto.Message):
     memo: str = betterproto.string_field(7)
 
 
-@dataclass
+@dataclass(eq=False, repr=False)
 class Fee(betterproto.Message):
     coins: List["Coin"] = betterproto.message_field(1)
     pool_deduct: str = betterproto.string_field(2)
 
 
-@dataclass
+@dataclass(eq=False, repr=False)
 class ProtoUint(betterproto.Message):
     value: str = betterproto.string_field(1)

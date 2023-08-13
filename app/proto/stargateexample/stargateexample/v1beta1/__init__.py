@@ -6,7 +6,7 @@ from dataclasses import dataclass
 import betterproto
 
 
-@dataclass
+@dataclass(eq=False, repr=False)
 class GenesisState(betterproto.Message):
     """GenesisState defines the capability module's genesis state."""
 

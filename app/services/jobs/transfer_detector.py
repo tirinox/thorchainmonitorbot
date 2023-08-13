@@ -1,8 +1,8 @@
 from collections import defaultdict
 from typing import List
 
-from proto import NativeThorTx, parse_thor_address, DecodedEvent, thor_decode_amount_field
-from proto.thor_types import MsgSend, MsgDeposit
+from proto.types import MsgSend, MsgDeposit
+from proto.access import NativeThorTx, parse_thor_address, DecodedEvent, thor_decode_amount_field
 from services.jobs.fetch.native_scan import BlockResult
 from services.lib.constants import thor_to_float, is_rune
 from services.lib.delegates import WithDelegates, INotified
