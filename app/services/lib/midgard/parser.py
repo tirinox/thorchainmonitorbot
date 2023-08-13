@@ -15,6 +15,8 @@ class TxParseResult(NamedTuple):
     txs: List[ThorTx] = None
     tx_count_unfiltered: int = 0
     network_id: str = ''
+    next_page_token: str = ''
+    prev_page_token: str = ''
 
     @property
     def tx_count(self):
@@ -92,7 +94,12 @@ class MidgardParserV2(MidgardParserBase):
         raw_txs = response.get('actions', [])
         count = int(response.get('count', 0))
         txs = list(self.safe_parse_raw_batch(raw_txs))
-        return TxParseResult(count, txs, len(raw_txs), network_id=self.network_id)
+        meta = response.get('meta', {})
+        return TxParseResult(
+            count, txs, len(raw_txs), network_id=self.network_id,
+            next_page_token=meta.get('nextPageToken', ''),
+            prev_page_token=meta.get('prevPageToken', '')
+        )
 
     def parse_historic_pool_items(self, response: dict) -> List[PoolInfoHistoricEntry]:
         results = []

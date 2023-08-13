@@ -1,4 +1,3 @@
-import asyncio
 from typing import List, Optional
 
 from aiohttp import ContentTypeError
@@ -110,8 +109,11 @@ class TxFetcher(BaseFetcher):
 
     # -------
 
-    async def fetch_one_batch(self, page, txid=None, tx_types=None) -> Optional[TxParseResult]:
-        q_path = free_url_gen.url_for_tx(page * self.tx_per_batch, self.tx_per_batch, txid=txid, tx_type=tx_types)
+    async def fetch_one_batch(self, page=0, txid=None, tx_types=None, next_page_token=None) -> Optional[TxParseResult]:
+        if next_page_token:
+            q_path = free_url_gen.url_for_next_page(next_page_token)
+        else:
+            q_path = free_url_gen.url_for_tx(page * self.tx_per_batch, self.tx_per_batch, txid=txid, tx_type=tx_types)
 
         try:
             j = await self.deps.midgard_connector.request(q_path)

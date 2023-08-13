@@ -35,7 +35,7 @@ class MidgardURLGenBase(ABC):
 class MidgardURLGenV2(MidgardURLGenBase):
     LIQUIDITY_TX_TYPES = ['withdraw', 'addLiquidity']
 
-    def url_for_tx(self, offset=0, count=50, address=None, tx_type=None, txid=None) -> str:
+    def url_for_tx(self, offset=0, count=50, address=None, tx_type=None, txid=None, next_page_token='') -> str:
         url = f'{self.base_url}/v2/actions?offset={offset}&limit={count}'
         if address:
             url += f'&address={address}'
@@ -47,6 +47,9 @@ class MidgardURLGenV2(MidgardURLGenBase):
             url += f'&txid={txid}'
 
         return url
+
+    def url_for_next_page(self, next_page_token):
+        return f'{self.base_url}/v2/actions?nextPageToken={next_page_token}'
 
     @staticmethod
     def bool_flag(b: bool):
