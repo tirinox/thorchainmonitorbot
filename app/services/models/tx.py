@@ -4,6 +4,7 @@ from typing import List, Optional, NamedTuple
 
 from services.lib.constants import is_rune, RUNE_SYMBOL, Chains, thor_to_float, THOR_BASIS_POINT_MAX
 from services.lib.date_utils import now_ts
+from services.lib.memo import THORMemo
 from services.lib.money import Asset
 from services.lib.texts import sum_and_str
 from services.lib.w3.token_record import SwapInOut
@@ -11,6 +12,7 @@ from services.models.cap_info import ThorCapInfo
 from services.models.lp_info import LPAddress
 from services.models.mimir import MimirHolder
 from services.models.pool_info import PoolInfo, PoolInfoMap
+from services.models.s_swap import StreamingSwap
 
 
 class ThorTxType:
@@ -81,6 +83,7 @@ class ThorMetaSwap:
     affiliate_fee: float = 0.0  # (0..1) range
     memo: str = ''
     affiliate_address: str = ''  # highly likely to be a THORName
+    streaming: Optional[StreamingSwap] = None
 
     @classmethod
     def parse(cls, j):
@@ -116,6 +119,10 @@ class ThorMetaSwap:
             )
         else:
             return a or b
+
+    @property
+    def parsed_memo(self):
+        return THORMemo.parse_memo(self.memo)
 
 
 @dataclass

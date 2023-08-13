@@ -133,21 +133,22 @@ class SwapTxNotifier(GenericTxNotifier):
         super().__init__(deps, params, (ThorTxType.TYPE_SWAP,), curve)
         self.dex_min_usd = params.as_float('also_trigger_when.dex_aggregator_used.min_usd_total', 500)
         self.aff_fee_min_usd = params.as_float('also_trigger_when.affiliate_fee_usd_greater', 500)
-        self.filter_ss = params.get_pure('filter_ss', False)
+        self.min_streaming_swap_usd = params.as_float('also_trigger_when.steaming_swap.volume_greater', 2500)
 
     def is_tx_suitable(self, tx: ThorTx, min_rune_volume, usd_per_rune, curve_mult=None):
+        # a) It is interesting if a steaming swap
+        if tx.meta_swap and tx.meta_swap.streaming:
+            if tx.full_rune >= self.min_streaming_swap_usd / usd_per_rune:
+                return True
+
+        # b) It is interesting if paid much to affiliate fee collector
         affiliate_fee_rune = tx.meta_swap.affiliate_fee * tx.full_rune
-
-        if self.filter_ss and tx.meta_swap:
-            with suppress(Exception):
-                memo = THORMemo.parse_memo(tx.meta_swap.memo)
-                if memo.is_streaming:
-                    return False
-
         if affiliate_fee_rune >= self.aff_fee_min_usd / usd_per_rune:
             return True
 
+        # c) It is interesting if the Dex aggregator used
         if tx.dex_aggregator_used and tx.full_rune >= self.dex_min_usd / usd_per_rune:
             return True
 
+        # d) Regular rules are applied
         return super().is_tx_suitable(tx, min_rune_volume, usd_per_rune, curve_mult)

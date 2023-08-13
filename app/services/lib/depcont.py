@@ -46,6 +46,8 @@ class DepContainer:
 
     name_service: Optional[NameService] = None
 
+    block_scanner = None
+
     rune_market_fetcher = None  # type: 'RuneMarketInfoFetcher'
 
     pool_fetcher = None  # type: 'PoolFetcher'

@@ -222,8 +222,10 @@ names:
 
 tx:
   enabled: true
-  max_age: 1d
-  fetch_period: 70
+
+  # Everything except SWAPS!
+  max_age: 2d
+  fetch_period: 60
   tx_per_batch: 50
   max_page_deep: 5
   max_tx_per_single_message: 6
@@ -258,10 +260,6 @@ tx:
       ilp_paid_usd_greater: 5000
       affiliate_fee_usd_greater: 1000
 
-    dedicated_fetcher:
-      enabled: True
-      period: 10m
-
     savers:
       enabled: true
       min_usd_total: 100
@@ -276,6 +274,8 @@ tx:
       dex_aggregator_used:
         min_usd_total: 1000
       affiliate_fee_usd_greater: 1000
+      steaming_swap: # (!) new
+        volume_greater: 2500
 
   donate:
     enabled: true
@@ -296,13 +296,6 @@ tx:
     cooldown: 4d
 
   show_add_more: false
-
-
-streaming_swaps: # (!) new
-  enabled: True
-  min_usd_total: 10
-  period: 60
-  notify_start: true
 
 
 price:

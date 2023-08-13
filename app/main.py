@@ -30,6 +30,7 @@ from services.jobs.fetch.queue import QueueFetcher
 from services.jobs.fetch.savers_vnx import VNXSaversStatsFetcher
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.ilp_summer import ILPSummer
+from services.jobs.native_actions import NativeActionExtractor
 from services.jobs.node_churn import NodeChurnDetector
 from services.jobs.transfer_detector import RuneTransferDetectorTxLogs
 from services.jobs.user_counter import UserCounter
@@ -75,7 +76,7 @@ from services.notify.types.savers_stats_notify import SaversStatsNotifier
 from services.notify.types.stats_notify import NetworkStatsNotifier
 from services.notify.types.supply_notify import SupplyNotifier
 from services.notify.types.transfer_notify import RuneMoveNotifier
-from services.notify.types.tx_notify import GenericTxNotifier, SwitchTxNotifier, SwapTxNotifier, LiquidityTxNotifier
+from services.notify.types.tx_notify import GenericTxNotifier, SwitchTxNotifier, LiquidityTxNotifier, SwapTxNotifier
 from services.notify.types.version_notify import VersionNotifier
 from services.notify.types.voting_notify import VotingNotifier
 
@@ -215,27 +216,41 @@ class App:
             # achievements will subscribe to other components later in this method
             d.last_block_store.add_subscriber(achievements)
 
-        # ------ TXS from Midgard ------
+        if d.cfg.get('native_scanner.enabled', True):
+            # The block scanner itself
+            max_attempts = d.cfg.as_int('native_scanner.max_attempts_per_block', 5)
+            d.block_scanner = NativeScannerBlock(d, max_attempts=max_attempts)
+            tasks.append(d.block_scanner)
+            reserve_address = d.cfg.as_str('native_scanner.reserve_address')
+
+            # Personal Rune transfer notifications
+            decoder = RuneTransferDetectorTxLogs(reserve_address)
+            d.block_scanner.add_subscriber(decoder)
+            balance_notifier = PersonalBalanceNotifier(d)
+            decoder.add_subscriber(balance_notifier)
+
+            # Count unique users
+            user_counter = UserCounter(d)
+            d.block_scanner.add_subscriber(user_counter)
+
+            # Public: THOR.Rune transfer
+            if d.rune_move_notifier is not None:
+                decoder.add_subscriber(d.rune_move_notifier)
 
         if d.cfg.get('tx.enabled', True):
             main_tx_types = [
                 ThorTxType.TYPE_SWITCH,
-                ThorTxType.TYPE_SWAP,
+                # ThorTxType.TYPE_SWAP,  # fixme: using the native block scanner
                 ThorTxType.TYPE_REFUND,
+                ThorTxType.TYPE_ADD_LIQUIDITY,
+                ThorTxType.TYPE_WITHDRAW,
             ]
-
-            dedicated_tx_fetcher_enabled = d.cfg.tx.liquidity.dedicated_fetcher.get('enabled', True)
-            if not dedicated_tx_fetcher_enabled:
-                # all job will be done by a single worker
-                main_tx_types += [
-                    ThorTxType.TYPE_ADD_LIQUIDITY,
-                    ThorTxType.TYPE_WITHDRAW,
-                ]
 
             ignore_donates = d.cfg.get('tx.ignore_donates', True)
             if not ignore_donates:
                 main_tx_types.append(ThorTxType.TYPE_DONATE)
 
+            # Uses Midgard as data source
             fetcher_tx = TxFetcher(d, tx_types=main_tx_types)
 
             # for tracking 24h ILP payouts
@@ -244,6 +259,12 @@ class App:
 
             aggregator = AggregatorDataExtractor(d)
             fetcher_tx.add_subscriber(aggregator)
+
+            # Swaps come from the Block scanner through NativeActionExtractor
+            if d.block_scanner:
+                native_action_extractor = NativeActionExtractor(d)
+                d.block_scanner.add_subscriber(native_action_extractor)
+                native_action_extractor.add_subscriber(aggregator)
 
             volume_filler = VolumeFillerUpdater(d)
             aggregator.add_subscriber(volume_filler)
@@ -269,14 +290,6 @@ class App:
                 liq_notifier_tx = LiquidityTxNotifier(d, d.cfg.tx.liquidity, curve=curve)
                 volume_filler.add_subscriber(liq_notifier_tx)
                 liq_notifier_tx.add_subscriber(d.alert_presenter)
-
-                if dedicated_tx_fetcher_enabled:
-                    dedicated_fetcher_tx = TxFetcher(d, tx_types=ThorTxType.GROUP_ADD_WITHDRAW)
-                    dedicated_fetcher_tx.sleep_period = d.cfg.tx.liquidity.dedicated_fetcher.as_interval(
-                        'period', '20m')
-                    dedicated_fetcher_tx.add_subscriber(aggregator)
-                    dedicated_fetcher_tx.add_subscriber(ilp_summer)
-                    tasks.append(dedicated_fetcher_tx)
 
             if d.cfg.tx.donate.get('enabled', True):
                 donate_notifier_tx = GenericTxNotifier(d, d.cfg.tx.donate,
@@ -405,24 +418,6 @@ class App:
             # Public BEP2 rune transfers:
             d.rune_move_notifier.add_subscriber(d.alert_presenter)
             tasks.append(fetcher_bep2)
-
-        if d.cfg.get('native_scanner.enabled', True):
-            max_attempts = d.cfg.as_int('native_scanner.max_attempts_per_block', 5)
-
-            scanner = NativeScannerBlock(d, max_attempts=max_attempts)
-            tasks.append(scanner)
-            reserve_address = d.cfg.as_str('native_scanner.reserve_address')
-            decoder = RuneTransferDetectorTxLogs(reserve_address)
-            scanner.add_subscriber(decoder)
-            balance_notifier = PersonalBalanceNotifier(d)
-            decoder.add_subscriber(balance_notifier)
-
-            user_counter = UserCounter(d)
-            scanner.add_subscriber(user_counter)
-
-            # Public: THOR.Rune transfer
-            if d.rune_move_notifier is not None:
-                decoder.add_subscriber(d.rune_move_notifier)
 
         if d.cfg.get('supply.enabled', True):
             supply_notifier = SupplyNotifier(d)
