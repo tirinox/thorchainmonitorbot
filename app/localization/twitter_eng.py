@@ -28,6 +28,7 @@ from services.models.node_info import NodeSetChanges, NodeVersionConsensus, Node
 from services.models.pol import EventPOL
 from services.models.pool_info import PoolMapPair, PoolChanges, PoolInfo
 from services.models.price import RuneMarketInfo, PriceReport
+from services.models.s_swap import EventStreamingSwapStart
 from services.models.savers import EventSaverStats
 from services.models.transfer import RuneCEXFlow, RuneTransfer
 from services.models.tx import ThorTx, ThorTxType
@@ -226,6 +227,22 @@ class TwitterEnglishLocalization(BaseLocalization):
               f"{link}"
 
         return msg.strip()
+
+    def notification_text_streaming_swap_started(self, e: EventStreamingSwapStart, name_map: NameMap):
+        user_link = self.link_to_address(e.from_address, name_map)
+        chain = Chains.THOR
+        tx_link = get_explorer_url_to_tx(self.cfg.network_id, chain, e.ss.tx_id)
+        asset_str = Asset(e.in_asset).pretty_str
+        amount_str = self.format_op_amount(e.in_amount)
+        target_asset_str = Asset(e.out_asset).pretty_str
+        total_duration_str = self.seconds_human(e.ss.total_duration)
+        return (
+            '🔁 Streaming swap started\n\n' +
+            f'User: {user_link}\n',
+            f'{amount_str} {asset_str} → ⚡ → {target_asset_str} ({short_dollar(e.volume_usd)})\n'
+            f'{e.ss.quantity} swaps every {e.ss.interval} blocks, full duration: {total_duration_str}\n'
+            f'{tx_link}'
+        )
 
     def notification_text_queue_update(self, item_type, is_free, value):
         if is_free:

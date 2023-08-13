@@ -13,7 +13,7 @@ from services.lib.config import Config
 from services.lib.constants import Chains, rune_origin
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address, get_thoryield_address, \
-    get_ip_info_link
+    get_ip_info_link, get_explorer_url_to_tx
 from services.lib.midgard.name_service import add_thor_suffix, NameMap
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change, Asset, short_money, short_dollar, format_percent, RAIDO_GLYPH, short_rune, pretty_percent, \
@@ -33,6 +33,7 @@ from services.models.pol import EventPOL
 from services.models.pool_info import PoolInfo, PoolChanges, PoolMapPair
 from services.models.price import PriceReport, RuneMarketInfo
 from services.models.queue import QueueInfo
+from services.models.s_swap import EventStreamingSwapStart
 from services.models.savers import EventSaverStats
 from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.tx import ThorTx, ThorTxType
@@ -479,6 +480,22 @@ class RussianLocalization(BaseLocalization):
         #     )
 
         return msg.strip()
+
+    def notification_text_streaming_swap_started(self, e: EventStreamingSwapStart, name_map: NameMap):
+        user_link = self.link_to_address(e.from_address, name_map)
+        chain = Chains.THOR
+        tx_link = link(get_explorer_url_to_tx(self.cfg.network_id, chain, e.ss.tx_id), 'TX')
+
+        asset_str = Asset(e.in_asset).pretty_str
+        amount_str = self.format_op_amount(e.in_amount)
+        target_asset_str = Asset(e.out_asset).pretty_str
+        total_duration_str = self.seconds_human(e.ss.total_duration)
+        return (
+            '🔁 <b>Потоковый обмен начался</b>\n\n' +
+            f'Пользователь: {user_link} / {tx_link}\n',
+            f'{amount_str} {asset_str} → ⚡ → {target_asset_str} ({short_dollar(e.volume_usd)})\n'
+            f'{e.ss.quantity} обменов каждые {e.ss.interval} блоков, полная длительность: {total_duration_str}'
+        )
 
     # ------- QUEUE -------
 

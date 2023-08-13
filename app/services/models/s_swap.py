@@ -78,3 +78,8 @@ class StreamingSwap(NamedTuple):
     @property
     def second_to_wait(self):
         return self.blocks_to_wait * THOR_BLOCK_TIME
+
+
+class EventStreamingSwapStart(NamedTuple):
+    ss: StreamingSwap
+
