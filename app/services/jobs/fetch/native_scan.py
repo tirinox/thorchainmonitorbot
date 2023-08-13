@@ -25,6 +25,9 @@ class BlockResult:
     TYPE_SWAP = 'swap'
     TYPE_SCHEDULED_OUT = 'scheduled_outbound'
 
+    def find_tx_by_type(self, tx_class):
+        return filter(lambda tx: isinstance(tx.first_message, tx_class), self.txs)
+
 
 class NativeScannerBlock(BaseFetcher):
     MAX_ATTEMPTS_TO_SKIP_BLOCK = 5

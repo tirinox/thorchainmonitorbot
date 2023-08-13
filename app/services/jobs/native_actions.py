@@ -25,9 +25,7 @@ class NativeActionExtractor(WithDelegates, INotified, WithLogger):
     @staticmethod
     async def get_swap_intentions(block: BlockResult) -> List[NativeThorTx]:
         tx: NativeThorTx
-        for tx in block.txs:
-            if isinstance(tx.first_message, (MsgDeposit, MsgObservedTxIn)):
-                yield tx
+        return block.find_tx_by_type((MsgDeposit, MsgObservedTxIn))
 
     async def on_data(self, sender, block: BlockResult) -> List[ThorTx]:
         """

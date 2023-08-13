@@ -178,6 +178,10 @@ class LastPriceHolder:
     def pool_fuzzy_search(self, query: str) -> List[str]:
         return fuzzy_search(query, self.pool_names)
 
+    def pool_fuzzy_first(self, query: str) -> str:
+        candidates = self.pool_fuzzy_search(query)
+        return candidates[0] if candidates else ''
+
     def total_synth_supply_in_usd(self):
         accum = 0.0
         for p in self.pool_info_map.values():
