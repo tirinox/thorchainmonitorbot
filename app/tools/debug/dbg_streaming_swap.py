@@ -11,6 +11,7 @@ from services.lib.money import DepthCurve
 from services.lib.w3.aggregator import AggregatorDataExtractor
 from services.lib.w3.dex_analytics import DexAnalyticsCollector
 from services.notify.types.dex_report_notify import DexReportNotifier
+from services.notify.types.s_swap_notify import StreamingSwapStartTxNotifier
 from services.notify.types.tx_notify import SwapTxNotifier
 from tools.lib.lp_common import LpAppFramework
 
@@ -80,33 +81,42 @@ async def debug_block_analyse(app: LpAppFramework):
 
 async def debug_full_pipeline(app, start=None):
     d = app.deps
+
+    # Block scanner: the source of the river
     d.block_scanner = NativeScannerBlock(d, last_block=start)
     action_extractor = NativeActionExtractor(app.deps)
     d.block_scanner.add_subscriber(action_extractor)
 
+    # Just to check stability
     user_counter = UserCounter(d)
     d.block_scanner.add_subscriber(user_counter)
 
+    # Enrich with aggregator data
     aggregator = AggregatorDataExtractor(d)
 
+    # Extract ThorTx from BlockResult
     native_action_extractor = NativeActionExtractor(d)
     d.block_scanner.add_subscriber(native_action_extractor)
     native_action_extractor.add_subscriber(aggregator)
 
+    # Volume filler (important)
     volume_filler = VolumeFillerUpdater(d)
     aggregator.add_subscriber(volume_filler)
 
+    # Just to check stability
     d.dex_analytics = DexAnalyticsCollector(d)
     aggregator.add_subscriber(d.dex_analytics)
 
+    # Just to check stability
     d.volume_recorder = VolumeRecorder(d)
     volume_filler.add_subscriber(d.volume_recorder)
 
-    if d.cfg.tx.dex_aggregator_update.get('enabled', True):
-        dex_report_notifier = DexReportNotifier(d, d.dex_analytics)
-        volume_filler.add_subscriber(dex_report_notifier)
-        dex_report_notifier.add_subscriber(d.alert_presenter)
+    # # Just to check stability: DEX reports
+    dex_report_notifier = DexReportNotifier(d, d.dex_analytics)
+    volume_filler.add_subscriber(dex_report_notifier)
+    dex_report_notifier.add_subscriber(d.alert_presenter)
 
+    # Swap notifier (when it finishes)
     curve_pts = d.cfg.get_pure('tx.curve', default=DepthCurve.DEFAULT_TX_VS_DEPTH_CURVE)
     curve = DepthCurve(curve_pts)
 
@@ -114,6 +124,12 @@ async def debug_full_pipeline(app, start=None):
     volume_filler.add_subscriber(swap_notifier_tx)
     swap_notifier_tx.add_subscriber(d.alert_presenter)
 
+    # When SS starts we do notify as well
+    stream_swap_notifier = StreamingSwapStartTxNotifier(d)
+    d.block_scanner.add_subscriber(stream_swap_notifier)
+    stream_swap_notifier.add_subscriber(d.alert_presenter)
+
+    # Run all together
     while True:
         await d.block_scanner.run()
         await asyncio.sleep(5.9)

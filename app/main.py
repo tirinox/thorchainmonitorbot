@@ -72,6 +72,7 @@ from services.notify.types.pool_churn_notify import PoolChurnNotifier
 from services.notify.types.price_div_notify import PriceDivergenceNotifier
 from services.notify.types.price_notify import PriceNotifier
 from services.notify.types.queue_notify import QueueNotifier, QueueStoreMetrics
+from services.notify.types.s_swap_notify import StreamingSwapStartTxNotifier
 from services.notify.types.savers_stats_notify import SaversStatsNotifier
 from services.notify.types.stats_notify import NetworkStatsNotifier
 from services.notify.types.supply_notify import SupplyNotifier
@@ -303,6 +304,11 @@ class App:
                 volume_filler.add_subscriber(swap_notifier_tx)
                 swap_notifier_tx.add_subscriber(d.alert_presenter)
 
+                if d.cfg.tx.swap.also_trigger_when.steaming_swap.notify_start.get('enabled', True):
+                    stream_swap_notifier = StreamingSwapStartTxNotifier(d)
+                    d.block_scanner.add_subscriber(stream_swap_notifier)
+                    stream_swap_notifier.add_subscriber(d.alert_presenter)
+
             if d.cfg.tx.refund.get('enabled', True):
                 refund_notifier_tx = GenericTxNotifier(d, d.cfg.tx.refund,
                                                        tx_types=(ThorTxType.TYPE_REFUND,),
@@ -462,17 +468,6 @@ class App:
             metrics_notifier.add_subscriber(d.alert_presenter)
             if achievements_enabled:
                 metrics_fetcher.add_subscriber(achievements)
-
-        # --- steaming swaps ----
-
-        # todo: here!
-        # Do not forget to wire up: AggregatorDataExtractor, VolumeFillerUpdater, DexAnalyticsCollector
-
-        # new
-        # if d.cfg.tx.streaming_swap.get('enabled', True):
-        #     stream_swap_notifer = StreamingSwapTxNotifier(d, d.cfg.tx.streaming_swap, curve)
-        #     volume_filler.add_subscriber(stream_swap_notifer)
-        #     stream_swap_notifer.add_subscriber(d.alert_presenter)
 
         # -------- SCHEDULER --------
 

@@ -647,6 +647,14 @@ class BaseLocalization(ABC):  # == English
               f"{blockchain_components_str}\n" \
               f"{content}"
 
+        # todo! support streaming swaps
+        """  extra data:
+        ⏱️ Time elapsed: 25 minutes
+        Success: 35% (35/100)
+        Liq. fee: $3.0K❗
+        Est. Savings vs CEX: $96,54   
+        """
+
         # todo! cap info
         # if cap:
         #     msg += (
