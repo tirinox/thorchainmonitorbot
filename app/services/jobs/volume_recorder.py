@@ -1,3 +1,4 @@
+from contextlib import suppress
 from typing import List
 
 from services.lib.accumulator import Accumulator
@@ -21,6 +22,11 @@ class VolumeRecorder(WithDelegates, INotified, WithLogger):
         self._accumulator = Accumulator('Volume', deps.db, tolerance=t)
 
     async def on_data(self, sender, txs: List[ThorTx]):
+        with suppress(Exception):
+            total_volume = await self.handle_txs_unsafe(txs)
+            await self.pass_data_to_listeners(total_volume, self)
+
+    async def handle_txs_unsafe(self, txs):
         current_price = self.deps.price_holder.usd_per_rune or 0.01
         total_volume = 0.0
         for tx in txs:
@@ -48,8 +54,7 @@ class VolumeRecorder(WithDelegates, INotified, WithLogger):
                     tx.date_timestamp,
                     price=current_price,  # it is better to get price at the tx's block!
                 )
-
-        await self.pass_data_to_listeners(total_volume, self)
+        return total_volume
 
     async def get_data_instant(self, ts=None):
         return await self._accumulator.get(ts)

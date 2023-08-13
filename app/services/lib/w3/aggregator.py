@@ -1,3 +1,4 @@
+from contextlib import suppress
 from typing import Optional, List, Tuple
 
 from web3.exceptions import TransactionNotFound
@@ -130,13 +131,14 @@ class AggregatorDataExtractor(WithLogger, INotified, WithDelegates):
             self.logger.exception(f'Error decoding Swap {tag} @ {tx_hash} ({chain})')
 
     async def on_data(self, sender, txs: List[ThorTx]):
-        for tx in txs:
-            if tx.type == ThorTxType.TYPE_SWAP:
-                in_amount = await self._try_detect_aggregator(tx.first_input_tx, is_in=True)
-                out_amount = await self._try_detect_aggregator(tx.first_output_tx, is_in=False)
-                if in_amount or out_amount:
-                    self.logger.info(f'DEX aggregator detected: IN({in_amount}), OUT({out_amount})')
-                tx.dex_info = SwapInOut(in_amount, out_amount)
+        with suppress(Exception):  # This must not break the rest of the pipeline! So ignore everything bad
+            for tx in txs:
+                if tx.type == ThorTxType.TYPE_SWAP:
+                    in_amount = await self._try_detect_aggregator(tx.first_input_tx, is_in=True)
+                    out_amount = await self._try_detect_aggregator(tx.first_output_tx, is_in=False)
+                    if in_amount or out_amount:
+                        self.logger.info(f'DEX aggregator detected: IN({in_amount}), OUT({out_amount})')
+                    tx.dex_info = SwapInOut(in_amount, out_amount)
 
         await self.pass_data_to_listeners(txs, sender)  # pass through
 

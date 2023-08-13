@@ -1,3 +1,4 @@
+from contextlib import suppress
 from typing import List
 
 from services.jobs.fetch.pool_price import PoolFetcher
@@ -14,8 +15,10 @@ class VolumeFillerUpdater(WithDelegates, INotified, WithLogger):
         self.update_pools_each_time = True
 
     async def on_data(self, sender, extended_txs: List[ThorTx]):
-        # update & fill
-        await self.fill_volumes(extended_txs)
+        with suppress(Exception):
+            # update & fill
+            await self.fill_volumes(extended_txs)
+
         # send to the listeners
         await self.pass_data_to_listeners(extended_txs, sender=(sender, self))  # pass it to the next subscribers
 
@@ -30,6 +33,8 @@ class VolumeFillerUpdater(WithDelegates, INotified, WithLogger):
             pool_info_map = await ppf.reload_global_pools()
         else:
             pool_info_map = self.deps.price_holder.pool_info_map
+            if not pool_info_map:
+                pool_info_map = await ppf.reload_global_pools()
 
         for tx in txs:
             tx.calc_full_rune_amount(pool_info_map)

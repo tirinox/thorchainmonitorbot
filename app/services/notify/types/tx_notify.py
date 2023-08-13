@@ -5,7 +5,6 @@ from services.lib.config import SubConfig
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
-from services.lib.memo import THORMemo
 from services.lib.money import Asset, DepthCurve
 from services.lib.utils import class_logger
 from services.models.tx import ThorTx, EventLargeTransaction, ThorTxType
@@ -28,6 +27,10 @@ class GenericTxNotifier(INotified, WithDelegates):
         self.min_usd_total = int(params.min_usd_total)
 
     async def on_data(self, senders, txs: List[ThorTx]):
+        with suppress(Exception):
+            await self.handle_txs_unsafe(senders, txs)
+
+    async def handle_txs_unsafe(self, senders, txs: List[ThorTx]):
         txs = [tx for tx in txs if tx.type in self.tx_types]  # filter my TX types
         if not txs:
             return

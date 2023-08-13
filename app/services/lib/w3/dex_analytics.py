@@ -1,4 +1,5 @@
 import json
+from contextlib import suppress
 from typing import List, NamedTuple, Dict
 
 from services.lib.date_utils import DAY
@@ -66,8 +67,12 @@ class DexAnalyticsCollector(WithLogger, INotified):
         if tx_hash:
             await self.deps.db.redis.sadd(self.KEY_DEX_COUNTED_TX_SET, tx_hash)
 
-    async def on_data(self, sender, extended_txs: List[ThorTx]):
-        for tx in extended_txs:
+    async def on_data(self, sender, txs: List[ThorTx]):
+        with suppress(Exception):
+            await self.handle_txs_unsafe(txs)
+
+    async def handle_txs_unsafe(self, txs):
+        for tx in txs:
             if tx.dex_aggregator_used and tx.full_rune > 0:
                 tx_hash = tx.tx_hash
                 if not (await self.is_counted(tx_hash)):
@@ -84,7 +89,6 @@ class DexAnalyticsCollector(WithLogger, INotified):
                         volume=tx.full_rune,
                     )
                     await self._mark_as_counted(tx_hash)
-
         await self.series.trim_oldest(self.MAX_POINTS)
 
     @staticmethod
