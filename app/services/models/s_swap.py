@@ -79,7 +79,16 @@ class StreamingSwap(NamedTuple):
     def second_to_wait(self):
         return self.blocks_to_wait * THOR_BLOCK_TIME
 
+    @property
+    def total_duration(self):
+        return self.quantity * THOR_BLOCK_TIME
+
 
 class EventStreamingSwapStart(NamedTuple):
     ss: StreamingSwap
-
+    from_address: str
+    in_amount: float
+    in_asset: str
+    out_asset: str
+    expected_rate: float
+    volume_usd: float
