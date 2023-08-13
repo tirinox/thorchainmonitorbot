@@ -4,7 +4,7 @@ from typing import List, Optional
 
 import ujson
 
-from proto import NativeThorTx, thor_decode_event, DecodedEvent
+from proto.access import NativeThorTx, thor_decode_event, DecodedEvent
 from services.jobs.fetch.base import BaseFetcher
 from services.lib.constants import THOR_BLOCK_TIME
 from services.lib.depcont import DepContainer
@@ -127,9 +127,9 @@ class NativeScannerBlock(BaseFetcher):
             return
 
         if self._last_block % 10 == 0:
-            self.logger.info(f'Tick start for block #{self._last_block}.')
+            self.logger.info(f'👿 Tick start for block #{self._last_block}.')
         else:
-            self.logger.debug(f'Tick start for block #{self._last_block}.')
+            self.logger.debug(f'👿 Tick start for block #{self._last_block}.')
 
         while True:
             try:
@@ -138,14 +138,17 @@ class NativeScannerBlock(BaseFetcher):
                     self._on_error()
                     break
 
-                if block_result.is_error and block_result.block_no > self._last_block:
-                    self.logger.warning(f'It seems that no blocks available before {block_result.block_no}. '
-                                        f'Jumping to it!')
-                    self.deps.emergency.report(self.NAME, 'Jump block',
-                                               from_block=self._last_block,
-                                               to_block=block_result.block_no)
-                    self._last_block = block_result.block_no
-                    self._this_block_attempts = 0
+                if block_result.is_error:
+                    if block_result.block_no > self._last_block:
+                        self.logger.warning(f'It seems that no blocks available before {block_result.block_no}. '
+                                            f'Jumping to it!')
+                        self.deps.emergency.report(self.NAME, 'Jump block',
+                                                   from_block=self._last_block,
+                                                   to_block=block_result.block_no)
+                        self._last_block = block_result.block_no
+                        self._this_block_attempts = 0
+                    else:
+                        self._on_error()
                     break
 
             except Exception as e:
