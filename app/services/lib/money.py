@@ -305,6 +305,18 @@ class Asset:
                 (self.chain == Chains.ATOM and self.name == 'ATOM')
         )
 
+    SHORT_NAMES = {
+        'a': 'AVAX.AVAX',
+        'b': 'BTC.BTC',
+        'c': 'BCH.BCH',
+        'n': 'BNB.BNB',
+        's': 'BSC.BNB',
+        'd': 'DOGE.DOGE',
+        'e': 'ETH.ETH',
+        'l': 'LTC.LTC',
+        'r': 'THOR.RUNE'
+    }
+
 
 AssetRUNE = Asset.from_string(NATIVE_RUNE_SYMBOL)
 

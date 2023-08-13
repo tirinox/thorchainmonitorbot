@@ -203,7 +203,7 @@ async def debug_detect_start_on_external_tx(app: LpAppFramework):
 
     sep('BLOCK 12132229')
 
-    blk = await scanner.fetch_one_block(12132229)  # ETH => ETH.XDEFI
+    blk = await scanner.fetch_one_block(12132223) 
     deposits = list(blk.find_tx_by_type(MsgObservedTxIn))
     results = sss.handle_observed_txs(deposits)
     print(results)

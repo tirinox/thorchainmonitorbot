@@ -6,7 +6,7 @@ from services.jobs.fetch.circulating import RuneCirculatingSupply
 from services.lib.config import Config
 from services.lib.constants import BNB_BTCB_SYMBOL, BTC_SYMBOL, STABLE_COIN_POOLS, thor_to_float
 from services.lib.date_utils import now_ts
-from services.lib.money import weighted_mean
+from services.lib.money import weighted_mean, Asset
 from services.lib.texts import fuzzy_search
 from services.models.base import BaseModelMixin
 from services.models.pool_info import PoolInfo, PoolInfoMap
@@ -176,6 +176,8 @@ class LastPriceHolder:
         return tlv
 
     def pool_fuzzy_search(self, query: str) -> List[str]:
+        if (q := query.lower()) in Asset.SHORT_NAMES:
+            return [Asset.SHORT_NAMES[q]]
         return fuzzy_search(query, self.pool_names)
 
     def pool_fuzzy_first(self, query: str) -> str:
