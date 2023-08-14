@@ -168,6 +168,10 @@ class EventStreamingSwap(NamedTuple):
             original=event
         )
 
+    @property
+    def is_final(self):
+        return self.count == self.quantity
+
 
 class EventOutbound(NamedTuple):
     tx_id: str = ''  # in_tx_id
@@ -213,6 +217,7 @@ class EventScheduledOutbound(NamedTuple):
     max_gas_asset_0: str = ''
     max_gas_amount_0: int = 0
     max_gas_decimals_0: int = 0
+    original: Optional[DecodedEvent] = None
 
     @classmethod
     def from_event(cls, event: DecodedEvent):
@@ -232,6 +237,7 @@ class EventScheduledOutbound(NamedTuple):
             max_gas_asset_0=attrs.get('max_gas_asset_0', ''),
             max_gas_amount_0=int(attrs.get('max_gas_amount_0', 0)),
             max_gas_decimals_0=int(attrs.get('max_gas_decimals_0', 0)),
+            original=event,
         )
 
 

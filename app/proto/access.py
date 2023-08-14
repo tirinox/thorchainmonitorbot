@@ -112,6 +112,13 @@ class DecodedEvent(typing.NamedTuple):
             attributes={attr['key']: attr.get('value') for attr in d['attributes']}
         )
 
+    @property
+    def to_dict(self):
+        return {
+            'type': self.type,
+            'attributes': self.attributes
+        }
+
 
 def thor_decode_event(e) -> DecodedEvent:
     decoded_attrs = {}
