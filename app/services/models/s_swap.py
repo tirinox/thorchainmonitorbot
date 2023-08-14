@@ -1,5 +1,6 @@
-from typing import NamedTuple, List
+from typing import NamedTuple, List, Optional
 
+from proto.access import DecodedEvent
 from services.lib.constants import THOR_BLOCK_TIME
 
 
@@ -92,3 +93,154 @@ class EventStreamingSwapStart(NamedTuple):
     out_asset: str
     expected_rate: float
     volume_usd: float
+
+
+class EventSwap(NamedTuple):
+    pool: str = ''
+    swap_target: int = 0
+    swap_slip: int = 0
+    liquidity_fee: int = 0
+    liquidity_fee_in_rune: int = 0
+    emit_asset: str = ''
+    streaming_swap_quantity: int = 0
+    streaming_swap_count: int = 0
+    tx_id: str = ''
+    chain: str = ''
+    from_address: str = ''
+    to_address: str = ''
+    coin: str = ''
+    amount: int = 0
+    asset: str = ''
+    memo: str = ''
+    original: Optional[DecodedEvent] = None
+
+    @classmethod
+    def from_event(cls, event: DecodedEvent):
+        attrs = event.attributes
+        return cls(
+            pool=attrs.get('pool', ''),
+            swap_target=int(attrs.get('swap_target', 0)),
+            swap_slip=int(attrs.get('swap_slip', 0)),
+            liquidity_fee=int(attrs.get('liquidity_fee', 0)),
+            liquidity_fee_in_rune=int(attrs.get('liquidity_fee_in_rune', 0)),
+            emit_asset=attrs.get('emit_asset', ''),
+            streaming_swap_quantity=int(attrs.get('streaming_swap_quantity', 0)),
+            streaming_swap_count=int(attrs.get('streaming_swap_count', 0)),
+            tx_id=attrs.get('id', ''),
+            chain=attrs.get('chain', ''),
+            from_address=attrs.get('from', ''),
+            to_address=attrs.get('to', ''),
+            coin=attrs.get('coin', ''),
+            amount=int(attrs.get('amount', 0)),
+            asset=attrs.get('asset', ''),
+            memo=attrs.get('memo', ''),
+            original=event,
+        )
+
+
+class EventStreamingSwap(NamedTuple):
+    tx_id: str = ''
+    interval: int = 0
+    quantity: int = 0
+    count: int = 0
+    last_height: int = 0
+    deposit: str = ''
+    in_amt_str: str = ''
+    out_out_str: str = ''
+    failed_swaps: bytes = b''
+    failed_swap_reasons: bytes = b''
+    original: Optional[DecodedEvent] = None
+
+    @classmethod
+    def from_event(cls, event: DecodedEvent):
+        attrs = event.attributes
+        return cls(
+            tx_id=attrs.get('tx_id', ''),
+            interval=int(attrs.get('interval', 0)),
+            quantity=int(attrs.get('quantity', 0)),
+            count=int(attrs.get('count', 0)),
+            last_height=int(attrs.get('last_height', 0)),
+            deposit=attrs.get('deposit', ''),
+            in_amt_str=attrs.get('in', ''),
+            out_out_str=attrs.get('out', ''),
+            failed_swaps=attrs.get('failed_swaps', b''),
+            failed_swap_reasons=attrs.get('failed_swap_reasons', b''),
+            original=event
+        )
+
+
+class EventOutbound(NamedTuple):
+    tx_id: str = ''  # in_tx_id
+    out_id: str = ''
+    chain: str = ''
+    from_address: str = ''
+    to_address: str = ''
+    coin: str = ''
+    amount: int = 0
+    asset: str = ''
+    memo: str = ''
+    original: Optional[DecodedEvent] = None
+
+    @classmethod
+    def from_event(cls, event: DecodedEvent):
+        attrs = event.attributes
+        return cls(
+            tx_id=attrs.get('in_tx_id', ''),
+            out_id=attrs.get('id', ''),
+            chain=attrs.get('chain', ''),
+            from_address=attrs.get('from', ''),
+            to_address=attrs.get('to', ''),
+            coin=attrs.get('coin', ''),
+            amount=int(attrs.get('amount', 0)),
+            asset=attrs.get('asset', ''),
+            memo=attrs.get('memo', ''),
+            original=event,
+        )
+
+
+class EventScheduledOutbound(NamedTuple):
+    chain: str = ''
+    to_address: str = ''
+    vault_pub_key: str = ''
+    coin_asset: str = ''
+    coin_amount: int = 0
+    coin_decimals: int = 0
+    memo: str = ''
+    gas_rate: int = 0
+    in_hash: str = ''
+    out_hash: bytes = ''
+    module_name: bytes = b''
+    max_gas_asset_0: str = ''
+    max_gas_amount_0: int = 0
+    max_gas_decimals_0: int = 0
+
+    @classmethod
+    def from_event(cls, event: DecodedEvent):
+        attrs = event.attributes
+        return cls(
+            chain=attrs.get('chain', ''),
+            to_address=attrs.get('to_address', ''),
+            vault_pub_key=attrs.get('vault_pub_key', ''),
+            coin_asset=attrs.get('coin_asset', ''),
+            coin_amount=int(attrs.get('coin_amount', 0)),
+            coin_decimals=int(attrs.get('coin_decimals', 0)),
+            memo=attrs.get('memo', ''),
+            gas_rate=int(attrs.get('gas_rate', 0)),
+            in_hash=attrs.get('in_hash', ''),
+            out_hash=attrs.get('out_hash', b''),
+            module_name=attrs.get('module_name', b''),
+            max_gas_asset_0=attrs.get('max_gas_asset_0', ''),
+            max_gas_amount_0=int(attrs.get('max_gas_amount_0', 0)),
+            max_gas_decimals_0=int(attrs.get('max_gas_decimals_0', 0)),
+        )
+
+
+def parse_swap_event(e: DecodedEvent):
+    if e.type == 'swap':
+        return EventSwap.from_event(e)
+    elif e.type == 'streaming_swap':
+        return EventStreamingSwap.from_event(e)
+    elif e.type == 'outbound':
+        return EventOutbound.from_event(e)
+    elif e.type == 'scheduled_outbound':
+        return EventScheduledOutbound.from_event(e)
