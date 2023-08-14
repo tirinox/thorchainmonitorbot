@@ -12,17 +12,17 @@
     "0x0747c681e5ADa7936Ad915CcfF6cD3bd71DBF121": [
         "0x0747c681e5ADa7936Ad915CcfF6cD3bd71DBF121",
         "ETH",
-        "TSAggregatorUniswapV3 500 - legacy notation"
+        "TSAggregatorUniswapV3 500 L"
     ],
     "0xd1ea5F7cE9dA98D0bd7B1F4e3E05985E88b1EF10": [
         "0xd1ea5F7cE9dA98D0bd7B1F4e3E05985E88b1EF10",
         "ETH",
-        "TSAggregatorUniswapV3 3000 - legacy notation"
+        "TSAggregatorUniswapV3 3000 L"
     ],
     "0x94a852F0a21E473078846cf88382dd8d15bD1Dfb": [
         "0x94a852F0a21E473078846cf88382dd8d15bD1Dfb",
         "ETH",
-        "TSAggregatorUniswapV3 10000 - legacy notation"
+        "TSAggregatorUniswapV3 10000 L"
     ],
     "0x3660dE6C56cFD31998397652941ECe42118375DA": [
         "0x3660dE6C56cFD31998397652941ECe42118375DA",
@@ -32,7 +32,7 @@
     "0x0F2CD5dF82959e00BE7AfeeF8245900FC4414199": [
         "0x0F2CD5dF82959e00BE7AfeeF8245900FC4414199",
         "ETH",
-        "TSAggregator Sushiswap - legacy notation"
+        "TSAggregator Sushiswap L"
     ],
     "0x2a7813412b8da8d18Ce56FE763B9eb264D8e28a8": [
         "0x2a7813412b8da8d18Ce56FE763B9eb264D8e28a8",
@@ -52,32 +52,32 @@
     "0x86904eb2b3c743400d03f929f2246efa80b91215": [
         "0x86904eb2b3c743400d03f929f2246efa80b91215",
         "ETH",
-        "TSAggregatorUniswapV2 - short notation"
+        "TSAggregatorUniswapV2 S"
     ],
     "0xbf365e79aa44a2164da135100c57fdb6635ae870": [
         "0xbf365e79aa44a2164da135100c57fdb6635ae870",
         "ETH",
-        "TSAggregatorSushiswap - short notation"
+        "TSAggregatorSushiswap S"
     ],
     "0xbd68cbe6c247e2c3a0e36b8f0e24964914f26ee8": [
         "0xbd68cbe6c247e2c3a0e36b8f0e24964914f26ee8",
         "ETH",
-        "TSAggregatorUniswapV3 100 - short notation"
+        "TSAggregatorUniswapV3 100 S"
     ],
     "0xe4ddca21881bac219af7f217703db0475d2a9f02": [
         "0xe4ddca21881bac219af7f217703db0475d2a9f02",
         "ETH",
-        "TSAggregatorUniswapV3 500 - short notation"
+        "TSAggregatorUniswapV3 500 S"
     ],
     "0x11733abf0cdb43298f7e949c930188451a9a9ef2": [
         "0x11733abf0cdb43298f7e949c930188451a9a9ef2",
         "ETH",
-        "TSAggregatorUniswapV3 3000 - short notation"
+        "TSAggregatorUniswapV3 3000 S"
     ],
     "0xb33874810e5395eb49d8bd7e912631db115d5a03": [
         "0xb33874810e5395eb49d8bd7e912631db115d5a03",
         "ETH",
-        "TSAggregatorUniswapV3 10000 - short notation"
+        "TSAggregatorUniswapV3 10000 S"
     ],
     "0x942c6dA485FD6cEf255853ef83a149d43A73F18a": [
         "0x942c6dA485FD6cEf255853ef83a149d43A73F18a",
