@@ -303,7 +303,10 @@ DICT_WORDS = (
     'on,halt,unbond,iteration,sale,reward,ratio,strict,maximum,churning,btc,bch,ltc,doge,terra,avax,atom,gaia,bnb,eth,'
     'thor,utxos,check,trading,thorname,thornames,asset,signing,set,haven,spend,funding,cloud,new,number,desired,'
     'update,memo,next,saving,savings,savers,vaults,vault,bsc,ilp,deprecate,pol,buffer,deposit,movement,utilization,'
-    'thor,anchor,multiple,basis,dofm,pending,vote,voting,in,or,and,the,yield,streaming,stream,tor,top,lending'
+    'thor,anchor,multiple,basis,dofm,pending,vote,voting,in,or,and,the,yield,streaming,stream,tor,top,lending,'
+    'supply,multiplier,ETH-USDC,surplus,target,swaps,order,book,books,AVAX-USDC,significant,digits,length,'
+    'red,line,lune,fees,affiliate,cut,off,BNB-BUSD-BD1,ETH-USDT,loan,repayment,maturity,lever,slip,pts,'
+    'UST,luna,wide,blame,keygen,assets,derived,round,rounds,prefer'
 ).strip(' ,')
 
 WORD_TRANSFORM = {

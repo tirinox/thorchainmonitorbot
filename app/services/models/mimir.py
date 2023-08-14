@@ -7,13 +7,11 @@ from itertools import chain
 
 from aiothornode.types import ThorConstants, ThorMimir, ThorMimirVote
 
-from services.lib.constants import DEFAULT_KILL_RUNE_START_BLOCK, DEFAULT_KILL_RUNE_DURATION_BLOCKS, \
-    THOR_BASIS_POINT_MAX
-from services.lib.money import clamp
+from services.lib.constants import THOR_BASIS_POINT_MAX
 from services.lib.texts import split_by_camel_case
 from services.models.base import BaseModelMixin
 from services.models.mimir_naming import TRANSLATE_MIMIRS, EXCLUDED_VOTE_KEYS, MimirUnits, try_deducting_mimir_name, \
-    MIMIR_KEY_KILL_SWITCH_START, MIMIR_KEY_KILL_SWITCH_DURATION, MIMIR_KEY_MAX_SYNTH_PER_POOL_DEPTH
+    MIMIR_KEY_MAX_SYNTH_PER_POOL_DEPTH
 from services.models.node_info import NodeInfo
 
 # for automatic Mimir, when it becomes 0 -> 1 or 1 -> 0, that is Admin's actions
