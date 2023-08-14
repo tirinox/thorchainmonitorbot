@@ -278,7 +278,7 @@ async def demo_verify_tx_scanner_in_the_past(app: LpAppFramework):
     n_zeros = 0
 
     while True:
-        batch_txs = await fetcher_tx.fetch_one_batch(page, tx_types=ThorTxType.all_except_donate())
+        batch_txs = await fetcher_tx.fetch_one_batch(page, tx_types=ThorTxType.ALL_EXCEPT_DONATE)
         batch_txs = batch_txs.txs
         batch_txs = fetcher_tx.merge_related_txs(batch_txs)
         for tx in batch_txs:
