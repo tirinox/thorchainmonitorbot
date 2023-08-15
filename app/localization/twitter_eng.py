@@ -231,7 +231,7 @@ class TwitterEnglishLocalization(BaseLocalization):
     def notification_text_streaming_swap_started(self, e: EventSwapStart, name_map: NameMap):
         user_link = self.link_to_address(e.from_address, name_map)
         chain = Chains.THOR
-        tx_link = get_explorer_url_to_tx(self.cfg.network_id, chain, e.ss.tx_id)
+        tx_link = get_explorer_url_to_tx(self.cfg.network_id, chain, e.tx_id)
         asset_str = Asset(e.in_asset).pretty_str
         amount_str = self.format_op_amount(e.in_amount)
         target_asset_str = Asset(e.out_asset).pretty_str

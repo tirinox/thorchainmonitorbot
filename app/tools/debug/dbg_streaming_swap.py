@@ -167,7 +167,7 @@ async def debug_detect_start_on_deposit_rune(app):
     sss = StreamingSwapStartTxNotifier(app.deps)
     deposits = blk.find_tx_by_type(MsgDeposit)
 
-    results = sss.handle_deposits(deposits)
+    results = sss.detector.handle_deposits(deposits)
     print(results)
 
 

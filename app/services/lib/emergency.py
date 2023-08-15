@@ -58,6 +58,7 @@ class EmergencyReport(WithLogger):
         if not self._running:
             raise Exception('First you must run this in background. Use "await run()" method!')
 
+        self.logger.warning(f'The module {module!r} has reported an emergency message "{message}", {kwargs = }')
         self._q.put_nowait(ReportedEvent(module, message, datetime.now(), kwargs))
 
     async def _process_item(self, e: ReportedEvent):

@@ -189,9 +189,15 @@ def fuzzy_search(query: str, realm, f=str.upper) -> List[str]:
         return [query]
 
     variants = []
+    query_comp = query.split('-', 2)
     for name in realm:
+        name: str
         if query in name:
             variants.append(name)
+        elif len(query_comp) >= 2 and name.startswith(query_comp[0]) and name.endswith(query_comp[1]):
+            # So ETH.USDT-EC7 matches ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7
+            variants.append(name)
+
     return variants
 
 
