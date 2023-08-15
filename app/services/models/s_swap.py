@@ -1,4 +1,4 @@
-from typing import NamedTuple, List, Optional
+from typing import NamedTuple, List, Optional, Union
 
 from proto.access import DecodedEvent
 from services.lib.constants import THOR_BLOCK_TIME
@@ -269,3 +269,6 @@ def parse_swap_and_out_event(e: DecodedEvent, height):
         return EventOutbound.from_event(e, height)
     elif e.type == 'scheduled_outbound':
         return EventScheduledOutbound.from_event(e, height)
+
+
+TypeEventSwapAndOut = Union[EventSwap, EventStreamingSwap, EventOutbound, EventScheduledOutbound]

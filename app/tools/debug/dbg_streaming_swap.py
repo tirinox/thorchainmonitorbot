@@ -1,5 +1,4 @@
 import asyncio
-from pprint import pprint
 
 from proto.types import MsgDeposit, MsgObservedTxIn
 from services.jobs.fetch.native_scan import NativeScannerBlock
@@ -34,6 +33,7 @@ SS_EXAMPLE_BLOCK = 12079656
 
 # 2)
 #  030E71AD7F00A9273ADFFF6327069264FBE6296119CFFC9E6A1C174E35F87315
+#  ETH => [ss, aff] => ETH.XDEFI
 #   "memo": "=:ETH.XDEFI:0xc8Ba8c8E2D86d1Cf614325ceC04151D24Ed72DDa:4261584533288/9/65:t:15"
 # Inb: https://thornode.ninerealms.com/thorchain/tx/030E71AD7F00A9273ADFFF6327069264FBE6296119CFFC9E6A1C174E35F87315
 
@@ -104,13 +104,12 @@ async def debug_block_analyse(app: LpAppFramework):
     'out': '6930999917 BNB.BNB', 'failed_swaps': b'', 'failed_swap_reasons': b''}), """
 
 
-async def debug_full_pipeline(app, start=None):
+async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
     d = app.deps
 
     # Block scanner: the source of the river
     d.block_scanner = NativeScannerBlock(d, last_block=start)
-    action_extractor = NativeActionExtractor(app.deps)
-    d.block_scanner.add_subscriber(action_extractor)
+    d.block_scanner.one_block_per_run = single_block
 
     # Just to check stability
     user_counter = UserCounter(d)
@@ -123,6 +122,8 @@ async def debug_full_pipeline(app, start=None):
     native_action_extractor = NativeActionExtractor(d)
     d.block_scanner.add_subscriber(native_action_extractor)
     native_action_extractor.add_subscriber(aggregator)
+    if tx_id:
+        native_action_extractor.dbg_watch_swap_id = tx_id
 
     # Volume filler (important)
     volume_filler = VolumeFillerUpdater(d)
@@ -156,9 +157,12 @@ async def debug_full_pipeline(app, start=None):
     await stream_swap_notifier.clear_seen_cache()
 
     # Run all together
-    while True:
-        await d.block_scanner.run()
-        await asyncio.sleep(5.9)
+    if single_block:
+        await d.block_scanner.run_once()
+    else:
+        while True:
+            await d.block_scanner.run()
+            await asyncio.sleep(5.9)
 
 
 async def debug_detect_start_on_deposit_rune(app):
@@ -172,7 +176,6 @@ async def debug_detect_start_on_deposit_rune(app):
 
 
 async def demo_search_for_deposit_streaming_synth(app):
-
     tx_fetcher = TxFetcher(app.deps, tx_types=(ThorTxType.TYPE_SWAP,))
     txs = await tx_fetcher.fetch_one_batch(tx_types=tx_fetcher.tx_types)
     next_token = txs.next_page_token
@@ -191,7 +194,6 @@ async def demo_search_for_deposit_streaming_synth(app):
                     print(tx)
 
 
-
 async def debug_detect_start_on_external_tx(app: LpAppFramework):
     scanner = NativeScannerBlock(app.deps)
     sss = StreamingSwapStartTxNotifier(app.deps)
@@ -202,10 +204,11 @@ async def debug_detect_start_on_external_tx(app: LpAppFramework):
 
     blk = await scanner.fetch_one_block(12132223)
     deposits = list(blk.find_tx_by_type(MsgObservedTxIn))
-    results = sss.handle_observed_txs(deposits)
+    results = sss.detector.handle_observed_txs(deposits)
     print(results)
 
     sep()
+
 
 async def run():
     app = LpAppFramework()
@@ -217,7 +220,14 @@ async def run():
         # await debug_fetch_ss(app)
         # await debug_block_analyse(app)
         # await debug_full_pipeline(app, start=12132219)
-        await debug_full_pipeline(app, start=12148000)
+
+        await debug_full_pipeline(
+            app,
+            # start=12136527, # almost end
+            start=12136544,  # outbound ETH
+            tx_id='50D20A3C457A87F96CB843CA9D28AC9402D821B832CFE0239E7AF3685C621B49',
+            # single_block=True
+        )
 
         # await debug_detect_start_on_deposit_rune(app)
         # await debug_detect_start_on_external_tx(app)

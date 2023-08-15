@@ -1,4 +1,8 @@
+import datetime
+from collections import defaultdict
 from typing import List, Optional
+
+from aioredis import Redis
 
 from proto.access import parse_thor_address, NativeThorTx
 from proto.types import MsgDeposit, MsgObservedTxIn
@@ -10,7 +14,8 @@ from services.lib.memo import THORMemo
 from services.lib.money import Asset
 from services.lib.texts import sep
 from services.lib.utils import WithLogger
-from services.models.s_swap import parse_swap_and_out_event, EventOutbound, StreamingSwap, EventSwapStart
+from services.models.s_swap import parse_swap_and_out_event, StreamingSwap, EventSwapStart, EventOutbound, \
+    EventScheduledOutbound, TypeEventSwapAndOut
 from services.models.tx import ThorTx, ThorTxType, ThorMetaSwap, SUCCESS
 
 
@@ -18,6 +23,10 @@ class SwapStartDetector(WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
+
+    @staticmethod
+    def is_rune_asset(asset: str):
+        return asset.lower() == 'r' or asset.upper() == NATIVE_RUNE_SYMBOL
 
     def make_ss_event(self, msg, tx_hash, height) -> Optional[EventSwapStart]:
         ph = self.deps.price_holder
@@ -29,8 +38,12 @@ class SwapStartDetector(WithLogger):
             return
 
         if msg.coins:
-            out_asset = ph.pool_fuzzy_first(memo.asset)
-            if not out_asset:
+            if self.is_rune_asset(memo.asset):
+                out_asset_name = NATIVE_RUNE_SYMBOL
+            else:
+                out_asset_name = ph.pool_fuzzy_first(memo.asset)
+
+            if not out_asset_name:
                 self.logger.warning(f'{memo.asset}: asset not found!')
                 return
 
@@ -63,10 +76,11 @@ class SwapStartDetector(WithLogger):
                 from_address=from_address,
                 in_amount=thor_to_float(msg.coins[0].amount),
                 in_asset=str(in_asset),
-                out_asset=out_asset,
+                out_asset=out_asset_name,
                 expected_rate=thor_to_float(memo.limit),
                 volume_usd=volume_usd,
-                block_height=height
+                block_height=height,
+                memo=memo
             )
 
     def handle_deposits(self, txs: List[NativeThorTx], height):
@@ -114,35 +128,84 @@ class NativeActionExtractor(WithDelegates, INotified, WithLogger):
         self.deps = deps
         self._swap_detector = SwapStartDetector(deps)
 
-    async def on_data(self, sender, block: BlockResult) -> List[ThorTx]:
-        """
-        Strategy
-        Let's aggreagate all events grouped by TX ID (inbound tx hash)
+        self.dbg_watch_swap_id = None
 
-        """
+    async def register_new_swaps(self, swaps: List[EventSwapStart], height):
+        self.logger.info(f"New swaps {len(swaps)} in block #{height}")
 
-        new_swaps = self._swap_detector.detect_swaps(block)
-        print(f"New swaps: {len(new_swaps)}")
+        r: Redis = await self.deps.db.get_redis()
 
-        for ev in block.end_block_events:
-            swap_ev = parse_swap_and_out_event(ev)
-            if not swap_ev:
-                continue
-
-            # if isinstance(swap_ev, EventOutbound):
-            #     print(swap_ev)
-
-            tx_id = swap_ev.tx_id
-            if tx_id == '026170F3A6E8EA8A9BA1DDBB106536390C086B64D8E157F31E65789A31841284':
-                sep(swap_ev.__class__.__name__)
-                print(tx_id)
+        for swap in swaps:
+            if swap.tx_id == self.dbg_watch_swap_id:
+                print(f'👿 Start watching swap: {swap}')
                 sep()
+
+    async def register_swap_events(self, block: BlockResult, interesting_events: List[TypeEventSwapAndOut]):
+        r: Redis = await self.deps.db.get_redis()
+
+        for swap_ev in interesting_events:
+            if swap_ev.tx_id == self.dbg_watch_swap_id:
+                print(f'👿 new event for watched TX!!! {swap_ev.__class__} at block #{swap_ev.height}')
                 print(swap_ev)
                 sep()
 
+    @staticmethod
+    def get_events_of_interest(block: BlockResult) -> List[TypeEventSwapAndOut]:
+        for ev in block.end_block_events:
+            swap_ev = parse_swap_and_out_event(ev, height=block.block_no)
+            if swap_ev:
+                yield swap_ev
+
+    async def on_data(self, sender, block: BlockResult) -> List[ThorTx]:
+        new_swaps = self._swap_detector.detect_swaps(block)
+
+        # Incoming swap intentions will be recorded in the DB
+        await self.register_new_swaps(new_swaps, block.block_no)
+
+        # Swaps and Outs
+        interesting_events = list(self.get_events_of_interest(block))
+
+        # To calculate progress and final slip/fees
+        await self.register_swap_events(block, interesting_events)
+
+        return await self.detect_swap_finished(block, interesting_events)
+
+    """
+    Kinds of TX
+    
+    1) THOR => single swap => THOR
+    2) THOR => double swap => THOR
+    3) OUT => single swap => THOR
+    4) OUT => double swap => THOR
+    
+    5) THOR => single swap [stream] => THOR
+    6) THOR => double swap [stream] => THOR
+    7) OUT => single swap [stream] => THOR
+    8) OUT => double swap [stream] => THOR
+
+    """
+
+    async def detect_swap_finished(self, block: BlockResult, interesting_events: List[TypeEventSwapAndOut]) \
+            -> List[ThorTx]:
+        """
+            We do not wait until scheduled outbound will be sent out.
+            Swap end is detected by
+                a) EventScheduledOutbound
+                b) EventOutbound for Rune/synths
+        """
+        group_by_in = defaultdict(list)
+
+        for ev in interesting_events:
+            if isinstance(ev, (EventOutbound, EventScheduledOutbound)):
+                group_by_in[ev.tx_id].append(ev)
+
+        for tx_id, events in group_by_in.items():
+            print(f"TX finish {tx_id} => {[e.__class__.__name__ for e in events]}")
+
+        # Build ThorTx
         tx = ThorTx(
-            date='',
-            height='',
+            date=int(datetime.datetime.utcnow().timestamp() * 1e9),
+            height=block.block_no,
             type=ThorTxType.TYPE_SWAP,
             pools=[],
             in_tx=[],
@@ -172,4 +235,4 @@ class NativeActionExtractor(WithDelegates, INotified, WithLogger):
             status=SUCCESS
         )
 
-        return []  # todo
+        return []

@@ -182,10 +182,11 @@ class LastPriceHolder:
         return fuzzy_search(query, self.pool_names)
 
     def pool_fuzzy_first(self, query: str) -> str:
-        query = query.replace('/', '.', 1)
+        query = query.replace('/', '.', 1).strip()
 
         # See: https://dev.thorchain.org/thorchain-dev/concepts/memos#asset-abbreviations
         candidates = self.pool_fuzzy_search(query)
+
         if not candidates:
             return ''
         elif len(candidates) == 1:
