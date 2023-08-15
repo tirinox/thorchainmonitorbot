@@ -85,7 +85,7 @@ class MidgardParserV2(MidgardParserBase):
             metadata.get('refund', {})) if tx_type == ThorTxType.TYPE_REFUND else None
 
         return ThorTx(
-            date, block_height, status, tx_type,
+            int(date), int(block_height), status, tx_type,
             pools, in_tx_list, out_tx_list,
             meta_add, meta_withdraw, meta_swap, meta_refund
         )

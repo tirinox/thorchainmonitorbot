@@ -194,8 +194,8 @@ PENDING = 'pending'
 
 @dataclass
 class ThorTx:
-    date: str
-    height: str
+    date: int
+    height: int
     status: str
     type: str
     pools: List[str]
