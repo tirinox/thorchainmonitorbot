@@ -1,3 +1,4 @@
+import asyncio
 import re
 from dataclasses import dataclass
 from typing import List, Optional
@@ -121,13 +122,16 @@ class NativeScannerBlock(BaseFetcher):
             self._last_block += 1
             self._this_block_attempts = 0
 
-    async def fetch(self):
-        if not self._last_block:
+    async def ensure_last_block(self):
+        while not self._last_block:
             await self._update_last_block()
 
-        if not self._last_block:
-            self.logger.error('Still no last_block height!')
-            return
+            if not self._last_block:
+                self.logger.error('Still no last_block height!')
+                await asyncio.sleep(self.sleep_period)
+
+    async def fetch(self):
+        await self.ensure_last_block()
 
         if self._last_block % 10 == 0:
             self.logger.info(f'👿 Tick start for block #{self._last_block}.')
