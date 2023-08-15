@@ -41,6 +41,7 @@ class NativeScannerBlock(BaseFetcher):
         self._last_block = last_block
         self._this_block_attempts = 0
         self.max_attempts = max_attempts
+        self.one_block_per_run = False
 
     async def _fetch_last_block(self):
         result = await self.deps.thor_connector.query_native_status_raw()
@@ -167,6 +168,9 @@ class NativeScannerBlock(BaseFetcher):
 
             self._last_block += 1
             self._this_block_attempts = 0
+
+            if self.one_block_per_run:
+                break
 
     async def fetch_one_block(self, block_index) -> Optional[BlockResult]:
         block_result = await self.fetch_block_results(block_index)
