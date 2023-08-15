@@ -16,7 +16,7 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
         self.prefix = prefix
         self.detector = SwapStartDetector(deps)
 
-    KEY_LAST_SEEN_TX_HASH = 'tx:scanner:streaming-swap:seen-start'
+    KEY_LAST_SEEN_TX_HASH = 'tx:scanner:streaming-swap:seen-start:notify'
 
     async def has_seen_hash(self, tx_id: str):
         if tx_id:
@@ -32,7 +32,7 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
         swaps = self.detector.detect_swaps(data)
         for swap_start_ev in swaps:
             if swap_start_ev.is_streaming:
-                if not await self.has_seen_hash(tx_id := swap_start_ev.ss.tx_id):
+                if not await self.has_seen_hash(tx_id := swap_start_ev.tx_id):
                     await self.pass_data_to_listeners(swap_start_ev)
                     await self.mark_as_seen(tx_id)
 
