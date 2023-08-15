@@ -97,3 +97,4 @@ class StreamingSwapQuote(WithLogger):
 
         full_swaps, reminder_swap = divmod(asset_depth, two_bps_depth)
         full_swaps = int(full_swaps)
+

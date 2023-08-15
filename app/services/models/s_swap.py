@@ -85,7 +85,7 @@ class StreamingSwap(NamedTuple):
         return self.quantity * self.interval * THOR_BLOCK_TIME
 
 
-class EventStreamingSwapStart(NamedTuple):
+class EventSwapStart(NamedTuple):
     ss: StreamingSwap
     from_address: str
     in_amount: float
@@ -93,6 +93,11 @@ class EventStreamingSwapStart(NamedTuple):
     out_asset: str
     expected_rate: float
     volume_usd: float
+    block_height: int
+
+    @property
+    def is_streaming(self):
+        return self.ss.quantity > 1
 
 
 class EventSwap(NamedTuple):
@@ -211,7 +216,7 @@ class EventScheduledOutbound(NamedTuple):
     coin_decimals: int = 0
     memo: str = ''
     gas_rate: int = 0
-    in_hash: str = ''
+    tx_id: str = ''  # in_hash
     out_hash: bytes = ''
     module_name: bytes = b''
     max_gas_asset_0: str = ''
@@ -231,7 +236,7 @@ class EventScheduledOutbound(NamedTuple):
             coin_decimals=int(attrs.get('coin_decimals', 0)),
             memo=attrs.get('memo', ''),
             gas_rate=int(attrs.get('gas_rate', 0)),
-            in_hash=attrs.get('in_hash', ''),
+            tx_id=attrs.get('in_hash', ''),
             out_hash=attrs.get('out_hash', b''),
             module_name=attrs.get('module_name', b''),
             max_gas_asset_0=attrs.get('max_gas_asset_0', ''),
@@ -241,7 +246,7 @@ class EventScheduledOutbound(NamedTuple):
         )
 
 
-def parse_swap_event(e: DecodedEvent):
+def parse_swap_and_out_event(e: DecodedEvent):
     if e.type == 'swap':
         return EventSwap.from_event(e)
     elif e.type == 'streaming_swap':

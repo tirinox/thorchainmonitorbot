@@ -28,7 +28,7 @@ from services.models.node_info import NodeSetChanges, NodeVersionConsensus, Node
 from services.models.pol import EventPOL
 from services.models.pool_info import PoolMapPair, PoolChanges, PoolInfo
 from services.models.price import RuneMarketInfo, PriceReport
-from services.models.s_swap import EventStreamingSwapStart
+from services.models.s_swap import EventSwapStart
 from services.models.savers import EventSaverStats
 from services.models.transfer import RuneCEXFlow, RuneTransfer
 from services.models.tx import ThorTx, ThorTxType
@@ -228,7 +228,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         return msg.strip()
 
-    def notification_text_streaming_swap_started(self, e: EventStreamingSwapStart, name_map: NameMap):
+    def notification_text_streaming_swap_started(self, e: EventSwapStart, name_map: NameMap):
         user_link = self.link_to_address(e.from_address, name_map)
         chain = Chains.THOR
         tx_link = get_explorer_url_to_tx(self.cfg.network_id, chain, e.ss.tx_id)

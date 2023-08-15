@@ -55,18 +55,15 @@ async def debug_fetch_ss(app: LpAppFramework):
 async def debug_block_analyse(app: LpAppFramework):
     scanner = NativeScannerBlock(app.deps)
     # await scanner.run()
-    blk = await scanner.fetch_one_block(12079656)
-    pprint(blk)
+    blk = await scanner.fetch_one_block(12132347)
+    # blk = await scanner.fetch_one_block(12147039)  # has swap, ss, out, sch out
+    # pprint(blk)
 
     sep()
-    depo = list(blk.find_tx_by_type(MsgDeposit))
 
-    print(depo)
-    print(depo[0].hash)
-    #
-    # naex = NativeActionExtractor(app.deps)
-    # actions = await naex.on_data(None, blk)
-    # print(actions)
+    naex = NativeActionExtractor(app.deps)
+    actions = await naex.on_data(None, blk)
+    print(actions)
 
     """
     12135951 Streaming Swap start from ETH chain
@@ -215,11 +212,12 @@ async def run():
     async with app(brief=True):
         await app.deps.pool_fetcher.reload_global_pools()
 
-        print(app.deps.price_holder.pool_fuzzy_first('ETH.Usd'))
+        # print(app.deps.price_holder.pool_fuzzy_first('ETH.Usd'))
 
         # await debug_fetch_ss(app)
         # await debug_block_analyse(app)
-        await debug_full_pipeline(app, start=12132219)
+        # await debug_full_pipeline(app, start=12132219)
+        await debug_full_pipeline(app, start=12148000)
 
         # await debug_detect_start_on_deposit_rune(app)
         # await debug_detect_start_on_external_tx(app)

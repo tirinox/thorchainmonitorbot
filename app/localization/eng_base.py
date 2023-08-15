@@ -38,7 +38,7 @@ from services.models.pol import EventPOL
 from services.models.pool_info import PoolInfo, PoolChanges, PoolMapPair
 from services.models.price import PriceReport, RuneMarketInfo
 from services.models.queue import QueueInfo
-from services.models.s_swap import EventStreamingSwapStart
+from services.models.s_swap import EventSwapStart
 from services.models.savers import how_much_savings_you_can_add, EventSaverStats
 from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.tx import ThorTx, ThorTxType, ThorSubTx
@@ -691,7 +691,7 @@ class BaseLocalization(ABC):  # == English
         saver_pct = asset_amount / pool.savers_depth_float * 100.0 if pool.savers_depth else 100
         return amount_more, Asset(pool.asset).name, saver_pb, thor_to_float(cap), saver_pct
 
-    def notification_text_streaming_swap_started(self, e: EventStreamingSwapStart, name_map: NameMap):
+    def notification_text_streaming_swap_started(self, e: EventSwapStart, name_map: NameMap):
         user_link = self.link_to_address(e.from_address, name_map)
         chain = Chains.THOR
         tx_link = link(get_explorer_url_to_tx(self.cfg.network_id, chain, e.ss.tx_id), 'TX')
