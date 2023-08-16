@@ -42,6 +42,7 @@ class NativeScannerBlock(BaseFetcher):
         self._this_block_attempts = 0
         self.max_attempts = max_attempts
         self.one_block_per_run = False
+        self.allow_jumps = True
 
     async def _fetch_last_block(self):
         result = await self.deps.thor_connector.query_native_status_raw()
@@ -147,7 +148,7 @@ class NativeScannerBlock(BaseFetcher):
                     break
 
                 if block_result.is_error:
-                    if block_result.block_no > self._last_block:
+                    if self.allow_jumps and block_result.block_no > self._last_block:
                         self.logger.warning(f'It seems that no blocks available before {block_result.block_no}. '
                                             f'Jumping to it!')
                         self.deps.emergency.report(self.NAME, 'Jump block',
