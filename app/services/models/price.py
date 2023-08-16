@@ -4,7 +4,7 @@ from typing import List
 
 from services.jobs.fetch.circulating import RuneCirculatingSupply
 from services.lib.config import Config
-from services.lib.constants import BNB_BTCB_SYMBOL, BTC_SYMBOL, STABLE_COIN_POOLS, thor_to_float
+from services.lib.constants import BNB_BTCB_SYMBOL, BTC_SYMBOL, STABLE_COIN_POOLS, thor_to_float, NATIVE_RUNE_SYMBOL
 from services.lib.date_utils import now_ts
 from services.lib.money import weighted_mean, Asset
 from services.lib.texts import fuzzy_search
@@ -201,6 +201,28 @@ class LastPriceHolder:
                     deepest_pool = candidate
 
             return deepest_pool
+
+    @staticmethod
+    def is_rune_asset(asset: str):
+        return asset.lower() == 'r' or asset.upper() == NATIVE_RUNE_SYMBOL
+
+    def get_asset_price_in_rune(self, query: str):
+        if self.is_rune_asset(query):
+            return 1.0
+        full_name_of_asset = self.pool_fuzzy_first(query)
+        pool = self.find_pool(full_name_of_asset)
+        if pool:
+            return pool.runes_per_asset
+
+    def get_asset_price_in_usd(self, query: str):
+        price_in_rune = self.get_asset_price_in_rune(query)
+        if price_in_rune:
+            return self.usd_per_rune * price_in_rune
+
+    def convert_to_usd(self, amount: float, asset: str):
+        price = self.get_asset_price_in_usd(asset)
+        if price:
+            return amount * price
 
     def total_synth_supply_in_usd(self):
         accum = 0.0

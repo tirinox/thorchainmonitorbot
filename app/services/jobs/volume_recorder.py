@@ -1,3 +1,4 @@
+import datetime
 from contextlib import suppress
 from typing import List
 
@@ -6,6 +7,7 @@ from services.lib.date_utils import HOUR
 from services.lib.delegates import WithDelegates, INotified
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
+from services.models.s_swap import EventSwap
 from services.models.tx import ThorTx, ThorTxType
 
 
@@ -40,21 +42,27 @@ class VolumeRecorder(WithDelegates, INotified, WithLogger):
 
                 add = volume if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY else 0.0
                 withdraw = volume if tx.type == ThorTxType.TYPE_WITHDRAW else 0.0
-                await self._accumulator.add(
-                    tx.date_timestamp,
-                    **{
-                        self.KEY_SWAP: swap,
-                        self.KEY_SWAP_SYNTH: synth,
-                        self.KEY_ADD_LIQUIDITY: add,
-                        self.KEY_WITHDRAW_LIQUIDITY: withdraw,
-                    }
-                )
+
+                await self._add_point(tx.date_timestamp, add, swap, synth, withdraw, current_price)
+
                 total_volume += volume
-                await self._accumulator.set(
-                    tx.date_timestamp,
-                    price=current_price,  # it is better to get price at the tx's block!
-                )
+
         return total_volume
+
+    async def _add_point(self, date_timestamp, add, swap, synth, withdraw, current_price):
+        await self._accumulator.add(
+            date_timestamp,
+            **{
+                self.KEY_SWAP: swap,
+                self.KEY_SWAP_SYNTH: synth,
+                self.KEY_ADD_LIQUIDITY: add,
+                self.KEY_WITHDRAW_LIQUIDITY: withdraw,
+            }
+        )
+        await self._accumulator.set(
+            date_timestamp,
+            price=current_price,  # it is better to get price at the tx's block!
+        )
 
     async def get_data_instant(self, ts=None):
         return await self._accumulator.get(ts)
@@ -64,3 +72,23 @@ class VolumeRecorder(WithDelegates, INotified, WithLogger):
 
     async def get_data_range_ago_n(self, ago, n=30):
         return await self._accumulator.get_range_n(-ago, n=n)
+
+
+class VolumeRecorderSwapEvent(VolumeRecorder):
+    def __init__(self, deps: DepContainer):
+        super().__init__(deps)
+
+    async def on_data(self, sender, events: List[EventSwap]):
+        with suppress(Exception):
+            total_volume = await self.handle_txs_unsafe(events)
+            await self.pass_data_to_listeners(total_volume, self)
+
+    async def handle_txs_unsafe(self, events: List[EventSwap], ts=None):
+        ph = self.deps.price_holder
+        ts = datetime.datetime.now().timestamp()
+        for event in events:
+            usd_value = ph.convert_to_usd(event.amount, event.asset)
+            is_synth = '/' in event.asset
+
+            synth_volume = usd_value if is_synth else usd_value
+            await self._add_point(ts, 0.0, usd_value, synth_volume, 0.0, ph.usd_per_rune)
