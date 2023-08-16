@@ -96,6 +96,7 @@ class EventSwapStart(NamedTuple):
     volume_usd: float
     block_height: int
     memo: THORMemo
+    memo_str: str
 
     @property
     def is_streaming(self):

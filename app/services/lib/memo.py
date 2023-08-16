@@ -35,6 +35,10 @@ class THORMemo:
             return default
 
     @property
+    def has_affiliate_part(self):
+        return self.affiliate_address and self.affiliate_fee > 0
+
+    @property
     def is_streaming(self):
         return self.s_swap_quantity > 1
 
