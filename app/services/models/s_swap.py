@@ -160,7 +160,7 @@ class EventStreamingSwap(NamedTuple):
     last_height: int = 0
     deposit: str = ''
     in_amt_str: str = ''
-    out_out_str: str = ''
+    out_amt_str: str = ''
     failed_swaps: bytes = b''
     failed_swap_reasons: bytes = b''
     original: Optional[DecodedEvent] = None
@@ -177,7 +177,7 @@ class EventStreamingSwap(NamedTuple):
             last_height=int(attrs.get('last_height', 0)),
             deposit=attrs.get('deposit', ''),
             in_amt_str=attrs.get('in', ''),
-            out_out_str=attrs.get('out', ''),
+            out_amt_str=attrs.get('out', ''),
             failed_swaps=attrs.get('failed_swaps', b''),
             failed_swap_reasons=attrs.get('failed_swap_reasons', b''),
             original=event,

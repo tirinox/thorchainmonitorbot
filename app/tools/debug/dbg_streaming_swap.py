@@ -46,6 +46,13 @@ SS_EXAMPLE_BLOCK = 12079656
 # https://viewblock.io/thorchain/tx/1E67334A573AC5AA87084836E7CAEC77CC9716A6A39C03A462DC623322E0E3E5
 # This is streaming swap of synth!
 
+
+# 5) Simple ARB: Rune -> synth, no aff, no stream
+# 1516681B16786D7F0721942685162510C77A0022F74FF88D9A73C5EC6E5AB46C
+# https://midgard.ninerealms.com/v2/actions?txid=1516681B16786D7F0721942685162510C77A0022F74FF88D9A73C5EC6E5AB46C
+# https://viewblock.io/thorchain/tx/1516681B16786D7F0721942685162510C77A0022F74FF88D9A73C5EC6E5AB46C
+# 12176322
+
 async def debug_fetch_ss(app: LpAppFramework):
     ssf = StreamingSwapFechter(app.deps)
     data = await ssf.run_once()
@@ -58,50 +65,11 @@ async def debug_block_analyse(app: LpAppFramework):
     blk = await scanner.fetch_one_block(12132347)
     # blk = await scanner.fetch_one_block(12147039)  # has swap, ss, out, sch out
     # pprint(blk)
-
     sep()
 
     naex = NativeActionExtractor(app.deps)
     actions = await naex.on_data(None, blk)
     print(actions)
-
-    """
-    12135951 Streaming Swap start from ETH chain
-    
-    """
-
-    """
-    Double swap. BTC => RUNE
-    [DecodedEvent(type='swap', attributes=
-    {'pool': 'BTC.BTC', 'swap_target': '0', 'swap_slip': '1', 'liquidity_fee': '11243951', 
-    'liquidity_fee_in_rune': '11243951', 'emit_asset': '138462176483 THOR.RUNE', 
-    'streaming_swap_quantity': '9', 'streaming_swap_count': '9', 
-    'id': '026170F3A6E8EA8A9BA1DDBB106536390C086B64D8E157F31E65789A31841284', 
-    'chain': 'BTC', 'from': 'bc1qhqrv445ynkzqw8dwllycwpespg4cwhc86vv6ar', 
-    'to': 'bc1q7dntvsztw8pyul7904cstg9rs50dv96r787uym', 'coin': '6314336 BTC.BTC', 
-    'amount': 6314336, 'asset': 'BTC.BTC', 
-    'memo': '=:n:bnb1jer9yxcdpmrsy773z4r5kkak9xk7gpktfa6wx8:6904532050/9/9:t:30'}), """
-
-    """
-    The second part is RUNE => BNB
-    
-    DecodedEvent(type='swap', 
-    attributes={'pool': 'BNB.BNB', 'swap_target': '742719800', 'swap_slip': '6', 'liquidity_fee': '426632', 
-    'liquidity_fee_in_rune': '76713295', 'emit_asset': '769187667 BNB.BNB', 'streaming_swap_quantity': '9',
-     'streaming_swap_count': '9', 'id': '026170F3A6E8EA8A9BA1DDBB106536390C086B64D8E157F31E65789A31841284', 
-     'chain': 'BTC', 'from': 'bc1qhqrv445ynkzqw8dwllycwpespg4cwhc86vv6ar', 
-     'to': 'bc1q7dntvsztw8pyul7904cstg9rs50dv96r787uym', 'coin': '138462176483 THOR.RUNE', 
-     'amount': 138462176483, 'asset': 'THOR.RUNE', 
-     'memo': '=:n:bnb1jer9yxcdpmrsy773z4r5kkak9xk7gpktfa6wx8:6904532050/9/9:t:30'})
-    """
-
-    """
-    streaming_swap desc:
-    
-    DecodedEvent(type='streaming_swap', 
-    attributes={'tx_id': '026170F3A6E8EA8A9BA1DDBB106536390C086B64D8E157F31E65789A31841284', 'interval': '9', 
-    'quantity': '9', 'count': '9', 'last_height': '12132219', 'deposit': '56829000 BTC.BTC', 'in': '56829000 BTC.BTC', 
-    'out': '6930999917 BNB.BNB', 'failed_swaps': b'', 'failed_swap_reasons': b''}), """
 
 
 async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
@@ -110,6 +78,7 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
     # Block scanner: the source of the river
     d.block_scanner = NativeScannerBlock(d, last_block=start)
     d.block_scanner.one_block_per_run = single_block
+    d.block_scanner.allow_jumps = False
 
     # Just to check stability
     user_counter = UserCounter(d)
@@ -120,6 +89,7 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
 
     # Extract ThorTx from BlockResult
     native_action_extractor = NativeActionExtractor(d)
+    native_action_extractor.dbg_open_file(f'../temp/{tx_id}.txt')
     d.block_scanner.add_subscriber(native_action_extractor)
     native_action_extractor.add_subscriber(aggregator)
     if tx_id:
@@ -154,7 +124,7 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
     stream_swap_notifier = StreamingSwapStartTxNotifier(d)
     d.block_scanner.add_subscriber(stream_swap_notifier)
     stream_swap_notifier.add_subscriber(d.alert_presenter)
-    await stream_swap_notifier.clear_seen_cache()
+    # await stream_swap_notifier.clear_seen_cache()
 
     # Run all together
     if single_block:
@@ -224,13 +194,33 @@ async def run():
         await debug_full_pipeline(
             app,
             # start=12136527, # almost end
-            start=12136544,  # outbound ETH
-            tx_id='50D20A3C457A87F96CB843CA9D28AC9402D821B832CFE0239E7AF3685C621B49',
+            # start=12167419,
+            start=12132156-20,
+            tx_id='026170F3A6E8EA8A9BA1DDBB106536390C086B64D8E157F31E65789A31841284',
             # single_block=True
         )
 
         # await debug_detect_start_on_deposit_rune(app)
         # await debug_detect_start_on_external_tx(app)
+
+        # New idea:
+        """
+        1) On event swap where streaming_swap_quantity == streaming_swap_count!
+        2) Read midgard for this TX (last one has refund and outbound)
+           PITFALL => at that moment Midgard highly probably is not fully synced! (wait or monitor?)
+           => wait until Outbound is finalised?
+              => how? https://thornode.ninerealms.com/thorchain/alpha/tx/stages/<tx_id>
+           => filter beforehand based on "tx.swap.min_usd_total"
+           
+        3) Read Tx data from Thornode (can calculate outbound duration?) or (swap start height - current height)
+        4) Affiliate Fee = (In - Refund) * aff_bps
+        """
+
+        # Other idea:
+        """
+        1) Register and saver swap start. Detect if it is streaming: from memo
+        2a) 
+        """
 
 
 if __name__ == '__main__':
