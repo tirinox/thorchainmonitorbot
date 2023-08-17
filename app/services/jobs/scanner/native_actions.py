@@ -78,13 +78,6 @@ class NativeActionExtractor(WithDelegates, INotified, WithLogger):
 
                 self.dbg_start_observed = True
 
-    def is_affiliate_swap(self, ev: EventSwap, tx_props: dict):
-        return ev.streaming_swap_count == ev.streaming_swap_quantity == 1
-
-    @staticmethod
-    def expect_scheduled_outbound(tx_props: dict):
-        ...
-
     @staticmethod
     def suspect_outbound_internal(ev: EventOutbound):
         return ev.out_id == ZERO_HASH and ev.chain == 'THOR'
@@ -155,43 +148,7 @@ class NativeActionExtractor(WithDelegates, INotified, WithLogger):
         return []
 
     async def _handle_finishing_swap_events_for_tx(self, tx_id: str, block_no, group: List[TypeEventSwapAndOut]):
-        # Swap is finished when
-        #   Is it a streaming swap?
-        #       a) After ss_count == ss_quantity > 1  => outbound_detected OR scheduled_outbound
-        #       b)
 
-        # Build ThorTx
-        tx = ThorTx(
-            date=int(datetime.datetime.utcnow().timestamp() * 1e9),
-            height=block_no,
-            type=ThorTxType.TYPE_SWAP,
-            pools=[],
-            in_tx=[],
-            out_tx=[],
-            meta_swap=ThorMetaSwap(
-                liquidity_fee='0',
-                network_fees=[],
-                trade_slip='0',
-                trade_target='0',
-                affiliate_fee=0.0,
-                memo='',
-                affiliate_address='',
-                streaming=StreamingSwap(
-                    tx_id='',
-                    interval=0,
-                    quantity=0,
-                    count=0,
-                    last_height=0,
-                    trade_target=0,
-                    deposit=0,
-                    in_amt=0,
-                    out_amt=0,
-                    failed_swaps=[],
-                    failed_swap_reasons=[]
-                )
-            ),
-            status=SUCCESS
-        )
 
         return []
 

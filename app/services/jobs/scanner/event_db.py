@@ -1,57 +1,9 @@
 import json
-from typing import NamedTuple, List, Optional
 
 from aioredis import Redis
 
-from proto.access import DecodedEvent
+from services.jobs.scanner.swap_props import SwapProps
 from services.lib.db import DB
-from services.lib.memo import THORMemo
-from services.lib.money import is_rune_asset
-from services.models.s_swap import TypeEventSwapAndOut, parse_swap_and_out_event, EventStreamingSwap
-
-
-class SwapProps(NamedTuple):
-    attrs: dict
-    events: List[TypeEventSwapAndOut]
-    memo: THORMemo
-
-    @classmethod
-    def restore_events_from_tx_status(cls, attrs):
-        """
-            foo = await self.read_tx_status(swap_ev.tx_id)
-            foo_ev = self.restore_events_from_tx_status(foo)
-        """
-        results = []
-        key: str
-        for key, value in attrs.items():
-            if key.startswith('ev_'):
-                raw_dict = json.loads(value)
-                event = DecodedEvent.from_dict_our(raw_dict)
-                swap_ev = parse_swap_and_out_event(event)
-                results.append(swap_ev)
-
-        return cls(
-            attrs,
-            results,
-            memo=THORMemo.parse_memo(attrs.get('memo', ''))
-        )
-
-    @property
-    def is_streaming(self):
-        return bool(self.attrs.get('is_streaming', False))
-
-    def find_event(self, klass) -> Optional[TypeEventSwapAndOut]:
-        return next((e for e in self.events if isinstance(e, klass)), None)
-
-    @property
-    def is_streaming_finished(self):
-        ss = self.find_event(EventStreamingSwap)
-        return ss and ss.streaming_swap_count == ss.streaming_swap_quantity > 1
-
-    @property
-    def is_native_outbound(self):
-        out_asset = self.memo.asset
-        return '/' in out_asset or is_rune_asset(out_asset)
 
 
 class EventDatabase:
