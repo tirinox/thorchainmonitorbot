@@ -53,13 +53,13 @@ def test_merge_two_coins():
 
 # noinspection PyTypeChecker
 def test_merge_two_swap_events():
-    a = ThorMetaSwap('10', [ThorCoin('10', NATIVE_RUNE_SYMBOL), ThorCoin('11', NATIVE_RUNE_SYMBOL)], '333', '1200000')
-    b = ThorMetaSwap('20', [ThorCoin('44', NATIVE_RUNE_SYMBOL), ThorCoin('45', NATIVE_RUNE_SYMBOL)], '22', '2300000')
+    a = ThorMetaSwap('10', [ThorCoin('10', NATIVE_RUNE_SYMBOL), ThorCoin('11', NATIVE_RUNE_SYMBOL)], 333, 1200000)
+    b = ThorMetaSwap('20', [ThorCoin('44', NATIVE_RUNE_SYMBOL), ThorCoin('45', NATIVE_RUNE_SYMBOL)], 22, 2300000)
     c = ThorMetaSwap.merge_two(a, b)
-    assert c.liquidity_fee == '30'
-    assert c.trade_slip == '355'
+    assert c.liquidity_fee == 30
+    assert c.trade_slip == 355
     assert len(c.network_fees) == 4
-    assert c.trade_target == '3500000'
+    assert c.trade_target == 3500000
 
     assert ThorMetaSwap.merge_two(a, None) == a
     assert ThorMetaSwap.merge_two(None, a) == a

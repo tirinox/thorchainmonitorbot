@@ -6,7 +6,7 @@ from services.lib.constants import is_rune, RUNE_SYMBOL, Chains, thor_to_float, 
 from services.lib.date_utils import now_ts
 from services.lib.memo import THORMemo
 from services.lib.money import Asset
-from services.lib.texts import sum_and_str
+from services.lib.texts import safe_sum
 from services.lib.w3.token_record import SwapInOut
 from services.models.cap_info import ThorCapInfo
 from services.models.lp_info import LPAddress
@@ -28,7 +28,7 @@ class ThorTxType:
 
 
 class ThorCoin(NamedTuple):
-    amount: str = '0'
+    amount: int = 0
     asset: str = ''
 
     @property
@@ -38,7 +38,11 @@ class ThorCoin(NamedTuple):
     @staticmethod
     def merge_two(a: 'ThorCoin', b: 'ThorCoin'):
         assert a.asset == b.asset
-        return ThorCoin(sum_and_str(a.amount, b.amount), a.asset)
+        return ThorCoin(safe_sum(a.amount, b.amount), a.asset)
+    
+    @classmethod
+    def from_json(cls, j):
+        return cls(int(j.get('amount', 0)), j.get('asset', ''))
 
 
 @dataclass
@@ -49,7 +53,7 @@ class ThorSubTx:
 
     @classmethod
     def parse(cls, j):
-        coins = [ThorCoin(**cj) for cj in j.get('coins', [])]
+        coins = [ThorCoin.from_json(cj) for cj in j.get('coins', [])]
         return cls(address=j.get('address', ''),
                    coins=coins,
                    tx_id=j.get('txID', ''))
@@ -73,10 +77,10 @@ class ThorSubTx:
 
 @dataclass
 class ThorMetaSwap:
-    liquidity_fee: str
+    liquidity_fee: int
     network_fees: List[ThorCoin]
-    trade_slip: str
-    trade_target: str
+    trade_slip: int
+    trade_target: int
     affiliate_fee: float = 0.0  # (0..1) range
     memo: str = ''
     affiliate_address: str = ''  # highly likely to be a THORName
@@ -84,12 +88,12 @@ class ThorMetaSwap:
 
     @classmethod
     def parse(cls, j):
-        fees = [ThorCoin(**cj) for cj in j.get('networkFees', [])]
+        fees = [ThorCoin.from_json(cj) for cj in j.get('networkFees', [])]
         return cls(
-            liquidity_fee=j.get('liquidityFee', 0),
+            liquidity_fee=int(j.get('liquidityFee', 0)),
             network_fees=fees,
-            trade_slip=j.get('swapSlip', '0'),
-            trade_target=j.get('swapTarget', '0'),
+            trade_slip=int(j.get('swapSlip', '0')),
+            trade_target=int(j.get('swapTarget', '0')),
             affiliate_fee=float(j.get('affiliateFee', 0)) / THOR_BASIS_POINT_MAX,
             memo=j.get('memo', ''),
             affiliate_address=j.get('affiliateAddress', '')
@@ -107,10 +111,10 @@ class ThorMetaSwap:
     def merge_two(a: 'ThorMetaSwap', b: 'ThorMetaSwap'):
         if a and b:
             return ThorMetaSwap(
-                liquidity_fee=sum_and_str(a.liquidity_fee, b.liquidity_fee),
+                liquidity_fee=safe_sum(a.liquidity_fee, b.liquidity_fee),
                 network_fees=a.network_fees + b.network_fees,
-                trade_slip=sum_and_str(a.trade_slip, b.trade_slip),
-                trade_target=sum_and_str(a.trade_target, b.trade_target),
+                trade_slip=safe_sum(a.trade_slip, b.trade_slip),
+                trade_target=safe_sum(a.trade_target, b.trade_target),
                 affiliate_fee=max(a.affiliate_fee, b.affiliate_fee),
                 memo=a.memo if a.memo else b.memo,
             )
@@ -144,7 +148,7 @@ class ThorMetaWithdraw:
 
     @classmethod
     def parse(cls, j):
-        fees = [ThorCoin(**cj) for cj in j.get('networkFees', [])]
+        fees = [ThorCoin.from_json(cj) for cj in j.get('networkFees', [])]
         return cls(
             asymmetry=j.get('asymmetry', '0'),
             network_fees=fees,
@@ -161,7 +165,7 @@ class ThorMetaRefund:
 
     @classmethod
     def parse(cls, j):
-        fees = [ThorCoin(**cj) for cj in j.get('networkFees', [])]
+        fees = [ThorCoin.from_json(cj) for cj in j.get('networkFees', [])]
         return cls(reason=j.get('reason', '?'),
                    network_fees=fees)
 
@@ -182,7 +186,7 @@ class ThorMetaAddLiquidity:
     def merge_two(a: 'ThorMetaAddLiquidity', b: 'ThorMetaAddLiquidity'):
         if a and b:
             return ThorMetaAddLiquidity(
-                liquidity_units=sum_and_str(a.liquidity_units, b.liquidity_units)
+                liquidity_units=safe_sum(a.liquidity_units, b.liquidity_units)
             )
         else:
             return a or b

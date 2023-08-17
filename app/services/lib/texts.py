@@ -201,11 +201,8 @@ def fuzzy_search(query: str, realm, f=str.upper) -> List[str]:
     return variants
 
 
-def sum_and_str(*args):
-    if not args:
-        return '0'
-    else:
-        return str(sum(int(arg) for arg in args))
+def safe_sum(*args):
+    return sum((int(arg) for arg in args), 0)
 
 
 def shorten_text(text, limit=200, end='...'):
