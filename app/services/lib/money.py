@@ -322,7 +322,7 @@ AssetRUNE = Asset.from_string(NATIVE_RUNE_SYMBOL)
 
 
 def is_rune_asset(asset: str):
-    return asset.lower() == 'r' or asset.upper() == NATIVE_RUNE_SYMBOL
+    return asset.lower() in ('r', 'rune') or asset.upper() == NATIVE_RUNE_SYMBOL
 
 
 def weighted_mean(values, weights):
