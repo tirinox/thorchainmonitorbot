@@ -52,7 +52,7 @@ class THORMemo:
 
         limit = cls.ith_or_default(s_swap_components, 0, 0, int)
         s_swap_interval = cls.ith_or_default(s_swap_components, 1, 0, int)
-        s_swap_quantity = cls.ith_or_default(s_swap_components, 2, 0, int)
+        s_swap_quantity = cls.ith_or_default(s_swap_components, 2, 1, int)
 
         if action == 'swap' or action == '=' or action == 's':
             return cls(
