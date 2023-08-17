@@ -697,13 +697,13 @@ class BaseLocalization(ABC):  # == English
         tx_link = link(get_explorer_url_to_tx(self.cfg.network_id, chain, e.tx_id), 'TX')
 
         asset_str = Asset(e.in_asset).pretty_str
-        amount_str = self.format_op_amount(e.in_amount)
+        amount_str = self.format_op_amount(e.in_amount_float)
         target_asset_str = Asset(e.out_asset).pretty_str
         total_duration_str = self.seconds_human(e.ss.total_duration)
         return (
-            f'🔁 <b>Streaming swap has started</b>\n'
+            f'🌊 <b>Streaming swap has started</b>\n'
             f'User: {user_link} / {tx_link}\n'
-            f'{amount_str} {asset_str} → ⚡ → {target_asset_str} ({short_dollar(e.volume_usd)})\n'
+            f'{amount_str} {asset_str} ({short_dollar(e.volume_usd)}) → ⚡ → {target_asset_str}\n'
             f'{e.ss.quantity} swaps every {e.ss.interval} blocks, '
             f'full duration is about {total_duration_str} + out. delay'
         )
