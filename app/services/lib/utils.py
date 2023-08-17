@@ -507,8 +507,9 @@ async def say(msg: str):
         asyncio.create_task(a_worker())
 
 
-def hash_of_string_repr(obj):
-    return hashlib.sha256(str(obj).encode()).hexdigest().upper()
+def hash_of_string_repr(*obj):
+    dump = ''.join(str(o) for o in obj)
+    return hashlib.sha256(dump.encode()).hexdigest().upper()
 
 
 def expect_bytes(o):

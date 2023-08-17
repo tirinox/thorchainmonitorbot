@@ -3,18 +3,17 @@ import sys
 from collections import defaultdict
 from typing import List
 
-from aioredis import Redis
-
 from services.jobs.affiliate_merge import ZERO_HASH
 from services.jobs.scanner.event_db import EventDatabase
 from services.jobs.scanner.native_scan import BlockResult
 from services.jobs.scanner.swap_start_detector import SwapStartDetector
+from services.lib.constants import NATIVE_RUNE_SYMBOL
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger, say, hash_of_string_repr
-from services.models.s_swap import parse_swap_and_out_event, StreamingSwap, EventSwapStart, EventOutbound, \
+from services.models.s_swap import parse_swap_and_out_event, EventSwapStart, EventOutbound, \
     EventScheduledOutbound, TypeEventSwapAndOut, EventSwap
-from services.models.tx import ThorTx, ThorTxType, ThorMetaSwap, SUCCESS
+from services.models.tx import ThorTx
 
 
 class NativeActionExtractor(WithDelegates, INotified, WithLogger):
@@ -39,6 +38,18 @@ class NativeActionExtractor(WithDelegates, INotified, WithLogger):
 
         # Incoming swap intentions will be recorded in the DB
         await self.register_new_swaps(new_swaps, block.block_no)
+
+        # # todo: debug
+        # for swap in new_swaps:
+        #     if swap.memo.affiliate_address:
+        #         print(f"{swap.in_amount} {swap.in_asset} => {swap.memo_str} ({swap.memo.affiliate_address}/{swap.memo.affiliate_fee})")
+        #         if swap.memo.affiliate_fee:
+        #             await say('Feeeeeee!')
+        #             print(swap.tx_id, ' /// ', swap.block_height)
+        #             # exit(0)
+        #     if swap.memo.affiliate_fee and swap.in_asset.upper().startswith('BNB'):
+        #         await say('Interesting!')
+        #         print('stop')
 
         # Swaps and Outs
         interesting_events = list(self.get_events_of_interest(block))
@@ -82,15 +93,13 @@ class NativeActionExtractor(WithDelegates, INotified, WithLogger):
     def suspect_outbound_internal(ev: EventOutbound):
         return ev.out_id == ZERO_HASH and ev.chain == 'THOR'
 
-    async def register_swap_events(self, block: BlockResult, interesting_events: List[TypeEventSwapAndOut]):
-        r: Redis = await self.deps.db.get_redis()
+    def do_write_event(self, tx_id):
+        return not self.dbg_watch_swap_id or self.dbg_watch_swap_id == tx_id
 
+    async def register_swap_events(self, block: BlockResult, interesting_events: List[TypeEventSwapAndOut]):
         boom = False
         for swap_ev in interesting_events:
-            hash_key = hash_of_string_repr(swap_ev)
-
-            print(f'Write {swap_ev.tx_id} => {hash_key}')
-            print(swap_ev)
+            hash_key = hash_of_string_repr(swap_ev, block.block_no)
 
             await self._db.write_tx_status(swap_ev.tx_id, {
                 f"ev_{hash_key}": swap_ev.original.to_dict
@@ -128,8 +137,14 @@ class NativeActionExtractor(WithDelegates, INotified, WithLogger):
                 a) EventScheduledOutbound
                 b) EventOutbound for Rune/synths
         """
-        group_by_in = defaultdict(list)
 
+        for ev in interesting_events:
+            if isinstance(ev, (EventOutbound, EventScheduledOutbound)):
+                if ev.is_outbound or ev.is_refund:
+                    ...
+
+        # Group all outbound txs
+        group_by_in = defaultdict(list)
         for ev in interesting_events:
             if isinstance(ev, (EventOutbound, EventScheduledOutbound)):
                 group_by_in[ev.tx_id].append(ev)
@@ -137,15 +152,7 @@ class NativeActionExtractor(WithDelegates, INotified, WithLogger):
         results = []
         for tx_id, group in group_by_in.items():
             results += await self._handle_finishing_swap_events_for_tx(tx_id, block.block_no, group)
-
-        # --8<-- debugging stuff --8<--
-        # for tx_id, events in group_by_in.items():
-        #     print(f"TX finish {tx_id} => {[e.__class__.__name__ for e in events]}")
-
-        # print(f'-----! SWAP SPEED is {self.dbg_swap_speed:.2f} swaps/sec')
-        # --8<-- debugging stuff --8<--
-
-        return []
+        return results
 
     async def _handle_finishing_swap_events_for_tx(self, tx_id: str, block_no, group: List[TypeEventSwapAndOut]):
 
