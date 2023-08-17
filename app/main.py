@@ -304,7 +304,7 @@ class App:
                 volume_filler.add_subscriber(swap_notifier_tx)
                 swap_notifier_tx.add_subscriber(d.alert_presenter)
 
-                if d.cfg.tx.swap.also_trigger_when.steaming_swap.notify_start.get('enabled', True):
+                if d.cfg.tx.swap.also_trigger_when.streaming_swap.notify_start.get('enabled', True):
                     stream_swap_notifier = StreamingSwapStartTxNotifier(d)
                     d.block_scanner.add_subscriber(stream_swap_notifier)
                     stream_swap_notifier.add_subscriber(d.alert_presenter)
