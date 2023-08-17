@@ -136,7 +136,7 @@ class SwapTxNotifier(GenericTxNotifier):
         super().__init__(deps, params, (ThorTxType.TYPE_SWAP,), curve)
         self.dex_min_usd = params.as_float('also_trigger_when.dex_aggregator_used.min_usd_total', 500)
         self.aff_fee_min_usd = params.as_float('also_trigger_when.affiliate_fee_usd_greater', 500)
-        self.min_streaming_swap_usd = params.as_float('also_trigger_when.steaming_swap.volume_greater', 2500)
+        self.min_streaming_swap_usd = params.as_float('also_trigger_when.streaming_swap.volume_greater', 2500)
 
     def is_tx_suitable(self, tx: ThorTx, min_rune_volume, usd_per_rune, curve_mult=None):
         # a) It is interesting if a steaming swap
