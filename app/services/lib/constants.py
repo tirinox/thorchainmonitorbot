@@ -72,6 +72,7 @@ DEFAULT_CEX_BASE_ASSET = 'USDT'
 
 
 def is_rune(symbol):
+    # todo: use is_rune_asset. It is more versatile
     return symbol == NATIVE_RUNE_SYMBOL
 
 

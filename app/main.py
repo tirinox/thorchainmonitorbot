@@ -3,6 +3,7 @@ import logging
 import os
 
 from aiothornode.connector import ThorConnector
+from services.jobs.fetch.native_scan import NativeScannerBlock
 
 from localization.manager import LocalizationManager
 from services.dialog.discord.discord_bot import DiscordBot
@@ -21,7 +22,6 @@ from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
 from services.jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from services.jobs.fetch.key_stats import KeyStatsFetcher
 from services.jobs.fetch.last_block import LastBlockFetcher
-from services.jobs.fetch.native_scan import NativeScannerBlock
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.jobs.fetch.pol import POLFetcher
@@ -30,8 +30,8 @@ from services.jobs.fetch.queue import QueueFetcher
 from services.jobs.fetch.savers_vnx import VNXSaversStatsFetcher
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.ilp_summer import ILPSummer
-from services.jobs.native_actions import NativeActionExtractor
 from services.jobs.node_churn import NodeChurnDetector
+from services.jobs.scanner.native_actions import NativeActionExtractor
 from services.jobs.transfer_detector import RuneTransferDetectorTxLogs
 from services.jobs.user_counter import UserCounter
 from services.jobs.volume_filler import VolumeFillerUpdater

@@ -8,6 +8,7 @@ import betterproto
 
 import proto.types as thor_type_lib
 from proto.cosmos.tx.v1beta1 import Tx
+from services.lib.utils import expect_string
 
 
 def parse_thor_address(addr: bytes, prefix='thor') -> str:
@@ -104,23 +105,37 @@ def block_events(block):
 class DecodedEvent(typing.NamedTuple):
     type: str
     attributes: typing.Dict[str, str]
+    height: int = 0
 
     @classmethod
     def from_dict(cls, d):
         return cls(
             type=d['type'],
-            attributes={attr['key']: attr.get('value') for attr in d['attributes']}
+            attributes={attr['key']: attr.get('value') for attr in d['attributes']},
+            height=d.get('height', 0)
+        )
+
+    @classmethod
+    def from_dict_our(cls, d):
+        return cls(
+            type=d['type'],
+            attributes=d['attributes'],
+            height=d.get('height', 0)
         )
 
     @property
     def to_dict(self):
         return {
             'type': self.type,
-            'attributes': self.attributes
+            'attributes': {
+                k: expect_string(v) if isinstance(v, bytes) else v
+                for k, v in self.attributes.items()
+            },
+            'height': int(self.height),
         }
 
 
-def thor_decode_event(e) -> DecodedEvent:
+def thor_decode_event(e, height) -> DecodedEvent:
     decoded_attrs = {}
     for attr in e['attributes']:
         key = debase64(attr.get('key'))
@@ -129,4 +144,4 @@ def thor_decode_event(e) -> DecodedEvent:
         if key == 'amount' or key == 'coin':
             decoded_attrs['amount'], decoded_attrs['asset'] = thor_decode_amount_field(value)
 
-    return DecodedEvent(e.get('type', ''), decoded_attrs)
+    return DecodedEvent(e.get('type', ''), decoded_attrs, height=height)

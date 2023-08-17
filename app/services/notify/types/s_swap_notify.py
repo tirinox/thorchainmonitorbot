@@ -2,8 +2,8 @@ from contextlib import suppress
 
 from aioredis import Redis
 
-from services.jobs.fetch.native_scan import BlockResult
-from services.jobs.native_actions import SwapStartDetector
+from services.jobs.scanner.native_scan import BlockResult
+from services.jobs.scanner.swap_start_detector import SwapStartDetector
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger

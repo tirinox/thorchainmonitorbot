@@ -3,6 +3,7 @@ from typing import NamedTuple, List, Optional, Union
 from proto.access import DecodedEvent
 from services.lib.constants import THOR_BLOCK_TIME
 from services.lib.memo import THORMemo
+from services.lib.utils import expect_string
 
 
 class StreamingSwap(NamedTuple):
@@ -128,7 +129,7 @@ class EventSwap(NamedTuple):
     height: int = 0
 
     @classmethod
-    def from_event(cls, event: DecodedEvent, height=0):
+    def from_event(cls, event: DecodedEvent):
         attrs = event.attributes
         return cls(
             pool=attrs.get('pool', ''),
@@ -148,7 +149,7 @@ class EventSwap(NamedTuple):
             asset=attrs.get('asset', ''),
             memo=attrs.get('memo', ''),
             original=event,
-            height=height,
+            height=attrs.get('height', 0),
         )
 
 
@@ -161,13 +162,13 @@ class EventStreamingSwap(NamedTuple):
     deposit: str = ''
     in_amt_str: str = ''
     out_amt_str: str = ''
-    failed_swaps: bytes = b''
-    failed_swap_reasons: bytes = b''
+    failed_swaps: str = ''
+    failed_swap_reasons: str = ''
     original: Optional[DecodedEvent] = None
     height: int = 0
 
     @classmethod
-    def from_event(cls, event: DecodedEvent, height=0):
+    def from_event(cls, event: DecodedEvent):
         attrs = event.attributes
         return cls(
             tx_id=attrs.get('tx_id', ''),
@@ -178,10 +179,10 @@ class EventStreamingSwap(NamedTuple):
             deposit=attrs.get('deposit', ''),
             in_amt_str=attrs.get('in', ''),
             out_amt_str=attrs.get('out', ''),
-            failed_swaps=attrs.get('failed_swaps', b''),
-            failed_swap_reasons=attrs.get('failed_swap_reasons', b''),
+            failed_swaps=expect_string(attrs.get('failed_swaps', b'')),
+            failed_swap_reasons=expect_string(attrs.get('failed_swap_reasons', b'').decode()),
             original=event,
-            height=height,
+            height=attrs.get('height', 0),
         )
 
     @property
@@ -203,7 +204,7 @@ class EventOutbound(NamedTuple):
     height: int = 0
 
     @classmethod
-    def from_event(cls, event: DecodedEvent, height=0):
+    def from_event(cls, event: DecodedEvent):
         attrs = event.attributes
         return cls(
             tx_id=attrs.get('in_tx_id', ''),
@@ -216,7 +217,7 @@ class EventOutbound(NamedTuple):
             asset=attrs.get('asset', ''),
             memo=attrs.get('memo', ''),
             original=event,
-            height=height,
+            height=attrs.get('height', 0),
         )
 
 
@@ -230,8 +231,8 @@ class EventScheduledOutbound(NamedTuple):
     memo: str = ''
     gas_rate: int = 0
     tx_id: str = ''  # in_hash
-    out_hash: bytes = ''
-    module_name: bytes = b''
+    out_hash: str = ''
+    module_name: str = ''
     max_gas_asset_0: str = ''
     max_gas_amount_0: int = 0
     max_gas_decimals_0: int = 0
@@ -239,7 +240,7 @@ class EventScheduledOutbound(NamedTuple):
     height: int = 0
 
     @classmethod
-    def from_event(cls, event: DecodedEvent, height=0):
+    def from_event(cls, event: DecodedEvent):
         attrs = event.attributes
         return cls(
             chain=attrs.get('chain', ''),
@@ -251,25 +252,25 @@ class EventScheduledOutbound(NamedTuple):
             memo=attrs.get('memo', ''),
             gas_rate=int(attrs.get('gas_rate', 0)),
             tx_id=attrs.get('in_hash', ''),
-            out_hash=attrs.get('out_hash', b''),
-            module_name=attrs.get('module_name', b''),
+            out_hash=expect_string(attrs.get('out_hash', b'')),
+            module_name=expect_string(attrs.get('module_name', b'')),
             max_gas_asset_0=attrs.get('max_gas_asset_0', ''),
             max_gas_amount_0=int(attrs.get('max_gas_amount_0', 0)),
             max_gas_decimals_0=int(attrs.get('max_gas_decimals_0', 0)),
             original=event,
-            height=height,
+            height=attrs.get('height', 0),
         )
 
 
-def parse_swap_and_out_event(e: DecodedEvent, height):
+def parse_swap_and_out_event(e: DecodedEvent):
     if e.type == 'swap':
-        return EventSwap.from_event(e, height)
+        return EventSwap.from_event(e)
     elif e.type == 'streaming_swap':
-        return EventStreamingSwap.from_event(e, height)
+        return EventStreamingSwap.from_event(e)
     elif e.type == 'outbound':
-        return EventOutbound.from_event(e, height)
+        return EventOutbound.from_event(e)
     elif e.type == 'scheduled_outbound':
-        return EventScheduledOutbound.from_event(e, height)
+        return EventScheduledOutbound.from_event(e)
 
 
 TypeEventSwapAndOut = Union[EventSwap, EventStreamingSwap, EventOutbound, EventScheduledOutbound]

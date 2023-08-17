@@ -1,10 +1,10 @@
 import asyncio
 
 from proto.types import MsgDeposit, MsgObservedTxIn
-from services.jobs.fetch.native_scan import NativeScannerBlock
 from services.jobs.fetch.streaming_swaps import StreamingSwapFechter
 from services.jobs.fetch.tx import TxFetcher
-from services.jobs.native_actions import NativeActionExtractor
+from services.jobs.scanner.native_actions import NativeActionExtractor
+from services.jobs.scanner.native_scan import NativeScannerBlock
 from services.jobs.user_counter import UserCounter
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.jobs.volume_recorder import VolumeRecorder
@@ -195,8 +195,8 @@ async def run():
             app,
             # start=12136527, # almost end
             # start=12167419,
-            start=12132156-20,
-            tx_id='026170F3A6E8EA8A9BA1DDBB106536390C086B64D8E157F31E65789A31841284',
+            start=12176322,
+            tx_id='1516681B16786D7F0721942685162510C77A0022F74FF88D9A73C5EC6E5AB46C',
             # single_block=True
         )
 

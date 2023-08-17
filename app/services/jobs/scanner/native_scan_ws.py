@@ -1,7 +1,7 @@
 import json
 from urllib.parse import urlparse, urlunparse
 
-from proto import thor_decode_event
+from proto.access import thor_decode_event
 from services.lib.delegates import WithDelegates
 from services.lib.utils import safe_get
 from services.lib.web_sockets import WSClient
@@ -44,7 +44,7 @@ class NativeScannerBlockEventsWS(NativeScannerWS):
         block_events = safe_get(reply, 'result', 'data', 'value', 'result_end_block', 'events')
 
         if block_events:
-            decoded_events = [thor_decode_event(e) for e in block_events]
+            decoded_events = [thor_decode_event(e, 0) for e in block_events]
             await self.pass_data_to_listeners(decoded_events)
 
 

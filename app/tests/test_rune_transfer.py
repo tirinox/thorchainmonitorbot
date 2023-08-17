@@ -3,7 +3,7 @@ from typing import List
 
 import pytest
 
-from services.jobs.fetch.native_scan import NativeScannerBlock
+from services.jobs.scanner.native_scan import NativeScannerBlock
 from services.jobs.transfer_detector import RuneTransferDetectorTxLogs
 from services.lib.constants import thor_to_float
 from services.lib.texts import sep

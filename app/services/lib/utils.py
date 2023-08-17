@@ -505,3 +505,15 @@ async def say(msg: str):
             await asyncio.get_event_loop().run_in_executor(None, worker)
 
         asyncio.create_task(a_worker())
+
+
+def hash_of_string_repr(obj):
+    return hashlib.sha256(str(obj).encode()).hexdigest().upper()
+
+
+def expect_bytes(o):
+    return o if isinstance(o, bytes) else str(o).encode('utf-8')
+
+
+def expect_string(o):
+    return o if isinstance(o, str) else o.decode('utf-8')

@@ -88,7 +88,7 @@ class NativeScannerBlock(BaseFetcher):
             decoded_txs = [tx for tx in decoded_txs if tx]
 
             end_block_events = safe_get(result, 'result', 'end_block_events') or []
-            decoded_end_block_events = [thor_decode_event(ev) for ev in end_block_events]
+            decoded_end_block_events = [thor_decode_event(ev, block_no) for ev in end_block_events]
 
             self.logger.info(f'Block #{block_no} has {len(decoded_txs)} txs.')
 

@@ -4,7 +4,7 @@ import random
 
 from aioredis import Redis
 
-from services.jobs.fetch.native_scan import NativeScannerBlock
+from services.jobs.scanner.native_scan import NativeScannerBlock
 from services.jobs.user_counter import UserCounter
 from services.lib.active_users import DailyActiveUserCounter, ManualUserCounter
 from services.lib.date_utils import DAY, now_ts

@@ -3,9 +3,9 @@ import json
 
 from localization.eng_base import BaseLocalization
 from localization.languages import Language
-from services.jobs.fetch.native_scan import NativeScannerBlock
-from services.jobs.fetch.native_scan_ws import NativeScannerTransactionWS, NativeScannerBlockEventsWS
-from services.jobs.native_actions import NativeActionExtractor
+from services.jobs.scanner.native_scan import NativeScannerBlock
+from services.jobs.scanner.native_scan_ws import NativeScannerTransactionWS, NativeScannerBlockEventsWS
+from services.jobs.scanner.native_actions import NativeActionExtractor
 from services.jobs.transfer_detector import RuneTransferDetectorBlockEvents, \
     RuneTransferDetectorFromTxResult, RuneTransferDetectorTxLogs
 from services.lib.config import Config
