@@ -3,7 +3,6 @@ import logging
 import os
 
 from aiothornode.connector import ThorConnector
-from services.jobs.fetch.native_scan import NativeScannerBlock
 
 from localization.manager import LocalizationManager
 from services.dialog.discord.discord_bot import DiscordBot
@@ -32,6 +31,7 @@ from services.jobs.fetch.tx import TxFetcher
 from services.jobs.ilp_summer import ILPSummer
 from services.jobs.node_churn import NodeChurnDetector
 from services.jobs.scanner.native_actions import NativeActionExtractor
+from services.jobs.scanner.native_scan import NativeScannerBlock
 from services.jobs.transfer_detector import RuneTransferDetectorTxLogs
 from services.jobs.user_counter import UserCounter
 from services.jobs.volume_filler import VolumeFillerUpdater

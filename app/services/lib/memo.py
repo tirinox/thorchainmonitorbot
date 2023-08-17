@@ -45,7 +45,7 @@ class THORMemo:
     @classmethod
     def parse_memo(cls, memo: str):
         components = [it for it in memo.split(':')]
-        action = cls.ith_or_default(components, 0).lower()
+        action = cls.ith_or_default(components, 0, '').lower()
 
         limit_and_s_swap = cls.ith_or_default(components, 3, '')
         s_swap_components = limit_and_s_swap.split('/')
