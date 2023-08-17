@@ -4,17 +4,11 @@ from typing import List
 from proto.types import MsgSend, MsgDeposit
 from proto.access import NativeThorTx, parse_thor_address, DecodedEvent, thor_decode_amount_field
 from services.jobs.scanner.native_scan import BlockResult
-from services.lib.constants import thor_to_float, is_rune
+from services.lib.constants import thor_to_float, is_rune, DEFAULT_RESERVE_ADDRESS, BOND_MODULE
 from services.lib.delegates import WithDelegates, INotified
 from services.lib.money import Asset
 from services.lib.utils import WithLogger
 from services.models.transfer import RuneTransfer
-
-DEFAULT_RUNE_FEE = 2000000
-
-DEFAULT_RESERVE_ADDRESS = 'thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt'
-BOND_MODULE = 'thor17gw75axcnr8747pkanye45pnrwk7p9c3cqncsv'
-POOL_MODULE = 'thor1g98cy3n9mmjrpn0sxmn63lztelera37n8n67c0'
 
 
 class RuneTransferDetectorNativeTX(WithDelegates, INotified):

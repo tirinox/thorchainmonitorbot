@@ -245,3 +245,10 @@ HTTP_CLIENT_ID = 'thorinfobot'
 THORCHAIN_BIRTHDAY = 1618058210955 * 0.001  # 2021-04-10T12:36:50.955991742Z
 
 STAGENET_RESERVE_ADDRESS = 'sthor1dheycdevq39qlkxs2a6wuuzyn4aqxhvepe6as4'
+
+DEFAULT_RUNE_FEE = 2000000
+
+DEFAULT_RESERVE_ADDRESS = 'thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt'
+BOND_MODULE = 'thor17gw75axcnr8747pkanye45pnrwk7p9c3cqncsv'
+POOL_MODULE = 'thor1g98cy3n9mmjrpn0sxmn63lztelera37n8n67c0'
+SYNTH_MODULE = 'thor1v8ppstuf6e3x0r4glqc68d5jqcs2tf38cg2q6y'
