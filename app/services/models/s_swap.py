@@ -1,7 +1,7 @@
 from typing import NamedTuple, List, Optional, Union
 
 from proto.access import DecodedEvent
-from services.lib.constants import THOR_BLOCK_TIME
+from services.lib.constants import THOR_BLOCK_TIME, thor_to_float, POOL_MODULE, NATIVE_RUNE_SYMBOL
 from services.lib.memo import THORMemo
 from services.lib.utils import expect_string
 
@@ -27,12 +27,15 @@ class StreamingSwap(NamedTuple):
 
     # the number of input tokens the swapper has deposited
     deposit: int
+    deposit_asset: str
 
     # the amount of input tokens that have been swapped so far
     in_amt: int
+    in_asset: str
 
     # the amount of output tokens that have been swapped so far
     out_amt: int
+    out_asset: str
 
     # the list of swap indexes that failed
     failed_swaps: List[int]
@@ -67,9 +70,9 @@ class StreamingSwap(NamedTuple):
             j.get('count', 1),
             j.get('last_height', 0),
             j.get('trade_target', 0),
-            int(j.get('deposit', 0)),
-            int(j.get('in', 0)),
-            int(j.get('out', 0)),
+            int(j.get('deposit', 0)), '',
+            int(j.get('in', 0)), '',
+            int(j.get('out', 0)), '',
             j.get('failed_swaps', []),
             j.get('failed_swap_reasons', []),
         )
@@ -106,6 +109,10 @@ class EventSwapStart(NamedTuple):
     @property
     def tx_id(self):
         return self.ss.tx_id
+
+    @property
+    def in_amount_float(self):
+        return thor_to_float(self.in_amount)
 
 
 class EventSwap(NamedTuple):
@@ -180,7 +187,7 @@ class EventStreamingSwap(NamedTuple):
             in_amt_str=attrs.get('in', ''),
             out_amt_str=attrs.get('out', ''),
             failed_swaps=expect_string(attrs.get('failed_swaps', b'')),
-            failed_swap_reasons=expect_string(attrs.get('failed_swap_reasons', b'').decode()),
+            failed_swap_reasons=expect_string(attrs.get('failed_swap_reasons', b'')),
             original=event,
             height=attrs.get('height', 0),
         )
@@ -188,6 +195,31 @@ class EventStreamingSwap(NamedTuple):
     @property
     def is_final(self):
         return self.count == self.quantity
+
+    @property
+    def failed_swap_list(self):
+        return self.failed_swaps.split(',')
+
+    @property
+    def number_of_failed_swaps(self):
+        return len(self.failed_swap_list)
+
+    @property
+    def failed_swap_reason_list(self):
+        return self.failed_swap_reasons.split('\n')
+
+    def asset_amount(self, is_in=False, is_out=False, deposit=False):
+        if deposit:
+            s = self.deposit
+        elif is_in:
+            s = self.in_amt_str
+        elif is_out:
+            s = self.out_amt_str
+        else:
+            raise ValueError()
+
+        amount, asset = s.split(' ')
+        return int(amount), asset.strip()
 
 
 class EventOutbound(NamedTuple):
@@ -219,6 +251,18 @@ class EventOutbound(NamedTuple):
             original=event,
             height=attrs.get('height', 0),
         )
+
+    @property
+    def is_refund(self):
+        return self.memo.upper().startswith('REFUND:')
+
+    @property
+    def is_outbound(self):
+        return self.memo.upper().startswith('OUT:')
+
+    @property
+    def is_affiliate(self):
+        return self.from_address == POOL_MODULE and self.chain == 'THOR' and self.asset == NATIVE_RUNE_SYMBOL
 
 
 class EventScheduledOutbound(NamedTuple):
@@ -260,6 +304,14 @@ class EventScheduledOutbound(NamedTuple):
             original=event,
             height=attrs.get('height', 0),
         )
+
+    @property
+    def is_refund(self):
+        return self.memo.upper().startswith('REFUND:')
+
+    @property
+    def is_outbound(self):
+        return self.memo.upper().startswith('OUT:')
 
 
 def parse_swap_and_out_event(e: DecodedEvent):

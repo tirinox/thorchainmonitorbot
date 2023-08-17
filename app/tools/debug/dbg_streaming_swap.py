@@ -18,9 +18,6 @@ from services.notify.types.s_swap_notify import StreamingSwapStartTxNotifier
 from services.notify.types.tx_notify import SwapTxNotifier
 from tools.lib.lp_common import LpAppFramework
 
-SS_EXAMPLE = '75327336C1EC3FE39D1DECB06C5F05756FAA5C28E0ACC777239F98D7F2903589'
-SS_EXAMPLE_BLOCK = 12079656
-
 
 # 1)
 # Memo:  =:ETH.THOR:0x8d2e7cab1747f98a7e1fa767c9ef62132e4c31db:139524325459200/9/99:t:30
@@ -52,6 +49,11 @@ SS_EXAMPLE_BLOCK = 12079656
 # https://midgard.ninerealms.com/v2/actions?txid=1516681B16786D7F0721942685162510C77A0022F74FF88D9A73C5EC6E5AB46C
 # https://viewblock.io/thorchain/tx/1516681B16786D7F0721942685162510C77A0022F74FF88D9A73C5EC6E5AB46C
 # 12176322
+
+# 6) RUNE => synthAVAX (549AE165C4156F08DEFDC8BC87890A5F630C759308AFC39834AC629518422495)
+# With Aff, Streaming
+# No Aff swap, because input is Rune!
+#
 
 async def debug_fetch_ss(app: LpAppFramework):
     ssf = StreamingSwapFechter(app.deps)
@@ -94,6 +96,7 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
     native_action_extractor.add_subscriber(aggregator)
     if tx_id:
         native_action_extractor.dbg_watch_swap_id = tx_id
+        native_action_extractor._db.dbg_only_tx_id = tx_id
 
     # Volume filler (important)
     volume_filler = VolumeFillerUpdater(d)
@@ -191,36 +194,22 @@ async def run():
         # await debug_block_analyse(app)
         # await debug_full_pipeline(app, start=12132219)
 
+        # How to?
+
         await debug_full_pipeline(
             app,
             # start=12136527, # almost end
             # start=12167419,
-            start=12132137,
-            tx_id='1516681B16786D7F0721942685162510C77A0022F74FF88D9A73C5EC6E5AB46C',
+            # start=12170514,
+            # todo: swap with aff from asset. record it
+
+            start=12080323,
+            tx_id='41D11E40D08072A94813CF329E4AE557B48BFFF6CA43E71E6EC0CFCF8B035E7D',
             # single_block=True
         )
 
         # await debug_detect_start_on_deposit_rune(app)
         # await debug_detect_start_on_external_tx(app)
-
-        # New idea:
-        """
-        1) On event swap where streaming_swap_quantity == streaming_swap_count!
-        2) Read midgard for this TX (last one has refund and outbound)
-           PITFALL => at that moment Midgard highly probably is not fully synced! (wait or monitor?)
-           => wait until Outbound is finalised?
-              => how? https://thornode.ninerealms.com/thorchain/alpha/tx/stages/<tx_id>
-           => filter beforehand based on "tx.swap.min_usd_total"
-           
-        3) Read Tx data from Thornode (can calculate outbound duration?) or (swap start height - current height)
-        4) Affiliate Fee = (In - Refund) * aff_bps
-        """
-
-        # Other idea:
-        """
-        1) Register and saver swap start. Detect if it is streaming: from memo
-        2a) 
-        """
 
 
 if __name__ == '__main__':
