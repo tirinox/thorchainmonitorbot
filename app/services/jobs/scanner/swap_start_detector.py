@@ -63,10 +63,10 @@ class SwapStartDetector(WithLogger):
                     0, 0, memo.limit, 0, 0, 0, [], []
                 ),
                 from_address=from_address,
-                in_amount=thor_to_float(msg.coins[0].amount),
+                in_amount=int(msg.coins[0].amount),
                 in_asset=str(in_asset),
                 out_asset=out_asset_name,
-                expected_rate=thor_to_float(memo.limit),
+                expected_rate=int(memo.limit),
                 volume_usd=volume_usd,
                 block_height=height,
                 memo=memo,
