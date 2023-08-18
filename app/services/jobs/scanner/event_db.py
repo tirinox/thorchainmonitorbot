@@ -46,10 +46,30 @@ class EventDatabase(WithLogger):
     async def write_tx_status_kw(self, tx_id, **kwargs):
         await self.write_tx_status(tx_id, kwargs)
 
-    async def clean_up_old_events(self, before_block):
-        pattern = self.key_to_tx('*')
+    @property
+    def all_keys_pattern(self):
+        return self.key_to_tx('*')
+
+    async def load_all_keys(self):
+        pattern = self.all_keys_pattern
         r: Redis = await self.db.get_redis()
         keys = await r.keys(pattern)
+        return keys
+
+    async def backup(self, filename):
+        r: Redis = await self.db.get_redis()
+        keys = await self.load_all_keys()
+
+        local_db = {}
+        for key in keys:
+            props = await r.hgetall(key)
+            local_db[key] = props
+
+        with open(filename, 'w') as f:
+            json.dump(local_db, f, indent=4)
+
+    async def clean_up_old_events(self, before_block):
+        keys = await self.load_all_keys()
         candidates_for_deletion = []
         for k in keys:
             height = await r.hget(k, 'block_height')
