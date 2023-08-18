@@ -1,4 +1,4 @@
-from typing import NamedTuple, List, Optional, Union
+from typing import NamedTuple, List, Optional, Union, Tuple
 
 from proto.access import DecodedEvent
 from services.lib.constants import THOR_BLOCK_TIME, thor_to_float, POOL_MODULE, NATIVE_RUNE_SYMBOL
@@ -264,6 +264,10 @@ class EventOutbound(NamedTuple):
     def is_affiliate(self):
         return self.from_address == POOL_MODULE and self.chain == 'THOR' and self.asset == NATIVE_RUNE_SYMBOL
 
+    @property
+    def amount_asset(self) -> Tuple[int, str]:
+        return self.amount, self.asset
+
 
 class EventScheduledOutbound(NamedTuple):
     chain: str = ''
@@ -312,6 +316,10 @@ class EventScheduledOutbound(NamedTuple):
     @property
     def is_outbound(self):
         return self.memo.upper().startswith('OUT:')
+
+    @property
+    def amount_asset(self) -> Tuple[int, str]:
+        return self.coin_amount, self.coin_asset
 
 
 def parse_swap_and_out_event(e: DecodedEvent):

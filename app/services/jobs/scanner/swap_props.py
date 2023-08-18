@@ -1,4 +1,5 @@
 import json
+from collections import defaultdict
 from datetime import datetime
 from typing import NamedTuple, List, Optional, Tuple
 
@@ -91,11 +92,25 @@ class SwapProps(NamedTuple):
         )
 
     @property
+    def inbound_address(self):
+        return self.attrs.get('from_address', '')
+
+    @property
     def true_outbounds(self):
         return [
             ev for ev in self.events
             if isinstance(ev, (EventOutbound, EventScheduledOutbound)) and ev.is_outbound or ev.is_refund
         ]
+
+    def gather_outbound(self) -> List[ThorSubTx]:
+        results = defaultdict(list)
+        # in_address = self.inbound_address
+        for outbound in self.true_outbounds:
+            # here we must separate the affiliate outbound.
+
+            results[outbound.to_address].append(ThorCoin(*outbound.amount_asset))
+
+        return [ThorSubTx(address, coins, '') for address, coins in results.items()]
 
     def build_tx(self) -> ThorTx:
         attrs = self.attrs
@@ -118,22 +133,14 @@ class SwapProps(NamedTuple):
         in_tx = [
             ThorSubTx(
                 address=attrs.get('from_address', ''),
-                coins=[
-                    ThorCoin(
-                        attrs.get('in_amount', 0),
-                        attrs.get('in_asset', '')
-                    ),
-                ],
+                coins=[self.in_coin],
                 tx_id=tx_id
             )
         ]
-        out_tx = []  # todo
+        out_tx = self.gather_outbound()
 
         affiliate_fee = 0  # todo
         affiliate_address = ''  # todo
-
-        trade_target = 0  # todo
-        network_fees = []  # todo
 
         ss_ev = self.find_event(EventStreamingSwap)
         if ss_ev:
@@ -167,6 +174,9 @@ class SwapProps(NamedTuple):
                 failed_swaps=[],
                 failed_swap_reasons=[]
             )
+
+        trade_target = 0  # ignore so far, not really used
+        network_fees = []  # ignore so far, not really used
 
         tx = ThorTx(
             date=int(datetime.utcnow().timestamp() * 1e9),

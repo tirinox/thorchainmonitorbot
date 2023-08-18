@@ -98,6 +98,8 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
         native_action_extractor.dbg_watch_swap_id = tx_id
         native_action_extractor._db.dbg_only_tx_id = tx_id
 
+    await native_action_extractor._db.backup('../temp/ev_db_backup_everything.json')
+
     # Volume filler (important)
     volume_filler = VolumeFillerUpdater(d)
     aggregator.add_subscriber(volume_filler)
