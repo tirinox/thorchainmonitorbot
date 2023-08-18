@@ -353,7 +353,10 @@ class RussianLocalization(BaseLocalization):
         elif tx.type == ThorTxType.TYPE_DONATE:
             heading = f'🙌 <b>Пожертвование в пул</b>'
         elif tx.type == ThorTxType.TYPE_SWAP:
-            heading = f'🐳 <b>Крупный обмен</b> 🔁'
+            if tx.meta_swap.streaming:
+                heading = f'🐳 <b>Крупный обмен</b> 🔁'
+            else:
+                heading = f'🌊 <b>Потоковый обмен</b> 🔁'
         elif tx.type == ThorTxType.TYPE_REFUND:
             heading = f'🐳️ <b>Возврат средств</b> ↩️❗'
         elif tx.type == ThorTxType.TYPE_SWITCH:
@@ -463,6 +466,18 @@ class RussianLocalization(BaseLocalization):
                 f"Проскальзывание: {bold(slip_str)}\n"
                 f"Комиссия пулам: {bold(pretty_dollar(l_fee_usd))}{slip_mark}"
             )
+
+            if tx.meta_swap.streaming and tx.meta_swap.streaming.quantity > 1:
+                duration = tx.meta_swap.streaming.total_duration
+                content += f'\n⏱️ Прошло времени: {self.seconds_human(duration)}.'
+
+                if (success := tx.meta_swap.streaming.success_rate) < 100.0:
+                    good = tx.meta_swap.streaming.successful_swaps
+                    total = tx.meta_swap.streaming.quantity
+                    content += f'\nПроцент успеха: {format_percent(success)} ({good}/{total})'
+
+                if (saved_usd := tx.meta_swap.streaming.estimated_savings_vs_cex_usd) > 0.0:
+                    content += f'\nСэкономлено против CEX: {bold(pretty_dollar(saved_usd))}'
 
         blockchain_components_str = self._add_input_output_links(tx, name_map, 'Входы: ', 'Выходы: ', 'Пользователь: ')
 

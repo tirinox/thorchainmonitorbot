@@ -93,7 +93,6 @@ class TwitterEnglishLocalization(BaseLocalization):
          total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
         heading = ''
-
         if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
             if tx.is_savings:
                 heading = f'🐳→💰 Add to savings vault'
@@ -107,7 +106,10 @@ class TwitterEnglishLocalization(BaseLocalization):
         elif tx.type == ThorTxType.TYPE_DONATE:
             heading = f'🐳 Donation to the pool 🙌'
         elif tx.type == ThorTxType.TYPE_SWAP:
-            heading = f'🐳 Swap 🔁'
+            if tx.meta_swap.streaming:
+                heading = f'🐳 Swap 🔁'
+            else:
+                heading = f'🌊 Streaming swap'
         elif tx.type == ThorTxType.TYPE_REFUND:
             heading = f'🐳 Refund ↩️❗'
         elif tx.type == ThorTxType.TYPE_SWITCH:
@@ -218,6 +220,19 @@ class TwitterEnglishLocalization(BaseLocalization):
                 f"Slip: {slip_str}, "
                 f"liq. fee: {short_dollar(l_fee_usd)}{slip_mark}"
             )
+
+            if tx.meta_swap.streaming and tx.meta_swap.streaming.quantity > 1:
+                duration = tx.meta_swap.streaming.total_duration
+                content += f'\n⏱️ Time: {self.seconds_human(duration)}.'
+
+                if (success := tx.meta_swap.streaming.success_rate) < 100.0:
+                    good = tx.meta_swap.streaming.successful_swaps
+                    total = tx.meta_swap.streaming.quantity
+                    content += f'\nSuccess rate: {format_percent(success)} ({good}/{total})'
+
+                if (saved_usd := tx.meta_swap.streaming.estimated_savings_vs_cex_usd) > 0.0:
+                    content += f'\nEst. savings vs CEX: {pretty_dollar(saved_usd)}'
+
 
         link = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, tx.first_input_tx_hash) \
             if tx and tx.first_input_tx_hash else ''
