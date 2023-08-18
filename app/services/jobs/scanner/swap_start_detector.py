@@ -60,7 +60,7 @@ class SwapStartDetector(WithLogger):
                     tx_hash,
                     memo.s_swap_interval,
                     memo.s_swap_quantity,
-                    0, 0, memo.limit, 0, 0, 0, [], []
+                    0, 0, memo.limit, 0, '', 0, '',0, '', [], [],
                 ),
                 from_address=from_address,
                 in_amount=int(msg.coins[0].amount),

@@ -1,4 +1,5 @@
 import json
+from typing import Optional
 
 from aioredis import Redis
 
@@ -17,7 +18,7 @@ class EventDatabase(WithLogger):
     def key_to_tx(tx_id):
         return f'tx:tracker:{tx_id}'
 
-    async def read_tx_status(self, tx_id) -> SwapProps:
+    async def read_tx_status(self, tx_id) -> Optional[SwapProps]:
         r: Redis = await self.db.get_redis()
         props = await r.hgetall(self.key_to_tx(tx_id))
         return SwapProps.restore_events_from_tx_status(props)
@@ -57,6 +58,7 @@ class EventDatabase(WithLogger):
         return keys
 
     async def backup(self, filename):
+        self.logger.info('Saving a backup')
         r: Redis = await self.db.get_redis()
         keys = await self.load_all_keys()
 
@@ -67,10 +69,12 @@ class EventDatabase(WithLogger):
 
         with open(filename, 'w') as f:
             json.dump(local_db, f, indent=4)
+            self.logger.info(f'Saved a backup containing {len(local_db)} records.')
 
     async def clean_up_old_events(self, before_block):
         keys = await self.load_all_keys()
         candidates_for_deletion = []
+        r: Redis = await self.db.get_redis()
         for k in keys:
             height = await r.hget(k, 'block_height')
             if height:
