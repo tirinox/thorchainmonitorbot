@@ -186,8 +186,10 @@ class SwapProps(NamedTuple):
         trade_target = 0  # ignore so far, not really used
         network_fees = []  # ignore so far, not really used
 
+        timestamp = int(datetime.now().timestamp() * 1e9)
+
         tx = ThorTx(
-            date=int(datetime.utcnow().timestamp() * 1e9),
+            date=timestamp,
             height=height,
             type=ThorTxType.TYPE_SWAP,
             pools=pools,
