@@ -254,15 +254,21 @@ class Asset:
         a.is_synth = bool(coin.asset.synth)
         return a
 
+    PILL = '💊'
+
     @property
     def pretty_str(self):
-        s = '💊' if self.is_synth else ''
+        s = self.PILL if self.is_synth else ''
         result = f'{s}{self.chain}{self.separator_symbol}{self.name}'
         if self.tag:
             short_tag = self.tag[:6]
             return f'{result}-{short_tag}'
         else:
             return result
+
+    @property
+    def pretty_str_no_emoji(self):
+        return self.pretty_str.replace(self.PILL, '')
 
     @property
     def shortest(self):

@@ -402,7 +402,7 @@ class BaseLocalization(ABC):  # == English
                 if a.is_synth:
                     chain = Chains.THOR
                 url = get_explorer_url_to_tx(net, chain, tx_id)
-                items.append(link(url, text=a.pretty_str))
+                items.append(link(url, text=a.pretty_str_no_emoji))
 
         result = ', '.join(items)
 
