@@ -211,7 +211,7 @@ class EventStreamingSwap(NamedTuple):
 
     @property
     def failed_swap_list(self):
-        return self.failed_swaps.split(',')
+        return list(filter(bool, self.failed_swaps.split(',')))
 
     @property
     def number_of_failed_swaps(self):
@@ -219,7 +219,7 @@ class EventStreamingSwap(NamedTuple):
 
     @property
     def failed_swap_reason_list(self):
-        return self.failed_swap_reasons.split('\n')
+        return list(filter(bool, self.failed_swap_reasons.split('\n')))
 
     def asset_amount(self, is_in=False, is_out=False, deposit=False):
         if deposit:

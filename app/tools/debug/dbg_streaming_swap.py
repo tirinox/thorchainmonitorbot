@@ -3,6 +3,7 @@ import asyncio
 from proto.types import MsgDeposit, MsgObservedTxIn
 from services.jobs.fetch.streaming_swaps import StreamingSwapFechter
 from services.jobs.fetch.tx import TxFetcher
+from services.jobs.scanner.event_db import EventDatabase
 from services.jobs.scanner.native_actions import NativeActionExtractor
 from services.jobs.scanner.native_scan import NativeScannerBlock
 from services.jobs.user_counter import UserCounter
@@ -170,6 +171,18 @@ async def demo_search_for_deposit_streaming_synth(app):
                     print(tx)
 
 
+async def debug_tx_records(app: LpAppFramework, tx_id):
+    ev_db = EventDatabase(app.deps.db)
+
+    props = await ev_db.read_tx_status(tx_id)
+    sep('swap')
+    print(props)
+
+    sep('tx')
+    tx = props.build_tx()
+    print(tx)
+
+
 async def debug_detect_start_on_external_tx(app: LpAppFramework):
     scanner = NativeScannerBlock(app.deps)
     sss = StreamingSwapStartTxNotifier(app.deps)
@@ -195,6 +208,7 @@ async def run():
         # await debug_fetch_ss(app)
         # await debug_block_analyse(app)
         # await debug_full_pipeline(app, start=12132219)
+        # await debug_tx_records(app, 'DB3185B2BC24208634473696D0A01D27A43A91AFFB74F2A3209A5285326D2026')
 
         await debug_full_pipeline(
             app,

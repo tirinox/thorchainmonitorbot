@@ -54,11 +54,6 @@ class SwapProps(NamedTuple):
         return (e for e in self.events if isinstance(e, klass))
 
     @property
-    def is_streaming_finished(self):
-        ss = self.find_event(EventStreamingSwap)
-        return ss and ss.streaming_swap_count == ss.streaming_swap_quantity > 1
-
-    @property
     def is_finished(self) -> bool:
         # unequivocally, it's done if there is any EventScheduledOutbound
         if any(isinstance(ev, EventScheduledOutbound) for ev in self.events):
