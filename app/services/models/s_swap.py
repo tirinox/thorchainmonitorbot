@@ -43,6 +43,8 @@ class StreamingSwap(NamedTuple):
     # the list of reasons that sub-swaps have failed
     failed_swap_reasons: List[str]
 
+    estimated_savings_vs_cex_usd: float = 0.0
+
     @property
     def progress_on_amount(self):
         """
@@ -88,6 +90,17 @@ class StreamingSwap(NamedTuple):
     @property
     def total_duration(self):
         return self.quantity * self.interval * THOR_BLOCK_TIME
+
+    @property
+    def successful_swaps(self):
+        return self.quantity - len(self.failed_swaps)
+
+    @property
+    def success_rate(self):
+        if self.quantity:
+            return self.successful_swaps / self.quantity * 1.0
+        else:
+            return 1.0
 
 
 class EventSwapStart(NamedTuple):

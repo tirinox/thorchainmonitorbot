@@ -625,9 +625,6 @@ class BaseLocalization(ABC):  # == English
                     f"\nReason: {pre(reason)}"
             )
         elif tx.type == ThorTxType.TYPE_SWAP:
-            # todo: swap duration
-            # todo: swap benefit vs CEX
-
             content = self.format_swap_route(tx, usd_per_rune)
             slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
             l_fee_usd = tx.meta_swap.liquidity_fee_rune_float * usd_per_rune
@@ -647,15 +644,17 @@ class BaseLocalization(ABC):  # == English
                 f"liquidity fee: {bold(short_dollar(l_fee_usd))}{slip_mark}"
             )
 
-            if tx.meta_swap.streaming:
-                ...
-                # todo! support streaming swaps
-                """  extra data:
-                ⏱️ Time elapsed: 25 minutes
-                Success: 35% (35/100)
-                Liq. fee: $3.0K❗
-                Est. Savings vs CEX: $96,54   
-                """
+            if tx.meta_swap.streaming and tx.meta_swap.streaming.quantity > 1:
+                duration = tx.meta_swap.streaming.total_duration
+                content += f'\n⏱️ Time elapsed: {self.seconds_human(duration)}.'
+
+                if (success := tx.meta_swap.streaming.success_rate) < 100.0:
+                    good = tx.meta_swap.streaming.successful_swaps
+                    total = tx.meta_swap.streaming.quantity
+                    content += f'\nSuccess rate: {format_percent(success)} ({good}/{total})'
+
+                if (saved_usd := tx.meta_swap.streaming.estimated_savings_vs_cex_usd) > 0.0:
+                    content += f'\nEst. Savings vs CEX: {bold(pretty_dollar(saved_usd))}'
 
         blockchain_components_str = self._add_input_output_links(tx, name_map, 'Input: ', 'Output: ', 'User: ')
 
