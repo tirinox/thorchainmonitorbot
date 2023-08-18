@@ -391,16 +391,13 @@ class BaseLocalization(ABC):  # == English
 
     TEXT_MORE_TXS = ' and {n} more'
 
-    def links_to_txs(self, txs: List[ThorSubTx], main_run_txid='', max_n=2, only_native_pools=False):
+    def links_to_txs(self, txs: List[ThorSubTx], main_run_txid='', max_n=2):
         net = self.cfg.network_id
         items = []
         for tx in txs[:max_n]:
             tx_id = tx.tx_id or main_run_txid
             if tx_id:
-                if only_native_pools:
-                    a = Asset(tx.first_asset)
-                else:
-                    a = Asset(Asset.to_L1_pool_name(tx.first_asset))
+                a = Asset(tx.first_asset)
                 chain = a.chain if a.chain else Chains.THOR
                 if a.is_synth:
                     chain = Chains.THOR

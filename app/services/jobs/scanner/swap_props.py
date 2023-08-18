@@ -149,7 +149,7 @@ class SwapProps(NamedTuple):
         out_tx = self.gather_outbound()
 
         _affiliate_fee_paid, affiliate_address = self.get_affiliate_fee_and_addr()
-        
+
         ss_ev = self.find_event(EventStreamingSwap)
         if ss_ev:
             in_amt, in_asset = ss_ev.asset_amount(is_in=True)
