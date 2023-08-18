@@ -225,7 +225,7 @@ class TwitterEnglishLocalization(BaseLocalization):
                 duration = tx.meta_swap.streaming.total_duration
                 content += f'\n⏱️ Time: {self.seconds_human(duration)}.'
 
-                if (success := tx.meta_swap.streaming.success_rate) < 100.0:
+                if (success := tx.meta_swap.streaming.success_rate) < 1.0:
                     good = tx.meta_swap.streaming.successful_swaps
                     total = tx.meta_swap.streaming.quantity
                     content += f'\nSuccess rate: {format_percent(success)} ({good}/{total})'
