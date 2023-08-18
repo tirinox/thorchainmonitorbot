@@ -62,7 +62,7 @@ class NativeActionExtractor(WithDelegates, INotified, WithLogger):
         #             await say('Feeeeeee!')
         #             print(swap.tx_id, ' /// ', swap.block_height)
         #             exit(0)
-            # if swap.memo.affiliate_fee and swap.in_asset.upper().startswith('BNB'):
+        # if swap.memo.affiliate_fee and swap.in_asset.upper().startswith('BNB'):
         #         await say('Interesting!')
         #         print('stop')
 
@@ -170,7 +170,8 @@ class NativeActionExtractor(WithDelegates, INotified, WithLogger):
                 self.logger.warning(f'There are outbounds for tx {tx_id}, but there is no info about its initiation.')
                 continue
 
-            if swap_info.is_finished:
+            # if no swaps, it is full refund
+            if swap_info.is_finished and swap_info.has_swaps:
                 tx = swap_info.build_tx()
                 results.append(tx)
 

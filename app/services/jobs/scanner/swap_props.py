@@ -61,12 +61,12 @@ class SwapProps(NamedTuple):
     @property
     def is_finished(self) -> bool:
         # unequivocally, it's done if there is any EventScheduledOutbound
-        if any(True for ev in self.events if isinstance(ev, EventScheduledOutbound)):
+        if any(isinstance(ev, EventScheduledOutbound) for ev in self.events):
             return True
 
         # if there is any outbound to my address, except internal outbounds (in the middle of double swap)
-        if any(True for ev in self.true_outbounds if
-               (isinstance(ev, EventOutbound) and ev.to_address == self.inbound_address)):
+        if any((isinstance(ev, EventOutbound) and ev.to_address == self.inbound_address)
+               for ev in self.true_outbounds):
             return True
 
         return False
@@ -112,6 +112,10 @@ class SwapProps(NamedTuple):
             results[outbound.to_address].append(ThorCoin(*outbound.amount_asset))
 
         return [ThorSubTx(address, coins, '') for address, coins in results.items()]
+
+    @property
+    def has_swaps(self):
+        return any(isinstance(ev, EventSwap) for ev in self.events)
 
     def build_tx(self) -> ThorTx:
         attrs = self.attrs
