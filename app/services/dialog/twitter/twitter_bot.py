@@ -4,8 +4,7 @@ import logging
 import tweepy
 from ratelimit import limits
 
-from services.dialog.twitter.text_length import twitter_text_length, twitter_cut_text, TWITTER_LIMIT_CHARACTERS, \
-    abbreviate_some_long_words
+from services.dialog.twitter.text_length import twitter_text_length, twitter_cut_text, TWITTER_LIMIT_CHARACTERS
 from services.lib.config import Config
 from services.lib.date_utils import DAY
 from services.lib.draw_utils import img_to_bio

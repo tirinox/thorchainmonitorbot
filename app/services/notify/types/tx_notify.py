@@ -5,7 +5,7 @@ from services.lib.config import SubConfig
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
-from services.lib.money import Asset, DepthCurve
+from services.lib.money import Asset, DepthCurve, pretty_dollar
 from services.lib.utils import class_logger
 from services.models.tx import ThorTx, EventLargeTransaction, ThorTxType
 from services.notify.types.cap_notify import LiquidityCapNotifier
@@ -93,6 +93,20 @@ class GenericTxNotifier(INotified, WithDelegates):
 
         if tx.full_rune >= min_rune_volume and tx.full_rune >= min_share_rune_volume:
             return True
+
+    def dbg_evaluate_curve_for_pools(self, max_pools=20):
+        pools = sorted(self.deps.price_holder.pool_info_map.values(), key=lambda p: p.balance_rune, reverse=True)
+        usd_per_rune = self.deps.price_holder.usd_per_rune
+
+        summary = " --- Threshold curve evaluation ---\n"
+        for pool in pools[:max_pools]:
+            if pool.asset.startswith('THOR'):  # no virtuals
+                continue
+            depth_usd = pool.usd_depth(usd_per_rune)
+            min_pool_share = self.curve.evaluate(depth_usd) * self.curve_mult
+            min_share_usd_volume = depth_usd * min_pool_share
+            summary += f"Pool: {pool.asset[:20]:<20} => Min Tx volume is {pretty_dollar(min_share_usd_volume)}\n"
+        self.logger.info(summary)
 
 
 class SwitchTxNotifier(GenericTxNotifier):

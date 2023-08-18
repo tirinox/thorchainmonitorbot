@@ -290,12 +290,14 @@ class App:
             if d.cfg.tx.liquidity.get('enabled', True):
                 liq_notifier_tx = LiquidityTxNotifier(d, d.cfg.tx.liquidity, curve=curve)
                 volume_filler.add_subscriber(liq_notifier_tx)
+                liq_notifier_tx.dbg_evaluate_curve_for_pools()
                 liq_notifier_tx.add_subscriber(d.alert_presenter)
 
             if d.cfg.tx.donate.get('enabled', True):
                 donate_notifier_tx = GenericTxNotifier(d, d.cfg.tx.donate,
                                                        tx_types=(ThorTxType.TYPE_DONATE,),
                                                        curve=curve)
+                donate_notifier_tx.dbg_evaluate_curve_for_pools()
                 volume_filler.add_subscriber(donate_notifier_tx)
                 donate_notifier_tx.add_subscriber(d.alert_presenter)
 
@@ -303,8 +305,9 @@ class App:
                 swap_notifier_tx = SwapTxNotifier(d, d.cfg.tx.swap, curve=curve)
                 volume_filler.add_subscriber(swap_notifier_tx)
                 swap_notifier_tx.add_subscriber(d.alert_presenter)
+                swap_notifier_tx.dbg_evaluate_curve_for_pools()
 
-                if d.cfg.tx.swap.also_trigger_when.streaming_swap.notify_start.get('enabled', True):
+                if d.cfg.tx.swap.also_trigger_when.streaming_swap.get('notify_start', True):
                     stream_swap_notifier = StreamingSwapStartTxNotifier(d)
                     d.block_scanner.add_subscriber(stream_swap_notifier)
                     stream_swap_notifier.add_subscriber(d.alert_presenter)
@@ -313,6 +316,7 @@ class App:
                 refund_notifier_tx = GenericTxNotifier(d, d.cfg.tx.refund,
                                                        tx_types=(ThorTxType.TYPE_REFUND,),
                                                        curve=curve)
+                refund_notifier_tx.dbg_evaluate_curve_for_pools()
                 volume_filler.add_subscriber(refund_notifier_tx)
                 refund_notifier_tx.add_subscriber(d.alert_presenter)
 
@@ -320,6 +324,7 @@ class App:
                 switch_notifier_tx = SwitchTxNotifier(d, d.cfg.tx.switch,
                                                       tx_types=(ThorTxType.TYPE_SWITCH,),
                                                       curve=curve)
+                switch_notifier_tx.dbg_evaluate_curve_for_pools()
                 volume_filler.add_subscriber(switch_notifier_tx)
                 switch_notifier_tx.add_subscriber(d.alert_presenter)
 

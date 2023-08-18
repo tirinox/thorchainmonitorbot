@@ -122,6 +122,7 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
     curve = DepthCurve(curve_pts)
 
     swap_notifier_tx = SwapTxNotifier(d, d.cfg.tx.swap, curve=curve)
+    swap_notifier_tx.dbg_evaluate_curve_for_pools()
     volume_filler.add_subscriber(swap_notifier_tx)
     swap_notifier_tx.add_subscriber(d.alert_presenter)
 
