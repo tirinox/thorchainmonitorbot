@@ -259,12 +259,17 @@ class Asset:
     @property
     def pretty_str(self):
         s = self.PILL if self.is_synth else ''
-        result = f'{s}{self.chain}{self.separator_symbol}{self.name}'
-        if self.tag:
-            short_tag = self.tag[:6]
-            return f'{result}-{short_tag}'
+        sep = self.separator_symbol
+        if self.is_synth:
+            return f'{s}{self.chain}{sep}{self.name}'
         else:
-            return result
+            str_me = str(self)
+            if is_rune_asset(str_me):
+                return 'Rune'
+            elif str_me in self.ABBREVIATE_GAS_ASSETS:
+                return self.name  # Not ETH.ETH, just ETH
+            else:
+                return f'{self.chain}{sep}{self.name}'
 
     @property
     def pretty_str_no_emoji(self):
@@ -321,6 +326,10 @@ class Asset:
         'e': 'ETH.ETH',
         'l': 'LTC.LTC',
         'r': 'THOR.RUNE'
+    }
+
+    ABBREVIATE_GAS_ASSETS = {
+        'ETH.ETH', 'BTC.BTC', 'LTC.LTC', 'AVAX.AVAX', 'DOGE.DOGE'
     }
 
 
