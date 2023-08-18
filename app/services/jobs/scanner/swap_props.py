@@ -150,6 +150,8 @@ class SwapProps(NamedTuple):
 
         _affiliate_fee_paid, affiliate_address = self.get_affiliate_fee_and_addr()
 
+        trade_target = 0  # ignore so far, not really used
+
         ss_ev = self.find_event(EventStreamingSwap)
         if ss_ev:
             in_amt, in_asset = ss_ev.asset_amount(is_in=True)
@@ -161,7 +163,7 @@ class SwapProps(NamedTuple):
                 quantity=ss_ev.quantity,
                 count=ss_ev.quantity - ss_ev.number_of_failed_swaps,
                 last_height=ss_ev.last_height,
-                trade_target=ss_ev.swap_target,
+                trade_target=trade_target,
                 deposit=dep_amt, deposit_asset=dep_asset,
                 in_amt=in_amt, in_asset=in_asset,
                 out_amt=out_amt, out_asset=out_asset,
@@ -183,7 +185,6 @@ class SwapProps(NamedTuple):
                 failed_swap_reasons=[]
             )
 
-        trade_target = 0  # ignore so far, not really used
         network_fees = []  # ignore so far, not really used
 
         timestamp = int(datetime.now().timestamp() * 1e9)
