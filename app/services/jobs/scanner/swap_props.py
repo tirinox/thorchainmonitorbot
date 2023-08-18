@@ -19,9 +19,13 @@ class SwapProps(NamedTuple):
     @classmethod
     def restore_events_from_tx_status(cls, attrs):
         """
+            Usage:
             foo = await self.read_tx_status(swap_ev.tx_id)
             foo_ev = self.restore_events_from_tx_status(foo)
         """
+        if not attrs:
+            return
+
         results = []
         key: str
         for key, value in attrs.items():
@@ -55,39 +59,36 @@ class SwapProps(NamedTuple):
         return ss and ss.streaming_swap_count == ss.streaming_swap_quantity > 1
 
     @property
-    def is_native_outbound(self):
-        out_asset = self.memo.asset
-        return '/' in out_asset or is_rune_asset(out_asset)
+    def is_finished(self) -> bool:
+        # unequivocally, it's done if there is any EventScheduledOutbound
+        if any(True for ev in self.events if isinstance(ev, EventScheduledOutbound)):
+            return True
 
-    def find_affiliate(self) -> Tuple[Optional[EventSwap], Optional[EventOutbound]]:
-        """
-        Affiliate swap properties:
-            1) Same asset as input asset (what if its rune?)
-            2) streaming_swap_quantity == streaming_swap_count == 1
-            3) If streaming: it is in the block with the very first swap
+        # if there is any outbound to my address, except internal outbounds (in the middle of double swap)
+        if any(True for ev in self.true_outbounds if
+               (isinstance(ev, EventOutbound) and ev.to_address == self.inbound_address)):
+            return True
 
-        Affiliate outbound:
-            1) Same block as Affiliate Swap event
-
-        In input is Rune => No affiliate outbound
-
-        @return:
-        """
+        return False
 
     def get_affiliate_fee_and_addr(self) -> Tuple[int, str]:
-        in_coin = self.in_coin
-        if is_rune_asset(in_coin.asset):
-            # In is Rune, so no swap to the affiliate addy
-            amount = int(in_coin.amount * self.memo.affiliate_fee)
-            return amount, self.memo.affiliate_address
-        else:
-            # There will be swap + outbound
-            ...
+        if self.memo.affiliate_fee and self.memo.affiliate_address:
+            in_coin = self.in_coin
+            if is_rune_asset(in_coin.asset):
+                # In is Rune, so no swap to the affiliate addy
+                amount = int(in_coin.amount * self.memo.affiliate_fee)
+                return amount, self.memo.affiliate_address
+            else:
+                for ev in self.events:
+                    if isinstance(ev, EventOutbound) and ev.to_address != self.inbound_address and ev.is_outbound:
+                        return ev.amount, ev.to_address
+
+        return 0, ''  # otherwise not found
 
     @property
     def in_coin(self):
         return ThorCoin(
-            self.attrs.get('in_amount', 0),
+            int(self.attrs.get('in_amount', 0)),
             self.attrs.get('in_asset', '')
         )
 
@@ -99,7 +100,7 @@ class SwapProps(NamedTuple):
     def true_outbounds(self):
         return [
             ev for ev in self.events
-            if isinstance(ev, (EventOutbound, EventScheduledOutbound)) and ev.is_outbound or ev.is_refund
+            if isinstance(ev, (EventOutbound, EventScheduledOutbound)) and (ev.is_outbound or ev.is_refund)
         ]
 
     def gather_outbound(self) -> List[ThorSubTx]:
@@ -139,8 +140,10 @@ class SwapProps(NamedTuple):
         ]
         out_tx = self.gather_outbound()
 
-        affiliate_fee = 0  # todo
-        affiliate_address = ''  # todo
+        try:
+            _affiliate_fee_paid, affiliate_address = self.get_affiliate_fee_and_addr()
+        except TypeError:
+            pass
 
         ss_ev = self.find_event(EventStreamingSwap)
         if ss_ev:
@@ -190,7 +193,7 @@ class SwapProps(NamedTuple):
                 network_fees=network_fees,
                 trade_slip=slip,
                 trade_target=trade_target,
-                affiliate_fee=affiliate_fee,
+                affiliate_fee=self.memo.affiliate_fee,  # (0..1)
                 memo=memo_str,
                 affiliate_address=affiliate_address,
                 streaming=ss_desc

@@ -529,7 +529,10 @@ class BaseLocalization(ABC):  # == English
         elif tx.type == ThorTxType.TYPE_DONATE:
             heading = f'🙌 <b>Donation to the pool</b>'
         elif tx.type == ThorTxType.TYPE_SWAP:
-            heading = f'🐳 <b>Swap</b> 🔁'
+            if tx.meta_swap.streaming:
+                heading = f'🐳 <b>Swap</b> 🔁'
+            else:
+                heading = f'🌊 <b>Streaming swap</b> 🔁'
         elif tx.type == ThorTxType.TYPE_REFUND:
             heading = f'🐳 <b>Refund</b> ↩️❗'
         elif tx.type == ThorTxType.TYPE_SWITCH:
@@ -622,6 +625,9 @@ class BaseLocalization(ABC):  # == English
                     f"\nReason: {pre(reason)}"
             )
         elif tx.type == ThorTxType.TYPE_SWAP:
+            # todo: swap duration
+            # todo: swap benefit vs CEX
+
             content = self.format_swap_route(tx, usd_per_rune)
             slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
             l_fee_usd = tx.meta_swap.liquidity_fee_rune_float * usd_per_rune

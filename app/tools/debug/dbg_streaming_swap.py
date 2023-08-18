@@ -86,19 +86,19 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
     user_counter = UserCounter(d)
     d.block_scanner.add_subscriber(user_counter)
 
-    # Enrich with aggregator data
-    aggregator = AggregatorDataExtractor(d)
-
     # Extract ThorTx from BlockResult
     native_action_extractor = NativeActionExtractor(d)
     native_action_extractor.dbg_open_file(f'../temp/{tx_id}.txt')
-    d.block_scanner.add_subscriber(native_action_extractor)
-    native_action_extractor.add_subscriber(aggregator)
     if tx_id:
         native_action_extractor.dbg_watch_swap_id = tx_id
         native_action_extractor._db.dbg_only_tx_id = tx_id
 
     await native_action_extractor._db.backup('../temp/ev_db_backup_everything.json')
+    d.block_scanner.add_subscriber(native_action_extractor)
+
+    # Enrich with aggregator data
+    aggregator = AggregatorDataExtractor(d)
+    native_action_extractor.add_subscriber(aggregator)
 
     # Volume filler (important)
     volume_filler = VolumeFillerUpdater(d)
@@ -191,25 +191,18 @@ async def run():
         await app.deps.pool_fetcher.reload_global_pools()
         await app.deps.last_block_fetcher.run_once()
 
-        # print(app.deps.price_holder.pool_fuzzy_first('ETH.Usd'))
-
         # await debug_fetch_ss(app)
         # await debug_block_analyse(app)
         # await debug_full_pipeline(app, start=12132219)
 
-        # How to?
-
         await debug_full_pipeline(
             app,
-            # start=12136527, # almost end
-            # start=12167419,
-            # start=12170514,
-            # todo: swap with aff from asset. record it
-
-            start=12080323,
-            tx_id='41D11E40D08072A94813CF329E4AE557B48BFFF6CA43E71E6EC0CFCF8B035E7D',
+            start=12140390,
+            # tx_id='x',
             # single_block=True
         )
+
+        # todo: check Tg (refunds, bugs?)
 
         # await debug_detect_start_on_deposit_rune(app)
         # await debug_detect_start_on_external_tx(app)

@@ -7,7 +7,6 @@ from services.jobs.affiliate_merge import ZERO_HASH
 from services.jobs.scanner.event_db import EventDatabase
 from services.jobs.scanner.native_scan import BlockResult
 from services.jobs.scanner.swap_start_detector import SwapStartDetector
-from services.lib.constants import NATIVE_RUNE_SYMBOL
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger, say, hash_of_string_repr
@@ -59,11 +58,11 @@ class NativeActionExtractor(WithDelegates, INotified, WithLogger):
         # for swap in new_swaps:
         #     if swap.memo.affiliate_address:
         #         print(f"{swap.in_amount} {swap.in_asset} => {swap.memo_str} ({swap.memo.affiliate_address}/{swap.memo.affiliate_fee})")
-        #         if swap.memo.affiliate_fee:
+        #         if swap.memo.affiliate_fee and swap.out_asset == 'THOR.RUNE':
         #             await say('Feeeeeee!')
         #             print(swap.tx_id, ' /// ', swap.block_height)
-        #             # exit(0)
-        #     if swap.memo.affiliate_fee and swap.in_asset.upper().startswith('BNB'):
+        #             exit(0)
+            # if swap.memo.affiliate_fee and swap.in_asset.upper().startswith('BNB'):
         #         await say('Interesting!')
         #         print('stop')
 
@@ -73,7 +72,11 @@ class NativeActionExtractor(WithDelegates, INotified, WithLogger):
         # To calculate progress and final slip/fees
         await self.register_swap_events(block, interesting_events)
 
-        return await self.detect_swap_finished(block, interesting_events)
+        # Extract finished TX
+        txs = await self.detect_swap_finished(block, interesting_events)
+
+        # Pass them down the pipe
+        await self.pass_data_to_listeners(txs)
 
     async def register_new_swaps(self, swaps: List[EventSwapStart], height):
         self.logger.info(f"New swaps {len(swaps)} in block #{height}")
@@ -154,11 +157,6 @@ class NativeActionExtractor(WithDelegates, INotified, WithLogger):
                 b) EventOutbound for Rune/synths
         """
 
-        for ev in interesting_events:
-            if isinstance(ev, (EventOutbound, EventScheduledOutbound)):
-                if ev.is_outbound or ev.is_refund:
-                    ...
-
         # Group all outbound txs
         group_by_in = defaultdict(list)
         for ev in interesting_events:
@@ -167,13 +165,20 @@ class NativeActionExtractor(WithDelegates, INotified, WithLogger):
 
         results = []
         for tx_id, group in group_by_in.items():
-            results += await self._handle_finishing_swap_events_for_tx(tx_id, block.block_no, group)
+            swap_info = await self._db.read_tx_status(tx_id)
+            if not swap_info:
+                self.logger.warning(f'There are outbounds for tx {tx_id}, but there is no info about its initiation.')
+                continue
+
+            if swap_info.is_finished:
+                tx = swap_info.build_tx()
+                results.append(tx)
+
+        # if results:
+        #     await say('ThorTx has been build!')
+        #     print('stop')
+
         return results
-
-    async def _handle_finishing_swap_events_for_tx(self, tx_id: str, block_no, group: List[TypeEventSwapAndOut]):
-
-
-        return []
 
     # --- debug and research ---
 
