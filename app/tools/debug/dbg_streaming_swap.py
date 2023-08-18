@@ -197,7 +197,7 @@ async def run():
 
         await debug_full_pipeline(
             app,
-            start=12140390,
+            start=12140890,
             # tx_id='x',
             # single_block=True
         )

@@ -171,13 +171,9 @@ class NativeActionExtractor(WithDelegates, INotified, WithLogger):
                 continue
 
             # if no swaps, it is full refund
-            if swap_info.is_finished and swap_info.has_swaps:
+            if swap_info.has_started and swap_info.has_swaps and swap_info.is_finished:
                 tx = swap_info.build_tx()
                 results.append(tx)
-
-        # if results:
-        #     await say('ThorTx has been build!')
-        #     print('stop')
 
         return results
 
