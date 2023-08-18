@@ -33,8 +33,24 @@ class NativeActionExtractor(WithDelegates, INotified, WithLogger):
         self.dbg_swaps = 0
         self.dbg_file = None
 
+        self.clean_block_older_than_block = deps.cfg.as_int('native_scanner.clean_block_older_than_block', 0)
+
+    async def _do_clean(self):
+        if self.clean_block_older_than_block <= 0:
+            return
+
+        last_block = self.deps.last_block_store.thor
+        if not last_block:
+            return
+
+        oldest_block = last_block - self.clean_block_older_than_block
+
+        await self._db.clean_up_old_events(oldest_block)
+
     async def on_data(self, sender, block: BlockResult) -> List[ThorTx]:
         new_swaps = self._swap_detector.detect_swaps(block)
+
+        await self._do_clean()
 
         # Incoming swap intentions will be recorded in the DB
         await self.register_new_swaps(new_swaps, block.block_no)

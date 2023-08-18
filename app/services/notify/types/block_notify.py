@@ -17,6 +17,10 @@ from services.models.time_series import TimeSeries
 class LastBlockStore(INotified, WithDelegates, WithLogger):
     KEY_SERIES_BLOCK_HEIGHT = 'ThorBlockHeight'
 
+    @property
+    def thor(self):
+        return self.last_thor_block
+
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps

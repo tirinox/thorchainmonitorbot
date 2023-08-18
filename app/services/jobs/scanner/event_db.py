@@ -4,10 +4,12 @@ from aioredis import Redis
 
 from services.jobs.scanner.swap_props import SwapProps
 from services.lib.db import DB
+from services.lib.utils import WithLogger
 
 
-class EventDatabase:
+class EventDatabase(WithLogger):
     def __init__(self, db: DB):
+        super().__init__()
         self.db = db
         self.dbg_only_tx_id = None
 
@@ -44,18 +46,18 @@ class EventDatabase:
     async def write_tx_status_kw(self, tx_id, **kwargs):
         await self.write_tx_status(tx_id, kwargs)
 
-    async def clean_up_old_events(self, before_block=0):
-        # todo: use it
+    async def clean_up_old_events(self, before_block):
         pattern = self.key_to_tx('*')
         r: Redis = await self.db.get_redis()
         keys = await r.keys(pattern)
         candidates_for_deletion = []
         for k in keys:
-            height = await r.hget(k, 'height')
+            height = await r.hget(k, 'block_height')
             if height:
                 height = int(height)
                 if height < before_block:
                     candidates_for_deletion.append(k)
 
         if candidates_for_deletion:
+            self.logger.info(f'I will clean up {len(candidates_for_deletion)} TX records now.')
             await r.delete(*candidates_for_deletion)

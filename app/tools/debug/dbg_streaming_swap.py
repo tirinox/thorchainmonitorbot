@@ -187,6 +187,7 @@ async def run():
     app = LpAppFramework()
     async with app(brief=True):
         await app.deps.pool_fetcher.reload_global_pools()
+        await app.deps.last_block_fetcher.run_once()
 
         # print(app.deps.price_holder.pool_fuzzy_first('ETH.Usd'))
 
