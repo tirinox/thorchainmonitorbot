@@ -2,6 +2,42 @@ from dataclasses import dataclass
 from typing import Union
 
 from services.lib.constants import THOR_BASIS_POINT_MAX
+from services.models.tx_type import TxType
+
+MEMO_ACTION_TABLE = {
+    "add": TxType.ADD_LIQUIDITY,
+    "+": TxType.ADD_LIQUIDITY,
+    "withdraw": TxType.WITHDRAW,
+    "wd": TxType.WITHDRAW,
+    "-": TxType.WITHDRAW,
+    "swap": TxType.SWAP,
+    "s": TxType.SWAP,
+    "=": TxType.SWAP,
+    "limito": TxType.LIMIT_ORDER,
+    "lo": TxType.LIMIT_ORDER,
+    "out": TxType.OUTBOUND,
+    "donate": TxType.DONATE,
+    "d": TxType.DONATE,
+    "bond": TxType.BOND,
+    "unbond": TxType.UNBOND,
+    "leave": TxType.LEAVE,
+    # "yggdrasil+": TxYggdrasilFund,
+    # "yggdrasil-": TxYggdrasilReturn,
+    # "reserve": TxReserve,
+    "refund": TxType.REFUND,
+    # "migrate": TxMigrate,
+    # "ragnarok": TxRagnarok,
+    "switch": TxType.SWITCH,
+    # "noop": TxNoOp,
+    # "consolidate": TxConsolidate,
+    "name": TxType.THORNAME,
+    "n": TxType.THORNAME,
+    "~": TxType.THORNAME,
+    "$+": TxType.LOAN_OPEN,
+    "loan+": TxType.LOAN_OPEN,
+    "$-": TxType.LOAN_CLOSE,
+    "loan-": TxType.LOAN_CLOSE,
+}
 
 
 @dataclass
@@ -46,6 +82,7 @@ class THORMemo:
     def parse_memo(cls, memo: str):
         components = [it for it in memo.split(':')]
         action = cls.ith_or_default(components, 0, '').lower()
+        tx_type = MEMO_ACTION_TABLE.get(action)
 
         limit_and_s_swap = cls.ith_or_default(components, 3, '')
         s_swap_components = limit_and_s_swap.split('/')
@@ -54,9 +91,9 @@ class THORMemo:
         s_swap_interval = cls.ith_or_default(s_swap_components, 1, 0, int)
         s_swap_quantity = cls.ith_or_default(s_swap_components, 2, 1, int)
 
-        if action == 'swap' or action == '=' or action == 's':
+        if tx_type == TxType.SWAP:
             return cls(
-                'swap',
+                tx_type,
                 asset=cls.ith_or_default(components, 1),
                 dest_address=cls.ith_or_default(components, 2),
                 limit=limit,

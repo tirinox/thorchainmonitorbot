@@ -14,7 +14,7 @@ def test_memo1():
     assert m.final_asset_address == '0xd533a949740bb3306d119cc777fa900ba034cd52'
     assert m.affiliate_fee == 0
     assert m.affiliate_address is None
-    assert m.s_swap_quantity == 0
+    assert m.s_swap_quantity == 1
     assert m.s_swap_interval == 0
 
     m = THORMemo.parse_memo('SWAP:BTC/BTC:thorname')
@@ -24,7 +24,7 @@ def test_memo1():
     assert m.final_asset_address is None
     assert m.dest_address == 'thorname'
     assert m.limit == 0
-    assert m.s_swap_quantity == 0
+    assert m.s_swap_quantity == 1
     assert m.s_swap_interval == 0
 
     m = THORMemo.parse_memo('SWAP:AVAX.AVAX:0x12345678901234589012345:18000000/5/20:t:50')
