@@ -196,10 +196,13 @@ class PlotBarGraph(PlotGraph):
             cur_y = self.bottom
             for y, color in zip(ys, colors):
                 height = y / max_y * h
-                self.draw.rectangle((
-                    int(cur_x), self.h - int(cur_y),
-                    int(cur_x + block_width), self.h - int(cur_y + height)
-                ), fill=color)
+                x1, y1 = int(cur_x), self.h - int(cur_y)
+                x2, y2 = int(cur_x + block_width), self.h - int(cur_y + height)
+                if x1 > x2:
+                    x1, x2 = x2, x1
+                if y1 > y2:
+                    y1, y2 = y2, y1
+                self.draw.rectangle((x1, y1, x2, y2), fill=color)
                 cur_y += height
             cur_x += block_width + m
 
@@ -420,10 +423,13 @@ class PlotGraphLines(PlotGraph):
                 bar_height = bar_normal_height * y
 
                 if bar_height > 0.1:
-                    self.draw.rectangle((
-                        int(x - bh2 + x_shift), int(oy - bar_height),
-                        int(x + bh2 + x_shift), int(oy),
-                    ), fill=color)
+                    x1, y1 = int(x - bh2 + x_shift), int(oy - bar_height)
+                    x2, y2 = int(x + bh2 + x_shift), int(oy)
+                    if x1 > x2:
+                        x1, x2 = x2, x1
+                    if y1 > y2:
+                        y1, y2 = y2, y1
+                    self.draw.rectangle((x1, y1, x2, y2), fill=color)
 
                 if show_values:
                     do_it = False
