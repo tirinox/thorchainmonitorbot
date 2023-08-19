@@ -86,7 +86,9 @@ class SwapProps(NamedTuple):
                 return amount, self.memo.affiliate_address
             else:
                 for ev in self.events:
-                    if isinstance(ev, EventOutbound) and ev.to_address != self.inbound_address and ev.is_outbound:
+                    # fixme: possible bug. it dest addy is THORName,
+                    #  it will mismatch anyway because events have natural addresses
+                    if isinstance(ev, EventOutbound) and ev.to_address != self.memo.dest_address and ev.is_outbound:
                         return ev.amount, ev.to_address
 
         return 0, ''  # otherwise not found
@@ -113,11 +115,13 @@ class SwapProps(NamedTuple):
             if isinstance(ev, (EventOutbound, EventScheduledOutbound)) and (ev.is_outbound or ev.is_refund)
         ]
 
-    def gather_outbound(self) -> List[ThorSubTx]:
+    def gather_outbound(self, affiliate_address) -> List[ThorSubTx]:
         results = defaultdict(list)
         # in_address = self.inbound_address
         for outbound in self.true_outbounds:
             # here we must separate the affiliate outbound.
+            if outbound.to_address == affiliate_address:
+                continue
 
             results[outbound.to_address].append(ThorCoin(*outbound.amount_asset))
 
@@ -152,9 +156,10 @@ class SwapProps(NamedTuple):
                 tx_id=tx_id
             )
         ]
-        out_tx = self.gather_outbound()
 
         _affiliate_fee_paid, affiliate_address = self.get_affiliate_fee_and_addr()
+
+        out_tx = self.gather_outbound(affiliate_address)
 
         trade_target = 0  # ignore so far, not really used
 

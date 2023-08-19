@@ -206,16 +206,14 @@ async def run():
         # await debug_fetch_ss(app)
         # await debug_block_analyse(app)
         # await debug_full_pipeline(app, start=12132219)
-        # await debug_tx_records(app, 'DB3185B2BC24208634473696D0A01D27A43A91AFFB74F2A3209A5285326D2026')
-        #
+        await debug_tx_records(app, 'E8766E3D825A7BFD755ECA14454256CA25980F8B4BA1C9DCD64ABCE4904F033D')
+
         await debug_full_pipeline(
             app,
             start=12209580,
             # tx_id='E24872FE5AFED50A7CFB423DA3FCC9EA507C6A6A040000D73FE8CE87865BC7A5',
             # single_block=True
         )
-
-        # todo: check Tg (refunds, bugs?)
 
         # await debug_detect_start_on_deposit_rune(app)
         # await debug_detect_start_on_external_tx(app)
