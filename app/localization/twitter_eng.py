@@ -221,7 +221,7 @@ class TwitterEnglishLocalization(BaseLocalization):
                 f"liq. fee: {short_dollar(l_fee_usd)}{slip_mark}"
             )
 
-            if tx.meta_swap.streaming and tx.meta_swap.streaming.quantity > 1:
+            if tx.is_streaming:
                 duration = tx.meta_swap.streaming.total_duration
                 content += f'\n⏱️ Time: {self.seconds_human(duration)}.'
 

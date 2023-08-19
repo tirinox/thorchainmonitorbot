@@ -521,6 +521,10 @@ class ThorTx:
     def dex_aggregator_used(self):
         return bool(self.dex_info.swap_in) or bool(self.dex_info.swap_out)
 
+    @property
+    def is_streaming(self):
+        return bool(self.meta_swap and self.meta_swap.streaming and self.meta_swap.streaming.quantity > 1)
+
 
 @dataclass
 class EventLargeTransaction:

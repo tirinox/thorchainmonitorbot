@@ -467,7 +467,7 @@ class RussianLocalization(BaseLocalization):
                 f"Комиссия пулам: {bold(pretty_dollar(l_fee_usd))}{slip_mark}"
             )
 
-            if tx.meta_swap.streaming and tx.meta_swap.streaming.quantity > 1:
+            if tx.is_streaming:
                 duration = tx.meta_swap.streaming.total_duration
                 content += f'\n⏱️ Прошло времени: {self.seconds_human(duration)}.'
 

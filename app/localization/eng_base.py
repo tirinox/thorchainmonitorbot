@@ -641,7 +641,7 @@ class BaseLocalization(ABC):  # == English
                 f"liquidity fee: {bold(short_dollar(l_fee_usd))}{slip_mark}"
             )
 
-            if tx.meta_swap.streaming and tx.meta_swap.streaming.quantity > 1:
+            if tx.is_streaming:
                 duration = tx.meta_swap.streaming.total_duration
                 content += f'\n⏱️ Time elapsed: {self.seconds_human(duration)}.'
 

@@ -212,7 +212,7 @@ class SwapTxNotifier(GenericTxNotifier):
 
     def is_tx_suitable(self, tx: ThorTx, min_rune_volume, usd_per_rune, curve_mult=None):
         # a) It is interesting if a steaming swap
-        if tx.meta_swap and tx.meta_swap.streaming:
+        if tx.is_streaming:
             if tx.full_rune >= self.min_streaming_swap_usd / usd_per_rune:
                 return True
 

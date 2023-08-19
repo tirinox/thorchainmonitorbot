@@ -178,6 +178,9 @@ class NativeActionExtractor(WithDelegates, INotified, WithLogger):
                 tx = swap_info.build_tx()
                 results.append(tx)
 
+        if results:
+            self.logger.info(f'Give away {len(results)} Txs.')
+
         return results
 
     # --- debug and research ---
