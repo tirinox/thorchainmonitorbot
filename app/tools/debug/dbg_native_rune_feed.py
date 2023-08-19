@@ -5,7 +5,6 @@ from localization.eng_base import BaseLocalization
 from localization.languages import Language
 from services.jobs.scanner.native_scan import NativeScannerBlock
 from services.jobs.scanner.native_scan_ws import NativeScannerTransactionWS, NativeScannerBlockEventsWS
-from services.jobs.scanner.native_actions import NativeActionExtractor
 from services.jobs.transfer_detector import RuneTransferDetectorBlockEvents, \
     RuneTransferDetectorFromTxResult, RuneTransferDetectorTxLogs
 from services.lib.config import Config
@@ -47,15 +46,16 @@ async def t_block_scanner_ws(url):
     await scanner.run()
 
 
-async def demo_native_block_action_detector(app, start=12033185):
+async def demo_native_block_action_detector(app, start=12209517):
     scanner = NativeScannerBlock(app.deps, last_block=start)
+    scanner.one_block_per_run = True
     detector = RuneTransferDetectorTxLogs()
     scanner.add_subscriber(detector)
     detector.add_subscriber(Receiver('Transfer'))
-    action_extractor = NativeActionExtractor(app.deps)
-    scanner.add_subscriber(action_extractor)
-    action_extractor.add_subscriber(Receiver('Action'))
-    await scanner.run()
+    # action_extractor = NativeActionExtractor(app.deps)
+    # scanner.add_subscriber(action_extractor)
+    # action_extractor.add_subscriber(Receiver('Action'))
+    await scanner.run_once()
 
 
 # sic!
@@ -136,8 +136,8 @@ async def main():
         # await search_out(app)
         # await demo_rune_transfers_once(app)
         # await demo_test_rune_detector(app)
-        # await demo_native_block_action_detector(app)
-        await debug_block_scan_for_swaps(app)
+        await demo_native_block_action_detector(app)
+        # await debug_block_scan_for_swaps(app)
 
 
 if __name__ == '__main__':

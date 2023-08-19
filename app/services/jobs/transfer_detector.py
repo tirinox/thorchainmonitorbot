@@ -4,7 +4,7 @@ from typing import List
 from proto.types import MsgSend, MsgDeposit
 from proto.access import NativeThorTx, parse_thor_address, DecodedEvent, thor_decode_amount_field
 from services.jobs.scanner.native_scan import BlockResult
-from services.lib.constants import thor_to_float, is_rune, DEFAULT_RESERVE_ADDRESS, BOND_MODULE
+from services.lib.constants import thor_to_float, is_rune, DEFAULT_RESERVE_ADDRESS, BOND_MODULE, DEFAULT_RUNE_FEE
 from services.lib.delegates import WithDelegates, INotified
 from services.lib.money import Asset
 from services.lib.utils import WithLogger
@@ -35,6 +35,8 @@ class RuneTransferDetectorNativeTX(WithDelegates, INotified):
                     from_addr = self.address_parse(message.from_address)
                     to_addr = self.address_parse(message.to_address)
                     for coin in message.amount:
+                        # todo: problem: he may want to Deposit something stupid, that he don't have, lika a trillion of TGT
+                        # do not announce
                         transfers.append(RuneTransfer(
                             from_addr=from_addr,
                             to_addr=to_addr,
