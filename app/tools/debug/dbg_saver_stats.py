@@ -138,11 +138,11 @@ async def demo_new_method_to_reach_fullness(app: LpAppFramework):
 async def main():
     app = LpAppFramework()
     async with app(brief=True):
-        # await app.deps.pool_fetcher.run_once()
-        await demo_show_savers_pic(app)
+        await app.deps.pool_fetcher.run_once()
+        # await demo_show_savers_pic(app)
         # await demo_show_notification(app)
         # await demo_new_method_to_reach_fullness(app)
-        # await demo_vnx(app)
+        await demo_vnx(app)
 
 
 if __name__ == '__main__':

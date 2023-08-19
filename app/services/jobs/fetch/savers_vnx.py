@@ -1,4 +1,5 @@
 import asyncio
+from contextlib import suppress
 from typing import NamedTuple, List
 
 from services.lib.async_cache import AsyncTTL
@@ -71,6 +72,9 @@ class VNXSaversStatsFetcher(INotified, WithDelegates, WithLogger):
         url = self.VNX_SAVERS_STATS_PREV_URL if old else self.VNX_SAVERS_STATS_URL
         async with self.deps.session.get(url) as resp:
             j = await resp.json()
+            if not j:
+                return []
+
             results = []
             for asset, sub_json in j.items():
                 saver_vault = VNXSaversStats.from_json(sub_json)
@@ -107,6 +111,7 @@ class VNXSaversStatsFetcher(INotified, WithDelegates, WithLogger):
         return await self.get_savers_event()
 
     async def on_data(self, sender, data):
-        vaults = await self.load_real_yield_vanaheimex()
-        bank = self.make_bank(vaults)
-        await self.pass_data_to_listeners(bank)
+        with suppress(Exception):
+            vaults = await self.load_real_yield_vanaheimex()
+            bank = self.make_bank(vaults)
+            await self.pass_data_to_listeners(bank)
