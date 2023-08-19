@@ -106,10 +106,10 @@ class TwitterEnglishLocalization(BaseLocalization):
         elif tx.type == ThorTxType.TYPE_DONATE:
             heading = f'🐳 Donation to the pool 🙌'
         elif tx.type == ThorTxType.TYPE_SWAP:
-            if tx.meta_swap.streaming:
-                heading = f'🐳 Swap 🔁'
-            else:
+            if tx.is_streaming:
                 heading = f'🌊 Streaming swap'
+            else:
+                heading = f'🐳 Swap 🔁'
         elif tx.type == ThorTxType.TYPE_REFUND:
             heading = f'🐳 Refund ↩️❗'
         elif tx.type == ThorTxType.TYPE_SWITCH:

@@ -353,10 +353,10 @@ class RussianLocalization(BaseLocalization):
         elif tx.type == ThorTxType.TYPE_DONATE:
             heading = f'🙌 <b>Пожертвование в пул</b>'
         elif tx.type == ThorTxType.TYPE_SWAP:
-            if tx.meta_swap.streaming:
-                heading = f'🐳 <b>Крупный обмен</b> 🔁'
-            else:
+            if tx.is_streaming:
                 heading = f'🌊 <b>Потоковый обмен</b> 🔁'
+            else:
+                heading = f'🐳 <b>Крупный обмен</b> 🔁'
         elif tx.type == ThorTxType.TYPE_REFUND:
             heading = f'🐳️ <b>Возврат средств</b> ↩️❗'
         elif tx.type == ThorTxType.TYPE_SWITCH:

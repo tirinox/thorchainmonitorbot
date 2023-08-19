@@ -526,10 +526,10 @@ class BaseLocalization(ABC):  # == English
         elif tx.type == ThorTxType.TYPE_DONATE:
             heading = f'🙌 <b>Donation to the pool</b>'
         elif tx.type == ThorTxType.TYPE_SWAP:
-            if tx.meta_swap.streaming:
-                heading = f'🐳 <b>Swap</b> 🔁'
-            else:
+            if tx.is_streaming:
                 heading = f'🌊 <b>Streaming swap</b> 🔁'
+            else:
+                heading = f'🐳 <b>Swap</b> 🔁'
         elif tx.type == ThorTxType.TYPE_REFUND:
             heading = f'🐳 <b>Refund</b> ↩️❗'
         elif tx.type == ThorTxType.TYPE_SWITCH:
