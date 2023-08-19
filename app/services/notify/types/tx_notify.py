@@ -2,6 +2,8 @@ import asyncio
 from contextlib import suppress
 from typing import List
 
+from aioredis import Redis
+
 from services.jobs.scanner.event_db import EventDatabase
 from services.lib.config import SubConfig
 from services.lib.date_utils import parse_timespan_to_seconds
@@ -27,6 +29,26 @@ class GenericTxNotifier(INotified, WithDelegates):
 
         self.max_age_sec = parse_timespan_to_seconds(deps.cfg.tx.max_age)
         self.min_usd_total = int(params.min_usd_total)
+        self.no_repeat_protection = True
+
+    DB_KEY_ANNOUNCED_TX_ID = 'tx:announced-hashes'
+
+    async def mark_as_announced(self, tx_id, clear=False):
+        if not tx_id:
+            return
+
+        r: Redis = self.deps.db.redis
+        if clear:
+            await r.srem(self.DB_KEY_ANNOUNCED_TX_ID, tx_id)
+        else:
+            await r.sadd(self.DB_KEY_ANNOUNCED_TX_ID, tx_id)
+
+    async def is_announced(self, tx_id):
+        if not tx_id:
+            return True
+
+        r: Redis = self.deps.db.redis
+        return await r.sismember(self.DB_KEY_ANNOUNCED_TX_ID, tx_id)
 
     async def on_data(self, senders, txs: List[ThorTx]):
         with suppress(Exception):
@@ -34,6 +56,17 @@ class GenericTxNotifier(INotified, WithDelegates):
 
     async def handle_txs_unsafe(self, senders, txs: List[ThorTx]):
         txs = [tx for tx in txs if tx.type in self.tx_types]  # filter my TX types
+
+        if self.no_repeat_protection:
+            flags = await asyncio.gather(*[self.is_announced(tx.tx_hash) for tx in txs])
+            tmp_txs = []
+            for flag, tx in zip(flags, txs):
+                if flag:
+                    self.logger.warning(f'Tx {tx.tx_hash} ({tx.type}) has been already announced. Ignore!')
+                else:
+                    tmp_txs.append(tx)
+            txs = tmp_txs
+
         if not txs:
             return
 
@@ -64,6 +97,9 @@ class GenericTxNotifier(INotified, WithDelegates):
                 cap_info=(cap_info if has_liquidity and is_last else None),
                 mimir=self.deps.mimir_const_holder
             ))
+
+            if self.no_repeat_protection:
+                await self.mark_as_announced(tx.tx_hash)
 
     def _get_min_usd_depth(self, tx: ThorTx, usd_per_rune):
         pools = tx.pools
