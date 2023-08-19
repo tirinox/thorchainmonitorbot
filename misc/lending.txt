@@ -1,0 +1,11 @@
+Lending
+-------
+
+Memos
+
+Open (borrow):
+"LOAN+:BTC.BTC:bc1YYYYYY:minBTC:affAddr:affPts:dexAgg:dexTarAddr:DexTargetLimit"
+
+Close (repayment):
+"LOAN-:BTC.BTC:bc1YYYYYY:minOut"
+
