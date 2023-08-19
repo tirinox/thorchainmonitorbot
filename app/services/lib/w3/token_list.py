@@ -65,7 +65,7 @@ class TokenListCached:
         if len(results) >= 1:
             return results[0]
 
-        if not web3.Web3.isAddress(address):
+        if not web3.Web3.is_address(address):
             return
 
         existing_data = await self._cache.load(address)
