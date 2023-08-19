@@ -65,9 +65,7 @@ async def debug_fetch_ss(app: LpAppFramework):
 async def debug_block_analyse(app: LpAppFramework):
     scanner = NativeScannerBlock(app.deps)
     # await scanner.run()
-    blk = await scanner.fetch_one_block(12132347)
-    # blk = await scanner.fetch_one_block(12147039)  # has swap, ss, out, sch out
-    # pprint(blk)
+    blk = await scanner.fetch_one_block(12209517)
     sep()
 
     naex = NativeActionExtractor(app.deps)
@@ -209,10 +207,10 @@ async def run():
         # await debug_block_analyse(app)
         # await debug_full_pipeline(app, start=12132219)
         # await debug_tx_records(app, 'DB3185B2BC24208634473696D0A01D27A43A91AFFB74F2A3209A5285326D2026')
-
+        #
         await debug_full_pipeline(
             app,
-            start=12208695,
+            start=12209500,
             # tx_id='x',
             # single_block=True
         )

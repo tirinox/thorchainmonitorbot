@@ -1,6 +1,8 @@
+import asyncio
 from contextlib import suppress
 from typing import List
 
+from services.jobs.scanner.event_db import EventDatabase
 from services.lib.config import SubConfig
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.delegates import INotified, WithDelegates
@@ -151,6 +153,26 @@ class SwapTxNotifier(GenericTxNotifier):
         self.dex_min_usd = params.as_float('also_trigger_when.dex_aggregator_used.min_usd_total', 500)
         self.aff_fee_min_usd = params.as_float('also_trigger_when.affiliate_fee_usd_greater', 500)
         self.min_streaming_swap_usd = params.as_float('also_trigger_when.streaming_swap.volume_greater', 2500)
+        self._txs_started = []  # Fill it every tick before is_tx_suitable is called.
+        self._ev_db = EventDatabase(deps.db)
+
+    async def _check_if_they_announced_as_started(self, txs: List[ThorTx]):
+        if not txs:
+            return
+
+        tx_ids = [tx.tx_hash for tx in txs]
+
+        flags = await asyncio.gather(
+            *[self._ev_db.is_announced_as_started(tx_id) for tx_id in tx_ids]
+        )
+        self._txs_started = [tx_id for tx_id, flag in zip(tx_ids, flags) if flag]
+        if self._txs_started:
+            self.logger.info(f'These Txs were announced as started SS: {self._txs_started}')
+
+    async def handle_txs_unsafe(self, senders, txs: List[ThorTx]):
+        await self._check_if_they_announced_as_started(txs)
+
+        return await super().handle_txs_unsafe(senders, txs)
 
     def is_tx_suitable(self, tx: ThorTx, min_rune_volume, usd_per_rune, curve_mult=None):
         # a) It is interesting if a steaming swap
@@ -167,5 +189,10 @@ class SwapTxNotifier(GenericTxNotifier):
         if tx.dex_aggregator_used and tx.full_rune >= self.dex_min_usd / usd_per_rune:
             return True
 
-        # d) Regular rules are applied
+        # d) If we announce that the streaming swap has started, then we should announce that it's finished,
+        # regardless of its volume.
+        if tx.tx_hash in self._txs_started:
+            return True
+
+        # e) Regular rules are applied
         return super().is_tx_suitable(tx, min_rune_volume, usd_per_rune, curve_mult)
