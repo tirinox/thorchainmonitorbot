@@ -16,6 +16,9 @@ class SwapProps(NamedTuple):
     events: List[TypeEventSwapAndOut]
     memo: THORMemo
 
+    STATUS_OBSERVED_IN = 'observed_in'
+    STATUS_GIVEN_AWAY = 'given_away'
+
     @classmethod
     def restore_events_from_tx_status(cls, attrs):
         """
@@ -46,6 +49,14 @@ class SwapProps(NamedTuple):
     @property
     def is_streaming(self):
         return bool(self.attrs.get('is_streaming', False))
+
+    @property
+    def status(self):
+        return self.attrs.get('status', '')
+
+    @property
+    def given_away(self):
+        return self.status == self.STATUS_GIVEN_AWAY
 
     def find_event(self, klass) -> Optional[TypeEventSwapAndOut]:
         return next(self.find_events(klass), None)
@@ -93,7 +104,7 @@ class SwapProps(NamedTuple):
 
     @property
     def has_started(self):
-        return self.memo and self.inbound_address
+        return bool(self.memo and self.inbound_address)
 
     @property
     def true_outbounds(self):

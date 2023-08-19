@@ -6,6 +6,7 @@ from typing import List
 from services.jobs.affiliate_merge import ZERO_HASH
 from services.jobs.scanner.event_db import EventDatabase
 from services.jobs.scanner.native_scan import BlockResult
+from services.jobs.scanner.swap_props import SwapProps
 from services.jobs.scanner.swap_start_detector import SwapStartDetector
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
@@ -16,10 +17,6 @@ from services.models.tx import ThorTx
 
 
 class NativeActionExtractor(WithDelegates, INotified, WithLogger):
-    STATUS_OBSERVED_IN = 'observed_in'
-    STATUS_WAITING_FOR_OUTBOUND = 'wait4out'
-    STATUS_FINISHED = 'finished'
-
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
@@ -88,7 +85,7 @@ class NativeActionExtractor(WithDelegates, INotified, WithLogger):
                 await self._db.write_tx_status_kw(
                     swap.tx_id,
                     id=swap.tx_id,
-                    status=self.STATUS_OBSERVED_IN,
+                    status=SwapProps.STATUS_OBSERVED_IN,
                     memo=swap.memo_str,
                     from_address=swap.from_address,
                     in_amount=swap.in_amount,
@@ -170,8 +167,14 @@ class NativeActionExtractor(WithDelegates, INotified, WithLogger):
                 self.logger.warning(f'There are outbounds for tx {tx_id}, but there is no info about its initiation.')
                 continue
 
+            # print(f'{tx_id}: {swap_info.has_started = }, {swap_info.has_swaps = }, '
+            #       f'{swap_info.is_finished = }, {swap_info.given_away = }')
+
             # if no swaps, it is full refund
-            if swap_info.has_started and swap_info.has_swaps and swap_info.is_finished:
+            if swap_info.has_started and swap_info.has_swaps and swap_info.is_finished and not swap_info.given_away:
+                # to ignore it in the future
+                await self._db.write_tx_status_kw(tx_id, status=SwapProps.STATUS_GIVEN_AWAY)
+
                 tx = swap_info.build_tx()
                 results.append(tx)
 
