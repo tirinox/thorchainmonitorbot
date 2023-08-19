@@ -148,7 +148,7 @@ class SwapProps(NamedTuple):
                 pools.append(swap.pool)
 
             liquidity_fee += swap.liquidity_fee_in_rune
-            slip += swap.swap_slip
+            slip = max(slip, swap.swap_slip)
 
         in_tx = [
             ThorSubTx(
