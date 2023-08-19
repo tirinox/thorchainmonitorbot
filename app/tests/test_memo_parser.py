@@ -1,5 +1,5 @@
 from services.lib.memo import THORMemo
-from services.models.tx import ThorTxType
+from services.models.tx_type import TxType
 
 
 def test_memo1():
@@ -7,7 +7,7 @@ def test_memo1():
                                   ':'
                                   ':'
                                   ':FC4414199:0xd533a949740bb3306d119cc777fa900ba034cd52')
-    assert m.action == ThorTxType.TYPE_SWAP
+    assert m.action == TxType.SWAP
     assert m.asset == 'ETH.ETH'
     assert m.dex_aggregator_address == 'FC4414199'
     assert m.limit == 0
@@ -18,7 +18,7 @@ def test_memo1():
     assert m.s_swap_interval == 0
 
     m = THORMemo.parse_memo('SWAP:BTC/BTC:thorname')
-    assert m.action == ThorTxType.TYPE_SWAP
+    assert m.action == TxType.SWAP
     assert m.asset == 'BTC/BTC'
     assert m.dex_aggregator_address is None
     assert m.final_asset_address is None
@@ -28,7 +28,7 @@ def test_memo1():
     assert m.s_swap_interval == 0
 
     m = THORMemo.parse_memo('SWAP:AVAX.AVAX:0x12345678901234589012345:18000000/5/20:t:50')
-    assert m.action == ThorTxType.TYPE_SWAP
+    assert m.action == TxType.SWAP
     assert m.asset == 'AVAX.AVAX'
     assert m.dest_address == '0x12345678901234589012345'
     assert m.limit == 18000000

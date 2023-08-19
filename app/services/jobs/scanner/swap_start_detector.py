@@ -9,7 +9,7 @@ from services.lib.memo import THORMemo
 from services.lib.money import is_rune_asset, Asset
 from services.lib.utils import WithLogger
 from services.models.s_swap import EventSwapStart, StreamingSwap
-from services.models.tx import ThorTxType
+from services.models.tx_type import TxType
 
 
 class SwapStartDetector(WithLogger):
@@ -23,7 +23,7 @@ class SwapStartDetector(WithLogger):
         memo = THORMemo.parse_memo(msg.memo)
 
         # Must be a swap!
-        if not memo or memo.action != ThorTxType.TYPE_SWAP:
+        if not memo or memo.action != TxType.SWAP:
             return
 
         if msg.coins:

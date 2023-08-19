@@ -1,7 +1,3 @@
-from typing import Tuple
-
-import PIL.Image
-
 from localization.manager import BaseLocalization
 from services.dialog.picture.common import PictureAndName
 from services.lib.date_utils import today_str

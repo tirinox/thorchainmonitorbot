@@ -1,9 +1,7 @@
 import asyncio
 
-from localization.manager import BaseLocalization, RussianLocalization
 from services.dialog.picture.block_height_picture import block_speed_chart
 from services.jobs.fetch.last_block import LastBlockFetcher
-from services.lib.constants import THOR_BLOCKS_PER_MINUTE
 from services.lib.date_utils import DAY
 from services.lib.delegates import INotified
 from services.notify.types.block_notify import BlockHeightNotifier

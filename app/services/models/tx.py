@@ -13,18 +13,7 @@ from services.models.lp_info import LPAddress
 from services.models.mimir import MimirHolder
 from services.models.pool_info import PoolInfo, PoolInfoMap
 from services.models.s_swap import StreamingSwap
-
-
-class ThorTxType:
-    TYPE_ADD_LIQUIDITY = 'addLiquidity'
-    TYPE_SWAP = 'swap'
-    TYPE_WITHDRAW = 'withdraw'
-    TYPE_DONATE = 'donate'
-    TYPE_REFUND = 'refund'
-    TYPE_SWITCH = 'switch'  # BNB/ETH Rune => Native RUNE
-
-    ALL_EXCEPT_DONATE = TYPE_ADD_LIQUIDITY, TYPE_SWAP, TYPE_WITHDRAW, TYPE_REFUND, TYPE_SWITCH
-    GROUP_ADD_WITHDRAW = TYPE_WITHDRAW, TYPE_ADD_LIQUIDITY
+from services.models.tx_type import TxType
 
 
 class ThorCoin(NamedTuple):
@@ -394,12 +383,12 @@ class ThorTx:
 
     @property
     def is_liquidity_type(self):
-        return self.type in (ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_ADD_LIQUIDITY)
+        return self.type in (TxType.WITHDRAW, TxType.ADD_LIQUIDITY)
 
     # extended methods and properties
     def __post_init__(self):
         t = self.type
-        if t == ThorTxType.TYPE_ADD_LIQUIDITY or t == ThorTxType.TYPE_DONATE:
+        if t == TxType.ADD_LIQUIDITY or t == TxType.DONATE:
             pool = self.first_pool  # add maybe both synth (means savers) or l1 (normal liquidity)
             self.rune_amount = self.sum_of_rune(in_only=True)
             self.asset_amount = self.sum_of_asset(pool, in_only=True)
@@ -412,7 +401,7 @@ class ThorTx:
             self.address_asset = asset_sub_tx.address if asset_sub_tx else None
             self.tx_hash_asset = asset_sub_tx.tx_id if asset_sub_tx else None
 
-        elif t == ThorTxType.TYPE_WITHDRAW:
+        elif t == TxType.WITHDRAW:
             pool = self.first_pool_l1  # withdraw always l1 no matter it was savers or normal liquidity
             self.rune_amount = self.sum_of_rune(out_only=True)
             self.asset_amount = self.sum_of_asset(pool, out_only=True)
@@ -425,17 +414,17 @@ class ThorTx:
             self.tx_hash_rune = out_sub_tx_rune.tx_id if out_sub_tx_rune else None
             self.tx_hash_asset = out_sub_tx_asset.tx_id if out_sub_tx_asset else None
 
-        elif t == ThorTxType.TYPE_SWITCH:
+        elif t == TxType.SWITCH:
             # rune_amount <= asset_amount when the kill switch is active!
             self.rune_amount = self.sum_of_rune(out_only=True)
             self.asset_amount = self.sum_of_non_rune(in_only=True)
 
-        elif t in (ThorTxType.TYPE_REFUND, ThorTxType.TYPE_SWAP):
+        elif t in (TxType.REFUND, TxType.SWAP):
             # only outputs
             self.rune_amount = self.sum_of_rune(out_only=True)
             self.asset_amount = self.sum_of_non_rune(out_only=True)
 
-            if t == ThorTxType.TYPE_SWAP:
+            if t == TxType.SWAP:
                 self.affiliate_fee = self.meta_swap.affiliate_fee
 
         self.is_savings = any(True for asset in self.pools if Asset.from_string(asset).is_synth)
@@ -482,7 +471,7 @@ class ThorTx:
         return rune_sum
 
     def calc_full_rune_amount(self, pool_map: PoolInfoMap = None):
-        if self.type == ThorTxType.TYPE_SWITCH:
+        if self.type == TxType.SWITCH:
             r = self.rune_amount
         else:
             # We take price in from the L1 pool, that's why convert_synth_to_pool_name is used
@@ -490,7 +479,7 @@ class ThorTx:
 
             self.asset_per_rune = pool_info.asset_per_rune if pool_info else 0.0
 
-            if self.type in (ThorTxType.TYPE_SWAP, ThorTxType.TYPE_WITHDRAW):
+            if self.type in (TxType.SWAP, TxType.WITHDRAW):
                 if self.is_pending and not self.out_tx:
                     # pending txs have no out_tx, so we use in_tx
                     realm = self.search_realm(in_only=True)
@@ -510,7 +499,7 @@ class ThorTx:
     def what_percent_of_pool(self, pool_info: PoolInfo) -> float:
         percent_of_pool = 100.0
         if pool_info:
-            correction = self.full_rune if self.type == ThorTxType.TYPE_WITHDRAW else 0.0
+            correction = self.full_rune if self.type == TxType.WITHDRAW else 0.0
             percent_of_pool = pool_info.percent_share(self.full_rune, correction)
         return percent_of_pool
 

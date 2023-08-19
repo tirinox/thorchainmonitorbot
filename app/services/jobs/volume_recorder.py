@@ -8,7 +8,8 @@ from services.lib.delegates import WithDelegates, INotified
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 from services.models.s_swap import EventSwap
-from services.models.tx import ThorTx, ThorTxType
+from services.models.tx import ThorTx
+from services.models.tx_type import TxType
 
 
 class VolumeRecorder(WithDelegates, INotified, WithLogger):
@@ -35,13 +36,13 @@ class VolumeRecorder(WithDelegates, INotified, WithLogger):
             volume = tx.full_rune
             if volume > 0:
                 swap, synth = 0.0, 0.0
-                if tx.type == ThorTxType.TYPE_SWAP:
+                if tx.type == TxType.SWAP:
                     swap = volume
                     if tx.is_synth_involved:
                         synth = volume
 
-                add = volume if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY else 0.0
-                withdraw = volume if tx.type == ThorTxType.TYPE_WITHDRAW else 0.0
+                add = volume if tx.type == TxType.ADD_LIQUIDITY else 0.0
+                withdraw = volume if tx.type == TxType.WITHDRAW else 0.0
 
                 await self._add_point(tx.date_timestamp, add, swap, synth, withdraw, current_price)
 

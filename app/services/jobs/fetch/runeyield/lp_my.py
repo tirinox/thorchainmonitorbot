@@ -19,7 +19,8 @@ from services.lib.utils import pairwise
 from services.models.lp_info import LiquidityPoolReport, CurrentLiquidity, FeeReport, ReturnMetrics, \
     LPDailyGraphPoint, LPDailyChartByPoolDict, ILProtectionReport, LPPosition
 from services.models.pool_info import PoolInfoMap, PoolInfo, pool_share
-from services.models.tx import ThorTx, ThorTxType
+from services.models.tx import ThorTx
+from services.models.tx_type import TxType
 
 HeightToAllPools = Dict[int, PoolInfoMap]
 
@@ -168,7 +169,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
     @staticmethod
     def is_lp_grandfathered(txs: List[ThorTx], pool: str = '') -> bool:
         for tx in txs:
-            if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
+            if tx.type == TxType.ADD_LIQUIDITY:
                 if pool and tx.first_pool == pool:
                     if tx.height_int >= BLOCK_ILP_DEPRECATION:
                         return True
@@ -257,7 +258,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             # so this_asset_pool_info is a real object, but 1/1:1 values inside.
             this_asset_pool_info = self._get_pool(pool_historic, tx.height_int, l1_pool_name)
 
-            if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
+            if tx.type == TxType.ADD_LIQUIDITY:
                 runes = tx.sum_of_rune(in_only=True) if not is_savings else 0
                 assets = tx.sum_of_asset(pool_name, in_only=True)
 
@@ -355,9 +356,9 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
     @staticmethod
     def _update_units(units, tx: ThorTx):
-        if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
+        if tx.type == TxType.ADD_LIQUIDITY:
             units += tx.meta_add.liquidity_units_int
-        elif tx.type == ThorTxType.TYPE_WITHDRAW:
+        elif tx.type == TxType.WITHDRAW:
             units += tx.meta_withdraw.liquidity_units_int
         return units
 
@@ -496,7 +497,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
     def _get_last_deposit_height(txs: List[ThorTx]) -> int:
         last_deposit_height = -1
         for tx in txs:
-            if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
+            if tx.type == TxType.ADD_LIQUIDITY:
                 if last_deposit_height < tx.height_int:
                     last_deposit_height = tx.height_int
         return last_deposit_height
@@ -552,13 +553,13 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         r0, a0 = 0.0, 0.0
         units = 0
         for tx in txs:
-            if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
+            if tx.type == TxType.ADD_LIQUIDITY:
                 pool = self._get_pool(historic_all_pool_states, tx.height_int, pool_name)
                 r, a = pool.get_share_rune_and_asset(tx.meta_add.liquidity_units_int)
                 r0 += r
                 a0 += a
                 units += tx.meta_add.liquidity_units_int
-            elif tx.type == ThorTxType.TYPE_WITHDRAW:
+            elif tx.type == TxType.WITHDRAW:
                 # part_ratio = tx.meta_withdraw.basis_points_int / THOR_BASIS_POINT_MAX
                 delta_units = abs(tx.meta_withdraw.liquidity_units_int)
                 part_ratio = delta_units / units
@@ -625,9 +626,9 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 def final_liquidity(txs: List[ThorTx]):
     lp = 0
     for tx in txs:
-        if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
+        if tx.type == TxType.ADD_LIQUIDITY:
             lp += tx.meta_add.liquidity_units_int
-        elif tx.type == ThorTxType.TYPE_WITHDRAW:
+        elif tx.type == TxType.WITHDRAW:
             lp += tx.meta_withdraw.liquidity_units_int
     return lp
 
@@ -636,9 +637,9 @@ def cut_off_previous_lp_sessions(txs: List[ThorTx]):
     lp = 0
     new_txs = []
     for tx in txs:
-        if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
+        if tx.type == TxType.ADD_LIQUIDITY:
             lp += tx.meta_add.liquidity_units_int
-        elif tx.type == ThorTxType.TYPE_WITHDRAW:
+        elif tx.type == TxType.WITHDRAW:
             lp += tx.meta_withdraw.liquidity_units_int
 
         new_txs.append(tx)

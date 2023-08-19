@@ -4,7 +4,8 @@ from services.lib.delegates import WithDelegates, INotified
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 from services.models.time_series import TimeSeries
-from services.models.tx import ThorTx, ThorTxType
+from services.models.tx import ThorTx
+from services.models.tx_type import TxType
 
 
 class SwapRouteRecorder(WithLogger, INotified, WithDelegates):
@@ -15,7 +16,7 @@ class SwapRouteRecorder(WithLogger, INotified, WithDelegates):
 
     async def on_data(self, sender, txs: List[ThorTx]):
         for tx in txs:
-            if tx.type == ThorTxType.TYPE_SWAP:
+            if tx.type == TxType.SWAP:
                 ...
 
         await self.pass_data_to_listeners(txs, sender)  # pass through

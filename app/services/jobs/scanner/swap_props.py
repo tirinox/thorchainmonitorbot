@@ -8,7 +8,8 @@ from services.lib.memo import THORMemo
 from services.lib.money import is_rune_asset
 from services.models.s_swap import TypeEventSwapAndOut, parse_swap_and_out_event, EventStreamingSwap, StreamingSwap, \
     EventSwap, EventOutbound, EventScheduledOutbound
-from services.models.tx import ThorTx, SUCCESS, ThorMetaSwap, ThorTxType, ThorCoin, ThorSubTx
+from services.models.tx import ThorTx, SUCCESS, ThorMetaSwap, ThorCoin, ThorSubTx
+from services.models.tx_type import TxType
 
 
 class SwapProps(NamedTuple):
@@ -203,7 +204,7 @@ class SwapProps(NamedTuple):
         tx = ThorTx(
             date=timestamp,
             height=height,
-            type=ThorTxType.TYPE_SWAP,
+            type=TxType.SWAP,
             pools=pools,
             in_tx=in_tx,
             out_tx=out_tx,

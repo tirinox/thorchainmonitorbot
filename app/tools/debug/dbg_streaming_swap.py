@@ -13,7 +13,8 @@ from services.lib.money import DepthCurve, Asset
 from services.lib.texts import sep
 from services.lib.w3.aggregator import AggregatorDataExtractor
 from services.lib.w3.dex_analytics import DexAnalyticsCollector
-from services.models.tx import ThorTxType, ThorTx
+from services.models.tx import ThorTx
+from services.models.tx_type import TxType
 from services.notify.types.dex_report_notify import DexReportNotifier
 from services.notify.types.s_swap_notify import StreamingSwapStartTxNotifier
 from services.notify.types.tx_notify import SwapTxNotifier
@@ -151,7 +152,7 @@ async def debug_detect_start_on_deposit_rune(app):
 
 
 async def demo_search_for_deposit_streaming_synth(app):
-    tx_fetcher = TxFetcher(app.deps, tx_types=(ThorTxType.TYPE_SWAP,))
+    tx_fetcher = TxFetcher(app.deps, tx_types=(TxType.SWAP,))
     txs = await tx_fetcher.fetch_one_batch(tx_types=tx_fetcher.tx_types)
     next_token = txs.next_page_token
 

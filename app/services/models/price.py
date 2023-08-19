@@ -4,7 +4,7 @@ from typing import List
 
 from services.jobs.fetch.circulating import RuneCirculatingSupply
 from services.lib.config import Config
-from services.lib.constants import BNB_BTCB_SYMBOL, BTC_SYMBOL, STABLE_COIN_POOLS, thor_to_float, NATIVE_RUNE_SYMBOL
+from services.lib.constants import BNB_BTCB_SYMBOL, BTC_SYMBOL, STABLE_COIN_POOLS, thor_to_float
 from services.lib.date_utils import now_ts
 from services.lib.money import weighted_mean, Asset, is_rune_asset
 from services.lib.texts import fuzzy_search

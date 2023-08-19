@@ -41,7 +41,8 @@ from services.models.queue import QueueInfo
 from services.models.s_swap import EventSwapStart
 from services.models.savers import how_much_savings_you_can_add, EventSaverStats
 from services.models.transfer import RuneTransfer, RuneCEXFlow
-from services.models.tx import ThorTx, ThorTxType, ThorSubTx
+from services.models.tx import ThorTx, ThorSubTx
+from services.models.tx_type import TxType
 from services.notify.channel import Messengers
 
 CREATOR_TG = '@account1242'
@@ -513,26 +514,26 @@ class BaseLocalization(ABC):  # == English
          total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
         heading = ''
-        if tx.type == ThorTxType.TYPE_ADD_LIQUIDITY:
+        if tx.type == TxType.ADD_LIQUIDITY:
             if tx.is_savings:
                 heading = f'🐳→💰 <b>Add to savings vault</b>'
             else:
                 heading = f'🐳→⚡ <b>Add liquidity</b>'
-        elif tx.type == ThorTxType.TYPE_WITHDRAW:
+        elif tx.type == TxType.WITHDRAW:
             if tx.is_savings:
                 heading = f'🐳←💰 <b>Withdraw from savings vault</b>'
             else:
                 heading = f'🐳←⚡ <b>Withdraw liquidity</b>'
-        elif tx.type == ThorTxType.TYPE_DONATE:
+        elif tx.type == TxType.DONATE:
             heading = f'🙌 <b>Donation to the pool</b>'
-        elif tx.type == ThorTxType.TYPE_SWAP:
+        elif tx.type == TxType.SWAP:
             if tx.is_streaming:
                 heading = f'🌊 <b>Streaming swap</b> 🔁'
             else:
                 heading = f'🐳 <b>Swap</b> 🔁'
-        elif tx.type == ThorTxType.TYPE_REFUND:
+        elif tx.type == TxType.REFUND:
             heading = f'🐳 <b>Refund</b> ↩️❗'
-        elif tx.type == ThorTxType.TYPE_SWITCH:
+        elif tx.type == TxType.SWITCH:
             heading = f'🐳 <b>Rune switch</b> 🆙'
 
         if tx.is_pending:
@@ -546,7 +547,7 @@ class BaseLocalization(ABC):  # == English
 
         content = f''
 
-        if tx.type in (ThorTxType.TYPE_ADD_LIQUIDITY, ThorTxType.TYPE_WITHDRAW, ThorTxType.TYPE_DONATE):
+        if tx.type in (TxType.ADD_LIQUIDITY, TxType.WITHDRAW, TxType.DONATE):
             if tx.affiliate_fee > 0:
                 aff_fee_usd = tx.get_affiliate_fee_usd(usd_per_rune)
                 mark = self._exclamation_sign(aff_fee_usd, 'fee_usd_limit')
@@ -600,7 +601,7 @@ class BaseLocalization(ABC):  # == English
                     f"{ilp_text}"
                     f"{pool_depth_part}"
                 )
-        elif tx.type == ThorTxType.TYPE_SWITCH:
+        elif tx.type == TxType.SWITCH:
             # [Amt] Rune [Blockchain: ERC20/BEP2] -> [Amt] THOR Rune ($usd)
             in_rune_amt = tx.asset_amount
             out_rune_amt = tx.rune_amount
@@ -615,13 +616,13 @@ class BaseLocalization(ABC):  # == English
             )
             if killed_rune > 0:
                 content += f'\n☠️ Killed {bold(short_rune(killed_rune))} ({killed_percent_str} or {killed_usd_str})!'
-        elif tx.type == ThorTxType.TYPE_REFUND:
+        elif tx.type == TxType.REFUND:
             reason = shorten_text(tx.meta_refund.reason, 180)
             content = (
                     self.format_swap_route(tx, usd_per_rune) +
                     f"\nReason: {pre(reason)}"
             )
-        elif tx.type == ThorTxType.TYPE_SWAP:
+        elif tx.type == TxType.SWAP:
             content = self.format_swap_route(tx, usd_per_rune)
             slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
             l_fee_usd = tx.meta_swap.liquidity_fee_rune_float * usd_per_rune

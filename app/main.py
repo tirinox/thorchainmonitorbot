@@ -52,7 +52,7 @@ from services.lib.w3.aggregator import AggregatorDataExtractor
 from services.lib.w3.dex_analytics import DexAnalyticsCollector
 from services.models.mimir import MimirHolder
 from services.models.node_watchers import AlertWatchers
-from services.models.tx import ThorTxType
+from services.models.tx_type import TxType
 from services.notify.alert_presenter import AlertPresenter
 from services.notify.broadcast import Broadcaster
 from services.notify.personal.balance import PersonalBalanceNotifier
@@ -240,16 +240,16 @@ class App:
 
         if d.cfg.get('tx.enabled', True):
             main_tx_types = [
-                ThorTxType.TYPE_SWITCH,
+                TxType.SWITCH,
                 # ThorTxType.TYPE_SWAP,  # fixme: using the native block scanner
-                ThorTxType.TYPE_REFUND,
-                ThorTxType.TYPE_ADD_LIQUIDITY,
-                ThorTxType.TYPE_WITHDRAW,
+                TxType.REFUND,
+                TxType.ADD_LIQUIDITY,
+                TxType.WITHDRAW,
             ]
 
             ignore_donates = d.cfg.get('tx.ignore_donates', True)
             if not ignore_donates:
-                main_tx_types.append(ThorTxType.TYPE_DONATE)
+                main_tx_types.append(TxType.DONATE)
 
             # Uses Midgard as data source
             fetcher_tx = TxFetcher(d, tx_types=main_tx_types)
@@ -295,7 +295,7 @@ class App:
 
             if d.cfg.tx.donate.get('enabled', True):
                 donate_notifier_tx = GenericTxNotifier(d, d.cfg.tx.donate,
-                                                       tx_types=(ThorTxType.TYPE_DONATE,),
+                                                       tx_types=(TxType.DONATE,),
                                                        curve=curve)
                 donate_notifier_tx.dbg_evaluate_curve_for_pools()
                 volume_filler.add_subscriber(donate_notifier_tx)
@@ -314,7 +314,7 @@ class App:
 
             if d.cfg.tx.refund.get('enabled', True):
                 refund_notifier_tx = GenericTxNotifier(d, d.cfg.tx.refund,
-                                                       tx_types=(ThorTxType.TYPE_REFUND,),
+                                                       tx_types=(TxType.REFUND,),
                                                        curve=curve)
                 refund_notifier_tx.dbg_evaluate_curve_for_pools()
                 volume_filler.add_subscriber(refund_notifier_tx)
@@ -322,7 +322,7 @@ class App:
 
             if d.cfg.tx.switch.get('enabled', True):
                 switch_notifier_tx = SwitchTxNotifier(d, d.cfg.tx.switch,
-                                                      tx_types=(ThorTxType.TYPE_SWITCH,),
+                                                      tx_types=(TxType.SWITCH,),
                                                       curve=curve)
                 switch_notifier_tx.dbg_evaluate_curve_for_pools()
                 volume_filler.add_subscriber(switch_notifier_tx)

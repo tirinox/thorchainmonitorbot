@@ -7,7 +7,6 @@ from services.lib.constants import THOR_BLOCK_TIME, thor_to_float
 from services.lib.date_utils import parse_timespan_to_seconds, now_ts, DAY
 from services.lib.depcont import DepContainer
 from services.lib.midgard.urlgen import free_url_gen
-from services.lib.money import Asset
 from services.models.net_stats import NetworkStats
 from services.models.swap_history import SwapHistoryResponse
 

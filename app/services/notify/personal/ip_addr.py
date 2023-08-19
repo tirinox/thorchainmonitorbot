@@ -1,7 +1,7 @@
 from typing import List
 
 from services.lib.depcont import DepContainer
-from services.models.node_info import MapAddressToPrevAndCurrNode, NodeEventType, NodeEvent
+from services.models.node_info import NodeEventType, NodeEvent
 from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
 
 

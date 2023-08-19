@@ -4,7 +4,6 @@ from typing import List
 
 from web3 import Web3
 
-from localization.eng_base import BaseLocalization
 from localization.languages import Language
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.volume_filler import VolumeFillerUpdater
@@ -19,7 +18,8 @@ from services.lib.w3.dex_analytics import DexAnalyticsCollector
 from services.lib.w3.erc20_contract import ERC20Contract
 from services.lib.w3.router_contract import TCRouterContract
 from services.lib.w3.token_list import TokenListCached, StaticTokenList
-from services.models.tx import ThorTx, ThorTxType
+from services.models.tx import ThorTx
+from services.models.tx_type import TxType
 from services.notify.types.tx_notify import SwapTxNotifier
 from tools.debug.dbg_tx_format import load_tx
 from tools.lib.lp_common import LpAppFramework
@@ -188,7 +188,7 @@ async def demo_find_aff(app: LpAppFramework):
                 await dex_ex.on_data(None, txs)
 
                 for tx in txs:
-                    if tx.type == ThorTxType.TYPE_SWAP:
+                    if tx.type == TxType.SWAP:
                         if tx.dex_aggregator_used:
                             print(tx.tx_hash, f' = {tx.full_rune:.1f} Rune; ', tx.dex_info, tx, file=f)
                             print(tx.tx_hash, tx.full_rune, 'Rune')

@@ -16,7 +16,7 @@ from services.lib.money import pretty_money, short_dollar, short_money, format_p
 from services.lib.texts import bracketify
 from services.lib.utils import async_wrap
 from services.models.flipside import EventKeyStats, FSLockedValue, FSFees, FSAffiliateCollectors, FSSwapVolume, \
-    FSSwapCount, FSSwapRoutes
+    FSSwapCount
 
 
 def sum_by_attribute(daily_list, attr_name, klass=None, f_sum=sum):

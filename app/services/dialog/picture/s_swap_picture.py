@@ -1,10 +1,9 @@
-from PIL import Image
+from PIL import Image, ImageDraw
 
 from localization.manager import BaseLocalization
 from services.dialog.picture.common import BasePictureGenerator
 from services.dialog.picture.resources import Resources
 from services.lib.utils import async_wrap
-from services.models.pol import EventPOL
 from services.models.s_swap import StreamingSwap
 from services.models.tx import ThorTx
 
