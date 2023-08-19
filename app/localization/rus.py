@@ -510,7 +510,7 @@ class RussianLocalization(BaseLocalization):
             f'Пользователь: {user_link} / {tx_link}\n'
             f'{amount_str} {asset_str} ({short_dollar(e.volume_usd)}) → ⚡ → {target_asset_str}\n'
             f'{e.ss.quantity} обменов каждые {e.ss.interval} блоков, '
-            f'полная длительность: {total_duration_str} + задержка'
+            f'длительность: {total_duration_str} + задержка'
         )
 
     # ------- QUEUE -------
