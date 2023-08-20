@@ -246,8 +246,8 @@ class TwitterEnglishLocalization(BaseLocalization):
 
     def notification_text_streaming_swap_started(self, e: EventSwapStart, name_map: NameMap):
         user_link = self.link_to_address(e.from_address, name_map)
-        chain = Chains.THOR
-        tx_link = get_explorer_url_to_tx(self.cfg.network_id, chain, e.tx_id)
+
+        tx_link = self.thorswap_tx_tracker(e.tx_id)
         asset_str = Asset(e.in_asset).pretty_str
         amount_str = self.format_op_amount(e.in_amount_float)
         target_asset_str = Asset(e.out_asset).pretty_str
@@ -257,7 +257,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             f'{user_link}: {amount_str} {asset_str} ({short_dollar(e.volume_usd)}) → ⚡ → {target_asset_str}\n'
             f'{e.ss.quantity} swaps every {e.ss.interval} blocks, '
             f'duration is {total_duration_str} + outbound delay\n'
-            f'{tx_link}'
+            f'Track Tx: {tx_link}'
         )
 
     def notification_text_queue_update(self, item_type, is_free, value):

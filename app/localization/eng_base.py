@@ -671,6 +671,10 @@ class BaseLocalization(ABC):  # == English
 
         return msg.strip()
 
+    @staticmethod
+    def thorswap_tx_tracker(tx_id: str):
+        return f'https://app.thorswap.finance/tx/{tx_id}'
+
     def _add_input_output_links(self, tx, name_map, text_inputs, text_outputs, text_user):
         blockchain_components = [f"{text_user}{self.link_to_explorer_user_address_for_tx(tx, name_map)}"]
 
@@ -696,8 +700,8 @@ class BaseLocalization(ABC):  # == English
 
     def notification_text_streaming_swap_started(self, e: EventSwapStart, name_map: NameMap):
         user_link = self.link_to_address(e.from_address, name_map)
-        chain = Chains.THOR
-        tx_link = link(get_explorer_url_to_tx(self.cfg.network_id, chain, e.tx_id), 'TX')
+
+        tx_link = link(self.thorswap_tx_tracker(e.tx_id), 'Track TX')
 
         asset_str = Asset(e.in_asset).pretty_str
         amount_str = self.format_op_amount(e.in_amount_float)
@@ -706,9 +710,9 @@ class BaseLocalization(ABC):  # == English
         return (
             f'🌊 <b>Streaming swap has started</b>\n'
             f'User: {user_link} / {tx_link}\n'
-            f'{amount_str} {asset_str} ({short_dollar(e.volume_usd)}) → ⚡ → {target_asset_str}\n'
+            f'{amount_str} {asset_str} ({short_dollar(e.volume_usd)}) → ⚡ → {bold(target_asset_str)}\n'
             f'{e.ss.quantity} swaps every {e.ss.interval} blocks, '
-            f'duration is about {total_duration_str} + outbound delay'
+            f'duration is about {ital(total_duration_str)} + outbound delay'
         )
 
     # ------- QUEUE -------
