@@ -518,3 +518,12 @@ def expect_bytes(o):
 
 def expect_string(o):
     return o if isinstance(o, str) else o.decode('utf-8')
+
+
+def keys_to_lower(d: dict) -> dict:
+    if not d:
+        return {}
+
+    return {
+        (k.lower() if isinstance(k, str) else k): v for k, v in d.items()
+    }

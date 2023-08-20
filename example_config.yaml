@@ -153,7 +153,7 @@ node_op_tools:
 native_scanner:
   enabled: true
 
-  max_attempts_per_block: 3  # (!) new
+  max_attempts_per_block: 8
 
   reserve_address: "thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt"
 
@@ -170,7 +170,7 @@ native_scanner:
       - "thor1v8ppstuf6e3x0r4glqc68d5jqcs2tf38cg2q6y"
       - "thor1g98cy3n9mmjrpn0sxmn63lztelera37n8n67c0"
 
-  clean_block_older_than_block: 10000  # (!) new
+  clean_block_older_than_block: 10000
 
 
 names:
@@ -219,6 +219,14 @@ names:
     bnb1axqc2gan462z6npw3c33srp4950mr5x28uc6wu: "THORChain Community"
     bnb13a7gyv5zl57c0rzeu0henx6d0tzspvrrakxxtv: "THORChain Operational"
     bnb1e4q8whcufp6d72w8nwmpuhxd96r4n0fstegyuy: "Burn address"
+
+  affiliates: # (!) new
+    wr: THORWallet
+    ss: ShapeShift
+    t: ThorSwap
+    tr: Trust iOS
+    te: Trust Android
+    dx: Asgardex
 
 
 tx:
@@ -275,8 +283,8 @@ tx:
       dex_aggregator_used:
         min_usd_total: 1000
       affiliate_fee_usd_greater: 1000
-      streaming_swap: # (!) new
-        volume_greater: 2500
+      streaming_swap:
+        volume_greater: 25000
         notify_start: true
 
   donate:

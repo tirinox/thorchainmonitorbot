@@ -9,7 +9,7 @@ from services.lib.constants import Chains
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.db import DB
 from services.lib.midgard.connector import MidgardConnector
-from services.lib.utils import WithLogger
+from services.lib.utils import WithLogger, keys_to_lower
 
 
 class NameMap(NamedTuple):
@@ -28,6 +28,7 @@ class NameService(WithLogger):
         self.midgard = midgard
         self._known_address = {}
         self._known_names = {}
+        self._affiliates = {}
         self._load_preconfigured_names()
 
         self._thorname_enabled = cfg.as_str('names.thorname.enabled', True)
@@ -134,6 +135,11 @@ class NameService(WithLogger):
                     ]
                 )
                 self._known_names[label] = address
+
+        self.affiliates = keys_to_lower(self.cfg.get_pure('names.affiliates'))
+
+    def get_affiliate_name(self, affiliate_short: str):
+        return self.affiliates.get(affiliate_short.lower())
 
     @staticmethod
     def _key_thorname_to_addresses(name: str):

@@ -210,7 +210,11 @@ class TwitterEnglishLocalization(BaseLocalization):
             if tx.affiliate_fee > 0:
                 aff_fee_usd = tx.get_affiliate_fee_usd(usd_per_rune)
                 mark = self._exclamation_sign(aff_fee_usd, 'fee_usd_limit')
-                aff_text = f'Aff. fee: {short_dollar(aff_fee_usd)}{mark} ' \
+
+                aff_collector = self.name_service.get_affiliate_name(tx.memo.affiliate_address)
+                aff_collector = f'{aff_collector} ' if aff_collector else ''
+
+                aff_text = f'{aff_collector}Aff. fee: {short_dollar(aff_fee_usd)}{mark} ' \
                            f'({format_percent(tx.affiliate_fee)})\n'
             else:
                 aff_text = ''

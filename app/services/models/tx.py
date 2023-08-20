@@ -28,7 +28,7 @@ class ThorCoin(NamedTuple):
     def merge_two(a: 'ThorCoin', b: 'ThorCoin'):
         assert a.asset == b.asset
         return ThorCoin(safe_sum(a.amount, b.amount), a.asset)
-    
+
     @classmethod
     def from_json(cls, j):
         return cls(int(j.get('amount', 0)), j.get('asset', ''))
@@ -513,6 +513,12 @@ class ThorTx:
     @property
     def is_streaming(self):
         return bool(self.meta_swap and self.meta_swap.streaming and self.meta_swap.streaming.quantity > 1)
+
+    @property
+    def memo(self) -> THORMemo:
+        meta = self.meta_swap or self.meta_add or self.meta_withdraw or self.meta_refund
+        if hasattr(meta, 'memo'):
+            return THORMemo.parse_memo(meta.memo)
 
 
 @dataclass
