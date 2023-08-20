@@ -33,7 +33,7 @@ class VNXSaversStats(NamedTuple):
             earned=float(j.get('earned')),
             filled=float(j.get('filled')),
             savers_count=int(j.get('saversCount')),
-            saver_return=float(j.get('saverReturn')),
+            saver_return=float(j.get('saverReturn', 0.0) or 0.0),
             savers_depth=int(j.get('saversDepth')),
             synth_supply=int(j.get('synthSupply')),
         )

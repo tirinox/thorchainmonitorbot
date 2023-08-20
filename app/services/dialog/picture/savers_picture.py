@@ -3,7 +3,7 @@ from PIL import Image, ImageDraw
 from localization.manager import BaseLocalization
 from services.dialog.picture.common import BasePictureGenerator
 from services.dialog.picture.resources import Resources
-from services.lib.draw_utils import TC_WHITE, line_progress_bar, result_color
+from services.lib.draw_utils import TC_WHITE, line_progress_bar, result_color, rect_progress_bar
 from services.lib.money import Asset, short_money, short_dollar
 from services.lib.utils import async_wrap
 from services.models.savers import SaverVault, EventSaverStats
@@ -58,7 +58,7 @@ class SaversPictureGenerator(BasePictureGenerator):
 
         # key metrics:
 
-        key_metrics_y = 115 * 2
+        key_metrics_y = 215
         n_key_metrics = 5
 
         def key_metric_xy(i, dx=0, dy=0):
@@ -106,7 +106,7 @@ class SaversPictureGenerator(BasePictureGenerator):
 
         # table:
         table_x = 46 * 2
-        y, dy = 242 * 2, 44 * 2
+        y, dy = 460, 84
         y_start = y
         logo_size = 32 * 2
 
@@ -187,7 +187,7 @@ class SaversPictureGenerator(BasePictureGenerator):
                       f"{short_money(vault.percent_of_cap_filled, integer=True)}%",
                       fill=TC_WHITE, font=font_asset_bold, anchor='lm')
 
-            line_progress_bar(draw, vault.percent_of_cap_filled / 100.0,
+            rect_progress_bar(draw, vault.percent_of_cap_filled / 100.0,
                               ((filled_x, y - 14), (fill_pb_width, 28)), line_width=2, gap=2)
 
             asset_earned = vault.calc_asset_earned(pool_map)

@@ -455,6 +455,25 @@ def line_progress_bar(draw: ImageDraw,
         x += line_width + gap
 
 
+def rect_progress_bar(draw: ImageDraw,
+                      value: float, xy, line_width=1, gap=1,
+                      color_filled='#fff', color_unfilled='#777', radius=6):
+    (x_start, y), (w, h) = xy
+    if w <= 0 or h <= 0:
+        return
+    x = x_start
+    x_end = x + w
+    y_end = y + h
+    value = clamp(value, 0.0, 1.0)
+
+    x_middle = w * value + x
+    margin = 2
+
+    draw: ImageDraw
+    draw.rounded_rectangle((x - margin, y - margin, x_end + margin, y_end + margin), radius, fill=color_unfilled)
+    draw.rounded_rectangle((x, y, x_middle, y_end), radius, fill=color_filled)
+
+
 def paste_image_masked(destination, source, xy, anchor='mm'):
     x_anchor, y_anchor = anchor.lower()
     w, h = source.width, source.height
