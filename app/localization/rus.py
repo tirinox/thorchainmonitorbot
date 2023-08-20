@@ -503,8 +503,8 @@ class RussianLocalization(BaseLocalization):
 
     def notification_text_streaming_swap_started(self, e: EventSwapStart, name_map: NameMap):
         user_link = self.link_to_address(e.from_address, name_map)
-        chain = Chains.THOR
-        tx_link = link(get_explorer_url_to_tx(self.cfg.network_id, chain, e.tx_id), 'TX')
+
+        tx_link = link(self.thorswap_tx_tracker(e.tx_id), 'Отследить')
 
         asset_str = Asset(e.in_asset).pretty_str
         amount_str = self.format_op_amount(e.in_amount_float)
@@ -513,9 +513,9 @@ class RussianLocalization(BaseLocalization):
         return (
             '🌊 <b>Потоковый обмен начался</b>\n'
             f'Пользователь: {user_link} / {tx_link}\n'
-            f'{amount_str} {asset_str} ({short_dollar(e.volume_usd)}) → ⚡ → {target_asset_str}\n'
+            f'{amount_str} {asset_str} ({short_dollar(e.volume_usd)}) → ⚡ → {bold(target_asset_str)}\n'
             f'{e.ss.quantity} обменов каждые {e.ss.interval} блоков, '
-            f'длительность: {total_duration_str} + задержка'
+            f'длительность: {ital(total_duration_str)} + задержка'
         )
 
     # ------- QUEUE -------
