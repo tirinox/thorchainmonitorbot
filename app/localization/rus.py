@@ -504,7 +504,7 @@ class RussianLocalization(BaseLocalization):
     def notification_text_streaming_swap_started(self, e: EventSwapStart, name_map: NameMap):
         user_link = self.link_to_address(e.from_address, name_map)
 
-        tx_link = link(self.thorswap_tx_tracker(e.tx_id), 'Отследить')
+        tx_link = link(self.url_for_tx_tracker(e.tx_id), 'Отследить')
 
         asset_str = Asset(e.in_asset).pretty_str
         amount_str = self.format_op_amount(e.in_amount_float)

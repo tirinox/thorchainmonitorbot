@@ -676,8 +676,8 @@ class BaseLocalization(ABC):  # == English
         return msg.strip()
 
     @staticmethod
-    def thorswap_tx_tracker(tx_id: str):
-        return f'https://app.thorswap.finance/tx/{tx_id}'
+    def url_for_tx_tracker(tx_id: str):
+        return f'https://track.ninerealms.com/{tx_id}'
 
     def _add_input_output_links(self, tx, name_map, text_inputs, text_outputs, text_user):
         blockchain_components = [f"{text_user}{self.link_to_explorer_user_address_for_tx(tx, name_map)}"]
@@ -705,7 +705,7 @@ class BaseLocalization(ABC):  # == English
     def notification_text_streaming_swap_started(self, e: EventSwapStart, name_map: NameMap):
         user_link = self.link_to_address(e.from_address, name_map)
 
-        tx_link = link(self.thorswap_tx_tracker(e.tx_id), 'Track TX')
+        tx_link = link(self.url_for_tx_tracker(e.tx_id), 'Track TX')
 
         asset_str = Asset(e.in_asset).pretty_str
         amount_str = self.format_op_amount(e.in_amount_float)
