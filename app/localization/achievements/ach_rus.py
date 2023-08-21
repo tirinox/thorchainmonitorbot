@@ -23,7 +23,7 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
         ADesc(A.ILP_PAID_TOTAL, 'Всего страховки выплачено', postfix=POSTFIX_RUNE),
         ADesc(A.TOTAL_ACTIVE_BOND, 'Всего активный бонд'),
         ADesc(A.TOTAL_BOND, 'Всего в бондах нод', postfix=POSTFIX_RUNE),
-        ADesc(A.NODE_COUNT, 'Всего нод в сети', postfix=POSTFIX_RUNE),
+        ADesc(A.NODE_COUNT, 'Всего нод в сети'),
         ADesc(A.ACTIVE_NODE_COUNT, 'Число активных нод'),
 
         ADesc(A.ANNIVERSARY, 'День Рождения'),

@@ -22,7 +22,7 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
         ADesc(A.ILP_PAID_TOTAL, 'Total ILP paid', postfix=POSTFIX_RUNE),
         ADesc(A.TOTAL_ACTIVE_BOND, 'Total active bond'),
         ADesc(A.TOTAL_BOND, 'Total bond', postfix=POSTFIX_RUNE),
-        ADesc(A.NODE_COUNT, 'Total nodes count', postfix=POSTFIX_RUNE),
+        ADesc(A.NODE_COUNT, 'Total nodes count'),
         ADesc(A.ACTIVE_NODE_COUNT, 'Active nodes count'),
 
         ADesc(A.ANNIVERSARY, 'Anniversary'),
@@ -60,7 +60,7 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
         desc, ago, desc_str, emoji, milestone_str, prev_milestone_str, value_str = self.prepare_achievement_data(a)
         desc: ADesc
 
-        msg = f'{emoji} <b>THORChain has reached a new milestone!</b>\n'
+        msg = f'{emoji} <b>THORChain has hit a new milestone!</b>\n'
 
         if a.key == A.ANNIVERSARY:
             # special case for anniversary

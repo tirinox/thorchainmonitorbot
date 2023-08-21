@@ -7,7 +7,7 @@ class AchievementsTwitterEnglishLocalization(AchievementsEnglishLocalization):
     def notification_achievement_unlocked(self, a: Achievement):
         desc, ago, desc_str, emoji, milestone_str, prev_milestone_str, value_str = self.prepare_achievement_data(a)
 
-        msg = f'{emoji} @THORChain has reached a new milestone!\n'
+        msg = f'{emoji} @THORChain has hit a new milestone!\n'
 
         if a.key == A.ANNIVERSARY:
             # special case for anniversary
