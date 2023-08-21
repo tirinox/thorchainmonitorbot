@@ -27,7 +27,7 @@ MEMO_ACTION_TABLE = {
     "refund": TxType.REFUND,
     # "migrate": TxMigrate,
     # "ragnarok": TxRagnarok,
-    "switch": TxType.SWITCH,
+    # "switch": TxType.SWITCH,
     # "noop": TxNoOp,
     # "consolidate": TxConsolidate,
     "name": TxType.THORNAME,

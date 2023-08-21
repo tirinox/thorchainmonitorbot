@@ -297,10 +297,6 @@ tx:
     min_usd_total: 50000
     curve_mult: 0.1
 
-  switch:
-    enabled: true
-    min_usd_total: 150000
-
   dex_aggregator_update:
     enabled: true
     cooldown: 4d

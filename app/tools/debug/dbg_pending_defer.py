@@ -5,7 +5,6 @@ from typing import List
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.jobs.volume_recorder import VolumeRecorder
-from services.lib.date_utils import HOUR
 from services.models.tx import ThorTx
 from tools.lib.lp_common import LpAppFramework, Receiver
 

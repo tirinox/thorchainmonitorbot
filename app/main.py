@@ -76,7 +76,7 @@ from services.notify.types.savers_stats_notify import SaversStatsNotifier
 from services.notify.types.stats_notify import NetworkStatsNotifier
 from services.notify.types.supply_notify import SupplyNotifier
 from services.notify.types.transfer_notify import RuneMoveNotifier
-from services.notify.types.tx_notify import GenericTxNotifier, SwitchTxNotifier, LiquidityTxNotifier, SwapTxNotifier
+from services.notify.types.tx_notify import GenericTxNotifier, LiquidityTxNotifier, SwapTxNotifier
 from services.notify.types.version_notify import VersionNotifier
 from services.notify.types.voting_notify import VotingNotifier
 
@@ -240,7 +240,6 @@ class App:
 
         if d.cfg.get('tx.enabled', True):
             main_tx_types = [
-                TxType.SWITCH,
                 # ThorTxType.TYPE_SWAP,  # fixme: using the native block scanner
                 TxType.REFUND,
                 TxType.ADD_LIQUIDITY,
@@ -319,14 +318,6 @@ class App:
                 refund_notifier_tx.dbg_evaluate_curve_for_pools()
                 volume_filler.add_subscriber(refund_notifier_tx)
                 refund_notifier_tx.add_subscriber(d.alert_presenter)
-
-            if d.cfg.tx.switch.get('enabled', True):
-                switch_notifier_tx = SwitchTxNotifier(d, d.cfg.tx.switch,
-                                                      tx_types=(TxType.SWITCH,),
-                                                      curve=curve)
-                switch_notifier_tx.dbg_evaluate_curve_for_pools()
-                volume_filler.add_subscriber(switch_notifier_tx)
-                switch_notifier_tx.add_subscriber(d.alert_presenter)
 
             tasks.append(fetcher_tx)
 

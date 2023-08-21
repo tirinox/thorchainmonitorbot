@@ -35,7 +35,7 @@ class NetworkStatisticsFetcher(BaseFetcher):
         ns.unique_swapper_count = int(j.get('uniqueSwapperCount', 0))  # fixme: zero for Midgard 2.12.2
         ns.swap_volume_rune = thor_to_float(j['swapVolume'])
 
-        ns.switched_rune = thor_to_float(j['switchedRune'])
+        ns.switched_rune = thor_to_float(j.get('switchedRune', 0))
         ns.total_rune_pooled = thor_to_float(j['runeDepth'])
 
     async def _get_network(self, ns: NetworkStats):

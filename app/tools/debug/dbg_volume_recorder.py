@@ -6,7 +6,6 @@ from services.jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.jobs.volume_recorder import VolumeRecorder
-from services.lib.date_utils import HOUR
 from services.lib.draw_utils import save_image_and_show
 from services.notify.types.price_notify import PriceNotifier
 from tools.debug.dbg_discord import debug_prepare_discord_bot

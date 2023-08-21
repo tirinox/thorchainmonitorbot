@@ -414,11 +414,6 @@ class ThorTx:
             self.tx_hash_rune = out_sub_tx_rune.tx_id if out_sub_tx_rune else None
             self.tx_hash_asset = out_sub_tx_asset.tx_id if out_sub_tx_asset else None
 
-        elif t == TxType.SWITCH:
-            # rune_amount <= asset_amount when the kill switch is active!
-            self.rune_amount = self.sum_of_rune(out_only=True)
-            self.asset_amount = self.sum_of_non_rune(in_only=True)
-
         elif t in (TxType.REFUND, TxType.SWAP):
             # only outputs
             self.rune_amount = self.sum_of_rune(out_only=True)
@@ -471,25 +466,22 @@ class ThorTx:
         return rune_sum
 
     def calc_full_rune_amount(self, pool_map: PoolInfoMap = None):
-        if self.type == TxType.SWITCH:
-            r = self.rune_amount
-        else:
-            # We take price in from the L1 pool, that's why convert_synth_to_pool_name is used
-            pool_info: PoolInfo = pool_map.get(self.first_pool_l1)
+        # We take price in from the L1 pool, that's why convert_synth_to_pool_name is used
+        pool_info: PoolInfo = pool_map.get(self.first_pool_l1)
 
-            self.asset_per_rune = pool_info.asset_per_rune if pool_info else 0.0
+        self.asset_per_rune = pool_info.asset_per_rune if pool_info else 0.0
 
-            if self.type in (TxType.SWAP, TxType.WITHDRAW):
-                if self.is_pending and not self.out_tx:
-                    # pending txs have no out_tx, so we use in_tx
-                    realm = self.search_realm(in_only=True)
-                else:
-                    realm = self.search_realm(out_only=True)
-                r = self.calc_amount(pool_map, realm,
-                                     filter_unknown_runes=self.is_savings)
+        if self.type in (TxType.SWAP, TxType.WITHDRAW):
+            if self.is_pending and not self.out_tx:
+                # pending txs have no out_tx, so we use in_tx
+                realm = self.search_realm(in_only=True)
             else:
-                # add, donate, refund
-                r = self.calc_amount(pool_map, self.search_realm(in_only=True))
+                realm = self.search_realm(out_only=True)
+            r = self.calc_amount(pool_map, realm,
+                                 filter_unknown_runes=self.is_savings)
+        else:
+            # add, donate, refund
+            r = self.calc_amount(pool_map, self.search_realm(in_only=True))
         self.full_rune = r
         return self.full_rune
 

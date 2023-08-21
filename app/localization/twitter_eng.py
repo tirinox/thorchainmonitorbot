@@ -113,8 +113,6 @@ class TwitterEnglishLocalization(BaseLocalization):
                 heading = f'🐳 Swap 🔁'
         elif tx.type == TxType.REFUND:
             heading = f'🐳 Refund ↩️❗'
-        elif tx.type == TxType.SWITCH:
-            heading = f'🐳 Switch 🆙'
 
         if tx.is_pending:
             heading += ' [Pending]'
@@ -172,29 +170,6 @@ class TwitterEnglishLocalization(BaseLocalization):
                 f"{ilp_text}"
                 f"{pool_depth_part}"
             )
-        elif tx.type == TxType.SWITCH:
-            # [Amt] Rune [Blockchain: ERC20/BEP2] -> [Amt] THOR Rune ($usd)
-            if tx.first_input_tx and tx.first_output_tx:
-                amt = thor_to_float(tx.first_input_tx.first_amount)
-                origin = rune_origin(tx.first_input_tx.first_asset)
-                content += (
-                    f"{short_money(amt)} {origin} {self.R} ➡️ {short_money(amt)} Native {self.R} "
-                    f"({short_dollar(tx.get_usd_volume(usd_per_rune))})"
-                )
-
-            in_rune_amt = tx.asset_amount
-            out_rune_amt = tx.rune_amount
-            killed_rune = max(0.0, in_rune_amt - out_rune_amt)
-            killed_usd_str = short_dollar(killed_rune * usd_per_rune)
-            killed_percent_str = format_percent(killed_rune, in_rune_amt)
-            origin = rune_origin(tx.first_input_tx.first_asset)
-            content = (
-                f"{short_money(in_rune_amt)} {origin} {self.R} ➡️ "
-                f"{short_money(out_rune_amt)} Native {self.R} "
-                f"({short_dollar(tx.get_usd_volume(usd_per_rune))})"
-            )
-            if killed_rune > 0:
-                content += f'\n☠️ Killed {short_rune(killed_rune)} ({killed_percent_str} or {killed_usd_str})!'
 
         elif tx.type == TxType.REFUND:
             reason = shorten_text(tx.meta_refund.reason, 30)
@@ -462,19 +437,16 @@ class TwitterEnglishLocalization(BaseLocalization):
             added_24h_rune = new.added_rune - old.added_rune
             withdrawn_24h_rune = new.withdrawn_rune - old.withdrawn_rune
             swap_volume_24h_rune = new.swap_volume_rune - old.swap_volume_rune
-            switched_24h_rune = new.switched_rune - old.switched_rune
 
             add_rune_text = short_rune(added_24h_rune)
             withdraw_rune_text = short_rune(withdrawn_24h_rune)
             swap_rune_text = short_rune(swap_volume_24h_rune)
-            switch_rune_text = short_rune(switched_24h_rune)
 
             price = new.usd_per_rune
 
             add_usd_text = short_dollar(added_24h_rune * price)
             withdraw_usd_text = short_dollar(withdrawn_24h_rune * price)
             swap_usd_text = short_dollar(swap_volume_24h_rune * price)
-            switch_usd_text = short_dollar(switched_24h_rune * price)
 
             message = ''
 
@@ -487,9 +459,6 @@ class TwitterEnglishLocalization(BaseLocalization):
             if swap_volume_24h_rune:
                 message += f'🔀 Rune swap volume: {swap_rune_text} ({swap_usd_text}) ' \
                            f'in {short_money(new.swaps_24h)} swaps.\n'
-
-            if switched_24h_rune:
-                message += f'💎 Rune switched to native: {switch_rune_text} ({switch_usd_text}).\n'
 
             if message:
                 message = f'Last 24 hours:\n' + message

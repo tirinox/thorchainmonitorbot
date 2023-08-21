@@ -4,7 +4,6 @@ class TxType:
     WITHDRAW = 'withdraw'
     DONATE = 'donate'
     REFUND = 'refund'
-    SWITCH = 'switch'  # todo: remove
 
     LOAN_OPEN = 'loan+'
     LOAN_CLOSE = 'loan-'
@@ -16,5 +15,5 @@ class TxType:
     THORNAME = 'thorname'
     OUTBOUND = 'out'
 
-    ALL_EXCEPT_DONATE = ADD_LIQUIDITY, SWAP, WITHDRAW, REFUND, SWITCH
+    ALL_EXCEPT_DONATE = ADD_LIQUIDITY, SWAP, WITHDRAW, REFUND
     GROUP_ADD_WITHDRAW = WITHDRAW, ADD_LIQUIDITY

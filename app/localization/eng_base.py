@@ -11,7 +11,7 @@ from localization.achievements.ach_eng import AchievementsEnglishLocalization
 from proto.types import ThorName
 from services.jobs.fetch.circulating import SupplyEntry, ThorRealms
 from services.lib.config import Config
-from services.lib.constants import rune_origin, thor_to_float, THOR_BLOCK_TIME, DEFAULT_CEX_NAME, \
+from services.lib.constants import thor_to_float, THOR_BLOCK_TIME, DEFAULT_CEX_NAME, \
     DEFAULT_CEX_BASE_ASSET, THOR_BASIS_POINT_MAX
 from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE, DAY
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
@@ -533,8 +533,6 @@ class BaseLocalization(ABC):  # == English
                 heading = f'🐳 <b>Swap</b> 🔁'
         elif tx.type == TxType.REFUND:
             heading = f'🐳 <b>Refund</b> ↩️❗'
-        elif tx.type == TxType.SWITCH:
-            heading = f'🐳 <b>Rune switch</b> 🆙'
 
         if tx.is_pending:
             heading += ital(' [Pending]')
@@ -601,21 +599,7 @@ class BaseLocalization(ABC):  # == English
                     f"{ilp_text}"
                     f"{pool_depth_part}"
                 )
-        elif tx.type == TxType.SWITCH:
-            # [Amt] Rune [Blockchain: ERC20/BEP2] -> [Amt] THOR Rune ($usd)
-            in_rune_amt = tx.asset_amount
-            out_rune_amt = tx.rune_amount
-            killed_rune = max(0.0, in_rune_amt - out_rune_amt)
-            killed_usd_str = short_dollar(killed_rune * usd_per_rune)
-            killed_percent_str = format_percent(killed_rune, in_rune_amt)
-            origin = rune_origin(tx.first_input_tx.first_asset)
-            content = (
-                f"{bold(short_money(in_rune_amt))} {origin} {self.R} ➡️ "
-                f"{bold(short_money(out_rune_amt))} Native {self.R} "
-                f"({short_dollar(tx.get_usd_volume(usd_per_rune))})"
-            )
-            if killed_rune > 0:
-                content += f'\n☠️ Killed {bold(short_rune(killed_rune))} ({killed_percent_str} or {killed_usd_str})!'
+
         elif tx.type == TxType.REFUND:
             reason = shorten_text(tx.meta_refund.reason, 180)
             content = (
@@ -1096,19 +1080,16 @@ class BaseLocalization(ABC):  # == English
             added_24h_rune = new.added_rune - old.added_rune
             withdrawn_24h_rune = new.withdrawn_rune - old.withdrawn_rune
             swap_volume_24h_rune = new.swap_volume_rune - old.swap_volume_rune
-            switched_24h_rune = new.switched_rune - old.switched_rune
 
             add_rune_text = bold(short_rune(added_24h_rune))
             withdraw_rune_text = bold(short_rune(withdrawn_24h_rune))
             swap_rune_text = bold(short_rune(swap_volume_24h_rune))
-            switch_rune_text = bold(short_rune(switched_24h_rune))
 
             price = new.usd_per_rune
 
             add_usd_text = short_dollar(added_24h_rune * price)
             withdraw_usd_text = short_dollar(withdrawn_24h_rune * price)
             swap_usd_text = short_dollar(swap_volume_24h_rune * price)
-            switch_usd_text = short_dollar(switched_24h_rune * price)
 
             message += f'{ital("Last 24 hours:")}\n'
 
@@ -1121,9 +1102,6 @@ class BaseLocalization(ABC):  # == English
             if swap_volume_24h_rune:
                 message += f'🔀 Rune swap volume: {swap_rune_text} ({swap_usd_text}) ' \
                            f'in {bold(short_money(new.swaps_24h))} operations.\n'
-
-            if switched_24h_rune:
-                message += f'💎 Rune switched to native: {switch_rune_text} ({switch_usd_text}).\n'
 
             # synthetics:
             synth_volume_rune = code(short_rune(new.synth_volume_24h))

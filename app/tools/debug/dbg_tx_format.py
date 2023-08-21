@@ -8,7 +8,6 @@ from services.jobs.affiliate_merge import AffiliateTXMerger, ZERO_HASH
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.lib.constants import Chains, thor_to_float
-from services.lib.delegates import INotified
 from services.lib.explorers import get_explorer_url_to_address, get_explorer_url_to_tx
 from services.lib.midgard.name_service import NameMap
 from services.lib.midgard.parser import get_parser_by_network_id
@@ -19,39 +18,8 @@ from services.lib.w3.aggregator import AggregatorDataExtractor
 from services.models.pool_info import PoolInfo
 from services.models.tx import ThorTx
 from services.models.tx_type import TxType
-from services.notify.alert_presenter import AlertPresenter
-from services.notify.types.tx_notify import SwitchTxNotifier, SwapTxNotifier, LiquidityTxNotifier
+from services.notify.types.tx_notify import SwapTxNotifier, LiquidityTxNotifier
 from tools.lib.lp_common import LpAppFramework, load_sample_txs, Receiver
-
-
-async def midgard_test_kill_switch(app, mdg):
-    switch_helper = SwitchTxNotifier(app.deps, app.deps.cfg.tx.switch, tx_types=(TxType.SWITCH,),
-                                     curve=DepthCurve.default())
-
-    q_path = free_url_gen.url_for_tx(0, 50,
-                                     types='switch',
-                                     txid='24CD2813F16DEB7342509840DA08C7FD962C6D5F830EFCF31438C941D5F22775')
-    ex_tx = await load_tx(app, mdg, q_path)
-    ex_tx.rune_amount = switch_helper.calculate_killed_rune(ex_tx.asset_amount, ex_tx.height_int)
-
-    class Fake(INotified):
-        async def on_data(self, sender, data):
-            print(data)
-
-    alert_presenter = AlertPresenter(app.deps.broadcaster, app.deps.name_service)
-
-    switch_helper.add_subscriber(Fake())
-    switch_helper.add_subscriber(alert_presenter)
-
-    await switch_helper.on_data(switch_helper, [ex_tx])
-    sep()
-
-    # for loc_name in (Language.RUSSIAN, Language.ENGLISH, Language.ENGLISH_TWITTER):
-    #     loc = app.deps.loc_man.get_from_lang(loc_name)
-    #     print(loc.__class__.__name__)
-    #     await send_tx_notification(app, ex_tx, loc)
-
-    await asyncio.sleep(10.0)
 
 
 async def midgard_test_1(app):
@@ -339,7 +307,6 @@ async def main():
 
     # await midgard_test_donate(app, mdg, tx_parser)
     # await midgard_test_1(app, mdg, tx_parser)
-    # await midgard_test_kill_switch(app)
     # await refund_full_rune(app)
     # await demo_midgard_test_large_ilp(app)
     await demo_full_tx_pipeline(app, announce=True)

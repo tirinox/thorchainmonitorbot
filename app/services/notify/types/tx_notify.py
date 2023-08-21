@@ -148,21 +148,6 @@ class GenericTxNotifier(INotified, WithDelegates):
         self.logger.info(summary)
 
 
-class SwitchTxNotifier(GenericTxNotifier):
-    def calculate_killed_rune(self, in_rune: float, block: int):
-        survive_rate = 1.0 - self.deps.mimir_const_holder.current_old_rune_kill_progress(block)
-        return in_rune * survive_rate
-
-    def _count_correct_output_rune_value(self, tx: ThorTx):
-        tx.rune_amount = self.calculate_killed_rune(tx.asset_amount, tx.height_int)
-        return tx
-
-    def is_tx_suitable(self, tx: ThorTx, min_rune_volume, usd_per_rune, curve_mult=None):
-        if tx.asset_amount >= min_rune_volume:
-            self._count_correct_output_rune_value(tx)
-            return True
-
-
 class LiquidityTxNotifier(GenericTxNotifier):
     def __init__(self, deps: DepContainer, params: SubConfig, curve: DepthCurve):
         super().__init__(deps, params, (TxType.WITHDRAW, TxType.ADD_LIQUIDITY), curve)
