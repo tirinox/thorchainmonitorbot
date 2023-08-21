@@ -117,20 +117,20 @@ class AchievementsExtractor(WithLogger):
     @staticmethod
     def on_savers(data: SaversBank, price_holder: LastPriceHolder):
         rune_price = price_holder.usd_per_rune or 0.0
-        evenets = [
+        events = [
             Achievement(A.TOTAL_UNIQUE_SAVERS, data.total_unique_savers),
             Achievement(A.TOTAL_SAVED_USD, int(data.total_usd_saved)),
             Achievement(A.TOTAL_SAVERS_EARNED_USD, data.total_rune_earned * rune_price),
         ]
         for vault in data.vaults:
             asset = Asset.from_string(vault.asset).name[:10]
-            evenets.append(Achievement(A.SAVER_VAULT_MEMBERS, vault.number_of_savers, specialization=asset))
-            evenets.append(Achievement(A.SAVER_VAULT_SAVED_USD, int(vault.total_asset_saved_usd), specialization=asset))
-            evenets.append(Achievement(A.SAVER_VAULT_SAVED_ASSET, int(vault.total_asset_saved), specialization=asset))
-            evenets.append(Achievement(A.SAVER_VAULT_EARNED_ASSET, vault.calc_asset_earned(price_holder.pool_info_map),
+            events.append(Achievement(A.SAVER_VAULT_MEMBERS, vault.number_of_savers, specialization=asset))
+            events.append(Achievement(A.SAVER_VAULT_SAVED_USD, int(vault.total_asset_saved_usd), specialization=asset))
+            events.append(Achievement(A.SAVER_VAULT_SAVED_ASSET, int(vault.total_asset_saved), specialization=asset))
+            events.append(Achievement(A.SAVER_VAULT_EARNED_ASSET, vault.calc_asset_earned(price_holder.pool_info_map),
                                        specialization=asset))
 
-        return evenets
+        return events
 
     def on_thor_tx_list(self, txs: List[ThorTx]):
         results = defaultdict(float)
