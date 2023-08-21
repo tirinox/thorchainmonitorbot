@@ -72,6 +72,18 @@ class DexAnalyticsCollector(WithLogger, INotified):
             await self.handle_txs_unsafe(txs)
 
     async def handle_txs_unsafe(self, txs):
+        """
+        From each tx we need:
+        1) tx_hash
+        2) full_rune amount
+        3) swap_in: Optional[AmountToken] = None
+        4) swap_out: Optional[AmountToken] = None
+        AmountToken are:
+            amount: float
+            token: TokenRecord
+            aggr_name: str = ''
+
+        """
         for tx in txs:
             if tx.dex_aggregator_used and tx.full_rune > 0:
                 tx_hash = tx.tx_hash
