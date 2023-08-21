@@ -126,7 +126,8 @@ class AchievementsExtractor(WithLogger):
             asset = Asset.from_string(vault.asset).name[:10]
             events.append(Achievement(A.SAVER_VAULT_MEMBERS, vault.number_of_savers, specialization=asset))
             events.append(Achievement(A.SAVER_VAULT_SAVED_USD, int(vault.total_asset_saved_usd), specialization=asset))
-            events.append(Achievement(A.SAVER_VAULT_SAVED_ASSET, int(vault.total_asset_saved), specialization=asset))
+            if not 'USD' in asset:
+                events.append(Achievement(A.SAVER_VAULT_SAVED_ASSET, int(vault.total_asset_saved), specialization=asset))
             events.append(Achievement(A.SAVER_VAULT_EARNED_ASSET, vault.calc_asset_earned(price_holder.pool_info_map),
                                        specialization=asset))
 

@@ -161,6 +161,22 @@ GROUP_MINIMALS = {
         'ETH.CRV-0XD533A949740BB3306D119CC777FA900BA034CD52': 7
     },
 
+    A.SAVER_VAULT_MEMBERS: {
+        'BUSD': 100,
+    },
+
+    A.SAVER_VAULT_SAVED_USD: {
+        'BUSD': 10_000,
+    },
+
+    A.SAVER_VAULT_SAVED_ASSET: {
+        'BUSD': 10_000,
+    },
+
+    A.SAVER_VAULT_EARNED_ASSET: {
+        'BUSD': 5_000
+    },
+
     A.COIN_MARKET_CAP_RANK: 42,
 }
 
