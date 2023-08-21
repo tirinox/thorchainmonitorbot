@@ -19,8 +19,8 @@ class SupplyBlock(NamedTuple):
 
 
 class SupplyPictureGenerator(BasePictureGenerator):
-    WIDTH = 1024
-    HEIGHT = 768
+    WIDTH = 2048
+    HEIGHT = 1536
     MIN_AMOUNT_FOR_LABEL = 1.5e6
 
     CHART_TEXT_COLOR = 'white'
@@ -34,7 +34,7 @@ class SupplyPictureGenerator(BasePictureGenerator):
             self._add_text(r.shift_from_origin(10, 8), item.label)
         meta = item.meta_data
         if meta:
-            font = self.res.fonts.get_font(20) if item.weight < 6e6 else self.res.fonts.get_font(34)
+            font = self.res.fonts.get_font(60) if item.weight < 6e6 else self.res.fonts.get_font(80)
             text = short_money(item.weight)
 
             self._add_text(r.center, text,
@@ -45,7 +45,7 @@ class SupplyPictureGenerator(BasePictureGenerator):
     def _add_text(self, xy, text, fill='white', stroke_fill='black', stroke_width=1, anchor=None, font=None):
         self.gr.draw.text(xy, text,
                           fill=fill,
-                          font=font or self.gr.font_ticks,
+                          font=font or self.font_block,
                           stroke_width=stroke_width,
                           stroke_fill=stroke_fill,
                           anchor=anchor)
@@ -61,14 +61,15 @@ class SupplyPictureGenerator(BasePictureGenerator):
         self.res = Resources()
 
         self.font = self.res.font_small
+        self.font_block = self.res.fonts.get_font_bold(40)
 
         self.gr = PlotGraph(self.WIDTH, self.HEIGHT)
         self.locked_thor_rune = supply.thor_rune.locked_amount
         self.translate = {
             ThorRealms.CIRCULATING: self.loc.SUPPLY_PIC_CIRCULATING,
-            ThorRealms.TEAM: self.loc.SUPPLY_PIC_TEAM,
-            ThorRealms.SEED: self.loc.SUPPLY_PIC_SEED,
-            ThorRealms.VESTING_9R: self.loc.SUPPLY_PIC_VESTING_9R,
+            # ThorRealms.TEAM: self.loc.SUPPLY_PIC_TEAM,
+            # ThorRealms.SEED: self.loc.SUPPLY_PIC_SEED,
+            # ThorRealms.VESTING_9R: self.loc.SUPPLY_PIC_VESTING_9R,
             ThorRealms.RESERVES: self.loc.SUPPLY_PIC_RESERVES,
             ThorRealms.UNDEPLOYED_RESERVES: self.loc.SUPPLY_PIC_UNDEPLOYED,
             ThorRealms.BONDED: self.loc.SUPPLY_PIC_BONDED,
@@ -76,9 +77,9 @@ class SupplyPictureGenerator(BasePictureGenerator):
         }
 
         self.PALETTE = {
-            ThorRealms.TEAM: '#2ecc71',
-            ThorRealms.SEED: '#16a085',
-            ThorRealms.VESTING_9R: '#5522e0',
+            # ThorRealms.TEAM: '#2ecc71',
+            # ThorRealms.SEED: '#16a085',
+            # ThorRealms.VESTING_9R: '#5522e0',
             ThorRealms.RESERVES: '#2980b9',
             ThorRealms.UNDEPLOYED_RESERVES: '#517496',
             ThorRealms.BONDED: '#e67e22',
@@ -99,13 +100,14 @@ class SupplyPictureGenerator(BasePictureGenerator):
         return self.gr.finalize()
 
     def _add_legend(self):
-        x = 55
+        x = 60
         y = self.HEIGHT - 55
+        legend_font = self.res.fonts.get_font_bold(30)
         for title, color in self.PALETTE.items():
             title = self.translate.get(title, title)
-            dx, _ = font_estimate_size(self.gr.font_ticks, title)
-            self.gr.plot_legend_unit(x, y, color, title)
-            x += dx + 40
+            dx, _ = font_estimate_size(legend_font, title)
+            self.gr.plot_legend_unit(x, y, color, title, font=legend_font, size=26)
+            x += dx + 70
             if x >= self.WIDTH - 100:
                 x = 55
                 y += 20
@@ -132,7 +134,7 @@ class SupplyPictureGenerator(BasePictureGenerator):
         )
 
     def _plot(self):
-        outer_rect = Rect.from_frame(50, 110, 50, 80, self.WIDTH, self.HEIGHT)
+        outer_rect = Rect.from_frame(50, 180, 50, 120, self.WIDTH, self.HEIGHT)
 
         ((locked_item, self.locked_rect), (circ_item, self.circulating_rect)) = self._pack([
             PackItem('', self.supply.thor_rune.locked_amount, ''),
@@ -158,9 +160,9 @@ class SupplyPictureGenerator(BasePictureGenerator):
             PackItem(self.loc.SUPPLY_PIC_CIRCULATING, free_circulating, self.PALETTE[ThorRealms.CIRCULATING], 'y'),
         ], self.circulating_rect, align=DrawRectPacker.V)
 
-        y_up = -22
+        y_up = -60
         self._add_text(self.locked_rect.shift_from_origin(0, y_up), self.loc.SUPPLY_PIC_SECTION_LOCKED, stroke_width=0)
         self._add_text(self.circulating_rect.shift_from_origin(0, y_up),
                        self.loc.SUPPLY_PIC_SECTION_CIRCULATING, stroke_width=0)
 
-        self._add_text(self.old_rect.shift_from_origin(-34, y_up), self.loc.SUPPLY_PIC_SECTION_OLD, stroke_width=0)
+        # self._add_text(self.old_rect.shift_from_origin(-34, y_up), self.loc.SUPPLY_PIC_SECTION_OLD, stroke_width=0)

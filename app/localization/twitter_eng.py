@@ -826,6 +826,7 @@ class TwitterEnglishLocalization(BaseLocalization):
     def format_supply_entry(self, name, s: SupplyEntry, total_of_total: int):
         locked_amount = sum(amount for _, amount in s.locked.items()) if s.locked else 0.0
 
+        # todo! add more items.
         return (
             f'📍 {name}:\n'
             f'Free-fl.: {short_rune(s.circulating)} ({format_percent(s.circulating, total_of_total)})\n'

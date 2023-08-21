@@ -93,9 +93,9 @@ class PlotGraph:
             cur_x += x_step
             cur_y += y_step
 
-    def plot_legend_unit(self, legend_x, legend_y, color, title, font=None):
+    def plot_legend_unit(self, legend_x, legend_y, color, title, font=None, size=14):
         font = font or self.font_ticks
-        half_square_sz = 7
+        half_square_sz = size // 2
         self.draw.rectangle(
             (
                 legend_x - half_square_sz,
@@ -105,7 +105,7 @@ class PlotGraph:
             ),
             fill=color, outline='black'
         )
-        self.draw.text((legend_x + 20 - half_square_sz, legend_y),
+        self.draw.text((legend_x + size * 1.5 - half_square_sz, legend_y),
                        title, fill=TC_WHITE, font=font, anchor='lm')
 
     @staticmethod
