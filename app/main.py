@@ -13,7 +13,6 @@ from services.dialog.telegram.telegram import TelegramBot
 from services.dialog.twitter.twitter_bot import TwitterBot, TwitterBotMock
 from services.jobs.achievement.notifier import AchievementsNotifier
 from services.jobs.fetch.account_number import AccountNumberFetcher
-from services.jobs.fetch.bep2_move import BinanceOrgDexWSSClient
 from services.jobs.fetch.cap import CapInfoFetcher
 from services.jobs.fetch.chains import ChainStateFetcher
 from services.jobs.fetch.const_mimir import ConstMimirFetcher
@@ -234,8 +233,9 @@ class App:
             user_counter = UserCounter(d)
             d.block_scanner.add_subscriber(user_counter)
 
-            # Public: THOR.Rune transfer
-            if d.rune_move_notifier is not None:
+            if d.cfg.get('rune_transfer.enabled', True):
+                d.rune_move_notifier = RuneMoveNotifier(d)
+                d.rune_move_notifier.add_subscriber(d.alert_presenter)
                 decoder.add_subscriber(d.rune_move_notifier)
 
         if d.cfg.get('tx.enabled', True):
@@ -421,14 +421,6 @@ class App:
             d.mimir_const_fetcher.add_subscriber(voting_notifier)
             if achievements_enabled:
                 d.mimir_const_fetcher.add_subscriber(achievements)
-
-        if d.cfg.get('rune_transfer.enabled', True):
-            fetcher_bep2 = BinanceOrgDexWSSClient()
-            d.rune_move_notifier = RuneMoveNotifier(d)
-            fetcher_bep2.add_subscriber(d.rune_move_notifier)
-            # Public BEP2 rune transfers:
-            d.rune_move_notifier.add_subscriber(d.alert_presenter)
-            tasks.append(fetcher_bep2)
 
         if d.cfg.get('supply.enabled', True):
             supply_notifier = SupplyNotifier(d)
