@@ -8,7 +8,7 @@ from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 from services.models.mimir_naming import MIMIR_KEY_POL_MAX_NETWORK_DEPOSIT, MIMIR_KEY_POL_TARGET_SYNTH_PER_POOL_DEPTH
-from services.models.pol import EventPOL, POLState
+from services.models.pol import AlertPOL, POLState
 from services.models.time_series import TimeSeries
 
 
@@ -22,35 +22,35 @@ class POLNotifier(WithDelegates, INotified, WithLogger):
         self._allow_when_zero = bool(deps.cfg.pol.notification.allow_when_zero)
         self.spam_cd = Cooldown(self.deps.db, 'POL', cd)
         self.ts = TimeSeries('POL', self.deps.db)
-        self.last_event: Optional[EventPOL] = None
+        self.last_event: Optional[AlertPOL] = None
 
-    async def find_stats_ago(self, period_ago) -> Optional[EventPOL]:
+    async def find_stats_ago(self, period_ago) -> Optional[AlertPOL]:
         data, _ = await self.ts.get_best_point_ago(period_ago, tolerance_percent=1.0, is_json=True)
         try:
             if data:
-                return EventPOL.load_from_series(data)
+                return AlertPOL.load_from_series(data)
         except Exception as e:
             self.logger.exception(f'Error loading EventPOL: {e}')
             return
 
-    async def last_points(self, period_ago) -> List[Tuple[float, EventPOL]]:
+    async def last_points(self, period_ago) -> List[Tuple[float, AlertPOL]]:
         try:
             data = await self.ts.get_last_values_json(period_ago, with_ts=True)
             return [
-                (ts, self._enrich_data(EventPOL.load_from_series(j))) for ts, j in data
+                (ts, self._enrich_data(AlertPOL.load_from_series(j))) for ts, j in data
             ]
         except Exception as e:
             self.logger.exception(f'Error loading last EventPOL: {e}')
             return []
 
-    async def _record_pol(self, event: EventPOL):
+    async def _record_pol(self, event: AlertPOL):
         try:
             data = event.to_json_for_series
             await self.ts.add_as_json(data)
         except Exception as e:
             self.logger.exception(f'Failed to add a point to the POL time series: {e}')
 
-    def _enrich_data(self, event: EventPOL, previous_data: Optional[POLState] = None):
+    def _enrich_data(self, event: AlertPOL, previous_data: Optional[POLState] = None):
         mimir = self.deps.mimir_const_holder
 
         synth_target = mimir.get_constant(MIMIR_KEY_POL_TARGET_SYNTH_PER_POOL_DEPTH, 4500)
@@ -64,7 +64,7 @@ class POLNotifier(WithDelegates, INotified, WithLogger):
         )
         return event
 
-    async def on_data(self, sender, event: EventPOL):
+    async def on_data(self, sender, event: AlertPOL):
         ago_seconds = max(self.spam_cd.cooldown, self.MIN_DURATION)
         previous_data = await self.find_stats_ago(ago_seconds)
 
