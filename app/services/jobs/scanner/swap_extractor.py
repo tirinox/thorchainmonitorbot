@@ -11,8 +11,9 @@ from services.jobs.scanner.swap_start_detector import SwapStartDetector
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger, say, hash_of_string_repr
-from services.models.events import EventSwapStart, EventSwap, EventOutbound, EventScheduledOutbound, \
+from services.models.events import EventSwap, EventOutbound, EventScheduledOutbound, \
     parse_swap_and_out_event, TypeEventSwapAndOut
+from services.models.s_swap import AlertSwapStart
 from services.models.tx import ThorTx
 
 
@@ -77,7 +78,7 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
 
         return txs
 
-    async def register_new_swaps(self, swaps: List[EventSwapStart], height):
+    async def register_new_swaps(self, swaps: List[AlertSwapStart], height):
         self.logger.info(f"New swaps {len(swaps)} in block #{height}")
 
         for swap in swaps:

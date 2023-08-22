@@ -8,7 +8,7 @@ from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 from services.models.price import LastPriceHolder
-from services.models.savers import SaverVault, EventSaverStats, SaversBank
+from services.models.savers import SaverVault, AlertSaverStats, SaversBank
 
 
 class VNXSaversStats(NamedTuple):
@@ -89,7 +89,7 @@ class VNXSaversStatsFetcher(INotified, WithDelegates, WithLogger):
             n += v.number_of_savers
         return SaversBank(n, vaults)
 
-    async def get_savers_event(self, *args) -> EventSaverStats:
+    async def get_savers_event(self, *args) -> AlertSaverStats:
         savers_stats_new, savers_stats_old = await asyncio.gather(
             self.load_real_yield_vanaheimex(),
             self.load_real_yield_vanaheimex(old=True)
@@ -100,14 +100,14 @@ class VNXSaversStatsFetcher(INotified, WithDelegates, WithLogger):
         curr_saver = self.make_bank(savers_stats_new)
         prev_saver = self.make_bank(savers_stats_old)
 
-        return EventSaverStats(
+        return AlertSaverStats(
             prev_saver, curr_saver, price_holder
         )
 
     CACHE_TTL = 60
 
     @AsyncTTL(time_to_live=CACHE_TTL)
-    async def get_savers_event_cached(self) -> EventSaverStats:
+    async def get_savers_event_cached(self) -> AlertSaverStats:
         return await self.get_savers_event()
 
     async def on_data(self, sender, data):

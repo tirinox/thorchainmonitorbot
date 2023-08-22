@@ -186,7 +186,7 @@ class KeyStats(NamedTuple):
     pools: PoolInfoMap
 
 
-class EventKeyStats(NamedTuple):
+class AlertKeyStats(NamedTuple):
     series: FSList
     previous_pools: PoolInfoMap
     current_pools: PoolInfoMap

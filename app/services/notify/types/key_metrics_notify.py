@@ -6,7 +6,7 @@ from services.lib.date_utils import parse_timespan_to_seconds, DAY, now_ts
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
-from services.models.flipside import FSFees, FSLockedValue, FSSwapCount, FSSwapVolume, EventKeyStats
+from services.models.flipside import FSFees, FSLockedValue, FSSwapCount, FSSwapVolume, AlertKeyStats
 from services.models.time_series import TimeSeries
 
 
@@ -35,7 +35,7 @@ class KeyMetricsNotifier(INotified, WithDelegates):
     def is_fresh_enough(self, data: FSList):
         return data and now_ts() - data.latest_date.timestamp() < self.data_max_age
 
-    async def on_data(self, sender, e: EventKeyStats):
+    async def on_data(self, sender, e: AlertKeyStats):
         if not e.current_pools:
             self.logger.error(f'No pool data! Aborting.')
             return

@@ -7,7 +7,7 @@ from services.lib.date_utils import parse_timespan_to_seconds, DAY
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 from services.models.flipside import FSAffiliateCollectors, FSFees, FSSwapCount, FSLockedValue, FSSwapVolume, \
-    FSSwapRoutes, EventKeyStats
+    FSSwapRoutes, AlertKeyStats
 
 URL_FS_AFFILIATE_AGENTS = "https://api.flipsidecrypto.com/api/v2/queries/541f964d-44d0-448f-b666-ffe4bfe7b50a/data/latest"
 URL_FS_RUNE_EARNINGS = "https://api.flipsidecrypto.com/api/v2/queries/6b27035e-f56f-4a7d-91f2-46995fc71a20/data/latest"
@@ -35,7 +35,7 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         # x3 days (this week + previous week + spare days)
         self.trim_max_days = deps.cfg.as_int('key_metrics.trim_max_days', self.tally_days_period * 3)
 
-    async def fetch(self) -> EventKeyStats:
+    async def fetch(self) -> AlertKeyStats:
         # Load pool data for BTC/ETH value in the pools
         pf: PoolFetcher = self.deps.pool_fetcher
         previous_block = self.deps.last_block_store.block_time_ago(self.tally_days_period * DAY)
@@ -84,7 +84,7 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         # prev_affiliates = [FSAffiliateCollectors.from_json_v2(x) for x in raw_affiliates_prev]
 
         # Done. Construct the resulting event
-        return EventKeyStats(
+        return AlertKeyStats(
             result, old_pools, fresh_pools,
             routes, [], [],
             days=self.tally_days_period

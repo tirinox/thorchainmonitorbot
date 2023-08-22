@@ -6,7 +6,7 @@ from services.dialog.picture.resources import Resources
 from services.lib.draw_utils import TC_WHITE, result_color, rect_progress_bar
 from services.lib.money import Asset, short_money, short_dollar
 from services.lib.utils import async_wrap
-from services.models.savers import SaverVault, EventSaverStats
+from services.models.savers import SaverVault, AlertSaverStats
 
 
 class SaversPictureGenerator(BasePictureGenerator):
@@ -19,7 +19,7 @@ class SaversPictureGenerator(BasePictureGenerator):
     WIDTH = 2048
     HEIGHT = 1200
 
-    def __init__(self, loc: BaseLocalization, event: EventSaverStats):
+    def __init__(self, loc: BaseLocalization, event: AlertSaverStats):
         super().__init__(loc)
         self.bg = Image.open(self.BG_FILE)
         self.event = event

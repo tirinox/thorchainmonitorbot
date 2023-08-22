@@ -26,7 +26,7 @@ from services.lib.utils import grouper, run_once
 from services.lib.w3.dex_analytics import DexReport, DexReportEntry
 from services.lib.w3.token_record import AmountToken
 from services.models.cap_info import ThorCapInfo
-from services.models.flipside import EventKeyStats
+from services.models.flipside import AlertKeyStats
 from services.models.last_block import BlockProduceState, EventBlockSpeed
 from services.models.lp_info import LiquidityPoolReport
 from services.models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting, MimirVoteOption
@@ -34,12 +34,12 @@ from services.models.mimir_naming import MimirUnits, NEXT_CHAIN_VOTING_MAP
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEventType, NodeEvent, \
     EventBlockHeight, EventDataSlash, calculate_security_cap_rune
-from services.models.pol import EventPOL
+from services.models.pol import AlertPOL
 from services.models.pool_info import PoolInfo, PoolChanges, PoolMapPair
 from services.models.price import PriceReport, RuneMarketInfo
 from services.models.queue import QueueInfo
-from services.models.events import EventSwapStart
-from services.models.savers import how_much_savings_you_can_add, EventSaverStats
+from services.models.s_swap import AlertSwapStart
+from services.models.savers import how_much_savings_you_can_add, AlertSaverStats
 from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.tx import ThorTx, ThorSubTx
 from services.models.tx_type import TxType
@@ -686,7 +686,7 @@ class BaseLocalization(ABC):  # == English
         saver_pct = asset_amount / pool.savers_depth_float * 100.0 if pool.savers_depth else 100
         return amount_more, Asset(pool.asset).name, saver_pb, thor_to_float(cap), saver_pct
 
-    def notification_text_streaming_swap_started(self, e: EventSwapStart, name_map: NameMap):
+    def notification_text_streaming_swap_started(self, e: AlertSwapStart, name_map: NameMap):
         user_link = self.link_to_address(e.from_address, name_map)
 
         tx_link = link(self.url_for_tx_tracker(e.tx_id), 'Track TX')
@@ -1178,7 +1178,7 @@ class BaseLocalization(ABC):  # == English
     TEXT_PIC_STATS_TOP_SWAP_ROUTES = 'Top 3 Swap Routes'
     TEXT_PIC_STATS_ORGANIC_VS_BLOCK_REWARDS = 'Organic Fees vs Block Rewards'
 
-    def notification_text_key_metrics_caption(self, data: EventKeyStats):
+    def notification_text_key_metrics_caption(self, data: AlertKeyStats):
         return 'THORChain weekly stats'
 
     # ------- NETWORK NODES -------
@@ -2268,7 +2268,7 @@ class BaseLocalization(ABC):  # == English
 
     MIN_PERCENT_TO_SHOW_VAULT_FILL = 10
 
-    def notification_text_saver_stats(self, event: EventSaverStats):
+    def notification_text_saver_stats(self, event: AlertSaverStats):
         message = f'💰 <b>THORChain Savers Vaults summary</b>\n'
 
         savers, prev = event.current_stats, event.previous_stats
@@ -2291,7 +2291,7 @@ class BaseLocalization(ABC):  # == English
         return message
 
     @staticmethod
-    def get_savers_stat_changed_metrics_as_str(event: EventSaverStats, prev, savers, total_earned_usd):
+    def get_savers_stat_changed_metrics_as_str(event: AlertSaverStats, prev, savers, total_earned_usd):
         if prev:
             saver_number_change = bracketify(up_down_arrow(
                 prev.total_unique_savers, savers.total_unique_savers, int_delta=True), before=' ')
@@ -2343,7 +2343,7 @@ class BaseLocalization(ABC):  # == English
     def pretty_asset(name):
         return Asset(name).pretty_str
 
-    def _format_pol_membership(self, event: EventPOL, of_pool, decor=True):
+    def _format_pol_membership(self, event: AlertPOL, of_pool, decor=True):
         text = ''
         for i, details in enumerate(event.membership, start=1):
             pool: PoolInfo = event.prices.find_pool(details.pool)
@@ -2361,7 +2361,7 @@ class BaseLocalization(ABC):  # == English
             )
         return text.strip()
 
-    def notification_text_pol_utilization(self, event: EventPOL):
+    def notification_text_pol_utilization(self, event: AlertPOL):
         text = '🥃 <b>Protocol Owned Liquidity</b>\n\n'
 
         curr, prev = event.current, event.previous

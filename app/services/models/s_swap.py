@@ -1,6 +1,7 @@
 from typing import NamedTuple, List
 
-from services.lib.constants import THOR_BLOCK_TIME
+from services.lib.constants import THOR_BLOCK_TIME, thor_to_float
+from services.lib.memo import THORMemo
 
 
 class StreamingSwap(NamedTuple):
@@ -98,3 +99,28 @@ class StreamingSwap(NamedTuple):
             return self.successful_swaps / self.quantity * 1.0
         else:
             return 1.0
+
+
+class AlertSwapStart(NamedTuple):
+    ss: StreamingSwap
+    from_address: str
+    in_amount: float
+    in_asset: str
+    out_asset: str
+    expected_rate: float
+    volume_usd: float
+    block_height: int
+    memo: THORMemo
+    memo_str: str
+
+    @property
+    def is_streaming(self):
+        return self.ss.quantity > 1
+
+    @property
+    def tx_id(self):
+        return self.ss.tx_id
+
+    @property
+    def in_amount_float(self):
+        return thor_to_float(self.in_amount)

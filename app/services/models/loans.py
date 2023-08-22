@@ -3,7 +3,7 @@ from typing import NamedTuple
 from services.lib.constants import thor_to_float
 
 
-class EventLoanOpen(NamedTuple):
+class AlertLoanOpen(NamedTuple):
     tx_id: str
     address: str
     asset: str
@@ -15,7 +15,7 @@ class EventLoanOpen(NamedTuple):
         return thor_to_float(self.amount)
 
 
-class EventLoanRepayment(NamedTuple):
+class AlertLoanRepayment(NamedTuple):
     tx_id: str
     address: str
     asset: str

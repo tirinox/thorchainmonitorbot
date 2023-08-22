@@ -10,14 +10,14 @@ from services.lib.constants import THOR_BLOCKS_PER_MINUTE
 from services.lib.delegates import INotified
 from services.lib.midgard.name_service import NameService
 from services.lib.w3.dex_analytics import DexReport
-from services.models.flipside import EventKeyStats
+from services.models.flipside import AlertKeyStats
 from services.models.last_block import EventBlockSpeed, BlockProduceState
-from services.models.loans import EventLoanOpen, EventLoanRepayment
+from services.models.loans import AlertLoanOpen, AlertLoanRepayment
 from services.models.node_info import NodeSetChanges
-from services.models.pol import EventPOL
+from services.models.pol import AlertPOL
 from services.models.pool_info import PoolChanges
-from services.models.events import EventSwapStart
-from services.models.savers import EventSaverStats
+from services.models.s_swap import AlertSwapStart
+from services.models.savers import AlertSaverStats
 from services.models.transfer import RuneCEXFlow, RuneTransfer
 from services.models.tx import EventLargeTransaction
 from services.notify.broadcast import Broadcaster
@@ -43,21 +43,21 @@ class AlertPresenter(INotified):
             await self._handle_large_tx(data)
         elif isinstance(data, DexReport):
             await self._handle_dex_report(data)
-        elif isinstance(data, EventSaverStats):
+        elif isinstance(data, AlertSaverStats):
             await self._handle_saver_stats(data)
         elif isinstance(data, PoolChanges):
             await self._handle_pool_churn(data)
-        elif isinstance(data, EventPOL):
+        elif isinstance(data, AlertPOL):
             await self._handle_pol(data)
         elif isinstance(data, Achievement):
             await self._handle_achievement(data)
         elif isinstance(data, NodeSetChanges):
             await self._handle_node_churn(data)
-        elif isinstance(data, EventKeyStats):
+        elif isinstance(data, AlertKeyStats):
             await self._handle_key_stats(data)
-        elif isinstance(data, EventSwapStart):
+        elif isinstance(data, AlertSwapStart):
             await self._handle_streaming_swap_start(data)
-        elif isinstance(data, (EventLoanOpen, EventLoanRepayment)):
+        elif isinstance(data, (AlertLoanOpen, AlertLoanRepayment)):
             await self._handle_loans(data)
 
     # ---- PARTICULARLY ----
@@ -108,7 +108,7 @@ class AlertPresenter(INotified):
             event
         )
 
-    async def _handle_saver_stats(self, event: EventSaverStats):
+    async def _handle_saver_stats(self, event: AlertSaverStats):
         async def _gen(loc: BaseLocalization, event):
             pic_gen = SaversPictureGenerator(loc, event)
             pic, pic_name = await pic_gen.get_picture()
@@ -130,7 +130,7 @@ class AlertPresenter(INotified):
 
         await self.broadcaster.notify_preconfigured_channels(_gen, event)
 
-    async def _handle_pol(self, event: EventPOL):
+    async def _handle_pol(self, event: AlertPOL):
         # async def _gen(loc: BaseLocalization, _a: EventPOL):
         #     pic_gen = POLPictureGenerator(loc.ach, _a)
         #     pic, pic_name = await pic_gen.get_picture()
@@ -149,9 +149,9 @@ class AlertPresenter(INotified):
             BaseLocalization.notification_text_for_node_churn,
             event)
 
-    async def _handle_key_stats(self, event: EventKeyStats):
+    async def _handle_key_stats(self, event: AlertKeyStats):
         # PICTURE
-        async def _gen(loc: BaseLocalization, _a: EventKeyStats):
+        async def _gen(loc: BaseLocalization, _a: AlertKeyStats):
             pic_gen = KeyStatsPictureGenerator(loc, _a)
             pic, pic_name = await pic_gen.get_picture()
             caption = loc.notification_text_key_metrics_caption(event)
@@ -159,7 +159,7 @@ class AlertPresenter(INotified):
 
         await self.broadcaster.notify_preconfigured_channels(_gen, event)
 
-    async def _handle_streaming_swap_start(self, event: EventSwapStart):
+    async def _handle_streaming_swap_start(self, event: AlertSwapStart):
         name_map = await self.name_service.safely_load_thornames_from_address_set([
             event.from_address
         ])

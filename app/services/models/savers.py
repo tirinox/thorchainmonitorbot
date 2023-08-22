@@ -125,7 +125,7 @@ def how_much_savings_you_can_add(pool: PoolInfo, max_synth_per_pool_depth=0.15,
     return max(0.0, thor_to_float(x))
 
 
-class EventSaverStats(NamedTuple):
+class AlertSaverStats(NamedTuple):
     previous_stats: Optional[SaversBank]
     current_stats: SaversBank
     price_holder: LastPriceHolder

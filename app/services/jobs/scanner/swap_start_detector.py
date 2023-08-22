@@ -8,8 +8,7 @@ from services.lib.depcont import DepContainer
 from services.lib.memo import THORMemo
 from services.lib.money import is_rune_asset, Asset
 from services.lib.utils import WithLogger
-from services.models.s_swap import StreamingSwap
-from services.models.events import EventSwapStart
+from services.models.s_swap import StreamingSwap, AlertSwapStart
 from services.models.tx_type import TxType
 
 
@@ -18,7 +17,7 @@ class SwapStartDetector(WithLogger):
         super().__init__()
         self.deps = deps
 
-    def make_ss_event(self, msg, tx_hash, height) -> Optional[EventSwapStart]:
+    def make_ss_event(self, msg, tx_hash, height) -> Optional[AlertSwapStart]:
         ph = self.deps.price_holder
 
         memo = THORMemo.parse_memo(msg.memo)
@@ -56,7 +55,7 @@ class SwapStartDetector(WithLogger):
             else:
                 from_address = parse_thor_address(msg.signer)
 
-            return EventSwapStart(
+            return AlertSwapStart(
                 StreamingSwap(
                     tx_hash,
                     memo.s_swap_interval,

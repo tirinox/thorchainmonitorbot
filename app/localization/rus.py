@@ -29,12 +29,12 @@ from services.models.mimir import MimirChange, MimirHolder
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEvent, EventDataSlash, \
     NodeEventType, EventBlockHeight
-from services.models.pol import EventPOL
+from services.models.pol import AlertPOL
 from services.models.pool_info import PoolInfo, PoolChanges, PoolMapPair
 from services.models.price import PriceReport, RuneMarketInfo
 from services.models.queue import QueueInfo
-from services.models.events import EventSwapStart
-from services.models.savers import EventSaverStats
+from services.models.s_swap import AlertSwapStart
+from services.models.savers import AlertSaverStats
 from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.tx import ThorTx
 from services.models.tx_type import TxType
@@ -483,7 +483,7 @@ class RussianLocalization(BaseLocalization):
 
         return msg.strip()
 
-    def notification_text_streaming_swap_started(self, e: EventSwapStart, name_map: NameMap):
+    def notification_text_streaming_swap_started(self, e: AlertSwapStart, name_map: NameMap):
         user_link = self.link_to_address(e.from_address, name_map)
 
         tx_link = link(self.url_for_tx_tracker(e.tx_id), 'Отследить')
@@ -1678,7 +1678,7 @@ class RussianLocalization(BaseLocalization):
             f'Популярные активы:\n{top_asset_str}'
         ).strip()
 
-    def notification_text_saver_stats(self, event: EventSaverStats):
+    def notification_text_saver_stats(self, event: AlertSaverStats):
         message = f'💰 <b>THORChain сбережения</b>\n\n'
 
         savers, prev = event.current_stats, event.previous_stats
@@ -1727,7 +1727,7 @@ class RussianLocalization(BaseLocalization):
 
     # ------ POL -------
 
-    def notification_text_pol_utilization(self, event: EventPOL):
+    def notification_text_pol_utilization(self, event: AlertPOL):
         text = '🥃 <b>POL: ликвидность от самого протокола</b>\n\n'
 
         curr, prev = event.current, event.previous

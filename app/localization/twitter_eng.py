@@ -19,17 +19,17 @@ from services.lib.texts import x_ses, progressbar, plural, bracketify, up_down_a
     bracketify_spaced, shorten_text
 from services.lib.w3.dex_analytics import DexReportEntry, DexReport
 from services.models.cap_info import ThorCapInfo
-from services.models.flipside import EventKeyStats
+from services.models.flipside import AlertKeyStats
 from services.models.last_block import EventBlockSpeed, BlockProduceState
 from services.models.mimir import MimirChange, MimirHolder
 from services.models.mimir_naming import MimirUnits
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeVersionConsensus, NodeInfo
-from services.models.pol import EventPOL
+from services.models.pol import AlertPOL
 from services.models.pool_info import PoolMapPair, PoolChanges, PoolInfo
 from services.models.price import RuneMarketInfo, PriceReport
-from services.models.events import EventSwapStart
-from services.models.savers import EventSaverStats
+from services.models.s_swap import AlertSwapStart
+from services.models.savers import AlertSaverStats
 from services.models.transfer import RuneCEXFlow, RuneTransfer
 from services.models.tx import ThorTx
 from services.models.tx_type import TxType
@@ -223,7 +223,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         return msg.strip()
 
-    def notification_text_streaming_swap_started(self, e: EventSwapStart, name_map: NameMap):
+    def notification_text_streaming_swap_started(self, e: AlertSwapStart, name_map: NameMap):
         user_link = self.link_to_address(e.from_address, name_map)
 
         tx_link = self.url_for_tx_tracker(e.tx_id)
@@ -848,7 +848,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         return self.smart_split(parts)
 
-    def notification_text_saver_stats(self, event: EventSaverStats):
+    def notification_text_saver_stats(self, event: AlertSaverStats):
         parts = [f'💰 THORChain Savers\n']
 
         savers, prev = event.current_stats, event.previous_stats
@@ -881,7 +881,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         # we add '$' before assets to mention the asset name in Twitter
         return '$' + Asset(name).name
 
-    def notification_text_pol_utilization(self, event: EventPOL):
+    def notification_text_pol_utilization(self, event: AlertPOL):
         curr, prev = event.current, event.previous
         pol_progress = progressbar(curr.rune_value, event.mimir_max_deposit, 10)
 
@@ -912,5 +912,5 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         return self.smart_split(parts)
 
-    def notification_text_key_metrics_caption(self, data: EventKeyStats):
+    def notification_text_key_metrics_caption(self, data: AlertKeyStats):
         return '@THORChain weekly stats $RUNE'
