@@ -128,7 +128,10 @@ class EventSwapStart(NamedTuple):
         return thor_to_float(self.in_amount)
 
 
-class EventSwap(NamedTuple):
+class ThorEvent(NamedTuple):
+    tx_id: str = ''
+
+class EventSwap(ThorEvent, NamedTuple):
     pool: str = ''
     swap_target: int = 0
     swap_slip: int = 0
@@ -235,7 +238,7 @@ class EventStreamingSwap(NamedTuple):
         return int(amount), asset.strip()
 
 
-class EventOutbound(NamedTuple):
+class EventOutbound(ThorEvent, NamedTuple):
     tx_id: str = ''  # in_tx_id
     out_id: str = ''
     chain: str = ''
@@ -282,7 +285,7 @@ class EventOutbound(NamedTuple):
         return self.amount, self.asset
 
 
-class EventScheduledOutbound(NamedTuple):
+class EventScheduledOutbound(ThorEvent, NamedTuple):
     chain: str = ''
     to_address: str = ''
     vault_pub_key: str = ''

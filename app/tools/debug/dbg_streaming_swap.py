@@ -4,7 +4,7 @@ from proto.types import MsgDeposit, MsgObservedTxIn
 from services.jobs.fetch.streaming_swaps import StreamingSwapFechter
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.scanner.event_db import EventDatabase
-from services.jobs.scanner.native_actions import NativeActionExtractor
+from services.jobs.scanner.swap_extractor import SwapExtractorBlock
 from services.jobs.scanner.native_scan import NativeScannerBlock
 from services.jobs.user_counter import UserCounter
 from services.jobs.volume_filler import VolumeFillerUpdater
@@ -69,7 +69,7 @@ async def debug_block_analyse(app: LpAppFramework):
     blk = await scanner.fetch_one_block(12209517)
     sep()
 
-    naex = NativeActionExtractor(app.deps)
+    naex = SwapExtractorBlock(app.deps)
     actions = await naex.on_data(None, blk)
     print(actions)
 
@@ -87,7 +87,7 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
     d.block_scanner.add_subscriber(user_counter)
 
     # Extract ThorTx from BlockResult
-    native_action_extractor = NativeActionExtractor(d)
+    native_action_extractor = SwapExtractorBlock(d)
     native_action_extractor.dbg_open_file(f'../temp/{tx_id}.txt')
     if tx_id:
         native_action_extractor.dbg_watch_swap_id = tx_id

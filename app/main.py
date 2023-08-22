@@ -29,7 +29,7 @@ from services.jobs.fetch.savers_vnx import VNXSaversStatsFetcher
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.ilp_summer import ILPSummer
 from services.jobs.node_churn import NodeChurnDetector
-from services.jobs.scanner.native_actions import NativeActionExtractor
+from services.jobs.scanner.swap_extractor import SwapExtractorBlock
 from services.jobs.scanner.native_scan import NativeScannerBlock
 from services.jobs.transfer_detector import RuneTransferDetectorTxLogs
 from services.jobs.user_counter import UserCounter
@@ -262,7 +262,7 @@ class App:
 
             # Swaps come from the Block scanner through NativeActionExtractor
             if d.block_scanner:
-                native_action_extractor = NativeActionExtractor(d)
+                native_action_extractor = SwapExtractorBlock(d)
                 d.block_scanner.add_subscriber(native_action_extractor)
                 native_action_extractor.add_subscriber(aggregator)
 
