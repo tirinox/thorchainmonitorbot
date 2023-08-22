@@ -46,16 +46,13 @@ class THORMemo:
     asset: str
     dest_address: str = ''
     limit: int = 0
+    s_swap_interval: int = 0
+    s_swap_quantity: int = 0
     affiliate_address: str = ''
     affiliate_fee: float = 0.0  # (0..1) range
     dex_aggregator_address: str = ''
     final_asset_address: str = ''
     min_amount_out: int = 0
-    s_swap_interval: int = 0
-    s_swap_quantity: int = 0
-
-    # 0    1     2        3   4         5   6                   7                8
-    # SWAP:ASSET:DESTADDR:LIM:AFFILIATE:FEE:DEX Aggregator Addr:Final Asset Addr:MinAmountOut
 
     @staticmethod
     def ith_or_default(a, index, default=None, dtype: type = str) -> Union[str, int, float]:
@@ -79,29 +76,70 @@ class THORMemo:
         return self.s_swap_quantity > 1
 
     @classmethod
-    def parse_memo(cls, memo: str):
-        components = [it for it in memo.split(':')]
-        action = cls.ith_or_default(components, 0, '').lower()
-        tx_type = MEMO_ACTION_TABLE.get(action)
-
-        limit_and_s_swap = cls.ith_or_default(components, 3, '')
-        s_swap_components = limit_and_s_swap.split('/')
+    def parse_streaming_params(cls, ss: str):
+        s_swap_components = ss.split('/')
 
         limit = cls.ith_or_default(s_swap_components, 0, 0, int)
         s_swap_interval = cls.ith_or_default(s_swap_components, 1, 0, int)
         s_swap_quantity = cls.ith_or_default(s_swap_components, 2, 1, int)
+        return limit, s_swap_interval, s_swap_quantity
+
+    @classmethod
+    def parse_memo(cls, memo: str):
+        gist, *_comment = memo.split('|', maxsplit=2)  # ignore comments
+
+        components = [it for it in gist.split(':')]
+
+        action = cls.ith_or_default(components, 0, '').lower()
+        tx_type = MEMO_ACTION_TABLE.get(action)
 
         if tx_type == TxType.SWAP:
+            # 0    1     2        3   4         5   6                   7                8
+            # SWAP:ASSET:DESTADDR:LIM:AFFILIATE:FEE:DEX Aggregator Addr:Final Asset Addr:MinAmountOut
+            asset = cls.ith_or_default(components, 1)
+            dest_address = cls.ith_or_default(components, 2)
+            limit_and_s_swap = cls.ith_or_default(components, 3, '')
+            limit, s_swap_interval, s_swap_quantity = cls.parse_streaming_params(limit_and_s_swap)
+
             return cls(
-                tx_type,
-                asset=cls.ith_or_default(components, 1),
-                dest_address=cls.ith_or_default(components, 2),
-                limit=limit,
+                tx_type, asset, dest_address, limit, s_swap_interval, s_swap_quantity,
                 affiliate_address=cls.ith_or_default(components, 4),
                 affiliate_fee=cls.ith_or_default(components, 5, 0, dtype=int) / THOR_BASIS_POINT_MAX,
                 dex_aggregator_address=cls.ith_or_default(components, 6),
                 final_asset_address=cls.ith_or_default(components, 7),
                 min_amount_out=cls.ith_or_default(components, 8, 0, dtype=int),
-                s_swap_interval=s_swap_interval,
-                s_swap_quantity=s_swap_quantity
+            )
+        elif tx_type == TxType.LOAN_OPEN:
+            # LOAN+:BTC.BTC:bc1YYYYYY:minBTC:affAddr:affPts:dexAgg:dexTarAddr:DexTargetLimit
+            # 0     1       2         3      4       5      6      7          8
+            limit_and_s_swap = cls.ith_or_default(components, 3, '')
+            limit, s_swap_interval, s_swap_quantity = cls.parse_streaming_params(limit_and_s_swap)
+            asset = cls.ith_or_default(components, 1)
+            dest_address = cls.ith_or_default(components, 2)
+
+            return cls(
+                TxType.LOAN_OPEN,
+                asset,
+                dest_address,
+                limit,
+                s_swap_interval,
+                s_swap_quantity,
+                affiliate_address=cls.ith_or_default(components, 4),
+                affiliate_fee=cls.ith_or_default(components, 5, 0, dtype=int) / THOR_BASIS_POINT_MAX,
+                dex_aggregator_address=cls.ith_or_default(components, 6),
+                final_asset_address=cls.ith_or_default(components, 7),
+                min_amount_out=cls.ith_or_default(components, 8, 0, dtype=int)
+            )
+        elif tx_type == TxType.LOAN_CLOSE:
+            # "LOAN-:BTC.BTC:bc1YYYYYY:minOut"
+            #  0     1       2         3
+
+            limit_and_s_swap = cls.ith_or_default(components, 3, '')
+            limit, s_swap_interval, s_swap_quantity = cls.parse_streaming_params(limit_and_s_swap)
+
+            asset = cls.ith_or_default(components, 1)
+            dest_address = cls.ith_or_default(components, 2)
+
+            return cls(
+                TxType.LOAN_CLOSE, asset, dest_address, limit, s_swap_interval, s_swap_quantity
             )
