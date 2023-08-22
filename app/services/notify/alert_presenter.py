@@ -60,12 +60,15 @@ class AlertPresenter(INotified):
         elif isinstance(data, (AlertLoanOpen, AlertLoanRepayment)):
             await self._handle_loans(data)
 
-    # ---- PARTICULARLY ----
+    async def load_names(self, names):
+        if not (isinstance(names, (list, tuple))):
+            names = (names,)
+        return await self.name_service.safely_load_thornames_from_address_set(names)
+
+        # ---- PARTICULARLY ----
 
     async def _handle_large_tx(self, txs_event: EventLargeTransaction):
-        name_map = await self.name_service.safely_load_thornames_from_address_set([
-            txs_event.transaction.sender_address
-        ])
+        name_map = await self.load_names(txs_event.transaction.sender_address)
 
         await self.broadcaster.notify_preconfigured_channels(
             BaseLocalization.notification_text_large_single_tx,
@@ -75,7 +78,7 @@ class AlertPresenter(INotified):
         )
 
     async def _handle_rune_transfer(self, transfer: RuneTransfer):
-        name_map = await self.name_service.safely_load_thornames_from_address_set([
+        name_map = await self.load_names([
             transfer.from_addr, transfer.to_addr
         ])
 
@@ -160,15 +163,22 @@ class AlertPresenter(INotified):
         await self.broadcaster.notify_preconfigured_channels(_gen, event)
 
     async def _handle_streaming_swap_start(self, event: AlertSwapStart):
-        name_map = await self.name_service.safely_load_thornames_from_address_set([
-            event.from_address
-        ])
+        name_map = await self.load_names(event.from_address)
 
         await self.broadcaster.notify_preconfigured_channels(
             BaseLocalization.notification_text_streaming_swap_started,
             event, name_map
         )
 
-    async def _handle_loans(self, data):
-        # todo!
-        pass
+    async def _handle_loans(self, event: AlertLoanOpen | AlertLoanRepayment):
+        name_map = await self.load_names(event.loan.owner)
+
+        if isinstance(event, AlertLoanOpen):
+            method = BaseLocalization.notification_text_loan_open
+        else:
+            method = BaseLocalization.notification_text_loan_repayment
+
+        await self.broadcaster.notify_preconfigured_channels(
+            method,
+            event, name_map
+        )

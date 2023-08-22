@@ -1,27 +1,24 @@
 from typing import NamedTuple
 
-from services.lib.constants import thor_to_float
+from services.models.events import EventLoanOpen, EventLoanRepayment
 
 
 class AlertLoanOpen(NamedTuple):
     tx_id: str
-    address: str
-    asset: str
-    amount: int
-    debt_usd: float
+    loan: EventLoanOpen
+    target_price_usd: float
+    collateral_price_usd: float
 
     @property
-    def amount_float(self):
-        return thor_to_float(self.amount)
+    def collateral_usd(self):
+        return self.loan.collateral_float * self.collateral_price_usd
 
 
 class AlertLoanRepayment(NamedTuple):
     tx_id: str
-    address: str
-    asset: str
-    amount: int
-    debt_usd: float
+    loan: EventLoanRepayment
+    collateral_price_usd: float
 
     @property
-    def amount_float(self):
-        return thor_to_float(self.amount)
+    def collateral_usd(self):
+        return self.loan.collateral_float * self.collateral_price_usd

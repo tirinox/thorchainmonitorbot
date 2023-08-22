@@ -13,7 +13,7 @@ from services.lib.config import Config
 from services.lib.constants import Chains
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address, get_thoryield_address, \
-    get_ip_info_link
+    get_ip_info_link, get_explorer_url_to_tx
 from services.lib.midgard.name_service import add_thor_suffix, NameMap
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change, Asset, short_money, short_dollar, format_percent, RAIDO_GLYPH, short_rune, pretty_percent, \
@@ -24,6 +24,7 @@ from services.lib.utils import grouper
 from services.lib.w3.dex_analytics import DexReportEntry, DexReport
 from services.models.cap_info import ThorCapInfo
 from services.models.last_block import BlockProduceState, EventBlockSpeed
+from services.models.loans import AlertLoanOpen, AlertLoanRepayment
 from services.models.lp_info import LiquidityPoolReport
 from services.models.mimir import MimirChange, MimirHolder
 from services.models.net_stats import NetworkStats
@@ -1757,3 +1758,36 @@ class RussianLocalization(BaseLocalization):
             text += self._format_pol_membership(event, of_pool='от пула')
 
         return text.strip()
+
+    # ----- LOANS ------
+
+    def notification_text_loan_open(self, event: AlertLoanOpen, name_map: NameMap):
+        l = event.loan
+        user_link = self.link_to_address(l.owner, name_map)
+        asset = ' ' + Asset(l.collateral_asset).pretty_str
+        target_asset = Asset(l.target_asset).pretty_str
+        db_link = link(self.LENDING_DASHBOARD_URL, "Инфопанель")
+        tx_link = link(get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, event.tx_id), "TX")
+        return (
+            '🏦→ <b>Заём открыт</b>\n\n'
+            f'{user_link} | {tx_link} | {db_link}\n'
+            f'Внесен залог: {code(pretty_money(l.collateral_float, postfix=asset))}'
+            f' ({pretty_dollar(event.collateral_usd)})\n'
+            f'CR: x{pretty_money(l.collateralization_ratio)}\n'
+            f'Долг: {code(pretty_dollar(l.debt_usd))}\n'
+            f'Целевой актив: {pre(target_asset)}'
+        )
+
+    def notification_text_loan_repayment(self, event: AlertLoanRepayment, name_map: NameMap):
+        l = event.loan
+        user_link = self.link_to_address(l.owner, name_map)
+        asset = ' ' + Asset(l.collateral_asset).pretty_str
+        db_link = link(self.LENDING_DASHBOARD_URL, "Инфопанель")
+        tx_link = link(get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, event.tx_id), "TX")
+        return (
+            '🏦← <b>Заём погашен</b>\n\n'
+            f'{user_link} | {tx_link} | {db_link}\n'
+            f'Залог: {code(pretty_money(l.collateral_float, postfix=asset))}'
+            f' ({pretty_dollar(event.collateral_usd)})\n'
+            f'Выплачен долг: {pre(pretty_dollar(l.debt_repaid))}'
+        )

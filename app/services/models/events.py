@@ -1,7 +1,7 @@
 from typing import NamedTuple, Optional, Tuple, Union
 
 from proto.access import DecodedEvent
-from services.lib.constants import POOL_MODULE, NATIVE_RUNE_SYMBOL
+from services.lib.constants import POOL_MODULE, NATIVE_RUNE_SYMBOL, thor_to_float
 from services.lib.utils import expect_string
 
 
@@ -239,6 +239,14 @@ class EventLoanOpen(ThorEvent, NamedTuple):
             height=event.height
         )
 
+    @property
+    def debt_usd(self):
+        return thor_to_float(self.debt_issued)
+
+    @property
+    def collateral_float(self):
+        return thor_to_float(self.collateral_deposited)
+
 
 class EventLoanRepayment(ThorEvent, NamedTuple):
     collateral_withdrawn: int
@@ -257,6 +265,14 @@ class EventLoanRepayment(ThorEvent, NamedTuple):
             owner=attrs.get('owner', ''),
             height=event.height
         )
+
+    @property
+    def debt_repaid_usd(self):
+        return thor_to_float(self.debt_repaid)
+
+    @property
+    def collateral_float(self):
+        return thor_to_float(self.collateral_withdrawn)
 
 
 def parse_swap_and_out_event(e: DecodedEvent):
