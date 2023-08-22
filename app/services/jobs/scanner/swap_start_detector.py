@@ -8,7 +8,8 @@ from services.lib.depcont import DepContainer
 from services.lib.memo import THORMemo
 from services.lib.money import is_rune_asset, Asset
 from services.lib.utils import WithLogger
-from services.models.s_swap import EventSwapStart, StreamingSwap
+from services.models.s_swap import StreamingSwap
+from services.models.events import EventSwapStart
 from services.models.tx_type import TxType
 
 

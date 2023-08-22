@@ -11,8 +11,8 @@ from services.jobs.scanner.swap_start_detector import SwapStartDetector
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger, say, hash_of_string_repr
-from services.models.s_swap import parse_swap_and_out_event, EventSwapStart, EventOutbound, \
-    EventScheduledOutbound, TypeEventSwapAndOut, EventSwap
+from services.models.events import EventSwapStart, EventSwap, EventOutbound, EventScheduledOutbound, \
+    parse_swap_and_out_event, TypeEventSwapAndOut
 from services.models.tx import ThorTx
 
 

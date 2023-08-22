@@ -33,7 +33,7 @@ from services.models.pol import EventPOL
 from services.models.pool_info import PoolInfo, PoolChanges, PoolMapPair
 from services.models.price import PriceReport, RuneMarketInfo
 from services.models.queue import QueueInfo
-from services.models.s_swap import EventSwapStart
+from services.models.events import EventSwapStart
 from services.models.savers import EventSaverStats
 from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.tx import ThorTx

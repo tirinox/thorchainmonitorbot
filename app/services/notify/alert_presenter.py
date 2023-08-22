@@ -12,10 +12,11 @@ from services.lib.midgard.name_service import NameService
 from services.lib.w3.dex_analytics import DexReport
 from services.models.flipside import EventKeyStats
 from services.models.last_block import EventBlockSpeed, BlockProduceState
+from services.models.loans import EventLoanOpen, EventLoanRepayment
 from services.models.node_info import NodeSetChanges
 from services.models.pol import EventPOL
 from services.models.pool_info import PoolChanges
-from services.models.s_swap import EventSwapStart
+from services.models.events import EventSwapStart
 from services.models.savers import EventSaverStats
 from services.models.transfer import RuneCEXFlow, RuneTransfer
 from services.models.tx import EventLargeTransaction
@@ -56,6 +57,8 @@ class AlertPresenter(INotified):
             await self._handle_key_stats(data)
         elif isinstance(data, EventSwapStart):
             await self._handle_streaming_swap_start(data)
+        elif isinstance(data, (EventLoanOpen, EventLoanRepayment)):
+            await self._handle_loans(data)
 
     # ---- PARTICULARLY ----
 
@@ -165,3 +168,7 @@ class AlertPresenter(INotified):
             BaseLocalization.notification_text_streaming_swap_started,
             event, name_map
         )
+
+    async def _handle_loans(self, data):
+        # todo!
+        pass

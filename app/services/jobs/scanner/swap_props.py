@@ -6,8 +6,9 @@ from typing import NamedTuple, List, Optional, Tuple
 from proto.access import DecodedEvent
 from services.lib.memo import THORMemo
 from services.lib.money import is_rune_asset
-from services.models.s_swap import TypeEventSwapAndOut, parse_swap_and_out_event, EventStreamingSwap, StreamingSwap, \
-    EventSwap, EventOutbound, EventScheduledOutbound
+from services.models.s_swap import StreamingSwap
+from services.models.events import EventSwap, EventStreamingSwap, EventOutbound, EventScheduledOutbound, \
+    parse_swap_and_out_event, TypeEventSwapAndOut
 from services.models.tx import ThorTx, SUCCESS, ThorMetaSwap, ThorCoin, ThorSubTx
 from services.models.tx_type import TxType
 
