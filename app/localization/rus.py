@@ -13,7 +13,7 @@ from services.lib.config import Config
 from services.lib.constants import Chains
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address, get_thoryield_address, \
-    get_ip_info_link, get_explorer_url_to_tx
+    get_ip_info_link
 from services.lib.midgard.name_service import add_thor_suffix, NameMap
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change, Asset, short_money, short_dollar, format_percent, RAIDO_GLYPH, short_rune, pretty_percent, \
@@ -1767,15 +1767,15 @@ class RussianLocalization(BaseLocalization):
         asset = ' ' + Asset(l.collateral_asset).pretty_str
         target_asset = Asset(l.target_asset).pretty_str
         db_link = link(self.LENDING_DASHBOARD_URL, "Инфопанель")
-        tx_link = link(get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, event.tx_id), "TX")
+        # tx_link = link(get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, event.tx_id), "TX")
         return (
-            '🏦→ <b>Заём открыт</b>\n\n'
-            f'{user_link} | {tx_link} | {db_link}\n'
+            '🏦→ <b>Заём открыт</b>\n'
             f'Внесен залог: {code(pretty_money(l.collateral_float, postfix=asset))}'
             f' ({pretty_dollar(event.collateral_usd)})\n'
             f'CR: x{pretty_money(l.collateralization_ratio)}\n'
             f'Долг: {code(pretty_dollar(l.debt_usd))}\n'
-            f'Целевой актив: {pre(target_asset)}'
+            f'Целевой актив: {pre(target_asset)}\n'
+            f'{user_link} | {db_link}'
         )
 
     def notification_text_loan_repayment(self, event: AlertLoanRepayment, name_map: NameMap):
@@ -1783,11 +1783,11 @@ class RussianLocalization(BaseLocalization):
         user_link = self.link_to_address(l.owner, name_map)
         asset = ' ' + Asset(l.collateral_asset).pretty_str
         db_link = link(self.LENDING_DASHBOARD_URL, "Инфопанель")
-        tx_link = link(get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, event.tx_id), "TX")
+        # tx_link = link(get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, event.tx_id), "TX")
         return (
-            '🏦← <b>Заём погашен</b>\n\n'
-            f'{user_link} | {tx_link} | {db_link}\n'
+            '🏦← <b>Заём погашен</b>\n'
             f'Залог: {code(pretty_money(l.collateral_float, postfix=asset))}'
             f' ({pretty_dollar(event.collateral_usd)})\n'
-            f'Выплачен долг: {pre(pretty_dollar(l.debt_repaid))}'
+            f'Выплачен долг: {pre(pretty_dollar(l.debt_repaid))}\n'
+            f'{user_link} | {db_link}'
         )

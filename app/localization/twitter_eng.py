@@ -896,7 +896,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         pnl_pct = curr.pnl_percent
 
         parts = [(
-            f'🥃 Protocol Owned Liquidity\n\n'
+            f'🥃 Protocol Owned Liquidity\n'
             f"Current value: {short_rune(curr.rune_value)} or "
             f"{short_dollar(curr.usd_value)} {str_value_delta_pct}\n"
             f"Utilization: {pretty_percent(event.pol_utilization, signed=False)} {pol_progress} "
@@ -925,7 +925,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         target_asset = Asset(l.target_asset).pretty_str
 
         return (
-            '🏦→ Loan open\n\n'
+            f'🏦→ Loan open {user_link}\n'
             f'Collateral deposited: {pretty_money(l.collateral_float, postfix=asset)}'
             f' ({pretty_dollar(event.collateral_usd)})\n'
             f'CR: x{pretty_money(l.collateralization_ratio)}\n'
@@ -940,7 +940,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         asset = ' ' + Asset(l.collateral_asset).pretty_str
 
         return (
-            '🏦← Loan repayment\n\n'
+            f'🏦← Loan repayment {user_link}\n'
             f'Collateral withdrawn: {pretty_money(l.collateral_float, postfix=asset)}'
             f' ({pretty_dollar(event.collateral_usd)})\n'
             f'Debt repaid: {pretty_dollar(l.debt_repaid)}\n'

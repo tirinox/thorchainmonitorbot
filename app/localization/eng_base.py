@@ -2402,15 +2402,15 @@ class BaseLocalization(ABC):  # == English
         asset = ' ' + Asset(l.collateral_asset).pretty_str
         target_asset = Asset(l.target_asset).pretty_str
         db_link = link(self.LENDING_DASHBOARD_URL, "Dashboard")
-        tx_link = link(get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, event.tx_id), "TX")
+        # tx_link = link(get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, event.tx_id), "TX")
         return (
-            '🏦→ <b>Loan open</b>\n\n'
-            f'{user_link} | {tx_link} | {db_link}\n'
+            '🏦→ <b>Loan open</b>\n'
             f'Collateral deposited: {code(pretty_money(l.collateral_float, postfix=asset))}'
             f' ({pretty_dollar(event.collateral_usd)})\n'
             f'CR: x{pretty_money(l.collateralization_ratio)}\n'
             f'Debt: {code(pretty_dollar(l.debt_usd))}\n'
-            f'Target asset: {pre(target_asset)}'
+            f'Target asset: {pre(target_asset)}\n'
+            f'{user_link} | {db_link}'
         )
 
     def notification_text_loan_repayment(self, event: AlertLoanRepayment, name_map: NameMap):
@@ -2418,13 +2418,13 @@ class BaseLocalization(ABC):  # == English
         user_link = self.link_to_address(l.owner, name_map)
         asset = ' ' + Asset(l.collateral_asset).pretty_str
         db_link = link(self.LENDING_DASHBOARD_URL, "Dashboard")
-        tx_link = link(get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, event.tx_id), "TX")
+        # tx_link = link(get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, event.tx_id), "TX")
         return (
-            '🏦← <b>Loan repayment</b>\n\n'
-            f'{user_link} | {tx_link} | {db_link}\n'
+            '🏦← <b>Loan repayment</b>\n'
             f'Collateral withdrawn: {code(pretty_money(l.collateral_float, postfix=asset))}'
             f' ({pretty_dollar(event.collateral_usd)})\n'
-            f'Debt repaid: {pre(pretty_dollar(l.debt_repaid))}'
+            f'Debt repaid: {pre(pretty_dollar(l.debt_repaid))}\n'
+            f'{user_link} | {db_link}'
         )
 
 
