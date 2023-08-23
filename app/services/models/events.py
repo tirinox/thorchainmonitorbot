@@ -5,12 +5,7 @@ from services.lib.constants import POOL_MODULE, NATIVE_RUNE_SYMBOL, thor_to_floa
 from services.lib.utils import expect_string
 
 
-class ThorEvent(NamedTuple):
-    tx_id: str = ''
-    height: int = 0
-
-
-class EventSwap(ThorEvent, NamedTuple):
+class EventSwap(NamedTuple):
     pool: str = ''
     swap_target: int = 0
     swap_slip: int = 0
@@ -117,7 +112,7 @@ class EventStreamingSwap(NamedTuple):
         return int(amount), asset.strip()
 
 
-class EventOutbound(ThorEvent, NamedTuple):
+class EventOutbound(NamedTuple):
     tx_id: str = ''  # in_tx_id
     out_id: str = ''
     chain: str = ''
@@ -164,7 +159,7 @@ class EventOutbound(ThorEvent, NamedTuple):
         return self.amount, self.asset
 
 
-class EventScheduledOutbound(ThorEvent, NamedTuple):
+class EventScheduledOutbound(NamedTuple):
     chain: str = ''
     to_address: str = ''
     vault_pub_key: str = ''
@@ -217,7 +212,7 @@ class EventScheduledOutbound(ThorEvent, NamedTuple):
         return self.coin_amount, self.coin_asset
 
 
-class EventLoanOpen(ThorEvent, NamedTuple):
+class EventLoanOpen(NamedTuple):
     collateral_deposited: int
     debt_issued: int
     collateralization_ratio: float
@@ -249,7 +244,7 @@ class EventLoanOpen(ThorEvent, NamedTuple):
         return thor_to_float(self.collateral_deposited)
 
 
-class EventLoanRepayment(ThorEvent, NamedTuple):
+class EventLoanRepayment(NamedTuple):
     collateral_withdrawn: int
     debt_repaid: int
     collateral_asset: str
