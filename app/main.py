@@ -29,6 +29,7 @@ from services.jobs.fetch.savers_vnx import VNXSaversStatsFetcher
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.ilp_summer import ILPSummer
 from services.jobs.node_churn import NodeChurnDetector
+from services.jobs.scanner.loan_extractor import LoanExtractorBlock
 from services.jobs.scanner.swap_extractor import SwapExtractorBlock
 from services.jobs.scanner.native_scan import NativeScannerBlock
 from services.jobs.transfer_detector import RuneTransferDetectorTxLogs
@@ -64,6 +65,7 @@ from services.notify.types.cap_notify import LiquidityCapNotifier
 from services.notify.types.chain_notify import TradingHaltedNotifier
 from services.notify.types.dex_report_notify import DexReportNotifier
 from services.notify.types.key_metrics_notify import KeyMetricsNotifier
+from services.notify.types.loans_notify import LoanTxNotifier
 from services.notify.types.mimir_notify import MimirChangedNotifier
 from services.notify.types.node_churn_notify import NodeChurnNotifier
 from services.notify.types.pol_notify import POLNotifier
@@ -318,6 +320,14 @@ class App:
                 refund_notifier_tx.dbg_evaluate_curve_for_pools()
                 volume_filler.add_subscriber(refund_notifier_tx)
                 refund_notifier_tx.add_subscriber(d.alert_presenter)
+
+            if d.cfg.tx.loans.get('enabled', True):
+                loan_extractor = LoanExtractorBlock(d)
+                d.block_scanner.add_subscriber(loan_extractor)
+
+                loan_notifier = LoanTxNotifier(d, curve=curve)
+                loan_extractor.add_subscriber(loan_notifier)
+                loan_notifier.add_subscriber(d.alert_presenter)
 
             tasks.append(fetcher_tx)
 

@@ -300,7 +300,7 @@ tx:
   loans:  # (!) new
     enabled: true
     min_usd_total: 5000
-    curve_mult: 0.1
+    # curve_mult: 0.1
 
   dex_aggregator_update:
     enabled: true
