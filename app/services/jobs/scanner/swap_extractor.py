@@ -11,12 +11,13 @@ from services.jobs.scanner.swap_start_detector import SwapStartDetector
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger, say, hash_of_string_repr
-from services.models.s_swap import parse_swap_and_out_event, EventSwapStart, EventOutbound, \
-    EventScheduledOutbound, TypeEventSwapAndOut, EventSwap
+from services.models.events import EventSwap, EventOutbound, EventScheduledOutbound, \
+    parse_swap_and_out_event, TypeEventSwapAndOut
+from services.models.s_swap import AlertSwapStart
 from services.models.tx import ThorTx
 
 
-class NativeActionExtractor(WithDelegates, INotified, WithLogger):
+class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
@@ -75,7 +76,9 @@ class NativeActionExtractor(WithDelegates, INotified, WithLogger):
         # Pass them down the pipe
         await self.pass_data_to_listeners(txs)
 
-    async def register_new_swaps(self, swaps: List[EventSwapStart], height):
+        return txs
+
+    async def register_new_swaps(self, swaps: List[AlertSwapStart], height):
         self.logger.info(f"New swaps {len(swaps)} in block #{height}")
 
         for swap in swaps:
@@ -166,9 +169,6 @@ class NativeActionExtractor(WithDelegates, INotified, WithLogger):
             if not swap_info:
                 self.logger.warning(f'There are outbounds for tx {tx_id}, but there is no info about its initiation.')
                 continue
-
-            # print(f'{tx_id}: {swap_info.has_started = }, {swap_info.has_swaps = }, '
-            #       f'{swap_info.is_finished = }, {swap_info.given_away = }')
 
             # if no swaps, it is full refund
             if swap_info.has_started and swap_info.has_swaps and swap_info.is_finished and not swap_info.given_away:

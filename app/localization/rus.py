@@ -24,17 +24,18 @@ from services.lib.utils import grouper
 from services.lib.w3.dex_analytics import DexReportEntry, DexReport
 from services.models.cap_info import ThorCapInfo
 from services.models.last_block import BlockProduceState, EventBlockSpeed
+from services.models.loans import AlertLoanOpen, AlertLoanRepayment
 from services.models.lp_info import LiquidityPoolReport
 from services.models.mimir import MimirChange, MimirHolder
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEvent, EventDataSlash, \
     NodeEventType, EventBlockHeight
-from services.models.pol import EventPOL
+from services.models.pol import AlertPOL
 from services.models.pool_info import PoolInfo, PoolChanges, PoolMapPair
 from services.models.price import PriceReport, RuneMarketInfo
 from services.models.queue import QueueInfo
-from services.models.s_swap import EventSwapStart
-from services.models.savers import EventSaverStats
+from services.models.s_swap import AlertSwapStart
+from services.models.savers import AlertSaverStats
 from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.tx import ThorTx
 from services.models.tx_type import TxType
@@ -483,7 +484,7 @@ class RussianLocalization(BaseLocalization):
 
         return msg.strip()
 
-    def notification_text_streaming_swap_started(self, e: EventSwapStart, name_map: NameMap):
+    def notification_text_streaming_swap_started(self, e: AlertSwapStart, name_map: NameMap):
         user_link = self.link_to_address(e.from_address, name_map)
 
         tx_link = link(self.url_for_tx_tracker(e.tx_id), 'Отследить')
@@ -1678,7 +1679,7 @@ class RussianLocalization(BaseLocalization):
             f'Популярные активы:\n{top_asset_str}'
         ).strip()
 
-    def notification_text_saver_stats(self, event: EventSaverStats):
+    def notification_text_saver_stats(self, event: AlertSaverStats):
         message = f'💰 <b>THORChain сбережения</b>\n\n'
 
         savers, prev = event.current_stats, event.previous_stats
@@ -1727,7 +1728,7 @@ class RussianLocalization(BaseLocalization):
 
     # ------ POL -------
 
-    def notification_text_pol_utilization(self, event: EventPOL):
+    def notification_text_pol_utilization(self, event: AlertPOL):
         text = '🥃 <b>POL: ликвидность от самого протокола</b>\n\n'
 
         curr, prev = event.current, event.previous
@@ -1757,3 +1758,36 @@ class RussianLocalization(BaseLocalization):
             text += self._format_pol_membership(event, of_pool='от пула')
 
         return text.strip()
+
+    # ----- LOANS ------
+
+    def notification_text_loan_open(self, event: AlertLoanOpen, name_map: NameMap):
+        l = event.loan
+        user_link = self.link_to_address(l.owner, name_map)
+        asset = ' ' + Asset(l.collateral_asset).pretty_str
+        target_asset = Asset(l.target_asset).pretty_str
+        db_link = link(self.LENDING_DASHBOARD_URL, "Инфопанель")
+        # tx_link = link(get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, event.tx_id), "TX")
+        return (
+            '🏦→ <b>Заём открыт</b>\n'
+            f'Внесен залог: {code(pretty_money(l.collateral_float, postfix=asset))}'
+            f' ({pretty_dollar(event.collateral_usd)})\n'
+            f'CR: x{pretty_money(l.collateralization_ratio)}\n'
+            f'Долг: {code(pretty_dollar(l.debt_usd))}\n'
+            f'Целевой актив: {pre(target_asset)}\n'
+            f'{user_link} | {db_link}'
+        )
+
+    def notification_text_loan_repayment(self, event: AlertLoanRepayment, name_map: NameMap):
+        l = event.loan
+        user_link = self.link_to_address(l.owner, name_map)
+        asset = ' ' + Asset(l.collateral_asset).pretty_str
+        db_link = link(self.LENDING_DASHBOARD_URL, "Инфопанель")
+        # tx_link = link(get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, event.tx_id), "TX")
+        return (
+            '🏦← <b>Заём погашен</b>\n'
+            f'Залог: {code(pretty_money(l.collateral_float, postfix=asset))}'
+            f' ({pretty_dollar(event.collateral_usd)})\n'
+            f'Выплачен долг: {pre(pretty_dollar(l.debt_repaid))}\n'
+            f'{user_link} | {db_link}'
+        )

@@ -8,7 +8,7 @@ from localization.eng_base import BaseLocalization
 from services.dialog.twitter.text_length import twitter_intelligent_text_splitter
 from services.jobs.fetch.circulating import SupplyEntry
 from services.lib.config import Config
-from services.lib.constants import thor_to_float, rune_origin, Chains
+from services.lib.constants import Chains
 from services.lib.date_utils import now_ts, seconds_human
 from services.lib.explorers import get_explorer_url_to_tx
 from services.lib.midgard.name_service import NameMap, add_thor_suffix
@@ -19,17 +19,18 @@ from services.lib.texts import x_ses, progressbar, plural, bracketify, up_down_a
     bracketify_spaced, shorten_text
 from services.lib.w3.dex_analytics import DexReportEntry, DexReport
 from services.models.cap_info import ThorCapInfo
-from services.models.flipside import EventKeyStats
+from services.models.flipside import AlertKeyStats
 from services.models.last_block import EventBlockSpeed, BlockProduceState
+from services.models.loans import AlertLoanOpen, AlertLoanRepayment
 from services.models.mimir import MimirChange, MimirHolder
 from services.models.mimir_naming import MimirUnits
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeVersionConsensus, NodeInfo
-from services.models.pol import EventPOL
+from services.models.pol import AlertPOL
 from services.models.pool_info import PoolMapPair, PoolChanges, PoolInfo
 from services.models.price import RuneMarketInfo, PriceReport
-from services.models.s_swap import EventSwapStart
-from services.models.savers import EventSaverStats
+from services.models.s_swap import AlertSwapStart
+from services.models.savers import AlertSaverStats
 from services.models.transfer import RuneCEXFlow, RuneTransfer
 from services.models.tx import ThorTx
 from services.models.tx_type import TxType
@@ -223,7 +224,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         return msg.strip()
 
-    def notification_text_streaming_swap_started(self, e: EventSwapStart, name_map: NameMap):
+    def notification_text_streaming_swap_started(self, e: AlertSwapStart, name_map: NameMap):
         user_link = self.link_to_address(e.from_address, name_map)
 
         tx_link = self.url_for_tx_tracker(e.tx_id)
@@ -848,7 +849,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         return self.smart_split(parts)
 
-    def notification_text_saver_stats(self, event: EventSaverStats):
+    def notification_text_saver_stats(self, event: AlertSaverStats):
         parts = [f'💰 THORChain Savers\n']
 
         savers, prev = event.current_stats, event.previous_stats
@@ -881,7 +882,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         # we add '$' before assets to mention the asset name in Twitter
         return '$' + Asset(name).name
 
-    def notification_text_pol_utilization(self, event: EventPOL):
+    def notification_text_pol_utilization(self, event: AlertPOL):
         curr, prev = event.current, event.previous
         pol_progress = progressbar(curr.rune_value, event.mimir_max_deposit, 10)
 
@@ -895,7 +896,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         pnl_pct = curr.pnl_percent
 
         parts = [(
-            f'🥃 Protocol Owned Liquidity\n\n'
+            f'🥃 Protocol Owned Liquidity\n'
             f"Current value: {short_rune(curr.rune_value)} or "
             f"{short_dollar(curr.usd_value)} {str_value_delta_pct}\n"
             f"Utilization: {pretty_percent(event.pol_utilization, signed=False)} {pol_progress} "
@@ -912,5 +913,36 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         return self.smart_split(parts)
 
-    def notification_text_key_metrics_caption(self, data: EventKeyStats):
+    def notification_text_key_metrics_caption(self, data: AlertKeyStats):
         return '@THORChain weekly stats $RUNE'
+
+    # ----- LOANS ------
+
+    def notification_text_loan_open(self, event: AlertLoanOpen, name_map: NameMap):
+        l = event.loan
+        user_link = self.link_to_address(l.owner, name_map)
+        asset = ' ' + Asset(l.collateral_asset).pretty_str
+        target_asset = Asset(l.target_asset).pretty_str
+
+        return (
+            f'🏦→ Loan open {user_link}\n'
+            f'Collateral deposited: {pretty_money(l.collateral_float, postfix=asset)}'
+            f' ({pretty_dollar(event.collateral_usd)})\n'
+            f'CR: x{pretty_money(l.collateralization_ratio)}\n'
+            f'Debt: {pretty_dollar(l.debt_usd)}\n'
+            f'Target asset: {target_asset}\n'
+            f'{self.LENDING_DASHBOARD_URL}'
+        )
+
+    def notification_text_loan_repayment(self, event: AlertLoanRepayment, name_map: NameMap):
+        l = event.loan
+        user_link = self.link_to_address(l.owner, name_map)
+        asset = ' ' + Asset(l.collateral_asset).pretty_str
+
+        return (
+            f'🏦← Loan repayment {user_link}\n'
+            f'Collateral withdrawn: {pretty_money(l.collateral_float, postfix=asset)}'
+            f' ({pretty_dollar(event.collateral_usd)})\n'
+            f'Debt repaid: {pretty_dollar(l.debt_repaid)}\n'
+            f'{self.LENDING_DASHBOARD_URL}'
+        )

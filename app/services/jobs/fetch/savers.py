@@ -8,7 +8,7 @@ from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 from services.models.pool_info import PoolInfoMap
 from services.models.price import LastPriceHolder
-from services.models.savers import SaverVault, SaversBank, get_savers_apr, EventSaverStats
+from services.models.savers import SaverVault, SaversBank, get_savers_apr, AlertSaverStats
 from services.notify.types.block_notify import LastBlockStore
 
 
@@ -59,7 +59,7 @@ class SaversStatsFetcher(INotified, WithDelegates, WithLogger):
         savers.sort_vaults()
         return savers
 
-    async def get_savers_event(self, period, usd_per_rune=None) -> EventSaverStats:
+    async def get_savers_event(self, period, usd_per_rune=None) -> AlertSaverStats:
         pf: PoolFetcher = self.deps.pool_fetcher
         block_store: LastBlockStore = self.deps.last_block_store
         shared_price_holder = self.deps.price_holder
@@ -90,14 +90,14 @@ class SaversStatsFetcher(INotified, WithDelegates, WithLogger):
             if pool := curr_pools.get(vault.asset):
                 vault.apr = pool.savers_apr * 100.0 if pool else 0.0
 
-        return EventSaverStats(
+        return AlertSaverStats(
             prev_saver, curr_saver, price_holder
         )
 
     CACHE_TTL = 60
 
     @AsyncTTL(time_to_live=CACHE_TTL)
-    async def get_savers_event_cached(self, period, usd_per_rune=None) -> EventSaverStats:
+    async def get_savers_event_cached(self, period, usd_per_rune=None) -> AlertSaverStats:
         return await self.get_savers_event(period, usd_per_rune)
 
     async def on_data(self, sender, data):

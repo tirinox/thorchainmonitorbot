@@ -43,7 +43,7 @@ class POLState(NamedTuple):
         return self.value.pnl / self.value.current_deposit if self.value.current_deposit else 0.0
 
 
-class EventPOL(NamedTuple):
+class AlertPOL(NamedTuple):
     current: POLState
     membership: List[PoolMemberDetails]
     previous: Optional[POLState] = None

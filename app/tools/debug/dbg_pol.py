@@ -10,7 +10,7 @@ from services.lib.constants import NetworkIdents, STAGENET_RESERVE_ADDRESS
 from services.lib.date_utils import DAY
 from services.lib.depcont import DepContainer
 from services.lib.money import distort_randomly
-from services.models.pol import POLState, EventPOL
+from services.models.pol import POLState, AlertPOL
 from services.notify.types.pol_notify import POLNotifier
 from tools.lib.lp_common import LpAppFramework
 
@@ -32,7 +32,7 @@ class DbgPOLNotifier(POLNotifier):
         super().__init__(deps)
         self.mode = mode
 
-    async def find_stats_ago(self, period_ago) -> Optional[EventPOL]:
+    async def find_stats_ago(self, period_ago) -> Optional[AlertPOL]:
         if self.mode == 'random_hardcode':
             return await self._find_stats_ago_random_hardcode(period_ago)
         elif self.mode == 'normal':
@@ -49,7 +49,7 @@ class DbgPOLNotifier(POLNotifier):
                 )
                 return data
 
-    async def _find_stats_ago_random_hardcode(self, period_ago) -> Optional[EventPOL]:
+    async def _find_stats_ago_random_hardcode(self, period_ago) -> Optional[AlertPOL]:
         pol_state = POLState(
             usd_per_rune=1.5,
             value=ThorPOL(
@@ -59,7 +59,7 @@ class DbgPOLNotifier(POLNotifier):
                 rune_withdrawn=distort_randomly(4904703055, up_only=True),
                 value=distort_randomly(6100055164, up_only=True),
             ))
-        return EventPOL(
+        return AlertPOL(
             current=pol_state,
             membership=[],
         )

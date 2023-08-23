@@ -15,7 +15,7 @@ from services.lib.draw_utils import paste_image_masked, result_color, TC_LIGHTNI
 from services.lib.money import pretty_money, short_dollar, short_money, format_percent, Asset
 from services.lib.texts import bracketify
 from services.lib.utils import async_wrap
-from services.models.flipside import EventKeyStats, FSLockedValue, FSFees, FSAffiliateCollectors, FSSwapVolume, \
+from services.models.flipside import AlertKeyStats, FSLockedValue, FSFees, FSAffiliateCollectors, FSSwapVolume, \
     FSSwapCount
 
 
@@ -40,7 +40,7 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
     BASE = './data'
     BG_FILE = f'{BASE}/key_weekly_stats_bg.png'
 
-    def __init__(self, loc: BaseLocalization, event: EventKeyStats):
+    def __init__(self, loc: BaseLocalization, event: AlertKeyStats):
         super().__init__(loc)
         self.bg = Image.open(self.BG_FILE)
         self.event = event
@@ -90,7 +90,7 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
             )
 
     @staticmethod
-    def _get_top_affiliate(e: EventKeyStats):
+    def _get_top_affiliate(e: AlertKeyStats):
         collectors = defaultdict(float)
         for obj in e.affiliates:
             collectors[obj.label] += obj.fee_usd
@@ -109,7 +109,7 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         return list(sorted(collectors.items(), key=operator.itemgetter(1), reverse=True))
 
     @staticmethod
-    def _get_to_swap_routes(e: EventKeyStats):
+    def _get_to_swap_routes(e: AlertKeyStats):
         collectors = defaultdict(float)
         for obj in e.routes:
             collectors[(obj.asset_from, obj.asset_to)] += obj.swap_volume

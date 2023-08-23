@@ -9,3 +9,36 @@ Open (borrow):
 Close (repayment):
 "LOAN-:BTC.BTC:bc1YYYYYY:minOut"
 
+-----
+
+Examples (only loan_open)
+
+Block 12262380 : 0.4 ETH => get Rune
+
+[12262380] BlockEvent >> loan_open
+Collateral: 0.40 ETH.ETH ($661.42) (BinanceUS: $665.11)
+CR: 2.29x (2.30x computed)
+Debt: $288.19
+Target Asset: THOR.RUNE
+Owner: 0xf1da1837154d027f244dc86dd8cb0fefee3e2ce0
+Links: ViewBlock Owner | Lending Dashboard
+--
+
+[12258889] BlockEvent >> loan_open
+Collateral: 0.50 ETH.ETH ($829.23) (BinanceUS: $831.33)
+CR: 2.27x (2.27x computed)
+Debt: $365.04
+Target Asset: ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48
+Owner: 0x08d2c744fd60f2dca8c1885d3aa03ff6d3fa5d11
+Links: ViewBlock Owner | Lending Dashboard
+--
+
+Block 12259205 : 0.23 ETH => get  BNB.BUSD-BD1
+
+[12259205] BlockEvent >> loan_open
+Collateral: 0.23 ETH.ETH ($380.69) (BinanceUS: $382.24)
+CR: 2.27x (2.27x computed)
+Debt: $167.83
+Target Asset: BNB.BUSD-BD1
+Owner: 0xe7062003a7be4df3a86127293a0d6b1f54c04220
+Links: ViewBlock Owner | Lending Dashboard

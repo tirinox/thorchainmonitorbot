@@ -7,7 +7,7 @@ from services.lib.date_utils import HOUR
 from services.lib.delegates import WithDelegates, INotified
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
-from services.models.s_swap import EventSwap
+from services.models.events import EventSwap
 from services.models.tx import ThorTx
 from services.models.tx_type import TxType
 
