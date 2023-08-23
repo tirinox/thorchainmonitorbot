@@ -118,6 +118,9 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
     async def register_swap_events(self, block: BlockResult, interesting_events: List[TypeEventSwapAndOut]):
         boom = False
         for swap_ev in interesting_events:
+            if not swap_ev.tx_id:
+                continue
+
             hash_key = hash_of_string_repr(swap_ev, block.block_no)
 
             await self._db.write_tx_status(swap_ev.tx_id, {

@@ -213,6 +213,7 @@ class EventScheduledOutbound(NamedTuple):
 
 
 class EventLoanOpen(NamedTuple):
+    tx_id: str
     collateral_deposited: int
     debt_issued: int
     collateralization_ratio: float
@@ -226,6 +227,7 @@ class EventLoanOpen(NamedTuple):
         attrs = event.attributes
         cr = int(attrs.get('collateralization_ratio', 0)) / THOR_BASIS_POINT_MAX
         return cls(
+            tx_id='',
             collateral_deposited=int(attrs.get('collateral_deposited', 0)),
             debt_issued=int(attrs.get('debt_issued', 0)),
             collateralization_ratio=cr,
@@ -245,6 +247,7 @@ class EventLoanOpen(NamedTuple):
 
 
 class EventLoanRepayment(NamedTuple):
+    tx_id: str
     collateral_withdrawn: int
     debt_repaid: int
     collateral_asset: str
@@ -255,6 +258,7 @@ class EventLoanRepayment(NamedTuple):
     def from_event(cls, event: DecodedEvent):
         attrs = event.attributes
         return cls(
+            tx_id='',
             collateral_withdrawn=int(attrs.get('collateral_withdrawn', 0)),
             debt_repaid=int(attrs.get('debt_repaid', 0)),
             collateral_asset=attrs.get('collateral_asset', ''),
