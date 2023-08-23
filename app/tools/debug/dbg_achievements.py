@@ -167,6 +167,26 @@ async def demo_run_pipeline_coin_rank(app: LpAppFramework):
     await demo_run_pipeline(app, ach_fet, spec_key_clear=A.COIN_MARKET_CAP_RANK)
 
 
+async def debug_naughty_savers_achievements(app: LpAppFramework):
+    ach_not = AchievementsNotifier(app.deps)
+
+    ach_not.add_subscriber(app.deps.alert_presenter)
+
+    # reset and clear
+    await ach_not.cd.clear()
+    await ach_not.tracker.delete_achievement_record(A.SAVER_VAULT_SAVED_USD, specialization='USDC')
+
+    event = Achievement(A.SAVER_VAULT_EARNED_ASSET, -0.1, specialization='USDC')
+
+    await ach_not.tracker.feed_data(event)
+
+    await asyncio.sleep(1.0)
+
+    await ach_not.tracker.feed_data(event)
+
+    await asyncio.sleep(3.0)
+
+
 async def main():
     app = LpAppFramework()
     async with app(brief=True):
@@ -175,9 +195,10 @@ async def main():
         # await demo_achievements_picture(Language.RUSSIAN, A.ANNIVERSARY, 2, 2)
         # await demo_achievements_picture(Language.ENGLISH, A.COIN_MARKET_CAP_RANK, 10, 11, descending=True)
         # await demo_achievements_picture(Language.RUSSIAN, A.COIN_MARKET_CAP_RANK, 10, 11, descending=True)
-        await demo_all_achievements()
+        # await demo_all_achievements()
         # await demo_run_pipeline_coin_rank(app)
-        await demo_run_pipeline_test(app, spec='BTC.BTC')
+        # await demo_run_pipeline_test(app, spec='BTC.BTC')
+        await debug_naughty_savers_achievements(app)
 
 
 if __name__ == '__main__':

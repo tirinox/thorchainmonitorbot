@@ -162,19 +162,35 @@ GROUP_MINIMALS = {
     },
 
     A.SAVER_VAULT_MEMBERS: {
-        'BUSD': 100,
+        'BUSD': 50,
+        'USDT': 50,
+        'USDC': 50,
+        'TUSD': 50,
+        'PUSD': 50,
     },
 
     A.SAVER_VAULT_SAVED_USD: {
         'BUSD': 10_000,
+        'USDT': 10_000,
+        'USDC': 10_000,
+        'TUSD': 10_000,
+        'PUST': 10_000,
     },
 
     A.SAVER_VAULT_SAVED_ASSET: {
         'BUSD': 10_000,
+        'USDT': 10_000,
+        'USDC': 10_000,
+        'TUSD': 10_000,
+        'PUST': 10_000,
     },
 
     A.SAVER_VAULT_EARNED_ASSET: {
-        'BUSD': 5_000
+        'BUSD': 1_000,
+        'USDT': 1_000,
+        # 'USDC': 1_000,
+        'TUSD': 1_000,
+        'PUST': 1_000,
     },
 
     A.COIN_MARKET_CAP_RANK: 42,
