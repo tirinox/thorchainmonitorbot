@@ -471,7 +471,17 @@ def rect_progress_bar(draw: ImageDraw,
 
     draw: ImageDraw
     draw.rounded_rectangle((x - margin, y - margin, x_end + margin, y_end + margin), radius, fill=color_unfilled)
-    draw.rounded_rectangle((x, y, x_middle, y_end), radius, fill=color_filled)
+
+    if x_middle < x:
+        x_middle, x = x, x_middle
+
+    try:
+        if abs(x_middle - x) <= radius * 3:
+            draw.rectangle((x, y, x_middle, y_end), fill=color_filled)
+        else:
+            draw.rounded_rectangle((x, y, x_middle, y_end), radius, fill=color_filled)
+    except ValueError:
+        pass
 
 
 def paste_image_masked(destination, source, xy, anchor='mm'):
