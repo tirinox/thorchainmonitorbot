@@ -41,7 +41,7 @@ class AchievementsTracker(WithLogger):
         assert name
 
         if not value or value <= 0.0:
-            self.logger.warning(f'Achievement {name} has invalid ({value}) value! Skip it.')
+            self.logger.debug(f'Achievement {name} has invalid ({value}) value! Skip it.')
             return
 
         if not self.meet_threshold(name, value, event.specialization, descending):
