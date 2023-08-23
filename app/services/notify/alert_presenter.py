@@ -1,4 +1,5 @@
 import asyncio
+from typing import Union
 
 from localization.manager import BaseLocalization
 from services.dialog.picture.achievement_picture import AchievementPictureGenerator
@@ -170,7 +171,7 @@ class AlertPresenter(INotified):
             event, name_map
         )
 
-    async def _handle_loans(self, event: AlertLoanOpen | AlertLoanRepayment):
+    async def _handle_loans(self, event: Union[AlertLoanOpen, AlertLoanRepayment]):
         name_map = await self.load_names(event.loan.owner)
 
         if isinstance(event, AlertLoanOpen):
