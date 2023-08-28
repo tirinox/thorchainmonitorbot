@@ -23,7 +23,7 @@ class LoanTxNotifier(INotified, WithDelegates, WithLogger):
 
     async def on_data(self, sender, events: List[Union[AlertLoanOpen, AlertLoanRepayment]]):
         for loan_ev in events:
-            if loan_ev.collateral_price_usd > self.min_volume_usd:
+            if loan_ev.collateral_usd > self.min_volume_usd:
                 virt_tx_id = hash_of_string_repr(loan_ev)
                 if not await self._ev_db.is_announced_as_started(virt_tx_id):
                     await self._ev_db.announce_tx_started(virt_tx_id)
