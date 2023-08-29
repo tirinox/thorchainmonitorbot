@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from PIL import Image, ImageDraw
 
 from localization.manager import BaseLocalization
@@ -159,6 +161,13 @@ class SaversPictureGenerator(BasePictureGenerator):
                           formatter(_delta, signed=True, **kwargs),
                           fill=result_color(_delta), font=changed_font, anchor='lm')
 
+        ambiguous_tracker = defaultdict(set)
+        for vault in cur_data.vaults:
+            name = Asset.from_string(vault.asset).name
+            ambiguous_tracker[name].add(vault.asset)
+
+        ambiguous_names = {name for name in ambiguous_tracker.keys() if len(ambiguous_tracker[name]) >= 2}
+
         for vault in cur_data.vaults:
             logo = self.logos.get(vault.asset)
             if logo:
@@ -167,6 +176,13 @@ class SaversPictureGenerator(BasePictureGenerator):
                 image.paste(logo, (table_x, y - logo_size // 2), logo)
 
             a = Asset.from_string(vault.asset)
+            if a.name in ambiguous_names:
+                gas_asset = a.gas_asset_from_chain(a.chain)
+                gas_logo = self.logos.get(str(gas_asset))
+                if gas_logo:
+                    gas_logo = gas_logo.copy()
+                    gas_logo.thumbnail((logo_size // 2, logo_size // 2))
+                    image.paste(gas_logo, (table_x - 4, y - logo_size // 2 - 4), gas_logo)
 
             draw_metric(asset_x, y, 'total_asset_saved', vault,
                         formatter=short_money, tolerance=0.1,

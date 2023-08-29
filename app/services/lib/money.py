@@ -311,10 +311,7 @@ class Asset:
 
     @property
     def is_gas_asset(self):
-        return not self.tag and (
-                self.chain == self.name or
-                (self.chain == Chains.ATOM and self.name == 'ATOM')
-        )
+        return self.gas_asset_from_chain(self.chain) == self
 
     SHORT_NAMES = {
         'a': 'AVAX.AVAX',
@@ -331,6 +328,19 @@ class Asset:
     ABBREVIATE_GAS_ASSETS = {
         'ETH.ETH', 'BTC.BTC', 'LTC.LTC', 'AVAX.AVAX', 'DOGE.DOGE'
     }
+
+    GAS_ASSETS = {
+        Chains.ATOM: 'ATOM',
+        Chains.THOR: 'RUNE',
+        Chains.BSC: 'BNB',
+        # to be continues
+    }
+
+    @classmethod
+    def gas_asset_from_chain(cls, chain: str):
+        chain = chain.upper()
+        name = cls.GAS_ASSETS.get(chain, chain)
+        return cls(chain, name)
 
 
 AssetRUNE = Asset.from_string(NATIVE_RUNE_SYMBOL)

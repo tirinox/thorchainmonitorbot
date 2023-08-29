@@ -73,3 +73,16 @@ def test_short_asset():
     assert short_address('thor1xd4j3gk9frpxh8r22runntnqy34lwzrdkazldh') == 'thor1xd...zldh'
     assert short_address('thor1xd4j3gk9frpxh8r22runntnqy34lwzrdkazldh', 0) == 'zldh'
     assert short_address('thor1xd4j3gk9frpxh8r22runntnqy34lwzrdkazldh', begin=5, end=0) == 'thor1'
+
+
+def test_gas_asset():
+    assert Asset.from_string('ETH.ETH').is_gas_asset
+    assert Asset.from_string('AVAX.AVAX').is_gas_asset
+    assert Asset.from_string('BTC.BTC').is_gas_asset
+    assert Asset.from_string('THOR.RUNE').is_gas_asset
+    assert Asset.from_string('GAIA.ATOM').is_gas_asset
+    assert Asset.from_string('BSC.BNB').is_gas_asset
+
+    assert not Asset.from_string('BSC.BUSD').is_gas_asset
+    assert not Asset.from_string('BSC.BNB-0x123').is_gas_asset
+    assert not Asset.from_string('ETH.USDT-0x123').is_gas_asset
