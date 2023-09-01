@@ -1,5 +1,7 @@
 import asyncio
 import logging
+from contextlib import suppress
+from typing import Optional
 
 import tweepy
 from ratelimit import limits
@@ -8,6 +10,7 @@ from services.dialog.twitter.text_length import twitter_text_length, twitter_cut
 from services.lib.config import Config
 from services.lib.date_utils import DAY
 from services.lib.draw_utils import img_to_bio
+from services.lib.emergency import EmergencyReport
 from services.lib.utils import class_logger, random_hex
 from services.notify.channel import MessageType, BoardMessage, MESSAGE_SEPARATOR
 
@@ -32,6 +35,8 @@ class TwitterBot:
         self.client = tweepy.Client(consumer_key=consumer_key, consumer_secret=consumer_secret,
                                     access_token=access_token, access_token_secret=access_token_secret)
         self.logger = class_logger(self)
+
+        self.emergency: Optional[EmergencyReport] = None
 
     async def verify_credentials(self, loop=None):
         try:
@@ -104,10 +109,17 @@ class TwitterBot:
             else:
                 logging.warning(f'Type "{msg.message_type}" is not supported for Twitter.')
             return True
-        except tweepy.errors.Forbidden as e:  # todo: check the error code before shortening the message!
+        except tweepy.errors.Forbidden as e:
             if _retrying:
-                logging.exception('Tried to resend Twitter message making it shorter. '
-                                  'Failed again. It must me something else.')
+                if self.emergency:
+                    with suppress(Exception):
+                        # Signal the admin to update app binding in the Twitter Developer Portal
+                        self.emergency.report(self.logger.name, "Twitter forbidden error",
+                                              api_errors=e.api_errors,
+                                              api_codes=e.api_codes,
+                                              api_messages=e.api_messages)
+
+                logging.exception('Tried to resend Twitter message. Failed again.')
                 return False
             else:
                 # logging.warning(f'There is an exception: {e!r}. But I will try to abbreviate the message and resend.')

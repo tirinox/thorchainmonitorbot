@@ -30,8 +30,8 @@ from services.jobs.fetch.tx import TxFetcher
 from services.jobs.ilp_summer import ILPSummer
 from services.jobs.node_churn import NodeChurnDetector
 from services.jobs.scanner.loan_extractor import LoanExtractorBlock
-from services.jobs.scanner.swap_extractor import SwapExtractorBlock
 from services.jobs.scanner.native_scan import NativeScannerBlock
+from services.jobs.scanner.swap_extractor import SwapExtractorBlock
 from services.jobs.transfer_detector import RuneTransferDetectorTxLogs
 from services.jobs.user_counter import UserCounter
 from services.jobs.volume_filler import VolumeFillerUpdater
@@ -100,6 +100,8 @@ class App:
         self._init_messaging()
 
         d.emergency = EmergencyReport(d.cfg.first_admin_id, d.telegram_bot.bot)
+        if d.twitter_bot:
+            d.twitter_bot.emergency = d.emergency
 
     def _init_configuration(self, log_level=None):
         d = self.deps
