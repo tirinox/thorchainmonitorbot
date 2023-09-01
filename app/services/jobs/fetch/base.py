@@ -9,39 +9,45 @@ from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
 
 
+class WatchedEntity:
+    def __init__(self):
+        self.name = self.__class__.__qualname__
+        self.sleep_period = 1.0
+        self.initial_sleep = 1.0
+        self.last_timestamp = 0.0
+        self.error_counter = 0
+        self.total_ticks = 0
+        self.creating_date = now_ts()
+
+
 class DataController:
     def __init__(self):
         self._tracker = {}
 
-    def register(self, fetcher):
-        if not fetcher:
+    def register(self, entity: WatchedEntity):
+        if not entity:
             return
-        name = fetcher.name
-        self._tracker[name] = fetcher
+        name = entity.name
+        self._tracker[name] = entity
 
-    def unregister(self, fetcher):
-        if not fetcher:
+    def unregister(self, entity):
+        if not entity:
             return
-        self._tracker.pop(fetcher.name)
+        self._tracker.pop(entity.name)
 
     @property
-    def summary(self) -> Dict[str, 'BaseFetcher']:
+    def summary(self) -> Dict[str, WatchedEntity]:
         return self._tracker
 
 
-class BaseFetcher(WithDelegates, ABC):
+class BaseFetcher(WithDelegates, WatchedEntity, ABC):
     def __init__(self, deps: DepContainer, sleep_period=60):
         super().__init__()
         self.deps = deps
-        self.name = self.__class__.__qualname__
-        self.sleep_period = sleep_period
-        self.initial_sleep = 1.0
         self.logger = class_logger(self)
-        self.last_timestamp = 0.0
-        self.error_counter = 0
-        self.total_ticks = 0
+
+        self.sleep_period = sleep_period
         self.data_controller.register(self)
-        self.creating_date = now_ts()
 
     @property
     def success_rate(self):
