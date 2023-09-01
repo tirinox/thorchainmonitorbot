@@ -55,6 +55,7 @@ class DepContainer:
     mimir_const_fetcher = None  # type: 'ConstMimirFetcher'
     last_block_fetcher = None  # type: 'LastBlockFetcher'
     saver_stats_fetcher = None
+    data_controller = None
 
     node_op_notifier = None  # type: 'NodeChangePersonalNotifier'
     block_notifier = None  # type: 'BlockHeightNotifier'

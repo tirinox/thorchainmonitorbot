@@ -3,6 +3,7 @@ from aiogram.dispatcher.filters.state import StatesGroup, State
 from aiogram.types import *
 from aiogram.utils.helper import HelperMode
 
+from localization.admin import AdminMessages
 from services.dialog.avatar_picture_dialog import AvatarDialog
 from services.dialog.base import message_handler, BaseDialog
 from services.dialog.metrics_menu import MetricsDialog
@@ -136,6 +137,13 @@ class MainMenuDialog(BaseDialog):
         await message.answer(self.loc.help_message(),
                              disable_web_page_preview=True,
                              disable_notification=True)
+
+    @message_handler(commands='debug', state='*')
+    async def cmd_debug(self, message: Message):
+        text = await AdminMessages(self.deps).get_debug_message_text()
+        await message.answer(text,
+                             disable_notification=True,
+                             disable_web_page_preview=True)
 
     @message_handler(filters.RegexpCommandsFilter(regexp_commands=[r'/.*']), state='*')
     async def on_unknown_command(self, message: Message):
