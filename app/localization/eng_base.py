@@ -449,7 +449,10 @@ class BaseLocalization(ABC):  # == English
             chain = Chains.AVAX
         elif a.token.chain_id == Chains.web3_chain_id(Chains.BSC):
             chain = Chains.BSC
-        return f'{self.format_op_amount(a.amount)} {chain}.{a.token.symbol}'
+        if a.amount > 0:
+            return f'{self.format_op_amount(a.amount)} {chain}.{a.token.symbol}'
+        else:
+            return f'{chain}.{a.token.symbol}'
 
     def format_swap_route(self, tx: ThorTx, usd_per_rune, dollar_assets=False):
         inputs = tx.get_asset_summary(in_only=True)
