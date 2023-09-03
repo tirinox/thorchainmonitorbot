@@ -7,6 +7,7 @@ from services.lib.constants import Chains
 from services.lib.delegates import WithDelegates, INotified
 from services.lib.depcont import DepContainer
 from services.lib.money import Asset
+from services.lib.texts import shorten_text
 from services.lib.utils import WithLogger
 from services.lib.w3.aggr_contract import AggregatorContract
 from services.lib.w3.erc20_contract import ERC20Contract
@@ -43,6 +44,13 @@ class AggregatorSingleChain:
             aggr_name
         )
 
+    def search_aggregator(self, tc_aggregator):
+        if tc_aggregator:
+            record = self.aggregator_resolver.search_aggregator_address(tc_aggregator)
+            if record:
+                return record.name
+        return shorten_text(tc_aggregator, limit=20)
+
     async def decode_swap_out(self, tx_hash) -> Optional[AmountToken]:
         tx = await self.w3.get_transaction(tx_hash)
 
@@ -52,18 +60,14 @@ class AggregatorSingleChain:
 
         token = ERC20Contract(self.w3, swap_out_call.target_token, self.token_list.chain_id)
 
-        aggr_name = ''
-        if swap_out_call.tc_aggregator:
-            record = self.aggregator_resolver.search_aggregator_address(swap_out_call.tc_aggregator)
-            if record:
-                aggr_name = record.name
-
         receipt_data = await self.w3.get_transaction_receipt(tx_hash)
         transfers = token.get_transfer_events_from_receipt(receipt_data, filter_by_receiver=swap_out_call.to_address)
         final_transfer = transfers[0]
         amount = final_transfer['args']['value']
 
         token_info = await self.token_list.resolve_token(swap_out_call.target_token)
+
+        aggr_name = self.search_aggregator(swap_out_call.tc_aggregator)
         return self.make_pair(amount, token_info, aggr_name)
 
     async def decode_swap_in(self, tx_hash) -> Optional[AmountToken]:
@@ -131,12 +135,30 @@ class AggregatorDataExtractor(WithLogger, INotified, WithDelegates):
         except (ValueError, AttributeError, TypeError, LookupError):
             self.logger.exception(f'Error decoding Swap {tag} @ {tx_hash} ({chain})')
 
+    def _try_detect_out_aggregator_from_memo(self, tx: ThorTx) -> Optional[AmountToken]:
+        if memo := tx.memo:
+            if memo.uses_aggregator_out:
+                chain = Asset(tx.first_output_tx.coins[0].asset).chain
+                aggr = self.asset_to_aggr.get(chain)
+
+                token = await aggr.token_list.resolve_token(memo.final_asset_address)
+                aggr_name = aggr.search_aggregator(memo.dex_aggregator_address)
+
+                return AmountToken(
+                    -1,  # unknown,
+                    token=token,
+                    aggr_name=aggr_name
+                )
+
     async def on_data(self, sender, txs: List[ThorTx]):
         with suppress(Exception):  # This must not break the rest of the pipeline! So ignore everything bad
             for tx in txs:
                 if tx.type == TxType.SWAP:
                     in_amount = await self._try_detect_aggregator(tx.first_input_tx, is_in=True)
-                    out_amount = await self._try_detect_aggregator(tx.first_output_tx, is_in=False)
+
+                    # out_amount = await self._try_detect_aggregator(tx.first_output_tx, is_in=False)
+                    out_amount = self._try_detect_out_aggregator_from_memo(tx)
+
                     if in_amount or out_amount:
                         self.logger.info(f'DEX aggregator detected: IN({in_amount}), OUT({out_amount})')
                     tx.dex_info = SwapInOut(in_amount, out_amount)

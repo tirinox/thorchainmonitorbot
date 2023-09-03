@@ -75,6 +75,10 @@ class THORMemo:
     def is_streaming(self):
         return self.s_swap_quantity > 1
 
+    @property
+    def uses_aggregator_out(self):
+        return bool(self.dex_aggregator_address)
+
     @classmethod
     def parse_streaming_params(cls, ss: str):
         s_swap_components = ss.split('/')
