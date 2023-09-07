@@ -38,6 +38,9 @@ class PoolFetcher(BaseFetcher):
     async def fetch(self) -> RuneMarketInfo:
         current_pools = await self.reload_global_pools()
 
+        price = self.deps.price_holder.usd_per_rune
+        self.logger.info(f'Fresh rune price is ${price:.3f}, {len(current_pools)} total pools')
+
         rune_market_info: RuneMarketInfo = await self.deps.rune_market_fetcher.get_rune_market_info()
         if rune_market_info:
             rune_market_info.pools = current_pools
@@ -55,9 +58,6 @@ class PoolFetcher(BaseFetcher):
         # store into the global state
         if current_pools:
             price_holder.update(current_pools)
-
-        price = price_holder.usd_per_rune
-        self.logger.info(f'Fresh rune price is ${price:.3f}, {len(current_pools)} total pools')
 
         return price_holder.pool_info_map
 
