@@ -39,5 +39,5 @@ yarn install
 yarn build
 
 # move everything to /web/frontend
-mv dist/*   ./web/frontend
+cp -r * ../../thorchainmonitorbot/web/frontend/
 ```
