@@ -56,6 +56,7 @@ from services.models.tx_type import TxType
 from services.notify.alert_presenter import AlertPresenter
 from services.notify.broadcast import Broadcaster
 from services.notify.personal.balance import PersonalBalanceNotifier
+from services.notify.personal.bond_provider import PersonalBondProviderNotifier
 from services.notify.personal.personal_main import NodeChangePersonalNotifier
 from services.notify.personal.price_divergence import PersonalPriceDivergenceNotifier, SettingsProcessorPriceDivergence
 from services.notify.personal.scheduled import PersonalPeriodicNotificationService
@@ -364,7 +365,10 @@ class App:
             notifier_nodes = NodeChurnNotifier(d)
             churn_detector.add_subscriber(notifier_nodes)
 
-            # notifier_nodes.add_subscriber(d.alert_presenter)  # not ready yet
+            bond_provider_tools = PersonalBondProviderNotifier(d)
+            churn_detector.add_subscriber(bond_provider_tools)
+
+            bond_provider_tools.add_subscriber(d.alert_presenter)
 
             if achievements_enabled:
                 churn_detector.add_subscriber(achievements)

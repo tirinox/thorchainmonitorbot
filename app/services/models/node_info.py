@@ -3,7 +3,7 @@ import random
 import re
 import secrets
 import typing
-from collections import Counter
+from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from statistics import median
 from typing import List, Dict, NamedTuple, Optional, Tuple, Any
@@ -161,6 +161,27 @@ def calculate_security_cap_rune(nodes: List[NodeInfo], full=False):
     return thor_to_float(cap)
 
 
+class BondFeeChange(NamedTuple):
+    node_address: str
+    previous: int
+    current: int
+
+
+class EventBondProviderPayout(NamedTuple):
+    node_address: str
+    bond_provider: BondProvider
+    rune_payout: float
+
+class EventBondProviderInOut(NamedTuple):
+    node_address: str
+    bond_provider: BondProvider
+    is_out: bool
+
+    @property
+    def is_in(self):
+        return not self.is_out
+
+
 @dataclass
 class NodeSetChanges:
     nodes_added: List[NodeInfo] = field(default_factory=list)
@@ -314,6 +335,23 @@ class NodeSetChanges:
                 f"removed={len(self.nodes_removed)}, "
                 f"activated={len(self.nodes_activated)}, "
                 f"deactivated={len(self.nodes_deactivated)})")
+
+    @property
+    def bond_providers_churns(self):
+        return [
+            EventBondProviderInOut(node.node_address, bp, is_out=(not node.is_active))
+            for node in self.nodes_activated + self.nodes_deactivated
+            for bp in node.bond_providers
+        ]
+
+    @property
+    def bond_providers_churns_by_address(self):
+        # why don't you use groupby?
+        addr2events = defaultdict(list)
+        for ev in self.bond_providers_churns:
+            addr2events[ev.bond_provider.address].append(ev)
+        return addr2events
+
 
 
 @dataclass
