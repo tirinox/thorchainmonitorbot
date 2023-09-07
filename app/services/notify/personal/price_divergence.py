@@ -4,22 +4,22 @@ from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
 from services.lib.settings_manager import SettingsManager
-from services.lib.utils import class_logger
+from services.lib.utils import class_logger, WithLogger
 from services.models.node_watchers import AlertWatchers
 from services.models.price import RuneMarketInfo
 from services.notify.channel import ChannelDescriptor, BoardMessage
 from services.notify.personal.helpers import GeneralSettings
 
 
-class PersonalPriceDivergenceNotifier(INotified):
+class PersonalPriceDivergenceNotifier(INotified, WithLogger):
     LAST_VALUE_KEY = '$PriceDivLastValue'
 
     def __init__(self, deps: DepContainer):
+        super().__init__()
         self.deps = deps
         self.personal_cooldown = parse_timespan_to_seconds(
             deps.cfg.as_str('price.divergence.personal.cooldown', '1h')
         )
-        self.logger = class_logger(self)
 
     async def on_data(self, sender, rune_market_info: RuneMarketInfo):
         users = await self.deps.alert_watcher.all_users_for_node(GeneralSettings.PRICE_DIV_ALERTS)

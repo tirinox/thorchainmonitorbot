@@ -135,7 +135,7 @@ class AggregatorDataExtractor(WithLogger, INotified, WithDelegates):
         except (ValueError, AttributeError, TypeError, LookupError):
             self.logger.exception(f'Error decoding Swap {tag} @ {tx_hash} ({chain})')
 
-    def _try_detect_out_aggregator_from_memo(self, tx: ThorTx) -> Optional[AmountToken]:
+    async def _try_detect_out_aggregator_from_memo(self, tx: ThorTx) -> Optional[AmountToken]:
         if memo := tx.memo:
             if memo.uses_aggregator_out:
                 chain = Asset(tx.first_output_tx.coins[0].asset).chain
@@ -157,7 +157,7 @@ class AggregatorDataExtractor(WithLogger, INotified, WithDelegates):
                     in_amount = await self._try_detect_aggregator(tx.first_input_tx, is_in=True)
 
                     # out_amount = await self._try_detect_aggregator(tx.first_output_tx, is_in=False)
-                    out_amount = self._try_detect_out_aggregator_from_memo(tx)
+                    out_amount = await self._try_detect_out_aggregator_from_memo(tx)
 
                     if in_amount or out_amount:
                         self.logger.info(f'DEX aggregator detected: IN({in_amount}), OUT({out_amount})')
