@@ -120,18 +120,22 @@ class MyWalletsMenu(DialogWithSettings):
     async def _show_address_selection_menu(self, message: Message, edit=False, show_add_more=True):
         await LPMenuStates.MAIN_MENU.set()
 
+        header = self.loc.TEXT_WALLETS_INTRO
+
         my_addresses = self.my_addresses
         if not my_addresses:
-            await message.answer(self.loc.TEXT_NO_ADDRESSES,
+            text = f'{header}\n{self.loc.TEXT_NO_ADDRESSES}'
+            await message.answer(text,
                                  reply_markup=kbd([self.loc.BUTTON_BACK]),
                                  disable_notification=True)
         else:
             tg_list = await self._make_address_keyboard_list(my_addresses)
             keyboard = tg_list.keyboard()
+            text = f'{header}\n{self.loc.TEXT_YOUR_ADDRESSES}'
             if edit:
-                await message.edit_text(self.loc.TEXT_YOUR_ADDRESSES, reply_markup=keyboard)
+                await message.edit_text(text, reply_markup=keyboard)
             else:
-                await message.answer(self.loc.TEXT_YOUR_ADDRESSES, reply_markup=keyboard, disable_notification=True)
+                await message.answer(text, reply_markup=keyboard, disable_notification=True)
 
         if show_add_more and my_addresses:
             msg = self.loc.TEXT_SELECT_ADDRESS_ABOVE if my_addresses else ''
@@ -263,6 +267,11 @@ class MyWalletsMenu(DialogWithSettings):
         # ---------------------------- ROW 1 ------------------------------
         row1 = []
         if my_pools:
+            # View value ON/OFF toggle switch
+            row1.append(InlineKeyboardButton(
+                self.loc.BUTTON_VIEW_VALUE_ON if view_value else self.loc.BUTTON_VIEW_VALUE_OFF,
+                callback_data=self.QUERY_TOGGLE_VIEW_VALUE))
+
             # Summary button (only if there are LP pools)
             row1.append(InlineKeyboardButton(
                 self.loc.BUTTON_SM_SUMMARY,
@@ -290,11 +299,15 @@ class MyWalletsMenu(DialogWithSettings):
         # ---------------------------- ROW 3 ------------------------------
         row3 = []
 
-        if my_pools:
-            # View value ON/OFF toggle switch
-            row3.append(InlineKeyboardButton(
-                self.loc.BUTTON_VIEW_VALUE_ON if view_value else self.loc.BUTTON_VIEW_VALUE_OFF,
-                callback_data=self.QUERY_TOGGLE_VIEW_VALUE))
+        if chain == Chains.THOR and not external:
+            ...
+            # todo: track bond
+
+        # todo: row3
+        # Track balance ON/OFF toggle switch
+        # text = self.loc.BUTTON_TRACK_BALANCE_ON if track_balance else self.loc.BUTTON_TRACK_BALANCE_OFF
+        # text = self.text_new_feature(text, Features.F_PERSONAL_TRACK_BALANCE)
+        # row2.append(InlineKeyboardButton(text, callback_data=self.QUERY_TOGGLE_BALANCE))
 
         if row3:
             below_button_matrix.append(row3)
@@ -664,3 +677,7 @@ class MyWalletsMenu(DialogWithSettings):
             ],
         ])
         return picture_kb
+
+    @classmethod
+    async def easy_enter(cls, source_dialog):
+        await cls.from_other_dialog(source_dialog).call_in_context(cls.on_enter)

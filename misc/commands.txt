@@ -1,4 +1,5 @@
 start - Start/restart the bot
+wallets - List of wallets you follow
 lp - Track LP/Savings yield
 price - Rune price chart
 stats - THORChain stats

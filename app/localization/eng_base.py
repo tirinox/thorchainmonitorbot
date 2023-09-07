@@ -191,6 +191,13 @@ class BaseLocalization(ABC):  # == English
         return f'🔔 <b>Congratulations!</b> You have successfully subscribed.\n' \
                f'The next update will come to you on {ital(next_date)}.'
 
+    TEXT_WALLETS_INTRO = (
+        'Here you can add the addresses of the wallets you want to follow. The following features are available:\n'
+        '👉 Liquidity Provisioning\n'
+        '👉 Savings vaults\n'
+        '👉 Track balances and actions\n'
+        '👉 Provision of Bond to nodes\n'
+    )
     TEXT_NO_ADDRESSES = "🔆 You have not added any addresses yet. Send me one."
     TEXT_YOUR_ADDRESSES = '🔆 You added addresses:'
     TEXT_INVALID_ADDRESS = code('⛔️ Invalid address!')

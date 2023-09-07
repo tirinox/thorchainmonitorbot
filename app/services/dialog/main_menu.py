@@ -103,14 +103,19 @@ class MainMenuDialog(BaseDialog):
         await MetricsDialog(self.loc, self.data, self.deps, self.message).show_mimir_info(message)
 
     @message_handler(commands='cexflow', state='*')
-    async def cmd_lp(self, message: Message):
+    async def cmd_cex_flow(self, message: Message):
         message.text = ''
         await MetricsDialog(self.loc, self.data, self.deps, self.message).show_cex_flow(message)
 
     @message_handler(commands='lp', state='*')
     async def cmd_lp(self, message: Message):
         message.text = ''
-        await MyWalletsMenu.from_other_dialog(self).call_in_context(MyWalletsMenu.on_enter)
+        await MyWalletsMenu.easy_enter(self)
+
+    @message_handler(commands='wallets', state='*')
+    async def cmd_wallets(self, message: Message):
+        message.text = ''
+        await MyWalletsMenu.easy_enter(self)
 
     @message_handler(commands='supply', state='*')
     async def cmd_supply(self, message: Message):
