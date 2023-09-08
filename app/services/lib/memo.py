@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from typing import Union
 
-from services.lib.constants import THOR_BASIS_POINT_MAX
+from services.lib.constants import bp_to_float
 from services.models.tx_type import TxType
 
 MEMO_ACTION_TABLE = {
@@ -108,7 +108,7 @@ class THORMemo:
             return cls(
                 tx_type, asset, dest_address, limit, s_swap_interval, s_swap_quantity,
                 affiliate_address=cls.ith_or_default(components, 4),
-                affiliate_fee=cls.ith_or_default(components, 5, 0, dtype=int) / THOR_BASIS_POINT_MAX,
+                affiliate_fee=bp_to_float(cls.ith_or_default(components, 5, 0, dtype=int)),
                 dex_aggregator_address=cls.ith_or_default(components, 6),
                 final_asset_address=cls.ith_or_default(components, 7),
                 min_amount_out=cls.ith_or_default(components, 8, 0, dtype=int),
@@ -129,7 +129,7 @@ class THORMemo:
                 s_swap_interval,
                 s_swap_quantity,
                 affiliate_address=cls.ith_or_default(components, 4),
-                affiliate_fee=cls.ith_or_default(components, 5, 0, dtype=int) / THOR_BASIS_POINT_MAX,
+                affiliate_fee=bp_to_float(cls.ith_or_default(components, 5, 0, dtype=int)),
                 dex_aggregator_address=cls.ith_or_default(components, 6),
                 final_asset_address=cls.ith_or_default(components, 7),
                 min_amount_out=cls.ith_or_default(components, 8, 0, dtype=int)

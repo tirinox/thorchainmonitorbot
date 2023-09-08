@@ -1,7 +1,8 @@
 from typing import List
 
 from services.jobs.fetch.base import BaseFetcher
-from services.lib.constants import Chains, float_to_thor, thor_to_float, THOR_BLOCK_TIME, THOR_BASIS_POINT_MAX
+from services.lib.constants import Chains, float_to_thor, thor_to_float, THOR_BLOCK_TIME, THOR_BASIS_POINT_MAX, \
+    bp_to_float
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.money import Asset, AssetRUNE
@@ -93,8 +94,9 @@ class StreamingSwapQuote(WithLogger):
         slippage_bps = int(result['slippage_bps'])
 
         asset_depth = thor_to_float(in_pool.balance_asset)
-        two_bps_depth = 2 / THOR_BASIS_POINT_MAX * asset_depth
+        two_bps_depth = bp_to_float(2) * asset_depth
 
         full_swaps, reminder_swap = divmod(asset_depth, two_bps_depth)
         full_swaps = int(full_swaps)
 
+        # to be continued...

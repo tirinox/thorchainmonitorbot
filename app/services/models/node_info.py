@@ -10,12 +10,11 @@ from typing import List, Dict, NamedTuple, Optional, Tuple, Any
 
 from semver import VersionInfo
 
-from services.lib.constants import thor_to_float, float_to_thor
+from services.lib.constants import thor_to_float, float_to_thor, bp_to_float
 from services.lib.date_utils import now_ts
 from services.lib.texts import find_country_emoji
 from services.lib.thor_logic import get_effective_security_bond
 from services.models.base import BaseModelMixin
-from services.models.thormon import ThorMonNode
 
 ZERO_VERSION = VersionInfo(0, 0, 0)
 
@@ -45,6 +44,7 @@ class NodeInfo(BaseModelMixin):
     current_award: float = 0.0
 
     bond_providers: List[BondProvider] = field(default_factory=list)
+    node_operator_fee: float = 0.0
 
     # new fields
     requested_to_leave: bool = False
@@ -93,6 +93,7 @@ class NodeInfo(BaseModelMixin):
             return None
         d = json.loads(jstr) if isinstance(jstr, (str, bytes)) else jstr
 
+        bond_provider_info = d.get('bond_providers', {})
         return cls(
             status=d.get('status', NodeInfo.DISABLED),
             node_address=d.get('node_address', ''),
@@ -111,8 +112,9 @@ class NodeInfo(BaseModelMixin):
                 BondProvider(
                     address=prov.get('bond_address'),
                     rune_bond=thor_to_float(prov.get('bond', 0))
-                ) for prov in (d.get('bond_providers', {}).get('providers') or [])
-            ]
+                ) for prov in (bond_provider_info.get('providers') or [])
+            ],
+            node_operator_fee=bp_to_float(bond_provider_info.get('node_operator_fee', 0))
         )
 
     @staticmethod
@@ -171,6 +173,7 @@ class EventBondProviderPayout(NamedTuple):
     node_address: str
     bond_provider: BondProvider
     rune_payout: float
+
 
 class EventBondProviderInOut(NamedTuple):
     node_address: str
@@ -353,7 +356,6 @@ class NodeSetChanges:
         return addr2events
 
 
-
 @dataclass
 class NetworkNodeIpInfo:
     UNKNOWN_PROVIDER = 'Unknown'
@@ -464,6 +466,11 @@ class EventDataSlash(NamedTuple):
         return abs(self.current_pts - self.previous_pts)
 
 
+class EventNodeFeeChange(NamedTuple):
+    previous: float
+    current: float
+
+
 class NodeEventType:
     VERSION_CHANGED = 'version_change'
     NEW_VERSION_DETECTED = 'new_version'
@@ -480,6 +487,9 @@ class NodeEventType:
 
     TEXT_MESSAGE = 'message_txt'
 
+    # bond provider tools:
+    FEE_CHANGE = 'fee_change'
+
 
 class NodeEvent(NamedTuple):
     address: str
@@ -487,7 +497,6 @@ class NodeEvent(NamedTuple):
     data: Any
     single_per_user: bool = False
     node: NodeInfo = None
-    thor_node: ThorMonNode = None
     tracker: object = None
 
     ANY = '*'

@@ -1,7 +1,7 @@
 from typing import NamedTuple, Optional, Tuple, Union
 
 from proto.access import DecodedEvent
-from services.lib.constants import POOL_MODULE, NATIVE_RUNE_SYMBOL, thor_to_float, THOR_BASIS_POINT_MAX
+from services.lib.constants import POOL_MODULE, NATIVE_RUNE_SYMBOL, thor_to_float, bp_to_float
 from services.lib.utils import expect_string
 
 
@@ -225,7 +225,7 @@ class EventLoanOpen(NamedTuple):
     @classmethod
     def from_event(cls, event: DecodedEvent):
         attrs = event.attributes
-        cr = int(attrs.get('collateralization_ratio', 0)) / THOR_BASIS_POINT_MAX
+        cr = bp_to_float(attrs.get('collateralization_ratio', 0))
         return cls(
             tx_id='',
             collateral_deposited=int(attrs.get('collateral_deposited', 0)),

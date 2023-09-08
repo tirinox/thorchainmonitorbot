@@ -1,7 +1,8 @@
 from typing import Optional, List, Tuple
 
-from aiothornode.types import thor_to_float, THOR_BASIS_POINT_MAX
+from aiothornode.types import thor_to_float
 
+from services.lib.constants import bp_to_percent
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds, MINUTE
 from services.lib.delegates import INotified, WithDelegates
@@ -54,7 +55,7 @@ class POLNotifier(WithDelegates, INotified, WithLogger):
         mimir = self.deps.mimir_const_holder
 
         synth_target = mimir.get_constant(MIMIR_KEY_POL_TARGET_SYNTH_PER_POOL_DEPTH, 4500)
-        synth_target = thor_to_float(synth_target) / THOR_BASIS_POINT_MAX * 100.0
+        synth_target = bp_to_percent(synth_target)
 
         event = event._replace(
             previous=previous_data or event.previous,

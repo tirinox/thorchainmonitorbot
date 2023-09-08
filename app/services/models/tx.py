@@ -2,7 +2,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import List, Optional, NamedTuple
 
-from services.lib.constants import is_rune, RUNE_SYMBOL, Chains, thor_to_float, THOR_BASIS_POINT_MAX
+from services.lib.constants import is_rune, RUNE_SYMBOL, Chains, thor_to_float, bp_to_float
 from services.lib.date_utils import now_ts
 from services.lib.memo import THORMemo
 from services.lib.money import Asset
@@ -83,7 +83,7 @@ class ThorMetaSwap:
             network_fees=fees,
             trade_slip=int(j.get('swapSlip', '0')),
             trade_target=int(j.get('swapTarget', '0')),
-            affiliate_fee=float(j.get('affiliateFee', 0)) / THOR_BASIS_POINT_MAX,
+            affiliate_fee=bp_to_float(j.get('affiliateFee', 0)),
             memo=j.get('memo', ''),
             affiliate_address=j.get('affiliateAddress', '')
         )

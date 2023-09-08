@@ -192,6 +192,14 @@ THOR_BLOCKS_PER_MINUTE = MINUTE * THOR_BLOCK_SPEED
 THOR_BASIS_POINT_MAX = 10_000
 
 
+def bp_to_float(bp):
+    return int(bp) / THOR_BASIS_POINT_MAX
+
+
+def bp_to_percent(bp):
+    return bp_to_float(bp) * 100.0
+
+
 def thor_to_float(x) -> float:
     return int(x) * THOR_DIVIDER_INV
 

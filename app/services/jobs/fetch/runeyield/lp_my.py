@@ -560,7 +560,6 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
                 a0 += a
                 units += tx.meta_add.liquidity_units_int
             elif tx.type == TxType.WITHDRAW:
-                # part_ratio = tx.meta_withdraw.basis_points_int / THOR_BASIS_POINT_MAX
                 delta_units = abs(tx.meta_withdraw.liquidity_units_int)
                 part_ratio = delta_units / units
                 units -= delta_units

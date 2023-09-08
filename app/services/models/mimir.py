@@ -7,7 +7,7 @@ from itertools import chain
 
 from aiothornode.types import ThorConstants, ThorMimir, ThorMimirVote
 
-from services.lib.constants import THOR_BASIS_POINT_MAX
+from services.lib.constants import bp_to_float
 from services.lib.texts import split_by_camel_case
 from services.models.base import BaseModelMixin
 from services.models.mimir_naming import TRANSLATE_MIMIRS, EXCLUDED_VOTE_KEYS, MimirUnits, try_deducting_mimir_name, \
@@ -282,4 +282,4 @@ class MimirHolder:
 
     def get_max_synth_per_pool_depth(self) -> float:
         value = self.get_constant(MIMIR_KEY_MAX_SYNTH_PER_POOL_DEPTH, 1500)
-        return value / THOR_BASIS_POINT_MAX
+        return bp_to_float(value)
