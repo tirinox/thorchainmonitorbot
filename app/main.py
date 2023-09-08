@@ -368,8 +368,6 @@ class App:
             bond_provider_tools = PersonalBondProviderNotifier(d)
             churn_detector.add_subscriber(bond_provider_tools)
 
-            bond_provider_tools.add_subscriber(d.alert_presenter)
-
             if achievements_enabled:
                 churn_detector.add_subscriber(achievements)
 

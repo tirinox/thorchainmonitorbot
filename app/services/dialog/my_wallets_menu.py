@@ -23,7 +23,8 @@ from services.lib.new_feature import Features
 from services.lib.texts import kbd, cut_long_text
 from services.lib.utils import paste_at_beginning_of_dict, grouper
 from services.models.lp_info import LPAddress
-from services.notify.personal.balance import WalletWatchlist, BondWatchlist
+from services.notify.personal.balance import WalletWatchlist
+from services.notify.personal.bond_provider import BondWatchlist
 from services.notify.personal.helpers import GeneralSettings, Props
 from services.notify.personal.scheduled import PersonalPeriodicNotificationService
 
