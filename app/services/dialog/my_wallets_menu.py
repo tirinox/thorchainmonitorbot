@@ -1,5 +1,6 @@
 import asyncio
 import logging
+from contextlib import suppress
 from typing import Optional
 
 from aiogram.dispatcher.filters.state import StatesGroup, State
@@ -22,7 +23,7 @@ from services.lib.new_feature import Features
 from services.lib.texts import kbd, cut_long_text
 from services.lib.utils import paste_at_beginning_of_dict, grouper
 from services.models.lp_info import LPAddress
-from services.notify.personal.balance import WalletWatchlist
+from services.notify.personal.balance import WalletWatchlist, BondWatchlist
 from services.notify.personal.helpers import GeneralSettings, Props
 from services.notify.personal.scheduled import PersonalPeriodicNotificationService
 
@@ -47,6 +48,7 @@ class MyWalletsMenu(DialogWithSettings):
     QUERY_1D = '1d'
     QUERY_7D = '7d'
     QUERY_30D = '30d'
+    QUERY_BOND_PROVIDER = 'bond-provider'
 
     KEY_CAN_VIEW_VALUE = 'can-view-value'
     KEY_ADD_LP_PROTECTION = 'add-lp-prot'
@@ -245,6 +247,7 @@ class MyWalletsMenu(DialogWithSettings):
         address = self.data.get(self.KEY_ACTIVE_ADDRESS)
         address_obj = self._get_address_object(address)
         track_balance = address_obj.get(Props.PROP_TRACK_BALANCE, False)
+        track_bond = address_obj.get(Props.PROP_TRACK_BOND, True)
 
         if my_pools is None:
             my_pools = []
@@ -297,19 +300,11 @@ class MyWalletsMenu(DialogWithSettings):
             below_button_matrix.append(row2)
 
         # ---------------------------- ROW 3 ------------------------------
-        row3 = []
 
         if chain == Chains.THOR and not external:
-            ...
-            # todo: track bond
-
-        # todo: row3
-        # Track balance ON/OFF toggle switch
-        # text = self.loc.BUTTON_TRACK_BALANCE_ON if track_balance else self.loc.BUTTON_TRACK_BALANCE_OFF
-        # text = self.text_new_feature(text, Features.F_PERSONAL_TRACK_BALANCE)
-        # row2.append(InlineKeyboardButton(text, callback_data=self.QUERY_TOGGLE_BALANCE))
-
-        if row3:
+            text = self.loc.BUTTON_TRACK_BOND_ON if track_bond else self.loc.BUTTON_TRACK_BOND_OFF
+            text = self.text_new_feature(text, Features.F_BOND_PROVIDER)
+            row3 = [InlineKeyboardButton(text, callback_data=self.QUERY_BOND_PROVIDER)]
             below_button_matrix.append(row3)
 
         # ---------------------------- ROW 4 ------------------------------
@@ -350,6 +345,11 @@ class MyWalletsMenu(DialogWithSettings):
             address = self.data[self.KEY_ACTIVE_ADDRESS]
             is_on = self._toggle_address_property(address, Props.PROP_TRACK_BALANCE)
             await self._process_wallet_balance_flag(address, is_on)
+            await self._present_wallet_contents_menu(query.message, edit=True)
+        elif query.data == self.QUERY_BOND_PROVIDER:
+            address = self.data[self.KEY_ACTIVE_ADDRESS]
+            is_on = self._toggle_address_property(address, Props.PROP_TRACK_BOND, default=True)
+            await self._process_wallet_track_bond_flag(address, is_on)
             await self._present_wallet_contents_menu(query.message, edit=True)
         elif query.data == self.QUERY_SET_RUNE_LIMIT:
             await self._enter_set_limit(query)
@@ -551,6 +551,7 @@ class MyWalletsMenu(DialogWithSettings):
             address = list(self.my_addresses.keys())[index]
             self.my_addresses.pop(address)
             await self._process_wallet_balance_flag(address, is_on=False)
+            await self._process_wallet_track_bond_flag(address, is_on=False)
         except IndexError:
             logging.error(f'Cannot delete address at {index = },')
 
@@ -588,18 +589,21 @@ class MyWalletsMenu(DialogWithSettings):
 
     async def get_balances(self, address: str):
         if LPAddress.is_thor_prefix(address):
-            try:
+            with suppress(Exception):
                 return await self.deps.thor_connector.query_balance(address)
-            except Exception:
-                pass
 
     async def _process_wallet_balance_flag(self, address: str, is_on: bool):
         user_id = str(self.data.fsm_context.user)
         await self._wallet_watch.set_user_to_node(user_id, address, is_on)
 
+    async def _process_wallet_track_bond_flag(self, address: str, is_on: bool):
+        user_id = str(self.data.fsm_context.user)
+        await self._bond_provider_watch.set_user_to_node(user_id, address, is_on)
+
     def __init__(self, loc: BaseLocalization, data: Optional[FSMContextProxy], d: DepContainer, message: Message):
         super().__init__(loc, data, d, message)
         self._wallet_watch = WalletWatchlist(d.db)
+        self._bond_provider_watch = BondWatchlist(d.db)
         self._subscribers = PersonalPeriodicNotificationService(d)
 
         prohibited_addresses = self.deps.cfg.get_pure('native_scanner.prohibited_addresses')

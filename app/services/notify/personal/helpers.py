@@ -54,6 +54,7 @@ class Props:
     PROP_ADDRESS = 'address'
     PROP_CHAIN = 'chain'
     PROP_MIN_LIMIT = 'min'
+    PROP_TRACK_BOND = 'bond_prov'
 
 
 class BaseChangeTracker:

@@ -12,7 +12,7 @@ from proto.types import ThorName
 from services.jobs.fetch.circulating import SupplyEntry, ThorRealms
 from services.lib.config import Config
 from services.lib.constants import thor_to_float, THOR_BLOCK_TIME, DEFAULT_CEX_NAME, \
-    DEFAULT_CEX_BASE_ASSET, THOR_BASIS_POINT_MAX
+    DEFAULT_CEX_BASE_ASSET, bp_to_percent
 from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE, DAY
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
     get_explorer_url_for_node, get_pool_url, get_thoryield_address, get_ip_info_link
@@ -166,6 +166,9 @@ class BaseLocalization(ABC):  # == English
 
     BUTTON_TRACK_BALANCE_ON = 'Track balance: ON'
     BUTTON_TRACK_BALANCE_OFF = 'Track balance: OFF'
+
+    BUTTON_TRACK_BOND_ON = 'Track bond: ON'
+    BUTTON_TRACK_BOND_OFF = 'Track bond: OFF'
 
     BUTTON_SET_RUNE_ALERT_LIMIT = 'Set min limit'
 
@@ -1453,7 +1456,7 @@ class BaseLocalization(ABC):  # == English
         elif units == MimirUnits.UNITS_USD:
             return short_dollar(thor_to_float(v))
         elif units == MimirUnits.UNITS_BASIS_POINTS:
-            p = int(v) / THOR_BASIS_POINT_MAX * 100.0
+            p = bp_to_percent(v)
             return f'{p:.02f}% ({int(v)} bp)'
         else:
             return str(v)

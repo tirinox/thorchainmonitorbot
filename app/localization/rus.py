@@ -126,8 +126,11 @@ class RussianLocalization(BaseLocalization):
     BUTTON_LP_PROT_ON = 'IL защита: ДА'
     BUTTON_LP_PROT_OFF = 'IL защита: НЕТ'
 
-    BUTTON_TRACK_BALANCE_ON = 'Следить: ДА'
-    BUTTON_TRACK_BALANCE_OFF = 'Следить: НЕТ'
+    BUTTON_TRACK_BALANCE_ON = 'Следить за балансом: ДА'
+    BUTTON_TRACK_BALANCE_OFF = 'Следить за балансом: НЕТ'
+
+    BUTTON_TRACK_BOND_ON = 'Следить за бондом: ДА'
+    BUTTON_TRACK_BOND_OFF = 'Следить за бондом: НЕТ'
 
     BUTTON_SET_RUNE_ALERT_LIMIT = 'Уст. мин. лимит R'
 

@@ -8,7 +8,7 @@ from services.lib.depcont import DepContainer
 from services.lib.midgard.name_service import NameMap
 from services.lib.money import Asset, ABSURDLY_LARGE_NUMBER
 from services.lib.settings_manager import SettingsManager
-from services.lib.utils import class_logger, safe_get, grouper
+from services.lib.utils import safe_get, grouper, WithLogger
 from services.models.node_watchers import UserWatchlist
 from services.models.transfer import RuneTransfer
 from services.notify.channel import ChannelDescriptor, BoardMessage
@@ -20,13 +20,18 @@ class WalletWatchlist(UserWatchlist):
         super().__init__(db, 'Wallet')
 
 
-class PersonalBalanceNotifier(INotified):
+class BondWatchlist(UserWatchlist):
+    def __init__(self, db: DB):
+        super().__init__(db, 'BondProvider')
+
+
+class PersonalBalanceNotifier(INotified, WithLogger):
     MAX_TRANSFER_PER_MESSAGE = 3
 
     def __init__(self, d: DepContainer):
+        super().__init__()
         self.deps = d
         self._watcher = WalletWatchlist(d.db)
-        self.logger = class_logger(self)
 
     async def on_data(self, sender, transfers: List[RuneTransfer]):
         self._fill_asset_price(transfers)
