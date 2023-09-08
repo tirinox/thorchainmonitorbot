@@ -117,6 +117,13 @@ class NodeInfo(BaseModelMixin):
             node_operator_fee=bp_to_float(bond_provider_info.get('node_operator_fee', 0))
         )
 
+    @classmethod
+    def from_db(cls, data):
+        instance = cls(**data)
+        # fix bond_providers by converting [str, float] to BondProvider
+        instance.bond_providers = [BondProvider(*arr) for arr in instance.bond_providers]
+        return instance
+
     @staticmethod
     def fake_node(status=ACTIVE, address=None, bond=None, ip=None, version='54.1', slash=0):
         r = lambda: random.randint(1, 255)
@@ -215,7 +222,7 @@ class NodeSetChanges:
 
     @property
     def has_churn_happened(self):
-        return self.nodes_activated or self.nodes_deactivated
+        return bool(self.nodes_activated or self.nodes_deactivated)
 
     @property
     def count_of_changes(self):
@@ -471,6 +478,19 @@ class EventNodeFeeChange(NamedTuple):
     current: float
 
 
+class EventProviderBondChange(NamedTuple):
+    bond_provider: str
+    prev_bond: float
+    curr_bond: float
+    on_churn: bool
+
+
+class EventProviderPresence(NamedTuple):
+    bond_provider: str
+    bond: float
+    appeared: bool
+
+
 class NodeEventType:
     VERSION_CHANGED = 'version_change'
     NEW_VERSION_DETECTED = 'new_version'
@@ -489,6 +509,8 @@ class NodeEventType:
 
     # bond provider tools:
     FEE_CHANGE = 'fee_change'
+    BOND_CHANGE = 'bond_change'
+    BP_PRESENCE = 'bp_presence'
 
 
 class NodeEvent(NamedTuple):

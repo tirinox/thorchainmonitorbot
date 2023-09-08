@@ -20,7 +20,7 @@ class NodeStateDatabase:
             db = self.deps.db
             j = await db.redis.get(self.key)
             raw_data_list = json.loads(j)
-            return [NodeInfo(**d) for d in raw_data_list]
+            return [NodeInfo.from_db(d) for d in raw_data_list]
         except (TypeError, ValueError, AttributeError, json.decoder.JSONDecodeError):
             self.logger.exception('get_last_node_info db error')
             return []
