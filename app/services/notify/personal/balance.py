@@ -6,7 +6,8 @@ from services.lib.money import Asset, ABSURDLY_LARGE_NUMBER
 from services.lib.utils import safe_get
 from services.models.node_watchers import UserWatchlist
 from services.models.transfer import RuneTransfer
-from services.notify.personal.helpers import GeneralSettings, Props, BasePersonalNotifier
+from services.notify.personal.helpers import GeneralSettings, Props
+from services.notify.personal.base import BasePersonalNotifier
 
 
 class WalletWatchlist(UserWatchlist):
