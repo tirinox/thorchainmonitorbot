@@ -474,6 +474,7 @@ class EventDataSlash(NamedTuple):
 
 
 class EventNodeFeeChange(NamedTuple):
+    bond_provider: str
     previous: float
     current: float
 
@@ -485,7 +486,7 @@ class EventProviderBondChange(NamedTuple):
     on_churn: bool
 
 
-class EventProviderPresence(NamedTuple):
+class EventProviderStatus(NamedTuple):
     bond_provider: str
     bond: float
     appeared: bool

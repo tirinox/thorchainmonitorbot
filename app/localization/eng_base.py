@@ -34,7 +34,8 @@ from services.models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVot
 from services.models.mimir_naming import MimirUnits, NEXT_CHAIN_VOTING_MAP
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEventType, NodeEvent, \
-    EventBlockHeight, EventDataSlash, calculate_security_cap_rune
+    EventBlockHeight, EventDataSlash, calculate_security_cap_rune, EventNodeFeeChange, EventProviderBondChange, \
+    EventProviderStatus
 from services.models.pol import AlertPOL
 from services.models.pool_info import PoolInfo, PoolChanges, PoolMapPair
 from services.models.price import PriceReport, RuneMarketInfo
@@ -2439,6 +2440,34 @@ class BaseLocalization(ABC):  # == English
             f'Debt repaid: {pre(pretty_dollar(l.debt_repaid))}\n'
             f'{user_link} | {db_link}'
         )
+
+    @staticmethod
+    def notification_text_bond_provider_alert(event: NodeEvent):
+        text = f'📡 <b>Bond provider:</b> {event.address}'
+
+        if event.type == NodeEventType.FEE_CHANGE:
+            # todo!
+            text = f'Fee changed for node: {event.address}: {event.data.previous} => {event.data.current}'
+            data: EventNodeFeeChange = event.data
+        elif event.type == NodeEventType.CHURNING:
+            # todo!
+            is_in = bool(event.data)
+
+            text = f''
+        elif event.type == NodeEventType.PRESENCE:
+            is_in = bool(event.data)
+            text = f'todo...'
+        elif event.type == NodeEventType.BOND_CHANGE:
+            # todo!
+            data: EventProviderBondChange = event.data
+            text = f'todo...'
+        elif event.type == NodeEventType.BP_PRESENCE:
+            # todo!
+            data: EventProviderStatus = event.data
+            text = f'todo...'
+        else:
+            text = ''
+        return text
 
 
 class EnglishLocalization(BaseLocalization):

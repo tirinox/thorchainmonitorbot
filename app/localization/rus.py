@@ -1801,3 +1801,8 @@ class RussianLocalization(BaseLocalization):
             f'Выплачен долг: {pre(pretty_dollar(l.debt_repaid))}\n'
             f'{user_link} | {db_link}'
         )
+
+    @staticmethod
+    def notification_text_bond_provider_alert(event: NodeEvent):
+        # todo!!!
+        return ''

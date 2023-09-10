@@ -1,7 +1,8 @@
+from localization.eng_base import BaseLocalization
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.models.node_info import NodeSetChanges, NodeInfo, EventNodeFeeChange, \
-    NodeEvent, NodeEventType, EventProviderBondChange, EventProviderPresence
+    NodeEvent, NodeEventType, EventProviderBondChange, EventProviderStatus
 from services.models.node_watchers import UserWatchlist
 from services.notify.personal.base import BasePersonalNotifier
 
@@ -33,6 +34,7 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
     async def _handle_fee_events(self, data: NodeSetChanges):
         fee_events = list(self._extract_fee_changes(data))
         provider_addresses = self._collect_provider_addresses_from_events(fee_events)
+        # send this message
         await self.group_and_send_messages(provider_addresses, fee_events)
 
     @staticmethod
@@ -65,7 +67,15 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
             events.append((node, NodeEventType.CHURNING, True))
         for node in data.nodes_deactivated:
             events.append((node, NodeEventType.CHURNING, False))
-        events = [NodeEvent(node.node_address, ev_type, data) for node, ev_type, data in events]
+
+        events = [
+            NodeEvent(
+                node.node_address, ev_type,
+                EventProviderStatus(bp.address, bp.rune_bond, appeared=data), node=node
+            )
+            for node, ev_type, data in events
+            for bp in node.bond_providers
+        ]
 
         addresses = self._collect_provider_addresses_from_events(events)
         await self.group_and_send_messages(addresses, events)
@@ -99,44 +109,27 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
                     ))
 
             added_bp = curr_bp_addresses - prev_bp_addresses
-            for address in added_bp:
+            for bp_address in added_bp:
                 events.append(NodeEvent(
                     node_address, NodeEventType.BP_PRESENCE,
-                    EventProviderPresence(address, curr_providers[address].rune_bond, appeared=True)
+                    EventProviderStatus(bp_address, curr_providers[bp_address].rune_bond, appeared=True)
                 ))
 
             left_bp = prev_bp_addresses - curr_bp_addresses
-            for address in left_bp:
+            for bp_address in left_bp:
                 events.append(NodeEvent(
                     node_address, NodeEventType.BP_PRESENCE,
-                    EventProviderPresence(address, prev_providers[address].rune_bond, appeared=False)
+                    EventProviderStatus(bp_address, prev_providers[bp_address].rune_bond, appeared=False)
                 ))
 
         await self.group_and_send_messages(addresses, events)
 
-    async def filter_events(self, event_list, user, settings):
-        return True  # all events are suitable
+    async def generate_messages(self, loc: BaseLocalization, group, settings, user, user_watch_addy_list, name_map):
+        return list(
+            filter(
+                bool, (loc.notification_text_bond_provider_alert(event) for event in group)
+            )
+        )
 
-    async def generate_messages(self, loc, group, settings, user, user_watch_addy_list, name_map):
-        messages = []
-        for event in group:
-            event: NodeEvent
-            if event.type == NodeEventType.FEE_CHANGE:
-                # todo!
-                text = f'Fee changed for node: {event.address}: {event.data.previous} => {event.data.current}'
-            elif event.type == NodeEventType.CHURNING:
-                # todo!
-                text = f'todo...'
-            elif event.type == NodeEventType.BOND_CHANGE:
-                # todo!
-                text = f'todo...'
-            elif event.type == NodeEventType.BP_PRESENCE:
-                # todo!
-                text = f'todo...'
-            else:
-                self.logger.warning(f'Unknown event type to build the alert text: {event.type}')
-                continue
-
-            messages.append(text)
-
-        return messages
+    def get_users_from_event(self, ev, address_to_user):
+        return address_to_user.get(ev.data.bond_provider)
