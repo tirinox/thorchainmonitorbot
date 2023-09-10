@@ -6,8 +6,8 @@ from services.lib.money import Asset, ABSURDLY_LARGE_NUMBER
 from services.lib.utils import safe_get
 from services.models.node_watchers import UserWatchlist
 from services.models.transfer import RuneTransfer
-from services.notify.personal.helpers import GeneralSettings, Props
 from services.notify.personal.base import BasePersonalNotifier
+from services.notify.personal.helpers import GeneralSettings, Props
 
 
 class WalletWatchlist(UserWatchlist):
@@ -75,6 +75,9 @@ class PersonalBalanceNotifier(BasePersonalNotifier):
                 results.append(transfer)
 
         return results
+
+    def get_users_from_event(self, ev: RuneTransfer, address_to_user):
+        return address_to_user.get(ev.from_addr) + address_to_user.get(ev.to_addr)
 
     async def generate_messages(self, loc, group, settings, user, user_watch_addy_list, name_map):
         return [loc.notification_text_rune_transfer(transfer, user_watch_addy_list, name_map) for transfer in group]

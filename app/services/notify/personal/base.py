@@ -45,7 +45,7 @@ class BasePersonalNotifier(INotified, WithLogger, ABC):
         # Sort events by user
         user_events = defaultdict(list)
         for ev in events:
-            users_for_event = set(address_to_user.get(ev.from_addr)) | set(address_to_user.get(ev.to_addr))
+            users_for_event = set(self.get_users_from_event(ev, address_to_user))
 
             for user in users_for_event:
                 user_events[user].append(ev)
@@ -80,11 +80,16 @@ class BasePersonalNotifier(INotified, WithLogger, ABC):
                     if group:
                         messages = await self.generate_messages(
                             loc, group, settings, user, user_watch_addy_list, name_map)
+
                         await self._send_message(messages, settings, user)
 
-    @abc.abstractmethod
     async def filter_events(self, event_list, user, settings):
-        return True
+        # no operation
+        return event_list
+
+    @abc.abstractmethod
+    def get_users_from_event(self, ev, address_to_user):
+        ...
 
     @abc.abstractmethod
     async def generate_messages(self, loc, group, settings, user, user_watch_addy_list, name_map):
