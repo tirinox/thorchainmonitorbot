@@ -2448,24 +2448,24 @@ class BaseLocalization(ABC):  # == English
         text = ''
         if event.type == NodeEventType.FEE_CHANGE:
             text = (
-                f'🔔 The node operator {node_link} has changed the fee from '
+                f'🔔 The node operator of {node_link} has changed the fee from '
                 f'{pre(format_percent(event.data.previous))} to {pre(format_percent(event.data.current))}.'
             )
         elif event.type == NodeEventType.CHURNING:
             data: EventProviderStatus = event.data
-            preposition = 'in → 🕸️' if data.appeared else 'out 🕸→'
+            preposition = 'in ✳️' if data.appeared else 'out ⏳'
             text = f'🔔 The node {node_link} where your wallet is a bond provider {bp_link} has churned {preposition}'
         elif event.type == NodeEventType.PRESENCE:
             data: EventProviderStatus = event.data
             verb = 'connected ✅' if data.appeared else 'disconnected ❌'
-            text = f'🔔 The node {node_link} where your wallet is a bond provider {bp_link} has {verb}.'
+            text = f'🔔 The node {node_link} where your wallet is a bond provider {bp_link} has {verb}'
         elif event.type == NodeEventType.BOND_CHANGE:
             data: EventProviderBondChange = event.data
             delta = data.curr_bond - data.prev_bond
             verb = '📈 increased' if delta > 0 else '📉 decreased'
             text = f'🔔 Bond {bp_link} has {verb} ' \
-                   f'from {short_rune(data.prev_bond)} ' \
-                   f'to {short_rune(data.curr_bond)} ({short_rune(delta, signed=True)}).'
+                   f'from {pre(short_rune(data.prev_bond))} ' \
+                   f'to {pre(short_rune(data.curr_bond))} ({pre(short_rune(delta, signed=True))}).'
         elif event.type == NodeEventType.BP_PRESENCE:
             data: EventProviderStatus = event.data
             if data.appeared:

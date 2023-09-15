@@ -5,7 +5,8 @@ from localization.eng_base import BaseLocalization
 from services.jobs.node_churn import NodeChurnDetector
 from services.lib.midgard.name_service import NameMap
 from services.lib.texts import sep
-from services.models.node_info import NodeEvent, NodeEventType, EventProviderStatus, EventNodeFeeChange
+from services.models.node_info import NodeEvent, NodeEventType, EventProviderStatus, EventNodeFeeChange, \
+    EventProviderBondChange
 from services.notify.personal.bond_provider import PersonalBondProviderNotifier
 from tools.lib.lp_common import LpAppFramework
 
@@ -45,13 +46,36 @@ async def demo_all_kinds_of_messages(app: LpAppFramework):
                       EventProviderStatus(bp_address, bond_provider.rune_bond, appeared=True)),
         NodeEvent.new(node, NodeEventType.CHURNING,
                       EventProviderStatus(bp_address, bond_provider.rune_bond, appeared=False)),
+
+        NodeEvent.new(node, NodeEventType.BOND_CHANGE,
+                      EventProviderBondChange(bp_address, bond_provider.rune_bond, bond_provider.rune_bond *
+                                              random.uniform(1.01, 1.5), on_churn=True)),
+        NodeEvent.new(node, NodeEventType.BOND_CHANGE,
+                      EventProviderBondChange(bp_address, bond_provider.rune_bond, bond_provider.rune_bond *
+                                              random.uniform(0.5, 0.99), on_churn=True)),
+        NodeEvent.new(node, NodeEventType.BOND_CHANGE,
+                      EventProviderBondChange(bp_address, bond_provider.rune_bond, bond_provider.rune_bond *
+                                              random.uniform(1.01, 1.5), on_churn=False)),
+        NodeEvent.new(node, NodeEventType.BOND_CHANGE,
+                      EventProviderBondChange(bp_address, bond_provider.rune_bond, bond_provider.rune_bond *
+                                              random.uniform(0.5, 0.99), on_churn=False)),
+
+        NodeEvent.new(node, NodeEventType.BP_PRESENCE,
+                      EventProviderStatus(bp_address, bond_provider.rune_bond, appeared=True)),
+        NodeEvent.new(node, NodeEventType.BP_PRESENCE,
+                      EventProviderStatus(bp_address, bond_provider.rune_bond, appeared=False)),
     ]
 
     name_map = NameMap({}, {})
+
+    aggregate_text = ''
     for event in events:
         text = loc.notification_text_bond_provider_alert(event, name_map)
+        aggregate_text += text + '\n\n'
         print(text)
         sep()
+
+    await app.send_test_tg_message(aggregate_text)
 
 
 
