@@ -260,7 +260,7 @@ def iterable_but_not_str(it):
     return not isinstance(it, (str, bytes)) and isinstance(it, Iterable)
 
 
-class TooManyTriesException(BaseException):
+class TooManyTriesException(Exception):
     pass
 
 
