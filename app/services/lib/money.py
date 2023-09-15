@@ -182,7 +182,7 @@ def format_percent(x, total=1.0, signed=False, threshold=0.01):
     if abs(s) < threshold:  # threshold is %
         return '0 %'
 
-    return pretty_money(s, signed=signed) + " %"
+    return pretty_money(s, signed=signed) + "%"
 
 
 def adaptive_round_to_str(x, force_sign=False, prefix=''):
