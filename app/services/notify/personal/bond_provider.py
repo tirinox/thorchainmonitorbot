@@ -50,11 +50,10 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
             old_node: NodeInfo
             curr_node: NodeInfo
             if old_node.node_operator_fee != curr_node.node_operator_fee:
-                yield NodeEvent(
-                    curr_node.node_address,
+                yield NodeEvent.new(
+                    curr_node,
                     NodeEventType.FEE_CHANGE,
-                    data=EventNodeFeeChange(old_node.node_operator_fee, curr_node.node_operator_fee),
-                    node=curr_node
+                    data=EventNodeFeeChange('', old_node.node_operator_fee, curr_node.node_operator_fee)
                 )
 
     async def _handle_churn_events(self, data: NodeSetChanges):
@@ -69,9 +68,8 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
             events.append((node, NodeEventType.CHURNING, False))
 
         events = [
-            NodeEvent(
-                node.node_address, ev_type,
-                EventProviderStatus(bp.address, bp.rune_bond, appeared=data), node=node
+            NodeEvent.new(node, ev_type,
+                EventProviderStatus(bp.address, bp.rune_bond, appeared=data)
             )
             for node, ev_type, data in events
             for bp in node.bond_providers
@@ -101,8 +99,8 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
                 if abs(delta_bond) > self.min_bond_delta_to_react:
                     addresses.add(provider)
 
-                    events.append(NodeEvent(
-                        node_address, NodeEventType.BOND_CHANGE,
+                    events.append(NodeEvent.new(
+                        curr_node, NodeEventType.BOND_CHANGE,
                         EventProviderBondChange(
                             provider, prev_bond, curr_bond, on_churn=just_churned
                         )
@@ -110,15 +108,15 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
 
             added_bp = curr_bp_addresses - prev_bp_addresses
             for bp_address in added_bp:
-                events.append(NodeEvent(
-                    node_address, NodeEventType.BP_PRESENCE,
+                events.append(NodeEvent.new(
+                    curr_node, NodeEventType.BP_PRESENCE,
                     EventProviderStatus(bp_address, curr_providers[bp_address].rune_bond, appeared=True)
                 ))
 
             left_bp = prev_bp_addresses - curr_bp_addresses
             for bp_address in left_bp:
-                events.append(NodeEvent(
-                    node_address, NodeEventType.BP_PRESENCE,
+                events.append(NodeEvent.new(
+                    curr_node, NodeEventType.BP_PRESENCE,
                     EventProviderStatus(bp_address, prev_providers[bp_address].rune_bond, appeared=False)
                 ))
 
@@ -127,7 +125,7 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
     async def generate_messages(self, loc: BaseLocalization, group, settings, user, user_watch_addy_list, name_map):
         return list(
             filter(
-                bool, (loc.notification_text_bond_provider_alert(event) for event in group)
+                bool, (loc.notification_text_bond_provider_alert(event, name_map) for event in group)
             )
         )
 

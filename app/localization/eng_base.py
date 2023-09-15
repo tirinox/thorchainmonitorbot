@@ -34,7 +34,7 @@ from services.models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVot
 from services.models.mimir_naming import MimirUnits, NEXT_CHAIN_VOTING_MAP
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEventType, NodeEvent, \
-    EventBlockHeight, EventDataSlash, calculate_security_cap_rune, EventNodeFeeChange, EventProviderBondChange, \
+    EventBlockHeight, EventDataSlash, calculate_security_cap_rune, EventProviderBondChange, \
     EventProviderStatus
 from services.models.pol import AlertPOL
 from services.models.pool_info import PoolInfo, PoolChanges, PoolMapPair
@@ -2441,32 +2441,38 @@ class BaseLocalization(ABC):  # == English
             f'{user_link} | {db_link}'
         )
 
-    @staticmethod
-    def notification_text_bond_provider_alert(event: NodeEvent):
-        text = f'📡 <b>Bond provider:</b> {event.address}'
+    def notification_text_bond_provider_alert(self, event: NodeEvent, name_map: NameMap):
+        bp_link = '👤' + self.link_to_address(event.data.bond_provider, name_map)
+        node_link = '🧑‍🏫' + self.link_to_address(event.address, name_map)
 
+        text = ''
         if event.type == NodeEventType.FEE_CHANGE:
-            # todo!
-            text = f'Fee changed for node: {event.address}: {event.data.previous} => {event.data.current}'
-            data: EventNodeFeeChange = event.data
+            text = (
+                f'🔔 The node operator {node_link} has changed the fee from '
+                f'{pre(format_percent(event.data.previous))} to {pre(format_percent(event.data.current))}.'
+            )
         elif event.type == NodeEventType.CHURNING:
-            # todo!
-            is_in = bool(event.data)
-
-            text = f''
-        elif event.type == NodeEventType.PRESENCE:
-            is_in = bool(event.data)
-            text = f'todo...'
-        elif event.type == NodeEventType.BOND_CHANGE:
-            # todo!
-            data: EventProviderBondChange = event.data
-            text = f'todo...'
-        elif event.type == NodeEventType.BP_PRESENCE:
-            # todo!
             data: EventProviderStatus = event.data
-            text = f'todo...'
-        else:
-            text = ''
+            preposition = 'in → 🕸️' if data.appeared else 'out 🕸→'
+            text = f'🔔 The node {node_link} where your wallet is a bond provider {bp_link} has churned {preposition}'
+        elif event.type == NodeEventType.PRESENCE:
+            data: EventProviderStatus = event.data
+            verb = 'connected ✅' if data.appeared else 'disconnected ❌'
+            text = f'🔔 The node {node_link} where your wallet is a bond provider {bp_link} has {verb}.'
+        elif event.type == NodeEventType.BOND_CHANGE:
+            data: EventProviderBondChange = event.data
+            delta = data.curr_bond - data.prev_bond
+            verb = '📈 increased' if delta > 0 else '📉 decreased'
+            text = f'🔔 Bond {bp_link} has {verb} ' \
+                   f'from {short_rune(data.prev_bond)} ' \
+                   f'to {short_rune(data.curr_bond)} ({short_rune(delta, signed=True)}).'
+        elif event.type == NodeEventType.BP_PRESENCE:
+            data: EventProviderStatus = event.data
+            if data.appeared:
+                text = f'🔔 Your address {bp_link} has become a bond provider for the node {node_link}. 👌'
+            else:
+                text = f'🔔 Your address {bp_link} is no longer a bond provider for node {node_link}. 🙅'
+
         return text
 
 

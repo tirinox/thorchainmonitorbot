@@ -156,8 +156,8 @@ def short_dollar(x, localization=None, signed=False):
     return short_money(x, prefix='$', localization=localization, signed=signed)
 
 
-def short_rune(x, localization=None):
-    return short_money(x, postfix=RAIDO_GLYPH, localization=localization)
+def short_rune(x, localization=None, signed=False):
+    return short_money(x, postfix=RAIDO_GLYPH, localization=localization, signed=signed)
 
 
 def short_address(address, begin=7, end=4, filler='...'):

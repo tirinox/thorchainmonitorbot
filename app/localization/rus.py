@@ -1802,7 +1802,6 @@ class RussianLocalization(BaseLocalization):
             f'{user_link} | {db_link}'
         )
 
-    @staticmethod
-    def notification_text_bond_provider_alert(event: NodeEvent):
+    def notification_text_bond_provider_alert(self, event: NodeEvent, name_map: NameMap):
         # todo!!!
         return ''

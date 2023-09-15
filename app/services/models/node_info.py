@@ -22,6 +22,7 @@ ZERO_VERSION = VersionInfo(0, 0, 0)
 class BondProvider(typing.NamedTuple):
     address: str
     rune_bond: float
+    is_node_operator: bool = False
 
 
 @dataclass
@@ -45,6 +46,7 @@ class NodeInfo(BaseModelMixin):
 
     bond_providers: List[BondProvider] = field(default_factory=list)
     node_operator_fee: float = 0.0
+    node_operator: str = ''
 
     # new fields
     requested_to_leave: bool = False
@@ -92,7 +94,7 @@ class NodeInfo(BaseModelMixin):
         if not jstr:
             return None
         d = json.loads(jstr) if isinstance(jstr, (str, bytes)) else jstr
-
+        node_operator = d.get('node_operator_address', '')
         bond_provider_info = d.get('bond_providers', {})
         return cls(
             status=d.get('status', NodeInfo.DISABLED),
@@ -110,10 +112,12 @@ class NodeInfo(BaseModelMixin):
             jail=d.get('jail', {}),
             bond_providers=[
                 BondProvider(
-                    address=prov.get('bond_address'),
-                    rune_bond=thor_to_float(prov.get('bond', 0))
+                    address=(bond_provider_address := prov.get('bond_address')),
+                    rune_bond=thor_to_float(prov.get('bond', 0)),
+                    is_node_operator=(bond_provider_address == node_operator)
                 ) for prov in (bond_provider_info.get('providers') or [])
             ],
+            node_operator=node_operator,
             node_operator_fee=bp_to_float(bond_provider_info.get('node_operator_fee', 0))
         )
 
@@ -168,12 +172,6 @@ def calculate_security_cap_rune(nodes: List[NodeInfo], full=False):
     else:
         cap = get_effective_security_bond(active_bonds)
     return thor_to_float(cap)
-
-
-class BondFeeChange(NamedTuple):
-    node_address: str
-    previous: int
-    current: int
 
 
 class EventBondProviderPayout(NamedTuple):
@@ -527,6 +525,10 @@ class NodeEvent(NamedTuple):
     @property
     def is_broad(self):
         return self.address == self.ANY
+
+    @classmethod
+    def new(cls, node: NodeInfo, ev_type, data):
+        return cls(node.node_address, ev_type, data, node=node)
 
 
 class NodeStatsItem(typing.NamedTuple):
