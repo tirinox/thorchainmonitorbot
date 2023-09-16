@@ -4,6 +4,10 @@ import logging
 import operator
 import os
 
+from services.jobs.node_churn import NodeChurnDetector
+from services.lib.texts import sep
+from services.models.node_info import NodeInfo
+from services.notify.personal.bond_provider import PersonalBondProviderNotifier
 from tools.lib.lp_common import LpAppFramework
 
 
@@ -102,6 +106,10 @@ class NodesDBRecorder:
     def are_nodes_identical(nodes1, nodes2):
         return json.dumps(nodes1) == json.dumps(nodes2)
 
+    async def batch_load(self, *blocks):
+        for b in blocks:
+            await self.get_nodes(b)
+
     async def scan(self, left_block, right_block, depth=0):
         prefix = ' ' * (depth * 2)
 
@@ -110,7 +118,7 @@ class NodesDBRecorder:
             return
 
         print(f'{prefix}Scan start {left_block} and {right_block}; '
-                  f'they are {right_block - left_block} block apart.')
+              f'they are {right_block - left_block} block apart.')
 
         left_nodes = await self.get_nodes(left_block, prefix)
         right_nodes = await self.get_nodes(right_block, prefix)
@@ -156,32 +164,76 @@ class NodesDBRecorder:
         print(r)
 
 
+class NodePlayer:
+    def __init__(self, db: dict):
+        self.db = db
+        self._keys = list(sorted(int(b) for b in self.db.keys()))
+        self.index = 0
+
+    def __next__(self):
+        if self.index >= len(self._keys):
+            raise StopIteration
+        key = self._keys[self.index]
+        self.index += 1
+        raw_nodes = self.db[str(key)]
+        nodes = [NodeInfo.from_json(node) for node in raw_nodes]
+        return key, nodes
+
+    def __iter__(self):
+        return self
+
+
 def get_size(file_path):
     file_size = os.path.getsize(file_path)
     size = file_size / 1024 ** 2
     return round(size, 3)
 
 
+DEFAULTS_FILE_NAME_FOR_DB = f'../temp/mainnet_nodes_db_1.json'
+
+
+async def run_recorder(app: LpAppFramework):
+    recorder = NodesDBRecorder(app, filename=DEFAULTS_FILE_NAME_FOR_DB)
+
+    recorder.load_db()
+    recorder.print_db_map()
+
+    # await recorder.diff(12602377, 12602978)
+
+    await recorder.ensure_last_block()
+
+    start = 12529212 - 20
+    await recorder.scan(left_block=start, right_block=12603435)
+    recorder.save_db()
+
+
+async def run_playback(app: LpAppFramework, delay=5.0):
+    recorder = NodesDBRecorder(app, filename=DEFAULTS_FILE_NAME_FOR_DB)
+    recorder.load_db()
+    recorder.print_db_map()
+
+    player = NodePlayer(recorder.db)
+
+    churn_detector = NodeChurnDetector(app.deps)
+
+    bond_provider_tools = PersonalBondProviderNotifier(app.deps)
+    bond_provider_tools.log_events = True
+    churn_detector.add_subscriber(bond_provider_tools)
+
+    for block, nodes in player:
+        sep(f'#{block}')
+        # noinspection PyTypeChecker
+        await churn_detector.on_data(None, nodes)
+        await asyncio.sleep(delay)
+
+
 async def main():
-    app = LpAppFramework(log_level=logging.WARNING)
+    app = LpAppFramework(log_level=logging.INFO)
     async with app(brief=True):
         app.deps.thor_env.timeout = 100
         # await demo_run_continuously(app)
 
-        filename = f'../temp/mainnet_nodes_db_1.json'
-        recorder = NodesDBRecorder(app,
-                                   filename=filename)
-
-        recorder.load_db()
-        recorder.print_db_map()
-
-        # await recorder.diff(12602377, 12602978)
-
-        await recorder.ensure_last_block()
-
-        start = 12529212 - 20
-        await recorder.scan(left_block=start, right_block=12603435)
-        recorder.save_db()
+        await run_playback(app, delay=0.01)
 
 
 if __name__ == '__main__':

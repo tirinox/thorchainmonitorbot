@@ -3,15 +3,15 @@ from dataclasses import asdict
 from typing import List
 
 from services.lib.depcont import DepContainer
-from services.lib.utils import class_logger
+from services.lib.utils import WithLogger
 from services.models.node_info import NodeInfo
 
 
-class NodeStateDatabase:
+class NodeStateDatabase(WithLogger):
     DB_KEY_OLD_NODE_LIST = 'NodeChurn:PreviousNodeInfo'
 
     def __init__(self, deps: DepContainer, key=None):
-        self.logger = class_logger(self)
+        super().__init__()
         self.deps = deps
         self.key = key or self.DB_KEY_OLD_NODE_LIST
 

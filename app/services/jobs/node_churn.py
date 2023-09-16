@@ -63,7 +63,7 @@ class NodeChurnDetector(WithDelegates, INotified):
         result = await self.compare_with_new_nodes(info_list)
 
         await self._node_db.save_node_info_list(info_list)
-        self.logger.info(f'Saved previous state of {len(info_list)} nodes.')
+        self.logger.info(f'Saved state of THORNode set: {len(info_list)} nodes.')
 
         try:
             # Fill out some additional data
@@ -111,9 +111,3 @@ class NodeChurnDetector(WithDelegates, INotified):
         data.nodes_removed.append(data.nodes_all[9])
 
         return data
-
-    # fixme: remove
-    # standby_nodes = [n for n in info_list if n.is_standby and n.bond > 10000]
-    # if standby_nodes:
-    #     info_list.remove(standby_nodes[2])
-    # fixme: remove

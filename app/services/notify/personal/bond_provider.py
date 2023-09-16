@@ -17,25 +17,31 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
         watcher = BondWatchlist(deps.db)
         super().__init__(deps, watcher)
         self.min_bond_delta_to_react = 1e-6
-
-        """
-        Notifications:
-        1) Your node churned in/out
-        2) Your address appears on the node's list, (or disappears)
-        3) Payout? bond changes (Rune amount, % to node, % APR, time in node)
-        4) Your node changes percent of fee 
-        """
+        self.log_events = False
 
     async def on_data(self, sender, data: NodeSetChanges):
-        await self._handle_fee_events(data)
-        await self._handle_churn_events(data)
-        await self._handle_bond_amount_events(data)
+        if not data.is_empty and self.log_events:
+            self.logger.info(f'NodeSetChanges: {data.count_of_changes} changes')
+
+        await self._run_handler(self._handle_fee_events, data)
+        await self._run_handler(self._handle_churn_events, data)
+        await self._run_handler(self._handle_bond_amount_events, data)
+
+    async def _run_handler(self, handler, data):
+        try:
+            addresses, events = await handler(data)
+            if self.log_events:
+                for ev in events:
+                    self.logger.info(f'BP event: {ev}')
+            await self.group_and_send_messages(addresses, events)
+        except Exception as e:
+            self.logger.exception(f'Failed to handle exception {e!r} in {handler.__name__}.', stack_info=True)
 
     async def _handle_fee_events(self, data: NodeSetChanges):
         fee_events = list(self._extract_fee_changes(data))
         provider_addresses = self._collect_provider_addresses_from_events(fee_events)
-        # send this message
-        await self.group_and_send_messages(provider_addresses, fee_events)
+
+        return provider_addresses, fee_events
 
     @staticmethod
     def _collect_provider_addresses_from_events(events):
@@ -57,6 +63,7 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
                 )
 
     async def _handle_churn_events(self, data: NodeSetChanges):
+        # todo: track time when BP and node are in/out
         events = []
         for node in data.nodes_removed:
             events.append((node, NodeEventType.PRESENCE, False))
@@ -69,14 +76,14 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
 
         events = [
             NodeEvent.new(node, ev_type,
-                EventProviderStatus(bp.address, bp.rune_bond, appeared=data)
-            )
+                          EventProviderStatus(bp.address, bp.rune_bond, appeared=data)
+                          )
             for node, ev_type, data in events
             for bp in node.bond_providers
         ]
 
         addresses = self._collect_provider_addresses_from_events(events)
-        await self.group_and_send_messages(addresses, events)
+        return addresses, events
 
     async def _handle_bond_amount_events(self, data: NodeSetChanges):
         events = []
@@ -120,7 +127,7 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
                     EventProviderStatus(bp_address, prev_providers[bp_address].rune_bond, appeared=False)
                 ))
 
-        await self.group_and_send_messages(addresses, events)
+        return addresses, events
 
     async def generate_messages(self, loc: BaseLocalization, group, settings, user, user_watch_addy_list, name_map):
         return list(
