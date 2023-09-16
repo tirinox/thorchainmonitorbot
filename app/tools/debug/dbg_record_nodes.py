@@ -1,13 +1,12 @@
 import asyncio
 import json
-import logging
 import operator
 import os
 
+import aiofiles
+
 from services.jobs.node_churn import NodeChurnDetector
-from services.lib.texts import sep
 from services.models.node_info import NodeInfo
-from services.notify.personal.bond_provider import PersonalBondProviderNotifier
 from tools.lib.lp_common import LpAppFramework
 
 
@@ -61,29 +60,31 @@ class NodesDBRecorder:
 
             if nodes:
                 self.db[block_no] = nodes
-                self.save_db_sometimes(prefix=prefix)
+                await self.save_db_sometimes(prefix=prefix)
                 return nodes
 
-    def save_db(self, prefix=''):
+    async def save_db(self, prefix=''):
         print(f'{prefix}Saving DB: {len(self.db)} entries')
         if self.db:
-            with open(self.filename, 'w') as f:
-                json.dump(self.db, f)
+            async with aiofiles.open(self.filename, 'w') as f:
+                data = json.dumps(self.db)
+                await f.write(data)
 
             print(f'{prefix}Saved file size is {get_size(self.filename)} MB')
         else:
             print(f'{prefix}Error! No data to save')
 
-    def save_db_sometimes(self, prefix=''):
+    async def save_db_sometimes(self, prefix=''):
         self.tick += 1
         if self.tick % 10 == 0:
-            self.save_db(prefix)
+            await self.save_db(prefix)
 
-    def load_db(self):
+    async def load_db(self):
         try:
-            with open(self.filename, 'r') as f:
+            async with aiofiles.open(self.filename, 'r') as f:
                 print(f'Loading Db. Filesize is {get_size(self.filename)} MB')
-                self.db = json.load(f)
+                data = await f.read()
+                self.db = json.loads(data)
                 if not isinstance(self.db, dict):
                     self.db = {}
                 print(f'Block 2 nodes DB loaded: {len(self.db)} items')
@@ -137,7 +138,7 @@ class NodesDBRecorder:
             print(f'{prefix}There are no changes in range {left_block}..{right_block} '
                   f'({right_block - left_block} blocks)')
 
-    async def diff(self, block1, block2):
+    async def naive_diff(self, block1, block2):
         if block1 == block2:
             print('Same block')
             return
@@ -153,6 +154,15 @@ class NodesDBRecorder:
         fn2 = await save(block2)
 
         os.system(f'diff "{fn1}" "{fn2}"')
+
+    async def diff_node_set_changes(self, block1, block2):
+        n1 = await self.get_nodes(block1)
+        n2 = await self.get_nodes(block2)
+
+        n1 = [NodeInfo.from_json(j) for j in n1]
+        n2 = [NodeInfo.from_json(j) for j in n2]
+
+        return NodeChurnDetector(self.app.deps).extract_changes(n2, n1)
 
     def print_db_map(self):
         min_block = min(int(b) for b in self.db.keys())
@@ -188,53 +198,3 @@ def get_size(file_path):
     size = file_size / 1024 ** 2
     return round(size, 3)
 
-
-DEFAULTS_FILE_NAME_FOR_DB = f'../temp/mainnet_nodes_db_1.json'
-
-
-async def run_recorder(app: LpAppFramework):
-    recorder = NodesDBRecorder(app, filename=DEFAULTS_FILE_NAME_FOR_DB)
-
-    recorder.load_db()
-    recorder.print_db_map()
-
-    # await recorder.diff(12602377, 12602978)
-
-    await recorder.ensure_last_block()
-
-    start = 12529212 - 20
-    await recorder.scan(left_block=start, right_block=12603435)
-    recorder.save_db()
-
-
-async def run_playback(app: LpAppFramework, delay=5.0):
-    recorder = NodesDBRecorder(app, filename=DEFAULTS_FILE_NAME_FOR_DB)
-    recorder.load_db()
-    recorder.print_db_map()
-
-    player = NodePlayer(recorder.db)
-
-    churn_detector = NodeChurnDetector(app.deps)
-
-    bond_provider_tools = PersonalBondProviderNotifier(app.deps)
-    bond_provider_tools.log_events = True
-    churn_detector.add_subscriber(bond_provider_tools)
-
-    for block, nodes in player:
-        sep(f'#{block}')
-        # noinspection PyTypeChecker
-        await churn_detector.on_data(None, nodes)
-        await asyncio.sleep(delay)
-
-
-async def main():
-    app = LpAppFramework(log_level=logging.INFO)
-    async with app(brief=True):
-        app.deps.thor_env.timeout = 100
-        # await demo_run_continuously(app)
-
-        await run_playback(app, delay=0.01)
-
-
-if __name__ == '__main__':
-    asyncio.run(main())
