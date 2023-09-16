@@ -56,11 +56,12 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
             old_node: NodeInfo
             curr_node: NodeInfo
             if old_node.node_operator_fee != curr_node.node_operator_fee:
-                yield NodeEvent.new(
-                    curr_node,
-                    NodeEventType.FEE_CHANGE,
-                    data=EventNodeFeeChange('', old_node.node_operator_fee, curr_node.node_operator_fee)
-                )
+                for bp in curr_node.bond_providers:
+                    yield NodeEvent.new(
+                        curr_node,
+                        NodeEventType.FEE_CHANGE,
+                        data=EventNodeFeeChange(bp.address, old_node.node_operator_fee, curr_node.node_operator_fee)
+                    )
 
     async def _handle_churn_events(self, data: NodeSetChanges):
         # todo: track time when BP and node are in/out
