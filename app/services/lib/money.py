@@ -173,16 +173,16 @@ def short_address(address, begin=7, end=4, filler='...'):
         return address
 
 
-def format_percent(x, total=1.0, signed=False, threshold=0.01):
+def format_percent(x, total=1.0, signed=False, threshold=0.01, space=''):
     if total <= 0:
         s = 0
     else:
         s = x / total * 100.0
 
     if abs(s) < threshold:  # threshold is %
-        return '0 %'
+        return f'0{space}%'
 
-    return pretty_money(s, signed=signed) + "%"
+    return f"{pretty_money(s, signed=signed)}{space}%"
 
 
 def adaptive_round_to_str(x, force_sign=False, prefix=''):
