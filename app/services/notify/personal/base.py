@@ -45,7 +45,8 @@ class BasePersonalNotifier(INotified, WithLogger, ABC):
         # Sort events by user
         user_events = defaultdict(list)
         for ev in events:
-            users_for_event = set(self.get_users_from_event(ev, address_to_user))
+            users_for_event = self.get_users_from_event(ev, address_to_user)
+            users_for_event = set(users_for_event or [])
 
             for user in users_for_event:
                 user_events[user].append(ev)
