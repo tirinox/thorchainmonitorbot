@@ -3,6 +3,7 @@ import logging
 import random
 
 from localization.eng_base import BaseLocalization
+from localization.languages import Language
 from services.dialog.telegram.telegram import TG_TEST_USER
 from services.jobs.node_churn import NodeChurnDetector
 from services.lib.midgard.name_service import NameMap
@@ -30,7 +31,8 @@ async def demo_all_kinds_of_messages(app: LpAppFramework):
 
     await app.deps.node_info_fetcher.run_once()
 
-    loc: BaseLocalization = app.deps.loc_man.default
+    # loc: BaseLocalization = app.deps.loc_man.default
+    loc: BaseLocalization = app.deps.loc_man.get_from_lang(Language.RUSSIAN)
 
     node = next(n for n in app.deps.node_holder.nodes if n.is_active and n.bond_providers)
     bond_provider = random.choice(node.bond_providers)
