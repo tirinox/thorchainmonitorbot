@@ -2445,35 +2445,40 @@ class BaseLocalization(ABC):  # == English
         bp_link = '👤' + self.link_to_address(event.data.bond_provider, name_map)
         node_link = '🧑‍🏫' + self.link_to_address(event.address, name_map)
 
-        text = ''
         if event.type == NodeEventType.FEE_CHANGE:
             text = (
-                f'🔔 The node operator of {node_link} has changed the fee from '
+                f'％ The node operator of {node_link} has changed the fee from '
                 f'{pre(format_percent(event.data.previous))} to {pre(format_percent(event.data.current))}.'
             )
         elif event.type == NodeEventType.CHURNING:
             data: EventProviderStatus = event.data
-            preposition = 'in ✳️' if data.appeared else 'out ⏳'
-            text = f'🔔 The node {node_link} where your wallet is a bond provider {bp_link} has churned {preposition}'
+            emoji = '✳️' if data.appeared else '⏳'
+            preposition = 'in' if data.appeared else 'out'
+            text = f'{emoji} The node {node_link} has churned {preposition}.'
         elif event.type == NodeEventType.PRESENCE:
             data: EventProviderStatus = event.data
-            verb = 'connected ✅' if data.appeared else 'disconnected ❌'
-            text = f'🔔 The node {node_link} where your wallet is a bond provider {bp_link} has {verb}'
+            verb = 'connected' if data.appeared else 'disconnected'
+            emoji = '✅' if data.appeared else '❌'
+            text = f'{emoji} The node {node_link} has {verb}.'
         elif event.type == NodeEventType.BOND_CHANGE:
             data: EventProviderBondChange = event.data
             delta = data.curr_bond - data.prev_bond
-            verb = '📈 increased' if delta > 0 else '📉 decreased'
-            text = f'🔔 Bond {bp_link} has {verb} ' \
-                   f'from {pre(short_rune(data.prev_bond))} ' \
-                   f'to {pre(short_rune(data.curr_bond))} ({pre(short_rune(delta, signed=True))}).'
+            verb = 'increased' if delta > 0 else 'decreased'
+            emoji = '📈' if delta > 0 else '📉'
+            text = (
+                f'{emoji} Bond amount has {verb} '
+                f'from {pre(short_rune(data.prev_bond))} '
+                f'to {pre(short_rune(data.curr_bond))} ({pre(short_rune(delta, signed=True))}).'
+            )
         elif event.type == NodeEventType.BP_PRESENCE:
             data: EventProviderStatus = event.data
-            if data.appeared:
-                text = f'🔔 Your address {bp_link} has become a bond provider for the node {node_link}. 👌'
-            else:
-                text = f'🔔 Your address {bp_link} is no longer a bond provider for node {node_link}. 🙅'
+            verb = 'appeared on' if data.appeared else 'disappeared from'
+            emoji = '🙅' if data.appeared else '👌'
+            text = f'{emoji} The address has {verb} the bond provider list of the node {node_link}.'
+        else:
+            return ''
 
-        return text
+        return f'🔔 <b>Bond provider alert for {bp_link}</b>\n{text}'
 
 
 class EnglishLocalization(BaseLocalization):

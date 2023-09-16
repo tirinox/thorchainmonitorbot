@@ -78,7 +78,7 @@ async def demo_all_kinds_of_messages(app: LpAppFramework):
     aggregate_text = ''
     for event in events:
         text = loc.notification_text_bond_provider_alert(event, name_map)
-        aggregate_text += text + '\n\n'
+        aggregate_text += text + '\n------\n'
         print(text)
         sep()
 
