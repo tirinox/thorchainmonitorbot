@@ -77,7 +77,7 @@ class PersonalBalanceNotifier(BasePersonalNotifier):
         return results
 
     def get_users_from_event(self, ev: RuneTransfer, address_to_user):
-        return address_to_user.get(ev.from_addr) + address_to_user.get(ev.to_addr)
+        return list(address_to_user.get(ev.from_addr)) + list(address_to_user.get(ev.to_addr))
 
     async def generate_messages(self, loc, group, settings, user, user_watch_addy_list, name_map):
         return [loc.notification_text_rune_transfer(transfer, user_watch_addy_list, name_map) for transfer in group]
