@@ -36,7 +36,6 @@ class NetworkStatisticsFetcher(BaseFetcher):
         ns.swap_volume_rune = thor_to_float(j['swapVolume'])
 
         ns.switched_rune = thor_to_float(j.get('switchedRune', 0))
-        ns.total_rune_pooled = thor_to_float(j['runeDepth'])
 
     async def _get_network(self, ns: NetworkStats):
         j = await self.deps.midgard_connector.request(free_url_gen.url_network())
@@ -56,6 +55,8 @@ class NetworkStatisticsFetcher(BaseFetcher):
         ns.total_active_bond_rune = thor_to_float(bonding_metrics['totalActiveBond'])
         stand_by_bond = thor_to_float(bonding_metrics['totalStandbyBond'])
         ns.total_bond_rune = ns.total_active_bond_rune + stand_by_bond
+
+        ns.total_rune_pooled = thor_to_float(j['totalPooledRune'])
 
     KEY_CONST_MIN_RUNE_POOL_DEPTH = 'MinRunePoolDepth'
 
