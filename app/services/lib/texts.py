@@ -117,6 +117,9 @@ def up_down_arrow(old_value, new_value, smiley=False, more_is_better=True, same_
     if pct_change < threshold_pct:
         return same_result
 
+    if int_delta is not None and delta == 0:
+        return same_result
+
     better = delta > 0 if more_is_better else delta < 0
 
     smiley = ('😃' if better else '🙁') if smiley else ''

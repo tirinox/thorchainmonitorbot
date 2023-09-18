@@ -72,6 +72,8 @@ def test_arrow():
     assert up_down_arrow(1.0, 1.1926640162, percent_delta=True) == '↑ +19.3%'
     assert up_down_arrow(1.0, 1.1926640162, percent_delta=True, brackets=True) == '(↑ +19.3%)'
 
+    assert up_down_arrow(10, 10, int_delta=True) == ''
+
 
 @pytest.mark.parametrize("x, digits", [
     (10, 0),
