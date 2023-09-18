@@ -23,6 +23,11 @@ class POLFetcher(BaseFetcher):
         reserve = reserve or self.reserve_address
         member_details = await self.deps.midgard_connector.request(
             free_url_gen.url_for_address_pool_membership(reserve))
+
+        if not member_details:
+            self.logger.warning(f'Reserve address is not member of pools')
+            return []
+
         details = self.midgard_parser.parse_pool_member_details(member_details, reserve)
         details.sort(key=lambda d: d.pool)
         return details
