@@ -17,7 +17,7 @@ from services.lib.explorers import get_explorer_url_to_address, get_thoryield_ad
 from services.lib.midgard.name_service import add_thor_suffix, NameMap
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change, Asset, short_money, short_dollar, format_percent, RAIDO_GLYPH, short_rune, pretty_percent, \
-    chart_emoji
+    chart_emoji, pretty_rune
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
     up_down_arrow, plural, shorten_text
 from services.lib.utils import grouper
@@ -1831,8 +1831,8 @@ class RussianLocalization(BaseLocalization):
             emoji = '📈' if delta > 0 else '📉'
             return (
                 f'{emoji} Размер бонда в ноде {bold(verb)} '
-                f'с {pre(short_rune(data.prev_bond))} '
-                f'до {pre(short_rune(data.curr_bond))} ({pre(delta_str)}).'
+                f'с {pre(pretty_rune(data.prev_bond))} '
+                f'до {pre(pretty_rune(data.curr_bond))} ({pre(delta_str)}).'
             )
         elif event.type == NodeEventType.BP_PRESENCE:
             data: EventProviderStatus = event.data

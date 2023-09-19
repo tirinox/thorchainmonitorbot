@@ -19,7 +19,7 @@ from services.lib.explorers import get_explorer_url_to_address, Chains, get_expl
 from services.lib.midgard.name_service import NameService, add_thor_suffix, NameMap
 from services.lib.money import format_percent, pretty_money, short_address, short_money, \
     calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset, short_dollar, \
-    RAIDO_GLYPH, short_rune, pretty_percent, chart_emoji
+    RAIDO_GLYPH, short_rune, pretty_percent, chart_emoji, pretty_rune
 from services.lib.texts import progressbar, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
     up_down_arrow, bracketify, plural, join_as_numbered_list, regroup_joining, shorten_text
 from services.lib.utils import grouper, run_once
@@ -2455,6 +2455,8 @@ class BaseLocalization(ABC):  # == English
                 for event in events:
                     message += f"      └ {self.bond_provider_event_text(event)}\n"
 
+            message += '\n'
+
         return message
 
     @staticmethod
@@ -2483,8 +2485,8 @@ class BaseLocalization(ABC):  # == English
             emoji = '📈' if delta > 0 else '📉'
             return (
                 f'{emoji} Bond amount has {bold(verb)} '
-                f'from {pre(short_rune(data.prev_bond))} '
-                f'to {pre(short_rune(data.curr_bond))} ({pre(delta_str)}).'
+                f'from {pre(pretty_rune(data.prev_bond))} '
+                f'to {pre(pretty_rune(data.curr_bond))} ({pre(delta_str)}).'
             )
         elif event.type == NodeEventType.BP_PRESENCE:
             data: EventProviderStatus = event.data
