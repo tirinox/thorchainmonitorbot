@@ -6,6 +6,7 @@ from localization.eng_base import BaseLocalization
 from localization.languages import Language
 from services.dialog.telegram.telegram import TG_TEST_USER
 from services.jobs.node_churn import NodeChurnDetector
+from services.lib.date_utils import now_ts
 from services.lib.midgard.name_service import NameMap
 from services.lib.texts import sep
 from services.models.node_info import NodeEvent, NodeEventType, EventProviderStatus, EventNodeFeeChange, \
@@ -50,7 +51,8 @@ async def demo_all_kinds_of_messages(app: LpAppFramework):
         NodeEvent.new(node, NodeEventType.CHURNING,
                       EventProviderStatus(bp_address, bond_provider.rune_bond, appeared=True)),
         NodeEvent.new(node, NodeEventType.CHURNING,
-                      EventProviderStatus(bp_address, bond_provider.rune_bond, appeared=False)),
+                      EventProviderStatus(bp_address, bond_provider.rune_bond, appeared=False,
+                                          previous_ts=now_ts() - 12888)),
 
         NodeEvent.new(node, NodeEventType.BOND_CHANGE,
                       EventProviderBondChange(bp_address, bond_provider.rune_bond, bond_provider.rune_bond *
@@ -66,7 +68,8 @@ async def demo_all_kinds_of_messages(app: LpAppFramework):
                                               random.uniform(0.5, 0.99), on_churn=False)),
 
         NodeEvent.new(node, NodeEventType.BP_PRESENCE,
-                      EventProviderStatus(bp_address, bond_provider.rune_bond, appeared=True)),
+                      EventProviderStatus(bp_address, bond_provider.rune_bond, appeared=True,
+                                          previous_ts=now_ts() - 1234)),
         NodeEvent.new(node, NodeEventType.BP_PRESENCE,
                       EventProviderStatus(bp_address, bond_provider.rune_bond, appeared=False)),
     ]

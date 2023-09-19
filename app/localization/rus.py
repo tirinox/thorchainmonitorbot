@@ -1805,8 +1805,11 @@ class RussianLocalization(BaseLocalization):
     TEXT_BOND_PROVIDER_ALERT_FOR = 'Оповещение для поставщика бонда'
     TEXT_BP_NODE = '🖥️ Нода'
 
-    @staticmethod
-    def bond_provider_event_text(event: NodeEvent):
+    def bp_event_duration(self, ev: EventProviderStatus):
+        dur = ev.duration
+        return f' ({self.seconds_human(dur)} с последнего статуса)' if dur else ''
+
+    def bond_provider_event_text(self, event: NodeEvent):
         if event.type == NodeEventType.FEE_CHANGE:
             verb = 'поднял' if event.data.previous < event.data.current else 'опустил'
             return (
@@ -1817,12 +1820,12 @@ class RussianLocalization(BaseLocalization):
             data: EventProviderStatus = event.data
             emoji = '✳️' if data.appeared else '⏳'
             adjective = 'активна' if data.appeared else 'неактивной'
-            return f'{emoji} Нода стала {bold(adjective)}.'
+            return f'{emoji} Нода стала {bold(adjective)}{self.bp_event_duration(data)}.'
         elif event.type == NodeEventType.PRESENCE:
             data: EventProviderStatus = event.data
             verb = 'подключилась к сети' if data.appeared else 'отключилась от сети'
             emoji = '✅' if data.appeared else '❌'
-            return f'{emoji} Нода {ital(verb)}.'
+            return f'{emoji} Нода {ital(verb)}{self.bp_event_duration(data)}.'
         elif event.type == NodeEventType.BOND_CHANGE:
             data: EventProviderBondChange = event.data
             delta = data.curr_bond - data.prev_bond
@@ -1838,6 +1841,6 @@ class RussianLocalization(BaseLocalization):
             data: EventProviderStatus = event.data
             verb = 'появился в списке' if data.appeared else 'исчез из списка'
             emoji = '🙅' if data.appeared else '👌'
-            return f'{emoji} Этот адрес {verb} провайдеров бонда для ноды.'
+            return f'{emoji} Этот адрес {verb} провайдеров бонда для ноды{self.bp_event_duration(data)}.'
         else:
             return ''

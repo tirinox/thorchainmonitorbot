@@ -2459,8 +2459,11 @@ class BaseLocalization(ABC):  # == English
 
         return message
 
-    @staticmethod
-    def bond_provider_event_text(event: NodeEvent):
+    def bp_event_duration(self, ev: EventProviderStatus):
+        dur = ev.duration
+        return f' ({self.seconds_human(dur)} since last status)' if dur else ''
+
+    def bond_provider_event_text(self, event: NodeEvent):
         if event.type == NodeEventType.FEE_CHANGE:
             verb = 'has raised' if event.data.previous < event.data.current else 'has dropped'
             return (
@@ -2471,12 +2474,12 @@ class BaseLocalization(ABC):  # == English
             data: EventProviderStatus = event.data
             emoji = '✳️' if data.appeared else '⏳'
             verb = 'churned in' if data.appeared else 'churned out'
-            return f'{emoji} The node has {bold(verb)}.'
+            return f'{emoji} The node has {bold(verb)}{self.bp_event_duration(data)}.'
         elif event.type == NodeEventType.PRESENCE:
             data: EventProviderStatus = event.data
             verb = 'connected' if data.appeared else 'disconnected'
             emoji = '✅' if data.appeared else '❌'
-            return f'{emoji} The node has {bold(verb)}!'
+            return f'{emoji} The node has {bold(verb)}{self.bp_event_duration(data)}!'
         elif event.type == NodeEventType.BOND_CHANGE:
             data: EventProviderBondChange = event.data
             delta = data.curr_bond - data.prev_bond
@@ -2492,7 +2495,8 @@ class BaseLocalization(ABC):  # == English
             data: EventProviderStatus = event.data
             verb = 'appeared on' if data.appeared else 'disappeared from'
             emoji = '🙅' if data.appeared else '👌'
-            return f'{emoji} The address has {ital(verb)} the bond provider list of the node.'
+            return f'{emoji} The address has {ital(verb)} the bond provider list of the node' \
+                   f'{self.bp_event_duration(data)}.'
         else:
             return ''
 

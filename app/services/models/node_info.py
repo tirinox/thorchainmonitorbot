@@ -488,7 +488,12 @@ class EventProviderStatus(NamedTuple):
     bond_provider: str
     bond: float
     appeared: bool
+    previous_status: str = None
+    previous_ts: float = 0
 
+    @property
+    def duration(self) -> float:
+        return now_ts() - self.previous_ts if self.previous_ts else 0
 
 class NodeEventType:
     VERSION_CHANGED = 'version_change'

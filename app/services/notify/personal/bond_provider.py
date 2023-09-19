@@ -1,6 +1,9 @@
+import json
 from collections import defaultdict
+from contextlib import suppress
 
 from localization.eng_base import BaseLocalization
+from services.lib.date_utils import now_ts
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.models.node_info import NodeSetChanges, NodeInfo, EventNodeFeeChange, \
@@ -17,7 +20,7 @@ class BondWatchlist(UserWatchlist):
 class PersonalBondProviderNotifier(BasePersonalNotifier):
     def __init__(self, deps: DepContainer):
         watcher = BondWatchlist(deps.db)
-        super().__init__(deps, watcher, max_events_per_message=7)
+        super().__init__(deps, watcher, max_events_per_message=20)
         self.min_bond_delta_to_react = 1e-1
         self.log_events = False
 
@@ -25,20 +28,25 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
         if not data.is_empty and self.log_events:
             self.logger.info(f'NodeSetChanges: {data.count_of_changes} changes')
 
-        await self._run_handler(self._handle_fee_events, data)
-        await self._run_handler(self._handle_churn_events, data)
-        await self._run_handler(self._handle_bond_amount_events, data)
+        events = []
+        addresses = set()
 
-    async def _run_handler(self, handler, data):
-        try:
-            addresses, events = await handler(data)
-            if self.log_events:
-                for ev in events:
-                    self.logger.info('---- Bond provider event ----')
-                    self.logger.info({ev})
-            await self.group_and_send_messages(addresses, events)
-        except Exception as e:
-            self.logger.exception(f'Failed to handle exception {e!r} in {handler.__name__}.', stack_info=True)
+        handlers = [self._handle_churn_events, self._handle_fee_events, self._handle_bond_amount_events]
+        for handler in handlers:
+            try:
+                this_addresses, this_events = await handler(data)
+                if self.log_events:
+                    for ev in events:
+                        self.logger.info('---- Bond provider event ----')
+                        self.logger.info({ev})
+
+                addresses |= this_addresses
+                events += this_events
+
+            except Exception as e:
+                self.logger.exception(f'Failed to handle exception {e!r} in {handler.__name__}.', stack_info=True)
+
+        await self.group_and_send_messages(addresses, events)
 
     async def _handle_fee_events(self, data: NodeSetChanges):
         fee_events = list(self._extract_fee_changes(data))
@@ -66,26 +74,69 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
                         data=EventNodeFeeChange(bp.address, old_node.node_operator_fee, curr_node.node_operator_fee)
                     )
 
-    async def _handle_churn_events(self, data: NodeSetChanges):
-        # todo: track time when BP and node are in/out
-        events = []
-        for node in data.nodes_removed:
-            events.append((node, NodeEventType.PRESENCE, False))
-        for node in data.nodes_added:
-            events.append((node, NodeEventType.PRESENCE, True))
-        for node in data.nodes_activated:
-            events.append((node, NodeEventType.CHURNING, True))
-        for node in data.nodes_deactivated:
-            events.append((node, NodeEventType.CHURNING, False))
+    DB_KEY_HMAP_NODE_STATUS_CHANGE_TS = 'NodeChurn:InOutTimestamp'
 
+    async def _memorize_node_status_change_ts(self, node: NodeInfo, ts: float, status: str) -> (str, float):
+        if node:
+            old_status, old_ts = await self.remember_node_status_change_ts(node.node_address)
+            await self.deps.db.redis.hset(
+                self.DB_KEY_HMAP_NODE_STATUS_CHANGE_TS,
+                node.node_address,
+                json.dumps({
+                    "ts": ts,
+                    "status": status
+                })
+            )
+            return old_status, old_ts
+        else:
+            return None, 0
+
+    async def remember_node_status_change_ts(self, node_address: str) -> (str, float):
+        with suppress(Exception):
+            data = await self.deps.db.redis.hget(self.DB_KEY_HMAP_NODE_STATUS_CHANGE_TS, node_address)
+            data = json.loads(data)
+            return (
+                str(data['status']),
+                float(data['ts']),
+            )
+
+        return None, 0
+
+    async def _handle_churn_events(self, data: NodeSetChanges):
+        events = []
+
+        # Collect all event data to a list of tuples (node, type, is_in?, status_string)
+        for node in data.nodes_removed:
+            events.append((node, NodeEventType.PRESENCE, False, 'removed'))
+        for node in data.nodes_added:
+            events.append((node, NodeEventType.PRESENCE, True, 'added'))
+        for node in data.nodes_activated:
+            events.append((node, NodeEventType.CHURNING, True, 'churn_in'))
+        for node in data.nodes_deactivated:
+            events.append((node, NodeEventType.CHURNING, False, 'churn_out'))
+
+        # For every node read old status and timestamp and write new status now
+        now = now_ts()
+        old_statuses = {}
+        for node, ev_type, on, status in events:
+            old_status, old_ts = await self._memorize_node_status_change_ts(node, now, status)
+            old_statuses[node.node_address] = old_status, old_ts
+
+        # Prepare NodeEvent for each bond provider for each node
         events = [
-            NodeEvent.new(node, ev_type,
-                          EventProviderStatus(bp.address, bp.rune_bond, appeared=data)
-                          )
-            for node, ev_type, data in events
+            NodeEvent.new(
+                node, ev_type,
+                EventProviderStatus(
+                    bp.address, bp.rune_bond, appeared=on,
+                    previous_status=old_statuses[node.node_address][0],
+                    previous_ts=old_statuses[node.node_address][1],
+                )
+            )
+            for node, ev_type, on, status in events
             for bp in node.bond_providers
         ]
 
+        # Collect all Bond provider addresses from events
         addresses = self._collect_provider_addresses_from_events(events)
         return addresses, events
 
