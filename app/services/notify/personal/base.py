@@ -18,20 +18,19 @@ class BasePersonalNotifier(INotified, WithLogger, ABC):
         self.watcher = watcher
         self.max_events_per_message = max_events_per_message
 
-    async def _send_message(self, messages, settings, user):
+    async def _send_message(self, message, settings, user):
         platform = SettingsManager.get_platform(settings)
 
-        text = '\n\n'.join(m for m in messages if m)
-        text = text.strip()
-        if text:
+        message = message.strip()
+        if message:
             task = self.deps.broadcaster.safe_send_message_rate(
                 ChannelDescriptor(platform, user),
-                BoardMessage(text),
+                BoardMessage(message),
                 disable_web_page_preview=True
             )
             asyncio.create_task(task)
 
-    async def group_and_send_messages(self, addresses, events):
+    async def group_and_send_messages(self, addresses, events, glue='\n\n'):
         if not addresses:
             return
 
@@ -79,10 +78,13 @@ class BasePersonalNotifier(INotified, WithLogger, ABC):
 
                 for group in groups:
                     if group:
-                        messages = await self.generate_messages(
+                        message = await self.generate_message_text(
                             loc, group, settings, user, user_watch_addy_list, name_map)
 
-                        await self._send_message(messages, settings, user)
+                        if not isinstance(message, str):
+                            message = glue.join(message)
+
+                        await self._send_message(message, settings, user)
 
     async def filter_events(self, event_list, user, settings):
         # no operation
@@ -93,7 +95,7 @@ class BasePersonalNotifier(INotified, WithLogger, ABC):
         ...
 
     @abc.abstractmethod
-    async def generate_messages(self, loc, group, settings, user, user_watch_addy_list, name_map):
+    async def generate_message_text(self, loc, group, settings, user, user_watch_addy_list, name_map):
         """
         Example:
         messages = [loc.notification_text_...(ev, my_addresses, name_map) for ev in group]

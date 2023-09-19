@@ -2441,44 +2441,58 @@ class BaseLocalization(ABC):  # == English
             f'{user_link} | {db_link}'
         )
 
-    def notification_text_bond_provider_alert(self, event: NodeEvent, name_map: NameMap):
-        bp_link = '👤' + self.link_to_address(event.data.bond_provider, name_map)
-        node_link = '🧑‍🏫' + self.link_to_address(event.address, name_map)
+    TEXT_BOND_PROVIDER_ALERT_FOR = 'Alert for bond provider'
+    TEXT_BP_NODE = '🖥️ Node'
 
+    def notification_text_bond_provider_alert(self, bp_to_node_to_event, name_map: NameMap):
+        message = ''
+        for bp_address, nodes in bp_to_node_to_event.items():
+            bp_link = '👤' + self.link_to_address(bp_address, name_map)
+            message += f'🔔 <b>{self.TEXT_BOND_PROVIDER_ALERT_FOR} {bp_link}</b>\n'
+
+            for node_address, events in nodes.items():
+                message += f' └ {self.TEXT_BP_NODE} {self.link_to_address(node_address, name_map)}\n'
+                for event in events:
+                    message += f"      └ {self.bond_provider_event_text(event)}\n"
+
+        return message
+
+    @staticmethod
+    def bond_provider_event_text(event: NodeEvent):
         if event.type == NodeEventType.FEE_CHANGE:
-            text = (
-                f'％ The node operator of {node_link} has changed the fee from '
+            verb = 'has raised' if event.data.previous < event.data.current else 'has dropped'
+            return (
+                f'％ The node operator {ital(verb)} the fee from '
                 f'{pre(format_percent(event.data.previous))} to {pre(format_percent(event.data.current))}.'
             )
         elif event.type == NodeEventType.CHURNING:
             data: EventProviderStatus = event.data
             emoji = '✳️' if data.appeared else '⏳'
-            preposition = 'in' if data.appeared else 'out'
-            text = f'{emoji} The node {node_link} has churned {preposition}.'
+            verb = 'churned in' if data.appeared else 'churned out'
+            return f'{emoji} The node has {bold(verb)}.'
         elif event.type == NodeEventType.PRESENCE:
             data: EventProviderStatus = event.data
             verb = 'connected' if data.appeared else 'disconnected'
             emoji = '✅' if data.appeared else '❌'
-            text = f'{emoji} The node {node_link} has {verb}.'
+            return f'{emoji} The node has {bold(verb)}!'
         elif event.type == NodeEventType.BOND_CHANGE:
             data: EventProviderBondChange = event.data
             delta = data.curr_bond - data.prev_bond
+            delta_str = up_down_arrow(data.prev_bond, data.curr_bond, money_delta=True, postfix=RAIDO_GLYPH)
             verb = 'increased' if delta > 0 else 'decreased'
             emoji = '📈' if delta > 0 else '📉'
-            text = (
-                f'{emoji} Bond amount has {verb} '
+            return (
+                f'{emoji} Bond amount has {bold(verb)} '
                 f'from {pre(short_rune(data.prev_bond))} '
-                f'to {pre(short_rune(data.curr_bond))} ({pre(short_rune(delta, signed=True))}).'
+                f'to {pre(short_rune(data.curr_bond))} ({pre(delta_str)}).'
             )
         elif event.type == NodeEventType.BP_PRESENCE:
             data: EventProviderStatus = event.data
             verb = 'appeared on' if data.appeared else 'disappeared from'
             emoji = '🙅' if data.appeared else '👌'
-            text = f'{emoji} The address has {verb} the bond provider list of the node {node_link}.'
+            return f'{emoji} The address has {ital(verb)} the bond provider list of the node.'
         else:
             return ''
-
-        return f'🔔 <b>Bond provider alert for {bp_link}</b>\n{text}'
 
 
 class EnglishLocalization(BaseLocalization):

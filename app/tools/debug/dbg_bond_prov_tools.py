@@ -28,11 +28,7 @@ async def demo_run_continuously(app: LpAppFramework):
 
 
 async def demo_all_kinds_of_messages(app: LpAppFramework):
-
     await app.deps.node_info_fetcher.run_once()
-
-    # loc: BaseLocalization = app.deps.loc_man.default
-    loc: BaseLocalization = app.deps.loc_man.get_from_lang(Language.RUSSIAN)
 
     node = next(n for n in app.deps.node_holder.nodes if n.is_active and n.bond_providers)
     bond_provider = random.choice(node.bond_providers)
@@ -77,14 +73,17 @@ async def demo_all_kinds_of_messages(app: LpAppFramework):
 
     name_map = NameMap({}, {})
 
-    aggregate_text = ''
-    for event in events:
-        text = loc.notification_text_bond_provider_alert(event, name_map)
-        aggregate_text += text + '\n------\n'
-        print(text)
-        sep()
+    bond_provider_tools = PersonalBondProviderNotifier(app.deps)
 
-    await app.send_test_tg_message(aggregate_text)
+    # loc: BaseLocalization = app.deps.loc_man.get_from_lang(Language.RUSSIAN)
+    locs = [app.deps.loc_man.get_from_lang(Language.RUSSIAN), app.deps.loc_man.default]
+
+    for loc in locs:
+        aggregate_text = await bond_provider_tools.generate_message_text(loc, events, None, None, None, name_map)
+        print(aggregate_text)
+        sep()
+        await app.send_test_tg_message(aggregate_text)
+
 
 
 DEFAULTS_FILE_NAME_FOR_DB_BIG = f'../temp/mainnet_nodes_db_1.json'
@@ -135,8 +134,21 @@ async def analise_churn(app: LpAppFramework):
     await recorder.save_db()
 
     bond_provider_tools = PersonalBondProviderNotifier(app.deps)
-    bond_provider_tools.log_events = True
+    # bond_provider_tools.log_events = True
+
+    await bond_provider_tools.watcher.add_user_to_node(TG_TEST_USER, 'thor1nfzkz5qcq46edmgn4kus8a2m4rqhm69dkktw48')
+
+    # this guy out
+    await bond_provider_tools.watcher.add_user_to_node(TG_TEST_USER, 'thor1un5fznfjnx3slzv6pgmhd7x898n9jz7ce8ng82')
+
+    # this guy in
+    await bond_provider_tools.watcher.add_user_to_node(TG_TEST_USER, 'thor1tcet6mxe80x89a8dlpynehlj4ya7cae4v3hmce')
+
+
+
     await bond_provider_tools.on_data(None, changes)
+
+    await asyncio.sleep(5.0)
 
 
 async def debug_fee_change(app: LpAppFramework):
@@ -156,6 +168,7 @@ async def debug_fee_change(app: LpAppFramework):
     # print(fee_events)
 
 
+
 async def main():
     app = LpAppFramework(log_level=logging.INFO)
     async with app(brief=True):
@@ -167,6 +180,7 @@ async def main():
         # await debug_fee_change(app)
 
         await demo_all_kinds_of_messages(app)
+        # await analise_churn(app)
 
 
 if __name__ == '__main__':

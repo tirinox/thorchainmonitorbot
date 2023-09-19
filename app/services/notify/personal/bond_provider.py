@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 from localization.eng_base import BaseLocalization
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
@@ -15,8 +17,8 @@ class BondWatchlist(UserWatchlist):
 class PersonalBondProviderNotifier(BasePersonalNotifier):
     def __init__(self, deps: DepContainer):
         watcher = BondWatchlist(deps.db)
-        super().__init__(deps, watcher)
-        self.min_bond_delta_to_react = 1e-6
+        super().__init__(deps, watcher, max_events_per_message=7)
+        self.min_bond_delta_to_react = 1e-1
         self.log_events = False
 
     async def on_data(self, sender, data: NodeSetChanges):
@@ -130,12 +132,14 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
 
         return addresses, events
 
-    async def generate_messages(self, loc: BaseLocalization, group, settings, user, user_watch_addy_list, name_map):
-        return list(
-            filter(
-                bool, (loc.notification_text_bond_provider_alert(event, name_map) for event in group)
-            )
-        )
+    async def generate_message_text(self, loc: BaseLocalization, group, settings, user, user_watch_addy_list, name_map):
+        # regroup events into a hierarchy: BP -> Node -> Event
+        bp_to_node_to_event = defaultdict(lambda: defaultdict(list))
+        for event in group:
+            event: NodeEvent
+            bp_to_node_to_event[event.address][event.data.bond_provider].append(event)
+
+        return loc.notification_text_bond_provider_alert(bp_to_node_to_event, name_map)
 
     def get_users_from_event(self, ev, address_to_user):
         return address_to_user.get(ev.data.bond_provider)

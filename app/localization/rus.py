@@ -1802,41 +1802,42 @@ class RussianLocalization(BaseLocalization):
             f'{user_link} | {db_link}'
         )
 
-    def notification_text_bond_provider_alert(self, event: NodeEvent, name_map: NameMap):
-        bp_link = '👤' + self.link_to_address(event.data.bond_provider, name_map)
-        node_link = '🧑‍🏫' + self.link_to_address(event.address, name_map)
+    TEXT_BOND_PROVIDER_ALERT_FOR = 'Оповещение для поставщика бонда'
+    TEXT_BP_NODE = '🖥️ Нода'
 
+    @staticmethod
+    def bond_provider_event_text(event: NodeEvent):
         if event.type == NodeEventType.FEE_CHANGE:
-            text = (
-                f'％ Оператор ноды {node_link} изменил комиссию с '
+            verb = 'поднял' if event.data.previous < event.data.current else 'опустил'
+            return (
+                f'％ Оператор ноды {ital(verb)} комиссию с '
                 f'{pre(format_percent(event.data.previous))} до {pre(format_percent(event.data.current))}.'
             )
         elif event.type == NodeEventType.CHURNING:
             data: EventProviderStatus = event.data
             emoji = '✳️' if data.appeared else '⏳'
-            preposition = 'активна' if data.appeared else 'неактивной'
-            text = f'{emoji} Нода {node_link} стала {preposition}.'
+            adjective = 'активна' if data.appeared else 'неактивной'
+            return f'{emoji} Нода стала {bold(adjective)}.'
         elif event.type == NodeEventType.PRESENCE:
             data: EventProviderStatus = event.data
             verb = 'подключилась к сети' if data.appeared else 'отключилась от сети'
             emoji = '✅' if data.appeared else '❌'
-            text = f'{emoji} Нода {node_link} {verb}.'
+            return f'{emoji} Нода {ital(verb)}.'
         elif event.type == NodeEventType.BOND_CHANGE:
             data: EventProviderBondChange = event.data
             delta = data.curr_bond - data.prev_bond
+            delta_str = up_down_arrow(data.prev_bond, data.curr_bond, money_delta=True, postfix=RAIDO_GLYPH)
             verb = 'вырос' if delta > 0 else 'упал'
             emoji = '📈' if delta > 0 else '📉'
-            text = (
-                f'{emoji} Размер бонда в ноде {node_link} {verb} '
+            return (
+                f'{emoji} Размер бонда в ноде {bold(verb)} '
                 f'с {pre(short_rune(data.prev_bond))} '
-                f'до {pre(short_rune(data.curr_bond))} ({pre(short_rune(delta, signed=True))}).'
+                f'до {pre(short_rune(data.curr_bond))} ({pre(delta_str)}).'
             )
         elif event.type == NodeEventType.BP_PRESENCE:
             data: EventProviderStatus = event.data
             verb = 'появился в списке' if data.appeared else 'исчез из списка'
             emoji = '🙅' if data.appeared else '👌'
-            text = f'{emoji} Этот адрес {verb} провайдеров бонда для ноды {node_link}.'
+            return f'{emoji} Этот адрес {verb} провайдеров бонда для ноды.'
         else:
             return ''
-
-        return f'🔔 <b>Оповещение для провайдера бонда в ноды {bp_link}</b>\n{text}'
