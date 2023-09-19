@@ -46,7 +46,7 @@ class NameService(WithLogger):
             thorname_by_address = {}
             for address in addresses:
                 for thorname in thorname_by_name.values():
-                    if thorname:
+                    if thorname and thorname != self.NO_VALUE:
                         for alias in thorname.aliases:
                             if alias.address == address:
                                 thorname_by_address[address] = thorname
