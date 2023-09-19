@@ -2463,6 +2463,12 @@ class BaseLocalization(ABC):  # == English
         dur = ev.duration
         return f' ({self.seconds_human(dur)} since last status)' if dur else ''
 
+    @staticmethod
+    def bp_bond_percent(ev: EventProviderBondChange):
+        if ev.prev_bond <= 0:
+            return 0
+        return format_percent(ev.curr_bond - ev.prev_bond, ev.prev_bond, signed=True)
+
     def bond_provider_event_text(self, event: NodeEvent):
         if event.type == NodeEventType.FEE_CHANGE:
             verb = 'has raised' if event.data.previous < event.data.current else 'has dropped'
@@ -2489,7 +2495,8 @@ class BaseLocalization(ABC):  # == English
             return (
                 f'{emoji} Bond amount has {bold(verb)} '
                 f'from {pre(pretty_rune(data.prev_bond))} '
-                f'to {pre(pretty_rune(data.curr_bond))} ({pre(delta_str)}).'
+                f'to {pre(pretty_rune(data.curr_bond))} '
+                f'({ital(delta_str)} or {ital(self.bp_bond_percent(data))}).'
             )
         elif event.type == NodeEventType.BP_PRESENCE:
             data: EventProviderStatus = event.data

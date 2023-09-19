@@ -1835,7 +1835,8 @@ class RussianLocalization(BaseLocalization):
             return (
                 f'{emoji} Размер бонда в ноде {bold(verb)} '
                 f'с {pre(pretty_rune(data.prev_bond))} '
-                f'до {pre(pretty_rune(data.curr_bond))} ({pre(delta_str)}).'
+                f'до {pre(pretty_rune(data.curr_bond))} '
+                f'({ital(delta_str)} или {ital(self.bp_bond_percent(data))}).'
             )
         elif event.type == NodeEventType.BP_PRESENCE:
             data: EventProviderStatus = event.data
