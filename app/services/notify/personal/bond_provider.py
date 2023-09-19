@@ -34,7 +34,8 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
             addresses, events = await handler(data)
             if self.log_events:
                 for ev in events:
-                    self.logger.info(f'BP event: {ev}')
+                    self.logger.info('---- Bond provider event ----')
+                    self.logger.info({ev})
             await self.group_and_send_messages(addresses, events)
         except Exception as e:
             self.logger.exception(f'Failed to handle exception {e!r} in {handler.__name__}.', stack_info=True)
@@ -103,8 +104,8 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
             # Bond changes
             common_bp = prev_bp_addresses & curr_bp_addresses
             for provider in common_bp:
-                prev_bond = curr_providers[provider].rune_bond
-                curr_bond = prev_providers[provider].rune_bond
+                curr_bond = curr_providers[provider].rune_bond
+                prev_bond = prev_providers[provider].rune_bond
                 delta_bond = curr_bond - prev_bond
                 if abs(delta_bond) > self.min_bond_delta_to_react:
                     addresses.add(provider)
@@ -137,7 +138,7 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
         bp_to_node_to_event = defaultdict(lambda: defaultdict(list))
         for event in group:
             event: NodeEvent
-            bp_to_node_to_event[event.address][event.data.bond_provider].append(event)
+            bp_to_node_to_event[event.data.bond_provider][event.node.node_address].append(event)
 
         return loc.notification_text_bond_provider_alert(bp_to_node_to_event, name_map)
 

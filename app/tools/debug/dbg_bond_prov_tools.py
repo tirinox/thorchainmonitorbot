@@ -130,7 +130,7 @@ async def analise_churn(app: LpAppFramework):
     await recorder.load_db()
 
     # Churn example: 12606980 .. 12606982
-    changes = await recorder.diff_node_set_changes(12606980, 12606982)
+    changes = await recorder.diff_node_set_changes(12651634, 12651635)
     await recorder.save_db()
 
     bond_provider_tools = PersonalBondProviderNotifier(app.deps)
@@ -144,6 +144,10 @@ async def analise_churn(app: LpAppFramework):
     # this guy in
     await bond_provider_tools.watcher.add_user_to_node(TG_TEST_USER, 'thor1tcet6mxe80x89a8dlpynehlj4ya7cae4v3hmce')
 
+
+    await bond_provider_tools.watcher.add_user_to_node(TG_TEST_USER, 'thor1yyfmkh6yd0tytk7nh7htq3fw27xsfk3x8wnr0j')
+    await bond_provider_tools.watcher.add_user_to_node(TG_TEST_USER, 'thor1nmnq0r99fwfkp3pg8sdj4wlj2l96hx73m6835y')
+    await bond_provider_tools.watcher.add_user_to_node(TG_TEST_USER, 'thor13tqs4dgvjyhukx2aed78lu6gz49t6penjwnd50')
 
 
     await bond_provider_tools.on_data(None, changes)
@@ -161,6 +165,7 @@ async def debug_fee_change(app: LpAppFramework):
     bond_provider_tools = PersonalBondProviderNotifier(app.deps)
 
     await bond_provider_tools.watcher.add_user_to_node(TG_TEST_USER, 'thor1nfzkz5qcq46edmgn4kus8a2m4rqhm69dkktw48')
+    await bond_provider_tools.watcher.add_user_to_node(TG_TEST_USER, 'thor1yyfmkh6yd0tytk7nh7htq3fw27xsfk3x8wnr0j')
 
     await bond_provider_tools.on_data(None, changes)
 
@@ -179,8 +184,8 @@ async def main():
 
         # await debug_fee_change(app)
 
-        await demo_all_kinds_of_messages(app)
-        # await analise_churn(app)
+        # await demo_all_kinds_of_messages(app)
+        await analise_churn(app)
 
 
 if __name__ == '__main__':
