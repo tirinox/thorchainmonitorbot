@@ -1,12 +1,12 @@
 aiodns
 aiofiles
-aiogram
+aiogram==2.*
 aiohttp
 aioredis
 aiothornode>=0.1.7
 async-timeout
 bech32
-# discord.py==1.7.3
+# discord.py==1.*
 emoji
 git+https://github.com/danielgtaylor/python-betterproto@v2.0.0b5#egg=betterproto
 html-slacker
@@ -15,23 +15,23 @@ multidict
 numpy
 pandas
 Pillow>=9.3.0
-pysha3
+# pysha3
 pytest
 pytest-asyncio
 python-dateutil
 python-dotenv
-PyYAML
+PyYAML>=6.0
 ratelimit
 redis[hiredis]
 semver
-slack-sdk
-slack-bolt
-starlette
+slack-sdk>=3.20.2
+slack-bolt>=1.16.4
+starlette>=0.26.1
 sentry-sdk
-tqdm
-tweepy
-ujson
+tqdm>=4.65.0
+tweepy==4.*
+ujson==5.*
 uvicorn
-uvloop
-web3
+uvloop>=0.17.0
+web3>=6.0.0
 websockets

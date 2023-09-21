@@ -1,10 +1,10 @@
 import os
 
-import sha3
 from PIL import Image
 from aiogram import Bot
 
 from services.lib.draw_utils import img_to_bio
+from services.lib.utils import hash_of_string_repr
 
 
 class TelegramStickerDownloader:
@@ -13,7 +13,7 @@ class TelegramStickerDownloader:
         self.bot = bot
 
     def sticker_local_path(self, sticker_id):
-        hashed = sha3.keccak_256(sticker_id.encode('utf-8')).hexdigest()
+        hashed = hash_of_string_repr(sticker_id)
         return os.path.join(self.base_path, f'tg-sticker-{hashed}.webp')
 
     async def _download_sticker(self, sticker_id, target_path):

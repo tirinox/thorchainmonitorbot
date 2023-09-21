@@ -1,7 +1,7 @@
 import logging
 import os
 
-import sha3
+import web3
 from PIL import Image
 
 from services.lib.constants import *
@@ -13,7 +13,8 @@ logger = logging.getLogger(__name__)
 
 def convert_eth_address_to_case_checksum(eth_address: str) -> str:
     eth_address = eth_address[2:].lower()  # strip 0x and lower case
-    address_hash = sha3.keccak_256(eth_address.encode('utf-8')).hexdigest()
+
+    address_hash = web3.Web3.keccak(eth_address.encode('utf-8')).hex()[2:]
 
     new_address = ''
     for hash_symbol, symbol in zip(address_hash, eth_address):
