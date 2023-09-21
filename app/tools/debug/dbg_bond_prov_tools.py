@@ -2,7 +2,6 @@ import asyncio
 import logging
 import random
 
-from localization.eng_base import BaseLocalization
 from localization.languages import Language
 from services.dialog.telegram.telegram import TG_TEST_USER
 from services.jobs.node_churn import NodeChurnDetector
