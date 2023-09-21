@@ -4,10 +4,11 @@ from services.lib.date_utils import days_ago_noon, DAY, full_years_old_ts, YEAR,
 
 
 def test_ago_noon():
-    ref_date = datetime.datetime(2021, 4, 11, 9, 24, 33, 977)
-    assert int(days_ago_noon(0, now=ref_date).timestamp()) == 1618131600
-    assert int(days_ago_noon(1, now=ref_date).timestamp()) == 1618045200
-    assert int(days_ago_noon(2, now=ref_date).timestamp()) == 1618045200 - DAY
+    ref_date = datetime.datetime(2021, 4, 11, 9, 24, 33, 977,
+                                 tzinfo=datetime.timezone.utc)
+    assert int(days_ago_noon(0, now=ref_date).timestamp()) == 1618142400
+    assert int(days_ago_noon(1, now=ref_date).timestamp()) == 1618056000
+    assert int(days_ago_noon(2, now=ref_date).timestamp()) == 1618056000 - DAY
 
 
 def test_full_years_old():
