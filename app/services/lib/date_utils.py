@@ -191,8 +191,8 @@ def today_str(prec='full'):
     return now.strftime(fmt)
 
 
-def days_ago_noon(days_ago, now=None, hour=12) -> datetime:
-    now = now or datetime.now()
+def days_ago_noon(days_ago, now=None, hour=12, tz=None) -> datetime:
+    now = now or datetime.now(tz=tz)
     day_back = now - timedelta(days=days_ago)
     day_back_noon = day_back.replace(hour=hour, minute=0, second=0, microsecond=0)
     return day_back_noon
