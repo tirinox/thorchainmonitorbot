@@ -1,6 +1,7 @@
 from collections import defaultdict, Counter
 from typing import Optional, List
 
+from services.lib.config import SubConfig
 from services.lib.constants import Chains
 from services.lib.date_utils import parse_timespan_to_seconds, HOUR
 from services.lib.depcont import DepContainer
@@ -26,7 +27,7 @@ class ChainHeightTracker(BaseChangeTracker):
         self.recent_max_blocks = {}
         self.cache: Optional[UserDataCache] = None
 
-        sub_cfg = deps.cfg.get('node_op_tools.types.chain_height')
+        sub_cfg = deps.cfg.get('node_op_tools.types.chain_height', SubConfig({}))
         self.chain_height_method = sub_cfg.as_str('top_height_estimation_method', self.METHOD_MAX_COMMITTEE)
         self.min_committee = sub_cfg.as_int('min_committee_members', 3)
         self.debug = False
@@ -42,9 +43,9 @@ class ChainHeightTracker(BaseChangeTracker):
     def estimate_block_height_most_common(nodes: List[NodeInfo]):
         chain_block_height = defaultdict(list)
         for node in nodes:
-            for name, chain_info in node.chain_dict.items():
-                if chain_info.valid:
-                    chain_block_height[name].append(chain_info.height)
+            for name, height in node.chain_dict.items():
+                if height > 0:
+                    chain_block_height[name].append(height)
 
         return {chain: most_common(height_list) for chain, height_list in chain_block_height.items()}
 
@@ -52,9 +53,9 @@ class ChainHeightTracker(BaseChangeTracker):
     def estimate_block_height_maximum(nodes: List[NodeInfo]):
         chain_block_height = defaultdict(int)
         for node in nodes:
-            for name, chain_info in node.chain_dict.items():
-                if chain_info.valid:
-                    chain_block_height[name] = max(chain_block_height[name], chain_info.height)
+            for name, height in node.chain_dict.items():
+                if height > 0:
+                    chain_block_height[name] = max(chain_block_height[name], height)
 
         return chain_block_height
 
