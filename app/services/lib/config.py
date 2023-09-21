@@ -45,7 +45,7 @@ class SubConfig:
             if default is not None:
                 return default
             else:
-                raise
+                raise LookupError(f'Config path "{path}" not found!')
 
     def get_pure(self, path=None, default=None) -> Any:
         return self.get(path, default, pure=True)
