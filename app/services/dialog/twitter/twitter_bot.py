@@ -110,20 +110,18 @@ class TwitterBot:
                 logging.warning(f'Type "{msg.message_type}" is not supported for Twitter.')
             return True
         except tweepy.errors.Forbidden as e:
+            if self.emergency:
+                with suppress(Exception):
+                    # Signal the admin to update app binding in the Twitter Developer Portal
+                    self.emergency.report(self.logger.name, "Twitter forbidden error",
+                                          api_errors=e.api_errors,
+                                          api_codes=e.api_codes,
+                                          api_messages=e.api_messages)
             if _retrying:
-                if self.emergency:
-                    with suppress(Exception):
-                        # Signal the admin to update app binding in the Twitter Developer Portal
-                        self.emergency.report(self.logger.name, "Twitter forbidden error",
-                                              api_errors=e.api_errors,
-                                              api_codes=e.api_codes,
-                                              api_messages=e.api_messages)
-
                 logging.exception('Tried to resend Twitter message. Failed again.')
                 return False
             else:
                 # logging.warning(f'There is an exception: {e!r}. But I will try to abbreviate the message and resend.')
-                #
                 # msg.text = abbreviate_some_long_words(msg.text)
                 # self.log_tweet(msg.text, None)
 
