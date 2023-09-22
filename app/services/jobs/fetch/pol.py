@@ -1,4 +1,3 @@
-import asyncio
 from typing import List
 
 from aiothornode.types import ThorPOL
@@ -40,10 +39,13 @@ class POLFetcher(BaseFetcher):
             return ThorPOL.from_json(data)
 
     async def fetch(self) -> AlertPOL:
-        pol, membership = await asyncio.gather(
-            self._load_pol_custom(),
-            self.get_reserve_membership(self.reserve_address)
-        )
+        pol = await self._load_pol_custom()
+
+        if pol.value > 0:
+            membership = await self.get_reserve_membership(self.reserve_address)
+        else:
+            membership = []
+
         self.logger.info(f"Got POL: {pol}")
         return AlertPOL(
             POLState(self.deps.price_holder.usd_per_rune, pol),
