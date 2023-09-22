@@ -15,6 +15,7 @@ class NetworkStatisticsFetcher(BaseFetcher):
     def __init__(self, deps: DepContainer):
         sleep_period = parse_timespan_to_seconds(deps.cfg.net_summary.fetch_period)
         super().__init__(deps, sleep_period)
+        self.step_sleep = 2.0
 
     async def _get_stats(self, ns: NetworkStats):
         j = await self.deps.midgard_connector.request(free_url_gen.url_stats())
@@ -95,13 +96,23 @@ class NetworkStatisticsFetcher(BaseFetcher):
     async def fetch(self) -> NetworkStats:
         ns = NetworkStats()
         ns.usd_per_rune = self.deps.price_holder.usd_per_rune
-        await asyncio.gather(
-            self._get_stats(ns),
-            self._get_network(ns),
-            self._get_pools(ns),
-            self._get_swap_stats(ns),
-            self._get_ilp_24h_payouts(ns),
-            self._get_user_stats(ns),
-        )
+
+        await self._get_stats(ns),
+        await asyncio.sleep(self.step_sleep)
+
+        await self._get_network(ns)
+        await asyncio.sleep(self.step_sleep)
+
+        await self._get_pools(ns)
+        await asyncio.sleep(self.step_sleep)
+
+        await self._get_swap_stats(ns)
+        await asyncio.sleep(self.step_sleep)
+
+        await self._get_ilp_24h_payouts(ns)
+        await asyncio.sleep(self.step_sleep)
+
+        await self._get_user_stats(ns)
+
         ns.date_ts = now_ts()
         return ns
