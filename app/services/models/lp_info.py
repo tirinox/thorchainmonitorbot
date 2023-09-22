@@ -271,6 +271,10 @@ class LiquidityPoolReport:
         cur_val = self.current_value(mode)
         wth_val = self.withdrawn_value(mode)
         add_val = self.added_value(mode)
+
+        if not add_val:
+            return 0, 0
+
         gain_loss_abs = cur_val + wth_val - add_val
         gain_loss_percent = gain_loss_abs / add_val * 100.0
         return gain_loss_abs, gain_loss_percent

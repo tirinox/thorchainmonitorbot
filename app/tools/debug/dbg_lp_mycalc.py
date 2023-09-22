@@ -142,7 +142,9 @@ async def main():
 
         # await demo_summary_all_pools(app, 'thor1gzautydm2mrpcuj36drqyzuuzqw4w8cp8zjj2c')  # 3 classic LP
         # await demo_summary_all_pools(app, 'bc1qcsmgsvfpp4w6dmlwwdf4s87ngh8trz8yuwsfy0')  # savers
-        await demo_summary_all_pools(app, 'ltc1q67tf8ryuggvetakwz5flex5ydhyvn7rp0y8kx3')
+        # await demo_summary_all_pools(app, 'ltc1q67tf8ryuggvetakwz5flex5ydhyvn7rp0y8kx3')
+
+        await demo_report_for_single_pool(app, 'thor1a8ydprhkk5u032r277nzs4vw5khnnl3ya9xnvs', 'ETH.ETH')
 
 
 if __name__ == "__main__":
