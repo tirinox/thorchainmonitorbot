@@ -1,9 +1,13 @@
+from typing import Optional
+
 from aiogram import filters
 from aiogram.dispatcher.filters.state import StatesGroup, State
+from aiogram.dispatcher.storage import FSMContextProxy
 from aiogram.types import *
 from aiogram.utils.helper import HelperMode
 
 from localization.admin import AdminMessages
+from localization.eng_base import BaseLocalization
 from services.dialog.avatar_picture_dialog import AvatarDialog
 from services.dialog.base import message_handler, BaseDialog
 from services.dialog.metrics_menu import MetricsDialog
@@ -11,6 +15,7 @@ from services.dialog.my_wallets_menu import MyWalletsMenu, LPMenuStates
 from services.dialog.node_op_menu import NodeOpDialog
 from services.dialog.settings_menu import SettingsDialog
 from services.lib.date_utils import DAY
+from services.lib.depcont import DepContainer
 from services.lib.new_feature import Features
 from services.lib.texts import kbd
 from services.notify.types.cap_notify import LiquidityCapNotifier
@@ -26,6 +31,10 @@ class MainStates(StatesGroup):
 
 
 class MainMenuDialog(BaseDialog):
+    def __init__(self, loc: BaseLocalization, data: Optional[FSMContextProxy], d: DepContainer, message: Message):
+        super().__init__(loc, data, d, message)
+        self.admin_messages = AdminMessages(self.deps)
+
     @message_handler(commands='start,lang', state='*')
     async def entry_point(self, message: Message):
         user_id = message.chat.id
@@ -145,7 +154,12 @@ class MainMenuDialog(BaseDialog):
 
     @message_handler(commands='debug', state='*')
     async def cmd_debug(self, message: Message):
-        text = await AdminMessages(self.deps).get_debug_message_text()
+        text = await self.admin_messages.get_debug_message_text_fetcher()
+        await message.answer(text,
+                             disable_notification=True,
+                             disable_web_page_preview=True)
+
+        text = await self.admin_messages.get_debug_message_text_session()
         await message.answer(text,
                              disable_notification=True,
                              disable_web_page_preview=True)

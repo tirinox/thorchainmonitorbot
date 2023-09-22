@@ -41,6 +41,9 @@ def append_if_not_zero(acc, val, denom, translate, plural=True):
 
 
 def seconds_human(seconds, translate=None, max_step=0) -> str:
+    if seconds is None:
+        return 'None'
+
     seconds = int(seconds)
 
     def tr(key):

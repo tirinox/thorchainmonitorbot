@@ -1,7 +1,7 @@
 import asyncio
 import json
 from collections import defaultdict
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from ssl import SSLContext
 from types import SimpleNamespace
 from typing import Any, Optional, Iterable, Type, Union, List, Dict, Mapping
@@ -16,7 +16,7 @@ from aiohttp.helpers import sentinel
 from aiohttp.typedefs import StrOrURL, LooseCookies, LooseHeaders, JSONEncoder
 
 from services.lib.date_utils import now_ts
-from services.lib.lru import LRUCache, WindowAverage
+from services.lib.lru import LRUCache, WindowAverage, RPSCounter
 from services.lib.utils import WithLogger
 
 WINDOW_SIZE_TO_AVERAGE = 100
@@ -33,8 +33,11 @@ class RequestEntry:
     last_timestamp: float = 0.0
     last_timestamp_response: float = 0.0
     response_codes: Dict[int, int] = None
-    # none_count: int = 0  # todo
-    avg_time: WindowAverage = WindowAverage(WINDOW_SIZE_TO_AVERAGE)
+    none_count: int = 0
+    text_answer_count: int = 0
+    last_text_answer: str = ''
+
+    avg_time: WindowAverage = field(default_factory=lambda: WindowAverage(WINDOW_SIZE_TO_AVERAGE))
     last_error: Optional[Exception] = None
 
     def __str__(self):
@@ -49,11 +52,18 @@ class RequestEntry:
         self.total_time += time_elapsed
         self.avg_time.append(time_elapsed)
 
-    def update_on_response(self, response: ClientResponse, ts_start):
+    async def update_on_response(self, response: ClientResponse, ts_start):
         if not self.response_codes:
             self.response_codes = defaultdict(int)
         self.response_codes[response.status] += 1
         self.last_timestamp_response = now_ts()
+
+        text = await response.text()
+        if text is None:
+            self.none_count += 1
+        elif not (text.startswith('{') or text.startswith('[')):
+            self.text_answer_count += 1
+            self.last_text_answer = text[:100].replace('<', '').replace('>', '')
 
         self.update_time(ts_start)
 
@@ -61,8 +71,7 @@ class RequestEntry:
         self.last_error = e
         self.total_errors += 1
         self.last_timestamp_response = now_ts()
-
-        self.update_time()
+        self.update_time(ts_start)
 
 
 class ObservableSession(aiohttp.ClientSession, WithLogger):
@@ -77,45 +86,55 @@ class ObservableSession(aiohttp.ClientSession, WithLogger):
     def debug_top_calls(self, n=10):
         return sorted(self._debug_cache.values(), key=lambda r: r.total_calls, reverse=True)[:n]
 
+    @property
+    def rps(self):
+        return self._rps_counter.get_rps()
+
+    @staticmethod
+    def clean_url(url: str):
+        return urlunparse(urlparse(url)._replace(query=''))
+
     @staticmethod
     def _key_from_url(url: str, method):
-        return method + ' ' + urlunparse(urlparse(url)._replace(query=''))
+        return method + ' ' + url
 
     def _register_start(self, url, method, ts_start):
         try:
-            clean_url = self._key_from_url(url, method)
+            clean_url = self.clean_url(url)
+            key = self._key_from_url(clean_url, method)
 
-            record = self._debug_cache.get(clean_url)
+            record = self._debug_cache.get(key)
             if record is None:
                 record = RequestEntry(clean_url, method, last_timestamp=ts_start, total_calls=1)
-                self._debug_cache[clean_url] = record
+                self._debug_cache[key] = record
             else:
                 record: RequestEntry
                 record.update_on_start(ts_start)
 
+            self._rps_counter.add_request()
+
         except Exception as e:
             self.logger.error(f'Error registering {url}: {e}')
 
-    def _register_end(self, url, method, ts_start, response: ClientResponse):
+    async def _register_end(self, url, method, ts_start, response: ClientResponse):
         try:
-            clean_url = self._key_from_url(url, method)
+            key = self._key_from_url(self.clean_url(url), method)
 
-            record = self._debug_cache.get(clean_url)
+            record = self._debug_cache.get(key)
             if not record:
                 self.logger.warning(f'No record for {url} {method}')
                 return
 
             record: RequestEntry
-            record.update_on_response(response, ts_start)
+            await record.update_on_response(response, ts_start)
 
         except Exception as e:
             self.logger.error(f'Error registering {url}: {e}')
 
     def _register_error(self, url, method, ts_start, e):
         try:
-            clean_url = self._key_from_url(url, method)
-
-            record = self._debug_cache.get(clean_url)
+            key = self._key_from_url(self.clean_url(url), method)
+            record = self._debug_cache.get(key)
             if not record:
                 self.logger.warning(f'No record for {url} {method}')
                 return
@@ -152,7 +171,7 @@ class ObservableSession(aiohttp.ClientSession, WithLogger):
                                             timeout=timeout, verify_ssl=verify_ssl, fingerprint=fingerprint,
                                             ssl_context=ssl_context, ssl=ssl, proxy_headers=proxy_headers,
                                             trace_request_ctx=trace_request_ctx, read_bufsize=read_bufsize)
-            self._register_end(str_or_url, method, ts_start, result)
+            await self._register_end(str_or_url, method, ts_start, result)
         except Exception as e:
             self._register_error(str_or_url, method, ts_start, e)
             raise e
@@ -181,3 +200,4 @@ class ObservableSession(aiohttp.ClientSession, WithLogger):
                          read_bufsize=read_bufsize)
 
         self._debug_cache = LRUCache(debug_deque_size)
+        self._rps_counter = RPSCounter()

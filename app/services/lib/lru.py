@@ -1,6 +1,8 @@
 from collections import deque
 from statistics import median
 
+from services.lib.date_utils import now_ts
+
 
 class LRUCache:
     def __init__(self, capacity: int):
@@ -51,14 +53,37 @@ class WindowAverage:
     def append(self, value):
         self._values.append(value)
 
+    @property
     def average(self):
         return sum(self._values) / len(self._values) if self._values else None
 
+    @property
     def min(self):
         return min(self._values) if self._values else None
 
+    @property
     def max(self):
         return max(self._values) if self._values else None
 
+    @property
     def median(self):
         return median(self._values) if self._values else None
+
+
+class RPSCounter:
+    def __init__(self, window_size=60, max_requests=10_000):
+        self.requests = deque()  # Use a deque to store request timestamps
+        self.window_size = window_size  # N minutes converted to seconds
+        self.max_requests = max_requests  # Adjust as needed
+
+    def add_request(self):
+        current_time = now_ts()
+        self.requests.append(current_time)
+
+        # Remove requests that are outside the window
+        while self.requests and current_time - self.requests[0] > self.window_size:
+            self.requests.popleft()
+
+    def get_rps(self):
+        # Calculate RPS by dividing the number of requests in the window by the window size
+        return len(self.requests) / self.window_size

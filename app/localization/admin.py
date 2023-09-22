@@ -1,8 +1,9 @@
 from services.jobs.fetch.base import DataController
 from services.lib.date_utils import format_time_ago, now_ts, MINUTE, seconds_human
 from services.lib.depcont import DepContainer
-from services.lib.money import format_percent
-from services.lib.texts import bold, code, pre, ital
+from services.lib.http_ses import ObservableSession, RequestEntry
+from services.lib.money import format_percent, short_address
+from services.lib.texts import bold, code, pre, ital, link
 
 
 class AdminMessages:
@@ -14,8 +15,8 @@ class AdminMessages:
     def uptime(self):
         return format_time_ago(now_ts() - self.creation_timestamp)
 
-    async def get_debug_message_text(self):
-        message = bold('Debug info') + '\n\n'
+    async def get_debug_message_text_fetcher(self):
+        message = '⚙️' + bold('Debug info') + '\n\n'
 
         data_ctrl: DataController = self.deps.pool_fetcher.data_controller
 
@@ -34,19 +35,60 @@ class AdminMessages:
             interval = seconds_human(fetcher.sleep_period)
             success_rate_txt = format_percent(fetcher.success_rate, 100.0)
 
+            if fetcher.total_ticks > 0:
+                ticks_str = fetcher.total_ticks
+            else:
+                ticks_str = '🤷 none yet!'
+
             message += (
                 f"{code(name)}\n"
                 f"{errors}. "
                 f"Last date: {ital(last_txt)}. "
                 f"Interval: {ital(interval)}. "
                 f"Success rate: {pre(success_rate_txt)}. "
-                f"Total ticks: {pre(fetcher.total_ticks)}"
+                f"Total ticks: {ticks_str}"
                 f"\n\n"
             )
 
         if not data_ctrl.summary:
             message += 'No info'
 
-        message += f'\nUptime: {self.uptime}'
+        message += f'\n<b>Uptime:</b> {self.uptime}'
+
+        return message
+
+    async def get_debug_message_text_session(self):
+        message = f'🕸️ {bold("HTTP session info")}\n\n'
+
+        # noinspection PyTypeChecker
+        session: ObservableSession = self.deps.session
+
+        now = now_ts()
+
+        top_requests = session.debug_top_calls(11)
+        for i, item in enumerate(top_requests, start=1):
+            item: RequestEntry
+
+            med_t = item.avg_time.median
+            max_t = item.avg_time.max
+            avg_t = item.avg_time.average
+
+            last_ago = format_time_ago(now - item.last_timestamp)
+            code_txt = ' | '.join(f'{bold(k)}: {v}' for k, v in item.response_codes.items())
+            caption = short_address(item.url, 40, 80)
+            message += (
+                f'{i}. {link(item.url, caption)}\n'
+                f'{bold(item.total_calls)} calls | {bold(item.total_errors)} err | {last_ago}\n'
+                f'Med <b>{med_t:.1f}</b>, avg <b>{avg_t:.1f}</b>, max <b>{max_t:.1f}</b>\n'
+                f'Codes: {code_txt}'
+            )
+            if item.none_count:
+                message += f' | None: {item.none_count}'
+            if item.text_answer_count:
+                message += f' | T: {item.text_answer_count}, last: {pre(item.last_text_answer)}'
+
+            message += '\n\n'
+
+        message += f'RPS: {session.rps:.1f}'
 
         return message
