@@ -2433,16 +2433,15 @@ class BaseLocalization(ABC):  # == English
         )
 
     def notification_text_loan_repayment(self, event: AlertLoanRepayment, name_map: NameMap):
-        l = event.loan
-        user_link = self.link_to_address(l.owner, name_map)
-        asset = ' ' + Asset(l.collateral_asset).pretty_str
+        user_link = self.link_to_address(event.loan.owner, name_map)
+        asset = ' ' + Asset(event.loan.collateral_asset).pretty_str
         db_link = link(self.LENDING_DASHBOARD_URL, "Dashboard")
         # tx_link = link(get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, event.tx_id), "TX")
         return (
             '🏦← <b>Loan repayment</b>\n'
-            f'Collateral withdrawn: {code(pretty_money(l.collateral_float, postfix=asset))}'
+            f'Collateral withdrawn: {code(pretty_money(event.loan.collateral_float, postfix=asset))}'
             f' ({pretty_dollar(event.collateral_usd)})\n'
-            f'Debt repaid: {pre(pretty_dollar(l.debt_repaid))}\n'
+            f'Debt repaid: {pre(pretty_dollar(event.loan.debt_repaid_usd))}\n'
             f'{user_link} | {db_link}'
         )
 

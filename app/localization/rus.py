@@ -1839,7 +1839,7 @@ class RussianLocalization(BaseLocalization):
             '🏦← <b>Заём погашен</b>\n'
             f'Залог: {code(pretty_money(l.collateral_float, postfix=asset))}'
             f' ({pretty_dollar(event.collateral_usd)})\n'
-            f'Выплачен долг: {pre(pretty_dollar(l.debt_repaid))}\n'
+            f'Выплачен долг: {pre(pretty_dollar(l.debt_repaid_usd))}\n'
             f'{user_link} | {db_link}'
         )
 

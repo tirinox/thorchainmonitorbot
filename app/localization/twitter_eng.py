@@ -943,6 +943,6 @@ class TwitterEnglishLocalization(BaseLocalization):
             f'🏦← Loan repayment {user_link}\n'
             f'Collateral withdrawn: {pretty_money(l.collateral_float, postfix=asset)}'
             f' ({pretty_dollar(event.collateral_usd)})\n'
-            f'Debt repaid: {pretty_dollar(l.debt_repaid)}\n'
+            f'Debt repaid: {pretty_dollar(l.debt_repaid_usd)}\n'
             f'{self.LENDING_DASHBOARD_URL}'
         )
