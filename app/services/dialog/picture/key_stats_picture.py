@@ -20,13 +20,16 @@ from services.models.flipside import AlertKeyStats, FSLockedValue, FSFees, FSAff
 
 
 def sum_by_attribute(daily_list, attr_name, klass=None, f_sum=sum):
-    return f_sum(
-        getattr(obj, attr_name)
-        for objects_for_day in daily_list
-        for objects in objects_for_day.values()
-        for obj in objects
-        if not klass or isinstance(obj, klass)
-    )
+    try:
+        return f_sum(
+            getattr(obj, attr_name)
+            for objects_for_day in daily_list
+            for objects in objects_for_day.values()
+            for obj in objects
+            if not klass or isinstance(obj, klass)
+        )
+    except ValueError:
+        return 0.0  # max of empty sequence
 
 
 def sum_by_attribute_pair(first_list, second_list, attr_name, klass=None, f_sum=sum):
@@ -64,12 +67,6 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         self.usdc_logo.thumbnail((logo_size, logo_size))
         self.usdt_logo.thumbnail((logo_size, logo_size))
         self.busd_logo.thumbnail((logo_size, logo_size))
-
-    @staticmethod
-    def format_period_dates_string(end_date: datetime, days=7):
-        start_date = end_date - timedelta(days=days)
-        date_format = '%d %B %Y'
-        return f'{start_date.strftime(date_format)} – {end_date.strftime(date_format)}'
 
     @staticmethod
     def percent_change(old_v, new_v):
@@ -157,7 +154,10 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         draw = ImageDraw.Draw(image)
 
         # Week dates
-        draw.text((1862, 236), self.format_period_dates_string(self.event.end_date, days=self.event.days),
+        start_date = self.event.end_date - timedelta(days=self.event.days)
+        period_str = self.loc.text_key_stats_period(start_date, self.event.end_date)
+
+        draw.text((1862, 236), period_str,
                   fill='#fff', font=r.fonts.get_font_bold(52),
                   anchor='rm')
 

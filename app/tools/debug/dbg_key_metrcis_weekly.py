@@ -2,6 +2,7 @@ import asyncio
 import logging
 import pickle
 
+from localization.languages import Language
 from services.dialog.picture.key_stats_picture import KeyStatsPictureGenerator
 from services.jobs.fetch.key_stats import KeyStatsFetcher
 from services.lib.delegates import INotified
@@ -63,7 +64,10 @@ async def demo_picture(app: LpAppFramework):
     sep()
     print('Data loaded')
 
-    pic_gen = KeyStatsPictureGenerator(app.deps.loc_man.default, data)
+    # loc = app.deps.loc_man.default
+    loc = app.deps.loc_man[Language.RUSSIAN]
+
+    pic_gen = KeyStatsPictureGenerator(loc, data)
     pic, name = await pic_gen.get_picture()
     save_and_show_pic(pic, name=name)
 

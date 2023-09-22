@@ -20,9 +20,10 @@ from services.lib.money import pretty_dollar, pretty_money, short_address, adapt
     chart_emoji, pretty_rune
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
     up_down_arrow, plural, shorten_text
-from services.lib.utils import grouper
+from services.lib.utils import grouper, translate
 from services.lib.w3.dex_analytics import DexReportEntry, DexReport
 from services.models.cap_info import ThorCapInfo
+from services.models.flipside import AlertKeyStats
 from services.models.last_block import BlockProduceState, EventBlockSpeed
 from services.models.loans import AlertLoanOpen, AlertLoanRepayment
 from services.models.lp_info import LiquidityPoolReport
@@ -927,6 +928,46 @@ class RussianLocalization(BaseLocalization):
             message += f"Пока что нет достойного пула для активации."
 
         return message
+
+    # Translate to Russian
+    TEXT_PIC_STATS_NATIVE_ASSET_VAULTS = "Нативные Активы в хранилищах"
+    TEXT_PIC_STATS_WEEKLY_REVENUE = "Недельный доход протокола"
+    TEXT_PIC_STATS_SWAP_INFO = "Информация о свопах за неделю"
+
+    TEXT_PIC_STATS_NATIVE_ASSET_POOLED = 'Всего нативных активов на'
+    TEXT_PIC_STATS_NETWORK_SECURITY = 'Безопасность сети'
+    TEXT_PIC_STATS_PROTOCOL_REVENUE = 'Доход протокола'
+    TEXT_PIC_STATS_AFFILIATE_REVENUE = 'Доход партнеров'
+    TEXT_PIC_STATS_TOP_AFFILIATE = 'Топ 3 партнера по доходу'
+    TEXT_PIC_STATS_UNIQUE_SWAPPERS = 'Уникальных трейдеров'
+    TEXT_PIC_STATS_NUMBER_OF_SWAPS = 'Количество обменов'
+    TEXT_PIC_STATS_USD_VOLUME = 'Объем торгов'
+    TEXT_PIC_STATS_TOP_SWAP_ROUTES = 'Топ 3 пути обмена'
+    TEXT_PIC_STATS_ORGANIC_VS_BLOCK_REWARDS = 'Комиссии / награды блока'
+
+    @staticmethod
+    def text_key_stats_period(start_date: datetime, end_date: datetime):
+        date_format = '%d %B %Y'
+
+        month_names = {
+            "January": "Января",
+            "February": "Февраля",
+            "March": "Марта",
+            "April": "Апреля",
+            "May": "Мая",
+            "June": "Июня",
+            "July": "Июля",
+            "August": "Августа",
+            "September": "Сентября",
+            "October": "Октября",
+            "November": "Ноября",
+            "December": "Декабря"
+        }
+
+        return translate(f'{start_date.strftime(date_format)} – {end_date.strftime(date_format)}', month_names)
+
+    def notification_text_key_metrics_caption(self, data: AlertKeyStats):
+        return 'THORChain недельная статистика'
 
     # ------- NETWORK NODES -------
 

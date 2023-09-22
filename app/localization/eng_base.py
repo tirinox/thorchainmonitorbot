@@ -1193,6 +1193,11 @@ class BaseLocalization(ABC):  # == English
     TEXT_PIC_STATS_TOP_SWAP_ROUTES = 'Top 3 Swap Routes'
     TEXT_PIC_STATS_ORGANIC_VS_BLOCK_REWARDS = 'Organic Fees vs Block Rewards'
 
+    @staticmethod
+    def text_key_stats_period(start_date: datetime, end_date: datetime):
+        date_format = '%d %B %Y'
+        return f'{start_date.strftime(date_format)} – {end_date.strftime(date_format)}'
+
     def notification_text_key_metrics_caption(self, data: AlertKeyStats):
         return 'THORChain weekly stats'
 
