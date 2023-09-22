@@ -92,3 +92,7 @@ class AdminMessages:
         message += f'RPS: {session.rps:.1f}'
 
         return message
+
+    @staticmethod
+    def text_bot_restarted():
+        return '🤖 Bot restarted!'

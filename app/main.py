@@ -4,6 +4,7 @@ import os
 
 from aiothornode.connector import ThorConnector
 
+from localization.admin import AdminMessages
 from localization.manager import LocalizationManager
 from services.dialog.discord.discord_bot import DiscordBot
 from services.dialog.main import init_dialogs
@@ -55,6 +56,7 @@ from services.models.node_watchers import AlertWatchers
 from services.models.tx_type import TxType
 from services.notify.alert_presenter import AlertPresenter
 from services.notify.broadcast import Broadcaster
+from services.notify.channel import BoardMessage
 from services.notify.personal.balance import PersonalBalanceNotifier
 from services.notify.personal.bond_provider import PersonalBondProviderNotifier
 from services.notify.personal.personal_main import NodeChangePersonalNotifier
@@ -89,6 +91,8 @@ class App:
         d = self.deps = DepContainer()
         d.is_loading = True
         self._bg_task = None
+
+        self._admin_messages = AdminMessages(d)
 
         self._init_configuration(log_level)
         self.sleep_step = d.cfg.as_interval('startup_step_delay', 3)
@@ -542,8 +546,21 @@ class App:
         logging.info(f'Ready! Starting background jobs in {self.sleep_step}...')
         await asyncio.sleep(self.sleep_step)
 
+        # todo: debug
+        asyncio.create_task(self._debug_command())
+
         # start background jobs
         await asyncio.gather(*(task.run() for task in tasks))
+
+    async def _debug_command(self):
+        await self.deps.telegram_bot.send_message(
+            self.deps.cfg.first_admin_id,
+            BoardMessage(self._admin_messages.text_bot_restarted())
+        )
+
+        # await asyncio.sleep(10)
+        # text = await self._admin_messages.get_debug_message_text_session()
+        # await self.deps.telegram_bot.send_message(self.deps.cfg.first_admin_id, BoardMessage(text))
 
     async def on_startup(self, _):
         self.deps.make_http_session()  # it must be inside a coroutine!
