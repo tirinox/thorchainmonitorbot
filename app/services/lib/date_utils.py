@@ -79,7 +79,7 @@ NUMBER_CHARS = [chr(i + ord('0')) for i in range(10)] + ['.']
 WHITE_SPACE_CHARS = [' ', ',', ';', ':', '\t', '/']
 
 
-def parse_timespan_to_seconds(span: str, do_float=False):
+def parse_timespan_to_seconds(span: str, do_float=True):
     try:
         return float(span) if do_float else int(span)
     except ValueError:

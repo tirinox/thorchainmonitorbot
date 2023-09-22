@@ -88,14 +88,18 @@ class App:
     def __init__(self, log_level=None):
         d = self.deps = DepContainer()
         d.is_loading = True
+        self._bg_task = None
 
         self._init_configuration(log_level)
+        self.sleep_step = d.cfg.as_interval('startup_step_delay', 3)
 
         d.node_info_fetcher = NodeInfoFetcher(d)
         d.mimir_const_fetcher = ConstMimirFetcher(d)
         d.mimir_const_holder = MimirHolder()
         d.pool_fetcher = PoolFetcher(d)
         d.last_block_fetcher = LastBlockFetcher(d)
+        d.last_block_store = LastBlockStore(d)
+        d.last_block_fetcher.add_subscriber(d.last_block_store)
 
         self._init_settings()
         self._init_messaging()
@@ -171,7 +175,7 @@ class App:
             logging.info(f'Sleeping before start for {sleep_interval:.1f} sec..')
             await asyncio.sleep(sleep_interval)
 
-    async def _run_background_jobs(self):
+    async def _prepare_tasks(self):
         d = self.deps
 
         # ----- PREPARE TASKS -----
@@ -183,18 +187,34 @@ class App:
 
         d.rune_market_fetcher = RuneMarketInfoFetcher(d)
 
-        # update pools for bootstrap (other components need them)
-        current_pools = await d.pool_fetcher.reload_global_pools()
-        if not current_pools:
-            logging.error("No pool data at startup! Halt it!")
-            exit(-1)
+        sleep_step = self.sleep_step
+        while True:
+            try:
+                logging.info('Loading procedure start.')
 
-        d.last_block_store = LastBlockStore(d)
-        d.last_block_fetcher.add_subscriber(d.last_block_store)
+                # update pools for bootstrap (other components need them)
+                logging.info('Loading pools...')
+                current_pools = await d.pool_fetcher.reload_global_pools()
+                if not current_pools:
+                    raise Exception("No pool data at startup!")
+                await asyncio.sleep(sleep_step)
 
-        await d.last_block_fetcher.run_once()
-        await d.node_info_fetcher.fetch()  # get nodes beforehand
-        await d.mimir_const_fetcher.fetch()  # get constants beforehand
+                logging.info('Loading last block...')
+                await d.last_block_fetcher.fetch()
+                await asyncio.sleep(sleep_step)
+
+                logging.info('Loading node info...')
+                await d.node_info_fetcher.fetch()  # get nodes beforehand
+                await asyncio.sleep(sleep_step)
+
+                logging.info('Loading constants and mimir...')
+                await d.mimir_const_fetcher.fetch()  # get constants beforehand
+                await asyncio.sleep(sleep_step)
+                break  # all is good. exit the loop
+            except Exception as e:
+                logging.exception(e)
+                logging.error(f'No luck. {e!r} Retrying in {sleep_step} sec...')
+                await asyncio.sleep(sleep_step)
 
         # ----- MANDATORY TASKS -----
 
@@ -505,7 +525,22 @@ class App:
         # ------- END INIT -------
 
         self.deps.is_loading = False
-        logging.info('Loading finished. Starting background jobs...')
+
+        return tasks
+
+    async def _run_background_jobs(self):
+        try:
+            tasks = await self._prepare_tasks()
+        except Exception as e:
+            logging.exception(f'Failed to prepare tasks: {e}')
+            logging.error(f'Terminating in {self.sleep_step} sec...')
+            await asyncio.sleep(self.sleep_step)
+
+            self._bg_task.cancel()
+            exit(-100)
+
+        logging.info(f'Ready! Starting background jobs in {self.sleep_step}...')
+        await asyncio.sleep(self.sleep_step)
 
         # start background jobs
         await asyncio.gather(*(task.run() for task in tasks))
@@ -514,7 +549,7 @@ class App:
         self.deps.make_http_session()  # it must be inside a coroutine!
         await self.create_thor_node_connector()
 
-        asyncio.create_task(self._run_background_jobs())
+        self._bg_task = asyncio.create_task(self._run_background_jobs())
 
     async def on_shutdown(self, _):
         await self.deps.session.close()
