@@ -88,6 +88,11 @@ class TelegramBot:
 
         executor.start_polling(self.dp, skip_updates=True, on_startup=my_startup, on_shutdown=on_shutdown)
 
+    async def stop(self):
+        await self.db.storage.close()
+        await self.db.storage.wait_closed()
+        await self.bot.close()
+
 
 def to_json_bool(b):
     return 'true' if b else 'false'
