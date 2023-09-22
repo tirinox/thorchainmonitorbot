@@ -14,15 +14,15 @@ URL_FS_RUNE_EARNINGS = "https://api.flipsidecrypto.com/api/v2/queries/6b27035e-f
 URL_FS_UNIQUE_SWAPPERS = 'https://api.flipsidecrypto.com/api/v2/queries/425f0bb7-f875-41cd-a7cb-ed0427d5bff0/data/latest'
 URL_FS_LOCKED_VALUE = 'https://api.flipsidecrypto.com/api/v2/queries/37f64aee-ef96-4833-a5fa-b9deb60a676a/data/latest'
 URL_FS_SWAP_VOL = 'https://api.flipsidecrypto.com/api/v2/queries/ee1f4915-988d-4920-99c0-e9346d0bb07c/data/latest'
-URL_FS_ROUTES = 'https://api.flipsidecrypto.com/api/v2/queries/e999ee41-f72b-4ce8-8ab1-ff2f36545d2a/data/latest'
 
+# URL_FS_ROUTES = 'https://api.flipsidecrypto.com/api/v2/queries/e999ee41-f72b-4ce8-8ab1-ff2f36545d2a/data/latest'
 URL_FS_ROUTES_V2 = 'https://api.flipsidecrypto.com/api/v2/queries/9084fde5-1019-479d-bd2c-77d482e9febb/data/latest'
 
 # by total liquidity fees
 URL_FS_AFFILIATES_V2 = 'https://api.flipsidecrypto.com/api/v2/queries/1b2bb8d7-3b9a-4e05-9a8b-f558807ef3bc/data/latest'
-URL_FS_AFFILIATES_V2_PREV = (
-    'https://api.flipsidecrypto.com/api/v2/queries/1581bc7e-eae9-4eec-a238-6c20203944c4/data/latest'
-)
+# URL_FS_AFFILIATES_V2_PREV = (
+#     'https://api.flipsidecrypto.com/api/v2/queries/1581bc7e-eae9-4eec-a238-6c20203944c4/data/latest'
+# )
 
 
 class KeyStatsFetcher(BaseFetcher, WithLogger):
@@ -44,8 +44,8 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
             pf.load_pools(height=previous_block)
         )
 
-        fresh_pools = pf.convert_pool_list_to_dict(fresh_pools.values())
-        old_pools = pf.convert_pool_list_to_dict(old_pools.values())
+        fresh_pools = pf.convert_pool_list_to_dict(list(fresh_pools.values()))
+        old_pools = pf.convert_pool_list_to_dict(list(old_pools.values()))
 
         # Load all FlipSideCrypto data
         loaders = [
