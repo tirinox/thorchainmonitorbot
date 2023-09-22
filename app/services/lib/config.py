@@ -114,6 +114,10 @@ class Config(SubConfig):
 
         self.network_id = self.get('thor.network_id', NetworkIdents.MAINNET)
 
+    @property
+    def get_timeout_global(self):
+        return self.as_interval('thor.timeout', 10.0)
+
     def get_thor_env_by_network_id(self, backup=False) -> ThorEnvironment:
         network_id = self.network_id
 
@@ -126,6 +130,8 @@ class Config(SubConfig):
             ref_env = MULTICHAIN_STAGENET_ENVIRONMENT.copy()
         else:
             raise KeyError('unsupported network ID!')
+
+        ref_env.timeout = self.get_timeout_global
 
         return ref_env
 
