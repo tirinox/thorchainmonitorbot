@@ -8,6 +8,11 @@ from services.lib.texts import bold, code, pre, ital
 class AdminMessages:
     def __init__(self, d: DepContainer):
         self.deps = d
+        self.creation_timestamp = now_ts()
+
+    @property
+    def uptime(self):
+        return format_time_ago(now_ts() - self.creation_timestamp)
 
     async def get_debug_message_text(self):
         message = bold('Debug info') + '\n\n'
@@ -15,7 +20,10 @@ class AdminMessages:
         data_ctrl: DataController = self.deps.pool_fetcher.data_controller
 
         for name, fetcher in data_ctrl.summary.items():
-            errors = '🆗 No errors' if not fetcher.error_counter else f'❌︎ {fetcher.error_counter} errors'
+            if fetcher.success_rate < 90.0:
+                errors = f'❌︎ {fetcher.error_counter} errors'
+            else:
+                errors = '🆗 No errors' if not fetcher.error_counter else f'🆗︎ {fetcher.error_counter} errors'
 
             last_ts = fetcher.last_timestamp
             sec_elapsed = now_ts() - last_ts
@@ -38,5 +46,7 @@ class AdminMessages:
 
         if not data_ctrl.summary:
             message += 'No info'
+
+        message += f'\nUptime: {self.uptime}'
 
         return message
