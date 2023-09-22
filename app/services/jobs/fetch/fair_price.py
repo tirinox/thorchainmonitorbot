@@ -25,6 +25,7 @@ class RuneMarketInfoFetcher(WithLogger):
 
         self.cex_name = deps.cfg.as_str('price.cex_reference.cex', DEFAULT_CEX_NAME)
         self.cex_pair = deps.cfg.as_str('price.cex_reference.pair', DEFAULT_CEX_BASE_ASSET)
+        self.step_delay = 1.0
 
         self.logger.info(f'Reference is RUNE/${self.cex_pair} at "{self.cex_name}" CEX.')
 
@@ -43,11 +44,13 @@ class RuneMarketInfoFetcher(WithLogger):
         return await supply_fetcher.fetch()
 
     async def get_rune_market_info_from_api(self) -> RuneMarketInfo:
-        supply_info, gecko, total_pulled_rune = await asyncio.gather(
-            self._get_circulating_supply(),
-            get_thorchain_coin_gecko_info(self.deps.session),
-            self.total_pooled_rune()
-        )
+        supply_info = await self._get_circulating_supply()
+        await asyncio.sleep(self.step_delay)
+
+        gecko = await get_thorchain_coin_gecko_info(self.deps.session)
+        await asyncio.sleep(self.step_delay)
+
+        total_pulled_rune = await self.total_pooled_rune()
 
         supply_info: RuneCirculatingSupply
         circulating_rune = supply_info.overall.circulating
