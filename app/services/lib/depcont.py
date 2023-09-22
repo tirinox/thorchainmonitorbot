@@ -3,7 +3,6 @@ import logging
 from dataclasses import dataclass, field
 from typing import Optional, Set, Dict
 
-import aiohttp
 import ujson
 from aiohttp import ClientSession, ClientTimeout
 from aiothornode.connector import ThorConnector
@@ -15,6 +14,7 @@ from services.dialog.twitter.twitter_bot import TwitterBot
 from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.emergency import EmergencyReport
+from services.lib.http_ses import ObservableSession
 from services.lib.midgard.connector import MidgardConnector
 from services.lib.midgard.name_service import NameService
 from services.lib.new_feature import NewFeatureManager, Features
@@ -96,8 +96,8 @@ class DepContainer:
     new_feature: NewFeatureManager = NewFeatureManager(Features.EXPIRE_TABLE)
 
     def make_http_session(self):
-        session_timeout = float(self.cfg.get('thor.timeout', 2.0))
-        self.session = aiohttp.ClientSession(
+        session_timeout = self.cfg.get_timeout_global
+        self.session = ObservableSession(
             json_serialize=ujson.dumps,
             timeout=ClientTimeout(total=session_timeout))
         logging.info(f'HTTP Session timeout is {session_timeout} sec')

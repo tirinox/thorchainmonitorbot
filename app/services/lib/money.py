@@ -420,3 +420,7 @@ def distort_randomly(x, dev=10, up_only=False):
     low_bound = 0 if up_only else -1
     new_x = x + random.uniform(low_bound, 1) * abs(x / 100.0 * dev)
     return int(new_x) if isinstance(x, int) else new_x
+
+
+def new_average(old_avg, new_value, count_of_values):
+    return (old_avg * count_of_values + new_value) / (count_of_values + 1)

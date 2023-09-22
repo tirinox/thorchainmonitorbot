@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import random
 from abc import ABC, abstractmethod
 from typing import Dict
 
@@ -18,6 +19,12 @@ class WatchedEntity:
         self.error_counter = 0
         self.total_ticks = 0
         self.creating_date = now_ts()
+
+    @property
+    def success_rate(self):
+        if not self.total_ticks:
+            return 100.0
+        return (self.total_ticks - self.error_counter) / self.total_ticks * 100.0
 
 
 class DataController:
@@ -47,13 +54,8 @@ class BaseFetcher(WithDelegates, WatchedEntity, ABC):
         self.logger = class_logger(self)
 
         self.sleep_period = sleep_period
+        self.initial_sleep = random.uniform(0, sleep_period)
         self.data_controller.register(self)
-
-    @property
-    def success_rate(self):
-        if not self.total_ticks:
-            return 100.0
-        return (self.total_ticks - self.error_counter) / self.total_ticks * 100.0
 
     @property
     def data_controller(self):
@@ -89,7 +91,10 @@ class BaseFetcher(WithDelegates, WatchedEntity, ABC):
             self.logger.info('This fetcher is disabled.')
             return
 
+        self.logger.info(f'Waiting {self.initial_sleep:.1f} sec before starting this fetcher...')
         await asyncio.sleep(self.initial_sleep)
+        self.logger.info(f'Starting this fetcher with period {self.sleep_period:.1f} sec.')
+
         while True:
             await self.run_once()
             await asyncio.sleep(self.sleep_period)
