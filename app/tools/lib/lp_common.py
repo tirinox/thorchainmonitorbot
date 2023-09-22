@@ -19,13 +19,17 @@ from services.notify.types.block_notify import LastBlockStore
 
 
 class LpAppFramework(App):
-    def __init__(self, rune_yield_class=None, network=None, log_level=logging.DEBUG, brief=None) -> None:
+    def __init__(self, rune_yield_class=None, network=None, log_level=logging.DEBUG, brief=None, emergency=True) -> None:
         self.solve_working_dir_mess()  # first of all!
 
         super().__init__(log_level)
         self.brief = brief
 
         d = self.deps
+
+        self.emergency = emergency
+        if not emergency:
+            d.emergency = None
 
         if network:
             d.cfg.network_id = network
@@ -73,7 +77,8 @@ class LpAppFramework(App):
 
         d.last_block_fetcher.add_subscriber(d.last_block_store)
 
-        asyncio.create_task(d.emergency.run_worker())
+        if self.emergency:
+            asyncio.create_task(d.emergency.run_worker())
 
         brief = brief if self.brief is None else self.brief
         if brief:

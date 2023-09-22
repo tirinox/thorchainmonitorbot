@@ -8,11 +8,14 @@ from services.lib.w3.resolver import AggregatorResolver, DEFAULT_AGGREGATOR_RESO
 from services.lib.w3.router_contract import TCRouterContract
 from services.lib.w3.token_list import StaticTokenList
 from services.lib.w3.web3_helper import Web3Helper
+from tools.lib.lp_common import LpAppFramework
+
+LpAppFramework.solve_working_dir_mess()
 
 
 @pytest.fixture(scope='module')
 def aggr() -> AggregatorResolver:
-    return AggregatorResolver('.' + DEFAULT_AGGREGATOR_RESOLVER_PATH)
+    return AggregatorResolver(DEFAULT_AGGREGATOR_RESOLVER_PATH)
 
 
 def test_loading(aggr):
@@ -21,27 +24,31 @@ def test_loading(aggr):
     assert set(aggr.by_chain.keys()) == {Chains.ETH, Chains.AVAX, Chains.BSC}
 
 
-@pytest.mark.parametrize(('address', 'name'), [
-    ('0x7C38b8B2efF28511ECc14a621e263857Fb5771d3', 'TSAggregatorUniswapV3-500'),
-    ('7c3', 'TSAggregatorUniswapV3-500'),
-    ('1D3', 'TSAggregatorUniswapV3-500'),
-    ('983976529', 'TSAggregator SUSHIswap'),
-    ('5dA', 'TSAggregator SUSHIswap'),
-    ('6cFD3', 'TSAggregator SUSHIswap'),
-    ('6Cfd3', 'TSAggregator SUSHIswap'),
-    ('0x2a781', 'RangoThorchainOutputAggUniV3'),
-    ('xyz', None),
-    ('0x35919b3929De1319', None),
+@pytest.mark.parametrize(('address', 'name', 'chain'), [
+    ('0x7C38b8B2efF28511ECc14a621e263857Fb5771d3', 'TSAggregatorAvaxGeneric', 'AVAX'),
+    ('7c3', 'TSAggregatorAvaxGeneric', 'AVAX'),
+    ('1D3', 'TSAggregatorAvaxGeneric', 'AVAX'),
+    ('983976529', 'TSAggregator2LegUniswapV2 USDC', 'ETH'),
+    ('5dA', 'TSAggregator2LegUniswapV2 USDC', 'ETH'),
+    ('4DD4072A9a8e', 'XDEFIAggregatorEthGeneric', 'ETH'),
+    ('0x53E4DD4072A9a8ed56289e048f5BD5AA51c9Bf6E', 'XDEFIAggregatorEthGeneric', 'ETH'),
+    ('6cFD3', 'TSAggregator2LegUniswapV2 USDC', 'ETH'),
+    ('6Cfd3', 'TSAggregator2LegUniswapV2 USDC', 'ETH'),
+    ('0x2a781', 'RangoThorchainOutputAggUniV2', 'ETH'),
+    ('xyz', None, 'ETH'),
+    ('0x35919b3929De1319', None, 'ETH'),
+    ('0xe93685f3bBA03016F02bD1828BaDD6195988D950', 'LayerZero Executor BinanceSmartChain', 'BSC'),
+    ('dd619', 'LayerZero Executor BinanceSmartChain', 'BSC'),
 ])
-def test_aggregator_fuzzy_search(address, name, aggr):
+def test_aggregator_fuzzy_search(address, name, chain, aggr):
     result = aggr.search_aggregator_address(address)
     if name is None:
         assert result is None
     else:
         assert result
-        found_name, chain, found_address = result
-        assert chain == Chains.ETH
-        assert found_name == name
+        assert address.lower() in result.address.lower()
+        assert result.chain == chain
+        assert result.name == name
 
 
 def test_token_list():
@@ -54,7 +61,7 @@ def test_token_list():
     assert t1.name == 'Bitcoin'
     assert all((t.chain_id == 43114 or t.chain_id == 4) for t in t_avax.tokens.values())
 
-    t_eth = StaticTokenList(StaticTokenList.DEFAULT_LISTS[Chains.ETH][3:], Chains.ETH)
+    t_eth = StaticTokenList(StaticTokenList.DEFAULT_LISTS[Chains.ETH], Chains.ETH)
     assert len(t_eth) > 0
 
     assert t_eth['0x5dbcF33D8c2E976c6b560249878e6F1491Bca25c'].name == 'yearnCurve.fiyDAIyUSDCyUSDTyTUSD'
@@ -76,9 +83,12 @@ SWAP_OUT_EXAMPLE_INPUT = '0x4039fd4b0000000000000000000000000f2cd5df82959e00be7a
 @pytest.fixture(scope='module')
 def w3_helper():
     return Web3Helper(Config(data={
-        'infura': {
+        'web3': {
+            'ETH': {
+                'rpc': ''
+            }
         }
-    }))
+    }), 'ETH')
 
 
 @pytest.mark.asyncio
