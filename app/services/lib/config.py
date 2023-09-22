@@ -34,9 +34,10 @@ class SubConfig:
 
             if isinstance(sub_config, (list, tuple, dict)):
                 # collection => SubConfig(it)
+                # fixme:
                 return (
                     sub_config if pure else SubConfig(sub_config)
-                ) if default is None else sub_config
+                ) if (default is None or isinstance(default, SubConfig)) else sub_config
             else:
                 # primitive => always pure!
                 return sub_config
@@ -60,7 +61,12 @@ class SubConfig:
         return str(self.get(path, default))
 
     def as_list(self, path: str = None, default=None):
-        return list(self.get(path, default)._root_config)
+        data = self.get(path, default)
+        return list(data.contents if isinstance(data, SubConfig) else data)
+
+    @property
+    def contents(self):
+        return self._root_config
 
     def as_interval(self, path: str = None, default=None):
         return parse_timespan_to_seconds(self.as_str(path, default))

@@ -26,8 +26,8 @@ class LiquidityCapNotifier(INotified):
         self.deps = deps
         self.logger = class_logger(self)
 
-        self.raise_stickers = deps.cfg.cap.raised.stickers
-        self.raise_sticker_iter = make_stickers_iterator(self.raise_stickers)
+        raise_stickers = deps.cfg.cap.raised.stickers.as_list()
+        self.raise_sticker_iter = make_stickers_iterator(raise_stickers)
 
         self.full_notification_enabled = bool(deps.cfg.cap.full.get('enabled', default=True))
         self.full_limit_ratio = float(deps.cfg.cap.full.get('full_limit_ratio', default=0.99))

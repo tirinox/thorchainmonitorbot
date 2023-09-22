@@ -38,7 +38,7 @@ class PriceNotifier(INotified):
 
         self.time_series = PriceTimeSeries(RUNE_SYMBOL_POOL, deps.db)
 
-        self.ath_stickers = cfg.ath.stickers
+        self.ath_stickers = cfg.ath.stickers.as_list()
         self.ath_sticker_iter = make_stickers_iterator(self.ath_stickers)
 
         self.price_graph_period = parse_timespan_to_seconds(cfg.price_graph.default_period)
