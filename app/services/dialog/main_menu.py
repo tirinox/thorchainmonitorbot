@@ -159,12 +159,12 @@ class MainMenuDialog(BaseDialog):
                              disable_notification=True,
                              disable_web_page_preview=True)
 
-        text = await self.admin_messages.get_debug_message_text_session(rps=False)
+        text = await self.admin_messages.get_debug_message_text_session(with_summary=False)
         await message.answer(text,
                              disable_notification=True,
                              disable_web_page_preview=True)
 
-        text = await self.admin_messages.get_debug_message_text_session(start=10, rps=True)
+        text = await self.admin_messages.get_debug_message_text_session(start=10, with_summary=True)
         await message.answer(text,
                              disable_notification=True,
                              disable_web_page_preview=True)

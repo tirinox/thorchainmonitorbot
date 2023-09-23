@@ -32,13 +32,17 @@ class RequestEntry:
     total_errors: int = 0
     last_timestamp: float = 0.0
     last_timestamp_response: float = 0.0
-    response_codes: Dict[int, int] = None
+    response_codes: Dict[int, int] = field(default_factory=dict)
     none_count: int = 0
     text_answer_count: int = 0
     last_text_answer: str = ''
 
     avg_time: WindowAverage = field(default_factory=lambda: WindowAverage(WINDOW_SIZE_TO_AVERAGE))
     last_error: Optional[Exception] = None
+
+    @property
+    def non_ok_code_count(self):
+        return sum(self.response_codes.get(k, 0) for k in self.response_codes if k != 200)
 
     def __str__(self):
         return f'{self.method} {self.url}'
@@ -63,7 +67,10 @@ class RequestEntry:
             self.none_count += 1
         elif not (text.startswith('{') or text.startswith('[')):
             self.text_answer_count += 1
-            self.last_text_answer = text[:100].replace('<', '').replace('>', '')
+            self.last_text_answer = (text[:100]
+                                     .replace('<', ' ')
+                                     .replace('>', ' ')
+                                     .replace('\n', ''))
 
         self.update_time(ts_start)
 
@@ -93,6 +100,26 @@ class ObservableSession(aiohttp.ClientSession, WithLogger):
     @staticmethod
     def clean_url(url: str):
         return urlunparse(urlparse(url)._replace(query=''))
+
+    @property
+    def total_calls(self):
+        return sum(r.total_calls for r in self._debug_cache.values())
+
+    @property
+    def total_errors(self):
+        return sum(r.total_errors for r in self._debug_cache.values())
+
+    @property
+    def success_rate_vs_error(self):
+        return 1.0 - self.total_errors / self.total_calls if self.total_calls else 0.0
+
+    @property
+    def success_rate_vs_code(self):
+        return 1.0 - self.count_non_ok_codes / self.total_calls if self.total_calls else 0.0
+
+    @property
+    def count_non_ok_codes(self):
+        return sum(r.non_ok_code_count for r in self._debug_cache.values())
 
     @staticmethod
     def _key_from_url(url: str, method):

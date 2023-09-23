@@ -57,7 +57,7 @@ class AdminMessages:
 
         return message
 
-    async def get_debug_message_text_session(self, start=0, count=10, rps=True):
+    async def get_debug_message_text_session(self, start=0, count=10, with_summary=True):
         message = f'🕸️ {bold("HTTP session info")}\n\n'
 
         # noinspection PyTypeChecker
@@ -69,9 +69,9 @@ class AdminMessages:
         for i, item in enumerate(top_requests[start:start + count], start=(start + 1)):
             item: RequestEntry
 
-            med_t = item.avg_time.median
-            max_t = item.avg_time.max
-            avg_t = item.avg_time.average
+            med_t = item.avg_time.median or -1
+            max_t = item.avg_time.max or -1
+            avg_t = item.avg_time.average or -1
 
             last_ago = format_time_ago(now - item.last_timestamp)
             if item.response_codes:
@@ -88,12 +88,17 @@ class AdminMessages:
             if item.none_count:
                 message += f' | None: {item.none_count}'
             if item.text_answer_count:
-                message += f' | T: {item.text_answer_count}, last: {pre(item.last_text_answer)}'
+                message += f' | Non-json: {item.text_answer_count}, last: {pre(item.last_text_answer)}'
 
             message += '\n\n'
 
-        if rps:
-            message += f'<b>RPS:</b> {session.rps:.2f} req/sec'
+        if with_summary:
+            message += (
+                f'<b>RPS:</b> {session.rps:.2f} req/sec, '
+                f'{ital(session.total_calls)} total requests, '
+                f'{ital(session.total_errors)} errors, '
+                f'{ital(format_percent(session.success_rate_vs_code))} of 200 code'
+            )
 
         return message
 
