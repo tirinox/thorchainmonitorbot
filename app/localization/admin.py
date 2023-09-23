@@ -57,7 +57,7 @@ class AdminMessages:
 
         return message
 
-    async def get_debug_message_text_session(self):
+    async def get_debug_message_text_session(self, start=0, count=10, rps=True):
         message = f'🕸️ {bold("HTTP session info")}\n\n'
 
         # noinspection PyTypeChecker
@@ -65,8 +65,8 @@ class AdminMessages:
 
         now = now_ts()
 
-        top_requests = session.debug_top_calls(11)
-        for i, item in enumerate(top_requests, start=1):
+        top_requests = session.debug_top_calls(start + count + 1)
+        for i, item in enumerate(top_requests[start:start + count], start=(start + 1)):
             item: RequestEntry
 
             med_t = item.avg_time.median
@@ -74,7 +74,10 @@ class AdminMessages:
             avg_t = item.avg_time.average
 
             last_ago = format_time_ago(now - item.last_timestamp)
-            code_txt = ' | '.join(f'{bold(k)}: {v}' for k, v in item.response_codes.items())
+            if item.response_codes:
+                code_txt = ' | '.join(f'{bold(k)}: {v}' for k, v in item.response_codes.items())
+            else:
+                code_txt = 'No response yet'
             caption = short_address(item.url, 40, 80)
             message += (
                 f'{i}. {link(item.url, caption)}\n'
@@ -89,7 +92,8 @@ class AdminMessages:
 
             message += '\n\n'
 
-        message += f'RPS: {session.rps:.1f}'
+        if rps:
+            message += f'<b>RPS:</b> {session.rps:.2f} req/sec'
 
         return message
 
