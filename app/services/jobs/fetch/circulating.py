@@ -88,23 +88,27 @@ class RuneCirculatingSupply:
 
 
 class RuneCirculatingSupplyFetcher(WithLogger):
-    def __init__(self, session, thor_exclude=None, thor_node=THOR_NODE_DEFAULT):
+    def __init__(self, session, thor_exclude=None, thor_node=THOR_NODE_DEFAULT, step_sleep=0):
         super().__init__()
         self.session = session
         self.thor_exclude = thor_exclude or THOR_EXCLUDE_FROM_CIRCULATING_ADDRESSES
         self.thor_node = thor_node
+        self.step_sleep = step_sleep
 
     async def fetch(self) -> RuneCirculatingSupply:
         """
         @return: RuneCirculatingSupply
         """
-        (
-            thor_rune_supply,
-            *thor_exclude_balance_arr,
-        ) = await asyncio.gather(
-            self.get_thor_rune_total_supply(),
-            *[self.get_thor_address_balance(address) for address in THOR_EXCLUDE_FROM_CIRCULATING_ADDRESSES.values()]
-        )
+
+        thor_rune_supply = await self.get_thor_rune_total_supply()
+
+        thor_exclude_balance_arr = []
+        for address in THOR_EXCLUDE_FROM_CIRCULATING_ADDRESSES.values():
+            # No hurry, do it step by step
+            await asyncio.sleep(self.step_sleep)
+
+            balance = await self.get_thor_address_balance(address)
+            thor_exclude_balance_arr.append(balance)
 
         thor_locked_dict = dict((k, v) for k, v in
                                 zip(THOR_EXCLUDE_FROM_CIRCULATING_ADDRESSES.keys(), thor_exclude_balance_arr))

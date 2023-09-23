@@ -103,10 +103,9 @@ async def run():
         # save_and_show_pic(pic, show=True, name='supply')
 
         # await post_supply_to_discord(app, pic)
-        # await my_demo_market_info(app)
+        await my_demo_market_info(app)
 
-        # await debug_get_rune_market_data(app)
-        await debug_network_stats(app)
+        # await debug_network_stats(app)
 
 
 if __name__ == '__main__':

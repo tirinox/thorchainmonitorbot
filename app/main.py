@@ -95,7 +95,7 @@ class App:
         self._admin_messages = AdminMessages(d)
 
         self._init_configuration(log_level)
-        self.sleep_step = d.cfg.as_interval('startup_step_delay', 3)
+        self.sleep_step = d.cfg.sleep_step
 
         d.node_info_fetcher = NodeInfoFetcher(d)
         d.mimir_const_fetcher = ConstMimirFetcher(d)

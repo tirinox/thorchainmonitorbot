@@ -15,7 +15,7 @@ class NetworkStatisticsFetcher(BaseFetcher):
     def __init__(self, deps: DepContainer):
         sleep_period = parse_timespan_to_seconds(deps.cfg.net_summary.fetch_period)
         super().__init__(deps, sleep_period)
-        self.step_sleep = 2.0
+        self.step_sleep = deps.cfg.sleep_step
 
     async def _get_stats(self, ns: NetworkStats):
         j = await self.deps.midgard_connector.request(free_url_gen.url_stats())

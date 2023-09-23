@@ -29,17 +29,17 @@ class RuneMarketInfoFetcher(WithLogger):
 
         self.logger.info(f'Reference is RUNE/${self.cex_pair} at "{self.cex_name}" CEX.')
 
+    @retries(5)
     async def total_pooled_rune(self):
         j = await self.midgard.request(free_url_gen.url_network())
-        total_pooled_rune = j.get('totalStaked', 0)
-        if not total_pooled_rune:
-            total_pooled_rune = j.get('totalPooledRune', 0)
+        total_pooled_rune = j.get('totalPooledRune', 0)
         return thor_to_float(total_pooled_rune)
 
     @retries(5)
     async def _get_circulating_supply(self) -> RuneCirculatingSupply:
         supply_fetcher = RuneCirculatingSupplyFetcher(self.deps.session,
-                                                      thor_node=self.deps.cfg.get('thor.node.node_url'))
+                                                      thor_node=self.deps.cfg.get('thor.node.node_url'),
+                                                      step_sleep=self.deps.cfg.sleep_step)
 
         return await supply_fetcher.fetch()
 

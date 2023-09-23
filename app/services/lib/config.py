@@ -153,3 +153,7 @@ class Config(SubConfig):
     @property
     def first_admin_id(self):
         return self.get('telegram.admins')[0]
+
+    @property
+    def sleep_step(self):
+        return self.as_interval('startup_step_delay', 3)
