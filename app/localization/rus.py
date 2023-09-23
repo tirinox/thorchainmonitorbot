@@ -545,7 +545,7 @@ class RussianLocalization(BaseLocalization):
         price = p.market_info.pool_rune_price
 
         btc_price = f"₿ {p.btc_pool_rune_price:.8f}"
-        pr_text = f"${price:.2f}"
+        pr_text = f"${price:.3f}"
         message += f"Цена <b>RUNE</b> сейчас {code(pr_text)} ({btc_price}).\n"
 
         fp = p.market_info
