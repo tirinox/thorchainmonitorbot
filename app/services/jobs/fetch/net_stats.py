@@ -79,10 +79,13 @@ class NetworkStatisticsFetcher(BaseFetcher):
 
     async def _get_swap_stats(self, ns: NetworkStats):
         j = await self.deps.midgard_connector.request(free_url_gen.url_for_swap_history(days=1))
-        swap_meta = SwapHistoryResponse.from_json(j).meta
-        ns.synth_volume_24h = thor_to_float(swap_meta.synth_mint_volume) + thor_to_float(swap_meta.synth_redeem_volume)
-        ns.synth_op_count = swap_meta.synth_mint_count + swap_meta.synth_redeem_count
-        ns.swap_volume_24h = thor_to_float(swap_meta.total_volume)
+        if j:
+            swap_meta = SwapHistoryResponse.from_json(j).meta
+            ns.synth_volume_24h = thor_to_float(swap_meta.synth_mint_volume) + thor_to_float(swap_meta.synth_redeem_volume)
+            ns.synth_op_count = swap_meta.synth_mint_count + swap_meta.synth_redeem_count
+            ns.swap_volume_24h = thor_to_float(swap_meta.total_volume)
+        else:
+            self.logger.error('Failed to get swap history from Midgard!')
 
     async def _get_ilp_24h_payouts(self, ns: NetworkStats):
         ns.loss_protection_paid_24h_rune = await ILPSummer(self.deps).ilp_sum(period=DAY)
