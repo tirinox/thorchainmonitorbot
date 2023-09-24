@@ -1,5 +1,6 @@
 import asyncio
 import json
+import pickle
 
 from localization.eng_base import BaseLocalization
 from localization.languages import Language
@@ -120,11 +121,23 @@ async def search_out(app):
         b += 1
 
 
-async def debug_block_scan_for_swaps(app, start=12033185):
-    scanner = NativeScannerBlock(app.deps, last_block=start)
-    # await scanner.run()
-    blk = await scanner.fetch_one_block(12090456)
-    print(blk)
+async def get_block_cached(app, block_index):
+    filename = f'../data/block_results_{block_index}.pickle'
+    try:
+        with open(filename, 'rb') as f:
+            block = pickle.load(f)
+    except FileNotFoundError:
+        scanner = NativeScannerBlock(app.deps)
+        block = await scanner.fetch_one_block(block_index)
+        with open(filename, 'wb') as f:
+            pickle.dump(block, f)
+
+    return block
+
+
+async def debug_block_tx_status_check(app):
+    block = await get_block_cached(app, 12716799)
+    print(block)
 
 
 async def main():
@@ -136,8 +149,9 @@ async def main():
         # await search_out(app)
         # await demo_rune_transfers_once(app)
         # await demo_test_rune_detector(app)
-        await demo_native_block_action_detector(app)
-        # await debug_block_scan_for_swaps(app)
+        # await demo_native_block_action_detector(app)
+
+        await debug_block_tx_status_check(app)
 
 
 if __name__ == '__main__':
