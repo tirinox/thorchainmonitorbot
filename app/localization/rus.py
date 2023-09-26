@@ -367,7 +367,7 @@ class RussianLocalization(BaseLocalization):
             heading = f'🙌 <b>Пожертвование в пул</b>'
         elif tx.type == TxType.SWAP:
             if tx.is_streaming:
-                heading = f'🌊 <b>Потоковый обмен</b> 🔁'
+                heading = f'🌊 <b>Потоковый обмен завершен</b> 🔁'
             else:
                 heading = f'🐳 <b>Крупный обмен</b> 🔁'
         elif tx.type == TxType.REFUND:

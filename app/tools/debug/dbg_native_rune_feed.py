@@ -122,7 +122,7 @@ async def search_out(app):
 
 
 async def get_block_cached(app, block_index):
-    filename = f'../data/block_results_{block_index}.pickle'
+    filename = f'../temp/block_results_{block_index}.pickle'
     try:
         with open(filename, 'rb') as f:
             block = pickle.load(f)
@@ -136,7 +136,7 @@ async def get_block_cached(app, block_index):
 
 
 async def debug_block_tx_status_check(app):
-    block = await get_block_cached(app, 12716799)
+    block = await get_block_cached(app, 12706550)
     print(block)
 
 

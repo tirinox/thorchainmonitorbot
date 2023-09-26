@@ -109,9 +109,9 @@ class TwitterEnglishLocalization(BaseLocalization):
             heading = f'🐳 Donation to the pool 🙌'
         elif tx.type == TxType.SWAP:
             if tx.is_streaming:
-                heading = f'🌊 Streaming swap'
+                heading = f'🌊 Streaming swap finished'
             else:
-                heading = f'🐳 Swap 🔁'
+                heading = f'🔁 Swap'
         elif tx.type == TxType.REFUND:
             heading = f'🐳 Refund ↩️❗'
 

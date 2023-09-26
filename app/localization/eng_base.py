@@ -543,7 +543,7 @@ class BaseLocalization(ABC):  # == English
             heading = f'🙌 <b>Donation to the pool</b>'
         elif tx.type == TxType.SWAP:
             if tx.is_streaming:
-                heading = f'🌊 <b>Streaming swap</b> 🔁'
+                heading = f'🌊 <b>Streaming swap finished</b> 🔁'
             else:
                 heading = f'🐳 <b>Swap</b> 🔁'
         elif tx.type == TxType.REFUND:
