@@ -2033,7 +2033,7 @@ class BaseLocalization(ABC):  # == English
             except ValueError:
                 delta_p = ''
 
-            asset = Asset.from_string(pool.asset).pretty_str
+            asset = Asset.from_string(pool.asset).shortest
             url = get_pool_url(pool.asset)
 
             text += f'#{i}. {link(url, asset)}: {code(v)} {delta_p}\n'

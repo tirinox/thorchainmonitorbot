@@ -84,8 +84,8 @@ async def main():
     app = LpAppFramework()
     async with app(brief=True):
         # await demo_cache_blocks(app)
-        # await demo_top_pools(app)
-        await demo_price_graph(app)
+        await demo_top_pools(app)
+        # await demo_price_graph(app)
 
 
 if __name__ == '__main__':

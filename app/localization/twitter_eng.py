@@ -880,7 +880,11 @@ class TwitterEnglishLocalization(BaseLocalization):
     @staticmethod
     def pretty_asset(name):
         # we add '$' before assets to mention the asset name in Twitter
-        return '$' + Asset(name).name
+        asset = Asset(name.upper())
+        if 'USD' in asset.name or 'BNB' in asset.name:
+            return f'${asset.name} ({asset.chain})'
+        else:
+            return f'${asset.name}'
 
     def notification_text_pol_utilization(self, event: AlertPOL):
         curr, prev = event.current, event.previous
