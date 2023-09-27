@@ -25,6 +25,7 @@ from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.jobs.fetch.pol import POLFetcher
 from services.jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
+from services.jobs.fetch.profit_against_cex import StreamingSwapVsCexProfitCalculator
 from services.jobs.fetch.queue import QueueFetcher
 from services.jobs.fetch.savers_vnx import VNXSaversStatsFetcher
 from services.jobs.fetch.tx import TxFetcher
@@ -293,7 +294,11 @@ class App:
             if d.block_scanner:
                 native_action_extractor = SwapExtractorBlock(d)
                 d.block_scanner.add_subscriber(native_action_extractor)
-                native_action_extractor.add_subscriber(aggregator)
+
+                profit_calc = StreamingSwapVsCexProfitCalculator(d)
+                native_action_extractor.add_subscriber(profit_calc)
+
+                profit_calc.add_subscriber(aggregator)
 
             volume_filler = VolumeFillerUpdater(d)
             aggregator.add_subscriber(volume_filler)

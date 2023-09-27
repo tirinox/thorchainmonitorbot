@@ -654,7 +654,8 @@ class BaseLocalization(ABC):  # == English
                     total = tx.meta_swap.streaming.quantity
                     content += f'\nSuccess rate: {format_percent(success)} ({good}/{total})'
 
-                if (saved_usd := tx.meta_swap.streaming.estimated_savings_vs_cex_usd) > 0.0:
+                saved_usd = tx.meta_swap.streaming.estimated_savings_vs_cex_usd
+                if saved_usd is not None and saved_usd > 0.0:
                     content += f'\nEst. Savings vs CEX: {bold(pretty_dollar(saved_usd))}'
 
         blockchain_components_str = self._add_input_output_links(tx, name_map, 'Input: ', 'Output: ', 'User: ')

@@ -45,6 +45,9 @@ class EventDatabase(WithLogger):
             kwargs = {k: self._convert_type(v) for k, v in mapping.items()}
             await r.hset(self.key_to_tx(tx_id), mapping=kwargs)
 
+    async def write_tx_give_away(self, tx_id):
+        await self.write_tx_status_kw(tx_id, status=SwapProps.STATUS_GIVEN_AWAY)
+
     async def write_tx_status_kw(self, tx_id, **kwargs):
         await self.write_tx_status(tx_id, kwargs)
 

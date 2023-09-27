@@ -12,6 +12,7 @@ from services.models.cap_info import ThorCapInfo
 from services.models.lp_info import LPAddress
 from services.models.mimir import MimirHolder
 from services.models.pool_info import PoolInfo, PoolInfoMap
+from services.models.price import LastPriceHolder
 from services.models.s_swap import StreamingSwap
 from services.models.tx_type import TxType
 
@@ -74,6 +75,8 @@ class ThorMetaSwap:
     memo: str = ''
     affiliate_address: str = ''  # highly likely to be a THORName
     streaming: Optional[StreamingSwap] = None
+    cex_out_amount: float = 0.0
+    cex_rate: float = 0.0
 
     @classmethod
     def parse(cls, j):
@@ -511,6 +514,36 @@ class ThorTx:
         meta = self.meta_swap or self.meta_add or self.meta_withdraw or self.meta_refund
         if hasattr(meta, 'memo'):
             return THORMemo.parse_memo(meta.memo)
+
+    def out_non_rune_amount(self):
+        return [coin for sub_tx in self.out_tx for coin in sub_tx.coins if not is_rune(coin.asset)]
+
+    @property
+    def swap_profit_vs_cex(self):
+        if not self.meta_swap:
+            return
+
+        real_out = self.sum_of_non_rune(out_only=True)
+        cex_out = self.meta_swap.cex_out_amount
+        return real_out - cex_out
+
+    @property
+    def percent_profit_vs_cex(self):
+        if not self.meta_swap:
+            return
+
+        real_out = self.sum_of_non_rune(out_only=True)
+        cex_out = self.meta_swap.cex_out_amount
+        return (real_out - cex_out) / cex_out * 100.0 if cex_out else None
+
+    def get_profit_vs_cex_in_usd(self, price_holder: LastPriceHolder):
+        profit_out_asset = self.swap_profit_vs_cex
+        if profit_out_asset is None:
+            return
+
+        out_coin = self.out_non_rune_amount()[0]
+
+        return price_holder.convert_to_usd(profit_out_asset, out_coin.asset)
 
 
 @dataclass

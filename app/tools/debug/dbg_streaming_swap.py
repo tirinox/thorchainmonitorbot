@@ -1,11 +1,14 @@
 import asyncio
+import faulthandler
 
 from proto.types import MsgDeposit, MsgObservedTxIn
+from services.jobs.fetch.profit_against_cex import StreamingSwapVsCexProfitCalculator
 from services.jobs.fetch.streaming_swaps import StreamingSwapFechter
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.scanner.event_db import EventDatabase
-from services.jobs.scanner.swap_extractor import SwapExtractorBlock
 from services.jobs.scanner.native_scan import NativeScannerBlock
+from services.jobs.scanner.swap_extractor import SwapExtractorBlock
+from services.jobs.scanner.swap_props import SwapProps
 from services.jobs.user_counter import UserCounter
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.jobs.volume_recorder import VolumeRecorder
@@ -20,6 +23,7 @@ from services.notify.types.s_swap_notify import StreamingSwapStartTxNotifier
 from services.notify.types.tx_notify import SwapTxNotifier
 from tools.lib.lp_common import LpAppFramework
 
+faulthandler.enable()
 
 # 1)
 # Memo:  =:ETH.THOR:0x8d2e7cab1747f98a7e1fa767c9ef62132e4c31db:139524325459200/9/99:t:30
@@ -80,7 +84,7 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
     # Block scanner: the source of the river
     d.block_scanner = NativeScannerBlock(d, last_block=start)
     d.block_scanner.one_block_per_run = single_block
-    d.block_scanner.allow_jumps = False
+    d.block_scanner.allow_jumps = True
 
     # Just to check stability
     user_counter = UserCounter(d)
@@ -88,17 +92,27 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
 
     # Extract ThorTx from BlockResult
     native_action_extractor = SwapExtractorBlock(d)
-    native_action_extractor.dbg_open_file(f'../temp/{tx_id}.txt')
-    if tx_id:
-        native_action_extractor.dbg_watch_swap_id = tx_id
-        native_action_extractor._db.dbg_only_tx_id = tx_id
+    native_action_extractor.dbg_ignore_finished_status = True
 
-    await native_action_extractor._db.backup('../temp/ev_db_backup_everything.json')
+    if tx_id:
+        native_action_extractor.dbg_open_file(f'../temp/{tx_id}.txt')
+        native_action_extractor.dbg_watch_swap_id = tx_id
+
+        db = native_action_extractor._db
+
+        db.dbg_only_tx_id = tx_id
+        await db.backup('../temp/ev_db_backup_everything.json')
+
+        # await db.clean_up_old_events(start + 10000)
+
     d.block_scanner.add_subscriber(native_action_extractor)
+
+    profit_calc = StreamingSwapVsCexProfitCalculator(d)
+    native_action_extractor.add_subscriber(profit_calc)
 
     # Enrich with aggregator data
     aggregator = AggregatorDataExtractor(d)
-    native_action_extractor.add_subscriber(aggregator)
+    profit_calc.add_subscriber(aggregator)
 
     # Volume filler (important)
     volume_filler = VolumeFillerUpdater(d)
@@ -130,7 +144,6 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
     stream_swap_notifier = StreamingSwapStartTxNotifier(d)
     d.block_scanner.add_subscriber(stream_swap_notifier)
     stream_swap_notifier.add_subscriber(d.alert_presenter)
-    # await stream_swap_notifier.clear_seen_cache()
 
     # Run all together
     if single_block:
@@ -198,6 +211,22 @@ async def debug_detect_start_on_external_tx(app: LpAppFramework):
     sep()
 
 
+async def debug_cex_profit_calc(app: LpAppFramework, tx_id):
+    native_action_extractor = SwapExtractorBlock(app.deps)
+
+    tx = await native_action_extractor.find_tx(tx_id)
+    if not tx:
+        raise Exception(f'TX {tx_id} not found')
+
+    profit_calc = StreamingSwapVsCexProfitCalculator(app.deps)
+    await profit_calc.get_cex_data(tx)
+
+    print(f'{tx.swap_profit_vs_cex=}')
+
+    usd_profit = tx.get_profit_vs_cex_in_usd(app.deps.price_holder)
+    print(f'{usd_profit=}')
+
+
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
@@ -207,17 +236,21 @@ async def run():
         # await debug_fetch_ss(app)
         # await debug_block_analyse(app)
         # await debug_full_pipeline(app, start=12132219)
-        await debug_tx_records(app, 'E8766E3D825A7BFD755ECA14454256CA25980F8B4BA1C9DCD64ABCE4904F033D')
+        # await debug_tx_records(app, 'E8766E3D825A7BFD755ECA14454256CA25980F8B4BA1C9DCD64ABCE4904F033D')
+        #
+        # await debug_full_pipeline(
+        #     app,
+        #     start=12768946,
+        #     # tx_id='24A0F836682C9AB41D6AB8567FBF5110783B29DEB45AA71F529E90831E4B30B2',
+        #     # single_block=False
+        # )
 
-        await debug_full_pipeline(
-            app,
-            start=12204032,
-            # tx_id='E24872FE5AFED50A7CFB423DA3FCC9EA507C6A6A040000D73FE8CE87865BC7A5',
-            # single_block=True
-        )
+        await debug_full_pipeline(app, start=12768946)
 
         # await debug_detect_start_on_deposit_rune(app)
         # await debug_detect_start_on_external_tx(app)
+
+        # await debug_cex_profit_calc(app, '24A0F836682C9AB41D6AB8567FBF5110783B29DEB45AA71F529E90831E4B30B2')
 
 
 if __name__ == '__main__':

@@ -1,7 +1,7 @@
 import datetime
 import sys
 from collections import defaultdict
-from typing import List
+from typing import List, Optional
 
 from services.jobs.affiliate_merge import ZERO_HASH
 from services.jobs.scanner.event_db import EventDatabase
@@ -10,7 +10,7 @@ from services.jobs.scanner.swap_props import SwapProps
 from services.jobs.scanner.swap_start_detector import SwapStartDetector
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
-from services.lib.utils import WithLogger, say, hash_of_string_repr
+from services.lib.utils import WithLogger, hash_of_string_repr
 from services.models.events import EventSwap, EventOutbound, EventScheduledOutbound, \
     parse_swap_and_out_event, TypeEventSwapAndOut
 from services.models.s_swap import AlertSwapStart
@@ -29,6 +29,7 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
         self.dbg_start_time = datetime.datetime.now()
         self.dbg_swaps = 0
         self.dbg_file = None
+        self.dbg_ignore_finished_status = False
 
         self.clean_block_older_than_block = deps.cfg.as_int('native_scanner.clean_block_older_than_block', 0)
 
@@ -51,18 +52,6 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
 
         # Incoming swap intentions will be recorded in the DB
         await self.register_new_swaps(new_swaps, block.block_no)
-
-        # # todo: debug
-        # for swap in new_swaps:
-        #     if swap.memo.affiliate_address:
-        #         print(f"{swap.in_amount} {swap.in_asset} => {swap.memo_str} ({swap.memo.affiliate_address}/{swap.memo.affiliate_fee})")
-        #         if swap.memo.affiliate_fee and swap.out_asset == 'THOR.RUNE':
-        #             await say('Feeeeeee!')
-        #             print(swap.tx_id, ' /// ', swap.block_height)
-        #             exit(0)
-        # if swap.memo.affiliate_fee and swap.in_asset.upper().startswith('BNB'):
-        #         await say('Interesting!')
-        #         print('stop')
 
         # Swaps and Outs
         interesting_events = list(self.get_events_of_interest(block))
@@ -104,7 +93,7 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
                 self.dbg_print(f'👿 Start watching swap\n')
                 self.dbg_print(swap, '\n\n')
 
-                await say('Found a swap')
+                # await say('Found a swap')
 
                 self.dbg_start_observed = True
 
@@ -136,11 +125,11 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
                 self.dbg_print('----------\n')
 
                 if not boom:
-                    await say('Event!!')
+                    # await say('Event!!')
                     boom = True
 
-                if isinstance(swap_ev, EventScheduledOutbound):
-                    await say('Scheduled outbound!')
+                # if isinstance(swap_ev, EventScheduledOutbound):
+                #     await say('Scheduled outbound!')
             # --8<-- debugging stuff --8<--
 
     @staticmethod
@@ -149,6 +138,12 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
             swap_ev = parse_swap_and_out_event(ev)
             if swap_ev:
                 yield swap_ev
+
+    async def find_tx(self, tx_id) -> Optional[ThorTx]:
+        swap_info = await self._db.read_tx_status(tx_id)
+        if swap_info:
+            tx = swap_info.build_tx()
+            return tx
 
     async def detect_swap_finished(self,
                                    block: BlockResult,
@@ -168,18 +163,19 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
 
         results = []
         for tx_id, group in group_by_in.items():
-            swap_info = await self._db.read_tx_status(tx_id)
-            if not swap_info:
+            swap_props = await self._db.read_tx_status(tx_id)
+            if not swap_props:
                 self.logger.warning(f'There are outbounds for tx {tx_id}, but there is no info about its initiation.')
                 continue
 
-            # if no swaps, it is full refund
-            if swap_info.has_started and swap_info.has_swaps and swap_info.is_finished and not swap_info.given_away:
-                # to ignore it in the future
-                await self._db.write_tx_status_kw(tx_id, status=SwapProps.STATUS_GIVEN_AWAY)
+            given_away = swap_props.given_away or not self.dbg_ignore_finished_status
 
-                tx = swap_info.build_tx()
-                results.append(tx)
+            # if no swaps, it is full refund
+            if swap_props.has_started and swap_props.has_swaps and swap_props.is_finished and not given_away:
+                # to ignore it in the future
+                await self._db.write_tx_give_away(tx_id)
+
+                results.append(swap_props.build_tx())
 
         if results:
             self.logger.info(f'Give away {len(results)} Txs.')
