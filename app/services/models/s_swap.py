@@ -41,8 +41,6 @@ class StreamingSwap(NamedTuple):
     # the list of reasons that sub-swaps have failed
     failed_swap_reasons: List[str]
 
-    estimated_savings_vs_cex_usd: float = 0.0
-
     @property
     def progress_on_amount(self):
         """

@@ -475,9 +475,9 @@ class RussianLocalization(BaseLocalization):
                     total = tx.meta_swap.streaming.quantity
                     content += f'\nПроцент успеха: {format_percent(success)} ({good}/{total})'
 
-                saved_usd = tx.meta_swap.streaming.estimated_savings_vs_cex_usd
+                saved_usd = tx.meta_swap.estimated_savings_vs_cex_usd
                 if saved_usd is not None and saved_usd > 0.0:
-                    content += f'\nСэкономлено против CEX: {bold(pretty_dollar(saved_usd))}'
+                    content += f'\n🫰Сэкономлено против CEX: {bold(pretty_dollar(saved_usd))}'
 
         blockchain_components_str = self._add_input_output_links(tx, name_map, 'Входы: ', 'Выходы: ', 'Пользователь: ')
 

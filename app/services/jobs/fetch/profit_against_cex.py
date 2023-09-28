@@ -2,6 +2,7 @@ from contextlib import suppress
 
 from services.lib.constants import thor_to_float
 from services.lib.delegates import INotified, WithDelegates
+from services.lib.money import pretty_dollar
 from services.lib.utils import WithLogger
 from services.models.tx import ThorTx
 
@@ -22,6 +23,8 @@ class StreamingSwapVsCexProfitCalculator(WithLogger, WithDelegates, INotified):
             f"amount={amount}"
         )
 
+    TC_PROFIT_VS_CEX_TOO_MUCH_RATIO = 0.4
+
     async def get_cex_data(self, tx: ThorTx):
         """
         Get CEX output at the moment!
@@ -41,9 +44,15 @@ class StreamingSwapVsCexProfitCalculator(WithLogger, WithDelegates, INotified):
             tx.meta_swap.cex_out_amount = float(data['result'])
             tx.meta_swap.cex_rate = float(data['rate'])
 
-            tx.meta_swap.streaming.estimated_savings_vs_cex_usd = tx.get_profit_vs_cex_in_usd(self.deps.price_holder)
+            savings_usd = tx.get_profit_vs_cex_in_usd(self.deps.price_holder)
+            volume_usd = tx.get_usd_volume(self.deps.price_holder.usd_per_rune)
 
-            # print(f'🎉 {tx.meta_swap.cex_out_amount=}, {tx.meta_swap.cex_rate=}')
+            if abs(savings_usd) > volume_usd * self.TC_PROFIT_VS_CEX_TOO_MUCH_RATIO:
+                self.logger.warning(f'Tx {tx.tx_hash} has weird profit vs Cex {pretty_dollar(savings_usd)}; '
+                                    f'{tx.meta_swap.cex_out_amount=}, {tx.meta_swap.cex_rate=}')
+                savings_usd = 0.0
+
+            tx.meta_swap.estimated_savings_vs_cex_usd = savings_usd
 
     async def on_data(self, sender, data):
         try:

@@ -90,7 +90,7 @@ class SwapProps(NamedTuple):
                 for ev in self.events:
                     # fixme: possible bug. it dest addy is THORName,
                     #  it will mismatch anyway because events have natural addresses
-                    if isinstance(ev, EventOutbound) and ev.to_address != self.memo.dest_address and ev.is_outbound:
+                    if isinstance(ev, EventOutbound) and ev.to_address != self.memo.dest_address and ev.is_outbound_memo:
                         return ev.amount, ev.to_address
 
         return 0, ''  # otherwise not found
@@ -114,7 +114,7 @@ class SwapProps(NamedTuple):
     def true_outbounds(self):
         return [
             ev for ev in self.events
-            if isinstance(ev, (EventOutbound, EventScheduledOutbound)) and (ev.is_outbound or ev.is_refund)
+            if isinstance(ev, (EventOutbound, EventScheduledOutbound)) and (ev.is_outbound_memo or ev.is_refund_memo)
         ]
 
     def gather_outbound(self, affiliate_address) -> List[ThorSubTx]:

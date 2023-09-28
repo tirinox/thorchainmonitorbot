@@ -14,13 +14,13 @@ class VolumeFillerUpdater(WithDelegates, INotified, WithLogger):
         self.deps = deps
         self.update_pools_each_time = True
 
-    async def on_data(self, sender, extended_txs: List[ThorTx]):
+    async def on_data(self, sender, txs: List[ThorTx]):
         with suppress(Exception):
             # update & fill
-            await self.fill_volumes(extended_txs)
+            await self.fill_volumes(txs)
 
         # send to the listeners
-        await self.pass_data_to_listeners(extended_txs, sender=(sender, self))  # pass it to the next subscribers
+        await self.pass_data_to_listeners(txs, sender=(sender, self))  # pass it to the next subscribers
 
     async def fill_volumes(self, txs: List[ThorTx]):
         if not txs:

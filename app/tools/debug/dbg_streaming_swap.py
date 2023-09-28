@@ -8,7 +8,6 @@ from services.jobs.fetch.tx import TxFetcher
 from services.jobs.scanner.event_db import EventDatabase
 from services.jobs.scanner.native_scan import NativeScannerBlock
 from services.jobs.scanner.swap_extractor import SwapExtractorBlock
-from services.jobs.scanner.swap_props import SwapProps
 from services.jobs.user_counter import UserCounter
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.jobs.volume_recorder import VolumeRecorder
@@ -24,6 +23,7 @@ from services.notify.types.tx_notify import SwapTxNotifier
 from tools.lib.lp_common import LpAppFramework
 
 faulthandler.enable()
+
 
 # 1)
 # Memo:  =:ETH.THOR:0x8d2e7cab1747f98a7e1fa767c9ef62132e4c31db:139524325459200/9/99:t:30
@@ -212,19 +212,29 @@ async def debug_detect_start_on_external_tx(app: LpAppFramework):
 
 
 async def debug_cex_profit_calc(app: LpAppFramework, tx_id):
-    native_action_extractor = SwapExtractorBlock(app.deps)
+    d = app.deps
+    native_action_extractor = SwapExtractorBlock(d)
 
     tx = await native_action_extractor.find_tx(tx_id)
     if not tx:
         raise Exception(f'TX {tx_id} not found')
 
-    profit_calc = StreamingSwapVsCexProfitCalculator(app.deps)
-    await profit_calc.get_cex_data(tx)
+    volume_filler = VolumeFillerUpdater(d)
 
-    print(f'{tx.swap_profit_vs_cex=}')
+    profit_calc = StreamingSwapVsCexProfitCalculator(d)
+    volume_filler.add_subscriber(profit_calc)
 
-    usd_profit = tx.get_profit_vs_cex_in_usd(app.deps.price_holder)
-    print(f'{usd_profit=}')
+    swap_notifier_tx = SwapTxNotifier(d, d.cfg.tx.swap, curve=DepthCurve.DEFAULT_TX_VS_DEPTH_CURVE)
+    swap_notifier_tx.no_repeat_protection = False
+    swap_notifier_tx.curve_mult = 0.00001
+    volume_filler.add_subscriber(swap_notifier_tx)
+
+    swap_notifier_tx.add_subscriber(d.alert_presenter)
+
+    # push it through the pipeline
+    await volume_filler.on_data(None, [tx])
+
+    await asyncio.sleep(5.0)
 
 
 async def run():
@@ -245,12 +255,12 @@ async def run():
         #     # single_block=False
         # )
 
-        await debug_full_pipeline(app, start=12768946)
+        # await debug_full_pipeline(app, start=12779573    - 100)
 
         # await debug_detect_start_on_deposit_rune(app)
         # await debug_detect_start_on_external_tx(app)
 
-        # await debug_cex_profit_calc(app, '24A0F836682C9AB41D6AB8567FBF5110783B29DEB45AA71F529E90831E4B30B2')
+        await debug_cex_profit_calc(app, 'CC7E1A38B1E5C9B34622F9C99310EACA95BF8101184E9F23D3B96594162EDEE0')
 
 
 if __name__ == '__main__':

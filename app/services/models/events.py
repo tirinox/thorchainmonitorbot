@@ -143,11 +143,11 @@ class EventOutbound(NamedTuple):
         )
 
     @property
-    def is_refund(self):
+    def is_refund_memo(self):
         return self.memo.upper().startswith('REFUND:')
 
     @property
-    def is_outbound(self):
+    def is_outbound_memo(self):
         return self.memo.upper().startswith('OUT:')
 
     @property
@@ -200,11 +200,11 @@ class EventScheduledOutbound(NamedTuple):
         )
 
     @property
-    def is_refund(self):
+    def is_refund_memo(self):
         return self.memo.upper().startswith('REFUND:')
 
     @property
-    def is_outbound(self):
+    def is_outbound_memo(self):
         return self.memo.upper().startswith('OUT:')
 
     @property

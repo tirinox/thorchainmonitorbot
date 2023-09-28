@@ -295,16 +295,14 @@ class App:
                 native_action_extractor = SwapExtractorBlock(d)
                 d.block_scanner.add_subscriber(native_action_extractor)
 
-                profit_calc = StreamingSwapVsCexProfitCalculator(d)
-                native_action_extractor.add_subscriber(profit_calc)
-
-                profit_calc.add_subscriber(aggregator)
-
             volume_filler = VolumeFillerUpdater(d)
             aggregator.add_subscriber(volume_filler)
 
+            profit_calc = StreamingSwapVsCexProfitCalculator(d)
+            volume_filler.add_subscriber(profit_calc)
+
             d.dex_analytics = DexAnalyticsCollector(d)
-            aggregator.add_subscriber(d.dex_analytics)
+            profit_calc.add_subscriber(d.dex_analytics)
 
             d.volume_recorder = VolumeRecorder(d)
             volume_filler.add_subscriber(d.volume_recorder)

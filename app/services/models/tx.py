@@ -78,6 +78,8 @@ class ThorMetaSwap:
     cex_out_amount: float = 0.0
     cex_rate: float = 0.0
 
+    estimated_savings_vs_cex_usd: float = 0.0
+
     @classmethod
     def parse(cls, j):
         fees = [ThorCoin.from_json(cj) for cj in j.get('networkFees', [])]
