@@ -50,7 +50,6 @@ async def my_chain_height_update_check():
 
 
 async def main():
-    # await my_test_node_online_telemetry()
     await my_chain_height_update_check()
 
 

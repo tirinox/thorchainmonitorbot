@@ -8,7 +8,6 @@ from services.lib.depcont import DepContainer
 from services.lib.utils import class_logger
 from services.models.node_info import EventNodeOnline, NodeEvent, NodeEventType
 from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
-from services.notify.personal.telemetry import NodeTelemetryDatabase
 
 TimeStampedList = List[Tuple[float, bool]]
 
@@ -23,7 +22,6 @@ class NodeOnlineTracker(BaseChangeTracker):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
-        self.telemetry_db = NodeTelemetryDatabase(deps)
 
         self.logger = class_logger(self)
 

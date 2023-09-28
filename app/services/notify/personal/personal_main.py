@@ -21,7 +21,6 @@ from services.notify.personal.ip_addr import IpAddressTracker
 from services.notify.personal.node_online import NodeOnlineTracker
 from services.notify.personal.presence import PresenceTracker
 from services.notify.personal.slashing import SlashPointTracker
-from services.notify.personal.telemetry import NodeTelemetryDatabase
 from services.notify.personal.user_data import UserDataCache
 from services.notify.personal.versions import VersionTracker
 
@@ -33,7 +32,6 @@ class NodeChangePersonalNotifier(INotified):
         self.deps = deps
         self.logger = class_logger(self)
         self.watchers = NodeWatcherStorage(deps.db)
-        self.telemetry_db = NodeTelemetryDatabase(deps)
         self.settings_man = self.deps.settings_manager
 
         # trackers

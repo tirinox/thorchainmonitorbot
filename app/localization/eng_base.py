@@ -1778,8 +1778,8 @@ class BaseLocalization(ABC):  # == English
         else:
             text += '🟢'
 
-        thormon_link = 'https://thorchain.network/'
-        text += f'\n\nRealtime monitoring: {link(thormon_link, thormon_link)}'
+        mon_link = 'https://thorchain.network/'
+        text += f'\n\nRealtime monitoring: {link(mon_link, mon_link)}'
 
         return text
 
