@@ -195,12 +195,19 @@ class NameService(WithLogger):
 
     # ---- API calls ----
 
+    def _empty_if_error_or_not_found(self, results):
+        if results is None or results == self.midgard.ERROR_RESPONSE or results == self.midgard.ERROR_NOT_FOUND:
+            return None
+        else:
+            return results
+
     async def call_api_thorname_lookup(self, name: str) -> Optional[ThorName]:
         """
         Returns an array of chains and their addresses associated with the given ThorName
         """
         results = await self.midgard.request(f'/v2/thorname/lookup/{name}')
-        if results and results != self.midgard.ERROR_RESPONSE:
+        results = self._empty_if_error_or_not_found(results)
+        if results:
             return ThorName(
                 name=name,
                 expire_block_height=int(results['expire']),
@@ -215,10 +222,8 @@ class NameService(WithLogger):
         Returns an array of ThorNames associated with the given address
         """
         results = await self.midgard.request(f'/v2/thorname/rlookup/{address}')
-        if results == self.midgard.ERROR_RESPONSE or not results:
-            return []
-        else:
-            return results
+        results = self._empty_if_error_or_not_found(results)
+        return results or []
 
     async def call_api_get_thornames_owned_by_address(self, thor_address: str):
         """
@@ -226,6 +231,7 @@ class NameService(WithLogger):
         The address is not necessarily an associated address for those thornames.
         """
         results = await self.midgard.request(f'/v2/thorname/owner/{thor_address}')
+        results = self._empty_if_error_or_not_found(results)
         return results or []
 
 
