@@ -81,10 +81,11 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             return await self._create_lp_report_single(historic_all_pool_states, pool_name, user_txs)
 
     async def get_my_pools(self, address, show_savers=True) -> List[str]:
-        j = await self.deps.midgard_connector.request(
+        mdg = self.deps.midgard_connector
+        j = await mdg.request(
             free_url_gen.url_for_address_pool_membership(address, show_savers)
         )
-        if j == self.deps.midgard_connector.ERROR_RESPONSE:
+        if j == mdg.ERROR_RESPONSE or j == mdg.ERROR_NOT_FOUND:
             return await get_user_pools_from_thoryield(self.deps.session, address)
         return self.parser.parse_pool_membership(j)
 
