@@ -7,7 +7,6 @@ from typing import List, Tuple, Dict, Optional
 from services.jobs.fetch.runeyield import AsgardConsumerConnectorBase
 from services.jobs.fetch.runeyield.base import YieldSummary
 from services.jobs.fetch.runeyield.date2block import DateToBlockMapper
-from services.jobs.fetch.runeyield.external import get_user_pools_from_thoryield
 from services.jobs.fetch.tx import TxFetcher
 from services.lib.constants import thor_to_float, float_to_thor, Chains
 from services.lib.date_utils import days_ago_noon, now_ts
