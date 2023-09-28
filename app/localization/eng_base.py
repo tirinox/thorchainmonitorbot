@@ -656,7 +656,7 @@ class BaseLocalization(ABC):  # == English
 
                 saved_usd = tx.meta_swap.estimated_savings_vs_cex_usd
 
-                if saved_usd is not None and saved_usd > 0.0:
+                if (saved_usd is not None) and saved_usd > 0.0:
                     content += f'\n🫰Est. Savings vs CEX: {bold(pretty_dollar(saved_usd))}'
 
         blockchain_components_str = self._add_input_output_links(tx, name_map, 'Input: ', 'Output: ', 'User: ')

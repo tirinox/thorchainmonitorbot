@@ -212,7 +212,7 @@ class TwitterEnglishLocalization(BaseLocalization):
                     content += f'\nSuccess rate: {format_percent(success)} ({good}/{total})'
 
                 saved_usd = tx.meta_swap.estimated_savings_vs_cex_usd
-                if saved_usd is not None and saved_usd > 0.0:
+                if (saved_usd is not None) and saved_usd > 0.0:
                     content += f'\n🫰Est. savings vs CEX: {pretty_dollar(saved_usd)}'
 
         link = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, tx.first_input_tx_hash) \
