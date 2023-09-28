@@ -176,7 +176,7 @@ native_scanner:
 
 names:
   thorname:
-    enabled: false
+    enabled: true
     expire: 48h
 
   preconfig:
