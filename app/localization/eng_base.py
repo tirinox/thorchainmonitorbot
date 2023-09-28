@@ -200,7 +200,7 @@ class BaseLocalization(ABC):  # == English
         '👉 Liquidity Provisioning\n'
         '👉 Savings vaults\n'
         '👉 Track balances and actions\n'
-        '👉 Provision of Bond to nodes\n'
+        '👉 Provision of Bond to nodes 🆕\n'
     )
     TEXT_NO_ADDRESSES = "🔆 You have not added any addresses yet. Send me one."
     TEXT_YOUR_ADDRESSES = '🔆 You added addresses:'
