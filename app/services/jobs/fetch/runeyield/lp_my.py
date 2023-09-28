@@ -86,8 +86,9 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             free_url_gen.url_for_address_pool_membership(address, show_savers)
         )
         if j == mdg.ERROR_RESPONSE or j == mdg.ERROR_NOT_FOUND:
-            return await get_user_pools_from_thoryield(self.deps.session, address)
-        return self.parser.parse_pool_membership(j)
+            return []
+        else:
+            return self.parser.parse_pool_membership(j)
 
     # ------------------------------------------------------------------------------------------------------------------
 
