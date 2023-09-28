@@ -48,13 +48,15 @@ class DataController:
 
 
 class BaseFetcher(WithDelegates, WatchedEntity, ABC):
+    MAX_STARTUP_DELAY = 60
+
     def __init__(self, deps: DepContainer, sleep_period=60):
         super().__init__()
         self.deps = deps
         self.logger = class_logger(self)
 
         self.sleep_period = sleep_period
-        self.initial_sleep = random.uniform(0, sleep_period)
+        self.initial_sleep = random.uniform(0, min(self.MAX_STARTUP_DELAY, sleep_period))
         self.data_controller.register(self)
 
     @property
