@@ -1161,11 +1161,11 @@ class RussianLocalization(BaseLocalization):
             status = '🛑 Остановлен' if c.halted else '🆗 Активен'
             text += f'{bold(c.chain)}:\n' \
                     f'Статус: {status}\n' \
-                    f'Входящий адрес: {pre(c.address)} {address_link}\n'
+                    f'Входящий адрес: {pre(c.address)} | {address_link}\n'
 
             if c.router:
                 router_link = link(get_explorer_url_to_address(self.cfg.network_id, c.chain, c.router), 'СКАН')
-                text += f'Роутер: {pre(c.router)} {router_link}\n'
+                text += f'Роутер: {pre(c.router)} | {router_link}\n'
 
             text += f'Цена газа: {pre(c.gas_rate)}\n\n'
 

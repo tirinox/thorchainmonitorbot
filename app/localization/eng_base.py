@@ -1401,11 +1401,11 @@ class BaseLocalization(ABC):  # == English
             status = '🛑 Halted' if c.halted else '🆗 Active'
             text += f'{bold(c.chain)}:\n' \
                     f'Status: {status}\n' \
-                    f'Inbound address: {pre(c.address)} {address_link}\n'
+                    f'Inbound address: {pre(c.address)} | {address_link}\n'
 
             if c.router:
                 router_link = link(get_explorer_url_to_address(self.cfg.network_id, c.chain, c.router), 'SCAN')
-                text += f'Router: {pre(c.router)} {router_link}\n'
+                text += f'Router: {pre(c.router)} | {router_link}\n'
 
             text += f'Gas rate: {pre(c.gas_rate)}\n\n'
 
