@@ -54,6 +54,8 @@ class StreamingSwapVsCexProfitCalculator(WithLogger, WithDelegates, INotified):
 
             tx.meta_swap.estimated_savings_vs_cex_usd = savings_usd
 
+            self.logger.info(f'Tx {tx.tx_hash} profit vs CEX: {pretty_dollar(savings_usd)}')
+
     async def on_data(self, sender, data):
         try:
             for tx in data:
@@ -61,9 +63,11 @@ class StreamingSwapVsCexProfitCalculator(WithLogger, WithDelegates, INotified):
                 if tx.is_streaming:
                     await self.get_cex_data(tx)
         except Exception as e:
-            self.logger.error(f'{e!r}. Skipping this TX')
+            self.logger.error(f'Error! {e!r}. Skipping this TX')
 
             with suppress(Exception):
-                self.deps.emergency.report('ProfitVsCEX', txs=', '.join([tx.tx_hash for tx in data]))
+                self.deps.emergency.report('ProfitVsCEX',
+                                           txs=', '.join([tx.tx_hash for tx in data]),
+                                           error=repr(e))
 
         await self.pass_data_to_listeners(data)
