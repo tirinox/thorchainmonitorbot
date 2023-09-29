@@ -238,7 +238,7 @@ class LiquidityPoolReport:
         total_redeemable_in_usd = redeem_rune_in_usd + redeem_asset_in_usd
 
         lp_vs_hold_abs = total_redeemable_in_usd + total_withdrawn_in_usd - total_added_in_usd
-        lp_vs_hold_percent = lp_vs_hold_abs / total_added_in_usd * 100.0
+        lp_vs_hold_percent = lp_vs_hold_abs / total_added_in_usd * 100.0 if total_added_in_usd else 0.0
         return lp_vs_hold_abs, lp_vs_hold_percent
 
     @property
