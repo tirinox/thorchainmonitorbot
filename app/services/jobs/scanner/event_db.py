@@ -13,7 +13,6 @@ class EventDatabase(WithLogger):
     def __init__(self, db: DB):
         super().__init__()
         self.db = db
-        self.dbg_only_tx_id = None
 
     @staticmethod
     def key_to_tx(tx_id):
@@ -37,16 +36,10 @@ class EventDatabase(WithLogger):
                 return str(v)
 
     async def write_tx_status(self, tx_id, mapping):
-        if self.dbg_only_tx_id and self.dbg_only_tx_id != tx_id:
-            return
-
         if mapping:
             r: Redis = await self.db.get_redis()
             kwargs = {k: self._convert_type(v) for k, v in mapping.items()}
             await r.hset(self.key_to_tx(tx_id), mapping=kwargs)
-
-    async def write_tx_give_away(self, tx_id):
-        await self.write_tx_status_kw(tx_id, status=SwapProps.STATUS_GIVEN_AWAY)
 
     async def write_tx_status_kw(self, tx_id, **kwargs):
         await self.write_tx_status(tx_id, kwargs)
