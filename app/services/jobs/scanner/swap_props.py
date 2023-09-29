@@ -73,8 +73,11 @@ class SwapProps(NamedTuple):
             return True
 
         # if there is any outbound to my address, except internal outbounds (in the middle of double swap)
-        if any((isinstance(ev, EventOutbound) and ev.to_address == self.inbound_address)
-               for ev in self.true_outbounds):
+        if any((isinstance(ev, EventOutbound) and ev.to_address == self.inbound_address) for ev in self.true_outbounds):
+            return True
+
+        # if there is any streaming swap event, it's done
+        if any(isinstance(ev, EventStreamingSwap) for ev in self.events):
             return True
 
         return False
