@@ -47,6 +47,10 @@ class KeyMetricsNotifier(INotified, WithDelegates):
 
         if not self.is_fresh_enough(e.series):
             self.logger.error(f'Network data is too old! The most recent date is {e.series.latest_date}!')
+            self.deps.emergency.report(
+                'WeeklyKeyMetrics',
+                'Network data is too old!',
+                date=str(e.series.latest_date))
             return
 
         last_date = e.series.latest_date
