@@ -10,7 +10,7 @@ from services.jobs.scanner.swap_props import SwapProps
 from services.jobs.scanner.swap_start_detector import SwapStartDetector
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
-from services.lib.utils import WithLogger, hash_of_string_repr
+from services.lib.utils import WithLogger, hash_of_string_repr, say
 from services.models.events import EventSwap, EventOutbound, EventScheduledOutbound, \
     parse_swap_and_out_event, TypeEventSwapAndOut
 from services.models.s_swap import AlertSwapStart
@@ -62,6 +62,10 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
         # Extract finished TX
         txs = await self.detect_swap_finished(block, interesting_events)
 
+        if self.dbg_watch_swap_id:
+            if any(tx.tx_hash == self.dbg_watch_swap_id for tx in txs):
+                self.dbg_print(f'🎉 Swap finished\n')
+
         # Pass them down the pipe
         await self.pass_data_to_listeners(txs)
 
@@ -93,7 +97,7 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
                 self.dbg_print(f'👿 Start watching swap\n')
                 self.dbg_print(swap, '\n\n')
 
-                # await say('Found a swap')
+                await say('Found a swap')
 
                 self.dbg_start_observed = True
 
@@ -106,6 +110,7 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
 
     async def register_swap_events(self, block: BlockResult, interesting_events: List[TypeEventSwapAndOut]):
         boom = False
+
         for swap_ev in interesting_events:
             if not swap_ev.tx_id:
                 continue
@@ -119,17 +124,19 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
             # --8<-- debugging stuff --8<--
             if isinstance(swap_ev, EventSwap):
                 self.dbg_swaps += 1
+
             if swap_ev.tx_id == self.dbg_watch_swap_id:
                 self.dbg_print(f'👹 new event for watched TX!!! {swap_ev.__class__} at block #{swap_ev.height}\n')
                 self.dbg_print(swap_ev)
                 self.dbg_print('----------\n')
 
                 if not boom:
-                    # await say('Event!!')
+                    await say('Event!!')
                     boom = True
 
-                # if isinstance(swap_ev, EventScheduledOutbound):
-                #     await say('Scheduled outbound!')
+                if isinstance(swap_ev, EventScheduledOutbound):
+                    await say('Scheduled outbound!')
+                    self.dbg_print('Scheduled outbound!\n')
             # --8<-- debugging stuff --8<--
 
     @staticmethod
@@ -168,12 +175,14 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
                 self.logger.warning(f'There are outbounds for tx {tx_id}, but there is no info about its initiation.')
                 continue
 
-            given_away = swap_props.given_away or not self.dbg_ignore_finished_status
+            given_away = swap_props.given_away
+            if self.dbg_ignore_finished_status:
+                given_away = False
 
             # if no swaps, it is full refund
             if swap_props.has_started and swap_props.has_swaps and swap_props.is_finished and not given_away:
                 # to ignore it in the future
-                await self._db.write_tx_give_away(tx_id)
+                await self._db.write_tx_status_kw(tx_id, status=SwapProps.STATUS_GIVEN_AWAY)
 
                 results.append(swap_props.build_tx())
 
@@ -202,4 +211,4 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
 
     def dbg_print(self, *args):
         s = self.dbg_file or sys.stdout
-        print(*args, file=s)
+        print(*args, file=s, flush=True)

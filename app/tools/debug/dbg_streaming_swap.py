@@ -95,14 +95,12 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
     native_action_extractor.dbg_ignore_finished_status = True
 
     if tx_id:
-        native_action_extractor.dbg_open_file(f'../temp/{tx_id}.txt')
+        native_action_extractor.dbg_open_file(f'../temp/txs/{tx_id}.txt')
         native_action_extractor.dbg_watch_swap_id = tx_id
 
-        db = native_action_extractor._db
-
-        db.dbg_only_tx_id = tx_id
-        await db.backup('../temp/ev_db_backup_everything.json')
-
+        # db = native_action_extractor._db
+        # await db.backup('../temp/ev_db_backup_everything.json')
+        #
         # await db.clean_up_old_events(start + 10000)
 
     d.block_scanner.add_subscriber(native_action_extractor)
@@ -136,6 +134,9 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
     curve = DepthCurve(curve_pts)
 
     swap_notifier_tx = SwapTxNotifier(d, d.cfg.tx.swap, curve=curve)
+    if tx_id:
+        await swap_notifier_tx.mark_as_announced(tx_id, clear=True)
+
     swap_notifier_tx.dbg_evaluate_curve_for_pools()
     volume_filler.add_subscriber(swap_notifier_tx)
     swap_notifier_tx.add_subscriber(d.alert_presenter)
@@ -255,12 +256,14 @@ async def run():
         #     # single_block=False
         # )
 
-        # await debug_full_pipeline(app, start=12779573    - 100)
+        await debug_full_pipeline(
+            app, start=12802333,
+            tx_id='2065AD2148F242D59DEE34890022A2264C9B04C2297E04295BB118E29A995E05')
 
         # await debug_detect_start_on_deposit_rune(app)
         # await debug_detect_start_on_external_tx(app)
 
-        await debug_cex_profit_calc(app, 'CC7E1A38B1E5C9B34622F9C99310EACA95BF8101184E9F23D3B96594162EDEE0')
+        # await debug_cex_profit_calc(app, 'CC7E1A38B1E5C9B34622F9C99310EACA95BF8101184E9F23D3B96594162EDEE0')
 
 
 if __name__ == '__main__':
