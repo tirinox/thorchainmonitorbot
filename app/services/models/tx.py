@@ -76,7 +76,6 @@ class ThorMetaSwap:
     affiliate_address: str = ''  # highly likely to be a THORName
     streaming: Optional[StreamingSwap] = None
     cex_out_amount: float = 0.0
-    cex_rate: float = 0.0
 
     estimated_savings_vs_cex_usd: float = 0.0
 
@@ -517,15 +516,21 @@ class ThorTx:
         if hasattr(meta, 'memo'):
             return THORMemo.parse_memo(meta.memo)
 
-    def out_non_rune_amount(self):
-        return [coin for sub_tx in self.out_tx for coin in sub_tx.coins if not is_rune(coin.asset)]
-
+    def first_out_coin_other_than_input(self):
+        in_assets = set(a.first_asset for a in self.in_tx)
+        return next((
+            coin
+            for sub_tx in self.out_tx
+            for coin in sub_tx.coins
+            if coin.asset not in in_assets
+        ), None)
+        
     @property
     def swap_profit_vs_cex(self):
         if not self.meta_swap:
             return
 
-        real_out = self.sum_of_non_rune(out_only=True)
+        real_out = thor_to_float(self.first_out_coin_other_than_input().amount)
         cex_out = self.meta_swap.cex_out_amount
         return real_out - cex_out
 
@@ -534,7 +539,7 @@ class ThorTx:
         if not self.meta_swap:
             return
 
-        real_out = self.sum_of_non_rune(out_only=True)
+        real_out = thor_to_float(self.first_out_coin_other_than_input().amount)
         cex_out = self.meta_swap.cex_out_amount
         return (real_out - cex_out) / cex_out * 100.0 if cex_out else None
 
@@ -543,7 +548,7 @@ class ThorTx:
         if profit_out_asset is None:
             return
 
-        out_coin = self.out_non_rune_amount()[0]
+        out_coin = self.first_out_coin_other_than_input()
 
         return price_holder.convert_to_usd(profit_out_asset, out_coin.asset)
 

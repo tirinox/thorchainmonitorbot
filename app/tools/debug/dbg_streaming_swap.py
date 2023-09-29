@@ -238,6 +238,20 @@ async def debug_cex_profit_calc(app: LpAppFramework, tx_id):
     await asyncio.sleep(5.0)
 
 
+async def debug_cex_profit_calc_binance(app: LpAppFramework):
+    profit_calc = StreamingSwapVsCexProfitCalculator(app.deps)
+    result = await profit_calc.binance_query('BTC', 'BNB', 10)
+    print(f'10 BTC => {result} BNB')
+
+    result = await profit_calc.binance_query('BNB', 'BTC', 10)
+    print(f'10 BNB => {result} BTC')
+
+    result = await profit_calc.binance_query('BTC', 'RUNE', 100)
+    print(f'100 BTC => {result} RUNE')
+
+    # print(await profit_calc.binance_get_order_book_cached('BTC', 'BNB'))
+
+
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
@@ -256,14 +270,15 @@ async def run():
         #     # single_block=False
         # )
 
-        await debug_full_pipeline(
-            app, start=12802333,
-            tx_id='2065AD2148F242D59DEE34890022A2264C9B04C2297E04295BB118E29A995E05')
+        # await debug_full_pipeline(
+        #     app, start=12802333,
+        #     tx_id='2065AD2148F242D59DEE34890022A2264C9B04C2297E04295BB118E29A995E05')
 
         # await debug_detect_start_on_deposit_rune(app)
         # await debug_detect_start_on_external_tx(app)
 
-        # await debug_cex_profit_calc(app, 'CC7E1A38B1E5C9B34622F9C99310EACA95BF8101184E9F23D3B96594162EDEE0')
+        await debug_cex_profit_calc(app, '2065AD2148F242D59DEE34890022A2264C9B04C2297E04295BB118E29A995E05')
+        # await debug_cex_profit_calc_binance(app)
 
 
 if __name__ == '__main__':
