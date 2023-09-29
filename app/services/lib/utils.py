@@ -533,3 +533,8 @@ def translate(s: str, d: dict):
     for k, v in d.items():
         s = s.replace(k, v)
     return s
+
+
+def get_ttl_hash(seconds=3600):
+    """Return the same value withing `seconds` time period"""
+    return round(time.time() / seconds)

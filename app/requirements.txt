@@ -18,6 +18,7 @@ Pillow>=9.3.0
 # pysha3
 pytest
 pytest-asyncio
+python-binance==1.0.*
 python-dateutil
 python-dotenv
 PyYAML>=6.0
