@@ -77,8 +77,11 @@ class NativeScannerBlock(BaseFetcher):
                     last_available_block = int(match[-1])
                     return BlockResult(last_available_block, [], [], [], is_error=True)
 
+    async def _fetch_block_results_raw(self, block_no):
+        return await self.deps.thor_connector.query_native_block_results_raw(block_no)
+
     async def fetch_block_results(self, block_no) -> Optional[BlockResult]:
-        result = await self.deps.thor_connector.query_native_block_results_raw(block_no)
+        result = await self._fetch_block_results_raw(block_no)
         if result is not None:
             if err := self._get_is_error(result):
                 return err
@@ -96,8 +99,11 @@ class NativeScannerBlock(BaseFetcher):
         else:
             self.logger.warn(f'Error fetching block txs results #{block_no}.')
 
+    async def _fetch_block_txs_raw(self, block_no):
+        return await self.deps.thor_connector.query_tendermint_block_raw(block_no)
+
     async def fetch_block_txs(self, block_no) -> Optional[List[NativeThorTx]]:
-        result = await self.deps.thor_connector.query_tendermint_block_raw(block_no)
+        result = await self._fetch_block_txs_raw(block_no)
         if result is not None:
             if self._get_is_error(result):
                 return
