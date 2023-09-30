@@ -6,6 +6,7 @@ aioredis
 aiothornode>=0.1.7
 async-timeout
 bech32
+colorama
 # discord.py==1.*
 emoji
 git+https://github.com/danielgtaylor/python-betterproto@v2.0.0b5#egg=betterproto
