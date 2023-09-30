@@ -2,6 +2,7 @@ temp/*
 
 .idea/
 config.yaml
+config_live.yaml
 redis_data/
 datavar/
 dump.rdb

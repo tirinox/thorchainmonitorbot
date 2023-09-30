@@ -1317,7 +1317,7 @@ class RussianLocalization(BaseLocalization):
                     f'Старое значение: {old_value_fmt} → '
                     f'новое значение теперь: {new_value_fmt}‼️'
                 )
-                if change.entry.automatic:
+                if change.entry.automatic and change.non_zero_value:
                     text += f' (на блоке #{ital(change.non_zero_value)}).'
             text += '\n\n'
 

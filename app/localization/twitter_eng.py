@@ -705,7 +705,7 @@ class TwitterEnglishLocalization(BaseLocalization):
                     f"{old_value_fmt} → "
                     f"to {new_value_fmt}‼️"
                 )
-                if change.entry.automatic:
+                if change.entry.automatic and change.non_zero_value:
                     text += f' at block #{change.new_value}.'
             text += '\n'
 
