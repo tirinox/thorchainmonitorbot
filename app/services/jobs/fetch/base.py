@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import os
 import random
 from abc import ABC, abstractmethod
 from typing import Dict
@@ -46,6 +47,46 @@ class DataController:
     @property
     def summary(self) -> Dict[str, WatchedEntity]:
         return self._tracker
+
+    def make_graph(self):
+        results = set()
+
+        queue = set(self._tracker.values())
+        while queue:
+            node = queue.pop()
+            emitter_name = node.__class__.__qualname__
+            if isinstance(node, WithDelegates):
+                for listener in node.delegates:
+                    listener_name = listener.__class__.__qualname__
+                    results.add((emitter_name, listener_name))
+                    queue.add(listener)
+
+        return results
+
+    @staticmethod
+    def make_digraph_dot(list_of_connections):
+        dot_code = "digraph G {\n"
+
+        for edge in list_of_connections:
+            node_from, node_to = edge
+            dot_code += f'    "{node_from}" -> "{node_to}";\n'
+
+        dot_code += "}"
+        return dot_code
+
+    def save_dot_graph(self, filename):
+        with open(filename, 'w') as f:
+            connections = self.make_graph()
+            dot_code = self.make_digraph_dot(connections)
+            f.write(dot_code)
+
+    def display_graph(self):
+        filename = '../temp/graph.dot'
+        self.save_dot_graph(filename)
+
+        out_filename = filename + '.png'
+        os.system(f'dot -Tpng "{filename}" -O "{out_filename}"')
+        os.system(f'open "{out_filename}"')
 
 
 class BaseFetcher(WithDelegates, WatchedEntity, ABC, WithLogger):

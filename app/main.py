@@ -105,6 +105,7 @@ class App:
         d.last_block_fetcher = LastBlockFetcher(d)
         d.last_block_store = LastBlockStore(d)
         d.last_block_fetcher.add_subscriber(d.last_block_store)
+        d.rune_market_fetcher = RuneMarketInfoFetcher(d)
 
         self._init_settings()
         self._init_messaging()
@@ -183,17 +184,12 @@ class App:
             logging.info(f'Sleeping before start for {sleep_interval:.1f} sec..')
             await asyncio.sleep(sleep_interval)
 
-    async def _prepare_tasks(self):
+    async def _preloading(self):
         d = self.deps
-
-        # ----- PREPARE TASKS -----
-
         await self._some_sleep()
 
         if 'REPLACE_RUNE_TIMESERIES_WITH_GECKOS' in os.environ:
             await fill_rune_price_from_gecko(d.db)
-
-        d.rune_market_fetcher = RuneMarketInfoFetcher(d)
 
         sleep_step = self.sleep_step
         while True:
@@ -224,6 +220,9 @@ class App:
                 logging.error(f'No luck. {e!r} Retrying in {sleep_step} sec...')
                 await asyncio.sleep(sleep_step)
 
+    async def _prepare_task_graph(self):
+        d = self.deps
+
         # ----- MANDATORY TASKS -----
 
         fetcher_queue = QueueFetcher(d)
@@ -231,7 +230,6 @@ class App:
         fetcher_queue.add_subscriber(store_queue)
 
         tasks = [
-            # mandatory tasks:
             d.pool_fetcher,
             d.mimir_const_fetcher,
             d.last_block_fetcher,
@@ -533,15 +531,13 @@ class App:
                 logging.info('Using real Twitter bot.')
                 d.twitter_bot = TwitterBot(d.cfg)
 
-        # ------- END INIT -------
-
-        self.deps.is_loading = False
-
         return tasks
 
     async def _run_background_jobs(self):
         try:
-            tasks = await self._prepare_tasks()
+            tasks = await self._prepare_task_graph()
+            await self._preloading()
+            self.deps.is_loading = False
         except Exception as e:
             logging.exception(f'Failed to prepare tasks: {e}')
             logging.error(f'Terminating in {self.sleep_step} sec...')
@@ -581,6 +577,16 @@ class App:
     def run_bot(self):
         self.deps.telegram_bot.run(on_startup=self.on_startup, on_shutdown=self.on_shutdown)
 
+    def run_graph(self):
+        asyncio.run(self._run_graph())
+
+    async def _run_graph(self):
+        await self._prepare_task_graph()
+        self.deps.data_controller.display_graph()
+
 
 if __name__ == '__main__':
-    App().run_bot()
+    if 'DISPLAY_GRAPH' in os.environ:
+        App().run_graph()
+    else:
+        App().run_bot()

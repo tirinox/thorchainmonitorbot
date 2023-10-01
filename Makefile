@@ -2,7 +2,7 @@ include .env
 export
 
 .DEFAULT_GOAL := help
-.PHONY: help build start stop restart pull logs clean upgrade redis-cli redis-sv-loc
+.PHONY: help build start stop restart pull logs clean upgrade redis-cli redis-sv-loc certbot buildf test lint graph
 
 BOTNAME = thtgbot
 
@@ -79,3 +79,6 @@ test:
 lint:
 	find ./app/services -type f -name "*.py" | xargs pylint
 	find ./app/localization -type f -name "*.py" | xargs pylint
+
+graph:
+	cd app && DISPLAY_GRAPH=1 python main.py
