@@ -34,25 +34,32 @@ class VolumeRecorder(WithDelegates, INotified, WithLogger):
     async def handle_txs_unsafe(self, txs):
         current_price = self.deps.price_holder.usd_per_rune or 0.01
         total_volume = 0.0
+        swap, synth, add, withdraw = 0.0, 0.0, 0.0, 0.0
+        ts = None
         for tx in txs:
             volume = tx.full_rune
             if volume > 0:
-                swap, synth = 0.0, 0.0
                 if tx.type == TxType.SWAP:
-                    swap = volume
+                    swap += volume
                     if tx.is_synth_involved:
-                        synth = volume
-
-                add = volume if tx.type == TxType.ADD_LIQUIDITY else 0.0
-                withdraw = volume if tx.type == TxType.WITHDRAW else 0.0
-
-                await self._add_point(tx.date_timestamp, add, swap, synth, withdraw, current_price)
+                        synth += volume
+                elif tx.type == TxType.ADD_LIQUIDITY:
+                    add += volume
+                elif tx.type == TxType.WITHDRAW:
+                    withdraw += volume
 
                 total_volume += volume
+                ts = tx.date_timestamp
+
+        if ts is not None:
+            await self._add_point(ts, add, swap, synth, withdraw, current_price)
 
         return total_volume
 
     async def _add_point(self, date_timestamp, add, swap, synth, withdraw, current_price):
+        self.logger.info(f'Update {date_timestamp}: '
+                         f'{add = :.0f}, {swap = :.0f}, {synth = :.0f}, '
+                         f'{withdraw = :.0f}')
         await self._accumulator.add(
             date_timestamp,
             **{
