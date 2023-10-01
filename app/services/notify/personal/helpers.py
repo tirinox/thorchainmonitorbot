@@ -1,7 +1,7 @@
 from typing import List, Any, Tuple, Optional
 
 from services.lib.date_utils import now_ts
-from services.lib.utils import class_logger
+from services.lib.utils import WithLogger
 from services.models.node_info import NodeEvent, MapAddressToPrevAndCurrNode, NodeSetChanges
 from services.notify.personal.user_data import UserDataCache
 
@@ -57,9 +57,9 @@ class Props:
     PROP_TRACK_BOND = 'bond_prov'
 
 
-class BaseChangeTracker:
+class BaseChangeTracker(WithLogger):
     def __init__(self):
-        self.logger = class_logger(self)
+        super().__init__()
 
         self.user_cache: Optional[UserDataCache] = None
         self.prev_and_curr_node_map: MapAddressToPrevAndCurrNode = {}

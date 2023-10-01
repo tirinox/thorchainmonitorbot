@@ -10,19 +10,18 @@ from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.money import Asset, DepthCurve, pretty_dollar
-from services.lib.utils import class_logger
+from services.lib.utils import WithLogger
 from services.models.tx import ThorTx, EventLargeTransaction
 from services.models.tx_type import TxType
 from services.notify.types.cap_notify import LiquidityCapNotifier
 
 
-class GenericTxNotifier(INotified, WithDelegates):
+class GenericTxNotifier(INotified, WithDelegates, WithLogger):
     def __init__(self, deps: DepContainer, params: SubConfig, tx_types, curve: DepthCurve):
         super().__init__()
         self.deps = deps
         self.params = params
         self.tx_types = tx_types
-        self.logger = class_logger(self)
         self.max_tx_per_single_message = deps.cfg.as_int('tx.max_tx_per_single_message', 5)
 
         self.curve = curve
@@ -187,7 +186,7 @@ class SwapTxNotifier(GenericTxNotifier):
         flags = await asyncio.gather(
             *[self._ev_db.is_announced_as_started(tx_id) for tx_id in tx_ids]
         )
-        self._txs_started = [tx_id for tx_id, flag in zip(tx_ids, flags) if flag]
+        self._txs_started = set(tx_id for tx_id, flag in zip(tx_ids, flags) if flag)
         if self._txs_started:
             self.logger.info(f'These Txs were announced as started SS: {self._txs_started}')
 

@@ -7,14 +7,14 @@ from services.jobs.fetch.const_mimir import ConstMimirFetcher, MimirTuple
 from services.lib.date_utils import now_ts
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
-from services.lib.utils import class_logger
+from services.lib.utils import WithLogger
 from services.models.mimir import MimirChange
 
 
-class MimirChangedNotifier(INotified):
+class MimirChangedNotifier(INotified, WithLogger):
     def __init__(self, deps: DepContainer):
+        super().__init__()
         self.deps = deps
-        self.logger = class_logger(self)
 
     @staticmethod
     def mimir_last_modification_key(name):

@@ -7,14 +7,14 @@ from services.lib.constants import THOR_BLOCK_TIME
 from services.lib.date_utils import day_to_key, days_ago_noon, date_parse_rfc
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
-from services.lib.utils import class_logger
+from services.lib.utils import WithLogger
 
 
-class DateToBlockMapper:
+class DateToBlockMapper(WithLogger):
     def __init__(self, deps: DepContainer):
+        super().__init__()
         self.deps = deps
         self.midgard_parser = get_parser_by_network_id(deps.cfg.network_id)
-        self.logger = class_logger(self)
 
         self.iterative_algo_max_steps = 10
         self.iterative_algo_tolerance = THOR_BLOCK_TIME * 1.6

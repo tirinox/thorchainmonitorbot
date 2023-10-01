@@ -13,12 +13,12 @@ from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.draw_utils import img_to_bio
 from services.lib.settings_manager import SettingsManager
-from services.lib.utils import class_logger
+from services.lib.utils import WithLogger
 from services.notify.channel import Messengers, CHANNEL_INACTIVE, MessageType, BoardMessage
 from services.notify.personal.helpers import NodeOpSetting
 
 
-class SlackBot:
+class SlackBot(WithLogger):
     INSTALLATION_DIR = "./data/slack_db/installations"
     STATE_DIR = "./data/slack_db/states"
     SCOPES = [
@@ -38,7 +38,8 @@ class SlackBot:
     )
 
     def __init__(self, cfg: Config, db: DB, settings_manager: SettingsManager, sticker_downloader=None):
-        self.logger = class_logger(self)
+        super().__init__()
+
         self.db = db
         self.cfg = cfg
         self._sticker_downloader = sticker_downloader

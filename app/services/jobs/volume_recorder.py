@@ -22,6 +22,8 @@ class VolumeRecorder(WithDelegates, INotified, WithLogger):
         super().__init__()
         self.deps = deps
         t = deps.cfg.as_interval('price.volume.record_tolerance', HOUR)
+
+        # todo: auto clean
         self._accumulator = Accumulator('Volume', deps.db, tolerance=t)
 
     async def on_data(self, sender, txs: List[ThorTx]):

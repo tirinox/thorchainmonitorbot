@@ -10,15 +10,16 @@ from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
-from services.lib.utils import class_logger
+from services.lib.utils import WithLogger
 from services.models.pool_info import PoolInfoMap, PoolMapPair
 from services.notify.channel import BoardMessage
 
 
-class BestPoolsNotifier(INotified):
+class BestPoolsNotifier(INotified, WithLogger):
     def __init__(self, deps: DepContainer):
+        super().__init__()
+
         self.deps = deps
-        self.logger = class_logger(self)
         cooldown = parse_timespan_to_seconds(deps.cfg.as_str('best_pools.cooldown', '5h'))
         self._cooldown = Cooldown(self.deps.db, 'BestPools', cooldown)
         self._fetcher: Optional[PoolInfoFetcherMidgard] = None

@@ -5,7 +5,7 @@ from services.jobs.poll_tcp import TCPPollster
 from services.lib.constants import THORPort
 from services.lib.date_utils import HOUR, now_ts, DAY
 from services.lib.depcont import DepContainer
-from services.lib.utils import class_logger
+from services.lib.utils import WithLogger
 from services.models.node_info import EventNodeOnline, NodeEvent, NodeEventType
 from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
 
@@ -18,12 +18,10 @@ SERVICES = [RPC, BIFROST]
 AGE_CUT_OFF = 30 * DAY
 
 
-class NodeOnlineTracker(BaseChangeTracker):
+class NodeOnlineTracker(BaseChangeTracker, WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
-
-        self.logger = class_logger(self)
 
         cfg = deps.cfg.get('node_op_tools.types.online_service')
         timeout = cfg.as_float('tcp_timeout', 1.0)

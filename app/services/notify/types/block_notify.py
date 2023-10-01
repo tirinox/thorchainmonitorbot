@@ -9,7 +9,7 @@ from services.lib.cooldown import Cooldown, CooldownBiTrigger, INFINITE_TIME
 from services.lib.date_utils import DAY, parse_timespan_to_seconds, now_ts, format_time_ago_short, MINUTE
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
-from services.lib.utils import class_logger, WithLogger
+from services.lib.utils import WithLogger
 from services.models.last_block import BlockProduceState, EventBlockSpeed
 from services.models.time_series import TimeSeries
 
@@ -61,7 +61,6 @@ class BlockHeightNotifier(INotified, WithDelegates, WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
-        self.logger = class_logger(self)
 
         self.expected_chart_points_ratio = 0.8  # 80%
 

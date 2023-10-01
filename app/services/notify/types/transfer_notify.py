@@ -5,12 +5,12 @@ from services.lib.date_utils import parse_timespan_to_seconds, DAY
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.money import Asset
-from services.lib.utils import class_logger
+from services.lib.utils import WithLogger
 from services.models.time_series import TimeSeries
 from services.models.transfer import RuneTransfer, RuneCEXFlow
 
 
-class RuneMoveNotifier(INotified, WithDelegates):
+class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
     IGNORE_COMMENTS = (
         'deposit',
         'outbound',
@@ -23,7 +23,6 @@ class RuneMoveNotifier(INotified, WithDelegates):
         super().__init__()
 
         self.deps = deps
-        self.logger = class_logger(self)
         cfg = deps.cfg.get('rune_transfer')
 
         move_cd_sec = parse_timespan_to_seconds(cfg.as_str('cooldown', 1))

@@ -7,11 +7,12 @@ from typing import Dict
 from services.lib.date_utils import now_ts
 from services.lib.delegates import WithDelegates
 from services.lib.depcont import DepContainer
-from services.lib.utils import class_logger
+from services.lib.utils import WithLogger
 
 
 class WatchedEntity:
     def __init__(self):
+        super().__init__()
         self.name = self.__class__.__qualname__
         self.sleep_period = 1.0
         self.initial_sleep = 1.0
@@ -47,13 +48,12 @@ class DataController:
         return self._tracker
 
 
-class BaseFetcher(WithDelegates, WatchedEntity, ABC):
+class BaseFetcher(WithDelegates, WatchedEntity, ABC, WithLogger):
     MAX_STARTUP_DELAY = 60
 
     def __init__(self, deps: DepContainer, sleep_period=60):
         super().__init__()
         self.deps = deps
-        self.logger = class_logger(self)
 
         self.sleep_period = sleep_period
         self.initial_sleep = random.uniform(0, min(self.MAX_STARTUP_DELAY, sleep_period))

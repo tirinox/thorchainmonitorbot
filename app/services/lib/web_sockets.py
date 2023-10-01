@@ -5,11 +5,11 @@ import socket
 import ujson
 import websockets
 
-from services.lib.utils import class_logger
+from services.lib.utils import WithLogger
 from services.lib.texts import shorten_text
 
 
-class WSClient(abc.ABC):
+class WSClient(WithLogger, abc.ABC):
     @abc.abstractmethod
     async def handle_wss_message(self, reply: dict):
         ...
@@ -22,7 +22,7 @@ class WSClient(abc.ABC):
         self.reply_timeout = reply_timeout
         self.ping_timeout = ping_timeout
         self.sleep_time = sleep_time
-        self.logger = class_logger(self)
+
         self.headers = headers or {}
         self.ws: websockets.WebSocketClientProtocol = None
         self.exception_safe = True

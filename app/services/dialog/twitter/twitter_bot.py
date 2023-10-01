@@ -11,14 +11,15 @@ from services.lib.config import Config
 from services.lib.date_utils import DAY
 from services.lib.draw_utils import img_to_bio
 from services.lib.emergency import EmergencyReport
-from services.lib.utils import class_logger, random_hex
+from services.lib.utils import random_hex, WithLogger
 from services.notify.channel import MessageType, BoardMessage, MESSAGE_SEPARATOR
 
 
-class TwitterBot:
+class TwitterBot(WithLogger):
     MAX_TWEETS_PER_DAY = 300
 
     def __init__(self, cfg: Config):
+        super().__init__()
         self.cfg = cfg
         keys = cfg.get('twitter.bot')
 
@@ -34,7 +35,6 @@ class TwitterBot:
         self.api = tweepy.API(self.auth)
         self.client = tweepy.Client(consumer_key=consumer_key, consumer_secret=consumer_secret,
                                     access_token=access_token, access_token_secret=access_token_secret)
-        self.logger = class_logger(self)
 
         self.emergency: Optional[EmergencyReport] = None
 

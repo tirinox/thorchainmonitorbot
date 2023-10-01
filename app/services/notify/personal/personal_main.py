@@ -8,7 +8,7 @@ from services.lib.date_utils import now_ts, parse_timespan_to_seconds
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
 from services.lib.settings_manager import SettingsManager
-from services.lib.utils import class_logger, grouper
+from services.lib.utils import WithLogger, grouper
 from services.models.node_info import NodeSetChanges, NodeEvent, NodeEventType
 from services.models.node_watchers import NodeWatcherStorage
 from services.notify.broadcast import ChannelDescriptor
@@ -27,10 +27,11 @@ from services.notify.personal.versions import VersionTracker
 MAX_CHANGES_PER_MESSAGE = 10
 
 
-class NodeChangePersonalNotifier(INotified):
+class NodeChangePersonalNotifier(INotified, WithLogger):
     def __init__(self, deps: DepContainer):
+        super().__init__()
+
         self.deps = deps
-        self.logger = class_logger(self)
         self.watchers = NodeWatcherStorage(deps.db)
         self.settings_man = self.deps.settings_manager
 

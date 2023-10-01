@@ -8,13 +8,13 @@ from services.lib.date_utils import MINUTE, HOUR, DAY, parse_timespan_to_seconds
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
 from services.lib.money import pretty_money, calc_percent_change
-from services.lib.utils import make_stickers_iterator, class_logger
+from services.lib.utils import make_stickers_iterator, WithLogger
 from services.models.price import RuneMarketInfo, PriceReport, PriceATH
 from services.models.time_series import PriceTimeSeries
 from services.notify.channel import MessageType, BoardMessage
 
 
-class PriceNotifier(INotified):
+class PriceNotifier(INotified, WithLogger):
     ATH_KEY = 'runeATH'
     CD_KEY_PRICE_NOTIFIED = 'price_notified'
     CD_KEY_PRICE_RISE_NOTIFIED = 'price_notified_rise'
@@ -22,8 +22,8 @@ class PriceNotifier(INotified):
     CD_KEY_ATH_NOTIFIED = 'ath_notified'
 
     def __init__(self, deps: DepContainer):
+        super().__init__()
         self.deps = deps
-        self.logger = class_logger(self)
 
         cfg = deps.cfg.price
         self.percent_change_threshold = cfg.percent_change_threshold

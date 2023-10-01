@@ -3,21 +3,19 @@ from aiothornode.connector import ThorConnector
 from aiothornode.nodeclient import ThorNodeClient
 
 from services.lib.constants import HTTP_CLIENT_ID
-from services.lib.utils import class_logger
+from services.lib.utils import WithLogger
 
 DEFAULT_MIDGARD_PORT = 8080
 
 
-class MidgardConnector:
+class MidgardConnector(WithLogger):
     ERROR_RESPONSE = 'ERROR_Midgard'
     ERROR_NOT_FOUND = 'NotFound_Midgard'
     ERROR_NO_CLIENT = 'ERROR_NoClient'
 
-    def __init__(self, session: aiohttp.ClientSession,
-                 thor: ThorConnector,
-                 retry_number=3,
-                 public_url=''):
-        self.logger = class_logger(self)
+    def __init__(self, session: aiohttp.ClientSession, thor: ThorConnector, retry_number=3, public_url=''):
+        super().__init__()
+
         self.thor = thor
         self.public_url = public_url.rstrip('/')
         self.session = session

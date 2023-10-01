@@ -3,15 +3,14 @@ from typing import List
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
-from services.lib.utils import class_logger
+from services.lib.utils import WithLogger
 from services.models.node_db import NodeStateDatabase
 from services.models.node_info import NodeSetChanges, NodeInfo
 
 
-class NodeChurnDetector(WithDelegates, INotified):
+class NodeChurnDetector(WithDelegates, INotified, WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
-        self.logger = class_logger(self)
         self.deps = deps
         self._node_db = NodeStateDatabase(self.deps)
 

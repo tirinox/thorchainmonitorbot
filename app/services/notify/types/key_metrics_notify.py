@@ -5,19 +5,18 @@ from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds, DAY, now_ts
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
-from services.lib.utils import class_logger
+from services.lib.utils import WithLogger
 from services.models.flipside import FSFees, FSLockedValue, FSSwapCount, FSSwapVolume, AlertKeyStats
 from services.models.time_series import TimeSeries
 
 
-class KeyMetricsNotifier(INotified, WithDelegates):
+class KeyMetricsNotifier(INotified, WithDelegates, WithLogger):
     MAX_POINTS = 10000
     MAX_DATA_AGE_DEFAULT = '36h'
 
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
-        self.logger = class_logger(self)
 
         self.data_max_age = self.deps.cfg.as_interval('key_metrics.data_max_age', self.MAX_DATA_AGE_DEFAULT)
 

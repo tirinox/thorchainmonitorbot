@@ -7,15 +7,15 @@ from aiothornode.types import ThorChainInfo
 from localization.manager import BaseLocalization
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
-from services.lib.utils import class_logger
+from services.lib.utils import WithLogger
 
 EXCLUDE_CHAINS_FROM_HALTED = ('TERRA',)
 
 
-class TradingHaltedNotifier(INotified):
+class TradingHaltedNotifier(INotified, WithLogger):
     def __init__(self, deps: DepContainer):
+        super().__init__()
         self.deps = deps
-        self.logger = class_logger(self)
         # self.spam_cd = Cooldown(self.deps.db, 'TradingHalted', 30 * MINUTE)
 
     def _dbg_randomize_chain_dic_halted(self, data: Dict[str, ThorChainInfo]):

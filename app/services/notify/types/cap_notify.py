@@ -4,12 +4,12 @@ from localization.manager import BaseLocalization
 from services.lib.delegates import INotified
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
-from services.lib.utils import make_stickers_iterator, class_logger
+from services.lib.utils import make_stickers_iterator, WithLogger
 from services.models.cap_info import ThorCapInfo
 from services.notify.channel import MessageType, BoardMessage
 
 
-class LiquidityCapNotifier(INotified):
+class LiquidityCapNotifier(INotified, WithLogger):
     KEY_INFO = 'Cap:Info'
     KEY_FULL_NOTIFIED = 'Cap:Full'
 
@@ -23,8 +23,8 @@ class LiquidityCapNotifier(INotified):
             return ThorCapInfo.error()
 
     def __init__(self, deps: DepContainer):
+        super().__init__()
         self.deps = deps
-        self.logger = class_logger(self)
 
         raise_stickers = deps.cfg.cap.raised.stickers.as_list()
         self.raise_sticker_iter = make_stickers_iterator(raise_stickers)

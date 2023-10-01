@@ -63,8 +63,6 @@ async def main(db):
 
 
 if __name__ == '__main__':
-    logging.basicConfig(level=logging.INFO)
-
     loop = asyncio.get_event_loop()
     cfg = Config()
     db = DB(loop)

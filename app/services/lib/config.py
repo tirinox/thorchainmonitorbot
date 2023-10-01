@@ -1,3 +1,4 @@
+import logging
 import sys
 from typing import Any
 
@@ -107,6 +108,7 @@ class Config(SubConfig):
                 else:
                     self._config_name = self.DEFAULT
 
+            logging.info(f'Loading config from "{self._config_name}".')
             with open(self._config_name, 'r') as f:
                 data = yaml.load(f, Loader=yaml.SafeLoader)
 

@@ -5,11 +5,11 @@ from discord import Client, File, Intents
 from markdownify import markdownify
 
 from services.lib.config import Config
-from services.lib.utils import class_logger
+from services.lib.utils import WithLogger
 from services.notify.channel import MessageType, BoardMessage
 
 
-class DiscordBot:
+class DiscordBot(WithLogger):
     async def on_ready(self):
         self.logger.info('ready')
 
@@ -17,13 +17,14 @@ class DiscordBot:
         self.logger.info(repr(message))
 
     def __init__(self, cfg: Config, sticker_downloader):
+        super().__init__()
         intents = Intents.default()
         intents.typing = False
 
         self.client = Client(intents=intents)
         self.client.event(self.on_ready)
         self.client.event(self.on_message)
-        self.logger = class_logger(self)
+
         self._token = cfg.as_str('discord.bot.token')
         self._sticker_downloader = sticker_downloader
 

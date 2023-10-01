@@ -4,17 +4,18 @@ from services.lib.config import SubConfig
 from services.lib.cooldown import CooldownBiTrigger
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
-from services.lib.utils import class_logger
+from services.lib.utils import WithLogger
 from services.models.price import RuneMarketInfo
 from services.models.time_series import TimeSeries
 
 
-class PriceDivergenceNotifier(INotified):
+class PriceDivergenceNotifier(INotified, WithLogger):
     MAX_POINTS = 20000
 
     def __init__(self, deps: DepContainer):
+        super().__init__()
         self.deps = deps
-        self.logger = class_logger(self)
+
         cfg: SubConfig = deps.cfg.price.divergence
 
         self.min_percent = cfg.as_float('public.min_percent', 2.0)

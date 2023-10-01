@@ -22,6 +22,10 @@ import aiofiles
 import aiohttp
 
 from services.lib.date_utils import today_str
+from services.lib.logs import setup_logs, WithLogger
+
+# noinspection PyStatementEffect
+setup_logs, WithLogger
 
 
 def most_common_and_other(values: list, max_categories, other_str='Others'):
@@ -117,17 +121,6 @@ def make_stickers_iterator(name_list):
     return circular_shuffled_iterator(no_dup_list)
 
 
-def setup_logs(log_level):
-    logging.basicConfig(
-        level=logging.getLevelName(log_level),
-        format='%(asctime)s %(levelname)s:%(name)s:%(funcName)s: %(message)s',
-        datefmt='%Y-%m-%d %H:%M:%S',
-    )
-
-    logging.info('-' * 100)
-    logging.info(f"Log level: {log_level}")
-
-
 def pairwise(iterable):
     """s -> (s0,s1), (s1,s2), (s2, s3), ..."""
     a, b = tee(iterable)
@@ -162,10 +155,6 @@ def random_hex(length=12, sharp=False):
 
 def random_ip_address():
     return ".".join(str(random.randint(0, 255)) for _ in range(4))
-
-
-def class_logger(self, prefix=''):
-    return logging.getLogger(prefix + self.__class__.__name__)
 
 
 def parse_list_from_string(text: str, upper=False, lower=False, strip=True):
@@ -351,16 +340,6 @@ class Buffer:
             return contents
         else:
             return []
-
-
-class WithLogger:
-    @property
-    def logger_prefix(self):
-        return ''
-
-    def __init__(self):
-        super(WithLogger, self).__init__()
-        self.logger = class_logger(self, self.logger_prefix)
 
 
 def json_cached_to_file_async(filename):

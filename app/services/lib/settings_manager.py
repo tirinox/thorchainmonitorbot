@@ -4,13 +4,13 @@ from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.db_one2one import OneToOne
 from services.lib.delegates import INotified, WithDelegates
-from services.lib.utils import class_logger, random_hex
+from services.lib.utils import random_hex, WithLogger
 from services.models.node_watchers import AlertWatchers
 from services.notify.channel import Messengers, ChannelDescriptor
 from services.notify.personal.helpers import NodeOpSetting, GeneralSettings
 
 
-class SettingsManager(WithDelegates):
+class SettingsManager(WithDelegates, WithLogger):
     TOKEN_LEN = 16
 
     KEY_MESSENGER = '_messenger'
@@ -20,7 +20,6 @@ class SettingsManager(WithDelegates):
         self.db = db
         self.cfg = cfg
         self.public_url = cfg.as_str('web.public_url').rstrip('/')
-        self.logger = class_logger(self)
         self.token_channel_db = OneToOne(db, 'Token-Channel')
 
     def get_link(self, token):
@@ -146,10 +145,10 @@ class SettingsContext:
         settings[GeneralSettings.INACTIVE] = False
 
 
-class SettingsProcessorGeneralAlerts(INotified):
+class SettingsProcessorGeneralAlerts(INotified, WithLogger):
     def __init__(self, db: DB, alert_watcher: AlertWatchers):
+        super().__init__()
         self.db = db
-        self.logger = class_logger(self)
         self.alert_watcher = alert_watcher
 
     async def on_data(self, sender: SettingsManager, data):

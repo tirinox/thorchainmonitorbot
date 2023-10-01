@@ -9,7 +9,7 @@ from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
-from services.lib.utils import class_logger
+from services.lib.utils import WithLogger
 from services.models.node_info import NodeSetChanges, ZERO_VERSION
 
 
@@ -17,11 +17,11 @@ class NewVersions(NamedTuple):
     versions: List[str]
 
 
-class KnownVersionStorage:
+class KnownVersionStorage(WithLogger):
     def __init__(self, deps: DepContainer, context_name):
+        super().__init__()
         self.deps = deps
         self.context_name = context_name
-        self.logger = class_logger(self)
 
     DB_KEY_NEW_VERSION = 'THORNode.Version.Already.Notified.As.New'
     DB_KEY_LAST_PROGRESS = 'THORNode.Version.Last.Progress'
@@ -48,11 +48,10 @@ class KnownVersionStorage:
         await r.set(self.DB_KEY_LAST_PROGRESS + self.context_name, progress)
 
 
-class VersionNotifier(INotified, WithDelegates):
+class VersionNotifier(INotified, WithDelegates, WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
-        self.logger = class_logger(self)
         self.store = KnownVersionStorage(deps, context_name='public')
 
         cfg: SubConfig = deps.cfg.node_info.version

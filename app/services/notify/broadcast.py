@@ -8,20 +8,20 @@ from services.lib.date_utils import parse_timespan_to_seconds, now_ts, DAY
 from services.lib.depcont import DepContainer
 from services.lib.rate_limit import RateLimitCooldown
 from services.lib.texts import shorten_text
-from services.lib.utils import class_logger
+from services.lib.utils import WithLogger
 from services.notify.channel import Messengers, ChannelDescriptor, CHANNEL_INACTIVE, BoardMessage
 
 
-class Broadcaster:
+class Broadcaster(WithLogger):
     EXTRA_RETRY_DELAY = 0.1
 
     def __init__(self, d: DepContainer):
+        super().__init__()
         self.deps = d
 
         self._broadcast_lock = asyncio.Lock()
         self._rate_limit_lock = asyncio.Lock()
         self._rng = random.Random(now_ts())
-        self.logger = class_logger(self)
 
         # public channels
         self.channels = list(ChannelDescriptor.from_json(j) for j in d.cfg.get_pure('broadcasting.channels'))

@@ -4,13 +4,13 @@ from typing import List
 from services.lib.date_utils import DAY
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
-from services.lib.utils import class_logger
+from services.lib.utils import WithLogger
 from services.models.time_series import TimeSeries
 from services.models.tx import ThorTx
 from services.models.tx_type import TxType
 
 
-class ILPSummer(INotified):
+class ILPSummer(INotified, WithLogger):
     MAX_POINTS = 10000
 
     async def on_data(self, sender, data: List[ThorTx]):
@@ -27,5 +27,5 @@ class ILPSummer(INotified):
         return await self.time_series.sum(period_sec=period, key='ilp_rune', max_points=self.MAX_POINTS)
 
     def __init__(self, deps: DepContainer):
-        self.logger = class_logger(self)
+        super().__init__()
         self.time_series = TimeSeries('ILP:Paid-On-Withdraw', deps.db)

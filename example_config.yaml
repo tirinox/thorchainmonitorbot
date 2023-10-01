@@ -2,6 +2,7 @@
 # Rename it to "config.yaml"
 
 log_level: INFO
+colorful_logs: false  # (!) new
 
 sleep_before_start: 3
 startup_step_delay: 3.0 # (!) new. Delay between startup steps (in seconds)

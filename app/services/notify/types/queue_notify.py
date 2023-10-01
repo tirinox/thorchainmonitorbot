@@ -5,17 +5,17 @@ from services.lib.cooldown import CooldownBiTrigger
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
-from services.lib.utils import class_logger
+from services.lib.utils import WithLogger
 from services.models.time_series import TimeSeries
 from services.notify.channel import BoardMessage
 
 
-class QueueNotifier(INotified):
+class QueueNotifier(INotified, WithLogger):
     DEFAULT_WATCH_QUEUES = ('outbound', 'internal', 'swap')
 
     def __init__(self, deps: DepContainer):
+        super().__init__()
         self.deps = deps
-        self.logger = class_logger(self)
 
         cfg = deps.cfg.queue
         self.cooldown = parse_timespan_to_seconds(cfg.cooldown)

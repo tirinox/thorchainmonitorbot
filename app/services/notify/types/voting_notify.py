@@ -1,22 +1,21 @@
 import json
 
 from localization.manager import BaseLocalization
-from services.lib.delegates import INotified, WithDelegates
 from services.jobs.fetch.const_mimir import ConstMimirFetcher, MimirTuple
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds
+from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
-from services.lib.utils import class_logger
+from services.lib.utils import WithLogger
 from services.models.mimir import MimirVoteManager, MimirVoteOption, MimirVoting
 
 
-class VotingNotifier(INotified, WithDelegates):
+class VotingNotifier(INotified, WithDelegates, WithLogger):
     IGNORE_IF_THERE_ARE_MORE_UPDATES_THAN = 6
 
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
-        self.logger = class_logger(self)
         cfg = deps.cfg.get('constants.voting')
         self.notification_cd_time = parse_timespan_to_seconds(cfg.as_str('notification.cooldown'))
         assert self.notification_cd_time > 0

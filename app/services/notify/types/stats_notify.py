@@ -3,18 +3,18 @@ from services.lib.cooldown import Cooldown
 from services.lib.date_utils import DAY, parse_timespan_to_seconds, MINUTE
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
-from services.lib.utils import class_logger
+from services.lib.utils import WithLogger
 from services.models.net_stats import NetworkStats
 from services.models.price import RuneMarketInfo
 from services.models.time_series import TimeSeries
 
 
-class NetworkStatsNotifier(INotified):
+class NetworkStatsNotifier(INotified, WithLogger):
     MAX_POINTS = 10000
 
     def __init__(self, deps: DepContainer):
+        super().__init__()
         self.deps = deps
-        self.logger = class_logger(self)
 
         raw_cd = self.deps.cfg.net_summary.notification.cooldown
         notify_cd_sec = parse_timespan_to_seconds(raw_cd)

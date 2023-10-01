@@ -3,13 +3,13 @@ from typing import List
 
 from services.lib.date_utils import MINUTE, parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
-from services.lib.utils import class_logger
+from services.lib.utils import WithLogger
 from services.models.node_info import NodeEvent, NodeEventType, EventDataSlash, NodeInfo
 from services.models.time_series import TimeSeries
 from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting, STANDARD_INTERVALS
 
 
-class SlashPointTracker(BaseChangeTracker):
+class SlashPointTracker(BaseChangeTracker, WithLogger):
     HISTORY_MAX_POINTS = 100_000
     EXTRA_COOLDOWN_MULT = 1.1
 
@@ -18,7 +18,6 @@ class SlashPointTracker(BaseChangeTracker):
         self.deps = deps
         self.series = TimeSeries('SlashPointTracker', self.deps.db)
         self.std_intervals_sec = [parse_timespan_to_seconds(s) for s in STANDARD_INTERVALS]
-        self.logger = class_logger(self)
         intervals = list(zip(STANDARD_INTERVALS, self.std_intervals_sec))
         self.logger.info(f'{intervals = }')
 

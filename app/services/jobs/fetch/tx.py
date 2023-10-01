@@ -19,6 +19,7 @@ class TxFetcher(BaseFetcher):
     def __init__(self, deps: DepContainer, tx_types=None):
         s_cfg = deps.cfg.tx
         sleep_period = parse_timespan_to_seconds(s_cfg.fetch_period)
+
         super().__init__(deps, sleep_period=sleep_period)
 
         self.tx_types = tx_types

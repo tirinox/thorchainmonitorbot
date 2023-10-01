@@ -126,7 +126,10 @@ class App:
             )
 
         log_level = log_level or d.cfg.get_pure('log_level', logging.INFO)
-        setup_logs(log_level)
+        colorful_logs = d.cfg.get('colorful_logs', False)
+        setup_logs(log_level, colorful=colorful_logs)
+        logging.info('-' * 100)
+        logging.info(f"Log level: {log_level}")
 
         # todo: ART logo
         logging.info(f'Starting THORChainMonitoringBot for "{d.cfg.network_id}".')

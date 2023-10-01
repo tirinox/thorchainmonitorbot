@@ -1,16 +1,15 @@
 from typing import List
 
 from services.lib.depcont import DepContainer
-from services.lib.utils import class_logger
+from services.lib.utils import WithLogger
 from services.models.node_info import NodeEvent, NodeEventType
 from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
 
 
-class PresenceTracker(BaseChangeTracker):
+class PresenceTracker(BaseChangeTracker, WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
-        self.logger = class_logger(self)
 
     async def get_events_unsafe(self) -> List[NodeEvent]:
         events = []

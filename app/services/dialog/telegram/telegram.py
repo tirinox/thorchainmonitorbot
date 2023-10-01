@@ -9,7 +9,7 @@ from aiogram.utils import exceptions, executor
 from services.lib.config import Config
 from services.lib.db import DB
 from services.lib.texts import shorten_text
-from services.lib.utils import class_logger
+from services.lib.utils import WithLogger
 from services.notify.channel import MessageType, CHANNEL_INACTIVE, BoardMessage
 
 TG_TEST_USER = 192398802
@@ -18,11 +18,12 @@ TELEGRAM_MAX_MESSAGE_LENGTH = 4096
 TELEGRAM_MAX_CAPTION_LENGTH = 1024
 
 
-class TelegramBot:
+class TelegramBot(WithLogger):
     EXTRA_RETRY_DELAY = 0.1
 
     def __init__(self, cfg: Config, db: DB, loop):
-        self.logger = class_logger(self)
+        super().__init__()
+
         self.db = db
         self.bot = Bot(token=cfg.telegram.bot.token, parse_mode=ParseMode.HTML)
         self.dp = Dispatcher(self.bot, loop=loop)

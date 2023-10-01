@@ -6,19 +6,19 @@ from aioredis import Redis
 
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
-from services.lib.utils import class_logger, parallel_run_in_groups
+from services.lib.utils import parallel_run_in_groups, WithLogger
 
 
-class GeoIPManager:
+class GeoIPManager(WithLogger):
     DB_KEY_IP_INFO = 'NodeIpGeoInfo'
     API_URL = 'https://ipapi.co/{address}/json/'
     PARALLEL_FETCH_GROUP_SIZE = 8
 
     def __init__(self, deps: DepContainer):
+        super().__init__()
         self.deps = deps
         self.expire_period_sec = int(
             parse_timespan_to_seconds(deps.cfg.as_str('node_info.geo_ip.expire', default='24h')))
-        self.logger = class_logger(self)
 
     def key(self, ip: str):
         return f'{self.DB_KEY_IP_INFO}:{ip}'
