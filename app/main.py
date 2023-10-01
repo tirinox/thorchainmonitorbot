@@ -297,6 +297,7 @@ class App:
             if d.block_scanner:
                 native_action_extractor = SwapExtractorBlock(d)
                 d.block_scanner.add_subscriber(native_action_extractor)
+                native_action_extractor.add_subscriber(aggregator)
 
             volume_filler = VolumeFillerUpdater(d)
             aggregator.add_subscriber(volume_filler)

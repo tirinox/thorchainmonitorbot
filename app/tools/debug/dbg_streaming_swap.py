@@ -1,18 +1,20 @@
 import asyncio
-import faulthandler
+import logging
 
 from proto.types import MsgDeposit, MsgObservedTxIn
 from services.jobs.fetch.profit_against_cex import StreamingSwapVsCexProfitCalculator
 from services.jobs.fetch.streaming_swaps import StreamingSwapFechter
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.scanner.event_db import EventDatabase
-from services.jobs.scanner.native_scan import NativeScannerBlock
+# from services.jobs.scanner.native_scan import NativeScannerBlock
+from services.jobs.scanner.scan_cache import NativeScannerBlockCached
 from services.jobs.scanner.swap_extractor import SwapExtractorBlock
 from services.jobs.user_counter import UserCounter
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.jobs.volume_recorder import VolumeRecorder
 from services.lib.money import DepthCurve, Asset
 from services.lib.texts import sep
+from services.lib.utils import setup_logs
 from services.lib.w3.aggregator import AggregatorDataExtractor
 from services.lib.w3.dex_analytics import DexAnalyticsCollector
 from services.models.tx import ThorTx
@@ -22,7 +24,9 @@ from services.notify.types.s_swap_notify import StreamingSwapStartTxNotifier
 from services.notify.types.tx_notify import SwapTxNotifier
 from tools.lib.lp_common import LpAppFramework
 
-faulthandler.enable()
+BlockScannerClass = NativeScannerBlockCached
+
+# faulthandler.enable()
 
 
 # 1)
@@ -68,7 +72,7 @@ async def debug_fetch_ss(app: LpAppFramework):
 
 
 async def debug_block_analyse(app: LpAppFramework):
-    scanner = NativeScannerBlock(app.deps)
+    scanner = BlockScannerClass(app.deps)
     # await scanner.run()
     blk = await scanner.fetch_one_block(12209517)
     sep()
@@ -82,7 +86,7 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
     d = app.deps
 
     # Block scanner: the source of the river
-    d.block_scanner = NativeScannerBlock(d, last_block=start)
+    d.block_scanner = BlockScannerClass(d, last_block=start)
     d.block_scanner.one_block_per_run = single_block
     d.block_scanner.allow_jumps = True
 
@@ -156,7 +160,7 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
 
 
 async def debug_detect_start_on_deposit_rune(app):
-    scanner = NativeScannerBlock(app.deps)
+    scanner = BlockScannerClass(app.deps)
     blk = await scanner.fetch_one_block(12079656)  # RUNE => ETH.THOR
     sss = StreamingSwapStartTxNotifier(app.deps)
     deposits = blk.find_tx_by_type(MsgDeposit)
@@ -197,7 +201,7 @@ async def debug_tx_records(app: LpAppFramework, tx_id):
 
 
 async def debug_detect_start_on_external_tx(app: LpAppFramework):
-    scanner = NativeScannerBlock(app.deps)
+    scanner = BlockScannerClass(app.deps)
     sss = StreamingSwapStartTxNotifier(app.deps)
 
     # 12132229 vs 12136527
@@ -255,6 +259,11 @@ async def debug_cex_profit_calc_binance(app: LpAppFramework):
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
+        print('start!')
+
+        setup_logs(logging.INFO)
+        logging.error('???')
+
         await app.deps.pool_fetcher.reload_global_pools()
         await app.deps.last_block_fetcher.run_once()
 
@@ -274,11 +283,18 @@ async def run():
         #     app, start=12802333,
         #     tx_id='2065AD2148F242D59DEE34890022A2264C9B04C2297E04295BB118E29A995E05')
 
+        # fixme: no ss end!
+        await debug_full_pipeline(
+            app, start=12802040,
+            tx_id='63218D1F853AEB534B3469C4E0236F43E04BFEE99832DF124425454B8DB1528E')
+
         # await debug_detect_start_on_deposit_rune(app)
         # await debug_detect_start_on_external_tx(app)
 
-        await debug_cex_profit_calc(app, '2065AD2148F242D59DEE34890022A2264C9B04C2297E04295BB118E29A995E05')
+        # await debug_cex_profit_calc(app, '2065AD2148F242D59DEE34890022A2264C9B04C2297E04295BB118E29A995E05')
         # await debug_cex_profit_calc_binance(app)
+
+        # todo: streaming swap END test for small swap!!!
 
 
 if __name__ == '__main__':
