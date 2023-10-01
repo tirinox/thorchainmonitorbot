@@ -12,6 +12,7 @@ help:
 build:
 	$(info Make: Building images.)
 	docker-compose build --no-cache $(BOTNAME) api redis
+	echo "Note! Use 'make start' to make the changes take effect (recreate containers with updated images)."
 
 start:
 	$(info Make: Starting containers.)
