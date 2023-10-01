@@ -29,6 +29,12 @@ class WatchedEntity:
         return (self.total_ticks - self.error_counter) / self.total_ticks * 100.0
 
 
+def qualname(obj):
+    if hasattr(obj, '__qualname__'):
+        return obj.__qualname__
+    return obj.__class__.__qualname__
+
+
 class DataController:
     def __init__(self):
         self._tracker = {}
@@ -52,23 +58,32 @@ class DataController:
         results = set()
 
         queue = set(self._tracker.values())
+        root_nodes = set(qualname(node) for node in queue)
+
         while queue:
             node = queue.pop()
-            emitter_name = node.__class__.__qualname__
+            emitter_name = qualname(node)
+            is_root = emitter_name in root_nodes
             if isinstance(node, WithDelegates):
                 for listener in node.delegates:
-                    listener_name = listener.__class__.__qualname__
-                    results.add((emitter_name, listener_name))
+                    listener_name = qualname(listener)
+                    results.add((emitter_name, listener_name, is_root))
                     queue.add(listener)
 
         return results
 
     @staticmethod
     def make_digraph_dot(list_of_connections):
-        dot_code = "digraph G {\n"
+        dot_code = (
+            "digraph G {\n"
+            "  layout=fdp;\n"
+        )
 
         for edge in list_of_connections:
-            node_from, node_to = edge
+            node_from, node_to, is_root = edge
+            if is_root:
+                color = 'green' if is_root else 'black'
+                dot_code += f'    "{node_from}" [fillcolor="{color}"; style="filled"; shape="box"];\n'
             dot_code += f'    "{node_from}" -> "{node_to}";\n'
 
         dot_code += "}"
