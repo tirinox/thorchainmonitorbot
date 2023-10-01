@@ -960,8 +960,8 @@ class BaseLocalization(ABC):  # == English
             return '🟡'
         elif n <= 50:
             return '🔴'
-        elif n <= 100:
-            return '🤬!!'
+        else:
+            return '🤬❗️'
 
     TEXT_ASK_DURATION = 'For what period of time do you want to get the data?'
 
