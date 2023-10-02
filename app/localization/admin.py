@@ -33,7 +33,7 @@ class AdminMessages:
                 last_txt += '❗'
 
             interval = seconds_human(fetcher.sleep_period)
-            success_rate_txt = format_percent(fetcher.success_rate, 100.0)
+            success_rate_txt = format_percent(fetcher.success_rate)
 
             if fetcher.total_ticks > 0:
                 ticks_str = fetcher.total_ticks
@@ -97,7 +97,7 @@ class AdminMessages:
                 f'<b>RPS:</b> {session.rps:.2f} req/sec, '
                 f'{ital(session.total_calls)} total requests, '
                 f'{ital(session.total_errors)} errors, '
-                f'{ital(format_percent(session.success_rate_vs_code))} of 200 code'
+                f'{ital(format_percent(session.success_rate_vs_code, 1))} of 200 code'
             )
 
         return message
