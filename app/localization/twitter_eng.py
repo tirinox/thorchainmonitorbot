@@ -6,7 +6,7 @@ from semver import VersionInfo
 from localization.achievements.ach_tw_eng import AchievementsTwitterEnglishLocalization
 from localization.eng_base import BaseLocalization
 from services.dialog.twitter.text_length import twitter_intelligent_text_splitter
-from services.jobs.fetch.circulating import SupplyEntry
+from services.jobs.fetch.circulating import RuneCirculatingSupply
 from services.lib.config import Config
 from services.lib.constants import Chains
 from services.lib.date_utils import now_ts, seconds_human
@@ -638,7 +638,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         halted_chains = ', '.join(c.chain for c in chain_infos if c.halted)
         if halted_chains:
-            msg += f'🚨 Attention! Trading is halted on the {halted_chains} chains! ' \
+            msg += f'🚨 Attention! Trading is halted on the {halted_chains} chain! ' \
                    f'Refrain from using it until the trading is restarted! 🚨\n'
 
         resumed_chains = ', '.join(c.chain for c in chain_infos if not c.halted)
@@ -793,7 +793,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
     SUPPLY_PIC_CAPTION = 'THORChain Rune supply chart'
 
-    def format_supply_entry(self, name, s: SupplyEntry, total_of_total: int):
+    def format_supply_entry(self, name, s: RuneCirculatingSupply, total_of_total: int):
         locked_amount = sum(amount for _, amount in s.locked.items()) if s.locked else 0.0
 
         # todo! add more items.
@@ -807,7 +807,7 @@ class TwitterEnglishLocalization(BaseLocalization):
     def text_metrics_supply(self, market_info: RuneMarketInfo):
         parts = []
         supply = market_info.supply_info
-        parts.append(self.format_supply_entry('Native Thor RUNE', supply.thor_rune, supply.overall.total))
+        parts.append(self.format_supply_entry('Native Thor RUNE', supply, supply.total))
         return self.smart_split(parts)
 
     @staticmethod
