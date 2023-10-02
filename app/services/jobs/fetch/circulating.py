@@ -1,7 +1,8 @@
 import asyncio
+from contextlib import suppress
 from typing import NamedTuple, Dict
 
-from services.lib.constants import RUNE_IDEAL_SUPPLY, RUNE_SUPPLY_AFTER_SWITCH, RUNE_DECIMALS
+from services.lib.constants import RUNE_IDEAL_SUPPLY, RUNE_SUPPLY_AFTER_SWITCH, RUNE_DECIMALS, thor_to_float
 from services.lib.utils import WithLogger
 
 
@@ -18,6 +19,7 @@ class ThorRealms:
     BURNED = 'Burned'
     MINTED = 'Minted'
     TREASURY = 'Treasury'
+    MAYA_POOL = 'Maya pool'
 
     KILLED = 'Killed switched'
 
@@ -43,6 +45,8 @@ THOR_ADDRESS_DICT = {
     "thor15h7uv2339vdzt2a6qsjf6uh5zc06sed7szvze5": ("Ascendex", ThorRealms.CEX),
     "thor1nm0rrq86ucezaf8uj35pq9fpwr5r82clphp95t": ("Kraken", ThorRealms.CEX),
 }
+
+MAYA_POOLS_URL = 'https://mayanode.mayachain.info/mayachain/pools'
 
 
 class RuneHoldEntry(NamedTuple):
@@ -149,25 +153,25 @@ class RuneCirculatingSupplyFetcher(WithLogger):
         """
 
         thor_rune_supply = await self.get_thor_rune_total_supply()
+        result = RuneCirculatingSupply(thor_rune_supply, thor_rune_supply, {})
 
-        wallet_balances = {}
         for address, (wallet_name, realm) in THOR_ADDRESS_DICT.items():
             # No hurry, do it step by step
             await asyncio.sleep(self.step_sleep)
 
             balance = await self.get_thor_address_balance(address)
+            result.set_holder(RuneHoldEntry(address, balance, wallet_name, realm))
 
-            wallet_balances[address] = RuneHoldEntry(
-                address, balance, wallet_name, realm
-            )
+        maya_pool_balance = await self.get_maya_pool_rune()
+        result.set_holder(RuneHoldEntry('Maya pool', int(maya_pool_balance), 'Maya pool', ThorRealms.MAYA_POOL))
 
         locked_rune = sum(
-            w.amount for w in wallet_balances.values()
+            w.amount for w in result.holders.values()
             if w.realm in (ThorRealms.RESERVES, ThorRealms.UNDEPLOYED_RESERVES)
         )
 
         return RuneCirculatingSupply(
-            thor_rune_supply - locked_rune, thor_rune_supply, wallet_balances
+            thor_rune_supply - locked_rune, thor_rune_supply, result.holders
         )
 
     @staticmethod
@@ -192,3 +196,11 @@ class RuneCirculatingSupplyFetcher(WithLogger):
         async with self.session.get(url_balance) as resp:
             j = await resp.json()
             return self.get_pure_rune_from_thor_array(j['balances'])
+
+    async def get_maya_pool_rune(self):
+        with suppress(Exception):
+            async with self.session.get(MAYA_POOLS_URL) as resp:
+                j = await resp.json()
+                rune_pool = next(p for p in j if p['asset'] == 'THOR.RUNE')
+                return thor_to_float(rune_pool['balance_asset'])
+        return 0.0

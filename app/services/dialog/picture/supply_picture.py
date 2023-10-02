@@ -36,8 +36,8 @@ class SupplyPictureGenerator(BasePictureGenerator):
                 self.gr.draw.rounded_rectangle(r.coordinates, radius=14, fill=item.color, outline=outline)
         if item.label:
             self._add_text(r.shift_from_origin(10, 8), item.label)
-        meta = item.meta_data
-        if meta:
+
+        if item.meta_data == 'y' and item.weight > 1e6:
             font_sz = min(max(20, int(item.weight / 1e6)), 120)
             font = self.res.fonts.get_font(font_sz)
             text = short_money(item.weight)
@@ -62,8 +62,14 @@ class SupplyPictureGenerator(BasePictureGenerator):
 
         self.supply = supply
         self.net_stats = net_stats
+        self.maya_pool = self.supply.total_rune_in_realm(ThorRealms.MAYA_POOL)
 
         self.res = Resources()
+
+        self.left = 80
+        self.right = 80
+        self.top = 80
+        self.bottom = 160
 
         self.font = self.res.font_small
         self.font_block = self.res.fonts.get_font_bold(40)
@@ -100,8 +106,9 @@ class SupplyPictureGenerator(BasePictureGenerator):
         return self.gr.finalize()
 
     def _add_legend(self):
-        x = 60
-        y = self.HEIGHT - 55
+        x = orig_x = 60
+        y_step = 37
+        y = self.HEIGHT - 90
         legend_font = self.res.fonts.get_font_bold(30)
         for title, color in self.PALETTE.items():
             title = self.translate.get(title, title)
@@ -109,8 +116,8 @@ class SupplyPictureGenerator(BasePictureGenerator):
             self.gr.plot_legend_unit(x, y, color, title, font=legend_font, size=26)
             x += dx + 70
             if x >= self.WIDTH - 100:
-                x = 55
-                y += 20
+                x = orig_x
+                y += y_step
 
     def _pack(self, items, outer_rect, align):
         packer = DrawRectPacker(items)
@@ -134,7 +141,7 @@ class SupplyPictureGenerator(BasePictureGenerator):
         )
 
     def _plot(self):
-        outer_rect = Rect.from_frame(50, 100, 50, 120, self.WIDTH, self.HEIGHT)
+        outer_rect = Rect.from_frame(self.left, self.top, self.right, self.bottom, self.WIDTH, self.HEIGHT)
 
         # Title
         # y_up = -60
@@ -180,6 +187,7 @@ class SupplyPictureGenerator(BasePictureGenerator):
             PackItem('', self.supply.in_cex, ''),  # CEX Block
             PackItem(self.loc.SUPPLY_PIC_TREASURY, self.supply.treasury, self.PALETTE[ThorRealms.TREASURY], 'y'),
             PackItem(self.loc.SUPPLY_PIC_CIRCULATING, other_circulating, self.PALETTE[ThorRealms.CIRCULATING], 'y'),
+            PackItem(self.loc.SUPPLY_PIC_MAYA, self.maya_pool, self.PALETTE[ThorRealms.CIRCULATING], 'y'),
             PackItem(self.loc.SUPPLY_PIC_BURNED, abs(self.supply.lending_burnt_rune),
                      self.PALETTE[ThorRealms.BURNED], 'y'),
             PackItem(self.loc.SUPPLY_PIC_SECTION_KILLED,

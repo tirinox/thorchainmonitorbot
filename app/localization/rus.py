@@ -1635,6 +1635,7 @@ class RussianLocalization(BaseLocalization):
     SUPPLY_PIC_UNDEPLOYED = 'Неразвернутый резерв'
     SUPPLY_PIC_BONDED = 'Бонд в нодах'
     SUPPLY_PIC_TREASURY = 'Сокровищница'
+    SUPPLY_PIC_MAYA = 'Maya пул'
     SUPPLY_PIC_POOLED = 'В пулах'
     SUPPLY_PIC_BURNED = 'Сожжено'
     SUPPLY_PIC_SECTION_CIRCULATING = 'Нативные циркулируют'

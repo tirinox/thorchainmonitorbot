@@ -2140,6 +2140,7 @@ class BaseLocalization(ABC):  # == English
     SUPPLY_PIC_UNDEPLOYED = ThorRealms.UNDEPLOYED_RESERVES
     SUPPLY_PIC_BONDED = 'Bonded by nodes'
     SUPPLY_PIC_TREASURY = 'Treasury'
+    SUPPLY_PIC_MAYA = 'Maya pool'
     SUPPLY_PIC_POOLED = ThorRealms.POOLED
     SUPPLY_PIC_BURNED = ThorRealms.BURNED
     SUPPLY_PIC_SECTION_CIRCULATING = 'THOR.RUNE circulating'
