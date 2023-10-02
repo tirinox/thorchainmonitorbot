@@ -94,9 +94,14 @@ async def run():
         d.last_block_fetcher.add_subscriber(d.last_block_store)
         await d.last_block_fetcher.run_once()
 
+        fetcher_stats = NetworkStatisticsFetcher(app.deps)
+        app.deps.net_stats = await fetcher_stats.fetch()
+
+        await d.node_info_fetcher.run_once()
+
         await d.mimir_const_fetcher.fetch()  # get constants beforehand
 
-        await app.deps.pool_fetcher.fetch()
+        # await app.deps.pool_fetcher.fetch()
 
         pic, _ = await get_supply_pic(app)
         save_and_show_pic(pic, show=True, name='supply')

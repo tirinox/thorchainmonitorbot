@@ -1627,18 +1627,19 @@ class RussianLocalization(BaseLocalization):
             f'💰 Сокровищница имеет {pre(pretty_rune(sp.treasury))}'
         )
 
-    SUPPLY_PIC_TITLE = 'THORChain: запасы Руны'
-    SUPPLY_PIC_CIRCULATING = 'Циркулирующие'
+    SUPPLY_PIC_CIRCULATING = 'Прочие циркулирующие'
     SUPPLY_PIC_TEAM = 'Команда'
     SUPPLY_PIC_SEED = 'Сид-инвесторы'
     SUPPLY_PIC_VESTING_9R = 'NineRealms вестинг'
     SUPPLY_PIC_RESERVES = 'Резерв'
     SUPPLY_PIC_UNDEPLOYED = 'Неразвернутый резерв'
     SUPPLY_PIC_BONDED = 'Бонд в нодах'
+    SUPPLY_PIC_TREASURY = 'Сокровищница'
     SUPPLY_PIC_POOLED = 'В пулах'
+    SUPPLY_PIC_BURNED = 'Сожжено'
     SUPPLY_PIC_SECTION_CIRCULATING = 'Нативные циркулируют'
     SUPPLY_PIC_SECTION_LOCKED = 'Нативные заблокированы'
-    SUPPLY_PIC_SECTION_OLD = 'Устаревшие'
+    SUPPLY_PIC_SECTION_KILLED = 'Уничтоженные'
 
     # ---- MY WALLET ALERTS ----
 

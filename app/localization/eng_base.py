@@ -2135,15 +2135,16 @@ class BaseLocalization(ABC):  # == English
             f'💰 Treasury has {pre(pretty_rune(sp.treasury))}'
         )
 
-    SUPPLY_PIC_TITLE = 'THORChain Rune supply'
-    SUPPLY_PIC_CIRCULATING = ThorRealms.CIRCULATING
+    SUPPLY_PIC_CIRCULATING = 'Other circulating'
     SUPPLY_PIC_RESERVES = ThorRealms.RESERVES
     SUPPLY_PIC_UNDEPLOYED = ThorRealms.UNDEPLOYED_RESERVES
     SUPPLY_PIC_BONDED = 'Bonded by nodes'
+    SUPPLY_PIC_TREASURY = 'Treasury'
     SUPPLY_PIC_POOLED = ThorRealms.POOLED
+    SUPPLY_PIC_BURNED = ThorRealms.BURNED
     SUPPLY_PIC_SECTION_CIRCULATING = 'THOR.RUNE circulating'
     SUPPLY_PIC_SECTION_LOCKED = 'THOR.RUNE locked'
-    SUPPLY_PIC_SECTION_OLD = 'Obsolete'
+    SUPPLY_PIC_SECTION_KILLED = 'Killed switched'
 
     SUPPLY_PIC_CAPTION = ital('THORChain Rune supply chart')
 

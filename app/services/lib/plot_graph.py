@@ -96,13 +96,14 @@ class PlotGraph:
     def plot_legend_unit(self, legend_x, legend_y, color, title, font=None, size=14):
         font = font or self.font_ticks
         half_square_sz = size // 2
-        self.draw.rectangle(
+        self.draw.rounded_rectangle(
             (
                 legend_x - half_square_sz,
                 legend_y - half_square_sz,
                 legend_x + half_square_sz,
                 legend_y + half_square_sz
             ),
+            radius=10,
             fill=color, outline='black'
         )
         self.draw.text((legend_x + size * 1.5 - half_square_sz, legend_y),

@@ -19,6 +19,8 @@ class ThorRealms:
     MINTED = 'Minted'
     TREASURY = 'Treasury'
 
+    KILLED = 'Killed switched'
+
 
 THOR_ADDRESS_DICT = {
     # Reserves:
@@ -49,6 +51,9 @@ class RuneHoldEntry(NamedTuple):
     name: str
     realm: str
 
+    def add_amount(self, amount):
+        return self._replace(amount=self.amount + amount)
+
 
 class RuneCirculatingSupply(NamedTuple):
     circulating: int
@@ -62,18 +67,27 @@ class RuneCirculatingSupply(NamedTuple):
     def set_holder(self, h: RuneHoldEntry):
         self.holders[h.address] = h
 
-    @staticmethod
-    def lost_forever():
+    @property
+    def killed_switched(self):
         return RUNE_IDEAL_SUPPLY - RUNE_SUPPLY_AFTER_SWITCH
 
     @property
     def lending_burnt_rune(self):
         return RUNE_SUPPLY_AFTER_SWITCH - self.total
 
-    def find_by_realm(self, realms):
+    def find_by_realm(self, realms, join_by_name=False):
         if isinstance(realms, str):
             realms = (realms,)
-        return [h for h in self.holders.values() if h.realm in realms]
+        items = [h for h in self.holders.values() if h.realm in realms]
+        if join_by_name:
+            name_dict = {}
+            for item in items:
+                if item.name in name_dict:
+                    name_dict[item.name] = name_dict[item.name].add_amount(item.amount)
+                else:
+                    name_dict[item.name] = item
+            return list(name_dict.values())
+        return items
 
     def total_rune_in_realm(self, realms):
         return sum(h.amount for h in self.find_by_realm(realms))
@@ -116,6 +130,10 @@ class RuneCirculatingSupply(NamedTuple):
     @property
     def pooled_percent(self):
         return self.pooled / self.total * 100
+
+    @property
+    def working(self):
+        return self.bonded + self.pooled
 
 
 class RuneCirculatingSupplyFetcher(WithLogger):

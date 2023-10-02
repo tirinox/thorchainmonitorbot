@@ -73,8 +73,8 @@ class Rect(NamedTuple):
     @property
     def coordinates(self):
         return (
-            (self.x, self.y),
-            (self.x2, self.y2)
+            (min(self.x, self.x2), min(self.y, self.y2)),
+            (max(self.x, self.x2), max(self.y, self.y2))
         )
 
     @property
@@ -88,6 +88,14 @@ class Rect(NamedTuple):
         return (
             self.x + px,
             self.y + py
+        )
+
+    def extend(self, a):
+        return Rect(
+            self.x - a,
+            self.y - a,
+            max(1, self.w + a * 2),
+            max(1, self.h + a * 2)
         )
 
 
