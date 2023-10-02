@@ -99,6 +99,16 @@ class TwitterBot(WithLogger):
             await self.post(part, image, executor, loop)
             image = None  # attach image solely to the first post, then just nullify it
 
+    def _report_error(self, e):
+        with suppress(Exception):
+            logging.exception(f'Twitter exception!', stack_info=True)
+            if self.emergency:
+                # Signal the admin to update app binding in the Twitter Developer Portal
+                self.emergency.report(self.logger.name, repr(e),
+                                      api_errors=e.api_errors,
+                                      api_codes=e.api_codes,
+                                      api_messages=e.api_messages)
+
     async def send_message(self, chat_id, msg: BoardMessage, _retrying=False, **kwargs) -> bool:
         # Chat_id is not supported yet... only one single channel
         try:
@@ -109,27 +119,20 @@ class TwitterBot(WithLogger):
             else:
                 logging.warning(f'Type "{msg.message_type}" is not supported for Twitter.')
             return True
+        except tweepy.errors.TooManyRequests as e:
+            self._report_error(e)
+            return False
         except tweepy.errors.Forbidden as e:
-            if self.emergency:
-                with suppress(Exception):
-                    # Signal the admin to update app binding in the Twitter Developer Portal
-                    self.emergency.report(self.logger.name, "Twitter forbidden error",
-                                          api_errors=e.api_errors,
-                                          api_codes=e.api_codes,
-                                          api_messages=e.api_messages)
+            self._report_error(e)
             if _retrying:
                 logging.exception('Tried to resend Twitter message. Failed again.')
                 return False
             else:
-                # logging.warning(f'There is an exception: {e!r}. But I will try to abbreviate the message and resend.')
-                # msg.text = abbreviate_some_long_words(msg.text)
-                # self.log_tweet(msg.text, None)
-
                 logging.warning(f'There is an exception: {e!r}. But I will try to resend the message as is.')
                 await asyncio.sleep(15)
                 return await self.send_message(chat_id, msg, _retrying=True, **kwargs)
-        except Exception:
-            logging.exception(f'Twitter exception!', stack_info=True)
+        except Exception as e:
+            logging.exception(f'Other twitter exception {e!r}!', stack_info=True)
             return False
 
 
