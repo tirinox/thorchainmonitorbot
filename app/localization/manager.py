@@ -17,6 +17,10 @@ class LocalizationManager(metaclass=Singleton):
             Language.ENGLISH_TWITTER: TwitterEnglishLocalization(cfg),
         }
 
+    @property
+    def all(self):
+        return self._langs.values()
+
     def __getitem__(self, item):
         return self.get_from_lang(item)
 

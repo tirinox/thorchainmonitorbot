@@ -297,13 +297,13 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
                        TC_YGGDRASIL_GREEN, TC_LIGHTNING_BLUE)
 
         draw.text((x, y_p),
-                  format_percent(organic_ratio, threshold=0.0),
+                  format_percent(organic_ratio, 1, threshold=0.0),
                   font=font_fee,
                   anchor='lm',
                   fill=TC_YGGDRASIL_GREEN)
 
         draw.text((x_right, y_p),
-                  format_percent(block_ratio, threshold=0.0),
+                  format_percent(block_ratio, 1, threshold=0.0),
                   font=font_fee,
                   anchor='rm',
                   fill=TC_LIGHTNING_BLUE)

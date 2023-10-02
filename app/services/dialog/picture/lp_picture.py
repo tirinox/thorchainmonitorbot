@@ -225,7 +225,7 @@ def _generate_lp_pool_picture(price_holder: LastPriceHolder,
 
         else:
             fee_text = format_percent(fee_value, current)
-            il_prot_text = format_percent(prot.progress_progress)
+            il_prot_text = format_percent(prot.progress_progress, 1)
 
             r.put_hidden_plate(image, pos_percent_lp(x, rows_y[0]), anchor='center')
             r.put_hidden_plate(image, pos_percent_lp(x, rows_y[1]), anchor='center')
