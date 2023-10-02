@@ -38,7 +38,7 @@ class RuneMarketInfo:
                 and self.pool_rune_price > 0
                 and self.pools
                 and self.supply_info
-                and self.supply_info.overall.total > 0
+                and self.supply_info.total > 0
                 )
 
     @property

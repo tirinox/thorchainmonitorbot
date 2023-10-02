@@ -18,7 +18,7 @@ from services.models.price import RuneMarketInfo
 from services.notify.channel import BoardMessage
 from services.notify.types.block_notify import LastBlockStore
 from tools.debug.dbg_discord import debug_prepare_discord_bot
-from tools.lib.lp_common import LpAppFramework
+from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
 
 @json_cached_to_file_async("../temp/supply_info_2.json")
@@ -75,8 +75,7 @@ async def post_supply_to_discord(app: LpAppFramework, pic):
 
 
 async def my_demo_market_info(app: LpAppFramework):
-    rmif = RuneMarketInfoFetcher(app.deps)
-    info = await rmif.get_rune_market_info()
+    info = await app.deps.rune_market_fetcher.get_rune_market_info()
     pprint(info)
 
 
@@ -99,11 +98,11 @@ async def run():
 
         await app.deps.pool_fetcher.fetch()
 
-        # pic, _ = await get_supply_pic(app)
-        # save_and_show_pic(pic, show=True, name='supply')
+        pic, _ = await get_supply_pic(app)
+        save_and_show_pic(pic, show=True, name='supply')
 
         # await post_supply_to_discord(app, pic)
-        await my_demo_market_info(app)
+        # await my_demo_market_info(app)
 
         # await debug_network_stats(app)
 

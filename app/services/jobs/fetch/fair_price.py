@@ -1,7 +1,8 @@
 import asyncio
 from typing import Optional
 
-from services.jobs.fetch.circulating import RuneCirculatingSupplyFetcher, RuneCirculatingSupply
+from services.jobs.fetch.circulating import RuneCirculatingSupplyFetcher, RuneCirculatingSupply, RuneHoldEntry, \
+    ThorRealms
 from services.jobs.fetch.gecko_price import get_thorchain_coin_gecko_info, gecko_market_cap_rank, gecko_ticker_price, \
     gecko_market_volume
 from services.lib.constants import thor_to_float, DEFAULT_CEX_NAME, DEFAULT_CEX_BASE_ASSET
@@ -37,14 +38,39 @@ class RuneMarketInfoFetcher(WithLogger):
 
     @retries(5)
     async def _get_circulating_supply(self) -> RuneCirculatingSupply:
-        supply_fetcher = RuneCirculatingSupplyFetcher(self.deps.session,
-                                                      thor_node=self.deps.cfg.get('thor.node.node_url'),
-                                                      step_sleep=self.deps.cfg.sleep_step)
+        supply_fetcher = RuneCirculatingSupplyFetcher(
+            self.deps.session,
+            thor_node=self.deps.thor_connector.env.thornode_url,
+            step_sleep=self.deps.cfg.sleep_step)
 
         return await supply_fetcher.fetch()
 
-    async def get_rune_market_info_from_api(self) -> RuneMarketInfo:
+    def _enrich_circulating_supply(self, supply: RuneCirculatingSupply) -> RuneCirculatingSupply:
+        ns = self.deps.net_stats
+        if ns:
+            supply.set_holder(RuneHoldEntry('bond_module', int(ns.total_bond_rune), 'Bonded', ThorRealms.BONDED))
+            supply.set_holder(RuneHoldEntry('pool_module', int(ns.total_rune_pooled), 'Pooled', ThorRealms.POOLED))
+        else:
+            self.logger.warning('No net stats! Failed to enrich circulating supply data with pool/bonding info!')
+
+        nodes = self.deps.node_holder.nodes
+        if nodes:
+            for node in nodes:
+                if node.bond > 0:
+                    supply.set_holder(
+                        RuneHoldEntry(node.node_address, int(node.bond), node.status, ThorRealms.BONDED_NODE)
+                    )
+        else:
+            self.logger.warning('No nodes available! Failed to enrich circulating supply data with node info!')
+        return supply
+
+    async def get_full_supply(self) -> RuneCirculatingSupply:
         supply_info = await self._get_circulating_supply()
+        supply_info = self._enrich_circulating_supply(supply_info)
+        return supply_info
+
+    async def get_rune_market_info_from_api(self) -> RuneMarketInfo:
+        supply_info = await self.get_full_supply()
         await asyncio.sleep(self.step_delay)
 
         gecko = await get_thorchain_coin_gecko_info(self.deps.session)
@@ -53,8 +79,8 @@ class RuneMarketInfoFetcher(WithLogger):
         total_pulled_rune = await self.total_pooled_rune()
 
         supply_info: RuneCirculatingSupply
-        circulating_rune = supply_info.overall.circulating
-        total_supply = supply_info.overall.total
+        circulating_rune = supply_info.circulating
+        total_supply = supply_info.total
 
         if circulating_rune <= 0:
             raise ValueError(f"circulating is invalid ({circulating_rune})")
@@ -87,7 +113,7 @@ class RuneMarketInfoFetcher(WithLogger):
         return result
 
     @a_result_cached(RUNE_MARKET_INFO_CACHE_TIME)
-    async def get_rune_market_info(self) -> RuneMarketInfo:
+    async def get_rune_market_info_cached(self) -> RuneMarketInfo:
         try:
             result = await self.get_rune_market_info_from_api()
             if result.is_valid:
@@ -96,3 +122,8 @@ class RuneMarketInfoFetcher(WithLogger):
         except Exception as e:
             self.logger.exception(f'Failed to get fresh Rune market info! {e!r}', exc_info=True)
             return self._prev_result
+
+    async def get_rune_market_info(self) -> RuneMarketInfo:
+        data = await self.get_rune_market_info_cached()
+        self._enrich_circulating_supply(data.supply_info)
+        return data

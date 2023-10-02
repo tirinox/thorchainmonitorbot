@@ -182,7 +182,8 @@ class NetworkIdents:
         return 'multi' in network or network == cls.MAINNET
 
 
-THOR_DIVIDER = 100_000_000.0  # 1e8
+RUNE_DECIMALS = 8
+THOR_DIVIDER = float(10 ** RUNE_DECIMALS)
 THOR_DIVIDER_INV = 1.0 / THOR_DIVIDER
 
 THOR_BLOCK_TIME = 6.0  # seconds. 10 blocks / minute

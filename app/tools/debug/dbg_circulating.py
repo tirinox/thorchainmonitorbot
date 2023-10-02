@@ -4,7 +4,9 @@ import time
 
 from localization.languages import Language
 from localization.manager import BaseLocalization
+from services.jobs.fetch.circulating import RuneCirculatingSupplyFetcher
 from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
+from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
 from services.lib.texts import sep
 from tools.lib.lp_common import LpAppFramework
 
@@ -46,11 +48,43 @@ async def my_test_circulating(lp_app: LpAppFramework):
     sep()
 
 
+async def debug_circulating_rune_fetcher(app: LpAppFramework):
+    # data = await app.deps.rune_market_fetcher.get_full_supply()
+    supply = RuneCirculatingSupplyFetcher(app.deps.session, app.deps.thor_connector.env.thornode_url)
+    data = await supply.fetch()
+
+    print(data)
+    print(data.holders)
+
+
+async def debug_circulating_rune_message(app: LpAppFramework):
+    # supply = RuneCirculatingSupplyFetcher(app.deps.session, app.deps.thor_connector.env.thornode_url)
+    # data = await supply.fetch()
+
+    fetcher_stats = NetworkStatisticsFetcher(app.deps)
+    app.deps.net_stats = await fetcher_stats.fetch()
+
+    sep()
+
+    # cached: no pool/bond info!
+    market_info = await app.deps.rune_market_fetcher.get_rune_market_info()
+
+    locs = app.deps.loc_man.all
+    # locs = [app.deps.loc_man[Language.ENGLISH_TWITTER]]
+    for loc in locs:
+        text = loc.text_metrics_supply(market_info)
+        print(text)
+        await app.send_test_tg_message(text)
+        sep()
+
+
 async def main():
     lp_app = LpAppFramework(log_level=logging.INFO)
     async with lp_app():
         # await my_test_circulating(lp_app)
-        await my_test_circulating_telegram(lp_app)
+        # await my_test_circulating_telegram(lp_app)
+        await debug_circulating_rune_message(lp_app)
+        # await debug_circulating_rune_fetcher(lp_app)
 
 
 if __name__ == '__main__':

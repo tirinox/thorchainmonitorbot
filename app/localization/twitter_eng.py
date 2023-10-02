@@ -6,7 +6,6 @@ from semver import VersionInfo
 from localization.achievements.ach_tw_eng import AchievementsTwitterEnglishLocalization
 from localization.eng_base import BaseLocalization
 from services.dialog.twitter.text_length import twitter_intelligent_text_splitter
-from services.jobs.fetch.circulating import RuneCirculatingSupply
 from services.lib.config import Config
 from services.lib.constants import Chains
 from services.lib.date_utils import now_ts, seconds_human
@@ -14,7 +13,7 @@ from services.lib.explorers import get_explorer_url_to_tx
 from services.lib.midgard.name_service import NameMap, add_thor_suffix
 from services.lib.money import Asset, short_dollar, format_percent, pretty_money, pretty_dollar, RAIDO_GLYPH, \
     calc_percent_change, adaptive_round_to_str, emoji_for_percent_change, short_address, short_money, short_rune, \
-    pretty_percent, chart_emoji
+    pretty_percent, chart_emoji, pretty_rune
 from services.lib.texts import x_ses, progressbar, plural, bracketify, up_down_arrow, \
     bracketify_spaced, shorten_text
 from services.lib.w3.dex_analytics import DexReportEntry, DexReport
@@ -131,7 +130,7 @@ class TwitterEnglishLocalization(BaseLocalization):
                 aff_fee_usd = tx.get_affiliate_fee_usd(usd_per_rune)
                 mark = self._exclamation_sign(aff_fee_usd, 'fee_usd_limit')
                 aff_text = f'Aff. fee: {short_dollar(aff_fee_usd)}{mark} ' \
-                           f'({format_percent(tx.affiliate_fee)})\n'
+                           f'({format_percent(tx.affiliate_fee, 1)})\n'
             else:
                 aff_text = ''
 
@@ -191,7 +190,7 @@ class TwitterEnglishLocalization(BaseLocalization):
                 aff_collector = f'{aff_collector} ' if aff_collector else ''
 
                 aff_text = f'{aff_collector}Aff. fee: {short_dollar(aff_fee_usd)}{mark} ' \
-                           f'({format_percent(tx.affiliate_fee)})\n'
+                           f'({format_percent(tx.affiliate_fee, 1)})\n'
             else:
                 aff_text = ''
 
@@ -209,7 +208,7 @@ class TwitterEnglishLocalization(BaseLocalization):
                 if (success := tx.meta_swap.streaming.success_rate) < 1.0:
                     good = tx.meta_swap.streaming.successful_swaps
                     total = tx.meta_swap.streaming.quantity
-                    content += f'\nSuccess rate: {format_percent(success)} ({good}/{total})'
+                    content += f'\nSuccess rate: {format_percent(success, 1)} ({good}/{total})'
 
                 saved_usd = tx.meta_swap.estimated_savings_vs_cex_usd
                 if (saved_usd is not None) and saved_usd > 0.0:
@@ -793,22 +792,26 @@ class TwitterEnglishLocalization(BaseLocalization):
 
     SUPPLY_PIC_CAPTION = 'THORChain Rune supply chart'
 
-    def format_supply_entry(self, name, s: RuneCirculatingSupply, total_of_total: int):
-        locked_amount = sum(amount for _, amount in s.locked.items()) if s.locked else 0.0
-
-        # todo! add more items.
-        return (
-            f'📍 {name}:\n'
-            f'Free-fl.: {short_rune(s.circulating)} ({format_percent(s.circulating, total_of_total)})\n'
-            f'Lock: {short_rune(locked_amount)} ({format_percent(locked_amount, total_of_total)})\n'
-            f'Total: {short_rune(s.total)} ({format_percent(s.total, total_of_total)})\n\n'
-        )
-
     def text_metrics_supply(self, market_info: RuneMarketInfo):
-        parts = []
-        supply = market_info.supply_info
-        parts.append(self.format_supply_entry('Native Thor RUNE', supply, supply.total))
-        return self.smart_split(parts)
+        sp = market_info.supply_info
+
+        burn_amt = short_rune(abs(sp.lending_burnt_rune))
+        burn_pct = format_percent(abs(sp.lending_burnt_rune), sp.total)
+        if sp.lending_burnt_rune > 0:
+            str_burnt = f'🔥 Burnt Rune (lending) are {burn_amt} ({burn_pct})!\n'
+        elif sp.lending_burnt_rune < 0:
+            str_burnt = f'🪙 Minted Rune are {burn_amt} ({burn_pct})\n'
+        else:
+            str_burnt = ''
+
+        return (
+            f'⚡️Rune supply is {pretty_rune(market_info.total_supply)}\n'
+            f'{str_burnt}'
+            f'🏊‍ {short_rune(sp.pooled)} ({format_percent(sp.pooled_percent)}) are pooled\n'
+            f'🔒 {short_rune(sp.bonded)} ({format_percent(sp.bonded_percent)}) are bonded\n'
+            f'🏦 {short_rune(sp.in_cex)} ({format_percent(sp.in_cex_percent,)}) are in CEX\n'
+            f'💰 Treasury has {pretty_rune(sp.treasury)}'
+        )
 
     @staticmethod
     def format_dex_entry(e: DexReportEntry, r):

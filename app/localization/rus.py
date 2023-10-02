@@ -8,7 +8,7 @@ from semver import VersionInfo
 from localization.achievements.ach_rus import AchievementsRussianLocalization
 from localization.eng_base import BaseLocalization, CREATOR_TG, URL_LEADERBOARD_MCCN
 from proto.types import ThorName
-from services.jobs.fetch.circulating import SupplyEntry, ThorRealms
+from services.jobs.fetch.circulating import ThorRealms
 from services.lib.config import Config
 from services.lib.constants import Chains
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
@@ -389,7 +389,7 @@ class RussianLocalization(BaseLocalization):
                 aff_fee_usd = tx.get_affiliate_fee_usd(usd_per_rune)
                 mark = self._exclamation_sign(aff_fee_usd, 'fee_usd_limit')
                 aff_text = f'Партнерский бонус: {bold(short_dollar(aff_fee_usd))}{mark} ' \
-                           f'({format_percent(tx.affiliate_fee)})\n'
+                           f'({format_percent(tx.affiliate_fee, 1)})\n'
             else:
                 aff_text = ''
 
@@ -455,7 +455,7 @@ class RussianLocalization(BaseLocalization):
                 aff_collector = f'{aff_collector} ' if aff_collector else ''
 
                 aff_text = f'{aff_collector}Партнерский бонус: {bold(short_dollar(aff_fee_usd))}{mark} ' \
-                           f'({format_percent(tx.affiliate_fee)})\n'
+                           f'({format_percent(tx.affiliate_fee, 1)})\n'
             else:
                 aff_text = ''
 
@@ -473,7 +473,7 @@ class RussianLocalization(BaseLocalization):
                 if (success := tx.meta_swap.streaming.success_rate) < 1.0:
                     good = tx.meta_swap.streaming.successful_swaps
                     total = tx.meta_swap.streaming.quantity
-                    content += f'\nПроцент успеха: {format_percent(success)} ({good}/{total})'
+                    content += f'\nПроцент успеха: {format_percent(success, 1)} ({good}/{total})'
 
                 saved_usd = tx.meta_swap.estimated_savings_vs_cex_usd
                 if (saved_usd is not None) and saved_usd > 0.0:
@@ -1214,7 +1214,7 @@ class RussianLocalization(BaseLocalization):
 
         halted_chains = ', '.join(c.chain for c in chain_infos if c.halted)
         if halted_chains:
-            msg += f'🚨🚨🚨 <b>Внимание!</b> Торговля остановлена на блокчейнах: {code(halted_chains)}! ' \
+            msg += f'🚨🚨🚨 <b>Внимание!</b> Торговля остановлена на {code(halted_chains)}! ' \
                    f'Воздержитесь от обменов, пока торговля не будет снова запущена! 🚨🚨🚨\n\n'
 
         resumed_chains = ', '.join(c.chain for c in chain_infos if not c.halted)
@@ -1602,40 +1602,30 @@ class RussianLocalization(BaseLocalization):
     # ----- SUPPLY ------
 
     SUPPLY_HELPER_TRANSLATOR = {
-        ThorRealms.TEAM: 'Команда',
-        ThorRealms.SEED: 'Сид-инвесторы',
         ThorRealms.RESERVES: 'Резервы',
-        ThorRealms.VESTING_9R: 'NineRealms',
         ThorRealms.UNDEPLOYED_RESERVES: 'Неразвернутые резервы',
-        ThorRealms.PREBURN: 'Готово к сожжению',
-        ThorRealms.ASGARD: 'Горят в Асгарде',
     }
 
-    def format_supply_entry(self, name, s: SupplyEntry, total_of_total: int):
-        if s.locked and s.total != total_of_total:
-            items = '\n'.join(
-                f'∙ {pre(self.SUPPLY_HELPER_TRANSLATOR.get(name, name))}: '
-                f'{code(short_rune(amount))} ({format_percent(amount, total_of_total)})'
-                for name, amount in s.locked.items()
-            )
-            locked_summary = f'Заблокировано:\n{items}\n'
+    def text_metrics_supply(self, market_info: RuneMarketInfo):
+        sp = market_info.supply_info
+
+        burn_amt = short_rune(abs(sp.lending_burnt_rune))
+        burn_pct = format_percent(abs(sp.lending_burnt_rune), sp.total)
+        if sp.lending_burnt_rune > 0:
+            str_burnt = f'🔥 Сожжено Rune (<b>кредитован е</b>) – {code(burn_amt)} ({burn_pct})!\n'
+        elif sp.lending_burnt_rune < 0:
+            str_burnt = f'🪙 Напечатано Rune – {burn_amt} ({burn_pct})\n'
         else:
-            locked_summary = ''
+            str_burnt = ''
 
         return (
-            f'{bold(name)}:\n'
-            f'Циркулирует: {code(short_rune(s.circulating))} ({format_percent(s.circulating, total_of_total)})\n'
-            f'{locked_summary}'
-            f'Всего монет: {code(short_rune(s.total))} ({format_percent(s.total, total_of_total)})\n\n'
+            f'⚡️Предложение монеты Rune – {pre(pretty_rune(market_info.total_supply))}\n'
+            f'{str_burnt}'
+            f'🏊‍ {pre(short_rune(sp.pooled))} ({format_percent(sp.pooled_percent)}) в пулах ликвидности\n'
+            f'🔒 {pre(short_rune(sp.bonded))} ({format_percent(sp.bonded_percent)}) в бонде нод\n'
+            f'🏦 {pre(short_rune(sp.in_cex))} ({format_percent(sp.in_cex_percent, )}) на биржах\n'
+            f'💰 Сокровищница имеет {pre(pretty_rune(sp.treasury))}'
         )
-
-    def text_metrics_supply(self, market_info: RuneMarketInfo):
-        supply = market_info.supply_info
-        message = f'🪙 {bold("Предложение монет Rune")}\n\n'
-        message += self.format_supply_entry('Нативная THOR.RUNE', supply.thor_rune, supply.overall.total)
-        message += f"Капитализация {bold(self.R)}: {bold(short_dollar(market_info.market_cap))} " \
-                   f"(место #{bold(market_info.rank)})"
-        return message
 
     SUPPLY_PIC_TITLE = 'THORChain: запасы Руны'
     SUPPLY_PIC_CIRCULATING = 'Циркулирующие'
@@ -1856,7 +1846,7 @@ class RussianLocalization(BaseLocalization):
             verb = 'поднял' if event.data.previous < event.data.current else 'опустил'
             return (
                 f'％ Оператор ноды {ital(verb)} комиссию с '
-                f'{pre(format_percent(event.data.previous))} до {pre(format_percent(event.data.current))}.'
+                f'{pre(format_percent(event.data.previous, 1))} до {pre(format_percent(event.data.current, 1))}.'
             )
         elif event.type == NodeEventType.CHURNING:
             data: EventProviderStatus = event.data
