@@ -12,7 +12,7 @@ from services.jobs.fetch.last_block import LastBlockFetcher
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
 from services.lib.date_utils import today_str
 from services.lib.draw_utils import img_to_bio
-from services.lib.utils import json_cached_to_file_async
+from services.lib.utils import json_cached_to_file_async, load_pickle, save_pickle
 from services.models.net_stats import NetworkStats
 from services.models.price import RuneMarketInfo
 from services.notify.channel import BoardMessage
@@ -26,19 +26,28 @@ async def get_rune_supply(app: LpAppFramework):
     rune_market_info: RuneMarketInfo = await app.deps.rune_market_fetcher.get_rune_market_info()
     return dataclasses.asdict(rune_market_info.supply_info)
 
+#
+# @json_cached_to_file_async("../temp/net_stats1.json")
+# async def get_network_stats(app: LpAppFramework):
+#     ns_fetcher = NetworkStatisticsFetcher(app.deps)
+#     data = await ns_fetcher.fetch()
+#     return dataclasses.asdict(data)
 
-@json_cached_to_file_async("../temp/net_stats.json")
-async def get_network_stats(app: LpAppFramework):
-    ns_fetcher = NetworkStatisticsFetcher(app.deps)
-    data = await ns_fetcher.fetch()
-    return dataclasses.asdict(data)
 
-
-async def get_supply_pic(app):
+async def get_supply_pic(app, cached=True):
     loc_man: LocalizationManager = app.deps.loc_man
     loc = loc_man.get_from_lang(Language.ENGLISH)
 
-    net_stats, rune_market_info = await debug_get_rune_market_data(app)
+    if cached:
+        cache_path = '../temp/data_for_sup_pic.pickle'
+        try:
+            net_stats, rune_market_info = load_pickle(cache_path)
+        except Exception as e:
+            print(e)
+            net_stats, rune_market_info = await debug_get_rune_market_data(app)
+            save_pickle(cache_path, (net_stats, rune_market_info))
+    else:
+        net_stats, rune_market_info = await debug_get_rune_market_data(app)
 
     pic_gen = SupplyPictureGenerator(loc, rune_market_info.supply_info, net_stats)
 
@@ -46,11 +55,27 @@ async def get_supply_pic(app):
 
 
 async def debug_get_rune_market_data(app):
+    d = app.deps
+
     await app.deps.pool_fetcher.fetch()
-    rune_market_info: RuneMarketInfo = await app.deps.rune_market_fetcher.get_rune_market_info()
-    ns_raw = await get_network_stats(app)
-    ns = NetworkStats(**ns_raw)
-    return ns, rune_market_info
+
+    # ns_raw = await get_network_stats(app)
+    # ns = NetworkStats(**ns_raw)
+
+    d.last_block_fetcher = LastBlockFetcher(d)
+    d.last_block_store = LastBlockStore(d)
+    d.last_block_fetcher.add_subscriber(d.last_block_store)
+    await d.last_block_fetcher.run_once()
+
+    fetcher_stats = NetworkStatisticsFetcher(d)
+    d.net_stats = await fetcher_stats.fetch()
+
+    await d.node_info_fetcher.run_once()
+
+    await d.mimir_const_fetcher.fetch()  # get constants beforehand
+
+    rune_market_info: RuneMarketInfo = await d.rune_market_fetcher.get_rune_market_info()
+    return d.net_stats, rune_market_info
 
 
 def save_and_show_supply_pic(pic, show=True):
@@ -88,18 +113,6 @@ async def debug_network_stats(app: LpAppFramework):
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
-        d = app.deps
-        d.last_block_fetcher = LastBlockFetcher(d)
-        d.last_block_store = LastBlockStore(d)
-        d.last_block_fetcher.add_subscriber(d.last_block_store)
-        await d.last_block_fetcher.run_once()
-
-        fetcher_stats = NetworkStatisticsFetcher(app.deps)
-        app.deps.net_stats = await fetcher_stats.fetch()
-
-        await d.node_info_fetcher.run_once()
-
-        await d.mimir_const_fetcher.fetch()  # get constants beforehand
 
         # await app.deps.pool_fetcher.fetch()
 

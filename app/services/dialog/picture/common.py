@@ -1,4 +1,5 @@
 import abc
+import math
 from typing import Tuple, NamedTuple, List, Optional
 
 import PIL.Image
@@ -104,11 +105,13 @@ class PackItem(NamedTuple):
     weight: float = 1
     color: str = TC_WHITE
     meta_data: str = ''
+    preference: str = ''
 
 
 class DrawRectPacker:
     V = 'vert'
     H = 'hor'
+    INSIDE_LARGEST = 'inside_largest'
 
     def __init__(self, items=None):
         self.items: List[PackItem] = items or []
@@ -120,7 +123,7 @@ class DrawRectPacker:
     def total_weight(self):
         return sum(item.weight for item in self.items)
 
-    def pack(self, into: Rect, align=V) -> List[Tuple[PackItem, Rect]]:
+    def _pack_linear(self, into: Rect, align=V):
         horizontal = align == self.H
         full_size = into.w if horizontal else into.h
         x, y = into.x, into.y
@@ -142,3 +145,31 @@ class DrawRectPacker:
                 x += advance
             else:
                 y += advance
+
+    def _pack_inside_largest(self, into: Rect):
+        if not self.items:
+            return []
+
+        sorted_items = list(sorted(self.items, key=lambda i: i.weight, reverse=True))
+
+        total_s = into.w * into.h
+        total_m = self.total_weight
+        ratio = into.w / into.h
+
+        yield sorted_items[0], into
+
+        x = into.x + into.w
+        for item in sorted_items[1:]:
+            hi = math.sqrt(total_s * item.weight / (total_m * ratio))
+            wi = hi * ratio
+            y = into.y + into.h - hi
+            yield item, Rect(
+                x - wi, y, wi, hi
+            )
+            x -= wi
+
+    def pack(self, into: Rect, align=V) -> List[Tuple[PackItem, Rect]]:
+        if align in (self.V, self.H):
+            return list(self._pack_linear(into, align))
+        else:
+            return list(self._pack_inside_largest(into))

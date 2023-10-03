@@ -5,6 +5,7 @@ from localization.eng_base import BaseLocalization
 from services.dialog.picture.common import BasePictureGenerator, DrawRectPacker, Rect, PackItem
 from services.dialog.picture.resources import Resources
 from services.jobs.fetch.circulating import RuneCirculatingSupply, ThorRealms
+from services.lib.constants import RUNE_IDEAL_SUPPLY
 from services.lib.draw_utils import font_estimate_size
 from services.lib.money import short_money
 from services.lib.plot_graph import PlotGraph
@@ -35,7 +36,9 @@ class SupplyPictureGenerator(BasePictureGenerator):
             with suppress(ValueError):
                 self.gr.draw.rounded_rectangle(r.coordinates, radius=14, fill=item.color, outline=outline)
         if item.label:
-            self._add_text(r.shift_from_origin(10, 8), item.label)
+            py = -8 if item.preference == 'label_up' else 14
+            anchor = 'lb' if item.preference == 'label_up' else 'lt'
+            self._add_text(r.shift_from_origin(10, py), item.label, anchor=anchor)
 
         if item.meta_data == 'y' and item.weight > 1e6:
             font_sz = min(max(20, int(item.weight / 1e6)), 120)
@@ -85,15 +88,18 @@ class SupplyPictureGenerator(BasePictureGenerator):
         }
 
         self.PALETTE = {
-            ThorRealms.RESERVES: '#2980b9',
-            ThorRealms.UNDEPLOYED_RESERVES: '#517496',
-            ThorRealms.BONDED: '#00ffe4',
-            ThorRealms.POOLED: '#0bdf65',
-            ThorRealms.CIRCULATING: '#f8e287',
-            ThorRealms.CEX: '#d0f359',  # todo
-            ThorRealms.TREASURY: '#f8e287',  # todo
-            ThorRealms.KILLED: '#ff4444',  # todo
-            ThorRealms.BURNED: '#fb1d00',  # todo
+            ThorRealms.RESERVES: '#1AE6CC',
+            ThorRealms.UNDEPLOYED_RESERVES: '#02B662',
+            ThorRealms.BONDED: '#03CFFA',
+            ThorRealms.POOLED: '#31FD9D',
+            ThorRealms.CIRCULATING: '#72E6FE',
+            ThorRealms.CEX: '#bbb3ef',  # todo
+            'Binance': '#F0B90B',  # todo
+            'Kraken': '#5442d0',  # todo
+            ThorRealms.TREASURY: '#47EBD5',  # todo
+            ThorRealms.KILLED: '#720f01',  # todo
+            ThorRealms.BURNED: '#ff4200',  # todo
+            ThorRealms.MAYA_POOL: '#70f2e6',  # todo
         }
 
     @async_wrap
@@ -108,14 +114,14 @@ class SupplyPictureGenerator(BasePictureGenerator):
     def _add_legend(self):
         x = orig_x = 60
         y_step = 37
-        y = self.HEIGHT - 90
+        y = self.HEIGHT - 100
         legend_font = self.res.fonts.get_font_bold(30)
         for title, color in self.PALETTE.items():
             title = self.translate.get(title, title)
             dx, _ = font_estimate_size(legend_font, title)
             self.gr.plot_legend_unit(x, y, color, title, font=legend_font, size=26)
             x += dx + 70
-            if x >= self.WIDTH - 100:
+            if x >= self.WIDTH - 180:
                 x = orig_x
                 y += y_step
 
@@ -167,7 +173,7 @@ class SupplyPictureGenerator(BasePictureGenerator):
                 self.translate.get(item.realm, item.realm),
                 item.amount,
                 self.PALETTE.get(item.realm, 'black'),
-                item.amount if item.amount >= self.MIN_AMOUNT_FOR_LABEL else ''
+                'y' if item.amount >= self.MIN_AMOUNT_FOR_LABEL else ''
             )
             for item in self.supply.find_by_realm((ThorRealms.RESERVES, ThorRealms.UNDEPLOYED_RESERVES))
         ], locked_rect, align=DrawRectPacker.V)
@@ -182,23 +188,22 @@ class SupplyPictureGenerator(BasePictureGenerator):
         ], working_rect, align=DrawRectPacker.V)
 
         # Column 3: Circulating Rune
+
+        # Circulating
         other_circulating = self.supply.circulating - self.supply.treasury - self.supply.in_cex
-        [cex_rect, *_] = self._pack([
+        burned_killed_rune = RUNE_IDEAL_SUPPLY - self.supply.total
+
+        [cex_rect, other_rect, killed_rect] = self._pack([
             PackItem('', self.supply.in_cex, ''),  # CEX Block
-            PackItem(self.loc.SUPPLY_PIC_TREASURY, self.supply.treasury, self.PALETTE[ThorRealms.TREASURY], 'y'),
-            PackItem(self.loc.SUPPLY_PIC_CIRCULATING, other_circulating, self.PALETTE[ThorRealms.CIRCULATING], 'y'),
-            PackItem(self.loc.SUPPLY_PIC_MAYA, self.maya_pool, self.PALETTE[ThorRealms.CIRCULATING], 'y'),
-            PackItem(self.loc.SUPPLY_PIC_BURNED, abs(self.supply.lending_burnt_rune),
-                     self.PALETTE[ThorRealms.BURNED], 'y'),
-            PackItem(self.loc.SUPPLY_PIC_SECTION_KILLED,
-                     self.supply.killed_switched, self.PALETTE[ThorRealms.KILLED], 'y'),
+            PackItem('', other_circulating, ''),
+            PackItem('', max(1, burned_killed_rune), ''),  # Killed & burned
         ], circulating_rect, align=DrawRectPacker.V)
 
         cex_items = [
             PackItem(
                 (it.name if it.amount > 2e6 else ''),
                 it.amount,
-                self.PALETTE[ThorRealms.CEX], 'v'
+                self.PALETTE.get(it.name, self.PALETTE.get(ThorRealms.CEX)), 'y'
             )
             for it in sorted(
                 self.supply.find_by_realm(ThorRealms.CEX, join_by_name=True),
@@ -206,3 +211,24 @@ class SupplyPictureGenerator(BasePictureGenerator):
             )
         ]
         self._pack(cex_items, cex_rect, align=DrawRectPacker.H)
+
+        # Circulating, Maya, Treasury, Burned, Killed
+
+        self._pack([
+            PackItem(self.loc.SUPPLY_PIC_CIRCULATING, other_circulating, self.PALETTE[ThorRealms.CIRCULATING], 'y'),
+            PackItem(self.loc.SUPPLY_PIC_TREASURY, self.supply.treasury, self.PALETTE[ThorRealms.TREASURY], 'y',
+                     preference='label_up'),
+            PackItem(self.loc.SUPPLY_PIC_MAYA, self.maya_pool, self.PALETTE[ThorRealms.MAYA_POOL], 'y',
+                     preference='label_up'),
+        ], other_rect, align=DrawRectPacker.INSIDE_LARGEST)
+
+        items = []
+        if self.supply.lending_burnt_rune > 0:
+            items.append(PackItem(self.loc.SUPPLY_PIC_BURNED, abs(self.supply.lending_burnt_rune),
+                                  self.PALETTE[ThorRealms.BURNED], 'y',
+                                  preference='label_up'))
+        items.append(PackItem(self.loc.SUPPLY_PIC_SECTION_KILLED,
+                              self.supply.killed_switched,
+                              self.PALETTE[ThorRealms.KILLED], 'y'))
+
+        self._pack(items, killed_rect, align=DrawRectPacker.H)
