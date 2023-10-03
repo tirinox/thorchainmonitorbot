@@ -59,7 +59,7 @@ def a_result_cached(ttl=60):
         @wraps(func)
         async def wrapper(*args, **kwargs):
             nonlocal last_result, last_update_ts
-            if last_update_ts < 0 or time.monotonic() - ttl > last_update_ts:
+            if last_result is None or last_update_ts < 0 or time.monotonic() - ttl > last_update_ts:
                 last_result = await func(*args, **kwargs)
                 last_update_ts = time.monotonic()
             return last_result

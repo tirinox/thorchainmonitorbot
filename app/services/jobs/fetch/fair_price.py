@@ -20,7 +20,7 @@ class RuneMarketInfoFetcher(WithLogger):
         super().__init__()
         self.deps = deps
         self.price_holder = deps.price_holder
-        self.midgard = deps.midgard_connector
+
         self._ether_scan_key = deps.cfg.get('thor.circulating_supply.ether_scan_key', '')
         self._prev_result: Optional[RuneMarketInfo] = None
 
@@ -32,7 +32,7 @@ class RuneMarketInfoFetcher(WithLogger):
 
     @retries(5)
     async def total_pooled_rune(self):
-        j = await self.midgard.request(free_url_gen.url_network())
+        j = await self.deps.midgard_connector.request(free_url_gen.url_network())
         total_pooled_rune = j.get('totalPooledRune', 0)
         return thor_to_float(total_pooled_rune)
 
