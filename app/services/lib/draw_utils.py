@@ -56,7 +56,7 @@ PALETTE = [
 ]
 
 GRADIENT_TOP_COLOR = '#0b1c27'
-GRADIENT_BOTTOM_COLOR = '#11354b'
+GRADIENT_BOTTOM_COLOR = '#060f14'
 
 
 def rgb(r, g, b):
@@ -565,3 +565,14 @@ def font_estimate_size(font, text):
     else:
         left, top, right, bottom = font.getbbox(text)
         return right - left, bottom - top
+
+
+def reduce_alpha(im: Image, target_alpha=0.5):
+    na = np.array(im)
+
+    # Make alpha 128 anywhere is is non-zero
+    # na[..., 3] = target_alpha * (na[..., 3] > 0)
+    na[..., 3] = target_alpha * na[..., 3]
+
+    # Convert back to PIL Image
+    return Image.fromarray(na)

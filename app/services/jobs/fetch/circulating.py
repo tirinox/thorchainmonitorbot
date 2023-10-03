@@ -7,8 +7,8 @@ from services.lib.utils import WithLogger
 
 
 class ThorRealms:
-    RESERVES = 'Reserves'
-    UNDEPLOYED_RESERVES = 'Undeployed reserves'
+    RESERVES = 'Reserve'
+    STANDBY_RESERVES = 'Standby reserve'
 
     BONDED = 'Bonded'
     BONDED_NODE = 'Bonded (node)'
@@ -19,7 +19,7 @@ class ThorRealms:
     BURNED = 'Burned'
     MINTED = 'Minted'
     TREASURY = 'Treasury'
-    MAYA_POOL = 'Maya pool'
+    MAYA_POOL = 'Maya'
 
     KILLED = 'Killed switched'
 
@@ -27,7 +27,7 @@ class ThorRealms:
 THOR_ADDRESS_DICT = {
     # Reserves:
     'thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt': (ThorRealms.RESERVES, ThorRealms.RESERVES),
-    'thor1lj62pg6ryxv2htekqx04nv7wd3g98qf9gfvamy': (ThorRealms.UNDEPLOYED_RESERVES, ThorRealms.UNDEPLOYED_RESERVES),
+    'thor1lj62pg6ryxv2htekqx04nv7wd3g98qf9gfvamy': (ThorRealms.STANDBY_RESERVES, ThorRealms.STANDBY_RESERVES),
 
     # Treasury:
     'thor1qd4my7934h2sn5ag5eaqsde39va4ex2asz3yv5': ('Treasury Multisig', ThorRealms.TREASURY),
@@ -117,7 +117,7 @@ class RuneCirculatingSupply(NamedTuple):
 
     @property
     def in_reserves(self):
-        return self.total_rune_in_realm((ThorRealms.RESERVES, ThorRealms.UNDEPLOYED_RESERVES))
+        return self.total_rune_in_realm((ThorRealms.RESERVES, ThorRealms.STANDBY_RESERVES))
 
     @property
     def bonded(self):
@@ -167,7 +167,7 @@ class RuneCirculatingSupplyFetcher(WithLogger):
 
         locked_rune = sum(
             w.amount for w in result.holders.values()
-            if w.realm in (ThorRealms.RESERVES, ThorRealms.UNDEPLOYED_RESERVES)
+            if w.realm in (ThorRealms.RESERVES, ThorRealms.STANDBY_RESERVES)
         )
 
         return RuneCirculatingSupply(

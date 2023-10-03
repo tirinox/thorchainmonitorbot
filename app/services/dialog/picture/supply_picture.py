@@ -1,12 +1,15 @@
 from contextlib import suppress
+from math import sqrt
 from typing import List, NamedTuple
+
+from PIL import Image
 
 from localization.eng_base import BaseLocalization
 from services.dialog.picture.common import BasePictureGenerator, DrawRectPacker, Rect, PackItem
 from services.dialog.picture.resources import Resources
 from services.jobs.fetch.circulating import RuneCirculatingSupply, ThorRealms
 from services.lib.constants import RUNE_IDEAL_SUPPLY
-from services.lib.draw_utils import font_estimate_size
+from services.lib.draw_utils import font_estimate_size, reduce_alpha
 from services.lib.money import short_money
 from services.lib.plot_graph import PlotGraph
 from services.lib.utils import async_wrap
@@ -35,13 +38,12 @@ class SupplyPictureGenerator(BasePictureGenerator):
             # self.gr.draw.rectangle(r.coordinates, item.color, outline=outline)
             with suppress(ValueError):
                 self.gr.draw.rounded_rectangle(r.coordinates, radius=14, fill=item.color, outline=outline)
-        if item.label:
-            py = -8 if item.preference == 'label_up' else 14
-            anchor = 'lb' if item.preference == 'label_up' else 'lt'
-            self._add_text(r.shift_from_origin(10, py), item.label, anchor=anchor)
 
-        if item.meta_data == 'y' and item.weight > 1e6:
-            font_sz = min(max(20, int(item.weight / 1e6)), 120)
+        if path := item.meta_key('overlay_path'):
+            self._put_overlay(r, path, alpha=0.2)
+
+        if item.meta_key('show_weight') and item.weight > 1e6:
+            font_sz = min(max(20, int(sqrt(item.weight) / 1e2)), 120)
             font = self.res.fonts.get_font(font_sz)
             text = short_money(item.weight)
 
@@ -49,6 +51,15 @@ class SupplyPictureGenerator(BasePictureGenerator):
                            anchor='mm',
                            font=font,
                            fill=item.color or 'white')
+        if item.label:
+            label_pos = item.meta_key('label_pos')
+            if label_pos == 'up':
+                px, py, anchor = 10, -8, 'lb'
+            elif label_pos == 'left':
+                px, py, anchor = -10, 0, 'rt'
+            else:
+                px, py, anchor = 10, 14, 'lt'
+            self._add_text(r.shift_from_origin(px, py), item.label, anchor=anchor)
 
     def _add_text(self, xy, text, fill='white', stroke_fill='black', stroke_width=1, anchor=None, font=None):
         self.gr.draw.text(xy, text,
@@ -82,24 +93,36 @@ class SupplyPictureGenerator(BasePictureGenerator):
         self.translate = {
             ThorRealms.CIRCULATING: self.loc.SUPPLY_PIC_CIRCULATING,
             ThorRealms.RESERVES: self.loc.SUPPLY_PIC_RESERVES,
-            ThorRealms.UNDEPLOYED_RESERVES: self.loc.SUPPLY_PIC_UNDEPLOYED,
+            ThorRealms.STANDBY_RESERVES: self.loc.SUPPLY_PIC_UNDEPLOYED,
             ThorRealms.BONDED: self.loc.SUPPLY_PIC_BONDED,
             ThorRealms.POOLED: self.loc.SUPPLY_PIC_POOLED,
         }
 
         self.PALETTE = {
             ThorRealms.RESERVES: '#1AE6CC',
-            ThorRealms.UNDEPLOYED_RESERVES: '#02B662',
+            ThorRealms.STANDBY_RESERVES: '#02B662',
             ThorRealms.BONDED: '#03CFFA',
             ThorRealms.POOLED: '#31FD9D',
-            ThorRealms.CIRCULATING: '#72E6FE',
-            ThorRealms.CEX: '#bbb3ef',  # todo
-            'Binance': '#F0B90B',  # todo
-            'Kraken': '#5442d0',  # todo
-            ThorRealms.TREASURY: '#47EBD5',  # todo
-            ThorRealms.KILLED: '#720f01',  # todo
-            ThorRealms.BURNED: '#ff4200',  # todo
-            ThorRealms.MAYA_POOL: '#70f2e6',  # todo
+            ThorRealms.CIRCULATING: '#dddddd',
+            ThorRealms.CEX: '#bbb3ef',
+            'Binance': '#d0a10d',
+            'Kraken': '#7263d6',
+            ThorRealms.TREASURY: '#aee681',
+            ThorRealms.KILLED: '#720f01',
+            ThorRealms.BURNED: '#ff4200',
+            ThorRealms.MAYA_POOL: '#70f2e6',
+        }
+
+        self.OVERLAYS = {
+            'Binance': './data/supply_chart/binance.png',
+            'Kraken': './data/supply_chart/kraken.png',
+            ThorRealms.BONDED: './data/supply_chart/bonded.png',
+            ThorRealms.CIRCULATING: './data/supply_chart/circulating.png',
+            ThorRealms.MAYA_POOL: './data/supply_chart/maya.png',
+            ThorRealms.POOLED: './data/supply_chart/wave.png',
+            ThorRealms.RESERVES: './data/supply_chart/reserve.png',
+            ThorRealms.STANDBY_RESERVES: './data/supply_chart/standby.png',
+            ThorRealms.TREASURY: './data/supply_chart/treasury.png',
         }
 
     @async_wrap
@@ -112,25 +135,33 @@ class SupplyPictureGenerator(BasePictureGenerator):
         return self.gr.finalize()
 
     def _add_legend(self):
-        x = orig_x = 60
+        x = orig_x = self.left + 8
         y_step = 37
-        y = self.HEIGHT - 100
+        y = self.HEIGHT - 110
         legend_font = self.res.fonts.get_font_bold(30)
         for title, color in self.PALETTE.items():
             title = self.translate.get(title, title)
             dx, _ = font_estimate_size(legend_font, title)
             self.gr.plot_legend_unit(x, y, color, title, font=legend_font, size=26)
             x += dx + 70
-            if x >= self.WIDTH - 180:
+            if x >= self.WIDTH - self.right - 180:
                 x = orig_x
                 y += y_step
 
     def _pack(self, items, outer_rect, align):
+        if not items:
+            return []
         packer = DrawRectPacker(items)
         results = list(packer.pack(outer_rect, align))
         for item, r in results:
             self._draw_rect(r, item)
         return [r[1] for r in results]
+
+    def _put_overlay(self, r: Rect, path, alpha=0.5):
+        source = Image.open(path).convert('RGBA')
+        source.thumbnail((int(r.w), int(r.h)), Image.Resampling.LANCZOS)
+        source = reduce_alpha(source, alpha)
+        self.gr.image.paste(source, (int(r.x), int(r.y + r.h - source.height)), source)
 
     @staticmethod
     def _fit_smaller_rect(outer_rect: Rect, outer_weight, inner_weight) -> Rect:
@@ -149,12 +180,13 @@ class SupplyPictureGenerator(BasePictureGenerator):
     def _plot(self):
         outer_rect = Rect.from_frame(self.left, self.top, self.right, self.bottom, self.WIDTH, self.HEIGHT)
 
-        # Title
-        # y_up = -60
-        # self._add_text(locked_rect.shift_from_origin(0, y_up), self.loc.SUPPLY_PIC_SECTION_LOCKED, stroke_width=0)
-        #
-        # self._add_text(circulating_rect.shift_from_origin(0, y_up),
-        #                self.loc.SUPPLY_PIC_SECTION_CIRCULATING, stroke_width=0)
+        def meta(up_label=False, value=True, realm='', left_label=False):
+            label_pos = '' if left_label else 'up' if up_label else ''
+            if left_label:
+                label_pos = 'left'
+            return {'show_weight': value, 'label_pos': label_pos, 'overlay_path': self.OVERLAYS.get(realm)}
+
+        just_value = meta(value=False)
 
         # Top level layout (horizontal)
         (
@@ -173,9 +205,9 @@ class SupplyPictureGenerator(BasePictureGenerator):
                 self.translate.get(item.realm, item.realm),
                 item.amount,
                 self.PALETTE.get(item.realm, 'black'),
-                'y' if item.amount >= self.MIN_AMOUNT_FOR_LABEL else ''
+                meta_data=meta(realm=item.realm)
             )
-            for item in self.supply.find_by_realm((ThorRealms.RESERVES, ThorRealms.UNDEPLOYED_RESERVES))
+            for item in self.supply.find_by_realm((ThorRealms.RESERVES, ThorRealms.STANDBY_RESERVES))
         ], locked_rect, align=DrawRectPacker.V)
 
         # Column 2: Bond and Pool (working Rune)
@@ -183,8 +215,10 @@ class SupplyPictureGenerator(BasePictureGenerator):
         pooled = self.net_stats.total_rune_pooled
 
         self._pack([
-            PackItem(self.loc.SUPPLY_PIC_BONDED, bonded, self.PALETTE[ThorRealms.BONDED], 'y'),
-            PackItem(self.loc.SUPPLY_PIC_POOLED, pooled, self.PALETTE[ThorRealms.POOLED], 'y'),
+            PackItem(self.loc.SUPPLY_PIC_BONDED, bonded, self.PALETTE[ThorRealms.BONDED],
+                     meta(realm=ThorRealms.BONDED)),
+            PackItem(self.loc.SUPPLY_PIC_POOLED, pooled, self.PALETTE[ThorRealms.POOLED],
+                     meta(realm=ThorRealms.POOLED))
         ], working_rect, align=DrawRectPacker.V)
 
         # Column 3: Circulating Rune
@@ -203,7 +237,8 @@ class SupplyPictureGenerator(BasePictureGenerator):
             PackItem(
                 (it.name if it.amount > 2e6 else ''),
                 it.amount,
-                self.PALETTE.get(it.name, self.PALETTE.get(ThorRealms.CEX)), 'y'
+                self.PALETTE.get(it.name, self.PALETTE.get(ThorRealms.CEX)),
+                meta_data=meta(realm=it.name)
             )
             for it in sorted(
                 self.supply.find_by_realm(ThorRealms.CEX, join_by_name=True),
@@ -215,20 +250,20 @@ class SupplyPictureGenerator(BasePictureGenerator):
         # Circulating, Maya, Treasury, Burned, Killed
 
         self._pack([
-            PackItem(self.loc.SUPPLY_PIC_CIRCULATING, other_circulating, self.PALETTE[ThorRealms.CIRCULATING], 'y'),
-            PackItem(self.loc.SUPPLY_PIC_TREASURY, self.supply.treasury, self.PALETTE[ThorRealms.TREASURY], 'y',
-                     preference='label_up'),
-            PackItem(self.loc.SUPPLY_PIC_MAYA, self.maya_pool, self.PALETTE[ThorRealms.MAYA_POOL], 'y',
-                     preference='label_up'),
+            PackItem(self.loc.SUPPLY_PIC_CIRCULATING, other_circulating, self.PALETTE[ThorRealms.CIRCULATING],
+                     meta(realm=ThorRealms.CIRCULATING)),
+            PackItem(self.loc.SUPPLY_PIC_TREASURY, self.supply.treasury, self.PALETTE[ThorRealms.TREASURY],
+                     meta(realm=ThorRealms.TREASURY, left_label=True)),
+            PackItem(self.loc.SUPPLY_PIC_MAYA, self.maya_pool, self.PALETTE[ThorRealms.MAYA_POOL],
+                     meta(realm=ThorRealms.MAYA_POOL, left_label=True)),
         ], other_rect, align=DrawRectPacker.INSIDE_LARGEST)
 
         items = []
         if self.supply.lending_burnt_rune > 0:
             items.append(PackItem(self.loc.SUPPLY_PIC_BURNED, abs(self.supply.lending_burnt_rune),
-                                  self.PALETTE[ThorRealms.BURNED], 'y',
-                                  preference='label_up'))
-        items.append(PackItem(self.loc.SUPPLY_PIC_SECTION_KILLED,
-                              self.supply.killed_switched,
-                              self.PALETTE[ThorRealms.KILLED], 'y'))
-
+                                  self.PALETTE[ThorRealms.BURNED], meta(up_label=True)))
+        if self.supply.killed_switched > 0:
+            items.append(PackItem(self.loc.SUPPLY_PIC_SECTION_KILLED,
+                                  self.supply.killed_switched,
+                                  self.PALETTE[ThorRealms.KILLED], just_value))
         self._pack(items, killed_rect, align=DrawRectPacker.H)

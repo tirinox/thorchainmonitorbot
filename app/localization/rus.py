@@ -1603,7 +1603,7 @@ class RussianLocalization(BaseLocalization):
 
     SUPPLY_HELPER_TRANSLATOR = {
         ThorRealms.RESERVES: 'Резервы',
-        ThorRealms.UNDEPLOYED_RESERVES: 'Неразвернутые резервы',
+        ThorRealms.STANDBY_RESERVES: 'Неразвернутые резервы',
     }
 
     def text_metrics_supply(self, market_info: RuneMarketInfo):

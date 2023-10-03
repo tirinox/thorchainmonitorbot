@@ -104,8 +104,10 @@ class PackItem(NamedTuple):
     label: str
     weight: float = 1
     color: str = TC_WHITE
-    meta_data: str = ''
-    preference: str = ''
+    meta_data: dict = None
+
+    def meta_key(self, key):
+        return self.meta_data.get(key) if self.meta_data else None
 
 
 class DrawRectPacker:
@@ -158,11 +160,13 @@ class DrawRectPacker:
 
         yield sorted_items[0], into
 
-        x = into.x + into.w
+        margin = 0
+
+        x = into.x + into.w - margin
         for item in sorted_items[1:]:
             hi = math.sqrt(total_s * item.weight / (total_m * ratio))
             wi = hi * ratio
-            y = into.y + into.h - hi
+            y = into.y + into.h - hi - margin
             yield item, Rect(
                 x - wi, y, wi, hi
             )
