@@ -2191,8 +2191,7 @@ class BaseLocalization(ABC):  # == English
             tx_link = ''
 
         # Asset name
-        asset = t.asset.upper()
-        asset = short_address(asset, 12, 5)
+        asset = Asset.from_string(t.asset).pretty_str
 
         memo = ''
         if t.memo and not t.memo.startswith('OUT:'):

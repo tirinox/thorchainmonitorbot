@@ -13,7 +13,7 @@ class ThorRealms:
     BONDED = 'Bonded'
     BONDED_NODE = 'Bonded (node)'
     POOLED = 'Pooled'
-    CIRCULATING = 'Other circulating'
+    CIRCULATING = 'Circulating'
 
     CEX = 'CEX'
     BURNED = 'Burned'

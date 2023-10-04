@@ -258,10 +258,9 @@ class Asset:
 
     @property
     def pretty_str(self):
-        s = self.PILL if self.is_synth else ''
         sep = self.separator_symbol
         if self.is_synth:
-            return f'{s}{self.chain}{sep}{self.name}'
+            return f'synth {self.name}'
         else:
             str_me = str(self)
             if is_rune_asset(str_me):

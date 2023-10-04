@@ -9,7 +9,7 @@ from services.dialog.picture.common import BasePictureGenerator, DrawRectPacker,
 from services.dialog.picture.resources import Resources
 from services.jobs.fetch.circulating import RuneCirculatingSupply, ThorRealms
 from services.lib.constants import RUNE_IDEAL_SUPPLY
-from services.lib.draw_utils import font_estimate_size, reduce_alpha
+from services.lib.draw_utils import font_estimate_size, reduce_alpha, adjust_brightness
 from services.lib.money import short_money
 from services.lib.plot_graph import PlotGraph
 from services.lib.utils import async_wrap
@@ -43,23 +43,33 @@ class SupplyPictureGenerator(BasePictureGenerator):
             self._put_overlay(r, path, alpha=0.2)
 
         if item.meta_key('show_weight') and item.weight > 1e6:
-            font_sz = min(max(20, int(sqrt(item.weight) / 1e2)), 120)
+            font_sz = min(120, max(24, int(sqrt(item.weight) / 80)))
             font = self.res.fonts.get_font(font_sz)
             text = short_money(item.weight)
 
             self._add_text(r.center, text,
                            anchor='mm',
                            font=font,
-                           fill=item.color or 'white')
+                           fill=adjust_brightness(item.color, 1.1),
+                           stroke_fill=adjust_brightness(item.color, 0.5))
         if item.label:
             label_pos = item.meta_key('label_pos')
             if label_pos == 'up':
                 px, py, anchor = 10, -8, 'lb'
             elif label_pos == 'left':
                 px, py, anchor = -10, 0, 'rt'
+            elif label_pos == 'right':
+                px, py, anchor = 10 + r.w, 0, 'lt'
             else:
                 px, py, anchor = 10, 14, 'lt'
-            self._add_text(r.shift_from_origin(px, py), item.label, anchor=anchor)
+
+            font_sz = min(50, max(30, int(sqrt(item.weight) / 0.7e2)))
+            font = self.res.fonts.get_font(font_sz)
+
+            self._add_text(r.shift_from_origin(px, py), item.label, anchor=anchor,
+                           fill=adjust_brightness(item.color, 0.7),
+                           stroke_fill=adjust_brightness(item.color, 0.3),
+                           font=font)
 
     def _add_text(self, xy, text, fill='white', stroke_fill='black', stroke_width=1, anchor=None, font=None):
         self.gr.draw.text(xy, text,
@@ -85,8 +95,7 @@ class SupplyPictureGenerator(BasePictureGenerator):
         self.top = 80
         self.bottom = 160
 
-        self.font = self.res.font_small
-        self.font_block = self.res.fonts.get_font_bold(40)
+        self.font_block = self.res.fonts.get_font_bold(50)
 
         self.gr = PlotGraph(self.WIDTH, self.HEIGHT)
 
@@ -105,12 +114,12 @@ class SupplyPictureGenerator(BasePictureGenerator):
             ThorRealms.POOLED: '#31FD9D',
             ThorRealms.CIRCULATING: '#dddddd',
             ThorRealms.CEX: '#bbb3ef',
-            'Binance': '#d0a10d',
-            'Kraken': '#7263d6',
-            ThorRealms.TREASURY: '#aee681',
+            ThorRealms.TREASURY: '#35f8ec',
             ThorRealms.KILLED: '#720f01',
             ThorRealms.BURNED: '#ff4200',
-            ThorRealms.MAYA_POOL: '#70f2e6',
+            ThorRealms.MAYA_POOL: '#255fb0',
+            'Binance': '#d0a10d',
+            'Kraken': '#7263d6',
         }
 
         self.OVERLAYS = {
@@ -180,11 +189,8 @@ class SupplyPictureGenerator(BasePictureGenerator):
     def _plot(self):
         outer_rect = Rect.from_frame(self.left, self.top, self.right, self.bottom, self.WIDTH, self.HEIGHT)
 
-        def meta(up_label=False, value=True, realm='', left_label=False):
-            label_pos = '' if left_label else 'up' if up_label else ''
-            if left_label:
-                label_pos = 'left'
-            return {'show_weight': value, 'label_pos': label_pos, 'overlay_path': self.OVERLAYS.get(realm)}
+        def meta(label='', value=True, realm=''):
+            return {'show_weight': value, 'label_pos': label, 'overlay_path': self.OVERLAYS.get(realm)}
 
         just_value = meta(value=False)
 
@@ -253,15 +259,15 @@ class SupplyPictureGenerator(BasePictureGenerator):
             PackItem(self.loc.SUPPLY_PIC_CIRCULATING, other_circulating, self.PALETTE[ThorRealms.CIRCULATING],
                      meta(realm=ThorRealms.CIRCULATING)),
             PackItem(self.loc.SUPPLY_PIC_TREASURY, self.supply.treasury, self.PALETTE[ThorRealms.TREASURY],
-                     meta(realm=ThorRealms.TREASURY, left_label=True)),
+                     meta(realm=ThorRealms.TREASURY)),
             PackItem(self.loc.SUPPLY_PIC_MAYA, self.maya_pool, self.PALETTE[ThorRealms.MAYA_POOL],
-                     meta(realm=ThorRealms.MAYA_POOL, left_label=True)),
+                     meta(realm=ThorRealms.MAYA_POOL, label='up')),
         ], other_rect, align=DrawRectPacker.INSIDE_LARGEST)
 
         items = []
         if self.supply.lending_burnt_rune > 0:
-            items.append(PackItem(self.loc.SUPPLY_PIC_BURNED, abs(self.supply.lending_burnt_rune),
-                                  self.PALETTE[ThorRealms.BURNED], meta(up_label=True)))
+            items.append(PackItem('', abs(self.supply.lending_burnt_rune),
+                                  self.PALETTE[ThorRealms.BURNED], just_value))
         if self.supply.killed_switched > 0:
             items.append(PackItem(self.loc.SUPPLY_PIC_SECTION_KILLED,
                                   self.supply.killed_switched,

@@ -148,7 +148,7 @@ class DrawRectPacker:
             else:
                 y += advance
 
-    def _pack_inside_largest(self, into: Rect):
+    def _pack_inside_largest(self, into: Rect, left=True):
         if not self.items:
             return []
 
@@ -162,15 +162,19 @@ class DrawRectPacker:
 
         margin = 0
 
-        x = into.x + into.w - margin
+        x = into.x if left else into.x + into.w - margin
         for item in sorted_items[1:]:
             hi = math.sqrt(total_s * item.weight / (total_m * ratio))
             wi = hi * ratio
             y = into.y + into.h - hi - margin
             yield item, Rect(
-                x - wi, y, wi, hi
+                x if left else x - wi,
+                y, wi, hi
             )
-            x -= wi
+            if left:
+                x += wi
+            else:
+                x -= wi
 
     def pack(self, into: Rect, align=V) -> List[Tuple[PackItem, Rect]]:
         if align in (self.V, self.H):

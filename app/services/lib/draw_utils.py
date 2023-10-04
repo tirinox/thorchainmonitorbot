@@ -1,3 +1,4 @@
+import colorsys
 import logging
 import math
 import os
@@ -285,8 +286,29 @@ def hsv_to_rgb(hsv):
 def shift_hue(arr, hout):
     hsv = rgb_to_hsv(arr)
     hsv[..., 0] = hout
-    rgb = hsv_to_rgb(hsv)
-    return rgb
+    return hsv_to_rgb(hsv)
+
+
+def adjust_brightness(hex_color, factor):
+    # Convert the HEX color to RGB
+    hex_color = hex_color.lstrip('#')
+    r = int(hex_color[0:2], 16)
+    g = int(hex_color[2:4], 16)
+    b = int(hex_color[4:6], 16)
+
+    # Adjust the brightness by scaling the RGB values
+    h, s, v = colorsys.rgb_to_hsv(r / 255.0, g / 255.0, b / 255.0)
+
+    # Adjust brightness (value) while keeping hue and saturation constant
+    v = max(0, min(1, v * factor))
+
+    # Convert HSV back to RGB
+    r, g, b = [int(c * 255) for c in colorsys.hsv_to_rgb(h, s, v)]
+
+    # Convert the adjusted RGB values back to HEX
+    adjusted_hex_color = "#{:02X}{:02X}{:02X}".format(r, g, b)
+
+    return adjusted_hex_color
 
 
 def shift_hue_image(img: Image, hue_out):
