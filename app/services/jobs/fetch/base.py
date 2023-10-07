@@ -95,12 +95,12 @@ class DataController:
             dot_code = self.make_digraph_dot(connections)
             f.write(dot_code)
 
-    def display_graph(self):
+    def display_graph(self, out_filename=None):
         filename = '../temp/graph.dot'
         self.save_dot_graph(filename)
 
-        out_filename = filename + '.png'
-        os.system(f'dot -Tpng "{filename}" -O "{out_filename}"')
+        out_filename = out_filename or filename + '.png'
+        os.system(f'dot -Tpng "{filename}" > "{out_filename}"')
         os.system(f'open "{out_filename}"')
 
 

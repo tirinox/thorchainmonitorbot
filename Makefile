@@ -81,4 +81,4 @@ lint:
 	find ./app/localization -type f -name "*.py" | xargs pylint
 
 graph:
-	cd app && DISPLAY_GRAPH=1 python main.py
+	cd app && python graph.py

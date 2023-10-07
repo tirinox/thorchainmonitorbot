@@ -577,16 +577,6 @@ class App:
     def run_bot(self):
         self.deps.telegram_bot.run(on_startup=self.on_startup, on_shutdown=self.on_shutdown)
 
-    def run_graph(self):
-        asyncio.run(self._run_graph())
-
-    async def _run_graph(self):
-        await self._prepare_task_graph()
-        self.deps.data_controller.display_graph()
-
 
 if __name__ == '__main__':
-    if 'DISPLAY_GRAPH' in os.environ:
-        App().run_graph()
-    else:
-        App().run_bot()
+    App().run_bot()
