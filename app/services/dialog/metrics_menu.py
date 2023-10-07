@@ -5,6 +5,7 @@ from aiogram.utils.helper import HelperMode
 from localization.manager import BaseLocalization
 from services.dialog.base import BaseDialog, message_handler
 from services.dialog.picture.block_height_picture import block_speed_chart
+from services.dialog.picture.key_stats_picture import KeyStatsPictureGenerator
 from services.dialog.picture.nodes_pictures import NodePictureGenerator
 from services.dialog.picture.price_picture import price_graph_from_db
 from services.dialog.picture.queue_picture import queue_graph
@@ -326,6 +327,21 @@ class MetricsDialog(BaseDialog):
         await message.answer(text,
                              disable_web_page_preview=True,
                              disable_notification=True)
+
+    async def show_weekly_stats(self, message: Message):
+        if not self.deps.weekly_stats_notifier or not self.deps.weekly_stats_notifier.last_event:
+            await message.answer(self.loc.TEXT_WEEKLY_STATS_NO_DATA,
+                                 disable_notification=True)
+            return
+
+        ev = self.deps.weekly_stats_notifier.last_event
+
+        pic_gen = KeyStatsPictureGenerator(self.loc, ev)
+        pic, pic_name = await pic_gen.get_picture()
+        caption = self.loc.notification_text_key_metrics_caption(ev)
+
+        await message.answer_photo(img_to_bio(pic, pic_name), caption=caption, disable_notification=True)
+
 
     # ---- Ask for duration (universal)
 

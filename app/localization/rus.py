@@ -970,6 +970,8 @@ class RussianLocalization(BaseLocalization):
     def notification_text_key_metrics_caption(self, data: AlertKeyStats):
         return 'THORChain недельная статистика'
 
+    TEXT_WEEKLY_STATS_NO_DATA = '😩 Нет данных по статистике за этот период.'
+
     # ------- NETWORK NODES -------
 
     TEXT_PIC_NODES = 'ноды'

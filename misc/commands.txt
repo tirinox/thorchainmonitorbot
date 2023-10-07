@@ -12,3 +12,4 @@ mimir - Mimir global constants
 pools - Top pools
 voting - Node-Mimir voting
 lang - Set the language
+weekly - Weekly key statistics

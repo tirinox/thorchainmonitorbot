@@ -494,7 +494,7 @@ class App:
         if d.cfg.get('key_metrics.enabled', True):
             metrics_fetcher = KeyStatsFetcher(d)
             tasks.append(metrics_fetcher)
-            metrics_notifier = KeyMetricsNotifier(d)
+            d.weekly_stats_notifier = metrics_notifier = KeyMetricsNotifier(d)
             metrics_fetcher.add_subscriber(metrics_notifier)
             metrics_notifier.add_subscriber(d.alert_presenter)
             if achievements_enabled:

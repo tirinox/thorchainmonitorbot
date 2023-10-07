@@ -169,6 +169,10 @@ class MainMenuDialog(BaseDialog):
                              disable_notification=True,
                              disable_web_page_preview=True)
 
+    @message_handler(commands='weekly', state='*')
+    async def cmd_weekly(self, message: Message):
+        await MetricsDialog(self.loc, self.data, self.deps, self.message).show_weekly_stats(message)
+
     @message_handler(filters.RegexpCommandsFilter(regexp_commands=[r'/.*']), state='*')
     async def on_unknown_command(self, message: Message):
         await message.answer(self.loc.unknown_command(), disable_notification=True)

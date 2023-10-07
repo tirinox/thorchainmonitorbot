@@ -1,4 +1,5 @@
 from datetime import timedelta
+from typing import Optional
 
 from services.jobs.fetch.flipside import FSList
 from services.lib.cooldown import Cooldown
@@ -26,6 +27,7 @@ class KeyMetricsNotifier(INotified, WithDelegates, WithLogger):
         self.logger.info(f"it will notify every {self.notify_cd_sec} sec ({raw_cd})")
 
         self.series = TimeSeries('KeyMetrics', self.deps.db)
+        self._prev_data: Optional[AlertKeyStats] = None
 
     @property
     def window_in_days(self):
@@ -61,12 +63,18 @@ class KeyMetricsNotifier(INotified, WithDelegates, WithLogger):
         current_data = e.series.most_recent
         self.logger.info(f'Current date is {last_date}; data has {len(current_data)} entries.')
 
+        self._prev_data = e
+
         if await self.notify_cd.can_do():
             await self._notify(e)
             await self.notify_cd.do()
 
         # await self.series.add(info=new_info.as_json_string)
         # await self.series.trim_oldest(self.MAX_POINTS)
+
+    @property
+    def last_event(self):
+        return self._prev_data
 
     async def clear_cd(self):
         await self.notify_cd.clear()

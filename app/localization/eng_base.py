@@ -1204,6 +1204,8 @@ class BaseLocalization(ABC):  # == English
     def notification_text_key_metrics_caption(self, data: AlertKeyStats):
         return 'THORChain weekly stats'
 
+    TEXT_WEEKLY_STATS_NO_DATA = '😩 No data for this period.'
+
     # ------- NETWORK NODES -------
 
     TEXT_PIC_NODES = 'nodes'
