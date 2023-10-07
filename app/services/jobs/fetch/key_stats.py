@@ -9,20 +9,13 @@ from services.lib.utils import WithLogger
 from services.models.flipside import FSAffiliateCollectors, FSFees, FSSwapCount, FSLockedValue, FSSwapVolume, \
     FSSwapRoutes, AlertKeyStats
 
-URL_FS_AFFILIATE_AGENTS = "https://api.flipsidecrypto.com/api/v2/queries/541f964d-44d0-448f-b666-ffe4bfe7b50a/data/latest"
 URL_FS_RUNE_EARNINGS = "https://api.flipsidecrypto.com/api/v2/queries/6b27035e-f56f-4a7d-91f2-46995fc71a20/data/latest"
-URL_FS_UNIQUE_SWAPPERS = 'https://api.flipsidecrypto.com/api/v2/queries/425f0bb7-f875-41cd-a7cb-ed0427d5bff0/data/latest'
+URL_FS_UNIQUE_SWAPPERS = \
+    'https://api.flipsidecrypto.com/api/v2/queries/425f0bb7-f875-41cd-a7cb-ed0427d5bff0/data/latest'
 URL_FS_LOCKED_VALUE = 'https://api.flipsidecrypto.com/api/v2/queries/37f64aee-ef96-4833-a5fa-b9deb60a676a/data/latest'
 URL_FS_SWAP_VOL = 'https://api.flipsidecrypto.com/api/v2/queries/ee1f4915-988d-4920-99c0-e9346d0bb07c/data/latest'
-
-# URL_FS_ROUTES = 'https://api.flipsidecrypto.com/api/v2/queries/e999ee41-f72b-4ce8-8ab1-ff2f36545d2a/data/latest'
 URL_FS_ROUTES_V2 = 'https://api.flipsidecrypto.com/api/v2/queries/9084fde5-1019-479d-bd2c-77d482e9febb/data/latest'
-
-# by total liquidity fees
-URL_FS_AFFILIATES_V2 = 'https://api.flipsidecrypto.com/api/v2/queries/1b2bb8d7-3b9a-4e05-9a8b-f558807ef3bc/data/latest'
-# URL_FS_AFFILIATES_V2_PREV = (
-#     'https://api.flipsidecrypto.com/api/v2/queries/1581bc7e-eae9-4eec-a238-6c20203944c4/data/latest'
-# )
+URL_FS_AFFILIATES_V3 = 'https://api.flipsidecrypto.com/api/v2/queries/8c8073e1-5722-4346-853a-749b90fab070/data/latest'
 
 
 class KeyStatsFetcher(BaseFetcher, WithLogger):
@@ -53,7 +46,7 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
             (URL_FS_UNIQUE_SWAPPERS, FSSwapCount, None),
             (URL_FS_LOCKED_VALUE, FSLockedValue, None),
             (URL_FS_SWAP_VOL, FSSwapVolume, None),
-            (URL_FS_AFFILIATE_AGENTS, FSAffiliateCollectors, None),
+            (URL_FS_AFFILIATES_V3, FSAffiliateCollectors, None),
         ]
 
         # Actual API requests
@@ -70,18 +63,9 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         # Merge data streams
         result = FSList.combine(*transformed_data_chunks)
 
-        # Routes/Affiliates
-        # raw_routes, raw_affiliates, raw_affiliates_prev = await asyncio.gather(
-        #     self._fs.request(URL_FS_ROUTES_V2),
-        #     self._fs.request(URL_FS_AFFILIATES_V2),
-        #     self._fs.request(URL_FS_AFFILIATES_V2_PREV),
-        # )
-
         raw_routes = await self._fs.request(URL_FS_ROUTES_V2)
 
         routes = [FSSwapRoutes.from_json_v2(x) for x in raw_routes]
-        # affiliates = [FSAffiliateCollectors.from_json_v2(x) for x in raw_affiliates]
-        # prev_affiliates = [FSAffiliateCollectors.from_json_v2(x) for x in raw_affiliates_prev]
 
         # Done. Construct the resulting event
         return AlertKeyStats(
