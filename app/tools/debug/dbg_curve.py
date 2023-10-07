@@ -2,7 +2,7 @@ import asyncio
 import math
 
 from services.dialog.picture.block_height_picture import PRICE_GRAPH_WIDTH, PRICE_GRAPH_HEIGHT, LINE_COLOR_ACTUAL
-from services.lib.money import short_money, DepthCurve
+from services.lib.money import DepthCurve, short_dollar
 from services.lib.plot_graph import PlotGraphLines
 from services.lib.utils import async_wrap
 from tools.lib.lp_common import LpAppFramework
@@ -37,7 +37,7 @@ def curve_chart(pts):
 
     graph.add_title('Curve')
 
-    log_dollar = lambda y: short_money(10 ** y, '$')
+    log_dollar = lambda y: short_dollar(10 ** y)
     graph.y_formatter = log_dollar
     graph.x_formatter = log_dollar
 
