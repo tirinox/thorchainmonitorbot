@@ -1774,6 +1774,10 @@ class RussianLocalization(BaseLocalization):
 
     # ------ POL -------
 
+    @staticmethod
+    def pretty_asset(name):
+        return super().pretty_asset(name).replace('synth', 'синт.')
+
     def notification_text_pol_utilization(self, event: AlertPOL):
         text = '🥃 <b>POL: ликвидность от самого протокола</b>\n\n'
 
