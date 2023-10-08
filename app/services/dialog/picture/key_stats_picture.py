@@ -1,7 +1,7 @@
 import asyncio
 import operator
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import timedelta
 from typing import List
 
 from PIL import Image, ImageDraw

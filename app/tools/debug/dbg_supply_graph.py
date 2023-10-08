@@ -7,13 +7,11 @@ from localization.eng_base import BaseLocalization
 from localization.languages import Language
 from localization.manager import LocalizationManager
 from services.dialog.picture.supply_picture import SupplyPictureGenerator
-from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
 from services.jobs.fetch.last_block import LastBlockFetcher
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
 from services.lib.date_utils import today_str
 from services.lib.draw_utils import img_to_bio
 from services.lib.utils import json_cached_to_file_async, load_pickle, save_pickle
-from services.models.net_stats import NetworkStats
 from services.models.price import RuneMarketInfo
 from services.notify.channel import BoardMessage
 from services.notify.types.block_notify import LastBlockStore

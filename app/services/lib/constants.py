@@ -61,11 +61,6 @@ DEFAULT_CEX_NAME = 'Binance'
 DEFAULT_CEX_BASE_ASSET = 'USDT'
 
 
-def is_rune(symbol):
-    # todo: use is_rune_asset. It is more versatile
-    return symbol == NATIVE_RUNE_SYMBOL
-
-
 def is_stable_coin(pool):
     return pool in STABLE_COIN_POOLS_ALL
 

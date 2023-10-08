@@ -6,7 +6,7 @@ from services.jobs.fetch.circulating import RuneCirculatingSupply
 from services.lib.config import Config
 from services.lib.constants import BNB_BTCB_SYMBOL, BTC_SYMBOL, STABLE_COIN_POOLS, thor_to_float
 from services.lib.date_utils import now_ts
-from services.lib.money import weighted_mean, Asset, is_rune_asset
+from services.lib.money import weighted_mean, Asset, is_rune
 from services.lib.texts import fuzzy_search
 from services.models.base import BaseModelMixin
 from services.models.pool_info import PoolInfo, PoolInfoMap
@@ -203,7 +203,7 @@ class LastPriceHolder:
             return deepest_pool
 
     def get_asset_price_in_rune(self, query: str):
-        if is_rune_asset(query):
+        if is_rune(query):
             return 1.0
         full_name_of_asset = self.pool_fuzzy_first(query)
         pool = self.find_pool(full_name_of_asset)

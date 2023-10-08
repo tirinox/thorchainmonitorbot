@@ -48,7 +48,7 @@ async def test_has(many2many_example):
 
 @pytest.mark.asyncio
 async def test_get_many_from_many(many2many_example):
-    mm = await mm_example
+    mm = await many2many_example
     assert await mm.all_lefts_for_many_rights(['G1', 'G3', 'G2']) == {'A', 'B', 'C'}
     assert await mm.all_lefts_for_many_rights(['G1']) == {'A', 'B'}
     assert await mm.all_lefts_for_many_rights(['G3', 'G2']) == {'C', 'B'}

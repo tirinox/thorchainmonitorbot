@@ -5,7 +5,7 @@ from typing import NamedTuple, List, Optional, Tuple
 
 from proto.access import DecodedEvent
 from services.lib.memo import THORMemo
-from services.lib.money import is_rune_asset
+from services.lib.money import is_rune
 from services.models.s_swap import StreamingSwap
 from services.models.events import EventSwap, EventStreamingSwap, EventOutbound, EventScheduledOutbound, \
     parse_swap_and_out_event, TypeEventSwapAndOut
@@ -85,7 +85,7 @@ class SwapProps(NamedTuple):
     def get_affiliate_fee_and_addr(self) -> Tuple[int, str]:
         if self.memo.affiliate_fee and self.memo.affiliate_address:
             in_coin = self.in_coin
-            if is_rune_asset(in_coin.asset):
+            if is_rune(in_coin.asset):
                 # In is Rune, so no swap to the affiliate addy
                 amount = int(in_coin.amount * self.memo.affiliate_fee)
                 return amount, self.memo.affiliate_address

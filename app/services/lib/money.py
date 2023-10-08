@@ -265,7 +265,7 @@ class Asset:
             return f'synth {self.name}'
         else:
             str_me = str(self)
-            if is_rune_asset(str_me):
+            if is_rune(str_me):
                 return 'Rune ᚱ'
             elif str_me in self.ABBREVIATE_GAS_ASSETS:
                 return self.name  # Not ETH.ETH, just ETH
@@ -347,7 +347,8 @@ class Asset:
 AssetRUNE = Asset.from_string(NATIVE_RUNE_SYMBOL)
 
 
-def is_rune_asset(asset: str):
+def is_rune(asset: str):
+    asset = asset.strip()
     return asset.lower() in ('r', RUNE_DENOM) or asset.upper() == NATIVE_RUNE_SYMBOL
 
 

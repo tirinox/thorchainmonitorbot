@@ -2,10 +2,10 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import List, Optional, NamedTuple
 
-from services.lib.constants import is_rune, RUNE_SYMBOL, Chains, thor_to_float, bp_to_float
+from services.lib.constants import RUNE_SYMBOL, Chains, thor_to_float, bp_to_float
 from services.lib.date_utils import now_ts
 from services.lib.memo import THORMemo
-from services.lib.money import Asset
+from services.lib.money import Asset, is_rune
 from services.lib.texts import safe_sum
 from services.lib.w3.token_record import SwapInOut
 from services.models.cap_info import ThorCapInfo
@@ -337,13 +337,12 @@ class ThorTx:
     def get_asset_summary(self, in_only=False, out_only=False):
         results = defaultdict(float)
         for coin in self.coins_of(in_only, out_only):
-            name = Asset(coin.asset).pretty_str
-            results[name] += coin.amount_float
+            results[coin.asset] += coin.amount_float
         return results
 
     def not_rune_asset(self, in_only=False, out_only=False):
         for coin in self.coins_of(in_only, out_only):
-            if not is_rune(coin):
+            if not is_rune(coin.asset):
                 return coin
 
     @property

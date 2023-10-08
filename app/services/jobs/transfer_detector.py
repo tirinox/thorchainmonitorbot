@@ -4,10 +4,10 @@ from typing import List
 from proto.access import NativeThorTx, parse_thor_address, DecodedEvent, thor_decode_amount_field
 from proto.types import MsgSend, MsgDeposit
 from services.jobs.scanner.native_scan import BlockResult
-from services.lib.constants import thor_to_float, is_rune, DEFAULT_RESERVE_ADDRESS, BOND_MODULE, DEFAULT_RUNE_FEE, \
+from services.lib.constants import thor_to_float, DEFAULT_RESERVE_ADDRESS, BOND_MODULE, DEFAULT_RUNE_FEE, \
     RUNE_DENOM
 from services.lib.delegates import WithDelegates, INotified
-from services.lib.money import Asset
+from services.lib.money import Asset, is_rune
 from services.lib.utils import WithLogger
 from services.models.transfer import RuneTransfer
 

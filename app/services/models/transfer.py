@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 
-from services.lib.constants import is_rune, RUNE_DENOM
+from services.lib.constants import RUNE_DENOM
 from services.lib.date_utils import DAY
+from services.lib.money import is_rune
 
 
 @dataclass
@@ -30,7 +31,7 @@ class RuneTransfer:
 
     @property
     def is_rune(self):
-        return is_rune(self.asset) or self.asset.lower() == RUNE_DENOM
+        return is_rune(self.asset)
 
     def rune_amount(self, usd_per_rune):
         return self.usd_amount / usd_per_rune

@@ -6,7 +6,7 @@ from services.jobs.scanner.native_scan import BlockResult
 from services.lib.constants import NATIVE_RUNE_SYMBOL, thor_to_float
 from services.lib.depcont import DepContainer
 from services.lib.memo import THORMemo
-from services.lib.money import is_rune_asset, Asset
+from services.lib.money import is_rune, Asset
 from services.lib.utils import WithLogger
 from services.models.s_swap import StreamingSwap, AlertSwapStart
 from services.models.tx_type import TxType
@@ -27,7 +27,7 @@ class SwapStartDetector(WithLogger):
             return
 
         if msg.coins:
-            if is_rune_asset(memo.asset):
+            if is_rune(memo.asset):
                 out_asset_name = NATIVE_RUNE_SYMBOL
             else:
                 out_asset_name = ph.pool_fuzzy_first(memo.asset)
