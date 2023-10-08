@@ -114,6 +114,11 @@ class App:
         if d.twitter_bot:
             d.twitter_bot.emergency = d.emergency
 
+        self.swap_notifier_tx = None
+        self.refund_notifier_tx = None
+        self.liquidity_notifier_tx = None
+        self.donate_notifier_tx = None
+
     def _init_configuration(self, log_level=None):
         d = self.deps
         d.cfg = Config()
@@ -214,6 +219,17 @@ class App:
                 logging.info('Loading constants and mimir...')
                 await d.mimir_const_fetcher.fetch()  # get constants beforehand
                 await asyncio.sleep(sleep_step)
+
+                # print some information about threshold curves
+                if self.refund_notifier_tx:
+                    self.refund_notifier_tx.dbg_evaluate_curve_for_pools()
+                if self.swap_notifier_tx:
+                    self.swap_notifier_tx.dbg_evaluate_curve_for_pools()
+                if self.liquidity_notifier_tx:
+                    self.liquidity_notifier_tx.dbg_evaluate_curve_for_pools()
+                if self.donate_notifier_tx:
+                    self.donate_notifier_tx.dbg_evaluate_curve_for_pools()
+
                 break  # all is good. exit the loop
             except Exception as e:
                 logging.exception(e)
@@ -321,24 +337,20 @@ class App:
             curve = DepthCurve(curve_pts)
 
             if d.cfg.tx.liquidity.get('enabled', True):
-                liq_notifier_tx = LiquidityTxNotifier(d, d.cfg.tx.liquidity, curve=curve)
-                volume_filler.add_subscriber(liq_notifier_tx)
-                liq_notifier_tx.dbg_evaluate_curve_for_pools()
-                liq_notifier_tx.add_subscriber(d.alert_presenter)
+                self.liquidity_notifier_tx = LiquidityTxNotifier(d, d.cfg.tx.liquidity, curve=curve)
+                volume_filler.add_subscriber(self.liquidity_notifier_tx)
+                self.liquidity_notifier_tx.add_subscriber(d.alert_presenter)
 
             if d.cfg.tx.donate.get('enabled', True):
-                donate_notifier_tx = GenericTxNotifier(d, d.cfg.tx.donate,
-                                                       tx_types=(TxType.DONATE,),
-                                                       curve=curve)
-                donate_notifier_tx.dbg_evaluate_curve_for_pools()
-                volume_filler.add_subscriber(donate_notifier_tx)
-                donate_notifier_tx.add_subscriber(d.alert_presenter)
+                self.donate_notifier_tx = GenericTxNotifier(d, d.cfg.tx.donate, tx_types=(TxType.DONATE,), curve=curve)
+
+                volume_filler.add_subscriber(self.donate_notifier_tx)
+                self.donate_notifier_tx.add_subscriber(d.alert_presenter)
 
             if d.cfg.tx.swap.get('enabled', True):
-                swap_notifier_tx = SwapTxNotifier(d, d.cfg.tx.swap, curve=curve)
-                volume_filler.add_subscriber(swap_notifier_tx)
-                swap_notifier_tx.add_subscriber(d.alert_presenter)
-                swap_notifier_tx.dbg_evaluate_curve_for_pools()
+                self.swap_notifier_tx = SwapTxNotifier(d, d.cfg.tx.swap, curve=curve)
+                volume_filler.add_subscriber(self.swap_notifier_tx)
+                self.swap_notifier_tx.add_subscriber(d.alert_presenter)
 
                 if d.cfg.tx.swap.also_trigger_when.streaming_swap.get('notify_start', True):
                     stream_swap_notifier = StreamingSwapStartTxNotifier(d)
@@ -346,12 +358,10 @@ class App:
                     stream_swap_notifier.add_subscriber(d.alert_presenter)
 
             if d.cfg.tx.refund.get('enabled', True):
-                refund_notifier_tx = GenericTxNotifier(d, d.cfg.tx.refund,
-                                                       tx_types=(TxType.REFUND,),
-                                                       curve=curve)
-                refund_notifier_tx.dbg_evaluate_curve_for_pools()
-                volume_filler.add_subscriber(refund_notifier_tx)
-                refund_notifier_tx.add_subscriber(d.alert_presenter)
+                self.refund_notifier_tx = GenericTxNotifier(d, d.cfg.tx.refund, tx_types=(TxType.REFUND,), curve=curve)
+
+                volume_filler.add_subscriber(self.refund_notifier_tx)
+                self.refund_notifier_tx.add_subscriber(d.alert_presenter)
 
             if d.cfg.tx.loans.get('enabled', True):
                 loan_extractor = LoanExtractorBlock(d)
