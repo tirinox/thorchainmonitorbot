@@ -225,10 +225,20 @@ names:
   affiliates: # (!) new
     wr: THORWallet
     ss: ShapeShift
-    t: ThorSwap
+    t: THORSwap
     tr: Trust iOS
+    te-ios: Trust iOS
     te: Trust Android
     dx: Asgardex
+    rg: RangoExchange
+    ferz: Ferz
+    dx: Asgardex
+    dcf: DecentralFi
+    ej: EdgeWallet
+    xdf: XDEFI
+    cb: CoinBot
+    runifier: Runifier
+    0xbami: Unizen
 
 
 tx:
@@ -386,7 +396,6 @@ rune_transfer:
   fetch_period: 30
 
   min_usd:
-    bep2: 300000
     native: 200000
   cooldown: 10
 
