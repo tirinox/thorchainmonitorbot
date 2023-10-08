@@ -2,7 +2,7 @@ import asyncio
 from contextlib import suppress
 from typing import NamedTuple, Dict
 
-from services.lib.constants import RUNE_IDEAL_SUPPLY, RUNE_SUPPLY_AFTER_SWITCH, RUNE_DECIMALS, thor_to_float
+from services.lib.constants import RUNE_IDEAL_SUPPLY, RUNE_SUPPLY_AFTER_SWITCH, RUNE_DECIMALS, thor_to_float, RUNE_DENOM
 from services.lib.utils import WithLogger
 
 
@@ -177,7 +177,7 @@ class RuneCirculatingSupplyFetcher(WithLogger):
     @staticmethod
     def get_pure_rune_from_thor_array(arr):
         if arr:
-            thor_rune = next((item['amount'] for item in arr if item['denom'] == 'rune'), 0)
+            thor_rune = next((item['amount'] for item in arr if item['denom'] == RUNE_DENOM), 0)
             return int(int(thor_rune) / 10 ** RUNE_DECIMALS)
         else:
             return 0

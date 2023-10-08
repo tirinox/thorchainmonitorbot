@@ -7,7 +7,7 @@ from PIL import ImageDraw
 
 from localization.manager import BaseLocalization
 from services.dialog.picture.resources import Resources
-from services.lib.constants import BNB_RUNE_SYMBOL, is_rune, RUNE_SYMBOL
+from services.lib.constants import is_rune, RUNE_SYMBOL
 from services.lib.draw_utils import CATEGORICAL_PALETTE, pos_percent, result_color, hor_line, LIGHT_TEXT_COLOR, \
     TC_WHITE, paste_image_masked, LINE_COLOR
 from services.lib.money import pretty_money, format_percent, pretty_percent, Asset, RAIDO_GLYPH, pretty_rune, \
@@ -48,7 +48,7 @@ async def generate_yield_picture(price_holder: LastPriceHolder,
     else:
         # LP position
         rune_image, asset_image = await asyncio.gather(
-            r.logo_downloader.get_or_download_logo_cached(BNB_RUNE_SYMBOL),
+            r.logo_downloader.get_or_download_logo_cached(RUNE_SYMBOL),
             r.logo_downloader.get_or_download_logo_cached(asset)
         )
         return await _generate_lp_pool_picture(price_holder, report, loc, rune_image, asset_image, value_hidden)

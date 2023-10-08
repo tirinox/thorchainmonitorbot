@@ -5,10 +5,7 @@ import pickle
 from localization.eng_base import BaseLocalization
 from localization.languages import Language
 from services.jobs.scanner.native_scan import NativeScannerBlock
-from services.jobs.scanner.native_scan_ws import NativeScannerTransactionWS, NativeScannerBlockEventsWS
-from services.jobs.transfer_detector import RuneTransferDetectorBlockEvents, \
-    RuneTransferDetectorFromTxResult, RuneTransferDetectorTxLogs
-from services.lib.config import Config
+from services.jobs.transfer_detector import RuneTransferDetectorTxLogs
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
 from services.lib.texts import sep
@@ -28,23 +25,6 @@ class ReceiverPublicText(INotified):
             tr: RuneTransfer
             print(self.loc.notification_text_rune_transfer_public(tr, {}))
             sep()
-
-
-async def t_tx_scanner_ws(url, reserve_address):
-    scanner = NativeScannerTransactionWS(url)
-    detector = RuneTransferDetectorFromTxResult(reserve_address)
-    scanner.add_subscriber(detector)
-    # scanner.subscribe(Receiver('TX'))
-    detector.add_subscriber(Receiver('Transfer'))
-    await scanner.run()
-
-
-async def t_block_scanner_ws(url):
-    scanner = NativeScannerBlockEventsWS(url)
-    detector = RuneTransferDetectorBlockEvents()
-    scanner.add_subscriber(detector)
-    detector.add_subscriber(Receiver())
-    await scanner.run()
 
 
 async def demo_native_block_action_detector(app, start=12209517):
@@ -72,13 +52,6 @@ async def demo_block_scanner_active(app, send_alerts=False):
     await scanner.run()
 
 
-async def ws_main():
-    cfg = Config()
-    url = cfg.as_str('thor.node.rpc_node_url')
-    reserve_address = cfg.as_str('native_scanner.reserve_address')
-    await t_tx_scanner_ws(url, reserve_address)
-
-
 async def get_transfers_from_block(app, block_index):
     scanner = NativeScannerBlock(app.deps)
     r = await scanner.fetch_one_block(block_index)
@@ -87,11 +60,8 @@ async def get_transfers_from_block(app, block_index):
     return transfers
 
 
-async def demo_rune_transfers_once(app):
-    # b = 8783469  # unbond
-    # b = 8686955  # bond
-    b = 8815564  # crash
-    transfers = await get_transfers_from_block(app, b)
+async def demo_rune_transfers_once(app, block=12_918_080):
+    transfers = await get_transfers_from_block(app, block)
 
     sep()
     for tr in transfers:
@@ -143,15 +113,15 @@ async def debug_block_tx_status_check(app):
 async def main():
     app = LpAppFramework()
     async with app(brief=True):
-        # await demo_rune_transfers_once(app)
         # await demo_block_scanner_active(app, send_alerts=True)
         # await active_one(app)
         # await search_out(app)
-        # await demo_rune_transfers_once(app)
+
         # await demo_test_rune_detector(app)
         # await demo_native_block_action_detector(app)
 
-        await debug_block_tx_status_check(app)
+        # await debug_block_tx_status_check(app)
+        await demo_rune_transfers_once(app)
 
 
 if __name__ == '__main__':

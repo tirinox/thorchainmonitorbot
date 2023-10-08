@@ -32,7 +32,6 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
         self.summary_cd = Cooldown(self.deps.db, 'RuneMove.Summary', summary_cd_sec)
 
         self.min_usd_native = cfg.as_float('min_usd.native', 1000)
-        self.min_usd_bep2 = cfg.as_float('min_usd.bep2', 1000)
 
         self.cex_list = cfg.as_list('cex_list')
         self.ignore_cex2cex = bool(cfg.get('ignore_cex2cex', True))
@@ -42,7 +41,7 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
         return self.is_cex(transfer.from_addr) and self.is_cex(transfer.to_addr)
 
     async def handle_big_transfer(self, transfer: RuneTransfer, usd_per_rune):
-        min_usd_amount = self.min_usd_native if transfer.is_native else self.min_usd_bep2
+        min_usd_amount = self.min_usd_native
 
         if transfer.amount * usd_per_rune >= min_usd_amount:
             # ignore cex to cex transfers?

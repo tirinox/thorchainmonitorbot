@@ -49,9 +49,7 @@ class CryptoLogoDownloader:
     TEST_ASSET_MAPPING = {
         BNB_USDT_TEST_SYMBOL: BNB_USDT_SYMBOL,
         BNB_BUSD_TEST_SYMBOL: BNB_BUSD_SYMBOL,
-        BNB_RUNE_TEST_SYMBOL: BNB_RUNE_SYMBOL,
         ETH_USDT_TEST_SYMBOL: ETH_USDT_SYMBOL,
-        ETH_RUNE_SYMBOL_TEST: ETH_RUNE_SYMBOL,
     }
 
     def get_full_path(self, path):

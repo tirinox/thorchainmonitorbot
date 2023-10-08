@@ -19,7 +19,7 @@ def test_get():
     }
 
     assert nested_get(dic, ('path', 'to', 'freedom')) == 'is here'
-    assert nested_get(dic, ('path', 'to', 'the moon'), 'rune') == 'rune'
+    assert nested_get(dic, ('path', 'to', 'the moon'), 'foo') == 'foo'
     assert nested_get(dic, ('key',)) == 'value'
     assert nested_get(dic, (1, 2, 3, 4)) is None
 

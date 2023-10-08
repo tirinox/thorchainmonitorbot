@@ -857,7 +857,7 @@ class BaseLocalization(ABC):  # == English
     # ------- PERSONAL PRICE DIVERGENCE -------
 
     TEXT_PRICE_DIV_MIN_PERCENT = (
-        '↕️ Here you can customize your own personal price divergence (BEP2 Rune vs Native Rune) notifications.\n'
+        '↕️ Here you can customize your own personal price divergence (CEX vs Native Rune) notifications.\n'
         'For a start, enter a <b>minimum</b> percentage divergence (<i>cannot be less than 0.1</i>).\n'
         'If you don\'t want to be notified on the minimum side, hit "Next"'
     )

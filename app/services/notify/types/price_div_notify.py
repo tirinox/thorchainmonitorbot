@@ -27,7 +27,7 @@ class PriceDivergenceNotifier(INotified, WithLogger):
         self.time_series = TimeSeries('PriceDivergence', deps.db)
 
     async def on_data(self, sender, rune_market_info: RuneMarketInfo):
-        bep2_price, native_price = rune_market_info.cex_price, rune_market_info.pool_rune_price
+        cex_price, native_price = rune_market_info.cex_price, rune_market_info.pool_rune_price
 
         if native_price == 0:
             return
@@ -42,7 +42,7 @@ class PriceDivergenceNotifier(INotified, WithLogger):
                 await self._notify(rune_market_info, is_low=False)
 
         await self.time_series.add(
-            abs_delta=(bep2_price - native_price),
+            abs_delta=(cex_price - native_price),
             rel_delta=div_p
         )
         await self.time_series.trim_oldest(self.MAX_POINTS)

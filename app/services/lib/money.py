@@ -1,11 +1,12 @@
 import math
 import random
+from copy import copy
 from dataclasses import dataclass
 from math import floor, log10
 from typing import List
 
 from proto.common import Coin
-from services.lib.constants import Chains, NATIVE_RUNE_SYMBOL
+from services.lib.constants import Chains, NATIVE_RUNE_SYMBOL, RUNE_DENOM
 from services.lib.utils import linear_transform
 
 EMOJI_SCALE = [
@@ -234,8 +235,9 @@ class Asset:
     @classmethod
     def from_string(cls, asset: str):
         try:
-            if asset == 'rune':
-                return cls('THOR', 'RUNE')
+            if asset == RUNE_DENOM:
+                return copy(AssetRUNE)
+
             is_synth = '/' in asset
             chain, name_and_tag = asset.split('/' if is_synth else '.', maxsplit=2)
             name, tag = cls.get_name_tag(name_and_tag)
@@ -346,7 +348,7 @@ AssetRUNE = Asset.from_string(NATIVE_RUNE_SYMBOL)
 
 
 def is_rune_asset(asset: str):
-    return asset.lower() in ('r', 'rune') or asset.upper() == NATIVE_RUNE_SYMBOL
+    return asset.lower() in ('r', RUNE_DENOM) or asset.upper() == NATIVE_RUNE_SYMBOL
 
 
 def weighted_mean(values, weights):

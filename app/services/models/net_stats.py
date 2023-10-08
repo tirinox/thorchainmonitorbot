@@ -37,8 +37,6 @@ class NetworkStats(BaseModelMixin):
     active_nodes: int = 0  # network
     standby_nodes: int = 0  # network
 
-    # bep2_liquidity_usd: float = 0  # todo
-
     total_rune_pooled: float = 0.0  # stats
     total_bond_rune: float = 0.0  # network
     total_active_bond_rune: float = 0.0  # network

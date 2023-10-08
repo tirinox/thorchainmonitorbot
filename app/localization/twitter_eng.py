@@ -308,7 +308,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         text = (
             f"🖖 {title}\n"
-            f"CEX (BEP2) Rune price is {pretty_dollar(info.cex_price)}\n"
+            f"CEX Rune price is {pretty_dollar(info.cex_price)}\n"
             f"Weighted average Rune price over liquidity pools is {pretty_dollar(info.pool_rune_price)}\n"
             f"Divergence is {pretty_dollar(div)} ({div_p:.1f}%{exclamation})."
         )

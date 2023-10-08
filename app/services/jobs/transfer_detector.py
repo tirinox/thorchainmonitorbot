@@ -1,16 +1,18 @@
 from collections import defaultdict
 from typing import List
 
-from proto.types import MsgSend, MsgDeposit
 from proto.access import NativeThorTx, parse_thor_address, DecodedEvent, thor_decode_amount_field
+from proto.types import MsgSend, MsgDeposit
 from services.jobs.scanner.native_scan import BlockResult
-from services.lib.constants import thor_to_float, is_rune, DEFAULT_RESERVE_ADDRESS, BOND_MODULE, DEFAULT_RUNE_FEE
+from services.lib.constants import thor_to_float, is_rune, DEFAULT_RESERVE_ADDRESS, BOND_MODULE, DEFAULT_RUNE_FEE, \
+    RUNE_DENOM
 from services.lib.delegates import WithDelegates, INotified
 from services.lib.money import Asset
 from services.lib.utils import WithLogger
 from services.models.transfer import RuneTransfer
 
 
+# This one is used
 class RuneTransferDetectorNativeTX(WithDelegates, INotified):
     def __init__(self, address_prefix='thor'):
         super().__init__()
@@ -36,6 +38,7 @@ class RuneTransferDetectorNativeTX(WithDelegates, INotified):
                     to_addr = self.address_parse(message.to_address)
                     for coin in message.amount:
                         # todo: problem: he may want to Deposit something stupid, that he don't have, lika a trillion of TGT
+                        asset = str(coin.denom).upper()
                         # do not announce
                         transfers.append(RuneTransfer(
                             from_addr=from_addr,
@@ -44,7 +47,7 @@ class RuneTransferDetectorNativeTX(WithDelegates, INotified):
                             tx_hash=tx.hash,
                             amount=thor_to_float(coin.amount),
                             is_native=True,
-                            asset=str(coin.denom).upper(),
+                            asset=asset,
                             comment=comment,
                             memo=memo,
                         ))
@@ -71,6 +74,7 @@ class RuneTransferDetectorNativeTX(WithDelegates, INotified):
         await self.pass_data_to_listeners(transfers)
 
 
+# this one is not used
 class RuneTransferDetectorBlockEvents(WithDelegates, INotified):
     async def on_data(self, sender, data):
         events: List[DecodedEvent]
@@ -132,7 +136,7 @@ class RuneTransferDetectorFromTxResult(WithDelegates, INotified):
 
 
 def is_fee_tx(amount, asset, to_addr, reserve_address):
-    return amount == DEFAULT_RUNE_FEE and asset.lower() == 'rune' and to_addr == reserve_address
+    return amount == DEFAULT_RUNE_FEE and asset.lower() == RUNE_DENOM and to_addr == reserve_address
 
 
 # This one is presently used!
