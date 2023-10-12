@@ -148,7 +148,7 @@ class MetricsDialog(BaseDialog):
 
         event = await self.deps.saver_stats_fetcher.get_savers_event_cached()
 
-        if not event or not event.current_stats:
+        if not event or not event.current_stats or not event.current_stats.vaults:
             await message.answer(self.loc.TEXT_SAVERS_NO_DATA,
                                  disable_notification=True)
             return
@@ -341,7 +341,6 @@ class MetricsDialog(BaseDialog):
         caption = self.loc.notification_text_key_metrics_caption(ev)
 
         await message.answer_photo(img_to_bio(pic, pic_name), caption=caption, disable_notification=True)
-
 
     # ---- Ask for duration (universal)
 

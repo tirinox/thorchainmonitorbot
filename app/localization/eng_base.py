@@ -2337,7 +2337,7 @@ class BaseLocalization(ABC):  # == English
     TEXT_PIC_SAVERS_FILLED = 'Savers filled'
     TEXT_PIC_SAVERS_EARNED = 'Earned'
 
-    TEXT_SAVERS_NO_DATA = 'Sorry. We have not gotten any data for Savers Vaults yet.'
+    TEXT_SAVERS_NO_DATA = '😩 Sorry. We have not gotten any data for Savers Vaults yet.'
 
     SV_PIC_TITLE = 'savings'
     SV_PIC_APR = 'APR'

@@ -42,7 +42,11 @@ class KeyMetricsNotifier(INotified, WithDelegates, WithLogger):
             return
 
         if not e.previous_pools:
-            self.logger.warn(f'No previous pool data! Go on')
+            self.logger.warning(f'No previous pool data! Go on')
+
+        if not len(e.series):
+            self.logger.warning(f'Length is 0')
+            return 
 
         e = e._replace(series=e.series.remove_incomplete_rows((FSFees, FSSwapCount, FSLockedValue, FSSwapVolume)))
 
