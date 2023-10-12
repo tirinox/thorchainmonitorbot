@@ -1,8 +1,14 @@
-# thorchainmonitorbot
+# THORChain Infobot
 
 This is a telegram bot to monitor some aspects of THORChain. It can also generate liquidity pool reports for you. Like this:
 
 [![Report](misc/example_report_thumbnail.png)](https://raw.githubusercontent.com/tirinox/thorchainmonitorbot/master/misc/example_report.jpeg)
+
+## Live bot
+
+[Start the bot in Telegram](https://t.me/thor_infobot)
+
+[Twitter Automated account](https://twitter.com/THOR_InfoBot)
 
 ## Commands
 
@@ -10,11 +16,10 @@ This is a telegram bot to monitor some aspects of THORChain. It can also generat
 ```/price``` – Rune's price  
 ```/cap``` – current LP cap
 
+*To do: describe the rest of commands.*
+
 Inline command `@bot ADDRESS POOL` to make a LP card for ADDRESS providing liquidity to POOL, POOL may not be exact but short like BTC or TOKEN-0x443. 
 
-## Live bot
-
-[Start the bot in Telegram](https://telegram.me/thorchain_monitoring_bot?start=1)
 
 ## Installation
 
