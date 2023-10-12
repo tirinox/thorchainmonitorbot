@@ -121,8 +121,6 @@ class TwitterEnglishLocalization(BaseLocalization):
         if date_text := self.tx_date(tx):
             heading += f' {date_text}'
 
-        asset = self.pretty_asset(tx.first_pool)
-
         content = f'👤{self.link_to_address(tx.sender_address, name_map)}: '
 
         if tx.type in (TxType.ADD_LIQUIDITY, TxType.WITHDRAW, TxType.DONATE):
@@ -143,6 +141,8 @@ class TwitterEnglishLocalization(BaseLocalization):
                            f'({short_dollar(ilp_usd)})\n'
             else:
                 ilp_text = ''
+
+            asset = self.pretty_asset(tx.first_pool)
 
             if tx.is_savings:
                 rune_part = ''
@@ -174,11 +174,11 @@ class TwitterEnglishLocalization(BaseLocalization):
         elif tx.type == TxType.REFUND:
             reason = shorten_text(tx.meta_refund.reason, 30)
             content += (
-                    self.format_swap_route(tx, usd_per_rune, dollar_assets=True) +
+                    self.format_swap_route(tx, usd_per_rune) +
                     f"\nReason: {reason}.."
             )
         elif tx.type == TxType.SWAP:
-            content += self.format_swap_route(tx, usd_per_rune, dollar_assets=True)
+            content += self.format_swap_route(tx, usd_per_rune)
             slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
             l_fee_usd = tx.meta_swap.liquidity_fee_rune_float * usd_per_rune
 
@@ -809,7 +809,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             f'{str_burnt}'
             f'🏊‍ {short_rune(sp.pooled)} ({format_percent(sp.pooled_percent)}) are pooled\n'
             f'🔒 {short_rune(sp.bonded)} ({format_percent(sp.bonded_percent)}) are bonded\n'
-            f'🏦 {short_rune(sp.in_cex)} ({format_percent(sp.in_cex_percent,)}) are in CEX\n'
+            f'🏦 {short_rune(sp.in_cex)} ({format_percent(sp.in_cex_percent, )}) are in CEX\n'
             f'💰 Treasury has {pretty_rune(sp.treasury)}'
         )
 
@@ -885,12 +885,13 @@ class TwitterEnglishLocalization(BaseLocalization):
         if not name:
             return '???'
 
-        # we add '$' before assets to mention the asset name in Twitter
         asset = Asset(name.upper())
-        if 'USD' in asset.name or 'BNB' in asset.name:
-            return f'${asset.name} ({asset.chain})'
-        else:
-            return f'${asset.name}'
+        synth = 'synth ' if asset.is_synth else ''
+
+        chain = f' ({asset.chain})' if 'USD' in asset.name or 'BNB' in asset.name else ''
+
+        # we add '$' before assets to mention the asset name in Twitter
+        return f'{synth}${asset.name}{chain}'
 
     def notification_text_pol_utilization(self, event: AlertPOL):
         curr, prev = event.current, event.previous

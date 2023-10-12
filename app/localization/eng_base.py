@@ -411,6 +411,7 @@ class BaseLocalization(ABC):  # == English
         for tx in txs[:max_n]:
             tx_id = tx.tx_id or main_run_txid
             if tx_id:
+                # todo use self.pretty_asset
                 a = Asset(tx.first_asset)
                 chain = a.chain if a.chain else Chains.THOR
                 if a.is_synth:
@@ -466,20 +467,14 @@ class BaseLocalization(ABC):  # == English
         else:
             return f'{chain}.{a.token.symbol}'
 
-    def format_swap_route(self, tx: ThorTx, usd_per_rune, dollar_assets=False):
-        inputs = tx.get_asset_summary(in_only=True)
-        outputs = tx.get_asset_summary(out_only=True)
+    def _get_asset_summary_string(self, tx, in_only=False, out_only=False):
+        ends = tx.get_asset_summary(in_only=in_only, out_only=out_only)
+        ends = {self.pretty_asset(a): v for a, v in ends.items()}
+        return ', '.join(f"{self.format_op_amount(amount)} {asset}" for asset, amount in ends.items())
 
-        if dollar_assets:
-            def convert_assets(d):
-                # mention in Twitter
-                return {('$' + Asset(a).name): v for a, v in d.items()}
-
-            inputs = convert_assets(inputs)
-            outputs = convert_assets(outputs)
-
-        input_str = ', '.join(f"{self.format_op_amount(amount)} {asset}" for asset, amount in inputs.items())
-        output_str = ', '.join(f"{self.format_op_amount(amount)} {asset}" for asset, amount in outputs.items())
+    def format_swap_route(self, tx: ThorTx, usd_per_rune):
+        input_str = self._get_asset_summary_string(tx, in_only=True)
+        output_str = self._get_asset_summary_string(tx, out_only=True)
 
         route_components = []
         dex = tx.dex_info
