@@ -523,7 +523,7 @@ class ThorTx:
             for coin in sub_tx.coins
             if coin.asset not in in_assets
         ), None)
-        
+
     @property
     def swap_profit_vs_cex(self):
         if not self.meta_swap:
@@ -550,6 +550,16 @@ class ThorTx:
         out_coin = self.first_out_coin_other_than_input()
 
         return price_holder.convert_to_usd(profit_out_asset, out_coin.asset)
+
+    @property
+    def refund_coin(self) -> Optional[ThorCoin]:
+        in_tx = self.first_input_tx
+        if in_tx and in_tx.coins:
+            in_coin = in_tx.coins[0]
+            for out_tx in self.out_tx:
+                for coin in out_tx.coins:
+                    if coin.asset == in_coin.asset:
+                        return coin
 
 
 @dataclass

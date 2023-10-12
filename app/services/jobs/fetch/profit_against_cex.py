@@ -8,7 +8,7 @@ from binance.exceptions import BinanceAPIException
 from services.lib.constants import thor_to_float
 from services.lib.date_utils import MINUTE
 from services.lib.delegates import INotified, WithDelegates
-from services.lib.money import pretty_dollar
+from services.lib.money import pretty_dollar, Asset
 from services.lib.utils import WithLogger, get_ttl_hash
 from services.models.tx import ThorTx
 
@@ -59,17 +59,11 @@ class StreamingSwapVsCexProfitCalculator(WithLogger, WithDelegates, INotified):
         self.binance = Client()
 
     @classmethod
-    def just_asset_name(cls, asset):
-        return asset.split('.')[1] if '.' in asset else asset
-
-    @classmethod
-    def url_cex(cls, from_asset: str, to_asset: str, amount: float):
-        from_asset = cls.just_asset_name(from_asset)
-        to_asset = cls.just_asset_name(to_asset)
+    def url_cex(cls, from_asset: Asset, to_asset: Asset, amount: float):
         return (
             f"https://api.criptointercambio.com/amount/exchange/full?"
-            f"from={from_asset}&"
-            f"to={to_asset}&"
+            f"from={from_asset.name}&"
+            f"to={to_asset.name}&"
             f"amount={amount}"
         )
 
@@ -91,9 +85,9 @@ class StreamingSwapVsCexProfitCalculator(WithLogger, WithDelegates, INotified):
     async def binance_get_order_book_cached(self, asset: str, quote_asset='USDT'):
         return await self.binance_get_order_book(asset, quote_asset)
 
-    async def binance_query(self, from_asset: str, to_asset: str, amount: float):
-        from_asset = self.just_asset_name(from_asset)
-        to_asset = self.just_asset_name(to_asset)
+    async def binance_query(self, from_asset_obj: Asset, to_asset_obj: Asset, amount: float):
+        from_asset = from_asset_obj.name
+        to_asset = to_asset_obj.name
 
         if from_asset in ('USDT', 'BUSD'):
             book = await self.binance_get_order_book_cached(to_asset, quote_asset=from_asset)
@@ -119,9 +113,20 @@ class StreamingSwapVsCexProfitCalculator(WithLogger, WithDelegates, INotified):
         @param tx:
         @return:
         """
+        # We simply do not calculate profit it the swap was not fully fulfilled (it has refund part)
+        if tx.refund_coin:
+            return
+
         asset_in = tx.first_input_tx.first_asset
         asset_out = tx.first_output_tx.first_asset
         if not asset_in or not asset_out:
+            return
+
+        asset_in = Asset.from_string(asset_in)
+        asset_out = Asset.from_string(asset_out)
+
+        if asset_in.native_pool_name == asset_out.native_pool_name:
+            # Synth wrap/unwrap. Ignore
             return
 
         amount = thor_to_float(tx.first_input_tx.first_amount)
@@ -158,6 +163,9 @@ class StreamingSwapVsCexProfitCalculator(WithLogger, WithDelegates, INotified):
     def _finalize_tx(self, tx: ThorTx):
         savings_usd = tx.get_profit_vs_cex_in_usd(self.deps.price_holder)
         volume_usd = tx.get_usd_volume(self.deps.price_holder.usd_per_rune)
+
+        if savings_usd is None:
+            return
 
         if abs(savings_usd) > volume_usd * self.TC_PROFIT_VS_CEX_TOO_MUCH_RATIO:
             self.logger.warning(f'Tx {tx.tx_hash} has weird profit vs Cex {pretty_dollar(savings_usd)}; '

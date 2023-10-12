@@ -5,6 +5,7 @@ from typing import List
 from localization.languages import Language
 from localization.manager import BaseLocalization
 from services.jobs.affiliate_merge import AffiliateTXMerger, ZERO_HASH
+from services.jobs.fetch.profit_against_cex import StreamingSwapVsCexProfitCalculator
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.lib.constants import Chains, thor_to_float
@@ -149,6 +150,10 @@ async def send_tx_notification(app, ex_tx, loc: BaseLocalization = None):
     pool = ex_tx.first_pool_l1
     pool_info: PoolInfo = app.deps.price_holder.pool_info_map.get(pool)
     full_rune = ex_tx.calc_full_rune_amount(app.deps.price_holder.pool_info_map)
+
+    profit_calc = StreamingSwapVsCexProfitCalculator(app.deps)
+    await profit_calc.get_cex_data_v2(ex_tx)
+
     print(f'{ex_tx.affiliate_fee = }')
     rune_price = app.deps.price_holder.usd_per_rune
     print(f'{ex_tx.get_affiliate_fee_usd(rune_price) = } $')
@@ -278,7 +283,6 @@ async def find_affiliate_txs(app: LpAppFramework, desired_count=5, tx_types=None
         page += 1
 
 
-
 async def demo_find_missed_txs_swap(app: LpAppFramework):
     d = app.deps
     fetcher_tx = TxFetcher(d, tx_types=(TxType.SWAP,))
@@ -307,6 +311,18 @@ async def demo_swap_synth(app):
                                      tx_type=TxType.SWAP)
     await present_one_aff_tx(app, q_path)
 
+
+async def demo_swap_with_refund_and_incorrect_savings_vs_cex(app):
+    # txid = '98A0E24728729721BC6295A85991D28BF4A26A8767D773FD6BA53E6742F70631'  # no refund, synth
+    # txid = 'E22E41745A9422B12C02E26F12BE79D621DDCB3CA1BC954CCAD2AB4792DE5AC7'  # with refund BTC -> ETH + BTC
+    txid = '6604B9BC94BC50158BE5B4486178AE880F01E6532893F357C4ACBA1E83FFCB9F'  # normal SS
+
+    q_path = free_url_gen.url_for_tx(0, 50,
+                                     txid=txid,
+                                     tx_type=TxType.SWAP)
+    await present_one_aff_tx(app, q_path)
+
+
 async def main():
     app = LpAppFramework()
     await app.prepare(brief=True)
@@ -331,7 +347,8 @@ async def main():
     # await find_affiliate_txs(app, 1, (ThorTxType.TYPE_SWAP,))
     # await demo_find_aggregator_error(app)
     # await demo_find_missed_txs_swap(app)
-    await demo_swap_synth(app)
+    # await demo_swap_synth(app)
+    await demo_swap_with_refund_and_incorrect_savings_vs_cex(app)
 
 
 if __name__ == '__main__':

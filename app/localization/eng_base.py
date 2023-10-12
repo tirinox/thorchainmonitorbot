@@ -206,7 +206,7 @@ class BaseLocalization(ABC):  # == English
     TEXT_NO_ADDRESSES = "🔆 You have not added any addresses yet. Send me one."
     TEXT_YOUR_ADDRESSES = '🔆 You added addresses:'
     TEXT_INVALID_ADDRESS = code('⛔️ Invalid address!')
-    TEXT_SELECT_ADDRESS_ABOVE = 'Select one from above. ☝️ '
+    TEXT_SELECT_ADDRESS_ABOVE = 'Please select one from above. ☝️ '
     TEXT_SELECT_ADDRESS_SEND_ME = 'If you want to add one more, please send me it. 👇'
     TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS = "📪 <i>This address doesn't participate in any liquidity pools.</i>"
     TEXT_CANNOT_ADD = '😐 Sorry, but you cannot add this address.'
