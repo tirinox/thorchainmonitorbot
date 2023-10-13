@@ -9,6 +9,7 @@ from services.lib.date_utils import full_years_old_ts
 from services.lib.depcont import DepContainer
 from services.lib.money import Asset
 from services.lib.utils import is_list_of_type, WithLogger
+from services.models.flipside import AlertKeyStats
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges
 from services.models.pol import AlertPOL
@@ -45,6 +46,8 @@ class AchievementsExtractor(WithLogger):
             kv_events = self.on_thor_pol(data)
         elif isinstance(data, AchievementTest):
             kv_events = self.on_test_event(data)
+        elif isinstance(data, AlertKeyStats):
+            kv_events = []  # todo!
         else:
             self.logger.warning(f'Unknown data type {type(data)} from {sender}. Dont know how to handle it.')
             kv_events = []
@@ -127,7 +130,8 @@ class AchievementsExtractor(WithLogger):
             events.append(Achievement(A.SAVER_VAULT_MEMBERS, vault.number_of_savers, specialization=asset))
             events.append(Achievement(A.SAVER_VAULT_SAVED_USD, int(vault.total_asset_saved_usd), specialization=asset))
             if not 'USD' in asset:
-                events.append(Achievement(A.SAVER_VAULT_SAVED_ASSET, int(vault.total_asset_saved), specialization=asset))
+                events.append(
+                    Achievement(A.SAVER_VAULT_SAVED_ASSET, int(vault.total_asset_saved), specialization=asset))
 
             earned = vault.calc_asset_earned(price_holder.pool_info_map)
             events.append(Achievement(A.SAVER_VAULT_EARNED_ASSET, int(earned), specialization=asset))
