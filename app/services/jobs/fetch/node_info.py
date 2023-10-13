@@ -25,12 +25,10 @@ class NodeInfoFetcher(BaseFetcher):
         nodes = []
         for j in raw_nodes:
             node = NodeInfo.from_json(j)
-            # node = self._dbg_node_magic(node)
             nodes.append(node)
 
         nodes.sort(key=lambda k: (k.status, -k.bond))
 
-        # nodes = self._dbg_test_churn(nodes)
         return nodes
 
     async def fetch(self) -> List[NodeInfo]:
@@ -75,36 +73,3 @@ class NodeInfoFetcher(BaseFetcher):
             node_list,
             ip_info_dict
         )
-
-    @staticmethod
-    def _dbg_test_churn(new_nodes: List[NodeInfo]):
-        """
-        This is for debug purposes
-        """
-        import random
-
-        active_nodes = [n for n in new_nodes if n.is_active]
-        ready_nodes = [n for n in new_nodes if n.is_standby and n.bond > 10_000]
-
-        n_activate = random.randint(1, min(7, len(ready_nodes)))
-        n_off = random.randint(1, min(7, len(active_nodes)))
-        nodes_off = random.sample(active_nodes, n_off)
-        nodes_on = random.sample(ready_nodes, n_activate)
-        for n in nodes_off:
-            n.status = NodeInfo.STANDBY
-        for n in nodes_on:
-            n.status = NodeInfo.ACTIVE
-
-        return new_nodes
-
-    @staticmethod
-    def _dbg_node_magic(node):
-        # if node.node_address == 'thor15tjtgxq7mz3ljwk0rzw6pvj43tz3xsv9f2wfzp':
-        if node.node_address == 'thor15tjtgxq7mz3ljwk0rzw6pvj43tz3xsv9f2wfzp':
-            # node.status = node.STANDBY
-            node.version = '1.88.5'
-            ...
-            # node.ip_address = f'127.0.0.{random.randint(1, 255)}'
-            # node.bond = 100000 + random.randint(0, 1000000)
-            print('dyatel', node.node_address, node.bond)
-        return node

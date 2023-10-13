@@ -5,16 +5,18 @@ from localization.manager import BaseLocalization
 from services.dialog.picture.achievement_picture import AchievementPictureGenerator
 from services.dialog.picture.block_height_picture import block_speed_chart
 from services.dialog.picture.key_stats_picture import KeyStatsPictureGenerator
+from services.dialog.picture.nodes_pictures import NodePictureGenerator
 from services.dialog.picture.savers_picture import SaversPictureGenerator
 from services.jobs.achievement.ach_list import Achievement
 from services.lib.constants import THOR_BLOCKS_PER_MINUTE
 from services.lib.delegates import INotified
+from services.lib.draw_utils import img_to_bio
 from services.lib.midgard.name_service import NameService
 from services.lib.w3.dex_analytics import DexReport
 from services.models.flipside import AlertKeyStats
 from services.models.last_block import EventBlockSpeed, BlockProduceState
 from services.models.loans import AlertLoanOpen, AlertLoanRepayment
-from services.models.node_info import NodeSetChanges
+from services.models.node_info import AlertNodeChurn
 from services.models.pol import AlertPOL
 from services.models.pool_info import PoolChanges
 from services.models.s_swap import AlertSwapStart
@@ -52,7 +54,7 @@ class AlertPresenter(INotified):
             await self._handle_pol(data)
         elif isinstance(data, Achievement):
             await self._handle_achievement(data)
-        elif isinstance(data, NodeSetChanges):
+        elif isinstance(data, AlertNodeChurn):
             await self._handle_node_churn(data)
         elif isinstance(data, AlertKeyStats):
             await self._handle_key_stats(data)
@@ -147,11 +149,28 @@ class AlertPresenter(INotified):
             BaseLocalization.notification_text_pol_utilization, event
         )
 
-    async def _handle_node_churn(self, event: NodeSetChanges):
-        # TEXT
-        await self.broadcaster.notify_preconfigured_channels(
-            BaseLocalization.notification_text_for_node_churn,
-            event)
+    async def _handle_node_churn(self, event: AlertNodeChurn):
+        if event.finished:
+            await self.broadcaster.notify_preconfigured_channels(
+                BaseLocalization.notification_text_node_churn_finish,
+                event.changes)
+
+            if event.with_picture:
+                async def _gen(loc: BaseLocalization):
+                    gen = NodePictureGenerator(event.network_info, event.bond_chart, loc)
+                    pic = await gen.generate()
+                    bio_graph = img_to_bio(pic, gen.proper_name())
+                    caption = loc.PIC_NODE_DIVERSITY_BY_PROVIDER_CAPTION
+                    return BoardMessage.make_photo(bio_graph, caption)
+
+                await self.broadcaster.notify_preconfigured_channels(_gen)
+
+        else:
+            # started
+            await self.broadcaster.notify_preconfigured_channels(
+                BaseLocalization.notification_churn_started,
+                event.changes
+            )
 
     async def _handle_key_stats(self, event: AlertKeyStats):
         # PICTURE

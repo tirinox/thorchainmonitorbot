@@ -16,7 +16,7 @@ from services.lib.texts import find_country_emoji
 from services.lib.thor_logic import get_effective_security_bond
 from services.models.base import BaseModelMixin
 
-ZERO_VERSION = VersionInfo(0, 0, 0)
+ZERO_VERSION = VersionInfo(0)
 
 
 class BondProvider(typing.NamedTuple):
@@ -495,6 +495,7 @@ class EventProviderStatus(NamedTuple):
     def duration(self) -> float:
         return now_ts() - self.previous_ts if self.previous_ts else 0
 
+
 class NodeEventType:
     VERSION_CHANGED = 'version_change'
     NEW_VERSION_DETECTED = 'new_version'
@@ -563,3 +564,11 @@ class NodeStatsItem(typing.NamedTuple):
     @property
     def is_valid(self):
         return self.n_active_nodes > 0 and self.bond_active_total > 0
+
+
+class AlertNodeChurn(NamedTuple):
+    changes: NodeSetChanges
+    finished: bool
+    with_picture: bool
+    network_info: Optional[NetworkNodeIpInfo] = None
+    bond_chart: Optional[List[NodeStatsItem]] = None

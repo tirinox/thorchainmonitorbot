@@ -526,7 +526,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         bond_delta = bond_in - bond_out
         return f'Active bond net change: {short_money(bond_delta, postfix=RAIDO_GLYPH, signed=True)}'
 
-    def notification_text_for_node_churn(self, changes: NodeSetChanges):
+    def notification_text_node_churn_finish(self, changes: NodeSetChanges):
         def _format_node_text_plain(node: NodeInfo):
             node_thor_link = short_address(node.node_address, 0)
             return f'{node.flag_emoji}{node_thor_link} ({short_money(node.bond, postfix=RAIDO_GLYPH)})'

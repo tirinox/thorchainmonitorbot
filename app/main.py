@@ -403,6 +403,7 @@ class App:
 
             notifier_nodes = NodeChurnNotifier(d)
             churn_detector.add_subscriber(notifier_nodes)
+            notifier_nodes.add_subscriber(d.alert_presenter)
 
             bond_provider_tools = PersonalBondProviderNotifier(d)
             churn_detector.add_subscriber(bond_provider_tools)

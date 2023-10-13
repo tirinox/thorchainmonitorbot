@@ -1,6 +1,5 @@
-import typing
+from typing import List
 
-from localization.manager import BaseLocalization
 from services.dialog.picture.nodes_pictures import NodePictureGenerator
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.jobs.node_churn import NodeChurnDetector
@@ -8,12 +7,10 @@ from services.lib.cooldown import Cooldown
 from services.lib.date_utils import HOUR, now_ts
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
-from services.lib.draw_utils import img_to_bio
 from services.lib.utils import WithLogger
 from services.models.node_db import NodeStateDatabase
-from services.models.node_info import NodeSetChanges, NetworkNodeIpInfo, NodeStatsItem
+from services.models.node_info import NodeSetChanges, NetworkNodeIpInfo, NodeStatsItem, AlertNodeChurn
 from services.models.time_series import TimeSeries
-from services.notify.channel import BoardMessage
 
 
 class NodeChurnNotifier(INotified, WithDelegates, WithLogger):
@@ -74,37 +71,35 @@ class NodeChurnNotifier(INotified, WithDelegates, WithLogger):
     async def _notify_when_node_churn_started(self, changes: NodeSetChanges):
         if await self._notify_cd.can_do():
             await self._notify_cd.do()
-
-            await self.deps.broadcaster.notify_preconfigured_channels(
-                BaseLocalization.notification_churn_started,
-                changes
-            )
+            await self.pass_data_to_listeners(AlertNodeChurn(changes, finished=False, with_picture=False))
 
     async def _notify_when_node_churn_finished(self, changes: NodeSetChanges):
-        if not await self._notify_cd.can_do():
-            return
+        if await self._notify_cd.can_do():
+            await self._notify_cd.do()
+            with_picture = changes.count_of_changes >= self._min_changes_to_post_picture
 
-        await self._notify_cd.do()
+            if with_picture:
+                node_fetcher = NodeInfoFetcher(self.deps)
+                result_network_info = await node_fetcher.get_node_list_and_geo_info(node_list=changes.nodes_all)
+                chart_pts = await NodeChurnNotifier(self.deps).load_last_statistics(NodePictureGenerator.CHART_PERIOD)
 
-        # TEXT
-        await self.deps.broadcaster.notify_preconfigured_channels(
-            BaseLocalization.notification_text_for_node_churn,
-            changes)
+                if not changes or not result_network_info:
+                    self.logger.error(f'Could not load necessary info: '
+                                      f'{bool(result_network_info) = }, {bool(chart_pts) = }')
+                    with_picture = False
 
-        # PICTURE
-        node_fetcher = NodeInfoFetcher(self.deps)
-        result_network_info = await node_fetcher.get_node_list_and_geo_info(node_list=changes.nodes_all)
+            else:
+                result_network_info = None
+                chart_pts = None
 
-        async def node_div_pic_gen(loc: BaseLocalization):
-            chart_pts = await NodeChurnNotifier(self.deps).load_last_statistics(NodePictureGenerator.CHART_PERIOD)
-            gen = NodePictureGenerator(result_network_info, chart_pts, loc)
-            pic = await gen.generate()
-            bio_graph = img_to_bio(pic, gen.proper_name())
-            caption = loc.PIC_NODE_DIVERSITY_BY_PROVIDER_CAPTION
-            return BoardMessage.make_photo(bio_graph, caption)
-
-        if changes.count_of_changes >= self._min_changes_to_post_picture:
-            await self.deps.broadcaster.notify_preconfigured_channels(node_div_pic_gen)
+            await self.pass_data_to_listeners(
+                AlertNodeChurn(
+                    changes,
+                    finished=True,
+                    with_picture=with_picture,
+                    network_info=result_network_info,
+                    bond_chart=chart_pts,
+                ))
 
     # ---- Various DB interactions ----
 
@@ -163,6 +158,6 @@ class NodeChurnNotifier(INotified, WithDelegates, WithLogger):
 
         await self._record_metrics_cd.do()
 
-    async def load_last_statistics(self, period_sec) -> typing.List[NodeStatsItem]:
+    async def load_last_statistics(self, period_sec) -> List[NodeStatsItem]:
         points = await self._node_stats_ts.get_last_values(period_sec, key=None, with_ts=True)
         return [NodeStatsItem.from_json(p) for p in points]

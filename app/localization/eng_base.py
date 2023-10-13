@@ -1267,7 +1267,7 @@ class BaseLocalization(ABC):  # == English
         bond_delta = bond_in - bond_out
         return f'Active bond net change: {code(short_money(bond_delta, postfix=RAIDO_GLYPH, signed=True))}'
 
-    def notification_text_for_node_churn(self, changes: NodeSetChanges):
+    def notification_text_node_churn_finish(self, changes: NodeSetChanges):
         message = ''
 
         if changes.nodes_activated or changes.nodes_deactivated:

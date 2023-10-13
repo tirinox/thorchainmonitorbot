@@ -193,7 +193,7 @@ def img_to_bio(image: PIL.Image.Image, name):
         return
 
     if isinstance(image, BytesIO):
-        logging.warning('Got BytesIO. Suppossed to be PIL.Image')
+        logging.warning('Got BytesIO. Supposed to be PIL.Image')
         return image
 
     bio = BytesIO()
