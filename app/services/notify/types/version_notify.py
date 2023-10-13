@@ -154,25 +154,3 @@ class VersionNotifier(INotified, WithDelegates, WithLogger):
 
         if self.is_version_activation_enabled:
             await self._handle_active_version_change(changes)
-
-    # ----- D E B U G    S T U F F -----
-
-    async def _dbg_notify(self, changes):
-        await self.deps.broadcaster.notify_preconfigured_channels(
-            BaseLocalization.notification_text_version_upgrade,
-            changes,
-            [VersionInfo.parse('1.90.2')],
-            None, None
-        )
-
-        await self.deps.broadcaster.notify_preconfigured_channels(
-            BaseLocalization.notification_text_version_upgrade,
-            changes, [],
-            VersionInfo.parse('1.90.4'),
-            VersionInfo.parse('1.90.5')
-        )
-
-        await self.deps.broadcaster.notify_preconfigured_channels(
-            BaseLocalization.notification_text_version_upgrade_progress,
-            changes, changes.version_consensus
-        )
