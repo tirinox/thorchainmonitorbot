@@ -536,6 +536,9 @@ class NodeEvent(NamedTuple):
     def new(cls, node: NodeInfo, ev_type, data):
         return cls(node.node_address, ev_type, data, node=node)
 
+    def __str__(self):
+        return f'NodeEvent({self.address}, type={self.type}, data={self.data})'
+
 
 class NodeStatsItem(typing.NamedTuple):
     ts: float

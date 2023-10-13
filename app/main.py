@@ -400,18 +400,19 @@ class App:
         if d.cfg.get('node_info.enabled', True):
             churn_detector = NodeChurnDetector(d)
             d.node_info_fetcher.add_subscriber(churn_detector)
+            tasks.append(d.node_info_fetcher)
 
             notifier_nodes = NodeChurnNotifier(d)
             churn_detector.add_subscriber(notifier_nodes)
             notifier_nodes.add_subscriber(d.alert_presenter)
 
-            bond_provider_tools = PersonalBondProviderNotifier(d)
-            churn_detector.add_subscriber(bond_provider_tools)
+            if d.cfg.get('node_info.bond_tools.enabled', True):
+                bond_provider_tools = PersonalBondProviderNotifier(d)
+                bond_provider_tools.log_events = d.cfg.get('node_info.bond_tools.log_events')
+                churn_detector.add_subscriber(bond_provider_tools)
 
             if achievements_enabled:
                 churn_detector.add_subscriber(achievements)
-
-            tasks.append(d.node_info_fetcher)
 
             if d.cfg.get('node_info.version.enabled', True):
                 notifier_version = VersionNotifier(d)

@@ -496,6 +496,10 @@ node_info:
       minimum_nodes: 4
       minimum_progress_step_percent: 5
 
+  bond_tools: # (!) new
+    enabled: true
+    log_events: true
+
 
 constants:
   mimir_change:
