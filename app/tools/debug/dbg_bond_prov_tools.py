@@ -12,17 +12,23 @@ from services.models.node_info import NodeEvent, NodeEventType, EventProviderSta
     EventProviderBondChange
 from services.notify.personal.bond_provider import PersonalBondProviderNotifier
 from tools.debug.dbg_record_nodes import NodesDBRecorder, NodePlayer
+from tools.lib.churn_sim import DbgChurnSimulator
 from tools.lib.lp_common import LpAppFramework
 
 
 async def demo_run_continuously(app: LpAppFramework):
     d = app.deps
 
+    d.node_info_fetcher.sleep_period = 5
+
     churn_detector = NodeChurnDetector(d)
     d.node_info_fetcher.add_subscriber(churn_detector)
 
+    churn_sim = DbgChurnSimulator(trigger_on_tick=2)
+    churn_detector.add_subscriber(churn_sim)
+
     bond_provider_tools = PersonalBondProviderNotifier(d)
-    churn_detector.add_subscriber(bond_provider_tools)
+    churn_sim.add_subscriber(bond_provider_tools)
 
     await d.node_info_fetcher.run()
 
@@ -87,7 +93,6 @@ async def demo_all_kinds_of_messages(app: LpAppFramework):
         await app.send_test_tg_message(aggregate_text)
 
 
-
 DEFAULTS_FILE_NAME_FOR_DB_BIG = f'../temp/mainnet_nodes_db_1.json'
 DEFAULTS_FILE_NAME_FOR_DB_SMALL = f'../temp/mainnet_nodes_db_small.json'
 
@@ -132,7 +137,8 @@ async def analise_churn(app: LpAppFramework):
     await recorder.load_db()
 
     # Churn example: 12606980 .. 12606982
-    changes = await recorder.diff_node_set_changes(12651634, 12651635)
+    # Churn example: 12990302 .. 12991502
+    changes = await recorder.diff_node_set_changes(12985895 - 5, 12985895 + 5)
     await recorder.save_db()
 
     bond_provider_tools = PersonalBondProviderNotifier(app.deps)
@@ -146,11 +152,9 @@ async def analise_churn(app: LpAppFramework):
     # this guy in
     await bond_provider_tools.watcher.add_user_to_node(TG_TEST_USER, 'thor1tcet6mxe80x89a8dlpynehlj4ya7cae4v3hmce')
 
-
     await bond_provider_tools.watcher.add_user_to_node(TG_TEST_USER, 'thor1yyfmkh6yd0tytk7nh7htq3fw27xsfk3x8wnr0j')
     await bond_provider_tools.watcher.add_user_to_node(TG_TEST_USER, 'thor1nmnq0r99fwfkp3pg8sdj4wlj2l96hx73m6835y')
     await bond_provider_tools.watcher.add_user_to_node(TG_TEST_USER, 'thor13tqs4dgvjyhukx2aed78lu6gz49t6penjwnd50')
-
 
     await bond_provider_tools.on_data(None, changes)
 
@@ -175,19 +179,18 @@ async def debug_fee_change(app: LpAppFramework):
     # print(fee_events)
 
 
-
 async def main():
     app = LpAppFramework(log_level=logging.INFO)
     async with app(brief=True):
         app.deps.thor_env.timeout = 100
-        # await demo_run_continuously(app)
+        await demo_run_continuously(app)
 
         # await run_playback(app, delay=0.01)
 
         # await debug_fee_change(app)
 
         # await demo_all_kinds_of_messages(app)
-        await analise_churn(app)
+        # await analise_churn(app)
 
 
 if __name__ == '__main__':

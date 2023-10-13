@@ -74,39 +74,3 @@ class NodeChurnDetector(WithDelegates, INotified, WithLogger):
         # result = self._dbg_modification(result)
 
         await self.pass_data_to_listeners(result, (sender, self))
-
-    # ------------------------------------------------------------------------------------------------------------------
-
-    def _dbg_modification(self, data: NodeSetChanges) -> NodeSetChanges:
-        # 1. new version
-        # for i in range(1, 55):
-        #     data.nodes_all[i].version = '1.90.1'
-        # data.nodes_all[1].version = '0.88.5'
-
-        # 2. Min versions
-        # for n in data.nodes_all:
-        #     if random.uniform(0, 1) > 0.5:
-        #         n.version = '0.57.5'
-        #     n.version = '0.61.66'
-        # data.nodes_all[0].version = '0.61.63'
-
-        # 3. Upgrade
-        # progress = 0.99  # 0..1
-        # for n in data.nodes_all:
-        #     if random.uniform(0, 1) <= progress:
-        #         n.version = '0.60.6'
-
-        # data.nodes_added.append(data.nodes_all[0])
-
-        # simulate churn
-        data.nodes_activated.append(data.nodes_all[1])
-        data.nodes_activated.append(data.nodes_all[2])
-        data.nodes_activated.append(data.nodes_all[3])
-        data.nodes_deactivated.append(data.nodes_all[4])
-        data.nodes_deactivated.append(data.nodes_all[5])
-        data.nodes_deactivated.append(data.nodes_all[6])
-        data.nodes_deactivated.append(data.nodes_all[7])
-        data.nodes_deactivated.append(data.nodes_all[8])
-        data.nodes_removed.append(data.nodes_all[9])
-
-        return data
