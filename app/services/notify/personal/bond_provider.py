@@ -37,14 +37,16 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
                 this_addresses, this_events = await handler(data)
                 if self.log_events:
                     for ev in events:
-                        self.logger.info('---- Bond provider event ----')
-                        self.logger.info({ev})
+                        ev: NodeEvent
+                        self.logger.info(f'Bond tools event: {ev}')
 
                 addresses |= this_addresses
                 events += this_events
 
             except Exception as e:
                 self.logger.exception(f'Failed to handle exception {e!r} in {handler.__name__}.', stack_info=True)
+
+        self.logger.info(f'Total: {len(events)} events affecting {len(addresses)} addresses')
 
         await self.group_and_send_messages(addresses, events)
 
