@@ -1,4 +1,5 @@
 import asyncio
+import html
 import logging
 from contextlib import suppress
 from typing import Optional
@@ -65,6 +66,8 @@ class MyWalletsMenu(DialogWithSettings):
     KEY_MY_POOLS = 'my-pools'
     KEY_LAST_POOL = 'last-pool'
 
+    MAX_NAME_LEN = 42
+
     # ----------- ENTER ------------
 
     @classmethod
@@ -115,10 +118,22 @@ class MyWalletsMenu(DialogWithSettings):
     async def _make_address_keyboard_list(self, my_addresses: dict):
         extra_row = []
 
+        local_ns = self.get_name_service(self.message)
+
         async def address_label(address):
-            thor_name = await self.deps.name_service.lookup_name_by_address(address)
-            name = add_thor_suffix(thor_name) if thor_name else address
-            label = short_address(name, 10, 5, filler='..')
+            # 1) try local name
+            name = await local_ns.get_wallet_local_name(address)
+            if not name:
+                # 2) try THOR name
+                name = await self.deps.name_service.lookup_name_by_address(address)
+                if name:
+                    name = add_thor_suffix(name)
+
+            if not name:
+                # 3) just use address if no name
+                name = address
+
+            label = short_address(name, 11, 4, filler='..')
             return label, address
 
         # Every button is tuple of (label, full_address)
@@ -157,7 +172,7 @@ class MyWalletsMenu(DialogWithSettings):
 
     async def _on_selected_address(self, message: Message, address, index, edit=True):
         await LPMenuStates.WALLET_MENU.set()
-        address = self.data[self.KEY_ACTIVE_ADDRESS] = address
+        self.data[self.KEY_ACTIVE_ADDRESS] = address
         self.data[self.KEY_ACTIVE_ADDRESS_INDEX] = index
 
         await self.show_wallet_menu_for_address(message, address, edit=edit)
@@ -215,7 +230,7 @@ class MyWalletsMenu(DialogWithSettings):
     async def _present_wallet_contents_menu(self, message: Message, edit: bool):
         await LPMenuStates.WALLET_MENU.set()
 
-        address = self.data[self.KEY_ACTIVE_ADDRESS]
+        address = self.current_address
         my_pools = self.my_pools
 
         address_obj = self._get_address_object(address)
@@ -223,13 +238,15 @@ class MyWalletsMenu(DialogWithSettings):
         min_limit = float(address_obj.get(Props.PROP_MIN_LIMIT, 0))
         chain = address_obj.get(Props.PROP_CHAIN, '')
 
-        balances = await self.get_balances(address)
-
-        thor_name = await self.deps.name_service.lookup_name_by_address(address)
+        balances, thor_name, local_name = await asyncio.gather(
+            self.get_balances(address),
+            self.deps.name_service.lookup_name_by_address(address),
+            self.get_name_service(message).get_wallet_local_name(address)
+        )
 
         text = self.loc.text_inside_my_wallet_title(address, my_pools, balances,
                                                     min_limit if track_balance else None,
-                                                    chain, thor_name)
+                                                    chain, thor_name, local_name)
         inline_kbd = self._keyboard_inside_wallet_menu().keyboard()
         if edit:
             await message.edit_text(text=text,
@@ -323,7 +340,7 @@ class MyWalletsMenu(DialogWithSettings):
             await self._toggle_subscription(query)
 
     async def _show_wallet_again(self, query: CallbackQuery, edit=False):
-        address = self.data[self.KEY_ACTIVE_ADDRESS]
+        address = self.current_address
         await self.show_wallet_menu_for_address(query.message, address, edit=edit)
 
     # ---- Wallet settings ----
@@ -399,12 +416,12 @@ class MyWalletsMenu(DialogWithSettings):
             self.data[self.KEY_CAN_VIEW_VALUE] = not self.data.get(self.KEY_CAN_VIEW_VALUE, True)
             await self._present_wallet_contents_menu(query.message, edit=True)
         elif query.data == self.QUERY_TOGGLE_BALANCE:
-            address = self.data[self.KEY_ACTIVE_ADDRESS]
+            address = self.current_address
             is_on = self._toggle_address_property(address, Props.PROP_TRACK_BALANCE)
             await self._process_wallet_balance_flag(address, is_on)
             await self._present_wallet_contents_menu(query.message, edit=True)
         elif query.data == self.QUERY_BOND_PROVIDER:
-            address = self.data[self.KEY_ACTIVE_ADDRESS]
+            address = self.current_address
             is_on = self._toggle_address_property(address, Props.PROP_TRACK_BOND, default=True)
             await self._process_wallet_track_bond_flag(address, is_on)
             await self._present_wallet_contents_menu(query.message, edit=True)
@@ -431,8 +448,8 @@ class MyWalletsMenu(DialogWithSettings):
         else:
             period = False
 
-        address = self.data[self.KEY_ACTIVE_ADDRESS]
-        user_id = str(query.message.chat.id)
+        address = self.current_address
+        user_id = str(self.user_id(query.message))
 
         try:
             if period:
@@ -456,7 +473,7 @@ class MyWalletsMenu(DialogWithSettings):
     async def _enter_set_limit(self, query: CallbackQuery):
         await LPMenuStates.SET_LIMIT.set()
 
-        address = self.data[self.KEY_ACTIVE_ADDRESS]
+        address = self.current_address
         address_obj = self._get_address_object(address)
         current_min_limit = float(address_obj.get(Props.PROP_MIN_LIMIT, 0))
 
@@ -486,7 +503,7 @@ class MyWalletsMenu(DialogWithSettings):
 
     @query_handler(state=LPMenuStates.SET_LIMIT)
     async def on_set_limit_query(self, query: CallbackQuery):
-        address = self.data[self.KEY_ACTIVE_ADDRESS]
+        address = self.current_address
 
         if query.data != self.QUERY_CANCEL:
             self._set_rune_limit(address, query.data)
@@ -501,7 +518,7 @@ class MyWalletsMenu(DialogWithSettings):
             await message.reply(self.loc.TEXT_INVALID_LIMIT, disable_notification=True)
             return
 
-        address = self.data[self.KEY_ACTIVE_ADDRESS]
+        address = self.current_address
         self._set_rune_limit(address, value)
 
         await self.show_wallet_menu_for_address(message, address, reload_pools=False, edit=False)
@@ -509,7 +526,7 @@ class MyWalletsMenu(DialogWithSettings):
     # --- LP Pic generation actions ----
 
     async def view_pool_report(self, query: CallbackQuery, pool, allow_subscribe=False):
-        address = self.data[self.KEY_ACTIVE_ADDRESS]
+        address = self.current_address
 
         self.data[self.KEY_LAST_POOL] = pool
 
@@ -544,7 +561,7 @@ class MyWalletsMenu(DialogWithSettings):
                              self.safe_delete(sticker))
 
     async def view_address_summary(self, query: CallbackQuery):
-        address = self.data[self.KEY_ACTIVE_ADDRESS]
+        address = self.current_address
 
         my_pools = self.my_pools
         if not my_pools:
@@ -585,6 +602,13 @@ class MyWalletsMenu(DialogWithSettings):
     @property
     def my_pools(self):
         return self.data.get(self.KEY_MY_POOLS, []) or []
+
+    @property
+    def current_address(self):
+        return self.data[self.KEY_ACTIVE_ADDRESS]
+
+    def get_name_service(self, message):
+        return self.deps.name_service.get_local_service(self.user_id(message))
 
     def _add_address(self, new_addr, chain):
         if not new_addr:
@@ -627,7 +651,7 @@ class MyWalletsMenu(DialogWithSettings):
 
     def _get_address_object(self, address=None):
         if not address:
-            address = self.data[self.KEY_ACTIVE_ADDRESS]
+            address = self.current_address
         return self.my_addresses.get(address, {})
 
     def _set_rune_limit(self, address, raw_data):
@@ -698,8 +722,8 @@ class MyWalletsMenu(DialogWithSettings):
         if not pool:
             return
 
-        address = self.data[self.KEY_ACTIVE_ADDRESS]
-        user_id = str(query.message.chat.id)
+        address = self.current_address
+        user_id = str(self.user_id(query.message))
 
         is_subscribed = await self._is_subscribed(user_id, address, pool)
         is_subscribed = not is_subscribed
@@ -727,7 +751,7 @@ class MyWalletsMenu(DialogWithSettings):
         return await self._subscribers.when_next(user_id, address, pool) is not None
 
     async def _get_picture_bottom_keyboard(self, query: CallbackQuery, address, pool):
-        user_id = str(query.message.chat.id)
+        user_id = str(self.user_id(query.message))
 
         is_subscribed = await self._is_subscribed(user_id, address, pool)
         picture_kb = InlineKeyboardMarkup(inline_keyboard=[
@@ -744,28 +768,43 @@ class MyWalletsMenu(DialogWithSettings):
 
     @message_handler(state=LPMenuStates.SET_NAME)
     async def set_name_message_handler(self, message: Message):
-        # todo validate the name and set it!
-        print('todo!')
+        name = message.text.strip()[:self.MAX_NAME_LEN]
+        name = html.escape(name)
 
-        await self._present_wallet_contents_menu(message, edit=True)
+        await self.get_name_service(message).set_wallet_local_name(self.current_address, name)
+
+        await message.answer(
+            self.loc.text_my_wallet_name_changed(self.current_address, name),
+            disable_notification=True,
+        )
+
+        await self._present_wallet_contents_menu(message, edit=False)
 
     @query_handler(state=LPMenuStates.SET_NAME)
     async def on_set_limit_query(self, query: CallbackQuery):
         if query.data == self.QUERY_CANCEL:
             pass
         elif query.data == self.QUERY_CLEAR_NAME:
-            ...  # todo: set name = ''
+            await self.get_name_service(query.message).delete_wallet_local_name(self.current_address)
+            await query.answer(self.loc.TEXT_NAME_UNSET)
+
         await self._present_wallet_contents_menu(query.message, edit=True)
 
     async def _enter_wallet_set_name(self, query: CallbackQuery):
         await LPMenuStates.SET_NAME.set()
 
-        button_matrix = [
-            [InlineKeyboardButton(self.loc.BUTTON_WALLET_NAME_EMPTY, callback_data=self.QUERY_CLEAR_NAME)],
-            [InlineKeyboardButton(self.loc.BUTTON_CANCEL, callback_data=self.QUERY_CANCEL)]
-        ]
+        address = self.current_address
+        button_matrix = []
+
+        name = await self.get_name_service(query.message).get_wallet_local_name(address)
+        if name:
+            button_matrix.append([
+                InlineKeyboardButton(self.loc.BUTTON_CLEAR_NAME, callback_data=self.QUERY_CLEAR_NAME)
+            ])
+
+        button_matrix.append([InlineKeyboardButton(self.loc.BUTTON_CANCEL, callback_data=self.QUERY_CANCEL)])
 
         await query.message.edit_text(
-            self.loc.TEXT_SET_WALLET_NAME,
+            self.loc.text_wallet_name_dialog(address, name),
             reply_markup=InlineKeyboardMarkup(inline_keyboard=button_matrix)
         )

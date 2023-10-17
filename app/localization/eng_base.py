@@ -217,11 +217,11 @@ class BaseLocalization(ABC):  # == English
     BUTTON_WALLET_SETTINGS = '⚙️ Wallet settings'
     BUTTON_WALLET_NAME = 'Set name'
 
-    BUTTON_WALLET_NAME_EMPTY = 'None (use the address)'
-    TEXT_SET_WALLET_NAME = ('This name will appear in the wallet list instead of the address for your convenience.\n'
-                            '<b>Please, send me a name by message.</b> 👇')
+    BUTTON_CLEAR_NAME = 'None (use the address)'
 
     BUTTON_CANCEL = 'Cancel'
+
+    TEXT_NAME_UNSET = 'The name has been unlinked.'
 
     def text_set_rune_limit_threshold(self, address, curr_limit):
         return (
@@ -244,6 +244,20 @@ class BaseLocalization(ABC):  # == English
 
         return (f'🎚 Wallet "{code(address)}"{name_str} settings.'
                 f'{limit_str}')
+
+    @staticmethod
+    def text_my_wallet_name_changed(address, name):
+        return f'🎉 The new name is set to "{code(name)}" for wallet with address "{code(address)}".'
+
+    @staticmethod
+    def text_wallet_name_dialog(address, name):
+        message = (
+            f'This name will appear in the wallet list instead of the address ({pre(address)}) for your convenience.\n'
+        )
+        if name:
+            message += f'The current name is "{code(name)}".\n'
+        message += '<b>Please, send me a name by message.</b> 👇'
+        return message
 
     def text_lp_img_caption(self):
         bot_link = "@" + self.this_bot_name
@@ -320,7 +334,7 @@ class BaseLocalization(ABC):  # == English
         return result + '\n\n'
 
     def text_inside_my_wallet_title(self, address, pools, balances: ThorBalances, min_limit: float, chain,
-                                    thor_name: Optional[ThorName]):
+                                    thor_name: Optional[ThorName], local_name):
         if pools:
             title = '\n'
             footer = "\n\n👇 Click on the button to get a detailed card of LP yield."
@@ -334,7 +348,9 @@ class BaseLocalization(ABC):  # == English
 
         acc_caption = ''
         if thor_name:
-            acc_caption = f' (THORName: {pre(add_thor_suffix(thor_name))})'
+            acc_caption += f' | THORName: {pre(add_thor_suffix(thor_name))}'
+        if local_name:
+            acc_caption += f' | Local name: {pre(local_name)}'
 
         thor_yield_url = get_thoryield_address(self.cfg.network_id, address, chain)
         thor_yield_link = link(thor_yield_url, 'THORYield')
@@ -1806,7 +1822,7 @@ class BaseLocalization(ABC):  # == English
         'You added <pre>{n}</pre> nodes to your watchlist. ' \
         'Select one in the menu below to stop monitoring the node.'
 
-    TEXT_NOP_ADD_INSTRUCTIONS_PRE = 'Select the nodes which you would like to add to <b>your watchlist</b> ' \
+    TEXT_NOP_ADD_INSTRUCTIONS_PRE = 'Please select the nodes which you would like to add to <b>your watchlist</b> ' \
                                     'from the list below.'
 
     TEXT_NOP_ADD_INSTRUCTIONS = '🤓 If you know the addresses of the nodes you are interested in, ' \
@@ -2245,6 +2261,8 @@ class BaseLocalization(ABC):  # == English
 
         thor_yield_url = get_thoryield_address(self.cfg.network_id, address)
         thor_yield_link = link(thor_yield_url, 'THORYield')
+
+        # todo: local name
 
         return (
             f'Your LP/Savers position report {explorer_link} in the pool {pre(pretty_pool)} is ready.\n'

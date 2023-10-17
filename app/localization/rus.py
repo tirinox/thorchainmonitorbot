@@ -178,8 +178,9 @@ class RussianLocalization(BaseLocalization):
 
     BUTTON_WALLET_SETTINGS = '⚙️ Настройки кошелька'
     BUTTON_WALLET_NAME = 'Задать имя'
-    TEXT_SET_WALLET_NAME = ('Данное имя будет отображаться в списке кошельков вместо адреса для вашего удобства.'
-                            '<b>Пожалуйста, отправьте мне новое имя сообщением.</b> 👇')
+    BUTTON_CLEAR_NAME = 'Отвязать имя'
+
+    TEXT_NAME_UNSET = 'Имя было отвязано от адреса.'
 
     def text_set_rune_limit_threshold(self, address, curr_limit):
         return (
@@ -202,6 +203,20 @@ class RussianLocalization(BaseLocalization):
 
         return (f'🎚 Настройки кошелька "{code(address)}"{name_str}.'
                 f'{limit_str}')
+
+    @staticmethod
+    def text_my_wallet_name_changed(address, name):
+        return f'🎉 Новое имя установлено "{code(name)}" для кошелька с адресом "{code(address)}".'
+
+    @staticmethod
+    def text_wallet_name_dialog(address, name):
+        message = (
+            f'Для вашего удобства вы можете задать имя для этого адреса ({pre(address)}).\n'
+        )
+        if name:
+            message += f'Текущее имя: "{code(name)}".\n'
+        message += '<b>Пожалуйста, отправьте мне сообщение с новым названием для этого адреса</b> 👇'
+        return message
 
     def text_lp_img_caption(self):
         bot_link = "@" + self.this_bot_name
@@ -259,7 +274,7 @@ class RussianLocalization(BaseLocalization):
                f'Иногда она может идти долго, если Midgard сильно нагружен.'
 
     def text_inside_my_wallet_title(self, address, pools, balances: ThorBalances, min_limit: float, chain,
-                                    thor_name: Optional[ThorName]):
+                                    thor_name: Optional[ThorName], local_name):
         if pools:
             title = '\n'
             footer = '\n\n👇 Выберите пул, чтобы получить подробную карточку информации о ликвидности.'
@@ -273,7 +288,9 @@ class RussianLocalization(BaseLocalization):
 
         acc_caption = ''
         if thor_name:
-            acc_caption = f' (THORName: {code(add_thor_suffix(thor_name))})'
+            acc_caption += f' | THORName: {code(add_thor_suffix(thor_name))}'
+        if local_name:
+            acc_caption += f' | Имя: {code(local_name)}'
 
         thor_yield_url = get_thoryield_address(self.cfg.network_id, address, chain)
         thor_yield_link = link(thor_yield_url, 'THORYield')
@@ -1701,6 +1718,8 @@ class RussianLocalization(BaseLocalization):
 
         thor_yield_url = get_thoryield_address(self.cfg.network_id, address)
         thor_yield_link = link(thor_yield_url, 'THORYield')
+
+        # todo: local name
 
         return (
             f'Ваш отчет для адреса {explorer_link} в пуле {pre(pretty_pool)} готов.\n'
