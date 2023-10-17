@@ -35,6 +35,8 @@ class LPMenuStates(StatesGroup):
     WALLET_MENU = State()
     SET_LIMIT = State()
     SET_PERIOD = State()
+    WALLET_SETTINGS = State()
+    SET_NAME = State()
 
 
 class MyWalletsMenu(DialogWithSettings):
@@ -50,6 +52,10 @@ class MyWalletsMenu(DialogWithSettings):
     QUERY_7D = '7d'
     QUERY_30D = '30d'
     QUERY_BOND_PROVIDER = 'bond-provider'
+    QUERY_WALLET_SETTINGS = 'wallet-settings'
+    QUERY_BACK = 'back'
+    QUERY_SET_NAME = 'name'
+    QUERY_CLEAR_NAME = 'clear-name'
 
     KEY_CAN_VIEW_VALUE = 'can-view-value'
     KEY_ADD_LP_PROTECTION = 'add-lp-prot'
@@ -61,19 +67,23 @@ class MyWalletsMenu(DialogWithSettings):
 
     # ----------- ENTER ------------
 
+    @classmethod
+    async def easy_enter(cls, source_dialog):
+        await cls.from_other_dialog(source_dialog).call_in_context(cls.on_enter)
+
     async def on_enter(self, message: Message):
         self._migrate_data()
         await self._show_address_selection_menu(message)
 
     # ---- WALLET LIST ------
 
-    async def _add_address_handler(self, message: Message, edit: bool):
+    async def _add_address_handler(self, message: Message):
         # this handler adds an address
         address = message.text.strip()
         if not address:
             return
 
-        chain = Chains.BNB
+        chain = Chains.detect_chain(address) or Chains.BTC
 
         thor_name = await self.deps.name_service.lookup_thorname_by_name(address.lower(), forced=True)
         if thor_name:
@@ -100,7 +110,7 @@ class MyWalletsMenu(DialogWithSettings):
         if message.text == self.loc.BUTTON_BACK:
             await self.go_back(message)
         else:
-            await self._add_address_handler(message, edit=False)
+            await self._add_address_handler(message)
 
     async def _make_address_keyboard_list(self, my_addresses: dict):
         extra_row = []
@@ -150,7 +160,7 @@ class MyWalletsMenu(DialogWithSettings):
         address = self.data[self.KEY_ACTIVE_ADDRESS] = address
         self.data[self.KEY_ACTIVE_ADDRESS_INDEX] = index
 
-        await self.show_pool_menu_for_address(message, address, edit=edit)
+        await self.show_wallet_menu_for_address(message, address, edit=edit)
 
     @query_handler(state=LPMenuStates.MAIN_MENU)
     async def on_tap_address(self, query: CallbackQuery):
@@ -167,15 +177,13 @@ class MyWalletsMenu(DialogWithSettings):
 
     @message_handler(state=LPMenuStates.WALLET_MENU)
     async def inside_wallet_message_handler(self, message: Message):
-        await self._add_address_handler(message, edit=False)
+        await self._add_address_handler(message)
 
-    async def show_pool_menu_for_address(self, message: Message,
-                                         address: str,
-                                         reload_pools=True,
-                                         edit=True,
-                                         external=False):
-        await LPMenuStates.WALLET_MENU.set()
-
+    async def show_wallet_menu_for_address(self, message: Message,
+                                           address: str,
+                                           reload_pools=True,
+                                           edit=True,
+                                           external=False):
         # external means that it is not in my list! (called from MainMenu)
         self.data[self.KEY_ACTIVE_ADDRESS] = address
         self.data[self.KEY_IS_EXTERNAL] = external
@@ -205,8 +213,10 @@ class MyWalletsMenu(DialogWithSettings):
         await self._present_wallet_contents_menu(message, edit=edit)
 
     async def _present_wallet_contents_menu(self, message: Message, edit: bool):
+        await LPMenuStates.WALLET_MENU.set()
+
         address = self.data[self.KEY_ACTIVE_ADDRESS]
-        my_pools = self.data[self.KEY_MY_POOLS]
+        my_pools = self.my_pools
 
         address_obj = self._get_address_object(address)
         track_balance = address_obj.get(Props.PROP_TRACK_BALANCE, False)
@@ -241,20 +251,9 @@ class MyWalletsMenu(DialogWithSettings):
 
     def _keyboard_inside_wallet_menu(self) -> TelegramInlineList:
         external = self.data.get(self.KEY_IS_EXTERNAL, False)
-        view_value = self.data.get(self.KEY_CAN_VIEW_VALUE, True)
-        my_pools = self.data.get(self.KEY_MY_POOLS, [])
+        my_pools = self.my_pools
 
         addr_idx = int(self.data.get(self.KEY_ACTIVE_ADDRESS_INDEX, 0))
-        address = self.data.get(self.KEY_ACTIVE_ADDRESS)
-        address_obj = self._get_address_object(address)
-        track_balance = address_obj.get(Props.PROP_TRACK_BALANCE, False)
-        track_bond = address_obj.get(Props.PROP_TRACK_BOND, True)
-
-        if my_pools is None:
-            my_pools = []
-
-        chain = Chains.detect_chain(address)
-        chain = chain if chain else Chains.BTC  # fixme: how about other chains?
 
         # ---------------------------- POOLS ------------------------------
         pool_labels = [(self.pool_label(pool), pool) for pool in my_pools]
@@ -271,53 +270,32 @@ class MyWalletsMenu(DialogWithSettings):
         # ---------------------------- ROW 1 ------------------------------
         row1 = []
         if my_pools:
-            # View value ON/OFF toggle switch
-            row1.append(InlineKeyboardButton(
-                self.loc.BUTTON_VIEW_VALUE_ON if view_value else self.loc.BUTTON_VIEW_VALUE_OFF,
-                callback_data=self.QUERY_TOGGLE_VIEW_VALUE))
-
             # Summary button (only if there are LP pools)
-            row1.append(InlineKeyboardButton(
-                self.loc.BUTTON_SM_SUMMARY,
-                callback_data=f'{self.QUERY_SUMMARY_OF_ADDRESS}:{addr_idx}'))
+            row1.append(InlineKeyboardButton(self.loc.BUTTON_SM_SUMMARY,
+                                             callback_data=f'{self.QUERY_SUMMARY_OF_ADDRESS}:{addr_idx}'))
 
-        below_button_matrix.append(row1)
+        if not external:
+            # Wallet settings
+            text = self.text_new_feature(self.loc.BUTTON_WALLET_SETTINGS, Features.F_WALLET_SETTINGS)
+            row1.append(InlineKeyboardButton(text, callback_data=self.QUERY_WALLET_SETTINGS))
 
-        # ---------------------------- ROW 2 ------------------------------
-        row2 = []
-
-        if chain == Chains.THOR and not external:
-            # Track balance ON/OFF toggle switch
-            text = self.loc.BUTTON_TRACK_BALANCE_ON if track_balance else self.loc.BUTTON_TRACK_BALANCE_OFF
-            text = self.text_new_feature(text, Features.F_PERSONAL_TRACK_BALANCE)
-            row2.append(InlineKeyboardButton(text, callback_data=self.QUERY_TOGGLE_BALANCE))
-
-            if track_balance:
-                text = self.text_new_feature(self.loc.BUTTON_SET_RUNE_ALERT_LIMIT,
-                                             Features.F_PERSONAL_TRACK_BALANCE_LIMIT)
-                row2.append(InlineKeyboardButton(text, callback_data=self.QUERY_SET_RUNE_LIMIT))
-
-        if row2:
-            below_button_matrix.append(row2)
-
-        # ---------------------------- ROW 3 ------------------------------
-
-        if chain == Chains.THOR and not external:
-            text = self.loc.BUTTON_TRACK_BOND_ON if track_bond else self.loc.BUTTON_TRACK_BOND_OFF
-            text = self.text_new_feature(text, Features.F_BOND_PROVIDER)
-            row3 = [InlineKeyboardButton(text, callback_data=self.QUERY_BOND_PROVIDER)]
-            below_button_matrix.append(row3)
+        if row1:
+            below_button_matrix.append(row1)
 
         # ---------------------------- ROW 4 ------------------------------
-        row4 = []
+        # Back button
+        row4 = [
+            InlineKeyboardButton(self.loc.BUTTON_SM_BACK_TO_LIST, callback_data=tg_list.data_back)
+        ]
 
         if not external:
             # Remove this address button
-            row4.append(InlineKeyboardButton(self.loc.BUTTON_REMOVE_THIS_ADDRESS,
-                                             callback_data=f'{self.QUERY_REMOVE_ADDRESS}:{addr_idx}'))
-
-        # Back button
-        row4.append(InlineKeyboardButton(self.loc.BUTTON_SM_BACK_TO_LIST, callback_data=tg_list.data_back))
+            row4.append(
+                InlineKeyboardButton(
+                    self.loc.BUTTON_REMOVE_THIS_ADDRESS,
+                    callback_data=f'{self.QUERY_REMOVE_ADDRESS}:{addr_idx}'
+                )
+            )
 
         below_button_matrix.append(row4)
 
@@ -339,6 +317,84 @@ class MyWalletsMenu(DialogWithSettings):
             _, index = query.data.split(':')
             await self._remove_address(index)
             await self._show_address_selection_menu(query.message, edit=True, show_add_more=False)
+        elif query.data == self.QUERY_WALLET_SETTINGS:
+            await self._present_wallet_settings(query)
+        elif query.data == self.QUERY_SUBSCRIBE:
+            await self._toggle_subscription(query)
+
+    async def _show_wallet_again(self, query: CallbackQuery, edit=False):
+        address = self.data[self.KEY_ACTIVE_ADDRESS]
+        await self.show_wallet_menu_for_address(query.message, address, edit=edit)
+
+    # ---- Wallet settings ----
+
+    async def _present_wallet_settings(self, query):
+        await LPMenuStates.WALLET_SETTINGS.set()
+
+        my_pools = self.my_pools
+        external = self.data.get(self.KEY_IS_EXTERNAL, False)
+
+        address = self.data.get(self.KEY_ACTIVE_ADDRESS)
+        address_obj = self._get_address_object(address)
+        track_balance = address_obj.get(Props.PROP_TRACK_BALANCE, False)
+        track_bond = address_obj.get(Props.PROP_TRACK_BOND, True)
+        view_value = self.data.get(self.KEY_CAN_VIEW_VALUE, True)
+        chain = Chains.detect_chain(address)
+        min_limit = float(address_obj.get(Props.PROP_MIN_LIMIT, 0))
+        name = ''  # todo get from DB
+
+        button_matrix = []
+
+        if my_pools:
+            # View value ON/OFF toggle switch
+            button_matrix.append([InlineKeyboardButton(
+                self.loc.BUTTON_VIEW_VALUE_ON if view_value else self.loc.BUTTON_VIEW_VALUE_OFF,
+                callback_data=self.QUERY_TOGGLE_VIEW_VALUE)
+            ])
+
+        row2 = []
+        if chain == Chains.THOR and not external:
+            # Track balance ON/OFF toggle switch
+            text = self.loc.BUTTON_TRACK_BALANCE_ON if track_balance else self.loc.BUTTON_TRACK_BALANCE_OFF
+            text = self.text_new_feature(text, Features.F_PERSONAL_TRACK_BALANCE)
+            row2.append(InlineKeyboardButton(text, callback_data=self.QUERY_TOGGLE_BALANCE))
+
+            if track_balance:
+                text = self.text_new_feature(self.loc.BUTTON_SET_RUNE_ALERT_LIMIT,
+                                             Features.F_PERSONAL_TRACK_BALANCE_LIMIT)
+                row2.append(InlineKeyboardButton(text, callback_data=self.QUERY_SET_RUNE_LIMIT))
+
+        if row2:
+            button_matrix.append(row2)
+
+        # ---------------------------- ROW 3 ------------------------------
+
+        row3 = []
+        if chain == Chains.THOR and not external:
+            text = self.loc.BUTTON_TRACK_BOND_ON if track_bond else self.loc.BUTTON_TRACK_BOND_OFF
+            text = self.text_new_feature(text, Features.F_BOND_PROVIDER)
+            row3.append(InlineKeyboardButton(text, callback_data=self.QUERY_BOND_PROVIDER))
+
+        set_name_text = self.text_new_feature(self.loc.BUTTON_WALLET_NAME, Features.F_WALLET_SETTINGS)
+        row3.append(InlineKeyboardButton(set_name_text, callback_data=self.QUERY_SET_NAME))
+        button_matrix.append(row3)
+
+        button_matrix.append([
+            InlineKeyboardButton(self.loc.BUTTON_BACK, callback_data=self.QUERY_BACK)
+        ])
+
+        # ----
+
+        text = self.loc.text_my_wallet_settings(address, name=name, min_limit=min_limit)
+        inline_kbd = InlineKeyboardMarkup(inline_keyboard=button_matrix)
+        await query.message.edit_text(text=text,
+                                      reply_markup=inline_kbd,
+                                      disable_web_page_preview=True)
+
+    @query_handler(state=LPMenuStates.WALLET_SETTINGS)
+    async def on_wallet_settings_query(self, query: CallbackQuery):
+        if query.data == self.QUERY_BACK:
+            await self._present_wallet_contents_menu(query.message, edit=True)
         elif query.data == self.QUERY_TOGGLE_VIEW_VALUE:
             self.data[self.KEY_CAN_VIEW_VALUE] = not self.data.get(self.KEY_CAN_VIEW_VALUE, True)
             await self._present_wallet_contents_menu(query.message, edit=True)
@@ -354,12 +410,9 @@ class MyWalletsMenu(DialogWithSettings):
             await self._present_wallet_contents_menu(query.message, edit=True)
         elif query.data == self.QUERY_SET_RUNE_LIMIT:
             await self._enter_set_limit(query)
-        elif query.data == self.QUERY_SUBSCRIBE:
-            await self._toggle_subscription(query)
-
-    async def _show_wallet_again(self, query: CallbackQuery):
-        address = self.data[self.KEY_ACTIVE_ADDRESS]
-        await self.show_pool_menu_for_address(query.message, address, edit=False)
+        elif query.data == self.QUERY_SET_NAME:
+            await self._enter_wallet_set_name(query)
+        await query.answer()
 
     @query_handler(state=LPMenuStates.SET_PERIOD)
     async def on_period_selected(self, query: CallbackQuery):
@@ -438,7 +491,7 @@ class MyWalletsMenu(DialogWithSettings):
         if query.data != self.QUERY_CANCEL:
             self._set_rune_limit(address, query.data)
 
-        await self.show_pool_menu_for_address(query.message, address, reload_pools=False)
+        await self._present_wallet_contents_menu(query.message, edit=True)
 
     @message_handler(state=LPMenuStates.SET_LIMIT)
     async def on_message_set_limit(self, message: Message):
@@ -451,9 +504,9 @@ class MyWalletsMenu(DialogWithSettings):
         address = self.data[self.KEY_ACTIVE_ADDRESS]
         self._set_rune_limit(address, value)
 
-        await self.show_pool_menu_for_address(message, address, reload_pools=False, edit=False)
+        await self.show_wallet_menu_for_address(message, address, reload_pools=False, edit=False)
 
-    # --- LP Pic generation actions:
+    # --- LP Pic generation actions ----
 
     async def view_pool_report(self, query: CallbackQuery, pool, allow_subscribe=False):
         address = self.data[self.KEY_ACTIVE_ADDRESS]
@@ -493,7 +546,7 @@ class MyWalletsMenu(DialogWithSettings):
     async def view_address_summary(self, query: CallbackQuery):
         address = self.data[self.KEY_ACTIVE_ADDRESS]
 
-        my_pools = self.data[self.KEY_MY_POOLS]
+        my_pools = self.my_pools
         if not my_pools:
             await query.message.answer(self.loc.TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS, disable_notification=True)
             return
@@ -528,6 +581,10 @@ class MyWalletsMenu(DialogWithSettings):
     @property
     def my_addresses(self) -> dict:
         return self.global_data.setdefault(Props.KEY_ADDRESSES, {})
+
+    @property
+    def my_pools(self):
+        return self.data.get(self.KEY_MY_POOLS, []) or []
 
     def _add_address(self, new_addr, chain):
         if not new_addr:
@@ -683,6 +740,32 @@ class MyWalletsMenu(DialogWithSettings):
         ])
         return picture_kb
 
-    @classmethod
-    async def easy_enter(cls, source_dialog):
-        await cls.from_other_dialog(source_dialog).call_in_context(cls.on_enter)
+    # --- Set name ---
+
+    @message_handler(state=LPMenuStates.SET_NAME)
+    async def set_name_message_handler(self, message: Message):
+        # todo validate the name and set it!
+        print('todo!')
+
+        await self._present_wallet_contents_menu(message, edit=True)
+
+    @query_handler(state=LPMenuStates.SET_NAME)
+    async def on_set_limit_query(self, query: CallbackQuery):
+        if query.data == self.QUERY_CANCEL:
+            pass
+        elif query.data == self.QUERY_CLEAR_NAME:
+            ...  # todo: set name = ''
+        await self._present_wallet_contents_menu(query.message, edit=True)
+
+    async def _enter_wallet_set_name(self, query: CallbackQuery):
+        await LPMenuStates.SET_NAME.set()
+
+        button_matrix = [
+            [InlineKeyboardButton(self.loc.BUTTON_WALLET_NAME_EMPTY, callback_data=self.QUERY_CLEAR_NAME)],
+            [InlineKeyboardButton(self.loc.BUTTON_CANCEL, callback_data=self.QUERY_CANCEL)]
+        ]
+
+        await query.message.edit_text(
+            self.loc.TEXT_SET_WALLET_NAME,
+            reply_markup=InlineKeyboardMarkup(inline_keyboard=button_matrix)
+        )

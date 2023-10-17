@@ -176,6 +176,11 @@ class RussianLocalization(BaseLocalization):
 
     BUTTON_CANCEL = 'Отмена'
 
+    BUTTON_WALLET_SETTINGS = '⚙️ Настройки кошелька'
+    BUTTON_WALLET_NAME = 'Задать имя'
+    TEXT_SET_WALLET_NAME = ('Данное имя будет отображаться в списке кошельков вместо адреса для вашего удобства.'
+                            '<b>Пожалуйста, отправьте мне новое имя сообщением.</b> 👇')
+
     def text_set_rune_limit_threshold(self, address, curr_limit):
         return (
             f'🎚 Введите минимальное количество Рун '
@@ -183,6 +188,20 @@ class RussianLocalization(BaseLocalization):
             f'Сейчас это: {ital(short_rune(curr_limit))}.\n\n'
             f'Вы можете прислать мне число сообщением или выбрать один из вариантов на кнопках.'
         )
+
+    @staticmethod
+    def text_my_wallet_settings(address, name='', min_limit=None):
+        name_str = ''
+        if name:
+            name_str = f' ({ital(name)})'
+
+        if min_limit is not None:
+            limit_str = f'\n\n📨 Транзакции ≥ {short_rune(min_limit)} отслеживаются.'
+        else:
+            limit_str = ''
+
+        return (f'🎚 Настройки кошелька "{code(address)}"{name_str}.'
+                f'{limit_str}')
 
     def text_lp_img_caption(self):
         bot_link = "@" + self.this_bot_name

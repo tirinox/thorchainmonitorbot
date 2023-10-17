@@ -13,6 +13,7 @@ class Features:
 
     F_TEST_EXPIRED = 'Test.Expired'
     F_TEST_NOT_EXPIRED = 'Test.NotExpired'
+    F_WALLET_SETTINGS = 'MyWallets.WalletSettings'
 
     EXPIRE_TABLE = {
         F_PERSONAL_PRICE_DIV: datetime(2022, 8, 12),
@@ -20,6 +21,7 @@ class Features:
         F_PERSONAL_TRACK_BALANCE_LIMIT: datetime(2022, 10, 10),
 
         F_BOND_PROVIDER: datetime(2024, 2, 1),
+        F_WALLET_SETTINGS: datetime(2024, 4, 1),
 
         F_TEST_EXPIRED: datetime(2022, 2, 24),
         F_TEST_NOT_EXPIRED: datetime(2042, 2, 24),

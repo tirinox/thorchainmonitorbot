@@ -214,6 +214,13 @@ class BaseLocalization(ABC):  # == English
     TEXT_INVALID_LIMIT = '⛔ <b>Invalid number!</b> Please enter a positive number.'
     TEXT_ANY = 'Any amount'
 
+    BUTTON_WALLET_SETTINGS = '⚙️ Wallet settings'
+    BUTTON_WALLET_NAME = 'Set name'
+
+    BUTTON_WALLET_NAME_EMPTY = 'None (use the address)'
+    TEXT_SET_WALLET_NAME = ('This name will appear in the wallet list instead of the address for your convenience.\n'
+                            '<b>Please, send me a name by message.</b> 👇')
+
     BUTTON_CANCEL = 'Cancel'
 
     def text_set_rune_limit_threshold(self, address, curr_limit):
@@ -223,6 +230,20 @@ class BaseLocalization(ABC):  # == English
             f'It is now equal to {ital(short_rune(curr_limit))}.\n\n'
             f'You can send me the number with a text message or choose one of the options on the buttons.'
         )
+
+    @staticmethod
+    def text_my_wallet_settings(address, name='', min_limit=None):
+        name_str = ''
+        if name:
+            name_str = f' ({ital(name)})'
+
+        if min_limit is not None:
+            limit_str = f'\n\n📨 Transactions ≥ {short_rune(min_limit)} are tracked.'
+        else:
+            limit_str = ''
+
+        return (f'🎚 Wallet "{code(address)}"{name_str} settings.'
+                f'{limit_str}')
 
     def text_lp_img_caption(self):
         bot_link = "@" + self.this_bot_name

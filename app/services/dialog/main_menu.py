@@ -78,7 +78,7 @@ class MainMenuDialog(BaseDialog):
     async def _handle_start_lp_view(self, message: Message, address):
         message.text = ''
         await LPMenuStates.MAIN_MENU.set()
-        await MyWalletsMenu(self.loc, self.data, self.deps, self.message).show_pool_menu_for_address(
+        await MyWalletsMenu(self.loc, self.data, self.deps, self.message).show_wallet_menu_for_address(
             message, address,
             edit=False,
             external=True)
