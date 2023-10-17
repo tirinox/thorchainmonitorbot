@@ -25,17 +25,18 @@ class NameService(WithLogger):
         super().__init__()
         self.db = db
         self.cfg = cfg
-        self.midgard = midgard
-        self._known_address = {}
-        self._known_names = {}
-        self._affiliates = {}
-        self._load_preconfigured_names()
+
+        self._api = THORNameAPIClient(midgard)
+        self._cache = THORNameCache(db, cfg)
 
         self._thorname_enabled = cfg.as_str('names.thorname.enabled', True)
         self._thorname_expire = int(parse_timespan_to_seconds(cfg.as_str('names.thorname.expire', '24h'))) or None
 
         if self._thorname_enabled:
             self.logger.info(f'ThorName is enabled with expire time of {self._thorname_expire} sec.')
+
+    async def get_affiliate_name(self, affiliate_short):
+        return self._cache.get_affiliate_name(affiliate_short)
 
     async def safely_load_thornames_from_address_set(self, addresses: Iterable) -> NameMap:
         try:
@@ -46,32 +47,32 @@ class NameService(WithLogger):
             thorname_by_address = {}
             for address in addresses:
                 for thorname in thorname_by_name.values():
-                    if thorname and thorname != self.NO_VALUE:
+                    if thorname and thorname != self._cache.NO_VALUE:
                         for alias in thorname.aliases:
                             if alias.address == address:
                                 thorname_by_address[address] = thorname
                                 break
 
             return NameMap(thorname_by_name, thorname_by_address)
-        except Exception:
-            self.logger.exception(f'Something went wrong. That is OK', exc_info=True)
+        except Exception as e:
+            self.logger.exception(f'Something went wrong. That is OK. {e!r}', exc_info=True)
             return NameMap({}, {})
 
     async def lookup_name_by_address(self, address: str) -> Optional[ThorName]:
         if not address:
             return
 
-        local_results = self.lookup_name_by_address_local(address)
+        local_results = self._cache.lookup_name_by_address_local(address)
         if local_results:
             return local_results
 
         if not self._thorname_enabled:
             return
 
-        names = await self._cache_load_name_list(address)
+        names = await self._cache.load_name_list(address)
         if names is None:
-            names = await self.call_api_thorname_reversed_lookup(address)
-            await self._cache_save_name_list(address, names)
+            names = await self._api.thorname_reversed_lookup(address)
+            await self._cache.save_name_list(address, names)
 
         if not names:
             return
@@ -96,18 +97,19 @@ class NameService(WithLogger):
 
     async def lookup_thorname_by_name(self, name: str, forced=False) -> Optional[ThorName]:
         name = name.strip()
-        if name in self._known_names:
-            return self._known_names[name]
+
+        if known_name := self._cache.lookup_name_by_address_local(name):
+            return known_name
 
         if not self._thorname_enabled:
             return
 
-        if forced or not (thorname := await self._cache_load_thor_name(name)):
-            thorname = await self.call_api_thorname_lookup(name)
-            await self._cache_save_thor_name(name, thorname)  # save anyway, even if there is not ThorName!
+        if forced or not (thorname := await self._cache.load_thor_name(name)):
+            thorname = await self._api.thorname_lookup(name)
+            await self._cache.save_thor_name(name, thorname)  # save anyway, even if there is not ThorName!
 
             if forced and thorname:
-                await self._cache_save_name_list(self.get_thor_address_of_thorname(thorname), [thorname.name])
+                await self._cache.save_name_list(self.get_thor_address_of_thorname(thorname), [thorname.name])
 
         return thorname
 
@@ -119,7 +121,22 @@ class NameService(WithLogger):
             except StopIteration:
                 pass
 
-    # ---- CACHING stuff ----
+    def get_local_service(self, user_id):
+        return LocalWalletNameDB(self.db, user_id)
+
+
+class THORNameCache:
+    def __init__(self, db: DB, cfg: Config):
+        self.db = db
+        self.cfg = cfg
+
+        self._known_address = {}
+        self._known_names = {}
+        self._affiliates = {}
+
+        self.thorname_expire = int(parse_timespan_to_seconds(cfg.as_str('names.thorname.expire', '24h'))) or None
+
+        self._load_preconfigured_names()
 
     def lookup_name_by_address_local(self, address: str) -> Optional[ThorName]:
         return self._known_address.get(address)
@@ -149,18 +166,18 @@ class NameService(WithLogger):
     def _key_address_to_names(address: str):
         return f'THORName:Address-to-Names:{address}'
 
-    async def _cache_save_name_list(self, address: str, names: List[str]):
+    async def save_name_list(self, address: str, names: List[str]):
         await self.db.redis.set(self._key_address_to_names(address),
                                 value=json.dumps(names),
-                                ex=self._thorname_expire)
+                                ex=self.thorname_expire)
 
-    async def _cache_load_name_list(self, address: str) -> List[str]:
+    async def load_name_list(self, address: str) -> List[str]:
         data = await self.db.redis.get(self._key_address_to_names(address))
         return json.loads(data) if data else None
 
     NO_VALUE = 'no_value'
 
-    async def _cache_save_thor_name(self, name, thorname: ThorName):
+    async def save_thor_name(self, name, thorname: ThorName):
         if not name:
             return
 
@@ -168,10 +185,10 @@ class NameService(WithLogger):
         await self.db.redis.set(
             self._key_thorname_to_addresses(name),
             value=value,
-            ex=self._thorname_expire
+            ex=self.thorname_expire
         )
 
-    async def _cache_load_thor_name(self, name: str) -> Optional[ThorName]:
+    async def load_thor_name(self, name: str) -> Optional[ThorName]:
         if not name:
             return
 
@@ -193,7 +210,10 @@ class NameService(WithLogger):
     async def clear_cache_for_address(self, address: str):
         await self.db.redis.delete(self._key_address_to_names(address))
 
-    # ---- API calls ----
+
+class THORNameAPIClient:
+    def __init__(self, midgard: MidgardConnector):
+        self.midgard = midgard
 
     def _empty_if_error_or_not_found(self, results):
         if results is None or results == self.midgard.ERROR_RESPONSE or results == self.midgard.ERROR_NOT_FOUND:
@@ -201,7 +221,7 @@ class NameService(WithLogger):
         else:
             return results
 
-    async def call_api_thorname_lookup(self, name: str) -> Optional[ThorName]:
+    async def thorname_lookup(self, name: str) -> Optional[ThorName]:
         """
         Returns an array of chains and their addresses associated with the given ThorName
         """
@@ -217,7 +237,7 @@ class NameService(WithLogger):
                 ]
             )
 
-    async def call_api_thorname_reversed_lookup(self, address: str) -> List[str]:
+    async def thorname_reversed_lookup(self, address: str) -> List[str]:
         """
         Returns an array of ThorNames associated with the given address
         """
@@ -225,7 +245,7 @@ class NameService(WithLogger):
         results = self._empty_if_error_or_not_found(results)
         return results or []
 
-    async def call_api_get_thornames_owned_by_address(self, thor_address: str):
+    async def get_thornames_owned_by_address(self, thor_address: str):
         """
         Returns an array of ThorNames owned by the address.
         The address is not necessarily an associated address for those thornames.
@@ -233,6 +253,34 @@ class NameService(WithLogger):
         results = await self.midgard.request(f'/v2/thorname/owner/{thor_address}')
         results = self._empty_if_error_or_not_found(results)
         return results or []
+
+
+class LocalWalletNameDB:
+    def __init__(self, db: DB, user_id):
+        self.db = db
+        self.user_id = user_id
+
+    @property
+    def db_key(self):
+        return f'THORName:Local:{self.user_id}'
+
+    async def get_wallet_local_name(self, address: str) -> Optional[str]:
+        if not address or not self.user_id:
+            return
+        return await self.db.redis.hget(self.db_key, address)
+
+    async def delete_wallet_local_name(self, address: str):
+        if not address or not self.user_id:
+            return
+        await self.db.redis.hdel(self.db_key, address)
+
+    async def set_wallet_local_name(self, address: str, wallet_name: str):
+        if not address or not self.user_id:
+            return
+        return await self.db.redis.hset(self.db_key, wallet_name, address)
+
+    async def get_all_for_user(self):
+        return await self.db.redis.hgetall(self.db_key)
 
 
 def add_thor_suffix(thor_name: ThorName):
