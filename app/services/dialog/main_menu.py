@@ -37,7 +37,7 @@ class MainMenuDialog(BaseDialog):
 
     @message_handler(commands='start,lang', state='*')
     async def entry_point(self, message: Message):
-        user_id = message.chat.id
+        user_id = self.user_id(message)
         await UserRegistry(self.deps.db).register_user(user_id)
         loc_man = self.deps.loc_man
         current_language = await loc_man.get_lang(user_id, self.deps.db)

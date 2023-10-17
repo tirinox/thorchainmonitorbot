@@ -52,7 +52,7 @@ class NodeOpDialog(DialogWithSettings):
     async def show_main_menu(self, message: Message, with_welcome=True):
         await NodeOpStates.MAIN_MENU.set()
 
-        watch_list = await self._node_watcher.all_nodes_for_user(message.chat.id)
+        watch_list = await self._node_watcher.all_nodes_for_user(self.user_id(message))
 
         # activate the channel
         SettingsContext.resume_s(self.settings)
@@ -163,7 +163,7 @@ class NodeOpDialog(DialogWithSettings):
 
     async def on_add_node_menu(self, message: Message):
         await NodeOpStates.ADDING.set()
-        tg_list = await self.all_nodes_list_maker(message.chat.id)
+        tg_list = await self.all_nodes_list_maker(self.user_id(message))
 
         # to hide KB
         # await message.answer(self.loc.TEXT_NOP_ADD_INSTRUCTIONS_PRE, reply_markup=ReplyKeyboardRemove())
@@ -188,7 +188,7 @@ class NodeOpDialog(DialogWithSettings):
 
     @query_handler(state=NodeOpStates.ADDING)
     async def on_add_list_callback(self, query: CallbackQuery):
-        user_id = query.message.chat.id
+        user_id = self.user_id(query.message)
 
         tg_list = await self.all_nodes_list_maker(user_id)
         result = await tg_list.handle_query(query)
@@ -263,13 +263,13 @@ class NodeOpDialog(DialogWithSettings):
 
     async def on_manage_menu(self, message: Message):
         await NodeOpStates.MANAGE_MENU.set()
-        tg_list = await self.my_node_list_maker(message.chat.id)
+        tg_list = await self.my_node_list_maker(self.user_id(message))
         keyboard = tg_list.reset_page().keyboard()
         await message.edit_text(self.loc.TEXT_NOP_MANAGE_LIST_TITLE.format(n=len(tg_list)), reply_markup=keyboard)
 
     @query_handler(state=NodeOpStates.MANAGE_MENU)
     async def on_manage_callback(self, query: CallbackQuery):
-        user_id = query.message.chat.id
+        user_id = self.user_id(query.message)
         tg_list = await self.my_node_list_maker(user_id)
         result = await tg_list.handle_query(query)
 
