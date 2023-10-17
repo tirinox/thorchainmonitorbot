@@ -1,7 +1,9 @@
+import html
 import logging
 import secrets
 from abc import ABC
 from functools import wraps
+from html.parser import HTMLParser
 from typing import Optional
 
 from aiogram.dispatcher.filters.state import StatesGroup, State
@@ -21,7 +23,9 @@ logger = logging.getLogger('DIALOGS')
 async def display_error(message: Message, e: Exception):
     tag = secrets.token_hex(8)
     logger.exception(f"TAG: {tag}")
-    await message.answer(code(f"Sorry! An error occurred: {repr(e)}. Incident ID is {tag}.") +
+
+    err = html.escape(repr(e))
+    await message.answer(code(f"Sorry! An error occurred: {err}. Incident ID is {tag}.") +
                          f"\nFeedback/support: {CREATOR_TG}. To reset the bot press /start command.")
 
 
@@ -176,7 +180,7 @@ class BaseDialog(ABC):
                                            regexp=handler_stuff['regexp'],
                                            content_types=handler_stuff['content_types'])
         @bot_error_guard
-        async def handler(message: Message, state: FSMContext, that_name=name):  # name=name important!!
+        async def handler(message: Message, state: FSMContext, that_name=name, cls=cls):  # name=name important!!
             logger.info({
                 'from': (message.from_user.id, message.from_user.first_name, message.from_user.username),
                 'text': message.text
