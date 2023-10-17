@@ -277,7 +277,7 @@ class LocalWalletNameDB:
     async def set_wallet_local_name(self, address: str, wallet_name: str):
         if not address or not self.user_id:
             return
-        return await self.db.redis.hset(self.db_key, wallet_name, address)
+        return await self.db.redis.hset(self.db_key, address, wallet_name)
 
     async def get_all_for_user(self):
         return await self.db.redis.hgetall(self.db_key)
