@@ -2,8 +2,8 @@ import html
 import logging
 import secrets
 from abc import ABC
+from contextlib import suppress
 from functools import wraps
-from html.parser import HTMLParser
 from typing import Optional
 
 from aiogram.dispatcher.filters.state import StatesGroup, State
@@ -260,3 +260,7 @@ class DialogWithSettings(BaseDialog):
             await self._settings_manager.set_settings(user_id, self.settings)
         else:
             logger.error('Tried to save invalid settings. Rejected!')
+
+    async def delete_message_by_id(self, chat_id, message_id):
+        with suppress(Exception):
+            await self.deps.telegram_bot.bot.delete_message(chat_id, message_id)

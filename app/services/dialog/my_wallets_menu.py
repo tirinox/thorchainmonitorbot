@@ -335,7 +335,7 @@ class MyWalletsMenu(DialogWithSettings):
             await self._remove_address(index)
             await self._show_address_selection_menu(query.message, edit=True, show_add_more=False)
         elif query.data == self.QUERY_WALLET_SETTINGS:
-            await self._present_wallet_settings(query)
+            await self._present_wallet_settings(query.message)
         elif query.data == self.QUERY_SUBSCRIBE:
             await self._toggle_subscription(query)
 
@@ -345,7 +345,7 @@ class MyWalletsMenu(DialogWithSettings):
 
     # ---- Wallet settings ----
 
-    async def _present_wallet_settings(self, query):
+    async def _present_wallet_settings(self, message: Message):
         await LPMenuStates.WALLET_SETTINGS.set()
 
         my_pools = self.my_pools
@@ -404,9 +404,9 @@ class MyWalletsMenu(DialogWithSettings):
 
         text = self.loc.text_my_wallet_settings(address, name=name, min_limit=min_limit)
         inline_kbd = InlineKeyboardMarkup(inline_keyboard=button_matrix)
-        await query.message.edit_text(text=text,
-                                      reply_markup=inline_kbd,
-                                      disable_web_page_preview=True)
+        await message.edit_text(text=text,
+                                reply_markup=inline_kbd,
+                                disable_web_page_preview=True)
 
     @query_handler(state=LPMenuStates.WALLET_SETTINGS)
     async def on_wallet_settings_query(self, query: CallbackQuery):
@@ -414,17 +414,17 @@ class MyWalletsMenu(DialogWithSettings):
             await self._present_wallet_contents_menu(query.message, edit=True)
         elif query.data == self.QUERY_TOGGLE_VIEW_VALUE:
             self.data[self.KEY_CAN_VIEW_VALUE] = not self.data.get(self.KEY_CAN_VIEW_VALUE, True)
-            await self._present_wallet_contents_menu(query.message, edit=True)
+            await self._present_wallet_settings(query.message)
         elif query.data == self.QUERY_TOGGLE_BALANCE:
             address = self.current_address
             is_on = self._toggle_address_property(address, Props.PROP_TRACK_BALANCE)
             await self._process_wallet_balance_flag(address, is_on)
-            await self._present_wallet_contents_menu(query.message, edit=True)
+            await self._present_wallet_settings(query.message)
         elif query.data == self.QUERY_BOND_PROVIDER:
             address = self.current_address
             is_on = self._toggle_address_property(address, Props.PROP_TRACK_BOND, default=True)
             await self._process_wallet_track_bond_flag(address, is_on)
-            await self._present_wallet_contents_menu(query.message, edit=True)
+            await self._present_wallet_settings(query.message)
         elif query.data == self.QUERY_SET_RUNE_LIMIT:
             await self._enter_set_limit(query)
         elif query.data == self.QUERY_SET_NAME:
@@ -508,7 +508,7 @@ class MyWalletsMenu(DialogWithSettings):
         if query.data != self.QUERY_CANCEL:
             self._set_rune_limit(address, query.data)
 
-        await self._present_wallet_contents_menu(query.message, edit=True)
+        await self._present_wallet_settings(query.message)
 
     @message_handler(state=LPMenuStates.SET_LIMIT)
     async def on_message_set_limit(self, message: Message):
@@ -778,7 +778,7 @@ class MyWalletsMenu(DialogWithSettings):
             disable_notification=True,
         )
 
-        await self._present_wallet_contents_menu(message, edit=False)
+        await self._present_wallet_settings(message)
 
     @query_handler(state=LPMenuStates.SET_NAME)
     async def on_set_limit_query(self, query: CallbackQuery):
