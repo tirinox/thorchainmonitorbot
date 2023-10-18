@@ -10,6 +10,7 @@ import os
 import pickle
 import random
 import re
+import string
 import time
 from bisect import bisect_left
 from collections import deque, Counter, defaultdict
@@ -151,6 +152,12 @@ def save_pickle(path, data):
 def random_hex(length=12, sharp=False):
     r = binascii.hexlify(os.urandom(length))
     return f'#{r.decode()}' if sharp else r
+
+
+def generate_random_code(length):
+    characters = string.ascii_letters + string.digits
+    random_code = ''.join(random.choice(characters) for _ in range(length))
+    return random_code
 
 
 def random_ip_address():

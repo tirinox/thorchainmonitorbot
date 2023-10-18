@@ -1,3 +1,4 @@
+import dataclasses
 import math
 import random
 from copy import copy
@@ -302,6 +303,10 @@ class Asset:
     @property
     def native_pool_name(self):
         return f'{self.chain}.{self.full_name}' if self.valid else self.name
+
+    @property
+    def l1_asset(self):
+        return dataclasses.replace(self, is_synth=False)
 
     def __str__(self):
         return self.to_canonical

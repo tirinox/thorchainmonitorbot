@@ -18,6 +18,7 @@ from services.lib.date_utils import DAY
 from services.lib.depcont import DepContainer
 from services.lib.new_feature import Features
 from services.lib.texts import kbd
+from services.notify.personal.scheduled import PersonalPeriodicNotificationService
 from services.notify.types.cap_notify import LiquidityCapNotifier
 from services.notify.user_registry import UserRegistry
 
@@ -172,6 +173,14 @@ class MainMenuDialog(BaseDialog):
     @message_handler(commands='weekly', state='*')
     async def cmd_weekly(self, message: Message):
         await MetricsDialog(self.loc, self.data, self.deps, self.message).show_weekly_stats(message)
+
+    @message_handler(filters.RegexpCommandsFilter(regexp_commands=[r'^/unsub_.*']), state='*')
+    async def on_unsubscribe_command(self, message: Message):
+        # Commands like /unsub_sMth1
+        unsub_id = message.text.split('_')[1]
+        is_good = await PersonalPeriodicNotificationService(self.deps).unsubscribe_by_id(unsub_id)
+        text = self.loc.ALERT_UNSUBSCRIBED_FROM_LP if is_good else self.loc.ALERT_UNSUBSCRIBE_FAILED
+        await message.answer(text, disable_notification=True)
 
     @message_handler(filters.RegexpCommandsFilter(regexp_commands=[r'/.*']), state='*')
     async def on_unknown_command(self, message: Message):
