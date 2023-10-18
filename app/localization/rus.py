@@ -147,6 +147,7 @@ class RussianLocalization(BaseLocalization):
     BUTTON_LP_PERIOD_1M = 'Каждый месяц'
     ALERT_SUBSCRIBED_TO_LP = '🔔 Вы подписались'
     ALERT_UNSUBSCRIBED_FROM_LP = '🔕 Вы отписались'
+    ALERT_UNSUBSCRIBE_FAILED = 'Отписка не удалась!'
 
     @staticmethod
     def text_subscribed_to_lp(period):
@@ -1711,19 +1712,16 @@ class RussianLocalization(BaseLocalization):
                f'{code(short_money(t.amount, postfix=" " + asset))}{usd_amt} ' \
                f'от {from_my} ➡️ к {to_my}{memo}.'
 
-    def notification_text_regular_lp_report(self, user, address, pool, lp_report: LiquidityPoolReport):
-        pretty_pool = Asset(pool).pretty_str
-        explorer_url = get_explorer_url_to_address(self.cfg.network_id, Chains.THOR, address)
-        explorer_link = link(explorer_url, short_address(address, 10, 5))
+    def notification_text_regular_lp_report(self, user, address, pool, lp_report: LiquidityPoolReport, local_name: str,
+                                            unsub_id):
+        explorer_link, name_str, pretty_pool, thor_yield_link = self._regular_report_variables(address, local_name,
+                                                                                               pool)
 
-        thor_yield_url = get_thoryield_address(self.cfg.network_id, address)
-        thor_yield_link = link(thor_yield_url, 'THORYield')
-
-        # todo: local name
-
+        pos_type = 'о состоянии вклада' if lp_report.is_savers else 'о позиции ликвидности'
         return (
-            f'Ваш отчет для адреса {explorer_link} в пуле {pre(pretty_pool)} готов.\n'
-            f'{thor_yield_link}.'
+            f'Ваш регулярный отчет {pos_type} на адресе {explorer_link}{name_str} в пуле {pre(pretty_pool)} готов.\n'
+            f'{thor_yield_link}.\n\n'
+            f'Отписка: /unsub_{unsub_id}'
         )
 
     @staticmethod

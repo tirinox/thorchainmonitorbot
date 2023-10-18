@@ -187,6 +187,7 @@ class BaseLocalization(ABC):  # == English
     BUTTON_LP_PERIOD_1M = 'Every month'
     ALERT_SUBSCRIBED_TO_LP = '🔔 You have subscribed!'
     ALERT_UNSUBSCRIBED_FROM_LP = '🔕 You have unsubscribed!'
+    ALERT_UNSUBSCRIBE_FAILED = 'Failed to unsubscribe. Please try again later.'
 
     @staticmethod
     def text_subscribed_to_lp(period):
@@ -2254,20 +2255,28 @@ class BaseLocalization(ABC):  # == English
                f'{code(short_money(t.amount, postfix=" " + asset))}{usd_amt} ' \
                f'from {from_my} ➡️ {to_my}{memo}.'
 
-    def notification_text_regular_lp_report(self, user, address, pool, lp_report: LiquidityPoolReport):
-        pretty_pool = Asset(pool).pretty_str
+    def notification_text_regular_lp_report(self, user, address, pool, lp_report: LiquidityPoolReport, local_name: str,
+                                            unsub_id):
+        explorer_link, name_str, pretty_pool, thor_yield_link = self._regular_report_variables(address, local_name,
+                                                                                               pool)
+
+        pos_type = 'savings' if lp_report.is_savers else 'liquidity'
+        return (
+            f'Your {pos_type} position report {explorer_link}{name_str} in the pool {pre(pretty_pool)} is ready.\n'
+            f'{thor_yield_link}.\n\n'
+            f'Unsubscribe /unsub_{unsub_id}'
+        )
+
+    def _regular_report_variables(self, address, local_name, pool):
+        pool_asset = Asset(pool)
+        pretty_pool = pool_asset.l1_asset.pretty_str
         explorer_url = get_explorer_url_to_address(self.cfg.network_id, Chains.THOR, address)
         explorer_link = link(explorer_url, short_address(address, 10, 5))
-
         thor_yield_url = get_thoryield_address(self.cfg.network_id, address)
         thor_yield_link = link(thor_yield_url, 'THORYield')
+        name_str = f' ({ital(local_name)})' if local_name else ''
 
-        # todo: local name
-
-        return (
-            f'Your LP/Savers position report {explorer_link} in the pool {pre(pretty_pool)} is ready.\n'
-            f'{thor_yield_link}.'
-        )
+        return explorer_link, name_str, pretty_pool, thor_yield_link
 
     # ------ DEX -------
 
