@@ -11,6 +11,7 @@ from aiogram.utils.helper import HelperMode
 
 from localization.eng_base import BaseLocalization
 from services.dialog.base import message_handler, query_handler, DialogWithSettings
+from services.dialog.message_cat_db import MessageCategoryDB
 from services.dialog.picture.lp_picture import generate_yield_picture, lp_address_summary_picture
 from services.dialog.telegram.inline_list import TelegramInlineList
 from services.jobs.fetch.runeyield import get_rune_yield_connector
@@ -28,6 +29,9 @@ from services.notify.personal.balance import WalletWatchlist
 from services.notify.personal.bond_provider import BondWatchlist
 from services.notify.personal.helpers import GeneralSettings, Props
 from services.notify.personal.scheduled import PersonalPeriodicNotificationService
+
+CAT_ADD_MORE = 'add-more'
+CAT_WALLET_MENU = 'wallet-menu'
 
 
 class LPMenuStates(StatesGroup):
@@ -150,6 +154,9 @@ class MyWalletsMenu(DialogWithSettings):
 
         header = self.loc.TEXT_WALLETS_INTRO
 
+        if not edit:
+            await self.remove_old_messages(CAT_WALLET_MENU)
+
         my_addresses = self.my_addresses
         if not my_addresses:
             text = f'{header}\n{self.loc.TEXT_NO_ADDRESSES}'
@@ -163,12 +170,14 @@ class MyWalletsMenu(DialogWithSettings):
             if edit:
                 await message.edit_text(text, reply_markup=keyboard)
             else:
-                await message.answer(text, reply_markup=keyboard, disable_notification=True)
+                out_message = await message.answer(text, reply_markup=keyboard, disable_notification=True)
+                await self.register_message(CAT_WALLET_MENU, out_message)
 
         if show_add_more and my_addresses:
             msg = self.loc.TEXT_SELECT_ADDRESS_ABOVE if my_addresses else ''
             msg += self.loc.TEXT_SELECT_ADDRESS_SEND_ME
-            await message.answer(msg, reply_markup=ReplyKeyboardRemove(), disable_notification=True)
+            extra_message = await message.answer(msg, reply_markup=ReplyKeyboardRemove(), disable_notification=True)
+            await self.register_message(CAT_ADD_MORE, extra_message)
 
     async def _on_selected_address(self, message: Message, address, index, edit=True):
         await LPMenuStates.WALLET_MENU.set()
@@ -236,7 +245,7 @@ class MyWalletsMenu(DialogWithSettings):
         address_obj = self._get_address_object(address)
         track_balance = address_obj.get(Props.PROP_TRACK_BALANCE, False)
         min_limit = float(address_obj.get(Props.PROP_MIN_LIMIT, 0))
-        chain = address_obj.get(Props.PROP_CHAIN, '')
+        chain = Chains.detect_chain(address)
 
         balances, thor_name, local_name = await asyncio.gather(
             self.get_balances(address),
@@ -253,10 +262,17 @@ class MyWalletsMenu(DialogWithSettings):
                                     reply_markup=inline_kbd,
                                     disable_web_page_preview=True)
         else:
-            await message.answer(text=text,
-                                 reply_markup=inline_kbd,
-                                 disable_web_page_preview=True,
-                                 disable_notification=True)
+            # clean up
+            await self.remove_old_messages(CAT_WALLET_MENU)
+
+            # post new menu
+            new_msg = await message.answer(text=text,
+                                           reply_markup=inline_kbd,
+                                           disable_web_page_preview=True,
+                                           disable_notification=True)
+
+            # register it
+            await self.register_message(CAT_WALLET_MENU, new_msg)
 
     @staticmethod
     def pool_label(pool_name):
@@ -299,22 +315,22 @@ class MyWalletsMenu(DialogWithSettings):
         if row1:
             below_button_matrix.append(row1)
 
-        # ---------------------------- ROW 4 ------------------------------
+        # ---------------------------- ROW 2 ------------------------------
         # Back button
-        row4 = [
+        row2 = [
             InlineKeyboardButton(self.loc.BUTTON_SM_BACK_TO_LIST, callback_data=tg_list.data_back)
         ]
 
         if not external:
             # Remove this address button
-            row4.append(
+            row2.append(
                 InlineKeyboardButton(
                     self.loc.BUTTON_REMOVE_THIS_ADDRESS,
                     callback_data=f'{self.QUERY_REMOVE_ADDRESS}:{addr_idx}'
                 )
             )
 
-        below_button_matrix.append(row4)
+        below_button_matrix.append(row2)
 
         # install all extra buttons to the List
         tg_list.set_extra_buttons_below(below_button_matrix)
@@ -345,8 +361,9 @@ class MyWalletsMenu(DialogWithSettings):
 
     # ---- Wallet settings ----
 
-    async def _present_wallet_settings(self, message: Message):
+    async def _present_wallet_settings(self, message: Message, edit=True):
         await LPMenuStates.WALLET_SETTINGS.set()
+        await self.remove_old_messages(CAT_ADD_MORE)
 
         my_pools = self.my_pools
         external = self.data.get(self.KEY_IS_EXTERNAL, False)
@@ -358,7 +375,9 @@ class MyWalletsMenu(DialogWithSettings):
         view_value = self.data.get(self.KEY_CAN_VIEW_VALUE, True)
         chain = Chains.detect_chain(address)
         min_limit = float(address_obj.get(Props.PROP_MIN_LIMIT, 0))
-        name = ''  # todo get from DB
+        if not track_balance:
+            min_limit = None
+        name = await self.get_name_service(message).get_wallet_local_name(address)
 
         button_matrix = []
 
@@ -404,9 +423,13 @@ class MyWalletsMenu(DialogWithSettings):
 
         text = self.loc.text_my_wallet_settings(address, name=name, min_limit=min_limit)
         inline_kbd = InlineKeyboardMarkup(inline_keyboard=button_matrix)
-        await message.edit_text(text=text,
-                                reply_markup=inline_kbd,
-                                disable_web_page_preview=True)
+        if edit:
+            await message.edit_text(text=text,
+                                    reply_markup=inline_kbd,
+                                    disable_web_page_preview=True)
+        else:
+            out_message = await message.answer(text=text, reply_markup=inline_kbd, disable_notification=True)
+            await self.register_message(CAT_WALLET_MENU, out_message)
 
     @query_handler(state=LPMenuStates.WALLET_SETTINGS)
     async def on_wallet_settings_query(self, query: CallbackQuery):
@@ -607,9 +630,6 @@ class MyWalletsMenu(DialogWithSettings):
     def current_address(self):
         return self.data[self.KEY_ACTIVE_ADDRESS]
 
-    def get_name_service(self, message):
-        return self.deps.name_service.get_local_service(self.user_id(message))
-
     def _add_address(self, new_addr, chain):
         if not new_addr:
             logging.error('Cannot add empty address!')
@@ -661,11 +681,6 @@ class MyWalletsMenu(DialogWithSettings):
         except ValueError:
             logging.error('Failed to parse Rune limit.')
             return
-
-    @property
-    def global_data(self):
-        """ This uses "settings" instead of Telegram context """
-        return self.settings.setdefault(GeneralSettings.BALANCE_TRACK, {})
 
     # --- MISC ---
 
@@ -773,22 +788,23 @@ class MyWalletsMenu(DialogWithSettings):
 
         await self.get_name_service(message).set_wallet_local_name(self.current_address, name)
 
-        await message.answer(
-            self.loc.text_my_wallet_name_changed(self.current_address, name),
-            disable_notification=True,
-        )
+        # out_message = await message.answer(
+        #     self.loc.text_my_wallet_name_changed(self.current_address, name),
+        #     disable_notification=True,
+        # )
+        # await self.register_message(CAT_ADD_MORE, out_message)
 
-        await self._present_wallet_settings(message)
+        await self._present_wallet_settings(message, edit=False)
 
     @query_handler(state=LPMenuStates.SET_NAME)
-    async def on_set_limit_query(self, query: CallbackQuery):
+    async def on_set_name_query(self, query: CallbackQuery):
         if query.data == self.QUERY_CANCEL:
             pass
         elif query.data == self.QUERY_CLEAR_NAME:
             await self.get_name_service(query.message).delete_wallet_local_name(self.current_address)
             await query.answer(self.loc.TEXT_NAME_UNSET)
 
-        await self._present_wallet_contents_menu(query.message, edit=True)
+        await self._present_wallet_settings(query.message, edit=True)
 
     async def _enter_wallet_set_name(self, query: CallbackQuery):
         await LPMenuStates.SET_NAME.set()
@@ -808,3 +824,24 @@ class MyWalletsMenu(DialogWithSettings):
             self.loc.text_wallet_name_dialog(address, name),
             reply_markup=InlineKeyboardMarkup(inline_keyboard=button_matrix)
         )
+
+    # ---- Utils ----
+
+    def get_name_service(self, message):
+        return self.deps.name_service.get_local_service(self.user_id(message))
+
+    def get_message_tracker(self, message, category: str):
+        return MessageCategoryDB(self.deps.db, self.user_id(message), category)
+
+    @property
+    def global_data(self):
+        """ This uses "settings" instead of Telegram context """
+        return self.settings.setdefault(GeneralSettings.BALANCE_TRACK, {})
+
+    async def remove_old_messages(self, category):
+        with suppress(Exception):
+            await self.get_message_tracker(self.message, category).delete_all(self.deps.telegram_bot)
+
+    async def register_message(self, category, message: Message):
+        with suppress(Exception):
+            await self.get_message_tracker(message, category).push(message.message_id)

@@ -25,7 +25,8 @@ async def test_push_pop(m_cat_db):
     await m_cat_db.push(10000003)
     await m_cat_db.push(10000005)
     await m_cat_db.push(10000002)
-    s_all = {'10000001', '10000002', '10000003', '10000005'}
+    await m_cat_db.push(10000010, 10000011, 10000011)
+    s_all = {'10000001', '10000002', '10000003', '10000005', '10000010', '10000011'}
     assert await m_cat_db.get_all() == s_all
 
     r = await m_cat_db.pop()

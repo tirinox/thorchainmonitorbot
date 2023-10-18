@@ -16,13 +16,14 @@ class MessageCategoryDB(WithLogger):
     def db_key(self):
         return f'Message:Tracker:{self.user_id}:{self.category}'
 
-    async def push(self, message_id):
-        if not message_id:
-            self.logger.error(f'U: {self.user_id} Empty message_id for category {self.category}')
-            return
+    async def push(self, *message_ids):
+        for message_id in message_ids:
+            if not message_id:
+                self.logger.error(f'U: {self.user_id} Empty message_id for category {self.category}')
+                continue
 
-        key = self.db_key
-        await self.db.redis.sadd(key, message_id)
+            key = self.db_key
+            await self.db.redis.sadd(key, message_id)
 
     async def pop(self):
         key = self.db_key
