@@ -16,7 +16,7 @@ from services.dialog.picture.lp_picture import generate_yield_picture, lp_addres
 from services.dialog.telegram.inline_list import TelegramInlineList
 from services.jobs.fetch.runeyield import get_rune_yield_connector
 from services.lib.constants import Chains
-from services.lib.date_utils import today_str, DAY
+from services.lib.date_utils import today_str, parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.draw_utils import img_to_bio
 from services.lib.midgard.name_service import add_thor_suffix
@@ -79,7 +79,6 @@ class MyWalletsMenu(DialogWithSettings):
         await cls.from_other_dialog(source_dialog).call_in_context(cls.on_enter)
 
     async def on_enter(self, message: Message):
-        self._migrate_data()
         await self._show_address_selection_menu(message)
 
     # ---- WALLET LIST ------
@@ -462,14 +461,10 @@ class MyWalletsMenu(DialogWithSettings):
 
         await LPMenuStates.WALLET_MENU.set()
 
-        if query.data == '1d':
-            period = DAY
-        elif query.data == '1w':
-            period = DAY * 7
-        elif query.data == '1m':
-            period = DAY * 30
-        else:
+        if query.data == self.QUERY_CANCEL:
             period = False
+        else:
+            period = parse_timespan_to_seconds(query.data)
 
         address = self.current_address
         user_id = str(self.user_id(query.message))
@@ -580,8 +575,8 @@ class MyWalletsMenu(DialogWithSettings):
                                          reply_markup=picture_kb)
 
         # CLEAN UP
-        await asyncio.gather(self.safe_delete(query.message),
-                             self.safe_delete(sticker))
+        await self.safe_delete(query.message)
+        await self.safe_delete(sticker)
 
     async def view_address_summary(self, query: CallbackQuery):
         address = self.current_address
@@ -706,31 +701,7 @@ class MyWalletsMenu(DialogWithSettings):
         prohibited_addresses = self.deps.cfg.get_pure('native_scanner.prohibited_addresses')
         self.prohibited_addresses = prohibited_addresses if isinstance(prohibited_addresses, list) else []
 
-    # ---- Migration from Tg settings to common settings ----
-
-    _OLD_KEY_MY_ADDRESSES = 'my-address-list'
-
-    def _migrate_data(self):
-        old_addresses = self.data.get(self._OLD_KEY_MY_ADDRESSES, [])
-        if not old_addresses:
-            return False  # nothing to migrate
-
-        new_addresses = {}
-        for address_obj in old_addresses:
-            # make a copy and make it pretty and concise
-            address_obj = dict(address_obj)
-            address = address_obj.pop(Props.PROP_ADDRESS, None)
-            if address:
-                address_obj.pop('pools', None)
-                new_addresses[address] = address_obj
-
-        self.global_data[Props.KEY_ADDRESSES] = new_addresses
-
-        # dict.pop(key, None) == try delete key if exists
-        self.data.pop(self._OLD_KEY_MY_ADDRESSES)
-
-        logging.info(f'Address data successfully migrated ({len(old_addresses)}).')
-        return True
+        self.dbg_fast_subscription = self.deps.cfg.get_pure('telegram.debug', False)
 
     async def _toggle_subscription(self, query: CallbackQuery):
         pool = self.data.get(self.KEY_LAST_POOL)
@@ -741,8 +712,7 @@ class MyWalletsMenu(DialogWithSettings):
         user_id = str(self.user_id(query.message))
 
         is_subscribed = await self._is_subscribed(user_id, address, pool)
-        is_subscribed = not is_subscribed
-        if not is_subscribed:
+        if is_subscribed:
             await self._subscribers.unsubscribe(user_id, address, pool)
             kb = await self._get_picture_bottom_keyboard(query, address, pool)
             await query.message.edit_caption('', reply_markup=kb)
@@ -752,13 +722,17 @@ class MyWalletsMenu(DialogWithSettings):
             kb = InlineKeyboardMarkup(inline_keyboard=[
                 [
                     InlineKeyboardButton(self.loc.BUTTON_LP_PERIOD_1D, callback_data='1d'),
-                    InlineKeyboardButton(self.loc.BUTTON_LP_PERIOD_1W, callback_data='1w'),
-                    InlineKeyboardButton(self.loc.BUTTON_LP_PERIOD_1M, callback_data='1m'),
+                    InlineKeyboardButton(self.loc.BUTTON_LP_PERIOD_1W, callback_data='7d'),
+                    InlineKeyboardButton(self.loc.BUTTON_LP_PERIOD_1M, callback_data='30d'),
                 ],
                 [
                     InlineKeyboardButton(self.loc.BUTTON_CANCEL, callback_data=self.QUERY_CANCEL),
                 ]
             ])
+
+            if self.dbg_fast_subscription:
+                kb.inline_keyboard[0].append(InlineKeyboardButton("Dbg: 30 sec", callback_data='30'))
+
             await query.message.edit_caption(self.loc.TEXT_SUBSCRIBE_TO_LP, reply_markup=kb)
             await query.answer()
 
@@ -787,13 +761,6 @@ class MyWalletsMenu(DialogWithSettings):
         name = html.escape(name)
 
         await self.get_name_service(message).set_wallet_local_name(self.current_address, name)
-
-        # out_message = await message.answer(
-        #     self.loc.text_my_wallet_name_changed(self.current_address, name),
-        #     disable_notification=True,
-        # )
-        # await self.register_message(CAT_ADD_MORE, out_message)
-
         await self._present_wallet_settings(message, edit=False)
 
     @query_handler(state=LPMenuStates.SET_NAME)
