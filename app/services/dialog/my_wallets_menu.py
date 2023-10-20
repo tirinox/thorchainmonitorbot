@@ -89,6 +89,13 @@ class MyWalletsMenu(DialogWithSettings):
         if not address:
             return
 
+        if '|' in address:
+            address, name = address.split('|', 1)
+            address = address.strip()
+            name = name.strip()
+        else:
+            name = None
+
         chain = Chains.detect_chain(address) or Chains.BTC
 
         thor_name = await self.deps.name_service.lookup_thorname_by_name(address.lower(), forced=True)
@@ -106,6 +113,10 @@ class MyWalletsMenu(DialogWithSettings):
             return
 
         self._add_address(address, chain)
+
+        # If name is not empty, set it
+        if name:
+            await self.get_name_service(message).set_wallet_local_name(address, name)
 
         # redraw menu!
         await self._on_selected_address(message, address, 0, edit=False)
