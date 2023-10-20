@@ -329,6 +329,8 @@ class MetricsDialog(BaseDialog):
                              disable_notification=True)
 
     async def show_weekly_stats(self, message: Message):
+        loading_message = await self.show_loading(message)
+
         if not self.deps.weekly_stats_notifier or not self.deps.weekly_stats_notifier.last_event:
             await message.answer(self.loc.TEXT_WEEKLY_STATS_NO_DATA,
                                  disable_notification=True)
@@ -341,6 +343,8 @@ class MetricsDialog(BaseDialog):
         caption = self.loc.notification_text_key_metrics_caption(ev)
 
         await message.answer_photo(img_to_bio(pic, pic_name), caption=caption, disable_notification=True)
+
+        await self.safe_delete(loading_message)
 
     # ---- Ask for duration (universal)
 
