@@ -1,4 +1,4 @@
-from services.jobs.fetch.base import DataController
+from services.jobs.fetch.base import DataController, BaseFetcher
 from services.lib.date_utils import format_time_ago, now_ts, MINUTE, seconds_human
 from services.lib.depcont import DepContainer
 from services.lib.http_ses import ObservableSession, RequestEntry
@@ -21,6 +21,7 @@ class AdminMessages:
         data_ctrl: DataController = self.deps.pool_fetcher.data_controller
 
         for name, fetcher in data_ctrl.summary.items():
+            fetcher: BaseFetcher
             if fetcher.success_rate < 90.0:
                 errors = f'❌︎ {fetcher.error_counter} errors'
             else:
@@ -40,13 +41,23 @@ class AdminMessages:
             else:
                 ticks_str = '🤷 none yet!'
 
+            if fetcher.run_times:
+                last_run_time_str = round(fetcher.dbg_last_run_time, 2)
+                avg_run_time_str = round(fetcher.dbg_average_run_time, 2)
+                run_time_str = (
+                    f'\nAvg. run time is {pre(avg_run_time_str)} s, '
+                    f'last run time is {pre(last_run_time_str)} s'
+                )
+            else:
+                run_time_str = ''
+
             message += (
                 f"{code(name)}\n"
                 f"{errors}. "
                 f"Last date: {ital(last_txt)}. "
                 f"Interval: {ital(interval)}. "
                 f"Success rate: {pre(success_rate_txt)}. "
-                f"Total ticks: {ticks_str}"
+                f"Total ticks: {ticks_str}{run_time_str}"
                 f"\n\n"
             )
 

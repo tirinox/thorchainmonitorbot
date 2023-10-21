@@ -566,7 +566,7 @@ class App:
 
         # start background jobs
         for task in tasks:
-            asyncio.create_task(task.run())
+            task.run_in_background()
         # await asyncio.gather(*(task.run() for task in tasks))
 
     async def _debug_command(self):

@@ -2,7 +2,9 @@ import asyncio
 import datetime
 import os
 import random
+import time
 from abc import ABC, abstractmethod
+from collections import deque
 from typing import Dict
 
 from services.lib.date_utils import now_ts
@@ -114,6 +116,15 @@ class BaseFetcher(WithDelegates, WatchedEntity, ABC, WithLogger):
         self.sleep_period = sleep_period
         self.initial_sleep = random.uniform(0, min(self.MAX_STARTUP_DELAY, sleep_period))
         self.data_controller.register(self)
+        self.run_times = deque(maxlen=100)
+
+    @property
+    def dbg_last_run_time(self):
+        return self.run_times[-1] if self.run_times else None
+
+    @property
+    def dbg_average_run_time(self):
+        return sum(self.run_times) / len(self.run_times) if self.run_times else None
 
     @property
     def data_controller(self):
@@ -129,6 +140,8 @@ class BaseFetcher(WithDelegates, WatchedEntity, ABC, WithLogger):
         ...
 
     async def run_once(self):
+        self.logger.info(f'Tick #{self.total_ticks}')
+        t0 = time.monotonic()
         try:
             data = await self.fetch()
             await self.pass_data_to_listeners(data)
@@ -143,8 +156,10 @@ class BaseFetcher(WithDelegates, WatchedEntity, ABC, WithLogger):
         finally:
             self.total_ticks += 1
             self.last_timestamp = datetime.datetime.now().timestamp()
+            delta = time.monotonic() - t0
+            self.run_times.append(delta)
 
-    async def run(self):
+    async def _run(self):
         if self.sleep_period < 0:
             self.logger.info('This fetcher is disabled.')
             return
@@ -156,3 +171,14 @@ class BaseFetcher(WithDelegates, WatchedEntity, ABC, WithLogger):
         while True:
             await self.run_once()
             await asyncio.sleep(self.sleep_period)
+
+    async def run(self):
+        try:
+            await self._run()
+        except Exception as e:
+            self.logger.error(f'Unexpected termination due to exception {e!r}')
+        finally:
+            self.logger.warning('Unexpected termination!')
+
+    def run_in_background(self):
+        asyncio.create_task(self.run())
