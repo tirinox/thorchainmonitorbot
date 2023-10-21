@@ -43,17 +43,25 @@ class NativeScannerBlock(BaseFetcher):
         self.max_attempts = max_attempts
         self.one_block_per_run = False
         self.allow_jumps = True
+        self._block_cycle = 0
+
+    @property
+    def block_cycle(self):
+        return self._block_cycle
+
+    @property
+    def last_block(self):
+        return self._last_block
+
+    @last_block.setter
+    def last_block(self, value):
+        self.logger.warning(f'Last block number manually changed from {self._last_block} to {value}.')
+        self._last_block = value
 
     async def _fetch_last_block(self):
         result = await self.deps.thor_connector.query_native_status_raw()
         if result:
             return int(safe_get(result, 'result', 'sync_info', 'latest_block_height'))
-
-    async def _update_last_block(self):
-        last_block = await self._fetch_last_block()
-        if last_block:
-            self._last_block = last_block
-            self.logger.info(f'Updated last block number: #{self._last_block}')
 
     @staticmethod
     def _decode_logs(tx_result):
@@ -122,6 +130,7 @@ class NativeScannerBlock(BaseFetcher):
             self.logger.error(f'Error decoding tx: {e}')
 
     def _on_error(self):
+        self.logger.warning(f'Error fetching block #{self._last_block}.')
         self._this_block_attempts += 1
         if self._this_block_attempts >= self.max_attempts:
             self.logger.error(f'Too many attempts to get block #{self._last_block}. Skipping it.')
@@ -132,11 +141,28 @@ class NativeScannerBlock(BaseFetcher):
 
     async def ensure_last_block(self):
         while not self._last_block:
-            await self._update_last_block()
-
-            if not self._last_block:
+            last_block = await self._fetch_last_block()
+            if last_block:
+                self._last_block = last_block
+                self.logger.info(f'Updated last block number: #{self._last_block}')
+            else:
                 self.logger.error('Still no last_block height!')
                 await asyncio.sleep(self.sleep_period)
+
+    async def check_lagging(self):
+        # todo: use it!
+        real_last_block = await self._fetch_last_block()
+        if not real_last_block:
+            self.logger.error('Failed to get real last block number!')
+            return False
+        delta = real_last_block - self._last_block
+        if delta > 10:
+            self.logger.warning(f'Lagging behind {delta} blocks!')
+            self.deps.emergency.report(self.NAME, 'Lagging behind',
+                                       delta=delta,
+                                       my_block=self._last_block,
+                                       real_block=real_last_block)
+            return False
 
     async def fetch(self):
         await self.ensure_last_block()
@@ -146,8 +172,10 @@ class NativeScannerBlock(BaseFetcher):
         else:
             self.logger.debug(f'👿 Tick start for block #{self._last_block}.')
 
+        self._block_cycle = 0
         while True:
             try:
+                self.logger.info(f'Fetching block #{self._last_block}. Cycle: {self._block_cycle}.')
                 block_result = await self.fetch_one_block(self._last_block)
                 if block_result is None:
                     self._on_error()
@@ -164,7 +192,7 @@ class NativeScannerBlock(BaseFetcher):
                         self._this_block_attempts = 0
                     else:
                         self._on_error()
-                    break
+                        break
 
             except Exception as e:
                 self.logger.error(f'Error while fetching block #{self._last_block}: {e}')
@@ -175,8 +203,10 @@ class NativeScannerBlock(BaseFetcher):
 
             self._last_block += 1
             self._this_block_attempts = 0
+            self._block_cycle += 1
 
             if self.one_block_per_run:
+                self.logger.warning('One block per run mode is on. Stopping.')
                 break
 
     async def fetch_one_block(self, block_index) -> Optional[BlockResult]:
