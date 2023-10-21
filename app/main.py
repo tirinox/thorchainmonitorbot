@@ -44,6 +44,7 @@ from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
 from services.lib.emergency import EmergencyReport
+from services.lib.logs import WithLogger
 from services.lib.midgard.connector import MidgardConnector
 from services.lib.midgard.name_service import NameService
 from services.lib.money import DepthCurve
@@ -87,8 +88,9 @@ from services.notify.types.version_notify import VersionNotifier
 from services.notify.types.voting_notify import VotingNotifier
 
 
-class App:
+class App(WithLogger):
     def __init__(self, log_level=None):
+        super().__init__()
         d = self.deps = DepContainer()
         d.is_loading = True
         self._bg_task = None
@@ -134,11 +136,11 @@ class App:
         log_level = log_level or d.cfg.get_pure('log_level', logging.INFO)
         colorful_logs = d.cfg.get('colorful_logs', False)
         setup_logs(log_level, colorful=colorful_logs)
-        logging.info('-' * 100)
-        logging.info(f"Log level: {log_level}")
+        self.logger.info('-' * 100)
+        self.logger.info(f"Log level: {log_level}")
 
         # todo: ART logo
-        logging.info(f'Starting THORChainMonitoringBot for "{d.cfg.network_id}".')
+        self.logger.info(f'Starting THORChainMonitoringBot for "{d.cfg.network_id}".')
 
         d.loop = asyncio.get_event_loop()
         d.db = DB(d.loop)
@@ -186,7 +188,7 @@ class App:
     async def _some_sleep(self):
         sleep_interval = self.deps.cfg.as_float('sleep_before_start', 0)
         if sleep_interval > 0:
-            logging.info(f'Sleeping before start for {sleep_interval:.1f} sec..')
+            self.logger.info(f'Sleeping before start for {sleep_interval:.1f} sec..')
             await asyncio.sleep(sleep_interval)
 
     async def _preloading(self):
@@ -199,24 +201,26 @@ class App:
         sleep_step = self.sleep_step
         while True:
             try:
-                logging.info('Loading procedure start.')
+                self.logger.info('Loading procedure start.')
+
+                await self.create_thor_node_connector()
 
                 # update pools for bootstrap (other components need them)
-                logging.info('Loading pools...')
+                self.logger.info('Loading pools...')
                 current_pools = await d.pool_fetcher.reload_global_pools()
                 if not current_pools:
                     raise Exception("No pool data at startup!")
                 await asyncio.sleep(sleep_step)
 
-                logging.info('Loading last block...')
+                self.logger.info('Loading last block...')
                 await d.last_block_fetcher.run_once()
                 await asyncio.sleep(sleep_step)
 
-                logging.info('Loading node info...')
+                self.logger.info('Loading node info...')
                 await d.node_info_fetcher.run_once()  # get nodes beforehand
                 await asyncio.sleep(sleep_step)
 
-                logging.info('Loading constants and mimir...')
+                self.logger.info('Loading constants and mimir...')
                 await d.mimir_const_fetcher.run_once()  # get constants beforehand
                 await asyncio.sleep(sleep_step)
 
@@ -232,8 +236,8 @@ class App:
 
                 break  # all is good. exit the loop
             except Exception as e:
-                logging.exception(e)
-                logging.error(f'No luck. {e!r} Retrying in {sleep_step} sec...')
+                self.logger.exception(e)
+                self.logger.error(f'No luck. {e!r} Retrying in {sleep_step} sec...')
                 await asyncio.sleep(sleep_step)
 
     async def _prepare_task_graph(self):
@@ -537,10 +541,10 @@ class App:
 
         if d.cfg.get('twitter.enabled', False):
             if d.cfg.get('twitter.is_mock', False):
-                logging.warning('Using Twitter Mock bot! All Tweets will go only to the logs!')
+                self.logger.warning('Using Twitter Mock bot! All Tweets will go only to the logs!')
                 d.twitter_bot = TwitterBotMock(d.cfg)
             else:
-                logging.info('Using real Twitter bot.')
+                self.logger.info('Using real Twitter bot.')
                 d.twitter_bot = TwitterBot(d.cfg)
 
         return tasks
@@ -551,20 +555,21 @@ class App:
             await self._preloading()
             self.deps.is_loading = False
         except Exception as e:
-            logging.exception(f'Failed to prepare tasks: {e}')
-            logging.error(f'Terminating in {self.sleep_step} sec...')
+            self.logger.exception(f'Failed to prepare tasks: {e}')
+            self.logger.error(f'Terminating in {self.sleep_step} sec...')
             await asyncio.sleep(self.sleep_step)
 
             self._bg_task.cancel()
             exit(-100)
 
-        logging.info(f'Ready! Starting background jobs in {self.sleep_step}...')
+        self.logger.info(f'Ready! Starting background jobs in {self.sleep_step}...')
         await asyncio.sleep(self.sleep_step)
 
         # todo: debug
         asyncio.create_task(self._debug_command())
 
         # start background jobs
+        self.logger.info(f'Total tasks to run: {len(tasks)}')
         for task in tasks:
             task.run_in_background()
         # await asyncio.gather(*(task.run() for task in tasks))
@@ -581,7 +586,6 @@ class App:
 
     async def on_startup(self, _):
         self.deps.make_http_session()  # it must be inside a coroutine!
-        await self.create_thor_node_connector()
 
         self._bg_task = asyncio.create_task(self._run_background_jobs())
 
