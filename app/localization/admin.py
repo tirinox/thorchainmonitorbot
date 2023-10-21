@@ -1,3 +1,5 @@
+import asyncio
+
 from services.jobs.fetch.base import DataController, BaseFetcher
 from services.lib.date_utils import format_time_ago, now_ts, MINUTE, seconds_human
 from services.lib.depcont import DepContainer
@@ -116,3 +118,11 @@ class AdminMessages:
     @staticmethod
     def text_bot_restarted():
         return '🤖 Bot restarted!'
+
+    async def get_debug_message_tasks(self):
+        tasks = asyncio.all_tasks()
+        message = ''
+        for i, task in enumerate(tasks, start=1):
+            message += f'{i}. {task}\n\n'
+        print(message)
+        return f'Check the terminal please.'

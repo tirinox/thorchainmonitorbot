@@ -166,6 +166,13 @@ class MainMenuDialog(BaseDialog):
                              disable_notification=True,
                              disable_web_page_preview=True)
 
+    @message_handler(commands='debug_tasks', state='*')
+    async def cmd_debug_tasks(self, message: Message):
+        text = await self.admin_messages.get_debug_message_tasks()
+        await message.answer(text,
+                             disable_notification=True,
+                             disable_web_page_preview=True)
+
     @message_handler(commands='debug_http', state='*')
     async def cmd_debug_http(self, message: Message):
         text = await self.admin_messages.get_debug_message_text_session()
