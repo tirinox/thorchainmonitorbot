@@ -32,6 +32,10 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         # Load pool data for BTC/ETH value in the pools
         pf: PoolFetcher = self.deps.pool_fetcher
         previous_block = self.deps.last_block_store.block_time_ago(self.tally_days_period * DAY)
+
+        if previous_block < 0:
+            raise ValueError(f'Previous block is negative {previous_block}!')
+
         fresh_pools, old_pools = await asyncio.gather(
             pf.load_pools(),
             pf.load_pools(height=previous_block)

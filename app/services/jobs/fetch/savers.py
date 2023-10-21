@@ -82,6 +82,9 @@ class SaversStatsFetcher(INotified, WithDelegates, WithLogger):
         prev_saver, prev_pools = None, None
         if period:
             prev_block = block_store.block_time_ago(period, last_block=last_block_no)
+            if prev_block < 0:
+                raise ValueError(f'Previous block is negative {prev_block}!')
+
             prev_pools = await pf.load_pools(height=prev_block, usd_per_rune=usd_per_rune)
             if prev_pools:
                 prev_saver = await self.get_all_savers(prev_pools, prev_block)
