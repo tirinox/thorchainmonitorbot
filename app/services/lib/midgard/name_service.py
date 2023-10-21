@@ -35,7 +35,7 @@ class NameService(WithLogger):
         if self._thorname_enabled:
             self.logger.info(f'ThorName is enabled with expire time of {self._thorname_expire} sec.')
 
-    async def get_affiliate_name(self, affiliate_short):
+    def get_affiliate_name(self, affiliate_short):
         return self._cache.get_affiliate_name(affiliate_short)
 
     async def safely_load_thornames_from_address_set(self, addresses: Iterable) -> NameMap:
