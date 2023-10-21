@@ -181,4 +181,4 @@ class BaseFetcher(WithDelegates, WatchedEntity, ABC, WithLogger):
             self.logger.warning('Unexpected termination!')
 
     def run_in_background(self):
-        asyncio.create_task(self.run())
+        return asyncio.create_task(self.run())

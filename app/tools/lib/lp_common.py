@@ -78,7 +78,7 @@ class LpAppFramework(App):
         d.last_block_fetcher.add_subscriber(d.last_block_store)
 
         if self.emergency:
-            asyncio.create_task(d.emergency.run_worker())
+            d.emergency.run_in_background()
 
         brief = brief if self.brief is None else self.brief
         if brief:

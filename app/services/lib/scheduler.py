@@ -125,3 +125,6 @@ class Scheduler(WithLogger, WithDelegates):
                 await self._process()
             except Exception as e:
                 self.logger.exception(f'Error in scheduler: {e}', stack_info=True)
+
+    def run_in_background(self):
+        return asyncio.create_task(self.run())

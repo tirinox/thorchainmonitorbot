@@ -30,11 +30,10 @@ class EmergencyReport(WithLogger):
 
         self.logger.info(f'I will send emergency reports to Telegram user #{self._admin_id}!')
 
-    async def run(self):
-        """ Just for common interface compatibility """
-        await self.run_worker()
+    def run_in_background(self):
+        return asyncio.create_task(self.run())
 
-    async def run_worker(self):
+    async def run(self):
         if self._running:
             self.logger.error('Already running!')
             return

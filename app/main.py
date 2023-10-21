@@ -549,7 +549,12 @@ class App(WithLogger):
 
         return tasks
 
+    def die(self, code=-100):
+        self._bg_task.cancel()
+        exit(code)
+
     async def _run_background_jobs(self):
+        tasks = []
         try:
             tasks = await self._prepare_task_graph()
             await self._preloading()
@@ -558,9 +563,7 @@ class App(WithLogger):
             self.logger.exception(f'Failed to prepare tasks: {e}')
             self.logger.error(f'Terminating in {self.sleep_step} sec...')
             await asyncio.sleep(self.sleep_step)
-
-            self._bg_task.cancel()
-            exit(-100)
+            self.die()
 
         self.logger.info(f'Ready! Starting background jobs in {self.sleep_step}...')
         await asyncio.sleep(self.sleep_step)
@@ -570,8 +573,12 @@ class App(WithLogger):
 
         # start background jobs
         self.logger.info(f'Total tasks to run: {len(tasks)}')
-        for task in tasks:
-            task.run_in_background()
+        try:
+            running_tasks = [task.run_in_background() for task in tasks]
+            self.logger.info(f'Total tasks to running: {len(running_tasks)}')
+        except Exception as e:
+            self.logger.exception(f'{e!r}', exc_info=True)
+            self.die()
         # await asyncio.gather(*(task.run() for task in tasks))
 
     async def _debug_command(self):
