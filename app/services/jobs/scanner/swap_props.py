@@ -6,9 +6,9 @@ from typing import NamedTuple, List, Optional, Tuple
 from proto.access import DecodedEvent
 from services.lib.memo import THORMemo
 from services.lib.money import is_rune
-from services.models.s_swap import StreamingSwap
 from services.models.events import EventSwap, EventStreamingSwap, EventOutbound, EventScheduledOutbound, \
     parse_swap_and_out_event, TypeEventSwapAndOut
+from services.models.s_swap import StreamingSwap
 from services.models.tx import ThorTx, SUCCESS, ThorMetaSwap, ThorCoin, ThorSubTx
 from services.models.tx_type import TxType
 
@@ -93,7 +93,8 @@ class SwapProps(NamedTuple):
                 for ev in self.events:
                     # fixme: possible bug. it dest addy is THORName,
                     #  it will mismatch anyway because events have natural addresses
-                    if isinstance(ev, EventOutbound) and ev.to_address != self.memo.dest_address and ev.is_outbound_memo:
+                    if isinstance(ev,
+                                  EventOutbound) and ev.to_address != self.memo.dest_address and ev.is_outbound_memo:
                         return ev.amount, ev.to_address
 
         return 0, ''  # otherwise not found

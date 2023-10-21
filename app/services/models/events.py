@@ -291,3 +291,11 @@ def parse_swap_and_out_event(e: DecodedEvent):
 
 
 TypeEventSwapAndOut = Union[EventSwap, EventStreamingSwap, EventOutbound, EventScheduledOutbound]
+TypeEvents = Union[
+    EventSwap,
+    EventStreamingSwap,
+    EventOutbound,
+    EventScheduledOutbound,
+    EventLoanOpen,
+    EventLoanRepayment
+]
