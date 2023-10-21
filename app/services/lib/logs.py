@@ -21,10 +21,10 @@ class ColorFormatter(logging.Formatter):
     # Change this dictionary to suit your coloring needs!
     COLORS = {
         "WARNING": Fore.YELLOW,
-        "ERROR": Fore.RED + Back.WHITE,
+        "ERROR": Fore.RED,
         "DEBUG": Fore.BLUE,
         "INFO": Fore.GREEN,
-        "CRITICAL": Fore.RED + Back.WHITE
+        "CRITICAL": Fore.RED
     }
 
     def format(self, record):
