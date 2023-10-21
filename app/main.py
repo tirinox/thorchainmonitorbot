@@ -209,15 +209,15 @@ class App:
                 await asyncio.sleep(sleep_step)
 
                 logging.info('Loading last block...')
-                await d.last_block_fetcher.fetch()
+                await d.last_block_fetcher.run_once()
                 await asyncio.sleep(sleep_step)
 
                 logging.info('Loading node info...')
-                await d.node_info_fetcher.fetch()  # get nodes beforehand
+                await d.node_info_fetcher.run_once()  # get nodes beforehand
                 await asyncio.sleep(sleep_step)
 
                 logging.info('Loading constants and mimir...')
-                await d.mimir_const_fetcher.fetch()  # get constants beforehand
+                await d.mimir_const_fetcher.run_once()  # get constants beforehand
                 await asyncio.sleep(sleep_step)
 
                 # print some information about threshold curves
@@ -565,7 +565,9 @@ class App:
         asyncio.create_task(self._debug_command())
 
         # start background jobs
-        await asyncio.gather(*(task.run() for task in tasks))
+        for task in tasks:
+            asyncio.create_task(task.run())
+        # await asyncio.gather(*(task.run() for task in tasks))
 
     async def _debug_command(self):
         await self.deps.telegram_bot.send_message(
