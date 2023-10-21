@@ -31,10 +31,16 @@ class MainStates(StatesGroup):
     SETTINGS = State()
 
 
+g_admin_msg: Optional[AdminMessages] = None
+
+
 class MainMenuDialog(BaseDialog):
     def __init__(self, loc: BaseLocalization, data: Optional[FSMContextProxy], d: DepContainer, message: Message):
         super().__init__(loc, data, d, message)
-        self.admin_messages = AdminMessages(self.deps)
+        global g_admin_msg
+        if not g_admin_msg:
+            g_admin_msg = AdminMessages(d)
+        self.admin_messages = g_admin_msg
 
     @message_handler(commands='start,lang', state='*')
     async def entry_point(self, message: Message):
@@ -160,7 +166,9 @@ class MainMenuDialog(BaseDialog):
                              disable_notification=True,
                              disable_web_page_preview=True)
 
-        text = await self.admin_messages.get_debug_message_text_session(with_summary=False)
+    @message_handler(commands='debug_http', state='*')
+    async def cmd_debug_http(self, message: Message):
+        text = await self.admin_messages.get_debug_message_text_session()
         await message.answer(text,
                              disable_notification=True,
                              disable_web_page_preview=True)

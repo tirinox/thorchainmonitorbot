@@ -57,7 +57,7 @@ class AdminMessages:
 
         return message
 
-    async def get_debug_message_text_session(self, start=0, count=10, with_summary=True):
+    async def get_debug_message_text_session(self, start=0, count=10, with_summary=False):
         message = f'🕸️ {bold("HTTP session info")}\n\n'
 
         # noinspection PyTypeChecker
