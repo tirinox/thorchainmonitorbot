@@ -1,3 +1,5 @@
+import logging
+import time
 from abc import ABC, abstractmethod
 
 
@@ -28,6 +30,17 @@ class WithDelegates:
         if not data:
             return
         sender = sender or self
+
+        summary = {}
+
         for delegate in self.delegates:
             delegate: INotified
-            await delegate.on_data(sender, data)
+            t0 = time.monotonic()
+            try:
+                await delegate.on_data(sender, data)
+            except Exception as e:
+                logging.exception(f"{e!r}")
+            t1 = time.monotonic()
+            summary[str(delegate)] = t1 - t0
+
+        return summary
