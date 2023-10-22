@@ -1,4 +1,5 @@
 import json
+import time
 from contextlib import suppress
 from typing import Optional
 
@@ -10,9 +11,13 @@ from services.lib.utils import WithLogger
 
 
 class EventDatabase(WithLogger):
-    def __init__(self, db: DB):
+    CLEAN_UP_PERIOD = 100
+
+    def __init__(self, db: DB, clean_up_period=CLEAN_UP_PERIOD):
         super().__init__()
         self.db = db
+        self._calls = 0
+        self._clean_up_period = clean_up_period
 
     @staticmethod
     def key_to_tx(tx_id):
@@ -68,7 +73,7 @@ class EventDatabase(WithLogger):
             json.dump(local_db, f, indent=4)
             self.logger.info(f'Saved a backup containing {len(local_db)} records.')
 
-    async def clean_up_old_events(self, before_block):
+    async def _clean_up_old_events(self, before_block):
         keys = await self.load_all_keys()
         candidates_for_deletion = []
         r: Redis = await self.db.get_redis()
@@ -82,6 +87,17 @@ class EventDatabase(WithLogger):
         if candidates_for_deletion:
             self.logger.info(f'I will clean up {len(candidates_for_deletion)} TX records now.')
             await r.delete(*candidates_for_deletion)
+
+    async def clean_up_old_events(self, before_block):
+        # do it from time to time
+        if self._calls % self._clean_up_period == 0:
+            t0 = time.monotonic()
+            await self._clean_up_old_events(before_block)
+            t1 = time.monotonic()
+            delta_time = t1 - t0
+            log_f = self.logger.warning if delta_time > 1.0 else self.logger.info()
+            log_f(f'Clean up took {delta_time:.2f} sec')
+        self._calls += 1
 
     DB_KEY_SS_STARTED_SET = 'tx:ss-started-set'
 

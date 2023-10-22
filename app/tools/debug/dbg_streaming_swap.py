@@ -12,7 +12,7 @@ from services.jobs.scanner.swap_extractor import SwapExtractorBlock
 from services.jobs.user_counter import UserCounter
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.jobs.volume_recorder import VolumeRecorder
-from services.lib.money import DepthCurve, Asset
+from services.lib.money import DepthCurve, Asset, AssetRUNE
 from services.lib.texts import sep
 from services.lib.utils import setup_logs
 from services.lib.w3.aggregator import AggregatorDataExtractor
@@ -25,6 +25,7 @@ from services.notify.types.tx_notify import SwapTxNotifier
 from tools.lib.lp_common import LpAppFramework
 
 BlockScannerClass = NativeScannerBlockCached
+
 
 # faulthandler.enable()
 
@@ -244,13 +245,17 @@ async def debug_cex_profit_calc(app: LpAppFramework, tx_id):
 
 async def debug_cex_profit_calc_binance(app: LpAppFramework):
     profit_calc = StreamingSwapVsCexProfitCalculator(app.deps)
-    result = await profit_calc.binance_query('BTC', 'BNB', 10)
+
+    btc = Asset.from_string('BTC.BTC')
+    bnb = Asset.from_string('BNB.BNB')
+
+    result = await profit_calc.binance_query(btc, bnb, 10)
     print(f'10 BTC => {result} BNB')
 
-    result = await profit_calc.binance_query('BNB', 'BTC', 10)
+    result = await profit_calc.binance_query(bnb, btc, 10)
     print(f'10 BNB => {result} BTC')
 
-    result = await profit_calc.binance_query('BTC', 'RUNE', 100)
+    result = await profit_calc.binance_query(btc, AssetRUNE, 100)
     print(f'100 BTC => {result} RUNE')
 
     # print(await profit_calc.binance_get_order_book_cached('BTC', 'BNB'))
@@ -262,7 +267,6 @@ async def run():
         print('start!')
 
         setup_logs(logging.INFO)
-        logging.error('???')
 
         await app.deps.pool_fetcher.reload_global_pools()
         await app.deps.last_block_fetcher.run_once()
@@ -283,10 +287,11 @@ async def run():
         #     app, start=12802333,
         #     tx_id='2065AD2148F242D59DEE34890022A2264C9B04C2297E04295BB118E29A995E05')
 
-        # fixme: no ss end!
-        await debug_full_pipeline(
-            app, start=12802040,
-            tx_id='63218D1F853AEB534B3469C4E0236F43E04BFEE99832DF124425454B8DB1528E')
+        await debug_full_pipeline(app)
+
+        # await debug_full_pipeline(
+        #     app, start=12802040,
+        #     tx_id='63218D1F853AEB534B3469C4E0236F43E04BFEE99832DF124425454B8DB1528E')
 
         # await debug_detect_start_on_deposit_rune(app)
         # await debug_detect_start_on_external_tx(app)
