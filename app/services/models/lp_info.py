@@ -245,7 +245,7 @@ class LiquidityPoolReport:
     def savers_apr(self):
         _, a = self.redeemable_rune_asset
         asset_change = a + self.liq.asset_withdrawn - self.liq.asset_added
-        asset_change_r = asset_change / a
+        asset_change_r = asset_change / a if a != 0 else 0
         return self.apy_from_change(asset_change_r)
 
     @property
