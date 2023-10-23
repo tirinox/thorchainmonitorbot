@@ -105,8 +105,6 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
 
         # db = native_action_extractor._db
         # await db.backup('../temp/ev_db_backup_everything.json')
-        #
-        # await db.clean_up_old_events(start + 10000)
 
     d.block_scanner.add_subscriber(native_action_extractor)
 
