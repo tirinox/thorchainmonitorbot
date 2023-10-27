@@ -24,7 +24,9 @@ def link_with_domain_text(url):
 
 
 def code(text):
-    return f"<code>{text}</code>"
+    # In new version of Telegram they changed appearance of code blocks dramatically
+    # Previously: return f"<code>{text}</code>"
+    return pre(text)
 
 
 def ital(text):
