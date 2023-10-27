@@ -2,6 +2,7 @@ import asyncio
 import logging
 import os
 
+import aioredis.exceptions
 from aiothornode.connector import ThorConnector
 
 from localization.admin import AdminMessages
@@ -198,10 +199,13 @@ class App(WithLogger):
         if 'REPLACE_RUNE_TIMESERIES_WITH_GECKOS' in os.environ:
             await fill_rune_price_from_gecko(d.db)
 
+        self.logger.info('Loading procedure start.')
+
         sleep_step = self.sleep_step
         while True:
             try:
-                self.logger.info('Loading procedure start.')
+                self.logger.info('Testing DB connection...')
+                await self.deps.db.test_db_connection()
 
                 await self.create_thor_node_connector()
 
@@ -236,9 +240,11 @@ class App(WithLogger):
 
                 break  # all is good. exit the loop
             except Exception as e:
-                self.logger.exception(e)
-                self.logger.error(f'No luck. {e!r} Retrying in {sleep_step} sec...')
-                await asyncio.sleep(sleep_step)
+                if not isinstance(e, aioredis.exceptions.ConnectionError):
+                    self.logger.exception(e)
+                retry_after = sleep_step * 5
+                self.logger.error(f'No luck. {e!r} Retrying in {retry_after} sec...')
+                await asyncio.sleep(retry_after)
 
     async def _prepare_task_graph(self):
         d = self.deps
@@ -550,7 +556,8 @@ class App(WithLogger):
         return tasks
 
     def die(self, code=-100):
-        self._bg_task.cancel()
+        if self._bg_task:
+            self._bg_task.cancel()
         exit(code)
 
     async def _run_background_jobs(self):
@@ -597,7 +604,8 @@ class App(WithLogger):
         self._bg_task = asyncio.create_task(self._run_background_jobs())
 
     async def on_shutdown(self, _):
-        await self.deps.session.close()
+        if self.deps.session:
+            await self.deps.session.close()
 
     def run_bot(self):
         self.deps.telegram_bot.run(on_startup=self.on_startup, on_shutdown=self.on_shutdown)

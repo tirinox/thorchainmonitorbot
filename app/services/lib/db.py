@@ -1,5 +1,5 @@
-import os
 import logging
+import os
 import typing
 from contextlib import asynccontextmanager
 
@@ -48,3 +48,7 @@ class DB:
         fsm = FSMContext(self.storage, chat, user)
         async with fsm.proxy() as p:
             yield p
+
+    async def test_db_connection(self):
+        r = await self.get_redis()
+        await r.ping()
