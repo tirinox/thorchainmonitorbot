@@ -1,3 +1,4 @@
+import collections
 import colorsys
 import logging
 import math
@@ -11,7 +12,7 @@ from typing import List, Tuple
 
 import PIL.Image
 import numpy as np
-from PIL import Image, ImageDraw, ImageColor
+from PIL import Image, ImageDraw, ImageColor, ImageFilter
 
 from services.lib.money import clamp
 from services.lib.utils import linear_transform
@@ -289,12 +290,17 @@ def shift_hue(arr, hout):
     return hsv_to_rgb(hsv)
 
 
-def adjust_brightness(hex_color, factor):
+def adjust_brightness(color, factor):
     # Convert the HEX color to RGB
-    hex_color = hex_color.lstrip('#')
-    r = int(hex_color[0:2], 16)
-    g = int(hex_color[2:4], 16)
-    b = int(hex_color[4:6], 16)
+    if isinstance(color, str):
+        hex_color = color.lstrip('#')
+        r = int(color[0:2], 16)
+        g = int(color[2:4], 16)
+        b = int(color[4:6], 16)
+        as_tuple = False
+    else:
+        r, g, b = color
+        as_tuple = True
 
     # Adjust the brightness by scaling the RGB values
     h, s, v = colorsys.rgb_to_hsv(r / 255.0, g / 255.0, b / 255.0)
@@ -305,10 +311,11 @@ def adjust_brightness(hex_color, factor):
     # Convert HSV back to RGB
     r, g, b = [int(c * 255) for c in colorsys.hsv_to_rgb(h, s, v)]
 
-    # Convert the adjusted RGB values back to HEX
-    adjusted_hex_color = "#{:02X}{:02X}{:02X}".format(r, g, b)
-
-    return adjusted_hex_color
+    if as_tuple:
+        return r, g, b
+    else:
+        # Convert the adjusted RGB values back to HEX
+        return "#{:02X}{:02X}{:02X}".format(r, g, b)
 
 
 def shift_hue_image(img: Image, hue_out):
@@ -598,3 +605,88 @@ def reduce_alpha(im: Image, target_alpha=0.5):
 
     # Convert back to PIL Image
     return Image.fromarray(na)
+
+
+def add_shadow(image, size=10):
+    shadow = image.filter(ImageFilter.GaussianBlur(radius=size))  # Adjust the radius for the desired softness
+    shadow.paste((255, 255, 255, 255), (0, 0, shadow.width, shadow.height), image)
+    return shadow
+
+
+def add_transparent_frame(image, left, top=None, right=None, bottom=None):
+    if top is None:
+        top = left
+    if right is None:
+        right = left
+    if bottom is None:
+        bottom = top
+
+    new_width = image.width + left + right
+    new_height = image.height + top + bottom
+
+    # Create a new blank image with an alpha channel
+    frame = Image.new('RGBA', (new_width, new_height), (0, 0, 0, 0))
+
+    # Paste the original image onto the frame, with an offset to center it
+    offset = ((new_width - image.width) // 2, (new_height - image.height) // 2)
+    frame.paste(image, offset)
+    return frame
+
+
+def add_tint_to_bw_image(img, tint_color):
+    # Ensure the image is in grayscale
+    if img.mode != 'L':
+        img = img.convert('L')
+
+    # Create a new image with the same size and tint color
+    tinted_img = Image.new('RGB', img.size, tint_color)
+
+    # Apply the grayscale image as an alpha mask
+    tinted_img.putalpha(img)
+
+    return tinted_img
+
+
+def get_dominant_colors(img, num_colors=5, thumb_size=60, threshold=100):
+    # Resize the image for faster processing if needed
+    img = img.copy()
+    img.thumbnail((thumb_size, thumb_size))
+
+    # Convert the image to RGB mode
+    img = img.convert("RGB")
+
+    # Get the image data as a list of RGB tuples
+    pixels = list(img.getdata())
+
+    pixels = [p for p in pixels if sum(p) > threshold]
+
+    # Count the occurrence of each color
+    color_counter = collections.Counter(pixels)
+
+    # Find the most common colors
+    dominant_colors = color_counter.most_common(num_colors)
+
+    return [color[0] for color in dominant_colors]
+
+
+def extract_characteristic_color(img, thumb_size=60, threshold=0):
+    img = img.copy()
+    img.thumbnail((thumb_size, thumb_size))
+
+    # Calculate the average color of the image
+    width, height = img.size
+    pixel_data = list(img.getdata())
+
+    threshold *= 3
+    total_red = total_green = total_blue = 0
+    total_pixels = 0
+    for r, g, b, *_ in pixel_data:
+        if r + g + b > threshold:
+            total_red += r
+            total_green += g
+            total_blue += b
+            total_pixels += 1
+
+    average_color = (total_red // total_pixels, total_green // total_pixels, total_blue // total_pixels)
+
+    return average_color
