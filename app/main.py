@@ -468,7 +468,7 @@ class App(WithLogger):
             fetcher_chain_state.add_subscriber(notifier_trade_halt)
             tasks.append(fetcher_chain_state)
 
-        if d.cfg.get('constants.mimir_change', True):
+        if d.cfg.get('constants.mimir_change.enabled', True):
             notifier_mimir_change = MimirChangedNotifier(d)
             d.mimir_const_fetcher.add_subscriber(notifier_mimir_change)
 
