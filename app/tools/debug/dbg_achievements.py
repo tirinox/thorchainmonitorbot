@@ -188,18 +188,28 @@ async def debug_naughty_savers_achievements(app: LpAppFramework):
     await asyncio.sleep(3.0)
 
 
+def clear_temp_achievements_folder():
+    source_folder = '../temp/a'
+    for f in os.listdir(source_folder):
+        if f.endswith('.png') and f.startswith('thorchain-ach'):
+            path_to_delete = os.path.join(source_folder, f)
+            os.remove(path_to_delete)
+            print(f'Deleted: {path_to_delete}')
+
+
 async def main():
     app = LpAppFramework()
     async with app(brief=True):
+        clear_temp_achievements_folder()
         # await demo_debug_logic(app)
         # await demo_achievements_picture(Language.ENGLISH, A.ANNIVERSARY, 3, 3)
         # await demo_achievements_picture(Language.RUSSIAN, A.ANNIVERSARY, 2, 2)
         # await demo_achievements_picture(Language.ENGLISH, A.COIN_MARKET_CAP_RANK, 10, 11, descending=True)
         # await demo_achievements_picture(Language.RUSSIAN, A.COIN_MARKET_CAP_RANK, 10, 11, descending=True)
-        await demo_achievements_picture(
-            Language.ENGLISH, A.SWAP_COUNT_TOTAL, 100003, 100000,
-            force_background='nn_wreath_experimental_2.png'
-        )
+        # await demo_achievements_picture(
+        #     Language.ENGLISH, A.SWAP_COUNT_TOTAL, 100003, 100000,
+        #     force_background='nn_wreath_experimental_2.png'
+        # )
         await demo_all_achievements()
         # await demo_run_pipeline_coin_rank(app)
         # await demo_run_pipeline_test(app, spec='BTC.BTC')
