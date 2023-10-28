@@ -1,3 +1,4 @@
+import abc
 import random
 from typing import NamedTuple
 
@@ -38,10 +39,10 @@ POSTFIX_RUNE = RAIDO_GLYPH
 META_KEY_SPEC = '::asset::'
 
 
-class AchievementsLocalizationBase:
+class AchievementsLocalizationBase(abc.ABC):
     ACHIEVEMENT_DESC_LIST = []
     CELEBRATION_EMOJIES = "🎉🎊🥳🙌🥂🪅🎆"
-    DEVIAION_TO_SHOW_VALUE_PCT = 10
+    DEVIATION_TO_SHOW_VALUE_PCT = 10
 
     @classmethod
     def check_if_all_achievements_have_description(cls):
@@ -80,7 +81,7 @@ class AchievementsLocalizationBase:
         # Value string (goes in parentheses after the milestone_str)
         value_str = ''
         if a.value and not a.descending:
-            if abs(a.value - a.milestone) < 0.01 * self.DEVIAION_TO_SHOW_VALUE_PCT * a.milestone:
+            if abs(a.value - a.milestone) < 0.01 * self.DEVIATION_TO_SHOW_VALUE_PCT * a.milestone:
                 value_str = ''
             else:
                 value_str = desc.format_value(a.value, a)
@@ -91,3 +92,7 @@ class AchievementsLocalizationBase:
     def __init__(self):
         self.desc_map = {a.key: a for a in self.ACHIEVEMENT_DESC_LIST}
         self.check_if_all_achievements_have_description()
+
+    @abc.abstractmethod
+    def notification_achievement_unlocked(self, a: Achievement):
+        ...

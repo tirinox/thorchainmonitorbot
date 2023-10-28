@@ -2,7 +2,7 @@ import asyncio
 from typing import Union
 
 from localization.manager import BaseLocalization
-from services.dialog.picture.achievement_picture import AchievementPictureGenerator
+from services.dialog.picture.achievement_picture import build_achievement_picture_generator
 from services.dialog.picture.block_height_picture import block_speed_chart
 from services.dialog.picture.key_stats_picture import KeyStatsPictureGenerator
 from services.dialog.picture.nodes_pictures import NodePictureGenerator
@@ -129,7 +129,7 @@ class AlertPresenter(INotified):
 
     async def _handle_achievement(self, event: Achievement):
         async def _gen(loc: BaseLocalization, _a: Achievement):
-            pic_gen = AchievementPictureGenerator(loc.ach, _a)
+            pic_gen = build_achievement_picture_generator(_a, loc.ach)
             pic, pic_name = await pic_gen.get_picture()
             caption = loc.ach.notification_achievement_unlocked(event)
             return BoardMessage.make_photo(pic, caption=caption, photo_file_name=pic_name)

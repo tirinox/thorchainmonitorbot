@@ -6,7 +6,7 @@ import random
 from localization.achievements.ach_eng import AchievementsEnglishLocalization
 from localization.achievements.ach_rus import AchievementsRussianLocalization
 from localization.languages import Language
-from services.dialog.picture.achievement_picture import AchievementPictureGenerator
+from services.dialog.picture.achievement_picture import build_achievement_picture_generator
 from services.jobs.achievement.ach_list import Achievement, AchievementTest, A
 from services.jobs.achievement.milestones import Milestones
 from services.jobs.achievement.notifier import AchievementsNotifier
@@ -91,7 +91,8 @@ async def demo_achievements_picture(lang=None, a=None, v=None, milestone=None, d
     lang = lang or Language.ENGLISH
 
     loc = AchievementsRussianLocalization() if lang == Language.RUSSIAN else AchievementsEnglishLocalization()
-    gen = AchievementPictureGenerator(loc, rec, force_background=force_background)
+    gen = build_achievement_picture_generator(rec, loc)
+    gen.force_background = force_background
     pic, pic_name = await gen.get_picture()
     save_and_show_pic(pic, name=f'a/{pic_name}')
 
@@ -128,7 +129,7 @@ async def demo_all_achievements():
             print('TS: ', ts, datetime.datetime.fromtimestamp(rec.timestamp).strftime('%B %d, %Y'))
 
             # loc = AchievementsEnglishLocalization()
-            gen = AchievementPictureGenerator(loc, rec)
+            gen = build_achievement_picture_generator(rec, loc)
             pic, pic_name = await gen.get_picture()
             save_and_show_pic(pic, name=f'a/{pic_name}', show=show)
 
@@ -177,6 +178,7 @@ async def debug_naughty_savers_achievements(app: LpAppFramework):
     await ach_not.cd.clear()
     await ach_not.tracker.delete_achievement_record(A.SAVER_VAULT_SAVED_USD, specialization='USDC')
 
+    # noinspection PyTypeChecker
     event = Achievement(A.SAVER_VAULT_EARNED_ASSET, -0.1, specialization='USDC')
 
     await ach_not.tracker.feed_data(event)
