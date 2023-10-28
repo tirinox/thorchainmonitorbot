@@ -14,21 +14,24 @@ class SpriteFont:
     }
 
     def __init__(self, path, spacing=4, borders=4, whitespace_width=40,
-                 available_symbols=DEFAULT_AVAILABLE_SYMBOLS, symbols_special_names=None):
+                 available_symbols=DEFAULT_AVAILABLE_SYMBOLS, symbols_special_names=None,
+                 filename_prefix=''):
         self.path = path
         self.spacing = spacing
         self.borders = borders
         self.available_symbols = available_symbols
         self.symbol_special_names = symbols_special_names or self.DEFAULT_SPECIAL_NAMES
         self.whitespace_width = whitespace_width
+        self.filename_prefix = filename_prefix
+
         self.symbols = {s: self._symbol_to_image(s) for s in self.available_symbols}
 
     def _symbol_to_image(self, symbol: str) -> Image:
         if symbol == ' ':
             return Image.new(mode='RGBA', size=(self.whitespace_width, 1), color=(0, 0, 0, 0))
         symbol = self.symbol_special_names.get(symbol, symbol)
-        # noinspection PyTypeChecker
-        return Image.open(os.path.join(self.path, f'{symbol}.png'))
+
+        return Image.open(os.path.join(self.path, f'{self.filename_prefix}{symbol}.png'))
 
     def render_string(self, string):
         for s in string:
