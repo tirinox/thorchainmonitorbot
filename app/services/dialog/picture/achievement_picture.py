@@ -48,34 +48,35 @@ class GenericAchievementPictureGenerator(BasePictureGenerator, abc.ABC):
         image = Image.open(path)
         return convert_indexed_png(image)
 
-    @async_wrap
-    def _get_picture_sync(self):
-        _desc, ago, desc_text, emoji, milestone_str, prev_milestone_str, value_str = self.loc.prepare_achievement_data(
-            self.ach,
-            newlines=True,
-        )
-        desc_text = desc_text.upper()
-
-        # ---- Canvas ----
-        attributes = self.custom_attributes(self.r)  # for this kind of achievement
-
-        image = self.load_background_picture()
-
+    def get_tint(self, image):
         # get dominant color of the background
         tint = extract_characteristic_color(image, threshold=150)
         n = 0
         while sum(tint) < 600 and n < 10:
             tint = adjust_brightness(tint, 1.2)
             n += 1
+        return tint
 
-        draw = ImageDraw.Draw(image)
+    @async_wrap
+    def _get_picture_sync(self):
+        _desc, ago, desc_text, emoji, milestone_str, prev_milestone_str, value_str = self.loc.prepare_achievement_data(
+            self.ach,
+            newlines=True,
+        )
 
-        self.put_logo(image)
-        self.put_main_number(image, attributes, milestone_str, tint)
-        self.put_description(attributes, desc_text, image, tint)
+        bg = self.load_background_picture()
+
+        # get dominant color of the background
+        tint = self.get_tint(bg)
+        draw = ImageDraw.Draw(bg)
+        attributes = self.custom_attributes(self.r)  # for this kind of achievement
+
+        self.put_logo(bg)
+        self.put_main_number(bg, attributes, milestone_str, tint)
+        self.put_description(attributes, desc_text, bg, tint)
         self.put_date(draw)
 
-        return image
+        return bg
 
     def put_date(self, draw):
         font_getter = self.r.fonts.get_font
@@ -85,6 +86,8 @@ class GenericAchievementPictureGenerator(BasePictureGenerator, abc.ABC):
                   fill='#aaa', font=font_getter(28), anchor='mb')
 
     def put_description(self, attributes, desc_text, image, tint):
+        desc_text = desc_text.upper()
+
         desc_y = 89
         font_getter_bold = self.r.fonts.get_font_bold
 
