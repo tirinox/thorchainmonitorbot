@@ -12,7 +12,7 @@ from typing import List, Tuple
 
 import PIL.Image
 import numpy as np
-from PIL import Image, ImageDraw, ImageColor, ImageFilter
+from PIL import Image, ImageDraw, ImageColor, ImageFilter, ImageFont
 
 from services.lib.money import clamp
 from services.lib.utils import linear_transform
@@ -607,8 +607,11 @@ def reduce_alpha(im: Image, target_alpha=0.5):
     return Image.fromarray(na)
 
 
-def add_shadow(image, size=10):
-    shadow = image.filter(ImageFilter.GaussianBlur(radius=size))  # Adjust the radius for the desired softness
+def add_shadow(image, size=10, shadow_source=None):
+    shadow_source = shadow_source or image
+    # Adjust the radius for the desired softness
+    shadow = shadow_source.filter(ImageFilter.GaussianBlur(radius=size))
+
     shadow.paste((255, 255, 255, 255), (0, 0, shadow.width, shadow.height), image)
     return shadow
 
@@ -690,3 +693,26 @@ def extract_characteristic_color(img, thumb_size=60, threshold=0):
     average_color = (total_red // total_pixels, total_green // total_pixels, total_blue // total_pixels)
 
     return average_color
+
+
+def draw_text_with_font(text: str, font: ImageFont, text_color=(0, 0, 0, 255), stroke_width=0, stroke_fill=None):
+    background_color = (255, 255, 255, 0)  # Transparent background
+
+    # Initialize the drawing context with a temporary image to calculate text size
+    text_width, text_height = font_estimate_size(font, text)
+
+    image = Image.new("RGBA", (
+        text_width + stroke_width * 2, text_height + stroke_width * 2
+    ), background_color)
+
+    # Initialize the drawing context
+    draw = ImageDraw.Draw(image)
+
+    # Draw the text on the image
+    x = y = stroke_width
+    draw.text((x, y), text, fill=text_color, font=font,
+              stroke_width=stroke_width,
+              stroke_fill=stroke_fill,
+              anchor='lt')
+
+    return image
