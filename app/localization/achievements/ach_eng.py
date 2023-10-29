@@ -52,6 +52,10 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
         ADesc(A.COIN_MARKET_CAP_RANK, 'Market cap rank'),
 
         ADesc(A.POL_VALUE_RUNE, 'POL maximum value'),
+
+        ADesc(A.BTC_IN_VAULT, 'Bitcoin in vaults'),
+        ADesc(A.ETH_IN_VAULT, 'Ethereum in vaults'),
+        ADesc(A.STABLES_IN_VAULT, 'Stable coins in vaults'),
     ]
 
     CELEBRATION_EMOJIES = "🎉🎊🥳🙌🥂🪅🎆"

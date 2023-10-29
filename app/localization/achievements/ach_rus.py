@@ -53,6 +53,10 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
         ADesc(A.COIN_MARKET_CAP_RANK, 'Место по капитализации'),
 
         ADesc(A.POL_VALUE_RUNE, 'POL вклад в Rune'),
+
+        ADesc(A.BTC_IN_VAULT, 'Bitcoin в хранилище'),
+        ADesc(A.ETH_IN_VAULT, 'Ethereum в хранилище'),
+        ADesc(A.STABLES_IN_VAULT, 'Стейблы в хранилище'),
     ]
 
     def notification_achievement_unlocked(self, a: Achievement):

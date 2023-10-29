@@ -213,3 +213,9 @@ class AlertKeyStats(NamedTuple):
             if pool:
                 running_sum += pool.balance_asset
         return thor_to_float(running_sum)
+
+    def get_btc(self, previous=False):
+        return self.get_sum(('BTC.BTC',), previous)
+
+    def get_eth(self, previous=False):
+        return self.get_sum(('ETH.ETH',), previous)

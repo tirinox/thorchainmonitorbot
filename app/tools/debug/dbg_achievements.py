@@ -92,7 +92,8 @@ async def demo_achievements_picture(lang=None, a=None, v=None, milestone=None, d
 
     loc = AchievementsRussianLocalization() if lang == Language.RUSSIAN else AchievementsEnglishLocalization()
     gen = build_achievement_picture_generator(rec, loc)
-    gen.force_background = force_background
+    if force_background:
+        gen.force_background = force_background
     pic, pic_name = await gen.get_picture()
     save_and_show_pic(pic, name=f'a/{pic_name}')
 
@@ -208,10 +209,10 @@ async def main():
         # await demo_achievements_picture(Language.RUSSIAN, A.ANNIVERSARY, 2, 2)
         # await demo_achievements_picture(Language.ENGLISH, A.COIN_MARKET_CAP_RANK, 10, 11, descending=True)
         # await demo_achievements_picture(Language.RUSSIAN, A.COIN_MARKET_CAP_RANK, 10, 11, descending=True)
-        # await demo_achievements_picture(
-        #     Language.ENGLISH, A.SWAP_COUNT_TOTAL, 100003, 100000,
-        #     force_background='nn_wreath_experimental_2.png'
-        # )
+        await demo_achievements_picture(
+            Language.ENGLISH, A.BTC_IN_VAULT, 105, 100,
+            # force_background='nn_wreath_experimental_3.png'
+        )
         await demo_all_achievements()
         # await demo_run_pipeline_coin_rank(app)
         # await demo_run_pipeline_test(app, spec='BTC.BTC')

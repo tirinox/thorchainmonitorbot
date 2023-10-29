@@ -44,10 +44,10 @@ class AchievementsExtractor(WithLogger):
             kv_events = self.on_thor_tx_list(data)
         elif isinstance(data, AlertPOL):
             kv_events = self.on_thor_pol(data)
+        elif isinstance(data, AlertKeyStats):
+            kv_events = self.on_weekly_stats(data)
         elif isinstance(data, AchievementTest):
             kv_events = self.on_test_event(data)
-        elif isinstance(data, AlertKeyStats):
-            kv_events = []  # todo!
         else:
             self.logger.warning(f'Unknown data type {type(data)} from {sender}. Dont know how to handle it.')
             kv_events = []
@@ -161,3 +161,11 @@ class AchievementsExtractor(WithLogger):
         return [
             Achievement(A.POL_VALUE_RUNE, int(pol.current.rune_value))
         ]
+
+    def on_weekly_stats(self, ev: AlertKeyStats):
+        results = [
+            Achievement(A.BTC_IN_VAULT, int(ev.get_btc())),
+            Achievement(A.ETH_IN_VAULT, int(ev.get_eth())),
+            Achievement(A.STABLES_IN_VAULT, int(ev.get_stables_sum())),
+        ]
+        return results

@@ -62,6 +62,11 @@ class AchievementName:
 
     MAX_ADD_AMOUNT_USD_PER_POOL = 'max_add_amount_usd_per_pool'
 
+    # new:
+    BTC_IN_VAULT = 'btc_in_vault'
+    ETH_IN_VAULT = 'eth_in_vault'
+    STABLES_IN_VAULT = 'stables_in_vault'
+
     @classmethod
     def all_keys(cls):
         return [getattr(cls, k) for k in cls.__dict__
