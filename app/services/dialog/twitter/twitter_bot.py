@@ -104,10 +104,12 @@ class TwitterBot(WithLogger):
             logging.exception(f'Twitter exception!', stack_info=True)
             if self.emergency:
                 # Signal the admin to update app binding in the Twitter Developer Portal
-                self.emergency.report(self.logger.name, repr(e),
-                                      api_errors=e.api_errors,
-                                      api_codes=e.api_codes,
-                                      api_messages=e.api_messages)
+                self.emergency.report(
+                    self.logger.name, repr(e),
+                    api_errors=getattr(e, 'api_errors', None),
+                    api_codes=getattr(e, 'api_codes', None),
+                    api_messages=getattr(e, 'api_messages', None)
+                )
 
     async def send_message(self, chat_id, msg: BoardMessage, _retrying=False, **kwargs) -> bool:
         # Chat_id is not supported yet... only one single channel
@@ -134,6 +136,19 @@ class TwitterBot(WithLogger):
         except Exception as e:
             logging.exception(f'Other twitter exception {e!r}!', stack_info=True)
             return False
+
+    """
+        from tweepy.errors import TooManyRequests
+        Response = namedtuple('Response', ['status', 'json', 'reason'])
+        self.deps.twitter_bot._report_error(
+            TooManyRequests(
+                Response(
+                    429, lambda: {'error': 'test'},
+                    'Too many requests'
+                )
+            )
+        )
+    """
 
 
 class TwitterBotMock(TwitterBot):
