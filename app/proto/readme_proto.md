@@ -10,7 +10,8 @@ https://github.com/danielgtaylor/python-betterproto
 `pip install betterproto`
 
 Download Cosmos SDK (AFAIK THORChain uses v0.45.1, check it):
-```git clone https://github.com/cosmos/cosmos-sdk.git
+```
+git clone https://github.com/cosmos/cosmos-sdk.git
 cd cosmos-sdk
 git checkout v0.45.1
 cd ..
@@ -18,13 +19,14 @@ cd ..
 
 
 Download THORChain source code (https://gitlab.com/thorchain/thornode/) and switch your working directory:
-```git clone https://gitlab.com/thorchain/thornode.git
+```
+git clone https://gitlab.com/thorchain/thornode.git
 cd thornode
-git checkout release-1.118.0
+git checkout release-1.123.0
 ```
 
 
-Note: use the "release-vxxx" branch. For instance: https://gitlab.com/thorchain/thornode/-/tree/release-1.118.0
+Note: use the "release-vxxx" branch. For instance: https://gitlab.com/thorchain/thornode/-/tree/release-1.123.0
 
 Command to generate Python files:
 ```mkdir -p pylib

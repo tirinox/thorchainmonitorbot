@@ -244,6 +244,7 @@ class MsgLoanOpen(betterproto.Message):
     aggregator_target_address: str = betterproto.string_field(10)
     aggregator_target_limit: str = betterproto.string_field(11)
     signer: bytes = betterproto.bytes_field(12)
+    tx_id: str = betterproto.string_field(13)
 
 
 @dataclass(eq=False, repr=False)
@@ -254,6 +255,7 @@ class MsgLoanRepayment(betterproto.Message):
     min_out: str = betterproto.string_field(4)
     signer: bytes = betterproto.bytes_field(5)
     from_: str = betterproto.string_field(6)
+    tx_id: str = betterproto.string_field(7)
 
 
 @dataclass(eq=False, repr=False)
@@ -713,6 +715,22 @@ class EventOutbound(betterproto.Message):
 
 
 @dataclass(eq=False, repr=False)
+class EventTssKeygenSuccess(betterproto.Message):
+    pub_key: str = betterproto.string_field(1)
+    members: List[str] = betterproto.string_field(2)
+    height: int = betterproto.int64_field(3)
+
+
+@dataclass(eq=False, repr=False)
+class EventTssKeygenFailure(betterproto.Message):
+    fail_reason: str = betterproto.string_field(1)
+    is_unicast: bool = betterproto.bool_field(2)
+    blame_nodes: List[str] = betterproto.string_field(3)
+    round: str = betterproto.string_field(4)
+    height: int = betterproto.int64_field(5)
+
+
+@dataclass(eq=False, repr=False)
 class EventTssKeygenMetric(betterproto.Message):
     pub_key: str = betterproto.string_field(1)
     median_duration_ms: int = betterproto.int64_field(2)
@@ -774,6 +792,7 @@ class EventLoanOpen(betterproto.Message):
     debt_issued: str = betterproto.string_field(4)
     owner: str = betterproto.string_field(5)
     target_asset: "_common__.Asset" = betterproto.message_field(6)
+    tx_id: str = betterproto.string_field(7)
 
 
 @dataclass(eq=False, repr=False)
@@ -782,6 +801,7 @@ class EventLoanRepayment(betterproto.Message):
     collateral_asset: "_common__.Asset" = betterproto.message_field(2)
     debt_repaid: str = betterproto.string_field(3)
     owner: str = betterproto.string_field(4)
+    tx_id: str = betterproto.string_field(7)
 
 
 @dataclass(eq=False, repr=False)
