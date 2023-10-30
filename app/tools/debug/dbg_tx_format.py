@@ -159,7 +159,7 @@ async def send_tx_notification(app, ex_tx, loc: BaseLocalization = None):
     print(f'{ex_tx.get_affiliate_fee_usd(rune_price) = } $')
     print(f'{full_rune = } R')
 
-    nm = NameMap({}, {})
+    nm = NameMap.empty()
 
     for lang in [Language.RUSSIAN, Language.ENGLISH, Language.ENGLISH_TWITTER]:
         loc = app.deps.loc_man[lang]

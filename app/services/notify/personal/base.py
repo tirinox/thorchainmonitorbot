@@ -78,8 +78,12 @@ class BasePersonalNotifier(INotified, WithLogger, ABC):
 
                 for group in groups:
                     if group:
+                        local_ns = self.deps.name_service.get_local_service(user)
+                        local_name_map = await local_ns.get_name_map()
+                        name_map_for_user = name_map.joined_with(local_name_map)
+
                         message = await self.generate_message_text(
-                            loc, group, settings, user, user_watch_addy_list, name_map)
+                            loc, group, settings, user, user_watch_addy_list, name_map_for_user)
 
                         if not isinstance(message, str):
                             message = glue.join(message)

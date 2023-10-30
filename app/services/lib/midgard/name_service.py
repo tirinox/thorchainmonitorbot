@@ -16,6 +16,16 @@ class NameMap(NamedTuple):
     by_name: Dict[str, ThorName]
     by_address: Dict[str, ThorName]
 
+    @classmethod
+    def empty(cls):
+        return cls({}, {})
+
+    def joined_with(self, other: 'NameMap'):
+        return NameMap(
+            {**self.by_name, **other.by_name},
+            {**self.by_address, **other.by_address}
+        )
+
 
 # ThorName: address[owner] -> many of [name] -> many of [address (thor + chains)]
 # Here we basically don't care about owners of ThorNames.
@@ -56,7 +66,7 @@ class NameService(WithLogger):
             return NameMap(thorname_by_name, thorname_by_address)
         except Exception as e:
             self.logger.exception(f'Something went wrong. That is OK. {e!r}', exc_info=True)
-            return NameMap({}, {})
+            return NameMap.empty()
 
     async def lookup_name_by_address(self, address: str) -> Optional[ThorName]:
         if not address:
@@ -282,9 +292,32 @@ class LocalWalletNameDB:
     async def get_all_for_user(self):
         return await self.db.redis.hgetall(self.db_key)
 
+    async def get_name_map(self) -> Optional[NameMap]:
+        all_names = await self.get_all_for_user()
+        if not all_names:
+            return NameMap.empty()
+
+        by_name, by_address = {}, {}
+        for address, name in all_names.items():
+            thor_name = ThorName(
+                name=name,
+                expire_block_height=0,
+                owner=address,
+                aliases=[
+                    # chain is unknown here
+                    ThorNameAlias(Chains.THOR, address)
+                ]
+            )
+            by_name[name] = thor_name
+            by_address[address] = thor_name
+
+        return NameMap(by_name, by_address)
+
 
 def add_thor_suffix(thor_name: ThorName):
     if thor_name.expire_block_height:
+        # Registered
         return f'{thor_name.name}.thor'
     else:
+        # Configured
         return thor_name.name

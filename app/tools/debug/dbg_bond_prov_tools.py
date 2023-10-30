@@ -16,6 +16,10 @@ from tools.lib.churn_sim import DbgChurnSimulator
 from tools.lib.lp_common import LpAppFramework
 
 
+async def clear_user_db(app: LpAppFramework):
+    ...
+
+
 async def demo_run_continuously(app: LpAppFramework):
     d = app.deps
 
@@ -24,7 +28,7 @@ async def demo_run_continuously(app: LpAppFramework):
     churn_detector = NodeChurnDetector(d)
     d.node_info_fetcher.add_subscriber(churn_detector)
 
-    churn_sim = DbgChurnSimulator(trigger_on_tick=2)
+    churn_sim = DbgChurnSimulator(trigger_on_tick=2, every_tick=True)
     churn_detector.add_subscriber(churn_sim)
 
     bond_provider_tools = PersonalBondProviderNotifier(d)
@@ -79,7 +83,7 @@ async def demo_all_kinds_of_messages(app: LpAppFramework):
                       EventProviderStatus(bp_address, bond_provider.rune_bond, appeared=False)),
     ]
 
-    name_map = NameMap({}, {})
+    name_map = NameMap.empty()
 
     bond_provider_tools = PersonalBondProviderNotifier(app.deps)
 
