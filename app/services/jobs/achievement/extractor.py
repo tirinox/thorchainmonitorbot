@@ -157,15 +157,28 @@ class AchievementsExtractor(WithLogger):
             Achievement(key, int(value), specialization=spec) for (key, spec), value in results.items()
         ]
 
-    def on_thor_pol(self, pol: AlertPOL):
+    @staticmethod
+    def on_thor_pol(pol: AlertPOL):
         return [
             Achievement(A.POL_VALUE_RUNE, int(pol.current.rune_value))
         ]
 
-    def on_weekly_stats(self, ev: AlertKeyStats):
+    @staticmethod
+    def on_weekly_stats(ev: AlertKeyStats):
+        total_locked, _ = ev.locked_value_usd_curr_prev
+        weekly_protocol_revenue, _ = ev.total_revenue_usd_curr_prev
+        weekly_affiliate_revenue, _ = ev.affiliate_fee_usd_curr_prev
+        weekly_swap_volume, _ = ev.usd_volume_curr_prev
+        total_locked_value_usd = total_locked.total_value_locked_usd
+
         results = [
             Achievement(A.BTC_IN_VAULT, int(ev.get_btc())),
             Achievement(A.ETH_IN_VAULT, int(ev.get_eth())),
             Achievement(A.STABLES_IN_VAULT, int(ev.get_stables_sum())),
+
+            Achievement(A.TOTAL_VALUE_LOCKED, int(total_locked_value_usd)),
+            Achievement(A.WEEKLY_PROTOCOL_REVENUE_USD, int(weekly_protocol_revenue)),
+            Achievement(A.WEEKLY_AFFILIATE_REVENUE_USD, int(weekly_affiliate_revenue)),
+            Achievement(A.WEEKLY_SWAP_VOLUME, int(weekly_swap_volume))
         ]
         return results

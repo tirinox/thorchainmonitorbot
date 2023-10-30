@@ -45,6 +45,11 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
         A.BTC_IN_VAULT: "Bitcoin in vaults",
         A.ETH_IN_VAULT: "Ethereum in vaults",
         A.STABLES_IN_VAULT: "Stable coins in vaults",
+
+        A.TOTAL_VALUE_LOCKED: "Total value locked",
+        A.WEEKLY_SWAP_VOLUME: "Weekly swap volume",
+        A.WEEKLY_PROTOCOL_REVENUE_USD: "Weekly protocol revenue",
+        A.WEEKLY_AFFILIATE_REVENUE_USD: "Weekly affiliate revenue",
     }
 
     CELEBRATION_EMOJIES = "🎉🎊🥳🙌🥂🪅🎆"

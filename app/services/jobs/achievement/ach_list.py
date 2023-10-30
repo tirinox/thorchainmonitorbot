@@ -65,10 +65,14 @@ class AchievementName:
 
     MAX_ADD_AMOUNT_USD_PER_POOL = 'max_add_amount_usd_per_pool'
 
-    # new:
+    # from weekly chart:
     BTC_IN_VAULT = 'btc_in_vault'
     ETH_IN_VAULT = 'eth_in_vault'
     STABLES_IN_VAULT = 'stables_in_vault'
+    TOTAL_VALUE_LOCKED = 'tvl'
+    WEEKLY_PROTOCOL_REVENUE_USD = 'weekly_protocol_revenue_usd'
+    WEEKLY_AFFILIATE_REVENUE_USD = 'weekly_affiliate_revenue_usd'
+    WEEKLY_SWAP_VOLUME = 'weekly_swap_volume'
 
     @classmethod
     def all_keys(cls):
@@ -251,6 +255,11 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.BTC_IN_VAULT, 'Bitcoin in vaults', preferred_bg=BTC_BG),
     ADesc(A.ETH_IN_VAULT, 'Ethereum in vaults', preferred_bg=ETH_BG),
     ADesc(A.STABLES_IN_VAULT, 'Stable coins in vaults'),
+
+    ADesc(A.TOTAL_VALUE_LOCKED, 'Total value locked', prefix='$', thresholds=356_700_000),
+    ADesc(A.WEEKLY_SWAP_VOLUME, 'Weekly swap volume', prefix='$', thresholds=300_600_000),
+    ADesc(A.WEEKLY_PROTOCOL_REVENUE_USD, 'Weekly protocol revenue', prefix='$', thresholds=867_900),
+    ADesc(A.WEEKLY_AFFILIATE_REVENUE_USD, 'Weekly affiliate revenue', prefix='$', thresholds=60_300),
 ]}
 
 

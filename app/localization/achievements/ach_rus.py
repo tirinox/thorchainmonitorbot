@@ -45,6 +45,11 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
         A.BTC_IN_VAULT: "Bitcoin в хранилище",
         A.ETH_IN_VAULT: "Ethereum в хранилище",
         A.STABLES_IN_VAULT: "Стейблы в хранилище",
+
+        A.TOTAL_VALUE_LOCKED: "Всего залочено USD",
+        A.WEEKLY_SWAP_VOLUME: "Еженедельный объем свопов",
+        A.WEEKLY_PROTOCOL_REVENUE_USD: "Еженедельный доход протокола",
+        A.WEEKLY_AFFILIATE_REVENUE_USD: "Еженедельный доход партнеров",
     }
 
     MORE_THAN = 'Более чем'
