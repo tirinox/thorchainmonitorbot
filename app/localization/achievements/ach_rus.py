@@ -21,18 +21,18 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
         ADesc(A.ADD_LIQUIDITY_VOLUME_TOTAL, 'Общий объем добавленной ликвидности'),
         ADesc(A.DAILY_VOLUME, 'Ежедневный объем', prefix='$'),
         ADesc(A.ILP_PAID_TOTAL, 'Всего страховки выплачено', postfix=POSTFIX_RUNE),
-        ADesc(A.TOTAL_ACTIVE_BOND, 'Всего активный бонд'),
+        ADesc(A.TOTAL_ACTIVE_BOND, 'Всего активный бонд', more_than=False),
         ADesc(A.TOTAL_BOND, 'Всего в бондах нод', postfix=POSTFIX_RUNE),
-        ADesc(A.NODE_COUNT, 'Всего нод в сети'),
-        ADesc(A.ACTIVE_NODE_COUNT, 'Число активных нод'),
+        ADesc(A.NODE_COUNT, 'Всего нод в сети', more_than=False),
+        ADesc(A.ACTIVE_NODE_COUNT, 'Число активных нод', more_than=False),
 
-        ADesc(A.ANNIVERSARY, 'День Рождения'),
+        ADesc(A.ANNIVERSARY, 'День Рождения', more_than=False),
         ADesc(A.BLOCK_NUMBER, 'Сгенерировано блоков'),
         ADesc(A.DAILY_TX_COUNT, 'Количество транзакций за день'),
-        ADesc(A.TOTAL_MIMIR_VOTES, 'Всего голосов за Mimir'),
+        ADesc(A.TOTAL_MIMIR_VOTES, 'Всего голосов за Mimir', more_than=False),
         ADesc(A.MARKET_CAP_USD, 'Rune общая капитализации', prefix='$'),
-        ADesc(A.TOTAL_POOLS, 'Всего пулов'),
-        ADesc(A.TOTAL_ACTIVE_POOLS, 'Активных пулов'),
+        ADesc(A.TOTAL_POOLS, 'Всего пулов', more_than=False),
+        ADesc(A.TOTAL_ACTIVE_POOLS, 'Активных пулов', more_than=False),
 
         ADesc(A.TOTAL_UNIQUE_SAVERS, 'Всего уникальных сберегателей'),
         ADesc(A.TOTAL_SAVED_USD, 'Всего в сберегательных хранилищах', prefix='$'),
@@ -54,10 +54,12 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
 
         ADesc(A.POL_VALUE_RUNE, 'POL вклад в Rune'),
 
-        ADesc(A.BTC_IN_VAULT, 'Bitcoin в хранилище'),
-        ADesc(A.ETH_IN_VAULT, 'Ethereum в хранилище'),
-        ADesc(A.STABLES_IN_VAULT, 'Стейблы в хранилище'),
+        ADesc(A.BTC_IN_VAULT, 'Bitcoin в хранилище', more_than=True),
+        ADesc(A.ETH_IN_VAULT, 'Ethereum в хранилище', more_than=True),
+        ADesc(A.STABLES_IN_VAULT, 'Стейблы в хранилище', more_than=True),
     ]
+
+    MORE_THAN = 'Более чем'
 
     def notification_achievement_unlocked(self, a: Achievement):
         desc, ago, desc_str, emoji, milestone_str, prev_milestone_str, value_str = self.prepare_achievement_data(a)

@@ -38,8 +38,6 @@ class GenericAchievementPictureGenerator(BasePictureGenerator, abc.ABC):
         self.force_background = force_background
         self.r = Resources()
         self.desc_stroke_width = 4
-        # self.more_or_equals = '≥'
-        self.more_or_equals = ''
 
     def pos_percent(self, px, py):
         return pos_percent(px, py, w=self.w, h=self.h)
@@ -61,7 +59,7 @@ class GenericAchievementPictureGenerator(BasePictureGenerator, abc.ABC):
 
     @async_wrap
     def _get_picture_sync(self):
-        _desc, ago, desc_text, emoji, milestone_str, prev_milestone_str, value_str = self.loc.prepare_achievement_data(
+        desc, ago, desc_text, emoji, milestone_str, prev_milestone_str, value_str = self.loc.prepare_achievement_data(
             self.ach,
             newlines=True,
         )
@@ -74,7 +72,7 @@ class GenericAchievementPictureGenerator(BasePictureGenerator, abc.ABC):
         attributes = self.custom_attributes(self.r)  # for this kind of achievement
 
         self.put_logo(bg)
-        self.put_main_number(bg, draw, attributes, milestone_str, tint)
+        self.put_main_number(bg, draw, attributes, milestone_str, tint, desc)
         self.put_description(attributes, desc_text, bg, tint)
         self.put_date(draw)
 
@@ -108,7 +106,7 @@ class GenericAchievementPictureGenerator(BasePictureGenerator, abc.ABC):
         desc_img = add_shadow(desc_img, 20, shadow_source=shadow_source)
         paste_image_masked(image, desc_img, desc_pos)
 
-    def put_main_number(self, image, draw, attributes, milestone_str, tint):
+    def put_main_number(self, image, draw, attributes, milestone_str, tint, desc):
         main_number_y = 46
 
         mx, my = self.pos_percent(50, main_number_y)
@@ -122,14 +120,19 @@ class GenericAchievementPictureGenerator(BasePictureGenerator, abc.ABC):
             main_number_label = add_shadow(main_number_label, 6, shadow_source=shadow_source)
             # main_number_label = add_tint_to_bw_image(main_number_label, tint)
 
-        # more or equal
-        if self.more_or_equals:
-            print(main_number_label.height)
-            draw.text((mx, my - main_number_label.height // 2),
-                      self.more_or_equals, fill=adjust_brightness(tint, 0.7),
-                      font=self.r.fonts.get_font_bold(80), anchor='lb')
-
         paste_image_masked(image, main_number_label, (mx, my))
+
+        self.put_more_than(image, tint, mx, my, main_number_label.height, desc)
+
+    def put_more_than(self, image, tint, mx, my, label_height, desc):
+        if not desc.more_than:
+            return
+
+        font = self.r.fonts.get_font_bold(44)
+        desc_img = draw_text_with_font(self.loc.MORE_THAN, font, tint)
+        desc_img = add_transparent_frame(desc_img, 10)
+        desc_img = add_shadow(desc_img, 4)
+        paste_image_masked(image, desc_img, (mx, my - label_height // 2 + 28), anchor='mb')
 
     LOGO_Y = 6
 

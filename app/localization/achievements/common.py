@@ -14,6 +14,7 @@ class AchievementDescription(NamedTuple):
     prefix: str = ''
     url: str = ''  # url to the dashboard
     signed: bool = False
+    more_than: bool = True
 
     @property
     def image(self):
@@ -43,6 +44,7 @@ class AchievementsLocalizationBase(abc.ABC):
     ACHIEVEMENT_DESC_LIST = []
     CELEBRATION_EMOJIES = "🎉🎊🥳🙌🥂🪅🎆"
     DEVIATION_TO_SHOW_VALUE_PCT = 10
+    MORE_THAN = 'More than'
 
     @classmethod
     def check_if_all_achievements_have_description(cls):
