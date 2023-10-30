@@ -7,6 +7,7 @@ from services.jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from services.jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
 from services.lib.constants import NetworkIdents
 from services.lib.depcont import DepContainer
+from services.models.price import LastPriceHolder
 from services.notify.types.best_pool_notify import BestPoolsNotifier
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
@@ -80,12 +81,25 @@ async def demo_price_graph(app, fill=False):
     save_and_show_pic(graph, graph_name)
 
 
+async def find_anomaly(app, start=13225800, steps=200):
+    block = start
+    holder = LastPriceHolder()
+    while block < start + steps:
+        pools = await app.deps.pool_fetcher.load_pools(block, caching=True)
+        holder.update(pools)
+
+        print(f'Block {block}: {len(pools)} pools, rune price = {holder.usd_per_rune}')
+
+        block += 1
+
+
 async def main():
     app = LpAppFramework()
     async with app(brief=True):
+        await find_anomaly(app)
         # await demo_cache_blocks(app)
-        await demo_top_pools(app)
-        await demo_price_graph(app)
+        # await demo_top_pools(app)
+        # await demo_price_graph(app)
 
 
 if __name__ == '__main__':
