@@ -1,4 +1,8 @@
+import dataclasses
+import operator
+from collections import defaultdict
 from datetime import datetime
+from functools import cached_property
 from typing import NamedTuple, List
 
 from services.jobs.fetch.flipside import FSList, KEY_DATETIME
@@ -186,7 +190,8 @@ class KeyStats(NamedTuple):
     pools: PoolInfoMap
 
 
-class AlertKeyStats(NamedTuple):
+@dataclasses.dataclass
+class AlertKeyStats:
     series: FSList
     previous_pools: PoolInfoMap
     current_pools: PoolInfoMap
@@ -219,3 +224,108 @@ class AlertKeyStats(NamedTuple):
 
     def get_eth(self, previous=False):
         return self.get_sum(('ETH.ETH',), previous)
+
+    @property
+    def top_affiliate_daily(self):
+        daily_list, _ = self.curr_prev_data
+        collectors = defaultdict(float)
+
+        for objects_for_day in daily_list:
+            for objects in objects_for_day.values():
+                for obj in objects:
+                    if isinstance(obj, FSAffiliateCollectors):
+                        if obj.label:
+                            collectors[obj.label] += obj.fee_usd
+        return list(sorted(collectors.items(), key=operator.itemgetter(1), reverse=True))
+
+    @property
+    def swap_routes(self):
+        collectors = defaultdict(float)
+        for obj in self.routes:
+            collectors[(obj.asset_from, obj.asset_to)] += obj.swap_volume
+        return list(sorted(collectors.items(), key=operator.itemgetter(1), reverse=True))
+
+    @cached_property
+    def curr_prev_data(self):
+        curr_data, prev_data = self.series.get_current_and_previous_range(self.days)
+        return curr_data, prev_data
+
+    @cached_property
+    def total_revenue_usd_curr_prev(self):
+        curr_data, prev_data = self.curr_prev_data
+        return sum_by_attribute_pair(curr_data, prev_data, 'total_earnings_usd', FSFees)
+
+    @cached_property
+    def block_rewards_usd_curr_prev(self):
+        curr_data, prev_data = self.curr_prev_data
+        return sum_by_attribute_pair(curr_data, prev_data, 'block_rewards_usd', FSFees)
+
+    @cached_property
+    def liquidity_fee_usd_curr_prev(self):
+        curr_data, prev_data = self.curr_prev_data
+        return sum_by_attribute_pair(curr_data, prev_data, 'liquidity_fees_usd', FSFees)
+
+    @cached_property
+    def affiliate_fee_usd_curr_prev(self):
+        curr_data, prev_data = self.curr_prev_data
+        return sum_by_attribute_pair(curr_data, prev_data, 'fee_usd', FSAffiliateCollectors)
+
+    @cached_property
+    def block_ratio(self):
+        block_rewards_usd, _ = self.block_rewards_usd_curr_prev
+        total_revenue_usd, _ = self.total_revenue_usd_curr_prev
+        block_ratio_v = block_rewards_usd / total_revenue_usd if total_revenue_usd else 100.0
+        return block_ratio_v
+
+    @cached_property
+    def organic_ratio(self):
+        total_revenue_usd, _ = self.total_revenue_usd_curr_prev
+        liq_fee_usd, _ = self.liquidity_fee_usd_curr_prev
+        organic_ratio_v = liq_fee_usd / total_revenue_usd if total_revenue_usd else 100.0
+        return organic_ratio_v
+
+    @cached_property
+    def swap_count_curr_prev(self):
+        curr_data, prev_data = self.curr_prev_data
+        swap_count, prev_swap_count = sum_by_attribute_pair(curr_data, prev_data, 'swap_count', FSSwapCount)
+        return swap_count, prev_swap_count
+
+    @cached_property
+    def usd_volume_curr_prev(self):
+        curr_data, prev_data = self.curr_prev_data
+        usd_volume, prev_usd_volume = sum_by_attribute_pair(curr_data, prev_data, 'swap_volume_usd', FSSwapVolume)
+        return usd_volume, prev_usd_volume
+
+    @cached_property
+    def unique_swap_curr_prev(self):
+        curr_data, prev_data = self.curr_prev_data
+        unique_swap, prev_unique_swap = sum_by_attribute_pair(curr_data, prev_data, 'unique_swapper_count',
+                                                              FSSwapCount, max)
+        return unique_swap, prev_unique_swap
+
+    @cached_property
+    def locked_value_usd_curr_prev(self):
+        prev_lock, curr_lock = self.series.get_prev_and_curr(self.days, FSLockedValue)
+        prev_lock: FSLockedValue = prev_lock[0] if prev_lock else None
+        curr_lock: FSLockedValue = curr_lock[0] if curr_lock else None
+        return curr_lock, prev_lock
+
+
+def sum_by_attribute(daily_list, attr_name, klass=None, f_sum=sum):
+    try:
+        return f_sum(
+            getattr(obj, attr_name)
+            for objects_for_day in daily_list
+            for objects in objects_for_day.values()
+            for obj in objects
+            if not klass or isinstance(obj, klass)
+        )
+    except ValueError:
+        return 0.0  # max of empty sequence
+
+
+def sum_by_attribute_pair(first_list, second_list, attr_name, klass=None, f_sum=sum):
+    return (
+        sum_by_attribute(first_list, attr_name, klass, f_sum),
+        sum_by_attribute(second_list, attr_name, klass, f_sum)
+    )

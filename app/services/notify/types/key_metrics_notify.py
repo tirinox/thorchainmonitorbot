@@ -46,9 +46,9 @@ class KeyMetricsNotifier(INotified, WithDelegates, WithLogger):
 
         if not len(e.series):
             self.logger.warning(f'Length is 0')
-            return 
+            return
 
-        e = e._replace(series=e.series.remove_incomplete_rows((FSFees, FSSwapCount, FSLockedValue, FSSwapVolume)))
+        e.series = e.series.remove_incomplete_rows((FSFees, FSSwapCount, FSLockedValue, FSSwapVolume))
 
         if not self.is_fresh_enough(e.series):
             self.logger.error(f'Network data is too old! The most recent date is {e.series.latest_date}!')

@@ -1,8 +1,5 @@
 import asyncio
-import operator
-from collections import defaultdict
 from datetime import timedelta
-from typing import List
 
 from PIL import Image, ImageDraw
 
@@ -15,28 +12,7 @@ from services.lib.draw_utils import paste_image_masked, result_color, TC_LIGHTNI
 from services.lib.money import pretty_money, short_dollar, short_money, format_percent, Asset
 from services.lib.texts import bracketify
 from services.lib.utils import async_wrap
-from services.models.flipside import AlertKeyStats, FSLockedValue, FSFees, FSAffiliateCollectors, FSSwapVolume, \
-    FSSwapCount
-
-
-def sum_by_attribute(daily_list, attr_name, klass=None, f_sum=sum):
-    try:
-        return f_sum(
-            getattr(obj, attr_name)
-            for objects_for_day in daily_list
-            for objects in objects_for_day.values()
-            for obj in objects
-            if not klass or isinstance(obj, klass)
-        )
-    except ValueError:
-        return 0.0  # max of empty sequence
-
-
-def sum_by_attribute_pair(first_list, second_list, attr_name, klass=None, f_sum=sum):
-    return (
-        sum_by_attribute(first_list, attr_name, klass, f_sum),
-        sum_by_attribute(second_list, attr_name, klass, f_sum)
-    )
+from services.models.flipside import AlertKeyStats
 
 
 class KeyStatsPictureGenerator(BasePictureGenerator):
@@ -86,68 +62,26 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
                 anchor='lm', fill=result_color(percent), font=font_second
             )
 
-    @staticmethod
-    def _get_top_affiliate(e: AlertKeyStats):
-        collectors = defaultdict(float)
-        for obj in e.affiliates:
-            collectors[obj.label] += obj.fee_usd
-        return list(sorted(collectors.items(), key=operator.itemgetter(1), reverse=True))
-
-    @staticmethod
-    def _get_top_affiliate_daily(daily_list):
-        collectors = defaultdict(float)
-
-        for objects_for_day in daily_list:
-            for objects in objects_for_day.values():
-                for obj in objects:
-                    if isinstance(obj, FSAffiliateCollectors):
-                        if obj.label:
-                            collectors[obj.label] += obj.fee_usd
-        return list(sorted(collectors.items(), key=operator.itemgetter(1), reverse=True))
-
-    @staticmethod
-    def _get_to_swap_routes(e: AlertKeyStats):
-        collectors = defaultdict(float)
-        for obj in e.routes:
-            collectors[(obj.asset_from, obj.asset_to)] += obj.swap_volume
-        return list(sorted(collectors.items(), key=operator.itemgetter(1), reverse=True))
-
-    @staticmethod
-    def _total_affiliate_revenue(affs: List[FSAffiliateCollectors]):
-        return sum(aff.fee_usd for aff in affs)
-
     @async_wrap
     def _get_picture_sync(self):
         # prepare data
         r, loc, e = self.r, self.loc, self.event
-        prev_lock, curr_lock = e.series.get_prev_and_curr(e.days, FSLockedValue)
-        prev_lock: FSLockedValue = prev_lock[0] if prev_lock else None
-        curr_lock: FSLockedValue = curr_lock[0] if curr_lock else None
+        curr_lock, prev_lock = e.locked_value_usd_curr_prev
 
-        curr_data, prev_data = e.series.get_current_and_previous_range(e.days)
-        total_revenue_usd, prev_total_revenue_usd = sum_by_attribute_pair(
-            curr_data, prev_data, 'total_earnings_usd', FSFees)
-        block_rewards_usd, prev_block_rewards_usd = sum_by_attribute_pair(
-            curr_data, prev_data, 'block_rewards_usd', FSFees)
-        liq_fee_usd, prev_liq_fee_usd = sum_by_attribute_pair(curr_data, prev_data, 'liquidity_fees_usd', FSFees)
+        total_revenue_usd, prev_total_revenue_usd = e.total_revenue_usd_curr_prev
+        block_rewards_usd, prev_block_rewards_usd = e.block_rewards_usd_curr_prev
+        liq_fee_usd, prev_liq_fee_usd = e.liquidity_fee_usd_curr_prev
+        aff_fee_usd, prev_aff_fee_usd = e.affiliate_fee_usd_curr_prev
 
-        aff_fee_usd, prev_aff_fee_usd = sum_by_attribute_pair(curr_data, prev_data, 'fee_usd', FSAffiliateCollectors)
-        # aff_fee_usd = self._total_affiliate_revenue(e.affiliates)
-        # prev_aff_fee_usd = self._total_affiliate_revenue(e.prev_affiliates)
+        block_ratio = e.block_ratio
+        organic_ratio = e.organic_ratio
+        aff_collectors = e.top_affiliate_daily
 
-        block_ratio = block_rewards_usd / total_revenue_usd if total_revenue_usd else 100.0
-        organic_ratio = liq_fee_usd / total_revenue_usd if total_revenue_usd else 100.0
+        swap_count, prev_swap_count = e.swap_count_curr_prev
+        usd_volume, prev_usd_volume = e.usd_volume_curr_prev
+        unique_swap, prev_unique_swap = e.unique_swap_curr_prev
 
-        # aff_collectors = self._get_top_affiliate(e)
-        aff_collectors = self._get_top_affiliate_daily(curr_data)
-
-        swap_count, prev_swap_count = sum_by_attribute_pair(curr_data, prev_data, 'swap_count', FSSwapCount)
-        usd_volume, prev_usd_volume = sum_by_attribute_pair(curr_data, prev_data, 'swap_volume_usd', FSSwapVolume)
-
-        unique_swap, prev_unique_swap = sum_by_attribute_pair(curr_data, prev_data, 'unique_swapper_count',
-                                                              FSSwapCount, max)
-
-        swap_routes = self._get_to_swap_routes(e)
+        swap_routes = e.swap_routes
 
         # prepare painting stuff
         image = self.bg.copy()
@@ -351,11 +285,10 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
 
         font_routes = r.fonts.get_font_bold(40)
         for i, ((label_left, label_right), count) in zip(range(1, n_max + 1), swap_routes):
-
             l_asset, r_asset = Asset(label_left), Asset(label_right)
 
             text = f'{i}. {l_asset.name} ⇌ {r_asset.name}'
-            # text = f'{i}. {l_asset.name} ←→ {r_asset.name}'
+
             draw.text((x, y),
                       text,
                       font=font_routes,
