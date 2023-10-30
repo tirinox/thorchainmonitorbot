@@ -1,4 +1,3 @@
-import abc
 import datetime
 import os.path
 import random
@@ -8,7 +7,7 @@ from PIL import Image, ImageDraw
 from localization.achievements.ach_eng import AchievementsLocalizationBase
 from services.dialog.picture.common import BasePictureGenerator
 from services.dialog.picture.resources import Resources
-from services.jobs.achievement.ach_list import Achievement, A
+from services.jobs.achievement.ach_list import Achievement
 from services.lib.date_utils import today_str
 from services.lib.draw_utils import pos_percent, paste_image_masked, measure_font_to_fit_in_box, convert_indexed_png, \
     add_shadow, add_transparent_frame, add_tint_to_bw_image, adjust_brightness, \
@@ -16,14 +15,10 @@ from services.lib.draw_utils import pos_percent, paste_image_masked, measure_fon
 from services.lib.utils import async_wrap
 
 
-class GenericAchievementPictureGenerator(BasePictureGenerator, abc.ABC):
+class GenericAchievementPictureGenerator(BasePictureGenerator):
     BASE = './data/achievement'
     WIDTH = 1024
     HEIGHT = 1024
-
-    @abc.abstractmethod
-    def choice_background(self):
-        ...
 
     def generate_picture_filename(self):
         return f'thorchain-ach-{self.ach.key}-{today_str()}.png'
@@ -38,6 +33,7 @@ class GenericAchievementPictureGenerator(BasePictureGenerator, abc.ABC):
         self.force_background = force_background
         self.r = Resources()
         self.desc_stroke_width = 4
+        self.ach_desc = self.loc.get_achievement_description(self.ach.key)
 
     def pos_percent(self, px, py):
         return pos_percent(px, py, w=self.w, h=self.h)
@@ -69,10 +65,13 @@ class GenericAchievementPictureGenerator(BasePictureGenerator, abc.ABC):
         # get dominant color of the background
         tint = self.get_tint(bg)
         draw = ImageDraw.Draw(bg)
-        attributes = self.custom_attributes(self.r)  # for this kind of achievement
+        if desc.custom_attributes:
+            attributes = desc.custom_attributes
+        else:
+            attributes = self.attributes_default(self.r)
 
         self.put_logo(bg)
-        self.put_main_number(bg, draw, attributes, milestone_str, tint, desc)
+        self.put_main_number(bg, attributes, milestone_str, tint, desc)
         self.put_description(attributes, desc_text, bg, tint)
         self.put_date(draw)
 
@@ -106,11 +105,16 @@ class GenericAchievementPictureGenerator(BasePictureGenerator, abc.ABC):
         desc_img = add_shadow(desc_img, 20, shadow_source=shadow_source)
         paste_image_masked(image, desc_img, desc_pos)
 
-    def put_main_number(self, image, draw, attributes, milestone_str, tint, desc):
-        main_number_y = 46
+    def put_main_number(self, image, attributes, milestone_str, tint, desc):
+        main_number_y = 48 if desc.more_than else 46
 
         mx, my = self.pos_percent(50, main_number_y)
-        main_number_label = attributes['main_font'].render_string(milestone_str)
+
+        main_font = attributes['main_font']
+        if isinstance(main_font, str):
+            main_font = getattr(self.r, main_font)
+
+        main_number_label = main_font.render_string(milestone_str)
         main_number_label.thumbnail(attributes['main_area'])
 
         style = attributes['font_style']
@@ -125,24 +129,21 @@ class GenericAchievementPictureGenerator(BasePictureGenerator, abc.ABC):
         self.put_more_than(image, tint, mx, my, main_number_label.height, desc)
 
     def put_more_than(self, image, tint, mx, my, label_height, desc):
-        if not desc.more_than:
-            return
+        if desc.more_than:
+            font = self.r.fonts.get_font_bold(44)
+            desc_img = draw_text_with_font(self.loc.MORE_THAN, font, tint)
+            desc_img = add_transparent_frame(desc_img, 10)
+            desc_img = add_shadow(desc_img, 4)
+            paste_image_masked(image, desc_img, (mx, my - label_height // 2 + 28), anchor='mb')
 
-        font = self.r.fonts.get_font_bold(44)
-        desc_img = draw_text_with_font(self.loc.MORE_THAN, font, tint)
-        desc_img = add_transparent_frame(desc_img, 10)
-        desc_img = add_shadow(desc_img, 4)
-        paste_image_masked(image, desc_img, (mx, my - label_height // 2 + 28), anchor='mb')
-
-    LOGO_Y = 6
-
-    def put_logo(self, image):
-        paste_image_masked(image, self.r.tc_logo_transparent, self.pos_percent(50, self.LOGO_Y))
+    def put_logo(self, image, logo_y=7):
+        paste_image_masked(image, self.r.tc_logo_transparent, self.pos_percent(50, logo_y))
 
     async def prepare(self):
         return await super().prepare()
 
-    def custom_attributes(self, r):
+    @staticmethod
+    def attributes_default(r):
         return {
             'main_font': r.custom_font_runic_bw,
             'desc_color': '#fff',
@@ -151,45 +152,24 @@ class GenericAchievementPictureGenerator(BasePictureGenerator, abc.ABC):
             'font_style': 'fancy',
         }
 
-
-class NormalAchievementPictureGenerator(GenericAchievementPictureGenerator):
-    PICTURE_BACKGROUNDS = [
+    DEFAULT_PICTURE_BACKGROUNDS = [
         'nn_wreath_1.png',
         'nn_wreath_2.png',
         'nn_wreath_3.png',
         'nn_wreath_4.png',
-        'nn_wreath_5.png',
-        # 'nn_wreath_experimental_2.png',
     ]
 
     def choice_background(self):
         if self.force_background:
             return self.force_background
+        elif bg := self.ach_desc.preferred_bg:
+            if isinstance(bg, str):
+                return bg
+            else:
+                return random.choice(bg)
         else:
-            return random.choice(self.PICTURE_BACKGROUNDS)
-
-
-class HappyBirthdayPictureGenerator(GenericAchievementPictureGenerator):
-    def choice_background(self):
-        return 'nn_wreath_ann_2.png'
-
-    def __init__(self, loc: AchievementsLocalizationBase, a: Achievement):
-        super().__init__(loc, a)
-
-    def custom_attributes(self, r):
-        return {
-            'main_font': r.custom_font_balloon,
-            'desc_color': '#f4e18d',
-            'desc_stroke': '#954c07',
-            'main_area': (320, 320),
-            'font_style': 'normal',
-        }
+            return random.choice(self.DEFAULT_PICTURE_BACKGROUNDS)
 
 
 def build_achievement_picture_generator(achievement: Achievement, loc: AchievementsLocalizationBase):
-    if achievement.key == A.ANNIVERSARY:
-        return HappyBirthdayPictureGenerator(loc, achievement)
-    elif achievement.key == A.BTC_IN_VAULT:
-        return NormalAchievementPictureGenerator(loc, achievement, force_background='nn_wreath_btc_vault.png')
-    else:
-        return NormalAchievementPictureGenerator(loc, achievement)
+    return GenericAchievementPictureGenerator(loc, achievement)

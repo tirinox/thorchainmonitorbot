@@ -1,62 +1,51 @@
-from localization.achievements.common import ADesc, POSTFIX_RUNE, AchievementsLocalizationBase
-from services.jobs.achievement.ach_list import Achievement, A
+from localization.achievements.common import AchievementsLocalizationBase
+from services.jobs.achievement.ach_list import Achievement, A, ADesc
 from services.lib.texts import code, pre
 
 
 class AchievementsEnglishLocalization(AchievementsLocalizationBase):
-    ACHIEVEMENT_DESC_LIST = [
-        ADesc(A.TEST, 'Test metric'),
-        ADesc(A.TEST_SPEC, 'Test metric', postfix=POSTFIX_RUNE),
-        ADesc(A.TEST_DESCENDING, 'Test descending'),
-
-        ADesc(A.DAU, 'Daily active users'),
-        ADesc(A.MAU, 'Monthly active users'),
-        ADesc(A.WALLET_COUNT, 'Number of wallets'),
-        ADesc(A.SWAP_COUNT_TOTAL, 'Total swap count'),
-        ADesc(A.SWAP_COUNT_24H, '24h swap count'),
-        ADesc(A.SWAP_COUNT_30D, 'Monthly swap count'),
-        # ADesc(A.SWAP_UNIQUE_COUNT, 'Unique swappers'),
-        ADesc(A.ADD_LIQUIDITY_COUNT_TOTAL, 'Times liquidity added'),
-        ADesc(A.ADD_LIQUIDITY_VOLUME_TOTAL, 'Total add liquidity volume'),
-        ADesc(A.DAILY_VOLUME, 'Daily volume', prefix='$'),
-        ADesc(A.ILP_PAID_TOTAL, 'Total ILP paid', postfix=POSTFIX_RUNE),
-        ADesc(A.TOTAL_ACTIVE_BOND, 'Total active bond'),
-        ADesc(A.TOTAL_BOND, 'Total bond', postfix=POSTFIX_RUNE),
-        ADesc(A.NODE_COUNT, 'Total nodes count', more_than=False),
-        ADesc(A.ACTIVE_NODE_COUNT, 'Active nodes count', more_than=False),
-
-        ADesc(A.ANNIVERSARY, 'Anniversary', more_than=False),
-        ADesc(A.BLOCK_NUMBER, 'Blocks generated'),
-        ADesc(A.DAILY_TX_COUNT, 'Daily TX count'),
-        ADesc(A.TOTAL_MIMIR_VOTES, 'Total Mimir votes', more_than=False),
-        ADesc(A.MARKET_CAP_USD, 'Rune Total Market Cap', prefix='$'),
-        ADesc(A.TOTAL_POOLS, 'Total pools', more_than=False),
-        ADesc(A.TOTAL_ACTIVE_POOLS, 'Active pools', more_than=False),
-
-        ADesc(A.TOTAL_UNIQUE_SAVERS, 'Total unique savers'),
-        ADesc(A.TOTAL_SAVED_USD, 'Total USD saved', prefix='$'),
-        ADesc(A.TOTAL_SAVERS_EARNED_USD, 'Savers: Total USD earned', prefix='$'),
-
-        ADesc(A.SAVER_VAULT_SAVED_ASSET, '::asset:: Savers depth'),
-        ADesc(A.SAVER_VAULT_SAVED_USD, '::asset:: Savers depth in USD', prefix='$'),
-        ADesc(A.SAVER_VAULT_MEMBERS, '::asset:: savers count'),
-        ADesc(A.SAVER_VAULT_EARNED_ASSET, 'Savers earned ::asset::'),
-
-        ADesc(A.SWAP_VOLUME_TOTAL_RUNE, 'Total swap volume', postfix=POSTFIX_RUNE),
-
-        ADesc(A.MAX_SWAP_AMOUNT_USD, 'Maximum swap volume', prefix='$'),
-        ADesc(A.MAX_ADD_AMOUNT_USD, 'Maximum add liquidity volume', prefix='$'),
-
-        ADesc(A.MAX_ADD_AMOUNT_USD_PER_POOL, 'Added ::asset:: in a single TX', prefix='$'),
-
-        ADesc(A.COIN_MARKET_CAP_RANK, 'Market cap rank'),
-
-        ADesc(A.POL_VALUE_RUNE, 'POL maximum value'),
-
-        ADesc(A.BTC_IN_VAULT, 'Bitcoin in vaults'),
-        ADesc(A.ETH_IN_VAULT, 'Ethereum in vaults'),
-        ADesc(A.STABLES_IN_VAULT, 'Stable coins in vaults'),
-    ]
+    TRANSLATION_MAP = {
+        A.TEST: "Test metric",
+        A.TEST_SPEC: "Test metric",
+        A.TEST_DESCENDING: "Test descending",
+        A.DAU: "Daily active users",
+        A.MAU: "Monthly active users",
+        A.WALLET_COUNT: "Number of wallets",
+        A.SWAP_COUNT_TOTAL: "Total swap count",
+        A.SWAP_COUNT_24H: "24h swap count",
+        A.SWAP_COUNT_30D: "Monthly swap count",
+        A.ADD_LIQUIDITY_COUNT_TOTAL: "Times liquidity added",
+        A.ADD_LIQUIDITY_VOLUME_TOTAL: "Total add liquidity volume",
+        A.DAILY_VOLUME: "Daily volume",
+        A.ILP_PAID_TOTAL: "Total ILP paid",
+        A.TOTAL_ACTIVE_BOND: "Total active bond",
+        A.TOTAL_BOND: "Total bond",
+        A.NODE_COUNT: "Total nodes count",
+        A.ACTIVE_NODE_COUNT: "Active nodes count",
+        A.ANNIVERSARY: "Anniversary",
+        A.BLOCK_NUMBER: "Blocks generated",
+        A.DAILY_TX_COUNT: "Daily TX count",
+        A.TOTAL_MIMIR_VOTES: "Total Mimir votes",
+        A.MARKET_CAP_USD: "Rune Total Market Cap",
+        A.TOTAL_POOLS: "Total pools",
+        A.TOTAL_ACTIVE_POOLS: "Active pools",
+        A.TOTAL_UNIQUE_SAVERS: "Total unique savers",
+        A.TOTAL_SAVED_USD: "Total USD saved",
+        A.TOTAL_SAVERS_EARNED_USD: "Savers: Total USD earned",
+        A.SAVER_VAULT_SAVED_ASSET: "::asset:: Savers depth",
+        A.SAVER_VAULT_SAVED_USD: "::asset:: Savers depth in USD",
+        A.SAVER_VAULT_MEMBERS: "::asset:: savers count",
+        A.SAVER_VAULT_EARNED_ASSET: "Savers earned ::asset::",
+        A.SWAP_VOLUME_TOTAL_RUNE: "Total swap volume",
+        A.MAX_SWAP_AMOUNT_USD: "Maximum swap volume",
+        A.MAX_ADD_AMOUNT_USD: "Maximum add liquidity volume",
+        A.MAX_ADD_AMOUNT_USD_PER_POOL: "Added ::asset:: in a single TX",
+        A.COIN_MARKET_CAP_RANK: "Market cap rank",
+        A.POL_VALUE_RUNE: "POL maximum value",
+        A.BTC_IN_VAULT: "Bitcoin in vaults",
+        A.ETH_IN_VAULT: "Ethereum in vaults",
+        A.STABLES_IN_VAULT: "Stable coins in vaults",
+    }
 
     CELEBRATION_EMOJIES = "🎉🎊🥳🙌🥂🪅🎆"
 

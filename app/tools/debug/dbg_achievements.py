@@ -5,9 +5,11 @@ import random
 
 from localization.achievements.ach_eng import AchievementsEnglishLocalization
 from localization.achievements.ach_rus import AchievementsRussianLocalization
+from localization.achievements.common import AchievementsLocalizationBase
 from localization.languages import Language
 from services.dialog.picture.achievement_picture import build_achievement_picture_generator
-from services.jobs.achievement.ach_list import Achievement, AchievementTest, A
+from services.jobs.achievement.ach_list import Achievement, AchievementTest, A, AchievementDescription, \
+    ACHIEVEMENT_DESC_MAP
 from services.jobs.achievement.milestones import Milestones
 from services.jobs.achievement.notifier import AchievementsNotifier
 from services.jobs.achievement.tracker import AchievementsTracker
@@ -71,7 +73,7 @@ def random_achievement():
     value = random.randint(1, random.randint(1, 1_000_000_000))
     milestone = milestones.previous(value)
 
-    random_achievement_key = random.choice(AchievementsEnglishLocalization.ACHIEVEMENT_DESC_LIST).key
+    random_achievement_key = random.choice(ACHIEVEMENT_DESC_MAP).key
     rec = Achievement(random_achievement_key, value,
                       milestone, now_ts(),
                       2, now_ts() - random.randint(1, int(100 * DAY)))
@@ -113,7 +115,7 @@ async def demo_all_achievements():
     for loc in [loc_en, loc_ru]:
         print(loc.__class__.__name__)
 
-        for ach_key in loc.desc_map:
+        for ach_key in ACHIEVEMENT_DESC_MAP:
             if ach_key == A.ANNIVERSARY:
                 v = random.randint(1, 10)
             else:
@@ -200,6 +202,23 @@ def clear_temp_achievements_folder():
             print(f'Deleted: {path_to_delete}')
 
 
+def gen_ach_desc_translate_mapping(items):
+    sep()
+    message = 'TRANSLATION_MAP = {\n'
+
+    field_dict = {attr_v: attr for attr in dir(A) if isinstance((attr_v := getattr(A, attr)), str)}
+
+    for item in items:
+        item: AchievementDescription
+        key = item.key
+        key_name = field_dict.get(key)
+        message += f'    A.{key_name}: "{item.description}",\n'
+
+    message += '}\n'
+    print(message)
+    sep()
+
+
 async def main():
     app = LpAppFramework()
     async with app(brief=True):
@@ -209,14 +228,16 @@ async def main():
         # await demo_achievements_picture(Language.RUSSIAN, A.ANNIVERSARY, 2, 2)
         # await demo_achievements_picture(Language.ENGLISH, A.COIN_MARKET_CAP_RANK, 10, 11, descending=True)
         # await demo_achievements_picture(Language.RUSSIAN, A.COIN_MARKET_CAP_RANK, 10, 11, descending=True)
-        await demo_achievements_picture(
-            Language.ENGLISH, A.BTC_IN_VAULT, 105, 100,
-            # force_background='nn_wreath_experimental_3.png'
-        )
+        # await demo_achievements_picture(
+        #     Language.ENGLISH, A.BTC_IN_VAULT, 105, 100,
+        #     # force_background='nn_wreath_experimental_3.png'
+        # )
         await demo_all_achievements()
         # await demo_run_pipeline_coin_rank(app)
         # await demo_run_pipeline_test(app, spec='BTC.BTC')
         # await debug_naughty_savers_achievements(app)
+        # gen_ach_desc_translate_mapping(AchievementsEnglishLocalization())
+        # gen_ach_desc_translate_mapping(AchievementsRussianLocalization())
 
 
 if __name__ == '__main__':

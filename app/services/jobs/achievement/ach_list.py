@@ -1,7 +1,10 @@
-from typing import NamedTuple
+from typing import NamedTuple, Union, Tuple, List
 
 from services.jobs.achievement.milestones import Milestones, MilestonesEveryInt
+from services.lib.money import RAIDO_GLYPH, short_money
 
+POSTFIX_RUNE = RAIDO_GLYPH
+META_KEY_SPEC = '::asset::'
 ACH_CUT_OFF_TS = 1674473134.216954
 
 
@@ -25,7 +28,7 @@ class AchievementName:
     SWAP_COUNT_TOTAL = 'swap_count_total'
     SWAP_COUNT_24H = 'swap_count_24h'
     SWAP_COUNT_30D = 'swap_count_30d'
-    # SWAP_UNIQUE_COUNT = 'swap_unique_count'  (0)
+
     SWAP_VOLUME_TOTAL_RUNE = 'swap_volume_total_rune'
 
     ADD_LIQUIDITY_COUNT_TOTAL = 'add_liquidity_count_total'
@@ -86,32 +89,6 @@ GROUP_MILESTONES = {
     A.WALLET_COUNT: MILESTONES_EVERY_DIGIT,
     A.COIN_MARKET_CAP_RANK: MILESTONES_EVERY_INT,
 }
-
-
-class Achievement(NamedTuple):
-    key: str
-    value: int  # real current value
-    milestone: int = 0  # current milestone
-    timestamp: float = 0
-    prev_milestone: int = 0
-    previous_ts: float = 0
-    specialization: str = ''
-    descending: bool = False  # if True, then we need to check if value is less than milestone
-
-    @property
-    def has_previous(self):
-        return self.prev_milestone > 0 and self.previous_ts > ACH_CUT_OFF_TS
-
-    def get_previous_milestone(self):
-        provider = GROUP_MILESTONES.get(self.key, MILESTONES_NORMAL)
-
-        if self.descending:
-            v = provider.next(self.value)
-        else:
-            v = provider.previous(self.value)
-
-        return v
-
 
 # this metrics only trigger when greater than their historic maximums
 GROUP_MINIMALS = {
@@ -206,3 +183,129 @@ class AchievementTest(NamedTuple):
     value: int
     specialization: str = ''
     descending: bool = False
+
+
+class Achievement(NamedTuple):
+    key: str
+    value: int  # real current value
+    milestone: int = 0  # current milestone
+    timestamp: float = 0
+    prev_milestone: int = 0
+    previous_ts: float = 0
+    specialization: str = ''
+    descending: bool = False  # if True, then we need to check if value is less than milestone
+
+    @property
+    def has_previous(self):
+        return self.prev_milestone > 0 and self.previous_ts > ACH_CUT_OFF_TS
+
+    def get_previous_milestone(self):
+        provider = GROUP_MILESTONES.get(self.key, MILESTONES_NORMAL)
+
+        if self.descending:
+            v = provider.next(self.value)
+        else:
+            v = provider.previous(self.value)
+
+        return v
+
+
+class AchievementDescription(NamedTuple):
+    key: str
+    description: str
+    postfix: str = ''
+    prefix: str = ''
+    url: str = ''  # url to the dashboard
+    signed: bool = False
+    more_than: bool = True
+    preferred_bg: Union[Tuple, List, str] = None
+    custom_attributes: dict = None
+
+    @property
+    def image(self):
+        return f'ach_{self.key}.png'
+
+    @staticmethod
+    def space_before_non_empty(s):
+        return f' {s}' if s else ''
+
+    @classmethod
+    def _do_substitutions(cls, achievement: Achievement, text: str) -> str:
+        return text.replace(META_KEY_SPEC, achievement.specialization)
+
+    def format_value(self, value, ach: Achievement):
+        return short_money(value,
+                           prefix=self._do_substitutions(ach, self.prefix),
+                           postfix=self.space_before_non_empty(self._do_substitutions(ach, self.postfix)),
+                           integer=True, signed=self.signed)
+
+
+ADesc = AchievementDescription
+
+SAVER_BG = 'nn_wreath_saver.png'
+BTC_BG = 'nn_wreath_btc_vault.png'
+ETH_BG = 'nn_wreath_eth_vault.png'
+ANNIVERSARY_BG = 'nn_wreath_ann_2.png'
+
+ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
+    # each description will be replaced with the translation from the localization,
+    # here they are just for convenience
+    ADesc(A.TEST, 'Test metric'),
+    ADesc(A.TEST_SPEC, 'Test metric', postfix=POSTFIX_RUNE),
+    ADesc(A.TEST_DESCENDING, 'Test descending'),
+
+    ADesc(A.DAU, 'Daily active users'),
+    ADesc(A.MAU, 'Monthly active users'),
+    ADesc(A.WALLET_COUNT, 'Number of wallets'),
+    ADesc(A.SWAP_COUNT_TOTAL, 'Total swap count'),
+    ADesc(A.SWAP_COUNT_24H, '24h swap count'),
+    ADesc(A.SWAP_COUNT_30D, 'Monthly swap count'),
+
+    ADesc(A.ADD_LIQUIDITY_COUNT_TOTAL, 'Times liquidity added'),
+    ADesc(A.ADD_LIQUIDITY_VOLUME_TOTAL, 'Total add liquidity volume'),
+    ADesc(A.DAILY_VOLUME, 'Daily volume', prefix='$'),
+    ADesc(A.ILP_PAID_TOTAL, 'Total ILP paid', postfix=POSTFIX_RUNE),
+    ADesc(A.TOTAL_ACTIVE_BOND, 'Total active bond'),
+    ADesc(A.TOTAL_BOND, 'Total bond', postfix=POSTFIX_RUNE),
+    ADesc(A.NODE_COUNT, 'Total nodes count', more_than=False),
+    ADesc(A.ACTIVE_NODE_COUNT, 'Active nodes count', more_than=False),
+
+    ADesc(A.ANNIVERSARY, 'Anniversary', more_than=False, preferred_bg=ANNIVERSARY_BG,
+          custom_attributes={
+              'main_font': 'custom_font_balloon',
+              'desc_color': '#f4e18d',
+              'desc_stroke': '#954c07',
+              'main_area': (320, 320),
+              'font_style': 'normal',
+          }),
+
+    ADesc(A.BLOCK_NUMBER, 'Blocks generated'),
+    ADesc(A.DAILY_TX_COUNT, 'Daily TX count'),
+    ADesc(A.TOTAL_MIMIR_VOTES, 'Total Mimir votes', more_than=False),
+    ADesc(A.MARKET_CAP_USD, 'Rune Total Market Cap', prefix='$'),
+    ADesc(A.TOTAL_POOLS, 'Total pools', more_than=False),
+    ADesc(A.TOTAL_ACTIVE_POOLS, 'Active pools', more_than=False),
+
+    ADesc(A.TOTAL_UNIQUE_SAVERS, 'Total unique savers', prefix=SAVER_BG),
+    ADesc(A.TOTAL_SAVED_USD, 'Total USD saved', prefix='$', preferred_bg=SAVER_BG),
+    ADesc(A.TOTAL_SAVERS_EARNED_USD, 'Savers: Total USD earned', prefix='$', preferred_bg=SAVER_BG),
+    ADesc(A.SAVER_VAULT_SAVED_ASSET, '::asset:: Savers depth', preferred_bg=SAVER_BG),
+    ADesc(A.SAVER_VAULT_SAVED_USD, '::asset:: Savers depth in USD', prefix='$', preferred_bg=SAVER_BG),
+    ADesc(A.SAVER_VAULT_MEMBERS, '::asset:: savers count', preferred_bg=SAVER_BG),
+    ADesc(A.SAVER_VAULT_EARNED_ASSET, 'Savers earned ::asset::', preferred_bg=SAVER_BG),
+
+    ADesc(A.SWAP_VOLUME_TOTAL_RUNE, 'Total swap volume', postfix=POSTFIX_RUNE),
+
+    ADesc(A.MAX_SWAP_AMOUNT_USD, 'Maximum swap volume', prefix='$'),
+    ADesc(A.MAX_ADD_AMOUNT_USD, 'Maximum add liquidity volume', prefix='$'),
+
+    ADesc(A.MAX_ADD_AMOUNT_USD_PER_POOL, 'Added ::asset:: in a single TX', prefix='$'),
+
+    ADesc(A.COIN_MARKET_CAP_RANK, 'Market cap rank'),
+
+    ADesc(A.POL_VALUE_RUNE, 'POL maximum value', preferred_bg=SAVER_BG),
+
+    ADesc(A.BTC_IN_VAULT, 'Bitcoin in vaults', preferred_bg=BTC_BG),
+    ADesc(A.ETH_IN_VAULT, 'Ethereum in vaults', preferred_bg=ETH_BG),
+    ADesc(A.STABLES_IN_VAULT, 'Stable coins in vaults'),
+]}
