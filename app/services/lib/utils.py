@@ -450,7 +450,10 @@ def grouper(n, iterable):
 
 
 def is_list_of_type(lst, type_):
-    return lst and all(isinstance(item, type_) for item in lst)
+    try:
+        return lst and all(isinstance(item, type_) for item in lst)
+    except TypeError:
+        return False
 
 
 def is_named_tuple_instance(x):
