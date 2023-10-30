@@ -2,12 +2,12 @@ include .env
 export
 
 .DEFAULT_GOAL := help
-.PHONY: help build start stop restart pull logs clean upgrade redis-cli redis-sv-loc certbot buildf test lint graph
+.PHONY: help build start stop restart pull logs clean upgrade redis-cli redis-sv-loc certbot buildf test lint graph switch-db
 
 BOTNAME = thtgbot
 
 help:
-	$(info Commands: build | start | stop | restart | pull | logs | clean | upgrade | redis-cli | redis-sv-loc)
+	$(info Commands: build | start | stop | restart | pull | logs | clean | upgrade | redis-cli | redis-sv-loc | switch-db)
 
 build:
 	$(info Make: Building images.)
@@ -82,3 +82,6 @@ lint:
 
 graph:
 	cd app && python graph.py
+
+switch-db:
+	cd app/tools && ./switch-db.sh
