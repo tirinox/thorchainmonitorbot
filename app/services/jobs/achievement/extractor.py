@@ -1,7 +1,7 @@
 from collections import defaultdict
 from typing import List
 
-from services.jobs.achievement.ach_list import A, AchievementTest, Achievement
+from services.jobs.achievement.ach_list import A, EventTestAchievement, Achievement
 from services.jobs.fetch.account_number import AccountNumberFetcher
 from services.jobs.fetch.const_mimir import MimirTuple
 from services.lib.constants import THORCHAIN_BIRTHDAY
@@ -46,7 +46,7 @@ class AchievementsExtractor(WithLogger):
             kv_events = self.on_thor_pol(data)
         elif isinstance(data, AlertKeyStats):
             kv_events = self.on_weekly_stats(data)
-        elif isinstance(data, AchievementTest):
+        elif isinstance(data, EventTestAchievement):
             kv_events = self.on_test_event(data)
         else:
             self.logger.warning(f'Unknown data type {type(data)} from {sender}. Dont know how to handle it.')
@@ -54,7 +54,7 @@ class AchievementsExtractor(WithLogger):
         return kv_events
 
     @staticmethod
-    def on_test_event(data: AchievementTest):
+    def on_test_event(data: EventTestAchievement):
         if data.specialization:
             return [Achievement(A.TEST_SPEC, data.value, specialization=data.specialization)]
         elif data.descending:

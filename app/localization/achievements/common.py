@@ -4,6 +4,7 @@ import random
 from services.jobs.achievement.ach_list import AchievementDescription, Achievement, META_KEY_SPEC, AchievementName, \
     ACHIEVEMENT_DESC_MAP
 from services.lib.date_utils import seconds_human
+from services.lib.money import short_money
 
 
 class AchievementsLocalizationBase(abc.ABC):
@@ -35,6 +36,16 @@ class AchievementsLocalizationBase(abc.ABC):
     def _do_substitutions(cls, achievement: Achievement, text: str) -> str:
         return text.replace(META_KEY_SPEC, achievement.specialization)
 
+    @staticmethod
+    def space_before_non_empty(s):
+        return f' {s}' if s else ''
+
+    def format_value(self, value, ach: 'Achievement', desc: AchievementDescription):
+        return short_money(value,
+                           prefix=self._do_substitutions(ach, desc.prefix),
+                           postfix=self.space_before_non_empty(self._do_substitutions(ach, desc.postfix)),
+                           integer=True, signed=desc.signed)
+
     def prepare_achievement_data(self, a: Achievement, newlines=False):
         desc = self.get_achievement_description(a.key)
         emoji = random.choice(self.CELEBRATION_EMOJIES)
@@ -43,11 +54,11 @@ class AchievementsLocalizationBase(abc.ABC):
         # Milestone string is used as the main number on the picture
         if a.descending:
             # show the real value for descending sequences
-            milestone_str = desc.format_value(a.value, a)
+            milestone_str = self.format_value(a.value, a, desc)
         else:
-            milestone_str = desc.format_value(a.milestone, a)
+            milestone_str = self.format_value(a.milestone, a, desc)
 
-        prev_milestone_str = desc.format_value(a.prev_milestone, a)
+        prev_milestone_str = self.format_value(a.prev_milestone, a, desc)
 
         # Description
         desc_text = desc.description
@@ -61,7 +72,7 @@ class AchievementsLocalizationBase(abc.ABC):
             if abs(a.value - a.milestone) < 0.01 * self.DEVIATION_TO_SHOW_VALUE_PCT * a.milestone:
                 value_str = ''
             else:
-                value_str = desc.format_value(a.value, a)
+                value_str = self.format_value(a.value, a, desc)
             value_str = self._do_substitutions(a, value_str)
 
         return desc, ago, desc_text, emoji, milestone_str, prev_milestone_str, value_str

@@ -1,7 +1,7 @@
 import json
 from typing import Optional
 
-from services.jobs.achievement.ach_list import GROUP_MINIMALS, Achievement
+from services.jobs.achievement.ach_list import Achievement
 from services.lib.date_utils import now_ts
 from services.lib.db import DB
 from services.lib.utils import WithLogger
@@ -20,17 +20,21 @@ class AchievementsTracker(WithLogger):
             return f'Achievements:{name}'
 
     @staticmethod
-    def meet_threshold(key, value, spec=None, descending=False):
-        threshold = GROUP_MINIMALS.get(key)
-        if spec and isinstance(threshold, dict):
-            threshold = threshold.get(spec)
+    def meet_threshold(a: Achievement):
+        thresholds = a.descriptor.thresholds
+
+        if a.specialization and isinstance(thresholds, dict):
+            threshold = thresholds.get(a.specialization)
+        else:
+            threshold = thresholds
+
         if threshold is None:
             return True
         else:
-            if descending:
-                return value <= threshold
+            if a.descending:
+                return a.value <= threshold
             else:
-                return value >= threshold
+                return a.value >= threshold
 
     async def feed_data(self, event: Achievement) -> Optional[Achievement]:
         if not event:
@@ -44,7 +48,7 @@ class AchievementsTracker(WithLogger):
             self.logger.debug(f'Achievement {name} has invalid ({value}) value! Skip it.')
             return
 
-        if not self.meet_threshold(name, value, event.specialization, descending):
+        if not self.meet_threshold(event):
             return
 
         current_milestone = event.get_previous_milestone()

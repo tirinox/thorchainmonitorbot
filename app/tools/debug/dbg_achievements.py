@@ -8,7 +8,7 @@ from localization.achievements.ach_rus import AchievementsRussianLocalization
 from localization.achievements.common import AchievementsLocalizationBase
 from localization.languages import Language
 from services.dialog.picture.achievement_picture import build_achievement_picture_generator
-from services.jobs.achievement.ach_list import Achievement, AchievementTest, A, AchievementDescription, \
+from services.jobs.achievement.ach_list import Achievement, EventTestAchievement, A, AchievementDescription, \
     ACHIEVEMENT_DESC_MAP
 from services.jobs.achievement.milestones import Milestones
 from services.jobs.achievement.notifier import AchievementsNotifier
@@ -38,7 +38,7 @@ class DebugAchievementsFetcher(BaseFetcher):
             self.current = int(self.current * random.uniform(1.1, 1.5))
 
         self.logger.info(f'Generated achievement "test": ({old} -> {self.current} new!)')
-        return AchievementTest(self.current, self.specialization, self.descending)
+        return EventTestAchievement(self.current, self.specialization, self.descending)
 
 
 class DebugAchievementRank(BaseFetcher):
