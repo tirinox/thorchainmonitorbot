@@ -17,7 +17,7 @@ async def demo_load(app: LpAppFramework):
 
 
 class FlipSideSaver(INotified):
-    DEFAULT_FILENAME = '../temp/fs_key_metrics_3.pickle'
+    DEFAULT_FILENAME = '../temp/fs_key_metrics_4.pickle'
 
     def __init__(self, filename=DEFAULT_FILENAME) -> None:
         super().__init__()
@@ -77,7 +77,7 @@ async def main():
     async with lp_app:
         # await lp_app.prepare(brief=True)
 
-        await demo_analyse(lp_app)
+        # await demo_analyse(lp_app)
         await demo_picture(lp_app)
 
 
