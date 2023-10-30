@@ -4,7 +4,7 @@ import random
 from services.jobs.achievement.ach_list import AchievementDescription, Achievement, META_KEY_SPEC, AchievementName, \
     ACHIEVEMENT_DESC_MAP
 from services.lib.date_utils import seconds_human
-from services.lib.money import short_money
+from services.lib.money import short_money, pretty_money
 
 
 class AchievementsLocalizationBase(abc.ABC):
@@ -40,11 +40,15 @@ class AchievementsLocalizationBase(abc.ABC):
     def space_before_non_empty(s):
         return f' {s}' if s else ''
 
-    def format_value(self, value, ach: 'Achievement', desc: AchievementDescription):
-        return short_money(value,
-                           prefix=self._do_substitutions(ach, desc.prefix),
-                           postfix=self.space_before_non_empty(self._do_substitutions(ach, desc.postfix)),
-                           integer=True, signed=desc.signed)
+    def format_value(self, value, ach: 'Achievement', desc: AchievementDescription, short=True):
+        f = short_money if short else pretty_money
+        return f(
+            value,
+            prefix=self._do_substitutions(ach, desc.prefix),
+            postfix=self.space_before_non_empty(self._do_substitutions(ach, desc.postfix)),
+            integer=True,
+            signed=desc.signed
+        )
 
     def prepare_achievement_data(self, a: Achievement, newlines=False):
         desc = self.get_achievement_description(a.key)
@@ -70,9 +74,11 @@ class AchievementsLocalizationBase(abc.ABC):
         value_str = ''
         if a.value and not a.descending:
             if abs(a.value - a.milestone) < 0.01 * self.DEVIATION_TO_SHOW_VALUE_PCT * a.milestone:
+                # clear it if it's too close to the milestone
                 value_str = ''
             else:
-                value_str = self.format_value(a.value, a, desc)
+                # short = False => full value!
+                value_str = self.format_value(a.value, a, desc, short=False)
             value_str = self._do_substitutions(a, value_str)
 
         return desc, ago, desc_text, emoji, milestone_str, prev_milestone_str, value_str

@@ -55,7 +55,7 @@ class GenericAchievementPictureGenerator(BasePictureGenerator):
 
     @async_wrap
     def _get_picture_sync(self):
-        desc, ago, desc_text, emoji, milestone_str, prev_milestone_str, value_str = self.loc.prepare_achievement_data(
+        desc, ago, desc_text, _, milestone_str, _, _ = self.loc.prepare_achievement_data(
             self.ach,
             newlines=True,
         )

@@ -61,13 +61,17 @@ def pretty_rune(x, signed=False, prefix=''):
     return pretty_money(x, postfix=RAIDO_GLYPH, signed=signed, prefix=prefix)
 
 
-def pretty_money(x, prefix='', signed=False, postfix=''):
+def pretty_money(x, prefix='', signed=False, postfix='', integer=False):
     if math.isnan(x) or math.isinf(x):
         return str(x)
+
+    if integer:
+        x = int(x)
+
     if x < 0:
         return f"-{prefix}{pretty_money(-x)}{postfix}"
     elif x == 0:
-        r = "0.0"
+        r = "0" if integer else "0.0"
     else:
         if x < 1e-4:
             r = f'{x:.4f}'
