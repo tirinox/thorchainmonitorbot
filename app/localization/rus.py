@@ -1074,7 +1074,7 @@ class RussianLocalization(BaseLocalization):
             message += bold('♻️ Перемешивание нод завершено') + '\n\n'
 
         message += self._make_node_list(changes.nodes_added, '🆕 Новые ноды появились:', add_status=True)
-        message += self._make_node_list(changes.nodes_activated, '➡️ Ноды активироны:')
+        message += self._make_node_list(changes.nodes_activated, '➡️ Ноды активированы:')
         message += self._make_node_list(changes.nodes_deactivated, '⬅️️ Ноды деактивированы:')
         message += self._make_node_list(changes.nodes_removed, '🗑️ Ноды отключились или исчезли:', add_status=True)
 
