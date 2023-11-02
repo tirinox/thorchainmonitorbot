@@ -377,6 +377,9 @@ class App(WithLogger):
                 loan_extractor = LoanExtractorBlock(d)
                 d.block_scanner.add_subscriber(loan_extractor)
 
+                if achievements_enabled:
+                    loan_extractor.add_subscriber(achievements)
+
                 loan_notifier = LoanTxNotifier(d, curve=curve)
                 loan_extractor.add_subscriber(loan_notifier)
                 loan_notifier.add_subscriber(d.alert_presenter)
@@ -553,6 +556,8 @@ class App(WithLogger):
                 self.logger.info('Using real Twitter bot.')
                 d.twitter_bot = TwitterBot(d.cfg)
 
+            d.twitter_bot.emergency = d.emergency
+
         return tasks
 
     def die(self, code=-100):
@@ -595,6 +600,7 @@ class App(WithLogger):
         )
 
         # await asyncio.sleep(10)
+
         # text = await self._admin_messages.get_debug_message_text_session()
         # await self.deps.telegram_bot.send_message(self.deps.cfg.first_admin_id, BoardMessage(text))
 
