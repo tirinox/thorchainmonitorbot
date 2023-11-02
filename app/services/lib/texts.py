@@ -176,12 +176,10 @@ def capitalize_each_word(s):
     return ' '.join(map(str.capitalize, str(s).split()))
 
 
-def sep(space=False):
-    if space:
-        print()
-    print('-' * 100)
-    if space:
-        print()
+def sep(title='', simple=False):
+    if not simple:
+        title = ' '.join(title.upper())
+    print(f'{title:-^120}')
 
 
 def fuzzy_search(query: str, realm, f=str.upper) -> List[str]:
