@@ -10,6 +10,7 @@ from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
 from services.lib.texts import sep
 from services.models.transfer import RuneTransfer
+from services.notify.personal.balance import PersonalBalanceNotifier
 from services.notify.types.transfer_notify import RuneMoveNotifier
 from tools.lib.lp_common import LpAppFramework, Receiver
 
@@ -115,10 +116,25 @@ async def debug_block_tx_status_check(app):
     print(block)
 
 
+async def demo_debug_personal_transfer(app):
+    balance_notifier = PersonalBalanceNotifier(app.deps)
+    await balance_notifier.on_data(None, [
+        RuneTransfer(
+            'thor136askulc04d0ek9yra6860vsaaamequv2l0jwh',
+            'thor1tcet6mxe80x89a8dlpynehlj4ya7cae4v3hmce',
+            13_300_000, '9E29B0D4E356DBA2B865AB129E22C4FA905C4720B3CCCAF7E0B2E0F4D9BDCF31',
+            3456.78, 2.99, is_native=True, comment='Send', memo='Hello, world!'
+        )
+    ])
+    await asyncio.sleep(3.0)
+
+
 async def main():
     app = LpAppFramework()
     async with app(brief=True):
-        await demo_block_scanner_active(app, send_alerts=False, catch_up=True)
+        # await demo_block_scanner_active(app, send_alerts=False, catch_up=True)
+
+        await demo_debug_personal_transfer(app)
 
         # await search_out(app)
 

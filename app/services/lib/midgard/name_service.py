@@ -9,7 +9,7 @@ from services.lib.constants import Chains
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.db import DB
 from services.lib.midgard.connector import MidgardConnector
-from services.lib.utils import WithLogger, keys_to_lower
+from services.lib.utils import WithLogger, keys_to_lower, filter_none_values
 
 
 class NameMap(NamedTuple):
@@ -52,16 +52,16 @@ class NameService(WithLogger):
         try:
             addresses = list(set(addresses))  # make it unique and strictly ordered
 
-            thorname_by_name = await self.lookup_multiple_names_by_addresses(addresses)
+            thorname_by_address = await self.lookup_multiple_names_by_addresses(addresses)
+            thorname_by_address = filter_none_values(thorname_by_address)
 
-            thorname_by_address = {}
-            for address in addresses:
-                for thorname in thorname_by_name.values():
-                    if thorname and thorname != self._cache.NO_VALUE:
-                        for alias in thorname.aliases:
-                            if alias.address == address:
-                                thorname_by_address[address] = thorname
-                                break
+            thorname_by_name = {}
+            for address, thorname in thorname_by_address.items():
+                if thorname and thorname != self._cache.NO_VALUE:
+                    for alias in thorname.aliases:
+                        if alias.address == address:
+                            thorname_by_name[thorname.name] = thorname
+                            break
 
             return NameMap(thorname_by_name, thorname_by_address)
         except Exception as e:

@@ -63,10 +63,10 @@ class AlertPresenter(INotified):
         elif isinstance(data, (AlertLoanOpen, AlertLoanRepayment)):
             await self._handle_loans(data)
 
-    async def load_names(self, names):
-        if not (isinstance(names, (list, tuple))):
-            names = (names,)
-        return await self.name_service.safely_load_thornames_from_address_set(names)
+    async def load_names(self, addresses):
+        if not (isinstance(addresses, (list, tuple))):
+            addresses = (addresses,)
+        return await self.name_service.safely_load_thornames_from_address_set(addresses)
 
         # ---- PARTICULARLY ----
 
