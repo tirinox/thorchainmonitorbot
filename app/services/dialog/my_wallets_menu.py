@@ -112,7 +112,7 @@ class MyWalletsMenu(DialogWithSettings):
             await message.answer(self.loc.TEXT_CANNOT_ADD, disable_notification=True)
             return
 
-        self._add_address(address, chain)
+        await self._add_address(address, chain, name)
 
         # If name is not empty, set it
         if name:
@@ -636,7 +636,7 @@ class MyWalletsMenu(DialogWithSettings):
     def current_address(self):
         return self.data[self.KEY_ACTIVE_ADDRESS]
 
-    def _add_address(self, new_addr, chain):
+    async def _add_address(self, new_addr, chain, name):
         if not new_addr:
             logging.error('Cannot add empty address!')
             return
@@ -652,6 +652,9 @@ class MyWalletsMenu(DialogWithSettings):
 
         # As the dict is ordered, we add new obj at the beginning in a fishy way
         self.global_data[Props.KEY_ADDRESSES] = paste_at_beginning_of_dict(address_dict, new_addr, new_addr_obj)
+
+        # Bond tracker is on by default
+        await self._process_wallet_track_bond_flag(new_addr, is_on=True)
 
     async def _remove_address(self, index):
         try:
