@@ -3,6 +3,7 @@ import random
 from services.jobs.node_churn import NodeChurnDetector
 from services.lib.delegates import WithDelegates, INotified
 from services.lib.depcont import DepContainer
+from services.lib.money import distort_randomly
 from services.lib.texts import sep
 from services.models.node_info import NodeSetChanges, NodeInfo
 
@@ -24,6 +25,7 @@ class DbgChurnSimulator(WithDelegates, INotified):
         self.max_activate_number = 5
         self.min_deactivate_number = 1
         self.max_deactivate_number = 5
+        self.bond_changes = True
 
     async def run_standalone(self):
         # node_info_fetcher -> node_churn_detector -> self -> ...
@@ -72,3 +74,8 @@ class DbgChurnSimulator(WithDelegates, INotified):
         for n in deactivate:
             n.status = n.STANDBY
             nodes.nodes_deactivated.append(n)
+
+        if self.bond_changes:
+            for n in activate + deactivate:
+                for i, b in enumerate(n.bond_providers):
+                    n.bond_providers[i] = b._replace(rune_bond=distort_randomly(b.rune_bond))
