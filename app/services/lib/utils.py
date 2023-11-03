@@ -527,3 +527,7 @@ def translate(s: str, d: dict):
 def get_ttl_hash(seconds=3600):
     """Return the same value withing `seconds` time period"""
     return round(time.time() / seconds)
+
+
+def filter_none_values(d: dict):
+    return {k: v for k, v in d.items() if v is not None}
