@@ -2,12 +2,15 @@ include .env
 export
 
 .DEFAULT_GOAL := help
-.PHONY: help build start stop restart pull logs clean upgrade redis-cli redis-sv-loc certbot buildf test lint graph switch-db
+.PHONY: help build start stop restart pull logs clean upgrade redis-cli redis-sv-loc certbot buildf test lint graph switch-db attach
 
 BOTNAME = thtgbot
 
 help:
-	$(info Commands: build | start | stop | restart | pull | logs | clean | upgrade | redis-cli | redis-sv-loc | switch-db)
+	$(info Commands: build | start | stop | restart | pull | logs | clean | upgrade | redis-cli | redis-sv-loc | switch-db | attach)
+
+attach:
+	docker-compose exec $(BOTNAME) bash
 
 build:
 	$(info Make: Building images.)
