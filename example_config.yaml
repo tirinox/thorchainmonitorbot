@@ -2,10 +2,10 @@
 # Rename it to "config.yaml"
 
 log_level: INFO
-colorful_logs: false  # (!) new
+colorful_logs: false
 
 sleep_before_start: 3
-startup_step_delay: 3.0 # (!) new. Delay between startup steps (in seconds)
+startup_step_delay: 3.0
 
 sentry:
   url: ""
@@ -172,7 +172,7 @@ native_scanner:
       - "thor1v8ppstuf6e3x0r4glqc68d5jqcs2tf38cg2q6y"
       - "thor1g98cy3n9mmjrpn0sxmn63lztelera37n8n67c0"
 
-  db: # (!) new
+  db:
     ttl: 7d
 
 
@@ -223,7 +223,7 @@ names:
     bnb13a7gyv5zl57c0rzeu0henx6d0tzspvrrakxxtv: "THORChain Operational"
     bnb1e4q8whcufp6d72w8nwmpuhxd96r4n0fstegyuy: "Burn address"
 
-  affiliates: # (!) new
+  affiliates:
     wr: THORWallet
     ss: ShapeShift
     t: THORSwap
@@ -310,7 +310,7 @@ tx:
     min_usd_total: 50000
     curve_mult: 0.1
 
-  loans: # (!) new
+  loans:
     enabled: true
     min_usd_total: 5000
     # curve_mult: 0.1
@@ -496,7 +496,7 @@ node_info:
       minimum_nodes: 4
       minimum_progress_step_percent: 5
 
-  bond_tools: # (!) new
+  bond_tools:
     enabled: true
     log_events: true
 
@@ -582,3 +582,9 @@ key_metrics:
   data_max_age: 36h
   notification:
     cooldown: 7d
+
+
+borrowers:  # (!) new
+  enabled: true
+  fetch_period: 10m
+
