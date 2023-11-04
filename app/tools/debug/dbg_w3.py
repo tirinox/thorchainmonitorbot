@@ -249,7 +249,7 @@ async def demo_find_aggregator_error(app: LpAppFramework):
     print(r)
 
 
-async def demo_avax(app: LpAppFramework):
+async def demo_avax_w3_low_level(app: LpAppFramework):
     w3 = Web3(Web3.HTTPProvider(f'https://api.avax.network/ext/bc/C/rpc'))
     print(w3.is_connected())
 
@@ -273,15 +273,26 @@ async def show_dex_report(app: LpAppFramework):
     # await app.send_test_tg_message(txt=app.deps.loc_man.default.notification_text_dex_report(report))
 
 
+async def demo_avax_health(app: LpAppFramework):
+    tx_id = 'DD0C994E6245A355D2DE9098C9B0CEC582BD5538697EA9A5FD815B92146F7FC9'
+    q_path = free_url_gen.url_for_tx(0, 50, txid=tx_id)
+    tx = await load_tx(app, app.deps.midgard_connector, q_path)
+
+    aggregator = AggregatorDataExtractor(app.deps)
+    r = await aggregator.on_data(None, [tx])
+    print(r)
+
+
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
-        # await demo_avax(app)
+        # await demo_avax_w3_low_level(app)
         # await demo_decoder(app)
-        await demo_full_tx_pipeline(app)
+        # await demo_full_tx_pipeline(app)
         # await demo_find_aff(app)
         # await load_dex_txs(app)
         # await show_dex_report(app)
+        await demo_avax_health(app)
 
 
 if __name__ == '__main__':
