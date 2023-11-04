@@ -96,6 +96,11 @@ class SettingsManager(WithDelegates, WithLogger):
                 context.stop()
             self.logger.warning(f'Auto-paused alerts for {user}! It is marked as "Inactive" now!')
 
+    async def all_users_having_settings(self):
+        pattern = self.db_key_settings('*')
+        keys = await self.db.redis.keys(pattern)
+        return [str(k).split(':', 3)[2] for k in keys]
+
 
 class SettingsContext:
     def __init__(self, manager: SettingsManager, user_id):

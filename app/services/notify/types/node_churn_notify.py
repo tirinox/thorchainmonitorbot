@@ -23,7 +23,8 @@ class NodeChurnNotifier(INotified, WithDelegates, WithLogger):
         self._min_changes_to_post_picture = deps.cfg.as_int('node_info.churn.min_changes_to_post_picture', 4)
         notify_cooldown = deps.cfg.as_interval('node_info.churn.cooldown', '10m')
 
-        self._notify_cd = Cooldown(self.deps.db, 'NodeChurn:Notification', notify_cooldown, 10)
+        self._start_cd = Cooldown(self.deps.db, 'NodeChurn:Notification:Start', notify_cooldown,)
+        self._finish_cd = Cooldown(self.deps.db, 'NodeChurn:Notification:Finish', notify_cooldown)
         self._record_metrics_cd = Cooldown(self.deps.db, 'NodeChurn:Metrics', self.STATS_RECORD_INTERVAL)
 
         self._node_stats_ts = TimeSeries('NodeMetrics', self.deps.db)
@@ -69,13 +70,13 @@ class NodeChurnNotifier(INotified, WithDelegates, WithLogger):
         await self._notify_when_node_churn_finished(event)
 
     async def _notify_when_node_churn_started(self, changes: NodeSetChanges):
-        if await self._notify_cd.can_do():
-            await self._notify_cd.do()
+        if await self._start_cd.can_do():
+            await self._start_cd.do()
             await self.pass_data_to_listeners(AlertNodeChurn(changes, finished=False, with_picture=False))
 
     async def _notify_when_node_churn_finished(self, changes: NodeSetChanges):
-        if await self._notify_cd.can_do():
-            await self._notify_cd.do()
+        if await self._finish_cd.can_do():
+            await self._finish_cd.do()
             with_picture = changes.count_of_changes >= self._min_changes_to_post_picture
 
             if with_picture:

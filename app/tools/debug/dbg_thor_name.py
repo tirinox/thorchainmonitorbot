@@ -1,6 +1,7 @@
 import asyncio
 
 from services.lib.midgard.name_service import NameService
+from services.lib.texts import sep
 from tools.lib.lp_common import LpAppFramework
 
 NAMES = {
@@ -41,12 +42,30 @@ async def t_not_exists(ns: NameService):
     print(r1)
 
 
+async def t_fix_name_map(ns: NameService):
+    # thor_swap = await ns.lookup_thorname_by_name('t')
+    # print(thor_swap)
+    # return
+
+    result = await ns.safely_load_thornames_from_address_set([
+        'thor1tcet6mxe80x89a8dlpynehlj4ya7cae4v3hmce',
+        'thor136askulc04d0ek9yra6860vsaaamequv2l0jwh',
+        'thor13tqs4dgvjyhukx2aed78lu6gz49t6penjwnd50',
+        'thor160yye65pf9rzwrgqmtgav69n6zlsyfpgm9a7xk',  # (t)
+    ])
+    sep('By name')
+    print(result.by_name)
+    sep('By address')
+    print(result.by_address)
+
+
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
         ns = app.deps.name_service
-        await t_exists(ns)
+        # await t_exists(ns)
         # await t_not_exists(ns)
+        await t_fix_name_map(ns)
 
 
 if __name__ == '__main__':

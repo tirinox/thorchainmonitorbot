@@ -20,21 +20,15 @@ async def clear_user_db(app: LpAppFramework):
     ...
 
 
-async def demo_run_continuously(app: LpAppFramework):
+async def demo_run_churn_sim_continuously(app: LpAppFramework):
     d = app.deps
 
-    d.node_info_fetcher.sleep_period = 5
-
-    churn_detector = NodeChurnDetector(d)
-    d.node_info_fetcher.add_subscriber(churn_detector)
-
-    churn_sim = DbgChurnSimulator(trigger_on_tick=2, every_tick=True)
-    churn_detector.add_subscriber(churn_sim)
+    churn_sim = DbgChurnSimulator(d, trigger_on_tick=2, every_tick=True, tick_duration=3)
 
     bond_provider_tools = PersonalBondProviderNotifier(d)
     churn_sim.add_subscriber(bond_provider_tools)
 
-    await d.node_info_fetcher.run()
+    await churn_sim.run_standalone()
 
 
 async def demo_all_kinds_of_messages(app: LpAppFramework):
@@ -187,7 +181,7 @@ async def main():
     app = LpAppFramework(log_level=logging.INFO)
     async with app(brief=True):
         app.deps.thor_env.timeout = 100
-        await demo_run_continuously(app)
+        await demo_run_churn_sim_continuously(app)
 
         # await run_playback(app, delay=0.01)
 

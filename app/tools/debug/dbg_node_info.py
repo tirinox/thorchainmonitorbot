@@ -19,6 +19,7 @@ from services.lib.utils import setup_logs
 from services.models.node_info import NodeSetChanges, NodeVersionConsensus, NodeInfo
 from services.notify.types.node_churn_notify import NodeChurnNotifier
 from services.notify.types.version_notify import VersionNotifier
+from tools.lib.churn_sim import DbgChurnSimulator
 from tools.lib.lp_common import LpAppFramework
 
 
@@ -67,6 +68,7 @@ async def node_version_notification_check_1(lpgen: LpAppFramework, data):
 
     for loc in locs:
         sep()
+        # noinspection PyTypeChecker
         msg = loc.notification_text_version_upgrade(
             data,
             new_versions=[
@@ -233,7 +235,7 @@ class NodeFetcherSimulator(BaseFetcher):
         return nodes
 
 
-async def demo_churn_simulator(app: LpAppFramework):
+async def demo_churn_simulator(app: LpAppFramework, version=False):
     d = app.deps
 
     await d.node_info_fetcher.run_once()
@@ -242,27 +244,30 @@ async def demo_churn_simulator(app: LpAppFramework):
     await d.broadcaster.notify_preconfigured_channels('---------')
 
     # simulator
-    node_fetcher_simulator = NodeFetcherSimulator(d, d.node_holder.nodes)
-    node_fetcher_simulator.set_thor_network(d.node_info_fetcher.thor_network)
+    # node_fetcher_simulator = NodeFetcherSimulator(d, d.node_holder.nodes)
+    # node_fetcher_simulator.set_thor_network(d.node_info_fetcher.thor_network)
 
     # churn_detector
-    churn_detector = NodeChurnDetector(d)
-    node_fetcher_simulator.add_subscriber(churn_detector)
+    # node_fetcher_simulator.add_subscriber(churn_detector)
+
+    churn_sim = DbgChurnSimulator(app.deps, trigger_on_tick=2, every_tick=True)
 
     # notifier module
     notifier_nodes = NodeChurnNotifier(d)
-    churn_detector.add_subscriber(notifier_nodes)
+    churn_sim.add_subscriber(notifier_nodes)
 
-    # notifier_nodes.add_subscriber(d.alert_presenter)  # not ready yet
+    notifier_nodes.add_subscriber(d.alert_presenter)
 
     # the rest of stuff
     achievements = AchievementsNotifier(d)
     achievements.add_subscriber(d.alert_presenter)
 
-    notifier_version = VersionNotifier(d)
-    churn_detector.add_subscriber(notifier_version)
+    if version:
+        notifier_version = VersionNotifier(d)
+        churn_sim.node_churn_detector.add_subscriber(notifier_version)
 
-    await node_fetcher_simulator.run()
+    # await node_fetcher_simulator.run()
+    await churn_sim.run_standalone()
 
 
 async def demo_once(app: LpAppFramework):
