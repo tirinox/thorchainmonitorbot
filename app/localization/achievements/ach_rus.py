@@ -50,6 +50,8 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
         A.WEEKLY_SWAP_VOLUME: "Еженедельный объем свопов",
         A.WEEKLY_PROTOCOL_REVENUE_USD: "Еженедельный доход протокола",
         A.WEEKLY_AFFILIATE_REVENUE_USD: "Еженедельный доход партнеров",
+
+        A.RUNE_BURNT_LENDING: "RUNE сожжено",
     }
 
     MORE_THAN = 'Более чем'

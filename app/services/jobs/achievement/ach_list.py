@@ -1,4 +1,4 @@
-from typing import NamedTuple, Union, Tuple, List
+from typing import NamedTuple, Union, Tuple, List, Optional
 
 from services.jobs.achievement.milestones import Milestones, MilestonesEveryInt
 from services.lib.money import RAIDO_GLYPH
@@ -74,6 +74,9 @@ class AchievementName:
     WEEKLY_AFFILIATE_REVENUE_USD = 'weekly_affiliate_revenue_usd'
     WEEKLY_SWAP_VOLUME = 'weekly_swap_volume'
 
+    # loans
+    RUNE_BURNT_LENDING = 'rune_burnt_lending'
+
     @classmethod
     def all_keys(cls):
         return [getattr(cls, k) for k in cls.__dict__
@@ -105,6 +108,7 @@ class AchievementDescription(NamedTuple):
     custom_attributes: dict = None
     milestone_scale: Milestones = MILESTONES_NORMAL
     thresholds: Union[int, dict] = 0
+    tint: Optional[str] = None
 
     @property
     def image(self):
@@ -117,6 +121,7 @@ SAVER_BG = 'nn_wreath_saver.png'
 BTC_BG = 'nn_wreath_btc_vault.png'
 ETH_BG = 'nn_wreath_eth_vault.png'
 ANNIVERSARY_BG = 'nn_wreath_ann_2.png'
+BURN_BG = 'nn_wreath_burn.png'
 
 ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     # each description will be replaced with the translation from the localization,
@@ -260,6 +265,10 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.WEEKLY_SWAP_VOLUME, 'Weekly swap volume', prefix='$', thresholds=300_600_000),
     ADesc(A.WEEKLY_PROTOCOL_REVENUE_USD, 'Weekly protocol revenue', prefix='$', thresholds=867_900),
     ADesc(A.WEEKLY_AFFILIATE_REVENUE_USD, 'Weekly affiliate revenue', prefix='$', thresholds=60_300),
+
+    # loans
+    ADesc(A.RUNE_BURNT_LENDING, 'Burnt Rune from lending', postfix=POSTFIX_RUNE,
+          preferred_bg=BURN_BG, tint='#f83f0e'),
 ]}
 
 

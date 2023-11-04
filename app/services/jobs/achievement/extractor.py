@@ -114,6 +114,7 @@ class AchievementsExtractor(WithLogger):
             Achievement(A.TOTAL_POOLS, data.total_pools),
             Achievement(A.TOTAL_ACTIVE_POOLS, data.total_active_pools),
             Achievement(A.COIN_MARKET_CAP_RANK, data.rank, descending=True) if data.rank else None,
+            Achievement(A.RUNE_BURNT_LENDING, int(data.supply_info.lending_burnt_rune)),
         ]
         return events
 

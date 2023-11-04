@@ -48,6 +48,7 @@ async def main():
     async with app(brief=True):
         # configure
         app.deps.twitter_bot = twitter_bot
+        app.deps.twitter_bot.emergency = app.deps.emergency
         app.deps.broadcaster.channels = [
             ChannelDescriptor('twitter', '', Language.ENGLISH_TWITTER)
         ]

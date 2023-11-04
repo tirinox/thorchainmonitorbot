@@ -63,14 +63,14 @@ class GenericAchievementPictureGenerator(BasePictureGenerator):
         bg = self.load_background_picture()
 
         # get dominant color of the background
-        tint = self.get_tint(bg)
+        tint = self.ach_desc.tint or self.get_tint(bg)
         draw = ImageDraw.Draw(bg)
         if desc.custom_attributes:
             attributes = desc.custom_attributes
         else:
             attributes = self.attributes_default(self.r)
 
-        self.put_logo(bg)
+        self.put_logo(bg, tint)
         self.put_main_number(bg, attributes, milestone_str, tint, desc)
         self.put_description(attributes, desc_text, bg, tint)
         self.put_date(draw)
@@ -98,11 +98,11 @@ class GenericAchievementPictureGenerator(BasePictureGenerator):
 
         font_desc, *_ = measure_font_to_fit_in_box(font_getter_bold, desc_text, 890, 172, current_font_size=80)
         desc_pos = self.pos_percent(50, desc_y)
-        thick_stroke_color = adjust_brightness(tint, 0.2)
+        thick_stroke_color = adjust_brightness(tint, 0.3)
         desc_img = draw_text_with_font(desc_text, font_desc, desc_color)
         desc_img = add_transparent_frame(desc_img, 30)
         shadow_source = add_tint_to_bw_image(desc_img, thick_stroke_color)
-        desc_img = add_shadow(desc_img, 20, shadow_source=shadow_source)
+        desc_img = add_shadow(desc_img, 12, shadow_source=shadow_source)
         paste_image_masked(image, desc_img, desc_pos)
 
     def put_main_number(self, image, attributes, milestone_str, tint, desc):
@@ -136,8 +136,16 @@ class GenericAchievementPictureGenerator(BasePictureGenerator):
             desc_img = add_shadow(desc_img, 4)
             paste_image_masked(image, desc_img, (mx, my - label_height // 2 + 28), anchor='mb')
 
-    def put_logo(self, image, logo_y=7):
-        paste_image_masked(image, self.r.tc_logo_transparent, self.pos_percent(50, logo_y))
+    def put_logo(self, image, tint, logo_y=7):
+        logo = self.r.tc_logo_transparent
+
+        # logo = self.r.tc_logo_transparent.copy()
+        # logo = add_transparent_frame(logo, 5)
+        # shadow_color = adjust_brightness(tint, 0.3)
+        # shadow_source = add_tint_to_bw_image(logo, shadow_color)
+        # logo = add_shadow(logo, 4, shadow_source=shadow_source)
+
+        paste_image_masked(image, logo, self.pos_percent(50, logo_y))
 
     async def prepare(self):
         return await super().prepare()

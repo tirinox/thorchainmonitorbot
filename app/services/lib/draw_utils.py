@@ -294,9 +294,9 @@ def adjust_brightness(color, factor):
     # Convert the HEX color to RGB
     if isinstance(color, str):
         hex_color = color.lstrip('#')
-        r = int(color[0:2], 16)
-        g = int(color[2:4], 16)
-        b = int(color[4:6], 16)
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
         as_tuple = False
     else:
         r, g, b = color

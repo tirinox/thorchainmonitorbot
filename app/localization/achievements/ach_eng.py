@@ -50,6 +50,8 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
         A.WEEKLY_SWAP_VOLUME: "Weekly swap volume",
         A.WEEKLY_PROTOCOL_REVENUE_USD: "Weekly protocol revenue",
         A.WEEKLY_AFFILIATE_REVENUE_USD: "Weekly affiliate revenue",
+
+        A.RUNE_BURNT_LENDING: "RUNE burnt",
     }
 
     CELEBRATION_EMOJIES = "🎉🎊🥳🙌🥂🪅🎆"

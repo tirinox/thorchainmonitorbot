@@ -5,9 +5,9 @@ import random
 
 from localization.achievements.ach_eng import AchievementsEnglishLocalization
 from localization.achievements.ach_rus import AchievementsRussianLocalization
-from localization.achievements.common import AchievementsLocalizationBase
 from localization.languages import Language
 from services.dialog.picture.achievement_picture import build_achievement_picture_generator
+from services.dialog.telegram.telegram import TG_TEST_USER
 from services.jobs.achievement.ach_list import Achievement, EventTestAchievement, A, AchievementDescription, \
     ACHIEVEMENT_DESC_MAP
 from services.jobs.achievement.milestones import Milestones
@@ -16,6 +16,7 @@ from services.jobs.achievement.tracker import AchievementsTracker
 from services.jobs.fetch.base import BaseFetcher
 from services.lib.date_utils import now_ts, DAY
 from services.lib.depcont import DepContainer
+from services.lib.draw_utils import img_to_bio
 from services.lib.texts import sep
 from services.models.price import RuneMarketInfo
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
@@ -80,8 +81,9 @@ def random_achievement():
     return rec
 
 
-async def demo_achievements_picture(lang=None, a=None, v=None, milestone=None, descending=False,
-                                    force_background=None):
+async def demo_achievements_picture(app: LpAppFramework,
+                                    lang=None, a=None, v=None, milestone=None, descending=False,
+                                    force_background=None, send_to_tg=False):
     # rec = random_achievement()
     # rec = Achievement(Achievement.MARKET_CAP_USD, 501_344_119, 500_000_000, now_ts(), 0, 0)
     v = v or 501_344_119
@@ -103,6 +105,13 @@ async def demo_achievements_picture(lang=None, a=None, v=None, milestone=None, d
     sep()
     print(text)
     sep()
+
+    if send_to_tg:
+        d: DepContainer = app.deps
+        await d.telegram_bot.bot.send_photo(
+            TG_TEST_USER, img_to_bio(pic, '1.png'), caption=text,
+        )
+        await asyncio.sleep(1.0)
 
 
 async def demo_all_achievements():
@@ -228,11 +237,13 @@ async def main():
         # await demo_achievements_picture(Language.RUSSIAN, A.ANNIVERSARY, 2, 2)
         # await demo_achievements_picture(Language.ENGLISH, A.COIN_MARKET_CAP_RANK, 10, 11, descending=True)
         # await demo_achievements_picture(Language.RUSSIAN, A.COIN_MARKET_CAP_RANK, 10, 11, descending=True)
-        # await demo_achievements_picture(
-        #     Language.ENGLISH, A.BTC_IN_VAULT, 105, 100,
-        #     # force_background='nn_wreath_experimental_3.png'
-        # )
-        await demo_all_achievements()
+        await demo_achievements_picture(
+            app,
+            Language.ENGLISH, A.RUNE_BURNT_LENDING, 2_000_100, 2_000_000,
+            send_to_tg=True
+            # force_background='nn_wreath_experimental_3.png'
+        )
+        # await demo_all_achievements()
         # await demo_run_pipeline_coin_rank(app)
         # await demo_run_pipeline_test(app, spec='BTC.BTC')
         # await debug_naughty_savers_achievements(app)
