@@ -76,6 +76,11 @@ class AchievementName:
 
     # loans
     RUNE_BURNT_LENDING = 'rune_burnt_lending'
+    LOANS_OPENED = 'loans_opened'
+    BORROWER_COUNT = 'borrower_count'
+    MAX_LOAN_AMOUNT_USD = 'max_loan_amount_usd'
+    TOTAL_BORROWED_USD = 'total_borrowed_usd'
+    TOTAL_COLLATERAL_USD = 'total_collateral_usd'
 
     @classmethod
     def all_keys(cls):
@@ -94,6 +99,37 @@ class EventTestAchievement(NamedTuple):
     value: int
     specialization: str = ''
     descending: bool = False
+
+
+class Achievement(NamedTuple):
+    key: str
+    value: int  # real current value
+    milestone: int = 0  # current milestone
+    timestamp: float = 0
+    prev_milestone: int = 0
+    previous_ts: float = 0
+    specialization: str = ''
+    descending: bool = False  # if True, then we need to check if value is less than milestone
+
+    @property
+    def has_previous(self):
+        return self.prev_milestone > 0 and self.previous_ts > ACH_CUT_OFF_TS
+
+    @property
+    def descriptor(self) -> 'AchievementDescription':
+        return ACHIEVEMENT_DESC_MAP[self.key]
+
+    def get_previous_milestone(self):
+        provider: Milestones = self.descriptor.milestone_scale
+        if not provider:
+            raise Exception(f'No description for achievement: {self.key!r}')
+
+        if self.descending:
+            v = provider.next(self.value)
+        else:
+            v = provider.previous(self.value)
+
+        return v
 
 
 class AchievementDescription(NamedTuple):
@@ -269,35 +305,9 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     # loans
     ADesc(A.RUNE_BURNT_LENDING, 'Burnt Rune from lending', postfix=POSTFIX_RUNE,
           preferred_bg=BURN_BG, tint='#f83f0e'),
+    ADesc(A.LOANS_OPENED, 'Total loans opened'),
+    ADesc(A.BORROWER_COUNT, 'Total borrowers count'),
+    ADesc(A.MAX_LOAN_AMOUNT_USD, 'Maximum loan amount', prefix='$'),
+    ADesc(A.TOTAL_BORROWED_USD, 'Total borrowed', prefix='$'),
+    ADesc(A.TOTAL_COLLATERAL_USD, 'Total collateral', prefix='$'),
 ]}
-
-
-class Achievement(NamedTuple):
-    key: str
-    value: int  # real current value
-    milestone: int = 0  # current milestone
-    timestamp: float = 0
-    prev_milestone: int = 0
-    previous_ts: float = 0
-    specialization: str = ''
-    descending: bool = False  # if True, then we need to check if value is less than milestone
-
-    @property
-    def has_previous(self):
-        return self.prev_milestone > 0 and self.previous_ts > ACH_CUT_OFF_TS
-
-    @property
-    def descriptor(self) -> AchievementDescription:
-        return ACHIEVEMENT_DESC_MAP[self.key]
-
-    def get_previous_milestone(self):
-        provider: Milestones = self.descriptor.milestone_scale
-        if not provider:
-            raise Exception(f'No description for achievement: {self.key!r}')
-
-        if self.descending:
-            v = provider.next(self.value)
-        else:
-            v = provider.previous(self.value)
-
-        return v

@@ -1,5 +1,7 @@
 import asyncio
 
+from services.jobs.achievement.extractor import AchievementsExtractor
+from services.jobs.fetch.borrowers import BorrowersFetcher
 from services.jobs.scanner.event_db import EventDatabase
 from services.jobs.scanner.loan_extractor import LoanExtractorBlock
 from services.jobs.scanner.native_scan import NativeScannerBlock
@@ -73,22 +75,31 @@ async def debug_tx_records(app: LpAppFramework, tx_id):
     print(tx)
 
 
+async def demo_lending_stats(app: LpAppFramework):
+    borrowers_fetcher = BorrowersFetcher(app.deps)
+    r = await borrowers_fetcher.fetch()
+    print(r)
+    sep()
+    events = await AchievementsExtractor(app.deps).extract_events_by_type(None, r)
+    print(events)
+
+
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
         await app.deps.pool_fetcher.reload_global_pools()
         await app.deps.last_block_fetcher.run_once()
 
+        await demo_lending_stats(app)
+
         # await debug_block_analyse(app, 12262380)
-
         # await debug_tx_records(app, 'xxx')
-
-        await debug_full_pipeline(
-            app,
-            start=12258889,
-            # tx_id='xx',
-            # single_block=True
-        )
+        # await debug_full_pipeline(
+        #     app,
+        #     start=12258889,
+        #     # tx_id='xx',
+        #     # single_block=True
+        # )
 
 
 if __name__ == '__main__':

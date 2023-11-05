@@ -15,6 +15,7 @@ from services.dialog.telegram.telegram import TelegramBot
 from services.dialog.twitter.twitter_bot import TwitterBot, TwitterBotMock
 from services.jobs.achievement.notifier import AchievementsNotifier
 from services.jobs.fetch.account_number import AccountNumberFetcher
+from services.jobs.fetch.borrowers import BorrowersFetcher
 from services.jobs.fetch.cap import CapInfoFetcher
 from services.jobs.fetch.chains import ChainStateFetcher
 from services.jobs.fetch.const_mimir import ConstMimirFetcher
@@ -524,6 +525,12 @@ class App(WithLogger):
             metrics_notifier.add_subscriber(d.alert_presenter)
             if achievements_enabled:
                 metrics_fetcher.add_subscriber(achievements)
+
+        if d.cfg.get('borrowers.enabled', True):
+            borrowers_fetcher = BorrowersFetcher(d)
+            tasks.append(borrowers_fetcher)
+            if achievements_enabled:
+                borrowers_fetcher.add_subscriber(achievements)
 
         # -------- SCHEDULER --------
 

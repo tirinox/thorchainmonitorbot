@@ -52,6 +52,11 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
         A.WEEKLY_AFFILIATE_REVENUE_USD: "Weekly affiliate revenue",
 
         A.RUNE_BURNT_LENDING: "RUNE burnt",
+        A.LOANS_OPENED: "Loans opened",
+        A.BORROWER_COUNT: "Borrowers count",
+        A.MAX_LOAN_AMOUNT_USD: "Maximum loan amount",
+        A.TOTAL_BORROWED_USD: "Total borrowed",
+        A.TOTAL_COLLATERAL_USD: "Total collateral",
     }
 
     CELEBRATION_EMOJIES = "🎉🎊🥳🙌🥂🪅🎆"

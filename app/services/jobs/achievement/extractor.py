@@ -10,6 +10,7 @@ from services.lib.depcont import DepContainer
 from services.lib.money import Asset
 from services.lib.utils import is_list_of_type, WithLogger
 from services.models.flipside import AlertKeyStats
+from services.models.loans import LendingStats, AlertLoanOpen
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges
 from services.models.pol import AlertPOL
@@ -48,6 +49,10 @@ class AchievementsExtractor(WithLogger):
             kv_events = self.on_weekly_stats(data)
         elif isinstance(data, EventTestAchievement):
             kv_events = self.on_test_event(data)
+        elif isinstance(data, LendingStats):
+            kv_events = self.on_lending_stats(data)
+        elif isinstance(data, AlertLoanOpen):
+            kv_events = self.on_loan_open(data)
         else:
             self.logger.warning(f'Unknown data type {type(data)} from {sender}. Dont know how to handle it.')
             kv_events = []
@@ -183,3 +188,18 @@ class AchievementsExtractor(WithLogger):
             Achievement(A.WEEKLY_SWAP_VOLUME, int(weekly_swap_volume))
         ]
         return results
+
+    @staticmethod
+    def on_lending_stats(data: LendingStats):
+        return [
+            Achievement(A.BORROWER_COUNT, data.borrower_count),
+            Achievement(A.LOANS_OPENED, data.lending_tx_count),
+            Achievement(A.TOTAL_COLLATERAL_USD, int(data.total_collateral_value_usd)),
+            Achievement(A.TOTAL_BORROWED_USD, int(data.total_borrowed_amount_usd)),
+        ]
+
+    @staticmethod
+    def on_loan_open(data: AlertLoanOpen):
+        return [
+            Achievement(A.MAX_LOAN_AMOUNT_USD, int(data.loan.debt_issued)),
+        ]

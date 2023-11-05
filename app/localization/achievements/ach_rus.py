@@ -52,6 +52,11 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
         A.WEEKLY_AFFILIATE_REVENUE_USD: "Еженедельный доход партнеров",
 
         A.RUNE_BURNT_LENDING: "RUNE сожжено",
+        A.LOANS_OPENED: "Открыто займов",
+        A.BORROWER_COUNT: "Количество заемщиков",
+        A.MAX_LOAN_AMOUNT_USD: "Максимальный размер займа",
+        A.TOTAL_BORROWED_USD: "Всего занято средств",
+        A.TOTAL_COLLATERAL_USD: "Всего залогов внесено",
     }
 
     MORE_THAN = 'Более чем'
