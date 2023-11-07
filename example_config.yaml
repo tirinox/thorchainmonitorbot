@@ -518,8 +518,8 @@ chain_state:
 
 
 last_block:
-  enabled: true
-  fetch_period: 30s
+  enabled: true  # notification enabled?
+  fetch_period: 30s  # always enabled
   chart:
     estimation_interval: 5m
   stuck_alert:

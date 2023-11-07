@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from contextlib import suppress
 from random import random
 from typing import Optional, List, Dict
 
@@ -7,8 +7,8 @@ from aioredis import Redis
 
 from services.jobs.fetch.base import BaseFetcher
 from services.lib.config import Config
-from services.lib.constants import RUNE_SYMBOL_DET, RUNE_SYMBOL_POOL, RUNE_SYMBOL_CEX
-from services.lib.date_utils import parse_timespan_to_seconds
+from services.lib.constants import RUNE_SYMBOL_DET, RUNE_SYMBOL_POOL, RUNE_SYMBOL_CEX, THOR_BLOCK_TIME
+from services.lib.date_utils import parse_timespan_to_seconds, DAY
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import free_url_gen
@@ -34,6 +34,8 @@ class PoolFetcher(BaseFetcher):
         self.use_thor_consensus = False
         self.parser = get_parser_by_network_id(self.deps.cfg.network_id)
         self.history_max_points = 200000
+        self._pool_cache_saves = 0
+        self._pool_cache_clear_every = 1000
 
     async def fetch(self) -> RuneMarketInfo:
         current_pools = await self.reload_global_pools()
@@ -106,9 +108,34 @@ class PoolFetcher(BaseFetcher):
 
     DB_KEY_POOL_INFO_HASH = 'PoolInfo:hashtable_v2'
 
+    async def clear_cache(self, max_age=1000 * DAY):
+        r: Redis = await self.deps.db.get_redis()
+
+        top_block = self.deps.last_block_store.thor
+        if top_block is None or top_block < 1:
+            self.logger.warning(f'Failed to get top block from the store ({top_block = })')
+            return
+
+        min_block = int(max(1, top_block - max_age / THOR_BLOCK_TIME))
+        block_numbers = await r.hkeys(self.DB_KEY_POOL_INFO_HASH)
+
+        cache_size = len(block_numbers)
+        blocks_to_delete = [b for b in block_numbers if int(b) < min_block or int(b) > top_block]
+        self.logger.info(f'Cache size: {cache_size}, entries to delete: {len(blocks_to_delete)}')
+
+        for block_number in blocks_to_delete:
+            await r.hdel(self.DB_KEY_POOL_INFO_HASH, block_number)
+
+        self.logger.info('Cache cleared successfully!')
+
     async def _save_to_cache(self, r: Redis, subkey, pool_map: PoolInfoMap):
         j_pools = json.dumps({key: p.as_dict_brief() for key, p in pool_map.items()})
         await r.hset(self.DB_KEY_POOL_INFO_HASH, str(subkey), j_pools)
+
+        with suppress(Exception):
+            if self._pool_cache_saves % self._pool_cache_clear_every == 0:
+                await self.clear_cache()
+            self._pool_cache_saves += 1
 
     async def _load_from_cache(self, r: Redis, subkey) -> Optional[PoolInfoMap]:
         try:
@@ -122,19 +149,20 @@ class PoolFetcher(BaseFetcher):
             self.logger.warning(f'Failed to load PoolInfoMap from the cache ({subkey = })')
             return
 
-    def _hash_key_day(self, dt: datetime):
-        return str(int(dt.timestamp()) // self.CACHE_TOLERANCE * self.CACHE_TOLERANCE)
-
     async def load_pools(self, height=None, caching=True, usd_per_rune=None) -> PoolInfoMap:
         if caching:
             r: Redis = await self.deps.db.get_redis()
 
-            cache_key = height if height else self._hash_key_day(datetime.now())
-            pool_map = await self._load_from_cache(r, cache_key)
-
-            if not pool_map:
-                pool_map = await self._fetch_current_pool_data_from_thornode(height)
+            if height is None:
+                # latest
+                pool_map = await self._fetch_current_pool_data_from_thornode()
+                cache_key = self.deps.last_block_store.thor
                 await self._save_to_cache(r, cache_key, pool_map)
+            else:
+                pool_map = await self._load_from_cache(r, height)
+                if not pool_map:
+                    pool_map = await self._fetch_current_pool_data_from_thornode(height)
+                    await self._save_to_cache(r, height, pool_map)
         else:
             pool_map = await self._fetch_current_pool_data_from_thornode(height)
 
@@ -170,8 +198,8 @@ class PoolFetcher(BaseFetcher):
             current_pools[p.asset] = p
 
     @staticmethod
-    def convert_pool_list_to_dict(l: List[PoolInfo]) -> Dict[str, PoolInfo]:
-        return {p.asset: p for p in l} if l else None
+    def convert_pool_list_to_dict(pool_list: List[PoolInfo]) -> Dict[str, PoolInfo]:
+        return {p.asset: p for p in pool_list} if pool_list else None
 
 
 class PoolInfoFetcherMidgard(BaseFetcher):
@@ -192,7 +220,8 @@ class PoolInfoFetcherMidgard(BaseFetcher):
         result = await self.get_pool_info_midgard()
         return result
 
-    def _dbg_test_drop_one(self, pool_info_map: PoolInfoMap) -> PoolInfoMap:
+    @staticmethod
+    def _dbg_test_drop_one(pool_info_map: PoolInfoMap) -> PoolInfoMap:
         if not pool_info_map or random() > 0.5:
             return pool_info_map
 

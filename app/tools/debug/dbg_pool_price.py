@@ -7,6 +7,7 @@ from services.jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from services.jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
 from services.lib.constants import NetworkIdents
 from services.lib.depcont import DepContainer
+from services.lib.texts import sep
 from services.models.price import LastPriceHolder
 from services.notify.types.best_pool_notify import BestPoolsNotifier
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
@@ -93,13 +94,31 @@ async def find_anomaly(app, start=13225800, steps=200):
         block += 1
 
 
+async def debug_load_pools(app: LpAppFramework):
+    await app.deps.last_block_fetcher.run_once()
+
+    pf = app.deps.pool_fetcher
+    pools = await pf.load_pools(13345278)
+    print(len(pools))
+    pools = await pf.load_pools(13345278)
+    print(len(pools))
+    sep()
+
+    pools = await pf.load_pools()
+    print(len(pools))
+    sep()
+    pools = await pf.load_pools()
+    print(len(pools))
+
+
 async def main():
     app = LpAppFramework()
     async with app(brief=True):
-        await find_anomaly(app)
+        # await find_anomaly(app)
         # await demo_cache_blocks(app)
         # await demo_top_pools(app)
         # await demo_price_graph(app)
+        await debug_load_pools(app)
 
 
 if __name__ == '__main__':

@@ -211,14 +211,14 @@ class App(WithLogger):
                 await self.create_thor_node_connector()
 
                 # update pools for bootstrap (other components need them)
+                self.logger.info('Loading last block...')
+                await d.last_block_fetcher.run_once()
+                await asyncio.sleep(sleep_step)
+
                 self.logger.info('Loading pools...')
                 current_pools = await d.pool_fetcher.reload_global_pools()
                 if not current_pools:
                     raise Exception("No pool data at startup!")
-                await asyncio.sleep(sleep_step)
-
-                self.logger.info('Loading last block...')
-                await d.last_block_fetcher.run_once()
                 await asyncio.sleep(sleep_step)
 
                 self.logger.info('Loading node info...')
