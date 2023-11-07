@@ -17,10 +17,18 @@ async def do_job(app):
     types = set()
     for key in tqdm.tqdm(tx_keys):
         key_type = await r.type(key)
+
+        if key_type == 'none':
+            # try again
+            await asyncio.sleep(0.1)
+            key_type = await r.type(key)
+        
         if key_type == 'hash':
             data_len = await r.hlen(key)
         elif key_type == 'set':
             data_len = await r.scard(key)
+        elif key_type == 'zset':
+            data_len = await r.zcard(key)
         elif key_type == 'stream':
             data_len = await r.xlen(key)
         elif key_type == 'string':
