@@ -12,6 +12,7 @@ from services.notify.channel import BoardMessage
 
 class QueueNotifier(INotified, WithLogger):
     DEFAULT_WATCH_QUEUES = ('outbound', 'internal', 'swap')
+    MAX_POINTS = 200_000
 
     def __init__(self, deps: DepContainer):
         super().__init__()
@@ -23,6 +24,7 @@ class QueueNotifier(INotified, WithLogger):
         self.threshold_free = int(cfg.threshold.free)
         self.avg_period = parse_timespan_to_seconds(cfg.threshold.avg_period)
         self.watch_queues = cfg.get('watch_queues', self.DEFAULT_WATCH_QUEUES)
+        self.ts = TimeSeries(QUEUE_TIME_SERIES, self.deps.db)
 
         self.logger.info(f'config: {deps.cfg.queue}')
 
@@ -64,16 +66,16 @@ class QueueNotifier(INotified, WithLogger):
             if await cd_trigger.turn_off():
                 await self.notify(item_type, is_free=True, value=avg_value)
 
-    async def store_queue_info(self, data: QueueInfo) -> TimeSeries:
-        ts = TimeSeries(QUEUE_TIME_SERIES, self.deps.db)
-        await ts.add(swap=data.swap,
-                     outbound=data.outbound,
-                     internal=data.internal)
-        return ts
+    async def store_queue_info(self, data: QueueInfo):
+        await self.ts.add(swap=data.swap,
+                          outbound=data.outbound,
+                          internal=data.internal)
 
     async def on_data(self, sender: 'QueueStoreMetrics', data: QueueInfo):
         for key in self.watch_queues:
             await self.handle_entry(key, sender.ts)
+
+        await self.ts.trim_oldest(self.MAX_POINTS)
 
 
 class QueueStoreMetrics(INotified, WithDelegates):

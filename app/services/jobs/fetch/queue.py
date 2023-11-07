@@ -14,7 +14,7 @@ class QueueFetcher(BaseFetcher):
     async def fetch(self) -> QueueInfo:  # override
         resp: ThorQueue = await self.deps.thor_connector.query_queue()
         if resp is None:
-            self.logger.error(f'No queue data from THORnodes!')
+            self.logger.error(f'No queue data from THORNodes!')
             return QueueInfo.error()
 
         q = QueueInfo(

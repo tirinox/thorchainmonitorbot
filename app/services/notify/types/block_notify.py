@@ -16,6 +16,7 @@ from services.models.time_series import TimeSeries
 
 class LastBlockStore(INotified, WithDelegates, WithLogger):
     KEY_SERIES_BLOCK_HEIGHT = 'ThorBlockHeight'
+    BLOCK_HEIGHT_MAX_LEN = 100_000
 
     @property
     def thor(self):
@@ -45,6 +46,9 @@ class LastBlockStore(INotified, WithDelegates, WithLogger):
         self.last_thor_block = thor_block
 
         await self.series.add(thor_block=thor_block)
+
+        await self.series.trim_oldest(self.BLOCK_HEIGHT_MAX_LEN)
+
         await self.pass_data_to_listeners(thor_block)
 
     async def get_last_block_height_points(self, duration_sec=DAY):
@@ -52,7 +56,6 @@ class LastBlockStore(INotified, WithDelegates, WithLogger):
 
 
 class BlockHeightNotifier(INotified, WithDelegates, WithLogger):
-    KEY_SERIES_BLOCK_HEIGHT = 'ThorBlockHeight'
     KEY_LAST_TIME_BLOCK_UPDATED = 'ThorBlock:LastTime'
     KEY_LAST_TIME_LAST_HEIGHT = 'ThorBlock:LastHeight'
     KEY_BLOCK_SPEED_ALERT_STATE = 'ThorBlock:BlockSpeed:AlertState'
