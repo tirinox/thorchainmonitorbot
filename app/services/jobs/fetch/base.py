@@ -7,6 +7,9 @@ from abc import ABC, abstractmethod
 from collections import deque
 from typing import Dict
 
+from aioredis import BusyLoadingError as BusyLoadingErrorAIO
+from redis import BusyLoadingError as BusyLoadingErrorNormal
+
 from services.lib.date_utils import now_ts
 from services.lib.delegates import WithDelegates
 from services.lib.depcont import DepContainer
@@ -37,9 +40,23 @@ def qualname(obj):
     return obj.__class__.__qualname__
 
 
-class DataController:
+class DataController(WithLogger):
     def __init__(self):
+        super().__init__()
         self._tracker = {}
+        self._all_paused = False
+
+    @property
+    def all_paused(self):
+        return self._all_paused
+
+    def request_global_pause(self):
+        self.logger.warning('Global pause requested!')
+        self._all_paused = True
+
+    def request_global_resume(self):
+        self.logger.warning('Global resume requested!')
+        self._all_paused = False
 
     def register(self, entity: WatchedEntity):
         if not entity:
@@ -55,6 +72,11 @@ class DataController:
     @property
     def summary(self) -> Dict[str, WatchedEntity]:
         return self._tracker
+
+
+class GraphBuilder:
+    def __init__(self, tracker: dict):
+        self._tracker = tracker
 
     def make_graph(self):
         results = set()
@@ -141,12 +163,21 @@ class BaseFetcher(WithDelegates, WatchedEntity, ABC, WithLogger):
 
     async def run_once(self):
         self.logger.info(f'Tick #{self.total_ticks}')
+        if self.data_controller.all_paused:
+            self.logger.warning('Global pause')
+            return
+
         t0 = time.monotonic()
         try:
             data = await self.fetch()
             await self.pass_data_to_listeners(data)
             await self.post_action(data)
         except Exception as e:
+
+            if isinstance(e, (BusyLoadingErrorNormal, BusyLoadingErrorAIO)):
+                self.deps.emergency.report(self.name, f'BusyLoadingError: {e}')
+                self.data_controller.request_global_pause()
+
             self.logger.exception(f"task error: {e}")
             self.error_counter += 1
             try:

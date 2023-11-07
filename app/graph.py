@@ -1,6 +1,7 @@
 import asyncio
 
 from main import App
+from services.jobs.fetch.base import GraphBuilder
 
 
 class GraphApp(App):
@@ -9,7 +10,8 @@ class GraphApp(App):
 
     async def _run_graph(self, out_filename):
         await self._prepare_task_graph()
-        self.deps.data_controller.display_graph(out_filename)
+        graph_builder = GraphBuilder(self.deps.data_controller.summary)
+        graph_builder.display_graph(out_filename)
 
 
 if __name__ == '__main__':
