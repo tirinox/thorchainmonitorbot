@@ -153,8 +153,15 @@ class Config(SubConfig):
         return ref_env
 
     @property
+    def admins(self):
+        return [int(a) for a in self.get('telegram.admins', [])]
+
+    @property
     def first_admin_id(self):
-        return self.get('telegram.admins')[0]
+        return self.admins[0]
+
+    def is_admin(self, user_id):
+        return user_id in self.admins
 
     @property
     def sleep_step(self):

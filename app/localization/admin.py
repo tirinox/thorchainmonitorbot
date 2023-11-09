@@ -9,6 +9,18 @@ from services.lib.texts import bold, code, pre, ital, link
 
 
 class AdminMessages:
+    TEXT_ROOT_INTRO = "Welcome to the admin's panel!"
+    BUTT_CONTROL = 'Control'
+    BUTT_INFO = 'Info'
+    BUTT_BACK = 'Back'
+    TEXT_CONTROL_MENU = 'Control menu'
+    TEXT_INFO_MENU = 'Info menu'
+    BUTT_HTTP = 'HTTP'
+    BUTT_FETCHERS = 'Fetchers'
+    BUTT_TASKS = 'Tasks'
+    BUTT_GLOBAL_PAUSE = 'Pause all'
+    BUTT_GLOBAL_RESUME = 'Resume all'
+
     def __init__(self, d: DepContainer):
         self.deps = d
         self.creation_timestamp = now_ts()
@@ -119,7 +131,8 @@ class AdminMessages:
     def text_bot_restarted():
         return '🤖 Bot restarted!'
 
-    async def get_debug_message_tasks(self):
+    @staticmethod
+    async def get_debug_message_tasks():
         tasks = asyncio.all_tasks()
         message = ''
         for i, task in enumerate(tasks, start=1):

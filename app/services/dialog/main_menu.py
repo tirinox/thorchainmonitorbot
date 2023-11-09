@@ -6,8 +6,8 @@ from aiogram.dispatcher.storage import FSMContextProxy
 from aiogram.types import *
 from aiogram.utils.helper import HelperMode
 
-from localization.admin import AdminMessages
 from localization.eng_base import BaseLocalization
+from services.dialog.admin_menu import AdminDialog
 from services.dialog.avatar_picture_dialog import AvatarDialog
 from services.dialog.base import message_handler, BaseDialog
 from services.dialog.metrics_menu import MetricsDialog
@@ -31,16 +31,9 @@ class MainStates(StatesGroup):
     SETTINGS = State()
 
 
-g_admin_msg: Optional[AdminMessages] = None
-
-
 class MainMenuDialog(BaseDialog):
     def __init__(self, loc: BaseLocalization, data: Optional[FSMContextProxy], d: DepContainer, message: Message):
         super().__init__(loc, data, d, message)
-        global g_admin_msg
-        if not g_admin_msg:
-            g_admin_msg = AdminMessages(d)
-        self.admin_messages = g_admin_msg
 
     @message_handler(commands='start,lang', state='*')
     async def entry_point(self, message: Message):
@@ -85,43 +78,44 @@ class MainMenuDialog(BaseDialog):
     async def _handle_start_lp_view(self, message: Message, address):
         message.text = ''
         await LPMenuStates.MAIN_MENU.set()
-        await MyWalletsMenu(self.loc, self.data, self.deps, self.message).show_wallet_menu_for_address(
+        await MyWalletsMenu.from_other_dialog(self).show_wallet_menu_for_address(
             message, address,
             edit=False,
-            external=True)
+            external=True
+        )
 
     @message_handler(commands='cap', state='*')
     async def cmd_cap(self, message: Message):
-        await MetricsDialog(self.loc, self.data, self.deps, self.message).show_cap(message)
+        await self.build_metrics_dialog().show_cap(message)
 
     @message_handler(commands='price', state='*')
     async def cmd_price(self, message: Message):
-        await MetricsDialog(self.loc, self.data, self.deps, self.message).show_price(message, 7 * DAY)
+        await self.build_metrics_dialog().show_price(message, 7 * DAY)
 
     @message_handler(commands='nodes', state='*')
     async def cmd_nodes(self, message: Message):
-        await MetricsDialog(self.loc, self.data, self.deps, self.message).show_node_list(message)
+        await self.build_metrics_dialog().show_node_list(message)
 
     @message_handler(commands='stats', state='*')
     async def cmd_stats(self, message: Message):
-        await MetricsDialog(self.loc, self.data, self.deps, self.message).show_last_stats(message)
+        await self.build_metrics_dialog().show_last_stats(message)
 
     @message_handler(commands='queue', state='*')
     async def cmd_queue(self, message: Message):
-        await MetricsDialog(self.loc, self.data, self.deps, self.message).show_queue(message, DAY)
+        await self.build_metrics_dialog().show_queue(message, DAY)
 
     @message_handler(commands='chains', state='*')
     async def cmd_chains(self, message: Message):
-        await MetricsDialog(self.loc, self.data, self.deps, self.message).show_chain_info(message)
+        await self.build_metrics_dialog().show_chain_info(message)
 
     @message_handler(commands='mimir', state='*')
     async def cmd_mimir(self, message: Message):
-        await MetricsDialog(self.loc, self.data, self.deps, self.message).show_mimir_info(message)
+        await self.build_metrics_dialog().show_mimir_info(message)
 
     @message_handler(commands='cexflow', state='*')
     async def cmd_cex_flow(self, message: Message):
         message.text = ''
-        await MetricsDialog(self.loc, self.data, self.deps, self.message).show_cex_flow(message)
+        await self.build_metrics_dialog().show_cex_flow(message)
 
     @message_handler(commands='lp', state='*')
     async def cmd_lp(self, message: Message):
@@ -136,22 +130,22 @@ class MainMenuDialog(BaseDialog):
     @message_handler(commands='supply', state='*')
     async def cmd_supply(self, message: Message):
         message.text = ''
-        await MetricsDialog(self.loc, self.data, self.deps, self.message).show_rune_supply(message)
+        await self.build_metrics_dialog().show_rune_supply(message)
 
     @message_handler(commands='savings', state='*')
     async def cmd_savings(self, message: Message):
         message.text = ''
-        await MetricsDialog(self.loc, self.data, self.deps, self.message).show_savers(message)
+        await self.build_metrics_dialog().show_savers(message)
 
     @message_handler(commands='voting', state='*')
     async def cmd_voting(self, message: Message):
         message.text = ''
-        await MetricsDialog(self.loc, self.data, self.deps, self.message).show_voting_info(message)
+        await self.build_metrics_dialog().show_voting_info(message)
 
     @message_handler(commands='pools', state='*')
     async def cmd_top_pools(self, message: Message):
         message.text = ''
-        await MetricsDialog(self.loc, self.data, self.deps, self.message).show_top_pools(message)
+        await self.build_metrics_dialog().show_top_pools(message)
 
     @message_handler(commands='help', state='*')
     async def cmd_help(self, message: Message):
@@ -161,33 +155,12 @@ class MainMenuDialog(BaseDialog):
 
     @message_handler(commands='debug', state='*')
     async def cmd_debug(self, message: Message):
-        text = await self.admin_messages.get_debug_message_text_fetcher()
-        await message.answer(text,
-                             disable_notification=True,
-                             disable_web_page_preview=True)
-
-    @message_handler(commands='debug_tasks', state='*')
-    async def cmd_debug_tasks(self, message: Message):
-        text = await self.admin_messages.get_debug_message_tasks()
-        await message.answer(text,
-                             disable_notification=True,
-                             disable_web_page_preview=True)
-
-    @message_handler(commands='debug_http', state='*')
-    async def cmd_debug_http(self, message: Message):
-        text = await self.admin_messages.get_debug_message_text_session()
-        await message.answer(text,
-                             disable_notification=True,
-                             disable_web_page_preview=True)
-
-        text = await self.admin_messages.get_debug_message_text_session(start=10, with_summary=True)
-        await message.answer(text,
-                             disable_notification=True,
-                             disable_web_page_preview=True)
+        await self.require_admin(message)
+        await AdminDialog.from_other_dialog(self).show_main_menu(message)
 
     @message_handler(commands='weekly', state='*')
     async def cmd_weekly(self, message: Message):
-        await MetricsDialog(self.loc, self.data, self.deps, self.message).show_weekly_stats(message)
+        await self.build_metrics_dialog().show_weekly_stats(message)
 
     @message_handler(filters.RegexpCommandsFilter(regexp_commands=[r'^/unsub_.*']), state='*')
     async def on_unsubscribe_command(self, message: Message):
@@ -204,7 +177,7 @@ class MainMenuDialog(BaseDialog):
     @message_handler(state=MainStates.MAIN_MENU)
     async def on_main_menu(self, message: Message):
         if message.text == self.loc.BUTTON_MM_METRICS:
-            await MetricsDialog.from_other_dialog(self).show_main_menu(message)
+            await self.build_metrics_dialog().show_main_menu(message)
         elif message.text == self.my_wallets_button_text:
             await MyWalletsMenu.from_other_dialog(self).call_in_context(MyWalletsMenu.on_enter)
         elif message.text == self.settings_button_text:
@@ -215,3 +188,7 @@ class MainMenuDialog(BaseDialog):
             await NodeOpDialog.from_other_dialog(self).show_main_menu(message)
         else:
             return False
+
+    def build_metrics_dialog(self):
+        return MetricsDialog.from_other_dialog(self)
+

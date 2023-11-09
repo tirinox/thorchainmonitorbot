@@ -86,6 +86,10 @@ def inline_bot_handler(*custom_filters):
     return outer
 
 
+class AccessRestrictedError(Exception):
+    ...
+
+
 class BaseDialog(ABC):
     back_dialog: 'BaseDialog' = None
     back_func = None
@@ -242,6 +246,10 @@ class BaseDialog(ABC):
     @classmethod
     def from_other_dialog(cls, d: 'BaseDialog'):
         return cls(d.loc, d.data, d.deps, d.message)
+
+    async def require_admin(self, message: Message):
+        if not self.deps.cfg.is_admin(message.from_user.id):
+            raise AccessRestrictedError('You are not admin!')
 
 
 class DialogWithSettings(BaseDialog):
