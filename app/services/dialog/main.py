@@ -2,6 +2,7 @@ import logging
 
 from aiogram.types import ContentTypes, Message
 
+from services.dialog.admin_menu import AdminDialog
 from services.dialog.avatar_picture_dialog import AvatarDialog
 from services.dialog.inline_bot_handler import InlineBotHandlerDialog
 from services.dialog.main_menu import MainMenuDialog
@@ -31,6 +32,7 @@ def init_dialogs(d: DepContainer):
     SettingsDialog.register(d, mm, mm.entry_point)
     MetricsDialog.register(d, mm, mm.entry_point)
     AvatarDialog.register(d, mm, mm.entry_point)
+    AdminDialog.register(d, mm, mm.entry_point)
 
     if InlineBotHandlerDialog.is_enabled(d.cfg):
         logging.info('InlineBotHandlerDialog is enabled.')

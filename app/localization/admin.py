@@ -20,6 +20,8 @@ class AdminMessages:
     BUTT_TASKS = 'Tasks'
     BUTT_GLOBAL_PAUSE = 'Pause all'
     BUTT_GLOBAL_RESUME = 'Resume all'
+    TEXT_ALL_PAUSED = 'All paused!'
+    TEXT_ALL_RESUMED = 'All resumed!'
 
     def __init__(self, d: DepContainer):
         self.deps = d
