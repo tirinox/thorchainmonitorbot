@@ -4,7 +4,7 @@ import random
 from copy import copy
 from typing import Optional, List
 
-from aiothornode.types import ThorNetwork
+from aionode.types import ThorNetwork
 from semver import VersionInfo
 
 from localization.languages import Language

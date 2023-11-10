@@ -4,7 +4,7 @@ from datetime import datetime
 from math import ceil
 from typing import List, Optional
 
-from aiothornode.types import ThorChainInfo, ThorBalances
+from aionode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
 from localization.achievements.ach_eng import AchievementsEnglishLocalization

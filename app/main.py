@@ -3,7 +3,7 @@ import logging
 import os
 
 import aioredis.exceptions
-from aiothornode.connector import ThorConnector
+from aionode.connector import ThorConnector
 
 from localization.admin import AdminMessages
 from localization.manager import LocalizationManager

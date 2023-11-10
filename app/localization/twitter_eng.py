@@ -1,6 +1,6 @@
 from typing import List
 
-from aiothornode.types import ThorChainInfo
+from aionode.types import ThorChainInfo
 from semver import VersionInfo
 
 from localization.achievements.ach_tw_eng import AchievementsTwitterEnglishLocalization

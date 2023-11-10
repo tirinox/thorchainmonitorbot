@@ -1,6 +1,6 @@
 from typing import Optional, List, Tuple
 
-from aiothornode.types import thor_to_float
+from aionode.types import thor_to_float
 
 from services.lib.constants import bp_to_percent
 from services.lib.cooldown import Cooldown

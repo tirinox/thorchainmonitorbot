@@ -1,7 +1,7 @@
 from datetime import date, datetime, timedelta
 
 from aioredis import Redis
-from aiothornode.types import ThorLastBlock
+from aionode.types import ThorLastBlock
 
 from services.lib.constants import THOR_BLOCK_TIME
 from services.lib.date_utils import day_to_key, days_ago_noon, date_parse_rfc

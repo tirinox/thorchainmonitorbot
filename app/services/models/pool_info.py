@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from operator import attrgetter
 from typing import List, Dict, NamedTuple
 
-from aiothornode.types import ThorPool
+from aionode.types import ThorPool
 
 from services.lib.constants import thor_to_float
 from services.lib.money import Asset

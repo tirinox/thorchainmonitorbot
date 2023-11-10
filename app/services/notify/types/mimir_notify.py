@@ -1,6 +1,6 @@
 import json
 
-from aiothornode.types import ThorMimir
+from aionode.types import ThorMimir
 
 from localization.manager import BaseLocalization
 from services.jobs.fetch.const_mimir import ConstMimirFetcher, MimirTuple

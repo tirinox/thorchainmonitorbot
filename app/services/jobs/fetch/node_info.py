@@ -1,7 +1,7 @@
 from time import perf_counter
 from typing import List, Optional
 
-from aiothornode.types import ThorNetwork
+from aionode.types import ThorNetwork
 
 from services.jobs.fetch.base import BaseFetcher
 from services.lib.date_utils import parse_timespan_to_seconds

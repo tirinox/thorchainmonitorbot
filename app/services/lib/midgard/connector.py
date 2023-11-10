@@ -1,6 +1,6 @@
 import aiohttp
-from aiothornode.connector import ThorConnector
-from aiothornode.nodeclient import ThorNodeClient
+from aionode.connector import ThorConnector
+from aionode.nodeclient import ThorNodeClient
 
 from services.lib.constants import HTTP_CLIENT_ID
 from services.lib.utils import WithLogger

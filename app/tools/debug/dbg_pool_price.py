@@ -1,6 +1,6 @@
 import asyncio
 
-from aiothornode.connector import ThorConnector
+from aionode.connector import ThorConnector
 
 from services.dialog.picture.price_picture import price_graph_from_db
 from services.jobs.fetch.gecko_price import fill_rune_price_from_gecko

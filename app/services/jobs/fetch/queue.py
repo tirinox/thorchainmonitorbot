@@ -1,4 +1,4 @@
-from aiothornode.types import ThorQueue
+from aionode.types import ThorQueue
 
 from services.jobs.fetch.base import BaseFetcher
 from services.lib.date_utils import parse_timespan_to_seconds

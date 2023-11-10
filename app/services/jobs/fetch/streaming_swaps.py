@@ -17,7 +17,7 @@ class StreamingSwapFechter(BaseFetcher, WithLogger):
         super().__init__(deps, sleep_period)
 
     async def fetch(self) -> List[StreamingSwap]:
-        # I've got to dig in the guts because aiothornode treats null response as a fail and retries
+        # I've got to dig in the guts because aionode treats null response as a fail and retries
         client = self.deps.thor_connector._clients[0]  # Get the primary client
         resp = await client.request(self.PATH)
         if not isinstance(resp, list):

@@ -3,7 +3,7 @@ import sys
 from typing import Any
 
 import yaml
-from aiothornode.env import ThorEnvironment, MAINNET, MULTICHAIN_STAGENET_ENVIRONMENT
+from aionode.env import ThorEnvironment, MAINNET, MULTICHAIN_STAGENET_ENVIRONMENT
 from dotenv import load_dotenv
 
 from services.lib.constants import NetworkIdents

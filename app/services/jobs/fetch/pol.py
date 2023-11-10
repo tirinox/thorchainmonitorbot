@@ -1,6 +1,6 @@
 from typing import List
 
-from aiothornode.types import ThorPOL
+from aionode.types import ThorPOL
 
 from services.jobs.fetch.base import BaseFetcher
 from services.lib.date_utils import parse_timespan_to_seconds

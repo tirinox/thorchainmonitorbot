@@ -2,7 +2,7 @@ import json
 import random
 from typing import Dict
 
-from aiothornode.types import ThorChainInfo
+from aionode.types import ThorChainInfo
 
 from localization.manager import BaseLocalization
 from services.lib.delegates import INotified

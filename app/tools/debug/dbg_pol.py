@@ -3,7 +3,7 @@ import logging
 from pprint import pprint
 from typing import Optional
 
-from aiothornode.types import ThorPOL
+from aionode.types import ThorPOL
 
 from services.jobs.fetch.pol import POLFetcher
 from services.lib.constants import NetworkIdents, STAGENET_RESERVE_ADDRESS

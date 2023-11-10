@@ -1,6 +1,6 @@
 from typing import Dict, Optional
 
-from aiothornode.types import ThorLastBlock
+from aionode.types import ThorLastBlock
 
 from services.jobs.fetch.last_block import LastBlockFetcher
 from services.lib.config import SubConfig

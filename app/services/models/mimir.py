@@ -5,7 +5,7 @@ import typing
 from dataclasses import dataclass
 from itertools import chain
 
-from aiothornode.types import ThorConstants, ThorMimir, ThorMimirVote
+from aionode.types import ThorConstants, ThorMimir, ThorMimirVote
 
 from services.lib.constants import bp_to_float
 from services.lib.texts import split_by_camel_case

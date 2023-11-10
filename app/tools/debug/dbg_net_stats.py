@@ -4,7 +4,7 @@ import logging
 from copy import copy
 from dataclasses import Field
 
-from aiothornode.types import ThorPool
+from aionode.types import ThorPool
 
 from localization.manager import BaseLocalization
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher

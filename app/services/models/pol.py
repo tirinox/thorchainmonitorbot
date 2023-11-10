@@ -1,7 +1,7 @@
 import dataclasses
 from typing import NamedTuple, List, Optional
 
-from aiothornode.types import ThorPOL, thor_to_float
+from aionode.types import ThorPOL, thor_to_float
 
 from services.models.pool_member import PoolMemberDetails
 from services.models.price import LastPriceHolder

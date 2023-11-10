@@ -5,9 +5,9 @@ from typing import Optional, Set, Dict
 
 import ujson
 from aiohttp import ClientSession, ClientTimeout
-from aiothornode.connector import ThorConnector
-from aiothornode.env import ThorEnvironment
-from aiothornode.types import ThorChainInfo
+from aionode.connector import ThorConnector
+from aionode.env import ThorEnvironment
+from aionode.types import ThorChainInfo
 
 from services.dialog.telegram.telegram import TelegramBot
 from services.dialog.twitter.twitter_bot import TwitterBot

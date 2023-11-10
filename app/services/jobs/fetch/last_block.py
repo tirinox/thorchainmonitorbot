@@ -1,6 +1,6 @@
 from typing import Dict
 
-from aiothornode.types import ThorLastBlock
+from aionode.types import ThorLastBlock
 
 from services.jobs.fetch.base import BaseFetcher
 from services.lib.date_utils import parse_timespan_to_seconds
