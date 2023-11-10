@@ -925,7 +925,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         return self.smart_split(parts)
 
     def notification_text_key_metrics_caption(self, data: AlertKeyStats):
-        return '@THORChain weekly stats $RUNE'
+        return '.@THORChain weekly stats $RUNE'
 
     # ----- LOANS ------
 
