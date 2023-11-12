@@ -289,7 +289,8 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
               'ETH.CRV-0XD533A949740BB3306D119CC777FA900BA034CD52': 7
           }),
 
-    ADesc(A.COIN_MARKET_CAP_RANK, 'Market cap rank', milestone_scale=MILESTONES_EVERY_INT),
+    ADesc(A.COIN_MARKET_CAP_RANK, 'Market cap rank', milestone_scale=MILESTONES_EVERY_INT,
+          thresholds=42),
 
     ADesc(A.POL_VALUE_RUNE, 'POL maximum value', preferred_bg=SAVER_BG),
 
