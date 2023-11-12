@@ -26,29 +26,19 @@ thor:
   network_id: "mainnet"
 
   node:
-    node_url: "https://thornode.ninerealms.com/"
-    rpc_node_url: "https://rpc.ninerealms.com/"
-    backup_node_url: "https://thornode-archive.ninerealms.com"
+    node_url: "https://mayanode.mayachain.info/"
+    rpc_node_url: "https://tendermint.mayachain.info/"
+    backup_node_url: "https://mayanode.mayachain.info/"
 
   midgard:
     tries: 3
-    public_url: "https://midgard.ninerealms.com/"
-  #    public_url: "https://midgard.thorchain.info/"
+    public_url: "https://midgard.mayachain.info/"
 
   timeout: 20.0
 
   stable_coins:
     - ETH.USDC-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48
     - ETH.USDT-0XDAC17F958D2EE523A2206206994597C13D831EC7
-    - ETH.USDT-0XA3910454BF2CB59B8B3A401589A3BACC5CA42306  # test
-    - BSC.BUSD-0XE9E7CEA3DEDCA5984780BAFC599BD69ADD087D56
-    - AVAX.USDC-0XB97EF9EF8734C71904D8002F8B6BC66DD9C48A6E
-    - BNB.USDT-6D8
-    - BNB.USDT-DC8  # test
-    - BNB.BUSD-BD1
-    - BNB.BUSD-BAF  # test
-    - BNB.BUSD-74E  # test
-
 
   circulating_supply:
     # https://docs.etherscan.io/getting-started/creating-an-account
@@ -117,8 +107,7 @@ web:
   debug: false
   port: 8077
   host: 0.0.0.0
-  public_url: https://settings.thornode.org
-  #  public_url: https://test-settings.thornode.org
+  public_url: https://todo.org
   serve_front_end: false  # false on production, this is work for nginx
 
 
@@ -127,7 +116,7 @@ broadcasting:
 
   channels:
     - type: telegram
-      name: "@thorchain_alert"  # live channel
+      name: "@maya_alert"  # live channel
       lang: eng
     - type: discord
       name: 322323232323  # channel ID
@@ -157,20 +146,14 @@ native_scanner:
 
   max_attempts_per_block: 8
 
-  reserve_address: "thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt"
+  reserve_address: "maya1dheycdevq39qlkxs2a6wuuzyn4aqxhve4hc8sm"
 
   prohibited_addresses:
-    - "thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt"
-    - "thor17gw75axcnr8747pkanye45pnrwk7p9c3cqncsv"
-    - "thor1g98cy3n9mmjrpn0sxmn63lztelera37n8n67c0"
-    - "thor1v8ppstuf6e3x0r4glqc68d5jqcs2tf38cg2q6y"
+    - "maya1g98cy3n9mmjrpn0sxmn63lztelera37n8yyjwl"
 
   user_counting:
     exclude_addresses:
-      - "thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt"
-      - "thor17gw75axcnr8747pkanye45pnrwk7p9c3cqncsv"
-      - "thor1v8ppstuf6e3x0r4glqc68d5jqcs2tf38cg2q6y"
-      - "thor1g98cy3n9mmjrpn0sxmn63lztelera37n8n67c0"
+      - "maya1g98cy3n9mmjrpn0sxmn63lztelera37n8yyjwl"
 
   db:
     ttl: 7d
@@ -182,46 +165,9 @@ names:
     expire: 48h
 
   preconfig:
-    "thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt": "Reserve"
-    "thor17gw75axcnr8747pkanye45pnrwk7p9c3cqncsv": "Bond Module"
-    "thor1lj62pg6ryxv2htekqx04nv7wd3g98qf9gfvamy": "Standby Reserve"
-    "thor1t60f02r8jvzjrhtnjgfj4ne6rs5wjnejwmj7fh": "Binance Cold"
-    "thor1cqg8pyxnq03d88cl3xfn5wzjkguw5kh9enwte4": "Binance Cold 2"
-    "thor1uz4fpyd5f5d6p9pzk8lxyj4qxnwq6f9utg0e7k": "Binance Hot"
-    "thor1g98cy3n9mmjrpn0sxmn63lztelera37n8n67c0": "Pool Module"
-    "thor1lrnrawjlfp6jyrzf39r740ymnuk9qgdgp29rqv": "Vested Wallet1"
-    "thor16qnm285eez48r4u9whedq4qunydu2ucmzchz7p": "Vested Wallet2"
-    "thor1505gp5h48zd24uexrfgka70fg8ccedafsnj0e3": "Treasury1"
-    "thor14n2q7tpemxcha8zc26j0g5pksx4x3a9xw9ryq9": "Treasury2"
-    "thor1qd4my7934h2sn5ag5eaqsde39va4ex2asz3yv5": "Treasury Multisig"
-    "thor1y5lk3rzatghv9y4s4j90qt9ayq83e2dpf2hvzc": "Vesting 9R"
-    "thor1ty6h2ll07fqfzumphp6kq3hm4ps28xlm2l6kd6": "crypto.com"
-    "thor1egxvam70a86jafa8gcg3kqfmfax3s0m2g3m754": "TreasuryLP"
-    "thor1v8ppstuf6e3x0r4glqc68d5jqcs2tf38cg2q6y": "Synth Minter"
-
-    "thor1jw0nhlmj4lv83dwhfknqnw6tmlvgw4xyf6rgd7": "KuCoin Hot"
-    "thor1hy2ka6xmqjfcwagtplyttayug4eqpqhu0sdu6r": "KuCoin Cold"
-    "thor15h7uv2339vdzt2a6qsjf6uh5zc06sed7szvze5": "Ascendex"
-    "thor1nm0rrq86ucezaf8uj35pq9fpwr5r82clphp95t": "Kraken"
-
-    "thor1fddercd7pufy0adf2rh7ml2x9jdwla5lp56dpe": "TrustWalletFee"
-
-    bnb1jzdy3vy3h0ux0j7qqcutfnsjm2xnsa5mru7gtj: "FTX"
-    bnb142q467df6jun6rt5u2ar58sp47hm5f9wvz2cvg: "Binance 1"
-    bnb1u2agwjat20494fmc6jnuau0ls937cfjn4pjwtn: "Binance 2"
-    bnb1fnd0k5l4p3ck2j9x9dp36chk059w977pszdgdz: "Binance 3"
-    bnb136ns6lfw4zs5hg4n85vdthaad7hq5m4gtkgf23: "Binance Deposits"
-    bnb1dtpty6hrxehwz9xew6ttj52l929cu8zehprzwj: "KuCoin Cold"
-    bnb13q87ekxvvte78t2q7z05lzfethnlht5agfh4ur: "KuCoin Hot"
-    bnb1apkwlqftwue7mcwvhe8zckxq030afecat9lkae: "Probit"
-    bnb16e9kvc8846lht4y2yav777p6hweffcqvva757l: "HitBTC"
-    bnb10af52w77pkehgxhnwgeca50q2t2354q4xamz5y: "MEXC"
-    bnb165r4pxe862hetuz2l3wt4yx43uhh4ph9u0ptz6: "Unknown CEX"
-    bnb1pv5vycd4xe3nu0msrewgf9tmfvam8yr3x6j97q: "Ascendex"
-    bnb1zp46uw7w3g5uku2tme5fvarf6ldf3j2l5g6cv2: "Ascendex 2"
-    bnb1axqc2gan462z6npw3c33srp4950mr5x28uc6wu: "THORChain Community"
-    bnb13a7gyv5zl57c0rzeu0henx6d0tzspvrrakxxtv: "THORChain Operational"
-    bnb1e4q8whcufp6d72w8nwmpuhxd96r4n0fstegyuy: "Burn address"
+    "maya1dheycdevq39qlkxs2a6wuuzyn4aqxhve4hc8sm": "Reserve"
+    "maya17gw75axcnr8747pkanye45pnrwk7p9c3chd5xu": "Bond Module"
+    "maya1g98cy3n9mmjrpn0sxmn63lztelera37n8yyjwl": "Asgard"
 
   affiliates:
     wr: THORWallet
@@ -275,7 +221,7 @@ tx:
 
   liquidity:
     enabled: true
-    min_usd_total: 50000
+    min_usd_total: 10000
     curve_mult: 0.8
 
     also_trigger_when:
@@ -289,31 +235,26 @@ tx:
 
   swap:
     enabled: true
-    min_usd_total: 5000
+    min_usd_total: 20000
     curve_mult: 0.3
 
     also_trigger_when:
       dex_aggregator_used:
-        min_usd_total: 1000
-      affiliate_fee_usd_greater: 1000
+        min_usd_total: 20000
+      affiliate_fee_usd_greater: 2000
       streaming_swap:
         volume_greater: 25000
         notify_start: true
 
   donate:
     enabled: true
-    min_usd_total: 1000
+    min_usd_total: 5000
     curve_mult: 0.075
 
   refund:
     enabled: true
     min_usd_total: 50000
     curve_mult: 0.1
-
-  loans:
-    enabled: true
-    min_usd_total: 5000
-    # curve_mult: 0.1
 
   dex_aggregator_update:
     enabled: true
@@ -331,9 +272,9 @@ price:
   price_graph:
     default_period: 7d
 
-  cex_reference:
-    cex: binance
-    pair: USDT
+  #  cex_reference:
+  #    cex: binance
+  #    pair: USDT
 
   ath:
     cooldown: 2m
@@ -378,7 +319,7 @@ price:
       - CAACAgIAAxkBAAKYJmAxST6CTOiOStfQ9CH7hqLiv0iWAAL8BgACRvusBG1XSZhZ24v-HgQ
 
   divergence:
-    enabled: true
+    enabled: false
     cooldown: 12h
 
     public:
@@ -392,12 +333,12 @@ price:
     record_tolerance: 1h
 
 
-rune_transfer:
+token_transfer:
   enabled: true
   fetch_period: 30
 
   min_usd:
-    native: 200000
+    native: 100000
   cooldown: 10
 
   flow_summary:
@@ -405,45 +346,9 @@ rune_transfer:
     cooldown: 1d
 
   cex_list:
-    - bnb1jzdy3vy3h0ux0j7qqcutfnsjm2xnsa5mru7gtj
-    - bnb142q467df6jun6rt5u2ar58sp47hm5f9wvz2cvg
-    - bnb1u2agwjat20494fmc6jnuau0ls937cfjn4pjwtn
-    - bnb1fnd0k5l4p3ck2j9x9dp36chk059w977pszdgdz
-    - bnb136ns6lfw4zs5hg4n85vdthaad7hq5m4gtkgf23
-    - bnb1dtpty6hrxehwz9xew6ttj52l929cu8zehprzwj
-    - bnb1apkwlqftwue7mcwvhe8zckxq030afecat9lkae
-    - bnb16e9kvc8846lht4y2yav777p6hweffcqvva757l
-    - bnb10af52w77pkehgxhnwgeca50q2t2354q4xamz5y
-    - bnb165r4pxe862hetuz2l3wt4yx43uhh4ph9u0ptz6
-    - bnb1pv5vycd4xe3nu0msrewgf9tmfvam8yr3x6j97q
-    - bnb13q87ekxvvte78t2q7z05lzfethnlht5agfh4ur
-    - thor1t60f02r8jvzjrhtnjgfj4ne6rs5wjnejwmj7fh
-    - thor1uz4fpyd5f5d6p9pzk8lxyj4qxnwq6f9utg0e7k
-    - thor1ty6h2ll07fqfzumphp6kq3hm4ps28xlm2l6kd6
-    - thor1cqg8pyxnq03d88cl3xfn5wzjkguw5kh9enwte4
-    - thor1jw0nhlmj4lv83dwhfknqnw6tmlvgw4xyf6rgd7
-    - thor1hy2ka6xmqjfcwagtplyttayug4eqpqhu0sdu6r
-    - thor15nzfs98pz8qsuvpuvq4eepe9n4rhsp4pp0g84g
-    - thor15h7uv2339vdzt2a6qsjf6uh5zc06sed7szvze5
+    - none
 
   ignore_cex2cex: true
-
-
-cap:
-  enabled: true
-  fetch_period: 120
-
-  full:
-    enabled: True
-    full_limit_ratio: 0.995
-    open_up_limit_ratio: 0.97
-
-  raised:
-    stickers:
-      - CAACAgIAAxkBAAIKKmCLydn1J32d6Rawoy8AAZYxwCXnPQACLQADFJKoHX4nAr5MyGKYHwQ
-      - CAACAgIAAxkBAAIKLGCLyeS4VTRUaSJDGhpCQ-51H8HHAAJGAAMUkqgdblkQIwX7yqsfBA
-      - CAACAgIAAxkBAAIKMGCLyi1YmvVywp3aSZV7tuAzFUhLAAI9AAMUkqgdxLKS55dH2qkfBA
-      - CAACAgIAAxkBAAIKRWCL-Q5NWNZJbYhHEA300U7qbZGWAAL4DgAC2GVZSLdSltiAcx7cHwQ
 
 
 queue:
@@ -512,13 +417,13 @@ constants:
       cooldown: 2h
 
 
-chain_state:
+chain_halt_state:
   enabled: true
   fetch_period: 67s
 
 
 last_block:
-  enabled: true  # notification enabled?
+  enabled: false  # notification enabled?
   fetch_period: 30s  # always enabled
   chart:
     estimation_interval: 5m
@@ -551,7 +456,7 @@ supply:
 
 
 saver_stats:
-  enabled: true
+  enabled: false
   period: 3d
 
 
@@ -576,15 +481,9 @@ pol:
     allow_when_zero: false
 
 
-key_metrics:
-  enabled: true
-  fetch_period: 10m
-  data_max_age: 36h
-  notification:
-    cooldown: 7d
-
-
-borrowers:  # (!) new
-  enabled: true
-  fetch_period: 10m
-
+#key_metrics:
+#  enabled: false
+#  fetch_period: 10m
+#  data_max_age: 36h
+#  notification:
+#    cooldown: 7d

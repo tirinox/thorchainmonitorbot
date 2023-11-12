@@ -466,7 +466,7 @@ class App(WithLogger):
             fetcher_pool_info.add_subscriber(d.best_pools_notifier)
             tasks.append(fetcher_pool_info)
 
-        if d.cfg.get('chain_state.enabled', True):
+        if d.cfg.get('chain_halt_state.enabled', True):
             fetcher_chain_state = ChainStateFetcher(d)
             notifier_trade_halt = TradingHaltedNotifier(d)
             fetcher_chain_state.add_subscriber(notifier_trade_halt)
