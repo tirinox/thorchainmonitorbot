@@ -1,26 +1,36 @@
-# THORChain Infobot
+# Maya Infobot
 
-This is a telegram bot to monitor some aspects of THORChain. It can also generate liquidity pool reports for you. Like
-this:
+This is a telegram bot to monitor some aspects of Maya Protocol. 
 
-[![Report](misc/example_report_thumbnail.png)](https://raw.githubusercontent.com/tirinox/thorchainmonitorbot/master/misc/example_report.jpeg)
+Work in progress.
+
+Features that are planned:
+1. Alerts on price changes
+2. Mimir changes and voting
+3. New pools
+4. Large transactions
+5. Personal balance tracking
+6. LP/Savers tracking
+
+Channels:
+1. Twitter
+2. Telegram
+3. Discord
 
 ## Live bot
 
-[Start the bot in Telegram](https://t.me/thor_infobot)
+[Start the bot in Telegram](https://t.me/MayaAlerts)
 
-[Twitter Automated account](https://twitter.com/THOR_InfoBot)
+[Twitter Automated account](https://twitter.com/TODO)
 
 ## Commands
 
 ```/start``` – run the bot  
-```/price``` – Rune's price  
-```/cap``` – current LP cap
-
-*To do: describe the rest of commands.*
-
-Inline command `@bot ADDRESS POOL` to make a LP card for ADDRESS providing liquidity to POOL, POOL may not be exact but
-short like BTC or TOKEN-0x443.
+```/price``` – Cacao's price  
+```/mimir``` – Mimir's constants  
+```/pools``` – list of the best pools  
+```/lp``` – list of your wallets  
+```/savers``` – list of savers  
 
 ## Installation
 
