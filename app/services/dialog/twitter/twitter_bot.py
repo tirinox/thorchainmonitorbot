@@ -99,15 +99,16 @@ class TwitterBot(WithLogger):
             await self.post(part, image, executor, loop)
             image = None  # attach image solely to the first post, then just nullify it
 
-    def _report_error(self, e):
+    def _report_error(self, e, msg: BoardMessage):
         with suppress(Exception):
             logging.exception(f'Twitter exception!', stack_info=True)
             if self.emergency:
                 # Signal the admin to update app binding in the Twitter Developer Portal
                 self.emergency.report(
                     self.logger.name, repr(e),
-                    api_errors=getattr(e, 'api_errors', None),
-                    api_codes=getattr(e, 'api_codes', None),
+                    text=str(msg.text)[:50] + '...',
+                    # api_errors=getattr(e, 'api_errors', None),
+                    # api_codes=getattr(e, 'api_codes', None),
                     api_messages=getattr(e, 'api_messages', None)
                 )
 
@@ -122,10 +123,10 @@ class TwitterBot(WithLogger):
                 logging.warning(f'Type "{msg.message_type}" is not supported for Twitter.')
             return True
         except tweepy.errors.TooManyRequests as e:
-            self._report_error(e)
+            self._report_error(e, msg)
             return False
         except tweepy.errors.Forbidden as e:
-            self._report_error(e)
+            self._report_error(e, msg)
             if _retrying:
                 logging.exception('Tried to resend Twitter message. Failed again.')
                 return False
@@ -136,19 +137,6 @@ class TwitterBot(WithLogger):
         except Exception as e:
             logging.exception(f'Other twitter exception {e!r}!', stack_info=True)
             return False
-
-    """
-        from tweepy.errors import TooManyRequests
-        Response = namedtuple('Response', ['status', 'json', 'reason'])
-        self.deps.twitter_bot._report_error(
-            TooManyRequests(
-                Response(
-                    429, lambda: {'error': 'test'},
-                    'Too many requests'
-                )
-            )
-        )
-    """
 
 
 class TwitterBotMock(TwitterBot):
