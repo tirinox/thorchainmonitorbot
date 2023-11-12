@@ -1,4 +1,3 @@
-import logging
 import os
 import typing
 from contextlib import asynccontextmanager
@@ -13,26 +12,22 @@ class DB:
         self.loop = loop
         self.redis: typing.Optional[aioredis.Redis] = None
         self.storage: typing.Optional[RedisStorage2] = None
-        self.host = os.environ.get('REDIS_HOST', 'localhost')
-        self.port = os.environ.get('REDIS_PORT', 6379)
+        self.url = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
         self.password = os.environ.get('REDIS_PASSWORD', None)
 
     async def get_redis(self) -> aioredis.Redis:
         if self.redis is not None:
             return self.redis
 
-        try:
-            self.redis = await aioredis.from_url(
-                f'redis://{self.host}:{self.port}',
-                password=self.password,
-                encoding="utf-8",
-                decode_responses=True
-            )
+        self.redis = await aioredis.from_url(
+            self.redis,
+            password=self.password,
+            encoding="utf-8",
+            decode_responses=True
+        )
 
-            self.storage = RedisStorage2(prefix='fsm')
-            self.storage._redis = self.redis
-        except Exception:
-            logging.exception('cannot connect to redis')
+        self.storage = RedisStorage2(prefix='fsm')
+        self.storage._redis = self.redis
 
         return self.redis
 
