@@ -68,7 +68,7 @@ class AdminMessages:
                 run_time_str = ''
 
             message += (
-                f"{code(name)}\n"
+                f"{bold(name)}\n"
                 f"{errors}. "
                 f"Last date: {ital(last_txt)}. "
                 f"Interval: {ital(interval)}. "

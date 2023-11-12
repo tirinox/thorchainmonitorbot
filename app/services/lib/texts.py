@@ -34,7 +34,8 @@ def ital(text):
 
 
 def pre(text):
-    return f"<pre>{text}</pre>"
+    # return f"<pre>{text}</pre>"
+    return bold(text)
 
 
 def x_ses(one, two):
