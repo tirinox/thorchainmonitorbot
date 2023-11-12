@@ -290,7 +290,7 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
           }),
 
     ADesc(A.COIN_MARKET_CAP_RANK, 'Market cap rank', milestone_scale=MILESTONES_EVERY_INT,
-          thresholds=42),
+          thresholds=42, more_than=False),
 
     ADesc(A.POL_VALUE_RUNE, 'POL maximum value', preferred_bg=SAVER_BG),
 
