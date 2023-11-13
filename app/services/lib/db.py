@@ -20,7 +20,7 @@ class DB:
             return self.redis
 
         self.redis = await aioredis.from_url(
-            self.redis,
+            self.url,
             password=self.password,
             encoding="utf-8",
             decode_responses=True
