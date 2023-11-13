@@ -392,7 +392,7 @@ price:
     record_tolerance: 1h
 
 
-rune_transfer:
+token_transfer:  # (!) renamed from rune_transfer
   enabled: true
   fetch_period: 30
 
@@ -512,7 +512,7 @@ constants:
       cooldown: 2h
 
 
-chain_state:
+chain_halt_state:  # (!) renamed from chain_state
   enabled: true
   fetch_period: 67s
 

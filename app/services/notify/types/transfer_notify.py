@@ -23,7 +23,7 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
         super().__init__()
 
         self.deps = deps
-        cfg = deps.cfg.get('rune_transfer')
+        cfg = deps.cfg.get('token_transfer')
 
         move_cd_sec = parse_timespan_to_seconds(cfg.as_str('cooldown', 1))
         self.move_cd = Cooldown(self.deps.db, 'RuneMove', move_cd_sec, max_times=5)
