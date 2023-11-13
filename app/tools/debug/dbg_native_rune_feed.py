@@ -129,12 +129,20 @@ async def demo_debug_personal_transfer(app):
     await asyncio.sleep(3.0)
 
 
+async def demo_non_zero_code(app: LpAppFramework):
+    bad_block = 13424040
+    scanner = NativeScannerBlock(app.deps)
+    block = await scanner.fetch_one_block(bad_block)
+    print(len(block.txs))
+
+
 async def main():
     app = LpAppFramework()
     async with app(brief=True):
+        await demo_non_zero_code(app)
         # await demo_block_scanner_active(app, send_alerts=False, catch_up=True)
 
-        await demo_debug_personal_transfer(app)
+        # await demo_debug_personal_transfer(app)
 
         # await search_out(app)
 

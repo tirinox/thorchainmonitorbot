@@ -29,6 +29,20 @@ class BlockResult:
     def find_tx_by_type(self, tx_class):
         return filter(lambda tx: isinstance(tx.first_message, tx_class), self.txs)
 
+    @property
+    def only_successful(self) -> 'BlockResult':
+        # a log is only present when tx's code == 0
+        filtered_data = [(tx, log) for tx, log in zip(self.txs, self.tx_logs) if log]
+        new_txs, new_logs = tuple(zip(*filtered_data))
+
+        return BlockResult(
+            self.block_no,
+            new_txs,
+            new_logs,
+            self.end_block_events,
+            self.is_error
+        )
+
 
 class NativeScannerBlock(BaseFetcher):
     MAX_ATTEMPTS_TO_SKIP_BLOCK = 5
@@ -63,10 +77,10 @@ class NativeScannerBlock(BaseFetcher):
         if result:
             return int(safe_get(result, 'result', 'sync_info', 'latest_block_height'))
 
-    @staticmethod
-    def _decode_logs(tx_result):
+    def _decode_logs(self, tx_result, block):
         code = tx_result.get('code', 0)
         if code != 0:
+            self.logger.warning(f'Error code in tx result: {code} at block #{block}')
             return
         return ujson.loads(tx_result.get('log'))
 
@@ -95,15 +109,16 @@ class NativeScannerBlock(BaseFetcher):
                 return err
 
             tx_result_arr = safe_get(result, 'result', 'txs_results') or []
-            decoded_txs = [self._decode_logs(tx_result) for tx_result in tx_result_arr]
-            decoded_txs = [tx for tx in decoded_txs if tx]
+
+            # if log is None, that means that tx is unsuccessful (code != 0)
+            decoded_tx_logs = [self._decode_logs(tx_result, block_no) for tx_result in tx_result_arr]
 
             end_block_events = safe_get(result, 'result', 'end_block_events') or []
             decoded_end_block_events = [thor_decode_event(ev, block_no) for ev in end_block_events]
 
-            self.logger.info(f'Block #{block_no} has {len(decoded_txs)} txs.')
+            self.logger.info(f'Block #{block_no} has {len(decoded_tx_logs)} txs.')
 
-            return BlockResult(block_no, [], decoded_txs, decoded_end_block_events)
+            return BlockResult(block_no, [], decoded_tx_logs, decoded_end_block_events)
         else:
             self.logger.warn(f'Error fetching block txs results #{block_no}.')
 
@@ -222,4 +237,4 @@ class NativeScannerBlock(BaseFetcher):
             self.logger.error(f'Failed to get transactions of the block #{block_index}.')
             return
 
-        return block_result
+        return block_result.only_successful
