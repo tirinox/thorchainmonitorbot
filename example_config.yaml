@@ -71,8 +71,7 @@ telegram:
   bot:
     token: "insert the bot token from @BotFather here"
     username: "thor_infobot"
-  common:
-    loading_sticker: CAACAgIAAxkBAAIRx1--Tia-m6DNRIApk3yqmNWvap_sAALcAAP3AsgPUNi8Bnu98HweBA
+
 
   admins:
     - 12345  # List of TG admins
