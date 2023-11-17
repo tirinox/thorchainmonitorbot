@@ -130,10 +130,13 @@ async def demo_debug_personal_transfer(app):
 
 
 async def demo_non_zero_code(app: LpAppFramework):
-    bad_block = 13424040
-    scanner = NativeScannerBlock(app.deps)
-    block = await scanner.fetch_one_block(bad_block)
-    print(len(block.txs))
+    # bad_block = 13424040
+
+    # 💸 Large transfer  "Send": 102.5M Rune ᚱ ($608,499,689) from thor1zw...6s66 ➡️ Binance Hot.
+    bad_block = 13_480_048
+    transfers = await get_transfers_from_block(app, bad_block)
+    print(transfers)
+    assert all(t for t in transfers if t.amount < 1_000_000)
 
 
 async def main():

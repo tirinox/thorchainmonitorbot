@@ -80,9 +80,13 @@ class NativeScannerBlock(BaseFetcher):
     def _decode_logs(self, tx_result, block):
         code = tx_result.get('code', 0)
         if code != 0:
-            self.logger.warning(f'Error code in tx result: {code} at block #{block}')
+            self.logger.debug(f'Error code in tx result: {code} at block #{block}')
             return
-        return ujson.loads(tx_result.get('log'))
+        try:
+            return ujson.loads(tx_result.get('log'))
+        except ujson.JSONDecodeError:
+            self.logger.error(f'Error decoding tx log: {tx_result.get("log")} at block #{block}')
+            return
 
     def _get_is_error(self, result):
         error = result.get('error')
