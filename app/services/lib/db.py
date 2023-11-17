@@ -12,7 +12,9 @@ class DB:
         self.loop = loop
         self.redis: typing.Optional[aioredis.Redis] = None
         self.storage: typing.Optional[RedisStorage2] = None
-        self.url = os.environ.get('REDIS_URL', 'redis://localhost:6379/0')
+        self.host = os.environ.get('REDIS_HOST', 'localhost')
+        self.port = os.environ.get('REDIS_PORT', 6379)
+        self.db_index = os.environ.get('REDIS_DB_INDEX', 0)
         self.password = os.environ.get('REDIS_PASSWORD', None)
 
     async def get_redis(self) -> aioredis.Redis:
@@ -20,7 +22,7 @@ class DB:
             return self.redis
 
         self.redis = await aioredis.from_url(
-            self.url,
+            f'redis://{self.host}:{self.port}/{self.db_index}',
             password=self.password,
             encoding="utf-8",
             decode_responses=True
