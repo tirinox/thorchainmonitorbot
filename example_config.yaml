@@ -240,6 +240,9 @@ names:
     0xbami: Unizen
     ds: Defispot
 
+  arb_bot_detector:  # (!) new
+    min_sequence: 10_000  # minimum sequence number to consider this address as arbitrage
+
 
 tx:
   enabled: true

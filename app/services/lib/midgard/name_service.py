@@ -45,6 +45,10 @@ class NameService(WithLogger):
         if self._thorname_enabled:
             self.logger.info(f'ThorName is enabled with expire time of {self._thorname_expire} sec.')
 
+    @property
+    def cache(self):
+        return self._cache
+
     def get_affiliate_name(self, affiliate_short):
         return self._cache.get_affiliate_name(affiliate_short)
 
@@ -176,10 +180,11 @@ class THORNameCache:
     def _key_address_to_names(address: str):
         return f'THORName:Address-to-Names:{address}'
 
-    async def save_name_list(self, address: str, names: List[str]):
+    async def save_name_list(self, address: str, names: List[str], expiring: bool = True):
+        ex = self.thorname_expire if expiring else None
         await self.db.redis.set(self._key_address_to_names(address),
                                 value=json.dumps(names),
-                                ex=self.thorname_expire)
+                                ex=ex)
 
     async def load_name_list(self, address: str) -> List[str]:
         data = await self.db.redis.get(self._key_address_to_names(address))
@@ -187,16 +192,30 @@ class THORNameCache:
 
     NO_VALUE = 'no_value'
 
-    async def save_thor_name(self, name, thorname: ThorName):
+    async def save_thor_name(self, name, thorname: ThorName, expiring: bool = True):
         if not name:
             return
 
+        ex = self.thorname_expire if expiring else None
         value = thorname.to_json() if thorname else self.NO_VALUE
         await self.db.redis.set(
             self._key_thorname_to_addresses(name),
             value=value,
-            ex=self.thorname_expire
+            ex=ex
         )
+
+    async def save_custom_name(self, name, address: str, expiring: bool = True):
+        if not name:
+            return
+
+        await self.save_thor_name(name, ThorName(
+            name=name,
+            expire_block_height=0,
+            owner=address.encode(),
+            aliases=[
+                ThorNameAlias(Chains.THOR, address)
+            ],
+        ), expiring=expiring)
 
     async def load_thor_name(self, name: str) -> Optional[ThorName]:
         if not name:
