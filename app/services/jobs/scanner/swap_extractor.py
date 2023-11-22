@@ -109,21 +109,21 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
             })
 
             # --8<-- debugging stuff --8<--
-            if isinstance(swap_ev, EventSwap):
-                self.dbg_swaps += 1
-
-            if swap_ev.tx_id == self.dbg_watch_swap_id:
-                self.dbg_print(f'👹 new event for watched TX!!! {swap_ev.__class__} at block #{swap_ev.height}\n')
-                self.dbg_print(swap_ev)
-                self.dbg_print('----------\n')
-
-                if not boom:
-                    await say('Event!!')
-                    boom = True
-
-                if isinstance(swap_ev, EventScheduledOutbound):
-                    await say('Scheduled outbound!')
-                    self.dbg_print('Scheduled outbound!\n')
+            # if isinstance(swap_ev, EventSwap):
+            #     self.dbg_swaps += 1
+            #
+            # if swap_ev.tx_id == self.dbg_watch_swap_id:
+            #     self.dbg_print(f'👹 new event for watched TX!!! {swap_ev.__class__} at block #{swap_ev.height}\n')
+            #     self.dbg_print(swap_ev)
+            #     self.dbg_print('----------\n')
+            #
+            #     if not boom:
+            #         await say('Event!!')
+            #         boom = True
+            #
+            #     if isinstance(swap_ev, EventScheduledOutbound):
+            #         await say('Scheduled outbound!')
+            #         self.dbg_print('Scheduled outbound!\n')
             # --8<-- debugging stuff --8<--
 
     @staticmethod
