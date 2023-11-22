@@ -1,5 +1,7 @@
+from contextlib import suppress
 from typing import List
 
+from services.jobs.scanner.arb_detector import ArbBotDetector
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds, DAY
 from services.lib.delegates import INotified, WithDelegates
@@ -36,6 +38,7 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
         self.cex_list = cfg.as_list('cex_list')
         self.ignore_cex2cex = bool(cfg.get('ignore_cex2cex', True))
         self.tracker = CEXFlowTracker(deps)
+        self.arb_detector = ArbBotDetector(deps)
 
     def is_cex2cex(self, transfer: RuneTransfer):
         return self.is_cex(transfer.from_addr) and self.is_cex(transfer.to_addr)
@@ -51,6 +54,11 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
 
             if await self.move_cd.can_do():
                 await self.move_cd.do()
+
+                with suppress(Exception):
+                    await self.arb_detector.try_to_detect_arb_bot(transfer.from_addr)
+                    await self.arb_detector.try_to_detect_arb_bot(transfer.to_addr)
+
                 await self.pass_data_to_listeners(transfer)
 
     def _is_to_be_ignored(self, transfer: RuneTransfer):
