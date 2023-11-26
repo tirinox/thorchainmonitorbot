@@ -1,6 +1,5 @@
 start - Start/restart the bot
-wallets - List of wallets you follow
-lp - Track LP/Savings yield
+lp - List of wallets you follow
 price - Rune price chart
 stats - THORChain stats
 savings - Savings vaults stats
@@ -13,3 +12,4 @@ pools - Top pools
 voting - Node-Mimir voting
 lang - Set the language
 weekly - Weekly key statistics
+wallets - List of wallets you follow
