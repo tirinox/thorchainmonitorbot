@@ -178,7 +178,8 @@ class RuneCirculatingSupplyFetcher(WithLogger):
     def get_pure_rune_from_thor_array(arr):
         if arr:
             thor_rune = next((item['amount'] for item in arr if item['denom'] == RUNE_DENOM), 0)
-            return int(int(thor_rune) / 10 ** RUNE_DECIMALS)
+            # return int(int(thor_rune) / 10 ** RUNE_DECIMALS)
+            return int(thor_to_float(thor_rune))
         else:
             return 0
 
