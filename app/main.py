@@ -183,7 +183,7 @@ class App(WithLogger):
             public_url=d.thor_env.midgard_url
         )
 
-        d.name_service = NameService(d.db, d.cfg, d.midgard_connector)
+        d.name_service = NameService(d.db, d.cfg, d.midgard_connector, d.node_holder)
         d.alert_presenter.name_service = d.name_service
         d.loc_man.set_name_service(d.name_service)
 

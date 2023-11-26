@@ -1,7 +1,9 @@
 import asyncio
 
+from localization.languages import Language
 from services.lib.midgard.name_service import NameService
 from services.lib.texts import sep
+from services.models.transfer import RuneTransfer
 from tools.lib.lp_common import LpAppFramework
 
 NAMES = {
@@ -59,13 +61,47 @@ async def t_fix_name_map(ns: NameService):
     print(result.by_address)
 
 
+async def demo_node_names(app: LpAppFramework):
+    await app.deps.node_info_fetcher.run_once()
+    nodes = app.deps.node_holder.nodes
+    print(f"Total nodes: {len(nodes)}")
+
+    addresses = [
+        'thor1hxcdgn43pyz58ajdqd0hl3rfl3avwdd5y27whf',  # bp
+        'thor1puhn8fclwvmmzh7uj7546wnxz5h3zar8adtqp3',  # bp
+        'thor160yye65pf9rzwrgqmtgav69n6zlsyfpgm9a7xk',  # not a node (but "t")
+        'thor166n4w5039meulfa3p6ydg60ve6ueac7tlt0jws',  # has no name
+    ]
+
+    name_map = await app.deps.name_service.safely_load_thornames_from_address_set(addresses)
+    print(f"Name map is {name_map}")
+
+    # ------------------------------------
+
+    tr = RuneTransfer(
+        'thor1puhn8fclwvmmzh7uj7546wnxz5h3zar8adtqp3', 'thor166n4w5039meulfa3p6ydg60ve6ueac7tlt0jws',
+        13_123_132, '123456789054321123456789098754321', 222_854.24, 5.29, is_native=True, asset='THOR.RUNE',
+        comment='SEND', memo='Hello'
+    )
+
+    locs = [
+        app.deps.loc_man.default,
+        app.deps.loc_man[Language.ENGLISH_TWITTER]
+    ]
+
+    for loc in locs:
+        sep()
+        print(loc.notification_text_rune_transfer_public(tr, name_map))
+
+
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
         ns = app.deps.name_service
         # await t_exists(ns)
         # await t_not_exists(ns)
-        await t_fix_name_map(ns)
+        # await t_fix_name_map(ns)
+        await demo_node_names(app)
 
 
 if __name__ == '__main__':

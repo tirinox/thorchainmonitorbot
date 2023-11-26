@@ -10,6 +10,7 @@ from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.db import DB
 from services.lib.midgard.connector import MidgardConnector
 from services.lib.utils import WithLogger, keys_to_lower, filter_none_values
+from services.models.node_info import NodeListHolder
 
 
 class NameMap(NamedTuple):
@@ -26,15 +27,30 @@ class NameMap(NamedTuple):
             {**self.by_address, **other.by_address}
         )
 
+    def add(self, thor_name: ThorName):
+        self.by_name[thor_name.name] = thor_name
+        for alias in thor_name.aliases:
+            self.by_address[alias.address] = thor_name
+
+
+def make_virtual_thor_name(address: str, name: str):
+    return ThorName(
+        name, 0, address.encode(),
+        aliases=[
+            ThorNameAlias(Chains.detect_chain(address), address)
+        ]
+    )
+
 
 # ThorName: address[owner] -> many of [name] -> many of [address (thor + chains)]
 # Here we basically don't care about owners of ThorNames.
 # We must have API for Address -> ThorName, and ThorName -> [Address] resolution
 class NameService(WithLogger):
-    def __init__(self, db: DB, cfg: Config, midgard: MidgardConnector):
+    def __init__(self, db: DB, cfg: Config, midgard: MidgardConnector, node_holder: NodeListHolder):
         super().__init__()
         self.db = db
         self.cfg = cfg
+        self.node_holder = node_holder
 
         self._api = THORNameAPIClient(midgard)
         self._cache = THORNameCache(db, cfg)
@@ -67,7 +83,9 @@ class NameService(WithLogger):
                             thorname_by_name[thorname.name] = thorname
                             break
 
-            return NameMap(thorname_by_name, thorname_by_address)
+            name_map = NameMap(thorname_by_name, thorname_by_address)
+            name_map = self.enrich_name_map_with_nodes(name_map, addresses)
+            return name_map
         except Exception as e:
             self.logger.exception(f'Something went wrong. That is OK. {e!r}', exc_info=True)
             return NameMap.empty()
@@ -120,7 +138,7 @@ class NameService(WithLogger):
 
         if forced or not (thorname := await self._cache.load_thor_name(name)):
             thorname = await self._api.thorname_lookup(name)
-            await self._cache.save_thor_name(name, thorname)  # save anyway, even if there is not ThorName!
+            await self._cache.save_thor_name(name, thorname)  # save anyway, even if there is no registered ThorName!
 
             if forced and thorname:
                 await self._cache.save_name_list(self.get_thor_address_of_thorname(thorname), [thorname.name])
@@ -137,6 +155,24 @@ class NameService(WithLogger):
 
     def get_local_service(self, user_id):
         return LocalWalletNameDB(self.db, user_id)
+
+    def enrich_name_map_with_nodes(self, name_map: NameMap, addresses: Iterable):
+        if not self.node_holder and not self.node_holder.nodes:
+            return
+
+        for node in self.node_holder.nodes:
+            for bp in node.bond_providers:
+                if bp.address in name_map.by_address:
+                    continue
+
+                if addresses is not None and bp.address not in addresses:
+                    continue
+
+                name = f"NodeBP-{bp.address[-4:]}"
+                thor_name = make_virtual_thor_name(bp.address, name)
+                name_map.add(thor_name)
+
+        return name_map
 
 
 class THORNameCache:
@@ -159,12 +195,7 @@ class THORNameCache:
         name_dic: dict = self.cfg.get_pure('names.preconfig', {})
         for address, label in name_dic.items():
             if address and label:
-                self._known_address[address] = ThorName(
-                    label, 0, address.encode(),
-                    aliases=[
-                        ThorNameAlias(Chains.detect_chain(address), address)
-                    ]
-                )
+                self._known_address[address] = make_virtual_thor_name(address, label)
                 self._known_names[label] = address
 
         self.affiliates = keys_to_lower(self.cfg.get_pure('names.affiliates'))
@@ -208,14 +239,7 @@ class THORNameCache:
         if not name:
             return
 
-        await self.save_thor_name(name, ThorName(
-            name=name,
-            expire_block_height=0,
-            owner=address.encode(),
-            aliases=[
-                ThorNameAlias(Chains.THOR, address)
-            ],
-        ), expiring=expiring)
+        await self.save_thor_name(name, make_virtual_thor_name(address, name), expiring=expiring)
 
     async def load_thor_name(self, name: str) -> Optional[ThorName]:
         if not name:
@@ -318,15 +342,7 @@ class LocalWalletNameDB:
 
         by_name, by_address = {}, {}
         for address, name in all_names.items():
-            thor_name = ThorName(
-                name=name,
-                expire_block_height=0,
-                owner=address,
-                aliases=[
-                    # chain is unknown here
-                    ThorNameAlias(Chains.THOR, address)
-                ]
-            )
+            thor_name = make_virtual_thor_name(address, name)
             by_name[name] = thor_name
             by_address[address] = thor_name
 

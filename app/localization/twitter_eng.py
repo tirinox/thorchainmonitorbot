@@ -767,7 +767,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             f'({short_dollar(cex_flow.netflow_usd)})'
         )
 
-    def notification_text_rune_transfer_public(self, t: RuneTransfer, name_map):
+    def notification_text_rune_transfer_public(self, t: RuneTransfer, name_map: NameMap):
         asset, comment, from_my, to_my, tx_link, usd_amt, memo = self._native_transfer_prepare_stuff(
             None, t,
             tx_title='',

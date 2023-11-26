@@ -11,7 +11,7 @@ from services.jobs.achievement.ach_list import Achievement
 from services.lib.constants import THOR_BLOCKS_PER_MINUTE
 from services.lib.delegates import INotified
 from services.lib.draw_utils import img_to_bio
-from services.lib.midgard.name_service import NameService
+from services.lib.midgard.name_service import NameService, NameMap
 from services.lib.w3.dex_analytics import DexReport
 from services.models.flipside import AlertKeyStats
 from services.models.last_block import EventBlockSpeed, BlockProduceState
@@ -63,9 +63,10 @@ class AlertPresenter(INotified):
         elif isinstance(data, (AlertLoanOpen, AlertLoanRepayment)):
             await self._handle_loans(data)
 
-    async def load_names(self, addresses):
+    async def load_names(self, addresses) -> NameMap:
         if not (isinstance(addresses, (list, tuple))):
             addresses = (addresses,)
+
         return await self.name_service.safely_load_thornames_from_address_set(addresses)
 
         # ---- PARTICULARLY ----

@@ -2244,7 +2244,7 @@ class BaseLocalization(ABC):  # == English
                f'from {from_my} ' \
                f'➡️ {to_my}{memo}.'
 
-    def notification_text_rune_transfer_public(self, t: RuneTransfer, name_map):
+    def notification_text_rune_transfer_public(self, t: RuneTransfer, name_map: NameMap):
         asset, comment, from_my, to_my, tx_link, usd_amt, memo = self._native_transfer_prepare_stuff(
             None, t,
             tx_title='',
