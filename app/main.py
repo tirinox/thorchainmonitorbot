@@ -291,7 +291,7 @@ class App(WithLogger):
             user_counter = UserCounter(d)
             d.block_scanner.add_subscriber(user_counter)
 
-            if d.cfg.get('rune_transfer.enabled', True):
+            if d.cfg.get('token_transfer.enabled', True):
                 d.rune_move_notifier = RuneMoveNotifier(d)
                 d.rune_move_notifier.add_subscriber(d.alert_presenter)
                 decoder.add_subscriber(d.rune_move_notifier)
