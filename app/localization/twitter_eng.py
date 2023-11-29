@@ -260,7 +260,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         price = p.market_info.pool_rune_price
 
         btc_price = f"₿ {p.btc_pool_rune_price:.8f}"
-        message += f"RUNE price is {price:.3f} ({btc_price}) now\n"
+        message += f"$RUNE price is now ${price:.3f} ({btc_price}).\n"
 
         fp = p.market_info
 

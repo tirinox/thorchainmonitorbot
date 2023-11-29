@@ -5,7 +5,7 @@ from proto.access import NativeThorTx, parse_thor_address, DecodedEvent, thor_de
 from proto.types import MsgSend, MsgDeposit
 from services.jobs.scanner.native_scan import BlockResult
 from services.lib.constants import thor_to_float, DEFAULT_RESERVE_ADDRESS, BOND_MODULE, DEFAULT_RUNE_FEE, \
-    RUNE_DENOM, RUNE_SYMBOL
+    RUNE_DENOM, RUNE_SYMBOL, NATIVE_RUNE_SYMBOL
 from services.lib.delegates import WithDelegates, INotified
 from services.lib.money import Asset, is_rune
 from services.lib.utils import WithLogger
@@ -92,7 +92,7 @@ class RuneTransferDetectorTxLogs(WithDelegates, INotified, WithLogger):
         if ev.type == 'outbound' and ev.attributes.get('chain') == 'THOR':
             asset = ev.attributes.get('asset', '')
             if is_rune(asset):
-                asset = 'THOR.RUNE'
+                asset = NATIVE_RUNE_SYMBOL
             memo = ev.attributes.get('memo', '')
 
             if 'amount' in ev.attributes:

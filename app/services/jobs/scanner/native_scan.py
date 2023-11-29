@@ -148,8 +148,8 @@ class NativeScannerBlock(BaseFetcher):
         except Exception as e:
             self.logger.error(f'Error decoding tx: {e}')
 
-    def _on_error(self):
-        self.logger.warning(f'Error fetching block #{self._last_block}.')
+    def _on_error(self, reason=''):
+        self.logger.warning(f'Error fetching block #{self._last_block}, {reason = !r}.')
         self._this_block_attempts += 1
         if self._this_block_attempts >= self.max_attempts:
             self.logger.error(f'Too many attempts to get block #{self._last_block}. Skipping it.')
@@ -197,7 +197,7 @@ class NativeScannerBlock(BaseFetcher):
                 self.logger.info(f'Fetching block #{self._last_block}. Cycle: {self._block_cycle}.')
                 block_result = await self.fetch_one_block(self._last_block)
                 if block_result is None:
-                    self._on_error()
+                    self._on_error('Block is None')
                     break
 
                 if block_result.is_error:
@@ -210,12 +210,12 @@ class NativeScannerBlock(BaseFetcher):
                         self._last_block = block_result.block_no
                         self._this_block_attempts = 0
                     else:
-                        self._on_error()
+                        self._on_error('Block has error')
                         break
 
             except Exception as e:
                 self.logger.error(f'Error while fetching block #{self._last_block}: {e}')
-                self._on_error()
+                self._on_error(str(e))
                 break
 
             await self.pass_data_to_listeners(block_result)

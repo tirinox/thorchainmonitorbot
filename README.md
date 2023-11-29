@@ -14,8 +14,7 @@ this:
 ## Commands
 
 ```/start``` – run the bot  
-```/price``` – Rune's price  
-```/cap``` – current LP cap
+```/price``` – Rune's price
 
 *To do: describe the rest of commands.*
 
