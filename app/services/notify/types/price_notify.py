@@ -1,20 +1,17 @@
 import asyncio
 
-from localization.manager import BaseLocalization
-from services.dialog.picture.price_picture import price_graph_from_db
 from services.lib.constants import RUNE_SYMBOL_POOL
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import MINUTE, HOUR, DAY, parse_timespan_to_seconds, now_ts
-from services.lib.delegates import INotified
+from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.money import pretty_money, calc_percent_change
 from services.lib.utils import make_stickers_iterator, WithLogger
-from services.models.price import RuneMarketInfo, PriceReport, PriceATH
+from services.models.price import RuneMarketInfo, AlertPrice, PriceATH
 from services.models.time_series import PriceTimeSeries
-from services.notify.channel import MessageType, BoardMessage
 
 
-class PriceNotifier(INotified, WithLogger):
+class PriceNotifier(INotified, WithDelegates, WithLogger):
     ATH_KEY = 'runeATH'
     CD_KEY_PRICE_NOTIFIED = 'price_notified'
     CD_KEY_PRICE_RISE_NOTIFIED = 'price_notified_rise'
@@ -59,23 +56,28 @@ class PriceNotifier(INotified, WithLogger):
         )
         return price_1h, price_24h, price_7d
 
-    async def send_ath_sticker(self):
-        sticker = next(self.ath_sticker_iter)
-        await self.deps.broadcaster.notify_preconfigured_channels(BoardMessage(sticker, MessageType.STICKER))
+    def _next_ath_sticker(self):
+        try:
+            return next(self.ath_sticker_iter)
+        except (StopIteration, TypeError, ValueError):
+            return ''
 
     async def do_notify_price_table(self, market_info, hist_prices, ath, last_ath=None):
-        btc_price = self.deps.price_holder.btc_per_rune
-        report = PriceReport(*hist_prices, market_info, last_ath, btc_price)
+        btc_per_rune = self.deps.price_holder.btc_per_rune
+        p_1h, p_24h, p_7d = hist_prices
 
-        async def price_graph_gen(loc: BaseLocalization):
-            graph, graph_name = await price_graph_from_db(self.deps, loc, self.price_graph_period)
-            caption = loc.notification_text_price_update(report, ath, halted_chains=self.deps.halted_chains)
-            return BoardMessage.make_photo(graph, caption=caption, photo_file_name=graph_name)
+        price_alert = AlertPrice(
+            p_1h, p_24h, p_7d,
+            market_info,
+            last_ath,
+            btc_per_rune,
+            is_ath=ath,
+            ath_sticker=self._next_ath_sticker(),
+            halted_chains=self.deps.halted_chains,
+            price_graph_period=self.price_graph_period,
+        )
 
-        if ath:
-            await self.send_ath_sticker()
-
-        await self.deps.broadcaster.notify_preconfigured_channels(price_graph_gen)
+        await self.pass_data_to_listeners(price_alert)
 
     async def handle_new_price(self, market_info: RuneMarketInfo):
         hist_prices = await self.historical_get_triplet()

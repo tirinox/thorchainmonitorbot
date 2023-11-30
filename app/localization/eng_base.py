@@ -38,7 +38,7 @@ from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConse
     EventProviderStatus
 from services.models.pol import AlertPOL
 from services.models.pool_info import PoolInfo, PoolChanges, PoolMapPair
-from services.models.price import PriceReport, RuneMarketInfo
+from services.models.price import AlertPrice, RuneMarketInfo
 from services.models.queue import QueueInfo
 from services.models.s_swap import AlertSwapStart
 from services.models.savers import how_much_savings_you_can_add, AlertSaverStats
@@ -782,16 +782,16 @@ class BaseLocalization(ABC):  # == English
 
     TEXT_PRICE_NO_DATA = 'Sorry. No price data available yet. Please try again later.'
 
-    def notification_text_price_update(self, p: PriceReport, ath=False, halted_chains=None):
-        title = bold('Price update') if not ath else bold('🚀 A new all-time high has been achieved!')
+    def notification_text_price_update(self, p: AlertPrice):
+        title = bold('Price update') if not p.is_ath else bold('🚀 A new all-time high has been achieved!')
 
         c_gecko_url = 'https://www.coingecko.com/en/coins/thorchain'
         c_gecko_link = link(c_gecko_url, 'RUNE')
 
         message = f"{title} | {c_gecko_link}\n\n"
 
-        if halted_chains:
-            hc = pre(', '.join(halted_chains))
+        if p.halted_chains:
+            hc = pre(', '.join(p.halted_chains))
             message += f"🚨 <code>Trading is still halted on {hc}.</code>\n\n"
 
         price = p.market_info.pool_rune_price
@@ -811,7 +811,7 @@ class BaseLocalization(ABC):  # == English
             message += f"<b>Divergence</b> vs CEX is {code(pretty_dollar(div))} ({div_p:.1f}%{exclamation}).\n"
 
         last_ath = p.last_ath
-        if last_ath is not None and ath:
+        if last_ath is not None and p.is_ath:
             last_ath_pr = f'{last_ath.ath_price:.2f}'
             ago_str = self.format_time_ago(now_ts() - last_ath.ath_date)
             message += f"Last ATH was ${pre(last_ath_pr)} ({ago_str}).\n"

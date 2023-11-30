@@ -18,7 +18,7 @@ from services.lib.date_utils import DAY, HOUR, parse_timespan_to_seconds, now_ts
 from services.lib.draw_utils import img_to_bio
 from services.lib.texts import kbd
 from services.models.node_info import NodeInfo
-from services.models.price import PriceReport, RuneMarketInfo
+from services.models.price import AlertPrice, RuneMarketInfo
 from services.notify.types.best_pool_notify import BestPoolsNotifier
 from services.notify.types.block_notify import BlockHeightNotifier
 from services.notify.types.cap_notify import LiquidityCapNotifier
@@ -228,12 +228,13 @@ class MetricsDialog(BaseDialog):
         market_info.pool_rune_price = self.deps.price_holder.usd_per_rune
         btc_price = self.deps.price_holder.btc_per_rune
 
-        price_text = self.loc.notification_text_price_update(PriceReport(
+        price_text = self.loc.notification_text_price_update(AlertPrice(
             price_1h, price_24h, price_7d,
             market_info=market_info,
-            btc_pool_rune_price=btc_price),
+            last_ath=None, is_ath=False,
+            btc_pool_rune_price=btc_price,
             halted_chains=self.deps.halted_chains
-        )
+        ))
 
         graph, graph_name = await price_graph_from_db(self.deps, self.loc, period=period)
         await message.answer_photo(img_to_bio(graph, graph_name),

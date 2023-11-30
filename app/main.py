@@ -160,7 +160,7 @@ class App(WithLogger):
         d = self.deps
         d.loc_man = LocalizationManager(d.cfg)
         d.broadcaster = Broadcaster(d)
-        d.alert_presenter = AlertPresenter(d.broadcaster, d.name_service)
+        d.alert_presenter = AlertPresenter(d)
         d.telegram_bot = TelegramBot(d.cfg, d.db, d.loop)
         init_dialogs(d)
 
@@ -441,6 +441,7 @@ class App(WithLogger):
             # handles RuneMarketInfo
             notifier_price = PriceNotifier(d)
             d.pool_fetcher.add_subscriber(notifier_price)
+            notifier_price.add_subscriber(d.alert_presenter)
 
             if achievements_enabled:
                 d.pool_fetcher.add_subscriber(achievements)

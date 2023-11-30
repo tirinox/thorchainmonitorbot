@@ -1,11 +1,11 @@
 import logging
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional, Set
 
 from services.jobs.fetch.circulating import RuneCirculatingSupply
 from services.lib.config import Config
 from services.lib.constants import BNB_BTCB_SYMBOL, BTC_SYMBOL, STABLE_COIN_POOLS, thor_to_float
-from services.lib.date_utils import now_ts
+from services.lib.date_utils import now_ts, DAY
 from services.lib.money import weighted_mean, Asset, is_rune
 from services.lib.texts import fuzzy_search
 from services.models.base import BaseModelMixin
@@ -83,13 +83,18 @@ class PriceATH(BaseModelMixin):
 
 
 @dataclass
-class PriceReport:
+class AlertPrice:
     price_1h: float = 0.0
     price_24h: float = 0.0
     price_7d: float = 0.0
     market_info: RuneMarketInfo = RuneMarketInfo()
-    last_ath: PriceATH = PriceATH()
+    last_ath: Optional[PriceATH] = None
     btc_pool_rune_price: float = 0.0
+    is_ath: bool = False
+    ath_sticker: str = ''
+    halted_chains: Set[str] = None
+    price_graph_period: int = 7 * DAY
+
 
 
 class LastPriceHolder:

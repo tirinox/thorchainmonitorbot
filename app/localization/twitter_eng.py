@@ -1,8 +1,8 @@
 from typing import List
 
-from aionode.types import ThorChainInfo
 from semver import VersionInfo
 
+from aionode.types import ThorChainInfo
 from localization.achievements.ach_tw_eng import AchievementsTwitterEnglishLocalization
 from localization.eng_base import BaseLocalization
 from services.dialog.twitter.text_length import twitter_intelligent_text_splitter
@@ -27,7 +27,7 @@ from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeVersionConsensus, NodeInfo
 from services.models.pol import AlertPOL
 from services.models.pool_info import PoolMapPair, PoolChanges, PoolInfo
-from services.models.price import RuneMarketInfo, PriceReport
+from services.models.price import RuneMarketInfo, AlertPrice
 from services.models.s_swap import AlertSwapStart
 from services.models.savers import AlertSaverStats
 from services.models.transfer import RuneCEXFlow, RuneTransfer
@@ -250,8 +250,8 @@ class TwitterEnglishLocalization(BaseLocalization):
 
             return f"🤬 Attention! Queue [{item_type}] has {value} transactions!{extra}"
 
-    def notification_text_price_update(self, p: PriceReport, ath=False, halted_chains=None):
-        message = '🚀 New all-time high!\n' if ath else ''
+    def notification_text_price_update(self, p: AlertPrice):
+        message = '🚀 New all-time high!\n' if p.is_ath else ''
 
         # if halted_chains:
         #     hc = ', '.join(halted_chains)
@@ -272,7 +272,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             message += f"Divergence: {div_p:.1f}%{exclamation}\n"
 
         last_ath = p.last_ath
-        if last_ath is not None and ath:
+        if last_ath is not None and p.is_ath:
             last_ath_pr = f'{last_ath.ath_price:.2f}'
             ago_str = self.format_time_ago(now_ts() - last_ath.ath_date)
             message += f"Last ATH: ${last_ath_pr} ({ago_str}).\n"
