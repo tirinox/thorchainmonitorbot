@@ -71,14 +71,6 @@ async def demo_price_graph(app, fill=False):
     loc = app.deps.loc_man.default
     graph, graph_name = await price_graph_from_db(app.deps, loc)
 
-    # sender = PriceNotifier(app.deps)
-    # hist_prices = await sender.historical_get_triplet()
-    #
-    # net_stats, market_info = await debug_get_rune_market_data(app)
-    #
-    # report = PriceReport(*hist_prices, market_info, last_ath, btc_price)
-    # caption = loc.notification_text_price_update(report, ath, halted_chains=self.deps.halted_chains)
-    #
     save_and_show_pic(graph, graph_name)
 
 

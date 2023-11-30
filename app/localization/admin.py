@@ -5,7 +5,7 @@ from services.lib.date_utils import format_time_ago, now_ts, MINUTE, seconds_hum
 from services.lib.depcont import DepContainer
 from services.lib.http_ses import ObservableSession, RequestEntry
 from services.lib.money import format_percent, short_address
-from services.lib.texts import bold, code, pre, ital, link
+from services.lib.texts import bold, pre, ital, link
 
 
 class AdminMessages:

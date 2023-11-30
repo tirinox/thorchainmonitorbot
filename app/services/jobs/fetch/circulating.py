@@ -2,7 +2,7 @@ import asyncio
 from contextlib import suppress
 from typing import NamedTuple, Dict
 
-from services.lib.constants import RUNE_IDEAL_SUPPLY, RUNE_SUPPLY_AFTER_SWITCH, RUNE_DECIMALS, thor_to_float, RUNE_DENOM
+from services.lib.constants import RUNE_IDEAL_SUPPLY, RUNE_SUPPLY_AFTER_SWITCH, thor_to_float, RUNE_DENOM
 from services.lib.utils import WithLogger
 
 

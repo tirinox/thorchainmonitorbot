@@ -1,7 +1,7 @@
 import logging
 import sys
 
-from colorama import init, Fore, Back
+from colorama import init, Fore
 
 init(autoreset=True)
 g_log_level = logging.INFO
