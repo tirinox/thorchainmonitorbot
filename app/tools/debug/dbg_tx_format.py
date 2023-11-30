@@ -52,7 +52,8 @@ async def demo_savers_add(app):
 
 
 async def demo_test_savers_vaults(app):
-    q_path = free_url_gen.url_for_tx(0, 50, txid='050000225130CE9C5DBDDF0D1821036FC1CB7473A01EA41BB4F1EB5E3431A036')
+    # q_path = free_url_gen.url_for_tx(0, 50, txid='050000225130CE9C5DBDDF0D1821036FC1CB7473A01EA41BB4F1EB5E3431A036')
+    q_path = free_url_gen.url_for_tx(0, 50, txid='D08540806F70536BE497E9796180DCD8A66866D9F034983C8DDB8561E8D3D1F4')
     await present_one_aff_tx(app, q_path, find_aff=False)
 
 
@@ -152,7 +153,8 @@ async def send_tx_notification(app, ex_tx, loc: BaseLocalization = None):
     full_rune = ex_tx.calc_full_rune_amount(app.deps.price_holder.pool_info_map)
 
     profit_calc = StreamingSwapVsCexProfitCalculator(app.deps)
-    await profit_calc.get_cex_data_v2(ex_tx)
+    if ex_tx.type == TxType.SWAP:
+        await profit_calc.get_cex_data_v2(ex_tx)
 
     print(f'{ex_tx.affiliate_fee = }')
     rune_price = app.deps.price_holder.usd_per_rune
@@ -332,7 +334,7 @@ async def main():
     # await refund_full_rune(app)
     # await demo_midgard_test_large_ilp(app)
     # await demo_full_tx_pipeline(app, announce=True)
-    # await demo_test_savers_vaults(app)
+    await demo_test_savers_vaults(app)
     # await demo_aggr_aff_2(app)
     # await demo_test_aff_add_liq(app)
     # await demo_test_2(app)
@@ -348,7 +350,7 @@ async def main():
     # await demo_find_aggregator_error(app)
     # await demo_find_missed_txs_swap(app)
     # await demo_swap_synth(app)
-    await demo_swap_with_refund_and_incorrect_savings_vs_cex(app)
+    # await demo_swap_with_refund_and_incorrect_savings_vs_cex(app)
 
 
 if __name__ == '__main__':

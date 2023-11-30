@@ -551,7 +551,7 @@ class BaseLocalization(ABC):  # == English
         if tx.date_timestamp < now - self.tx_add_date_if_older_than():
             return self.format_time_ago(now - tx.date_timestamp)
 
-    MIN_PERCENT_TO_SHOW = 0.1
+    MIN_PERCENT_TO_SHOW = 1.0
 
     def notification_text_large_single_tx(self, tx: ThorTx,
                                           usd_per_rune: float,
@@ -734,8 +734,8 @@ class BaseLocalization(ABC):  # == English
         cap = pool.get_synth_cap_in_asset_float(max_synth_per_asset_ratio)
         amount_more = how_much_savings_you_can_add(pool, max_synth_per_asset_ratio)
         saver_pb = self._cap_progress_bar(ThorCapInfo(cap, pool.synth_supply_float, usd_per_rune))
-        saver_pct = asset_amount / pool.savers_depth_float * 100.0 if pool.savers_depth else 100
-        return amount_more, Asset(pool.asset).name, saver_pb, thor_to_float(cap), saver_pct
+        saver_pct = asset_amount / cap * 100.0 if pool.savers_depth else 100
+        return amount_more, Asset(pool.asset).name, saver_pb, cap, saver_pct
 
     def notification_text_streaming_swap_started(self, e: AlertSwapStart, name_map: NameMap):
         user_link = self.link_to_address(e.from_address, name_map)
