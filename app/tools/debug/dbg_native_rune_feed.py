@@ -41,7 +41,7 @@ async def demo_native_block_action_detector(app, start=12209517):
 
 
 # sic!
-async def demo_block_scanner_active(app, send_alerts=False, catch_up=False):
+async def demo_block_scanner_active(app, send_alerts=False, catch_up=False, force_start_block=None):
     scanner = NativeScannerBlock(app.deps)
     detector = RuneTransferDetectorTxLogs()
     scanner.add_subscriber(detector)
@@ -49,7 +49,9 @@ async def demo_block_scanner_active(app, send_alerts=False, catch_up=False):
 
     if catch_up:
         await scanner.ensure_last_block()
-        scanner.last_block -= 30
+        scanner.last_block -= 3
+    elif force_start_block:
+        scanner.last_block = force_start_block
 
     if send_alerts:
         notifier = RuneMoveNotifier(app.deps)
@@ -143,7 +145,10 @@ async def main():
     app = LpAppFramework()
     async with app(brief=True):
         await demo_non_zero_code(app)
-        # await demo_block_scanner_active(app, send_alerts=False, catch_up=True)
+
+        await demo_block_scanner_active(app, send_alerts=False, catch_up=True)
+
+        # await demo_block_scanner_active(app, send_alerts=False, force_start_block=100)  # test behind your node
 
         # await demo_debug_personal_transfer(app)
 
