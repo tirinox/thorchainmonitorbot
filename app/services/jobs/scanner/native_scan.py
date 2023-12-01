@@ -31,6 +31,10 @@ class BlockResult:
 
     @property
     def only_successful(self) -> 'BlockResult':
+        if not self.txs or not self.tx_logs:
+            # Empty block
+            return self
+
         # a log is only present when tx's code == 0
         filtered_data = [(tx, log) for tx, log in zip(self.txs, self.tx_logs) if log]
         new_txs, new_logs = tuple(zip(*filtered_data))
