@@ -8,6 +8,7 @@ from services.lib.memo import THORMemo
 from services.lib.money import is_rune
 from services.models.events import EventSwap, EventStreamingSwap, EventOutbound, EventScheduledOutbound, \
     parse_swap_and_out_event, TypeEventSwapAndOut
+from services.models.price import LastPriceHolder
 from services.models.s_swap import StreamingSwap
 from services.models.tx import ThorTx, SUCCESS, ThorMetaSwap, ThorCoin, ThorSubTx
 from services.models.tx_type import TxType
@@ -93,8 +94,9 @@ class SwapProps(NamedTuple):
                 for ev in self.events:
                     # fixme: possible bug. it dest addy is THORName,
                     #  it will mismatch anyway because events have natural addresses
-                    if isinstance(ev,
-                                  EventOutbound) and ev.to_address != self.memo.dest_address and ev.is_outbound_memo:
+                    if (isinstance(ev, EventOutbound)
+                            and ev.to_address != self.memo.dest_address
+                            and ev.is_outbound_memo):
                         return ev.amount, ev.to_address
 
         return 0, ''  # otherwise not found
@@ -133,14 +135,31 @@ class SwapProps(NamedTuple):
 
         return [ThorSubTx(address, coins, '') for address, coins in results.items()]
 
+    def find_outbound(self, address) -> Optional[ThorCoin]:
+        for outbound in self.true_outbounds:
+            if outbound.to_address == address:
+                return ThorCoin(*outbound.amount_asset)
+
     @property
     def has_swaps(self):
         return any(isinstance(ev, EventSwap) for ev in self.events)
 
-    def build_tx(self) -> ThorTx:
+    @staticmethod
+    def _calculate_output_usd_volume(out_txs: List[ThorSubTx], pools: LastPriceHolder) -> Optional[float]:
+        out_usd = 0.0
+        for sub_tx in out_txs:
+            for coin in sub_tx.coins:
+                usd_value = pools.convert_to_usd(coin.amount_float, coin.asset)
+                if usd_value is None:
+                    return
+                out_usd += usd_value
+
+        return out_usd
+
+    def build_tx(self, price_holder: Optional[LastPriceHolder]) -> ThorTx:
         attrs = self.attrs
 
-        memo_str = self.attrs.get('memo', '')
+        memo_str = attrs.get('memo', '')
         height = int(attrs.get('block_height', 0))
         tx_id = attrs.get('id')
 
@@ -152,6 +171,8 @@ class SwapProps(NamedTuple):
             if swap.pool not in pools:
                 pools.append(swap.pool)
 
+            # todo: too low slip fee
+            # fixme: (!) work here
             liquidity_fee += swap.liquidity_fee_in_rune
             slip = max(slip, swap.swap_slip)
 
@@ -202,6 +223,13 @@ class SwapProps(NamedTuple):
                 failed_swap_reasons=[]
             )
 
+        input_usd_volume = attrs.get('volume_usd', 0.0)
+        output_usd_volume = self._calculate_output_usd_volume(out_tx, price_holder) if price_holder else None
+        affiliate_factor = self.memo.affiliate_fee
+        real_slip_usd = input_usd_volume - output_usd_volume - (input_usd_volume * affiliate_factor)
+        # slip = max(real_slip_usd, slip)
+        print(f"{tx_id =} ; {real_slip_usd = } ; block's {slip = }")
+
         network_fees = []  # ignore so far, not really used
 
         timestamp = int(datetime.now().timestamp() * 1e9)
@@ -218,7 +246,7 @@ class SwapProps(NamedTuple):
                 network_fees=network_fees,
                 trade_slip=slip,
                 trade_target=trade_target,
-                affiliate_fee=self.memo.affiliate_fee,  # (0..1)
+                affiliate_fee=affiliate_factor,  # (0..1)
                 memo=memo_str,
                 affiliate_address=affiliate_address,
                 streaming=ss_desc

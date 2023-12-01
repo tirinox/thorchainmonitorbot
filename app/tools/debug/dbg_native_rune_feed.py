@@ -142,7 +142,7 @@ async def demo_non_zero_code(app: LpAppFramework):
 async def main():
     app = LpAppFramework()
     async with app(brief=True):
-        await demo_non_zero_code(app)
+        # await demo_non_zero_code(app)
         # await demo_block_scanner_active(app, send_alerts=False, catch_up=True)
 
         # await demo_debug_personal_transfer(app)
@@ -153,7 +153,7 @@ async def main():
         # await demo_native_block_action_detector(app)
 
         # await debug_block_tx_status_check(app)
-        # await demo_rune_transfers_once(app, )  # block=12929445
+        await demo_rune_transfers_once(app, block=13670768)
 
 
 if __name__ == '__main__':
