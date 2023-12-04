@@ -30,6 +30,7 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
         move_cd_sec = parse_timespan_to_seconds(cfg.as_str('cooldown', 1))
         self.move_cd = Cooldown(self.deps.db, 'RuneMove', move_cd_sec, max_times=5)
 
+        self.flow_enabled = cfg.get_pure('flow_summary.enabled', True)
         summary_cd_sec = parse_timespan_to_seconds(cfg.as_str('flow_summary.cooldown', 1))
         self.summary_cd = Cooldown(self.deps.db, 'RuneMove.Summary', summary_cd_sec)
 
@@ -95,8 +96,9 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
             await self.handle_big_transfer(transfer, usd_per_rune)
             await self._store_transfer(transfer)
 
-        if transfers:
-            await self._notify_cex_flow(usd_per_rune)
+        if self.flow_enabled:
+            if transfers:
+                await self._notify_cex_flow(usd_per_rune)
 
     async def _notify_cex_flow(self, usd_per_rune):
         if await self.summary_cd.can_do():
