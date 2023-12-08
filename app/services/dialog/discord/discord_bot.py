@@ -50,7 +50,7 @@ class DiscordBot(WithLogger):
 
         # int(channel) is important! otherwise it will fail
         channel = self.client.get_channel(int(channel))
-        result = await channel.send(text, file=file)
+        result = await channel.send(text, file=file, suppress_embeds=True)
         self.logger.info(f'Result: {result}')
 
     async def send_message(self, chat_id, msg: BoardMessage, **kwargs) -> bool:
