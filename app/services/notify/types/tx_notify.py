@@ -217,3 +217,8 @@ class SwapTxNotifier(GenericTxNotifier):
 
         # e) Regular rules are applied
         return super().is_tx_suitable(tx, min_rune_volume, usd_per_rune, curve_mult)
+
+
+class RefundTxNotifier(GenericTxNotifier):
+    def __init__(self, deps: DepContainer, params: SubConfig, curve: DepthCurve):
+        super().__init__(deps, params, (TxType.REFUND,), curve)

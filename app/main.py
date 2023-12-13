@@ -85,7 +85,7 @@ from services.notify.types.savers_stats_notify import SaversStatsNotifier
 from services.notify.types.stats_notify import NetworkStatsNotifier
 from services.notify.types.supply_notify import SupplyNotifier
 from services.notify.types.transfer_notify import RuneMoveNotifier
-from services.notify.types.tx_notify import GenericTxNotifier, LiquidityTxNotifier, SwapTxNotifier
+from services.notify.types.tx_notify import GenericTxNotifier, LiquidityTxNotifier, SwapTxNotifier, RefundTxNotifier
 from services.notify.types.version_notify import VersionNotifier
 from services.notify.types.voting_notify import VotingNotifier
 
@@ -369,7 +369,7 @@ class App(WithLogger):
                     stream_swap_notifier.add_subscriber(d.alert_presenter)
 
             if d.cfg.tx.refund.get('enabled', True):
-                self.refund_notifier_tx = GenericTxNotifier(d, d.cfg.tx.refund, tx_types=(TxType.REFUND,), curve=curve)
+                self.refund_notifier_tx = RefundTxNotifier(d, d.cfg.tx.refund, curve=curve)
 
                 volume_filler.add_subscriber(self.refund_notifier_tx)
                 self.refund_notifier_tx.add_subscriber(d.alert_presenter)
