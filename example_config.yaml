@@ -514,9 +514,10 @@ constants:
       cooldown: 2h
 
 
-chain_halt_state:  # (!) renamed from chain_state
+chain_halt_state:
   enabled: true
   fetch_period: 67s
+  cooldown: 1h  # (!) new
 
 
 last_block:
