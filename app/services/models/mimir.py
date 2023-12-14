@@ -1,12 +1,11 @@
 import logging
 import math
 import operator
-import typing
 from dataclasses import dataclass
 from itertools import chain
+from typing import Dict, List, Optional, NamedTuple
 
 from aionode.types import ThorConstants, ThorMimir, ThorMimirVote
-
 from services.lib.constants import bp_to_float
 from services.lib.texts import split_by_camel_case
 from services.models.base import BaseModelMixin
@@ -33,9 +32,9 @@ class MimirVoteOption:
 @dataclass
 class MimirVoting:
     key: str
-    options: typing.Dict[int, MimirVoteOption]
+    options: Dict[int, MimirVoteOption]
     active_nodes: int
-    top_options: typing.List[MimirVoteOption]
+    top_options: List[MimirVoteOption]
 
     SUPER_MAJORITY = 0.66666667
 
@@ -70,7 +69,7 @@ class MimirVoting:
 
 
 class MimirVoteManager:
-    def __init__(self, all_votes: typing.List[ThorMimirVote], active_nodes: typing.List[NodeInfo], exclude_keys):
+    def __init__(self, all_votes: List[ThorMimirVote], active_nodes: List[NodeInfo], exclude_keys):
         active_signers = [n.node_address for n in active_nodes if n.node_address and n.is_active]
 
         # only active signer is allowed to vote
@@ -95,7 +94,7 @@ class MimirVoteManager:
             voting.finalize_calculations()
 
     @property
-    def all_voting_list(self) -> typing.List[MimirVoting]:
+    def all_voting_list(self) -> List[MimirVoting]:
         return list(self.all_voting.values())
 
     def find_voting(self, const_name):
@@ -163,13 +162,19 @@ class MimirChange(BaseModelMixin):
         return self.entry.automated and not is_admin
 
     @property
+    def is_automatic_to_automatic(self):
+        o, n = int(self.old_value), int(self.new_value)
+        both_auto = (o != ADMIN_VALUE and o != 0) and (n != 0 and n != ADMIN_VALUE)
+        return self.entry.automated and both_auto
+
+    @property
     def non_zero_value(self):
         return self.new_value if self.new_value != 0 else self.old_value
 
 
 class MimirHolder:
     def __init__(self) -> None:
-        self.last_changes: typing.Dict[str, float] = {}
+        self.last_changes: Dict[str, float] = {}
 
         self._const_map = {}
         self.all_names = set()
@@ -190,7 +195,7 @@ class MimirHolder:
     def detect_auto_solvency_checker(name: str, value):
         return MimirEntry.can_be_automatic(name) and (value != ADMIN_VALUE and value != 0)
 
-    def get_constant(self, name: str, default=0, const_type: typing.Optional[type] = int):
+    def get_constant(self, name: str, default=0, const_type: Optional[type] = int):
         entry = self.get_entry(name)
         if not entry:
             return default
@@ -200,7 +205,7 @@ class MimirHolder:
         entry = self.get_entry(name)
         return entry.hard_coded_value if entry else default
 
-    def get_entry(self, name) -> typing.Optional[MimirEntry]:
+    def get_entry(self, name) -> Optional[MimirEntry]:
         return self._const_map.get(name.upper())
 
     def pretty_name(self, name):
@@ -213,9 +218,9 @@ class MimirHolder:
     def update(self,
                constants: ThorConstants,
                mimir: ThorMimir,
-               node_mimir: typing.Dict[str, str],
-               node_votes: typing.List[ThorMimirVote],
-               active_nodes: typing.List[NodeInfo]):
+               node_mimir: Dict[str, str],
+               node_votes: List[ThorMimirVote],
+               active_nodes: List[NodeInfo]):
 
         self.voting_manager = MimirVoteManager(node_votes, active_nodes, EXCLUDED_VOTE_KEYS)
 
@@ -265,7 +270,7 @@ class MimirHolder:
             )
 
     @property
-    def all_entries(self) -> typing.List[MimirEntry]:
+    def all_entries(self) -> List[MimirEntry]:
         entries = [self._const_map[name] for name in self.all_names]
         entries.sort(key=lambda en: en.pretty_name)
         return entries
@@ -277,9 +282,11 @@ class MimirHolder:
             if entry and ts > 0:
                 entry.changed_ts = ts
 
-    def current_old_rune_kill_progress(self, current_block):
-        return 1.0
-
     def get_max_synth_per_pool_depth(self) -> float:
         value = self.get_constant(MIMIR_KEY_MAX_SYNTH_PER_POOL_DEPTH, 1500)
         return bp_to_float(value)
+
+
+class AlertMimirChange(NamedTuple):
+    changes: List[MimirChange]
+    holder: MimirHolder

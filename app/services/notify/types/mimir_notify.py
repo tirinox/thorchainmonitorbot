@@ -1,17 +1,15 @@
 import json
 
 from aionode.types import ThorMimir
-
-from localization.manager import BaseLocalization
 from services.jobs.fetch.const_mimir import ConstMimirFetcher, MimirTuple
 from services.lib.date_utils import now_ts
-from services.lib.delegates import INotified
+from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
-from services.models.mimir import MimirChange
+from services.models.mimir import MimirChange, AlertMimirChange
 
 
-class MimirChangedNotifier(INotified, WithLogger):
+class MimirChangedNotifier(INotified, WithDelegates, WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
@@ -73,15 +71,18 @@ class MimirChangedNotifier(INotified, WithLogger):
             old_value, new_value = None, None
 
             if name in fresh_const_names and name in old_const_names:
+                # test if value changed
                 old_value = old_mimir[name]
                 new_value = fresh_mimir[name]
                 if old_value != new_value:
                     change_kind = MimirChange.VALUE_CHANGE
             elif name in fresh_const_names and name not in old_const_names:
+                # test if there is new Mimir
                 new_value = fresh_mimir[name]
                 old_value = holder.get_hardcoded_const(name)
                 change_kind = MimirChange.ADDED_MIMIR
             elif name not in fresh_const_names and name in old_const_names:
+                # test if Mimir key deleted
                 old_value = old_mimir[name]
                 new_value = holder.get_hardcoded_const(name)
                 change_kind = MimirChange.REMOVED_MIMIR
@@ -94,7 +95,10 @@ class MimirChangedNotifier(INotified, WithLogger):
                         entry.source = entry.SOURCE_NODE_CEASED
 
                     change = MimirChange(change_kind, name, old_value, new_value, entry, timestamp)
-                    changes.append(change)
+
+                    if self._will_pass(change):
+                        changes.append(change)
+
                     await self._save_mimir_change_date(change)
 
         if fresh_mimir and fresh_mimir.constants:
@@ -102,11 +106,9 @@ class MimirChangedNotifier(INotified, WithLogger):
             await self._save_mimir_state(node_mimir, is_node_mimir=True)
 
         if changes:
-            await self.deps.broadcaster.notify_preconfigured_channels(
-                BaseLocalization.notification_text_mimir_changed,
-                changes,
-                self.deps.mimir_const_holder,
-            )
+            await self.pass_data_to_listeners(AlertMimirChange(
+                changes, self.deps.mimir_const_holder
+            ))
 
     DB_KEY_MIMIR_LAST_STATE = 'Mimir:LastState'
     DB_KEY_NODE_MIMIR_LAST_STATE = 'Mimir:Node:LastState'
@@ -126,3 +128,10 @@ class MimirChangedNotifier(INotified, WithLogger):
         db = await self.deps.db.get_redis()
         key = self.DB_KEY_NODE_MIMIR_LAST_STATE if is_node_mimir else self.DB_KEY_MIMIR_LAST_STATE
         await db.set(key, data)
+
+    @staticmethod
+    def _will_pass(c: MimirChange):
+        if c.is_automatic_to_automatic:
+            return False
+
+        return True

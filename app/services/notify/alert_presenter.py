@@ -18,6 +18,7 @@ from services.lib.w3.dex_analytics import DexReport
 from services.models.flipside import AlertKeyStats
 from services.models.last_block import EventBlockSpeed, BlockProduceState
 from services.models.loans import AlertLoanOpen, AlertLoanRepayment
+from services.models.mimir import AlertMimirChange
 from services.models.node_info import AlertNodeChurn
 from services.models.pol import AlertPOL
 from services.models.pool_info import PoolChanges
@@ -68,6 +69,8 @@ class AlertPresenter(INotified):
             await self._handle_loans(data)
         elif isinstance(data, AlertPrice):
             await self._handle_price(data)
+        elif isinstance(data, AlertMimirChange):
+            await self._handle_mimir(data)
 
     async def load_names(self, addresses) -> NameMap:
         if not (isinstance(addresses, (list, tuple))):
@@ -221,3 +224,10 @@ class AlertPresenter(INotified):
             await self.broadcaster.notify_preconfigured_channels(BoardMessage(event.ath_sticker, MessageType.STICKER))
 
         await self.broadcaster.notify_preconfigured_channels(price_graph_gen)
+
+    async def _handle_mimir(self, data: AlertMimirChange):
+        await self.deps.broadcaster.notify_preconfigured_channels(
+            BaseLocalization.notification_text_mimir_changed,
+            data.changes,
+            data.holder,
+        )
