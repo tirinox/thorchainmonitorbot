@@ -178,6 +178,7 @@ def capitalize_each_word(s):
 
 
 def sep(title='', simple=False):
+    title = str(title)
     if not simple:
         title = ' '.join(title.upper())
     if title:

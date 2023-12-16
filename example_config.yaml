@@ -311,6 +311,7 @@ tx:
     enabled: true
     min_usd_total: 50000
     curve_mult: 0.1
+    cooldown: 20m  # (!) new
 
   loans:
     enabled: true

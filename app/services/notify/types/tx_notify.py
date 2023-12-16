@@ -6,7 +6,8 @@ from aioredis import Redis
 
 from services.jobs.scanner.event_db import EventDatabase
 from services.lib.config import SubConfig
-from services.lib.date_utils import parse_timespan_to_seconds
+from services.lib.cooldown import Cooldown
+from services.lib.date_utils import parse_timespan_to_seconds, MINUTE
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.money import Asset, DepthCurve, pretty_dollar
@@ -54,22 +55,28 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
         with suppress(Exception):
             await self.handle_txs_unsafe(senders, txs)
 
+    async def _only_new_transactions(self, txs: List[ThorTx]):
+        flags = await asyncio.gather(*[self.is_announced(tx.tx_hash) for tx in txs])
+        tmp_txs = []
+        for flag, tx in zip(flags, txs):
+            if flag:
+                self.logger.warning(f'Tx {tx.tx_hash} ({tx.type}) has been already announced. Ignore!')
+            else:
+                tmp_txs.append(tx)
+        return tmp_txs
+
     async def handle_txs_unsafe(self, senders, txs: List[ThorTx]):
+        # 1. filter irrelevant tx types
         txs = [tx for tx in txs if tx.type in self.tx_types]  # filter my TX types
 
+        # 2. Throw away announced Txs in the past
         if self.no_repeat_protection:
-            flags = await asyncio.gather(*[self.is_announced(tx.tx_hash) for tx in txs])
-            tmp_txs = []
-            for flag, tx in zip(flags, txs):
-                if flag:
-                    self.logger.warning(f'Tx {tx.tx_hash} ({tx.type}) has been already announced. Ignore!')
-                else:
-                    tmp_txs.append(tx)
-            txs = tmp_txs
+            txs = await self._only_new_transactions(txs)
 
         if not txs:
             return
 
+        # 3. Select only large transactions
         usd_per_rune = self.deps.price_holder.usd_per_rune
         if not usd_per_rune:
             self.logger.error(f'Can not filter Txs, no USD/Rune price')
@@ -78,11 +85,13 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
         min_rune_volume = self.min_usd_total / usd_per_rune
 
         large_txs = [tx for tx in txs if self.is_tx_suitable(tx, min_rune_volume, usd_per_rune)]
-        large_txs = large_txs[:self.max_tx_per_single_message]  # limit for 1 notification
-
         if not large_txs:
             return
 
+        # 4. Limit Tx count per 1 tick (basically the number of transactions in each alert)
+        large_txs = large_txs[:self.max_tx_per_single_message]
+
+        # 5. Pass them down the pipeline
         self.logger.info(f"Large Txs count is {len(large_txs)}.")
 
         cap_info = await LiquidityCapNotifier.get_last_cap_from_db(self.deps.db)
@@ -222,3 +231,17 @@ class SwapTxNotifier(GenericTxNotifier):
 class RefundTxNotifier(GenericTxNotifier):
     def __init__(self, deps: DepContainer, params: SubConfig, curve: DepthCurve):
         super().__init__(deps, params, (TxType.REFUND,), curve)
+        cd_period = params.as_interval('cooldown', 5 * MINUTE)
+        self.refund_cd = Cooldown(deps.db, 'Refund', cd_period)
+
+    async def is_announced(self, tx_id):
+        before = await super().is_announced(tx_id)
+        if before:
+            return True
+
+        if not await self.refund_cd.can_do():
+            self.logger.warning(f'Refund announcement cooldown went off!')
+            return True
+
+        await self.refund_cd.do()
+        return False
