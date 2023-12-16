@@ -163,6 +163,9 @@ class MimirChange(BaseModelMixin):
 
     @property
     def is_automatic_to_automatic(self):
+        if self.old_value is None or self.new_value is None:
+            return False
+
         o, n = int(self.old_value), int(self.new_value)
         both_auto = (o != ADMIN_VALUE and o != 0) and (n != 0 and n != ADMIN_VALUE)
         return self.entry.automated and both_auto

@@ -66,6 +66,8 @@ class MimirMockChangesFetcher(ConstMimirFetcher):
     def __init__(self, deps: DepContainer, method: str):
         super().__init__(deps)
         self.method = method
+        self.prev = None
+        self.sleep_period = 3
 
     async def fetch(self) -> MimirTuple:
         results = await super().fetch()
@@ -128,8 +130,9 @@ class MimirMockChangesFetcher(ConstMimirFetcher):
     def _dbg_auto_to_auto(self, results: MimirTuple):
         key = 'HALTBNBTRADING'
 
+        self.prev = results.mimir.constants[key]
         current = results.mimir.constants[key] = next(self._dbg_wheel)
-        print(f'Mock: Mimir {key!r} is not {current}!')
+        print(f'Mock: Mimir {key!r} | {self.prev} => {current}!')
 
         return results
 
@@ -140,6 +143,8 @@ async def demo_mimir_spam_filter(app: LpAppFramework):
     mimir_notifier = MimirChangedNotifier(app.deps)
     mimir_fetcher.add_subscriber(mimir_notifier)
     mimir_notifier.add_subscriber(app.deps.alert_presenter)
+
+    await mimir_fetcher.run()
 
 
 async def run():

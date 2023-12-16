@@ -1489,7 +1489,7 @@ class BaseLocalization(ABC):  # == English
             return f'{time_str}, {blocks} {self.MIMIR_BLOCKS}'
         elif units == MimirUnits.UNITS_BOOL:
             s = self.MIMIR_YES if bool(int(v)) else self.MIMIR_NO
-            return f'{s} ({v})'
+            return f'{s}'
         elif units == MimirUnits.UNITS_NEXT_CHAIN:
             try:
                 v = int(v)
