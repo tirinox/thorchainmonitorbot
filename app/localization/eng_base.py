@@ -1203,12 +1203,12 @@ class BaseLocalization(ABC):  # == English
     def _extract_apy_deltas(new, old):
         if abs(old.bonding_apy - new.bonding_apy) > 0.01:
             bonding_apy_change = bracketify(
-                up_down_arrow(old.bonding_apy, new.bonding_apy, percent_delta=True))
+                up_down_arrow(old.bonding_apy, new.bonding_apy, money_delta=True, postfix=' pp'))
         else:
             bonding_apy_change = ''
         if abs(old.liquidity_apy - new.liquidity_apy) > 0.01:
             liquidity_apy_change = bracketify(
-                up_down_arrow(old.liquidity_apy, new.liquidity_apy, percent_delta=True))
+                up_down_arrow(old.liquidity_apy, new.liquidity_apy, money_delta=True, postfix=' pp'))
         else:
             liquidity_apy_change = ''
 
@@ -2067,7 +2067,7 @@ class BaseLocalization(ABC):  # == English
                 delta = 0
 
             try:
-                delta_p = bracketify(pretty_money(delta, signed=True, postfix='%')) if delta else ''
+                delta_p = bracketify(pretty_money(delta, signed=True, postfix=' pp')) if delta else ''
             except ValueError:
                 delta_p = ''
 

@@ -40,7 +40,9 @@ def randomize_all_fields(old: NetworkStats, dev=10):
 
 async def print_message(old_info: NetworkStats, new_info: NetworkStats, deps: DepContainer, post_tg=True, loc=None):
     loc: BaseLocalization = loc or deps.loc_man.default
+    market = deps.rune_market_fetcher._prev_result
     message = loc.notification_text_network_summary(old_info, new_info,
+                                                    market,
                                                     deps.node_holder.active_nodes)
     print('OLD:')
     print(old_info)
@@ -94,7 +96,7 @@ async def demo_pool_consistency():
         assert new_info.pending_pool_count == 6
 
     await print_message(old_info, new_info, lpgen.deps, post_tg=False, loc=lpgen.deps.loc_man.get_from_lang('rus'))
-    # await print_message(old_info, new_info, lpgen.deps, post_tg=False, loc=lpgen.deps.loc_man.get_from_lang('eng'))
+    await print_message(old_info, new_info, lpgen.deps, post_tg=False, loc=lpgen.deps.loc_man.get_from_lang('eng'))
 
 
 async def demo_generic_pool_message():
@@ -114,7 +116,7 @@ async def demo_generic_pool_message():
     old_info, new_info = get_info_pair_for_test(new_info)
 
     await print_message(old_info, new_info, lpgen.deps, loc=lpgen.deps.loc_man.get_from_lang('rus'))
-    # await print_message(old_info, new_info, lpgen.deps, loc=lpgen.deps.loc_man.get_from_lang('eng'))
+    await print_message(old_info, new_info, lpgen.deps, loc=lpgen.deps.loc_man.get_from_lang('eng'))
 
 
 def upd(old_value, new_value, smiley=False, more_is_better=True, same_result='',
@@ -151,8 +153,8 @@ async def demo_pool_stats():
 
 
 async def main():
-    # await demo_generic_pool_message()
-    await demo_pool_stats()
+    await demo_generic_pool_message()
+    # await demo_pool_stats()
 
 
 if __name__ == "__main__":
