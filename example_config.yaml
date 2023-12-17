@@ -507,6 +507,7 @@ node_info:
 constants:
   mimir_change:
     enabled: true
+    cooldown: 20m  # (!) new
   fetch_period: 130s
 
   voting:
@@ -588,7 +589,7 @@ key_metrics:
     cooldown: 7d
 
 
-borrowers:  # (!) new
+borrowers:
   enabled: true
   fetch_period: 10m
 

@@ -1,7 +1,9 @@
 import json
+from contextlib import suppress
 
 from aionode.types import ThorMimir
 from services.jobs.fetch.const_mimir import ConstMimirFetcher, MimirTuple
+from services.lib.cooldown import Cooldown
 from services.lib.date_utils import now_ts
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
@@ -13,6 +15,7 @@ class MimirChangedNotifier(INotified, WithDelegates, WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
+        self.cd_sec_change = deps.cfg.as_interval('constants.mimir_change.cooldown')
 
     @staticmethod
     def mimir_last_modification_key(name):
@@ -21,11 +24,10 @@ class MimirChangedNotifier(INotified, WithDelegates, WithLogger):
     async def last_mimir_change_date(self, name: str) -> float:
         if not name:
             return 0
-        try:
+        with suppress(Exception):
             data = await self.deps.db.redis.get(self.mimir_last_modification_key(name))
             return float(data)
-        except Exception:
-            return 0
+        return 0
 
     async def _save_mimir_change_date(self, change: MimirChange):
         try:
@@ -96,7 +98,7 @@ class MimirChangedNotifier(INotified, WithDelegates, WithLogger):
 
                     change = MimirChange(change_kind, name, old_value, new_value, entry, timestamp)
 
-                    if self._will_pass(change):
+                    if await self._will_pass(change):
                         changes.append(change)
 
                     await self._save_mimir_change_date(change)
@@ -129,9 +131,14 @@ class MimirChangedNotifier(INotified, WithDelegates, WithLogger):
         key = self.DB_KEY_NODE_MIMIR_LAST_STATE if is_node_mimir else self.DB_KEY_MIMIR_LAST_STATE
         await db.set(key, data)
 
-    @staticmethod
-    def _will_pass(c: MimirChange):
+    async def _will_pass(self, c: MimirChange):
         if c.is_automatic_to_automatic:
             return False
 
-        return True
+        cd = Cooldown(self.deps.db, f"MimirChange:{c.entry.name}", self.cd_sec_change, max_times=2)
+        if await cd.can_do():
+            await cd.do()
+            return True
+        else:
+            self.logger.warning(f'Mimir {c.entry.name!r} changes too often! Ignore.')
+            return False
