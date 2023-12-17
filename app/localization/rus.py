@@ -923,10 +923,10 @@ class RussianLocalization(BaseLocalization):
             message += f'💊 Объем торговли синтетиками: {synth_volume_rune} ({synth_volume_usd}) ' \
                        f'путем {synth_op_count} обменов 🆕\n'
 
-            if new.loss_protection_paid_24h_rune:
-                ilp_rune_str = code(short_rune(new.loss_protection_paid_24h_rune))
-                ilp_usd_str = code(short_dollar(new.loss_protection_paid_24h_rune * new.usd_per_rune))
-                message += f'🛡️ Выплачено страховки от IL сегодня: {ilp_rune_str} ({ilp_usd_str}) 🆕\n'
+            # if new.loss_protection_paid_24h_rune:
+            #     ilp_rune_str = code(short_rune(new.loss_protection_paid_24h_rune))
+            #     ilp_usd_str = code(short_dollar(new.loss_protection_paid_24h_rune * new.usd_per_rune))
+            #     message += f'🛡️ Выплачено страховки от IL сегодня: {ilp_rune_str} ({ilp_usd_str}) 🆕\n'
 
             message += '\n'
 
@@ -940,9 +940,9 @@ class RussianLocalization(BaseLocalization):
             f'{code(pretty_money(new.liquidity_apy, postfix="%"))}{liquidity_apy_change}.\n'
         )
 
-        message += (
-            f'🛡️ Всего выплачено страховки от IL (непостоянных потерь): '
-            f'{code(short_dollar(new.loss_protection_paid_usd))}.\n')
+        # message += (
+        #     f'🛡️ Всего выплачено страховки от IL (непостоянных потерь): '
+        #     f'{code(short_dollar(new.loss_protection_paid_usd))}.\n')
 
         if new.users_daily or new.users_monthly:
             daily_users_change = bracketify(up_down_arrow(old.users_daily, new.users_daily, int_delta=True))
