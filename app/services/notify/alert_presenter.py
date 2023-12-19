@@ -29,6 +29,7 @@ from services.models.transfer import RuneCEXFlow, RuneTransfer
 from services.models.tx import EventLargeTransaction
 from services.notify.broadcast import Broadcaster
 from services.notify.channel import BoardMessage, MessageType
+from services.notify.types.chain_notify import AlertChainHalt
 
 
 class AlertPresenter(INotified):
@@ -38,6 +39,7 @@ class AlertPresenter(INotified):
         self.name_service: NameService = deps.name_service
 
     async def on_data(self, sender, data):
+        # noinspection PyAsyncCall
         asyncio.create_task(self._handle_async(data))
 
     async def _handle_async(self, data):
@@ -71,6 +73,8 @@ class AlertPresenter(INotified):
             await self._handle_price(data)
         elif isinstance(data, AlertMimirChange):
             await self._handle_mimir(data)
+        elif isinstance(data, AlertChainHalt):
+            await self._handle_chain_halt(data)
 
     async def load_names(self, addresses) -> NameMap:
         if not (isinstance(addresses, (list, tuple))):
@@ -224,6 +228,12 @@ class AlertPresenter(INotified):
             await self.broadcaster.notify_preconfigured_channels(BoardMessage(event.ath_sticker, MessageType.STICKER))
 
         await self.broadcaster.notify_preconfigured_channels(price_graph_gen)
+
+    async def _handle_chain_halt(self, event: AlertChainHalt):
+        await self.broadcaster.notify_preconfigured_channels(
+            BaseLocalization.notification_text_trading_halted_multi,
+            event.changed_chains
+        )
 
     async def _handle_mimir(self, data: AlertMimirChange):
         await self.deps.broadcaster.notify_preconfigured_channels(

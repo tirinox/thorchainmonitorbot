@@ -1,19 +1,23 @@
 import json
 import random
-from typing import Dict
+from typing import Dict, NamedTuple, List
 
 from aionode.types import ThorChainInfo
 from localization.manager import BaseLocalization
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import MINUTE
-from services.lib.delegates import INotified
+from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 
 EXCLUDE_CHAINS_FROM_HALTED = ('TERRA',)
 
 
-class TradingHaltedNotifier(INotified, WithLogger):
+class AlertChainHalt(NamedTuple):
+    changed_chains: List[ThorChainInfo]
+
+
+class TradingHaltedNotifier(INotified, WithDelegates, WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
@@ -52,7 +56,6 @@ class TradingHaltedNotifier(INotified, WithLogger):
                 old_info = await self._get_saved_chain_state(chain)
                 if old_info and old_info.is_ok:
                     if old_info.halted != new_info.halted:
-
                         if await self._can_notify_on_chain(chain):
                             changed_chains.append(new_info)
 
@@ -64,6 +67,7 @@ class TradingHaltedNotifier(INotified, WithLogger):
                 BaseLocalization.notification_text_trading_halted_multi,
                 changed_chains
             )
+            await self.pass_data_to_listeners(AlertChainHalt(changed_chains))
 
             # after notification trigger the involved cooldown timers
             for chain_info in changed_chains:
