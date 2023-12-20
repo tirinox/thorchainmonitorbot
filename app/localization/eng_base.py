@@ -2067,7 +2067,11 @@ class BaseLocalization(ABC):  # == English
                 delta = 0
 
             try:
-                delta_p = bracketify(pretty_money(delta, signed=True, postfix=' pp')) if delta else ''
+                if attr_name == pd.BY_APY:
+                    delta_p = pretty_money(delta, signed=True, postfix=' pp')
+                else:
+                    delta_p = pretty_percent(delta)
+                delta_p = bracketify(delta_p) if delta else ''
             except ValueError:
                 delta_p = ''
 
