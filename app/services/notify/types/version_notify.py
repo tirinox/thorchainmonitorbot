@@ -72,18 +72,18 @@ class VersionNotifier(INotified, WithDelegates, WithLogger):
         self.min_step_for_upgrade = cfg.as_int('upgrade_progress.minimum_progress_step_percent', 5) * 0.01
 
     async def _find_new_versions(self, data: NodeSetChanges) -> List[VersionInfo]:
-        new_versions = data.new_versions
+        new_versions = data.version_set(data.nodes_all)
         if not new_versions:
-            return []
-
-        if not await self.cd_new_version.can_do():
             return []
 
         # filter out known ones
         versions_to_announce = []
         for new_v in new_versions:
             if not await self.store.is_version_known(new_v):
-                versions_to_announce.append(new_v)
+                n_nodes = data.count_version(data.nodes_all, new_v)
+                if n_nodes >= self.min_nodes_for_upgrade:
+                    versions_to_announce.append(new_v)
+
         return versions_to_announce
 
     @staticmethod
@@ -97,6 +97,9 @@ class VersionNotifier(INotified, WithDelegates, WithLogger):
         return None, None  # no change
 
     async def _handle_new_versions(self, data: NodeSetChanges):
+        if not await self.cd_new_version.can_do():
+            return
+
         new_versions = await self._find_new_versions(data)
 
         if new_versions:
