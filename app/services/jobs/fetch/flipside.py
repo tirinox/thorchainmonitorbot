@@ -13,7 +13,10 @@ KEY_DATETIME = '__dt'
 class FSList(dict):
     @staticmethod
     def parse_date(string_date):
-        return datetime.strptime(string_date, '%Y-%m-%d') if string_date else None
+        try:
+            return datetime.strptime(string_date, '%Y-%m-%d') if string_date else None
+        except ValueError:
+            return datetime.strptime(string_date, '%Y-%m-%d %H:%M:%S.%f')
 
     @staticmethod
     def get_date(obj: dict):
