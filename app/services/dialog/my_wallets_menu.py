@@ -733,7 +733,7 @@ class MyWalletsMenu(DialogWithSettings):
             await query.answer(self.loc.ALERT_UNSUBSCRIBED_FROM_LP)
         else:
             await LPMenuStates.SET_PERIOD.set()
-            kb = InlineKeyboardMarkup(inline_keyboard=[
+            keyboard = [
                 [
                     InlineKeyboardButton(self.loc.BUTTON_LP_PERIOD_1D, callback_data='1d'),
                     InlineKeyboardButton(self.loc.BUTTON_LP_PERIOD_1W, callback_data='7d'),
@@ -742,7 +742,14 @@ class MyWalletsMenu(DialogWithSettings):
                 [
                     InlineKeyboardButton(self.loc.BUTTON_CANCEL, callback_data=self.QUERY_CANCEL),
                 ]
-            ])
+            ]
+
+            if self.deps.cfg.is_debug_mode:
+                keyboard.insert(1, [
+                    InlineKeyboardButton('Debug: 30s', callback_data='30'),
+                ])
+
+            kb = InlineKeyboardMarkup(inline_keyboard=keyboard)
 
             if self.dbg_fast_subscription:
                 kb.inline_keyboard[0].append(InlineKeyboardButton("Dbg: 30 sec", callback_data='30'))
