@@ -166,3 +166,7 @@ class Config(SubConfig):
     @property
     def sleep_step(self):
         return self.as_interval('startup_step_delay', 3)
+
+    @property
+    def is_debug_mode(self):
+        return bool(self.get_pure('debug_mode', False))
