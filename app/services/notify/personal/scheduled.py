@@ -27,8 +27,10 @@ class PersonalPeriodicNotificationService(WithLogger, INotified):
 
     @staticmethod
     def key_parts(key):
-        parts = key.split('-')
-        return parts[0], parts[1], parts[2]
+        parts = key.split('-')  # '-' is very bad separator, because it can be in the asset name
+        user_id, address, *asset_parts = parts
+        asset = '-'.join(asset_parts)  # thus we reassemble the asset name
+        return user_id, address, asset
 
     async def cancel_all_for_user(self, user_id):
         key = self.key(user_id, '*', '*')
