@@ -16,6 +16,7 @@ URL_FS_LOCKED_VALUE = 'https://api.flipsidecrypto.com/api/v2/queries/37f64aee-ef
 URL_FS_SWAP_VOL = 'https://api.flipsidecrypto.com/api/v2/queries/ee1f4915-988d-4920-99c0-e9346d0bb07c/data/latest'
 URL_FS_ROUTES_V2 = 'https://api.flipsidecrypto.com/api/v2/queries/9084fde5-1019-479d-bd2c-77d482e9febb/data/latest'
 URL_FS_AFFILIATES_V3 = 'https://api.flipsidecrypto.com/api/v2/queries/8c8073e1-5722-4346-853a-749b90fab070/data/latest'
+URL_FS_AFFILIATES_V4 = 'https://flipsidecrypto.xyz/api/v1/queries/cebb9137-b58f-452d-a30a-6990a8e8fdc8/data/latest'
 
 
 class KeyStatsFetcher(BaseFetcher, WithLogger):
@@ -50,7 +51,7 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
             (URL_FS_UNIQUE_SWAPPERS, FSSwapCount, None),
             (URL_FS_LOCKED_VALUE, FSLockedValue, None),
             (URL_FS_SWAP_VOL, FSSwapVolume, None),
-            (URL_FS_AFFILIATES_V3, FSAffiliateCollectors, None),
+            (URL_FS_AFFILIATES_V4, FSAffiliateCollectors, None),
         ]
 
         # Actual API requests
