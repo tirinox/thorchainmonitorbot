@@ -536,6 +536,7 @@ class App(WithLogger):
 
             notifier = LendingStatsNotifier(d)
             notifier.add_subscriber(d.alert_presenter)
+            borrowers_fetcher.add_subscriber(notifier)
 
             if achievements_enabled:
                 borrowers_fetcher.add_subscriber(achievements)
