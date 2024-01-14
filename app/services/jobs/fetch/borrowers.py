@@ -1,3 +1,4 @@
+import datetime
 from typing import List, Optional
 
 from services.jobs.fetch.base import BaseFetcher
@@ -44,7 +45,7 @@ class BorrowersFetcher(BaseFetcher):
         if lending_stats.data_age > MAX_AGE_TO_REPORT_ERROR:
             self.deps.emergency.report(self.name,
                                        'Lending data is too old',
-                                       day=str(lending_stats.day))
+                                       day=str(datetime.datetime.fromtimestamp(lending_stats.timestamp_day)))
             return
 
         return lending_stats

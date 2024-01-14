@@ -3,8 +3,8 @@ import logging
 import os
 
 import aioredis.exceptions
-from aionode.connector import ThorConnector
 
+from aionode.connector import ThorConnector
 from localization.admin import AdminMessages
 from localization.manager import LocalizationManager
 from services.dialog.discord.discord_bot import DiscordBot
@@ -72,6 +72,7 @@ from services.notify.types.cap_notify import LiquidityCapNotifier
 from services.notify.types.chain_notify import TradingHaltedNotifier
 from services.notify.types.dex_report_notify import DexReportNotifier
 from services.notify.types.key_metrics_notify import KeyMetricsNotifier
+from services.notify.types.lend_stats_notify import LendingStatsNotifier
 from services.notify.types.loans_notify import LoanTxNotifier
 from services.notify.types.mimir_notify import MimirChangedNotifier
 from services.notify.types.node_churn_notify import NodeChurnNotifier
@@ -532,6 +533,10 @@ class App(WithLogger):
         if d.cfg.get('borrowers.enabled', True):
             borrowers_fetcher = BorrowersFetcher(d)
             tasks.append(borrowers_fetcher)
+
+            notifier = LendingStatsNotifier(d)
+            notifier.add_subscriber(d.alert_presenter)
+
             if achievements_enabled:
                 borrowers_fetcher.add_subscriber(achievements)
 

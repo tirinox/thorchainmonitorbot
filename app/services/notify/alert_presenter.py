@@ -17,7 +17,7 @@ from services.lib.midgard.name_service import NameService, NameMap
 from services.lib.w3.dex_analytics import DexReport
 from services.models.flipside import AlertKeyStats
 from services.models.last_block import EventBlockSpeed, BlockProduceState
-from services.models.loans import AlertLoanOpen, AlertLoanRepayment
+from services.models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats
 from services.models.mimir import AlertMimirChange
 from services.models.node_info import AlertNodeChurn
 from services.models.pol import AlertPOL
@@ -75,6 +75,8 @@ class AlertPresenter(INotified):
             await self._handle_mimir(data)
         elif isinstance(data, AlertChainHalt):
             await self._handle_chain_halt(data)
+        elif isinstance(data, AlertLendingStats):
+            await self._handle_lending_stats(data)
 
     async def load_names(self, addresses) -> NameMap:
         if not (isinstance(addresses, (list, tuple))):
@@ -240,4 +242,10 @@ class AlertPresenter(INotified):
             BaseLocalization.notification_text_mimir_changed,
             data.changes,
             data.holder,
+        )
+
+    async def _handle_lending_stats(self, data: AlertLendingStats):
+        await self.deps.broadcaster.notify_preconfigured_channels(
+            BaseLocalization.notification_lending_stats,
+            data,
         )

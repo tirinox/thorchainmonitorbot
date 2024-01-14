@@ -2,9 +2,9 @@ from datetime import datetime
 from math import ceil
 from typing import List, Optional
 
-from aionode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
+from aionode.types import ThorChainInfo, ThorBalances
 from localization.achievements.ach_rus import AchievementsRussianLocalization
 from localization.eng_base import BaseLocalization, CREATOR_TG, URL_LEADERBOARD_MCCN
 from proto.types import ThorName
@@ -25,7 +25,7 @@ from services.lib.w3.dex_analytics import DexReportEntry, DexReport
 from services.models.cap_info import ThorCapInfo
 from services.models.flipside import AlertKeyStats
 from services.models.last_block import BlockProduceState, EventBlockSpeed
-from services.models.loans import AlertLoanOpen, AlertLoanRepayment
+from services.models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats
 from services.models.lp_info import LiquidityPoolReport
 from services.models.mimir import MimirChange, MimirHolder
 from services.models.net_stats import NetworkStats
@@ -1877,6 +1877,23 @@ class RussianLocalization(BaseLocalization):
             f'Выплачен долг: {pre(pretty_dollar(l.debt_repaid_usd))}\n'
             f'{user_link} | {db_link}'
         )
+
+    def notification_lending_stats(self, event: AlertLendingStats):
+        curr = event.current
+        return (
+            f'<b>Статистика кредитования</b>\n\n'
+            f'🙋‍♀️ Число заемщиков: {bold(pretty_money(curr.borrower_count))}\n'
+            f'📝 Количество транзакций: {bold(pretty_money(curr.lending_tx_count))}\n'
+            f'💰 Общее обеспечение: {bold(short_dollar(curr.total_collateral_value_usd))}\n'
+            f'💸 Объем займов: {bold(short_dollar(curr.total_borrowed_amount_usd))}\n'
+            f'₿ Bitcoin CR: {bold(short_money(curr.btc_current_cr))}, '
+            f'LTV: {bold(short_money(curr.btc_current_ltv))}\n'
+            f'Ξ Ethereum CR: {bold(short_money(curr.eth_current_cr))}, '
+            f'LTV: {bold(short_money(curr.eth_current_ltv))}\n'
+            f'❤️‍🔥 Rune сожжено: {bold(short_rune(curr.rune_burned_rune))}'
+        )
+
+    # ------ Bond providers alerts ------
 
     TEXT_BOND_PROVIDER_ALERT_FOR = 'Оповещение для поставщика бонда'
     TEXT_BP_NODE = '🖥️ Нода'

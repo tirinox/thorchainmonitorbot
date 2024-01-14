@@ -589,7 +589,7 @@ key_metrics:
     cooldown: 7d
 
 
-borrowers:
+borrowers:  # (!) new
   enabled: true
   fetch_period: 10m
-
+  cooldown: 1d

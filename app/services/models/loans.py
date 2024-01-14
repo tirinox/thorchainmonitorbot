@@ -1,6 +1,6 @@
 import datetime
 from datetime import date
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 from services.jobs.fetch.flipside import FSList
 from services.lib.date_utils import now_ts
@@ -38,7 +38,7 @@ class LendingStats(NamedTuple):
     eth_current_cr: float
     btc_current_ltv: float
     eth_current_ltv: float
-    day: date
+    timestamp_day: float
 
     @classmethod
     def from_fs_json(cls, j):
@@ -53,9 +53,14 @@ class LendingStats(NamedTuple):
             eth_current_cr=j['ETH_CURRENT_CR'],
             btc_current_ltv=j['BTC_CURRENT_LTV'],
             eth_current_ltv=j['ETH_CURRENT_LTV'],
-            day=FSList.parse_date(j['DAY'])
+            timestamp_day=FSList.parse_date(j['DAY']).timestamp()
         )
 
     @property
     def data_age(self) -> float:
-        return now_ts() - datetime.datetime(self.day.year, self.day.month, self.day.day).timestamp()
+        return now_ts() - self.timestamp_day
+
+
+class AlertLendingStats(NamedTuple):
+    current: LendingStats
+    previous: Optional[LendingStats]

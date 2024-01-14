@@ -1,12 +1,14 @@
 import asyncio
 
-from services.jobs.achievement.extractor import AchievementsExtractor
+from localization.eng_base import BaseLocalization
 from services.jobs.fetch.borrowers import BorrowersFetcher
 from services.jobs.scanner.event_db import EventDatabase
 from services.jobs.scanner.loan_extractor import LoanExtractorBlock
 from services.jobs.scanner.native_scan import NativeScannerBlock
 from services.lib.money import DepthCurve
 from services.lib.texts import sep
+from services.models.loans import AlertLendingStats
+from services.notify.types.lend_stats_notify import LendingStatsNotifier
 from services.notify.types.loans_notify import LoanTxNotifier
 from tools.lib.lp_common import LpAppFramework
 
@@ -75,13 +77,30 @@ async def debug_tx_records(app: LpAppFramework, tx_id):
     print(tx)
 
 
+async def demo_lending_stats_old(app: LpAppFramework):
+    borrowers_fetcher = BorrowersFetcher(app.deps)
+
+    notifier = LendingStatsNotifier(app.deps)
+    notifier.add_subscriber(app.deps.alert_presenter)
+
+    await notifier.cd.clear()
+
+    borrowers_fetcher.add_subscriber(notifier)
+
+    await borrowers_fetcher.run_once()
+
+    await asyncio.sleep(5)
+
+
 async def demo_lending_stats(app: LpAppFramework):
     borrowers_fetcher = BorrowersFetcher(app.deps)
-    r = await borrowers_fetcher.fetch()
-    print(r)
-    sep()
-    events = await AchievementsExtractor(app.deps).extract_events_by_type(None, r)
-    print(events)
+    data = await borrowers_fetcher.fetch()
+
+    data = AlertLendingStats(data, None)
+
+    await app.test_all_locs(
+        BaseLocalization.notification_lending_stats, data
+    )
 
 
 async def run():
@@ -91,6 +110,7 @@ async def run():
         await app.deps.last_block_fetcher.run_once()
 
         await demo_lending_stats(app)
+        # await demo_lending_stats_old(app)
 
         # await debug_block_analyse(app, 12262380)
         # await debug_tx_records(app, 'xxx')

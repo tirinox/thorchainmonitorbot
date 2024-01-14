@@ -4,9 +4,9 @@ from datetime import datetime
 from math import ceil
 from typing import List, Optional
 
-from aionode.types import ThorChainInfo, ThorBalances
 from semver import VersionInfo
 
+from aionode.types import ThorChainInfo, ThorBalances
 from localization.achievements.ach_eng import AchievementsEnglishLocalization
 from proto.types import ThorName
 from services.jobs.fetch.circulating import ThorRealms
@@ -28,7 +28,7 @@ from services.lib.w3.token_record import AmountToken
 from services.models.cap_info import ThorCapInfo
 from services.models.flipside import AlertKeyStats
 from services.models.last_block import BlockProduceState, EventBlockSpeed
-from services.models.loans import AlertLoanOpen, AlertLoanRepayment
+from services.models.loans import AlertLoanOpen, AlertLoanRepayment, LendingStats, AlertLendingStats
 from services.models.lp_info import LiquidityPoolReport
 from services.models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting, MimirVoteOption
 from services.models.mimir_naming import MimirUnits, NEXT_CHAIN_VOTING_MAP
@@ -2488,6 +2488,23 @@ class BaseLocalization(ABC):  # == English
             f'Debt repaid: {pre(pretty_dollar(event.loan.debt_repaid_usd))}\n'
             f'{user_link} | {db_link}'
         )
+
+    def notification_lending_stats(self, event: AlertLendingStats):
+        curr = event.current
+        return (
+            f'<b>Lending stats</b>\n\n'
+            f'🙋‍♀️ Borrower count: {bold(pretty_money(curr.borrower_count))}\n'
+            f'📝 Lending Tx count: {bold(pretty_money(curr.lending_tx_count))}\n'
+            f'💰 Total collateral value: {bold(short_dollar(curr.total_collateral_value_usd))}\n'
+            f'💸 Total borrowed value: {bold(short_dollar(curr.total_borrowed_amount_usd))}\n'
+            f'₿ Bitcoin CR: {bold(short_money(curr.btc_current_cr))}, '
+            f'LTV: {bold(short_money(curr.btc_current_ltv))}\n'
+            f'Ξ Ethereum CR: {bold(short_money(curr.eth_current_cr))}, '
+            f'LTV: {bold(short_money(curr.eth_current_ltv))}\n'
+            f'❤️‍🔥 Rune burned: {bold(short_rune(curr.rune_burned_rune))}'
+        )
+
+    # ------ Bond providers alerts ------
 
     TEXT_BOND_PROVIDER_ALERT_FOR = 'Alert for bond provider'
     TEXT_BP_NODE = '🖥️ Node'

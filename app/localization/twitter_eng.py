@@ -20,7 +20,7 @@ from services.lib.w3.dex_analytics import DexReportEntry, DexReport
 from services.models.cap_info import ThorCapInfo
 from services.models.flipside import AlertKeyStats
 from services.models.last_block import EventBlockSpeed, BlockProduceState
-from services.models.loans import AlertLoanOpen, AlertLoanRepayment
+from services.models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats
 from services.models.mimir import MimirChange, MimirHolder
 from services.models.mimir_naming import MimirUnits
 from services.models.net_stats import NetworkStats
@@ -961,4 +961,19 @@ class TwitterEnglishLocalization(BaseLocalization):
             f' ({pretty_dollar(event.collateral_usd)})\n'
             f'Debt repaid: {pretty_dollar(l.debt_repaid_usd)}\n'
             f'{self.LENDING_DASHBOARD_URL}'
+        )
+
+    def notification_lending_stats(self, event: AlertLendingStats):
+        curr = event.current
+        return (
+            f'Lending stats\n\n'
+            f'🙋‍♀️ Borrower count: {pretty_money(curr.borrower_count)}\n'
+            f'📝 Tx count: {pretty_money(curr.lending_tx_count)}\n'
+            f'💰 Total collateral: {short_dollar(curr.total_collateral_value_usd)}\n'
+            f'💸 Total borrowed: {short_dollar(curr.total_borrowed_amount_usd)}\n'
+            f'₿ Bitcoin CR: {short_money(curr.btc_current_cr)}, '
+            f'LTV: {short_money(curr.btc_current_ltv)}\n'
+            f'Ξ Ethereum CR: {short_money(curr.eth_current_cr)}, '
+            f'LTV: {short_money(curr.eth_current_ltv)}\n'
+            f'❤️‍🔥 Rune burned: {short_rune(curr.rune_burned_rune)}'
         )

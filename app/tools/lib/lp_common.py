@@ -3,6 +3,7 @@ import os
 
 from main import App
 from services.dialog.telegram.telegram import telegram_send_message_basic, TG_TEST_USER
+from services.dialog.twitter.text_length import twitter_text_length
 from services.dialog.twitter.twitter_bot import TwitterBotMock
 from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
 from services.jobs.fetch.last_block import LastBlockFetcher
@@ -18,7 +19,8 @@ from services.notify.types.block_notify import LastBlockStore
 
 
 class LpAppFramework(App):
-    def __init__(self, rune_yield_class=None, network=None, log_level=logging.DEBUG, brief=None, emergency=True) -> None:
+    def __init__(self, rune_yield_class=None, network=None, log_level=logging.DEBUG, brief=None,
+                 emergency=True) -> None:
         self.solve_working_dir_mess()  # first of all!
 
         super().__init__(log_level)
@@ -101,6 +103,16 @@ class LpAppFramework(App):
     def __call__(self, brief=False):
         self.brief = brief
         return self
+
+    async def test_all_locs(self, f, *args, **kwargs):
+        locs = self.deps.loc_man.all
+        for loc in locs:
+            f = getattr(loc, f.__name__)
+            text = f(*args, **kwargs)
+            print(text)
+            print(f"\nTwitter len: {twitter_text_length(text)}")
+            await self.send_test_tg_message(text)
+            sep()
 
 
 class LpGenerator(LpAppFramework):
