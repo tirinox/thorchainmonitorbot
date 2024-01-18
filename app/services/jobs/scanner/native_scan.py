@@ -71,6 +71,9 @@ class NativeScannerBlock(BaseFetcher):
         self._block_cycle = 0
         self._last_block_ts = 0
 
+        self.last_processed_block = 0
+        self.last_block_ts = 0
+
         # if more time has passed since the last block, we should run aggressive scan
         self._time_tolerance_for_aggressive_scan = THOR_BLOCK_TIME * 1.1  # 6 sec + 10%
 
@@ -231,6 +234,9 @@ class NativeScannerBlock(BaseFetcher):
                 if block_result is None:
                     self._on_error('None returned')
                     break
+
+                self.last_processed_block = self._last_block
+                self.last_block_ts = now_ts()
 
                 if block_result.is_error:
                     if self.allow_jumps:

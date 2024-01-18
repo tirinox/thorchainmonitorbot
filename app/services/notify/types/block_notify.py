@@ -56,6 +56,9 @@ class LastBlockStore(INotified, WithDelegates, WithLogger):
     async def get_last_block_height_points(self, duration_sec=DAY):
         return await self.series.get_last_values(duration_sec, key='thor_block', with_ts=True, decoder=int)
 
+    def __int__(self):
+        return self.last_thor_block
+
 
 class BlockHeightNotifier(INotified, WithDelegates, WithLogger):
     KEY_LAST_TIME_BLOCK_UPDATED = 'ThorBlock:LastTime'

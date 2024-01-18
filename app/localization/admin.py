@@ -1,11 +1,13 @@
 import asyncio
 
 from services.jobs.fetch.base import DataController, BaseFetcher
+from services.jobs.scanner.native_scan import NativeScannerBlock
+from services.lib.constants import THOR_BLOCK_TIME
 from services.lib.date_utils import format_time_ago, now_ts, MINUTE, seconds_human
 from services.lib.depcont import DepContainer
 from services.lib.http_ses import ObservableSession, RequestEntry
 from services.lib.money import format_percent, short_address
-from services.lib.texts import bold, pre, ital, link
+from services.lib.texts import bold, pre, ital, link, code
 
 
 class AdminMessages:
@@ -18,6 +20,7 @@ class AdminMessages:
     BUTT_HTTP = 'HTTP'
     BUTT_FETCHERS = 'Fetchers'
     BUTT_TASKS = 'Tasks'
+    BUTT_SCANNER = 'Scanner'
     BUTT_GLOBAL_PAUSE = 'Pause all'
     BUTT_GLOBAL_RESUME = 'Resume all'
     TEXT_ALL_PAUSED = 'All paused!'
@@ -136,8 +139,24 @@ class AdminMessages:
     @staticmethod
     async def get_debug_message_tasks():
         tasks = asyncio.all_tasks()
-        message = ''
+
+        acc_message = ''
         for i, task in enumerate(tasks, start=1):
-            message += f'{i}. {task}\n\n'
-        print(message)
+            acc_message += f'{i}. {task}\n\n'
+        print(acc_message)
+
         return f'Check the terminal please.'
+
+    async def get_message_about_scanner(self):
+        scanner: NativeScannerBlock = self.deps.block_scanner
+        last_thor_block = int(self.deps.last_block_store)
+        block_diff = (last_thor_block - scanner.last_processed_block)
+
+        return (
+            f'<b>Native block scanner</b>\n\n'
+            f'Last block: {bold(scanner.last_processed_block)}\n'
+            f'Time since: {bold(format_time_ago(now_ts() - scanner.last_block_ts))}\n'
+            f'Node last block: {bold(last_thor_block)}\n'
+            f'Difference last - processed: {bold(block_diff)} or '
+            f'{bold(format_time_ago(block_diff * THOR_BLOCK_TIME))}'
+        )

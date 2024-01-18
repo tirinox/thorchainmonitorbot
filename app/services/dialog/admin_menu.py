@@ -76,7 +76,8 @@ class AdminDialog(BaseDialog):
     async def show_info_menu(self, message: Message):
         await AdminStates.INFO_SUBMENU.set()
         await message.answer('Info menu', disable_notification=True, reply_markup=kbd([
-            [self.adm_loc.BUTT_HTTP, self.adm_loc.BUTT_FETCHERS, self.adm_loc.BUTT_TASKS],
+            [self.adm_loc.BUTT_HTTP, self.adm_loc.BUTT_FETCHERS],
+            [self.adm_loc.BUTT_SCANNER, self.adm_loc.BUTT_TASKS],
             [self.adm_loc.BUTT_BACK],
         ]))
 
@@ -90,6 +91,8 @@ class AdminDialog(BaseDialog):
             await self.show_debug_info_fetchers(message)
         elif message.text == self.adm_loc.BUTT_TASKS:
             await self.show_debug_info_tasks(message)
+        elif message.text == self.adm_loc.BUTT_SCANNER:
+            await self.show_debug_info_scanner(message)
 
     async def show_debug_info_about_http(self, message: Message):
         text = await self.adm_loc.get_debug_message_text_session()
@@ -106,6 +109,12 @@ class AdminDialog(BaseDialog):
 
     async def show_debug_info_fetchers(self, message: Message):
         text = await self.adm_loc.get_debug_message_text_fetcher()
+        await message.answer(text,
+                             disable_notification=True,
+                             disable_web_page_preview=True)
+
+    async def show_debug_info_scanner(self, message: Message):
+        text = await self.adm_loc.get_message_about_scanner()
         await message.answer(text,
                              disable_notification=True,
                              disable_web_page_preview=True)
