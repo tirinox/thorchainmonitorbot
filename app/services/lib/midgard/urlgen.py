@@ -80,4 +80,8 @@ class MidgardURLGenV2(MidgardURLGenBase):
     def url_borrowers(self):
         return f'{self.base_url}/v2/borrowers'
 
+    def url_borrower(self, address):
+        return f'{self.base_url}/v2/borrower/{address}'
+
+
 free_url_gen = MidgardURLGenV2('')
