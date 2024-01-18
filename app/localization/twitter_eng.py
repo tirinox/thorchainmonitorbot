@@ -975,5 +975,6 @@ class TwitterEnglishLocalization(BaseLocalization):
             f'LTV: {short_money(curr.btc_current_ltv)}\n'
             f'Ξ Ethereum CR: {short_money(curr.eth_current_cr)}, '
             f'LTV: {short_money(curr.eth_current_ltv)}\n'
-            f'❤️‍🔥 Rune burned: {short_rune(curr.rune_burned_rune)}'
+            f'❤️‍🔥 Rune burned: {short_rune(curr.rune_burned_rune)}\n\n'
+            f'{self.LENDING_LINK}'
         )

@@ -2489,6 +2489,8 @@ class BaseLocalization(ABC):  # == English
             f'{user_link} | {db_link}'
         )
 
+    LENDING_LINK = "https://flipsidecrypto.xyz/banbannard/%E2%9A%A1-thor-chain-lending-thorchain-lending-fOAKej"
+
     def notification_lending_stats(self, event: AlertLendingStats):
         curr = event.current
         return (
@@ -2501,7 +2503,8 @@ class BaseLocalization(ABC):  # == English
             f'LTV: {bold(short_money(curr.btc_current_ltv))}\n'
             f'Ξ Ethereum CR: {bold(short_money(curr.eth_current_cr))}, '
             f'LTV: {bold(short_money(curr.eth_current_ltv))}\n'
-            f'❤️‍🔥 Rune burned: {bold(short_rune(curr.rune_burned_rune))}'
+            f'❤️‍🔥 Rune burned: {bold(short_rune(curr.rune_burned_rune))}\n\n'
+            f'{link(self.LENDING_LINK, "Details")}'
         )
 
     # ------ Bond providers alerts ------

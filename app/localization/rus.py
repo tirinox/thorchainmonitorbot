@@ -1890,7 +1890,8 @@ class RussianLocalization(BaseLocalization):
             f'LTV: {bold(short_money(curr.btc_current_ltv))}\n'
             f'Ξ Ethereum CR: {bold(short_money(curr.eth_current_cr))}, '
             f'LTV: {bold(short_money(curr.eth_current_ltv))}\n'
-            f'❤️‍🔥 Rune сожжено: {bold(short_rune(curr.rune_burned_rune))}'
+            f'❤️‍🔥 Rune сожжено: {bold(short_rune(curr.rune_burned_rune))}\n\n'
+            f'{link(self.LENDING_LINK, "Подробности")}'
         )
 
     # ------ Bond providers alerts ------
