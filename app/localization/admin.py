@@ -7,7 +7,7 @@ from services.lib.date_utils import format_time_ago, now_ts, MINUTE, seconds_hum
 from services.lib.depcont import DepContainer
 from services.lib.http_ses import ObservableSession, RequestEntry
 from services.lib.money import format_percent, short_address
-from services.lib.texts import bold, pre, ital, link, code
+from services.lib.texts import bold, pre, ital, link
 
 
 class AdminMessages:
@@ -150,11 +150,11 @@ class AdminMessages:
     async def get_message_about_scanner(self):
         scanner: NativeScannerBlock = self.deps.block_scanner
         last_thor_block = int(self.deps.last_block_store)
-        block_diff = (last_thor_block - scanner.last_processed_block)
+        block_diff = (last_thor_block - scanner.last_block)
 
         return (
             f'<b>Native block scanner</b>\n\n'
-            f'Last block: {bold(scanner.last_processed_block)}\n'
+            f'Last block: {bold(scanner.last_block)}\n'
             f'Time since: {bold(format_time_ago(now_ts() - scanner.last_block_ts))}\n'
             f'Node last block: {bold(last_thor_block)}\n'
             f'Difference last - processed: {bold(block_diff)} or '

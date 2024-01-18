@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 import pickle
 
 from localization.eng_base import BaseLocalization
@@ -41,11 +42,18 @@ async def demo_native_block_action_detector(app, start=12209517):
 
 
 # sic!
-async def demo_block_scanner_active(app, send_alerts=False, catch_up=False, force_start_block=None):
-    scanner = NativeScannerBlock(app.deps)
+async def demo_block_scanner_active(app, send_alerts=False, catch_up=False, force_start_block=None,
+                                    print_txs=False):
+    d = app.deps
+    scanner = NativeScannerBlock(d, sleep_period=10.0)
     detector = RuneTransferDetectorTxLogs()
     scanner.add_subscriber(detector)
-    detector.add_subscriber(Receiver('Transfer'))
+
+    d.last_block_fetcher.add_subscriber(d.last_block_store)
+    asyncio.create_task(d.last_block_fetcher.run())
+
+    if print_txs:
+        detector.add_subscriber(Receiver('Transfer'))
 
     if catch_up:
         await scanner.ensure_last_block()
@@ -142,7 +150,7 @@ async def demo_non_zero_code(app: LpAppFramework):
 
 
 async def main():
-    app = LpAppFramework()
+    app = LpAppFramework(log_level=logging.INFO)
     async with app(brief=True):
         await demo_non_zero_code(app)
 
