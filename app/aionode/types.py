@@ -606,3 +606,21 @@ class ThorNetwork(NamedTuple):
             total_reserve=int(j.get('total_reserve', 0)),
             vaults_migrating=bool(j.get('vaults_migrating', False)),
         )
+
+
+class ThorSwapperClout(NamedTuple):
+    address: str
+    score: int
+    reclaimed: int
+    spent: int
+    last_spent_height: int
+
+    @classmethod
+    def from_json(cls, j):
+        return cls(
+            address=j.get('address', ''),
+            score=int(j.get('score', 0)),
+            reclaimed=int(j.get('reclaimed', 0)),
+            spent=int(j.get('spent', 0)),
+            last_spent_height=int(j.get('last_spent_height', 0)),
+        )

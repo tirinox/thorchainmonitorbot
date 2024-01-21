@@ -150,6 +150,12 @@ class ThorConnector:
         if data:
             return ThorNetwork.from_json(data)
 
+    async def query_swapper_clout(self, address: str, height=0):
+        url = self.env.path_swapper_clout.format(address=address, height=height)
+        data = await self._request(url)
+        if data:
+            return ThorSwapperClout.from_json(data)
+
     # ---- Internal ----
 
     def __init__(self, env: ThorEnvironment, session: ClientSession, logger=None, extra_headers=None,
