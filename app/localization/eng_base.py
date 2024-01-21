@@ -6,7 +6,7 @@ from typing import List, Optional
 
 from semver import VersionInfo
 
-from aionode.types import ThorChainInfo, ThorBalances
+from aionode.types import ThorChainInfo, ThorBalances, ThorSwapperClout
 from localization.achievements.ach_eng import AchievementsEnglishLocalization
 from proto.types import ThorName
 from services.jobs.fetch.circulating import ThorRealms
@@ -28,7 +28,7 @@ from services.lib.w3.token_record import AmountToken
 from services.models.cap_info import ThorCapInfo
 from services.models.flipside import AlertKeyStats
 from services.models.last_block import BlockProduceState, EventBlockSpeed
-from services.models.loans import AlertLoanOpen, AlertLoanRepayment, LendingStats, AlertLendingStats
+from services.models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats
 from services.models.lp_info import LiquidityPoolReport
 from services.models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting, MimirVoteOption
 from services.models.mimir_naming import MimirUnits, NEXT_CHAIN_VOTING_MAP
@@ -335,7 +335,7 @@ class BaseLocalization(ABC):  # == English
         return result + '\n\n'
 
     def text_inside_my_wallet_title(self, address, pools, balances: ThorBalances, min_limit: float, chain,
-                                    thor_name: Optional[ThorName], local_name):
+                                    thor_name: Optional[ThorName], local_name, clout: Optional[ThorSwapperClout]):
         if pools:
             title = '\n'
             footer = "\n\n👇 Click on the button to get a detailed card of LP yield."
@@ -346,6 +346,13 @@ class BaseLocalization(ABC):  # == English
         explorer_links = self.explorer_link_to_address_with_domain(address)
 
         balance_str = self.text_balances(balances)
+
+        if clout:
+            score_text = pretty_rune(thor_to_float(clout.score))
+            reclaimed_text = pretty_rune(thor_to_float(clout.reclaimed))
+            spent_text = pretty_rune(thor_to_float(clout.spent))
+            clout_text = f'{bold(score_text)} score | {bold(reclaimed_text)} reclaimed | {bold(spent_text)} spent'
+            balance_str += f'Swapper clout: {clout_text}\n\n'
 
         acc_caption = ''
         if thor_name:
@@ -558,7 +565,8 @@ class BaseLocalization(ABC):  # == English
                                           pool_info: PoolInfo,
                                           cap: ThorCapInfo = None,
                                           name_map: NameMap = None,
-                                          mimir: MimirHolder = None):
+                                          mimir: MimirHolder = None,
+                                          clout: ThorSwapperClout = None):
         (ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short,
          total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
@@ -737,7 +745,7 @@ class BaseLocalization(ABC):  # == English
         saver_pct = asset_amount / cap * 100.0 if pool.savers_depth else 100
         return amount_more, Asset(pool.asset).name, saver_pb, cap, saver_pct
 
-    def notification_text_streaming_swap_started(self, e: AlertSwapStart, name_map: NameMap):
+    def notification_text_streaming_swap_started(self, e: AlertSwapStart, name_map: NameMap, clout: ThorSwapperClout):
         user_link = self.link_to_address(e.from_address, name_map)
 
         tx_link = link(self.url_for_tx_tracker(e.tx_id), 'Track TX')
@@ -746,9 +754,14 @@ class BaseLocalization(ABC):  # == English
         amount_str = self.format_op_amount(e.in_amount_float)
         target_asset_str = Asset(e.out_asset).pretty_str
         total_duration_str = self.seconds_human(e.ss.total_duration)
+
+        clout_str = ''
+        if clout and clout.score > 10_000:
+            clout_str = f' / {bold(pretty_rune(thor_to_float(clout.score)))} clout'
+
         return (
             f'🌊 <b>Streaming swap has started</b>\n'
-            f'User: {user_link} / {tx_link}\n'
+            f'User: {user_link} / {tx_link}{clout_str}\n'
             f'{amount_str} {asset_str} ({short_dollar(e.volume_usd)}) → ⚡ → {bold(target_asset_str)}\n'
             f'{e.ss.quantity} swaps every {e.ss.interval} blocks, '
             f'duration is about {ital(total_duration_str)} + outbound delay'

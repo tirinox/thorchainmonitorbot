@@ -4,7 +4,7 @@ from typing import List, Optional
 
 from semver import VersionInfo
 
-from aionode.types import ThorChainInfo, ThorBalances
+from aionode.types import ThorChainInfo, ThorBalances, ThorSwapperClout, thor_to_float
 from localization.achievements.ach_rus import AchievementsRussianLocalization
 from localization.eng_base import BaseLocalization, CREATOR_TG, URL_LEADERBOARD_MCCN
 from proto.types import ThorName
@@ -275,7 +275,7 @@ class RussianLocalization(BaseLocalization):
                f'Иногда она может идти долго, если Midgard сильно нагружен.'
 
     def text_inside_my_wallet_title(self, address, pools, balances: ThorBalances, min_limit: float, chain,
-                                    thor_name: Optional[ThorName], local_name):
+                                    thor_name: Optional[ThorName], local_name, clout: Optional[ThorSwapperClout]):
         if pools:
             title = '\n'
             footer = '\n\n👇 Выберите пул, чтобы получить подробную карточку информации о ликвидности.'
@@ -286,6 +286,13 @@ class RussianLocalization(BaseLocalization):
         explorer_links = self.explorer_link_to_address_with_domain(address)
 
         balance_str = self.text_balances(balances, 'Балансы аккаунта: ')
+
+        if clout:
+            score_text = pretty_rune(thor_to_float(clout.score))
+            reclaimed_text = pretty_rune(thor_to_float(clout.reclaimed))
+            spent_text = pretty_rune(thor_to_float(clout.spent))
+            clout_text = f'всего {bold(score_text)} | восстановлено {bold(reclaimed_text)} | потрачено {bold(spent_text)}'
+            balance_str += f'Влиятельность: {clout_text}\n\n'
 
         acc_caption = ''
         if thor_name:
@@ -385,7 +392,8 @@ class RussianLocalization(BaseLocalization):
                                           pool_info: PoolInfo,
                                           cap: ThorCapInfo = None,
                                           name_map: NameMap = None,
-                                          mimir: MimirHolder = None):
+                                          mimir: MimirHolder = None,
+                                          clout: ThorSwapperClout = None):
         (ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short,
          total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
@@ -533,7 +541,7 @@ class RussianLocalization(BaseLocalization):
 
         return msg.strip()
 
-    def notification_text_streaming_swap_started(self, e: AlertSwapStart, name_map: NameMap):
+    def notification_text_streaming_swap_started(self, e: AlertSwapStart, name_map: NameMap, clout: ThorSwapperClout):
         user_link = self.link_to_address(e.from_address, name_map)
 
         tx_link = link(self.url_for_tx_tracker(e.tx_id), 'Отследить')
@@ -542,9 +550,14 @@ class RussianLocalization(BaseLocalization):
         amount_str = self.format_op_amount(e.in_amount_float)
         target_asset_str = Asset(e.out_asset).pretty_str
         total_duration_str = self.seconds_human(e.ss.total_duration)
+
+        clout_str = ''
+        if clout and clout.score > 10_000:
+            clout_str = f' / {bold(pretty_rune(thor_to_float(clout.score)))} влияния'
+
         return (
             '🌊 <b>Потоковый обмен начался</b>\n'
-            f'Пользователь: {user_link} / {tx_link}\n'
+            f'Пользователь: {user_link} / {tx_link}{clout_str}\n'
             f'{amount_str} {asset_str} ({short_dollar(e.volume_usd)}) → ⚡ → {bold(target_asset_str)}\n'
             f'{e.ss.quantity} обменов каждые {e.ss.interval} блоков, '
             f'длительность: {ital(total_duration_str)} + задержка'

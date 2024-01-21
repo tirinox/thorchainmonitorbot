@@ -1,6 +1,8 @@
 import asyncio
-from typing import Union
+from contextlib import suppress
+from typing import Union, Optional
 
+from aionode.types import ThorSwapperClout
 from localization.manager import BaseLocalization
 from services.dialog.picture.achievement_picture import build_achievement_picture_generator
 from services.dialog.picture.block_height_picture import block_speed_chart
@@ -84,16 +86,22 @@ class AlertPresenter(INotified):
 
         return await self.name_service.safely_load_thornames_from_address_set(addresses)
 
-        # ---- PARTICULARLY ----
+    async def _get_clout(self, address) -> Optional[ThorSwapperClout]:
+        with suppress(Exception):
+            return await self.deps.thor_connector.query_swapper_clout(address)
+
+    # ---- PARTICULARLY ----
 
     async def _handle_large_tx(self, txs_event: EventLargeTransaction):
         name_map = await self.load_names(txs_event.transaction.sender_address)
+        clout = await self._get_clout(txs_event.transaction.sender_address)
 
         await self.broadcaster.notify_preconfigured_channels(
             BaseLocalization.notification_text_large_single_tx,
             txs_event.transaction, txs_event.usd_per_rune, txs_event.pool_info, txs_event.cap_info,
             name_map,
             txs_event.mimir,
+            clout
         )
 
     async def _handle_rune_transfer(self, transfer: RuneTransfer):
@@ -201,9 +209,11 @@ class AlertPresenter(INotified):
     async def _handle_streaming_swap_start(self, event: AlertSwapStart):
         name_map = await self.load_names(event.from_address)
 
+        clout = await self._get_clout(event.from_address)
+
         await self.broadcaster.notify_preconfigured_channels(
             BaseLocalization.notification_text_streaming_swap_started,
-            event, name_map
+            event, name_map, clout
         )
 
     async def _handle_loans(self, event: Union[AlertLoanOpen, AlertLoanRepayment]):
