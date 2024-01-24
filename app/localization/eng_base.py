@@ -1833,7 +1833,7 @@ class BaseLocalization(ABC):  # == English
         return text
 
     TEXT_NOP_MANAGE_LIST_TITLE = \
-        'You added <pre>{n}</pre> nodes to your watchlist. ' \
+        'You added <b>{n}</b> nodes to your watchlist. ' \
         'Select one in the menu below to stop monitoring the node.'
 
     TEXT_NOP_ADD_INSTRUCTIONS_PRE = 'Please select the nodes which you would like to add to <b>your watchlist</b> ' \
@@ -1994,8 +1994,8 @@ class BaseLocalization(ABC):  # == English
         elif c.type == NodeEventType.BOND:
             old, new = c.data
             message = f'⚖️ Node {short_addr}: bond changed ' \
-                      f'from {short_money(old, postfix=RAIDO_GLYPH)} ' \
-                      f'to {bold(short_money(new, postfix=RAIDO_GLYPH))}!'
+                      f'from {pretty_rune(old)} ' \
+                      f'to {bold(pretty_rune(new))}!'
         elif c.type == NodeEventType.IP_ADDRESS_CHANGED:
             old, new = c.data
             message = f'🏤 Node {short_addr} changed its IP address from {ital(old)} to {bold(new)}!'

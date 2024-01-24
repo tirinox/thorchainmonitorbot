@@ -1410,7 +1410,7 @@ class RussianLocalization(BaseLocalization):
         return text
 
     TEXT_NOP_MANAGE_LIST_TITLE = \
-        'Вы добавили <pre>{n}</pre> нод в ваш список слежения. ' \
+        'Вы добавили <b>{n}</b> нод в ваш список слежения. ' \
         'Вы можете убрать ноды из списка слежения, нажав на кпонки снизу.'
 
     TEXT_NOP_ADD_INSTRUCTIONS = '🤓 Если вам уже известны адреса интересующих вас нод, ' \
@@ -1561,8 +1561,8 @@ class RussianLocalization(BaseLocalization):
         elif c.type == NodeEventType.BOND:
             old, new = c.data
             message = f'⚖️ Нода {short_addr}: изменение бонда с ' \
-                      f'{short_money(old, postfix=RAIDO_GLYPH)} ' \
-                      f'до {bold(short_money(new, postfix=RAIDO_GLYPH))}!'
+                      f'{pretty_rune(old)} ' \
+                      f'до {bold(pretty_rune(new))}!'
         elif c.type == NodeEventType.IP_ADDRESS_CHANGED:
             old, new = c.data
             message = f'🏤 Нода {short_addr} сменила свой IP адрес с {ital(old)} на {bold(new)}!'

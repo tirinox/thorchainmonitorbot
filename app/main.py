@@ -436,6 +436,7 @@ class App(WithLogger):
             if d.cfg.get('node_op_tools.enabled', True):
                 d.node_op_notifier = NodeChangePersonalNotifier(d)
                 await d.node_op_notifier.prepare()
+
                 churn_detector.add_subscriber(d.node_op_notifier)
 
         if d.cfg.get('price.enabled', True):
