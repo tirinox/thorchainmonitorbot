@@ -274,12 +274,12 @@ async def run():
         # await debug_full_pipeline(app, start=12132219)
         # await debug_tx_records(app, 'E8766E3D825A7BFD755ECA14454256CA25980F8B4BA1C9DCD64ABCE4904F033D')
         #
-        # await debug_full_pipeline(
-        #     app,
-        #     start=12768946,
-        #     # tx_id='24A0F836682C9AB41D6AB8567FBF5110783B29DEB45AA71F529E90831E4B30B2',
-        #     # single_block=False
-        # )
+        await debug_full_pipeline(
+            app,
+            start=14420256,
+            tx_id='696A2C031B2BCB73C6A78A297F30B5A33A91BB754C564F10AA589E089F05D573',
+            # single_block=False
+        )
 
         # await debug_full_pipeline(
         #     app, start=12802333,
@@ -296,8 +296,6 @@ async def run():
 
         # await debug_cex_profit_calc(app, '2065AD2148F242D59DEE34890022A2264C9B04C2297E04295BB118E29A995E05')
         # await debug_cex_profit_calc_binance(app)
-
-        # todo: streaming swap END test for small swap!!!
 
 
 if __name__ == '__main__':
