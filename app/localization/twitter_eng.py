@@ -2,7 +2,7 @@ from typing import List
 
 from semver import VersionInfo
 
-from aionode.types import ThorChainInfo
+from aionode.types import ThorChainInfo, ThorSwapperClout, thor_to_float
 from localization.achievements.ach_tw_eng import AchievementsTwitterEnglishLocalization
 from localization.eng_base import BaseLocalization
 from services.dialog.twitter.text_length import twitter_intelligent_text_splitter
@@ -89,7 +89,8 @@ class TwitterEnglishLocalization(BaseLocalization):
                                           pool_info: PoolInfo,
                                           cap: ThorCapInfo = None,
                                           name_map: NameMap = None,
-                                          mimir: MimirHolder = None):
+                                          mimir: MimirHolder = None,
+                                          clout: ThorSwapperClout = None):
         (ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short,
          total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
@@ -223,7 +224,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         return msg.strip()
 
-    def notification_text_streaming_swap_started(self, e: AlertSwapStart, name_map: NameMap):
+    def notification_text_streaming_swap_started(self, e: AlertSwapStart, name_map: NameMap, clout: ThorSwapperClout):
         user_link = self.link_to_address(e.from_address, name_map)
 
         tx_link = self.url_for_tx_tracker(e.tx_id)
@@ -231,11 +232,22 @@ class TwitterEnglishLocalization(BaseLocalization):
         amount_str = self.format_op_amount(e.in_amount_float)
         target_asset_str = Asset(e.out_asset).pretty_str
         total_duration_str = self.seconds_human(e.ss.total_duration)
+
+        clout_str = ''
+        if clout and clout.score > 10_000:
+            clout_str = f' / {pretty_rune(thor_to_float(clout.score))} clout\n'
+
+        if e.ss.quantity > 0:
+            dur_str = f'{e.ss.quantity} swaps every {e.ss.interval} blocks, '
+            f'duration is about {total_duration_str} + outbound delay.'
+        else:
+            dur_str = f'Swaps every {e.ss.interval} blocks.'
+
         return (
             f'🌊 Streaming swap has started\n'
             f'{user_link}: {amount_str} {asset_str} ({short_dollar(e.volume_usd)}) → ⚡ → {target_asset_str}\n'
-            f'{e.ss.quantity} swaps every {e.ss.interval} blocks, '
-            f'duration is {total_duration_str} + outbound delay\n'
+            f'{clout_str}'
+            f'{dur_str}\n'
             f'Track Tx: {tx_link}'
         )
 
@@ -924,7 +936,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         # POL pool membership
         if event.membership:
-            text = "\nPools:\n" + self._format_pol_membership(event, of_pool='of pool', decor=False)
+            text = "\n🥃 POL pool membership:\n" + self._format_pol_membership(event, of_pool='of pool', decor=False)
             parts.append(text)
 
         return self.smart_split(parts)

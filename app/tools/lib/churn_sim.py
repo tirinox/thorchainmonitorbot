@@ -79,3 +79,14 @@ class DbgChurnSimulator(WithDelegates, INotified):
             for n in activate + deactivate:
                 for i, b in enumerate(n.bond_providers):
                     n.bond_providers[i] = b._replace(rune_bond=distort_randomly(b.rune_bond))
+
+
+class DbgBondChangeSimulator(WithDelegates, INotified):
+    def __init__(self, node_address):
+        super().__init__()
+        self.node_address = node_address
+
+    async def on_data(self, sender, data: NodeSetChanges):
+        node = [node for node in data.nodes_all if node.node_address == self.node_address]
+        node[0].bond *= random.uniform(0.95, 1.05)
+        await self.pass_data_to_listeners(data)

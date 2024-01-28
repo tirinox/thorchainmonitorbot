@@ -45,6 +45,10 @@ class ThorEnvironment:
     path_savers = '/thorchain/pool/{asset}/savers?height={height}'
     path_pol = '/thorchain/pol?height={height}'
     path_network = '/thorchain/network?height={height}'
+    path_swapper_clout = '/thorchain/clout/swap/{address}?height={height}'
+
+    path_tx_details = '/thorchain/tx/details/{txid}'
+    path_tx_stages = '/thorchain/tx/stages/{txid}'
 
     path_block_results = '/block_results?height={height}'
 

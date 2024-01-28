@@ -113,7 +113,7 @@ class AlertSwapStart(NamedTuple):
 
     @property
     def is_streaming(self):
-        return self.ss.quantity > 1
+        return self.ss.interval > 1
 
     @property
     def tx_id(self):

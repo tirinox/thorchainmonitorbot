@@ -9,6 +9,7 @@ from aiogram.dispatcher.storage import FSMContextProxy
 from aiogram.types import *
 from aiogram.utils.helper import HelperMode
 
+from aionode.types import ThorSwapperClout
 from localization.eng_base import BaseLocalization
 from services.dialog.base import message_handler, query_handler, DialogWithSettings
 from services.dialog.message_cat_db import MessageCategoryDB
@@ -257,15 +258,17 @@ class MyWalletsMenu(DialogWithSettings):
         min_limit = float(address_obj.get(Props.PROP_MIN_LIMIT, 0))
         chain = Chains.detect_chain(address)
 
-        balances, thor_name, local_name = await asyncio.gather(
+        balances, thor_name, local_name, clout = await asyncio.gather(
             self.get_balances(address),
             self.deps.name_service.lookup_name_by_address(address),
-            self.get_name_service(message).get_wallet_local_name(address)
+            self.get_name_service(message).get_wallet_local_name(address),
+            self.get_clout(address)
         )
 
         text = self.loc.text_inside_my_wallet_title(address, my_pools, balances,
                                                     min_limit if track_balance else None,
-                                                    chain, thor_name, local_name)
+                                                    chain, thor_name, local_name,
+                                                    clout)
         inline_kbd = self._keyboard_inside_wallet_menu().keyboard()
         if edit:
             await message.edit_text(text=text,
@@ -697,6 +700,10 @@ class MyWalletsMenu(DialogWithSettings):
         if LPAddress.is_thor_prefix(address):
             with suppress(Exception):
                 return await self.deps.thor_connector.query_balance(address)
+
+    async def get_clout(self, address: str) -> Optional[ThorSwapperClout]:
+        with suppress(Exception):
+            return await self.deps.thor_connector.query_swapper_clout(address)
 
     async def _process_wallet_balance_flag(self, address: str, is_on: bool):
         user_id = str(self.data.fsm_context.user)
