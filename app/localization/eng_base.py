@@ -759,12 +759,17 @@ class BaseLocalization(ABC):  # == English
         if clout and clout.score > 10_000:
             clout_str = f' / {bold(pretty_rune(thor_to_float(clout.score)))} clout'
 
+        if e.ss.quantity > 0:
+            dur_str = f'{e.ss.quantity} swaps every {e.ss.interval} blocks, '
+            f'duration is about {ital(total_duration_str)} + outbound delay.'
+        else:
+            dur_str = f'Swaps every {e.ss.interval} blocks.'
+
         return (
             f'🌊 <b>Streaming swap has started</b>\n'
             f'User: {user_link} / {tx_link}{clout_str}\n'
             f'{amount_str} {asset_str} ({short_dollar(e.volume_usd)}) → ⚡ → {bold(target_asset_str)}\n'
-            f'{e.ss.quantity} swaps every {e.ss.interval} blocks, '
-            f'duration is about {ital(total_duration_str)} + outbound delay'
+            f'{dur_str}'
         )
 
     # ------- QUEUE -------

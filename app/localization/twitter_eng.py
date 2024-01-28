@@ -235,13 +235,19 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         clout_str = ''
         if clout and clout.score > 10_000:
-            clout_str = f' / {pretty_rune(thor_to_float(clout.score))} clout'
+            clout_str = f' / {pretty_rune(thor_to_float(clout.score))} clout\n'
+
+        if e.ss.quantity > 0:
+            dur_str = f'{e.ss.quantity} swaps every {e.ss.interval} blocks, '
+            f'duration is about {total_duration_str} + outbound delay.'
+        else:
+            dur_str = f'Swaps every {e.ss.interval} blocks.'
 
         return (
             f'🌊 Streaming swap has started\n'
             f'{user_link}: {amount_str} {asset_str} ({short_dollar(e.volume_usd)}) → ⚡ → {target_asset_str}\n'
-            f'{e.ss.quantity} swaps every {e.ss.interval} blocks, '
-            f'duration is {total_duration_str} + outbound delay{clout_str}\n'
+            f'{clout_str}'
+            f'{dur_str}\n'
             f'Track Tx: {tx_link}'
         )
 

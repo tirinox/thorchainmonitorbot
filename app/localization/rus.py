@@ -555,12 +555,17 @@ class RussianLocalization(BaseLocalization):
         if clout and clout.score > 10_000:
             clout_str = f' / {bold(pretty_rune(thor_to_float(clout.score)))} влияния'
 
+        if e.ss.quantity > 0:
+            dur_str = f'{e.ss.quantity} обменов каждые {e.ss.interval} блоков, '
+            f'длительность: {ital(total_duration_str)} + задержка.'
+        else:
+            dur_str = f'Обмены каждые {e.ss.interval} блоков.'
+
         return (
             '🌊 <b>Потоковый обмен начался</b>\n'
             f'Пользователь: {user_link} / {tx_link}{clout_str}\n'
             f'{amount_str} {asset_str} ({short_dollar(e.volume_usd)}) → ⚡ → {bold(target_asset_str)}\n'
-            f'{e.ss.quantity} обменов каждые {e.ss.interval} блоков, '
-            f'длительность: {ital(total_duration_str)} + задержка'
+            f'{dur_str}'
         )
 
     # ------- QUEUE -------
