@@ -43,7 +43,17 @@ nano config.yaml
 make start
 ```
 
-### Optional Dev deps
+### Optional Dev things
 
-For deep performance profiling
+1. For deep performance profiling
 `pip install line-profiler-pycharm`
+2. Run DB server locally:
+```
+cd redis-data 
+redis-server
+```
+
+
+### Caveats
+
+1. If you cannot debug on Python 3.10+, try uninstalling uvloop package `pip uninstall uvloop`. It helped me.
