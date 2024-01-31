@@ -241,6 +241,7 @@ class NativeScannerBlock(BaseFetcher):
             try:
                 self.logger.info(f'Fetching block #{self._last_block}. Cycle: {self._block_cycle}.')
                 block_result = await self.fetch_one_block(self._last_block)
+
                 if block_result is None:
                     self._on_error('None returned')
                     break

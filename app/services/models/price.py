@@ -1,5 +1,5 @@
 import logging
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import List, Optional, Set
 
 from services.jobs.fetch.circulating import RuneCirculatingSupply
@@ -87,7 +87,7 @@ class AlertPrice:
     price_1h: float = 0.0
     price_24h: float = 0.0
     price_7d: float = 0.0
-    market_info: RuneMarketInfo = RuneMarketInfo()
+    market_info: RuneMarketInfo = field(default_factory=RuneMarketInfo)
     last_ath: Optional[PriceATH] = None
     btc_pool_rune_price: float = 0.0
     is_ath: bool = False
