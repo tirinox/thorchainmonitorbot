@@ -2,6 +2,7 @@ from collections import defaultdict
 from dataclasses import dataclass
 from typing import List, Optional, NamedTuple
 
+from aionode.types import ThorTxStatus, ThorSwapperClout
 from services.lib.constants import RUNE_SYMBOL, Chains, thor_to_float, bp_to_float
 from services.lib.date_utils import now_ts
 from services.lib.memo import THORMemo
@@ -283,6 +284,12 @@ class ThorTx:
     @property
     def sender_address(self):
         return self.in_tx[0].address if self.in_tx else None
+
+    @property
+    def all_addresses(self):
+        return [
+            tx.address for tx in self.in_tx + self.out_tx
+        ]
 
     @property
     def rune_input_address(self):
@@ -567,5 +574,7 @@ class EventLargeTransaction:
     transaction: ThorTx
     usd_per_rune: float
     pool_info: PoolInfo
-    cap_info: ThorCapInfo = None
-    mimir: MimirHolder = None
+    cap_info: Optional[ThorCapInfo] = None
+    mimir: Optional[MimirHolder] = None
+    status: Optional[ThorTxStatus] = None
+    clout: Optional[ThorSwapperClout] = None
