@@ -31,7 +31,7 @@ from services.models.price import RuneMarketInfo, AlertPrice
 from services.models.s_swap import AlertSwapStart
 from services.models.savers import AlertSaverStats
 from services.models.transfer import RuneCEXFlow, RuneTransfer
-from services.models.tx import ThorTx
+from services.models.tx import EventLargeTransaction
 from services.models.tx_type import TxType
 from services.notify.channel import MESSAGE_SEPARATOR
 
@@ -84,13 +84,9 @@ class TwitterEnglishLocalization(BaseLocalization):
     def format_op_amount(amt):
         return short_money(amt)
 
-    def notification_text_large_single_tx(self, tx: ThorTx,
-                                          usd_per_rune: float,
-                                          pool_info: PoolInfo,
-                                          cap: ThorCapInfo = None,
-                                          name_map: NameMap = None,
-                                          mimir: MimirHolder = None,
-                                          clout: ThorSwapperClout = None):
+    def notification_text_large_single_tx(self, e: EventLargeTransaction, name_map: NameMap):
+        usd_per_rune, pool_info, tx = e.usd_per_rune, e.pool_info, e.transaction
+
         (ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short,
          total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
@@ -149,7 +145,7 @@ class TwitterEnglishLocalization(BaseLocalization):
                 rune_part = ''
                 asset_part = f"{short_money(tx.asset_amount)} {asset}"
                 amount_more, asset_more, saver_pb, saver_cap, saver_percent = \
-                    self.get_savers_limits(pool_info, usd_per_rune, mimir, tx.asset_amount)
+                    self.get_savers_limits(pool_info, usd_per_rune, e.mimir, tx.asset_amount)
                 pool_depth_part = f'Savers cap is {saver_pb} full. '
 
                 # todo
@@ -224,7 +220,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         return msg.strip()
 
-    def notification_text_streaming_swap_started(self, e: AlertSwapStart, name_map: NameMap, clout: ThorSwapperClout):
+    def notification_text_streaming_swap_started(self, e: AlertSwapStart, name_map: NameMap):
         user_link = self.link_to_address(e.from_address, name_map)
 
         tx_link = self.url_for_tx_tracker(e.tx_id)
@@ -234,8 +230,8 @@ class TwitterEnglishLocalization(BaseLocalization):
         total_duration_str = self.seconds_human(e.ss.total_duration)
 
         clout_str = ''
-        if clout and clout.score > 10_000:
-            clout_str = f' / {pretty_rune(thor_to_float(clout.score))} clout\n'
+        if e.clout and e.clout.score > 10_000:
+            clout_str = f' / {pretty_rune(thor_to_float(e.clout.score))} clout\n'
 
         if e.ss.quantity > 0:
             dur_str = f'{e.ss.quantity} swaps every {e.ss.interval} blocks, '

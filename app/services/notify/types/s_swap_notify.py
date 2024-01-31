@@ -3,7 +3,8 @@ from services.jobs.scanner.native_scan import BlockResult
 from services.jobs.scanner.swap_start_detector import SwapStartDetector
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
-from services.lib.utils import WithLogger
+from services.lib.utils import WithLogger, safe_get
+from services.models.s_swap import AlertSwapStart
 
 
 class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
@@ -21,9 +22,35 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
             return
 
         swaps = self.detector.detect_swaps(data)
+        self.logger.info(f'Found {len(swaps)} swap starts in block #{data.block_no}')
         for swap_start_ev in swaps:
             if swap_start_ev.is_streaming:
                 if swap_start_ev.volume_usd >= self.min_streaming_swap_usd:
-                    if not await self._ev_db.is_announced_as_started(tx_id := swap_start_ev.tx_id):
-                        await self._ev_db.announce_tx_started(tx_id)
-                        await self.pass_data_to_listeners(swap_start_ev)
+                    if not await self._ev_db.is_announced_as_started(swap_start_ev.tx_id):
+                        await self._relay_new_event(swap_start_ev)
+
+    async def _relay_new_event(self, event: AlertSwapStart):
+        await self._load_status_info(event)
+        self._correct_streaming_swap_info(event)
+        await self._ev_db.announce_tx_started(event.tx_id)
+        await self.pass_data_to_listeners(event)
+
+    async def _load_status_info(self, event: AlertSwapStart):
+        try:
+            event.status = await self.deps.thor_connector.query_tx_status(event.tx_id)
+        except Exception as e:
+            self.logger.warning(f'Failed to load status for {event.tx_id}: {e}')
+
+        try:
+            event.clout = await self.deps.thor_connector.query_swapper_clout(event.from_address)
+        except Exception as e:
+            self.logger.warning(f'Failed to load clout for {event.tx_id}: {e}')
+
+    def _correct_streaming_swap_info(self, event: AlertSwapStart):
+        if event.ss and event.ss.quantity == 0 and event.ss.interval > 0:
+            if event.status:
+                ...  # todo get this from tx.status
+                new_quantity = safe_get(event.status.stages, 'swap_status', 'streaming', 'quantity')
+                if new_quantity:
+                    self.logger.info(f'Updated SS quantity {event.ss.quantity} => {new_quantity}')
+                    event.ss = event.ss._replace(quantity=new_quantity)
