@@ -1,9 +1,10 @@
 import asyncio
 from contextlib import suppress
-from typing import List
+from typing import List, Optional
 
-from aioredis import Redis
+from redis.asyncio import Redis
 
+from aionode.types import ThorSwapperClout
 from services.jobs.scanner.event_db import EventDatabase
 from services.lib.config import SubConfig
 from services.lib.cooldown import Cooldown
@@ -100,15 +101,28 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
         for tx in large_txs:
             is_last = tx == large_txs[-1]
             pool_info = self.deps.price_holder.pool_info_map.get(tx.first_pool_l1)
-            await self.pass_data_to_listeners(EventLargeTransaction(
+
+            clout = await self._get_clout(tx.sender_address)
+
+            event = EventLargeTransaction(
                 tx, usd_per_rune,
                 pool_info,
                 cap_info=(cap_info if has_liquidity and is_last else None),
-                mimir=self.deps.mimir_const_holder
-            ))
+                mimir=self.deps.mimir_const_holder,
+                clout=clout,
+            )
+
+            await self.pass_data_to_listeners(event)
 
             if self.no_repeat_protection:
                 await self.mark_as_announced(tx.tx_hash)
+
+    async def _get_clout(self, address) -> Optional[ThorSwapperClout]:
+        try:
+            return await self.deps.thor_connector.query_swapper_clout(address)
+        except Exception as e:
+            self.logger.error(f'Error getting clout for {address}: {e}')
+            return None
 
     def _get_min_usd_depth(self, tx: ThorTx, usd_per_rune):
         pools = tx.pools

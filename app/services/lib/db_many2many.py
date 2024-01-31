@@ -1,7 +1,7 @@
 import asyncio
 from typing import List
 
-from aioredis import Redis
+from redis.asyncio import Redis
 
 from services.lib.db import DB
 

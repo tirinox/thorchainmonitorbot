@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 import tqdm
-from aioredis import Redis
+from redis.asyncio import Redis
 
 from tools.lib.lp_common import LpAppFramework
 

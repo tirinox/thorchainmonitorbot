@@ -1,7 +1,7 @@
 from typing import List, Optional
 
 from aiohttp import ContentTypeError
-from aioredis import Redis
+from redis.asyncio import Redis
 from tqdm import tqdm
 
 from services.jobs.affiliate_merge import AffiliateTXMerger

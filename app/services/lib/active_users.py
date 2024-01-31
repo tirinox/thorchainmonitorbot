@@ -2,7 +2,7 @@ import asyncio
 import typing
 from datetime import datetime
 
-from aioredis import Redis
+from redis.asyncio import Redis
 
 from services.lib.date_utils import now_ts, DAY
 

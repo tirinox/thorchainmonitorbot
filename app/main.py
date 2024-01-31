@@ -2,8 +2,6 @@ import asyncio
 import logging
 import os
 
-import aioredis.exceptions
-
 from aionode.connector import ThorConnector
 from localization.admin import AdminMessages
 from localization.manager import LocalizationManager
@@ -242,7 +240,7 @@ class App(WithLogger):
 
                 break  # all is good. exit the loop
             except Exception as e:
-                if not isinstance(e, aioredis.exceptions.ConnectionError):
+                if not isinstance(e, ConnectionError):
                     self.logger.exception(e)
                 retry_after = sleep_step * 5
                 self.logger.error(f'No luck. {e!r} Retrying in {retry_after} sec...')

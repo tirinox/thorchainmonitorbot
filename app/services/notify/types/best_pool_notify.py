@@ -1,7 +1,7 @@
 import json
 from typing import Optional
 
-from aioredis import Redis
+from redis.asyncio import Redis
 
 from localization.languages import Language
 from localization.manager import BaseLocalization

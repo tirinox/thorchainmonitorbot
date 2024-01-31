@@ -7,8 +7,7 @@ from abc import ABC, abstractmethod
 from collections import deque
 from typing import Dict
 
-from aioredis import BusyLoadingError as BusyLoadingErrorAIO
-from redis import BusyLoadingError as BusyLoadingErrorNormal
+from redis import BusyLoadingError
 
 from services.lib.date_utils import now_ts
 from services.lib.delegates import WithDelegates
@@ -174,7 +173,7 @@ class BaseFetcher(WithDelegates, WatchedEntity, ABC, WithLogger):
             await self.post_action(data)
         except Exception as e:
 
-            if isinstance(e, (BusyLoadingErrorNormal, BusyLoadingErrorAIO)):
+            if isinstance(e, BusyLoadingError):
                 self.deps.emergency.report(self.name, f'BusyLoadingError: {e}')
                 self.data_controller.request_global_pause()
 

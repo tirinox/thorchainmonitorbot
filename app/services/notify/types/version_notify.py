@@ -1,6 +1,6 @@
 from typing import List, NamedTuple
 
-from aioredis import Redis
+from redis.asyncio import Redis
 from semver import VersionInfo
 
 from localization.manager import BaseLocalization

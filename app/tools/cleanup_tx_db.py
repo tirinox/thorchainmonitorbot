@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 import tqdm
-from aioredis import Redis
+from redis.asyncio import Redis
 
 from services.lib.constants import THOR_BLOCK_TIME
 from services.lib.date_utils import DAY

@@ -2,7 +2,7 @@ import json
 from typing import List
 
 from aiohttp import ClientError
-from aioredis import Redis
+from redis.asyncio import Redis
 
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer

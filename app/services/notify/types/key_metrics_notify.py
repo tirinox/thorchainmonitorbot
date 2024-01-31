@@ -58,6 +58,8 @@ class KeyMetricsNotifier(INotified, WithDelegates, WithLogger):
                 date=str(e.series.latest_date))
             return
 
+        # todo: check affiliate fee rows!
+
         last_date = e.series.latest_date
         previous_date = last_date - timedelta(days=self.window_in_days)
 
