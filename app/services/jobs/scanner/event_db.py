@@ -2,7 +2,7 @@ import json
 from contextlib import suppress
 from typing import Optional
 
-from aioredis import Redis
+from redis.asyncio import Redis
 
 from services.jobs.scanner.swap_props import SwapProps
 from services.lib.date_utils import DAY

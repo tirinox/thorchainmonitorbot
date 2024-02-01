@@ -3,7 +3,7 @@ from contextlib import suppress
 from random import random
 from typing import Optional, List, Dict
 
-from aioredis import Redis
+from redis.asyncio import Redis
 
 from services.jobs.fetch.base import BaseFetcher
 from services.lib.config import Config

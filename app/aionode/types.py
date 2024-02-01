@@ -624,3 +624,27 @@ class ThorSwapperClout(NamedTuple):
             spent=int(j.get('spent', 0)),
             last_spent_height=int(j.get('last_spent_height', 0)),
         )
+
+
+class ThorTxStatus(NamedTuple):
+    tx: dict
+    planned_out_txs: List[dict]
+    out_txs: List[dict]
+    stages: dict
+
+    @classmethod
+    def from_json(cls, j):
+        return cls(
+            tx=j.get('tx'),
+            planned_out_txs=j.get('planned_out_txs', []),
+            out_txs=j.get('out_txs', []),
+            stages=j.get('stages', {})
+        )
+
+    STAGE_SWAP_STATUS = 'swap_status'
+
+    def get_stage(self, stage):
+        return self.stages.get(stage, {})
+
+    def get_streaming_swap(self):
+        return self.get_stage(self.STAGE_SWAP_STATUS).get('streaming')

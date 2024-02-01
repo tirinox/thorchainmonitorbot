@@ -1,6 +1,6 @@
 import asyncio
 
-from aioredis import Redis
+from redis.asyncio import Redis
 
 from services.lib.date_utils import now_ts, DAY
 from services.lib.delegates import WithDelegates

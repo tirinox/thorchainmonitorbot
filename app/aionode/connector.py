@@ -156,6 +156,17 @@ class ThorConnector:
         if data:
             return ThorSwapperClout.from_json(data)
 
+    async def query_tx_status(self, tx_hash: str):
+        url = self.env.path_tx_status.format(txid=tx_hash)
+        data = await self._request(url)
+        if data:
+            return ThorTxStatus.from_json(data)
+
+    async def query_tx_stages(self, tx_hash: str):
+        url = self.env.path_tx_stages.format(txid=tx_hash)
+        data = await self._request(url)
+        return data
+
     # ---- Internal ----
 
     def __init__(self, env: ThorEnvironment, session: ClientSession, logger=None, extra_headers=None,

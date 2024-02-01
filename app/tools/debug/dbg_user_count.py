@@ -2,7 +2,7 @@ import asyncio
 import logging
 import random
 
-from aioredis import Redis
+from redis.asyncio import Redis
 
 from services.jobs.scanner.native_scan import NativeScannerBlock
 from services.jobs.user_counter import UserCounter

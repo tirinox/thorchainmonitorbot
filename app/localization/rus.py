@@ -38,7 +38,7 @@ from services.models.queue import QueueInfo
 from services.models.s_swap import AlertSwapStart
 from services.models.savers import AlertSaverStats
 from services.models.transfer import RuneTransfer, RuneCEXFlow
-from services.models.tx import ThorTx
+from services.models.tx import EventLargeTransaction
 from services.models.tx_type import TxType
 
 
@@ -387,13 +387,9 @@ class RussianLocalization(BaseLocalization):
     def none_str(x):
         return 'нет' if x is None else x
 
-    def notification_text_large_single_tx(self, tx: ThorTx,
-                                          usd_per_rune: float,
-                                          pool_info: PoolInfo,
-                                          cap: ThorCapInfo = None,
-                                          name_map: NameMap = None,
-                                          mimir: MimirHolder = None,
-                                          clout: ThorSwapperClout = None):
+    def notification_text_large_single_tx(self, e: EventLargeTransaction, name_map: NameMap):
+        usd_per_rune, pool_info, tx = e.usd_per_rune, e.pool_info, e.transaction
+
         (ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short,
          total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
@@ -450,7 +446,7 @@ class RussianLocalization(BaseLocalization):
             if tx.is_savings:
                 cap = None  # it will stop standard LP cap from being shown
                 amount_more, asset_more, saver_pb, saver_cap, saver_percent = \
-                    self.get_savers_limits(pool_info, usd_per_rune, mimir, tx.asset_amount)
+                    self.get_savers_limits(pool_info, usd_per_rune, e.mimir, tx.asset_amount)
                 saver_cap_part = f'Кап сбережений {saver_pb}. '
 
                 # todo
@@ -524,7 +520,8 @@ class RussianLocalization(BaseLocalization):
                 if (saved_usd is not None) and saved_usd > 0.0:
                     content += f'\n🫰Сэкономлено против CEX: {bold(pretty_dollar(saved_usd))}'
 
-        blockchain_components_str = self._add_input_output_links(tx, name_map, 'Входы: ', 'Выходы: ', 'Пользователь: ')
+        blockchain_components_str = self._add_input_output_links(
+            tx, name_map, 'Входы: ', 'Выходы: ', 'Пользователь: ')
 
         msg = f"{heading}\n" \
               f"{blockchain_components_str}\n" \
@@ -541,7 +538,7 @@ class RussianLocalization(BaseLocalization):
 
         return msg.strip()
 
-    def notification_text_streaming_swap_started(self, e: AlertSwapStart, name_map: NameMap, clout: ThorSwapperClout):
+    def notification_text_streaming_swap_started(self, e: AlertSwapStart, name_map: NameMap):
         user_link = self.link_to_address(e.from_address, name_map)
 
         tx_link = link(self.url_for_tx_tracker(e.tx_id), 'Отследить')
@@ -552,12 +549,14 @@ class RussianLocalization(BaseLocalization):
         total_duration_str = self.seconds_human(e.ss.total_duration)
 
         clout_str = ''
-        if clout and clout.score > 10_000:
-            clout_str = f' / {bold(pretty_rune(thor_to_float(clout.score)))} влияния'
+        if e.clout and e.clout.score > 10_000:
+            clout_str = f' / {bold(pretty_rune(thor_to_float(e.clout.score)))} влияния'
 
         if e.ss.quantity > 0:
-            dur_str = f'{e.ss.quantity} обменов каждые {e.ss.interval} блоков, '
-            f'длительность: {ital(total_duration_str)} + задержка.'
+            dur_str = (
+                f'{e.ss.quantity} обменов каждые {e.ss.interval} блоков, '
+                f'длительность: {ital(total_duration_str)} + задержка.'
+            )
         else:
             dur_str = f'Обмены каждые {e.ss.interval} блоков.'
 

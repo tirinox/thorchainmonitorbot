@@ -2,7 +2,7 @@ import logging
 import random
 
 import aiohttp
-import aioredis
+from redis import ResponseError
 from tqdm import tqdm
 
 from services.lib.constants import RUNE_SYMBOL_DET, RUNE_SYMBOL_POOL, RUNE_SYMBOL_CEX
@@ -53,7 +53,7 @@ async def fill_rune_price_from_gecko(db, include_fake_det=False, fake_value=0.2)
             if include_fake_det:
                 det_price = price / random.uniform(2.8, 3.1)
                 await det_series.add(message_id=ident, price=det_price)
-        except aioredis.ResponseError:
+        except ResponseError:
             pass
 
 

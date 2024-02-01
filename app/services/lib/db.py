@@ -2,9 +2,9 @@ import os
 import typing
 from contextlib import asynccontextmanager
 
-import aioredis
 from aiogram.contrib.fsm_storage.redis import RedisStorage2
 from aiogram.dispatcher import FSMContext
+from redis import asyncio as aioredis
 
 
 class DB:

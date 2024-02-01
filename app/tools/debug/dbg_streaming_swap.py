@@ -6,6 +6,7 @@ from services.jobs.fetch.profit_against_cex import StreamingSwapVsCexProfitCalcu
 from services.jobs.fetch.streaming_swaps import StreamingSwapFechter
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.scanner.event_db import EventDatabase
+from services.jobs.scanner.native_scan import NativeScannerBlock
 # from services.jobs.scanner.native_scan import NativeScannerBlock
 from services.jobs.scanner.scan_cache import NativeScannerBlockCached
 from services.jobs.scanner.swap_extractor import SwapExtractorBlock
@@ -25,9 +26,8 @@ from services.notify.types.tx_notify import SwapTxNotifier
 from tools.lib.lp_common import LpAppFramework
 
 BlockScannerClass = NativeScannerBlockCached
-
-
-# faulthandler.enable()
+print(BlockScannerClass, ' <= look!')
+BlockScannerClass = NativeScannerBlock
 
 
 # 1)
@@ -146,6 +146,7 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
 
     # When SS starts we do notify as well
     stream_swap_notifier = StreamingSwapStartTxNotifier(d)
+    stream_swap_notifier.check_unique = False
     d.block_scanner.add_subscriber(stream_swap_notifier)
     stream_swap_notifier.add_subscriber(d.alert_presenter)
 
@@ -259,33 +260,39 @@ async def debug_cex_profit_calc_binance(app: LpAppFramework):
     # print(await profit_calc.binance_get_order_book_cached('BTC', 'BNB'))
 
 
+async def debug_tx_status(app):
+    tx_st = await app.deps.thor_connector.query_tx_status(
+        'EDF8885C62DA1814E1C0AB2FBA2F9E2BDA857FBCFEDA8CE27CD95C5A52C7597F')
+    print(tx_st)
+
+
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
         print('start!')
 
-        setup_logs(logging.INFO)
+        setup_logs(logging.DEBUG)
 
         await app.deps.pool_fetcher.reload_global_pools()
         await app.deps.last_block_fetcher.run_once()
+
+        await debug_full_pipeline(app, start=14519387 - 1)
 
         # await debug_fetch_ss(app)
         # await debug_block_analyse(app)
         # await debug_full_pipeline(app, start=12132219)
         # await debug_tx_records(app, 'E8766E3D825A7BFD755ECA14454256CA25980F8B4BA1C9DCD64ABCE4904F033D')
-        #
-        await debug_full_pipeline(
-            app,
-            start=14420256,
-            tx_id='696A2C031B2BCB73C6A78A297F30B5A33A91BB754C564F10AA589E089F05D573',
-            # single_block=False
-        )
+
+        # await debug_full_pipeline(
+        #     app,
+        #     start=14420256,
+        #     tx_id='696A2C031B2BCB73C6A78A297F30B5A33A91BB754C564F10AA589E089F05D573',
+        #     # single_block=False
+        # )
 
         # await debug_full_pipeline(
         #     app, start=12802333,
         #     tx_id='2065AD2148F242D59DEE34890022A2264C9B04C2297E04295BB118E29A995E05')
-
-        await debug_full_pipeline(app)
 
         # await debug_full_pipeline(
         #     app, start=12802040,

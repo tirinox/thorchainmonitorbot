@@ -2,7 +2,6 @@ aiodns
 aiofiles
 aiogram==2.*
 aiohttp
-aioredis
 async-timeout
 bech32
 colorama
@@ -23,6 +22,7 @@ python-dateutil
 python-dotenv
 PyYAML>=6.0
 ratelimit
+redis
 redis[hiredis]
 semver
 slack-sdk>=3.20.2

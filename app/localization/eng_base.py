@@ -1,9 +1,9 @@
 import logging
 from abc import ABC
 from datetime import datetime
-from math import ceil
 from typing import List, Optional
 
+from math import ceil
 from semver import VersionInfo
 
 from aionode.types import ThorChainInfo, ThorBalances, ThorSwapperClout
@@ -43,7 +43,7 @@ from services.models.queue import QueueInfo
 from services.models.s_swap import AlertSwapStart
 from services.models.savers import how_much_savings_you_can_add, AlertSaverStats
 from services.models.transfer import RuneTransfer, RuneCEXFlow
-from services.models.tx import ThorTx, ThorSubTx
+from services.models.tx import ThorTx, ThorSubTx, EventLargeTransaction
 from services.models.tx_type import TxType
 from services.notify.channel import Messengers
 
@@ -560,13 +560,9 @@ class BaseLocalization(ABC):  # == English
 
     MIN_PERCENT_TO_SHOW = 1.0
 
-    def notification_text_large_single_tx(self, tx: ThorTx,
-                                          usd_per_rune: float,
-                                          pool_info: PoolInfo,
-                                          cap: ThorCapInfo = None,
-                                          name_map: NameMap = None,
-                                          mimir: MimirHolder = None,
-                                          clout: ThorSwapperClout = None):
+    def notification_text_large_single_tx(self, e: EventLargeTransaction, name_map: NameMap):
+        usd_per_rune, pool_info, tx = e.usd_per_rune, e.pool_info, e.transaction
+
         (ap, asset_side_usd_short, chain, percent_of_pool, pool_depth_usd, rp, rune_side_usd_short,
          total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
@@ -624,7 +620,7 @@ class BaseLocalization(ABC):  # == English
                 cap = None  # it will stop standard LP cap from being shown
 
                 amount_more, asset_more, saver_pb, saver_cap, saver_percent = \
-                    self.get_savers_limits(pool_info, usd_per_rune, mimir, tx.asset_amount)
+                    self.get_savers_limits(pool_info, usd_per_rune, e.mimir, tx.asset_amount)
                 saver_cap_part = f'Savers cap is {saver_pb} full. '
 
                 # todo
@@ -701,7 +697,8 @@ class BaseLocalization(ABC):  # == English
                 if (saved_usd is not None) and saved_usd > 0.0:
                     content += f'\n🫰Est. Savings vs CEX: {bold(pretty_dollar(saved_usd))}'
 
-        blockchain_components_str = self._add_input_output_links(tx, name_map, 'Input: ', 'Output: ', 'User: ')
+        blockchain_components_str = self._add_input_output_links(
+            tx, name_map, 'Input: ', 'Output: ', 'User: ')
 
         msg = f"{heading}\n" \
               f"{blockchain_components_str}\n" \
@@ -745,7 +742,7 @@ class BaseLocalization(ABC):  # == English
         saver_pct = asset_amount / cap * 100.0 if pool.savers_depth else 100
         return amount_more, Asset(pool.asset).name, saver_pb, cap, saver_pct
 
-    def notification_text_streaming_swap_started(self, e: AlertSwapStart, name_map: NameMap, clout: ThorSwapperClout):
+    def notification_text_streaming_swap_started(self, e: AlertSwapStart, name_map: NameMap):
         user_link = self.link_to_address(e.from_address, name_map)
 
         tx_link = link(self.url_for_tx_tracker(e.tx_id), 'Track TX')
@@ -756,12 +753,14 @@ class BaseLocalization(ABC):  # == English
         total_duration_str = self.seconds_human(e.ss.total_duration)
 
         clout_str = ''
-        if clout and clout.score > 10_000:
-            clout_str = f' / {bold(pretty_rune(thor_to_float(clout.score)))} clout'
+        if e.clout and e.clout.score > 10_000:
+            clout_str = f' / {bold(pretty_rune(thor_to_float(e.clout.score)))} clout'
 
         if e.ss.quantity > 0:
-            dur_str = f'{e.ss.quantity} swaps every {e.ss.interval} blocks, '
-            f'duration is about {ital(total_duration_str)} + outbound delay.'
+            dur_str = (
+                f'{e.ss.quantity} swaps every {e.ss.interval} blocks, '
+                f'duration is about {ital(total_duration_str)} + outbound delay.'
+            )
         else:
             dur_str = f'Swaps every {e.ss.interval} blocks.'
 
