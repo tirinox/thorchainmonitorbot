@@ -1,9 +1,9 @@
 import logging
 from abc import ABC
 from datetime import datetime
-from math import ceil
 from typing import List, Optional
 
+from math import ceil
 from semver import VersionInfo
 
 from aionode.types import ThorChainInfo, ThorBalances, ThorSwapperClout
@@ -757,8 +757,10 @@ class BaseLocalization(ABC):  # == English
             clout_str = f' / {bold(pretty_rune(thor_to_float(e.clout.score)))} clout'
 
         if e.ss.quantity > 0:
-            dur_str = f'{e.ss.quantity} swaps every {e.ss.interval} blocks, '
-            f'duration is about {ital(total_duration_str)} + outbound delay.'
+            dur_str = (
+                f'{e.ss.quantity} swaps every {e.ss.interval} blocks, '
+                f'duration is about {ital(total_duration_str)} + outbound delay.'
+            )
         else:
             dur_str = f'Swaps every {e.ss.interval} blocks.'
 

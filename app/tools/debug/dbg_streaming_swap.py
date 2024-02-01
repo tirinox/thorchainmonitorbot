@@ -6,6 +6,7 @@ from services.jobs.fetch.profit_against_cex import StreamingSwapVsCexProfitCalcu
 from services.jobs.fetch.streaming_swaps import StreamingSwapFechter
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.scanner.event_db import EventDatabase
+from services.jobs.scanner.native_scan import NativeScannerBlock
 # from services.jobs.scanner.native_scan import NativeScannerBlock
 from services.jobs.scanner.scan_cache import NativeScannerBlockCached
 from services.jobs.scanner.swap_extractor import SwapExtractorBlock
@@ -25,9 +26,8 @@ from services.notify.types.tx_notify import SwapTxNotifier
 from tools.lib.lp_common import LpAppFramework
 
 BlockScannerClass = NativeScannerBlockCached
-
-
-# faulthandler.enable()
+print(BlockScannerClass, ' <= look!')
+BlockScannerClass = NativeScannerBlock
 
 
 # 1)
@@ -146,6 +146,7 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
 
     # When SS starts we do notify as well
     stream_swap_notifier = StreamingSwapStartTxNotifier(d)
+    stream_swap_notifier.check_unique = False
     d.block_scanner.add_subscriber(stream_swap_notifier)
     stream_swap_notifier.add_subscriber(d.alert_presenter)
 
@@ -275,7 +276,7 @@ async def run():
         await app.deps.pool_fetcher.reload_global_pools()
         await app.deps.last_block_fetcher.run_once()
 
-        await debug_full_pipeline(app)
+        await debug_full_pipeline(app, start=14519387 - 1)
 
         # await debug_fetch_ss(app)
         # await debug_block_analyse(app)

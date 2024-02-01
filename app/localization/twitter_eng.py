@@ -2,7 +2,7 @@ from typing import List
 
 from semver import VersionInfo
 
-from aionode.types import ThorChainInfo, ThorSwapperClout, thor_to_float
+from aionode.types import ThorChainInfo, thor_to_float
 from localization.achievements.ach_tw_eng import AchievementsTwitterEnglishLocalization
 from localization.eng_base import BaseLocalization
 from services.dialog.twitter.text_length import twitter_intelligent_text_splitter
@@ -234,8 +234,10 @@ class TwitterEnglishLocalization(BaseLocalization):
             clout_str = f' / {pretty_rune(thor_to_float(e.clout.score))} clout\n'
 
         if e.ss.quantity > 0:
-            dur_str = f'{e.ss.quantity} swaps every {e.ss.interval} blocks, '
-            f'duration is about {total_duration_str} + outbound delay.'
+            dur_str = (
+                f'{e.ss.quantity} swaps every {e.ss.interval} blocks, '
+                f'duration is about {total_duration_str} + outbound delay.'
+            )
         else:
             dur_str = f'Swaps every {e.ss.interval} blocks.'
 

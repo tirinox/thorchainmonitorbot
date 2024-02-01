@@ -553,8 +553,10 @@ class RussianLocalization(BaseLocalization):
             clout_str = f' / {bold(pretty_rune(thor_to_float(e.clout.score)))} влияния'
 
         if e.ss.quantity > 0:
-            dur_str = f'{e.ss.quantity} обменов каждые {e.ss.interval} блоков, '
-            f'длительность: {ital(total_duration_str)} + задержка.'
+            dur_str = (
+                f'{e.ss.quantity} обменов каждые {e.ss.interval} блоков, '
+                f'длительность: {ital(total_duration_str)} + задержка.'
+            )
         else:
             dur_str = f'Обмены каждые {e.ss.interval} блоков.'
 
