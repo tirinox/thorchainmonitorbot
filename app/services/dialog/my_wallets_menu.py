@@ -98,6 +98,9 @@ class MyWalletsMenu(DialogWithSettings):
         else:
             name = None
 
+        # POST A LOADING STICKER
+        load_sticker = await self.answer_loading_sticker(message)
+
         chain = Chains.detect_chain(address) or Chains.BTC
 
         thor_name = await self.deps.name_service.lookup_thorname_by_name(address.lower(), forced=True)
@@ -123,6 +126,9 @@ class MyWalletsMenu(DialogWithSettings):
         # redraw menu!
         await self._on_selected_address(message, address, 0, edit=False)
         # await self._show_address_selection_menu(message, edit=edit)
+
+        # CLEAN UP
+        await self.safe_delete(load_sticker)
 
     @message_handler(state=LPMenuStates.MAIN_MENU)
     async def wallet_list_message_handler(self, message: Message):
@@ -310,7 +316,7 @@ class MyWalletsMenu(DialogWithSettings):
         addr_idx = int(self.data.get(self.KEY_ACTIVE_ADDRESS_INDEX, 0))
 
         # ---------------------------- POOLS ------------------------------
-        pool_labels = [(self.loc.pool_label(pool), pool) for pool in my_pools]
+        pool_labels = [(self.loc.label_for_pool_button(pool), pool) for pool in my_pools]
 
         tg_list = TelegramInlineList(
             pool_labels, data_proxy=self.data,

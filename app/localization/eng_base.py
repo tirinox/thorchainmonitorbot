@@ -306,7 +306,7 @@ class BaseLocalization(ABC):  # == English
 
     LOAN_MARKER = '$+'
 
-    def pool_label(self, pool_name):
+    def label_for_pool_button(self, pool_name):
         short_name = cut_long_text(pool_name)
         if self.LOAN_MARKER in pool_name:
             # strip LOAN_MARKER

@@ -263,7 +263,7 @@ class RussianLocalization(BaseLocalization):
     LP_PIC_SUMMARY_TOTAL_LP_VS_HOLD = 'Итого холд против пулов, $'
     LP_PIC_SUMMARY_NO_WEEKLY_CHART = "Нет недельного графика, извините..."
 
-    def pool_label(self, pool_name):
+    def label_for_pool_button(self, pool_name):
         short_name = cut_long_text(pool_name)
         if self.LOAN_MARKER in pool_name:
             # strip LOAN_MARKER
