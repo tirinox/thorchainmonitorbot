@@ -16,6 +16,7 @@ from services.dialog.message_cat_db import MessageCategoryDB
 from services.dialog.picture.lp_picture import generate_yield_picture, lp_address_summary_picture
 from services.dialog.telegram.inline_list import TelegramInlineList
 from services.jobs.fetch.runeyield import get_rune_yield_connector
+from services.jobs.fetch.runeyield.borrower import BorrowerPositionGenerator
 from services.lib.constants import Chains
 from services.lib.date_utils import today_str, parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
@@ -233,19 +234,32 @@ class MyWalletsMenu(DialogWithSettings):
                 loading_message = await message.answer(text=self.loc.text_lp_loading_pools(address),
                                                        reply_markup=ReplyKeyboardRemove(),
                                                        disable_notification=True)
-            try:
-                rune_yield = get_rune_yield_connector(self.deps)
-                my_pools = await rune_yield.get_my_pools(address, show_savers=True)
-            except FileNotFoundError:
-                logging.error(f'not found pools for address {address}')
-                my_pools = []
-            finally:
-                if loading_message:
-                    await self.safe_delete(loading_message)
 
+            my_pools = await self._load_my_pools(address)
             self.data[self.KEY_MY_POOLS] = my_pools
 
+            if loading_message:
+                await self.safe_delete(loading_message)
+
         await self._present_wallet_contents_menu(message, edit=edit)
+
+    async def _load_my_pools(self, address: str):
+        try:
+            rune_yield = get_rune_yield_connector(self.deps)
+            pool_names = await rune_yield.get_my_pools(address, show_savers=True)
+        except FileNotFoundError:
+            logging.error(f'not found pools for address {address}')
+            pool_names = []
+
+        try:
+            loans_positions = await self.lending_helper().get_borrower_positions(address)
+            loan_names = [f'{self.LOAN_MARKER}{lp.collateral_asset}' for lp in loans_positions]
+        except Exception as e:
+            logging.error(f'Error loading borrower positions for {address}: {e!r}')
+            loan_names = []
+
+        my_pools = pool_names + loan_names
+        return my_pools
 
     async def _present_wallet_contents_menu(self, message: Message, edit: bool):
         await LPMenuStates.WALLET_MENU.set()
@@ -287,9 +301,15 @@ class MyWalletsMenu(DialogWithSettings):
             # register it
             await self.register_message(CAT_WALLET_MENU, new_msg)
 
-    @staticmethod
-    def pool_label(pool_name):
+    LOAN_MARKER = '$+'
+
+    @classmethod
+    def pool_label(cls, pool_name):
         short_name = cut_long_text(pool_name)
+        if cls.LOAN_MARKER in pool_name:
+            # strip LOAN_MARKER
+            return f'Loan: {short_name[len(cls.LOAN_MARKER):]}'
+
         if Asset(pool_name).is_synth:
             return 'Sv:' + short_name
         else:
@@ -840,3 +860,6 @@ class MyWalletsMenu(DialogWithSettings):
     async def register_message(self, category, message: Message):
         with suppress(Exception):
             await self.get_message_tracker(message, category).push(message.message_id)
+
+    def lending_helper(self) -> BorrowerPositionGenerator:
+        return BorrowerPositionGenerator(self.deps)

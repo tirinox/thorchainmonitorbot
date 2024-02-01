@@ -32,6 +32,7 @@ class BorrowerPosition(NamedTuple):
 
 class BorrowerPositionGenerator(WithLogger):
     def __init__(self, deps: DepContainer):
+        super().__init__()
         self.deps = deps
 
     async def get_borrower_positions(self, address: str) -> List[BorrowerPosition]:
