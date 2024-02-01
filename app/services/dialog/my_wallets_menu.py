@@ -22,9 +22,9 @@ from services.lib.date_utils import today_str, parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.draw_utils import img_to_bio
 from services.lib.midgard.name_service import add_thor_suffix
-from services.lib.money import short_address, short_rune, Asset
+from services.lib.money import short_address, short_rune
 from services.lib.new_feature import Features
-from services.lib.texts import kbd, cut_long_text
+from services.lib.texts import kbd
 from services.lib.utils import paste_at_beginning_of_dict, grouper
 from services.models.lp_info import LPAddress
 from services.notify.personal.balance import WalletWatchlist
@@ -303,18 +303,6 @@ class MyWalletsMenu(DialogWithSettings):
 
     LOAN_MARKER = '$+'
 
-    @classmethod
-    def pool_label(cls, pool_name):
-        short_name = cut_long_text(pool_name)
-        if cls.LOAN_MARKER in pool_name:
-            # strip LOAN_MARKER
-            return f'Loan: {short_name[len(cls.LOAN_MARKER):]}'
-
-        if Asset(pool_name).is_synth:
-            return 'Sv:' + short_name
-        else:
-            return 'LP:' + short_name
-
     def _keyboard_inside_wallet_menu(self) -> TelegramInlineList:
         external = self.data.get(self.KEY_IS_EXTERNAL, False)
         my_pools = self.my_pools
@@ -322,7 +310,7 @@ class MyWalletsMenu(DialogWithSettings):
         addr_idx = int(self.data.get(self.KEY_ACTIVE_ADDRESS_INDEX, 0))
 
         # ---------------------------- POOLS ------------------------------
-        pool_labels = [(self.pool_label(pool), pool) for pool in my_pools]
+        pool_labels = [(self.loc.pool_label(pool), pool) for pool in my_pools]
 
         tg_list = TelegramInlineList(
             pool_labels, data_proxy=self.data,
@@ -376,7 +364,7 @@ class MyWalletsMenu(DialogWithSettings):
         if result.result == result.BACK:
             await self._show_address_selection_menu(query.message, edit=True, show_add_more=False)
         elif result.result == result.SELECTED:
-            await self.view_pool_report(query, result.selected_data_tag, allow_subscribe=True)
+            await self.click_on_wallet_position(query, result.selected_data_tag, allow_subscribe=True)
         elif query.data.startswith(f'{self.QUERY_SUMMARY_OF_ADDRESS}:'):
             await self.view_address_summary(query)
         elif query.data.startswith(f'{self.QUERY_REMOVE_ADDRESS}:'):
@@ -576,6 +564,34 @@ class MyWalletsMenu(DialogWithSettings):
         await self.show_wallet_menu_for_address(message, address, reload_pools=False, edit=False)
 
     # --- LP Pic generation actions ----
+
+    async def click_on_wallet_position(self, query: CallbackQuery, pool_label, allow_subscribe=False):
+        if self.LOAN_MARKER in pool_label:
+            # LOAN
+            await self.view_loan_report(query, pool_label, allow_subscribe)
+        else:
+            # LP or savers
+            await self.view_pool_report(query, pool_label, allow_subscribe)
+
+    async def view_loan_report(self, query: CallbackQuery, pool, allow_subscribe=False):
+        address = self.current_address
+
+        # POST A LOADING STICKER
+        sticker = await self.answer_loading_sticker(query.message)
+
+        # ANSWER
+        await self._show_wallet_again(query)
+
+        # CONTENT
+
+        loans_positions = await self.lending_helper().get_borrower_positions(address)
+        # todo!!!
+
+        await query.message.answer(f'Borrow Pool is {pool}. TODO!')
+
+        # CLEAN UP
+        await self.safe_delete(query.message)
+        await self.safe_delete(sticker)
 
     async def view_pool_report(self, query: CallbackQuery, pool, allow_subscribe=False):
         address = self.current_address

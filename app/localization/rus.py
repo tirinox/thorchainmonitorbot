@@ -19,7 +19,7 @@ from services.lib.money import pretty_dollar, pretty_money, short_address, adapt
     emoji_for_percent_change, Asset, short_money, short_dollar, format_percent, RAIDO_GLYPH, short_rune, pretty_percent, \
     chart_emoji, pretty_rune
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
-    up_down_arrow, plural, shorten_text
+    up_down_arrow, plural, shorten_text, cut_long_text
 from services.lib.utils import grouper, translate
 from services.lib.w3.dex_analytics import DexReportEntry, DexReport
 from services.models.cap_info import ThorCapInfo
@@ -163,6 +163,7 @@ class RussianLocalization(BaseLocalization):
         '👉 Сберегательные хранилища\n'
         '👉 Слежение за балансами и действиями\n'
         '👉 Предоставление бонда в ноды 🆕\n'
+        '👉 Заёмы 🆕\n'
     )
     TEXT_NO_ADDRESSES = "🔆 Вы еще не добавили никаких адресов. Пришлите мне адрес, чтобы добавить."
     TEXT_YOUR_ADDRESSES = '🔆 Вы добавили следующие адреса:'
@@ -262,6 +263,17 @@ class RussianLocalization(BaseLocalization):
     LP_PIC_SUMMARY_TOTAL_LP_VS_HOLD = 'Итого холд против пулов, $'
     LP_PIC_SUMMARY_NO_WEEKLY_CHART = "Нет недельного графика, извините..."
 
+    def pool_label(self, pool_name):
+        short_name = cut_long_text(pool_name)
+        if self.LOAN_MARKER in pool_name:
+            # strip LOAN_MARKER
+            return f'Заём: {short_name[len(self.LOAN_MARKER):]}'
+
+        if Asset(pool_name).is_synth:
+            return f'Сбер.: {short_name}'
+        else:
+            return f'Ликв.пр.: {short_name}'
+
     def pic_lping_days(self, total_days, first_add_ts, extra=''):
         start_date = datetime.fromtimestamp(first_add_ts).strftime('%d.%m.%Y')
         extra = ' ' + extra if extra else ''
@@ -278,7 +290,7 @@ class RussianLocalization(BaseLocalization):
                                     thor_name: Optional[ThorName], local_name, clout: Optional[ThorSwapperClout]):
         if pools:
             title = '\n'
-            footer = '\n\n👇 Выберите пул, чтобы получить подробную карточку информации о ликвидности.'
+            footer = '\n\n👇 Выберите пул, чтобы получить подробную карточку информации о позиции.'
         else:
             title = self.TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS + '\n\n'
             footer = ''

@@ -21,7 +21,7 @@ from services.lib.money import format_percent, pretty_money, short_address, shor
     calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset, short_dollar, \
     RAIDO_GLYPH, short_rune, pretty_percent, chart_emoji, pretty_rune
 from services.lib.texts import progressbar, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
-    up_down_arrow, bracketify, plural, join_as_numbered_list, regroup_joining, shorten_text
+    up_down_arrow, bracketify, plural, join_as_numbered_list, regroup_joining, shorten_text, cut_long_text
 from services.lib.utils import grouper, run_once
 from services.lib.w3.dex_analytics import DexReport, DexReportEntry
 from services.lib.w3.token_record import AmountToken
@@ -203,6 +203,7 @@ class BaseLocalization(ABC):  # == English
         '👉 Savings vaults\n'
         '👉 Track balances and actions\n'
         '👉 Provision of Bond to nodes 🆕\n'
+        '👉 Loans 🆕\n'
     )
     TEXT_NO_ADDRESSES = "🔆 You have not added any addresses yet. Send me one."
     TEXT_YOUR_ADDRESSES = '🔆 You added addresses:'
@@ -303,6 +304,19 @@ class BaseLocalization(ABC):  # == English
     LP_PIC_SUMMARY_TOTAL_LP_VS_HOLD = 'Total LP vs Hold $'
     LP_PIC_SUMMARY_NO_WEEKLY_CHART = "No weekly chart, sorry"
 
+    LOAN_MARKER = '$+'
+
+    def pool_label(self, pool_name):
+        short_name = cut_long_text(pool_name)
+        if self.LOAN_MARKER in pool_name:
+            # strip LOAN_MARKER
+            return f'Loan: {short_name[len(self.LOAN_MARKER):]}'
+
+        if Asset(pool_name).is_synth:
+            return 'Sv:' + short_name
+        else:
+            return 'LP:' + short_name
+
     def pic_lping_days(self, total_days, first_add_ts, extra=''):
         start_date = datetime.fromtimestamp(first_add_ts).strftime('%d.%m.%Y')
         day_count_str = plural(total_days, 'day', 'days')
@@ -338,7 +352,7 @@ class BaseLocalization(ABC):  # == English
                                     thor_name: Optional[ThorName], local_name, clout: Optional[ThorSwapperClout]):
         if pools:
             title = '\n'
-            footer = "\n\n👇 Click on the button to get a detailed card of LP yield."
+            footer = "\n\n👇 Click on the button to get a detailed card."
         else:
             title = self.TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS + '\n\n'
             footer = ''
