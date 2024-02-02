@@ -167,6 +167,12 @@ class ThorConnector:
         data = await self._request(url)
         return data
 
+    async def query_borrower_details(self, asset, address, height=0):
+        url = self.env.path_borrower_details.format(asset=asset, height=height, address=address)
+        data = await self._request(url)
+        if data:
+            return ThorBorrowerPosition.from_json(data)
+
     # ---- Internal ----
 
     def __init__(self, env: ThorEnvironment, session: ClientSession, logger=None, extra_headers=None,

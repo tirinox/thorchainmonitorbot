@@ -648,3 +648,31 @@ class ThorTxStatus(NamedTuple):
 
     def get_streaming_swap(self):
         return self.get_stage(self.STAGE_SWAP_STATUS).get('streaming')
+
+
+class ThorBorrowerPosition(NamedTuple):
+    asset: str
+    collateral_current: float
+    collateral_deposited: float
+    collateral_withdrawn: float
+    debt_current: float
+    debt_issued: float
+    debt_repaid: float
+    last_open_height: int
+    last_repay_height: int
+    owner: str
+
+    @classmethod
+    def from_json(cls, j):
+        return cls(
+            j['asset'],
+            thor_to_float(j['collateral_current']),
+            thor_to_float(j['collateral_deposited']),
+            thor_to_float(j['collateral_withdrawn']),
+            thor_to_float(j['debt_current']),
+            thor_to_float(j['debt_issued']),
+            thor_to_float(j['debt_repaid']),
+            int(j['last_open_height']),
+            int(j['last_repay_height']),
+            j['owner']
+        )

@@ -235,8 +235,6 @@ class MyWalletsMenu(DialogWithSettings):
             if edit:
                 await message.edit_text(text=self.loc.text_lp_loading_pools(address))
             else:
-                # message = await message.answer(text=self.loc.text_lp_loading_pools(address),
-                #                                reply_markup=kbd([self.loc.BUTTON_SM_BACK_MM]))
                 loading_message = await message.answer(text=self.loc.text_lp_loading_pools(address),
                                                        reply_markup=ReplyKeyboardRemove(),
                                                        disable_notification=True)
@@ -258,8 +256,9 @@ class MyWalletsMenu(DialogWithSettings):
             pool_names = []
 
         try:
-            loans_positions = await self.lending_helper().get_borrower_positions(address)
-            loan_names = [f'{self.LOAN_MARKER}{lp.collateral_asset}' for lp in loans_positions]
+            loans_positions = await self.lending_helper().get_full_borrower_state(address)
+            non_zero_positions = loans_positions.get_non_empty_positions
+            loan_names = [f'{self.LOAN_MARKER}{lp.collateral_asset}' for lp in non_zero_positions]
         except Exception as e:
             logging.error(f'Error loading borrower positions for {address}: {e!r}')
             loan_names = []
@@ -590,7 +589,7 @@ class MyWalletsMenu(DialogWithSettings):
 
         # CONTENT
 
-        loans_positions = await self.lending_helper().get_borrower_positions(address)
+        loans_positions = await self.lending_helper().get_borrower_thornode(address)
         # todo!!!
 
         await query.message.answer(f'Borrow Pool is {pool}. TODO!')
