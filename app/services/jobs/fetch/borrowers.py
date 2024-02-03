@@ -19,7 +19,7 @@ class BorrowersFetcher(BaseFetcher):
         period = parse_timespan_to_seconds(deps.cfg.borrowers.fetch_period)
         super().__init__(deps, period)
         self.midgard_parser = get_parser_by_network_id(deps.cfg.network_id)
-        self.fs = FlipSideConnector(deps.session)
+        self.fs = FlipSideConnector(deps.session, deps.cfg.flipside.api_key)
 
     async def get_borrower_list(self) -> List[str]:
         borrowers = await self.deps.midgard_connector.request(free_url_gen.url_borrowers())
