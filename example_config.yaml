@@ -22,6 +22,10 @@ web3:
   retry_wait: 2s
 
 
+flipside:
+  api_key: 0123-445-881 # https://flipsidecrypto.xyz/settings/api
+
+
 thor:
   network_id: "mainnet"
 
@@ -591,5 +595,5 @@ key_metrics:
 
 borrowers:  # (!) new
   enabled: true
-  fetch_period: 10m
+  fetch_period: 2h
   cooldown: 1d
