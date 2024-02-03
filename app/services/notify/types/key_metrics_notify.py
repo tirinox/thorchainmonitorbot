@@ -1,7 +1,7 @@
 from datetime import timedelta
 from typing import Optional
 
-from services.jobs.fetch.flipside import FSList
+from services.jobs.fetch.flipside.flipside import FSList
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds, DAY, now_ts
 from services.lib.delegates import INotified, WithDelegates

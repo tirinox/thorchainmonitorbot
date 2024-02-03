@@ -5,7 +5,7 @@ from datetime import datetime
 from functools import cached_property
 from typing import NamedTuple, List
 
-from services.jobs.fetch.flipside import FSList, KEY_DATETIME
+from services.jobs.fetch.flipside.flipside import FSList, KEY_DATETIME
 from services.lib.constants import STABLE_COIN_POOLS_ALL, thor_to_float
 from services.models.pool_info import PoolInfoMap
 
@@ -25,6 +25,16 @@ class FSSwapVolume(NamedTuple):
             float(j.get('SWAP_NON_SYNTH_VOLUME_USD', 0.0)),
             float(j.get('SWAP_VOLUME_USD', 0.0)),
             float(j.get('SWAP_VOLUME_USD_CUMULATIVE', 0.0)),
+        )
+
+    @classmethod
+    def from_json_lowercase(cls, j):
+        return cls(
+            j.get(KEY_DATETIME),
+            float(j.get('swap_synth_volume_usd', 0.0)),
+            float(j.get('swap_non_synth_volume_usd', 0.0)),
+            float(j.get('swap_volume_usd', 0.0)),
+            float(j.get('swap_volume_usd_cumulative', 0.0)),
         )
 
 
@@ -49,6 +59,18 @@ class FSLockedValue(NamedTuple):
             float(j.get('TOTAL_VALUE_LOCKED_USD', 0.0)),
         )
 
+    @classmethod
+    def from_json_lowercase(cls, j):
+        return cls(
+            j.get(KEY_DATETIME),
+            float(j.get('total_value_pooled', 0.0)),
+            float(j.get('total_value_pooled_usd', 0.0)),
+            float(j.get('total_value_bonded', 0.0)),
+            float(j.get('total_value_bonded_usd', 0.0)),
+            float(j.get('total_value_locked', 0.0)),
+            float(j.get('total_value_locked_usd', 0.0)),
+        )
+
 
 class FSSwapCount(NamedTuple):
     date: datetime
@@ -63,6 +85,15 @@ class FSSwapCount(NamedTuple):
             int(j.get('SWAP_COUNT', 0)),
             int(j.get('UNIQUE_SWAPPER_COUNT', 0)),
             int(j.get('SWAP_COUNT_CUMULATIVE', 0)),
+        )
+
+    @classmethod
+    def from_json_lowercase(cls, j):
+        return cls(
+            j.get(KEY_DATETIME),
+            int(j.get('swap_count', 0)),
+            int(j.get('unique_swapper_count', 0)),
+            int(j.get('swap_count_cumulative', 0)),
         )
 
 
@@ -109,34 +140,45 @@ class FSFees(NamedTuple):
             float(j.get('EARNINGS_TO_POOLS_USD_CUMULATIVE', 0.0)),
         )
 
+    @classmethod
+    def from_json_lowercase(cls, j):
+        return cls(
+            j.get(KEY_DATETIME),
+            float(j.get('liquidity_fees', 0.0)),
+            float(j.get('liquidity_fees_usd', 0.0)),
+            float(j.get('block_rewards', 0.0)),
+            float(j.get('block_rewards_usd', 0.0)),
+            float(j.get('pct_of_earnings_from_liq_fees', 0.0)),
+            float(j.get('pct_30d_moving_average', 0.0)),
+            float(j.get('total_earnings', 0.0)),
+            float(j.get('total_earnings_usd', 0.0)),
+            float(j.get('earnings_to_nodes', 0.0)),
+            float(j.get('earnings_to_nodes_usd', 0.0)),
+            float(j.get('earnings_to_pools', 0.0)),
+            float(j.get('earnings_to_pools_usd', 0.0)),
+            float(j.get('liquidity_fees_usd_cumulative', 0.0)),
+            float(j.get('block_rewards_usd_cumulative', 0.0)),
+            float(j.get('total_earnings_usd_cumulative', 0.0)),
+            float(j.get('earnings_to_nodes_usd_cumulative', 0.0)),
+            float(j.get('earnings_to_pools_usd_cumulative', 0.0)),
+        )
+
 
 class FSAffiliateCollectors(NamedTuple):
     date: datetime
     label: str
     fee_usd: float = 0.0
     cumulative_fee_usd: float = 0.0
-    fee_rune: float = 0.0
-    cumulative_fee_rune: float = 0.0
+    total_cumulative_fee_usd: float = 0.0
 
     @classmethod
-    def from_json(cls, j):
+    def from_json_lowercase(cls, j):
         return cls(
             j.get(KEY_DATETIME),
-            j.get('LABEL', ''),
-            float(j.get('FEE_USD', 0.0)),
-            float(j.get('CUMULATIVE_FEE_USD', 0.0)),
-            float(j.get('FEE_RUNE', 0.0)),
-            float(j.get('CUMULATIVE_FEE_RUNE', 0.0)),
-        )
-
-    @classmethod
-    def from_json_v2(cls, j):
-        """[{"AFFILIATE":"TrustWallet","TOTAL_VOLUME_USD":7629531.47796143,"DAY":"2023-04-06"},...]"""
-        return cls(
-            j.get(KEY_DATETIME),
-            j.get('AFFILIATE', ''),
-            float(j.get('TOTAL_LIQUIDITY_FEES_USD', 0.0)),
-            0, 0, 0
+            j.get('label', ''),
+            fee_usd=float(j.get('fee_usd', 0.0)),
+            cumulative_fee_usd=float(j.get('cumulative_fee_usd', 0.0)),
+            total_cumulative_fee_usd=float(j.get('total_cumulative_fee_usd', 0.0)),
         )
 
 
@@ -152,20 +194,6 @@ class FSSwapRoutes(NamedTuple):
 
     @classmethod
     def from_json(cls, j):
-        assets = j.get('ASSETS')
-        asset_from, asset_to = assets.split(' to ', 2) if assets else ('', '')
-
-        return cls(
-            j.get(KEY_DATETIME),
-            assets, asset_from, asset_to,
-            int(j.get('SWAP_COUNT', 0)),
-            float(j.get('SWAP_VOLUME', 0.0)),
-            float(j.get('USD_PER_SWAP', 0.0)),
-            float(j.get('FEE_PER_SWAP', 0.0)),
-        )
-
-    @classmethod
-    def from_json_v2(cls, j):
         """[{"SWAP_PATH":"BTC.BTC <-> THOR.RUNE","TOTAL_VOLUME_USD":20045361.3515259,"DAY":"2023-04-06"},...]"""
         assets = j.get('SWAP_PATH')
         asset_from, asset_to = assets.split(' <-> ', 2) if assets else ('', '')
@@ -175,6 +203,20 @@ class FSSwapRoutes(NamedTuple):
             assets, asset_from, asset_to,
             0,
             float(j.get('TOTAL_VOLUME_USD', 0.0)),
+            0,
+            0,
+        )
+
+    @classmethod
+    def from_json_lowercase(cls, j):
+        assets = j.get('swap_path')
+        asset_from, asset_to = assets.split(' <-> ', 2) if assets else ('', '')
+
+        return cls(
+            j.get(KEY_DATETIME),
+            assets, asset_from, asset_to,
+            0,
+            float(j.get('total_volume_usd', 0.0)),
             0,
             0,
         )

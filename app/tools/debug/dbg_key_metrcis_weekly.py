@@ -1,19 +1,24 @@
 import asyncio
 import logging
+import os
 import pickle
 
 from localization.languages import Language
 from services.dialog.picture.key_stats_picture import KeyStatsPictureGenerator
-from services.jobs.fetch.key_stats import KeyStatsFetcher
+from services.jobs.fetch.flipside import FlipSideConnector
+from services.jobs.fetch.key_stats import KeyStatsFetcher, FS_ROUTES_V2
 from services.lib.delegates import INotified
 from services.lib.texts import sep
+from services.models.flipside import FSFees, FSSwapRoutes, FSAffiliateCollectors
 from services.notify.types.key_metrics_notify import KeyMetricsNotifier
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
 
 async def demo_load(app: LpAppFramework):
+    await app.deps.last_block_fetcher.run_once()
     f = KeyStatsFetcher(app.deps)
-    await f.fetch()
+    d = await f.fetch()
+    print(d)
 
 
 class FlipSideSaver(INotified):
@@ -72,13 +77,33 @@ async def demo_picture(app: LpAppFramework):
     save_and_show_pic(pic, name=name)
 
 
+async def demo_new_flipside_sql(app: LpAppFramework):
+    print(os.getcwd())
+    connector = FlipSideConnector(app.deps.session, app.deps.cfg.flipside.api_key)
+
+    series = await connector.request_daily_series_sql_file('query_affiliates_v4.sql')
+    fees = series.transform_from_json(FSAffiliateCollectors, f='from_json_lowercase')
+    print(fees)
+
+
+async def demo_new_flipside_swap_routes(app: LpAppFramework):
+    connector = FlipSideConnector(app.deps.session, app.deps.cfg.flipside.api_key)
+    raw_routes = await connector.direct_sql_file_query(FS_ROUTES_V2)
+    routes = [FSSwapRoutes.from_json_lowercase(x) for x in raw_routes.records]
+    print(routes)
+
+
 async def main():
     lp_app = LpAppFramework(log_level=logging.INFO)
-    async with lp_app:
+    async with lp_app(brief=True):
+        await lp_app.deps.last_block_fetcher.run_once()
         # await lp_app.prepare(brief=True)
 
         await demo_analyse(lp_app)
         await demo_picture(lp_app)
+        # await demo_new_flipside_sql(lp_app)
+        # await demo_load(lp_app)
+        # await demo_new_flipside_swap_routes(lp_app)
 
 
 if __name__ == '__main__':
