@@ -30,7 +30,7 @@ from services.models.lp_info import LPAddress
 from services.notify.personal.balance import WalletWatchlist
 from services.notify.personal.bond_provider import BondWatchlist
 from services.notify.personal.helpers import GeneralSettings, Props
-from services.notify.personal.scheduled import PersonalPeriodicNotificationService
+from services.notify.personal.scheduled import PersonalPeriodicNotificationService, PersonalIdTriplet
 
 CAT_ADD_MORE = 'add-more'
 CAT_WALLET_MENU = 'wallet-menu'
@@ -117,7 +117,7 @@ class MyWalletsMenu(DialogWithSettings):
             await message.answer(self.loc.TEXT_CANNOT_ADD, disable_notification=True)
             return
 
-        await self._add_address(address, chain, name)
+        await self._add_address(address, chain)
 
         # If name is not empty, set it
         if name:
@@ -499,7 +499,7 @@ class MyWalletsMenu(DialogWithSettings):
                 alert = self.loc.ALERT_SUBSCRIBED_TO_LP
                 text = self.loc.text_subscribed_to_lp(period)
 
-                await self._subscribers.subscribe(user_id, address, pool, period)
+                await self._subscribers.subscribe(PersonalIdTriplet(user_id, address, pool), period)
             else:
                 text = ''
                 alert = ''
@@ -601,7 +601,7 @@ class MyWalletsMenu(DialogWithSettings):
             picture_kb = None
 
         await query.message.answer(
-            self.loc.text_loan_card(loan_card),
+            self.loc.notification_text_loan_card(loan_card),
             disable_notification=True,
             reply_markup=picture_kb
         )
@@ -632,7 +632,6 @@ class MyWalletsMenu(DialogWithSettings):
 
         # ANSWER
         await self._show_wallet_again(query)
-
 
         if allow_subscribe:
             picture_kb = await self._get_picture_bottom_keyboard(query, address, pool)
@@ -694,7 +693,7 @@ class MyWalletsMenu(DialogWithSettings):
     def current_address(self):
         return self.data[self.KEY_ACTIVE_ADDRESS]
 
-    async def _add_address(self, new_addr, chain, name):
+    async def _add_address(self, new_addr, chain):
         if not new_addr:
             logging.error('Cannot add empty address!')
             return
@@ -786,10 +785,11 @@ class MyWalletsMenu(DialogWithSettings):
 
         address = self.current_address
         user_id = str(self.user_id(query.message))
+        tr = PersonalIdTriplet(user_id, address, pool)
 
-        is_subscribed = await self._is_subscribed(user_id, address, pool)
+        is_subscribed = await self._is_subscribed(tr)
         if is_subscribed:
-            await self._subscribers.unsubscribe(user_id, address, pool)
+            await self._subscribers.unsubscribe(tr)
             kb = await self._get_picture_bottom_keyboard(query, address, pool)
             await query.message.edit_caption('', reply_markup=kb)
             await query.answer(self.loc.ALERT_UNSUBSCRIBED_FROM_LP)
@@ -819,13 +819,13 @@ class MyWalletsMenu(DialogWithSettings):
             await query.message.edit_caption(self.loc.TEXT_SUBSCRIBE_TO_LP, reply_markup=kb)
             await query.answer()
 
-    async def _is_subscribed(self, user_id, address, pool):
-        return await self._subscribers.when_next(user_id, address, pool) is not None
+    async def _is_subscribed(self, tr: PersonalIdTriplet):
+        return await self._subscribers.when_next(tr) is not None
 
     async def _get_picture_bottom_keyboard(self, query: CallbackQuery, address, pool):
         user_id = str(self.user_id(query.message))
 
-        is_subscribed = await self._is_subscribed(user_id, address, pool)
+        is_subscribed = await self._is_subscribed(PersonalIdTriplet(user_id, address, pool))
         picture_kb = InlineKeyboardMarkup(inline_keyboard=[
             [
                 InlineKeyboardButton(
