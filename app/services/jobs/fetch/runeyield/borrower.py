@@ -2,10 +2,11 @@ from dataclasses import dataclass
 from typing import NamedTuple, List, Dict
 
 from aionode.types import ThorBorrowerPosition
-from services.lib.constants import thor_to_float
+from services.lib.constants import thor_to_float, LOAN_MARKER
 from services.lib.depcont import DepContainer
 from services.lib.logs import WithLogger
 from services.lib.midgard.urlgen import free_url_gen
+from services.models.price import LastPriceHolder
 
 
 class BorrowerPosition(NamedTuple):
@@ -54,6 +55,14 @@ class BorrowerFullState:
         return [p for p in self.positions.values() if p.current_collateral > 0]
 
 
+@dataclass
+class LoanReportCard:
+    pool: str
+    address: str
+    details: BorrowerPair
+    price_holder: LastPriceHolder
+
+
 class BorrowerPositionGenerator(WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
@@ -64,7 +73,7 @@ class BorrowerPositionGenerator(WithLogger):
         data = await self.deps.midgard_connector.request(path)
         return [BorrowerPosition.from_j(j) for j in data['pools']]
 
-    async def get_borrower_thornode(self, pool: str, address: str):
+    async def _get_borrower_thornode(self, pool: str, address: str):
         return await self.deps.thor_connector.query_borrower_details(pool, address)
 
     async def get_full_borrower_state(self, address: str) -> BorrowerFullState:
@@ -73,7 +82,25 @@ class BorrowerPositionGenerator(WithLogger):
         pos_map = {}
 
         for m_pos in m_positions:
-            t_pos = await self.get_borrower_thornode(m_pos.collateral_asset, address)
+            t_pos = await self._get_borrower_thornode(m_pos.collateral_asset, address)
             pos_map[m_pos.collateral_asset] = BorrowerPair(m_pos, t_pos)
 
         return BorrowerFullState(pos_map)
+
+    async def get_loan_report_card(self, pool: str, address: str) -> LoanReportCard:
+        if pool.startswith(LOAN_MARKER):
+            pool = pool[len(LOAN_MARKER):]
+
+        m_positions = await self.get_borrower_positions_midgard(address)
+        m_pos = next((p for p in m_positions if p.collateral_asset == pool), None)
+
+        if not m_pos:
+            raise ValueError(f'No position for {pool} found for address {address}')
+
+        t_pos = await self._get_borrower_thornode(pool, address)
+
+        return LoanReportCard(
+            pool, address,
+            BorrowerPair(m_pos, t_pos),
+            self.deps.price_holder
+        )

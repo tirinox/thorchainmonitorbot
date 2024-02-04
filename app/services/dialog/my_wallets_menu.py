@@ -17,7 +17,7 @@ from services.dialog.picture.lp_picture import generate_yield_picture, lp_addres
 from services.dialog.telegram.inline_list import TelegramInlineList
 from services.jobs.fetch.runeyield import get_rune_yield_connector
 from services.jobs.fetch.runeyield.borrower import BorrowerPositionGenerator
-from services.lib.constants import Chains
+from services.lib.constants import Chains, LOAN_MARKER
 from services.lib.date_utils import today_str, parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.draw_utils import img_to_bio
@@ -258,7 +258,7 @@ class MyWalletsMenu(DialogWithSettings):
         try:
             loans_positions = await self.lending_helper().get_full_borrower_state(address)
             non_zero_positions = loans_positions.get_non_empty_positions
-            loan_names = [f'{self.LOAN_MARKER}{lp.collateral_asset}' for lp in non_zero_positions]
+            loan_names = [f'{LOAN_MARKER}{lp.collateral_asset}' for lp in non_zero_positions]
         except Exception as e:
             logging.error(f'Error loading borrower positions for {address}: {e!r}')
             loan_names = []
@@ -305,8 +305,6 @@ class MyWalletsMenu(DialogWithSettings):
 
             # register it
             await self.register_message(CAT_WALLET_MENU, new_msg)
-
-    LOAN_MARKER = '$+'
 
     def _keyboard_inside_wallet_menu(self) -> TelegramInlineList:
         external = self.data.get(self.KEY_IS_EXTERNAL, False)
@@ -571,7 +569,7 @@ class MyWalletsMenu(DialogWithSettings):
     # --- LP Pic generation actions ----
 
     async def click_on_wallet_position(self, query: CallbackQuery, pool_label, allow_subscribe=False):
-        if self.LOAN_MARKER in pool_label:
+        if LOAN_MARKER in pool_label:
             # LOAN
             await self.view_loan_report(query, pool_label, allow_subscribe)
         else:
@@ -581,6 +579,9 @@ class MyWalletsMenu(DialogWithSettings):
     async def view_loan_report(self, query: CallbackQuery, pool, allow_subscribe=False):
         address = self.current_address
 
+        # remember the last pool (if we want to subscribe)
+        self.data[self.KEY_LAST_POOL] = pool
+
         # POST A LOADING STICKER
         sticker = await self.answer_loading_sticker(query.message)
 
@@ -589,10 +590,21 @@ class MyWalletsMenu(DialogWithSettings):
 
         # CONTENT
 
-        loans_positions = await self.lending_helper().get_borrower_thornode(address)
-        # todo!!!
+        try:
+            loan_card = await self.lending_helper().get_loan_report_card(pool, address)
+        except ValueError:
+            loan_card = None
 
-        await query.message.answer(f'Borrow Pool is {pool}. TODO!')
+        if allow_subscribe:
+            picture_kb = await self._get_picture_bottom_keyboard(query, address, pool)
+        else:
+            picture_kb = None
+
+        await query.message.answer(
+            self.loc.text_loan_card(loan_card),
+            disable_notification=True,
+            reply_markup=picture_kb
+        )
 
         # CLEAN UP
         await self.safe_delete(query.message)
@@ -601,6 +613,7 @@ class MyWalletsMenu(DialogWithSettings):
     async def view_pool_report(self, query: CallbackQuery, pool, allow_subscribe=False):
         address = self.current_address
 
+        # remember the last pool (if we want to subscribe)
         self.data[self.KEY_LAST_POOL] = pool
 
         # POST A LOADING STICKER
@@ -619,6 +632,7 @@ class MyWalletsMenu(DialogWithSettings):
 
         # ANSWER
         await self._show_wallet_again(query)
+
 
         if allow_subscribe:
             picture_kb = await self._get_picture_bottom_keyboard(query, address, pool)

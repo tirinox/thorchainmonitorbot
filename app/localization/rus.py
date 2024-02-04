@@ -9,8 +9,9 @@ from localization.achievements.ach_rus import AchievementsRussianLocalization
 from localization.eng_base import BaseLocalization, CREATOR_TG, URL_LEADERBOARD_MCCN
 from proto.types import ThorName
 from services.jobs.fetch.circulating import ThorRealms
+from services.jobs.fetch.runeyield.borrower import LoanReportCard
 from services.lib.config import Config
-from services.lib.constants import Chains
+from services.lib.constants import Chains, LOAN_MARKER
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address, get_thoryield_address, \
     get_ip_info_link
@@ -150,6 +151,15 @@ class RussianLocalization(BaseLocalization):
     ALERT_UNSUBSCRIBE_FAILED = 'Отписка не удалась!'
 
     @staticmethod
+    def text_error_delivering_report(self, e, address, pool):
+        return (
+            f'🔥 Ошибка при отправке отчета: {e}. '
+            f'Вы отписаны от уведомления. '
+            f'Попробуйте подписаться позже или обратитесь к разработчику. {CREATOR_TG}\n\n'
+            f'Адрес {ital(address)}, пул {ital(pool)}'
+        )
+
+    @staticmethod
     def text_subscribed_to_lp(period):
         next_ts = now_ts() + period
         next_date = datetime.utcfromtimestamp(next_ts).strftime('%d.%m.%Y %H:%M:%S')
@@ -265,9 +275,9 @@ class RussianLocalization(BaseLocalization):
 
     def label_for_pool_button(self, pool_name):
         short_name = cut_long_text(pool_name)
-        if self.LOAN_MARKER in pool_name:
+        if LOAN_MARKER in pool_name:
             # strip LOAN_MARKER
-            return f'Заём: {short_name[len(self.LOAN_MARKER):]}'
+            return f'Заём: {short_name[len(LOAN_MARKER):]}'
 
         if Asset(pool_name).is_synth:
             return f'Сбер.: {short_name}'
@@ -333,6 +343,15 @@ class RussianLocalization(BaseLocalization):
     def text_lp_today(self):
         today = datetime.now().strftime('%d.%m.%Y')
         return f'Сегодня: {today}'
+
+    TEXT_LP_NO_LOAN_FOR_THIS_ADDRESS = '📪 <i>На этом адресе нет заёмов в пуле {pool}.</i>'
+
+    def notification_text_loan_card(self, card: LoanReportCard, local_name='', unsub_id=''):
+        return (
+            f'🏦 <b>Пул:</b> {card.pool}\n'
+            f'🔗 <b>Адрес:</b> {short_address(card.address)}\n'
+            f'💰 <b>Детали:</b> {card.details.m_pos}\n'
+        )
 
     # ----- CAP ------
 

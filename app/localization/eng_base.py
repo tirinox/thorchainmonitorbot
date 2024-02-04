@@ -10,9 +10,10 @@ from aionode.types import ThorChainInfo, ThorBalances, ThorSwapperClout
 from localization.achievements.ach_eng import AchievementsEnglishLocalization
 from proto.types import ThorName
 from services.jobs.fetch.circulating import ThorRealms
+from services.jobs.fetch.runeyield.borrower import LoanReportCard
 from services.lib.config import Config
 from services.lib.constants import thor_to_float, THOR_BLOCK_TIME, DEFAULT_CEX_NAME, \
-    DEFAULT_CEX_BASE_ASSET, bp_to_percent
+    DEFAULT_CEX_BASE_ASSET, bp_to_percent, LOAN_MARKER
 from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE, DAY
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
     get_explorer_url_for_node, get_pool_url, get_thoryield_address, get_ip_info_link
@@ -190,6 +191,15 @@ class BaseLocalization(ABC):  # == English
     ALERT_UNSUBSCRIBE_FAILED = 'Failed to unsubscribe. Please try again later.'
 
     @staticmethod
+    def text_error_delivering_report(self, e, address, pool):
+        return (
+            f'🔥 Error delivering report: {e}. '
+            f'You are unsubscribed from the notification. '
+            f'Try to subscribe later or contact the developer {CREATOR_TG}.\n\n'
+            f'Address {ital(address)}, pool {ital(pool)}'
+        )
+
+    @staticmethod
     def text_subscribed_to_lp(period):
         next_ts = now_ts() + period
         next_date = datetime.utcfromtimestamp(next_ts).strftime('%Y-%m-%d %H:%M:%S')
@@ -304,13 +314,11 @@ class BaseLocalization(ABC):  # == English
     LP_PIC_SUMMARY_TOTAL_LP_VS_HOLD = 'Total LP vs Hold $'
     LP_PIC_SUMMARY_NO_WEEKLY_CHART = "No weekly chart, sorry"
 
-    LOAN_MARKER = '$+'
-
     def label_for_pool_button(self, pool_name):
         short_name = cut_long_text(pool_name)
-        if self.LOAN_MARKER in pool_name:
+        if LOAN_MARKER in pool_name:
             # strip LOAN_MARKER
-            return f'Loan: {short_name[len(self.LOAN_MARKER):]}'
+            return f'Loan: {short_name[len(LOAN_MARKER):]}'
 
         if Asset(pool_name).is_synth:
             return 'Sv:' + short_name
@@ -395,6 +403,14 @@ class BaseLocalization(ABC):  # == English
     def text_lp_today(self):
         today = datetime.now().strftime('%d.%m.%Y')
         return f'Today is {today}'
+
+    TEXT_LP_NO_LOAN_FOR_THIS_ADDRESS = "📪 <i>There are no loans for this address in the pool {pool}</i>"
+
+    def notification_text_loan_card(self, card: LoanReportCard, local_name='', unsub_id=''):
+        # todo
+        return (
+            f'🏦 <b>Loan</b> | {card.pool} | {card.address}\n'
+        )
 
     # ------- CAP -------
 
