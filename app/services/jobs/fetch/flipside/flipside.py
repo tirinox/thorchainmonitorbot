@@ -1,9 +1,13 @@
+import asyncio
+import os.path
 from collections import defaultdict
 from datetime import datetime, timedelta
 
 import aiohttp
+from flipside import Flipside
+from flipside.flipside import API_BASE_URL
 
-from services.lib.date_utils import now_ts, DAY, discard_time
+from services.lib.date_utils import now_ts, DAY, discard_time, HOUR, MINUTE, date_parse_rfc_z_no_ms
 from services.lib.utils import WithLogger
 
 KEY_TS = '__ts'
@@ -14,6 +18,11 @@ class FSList(dict):
     @staticmethod
     def parse_date(string_date):
         try:
+            return date_parse_rfc_z_no_ms(string_date)
+        except ValueError:
+            pass
+
+        try:
             return datetime.strptime(string_date, '%Y-%m-%d') if string_date else None
         except ValueError:
             return datetime.strptime(string_date, '%Y-%m-%d %H:%M:%S.%f')
@@ -21,7 +30,7 @@ class FSList(dict):
     @staticmethod
     def get_date(obj: dict):
         if obj:
-            return obj.get('DAY') or obj.get('DATE')
+            return obj.get('day') or obj.get('date') or obj.get('DAY') or obj.get('DATE')
 
     @classmethod
     def from_server(cls, data, max_days=0):
@@ -149,9 +158,12 @@ class FSList(dict):
 
 
 class FlipSideConnector(WithLogger):
-    def __init__(self, session: aiohttp.ClientSession):
+    def __init__(self, session: aiohttp.ClientSession, flipside_api_key: str,
+                 flipside_api_url: str = API_BASE_URL):
         super().__init__()
         self.session = session
+        self.flipside = Flipside(flipside_api_key, flipside_api_url)
+        self.max_cache_age = 24 * HOUR
 
     async def request(self, url):
         self.logger.info(f'Getting "{url}"...')
@@ -167,4 +179,34 @@ class FlipSideConnector(WithLogger):
         data = await self.request(url)
         fs_list = FSList.from_server(data, max_days)
         self.logger.info(f'"{url}" returned total {len(data)} objects; latest date is {fs_list.latest_date}')
+        return fs_list
+
+    def _direct_sql_query_sync(self, sql):
+        return self.flipside.query(sql, max_age_minutes=self.max_cache_age / MINUTE)
+
+    async def direct_sql_query(self, sql):
+        return await asyncio.get_event_loop().run_in_executor(None, self._direct_sql_query_sync, sql)
+
+    async def direct_sql_file_query(self, filename):
+        sql = self.load_sql(filename)
+        return await self.direct_sql_query(sql)
+
+    BASE_PATH = './services/jobs/fetch/flipside/'
+
+    @classmethod
+    def load_sql(cls, filename):
+        path = os.path.join(cls.BASE_PATH, filename)
+        with open(path) as f:
+            return f.read()
+
+    async def request_daily_series_sql_file(self, filename, max_days=0):
+        sql = self.load_sql(filename)
+        data = await self.direct_sql_query(sql)
+        if data.error:
+            raise Exception(f"Failed to load Flipside query for {filename}: {data.error}")
+
+        records = data.records
+        fs_list = FSList.from_server(records, max_days)
+
+        self.logger.info(f'"{filename}" returned total {len(records)} objects; latest date is {fs_list.latest_date}')
         return fs_list

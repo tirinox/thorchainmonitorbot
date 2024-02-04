@@ -1001,7 +1001,7 @@ class RussianLocalization(BaseLocalization):
     TEXT_PIC_STATS_WEEKLY_REVENUE = "Недельный доход протокола"
     TEXT_PIC_STATS_SWAP_INFO = "Информация о свопах за неделю"
 
-    TEXT_PIC_STATS_NATIVE_ASSET_POOLED = 'Всего нативных активов на'
+    TEXT_PIC_STATS_NATIVE_ASSET_POOLED = 'Всего нативных активов'
     TEXT_PIC_STATS_NETWORK_SECURITY = 'Безопасность сети'
     TEXT_PIC_STATS_PROTOCOL_REVENUE = 'Доход протокола'
     TEXT_PIC_STATS_AFFILIATE_REVENUE = 'Доход партнеров'
