@@ -2,12 +2,15 @@ from services.lib.constants import NetworkIdents, Chains
 from services.lib.money import Asset
 
 
-def get_explorer_url_to_address(network_id, pool_or_chain: str, address: str):
+def get_explorer_url_to_address(network_id, pool_or_chain: str, address: str, tab=None):
     chain = Asset(pool_or_chain).first_filled_component
 
     is_live = not NetworkIdents.is_test(network_id)
     if chain == Chains.THOR:
-        return f"https://runescan.io/address/{address}"
+        url = f"https://runescan.io/address/{address}"
+        if tab:
+            url += f'?tab={tab}'
+        return url
     elif chain == Chains.BNB:
         return f'https://explorer.binance.org/address/{address}' if is_live else \
             f'https://testnet-explorer.binance.org/address/{address}'
