@@ -795,7 +795,7 @@ class MyWalletsMenu(DialogWithSettings):
         if is_subscribed:
             await self._subscribers.unsubscribe(tr)
             kb = await self._get_picture_bottom_keyboard(query, address, pool)
-            await query.message.edit_caption('', reply_markup=kb)
+            await query.message.edit_reply_markup(reply_markup=kb)
             await query.answer(self.loc.ALERT_UNSUBSCRIBED_FROM_LP)
         else:
             await LPMenuStates.SET_PERIOD.set()

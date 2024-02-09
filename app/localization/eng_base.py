@@ -2335,7 +2335,10 @@ class BaseLocalization(ABC):  # == English
         address_link = self.link_to_address(card.address, None, is_loan=True)
         t_pos = card.details.t_pos
         asset_str = Asset(t_pos.asset).pretty_str
-        message = f'🏦 <b>Loan for</b> {address_link} ({card.pool})\n\n'
+        message = (
+            f"––––––––––––––––––––––––––––––––––––––––––––––––\n"
+            f'🏦 <b>Loan for</b> {address_link} ({card.pool})\n\n'
+        )
 
         message += (
             f'Current collateral is {underline(bold(pretty_money(t_pos.collateral_current)))} '
@@ -2379,10 +2382,12 @@ class BaseLocalization(ABC):  # == English
                 message += f'Target asset is {ital(Asset(asset).pretty_str)}\n'
             else:
                 assets_all = ', '.join(Asset(a).pretty_str for a in target_assets)
-                message += f'Target assets are {ital(assets_all)}'
+                message += f'Target assets are {ital(assets_all)}\n'
 
         if unsub_id:
-            message += f'\n{self.unsubscribe_text(unsub_id)}'
+            message += f'\n{self.unsubscribe_text(unsub_id)}\n'
+
+        message += f"––––––––––––––––––––––––––––––––––––––––––––––––"
 
         return message
 

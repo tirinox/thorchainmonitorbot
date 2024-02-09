@@ -1775,7 +1775,10 @@ class RussianLocalization(BaseLocalization):
         address_link = self.link_to_address(card.address, None, is_loan=True)
         t_pos = card.details.t_pos
         asset_str = Asset(t_pos.asset).pretty_str
-        message = f'🏦 <b>Заём для</b> {address_link} (пул {card.pool})\n\n'
+        message = (
+            f"––––––––––––––––––––––––––––––––––––––––––––––––\n"
+            f'🏦 <b>Заём для</b> {address_link} (пул {card.pool})\n\n'
+        )
 
         message += (
             f'Текущий залог: {underline(bold(pretty_money(t_pos.collateral_current)))} '
@@ -1818,10 +1821,12 @@ class RussianLocalization(BaseLocalization):
                 message += f'Целевой актив заёма: {ital(Asset(asset).pretty_str)}\n'
             else:
                 assets_all = ', '.join(Asset(a).pretty_str for a in target_assets)
-                message += f'Целевые активы заёма: {ital(assets_all)}'
+                message += f'Целевые активы заёма: {ital(assets_all)}\n'
 
         if unsub_id:
-            message += f'\n{self.unsubscribe_text(unsub_id)}'
+            message += f'\n{self.unsubscribe_text(unsub_id)}\n'
+
+        message += f"––––––––––––––––––––––––––––––––––––––––––––––––"
 
         return message
 
