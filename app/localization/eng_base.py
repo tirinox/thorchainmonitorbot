@@ -22,7 +22,7 @@ from services.lib.money import format_percent, pretty_money, short_address, shor
     calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset, short_dollar, \
     RAIDO_GLYPH, short_rune, pretty_percent, chart_emoji, pretty_rune
 from services.lib.texts import progressbar, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
-    up_down_arrow, bracketify, plural, join_as_numbered_list, regroup_joining, shorten_text, cut_long_text
+    up_down_arrow, bracketify, plural, join_as_numbered_list, regroup_joining, shorten_text, cut_long_text, underline
 from services.lib.utils import grouper, run_once
 from services.lib.w3.dex_analytics import DexReport, DexReportEntry
 from services.lib.w3.token_record import AmountToken
@@ -403,14 +403,6 @@ class BaseLocalization(ABC):  # == English
     def text_lp_today(self):
         today = datetime.now().strftime('%d.%m.%Y')
         return f'Today is {today}'
-
-    TEXT_LP_NO_LOAN_FOR_THIS_ADDRESS = "📪 <i>There are no loans for this address in the pool {pool}</i>"
-
-    def notification_text_loan_card(self, card: LoanReportCard, local_name='', unsub_id=''):
-        # todo
-        return (
-            f'🏦 <b>Loan</b> | {card.pool} | {card.address}\n'
-        )
 
     # ------- CAP -------
 
@@ -2241,9 +2233,13 @@ class BaseLocalization(ABC):  # == English
     def _is_my_address_tag(address, my_addresses):
         return ' ★' if my_addresses and address in my_addresses else ''
 
-    def link_to_address(self, addr, name_map, chain=Chains.THOR):
-        url = get_explorer_url_to_address(self.cfg.network_id, chain, addr)
-        name = name_map.by_address.get(addr)
+    def link_to_address(self, addr, name_map, chain=Chains.THOR, is_loan=False):
+        tab = 'loans' if is_loan else ''
+        url = get_explorer_url_to_address(self.cfg.network_id, chain, addr, tab)
+        if name_map:
+            name = name_map.by_address.get(addr)
+        else:
+            name = None
         caption = add_thor_suffix(name) if name else short_address(addr)
         return link(url, caption)
 
@@ -2306,6 +2302,10 @@ class BaseLocalization(ABC):  # == English
                f'{code(short_money(t.amount, postfix=" " + asset))}{usd_amt} ' \
                f'from {from_my} ➡️ {to_my}{memo}.'
 
+    @staticmethod
+    def unsubscribe_text(unsub_id):
+        return f'🔕 Unsubscribe /unsub_{unsub_id}'
+
     def notification_text_regular_lp_report(self, user, address, pool, lp_report: LiquidityPoolReport, local_name: str,
                                             unsub_id):
         explorer_link, name_str, pretty_pool, thor_yield_link = self._regular_report_variables(address, local_name,
@@ -2315,7 +2315,7 @@ class BaseLocalization(ABC):  # == English
         return (
             f'Your {pos_type} position report {explorer_link}{name_str} in the pool {pre(pretty_pool)} is ready.\n'
             f'{thor_yield_link}.\n\n'
-            f'Unsubscribe /unsub_{unsub_id}'
+            f'{self.unsubscribe_text(unsub_id)}'
         )
 
     def _regular_report_variables(self, address, local_name, pool):
@@ -2328,6 +2328,63 @@ class BaseLocalization(ABC):  # == English
         name_str = f' ({ital(local_name)})' if local_name else ''
 
         return explorer_link, name_str, pretty_pool, thor_yield_link
+
+    TEXT_LP_NO_LOAN_FOR_THIS_ADDRESS = "📪 <i>There are no loans for this address in the pool {pool}</i>"
+
+    def notification_text_loan_card(self, card: LoanReportCard, local_name='', unsub_id=''):
+        address_link = self.link_to_address(card.address, None, is_loan=True)
+        t_pos = card.details.t_pos
+        asset_str = Asset(t_pos.asset).pretty_str
+        message = f'🏦 <b>Loan for</b> {address_link} ({card.pool})\n\n'
+
+        message += (
+            f'Current collateral is {underline(bold(pretty_money(t_pos.collateral_current)))} '
+            f'{bold(asset_str)} or '
+            f'{underline(bold(pretty_dollar(card.collateral_current_usd)))}\n'
+        )
+
+        if card.collateral_price_last_add and card.collateral_price_last_add > 0:
+            old_collateral_value = card.collateral_price_last_add * t_pos.collateral_current
+            message += (
+                f"Value of collateral at the time "
+                f"of loan opening was {ital(pretty_dollar(old_collateral_value))}"
+            )
+
+            percent_change = up_down_arrow(old_collateral_value, card.collateral_current_usd, signed=True,
+                                           percent_delta=True)
+
+            if percent_change:
+                message += f" ({percent_change})"
+            message += '\n'
+
+        message += f'Time elapsed: {ital(self.seconds_human(card.time_elapsed))}\n'
+
+        message += f'\n<b>Debt current</b>: {underline(bold(pretty_dollar(t_pos.debt_current)))}\n'
+
+        if t_pos.debt_current > t_pos.debt_issued:
+            message += f'<b>Debt issued</b>: {ital(pretty_dollar(t_pos.debt_issued))}\n'
+
+        if t_pos.debt_repaid:
+            message += f'<b>Debt repaid</b>: {ital(pretty_dollar(t_pos.debt_repaid))}\n'
+
+        if t_pos.debt_current > 0:
+            message += (
+                f"CR: {bold(pretty_money(card.collateral_ratio))}x, "
+                f"LTV: {bold(pretty_money(card.loan_to_value))}%\n"
+            )
+
+        if target_assets := card.details.m_pos.target_assets:
+            if len(target_assets) == 1:
+                asset = target_assets[0]
+                message += f'Target asset is {ital(Asset(asset).pretty_str)}\n'
+            else:
+                assets_all = ', '.join(Asset(a).pretty_str for a in target_assets)
+                message += f'Target assets are {ital(assets_all)}'
+
+        if unsub_id:
+            message += f'\n{self.unsubscribe_text(unsub_id)}'
+
+        return message
 
     # ------ DEX -------
 
@@ -2546,10 +2603,10 @@ class BaseLocalization(ABC):  # == English
             f'📝 Lending Tx count: {bold(pretty_money(curr.lending_tx_count))}\n'
             f'💰 Total collateral value: {bold(short_dollar(curr.total_collateral_value_usd))}\n'
             f'💸 Total borrowed value: {bold(short_dollar(curr.total_borrowed_amount_usd))}\n'
-            f'₿ Bitcoin CR: {bold(short_money(curr.btc_current_cr))}, '
-            f'LTV: {bold(short_money(curr.btc_current_ltv))}\n'
-            f'Ξ Ethereum CR: {bold(short_money(curr.eth_current_cr))}, '
-            f'LTV: {bold(short_money(curr.eth_current_ltv))}\n'
+            f'₿ Bitcoin CR: {bold(short_money(curr.btc_current_cr))}x, '
+            f'LTV: {bold(short_money(curr.btc_current_ltv))}%\n'
+            f'Ξ Ethereum CR: {bold(short_money(curr.eth_current_cr))}x, '
+            f'LTV: {bold(short_money(curr.eth_current_ltv))}%\n'
             f'❤️‍🔥 Rune burned: {bold(short_rune(curr.rune_burned_rune))}\n\n'
             f'{link(self.LENDING_LINK, "Details")}'
         )

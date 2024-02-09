@@ -3,6 +3,7 @@ from typing import NamedTuple, List, Dict
 
 from aionode.types import ThorBorrowerPosition
 from services.lib.constants import thor_to_float, LOAN_MARKER
+from services.lib.date_utils import now_ts
 from services.lib.depcont import DepContainer
 from services.lib.logs import WithLogger
 from services.lib.midgard.urlgen import free_url_gen
@@ -61,6 +62,37 @@ class LoanReportCard:
     address: str
     details: BorrowerPair
     price_holder: LastPriceHolder
+    collateral_price_last_add: float
+
+    @property
+    def collateral_current_usd(self):
+        return self.price_holder.convert_to_usd(self.details.t_pos.collateral_current, self.pool)
+
+    @property
+    def last_open_loan_timestamp(self):
+        return self.details.m_pos.last_open_loan_timestamp
+
+    @property
+    def last_repay_loan_timestamp(self):
+        return self.details.m_pos.last_repay_loan_timestamp
+
+    @property
+    def collateral_ratio(self):
+        try:
+            return self.collateral_current_usd / self.details.t_pos.debt_current
+        except ZeroDivisionError:
+            return 0.0
+
+    @property
+    def loan_to_value(self):
+        try:
+            return self.details.t_pos.debt_current / self.collateral_current_usd * 100.0
+        except ZeroDivisionError:
+            return 0.0
+
+    @property
+    def time_elapsed(self):
+        return now_ts() - self.last_open_loan_timestamp
 
 
 class BorrowerPositionGenerator(WithLogger):
@@ -99,8 +131,21 @@ class BorrowerPositionGenerator(WithLogger):
 
         t_pos = await self._get_borrower_thornode(pool, address)
 
+        last_open_block = -1
+        try:
+            last_open_block = t_pos.last_open_height
+            pools = await self.deps.pool_fetcher.load_pools(height=last_open_block)
+            lph = self.deps.price_holder.clone()
+            lph.update(pools)
+            collateral_price_last_add = lph.convert_to_usd(1.0, t_pos.asset)
+        except Exception as e:
+            self.logger.error(f"Could not get collateral price at last open height ({last_open_block}): {e}")
+            collateral_price_last_add = 0.0
+
         return LoanReportCard(
-            pool, address,
-            BorrowerPair(m_pos, t_pos),
-            self.deps.price_holder
+            pool=(t_pos.asset if t_pos else pool),
+            address=address,
+            details=BorrowerPair(m_pos, t_pos),
+            price_holder=self.deps.price_holder,
+            collateral_price_last_add=collateral_price_last_add
         )

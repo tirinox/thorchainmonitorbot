@@ -763,9 +763,12 @@ class TwitterEnglishLocalization(BaseLocalization):
                           ]])
         return text
 
-    def link_to_address(self, addr, name_map, chain=Chains.THOR):
+    def link_to_address(self, addr, name_map, chain=Chains.THOR, is_loan=False):
         # without a link, just a caption
-        name = name_map.by_address.get(addr)
+        if name_map:
+            name = name_map.by_address.get(addr)
+        else:
+            name = None
         caption = add_thor_suffix(name) if name else short_address(addr, 0, 4)
         return f'[{caption}]'
 
@@ -981,10 +984,10 @@ class TwitterEnglishLocalization(BaseLocalization):
             f'📝 Tx count: {pretty_money(curr.lending_tx_count)}\n'
             f'💰 Total collateral: {short_dollar(curr.total_collateral_value_usd)}\n'
             f'💸 Total borrowed: {short_dollar(curr.total_borrowed_amount_usd)}\n'
-            f'₿ Bitcoin CR: {short_money(curr.btc_current_cr)}, '
-            f'LTV: {short_money(curr.btc_current_ltv)}\n'
-            f'Ξ Ethereum CR: {short_money(curr.eth_current_cr)}, '
-            f'LTV: {short_money(curr.eth_current_ltv)}\n'
+            f'₿ Bitcoin CR: {short_money(curr.btc_current_cr)}x, '
+            f'LTV: {short_money(curr.btc_current_ltv)}%\n'
+            f'Ξ Ethereum CR: {short_money(curr.eth_current_cr)}x, '
+            f'LTV: {short_money(curr.eth_current_ltv)}%\n'
             f'❤️‍🔥 Rune burned: {short_rune(curr.rune_burned_rune)}\n\n'
             f'{self.LENDING_LINK}'
         )

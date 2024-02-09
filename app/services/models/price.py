@@ -1,3 +1,4 @@
+import copy
 import logging
 from dataclasses import dataclass, field
 from typing import List, Optional, Set
@@ -96,7 +97,6 @@ class AlertPrice:
     price_graph_period: int = 7 * DAY
 
 
-
 class LastPriceHolder:
     def __init__(self, stable_coins=None):
         self.usd_per_rune = 1.0  # weighted across multiple stable coin pools
@@ -104,6 +104,9 @@ class LastPriceHolder:
         self.pool_info_map: PoolInfoMap = {}
         self.last_update_ts = 0
         self.stable_coins = stable_coins or STABLE_COIN_POOLS
+
+    def clone(self):
+        return copy.deepcopy(self)
 
     def is_stable_coin(self, c):
         return c in self.stable_coins
