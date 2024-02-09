@@ -491,6 +491,9 @@ class MyWalletsMenu(DialogWithSettings):
         else:
             period = parse_timespan_to_seconds(query.data)
 
+        if isinstance(period, str):
+            return  # error
+
         address = self.current_address
         user_id = str(self.user_id(query.message))
 
@@ -505,7 +508,7 @@ class MyWalletsMenu(DialogWithSettings):
                 alert = ''
 
             kb = await self._get_picture_bottom_keyboard(query, address, pool)
-            await query.message.edit_caption(text, reply_markup=kb)
+            await query.message.edit_reply_markup(reply_markup=kb)
 
             await query.answer(alert, show_alert=False)
         except Exception as e:
@@ -585,9 +588,6 @@ class MyWalletsMenu(DialogWithSettings):
         # POST A LOADING STICKER
         sticker = await self.answer_loading_sticker(query.message)
 
-        # ANSWER
-        await self._show_wallet_again(query)
-
         # CONTENT
 
         try:
@@ -603,8 +603,12 @@ class MyWalletsMenu(DialogWithSettings):
         await query.message.answer(
             self.loc.notification_text_loan_card(loan_card),
             disable_notification=True,
+            disable_web_page_preview=True,
             reply_markup=picture_kb
         )
+
+        # ANSWER
+        await self._show_wallet_again(query)
 
         # CLEAN UP
         await self.safe_delete(query.message)
@@ -816,7 +820,7 @@ class MyWalletsMenu(DialogWithSettings):
             if self.dbg_fast_subscription:
                 kb.inline_keyboard[0].append(InlineKeyboardButton("Dbg: 30 sec", callback_data='30'))
 
-            await query.message.edit_caption(self.loc.TEXT_SUBSCRIBE_TO_LP, reply_markup=kb)
+            await query.message.edit_reply_markup(kb)
             await query.answer()
 
     async def _is_subscribed(self, tr: PersonalIdTriplet):

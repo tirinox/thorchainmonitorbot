@@ -62,6 +62,9 @@ def pretty_rune(x, signed=False, prefix=''):
 
 
 def pretty_money(x, prefix='', signed=False, postfix='', integer=False):
+    if x is None:
+        return 'N/A'
+
     if math.isnan(x) or math.isinf(x):
         return str(x)
 
