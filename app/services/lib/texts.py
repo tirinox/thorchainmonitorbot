@@ -1,9 +1,9 @@
 import re
 from typing import List
-from unicodedata import lookup
 from urllib.parse import urlparse
 
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
+from unicodedata import lookup
 
 from services.lib.money import pretty_money, short_money
 from services.lib.utils import grouper
@@ -36,6 +36,10 @@ def ital(text):
 def pre(text):
     # return f"<pre>{text}</pre>"
     return bold(text)
+
+
+def underline(text):
+    return f"<u>{text}</u>"
 
 
 def x_ses(one, two):

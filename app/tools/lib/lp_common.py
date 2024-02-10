@@ -104,8 +104,8 @@ class LpAppFramework(App):
         self.brief = brief
         return self
 
-    async def test_all_locs(self, f, *args, **kwargs):
-        locs = self.deps.loc_man.all
+    async def test_all_locs(self, f, locs=None, *args, **kwargs):
+        locs = locs or self.deps.loc_man.all
         for loc in locs:
             f = getattr(loc, f.__name__)
             text = f(*args, **kwargs)
@@ -113,6 +113,10 @@ class LpAppFramework(App):
             print(f"\nTwitter len: {twitter_text_length(text)}")
             await self.send_test_tg_message(text)
             sep()
+
+    async def test_locs_except_tw(self, f, *args, **kwargs):
+        locs = [loc for loc in self.deps.loc_man.all if 'Twitter' not in loc.__class__.__name__]
+        await self.test_all_locs(f, locs, *args, **kwargs)
 
 
 class LpGenerator(LpAppFramework):

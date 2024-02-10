@@ -16,20 +16,21 @@ from services.dialog.message_cat_db import MessageCategoryDB
 from services.dialog.picture.lp_picture import generate_yield_picture, lp_address_summary_picture
 from services.dialog.telegram.inline_list import TelegramInlineList
 from services.jobs.fetch.runeyield import get_rune_yield_connector
-from services.lib.constants import Chains
+from services.jobs.fetch.runeyield.borrower import BorrowerPositionGenerator
+from services.lib.constants import Chains, LOAN_MARKER
 from services.lib.date_utils import today_str, parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.draw_utils import img_to_bio
 from services.lib.midgard.name_service import add_thor_suffix
-from services.lib.money import short_address, short_rune, Asset
+from services.lib.money import short_address, short_rune
 from services.lib.new_feature import Features
-from services.lib.texts import kbd, cut_long_text
+from services.lib.texts import kbd
 from services.lib.utils import paste_at_beginning_of_dict, grouper
 from services.models.lp_info import LPAddress
 from services.notify.personal.balance import WalletWatchlist
 from services.notify.personal.bond_provider import BondWatchlist
 from services.notify.personal.helpers import GeneralSettings, Props
-from services.notify.personal.scheduled import PersonalPeriodicNotificationService
+from services.notify.personal.scheduled import PersonalPeriodicNotificationService, PersonalIdTriplet
 
 CAT_ADD_MORE = 'add-more'
 CAT_WALLET_MENU = 'wallet-menu'
@@ -97,6 +98,9 @@ class MyWalletsMenu(DialogWithSettings):
         else:
             name = None
 
+        # POST A LOADING STICKER
+        load_sticker = await self.answer_loading_sticker(message)
+
         chain = Chains.detect_chain(address) or Chains.BTC
 
         thor_name = await self.deps.name_service.lookup_thorname_by_name(address.lower(), forced=True)
@@ -113,7 +117,7 @@ class MyWalletsMenu(DialogWithSettings):
             await message.answer(self.loc.TEXT_CANNOT_ADD, disable_notification=True)
             return
 
-        await self._add_address(address, chain, name)
+        await self._add_address(address, chain)
 
         # If name is not empty, set it
         if name:
@@ -122,6 +126,9 @@ class MyWalletsMenu(DialogWithSettings):
         # redraw menu!
         await self._on_selected_address(message, address, 0, edit=False)
         # await self._show_address_selection_menu(message, edit=edit)
+
+        # CLEAN UP
+        await self.safe_delete(load_sticker)
 
     @message_handler(state=LPMenuStates.MAIN_MENU)
     async def wallet_list_message_handler(self, message: Message):
@@ -228,24 +235,36 @@ class MyWalletsMenu(DialogWithSettings):
             if edit:
                 await message.edit_text(text=self.loc.text_lp_loading_pools(address))
             else:
-                # message = await message.answer(text=self.loc.text_lp_loading_pools(address),
-                #                                reply_markup=kbd([self.loc.BUTTON_SM_BACK_MM]))
                 loading_message = await message.answer(text=self.loc.text_lp_loading_pools(address),
                                                        reply_markup=ReplyKeyboardRemove(),
                                                        disable_notification=True)
-            try:
-                rune_yield = get_rune_yield_connector(self.deps)
-                my_pools = await rune_yield.get_my_pools(address, show_savers=True)
-            except FileNotFoundError:
-                logging.error(f'not found pools for address {address}')
-                my_pools = []
-            finally:
-                if loading_message:
-                    await self.safe_delete(loading_message)
 
+            my_pools = await self._load_my_pools(address)
             self.data[self.KEY_MY_POOLS] = my_pools
 
+            if loading_message:
+                await self.safe_delete(loading_message)
+
         await self._present_wallet_contents_menu(message, edit=edit)
+
+    async def _load_my_pools(self, address: str):
+        try:
+            rune_yield = get_rune_yield_connector(self.deps)
+            pool_names = await rune_yield.get_my_pools(address, show_savers=True)
+        except FileNotFoundError:
+            logging.error(f'not found pools for address {address}')
+            pool_names = []
+
+        try:
+            loans_positions = await self.lending_helper().get_full_borrower_state(address)
+            non_zero_positions = loans_positions.get_non_empty_positions
+            loan_names = [f'{LOAN_MARKER}{lp.collateral_asset}' for lp in non_zero_positions]
+        except Exception as e:
+            logging.error(f'Error loading borrower positions for {address}: {e!r}')
+            loan_names = []
+
+        my_pools = pool_names + loan_names
+        return my_pools
 
     async def _present_wallet_contents_menu(self, message: Message, edit: bool):
         await LPMenuStates.WALLET_MENU.set()
@@ -287,14 +306,6 @@ class MyWalletsMenu(DialogWithSettings):
             # register it
             await self.register_message(CAT_WALLET_MENU, new_msg)
 
-    @staticmethod
-    def pool_label(pool_name):
-        short_name = cut_long_text(pool_name)
-        if Asset(pool_name).is_synth:
-            return 'Sv:' + short_name
-        else:
-            return 'LP:' + short_name
-
     def _keyboard_inside_wallet_menu(self) -> TelegramInlineList:
         external = self.data.get(self.KEY_IS_EXTERNAL, False)
         my_pools = self.my_pools
@@ -302,7 +313,7 @@ class MyWalletsMenu(DialogWithSettings):
         addr_idx = int(self.data.get(self.KEY_ACTIVE_ADDRESS_INDEX, 0))
 
         # ---------------------------- POOLS ------------------------------
-        pool_labels = [(self.pool_label(pool), pool) for pool in my_pools]
+        pool_labels = [(self.loc.label_for_pool_button(pool), pool) for pool in my_pools]
 
         tg_list = TelegramInlineList(
             pool_labels, data_proxy=self.data,
@@ -356,7 +367,7 @@ class MyWalletsMenu(DialogWithSettings):
         if result.result == result.BACK:
             await self._show_address_selection_menu(query.message, edit=True, show_add_more=False)
         elif result.result == result.SELECTED:
-            await self.view_pool_report(query, result.selected_data_tag, allow_subscribe=True)
+            await self.click_on_wallet_position(query, result.selected_data_tag, allow_subscribe=True)
         elif query.data.startswith(f'{self.QUERY_SUMMARY_OF_ADDRESS}:'):
             await self.view_address_summary(query)
         elif query.data.startswith(f'{self.QUERY_REMOVE_ADDRESS}:'):
@@ -480,6 +491,9 @@ class MyWalletsMenu(DialogWithSettings):
         else:
             period = parse_timespan_to_seconds(query.data)
 
+        if isinstance(period, str):
+            return  # error
+
         address = self.current_address
         user_id = str(self.user_id(query.message))
 
@@ -488,13 +502,13 @@ class MyWalletsMenu(DialogWithSettings):
                 alert = self.loc.ALERT_SUBSCRIBED_TO_LP
                 text = self.loc.text_subscribed_to_lp(period)
 
-                await self._subscribers.subscribe(user_id, address, pool, period)
+                await self._subscribers.subscribe(PersonalIdTriplet(user_id, address, pool), period)
             else:
                 text = ''
                 alert = ''
 
             kb = await self._get_picture_bottom_keyboard(query, address, pool)
-            await query.message.edit_caption(text, reply_markup=kb)
+            await query.message.edit_reply_markup(reply_markup=kb)
 
             await query.answer(alert, show_alert=False)
         except Exception as e:
@@ -557,9 +571,53 @@ class MyWalletsMenu(DialogWithSettings):
 
     # --- LP Pic generation actions ----
 
+    async def click_on_wallet_position(self, query: CallbackQuery, pool_label, allow_subscribe=False):
+        if LOAN_MARKER in pool_label:
+            # LOAN
+            await self.view_loan_report(query, pool_label, allow_subscribe)
+        else:
+            # LP or savers
+            await self.view_pool_report(query, pool_label, allow_subscribe)
+
+    async def view_loan_report(self, query: CallbackQuery, pool, allow_subscribe=False):
+        address = self.current_address
+
+        # remember the last pool (if we want to subscribe)
+        self.data[self.KEY_LAST_POOL] = pool
+
+        # POST A LOADING STICKER
+        sticker = await self.answer_loading_sticker(query.message)
+
+        # CONTENT
+
+        try:
+            loan_card = await self.lending_helper().get_loan_report_card(pool, address)
+        except ValueError:
+            loan_card = None
+
+        if allow_subscribe:
+            picture_kb = await self._get_picture_bottom_keyboard(query, address, pool)
+        else:
+            picture_kb = None
+
+        await query.message.answer(
+            self.loc.notification_text_loan_card(loan_card),
+            disable_notification=True,
+            disable_web_page_preview=True,
+            reply_markup=picture_kb
+        )
+
+        # ANSWER
+        await self._show_wallet_again(query)
+
+        # CLEAN UP
+        await self.safe_delete(query.message)
+        await self.safe_delete(sticker)
+
     async def view_pool_report(self, query: CallbackQuery, pool, allow_subscribe=False):
         address = self.current_address
 
+        # remember the last pool (if we want to subscribe)
         self.data[self.KEY_LAST_POOL] = pool
 
         # POST A LOADING STICKER
@@ -639,7 +697,7 @@ class MyWalletsMenu(DialogWithSettings):
     def current_address(self):
         return self.data[self.KEY_ACTIVE_ADDRESS]
 
-    async def _add_address(self, new_addr, chain, name):
+    async def _add_address(self, new_addr, chain):
         if not new_addr:
             logging.error('Cannot add empty address!')
             return
@@ -731,12 +789,13 @@ class MyWalletsMenu(DialogWithSettings):
 
         address = self.current_address
         user_id = str(self.user_id(query.message))
+        tr = PersonalIdTriplet(user_id, address, pool)
 
-        is_subscribed = await self._is_subscribed(user_id, address, pool)
+        is_subscribed = await self._is_subscribed(tr)
         if is_subscribed:
-            await self._subscribers.unsubscribe(user_id, address, pool)
+            await self._subscribers.unsubscribe(tr)
             kb = await self._get_picture_bottom_keyboard(query, address, pool)
-            await query.message.edit_caption('', reply_markup=kb)
+            await query.message.edit_reply_markup(reply_markup=kb)
             await query.answer(self.loc.ALERT_UNSUBSCRIBED_FROM_LP)
         else:
             await LPMenuStates.SET_PERIOD.set()
@@ -761,16 +820,16 @@ class MyWalletsMenu(DialogWithSettings):
             if self.dbg_fast_subscription:
                 kb.inline_keyboard[0].append(InlineKeyboardButton("Dbg: 30 sec", callback_data='30'))
 
-            await query.message.edit_caption(self.loc.TEXT_SUBSCRIBE_TO_LP, reply_markup=kb)
+            await query.message.edit_reply_markup(kb)
             await query.answer()
 
-    async def _is_subscribed(self, user_id, address, pool):
-        return await self._subscribers.when_next(user_id, address, pool) is not None
+    async def _is_subscribed(self, tr: PersonalIdTriplet):
+        return await self._subscribers.when_next(tr) is not None
 
     async def _get_picture_bottom_keyboard(self, query: CallbackQuery, address, pool):
         user_id = str(self.user_id(query.message))
 
-        is_subscribed = await self._is_subscribed(user_id, address, pool)
+        is_subscribed = await self._is_subscribed(PersonalIdTriplet(user_id, address, pool))
         picture_kb = InlineKeyboardMarkup(inline_keyboard=[
             [
                 InlineKeyboardButton(
@@ -840,3 +899,6 @@ class MyWalletsMenu(DialogWithSettings):
     async def register_message(self, category, message: Message):
         with suppress(Exception):
             await self.get_message_tracker(message, category).push(message.message_id)
+
+    def lending_helper(self) -> BorrowerPositionGenerator:
+        return BorrowerPositionGenerator(self.deps)

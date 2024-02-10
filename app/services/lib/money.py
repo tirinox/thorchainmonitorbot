@@ -62,6 +62,9 @@ def pretty_rune(x, signed=False, prefix=''):
 
 
 def pretty_money(x, prefix='', signed=False, postfix='', integer=False):
+    if x is None:
+        return 'N/A'
+
     if math.isnan(x) or math.isinf(x):
         return str(x)
 
@@ -180,8 +183,10 @@ def short_address(address, begin=7, end=4, filler='...'):
 
 
 def format_percent(x, total=100.0, signed=False, threshold=0.01, space=''):
-    if total <= 0:
+    if total < 0:
         s = 0
+    elif total == 0:
+        return 'N/A %'
     else:
         s = x / total * 100.0
 

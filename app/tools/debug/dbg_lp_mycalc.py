@@ -69,13 +69,20 @@ async def my_test_block_calibration(lpgen: LpAppFramework):
     # print(r)
 
 
-async def my_test_block_by_date(lpgen: LpAppFramework):
+async def my_test_block_by_date(lpgen: LpAppFramework, d: date):
     dbm = DateToBlockMapper(lpgen.deps)
-    d = date(2022, 10, 13)
+    d = d or date(2022, 10, 13)
 
     last_block = await dbm.get_last_thorchain_block()
     r = await dbm.get_block_height_by_date(d, last_block)
     print(r)
+
+
+async def demo_test_block_to_date(lpgen: LpAppFramework, block_no):
+    dbm = DateToBlockMapper(lpgen.deps)
+    r = await dbm.get_timestamp_by_block_height(block_no)
+    print(f"Block #{block_no} => date {r}")
+    sep()
 
 
 async def clear_date2block(lpgen: LpAppFramework):
@@ -138,14 +145,16 @@ async def main():
 
         # await test_block_calibration(app)
         # await clear_date2block(app)
-        # await my_test_block_by_date(app)
+        # await my_test_block_by_date(app, date(2024, 1, 16))
+        await demo_test_block_to_date(app, 14289561)
+        await demo_test_block_to_date(app, 14232321)
 
         # await demo_summary_all_pools(app, 'thor1gzautydm2mrpcuj36drqyzuuzqw4w8cp8zjj2c')  # 3 classic LP
         # await demo_summary_all_pools(app, 'bc1qcsmgsvfpp4w6dmlwwdf4s87ngh8trz8yuwsfy0')  # savers
         # await demo_summary_all_pools(app, 'ltc1q67tf8ryuggvetakwz5flex5ydhyvn7rp0y8kx3')
 
         # await demo_report_for_single_pool(app, 'thor1a8ydprhkk5u032r277nzs4vw5khnnl3ya9xnvs', 'ETH.ETH')
-        await my_test_summary_of_all_pools(app, 'thor1tfm4q8u57qzsznpvh02s8j483aga63cl02k6jt')
+        # await my_test_summary_of_all_pools(app, 'thor1tfm4q8u57qzsznpvh02s8j483aga63cl02k6jt')
 
 
 if __name__ == "__main__":

@@ -9,8 +9,9 @@ from localization.achievements.ach_rus import AchievementsRussianLocalization
 from localization.eng_base import BaseLocalization, CREATOR_TG, URL_LEADERBOARD_MCCN
 from proto.types import ThorName
 from services.jobs.fetch.circulating import ThorRealms
+from services.jobs.fetch.runeyield.borrower import LoanReportCard
 from services.lib.config import Config
-from services.lib.constants import Chains
+from services.lib.constants import Chains, LOAN_MARKER
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address, get_thoryield_address, \
     get_ip_info_link
@@ -19,7 +20,7 @@ from services.lib.money import pretty_dollar, pretty_money, short_address, adapt
     emoji_for_percent_change, Asset, short_money, short_dollar, format_percent, RAIDO_GLYPH, short_rune, pretty_percent, \
     chart_emoji, pretty_rune
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
-    up_down_arrow, plural, shorten_text
+    up_down_arrow, plural, shorten_text, cut_long_text, underline
 from services.lib.utils import grouper, translate
 from services.lib.w3.dex_analytics import DexReportEntry, DexReport
 from services.models.cap_info import ThorCapInfo
@@ -150,6 +151,15 @@ class RussianLocalization(BaseLocalization):
     ALERT_UNSUBSCRIBE_FAILED = 'Отписка не удалась!'
 
     @staticmethod
+    def text_error_delivering_report(self, e, address, pool):
+        return (
+            f'🔥 Ошибка при отправке отчета: {e}. '
+            f'Вы отписаны от уведомления. '
+            f'Попробуйте подписаться позже или обратитесь к разработчику. {CREATOR_TG}\n\n'
+            f'Адрес {ital(address)}, пул {ital(pool)}'
+        )
+
+    @staticmethod
     def text_subscribed_to_lp(period):
         next_ts = now_ts() + period
         next_date = datetime.utcfromtimestamp(next_ts).strftime('%d.%m.%Y %H:%M:%S')
@@ -163,6 +173,7 @@ class RussianLocalization(BaseLocalization):
         '👉 Сберегательные хранилища\n'
         '👉 Слежение за балансами и действиями\n'
         '👉 Предоставление бонда в ноды 🆕\n'
+        '👉 Заёмы 🆕\n'
     )
     TEXT_NO_ADDRESSES = "🔆 Вы еще не добавили никаких адресов. Пришлите мне адрес, чтобы добавить."
     TEXT_YOUR_ADDRESSES = '🔆 Вы добавили следующие адреса:'
@@ -262,6 +273,17 @@ class RussianLocalization(BaseLocalization):
     LP_PIC_SUMMARY_TOTAL_LP_VS_HOLD = 'Итого холд против пулов, $'
     LP_PIC_SUMMARY_NO_WEEKLY_CHART = "Нет недельного графика, извините..."
 
+    def label_for_pool_button(self, pool_name):
+        short_name = cut_long_text(pool_name)
+        if LOAN_MARKER in pool_name:
+            # strip LOAN_MARKER
+            return f'Заём: {short_name[len(LOAN_MARKER):]}'
+
+        if Asset(pool_name).is_synth:
+            return f'Сбер.: {short_name}'
+        else:
+            return f'Ликв.пр.: {short_name}'
+
     def pic_lping_days(self, total_days, first_add_ts, extra=''):
         start_date = datetime.fromtimestamp(first_add_ts).strftime('%d.%m.%Y')
         extra = ' ' + extra if extra else ''
@@ -278,7 +300,7 @@ class RussianLocalization(BaseLocalization):
                                     thor_name: Optional[ThorName], local_name, clout: Optional[ThorSwapperClout]):
         if pools:
             title = '\n'
-            footer = '\n\n👇 Выберите пул, чтобы получить подробную карточку информации о ликвидности.'
+            footer = '\n\n👇 Выберите пул, чтобы получить подробную карточку информации о позиции.'
         else:
             title = self.TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS + '\n\n'
             footer = ''
@@ -321,6 +343,8 @@ class RussianLocalization(BaseLocalization):
     def text_lp_today(self):
         today = datetime.now().strftime('%d.%m.%Y')
         return f'Сегодня: {today}'
+
+    TEXT_LP_NO_LOAN_FOR_THIS_ADDRESS = '📪 <i>На этом адресе нет заёмов в пуле {pool}.</i>'
 
     # ----- CAP ------
 
@@ -1630,6 +1654,8 @@ class RussianLocalization(BaseLocalization):
         'hours': 'час',
         'day': 'дн',
         'days': 'дн',
+        'month': 'мес',
+        'months': 'мес',
         'ago': 'назад',
     }
 
@@ -1729,6 +1755,10 @@ class RussianLocalization(BaseLocalization):
                f'{code(short_money(t.amount, postfix=" " + asset))}{usd_amt} ' \
                f'от {from_my} ➡️ к {to_my}{memo}.'
 
+    @staticmethod
+    def unsubscribe_text(unsub_id):
+        return f'🔕 Отписка: /unsub_{unsub_id}'
+
     def notification_text_regular_lp_report(self, user, address, pool, lp_report: LiquidityPoolReport, local_name: str,
                                             unsub_id):
         explorer_link, name_str, pretty_pool, thor_yield_link = self._regular_report_variables(address, local_name,
@@ -1738,8 +1768,69 @@ class RussianLocalization(BaseLocalization):
         return (
             f'Ваш регулярный отчет {pos_type} на адресе {explorer_link}{name_str} в пуле {pre(pretty_pool)} готов.\n'
             f'{thor_yield_link}.\n\n'
-            f'Отписка: /unsub_{unsub_id}'
+            f'{self.unsubscribe_text(unsub_id)}'
         )
+
+    def notification_text_loan_card(self, card: LoanReportCard, local_name='', unsub_id=''):
+        address_link = self.link_to_address(card.address, None, is_loan=True)
+        t_pos = card.details.t_pos
+        asset_str = Asset(t_pos.asset).pretty_str
+        message = (
+            f"––––––––––––––––––––––––––––––––––––––––––––––––\n"
+            f'🏦 <b>Заём для</b> {address_link} (пул {card.pool})\n\n'
+        )
+
+        message += (
+            f'Текущий залог: {underline(bold(pretty_money(t_pos.collateral_current)))} '
+            f'{bold(asset_str)} или '
+            f'{underline(bold(pretty_dollar(card.collateral_current_usd)))}\n'
+        )
+
+        if card.collateral_price_last_add and card.collateral_price_last_add > 0:
+            old_collateral_value = card.collateral_price_last_add * t_pos.collateral_current
+            message += (
+                f"Стоимость залога на момент последнего открытия заёма: {ital(pretty_dollar(old_collateral_value))}"
+            )
+
+            percent_change = up_down_arrow(old_collateral_value, card.collateral_current_usd, signed=True,
+                                           percent_delta=True)
+
+            if percent_change:
+                message += f" ({percent_change})"
+            message += '\n'
+
+        message += f'Прошло времени: {ital(self.seconds_human(card.time_elapsed))}\n'
+
+        message += f'\n<b>Долг текущий</b>: {underline(bold(pretty_dollar(t_pos.debt_current)))}\n'
+
+        if t_pos.debt_current > t_pos.debt_issued:
+            message += f'<b>Долг выпущенный</b>: {ital(pretty_dollar(t_pos.debt_issued))}\n'
+
+        if t_pos.debt_repaid:
+            message += f'<b>Долг погашенный</b>: {ital(pretty_dollar(t_pos.debt_repaid))}\n'
+
+        if t_pos.debt_current > 0:
+            message += (
+                f"CR: {bold(pretty_money(card.collateral_ratio))}x, "
+                f"LTV: {bold(pretty_money(card.loan_to_value))}%\n"
+            )
+
+        if target_assets := card.details.m_pos.target_assets:
+            if len(target_assets) == 1:
+                asset = target_assets[0]
+                message += f'Целевой актив заёма: {ital(Asset(asset).pretty_str)}\n'
+            else:
+                assets_all = ', '.join(Asset(a).pretty_str for a in target_assets)
+                message += f'Целевые активы заёма: {ital(assets_all)}\n'
+
+        if unsub_id:
+            message += f'\n{self.unsubscribe_text(unsub_id)}\n'
+
+        message += f"––––––––––––––––––––––––––––––––––––––––––––––––"
+
+        return message
+
+    # ------ DEX -------
 
     @staticmethod
     def format_dex_entry(e: DexReportEntry, r):
@@ -1903,10 +1994,10 @@ class RussianLocalization(BaseLocalization):
             f'📝 Количество транзакций: {bold(pretty_money(curr.lending_tx_count))}\n'
             f'💰 Общее обеспечение: {bold(short_dollar(curr.total_collateral_value_usd))}\n'
             f'💸 Объем займов: {bold(short_dollar(curr.total_borrowed_amount_usd))}\n'
-            f'₿ Bitcoin CR: {bold(short_money(curr.btc_current_cr))}, '
-            f'LTV: {bold(short_money(curr.btc_current_ltv))}\n'
-            f'Ξ Ethereum CR: {bold(short_money(curr.eth_current_cr))}, '
-            f'LTV: {bold(short_money(curr.eth_current_ltv))}\n'
+            f'₿ Bitcoin CR: {bold(short_money(curr.btc_current_cr))}x, '
+            f'LTV: {bold(short_money(curr.btc_current_ltv))}%\n'
+            f'Ξ Ethereum CR: {bold(short_money(curr.eth_current_cr))}x, '
+            f'LTV: {bold(short_money(curr.eth_current_ltv))}%\n'
             f'❤️‍🔥 Rune сожжено: {bold(short_rune(curr.rune_burned_rune))}\n\n'
             f'{link(self.LENDING_LINK, "Подробности")}'
         )

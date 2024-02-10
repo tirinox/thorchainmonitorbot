@@ -53,6 +53,8 @@ class ThorEnvironment:
 
     path_block_results = '/block_results?height={height}'
 
+    path_borrower_details = '/thorchain/pool/{asset}/borrower/{address}?height={height}'
+
     kind: str = ''
 
     def copy(self):

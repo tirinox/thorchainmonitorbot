@@ -2,6 +2,7 @@ import asyncio
 
 from localization.eng_base import BaseLocalization
 from services.jobs.fetch.borrowers import BorrowersFetcher
+from services.jobs.fetch.runeyield.borrower import BorrowerPositionGenerator
 from services.jobs.scanner.event_db import EventDatabase
 from services.jobs.scanner.loan_extractor import LoanExtractorBlock
 from services.jobs.scanner.native_scan import NativeScannerBlock
@@ -99,7 +100,27 @@ async def demo_lending_stats(app: LpAppFramework):
     data = AlertLendingStats(data, None)
 
     await app.test_all_locs(
-        BaseLocalization.notification_lending_stats, data
+        BaseLocalization.notification_lending_stats, None, data
+    )
+
+
+async def demo_personal_loan_card(app: LpAppFramework):
+    gen = BorrowerPositionGenerator(app.deps)
+    # pool = 'BTC.BTC'
+    pool = 'ETH.ETH'
+    # address = 'bc1q8087yq4x9j4zyp4nua9ex7yrjf8h6kajdzrepp'  # didn't repay dept
+    # address = 'bc1qcsn8nwh7aqj3swx5ryps42y89fftxv08la3cyw'  # repaid dept
+    address = '0xf744112774ef03c8d35f8d1f5b4677933fbd3d6b'
+
+    card = await gen.get_loan_report_card(pool, address)
+
+    print(card)
+
+    await app.test_locs_except_tw(
+        BaseLocalization.notification_text_loan_card,
+        card,
+        'mockWallet',
+        '12345'
     )
 
 
@@ -109,7 +130,9 @@ async def run():
         await app.deps.pool_fetcher.reload_global_pools()
         await app.deps.last_block_fetcher.run_once()
 
-        await demo_lending_stats(app)
+        await demo_personal_loan_card(app)
+
+        # await demo_lending_stats(app)
         # await demo_lending_stats_old(app)
 
         # await debug_block_analyse(app, 12262380)
