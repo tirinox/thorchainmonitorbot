@@ -2598,24 +2598,47 @@ class BaseLocalization(ABC):  # == English
             f'{user_link} | {db_link}'
         )
 
-    LENDING_LINK = "https://flipsidecrypto.xyz/banbannard/%E2%9A%A1-thor-chain-lending-thorchain-lending-fOAKej"
+    LENDING_LINK = "https://dashboards.ninerealms.com/#lending"
 
     def notification_lending_stats(self, event: AlertLendingStats):
-        curr = event.current
-        # todo: delta
+        (borrower_count_delta, curr, lending_tx_count_delta, rune_burned_rune_delta, total_borrowed_amount_delta,
+         total_collateral_value_delta) = self._lending_stats_delta(event)
+
         return (
             f'<b>Lending stats</b>\n\n'
-            f'🙋‍♀️ Borrower count: {bold(pretty_money(curr.borrower_count))}\n'
-            f'📝 Lending Tx count: {bold(pretty_money(curr.lending_tx_count))}\n'
-            f'💰 Total collateral value: {bold(short_dollar(curr.total_collateral_value_usd))}\n'
-            f'💸 Total borrowed value: {bold(short_dollar(curr.total_borrowed_amount_usd))}\n'
+            f'🙋‍♀️ Borrower count: {bold(pretty_money(curr.borrower_count))} {borrower_count_delta}\n'
+            f'📝 Lending Tx count: {bold(pretty_money(curr.lending_tx_count))} {lending_tx_count_delta}\n'
+            f'💰 Total collateral value: {bold(short_dollar(curr.total_collateral_value_usd))} {total_collateral_value_delta}\n'
+            f'💸 Total borrowed value: {bold(short_dollar(curr.total_borrowed_amount_usd))} {total_borrowed_amount_delta}\n'
             f'₿ Bitcoin CR: {bold(short_money(curr.btc_current_cr))}x, '
             f'LTV: {bold(short_money(curr.btc_current_ltv))}%\n'
             f'Ξ Ethereum CR: {bold(short_money(curr.eth_current_cr))}x, '
             f'LTV: {bold(short_money(curr.eth_current_ltv))}%\n'
-            f'❤️‍🔥 Rune burned: {bold(short_rune(curr.rune_burned_rune))}\n\n'
+            f'❤️‍🔥 Rune burned: {bold(short_rune(curr.rune_burned_rune))} {rune_burned_rune_delta}\n\n'
             f'{link(self.LENDING_LINK, "Details")}'
         )
+
+    @staticmethod
+    def _lending_stats_delta(event: AlertLendingStats):
+        curr, prev = event.current, event.previous
+        if prev:
+            borrower_count_delta = bracketify(up_down_arrow(curr.borrower_count, prev.borrower_count, int_delta=True))
+            lending_tx_count_delta = bracketify(
+                up_down_arrow(curr.lending_tx_count, prev.lending_tx_count, int_delta=True))
+            total_collateral_value_delta = bracketify(
+                up_down_arrow(curr.total_collateral_value_usd, prev.total_collateral_value_usd, money_delta=True))
+            total_borrowed_amount_delta = bracketify(
+                up_down_arrow(curr.total_borrowed_amount_usd, prev.total_borrowed_amount_usd, money_delta=True))
+            rune_burned_rune_delta = bracketify(
+                up_down_arrow(curr.rune_burned_rune, prev.rune_burned_rune, money_delta=True))
+        else:
+            borrower_count_delta = ''
+            lending_tx_count_delta = ''
+            total_collateral_value_delta = ''
+            total_borrowed_amount_delta = ''
+            rune_burned_rune_delta = ''
+        return (borrower_count_delta, curr, lending_tx_count_delta, rune_burned_rune_delta,
+                total_borrowed_amount_delta, total_collateral_value_delta)
 
     # ------ Bond providers alerts ------
 

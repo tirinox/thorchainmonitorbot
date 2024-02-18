@@ -977,17 +977,19 @@ class TwitterEnglishLocalization(BaseLocalization):
         )
 
     def notification_lending_stats(self, event: AlertLendingStats):
-        curr = event.current
+        (borrower_count_delta, curr, lending_tx_count_delta, rune_burned_rune_delta, total_borrowed_amount_delta,
+         total_collateral_value_delta) = self._lending_stats_delta(event)
+
         return (
             f'Lending stats\n\n'
-            f'🙋‍♀️ Borrower count: {pretty_money(curr.borrower_count)}\n'
-            f'📝 Tx count: {pretty_money(curr.lending_tx_count)}\n'
-            f'💰 Total collateral: {short_dollar(curr.total_collateral_value_usd)}\n'
-            f'💸 Total borrowed: {short_dollar(curr.total_borrowed_amount_usd)}\n'
-            f'₿ Bitcoin CR: {short_money(curr.btc_current_cr)}x, '
+            f'🙋‍️ Borrower count: {pretty_money(curr.borrower_count)} {borrower_count_delta}\n'
+            f'📝 Tx count: {pretty_money(curr.lending_tx_count)} {lending_tx_count_delta}\n'
+            f'💰 Total collateral: {short_dollar(curr.total_collateral_value_usd)} {total_collateral_value_delta}\n'
+            f'💸 Total borrowed: {short_dollar(curr.total_borrowed_amount_usd)} {total_borrowed_amount_delta}\n'
+            f'₿ Btc CR: {short_money(curr.btc_current_cr)}x, '
             f'LTV: {short_money(curr.btc_current_ltv)}%\n'
-            f'Ξ Ethereum CR: {short_money(curr.eth_current_cr)}x, '
+            f'Ξ Eth CR: {short_money(curr.eth_current_cr)}x, '
             f'LTV: {short_money(curr.eth_current_ltv)}%\n'
-            f'❤️‍🔥 Rune burned: {short_rune(curr.rune_burned_rune)}\n\n'
+            f'❤️‍🔥 Rune burned: {short_rune(curr.rune_burned_rune)} {rune_burned_rune_delta}\n\n'
             f'{self.LENDING_LINK}'
         )

@@ -1,4 +1,6 @@
 import asyncio
+import copy
+import random
 
 from localization.eng_base import BaseLocalization
 from services.jobs.fetch.borrowers import BorrowersFetcher
@@ -8,7 +10,7 @@ from services.jobs.scanner.loan_extractor import LoanExtractorBlock
 from services.jobs.scanner.native_scan import NativeScannerBlock
 from services.lib.money import DepthCurve
 from services.lib.texts import sep
-from services.models.loans import AlertLendingStats
+from services.models.loans import AlertLendingStats, LendingStats
 from services.notify.types.lend_stats_notify import LendingStatsNotifier
 from services.notify.types.loans_notify import LoanTxNotifier
 from tools.lib.lp_common import LpAppFramework
@@ -101,7 +103,17 @@ async def demo_lending_stats(app: LpAppFramework):
     borrowers_fetcher = BorrowersFetcher(app.deps)
     data = await borrowers_fetcher.fetch()
 
-    data = AlertLendingStats(data, None)
+    prev = copy.deepcopy(data)
+
+    prev: LendingStats = prev._replace(
+        borrower_count=prev.borrower_count + random.randint(-100, 100),
+        lending_tx_count=prev.lending_tx_count + random.randint(-100, 100),
+        total_collateral_value_usd=prev.total_collateral_value_usd + random.uniform(-100000, 100000000),
+        total_borrowed_amount_usd=prev.total_borrowed_amount_usd + random.uniform(-100000, 100000000),
+        rune_burned_rune=prev.rune_burned_rune + random.uniform(-100000, 10000000),
+    )
+
+    data = AlertLendingStats(data, prev)
 
     await app.test_all_locs(
         BaseLocalization.notification_lending_stats, None, data
