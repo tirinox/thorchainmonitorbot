@@ -2602,6 +2602,7 @@ class BaseLocalization(ABC):  # == English
 
     def notification_lending_stats(self, event: AlertLendingStats):
         curr = event.current
+        # todo: delta
         return (
             f'<b>Lending stats</b>\n\n'
             f'🙋‍♀️ Borrower count: {bold(pretty_money(curr.borrower_count))}\n'

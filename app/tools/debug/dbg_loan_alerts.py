@@ -79,6 +79,8 @@ async def debug_tx_records(app: LpAppFramework, tx_id):
 
 
 async def demo_lending_stats_old(app: LpAppFramework):
+    await app.deps.rune_market_fetcher.run_once()
+
     borrowers_fetcher = BorrowersFetcher(app.deps)
 
     notifier = LendingStatsNotifier(app.deps)
@@ -94,6 +96,8 @@ async def demo_lending_stats_old(app: LpAppFramework):
 
 
 async def demo_lending_stats(app: LpAppFramework):
+    await app.deps.rune_market_fetcher.get_rune_market_info()
+
     borrowers_fetcher = BorrowersFetcher(app.deps)
     data = await borrowers_fetcher.fetch()
 
@@ -130,9 +134,9 @@ async def run():
         await app.deps.pool_fetcher.reload_global_pools()
         await app.deps.last_block_fetcher.run_once()
 
-        await demo_personal_loan_card(app)
+        # await demo_personal_loan_card(app)
 
-        # await demo_lending_stats(app)
+        await demo_lending_stats(app)
         # await demo_lending_stats_old(app)
 
         # await debug_block_analyse(app, 12262380)

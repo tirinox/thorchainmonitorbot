@@ -8,6 +8,7 @@ from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import free_url_gen
 from services.models.loans import LendingStats
+from services.models.price import RuneMarketInfo
 
 URL_FS_BORROWERS_V3 = 'https://flipsidecrypto.xyz/api/dashboards/visualizations/cd7ab830-94e4-4ccb-99a6-eb7cf3aed0f4/get'
 
@@ -29,10 +30,19 @@ class BorrowersFetcher(BaseFetcher):
             return []
         return borrowers
 
+    async def get_real_burned_rune(self) -> float:
+        market_info: RuneMarketInfo = await self.deps.rune_market_fetcher.get_rune_market_info()
+        return market_info.supply_info.lending_burnt_rune
+
     async def get_fs_lending_stats(self) -> Optional[LendingStats]:
         data = await self.fs.request(URL_FS_BORROWERS_V3)
         if data:
-            return LendingStats.from_fs_json(data)
+            lending_stats = LendingStats.from_fs_json(data)
+            if lending_stats:
+                real_burned_rune = await self.get_real_burned_rune()
+                if real_burned_rune is not None:
+                    lending_stats = lending_stats._replace(rune_burned_rune=real_burned_rune)
+            return lending_stats
 
     async def fetch(self) -> Optional[LendingStats]:
         lending_stats = await self.get_fs_lending_stats()
