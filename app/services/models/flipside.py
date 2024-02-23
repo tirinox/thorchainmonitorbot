@@ -181,6 +181,16 @@ class FSAffiliateCollectors(NamedTuple):
             total_cumulative_fee_usd=float(j.get('total_cumulative_fee_usd', 0.0)),
         )
 
+    @classmethod
+    def from_json(cls, j):
+        return cls(
+            j.get(KEY_DATETIME),
+            j.get('LABEL', ''),
+            fee_usd=float(j.get('FEE_USD', 0.0)),
+            cumulative_fee_usd=float(j.get('CUMULATIVE_FEE_USD', 0.0)),
+            total_cumulative_fee_usd=float(j.get('TOTAL_CUMULATIVE_FEE_USD', 0.0)),
+        )
+
 
 class FSSwapRoutes(NamedTuple):
     date: datetime

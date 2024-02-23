@@ -3,6 +3,7 @@ from typing import List, Optional
 
 from services.jobs.fetch.base import BaseFetcher
 from services.jobs.fetch.flipside.flipside import FlipSideConnector
+from services.jobs.fetch.flipside.urls import URL_FS_BORROWERS_V3
 from services.lib.date_utils import parse_timespan_to_seconds, DAY
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
@@ -10,7 +11,6 @@ from services.lib.midgard.urlgen import free_url_gen
 from services.models.loans import LendingStats
 from services.models.price import RuneMarketInfo
 
-URL_FS_BORROWERS_V3 = 'https://flipsidecrypto.xyz/api/dashboards/visualizations/cd7ab830-94e4-4ccb-99a6-eb7cf3aed0f4/get'
 
 MAX_AGE_TO_REPORT_ERROR = 3 * DAY
 

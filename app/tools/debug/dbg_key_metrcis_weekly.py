@@ -6,10 +6,13 @@ import pickle
 from localization.languages import Language
 from services.dialog.picture.key_stats_picture import KeyStatsPictureGenerator
 from services.jobs.fetch.flipside import FlipSideConnector
+from services.jobs.fetch.flipside.urls import FS_LATEST_EARNINGS_URL, FS_LATEST_SWAP_VOL_URL, \
+    FS_LATEST_SWAP_AFF_FEE_URL, FS_LATEST_SWAP_COUNT_URL, FS_LATEST_SWAP_PATH_URL, FS_LATEST_LOCKED_RUNE_URL
 from services.jobs.fetch.key_stats import KeyStatsFetcher, FS_ROUTES_V2
 from services.lib.delegates import INotified
 from services.lib.texts import sep
-from services.models.flipside import FSFees, FSSwapRoutes, FSAffiliateCollectors
+from services.models.flipside import FSSwapRoutes, FSAffiliateCollectors, FSFees, FSSwapVolume, FSSwapCount, \
+    FSLockedValue
 from services.notify.types.key_metrics_notify import KeyMetricsNotifier
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
@@ -19,6 +22,34 @@ async def demo_load(app: LpAppFramework):
     f = KeyStatsFetcher(app.deps)
     d = await f.fetch()
     print(d)
+
+
+async def demo_load_single_fs_list(app: LpAppFramework):
+    fs = FlipSideConnector(app.deps.session, app.deps.cfg.flipside.api_key)
+
+    data = await fs.request_daily_series_v2(FS_LATEST_EARNINGS_URL, FSFees)
+    print(data)
+    sep()
+
+    data = await fs.request_daily_series_v2(FS_LATEST_SWAP_VOL_URL, FSSwapVolume)
+    print(data)
+    sep()
+
+    data = await fs.request_daily_series_v2(FS_LATEST_SWAP_AFF_FEE_URL, FSAffiliateCollectors)
+    print(data)
+    sep()
+
+    data = await fs.request_daily_series_v2(FS_LATEST_LOCKED_RUNE_URL, FSLockedValue)
+    print(data)
+    sep()
+
+    data = await fs.request_daily_series_v2(FS_LATEST_SWAP_PATH_URL, FSSwapRoutes)
+    print(data)
+    sep()
+
+    data = await fs.request_daily_series_v2(FS_LATEST_SWAP_COUNT_URL, FSSwapCount)
+    print(data)
+    sep()
 
 
 class FlipSideSaver(INotified):
@@ -99,11 +130,12 @@ async def main():
         await lp_app.deps.last_block_fetcher.run_once()
         # await lp_app.prepare(brief=True)
 
-        await demo_analyse(lp_app)
-        await demo_picture(lp_app)
+        # await demo_analyse(lp_app)
+        # await demo_picture(lp_app)
         # await demo_new_flipside_sql(lp_app)
         # await demo_load(lp_app)
         # await demo_new_flipside_swap_routes(lp_app)
+        await demo_load_single_fs_list(lp_app)
 
 
 if __name__ == '__main__':

@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 import aiohttp
 from flipside import Flipside
 from flipside.flipside import API_BASE_URL
+from pydantic import ValidationError
 
 from services.lib.date_utils import now_ts, DAY, discard_time, HOUR, MINUTE, date_parse_rfc_z_no_ms
 from services.lib.utils import WithLogger
@@ -50,6 +51,35 @@ class FSList(dict):
                 break
 
         self.update(grouped_by)
+        return self
+
+    @classmethod
+    def from_server_v2(cls, data, klass):
+        self = cls()
+        if not data:
+            return self
+
+        columns = data['result']['columnNames']
+
+        for row in data['result']['rows']:
+            # combine columns and row into a dict
+            item = {}
+            for column, value in zip(columns, row):
+                item[column] = value
+
+            # parse date
+            day_value = item.get('day') or item.get('DAY')
+            date = item[KEY_DATETIME] = self.parse_date(day_value)
+            item[KEY_TS] = date.timestamp()
+
+            # create object
+            item_obj = klass.from_json(item)
+
+            # add to the list
+            if date in self:
+                self[date][klass].append(item_obj)
+            else:
+                self[date] = {klass: [item_obj]}
         return self
 
     def __init__(self, *args, **kwargs) -> None:
@@ -200,13 +230,25 @@ class FlipSideConnector(WithLogger):
             return f.read()
 
     async def request_daily_series_sql_file(self, filename, max_days=0):
-        sql = self.load_sql(filename)
-        data = await self.direct_sql_query(sql)
-        if data.error:
-            raise Exception(f"Failed to load Flipside query for {filename}: {data.error}")
+        try:
+            sql = self.load_sql(filename)
+            data = await self.direct_sql_query(sql)
+            if data.error:
+                raise Exception(f"Failed to load Flipside query for {filename}: {data.error}")
 
-        records = data.records
-        fs_list = FSList.from_server(records, max_days)
+            records = data.records
+            fs_list = FSList.from_server(records, max_days)
 
-        self.logger.info(f'"{filename}" returned total {len(records)} objects; latest date is {fs_list.latest_date}')
-        return fs_list
+            self.logger.info(f'"{filename}" returned total {len(records)} objects; latest date is {fs_list.latest_date}')
+            return fs_list
+        except ValidationError:
+            self.logger.exception(f'Failed to load Flipside query for {filename}')
+            return None
+
+    async def request_daily_series_v2(self, url, klass):
+        data = await self.request(url)
+        if not data:
+            self.logger.error(f'No data for URL: "{url}"')
+            return
+
+        return FSList.from_server_v2(data, klass)
