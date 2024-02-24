@@ -283,11 +283,10 @@ class AlertKeyStats:
         collectors = defaultdict(float)
 
         for objects_for_day in daily_list:
-            for objects in objects_for_day.values():
-                for obj in objects:
-                    if isinstance(obj, FSAffiliateCollectors):
-                        if obj.label:
-                            collectors[obj.label] += obj.fee_usd
+            for obj in objects_for_day:
+                if isinstance(obj, FSAffiliateCollectors):
+                    if obj.label:
+                        collectors[obj.label] += obj.fee_usd
         return list(sorted(collectors.items(), key=operator.itemgetter(1), reverse=True))
 
     @property
@@ -368,8 +367,7 @@ def sum_by_attribute(daily_list, attr_name, klass=None, f_sum=sum):
         return f_sum(
             getattr(obj, attr_name)
             for objects_for_day in daily_list
-            for objects in objects_for_day.values()
-            for obj in objects
+            for obj in objects_for_day
             if not klass or isinstance(obj, klass)
         )
     except ValueError:

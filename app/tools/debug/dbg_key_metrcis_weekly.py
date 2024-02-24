@@ -5,7 +5,7 @@ import pickle
 
 from localization.languages import Language
 from services.dialog.picture.key_stats_picture import KeyStatsPictureGenerator
-from services.jobs.fetch.flipside import FlipSideConnector
+from services.jobs.fetch.flipside import FlipSideConnector, FSList
 from services.jobs.fetch.flipside.urls import FS_LATEST_EARNINGS_URL, FS_LATEST_SWAP_VOL_URL, \
     FS_LATEST_SWAP_AFF_FEE_URL, FS_LATEST_SWAP_COUNT_URL, FS_LATEST_SWAP_PATH_URL, FS_LATEST_LOCKED_RUNE_URL
 from services.jobs.fetch.key_stats import KeyStatsFetcher, FS_ROUTES_V2
@@ -27,28 +27,27 @@ async def demo_load(app: LpAppFramework):
 async def demo_load_single_fs_list(app: LpAppFramework):
     fs = FlipSideConnector(app.deps.session, app.deps.cfg.flipside.api_key)
 
-    data = await fs.request_daily_series_v2(FS_LATEST_EARNINGS_URL, FSFees)
-    print(data)
-    sep()
+    tasks = [
+        (FS_LATEST_EARNINGS_URL, FSFees),
+        (FS_LATEST_SWAP_VOL_URL, FSSwapVolume),
+        (FS_LATEST_SWAP_AFF_FEE_URL, FSAffiliateCollectors),
+        (FS_LATEST_LOCKED_RUNE_URL, FSLockedValue),
+        (FS_LATEST_SWAP_PATH_URL, FSSwapRoutes),
+        (FS_LATEST_SWAP_COUNT_URL, FSSwapCount)
+    ]
 
-    data = await fs.request_daily_series_v2(FS_LATEST_SWAP_VOL_URL, FSSwapVolume)
-    print(data)
-    sep()
+    async def load_one(url, cls):
+        data = await fs.request_daily_series_v2(url, cls)
+        sep(str(cls))
+        print(f'Loaded {cls.__name__} from {url}')
+        print(data)
+        sep()
+        return data
 
-    data = await fs.request_daily_series_v2(FS_LATEST_SWAP_AFF_FEE_URL, FSAffiliateCollectors)
-    print(data)
-    sep()
+    lists = [await load_one(url, cls) for url, cls in tasks]
 
-    data = await fs.request_daily_series_v2(FS_LATEST_LOCKED_RUNE_URL, FSLockedValue)
-    print(data)
-    sep()
-
-    data = await fs.request_daily_series_v2(FS_LATEST_SWAP_PATH_URL, FSSwapRoutes)
-    print(data)
-    sep()
-
-    data = await fs.request_daily_series_v2(FS_LATEST_SWAP_COUNT_URL, FSSwapCount)
-    print(data)
+    combined_list = FSList.combine(*lists)
+    print(combined_list)
     sep()
 
 
@@ -74,7 +73,7 @@ class FlipSideSaver(INotified):
             pass
 
 
-async def demo_analyse(app: LpAppFramework):
+async def demo_analyse_and_show(app: LpAppFramework):
     f = KeyStatsFetcher(app.deps)
     noter = KeyMetricsNotifier(app.deps)
     f.add_subscriber(noter)
@@ -83,8 +82,20 @@ async def demo_analyse(app: LpAppFramework):
     saver = FlipSideSaver()
     f.add_subscriber(saver)
 
-    await f.run_once()
+    r = await f.fetch()
+
+    await show_picture(app, r)
+
     await asyncio.sleep(5)  # let them send the picture
+
+
+async def show_picture(app: LpAppFramework, data):
+    # loc = app.deps.loc_man.default
+    loc = app.deps.loc_man[Language.RUSSIAN]
+
+    pic_gen = KeyStatsPictureGenerator(loc, data)
+    pic, name = await pic_gen.get_picture()
+    save_and_show_pic(pic, name=name)
 
 
 async def demo_picture(app: LpAppFramework):
@@ -94,18 +105,14 @@ async def demo_picture(app: LpAppFramework):
     loader = FlipSideSaver()
     data = loader.load_data()
     if not data:
-        await demo_analyse(app)
+        await demo_analyse_and_show(app)
         data = loader.load_data()
 
     sep()
     print('Data loaded')
 
-    # loc = app.deps.loc_man.default
-    loc = app.deps.loc_man[Language.RUSSIAN]
+    await show_picture(app, data)
 
-    pic_gen = KeyStatsPictureGenerator(loc, data)
-    pic, name = await pic_gen.get_picture()
-    save_and_show_pic(pic, name=name)
 
 
 async def demo_new_flipside_sql(app: LpAppFramework):
@@ -130,12 +137,12 @@ async def main():
         await lp_app.deps.last_block_fetcher.run_once()
         # await lp_app.prepare(brief=True)
 
-        # await demo_analyse(lp_app)
+        await demo_analyse_and_show(lp_app)
         # await demo_picture(lp_app)
         # await demo_new_flipside_sql(lp_app)
         # await demo_load(lp_app)
         # await demo_new_flipside_swap_routes(lp_app)
-        await demo_load_single_fs_list(lp_app)
+        # await demo_load_single_fs_list(lp_app)
 
 
 if __name__ == '__main__':

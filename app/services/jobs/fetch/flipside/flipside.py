@@ -1,7 +1,9 @@
 import asyncio
 import os.path
 from collections import defaultdict
+from dataclasses import dataclass, field
 from datetime import datetime, timedelta
+from typing import List, Dict
 
 import aiohttp
 from flipside import Flipside
@@ -15,7 +17,11 @@ KEY_TS = '__ts'
 KEY_DATETIME = '__dt'
 
 
-class FSList(dict):
+@dataclass
+class FSList:
+    # Date => [List of FS_XXx]
+    data: Dict[datetime, List] = field(default_factory=lambda: defaultdict(list))
+
     @staticmethod
     def parse_date(string_date):
         try:
@@ -50,7 +56,7 @@ class FSList(dict):
             if max_days and len(grouped_by) >= max_days:
                 break
 
-        self.update(grouped_by)
+        self.data.update(grouped_by)
         return self
 
     @classmethod
@@ -68,7 +74,7 @@ class FSList(dict):
                 item[column] = value
 
             # parse date
-            day_value = item.get('day') or item.get('DAY')
+            day_value = self.get_date(item)
             date = item[KEY_DATETIME] = self.parse_date(day_value)
             item[KEY_TS] = date.timestamp()
 
@@ -76,23 +82,17 @@ class FSList(dict):
             item_obj = klass.from_json(item)
 
             # add to the list
-            if date in self:
-                self[date][klass].append(item_obj)
-            else:
-                self[date] = {klass: [item_obj]}
-        return self
+            self.data[date].append(item_obj)
 
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
-        self.klass = dict
+        return self
 
     @property
     def latest_date(self):
-        return max(self.keys()) if self else datetime(1990, 1, 1)
+        return max(self.data.keys()) if self else datetime(1990, 1, 1)
 
     @property
     def most_recent(self):
-        return self[self.latest_date]
+        return self.data[self.latest_date]
 
     @property
     def most_recent_one(self):
@@ -100,9 +100,9 @@ class FSList(dict):
 
     def get_data_from_day(self, dt, klass=None):
         then = discard_time(dt)
-        data_then = self.get(then)
+        data_then = self.data.get(then)
         if data_then:
-            return data_then.get(klass) if klass else data_then
+            return [d for d in data_then if not klass or isinstance(d, klass)]
 
     def get_data_days_ago(self, days, klass=None):
         then = datetime.fromtimestamp(now_ts() - days * DAY)
@@ -136,30 +136,25 @@ class FSList(dict):
 
     def transform_from_json(self, klass, f='from_json'):
         loader = getattr(klass, f)
-        result = FSList([
-            (k, [
-                loader(piece) for piece in v
-            ]) for k, v in self.items()
-        ])
-        result.klass = klass
+        data = {k: [loader(piece) for piece in v] for k, v in self.data.items()}
+        result = FSList()
+        result.data = defaultdict(list, data)
         return result
 
     @property
     def all_dates_set(self):
-        return set(self.keys())
+        return set(self.data.keys())
 
     def all_pieces_of_type_to_date(self, date, klass):
-        return [piece for piece in self.get(date, []) if isinstance(piece, klass)]
+        return [piece for piece in self.data.get(date, []) if isinstance(piece, klass)]
 
     @classmethod
     def combine(cls, *lists):
         results = cls()
         for fs_list in lists:
             fs_list: FSList
-            for date, v in fs_list.items():
-                if date not in results:
-                    results[date] = defaultdict(list)
-                results[date][fs_list.klass].extend(v)
+            for date, v in fs_list.data.items():
+                results.data[date].extend(v)
         return results
 
     @staticmethod
@@ -167,24 +162,17 @@ class FSList(dict):
         return all(klass in row for klass in class_list)
 
     def remove_incomplete_rows(self, class_list) -> 'FSList':
-        result = FSList(self)
+        result = FSList()
+        result.data = self.data.copy()
+
         if not class_list:
             return result
 
-        for date in sorted(result.keys(), reverse=True):
-            row = result[date]
+        for date in sorted(result.data.keys(), reverse=True):
+            row = result.data[date]
             if not result.has_classes(row, class_list):
-                del result[date]
+                del result.data[date]
         return result
-
-    def sum_attribute(self, attribute: str, max_days=-1):
-        summed = 0
-        for day_no, date in enumerate(sorted(self.values(), reverse=True)):
-            if 0 < max_days <= day_no:
-                break
-            for item in self[date]:
-                summed += getattr(item, attribute)
-        return summed
 
 
 class FlipSideConnector(WithLogger):
@@ -239,7 +227,8 @@ class FlipSideConnector(WithLogger):
             records = data.records
             fs_list = FSList.from_server(records, max_days)
 
-            self.logger.info(f'"{filename}" returned total {len(records)} objects; latest date is {fs_list.latest_date}')
+            self.logger.info(
+                f'"{filename}" returned total {len(records)} objects; latest date is {fs_list.latest_date}')
             return fs_list
         except ValidationError:
             self.logger.exception(f'Failed to load Flipside query for {filename}')

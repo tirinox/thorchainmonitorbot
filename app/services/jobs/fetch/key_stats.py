@@ -2,6 +2,7 @@ import asyncio
 
 from services.jobs.fetch.base import BaseFetcher
 from services.jobs.fetch.flipside.flipside import FlipSideConnector, FSList
+from services.jobs.fetch.flipside.urls import *
 from services.jobs.fetch.pool_price import PoolFetcher
 from services.lib.date_utils import parse_timespan_to_seconds, DAY
 from services.lib.depcont import DepContainer
@@ -43,33 +44,45 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         fresh_pools = pf.convert_pool_list_to_dict(list(fresh_pools.values()))
         old_pools = pf.convert_pool_list_to_dict(list(old_pools.values()))
 
+        routes = await self._fs.request_daily_series_v2(FS_LATEST_SWAP_PATH_URL, FSSwapRoutes)
+        routes = routes.most_recent
+
         # Load all FlipSideCrypto data
+        # loaders = [
+        #     (FS_RUNE_EARNINGS, FSFees, None),
+        #     (FS_UNIQUE_SWAPPERS, FSSwapCount, None),
+        #     (FS_LOCKED_VALUE, FSLockedValue, None),
+        #     (FS_SWAP_VOL, FSSwapVolume, None),
+        #     (FS_AFFILIATES_V4, FSAffiliateCollectors, None),
+        # ]
+        #
+        # # Actual API requests
+        # data_chunks = await asyncio.gather(
+        #     *[self._fs.request_daily_series_sql_file(sql_file, max_days=self.trim_max_days)
+        #       for sql_file, klass, _ in loaders]
+        # )
+
         loaders = [
-            (FS_RUNE_EARNINGS, FSFees, None),
-            (FS_UNIQUE_SWAPPERS, FSSwapCount, None),
-            (FS_LOCKED_VALUE, FSLockedValue, None),
-            (FS_SWAP_VOL, FSSwapVolume, None),
-            (FS_AFFILIATES_V4, FSAffiliateCollectors, None),
+            (FS_LATEST_EARNINGS_URL, FSFees),
+            (FS_LATEST_SWAP_COUNT_URL, FSSwapCount),
+            (FS_LATEST_LOCKED_RUNE_URL, FSLockedValue),
+            (FS_LATEST_SWAP_VOL_URL, FSSwapVolume),
+            (FS_LATEST_SWAP_AFF_FEE_URL, FSAffiliateCollectors),
         ]
 
         # Actual API requests
         data_chunks = await asyncio.gather(
-            *[self._fs.request_daily_series_sql_file(sql_file, max_days=self.trim_max_days)
-              for sql_file, klass, _ in loaders]
+            *[self._fs.request_daily_series_v2(url, klass) for url, klass in loaders]
         )
 
         # Convert JSON to FSxx objects
-        transformed_data_chunks = [
-            batch.transform_from_json(klass, f or 'from_json_lowercase')
-            for batch, (_, klass, f) in zip(data_chunks, loaders)
-        ]
+        # transformed_data_chunks = [
+        #     batch.transform_from_json(klass, f or 'from_json_lowercase')
+        #     for batch, (_, klass, f) in zip(data_chunks, loaders)
+        # ]
 
         # Merge data streams
-        result = FSList.combine(*transformed_data_chunks)
-
-        # raw_routes = await self._fs.request(URL_FS_ROUTES_V2)
-        raw_routes = await self._fs.direct_sql_file_query(FS_ROUTES_V2)
-        routes = [FSSwapRoutes.from_json_lowercase(x) for x in raw_routes.records]
+        result = FSList.combine(*data_chunks)
 
         # Done. Construct the resulting event
         return AlertKeyStats(
