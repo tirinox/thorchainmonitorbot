@@ -75,12 +75,14 @@ class VNXSaversStatsFetcher(INotified, WithDelegates, WithLogger):
         rune_earned = thor_to_float(stats.earned) * stats.asset_price / usd_per_rune
         rune_earned_old = thor_to_float(stats.earned_old) * stats.asset_price / usd_per_rune
 
+        savers_return = stats.saver_return if new and stats.saver_return else stats.saver_return_old
+
         return SaverVault(
             asset=stats.asset,
             number_of_savers=stats.savers_count if new else stats.savers_count_old,
             total_asset_saved=amount if new else amount_old,
             total_asset_saved_usd=amount_usd if new else amount_usd_old,
-            apr=(stats.saver_return if new else stats.saver_return_old) * 100.0,
+            apr=savers_return * 100.0,
             asset_cap=cap,
             runes_earned=rune_earned if new else rune_earned_old,
             synth_supply=thor_to_float(stats.synth_supply),
