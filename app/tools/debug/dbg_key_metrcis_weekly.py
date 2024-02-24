@@ -82,6 +82,7 @@ async def demo_analyse_and_show(app: LpAppFramework):
     saver = FlipSideSaver()
     f.add_subscriber(saver)
 
+    await f.run_once()
     r = await f.fetch()
 
     await show_picture(app, r)

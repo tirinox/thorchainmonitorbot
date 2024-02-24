@@ -63,7 +63,7 @@ class KeyMetricsNotifier(INotified, WithDelegates, WithLogger):
         last_date = e.series.latest_date
         previous_date = last_date - timedelta(days=self.window_in_days)
 
-        previous_data = e.series.get(previous_date, [])
+        previous_data = e.series.data.get(previous_date, [])
         self.logger.info(f'Previous date is {previous_date}; data has {len(previous_data)} entries.')
 
         current_data = e.series.most_recent

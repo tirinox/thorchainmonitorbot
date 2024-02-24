@@ -87,6 +87,6 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         # Done. Construct the resulting event
         return AlertKeyStats(
             result, old_pools, fresh_pools,
-            routes, [], [],
+            routes,
             days=self.tally_days_period
         )

@@ -249,8 +249,6 @@ class AlertKeyStats:
     current_pools: PoolInfoMap
 
     routes: List[FSSwapRoutes]
-    affiliates: List[FSAffiliateCollectors]
-    prev_affiliates: List[FSAffiliateCollectors]
 
     days: int = 7
 

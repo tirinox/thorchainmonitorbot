@@ -22,6 +22,9 @@ class FSList:
     # Date => [List of FS_XXx]
     data: Dict[datetime, List] = field(default_factory=lambda: defaultdict(list))
 
+    def __len__(self):
+        return len(self.data)
+
     @staticmethod
     def parse_date(string_date):
         try:
@@ -159,7 +162,9 @@ class FSList:
 
     @staticmethod
     def has_classes(row, class_list):
-        return all(klass in row for klass in class_list)
+        return all(
+            any(item for item in row if isinstance(item, klass)) for klass in class_list
+        )
 
     def remove_incomplete_rows(self, class_list) -> 'FSList':
         result = FSList()
