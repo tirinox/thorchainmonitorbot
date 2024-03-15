@@ -241,6 +241,10 @@ class PoolMapPair:
     def bad_value(x: float):
         return math.isinf(x) or math.isnan(x)
 
+    @property
+    def all_assets(self):
+        return set(self.pool_detail_dic.keys()) | set(self.pool_detail_dic_prev.keys())
+
     def get_top_pools(self, criterion: str, n=None, descending=True) -> List[PoolInfo]:
         pools = self.pool_detail_dic.values()
         criterion = str(criterion)
