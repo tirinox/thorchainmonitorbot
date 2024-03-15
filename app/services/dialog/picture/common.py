@@ -6,7 +6,9 @@ import PIL.Image
 
 from localization.manager import BaseLocalization
 from services.lib.date_utils import today_str
-from services.lib.draw_utils import TC_WHITE
+from services.lib.draw_utils import TC_WHITE, font_estimate_size, result_color
+from services.lib.money import calc_percent_change, short_money
+from services.lib.texts import bracketify
 from services.lib.utils import async_wrap, WithLogger
 
 PictureAndName = Tuple[Optional[PIL.Image.Image], str]
@@ -40,6 +42,21 @@ class BasePictureGenerator(WithLogger, abc.ABC):
     @async_wrap
     def _get_picture_sync(self):
         return None
+
+    @staticmethod
+    def text_and_change(old_v, new_v, draw, x, y, text, font_main, font_second, fill='#fff',
+                        x_shift=20, y_shift=6):
+        draw.text((x, y), text, font=font_main, fill=fill, anchor='lm')
+
+        percent = calc_percent_change(old_v, new_v)
+
+        size_x, _ = font_estimate_size(font_main, text)
+        if abs(percent) > 0.1:
+            draw.text(
+                (x + size_x + x_shift, y + y_shift),
+                bracketify(short_money(percent, postfix='%', signed=True)),
+                anchor='lm', fill=result_color(percent), font=font_second
+            )
 
 
 class Rect(NamedTuple):

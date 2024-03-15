@@ -9,7 +9,7 @@ from services.dialog.picture.resources import Resources
 from services.lib.constants import BTC_SYMBOL, ETH_SYMBOL, BNB_BUSD_SYMBOL, ETH_USDC_SYMBOL, ETH_USDT_SYMBOL
 from services.lib.draw_utils import paste_image_masked, result_color, TC_LIGHTNING_BLUE, TC_YGGDRASIL_GREEN, \
     dual_side_rect, COLOR_OF_PROFIT, font_estimate_size
-from services.lib.money import pretty_money, short_dollar, short_money, format_percent, Asset
+from services.lib.money import pretty_money, short_dollar, short_money, format_percent, Asset, calc_percent_change
 from services.lib.texts import bracketify
 from services.lib.utils import async_wrap
 from services.models.flipside import AlertKeyStats
@@ -44,23 +44,6 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         self.usdt_logo.thumbnail((logo_size, logo_size))
         self.busd_logo.thumbnail((logo_size, logo_size))
 
-    @staticmethod
-    def percent_change(old_v, new_v):
-        return (new_v - old_v) / old_v * 100.0 if old_v else 0.0
-
-    def text_and_change(self, old_v, new_v, draw, x, y, text, font_main, font_second, fill='#fff',
-                        x_shift=20, y_shift=6):
-        draw.text((x, y), text, font=font_main, fill=fill, anchor='lm')
-
-        percent = self.percent_change(old_v, new_v)
-
-        size_x, _ = font_estimate_size(font_main, text)
-        if abs(percent) > 0.1:
-            draw.text(
-                (x + size_x + x_shift, y + y_shift),
-                bracketify(short_money(percent, postfix='%', signed=True)),
-                anchor='lm', fill=result_color(percent), font=font_second
-            )
 
     @async_wrap
     def _get_picture_sync(self):

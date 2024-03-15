@@ -193,6 +193,8 @@ def save_and_show_pic(pic, show=True, name='pic'):
 
     filepath = f'../temp/{name}.png'
 
+    os.makedirs(os.path.dirname(filepath), exist_ok=True)
+
     with open(filepath, 'wb') as f:
         pic_bio = img_to_bio(pic, os.path.basename(filepath))
         f.write(pic_bio.getbuffer())
