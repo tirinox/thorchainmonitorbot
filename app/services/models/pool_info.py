@@ -47,6 +47,8 @@ class PoolInfo:
     savers_units: int = 0
     savers_apr: float = 0.0
 
+    pool_apr: float = 0.0  # new!
+
     is_virtual: bool = False
 
     DEPRECATED_BOOTSTRAP = 'bootstrap'
@@ -236,6 +238,7 @@ class PoolMapPair:
     BY_VOLUME_24h = 'usd_volume_24h'
     BY_DEPTH = 'total_liquidity'
     BY_APY = 'pool_apy'
+    BY_APR = 'pool_apr'
 
     @staticmethod
     def bad_value(x: float):
@@ -249,7 +252,7 @@ class PoolMapPair:
         pools = self.pool_detail_dic.values()
         criterion = str(criterion)
 
-        if criterion in (self.BY_APY, self.BY_VOLUME_24h):
+        if criterion in (self.BY_APR, self.BY_VOLUME_24h):
             pools = filter(lambda p: p.is_enabled, pools)
         pools = filter(lambda p: not self.bad_value(getattr(p, criterion)), pools)
 
@@ -275,7 +278,7 @@ class PoolMapPair:
         if prev_value == 0.0:
             return None
 
-        if attr_name == self.BY_APY:
+        if attr_name == self.BY_APR:
             return curr_value - prev_value
         else:
             return (curr_value / prev_value - 1.0) * 100.0

@@ -726,7 +726,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         for i, pool in enumerate(top_pools, start=1):
 
             v = pd.get_value(pool.asset, attr_name)
-            if attr_name == pd.BY_APY:
+            if attr_name == pd.BY_APR:
                 v = f'{v:.1f}%'
             else:
                 v = short_dollar(v)
@@ -757,7 +757,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         n_pools = 3  # less for Twitter
         text = '\n'.join([self.format_pool_top(top_pools, pd, title, '', n_pools)
                           for title, top_pools in [
-                              ('💎 Best APY', pd.BY_APY),
+                              ('💎 Best APY', pd.BY_APR),
                               ('💸 Top volume', pd.BY_VOLUME_24h),
                               ('🏊 Max Liquidity', pd.BY_DEPTH),
                           ]])

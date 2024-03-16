@@ -11,6 +11,7 @@ from services.dialog.picture.savers_picture import SaversPictureGenerator
 from services.jobs.fetch.savers_vnx import VNXSaversStatsFetcher
 from services.lib.date_utils import DAY
 from services.lib.texts import sep
+from services.lib.utils import random_chance
 from services.models.pool_info import PoolInfo
 from services.models.savers import SaversBank, how_much_savings_you_can_add
 from services.notify.types.savers_stats_notify import SaversStatsNotifier
@@ -19,7 +20,7 @@ from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
 def randomize_savers_data(c_data: SaversBank, sc=0.2, fail_chance=0.3):
     def r(x, scatter=sc, no_change_chance=fail_chance):
-        if random.uniform(0, 1) < no_change_chance:
+        if random_chance(no_change_chance):
             return x
         return x * random.uniform(1.0 - scatter, 1.0 + scatter)
 

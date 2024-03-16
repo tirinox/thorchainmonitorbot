@@ -21,9 +21,6 @@ class PoolPictureGenerator(BasePictureGenerator):
         self.event = event
         self.logos = {}
         self.r = Resources()
-        self.btc_logo = None
-        self.eth_logo = None
-        self.usdt_logo = self.usdc_logo = self.busd_logo = None
 
     FILENAME_PREFIX = 'thorchain_pools'
 
@@ -34,17 +31,18 @@ class PoolPictureGenerator(BasePictureGenerator):
             logo = await r.logo_downloader.get_or_download_logo_cached(vault)
             self.logos[vault] = logo
 
-    def draw_one_number(self, draw, image, name, row, col, value, prev_value, prefix='', suffix='', color='#fff'):
-        value_font = self.r.fonts.get_font(70)
+    def draw_one_number(self, draw, image, name, row, col, value, percent_diff, prefix='', suffix='', color='#fff'):
+        value_font = self.r.fonts.get_font_bold(50)
         name_font = self.r.fonts.get_font_bold(50)
-        number_font = self.r.fonts.get_font(46)
+        number_font = self.r.fonts.get_font(38)
+        percent_font = self.r.fonts.get_font(28)
 
-        x = [66, 749, 1419][col]
-        y = 308 + 124 * row
+        x = [110, 749, 1392][col]
+        y = 300 + 124 * row
         logo_size = 50
 
         # row number
-        draw.text((x, y), f'{row}.', fill=color, font=number_font, anchor='lt')
+        draw.text((x, y), f'{row}.', fill='#999', font=number_font, anchor='lt')
 
         # logo
         a = Asset(name.asset)
@@ -52,7 +50,7 @@ class PoolPictureGenerator(BasePictureGenerator):
         if logo:
             logo = logo.copy()
             logo.thumbnail((logo_size, logo_size))
-            logo_x, logo_y = x + 49, y - logo_size // 2 + 15
+            logo_x, logo_y = x + 49, y - logo_size // 2 + 12
             image.paste(logo, (logo_x, logo_y), logo)
 
             ambiguous_name = a.gas_asset_from_chain(a.chain) != a
@@ -66,22 +64,24 @@ class PoolPictureGenerator(BasePictureGenerator):
 
         # asset
         name = a.name
-        draw.text((x + 120, y), name, fill=color, font=name_font, anchor='lt')
+        draw.text((x + 120, y - 8), name, fill=color, font=name_font, anchor='lt')
 
         # value
+        has_change_field = percent_diff and value and abs(percent_diff) > 0.1
+
         value = '-' if value is None else short_money(value)
-        draw.text((x + 540, y - 20), f'{prefix}{value}{suffix}', fill='#dee', font=value_font, anchor='rt')
+        value_y = y - 12 if has_change_field else y - 12
+        draw.text((x + 540, value_y), f'{prefix}{value}{suffix}', fill='#dee', font=value_font, anchor='rt')
 
         # percent change
-        if prev_value and value:
-            percent_change = calc_percent_change(prev_value, value)
-            if percent_change is not None:
-                color = result_color(percent_change)
-                draw.text((x, y + 40), f'{percent_change:+.1f}%', fill=color, font=value_font, anchor='lt')
+        if has_change_field:
+            color = result_color(percent_diff)
+            draw.text((x + 540, y + 41), pretty_money(percent_diff, postfix='%', signed=True),
+                      fill=color, font=percent_font, anchor='rt')
 
         # bottom line
         if row != self.N_POOLS:
-            line_y = y + 70
+            line_y = y + 73
             draw.line((x, line_y, x + 540, line_y), fill='#577', width=2)
 
     @async_wrap
@@ -100,34 +100,29 @@ class PoolPictureGenerator(BasePictureGenerator):
                   anchor='lm')
 
         sub_header_font = r.fonts.get_font(60)
-        draw.text((210, 290), "BEST APR", fill='#fff', font=sub_header_font, anchor='lt')
-        draw.text((850, 290), "TOP VOLUME", fill='#fff', font=sub_header_font, anchor='lt')
-        draw.text((1570, 290), "DEEPEST", fill='#fff', font=sub_header_font, anchor='lt')
-
-        # vertical lines
-        # xs = 2048 // 3
-        # y1, y2 = 240, 1400
-        # draw.line((xs, y1, xs, y2), fill='#fff', width=2)
-        # xs *= 2
-        # draw.line((xs, y1, xs, y2), fill='#fff', width=2)
+        sub_header_color = '#bbb'
+        draw.text((240, 290), "BEST APR", fill=sub_header_color, font=sub_header_font, anchor='lt')
+        draw.text((850, 290), "TOP VOLUME", fill=sub_header_color, font=sub_header_font, anchor='lt')
+        draw.text((1530, 290), "DEEPEST", fill=sub_header_color, font=sub_header_font, anchor='lt')
 
         # numbers
-        for column, attr_name in enumerate([PoolMapPair.BY_APY, PoolMapPair.BY_VOLUME_24h, PoolMapPair.BY_DEPTH]):
+        for column, attr_name in enumerate([PoolMapPair.BY_APR, PoolMapPair.BY_VOLUME_24h, PoolMapPair.BY_DEPTH]):
             top_pools = e.get_top_pools(attr_name, n=self.N_POOLS)
-            print(top_pools)
-            print('-----')
             for i, pool in enumerate(top_pools, start=1):
                 v = e.get_value(pool.asset, attr_name)
                 p = e.get_difference_percent(pool.asset, attr_name)
                 prefix, suffix = '', ''
-                if attr_name == PoolMapPair.BY_APY:
-                    p = p or 0.0
-                    p *= 100.0
+                if attr_name == PoolMapPair.BY_APR:
                     suffix = '%'
                 elif attr_name == PoolMapPair.BY_VOLUME_24h:
                     prefix = '$'
                 else:
                     prefix = '$'
                 self.draw_one_number(draw, image, pool, i, column, v, p, prefix, suffix)
+
+        # note
+        note_text = "1) Percentage changes are shown for a period of 24 hours"
+        note_font = r.fonts.get_font(30)
+        draw.text((self.bg.width - 16, self.bg.height - 16), note_text, fill='#999', font=note_font, anchor='rb')
 
         return image

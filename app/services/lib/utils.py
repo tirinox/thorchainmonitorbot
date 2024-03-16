@@ -164,6 +164,14 @@ def random_ip_address():
     return ".".join(str(random.randint(0, 255)) for _ in range(4))
 
 
+def random_chance(percent):
+    return random.uniform(0, 100) < percent
+
+
+def chance_50():
+    return random_chance(50)
+
+
 def parse_list_from_string(text: str, upper=False, lower=False, strip=True):
     items = re.split('[;,\n\t]', text)
 

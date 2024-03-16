@@ -74,7 +74,9 @@ class MidgardURLGenV2(MidgardURLGenBase):
     def url_stats(self):
         return f'{self.base_url}/v2/stats'
 
-    def url_pool_info(self):
+    def url_pool_info(self, period=None):
+        if period:
+            return f'{self.base_url}/v2/pools?period={period}'
         return f'{self.base_url}/v2/pools'
 
     def url_borrowers(self):
