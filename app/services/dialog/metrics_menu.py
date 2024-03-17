@@ -7,6 +7,7 @@ from services.dialog.base import BaseDialog, message_handler
 from services.dialog.picture.block_height_picture import block_speed_chart
 from services.dialog.picture.key_stats_picture import KeyStatsPictureGenerator
 from services.dialog.picture.nodes_pictures import NodePictureGenerator
+from services.dialog.picture.pools_picture import PoolPictureGenerator
 from services.dialog.picture.price_picture import price_graph_from_db
 from services.dialog.picture.queue_picture import queue_graph
 from services.dialog.picture.savers_picture import SaversPictureGenerator
@@ -289,7 +290,12 @@ class MetricsDialog(BaseDialog):
     async def show_top_pools(self, message: Message):
         notifier: BestPoolsNotifier = self.deps.best_pools_notifier
         text = self.loc.notification_text_best_pools(notifier.last_pool_detail, notifier.n_pools)
-        await message.answer(text, disable_notification=True, disable_web_page_preview=True)
+
+        generator = PoolPictureGenerator(self.loc, notifier.last_pool_detail)
+        pic, pic_name = await generator.get_picture()
+        await message.answer_photo(img_to_bio(pic, pic_name), caption=text, disable_notification=True)
+
+        # await message.answer(text, disable_notification=True, disable_web_page_preview=True)
 
     async def show_cex_flow(self, message: Message, period=DAY):
         notifier: RuneMoveNotifier = self.deps.rune_move_notifier
