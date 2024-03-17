@@ -28,7 +28,7 @@ class NetworkStatisticsFetcher(BaseFetcher):
         ns.withdraw_count = int(j['withdrawCount'])
         ns.withdrawn_rune = thor_to_float(j['withdrawVolume'])
 
-        ns.loss_protection_paid_rune = thor_to_float(j['impermanentLossProtectionPaid'])
+        ns.loss_protection_paid_rune = thor_to_float(j.get('impermanentLossProtectionPaid', 0))
 
         ns.swaps_total = int(j['swapCount'])
         ns.swaps_24h = int(j['swapCount24h'])
