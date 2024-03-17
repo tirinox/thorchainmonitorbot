@@ -3,8 +3,8 @@ from PIL import Image, ImageDraw
 from localization.eng_base import BaseLocalization
 from services.dialog.picture.common import BasePictureGenerator
 from services.dialog.picture.resources import Resources
-from services.lib.draw_utils import result_color
-from services.lib.money import calc_percent_change, pretty_money, Asset, short_money
+from services.lib.draw_utils import result_color, TC_MIDGARD_TURQOISE, TC_LIGHTNING_BLUE
+from services.lib.money import calc_percent_change, pretty_money, Asset, short_money, short_dollar
 from services.lib.utils import async_wrap
 from services.models.pool_info import PoolMapPair
 
@@ -31,7 +31,8 @@ class PoolPictureGenerator(BasePictureGenerator):
             logo = await r.logo_downloader.get_or_download_logo_cached(vault)
             self.logos[vault] = logo
 
-    def draw_one_number(self, draw, image, name, row, col, value, percent_diff, prefix='', suffix='', color='#fff'):
+    def draw_one_number(self, draw, image, name, row, col, value, percent_diff, prefix='', suffix='',
+                        total_value=None, attr_value_accum=0.0):
         value_font = self.r.fonts.get_font_bold(50)
         name_font = self.r.fonts.get_font_bold(50)
         number_font = self.r.fonts.get_font(38)
@@ -64,14 +65,14 @@ class PoolPictureGenerator(BasePictureGenerator):
 
         # asset
         name = a.name
-        draw.text((x + 120, y - 8), name, fill=color, font=name_font, anchor='lt')
+        draw.text((x + 120, y - 8), name, fill='#fff', font=name_font, anchor='lt')
 
         # value
         has_change_field = percent_diff and value and abs(percent_diff) > 0.1
 
-        value = '-' if value is None else short_money(value)
+        value_str = '-' if value is None else short_money(value)
         value_y = y - 12 if has_change_field else y - 12
-        draw.text((x + 540, value_y), f'{prefix}{value}{suffix}', fill='#dee', font=value_font, anchor='rt')
+        draw.text((x + 540, value_y), f'{prefix}{value_str}{suffix}', fill='#dee', font=value_font, anchor='rt')
 
         # percent change
         if has_change_field:
@@ -80,9 +81,22 @@ class PoolPictureGenerator(BasePictureGenerator):
                       fill=color, font=percent_font, anchor='rt')
 
         # bottom line
-        if row != self.N_POOLS:
-            line_y = y + 73
-            draw.line((x, line_y, x + 540, line_y), fill='#577', width=2)
+        line_width, line_y = 540, y + 76
+        last_line = row == self.N_POOLS
+        if not last_line:
+            draw.line((x, line_y, x + line_width, line_y), fill='#577', width=2)
+
+        # share of total
+        if total_value and not last_line:
+            x_offset = attr_value_accum / total_value * line_width if total_value else 0
+            partial_width = value / total_value * line_width if total_value else 0
+
+            draw.line((x + x_offset, line_y, x + x_offset + partial_width, line_y), fill=TC_LIGHTNING_BLUE, width=4)
+            # small vertical notches to left and right of the span
+            draw.line((x + x_offset, line_y - 4, x + x_offset, line_y + 4), fill=TC_LIGHTNING_BLUE, width=1)
+            draw.line((x + x_offset + partial_width, line_y - 4, x + x_offset + partial_width, line_y + 4),
+                      fill=TC_LIGHTNING_BLUE, width=1)
+
 
     @async_wrap
     def _get_picture_sync(self):
@@ -102,27 +116,54 @@ class PoolPictureGenerator(BasePictureGenerator):
         sub_header_font = r.fonts.get_font(60)
         sub_header_color = '#bbb'
         draw.text((240, 290), "BEST APR", fill=sub_header_color, font=sub_header_font, anchor='lt')
-        draw.text((850, 290), "TOP VOLUME", fill=sub_header_color, font=sub_header_font, anchor='lt')
+        draw.text((850, 290), "HIGH VOLUME", fill=sub_header_color, font=sub_header_font, anchor='lt')
         draw.text((1530, 290), "DEEPEST", fill=sub_header_color, font=sub_header_font, anchor='lt')
 
         # numbers
         for column, attr_name in enumerate([PoolMapPair.BY_APR, PoolMapPair.BY_VOLUME_24h, PoolMapPair.BY_DEPTH]):
             top_pools = e.get_top_pools(attr_name, n=self.N_POOLS)
+            total_value = e.total_liquidity() if attr_name == PoolMapPair.BY_DEPTH else e.total_volume_24h()
+            attr_value_accum = 0.0
             for i, pool in enumerate(top_pools, start=1):
                 v = e.get_value(pool.asset, attr_name)
                 p = e.get_difference_percent(pool.asset, attr_name)
                 prefix, suffix = '', ''
                 if attr_name == PoolMapPair.BY_APR:
                     suffix = '%'
+                    total_value = None
                 elif attr_name == PoolMapPair.BY_VOLUME_24h:
                     prefix = '$'
                 else:
                     prefix = '$'
-                self.draw_one_number(draw, image, pool, i, column, v, p, prefix, suffix)
+                self.draw_one_number(draw, image, pool, i, column, v, p, prefix, suffix, total_value, attr_value_accum)
+                attr_value_accum += v
 
         # note
-        note_text = "1) Percentage changes are shown for a period of 24 hours"
-        note_font = r.fonts.get_font(30)
-        draw.text((self.bg.width - 16, self.bg.height - 16), note_text, fill='#999', font=note_font, anchor='rb')
+        # note_text = "1) Percentage changes are shown for a period of 24 hours"
+        # note_font = r.fonts.get_font(30)
+        # draw.text((self.bg.width - 16, self.bg.height - 16), note_text, fill='#999', font=note_font, anchor='rb')
+
+        bottom_value_y = self.bg.height - 192
+        bottom_text_y = self.bg.height - 134
+        bottom_value_font = r.fonts.get_font_bold(80)
+        bottom_text_font = r.fonts.get_font(48)
+
+        # total pools
+        x = 240
+        total_pools = e.number_of_active_pools
+        draw.text((x, bottom_value_y), str(total_pools), fill='#eee', font=bottom_value_font, anchor='lm')
+        draw.text((x, bottom_text_y), 'ACTIVE POOLS', fill='#aaa', font=bottom_text_font, anchor='lt')
+
+        # total liquidity
+        x = 870
+        total_liquidity = short_dollar(e.total_liquidity())
+        draw.text((x, bottom_value_y), total_liquidity, fill='#eee', font=bottom_value_font, anchor='lm')
+        draw.text((x, bottom_text_y), 'TOTAL LIQUIDITY', fill='#aaa', font=bottom_text_font, anchor='lt')
+
+        # total volume
+        x = 1512
+        total_volume = short_dollar(e.total_volume_24h())
+        draw.text((x, bottom_value_y), total_volume, fill='#eee', font=bottom_value_font, anchor='lm')
+        draw.text((x, bottom_text_y), '24H VOLUME', fill='#aaa', font=bottom_text_font, anchor='lt')
 
         return image

@@ -10,7 +10,7 @@ from typing import List, Dict, NamedTuple
 from aionode.types import ThorPool
 
 from services.lib.constants import thor_to_float
-from services.lib.money import Asset
+from services.lib.money import Asset, calc_percent_change
 
 
 def pool_share(rune_depth, asset_depth, my_units, pool_total_units):
@@ -286,3 +286,33 @@ class PoolMapPair:
     @property
     def empty(self):
         return not self.pool_detail_dic
+
+    @property
+    def number_of_active_pools(self):
+        return len([pool for pool in self.pool_detail_dic.values() if pool.is_enabled])
+
+    def total_liquidity(self, prev=False):
+        scope = self.pool_detail_dic_prev if prev else self.pool_detail_dic
+        return sum(p.total_liquidity for p in scope.values())
+
+    def total_volume_24h(self, prev=False):
+        scope = self.pool_detail_dic_prev if prev else self.pool_detail_dic
+        return sum(p.usd_volume_24h for p in scope.values())
+
+    @property
+    def total_liquidity_diff_percent(self):
+        if not self.pool_detail_dic_prev:
+            return None
+
+        prev = self.total_liquidity(prev=True)
+        curr = self.total_liquidity()
+        return calc_percent_change(prev, curr)
+
+    @property
+    def total_volume_24h_diff_percent(self):
+        if not self.pool_detail_dic_prev:
+            return None
+
+        prev = self.total_volume_24h(prev=True)
+        curr = self.total_volume_24h()
+        return calc_percent_change(prev, curr)
