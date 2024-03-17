@@ -2123,14 +2123,15 @@ class BaseLocalization(ABC):  # == English
         return text.strip()
 
     def notification_text_best_pools(self, pd: PoolMapPair, n_pools):
-        no_pool_text = 'Nothing yet. Maybe still loading...'
-        text = '\n\n'.join([self.format_pool_top(top_pools, pd, title, no_pool_text, n_pools) for title, top_pools in [
-            ('💎 Best APR', pd.BY_APR),
-            ('💸 Top volume', pd.BY_VOLUME_24h),
-            ('🏊 Max Liquidity', pd.BY_DEPTH),
-        ]])
-
-        return text
+        # no_pool_text = 'Nothing yet. Maybe still loading...'
+        # text = '\n\n'.join([self.format_pool_top(top_pools, pd, title, no_pool_text, n_pools) for title, top_pools in [
+        #     ('💎 Best APR', pd.BY_APR),
+        #     ('💸 Top volume', pd.BY_VOLUME_24h),
+        #     ('🏊 Max Liquidity', pd.BY_DEPTH),
+        # ]])
+        #
+        # return text
+        return 'THORChain top liquidity pools'
 
     # ------- INLINE BOT (English only) -------
 

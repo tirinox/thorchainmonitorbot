@@ -3,8 +3,8 @@ from PIL import Image, ImageDraw
 from localization.eng_base import BaseLocalization
 from services.dialog.picture.common import BasePictureGenerator
 from services.dialog.picture.resources import Resources
-from services.lib.draw_utils import result_color, TC_MIDGARD_TURQOISE, TC_LIGHTNING_BLUE
-from services.lib.money import calc_percent_change, pretty_money, Asset, short_money, short_dollar
+from services.lib.draw_utils import result_color, TC_LIGHTNING_BLUE
+from services.lib.money import pretty_money, Asset, short_money, short_dollar
 from services.lib.utils import async_wrap
 from services.models.pool_info import PoolMapPair
 

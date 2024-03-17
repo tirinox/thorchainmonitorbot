@@ -6,6 +6,7 @@ from services.dialog.picture.achievement_picture import build_achievement_pictur
 from services.dialog.picture.block_height_picture import block_speed_chart
 from services.dialog.picture.key_stats_picture import KeyStatsPictureGenerator
 from services.dialog.picture.nodes_pictures import NodePictureGenerator
+from services.dialog.picture.pools_picture import PoolPictureGenerator
 from services.dialog.picture.price_picture import price_graph_from_db
 from services.dialog.picture.savers_picture import SaversPictureGenerator
 from services.jobs.achievement.ach_list import Achievement
@@ -22,7 +23,7 @@ from services.models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendin
 from services.models.mimir import AlertMimirChange
 from services.models.node_info import AlertNodeChurn
 from services.models.pol import AlertPOL
-from services.models.pool_info import PoolChanges
+from services.models.pool_info import PoolChanges, PoolMapPair
 from services.models.price import AlertPrice
 from services.models.s_swap import AlertSwapStart
 from services.models.savers import AlertSaverStats
@@ -79,6 +80,8 @@ class AlertPresenter(INotified, WithLogger):
             await self._handle_chain_halt(data)
         elif isinstance(data, AlertLendingStats):
             await self._handle_lending_stats(data)
+        elif isinstance(data, PoolMapPair):
+            await self._handle_best_pools(data)
 
     async def load_names(self, addresses) -> NameMap:
         if isinstance(addresses, str):
@@ -249,3 +252,12 @@ class AlertPresenter(INotified, WithLogger):
             BaseLocalization.notification_lending_stats,
             data,
         )
+
+    async def _handle_best_pools(self, data: PoolMapPair):
+        async def generate_pool_picture(loc: BaseLocalization, event: PoolMapPair):
+            pic_gen = PoolPictureGenerator(loc, event)
+            pic, pic_name = await pic_gen.get_picture()
+            caption = loc.notification_text_best_pools(event, 5)
+            return BoardMessage.make_photo(pic, caption=caption, photo_file_name=pic_name)
+
+        await self.deps.broadcaster.notify_preconfigured_channels(generate_pool_picture, data)

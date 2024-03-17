@@ -8,14 +8,14 @@ from localization.manager import BaseLocalization
 from services.jobs.fetch.pool_price import PoolInfoFetcherMidgard
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds
-from services.lib.delegates import INotified
+from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 from services.models.pool_info import PoolInfoMap, PoolMapPair
 from services.notify.channel import BoardMessage
 
 
-class BestPoolsNotifier(INotified, WithLogger):
+class BestPoolsNotifier(INotified, WithDelegates, WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
 
@@ -62,9 +62,7 @@ class BestPoolsNotifier(INotified, WithLogger):
             await self._write_previous_data(sender.last_raw_result)
 
     async def _notify(self, pd: PoolMapPair):
-        await self.deps.broadcaster.notify_preconfigured_channels(
-            BaseLocalization.notification_text_best_pools,
-            pd, self.n_pools)
+        await self.pass_data_to_listeners(pd)
 
     async def _debug_twitter(self):
         notifier: BestPoolsNotifier = self.deps.best_pools_notifier

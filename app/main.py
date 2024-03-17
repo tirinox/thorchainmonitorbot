@@ -465,6 +465,7 @@ class App(WithLogger):
             fetcher_pool_info = PoolInfoFetcherMidgard(d, period)
             d.best_pools_notifier = BestPoolsNotifier(d)
             fetcher_pool_info.add_subscriber(d.best_pools_notifier)
+            d.best_pools_notifier.add_subscriber(d.alert_presenter)
             tasks.append(fetcher_pool_info)
 
         if d.cfg.get('chain_halt_state.enabled', True):
