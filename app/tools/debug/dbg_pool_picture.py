@@ -2,6 +2,7 @@ import asyncio
 import random
 from copy import deepcopy
 
+from localization.languages import Language
 from services.dialog.picture.pools_picture import PoolPictureGenerator
 from services.jobs.fetch.pool_price import PoolInfoFetcherMidgard
 from services.lib.utils import random_chance
@@ -30,7 +31,8 @@ async def main():
                     v.volume_24h *= random.uniform(0.5, 1.5)
 
         print(pools)
-        loc = lp_app.deps.loc_man.default
+        # loc = lp_app.deps.loc_man.default
+        loc = lp_app.deps.loc_man[Language.RUSSIAN]
         event = PoolMapPair(pools, prev_pools)
         pool_pic_gen = PoolPictureGenerator(loc, event)
         pool_pic, _ = await pool_pic_gen.get_picture()

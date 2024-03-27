@@ -1633,6 +1633,16 @@ class RussianLocalization(BaseLocalization):
 
     # ------- BEST POOLS -------
 
+    TEXT_BP_HEADER = 'ЛУЧШИЕ ПУЛЫ'
+
+    TEXT_BP_BEST_APR_TITLE = 'ПРИРОСТ'
+    TEXT_BP_HIGH_VOLUME_TITLE = 'ОБЪЕМЫ'
+    TEXT_BP_DEEPEST_TITLE = 'ГЛУБИНА'
+
+    TEXT_BP_ACTIVE_POOLS = 'Активные пулы'
+    TEXT_BP_TOTAL_LIQ = 'Общая ликвидность'
+    TEXT_BP_24H_VOLUME = 'Объем за 24 часа'
+
     def notification_text_best_pools(self, pd: PoolMapPair, n_pools):
         # no_pool_text = 'Пока ничего, наверное, еще грузится...'
         # text = '\n\n'.join([self.format_pool_top(top_pools, pd, title, no_pool_text, n_pools) for title, top_pools in [

@@ -108,16 +108,16 @@ class PoolPictureGenerator(BasePictureGenerator):
         draw = ImageDraw.Draw(image)
 
         # header = loc.top_pools()
-        header = "TOP POOLS"
+        header = loc.TEXT_BP_HEADER
         draw.text((830, 106), header,
                   fill='#fff', font=r.fonts.get_font_bold(80),
                   anchor='lm')
 
         sub_header_font = r.fonts.get_font(60)
         sub_header_color = '#bbb'
-        draw.text((240, 290), "BEST APR", fill=sub_header_color, font=sub_header_font, anchor='lt')
-        draw.text((850, 290), "HIGH VOLUME", fill=sub_header_color, font=sub_header_font, anchor='lt')
-        draw.text((1530, 290), "DEEPEST", fill=sub_header_color, font=sub_header_font, anchor='lt')
+        draw.text((240, 290), loc.TEXT_BP_BEST_APR_TITLE, fill=sub_header_color, font=sub_header_font, anchor='lt')
+        draw.text((850, 290), loc.TEXT_BP_HIGH_VOLUME_TITLE, fill=sub_header_color, font=sub_header_font, anchor='lt')
+        draw.text((1530, 290), loc.TEXT_BP_DEEPEST_TITLE, fill=sub_header_color, font=sub_header_font, anchor='lt')
 
         # numbers
         for column, attr_name in enumerate([PoolMapPair.BY_APR, PoolMapPair.BY_VOLUME_24h, PoolMapPair.BY_DEPTH]):
@@ -138,11 +138,6 @@ class PoolPictureGenerator(BasePictureGenerator):
                 self.draw_one_number(draw, image, pool, i, column, v, p, prefix, suffix, total_value, attr_value_accum)
                 attr_value_accum += v
 
-        # note
-        # note_text = "1) Percentage changes are shown for a period of 24 hours"
-        # note_font = r.fonts.get_font(30)
-        # draw.text((self.bg.width - 16, self.bg.height - 16), note_text, fill='#999', font=note_font, anchor='rb')
-
         bottom_value_y = self.bg.height - 192
         bottom_text_y = self.bg.height - 134
         bottom_value_font = r.fonts.get_font_bold(80)
@@ -152,18 +147,18 @@ class PoolPictureGenerator(BasePictureGenerator):
         x = 240
         total_pools = e.number_of_active_pools
         draw.text((x, bottom_value_y), str(total_pools), fill='#eee', font=bottom_value_font, anchor='lm')
-        draw.text((x, bottom_text_y), 'ACTIVE POOLS', fill='#aaa', font=bottom_text_font, anchor='lt')
+        draw.text((x, bottom_text_y), loc.TEXT_BP_ACTIVE_POOLS, fill='#aaa', font=bottom_text_font, anchor='lt')
 
         # total liquidity
         x = 870
         total_liquidity = short_dollar(e.total_liquidity())
         draw.text((x, bottom_value_y), total_liquidity, fill='#eee', font=bottom_value_font, anchor='lm')
-        draw.text((x, bottom_text_y), 'TOTAL LIQUIDITY', fill='#aaa', font=bottom_text_font, anchor='lt')
+        draw.text((x, bottom_text_y), loc.TEXT_BP_TOTAL_LIQ, fill='#aaa', font=bottom_text_font, anchor='lt')
 
         # total volume
         x = 1512
         total_volume = short_dollar(e.total_volume_24h())
         draw.text((x, bottom_value_y), total_volume, fill='#eee', font=bottom_value_font, anchor='lm')
-        draw.text((x, bottom_text_y), '24H VOLUME', fill='#aaa', font=bottom_text_font, anchor='lt')
+        draw.text((x, bottom_text_y), loc.TEXT_BP_24H_VOLUME, fill='#aaa', font=bottom_text_font, anchor='lt')
 
         return image
