@@ -45,19 +45,19 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
         else:
             await r.sadd(self.DB_KEY_ANNOUNCED_TX_ID, tx_id)
 
-    async def is_announced(self, tx_id):
-        if not tx_id:
+    async def is_announced(self, tx: ThorTx):
+        if not tx or not tx.tx_hash:
             return True
 
         r: Redis = self.deps.db.redis
-        return await r.sismember(self.DB_KEY_ANNOUNCED_TX_ID, tx_id)
+        return await r.sismember(self.DB_KEY_ANNOUNCED_TX_ID, tx.tx_hash)
 
     async def on_data(self, senders, txs: List[ThorTx]):
         with suppress(Exception):
             await self.handle_txs_unsafe(senders, txs)
 
     async def _only_new_transactions(self, txs: List[ThorTx]):
-        flags = await asyncio.gather(*[self.is_announced(tx.tx_hash) for tx in txs])
+        flags = await asyncio.gather(*[self.is_announced(tx) for tx in txs])
         tmp_txs = []
         for flag, tx in zip(flags, txs):
             if flag:
@@ -245,17 +245,18 @@ class SwapTxNotifier(GenericTxNotifier):
 class RefundTxNotifier(GenericTxNotifier):
     def __init__(self, deps: DepContainer, params: SubConfig, curve: DepthCurve):
         super().__init__(deps, params, (TxType.REFUND,), curve)
-        cd_period = params.as_interval('cooldown', 5 * MINUTE)
-        self.refund_cd = Cooldown(deps.db, 'Refund', cd_period)
+        self.cd_period = params.as_interval('cooldown', 5 * MINUTE)
 
-    async def is_announced(self, tx_id):
-        before = await super().is_announced(tx_id)
+    async def is_announced(self, tx: ThorTx):
+        before = await super().is_announced(tx)
         if before:
             return True
 
-        if not await self.refund_cd.can_do():
+        # for each sender, we have a separate cooldown
+        refund_cd = Cooldown(self.deps.db, f'Refund-{tx.sender_address}', self.cd_period)
+        if not await refund_cd.can_do():
             self.logger.warning(f'Refund announcement cooldown went off!')
             return True
 
-        await self.refund_cd.do()
+        await refund_cd.do()
         return False

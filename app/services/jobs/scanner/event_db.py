@@ -80,7 +80,7 @@ class EventDatabase(WithLogger):
         if not tx_id:
             return True
         r: Redis = await self.db.get_redis()
-        return await r.sismember(self.DB_KEY_SS_STARTED_SET, tx_id)
+        return bool(await r.sismember(self.DB_KEY_SS_STARTED_SET, tx_id))
 
     async def announce_tx_started(self, tx_id: str):
         if tx_id:
