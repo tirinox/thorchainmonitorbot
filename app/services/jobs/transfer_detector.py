@@ -36,6 +36,7 @@ class RuneTransferDetectorNativeTX(WithDelegates, INotified):
                 if isinstance(message, MsgSend):
                     from_addr = self.address_parse(message.from_address)
                     to_addr = self.address_parse(message.to_address)
+
                     for coin in message.amount:
                         # todo: problem: he may want to Deposit something stupid, that he don't have, lika a trillion of TGT
                         asset = str(coin.denom)
@@ -131,7 +132,9 @@ class RuneTransferDetectorTxLogs(WithDelegates, INotified, WithLogger):
         # Third, add inbound transfers from the Protocol from the TX logs
         try:
             for logs in r.tx_logs:
-                for log in logs:
+                if not logs:  # may be None
+                    continue
+                for log in logs.entries:
                     for ev in log['events']:
                         dec_ev = DecodedEvent.from_dict(ev)
                         if t := self._build_transfer_from_event(dec_ev, r.block_no):

@@ -36,6 +36,11 @@ class NativeThorTx:
     def __init__(self, tx: Tx, tx_hash: str = ''):
         self.tx = tx
         self.hash = tx_hash
+        self.code = 0
+
+    @property
+    def is_success(self):
+        return self.code == 0
 
     def __repr__(self) -> str:
         return repr(self.tx)

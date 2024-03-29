@@ -1,58 +1,13 @@
 import asyncio
-import re
-from dataclasses import dataclass, replace
 from typing import List, Optional
 
-import ujson
-
-from proto.access import NativeThorTx, thor_decode_event, DecodedEvent
+from proto.access import NativeThorTx
 from services.jobs.fetch.base import BaseFetcher
+from services.jobs.scanner.block_loader import BlockResult
 from services.lib.constants import THOR_BLOCK_TIME
 from services.lib.date_utils import now_ts
 from services.lib.depcont import DepContainer
 from services.lib.utils import safe_get
-
-
-@dataclass
-class BlockResult:
-    block_no: int
-    txs: List[NativeThorTx]
-    tx_logs: List[dict]
-    end_block_events: List[DecodedEvent]
-    is_error: bool = False
-    last_available_block: int = 0  # this is set when you requested missing block
-    error_code: int = 0
-    error_message: str = ''
-
-    @property
-    def is_ahead(self):
-        return self.last_available_block != 0 and self.block_no > self.last_available_block
-
-    @property
-    def is_behind(self):
-        return self.last_available_block != 0 and self.block_no < self.last_available_block
-
-    def find_events_by_type(self, ev_type: str):
-        return filter(lambda ev: ev.type == ev_type, self.end_block_events)
-
-    TYPE_SWAP = 'swap'
-    TYPE_SCHEDULED_OUT = 'scheduled_outbound'
-
-    def find_tx_by_type(self, tx_class):
-        return filter(lambda tx: isinstance(tx.first_message, tx_class), self.txs)
-
-    @property
-    def only_successful(self) -> 'BlockResult':
-        if not self.txs or not self.tx_logs:
-            # Empty block
-            return self
-
-        # a log is only present when tx's code == 0
-        filtered_data = [(tx, log) for tx, log in zip(self.txs, self.tx_logs) if log]
-
-        new_txs, new_logs = tuple(zip(*filtered_data))
-
-        return replace(self, txs=new_txs, tx_logs=new_logs)
 
 
 class NativeScannerBlock(BaseFetcher):
@@ -90,82 +45,6 @@ class NativeScannerBlock(BaseFetcher):
     def last_block(self, value):
         self.logger.warning(f'Last block number manually changed from {self._last_block} to {value}.')
         self._last_block = value
-
-    async def _fetch_last_block(self):
-        result = await self.deps.thor_connector.query_native_status_raw()
-        if result:
-            return int(safe_get(result, 'result', 'sync_info', 'latest_block_height'))
-
-    @staticmethod
-    def _decode_logs(tx_result):
-        code = tx_result.get('code', 0)
-        if code != 0:
-            return
-        return ujson.loads(tx_result.get('log'))
-
-    def _get_is_error(self, result, requested_block_height):
-        error = result.get('error')
-        if error:
-            code = error.get('code')
-            error_message = f"{error.get('message')}/{error.get('data')}"
-            if code == -32603:
-                # must be that no all blocks are present, try to extract the last available block no from the error msg
-                data = str(error.get('data', ''))
-                match = re.findall(r'\d+', data)
-                if match:
-                    last_available_block = int(match[-1])
-                    return BlockResult(requested_block_height, [], [], [],
-                                       is_error=True, error_code=code, error_message=error_message,
-                                       last_available_block=last_available_block)
-
-            # else general error
-            self.logger.error(f'Error: "{error}"!')
-            return BlockResult(requested_block_height, [], [], [],
-                               is_error=True, error_code=code, error_message=error_message)
-
-    async def _fetch_block_results_raw(self, block_no):
-        return await self.deps.thor_connector.query_native_block_results_raw(block_no)
-
-    async def fetch_block_results(self, block_no) -> Optional[BlockResult]:
-        result = await self._fetch_block_results_raw(block_no)
-        if result is not None:
-            if err := self._get_is_error(result, block_no):
-                return err
-
-            tx_result_arr = safe_get(result, 'result', 'txs_results') or []
-            decoded_txs = [self._decode_logs(tx_result) for tx_result in tx_result_arr]
-            decoded_txs = [tx for tx in decoded_txs if tx]
-
-            end_block_events = safe_get(result, 'result', 'end_block_events') or []
-            decoded_end_block_events = [thor_decode_event(ev, block_no) for ev in end_block_events]
-
-            self.logger.info(f'Block #{block_no} has {len(decoded_txs)} txs.')
-
-            return BlockResult(block_no, [], decoded_txs, decoded_end_block_events)
-        else:
-            self.logger.warning(f'Error fetching block txs results #{block_no}.')
-
-    async def _fetch_block_txs_raw(self, block_no):
-        return await self.deps.thor_connector.query_tendermint_block_raw(block_no)
-
-    async def fetch_block_txs(self, block_no) -> Optional[List[NativeThorTx]]:
-        result = await self._fetch_block_txs_raw(block_no)
-        if result is not None:
-            if self._get_is_error(result, block_no):
-                return
-
-            raw_txs = safe_get(result, 'result', 'block', 'data', 'txs') or []
-            decoded_txs = [self._decode_one_tx(raw) for raw in raw_txs]
-            return list(filter(bool, decoded_txs))
-        else:
-            self.logger.warning(f'Error fetching block #{block_no}.')
-            self.deps.emergency.report(self.NAME, 'Error fetching block', block_no=block_no)
-
-    def _decode_one_tx(self, raw):
-        try:
-            return NativeThorTx.from_base64(raw)
-        except Exception as e:
-            self.logger.error(f'Error decoding tx: {e}')
 
     def _on_error(self, reason='', **kwargs):
         self.logger.warning(f'Error fetching block #{self._last_block} ({reason = !r}).')
@@ -213,12 +92,12 @@ class NativeScannerBlock(BaseFetcher):
     def should_run_aggressive_scan(self):
         time_since_last_block = now_ts() - self._last_block_ts
         if time_since_last_block > self._time_tolerance_for_aggressive_scan:
-            self.logger.info(f'😡 time_since_last_block = {time_since_last_block:.3f} sec. Go aggrrh!')
+            self.logger.info(f'😡 time_since_last_block = {time_since_last_block:.3f} sec. Run aggressive scan!')
             return True
 
         lag_behind_node_block = int(self.deps.last_block_store) - self._last_block
         if lag_behind_node_block > 2:
-            self.logger.info(f"😡 {lag_behind_node_block = }. Go aggrrh!")
+            self.logger.info(f"😡 {lag_behind_node_block = }. Run aggressive scan!")
             return True
 
         return False
@@ -289,7 +168,37 @@ class NativeScannerBlock(BaseFetcher):
                 # only one block at the time if it is not aggressive scan
                 break
 
+    async def _fetch_last_block(self):
+        result = await self.deps.thor_connector.query_native_status_raw()
+        if result:
+            return int(safe_get(result, 'result', 'sync_info', 'latest_block_height'))
+
+    async def _fetch_block_results_raw(self, block_no):
+        return await self.deps.thor_connector.query_native_block_results_raw(block_no)
+
+    async def fetch_block_results(self, block_no) -> Optional[BlockResult]:
+        block_results_raw = await self._fetch_block_results_raw(block_no)
+        if block_results_raw is not None:
+            block_result = BlockResult.load_block(block_results_raw, block_no)
+            if not block_result.is_error:
+                self.logger.info(f'Block #{block_no} has {len(block_result.txs)} txs.')
+            return block_result
+        else:
+            self.logger.warning(f'Error fetching block txs results #{block_no}.')
+
+    async def _fetch_block_txs_raw(self, block_no):
+        return await self.deps.thor_connector.query_tendermint_block_raw(block_no)
+
+    async def fetch_block_txs(self, block_no) -> Optional[List[NativeThorTx]]:
+        result = await self._fetch_block_txs_raw(block_no)
+        if result is not None:
+            return BlockResult.load_txs(result, block_no)
+        else:
+            self.logger.warning(f'Error fetching block #{block_no}.')
+            self.deps.emergency.report(self.NAME, 'Error fetching block', block_no=block_no)
+
     async def fetch_one_block(self, block_index) -> Optional[BlockResult]:
+        # This is needed to get the block results namely Logs and Tx status codes.
         block_result = await self.fetch_block_results(block_index)
         if block_result is None:
             return
@@ -297,9 +206,13 @@ class NativeScannerBlock(BaseFetcher):
         if block_result.is_error:
             return block_result
 
-        block_result.txs = await self.fetch_block_txs(block_index)
+        # This is needed to get user intents from the block (Deposits and Sends).
+        txs = await self.fetch_block_txs(block_index)
+        block_result.fill_transactions(txs)
         if block_result.txs is None:
             self.logger.error(f'Failed to get transactions of the block #{block_index}.')
             return
 
+        # So we match the logs with the txs
         return block_result.only_successful
+        # return block_result

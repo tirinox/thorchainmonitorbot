@@ -149,12 +149,25 @@ async def demo_non_zero_code(app: LpAppFramework):
     assert all(t for t in transfers if t.amount < 1_000_000)
 
 
+async def debug_ill_transfers(app: LpAppFramework):
+    tx_id = '22174930993EEA1E7CDB6511FB8C5E81BDC37C0DCFB23EEA6696C0CD9D13351B'
+    block_id = 15264091
+
+    scanner = NativeScannerBlock(app.deps, last_block=block_id)
+    block = await scanner.fetch_one_block(block_id)
+    detector = RuneTransferDetectorTxLogs()
+    events = detector.process_events(block)
+    print(events)
+
+
 async def main():
     app = LpAppFramework(log_level=logging.INFO)
     async with app(brief=True):
-        await demo_non_zero_code(app)
+        # await debug_ill_transfers(app)
 
-        await demo_block_scanner_active(app, send_alerts=False, catch_up=True)
+        # await demo_non_zero_code(app)
+
+        await demo_block_scanner_active(app, send_alerts=True, catch_up=True)
 
         # await demo_block_scanner_active(app, send_alerts=False, force_start_block=100)  # test behind your node
 
