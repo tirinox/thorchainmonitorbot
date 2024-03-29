@@ -8,7 +8,7 @@ from services.lib.utils import WithLogger
 
 class ThorRealms:
     RESERVES = 'Reserve'
-    STANDBY_RESERVES = 'Standby reserve'
+    STANDBY_RESERVES = '.'
 
     BONDED = 'Bonded'
     BONDED_NODE = 'Bonded (node)'
