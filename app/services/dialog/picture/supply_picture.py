@@ -32,6 +32,12 @@ class SupplyPictureGenerator(BasePictureGenerator):
 
     FILENAME_PREFIX = 'thorchain_supply'
 
+    MIN_FONT_SIZE = 30
+    MAX_FONT_SIZE = 50
+
+    MIN_VALUE_FONT_SIZE = 40
+    MAX_VALUE_FONT_SIZE = 100
+
     def _draw_rect(self, r: Rect, item: PackItem, outline='black'):
         if item.color:
             r = r.extend(-1)
@@ -43,7 +49,7 @@ class SupplyPictureGenerator(BasePictureGenerator):
             self._put_overlay(r, path, alpha=0.2)
 
         if item.meta_key('show_weight') and item.weight > 1e6:
-            font_sz = min(120, max(24, int(sqrt(item.weight) / 80)))
+            font_sz = min(self.MAX_VALUE_FONT_SIZE, max(self.MIN_FONT_SIZE, int(sqrt(item.weight) / 80)))
             font = self.res.fonts.get_font(font_sz)
             text = short_money(item.weight)
 
@@ -63,7 +69,7 @@ class SupplyPictureGenerator(BasePictureGenerator):
             else:
                 px, py, anchor = 10, 14, 'lt'
 
-            font_sz = min(50, max(30, int(sqrt(item.weight) / 0.7e2)))
+            font_sz = min(self.MAX_FONT_SIZE, max(self.MIN_FONT_SIZE, int(sqrt(item.weight) / 0.7e2)))
             font = self.res.fonts.get_font(font_sz)
 
             self._add_text(r.shift_from_origin(px, py), item.label, anchor=anchor,
@@ -109,14 +115,14 @@ class SupplyPictureGenerator(BasePictureGenerator):
 
         self.PALETTE = {
             ThorRealms.RESERVES: '#1AE6CC',
-            ThorRealms.STANDBY_RESERVES: '#02B662',
+            # ThorRealms.STANDBY_RESERVES: '#02B662',
             ThorRealms.BONDED: '#03CFFA',
             ThorRealms.POOLED: '#31FD9D',
             ThorRealms.CIRCULATING: '#dddddd',
             ThorRealms.CEX: '#bbb3ef',
             ThorRealms.TREASURY: '#35f8ec',
-            ThorRealms.KILLED: '#720f01',
-            ThorRealms.BURNED: '#ff4200',
+            ThorRealms.KILLED: '#9e1d0b',
+            ThorRealms.BURNED: '#dd5627',
             ThorRealms.MAYA_POOL: '#255fb0',
             'Binance': '#d0a10d',
             'Kraken': '#7263d6',
@@ -132,6 +138,7 @@ class SupplyPictureGenerator(BasePictureGenerator):
             ThorRealms.RESERVES: './data/supply_chart/reserve.png',
             ThorRealms.STANDBY_RESERVES: './data/supply_chart/standby.png',
             ThorRealms.TREASURY: './data/supply_chart/treasury.png',
+            ThorRealms.BURNED: './data/supply_chart/burned.png',
         }
 
     @async_wrap
@@ -213,7 +220,7 @@ class SupplyPictureGenerator(BasePictureGenerator):
                 self.PALETTE.get(item.realm, 'black'),
                 meta_data=meta(realm=item.realm)
             )
-            for item in self.supply.find_by_realm((ThorRealms.RESERVES, ThorRealms.STANDBY_RESERVES))
+            for item in self.supply.find_by_realm((ThorRealms.RESERVES,))
         ], locked_rect, align=DrawRectPacker.V)
 
         # Column 2: Bond and Pool (working Rune)
@@ -266,10 +273,11 @@ class SupplyPictureGenerator(BasePictureGenerator):
 
         items = []
         if self.supply.lending_burnt_rune > 0:
-            items.append(PackItem('', abs(self.supply.lending_burnt_rune),
-                                  self.PALETTE[ThorRealms.BURNED], just_value))
+            items.append(PackItem(self.loc.SUPPLY_PIC_BURNED, abs(self.supply.lending_burnt_rune),
+                                  self.PALETTE[ThorRealms.BURNED], meta(value=True, realm=ThorRealms.BURNED)))
         if self.supply.killed_switched > 0:
             items.append(PackItem(self.loc.SUPPLY_PIC_SECTION_KILLED,
                                   self.supply.killed_switched,
-                                  self.PALETTE[ThorRealms.KILLED], just_value))
+                                  self.PALETTE[ThorRealms.KILLED],
+                                  meta(value=True, realm=ThorRealms.KILLED)))
         self._pack(items, killed_rect, align=DrawRectPacker.H)
