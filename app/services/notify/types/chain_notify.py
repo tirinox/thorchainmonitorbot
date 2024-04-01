@@ -63,10 +63,6 @@ class TradingHaltedNotifier(INotified, WithDelegates, WithLogger):
                 self._update_global_state(chain, new_info.halted)
 
         if changed_chains:
-            await self.deps.broadcaster.notify_preconfigured_channels(
-                BaseLocalization.notification_text_trading_halted_multi,
-                changed_chains
-            )
             await self.pass_data_to_listeners(AlertChainHalt(changed_chains))
 
             # after notification trigger the involved cooldown timers

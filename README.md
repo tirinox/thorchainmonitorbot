@@ -57,3 +57,4 @@ redis-server
 ### Caveats
 
 1. If you cannot debug on Python 3.10+, try uninstalling uvloop package `pip uninstall uvloop`. It helped me.
+2. If you use PyCharm, please mark directory "app" as a source root.
