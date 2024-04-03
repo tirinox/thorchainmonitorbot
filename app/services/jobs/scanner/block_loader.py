@@ -77,7 +77,7 @@ class BlockResult:
         # a log is only present when tx's code == 0
         filtered_data = [(tx, log) for tx, log in zip(self.txs, self.tx_logs) if log and log.code == 0]
 
-        new_txs, new_logs = tuple(zip(*filtered_data))
+        new_txs, new_logs = tuple(zip(*filtered_data)) if filtered_data else ([], [])
 
         return replace(self, txs=new_txs, tx_logs=new_logs)
 
