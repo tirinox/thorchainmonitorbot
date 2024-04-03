@@ -31,6 +31,10 @@ class LendingStatsNotifier(INotified, WithDelegates, WithLogger):
         await self.deps.db.redis.set(self.KEY_DB_LENDING_STATS, j)
 
     async def _load_old_stats(self):
-        with suppress(Exception):
+        try:
             j = await self.deps.db.redis.get(self.KEY_DB_LENDING_STATS)
+            j = json.loads(j)
             return LendingStats(**j)
+        except Exception as e:
+            self.logger.exception(e)
+            return None

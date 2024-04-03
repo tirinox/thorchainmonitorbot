@@ -80,8 +80,8 @@ async def debug_tx_records(app: LpAppFramework, tx_id):
     print(tx)
 
 
-async def demo_lending_stats_old(app: LpAppFramework):
-    await app.deps.rune_market_fetcher.run_once()
+async def demo_lending_stats_with_deltas(app: LpAppFramework):
+    await app.deps.rune_market_fetcher.get_rune_market_info()
 
     borrowers_fetcher = BorrowersFetcher(app.deps)
 
@@ -148,8 +148,8 @@ async def run():
 
         # await demo_personal_loan_card(app)
 
-        await demo_lending_stats(app)
-        # await demo_lending_stats_old(app)
+        # await demo_lending_stats(app)
+        await demo_lending_stats_with_deltas(app)
 
         # await debug_block_analyse(app, 12262380)
         # await debug_tx_records(app, 'xxx')

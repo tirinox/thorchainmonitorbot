@@ -1,4 +1,5 @@
 import datetime
+import random
 from typing import List, Optional
 
 from services.jobs.fetch.base import BaseFetcher
@@ -34,14 +35,21 @@ class BorrowersFetcher(BaseFetcher):
         market_info: RuneMarketInfo = await self.deps.rune_market_fetcher.get_rune_market_info()
         return market_info.supply_info.lending_burnt_rune
 
+    async def amend_burned_rune(self, lending_stats: LendingStats):
+        real_burned_rune = await self.get_real_burned_rune()
+        if real_burned_rune is not None:
+            lending_stats = lending_stats._replace(rune_burned_rune=real_burned_rune)
+
+        # debug thing
+
+        return lending_stats
+
     async def get_fs_lending_stats(self) -> Optional[LendingStats]:
         data = await self.fs.request(URL_FS_BORROWERS_V3)
         if data:
             lending_stats = LendingStats.from_fs_json(data)
             if lending_stats:
-                real_burned_rune = await self.get_real_burned_rune()
-                if real_burned_rune is not None:
-                    lending_stats = lending_stats._replace(rune_burned_rune=real_burned_rune)
+                lending_stats = await self.amend_burned_rune(lending_stats)
             return lending_stats
 
     async def fetch(self) -> Optional[LendingStats]:
