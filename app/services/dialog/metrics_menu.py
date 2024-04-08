@@ -295,8 +295,6 @@ class MetricsDialog(BaseDialog):
         pic, pic_name = await generator.get_picture()
         await message.answer_photo(img_to_bio(pic, pic_name), caption=text, disable_notification=True)
 
-        # await message.answer(text, disable_notification=True, disable_web_page_preview=True)
-
     async def show_cex_flow(self, message: Message, period=DAY):
         notifier: RuneMoveNotifier = self.deps.rune_move_notifier
         flow = await notifier.tracker.read_within_period(period=period)
