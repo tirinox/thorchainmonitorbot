@@ -5,7 +5,7 @@ from collections import defaultdict
 
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
-from services.lib.settings_manager import SettingsManager
+from services.lib.settings_manager import SettingsManager, SettingsContext
 from services.lib.utils import WithLogger, grouper
 from services.notify.channel import ChannelDescriptor, BoardMessage
 from services.notify.personal.helpers import GeneralSettings
@@ -59,7 +59,7 @@ class BasePersonalNotifier(INotified, WithLogger, ABC):
         for user, event_list in user_events.items():
             settings = settings_dic.get(user, {})
 
-            if bool(settings.get(GeneralSettings.INACTIVE, False)):
+            if SettingsContext.is_inactive_s(settings):
                 continue  # paused
 
             # filter events according to the user's preferences

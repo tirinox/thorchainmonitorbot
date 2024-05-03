@@ -160,6 +160,20 @@ async def debug_ill_transfers(app: LpAppFramework):
     print(events)
 
 
+async def dbg_second_chance_before_deactivate(app):
+    bpt = PersonalBalanceNotifier(app.deps)
+    addr = "thor1zslq29e77hqsjfklprnwaf0a29zcnxlpp3fc2u"
+    while True:
+        await bpt.group_and_send_messages(
+            [addr],
+            [
+                RuneTransfer(addr, addr, 1230000, "FFFFFFFFFFF", 300.123, 5.0, is_native=True,
+                             memo="foobar", comment="comment")
+            ]
+        )
+        await asyncio.sleep(10.0)
+
+
 async def main():
     app = LpAppFramework(log_level=logging.INFO)
     async with app(brief=True):
@@ -167,7 +181,7 @@ async def main():
 
         # await demo_non_zero_code(app)
 
-        await demo_block_scanner_active(app, send_alerts=True, catch_up=True)
+        # await demo_block_scanner_active(app, send_alerts=True, catch_up=True)
 
         # await demo_block_scanner_active(app, send_alerts=False, force_start_block=100)  # test behind your node
 
@@ -180,6 +194,7 @@ async def main():
 
         # await debug_block_tx_status_check(app)
         # await demo_rune_transfers_once(app, )  # block=12929445
+        await dbg_second_chance_before_deactivate(app)
 
 
 if __name__ == '__main__':

@@ -189,6 +189,7 @@ async def main():
 
         # await demo_all_kinds_of_messages(app)
         # await analise_churn(app)
+        # await dbg_second_chance_before_deactivating_channel(app)
 
 
 if __name__ == '__main__':

@@ -87,10 +87,24 @@ class Broadcaster(WithLogger):
         await self.broadcast(all_channels, message_gen)
 
     async def _handle_bad_user(self, channel_info):
-        self.logger.info(f'{channel_info} became inactive!')
+        self.logger.warning(f'{channel_info} is about to be paused!')
         channel_id = channel_info.channel_id
-        if channel_id:
-            await self.deps.settings_manager.make_inactive(channel_id)
+        if not channel_id:
+            return
+
+        max_fails = self.deps.cfg.get('personal.max_fails', 3)
+
+        async with self.deps.settings_manager.get_context(channel_id) as context:
+            if context.is_inactive:
+                return
+
+            # give a second change
+            context.increment_fail_counter()
+            if context.fail_counter >= max_fails:
+                context.stop()
+                self.logger.warning(f'Auto-paused alerts for {channel_id}! It is marked as "Inactive" now!')
+            else:
+                self.logger.warning(f'Fail counter for {channel_id} is {context.fail_counter}/{max_fails}.')
 
     # noinspection PyBroadException
     async def safe_send_message(self, channel_info: ChannelDescriptor,

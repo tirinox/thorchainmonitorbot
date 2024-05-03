@@ -68,7 +68,7 @@ class TelegramBot(WithLogger):
             # Recursive call
             return await self.send_message(chat_id, msg, **kwargs)
         except exceptions.Unauthorized as e:
-            self.logger.error(f"Target [ID:{chat_id}]: user is deactivated: {e!r}")
+            self.logger.error(f"Target [ID:{chat_id}]: user is Unauthorized: {e!r}. Return CHANNEL_INACTIVE")
             return CHANNEL_INACTIVE
         except exceptions.TelegramAPIError:
             self.logger.exception(f"Target [ID:{chat_id}]: failed")

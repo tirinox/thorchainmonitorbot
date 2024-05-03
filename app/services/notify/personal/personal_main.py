@@ -7,7 +7,7 @@ from localization.manager import LocalizationManager
 from services.lib.date_utils import now_ts, parse_timespan_to_seconds
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
-from services.lib.settings_manager import SettingsManager
+from services.lib.settings_manager import SettingsManager, SettingsContext
 from services.lib.utils import WithLogger, grouper
 from services.models.node_info import NodeSetChanges, NodeEvent, NodeEventType
 from services.models.node_watchers import NodeWatcherStorage
@@ -174,7 +174,7 @@ class NodeChangePersonalNotifier(INotified, WithLogger):
         for user, event_list in user_events.items():
             settings = settings_dic.get(user, {})
 
-            if bool(settings.get(GeneralSettings.INACTIVE, False)):
+            if SettingsContext.is_inactive_s(settings):
                 continue  # paused
 
             if bool(settings.get(NodeOpSetting.PAUSE_ALL_ON, False)):

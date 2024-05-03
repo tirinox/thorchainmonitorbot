@@ -111,6 +111,7 @@ class SlackBot(WithLogger):
             self.logger.error(f'Slack error: {e}')
             error = e.response['error']
             if error in self.REASONS_TO_STOP_NOTIFICATIONS:
+                self.logger.error(f"Target [ID:{channel}]: {error!r}. Return CHANNEL_INACTIVE")
                 return CHANNEL_INACTIVE
             return error
 

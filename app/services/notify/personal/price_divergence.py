@@ -3,7 +3,7 @@ import asyncio
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
-from services.lib.settings_manager import SettingsManager
+from services.lib.settings_manager import SettingsManager, SettingsContext
 from services.lib.utils import WithLogger
 from services.models.node_watchers import AlertWatchers
 from services.models.price import RuneMarketInfo
@@ -28,7 +28,7 @@ class PersonalPriceDivergenceNotifier(INotified, WithLogger):
         for user in users:
             settings = their_settings.get(user, {})
 
-            if bool(settings.get(GeneralSettings.INACTIVE, False)):
+            if SettingsContext.is_inactive_s(settings):
                 continue  # paused
 
             min_percent = settings.get(SettingsProcessorPriceDivergence.KEY_MIN_PERCENT)

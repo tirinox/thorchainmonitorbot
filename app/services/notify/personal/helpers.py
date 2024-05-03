@@ -39,6 +39,7 @@ class NodeOpSetting:
 
 class GeneralSettings:
     INACTIVE = '_inactive'
+    FAIL_COUNTER = '_fail_count'
 
     GENERAL_ALERTS = 'gen:alerts'
     PRICE_DIV_ALERTS = 'personal:price-div'

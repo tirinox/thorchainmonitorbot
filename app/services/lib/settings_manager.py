@@ -90,12 +90,6 @@ class SettingsManager(WithDelegates, WithLogger):
     def get_context(self, user_id) -> 'SettingsContext':
         return SettingsContext(self, user_id)
 
-    async def make_inactive(self, user):
-        async with self.get_context(user) as context:
-            if not context.is_inactive:
-                context.stop()
-            self.logger.warning(f'Auto-paused alerts for {user}! It is marked as "Inactive" now!')
-
     async def all_users_having_settings(self):
         pattern = self.db_key_settings('*')
         keys = await self.db.redis.keys(pattern)
@@ -133,20 +127,28 @@ class SettingsContext:
 
     @property
     def is_inactive(self):
-        return bool(self._curr_settings.get(GeneralSettings.INACTIVE, False))
+        return self.is_inactive_s(self._curr_settings)
+
+    @staticmethod
+    def is_inactive_s(settings):
+        return bool(settings.get(GeneralSettings.INACTIVE, False))
 
     def stop(self):
-        self.stop_s(self._curr_settings)
+        self._curr_settings[GeneralSettings.INACTIVE] = True
 
     def resume(self):
         self.resume_s(self._curr_settings)
 
-    @staticmethod
-    def stop_s(settings):
-        settings[GeneralSettings.INACTIVE] = True
+    @property
+    def fail_counter(self):
+        return self._curr_settings.get(GeneralSettings.FAIL_COUNTER, 0)
+
+    def increment_fail_counter(self):
+        self._curr_settings[GeneralSettings.FAIL_COUNTER] = self.fail_counter + 1
 
     @staticmethod
     def resume_s(settings):
+        settings[GeneralSettings.FAIL_COUNTER] = 0
         settings[GeneralSettings.INACTIVE] = False
 
 
@@ -177,7 +179,7 @@ class SettingsProcessorGeneralAlerts(INotified, WithLogger):
         for channel in channels:
             settings = their_settings.get(channel, {})
 
-            if bool(settings.get(GeneralSettings.INACTIVE, False)):
+            if SettingsContext.is_inactive_s(settings):
                 continue  # skip those who paused all the events.
 
             if bool(settings.get(NodeOpSetting.PAUSE_ALL_ON, False)):
