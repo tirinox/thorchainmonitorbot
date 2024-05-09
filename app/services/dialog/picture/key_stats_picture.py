@@ -44,7 +44,6 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         self.usdt_logo.thumbnail((logo_size, logo_size))
         self.busd_logo.thumbnail((logo_size, logo_size))
 
-
     @async_wrap
     def _get_picture_sync(self):
         # prepare data

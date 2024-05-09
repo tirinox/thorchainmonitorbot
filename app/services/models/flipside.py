@@ -232,16 +232,6 @@ class FSSwapRoutes(NamedTuple):
         )
 
 
-class KeyStats(NamedTuple):
-    date: datetime
-    affiliates: List[FSAffiliateCollectors]
-    fees: FSFees
-    swappers: FSSwapCount
-    volume: FSSwapVolume
-    locked: FSLockedValue
-    pools: PoolInfoMap
-
-
 @dataclasses.dataclass
 class AlertKeyStats:
     series: FSList

@@ -136,7 +136,8 @@ async def demo_test_new_geo_chart(app: LpAppFramework):
     # chart_pts = EXAMPLE_CHAR_PTS[5:7]
     # chart_pts = list(make_random_node_chart())
 
-    infos = await get_ip_infos_pickled('nodes_new_3.pickle')
+    # infos = await get_ip_infos_pickled(app, 'nodes_new_10.pickle')
+    infos = await get_ip_infos_pickled(app, path=None)
     gen = NodePictureGenerator(infos, chart_pts, app.deps.loc_man.default)
 
     pic = await gen.generate()
@@ -147,7 +148,7 @@ async def demo_test_new_geo_chart(app: LpAppFramework):
     """
     node_set_info: NetworkNodeIpInfo
     churn_notifier: NodeChurnNotifier
-    loc: BasrLocalisation
+    loc: BaseLocalisation
     chart_pts = await churn_notifier.load_last_statistics(NodePictureGenerator.CHART_PERIOD)
     gen = NodePictureGenerator(node_set_info, chart_pts, loc)
     pic = await gen.generate()

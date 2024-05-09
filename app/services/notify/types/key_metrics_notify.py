@@ -51,7 +51,7 @@ class KeyMetricsNotifier(INotified, WithDelegates, WithLogger):
         e.series = e.series.remove_incomplete_rows((FSFees, FSSwapCount, FSLockedValue, FSSwapVolume))
 
         if not self.is_fresh_enough(e.series):
-            self.logger.error(f'Network data is too old! The most recent date is {e.series.latest_date}!')
+            self.logger.error(f'Network data is too old! The most recent date is {e.end_date}!')
             self.deps.emergency.report(
                 'WeeklyKeyMetrics',
                 'Network data is too old!',
@@ -60,7 +60,7 @@ class KeyMetricsNotifier(INotified, WithDelegates, WithLogger):
 
         # todo: check affiliate fee rows!
 
-        last_date = e.series.latest_date
+        last_date = e.end_date
         previous_date = last_date - timedelta(days=self.window_in_days)
 
         previous_data = e.series.data.get(previous_date, [])
@@ -74,9 +74,6 @@ class KeyMetricsNotifier(INotified, WithDelegates, WithLogger):
         if await self.notify_cd.can_do():
             await self._notify(e)
             await self.notify_cd.do()
-
-        # await self.series.add(info=new_info.as_json_string)
-        # await self.series.trim_oldest(self.MAX_POINTS)
 
     @property
     def last_event(self):
