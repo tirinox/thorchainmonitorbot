@@ -404,6 +404,8 @@ class NodePictureGenerator:
                 results.append(p)
                 last_ts = p.ts
 
+        results.append(pts[-1])
+
         return list(reversed(results))
 
     def _make_bond_chart(self, pts: List[NodeStatsItem], r, w, h, period=DAY * 14):
