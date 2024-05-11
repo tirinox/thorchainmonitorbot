@@ -10,12 +10,9 @@ from services.lib.utils import WithLogger
 from services.models.flipside import FSAffiliateCollectors, FSFees, FSSwapCount, FSLockedValue, FSSwapVolume, \
     FSSwapRoutes, AlertKeyStats
 
-FS_AFFILIATES_V4 = 'query_affiliates_v4.sql'
-FS_ROUTES_V2 = 'query_routes_v2.sql'
-FS_SWAP_VOL = 'query_swap_vol.sql'
-FS_LOCKED_VALUE = 'query_locked_value.sql'
-FS_UNIQUE_SWAPPERS = 'query_unique_swappers.sql'
-FS_RUNE_EARNINGS = 'query_rune_earnings.sql'
+
+# Swap history: https://midgard.ninerealms.com/v2/history/swaps?interval=week&count=2
+# Earnings history: https://midgard.ninerealms.com/v2/history/earnings?interval=week&count=2
 
 
 class KeyStatsFetcher(BaseFetcher, WithLogger):
@@ -47,21 +44,6 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         routes = await self._fs.request_daily_series_v2(FS_LATEST_SWAP_PATH_URL, FSSwapRoutes)
         routes = routes.most_recent
 
-        # Load all FlipSideCrypto data
-        # loaders = [
-        #     (FS_RUNE_EARNINGS, FSFees, None),
-        #     (FS_UNIQUE_SWAPPERS, FSSwapCount, None),
-        #     (FS_LOCKED_VALUE, FSLockedValue, None),
-        #     (FS_SWAP_VOL, FSSwapVolume, None),
-        #     (FS_AFFILIATES_V4, FSAffiliateCollectors, None),
-        # ]
-        #
-        # # Actual API requests
-        # data_chunks = await asyncio.gather(
-        #     *[self._fs.request_daily_series_sql_file(sql_file, max_days=self.trim_max_days)
-        #       for sql_file, klass, _ in loaders]
-        # )
-
         loaders = [
             (FS_LATEST_EARNINGS_URL, FSFees),
             (FS_LATEST_SWAP_COUNT_URL, FSSwapCount),
@@ -74,12 +56,6 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         data_chunks = await asyncio.gather(
             *[self._fs.request_daily_series_v2(url, klass) for url, klass in loaders]
         )
-
-        # Convert JSON to FSxx objects
-        # transformed_data_chunks = [
-        #     batch.transform_from_json(klass, f or 'from_json_lowercase')
-        #     for batch, (_, klass, f) in zip(data_chunks, loaders)
-        # ]
 
         # Merge data streams
         result = FSList.combine(*data_chunks)

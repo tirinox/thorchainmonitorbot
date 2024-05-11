@@ -115,15 +115,6 @@ async def demo_picture(app: LpAppFramework):
 
 
 
-async def demo_new_flipside_sql(app: LpAppFramework):
-    print(os.getcwd())
-    connector = FlipSideConnector(app.deps.session, app.deps.cfg.flipside.api_key)
-
-    series = await connector.request_daily_series_sql_file('query_affiliates_v4.sql')
-    fees = series.transform_from_json(FSAffiliateCollectors, f='from_json_lowercase')
-    print(fees)
-
-
 async def demo_new_flipside_swap_routes(app: LpAppFramework):
     connector = FlipSideConnector(app.deps.session, app.deps.cfg.flipside.api_key)
     raw_routes = await connector.direct_sql_file_query(FS_ROUTES_V2)
