@@ -24,8 +24,7 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
         self._swap_detector = SwapStartDetector(deps)
 
         expiration_sec = deps.cfg.as_interval('native_scanner.db.ttl', '3d')
-        self._db = EventDatabase(deps.db,
-                                 expiration_sec=expiration_sec)
+        self._db = EventDatabase(deps.db, expiration_sec=expiration_sec)
 
         self.dbg_watch_swap_id = None
         self.dbg_start_observed = False

@@ -66,6 +66,8 @@ class DepContainer:
     pol_notifier = None
 
     dex_analytics = None
+    affiliate_recorder = None
+    route_recorder = None
 
     scheduler: Optional[Scheduler] = None
 

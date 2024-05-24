@@ -132,7 +132,7 @@ class BlockResult:
         # txs are empty so far; use load_txs to fill them
         return BlockResult(block_no, [], decoded_tx_logs, decoded_end_block_events)
 
-    def fill_transactions(self, txs):
+    def fill_transactions(self, txs: List[NativeThorTx]):
         self.txs = txs
         self._validate_txs_and_logs_count()
 

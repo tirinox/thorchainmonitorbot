@@ -193,8 +193,8 @@ async def main():
         # await demo_native_block_action_detector(app)
 
         # await debug_block_tx_status_check(app)
-        # await demo_rune_transfers_once(app, )  # block=12929445
-        await dbg_second_chance_before_deactivate(app)
+        await demo_rune_transfers_once(app, block=16102530)
+        # await dbg_second_chance_before_deactivate(app)
 
 
 if __name__ == '__main__':
