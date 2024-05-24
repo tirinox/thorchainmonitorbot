@@ -31,9 +31,11 @@ from services.jobs.fetch.savers_vnx import VNXSaversStatsFetcher
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.ilp_summer import ILPSummer
 from services.jobs.node_churn import NodeChurnDetector
+from services.jobs.scanner.affliliate_recorder import AffiliateRecorder
 from services.jobs.scanner.loan_extractor import LoanExtractorBlock
 from services.jobs.scanner.native_scan import NativeScannerBlock
 from services.jobs.scanner.swap_extractor import SwapExtractorBlock
+from services.jobs.scanner.swap_routes import SwapRouteRecorder
 from services.jobs.transfer_detector import RuneTransferDetectorTxLogs
 from services.jobs.user_counter import UserCounter
 from services.jobs.volume_filler import VolumeFillerUpdater
@@ -281,19 +283,23 @@ class App(WithLogger):
             reserve_address = d.cfg.as_str('native_scanner.reserve_address')
 
             # Personal Rune transfer notifications
-            decoder = RuneTransferDetectorTxLogs(reserve_address)
-            d.block_scanner.add_subscriber(decoder)
+            transfer_decoder = RuneTransferDetectorTxLogs(reserve_address)
+            d.block_scanner.add_subscriber(transfer_decoder)
             balance_notifier = PersonalBalanceNotifier(d)
-            decoder.add_subscriber(balance_notifier)
+            transfer_decoder.add_subscriber(balance_notifier)
 
             # Count unique users
             user_counter = UserCounter(d)
             d.block_scanner.add_subscriber(user_counter)
 
+            # AffiliateRecorder
+            d.affiliate_recorder = AffiliateRecorder(d)
+            d.block_scanner.add_subscriber(d.affiliate_recorder)
+
             if d.cfg.get('token_transfer.enabled', True):
                 d.rune_move_notifier = RuneMoveNotifier(d)
                 d.rune_move_notifier.add_subscriber(d.alert_presenter)
-                decoder.add_subscriber(d.rune_move_notifier)
+                transfer_decoder.add_subscriber(d.rune_move_notifier)
 
         if d.cfg.get('tx.enabled', True):
             main_tx_types = [
@@ -334,6 +340,10 @@ class App(WithLogger):
 
             d.volume_recorder = VolumeRecorder(d)
             volume_filler.add_subscriber(d.volume_recorder)
+
+            # Swap route recorder
+            d.route_recorder = SwapRouteRecorder(d.db)
+            volume_filler.add_subscriber(d.route_recorder)
 
             if achievements_enabled:
                 volume_filler.add_subscriber(achievements)
