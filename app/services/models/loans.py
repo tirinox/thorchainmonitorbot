@@ -1,4 +1,4 @@
-from typing import NamedTuple, Optional
+from typing import NamedTuple, Optional, List
 
 from services.lib.date_utils import now_ts
 from services.models.events import EventLoanOpen, EventLoanRepayment
@@ -25,6 +25,14 @@ class AlertLoanRepayment(NamedTuple):
         return self.loan.collateral_float * self.collateral_price_usd
 
 
+class PoolLendState(NamedTuple):
+    collateral_name: str
+    collateral_amount: float
+    available_rune: float
+    fill_ratio: float
+    collateral_available: float
+
+
 class LendingStats(NamedTuple):
     borrower_count: int
     lending_tx_count: int
@@ -36,6 +44,8 @@ class LendingStats(NamedTuple):
     btc_current_ltv: float
     eth_current_ltv: float
     timestamp_day: float
+
+    pools: List[PoolLendState]
 
     @classmethod
     def from_fs_json(cls, j):
@@ -51,6 +61,7 @@ class LendingStats(NamedTuple):
             btc_current_ltv=j['BTC_CURRENT_LTV'],
             eth_current_ltv=j['ETH_CURRENT_LTV'],
             timestamp_day=now_ts(),
+            pools=[],
         )
 
     @property

@@ -1,9 +1,10 @@
 import asyncio
 import copy
 import random
+from pprint import pprint
 
 from localization.eng_base import BaseLocalization
-from services.jobs.fetch.borrowers import BorrowersFetcher
+from services.jobs.fetch.lending_stats import LendingStatsFetcher
 from services.jobs.fetch.runeyield.borrower import BorrowerPositionGenerator
 from services.jobs.scanner.event_db import EventDatabase
 from services.jobs.scanner.loan_extractor import LoanExtractorBlock
@@ -14,6 +15,19 @@ from services.models.loans import AlertLendingStats, LendingStats
 from services.notify.types.lend_stats_notify import LendingStatsNotifier
 from services.notify.types.loans_notify import LoanTxNotifier
 from tools.lib.lp_common import LpAppFramework
+
+
+async def dbg_lending_limits(app: LpAppFramework):
+    await asyncio.gather(
+        app.deps.rune_market_fetcher.get_rune_market_info(),
+        app.deps.pool_fetcher.reload_global_pools(),
+        app.deps.mimir_const_fetcher.run_once(),
+    )
+
+    borrowers_fetcher = LendingStatsFetcher(app.deps)
+
+    results = await borrowers_fetcher.fetch()
+    pprint(results)
 
 
 async def debug_block_analyse(app: LpAppFramework, block_no):
@@ -83,7 +97,7 @@ async def debug_tx_records(app: LpAppFramework, tx_id):
 async def demo_lending_stats_with_deltas(app: LpAppFramework):
     await app.deps.rune_market_fetcher.get_rune_market_info()
 
-    borrowers_fetcher = BorrowersFetcher(app.deps)
+    borrowers_fetcher = LendingStatsFetcher(app.deps)
 
     notifier = LendingStatsNotifier(app.deps)
     notifier.add_subscriber(app.deps.alert_presenter)
@@ -100,7 +114,7 @@ async def demo_lending_stats_with_deltas(app: LpAppFramework):
 async def demo_lending_stats(app: LpAppFramework):
     await app.deps.rune_market_fetcher.get_rune_market_info()
 
-    borrowers_fetcher = BorrowersFetcher(app.deps)
+    borrowers_fetcher = LendingStatsFetcher(app.deps)
     data = await borrowers_fetcher.fetch()
 
     prev = copy.deepcopy(data)
@@ -149,7 +163,8 @@ async def run():
         # await demo_personal_loan_card(app)
 
         # await demo_lending_stats(app)
-        await demo_lending_stats_with_deltas(app)
+        # await demo_lending_stats_with_deltas(app)
+        await dbg_lending_limits(app)
 
         # await debug_block_analyse(app, 12262380)
         # await debug_tx_records(app, 'xxx')

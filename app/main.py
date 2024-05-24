@@ -13,7 +13,7 @@ from services.dialog.telegram.telegram import TelegramBot
 from services.dialog.twitter.twitter_bot import TwitterBot, TwitterBotMock
 from services.jobs.achievement.notifier import AchievementsNotifier
 from services.jobs.fetch.account_number import AccountNumberFetcher
-from services.jobs.fetch.borrowers import BorrowersFetcher
+from services.jobs.fetch.lending_stats import LendingStatsFetcher
 from services.jobs.fetch.cap import CapInfoFetcher
 from services.jobs.fetch.chains import ChainStateFetcher
 from services.jobs.fetch.const_mimir import ConstMimirFetcher
@@ -541,7 +541,7 @@ class App(WithLogger):
                 metrics_fetcher.add_subscriber(achievements)
 
         if d.cfg.get('borrowers.enabled', True):
-            borrowers_fetcher = BorrowersFetcher(d)
+            borrowers_fetcher = LendingStatsFetcher(d)
             tasks.append(borrowers_fetcher)
 
             notifier = LendingStatsNotifier(d)
