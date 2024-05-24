@@ -159,6 +159,12 @@ class ThorPool(NamedTuple):
     savers_units: int = 0
     synth_mint_paused: bool = False
     synth_supply: int = 0
+    synth_supply_remaining: int = 0
+
+    loan_collateral_remaining: int = 0
+    loan_collateral: int = 0
+    loan_cr: int = 0
+    derived_depth_bps: int = 0
 
     STATUS_AVAILABLE = 'Available'
     STATUS_BOOTSTRAP = 'Bootstrap'
@@ -190,6 +196,11 @@ class ThorPool(NamedTuple):
             savers_depth=int(j.get('savers_depth', 0)),
             savers_units=int(j.get('savers_units', 0)),
             synth_mint_paused=bool(j.get('synth_mint_paused', False)),
+            synth_supply_remaining=int(j.get('synth_supply_remaining', 0)),
+            loan_collateral_remaining=int(j.get('loan_collateral_remaining', 0)),
+            loan_collateral=int(j.get('loan_collateral', 0)),
+            loan_cr=int(j.get('loan_cr', 0)),
+            derived_depth_bps=int(j.get('derived_depth_bps', 0))
         )
 
 

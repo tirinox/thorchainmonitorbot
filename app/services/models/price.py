@@ -5,7 +5,7 @@ from typing import List, Optional, Set
 
 from services.jobs.fetch.circulating import RuneCirculatingSupply
 from services.lib.config import Config
-from services.lib.constants import BNB_BTCB_SYMBOL, BTC_SYMBOL, STABLE_COIN_POOLS, thor_to_float
+from services.lib.constants import BNB_BTCB_SYMBOL, BTC_SYMBOL, STABLE_COIN_POOLS, thor_to_float, RUNE_IDEAL_SUPPLY
 from services.lib.date_utils import now_ts, DAY
 from services.lib.money import weighted_mean, Asset, is_rune
 from services.lib.texts import fuzzy_search
@@ -15,7 +15,7 @@ from services.models.pool_info import PoolInfo, PoolInfoMap
 
 @dataclass
 class RuneMarketInfo:
-    circulating: int = 500_000_000
+    circulating: int = RUNE_IDEAL_SUPPLY
     rune_vault_locked: int = 0
     pool_rune_price: float = 0.0  # THORChain Pool Price (weighted across stable coins)
     fair_price: float = 0.0  # Deterministic Price
@@ -23,7 +23,7 @@ class RuneMarketInfo:
     tlv_usd: float = 0.0
     rank: int = 0
     total_trade_volume_usd: float = 0.0
-    total_supply: int = 500_000_000
+    total_supply: int = RUNE_IDEAL_SUPPLY
     supply_info: RuneCirculatingSupply = RuneCirculatingSupply.zero()
     pools: PoolInfoMap = None
 

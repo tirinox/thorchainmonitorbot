@@ -5,7 +5,7 @@ import math
 from _operator import attrgetter
 from dataclasses import dataclass
 from operator import attrgetter
-from typing import List, Dict, NamedTuple
+from typing import List, Dict, NamedTuple, Optional
 
 from aionode.types import ThorPool
 
@@ -50,6 +50,8 @@ class PoolInfo:
     pool_apr: float = 0.0  # new!
 
     is_virtual: bool = False
+
+    original: Optional[ThorPool] = None
 
     DEPRECATED_BOOTSTRAP = 'bootstrap'
     DEPRECATED_ENABLED = 'enabled'
@@ -186,6 +188,7 @@ class PoolInfoHistoricEntry:
             self.liquidity_units,
             PoolInfo.DEPRECATED_ENABLED,
             units=self.liquidity_units,
+            original=None,
         )
 
 
@@ -209,6 +212,7 @@ def parse_thor_pools(thor_pools: List[ThorPool]) -> PoolInfoMap:
             savers_depth=p.savers_depth,
             savers_units=p.savers_units,
             synth_supply=p.synth_supply,
+            original=p,
         )
         for p in thor_pools
     }
