@@ -8,7 +8,7 @@ from services.dialog.picture.key_stats_picture import KeyStatsPictureGenerator
 from services.jobs.fetch.flipside import FlipSideConnector, FSList
 from services.jobs.fetch.flipside.urls import FS_LATEST_EARNINGS_URL, FS_LATEST_SWAP_VOL_URL, \
     FS_LATEST_SWAP_AFF_FEE_URL, FS_LATEST_SWAP_COUNT_URL, FS_LATEST_SWAP_PATH_URL, FS_LATEST_LOCKED_RUNE_URL
-from services.jobs.fetch.key_stats import KeyStatsFetcher, FS_ROUTES_V2
+from services.jobs.fetch.key_stats import KeyStatsFetcher
 from services.lib.delegates import INotified
 from services.lib.texts import sep
 from services.models.flipside import FSSwapRoutes, FSAffiliateCollectors, FSFees, FSSwapVolume, FSSwapCount, \
@@ -112,14 +112,6 @@ async def demo_picture(app: LpAppFramework):
     print('Data loaded')
 
     await show_picture(app, data)
-
-
-
-async def demo_new_flipside_swap_routes(app: LpAppFramework):
-    connector = FlipSideConnector(app.deps.session, app.deps.cfg.flipside.api_key)
-    raw_routes = await connector.direct_sql_file_query(FS_ROUTES_V2)
-    routes = [FSSwapRoutes.from_json_lowercase(x) for x in raw_routes.records]
-    print(routes)
 
 
 async def main():
