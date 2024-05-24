@@ -56,12 +56,14 @@ class NodeInfoFetcher(BaseFetcher):
         ip_addresses = [node.ip_address for node in node_list if node.ip_address]
 
         t0 = perf_counter()
-        self.logger.debug(f'Requesting info for {len(ip_addresses)} IP addresses.')
+
+        unique_ip_addresses = list(set(ip_addresses))
+        self.logger.info(f'Requesting geo info for {len(ip_addresses)} IP addresses. Unique: {len(unique_ip_addresses)}')
 
         ip_info_dict = await self._geo_ip.get_ip_info_bulk_as_dict(ip_addresses)
 
         time_elapsed = perf_counter() - t0
-        self.logger.debug(f'Got {len(ip_info_dict)} IP address info pieces. It took: {time_elapsed:.3f} sec.')
+        self.logger.info(f'Got {len(ip_info_dict)} IP address info pieces. It took: {time_elapsed:.3f} sec.')
 
         if not ip_info_dict:
             self.logger.warning(f'Failed to get IP info ({len(ip_addresses)} addresses were requested)')

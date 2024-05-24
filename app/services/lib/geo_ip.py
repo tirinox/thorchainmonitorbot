@@ -27,7 +27,7 @@ class GeoIPManager(WithLogger):
         try:
             url = self.API_URL.format(address=ip)
 
-            self.logger.info(url)
+            self.logger.info(f"Using GeoIP API: {url}")
 
             async with self.deps.session.get(url) as resp:
                 if resp.status == 200:
