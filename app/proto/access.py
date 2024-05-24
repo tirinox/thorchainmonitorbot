@@ -77,6 +77,13 @@ class NativeThorTx:
     def messages(self):
         return self.tx.body.messages
 
+    @property
+    def memo(self):
+        memo = self.tx.body.memo
+        if not memo and hasattr(self.first_message, 'memo'):
+            memo = self.first_message.memo
+        return memo
+
 
 def thor_decode_amount_field(string: str):
     """ e.g. 114731984rune """

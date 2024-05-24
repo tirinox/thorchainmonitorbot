@@ -115,10 +115,6 @@ class ThorMetaSwap:
         else:
             return a or b
 
-    @property
-    def parsed_memo(self):
-        return THORMemo.parse_memo(self.memo)
-
 
 @dataclass
 class ThorMetaWithdraw:

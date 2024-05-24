@@ -183,7 +183,7 @@ async def demo_search_for_deposit_streaming_synth(app):
                 continue
             tx: ThorTx
             if Asset(tx.first_input_tx.first_asset).is_synth:
-                if tx.meta_swap.parsed_memo.is_streaming:
+                if tx.memo.is_streaming:
                     sep('BINGO')
                     print(tx)
 

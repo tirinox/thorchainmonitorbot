@@ -12,7 +12,7 @@ from services.lib.utils import WithLogger
 from services.models.transfer import RuneTransfer
 
 
-# This one is used
+# This one is used as a helper for the main RuneTransferDetectorTxLogs
 class RuneTransferDetectorNativeTX(WithDelegates, INotified):
     def __init__(self, address_prefix='thor'):
         super().__init__()
@@ -27,9 +27,7 @@ class RuneTransferDetectorNativeTX(WithDelegates, INotified):
         transfers = []
         for tx in txs:
             # find out memo
-            memo = tx.tx.body.memo
-            if not memo and hasattr(tx.first_message, 'memo'):
-                memo = tx.first_message.memo
+            memo = tx.memo
 
             for message in tx.tx.body.messages:
                 comment = (type(message)).__name__
@@ -38,7 +36,6 @@ class RuneTransferDetectorNativeTX(WithDelegates, INotified):
                     to_addr = self.address_parse(message.to_address)
 
                     for coin in message.amount:
-                        # todo: problem: he may want to Deposit something stupid, that he don't have, lika a trillion of TGT
                         asset = str(coin.denom)
                         if is_rune(asset):
                             asset = RUNE_SYMBOL
@@ -191,68 +188,3 @@ class RuneTransferDetectorTxLogs(WithDelegates, INotified, WithLogger):
             for t in transfers:
                 if not t.to_addr:
                     t.to_addr = BOND_MODULE
-
-
-# ----- temporarily unused code -----
-
-
-# this one is not used
-class RuneTransferDetectorBlockEvents(WithDelegates, INotified):
-    async def on_data(self, sender, data):
-        events: List[DecodedEvent]
-        events, block_no = data
-
-        if not events:
-            return
-
-        transfers = []
-        for event in events:
-            if event.type == 'transfer':
-                amount, asset = event.attributes['amount']
-                asset = asset.upper()
-                transfers.append(RuneTransfer(
-                    event.attributes['sender'],
-                    event.attributes['recipient'],
-                    block=block_no,
-                    tx_hash='',
-                    amount=thor_to_float(amount),
-                    usd_per_asset=1.0,
-                    is_native=True,
-                    asset=asset
-                ))
-        await self.pass_data_to_listeners(transfers)
-
-
-# this one is not used
-class RuneTransferDetectorFromTxResult(WithDelegates, INotified):
-    async def on_data(self, sender, data: List[tuple]):
-        transfers = []
-        for tx_result, events, height in data:
-            senders = events.get('transfer.sender')
-            recipients = events.get('transfer.recipient')
-            amounts = events.get('transfer.amount')
-
-            if not all((senders, recipients, amounts)):
-                continue
-
-            tx_hash = events['tx.hash'][0]
-            for sender, recipient, amount_obj in zip(senders, recipients, amounts):
-                amount, asset = thor_decode_amount_field(amount_obj)
-
-                # ignore fee transfers
-                if is_fee_tx(amount, asset, recipient, self.reserve_address):
-                    continue
-
-                transfers.append(RuneTransfer(
-                    sender, recipient,
-                    height, tx_hash,
-                    thor_to_float(amount),
-                    asset=asset,
-                    is_native=True
-                ))
-
-        await self.pass_data_to_listeners(transfers)
-
-    def __init__(self, reserve_address=''):
-        super().__init__()
-        self.reserve_address = reserve_address

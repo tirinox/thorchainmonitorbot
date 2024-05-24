@@ -83,18 +83,18 @@ class SwapProps(NamedTuple):
         return False
 
     def get_affiliate_fee_and_addr(self) -> Tuple[int, str]:
-        if self.memo.affiliate_fee and self.memo.affiliate_address:
+        if self.memo.affiliate_fee_0_1 and self.memo.affiliate_address:
             in_coin = self.in_coin
             if is_rune(in_coin.asset):
                 # In is Rune, so no swap to the affiliate addy
-                amount = int(in_coin.amount * self.memo.affiliate_fee)
+                amount = int(in_coin.amount * self.memo.affiliate_fee_0_1)
                 return amount, self.memo.affiliate_address
             else:
                 for ev in self.events:
                     # fixme: possible bug. it dest addy is THORName,
                     #  it will mismatch anyway because events have natural addresses
-                    if isinstance(ev,
-                                  EventOutbound) and ev.to_address != self.memo.dest_address and ev.is_outbound_memo:
+                    if (isinstance(ev, EventOutbound)
+                            and ev.to_address != self.memo.dest_address and ev.is_outbound_memo):
                         return ev.amount, ev.to_address
 
         return 0, ''  # otherwise not found
@@ -218,7 +218,7 @@ class SwapProps(NamedTuple):
                 network_fees=network_fees,
                 trade_slip=slip,
                 trade_target=trade_target,
-                affiliate_fee=self.memo.affiliate_fee,  # (0..1)
+                affiliate_fee=self.memo.affiliate_fee_0_1,
                 memo=memo_str,
                 affiliate_address=affiliate_address,
                 streaming=ss_desc
