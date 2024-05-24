@@ -73,6 +73,7 @@ from services.notify.types.chain_notify import TradingHaltedNotifier
 from services.notify.types.dex_report_notify import DexReportNotifier
 from services.notify.types.key_metrics_notify import KeyMetricsNotifier
 from services.notify.types.lend_stats_notify import LendingStatsNotifier
+from services.notify.types.lending_open_up import LendingCapsNotifier
 from services.notify.types.loans_notify import LoanTxNotifier
 from services.notify.types.mimir_notify import MimirChangedNotifier
 from services.notify.types.node_churn_notify import NodeChurnNotifier
@@ -540,13 +541,20 @@ class App(WithLogger):
             if achievements_enabled:
                 metrics_fetcher.add_subscriber(achievements)
 
-        if d.cfg.get('borrowers.enabled', True):
+        lending_report_enabled = d.cfg.get('lending.stats_report.enabled', True)
+        lending_caps_alert_enabled = d.cfg.get('lending.caps_alert.enabled', True)
+        if lending_caps_alert_enabled or lending_report_enabled:
             borrowers_fetcher = LendingStatsFetcher(d)
             tasks.append(borrowers_fetcher)
 
-            notifier = LendingStatsNotifier(d)
-            notifier.add_subscriber(d.alert_presenter)
-            borrowers_fetcher.add_subscriber(notifier)
+            if lending_report_enabled:
+                stats_notifier = LendingStatsNotifier(d)
+                stats_notifier.add_subscriber(d.alert_presenter)
+                borrowers_fetcher.add_subscriber(stats_notifier)
+
+            if lending_caps_alert_enabled:
+                cap_notifier = LendingCapsNotifier(d)
+                borrowers_fetcher.add_subscriber(cap_notifier)
 
             if achievements_enabled:
                 borrowers_fetcher.add_subscriber(achievements)

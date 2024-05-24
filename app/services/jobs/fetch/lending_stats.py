@@ -17,7 +17,7 @@ MAX_AGE_TO_REPORT_ERROR = 3 * DAY
 
 class LendingStatsFetcher(BaseFetcher):
     def __init__(self, deps: DepContainer):
-        period = parse_timespan_to_seconds(deps.cfg.borrowers.fetch_period)
+        period = parse_timespan_to_seconds(deps.cfg.lending.fetch_period)
         super().__init__(deps, period)
         self.midgard_parser = get_parser_by_network_id(deps.cfg.network_id)
         self.fs = FlipSideConnector(deps.session, deps.cfg.flipside.api_key)
@@ -115,7 +115,7 @@ class LendingStatsFetcher(BaseFetcher):
         market_info = await self.deps.rune_market_fetcher.get_rune_market_info()
         lending_stats = await self.amend_burned_rune(lending_stats, market_info)
 
-        # Enrich with total rune for protocol and lending caps
+        # Enrich with lending caps
         lending_stats = await self._enrich_with_caps(market_info, lending_stats)
 
         return lending_stats

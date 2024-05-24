@@ -594,7 +594,13 @@ key_metrics:
     cooldown: 7d
 
 
-borrowers:  # (!) new
-  enabled: true
+lending:  # (!) new
   fetch_period: 2h
-  cooldown: 1d
+
+  stats_report:   # (!) new
+    enabled: true
+    cooldown: 3d
+
+  caps_alert:
+    enabled: true
+    cooldown: 1h
