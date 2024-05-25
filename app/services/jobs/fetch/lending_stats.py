@@ -53,7 +53,13 @@ class LendingStatsFetcher(BaseFetcher):
 
     def get_enabled_pools_for_lending(self):
         mimir = self.deps.mimir_const_holder
+        if not mimir.all_entries:
+            self.logger.error('No mimir entries found')
+
         price_holder = self.deps.price_holder
+        if not price_holder.pool_info_map:
+            self.logger.error('No pool info map found')
+
         for entry in mimir.all_entries:
             if (key := entry.name.upper()).startswith('LENDING-THOR-'):
                 key_parts = key.split('-', maxsplit=2)

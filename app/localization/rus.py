@@ -1997,9 +1997,18 @@ class RussianLocalization(BaseLocalization):
             f'{user_link} | {db_link}'
         )
 
+    def _format_lending_pool_entry(self, asset, fill, pool_desc, pool_name, remaining_collateral, sing):
+        pool_desc += (
+            f'{pool_name} '
+            f'заполнение: {fill} {sing}, '
+            f'{remaining_collateral} {self.pretty_asset(asset)} доступно.'
+            f'\n'
+        )
+        return pool_desc
+
     def notification_lending_stats(self, event: AlertLendingStats):
         (borrower_count_delta, curr, lending_tx_count_delta, rune_burned_rune_delta, total_borrowed_amount_delta,
-         total_collateral_value_delta) = self._lending_stats_delta(event)
+         total_collateral_value_delta, cr) = self._lending_stats_delta(event)
 
         return (
             f'<b>Статистика кредитования</b>\n\n'
@@ -2007,10 +2016,8 @@ class RussianLocalization(BaseLocalization):
             f'📝 Количество транзакций: {bold(pretty_money(curr.lending_tx_count))} {lending_tx_count_delta}\n'
             f'💰 Общее обеспечение: {bold(short_dollar(curr.total_collateral_value_usd))} {total_collateral_value_delta}\n'
             f'💸 Объем займов: {bold(short_dollar(curr.total_borrowed_amount_usd))} {total_borrowed_amount_delta}\n'
-            f'₿ Bitcoin CR: {bold(short_money(curr.btc_current_cr))}x, '
-            f'LTV: {bold(short_money(curr.btc_current_ltv))}%\n'
-            f'Ξ Ethereum CR: {bold(short_money(curr.eth_current_cr))}x, '
-            f'LTV: {bold(short_money(curr.eth_current_ltv))}%\n'
+            f'{self._lend_pool_desc(event)}'
+            f"Коэффициент обеспечения: {pretty_money(cr)}\n"
             f'❤️‍🔥 Rune сожжено: {bold(short_rune(curr.rune_burned_rune))} {rune_burned_rune_delta}\n\n'
             f'{link(self.LENDING_LINK, "Подробности")}'
         )

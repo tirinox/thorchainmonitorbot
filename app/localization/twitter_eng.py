@@ -979,7 +979,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
     def notification_lending_stats(self, event: AlertLendingStats):
         (borrower_count_delta, curr, lending_tx_count_delta, rune_burned_rune_delta, total_borrowed_amount_delta,
-         total_collateral_value_delta) = self._lending_stats_delta(event)
+         total_collateral_value_delta, cr) = self._lending_stats_delta(event)
 
         return (
             f'Lending stats\n\n'
@@ -987,10 +987,8 @@ class TwitterEnglishLocalization(BaseLocalization):
             f'📝 Tx count: {pretty_money(curr.lending_tx_count)} {lending_tx_count_delta}\n'
             f'💰 Total collateral: {short_dollar(curr.total_collateral_value_usd)} {total_collateral_value_delta}\n'
             f'💸 Total borrowed: {short_dollar(curr.total_borrowed_amount_usd)} {total_borrowed_amount_delta}\n'
-            f'₿ Btc CR: {short_money(curr.btc_current_cr)}x, '
-            f'LTV: {short_money(curr.btc_current_ltv)}%\n'
-            f'Ξ Eth CR: {short_money(curr.eth_current_cr)}x, '
-            f'LTV: {short_money(curr.eth_current_ltv)}%\n'
+            f'{self._lend_pool_desc(event)}'
+            f"Collateral Ratio: {pretty_money(cr)}\n"
             f'❤️‍🔥 Rune burned: {short_rune(curr.rune_burned_rune)} {rune_burned_rune_delta}\n\n'
             f'{self.LENDING_LINK}'
         )

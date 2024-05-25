@@ -1,5 +1,6 @@
 import asyncio
 import copy
+import json
 import random
 from pprint import pprint
 
@@ -11,6 +12,7 @@ from services.jobs.scanner.loan_extractor import LoanExtractorBlock
 from services.jobs.scanner.native_scan import NativeScannerBlock
 from services.lib.money import DepthCurve
 from services.lib.texts import sep
+from services.lib.utils import load_pickle, save_pickle
 from services.models.loans import AlertLendingStats, LendingStats
 from services.notify.types.lend_stats_notify import LendingStatsNotifier
 from services.notify.types.loans_notify import LoanTxNotifier
@@ -111,23 +113,34 @@ async def demo_lending_stats_with_deltas(app: LpAppFramework):
     await asyncio.sleep(5)
 
 
+LENDING_STATS_SAVED_FILE = '../temp/lending_stats.pkl'
+
+
 async def demo_lending_stats(app: LpAppFramework):
-    await app.deps.rune_market_fetcher.get_rune_market_info()
+    data = load_pickle(LENDING_STATS_SAVED_FILE)
+    if not data or not isinstance(data, AlertLendingStats):
+        print('No saved data. Will load...')
 
-    borrowers_fetcher = LendingStatsFetcher(app.deps)
-    data = await borrowers_fetcher.fetch()
+        await app.deps.pool_fetcher.reload_global_pools()
+        await app.deps.last_block_fetcher.run_once()
+        await app.deps.rune_market_fetcher.get_rune_market_info()
+        await app.deps.mimir_const_fetcher.run_once()
 
-    prev = copy.deepcopy(data)
+        borrowers_fetcher = LendingStatsFetcher(app.deps)
+        data = await borrowers_fetcher.fetch()
 
-    prev: LendingStats = prev._replace(
-        borrower_count=prev.borrower_count + random.randint(-100, 100),
-        lending_tx_count=prev.lending_tx_count + random.randint(-100, 100),
-        total_collateral_value_usd=prev.total_collateral_value_usd + random.uniform(-100000, 100000000),
-        total_borrowed_amount_usd=prev.total_borrowed_amount_usd + random.uniform(-100000, 100000000),
-        rune_burned_rune=prev.rune_burned_rune + random.uniform(-100000, 10000000),
-    )
+        prev = copy.deepcopy(data)
 
-    data = AlertLendingStats(data, prev)
+        prev: LendingStats = prev._replace(
+            borrower_count=prev.borrower_count + random.randint(-100, 100),
+            lending_tx_count=prev.lending_tx_count + random.randint(-100, 100),
+            total_collateral_value_usd=prev.total_collateral_value_usd + random.uniform(-100000, 100000000),
+            total_borrowed_amount_usd=prev.total_borrowed_amount_usd + random.uniform(-100000, 100000000),
+            rune_burned_rune=prev.rune_burned_rune + random.uniform(-100000, 10000000),
+        )
+
+        data = AlertLendingStats(data, prev)
+        save_pickle(LENDING_STATS_SAVED_FILE, data)
 
     await app.test_all_locs(
         BaseLocalization.notification_lending_stats, None, data
@@ -157,14 +170,11 @@ async def demo_personal_loan_card(app: LpAppFramework):
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
-        await app.deps.pool_fetcher.reload_global_pools()
-        await app.deps.last_block_fetcher.run_once()
-
         # await demo_personal_loan_card(app)
 
-        # await demo_lending_stats(app)
+        await demo_lending_stats(app)
         # await demo_lending_stats_with_deltas(app)
-        await dbg_lending_limits(app)
+        # await dbg_lending_limits(app)
 
         # await debug_block_analyse(app, 12262380)
         # await debug_tx_records(app, 'xxx')

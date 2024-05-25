@@ -13,7 +13,7 @@ from services.jobs.fetch.circulating import ThorRealms
 from services.jobs.fetch.runeyield.borrower import LoanReportCard
 from services.lib.config import Config
 from services.lib.constants import thor_to_float, THOR_BLOCK_TIME, DEFAULT_CEX_NAME, \
-    DEFAULT_CEX_BASE_ASSET, bp_to_percent, LOAN_MARKER
+    DEFAULT_CEX_BASE_ASSET, bp_to_percent, LOAN_MARKER, BTC_SYMBOL, ETH_SYMBOL
 from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE, DAY
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
     get_explorer_url_for_node, get_pool_url, get_thoryield_address, get_ip_info_link
@@ -2611,23 +2611,37 @@ class BaseLocalization(ABC):  # == English
 
     LENDING_LINK = "https://dashboards.ninerealms.com/#lending"
 
-    def notification_lending_stats(self, event: AlertLendingStats):
-        (borrower_count_delta, curr, lending_tx_count_delta, rune_burned_rune_delta, total_borrowed_amount_delta,
-         total_collateral_value_delta) = self._lending_stats_delta(event)
+    LEND_DICT = {
+        BTC_SYMBOL: "₿ Bitcoin",
+        ETH_SYMBOL: "Ξ Ethereum",
+    }
 
-        return (
-            f'<b>Lending stats</b>\n\n'
-            f'🙋‍♀️ Borrower count: {bold(pretty_money(curr.borrower_count))} {borrower_count_delta}\n'
-            f'📝 Lending Tx count: {bold(pretty_money(curr.lending_tx_count))} {lending_tx_count_delta}\n'
-            f'💰 Total collateral value: {bold(short_dollar(curr.total_collateral_value_usd))} {total_collateral_value_delta}\n'
-            f'💸 Total borrowed value: {bold(short_dollar(curr.total_borrowed_amount_usd))} {total_borrowed_amount_delta}\n'
-            f'₿ Bitcoin CR: {bold(short_money(curr.btc_current_cr))}x, '
-            f'LTV: {bold(short_money(curr.btc_current_ltv))}%\n'
-            f'Ξ Ethereum CR: {bold(short_money(curr.eth_current_cr))}x, '
-            f'LTV: {bold(short_money(curr.eth_current_ltv))}%\n'
-            f'❤️‍🔥 Rune burned: {bold(short_rune(curr.rune_burned_rune))} {rune_burned_rune_delta}\n\n'
-            f'{link(self.LENDING_LINK, "Details")}'
+    def _lend_pool_desc(self, event: AlertLendingStats):
+        pool_desc = ''
+        for pool in sorted(event.current.pools):
+            asset = pool.collateral_name
+            pool_name = self.LEND_DICT.get(asset, asset)
+
+            fill = format_percent(pool.fill_ratio, total=1.0)
+            remaining_collateral = short_money(pool.collateral_available)
+            if pool.fill_ratio >= 1.0:
+                sing = '🚩'
+            elif pool.fill_ratio >= 0.9:
+                sing = '🔰'
+            else:
+                sing = '🟢'
+            pool_desc = self._format_lending_pool_entry(asset, fill, pool_desc, pool_name, remaining_collateral, sing)
+
+        return pool_desc
+
+    def _format_lending_pool_entry(self, asset, fill, pool_desc, pool_name, remaining_collateral, sing):
+        pool_desc += (
+            f'{pool_name} '
+            f'fill: {fill} {sing}, '
+            f'{remaining_collateral} {self.pretty_asset(asset)} available.'
+            f'\n'
         )
+        return pool_desc
 
     @staticmethod
     def _lending_stats_delta(event: AlertLendingStats):
@@ -2648,8 +2662,27 @@ class BaseLocalization(ABC):  # == English
             total_collateral_value_delta = ''
             total_borrowed_amount_delta = ''
             rune_burned_rune_delta = ''
-        return (borrower_count_delta, curr, lending_tx_count_delta, rune_burned_rune_delta,
-                total_borrowed_amount_delta, total_collateral_value_delta)
+        cr = (event.current.btc_current_cr + event.current.eth_current_cr) * 0.5
+        return (
+            borrower_count_delta, curr, lending_tx_count_delta, rune_burned_rune_delta,
+            total_borrowed_amount_delta, total_collateral_value_delta, cr
+        )
+
+    def notification_lending_stats(self, event: AlertLendingStats):
+        (borrower_count_delta, curr, lending_tx_count_delta, rune_burned_rune_delta, total_borrowed_amount_delta,
+         total_collateral_value_delta, cr) = self._lending_stats_delta(event)
+
+        return (
+            f'<b>Lending stats</b>\n\n'
+            f'🙋‍♀️ Borrower count: {bold(pretty_money(curr.borrower_count))} {borrower_count_delta}\n'
+            f'📝 Lending Tx count: {bold(pretty_money(curr.lending_tx_count))} {lending_tx_count_delta}\n'
+            f'💰 Total collateral value: {bold(short_dollar(curr.total_collateral_value_usd))} {total_collateral_value_delta}\n'
+            f'💸 Total borrowed value: {bold(short_dollar(curr.total_borrowed_amount_usd))} {total_borrowed_amount_delta}\n'
+            f'{self._lend_pool_desc(event)}'
+            f"Collateral Ratio: {pretty_money(cr)}\n"
+            f'❤️‍🔥 Rune burned: {bold(short_rune(curr.rune_burned_rune))} {rune_burned_rune_delta}\n\n'
+            f'{link(self.LENDING_LINK, "Details")}'
+        )
 
     # ------ Bond providers alerts ------
 
