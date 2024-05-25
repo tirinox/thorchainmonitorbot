@@ -245,6 +245,9 @@ class Asset:
     @classmethod
     def from_string(cls, asset: str):
         try:
+            if not isinstance(asset, str):
+                raise ValueError('Asset must be a string')
+
             if asset == RUNE_DENOM:
                 return copy(AssetRUNE)
 
