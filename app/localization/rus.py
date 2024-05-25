@@ -26,7 +26,7 @@ from services.lib.w3.dex_analytics import DexReportEntry, DexReport
 from services.models.cap_info import ThorCapInfo
 from services.models.flipside import AlertKeyStats
 from services.models.last_block import BlockProduceState, EventBlockSpeed
-from services.models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats
+from services.models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats, AlertLendingOpenUpdate
 from services.models.lp_info import LiquidityPoolReport
 from services.models.mimir import MimirChange, MimirHolder
 from services.models.net_stats import NetworkStats
@@ -2020,6 +2020,15 @@ class RussianLocalization(BaseLocalization):
             f"Коэффициент обеспечения: {pretty_money(cr)}\n"
             f'❤️‍🔥 Rune сожжено: {bold(short_rune(curr.rune_burned_rune))} {rune_burned_rune_delta}\n\n'
             f'{link(self.LENDING_LINK, "Подробности")}'
+        )
+
+    def notification_lending_open_back_up(self, event: AlertLendingOpenUpdate):
+        available_collateral = short_money(event.pool_state.collateral_available)
+        pool_name = self.LEND_DICT.get(event.asset, event.asset)
+        return (
+            f'🟢 В пуле {pool_name} открылось место для кредитов.\n'
+            f'{available_collateral} {pool_name} доступно для внесения как залога.\n'
+            f'Заполнение сейчас – {ital(format_percent(event.pool_state.fill_ratio, total=1.0))}.\n'
         )
 
     # ------ Bond providers alerts ------

@@ -604,3 +604,4 @@ lending:  # (!) new
   caps_alert:
     enabled: true
     cooldown: 1h
+    threshold: 99  # %

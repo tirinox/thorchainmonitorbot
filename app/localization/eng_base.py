@@ -29,7 +29,7 @@ from services.lib.w3.token_record import AmountToken
 from services.models.cap_info import ThorCapInfo
 from services.models.flipside import AlertKeyStats
 from services.models.last_block import BlockProduceState, EventBlockSpeed
-from services.models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats
+from services.models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats, AlertLendingOpenUpdate
 from services.models.lp_info import LiquidityPoolReport
 from services.models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting, MimirVoteOption
 from services.models.mimir_naming import MimirUnits, NEXT_CHAIN_VOTING_MAP
@@ -2682,6 +2682,15 @@ class BaseLocalization(ABC):  # == English
             f"Collateral Ratio: {pretty_money(cr)}\n"
             f'❤️‍🔥 Rune burned: {bold(short_rune(curr.rune_burned_rune))} {rune_burned_rune_delta}\n\n'
             f'{link(self.LENDING_LINK, "Details")}'
+        )
+
+    def notification_lending_open_back_up(self, event: AlertLendingOpenUpdate):
+        available_collateral = short_money(event.pool_state.collateral_available)
+        pool_name = self.LEND_DICT.get(event.asset, event.asset)
+        return (
+            f'🟢 Some space opened up for lending in the {bold(self.pretty_asset(event.asset))} pool.\n'
+            f'{bold(available_collateral)} {ital(pool_name)} can be deposited as collateral.\n'
+            f'Fill is {ital(format_percent(event.pool_state.fill_ratio, total=1.0))}.\n'
         )
 
     # ------ Bond providers alerts ------

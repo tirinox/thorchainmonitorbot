@@ -72,3 +72,12 @@ class LendingStats(NamedTuple):
 class AlertLendingStats(NamedTuple):
     current: LendingStats
     previous: Optional[LendingStats]
+
+
+class AlertLendingOpenUpdate(NamedTuple):
+    asset: str
+    stats: LendingStats
+
+    @property
+    def pool_state(self) -> PoolLendState:
+        return next((p for p in self.stats.pools if p.collateral_name == self.asset), None)

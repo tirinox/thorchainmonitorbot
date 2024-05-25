@@ -539,3 +539,21 @@ def get_ttl_hash(seconds=3600):
 
 def filter_none_values(d: dict):
     return {k: v for k, v in d.items() if v is not None}
+
+
+def read_var_file():
+    file_name = '../temp/var.json'
+    if os.path.exists(file_name):
+        try:
+            with open(file_name, 'r') as f:
+                return json.load(f)
+        except Exception as e:
+            logging.error(f'Failed to read var file: {e}')
+            return {}
+    else:
+        # write empty file
+        with open(file_name, 'w') as f:
+            logging.info(f'Created empty var file: {file_name}')
+            json.dump({}, f)
+
+        return {}

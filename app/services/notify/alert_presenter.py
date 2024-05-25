@@ -19,7 +19,7 @@ from services.lib.midgard.name_service import NameService, NameMap
 from services.lib.w3.dex_analytics import DexReport
 from services.models.flipside import AlertKeyStats
 from services.models.last_block import EventBlockSpeed, BlockProduceState
-from services.models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats
+from services.models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats, AlertLendingOpenUpdate
 from services.models.mimir import AlertMimirChange
 from services.models.node_info import AlertNodeChurn
 from services.models.pol import AlertPOL
@@ -72,6 +72,8 @@ class AlertPresenter(INotified, WithLogger):
             await self._handle_streaming_swap_start(data)
         elif isinstance(data, (AlertLoanOpen, AlertLoanRepayment)):
             await self._handle_loans(data)
+        elif isinstance(data, AlertLendingOpenUpdate):
+            await self._handle_lending_caps(data)
         elif isinstance(data, AlertPrice):
             await self._handle_price(data)
         elif isinstance(data, AlertMimirChange):
@@ -250,6 +252,12 @@ class AlertPresenter(INotified, WithLogger):
     async def _handle_lending_stats(self, data: AlertLendingStats):
         await self.deps.broadcaster.notify_preconfigured_channels(
             BaseLocalization.notification_lending_stats,
+            data,
+        )
+
+    async def _handle_lending_caps(self, data: AlertLendingOpenUpdate):
+        await self.deps.broadcaster.notify_preconfigured_channels(
+            BaseLocalization.notification_lending_open_back_up,
             data,
         )
 

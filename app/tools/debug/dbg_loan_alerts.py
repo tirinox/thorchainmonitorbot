@@ -1,6 +1,5 @@
 import asyncio
 import copy
-import json
 import random
 from pprint import pprint
 
@@ -12,9 +11,10 @@ from services.jobs.scanner.loan_extractor import LoanExtractorBlock
 from services.jobs.scanner.native_scan import NativeScannerBlock
 from services.lib.money import DepthCurve
 from services.lib.texts import sep
-from services.lib.utils import load_pickle, save_pickle
-from services.models.loans import AlertLendingStats, LendingStats
+from services.lib.utils import load_pickle, save_pickle, read_var_file
+from services.models.loans import AlertLendingStats, LendingStats, AlertLendingOpenUpdate
 from services.notify.types.lend_stats_notify import LendingStatsNotifier
+from services.notify.types.lending_open_up import LendingCapsNotifier
 from services.notify.types.loans_notify import LoanTxNotifier
 from tools.lib.lp_common import LpAppFramework
 
@@ -116,15 +116,19 @@ async def demo_lending_stats_with_deltas(app: LpAppFramework):
 LENDING_STATS_SAVED_FILE = '../temp/lending_stats.pkl'
 
 
+async def _preload(app):
+    await app.deps.pool_fetcher.reload_global_pools()
+    await app.deps.last_block_fetcher.run_once()
+    await app.deps.rune_market_fetcher.get_rune_market_info()
+    await app.deps.mimir_const_fetcher.run_once()
+
+
 async def demo_lending_stats(app: LpAppFramework):
     data = load_pickle(LENDING_STATS_SAVED_FILE)
     if not data or not isinstance(data, AlertLendingStats):
         print('No saved data. Will load...')
 
-        await app.deps.pool_fetcher.reload_global_pools()
-        await app.deps.last_block_fetcher.run_once()
-        await app.deps.rune_market_fetcher.get_rune_market_info()
-        await app.deps.mimir_const_fetcher.run_once()
+        await _preload(app)
 
         borrowers_fetcher = LendingStatsFetcher(app.deps)
         data = await borrowers_fetcher.fetch()
@@ -167,14 +171,45 @@ async def demo_personal_loan_card(app: LpAppFramework):
     )
 
 
+async def demo_lending_opened_up(app: LpAppFramework):
+    await _preload(app)
+
+    data = load_pickle(LENDING_STATS_SAVED_FILE)
+    if not data or not isinstance(data, AlertLendingStats):
+        print('No saved data. It is impossible to run this demo without the saved data.')
+
+    notifier = LendingCapsNotifier(app.deps)
+    notifier.add_subscriber(app.deps.alert_presenter)
+
+    prev_var = None
+
+    while True:
+        var_file = read_var_file()
+        if var_file != prev_var:
+            prev_var = var_file
+            sep()
+            print('New var values detected:')
+            pprint(var_file)
+
+            data.current.pools[0] = data.current.pools[0]._replace(
+                collateral_available=var_file.get('collateral_available', 0),
+                fill_ratio=var_file.get('fill_ratio', 101) / 100.0
+            )
+
+        await notifier.on_data(None, data.current)
+        await asyncio.sleep(3.0)
+
+
+
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
         # await demo_personal_loan_card(app)
 
-        await demo_lending_stats(app)
+        # await demo_lending_stats(app)
         # await demo_lending_stats_with_deltas(app)
         # await dbg_lending_limits(app)
+        await demo_lending_opened_up(app)
 
         # await debug_block_analyse(app, 12262380)
         # await debug_tx_records(app, 'xxx')

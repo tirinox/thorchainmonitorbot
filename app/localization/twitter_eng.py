@@ -7,7 +7,7 @@ from localization.achievements.ach_tw_eng import AchievementsTwitterEnglishLocal
 from localization.eng_base import BaseLocalization
 from services.dialog.twitter.text_length import twitter_intelligent_text_splitter
 from services.lib.config import Config
-from services.lib.constants import Chains
+from services.lib.constants import Chains, BTC_SYMBOL, ETH_SYMBOL
 from services.lib.date_utils import now_ts, seconds_human
 from services.lib.explorers import get_explorer_url_to_tx
 from services.lib.midgard.name_service import NameMap, add_thor_suffix
@@ -20,7 +20,7 @@ from services.lib.w3.dex_analytics import DexReportEntry, DexReport
 from services.models.cap_info import ThorCapInfo
 from services.models.flipside import AlertKeyStats
 from services.models.last_block import EventBlockSpeed, BlockProduceState
-from services.models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats
+from services.models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats, AlertLendingOpenUpdate
 from services.models.mimir import MimirChange, MimirHolder
 from services.models.mimir_naming import MimirUnits
 from services.models.net_stats import NetworkStats
@@ -676,6 +676,11 @@ class TwitterEnglishLocalization(BaseLocalization):
             f'it takes {self.format_block_time(e.block_speed)} seconds to generate a new block.'
         )
 
+    LEND_DICT = {
+        BTC_SYMBOL: "₿ $BTC",
+        ETH_SYMBOL: "Ξ $ETH",
+    }
+
     def notification_text_mimir_changed(self, changes: List[MimirChange], mimir: MimirHolder):
         if not changes:
             return ''
@@ -991,4 +996,13 @@ class TwitterEnglishLocalization(BaseLocalization):
             f"Collateral Ratio: {pretty_money(cr)}\n"
             f'❤️‍🔥 Rune burned: {short_rune(curr.rune_burned_rune)} {rune_burned_rune_delta}\n\n'
             f'{self.LENDING_LINK}'
+        )
+
+    def notification_lending_open_back_up(self, event: AlertLendingOpenUpdate):
+        available_collateral = short_money(event.pool_state.collateral_available)
+        pool_name = self.LEND_DICT.get(event.asset, event.asset)
+        return (
+            f'🟢 Some space opened up for lending in the {self.pretty_asset(event.asset)} pool.\n'
+            f'{available_collateral} {pool_name} can be deposited as collateral.\n'
+            f'Fill is {format_percent(event.pool_state.fill_ratio, total=1.0)}.\n'
         )
