@@ -351,6 +351,18 @@ class MetricsDialog(BaseDialog):
 
         await self.safe_delete(loading_message)
 
+    async def show_lending_stats(self, message: Message):
+        loading_message = await self.show_loading(message)
+
+        try:
+            event = await self.deps.lend_stats_notifier.get_last_event()
+        except AttributeError:
+            event = None
+
+        text = self.loc.notification_lending_stats(event) if event else self.loc.TEXT_LENDING_STATS_NO_DATA
+        await message.answer(text, disable_notification=True)
+        await self.safe_delete(loading_message)
+
     # ---- Ask for duration (universal)
 
     def parse_duration_response(self, message: Message):

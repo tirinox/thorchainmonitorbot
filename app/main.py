@@ -544,20 +544,20 @@ class App(WithLogger):
         lending_report_enabled = d.cfg.get('lending.stats_report.enabled', True)
         lending_caps_alert_enabled = d.cfg.get('lending.caps_alert.enabled', True)
         if lending_caps_alert_enabled or lending_report_enabled:
-            lend_stats_fetcher = LendingStatsFetcher(d)
-            tasks.append(lend_stats_fetcher)
+            d.lend_stats_fetcher = LendingStatsFetcher(d)
+            tasks.append(d.lend_stats_fetcher)
 
             if lending_report_enabled:
-                stats_notifier = LendingStatsNotifier(d)
-                stats_notifier.add_subscriber(d.alert_presenter)
-                lend_stats_fetcher.add_subscriber(stats_notifier)
+                d.lend_stats_notifier = LendingStatsNotifier(d)
+                d.lend_stats_notifier.add_subscriber(d.alert_presenter)
+                d.lend_stats_fetcher.add_subscriber(d.lend_stats_notifier)
 
             if lending_caps_alert_enabled:
                 cap_notifier = LendingCapsNotifier(d)
-                lend_stats_fetcher.add_subscriber(cap_notifier)
+                d.lend_stats_fetcher.add_subscriber(cap_notifier)
 
             if achievements_enabled:
-                lend_stats_fetcher.add_subscriber(achievements)
+                d.lend_stats_fetcher.add_subscriber(achievements)
 
         # -------- SCHEDULER --------
 

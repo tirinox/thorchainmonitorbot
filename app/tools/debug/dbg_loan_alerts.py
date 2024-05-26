@@ -97,7 +97,11 @@ async def debug_tx_records(app: LpAppFramework, tx_id):
 
 
 async def demo_lending_stats_with_deltas(app: LpAppFramework):
-    await app.deps.rune_market_fetcher.get_rune_market_info()
+    await asyncio.gather(
+        app.deps.pool_fetcher.reload_global_pools(),
+        app.deps.rune_market_fetcher.get_rune_market_info(),
+        app.deps.mimir_const_fetcher.run_once(),
+    )
 
     borrowers_fetcher = LendingStatsFetcher(app.deps)
 
@@ -123,8 +127,12 @@ async def _preload(app):
     await app.deps.mimir_const_fetcher.run_once()
 
 
-async def demo_lending_stats(app: LpAppFramework):
-    data = load_pickle(LENDING_STATS_SAVED_FILE)
+async def demo_lending_stats(app: LpAppFramework, cached=False):
+    if cached:
+        data = load_pickle(LENDING_STATS_SAVED_FILE)
+    else:
+        data = None
+
     if not data or not isinstance(data, AlertLendingStats):
         print('No saved data. Will load...')
 
@@ -144,7 +152,8 @@ async def demo_lending_stats(app: LpAppFramework):
         )
 
         data = AlertLendingStats(data, prev)
-        save_pickle(LENDING_STATS_SAVED_FILE, data)
+        if cached:
+            save_pickle(LENDING_STATS_SAVED_FILE, data)
 
     await app.test_all_locs(
         BaseLocalization.notification_lending_stats, None, data
@@ -200,16 +209,15 @@ async def demo_lending_opened_up(app: LpAppFramework):
         await asyncio.sleep(3.0)
 
 
-
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
         # await demo_personal_loan_card(app)
 
-        # await demo_lending_stats(app)
-        # await demo_lending_stats_with_deltas(app)
+        # await demo_lending_stats(app, cached=True)
+        await demo_lending_stats_with_deltas(app)
         # await dbg_lending_limits(app)
-        await demo_lending_opened_up(app)
+        # await demo_lending_opened_up(app)
 
         # await debug_block_analyse(app, 12262380)
         # await debug_tx_records(app, 'xxx')

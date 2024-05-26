@@ -162,6 +162,10 @@ class MainMenuDialog(BaseDialog):
     async def cmd_weekly(self, message: Message):
         await self.build_metrics_dialog().show_weekly_stats(message)
 
+    @message_handler(commands='lending', state='*')
+    async def cmd_lending(self, message: Message):
+        await self.build_metrics_dialog().show_lending_stats(message)
+
     @message_handler(filters.RegexpCommandsFilter(regexp_commands=[r'^/unsub_.*']), state='*')
     async def on_unsubscribe_command(self, message: Message):
         # Commands like /unsub_sMth1

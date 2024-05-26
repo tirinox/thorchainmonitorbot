@@ -34,7 +34,7 @@ class LendingCapsNotifier(INotified, WithDelegates, WithLogger):
         previous_above_caps = await r.hget(self._key(pool_name), 'above_caps')
         previous_above_caps = int(previous_above_caps) if previous_above_caps is not None else 0
 
-        print(f'Pool {pool_name} is above caps: {pool.fill_ratio:.2f}. {previous_above_caps =}')
+        # print(f'Pool {pool_name} is above caps: {pool.fill_ratio:.2f}. {previous_above_caps =}')
 
         # hysteresis logic
         if previous_above_caps and pool.fill_ratio < self.threshold:

@@ -1002,7 +1002,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         available_collateral = short_money(event.pool_state.collateral_available)
         pool_name = self.LEND_DICT.get(event.asset, event.asset)
         return (
-            f'🟢 Some space opened up for lending in the {self.pretty_asset(event.asset)} pool.\n'
+            f'🟢 A lending opportunity is now available in the {self.pretty_asset(event.asset)} pool.\n'
             f'{available_collateral} {pool_name} can be deposited as collateral.\n'
-            f'Fill is {format_percent(event.pool_state.fill_ratio, total=1.0)}.\n'
+            f'Current fill level: {format_percent(event.pool_state.fill_ratio, total=1.0)}.\n'
         )

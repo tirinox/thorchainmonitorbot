@@ -2688,10 +2688,12 @@ class BaseLocalization(ABC):  # == English
         available_collateral = short_money(event.pool_state.collateral_available)
         pool_name = self.LEND_DICT.get(event.asset, event.asset)
         return (
-            f'🟢 Some space opened up for lending in the {bold(self.pretty_asset(event.asset))} pool.\n'
+            f'🟢 A lending opportunity is now available in the {bold(self.pretty_asset(event.asset))} pool.\n'
             f'{bold(available_collateral)} {ital(pool_name)} can be deposited as collateral.\n'
-            f'Fill is {ital(format_percent(event.pool_state.fill_ratio, total=1.0))}.\n'
+            f'Fill level is {ital(format_percent(event.pool_state.fill_ratio, total=1.0))}.\n'
         )
+
+    TEXT_LENDING_STATS_NO_DATA = '😩 Sorry. We have not gotten any data for lending stats yet.'
 
     # ------ Bond providers alerts ------
 

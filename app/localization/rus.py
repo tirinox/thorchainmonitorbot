@@ -2031,6 +2031,8 @@ class RussianLocalization(BaseLocalization):
             f'Заполнение сейчас – {ital(format_percent(event.pool_state.fill_ratio, total=1.0))}.\n'
         )
 
+    TEXT_LENDING_STATS_NO_DATA = '😩 Простите, у нас пока нет никаких данных о статистике кредитования.'
+
     # ------ Bond providers alerts ------
 
     TEXT_BOND_PROVIDER_ALERT_FOR = 'Оповещение для поставщика бонда'

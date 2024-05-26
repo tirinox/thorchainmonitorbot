@@ -56,6 +56,7 @@ class DepContainer:
     last_block_fetcher = None  # type: 'LastBlockFetcher'
     saver_stats_fetcher = None
     data_controller = None
+    lend_stats_fetcher = None
 
     node_op_notifier = None  # type: 'NodeChangePersonalNotifier'
     block_notifier = None  # type: 'BlockHeightNotifier'
@@ -64,6 +65,7 @@ class DepContainer:
     volume_recorder = None  # type: 'VolumeRecorder'
     weekly_stats_notifier = None
     pol_notifier = None
+    lend_stats_notifier = None
 
     dex_analytics = None
     affiliate_recorder = None

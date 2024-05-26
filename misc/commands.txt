@@ -7,9 +7,10 @@ supply - Rune supply chart
 queue - TX queue info
 nodes - List of THORNodes
 chains - Connected blockchains
-mimir - Mimir global constants
+mimir - Mimir constants
 pools - Top pools
 voting - Node-Mimir voting
-lang - Set the language
 weekly - Weekly key statistics
 wallets - List of wallets you follow
+lending - Lending stats
+lang - Set the language
