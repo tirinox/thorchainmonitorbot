@@ -1,5 +1,4 @@
-from services.lib.constants import BTC_SYMBOL
-from services.lib.cooldown import Cooldown, CooldownBiTrigger
+from services.lib.cooldown import CooldownBiTrigger, Cooldown
 from services.lib.date_utils import HOUR
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
@@ -20,23 +19,31 @@ class LendingCapsNotifier(INotified, WithDelegates, WithLogger):
             self.logger.warning(f'Set to default: {self.threshold} ({self.threshold * 100}%)')
 
     async def _notify(self, event: LendingStats, pool_name: str):
-        await self.pass_data_to_listeners(AlertLendingOpenUpdate(pool_name, event))
+        cd = Cooldown(self.deps.db, f'Lending:Open:{pool_name}', self.cd_switch)
+        if await cd.can_do():
+            self.logger.info(f'Caps alert for pool {pool_name})')
+            await self.pass_data_to_listeners(AlertLendingOpenUpdate(pool_name, event))
+            await cd.do()
+
+    @staticmethod
+    def _key(pool_name: str):
+        return f'Lending:Open:{pool_name}'
 
     async def _handle_pool(self, pool_name: str, pool: PoolLendState, event: LendingStats):
-        cd_is_open = CooldownBiTrigger(self.deps.db, f'Lending:Open:Switch:{pool_name}',
-                                       switch_cooldown_sec=self.cd_switch,
-                                       default=True)
-
         r = await self.deps.db.get_redis()
+        previous_above_caps = await r.hget(self._key(pool_name), 'above_caps')
+        previous_above_caps = int(previous_above_caps) if previous_above_caps is not None else 0
 
-        if pool.fill_ratio > 1.0:
-            self.logger.info(f'Pool {pool_name} has fill ratio > 1.0: {pool.fill_ratio:.2f}')
-            await cd_is_open.turn(on=False)
-        elif pool.fill_ratio < self.threshold:
-            self.logger.info(f'Pool {pool_name} has fill ratio < threshold: '
-                             f'{pool.fill_ratio:.2f} < {self.threshold:.2f}')
-            if await cd_is_open.turn(on=True):
-                await self._notify(event, pool_name)
+        print(f'Pool {pool_name} is above caps: {pool.fill_ratio:.2f}. {previous_above_caps =}')
+
+        # hysteresis logic
+        if previous_above_caps and pool.fill_ratio < self.threshold:
+            await r.hset(self._key(pool_name), mapping={'above_caps': 0})
+            await self._notify(event, pool_name)
+
+        if not previous_above_caps and pool.fill_ratio >= 1.0:
+            await r.hset(self._key(pool_name), mapping={'above_caps': 1})
+            self.logger.info(f'Pool {pool_name} is above caps: {pool.fill_ratio:.2f}')
 
     async def on_data(self, sender, event: LendingStats):
         for lend_pool in event.pools:
