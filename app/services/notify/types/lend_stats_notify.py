@@ -1,5 +1,4 @@
 import json
-from contextlib import suppress
 from typing import Optional
 
 from services.lib.cooldown import Cooldown

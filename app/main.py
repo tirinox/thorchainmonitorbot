@@ -293,9 +293,9 @@ class App(WithLogger):
             user_counter = UserCounter(d)
             d.block_scanner.add_subscriber(user_counter)
 
-            # AffiliateRecorder
-            d.affiliate_recorder = AffiliateRecorder(d)
-            d.block_scanner.add_subscriber(d.affiliate_recorder)
+            # fixme: enable this later
+            # d.affiliate_recorder = AffiliateRecorder(d)
+            # d.block_scanner.add_subscriber(d.affiliate_recorder)
 
             if d.cfg.get('token_transfer.enabled', True):
                 d.rune_move_notifier = RuneMoveNotifier(d)
