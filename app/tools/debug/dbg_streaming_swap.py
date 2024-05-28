@@ -276,19 +276,19 @@ async def run():
         await app.deps.pool_fetcher.reload_global_pools()
         await app.deps.last_block_fetcher.run_once()
 
-        await debug_full_pipeline(app, start=14519387 - 1)
+        # await debug_full_pipeline(app, start=14519387 - 1)
 
         # await debug_fetch_ss(app)
         # await debug_block_analyse(app)
         # await debug_full_pipeline(app, start=12132219)
         # await debug_tx_records(app, 'E8766E3D825A7BFD755ECA14454256CA25980F8B4BA1C9DCD64ABCE4904F033D')
 
-        # await debug_full_pipeline(
-        #     app,
-        #     start=14420256,
-        #     tx_id='696A2C031B2BCB73C6A78A297F30B5A33A91BB754C564F10AA589E089F05D573',
-        #     # single_block=False
-        # )
+        await debug_full_pipeline(
+            app,
+            start=16151780,
+            # tx_id='696A2C031B2BCB73C6A78A297F30B5A33A91BB754C564F10AA589E089F05D573',
+            single_block=False
+        )
 
         # await debug_full_pipeline(
         #     app, start=12802333,

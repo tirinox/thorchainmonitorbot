@@ -43,6 +43,8 @@ class ActionType(Enum):
 
     UNKNOWN = '_unknown_'
 
+    NO_INTENT = 'no_intent'
+
 
 MEMO_ACTION_TABLE = {
     "add": ActionType.ADD_LIQUIDITY,
@@ -142,6 +144,9 @@ class THORMemo:
 
     @classmethod
     def parse_memo(cls, memo: str, no_raise=False):
+        if memo.strip() == '':
+            return cls(ActionType.NO_INTENT)
+
         gist, *_comment = memo.split('|', maxsplit=2)  # ignore comments
 
         components = [it for it in gist.split(':')]
