@@ -1,3 +1,6 @@
+# Instruction:
+# $ make attach
+# $ PYTHONPATH="/app" python tools/redis_analytics.py /config/config.yaml
 import asyncio
 import logging
 
