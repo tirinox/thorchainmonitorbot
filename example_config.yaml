@@ -61,7 +61,7 @@ thor:
 
 
 personal:
-  max_fails: 3  # (!) new
+  max_fails: 3
   rate_limit:
     number: 50
     period: 5m
@@ -245,7 +245,7 @@ names:
     0xbami: Unizen
     ds: Defispot
 
-  arb_bot_detector:  # (!) new
+  arb_bot_detector:
     min_sequence: 10_000  # minimum sequence number to consider this address as arbitrage
 
 
@@ -316,7 +316,7 @@ tx:
     enabled: true
     min_usd_total: 50000
     curve_mult: 0.1
-    cooldown: 20m  # (!) new
+    cooldown: 20m
 
   loans:
     enabled: true
@@ -338,6 +338,8 @@ price:
   percent_change_threshold: 5
   price_graph:
     default_period: 7d
+
+  pool_max_age: 30d  # (!) new
 
   cex_reference:
     cex: binance
@@ -512,7 +514,7 @@ node_info:
 constants:
   mimir_change:
     enabled: true
-    cooldown: 20m  # (!) new
+    cooldown: 20m
   fetch_period: 130s
 
   voting:
@@ -524,7 +526,7 @@ constants:
 chain_halt_state:
   enabled: true
   fetch_period: 67s
-  cooldown: 1h  # (!) new
+  cooldown: 1h
 
 
 last_block:
@@ -594,10 +596,10 @@ key_metrics:
     cooldown: 7d
 
 
-lending:  # (!) new
+lending:
   fetch_period: 2h
 
-  stats_report:   # (!) new
+  stats_report:
     enabled: true
     cooldown: 3d
 

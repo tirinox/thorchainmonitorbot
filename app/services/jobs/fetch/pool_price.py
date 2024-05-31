@@ -29,11 +29,15 @@ class PoolFetcher(BaseFetcher):
         assert deps
         cfg: Config = deps.cfg
         period = parse_timespan_to_seconds(cfg.price.fetch_period)
+
         super().__init__(deps, sleep_period=period)
+
+        self.pool_cache_max_age = parse_timespan_to_seconds(cfg.price.pool_cache_max_age)
+        assert self.pool_cache_max_age > 0
         self.deps = deps
         self.use_thor_consensus = False
         self.parser = get_parser_by_network_id(self.deps.cfg.network_id)
-        self.history_max_points = 200000
+        self.price_history_max_points = 200000
         self._pool_cache_saves = 0
         self._pool_cache_clear_every = 1000
 
@@ -47,6 +51,13 @@ class PoolFetcher(BaseFetcher):
         if rune_market_info:
             rune_market_info.pools = current_pools
             await self._write_price_time_series(rune_market_info)
+
+        # sometimes clear the cache
+        with suppress(Exception):
+            if self._pool_cache_saves % self._pool_cache_clear_every == 0:
+                self.logger.info('Clearing the cache...')
+                await self.clear_cache(self.pool_cache_max_age)
+            self._pool_cache_saves += 1
 
         return rune_market_info
 
@@ -77,7 +88,7 @@ class PoolFetcher(BaseFetcher):
         if rune_market_info.pool_rune_price and rune_market_info.pool_rune_price > 0:
             pool_price_series = PriceTimeSeries(RUNE_SYMBOL_POOL, db)
             await pool_price_series.add(price=rune_market_info.pool_rune_price)
-            await pool_price_series.trim_oldest(self.history_max_points)
+            await pool_price_series.trim_oldest(self.price_history_max_points)
         else:
             self.logger.error(f'Odd {rune_market_info.pool_rune_price = }')
 
@@ -85,7 +96,7 @@ class PoolFetcher(BaseFetcher):
         if rune_market_info.cex_price and rune_market_info.cex_price > 0:
             cex_price_series = PriceTimeSeries(RUNE_SYMBOL_CEX, db)
             await cex_price_series.add(price=rune_market_info.cex_price)
-            await cex_price_series.trim_oldest(self.history_max_points)
+            await cex_price_series.trim_oldest(self.price_history_max_points)
         else:
             self.logger.error(f'Odd {rune_market_info.cex_price = }')
 
@@ -93,7 +104,7 @@ class PoolFetcher(BaseFetcher):
         if rune_market_info.fair_price and rune_market_info.fair_price > 0:
             deterministic_price_series = PriceTimeSeries(RUNE_SYMBOL_DET, db)
             await deterministic_price_series.add(price=rune_market_info.fair_price)
-            await deterministic_price_series.trim_oldest(self.history_max_points)
+            await deterministic_price_series.trim_oldest(self.price_history_max_points)
         else:
             self.logger.error(f'Odd {rune_market_info.fair_price = }')
 
@@ -131,11 +142,6 @@ class PoolFetcher(BaseFetcher):
     async def _save_to_cache(self, r: Redis, subkey, pool_map: PoolInfoMap):
         j_pools = json.dumps({key: p.as_dict_brief() for key, p in pool_map.items()})
         await r.hset(self.DB_KEY_POOL_INFO_HASH, str(subkey), j_pools)
-
-        with suppress(Exception):
-            if self._pool_cache_saves % self._pool_cache_clear_every == 0:
-                await self.clear_cache()
-            self._pool_cache_saves += 1
 
     async def _load_from_cache(self, r: Redis, subkey) -> Optional[PoolInfoMap]:
         try:
