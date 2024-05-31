@@ -20,6 +20,7 @@ class PoolPictureGenerator(BasePictureGenerator):
         self.bg = Image.open(self.BG_FILE)
         self.event = event
         self.logos = {}
+        self.chain_logos = {}
         self.r = Resources()
 
     FILENAME_PREFIX = 'thorchain_pools'
@@ -30,6 +31,11 @@ class PoolPictureGenerator(BasePictureGenerator):
         for vault in self.event.all_assets:
             logo = await r.logo_downloader.get_or_download_logo_cached(vault)
             self.logos[vault] = logo
+
+            chain = Asset(vault).chain
+            if chain:
+                chain_logo = await r.logo_downloader.get_logo_for_chain(chain)
+                self.chain_logos[chain] = chain_logo
 
     def draw_one_number(self, draw, image, name, row, col, value, percent_diff, prefix='', suffix='',
                         total_value=None, attr_value_accum=0.0):
@@ -56,8 +62,9 @@ class PoolPictureGenerator(BasePictureGenerator):
 
             ambiguous_name = a.gas_asset_from_chain(a.chain) != a
             if ambiguous_name:
-                gas_asset = a.gas_asset_from_chain(a.chain)
-                gas_logo = self.logos.get(str(gas_asset))
+                # gas_asset = a.gas_asset_from_chain(a.chain)
+                # gas_logo = self.logos.get(str(gas_asset))
+                gas_logo = self.chain_logos.get(a.chain)
                 if gas_logo:
                     gas_logo = gas_logo.copy()
                     gas_logo.thumbnail((logo_size // 2, logo_size // 2))
