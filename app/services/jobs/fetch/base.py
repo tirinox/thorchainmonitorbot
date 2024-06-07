@@ -8,12 +8,13 @@ from typing import Dict
 
 from redis import BusyLoadingError
 
-from services.lib.date_utils import now_ts, HOUR
+from services.lib.date_utils import now_ts, HOUR, MINUTE
 from services.lib.delegates import WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 
-UNPAUSE_AFTER = 30 * HOUR
+UNPAUSE_AFTER = 5 * MINUTE
+# UNPAUSE_AFTER = 30
 
 
 class WatchedEntity:
@@ -53,11 +54,6 @@ class DataController(WithLogger):
     def request_global_pause(self):
         self.logger.warning('Global pause requested!')
         self._all_paused = True
-        asyncio.create_task(self._unpause_after())
-
-    async def _unpause_after(self):
-        await asyncio.sleep(UNPAUSE_AFTER)
-        self.request_global_resume()
 
     def request_global_resume(self):
         self.logger.warning('Global resume requested!')
@@ -143,6 +139,12 @@ class BaseFetcher(WithDelegates, WatchedEntity, ABC, WithLogger):
     async def _handle_db_busy_error(self, e):
         self.deps.emergency.report(self.name, f'BusyLoadingError: {e}')
         self.data_controller.request_global_pause()
+        # noinspection PyAsyncCall
+        asyncio.create_task(self._unpause_after())
+
+    async def _unpause_after(self):
+        await asyncio.sleep(UNPAUSE_AFTER)
+        self.data_controller.request_global_resume()
 
     async def _run(self):
         if self.sleep_period < 0:
