@@ -57,8 +57,6 @@ class CryptoLogoDownloader:
     }
 
     TEST_ASSET_MAPPING = {
-        BNB_USDT_TEST_SYMBOL: BNB_USDT_SYMBOL,
-        BNB_BUSD_TEST_SYMBOL: BNB_BUSD_SYMBOL,
         ETH_USDT_TEST_SYMBOL: ETH_USDT_SYMBOL,
     }
 

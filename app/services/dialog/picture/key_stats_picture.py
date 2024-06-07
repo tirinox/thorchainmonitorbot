@@ -6,10 +6,10 @@ from PIL import Image, ImageDraw
 from localization.manager import BaseLocalization
 from services.dialog.picture.common import BasePictureGenerator
 from services.dialog.picture.resources import Resources
-from services.lib.constants import BTC_SYMBOL, ETH_SYMBOL, BNB_BUSD_SYMBOL, ETH_USDC_SYMBOL, ETH_USDT_SYMBOL
-from services.lib.draw_utils import paste_image_masked, result_color, TC_LIGHTNING_BLUE, TC_YGGDRASIL_GREEN, \
+from services.lib.constants import BTC_SYMBOL, ETH_SYMBOL, ETH_USDC_SYMBOL, ETH_USDT_SYMBOL
+from services.lib.draw_utils import paste_image_masked, TC_LIGHTNING_BLUE, TC_YGGDRASIL_GREEN, \
     dual_side_rect, COLOR_OF_PROFIT, font_estimate_size
-from services.lib.money import pretty_money, short_dollar, short_money, format_percent, Asset, calc_percent_change
+from services.lib.money import pretty_money, short_dollar, format_percent, Asset
 from services.lib.texts import bracketify
 from services.lib.utils import async_wrap
 from services.models.flipside import AlertKeyStats
@@ -32,17 +32,15 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
     FILENAME_PREFIX = 'thorchain_weekly_stats'
 
     async def prepare(self):
-        self.btc_logo, self.eth_logo, self.usdt_logo, self.usdc_logo, self.busd_logo = await asyncio.gather(
+        self.btc_logo, self.eth_logo, self.usdt_logo, self.usdc_logo = await asyncio.gather(
             self.r.logo_downloader.get_or_download_logo_cached(BTC_SYMBOL),
             self.r.logo_downloader.get_or_download_logo_cached(ETH_SYMBOL),
             self.r.logo_downloader.get_or_download_logo_cached(ETH_USDT_SYMBOL),
             self.r.logo_downloader.get_or_download_logo_cached(ETH_USDC_SYMBOL),
-            self.r.logo_downloader.get_or_download_logo_cached(BNB_BUSD_SYMBOL),
         )
         logo_size = int(self.btc_logo.width * 0.66)
         self.usdc_logo.thumbnail((logo_size, logo_size))
         self.usdt_logo.thumbnail((logo_size, logo_size))
-        self.busd_logo.thumbnail((logo_size, logo_size))
 
     @async_wrap
     def _get_picture_sync(self):
@@ -106,9 +104,8 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         paste_image_masked(image, self.btc_logo, (coin_x, 473))
         paste_image_masked(image, self.eth_logo, (coin_x, 622))
 
-        paste_image_masked(image, self.busd_logo, (coin_x - 30, stable_y))
-        paste_image_masked(image, self.usdt_logo, (coin_x, stable_y))
-        paste_image_masked(image, self.usdc_logo, (coin_x + 30, stable_y))
+        paste_image_masked(image, self.usdt_logo, (coin_x - 20, stable_y))
+        paste_image_masked(image, self.usdc_logo, (coin_x + 20, stable_y))
 
         coin_font = r.fonts.get_font_bold(54)
 
