@@ -20,7 +20,7 @@ class SwapStartDetector(WithLogger):
     def make_ss_event(self, msg, tx_hash, height) -> Optional[AlertSwapStart]:
         ph = self.deps.price_holder
 
-        memo = THORMemo.parse_memo(msg.memo)
+        memo = THORMemo.parse_memo(msg.memo, no_raise=True)
 
         # Must be a swap!
         if not memo or memo.action.value != TxType.SWAP:
