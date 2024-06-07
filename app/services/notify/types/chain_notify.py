@@ -10,7 +10,7 @@ from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 
-EXCLUDE_CHAINS_FROM_HALTED = ('TERRA',)
+EXCLUDE_CHAINS_FROM_HALTED = ('BNB',)
 
 
 class AlertChainHalt(NamedTuple):

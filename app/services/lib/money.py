@@ -351,7 +351,7 @@ class Asset:
         Chains.ATOM: 'ATOM',
         Chains.THOR: 'RUNE',
         Chains.BSC: 'BNB',
-        # to be continues
+        # to be continued...
     }
 
     @classmethod

@@ -1,6 +1,8 @@
 To Restore Midgard
 
-After make recover-ninerealms
+After
+
+make restore-external-snapshot
 
 You should do
 

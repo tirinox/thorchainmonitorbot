@@ -2,12 +2,11 @@ import logging
 from collections import defaultdict
 from typing import List
 
-from services.lib.constants import thor_to_float
+from services.lib.constants import thor_to_float, ZERO_HASH
 from services.lib.utils import WithLogger
 from services.models.tx import ThorCoin, ThorTx, ThorMetaSwap, ThorMetaAddLiquidity, ThorSubTx
 from services.models.tx_type import TxType
 
-ZERO_HASH = '0000000000000000000000000000000000000000000000000000000000000000'
 
 
 class AffiliateTXMerger(WithLogger):

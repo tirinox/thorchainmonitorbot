@@ -114,7 +114,7 @@
 					"networkFees": [
 						{
 							"amount": "1374892700",
-							"asset": "TERRA.USD"
+							"asset": "old_t.USD"
 						}
 					],
 					"swapSlip": "3375",
@@ -123,7 +123,7 @@
 			},
 			"out": [],
 			"pools": [
-				"TERRA.USD"
+				"old_t.USD"
 			],
 			"status": "pending",
 			"type": "swap"
@@ -149,7 +149,7 @@
 					"networkFees": [
 						{
 							"amount": "19249200",
-							"asset": "TERRA.LUNA"
+							"asset": "old_t.LUNA"
 						}
 					],
 					"swapSlip": "882",
@@ -158,7 +158,7 @@
 			},
 			"out": [],
 			"pools": [
-				"TERRA.LUNA"
+				"old_t.LUNA"
 			],
 			"status": "pending",
 			"type": "swap"
@@ -403,7 +403,7 @@
 					"networkFees": [
 						{
 							"amount": "121400",
-							"asset": "TERRA/LUNA"
+							"asset": "old_t/LUNA"
 						}
 					],
 					"swapSlip": "49",
@@ -416,14 +416,14 @@
 					"coins": [
 						{
 							"amount": "5951400",
-							"asset": "TERRA/LUNA"
+							"asset": "old_t/LUNA"
 						}
 					],
 					"txID": ""
 				}
 			],
 			"pools": [
-				"TERRA.LUNA"
+				"old_t.LUNA"
 			],
 			"status": "success",
 			"type": "swap"
@@ -465,11 +465,11 @@
 			"height": "40939",
 			"in": [
 				{
-					"address": "terra19xglhafjaatq6xus972l78c2szhjy22z2zxcje",
+					"address": "old_t19xglhafjaatq6xus972l78c2szhjy22z2zxcje",
 					"coins": [
 						{
 							"amount": "1038000000",
-							"asset": "TERRA.USD"
+							"asset": "old_t.USD"
 						}
 					],
 					"txID": "1F0B6B2A2702CF349EB0F40FDB843F46529236CCFD34C15716103FB77BB5008D"
@@ -480,10 +480,10 @@
 					"networkFees": [
 						{
 							"amount": "1038000000",
-							"asset": "TERRA.USD"
+							"asset": "old_t.USD"
 						}
 					],
-					"reason": "mismatch of address; fail to refund (1038000000 TERRA.USD): not enough asset to pay for fees"
+					"reason": "mismatch of address; fail to refund (1038000000 old_t.USD): not enough asset to pay for fees"
 				}
 			},
 			"out": [],
@@ -509,7 +509,7 @@
 			"metadata": {},
 			"out": [],
 			"pools": [
-				"TERRA.USD"
+				"old_t.USD"
 			],
 			"status": "pending",
 			"type": "addLiquidity"
@@ -550,11 +550,11 @@
 			"height": "40747",
 			"in": [
 				{
-					"address": "terra19xglhafjaatq6xus972l78c2szhjy22z2zxcje",
+					"address": "old_t19xglhafjaatq6xus972l78c2szhjy22z2zxcje",
 					"coins": [
 						{
 							"amount": "10000000",
-							"asset": "TERRA.LUNA"
+							"asset": "old_t.LUNA"
 						}
 					],
 					"txID": "6024F92D15825A321B51A4E540DCABB000A02AC81FA42F1C405303EF493C5ABC"
@@ -586,7 +586,7 @@
 				}
 			],
 			"pools": [
-				"TERRA.LUNA"
+				"old_t.LUNA"
 			],
 			"status": "success",
 			"type": "swap"
@@ -627,11 +627,11 @@
 			"height": "38865",
 			"in": [
 				{
-					"address": "terra1pcsjklzgflewwzsqvwz9d47mxa9mttuyuqsysq",
+					"address": "old_t1pcsjklzgflewwzsqvwz9d47mxa9mttuyuqsysq",
 					"coins": [
 						{
 							"amount": "5000000",
-							"asset": "TERRA.LUNA"
+							"asset": "old_t.LUNA"
 						}
 					],
 					"txID": "4E1E3C0AA0CC58B72160357D809F9467F595C2344A5143C1C6E1AC0AF2C856E5"
@@ -663,7 +663,7 @@
 				}
 			],
 			"pools": [
-				"TERRA.LUNA"
+				"old_t.LUNA"
 			],
 			"status": "success",
 			"type": "swap"
@@ -689,7 +689,7 @@
 					"networkFees": [
 						{
 							"amount": "19270800",
-							"asset": "TERRA.LUNA"
+							"asset": "old_t.LUNA"
 						}
 					],
 					"swapSlip": "643",
@@ -698,7 +698,7 @@
 			},
 			"out": [],
 			"pools": [
-				"TERRA.LUNA"
+				"old_t.LUNA"
 			],
 			"status": "pending",
 			"type": "swap"
@@ -718,11 +718,11 @@
 					"txID": "7E43E29054F36854A74BDA8BFE8385E9ED85994FA8C30D394107DA25FA0F9A3C"
 				},
 				{
-					"address": "terra1nrajxfwzc6s85h88vtwp9l4y3mnc5dx5uyas4u",
+					"address": "old_t1nrajxfwzc6s85h88vtwp9l4y3mnc5dx5uyas4u",
 					"coins": [
 						{
 							"amount": "13898654000",
-							"asset": "TERRA.USD"
+							"asset": "old_t.USD"
 						}
 					],
 					"txID": "5094157A89137CD762EDDC94E08016CB57D3717FF950D8CE227FDBD7A942479E"
@@ -735,7 +735,7 @@
 			},
 			"out": [],
 			"pools": [
-				"TERRA.USD"
+				"old_t.USD"
 			],
 			"status": "success",
 			"type": "addLiquidity"
@@ -755,11 +755,11 @@
 					"txID": "7E43E29054F36854A74BDA8BFE8385E9ED85994FA8C30D394107DA25FA0F9A3C"
 				},
 				{
-					"address": "terra1nrajxfwzc6s85h88vtwp9l4y3mnc5dx5uyas4u",
+					"address": "old_t1nrajxfwzc6s85h88vtwp9l4y3mnc5dx5uyas4u",
 					"coins": [
 						{
 							"amount": "13898654000",
-							"asset": "TERRA.UST"
+							"asset": "old_t.UST"
 						}
 					],
 					"txID": "5094157A89137CD762EDDC94E08016CB57D3717FF950D8CE227FDBD7A942479E"
@@ -772,7 +772,7 @@
 			},
 			"out": [],
 			"pools": [
-				"TERRA.UST"
+				"old_t.UST"
 			],
 			"status": "success",
 			"type": "addLiquidity"
@@ -782,11 +782,11 @@
 			"height": "33496",
 			"in": [
 				{
-					"address": "terra1yg0zd2dm5xwq9redhgccjlnqsyezmjxv5zw0r7",
+					"address": "old_t1yg0zd2dm5xwq9redhgccjlnqsyezmjxv5zw0r7",
 					"coins": [
 						{
 							"amount": "1000000",
-							"asset": "TERRA.LUNA"
+							"asset": "old_t.LUNA"
 						}
 					],
 					"txID": "7BC2C43D93D6E3F71CF42B226DEA0C255E821E25AFB86080E18A35BE2E3B8636"
@@ -797,10 +797,10 @@
 					"networkFees": [
 						{
 							"amount": "1000000",
-							"asset": "TERRA.LUNA"
+							"asset": "old_t.LUNA"
 						}
 					],
-					"reason": "swap destination address is not the same chain as the target asset: unknown request; fail to refund (1000000 TERRA.LUNA): not enough asset to pay for fees"
+					"reason": "swap destination address is not the same chain as the target asset: unknown request; fail to refund (1000000 old_t.LUNA): not enough asset to pay for fees"
 				}
 			},
 			"out": [],
@@ -1170,7 +1170,7 @@
 					"networkFees": [
 						{
 							"amount": "2853381",
-							"asset": "TERRA.LUNA"
+							"asset": "old_t.LUNA"
 						}
 					],
 					"swapSlip": "536",
@@ -1179,7 +1179,7 @@
 			},
 			"out": [],
 			"pools": [
-				"TERRA.LUNA"
+				"old_t.LUNA"
 			],
 			"status": "pending",
 			"type": "swap"
@@ -1189,11 +1189,11 @@
 			"height": "18498",
 			"in": [
 				{
-					"address": "terra1nrajxfwzc6s85h88vtwp9l4y3mnc5dx5uyas4u",
+					"address": "old_t1nrajxfwzc6s85h88vtwp9l4y3mnc5dx5uyas4u",
 					"coins": [
 						{
 							"amount": "250000000",
-							"asset": "TERRA.LUNA"
+							"asset": "old_t.LUNA"
 						}
 					],
 					"txID": "02174E397F4D4E2354E860F96841519472CF2FC2A0EC5C1E6B13EA422EA6CEF7"
@@ -1202,7 +1202,7 @@
 			"metadata": {},
 			"out": [],
 			"pools": [
-				"TERRA.LUNA"
+				"old_t.LUNA"
 			],
 			"status": "success",
 			"type": "donate"
@@ -1225,7 +1225,7 @@
 			"metadata": {},
 			"out": [],
 			"pools": [
-				"TERRA.LUNA"
+				"old_t.LUNA"
 			],
 			"status": "success",
 			"type": "donate"
@@ -1245,11 +1245,11 @@
 					"txID": "6596F6E22D19F0C5B29E2A0810C7A1795250BD2B9AA06145AE2927F8C0FC862F"
 				},
 				{
-					"address": "terra1nrajxfwzc6s85h88vtwp9l4y3mnc5dx5uyas4u",
+					"address": "old_t1nrajxfwzc6s85h88vtwp9l4y3mnc5dx5uyas4u",
 					"coins": [
 						{
 							"amount": "10000000",
-							"asset": "TERRA.LUNA"
+							"asset": "old_t.LUNA"
 						}
 					],
 					"txID": "1D37497ECE3E595ABFE5545B6CBE5A8C94EADBA3EF73E3310C3A4AAAC28BD210"
@@ -1262,7 +1262,7 @@
 			},
 			"out": [],
 			"pools": [
-				"TERRA.LUNA"
+				"old_t.LUNA"
 			],
 			"status": "success",
 			"type": "addLiquidity"
@@ -1282,11 +1282,11 @@
 					"txID": "EB02897E02FB65A6098CA52E6AA951B2759B1EC901B9CA8F705F82FCE86BF715"
 				},
 				{
-					"address": "terra1nrajxfwzc6s85h88vtwp9l4y3mnc5dx5uyas4u",
+					"address": "old_t1nrajxfwzc6s85h88vtwp9l4y3mnc5dx5uyas4u",
 					"coins": [
 						{
 							"amount": "20000000",
-							"asset": "TERRA.LUNA"
+							"asset": "old_t.LUNA"
 						}
 					],
 					"txID": "AEDD2B9C8FEFA68061499BA89CA1DCEF3D7C3945B7078CA9BA8ED6AD281332E3"
@@ -1299,7 +1299,7 @@
 			},
 			"out": [],
 			"pools": [
-				"TERRA.LUNA"
+				"old_t.LUNA"
 			],
 			"status": "success",
 			"type": "addLiquidity"
@@ -1319,11 +1319,11 @@
 					"txID": "653116F54851CE4D580D615151347A31E8E514070110CA9E0868832EC2AD6FF5"
 				},
 				{
-					"address": "terra1nrajxfwzc6s85h88vtwp9l4y3mnc5dx5uyas4u",
+					"address": "old_t1nrajxfwzc6s85h88vtwp9l4y3mnc5dx5uyas4u",
 					"coins": [
 						{
 							"amount": "50000000",
-							"asset": "TERRA.LUNA"
+							"asset": "old_t.LUNA"
 						}
 					],
 					"txID": "69C50280CE3A2A95C0F5B916DEF4F3994E754D7B58848D55B09167FC0E65D34F"
@@ -1336,7 +1336,7 @@
 			},
 			"out": [],
 			"pools": [
-				"TERRA.LUNA"
+				"old_t.LUNA"
 			],
 			"status": "success",
 			"type": "addLiquidity"
@@ -1346,11 +1346,11 @@
 			"height": "17592",
 			"in": [
 				{
-					"address": "terra1nrajxfwzc6s85h88vtwp9l4y3mnc5dx5uyas4u",
+					"address": "old_t1nrajxfwzc6s85h88vtwp9l4y3mnc5dx5uyas4u",
 					"coins": [
 						{
 							"amount": "13890000000",
-							"asset": "TERRA.USD"
+							"asset": "old_t.USD"
 						}
 					],
 					"txID": "4BB36233F79DFE2DAA9C35DDE2B5F5196A5FDC4DD9A7B180B9E99EA1801187DD"
@@ -1582,11 +1582,11 @@
 					"txID": "1874BF8CD86D440A0099A4EEABE0E470511C3D2CD125225253930B1FA6F7589E"
 				},
 				{
-					"address": "terra1nrajxfwzc6s85h88vtwp9l4y3mnc5dx5uyas4u",
+					"address": "old_t1nrajxfwzc6s85h88vtwp9l4y3mnc5dx5uyas4u",
 					"coins": [
 						{
 							"amount": "400000000",
-							"asset": "TERRA.LUNA"
+							"asset": "old_t.LUNA"
 						}
 					],
 					"txID": "A1FA5D86C7F2FFD03F89EB399593EDA556CD4E67BF7DC7D1B6400779F9D00138"
@@ -1599,7 +1599,7 @@
 			},
 			"out": [],
 			"pools": [
-				"TERRA.LUNA"
+				"old_t.LUNA"
 			],
 			"status": "success",
 			"type": "addLiquidity"
