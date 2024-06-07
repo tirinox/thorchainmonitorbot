@@ -1,6 +1,5 @@
 import asyncio
 import datetime
-import os
 import random
 import time
 from abc import ABC, abstractmethod
@@ -9,10 +8,12 @@ from typing import Dict
 
 from redis import BusyLoadingError
 
-from services.lib.date_utils import now_ts
+from services.lib.date_utils import now_ts, HOUR
 from services.lib.delegates import WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
+
+UNPAUSE_AFTER = 30 * HOUR
 
 
 class WatchedEntity:
@@ -52,6 +53,11 @@ class DataController(WithLogger):
     def request_global_pause(self):
         self.logger.warning('Global pause requested!')
         self._all_paused = True
+        asyncio.create_task(self._unpause_after())
+
+    async def _unpause_after(self):
+        await asyncio.sleep(UNPAUSE_AFTER)
+        self.request_global_resume()
 
     def request_global_resume(self):
         self.logger.warning('Global resume requested!')
@@ -71,60 +77,6 @@ class DataController(WithLogger):
     @property
     def summary(self) -> Dict[str, WatchedEntity]:
         return self._tracker
-
-
-class GraphBuilder:
-    def __init__(self, tracker: dict):
-        self._tracker = tracker
-
-    def make_graph(self):
-        results = set()
-
-        queue = set(self._tracker.values())
-        root_nodes = set(qualname(node) for node in queue)
-
-        while queue:
-            node = queue.pop()
-            emitter_name = qualname(node)
-            is_root = emitter_name in root_nodes
-            if isinstance(node, WithDelegates):
-                for listener in node.delegates:
-                    listener_name = qualname(listener)
-                    results.add((emitter_name, listener_name, is_root))
-                    queue.add(listener)
-
-        return results
-
-    @staticmethod
-    def make_digraph_dot(list_of_connections):
-        dot_code = (
-            "digraph G {\n"
-            "  layout=fdp;\n"
-        )
-
-        for edge in list_of_connections:
-            node_from, node_to, is_root = edge
-            if is_root:
-                color = 'green' if is_root else 'black'
-                dot_code += f'    "{node_from}" [fillcolor="{color}"; style="filled"; shape="box"];\n'
-            dot_code += f'    "{node_from}" -> "{node_to}";\n'
-
-        dot_code += "}"
-        return dot_code
-
-    def save_dot_graph(self, filename):
-        with open(filename, 'w') as f:
-            connections = self.make_graph()
-            dot_code = self.make_digraph_dot(connections)
-            f.write(dot_code)
-
-    def display_graph(self, out_filename=None):
-        filename = '../temp/graph.dot'
-        self.save_dot_graph(filename)
-
-        out_filename = out_filename or filename + '.png'
-        os.system(f'dot -Tpng "{filename}" > "{out_filename}"')
-        os.system(f'open "{out_filename}"')
 
 
 class BaseFetcher(WithDelegates, WatchedEntity, ABC, WithLogger):
@@ -172,10 +124,9 @@ class BaseFetcher(WithDelegates, WatchedEntity, ABC, WithLogger):
             await self.pass_data_to_listeners(data)
             await self.post_action(data)
         except Exception as e:
-
+            # If the database is in a busy state, we need to pause for a while
             if isinstance(e, BusyLoadingError):
-                self.deps.emergency.report(self.name, f'BusyLoadingError: {e}')
-                self.data_controller.request_global_pause()
+                await self._handle_db_busy_error(e)
 
             self.logger.exception(f"task error: {e}")
             self.error_counter += 1
@@ -188,6 +139,10 @@ class BaseFetcher(WithDelegates, WatchedEntity, ABC, WithLogger):
             self.last_timestamp = datetime.datetime.now().timestamp()
             delta = time.monotonic() - t0
             self.run_times.append(delta)
+
+    async def _handle_db_busy_error(self, e):
+        self.deps.emergency.report(self.name, f'BusyLoadingError: {e}')
+        self.data_controller.request_global_pause()
 
     async def _run(self):
         if self.sleep_period < 0:
