@@ -204,6 +204,7 @@ class App(WithLogger):
         self.logger.info('Loading procedure start.')
 
         sleep_step = self.sleep_step
+        retry_after = sleep_step * 5
         while True:
             try:
                 self.logger.info('Testing DB connection...')
@@ -244,7 +245,7 @@ class App(WithLogger):
             except Exception as e:
                 if not isinstance(e, ConnectionError):
                     self.logger.exception(e)
-                retry_after = sleep_step * 5
+                retry_after = retry_after * 2
                 self.logger.error(f'No luck. {e!r} Retrying in {retry_after} sec...')
                 await asyncio.sleep(retry_after)
 
