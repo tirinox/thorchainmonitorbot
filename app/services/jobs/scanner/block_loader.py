@@ -20,7 +20,6 @@ class LogItem(NamedTuple):
     def load(cls, tx_result):
         code = tx_result.get('code', 0)
         if code != 0:
-            logger.warning(f'Error in tx: {tx_result.get("log")!r}; code={code}')
             entries = {}
             error_message = tx_result.get('log')
         else:
@@ -125,6 +124,10 @@ class BlockResult:
         tx_result_arr = safe_get(block_results_raw, 'result', 'txs_results') or []
 
         decoded_tx_logs = [LogItem.load(tx_result) for tx_result in tx_result_arr]
+
+        for log in decoded_tx_logs:
+            if log.code != 0:
+                logger.error(f'Error in tx: code={log.code}; error_message={log.error_message}; block #{block_no}')
 
         end_block_events = safe_get(block_results_raw, 'result', 'end_block_events') or []
         decoded_end_block_events = [thor_decode_event(ev, block_no) for ev in end_block_events]
