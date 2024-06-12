@@ -4,6 +4,7 @@ from typing import List
 from aiohttp import ClientError
 from redis.asyncio import Redis
 
+from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.utils import parallel_run_in_groups, WithLogger
@@ -24,14 +25,23 @@ class GeoIPManager(WithLogger):
         return f'{self.DB_KEY_IP_INFO}:{ip}'
 
     async def get_ip_info_from_external_api(self, ip: str):
+        cooldown = Cooldown(self.deps.db, 'GeoIP-Rate-Limit', 60)
         try:
+            if not await cooldown.can_do():
+                self.logger.debug(f'GeoIP is on cooldown. I will not even try!')
+                return None
+
             url = self.API_URL.format(address=ip)
 
-            self.logger.info(f"Using GeoIP API: {url}")
+            self.logger.info(f"Request GeoIP API: {url}")
 
             async with self.deps.session.get(url) as resp:
                 if resp.status == 200:
                     return await resp.json()
+                elif resp.status == 429:
+                    self.logger.error(f'GeoIP API rate limit exceeded. Cooldown: {cooldown.cooldown} sec')
+                    await cooldown.do()
+                    return None
                 else:
                     return None
         except ClientError as e:
