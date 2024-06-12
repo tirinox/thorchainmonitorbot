@@ -6,6 +6,18 @@ from attr import dataclass
 from proto.common import Coin
 from services.lib.constants import RUNE_DENOM, Chains, NATIVE_RUNE_SYMBOL
 
+ASSET_NORMAL_SEPARATOR = '.'
+ASSET_SYNTH_SEPARATOR = '/'
+ASSET_TRADE_SEPARATOR = '~'
+
+
+def is_synthetic(asset: str):
+    return ASSET_SYNTH_SEPARATOR in asset
+
+
+def is_trade_asset(asset: str):
+    return ASSET_TRADE_SEPARATOR in asset
+
 
 @dataclass
 class Asset:
@@ -47,14 +59,23 @@ class Asset:
             if asset == RUNE_DENOM:
                 return copy(AssetRUNE)
 
-            is_synth = '/' in asset
-            chain, name_and_tag = asset.split('/' if is_synth else '.', maxsplit=2)
+            is_synth, is_trade = False, False
+            if is_synthetic(asset):
+                is_synth = True
+                separator = ASSET_SYNTH_SEPARATOR
+            elif is_trade_asset(asset):
+                is_trade = True
+                separator = ASSET_TRADE_SEPARATOR
+            else:
+                separator = ASSET_NORMAL_SEPARATOR
+
+            chain, name_and_tag = asset.split(separator, maxsplit=2)
             name, tag = cls.get_name_tag(name_and_tag)
             chain = str(chain).upper()
             name = str(name).upper()
             tag = str(tag).upper()
             is_virtual = chain == 'THOR' and name != 'RUNE'
-            return cls(chain, name, tag, is_synth, is_virtual)
+            return cls(chain, name, tag, is_synth, is_virtual, is_trade)
         except (IndexError, TypeError, ValueError):
             return cls(name=asset)
 
@@ -66,20 +87,27 @@ class Asset:
         return a
 
     PILL = '💊'
+    TRADE = '🔄'
 
     @property
     def pretty_str(self):
-        sep = self.separator_symbol
         if self.is_synth:
-            return f'synth {self.name}'
+            return f'synth {self._pretty_name}'
+        elif self.is_trade:
+            return f'trade {self._pretty_name}'
         else:
-            str_me = str(self)
-            if is_rune(str_me):
-                return 'Rune ᚱ'
-            elif str_me in self.ABBREVIATE_GAS_ASSETS:
-                return self.name  # Not ETH.ETH, just ETH
-            else:
-                return f'{self.chain}{sep}{self.name}'
+            return self._pretty_name
+
+    @property
+    def _pretty_name(self):
+        sep = self.separator_symbol
+        str_me = str(self)
+        if is_rune(str_me):
+            return 'Rune ᚱ'
+        elif str_me in self.ABBREVIATE_GAS_ASSETS:
+            return self.name  # Not ETH.ETH, just ETH
+        else:
+            return f'{self.chain}{sep}{self.name}'
 
     @property
     def pretty_str_no_emoji(self):
@@ -98,7 +126,12 @@ class Asset:
 
     @property
     def separator_symbol(self):
-        return '/' if self.is_synth else '.'
+        if self.is_trade:
+            return ASSET_TRADE_SEPARATOR
+        elif self.is_synth:
+            return ASSET_SYNTH_SEPARATOR
+        else:
+            return ASSET_NORMAL_SEPARATOR
 
     @property
     def to_canonical(self):
@@ -163,3 +196,4 @@ AssetRUNE = Asset.from_string(NATIVE_RUNE_SYMBOL)
 def is_rune(asset: str):
     asset = asset.strip()
     return asset.lower() in ('r', RUNE_DENOM) or asset.upper() == NATIVE_RUNE_SYMBOL
+
