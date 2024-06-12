@@ -34,10 +34,8 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
         self.dbg_ignore_finished_status = False
 
     async def on_data(self, sender, block: BlockResult) -> List[ThorTx]:
-        new_swaps = self._swap_detector.detect_swaps(block)
-
         # Incoming swap intentions will be recorded in the DB
-        await self.register_new_swaps(new_swaps, block.block_no)
+        await self.register_new_swaps(block, block.block_no)
 
         # Swaps and Outs
         interesting_events = list(self.get_events_of_interest(block))
@@ -57,7 +55,9 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
 
         return txs
 
-    async def register_new_swaps(self, swaps: List[AlertSwapStart], height):
+    async def register_new_swaps(self, block, height):
+        swaps = self._swap_detector.detect_swaps(block)
+
         self.logger.info(f"New swaps {len(swaps)} in block #{height}")
 
         for swap in swaps:

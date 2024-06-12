@@ -1,11 +1,10 @@
-from collections import defaultdict
 from typing import List
 
 from aionode.types import ThorTradeUnits
 from services.jobs.fetch.base import BaseFetcher
 from services.lib.depcont import DepContainer
 from services.lib.utils import parallel_run_in_groups
-from services.models.trade_acc import AlertTradeAccount
+from services.models.trade_acc import AlertTradeAccountSummary
 
 
 class TradeAccountFetcher(BaseFetcher):
@@ -30,4 +29,4 @@ class TradeAccountFetcher(BaseFetcher):
         trade_units = await self.deps.thor_connector.query_trade_units()
         traders = await self._get_traders(trade_units)
 
-        return AlertTradeAccount.from_trade_units(trade_units, pools, traders, vault_balances)
+        return AlertTradeAccountSummary.from_trade_units(trade_units, pools, traders, vault_balances)

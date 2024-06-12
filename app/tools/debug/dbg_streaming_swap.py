@@ -73,10 +73,10 @@ async def debug_fetch_ss(app: LpAppFramework):
     print(data)
 
 
-async def debug_block_analyse(app: LpAppFramework):
+async def debug_block_analyse(app: LpAppFramework, block):
     scanner = BlockScannerClass(app.deps)
     # await scanner.run()
-    blk = await scanner.fetch_one_block(12209517)
+    blk = await scanner.fetch_one_block(block)
     sep()
 
     naex = SwapExtractorBlock(app.deps)
@@ -280,16 +280,16 @@ async def run():
         # await debug_full_pipeline(app, start=14519387 - 1)
 
         # await debug_fetch_ss(app)
-        # await debug_block_analyse(app)
-        # await debug_full_pipeline(app, start=12132219)
+        await debug_block_analyse(app, block=16374337)
+        # await debug_full_pipeline(app, start=16374337, single_block=True)
         # await debug_tx_records(app, 'E8766E3D825A7BFD755ECA14454256CA25980F8B4BA1C9DCD64ABCE4904F033D')
 
-        await debug_full_pipeline(
-            app,
-            start=16151780,
-            # tx_id='696A2C031B2BCB73C6A78A297F30B5A33A91BB754C564F10AA589E089F05D573',
-            single_block=False
-        )
+        # await debug_full_pipeline(
+        #     app,
+        #     start=16151780,
+        #     # tx_id='696A2C031B2BCB73C6A78A297F30B5A33A91BB754C564F10AA589E089F05D573',
+        #     single_block=False
+        # )
 
         # await debug_full_pipeline(
         #     app, start=12802333,
