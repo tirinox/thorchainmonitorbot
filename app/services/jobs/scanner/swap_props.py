@@ -4,13 +4,13 @@ from datetime import datetime
 from typing import NamedTuple, List, Optional, Tuple
 
 from proto.access import DecodedEvent
-from services.lib.memo import THORMemo
+from services.models.memo import THORMemo
 from services.lib.money import is_rune
 from services.models.events import EventSwap, EventStreamingSwap, EventOutbound, EventScheduledOutbound, \
     parse_swap_and_out_event, TypeEventSwapAndOut
 from services.models.s_swap import StreamingSwap
 from services.models.tx import ThorTx, SUCCESS, ThorMetaSwap, ThorCoin, ThorSubTx
-from services.models.tx_type import TxType
+from services.models.memo import ActionType
 
 
 class SwapProps(NamedTuple):
@@ -209,7 +209,7 @@ class SwapProps(NamedTuple):
         tx = ThorTx(
             date=timestamp,
             height=height,
-            type=TxType.SWAP,
+            type=ActionType.SWAP,
             pools=pools,
             in_tx=in_tx,
             out_tx=out_tx,

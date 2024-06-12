@@ -6,7 +6,7 @@ from services.models.pool_info import PoolInfoHistoricEntry, PoolInfoMap, PoolIn
 from services.models.pool_member import PoolMemberDetails
 from services.models.tx import ThorTx, ThorSubTx, ThorMetaSwap, ThorMetaRefund, ThorMetaWithdraw, \
     ThorMetaAddLiquidity
-from services.models.tx_type import TxType
+from services.models.memo import ActionType
 
 logger = logging.getLogger(__name__)
 
@@ -78,12 +78,12 @@ class MidgardParserV2(MidgardParserBase):
         out_tx_list = [ThorSubTx.parse(rt) for rt in r.get('out', [])]
 
         meta_add = ThorMetaAddLiquidity.parse(
-            metadata.get('addLiquidity', {})) if tx_type == TxType.ADD_LIQUIDITY else None
+            metadata.get('addLiquidity', {})) if tx_type == ActionType.ADD_LIQUIDITY else None
         meta_withdraw = ThorMetaWithdraw.parse(
-            metadata.get('withdraw', {})) if tx_type == TxType.WITHDRAW else None
-        meta_swap = ThorMetaSwap.parse(metadata.get('swap', {})) if tx_type == TxType.SWAP else None
+            metadata.get('withdraw', {})) if tx_type == ActionType.WITHDRAW else None
+        meta_swap = ThorMetaSwap.parse(metadata.get('swap', {})) if tx_type == ActionType.SWAP else None
         meta_refund = ThorMetaRefund.parse(
-            metadata.get('refund', {})) if tx_type == TxType.REFUND else None
+            metadata.get('refund', {})) if tx_type == ActionType.REFUND else None
 
         return ThorTx(
             int(date), int(block_height), status, tx_type,

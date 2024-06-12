@@ -1,5 +1,4 @@
-from services.lib.memo import THORMemo
-from services.models.tx_type import TxType
+from services.models.memo import THORMemo, ActionType
 
 
 def test_memo1():
@@ -7,7 +6,7 @@ def test_memo1():
                                   ':'
                                   ':'
                                   ':FC4414199:0xd533a949740bb3306d119cc777fa900ba034cd52')
-    assert m.action.value == TxType.SWAP
+    assert m.action.value == ActionType.SWAP
     assert m.asset == 'ETH.ETH'
     assert m.dex_aggregator_address == 'FC4414199'
     assert m.limit == 0
@@ -18,7 +17,7 @@ def test_memo1():
     assert m.s_swap_interval == 0
 
     m = THORMemo.parse_memo('SWAP:BTC/BTC:thorname')
-    assert m.action.value == TxType.SWAP
+    assert m.action.value == ActionType.SWAP
     assert m.asset == 'BTC/BTC'
     assert m.dex_aggregator_address == ''
     assert m.final_asset_address == ''
@@ -28,7 +27,7 @@ def test_memo1():
     assert m.s_swap_interval == 0
 
     m = THORMemo.parse_memo('SWAP:AVAX.AVAX:0x12345678901234589012345:18000000/5/20:t:50')
-    assert m.action.value == TxType.SWAP
+    assert m.action.value == ActionType.SWAP
     assert m.asset == 'AVAX.AVAX'
     assert m.dest_address == '0x12345678901234589012345'
     assert m.limit == 18000000
@@ -36,6 +35,14 @@ def test_memo1():
     assert m.s_swap_quantity == 20
     assert m.affiliate_address == 't'
     assert m.affiliate_fee_0_1 == 0.005
+
+    m = THORMemo.parse_memo('trade-:bc1qp8278yutn09r2wu3jrc8xg2a7hgdgwv2gvsdyw')
+    assert m.action.value == ActionType.TRADE_ACC_WITHDRAW
+    assert m.dest_address == 'bc1qp8278yutn09r2wu3jrc8xg2a7hgdgwv2gvsdyw'
+
+    m = THORMemo.parse_memo('trade+:thor1g6pnmnyeg48yc3lg796plt0uw50qpp7humfggz')
+    assert m.action.value == ActionType.TRADE_ACC_DEPOSIT
+    assert m.dest_address == 'thor1g6pnmnyeg48yc3lg796plt0uw50qpp7humfggz'
 
 
 def test_memo2():

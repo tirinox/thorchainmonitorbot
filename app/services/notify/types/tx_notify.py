@@ -13,8 +13,8 @@ from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.money import Asset, DepthCurve, pretty_dollar
 from services.lib.utils import WithLogger
+from services.models.memo import ActionType
 from services.models.tx import ThorTx, EventLargeTransaction
-from services.models.tx_type import TxType
 from services.notify.types.cap_notify import LiquidityCapNotifier
 
 
@@ -141,7 +141,7 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
     def is_tx_suitable(self, tx: ThorTx, min_rune_volume, usd_per_rune, curve_mult=None):
         pool_usd_depth = self._get_min_usd_depth(tx, usd_per_rune)
         if pool_usd_depth == 0.0:
-            if tx.type != TxType.REFUND:
+            if tx.type != ActionType.REFUND:
                 self.logger.warning(f'No pool depth for Tx: {tx}.')
             min_share_rune_volume = 0.0
         else:
@@ -172,7 +172,7 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
 
 class LiquidityTxNotifier(GenericTxNotifier):
     def __init__(self, deps: DepContainer, params: SubConfig, curve: DepthCurve):
-        super().__init__(deps, params, (TxType.WITHDRAW, TxType.ADD_LIQUIDITY), curve)
+        super().__init__(deps, params, (ActionType.WITHDRAW, ActionType.ADD_LIQUIDITY), curve)
         self.ilp_paid_min_usd = params.as_float('also_trigger_when.ilp_paid_min_usd', 6000)
 
         self.savers_enabled = params.get('savers.enabled', True)
@@ -193,7 +193,7 @@ class LiquidityTxNotifier(GenericTxNotifier):
 
 class SwapTxNotifier(GenericTxNotifier):
     def __init__(self, deps: DepContainer, params: SubConfig, curve: DepthCurve):
-        super().__init__(deps, params, (TxType.SWAP,), curve)
+        super().__init__(deps, params, (ActionType.SWAP,), curve)
         self.dex_min_usd = params.as_float('also_trigger_when.dex_aggregator_used.min_usd_total', 500)
         self.aff_fee_min_usd = params.as_float('also_trigger_when.affiliate_fee_usd_greater', 500)
         self.min_streaming_swap_usd = params.as_float('also_trigger_when.streaming_swap.volume_greater', 2500)
@@ -244,7 +244,7 @@ class SwapTxNotifier(GenericTxNotifier):
 
 class RefundTxNotifier(GenericTxNotifier):
     def __init__(self, deps: DepContainer, params: SubConfig, curve: DepthCurve):
-        super().__init__(deps, params, (TxType.REFUND,), curve)
+        super().__init__(deps, params, (ActionType.REFUND,), curve)
         self.cd_period = params.as_interval('cooldown', 5 * MINUTE)
 
     async def is_announced(self, tx: ThorTx):

@@ -5,9 +5,9 @@ from services.lib.date_utils import DAY
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
+from services.models.memo import ActionType
 from services.models.time_series import TimeSeries
 from services.models.tx import ThorTx
-from services.models.tx_type import TxType
 
 
 class ILPSummer(INotified, WithLogger):
@@ -16,7 +16,7 @@ class ILPSummer(INotified, WithLogger):
     async def on_data(self, sender, data: List[ThorTx]):
         with suppress(Exception):  # This must not break the rest of the pipeline! So ignore everything bad
             for tx in data:
-                if tx.type == TxType.WITHDRAW:
+                if tx.type == ActionType.WITHDRAW:
                     ilp_rune = tx.meta_withdraw.ilp_rune
                     if ilp_rune > 0:
                         await self.time_series.add(ilp_rune=ilp_rune)

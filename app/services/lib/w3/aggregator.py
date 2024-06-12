@@ -17,7 +17,7 @@ from services.lib.w3.token_list import StaticTokenList, TokenListCached
 from services.lib.w3.token_record import TokenRecord, AmountToken, SwapInOut
 from services.lib.w3.web3_helper import Web3HelperCached
 from services.models.tx import ThorTx, ThorSubTx
-from services.models.tx_type import TxType
+from services.models.memo import ActionType
 
 
 class AggregatorSingleChain:
@@ -153,7 +153,7 @@ class AggregatorDataExtractor(WithLogger, INotified, WithDelegates):
     async def on_data(self, sender, txs: List[ThorTx]):
         with suppress(Exception):  # This must not break the rest of the pipeline! So ignore everything bad
             for tx in txs:
-                if tx.type == TxType.SWAP:
+                if tx.type == ActionType.SWAP:
                     in_amount = await self._try_detect_aggregator(tx.first_input_tx, is_in=True)
 
                     # out_amount = await self._try_detect_aggregator(tx.first_output_tx, is_in=False)

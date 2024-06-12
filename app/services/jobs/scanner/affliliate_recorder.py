@@ -5,7 +5,7 @@ from services.jobs.scanner.block_loader import BlockResult
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
 from services.lib.logs import WithLogger
-from services.lib.memo import THORMemo
+from services.models.memo import THORMemo
 from services.lib.money import pretty_dollar
 
 

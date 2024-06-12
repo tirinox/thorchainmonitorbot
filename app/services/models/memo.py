@@ -45,6 +45,9 @@ class ActionType(Enum):
 
     NO_INTENT = 'no_intent'
 
+    TRADE_ACC_DEPOSIT = 'trade+'
+    TRADE_ACC_WITHDRAW = 'trade-'
+
 
 MEMO_ACTION_TABLE = {
     "add": ActionType.ADD_LIQUIDITY,
@@ -73,6 +76,8 @@ MEMO_ACTION_TABLE = {
     "loan+": ActionType.LOAN_OPEN,
     "$-": ActionType.LOAN_CLOSE,
     "loan-": ActionType.LOAN_CLOSE,
+    "trade+": ActionType.TRADE_ACC_DEPOSIT,
+    "trade-": ActionType.TRADE_ACC_WITHDRAW,
     # "migrate": TxMigrate,
     # "ragnarok": TxRagnarok,
     # "consolidate": TxConsolidate,
@@ -270,6 +275,12 @@ class THORMemo:
             no_vault = ith(components, 1, default='').upper().strip() == 'NOVAULT'
             return cls.noop(no_vault)
 
+        elif tx_type == ActionType.TRADE_ACC_DEPOSIT:
+            return cls.trade_account_deposit(dest_address=ith(components, 1, ''))
+
+        elif tx_type == ActionType.TRADE_ACC_WITHDRAW:
+            return cls.trade_account_withdraw(dest_address=ith(components, 1, ''))
+
         else:
             # todo: limit order, register memo, etc.
             if no_raise:
@@ -355,6 +366,12 @@ class THORMemo:
 
         elif self.action == ActionType.NOOP:
             memo = 'NOOP:NOVAULT' if self.no_vault else 'NOOP'
+
+        elif self.action == ActionType.TRADE_ACC_DEPOSIT:
+            memo = f'+TRADE:{self.dest_address}'
+
+        elif self.action == ActionType.TRADE_ACC_WITHDRAW:
+            memo = f'-TRADE:{self.dest_address}'
 
         else:
             raise NotImplementedError(f"Can not build memo for {self.action}")
@@ -511,6 +528,20 @@ class THORMemo:
     @classmethod
     def noop(cls, no_vault=False):
         return cls(ActionType.NOOP, no_vault=no_vault)
+
+    @classmethod
+    def trade_account_deposit(cls, dest_address: str):
+        return cls(
+            ActionType.TRADE_ACC_DEPOSIT,
+            dest_address=dest_address
+        )
+
+    @classmethod
+    def trade_account_withdraw(cls, dest_address: str):
+        return cls(
+            ActionType.TRADE_ACC_WITHDRAW,
+            dest_address=dest_address
+        )
 
     # Utils:
 

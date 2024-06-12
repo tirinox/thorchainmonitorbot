@@ -5,11 +5,11 @@ from proto.types import MsgDeposit, MsgObservedTxIn
 from services.jobs.scanner.native_scan import BlockResult
 from services.lib.constants import NATIVE_RUNE_SYMBOL, thor_to_float
 from services.lib.depcont import DepContainer
-from services.lib.memo import THORMemo
+from services.models.memo import THORMemo
 from services.lib.money import is_rune, Asset
 from services.lib.utils import WithLogger
 from services.models.s_swap import StreamingSwap, AlertSwapStart
-from services.models.tx_type import TxType
+from services.models.memo import ActionType
 
 
 class SwapStartDetector(WithLogger):
@@ -23,7 +23,7 @@ class SwapStartDetector(WithLogger):
         memo = THORMemo.parse_memo(msg.memo, no_raise=True)
 
         # Must be a swap!
-        if not memo or memo.action.value != TxType.SWAP:
+        if not memo or memo.action.value != ActionType.SWAP:
             return
 
         if msg.coins:

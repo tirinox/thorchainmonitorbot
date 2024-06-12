@@ -18,18 +18,18 @@ from services.lib.texts import sep
 from services.lib.w3.aggregator import AggregatorDataExtractor
 from services.models.pool_info import PoolInfo
 from services.models.tx import ThorTx
-from services.models.tx_type import TxType
+from services.models.memo import ActionType
 from services.notify.types.tx_notify import SwapTxNotifier, LiquidityTxNotifier, RefundTxNotifier
 from tools.lib.lp_common import LpAppFramework, load_sample_txs, Receiver
 
 
 async def midgard_test_1(app):
     q_path = free_url_gen.url_for_tx(0, 50,
-                                     tx_type=TxType.ADD_LIQUIDITY,
+                                     tx_type=ActionType.ADD_LIQUIDITY,
                                      txid='58B3D28E121A34BCE2D31018C00C660942088BC548171A427A51F6825ED77142')
     await present_one_aff_tx(app, q_path)
     q_path = free_url_gen.url_for_tx(0, 50,
-                                     tx_type=TxType.SWAP,
+                                     tx_type=ActionType.SWAP,
                                      txid='7F98B4867018DC97C1DC8A6C34E1E597641FC306093B70AB41F156C85D0CD01E')
     await present_one_aff_tx(app, q_path)
     q_path = free_url_gen.url_for_tx(0, 50, address='bnb10gh0p6thzjz54jqy9lg0rv733fnl0vqmc789pp')
@@ -38,14 +38,14 @@ async def midgard_test_1(app):
 
 async def demo_midgard_test_large_ilp(app):
     q_path = free_url_gen.url_for_tx(0, 50,
-                                     tx_type=TxType.WITHDRAW,
+                                     tx_type=ActionType.WITHDRAW,
                                      txid='C3BC98CB15022DBA8C5BAEC3C3637FD0BBD55CB7F7000BB62594C234C219E798')
     await present_one_aff_tx(app, q_path)
 
 
 async def demo_savers_add(app):
     q_path = free_url_gen.url_for_tx(0, 50,
-                                     tx_type=TxType.ADD_LIQUIDITY,
+                                     tx_type=ActionType.ADD_LIQUIDITY,
                                      txid='B380846D04AFB83961D2728177B10D593E1C144A534A21A443366D233971A135')
     # txid='413768826A02E8EA4068A2F35A7941008A15A18F7E76E49B8602BD99D840B721')
     await present_one_aff_tx(app, q_path)
@@ -59,7 +59,7 @@ async def demo_test_savers_vaults(app):
 
 async def demo_test_aff_add_liq(app):
     q_path = free_url_gen.url_for_tx(0, 50,
-                                     tx_type=TxType.ADD_LIQUIDITY,
+                                     tx_type=ActionType.ADD_LIQUIDITY,
                                      txid='CBC44B4E2A6332692BD1A3CCE7817F0CBE8AB2CFDC10470327B3057FA1CD8017')
     await present_one_aff_tx(app, q_path)
 
@@ -94,14 +94,14 @@ async def demo_withdraw_savers(app):
     q_path = free_url_gen.url_for_tx(0, 50,
                                      txid='C24DF9D0A379519EBEEF2DBD50F5AD85AB7A5B75A2F3C571E185202EE2E9876F',
                                      # txid='59A5981184350A481F02FC9D8782FF114A4A010E0FE9C26630089D0944DC42AF',
-                                     tx_type=TxType.WITHDRAW)
+                                     tx_type=ActionType.WITHDRAW)
     await present_one_aff_tx(app, q_path)
 
 
 async def demo_add_savers(app):
     q_path = free_url_gen.url_for_tx(0, 50,
                                      txid='2A36FD67A32D47C9B7B1821197A8EF9F3C688CAB8979C43F235B8664563009CF',
-                                     tx_type=TxType.ADD_LIQUIDITY)
+                                     tx_type=ActionType.ADD_LIQUIDITY)
     await present_one_aff_tx(app, q_path)
 
 
@@ -120,7 +120,7 @@ async def present_one_aff_tx(app, q_path, find_aff=False):
 
 async def demo_find_last_savers_additions(app: LpAppFramework):
     d = app.deps
-    fetcher_tx = TxFetcher(d, tx_types=(TxType.ADD_LIQUIDITY,))
+    fetcher_tx = TxFetcher(d, tx_types=(ActionType.ADD_LIQUIDITY,))
 
     aggregator = AggregatorDataExtractor(d)
     fetcher_tx.add_subscriber(aggregator)
@@ -153,7 +153,7 @@ async def send_tx_notification(app, ex_tx, loc: BaseLocalization = None):
     full_rune = ex_tx.calc_full_rune_amount(app.deps.price_holder.pool_info_map)
 
     profit_calc = StreamingSwapVsCexProfitCalculator(app.deps)
-    if ex_tx.type == TxType.SWAP:
+    if ex_tx.type == ActionType.SWAP:
         await profit_calc.get_cex_data_v2(ex_tx)
 
     print(f'{ex_tx.affiliate_fee = }')
@@ -184,7 +184,7 @@ async def demo_full_tx_pipeline(app: LpAppFramework, announce=True):
 
     await d.mimir_const_fetcher.run_once()
 
-    fetcher_tx = TxFetcher(d, tx_types=(TxType.ADD_LIQUIDITY, TxType.WITHDRAW, TxType.SWAP))
+    fetcher_tx = TxFetcher(d, tx_types=(ActionType.ADD_LIQUIDITY, ActionType.WITHDRAW, ActionType.SWAP))
 
     aggregator = AggregatorDataExtractor(d)
     fetcher_tx.add_subscriber(aggregator)
@@ -254,7 +254,7 @@ async def demo_verify_tx_scanner_in_the_past(app: LpAppFramework):
     n_zeros = 0
 
     while True:
-        batch_txs = await fetcher_tx.fetch_one_batch(page, tx_types=TxType.ALL_EXCEPT_DONATE)
+        batch_txs = await fetcher_tx.fetch_one_batch(page, tx_types=ActionType.ALL_EXCEPT_DONATE)
         batch_txs = batch_txs.txs
         batch_txs = fetcher_tx.merge_related_txs(batch_txs)
         for tx in batch_txs:
@@ -275,7 +275,7 @@ async def find_affiliate_txs(app: LpAppFramework, desired_count=5, tx_types=None
 
     interesting_txs = []
     page = 0
-    tx_types = tx_types or (TxType.ADD_LIQUIDITY, TxType.WITHDRAW, TxType.SWAP)
+    tx_types = tx_types or (ActionType.ADD_LIQUIDITY, ActionType.WITHDRAW, ActionType.SWAP)
     while len(interesting_txs) < desired_count:
         page_results = await fetcher_tx.fetch_one_batch(page, tx_types=tx_types)
         for tx in page_results.txs:
@@ -287,7 +287,7 @@ async def find_affiliate_txs(app: LpAppFramework, desired_count=5, tx_types=None
 
 async def demo_find_missed_txs_swap(app: LpAppFramework):
     d = app.deps
-    fetcher_tx = TxFetcher(d, tx_types=(TxType.SWAP,))
+    fetcher_tx = TxFetcher(d, tx_types=(ActionType.SWAP,))
 
     aggregator = AggregatorDataExtractor(d)
     fetcher_tx.add_subscriber(aggregator)
@@ -297,7 +297,7 @@ async def demo_find_missed_txs_swap(app: LpAppFramework):
 
     page = 50
     while True:
-        txs = await fetcher_tx.fetch_one_batch(page, tx_types=(TxType.SWAP,))
+        txs = await fetcher_tx.fetch_one_batch(page, tx_types=(ActionType.SWAP,))
         for tx in txs.txs:
             if 'ETH.ETH' in tx.pools and tx.rune_amount > 100_000:
                 url = get_explorer_url_to_tx(d.cfg.network_id, Chains.THOR, tx.tx_hash)
@@ -310,7 +310,7 @@ async def demo_find_missed_txs_swap(app: LpAppFramework):
 async def demo_swap_synth(app):
     q_path = free_url_gen.url_for_tx(0, 50,
                                      txid='CD95B08C68AD0EC93E13A586F04A7F6BC6EE4B70471F84F1BD3D4933EA86FAA2',
-                                     tx_type=TxType.SWAP)
+                                     tx_type=ActionType.SWAP)
     await present_one_aff_tx(app, q_path)
 
 
@@ -321,7 +321,7 @@ async def demo_swap_with_refund_and_incorrect_savings_vs_cex(app):
 
     q_path = free_url_gen.url_for_tx(0, 50,
                                      txid=txid,
-                                     tx_type=TxType.SWAP)
+                                     tx_type=ActionType.SWAP)
     await present_one_aff_tx(app, q_path)
 
 
@@ -338,7 +338,7 @@ async def dbg_refund_spam(app):
     await d.pool_fetcher.run_once()
 
     q_path = free_url_gen.url_for_tx(0, 20, address='thor1wx5av89rghsmgh2vh40aknx7csvs7xj2cr474n',
-                                     tx_type=TxType.REFUND)
+                                     tx_type=ActionType.REFUND)
 
     j = await d.midgard_connector.request(q_path)
     tx_parser = get_parser_by_network_id(app.deps.cfg.network_id)

@@ -9,7 +9,7 @@ from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 from services.models.events import EventSwap
 from services.models.tx import ThorTx
-from services.models.tx_type import TxType
+from services.models.memo import ActionType
 
 
 class VolumeRecorder(WithDelegates, INotified, WithLogger):
@@ -39,13 +39,13 @@ class VolumeRecorder(WithDelegates, INotified, WithLogger):
         for tx in txs:
             volume = tx.full_rune
             if volume > 0:
-                if tx.type == TxType.SWAP:
+                if tx.type == ActionType.SWAP:
                     swap += volume
                     if tx.is_synth_involved:
                         synth += volume
-                elif tx.type == TxType.ADD_LIQUIDITY:
+                elif tx.type == ActionType.ADD_LIQUIDITY:
                     add += volume
-                elif tx.type == TxType.WITHDRAW:
+                elif tx.type == ActionType.WITHDRAW:
                     withdraw += volume
 
                 total_volume += volume

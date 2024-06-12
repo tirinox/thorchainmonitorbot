@@ -55,6 +55,9 @@ class ThorEnvironment:
 
     path_borrower_details = '/thorchain/pool/{asset}/borrower/{address}?height={height}'
 
+    path_trade_units = '/thorchain/trade/units?height={height}'
+    path_trade_accounts = '/thorchain/trade/accounts/{asset}?height={height}'
+
     kind: str = ''
 
     def copy(self):

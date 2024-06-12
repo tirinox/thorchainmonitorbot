@@ -40,7 +40,7 @@ from services.models.s_swap import AlertSwapStart
 from services.models.savers import AlertSaverStats
 from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.tx import EventLargeTransaction
-from services.models.tx_type import TxType
+from services.models.memo import ActionType
 
 
 class RussianLocalization(BaseLocalization):
@@ -418,24 +418,24 @@ class RussianLocalization(BaseLocalization):
          total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
         heading = ''
-        if tx.type == TxType.ADD_LIQUIDITY:
+        if tx.type == ActionType.ADD_LIQUIDITY:
             if tx.is_savings:
                 heading = f'🐳→💰 <b>Добавлено на сберегательный счет</b>'
             else:
                 heading = f'🐳→⚡ <b>Добавлена ликвидности</b>'
-        elif tx.type == TxType.WITHDRAW:
+        elif tx.type == ActionType.WITHDRAW:
             if tx.is_savings:
                 heading = f'🐳←💰 <b>Выведено со сберегательного счета</b>'
             else:
                 heading = f'🐳←⚡ <b>Выведена ликвидность</b>'
-        elif tx.type == TxType.DONATE:
+        elif tx.type == ActionType.DONATE:
             heading = f'🙌 <b>Пожертвование в пул</b>'
-        elif tx.type == TxType.SWAP:
+        elif tx.type == ActionType.SWAP:
             if tx.is_streaming:
                 heading = f'🌊 <b>Потоковый обмен завершен</b> 🔁'
             else:
                 heading = f'🐳 <b>Крупный обмен</b> 🔁'
-        elif tx.type == TxType.REFUND:
+        elif tx.type == ActionType.REFUND:
             heading = f'🐳️ <b>Возврат средств</b> ↩️❗'
 
         if tx.is_pending:
@@ -449,7 +449,7 @@ class RussianLocalization(BaseLocalization):
 
         content = f''
 
-        if tx.type in (TxType.ADD_LIQUIDITY, TxType.WITHDRAW, TxType.DONATE):
+        if tx.type in (ActionType.ADD_LIQUIDITY, ActionType.WITHDRAW, ActionType.DONATE):
             if tx.affiliate_fee > 0:
                 aff_fee_usd = tx.get_affiliate_fee_usd(usd_per_rune)
                 mark = self._exclamation_sign(aff_fee_usd, 'fee_usd_limit')
@@ -501,13 +501,13 @@ class RussianLocalization(BaseLocalization):
                     f"{ilp_text}"
                     f"{pool_depth_part}\n"
                 )
-        elif tx.type == TxType.REFUND:
+        elif tx.type == ActionType.REFUND:
             reason = shorten_text(tx.meta_refund.reason, 180)
             content += (
                     self.format_swap_route(tx, usd_per_rune) +
                     f"\nПричина: {pre(reason)}"
             )
-        elif tx.type == TxType.SWAP:
+        elif tx.type == ActionType.SWAP:
             content += self.format_swap_route(tx, usd_per_rune)
             slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
             l_fee_usd = tx.meta_swap.liquidity_fee_rune_float * usd_per_rune

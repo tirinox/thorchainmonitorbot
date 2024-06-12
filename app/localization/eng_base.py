@@ -45,7 +45,7 @@ from services.models.s_swap import AlertSwapStart
 from services.models.savers import how_much_savings_you_can_add, AlertSaverStats
 from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.tx import ThorTx, ThorSubTx, EventLargeTransaction
-from services.models.tx_type import TxType
+from services.models.memo import ActionType
 from services.notify.channel import Messengers
 
 CREATOR_TG = '@account1242'
@@ -589,24 +589,24 @@ class BaseLocalization(ABC):  # == English
          total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
         heading = ''
-        if tx.type == TxType.ADD_LIQUIDITY:
+        if tx.type == ActionType.ADD_LIQUIDITY:
             if tx.is_savings:
                 heading = f'🐳→💰 <b>Add to savings vault</b>'
             else:
                 heading = f'🐳→⚡ <b>Add liquidity</b>'
-        elif tx.type == TxType.WITHDRAW:
+        elif tx.type == ActionType.WITHDRAW:
             if tx.is_savings:
                 heading = f'🐳←💰 <b>Withdraw from savings vault</b>'
             else:
                 heading = f'🐳←⚡ <b>Withdraw liquidity</b>'
-        elif tx.type == TxType.DONATE:
+        elif tx.type == ActionType.DONATE:
             heading = f'🙌 <b>Donation to the pool</b>'
-        elif tx.type == TxType.SWAP:
+        elif tx.type == ActionType.SWAP:
             if tx.is_streaming:
                 heading = f'🌊 <b>Streaming swap finished</b> 🔁'
             else:
                 heading = f'🐳 <b>Swap</b> 🔁'
-        elif tx.type == TxType.REFUND:
+        elif tx.type == ActionType.REFUND:
             heading = f'🐳 <b>Refund</b> ↩️❗'
 
         if tx.is_pending:
@@ -620,7 +620,7 @@ class BaseLocalization(ABC):  # == English
 
         content = f''
 
-        if tx.type in (TxType.ADD_LIQUIDITY, TxType.WITHDRAW, TxType.DONATE):
+        if tx.type in (ActionType.ADD_LIQUIDITY, ActionType.WITHDRAW, ActionType.DONATE):
             if tx.affiliate_fee > 0:
                 aff_fee_usd = tx.get_affiliate_fee_usd(usd_per_rune)
                 mark = self._exclamation_sign(aff_fee_usd, 'fee_usd_limit')
@@ -675,13 +675,13 @@ class BaseLocalization(ABC):  # == English
                     f"{pool_depth_part}"
                 )
 
-        elif tx.type == TxType.REFUND:
+        elif tx.type == ActionType.REFUND:
             reason = shorten_text(tx.meta_refund.reason, 180)
             content = (
                     self.format_swap_route(tx, usd_per_rune) +
                     f"\nReason: {pre(reason)}"
             )
-        elif tx.type == TxType.SWAP:
+        elif tx.type == ActionType.SWAP:
             content = self.format_swap_route(tx, usd_per_rune)
             slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
             l_fee_usd = tx.meta_swap.liquidity_fee_rune_float * usd_per_rune

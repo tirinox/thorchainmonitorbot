@@ -533,6 +533,54 @@ class ThorNativeTX(NamedTuple):
         )
 
 
+def trade_asset_to_normal(asset: str):
+    return asset.replace('~', '.', 1)
+
+
+class ThorTradeUnits(NamedTuple):
+    asset: str
+    units: int
+    depth: int
+
+    @classmethod
+    def from_json(cls, j):
+        return cls(
+            asset=trade_asset_to_normal(j.get('asset')),
+            units=int(j.get('units', 0)),
+            depth=int(j.get('depth', 0))
+        )
+
+    @property
+    def depth_float(self):
+        return thor_to_float(self.depth)
+
+    @classmethod
+    def from_json_array(cls, j):
+        return [cls.from_json(item) for item in j] if j else []
+
+
+class ThorTradeAccount(NamedTuple):
+    asset: str
+    units: int
+    owner: str
+    last_add_height: int
+    last_withdraw_height: int
+
+    @classmethod
+    def from_json(cls, j):
+        return cls(
+            asset=trade_asset_to_normal(j.get('asset')),
+            units=int(j.get('units', 0)),
+            owner=j.get('owner', ''),
+            last_add_height=int(j.get('last_add_height', 0)),
+            last_withdraw_height=int(j.get('last_withdraw_height', 0))
+        )
+
+    @classmethod
+    def from_json_array(cls, j):
+        return [cls.from_json(item) for item in j] if j else []
+
+
 class ThorLiquidityProvider(NamedTuple):
     asset: str
     asset_address: str

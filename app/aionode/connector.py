@@ -173,6 +173,18 @@ class ThorConnector:
         if data:
             return ThorBorrowerPosition.from_json(data)
 
+    async def query_trade_units(self, height=0):
+        url = self.env.path_trade_units.format(height=height)
+        data = await self._request(url)
+        if data:
+            return [ThorTradeUnits.from_json(p) for p in data]
+
+    async def query_trade_accounts(self, asset, height=0):
+        url = self.env.path_trade_accounts.format(asset=asset, height=height)
+        data = await self._request(url)
+        if data:
+            return [ThorTradeAccount.from_json(p) for p in data]
+
     # ---- Internal ----
 
     def __init__(self, env: ThorEnvironment, session: ClientSession, logger=None, extra_headers=None,

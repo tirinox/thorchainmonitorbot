@@ -54,9 +54,9 @@ from services.lib.settings_manager import SettingsManager, SettingsProcessorGene
 from services.lib.utils import setup_logs
 from services.lib.w3.aggregator import AggregatorDataExtractor
 from services.lib.w3.dex_analytics import DexAnalyticsCollector
+from services.models.memo import ActionType
 from services.models.mimir import MimirHolder
 from services.models.node_watchers import AlertWatchers
-from services.models.tx_type import TxType
 from services.notify.alert_presenter import AlertPresenter
 from services.notify.broadcast import Broadcaster
 from services.notify.channel import BoardMessage
@@ -305,14 +305,14 @@ class App(WithLogger):
         if d.cfg.get('tx.enabled', True):
             main_tx_types = [
                 # ThorTxType.TYPE_SWAP,  # fixme: using the native block scanner
-                TxType.REFUND,
-                TxType.ADD_LIQUIDITY,
-                TxType.WITHDRAW,
+                ActionType.REFUND,
+                ActionType.ADD_LIQUIDITY,
+                ActionType.WITHDRAW,
             ]
 
             ignore_donates = d.cfg.get('tx.ignore_donates', True)
             if not ignore_donates:
-                main_tx_types.append(TxType.DONATE)
+                main_tx_types.append(ActionType.DONATE)
 
             # Uses Midgard as data source
             fetcher_tx = TxFetcher(d, tx_types=main_tx_types)
@@ -363,7 +363,7 @@ class App(WithLogger):
                 self.liquidity_notifier_tx.add_subscriber(d.alert_presenter)
 
             if d.cfg.tx.donate.get('enabled', True):
-                self.donate_notifier_tx = GenericTxNotifier(d, d.cfg.tx.donate, tx_types=(TxType.DONATE,), curve=curve)
+                self.donate_notifier_tx = GenericTxNotifier(d, d.cfg.tx.donate, tx_types=(ActionType.DONATE,), curve=curve)
 
                 volume_filler.add_subscriber(self.donate_notifier_tx)
                 self.donate_notifier_tx.add_subscriber(d.alert_presenter)

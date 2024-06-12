@@ -21,6 +21,7 @@ from services.models.cap_info import ThorCapInfo
 from services.models.flipside import AlertKeyStats
 from services.models.last_block import EventBlockSpeed, BlockProduceState
 from services.models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats, AlertLendingOpenUpdate
+from services.models.memo import ActionType
 from services.models.mimir import MimirChange, MimirHolder
 from services.models.mimir_naming import MimirUnits
 from services.models.net_stats import NetworkStats
@@ -32,7 +33,6 @@ from services.models.s_swap import AlertSwapStart
 from services.models.savers import AlertSaverStats
 from services.models.transfer import RuneCEXFlow, RuneTransfer
 from services.models.tx import EventLargeTransaction
-from services.models.tx_type import TxType
 from services.notify.channel import MESSAGE_SEPARATOR
 
 
@@ -91,24 +91,24 @@ class TwitterEnglishLocalization(BaseLocalization):
          total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
         heading = ''
-        if tx.type == TxType.ADD_LIQUIDITY:
+        if tx.type == ActionType.ADD_LIQUIDITY:
             if tx.is_savings:
                 heading = f'🐳→💰 Add to savings vault'
             else:
                 heading = f'🐳→⚡ Add liquidity'
-        elif tx.type == TxType.WITHDRAW:
+        elif tx.type == ActionType.WITHDRAW:
             if tx.is_savings:
                 heading = f'🐳←💰 Withdraw from savings vault'
             else:
                 heading = f'🐳←⚡ Withdraw liquidity'
-        elif tx.type == TxType.DONATE:
+        elif tx.type == ActionType.DONATE:
             heading = f'🐳 Donation to the pool 🙌'
-        elif tx.type == TxType.SWAP:
+        elif tx.type == ActionType.SWAP:
             if tx.is_streaming:
                 heading = f'🌊 Streaming swap finished'
             else:
                 heading = f'🔁 Swap'
-        elif tx.type == TxType.REFUND:
+        elif tx.type == ActionType.REFUND:
             heading = f'🐳 Refund ↩️❗'
 
         if tx.is_pending:
@@ -120,7 +120,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         content = f'👤{self.link_to_address(tx.sender_address, name_map)}: '
 
-        if tx.type in (TxType.ADD_LIQUIDITY, TxType.WITHDRAW, TxType.DONATE):
+        if tx.type in (ActionType.ADD_LIQUIDITY, ActionType.WITHDRAW, ActionType.DONATE):
             if tx.affiliate_fee > 0:
                 aff_fee_usd = tx.get_affiliate_fee_usd(usd_per_rune)
                 mark = self._exclamation_sign(aff_fee_usd, 'fee_usd_limit')
@@ -168,13 +168,13 @@ class TwitterEnglishLocalization(BaseLocalization):
                 f"{pool_depth_part}"
             )
 
-        elif tx.type == TxType.REFUND:
+        elif tx.type == ActionType.REFUND:
             reason = shorten_text(tx.meta_refund.reason, 30)
             content += (
                     self.format_swap_route(tx, usd_per_rune) +
                     f"\nReason: {reason}.."
             )
-        elif tx.type == TxType.SWAP:
+        elif tx.type == ActionType.SWAP:
             content += self.format_swap_route(tx, usd_per_rune)
             slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
             l_fee_usd = tx.meta_swap.liquidity_fee_rune_float * usd_per_rune
