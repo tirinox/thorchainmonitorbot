@@ -26,9 +26,10 @@ class KnownVersionStorage(WithLogger):
     DB_KEY_NEW_VERSION = 'THORNode.Version.Already.Notified.As.New'
     DB_KEY_LAST_PROGRESS = 'THORNode.Version.Last.Progress'
 
-    async def is_version_known(self, new_v) -> List[VersionInfo]:
+    async def is_version_known(self, new_v):
         r = await self.deps.db.get_redis()
-        return await r.sismember(self.DB_KEY_NEW_VERSION + self.context_name, str(new_v))
+        result = await r.sismember(self.DB_KEY_NEW_VERSION + self.context_name, str(new_v))
+        return bool(result)
 
     async def mark_as_known(self, versions):
         r = await self.deps.db.get_redis()
