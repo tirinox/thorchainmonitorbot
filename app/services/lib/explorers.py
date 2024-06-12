@@ -1,5 +1,5 @@
 from services.lib.constants import NetworkIdents, Chains
-from services.lib.money import Asset
+from services.models.asset import Asset
 
 
 def get_explorer_url_to_address(network_id, pool_or_chain: str, address: str, tab=None):

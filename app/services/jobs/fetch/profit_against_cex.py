@@ -8,8 +8,9 @@ from binance.exceptions import BinanceAPIException
 from services.lib.constants import thor_to_float
 from services.lib.date_utils import MINUTE
 from services.lib.delegates import INotified, WithDelegates
-from services.lib.money import pretty_dollar, Asset
+from services.lib.money import pretty_dollar
 from services.lib.utils import WithLogger, get_ttl_hash
+from services.models.asset import Asset
 from services.models.tx import ThorTx
 
 

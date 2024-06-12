@@ -13,13 +13,13 @@ from services.lib.date_utils import days_ago_noon, now_ts
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import free_url_gen
-from services.lib.money import Asset
 from services.lib.utils import pairwise
+from services.models.asset import Asset
 from services.models.lp_info import LiquidityPoolReport, CurrentLiquidity, FeeReport, ReturnMetrics, \
     LPDailyGraphPoint, LPDailyChartByPoolDict, ILProtectionReport, LPPosition
+from services.models.memo import ActionType
 from services.models.pool_info import PoolInfoMap, PoolInfo, pool_share
 from services.models.tx import ThorTx
-from services.models.memo import ActionType
 
 HeightToAllPools = Dict[int, PoolInfoMap]
 

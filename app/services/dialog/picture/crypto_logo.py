@@ -5,7 +5,7 @@ import web3
 from PIL import Image
 
 from services.lib.constants import *
-from services.lib.money import Asset
+from services.models.asset import Asset
 from services.lib.utils import download_file
 
 logger = logging.getLogger(__name__)

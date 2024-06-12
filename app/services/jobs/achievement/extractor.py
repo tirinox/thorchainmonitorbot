@@ -7,17 +7,17 @@ from services.jobs.fetch.const_mimir import MimirTuple
 from services.lib.constants import THORCHAIN_BIRTHDAY
 from services.lib.date_utils import full_years_old_ts
 from services.lib.depcont import DepContainer
-from services.lib.money import Asset
 from services.lib.utils import is_list_of_type, WithLogger
+from services.models.asset import Asset
 from services.models.flipside import AlertKeyStats
 from services.models.loans import LendingStats, AlertLoanOpen
+from services.models.memo import ActionType
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges
 from services.models.pol import AlertPOL
 from services.models.price import RuneMarketInfo, LastPriceHolder
 from services.models.savers import SaversBank
 from services.models.tx import ThorTx
-from services.models.memo import ActionType
 from services.notify.types.block_notify import LastBlockStore
 
 

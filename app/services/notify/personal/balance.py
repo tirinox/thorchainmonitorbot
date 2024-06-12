@@ -2,8 +2,9 @@ from typing import List
 
 from services.lib.db import DB
 from services.lib.depcont import DepContainer
-from services.lib.money import Asset, ABSURDLY_LARGE_NUMBER
+from services.lib.money import ABSURDLY_LARGE_NUMBER
 from services.lib.utils import safe_get
+from services.models.asset import Asset
 from services.models.node_watchers import UserWatchlist
 from services.models.transfer import RuneTransfer
 from services.notify.personal.base import BasePersonalNotifier

@@ -13,7 +13,8 @@ from services.jobs.scanner.swap_extractor import SwapExtractorBlock
 from services.jobs.user_counter import UserCounter
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.jobs.volume_recorder import VolumeRecorder
-from services.lib.money import DepthCurve, Asset, AssetRUNE
+from services.models.asset import Asset
+from services.lib.money import DepthCurve
 from services.lib.texts import sep
 from services.lib.utils import setup_logs
 from services.lib.w3.aggregator import AggregatorDataExtractor

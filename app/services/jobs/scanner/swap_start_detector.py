@@ -5,11 +5,11 @@ from proto.types import MsgDeposit, MsgObservedTxIn
 from services.jobs.scanner.native_scan import BlockResult
 from services.lib.constants import NATIVE_RUNE_SYMBOL, thor_to_float
 from services.lib.depcont import DepContainer
-from services.models.memo import THORMemo
-from services.lib.money import is_rune, Asset
 from services.lib.utils import WithLogger
-from services.models.s_swap import StreamingSwap, AlertSwapStart
+from services.models.asset import Asset, is_rune
 from services.models.memo import ActionType
+from services.models.memo import THORMemo
+from services.models.s_swap import StreamingSwap, AlertSwapStart
 
 
 class SwapStartDetector(WithLogger):

@@ -6,7 +6,6 @@ from web3.exceptions import TransactionNotFound
 from services.lib.constants import Chains
 from services.lib.delegates import WithDelegates, INotified
 from services.lib.depcont import DepContainer
-from services.lib.money import Asset
 from services.lib.texts import shorten_text
 from services.lib.utils import WithLogger
 from services.lib.w3.aggr_contract import AggregatorContract
@@ -16,8 +15,9 @@ from services.lib.w3.router_contract import TCRouterContract
 from services.lib.w3.token_list import StaticTokenList, TokenListCached
 from services.lib.w3.token_record import TokenRecord, AmountToken, SwapInOut
 from services.lib.w3.web3_helper import Web3HelperCached
-from services.models.tx import ThorTx, ThorSubTx
+from services.models.asset import Asset
 from services.models.memo import ActionType
+from services.models.tx import ThorTx, ThorSubTx
 
 
 class AggregatorSingleChain:

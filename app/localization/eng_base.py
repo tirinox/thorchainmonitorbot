@@ -1,9 +1,9 @@
 import logging
 from abc import ABC
 from datetime import datetime
+from math import ceil
 from typing import List, Optional
 
-from math import ceil
 from semver import VersionInfo
 
 from aionode.types import ThorChainInfo, ThorBalances, ThorSwapperClout
@@ -19,18 +19,20 @@ from services.lib.explorers import get_explorer_url_to_address, Chains, get_expl
     get_explorer_url_for_node, get_pool_url, get_thoryield_address, get_ip_info_link
 from services.lib.midgard.name_service import NameService, add_thor_suffix, NameMap
 from services.lib.money import format_percent, pretty_money, short_address, short_money, \
-    calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, Asset, short_dollar, \
+    calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, short_dollar, \
     RAIDO_GLYPH, short_rune, pretty_percent, chart_emoji, pretty_rune
 from services.lib.texts import progressbar, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
     up_down_arrow, bracketify, plural, join_as_numbered_list, regroup_joining, shorten_text, cut_long_text, underline
 from services.lib.utils import grouper, run_once
 from services.lib.w3.dex_analytics import DexReport, DexReportEntry
 from services.lib.w3.token_record import AmountToken
+from services.models.asset import Asset
 from services.models.cap_info import ThorCapInfo
 from services.models.flipside import AlertKeyStats
 from services.models.last_block import BlockProduceState, EventBlockSpeed
 from services.models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats, AlertLendingOpenUpdate
 from services.models.lp_info import LiquidityPoolReport
+from services.models.memo import ActionType
 from services.models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting, MimirVoteOption
 from services.models.mimir_naming import MimirUnits, NEXT_CHAIN_VOTING_MAP
 from services.models.net_stats import NetworkStats
@@ -45,7 +47,6 @@ from services.models.s_swap import AlertSwapStart
 from services.models.savers import how_much_savings_you_can_add, AlertSaverStats
 from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.tx import ThorTx, ThorSubTx, EventLargeTransaction
-from services.models.memo import ActionType
 from services.notify.channel import Messengers
 
 CREATOR_TG = '@account1242'

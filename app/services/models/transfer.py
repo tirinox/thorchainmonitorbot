@@ -2,7 +2,7 @@ from dataclasses import dataclass
 
 from services.lib.constants import RUNE_DENOM
 from services.lib.date_utils import DAY
-from services.lib.money import is_rune
+from services.models.asset import is_rune
 
 
 @dataclass

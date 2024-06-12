@@ -4,8 +4,8 @@ from services.jobs.fetch.base import BaseFetcher
 from services.lib.constants import Chains, float_to_thor, thor_to_float, THOR_BLOCK_TIME, bp_to_float
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
-from services.lib.money import Asset, AssetRUNE
 from services.lib.utils import WithLogger
+from services.models.asset import Asset, AssetRUNE
 from services.models.s_swap import StreamingSwap
 
 

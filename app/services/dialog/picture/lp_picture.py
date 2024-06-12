@@ -10,11 +10,12 @@ from services.dialog.picture.resources import Resources
 from services.lib.constants import RUNE_SYMBOL
 from services.lib.draw_utils import CATEGORICAL_PALETTE, pos_percent, result_color, hor_line, LIGHT_TEXT_COLOR, \
     TC_WHITE, paste_image_masked, LINE_COLOR
-from services.lib.money import pretty_money, format_percent, pretty_percent, Asset, RAIDO_GLYPH, pretty_rune, \
-    short_dollar, short_money, is_rune
+from services.lib.money import pretty_money, format_percent, pretty_percent, RAIDO_GLYPH, pretty_rune, \
+    short_dollar, short_money
 from services.lib.plot_graph import PlotBarGraph
 from services.lib.texts import bracketify
 from services.lib.utils import async_wrap, grouper
+from services.models.asset import Asset, is_rune
 from services.models.lp_info import LiquidityPoolReport, LPDailyGraphPoint, ILProtectionReport
 from services.models.price import LastPriceHolder
 

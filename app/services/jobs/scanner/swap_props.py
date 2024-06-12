@@ -5,7 +5,7 @@ from typing import NamedTuple, List, Optional, Tuple
 
 from proto.access import DecodedEvent
 from services.models.memo import THORMemo
-from services.lib.money import is_rune
+from services.models.asset import is_rune
 from services.models.events import EventSwap, EventStreamingSwap, EventOutbound, EventScheduledOutbound, \
     parse_swap_and_out_event, TypeEventSwapAndOut
 from services.models.s_swap import StreamingSwap

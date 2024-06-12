@@ -9,9 +9,10 @@ from services.dialog.picture.resources import Resources
 from services.lib.constants import BTC_SYMBOL, ETH_SYMBOL, ETH_USDC_SYMBOL, ETH_USDT_SYMBOL
 from services.lib.draw_utils import paste_image_masked, TC_LIGHTNING_BLUE, TC_YGGDRASIL_GREEN, \
     dual_side_rect, COLOR_OF_PROFIT, font_estimate_size
-from services.lib.money import pretty_money, short_dollar, format_percent, Asset
+from services.lib.money import pretty_money, short_dollar, format_percent
 from services.lib.texts import bracketify
 from services.lib.utils import async_wrap
+from services.models.asset import Asset
 from services.models.flipside import AlertKeyStats
 
 

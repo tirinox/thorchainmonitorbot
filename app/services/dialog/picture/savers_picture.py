@@ -6,8 +6,9 @@ from localization.manager import BaseLocalization
 from services.dialog.picture.common import BasePictureGenerator
 from services.dialog.picture.resources import Resources
 from services.lib.draw_utils import TC_WHITE, result_color, rect_progress_bar
-from services.lib.money import Asset, short_money, short_dollar
+from services.lib.money import short_money, short_dollar
 from services.lib.utils import async_wrap
+from services.models.asset import Asset
 from services.models.savers import SaverVault, AlertSaverStats
 
 

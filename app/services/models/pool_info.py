@@ -8,9 +8,9 @@ from operator import attrgetter
 from typing import List, Dict, NamedTuple, Optional
 
 from aionode.types import ThorPool
-
 from services.lib.constants import thor_to_float
-from services.lib.money import Asset, calc_percent_change
+from services.lib.money import calc_percent_change
+from services.models.asset import Asset
 
 
 def pool_share(rune_depth, asset_depth, my_units, pool_total_units):

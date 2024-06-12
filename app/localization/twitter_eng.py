@@ -11,12 +11,13 @@ from services.lib.constants import Chains, BTC_SYMBOL, ETH_SYMBOL
 from services.lib.date_utils import now_ts, seconds_human
 from services.lib.explorers import get_explorer_url_to_tx
 from services.lib.midgard.name_service import NameMap, add_thor_suffix
-from services.lib.money import Asset, short_dollar, format_percent, pretty_money, pretty_dollar, RAIDO_GLYPH, \
+from services.lib.money import short_dollar, format_percent, pretty_money, pretty_dollar, RAIDO_GLYPH, \
     calc_percent_change, adaptive_round_to_str, emoji_for_percent_change, short_address, short_money, short_rune, \
     pretty_percent, chart_emoji, pretty_rune
 from services.lib.texts import x_ses, progressbar, plural, bracketify, up_down_arrow, \
     bracketify_spaced, shorten_text
 from services.lib.w3.dex_analytics import DexReportEntry, DexReport
+from services.models.asset import Asset
 from services.models.cap_info import ThorCapInfo
 from services.models.flipside import AlertKeyStats
 from services.models.last_block import EventBlockSpeed, BlockProduceState

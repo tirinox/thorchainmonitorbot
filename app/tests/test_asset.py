@@ -1,4 +1,5 @@
-from services.lib.money import Asset, short_address
+from services.lib.money import short_address
+from services.models.asset import Asset
 
 
 def test_asset1():

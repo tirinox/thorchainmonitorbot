@@ -11,8 +11,9 @@ from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds, MINUTE
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
-from services.lib.money import Asset, DepthCurve, pretty_dollar
+from services.lib.money import DepthCurve, pretty_dollar
 from services.lib.utils import WithLogger
+from services.models.asset import Asset
 from services.models.memo import ActionType
 from services.models.tx import ThorTx, EventLargeTransaction
 from services.notify.types.cap_notify import LiquidityCapNotifier

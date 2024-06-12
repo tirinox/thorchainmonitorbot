@@ -6,8 +6,8 @@ from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds, DAY
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
-from services.lib.money import Asset
 from services.lib.utils import WithLogger
+from services.models.asset import Asset
 from services.models.time_series import TimeSeries
 from services.models.transfer import RuneTransfer, RuneCEXFlow
 

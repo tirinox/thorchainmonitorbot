@@ -17,17 +17,19 @@ from services.lib.explorers import get_explorer_url_to_address, get_thoryield_ad
     get_ip_info_link
 from services.lib.midgard.name_service import add_thor_suffix, NameMap
 from services.lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
-    emoji_for_percent_change, Asset, short_money, short_dollar, format_percent, RAIDO_GLYPH, short_rune, pretty_percent, \
+    emoji_for_percent_change, short_money, short_dollar, format_percent, RAIDO_GLYPH, short_rune, pretty_percent, \
     chart_emoji, pretty_rune
 from services.lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
     up_down_arrow, plural, shorten_text, cut_long_text, underline
 from services.lib.utils import grouper, translate
 from services.lib.w3.dex_analytics import DexReportEntry, DexReport
+from services.models.asset import Asset
 from services.models.cap_info import ThorCapInfo
 from services.models.flipside import AlertKeyStats
 from services.models.last_block import BlockProduceState, EventBlockSpeed
 from services.models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats, AlertLendingOpenUpdate
 from services.models.lp_info import LiquidityPoolReport
+from services.models.memo import ActionType
 from services.models.mimir import MimirChange, MimirHolder
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEvent, EventDataSlash, \
@@ -40,7 +42,6 @@ from services.models.s_swap import AlertSwapStart
 from services.models.savers import AlertSaverStats
 from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.tx import EventLargeTransaction
-from services.models.memo import ActionType
 
 
 class RussianLocalization(BaseLocalization):

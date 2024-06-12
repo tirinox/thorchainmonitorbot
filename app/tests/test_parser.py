@@ -5,8 +5,8 @@ import pytest
 from services.jobs.affiliate_merge import AffiliateTXMerger
 from services.lib.constants import NetworkIdents, THOR_DIVIDER, NATIVE_RUNE_SYMBOL
 from services.lib.midgard.parser import MidgardParserV2
-from services.lib.money import is_rune
 from services.lib.utils import load_json
+from services.models.asset import is_rune
 from services.models.tx import ThorCoin, ThorMetaSwap, ThorTx, ThorSubTx
 
 PATH = './sample_data'

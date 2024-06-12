@@ -7,8 +7,9 @@ from services.jobs.fetch.circulating import RuneCirculatingSupply
 from services.lib.config import Config
 from services.lib.constants import BTC_SYMBOL, STABLE_COIN_POOLS, thor_to_float, RUNE_IDEAL_SUPPLY
 from services.lib.date_utils import now_ts, DAY
-from services.lib.money import weighted_mean, Asset, is_rune
+from services.lib.money import weighted_mean
 from services.lib.texts import fuzzy_search
+from services.models.asset import Asset, is_rune
 from services.models.base import BaseModelMixin
 from services.models.pool_info import PoolInfo, PoolInfoMap
 

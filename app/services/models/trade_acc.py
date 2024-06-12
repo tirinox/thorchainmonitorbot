@@ -2,20 +2,29 @@ from typing import NamedTuple, List
 
 from aionode.types import ThorTradeUnits, ThorVault, ThorTradeAccount
 from services.models.pool_info import PoolInfoMap
+from services.models.tx import ThorTx
 
 
-class AlertTradeAccount(NamedTuple):
+class AlertTradeAccountAction(NamedTuple):
+    tx: ThorTx
+    actor: str
+    destination_address: str
+    amount: float
+    asset: str
+
+
+class AlertTradeAccountSummary(NamedTuple):
     total_usd: float
     pool2acc: dict[str, ThorTradeUnits]
     pools: PoolInfoMap
     pool2traders: dict[str, List[ThorTradeAccount]]
-    vault_balances: dict[str, ThorVault]
+    vault_balances: List[ThorVault]
 
     @classmethod
     def from_trade_units(cls, units: List[ThorTradeUnits],
                          pools: PoolInfoMap,
                          pool2traders: dict[str, List[ThorTradeAccount]],
-                         vaults: dict[str, ThorVault]):
+                         vaults: List[ThorVault]):
         pool2acc = {}
         total_usd = 0.0
         for unit in units:
