@@ -23,7 +23,7 @@ class SwapStartDetector(WithLogger):
         memo = THORMemo.parse_memo(msg.memo, no_raise=True)
 
         # Must be a swap!
-        if not memo or memo.action.value != ActionType.SWAP:
+        if not memo or memo.action != ActionType.SWAP:
             return
 
         if msg.coins:

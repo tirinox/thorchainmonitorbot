@@ -48,6 +48,8 @@ class ActionType(Enum):
     TRADE_ACC_DEPOSIT = 'trade+'
     TRADE_ACC_WITHDRAW = 'trade-'
 
+    GROUP_ADD_WITHDRAW = (ADD_LIQUIDITY, WITHDRAW, DONATE)
+
 
 MEMO_ACTION_TABLE = {
     "add": ActionType.ADD_LIQUIDITY,
