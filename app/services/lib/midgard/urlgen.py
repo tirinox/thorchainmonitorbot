@@ -1,4 +1,7 @@
 from abc import ABC, abstractmethod
+from enum import Enum
+
+from services.models.memo import ActionType
 
 
 class MidgardURLGenBase(ABC):
@@ -40,8 +43,13 @@ class MidgardURLGenV2(MidgardURLGenBase):
         if address:
             url += f'&address={address}'
         if tx_type:
-            if isinstance(tx_type, (list, tuple)):
-                tx_type = ','.join(tx_type)
+            if isinstance(tx_type, ActionType):
+                tx_type = tx_type.value
+            elif isinstance(tx_type, (list, tuple)):
+                tx_type = ','.join(
+                    t.value if isinstance(t, ActionType) else str(t)
+                    for t in tx_type
+                )
             url += f'&type={tx_type}'
         if txid:
             url += f'&txid={txid}'
