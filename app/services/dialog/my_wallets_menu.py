@@ -9,7 +9,7 @@ from aiogram.dispatcher.storage import FSMContextProxy
 from aiogram.types import *
 from aiogram.utils.helper import HelperMode
 
-from aionode.types import ThorSwapperClout
+from aionode.types import ThorSwapperClout, ThorCoin
 from localization.eng_base import BaseLocalization
 from services.dialog.base import message_handler, query_handler, DialogWithSettings
 from services.dialog.message_cat_db import MessageCategoryDB
@@ -17,7 +17,7 @@ from services.dialog.picture.lp_picture import generate_yield_picture, lp_addres
 from services.dialog.telegram.inline_list import TelegramInlineList
 from services.jobs.fetch.runeyield import get_rune_yield_connector
 from services.jobs.fetch.runeyield.borrower import BorrowerPositionGenerator
-from services.lib.constants import Chains, LOAN_MARKER
+from services.lib.constants import Chains, LOAN_MARKER, RUNE_DECIMALS
 from services.lib.date_utils import today_str, parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.draw_utils import img_to_bio
@@ -278,7 +278,7 @@ class MyWalletsMenu(DialogWithSettings):
         chain = Chains.detect_chain(address)
 
         balances, thor_name, local_name, clout = await asyncio.gather(
-            self.get_balances(address),
+            self.get_balances(address, with_trade_accounts=True),
             self.deps.name_service.lookup_name_by_address(address),
             self.get_name_service(message).get_wallet_local_name(address),
             self.get_clout(address)
@@ -754,10 +754,11 @@ class MyWalletsMenu(DialogWithSettings):
 
     # --- MISC ---
 
-    async def get_balances(self, address: str):
+    async def get_balances(self, address: str, with_trade_accounts=False):
         if LPAddress.is_thor_prefix(address):
             with suppress(Exception):
-                return await self.deps.thor_connector.query_balance(address)
+                balances = await self.deps.trade_acc_fetcher.get_whole_balances(address, with_trade_accounts)
+                return balances
 
     async def get_clout(self, address: str) -> Optional[ThorSwapperClout]:
         with suppress(Exception):

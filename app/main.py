@@ -28,6 +28,7 @@ from services.jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
 from services.jobs.fetch.profit_against_cex import StreamingSwapVsCexProfitCalculator
 from services.jobs.fetch.queue import QueueFetcher
 from services.jobs.fetch.savers_vnx import VNXSaversStatsFetcher
+from services.jobs.fetch.trade_accounts import TradeAccountFetcher
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.ilp_summer import ILPSummer
 from services.jobs.node_churn import NodeChurnDetector
@@ -111,6 +112,7 @@ class App(WithLogger):
         d.last_block_store = LastBlockStore(d)
         d.last_block_fetcher.add_subscriber(d.last_block_store)
         d.rune_market_fetcher = RuneMarketInfoFetcher(d)
+        d.trade_acc_fetcher = TradeAccountFetcher(d)
 
         self._init_settings()
         self._init_messaging()

@@ -602,3 +602,9 @@ lending:
     enabled: true
     cooldown: 1h
     threshold: 99  # %
+
+
+trade_accounts:  # (!) new
+    enabled: true
+    fetch_period: 2h
+    cooldown: 2d

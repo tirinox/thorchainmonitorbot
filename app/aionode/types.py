@@ -533,10 +533,6 @@ class ThorNativeTX(NamedTuple):
         )
 
 
-def trade_asset_to_normal(asset: str):
-    return asset.replace('~', '.', 1)
-
-
 class ThorTradeUnits(NamedTuple):
     asset: str
     units: int
@@ -545,7 +541,7 @@ class ThorTradeUnits(NamedTuple):
     @classmethod
     def from_json(cls, j):
         return cls(
-            asset=trade_asset_to_normal(j.get('asset')),
+            asset=j.get('asset'),
             units=int(j.get('units', 0)),
             depth=int(j.get('depth', 0))
         )
@@ -569,7 +565,7 @@ class ThorTradeAccount(NamedTuple):
     @classmethod
     def from_json(cls, j):
         return cls(
-            asset=trade_asset_to_normal(j.get('asset')),
+            asset=j.get('asset'),
             units=int(j.get('units', 0)),
             owner=j.get('owner', ''),
             last_add_height=int(j.get('last_add_height', 0)),

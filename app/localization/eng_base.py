@@ -348,8 +348,8 @@ class BaseLocalization(ABC):  # == English
             return ''
         items = []
         for coin in balances.assets:
-            postfix = ' ' + Asset(coin.asset).pretty_str
-            items.append(pre(short_money(coin.amount_float) + postfix))
+            postfix = ' ' + Asset.from_string(coin.asset).pretty_str
+            items.append(bold(short_money(coin.amount_float)) + ital(postfix))
 
         if len(items) == 1:
             result = f'{title} {items[0]}'

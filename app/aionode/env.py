@@ -57,6 +57,7 @@ class ThorEnvironment:
 
     path_trade_units = '/thorchain/trade/units?height={height}'
     path_trade_accounts = '/thorchain/trade/accounts/{asset}?height={height}'
+    path_trade_account = '/thorchain/trade/account/{wallet}?height={height}'
 
     kind: str = ''
 

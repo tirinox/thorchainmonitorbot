@@ -50,6 +50,13 @@ class Asset:
         else:
             return name_and_tag_str, ''
 
+    def upper(self):
+        asset = copy(self)
+        asset.chain = asset.chain.upper()
+        asset.name = asset.name.upper()
+        asset.tag = asset.tag.upper()
+        return asset
+
     @classmethod
     def from_string(cls, asset: str):
         try:
@@ -91,12 +98,13 @@ class Asset:
 
     @property
     def pretty_str(self):
+        pn = self._pretty_name.upper()
         if self.is_synth:
-            return f'synth {self._pretty_name}'.upper()
+            return f'synth {pn}'
         elif self.is_trade:
-            return f'trade {self._pretty_name}'.upper()
+            return f'trade {pn}'
         else:
-            return self._pretty_name.upper()
+            return pn
 
     @property
     def _pretty_name(self):
