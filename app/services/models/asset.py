@@ -1,7 +1,7 @@
 import dataclasses
 from copy import copy
 
-from attr import dataclass
+from dataclasses import dataclass
 
 from proto.common import Coin
 from services.lib.constants import RUNE_DENOM, Chains, NATIVE_RUNE_SYMBOL
@@ -92,11 +92,11 @@ class Asset:
     @property
     def pretty_str(self):
         if self.is_synth:
-            return f'synth {self._pretty_name}'
+            return f'synth {self._pretty_name}'.upper()
         elif self.is_trade:
-            return f'trade {self._pretty_name}'
+            return f'trade {self._pretty_name}'.upper()
         else:
-            return self._pretty_name
+            return self._pretty_name.upper()
 
     @property
     def _pretty_name(self):
