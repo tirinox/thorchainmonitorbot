@@ -73,7 +73,7 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
     loan_notifier = LoanTxNotifier(d, curve=curve)
     loan_extractor.add_subscriber(loan_notifier)
     loan_notifier.add_subscriber(d.alert_presenter)
-    await loan_notifier._ev_db.clear_tx_started_cache()
+    await loan_notifier.deduplicator.clear()
 
     # Run all together
     if single_block:

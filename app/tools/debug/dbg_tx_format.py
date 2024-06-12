@@ -355,7 +355,7 @@ async def dbg_refund_spam(app):
     for i, tx in enumerate(txs, start=1):
         sep(i)
 
-        await refund_notifier.mark_as_announced(tx.tx_hash, clear=True)
+        await refund_notifier.deduplicator.forget(tx.tx_hash)
         await volume_filler.on_data(None, [tx])
         await asyncio.sleep(1)
 

@@ -11,6 +11,7 @@ from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id, TxParseResult
 from services.lib.midgard.urlgen import free_url_gen
 from services.models.tx import ThorTx
+from services.notify.dup_stop import TxDeduplicator
 
 
 class TxFetcher(BaseFetcher):
@@ -36,6 +37,8 @@ class TxFetcher(BaseFetcher):
 
         self.pending_hash_to_height = {}
 
+        self.deduplicator = TxDeduplicator(deps.db, "tx:scanner:last_seen:hash")
+
         self.logger.info(f'New TX fetcher is created for {self.tx_types}')
 
     async def fetch(self):
@@ -49,7 +52,8 @@ class TxFetcher(BaseFetcher):
 
     async def post_action(self, txs: List[ThorTx]):
         hashes = [self.get_seen_hash(t) for t in txs]
-        await self.mark_tx_hashes_as_seen(hashes)
+        for h in hashes:
+            await self.deduplicator.mark_as_seen(h)
 
     # -----------------------
 
@@ -222,8 +226,7 @@ class TxFetcher(BaseFetcher):
             # filter out TXs from "selected_txs" that have been seen already
             unseen_new_txs = []
             for tx in selected_txs:
-                is_seen = await self.is_seen(self.get_seen_hash(tx))
-                if not is_seen:
+                if not await self.deduplicator.have_ever_seen(tx):
                     unseen_new_txs.append(tx)
 
                     # It was previously pending, but now it's successful
@@ -271,12 +274,3 @@ class TxFetcher(BaseFetcher):
             return True
         r: Redis = self.deps.db.redis
         return await r.sismember(self.KEY_LAST_SEEN_TX_HASH, tx_hash)
-
-    async def mark_tx_hashes_as_seen(self, hashes):
-        if hashes:
-            r: Redis = await self.deps.db.get_redis()
-            await r.sadd(self.KEY_LAST_SEEN_TX_HASH, *hashes)
-
-    async def clear_all_seen_tx(self):
-        r: Redis = await self.deps.db.get_redis()
-        await r.delete(self.KEY_LAST_SEEN_TX_HASH)

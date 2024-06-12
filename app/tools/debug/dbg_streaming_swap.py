@@ -139,7 +139,7 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
 
     swap_notifier_tx = SwapTxNotifier(d, d.cfg.tx.swap, curve=curve)
     if tx_id:
-        await swap_notifier_tx.mark_as_announced(tx_id, clear=True)
+        await swap_notifier_tx.deduplicator.forget(tx_id)
 
     swap_notifier_tx.dbg_evaluate_curve_for_pools()
     volume_filler.add_subscriber(swap_notifier_tx)

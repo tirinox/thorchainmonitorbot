@@ -2,8 +2,6 @@ import asyncio
 from contextlib import suppress
 from typing import List, Optional
 
-from redis.asyncio import Redis
-
 from aionode.types import ThorSwapperClout
 from services.jobs.scanner.event_db import EventDatabase
 from services.lib.config import SubConfig
@@ -16,7 +14,11 @@ from services.lib.utils import WithLogger
 from services.models.asset import Asset
 from services.models.memo import ActionType
 from services.models.tx import ThorTx, EventLargeTransaction
+from services.notify.dup_stop import TxDeduplicator, TxDeduplicatorSenderCooldown
 from services.notify.types.cap_notify import LiquidityCapNotifier
+from services.notify.types.s_swap_notify import DB_KEY_ANNOUNCED_SS_START
+
+DB_KEY_TX_ANNOUNCED_HASHES = 'tx:announced-hashes'
 
 
 class GenericTxNotifier(INotified, WithDelegates, WithLogger):
@@ -34,38 +36,11 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
         self.min_usd_total = int(params.min_usd_total)
         self.no_repeat_protection = True
 
-    DB_KEY_ANNOUNCED_TX_ID = 'tx:announced-hashes'
-
-    async def mark_as_announced(self, tx_id, clear=False):
-        if not tx_id:
-            return
-
-        r: Redis = self.deps.db.redis
-        if clear:
-            await r.srem(self.DB_KEY_ANNOUNCED_TX_ID, tx_id)
-        else:
-            await r.sadd(self.DB_KEY_ANNOUNCED_TX_ID, tx_id)
-
-    async def is_announced(self, tx: ThorTx):
-        if not tx or not tx.tx_hash:
-            return True
-
-        r: Redis = self.deps.db.redis
-        return await r.sismember(self.DB_KEY_ANNOUNCED_TX_ID, tx.tx_hash)
+        self.deduplicator = TxDeduplicator(deps.db, DB_KEY_TX_ANNOUNCED_HASHES)
 
     async def on_data(self, senders, txs: List[ThorTx]):
         with suppress(Exception):
             await self.handle_txs_unsafe(senders, txs)
-
-    async def _only_new_transactions(self, txs: List[ThorTx]):
-        flags = await asyncio.gather(*[self.is_announced(tx) for tx in txs])
-        tmp_txs = []
-        for flag, tx in zip(flags, txs):
-            if flag:
-                self.logger.warning(f'Tx {tx.tx_hash} ({tx.type}) has been already announced. Ignore!')
-            else:
-                tmp_txs.append(tx)
-        return tmp_txs
 
     async def handle_txs_unsafe(self, senders, txs: List[ThorTx]):
         # 1. filter irrelevant tx types
@@ -73,7 +48,7 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
 
         # 2. Throw away announced Txs in the past
         if self.no_repeat_protection:
-            txs = await self._only_new_transactions(txs)
+            txs = await self.deduplicator.only_new_transactions(txs)
 
         if not txs:
             return
@@ -116,7 +91,7 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
             await self.pass_data_to_listeners(event)
 
             if self.no_repeat_protection:
-                await self.mark_as_announced(tx.tx_hash)
+                await self.deduplicator.mark_as_seen(tx.tx_hash)
 
     async def _get_clout(self, address) -> Optional[ThorSwapperClout]:
         try:
@@ -200,17 +175,15 @@ class SwapTxNotifier(GenericTxNotifier):
         self.min_streaming_swap_usd = params.as_float('also_trigger_when.streaming_swap.volume_greater', 2500)
         self._txs_started = []  # Fill it every tick before is_tx_suitable is called.
         self._ev_db = EventDatabase(deps.db)
+        self.swap_start_deduplicator = TxDeduplicator(deps.db, DB_KEY_ANNOUNCED_SS_START)
 
     async def _check_if_they_announced_as_started(self, txs: List[ThorTx]):
         if not txs:
             return
 
-        tx_ids = [tx.tx_hash for tx in txs]
+        only_new_txs = await self.swap_start_deduplicator.only_new_transactions(txs)
 
-        flags = await asyncio.gather(
-            *[self._ev_db.is_announced_as_started(tx_id) for tx_id in tx_ids]
-        )
-        self._txs_started = set(tx_id for tx_id, flag in zip(tx_ids, flags) if flag)
+        self._txs_started = set(tx.tx_hash for tx in only_new_txs)
         if self._txs_started:
             self.logger.info(f'These Txs were announced as started SS: {self._txs_started}')
 
@@ -248,16 +221,9 @@ class RefundTxNotifier(GenericTxNotifier):
         super().__init__(deps, params, (ActionType.REFUND,), curve)
         self.cd_period = params.as_interval('cooldown', 5 * MINUTE)
 
-    async def is_announced(self, tx: ThorTx):
-        before = await super().is_announced(tx)
-        if before:
-            return True
-
-        # for each sender, we have a separate cooldown
-        refund_cd = Cooldown(self.deps.db, f'Refund-{tx.sender_address}', self.cd_period)
-        if not await refund_cd.can_do():
-            self.logger.warning(f'Refund announcement cooldown went off!')
-            return True
-
-        await refund_cd.do()
-        return False
+        # Deduplicator with cooldown for each tx sender
+        self.deduplicator = TxDeduplicatorSenderCooldown(
+            deps.db, DB_KEY_TX_ANNOUNCED_HASHES,
+            'Refund',
+            self.cd_period
+        )

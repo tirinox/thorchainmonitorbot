@@ -6,6 +6,9 @@ from services.lib.depcont import DepContainer
 from services.lib.money import pretty_dollar
 from services.lib.utils import WithLogger, safe_get
 from services.models.s_swap import AlertSwapStart
+from services.notify.dup_stop import TxDeduplicator
+
+DB_KEY_ANNOUNCED_SS_START = 'tx:ss-started:announced-hashes'
 
 
 class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
@@ -19,6 +22,8 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
             'tx.swap.also_trigger_when.streaming_swap.volume_greater', 2500.0)
         self.check_unique = True
         self.logger.info(f'min_streaming_swap_usd = {pretty_dollar(self.min_streaming_swap_usd)}')
+
+        self.deduplicator = TxDeduplicator(deps.db, DB_KEY_ANNOUNCED_SS_START)
 
     async def on_data(self, sender, data: BlockResult):
         if self.min_streaming_swap_usd <= 0.0:
@@ -42,7 +47,7 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
             return False
 
         if self.check_unique:
-            if await self._ev_db.is_announced_as_started(swap_start_ev.tx_id):
+            if await self.deduplicator.have_ever_seen_hash(swap_start_ev.tx_id):
                 return False
 
         return True
@@ -50,7 +55,7 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
     async def _relay_new_event(self, event: AlertSwapStart):
         await self._load_status_info(event)
         self._correct_streaming_swap_info(event)
-        await self._ev_db.announce_tx_started(event.tx_id)
+        await self.deduplicator.mark_as_seen(event.tx_id)
         await self.pass_data_to_listeners(event)
 
     async def _load_status_info(self, event: AlertSwapStart):

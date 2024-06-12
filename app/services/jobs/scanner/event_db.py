@@ -73,21 +73,3 @@ class EventDatabase(WithLogger):
         with open(filename, 'w') as f:
             json.dump(local_db, f, indent=4)
             self.logger.info(f'Saved a backup containing {len(local_db)} records.')
-
-    DB_KEY_SS_STARTED_SET = 'tx:ss-started-set'
-
-    async def is_announced_as_started(self, tx_id: str) -> bool:
-        if not tx_id:
-            return True
-        r: Redis = await self.db.get_redis()
-        return bool(await r.sismember(self.DB_KEY_SS_STARTED_SET, tx_id))
-
-    async def announce_tx_started(self, tx_id: str):
-        if tx_id:
-            r: Redis = await self.db.get_redis()
-            await r.sadd(self.DB_KEY_SS_STARTED_SET, tx_id)
-
-    async def clear_tx_started_cache(self):
-        with suppress(Exception):
-            r: Redis = await self.db.get_redis()
-            await r.delete(self.DB_KEY_SS_STARTED_SET)
