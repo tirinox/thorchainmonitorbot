@@ -212,10 +212,15 @@ class SwapTxNotifier(GenericTxNotifier):
 
         # d) If we announce that the streaming swap has started, then we should announce that it's finished,
         # regardless of its volume.
-        if tx.tx_hash in self._txs_started:
+        if tx.tx_hash in self._ss_txs_started:
             return True
 
-        # e) Regular rules are applied
+        # e) If trade asset involved
+        if tx.is_trade_asset_involved:
+            if tx.full_rune >= self.min_trade_asset_swap_usd / usd_per_rune:
+                return True
+
+        # f) Regular rules are applied
         return super().is_tx_suitable(tx, min_rune_volume, usd_per_rune, curve_mult)
 
 

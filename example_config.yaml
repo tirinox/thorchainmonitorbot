@@ -301,6 +301,8 @@ tx:
       streaming_swap:
         volume_greater: 25000
         notify_start: true
+      trade_asset_swap: # (!) new
+        volume_greater: 10_000
 
   donate:
     enabled: true
