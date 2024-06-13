@@ -37,7 +37,7 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
             if await self.is_swap_eligible(swap_start_ev):
                 await self._relay_new_event(swap_start_ev)
 
-    async def is_swap_eligible(self, swap_start_ev):
+    async def is_swap_eligible(self, swap_start_ev: AlertSwapStart):
         # print(f'Swap {swap_start_ev.is_streaming = }, {swap_start_ev.volume_usd = }')
 
         if not swap_start_ev.is_streaming:
@@ -55,8 +55,10 @@ class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):
     async def _relay_new_event(self, event: AlertSwapStart):
         await self._load_status_info(event)
         self._correct_streaming_swap_info(event)
-        await self.deduplicator.mark_as_seen(event.tx_id)
-        await self.pass_data_to_listeners(event)
+        if event.is_streaming:
+            await self.deduplicator.mark_as_seen(event.tx_id)
+
+        await self.pass_data_to_listeners(event)  # alert!
 
     async def _load_status_info(self, event: AlertSwapStart):
         try:

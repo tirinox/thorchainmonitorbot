@@ -39,8 +39,10 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
         self.deduplicator = TxDeduplicator(deps.db, DB_KEY_TX_ANNOUNCED_HASHES)
 
     async def on_data(self, senders, txs: List[ThorTx]):
-        with suppress(Exception):
+        try:
             await self.handle_txs_unsafe(senders, txs)
+        except Exception as e:
+            self.logger.exception(f"Failed! {e}")
 
     async def handle_txs_unsafe(self, senders, txs: List[ThorTx]):
         # 1. filter irrelevant tx types
@@ -48,7 +50,7 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
 
         # 2. Throw away announced Txs in the past
         if self.no_repeat_protection:
-            txs = await self.deduplicator.only_new_transactions(txs)
+            txs = await self.deduplicator.only_new_txs(txs)
 
         if not txs:
             return
@@ -173,7 +175,8 @@ class SwapTxNotifier(GenericTxNotifier):
         self.dex_min_usd = params.as_float('also_trigger_when.dex_aggregator_used.min_usd_total', 500)
         self.aff_fee_min_usd = params.as_float('also_trigger_when.affiliate_fee_usd_greater', 500)
         self.min_streaming_swap_usd = params.as_float('also_trigger_when.streaming_swap.volume_greater', 2500)
-        self._txs_started = []  # Fill it every tick before is_tx_suitable is called.
+        self.min_trade_asset_swap_usd = params.as_float('also_trigger_when.streaming_swap.trade_asset_swap', 2500)
+        self._ss_txs_started = []  # Fill it every tick before is_tx_suitable is called.
         self._ev_db = EventDatabase(deps.db)
         self.swap_start_deduplicator = TxDeduplicator(deps.db, DB_KEY_ANNOUNCED_SS_START)
 
@@ -181,11 +184,11 @@ class SwapTxNotifier(GenericTxNotifier):
         if not txs:
             return
 
-        only_new_txs = await self.swap_start_deduplicator.only_new_transactions(txs)
+        only_seen_ss_txs = await self.swap_start_deduplicator.only_seen_txs(txs)
 
-        self._txs_started = set(tx.tx_hash for tx in only_new_txs)
-        if self._txs_started:
-            self.logger.info(f'These Txs were announced as started SS: {self._txs_started}')
+        self._ss_txs_started = set(tx.tx_hash for tx in only_seen_ss_txs)
+        if self._ss_txs_started:
+            self.logger.info(f'These Txs were announced as started SS before: {self._ss_txs_started}')
 
     async def handle_txs_unsafe(self, senders, txs: List[ThorTx]):
         await self._check_if_they_announced_as_started(txs)

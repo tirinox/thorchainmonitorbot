@@ -42,6 +42,8 @@ class Broadcaster(WithLogger):
         return await self.deps.gen_alert_settings_proc.get_general_alerts_channels(self.deps.settings_manager)
 
     async def notify_preconfigured_channels(self, f, *args, **kwargs):
+        # todo: rename!
+
         subscribed_channels = await self.get_subscribed_channels()
         all_channels = self.channels + subscribed_channels
 
