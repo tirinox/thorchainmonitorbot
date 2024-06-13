@@ -482,7 +482,7 @@ class BaseLocalization(ABC):  # == English
                 # todo use self.pretty_asset
                 a = Asset(tx.first_asset)
                 chain = a.chain if a.chain else Chains.THOR
-                if a.is_synth:
+                if a.is_synth or a.is_trade:
                     chain = Chains.THOR
                 url = get_explorer_url_to_tx(net, chain, tx_id)
                 items.append(link(url, text=a.pretty_str_no_emoji))

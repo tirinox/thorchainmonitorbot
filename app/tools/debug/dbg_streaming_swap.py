@@ -13,7 +13,7 @@ from services.jobs.scanner.swap_extractor import SwapExtractorBlock
 from services.jobs.user_counter import UserCounter
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.jobs.volume_recorder import VolumeRecorder
-from services.models.asset import Asset
+from services.models.asset import Asset, AssetRUNE
 from services.lib.money import DepthCurve
 from services.lib.texts import sep
 from services.lib.utils import setup_logs
@@ -280,8 +280,9 @@ async def run():
         # await debug_full_pipeline(app, start=14519387 - 1)
 
         # await debug_fetch_ss(app)
-        await debug_block_analyse(app, block=16374337)
-        # await debug_full_pipeline(app, start=16374337, single_block=True)
+        await debug_block_analyse(app, block=16388225)
+        # await debug_full_pipeline(app, start=16387377, single_block=True,
+        #                           tx_id='BE7B085E50DE86CD9BD8959ABF3EA924AC60302330888D484219B8B7385F7B1D')
         # await debug_tx_records(app, 'E8766E3D825A7BFD755ECA14454256CA25980F8B4BA1C9DCD64ABCE4904F033D')
 
         # await debug_full_pipeline(

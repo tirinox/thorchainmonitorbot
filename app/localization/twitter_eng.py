@@ -911,7 +911,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             return '???'
 
         asset = Asset(name.upper())
-        synth = 'synth ' if asset.is_synth else ''
+        synth = 'synth ' if asset.is_synth else ('trade ' if asset.is_trade else '')
 
         chain = f' ({asset.chain})' if 'USD' in asset.name or 'BNB' in asset.name else ''
 

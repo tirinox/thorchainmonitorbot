@@ -41,6 +41,8 @@ class Asset:
             self.tag = a.tag
             self.is_synth = a.is_synth
             self.is_virtual = a.is_virtual
+            self.is_trade = a.is_trade
+            # don't forget to copy the rest of fields if you add them!
 
     @staticmethod
     def get_name_tag(name_and_tag_str):

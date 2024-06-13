@@ -1932,7 +1932,7 @@ class RussianLocalization(BaseLocalization):
 
     @staticmethod
     def pretty_asset(name):
-        return BaseLocalization.pretty_asset(name).replace('synth', 'синт.')
+        return BaseLocalization.pretty_asset(name).replace('synth', 'синт.').replace('trade', 'торг.')
 
     def notification_text_pol_utilization(self, event: AlertPOL):
         text = '🥃 <b>POL: ликвидность от самого протокола</b>\n\n'
