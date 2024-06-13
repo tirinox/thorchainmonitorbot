@@ -1,4 +1,5 @@
 import datetime
+import os
 import sys
 from collections import defaultdict
 from typing import List, Optional
@@ -180,6 +181,7 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
     # --- debug and research ---
 
     def dbg_open_file(self, filename):
+        os.makedirs(os.path.dirname(filename), exist_ok=True)
         self.dbg_file = open(filename, 'w')
 
     def __del__(self):

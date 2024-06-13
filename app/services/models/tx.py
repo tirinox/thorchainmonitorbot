@@ -7,7 +7,7 @@ from services.lib.constants import RUNE_SYMBOL, Chains, thor_to_float, bp_to_flo
 from services.lib.date_utils import now_ts
 from services.lib.texts import safe_sum
 from services.lib.w3.token_record import SwapInOut
-from services.models.asset import Asset, is_rune
+from services.models.asset import Asset, is_rune, ASSET_TRADE_SEPARATOR
 from services.models.cap_info import ThorCapInfo
 from services.models.lp_info import LPAddress
 from services.models.memo import ActionType
@@ -507,6 +507,15 @@ class ThorTx:
     @property
     def dex_aggregator_used(self):
         return bool(self.dex_info.swap_in) or bool(self.dex_info.swap_out)
+
+    @property
+    def is_trade_asset_involved(self):
+        for sub_tx in self.search_realm():
+            for coin in sub_tx.coins:
+                if ASSET_TRADE_SEPARATOR in coin.asset:
+                    return True
+
+        return False
 
     @property
     def is_streaming(self):

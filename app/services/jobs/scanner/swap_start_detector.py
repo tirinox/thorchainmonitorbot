@@ -17,7 +17,7 @@ class SwapStartDetector(WithLogger):
         super().__init__()
         self.deps = deps
 
-    def make_ss_event(self, msg, tx_hash, height) -> Optional[AlertSwapStart]:
+    def make_ss_event(self, msg, tx_hash, height, is_deposit) -> Optional[AlertSwapStart]:
         ph = self.deps.price_holder
 
         memo = THORMemo.parse_memo(msg.memo, no_raise=True)
@@ -50,6 +50,10 @@ class SwapStartDetector(WithLogger):
                 in_pool_info = ph.find_pool(in_pool_name)
                 volume_usd = in_amount * in_pool_info.usd_per_asset
 
+                if is_deposit and not in_asset.is_synth:
+                    # It is not a synth, but it is deposited by a native tx? hm... is it real? Ah, must be TRADE ASSET!
+                    in_asset.is_trade = True
+
             if hasattr(msg, 'from_address'):
                 from_address = msg.from_address
             else:
@@ -78,7 +82,7 @@ class SwapStartDetector(WithLogger):
         for tx in txs:
             try:
                 msg: MsgDeposit = tx.first_message
-                if event := self.make_ss_event(msg, tx.hash, height):
+                if event := self.make_ss_event(msg, tx.hash, height, is_deposit=True):
                     results.append(event)
             except Exception as e:
                 self.logger.error(f'Could not parse DepositTx TX ({tx.hash}): {e!r}')
@@ -98,7 +102,7 @@ class SwapStartDetector(WithLogger):
         for tx in txs:
             try:
                 # Instead of Message there goes just Tx. For this particular test their attributes are compatible!
-                if event := self.make_ss_event(tx, tx.id, height):
+                if event := self.make_ss_event(tx, tx.id, height, is_deposit=False):
                     results.append(event)
             except Exception as e:
                 self.logger.error(f'Could not parse Observed In TX ({tx.id}): {e!r}')
