@@ -196,6 +196,11 @@ class NativeScannerBlock(BaseFetcher):
             self.deps.emergency.report(self.NAME, 'Error fetching block', block_no=block_no)
 
     async def fetch_one_block(self, block_index) -> Optional[BlockResult]:
+        """
+        Fetches one block by its height. Combines fetch_block_results and fetch_block_txs
+        Does not save the block to the database.
+        """
+
         # This is needed to get the block results namely Logs and Tx status codes.
         block_result = await self.fetch_block_results(block_index)
         if block_result is None:
