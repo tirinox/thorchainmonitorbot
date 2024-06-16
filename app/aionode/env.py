@@ -50,6 +50,7 @@ class ThorEnvironment:
     path_tx_details = '/thorchain/tx/details/{txid}'
     path_tx_stages = '/thorchain/tx/stages/{txid}'
     path_tx_status = '/thorchain/tx/status/{txid}'
+    path_tx_simple = '/thorchain/tx/{txid}'
 
     path_block_results = '/block_results?height={height}'
 

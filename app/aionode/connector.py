@@ -95,8 +95,6 @@ class ThorConnector:
 
     async def query_native_tx(self, tx_hash: str, before_hard_fork=False):
         tx_hash = str(tx_hash)
-        if not tx_hash.startswith('0x') and not tx_hash.startswith('0X'):
-            tx_hash = f'0x{tx_hash}'
 
         path_pattern = self.env.path_tx_by_hash_old if before_hard_fork else self.env.path_tx_by_hash
         path = path_pattern.format(hash=tx_hash)
@@ -164,6 +162,16 @@ class ThorConnector:
 
     async def query_tx_stages(self, tx_hash: str):
         url = self.env.path_tx_stages.format(txid=tx_hash)
+        data = await self._request(url)
+        return data
+
+    async def query_tx_details(self, tx_hash: str):
+        url = self.env.path_tx_details.format(txid=tx_hash)
+        data = await self._request(url)
+        return data
+
+    async def query_tx_simple(self, tx_hash: str):
+        url = self.env.path_tx_simple.format(txid=tx_hash)
         data = await self._request(url)
         return data
 
