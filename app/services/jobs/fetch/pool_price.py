@@ -62,6 +62,10 @@ class PoolFetcher(BaseFetcher):
         return rune_market_info
 
     async def reload_global_pools(self) -> PoolInfoMap:
+        """
+        Loads pools and store them into deps.price_holder
+        Returns: PoolInfoMap
+        """
         price_holder = self.deps.price_holder
 
         current_pools = await self.load_pools()

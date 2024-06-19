@@ -1,10 +1,12 @@
 import asyncio
+import pprint
 
 from localization.eng_base import BaseLocalization
 from services.jobs.fetch.trade_accounts import TradeAccountFetcher
 from services.jobs.scanner.native_scan import NativeScannerBlock
 from services.jobs.scanner.trade_acc import TradeAccEventDecoder
 from services.lib.texts import sep
+from services.models.trade_acc import AlertTradeAccountAction
 from tools.lib.lp_common import LpAppFramework
 
 
@@ -27,9 +29,13 @@ TX_DEPOSIT_BLOCK_HEIGHT = 16391695
 TX_ID_WITHDRAWAL = "8F61556AC39FD3EC6C79D3F00B3D47E1AB62F0879B74FF63B6AE2E1EFF6F7978"
 TX_WITHDRAWAL_BLOCK_HEIGHT = 16389279
 
+TX_WITHDRAW_USDT = '5CADA8C13A6CAC009F1B3653979F17CBAB8BAC416D2DB8E265EE8CE73C4366F6'
+TX_WITHDRAW_USDT_BLOCK_HEIGHT = 16469565
+
 BLOCK_MAP = {
     TX_ID_DEPOSIT: TX_DEPOSIT_BLOCK_HEIGHT,
     TX_ID_WITHDRAWAL: TX_WITHDRAWAL_BLOCK_HEIGHT,
+    TX_WITHDRAW_USDT: TX_WITHDRAW_USDT_BLOCK_HEIGHT,
 }
 
 
@@ -39,9 +45,20 @@ async def demo_decode_trade_acc(app: LpAppFramework, tx_id):
     height = BLOCK_MAP[tx_id]
     block = await scanner.fetch_one_block(height)
 
-    dcd = TradeAccEventDecoder(app.deps.db)
+    dcd = TradeAccEventDecoder(app.deps.db, app.deps.price_holder)
     r = await dcd.on_data(None, block)
-    print(r)
+
+    if not r:
+        print('No trade acc event found')
+        return
+    else:
+        # print total
+        print(f"Total found {len(r)} txs")
+
+    event: AlertTradeAccountAction = r[0]
+    pprint.pprint(event, width=1)
+
+    # await app.test_all_locs(BaseLocalization.notification_text_trade_account_move, None, event)
 
 
 async def run():
@@ -52,7 +69,13 @@ async def run():
         await app.deps.mimir_const_fetcher.run_once()
 
         # await demo_trade_balance(app)
-        await demo_decode_trade_acc(app, TX_ID_WITHDRAWAL)
+        # await demo_decode_trade_acc(app, TX_ID_DEPOSIT)
+        # sep()
+        # await demo_decode_trade_acc(app, TX_ID_WITHDRAWAL)
+        # sep()
+
+        await demo_decode_trade_acc(app, TX_WITHDRAW_USDT)
+        sep()
 
 
 if __name__ == '__main__':

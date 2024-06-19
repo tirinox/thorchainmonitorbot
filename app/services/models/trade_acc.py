@@ -1,16 +1,22 @@
 from typing import NamedTuple, List
 
 from aionode.types import ThorTradeUnits, ThorVault, ThorTradeAccount
+from proto.access import NativeThorTx
 from services.models.pool_info import PoolInfoMap
-from services.models.tx import ThorTx
 
 
 class AlertTradeAccountAction(NamedTuple):
-    tx: ThorTx
+    tx: NativeThorTx
     actor: str
     destination_address: str
     amount: float
+    usd_amount: float
     asset: str
+    is_deposit: bool
+
+    @property
+    def is_withdraw(self) -> bool:
+        return not self.is_deposit
 
 
 class AlertTradeAccountSummary(NamedTuple):
