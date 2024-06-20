@@ -13,9 +13,11 @@ class AlertTradeAccountAction(NamedTuple):
     usd_amount: float
     asset: str
     is_deposit: bool
+    chain: str
+    wait_time: float = 0.0
 
     @property
-    def is_withdraw(self) -> bool:
+    def is_withdrawal(self) -> bool:
         return not self.is_deposit
 
 

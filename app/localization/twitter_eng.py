@@ -32,6 +32,7 @@ from services.models.pool_info import PoolMapPair, PoolChanges, PoolInfo
 from services.models.price import RuneMarketInfo, AlertPrice
 from services.models.s_swap import AlertSwapStart
 from services.models.savers import AlertSaverStats
+from services.models.trade_acc import AlertTradeAccountAction
 from services.models.transfer import RuneCEXFlow, RuneTransfer
 from services.models.tx import EventLargeTransaction
 from services.notify.channel import MESSAGE_SEPARATOR
@@ -48,6 +49,9 @@ class TwitterEnglishLocalization(BaseLocalization):
     def smart_split(cls, parts):
         parts = twitter_intelligent_text_splitter(parts)
         return MESSAGE_SEPARATOR.join(parts).strip()
+
+    def link_to_tx(self, tx_id, chain=Chains.THOR, label="TX"):
+        return "TX:" + get_explorer_url_to_tx(self.cfg.network_id, chain, tx_id)
 
     PIC_NODE_DIVERSITY_BY_PROVIDER_CAPTION = 'THORChain nodes'
 
@@ -913,7 +917,12 @@ class TwitterEnglishLocalization(BaseLocalization):
         asset = Asset(name.upper())
         synth = 'synth ' if asset.is_synth else ('trade ' if asset.is_trade else '')
 
-        chain = f' ({asset.chain})' if 'USD' in asset.name or 'BNB' in asset.name else ''
+        if asset.name == asset.chain and not asset.tag:
+            chain = ''
+        elif 'USD' in asset.name or 'BNB' in asset.name:
+            chain = f' ({asset.chain})'
+        else:
+            chain = ''
 
         # we add '$' before assets to mention the asset name in Twitter
         return f'{synth}${asset.name}{chain}'
@@ -1006,4 +1015,18 @@ class TwitterEnglishLocalization(BaseLocalization):
             f'🟢 A lending opportunity is now available in the {self.pretty_asset(event.asset)} pool.\n'
             f'{available_collateral} {pool_name} can be deposited as collateral.\n'
             f'Current fill level: {format_percent(event.pool_state.fill_ratio, total=1.0)}.\n'
+        )
+
+    # ------ TRADE ACCOUNT ------
+
+    def notification_text_trade_account_move(self, event: AlertTradeAccountAction, name_map: NameMap):
+        # todo
+        action_str = 'deposit' if event.is_deposit else 'withdrawal'
+        from_link, to_link, amt_str = self._trade_acc_from_to_links(event, name_map)
+        return (
+            f"🏦 Trade account {action_str}\n"
+            f"👤 From {from_link}"
+            f" to {to_link}\n"
+            f"Total: {amt_str}\n"
+            f"{self.link_to_tx(event.tx.hash)}"
         )

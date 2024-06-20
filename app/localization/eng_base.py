@@ -23,7 +23,7 @@ from services.lib.money import format_percent, pretty_money, short_address, shor
     RAIDO_GLYPH, short_rune, pretty_percent, chart_emoji, pretty_rune
 from services.lib.texts import progressbar, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
     up_down_arrow, bracketify, plural, join_as_numbered_list, regroup_joining, shorten_text, cut_long_text, underline
-from services.lib.utils import grouper, run_once
+from services.lib.utils import grouper, run_once, identity
 from services.lib.w3.dex_analytics import DexReport, DexReportEntry
 from services.lib.w3.token_record import AmountToken
 from services.models.asset import Asset
@@ -45,6 +45,7 @@ from services.models.price import AlertPrice, RuneMarketInfo
 from services.models.queue import QueueInfo
 from services.models.s_swap import AlertSwapStart
 from services.models.savers import how_much_savings_you_can_add, AlertSaverStats
+from services.models.trade_acc import AlertTradeAccountAction
 from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.tx import ThorTx, ThorSubTx, EventLargeTransaction
 from services.notify.channel import Messengers
@@ -110,6 +111,9 @@ class BaseLocalization(ABC):  # == English
     def _cap_progress_bar(info: ThorCapInfo):
         return (f'{progressbar(info.pooled_rune, info.cap, 10)} '
                 f'({format_percent(info.pooled_rune, info.cap)})')
+
+    def link_to_tx(self, tx_id, chain=Chains.THOR, label="TX"):
+        return link(get_explorer_url_to_tx(self.cfg.network_id, chain, tx_id), label)
 
     # ---- WELCOME ----
     def help_message(self):
@@ -2586,7 +2590,7 @@ class BaseLocalization(ABC):  # == English
         asset = ' ' + Asset(l.collateral_asset).pretty_str
         target_asset = Asset(l.target_asset).pretty_str
         db_link = link(self.LENDING_DASHBOARD_URL, "Dashboard")
-        # tx_link = link(get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, event.tx_id), "TX")
+        # tx_link = self.link_to_tx(event.tx_id)
         return (
             '🏦→ <b>Loan open</b>\n'
             f'Collateral deposited: {code(pretty_money(l.collateral_float, postfix=asset))}'
@@ -2695,6 +2699,31 @@ class BaseLocalization(ABC):  # == English
         )
 
     TEXT_LENDING_STATS_NO_DATA = '😩 Sorry. We have not gotten any data for lending stats yet.'
+
+    # ------ TRADE ACCOUNT ------
+
+    def notification_text_trade_account_move(self, event: AlertTradeAccountAction, name_map: NameMap):
+        action_str = 'deposit' if event.is_deposit else 'withdrawal'
+        from_link, to_link, amt_str = self._trade_acc_from_to_links(event, name_map)
+        arrow = '➡' if event.is_deposit else '⬅'
+        return (
+            f"{arrow}🏦 <b>Trade account {action_str}</b> {self.link_to_tx(event.tx.hash)}\n"
+            f"👤 From {from_link}"
+            f" to {to_link}\n"
+            f"Total: {amt_str}"
+        )
+
+    def _trade_acc_from_to_links(self, event: AlertTradeAccountAction, name_map, formatting=True):
+        from_link = self.link_to_address(event.actor, name_map,
+                                         chain=(Chains.THOR if event.is_withdrawal else event.chain))
+        to_link = self.link_to_address(event.destination_address, name_map,
+                                       chain=(Chains.THOR if event.is_deposit else event.chain))
+        code_loc = code if formatting else identity
+        usd_str = f" ({pretty_dollar(event.usd_amount)})" if 'USD' not in event.asset.upper() else ''
+        amt_str = (
+            f"{code_loc(pretty_money(event.amount))} {self.pretty_asset(event.asset)}{usd_str}"
+        )
+        return from_link, to_link, amt_str
 
     # ------ Bond providers alerts ------
 

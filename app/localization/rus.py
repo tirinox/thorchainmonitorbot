@@ -40,6 +40,7 @@ from services.models.price import AlertPrice, RuneMarketInfo
 from services.models.queue import QueueInfo
 from services.models.s_swap import AlertSwapStart
 from services.models.savers import AlertSaverStats
+from services.models.trade_acc import AlertTradeAccountAction
 from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.tx import EventLargeTransaction
 
@@ -1050,6 +1051,19 @@ class RussianLocalization(BaseLocalization):
         return 'THORChain недельная статистика'
 
     TEXT_WEEKLY_STATS_NO_DATA = '😩 Нет данных по статистике за этот период.'
+
+    # ------ TRADE ACCOUNT ------
+
+    def notification_text_trade_account_move(self, event: AlertTradeAccountAction, name_map: NameMap):
+        action_str = 'Депозит на торговый счет' if event.is_deposit else 'Вывод с торгового счета'
+        from_link, to_link, amt_str = self._trade_acc_from_to_links(event, name_map)
+        arrow = '➡' if event.is_deposit else '⬅'
+        return (
+            f"{arrow}🏦 <b>{action_str}</b>\n"
+            f"👤 От {from_link}"
+            f" на {to_link}\n"
+            f"Всего: {amt_str}"
+        )
 
     # ------- NETWORK NODES -------
 

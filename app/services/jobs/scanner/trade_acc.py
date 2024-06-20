@@ -7,7 +7,6 @@ from services.lib.constants import thor_to_float
 from services.lib.db import DB
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.logs import WithLogger
-from services.models.asset import Asset
 from services.models.memo import THORMemo, ActionType
 from services.models.price import LastPriceHolder
 from services.models.trade_acc import AlertTradeAccountAction
@@ -74,7 +73,8 @@ class TradeAccEventDecoder(WithLogger, INotified, WithDelegates):
             amount=amount,
             usd_amount=usd_amount,
             asset=asset,
-            is_deposit=True
+            chain=coin.asset.chain,
+            is_deposit=True,
         )
 
     def _make_withdraw(self, memo, tx, tx_id):
@@ -95,5 +95,6 @@ class TradeAccEventDecoder(WithLogger, INotified, WithDelegates):
             amount=amount,
             usd_amount=usd_amount,
             asset=asset,
+            chain=coin.asset.chain,
             is_deposit=False,
         )

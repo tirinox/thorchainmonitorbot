@@ -32,10 +32,14 @@ TX_WITHDRAWAL_BLOCK_HEIGHT = 16389279
 TX_WITHDRAW_USDT = '5CADA8C13A6CAC009F1B3653979F17CBAB8BAC416D2DB8E265EE8CE73C4366F6'
 TX_WITHDRAW_USDT_BLOCK_HEIGHT = 16469565
 
+TX_ID_DEPOSIT_BTC = '442371c470efb32c1d91651889da5af900306dcff43cfdbf678d56ce2a84be2b'
+TX_DEPOSIT_BTC_BLOCK_HEIGHT = 16485260
+
 BLOCK_MAP = {
     TX_ID_DEPOSIT: TX_DEPOSIT_BLOCK_HEIGHT,
     TX_ID_WITHDRAWAL: TX_WITHDRAWAL_BLOCK_HEIGHT,
     TX_WITHDRAW_USDT: TX_WITHDRAW_USDT_BLOCK_HEIGHT,
+    TX_ID_DEPOSIT_BTC: TX_DEPOSIT_BTC_BLOCK_HEIGHT,
 }
 
 
@@ -58,7 +62,10 @@ async def demo_decode_trade_acc(app: LpAppFramework, tx_id):
     event: AlertTradeAccountAction = r[0]
     pprint.pprint(event, width=1)
 
-    # await app.test_all_locs(BaseLocalization.notification_text_trade_account_move, None, event)
+    name_map = await app.deps.name_service.safely_load_thornames_from_address_set(
+        [event.actor, event.destination_address]
+    )
+    await app.test_all_locs(BaseLocalization.notification_text_trade_account_move, None, event, name_map)
 
 
 async def run():
@@ -69,13 +76,13 @@ async def run():
         await app.deps.mimir_const_fetcher.run_once()
 
         # await demo_trade_balance(app)
-        # await demo_decode_trade_acc(app, TX_ID_DEPOSIT)
-        # sep()
-        # await demo_decode_trade_acc(app, TX_ID_WITHDRAWAL)
-        # sep()
-
-        await demo_decode_trade_acc(app, TX_WITHDRAW_USDT)
+        await demo_decode_trade_acc(app, TX_ID_DEPOSIT_BTC)
         sep()
+        await demo_decode_trade_acc(app, TX_ID_WITHDRAWAL)
+        sep()
+
+        # await demo_decode_trade_acc(app, TX_WITHDRAW_USDT)
+        # sep()
 
 
 if __name__ == '__main__':

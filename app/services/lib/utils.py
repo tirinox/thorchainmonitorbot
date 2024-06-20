@@ -557,3 +557,7 @@ def read_var_file():
             json.dump({}, f)
 
         return {}
+
+
+def identity(x):
+    return x
