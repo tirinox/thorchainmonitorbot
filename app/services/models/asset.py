@@ -19,6 +19,12 @@ def is_trade_asset(asset: str):
     return ASSET_TRADE_SEPARATOR in asset
 
 
+def normalize_asset(asset: str):
+    asset = asset.replace(ASSET_SYNTH_SEPARATOR, ASSET_NORMAL_SEPARATOR, 1).strip()
+    asset = asset.replace(ASSET_TRADE_SEPARATOR, ASSET_NORMAL_SEPARATOR, 1)
+    return asset
+
+
 @dataclass
 class Asset:
     chain: str = ''
@@ -114,7 +120,7 @@ class Asset:
         str_me = str(self)
         if is_rune(str_me):
             return 'Rune ᚱ'
-        elif str_me in self.ABBREVIATE_GAS_ASSETS:
+        elif normalize_asset(str_me) in self.ABBREVIATE_GAS_ASSETS:
             return self.name  # Not ETH.ETH, just ETH
         else:
             return f'{self.chain}{sep}{self.name}'
@@ -183,7 +189,7 @@ class Asset:
     }
 
     ABBREVIATE_GAS_ASSETS = {
-        'ETH.ETH', 'BTC.BTC', 'LTC.LTC', 'AVAX.AVAX', 'DOGE.DOGE'
+        'ETH.ETH', 'BTC.BTC', 'LTC.LTC', 'AVAX.AVAX', 'DOGE.DOGE', 'GAIA.ATOM', 'BSC.BNB', 'BCH.BCH'
     }
 
     GAS_ASSETS = {

@@ -9,7 +9,8 @@ from services.lib.constants import BTC_SYMBOL, STABLE_COIN_POOLS, thor_to_float,
 from services.lib.date_utils import now_ts, DAY
 from services.lib.money import weighted_mean
 from services.lib.texts import fuzzy_search
-from services.models.asset import Asset, is_rune
+from services.models.asset import Asset, is_rune, ASSET_TRADE_SEPARATOR, ASSET_SYNTH_SEPARATOR, ASSET_NORMAL_SEPARATOR, \
+    normalize_asset
 from services.models.base import BaseModelMixin
 from services.models.pool_info import PoolInfo, PoolInfoMap
 
@@ -163,6 +164,7 @@ class LastPriceHolder:
         self._calculate_btc_price()
         self._fill_asset_price()
         self.last_update_ts = now_ts()
+        return self
 
     @property
     def pool_names(self):
@@ -191,8 +193,7 @@ class LastPriceHolder:
         return fuzzy_search(query, self.pool_names)
 
     def pool_fuzzy_first(self, query: str) -> str:
-        query = query.replace('/', '.', 1).strip()
-        query = query.replace('~', '.')
+        query = normalize_asset(query)
 
         # See: https://dev.thorchain.org/thorchain-dev/concepts/memos#asset-abbreviations
         candidates = self.pool_fuzzy_search(query)
