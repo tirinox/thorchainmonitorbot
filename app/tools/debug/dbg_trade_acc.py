@@ -6,11 +6,26 @@ from services.jobs.fetch.trade_accounts import TradeAccountFetcher
 from services.jobs.scanner.native_scan import NativeScannerBlock
 from services.jobs.scanner.trade_acc import TradeAccEventDecoder
 from services.lib.texts import sep
+from services.lib.utils import load_pickle, save_pickle
 from services.models.trade_acc import AlertTradeAccountAction
+from services.notify.types.trade_acc_notify import TradeAccSummaryNotifier
 from tools.lib.lp_common import LpAppFramework
+
+prepared = False
+
+
+async def prepare_once(app):
+    global prepared
+    if not prepared:
+        await app.deps.pool_fetcher.reload_global_pools()
+        await app.deps.last_block_fetcher.run_once()
+        await app.deps.mimir_const_fetcher.run_once()
+        prepared = True
 
 
 async def demo_trade_balance(app: LpAppFramework):
+    await prepare_once(app)
+
     f: TradeAccountFetcher = app.deps.trade_acc_fetcher
     address = 'thor14mh37ua4vkyur0l5ra297a4la6tmf95mt96a55'
     balances = await f.get_whole_balances(address)
@@ -44,6 +59,8 @@ BLOCK_MAP = {
 
 
 async def demo_decode_trade_acc(app: LpAppFramework, tx_id):
+    await prepare_once(app)
+
     scanner = NativeScannerBlock(app.deps)
 
     height = BLOCK_MAP[tx_id]
@@ -68,21 +85,68 @@ async def demo_decode_trade_acc(app: LpAppFramework, tx_id):
     await app.test_all_locs(BaseLocalization.notification_text_trade_account_move, None, event, name_map)
 
 
+async def demo_top_trade_asset_holders(app: LpAppFramework):
+    await prepare_once(app)
+
+    f: TradeAccountFetcher = app.deps.trade_acc_fetcher
+    r = await f.fetch()
+    print(r)
+
+
+async def demo_trade_acc_summary_continuous(app: LpAppFramework):
+    await prepare_once(app)
+
+    d = app.deps
+    trade_acc_fetcher = TradeAccountFetcher(d)
+    trade_acc_fetcher.sleep_period = 60
+    trade_acc_fetcher.initial_sleep = 0
+
+    tr_acc_summary_not = TradeAccSummaryNotifier(d)
+    tr_acc_summary_not.add_subscriber(d.alert_presenter)
+    trade_acc_fetcher.add_subscriber(tr_acc_summary_not)
+
+    # d.trade_acc_fetcher.add_subscriber(achievements)
+
+    await trade_acc_fetcher.run()
+
+
+async def demo_trade_acc_summary_single(app: LpAppFramework, reset_cache=False):
+    d = app.deps
+    trade_acc_fetcher = TradeAccountFetcher(d)
+
+    tr_acc_summary_not = TradeAccSummaryNotifier(d)
+    tr_acc_summary_not.add_subscriber(d.alert_presenter)
+    trade_acc_fetcher.add_subscriber(tr_acc_summary_not)
+    # d.trade_acc_fetcher.add_subscriber(achievements)
+
+    cache_path = '../temp/trade_acc_summary.pickle'
+    data = None if reset_cache else load_pickle(cache_path)
+    if not data:
+        await prepare_once(app)
+        data = await trade_acc_fetcher.fetch()
+        save_pickle(cache_path, data)
+
+    if data:
+        await app.test_all_locs(BaseLocalization.notification_text_trade_account_summary, None, data)
+    else:
+        print('No data!')
+
+
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
-        await app.deps.pool_fetcher.reload_global_pools()
-        await app.deps.last_block_fetcher.run_once()
-        await app.deps.mimir_const_fetcher.run_once()
-
         # await demo_trade_balance(app)
-        await demo_decode_trade_acc(app, TX_ID_DEPOSIT_BTC)
-        sep()
-        await demo_decode_trade_acc(app, TX_ID_WITHDRAWAL)
-        sep()
-
+        # await demo_decode_trade_acc(app, TX_ID_DEPOSIT_BTC)
+        # sep()
+        # await demo_decode_trade_acc(app, TX_ID_WITHDRAWAL)
+        # sep()
         # await demo_decode_trade_acc(app, TX_WITHDRAW_USDT)
         # sep()
+
+        # await demo_top_trade_asset_holders(app)
+
+        # await demo_trade_acc_summary_continuous(app)
+        await demo_trade_acc_summary_single(app)
 
 
 if __name__ == '__main__':

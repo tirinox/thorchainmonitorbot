@@ -31,7 +31,8 @@ class LastBlockStore(INotified, WithDelegates, WithLogger):
 
     def block_time_ago(self, seconds, last_block=None):
         last_block = last_block or self.last_thor_block
-        return int(last_block - seconds / THOR_BLOCK_TIME)
+        if last_block:
+            return int(last_block - seconds / THOR_BLOCK_TIME)
 
     @staticmethod
     def _estimate_last_thor_block(data: Dict[str, ThorLastBlock]):

@@ -32,7 +32,7 @@ from services.models.pool_info import PoolMapPair, PoolChanges, PoolInfo
 from services.models.price import RuneMarketInfo, AlertPrice
 from services.models.s_swap import AlertSwapStart
 from services.models.savers import AlertSaverStats
-from services.models.trade_acc import AlertTradeAccountAction
+from services.models.trade_acc import AlertTradeAccountAction, AlertTradeAccountSummary
 from services.models.transfer import RuneCEXFlow, RuneTransfer
 from services.models.tx import EventLargeTransaction
 from services.notify.channel import MESSAGE_SEPARATOR
@@ -1030,3 +1030,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             f"Total: {amt_str}\n"
             f"{self.link_to_tx(event.tx.hash)}"
         )
+
+    def notification_text_trade_account_summary(self, e: AlertTradeAccountSummary):
+        # todo
+        return super().notification_text_trade_account_summary(e)

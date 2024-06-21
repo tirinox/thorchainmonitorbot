@@ -40,7 +40,7 @@ from services.models.price import AlertPrice, RuneMarketInfo
 from services.models.queue import QueueInfo
 from services.models.s_swap import AlertSwapStart
 from services.models.savers import AlertSaverStats
-from services.models.trade_acc import AlertTradeAccountAction
+from services.models.trade_acc import AlertTradeAccountAction, AlertTradeAccountSummary
 from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.tx import EventLargeTransaction
 
@@ -1064,6 +1064,10 @@ class RussianLocalization(BaseLocalization):
             f" на {to_link}\n"
             f"Всего: {amt_str}"
         )
+
+    def notification_text_trade_account_summary(self, e: AlertTradeAccountSummary):
+        # todo
+        return super().notification_text_trade_account_summary(e)
 
     # ------- NETWORK NODES -------
 

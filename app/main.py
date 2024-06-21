@@ -36,6 +36,7 @@ from services.jobs.scanner.loan_extractor import LoanExtractorBlock
 from services.jobs.scanner.native_scan import NativeScannerBlock
 from services.jobs.scanner.swap_extractor import SwapExtractorBlock
 from services.jobs.scanner.swap_routes import SwapRouteRecorder
+from services.jobs.scanner.trade_acc import TradeAccEventDecoder
 from services.jobs.transfer_detector import RuneTransferDetectorTxLogs
 from services.jobs.user_counter import UserCounter
 from services.jobs.volume_filler import VolumeFillerUpdater
@@ -86,6 +87,7 @@ from services.notify.types.s_swap_notify import StreamingSwapStartTxNotifier
 from services.notify.types.savers_stats_notify import SaversStatsNotifier
 from services.notify.types.stats_notify import NetworkStatsNotifier
 from services.notify.types.supply_notify import SupplyNotifier
+from services.notify.types.trade_acc_notify import TradeAccTransactionNotifier, TradeAccSummaryNotifier
 from services.notify.types.transfer_notify import RuneMoveNotifier
 from services.notify.types.tx_notify import GenericTxNotifier, LiquidityTxNotifier, SwapTxNotifier, RefundTxNotifier
 from services.notify.types.version_notify import VersionNotifier
@@ -560,6 +562,25 @@ class App(WithLogger):
 
             if achievements_enabled:
                 d.lend_stats_fetcher.add_subscriber(achievements)
+
+        if d.cfg.get('trade_accounts.enabled', True):
+            traed = TradeAccEventDecoder(d.db, d.price_holder)
+            d.block_scanner.add_subscriber(traed)
+
+            tr_acc_not = TradeAccTransactionNotifier(d)
+            traed.add_subscriber(tr_acc_not)
+            tr_acc_not.add_subscriber(d.alert_presenter)
+
+            traed.add_subscriber(achievements)
+
+            if d.cfg.get('trade_accounts.summary.enabled', True):
+                tasks.append(d.trade_acc_fetcher)
+
+                tr_acc_summary_not = TradeAccSummaryNotifier(d)
+                tr_acc_summary_not.add_subscriber(d.alert_presenter)
+                d.trade_acc_fetcher.add_subscriber(tr_acc_summary_not)
+
+                d.trade_acc_fetcher.add_subscriber(achievements)
 
         # -------- SCHEDULER --------
 

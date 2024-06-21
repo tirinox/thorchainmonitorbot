@@ -1,7 +1,8 @@
-from typing import NamedTuple, List
+from typing import NamedTuple, List, Optional
 
 from aionode.types import ThorTradeUnits, ThorVault, ThorTradeAccount
 from proto.access import NativeThorTx
+from services.models.asset import ASSET_TRADE_SEPARATOR, ASSET_NORMAL_SEPARATOR, normalize_asset
 from services.models.pool_info import PoolInfoMap
 
 
@@ -21,8 +22,9 @@ class AlertTradeAccountAction(NamedTuple):
         return not self.is_deposit
 
 
-class AlertTradeAccountSummary(NamedTuple):
+class TradeAccountSummary(NamedTuple):
     total_usd: float
+
     pool2acc: dict[str, ThorTradeUnits]
     pools: PoolInfoMap
     pool2traders: dict[str, List[ThorTradeAccount]]
@@ -36,7 +38,7 @@ class AlertTradeAccountSummary(NamedTuple):
         pool2acc = {}
         total_usd = 0.0
         for unit in units:
-            pool = pools.get(unit.asset)
+            pool = pools.get(normalize_asset(unit.asset))
             if pool:
                 pool2acc[pool.asset] = unit
                 total_usd += unit.depth_float * pool.usd_per_asset
@@ -47,6 +49,23 @@ class AlertTradeAccountSummary(NamedTuple):
         return sum(len(t) for t in self.pool2traders.values())
 
     def usd_units(self, asset) -> float:
-        pool = self.pools.get(asset)
+        pool = self.pools.get(normalize_asset(asset))
         if pool:
             return self.pool2acc.get(pool.asset).depth_float * pool.usd_per_asset
+
+    def top_by_usd_value(self, n: int) -> List[ThorTradeUnits]:
+        try:
+            return sorted(self.pool2acc.values(), key=lambda x: self.usd_units(x.asset), reverse=True)[:n]
+        except (TypeError, ValueError):
+            return []
+
+
+class AlertTradeAccountSummary(NamedTuple):
+    current: TradeAccountSummary
+    previous: Optional[TradeAccountSummary]
+
+    swaps_current: int = 0
+    swaps_prev: int = 0
+
+    swap_vol_current_usd: float = 0.0
+    swap_vol_prev_usd: float = 0.0

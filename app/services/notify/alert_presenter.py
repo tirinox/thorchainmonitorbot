@@ -27,7 +27,7 @@ from services.models.pool_info import PoolChanges, PoolMapPair
 from services.models.price import AlertPrice
 from services.models.s_swap import AlertSwapStart
 from services.models.savers import AlertSaverStats
-from services.models.trade_acc import AlertTradeAccountAction
+from services.models.trade_acc import AlertTradeAccountAction, AlertTradeAccountSummary
 from services.models.transfer import RuneCEXFlow, RuneTransfer
 from services.models.tx import EventLargeTransaction
 from services.notify.broadcast import Broadcaster
@@ -87,6 +87,8 @@ class AlertPresenter(INotified, WithLogger):
             await self._handle_best_pools(data)
         elif isinstance(data, AlertTradeAccountAction):
             await self._handle_trace_account_move(data)
+        elif isinstance(data, AlertTradeAccountSummary):
+            await self._handle_trace_account_summary(data)
 
     async def load_names(self, addresses) -> NameMap:
         if isinstance(addresses, str):
@@ -279,4 +281,10 @@ class AlertPresenter(INotified, WithLogger):
             BaseLocalization.notification_text_trade_account_move,
             data,
             name_map
+        )
+
+    async def _handle_trace_account_summary(self, data: AlertTradeAccountSummary):
+        await self.deps.broadcaster.notify_preconfigured_channels(
+            BaseLocalization.notification_text_trade_account_summary,
+            data,
         )

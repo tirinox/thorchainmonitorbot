@@ -53,6 +53,9 @@ class AchievementsExtractor(WithLogger):
             kv_events = self.on_lending_stats(data)
         elif isinstance(data, AlertLoanOpen):
             kv_events = self.on_loan_open(data)
+
+        # todo: add event types for Trade accounts!
+
         else:
             self.logger.warning(f'Unknown data type {type(data)} from {sender}. Dont know how to handle it.')
             kv_events = []
