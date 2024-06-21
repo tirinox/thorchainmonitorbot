@@ -21,7 +21,7 @@ class ThorNodeClient:
         url = self.connection_url(path, is_rpc)
         self.logger.debug(f'Node GET "{url}"')
         async with self.session.get(url, timeout=self.timeout, headers=self.extra_headers) as resp:
-            self.logger.debug(f'Node RESPONSE "{url}" code={resp.status}')
+            self.logger.debug(f'Node RESPONSE ({resp.status}) "{url}"')
             if resp.status == 404:
                 raise FileNotFoundError(f'{url} not found, sorry!')
             elif resp.status == 501:

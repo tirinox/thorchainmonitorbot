@@ -27,8 +27,8 @@ class ThorEnvironment:
     path_mimir_nodes: str = '/thorchain/mimir/nodes'
     path_mimir_votes: str = '/thorchain/mimir/nodes_all'
     path_inbound_addresses: str = "/thorchain/inbound_addresses"
-    path_vault_yggdrasil: str = "/thorchain/vaults/yggdrasil"
-    path_vault_asgard: str = "/thorchain/vaults/asgard"
+    path_vault_yggdrasil: str = "/thorchain/vaults/yggdrasil?height={height}"
+    path_vault_asgard: str = "/thorchain/vaults/asgard?height={height}"
     path_balance: str = '/cosmos/bank/v1beta1/balances/{address}'
     path_block_by_height: str = '/block?height={height}'
     path_tx_by_hash: str = '/cosmos/tx/v1beta1/txs/{hash}'

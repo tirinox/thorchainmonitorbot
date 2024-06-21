@@ -561,6 +561,7 @@ class ThorTradeAccount(NamedTuple):
     owner: str
     last_add_height: int
     last_withdraw_height: int
+    usd_value: float = 0.0
 
     @classmethod
     def from_json(cls, j):
@@ -575,6 +576,16 @@ class ThorTradeAccount(NamedTuple):
     @classmethod
     def from_json_array(cls, j):
         return [cls.from_json(item) for item in j] if j else []
+
+    @property
+    def value_float(self):
+        return thor_to_float(self.units)
+
+    def filled_usd_value(self, price_holder):
+        if self.asset:
+            usd_value = price_holder.convert_to_usd(self.value_float, self.asset)
+            return self._replace(usd_value=usd_value)
+        return self
 
 
 class ThorLiquidityProvider(NamedTuple):
