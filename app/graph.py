@@ -35,11 +35,22 @@ class GraphBuilder:
             "  layout=fdp;\n"
         )
 
+        def attributed_node(node_name, color=None, is_box=False):
+            shape = 'box' if is_box else 'ellipse'
+            if color:
+                return f'"{node_name}" [fillcolor="{color}"; style="filled"; shape="{shape}"];\n'
+            return f'"{node_name}" [shape="{shape}"];\n'
+
         for edge in list_of_connections:
             node_from, node_to, is_root = edge
+
             if is_root:
-                color = 'green' if is_root else 'black'
-                dot_code += f'    "{node_from}" [fillcolor="{color}"; style="filled"; shape="box"];\n'
+                dot_code += attributed_node(node_from, 'green', is_box=True)
+            elif node_to == 'AlertPresenter':
+                dot_code += attributed_node(node_to, 'orange')
+            elif 'Notifier' in node_to:
+                dot_code += attributed_node(node_to, 'yellow')
+
             dot_code += f'    "{node_from}" -> "{node_to}";\n'
 
         dot_code += "}"
