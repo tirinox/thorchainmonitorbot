@@ -6,9 +6,11 @@ from services.jobs.achievement.notifier import AchievementsNotifier
 from services.jobs.fetch.trade_accounts import TradeAccountFetcher
 from services.jobs.scanner.native_scan import NativeScannerBlock
 from services.jobs.scanner.trade_acc import TradeAccEventDecoder
+from services.jobs.volume_recorder import VolumeRecorder, TxCountRecorder
+from services.lib.money import distort_randomly
 from services.lib.texts import sep
 from services.lib.utils import load_pickle, save_pickle
-from services.models.trade_acc import AlertTradeAccountAction
+from services.models.trade_acc import AlertTradeAccountAction, AlertTradeAccountSummary
 from services.notify.types.trade_acc_notify import TradeAccSummaryNotifier, TradeAccTransactionNotifier
 from tools.lib.lp_common import LpAppFramework
 
@@ -139,6 +141,10 @@ async def demo_trade_acc_summary_continuous(app: LpAppFramework):
 
 async def demo_trade_acc_summary_single(app: LpAppFramework, reset_cache=False):
     d = app.deps
+
+    d.volume_recorder = VolumeRecorder(d)
+    d.tx_count_recorder = TxCountRecorder(d)
+
     trade_acc_fetcher = TradeAccountFetcher(d)
 
     tr_acc_summary_not = TradeAccSummaryNotifier(d)
@@ -153,7 +159,15 @@ async def demo_trade_acc_summary_single(app: LpAppFramework, reset_cache=False):
         data = await trade_acc_fetcher.fetch()
         save_pickle(cache_path, data)
 
+    data: AlertTradeAccountSummary = data._replace(
+        swaps_prev= int(distort_randomly(data.swaps_current, 30)),
+        swap_vol_prev_usd= distort_randomly(data.swap_vol_current_usd, 30),
+    )
+
     if data:
+        sep()
+        print(data)
+        sep()
         await app.test_all_locs(BaseLocalization.notification_text_trade_account_summary, None, data)
     else:
         print('No data!')
@@ -173,8 +187,8 @@ async def run():
         # await demo_top_trade_asset_holders(app)
 
         # await demo_trade_acc_summary_continuous(app)
-        # await demo_trade_acc_summary_single(app)
-        await demo_trade_acc_decode_continuous(app, 16515624)
+        await demo_trade_acc_summary_single(app)
+        # await demo_trade_acc_decode_continuous(app, 16515624)
 
 
 if __name__ == '__main__':

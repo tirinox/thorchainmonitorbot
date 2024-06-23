@@ -1,3 +1,4 @@
+from collections import defaultdict
 from contextlib import suppress
 from typing import List, NamedTuple
 
@@ -148,8 +149,21 @@ class VolumeRecorder(WithDelegates, INotified, WithLogger):
     async def get_data_instant(self, ts=None):
         return await self._accumulator.get(ts)
 
-    async def get_data_range_ago(self, ago):
-        return await self._accumulator.get_range(-ago)
+    async def get_data_range_ago(self, ago_sec) -> dict[float, dict[str, float]]:
+        # timestamp -> {key -> value}
+        return await self._accumulator.get_range(-ago_sec)
+
+    async def get_sum(self, start_ts, end_ts) -> dict[str, float]:
+        range_data = await self._accumulator.get_range(start_ts, end_ts)
+        # sum all dict values for each key
+        s = defaultdict(float)
+        for d in range_data.values():
+            price = d.pop('price', 0.0)
+            for k, v in d.items():
+                s[k] += v
+                s[f'{k}_usd'] += v * price
+
+        return s
 
     async def get_data_range_ago_n(self, ago, n=30):
         return await self._accumulator.get_range_n(-ago, n=n)

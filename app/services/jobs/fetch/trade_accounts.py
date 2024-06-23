@@ -2,7 +2,9 @@ from typing import List, Optional
 
 from aionode.types import ThorTradeUnits, ThorBalances, ThorCoin
 from services.jobs.fetch.base import BaseFetcher
+from services.jobs.volume_recorder import TxCountRecorder, VolumeRecorder
 from services.lib.constants import RUNE_DECIMALS
+from services.lib.date_utils import DAY, now_ts
 from services.lib.depcont import DepContainer
 from services.lib.utils import parallel_run_in_groups
 from services.models.trade_acc import AlertTradeAccountSummary, TradeAccountSummary
@@ -78,8 +80,20 @@ class TradeAccountFetcher(BaseFetcher):
         if not previous:
             self.logger.warning(f'No previous Trade Acc summary data at #{self.previous_block_height}')
 
-        swaps_current, swaps_prev = 0, 0
-        swap_vol_current_usd, swap_vol_prev_usd = 0.0, 0.0
+        tx_counter: TxCountRecorder = self.deps.tx_count_recorder
+        volume_recorder: VolumeRecorder = self.deps.volume_recorder
+
+        tally_days = int(self.tally_period / DAY)
+        tx_count_stats = await tx_counter.get_stats(tally_days)
+        now = now_ts()
+        curr_volume_stats = await volume_recorder.get_sum(now - self.tally_period, now)
+        prev_volume_stats = await volume_recorder.get_sum(now - self.tally_period * 2, now - self.tally_period)
+
+        swaps_current = tx_count_stats.trade.count_curr
+        swaps_prev = tx_count_stats.trade.count_prev
+
+        swap_vol_current_usd = curr_volume_stats.get('trade_asset_usd', 0.0)
+        swap_vol_prev_usd = prev_volume_stats.get('trade_asset_usd', 0.0)
 
         return AlertTradeAccountSummary(
             current, previous,
