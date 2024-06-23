@@ -23,19 +23,18 @@ class TradeAccEventDecoder(WithLogger, INotified, WithDelegates):
         self.price_holder = price_holder
 
     async def on_data(self, sender, data: BlockResult):
-        events = []
-
-        txs = data.txs
-
-        for tx in txs:
+        events = {}
+        for tx in data.txs:
             if memo := THORMemo.parse_memo(tx.memo):
                 if memo.action in (ActionType.TRADE_ACC_WITHDRAW, ActionType.TRADE_ACC_DEPOSIT):
                     event = self._convert_tx_to_event(tx, memo)
-                    events.append(event)
+                    events[event.tx_hash] = event
 
-        for event in events:
+        unique_events = list(events.values())
+
+        for event in unique_events:
             await self.pass_data_to_listeners(event)
-        return events
+        return unique_events
 
     def _convert_tx_to_event(self, tx: NativeThorTx, memo: THORMemo) -> Optional[AlertTradeAccountAction]:
         if not tx:

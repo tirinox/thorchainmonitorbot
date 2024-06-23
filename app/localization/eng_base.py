@@ -2754,7 +2754,6 @@ class BaseLocalization(ABC):  # == English
 
             if e.previous:
                 prev_usd = e.previous.usd_units(asset)
-                # prev_depth = e.previous.pool2acc[asset].depth_float
                 prev_usd_change = ' ,' + up_down_arrow(prev_usd, usd, percent_delta=True)
             else:
                 prev_usd_change = ''

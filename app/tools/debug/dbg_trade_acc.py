@@ -2,6 +2,7 @@ import asyncio
 import pprint
 
 from localization.eng_base import BaseLocalization
+from services.jobs.achievement.notifier import AchievementsNotifier
 from services.jobs.fetch.trade_accounts import TradeAccountFetcher
 from services.jobs.scanner.native_scan import NativeScannerBlock
 from services.jobs.scanner.trade_acc import TradeAccEventDecoder
@@ -85,12 +86,14 @@ async def demo_decode_trade_acc(app: LpAppFramework, tx_id):
     await app.test_all_locs(BaseLocalization.notification_text_trade_account_move, None, event, name_map)
 
 
-async def demo_trade_acc_decode_continuous(app: LpAppFramework):
+async def demo_trade_acc_decode_continuous(app: LpAppFramework, b=0):
     await prepare_once(app)
 
+    # b = 16515624
+
     d = app.deps
-    scanner = NativeScannerBlock(d, last_block=16515624)
-    scanner.one_block_per_run = True
+    scanner = NativeScannerBlock(d, last_block=b)
+    scanner.one_block_per_run = b > 0
 
     dcd = TradeAccEventDecoder(d.db, d.price_holder)
     dcd.sleep_period = 60
@@ -102,7 +105,10 @@ async def demo_trade_acc_decode_continuous(app: LpAppFramework):
     dcd.add_subscriber(nt)
     nt.add_subscriber(d.alert_presenter)
 
-    await scanner.run_once()
+    achievements = AchievementsNotifier(d)
+    dcd.add_subscriber(achievements)
+
+    await scanner.run()
     await asyncio.sleep(5.0)
 
 
@@ -168,7 +174,7 @@ async def run():
 
         # await demo_trade_acc_summary_continuous(app)
         # await demo_trade_acc_summary_single(app)
-        await demo_trade_acc_decode_continuous(app)
+        await demo_trade_acc_decode_continuous(app, 16515624)
 
 
 if __name__ == '__main__':
