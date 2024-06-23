@@ -6,6 +6,10 @@ from services.lib.utils import take_closest
 
 
 class Accumulator:
+    """
+    This class is used to count the sum of events that occur within a certain time interval.
+    Items are put into buckets with tolerance.
+    """
     def __init__(self, name, db: DB, tolerance: float):
         self.name = name
         self.db = db

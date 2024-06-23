@@ -40,7 +40,7 @@ from services.jobs.scanner.trade_acc import TradeAccEventDecoder
 from services.jobs.transfer_detector import RuneTransferDetectorTxLogs
 from services.jobs.user_counter import UserCounter
 from services.jobs.volume_filler import VolumeFillerUpdater
-from services.jobs.volume_recorder import VolumeRecorder
+from services.jobs.volume_recorder import VolumeRecorder, TxCountRecorder
 from services.lib.config import Config, SubConfig
 from services.lib.constants import HTTP_CLIENT_ID
 from services.lib.date_utils import parse_timespan_to_seconds
@@ -345,6 +345,9 @@ class App(WithLogger):
 
             d.volume_recorder = VolumeRecorder(d)
             volume_filler.add_subscriber(d.volume_recorder)
+
+            d.tx_count_recorder = TxCountRecorder(d)
+            volume_filler.add_subscriber(d.tx_count_recorder)
 
             # Swap route recorder
             d.route_recorder = SwapRouteRecorder(d.db)

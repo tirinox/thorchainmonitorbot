@@ -12,6 +12,19 @@ from services.models.memo import THORMemo
 from services.models.s_swap import StreamingSwap, AlertSwapStart
 
 
+def filter_unique_observed_txs(txs: List[NativeThorTx]):
+    # Filter only unique MsgObservedTxIn
+    hash_to_tx = {}
+    for tx in txs:
+        if hasattr(tx.first_message, 'txs'):
+            for observed_tx in tx.first_message.txs:
+                if (tx_id := observed_tx.tx.id) not in hash_to_tx:
+                    hash_to_tx[tx_id] = observed_tx.tx
+        else:
+            hash_to_tx[tx.hash] = tx
+    return list(hash_to_tx.values())
+
+
 class SwapStartDetector(WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
@@ -64,7 +77,7 @@ class SwapStartDetector(WithLogger):
                     tx_hash,
                     memo.s_swap_interval,
                     memo.s_swap_quantity,
-                    0, 0, memo.limit, 0, '', 0, '',0, '', [], [],
+                    0, 0, memo.limit, 0, '', 0, '', 0, '', [], [],
                 ),
                 from_address=from_address,
                 in_amount=int(msg.coins[0].amount),
@@ -90,13 +103,7 @@ class SwapStartDetector(WithLogger):
         return results
 
     def handle_observed_txs(self, txs: List[NativeThorTx], height):
-        # Filter only unique MsgObservedTxIn
-        hash_to_tx = {}
-        for tx in txs:
-            for observed_tx in tx.first_message.txs:
-                if (tx_id := observed_tx.tx.id) not in hash_to_tx:
-                    hash_to_tx[tx_id] = observed_tx.tx
-        txs = list(hash_to_tx.values())
+        txs = filter_unique_observed_txs(txs)
 
         results = []
         for tx in txs:

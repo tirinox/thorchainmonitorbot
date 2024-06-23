@@ -85,6 +85,7 @@ class NativeThorTx:
 
         if not memo:
             for msg in self.messages:
+                # observed tx in?
                 if hasattr(msg, 'txs'):
                     for tx in msg.txs:
                         if hasattr(tx, 'memo'):

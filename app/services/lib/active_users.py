@@ -23,6 +23,9 @@ class ActiveUserCounter:
             await self.r.pfadd(key, *users)
 
     async def get_count(self, key_postfixes):
+        """
+        Sums all the counters for the given postfixes.
+        """
         keys = map(self._key, key_postfixes)
         keys = tuple(keys)
         return await self.r.pfcount(*keys)
@@ -60,10 +63,10 @@ class DailyActiveUserCounter(ActiveUserCounter):
         yesterday = now_ts() - DAY + 1.0
         return await self.get_dau(yesterday)
 
-    async def get_au_over_days(self, days):
+    async def get_au_over_days(self, days, start=0):
         assert 0 < days <= 31
         now = now_ts()
-        timestamps = [now - day_ago * DAY for day_ago in range(days)]
+        timestamps = [now - day_ago * DAY for day_ago in range(start, days)]
         postfixes = map(self.key_postfix, timestamps)
         return await self.get_count(postfixes)
 
@@ -83,6 +86,11 @@ class DailyActiveUserCounter(ActiveUserCounter):
         return UserStats(
             dau, dau_yesterday, wau, mau
         )
+
+    async def get_current_and_previous_au(self, period_days):
+        current = await self.get_au_over_days(period_days)
+        previous = await self.get_au_over_days(period_days * 2, start=period_days)
+        return current, previous
 
 
 class ManualUserCounter:

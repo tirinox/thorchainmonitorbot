@@ -64,6 +64,7 @@ class DepContainer:
     best_pools_notifier = None  # type: 'BestPoolsNotifier'
     rune_move_notifier = None  # type: 'RuneMoveNotifier'
     volume_recorder = None  # type: 'VolumeRecorder'
+    tx_count_recorder = None  # type: 'TxCountRecorder'
     weekly_stats_notifier = None
     pol_notifier = None
     lend_stats_notifier = None
