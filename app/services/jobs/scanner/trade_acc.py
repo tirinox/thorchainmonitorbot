@@ -25,7 +25,9 @@ class TradeAccEventDecoder(WithLogger, INotified, WithDelegates):
     async def on_data(self, sender, data: BlockResult):
         events = []
 
-        for tx in data.txs:
+        txs = data.txs
+
+        for tx in txs:
             if memo := THORMemo.parse_memo(tx.memo):
                 if memo.action in (ActionType.TRADE_ACC_WITHDRAW, ActionType.TRADE_ACC_DEPOSIT):
                     event = self._convert_tx_to_event(tx, memo)
@@ -44,20 +46,23 @@ class TradeAccEventDecoder(WithLogger, INotified, WithDelegates):
             self.logger.warning(f'Tx has abnormal messages count: {len(tx.messages)}')
             return
 
-        tx_id = tx.hash
-
         if memo.action == ActionType.TRADE_ACC_WITHDRAW:
-            return self._make_withdraw(memo, tx, tx_id)
+            return self._make_withdraw(memo, tx)
 
         elif memo.action == ActionType.TRADE_ACC_DEPOSIT:
-            return self._make_deposit(memo, tx, tx_id)
+            return self._make_deposit(memo, tx)
 
-    def _make_deposit(self, memo, tx, tx_id):
+    def _make_deposit(self, memo, tx):
+        tx_id = tx.hash
         observed_in_tx = tx.first_message
         if len(observed_in_tx.txs) != 1:
             self.logger.warning(f'ObservedTxIn {tx_id} has abnormal txs count: {len(observed_in_tx.txs)}')
             return
         in_tx: Tx = observed_in_tx.txs[0].tx
+
+        # here we override tx_id with inner tx id!
+        tx_id = in_tx.id
+
         if len(in_tx.coins) != 1:
             self.logger.warning(f'Tx {tx_id} has abnormal coins count: {len(in_tx.coins)}')
             return
@@ -67,7 +72,7 @@ class TradeAccEventDecoder(WithLogger, INotified, WithDelegates):
         usd_amount = self.price_holder.convert_to_usd(amount, asset)
 
         return AlertTradeAccountAction(
-            tx,
+            tx_id,
             actor=in_tx.from_address,
             destination_address=memo.dest_address,
             amount=amount,
@@ -77,10 +82,10 @@ class TradeAccEventDecoder(WithLogger, INotified, WithDelegates):
             is_deposit=True,
         )
 
-    def _make_withdraw(self, memo, tx, tx_id):
+    def _make_withdraw(self, memo, tx):
         coins = tx.first_message.coins
         if len(coins) != 1:
-            self.logger.warning(f'Tx {tx_id} has abnormal coins count: {len(coins)}')
+            self.logger.warning(f'Tx {tx.hash} has abnormal coins count: {len(coins)}')
             return
         coin = coins[0]
         amount = thor_to_float(coin.amount)
@@ -89,7 +94,7 @@ class TradeAccEventDecoder(WithLogger, INotified, WithDelegates):
         actor = parse_thor_address(tx.first_message.signer)
 
         return AlertTradeAccountAction(
-            tx,
+            tx.hash,
             actor=actor,
             destination_address=memo.dest_address,
             amount=amount,

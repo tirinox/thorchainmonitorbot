@@ -2711,7 +2711,7 @@ class BaseLocalization(ABC):  # == English
         from_link, to_link, amt_str = self._trade_acc_from_to_links(event, name_map)
         arrow = '➡' if event.is_deposit else '⬅'
         return (
-            f"{arrow}🏦 <b>Trade account {action_str}</b> {self.link_to_tx(event.tx.hash)}\n"
+            f"{arrow}🏦 <b>Trade account {action_str}</b> {self.link_to_tx(event.tx_hash)}\n"
             f"👤 From {from_link}"
             f" to {to_link}\n"
             f"Total: {amt_str}"

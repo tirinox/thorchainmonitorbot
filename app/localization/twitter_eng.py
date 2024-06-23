@@ -1028,7 +1028,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             f"👤 From {from_link}"
             f" to {to_link}\n"
             f"Total: {amt_str}\n"
-            f"{self.link_to_tx(event.tx.hash)}"
+            f"{self.link_to_tx(event.tx_hash)}"
         )
 
     def notification_text_trade_account_summary(self, e: AlertTradeAccountSummary):

@@ -8,7 +8,7 @@ from services.jobs.scanner.trade_acc import TradeAccEventDecoder
 from services.lib.texts import sep
 from services.lib.utils import load_pickle, save_pickle
 from services.models.trade_acc import AlertTradeAccountAction
-from services.notify.types.trade_acc_notify import TradeAccSummaryNotifier
+from services.notify.types.trade_acc_notify import TradeAccSummaryNotifier, TradeAccTransactionNotifier
 from tools.lib.lp_common import LpAppFramework
 
 prepared = False
@@ -85,6 +85,27 @@ async def demo_decode_trade_acc(app: LpAppFramework, tx_id):
     await app.test_all_locs(BaseLocalization.notification_text_trade_account_move, None, event, name_map)
 
 
+async def demo_trade_acc_decode_continuous(app: LpAppFramework):
+    await prepare_once(app)
+
+    d = app.deps
+    scanner = NativeScannerBlock(d, last_block=16515624)
+    scanner.one_block_per_run = True
+
+    dcd = TradeAccEventDecoder(d.db, d.price_holder)
+    dcd.sleep_period = 60
+    dcd.initial_sleep = 0
+    scanner.add_subscriber(dcd)
+
+    nt = TradeAccTransactionNotifier(d)
+    nt.min_usd_amount = 0.0
+    dcd.add_subscriber(nt)
+    nt.add_subscriber(d.alert_presenter)
+
+    await scanner.run_once()
+    await asyncio.sleep(5.0)
+
+
 async def demo_top_trade_asset_holders(app: LpAppFramework):
     await prepare_once(app)
 
@@ -146,7 +167,8 @@ async def run():
         # await demo_top_trade_asset_holders(app)
 
         # await demo_trade_acc_summary_continuous(app)
-        await demo_trade_acc_summary_single(app)
+        # await demo_trade_acc_summary_single(app)
+        await demo_trade_acc_decode_continuous(app)
 
 
 if __name__ == '__main__':

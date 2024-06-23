@@ -1,13 +1,12 @@
 from typing import NamedTuple, List, Optional
 
 from aionode.types import ThorTradeUnits, ThorVault, ThorTradeAccount
-from proto.access import NativeThorTx
-from services.models.asset import ASSET_TRADE_SEPARATOR, ASSET_NORMAL_SEPARATOR, normalize_asset
+from services.models.asset import normalize_asset
 from services.models.pool_info import PoolInfoMap
 
 
 class AlertTradeAccountAction(NamedTuple):
-    tx: NativeThorTx
+    tx_hash: str
     actor: str
     destination_address: str
     amount: float
