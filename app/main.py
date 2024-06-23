@@ -579,10 +579,9 @@ class App(WithLogger):
             if d.cfg.get('trade_accounts.summary.enabled', True):
                 tasks.append(d.trade_acc_fetcher)
 
-                tr_acc_summary_not = TradeAccSummaryNotifier(d)
-                tr_acc_summary_not.add_subscriber(d.alert_presenter)
-                d.trade_acc_fetcher.add_subscriber(tr_acc_summary_not)
-
+                d.tr_acc_summary_notifier = TradeAccSummaryNotifier(d)
+                d.tr_acc_summary_notifier.add_subscriber(d.alert_presenter)
+                d.trade_acc_fetcher.add_subscriber(d.tr_acc_summary_notifier)
                 d.trade_acc_fetcher.add_subscriber(achievements)
 
         # -------- SCHEDULER --------

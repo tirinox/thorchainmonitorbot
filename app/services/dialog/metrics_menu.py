@@ -364,6 +364,15 @@ class MetricsDialog(BaseDialog):
         await message.answer(text, disable_notification=True)
         await self.safe_delete(loading_message)
 
+    async def show_trade_acc_stats(self, message: Message):
+        loading_message = await self.show_loading(message)
+
+        event = self.deps.tr_acc_summary_notifier.last_event
+
+        text = self.loc.notification_text_trade_account_summary(event) if event else self.loc.TEXT_WEEKLY_STATS_NO_DATA
+        await message.answer(text, disable_notification=True)
+        await self.safe_delete(loading_message)
+
     # ---- Ask for duration (universal)
 
     def parse_duration_response(self, message: Message):

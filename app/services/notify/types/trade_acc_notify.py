@@ -1,3 +1,5 @@
+from typing import Optional
+
 from services.lib.cooldown import Cooldown
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
@@ -37,8 +39,13 @@ class TradeAccSummaryNotifier(INotified, WithDelegates, WithLogger):
         cfg = deps.cfg.trade_accounts.summary
         self.cooldown_sec = cfg.as_interval('cooldown', '1h')
         self.cd = Cooldown(self.deps.db, "TradeAccSummaryNotification", self.cooldown_sec)
+        self.last_event: Optional[AlertTradeAccountSummary] = None
 
     async def on_data(self, sender, e: AlertTradeAccountSummary):
+        if not e:
+            self.logger.error('Empty event!')
+
+        self.last_event = e
         if await self.cd.can_do():
             await self.pass_data_to_listeners(e)
             await self.cd.do()
