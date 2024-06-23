@@ -78,10 +78,12 @@ class NetworkStatisticsFetcher(BaseFetcher):
             ns.next_pool_to_activate = pending_pools[0].asset if pending_pools else None
 
     async def _get_swap_stats(self, ns: NetworkStats):
-        j = await self.deps.midgard_connector.request(free_url_gen.url_for_swap_history(days=1))
+        j = await self.deps.midgard_connector.request(free_url_gen.url_for_swap_history(days=2))
         if j:
-            swap_meta = SwapHistoryResponse.from_json(j).meta
-            ns.synth_volume_24h = thor_to_float(swap_meta.synth_mint_volume) + thor_to_float(swap_meta.synth_redeem_volume)
+            swap_meta = SwapHistoryResponse.from_json(j).intervals[0]
+            ns.synth_volume_24h = (
+                    thor_to_float(swap_meta.synth_mint_volume) + thor_to_float(swap_meta.synth_redeem_volume)
+            )
             ns.synth_op_count = swap_meta.synth_mint_count + swap_meta.synth_redeem_count
             ns.swap_volume_24h = thor_to_float(swap_meta.total_volume)
         else:

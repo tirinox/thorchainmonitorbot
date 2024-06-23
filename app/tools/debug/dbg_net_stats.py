@@ -19,8 +19,9 @@ from services.models.pool_info import PoolInfoMap, parse_thor_pools
 from services.notify.types.stats_notify import NetworkStatsNotifier
 from tools.lib.lp_common import LpAppFramework
 
-CACHE_NET_STATS = True
-CACHE_NET_STATS_FILE = '../../tmp/net_stats.pickle'
+CACHE_NET_STATS = False
+CACHE_NET_STATS_FILE = '../tmp/net_stats.pickle'
+NET_STATS_RANDOMIZE = False
 
 DRY_RUN = False
 
@@ -113,7 +114,10 @@ async def demo_generic_pool_message():
             if CACHE_NET_STATS:
                 save_pickle(CACHE_NET_STATS_FILE, new_info)
 
-    old_info, new_info = get_info_pair_for_test(new_info)
+    if NET_STATS_RANDOMIZE:
+        old_info, new_info = get_info_pair_for_test(new_info)
+    else:
+        old_info = copy(new_info)
 
     await print_message(old_info, new_info, lpgen.deps, loc=lpgen.deps.loc_man.get_from_lang('rus'))
     await print_message(old_info, new_info, lpgen.deps, loc=lpgen.deps.loc_man.get_from_lang('eng'))
@@ -141,13 +145,13 @@ def demo_upd():
 
 
 async def demo_pool_stats():
-    lpgen = LpAppFramework()
+    app = LpAppFramework()
 
-    async with lpgen:
-        fetcher_stats = NetworkStatisticsFetcher(lpgen.deps)
+    async with app:
+        fetcher_stats = NetworkStatisticsFetcher(app.deps)
         new_info = await fetcher_stats.fetch()
 
-        notifier_stats = NetworkStatsNotifier(lpgen.deps)
+        notifier_stats = NetworkStatsNotifier(app.deps)
 
         await notifier_stats.notify_right_now(new_info)
 
