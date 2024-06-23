@@ -1,5 +1,7 @@
 import asyncio
+import datetime
 
+from aionode.types import thor_to_float
 from services.jobs.fetch.base import BaseFetcher
 from services.jobs.fetch.flipside.flipside import FlipSideConnector, FSList
 from services.jobs.fetch.flipside.urls import *
@@ -60,9 +62,40 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         # Merge data streams
         result = FSList.combine(*data_chunks)
 
+        prev_lock, curr_lock = await asyncio.gather(
+            self.get_lock_value(self.tally_days_period),
+            self.get_lock_value()
+        )
+
         # Done. Construct the resulting event
         return AlertKeyStats(
             result, old_pools, fresh_pools,
             routes,
-            days=self.tally_days_period
+            days=self.tally_days_period,
+            prev_lock=prev_lock,
+            curr_lock=curr_lock,
+        )
+
+    async def get_lock_value(self, days_ago=0) -> FSLockedValue:
+        height = self.deps.last_block_store.block_time_ago(days_ago * DAY)
+        pools = await self.deps.pool_fetcher.load_pools(height=height)
+        price_holder = self.deps.price_holder.clone().update(pools)
+
+        total_pooled_rune = price_holder.total_pooled_value_rune
+        total_pooled_usd = price_holder.total_pooled_value_usd
+
+        nodes = await self.deps.thor_connector.query_node_accounts()
+        total_bonded_rune = sum([thor_to_float(node.bond) for node in nodes])
+        total_bonded_usd = total_bonded_rune * price_holder.usd_per_rune
+
+        date = datetime.datetime.now() - datetime.timedelta(days=days_ago)
+
+        return FSLockedValue(
+            date,
+            total_pooled_rune,
+            total_pooled_usd,
+            total_bonded_rune,
+            total_bonded_usd,
+            total_value_locked=total_pooled_rune + total_bonded_rune,
+            total_value_locked_usd=total_pooled_usd + total_bonded_usd,
         )

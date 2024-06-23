@@ -339,6 +339,7 @@ class MetricsDialog(BaseDialog):
         if not self.deps.weekly_stats_notifier or not self.deps.weekly_stats_notifier.last_event:
             await message.answer(self.loc.TEXT_WEEKLY_STATS_NO_DATA,
                                  disable_notification=True)
+            await self.safe_delete(loading_message)
             return
 
         ev = self.deps.weekly_stats_notifier.last_event

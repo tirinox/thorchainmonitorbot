@@ -240,6 +240,9 @@ class AlertKeyStats:
 
     routes: List[FSSwapRoutes]
 
+    prev_lock: FSLockedValue
+    curr_lock: FSLockedValue
+
     days: int = 7
 
     @property
@@ -342,12 +345,12 @@ class AlertKeyStats:
                                                               FSSwapCount, max)
         return unique_swap, prev_unique_swap
 
-    @cached_property
+    @property
     def locked_value_usd_curr_prev(self):
-        prev_lock, curr_lock = self.series.get_prev_and_curr(self.days, FSLockedValue)
-        prev_lock: FSLockedValue = prev_lock[0] if prev_lock else None
-        curr_lock: FSLockedValue = curr_lock[0] if curr_lock else None
-        return curr_lock, prev_lock
+        # prev_lock, curr_lock = self.series.get_prev_and_curr(self.days, FSLockedValue)
+        # prev_lock: FSLockedValue = prev_lock[0] if prev_lock else None
+        # curr_lock: FSLockedValue = curr_lock[0] if curr_lock else None
+        return self.curr_lock, self.prev_lock
 
 
 def sum_by_attribute(daily_list, attr_name, klass=None, f_sum=sum):

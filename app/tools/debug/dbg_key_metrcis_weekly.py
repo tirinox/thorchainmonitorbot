@@ -52,7 +52,7 @@ async def demo_load_single_fs_list(app: LpAppFramework):
 
 
 class FlipSideSaver(INotified):
-    DEFAULT_FILENAME = '../temp/fs_key_metrics_4.pickle'
+    DEFAULT_FILENAME = '../temp/fs_key_metrics_v5.pickle'
 
     def __init__(self, filename=DEFAULT_FILENAME) -> None:
         super().__init__()
@@ -114,6 +114,17 @@ async def demo_picture(app: LpAppFramework):
     await show_picture(app, data)
 
 
+async def debug_locked_value(app: LpAppFramework):
+    await app.deps.last_block_fetcher.run_once()
+    f = KeyStatsFetcher(app.deps)
+    sep()
+    curr = await f.get_lock_value()
+    print(f'Locked value now: {curr}')
+    sep()
+    prev = await f.get_lock_value(7)
+    print(f'Locked value 7 days ago: {prev}')
+
+
 async def main():
     lp_app = LpAppFramework(log_level=logging.INFO)
     async with lp_app(brief=True):
@@ -126,6 +137,7 @@ async def main():
         # await demo_load(lp_app)
         # await demo_new_flipside_swap_routes(lp_app)
         # await demo_load_single_fs_list(lp_app)
+        # await debug_locked_value(lp_app)
 
 
 if __name__ == '__main__':

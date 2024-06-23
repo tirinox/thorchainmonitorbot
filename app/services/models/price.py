@@ -179,12 +179,16 @@ class LastPriceHolder:
         return self.pool_info_map.get(asset)
 
     @property
-    def total_locked_value_usd(self):
-        tlv = 0  # in USD
+    def total_pooled_value_usd(self):
+        return self.total_pooled_value_rune * self.usd_per_rune
+
+    @property
+    def total_pooled_value_rune(self):
+        tlv = 0
         for pool in self.pool_info_map.values():
             pool: PoolInfo
-            tlv += thor_to_float(pool.balance_rune) * self.usd_per_rune
-        return tlv
+            tlv += thor_to_float(pool.balance_rune)
+        return tlv * 2.0
 
     def pool_fuzzy_search(self, query: str) -> List[str]:
         if (q := query.lower()) in Asset.SHORT_NAMES:
