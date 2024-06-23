@@ -2529,9 +2529,9 @@ class BaseLocalization(ABC):  # == English
     # ------ POL -------
 
     @staticmethod
-    def pretty_asset(name):
+    def pretty_asset(name, abbr=True):
         a = Asset(name)
-        if a.chain == a.name and not a.tag:
+        if abbr and a.chain == a.name and not a.tag:
             return a.name
         else:
             return a.pretty_str
@@ -2729,48 +2729,52 @@ class BaseLocalization(ABC):  # == English
         )
         return from_link, to_link, amt_str
 
-    def notification_text_trade_account_summary(self, e: AlertTradeAccountSummary):
-        """
-        Example:
-
-            ⚖️ <b>Trade accounts summary</b>
-            Total holders: 3,434 (+56)
-            Total balance: $1,300,000 (+$142,000)
-            Total value deposited: $1,300,000 (+$142,000)
-            Total value withdrawn: $1,200,000 (-$130,000)
-            Swaps of trade assets: 1,000 (+100)
-            Value of swaps: $5,000,000 (+$1300,000)
-
-            Trade BTC: 1,0 (+0,5) or $65,000, 25 holders
-            Trade ETH: 100.0 (+3) or $400,000, 32 holders
-        """
-
-        top_n = 5
+    def _top_trade_vaults(self, e: AlertTradeAccountSummary, top_n, formatting=True):
         top_vaults = e.current.top_by_usd_value(top_n)
         top_vaults_str = ''
+
+        asset_f = ital if formatting else identity
+        amount_f = bold if formatting else identity
+
         for i, vault in enumerate(top_vaults, start=1):
             asset = vault.asset
             usd = e.current.usd_units(asset)
 
             if e.previous:
                 prev_usd = e.previous.usd_units(asset)
-                prev_usd_change = ' ,' + up_down_arrow(prev_usd, usd, percent_delta=True)
+                prev_usd_change = up_down_arrow(prev_usd, usd, percent_delta=True)
             else:
                 prev_usd_change = ''
 
+            if calc_percent_change(vault.depth_float, usd) > 0.5:
+                usd_str = short_dollar(usd)
+            else:
+                usd_str = ''
+
+            extra = ', '.join(filter(bool, (usd_str, prev_usd_change)))
+
+            asset_str = asset_f(self.pretty_asset(asset, abbr=False))
             top_vaults_str += (
                 f'{i}. '
-                f'{ital(self.pretty_asset(asset))} {bold(short_money(vault.depth_float))} |'
-                f' ({short_dollar(usd)}{prev_usd_change})\n'
+                f'{asset_str}: {amount_f(short_money(vault.depth_float))}  |'
+                f'  {bracketify(extra)}\n'
             )
+        return top_vaults_str
 
-        # todo
+    def notification_text_trade_account_summary(self, e: AlertTradeAccountSummary):
+        top_n = 5
+        top_vaults_str = self._top_trade_vaults(e, top_n)
+
         return (
-            f"⚖️ <b>Trade accounts summary</b>\n"
+            f"⚖️ <b>Trade assets summary</b>\n\n"
             f"Total holders: {bold(pretty_money(e.current.total_traders))}"
             f" {bracketify(up_down_arrow(e.previous.total_traders, e.current.total_traders, int_delta=True))}\n"
             f"Total balance: {bold(short_money(e.current.total_usd))}"
             f" {bracketify(up_down_arrow(e.previous.total_usd, e.current.total_usd, percent_delta=True))}\n"
+            f"Trade volume: {bold(short_dollar(e.swap_vol_current_usd))}"
+            f" {bracketify(up_down_arrow(e.swap_vol_prev_usd, e.swap_vol_current_usd, percent_delta=True))}\n"
+            f"Swaps of trade assets: {bold(short_money(e.swaps_current, integer=True))}"
+            f" {bracketify(up_down_arrow(e.swaps_prev, e.swaps_current, int_delta=True))}\n"
             f"\n"
             f"Top {top_n} trade assets:\n"
             f"{top_vaults_str}"

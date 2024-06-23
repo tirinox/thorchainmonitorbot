@@ -1066,8 +1066,23 @@ class RussianLocalization(BaseLocalization):
         )
 
     def notification_text_trade_account_summary(self, e: AlertTradeAccountSummary):
-        # todo
-        return super().notification_text_trade_account_summary(e)
+        top_n = 5
+        top_vaults_str = self._top_trade_vaults(e, top_n)
+
+        return (
+            f"⚖️ <b>Сводка по торговым активам</b>\n\n"
+            f"Всего держателей: {bold(pretty_money(e.current.total_traders))}"
+            f" {bracketify(up_down_arrow(e.previous.total_traders, e.current.total_traders, int_delta=True))}\n"
+            f"Общий баланс: {bold(short_money(e.current.total_usd))}"
+            f" {bracketify(up_down_arrow(e.previous.total_usd, e.current.total_usd, percent_delta=True))}\n"
+            f"Объем торгов: {bold(short_dollar(e.swap_vol_current_usd))}"
+            f" {bracketify(up_down_arrow(e.swap_vol_prev_usd, e.swap_vol_current_usd, percent_delta=True))}\n"
+            f"Количество обменов: {bold(short_money(e.swaps_current, integer=True))}"
+            f" {bracketify(up_down_arrow(e.swaps_prev, e.swaps_current, int_delta=True))}\n"
+            f"\n"
+            f"Топ {top_n} самых значимых:\n"
+            f"{top_vaults_str}"
+        )
 
     # ------- NETWORK NODES -------
 
@@ -1949,8 +1964,8 @@ class RussianLocalization(BaseLocalization):
     # ------ POL -------
 
     @staticmethod
-    def pretty_asset(name):
-        return BaseLocalization.pretty_asset(name).replace('synth', 'синт.').replace('trade', 'торг.')
+    def pretty_asset(name, abbr=True):
+        return BaseLocalization.pretty_asset(name, abbr).replace('synth', 'синт.').replace('trade', 'торг.')
 
     def notification_text_pol_utilization(self, event: AlertPOL):
         text = '🥃 <b>POL: ликвидность от самого протокола</b>\n\n'

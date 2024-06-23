@@ -910,12 +910,12 @@ class TwitterEnglishLocalization(BaseLocalization):
     # ------ POL -------
 
     @staticmethod
-    def pretty_asset(name):
+    def pretty_asset(name, abbr=True):
         if not name:
             return '???'
 
         asset = Asset(name.upper())
-        synth = 'synth ' if asset.is_synth else ('trade ' if asset.is_trade else '')
+        synth = 'synth ' if asset.is_synth else ('tr. ' if asset.is_trade else '')
 
         if asset.name == asset.chain and not asset.tag:
             chain = ''
@@ -980,15 +980,15 @@ class TwitterEnglishLocalization(BaseLocalization):
         )
 
     def notification_text_loan_repayment(self, event: AlertLoanRepayment, name_map: NameMap):
-        l = event.loan
-        user_link = self.link_to_address(l.owner, name_map)
-        asset = ' ' + Asset(l.collateral_asset).pretty_str
+        loan = event.loan
+        user_link = self.link_to_address(loan.owner, name_map)
+        asset = ' ' + Asset(loan.collateral_asset).pretty_str
 
         return (
             f'🏦← Loan repayment {user_link}\n'
-            f'Collateral withdrawn: {pretty_money(l.collateral_float, postfix=asset)}'
+            f'Collateral withdrawn: {pretty_money(loan.collateral_float, postfix=asset)}'
             f' ({pretty_dollar(event.collateral_usd)})\n'
-            f'Debt repaid: {pretty_dollar(l.debt_repaid_usd)}\n'
+            f'Debt repaid: {pretty_dollar(loan.debt_repaid_usd)}\n'
             f'{self.LENDING_DASHBOARD_URL}'
         )
 
@@ -1032,5 +1032,23 @@ class TwitterEnglishLocalization(BaseLocalization):
         )
 
     def notification_text_trade_account_summary(self, e: AlertTradeAccountSummary):
-        # todo
-        return super().notification_text_trade_account_summary(e)
+        top_vaults_str = self._top_trade_vaults(e, 4, formatting=False)
+
+        parts = [
+            (
+                f"⚖️ Trade assets summary\n\n"
+                f"Total holders: {(pretty_money(e.current.total_traders))}"
+                f" {bracketify(up_down_arrow(e.previous.total_traders, e.current.total_traders, int_delta=True))}\n"
+                f"Total balance: {(short_money(e.current.total_usd))}"
+                f" {bracketify(up_down_arrow(e.previous.total_usd, e.current.total_usd, percent_delta=True))}\n"
+                f"Trade volume: {(short_dollar(e.swap_vol_current_usd))}"
+                f" {bracketify(up_down_arrow(e.swap_vol_prev_usd, e.swap_vol_current_usd, percent_delta=True))}\n"
+                f"Swaps of trade assets: {(short_money(e.swaps_current, integer=True))}"
+                f" {bracketify(up_down_arrow(e.swaps_prev, e.swaps_current, int_delta=True))}\n"
+            ),
+            (
+                f"Top trade assets:\n"
+                f"{top_vaults_str}"
+            ),
+        ]
+        return self.smart_split(parts)
