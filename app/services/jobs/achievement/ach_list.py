@@ -82,6 +82,12 @@ class AchievementName:
     TOTAL_BORROWED_USD = 'total_borrowed_usd'
     TOTAL_COLLATERAL_USD = 'total_collateral_usd'
 
+    # trade assets
+    TRADE_BALANCE_TOTAL_USD = 'trade_balance_total_usd'
+    TRADE_ASSET_HOLDERS_COUNT = 'trade_asset_holders_count'
+    TRADE_ASSET_SWAPS_COUNT = 'trade_asset_swaps_count'
+    TRADE_ASSET_MOVE_COUNT = 'trade_asset_move_count'
+
     @classmethod
     def all_keys(cls):
         return [getattr(cls, k) for k in cls.__dict__
@@ -305,4 +311,11 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.MAX_LOAN_AMOUNT_USD, 'Maximum loan amount', prefix='$'),
     ADesc(A.TOTAL_BORROWED_USD, 'Total borrowed', prefix='$'),
     ADesc(A.TOTAL_COLLATERAL_USD, 'Total collateral', prefix='$'),
+
+    # trade assets
+    ADesc(A.TRADE_BALANCE_TOTAL_USD, 'Total trade asset balance', prefix='$'),  # todo: picture
+    ADesc(A.TRADE_ASSET_HOLDERS_COUNT, 'Trade asset holders count'),  # todo: picture
+    ADesc(A.TRADE_ASSET_SWAPS_COUNT, 'Trade asset swaps count'),
+    ADesc(A.TRADE_ASSET_MOVE_COUNT, 'Trade asset deposits/withdrawals'),
+
 ]}
