@@ -314,8 +314,8 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
 
     # trade assets
     ADesc(A.TRADE_BALANCE_TOTAL_USD, 'Total trade asset balance', prefix='$'),  # todo: picture
-    ADesc(A.TRADE_ASSET_HOLDERS_COUNT, 'Trade asset holders count'),  # todo: picture
-    ADesc(A.TRADE_ASSET_SWAPS_COUNT, 'Trade asset swaps count'),
+    ADesc(A.TRADE_ASSET_HOLDERS_COUNT, 'Trade asset holders'),  # todo: picture
+    ADesc(A.TRADE_ASSET_SWAPS_COUNT, 'Trade asset swaps'),
     ADesc(A.TRADE_ASSET_MOVE_COUNT, 'Trade asset deposits/withdrawals'),
 
 ]}
