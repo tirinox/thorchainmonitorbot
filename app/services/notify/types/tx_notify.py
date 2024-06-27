@@ -175,7 +175,7 @@ class SwapTxNotifier(GenericTxNotifier):
         self.dex_min_usd = params.as_float('also_trigger_when.dex_aggregator_used.min_usd_total', 500)
         self.aff_fee_min_usd = params.as_float('also_trigger_when.affiliate_fee_usd_greater', 500)
         self.min_streaming_swap_usd = params.as_float('also_trigger_when.streaming_swap.volume_greater', 2500)
-        self.min_trade_asset_swap_usd = params.as_float('also_trigger_when.streaming_swap.trade_asset_swap', 2500)
+        self.min_trade_asset_swap_usd = params.as_float('also_trigger_when.trade_asset_swap.volume_greater', 100_000)
         self._ss_txs_started = []  # Fill it every tick before is_tx_suitable is called.
         self._ev_db = EventDatabase(deps.db)
         self.swap_start_deduplicator = TxDeduplicator(deps.db, DB_KEY_ANNOUNCED_SS_START)
