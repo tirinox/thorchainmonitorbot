@@ -90,9 +90,6 @@ def nothing_if_0(x):
     return str(x) if x else ''
 
 
-AUTO_OPTIMIZED = 0
-
-
 @dataclass
 class THORMemo:
     action: ActionType
@@ -370,10 +367,10 @@ class THORMemo:
             memo = 'NOOP:NOVAULT' if self.no_vault else 'NOOP'
 
         elif self.action == ActionType.TRADE_ACC_DEPOSIT:
-            memo = f'+TRADE:{self.dest_address}'
+            memo = f'TRADE+:{self.dest_address}'
 
         elif self.action == ActionType.TRADE_ACC_WITHDRAW:
-            memo = f'-TRADE:{self.dest_address}'
+            memo = f'TRADE-:{self.dest_address}'
 
         else:
             raise NotImplementedError(f"Can not build memo for {self.action}")
