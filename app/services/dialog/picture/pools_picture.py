@@ -105,7 +105,6 @@ class PoolPictureGenerator(BasePictureGenerator):
             draw.line((x + x_offset + partial_width, line_y - 4, x + x_offset + partial_width, line_y + 4),
                       fill=TC_LIGHTNING_BLUE, width=1)
 
-
     @async_wrap
     def _get_picture_sync(self):
         # prepare data

@@ -1022,7 +1022,7 @@ class TwitterEnglishLocalization(BaseLocalization):
     def notification_text_trade_account_move(self, event: AlertTradeAccountAction, name_map: NameMap):
         # todo
         action_str = 'deposit' if event.is_deposit else 'withdrawal'
-        from_link, to_link, amt_str = self._trade_acc_from_to_links(event, name_map)
+        from_link, to_link, amt_str = self._trade_acc_from_to_links(event, name_map, formatting=False)
         return (
             f"🏦 Trade account {action_str}\n"
             f"👤 From {from_link}"
