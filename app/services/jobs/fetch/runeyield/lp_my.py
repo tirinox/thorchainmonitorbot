@@ -40,7 +40,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         self.last_block = 0
         self.add_il_protection_to_final_figures = True
 
-    async def generate_yield_summary(self, address, pools: List[str]) -> Tuple[dict, List[LiquidityPoolReport]]:
+    async def generate_yield_summary(self, address, pools: List[str]) -> YieldSummary:
         self.update_fees()
 
         user_txs = await self._get_user_tx_actions(address)
