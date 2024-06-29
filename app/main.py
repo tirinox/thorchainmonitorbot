@@ -172,10 +172,10 @@ class App(WithLogger):
     async def create_thor_node_connector(self, thor_env=None):
         d = self.deps
 
-        d.thor_env = thor_env or d.cfg.get_thor_env_by_network_id()
+        thor_env = thor_env or d.cfg.get_thor_env_by_network_id()
         thor_env_backup = thor_env or d.cfg.get_thor_env_by_network_id(backup=True)
 
-        d.thor_connector = ThorConnector(d.thor_env, d.session, additional_envs=[
+        d.thor_connector = ThorConnector(thor_env, d.session, additional_envs=[
             thor_env_backup
         ])
         d.thor_connector.set_client_id_for_all(HTTP_CLIENT_ID)
@@ -183,9 +183,8 @@ class App(WithLogger):
         cfg: SubConfig = d.cfg.get('thor.midgard')
         d.midgard_connector = MidgardConnector(
             d.session,
-            d.thor_connector,
             int(cfg.get_pure('tries', 3)),
-            public_url=d.thor_env.midgard_url
+            public_url=thor_env.midgard_url
         )
 
         d.name_service = NameService(d.db, d.cfg, d.midgard_connector, d.node_holder)

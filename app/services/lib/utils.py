@@ -18,6 +18,7 @@ from functools import wraps, partial
 from io import BytesIO
 from itertools import tee
 from typing import Iterable, List, Any
+from urllib.parse import urlparse, urlunparse
 
 import aiofiles
 import aiohttp
@@ -561,3 +562,9 @@ def read_var_file():
 
 def identity(x):
     return x
+
+
+def remove_path_and_query(url):
+    parsed_url = urlparse(url)
+    clean_url = urlunparse((parsed_url.scheme, parsed_url.netloc, '', '', '', ''))
+    return clean_url

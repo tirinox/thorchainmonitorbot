@@ -25,6 +25,9 @@ class AdminMessages:
     BUTT_GLOBAL_RESUME = 'Resume all'
     TEXT_ALL_PAUSED = 'All paused!'
     TEXT_ALL_RESUMED = 'All resumed!'
+    BUTT_DATA_PROV = 'Edit providers'
+    BUTT_SET_THORNODE = 'Set ThorNode'
+    BUTT_SET_MIDGARD = 'Set Midgard'
 
     def __init__(self, d: DepContainer):
         self.deps = d

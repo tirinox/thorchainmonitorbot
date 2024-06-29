@@ -1,7 +1,6 @@
 import aiohttp
-from aionode.connector import ThorConnector
-from aionode.nodeclient import ThorNodeClient
 
+from aionode.nodeclient import ThorNodeClient
 from services.lib.constants import HTTP_CLIENT_ID
 from services.lib.utils import WithLogger
 
@@ -13,14 +12,24 @@ class MidgardConnector(WithLogger):
     ERROR_NOT_FOUND = 'NotFound_Midgard'
     ERROR_NO_CLIENT = 'ERROR_NoClient'
 
-    def __init__(self, session: aiohttp.ClientSession, thor: ThorConnector, retry_number=3, public_url=''):
+    def __init__(self, session: aiohttp.ClientSession, retry_number=3, public_url=''):
         super().__init__()
 
-        self.thor = thor
-        self.public_url = public_url.rstrip('/')
+        self._public_url = public_url
+
+        self.public_url = public_url
         self.session = session
         self.retries = retry_number
         self.session = session or aiohttp.ClientSession()
+
+    @property
+    def public_url(self):
+        return self._public_url
+
+    @public_url.setter
+    def public_url(self, value):
+        self._public_url = value.rstrip('/')
+        self.logger.info(f"Midgard public URL set to {value}")
 
     async def _request_json_from_midgard_by_ip(self, ip_address: str, path: str):
         path = path.lstrip('/')

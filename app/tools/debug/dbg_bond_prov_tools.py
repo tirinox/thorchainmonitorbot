@@ -180,7 +180,7 @@ async def debug_fee_change(app: LpAppFramework):
 async def main():
     app = LpAppFramework(log_level=logging.INFO)
     async with app(brief=True):
-        app.deps.thor_env.timeout = 100
+        app.deps.thor_connector.env.timeout = 100
         await demo_run_churn_sim_continuously(app)
 
         # await run_playback(app, delay=0.01)

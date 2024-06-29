@@ -37,7 +37,6 @@ class DepContainer:
     loc_man = None  # type: 'LocalizationManager'
     broadcaster = None  # type: 'Broadcaster'
     alert_presenter = None
-    thor_env: ThorEnvironment = field(default_factory=ThorEnvironment)
 
     session: Optional[ClientSession] = None
 
