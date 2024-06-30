@@ -25,10 +25,11 @@ class TradeAccEventDecoder(WithLogger, INotified, WithDelegates):
     async def on_data(self, sender, data: BlockResult):
         events = {}
         for tx in data.txs:
-            if memo := THORMemo.parse_memo(tx.memo):
-                if memo.action in (ActionType.TRADE_ACC_WITHDRAW, ActionType.TRADE_ACC_DEPOSIT):
-                    event = self._convert_tx_to_event(tx, memo)
-                    events[event.tx_hash] = event
+            if tx.memo:
+                if memo := THORMemo.parse_memo(tx.memo):
+                    if memo.action in (ActionType.TRADE_ACC_WITHDRAW, ActionType.TRADE_ACC_DEPOSIT):
+                        event = self._convert_tx_to_event(tx, memo)
+                        events[event.tx_hash] = event
 
         unique_events = list(events.values())
 
