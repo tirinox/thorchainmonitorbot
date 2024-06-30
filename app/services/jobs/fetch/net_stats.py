@@ -2,7 +2,7 @@ import asyncio
 
 from services.jobs.fetch.base import BaseFetcher
 from services.jobs.ilp_summer import ILPSummer
-from services.jobs.user_counter import UserCounter
+from services.jobs.user_counter import UserCounterMiddleware
 from services.lib.constants import THOR_BLOCK_TIME, thor_to_float
 from services.lib.date_utils import parse_timespan_to_seconds, now_ts, DAY
 from services.lib.depcont import DepContainer
@@ -93,7 +93,7 @@ class NetworkStatisticsFetcher(BaseFetcher):
         ns.loss_protection_paid_24h_rune = await ILPSummer(self.deps).ilp_sum(period=DAY)
 
     async def _get_user_stats(self, ns: NetworkStats):
-        counter = UserCounter(self.deps)
+        counter = UserCounterMiddleware(self.deps)
         stats = await counter.get_main_stats()
         ns.users_daily = stats.dau_yesterday
         ns.users_monthly = stats.mau

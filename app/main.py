@@ -38,7 +38,7 @@ from services.jobs.scanner.swap_extractor import SwapExtractorBlock
 from services.jobs.scanner.swap_routes import SwapRouteRecorder
 from services.jobs.scanner.trade_acc import TradeAccEventDecoder
 from services.jobs.transfer_detector import RuneTransferDetectorTxLogs
-from services.jobs.user_counter import UserCounter
+from services.jobs.user_counter import UserCounterMiddleware
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.jobs.volume_recorder import VolumeRecorder, TxCountRecorder
 from services.lib.config import Config, SubConfig
@@ -293,7 +293,7 @@ class App(WithLogger):
             transfer_decoder.add_subscriber(balance_notifier)
 
             # Count unique users
-            user_counter = UserCounter(d)
+            user_counter = UserCounterMiddleware(d)
             d.block_scanner.add_subscriber(user_counter)
 
             # fixme: enable this later

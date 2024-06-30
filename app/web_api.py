@@ -11,7 +11,7 @@ from starlette.routing import Route, Mount
 from starlette.staticfiles import StaticFiles
 
 from services.dialog.slack.slack_bot import SlackBot
-from services.jobs.user_counter import UserCounter
+from services.jobs.user_counter import UserCounterMiddleware
 from services.lib.config import Config
 from services.lib.date_utils import parse_timespan_to_seconds, DAY
 from services.lib.db import DB
@@ -56,7 +56,7 @@ class AppSettingsAPI:
         d.settings_manager = SettingsManager(d.db, d.cfg)
         self.slack = SlackBot(d.cfg, d.db, d.settings_manager)
 
-        self._user_counter = UserCounter(d)
+        self._user_counter = UserCounterMiddleware(d)
 
     async def _on_startup(self):
         self.deps.make_http_session()

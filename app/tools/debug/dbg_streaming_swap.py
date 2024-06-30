@@ -10,7 +10,7 @@ from services.jobs.scanner.native_scan import NativeScannerBlock
 # from services.jobs.scanner.native_scan import NativeScannerBlock
 from services.jobs.scanner.scan_cache import NativeScannerBlockCached
 from services.jobs.scanner.swap_extractor import SwapExtractorBlock
-from services.jobs.user_counter import UserCounter
+from services.jobs.user_counter import UserCounterMiddleware
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.jobs.volume_recorder import VolumeRecorder
 from services.models.asset import Asset, AssetRUNE
@@ -93,7 +93,7 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
     d.block_scanner.allow_jumps = True
 
     # Just to check stability
-    user_counter = UserCounter(d)
+    user_counter = UserCounterMiddleware(d)
     d.block_scanner.add_subscriber(user_counter)
 
     # Extract ThorTx from BlockResult
