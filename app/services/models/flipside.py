@@ -83,7 +83,7 @@ class FSSwapCount(NamedTuple):
         return cls(
             j.get(KEY_DATETIME),
             int(j.get('SWAP_COUNT', 0)),
-            int(j.get('UNIQUE_SWAPPER_COUNT', 0)),  # fixme: None!!
+            int(j.get('UNIQUE_SWAPPER_COUNT', 0) or 0),  # fixme: None!!
             int(j.get('SWAP_COUNT_CUMULATIVE', 0)),
         )
 
