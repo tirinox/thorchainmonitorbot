@@ -60,7 +60,7 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
 
         swap_count, prev_swap_count = e.swap_count_curr_prev
         usd_volume, prev_usd_volume = e.usd_volume_curr_prev
-        unique_swap, prev_unique_swap = e.unique_swap_curr_prev
+        unique_swap, prev_unique_swap = e.swapper_curr, e.swapper_prev
 
         swap_routes = e.swap_routes
 

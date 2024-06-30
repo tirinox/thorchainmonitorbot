@@ -9,6 +9,7 @@ from services.jobs.fetch.flipside import FlipSideConnector, FSList
 from services.jobs.fetch.flipside.urls import FS_LATEST_EARNINGS_URL, FS_LATEST_SWAP_VOL_URL, \
     FS_LATEST_SWAP_AFF_FEE_URL, FS_LATEST_SWAP_COUNT_URL, FS_LATEST_SWAP_PATH_URL, FS_LATEST_LOCKED_RUNE_URL
 from services.jobs.fetch.key_stats import KeyStatsFetcher
+from services.jobs.user_counter import UserCounterMiddleware
 from services.lib.delegates import INotified
 from services.lib.texts import sep
 from services.models.flipside import FSSwapRoutes, FSAffiliateCollectors, FSFees, FSSwapVolume, FSSwapCount, \
@@ -128,6 +129,7 @@ async def debug_locked_value(app: LpAppFramework):
 async def main():
     lp_app = LpAppFramework(log_level=logging.INFO)
     async with lp_app(brief=True):
+        lp_app.deps.user_counter = UserCounterMiddleware(lp_app.deps)
         await lp_app.deps.last_block_fetcher.run_once()
         # await lp_app.prepare(brief=True)
 

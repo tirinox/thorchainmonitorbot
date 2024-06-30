@@ -6,6 +6,7 @@ from services.jobs.fetch.base import BaseFetcher
 from services.jobs.fetch.flipside.flipside import FlipSideConnector, FSList
 from services.jobs.fetch.flipside.urls import *
 from services.jobs.fetch.pool_price import PoolFetcher
+from services.jobs.user_counter import UserCounterMiddleware
 from services.lib.date_utils import parse_timespan_to_seconds, DAY
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
@@ -67,6 +68,11 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
             self.get_lock_value()
         )
 
+        # Swapper count
+
+        user_counter: UserCounterMiddleware = self.deps.user_counter
+        user_stats = await user_counter.get_main_stats()
+
         # Done. Construct the resulting event
         return AlertKeyStats(
             result, old_pools, fresh_pools,
@@ -74,6 +80,8 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
             days=self.tally_days_period,
             prev_lock=prev_lock,
             curr_lock=curr_lock,
+            swapper_curr=user_stats.wau,
+            swapper_prev=user_stats.wau_prev_weak,
         )
 
     async def get_lock_value(self, days_ago=0) -> FSLockedValue:

@@ -293,8 +293,8 @@ class App(WithLogger):
             transfer_decoder.add_subscriber(balance_notifier)
 
             # Count unique users
-            user_counter = UserCounterMiddleware(d)
-            d.block_scanner.add_subscriber(user_counter)
+            d.user_counter = UserCounterMiddleware(d)
+            d.block_scanner.add_subscriber(d.user_counter)
 
             # fixme: enable this later
             # d.affiliate_recorder = AffiliateRecorder(d)

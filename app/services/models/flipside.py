@@ -243,6 +243,9 @@ class AlertKeyStats:
     prev_lock: FSLockedValue
     curr_lock: FSLockedValue
 
+    swapper_curr: int
+    swapper_prev: int
+
     days: int = 7
 
     @property
@@ -338,12 +341,12 @@ class AlertKeyStats:
         usd_volume, prev_usd_volume = sum_by_attribute_pair(curr_data, prev_data, 'swap_volume_usd', FSSwapVolume)
         return usd_volume, prev_usd_volume
 
-    @cached_property
-    def unique_swap_curr_prev(self):
-        curr_data, prev_data = self.curr_prev_data
-        unique_swap, prev_unique_swap = sum_by_attribute_pair(curr_data, prev_data, 'unique_swapper_count',
-                                                              FSSwapCount, max)
-        return unique_swap, prev_unique_swap
+    # @cached_property
+    # def unique_swap_curr_prev(self):
+        # curr_data, prev_data = self.curr_prev_data
+        # unique_swap, prev_unique_swap = sum_by_attribute_pair(curr_data, prev_data, 'unique_swapper_count',
+        #                                                       FSSwapCount, max)
+        # return unique_swap, prev_unique_swap
 
     @property
     def locked_value_usd_curr_prev(self):

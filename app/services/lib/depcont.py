@@ -7,7 +7,6 @@ import ujson
 from aiohttp import ClientSession, ClientTimeout
 
 from aionode.connector import ThorConnector
-from aionode.env import ThorEnvironment
 from aionode.types import ThorChainInfo
 from services.dialog.telegram.telegram import TelegramBot
 from services.dialog.twitter.twitter_bot import TwitterBot
@@ -65,6 +64,7 @@ class DepContainer:
     tr_acc_summary_notifier = None  # type: 'TradeAccSummaryNotifier'
     volume_recorder = None  # type: 'VolumeRecorder'
     tx_count_recorder = None  # type: 'TxCountRecorder'
+    user_counter = None  # type: 'UserCounterMiddleware'
     weekly_stats_notifier = None
     pol_notifier = None
     lend_stats_notifier = None
