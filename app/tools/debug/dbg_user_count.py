@@ -5,9 +5,10 @@ import random
 from redis.asyncio import Redis
 
 from services.jobs.scanner.native_scan import NativeScannerBlock
-from services.jobs.user_counter import UserCounter
+from services.jobs.user_counter import UserCounterMiddleware
 from services.lib.active_users import DailyActiveUserCounter, ManualUserCounter
 from services.lib.date_utils import DAY, now_ts
+from services.lib.utils import unique_ident, random_hex
 from tools.lib.lp_common import LpAppFramework
 
 
@@ -73,13 +74,13 @@ async def auto_play_dau(app):
 
 async def real_life_active_scan_user_counter(app: LpAppFramework):
     scanner = NativeScannerBlock(app.deps)
-    user_counter = UserCounter(app.deps)
+    user_counter = UserCounterMiddleware(app.deps)
     scanner.add_subscriber(user_counter)
     await scanner.run()
 
 
 async def demo_unique_users_of_block(app: LpAppFramework):
-    user_counter = UserCounter(app.deps)
+    user_counter = UserCounterMiddleware(app.deps)
     scanner = NativeScannerBlock(app.deps)
 
     r = await scanner.fetch_one_block(7499377)  # donate
@@ -95,6 +96,33 @@ async def demo_unique_users_of_block(app: LpAppFramework):
     print('synth:', user_counter.get_unique_users(r))
 
 
+async def demo_display_user_stats(app: LpAppFramework):
+    counter = UserCounterMiddleware(app.deps)
+
+    # definitely it is the week before
+    await counter.counter.hit(
+        user='thorFakeUser', now=now_ts() - 10 * DAY
+    )
+
+    stats = await counter.get_main_stats()
+    print(stats)
+
+
+async def demo_simulate_users(app: LpAppFramework):
+    counter = DailyActiveUserCounter(app.deps.db.redis, '_Test')
+    await counter.clear()
+
+    for day in range(30):
+        ts = now_ts() - day * DAY
+        user_count = 31 - day
+        users = [f'thor1{random_hex(20).decode()}' for i in range(user_count)]
+        print(f'day from now = {day}, users = {len(users)}')
+
+        await counter.hit(users=users, now=ts)
+
+    stats = await counter.get_stats()
+    print(stats)
+
 
 async def main():
     lp_app = LpAppFramework(log_level=logging.INFO)
@@ -103,8 +131,9 @@ async def main():
         # await play_dau(lp_app)
         # await auto_play_dau(lp_app)
         # await real_life_active_scan_user_counter(lp_app)
-        await demo_unique_users_of_block(lp_app)
-
+        # await demo_unique_users_of_block(lp_app)
+        # await demo_display_user_stats(lp_app)
+        await demo_simulate_users(lp_app)
 
 if __name__ == '__main__':
     asyncio.run(main())

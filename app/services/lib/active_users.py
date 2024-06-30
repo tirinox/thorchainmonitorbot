@@ -28,6 +28,8 @@ class ActiveUserCounter:
         """
         keys = map(self._key, key_postfixes)
         keys = tuple(keys)
+        if not keys:
+            return 0
         return await self.r.pfcount(*keys)
 
     def key_postfix(self, now: float):
@@ -47,6 +49,7 @@ class UserStats(typing.NamedTuple):
     dau_yesterday: int = 0
     wau: int = 0
     mau: int = 0
+    wau_prev_weak: int = 0
 
 
 class DailyActiveUserCounter(ActiveUserCounter):
@@ -66,30 +69,35 @@ class DailyActiveUserCounter(ActiveUserCounter):
     async def get_au_over_days(self, days, start=0):
         assert 0 < days <= 31
         now = now_ts()
-        timestamps = [now - day_ago * DAY for day_ago in range(start, days)]
+        timestamps = [now - day_ago * DAY for day_ago in range(start, start + days)]
         postfixes = map(self.key_postfix, timestamps)
         return await self.get_count(postfixes)
 
     async def get_wau(self):
         return await self.get_au_over_days(7)
 
+    async def get_wau_prev_week(self):
+        return await self.get_au_over_days(7, start=7)
+
     async def get_mau(self):
         return await self.get_au_over_days(30)
 
     async def get_stats(self) -> UserStats:
-        dau, dau_yesterday, wau, mau = await asyncio.gather(
+        dau, dau_yesterday, wau, mau, wau_prev_weak = await asyncio.gather(
             self.get_dau(),
             self.get_dau_yesterday(),
             self.get_wau(),
-            self.get_mau()
+            self.get_mau(),
+            self.get_wau_prev_week()
         )
         return UserStats(
-            dau, dau_yesterday, wau, mau
+            dau, dau_yesterday, wau, mau,
+            wau_prev_weak
         )
 
     async def get_current_and_previous_au(self, period_days):
         current = await self.get_au_over_days(period_days)
-        previous = await self.get_au_over_days(period_days * 2, start=period_days)
+        previous = await self.get_au_over_days(period_days, start=period_days)
         return current, previous
 
 
