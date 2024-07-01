@@ -149,11 +149,14 @@ async def main():
         # await demo_test_block_to_date(app, 16510834)
         # await demo_test_block_to_date(app, 14232321)
 
-        await demo_summary_all_pools(app, 'thor1gzautydm2mrpcuj36drqyzuuzqw4w8cp8zjj2c')  # 3 classic LP
+        # await demo_summary_all_pools(app, 'thor1gzautydm2mrpcuj36drqyzuuzqw4w8cp8zjj2c')  # 3 classic LP
         # await demo_summary_all_pools(app, 'bc1qcsmgsvfpp4w6dmlwwdf4s87ngh8trz8yuwsfy0')  # savers
         # await demo_summary_all_pools(app, 'ltc1q67tf8ryuggvetakwz5flex5ydhyvn7rp0y8kx3')
 
-        # await demo_report_for_single_pool(app, 'thor1a8ydprhkk5u032r277nzs4vw5khnnl3ya9xnvs', 'ETH.ETH')
+        # await demo_report_for_single_pool(app, 'thor1a8ydprhkk5u032r277nzs4vw5khnnl3ya9xnvs', 'ETH.ETH',
+        #                                   hidden=False)
+        await demo_report_for_single_pool(app, 'cosmos1yd8dys9q2kwjnldcayk53n0d5gc7kjnq6srf76', 'GAIA.ATOM',
+                                          hidden=False)
         # await my_test_summary_of_all_pools(app, 'thor1tfm4q8u57qzsznpvh02s8j483aga63cl02k6jt')
 
 

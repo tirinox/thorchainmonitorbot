@@ -78,12 +78,12 @@ class MidgardParserV2(MidgardParserBase):
         out_tx_list = [ThorSubTx.parse(rt) for rt in r.get('out', [])]
 
         meta_add = ThorMetaAddLiquidity.parse(
-            metadata.get('addLiquidity', {})) if tx_type == ActionType.ADD_LIQUIDITY else None
+            metadata.get('addLiquidity', {})) if tx_type == ActionType.ADD_LIQUIDITY.value else None
         meta_withdraw = ThorMetaWithdraw.parse(
-            metadata.get('withdraw', {})) if tx_type == ActionType.WITHDRAW else None
-        meta_swap = ThorMetaSwap.parse(metadata.get('swap', {})) if tx_type == ActionType.SWAP else None
+            metadata.get('withdraw', {})) if tx_type == ActionType.WITHDRAW.value else None
+        meta_swap = ThorMetaSwap.parse(metadata.get('swap', {})) if tx_type == ActionType.SWAP.value else None
         meta_refund = ThorMetaRefund.parse(
-            metadata.get('refund', {})) if tx_type == ActionType.REFUND else None
+            metadata.get('refund', {})) if tx_type == ActionType.REFUND.value else None
 
         return ThorTx(
             int(date), int(block_height), status, tx_type,
