@@ -216,6 +216,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
         # if the used withdrew 100% of liquidity, we ignore this history.
         # so accounting starts only with the most recent addition
+
         full_tx_count = len(txs)
         txs = cut_off_previous_lp_sessions(txs)
         last_session_tx_count = len(txs)
@@ -634,17 +635,19 @@ def final_liquidity(txs: List[ThorTx]):
 
 
 def cut_off_previous_lp_sessions(txs: List[ThorTx]):
-    lp = 0
+    lp = defaultdict(float)  # track LP units for each pool
     new_txs = []
     for tx in txs:
-        if tx.type == ActionType.ADD_LIQUIDITY:
-            lp += tx.meta_add.liquidity_units_int
-        elif tx.type == ActionType.WITHDRAW:
-            lp += tx.meta_withdraw.liquidity_units_int
+        pool = tx.first_pool
+        if tx.type == ActionType.ADD_LIQUIDITY.value:
+            lp[pool] += tx.meta_add.liquidity_units_int
+        elif tx.type == ActionType.WITHDRAW.value:
+            lp[pool] += tx.meta_withdraw.liquidity_units_int
 
         new_txs.append(tx)
 
-        if lp <= 0:
+        if lp[pool] <= 0:
             # oops! user has withdrawn all funds completely: resetting the accumulator!
             new_txs = []
+            lp[pool] = 0
     return new_txs
