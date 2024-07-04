@@ -26,7 +26,7 @@ class TradeAccEventDecoder(WithLogger, INotified, WithDelegates):
         events = {}
         for tx in data.txs:
             if tx.memo:
-                if memo := THORMemo.parse_memo(tx.memo):
+                if memo := THORMemo.parse_memo(tx.memo, no_raise=True):
                     if memo.action in (ActionType.TRADE_ACC_WITHDRAW, ActionType.TRADE_ACC_DEPOSIT):
                         event = self._convert_tx_to_event(tx, memo)
                         events[event.tx_hash] = event

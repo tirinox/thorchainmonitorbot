@@ -147,7 +147,7 @@ class THORMemo:
         return dest_address.strip(), refund_address.strip()
 
     @classmethod
-    def parse_memo(cls, memo: str, no_raise=False):
+    def parse_memo(cls, memo: str, no_raise=True):
         if memo.strip() == '':
             return cls(ActionType.NO_INTENT)
 
