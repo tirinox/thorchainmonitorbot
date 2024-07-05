@@ -6,7 +6,9 @@ The pool data from the removed pool_info table will be restored to the local red
 Target redis database connection details should be provided in the .env file.
 
 Usage:
-    python pool_data_recovery.py --host localhost --port 6379 --password secret --db 0
+
+    make attach
+    PYTHONPATH="/app" python tools/pool_data_recovery.py --host localhost --port 6379 --password secret --db 0
 """
 import asyncio
 import argparse
