@@ -84,7 +84,7 @@ class CurrentLiquidity(BaseModelMixin):
     pool: str
     rune_added: float
     asset_added: float
-    pool_units: int
+    pool_units: int  # core field. pool units at the moment
     asset_withdrawn: float
     rune_withdrawn: float
     total_added_as_asset: float

@@ -4,6 +4,7 @@ from datetime import date
 
 from localization.languages import Language
 from services.dialog.picture.lp_picture import generate_yield_picture, savings_pool_picture, lp_address_summary_picture
+from services.jobs.fetch.runeyield import get_rune_yield_connector
 from services.jobs.fetch.runeyield.date2block import DateToBlockMapper
 from services.jobs.fetch.runeyield.lp_my import HomebrewLPConnector, cut_off_previous_lp_sessions
 from services.jobs.fetch.tx import TxFetcher
@@ -121,11 +122,26 @@ async def demo_find_interesting_savers(app: LpAppFramework):
                 print(f'interrupted sessions detected: {n_this_session = } but {n = } !!!')
 
 
+async def debug_current_lp_state(app: LpAppFramework, pool, address, is_savings):
+    lp_conn = HomebrewLPConnector(app.deps)
+    lp = await lp_conn.get_current_liquidity_from_node(address, pool, is_savings)
+    print(lp)
+
+
 async def main():
     app = LpAppFramework(HomebrewLPConnector, log_level=logging.INFO)
     async with app:
         global LANG
         LANG = Language.ENGLISH
+
+        # saver BTC
+        # await debug_current_lp_state(app, "BTC.BTC", 'bc1qhjp04nzu744lupkjds4agyl2qm92z8z4qd6u9a',
+        #                              is_savings=True)
+
+        # await demo_summary_all_pools(app, 'bc1qhjp04nzu744lupkjds4agyl2qm92z8z4qd6u9a')  # savers
+        await demo_report_for_single_pool(app, 'bc1qhjp04nzu744lupkjds4agyl2qm92z8z4qd6u9a', 'BTC/BTC',
+                                          hidden=False)
+
         # await demo_find_interesting_savers(app)
         # await demo_get_my_pools(app, 'bc1q0jmh2ht08zha0vajx0kq87vxtyspak45xywf2p')
         # await demo_report_for_single_pool(app, 'thor1a8ydprhkk5u032r277nzs4vw5khnnl3ya9xnvs', 'ETH.ETH')
@@ -155,8 +171,8 @@ async def main():
 
         # await demo_report_for_single_pool(app, 'thor1a8ydprhkk5u032r277nzs4vw5khnnl3ya9xnvs', 'ETH.ETH',
         #                                   hidden=False)
-        await demo_report_for_single_pool(app, 'cosmos1yd8dys9q2kwjnldcayk53n0d5gc7kjnq6srf76', 'GAIA.ATOM',
-                                          hidden=False)
+        # await demo_report_for_single_pool(app, 'cosmos1yd8dys9q2kwjnldcayk53n0d5gc7kjnq6srf76', 'GAIA.ATOM',
+        #                                   hidden=False)
         # await my_test_summary_of_all_pools(app, 'thor1tfm4q8u57qzsznpvh02s8j483aga63cl02k6jt')
 
 

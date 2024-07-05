@@ -523,9 +523,9 @@ def sync_lp_address_summary_picture(reports: List[LiquidityPoolReport], weekly_c
 
     total_fees_rune *= 2.0  # we show full rune fees because there is no split rune/asset
 
-    total_gain_loss_usd_p = total_gain_loss_usd / total_added_value_usd * 100.0
-    total_gain_loss_rune_p = total_gain_loss_rune / total_added_value_rune * 100.0
-    total_lp_vs_hold_percent = total_lp_vs_hold_abs / total_added_value_usd * 100.0
+    total_gain_loss_usd_p = total_gain_loss_usd / total_added_value_usd * 100.0 if total_added_value_usd else 0.0
+    total_gain_loss_rune_p = total_gain_loss_rune / total_added_value_rune * 100.0 if total_added_value_rune else 0.0
+    total_lp_vs_hold_percent = total_lp_vs_hold_abs / total_added_value_usd * 100.0 if total_lp_vs_hold_abs else 0.0
 
     color_map = generate_color_map(asset for asset in asset_values.keys())
 

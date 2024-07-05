@@ -10,8 +10,8 @@ Usage:
     make attach
     PYTHONPATH="/app" python tools/pool_data_recovery.py --host localhost --port 6379 --password secret --db 0
 """
-import asyncio
 import argparse
+import asyncio
 import json
 import pprint
 
@@ -20,7 +20,6 @@ from redis.asyncio import Redis
 
 from services.jobs.fetch.pool_price import PoolFetcher
 from services.lib.db import DB
-from services.lib.texts import sep
 
 
 async def get_remote_redis() -> Redis:

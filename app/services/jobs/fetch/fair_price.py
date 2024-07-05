@@ -125,5 +125,6 @@ class RuneMarketInfoFetcher(WithLogger):
 
     async def get_rune_market_info(self) -> RuneMarketInfo:
         data = await self.get_rune_market_info_cached()
-        self._enrich_circulating_supply(data.supply_info)
+        if data:
+            self._enrich_circulating_supply(data.supply_info)
         return data
