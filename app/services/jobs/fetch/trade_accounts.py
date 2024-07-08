@@ -2,12 +2,12 @@ from typing import List, Optional
 
 from aionode.types import ThorTradeUnits, ThorBalances, ThorCoin
 from services.jobs.fetch.base import BaseFetcher
-from services.jobs.volume_recorder import TxCountRecorder, VolumeRecorder
+from services.jobs.volume_recorder import TxCountRecorder, VolumeRecorder, TxCountStats
 from services.lib.constants import RUNE_DECIMALS
-from services.lib.date_utils import DAY, now_ts
+from services.lib.date_utils import DAY
 from services.lib.depcont import DepContainer
 from services.lib.utils import parallel_run_in_groups
-from services.models.trade_acc import AlertTradeAccountSummary, TradeAccountSummary
+from services.models.trade_acc import AlertTradeAccountStats, TradeAccountVaults, TradeAccountStats
 
 
 class TradeAccountFetcher(BaseFetcher):
@@ -54,7 +54,7 @@ class TradeAccountFetcher(BaseFetcher):
             balances.assets.extend(trade_account_balances)
         return balances
 
-    async def load_summary_for_height(self, height=0) -> Optional[TradeAccountSummary]:
+    async def load_summary_for_height(self, height=0) -> Optional[TradeAccountVaults]:
         if not height:
             pools = self.deps.price_holder.pool_info_map
             if not pools:
@@ -68,37 +68,29 @@ class TradeAccountFetcher(BaseFetcher):
         vault_balances = await self.deps.thor_connector.query_vault(height=height)
         trade_units = await self.deps.thor_connector.query_trade_units(height)
         traders = await self._get_traders(trade_units, height)
-        return TradeAccountSummary.from_trade_units(trade_units, pools, traders, vault_balances)
+        return TradeAccountVaults.from_trade_units(trade_units, pools, traders, vault_balances)
 
     @property
     def previous_block_height(self):
         return self.deps.last_block_store.block_time_ago(self.tally_period)
 
-    async def fetch(self) -> AlertTradeAccountSummary:
-        current = await self.load_summary_for_height()
-        previous = await self.load_summary_for_height(self.previous_block_height)
+    async def fetch(self) -> AlertTradeAccountStats:
+        # State of Trade Account vaults
+        current: TradeAccountVaults = await self.load_summary_for_height()
+        previous: TradeAccountVaults = await self.load_summary_for_height(self.previous_block_height)
         if not previous:
             self.logger.warning(f'No previous Trade Acc summary data at #{self.previous_block_height}')
 
-        tx_counter: TxCountRecorder = self.deps.tx_count_recorder
+        # Volume stats
         volume_recorder: VolumeRecorder = self.deps.volume_recorder
+        curr_volume_stats, prev_volume_stats = await volume_recorder.get_previous_and_current_sum(self.tally_period)
 
+        # Transaction count stats
         tally_days = int(self.tally_period / DAY)
-        tx_count_stats = await tx_counter.get_stats(tally_days)
-        now = now_ts()
-        curr_volume_stats = await volume_recorder.get_sum(now - self.tally_period, now)
-        prev_volume_stats = await volume_recorder.get_sum(now - self.tally_period * 2, now - self.tally_period)
+        tx_counter: TxCountRecorder = self.deps.tx_count_recorder
+        tx_count_stats: TxCountStats = await tx_counter.get_stats(tally_days)
 
-        swaps_current = tx_count_stats.trade.count_curr
-        swaps_prev = tx_count_stats.trade.count_prev
-
-        swap_vol_current_usd = curr_volume_stats.get('trade_asset_usd', 0.0)
-        swap_vol_prev_usd = prev_volume_stats.get('trade_asset_usd', 0.0)
-
-        return AlertTradeAccountSummary(
-            current, previous,
-            swaps_current=swaps_current,
-            swaps_prev=swaps_prev,
-            swap_vol_current_usd=swap_vol_current_usd,
-            swap_vol_prev_usd=swap_vol_prev_usd
+        return AlertTradeAccountStats(
+            curr=TradeAccountStats(tx_count_stats.curr, curr_volume_stats, current),
+            prev=TradeAccountStats(tx_count_stats.prev, prev_volume_stats, previous),
         )

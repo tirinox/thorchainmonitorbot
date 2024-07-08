@@ -10,7 +10,7 @@ from services.jobs.volume_recorder import VolumeRecorder, TxCountRecorder
 from services.lib.money import distort_randomly
 from services.lib.texts import sep
 from services.lib.utils import load_pickle, save_pickle
-from services.models.trade_acc import AlertTradeAccountAction, AlertTradeAccountSummary
+from services.models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from services.notify.types.trade_acc_notify import TradeAccSummaryNotifier, TradeAccTransactionNotifier
 from tools.lib.lp_common import LpAppFramework
 
@@ -159,10 +159,11 @@ async def demo_trade_acc_summary_single(app: LpAppFramework, reset_cache=False):
         data = await trade_acc_fetcher.fetch()
         save_pickle(cache_path, data)
 
-    data: AlertTradeAccountSummary = data._replace(
-        swaps_prev= int(distort_randomly(data.swaps_current, 30)),
-        swap_vol_prev_usd= distort_randomly(data.swap_vol_current_usd, 30),
-    )
+    # fixme
+    # data: AlertTradeAccountStats = data._replace(
+    #     swaps_prev= int(distort_randomly(data.swaps_current, 30)),
+    #     swap_vol_prev_usd= distort_randomly(data.swap_vol_current_usd, 30),
+    # )
 
     if data:
         sep()

@@ -4,7 +4,7 @@ from services.lib.cooldown import Cooldown
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
-from services.models.trade_acc import AlertTradeAccountAction, AlertTradeAccountSummary
+from services.models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from services.notify.dup_stop import TxDeduplicator
 
 
@@ -39,9 +39,9 @@ class TradeAccSummaryNotifier(INotified, WithDelegates, WithLogger):
         cfg = deps.cfg.trade_accounts.summary
         self.cooldown_sec = cfg.as_interval('cooldown', '1h')
         self.cd = Cooldown(self.deps.db, "TradeAccSummaryNotification", self.cooldown_sec)
-        self.last_event: Optional[AlertTradeAccountSummary] = None
+        self.last_event: Optional[AlertTradeAccountStats] = None
 
-    async def on_data(self, sender, e: AlertTradeAccountSummary):
+    async def on_data(self, sender, e: AlertTradeAccountStats):
         if not e:
             self.logger.error('Empty event!')
 

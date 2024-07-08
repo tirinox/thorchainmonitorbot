@@ -1,8 +1,9 @@
-from typing import NamedTuple, List, Optional
+from typing import NamedTuple, List
 
 from aionode.types import ThorTradeUnits, ThorVault, ThorTradeAccount
 from services.models.asset import normalize_asset
 from services.models.pool_info import PoolInfoMap
+from services.models.vol_n import TxMetricType
 
 
 class AlertTradeAccountAction(NamedTuple):
@@ -21,7 +22,7 @@ class AlertTradeAccountAction(NamedTuple):
         return not self.is_deposit
 
 
-class TradeAccountSummary(NamedTuple):
+class TradeAccountVaults(NamedTuple):
     total_usd: float
 
     pool2acc: dict[str, ThorTradeUnits]
@@ -59,12 +60,20 @@ class TradeAccountSummary(NamedTuple):
             return []
 
 
-class AlertTradeAccountSummary(NamedTuple):
-    current: TradeAccountSummary
-    previous: Optional[TradeAccountSummary]
+class TradeAccountStats(NamedTuple):
+    tx_count: dict[str, int]
+    tx_volume: dict[str, int]
+    vaults: TradeAccountVaults
 
-    swaps_current: int = 0
-    swaps_prev: int = 0
 
-    swap_vol_current_usd: float = 0.0
-    swap_vol_prev_usd: float = 0.0
+class AlertTradeAccountStats(NamedTuple):
+    curr: TradeAccountStats
+    prev: TradeAccountStats
+    
+    @property
+    def swap_vol_prev_usd(self):
+        return self.prev.tx_volume.get(TxMetricType.usd_key(TxMetricType.TRADE_SWAP))
+
+    @property
+    def swap_vol_cur_usd(self):
+        return self.prev.tx_volume.get(TxMetricType.usd_key(TxMetricType.TRADE_SWAP))
