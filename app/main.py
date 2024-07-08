@@ -566,6 +566,7 @@ class App(WithLogger):
                 d.lend_stats_fetcher.add_subscriber(achievements)
 
         if d.cfg.get('trade_accounts.enabled', True):
+            # Trade account actions
             traed = TradeAccEventDecoder(d.db, d.price_holder)
             d.block_scanner.add_subscriber(traed)
 

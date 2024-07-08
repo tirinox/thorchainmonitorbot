@@ -1,27 +1,16 @@
 from collections import defaultdict
 from contextlib import suppress
-from typing import List, NamedTuple
+from typing import List, Tuple
 
 from services.lib.accumulator import Accumulator
 from services.lib.active_users import DailyActiveUserCounter
-from services.lib.date_utils import HOUR
+from services.lib.date_utils import HOUR, now_ts
 from services.lib.delegates import WithDelegates, INotified
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 from services.models.memo import ActionType
 from services.models.tx import ThorTx
-
-
-class TxCountStat(NamedTuple):
-    count_curr: int
-    count_prev: int
-
-
-class TxCountStats(NamedTuple):
-    all_swap: TxCountStat
-    trade: TxCountStat
-    synth: TxCountStat
-    streaming: TxCountStat
+from services.models.vol_n import TxCountStats, TxMetricType
 
 
 class TxCountRecorder(WithDelegates, INotified, WithLogger):
@@ -29,32 +18,42 @@ class TxCountRecorder(WithDelegates, INotified, WithLogger):
         super().__init__()
         self.deps = deps
         r = deps.db.redis
-        self._all_swap_counter = DailyActiveUserCounter(r, 'AllSwaps')
-        self._trade_swap_counter = DailyActiveUserCounter(r, 'TradeSwaps')
-        self._synth_swap_counter = DailyActiveUserCounter(r, 'SynthSwaps')
-        self._streaming_swap_counter = DailyActiveUserCounter(r, 'StreamingSwaps')
+        self._counters = {
+            TxMetricType.SWAP: DailyActiveUserCounter(r, 'AllSwaps'),
+            TxMetricType.TRADE_SWAP: DailyActiveUserCounter(r, 'TradeSwaps'),
+            TxMetricType.TRADE_DEPOSIT: DailyActiveUserCounter(r, 'TradeDeposit'),
+            TxMetricType.TRADE_WITHDRAWAL: DailyActiveUserCounter(r, 'TradeWithdrawal'),
+            TxMetricType.SWAP_SYNTH: DailyActiveUserCounter(r, 'SynthSwaps'),
+            TxMetricType.STREAMING: DailyActiveUserCounter(r, 'StreamingSwaps'),
+        }
 
     async def _write_tx_count(self, txs: List[ThorTx]):
-        normal_swaps = set()
-        trade_swaps = set()
-        synth_swaps = set()
-        streaming_swaps = set()
+        unique_tx_hashes = defaultdict(set)
 
         for tx in txs:
-            if tx.type == ActionType.SWAP:
-                ident = tx.tx_hash
-                if tx.is_trade_asset_involved:
-                    trade_swaps.add(ident)
-                if tx.is_synth_involved:
-                    synth_swaps.add(ident)
-                if tx.is_streaming:
-                    streaming_swaps.add(ident)
-                normal_swaps.add(ident)
+            if not tx or not (ident := tx.tx_hash):
+                continue
 
-        await self._all_swap_counter.hit(users=normal_swaps)
-        await self._trade_swap_counter.hit(users=trade_swaps)
-        await self._synth_swap_counter.hit(users=synth_swaps)
-        await self._streaming_swap_counter.hit(users=streaming_swaps)
+            if tx.type == ActionType.SWAP:
+                if tx.is_trade_asset_involved:
+                    unique_tx_hashes.get(TxMetricType.TRADE_SWAP).add(ident)
+                if tx.is_synth_involved:
+                    unique_tx_hashes.get(TxMetricType.SWAP_SYNTH).add(ident)
+                if tx.is_streaming:
+                    unique_tx_hashes.get(TxMetricType.STREAMING).add(ident)
+                unique_tx_hashes.get(TxMetricType.SWAP).add(ident)
+            elif tx.type == ActionType.TRADE_ACC_DEPOSIT:
+                unique_tx_hashes.get(TxMetricType.TRADE_DEPOSIT).add(ident)
+            elif tx.type == ActionType.TRADE_ACC_WITHDRAW:
+                unique_tx_hashes.get(TxMetricType.TRADE_WITHDRAWAL).add(ident)
+            elif tx.type == ActionType.ADD_LIQUIDITY:
+                unique_tx_hashes.get(TxMetricType.ADD_LIQUIDITY).add(ident)
+            elif tx.type == ActionType.WITHDRAW:
+                unique_tx_hashes.get(TxMetricType.WITHDRAW_LIQUIDITY).add(ident)
+
+        for tx_type, tx_set in unique_tx_hashes.values():
+            if tx_set:
+                await self._counters[tx_type].hit(users=tx_set)
 
     async def on_data(self, sender, txs: List[ThorTx]):
         try:
@@ -63,27 +62,17 @@ class TxCountRecorder(WithDelegates, INotified, WithLogger):
         except Exception:
             self.logger.exception('Error while writing tx count')
 
-    @staticmethod
-    async def _get_curr_prev(counter: DailyActiveUserCounter, days):
-        curr, prev = await counter.get_current_and_previous_au(days)
-        return TxCountStat(curr, prev)
-
     async def get_stats(self, period_days=7):
-        return TxCountStats(
-            all_swap=await self._get_curr_prev(self._all_swap_counter, period_days),
-            trade=await self._get_curr_prev(self._trade_swap_counter, period_days),
-            synth=await self._get_curr_prev(self._synth_swap_counter, period_days),
-            streaming=await self._get_curr_prev(self._streaming_swap_counter, period_days)
-        )
+        curr_dict, prev_dict = defaultdict(int), defaultdict(int)
+        for tx_type, counter in self._counters.values():
+            curr, prev = await counter.get_current_and_previous_au(period_days)
+            curr_dict[tx_type] += curr
+            prev_dict[tx_type] += prev
+
+        return TxCountStats(curr_dict, prev_dict)
 
 
 class VolumeRecorder(WithDelegates, INotified, WithLogger):
-    KEY_SWAP = 'swap'
-    KEY_SWAP_SYNTH = 'synth'
-    KEY_ADD_LIQUIDITY = 'add'
-    KEY_WITHDRAW_LIQUIDITY = 'withdraw'
-    KEY_TRADE_ASSET = 'trade_asset'
-
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
@@ -101,45 +90,42 @@ class VolumeRecorder(WithDelegates, INotified, WithLogger):
     async def handle_txs_unsafe(self, txs: List[ThorTx]):
         current_price = self.deps.price_holder.usd_per_rune or 0.01
         total_volume = 0.0
-        swap, synth, add, withdraw, trade = 0.0, 0.0, 0.0, 0.0, 0.0
+
+        volumes = defaultdict(float)
         ts = None
         for tx in txs:
             volume = tx.full_rune
             if volume > 0:
                 if tx.type == ActionType.SWAP:
-                    swap += volume
+                    volumes[TxMetricType.SWAP] += volume
                     if tx.is_synth_involved:
-                        synth += volume
+                        volumes[TxMetricType.SWAP_SYNTH] += volume
                     if tx.is_trade_asset_involved:
-                        trade += volume
+                        volumes[TxMetricType.TRADE_SWAP] += volume
+                    if tx.is_streaming:
+                        volumes[TxMetricType.STREAMING] += volume
+                elif tx.type == ActionType.TRADE_ACC_DEPOSIT:
+                    volumes[TxMetricType.TRADE_DEPOSIT] += volume
+                elif tx.type == ActionType.TRADE_ACC_WITHDRAW:
+                    volumes[TxMetricType.TRADE_WITHDRAWAL] += volume
                 elif tx.type == ActionType.ADD_LIQUIDITY:
-                    add += volume
+                    volumes[TxMetricType.ADD_LIQUIDITY] += volume
                 elif tx.type == ActionType.WITHDRAW:
-                    withdraw += volume
+                    volumes[TxMetricType.WITHDRAW_LIQUIDITY] += volume
 
                 total_volume += volume
                 ts = tx.date_timestamp
 
         if ts is not None:
-            await self._add_point(ts, add, swap, synth, withdraw, trade, current_price)
+            await self._add_point(ts, volumes, current_price)
 
         return total_volume
 
-    async def _add_point(self, date_timestamp,
-                         add: float, swap: float, synth: float,
-                         withdraw: float, trade: float, current_price: float):
-        self.logger.info(f'Update {date_timestamp}: '
-                         f'{add = :.0f}, {swap = :.0f}, {synth = :.0f}, '
-                         f'{withdraw = :.0f}')
+    async def _add_point(self, date_timestamp, volumes, current_price: float):
+        self.logger.info(f'Update {date_timestamp}: {volumes}')
         await self._accumulator.add(
             date_timestamp,
-            **{
-                self.KEY_SWAP: swap,
-                self.KEY_SWAP_SYNTH: synth,
-                self.KEY_ADD_LIQUIDITY: add,
-                self.KEY_WITHDRAW_LIQUIDITY: withdraw,
-                self.KEY_TRADE_ASSET: trade,
-            }
+            **volumes
         )
         await self._accumulator.set(
             date_timestamp,
@@ -161,9 +147,15 @@ class VolumeRecorder(WithDelegates, INotified, WithLogger):
             price = d.pop('price', 0.0)
             for k, v in d.items():
                 s[k] += v
-                s[f'{k}_usd'] += v * price
+                s[TxMetricType.usd_key(k)] += v * price
 
         return s
+
+    async def get_previous_and_current_sum(self, period_sec, now=0) -> Tuple[dict, dict]:
+        now = now or now_ts()
+        curr_volume_stats = await self.get_sum(now - period_sec, now)
+        prev_volume_stats = await self.get_sum(now - period_sec * 2, now - period_sec)
+        return curr_volume_stats, prev_volume_stats
 
     async def get_data_range_ago_n(self, ago, n=30):
         return await self._accumulator.get_range_n(-ago, n=n)

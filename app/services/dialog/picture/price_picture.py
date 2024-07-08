@@ -7,6 +7,7 @@ from services.lib.depcont import DepContainer
 from services.lib.plot_graph import PlotGraphLines
 from services.lib.utils import async_wrap, pluck_from_series
 from services.models.time_series import PriceTimeSeries
+from services.models.vol_n import TxMetricType
 
 PRICE_GRAPH_WIDTH = 1024
 PRICE_GRAPH_HEIGHT = 768
@@ -44,10 +45,10 @@ def price_graph(pool_price_df, det_price_df, cex_prices_df, volumes, loc: BaseLo
     graph.bar_height_limit = 200
 
     # In the series, swaps = L1 swaps + synths swaps. So this is the tall bar behind "only synth" swaps
-    graph.add_series_bars(pluck_from_series(volumes, VolumeRecorder.KEY_SWAP), BAR_COLOR_SWAP, 8)
-    graph.add_series_bars(pluck_from_series(volumes, VolumeRecorder.KEY_SWAP_SYNTH), BAR_COLOR_SWAP_SYNTH, 8)
-    graph.add_series_bars(pluck_from_series(volumes, VolumeRecorder.KEY_ADD_LIQUIDITY), BAR_COLOR_ADD, 2, -3)
-    graph.add_series_bars(pluck_from_series(volumes, VolumeRecorder.KEY_WITHDRAW_LIQUIDITY), BAR_COLOR_WITHDRAW, 2, 3)
+    graph.add_series_bars(pluck_from_series(volumes, TxMetricType.SWAP), BAR_COLOR_SWAP, 8)
+    graph.add_series_bars(pluck_from_series(volumes, TxMetricType.SWAP_SYNTH), BAR_COLOR_SWAP_SYNTH, 8)
+    graph.add_series_bars(pluck_from_series(volumes, TxMetricType.ADD_LIQUIDITY), BAR_COLOR_ADD, 2, -3)
+    graph.add_series_bars(pluck_from_series(volumes, TxMetricType.WITHDRAW_LIQUIDITY), BAR_COLOR_WITHDRAW, 2, 3)
 
     graph.add_legend(BAR_COLOR_SWAP, loc.PRICE_GRAPH_VOLUME_SWAP_NORMAL)
     graph.add_legend(BAR_COLOR_SWAP_SYNTH, loc.PRICE_GRAPH_VOLUME_SWAP_SYNTH)
