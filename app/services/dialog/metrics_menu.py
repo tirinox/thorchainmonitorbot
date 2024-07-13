@@ -295,6 +295,14 @@ class MetricsDialog(BaseDialog):
         pic, pic_name = await generator.get_picture()
         await message.answer_photo(img_to_bio(pic, pic_name), caption=text, disable_notification=True)
 
+    async def show_pol_state(self, message: Message):
+        event = self.deps.pol_notifier.last_event
+        if not event:
+            await message.answer(self.loc.TEXT_POL_NO_DATA, disable_notification=True)
+            return
+        else:
+            await message.answer(self.loc.notification_text_pol_utilization(event), disable_notification=True)
+
     async def show_cex_flow(self, message: Message, period=DAY):
         notifier: RuneMoveNotifier = self.deps.rune_move_notifier
         flow = await notifier.tracker.read_within_period(period=period)

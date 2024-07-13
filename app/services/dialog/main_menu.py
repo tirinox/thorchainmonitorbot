@@ -147,6 +147,11 @@ class MainMenuDialog(BaseDialog):
         message.text = ''
         await self.build_metrics_dialog().show_top_pools(message)
 
+    @message_handler(commands='pol', state='*')
+    async def cmd_pol(self, message: Message):
+        message.text = ''
+        await self.build_metrics_dialog().show_pol_state(message)
+
     @message_handler(commands='help', state='*')
     async def cmd_help(self, message: Message):
         await message.answer(self.loc.help_message(),
