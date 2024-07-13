@@ -107,6 +107,9 @@ def detect_decimal_digits(x):
 
 
 def short_money(x, prefix='', postfix='', localization=None, signed=False, integer=False):
+    if x is None:
+        return 'N/A'
+
     if math.isnan(x):
         return str(x)
 

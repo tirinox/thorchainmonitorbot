@@ -2,6 +2,7 @@ import asyncio
 import pprint
 
 from localization.eng_base import BaseLocalization
+from localization.languages import Language
 from services.jobs.achievement.notifier import AchievementsNotifier
 from services.jobs.fetch.trade_accounts import TradeAccountFetcher
 from services.jobs.scanner.native_scan import NativeScannerBlock
@@ -152,7 +153,7 @@ async def demo_trade_acc_summary_single(app: LpAppFramework, reset_cache=False):
     trade_acc_fetcher.add_subscriber(tr_acc_summary_not)
     # d.trade_acc_fetcher.add_subscriber(achievements)
 
-    cache_path = '../temp/trade_acc_summary.pickle'
+    cache_path = '../temp/trade_acc_summary_v2.pickle'
     data = None if reset_cache else load_pickle(cache_path)
     if not data:
         await prepare_once(app)
@@ -169,7 +170,11 @@ async def demo_trade_acc_summary_single(app: LpAppFramework, reset_cache=False):
         sep()
         print(data)
         sep()
-        await app.test_all_locs(BaseLocalization.notification_text_trade_account_summary, None, data)
+        locs = None
+        # locs = [
+        #     app.deps.loc_man[Language.ENGLISH]
+        # ]
+        await app.test_all_locs(BaseLocalization.notification_text_trade_account_summary, locs, data)
     else:
         print('No data!')
 

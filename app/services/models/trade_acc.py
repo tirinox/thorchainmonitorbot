@@ -65,15 +65,31 @@ class TradeAccountStats(NamedTuple):
     tx_volume: dict[str, int]
     vaults: TradeAccountVaults
 
+    @property
+    def trade_swap_vol_usd(self):
+        return self.tx_volume.get(TxMetricType.usd_key(TxMetricType.TRADE_SWAP), 0.0)
+
+    @property
+    def trade_swap_count(self):
+        return self.tx_count.get(TxMetricType.TRADE_SWAP, 0)
+
+    @property
+    def trade_deposit_count(self):
+        return self.tx_count.get(TxMetricType.TRADE_DEPOSIT, 0)
+
+    @property
+    def trade_withdrawal_count(self):
+        return self.tx_count.get(TxMetricType.TRADE_WITHDRAWAL, 0)
+
+    @property
+    def trade_deposit_vol_usd(self):
+        return self.tx_volume.get(TxMetricType.usd_key(TxMetricType.TRADE_DEPOSIT), 0.0)
+
+    @property
+    def trade_withdrawal_vol_usd(self):
+        return self.tx_volume.get(TxMetricType.usd_key(TxMetricType.TRADE_WITHDRAWAL), 0.0)
+
 
 class AlertTradeAccountStats(NamedTuple):
     curr: TradeAccountStats
     prev: TradeAccountStats
-    
-    @property
-    def swap_vol_prev_usd(self):
-        return self.prev.tx_volume.get(TxMetricType.usd_key(TxMetricType.TRADE_SWAP))
-
-    @property
-    def swap_vol_cur_usd(self):
-        return self.prev.tx_volume.get(TxMetricType.usd_key(TxMetricType.TRADE_SWAP))

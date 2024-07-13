@@ -45,9 +45,10 @@ from services.models.price import AlertPrice, RuneMarketInfo
 from services.models.queue import QueueInfo
 from services.models.s_swap import AlertSwapStart
 from services.models.savers import how_much_savings_you_can_add, AlertSaverStats
-from services.models.trade_acc import AlertTradeAccountAction, AlertTradeAccountSummary
+from services.models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.tx import ThorTx, ThorSubTx, EventLargeTransaction
+from services.models.vol_n import TxMetricType
 from services.notify.channel import Messengers
 
 CREATOR_TG = '@account1242'
@@ -2528,6 +2529,8 @@ class BaseLocalization(ABC):  # == English
 
     # ------ POL -------
 
+    TEXT_POL_NO_DATA = '😩 No data about POL yes.'
+
     @staticmethod
     def pretty_asset(name, abbr=True):
         a = Asset(name)
@@ -2729,8 +2732,9 @@ class BaseLocalization(ABC):  # == English
         )
         return from_link, to_link, amt_str
 
-    def _top_trade_vaults(self, e: AlertTradeAccountSummary, top_n, formatting=True):
-        top_vaults = e.current.top_by_usd_value(top_n)
+    def _top_trade_vaults(self, e: AlertTradeAccountStats, top_n, formatting=True):
+
+        top_vaults = e.curr.vaults.top_by_usd_value(top_n)
         top_vaults_str = ''
 
         asset_f = ital if formatting else identity
@@ -2738,10 +2742,10 @@ class BaseLocalization(ABC):  # == English
 
         for i, vault in enumerate(top_vaults, start=1):
             asset = vault.asset
-            usd = e.current.usd_units(asset)
+            usd = e.curr.vaults.usd_units(asset)
 
-            if e.previous:
-                prev_usd = e.previous.usd_units(asset)
+            if e.prev:
+                prev_usd = e.prev.vaults.usd_units(asset)
                 prev_usd_change = up_down_arrow(prev_usd, usd, percent_delta=True)
             else:
                 prev_usd_change = ''
@@ -2761,22 +2765,35 @@ class BaseLocalization(ABC):  # == English
             )
         return top_vaults_str
 
-    def notification_text_trade_account_summary(self, e: AlertTradeAccountSummary):
+    def notification_text_trade_account_summary(self, e: AlertTradeAccountStats):
         top_n = 5
         top_vaults_str = self._top_trade_vaults(e, top_n)
 
+        delta_holders = bracketify(
+            up_down_arrow(e.prev.vaults.total_traders, e.curr.vaults.total_traders, int_delta=True)) if e.prev else ''
+
+        delta_balance = bracketify(
+            up_down_arrow(e.prev.vaults.total_usd, e.curr.vaults.total_usd, percent_delta=True)) if e.prev else ''
+
+        delta_volume = bracketify(
+            up_down_arrow(e.prev.trade_swap_vol_usd, e.curr.trade_swap_vol_usd, percent_delta=True)) if e.prev else ''
+
         return (
             f"⚖️ <b>Trade assets summary</b>\n\n"
-            f"Total holders: {bold(pretty_money(e.current.total_traders))}"
-            f" {bracketify(up_down_arrow(e.previous.total_traders, e.current.total_traders, int_delta=True))}\n"
-            f"Total balance: {bold(short_money(e.current.total_usd))}"
-            f" {bracketify(up_down_arrow(e.previous.total_usd, e.current.total_usd, percent_delta=True))}\n"
-            f"Trade volume: {bold(short_dollar(e.swap_vol_current_usd))}"
-            f" {bracketify(up_down_arrow(e.swap_vol_prev_usd, e.swap_vol_current_usd, percent_delta=True))}\n"
-            f"Swaps of trade assets: {bold(short_money(e.swaps_current, integer=True))}"
-            f" {bracketify(up_down_arrow(e.swaps_prev, e.swaps_current, int_delta=True))}\n"
+            f"Total holders: {bold(pretty_money(e.curr.vaults.total_traders))}"
+            f" {delta_holders}\n"
+            f"Total trade assets: {bold(short_money(e.curr.vaults.total_usd))}"
+            f" {delta_balance}\n"
+            f"Deposits: {bold(short_money(e.curr.trade_deposit_count, integer=True))}"
+            f" {bracketify(short_dollar(e.curr.trade_deposit_vol_usd))}\n"
+            f"Withdrawals: {bold(short_money(e.curr.trade_withdrawal_count, integer=True))}"
+            f" {bracketify(short_dollar(e.curr.trade_withdrawal_vol_usd))}\n"
+            f"Trade volume: {bold(short_dollar(e.curr.trade_swap_vol_usd))}"
+            f" {delta_volume}\n"
+            f"Swaps of trade assets: {bold(short_money(e.curr.trade_swap_count, integer=True))}"
+            f" {bracketify(up_down_arrow(e.prev.trade_swap_count, e.curr.trade_swap_count, int_delta=True))}\n"
             f"\n"
-            f"Top {top_n} trade assets:\n"
+            f"Highest used:\n"
             f"{top_vaults_str}"
         )
 

@@ -40,7 +40,7 @@ from services.models.price import AlertPrice, RuneMarketInfo
 from services.models.queue import QueueInfo
 from services.models.s_swap import AlertSwapStart
 from services.models.savers import AlertSaverStats
-from services.models.trade_acc import AlertTradeAccountAction, AlertTradeAccountSummary
+from services.models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.tx import EventLargeTransaction
 
@@ -1065,22 +1065,35 @@ class RussianLocalization(BaseLocalization):
             f"Всего: {amt_str}"
         )
 
-    def notification_text_trade_account_summary(self, e: AlertTradeAccountSummary):
+    def notification_text_trade_account_summary(self, e: AlertTradeAccountStats):
         top_n = 5
         top_vaults_str = self._top_trade_vaults(e, top_n)
 
+        delta_holders = bracketify(
+            up_down_arrow(e.prev.vaults.total_traders, e.curr.vaults.total_traders, int_delta=True)) if e.prev else ''
+
+        delta_balance = bracketify(
+            up_down_arrow(e.prev.vaults.total_usd, e.curr.vaults.total_usd, percent_delta=True)) if e.prev else ''
+
+        delta_volume = bracketify(
+            up_down_arrow(e.prev.trade_swap_vol_usd, e.curr.trade_swap_vol_usd, percent_delta=True)) if e.prev else ''
+
         return (
-            f"⚖️ <b>Сводка по торговым активам</b>\n\n"
-            f"Всего держателей: {bold(pretty_money(e.current.total_traders))}"
-            f" {bracketify(up_down_arrow(e.previous.total_traders, e.current.total_traders, int_delta=True))}\n"
-            f"Общий баланс: {bold(short_money(e.current.total_usd))}"
-            f" {bracketify(up_down_arrow(e.previous.total_usd, e.current.total_usd, percent_delta=True))}\n"
-            f"Объем торгов: {bold(short_dollar(e.swap_vol_current_usd))}"
-            f" {bracketify(up_down_arrow(e.swap_vol_prev_usd, e.swap_vol_current_usd, percent_delta=True))}\n"
-            f"Количество обменов: {bold(short_money(e.swaps_current, integer=True))}"
-            f" {bracketify(up_down_arrow(e.swaps_prev, e.swaps_current, int_delta=True))}\n"
+            f"⚖️ <b>Сводка по торговым счетам</b>\n"
+            f"Всего держателей: {bold(pretty_money(e.curr.vaults.total_traders))}"
+            f" {delta_holders}\n"
+            f"Всего торговых активов: {bold(short_money(e.curr.vaults.total_usd))}"
+            f" {delta_balance}\n"
+            f"Депозиты: {bold(short_money(e.curr.trade_deposit_count, integer=True))}"
+            f" {bracketify(short_dollar(e.curr.trade_deposit_vol_usd))}\n"
+            f"Выводы: {bold(short_money(e.curr.trade_withdrawal_count, integer=True))}"
+            f" {bracketify(short_dollar(e.curr.trade_withdrawal_vol_usd))}\n"
+            f"Обем торгов: {bold(short_dollar(e.curr.trade_swap_vol_usd))}"
+            f" {delta_volume}\n"
+            f"Количество обменоа: {bold(short_money(e.curr.trade_swap_count, integer=True))}"
+            f" {bracketify(up_down_arrow(e.prev.trade_swap_count, e.curr.trade_swap_count, int_delta=True))}\n"
             f"\n"
-            f"Топ {top_n} самых значимых:\n"
+            f"Наиболее используемые:\n"
             f"{top_vaults_str}"
         )
 
