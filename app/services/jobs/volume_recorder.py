@@ -36,22 +36,22 @@ class TxCountRecorder(WithDelegates, INotified, WithLogger):
 
             if tx.type == ActionType.SWAP:
                 if tx.is_trade_asset_involved:
-                    unique_tx_hashes.get(TxMetricType.TRADE_SWAP).add(ident)
+                    unique_tx_hashes[TxMetricType.TRADE_SWAP].add(ident)
                 if tx.is_synth_involved:
-                    unique_tx_hashes.get(TxMetricType.SWAP_SYNTH).add(ident)
+                    unique_tx_hashes[TxMetricType.SWAP_SYNTH].add(ident)
                 if tx.is_streaming:
-                    unique_tx_hashes.get(TxMetricType.STREAMING).add(ident)
-                unique_tx_hashes.get(TxMetricType.SWAP).add(ident)
+                    unique_tx_hashes[TxMetricType.STREAMING].add(ident)
+                unique_tx_hashes[TxMetricType.SWAP].add(ident)
             elif tx.type == ActionType.TRADE_ACC_DEPOSIT:
-                unique_tx_hashes.get(TxMetricType.TRADE_DEPOSIT).add(ident)
+                unique_tx_hashes[TxMetricType.TRADE_DEPOSIT].add(ident)
             elif tx.type == ActionType.TRADE_ACC_WITHDRAW:
-                unique_tx_hashes.get(TxMetricType.TRADE_WITHDRAWAL).add(ident)
+                unique_tx_hashes[TxMetricType.TRADE_WITHDRAWAL].add(ident)
             elif tx.type == ActionType.ADD_LIQUIDITY:
-                unique_tx_hashes.get(TxMetricType.ADD_LIQUIDITY).add(ident)
+                unique_tx_hashes[TxMetricType.ADD_LIQUIDITY].add(ident)
             elif tx.type == ActionType.WITHDRAW:
-                unique_tx_hashes.get(TxMetricType.WITHDRAW_LIQUIDITY).add(ident)
+                unique_tx_hashes[TxMetricType.WITHDRAW_LIQUIDITY].add(ident)
 
-        for tx_type, tx_set in unique_tx_hashes.values():
+        for tx_type, tx_set in unique_tx_hashes.items():
             if tx_set:
                 await self._counters[tx_type].hit(users=tx_set)
 
@@ -64,7 +64,7 @@ class TxCountRecorder(WithDelegates, INotified, WithLogger):
 
     async def get_stats(self, period_days=7):
         curr_dict, prev_dict = defaultdict(int), defaultdict(int)
-        for tx_type, counter in self._counters.values():
+        for tx_type, counter in self._counters.items():
             curr, prev = await counter.get_current_and_previous_au(period_days)
             curr_dict[tx_type] += curr
             prev_dict[tx_type] += prev
