@@ -4,9 +4,8 @@ from datetime import date
 
 from localization.languages import Language
 from services.dialog.picture.lp_picture import generate_yield_picture, savings_pool_picture, lp_address_summary_picture
-from services.jobs.fetch.runeyield import get_rune_yield_connector
 from services.jobs.fetch.runeyield.date2block import DateToBlockMapper
-from services.jobs.fetch.runeyield.lp_my import HomebrewLPConnector, cut_off_previous_lp_sessions
+from services.jobs.fetch.runeyield.lp_my import HomebrewLPConnector
 from services.jobs.fetch.tx import TxFetcher
 from services.lib.texts import sep
 from services.models.asset import Asset
@@ -48,7 +47,6 @@ async def demo_report_for_single_pool(lpgen: LpAppFramework, addr, pool, hidden=
 
 async def demo_summary_all_pools(lpgen: LpAppFramework, addr, hidden=False):
     loc = lpgen.deps.loc_man[LANG]
-    lpgen.rune_yield.add_il_protection_to_final_figures = True
     pools = await lpgen.rune_yield.get_my_pools(addr, show_savers=True)
     print(f'{addr} has {pools = }')
     yield_summary = await lpgen.rune_yield.generate_yield_summary(addr, pools)
@@ -118,7 +116,7 @@ async def demo_find_interesting_savers(app: LpAppFramework):
             exclamation = '!' * min(10, n // 3)
             print(f'[{i:4}/{len(members):4}]{pool = } and {member =} =>> has {n} savings txs {exclamation}')
 
-            if (n_this_session := len(cut_off_previous_lp_sessions(txs))) != n:
+            if (n_this_session := len(HomebrewLPConnector.cut_off_previous_lp_sessions(txs))) != n:
                 print(f'interrupted sessions detected: {n_this_session = } but {n = } !!!')
 
 
@@ -139,9 +137,12 @@ async def main():
         #                              is_savings=True)
 
         # await demo_summary_all_pools(app, 'bc1qhjp04nzu744lupkjds4agyl2qm92z8z4qd6u9a')  # savers
-        await demo_report_for_single_pool(app, 'bc1qhjp04nzu744lupkjds4agyl2qm92z8z4qd6u9a', 'BTC/BTC',
-                                          hidden=False)
 
+        await demo_report_for_single_pool(app,
+                                          '',
+                                          'BTC.BTC',
+                                          hidden=False)
+   
         # await demo_find_interesting_savers(app)
         # await demo_get_my_pools(app, 'bc1q0jmh2ht08zha0vajx0kq87vxtyspak45xywf2p')
         # await demo_report_for_single_pool(app, 'thor1a8ydprhkk5u032r277nzs4vw5khnnl3ya9xnvs', 'ETH.ETH')

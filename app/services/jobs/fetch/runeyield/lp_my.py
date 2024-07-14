@@ -8,22 +8,20 @@ from services.jobs.fetch.runeyield import AsgardConsumerConnectorBase
 from services.jobs.fetch.runeyield.base import YieldSummary
 from services.jobs.fetch.runeyield.date2block import DateToBlockMapper
 from services.jobs.fetch.tx import TxFetcher
-from services.lib.constants import thor_to_float, float_to_thor, Chains
+from services.lib.constants import thor_to_float, Chains
 from services.lib.date_utils import days_ago_noon, now_ts
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import free_url_gen
 from services.lib.utils import pairwise
 from services.models.asset import Asset
-from services.models.lp_info import LiquidityPoolReport, CurrentLiquidity, FeeReport, ReturnMetrics, \
-    LPDailyGraphPoint, LPDailyChartByPoolDict, ILProtectionReport, LPPosition
+from services.models.lp_info import LiquidityPoolReport, LiquidityInOutSummary, FeeReport, ReturnMetrics, \
+    LPDailyGraphPoint, LPDailyChartByPoolDict, LPPosition
 from services.models.memo import ActionType
 from services.models.pool_info import PoolInfoMap, PoolInfo, pool_share
 from services.models.tx import ThorTx
 
 HeightToAllPools = Dict[int, PoolInfoMap]
-
-DEFAULT_RUNE_PRICE = 1.0  # USD
 
 BLOCK_ILP_DEPRECATION = 9_450_000
 
@@ -55,10 +53,12 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
             if Asset.from_string(pool_name).is_synth:
                 # Savers position
-                liq_report = await self._get_savers_position(historic_all_pool_states, pool_name, this_pool_txs)
+                liq_report = await self._get_savers_position(historic_all_pool_states, pool_name, this_pool_txs,
+                                                             address)
             else:
                 # Normal liquidity position
-                liq_report = await self._create_lp_report_single(historic_all_pool_states, pool_name, this_pool_txs)
+                liq_report = await self._create_lp_report_single(historic_all_pool_states, pool_name, this_pool_txs,
+                                                                 address)
 
             reports.append(liq_report)
 
@@ -73,10 +73,10 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
         if Asset.from_string(pool_name).is_synth:
             # Savers position
-            return await self._get_savers_position(historic_all_pool_states, pool_name, user_txs)
+            return await self._get_savers_position(historic_all_pool_states, pool_name, user_txs, address)
         else:
             # Normal liquidity position
-            return await self._create_lp_report_single(historic_all_pool_states, pool_name, user_txs)
+            return await self._create_lp_report_single(historic_all_pool_states, pool_name, user_txs, address)
 
     async def get_my_pools(self, address, show_savers=True) -> List[str]:
         mdg = self.deps.midgard_connector
@@ -100,59 +100,51 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
     async def _create_lp_report_single(self,
                                        historic_all_pool_states: HeightToAllPools,
                                        pool_name: str,
-                                       user_txs: List[ThorTx]) -> LiquidityPoolReport:
+                                       user_txs: List[ThorTx],
+                                       address) -> LiquidityPoolReport:
         # todo: idea: check date_last_added, if it is not changed - get user_txs from local cache
         # todo: or you can compare current liq_units! if it has changed, you reload tx! (unsafe)
 
-        cur_liq = self._get_current_liquidity(user_txs, pool_name, historic_all_pool_states,
-                                              withdraw_fee_rune=self.withdraw_fee_rune)
+        summary = self._get_liquidity_in_out_summary(user_txs, pool_name, historic_all_pool_states,
+                                                     withdraw_fee_rune=self.withdraw_fee_rune)
+        liq = await self.get_current_liquidity_from_node(address, pool_name, False)
 
         fees = self._get_fee_report(user_txs, pool_name, historic_all_pool_states)
 
         usd_per_asset_start, usd_per_rune_start = self._get_earliest_prices(user_txs, historic_all_pool_states)
 
-        pool_info = self.deps.price_holder.pool_info_map.get(cur_liq.pool)
-
-        protection_report = await self._get_il_report(
-            pool_info, user_txs,
-            historic_all_pool_states,
-            final_my_liq_units=cur_liq.pool_units
-        )
-
-        # add protection to final APY, LPvsHodl, % and so on!
-        if self.add_il_protection_to_final_figures:
-            cur_liq.pool_units += protection_report.member_extra_units
-            pool_info = protection_report.corrected_pool or pool_info
-
-        self.logger.info(f'{protection_report=}')
+        pool_info = self.deps.price_holder.pool_info_map.get(summary.pool)
 
         liq_report = LiquidityPoolReport(
-            self.deps.price_holder.usd_per_asset(cur_liq.pool),
+            liq,
+            self.deps.price_holder.usd_per_asset(summary.pool),
             self.deps.price_holder.usd_per_rune,
             usd_per_asset_start, usd_per_rune_start,
-            cur_liq, fees=fees,
+            in_out=summary, fees=fees,
             pool=pool_info,
-            protection=protection_report
         )
         return liq_report
 
-    async def _get_savers_position(self, historic_all_pool_states, pool, user_txs):
-        cur_liq = self._get_current_liquidity(user_txs, pool, historic_all_pool_states,
-                                              withdraw_fee_rune=self.withdraw_fee_rune,
-                                              is_savings=True)
+    async def _get_savers_position(self, historic_all_pool_states, pool, user_txs, address):
+        summary = self._get_liquidity_in_out_summary(user_txs, pool, historic_all_pool_states,
+                                                     withdraw_fee_rune=self.withdraw_fee_rune,
+                                                     is_savings=True)
         usd_per_asset_start, usd_per_rune_start = self._get_earliest_prices(user_txs, historic_all_pool_states)
 
-        l1_pool = Asset.to_L1_pool_name(cur_liq.pool)
+        l1_pool = Asset.to_L1_pool_name(summary.pool)
         pool_info = self.deps.price_holder.pool_info_map.get(l1_pool)
 
+        liq = await self.get_current_liquidity_from_node(address, pool, True)
+
         liq_report = LiquidityPoolReport(
+            liq,
             self.deps.price_holder.usd_per_asset(l1_pool),
             self.deps.price_holder.usd_per_rune,
             usd_per_asset_start, usd_per_rune_start,
-            cur_liq, fees=FeeReport(),
+            in_out=summary,
+            fees=FeeReport(),
             pool=pool_info,
-            protection=ILProtectionReport(),
-            is_savers=True
+            is_savers=True,
         )
         return liq_report
 
@@ -169,7 +161,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
     @staticmethod
     def is_lp_grandfathered(txs: List[ThorTx], pool: str = '') -> bool:
         for tx in txs:
-            if tx.type == ActionType.ADD_LIQUIDITY:
+            if tx.is_of_type(ActionType.ADD_LIQUIDITY):
                 if pool and tx.first_pool == pool:
                     if tx.height_int >= BLOCK_ILP_DEPRECATION:
                         return True
@@ -217,7 +209,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         # so accounting starts only with the most recent addition
 
         full_tx_count = len(txs)
-        txs = cut_off_previous_lp_sessions(txs)
+        txs = self.cut_off_previous_lp_sessions(txs)
         last_session_tx_count = len(txs)
         if last_session_tx_count != full_tx_count:
             self.logger.warning(f'[{address}]@[POOL:{pool_filter}] has interrupted session: '
@@ -232,11 +224,11 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         pool_states = await asyncio.gather(*tasks)
         return dict(zip(heights, pool_states))
 
-    def _get_current_liquidity(self, txs: List[ThorTx],
-                               pool_name,
-                               pool_historic: HeightToAllPools,
-                               withdraw_fee_rune,
-                               is_savings=False) -> CurrentLiquidity:
+    def _get_liquidity_in_out_summary(self, txs: List[ThorTx],
+                                      pool_name,
+                                      pool_historic: HeightToAllPools,
+                                      withdraw_fee_rune,
+                                      is_savings=False) -> LiquidityInOutSummary:
         first_add_date, last_add_date = 0, 0
         total_added_as_rune, total_withdrawn_as_rune = 0.0, 0.0
         total_added_as_usd, total_withdrawn_as_usd = 0.0, 0.0
@@ -253,13 +245,13 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             last_add_date = max(last_add_date, tx_timestamp) if last_add_date else tx_timestamp
 
             pools_info: PoolInfoMap = pool_historic[tx.height_int]
-            usd_per_rune = self._calculate_weighted_rune_price_in_usd(pools_info, use_default_price=True)
+            usd_per_rune = self._calculate_weighted_rune_price_in_usd(pools_info)
 
             # fixme: block has final state after all TX settled. this_asset_pool_info may be None!
             # so this_asset_pool_info is a real object, but 1/1:1 values inside.
             this_asset_pool_info = self._get_pool(pool_historic, tx.height_int, l1_pool_name)
 
-            if tx.type == ActionType.ADD_LIQUIDITY:
+            if tx.is_of_type(ActionType.ADD_LIQUIDITY):
                 runes = tx.sum_of_rune(in_only=True) if not is_savings else 0
                 assets = tx.sum_of_asset(pool_name, in_only=True)
 
@@ -289,9 +281,9 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
                 total_withdrawn_as_usd += total_this_runes * usd_per_rune
                 total_withdrawn_as_asset += assets + this_asset_pool_info.asset_per_rune * runes
 
-        liquidity_units = final_liquidity(txs)
+        liquidity_units = self.final_liquidity(txs)
 
-        results = CurrentLiquidity(
+        return LiquidityInOutSummary(
             pool=pool_name,
             rune_added=rune_added,
             asset_added=asset_added,
@@ -308,15 +300,28 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             last_add_ts=int(last_add_date),
         )
 
-        return results
+    async def get_current_liquidity_from_node(self, address: str, pool_name: str,
+                                              is_savings=False) -> LPPosition:
+        """
+        Fetches liquidity data from the node directly. This is a fallback method if the data from the transaction
+        history is not available.
+        """
+        pool_name = Asset.to_L1_pool_name(pool_name).upper()
+        pool_info = self.deps.price_holder.find_pool(pool_name)
+        usd_per_rune = self.deps.price_holder.usd_per_rune
 
-    def _calculate_weighted_rune_price_in_usd(self, pool_map: PoolInfoMap, use_default_price=False) -> Optional[float]:
+        if is_savings:
+            state = await self.deps.thor_connector.query_saver_details(pool_name, address)
+        else:
+            state = await self.deps.thor_connector.query_liquidity_provider(pool_name, address)
+
+        return LPPosition.create(pool_info, state.units, usd_per_rune, is_savings)
+
+    def _calculate_weighted_rune_price_in_usd(self, pool_map: PoolInfoMap) -> Optional[float]:
         price = self.deps.price_holder.calculate_rune_price_here(pool_map)
-        if price:
-            return price
-        elif use_default_price:
-            self.logger.warning('No USD price can be extracted. Perhaps USD pools are missing at that point')
-            return DEFAULT_RUNE_PRICE  # todo: get rune price somewhere else!
+        if not price:
+            raise ValueError('No USD price can be extracted. Perhaps USD pools are missing at that point')
+        return price
 
     def _get_earliest_prices(self, txs: List[ThorTx], pool_historic: HeightToAllPools) \
             -> Tuple[Optional[float], Optional[float]]:
@@ -330,7 +335,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
         earliest_pools = pool_historic.get(earliest_tx.height_int)
 
-        usd_per_rune = self._calculate_weighted_rune_price_in_usd(earliest_pools, use_default_price=True)
+        usd_per_rune = self._calculate_weighted_rune_price_in_usd(earliest_pools)
 
         this_pool = earliest_pools.get(Asset.to_L1_pool_name(earliest_tx.first_pool))
 
@@ -341,25 +346,26 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
         return usd_per_asset, usd_per_rune
 
-    def _create_lp_position(self, pool, height, my_units: int, pool_historic: HeightToAllPools) -> LPPosition:
+    def _create_lp_position(self, pool, height, my_units: int, pool_historic: HeightToAllPools,
+                            is_savings) -> LPPosition:
         all_pool_info_at_height = pool_historic.get(height)
 
         pool_info = self._get_pool(pool_historic, height, pool)
 
-        usd_per_rune = self._calculate_weighted_rune_price_in_usd(all_pool_info_at_height, use_default_price=True)
+        usd_per_rune = self._calculate_weighted_rune_price_in_usd(all_pool_info_at_height)
 
-        return LPPosition.create(pool_info, my_units, usd_per_rune)
+        return LPPosition.create(pool_info, my_units, usd_per_rune, is_savings)
 
-    def _create_current_lp_position(self, pool, my_units: int) -> LPPosition:
+    def _create_final_lp_position(self, pool, my_units: int, is_savings) -> LPPosition:
         pool_info = self.deps.price_holder.find_pool(pool)
         usd_per_rune = self.deps.price_holder.usd_per_rune
-        return LPPosition.create(pool_info, my_units, usd_per_rune)
+        return LPPosition.create(pool_info, my_units, usd_per_rune, is_savings)
 
     @staticmethod
     def _update_units(units, tx: ThorTx):
-        if tx.type == ActionType.ADD_LIQUIDITY:
+        if tx.is_of_type(ActionType.ADD_LIQUIDITY):
             units += tx.meta_add.liquidity_units_int
-        elif tx.type == ActionType.WITHDRAW:
+        elif tx.is_of_type(ActionType.WITHDRAW):
             units += tx.meta_withdraw.liquidity_units_int
         return units
 
@@ -388,16 +394,16 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
                 self.logger.warning(f'{tx0.sender_address} completely withdrawn assets. resetting his positions!')
                 position_pairs = []
             else:
-                p0 = self._create_lp_position(pool, tx0.height_int, units, pool_historic)
-                p1 = self._create_lp_position(pool, tx1.height_int, units, pool_historic)
+                p0 = self._create_lp_position(pool, tx0.height_int, units, pool_historic, False)
+                p1 = self._create_lp_position(pool, tx1.height_int, units, pool_historic, False)
                 position_pairs.append((p0, p1))
 
         # add the last window from the latest tx to the present moment
         last_tx = txs[-1]
         units = self._update_units(units, last_tx)
         position_pairs.append((
-            self._create_lp_position(pool, last_tx.height_int, units, pool_historic),
-            self._create_current_lp_position(pool, units)
+            self._create_lp_position(pool, last_tx.height_int, units, pool_historic, False),
+            self._create_final_lp_position(pool, units, False)
         ))
 
         # collect and accumulate all metrics
@@ -498,7 +504,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
     def _get_last_deposit_height(txs: List[ThorTx]) -> int:
         last_deposit_height = -1
         for tx in txs:
-            if tx.type == ActionType.ADD_LIQUIDITY:
+            if tx.is_of_type(ActionType.ADD_LIQUIDITY):
                 if last_deposit_height < tx.height_int:
                     last_deposit_height = tx.height_int
         return last_deposit_height
@@ -536,13 +542,13 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         r0, a0 = 0.0, 0.0
         units = 0
         for tx in txs:
-            if tx.type == ActionType.ADD_LIQUIDITY:
+            if tx.is_of_type(ActionType.ADD_LIQUIDITY):
                 pool = self._get_pool(historic_all_pool_states, tx.height_int, pool_name)
                 r, a = pool.get_share_rune_and_asset(tx.meta_add.liquidity_units_int)
                 r0 += r
                 a0 += a
                 units += tx.meta_add.liquidity_units_int
-            elif tx.type == ActionType.WITHDRAW:
+            elif tx.is_of_type(ActionType.WITHDRAW):
                 delta_units = abs(tx.meta_withdraw.liquidity_units_int)
                 part_ratio = delta_units / units
                 units -= delta_units
@@ -561,9 +567,9 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
     def final_liquidity(txs: List[ThorTx]):
         lp = 0
         for tx in txs:
-            if tx.type == ActionType.ADD_LIQUIDITY:
+            if tx.is_of_type(ActionType.ADD_LIQUIDITY):
                 lp += tx.meta_add.liquidity_units_int
-            elif tx.type == ActionType.WITHDRAW:
+            elif tx.is_of_type(ActionType.WITHDRAW):
                 lp += tx.meta_withdraw.liquidity_units_int
         return lp
 
@@ -573,9 +579,9 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         new_txs = []
         for tx in txs:
             pool = tx.first_pool
-            if tx.type == ActionType.ADD_LIQUIDITY.value:
+            if tx.is_of_type(ActionType.ADD_LIQUIDITY):
                 lp[pool] += tx.meta_add.liquidity_units_int
-            elif tx.type == ActionType.WITHDRAW.value:
+            elif tx.is_of_type(ActionType.WITHDRAW):
                 lp[pool] += tx.meta_withdraw.liquidity_units_int
 
             new_txs.append(tx)

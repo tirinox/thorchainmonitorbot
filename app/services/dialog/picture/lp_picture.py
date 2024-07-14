@@ -16,7 +16,7 @@ from services.lib.plot_graph import PlotBarGraph
 from services.lib.texts import bracketify
 from services.lib.utils import async_wrap, grouper
 from services.models.asset import Asset, is_rune
-from services.models.lp_info import LiquidityPoolReport, LPDailyGraphPoint, ILProtectionReport
+from services.models.lp_info import LiquidityPoolReport, LPDailyGraphPoint
 from services.models.price import LastPriceHolder
 
 LP_PIC_WIDTH, LP_PIC_HEIGHT = 1200, 1600
@@ -102,10 +102,10 @@ def _generate_lp_pool_picture(price_holder: LastPriceHolder,
         r.put_hidden_plate(image, pos_percent_lp(left, start_y), anchor='right')
         r.put_hidden_plate(image, pos_percent_lp(right, start_y), anchor='left')
     else:
-        draw.text(pos_percent_lp(left, start_y), f'{pretty_rune(report.liq.rune_added)}', font=font_n,
+        draw.text(pos_percent_lp(left, start_y), f'{pretty_rune(report.in_out.rune_added)}', font=font_n,
                   fill=FORE_COLOR,
                   anchor='rs')
-        draw.text(pos_percent_lp(right, start_y), f'{pretty_money(report.liq.asset_added)}', font=font_n,
+        draw.text(pos_percent_lp(right, start_y), f'{pretty_money(report.in_out.asset_added)}', font=font_n,
                   fill=FORE_COLOR,
                   anchor='ls')
     start_y += dy
@@ -116,11 +116,11 @@ def _generate_lp_pool_picture(price_holder: LastPriceHolder,
         r.put_hidden_plate(image, pos_percent_lp(left, start_y), anchor='right')
         r.put_hidden_plate(image, pos_percent_lp(right, start_y), anchor='left')
     else:
-        draw.text(pos_percent_lp(left, start_y), f'{pretty_money(report.liq.rune_withdrawn)} {RAIDO_GLYPH}',
+        draw.text(pos_percent_lp(left, start_y), f'{pretty_money(report.in_out.rune_withdrawn)} {RAIDO_GLYPH}',
                   font=font_n,
                   fill=FORE_COLOR,
                   anchor='rs')
-        draw.text(pos_percent_lp(right, start_y), f'{pretty_money(report.liq.asset_withdrawn)}', font=font_n,
+        draw.text(pos_percent_lp(right, start_y), f'{pretty_money(report.in_out.asset_withdrawn)}', font=font_n,
                   fill=FORE_COLOR,
                   anchor='ls')
     start_y += dy
@@ -234,9 +234,9 @@ def _generate_lp_pool_picture(price_holder: LastPriceHolder,
                       anchor='ms')
             r.put_hidden_plate(image, pos_percent_lp(x, rows_y[4]), anchor='center')
 
-            if is_il_protected:
-                draw.text(pos_percent_lp(x, rows_y[5]), il_prot_text, font=font_sn,
-                          fill=LIGHT_TEXT_COLOR, anchor='ms')
+            # if is_il_protected:
+            #     draw.text(pos_percent_lp(x, rows_y[5]), il_prot_text, font=font_sn,
+            #               fill=LIGHT_TEXT_COLOR, anchor='ms')
 
         if report.usd_per_asset_start is not None and report.usd_per_rune_start is not None:
             price_change = report.price_change(column)
@@ -291,7 +291,7 @@ def _generate_lp_pool_picture(price_holder: LastPriceHolder,
 
     # DATES
     draw.text(pos_percent_lp(50, 92),
-              loc.pic_lping_days(report.total_days, report.liq.first_add_ts),
+              loc.pic_lping_days(report.total_days, report.in_out.first_add_ts),
               anchor='ms', fill=FORE_COLOR,
               font=font_n)
 
@@ -829,7 +829,7 @@ def _generate_savings_picture(price_holder: LastPriceHolder,
     table_y += delta_y * 2
 
     # ---- ELAPSED ----
-    elapsed_days = loc.pic_lping_days(report.total_days, report.liq.first_add_ts, loc.SV_PIC_ELAPSED)
+    elapsed_days = loc.pic_lping_days(report.total_days, report.in_out.first_add_ts, loc.SV_PIC_ELAPSED)
     draw.text(pos_percent_lp(50, table_y), elapsed_days,
               font=r.fonts.get_font(40), anchor='mm', fill=FADE_COLOR)
 

@@ -3,6 +3,7 @@ from dataclasses import dataclass, field
 from math import sqrt
 from typing import List, Dict
 
+from aionode.types import ThorLiquidityProvider
 from services.lib.constants import thor_to_float
 from services.lib.date_utils import DAY, now_ts
 from services.models.base import BaseModelMixin
@@ -54,9 +55,10 @@ class LPPosition:
     usd_per_rune: float
     usd_per_asset: float
     total_usd_balance: float
+    is_savings: bool  # todo: new
 
     @classmethod
-    def create(cls, pool: PoolInfo, my_units: int, usd_per_rune: float):
+    def create(cls, pool: PoolInfo, my_units: int, usd_per_rune: float, is_savings: bool):
         usd_per_asset = usd_per_rune / pool.asset_per_rune
         return cls(
             pool=pool.asset,
@@ -66,7 +68,8 @@ class LPPosition:
             asset_balance=thor_to_float(pool.balance_asset),
             usd_per_rune=usd_per_rune,
             usd_per_asset=usd_per_asset,
-            total_usd_balance=thor_to_float(pool.balance_rune) * usd_per_rune * 2.0
+            total_usd_balance=thor_to_float(pool.balance_rune) * usd_per_rune * 2.0,
+            is_savings=is_savings,
         )
 
 
@@ -80,11 +83,12 @@ LPDailyChartByPoolDict = Dict[str, List[LPDailyGraphPoint]]
 
 
 @dataclass
-class CurrentLiquidity(BaseModelMixin):
+class LiquidityInOutSummary(BaseModelMixin):
     pool: str
+    pool_units: int
+
     rune_added: float
     asset_added: float
-    pool_units: int  # core field. pool units at the moment
     asset_withdrawn: float
     rune_withdrawn: float
     total_added_as_asset: float
@@ -95,6 +99,7 @@ class CurrentLiquidity(BaseModelMixin):
     total_withdrawn_as_usd: float
     first_add_ts: int
     last_add_ts: int
+
 
 
 @dataclass
@@ -170,16 +175,17 @@ class ReturnMetrics:
 
 @dataclass
 class LiquidityPoolReport:
+    liq: LPPosition
+
     usd_per_asset: float
     usd_per_rune: float
 
     usd_per_asset_start: float
     usd_per_rune_start: float
 
-    liq: CurrentLiquidity
+    in_out: LiquidityInOutSummary
     fees: FeeReport
     pool: PoolInfo
-    protection: ILProtectionReport
 
     is_savers: bool = False
 
@@ -200,12 +206,12 @@ class LiquidityPoolReport:
 
     @property
     def lp_vs_hold(self) -> (float, float):
-        rune_added_in_usd = self.liq.rune_added * self.usd_per_rune
-        asset_added_in_usd = self.liq.asset_added * self.usd_per_asset
+        rune_added_in_usd = self.in_out.rune_added * self.usd_per_rune
+        asset_added_in_usd = self.in_out.asset_added * self.usd_per_asset
         total_added_in_usd = rune_added_in_usd + asset_added_in_usd
 
-        rune_withdrawn_in_usd = self.liq.rune_withdrawn * self.usd_per_rune
-        asset_withdrawn_in_usd = self.liq.asset_withdrawn * self.usd_per_asset
+        rune_withdrawn_in_usd = self.in_out.rune_withdrawn * self.usd_per_rune
+        asset_withdrawn_in_usd = self.in_out.asset_withdrawn * self.usd_per_asset
         total_withdrawn_in_usd = rune_withdrawn_in_usd + asset_withdrawn_in_usd
 
         redeem_rune, redeem_asset = self.redeemable_rune_asset
@@ -220,13 +226,13 @@ class LiquidityPoolReport:
     @property
     def savers_apr(self):
         _, a = self.redeemable_rune_asset
-        asset_change = a + self.liq.asset_withdrawn - self.liq.asset_added
+        asset_change = a + self.in_out.asset_withdrawn - self.in_out.asset_added
         asset_change_r = asset_change / a if a != 0 else 0
         return self.apy_from_change(asset_change_r)
 
     @property
     def savers_usd_apr(self):
-        first_usd_value = self.usd_per_asset_start * self.liq.asset_added
+        first_usd_value = self.usd_per_asset_start * self.in_out.asset_added
         _, a = self.redeemable_rune_asset
         current_usd_value = a * self.usd_per_asset
         usd_change_r = current_usd_value / first_usd_value - 1.0
@@ -258,10 +264,10 @@ class LiquidityPoolReport:
     @property
     def gain_loss_raw(self):
         redeem_rune, redeem_asset = self.redeemable_rune_asset
-        gl_rune = self.liq.rune_withdrawn + redeem_rune - self.liq.rune_added
-        gl_asset = self.liq.asset_withdrawn + redeem_asset - self.liq.asset_added
-        gl_rune_per = gl_rune / self.liq.rune_added * 100.0 if self.liq.rune_added != 0 else 0.0
-        gl_asset_per = gl_asset / self.liq.asset_added * 100.0 if self.liq.asset_added != 0 else 0.0
+        gl_rune = self.in_out.rune_withdrawn + redeem_rune - self.in_out.rune_added
+        gl_asset = self.in_out.asset_withdrawn + redeem_asset - self.in_out.asset_added
+        gl_rune_per = gl_rune / self.in_out.rune_added * 100.0 if self.in_out.rune_added != 0 else 0.0
+        gl_asset_per = gl_asset / self.in_out.asset_added * 100.0 if self.in_out.asset_added != 0 else 0.0
         return gl_rune, gl_rune_per, gl_asset, gl_asset_per
 
     @property
@@ -275,26 +281,26 @@ class LiquidityPoolReport:
     def redeemable_rune_asset(self):
         if self.is_savers:
             r = 0
-            a = self.pool.savers_depth_float / thor_to_float(self.pool.savers_units) * self.liq.pool_units
+            a = self.pool.savers_depth_float / thor_to_float(self.pool.savers_units) * self.in_out.pool_units
         else:
-            r, a = pool_share(self.pool.balance_rune, self.pool.balance_asset, self.liq.pool_units, self.pool.units)
+            r, a = pool_share(self.pool.balance_rune, self.pool.balance_asset, self.in_out.pool_units, self.pool.units)
         return thor_to_float(r), thor_to_float(a)
 
     def added_value(self, mode):
         if mode == self.USD:
-            return self.liq.total_added_as_usd
+            return self.in_out.total_added_as_usd
         elif mode == self.RUNE:
-            return self.liq.total_added_as_rune
+            return self.in_out.total_added_as_rune
         elif mode == self.ASSET:
-            return self.liq.total_added_as_asset
+            return self.in_out.total_added_as_asset
 
     def withdrawn_value(self, mode):
         if mode == self.USD:
-            return self.liq.total_withdrawn_as_usd
+            return self.in_out.total_withdrawn_as_usd
         elif mode == self.RUNE:
-            return self.liq.total_withdrawn_as_rune
+            return self.in_out.total_withdrawn_as_rune
         elif mode == self.ASSET:
-            return self.liq.total_withdrawn_as_asset
+            return self.in_out.total_withdrawn_as_asset
 
     def current_value(self, mode):
         r, a = self.redeemable_rune_asset
@@ -308,7 +314,7 @@ class LiquidityPoolReport:
 
     @property
     def total_lping_sec(self):
-        return int(now_ts()) - self.liq.first_add_ts
+        return int(now_ts()) - self.in_out.first_add_ts
 
     def fee_value(self, mode=USD):
         if mode == self.USD:
