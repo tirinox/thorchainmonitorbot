@@ -192,15 +192,14 @@ def _generate_lp_pool_picture(price_holder: LastPriceHolder,
     draw.text(pos_percent_lp(columns_x[1], start_y), loc.LP_PIC_IN_ASSET.format(short_asset), font=r.font,
               fill=FADE_COLOR, anchor='ms')
 
-    prot = report.protection
-    is_il_protected = prot.is_protected
+    is_il_protected = False
 
     for x, column in zip(columns_x, columns):
         gl, _ = report.gain_loss(column)
 
         fee_value = report.fee_value(column)
         current = report.current_value(column)
-        il_prot = report.il_protection_value(column)
+        # il_prot = report.il_protection_value(column)
 
         if not value_hidden:
             added = report.added_value(column)
@@ -219,14 +218,14 @@ def _generate_lp_pool_picture(price_holder: LastPriceHolder,
                       fill=result_color(gl),
                       anchor='ms')
 
-            if is_il_protected:
-                draw.text(pos_percent_lp(x, rows_y[5]), pretty_money(il_prot, signed=True), font=font_sn,
-                          fill=result_color(il_prot),
-                          anchor='ms')
+            # if is_il_protected:
+            #     draw.text(pos_percent_lp(x, rows_y[5]), pretty_money(il_prot, signed=True), font=font_sn,
+            #               fill=result_color(il_prot),
+            #               anchor='ms')
 
         else:
             fee_text = format_percent(fee_value, current)
-            il_prot_text = format_percent(prot.progress_progress, 1)
+            # il_prot_text = format_percent(prot.progress_progress, 1)
 
             r.put_hidden_plate(image, pos_percent_lp(x, rows_y[0]), anchor='center')
             r.put_hidden_plate(image, pos_percent_lp(x, rows_y[1]), anchor='center')
@@ -271,22 +270,14 @@ def _generate_lp_pool_picture(price_holder: LastPriceHolder,
             draw.text(pos_percent_lp(x, rows_y[5]), loc.LONG_DASH, font=font_sn,
                       fill=FADE_COLOR, anchor='ms')
 
-    if not is_il_protected:
-        if prot.status == ILProtectionReport.STATUS_NOT_NEED:
-            il_prot_text = loc.LP_PIC_NO_NEED_PROTECTION
-        elif prot.status == ILProtectionReport.STATUS_DISABLED:
-            il_prot_text = loc.LP_PIC_PROTECTION_DISABLED
-        elif prot.status == ILProtectionReport.STATUS_EARLY:
-            il_prot_text = loc.LP_PIC_EARLY_TO_PROTECT
-        else:
-            il_prot_text = 'Unknown status.'
-        draw.text(pos_percent_lp(columns_x[0], rows_y[5]), il_prot_text, font=font_sn,
+    il_prot_text = loc.LP_PIC_PROTECTION_DISABLED
+    draw.text(pos_percent_lp(columns_x[0], rows_y[5]), il_prot_text, font=font_sn,
+              fill=LIGHT_TEXT_COLOR,
+              anchor='ms')
+    for col in range(1, len(columns)):
+        draw.text(pos_percent_lp(columns_x[col], rows_y[5]), loc.LONG_DASH, font=font_sn,
                   fill=LIGHT_TEXT_COLOR,
                   anchor='ms')
-        for col in range(1, len(columns)):
-            draw.text(pos_percent_lp(columns_x[col], rows_y[5]), loc.LONG_DASH, font=font_sn,
-                      fill=LIGHT_TEXT_COLOR,
-                      anchor='ms')
 
     draw.text(pos_percent_lp(table_x, rows_y[0]), loc.LP_PIC_ADDED_VALUE, font=r.font, fill=FADE_COLOR, anchor='rs')
     draw.text(pos_percent_lp(table_x, rows_y[1]), loc.LP_PIC_WITHDRAWN_VALUE, font=r.font, fill=FADE_COLOR, anchor='rs')

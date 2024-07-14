@@ -80,7 +80,6 @@ class AchievementsExtractor(WithLogger):
             Achievement(A.SWAP_COUNT_30D, data.swaps_30d),
             Achievement(A.ADD_LIQUIDITY_COUNT_TOTAL, data.add_count),
             Achievement(A.ADD_LIQUIDITY_VOLUME_TOTAL, int(data.added_rune)),
-            #   Achievement(A.ILP_PAID_TOTAL, int(data.loss_protection_paid_rune)),
 
             Achievement(A.TOTAL_ACTIVE_BOND, int(data.total_active_bond_rune)),
             Achievement(A.TOTAL_BOND, int(data.total_bond_rune)),

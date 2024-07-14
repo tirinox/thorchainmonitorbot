@@ -487,16 +487,8 @@ class TwitterEnglishLocalization(BaseLocalization):
 
             message = f'💊 Synth trade volume: {synth_volume_rune} ({synth_volume_usd}) ' \
                       f'in {synth_op_count} swaps\n'
-
-            # if new.loss_protection_paid_24h_rune:
-            #     ilp_rune_str = short_rune(new.loss_protection_paid_24h_rune)
-            #     ilp_usd_str = short_dollar(new.loss_protection_paid_24h_rune * new.usd_per_rune)
-            #     message += f'🛡️ ILP payout last 24h: {ilp_rune_str} ({ilp_usd_str})\n'
-
             parts.append(message)
 
-        # message = f'🛡 Total Imp. Loss Protection paid: {(short_dollar(new.loss_protection_paid_usd))}.\n'
-        # parts.append(message)
 
         # --------------------------------------------------------------------------------------------------------------
 

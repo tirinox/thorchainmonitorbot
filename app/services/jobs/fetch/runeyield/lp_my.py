@@ -38,7 +38,6 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         self.block_mapper = DateToBlockMapper(deps)
         self.withdraw_fee_rune = 2.0
         self.last_block = 0
-        self.add_il_protection_to_final_figures = True
 
     async def generate_yield_summary(self, address, pools: List[str]) -> YieldSummary:
         self.update_fees()
@@ -504,24 +503,6 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
                     last_deposit_height = tx.height_int
         return last_deposit_height
 
-    def get_il_protection_progress(self, current_block_height: int, last_deposit_height: int) -> (float, str):
-        blocks_protected_full = int(self.deps.mimir_const_holder.get_constant(
-            self.KEY_CONST_FULL_IL_PROTECTION_BLOCKS, default=1728000))
-
-        if blocks_protected_full <= 0 or last_deposit_height <= 0:
-            return 0.0, ILProtectionReport.STATUS_DISABLED
-
-        age = current_block_height - last_deposit_height
-
-        if age < 17280:
-            return 0.0, ILProtectionReport.STATUS_EARLY
-
-        if age >= blocks_protected_full:
-            return 1.0, ILProtectionReport.STATUS_FULL
-
-        ratio = age / blocks_protected_full
-        return ratio, ILProtectionReport.STATUS_PARTIAL
-
     @staticmethod
     def calculate_imp_loss(pool: PoolInfo, liquidity_units: int, r0: float, a0: float) -> float:
         r1, a1 = pool_share(pool.balance_rune, pool.balance_asset, liquidity_units, pool.units)
@@ -576,78 +557,31 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         pool = pools.get(pool_name)
         return pool or PoolInfo(pool_name, 1, 1, 1, PoolInfo.STAGED)
 
-    async def _get_il_report(self, pool: PoolInfo, txs: List[ThorTx],
-                             historic_all_pool_states: HeightToAllPools,
-                             final_my_liq_units: int) -> ILProtectionReport:
-        # Explanation: https://gitlab.com/thorchain/thornode/-/issues/794
-        last_block = await self.get_last_thorchain_block()
-        last_deposit_height = self._get_last_deposit_height(txs)
+    @staticmethod
+    def final_liquidity(txs: List[ThorTx]):
+        lp = 0
+        for tx in txs:
+            if tx.type == ActionType.ADD_LIQUIDITY:
+                lp += tx.meta_add.liquidity_units_int
+            elif tx.type == ActionType.WITHDRAW:
+                lp += tx.meta_withdraw.liquidity_units_int
+        return lp
 
-        if last_deposit_height <= 0 and pool.is_enabled:
-            return ILProtectionReport(corrected_pool=pool)
+    @staticmethod
+    def cut_off_previous_lp_sessions(txs: List[ThorTx]):
+        lp = defaultdict(float)  # track LP units for each pool
+        new_txs = []
+        for tx in txs:
+            pool = tx.first_pool
+            if tx.type == ActionType.ADD_LIQUIDITY.value:
+                lp[pool] += tx.meta_add.liquidity_units_int
+            elif tx.type == ActionType.WITHDRAW.value:
+                lp[pool] += tx.meta_withdraw.liquidity_units_int
 
-        if self.is_lp_grandfathered(txs, pool.asset):
-            return ILProtectionReport(status=ILProtectionReport.STATUS_DISABLED, corrected_pool=pool)
+            new_txs.append(tx)
 
-        protection_progress, protection_status = self.get_il_protection_progress(last_block, last_deposit_height)
-
-        self.logger.info(f'Protection for "{pool.asset}" is {protection_progress * 100:.1f} % ({protection_status}).')
-
-        r0, a0 = self._get_deposit_values_r0_and_a0(txs, historic_all_pool_states, pool.asset)
-
-        full_imp_loss_rune = self.calculate_imp_loss_v58(pool, final_my_liq_units, r0, a0)
-        coverage_rune = full_imp_loss_rune * protection_progress
-
-        new_pool_info = pool.copy()
-        member_extra_units = 0
-        if coverage_rune > 0:
-            pool_adj = pool.calculate_pool_units_rune_asset(
-                add_rune=float_to_thor(coverage_rune),
-                add_asset=0
-            )
-
-            new_pool_info.balance_rune += float_to_thor(coverage_rune)
-            new_pool_info.pool_units += pool_adj.delta_units
-            new_pool_info.units += pool_adj.delta_units
-            member_extra_units = pool_adj.delta_units
-
-        if member_extra_units == 0 and protection_status in ILProtectionReport.PROTECTED_STATUSES:
-            protection_status = ILProtectionReport.STATUS_NOT_NEED
-
-        return ILProtectionReport(
-            protection_progress,
-            coverage_rune,
-            full_imp_loss_rune,
-            new_pool_info,
-            member_extra_units,
-            protection_status
-        )
-
-
-def final_liquidity(txs: List[ThorTx]):
-    lp = 0
-    for tx in txs:
-        if tx.type == ActionType.ADD_LIQUIDITY:
-            lp += tx.meta_add.liquidity_units_int
-        elif tx.type == ActionType.WITHDRAW:
-            lp += tx.meta_withdraw.liquidity_units_int
-    return lp
-
-
-def cut_off_previous_lp_sessions(txs: List[ThorTx]):
-    lp = defaultdict(float)  # track LP units for each pool
-    new_txs = []
-    for tx in txs:
-        pool = tx.first_pool
-        if tx.type == ActionType.ADD_LIQUIDITY.value:
-            lp[pool] += tx.meta_add.liquidity_units_int
-        elif tx.type == ActionType.WITHDRAW.value:
-            lp[pool] += tx.meta_withdraw.liquidity_units_int
-
-        new_txs.append(tx)
-
-        if lp[pool] <= 0:
-            # oops! user has withdrawn all funds completely: resetting the accumulator!
-            new_txs = []
-            lp[pool] = 0
-    return new_txs
+            if lp[pool] <= 0:
+                # oops! user has withdrawn all funds completely: resetting the accumulator!
+                new_txs = []
+                lp[pool] = 0
+        return new_txs

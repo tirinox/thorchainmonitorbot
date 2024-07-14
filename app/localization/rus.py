@@ -127,9 +127,6 @@ class RussianLocalization(BaseLocalization):
     BUTTON_VIEW_VALUE_ON = 'Скрыть деньги: НЕТ'
     BUTTON_VIEW_VALUE_OFF = 'Скрыть деньги: ДА'
 
-    BUTTON_LP_PROT_ON = 'IL защита: ДА'
-    BUTTON_LP_PROT_OFF = 'IL защита: НЕТ'
-
     BUTTON_TRACK_BALANCE_ON = 'Следить за балансом: ДА'
     BUTTON_TRACK_BALANCE_OFF = 'Следить за балансом: НЕТ'
 
@@ -965,11 +962,6 @@ class RussianLocalization(BaseLocalization):
 
             message += f'💊 Объем торговли синтетиками: {synth_volume_rune} ({synth_volume_usd}) ' \
                        f'путем {synth_op_count} обменов 🆕\n'
-
-            # if new.loss_protection_paid_24h_rune:
-            #     ilp_rune_str = code(short_rune(new.loss_protection_paid_24h_rune))
-            #     ilp_usd_str = code(short_dollar(new.loss_protection_paid_24h_rune * new.usd_per_rune))
-            #     message += f'🛡️ Выплачено страховки от IL сегодня: {ilp_rune_str} ({ilp_usd_str}) 🆕\n'
 
             message += '\n'
 

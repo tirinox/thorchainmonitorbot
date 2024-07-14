@@ -34,8 +34,6 @@ class AchievementName:
     ADD_LIQUIDITY_COUNT_TOTAL = 'add_liquidity_count_total'
     ADD_LIQUIDITY_VOLUME_TOTAL = 'add_liquidity_volume_total'
 
-    ILP_PAID_TOTAL = 'ilp_paid_total'
-
     NODE_COUNT = 'node_count'
     ACTIVE_NODE_COUNT = 'active_node_count'
     TOTAL_ACTIVE_BOND = 'total_active_bond'
@@ -177,7 +175,6 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.ADD_LIQUIDITY_COUNT_TOTAL, 'Times liquidity added'),
     ADesc(A.ADD_LIQUIDITY_VOLUME_TOTAL, 'Total add liquidity volume'),
     ADesc(A.DAILY_VOLUME, 'Daily volume', prefix='$'),
-    ADesc(A.ILP_PAID_TOTAL, 'Total ILP paid', postfix=POSTFIX_RUNE),
     ADesc(A.TOTAL_ACTIVE_BOND, 'Total active bond'),
     ADesc(A.TOTAL_BOND, 'Total bond', postfix=POSTFIX_RUNE),
     ADesc(A.NODE_COUNT, 'Total nodes count', more_than=False),

@@ -1,10 +1,9 @@
 import asyncio
 
 from services.jobs.fetch.base import BaseFetcher
-from services.jobs.ilp_summer import ILPSummer
 from services.jobs.user_counter import UserCounterMiddleware
 from services.lib.constants import THOR_BLOCK_TIME, thor_to_float
-from services.lib.date_utils import parse_timespan_to_seconds, now_ts, DAY
+from services.lib.date_utils import parse_timespan_to_seconds, now_ts
 from services.lib.depcont import DepContainer
 from services.lib.midgard.urlgen import free_url_gen
 from services.models.net_stats import NetworkStats
@@ -89,9 +88,6 @@ class NetworkStatisticsFetcher(BaseFetcher):
         else:
             self.logger.error('Failed to get swap history from Midgard!')
 
-    async def _get_ilp_24h_payouts(self, ns: NetworkStats):
-        ns.loss_protection_paid_24h_rune = await ILPSummer(self.deps).ilp_sum(period=DAY)
-
     async def _get_user_stats(self, ns: NetworkStats):
         counter = UserCounterMiddleware(self.deps)
         stats = await counter.get_main_stats()
@@ -112,9 +108,6 @@ class NetworkStatisticsFetcher(BaseFetcher):
         await asyncio.sleep(self.step_sleep)
 
         await self._get_swap_stats(ns)
-        await asyncio.sleep(self.step_sleep)
-
-        await self._get_ilp_24h_payouts(ns)
         await asyncio.sleep(self.step_sleep)
 
         await self._get_user_stats(ns)

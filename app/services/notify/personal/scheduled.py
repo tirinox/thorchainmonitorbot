@@ -112,7 +112,6 @@ class PersonalPeriodicNotificationService(WithLogger, INotified):
 
         # Generate report
         rune_yield = get_rune_yield_connector(self.deps)
-        rune_yield.add_il_protection_to_final_figures = True
         lp_report = await rune_yield.generate_yield_report_single_pool(tr.address, tr.pool)
 
         loc, local_name, unsub_id, platform = await self._prepare_state(tr)

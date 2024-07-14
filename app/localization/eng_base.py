@@ -170,9 +170,6 @@ class BaseLocalization(ABC):  # == English
     BUTTON_VIEW_VALUE_ON = 'Show value: ON'
     BUTTON_VIEW_VALUE_OFF = 'Show value: OFF'
 
-    BUTTON_LP_PROT_ON = 'IL prot.: ON'
-    BUTTON_LP_PROT_OFF = 'IL prot.: OFF'
-
     BUTTON_TRACK_BALANCE_ON = 'Track balance: ON'
     BUTTON_TRACK_BALANCE_OFF = 'Track balance: OFF'
 
@@ -1206,11 +1203,6 @@ class BaseLocalization(ABC):  # == English
 
             message += f'💊 Synth trade volume: {synth_volume_rune} ({synth_volume_usd}) ' \
                        f'in {synth_op_count} swaps.\n'
-
-            # if new.loss_protection_paid_24h_rune:
-            #     ilp_rune_str = code(short_rune(new.loss_protection_paid_24h_rune))
-            #     ilp_usd_str = code(short_dollar(new.loss_protection_paid_24h_rune * new.usd_per_rune))
-            #     message += f'🛡️ IL protection payout: {ilp_rune_str} ({ilp_usd_str}).\n'
 
             message += '\n'
 

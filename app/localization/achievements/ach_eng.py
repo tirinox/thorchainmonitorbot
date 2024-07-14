@@ -17,7 +17,6 @@ class AchievementsEnglishLocalization(AchievementsLocalizationBase):
         A.ADD_LIQUIDITY_COUNT_TOTAL: "Times liquidity added",
         A.ADD_LIQUIDITY_VOLUME_TOTAL: "Total add liquidity volume",
         A.DAILY_VOLUME: "Daily volume",
-        A.ILP_PAID_TOTAL: "Total ILP paid",
         A.TOTAL_ACTIVE_BOND: "Total active bond",
         A.TOTAL_BOND: "Total bond",
         A.NODE_COUNT: "Total nodes count",

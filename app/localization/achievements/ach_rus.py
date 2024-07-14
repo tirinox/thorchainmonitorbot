@@ -17,7 +17,6 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
         A.ADD_LIQUIDITY_COUNT_TOTAL: "Общее количество добавлений ликвидности",
         A.ADD_LIQUIDITY_VOLUME_TOTAL: "Общий объем добавленной ликвидности",
         A.DAILY_VOLUME: "Ежедневный объем",
-        A.ILP_PAID_TOTAL: "Всего страховки выплачено",
         A.TOTAL_ACTIVE_BOND: "Всего активный бонд",
         A.TOTAL_BOND: "Всего в бондах нод",
         A.NODE_COUNT: "Всего нод в сети",
