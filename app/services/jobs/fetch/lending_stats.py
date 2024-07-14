@@ -32,6 +32,9 @@ class LendingStatsFetcher(BaseFetcher):
 
     @staticmethod
     async def amend_burned_rune(lending_stats: LendingStats, market_info):
+        if not market_info or not market_info.supply_info:
+            return lending_stats
+
         real_burned_rune = market_info.supply_info.lending_burnt_rune
         if real_burned_rune is not None:
             lending_stats = lending_stats._replace(rune_burned_rune=real_burned_rune)

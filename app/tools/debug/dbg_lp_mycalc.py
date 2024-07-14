@@ -142,7 +142,7 @@ async def main():
                                           '',
                                           'BTC.BTC',
                                           hidden=False)
-   
+
         # await demo_find_interesting_savers(app)
         # await demo_get_my_pools(app, 'bc1q0jmh2ht08zha0vajx0kq87vxtyspak45xywf2p')
         # await demo_report_for_single_pool(app, 'thor1a8ydprhkk5u032r277nzs4vw5khnnl3ya9xnvs', 'ETH.ETH')
