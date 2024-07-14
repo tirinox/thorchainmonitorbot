@@ -40,6 +40,7 @@ class DepContainer:
     session: Optional[ClientSession] = None
 
     thor_connector: Optional[ThorConnector] = None
+    thor_connector_archive: Optional[ThorConnector] = None
     midgard_connector: Optional[MidgardConnector] = None
 
     name_service: Optional[NameService] = None

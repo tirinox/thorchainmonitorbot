@@ -33,7 +33,7 @@ class ThorConnector:
         else:
             path = self.env.path_pools
         data = await self._request(path, treat_empty_as_ok=False)
-        return [ThorPool.from_json(j) for j in data]
+        return [ThorPool.from_json(j) for j in data] if data else None
 
     async def query_pool(self, pool: str, height=None) -> ThorPool:
         if height:

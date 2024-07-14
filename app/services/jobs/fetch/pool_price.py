@@ -115,6 +115,11 @@ class PoolFetcher(BaseFetcher):
     async def _fetch_current_pool_data_from_thornode(self, height=None) -> PoolInfoMap:
         try:
             thor_pools = await self.deps.thor_connector.query_pools(height)
+
+            # try to get from archive
+            if not thor_pools:
+                thor_pools = await self.deps.thor_connector_archive.query_pools(height)
+
             return parse_thor_pools(thor_pools)
         except (TypeError, IndexError) as e:
             self.logger.error(f'thor_connector.query_pools failed! Err: {e} at {height = }')
@@ -171,6 +176,7 @@ class PoolFetcher(BaseFetcher):
             else:
                 pool_map = await self._load_from_cache(r, height)
                 if not pool_map:
+                    # work here
                     pool_map = await self._fetch_current_pool_data_from_thornode(height)
                     await self._save_to_cache(r, height, pool_map)
         else:

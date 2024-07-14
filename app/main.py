@@ -30,7 +30,6 @@ from services.jobs.fetch.queue import QueueFetcher
 from services.jobs.fetch.savers_vnx import VNXSaversStatsFetcher
 from services.jobs.fetch.trade_accounts import TradeAccountFetcher
 from services.jobs.fetch.tx import TxFetcher
-from services.jobs.ilp_summer import ILPSummer
 from services.jobs.node_churn import NodeChurnDetector
 from services.jobs.scanner.loan_extractor import LoanExtractorBlock
 from services.jobs.scanner.native_scan import NativeScannerBlock
@@ -173,12 +172,15 @@ class App(WithLogger):
         d = self.deps
 
         thor_env = thor_env or d.cfg.get_thor_env_by_network_id()
-        thor_env_backup = thor_env or d.cfg.get_thor_env_by_network_id(backup=True)
+        thor_env_backup = d.cfg.get_thor_env_by_network_id(backup=True)
 
         d.thor_connector = ThorConnector(thor_env, d.session, additional_envs=[
             thor_env_backup
         ])
         d.thor_connector.set_client_id_for_all(HTTP_CLIENT_ID)
+
+        d.thor_connector_archive = ThorConnector(thor_env_backup, d.session)
+        d.thor_connector_archive.set_client_id_for_all(HTTP_CLIENT_ID)
 
         cfg: SubConfig = d.cfg.get('thor.midgard')
         d.midgard_connector = MidgardConnector(
@@ -319,10 +321,6 @@ class App(WithLogger):
 
             # Uses Midgard as data source
             fetcher_tx = TxFetcher(d, tx_types=main_tx_types)
-
-            # for tracking 24h ILP payouts
-            ilp_summer = ILPSummer(d)
-            fetcher_tx.add_subscriber(ilp_summer)
 
             aggregator = AggregatorDataExtractor(d)
             fetcher_tx.add_subscriber(aggregator)
