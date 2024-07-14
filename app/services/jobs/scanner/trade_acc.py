@@ -7,7 +7,7 @@ from services.lib.constants import thor_to_float
 from services.lib.db import DB
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.logs import WithLogger
-from services.models.memo import THORMemo, ActionType
+from services.models.memo import THORMemo, ActionType, is_action
 from services.models.price import LastPriceHolder
 from services.models.trade_acc import AlertTradeAccountAction
 
@@ -27,7 +27,7 @@ class TradeAccEventDecoder(WithLogger, INotified, WithDelegates):
         for tx in data.txs:
             if tx.memo:
                 if memo := THORMemo.parse_memo(tx.memo, no_raise=True):
-                    if memo.action in (ActionType.TRADE_ACC_WITHDRAW, ActionType.TRADE_ACC_DEPOSIT):
+                    if is_action(memo.action, (ActionType.TRADE_ACC_WITHDRAW, ActionType.TRADE_ACC_DEPOSIT)):
                         event = self._convert_tx_to_event(tx, memo)
                         if event:
                             events[event.tx_hash] = event

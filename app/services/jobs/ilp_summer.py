@@ -16,7 +16,7 @@ class ILPSummer(INotified, WithLogger):
     async def on_data(self, sender, data: List[ThorTx]):
         with suppress(Exception):  # This must not break the rest of the pipeline! So ignore everything bad
             for tx in data:
-                if tx.type == ActionType.WITHDRAW:
+                if tx.is_of_type(ActionType.WITHDRAW):
                     ilp_rune = tx.meta_withdraw.ilp_rune
                     if ilp_rune > 0:
                         await self.time_series.add(ilp_rune=ilp_rune)

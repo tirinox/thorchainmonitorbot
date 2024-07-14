@@ -57,9 +57,9 @@ class AffiliateTXMerger(WithLogger):
     def merge_same_txs(self, tx1: ThorTx, tx2: ThorTx) -> ThorTx:
         if tx1.type != tx2.type:
             # add/withdraw savers is a combination of forever pending swap and add/withdraw
-            if tx1.type == ActionType.SWAP and tx2.type in ActionType.GROUP_ADD_WITHDRAW:
+            if tx1.is_of_type(ActionType.SWAP) and tx2.is_of_type(ActionType.GROUP_ADD_WITHDRAW):
                 return tx2
-            elif tx2.type == ActionType.SWAP and tx1.type in ActionType.GROUP_ADD_WITHDRAW:
+            elif tx2.is_of_type(ActionType.SWAP) and tx1.is_of_type(ActionType.GROUP_ADD_WITHDRAW):
                 return tx1
 
             self.logger.warning('Same tx data mismatch, continuing...')

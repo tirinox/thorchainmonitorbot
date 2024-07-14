@@ -34,7 +34,7 @@ class TxCountRecorder(WithDelegates, INotified, WithLogger):
             if not tx or not (ident := tx.tx_hash):
                 continue
 
-            if tx.type == ActionType.SWAP:
+            if tx.is_of_type(ActionType.SWAP):
                 if tx.is_trade_asset_involved:
                     unique_tx_hashes[TxMetricType.TRADE_SWAP].add(ident)
                 if tx.is_synth_involved:
@@ -42,13 +42,13 @@ class TxCountRecorder(WithDelegates, INotified, WithLogger):
                 if tx.is_streaming:
                     unique_tx_hashes[TxMetricType.STREAMING].add(ident)
                 unique_tx_hashes[TxMetricType.SWAP].add(ident)
-            elif tx.type == ActionType.TRADE_ACC_DEPOSIT:
+            elif tx.is_of_type(ActionType.TRADE_ACC_DEPOSIT):
                 unique_tx_hashes[TxMetricType.TRADE_DEPOSIT].add(ident)
-            elif tx.type == ActionType.TRADE_ACC_WITHDRAW:
+            elif tx.is_of_type(ActionType.TRADE_ACC_WITHDRAW):
                 unique_tx_hashes[TxMetricType.TRADE_WITHDRAWAL].add(ident)
-            elif tx.type == ActionType.ADD_LIQUIDITY:
+            elif tx.is_of_type(ActionType.ADD_LIQUIDITY):
                 unique_tx_hashes[TxMetricType.ADD_LIQUIDITY].add(ident)
-            elif tx.type == ActionType.WITHDRAW:
+            elif tx.is_of_type(ActionType.WITHDRAW):
                 unique_tx_hashes[TxMetricType.WITHDRAW_LIQUIDITY].add(ident)
 
         for tx_type, tx_set in unique_tx_hashes.items():
@@ -96,7 +96,7 @@ class VolumeRecorder(WithDelegates, INotified, WithLogger):
         for tx in txs:
             volume = tx.full_rune
             if volume > 0:
-                if tx.type == ActionType.SWAP:
+                if tx.is_of_type(ActionType.SWAP):
                     volumes[TxMetricType.SWAP] += volume
                     if tx.is_synth_involved:
                         volumes[TxMetricType.SWAP_SYNTH] += volume
@@ -104,13 +104,13 @@ class VolumeRecorder(WithDelegates, INotified, WithLogger):
                         volumes[TxMetricType.TRADE_SWAP] += volume
                     if tx.is_streaming:
                         volumes[TxMetricType.STREAMING] += volume
-                elif tx.type == ActionType.TRADE_ACC_DEPOSIT:
+                elif tx.is_of_type(ActionType.TRADE_ACC_DEPOSIT):
                     volumes[TxMetricType.TRADE_DEPOSIT] += volume
-                elif tx.type == ActionType.TRADE_ACC_WITHDRAW:
+                elif tx.is_of_type(ActionType.TRADE_ACC_WITHDRAW):
                     volumes[TxMetricType.TRADE_WITHDRAWAL] += volume
-                elif tx.type == ActionType.ADD_LIQUIDITY:
+                elif tx.is_of_type(ActionType.ADD_LIQUIDITY):
                     volumes[TxMetricType.ADD_LIQUIDITY] += volume
-                elif tx.type == ActionType.WITHDRAW:
+                elif tx.is_of_type(ActionType.WITHDRAW):
                     volumes[TxMetricType.WITHDRAW_LIQUIDITY] += volume
 
                 total_volume += volume

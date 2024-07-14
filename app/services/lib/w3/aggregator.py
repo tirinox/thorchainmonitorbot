@@ -153,7 +153,7 @@ class AggregatorDataExtractor(WithLogger, INotified, WithDelegates):
     async def on_data(self, sender, txs: List[ThorTx]):
         with suppress(Exception):  # This must not break the rest of the pipeline! So ignore everything bad
             for tx in txs:
-                if tx.type == ActionType.SWAP:
+                if tx.is_of_type(ActionType.SWAP):
                     in_amount = await self._try_detect_aggregator(tx.first_input_tx, is_in=True)
 
                     # out_amount = await self._try_detect_aggregator(tx.first_output_tx, is_in=False)

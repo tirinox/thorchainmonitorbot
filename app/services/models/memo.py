@@ -51,6 +51,18 @@ class ActionType(Enum):
     GROUP_ADD_WITHDRAW = (ADD_LIQUIDITY, WITHDRAW, DONATE)
 
 
+def is_action(x, y):
+    if isinstance(y, (tuple, set, list, dict)):
+        return any(is_action(x, t) for t in y)
+
+    if isinstance(x, ActionType):
+        x = x.value
+    if isinstance(y, ActionType):
+        y = y.value
+
+    return str(x).lower() == str(y).lower()
+
+
 MEMO_ACTION_TABLE = {
     "add": ActionType.ADD_LIQUIDITY,
     "+": ActionType.ADD_LIQUIDITY,

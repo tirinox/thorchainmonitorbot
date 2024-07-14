@@ -96,24 +96,24 @@ class TwitterEnglishLocalization(BaseLocalization):
          total_usd_volume) = self.lp_tx_calculations(usd_per_rune, pool_info, tx)
 
         heading = ''
-        if tx.type == ActionType.ADD_LIQUIDITY:
+        if tx.is_of_type(ActionType.ADD_LIQUIDITY):
             if tx.is_savings:
                 heading = f'🐳→💰 Add to savings vault'
             else:
                 heading = f'🐳→⚡ Add liquidity'
-        elif tx.type == ActionType.WITHDRAW:
+        elif tx.is_of_type(ActionType.WITHDRAW):
             if tx.is_savings:
                 heading = f'🐳←💰 Withdraw from savings vault'
             else:
                 heading = f'🐳←⚡ Withdraw liquidity'
-        elif tx.type == ActionType.DONATE:
+        elif tx.is_of_type(ActionType.DONATE):
             heading = f'🐳 Donation to the pool 🙌'
-        elif tx.type == ActionType.SWAP:
+        elif tx.is_of_type(ActionType.SWAP):
             if tx.is_streaming:
                 heading = f'🌊 Streaming swap finished'
             else:
                 heading = f'🔁 Swap'
-        elif tx.type == ActionType.REFUND:
+        elif tx.is_of_type(ActionType.REFUND):
             heading = f'🐳 Refund ↩️❗'
 
         if tx.is_pending:
@@ -125,7 +125,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         content = f'👤{self.link_to_address(tx.sender_address, name_map)}: '
 
-        if tx.type in (ActionType.ADD_LIQUIDITY, ActionType.WITHDRAW, ActionType.DONATE):
+        if tx.is_of_type((ActionType.ADD_LIQUIDITY, ActionType.WITHDRAW, ActionType.DONATE)):
             if tx.affiliate_fee > 0:
                 aff_fee_usd = tx.get_affiliate_fee_usd(usd_per_rune)
                 mark = self._exclamation_sign(aff_fee_usd, 'fee_usd_limit')
@@ -173,13 +173,13 @@ class TwitterEnglishLocalization(BaseLocalization):
                 f"{pool_depth_part}"
             )
 
-        elif tx.type == ActionType.REFUND:
+        elif tx.is_of_type(ActionType.REFUND):
             reason = shorten_text(tx.meta_refund.reason, 30)
             content += (
                     self.format_swap_route(tx, usd_per_rune) +
                     f"\nReason: {reason}.."
             )
-        elif tx.type == ActionType.SWAP:
+        elif tx.is_of_type(ActionType.SWAP):
             content += self.format_swap_route(tx, usd_per_rune)
             slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
             l_fee_usd = tx.meta_swap.liquidity_fee_rune_float * usd_per_rune

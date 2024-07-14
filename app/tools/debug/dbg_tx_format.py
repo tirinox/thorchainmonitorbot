@@ -153,7 +153,7 @@ async def send_tx_notification(app, ex_tx, loc: BaseLocalization = None):
     full_rune = ex_tx.calc_full_rune_amount(app.deps.price_holder.pool_info_map)
 
     profit_calc = StreamingSwapVsCexProfitCalculator(app.deps)
-    if ex_tx.type == ActionType.SWAP:
+    if ex_tx.is_of_type(ActionType.SWAP):
         await profit_calc.get_cex_data_v2(ex_tx)
 
     print(f'{ex_tx.affiliate_fee = }')

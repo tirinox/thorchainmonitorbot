@@ -10,7 +10,7 @@ from services.lib.w3.token_record import SwapInOut
 from services.models.asset import Asset, is_rune, ASSET_TRADE_SEPARATOR
 from services.models.cap_info import ThorCapInfo
 from services.models.lp_info import LPAddress
-from services.models.memo import ActionType
+from services.models.memo import ActionType, is_action
 from services.models.memo import THORMemo
 from services.models.mimir import MimirHolder
 from services.models.pool_info import PoolInfo, PoolInfoMap
@@ -219,6 +219,12 @@ class ThorTx:
 
     is_savings: bool = False
 
+    def is_of_type(self, t):
+        if isinstance(t, (tuple, list, set)):
+            return any(is_action(self.type, tp) for tp in t)
+        else:
+            return is_action(self.type, t)
+
     def sort_inputs_by_first_asset(self):
         self.in_tx.sort(key=lambda sub_tx: (sub_tx.coins[0].asset if sub_tx.coins else ''))
 
@@ -389,12 +395,11 @@ class ThorTx:
 
     @property
     def is_liquidity_type(self):
-        return self.type in (ActionType.WITHDRAW, ActionType.ADD_LIQUIDITY)
+        return self.is_of_type((ActionType.ADD_LIQUIDITY, ActionType.WITHDRAW))
 
     # extended methods and properties
     def __post_init__(self):
-        t = self.type
-        if t == ActionType.ADD_LIQUIDITY or t == ActionType.DONATE:
+        if self.is_of_type((ActionType.ADD_LIQUIDITY, ActionType.DONATE)):
             pool = self.first_pool  # add maybe both synth (means savers) or l1 (normal liquidity)
             self.rune_amount = self.sum_of_rune(in_only=True)
             self.asset_amount = self.sum_of_asset(pool, in_only=True)
@@ -407,7 +412,7 @@ class ThorTx:
             self.address_asset = asset_sub_tx.address if asset_sub_tx else None
             self.tx_hash_asset = asset_sub_tx.tx_id if asset_sub_tx else None
 
-        elif t == ActionType.WITHDRAW:
+        elif self.is_of_type(ActionType.WITHDRAW):
             pool = self.first_pool_l1  # withdraw always l1 no matter it was savers or normal liquidity
             self.rune_amount = self.sum_of_rune(out_only=True)
             self.asset_amount = self.sum_of_asset(pool, out_only=True)
@@ -420,12 +425,12 @@ class ThorTx:
             self.tx_hash_rune = out_sub_tx_rune.tx_id if out_sub_tx_rune else None
             self.tx_hash_asset = out_sub_tx_asset.tx_id if out_sub_tx_asset else None
 
-        elif t in (ActionType.REFUND, ActionType.SWAP):
+        elif self.is_of_type((ActionType.REFUND, ActionType.SWAP)):
             # only outputs
             self.rune_amount = self.sum_of_rune(out_only=True)
             self.asset_amount = self.sum_of_non_rune(out_only=True)
 
-            if t == ActionType.SWAP:
+            if self.is_of_type(ActionType.SWAP):
                 self.affiliate_fee = self.meta_swap.affiliate_fee
 
         self.is_savings = any(True for asset in self.pools if Asset.from_string(asset).is_synth)
@@ -477,7 +482,7 @@ class ThorTx:
 
         self.asset_per_rune = pool_info.asset_per_rune if pool_info else 0.0
 
-        if self.type in (ActionType.SWAP, ActionType.WITHDRAW):
+        if self.is_of_type((ActionType.SWAP, ActionType.WITHDRAW)):
             if self.is_pending and not self.out_tx:
                 # pending txs have no out_tx, so we use in_tx
                 realm = self.search_realm(in_only=True)
@@ -497,7 +502,7 @@ class ThorTx:
     def what_percent_of_pool(self, pool_info: PoolInfo) -> float:
         percent_of_pool = 100.0
         if pool_info:
-            correction = self.full_rune if self.type == ActionType.WITHDRAW else 0.0
+            correction = self.full_rune if self.is_of_type(ActionType.WITHDRAW) else 0.0
             percent_of_pool = pool_info.percent_share(self.full_rune, correction)
         return percent_of_pool
 

@@ -156,9 +156,9 @@ class AchievementsExtractor(WithLogger):
 
         for tx in txs:
             this_volume = tx.get_usd_volume(price)
-            if tx.type == ActionType.SWAP:
+            if tx.is_of_type(ActionType.SWAP):
                 update(A.MAX_SWAP_AMOUNT_USD, this_volume)
-            elif tx.type == ActionType.ADD_LIQUIDITY:
+            elif tx.is_of_type(ActionType.ADD_LIQUIDITY):
                 update(A.MAX_ADD_AMOUNT_USD, this_volume)
 
         return [
