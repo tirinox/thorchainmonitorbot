@@ -14,7 +14,6 @@ async def main():
 
     lp_app = LpAppFramework(log_level=logging.INFO)
     async with lp_app:
-        await lp_app.prepare(brief=True)
 
         described_names = set([k.upper() for k in TRANSLATE_MIMIRS.keys()])
         current_names = set([k.upper() for k in lp_app.deps.mimir_const_holder.all_names])
