@@ -70,13 +70,25 @@ class RuneMarketInfoFetcher(WithLogger):
         return supply_info
 
     async def get_rune_market_info_from_api(self) -> RuneMarketInfo:
+        # Supply
         supply_info = await self.get_full_supply()
         await asyncio.sleep(self.step_delay)
 
+        # CoinGecko stats
         gecko = await get_thorchain_coin_gecko_info(self.deps.session)
+        if gecko:
+            cex_price = gecko_ticker_price(gecko, self.cex_name, self.cex_pair)
+            rank = gecko_market_cap_rank(gecko)
+            trade_volume = gecko_market_volume(gecko)
+        else:
+            cex_price = 0
+            rank = 0
+            trade_volume = 0
+
         await asyncio.sleep(self.step_delay)
 
-        total_pulled_rune = await self.total_pooled_rune()
+        # Total Rune in pools
+        total_pooled_rune = await self.total_pooled_rune()
 
         supply_info: RuneCirculatingSupply
         circulating_rune = supply_info.circulating
@@ -89,13 +101,9 @@ class RuneMarketInfoFetcher(WithLogger):
         if not price_holder.pool_info_map or not price_holder.usd_per_rune:
             raise ValueError(f"pool_info_map is empty!")
 
-        tlv_usd = total_pulled_rune * price_holder.usd_per_rune  # == tlv of non-rune assets
+        tlv_usd = total_pooled_rune * price_holder.usd_per_rune  # == tlv of non-rune assets
 
         fair_price = 3 * tlv_usd / circulating_rune  # The main formula of wealth!
-
-        cex_price = gecko_ticker_price(gecko, self.cex_name, self.cex_pair)
-        rank = gecko_market_cap_rank(gecko)
-        trade_volume = gecko_market_volume(gecko)
 
         result = RuneMarketInfo(
             circulating=circulating_rune,

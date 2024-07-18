@@ -2,6 +2,7 @@ import logging
 import random
 
 import aiohttp
+from aiohttp import ContentTypeError
 from redis import ResponseError
 from tqdm import tqdm
 
@@ -58,9 +59,12 @@ async def fill_rune_price_from_gecko(db, include_fake_det=False, fake_value=0.2)
 
 
 async def get_thorchain_coin_gecko_info(session):
-    async with session.get(COIN_RANK_GECKO, timeout=GECKO_TIMEOUT) as resp:
-        j = await resp.json()
-        return j
+    try:
+        async with session.get(COIN_RANK_GECKO, timeout=GECKO_TIMEOUT) as resp:
+            j = await resp.json()
+            return j
+    except ContentTypeError as e:
+        logging.error(f'Error while fetching gecko info: {e}')
 
 
 def gecko_market_cap_rank(gecko_json):
