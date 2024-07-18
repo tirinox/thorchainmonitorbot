@@ -320,6 +320,10 @@ class ThorTx:
     def search_realm(self, in_only=False, out_only=False):
         return self.in_tx if in_only else self.out_tx if out_only else self.in_tx + self.out_tx
 
+    @property
+    def all_realms(self):
+        return self.in_tx + self.out_tx
+
     def get_sub_tx(self, asset, in_only=False, out_only=False):
         for sub_tx in self.search_realm(in_only, out_only):
             for coin in sub_tx.coins:
@@ -387,7 +391,7 @@ class ThorTx:
 
     @property
     def is_synth_involved(self):
-        for sub_tx in self.search_realm():
+        for sub_tx in self.all_realms:
             for c in sub_tx.coins:
                 if '/' in c.asset:
                     return True
@@ -490,6 +494,8 @@ class ThorTx:
                 realm = self.search_realm(out_only=True)
             r = self.calc_amount(pool_map, realm,
                                  filter_unknown_runes=self.is_savings)
+        elif self.is_of_type((ActionType.TRADE_ACC_WITHDRAW, ActionType.TRADE_ACC_DEPOSIT)):
+            r = self.calc_amount(pool_map, self.all_realms)
         else:
             # add, donate, refund
             r = self.calc_amount(pool_map, self.search_realm(in_only=True))
@@ -515,7 +521,7 @@ class ThorTx:
 
     @property
     def is_trade_asset_involved(self):
-        for sub_tx in self.search_realm():
+        for sub_tx in self.all_realms:
             for coin in sub_tx.coins:
                 if ASSET_TRADE_SEPARATOR in coin.asset:
                     return True

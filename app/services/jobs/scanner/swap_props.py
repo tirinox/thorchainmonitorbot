@@ -209,7 +209,7 @@ class SwapProps(NamedTuple):
         tx = ThorTx(
             date=timestamp,
             height=height,
-            type=ActionType.SWAP,
+            type=ActionType.SWAP.value,
             pools=pools,
             in_tx=in_tx,
             out_tx=out_tx,

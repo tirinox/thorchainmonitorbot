@@ -373,6 +373,10 @@ class MetricsDialog(BaseDialog):
         await self.safe_delete(loading_message)
 
     async def show_trade_acc_stats(self, message: Message):
+        if not self.deps.tr_acc_summary_notifier:
+            await message.answer("This method is disabled.", disable_notification=True)
+            return
+
         loading_message = await self.show_loading(message)
 
         event = self.deps.tr_acc_summary_notifier.last_event

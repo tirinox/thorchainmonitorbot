@@ -1,8 +1,11 @@
 from typing import NamedTuple, List
 
-from aionode.types import ThorTradeUnits, ThorVault, ThorTradeAccount
+from aionode.types import ThorTradeUnits, ThorVault, ThorTradeAccount, float_to_thor
+from services.lib.date_utils import now_ts
 from services.models.asset import normalize_asset
+from services.models.memo import ActionType
 from services.models.pool_info import PoolInfoMap
+from services.models.tx import ThorTx, SUCCESS, ThorSubTx, ThorCoin
 from services.models.vol_n import TxMetricType
 
 
@@ -20,6 +23,41 @@ class AlertTradeAccountAction(NamedTuple):
     @property
     def is_withdrawal(self) -> bool:
         return not self.is_deposit
+
+    @property
+    def action_type(self) -> ActionType:
+        return ActionType.TRADE_ACC_DEPOSIT if self.is_deposit else ActionType.TRADE_ACC_WITHDRAW
+
+    @property
+    def as_thor_tx(self) -> ThorTx:
+        in_tx_list = []
+        out_tx_list = []
+        pools = [self.asset]
+
+        # usd_per_asset = self.usd_amount / self.amount if self.amount > 0 else 0
+
+        if self.is_deposit:
+            in_tx_list.append(ThorSubTx(
+                self.actor, [
+                    ThorCoin(float_to_thor(self.amount), self.asset)
+                ],
+                self.tx_hash
+            ))
+        else:
+            out_tx_list.append(ThorSubTx(
+                self.destination_address, [
+                    ThorCoin(float_to_thor(self.amount), self.asset)
+                ],
+                self.tx_hash
+            ))
+
+        ts = int(now_ts() * 1e9)
+        return ThorTx(
+            ts, 0, SUCCESS, self.action_type.value,
+            pools, in_tx_list, out_tx_list,
+            None, None, None, None,
+            asset_amount=self.amount,
+        )
 
 
 class TradeAccountVaults(NamedTuple):

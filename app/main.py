@@ -568,6 +568,9 @@ class App(WithLogger):
             traed = TradeAccEventDecoder(d.db, d.price_holder)
             d.block_scanner.add_subscriber(traed)
 
+            traed.add_subscriber(d.volume_recorder)
+            traed.add_subscriber(d.tx_count_recorder)
+
             tr_acc_not = TradeAccTransactionNotifier(d)
             traed.add_subscriber(tr_acc_not)
             tr_acc_not.add_subscriber(d.alert_presenter)

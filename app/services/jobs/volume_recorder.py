@@ -1,19 +1,39 @@
 from collections import defaultdict
-from contextlib import suppress
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 from services.lib.accumulator import Accumulator
 from services.lib.active_users import DailyActiveUserCounter
 from services.lib.date_utils import HOUR, now_ts
-from services.lib.delegates import WithDelegates, INotified
+from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 from services.models.memo import ActionType
+from services.models.trade_acc import AlertTradeAccountAction
 from services.models.tx import ThorTx
 from services.models.vol_n import TxCountStats, TxMetricType
 
 
-class TxCountRecorder(WithDelegates, INotified, WithLogger):
+def convert_trade_actions_to_txs(txs, price_holder, thor_height) -> List[ThorTx]:
+    """
+    The classes below are able to handle both ThorTx and AlertTradeAccountAction thanks to this function.
+
+    If the input is an AlertTradeAccountAction, convert it to a list of single ThorTx.
+    Otherwise, return the input as is. (List[ThorTx])
+    """
+    if isinstance(txs, AlertTradeAccountAction):
+        tx = txs.as_thor_tx
+        tx.calc_full_rune_amount(price_holder.pool_info_map)
+        tx.height = thor_height
+        tx.date = int(now_ts() * 1e9)
+
+        print(f'convert_trade_actions_to_txs: {tx.tx_hash}, {tx.full_rune} rune, {tx.asset_amount} asset')
+
+        return [tx]
+    else:
+        return txs
+
+
+class TxCountRecorder(INotified, WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
@@ -55,12 +75,12 @@ class TxCountRecorder(WithDelegates, INotified, WithLogger):
             if tx_set:
                 await self._counters[tx_type].hit(users=tx_set)
 
-    async def on_data(self, sender, txs: List[ThorTx]):
+    async def on_data(self, sender, txs: Union[List[ThorTx], AlertTradeAccountAction]):
         try:
+            txs = convert_trade_actions_to_txs(txs, self.deps.price_holder, int(self.deps.last_block_store))
             await self._write_tx_count(txs)
-            await self.pass_data_to_listeners(txs)  # pass the data unchanged to the next subscribers
-        except Exception:
-            self.logger.exception('Error while writing tx count')
+        except Exception as e:
+            self.logger.exception('Error while writing tx count', exc_info=e)
 
     async def get_stats(self, period_days=7):
         curr_dict, prev_dict = defaultdict(int), defaultdict(int)
@@ -72,7 +92,7 @@ class TxCountRecorder(WithDelegates, INotified, WithLogger):
         return TxCountStats(curr_dict, prev_dict)
 
 
-class VolumeRecorder(WithDelegates, INotified, WithLogger):
+class VolumeRecorder(INotified, WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
@@ -81,13 +101,17 @@ class VolumeRecorder(WithDelegates, INotified, WithLogger):
         # todo: auto clean
         self._accumulator = Accumulator('Volume', deps.db, tolerance=t)
 
-    async def on_data(self, sender, txs: List[ThorTx]):
-        with suppress(Exception):
+    async def on_data(self, sender, txs: Union[List[ThorTx], AlertTradeAccountAction]):
+        try:
+            txs = convert_trade_actions_to_txs(txs, self.deps.price_holder, int(self.deps.last_block_store))
             await self.handle_txs_unsafe(txs)
-
-            await self.pass_data_to_listeners(txs)  # pass the data unchanged to the next subscribers
+        except Exception as e:
+            self.logger.exception('Error while writing volume', exc_info=e)
 
     async def handle_txs_unsafe(self, txs: List[ThorTx]):
+        # todo: apply deduplicator?
+        # все еще неправильно считает, некоторые транзакции не учитываются в количестве, некоторые несколько раз
+
         current_price = self.deps.price_holder.usd_per_rune or 0.01
         total_volume = 0.0
 
