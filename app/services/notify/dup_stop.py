@@ -3,6 +3,7 @@ from typing import List
 
 from redis import Redis
 
+from services.lib.bloom_filt import BloomFilter
 from services.lib.cooldown import Cooldown
 from services.lib.db import DB
 from services.lib.logs import WithLogger
@@ -10,32 +11,33 @@ from services.models.tx import ThorTx
 
 
 class TxDeduplicator(WithLogger):
-    def __init__(self, db: DB, key):
+    def __init__(self, db: DB, key, capacity=100000, error_rate=0.001):
         super().__init__()
         self.db = db
-        self._key = key
+
+        assert capacity > 10
+        assert 0.0001 < error_rate < 0.1
+        assert key and isinstance(key, str)
+
+        full_key = f'tx:dedup_v2:{key}'
+        self._bf = BloomFilter(self.db.redis, full_key, capacity, error_rate)
+
+    @property
+    def key(self):
+        return self._bf.redis_key
 
     async def mark_as_seen(self, tx_id):
         if not tx_id:
             return
-
-        r: Redis = self.db.redis
-        await r.sadd(self._key, tx_id)
+        await self._bf.add(tx_id)
 
     async def mark_as_seen_txs(self, txs: List[ThorTx]):
-        # use pipe
-        r: Redis = self.db.redis
-        pipe = r.pipeline()
         for tx in txs:
             if tx and tx.tx_hash:
-                await pipe.sadd(self._key, tx.tx_hash)
-        await pipe.execute()
+                await self.mark_as_seen(tx.tx_hash)
 
     async def forget(self, tx_id):
-        if not tx_id:
-            return
-        r: Redis = self.db.redis
-        return await r.srem(self._key, tx_id)
+        raise NotImplementedError
 
     async def have_ever_seen(self, tx: ThorTx):
         if not tx or not tx.tx_hash:
@@ -45,8 +47,7 @@ class TxDeduplicator(WithLogger):
     async def have_ever_seen_hash(self, tx_id):
         if not tx_id:
             return True
-        r: Redis = self.db.redis
-        return await r.sismember(self._key, tx_id)
+        return await self._bf.contains(tx_id)
 
     async def batch_ever_seen_hashes(self, txs: List[str]):
         return await asyncio.gather(*[self.have_ever_seen_hash(tx_hash) for tx_hash in txs])
@@ -71,15 +72,19 @@ class TxDeduplicator(WithLogger):
     async def only_seen_hashes(self, txs: List[str]) -> List[str]:
         return await self.only_hashes_having_certain_flag(txs, True)
 
-    async def only_new_txs(self, txs: List[ThorTx]) -> List[ThorTx]:
-        return await self.only_txs_having_certain_flag(txs, False)
+    async def only_new_txs(self, txs: List[ThorTx], logs=False) -> List[ThorTx]:
+        len_in = len(txs)
+        results = await self.only_txs_having_certain_flag(txs, False)
+        if logs and len(results) != len_in:
+            self.logger.info(f'(k={self.key}) Filtered {len_in} txs to {len(results)} new txs.')
+        return results
 
     async def only_seen_txs(self, txs: List[ThorTx]) -> List[ThorTx]:
         return await self.only_txs_having_certain_flag(txs, True)
 
     async def clear(self):
         r: Redis = self.db.redis
-        await r.delete(self._key)
+        await r.delete(self.key)
 
 
 class TxDeduplicatorSenderCooldown(TxDeduplicator):
