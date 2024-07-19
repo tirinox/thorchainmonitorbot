@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import List
 
 from proto.access import NativeThorTx, parse_thor_address
 from proto.common import Tx
@@ -23,84 +23,85 @@ class TradeAccEventDecoder(WithLogger, INotified, WithDelegates):
         self.price_holder = price_holder
 
     async def on_data(self, sender, data: BlockResult):
-        events = {}
+        all_events = {}
         for tx in data.txs:
             if tx.memo:
                 if memo := THORMemo.parse_memo(tx.memo, no_raise=True):
                     if is_action(memo.action, (ActionType.TRADE_ACC_WITHDRAW, ActionType.TRADE_ACC_DEPOSIT)):
-                        event = self._convert_tx_to_event(tx, memo)
-                        if event:
-                            events[event.tx_hash] = event
+                        tx_events = self._convert_tx_to_event(tx, memo)
+                        for event in tx_events:
+                            all_events[event.tx_hash] = event
 
-        unique_events = list(events.values())
+        # Unique for this block, but may not be unique across the entire blockchain
+        unique_events = list(all_events.values())
 
         for event in unique_events:
             await self.pass_data_to_listeners(event)
         return unique_events
 
-    def _convert_tx_to_event(self, tx: NativeThorTx, memo: THORMemo) -> Optional[AlertTradeAccountAction]:
+    def _convert_tx_to_event(self, tx: NativeThorTx, memo: THORMemo) -> List[AlertTradeAccountAction]:
+        results = []
+
         if not tx:
             self.logger.warning('No tx in the event')
-            return
+            return results
 
         if len(tx.messages) != 1:
             self.logger.warning(f'Tx has abnormal messages count: {len(tx.messages)}')
-            return
+            return results
 
         if memo.action == ActionType.TRADE_ACC_WITHDRAW:
-            return self._make_withdraw(memo, tx)
+            results += list(self._make_withdraw(memo, tx))
 
         elif memo.action == ActionType.TRADE_ACC_DEPOSIT:
-            return self._make_deposit(memo, tx)
+            results += list(self._make_deposit(memo, tx))
 
-    def _make_deposit(self, memo, tx):
-        tx_id = tx.hash
+        return results
+
+    def _make_deposit(self, memo, tx) -> List[AlertTradeAccountAction]:
         observed_in_tx = tx.first_message
-        if len(observed_in_tx.txs) != 1:
-            self.logger.warning(f'ObservedTxIn {tx_id} has abnormal txs count: {len(observed_in_tx.txs)}')
-            return
-        in_tx: Tx = observed_in_tx.txs[0].tx
 
-        # here we override tx_id with inner tx id!
-        tx_id = in_tx.id
+        for sub_tx in observed_in_tx.txs:
+            in_tx: Tx = sub_tx.tx
 
-        if len(in_tx.coins) != 1:
-            self.logger.warning(f'Tx {tx_id} has abnormal coins count: {len(in_tx.coins)}')
-            return
-        coin = in_tx.coins[0]
-        amount = thor_to_float(coin.amount)
-        asset = f'{coin.asset.chain}~{coin.asset.symbol}'
-        usd_amount = self.price_holder.convert_to_usd(amount, asset)
+            # here we override tx_id with inner tx id!
+            tx_id = in_tx.id
 
-        return AlertTradeAccountAction(
-            tx_id,
-            actor=in_tx.from_address,
-            destination_address=memo.dest_address,
-            amount=amount,
-            usd_amount=usd_amount,
-            asset=asset,
-            chain=coin.asset.chain,
-            is_deposit=True,
-        )
+            if len(in_tx.coins) != 1:
+                self.logger.warning(f'Tx {tx_id} has abnormal coins count: {len(in_tx.coins)}')
+                continue
 
-    def _make_withdraw(self, memo, tx):
+            coin = in_tx.coins[0]
+            amount = thor_to_float(coin.amount)
+            asset = f'{coin.asset.chain}~{coin.asset.symbol}'
+            usd_amount = self.price_holder.convert_to_usd(amount, asset)
+
+            yield AlertTradeAccountAction(
+                tx_id,
+                actor=in_tx.from_address,
+                destination_address=memo.dest_address,
+                amount=amount,
+                usd_amount=usd_amount,
+                asset=asset,
+                chain=coin.asset.chain,
+                is_deposit=True,
+            )
+
+    def _make_withdraw(self, memo, tx) -> List[AlertTradeAccountAction]:
         coins = tx.first_message.coins
-        if len(coins) != 1:
-            self.logger.warning(f'Tx {tx.hash} has abnormal coins count: {len(coins)}')
-            return
-        coin = coins[0]
-        amount = thor_to_float(coin.amount)
-        asset = f'{coin.asset.chain}~{coin.asset.symbol}'
-        usd_amount = self.price_holder.convert_to_usd(amount, asset)
-        actor = parse_thor_address(tx.first_message.signer)
+        for coin in coins:
+            amount = thor_to_float(coin.amount)
+            asset = f'{coin.asset.chain}~{coin.asset.symbol}'
+            usd_amount = self.price_holder.convert_to_usd(amount, asset)
+            actor = parse_thor_address(tx.first_message.signer)
 
-        return AlertTradeAccountAction(
-            tx.hash,
-            actor=actor,
-            destination_address=memo.dest_address,
-            amount=amount,
-            usd_amount=usd_amount,
-            asset=asset,
-            chain=coin.asset.chain,
-            is_deposit=False,
-        )
+            yield AlertTradeAccountAction(
+                tx.hash,
+                actor=actor,
+                destination_address=memo.dest_address,
+                amount=amount,
+                usd_amount=usd_amount,
+                asset=asset,
+                chain=coin.asset.chain,
+                is_deposit=False,
+            )
