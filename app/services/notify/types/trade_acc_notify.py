@@ -17,7 +17,7 @@ class TradeAccTransactionNotifier(INotified, WithDelegates, WithLogger):
         self.cooldown_sec = cfg.as_interval('cooldown', '1h')
         self.cooldown_capacity = cfg.get('cooldown_capacity', 5)
         self.cd = Cooldown(self.deps.db, "TradeAccTxNotification", self.cooldown_sec, self.cooldown_capacity)
-        self.deduplicator = TxDeduplicator(deps.db, 'tx:TradeAccMove')
+        self.deduplicator = TxDeduplicator(deps.db, 'TradeAcc:announced-hashes')
 
     async def on_data(self, sender, e: AlertTradeAccountAction):
         if e.usd_amount >= self.min_usd_amount:

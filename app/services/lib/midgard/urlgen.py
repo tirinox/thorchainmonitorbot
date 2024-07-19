@@ -44,8 +44,10 @@ class MidgardURLGenV2(MidgardURLGenBase):
             url += f'&address={address}'
         if tx_type:
             if isinstance(tx_type, ActionType):
+                # ActionType is an Enum, so get the value
                 tx_type = tx_type.value
             elif isinstance(tx_type, (list, tuple)):
+                # Convert all ActionType to string
                 tx_type = ','.join(
                     t.value if isinstance(t, ActionType) else str(t)
                     for t in tx_type

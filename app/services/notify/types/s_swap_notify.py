@@ -8,7 +8,7 @@ from services.lib.utils import WithLogger, safe_get
 from services.models.s_swap import AlertSwapStart
 from services.notify.dup_stop import TxDeduplicator
 
-DB_KEY_ANNOUNCED_SS_START = 'tx:ss-started:announced-hashes'
+DB_KEY_ANNOUNCED_SS_START = 'ss-started:announced-hashes'
 
 
 class StreamingSwapStartTxNotifier(INotified, WithDelegates, WithLogger):

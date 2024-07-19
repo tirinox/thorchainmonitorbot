@@ -1,11 +1,8 @@
-import asyncio
-from contextlib import suppress
 from typing import List, Optional
 
 from aionode.types import ThorSwapperClout
 from services.jobs.scanner.event_db import EventDatabase
 from services.lib.config import SubConfig
-from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds, MINUTE
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
@@ -18,7 +15,7 @@ from services.notify.dup_stop import TxDeduplicator, TxDeduplicatorSenderCooldow
 from services.notify.types.cap_notify import LiquidityCapNotifier
 from services.notify.types.s_swap_notify import DB_KEY_ANNOUNCED_SS_START
 
-DB_KEY_TX_ANNOUNCED_HASHES = 'tx:announced-hashes'
+DB_KEY_TX_ANNOUNCED_HASHES = 'large-tx:announced-hashes'
 
 
 class GenericTxNotifier(INotified, WithDelegates, WithLogger):

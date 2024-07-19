@@ -37,7 +37,7 @@ class TxFetcher(BaseFetcher):
 
         self.pending_hash_to_height = {}
 
-        self.deduplicator = TxDeduplicator(deps.db, "tx:scanner:last_seen:hash")
+        self.deduplicator = TxDeduplicator(deps.db, "scanner:last_seen")
 
         self.logger.info(f'New TX fetcher is created for {self.tx_types}')
 

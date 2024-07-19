@@ -22,7 +22,7 @@ class LoanTxNotifier(INotified, WithDelegates, WithLogger):
         self.curve_mult = self.deps.cfg.as_float('tx.loans.curve_mult', 1.0)
         self.curve = curve
 
-        self.deduplicator = TxDeduplicator(deps.db, "tx:loans:announced-hashes")
+        self.deduplicator = TxDeduplicator(deps.db, "loans:announced-hashes")
 
     async def on_data(self, sender, events: List[Union[AlertLoanOpen, AlertLoanRepayment]]):
         for loan_ev in events:

@@ -48,7 +48,7 @@ class TxCountRecorder(INotified, WithLogger):
             TxMetricType.WITHDRAW_LIQUIDITY: DailyActiveUserCounter(r, 'Withdraw'),
             TxMetricType.ADD_LIQUIDITY: DailyActiveUserCounter(r, 'AddLiquidity'),
         }
-        self._deduplicator = TxDeduplicator(deps.db, 'tx:TxCount:Deduplicator')
+        self._deduplicator = TxDeduplicator(deps.db, 'TxCount')
 
     async def _write_tx_count(self, txs: List[ThorTx]):
         unique_tx_hashes = defaultdict(set)
@@ -87,7 +87,7 @@ class TxCountRecorder(INotified, WithLogger):
     async def on_data(self, sender, txs: Union[List[ThorTx], AlertTradeAccountAction]):
         try:
             txs = convert_trade_actions_to_txs(txs, self.deps)
-            txs = await self._deduplicator.only_new_txs(txs)
+            txs = await self._deduplicator.only_new_txs(txs, logs=True)
             await self._write_tx_count(txs)
             await self._deduplicator.mark_as_seen_txs(txs)
         except Exception as e:
@@ -112,12 +112,12 @@ class VolumeRecorder(INotified, WithLogger):
         # todo: auto clean
         self._accumulator = Accumulator('Volume', deps.db, tolerance=t)
 
-        self._deduplicator = TxDeduplicator(deps.db, 'tx:VolumeRecorder:Deduplicator')
+        self._deduplicator = TxDeduplicator(deps.db, 'VolumeRecorder')
 
     async def on_data(self, sender, txs: Union[List[ThorTx], AlertTradeAccountAction]):
         try:
             txs = convert_trade_actions_to_txs(txs, self.deps)
-            txs = await self._deduplicator.only_new_txs(txs)
+            txs = await self._deduplicator.only_new_txs(txs, logs=True)
             await self.handle_txs_unsafe(txs)
             await self._deduplicator.mark_as_seen_txs(txs)
         except Exception as e:
