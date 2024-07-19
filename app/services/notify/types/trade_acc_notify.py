@@ -37,7 +37,7 @@ class TradeAccSummaryNotifier(INotified, WithDelegates, WithLogger):
         super().__init__()
         self.deps = deps
         cfg = deps.cfg.trade_accounts.summary
-        self.cooldown_sec = cfg.as_interval('cooldown', '1h')
+        self.cooldown_sec = cfg.as_interval('cooldown', '3d')
         self.cd = Cooldown(self.deps.db, "TradeAccSummaryNotification", self.cooldown_sec)
         self.last_event: Optional[AlertTradeAccountStats] = None
 

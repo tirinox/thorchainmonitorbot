@@ -13,7 +13,7 @@ from services.models.trade_acc import AlertTradeAccountStats, TradeAccountVaults
 class TradeAccountFetcher(BaseFetcher):
     def __init__(self, deps: DepContainer):
         period = deps.cfg.as_interval('trade_accounts.fetch_period', '1h')
-        tally_period = deps.cfg.as_interval('trade_accounts.tally_period', '7d')
+        tally_period = deps.cfg.as_interval('trade_accounts.summary.tally_period', '7d')
         super().__init__(deps, sleep_period=period)
         self.deps = deps
         self.tally_period = tally_period
