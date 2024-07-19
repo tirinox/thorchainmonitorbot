@@ -11,23 +11,23 @@ from services.models.memo import ActionType
 from services.models.trade_acc import AlertTradeAccountAction
 from services.models.tx import ThorTx
 from services.models.vol_n import TxCountStats, TxMetricType
+from services.notify.dup_stop import TxDeduplicator
 
 
-def convert_trade_actions_to_txs(txs, price_holder, thor_height) -> List[ThorTx]:
+def convert_trade_actions_to_txs(txs, d: DepContainer) -> List[ThorTx]:
     """
     The classes below are able to handle both ThorTx and AlertTradeAccountAction thanks to this function.
 
     If the input is an AlertTradeAccountAction, convert it to a list of single ThorTx.
     Otherwise, return the input as is. (List[ThorTx])
     """
-    if isinstance(txs, AlertTradeAccountAction):
-        tx = txs.as_thor_tx
-        tx.calc_full_rune_amount(price_holder.pool_info_map)
-        tx.height = thor_height
+    if isinstance((event := txs), AlertTradeAccountAction):
+        tx = event.as_thor_tx
+        tx.calc_full_rune_amount(d.price_holder.pool_info_map)
+        tx.height = int(d.last_block_store)
         tx.date = int(now_ts() * 1e9)
 
-        print(f'convert_trade_actions_to_txs: {tx.tx_hash}, {tx.full_rune} rune, {tx.asset_amount} asset')
-
+        # print(f'convert_trade_actions_to_txs: {tx.tx_hash}, {tx.full_rune} rune, {tx.asset_amount} asset')
         return [tx]
     else:
         return txs
@@ -45,11 +45,13 @@ class TxCountRecorder(INotified, WithLogger):
             TxMetricType.TRADE_WITHDRAWAL: DailyActiveUserCounter(r, 'TradeWithdrawal'),
             TxMetricType.SWAP_SYNTH: DailyActiveUserCounter(r, 'SynthSwaps'),
             TxMetricType.STREAMING: DailyActiveUserCounter(r, 'StreamingSwaps'),
+            TxMetricType.WITHDRAW_LIQUIDITY: DailyActiveUserCounter(r, 'Withdraw'),
+            TxMetricType.ADD_LIQUIDITY: DailyActiveUserCounter(r, 'AddLiquidity'),
         }
+        self._deduplicator = TxDeduplicator(deps.db, 'tx:TxCount:Deduplicator')
 
     async def _write_tx_count(self, txs: List[ThorTx]):
         unique_tx_hashes = defaultdict(set)
-
         for tx in txs:
             if not tx or not (ident := tx.tx_hash):
                 continue
@@ -73,12 +75,21 @@ class TxCountRecorder(INotified, WithLogger):
 
         for tx_type, tx_set in unique_tx_hashes.items():
             if tx_set:
-                await self._counters[tx_type].hit(users=tx_set)
+                counter = self._counters.get(tx_type)
+                if counter:
+                    await counter.hit(users=tx_set)
+                else:
+                    self.logger.error(f'No counter for {tx_type}')
+
+        if unique_tx_hashes:
+            self.logger.info(f'Unique txs written {unique_tx_hashes}')
 
     async def on_data(self, sender, txs: Union[List[ThorTx], AlertTradeAccountAction]):
         try:
-            txs = convert_trade_actions_to_txs(txs, self.deps.price_holder, int(self.deps.last_block_store))
+            txs = convert_trade_actions_to_txs(txs, self.deps)
+            txs = await self._deduplicator.only_new_txs(txs)
             await self._write_tx_count(txs)
+            await self._deduplicator.mark_as_seen_txs(txs)
         except Exception as e:
             self.logger.exception('Error while writing tx count', exc_info=e)
 
@@ -101,17 +112,18 @@ class VolumeRecorder(INotified, WithLogger):
         # todo: auto clean
         self._accumulator = Accumulator('Volume', deps.db, tolerance=t)
 
+        self._deduplicator = TxDeduplicator(deps.db, 'tx:VolumeRecorder:Deduplicator')
+
     async def on_data(self, sender, txs: Union[List[ThorTx], AlertTradeAccountAction]):
         try:
-            txs = convert_trade_actions_to_txs(txs, self.deps.price_holder, int(self.deps.last_block_store))
+            txs = convert_trade_actions_to_txs(txs, self.deps)
+            txs = await self._deduplicator.only_new_txs(txs)
             await self.handle_txs_unsafe(txs)
+            await self._deduplicator.mark_as_seen_txs(txs)
         except Exception as e:
             self.logger.exception('Error while writing volume', exc_info=e)
 
     async def handle_txs_unsafe(self, txs: List[ThorTx]):
-        # todo: apply deduplicator?
-        # все еще неправильно считает, некоторые транзакции не учитываются в количестве, некоторые несколько раз
-
         current_price = self.deps.price_holder.usd_per_rune or 0.01
         total_volume = 0.0
 
@@ -146,6 +158,9 @@ class VolumeRecorder(INotified, WithLogger):
         return total_volume
 
     async def _add_point(self, date_timestamp, volumes, current_price: float):
+        if not volumes:
+            return
+
         self.logger.info(f'Update {date_timestamp}: {volumes}')
         await self._accumulator.add(
             date_timestamp,

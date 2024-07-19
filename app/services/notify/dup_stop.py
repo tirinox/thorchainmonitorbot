@@ -22,6 +22,15 @@ class TxDeduplicator(WithLogger):
         r: Redis = self.db.redis
         await r.sadd(self._key, tx_id)
 
+    async def mark_as_seen_txs(self, txs: List[ThorTx]):
+        # use pipe
+        r: Redis = self.db.redis
+        pipe = r.pipeline()
+        for tx in txs:
+            if tx and tx.tx_hash:
+                await pipe.sadd(self._key, tx.tx_hash)
+        await pipe.execute()
+
     async def forget(self, tx_id):
         if not tx_id:
             return
