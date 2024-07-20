@@ -13,7 +13,7 @@ from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger, hash_of_string_repr, say
 from services.models.events import EventOutbound, EventScheduledOutbound, \
-    parse_swap_and_out_event, TypeEventSwapAndOut, EventTradeAccountWithdraw
+    parse_swap_and_out_event, TypeEventSwapAndOut, EventTradeAccountWithdraw, EventTradeAccountDeposit
 from services.models.tx import ThorTx
 
 
@@ -35,7 +35,7 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
 
     async def on_data(self, sender, block: BlockResult) -> List[ThorTx]:
         # Incoming swap intentions will be recorded in the DB
-        await self.register_new_swaps(block, block.block_no)
+        new_swaps = await self.register_new_swaps(block, block.block_no)
 
         # Swaps and Outs
         interesting_events = list(self.get_events_of_interest(block))
@@ -50,6 +50,9 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
             if any(tx.tx_hash == self.dbg_watch_swap_id for tx in txs):
                 self.dbg_print(f'🎉 Swap finished\n')
 
+        if new_swaps or txs:
+            self.logger.info(f"New swaps detected {len(new_swaps)} and {len(txs)} passed in block #{block.block_no}")
+
         # Pass them down the pipe
         await self.pass_data_to_listeners(txs)
 
@@ -57,8 +60,6 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
 
     async def register_new_swaps(self, block, height):
         swaps = self._swap_detector.detect_swaps(block)
-
-        self.logger.info(f"New swaps {len(swaps)} in block #{height}")
 
         for swap in swaps:
             props = await self._db.read_tx_status(swap.tx_id)
@@ -86,6 +87,8 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
                 await say('Found a swap')
 
                 self.dbg_start_observed = True
+
+        return swaps
 
     @staticmethod
     def suspect_outbound_internal(ev: EventOutbound):
@@ -151,7 +154,7 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
         # Group all outbound txs
         group_by_in = defaultdict(list)
         for ev in interesting_events:
-            if isinstance(ev, (EventOutbound, EventScheduledOutbound, EventTradeAccountWithdraw)):
+            if isinstance(ev, (EventOutbound, EventScheduledOutbound, EventTradeAccountDeposit)):
                 group_by_in[ev.tx_id].append(ev)
 
         results = []

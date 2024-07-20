@@ -4,13 +4,13 @@ from datetime import datetime
 from typing import NamedTuple, List, Optional, Tuple
 
 from proto.access import DecodedEvent
-from services.models.memo import THORMemo
 from services.models.asset import is_rune
 from services.models.events import EventSwap, EventStreamingSwap, EventOutbound, EventScheduledOutbound, \
-    parse_swap_and_out_event, TypeEventSwapAndOut, EventTradeAccountWithdraw
+    parse_swap_and_out_event, TypeEventSwapAndOut, EventTradeAccountDeposit
+from services.models.memo import ActionType
+from services.models.memo import THORMemo
 from services.models.s_swap import StreamingSwap
 from services.models.tx import ThorTx, SUCCESS, ThorMetaSwap, ThorCoin, ThorSubTx
-from services.models.memo import ActionType
 
 
 class SwapProps(NamedTuple):
@@ -80,8 +80,8 @@ class SwapProps(NamedTuple):
         if any(isinstance(ev, EventStreamingSwap) for ev in self.events):
             return True
 
-        # if it contains a withdrawal of trade asset, it's done
-        if any(isinstance(ev, EventTradeAccountWithdraw) and ev.rune_address for ev in self.events):
+        # if it contains a deposit of trade asset, it's done
+        if any(isinstance(ev, EventTradeAccountDeposit) and ev.rune_address for ev in self.events):
             return True
 
         return False
@@ -137,7 +137,7 @@ class SwapProps(NamedTuple):
 
         # Trade withdraws to Rune Address after trade asset swap
         for e in self.events:
-            if isinstance(e, EventTradeAccountWithdraw):
+            if isinstance(e, EventTradeAccountDeposit):
                 if e.rune_address:
                     results[e.rune_address].append(ThorCoin(e.amount, e.asset))
 

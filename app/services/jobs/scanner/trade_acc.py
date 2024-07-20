@@ -36,6 +36,7 @@ class TradeAccEventDecoder(WithLogger, INotified, WithDelegates):
         unique_events = list(all_events.values())
 
         for event in unique_events:
+            self.logger.info(f'TradeAccEvent: {event}')
             await self.pass_data_to_listeners(event)
         return unique_events
 

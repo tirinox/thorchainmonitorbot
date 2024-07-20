@@ -12,7 +12,7 @@ from services.jobs.scanner.scan_cache import NativeScannerBlockCached
 from services.jobs.scanner.swap_extractor import SwapExtractorBlock
 from services.jobs.user_counter import UserCounterMiddleware
 from services.jobs.volume_filler import VolumeFillerUpdater
-from services.jobs.volume_recorder import VolumeRecorder
+from services.jobs.volume_recorder import VolumeRecorder, TxCountRecorder
 from services.models.asset import Asset, AssetRUNE
 from services.lib.money import DepthCurve
 from services.lib.texts import sep
@@ -127,6 +127,9 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
     # Just to check stability
     d.volume_recorder = VolumeRecorder(d)
     volume_filler.add_subscriber(d.volume_recorder)
+
+    d.tx_count_recorder = TxCountRecorder(d)
+    volume_filler.add_subscriber(d.tx_count_recorder)
 
     # # Just to check stability: DEX reports
     dex_report_notifier = DexReportNotifier(d, d.dex_analytics)
@@ -293,20 +296,20 @@ async def run():
         # )
 
         # ------------------- trade to trade no stream -------------------
-        # await debug_full_pipeline(
-        #     app,
-        #     start=16908330,
-        #     tx_id='BAB65D6A6A2D7AC127FDF36DF2B1219AC5F44732804848DB4FCEFC72AD5BCE77',
-        #     single_block=True
-        # )
-
-        # ------------------- trade to trade with stream -------------------
         await debug_full_pipeline(
             app,
-            start=16908744 - 1,
-            tx_id='4824290D3C7AE55F9915D4F0FEC46C93BB87604BD403649AD5BA208940218522',
-            single_block=False
+            start=16908330,
+            tx_id='BAB65D6A6A2D7AC127FDF36DF2B1219AC5F44732804848DB4FCEFC72AD5BCE77',
+            single_block=True
         )
+
+        # ------------------- trade to trade with stream -------------------
+        # await debug_full_pipeline(
+        #     app,
+        #     start=16908744 - 1,
+        #     tx_id='4824290D3C7AE55F9915D4F0FEC46C93BB87604BD403649AD5BA208940218522',
+        #     single_block=False
+        # )
 
         # await debug_full_pipeline(
         #     app, start=12802333,
