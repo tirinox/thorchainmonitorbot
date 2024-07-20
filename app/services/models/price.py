@@ -190,22 +190,38 @@ class LastPriceHolder:
             tlv += thor_to_float(pool.balance_rune)
         return tlv * 2.0
 
-    def pool_fuzzy_search(self, query: str) -> List[str]:
+    @staticmethod
+    def restore_asset_type(original: str, name: str):
+        if not name or not original:
+            return name
+
+        if ASSET_TRADE_SEPARATOR in original:
+            return name.replace(ASSET_NORMAL_SEPARATOR, ASSET_TRADE_SEPARATOR, 1)
+        elif ASSET_SYNTH_SEPARATOR in original:
+            return name.replace(ASSET_NORMAL_SEPARATOR, ASSET_SYNTH_SEPARATOR, 1)
+        else:
+            return name
+
+    def pool_fuzzy_search(self, query: str, restore_type=False) -> List[str]:
         if (q := query.lower()) in Asset.SHORT_NAMES:
             # See: https://dev.thorchain.org/thorchain-dev/concepts/memos#shortened-asset-names
             return [Asset.SHORT_NAMES[q]]
-        return fuzzy_search(query, self.pool_names)
+        results = fuzzy_search(query, self.pool_names)
+        if restore_type:
+            results = [self.restore_asset_type(query, r) for r in results]
+        return results
 
-    def pool_fuzzy_first(self, query: str) -> str:
+    def pool_fuzzy_first(self, query: str, restore_type=False) -> str:
+        original = query
         query = normalize_asset(query)
 
         # See: https://dev.thorchain.org/thorchain-dev/concepts/memos#asset-abbreviations
         candidates = self.pool_fuzzy_search(query)
 
         if not candidates:
-            return ''
+            result = ''
         elif len(candidates) == 1:
-            return candidates[0]
+            result = candidates[0]
         else:
             # If there are conflicts then the deepest pool is matched. (To prevent attacks).
             deepest_pool, deepest_rune = None, 0
@@ -215,7 +231,9 @@ class LastPriceHolder:
                     deepest_rune = pool.balance_rune
                     deepest_pool = candidate
 
-            return deepest_pool
+            result = deepest_pool
+
+        return self.restore_asset_type(original, result) if restore_type else result
 
     def get_asset_price_in_rune(self, query: str):
         if is_rune(query):
