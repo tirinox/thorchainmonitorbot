@@ -1,3 +1,4 @@
+import logging
 from collections import defaultdict
 from dataclasses import dataclass
 from typing import List, Optional, NamedTuple
@@ -16,6 +17,8 @@ from services.models.mimir import MimirHolder
 from services.models.pool_info import PoolInfo, PoolInfoMap
 from services.models.price import LastPriceHolder
 from services.models.s_swap import StreamingSwap
+
+logger = logging.getLogger('ThorTx')
 
 
 class ThorCoin(NamedTuple):
@@ -500,6 +503,10 @@ class ThorTx:
             # add, donate, refund
             r = self.calc_amount(pool_map, self.search_realm(in_only=True))
         self.full_rune = r
+
+        if self.full_rune == 0.0:
+            logger.warning(f'Tx {self} has ZERO Rune amount!')
+
         return self.full_rune
 
     def get_usd_volume(self, usd_per_rune):

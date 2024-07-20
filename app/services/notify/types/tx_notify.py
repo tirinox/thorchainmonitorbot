@@ -43,7 +43,7 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
 
     async def handle_txs_unsafe(self, senders, txs: List[ThorTx]):
         # 1. filter irrelevant tx types
-        txs = [tx for tx in txs if tx.type in self.tx_types]  # filter my TX types
+        txs = [tx for tx in txs if tx.is_of_type(self.tx_types)]  # filter my TX types
 
         # 2. Throw away announced Txs in the past
         if self.no_repeat_protection:
