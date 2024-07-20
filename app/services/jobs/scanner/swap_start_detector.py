@@ -43,7 +43,7 @@ class SwapStartDetector(WithLogger):
             if is_rune(memo.asset):
                 out_asset_name = NATIVE_RUNE_SYMBOL
             else:
-                out_asset_name = ph.pool_fuzzy_first(memo.asset)
+                out_asset_name = ph.pool_fuzzy_first(memo.asset, restore_type=True)
 
             if not out_asset_name:
                 self.logger.warning(f'{memo.asset}: asset not found!')
