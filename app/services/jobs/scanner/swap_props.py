@@ -7,7 +7,7 @@ from proto.access import DecodedEvent
 from services.models.memo import THORMemo
 from services.models.asset import is_rune
 from services.models.events import EventSwap, EventStreamingSwap, EventOutbound, EventScheduledOutbound, \
-    parse_swap_and_out_event, TypeEventSwapAndOut
+    parse_swap_and_out_event, TypeEventSwapAndOut, EventTradeAccountWithdraw
 from services.models.s_swap import StreamingSwap
 from services.models.tx import ThorTx, SUCCESS, ThorMetaSwap, ThorCoin, ThorSubTx
 from services.models.memo import ActionType
@@ -73,11 +73,15 @@ class SwapProps(NamedTuple):
             return True
 
         # if there is any outbound to my address, except internal outbounds (in the middle of double swap)
-        if any((isinstance(ev, EventOutbound) and ev.to_address == self.inbound_address) for ev in self.true_outbounds):
+        if any((isinstance(ev, EventOutbound) and ev.to_address == self.from_address) for ev in self.true_outbounds):
             return True
 
         # if there is any streaming swap event, it's done
         if any(isinstance(ev, EventStreamingSwap) for ev in self.events):
+            return True
+
+        # if it contains a withdrawal of trade asset, it's done
+        if any(isinstance(ev, EventTradeAccountWithdraw) and ev.rune_address for ev in self.events):
             return True
 
         return False
@@ -107,12 +111,12 @@ class SwapProps(NamedTuple):
         )
 
     @property
-    def inbound_address(self):
+    def from_address(self):
         return self.attrs.get('from_address', '')
 
     @property
     def has_started(self):
-        return bool(self.memo and self.inbound_address)
+        return bool(self.memo and self.from_address)
 
     @property
     def true_outbounds(self):
@@ -130,6 +134,12 @@ class SwapProps(NamedTuple):
                 continue
 
             results[outbound.to_address].append(ThorCoin(*outbound.amount_asset))
+
+        # Trade withdraws to Rune Address after trade asset swap
+        for e in self.events:
+            if isinstance(e, EventTradeAccountWithdraw):
+                if e.rune_address:
+                    results[e.rune_address].append(ThorCoin(e.amount, e.asset))
 
         return [ThorSubTx(address, coins, '') for address, coins in results.items()]
 

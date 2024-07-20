@@ -275,6 +275,60 @@ class EventLoanRepayment(NamedTuple):
         return thor_to_float(self.collateral_withdrawn)
 
 
+class EventTradeAccountDeposit(NamedTuple):
+    tx_id: str
+    amount: int
+    asset: str
+    rune_address: str
+    asset_address: str
+    height: int = 0
+    original: Optional[DecodedEvent] = None
+
+    @classmethod
+    def from_event(cls, event: DecodedEvent):
+        attrs = event.attributes
+        return cls(
+            tx_id=attrs.get('tx_id', ''),
+            amount=int(attrs.get('amount', 0)),
+            asset=attrs.get('asset', ''),
+            rune_address=attrs.get('rune_address', ''),
+            asset_address=attrs.get('asset_address', ''),
+            height=event.height,
+            original=event
+        )
+
+    @property
+    def amount_float(self):
+        return thor_to_float(self.amount)
+
+
+class EventTradeAccountWithdraw(NamedTuple):
+    tx_id: str
+    amount: int
+    asset: str
+    rune_address: str
+    asset_address: str
+    height: int = 0
+    original: Optional[DecodedEvent] = None
+
+    @classmethod
+    def from_event(cls, event: DecodedEvent):
+        attrs = event.attributes
+        return cls(
+            tx_id=attrs.get('tx_id', ''),
+            amount=int(attrs.get('amount', 0)),
+            asset=attrs.get('asset', ''),
+            rune_address=attrs.get('rune_address', ''),
+            asset_address=attrs.get('asset_address', ''),
+            height=event.height,
+            original=event
+        )
+
+    @property
+    def amount_float(self):
+        return thor_to_float(self.amount)
+
+
 def parse_swap_and_out_event(e: DecodedEvent):
     if e.type == 'swap':
         return EventSwap.from_event(e)
@@ -288,6 +342,10 @@ def parse_swap_and_out_event(e: DecodedEvent):
         return EventLoanOpen.from_event(e)
     elif e.type == 'loan_repayment':
         return EventLoanRepayment.from_event(e)
+    elif e.type == 'trade_account_deposit':
+        return EventTradeAccountDeposit.from_event(e)
+    elif e.type == 'trade_account_withdraw':
+        return EventTradeAccountWithdraw.from_event(e)
 
 
 TypeEventSwapAndOut = Union[EventSwap, EventStreamingSwap, EventOutbound, EventScheduledOutbound]
@@ -297,5 +355,7 @@ TypeEvents = Union[
     EventOutbound,
     EventScheduledOutbound,
     EventLoanOpen,
-    EventLoanRepayment
+    EventLoanRepayment,
+    EventTradeAccountDeposit,
+    EventTradeAccountWithdraw,
 ]

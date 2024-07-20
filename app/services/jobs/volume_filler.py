@@ -39,4 +39,4 @@ class VolumeFillerUpdater(WithDelegates, INotified, WithLogger):
         for tx in txs:
             tx.calc_full_rune_amount(pool_info_map)
             if tx.full_rune == 0.0:
-                self.logger.warning(f'Full Rune == 0 R for {tx = }')
+                self.logger.warning(f'Tx {tx = } has ZERO Rune amount!')

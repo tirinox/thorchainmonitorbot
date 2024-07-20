@@ -13,8 +13,7 @@ from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger, hash_of_string_repr, say
 from services.models.events import EventOutbound, EventScheduledOutbound, \
-    parse_swap_and_out_event, TypeEventSwapAndOut
-from services.models.s_swap import AlertSwapStart
+    parse_swap_and_out_event, TypeEventSwapAndOut, EventTradeAccountWithdraw
 from services.models.tx import ThorTx
 
 
@@ -102,7 +101,7 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
             if not swap_ev.tx_id:
                 continue
 
-            hash_key = hash_of_string_repr(swap_ev, block.block_no)
+            hash_key = hash_of_string_repr(swap_ev, block.block_no)[:8]
 
             await self._db.write_tx_status(swap_ev.tx_id, {
                 f"ev_{hash_key}": swap_ev.original.to_dict
@@ -152,7 +151,7 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
         # Group all outbound txs
         group_by_in = defaultdict(list)
         for ev in interesting_events:
-            if isinstance(ev, (EventOutbound, EventScheduledOutbound)):
+            if isinstance(ev, (EventOutbound, EventScheduledOutbound, EventTradeAccountWithdraw)):
                 group_by_in[ev.tx_id].append(ev)
 
         results = []

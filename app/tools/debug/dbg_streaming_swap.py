@@ -138,8 +138,8 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
     curve = DepthCurve(curve_pts)
 
     swap_notifier_tx = SwapTxNotifier(d, d.cfg.tx.swap, curve=curve)
-    if tx_id:
-        await swap_notifier_tx.deduplicator.forget(tx_id)
+    # if tx_id:
+    #     await swap_notifier_tx.deduplicator.forget(tx_id)
 
     swap_notifier_tx.dbg_evaluate_curve_for_pools()
     volume_filler.add_subscriber(swap_notifier_tx)
@@ -280,7 +280,7 @@ async def run():
         # await debug_full_pipeline(app, start=14519387 - 1)
 
         # await debug_fetch_ss(app)
-        await debug_block_analyse(app, block=16388225)
+        # await debug_block_analyse(app, block=16899137)
         # await debug_full_pipeline(app, start=16387377, single_block=True,
         #                           tx_id='BE7B085E50DE86CD9BD8959ABF3EA924AC60302330888D484219B8B7385F7B1D')
         # await debug_tx_records(app, 'E8766E3D825A7BFD755ECA14454256CA25980F8B4BA1C9DCD64ABCE4904F033D')
@@ -291,6 +291,22 @@ async def run():
         #     # tx_id='696A2C031B2BCB73C6A78A297F30B5A33A91BB754C564F10AA589E089F05D573',
         #     single_block=False
         # )
+
+        # ------------------- trade to trade no stream -------------------
+        # await debug_full_pipeline(
+        #     app,
+        #     start=16908330,
+        #     tx_id='BAB65D6A6A2D7AC127FDF36DF2B1219AC5F44732804848DB4FCEFC72AD5BCE77',
+        #     single_block=True
+        # )
+
+        # ------------------- trade to trade with stream -------------------
+        await debug_full_pipeline(
+            app,
+            start=16908744 - 1,
+            tx_id='4824290D3C7AE55F9915D4F0FEC46C93BB87604BD403649AD5BA208940218522',
+            single_block=False
+        )
 
         # await debug_full_pipeline(
         #     app, start=12802333,
