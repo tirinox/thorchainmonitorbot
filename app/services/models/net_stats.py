@@ -37,7 +37,9 @@ class NetworkStats(BaseModelMixin):
     active_nodes: int = 0  # network
     standby_nodes: int = 0  # network
 
-    total_rune_pooled: float = 0.0  # stats
+    total_rune_lp: float = 0.0  # stats
+    total_rune_pol: float = 0.0  # Protocol owned liquidity
+    total_rune_pool: float = 0.0  # rune pool
     total_bond_rune: float = 0.0  # network
     total_active_bond_rune: float = 0.0  # network
 
@@ -61,7 +63,7 @@ class NetworkStats(BaseModelMixin):
 
     @property
     def total_pooled_usd(self):
-        return self.total_rune_pooled * self.usd_per_rune
+        return self.total_rune_lp * self.usd_per_rune
 
     @property
     def total_liquidity_usd(self):
@@ -101,5 +103,5 @@ class NetworkStats(BaseModelMixin):
 
     @property
     def is_ok(self):
-        return self.total_rune_pooled > 0 and self.active_pool_count > 0 \
+        return self.total_rune_lp > 0 and self.active_pool_count > 0 \
             and self.active_nodes > 0 and self.total_active_bond_rune > 0

@@ -23,7 +23,7 @@ from services.jobs.fetch.last_block import LastBlockFetcher
 from services.jobs.fetch.lending_stats import LendingStatsFetcher
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
 from services.jobs.fetch.node_info import NodeInfoFetcher
-from services.jobs.fetch.pol import POLFetcher
+from services.jobs.fetch.pol import RunePoolFetcher
 from services.jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
 from services.jobs.fetch.profit_against_cex import StreamingSwapVsCexProfitCalculator
 from services.jobs.fetch.queue import QueueFetcher
@@ -528,7 +528,7 @@ class App(WithLogger):
                 wallet_counter.add_subscriber(achievements)
 
         if d.cfg.get('pol.enabled', True):
-            pol_fetcher = POLFetcher(d)
+            pol_fetcher = RunePoolFetcher(d)
             tasks.append(pol_fetcher)
             d.pol_notifier = POLNotifier(d)
             pol_fetcher.add_subscriber(d.pol_notifier)

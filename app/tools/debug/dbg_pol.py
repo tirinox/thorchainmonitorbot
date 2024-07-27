@@ -5,7 +5,7 @@ from typing import Optional
 
 from aionode.types import ThorPOL
 
-from services.jobs.fetch.pol import POLFetcher
+from services.jobs.fetch.pol import RunePoolFetcher
 from services.lib.constants import NetworkIdents, STAGENET_RESERVE_ADDRESS
 from services.lib.date_utils import DAY
 from services.lib.depcont import DepContainer
@@ -21,7 +21,7 @@ def get_reserve_address(app: LpAppFramework):
 
 
 async def demo_pol_1(app: LpAppFramework):
-    pol_fetcher = POLFetcher(app.deps, reserve_address=get_reserve_address(app))
+    pol_fetcher = RunePoolFetcher(app.deps, reserve_address=get_reserve_address(app))
     r = await pol_fetcher.fetch()
     pprint(r)
     pprint(r._asdict())
@@ -70,7 +70,7 @@ class DbgPOLNotifier(POLNotifier):
 
 
 async def demo_pol_pipeline(app: LpAppFramework):
-    pol_fetcher = POLFetcher(app.deps, reserve_address=get_reserve_address(app))
+    pol_fetcher = RunePoolFetcher(app.deps, reserve_address=get_reserve_address(app))
 
     pol_notifier = DbgPOLNotifier(app.deps, mode='random_value')
     pol_fetcher.add_subscriber(pol_notifier)

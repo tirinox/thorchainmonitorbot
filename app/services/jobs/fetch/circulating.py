@@ -12,7 +12,9 @@ class ThorRealms:
 
     BONDED = 'Bonded'
     BONDED_NODE = 'Bonded (node)'
-    POOLED = 'Pooled'
+    LIQ_POOL = 'Pooled'
+    RUNEPOOL = 'RUNEPool'
+    POL = 'Protocol owned liquidity'
     CIRCULATING = 'Circulating'
 
     CEX = 'CEX'
@@ -129,7 +131,7 @@ class RuneCirculatingSupply(NamedTuple):
 
     @property
     def pooled(self):
-        return self.total_rune_in_realm(ThorRealms.POOLED)
+        return self.total_rune_in_realm(ThorRealms.LIQ_POOL)
 
     @property
     def pooled_percent(self):

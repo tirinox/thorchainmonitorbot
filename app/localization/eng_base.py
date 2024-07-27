@@ -1081,7 +1081,7 @@ class BaseLocalization(ABC):  # == English
             logging.warning('Security cap is zero!')
             return 0
 
-        divisor = security_cap + stats.total_rune_pooled
+        divisor = security_cap + stats.total_rune_lp
 
         return security_cap / divisor if divisor else 0
 
@@ -1131,9 +1131,9 @@ class BaseLocalization(ABC):  # == English
                    f"{current_total_bond_usd_text}{current_total_bond_usd_change}.\n"
         # -- POOL
 
-        current_pooled_text = bold(short_rune(new.total_rune_pooled))
+        current_pooled_text = bold(short_rune(new.total_rune_lp))
         current_pooled_change = bracketify(
-            up_down_arrow(old.total_rune_pooled, new.total_rune_pooled, money_delta=True))
+            up_down_arrow(old.total_rune_lp, new.total_rune_lp, money_delta=True))
 
         current_pooled_usd_text = bold(short_dollar(new.total_pooled_usd))
         current_pooled_usd_change = bracketify(
@@ -2227,11 +2227,13 @@ class BaseLocalization(ABC):  # == English
     SUPPLY_PIC_BONDED = 'Bond'
     SUPPLY_PIC_TREASURY = 'Treasury'
     SUPPLY_PIC_MAYA = 'Maya pool'
-    SUPPLY_PIC_POOLED = ThorRealms.POOLED
+    SUPPLY_PIC_POOLED = ThorRealms.LIQ_POOL
+    SUPPLY_PIC_RUNE_POOL = 'RUNEPool'
+    SUPPLY_PIC_POL = 'POL'
     SUPPLY_PIC_BURNED = ThorRealms.BURNED
     SUPPLY_PIC_SECTION_CIRCULATING = 'THOR.RUNE circulating'
     SUPPLY_PIC_SECTION_LOCKED = 'THOR.RUNE locked'
-    SUPPLY_PIC_SECTION_KILLED = 'Killed switched'
+    SUPPLY_PIC_SECTION_KILLED = 'Killed'
 
     SUPPLY_PIC_CAPTION = ital('THORChain Rune supply chart')
 

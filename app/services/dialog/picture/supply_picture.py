@@ -110,22 +110,23 @@ class SupplyPictureGenerator(BasePictureGenerator):
             ThorRealms.RESERVES: self.loc.SUPPLY_PIC_RESERVES,
             ThorRealms.STANDBY_RESERVES: self.loc.SUPPLY_PIC_UNDEPLOYED,
             ThorRealms.BONDED: self.loc.SUPPLY_PIC_BONDED,
-            ThorRealms.POOLED: self.loc.SUPPLY_PIC_POOLED,
+            ThorRealms.LIQ_POOL: self.loc.SUPPLY_PIC_POOLED,
         }
 
         self.PALETTE = {
             ThorRealms.RESERVES: '#1AE6CC',
-            # ThorRealms.STANDBY_RESERVES: '#02B662',
+            ThorRealms.RUNEPOOL: '#28fcc4',
+            ThorRealms.POL: '#0cf5b7',
             ThorRealms.BONDED: '#03CFFA',
-            ThorRealms.POOLED: '#31FD9D',
+            ThorRealms.LIQ_POOL: '#31FD9D',
             ThorRealms.CIRCULATING: '#dddddd',
             ThorRealms.CEX: '#bbb3ef',
-            ThorRealms.TREASURY: '#35f8ec',
-            ThorRealms.KILLED: '#9e1d0b',
-            ThorRealms.BURNED: '#dd5627',
-            ThorRealms.MAYA_POOL: '#255fb0',
             'Binance': '#d0a10d',
             'Kraken': '#7263d6',
+            ThorRealms.TREASURY: '#35f8ec',
+            ThorRealms.MAYA_POOL: '#347ce0',
+            ThorRealms.BURNED: '#dd5627',
+            ThorRealms.KILLED: '#9e1d0b',
         }
 
         self.OVERLAYS = {
@@ -134,7 +135,7 @@ class SupplyPictureGenerator(BasePictureGenerator):
             ThorRealms.BONDED: './data/supply_chart/bonded.png',
             ThorRealms.CIRCULATING: './data/supply_chart/circulating.png',
             ThorRealms.MAYA_POOL: './data/supply_chart/maya.png',
-            ThorRealms.POOLED: './data/supply_chart/wave.png',
+            ThorRealms.LIQ_POOL: './data/supply_chart/wave.png',
             ThorRealms.RESERVES: './data/supply_chart/reserve.png',
             ThorRealms.STANDBY_RESERVES: './data/supply_chart/standby.png',
             ThorRealms.TREASURY: './data/supply_chart/treasury.png',
@@ -155,7 +156,21 @@ class SupplyPictureGenerator(BasePictureGenerator):
         y_step = 37
         y = self.HEIGHT - 110
         legend_font = self.res.fonts.get_font_bold(30)
-        for title, color in self.PALETTE.items():
+        legend_items = [
+            ThorRealms.RESERVES,
+            ThorRealms.RUNEPOOL,
+            ThorRealms.POL,
+            ThorRealms.BONDED,
+            ThorRealms.LIQ_POOL,
+            'Binance',
+            'Kraken',
+            ThorRealms.TREASURY,
+            ThorRealms.MAYA_POOL,
+            ThorRealms.BURNED,
+            ThorRealms.KILLED,
+        ]
+        for title in legend_items:
+            color = self.PALETTE.get(title, '#fff')
             title = self.translate.get(title, title)
             dx, _ = font_estimate_size(legend_font, title)
             self.gr.plot_legend_unit(x, y, color, title, font=legend_font, size=26)
@@ -199,39 +214,45 @@ class SupplyPictureGenerator(BasePictureGenerator):
         def meta(label='', value=True, realm=''):
             return {'show_weight': value, 'label_pos': label, 'overlay_path': self.OVERLAYS.get(realm)}
 
-        just_value = meta(value=False)
-
         # Top level layout (horizontal)
+        rune_pool = self.net_stats.total_rune_pool
+        reserves_1st_column = self.supply.in_reserves + rune_pool
         (
             locked_rect,
             working_rect,
             circulating_rect,
         ) = self._pack([
-            PackItem('', self.supply.in_reserves, ''),
+            PackItem('', reserves_1st_column, ''),
             PackItem('', self.supply.working, ''),
             PackItem('', self.supply.circulating, ''),
         ], outer_rect, align=DrawRectPacker.H)
 
         # Column 1: Reserves
+        reserve = self.supply.find_by_realm(ThorRealms.RESERVES)[0]
+
         self._pack([
             PackItem(
-                self.translate.get(item.realm, item.realm),
-                item.amount,
-                self.PALETTE.get(item.realm, 'black'),
-                meta_data=meta(realm=item.realm)
-            )
-            for item in self.supply.find_by_realm((ThorRealms.RESERVES,))
+                self.translate.get(reserve.realm, reserve.realm),
+                reserve.amount,
+                self.PALETTE.get(reserve.realm, 'black'),
+                meta_data=meta(realm=reserve.realm)
+            ),
+            PackItem(self.loc.SUPPLY_PIC_RUNE_POOL, rune_pool, self.PALETTE[ThorRealms.RUNEPOOL],
+                     meta(realm=ThorRealms.RUNEPOOL, label='up' if rune_pool < 1e6 else '')),
+            PackItem(self.loc.SUPPLY_PIC_POL, self.net_stats.total_rune_pol, self.PALETTE[ThorRealms.POL],
+                     meta(realm=ThorRealms.POL)),
+
         ], locked_rect, align=DrawRectPacker.V)
 
         # Column 2: Bond and Pool (working Rune)
         bonded = self.net_stats.total_bond_rune
-        pooled = self.net_stats.total_rune_pooled
+        pooled = self.net_stats.total_rune_lp
 
         self._pack([
             PackItem(self.loc.SUPPLY_PIC_BONDED, bonded, self.PALETTE[ThorRealms.BONDED],
                      meta(realm=ThorRealms.BONDED)),
-            PackItem(self.loc.SUPPLY_PIC_POOLED, pooled, self.PALETTE[ThorRealms.POOLED],
-                     meta(realm=ThorRealms.POOLED))
+            PackItem(self.loc.SUPPLY_PIC_POOLED, pooled, self.PALETTE[ThorRealms.LIQ_POOL],
+                     meta(realm=ThorRealms.LIQ_POOL)),
         ], working_rect, align=DrawRectPacker.V)
 
         # Column 3: Circulating Rune

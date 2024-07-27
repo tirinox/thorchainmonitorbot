@@ -56,7 +56,7 @@ class NetworkStatisticsFetcher(BaseFetcher):
         stand_by_bond = thor_to_float(bonding_metrics['totalStandbyBond'])
         ns.total_bond_rune = ns.total_active_bond_rune + stand_by_bond
 
-        ns.total_rune_pooled = thor_to_float(j['totalPooledRune'])
+        ns.total_rune_lp = thor_to_float(j['totalPooledRune'])
 
     KEY_CONST_MIN_RUNE_POOL_DEPTH = 'MinRunePoolDepth'
 
@@ -94,6 +94,14 @@ class NetworkStatisticsFetcher(BaseFetcher):
         ns.users_daily = stats.dau_yesterday
         ns.users_monthly = stats.mau
 
+    async def _get_rune_pool_stats(self, ns: NetworkStats):
+        runepool = await self.deps.thor_connector.query_runepool()
+        if runepool:
+            ns.total_rune_pool = thor_to_float(runepool.providers.current_deposit)
+            ns.total_rune_pol = thor_to_float(runepool.pol.value)
+        else:
+            self.logger.error('Failed to get RUNE pool stats from')
+
     async def fetch(self) -> NetworkStats:
         ns = NetworkStats()
         ns.usd_per_rune = self.deps.price_holder.usd_per_rune
@@ -111,6 +119,9 @@ class NetworkStatisticsFetcher(BaseFetcher):
         await asyncio.sleep(self.step_sleep)
 
         await self._get_user_stats(ns)
+        await asyncio.sleep(self.step_sleep)
+
+        await self._get_rune_pool_stats(ns)
 
         ns.date_ts = now_ts()
         return ns

@@ -409,9 +409,9 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         # -- POOL
 
-        current_pooled_text = short_rune(new.total_rune_pooled)
+        current_pooled_text = short_rune(new.total_rune_lp)
         current_pooled_change = bracketify(
-            up_down_arrow(old.total_rune_pooled, new.total_rune_pooled, money_delta=True))
+            up_down_arrow(old.total_rune_lp, new.total_rune_lp, money_delta=True))
 
         current_pooled_usd_text = short_dollar(new.total_pooled_usd)
         current_pooled_usd_change = bracketify(

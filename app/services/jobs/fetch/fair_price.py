@@ -49,7 +49,7 @@ class RuneMarketInfoFetcher(WithLogger):
         ns = self.deps.net_stats
         if ns:
             supply.set_holder(RuneHoldEntry('bond_module', int(ns.total_bond_rune), 'Bonded', ThorRealms.BONDED))
-            supply.set_holder(RuneHoldEntry('pool_module', int(ns.total_rune_pooled), 'Pooled', ThorRealms.POOLED))
+            supply.set_holder(RuneHoldEntry('pool_module', int(ns.total_rune_lp), 'Pooled', ThorRealms.LIQ_POOL))
         else:
             self.logger.warning('No net stats! Failed to enrich circulating supply data with pool/bonding info!')
 
