@@ -34,7 +34,7 @@ class POLNotifier(WithDelegates, INotified, WithLogger):
         try:
             data = await self.ts.get_last_values_json(period_ago, with_ts=True)
             return [
-                (ts, self._enrich_data(AlertPOL.load_from_series(j))) for ts, j in data
+                (ts, AlertPOL.load_from_series(j)) for ts, j in data
             ]
         except Exception as e:
             self.logger.exception(f'Error loading last EventPOL: {e}')
