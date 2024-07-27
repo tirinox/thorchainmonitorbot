@@ -1,15 +1,11 @@
 from typing import Optional, List, Tuple
 
-from aionode.types import thor_to_float
-
-from services.lib.constants import bp_to_percent
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds, MINUTE
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
-from services.models.mimir_naming import MIMIR_KEY_POL_MAX_NETWORK_DEPOSIT, MIMIR_KEY_POL_TARGET_SYNTH_PER_POOL_DEPTH
-from services.models.pol import AlertPOL, POLState
+from services.models.pol import AlertPOL
 from services.models.time_series import TimeSeries
 
 
@@ -51,25 +47,12 @@ class POLNotifier(WithDelegates, INotified, WithLogger):
         except Exception as e:
             self.logger.exception(f'Failed to add a point to the POL time series: {e}')
 
-    def _enrich_data(self, event: AlertPOL, previous_data: Optional[POLState] = None):
-        mimir = self.deps.mimir_const_holder
-
-        synth_target = mimir.get_constant(MIMIR_KEY_POL_TARGET_SYNTH_PER_POOL_DEPTH, 4500)
-        synth_target = bp_to_percent(synth_target)
-
-        event = event._replace(
-            previous=previous_data or event.previous,
-            prices=self.deps.price_holder,
-            mimir_max_deposit=thor_to_float(mimir.get_constant(MIMIR_KEY_POL_MAX_NETWORK_DEPOSIT, 10e3, float)),
-            mimir_synth_target_ptc=synth_target,
-        )
-        return event
-
     async def on_data(self, sender, event: AlertPOL):
         ago_seconds = max(self.spam_cd.cooldown, self.MIN_DURATION)
         previous_data = await self.find_stats_ago(ago_seconds)
 
-        event = self._enrich_data(event, previous_data.current if previous_data else None)
+        if previous_data:
+            event = event._replace(previous=previous_data.current)
 
         self.last_event = event
 

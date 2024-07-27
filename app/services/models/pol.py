@@ -1,7 +1,7 @@
 import dataclasses
 from typing import NamedTuple, List, Optional
 
-from aionode.types import ThorPOL, thor_to_float
+from aionode.types import ThorRunePoolPOL, thor_to_float
 
 from services.models.pool_member import PoolMemberDetails
 from services.models.price import LastPriceHolder
@@ -9,7 +9,7 @@ from services.models.price import LastPriceHolder
 
 class POLState(NamedTuple):
     usd_per_rune: float
-    value: ThorPOL
+    value: ThorRunePoolPOL
 
     @property
     def is_zero(self):
@@ -58,7 +58,7 @@ class AlertPOL(NamedTuple):
     @classmethod
     def load_from_series(cls, j):
         usd_per_rune = float(j.get('usd_per_rune', 1.0))
-        pol = POLState(usd_per_rune, ThorPOL(**j.get('pol')))
+        pol = POLState(usd_per_rune, ThorRunePoolPOL(**j.get('pol')))
         membership = [PoolMemberDetails(**it) for it in j.get('membership', [])]
         return cls(
             current=pol,

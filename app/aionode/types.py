@@ -636,24 +636,6 @@ class ThorMimirVote(NamedTuple):
         return [cls.from_json(item) for item in j] if j else []
 
 
-class ThorPOL(NamedTuple):
-    current_deposit: int  # current amount of rune deposited
-    pnl: int  # total value of protocol's LP position in RUNE value
-    rune_deposited: int  # total amount of RUNE withdrawn from the pools
-    rune_withdrawn: int  # total amount of RUNE deposited into the pools
-    value: int  # total value of protocol's LP position in RUNE value
-
-    @classmethod
-    def from_json(cls, j):
-        return cls(
-            current_deposit=int(j.get('current_deposit'), 0),
-            pnl=int(j.get('pnl', 0)),
-            rune_deposited=int(j.get('rune_deposited', 0)),
-            rune_withdrawn=int(j.get('rune_withdrawn', 0)),
-            value=int(j.get('value', 0)),
-        )
-
-
 class ThorNetwork(NamedTuple):
     bond_reward_rune: int
     burned_bep_2_rune: int
@@ -745,11 +727,11 @@ class ThorBorrowerPosition(NamedTuple):
 
 
 class ThorRunePoolPOL(NamedTuple):
-    rune_deposited: int
-    rune_withdrawn: int
-    value: int
-    pnl: int
-    current_deposit: int
+    rune_deposited: int  # total amount of RUNE withdrawn from the pools
+    rune_withdrawn: int  # total amount of RUNE withdrawn from the pools
+    value: int  # total value of protocol's LP position in RUNE value
+    pnl: int  # total value of protocol's LP position in RUNE value
+    current_deposit: int  # current amount of rune deposited
 
     @classmethod
     def from_json(cls, j):

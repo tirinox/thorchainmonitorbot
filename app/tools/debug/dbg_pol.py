@@ -3,7 +3,7 @@ import logging
 from pprint import pprint
 from typing import Optional
 
-from aionode.types import ThorPOL
+from aionode.types import ThorRunePoolPOL
 
 from services.jobs.fetch.pol import RunePoolFetcher
 from services.lib.constants import NetworkIdents, STAGENET_RESERVE_ADDRESS
@@ -21,6 +21,8 @@ def get_reserve_address(app: LpAppFramework):
 
 
 async def demo_pol_1(app: LpAppFramework):
+    await app.deps.pool_fetcher.run_once()
+    await app.deps.mimir_const_fetcher.run_once()
     pol_fetcher = RunePoolFetcher(app.deps, reserve_address=get_reserve_address(app))
     r = await pol_fetcher.fetch()
     pprint(r)
@@ -56,7 +58,7 @@ class DbgPOLNotifier(POLNotifier):
     async def _find_stats_ago_random_hardcode(self, period_ago) -> Optional[AlertPOL]:
         pol_state = POLState(
             usd_per_rune=1.5,
-            value=ThorPOL(
+            value=ThorRunePoolPOL(
                 current_deposit=distort_randomly(5028203433),  # = rune_deposited - rune_withdrawn
                 pnl=distort_randomly(1071851731),
                 rune_deposited=distort_randomly(9932906488, up_only=True),

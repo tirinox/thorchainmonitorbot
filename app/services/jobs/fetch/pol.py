@@ -1,10 +1,12 @@
 from typing import List
 
 from services.jobs.fetch.base import BaseFetcher
+from services.lib.constants import bp_to_percent, thor_to_float
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import free_url_gen
+from services.models.mimir_naming import MIMIR_KEY_POL_TARGET_SYNTH_PER_POOL_DEPTH, MIMIR_KEY_POL_MAX_NETWORK_DEPOSIT
 from services.models.pol import AlertPOL, POLState
 from services.models.pool_member import PoolMemberDetails
 
@@ -37,8 +39,17 @@ class RunePoolFetcher(BaseFetcher):
         else:
             membership = []
 
+        mimir = self.deps.mimir_const_holder
+
+        synth_target = mimir.get_constant(MIMIR_KEY_POL_TARGET_SYNTH_PER_POOL_DEPTH, 4500)
+        synth_target = bp_to_percent(synth_target)
+        max_deposit = thor_to_float(mimir.get_constant(MIMIR_KEY_POL_MAX_NETWORK_DEPOSIT, 10e3, float))
+
         self.logger.info(f"Got RunePOOL: {runepool}")
         return AlertPOL(
-            POLState(self.deps.price_holder.usd_per_rune, runepool),
-            membership
+            POLState(self.deps.price_holder.usd_per_rune, runepool.pol),
+            membership,
+            prices=self.deps.price_holder,
+            mimir_max_deposit=max_deposit,
+            mimir_synth_target_ptc=synth_target,
         )

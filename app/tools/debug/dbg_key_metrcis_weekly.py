@@ -106,7 +106,6 @@ async def demo_analyse_and_show(app: LpAppFramework):
 
     await show_picture(app, result)
 
-
     await asyncio.sleep(5)  # let them send the picture
 
 
