@@ -7,11 +7,13 @@ from services.jobs.fetch.flipside.flipside import FlipSideConnector, FSList
 from services.jobs.fetch.flipside.urls import *
 from services.jobs.fetch.pool_price import PoolFetcher
 from services.jobs.user_counter import UserCounterMiddleware
+from services.jobs.volume_recorder import VolumeRecorder, TxCountRecorder
 from services.lib.date_utils import parse_timespan_to_seconds, DAY
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 from services.models.flipside import FSAffiliateCollectors, FSFees, FSSwapCount, FSLockedValue, FSSwapVolume, \
-    FSSwapRoutes, AlertKeyStats
+    FSSwapRoutes, AlertKeyStats, KeyStats
+from services.models.vol_n import TxCountStats
 
 
 # Swap history: https://midgard.ninerealms.com/v2/history/swaps?interval=week&count=2
@@ -29,24 +31,65 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         self.trim_max_days = deps.cfg.as_int('key_metrics.trim_max_days', self.tally_days_period * 3)
 
     async def fetch(self) -> AlertKeyStats:
-        # Load pool data for BTC/ETH value in the pools
-        pf: PoolFetcher = self.deps.pool_fetcher
+        # Find block height a week ago
         previous_block = self.deps.last_block_store.block_time_ago(self.tally_days_period * DAY)
 
         if previous_block < 0:
             raise ValueError(f'Previous block is negative {previous_block}!')
 
-        fresh_pools, old_pools = await asyncio.gather(
+        # Load pool data for BTC/ETH value in the pools
+        pf: PoolFetcher = self.deps.pool_fetcher
+        curr_pools, prev_pools = await asyncio.gather(
             pf.load_pools(),
             pf.load_pools(height=previous_block)
         )
 
-        fresh_pools = pf.convert_pool_list_to_dict(list(fresh_pools.values()))
-        old_pools = pf.convert_pool_list_to_dict(list(old_pools.values()))
+        curr_pools = pf.convert_pool_list_to_dict(list(curr_pools.values()))
+        prev_pools = pf.convert_pool_list_to_dict(list(prev_pools.values()))
 
+        # TC's locked asset value
+        prev_lock, curr_lock = await asyncio.gather(
+            self.get_lock_value(self.tally_days_period),
+            self.get_lock_value()
+        )
+
+        # Swapper count
+        user_counter: UserCounterMiddleware = self.deps.user_counter
+        user_stats = await user_counter.get_main_stats()
+
+        # Swap volumes (trade, synth, normal)
+        prev_swap_vol_dict, curr_swap_vol_dict = await self.get_swap_volume_stats()
+        swap_count = await self.get_swap_number_stats()
+
+        # Combined THORChain stats from Flipside Crypto
+        fs_series = await self.get_flipside_series()
+
+        # Swap routes
         routes = await self._fs.request_daily_series_v2(FS_LATEST_SWAP_PATH_URL, FSSwapRoutes)
         routes = routes.most_recent
 
+        # Done. Construct the resulting event
+        return AlertKeyStats(
+            fs_series,
+            routes=routes,
+            days=self.tally_days_period,
+            current=KeyStats(
+                curr_pools,
+                curr_lock,
+                curr_swap_vol_dict,
+                swap_count.curr,
+                swapper_count=user_stats.wau,
+            ),
+            previous=KeyStats(
+                prev_pools,
+                prev_lock,
+                prev_swap_vol_dict,
+                swap_count.prev,
+                swapper_count=user_stats.wau_prev_weak
+            )
+        )
+
+    async def get_flipside_series(self):
         loaders = [
             (FS_LATEST_EARNINGS_URL, FSFees),
             (FS_LATEST_SWAP_COUNT_URL, FSSwapCount),
@@ -61,28 +104,7 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         )
 
         # Merge data streams
-        result = FSList.combine(*data_chunks)
-
-        prev_lock, curr_lock = await asyncio.gather(
-            self.get_lock_value(self.tally_days_period),
-            self.get_lock_value()
-        )
-
-        # Swapper count
-
-        user_counter: UserCounterMiddleware = self.deps.user_counter
-        user_stats = await user_counter.get_main_stats()
-
-        # Done. Construct the resulting event
-        return AlertKeyStats(
-            result, old_pools, fresh_pools,
-            routes,
-            days=self.tally_days_period,
-            prev_lock=prev_lock,
-            curr_lock=curr_lock,
-            swapper_curr=user_stats.wau,
-            swapper_prev=user_stats.wau_prev_weak,
-        )
+        return FSList.combine(*data_chunks)
 
     async def get_lock_value(self, days_ago=0) -> FSLockedValue:
         height = self.deps.last_block_store.block_time_ago(days_ago * DAY)
@@ -107,3 +129,15 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
             total_value_locked=total_pooled_rune + total_bonded_rune,
             total_value_locked_usd=total_pooled_usd + total_bonded_usd,
         )
+
+    async def get_swap_volume_stats(self):
+        # Volume stats
+        volume_recorder: VolumeRecorder = self.deps.volume_recorder
+        seconds = self.tally_days_period * DAY
+        curr_volume_stats, prev_volume_stats = await volume_recorder.get_previous_and_current_sum(seconds)
+        return prev_volume_stats, curr_volume_stats
+
+    async def get_swap_number_stats(self) -> TxCountStats:
+        # Transaction count stats
+        tx_counter: TxCountRecorder = self.deps.tx_count_recorder
+        return await tx_counter.get_stats(self.tally_days_period)

@@ -10,10 +10,11 @@ from services.jobs.fetch.flipside.urls import FS_LATEST_EARNINGS_URL, FS_LATEST_
     FS_LATEST_SWAP_AFF_FEE_URL, FS_LATEST_SWAP_COUNT_URL, FS_LATEST_SWAP_PATH_URL, FS_LATEST_LOCKED_RUNE_URL
 from services.jobs.fetch.key_stats import KeyStatsFetcher
 from services.jobs.user_counter import UserCounterMiddleware
+from services.jobs.volume_recorder import TxCountRecorder, VolumeRecorder
 from services.lib.delegates import INotified
 from services.lib.texts import sep
 from services.models.flipside import FSSwapRoutes, FSAffiliateCollectors, FSFees, FSSwapVolume, FSSwapCount, \
-    FSLockedValue
+    FSLockedValue, AlertKeyStats
 from services.notify.types.key_metrics_notify import KeyMetricsNotifier
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
@@ -75,17 +76,36 @@ class FlipSideSaver(INotified):
 
 
 async def demo_analyse_and_show(app: LpAppFramework):
-    f = KeyStatsFetcher(app.deps)
-    noter = KeyMetricsNotifier(app.deps)
+    d = app.deps
+    d.volume_recorder = VolumeRecorder(d)
+    # volume_filler.add_subscriber(d.volume_recorder)
+
+    d.tx_count_recorder = TxCountRecorder(d)
+    # volume_filler.add_subscriber(d.tx_count_recorder)
+
+    f = KeyStatsFetcher(d)
+    noter = KeyMetricsNotifier(d)
     f.add_subscriber(noter)
-    noter.add_subscriber(app.deps.alert_presenter)
+    noter.add_subscriber(d.alert_presenter)
 
     saver = FlipSideSaver()
     f.add_subscriber(saver)
 
     # await f.run_once()
-    r = await f.fetch()
-    await show_picture(app, r)
+    result: AlertKeyStats = await f.fetch()
+    sep('Weekly stats')
+    print(result)
+    sep('Swap vol: current')
+    print(result.current.swap_vol)
+    sep('Swap count: current')
+    print(result.current.swapper_count)
+    sep('Swap vol: previous')
+    print(result.previous.swap_vol)
+    sep('Swap count: previous')
+    print(result.previous.swapper_count)
+
+    await show_picture(app, result)
+
 
     await asyncio.sleep(5)  # let them send the picture
 

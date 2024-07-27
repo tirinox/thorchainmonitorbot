@@ -37,11 +37,11 @@ class KeyMetricsNotifier(INotified, WithDelegates, WithLogger):
         return data and now_ts() - data.latest_date.timestamp() < self.data_max_age
 
     async def on_data(self, sender, e: AlertKeyStats):
-        if not e.current_pools:
+        if not e.current.pools:
             self.logger.error(f'No pool data! Aborting.')
             return
 
-        if not e.previous_pools:
+        if not e.previous.pools:
             self.logger.warning(f'No previous pool data! Go on')
 
         if not len(e.series):

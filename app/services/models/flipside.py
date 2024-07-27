@@ -233,19 +233,20 @@ class FSSwapRoutes(NamedTuple):
 
 
 @dataclasses.dataclass
+class KeyStats:
+    pools: PoolInfoMap
+    lock: FSLockedValue
+    swap_vol: dict
+    swap_count: dict
+    swapper_count: int
+
+
+@dataclasses.dataclass
 class AlertKeyStats:
     series: FSList
-    previous_pools: PoolInfoMap
-    current_pools: PoolInfoMap
-
+    current: KeyStats
+    previous: KeyStats
     routes: List[FSSwapRoutes]
-
-    prev_lock: FSLockedValue
-    curr_lock: FSLockedValue
-
-    swapper_curr: int
-    swapper_prev: int
-
     days: int = 7
 
     @property
@@ -256,7 +257,7 @@ class AlertKeyStats:
         return self.get_sum(STABLE_COIN_POOLS_ALL, previous)
 
     def get_sum(self, coin_list, previous=False):
-        source = self.previous_pools if previous else self.current_pools
+        source = self.previous.pools if previous else self.current.pools
         running_sum = 0.0
 
         for symbol in coin_list:
@@ -341,19 +342,9 @@ class AlertKeyStats:
         usd_volume, prev_usd_volume = sum_by_attribute_pair(curr_data, prev_data, 'swap_volume_usd', FSSwapVolume)
         return usd_volume, prev_usd_volume
 
-    # @cached_property
-    # def unique_swap_curr_prev(self):
-        # curr_data, prev_data = self.curr_prev_data
-        # unique_swap, prev_unique_swap = sum_by_attribute_pair(curr_data, prev_data, 'unique_swapper_count',
-        #                                                       FSSwapCount, max)
-        # return unique_swap, prev_unique_swap
-
     @property
     def locked_value_usd_curr_prev(self):
-        # prev_lock, curr_lock = self.series.get_prev_and_curr(self.days, FSLockedValue)
-        # prev_lock: FSLockedValue = prev_lock[0] if prev_lock else None
-        # curr_lock: FSLockedValue = curr_lock[0] if curr_lock else None
-        return self.curr_lock, self.prev_lock
+        return self.current.lock, self.previous.lock
 
 
 def sum_by_attribute(daily_list, attr_name, klass=None, f_sum=sum):
