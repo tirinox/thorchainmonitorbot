@@ -4,6 +4,7 @@ from random import random
 from typing import Optional, List, Dict
 
 from redis.asyncio import Redis
+from ujson import JSONDecodeError
 
 from services.jobs.fetch.base import BaseFetcher
 from services.lib.config import Config
@@ -121,7 +122,7 @@ class PoolFetcher(BaseFetcher):
                 thor_pools = await self.deps.thor_connector_archive.query_pools(height)
 
             return parse_thor_pools(thor_pools)
-        except (TypeError, IndexError) as e:
+        except (TypeError, IndexError, JSONDecodeError) as e:
             self.logger.error(f'thor_connector.query_pools failed! Err: {e} at {height = }')
 
         return {}

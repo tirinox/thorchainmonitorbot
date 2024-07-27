@@ -13,10 +13,9 @@ from services.models.trade_acc import AlertTradeAccountStats, TradeAccountVaults
 class TradeAccountFetcher(BaseFetcher):
     def __init__(self, deps: DepContainer):
         period = deps.cfg.as_interval('trade_accounts.summary.fetch_period', '1h')
-        tally_period = deps.cfg.as_interval('trade_accounts.summary.tally_period', '7d')
         super().__init__(deps, sleep_period=period)
         self.deps = deps
-        self.tally_period = tally_period
+        self.tally_period_sec = deps.cfg.as_interval('trade_accounts.summary.tally_period', '7d')
 
     async def _get_traders(self, trade_units: List[ThorTradeUnits], height):
         traders_list = await parallel_run_in_groups([
@@ -72,7 +71,7 @@ class TradeAccountFetcher(BaseFetcher):
 
     @property
     def previous_block_height(self):
-        return self.deps.last_block_store.block_time_ago(self.tally_period)
+        return self.deps.last_block_store.block_time_ago(self.tally_period_sec)
 
     async def fetch(self) -> AlertTradeAccountStats:
         # State of Trade Account vaults
@@ -83,10 +82,10 @@ class TradeAccountFetcher(BaseFetcher):
 
         # Volume stats
         volume_recorder: VolumeRecorder = self.deps.volume_recorder
-        curr_volume_stats, prev_volume_stats = await volume_recorder.get_previous_and_current_sum(self.tally_period)
+        curr_volume_stats, prev_volume_stats = await volume_recorder.get_previous_and_current_sum(self.tally_period_sec)
 
         # Transaction count stats
-        tally_days = int(self.tally_period / DAY)
+        tally_days = int(self.tally_period_sec / DAY)
         tx_counter: TxCountRecorder = self.deps.tx_count_recorder
         tx_count_stats: TxCountStats = await tx_counter.get_stats(tally_days)
 

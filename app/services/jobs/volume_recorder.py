@@ -192,8 +192,11 @@ class VolumeRecorder(INotified, WithLogger):
 
     async def get_previous_and_current_sum(self, period_sec, now=0) -> Tuple[dict, dict]:
         now = now or now_ts()
-        curr_volume_stats = await self.get_sum(now - period_sec, now)
-        prev_volume_stats = await self.get_sum(now - period_sec * 2, now - period_sec)
+        t0 = now - period_sec * 2
+        t1 = now - period_sec
+
+        curr_volume_stats = await self.get_sum(t1, now)
+        prev_volume_stats = await self.get_sum(t0, t1)
         return curr_volume_stats, prev_volume_stats
 
     async def get_data_range_ago_n(self, ago, n=30):
