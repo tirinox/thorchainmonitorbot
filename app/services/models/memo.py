@@ -30,6 +30,14 @@ class ActionType(Enum):
     UNBOND = 'unbond'
     LEAVE = 'leave'
 
+    # Trade accounts
+    TRADE_ACC_DEPOSIT = 'trade+'
+    TRADE_ACC_WITHDRAW = 'trade-'
+
+    # RunePool
+    RUNEPOOL_ADD = 'pool+'
+    RUNEPOOL_WITHDRAW = 'pool-'
+
     # Prospective
     LIMIT_ORDER = 'limit_order'
 
@@ -42,11 +50,7 @@ class ActionType(Enum):
     NOOP = 'noop'
 
     UNKNOWN = '_unknown_'
-
     NO_INTENT = 'no_intent'
-
-    TRADE_ACC_DEPOSIT = 'trade+'
-    TRADE_ACC_WITHDRAW = 'trade-'
 
     GROUP_ADD_WITHDRAW = (ADD_LIQUIDITY, WITHDRAW, DONATE)
 
@@ -92,6 +96,8 @@ MEMO_ACTION_TABLE = {
     "loan-": ActionType.LOAN_CLOSE,
     "trade+": ActionType.TRADE_ACC_DEPOSIT,
     "trade-": ActionType.TRADE_ACC_WITHDRAW,
+    "pool+": ActionType.RUNEPOOL_ADD,
+    "pool-": ActionType.RUNEPOOL_WITHDRAW,
     # "migrate": TxMigrate,
     # "ragnarok": TxRagnarok,
     # "consolidate": TxConsolidate,
@@ -292,6 +298,16 @@ class THORMemo:
         elif tx_type == ActionType.TRADE_ACC_WITHDRAW:
             return cls.trade_account_withdraw(dest_address=ith(components, 1, ''))
 
+        elif tx_type == ActionType.RUNEPOOL_ADD:
+            return cls.runepool_add()
+
+        elif tx_type == ActionType.RUNEPOOL_WITHDRAW:
+            return cls.runepool_withdraw(
+                bp=ith(components, 1, THOR_BASIS_POINT_MAX, is_number=True),
+                affiliate=ith(components, 2, ''),
+                affiliate_fee_bp=ith(components, 3, 0, is_number=True)
+            )
+
         else:
             # todo: limit order, register memo, etc.
             if no_raise:
@@ -383,6 +399,12 @@ class THORMemo:
 
         elif self.action == ActionType.TRADE_ACC_WITHDRAW:
             memo = f'TRADE-:{self.dest_address}'
+
+        elif self.action == ActionType.RUNEPOOL_ADD:
+            memo = 'POOL+'
+
+        elif self.action == ActionType.RUNEPOOL_WITHDRAW:
+            memo = f'POOL-:{self.withdraw_portion_bp}:{self.affiliate_address}:{self.affiliate_fee_bp}'
 
         else:
             raise NotImplementedError(f"Can not build memo for {self.action}")
@@ -554,8 +576,20 @@ class THORMemo:
             dest_address=dest_address
         )
 
-    # Utils:
+    @classmethod
+    def runepool_add(cls):
+        return cls(ActionType.RUNEPOOL_ADD)
 
+    @classmethod
+    def runepool_withdraw(cls, bp: int, affiliate: str='', affiliate_fee_bp: int=0):
+        return cls(
+            ActionType.RUNEPOOL_WITHDRAW,
+            withdraw_portion_bp=bp,
+            affiliate_address=affiliate,
+            affiliate_fee_bp=affiliate_fee_bp,
+        )
+
+    # Utils:
     @classmethod
     def ith_or_default(cls, a, index, default=None, is_number=False) -> Union[str, int, float]:
         if 0 <= index < len(a):
