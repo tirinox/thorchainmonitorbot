@@ -121,6 +121,8 @@ BOOL_CONSTANTS = {
     "POL-ETH-ETH",
     "POL-BTC-BTC",
     "POL-BNB-BNB",
+
+    "RUNEPOOLENABLED",
 }
 
 DOLLAR_CONSTANTS = {
@@ -308,7 +310,7 @@ DICT_WORDS = (
     'supply,multiplier,ETH-USDC,surplus,target,swaps,order,book,books,AVAX-USDC,significant,digits,length,'
     'red,line,lune,fees,affiliate,cut,off,BNB-BUSD-BD1,ETH-USDT,loan,repayment,maturity,lever,slip,pts,'
     'UST,luna,wide,blame,keygen,assets,derived,round,rounds,prefer,Collateral,ready,'
-    'protocol,system,rev,incr,dynamic,trade,accounts,disabled,operational,security,bps,conf,'
+    'protocol,system,rev,incr,dynamic,trade,accounts,disabled,operational,security,bps,conf,rune'
 ).strip(' ,')
 
 WORD_TRANSFORM = {
