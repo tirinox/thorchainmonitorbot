@@ -742,3 +742,99 @@ class ThorBorrowerPosition(NamedTuple):
             int(j['last_repay_height']),
             j['owner']
         )
+
+
+class ThorRunePoolPOL(NamedTuple):
+    rune_deposited: int
+    rune_withdrawn: int
+    value: int
+    pnl: int
+    current_deposit: int
+
+    @classmethod
+    def from_json(cls, j):
+        return cls(
+            rune_deposited=int(j.get('rune_deposited', 0)),
+            rune_withdrawn=int(j.get('rune_withdrawn', 0)),
+            value=int(j.get('value', 0)),
+            pnl=int(j.get('pnl', 0)),
+            current_deposit=int(j.get('current_deposit', 0)),
+        )
+
+
+class ThorRunePoolProviders(NamedTuple):
+    units: int
+    pending_units: int
+    pending_rune: int
+    value: int
+    pnl: int
+    current_deposit: int
+
+    @classmethod
+    def from_json(cls, j):
+        return cls(
+            units=int(j.get('units', 0)),
+            pending_units=int(j.get('pending_units', 0)),
+            pending_rune=int(j.get('pending_rune', 0)),
+            value=int(j.get('value', 0)),
+            pnl=int(j.get('pnl', 0)),
+            current_deposit=int(j.get('current_deposit', 0)),
+        )
+
+
+class ThorRunePoolReserve(NamedTuple):
+    units: int
+    value: int
+    pnl: int
+    current_deposit: int
+
+    @classmethod
+    def from_json(cls, j):
+        return cls(
+            units=int(j.get('units', 0)),
+            value=int(j.get('value', 0)),
+            pnl=int(j.get('pnl', 0)),
+            current_deposit=int(j.get('current_deposit', 0)),
+        )
+
+
+class ThorRunePool(NamedTuple):
+    pol: ThorRunePoolPOL
+    providers: ThorRunePoolProviders
+    reserve: ThorRunePoolReserve
+
+    @classmethod
+    def from_json(cls, j):
+        return cls(
+            pol=ThorRunePoolPOL.from_json(j.get('pol', {})),
+            providers=ThorRunePoolProviders.from_json(j.get('providers', {})),
+            reserve=ThorRunePoolReserve.from_json(j.get('reserve', {})),
+        )
+
+
+class ThorRunePoolProvider(NamedTuple):
+    rune_address: str
+    units: int
+    value: int
+    pnl: int
+    deposit_amount: int
+    withdraw_amount: int
+    last_deposit_height: int
+    last_withdraw_height: int
+
+    @classmethod
+    def from_json(cls, j):
+        return cls(
+            rune_address=j.get('rune_address', ''),
+            units=int(j.get('units', 0)),
+            value=int(j.get('value', 0)),
+            pnl=int(j.get('pnl', 0)),
+            deposit_amount=int(j.get('deposit_amount', 0)),
+            withdraw_amount=int(j.get('withdraw_amount', 0)),
+            last_deposit_height=int(j.get('last_deposit_height', 0)),
+            last_withdraw_height=int(j.get('last_withdraw_height', 0))
+        )
+
+    @classmethod
+    def from_json_array(cls, j):
+        return [cls.from_json(item) for item in j] if j else []

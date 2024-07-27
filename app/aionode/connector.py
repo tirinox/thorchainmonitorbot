@@ -137,12 +137,6 @@ class ThorConnector:
         if data:
             return ThorLiquidityProvider.from_json(data)
 
-    async def query_pol(self, height=0):
-        url = self.env.path_pol.format(height=height)
-        data = await self._request(url)
-        if data:
-            return ThorPOL.from_json(data)
-
     async def query_network(self, height=0):
         url = self.env.path_network.format(height=height)
         data = await self._request(url)
@@ -202,6 +196,18 @@ class ThorConnector:
                 return [ThorTradeAccount.from_json(p) for p in data]
             else:
                 return [ThorTradeAccount.from_json(data)]
+
+    async def query_runepool(self, height=0):
+        url = self.env.path_runepool.format(height=height)
+        data = await self._request(url)
+        if data:
+            return ThorRunePool.from_json(data)
+
+    async def query_runepool_providers(self, height=0):
+        url = self.env.path_runepool_providers.format(height=height)
+        data = await self._request(url)
+        if data:
+            return [ThorRunePoolProvider.from_json(p) for p in data]
 
     # ---- Internal ----
 

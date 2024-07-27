@@ -43,7 +43,6 @@ class ThorEnvironment:
 
     path_saver_details = '/thorchain/pool/{asset}/saver/{address}?height={height}'
     path_savers = '/thorchain/pool/{asset}/savers?height={height}'
-    path_pol = '/thorchain/pol?height={height}'
     path_network = '/thorchain/network?height={height}'
     path_swapper_clout = '/thorchain/clout/swap/{address}?height={height}'
 
@@ -59,6 +58,9 @@ class ThorEnvironment:
     path_trade_units = '/thorchain/trade/units?height={height}'
     path_trade_accounts = '/thorchain/trade/accounts/{asset}?height={height}'
     path_trade_account = '/thorchain/trade/account/{wallet}?height={height}'
+
+    path_runepool = '/thorchain/runepool?height={height}'
+    path_runepool_providers = '/thorchain/rune_providers?height={height}'
 
     kind: str = ''
 
