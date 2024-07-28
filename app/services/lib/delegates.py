@@ -17,6 +17,8 @@ class WithDelegates:
         self.delegates = []  # list for fixed order
 
     def add_subscriber(self, delegate: INotified):
+        if not delegate:
+            raise ValueError("Delegate is None")
         if delegate not in self.delegates:
             self.delegates.append(delegate)
         return self
