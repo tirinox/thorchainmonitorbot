@@ -88,7 +88,7 @@ class TxCountRecorder(INotified, WithLogger):
                     self.logger.error(f'No counter for {tx_type}')
 
         if unique_tx_hashes:
-            self.logger.info(f'Unique txs written {unique_tx_hashes}')
+            self.logger.debug(f'Unique txs written {unique_tx_hashes}')
 
     async def on_data(self, sender, txs: Union[List[ThorTx], AlertTradeAccountAction]):
         try:
