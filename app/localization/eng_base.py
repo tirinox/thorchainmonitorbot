@@ -43,6 +43,7 @@ from services.models.pol import AlertPOL
 from services.models.pool_info import PoolInfo, PoolChanges, PoolMapPair
 from services.models.price import AlertPrice, RuneMarketInfo
 from services.models.queue import QueueInfo
+from services.models.runepool import AlertRunePoolAction
 from services.models.s_swap import AlertSwapStart
 from services.models.savers import how_much_savings_you_can_add, AlertSaverStats
 from services.models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
@@ -2726,7 +2727,6 @@ class BaseLocalization(ABC):  # == English
         return from_link, to_link, amt_str
 
     def _top_trade_vaults(self, e: AlertTradeAccountStats, top_n, formatting=True):
-
         top_vaults = e.curr.vaults.top_by_usd_value(top_n)
         top_vaults_str = ''
 
@@ -2788,6 +2788,35 @@ class BaseLocalization(ABC):  # == English
             f"\n"
             f"Highest used:\n"
             f"{top_vaults_str}"
+        )
+
+    # ------ RunePool ------
+
+    def notification_runepool_action(self, event: AlertRunePoolAction, name_map: NameMap):
+        action_str = 'deposit' if event.is_deposit else 'withdrawal'
+        from_link = self.link_to_address(event.actor, name_map)
+        to_link = self.link_to_address(event.destination_address, name_map)
+        amt_str = f"{pre(pretty_rune(event.amount))}"
+
+        if event.is_deposit:
+            route = f"👤{from_link} ➡️ RUNEPool"
+        else:
+            route = f"RUNEPool ➡️ 👤{to_link}"
+
+        if event.affiliate:
+            aff_collector = self.name_service.get_affiliate_name(event.affiliate)
+            aff_collector = f'{aff_collector} ' if aff_collector else ''
+
+            aff_text = f'{aff_collector}Aff. fee: {short_dollar(event.affiliate_usd)} ' \
+                       f'({format_percent(event.affiliate_rate, 1)})\n'
+        else:
+            aff_text = ''
+
+        return (
+            f"🏦 <b>RUNEPool {action_str}</b> {self.link_to_tx(event.tx_hash)}\n"
+            f"{route}\n"
+            f"Total: {amt_str} ({pretty_dollar(event.usd_amount)})\n"
+            f"{aff_text}"
         )
 
     # ------ Bond providers alerts ------

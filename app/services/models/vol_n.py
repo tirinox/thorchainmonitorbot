@@ -16,6 +16,9 @@ class TxMetricType:
     TRADE_DEPOSIT = 'trade_deposit'
     TRADE_WITHDRAWAL = 'trade_withdrawal'
 
+    RUNEPOOL_ADD = 'runepool_add'
+    RUNEPOOL_WITHDRAW = 'runepool_withdraw'
+
     @staticmethod
     def usd_key(rune_key):
         return f'{rune_key}_usd'

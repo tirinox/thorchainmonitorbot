@@ -8,6 +8,7 @@ from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 from services.models.memo import ActionType
+from services.models.runepool import AlertRunePoolAction
 from services.models.trade_acc import AlertTradeAccountAction
 from services.models.tx import ThorTx
 from services.models.vol_n import TxCountStats, TxMetricType
@@ -16,18 +17,17 @@ from services.notify.dup_stop import TxDeduplicator
 
 def convert_trade_actions_to_txs(txs, d: DepContainer) -> List[ThorTx]:
     """
-    The classes below are able to handle both ThorTx and AlertTradeAccountAction thanks to this function.
+    The classes below are able to handle both ThorTx and AlertTradeAccountAction, AlertRunePoolAction
+     thanks to this function.
 
     If the input is an AlertTradeAccountAction, convert it to a list of single ThorTx.
     Otherwise, return the input as is. (List[ThorTx])
     """
-    if isinstance((event := txs), AlertTradeAccountAction):
+    if isinstance((event := txs), (AlertTradeAccountAction, AlertRunePoolAction)):
         tx = event.as_thor_tx
         tx.calc_full_rune_amount(d.price_holder.pool_info_map)
         tx.height = int(d.last_block_store)
         tx.date = int(now_ts() * 1e9)
-
-        # print(f'convert_trade_actions_to_txs: {tx.tx_hash}, {tx.full_rune} rune, {tx.asset_amount} asset')
         return [tx]
     else:
         return txs
@@ -47,6 +47,8 @@ class TxCountRecorder(INotified, WithLogger):
             TxMetricType.STREAMING: DailyActiveUserCounter(r, 'StreamingSwaps'),
             TxMetricType.WITHDRAW_LIQUIDITY: DailyActiveUserCounter(r, 'Withdraw'),
             TxMetricType.ADD_LIQUIDITY: DailyActiveUserCounter(r, 'AddLiquidity'),
+            TxMetricType.RUNEPOOL_DEPOSIT: DailyActiveUserCounter(r, 'RunePoolDeposit'),
+            TxMetricType.RUNEPOOL_WITHDRAW: DailyActiveUserCounter(r, 'RunePoolWithdraw'),
         }
         self._deduplicator = TxDeduplicator(deps.db, 'TxCount')
 
@@ -72,6 +74,10 @@ class TxCountRecorder(INotified, WithLogger):
                 unique_tx_hashes[TxMetricType.ADD_LIQUIDITY].add(ident)
             elif tx.is_of_type(ActionType.WITHDRAW):
                 unique_tx_hashes[TxMetricType.WITHDRAW_LIQUIDITY].add(ident)
+            elif tx.is_of_type(ActionType.RUNEPOOL_ADD):
+                unique_tx_hashes[TxMetricType.RUNEPOOL_ADD].add(ident)
+            elif tx.is_of_type(ActionType.RUNEPOOL_WITHDRAW):
+                unique_tx_hashes[TxMetricType.RUNEPOOL_WITHDRAW].add(ident)
 
         for tx_type, tx_set in unique_tx_hashes.items():
             if tx_set:
@@ -148,6 +154,10 @@ class VolumeRecorder(INotified, WithLogger):
                     volumes[TxMetricType.ADD_LIQUIDITY] += volume
                 elif tx.is_of_type(ActionType.WITHDRAW):
                     volumes[TxMetricType.WITHDRAW_LIQUIDITY] += volume
+                elif tx.is_of_type(ActionType.RUNEPOOL_ADD):
+                    volumes[TxMetricType.RUNEPOOL_ADD] += volume
+                elif tx.is_of_type(ActionType.RUNEPOOL_WITHDRAW):
+                    volumes[TxMetricType.RUNEPOOL_WITHDRAW] += volume
 
                 total_volume += volume
                 ts = tx.date_timestamp

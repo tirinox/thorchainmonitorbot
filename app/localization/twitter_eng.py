@@ -30,6 +30,7 @@ from services.models.node_info import NodeSetChanges, NodeVersionConsensus, Node
 from services.models.pol import AlertPOL
 from services.models.pool_info import PoolMapPair, PoolChanges, PoolInfo
 from services.models.price import RuneMarketInfo, AlertPrice
+from services.models.runepool import AlertRunePoolAction
 from services.models.s_swap import AlertSwapStart
 from services.models.savers import AlertSaverStats
 from services.models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
@@ -488,7 +489,6 @@ class TwitterEnglishLocalization(BaseLocalization):
             message = f'💊 Synth trade volume: {synth_volume_rune} ({synth_volume_usd}) ' \
                       f'in {synth_op_count} swaps\n'
             parts.append(message)
-
 
         # --------------------------------------------------------------------------------------------------------------
 
@@ -1057,23 +1057,34 @@ class TwitterEnglishLocalization(BaseLocalization):
             )
         ]
 
-        # top_vaults_str = self._top_trade_vaults(e, 4, formatting=False)
-        #
-        # parts = [
-        #     (
-        #         f"⚖️ Trade assets summary\n\n"
-        #         f"Total holders: {(pretty_money(e.current.total_traders))}"
-        #         f" {bracketify(up_down_arrow(e.previous.total_traders, e.current.total_traders, int_delta=True))}\n"
-        #         f"Total balance: {(short_money(e.current.total_usd))}"
-        #         f" {bracketify(up_down_arrow(e.previous.total_usd, e.current.total_usd, percent_delta=True))}\n"
-        #         f"Trade volume: {(short_dollar(e.swap_vol_current_usd))}"
-        #         f" {bracketify(up_down_arrow(e.swap_vol_prev_usd, e.swap_vol_current_usd, percent_delta=True))}\n"
-        #         f"Swaps of trade assets: {(short_money(e.swaps_current, integer=True))}"
-        #         f" {bracketify(up_down_arrow(e.swaps_prev, e.swaps_current, int_delta=True))}\n"
-        #     ),
-        #     (
-        #         f"Highest used trade assets:\n"
-        #         f"{top_vaults_str}"
-        #     ),
-        # ]
         return self.smart_split(parts)
+
+    # ------- RUNEPOOL --------
+
+    def notification_runepool_action(self, event: AlertRunePoolAction, name_map: NameMap):
+        action_str = 'deposit' if event.is_deposit else 'withdrawal'
+        from_link = self.link_to_address(event.actor, name_map)
+        to_link = self.link_to_address(event.destination_address, name_map)
+        amt_str = f"{pretty_rune(event.amount)}"
+
+        if event.is_deposit:
+            route = f"👤{from_link} ➡️ RUNEPool"
+        else:
+            route = f"RUNEPool ➡️ 👤{to_link}"
+
+        if event.affiliate:
+            aff_collector = self.name_service.get_affiliate_name(event.affiliate)
+            aff_collector = f'{aff_collector} ' if aff_collector else ''
+
+            aff_text = f'{aff_collector}Aff. fee: {short_dollar(event.affiliate_usd)} ' \
+                       f'({format_percent(event.affiliate_rate, 1)})\n'
+        else:
+            aff_text = ''
+
+        return (
+            f"🏦 RUNEPool {action_str}\n"
+            f"{route}\n"
+            f"Total: {amt_str} ({pretty_dollar(event.usd_amount)})\n"
+            f"{aff_text}"
+            f"{self.link_to_tx(event.tx_hash)}"
+        )

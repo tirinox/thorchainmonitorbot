@@ -25,6 +25,7 @@ from services.models.node_info import AlertNodeChurn
 from services.models.pol import AlertPOL
 from services.models.pool_info import PoolChanges, PoolMapPair
 from services.models.price import AlertPrice
+from services.models.runepool import AlertRunePoolAction
 from services.models.s_swap import AlertSwapStart
 from services.models.savers import AlertSaverStats
 from services.models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
@@ -89,6 +90,8 @@ class AlertPresenter(INotified, WithLogger):
             await self._handle_trace_account_move(data)
         elif isinstance(data, AlertTradeAccountStats):
             await self._handle_trace_account_summary(data)
+        elif isinstance(data, AlertRunePoolAction):
+            await self._handle_runepool_action(data)
 
     async def load_names(self, addresses) -> NameMap:
         if isinstance(addresses, str):
@@ -287,4 +290,12 @@ class AlertPresenter(INotified, WithLogger):
         await self.deps.broadcaster.notify_preconfigured_channels(
             BaseLocalization.notification_text_trade_account_summary,
             data,
+        )
+
+    async def _handle_runepool_action(self, data: AlertRunePoolAction):
+        name_map = await self.load_names([data.actor, data.destination_address])
+        await self.deps.broadcaster.notify_preconfigured_channels(
+            BaseLocalization.notification_runepool_action,
+            data,
+            name_map
         )

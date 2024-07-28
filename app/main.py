@@ -33,6 +33,7 @@ from services.jobs.fetch.tx import TxFetcher
 from services.jobs.node_churn import NodeChurnDetector
 from services.jobs.scanner.loan_extractor import LoanExtractorBlock
 from services.jobs.scanner.native_scan import NativeScannerBlock
+from services.jobs.scanner.runepool import RunePoolEventDecoder
 from services.jobs.scanner.swap_extractor import SwapExtractorBlock
 from services.jobs.scanner.swap_routes import SwapRouteRecorder
 from services.jobs.scanner.trade_acc import TradeAccEventDecoder
@@ -82,6 +83,7 @@ from services.notify.types.pool_churn_notify import PoolChurnNotifier
 from services.notify.types.price_div_notify import PriceDivergenceNotifier
 from services.notify.types.price_notify import PriceNotifier
 from services.notify.types.queue_notify import QueueNotifier, QueueStoreMetrics
+from services.notify.types.runepool_notify import RunePoolTransactionNotifier
 from services.notify.types.s_swap_notify import StreamingSwapStartTxNotifier
 from services.notify.types.savers_stats_notify import SaversStatsNotifier
 from services.notify.types.stats_notify import NetworkStatsNotifier
@@ -584,6 +586,18 @@ class App(WithLogger):
                 d.tr_acc_summary_notifier.add_subscriber(d.alert_presenter)
                 d.trade_acc_fetcher.add_subscriber(d.tr_acc_summary_notifier)
                 d.trade_acc_fetcher.add_subscriber(achievements)
+
+        if d.cfg.get('runepool.enabled', True):
+            runepool_decoder = RunePoolEventDecoder(d.db, d.price_holder)
+            d.block_scanner.add_subscriber(runepool_decoder)
+
+            runepool_decoder.add_subscriber(d.volume_recorder)
+            runepool_decoder.add_subscriber(d.tx_count_recorder)
+
+            runepool_not = RunePoolTransactionNotifier(d)
+            runepool_decoder.add_subscriber(runepool_not)
+            runepool_not.add_subscriber(d.alert_presenter)
+            # notifier todo!
 
         # -------- SCHEDULER --------
 

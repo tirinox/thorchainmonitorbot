@@ -608,7 +608,7 @@ lending:
 
 
 
-trade_accounts:  # (!) new
+trade_accounts:
   enabled: true
   min_usd_total: 100000
   cooldown: 10m
@@ -619,3 +619,10 @@ trade_accounts:  # (!) new
     fetch_period: 5m
     cooldown: 7d
     tally_period: 7d
+
+
+runepool:  # (!) new
+  enabled: true
+  min_usd_total: 1000
+  cooldown: 10m
+  cooldown_capacity: 5  # how many times accept an event before trigger cooldown
