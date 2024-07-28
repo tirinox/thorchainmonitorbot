@@ -47,7 +47,7 @@ class TxCountRecorder(INotified, WithLogger):
             TxMetricType.STREAMING: DailyActiveUserCounter(r, 'StreamingSwaps'),
             TxMetricType.WITHDRAW_LIQUIDITY: DailyActiveUserCounter(r, 'Withdraw'),
             TxMetricType.ADD_LIQUIDITY: DailyActiveUserCounter(r, 'AddLiquidity'),
-            TxMetricType.RUNEPOOL_DEPOSIT: DailyActiveUserCounter(r, 'RunePoolDeposit'),
+            TxMetricType.RUNEPOOL_ADD: DailyActiveUserCounter(r, 'RunePoolDeposit'),
             TxMetricType.RUNEPOOL_WITHDRAW: DailyActiveUserCounter(r, 'RunePoolWithdraw'),
         }
         self._deduplicator = TxDeduplicator(deps.db, 'TxCount')
