@@ -39,6 +39,7 @@ class RunePoolEventDecoder(WithLogger, INotified, WithDelegates):
         for event in unique_events:
             self.logger.info(f'Rune pool events: {event}')
             await self.pass_data_to_listeners(event)
+
         return unique_events
 
     def _convert_tx_to_event(self, tx: NativeThorTx, memo: THORMemo, height) -> List[AlertRunePoolAction]:

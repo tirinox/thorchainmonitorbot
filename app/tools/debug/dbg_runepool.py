@@ -4,8 +4,10 @@ import pprint
 from localization.eng_base import BaseLocalization
 from services.jobs.scanner.native_scan import NativeScannerBlock
 from services.jobs.scanner.runepool import RunePoolEventDecoder
+from services.jobs.volume_recorder import VolumeRecorder, TxCountRecorder
 from services.models.memo import THORMemo
 from services.models.runepool import AlertRunePoolAction
+from services.notify.types.runepool_notify import RunePoolTransactionNotifier
 from tools.lib.lp_common import LpAppFramework
 
 prepared = False
@@ -14,9 +16,15 @@ prepared = False
 async def prepare_once(app):
     global prepared
     if not prepared:
-        await app.deps.pool_fetcher.reload_global_pools()
-        await app.deps.last_block_fetcher.run_once()
-        await app.deps.mimir_const_fetcher.run_once()
+        d = app.deps
+        d.block_scanner = NativeScannerBlock(d)
+
+        d.volume_recorder = VolumeRecorder(d)
+        d.tx_count_recorder = TxCountRecorder(d)
+
+        await d.pool_fetcher.reload_global_pools()
+        await d.last_block_fetcher.run_once()
+        await d.mimir_const_fetcher.run_once()
         prepared = True
 
 
@@ -69,12 +77,38 @@ async def demo_simulate_withdrawal(app: LpAppFramework):
     await app.test_all_locs(BaseLocalization.notification_runepool_action, None, event, name_map)
 
 
+async def demo_runepool_continuous(app: LpAppFramework, b=0):
+    await prepare_once(app)
+
+    d = app.deps
+    d.block_scanner = NativeScannerBlock(d, last_block=b)
+    d.block_scanner.one_block_per_run = b > 0
+
+    runepool_decoder = RunePoolEventDecoder(d.db, d.price_holder)
+    d.block_scanner.add_subscriber(runepool_decoder)
+
+    runepool_decoder.add_subscriber(d.volume_recorder)
+    runepool_decoder.add_subscriber(d.tx_count_recorder)
+
+    runepool_not = RunePoolTransactionNotifier(d)
+    runepool_decoder.add_subscriber(runepool_not)
+    runepool_not.add_subscriber(d.alert_presenter)
+
+    runepool_decoder.sleep_period = 60
+    runepool_decoder.initial_sleep = 0
+    d.block_scanner.add_subscriber(runepool_decoder)
+
+    await d.block_scanner.run()
+    await asyncio.sleep(5.0)
+
+
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
         # await demo_decode_runepool_deposit(app, DEPOSIT_TX_HEIGHT_1)
-        await demo_decode_runepool_deposit(app, DEPOSIT_TX_HEIGHT_2)
+        # await demo_decode_runepool_deposit(app, DEPOSIT_TX_HEIGHT_2)
         # await demo_simulate_withdrawal(app)
+        await demo_runepool_continuous(app, b=DEPOSIT_TX_HEIGHT_1)
 
 
 if __name__ == '__main__':

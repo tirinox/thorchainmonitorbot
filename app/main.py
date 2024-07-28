@@ -530,13 +530,13 @@ class App(WithLogger):
                 wallet_counter.add_subscriber(achievements)
 
         if d.cfg.get('pol.enabled', True):
-            pol_fetcher = RunePoolFetcher(d)
-            tasks.append(pol_fetcher)
+            runepool_fetcher = RunePoolFetcher(d)
+            tasks.append(runepool_fetcher)
             d.pol_notifier = POLNotifier(d)
-            pol_fetcher.add_subscriber(d.pol_notifier)
+            runepool_fetcher.add_subscriber(d.pol_notifier)
             d.pol_notifier.add_subscriber(d.alert_presenter)
             if achievements_enabled:
-                pol_fetcher.add_subscriber(achievements)
+                runepool_fetcher.add_subscriber(achievements)
 
         if d.cfg.get('key_metrics.enabled', True):
             metrics_fetcher = KeyStatsFetcher(d)
@@ -597,7 +597,6 @@ class App(WithLogger):
             runepool_not = RunePoolTransactionNotifier(d)
             runepool_decoder.add_subscriber(runepool_not)
             runepool_not.add_subscriber(d.alert_presenter)
-            # notifier todo!
 
         # -------- SCHEDULER --------
 
