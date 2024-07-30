@@ -326,10 +326,13 @@ class MyWalletsMenu(DialogWithSettings):
 
         # ---------------------------- ROW 1 ------------------------------
         row1 = []
-        if my_pools:
-            # Summary button (only if there are LP pools)
-            row1.append(InlineKeyboardButton(self.loc.BUTTON_SM_SUMMARY,
-                                             callback_data=f'{self.QUERY_SUMMARY_OF_ADDRESS}:{addr_idx}'))
+
+        # No summary button...
+
+        # if my_pools:
+        #     # Summary button (only if there are LP pools)
+        #     row1.append(InlineKeyboardButton(self.loc.BUTTON_SM_SUMMARY,
+        #                                      callback_data=f'{self.QUERY_SUMMARY_OF_ADDRESS}:{addr_idx}'))
 
         if not external:
             # Wallet settings
