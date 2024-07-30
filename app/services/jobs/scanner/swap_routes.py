@@ -8,6 +8,7 @@ from services.lib.logs import WithLogger
 from services.lib.money import pretty_dollar
 from services.models.key_stats_model import SwapRouteEntry
 from services.models.tx import ThorTx
+from services.notify.dup_stop import TxDeduplicator
 
 ROUTE_SEP = '=='
 
@@ -20,6 +21,7 @@ class SwapRouteRecorder(WithLogger, INotified):
         self.days_to_keep = 60
         self.clear_every_ticks = 10
         self._clear_counter = 0
+        self._dedup = TxDeduplicator(db, 'route:seen_tx')
 
     @staticmethod
     def _date_format(date):
@@ -61,7 +63,7 @@ class SwapRouteRecorder(WithLogger, INotified):
 
         # convert to SwapRouteEntry
         top_routes = [
-            SwapRouteEntry(from_asset=from_asset, to_asset=to_asset, volume_cacao=volume)
+            SwapRouteEntry(from_asset=from_asset, to_asset=to_asset, volume_rune=volume)
             for (from_asset, to_asset), volume in top_routes
         ]
 
@@ -92,19 +94,6 @@ class SwapRouteRecorder(WithLogger, INotified):
                 self._clear_counter = 0
                 await self.clear_old_events(self.days_to_keep)
 
-    @property
-    def key_counted_routes(self):
-        return f"{self.key_prefix}:route:counted_routes"
-
-    async def is_registered(self, tx_id):
-        return await self.redis.sismember(self.key_counted_routes, tx_id)
-
-    async def register(self, tx_id):
-        await self.redis.sadd(self.key_counted_routes, tx_id)
-
-    async def clear_registered(self):
-        await self.redis.delete(self.key_counted_routes)
-
     async def on_data(self, sender, data: List[ThorTx]):
         for tx in data:
             if not tx.meta_swap:
@@ -114,7 +103,7 @@ class SwapRouteRecorder(WithLogger, INotified):
                 self.logger.warning(f"Skip tx {tx.tx_hash} with zero RUNE amount")
                 continue
 
-            if await self.is_registered(tx.tx_hash):
+            if await self._dedup.have_ever_seen_hash(tx.tx_hash):
                 continue
 
             await self.store_swap_event(
@@ -124,7 +113,7 @@ class SwapRouteRecorder(WithLogger, INotified):
                 datetime.utcfromtimestamp(tx.date_timestamp)
             )
 
-            await self.register(tx.tx_hash)
+            await self._dedup.mark_as_seen(tx.tx_hash)
 
         # Sometimes we need to clear old dates
         await self._clear_routes_if_needed()
