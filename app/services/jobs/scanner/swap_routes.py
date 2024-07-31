@@ -6,6 +6,7 @@ from services.lib.db import DB
 from services.lib.delegates import INotified
 from services.lib.logs import WithLogger
 from services.lib.money import pretty_dollar
+from services.models.asset import normalize_asset
 from services.models.key_stats_model import SwapRouteEntry
 from services.models.tx import ThorTx
 from services.notify.dup_stop import TxDeduplicator
@@ -39,7 +40,9 @@ class SwapRouteRecorder(WithLogger, INotified):
         await self.redis.hincrbyfloat(key, "volume", volume)
         self.logger.debug(f"Stored swap event: {route} {pretty_dollar(volume)} at {dt}")
 
-    async def get_top_swap_routes_by_volume(self, days=7, top_n=3) -> List[SwapRouteEntry]:
+    async def get_top_swap_routes_by_volume(self, days=7, top_n=3,
+                                            normalize_assets=False,
+                                            reorder_assets=False) -> List[SwapRouteEntry]:
         end_time = datetime.now()
         start_time = end_time - timedelta(days=days)
         date_range = [start_time + timedelta(days=i) for i in range(days + 1)]
@@ -56,6 +59,16 @@ class SwapRouteRecorder(WithLogger, INotified):
                 volume = float(await self.redis.hget(key, "volume") or 0)
 
                 from_asset, to_asset = route.split(ROUTE_SEP)
+
+                if normalize_assets:
+                    # converts trade/synth asset to base asset
+                    from_asset = normalize_asset(from_asset)
+                    to_asset = normalize_asset(to_asset)
+
+                if reorder_assets and from_asset > to_asset:
+                    # reversed and straight routes are the same
+                    from_asset, to_asset = to_asset, from_asset
+
                 route_volume[(from_asset, to_asset)] += volume
 
         # Get the top N routes by volume

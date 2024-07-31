@@ -1,19 +1,17 @@
 import asyncio
 import logging
-import os
 import pickle
 
 from localization.languages import Language
 from services.dialog.picture.key_stats_picture import KeyStatsPictureGenerator
 from services.jobs.fetch.flipside import FlipSideConnector, FSList
-from services.jobs.fetch.flipside.urls import FS_LATEST_EARNINGS_URL, FS_LATEST_SWAP_VOL_URL, \
-    FS_LATEST_SWAP_AFF_FEE_URL, FS_LATEST_SWAP_COUNT_URL, FS_LATEST_SWAP_PATH_URL, FS_LATEST_LOCKED_RUNE_URL
+from services.jobs.fetch.flipside.urls import *
 from services.jobs.fetch.key_stats import KeyStatsFetcher
 from services.jobs.user_counter import UserCounterMiddleware
 from services.jobs.volume_recorder import TxCountRecorder, VolumeRecorder
 from services.lib.delegates import INotified
 from services.lib.texts import sep
-from services.models.flipside import FSSwapRoutes, FSAffiliateCollectors, FSFees, FSSwapVolume, FSSwapCount, \
+from services.models.flipside import FSAffiliateCollectors, FSFees, FSSwapVolume, FSSwapCount, \
     FSLockedValue, AlertKeyStats
 from services.notify.types.key_metrics_notify import KeyMetricsNotifier
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
@@ -34,7 +32,6 @@ async def demo_load_single_fs_list(app: LpAppFramework):
         (FS_LATEST_SWAP_VOL_URL, FSSwapVolume),
         (FS_LATEST_SWAP_AFF_FEE_URL, FSAffiliateCollectors),
         (FS_LATEST_LOCKED_RUNE_URL, FSLockedValue),
-        (FS_LATEST_SWAP_PATH_URL, FSSwapRoutes),
         (FS_LATEST_SWAP_COUNT_URL, FSSwapCount)
     ]
 
@@ -54,7 +51,7 @@ async def demo_load_single_fs_list(app: LpAppFramework):
 
 
 class FlipSideSaver(INotified):
-    DEFAULT_FILENAME = '../temp/fs_key_metrics_v5.pickle'
+    DEFAULT_FILENAME = '../temp/fs_key_metrics_v7.pickle'
 
     def __init__(self, filename=DEFAULT_FILENAME) -> None:
         super().__init__()
@@ -111,7 +108,7 @@ async def demo_analyse_and_show(app: LpAppFramework):
 
 async def show_picture(app: LpAppFramework, data):
     # loc = app.deps.loc_man.default
-    loc = app.deps.loc_man[Language.RUSSIAN]
+    loc = app.deps.loc_man[Language.ENGLISH]
 
     pic_gen = KeyStatsPictureGenerator(loc, data)
     pic, name = await pic_gen.get_picture()
@@ -126,12 +123,7 @@ async def demo_picture(app: LpAppFramework):
     data = loader.load_data()
     if not data:
         await demo_analyse_and_show(app)
-        data = loader.load_data()
-
-    sep()
-    print('Data loaded')
-
-    await show_picture(app, data)
+        return
 
 
 async def debug_locked_value(app: LpAppFramework):
@@ -152,8 +144,8 @@ async def main():
         await lp_app.deps.last_block_fetcher.run_once()
         # await lp_app.prepare(brief=True)
 
-        await demo_analyse_and_show(lp_app)
-        # await demo_picture(lp_app)
+        # await demo_analyse_and_show(lp_app)
+        await demo_picture(lp_app)
         # await demo_new_flipside_sql(lp_app)
         # await demo_load(lp_app)
         # await demo_new_flipside_swap_routes(lp_app)

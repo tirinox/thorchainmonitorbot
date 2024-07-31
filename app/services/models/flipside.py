@@ -7,6 +7,7 @@ from typing import NamedTuple, List
 
 from services.jobs.fetch.flipside.flipside import FSList, KEY_DATETIME
 from services.lib.constants import STABLE_COIN_POOLS_ALL, thor_to_float
+from services.models.key_stats_model import SwapRouteEntry
 from services.models.pool_info import PoolInfoMap
 
 
@@ -246,7 +247,7 @@ class AlertKeyStats:
     series: FSList
     current: KeyStats
     previous: KeyStats
-    routes: List[FSSwapRoutes]
+    routes: List[SwapRouteEntry]
     days: int = 7
 
     @property
@@ -288,7 +289,7 @@ class AlertKeyStats:
     def swap_routes(self):
         collectors = defaultdict(float)
         for obj in self.routes:
-            collectors[(obj.asset_from, obj.asset_to)] += obj.swap_volume
+            collectors[(obj.from_asset, obj.to_asset)] += obj.volume_rune
         return list(sorted(collectors.items(), key=operator.itemgetter(1), reverse=True))
 
     @cached_property

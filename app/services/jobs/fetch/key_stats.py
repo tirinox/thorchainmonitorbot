@@ -6,6 +6,7 @@ from services.jobs.fetch.base import BaseFetcher
 from services.jobs.fetch.flipside.flipside import FlipSideConnector, FSList
 from services.jobs.fetch.flipside.urls import *
 from services.jobs.fetch.pool_price import PoolFetcher
+from services.jobs.scanner.swap_routes import SwapRouteRecorder
 from services.jobs.user_counter import UserCounterMiddleware
 from services.jobs.volume_recorder import VolumeRecorder, TxCountRecorder
 from services.lib.date_utils import parse_timespan_to_seconds, DAY
@@ -26,6 +27,8 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         super().__init__(deps, sleep_period)
         self._fs = FlipSideConnector(deps.session, deps.cfg.flipside.api_key)
         self.tally_days_period = deps.cfg.as_int('key_metrics.tally_period_days', 7)
+
+        self._swap_route_recorder = SwapRouteRecorder(deps.db)
 
         # x3 days (this week + previous week + spare days)
         self.trim_max_days = deps.cfg.as_int('key_metrics.trim_max_days', self.tally_days_period * 3)
@@ -65,8 +68,14 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         fs_series = await self.get_flipside_series()
 
         # Swap routes
-        routes = await self._fs.request_daily_series_v2(FS_LATEST_SWAP_PATH_URL, FSSwapRoutes)
-        routes = routes.most_recent
+        # routes = await self._fs.request_daily_series_v2(FS_LATEST_SWAP_PATH_URL, FSSwapRoutes)
+        # routes = routes.most_recent
+        routes = await self._swap_route_recorder.get_top_swap_routes_by_volume(
+            self.tally_days_period,
+            top_n=10,
+            normalize_assets=True,
+            reorder_assets=True,
+        )
 
         # Done. Construct the resulting event
         return AlertKeyStats(
