@@ -43,19 +43,27 @@ class BasePictureGenerator(WithLogger, abc.ABC):
     def _get_picture_sync(self):
         return None
 
+    @classmethod
+    def text_and_change(cls, old_v, new_v, draw, x, y, text, font_main, font_second, fill='#fff',
+                        x_shift=20, y_shift=6, right_of_text=True):
+        size_x = 0
+        if text:
+            draw.text((x, y), text, font=font_main, fill=fill, anchor='lm')
+            if right_of_text:
+                size_x, _ = font_estimate_size(font_main, text)
+
+        cls.draw_text_change(old_v, new_v, draw,
+                             x=x + size_x + x_shift, y=y + y_shift,
+                             font=font_second)
+
     @staticmethod
-    def text_and_change(old_v, new_v, draw, x, y, text, font_main, font_second, fill='#fff',
-                        x_shift=20, y_shift=6):
-        draw.text((x, y), text, font=font_main, fill=fill, anchor='lm')
-
+    def draw_text_change(old_v, new_v, draw, x, y, font, min_change_pct=0.1, anchor='lm'):
         percent = calc_percent_change(old_v, new_v)
-
-        size_x, _ = font_estimate_size(font_main, text)
-        if abs(percent) > 0.1:
+        if abs(percent) > min_change_pct:
             draw.text(
-                (x + size_x + x_shift, y + y_shift),
+                (int(x), int(y)),
                 bracketify(short_money(percent, postfix='%', signed=True)),
-                anchor='lm', fill=result_color(percent), font=font_second
+                anchor=anchor, fill=result_color(percent), font=font
             )
 
 

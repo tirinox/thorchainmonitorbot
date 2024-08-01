@@ -1019,6 +1019,10 @@ class RussianLocalization(BaseLocalization):
     TEXT_PIC_STATS_TOP_SWAP_ROUTES = 'Топ 3 пути обмена'
     TEXT_PIC_STATS_ORGANIC_VS_BLOCK_REWARDS = 'Комиссии / награды блока'
 
+    TEXT_PIC_STATS_SYNTH = 'синты'
+    TEXT_PIC_STATS_TRADE = 'торг.'
+    TEXT_PIC_STATS_NORMAL = 'обычные'
+
     @staticmethod
     def text_key_stats_period(start_date: datetime, end_date: datetime):
         date_format = '%d %B %Y'

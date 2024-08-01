@@ -8,12 +8,16 @@ from services.dialog.picture.common import BasePictureGenerator
 from services.dialog.picture.resources import Resources
 from services.lib.constants import BTC_SYMBOL, ETH_SYMBOL, ETH_USDC_SYMBOL, ETH_USDT_SYMBOL
 from services.lib.draw_utils import paste_image_masked, TC_LIGHTNING_BLUE, TC_YGGDRASIL_GREEN, \
-    dual_side_rect, COLOR_OF_PROFIT, font_estimate_size
-from services.lib.money import pretty_money, short_dollar, format_percent
+    COLOR_OF_PROFIT, font_estimate_size, distribution_bar_chart, TC_MIDGARD_TURQOISE
+from services.lib.money import pretty_money, short_dollar, format_percent, pretty_dollar, short_money
 from services.lib.texts import bracketify
 from services.lib.utils import async_wrap
 from services.models.asset import Asset
 from services.models.flipside import AlertKeyStats
+from services.models.vol_n import TxMetricType
+
+BAR_WIDTH = 514
+BAR_HEIGHT = 12
 
 
 class KeyStatsPictureGenerator(BasePictureGenerator):
@@ -58,11 +62,7 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         organic_ratio = e.organic_ratio
         aff_collectors = e.top_affiliate_daily
 
-        swap_count, prev_swap_count = e.swap_count_curr_prev
-        usd_volume, prev_usd_volume = e.usd_volume_curr_prev
         unique_swap, prev_unique_swap = e.current.swapper_count, e.previous.swapper_count
-
-        swap_routes = e.swap_routes
 
         # prepare painting stuff
         image = self.bg.copy()
@@ -121,51 +121,35 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
             self.text_and_change(old_v, new_v, draw, text_x, y,
                                  text, coin_font, font_small_n)
 
-        # helper:
-
-        def _indicator(_x, _y, name, text_value, old_value, new_value, _margin=72):
-            draw.text((_x, _y),
-                      name,
-                      anchor='lt', fill='#fff',
-                      font=font_indicator_name)
-
-            if text_value:
-                self.text_and_change(
-                    old_value, new_value,
-                    draw, _x, _y + _margin,
-                    text_value,
-                    coin_font, font_small_n
-                )
-
         # ------- total native asset pooled -------
 
         margin, delta_y = 78, 160
         y = 888
 
-        _indicator(100, y, loc.TEXT_PIC_STATS_NATIVE_ASSET_POOLED,
-                   short_dollar(curr_lock.total_value_pooled_usd),
-                   prev_lock.total_value_pooled_usd, curr_lock.total_value_pooled_usd)
+        self._indicator(draw, 100, y, loc.TEXT_PIC_STATS_NATIVE_ASSET_POOLED,
+                        short_dollar(curr_lock.total_value_pooled_usd),
+                        prev_lock.total_value_pooled_usd, curr_lock.total_value_pooled_usd)
 
         # ------- total network security usd -------
 
-        _indicator(100, y + delta_y, loc.TEXT_PIC_STATS_NETWORK_SECURITY,
-                   short_dollar(curr_lock.total_value_bonded_usd),
-                   prev_lock.total_value_bonded_usd, curr_lock.total_value_bonded_usd)
+        self._indicator(draw, 100, y + delta_y, loc.TEXT_PIC_STATS_NETWORK_SECURITY,
+                        short_dollar(curr_lock.total_value_bonded_usd),
+                        prev_lock.total_value_bonded_usd, curr_lock.total_value_bonded_usd)
 
         # 2. Block
         # -------- protocol revenue -----
 
         x = 769
 
-        _indicator(x, 442,
-                   loc.TEXT_PIC_STATS_PROTOCOL_REVENUE,
-                   short_dollar(total_revenue_usd),
-                   prev_total_revenue_usd, total_revenue_usd)
+        self._indicator(draw, x, 442,
+                        loc.TEXT_PIC_STATS_PROTOCOL_REVENUE,
+                        short_dollar(total_revenue_usd),
+                        prev_total_revenue_usd, total_revenue_usd)
 
-        _indicator(x, 623,
-                   loc.TEXT_PIC_STATS_AFFILIATE_REVENUE,
-                   short_dollar(aff_fee_usd),
-                   prev_aff_fee_usd, aff_fee_usd)
+        self._indicator(draw, x, 623,
+                        loc.TEXT_PIC_STATS_AFFILIATE_REVENUE,
+                        short_dollar(aff_fee_usd),
+                        prev_aff_fee_usd, aff_fee_usd)
 
         # ----- top 3 affiliates table -----
 
@@ -206,9 +190,12 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
 
         y_p, y_bar = 1142, 1105
 
-        dual_side_rect(draw, x, y_bar, x_right, y_bar + 14,
-                       liq_fee_usd, block_rewards_usd,
-                       TC_YGGDRASIL_GREEN, TC_LIGHTNING_BLUE)
+        distribution_bar_chart(
+            draw,
+            [liq_fee_usd, block_rewards_usd],
+            x, y_bar, width=BAR_WIDTH, height=BAR_HEIGHT,
+            palette=[TC_YGGDRASIL_GREEN, TC_LIGHTNING_BLUE], gap=6
+        )
 
         draw.text((x, y_p),
                   format_percent(organic_ratio, 1, threshold=0.0),
@@ -228,42 +215,67 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
 
         # ---- unique swappers -----
 
-        _indicator(x, y,
-                   loc.TEXT_PIC_STATS_UNIQUE_SWAPPERS,
-                   pretty_money(unique_swap),
-                   prev_unique_swap, unique_swap)
+        self._indicator(draw, x, y,
+                        loc.TEXT_PIC_STATS_UNIQUE_SWAPPERS,
+                        pretty_money(unique_swap),
+                        prev_unique_swap, unique_swap)
 
         # ---- count of swaps ----
 
         y += 159
-
-        _indicator(x, y,
-                   loc.TEXT_PIC_STATS_NUMBER_OF_SWAPS,
-                   pretty_money(swap_count),
-                   prev_swap_count, swap_count)
-
-        # ---- swap volume -----
-
-        y += 159
-
-        _indicator(x, y,
-                   loc.TEXT_PIC_STATS_USD_VOLUME,
-                   short_dollar(usd_volume),
-                   prev_usd_volume, usd_volume)
+        self._draw_swap_stats_block(draw, x, y)
 
         # ---- routes ----
 
-        y += 159
+        y += 350
+
+        self._draw_routes(draw, n_max, x, y)
+
+        return image
+
+    def _indicator(self, draw, _x, _y, name, text_value, old_value, new_value, _margin=72, under=True):
+        font_coin = self.r.fonts.get_font_bold(54)
+        font_small_n = self.r.fonts.get_font(34)
+        font_indicator_name = self.r.fonts.get_font(42)
+
+        draw.text((_x, _y),
+                  name,
+                  anchor='lt', fill='#fff',
+                  font=font_indicator_name)
+
+        if text_value:
+            if under:
+                x = _x
+                y = _y + _margin
+                x_shift, y_shift = 20, 6
+            else:
+                x = _x + _margin
+                y = _y
+                x_shift, y_shift = 100, 0
+
+            self.text_and_change(
+                old_value, new_value,
+                draw, x, y,
+                text_value,
+                font_coin, font_small_n,
+                x_shift=x_shift, y_shift=y_shift,
+            )
+
+    def _draw_routes(self, draw, n_max, x, y):
+        font_small_n = self.r.fonts.get_font(34)
+        font_routes = self.r.fonts.get_font_bold(40)
+        font_indicator_name = self.r.fonts.get_font(42)
+
+        y_margin = 60
 
         draw.text((x, y),
-                  loc.TEXT_PIC_STATS_TOP_SWAP_ROUTES,
+                  self.loc.TEXT_PIC_STATS_TOP_SWAP_ROUTES,
                   fill='#fff',
                   font=font_indicator_name)
 
         y += 60
-        y_margin = 60
 
-        font_routes = r.fonts.get_font_bold(40)
+        swap_routes = self.event.swap_routes
         for i, ((label_left, label_right), count) in zip(range(1, n_max + 1), swap_routes):
             l_asset, r_asset = Asset(label_left), Asset(label_right)
 
@@ -283,4 +295,100 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
 
             y += y_margin
 
-        return image
+    def get_swap_info_prev_curr(self, metric, is_count):
+        attr_name = 'swap_count' if is_count else 'swap_vol'
+
+        prev_total, curr_total = (
+            getattr(self.event.previous, attr_name)[metric],
+            getattr(self.event.current, attr_name)[metric]
+        )
+
+        if metric == TxMetricType.SWAP:
+            # we must subtract synth and trade swap metrics from total swaps
+            prev_synth, curr_synth = self.get_swap_info_prev_curr(attr_name, TxMetricType.SWAP_SYNTH)
+            prev_trade, curr_trade = self.get_swap_info_prev_curr(attr_name, TxMetricType.TRADE_SWAP)
+            return (
+                prev_total - prev_synth - prev_trade,
+                curr_total - curr_synth - curr_trade
+            )
+        else:
+            return prev_total, curr_total
+
+    def _draw_swap_stats_block(self, draw, x, y):
+        loc = self.loc
+
+        # ----- SWAP VOLUME -----
+
+        usd_volume, prev_usd_volume = self.event.usd_volume_curr_prev
+        self._indicator(draw, x, y,
+                        self.loc.TEXT_PIC_STATS_USD_VOLUME,
+                        short_dollar(usd_volume),
+                        prev_usd_volume, usd_volume)
+
+        # ----- HORIZONTAL SWAP VOL DISTRIBUTION CHART -----
+
+        y += 150
+
+        prev_vol_synth, curr_vol_synth = self.get_swap_info_prev_curr(TxMetricType.SWAP_SYNTH, is_count=False)
+        prev_vol_trade, curr_vol_trade = self.get_swap_info_prev_curr(TxMetricType.TRADE_SWAP, is_count=False)
+        prev_vol_normal, curr_vol_normal = self.get_swap_info_prev_curr(TxMetricType.SWAP, is_count=False)
+
+        prev_count_synth, curr_count_synth = self.get_swap_info_prev_curr(TxMetricType.SWAP_SYNTH, is_count=True)
+        prev_count_trade, curr_count_trade = self.get_swap_info_prev_curr(TxMetricType.TRADE_SWAP, is_count=True)
+        prev_count_normal, curr_count_normal = self.get_swap_info_prev_curr(TxMetricType.SWAP, is_count=True)
+
+        palette = [TC_YGGDRASIL_GREEN, TC_MIDGARD_TURQOISE, TC_LIGHTNING_BLUE]
+        distribution_bar_chart(
+            draw,
+            # values=[swap_n_normal, swap_n_synth, swap_n_trade],
+            values=[curr_count_normal, curr_count_synth, curr_count_trade],
+            x=x, y=y, width=BAR_WIDTH, height=BAR_HEIGHT,
+            palette=palette,
+            gap=6,
+        )
+
+        # ----- CHART LABELS -----
+
+        y += 49
+
+        font = self.r.fonts.get_font_bold(32)
+
+        x_normal = x
+        x_synth = x + BAR_WIDTH // 2
+        x_trade = x + BAR_WIDTH
+
+        draw.text((x_normal, y), loc.TEXT_PIC_STATS_NORMAL, fill=palette[0], font=font, anchor='ls')
+        draw.text((x_synth, y), loc.TEXT_PIC_STATS_SYNTH, fill=palette[1], font=font, anchor='ms')
+        draw.text((x_trade, y), loc.TEXT_PIC_STATS_TRADE, fill=palette[2], font=font, anchor='rs')
+
+        font_small_n = self.r.fonts.get_font(24)
+        coin_font = self.r.fonts.get_font_bold(40)
+
+        # ---- TX COUNTERS ----
+
+        y += 35
+        font_tx_count = self.r.fonts.get_font(27)
+        draw.text((x_normal, y), f'{short_money(curr_count_normal, integer=True)} txs', font=font_tx_count,
+                  anchor='ls',
+                  fill=palette[0])
+        draw.text((x_synth, y), f'{short_money(curr_count_synth, integer=True)} txs', font=font_tx_count,
+                  anchor='ms',
+                  fill=palette[1])
+        draw.text((x_trade, y), f'{short_money(curr_count_trade, integer=True)} txs', font=font_tx_count,
+                  anchor='rs',
+                  fill=palette[2])
+
+        # ---- TX VOLUME FIGURES ----
+
+        y += 44
+        draw.text((x_normal, y), short_dollar(curr_vol_normal), font=coin_font, fill=palette[0], anchor='ls')
+        draw.text((x_synth, y), short_dollar(curr_vol_synth), font=coin_font, fill=palette[1], anchor='ms')
+        draw.text((x_trade, y), short_dollar(curr_vol_trade), font=coin_font, fill=palette[2], anchor='rs')
+
+        # ---- TX VOLUME CHANGE ----
+
+        y += 32
+        self.draw_text_change(prev_vol_synth, curr_vol_synth, draw, x_synth, y, font_small_n, anchor='ms')
+        self.draw_text_change(prev_vol_normal, curr_vol_normal, draw, x_normal, y, font_small_n, anchor='ls')
+        self.draw_text_change(prev_vol_trade, curr_vol_trade, draw, x_trade, y, font_small_n, anchor='rs')
+

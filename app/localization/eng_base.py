@@ -1266,6 +1266,10 @@ class BaseLocalization(ABC):  # == English
     TEXT_PIC_STATS_TOP_SWAP_ROUTES = 'Top 3 Swap Routes'
     TEXT_PIC_STATS_ORGANIC_VS_BLOCK_REWARDS = 'Organic Fees vs Block Rewards'
 
+    TEXT_PIC_STATS_SYNTH = 'synth'
+    TEXT_PIC_STATS_TRADE = 'trade'
+    TEXT_PIC_STATS_NORMAL = 'ordinary'
+
     @staticmethod
     def text_key_stats_period(start_date: datetime, end_date: datetime):
         date_format = '%d %B %Y'

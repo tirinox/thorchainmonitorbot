@@ -587,6 +587,29 @@ def dual_side_rect(draw: ImageDraw, x1, y1, x2, y2, a, b, a_color='#0f0', b_colo
     )
 
 
+def distribution_bar_chart(draw: ImageDraw, values, x, y, width, height, palette=None, gap=2):
+    assert width > 0 and height > 0
+
+    n = len(values)
+    total = sum(values)
+    if total == 0:
+        return
+
+    if not palette:
+        palette = CATEGORICAL_PALETTE
+
+    total_gaps = n - 1
+    available_width = width - total_gaps * gap
+
+    x_current = x
+
+    for i, value in enumerate(values):
+        color = palette[i % len(palette)]
+        wi = int(value / total * available_width)
+        draw.rectangle((x_current, y, x_current + wi, y + height), fill=color, outline=color)
+        x_current += gap + wi
+
+
 def font_estimate_size(font, text):
     if hasattr(font, 'getsize'):
         tw, th = font.getsize(text)
