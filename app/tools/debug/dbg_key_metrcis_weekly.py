@@ -9,6 +9,7 @@ from services.jobs.fetch.flipside.urls import *
 from services.jobs.fetch.key_stats import KeyStatsFetcher
 from services.jobs.user_counter import UserCounterMiddleware
 from services.jobs.volume_recorder import TxCountRecorder, VolumeRecorder
+from services.lib.date_utils import DAY
 from services.lib.delegates import INotified
 from services.lib.texts import sep
 from services.models.flipside import FSAffiliateCollectors, FSFees, FSSwapVolume, FSSwapCount, \
@@ -133,7 +134,7 @@ async def debug_locked_value(app: LpAppFramework):
     curr = await f.get_lock_value()
     print(f'Locked value now: {curr}')
     sep()
-    prev = await f.get_lock_value(7)
+    prev = await f.get_lock_value(7 * DAY)
     print(f'Locked value 7 days ago: {prev}')
 
 

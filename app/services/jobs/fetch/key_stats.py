@@ -5,6 +5,7 @@ from aionode.types import thor_to_float
 from services.jobs.fetch.base import BaseFetcher
 from services.jobs.fetch.flipside.flipside import FlipSideConnector, FSList
 from services.jobs.fetch.flipside.urls import *
+from services.jobs.fetch.pol import RunePoolFetcher
 from services.jobs.fetch.pool_price import PoolFetcher
 from services.jobs.scanner.swap_routes import SwapRouteRecorder
 from services.jobs.user_counter import UserCounterMiddleware
@@ -13,7 +14,7 @@ from services.lib.date_utils import parse_timespan_to_seconds, DAY
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 from services.models.flipside import FSAffiliateCollectors, FSFees, FSSwapCount, FSLockedValue, FSSwapVolume, \
-    FSSwapRoutes, AlertKeyStats, KeyStats
+    AlertKeyStats, KeyStats
 from services.models.vol_n import TxCountStats
 
 
@@ -29,13 +30,18 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         self.tally_days_period = deps.cfg.as_int('key_metrics.tally_period_days', 7)
 
         self._swap_route_recorder = SwapRouteRecorder(deps.db)
+        self._runepool = RunePoolFetcher(deps)
 
         # x3 days (this week + previous week + spare days)
         self.trim_max_days = deps.cfg.as_int('key_metrics.trim_max_days', self.tally_days_period * 3)
 
+    @property
+    def tally_period_in_sec(self):
+        return self.tally_days_period * DAY
+
     async def fetch(self) -> AlertKeyStats:
         # Find block height a week ago
-        previous_block = self.deps.last_block_store.block_time_ago(self.tally_days_period * DAY)
+        previous_block = self.deps.last_block_store.block_time_ago(self.tally_period_in_sec)
 
         if previous_block < 0:
             raise ValueError(f'Previous block is negative {previous_block}!')
@@ -52,7 +58,7 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
 
         # TC's locked asset value
         prev_lock, curr_lock = await asyncio.gather(
-            self.get_lock_value(self.tally_days_period),
+            self.get_lock_value(self.tally_period_in_sec),
             self.get_lock_value()
         )
 
@@ -77,6 +83,12 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
             reorder_assets=True,
         )
 
+        # Rune pool depths:
+        curr_runepool = await self._runepool.load_runepool()
+        prev_runepool = await self._runepool.load_runepool(self.tally_period_in_sec)
+        runepool_depth = curr_runepool.providers.current_deposit_float if curr_runepool else 0.0
+        runepool_prev_depth = prev_runepool.providers.current_deposit_float if prev_runepool else 0.0
+
         # Done. Construct the resulting event
         return AlertKeyStats(
             fs_series,
@@ -95,7 +107,9 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
                 prev_swap_vol_dict,
                 swap_count.prev,
                 swapper_count=user_stats.wau_prev_weak
-            )
+            ),
+            runepool_depth=runepool_depth,
+            runepool_prev_depth=runepool_prev_depth,
         )
 
     async def get_flipside_series(self):
@@ -115,8 +129,8 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         # Merge data streams
         return FSList.combine(*data_chunks)
 
-    async def get_lock_value(self, days_ago=0) -> FSLockedValue:
-        height = self.deps.last_block_store.block_time_ago(days_ago * DAY)
+    async def get_lock_value(self, sec_ago=0) -> FSLockedValue:
+        height = self.deps.last_block_store.block_time_ago(sec_ago)
         pools = await self.deps.pool_fetcher.load_pools(height=height)
         price_holder = self.deps.price_holder.clone().update(pools)
 
@@ -127,7 +141,7 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         total_bonded_rune = sum([thor_to_float(node.bond) for node in nodes])
         total_bonded_usd = total_bonded_rune * price_holder.usd_per_rune
 
-        date = datetime.datetime.now() - datetime.timedelta(days=days_ago)
+        date = datetime.datetime.now() - datetime.timedelta(seconds=sec_ago)
 
         return FSLockedValue(
             date,
@@ -142,7 +156,7 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
     async def get_swap_volume_stats(self):
         # Volume stats
         volume_recorder: VolumeRecorder = self.deps.volume_recorder
-        seconds = self.tally_days_period * DAY
+        seconds = self.tally_period_in_sec
         curr_volume_stats, prev_volume_stats = await volume_recorder.get_previous_and_current_sum(seconds)
         return prev_volume_stats, curr_volume_stats
 

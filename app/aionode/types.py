@@ -763,6 +763,10 @@ class ThorRunePoolProviders(NamedTuple):
             current_deposit=int(j.get('current_deposit', 0)),
         )
 
+    @property
+    def current_deposit_float(self):
+        return thor_to_float(self.current_deposit)
+
 
 class ThorRunePoolReserve(NamedTuple):
     units: int

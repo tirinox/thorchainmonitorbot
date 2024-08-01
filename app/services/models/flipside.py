@@ -250,6 +250,9 @@ class AlertKeyStats:
     routes: List[SwapRouteEntry]
     days: int = 7
 
+    runepool_depth: float = 0.0
+    runepool_prev_depth: float = 0.0
+
     @property
     def end_date(self):
         return self.series.latest_date

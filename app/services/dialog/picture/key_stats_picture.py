@@ -6,10 +6,10 @@ from PIL import Image, ImageDraw
 from localization.manager import BaseLocalization
 from services.dialog.picture.common import BasePictureGenerator
 from services.dialog.picture.resources import Resources
-from services.lib.constants import BTC_SYMBOL, ETH_SYMBOL, ETH_USDC_SYMBOL, ETH_USDT_SYMBOL
+from services.lib.constants import BTC_SYMBOL, ETH_SYMBOL, ETH_USDC_SYMBOL, ETH_USDT_SYMBOL, NATIVE_RUNE_SYMBOL
 from services.lib.draw_utils import paste_image_masked, TC_LIGHTNING_BLUE, TC_YGGDRASIL_GREEN, \
     COLOR_OF_PROFIT, font_estimate_size, distribution_bar_chart, TC_MIDGARD_TURQOISE
-from services.lib.money import pretty_money, short_dollar, format_percent, pretty_dollar, short_money
+from services.lib.money import pretty_money, short_dollar, format_percent, pretty_dollar, short_money, RAIDO_GLYPH
 from services.lib.texts import bracketify
 from services.lib.utils import async_wrap
 from services.models.asset import Asset
@@ -24,6 +24,8 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
     BASE = './data'
     BG_FILE = f'{BASE}/key_weekly_stats_bg.png'
 
+    LABEL_COLOR = '#c6c6c6'
+
     def __init__(self, loc: BaseLocalization, event: AlertKeyStats):
         super().__init__(loc)
         self.bg = Image.open(self.BG_FILE)
@@ -32,20 +34,28 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         self.r = Resources()
         self.btc_logo = None
         self.eth_logo = None
-        self.usdt_logo = self.usdc_logo = self.busd_logo = None
+        self.usdt_logo = self.usdc_logo = self.busd_logo = self.rune_logo = None
 
     FILENAME_PREFIX = 'thorchain_weekly_stats'
 
     async def prepare(self):
-        self.btc_logo, self.eth_logo, self.usdt_logo, self.usdc_logo = await asyncio.gather(
+        self.btc_logo, self.eth_logo, self.usdt_logo, self.usdc_logo, self.rune_logo = await asyncio.gather(
             self.r.logo_downloader.get_or_download_logo_cached(BTC_SYMBOL),
             self.r.logo_downloader.get_or_download_logo_cached(ETH_SYMBOL),
             self.r.logo_downloader.get_or_download_logo_cached(ETH_USDT_SYMBOL),
             self.r.logo_downloader.get_or_download_logo_cached(ETH_USDC_SYMBOL),
+            self.r.logo_downloader.get_or_download_logo_cached(NATIVE_RUNE_SYMBOL),
         )
-        logo_size = int(self.btc_logo.width * 0.66)
-        self.usdc_logo.thumbnail((logo_size, logo_size))
-        self.usdt_logo.thumbnail((logo_size, logo_size))
+
+        logo_size = int(self.btc_logo.width * 0.75)
+        self.btc_logo.thumbnail((logo_size, logo_size))
+        self.eth_logo.thumbnail((logo_size, logo_size))
+
+        usd_logo_size = int(self.btc_logo.width * 0.66)
+
+        self.usdc_logo.thumbnail((usd_logo_size, usd_logo_size))
+        self.usdt_logo.thumbnail((usd_logo_size, usd_logo_size))
+        self.rune_logo.thumbnail((logo_size, logo_size))
 
     @async_wrap
     def _get_picture_sync(self):
@@ -84,7 +94,7 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
             (2048 - 378, loc.TEXT_PIC_STATS_SWAP_INFO)
         ]:
             draw.text((x, 362),
-                      caption, fill='#c6c6c6', font=subtitle_font,
+                      caption, fill=self.LABEL_COLOR, font=subtitle_font,
                       anchor='ms')  # s stands for "Baseline"
 
         # ----- Block vaults -----
@@ -97,16 +107,22 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
             (e.get_sum((BTC_SYMBOL,), previous=True), e.get_sum((BTC_SYMBOL,))),
             (e.get_sum((ETH_SYMBOL,), previous=True), e.get_sum((ETH_SYMBOL,))),
             (e.get_stables_sum(previous=True), e.get_stables_sum()),
+            (e.runepool_prev_depth, e.runepool_depth,),
         ]
-        vaults_y = [473, 622, 771]
-        postfixes = [' ₿', ' Ξ', 'usd']
-        stable_y = vaults_y[2]
+        vaults_y = [473 + i * 116 for i in range(4)]
+        postfixes = [' ₿', ' Ξ', 'usd', f' {RAIDO_GLYPH}']
 
-        paste_image_masked(image, self.btc_logo, (coin_x, 473))
-        paste_image_masked(image, self.eth_logo, (coin_x, 622))
+        paste_image_masked(image, self.btc_logo, (coin_x, vaults_y[0]))
+        paste_image_masked(image, self.eth_logo, (coin_x, vaults_y[1]))
 
-        paste_image_masked(image, self.usdt_logo, (coin_x - 20, stable_y))
-        paste_image_masked(image, self.usdc_logo, (coin_x + 20, stable_y))
+        paste_image_masked(image, self.usdt_logo, (coin_x - 20, vaults_y[2]))
+        paste_image_masked(image, self.usdc_logo, (coin_x + 20, vaults_y[2]))
+
+        paste_image_masked(image, self.rune_logo, (coin_x, vaults_y[3]))
+        vaults_y[3] += 16  # Rune is a little bit lower to get room for RUNEPool label
+
+        text_x = coin_x + 94
+        draw.text((text_x, vaults_y[3] - 30), 'RUNEPool', fill=self.LABEL_COLOR, font=font_small_n, anchor='ls')
 
         coin_font = r.fonts.get_font_bold(54)
 
@@ -116,23 +132,21 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
             else:
                 text = pretty_money(new_v, postfix=postfix)
 
-            text_x = coin_x + 110
-
             self.text_and_change(old_v, new_v, draw, text_x, y,
                                  text, coin_font, font_small_n)
 
         # ------- total native asset pooled -------
 
-        margin, delta_y = 78, 160
-        y = 888
+        y = 918
 
         self._indicator(draw, 100, y, loc.TEXT_PIC_STATS_NATIVE_ASSET_POOLED,
                         short_dollar(curr_lock.total_value_pooled_usd),
                         prev_lock.total_value_pooled_usd, curr_lock.total_value_pooled_usd)
 
         # ------- total network security usd -------
+        y += 140
 
-        self._indicator(draw, 100, y + delta_y, loc.TEXT_PIC_STATS_NETWORK_SECURITY,
+        self._indicator(draw, 100, y, loc.TEXT_PIC_STATS_NETWORK_SECURITY,
                         short_dollar(curr_lock.total_value_bonded_usd),
                         prev_lock.total_value_bonded_usd, curr_lock.total_value_bonded_usd)
 
@@ -155,7 +169,7 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
 
         draw.text((x, 780),
                   loc.TEXT_PIC_STATS_TOP_AFFILIATE,
-                  fill='#fff',
+                  fill=self.LABEL_COLOR,
                   font=font_indicator_name)
 
         n_max = 3
@@ -182,7 +196,7 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
 
         draw.text((x, 1050),
                   loc.TEXT_PIC_STATS_ORGANIC_VS_BLOCK_REWARDS,
-                  fill='#fff',
+                  fill=self.LABEL_COLOR,
                   font=r.fonts.get_font(37))
 
         font_fee = r.fonts.get_font_bold(32)
@@ -240,7 +254,7 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
 
         draw.text((_x, _y),
                   name,
-                  anchor='lt', fill='#fff',
+                  anchor='lt', fill=self.LABEL_COLOR,
                   font=font_indicator_name)
 
         if text_value:
@@ -391,4 +405,3 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         self.draw_text_change(prev_vol_synth, curr_vol_synth, draw, x_synth, y, font_small_n, anchor='ms')
         self.draw_text_change(prev_vol_normal, curr_vol_normal, draw, x_normal, y, font_small_n, anchor='ls')
         self.draw_text_change(prev_vol_trade, curr_vol_trade, draw, x_trade, y, font_small_n, anchor='rs')
-

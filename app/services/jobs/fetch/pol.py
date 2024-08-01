@@ -1,5 +1,6 @@
 from typing import List
 
+from aionode.types import ThorRunePool
 from services.jobs.fetch.base import BaseFetcher
 from services.lib.constants import bp_to_percent, thor_to_float
 from services.lib.date_utils import parse_timespan_to_seconds
@@ -31,8 +32,15 @@ class RunePoolFetcher(BaseFetcher):
         details.sort(key=lambda d: d.pool)
         return details
 
+    async def load_runepool(self, ago_sec=0) -> ThorRunePool:
+        height = 0
+        if ago_sec:
+            height = self.deps.last_block_store.block_time_ago(ago_sec)
+        runepool = await self.deps.thor_connector.query_runepool(height)
+        return runepool
+
     async def fetch(self) -> AlertPOL:
-        runepool = await self.deps.thor_connector.query_runepool()
+        runepool = await self.load_runepool()
 
         if runepool.pol.value > 0:
             membership = await self.get_reserve_membership(self.reserve_address)
