@@ -394,6 +394,18 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
 
         # ---- TX VOLUME FIGURES ----
 
+        # Little hack to make the sum of the volumes equal to the USD volume.
+        # We are not able to record all swap events correctly, but we can extract an approximate distribution.
+        # Using this distribution, we calculate the actual trading volumes of different assets.
+        recorded_volume_sum = curr_vol_normal + curr_vol_synth + curr_vol_trade
+        difference_ratio = usd_volume / recorded_volume_sum
+        curr_vol_normal = curr_vol_normal * difference_ratio
+        curr_vol_synth = curr_vol_synth * difference_ratio
+        curr_vol_trade = curr_vol_trade * difference_ratio
+        prev_vol_normal = prev_vol_normal * difference_ratio
+        prev_vol_synth = prev_vol_synth * difference_ratio
+        prev_vol_trade = prev_vol_trade * difference_ratio
+
         y += 44
         draw.text((x_normal, y), short_dollar(curr_vol_normal), font=coin_font, fill=palette[0], anchor='ls')
         draw.text((x_synth, y), short_dollar(curr_vol_synth), font=coin_font, fill=palette[1], anchor='ms')
