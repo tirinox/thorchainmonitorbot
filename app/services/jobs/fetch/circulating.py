@@ -138,6 +138,22 @@ class RuneCirculatingSupply(NamedTuple):
         return self.pooled / self.total * 100
 
     @property
+    def pol(self):
+        return self.total_rune_in_realm(ThorRealms.POL)
+
+    @property
+    def pol_percent(self):
+        return self.pol / self.total * 100
+
+    @property
+    def runepool(self):
+        return self.total_rune_in_realm(ThorRealms.RUNEPOOL)
+
+    @property
+    def runepool_percent(self):
+        return self.runepool / self.total * 100
+
+    @property
     def working(self):
         return self.bonded + self.pooled
 
