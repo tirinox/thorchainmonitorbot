@@ -39,11 +39,10 @@ from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEventType, NodeEvent, \
     EventBlockHeight, EventDataSlash, calculate_security_cap_rune, EventProviderBondChange, \
     EventProviderStatus
-from services.models.pol import AlertPOL
 from services.models.pool_info import PoolInfo, PoolChanges, PoolMapPair
 from services.models.price import AlertPrice, RuneMarketInfo
 from services.models.queue import QueueInfo
-from services.models.runepool import AlertRunePoolAction
+from services.models.runepool import AlertPOLState, AlertRunePoolAction
 from services.models.s_swap import AlertSwapStart
 from services.models.savers import how_much_savings_you_can_add, AlertSaverStats
 from services.models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
@@ -2539,7 +2538,7 @@ class BaseLocalization(ABC):  # == English
         else:
             return a.pretty_str
 
-    def _format_pol_membership(self, event: AlertPOL, of_pool, decor=True):
+    def _format_pol_membership(self, event: AlertPOLState, of_pool, decor=True):
         text = ''
         for i, details in enumerate(event.membership, start=1):
             pool: PoolInfo = event.prices.find_pool(details.pool)
@@ -2557,7 +2556,7 @@ class BaseLocalization(ABC):  # == English
             )
         return text.strip()
 
-    def notification_text_pol_utilization(self, event: AlertPOL):
+    def notification_text_pol_stats(self, event: AlertPOLState):
         text = '🥃 <b>Protocol Owned Liquidity</b>\n\n'
 
         curr, prev = event.current, event.previous
@@ -2824,6 +2823,10 @@ class BaseLocalization(ABC):  # == English
             f"Total: {amt_str} ({pretty_dollar(event.usd_amount)})\n"
             f"{aff_text}"
         )
+
+    def notification_runepool_stats(self, event: AlertPOLState):
+        # todo
+        return ''
 
     # ------ Bond providers alerts ------
 

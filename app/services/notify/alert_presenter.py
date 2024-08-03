@@ -22,7 +22,7 @@ from services.models.last_block import EventBlockSpeed, BlockProduceState
 from services.models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats, AlertLendingOpenUpdate
 from services.models.mimir import AlertMimirChange
 from services.models.node_info import AlertNodeChurn
-from services.models.pol import AlertPOL
+from services.models.runepool import AlertPOLState, AlertRunepoolStats
 from services.models.pool_info import PoolChanges, PoolMapPair
 from services.models.price import AlertPrice
 from services.models.runepool import AlertRunePoolAction
@@ -62,7 +62,7 @@ class AlertPresenter(INotified, WithLogger):
             await self._handle_saver_stats(data)
         elif isinstance(data, PoolChanges):
             await self._handle_pool_churn(data)
-        elif isinstance(data, AlertPOL):
+        elif isinstance(data, AlertPOLState):
             await self._handle_pol(data)
         elif isinstance(data, Achievement):
             await self._handle_achievement(data)
@@ -92,6 +92,8 @@ class AlertPresenter(INotified, WithLogger):
             await self._handle_trace_account_summary(data)
         elif isinstance(data, AlertRunePoolAction):
             await self._handle_runepool_action(data)
+        elif isinstance(data, AlertRunepoolStats):
+            await self._handle_runepool_stats(data)
 
     async def load_names(self, addresses) -> NameMap:
         if isinstance(addresses, str):
@@ -165,7 +167,7 @@ class AlertPresenter(INotified, WithLogger):
 
         await self.broadcaster.notify_preconfigured_channels(_gen, event)
 
-    async def _handle_pol(self, event: AlertPOL):
+    async def _handle_pol(self, event: AlertPOLState):
         # async def _gen(loc: BaseLocalization, _a: EventPOL):
         #     pic_gen = POLPictureGenerator(loc.ach, _a)
         #     pic, pic_name = await pic_gen.get_picture()
@@ -175,7 +177,7 @@ class AlertPresenter(INotified, WithLogger):
 
         # simple text so far
         await self.broadcaster.notify_preconfigured_channels(
-            BaseLocalization.notification_text_pol_utilization, event
+            BaseLocalization.notification_text_pol_stats, event
         )
 
     async def _handle_node_churn(self, event: AlertNodeChurn):
@@ -298,4 +300,10 @@ class AlertPresenter(INotified, WithLogger):
             BaseLocalization.notification_runepool_action,
             data,
             name_map
+        )
+
+    async def _handle_runepool_stats(self, data: AlertRunepoolStats):
+        await self.deps.broadcaster.notify_preconfigured_channels(
+            BaseLocalization.notification_runepool_stats,
+            data
         )

@@ -1,8 +1,12 @@
+import json
+from typing import Optional
+
+from aionode.types import ThorRunePool
 from services.lib.cooldown import Cooldown
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
-from services.models.runepool import AlertRunePoolAction
+from services.models.runepool import AlertRunePoolAction, AlertPOLState, AlertRunepoolStats
 from services.notify.dup_stop import TxDeduplicator
 
 
@@ -10,7 +14,7 @@ class RunePoolTransactionNotifier(INotified, WithDelegates, WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
-        cfg = deps.cfg.runepool
+        cfg = deps.cfg.runepool.actions
         self.min_usd_amount = cfg.get('min_usd_total', 5000)
         self.cooldown_sec = cfg.as_interval('cooldown', '1h')
         self.cooldown_capacity = cfg.get('cooldown_capacity', 5)
@@ -28,3 +32,45 @@ class RunePoolTransactionNotifier(INotified, WithDelegates, WithLogger):
     async def reset(self):
         await self.cd.clear()
         await self.deduplicator.clear()
+
+
+class RunepoolStatsNotifier(INotified, WithDelegates, WithLogger):
+    def __init__(self, deps: DepContainer):
+        super().__init__()
+        self.deps = deps
+        cfg = deps.cfg.runepool.summary
+
+        self.cooldown_sec = cfg.as_interval('cooldown', '1h')
+        self.tally_period = cfg.as_interval('tally_period', '1d')
+        self.cd = Cooldown(self.deps.db, "RunePoolStatsNotification", self.cooldown_sec)
+
+    DB_KEY_LAST_EVENT = 'runepool:previous_event'
+
+    async def _save_last_event(self, e: AlertPOLState):
+        if not e:
+            self.logger.warning('No event to save')
+            return
+
+        data_to_save = e.runepool.to_dict()
+        data_to_save = json.dumps(data_to_save)
+        await self.deps.db.redis.set(self.DB_KEY_LAST_EVENT, data_to_save)
+
+    async def _load_last_event(self) -> Optional[ThorRunePool]:
+        try:
+            data = await self.deps.db.redis.get(self.DB_KEY_LAST_EVENT)
+            if data:
+                data = json.loads(data)
+                return ThorRunePool.from_json(data)
+        except Exception as e:
+            self.logger.exception(f'Failed to load last event {e}')
+
+    async def on_data(self, sender, e: AlertPOLState):
+        if await self.cd.can_do():
+            previous = await self._load_last_event()
+            new_event = AlertRunepoolStats(
+                e.runepool,
+                previous
+            )
+            await self.pass_data_to_listeners(new_event)
+            await self._save_last_event(e)
+            await self.cd.do()

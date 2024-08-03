@@ -27,10 +27,9 @@ from services.models.mimir import MimirChange, MimirHolder
 from services.models.mimir_naming import MimirUnits
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeVersionConsensus, NodeInfo
-from services.models.pol import AlertPOL
+from services.models.runepool import AlertPOLState, AlertRunePoolAction
 from services.models.pool_info import PoolMapPair, PoolChanges, PoolInfo
 from services.models.price import RuneMarketInfo, AlertPrice
-from services.models.runepool import AlertRunePoolAction
 from services.models.s_swap import AlertSwapStart
 from services.models.savers import AlertSaverStats
 from services.models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
@@ -921,7 +920,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         # we add '$' before assets to mention the asset name in Twitter
         return f'{synth}${asset.name}{chain}'
 
-    def notification_text_pol_utilization(self, event: AlertPOL):
+    def notification_text_pol_stats(self, event: AlertPOLState):
         curr, prev = event.current, event.previous
         pol_progress = progressbar(curr.rune_value, event.mimir_max_deposit, 10)
 
@@ -1090,3 +1089,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             f"{aff_text}"
             f"{self.link_to_tx(event.tx_hash)}"
         )
+
+    def notification_runepool_stats(self, event: AlertPOLState):
+        # todo
+        return ''

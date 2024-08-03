@@ -83,7 +83,7 @@ from services.notify.types.pool_churn_notify import PoolChurnNotifier
 from services.notify.types.price_div_notify import PriceDivergenceNotifier
 from services.notify.types.price_notify import PriceNotifier
 from services.notify.types.queue_notify import QueueNotifier, QueueStoreMetrics
-from services.notify.types.runepool_notify import RunePoolTransactionNotifier
+from services.notify.types.runepool_notify import RunePoolTransactionNotifier, RunepoolStatsNotifier
 from services.notify.types.s_swap_notify import StreamingSwapStartTxNotifier
 from services.notify.types.savers_stats_notify import SaversStatsNotifier
 from services.notify.types.stats_notify import NetworkStatsNotifier
@@ -529,15 +529,6 @@ class App(WithLogger):
             if achievements_enabled:
                 wallet_counter.add_subscriber(achievements)
 
-        if d.cfg.get('pol.enabled', True):
-            runepool_fetcher = RunePoolFetcher(d)
-            tasks.append(runepool_fetcher)
-            d.pol_notifier = POLNotifier(d)
-            runepool_fetcher.add_subscriber(d.pol_notifier)
-            d.pol_notifier.add_subscriber(d.alert_presenter)
-            if achievements_enabled:
-                runepool_fetcher.add_subscriber(achievements)
-
         if d.cfg.get('key_metrics.enabled', True):
             metrics_fetcher = KeyStatsFetcher(d)
             tasks.append(metrics_fetcher)
@@ -587,7 +578,7 @@ class App(WithLogger):
                 d.trade_acc_fetcher.add_subscriber(d.tr_acc_summary_notifier)
                 d.trade_acc_fetcher.add_subscriber(achievements)
 
-        if d.cfg.get('runepool.enabled', True):
+        if d.cfg.get('runepool.actions.enabled', True):
             runepool_decoder = RunePoolEventDecoder(d.db, d.price_holder)
             d.block_scanner.add_subscriber(runepool_decoder)
 
@@ -597,6 +588,27 @@ class App(WithLogger):
             runepool_not = RunePoolTransactionNotifier(d)
             runepool_decoder.add_subscriber(runepool_not)
             runepool_not.add_subscriber(d.alert_presenter)
+
+            achievements.add_subscriber(runepool_not)
+
+        runepool_fetcher = RunePoolFetcher(d)
+        need_runepool_data = False
+
+        if d.cfg.get('runepool.summary.enabled', True):
+            d.runepool_summary_notifier = RunepoolStatsNotifier(d)
+            d.runepool_summary_notifier.add_subscriber(d.alert_presenter)
+            need_runepool_data = True
+
+        if d.cfg.get('runepool.pol_summary.enabled', True):
+            d.pol_notifier = POLNotifier(d)
+            runepool_fetcher.add_subscriber(d.pol_notifier)
+            d.pol_notifier.add_subscriber(d.alert_presenter)
+            need_runepool_data = True
+
+        if need_runepool_data:
+            tasks.append(runepool_fetcher)
+            if achievements_enabled:
+                runepool_fetcher.add_subscriber(achievements)
 
         # -------- SCHEDULER --------
 

@@ -14,7 +14,7 @@ from services.models.loans import LendingStats, AlertLoanOpen
 from services.models.memo import ActionType
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges
-from services.models.pol import AlertPOL
+from services.models.runepool import AlertPOLState
 from services.models.price import RuneMarketInfo, LastPriceHolder
 from services.models.savers import SaversBank
 from services.models.tx import ThorTx
@@ -43,7 +43,7 @@ class AchievementsExtractor(WithLogger):
             kv_events = [Achievement(A.WALLET_COUNT, int(data))]
         elif is_list_of_type(data, ThorTx):
             kv_events = self.on_thor_tx_list(data)
-        elif isinstance(data, AlertPOL):
+        elif isinstance(data, AlertPOLState):
             kv_events = self.on_thor_pol(data)
         elif isinstance(data, AlertKeyStats):
             kv_events = self.on_weekly_stats(data)
@@ -166,7 +166,7 @@ class AchievementsExtractor(WithLogger):
         ]
 
     @staticmethod
-    def on_thor_pol(pol: AlertPOL):
+    def on_thor_pol(pol: AlertPOLState):
         return [
             Achievement(A.POL_VALUE_RUNE, int(pol.current.rune_value))
         ]

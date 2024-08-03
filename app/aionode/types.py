@@ -743,6 +743,15 @@ class ThorRunePoolPOL(NamedTuple):
             current_deposit=int(j.get('current_deposit', 0)),
         )
 
+    def to_dict(self):
+        return {
+            'rune_deposited': self.rune_deposited,
+            'rune_withdrawn': self.rune_withdrawn,
+            'value': self.value,
+            'pnl': self.pnl,
+            'current_deposit': self.current_deposit
+        }
+
 
 class ThorRunePoolProviders(NamedTuple):
     units: int
@@ -767,6 +776,16 @@ class ThorRunePoolProviders(NamedTuple):
     def current_deposit_float(self):
         return thor_to_float(self.current_deposit)
 
+    def to_dict(self):
+        return {
+            'units': self.units,
+            'pending_units': self.pending_units,
+            'pending_rune': self.pending_rune,
+            'value': self.value,
+            'pnl': self.pnl,
+            'current_deposit': self.current_deposit
+        }
+
 
 class ThorRunePoolReserve(NamedTuple):
     units: int
@@ -783,6 +802,14 @@ class ThorRunePoolReserve(NamedTuple):
             current_deposit=int(j.get('current_deposit', 0)),
         )
 
+    def to_dict(self):
+        return {
+            'units': self.units,
+            'value': self.value,
+            'pnl': self.pnl,
+            'current_deposit': self.current_deposit
+        }
+
 
 class ThorRunePool(NamedTuple):
     pol: ThorRunePoolPOL
@@ -796,6 +823,13 @@ class ThorRunePool(NamedTuple):
             providers=ThorRunePoolProviders.from_json(j.get('providers', {})),
             reserve=ThorRunePoolReserve.from_json(j.get('reserve', {})),
         )
+
+    def to_dict(self):
+        return {
+            'pol': self.pol.to_dict(),
+            'providers': self.providers.to_dict(),
+            'reserve': self.reserve.to_dict()
+        }
 
 
 class ThorRunePoolProvider(NamedTuple):

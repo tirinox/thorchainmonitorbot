@@ -8,13 +8,13 @@ from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import free_url_gen
 from services.models.mimir_naming import MIMIR_KEY_POL_TARGET_SYNTH_PER_POOL_DEPTH, MIMIR_KEY_POL_MAX_NETWORK_DEPOSIT
-from services.models.pol import AlertPOL, POLState
+from services.models.runepool import AlertPOLState, POLState
 from services.models.pool_member import PoolMemberDetails
 
 
 class RunePoolFetcher(BaseFetcher):
     def __init__(self, deps: DepContainer, reserve_address=None):
-        period = parse_timespan_to_seconds(deps.cfg.pol.fetch_period)
+        period = parse_timespan_to_seconds(deps.cfg.runepool.fetch_period)
         super().__init__(deps, period)
         self.reserve_address = reserve_address or deps.cfg.native_scanner.reserve_address
         self.midgard_parser = get_parser_by_network_id(deps.cfg.network_id)
@@ -39,7 +39,7 @@ class RunePoolFetcher(BaseFetcher):
         runepool = await self.deps.thor_connector.query_runepool(height)
         return runepool
 
-    async def fetch(self) -> AlertPOL:
+    async def fetch(self) -> AlertPOLState:
         runepool = await self.load_runepool()
 
         if runepool.pol.value > 0:
@@ -54,10 +54,11 @@ class RunePoolFetcher(BaseFetcher):
         max_deposit = thor_to_float(mimir.get_constant(MIMIR_KEY_POL_MAX_NETWORK_DEPOSIT, 10e3, float))
 
         self.logger.info(f"Got RunePOOL: {runepool}")
-        return AlertPOL(
+        return AlertPOLState(
             POLState(self.deps.price_holder.usd_per_rune, runepool.pol),
             membership,
             prices=self.deps.price_holder,
             mimir_max_deposit=max_deposit,
             mimir_synth_target_ptc=synth_target,
+            runepool=runepool,
         )

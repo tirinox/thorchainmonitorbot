@@ -34,11 +34,10 @@ from services.models.mimir import MimirChange, MimirHolder
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEvent, EventDataSlash, \
     NodeEventType, EventBlockHeight, EventProviderStatus, EventProviderBondChange
-from services.models.pol import AlertPOL
 from services.models.pool_info import PoolInfo, PoolChanges, PoolMapPair
 from services.models.price import AlertPrice, RuneMarketInfo
 from services.models.queue import QueueInfo
-from services.models.runepool import AlertRunePoolAction
+from services.models.runepool import AlertPOLState, AlertRunePoolAction
 from services.models.s_swap import AlertSwapStart
 from services.models.savers import AlertSaverStats
 from services.models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
@@ -1094,35 +1093,6 @@ class RussianLocalization(BaseLocalization):
             f"{top_vaults_str}"
         )
 
-    # ------- RUNEPOOL -------
-
-    def notification_runepool_action(self, event: AlertRunePoolAction, name_map: NameMap):
-        action_str = 'добавление' if event.is_deposit else 'вывод'
-        from_link = self.link_to_address(event.actor, name_map)
-        to_link = self.link_to_address(event.destination_address, name_map)
-        amt_str = f"{pre(pretty_rune(event.amount))}"
-
-        if event.is_deposit:
-            route = f"👤{from_link} ➡️ RUNEPool"
-        else:
-            route = f"RUNEPool ➡️ 👤{to_link}"
-
-        if event.affiliate:
-            aff_collector = self.name_service.get_affiliate_name(event.affiliate)
-            aff_collector = f'{aff_collector} ' if aff_collector else ''
-
-            aff_text = f'{aff_collector}партнерская комиссия: {short_dollar(event.affiliate_usd)} ' \
-                       f'({format_percent(event.affiliate_rate, 1)})\n'
-        else:
-            aff_text = ''
-
-        return (
-            f"🏦 <b>RUNEPool {action_str}</b> {self.link_to_tx(event.tx_hash)}\n"
-            f"{route}\n"
-            f"Всего: {amt_str} ({pretty_dollar(event.usd_amount)})\n"
-            f"{aff_text}"
-        )
-
     # ------- NETWORK NODES -------
 
     TEXT_PIC_NODES = 'ноды'
@@ -2002,42 +1972,9 @@ class RussianLocalization(BaseLocalization):
     SV_PIC_EARNED = 'Заработано'
     SV_PIC_ELAPSED = 'дней прошло с добавления'
 
-    # ------ POL -------
-
     @staticmethod
     def pretty_asset(name, abbr=True):
         return BaseLocalization.pretty_asset(name, abbr).replace('synth', 'синт.').replace('trade', 'торг.')
-
-    def notification_text_pol_utilization(self, event: AlertPOL):
-        text = '🥃 <b>POL: ликвидность от самого протокола</b>\n\n'
-
-        curr, prev = event.current, event.previous
-        pol_progress = progressbar(curr.rune_value, event.mimir_max_deposit, 10)
-
-        str_value_delta_pct, str_value_delta_abs = '', ''
-        if prev:
-            str_value_delta_pct = up_down_arrow(prev.rune_value, curr.rune_value, percent_delta=True, brackets=True,
-                                                threshold_pct=0.5)
-            # str_value_delta_abs = up_down_arrow(
-            # prev.rune_value, curr.rune_value, money_delta=True, postfix=RAIDO_GLYPH)
-
-        pnl_pct = curr.pnl_percent
-        text += (
-            f"Текущея POL ликвидность: {code(short_rune(curr.rune_value))} или "
-            f" {code(short_dollar(curr.usd_value))} {str_value_delta_pct}\n"
-            f"Использование: {pre(pretty_percent(event.pol_utilization, signed=False))} {pre(pol_progress)} "
-            f" из {short_rune(event.mimir_max_deposit)} максимум.\n"
-            f"Rune депонировано: {pre(short_rune(curr.rune_deposited))} "
-            f"и выведено: {pre(short_rune(curr.rune_withdrawn))}\n"
-            f"Доходы/убытки: {pre(pretty_percent(pnl_pct))} {chart_emoji(pnl_pct)}"
-        )
-
-        # POL pool membership
-        if event.membership:
-            text += "\n\n<b>Членство в пулах:</b>\n"
-            text += self._format_pol_membership(event, of_pool='от пула')
-
-        return text.strip()
 
     # ----- LOANS ------
 
@@ -2107,6 +2044,68 @@ class RussianLocalization(BaseLocalization):
         )
 
     TEXT_LENDING_STATS_NO_DATA = '😩 Простите, у нас пока нет никаких данных о статистике кредитования.'
+
+    # ------- RUNEPOOL -------
+
+    def notification_runepool_action(self, event: AlertRunePoolAction, name_map: NameMap):
+        action_str = 'добавление' if event.is_deposit else 'вывод'
+        from_link = self.link_to_address(event.actor, name_map)
+        to_link = self.link_to_address(event.destination_address, name_map)
+        amt_str = f"{pre(pretty_rune(event.amount))}"
+
+        if event.is_deposit:
+            route = f"👤{from_link} ➡️ RUNEPool"
+        else:
+            route = f"RUNEPool ➡️ 👤{to_link}"
+
+        if event.affiliate:
+            aff_collector = self.name_service.get_affiliate_name(event.affiliate)
+            aff_collector = f'{aff_collector} ' if aff_collector else ''
+
+            aff_text = f'{aff_collector}партнерская комиссия: {short_dollar(event.affiliate_usd)} ' \
+                       f'({format_percent(event.affiliate_rate, 1)})\n'
+        else:
+            aff_text = ''
+
+        return (
+            f"🏦 <b>RUNEPool {action_str}</b> {self.link_to_tx(event.tx_hash)}\n"
+            f"{route}\n"
+            f"Всего: {amt_str} ({pretty_dollar(event.usd_amount)})\n"
+            f"{aff_text}"
+        )
+
+    def notification_runepool_stats(self, event: AlertPOLState):
+        # todo
+        return ''
+
+    def notification_text_pol_stats(self, event: AlertPOLState):
+        text = '🥃 <b>POL: ликвидность протокола</b>\n\n'
+
+        curr, prev = event.current, event.previous
+        pol_progress = progressbar(curr.rune_value, event.mimir_max_deposit, 10)
+
+        str_value_delta_pct, str_value_delta_abs = '', ''
+        if prev:
+            str_value_delta_pct = up_down_arrow(prev.rune_value, curr.rune_value, percent_delta=True, brackets=True,
+                                                threshold_pct=0.5)
+
+        pnl_pct = curr.pnl_percent
+        text += (
+            f"Текущая POL ликвидность: {code(short_rune(curr.rune_value))} или "
+            f" {code(short_dollar(curr.usd_value))} {str_value_delta_pct}\n"
+            f"Использование: {pre(pretty_percent(event.pol_utilization, signed=False))} {pre(pol_progress)} "
+            f" из {short_rune(event.mimir_max_deposit)} максимум.\n"
+            f"Rune депонировано: {pre(short_rune(curr.rune_deposited))} "
+            f"и выведено: {pre(short_rune(curr.rune_withdrawn))}\n"
+            f"Доходы/убытки: {pre(pretty_percent(pnl_pct))} {chart_emoji(pnl_pct)}"
+        )
+
+        # POL pool membership
+        if event.membership:
+            text += "\n\n<b>Членство в пулах:</b>\n"
+            text += self._format_pol_membership(event, of_pool='от пула')
+
+        return text.strip()
 
     # ------ Bond providers alerts ------
 

@@ -301,7 +301,7 @@ class MetricsDialog(BaseDialog):
             await message.answer(self.loc.TEXT_POL_NO_DATA, disable_notification=True)
             return
         else:
-            await message.answer(self.loc.notification_text_pol_utilization(event), disable_notification=True)
+            await message.answer(self.loc.notification_text_pol_stats(event), disable_notification=True)
 
     async def show_cex_flow(self, message: Message, period=DAY):
         notifier: RuneMoveNotifier = self.deps.rune_move_notifier
@@ -336,7 +336,7 @@ class MetricsDialog(BaseDialog):
 
     async def show_pol(self, message: Message):
         report = self.deps.pol_notifier.last_event
-        text = self.loc.notification_text_pol_utilization(report)
+        text = self.loc.notification_text_pol_stats(report)
         await message.answer(text,
                              disable_web_page_preview=True,
                              disable_notification=True)
