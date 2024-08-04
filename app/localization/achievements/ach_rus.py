@@ -56,6 +56,11 @@ class AchievementsRussianLocalization(AchievementsEnglishLocalization):
         A.MAX_LOAN_AMOUNT_USD: "Максимальный размер займа",
         A.TOTAL_BORROWED_USD: "Всего занято средств",
         A.TOTAL_COLLATERAL_USD: "Всего залогов внесено",
+
+        A.TRADE_BALANCE_TOTAL_USD: "Общий баланс торговых счетов",
+        A.TRADE_ASSET_HOLDERS_COUNT: "Держателей торговых активов",
+        A.TRADE_ASSET_SWAPS_COUNT: "Свопов торговых активов",
+        A.TRADE_ASSET_MOVE_COUNT: "Операций торговых счетов",
     }
 
     MORE_THAN = 'Более чем'

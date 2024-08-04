@@ -17,6 +17,7 @@ from services.models.node_info import NodeSetChanges
 from services.models.runepool import AlertPOLState
 from services.models.price import RuneMarketInfo, LastPriceHolder
 from services.models.savers import SaversBank
+from services.models.trade_acc import TradeAccountSummary, AlertTradeAccountAction, AlertTradeAccountSummary
 from services.models.tx import ThorTx
 from services.notify.types.block_notify import LastBlockStore
 
@@ -205,3 +206,13 @@ class AchievementsExtractor(WithLogger):
         return [
             Achievement(A.MAX_LOAN_AMOUNT_USD, int(data.loan.debt_issued)),
         ]
+
+    @staticmethod
+    def on_trade_asset_summary(data: AlertTradeAccountSummary):
+        # todo
+        return []
+
+    @staticmethod
+    def on_trade_asset_action(data: AlertTradeAccountAction):
+        # todo
+        return []

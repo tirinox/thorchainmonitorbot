@@ -204,6 +204,7 @@ async def debug_naughty_savers_achievements(app: LpAppFramework):
 
 def clear_temp_achievements_folder():
     source_folder = '../temp/a'
+    os.makedirs(source_folder, exist_ok=True)
     for f in os.listdir(source_folder):
         if f.endswith('.png') and f.startswith('thorchain-ach'):
             path_to_delete = os.path.join(source_folder, f)
