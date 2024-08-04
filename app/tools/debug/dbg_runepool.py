@@ -134,6 +134,7 @@ async def demo_runepool_stats(app: LpAppFramework):
         n_providers=int(distort_randomly(previous.n_providers, 30)),
         avg_deposit=distort_randomly(previous.avg_deposit, 10),
     )
+    # previous = None
 
     new_event = AlertRunepoolStats(
         e.runepool,

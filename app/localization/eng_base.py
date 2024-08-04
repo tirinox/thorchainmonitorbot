@@ -2839,18 +2839,21 @@ class BaseLocalization(ABC):  # == English
 
     @staticmethod
     def _runepool_deltas(event):
-        rune_delta = bracketify(
-            comma_join(
-                short_dollar(event.current.usd_value),
-                up_down_arrow(event.previous.rune_value, event.current.rune_value, percent_delta=True)
+        if event.previous:
+            rune_delta = bracketify(
+                comma_join(
+                    short_dollar(event.current.usd_value),
+                    up_down_arrow(event.previous.rune_value, event.current.rune_value, percent_delta=True)
+                )
             )
-        )
-        pnl_delta = bracketify(up_down_arrow(event.previous.pnl, event.current.pnl, money_delta=True))
-        share_delta = bracketify(up_down_arrow(event.previous.providers_share, event.current.providers_share,
-                                               percent_delta=True, postfix=' pp'))
-        n_providers_delta = bracketify(
-            up_down_arrow(event.previous.n_providers, event.current.n_providers, int_delta=True))
-        return n_providers_delta, pnl_delta, rune_delta, share_delta
+            pnl_delta = bracketify(up_down_arrow(event.previous.pnl, event.current.pnl, money_delta=True))
+            share_delta = bracketify(up_down_arrow(event.previous.providers_share, event.current.providers_share,
+                                                   percent_delta=True, postfix=' pp'))
+            n_providers_delta = bracketify(
+                up_down_arrow(event.previous.n_providers, event.current.n_providers, int_delta=True))
+            return n_providers_delta, pnl_delta, rune_delta, share_delta
+        else:
+            return '', '', '', ''
 
     # ------ Bond providers alerts ------
 
