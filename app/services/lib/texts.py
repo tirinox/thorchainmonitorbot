@@ -228,3 +228,7 @@ def shorten_text(text, limit=200, end='...'):
 def find_country_emoji(country_code: str):
     if len(country_code) == 2:
         return ''.join(lookup(f'REGIONAL INDICATOR SYMBOL LETTER {symbol}') for symbol in country_code)
+
+
+def comma_join(*items):
+    return ', '.join(item for item in items if str(item).strip())

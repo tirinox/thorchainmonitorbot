@@ -596,6 +596,7 @@ class App(WithLogger):
 
         if d.cfg.get('runepool.summary.enabled', True):
             d.runepool_summary_notifier = RunepoolStatsNotifier(d)
+            runepool_fetcher.add_subscriber(d.runepool_summary_notifier)
             d.runepool_summary_notifier.add_subscriber(d.alert_presenter)
             need_runepool_data = True
 

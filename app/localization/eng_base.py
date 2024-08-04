@@ -22,7 +22,8 @@ from services.lib.money import format_percent, pretty_money, short_address, shor
     calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, short_dollar, \
     RAIDO_GLYPH, short_rune, pretty_percent, chart_emoji, pretty_rune
 from services.lib.texts import progressbar, link, pre, code, bold, x_ses, ital, link_with_domain_text, \
-    up_down_arrow, bracketify, plural, join_as_numbered_list, regroup_joining, shorten_text, cut_long_text, underline
+    up_down_arrow, bracketify, plural, join_as_numbered_list, regroup_joining, shorten_text, cut_long_text, underline, \
+    comma_join
 from services.lib.utils import grouper, run_once, identity
 from services.lib.w3.dex_analytics import DexReport, DexReportEntry
 from services.lib.w3.token_record import AmountToken
@@ -2839,8 +2840,10 @@ class BaseLocalization(ABC):  # == English
     @staticmethod
     def _runepool_deltas(event):
         rune_delta = bracketify(
-            short_dollar(event.current.usd_value) + ', ' +
-            up_down_arrow(event.previous.rune_value, event.current.rune_value, percent_delta=True)
+            comma_join(
+                short_dollar(event.current.usd_value),
+                up_down_arrow(event.previous.rune_value, event.current.rune_value, percent_delta=True)
+            )
         )
         pnl_delta = bracketify(up_down_arrow(event.previous.pnl, event.current.pnl, money_delta=True))
         share_delta = bracketify(up_down_arrow(event.previous.providers_share, event.current.providers_share,

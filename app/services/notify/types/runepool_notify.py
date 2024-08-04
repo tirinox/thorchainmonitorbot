@@ -41,7 +41,6 @@ class RunepoolStatsNotifier(INotified, WithDelegates, WithLogger):
         cfg = deps.cfg.runepool.summary
 
         self.cooldown_sec = cfg.as_interval('cooldown', '1h')
-        self.tally_period = cfg.as_interval('tally_period', '1d')
         self.cd = Cooldown(self.deps.db, "RunePoolStatsNotification", self.cooldown_sec)
 
     DB_KEY_LAST_EVENT = 'runepool:previous_event'
