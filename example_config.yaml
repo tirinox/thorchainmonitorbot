@@ -615,12 +615,12 @@ trade_accounts:
 
 runepool:
   enabled: true
-  min_usd_total: 1000
   fetch_period: 5m
 
   actions:  # (!) new
     # deposits and withdrawals
     enabled: true
+    min_usd_total: 1000
     cooldown: 10m
     cooldown_capacity: 5  # how many times accept an event before trigger cooldown
 
