@@ -27,7 +27,7 @@ from services.models.mimir import MimirChange, MimirHolder
 from services.models.mimir_naming import MimirUnits
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges, NodeVersionConsensus, NodeInfo
-from services.models.runepool import AlertPOLState, AlertRunePoolAction
+from services.models.runepool import AlertPOLState, AlertRunePoolAction, AlertRunepoolStats
 from services.models.pool_info import PoolMapPair, PoolChanges, PoolInfo
 from services.models.price import RuneMarketInfo, AlertPrice
 from services.models.s_swap import AlertSwapStart
@@ -1090,6 +1090,14 @@ class TwitterEnglishLocalization(BaseLocalization):
             f"{self.link_to_tx(event.tx_hash)}"
         )
 
-    def notification_runepool_stats(self, event: AlertPOLState):
-        # todo
-        return ''
+    def notification_runepool_stats(self, event: AlertRunepoolStats):
+        n_providers_delta, pnl_delta, rune_delta, share_delta = self._runepool_deltas(event)
+
+        return (
+            f'🏦 RUNEPool stats\n'
+            f'Total value: {pretty_rune(event.current.rune_value)} {rune_delta}\n'
+            f'Share of providers: {pretty_percent(event.current.providers_share, signed=False)} {share_delta}\n'
+            f'PnL: {pretty_rune(event.current.pnl)} {pnl_delta}\n'
+            f'Providers: {short_money(event.current.n_providers, integer=True)} {n_providers_delta}\n'
+            f'Avg. value per provider: {pretty_rune(event.current.avg_deposit)}\n'
+        )

@@ -752,6 +752,10 @@ class ThorRunePoolPOL(NamedTuple):
             'current_deposit': self.current_deposit
         }
 
+    @property
+    def current_deposit_float(self):
+        return thor_to_float(self.current_deposit)
+
 
 class ThorRunePoolProviders(NamedTuple):
     units: int
@@ -841,6 +845,10 @@ class ThorRunePoolProvider(NamedTuple):
     withdraw_amount: int
     last_deposit_height: int
     last_withdraw_height: int
+
+    @property
+    def rune_value(self):
+        return thor_to_float(self.value)
 
     @classmethod
     def from_json(cls, j):

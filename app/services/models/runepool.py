@@ -110,12 +110,55 @@ class POLState(NamedTuple):
         return self.value.pnl / self.value.current_deposit if self.value.current_deposit else 0.0
 
 
+class RunepoolState(NamedTuple):
+    pool: ThorRunePool
+    n_providers: int
+    avg_deposit: float
+    usd_per_rune: float = 0.0
+
+    def to_dict(self):
+        return {
+            'pool': self.pool.to_dict(),
+            'n_providers': self.n_providers,
+            'avg_deposit': self.avg_deposit,
+            'usd_per_rune': self.usd_per_rune,
+        }
+
+    @classmethod
+    def from_json(cls, j):
+        return cls(
+            ThorRunePool.from_json(j.get('pool')),
+            j.get('n_providers', 0),
+            j.get('avg_deposit', 0.0),
+            j.get('usd_per_rune', 0.0),
+        )
+
+    @property
+    def rune_value(self):
+        return thor_to_float(self.pool.providers.current_deposit) if self.pool else 0.0
+
+    @property
+    def usd_value(self):
+        return self.usd_per_rune * self.rune_value
+
+    @property
+    def pnl(self):
+        return thor_to_float(self.pool.providers.pnl) if self.pool else 0.0
+
+    @property
+    def providers_share(self):
+        if self.pool and self.pool.pol.current_deposit:
+            return self.pool.providers.current_deposit_float / self.pool.pol.current_deposit_float * 100.0
+        else:
+            return 0.0
+
+
 class AlertPOLState(NamedTuple):
     current: POLState
     membership: List[PoolMemberDetails]
     previous: Optional[POLState] = None
     prices: Optional[LastPriceHolder] = None
-    runepool: Optional[ThorRunePool] = None
+    runepool: Optional[RunepoolState] = None
     mimir_synth_target_ptc: float = 45.0  # %
     mimir_max_deposit: float = 10_000.0  # Rune
 
@@ -145,5 +188,6 @@ class AlertPOLState(NamedTuple):
 
 
 class AlertRunepoolStats(NamedTuple):
-    current: ThorRunePool
-    previous: Optional[ThorRunePool] = None
+    current: RunepoolState
+    previous: Optional[RunepoolState] = None
+    usd_per_rune: float = 0.0

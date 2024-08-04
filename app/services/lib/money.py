@@ -276,9 +276,9 @@ class DepthCurve:
         return curve[-1][self.SHARE]
 
 
-def distort_randomly(x, dev=10, up_only=False):
+def distort_randomly(x, dev_pct=10, up_only=False):
     low_bound = 0 if up_only else -1
-    new_x = x + random.uniform(low_bound, 1) * abs(x / 100.0 * dev)
+    new_x = x + random.uniform(low_bound, 1) * abs(x / 100.0 * dev_pct)
     return int(new_x) if isinstance(x, int) else new_x
 
 

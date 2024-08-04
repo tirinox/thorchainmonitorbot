@@ -2,12 +2,14 @@ import asyncio
 import pprint
 
 from localization.eng_base import BaseLocalization
+from services.jobs.fetch.pol import RunePoolFetcher
 from services.jobs.scanner.native_scan import NativeScannerBlock
 from services.jobs.scanner.runepool import RunePoolEventDecoder
 from services.jobs.volume_recorder import VolumeRecorder, TxCountRecorder
+from services.lib.money import distort_randomly
 from services.models.memo import THORMemo
-from services.models.runepool import AlertRunePoolAction
-from services.notify.types.runepool_notify import RunePoolTransactionNotifier
+from services.models.runepool import AlertRunePoolAction, AlertRunepoolStats, RunepoolState
+from services.notify.types.runepool_notify import RunePoolTransactionNotifier, RunepoolStatsNotifier
 from tools.lib.lp_common import LpAppFramework
 
 prepared = False
@@ -102,13 +104,60 @@ async def demo_runepool_continuous(app: LpAppFramework, b=0):
     await asyncio.sleep(5.0)
 
 
+async def demo_runepool_stats(app: LpAppFramework):
+    await prepare_once(app)
+
+    d = app.deps
+    runepool_fetcher = RunePoolFetcher(d)
+
+    notifier = RunepoolStatsNotifier(d)
+    # notifier.add_subscriber(d.alert_presenter)
+    # runepool_fetcher.add_subscriber(notifier)
+    e = await runepool_fetcher.fetch()
+
+    previous: RunepoolState = await notifier.load_last_event()
+
+    if not previous:
+        previous = e.runepool
+        await notifier._save_last_event(e.runepool)
+
+    previous = previous._replace(
+        pool=previous.pool._replace(
+            providers=previous.pool.providers._replace(
+                current_deposit=int(distort_randomly(previous.pool.providers.current_deposit, 15)),
+                pnl=int(distort_randomly(previous.pool.providers.pnl, 10)),
+            ),
+            pol=previous.pool.pol._replace(
+                current_deposit=int(distort_randomly(previous.pool.pol.current_deposit, 8)),
+            )
+        ),
+        n_providers=int(distort_randomly(previous.n_providers, 30)),
+        avg_deposit=distort_randomly(previous.avg_deposit, 10),
+    )
+
+    new_event = AlertRunepoolStats(
+        e.runepool,
+        previous,
+        usd_per_rune=app.deps.price_holder.usd_per_rune,
+    )
+
+    await app.test_all_locs(BaseLocalization.notification_runepool_stats, [
+        # d.loc_man.default
+    ], new_event)
+
+    # await notifier.cd.clear()
+    # await runepool_fetcher.run_once()
+    # await asyncio.sleep(5.0)
+
+
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
         # await demo_decode_runepool_deposit(app, DEPOSIT_TX_HEIGHT_1)
         # await demo_decode_runepool_deposit(app, DEPOSIT_TX_HEIGHT_2)
         # await demo_simulate_withdrawal(app)
-        await demo_runepool_continuous(app, b=DEPOSIT_TX_HEIGHT_1)
+        # await demo_runepool_continuous(app, b=DEPOSIT_TX_HEIGHT_1)
+        await demo_runepool_stats(app)
 
 
 if __name__ == '__main__':

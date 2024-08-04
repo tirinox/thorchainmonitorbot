@@ -42,7 +42,7 @@ from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConse
 from services.models.pool_info import PoolInfo, PoolChanges, PoolMapPair
 from services.models.price import AlertPrice, RuneMarketInfo
 from services.models.queue import QueueInfo
-from services.models.runepool import AlertPOLState, AlertRunePoolAction
+from services.models.runepool import AlertPOLState, AlertRunePoolAction, AlertRunepoolStats
 from services.models.s_swap import AlertSwapStart
 from services.models.savers import how_much_savings_you_can_add, AlertSaverStats
 from services.models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
@@ -2824,9 +2824,30 @@ class BaseLocalization(ABC):  # == English
             f"{aff_text}"
         )
 
-    def notification_runepool_stats(self, event: AlertPOLState):
-        # todo
-        return ''
+    def notification_runepool_stats(self, event: AlertRunepoolStats):
+        n_providers_delta, pnl_delta, rune_delta, share_delta = self._runepool_deltas(event)
+
+        return (
+            f'🏦 <b>RUNEPool stats</b>\n\n'
+            f'Total value: {bold(pretty_rune(event.current.rune_value))} {rune_delta}\n'
+            f'Share of providers: {bold(pretty_percent(event.current.providers_share, signed=False))} {share_delta}\n'
+            f'PnL: {bold(pretty_rune(event.current.pnl))} {pnl_delta}\n'
+            f'Providers: {bold(short_money(event.current.n_providers, integer=True))} {n_providers_delta}\n'
+            f'Average value per provider: {bold(pretty_rune(event.current.avg_deposit))}\n'
+        )
+
+    @staticmethod
+    def _runepool_deltas(event):
+        rune_delta = bracketify(
+            short_dollar(event.current.usd_value) + ', ' +
+            up_down_arrow(event.previous.rune_value, event.current.rune_value, percent_delta=True)
+        )
+        pnl_delta = bracketify(up_down_arrow(event.previous.pnl, event.current.pnl, money_delta=True))
+        share_delta = bracketify(up_down_arrow(event.previous.providers_share, event.current.providers_share,
+                                               percent_delta=True, postfix=' pp'))
+        n_providers_delta = bracketify(
+            up_down_arrow(event.previous.n_providers, event.current.n_providers, int_delta=True))
+        return n_providers_delta, pnl_delta, rune_delta, share_delta
 
     # ------ Bond providers alerts ------
 

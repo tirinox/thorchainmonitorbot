@@ -6,7 +6,7 @@ from services.lib.cooldown import Cooldown
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
-from services.models.runepool import AlertRunePoolAction, AlertPOLState, AlertRunepoolStats
+from services.models.runepool import AlertRunePoolAction, AlertPOLState, AlertRunepoolStats, RunepoolState
 from services.notify.dup_stop import TxDeduplicator
 
 
@@ -46,31 +46,32 @@ class RunepoolStatsNotifier(INotified, WithDelegates, WithLogger):
 
     DB_KEY_LAST_EVENT = 'runepool:previous_event'
 
-    async def _save_last_event(self, e: AlertPOLState):
+    async def _save_last_event(self, e: RunepoolState):
         if not e:
             self.logger.warning('No event to save')
             return
 
-        data_to_save = e.runepool.to_dict()
+        data_to_save = e.to_dict()
         data_to_save = json.dumps(data_to_save)
         await self.deps.db.redis.set(self.DB_KEY_LAST_EVENT, data_to_save)
 
-    async def _load_last_event(self) -> Optional[ThorRunePool]:
+    async def load_last_event(self) -> Optional[RunepoolState]:
         try:
             data = await self.deps.db.redis.get(self.DB_KEY_LAST_EVENT)
             if data:
                 data = json.loads(data)
-                return ThorRunePool.from_json(data)
+                return RunepoolState.from_json(data)
         except Exception as e:
             self.logger.exception(f'Failed to load last event {e}')
 
     async def on_data(self, sender, e: AlertPOLState):
         if await self.cd.can_do():
-            previous = await self._load_last_event()
+            previous = await self.load_last_event()
             new_event = AlertRunepoolStats(
                 e.runepool,
-                previous
+                previous,
+                usd_per_rune=self.deps.price_holder.usd_per_rune,
             )
             await self.pass_data_to_listeners(new_event)
-            await self._save_last_event(e)
+            await self._save_last_event(e.runepool)
             await self.cd.do()

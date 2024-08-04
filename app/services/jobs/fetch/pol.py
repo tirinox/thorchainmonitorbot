@@ -8,7 +8,7 @@ from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import free_url_gen
 from services.models.mimir_naming import MIMIR_KEY_POL_TARGET_SYNTH_PER_POOL_DEPTH, MIMIR_KEY_POL_MAX_NETWORK_DEPOSIT
-from services.models.runepool import AlertPOLState, POLState
+from services.models.runepool import AlertPOLState, POLState, RunepoolState
 from services.models.pool_member import PoolMemberDetails
 
 
@@ -40,25 +40,34 @@ class RunePoolFetcher(BaseFetcher):
         return runepool
 
     async def fetch(self) -> AlertPOLState:
-        runepool = await self.load_runepool()
-
-        if runepool.pol.value > 0:
-            membership = await self.get_reserve_membership(self.reserve_address)
-        else:
-            membership = []
-
         mimir = self.deps.mimir_const_holder
 
         synth_target = mimir.get_constant(MIMIR_KEY_POL_TARGET_SYNTH_PER_POOL_DEPTH, 4500)
         synth_target = bp_to_percent(synth_target)
         max_deposit = thor_to_float(mimir.get_constant(MIMIR_KEY_POL_MAX_NETWORK_DEPOSIT, 10e3, float))
 
-        self.logger.info(f"Got RunePOOL: {runepool}")
+        rune_providers = await self.deps.thor_connector.query_runepool_providers()
+        avg_deposit = sum(p.rune_value for p in rune_providers) / len(
+            rune_providers) if rune_providers else 0.0
+
+        runepool = await self.load_runepool()
+        if runepool.pol.value > 0:
+            membership = await self.get_reserve_membership(self.reserve_address)
+        else:
+            membership = []
+
+        self.logger.info(f"Got RunePOOL: {runepool}, providers: {len(rune_providers)}.")
+
         return AlertPOLState(
             POLState(self.deps.price_holder.usd_per_rune, runepool.pol),
             membership,
             prices=self.deps.price_holder,
             mimir_max_deposit=max_deposit,
             mimir_synth_target_ptc=synth_target,
-            runepool=runepool,
+            runepool=RunepoolState(
+                runepool,
+                n_providers=len(rune_providers),
+                avg_deposit=avg_deposit,
+                usd_per_rune=self.deps.price_holder.usd_per_rune,
+            ),
         )

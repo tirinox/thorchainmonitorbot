@@ -37,7 +37,7 @@ from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConse
 from services.models.pool_info import PoolInfo, PoolChanges, PoolMapPair
 from services.models.price import AlertPrice, RuneMarketInfo
 from services.models.queue import QueueInfo
-from services.models.runepool import AlertPOLState, AlertRunePoolAction
+from services.models.runepool import AlertPOLState, AlertRunePoolAction, AlertRunepoolStats
 from services.models.s_swap import AlertSwapStart
 from services.models.savers import AlertSaverStats
 from services.models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
@@ -2074,9 +2074,17 @@ class RussianLocalization(BaseLocalization):
             f"{aff_text}"
         )
 
-    def notification_runepool_stats(self, event: AlertPOLState):
-        # todo
-        return ''
+    def notification_runepool_stats(self, event: AlertRunepoolStats):
+        n_providers_delta, pnl_delta, rune_delta, share_delta = self._runepool_deltas(event)
+
+        return (
+            f'🏦 <b>RUNEPool статистика</b>\n\n'
+            f'Всего внесено: {bold(pretty_rune(event.current.rune_value))} {rune_delta}\n'
+            f'Доля провайдеров: {bold(pretty_percent(event.current.providers_share, signed=False))} {share_delta}\n'
+            f'Доход/убыток: {bold(pretty_rune(event.current.pnl))} {pnl_delta}\n'
+            f'Провайдеры Rune: {bold(short_money(event.current.n_providers, integer=True))} {n_providers_delta}\n'
+            f'Средний депозит провайдера: {bold(pretty_rune(event.current.avg_deposit))}\n'
+        )
 
     def notification_text_pol_stats(self, event: AlertPOLState):
         text = '🥃 <b>POL: ликвидность протокола</b>\n\n'
