@@ -2,7 +2,7 @@ import asyncio
 
 from services.lib.date_utils import now_ts
 from services.lib.db import DB
-from services.lib.utils import take_closest
+from services.lib.utils import take_closest, gather_in_batches
 
 
 class Accumulator:
@@ -64,7 +64,7 @@ class Accumulator:
         if not timestamps:
             return {}
 
-        results = await asyncio.gather(*(self.get(ts, conv_to_float) for ts in timestamps))
+        results = await gather_in_batches([self.get(ts, conv_to_float) for ts in timestamps], 10)
         return dict(zip(timestamps, results))
 
     async def get_range_n(self, start_ts: float, end_ts: float = None, conv_to_float=True, n=10):

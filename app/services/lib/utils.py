@@ -17,7 +17,7 @@ from collections import deque, Counter, defaultdict
 from functools import wraps, partial
 from io import BytesIO
 from itertools import tee
-from typing import Iterable, List, Any
+from typing import Iterable, List, Any, Awaitable
 from urllib.parse import urlparse, urlunparse
 
 import aiofiles
@@ -568,3 +568,22 @@ def remove_path_and_query(url):
     parsed_url = urlparse(url)
     clean_url = urlunparse((parsed_url.scheme, parsed_url.netloc, '', '', '', ''))
     return clean_url
+
+
+async def gather_in_batches(tasks: List[Awaitable[Any]], batch_size: int) -> List[Any]:
+    """
+    Gather asyncio tasks in batches to avoid overwhelming the system.
+
+    Args:
+        tasks (List[Awaitable[Any]]): A list of awaitable objects or coroutines.
+        batch_size (int): The number of tasks to process concurrently in each batch.
+
+    Returns:
+        List[Any]: A list of results from the tasks.
+    """
+    results = []
+    for i in range(0, len(tasks), batch_size):
+        batch = tasks[i:i + batch_size]
+        batch_results = await asyncio.gather(*batch)
+        results.extend(batch_results)
+    return results
