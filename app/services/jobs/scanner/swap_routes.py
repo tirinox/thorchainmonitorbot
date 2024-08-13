@@ -31,14 +31,26 @@ class SwapRouteRecorder(WithLogger, INotified):
     def _prefixed_key(self, route, date):
         return f"{self.key_prefix}:route:{route}:{self._date_format(date)}"
 
-    async def store_swap_event(self, from_asset, to_asset, volume, dt: datetime):
+    async def store_swap_event(self, tx):
+        volume = tx.full_rune
+
         if volume <= 0:
+            self.logger.error(f'Tx: {tx.tx_hash} volume = {volume} R. Ignored.')
             return
 
+        from_asset = tx.first_input_tx.first_asset
+        to_asset = tx.first_output_tx.first_asset
+        dt = datetime.utcfromtimestamp(tx.date_timestamp)
+
         route = f"{from_asset}{ROUTE_SEP}{to_asset}"
+
+        # fixme: debug
+        # print(f'{tx.tx_hash} {from_asset} -> {to_asset}, volume = {volume:.1f} Rune')
+        # print('--' * 50)
+
         key = self._prefixed_key(route, dt)
         await self.redis.hincrbyfloat(key, "volume", volume)
-        self.logger.debug(f"Stored swap event: {route} {pretty_dollar(volume)} at {dt}")
+        self.logger.debug(f"Stored swap event: {route} {pretty_dollar(volume)} hash = {tx.tx_hash}")
 
     async def get_top_swap_routes_by_volume(self, days=7, top_n=3,
                                             normalize_assets=False,
@@ -119,12 +131,7 @@ class SwapRouteRecorder(WithLogger, INotified):
             if await self._dedup.have_ever_seen_hash(tx.tx_hash):
                 continue
 
-            await self.store_swap_event(
-                tx.first_input_tx.first_asset,
-                tx.first_output_tx.first_asset,
-                tx.full_rune,
-                datetime.utcfromtimestamp(tx.date_timestamp)
-            )
+            await self.store_swap_event(tx)
 
             await self._dedup.mark_as_seen(tx.tx_hash)
 
