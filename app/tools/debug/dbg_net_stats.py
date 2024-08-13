@@ -14,7 +14,7 @@ from services.lib.depcont import DepContainer
 from services.lib.money import distort_randomly
 from services.lib.texts import up_down_arrow
 from services.lib.utils import setup_logs, load_pickle, save_pickle
-from services.models.net_stats import NetworkStats
+from services.models.net_stats import NetworkStats, AlertNetworkStats
 from services.models.pool_info import PoolInfoMap, parse_thor_pools
 from services.notify.types.stats_notify import NetworkStatsNotifier
 from tools.lib.lp_common import LpAppFramework
@@ -29,6 +29,7 @@ DRY_RUN = False
 def randomize_all_fields(old: NetworkStats, dev=10):
     exceptions = {'date_ts'}
     new = NetworkStats()
+    # noinspection PyUnresolvedReferences
     for name, field in old.__dataclass_fields__.items():
         val = getattr(old, name)
         if name not in exceptions:
@@ -41,10 +42,10 @@ def randomize_all_fields(old: NetworkStats, dev=10):
 
 async def print_message(old_info: NetworkStats, new_info: NetworkStats, deps: DepContainer, post_tg=True, loc=None):
     loc: BaseLocalization = loc or deps.loc_man.default
-    market = deps.rune_market_fetcher._prev_result
-    message = loc.notification_text_network_summary(old_info, new_info,
-                                                    market,
-                                                    deps.node_holder.active_nodes)
+
+    message = loc.notification_text_network_summary(AlertNetworkStats(
+        old_info, new_info, deps.node_holder.nodes
+    ))
     print('OLD:')
     print(old_info)
     print('-' * 100)
@@ -144,7 +145,7 @@ def demo_upd():
     upd(0, 10, int_delta=True, more_is_better=False, signed=False)  # no old = ignore
 
 
-async def demo_pool_stats():
+async def demo_pool_stats_normal():
     app = LpAppFramework()
 
     async with app:
@@ -156,9 +157,27 @@ async def demo_pool_stats():
         await notifier_stats.notify_right_now(new_info)
 
 
+async def demo_pool_stats_direct():
+    app = LpAppFramework()
+
+    async with app(brief=False):
+        fetcher_stats = NetworkStatisticsFetcher(app.deps)
+        new_info = await fetcher_stats.fetch()
+        old_info = randomize_all_fields(new_info, 10)
+        old_info.date_ts = new_info.date_ts - 2 * DAY
+
+        await app.test_all_locs(BaseLocalization.notification_text_network_summary,
+                                None,
+                                AlertNetworkStats(
+                                    old_info,
+                                    new_info,
+                                    app.deps.node_holder.nodes
+                                ))
+
+
 async def main():
-    await demo_generic_pool_message()
-    # await demo_pool_stats()
+    # await demo_generic_pool_message()
+    await demo_pool_stats_direct()
 
 
 if __name__ == "__main__":

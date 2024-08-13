@@ -1,15 +1,15 @@
 from localization.manager import BaseLocalization
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import DAY, parse_timespan_to_seconds, MINUTE
-from services.lib.delegates import INotified
+from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
-from services.models.net_stats import NetworkStats
+from services.models.net_stats import NetworkStats, AlertNetworkStats
 from services.models.price import RuneMarketInfo
 from services.models.time_series import TimeSeries
 
 
-class NetworkStatsNotifier(INotified, WithLogger):
+class NetworkStatsNotifier(INotified, WithDelegates, WithLogger):
     MAX_POINTS = 10000
 
     def __init__(self, deps: DepContainer):
@@ -38,19 +38,14 @@ class NetworkStatsNotifier(INotified, WithLogger):
         await self.series.trim_oldest(self.MAX_POINTS)
 
     async def notify_right_now(self, new_info: NetworkStats):
-        old_info = await self.get_previous_stats(ago=self.notify_cd.cooldown)  # since last time notified
-
-        # fixme: debug
-        # old_info = await self._dbg_get_other_info()
-
-        rune_market_info: RuneMarketInfo = await self.deps.rune_market_fetcher.get_rune_market_info()
-        await self._notify(old_info, new_info, rune_market_info)
+        old_info = await self.get_previous_stats(ago=DAY)  # 24 ago!
+        await self.pass_data_to_listeners(AlertNetworkStats(old_info, new_info, self.deps.node_holder.nodes))
 
     async def clear_cd(self):
         await self.notify_cd.clear()
 
     async def get_previous_stats(self, ago=DAY):
-        tolerance = ago * 0.05 if ago else MINUTE * 2
+        tolerance = ago * 0.05 if ago else MINUTE * 10
         start, end = self.series.range_ago(ago, tolerance_sec=tolerance)
         data = await self.series.select(start, end, 1)
         if not data:
@@ -59,13 +54,6 @@ class NetworkStatsNotifier(INotified, WithLogger):
 
     async def get_latest_info(self):
         return await self.get_previous_stats(0)
-
-    async def _notify(self, old: NetworkStats, new: NetworkStats, rune_market_info: RuneMarketInfo):
-        await self.deps.broadcaster.notify_preconfigured_channels(
-            BaseLocalization.notification_text_network_summary,
-            old, new, rune_market_info,
-            self.deps.node_holder.active_nodes
-        )
 
     async def _dbg_get_other_info(self):
         r = await self.get_previous_stats(0)

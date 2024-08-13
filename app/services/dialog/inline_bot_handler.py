@@ -13,6 +13,7 @@ from services.lib.date_utils import today_str, MINUTE, parse_timespan_to_seconds
 from services.lib.draw_utils import img_to_bio
 from services.lib.utils import unique_ident
 from services.models.lp_info import LPAddress
+from services.models.net_stats import AlertNetworkStats
 from services.models.price import RuneMarketInfo
 from services.notify.types.best_pool_notify import BestPoolsNotifier
 from services.notify.types.stats_notify import NetworkStatsNotifier
@@ -84,11 +85,11 @@ class InlineBotHandlerDialog(BaseDialog):
             return
 
         loc: BaseLocalization = self.get_localization()
-        rune_market_info: RuneMarketInfo = await self.deps.rune_market_fetcher.get_rune_market_info()
         text = loc.notification_text_network_summary(
-            old_info, new_info,
-            rune_market_info,
-            self.deps.node_holder.active_nodes
+            AlertNetworkStats(
+                old_info, new_info,
+                self.deps.node_holder.nodes
+            )
         )
 
         await self._answer_results(inline_query, [

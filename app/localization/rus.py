@@ -12,7 +12,7 @@ from services.jobs.fetch.circulating import ThorRealms
 from services.jobs.fetch.runeyield.borrower import LoanReportCard
 from services.lib.config import Config
 from services.lib.constants import Chains, LOAN_MARKER
-from services.lib.date_utils import format_time_ago, seconds_human, now_ts
+from services.lib.date_utils import format_time_ago, seconds_human, now_ts, HOUR
 from services.lib.explorers import get_explorer_url_to_address, get_thoryield_address, \
     get_ip_info_link
 from services.lib.midgard.name_service import add_thor_suffix, NameMap
@@ -31,7 +31,7 @@ from services.models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendin
 from services.models.lp_info import LiquidityPoolReport
 from services.models.memo import ActionType
 from services.models.mimir import MimirChange, MimirHolder
-from services.models.net_stats import NetworkStats
+from services.models.net_stats import AlertNetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEvent, EventDataSlash, \
     NodeEventType, EventBlockHeight, EventProviderStatus, EventProviderBondChange
 from services.models.pool_info import PoolInfo, PoolChanges, PoolMapPair
@@ -467,7 +467,6 @@ class RussianLocalization(BaseLocalization):
                 ilp_text = ''
 
             if tx.is_savings:
-                cap = None  # it will stop standard LP cap from being shown
                 amount_more, asset_more, saver_pb, saver_cap, saver_percent = \
                     self.get_savers_limits(pool_info, usd_per_rune, e.mimir, tx.asset_amount)
                 saver_cap_part = f'Кап сбережений {saver_pb}. '
@@ -549,15 +548,6 @@ class RussianLocalization(BaseLocalization):
         msg = f"{heading}\n" \
               f"{blockchain_components_str}\n" \
               f"{content}"
-
-        # todo: cap info
-        # if cap:
-        #     msg += (
-        #         f"\n"
-        #         f"Кап ликвидности {self._cap_progress_bar(cap)}.\n"
-        #         f'Вы можете добавить еще {code(short_rune(cap.how_much_rune_you_can_lp))} {bold(self.R)} '
-        #         f'({short_dollar(cap.how_much_usd_you_can_lp)}).'
-        #     )
 
         return msg.strip()
 
@@ -846,13 +836,12 @@ class RussianLocalization(BaseLocalization):
         else:
             return "🤬 ПОТЕНЦИАЛЬНО НЕБЕЗОПАСНА"
 
-    def notification_text_network_summary(self,
-                                          old: NetworkStats, new: NetworkStats,
-                                          market: RuneMarketInfo,
-                                          nodes: List[NodeInfo]):
-        message = bold('🌐 THORChain статистика') + '\n'
+    def notification_text_network_summary(self, e: AlertNetworkStats):
+        new, old, nodes = e.new, e.old, e.nodes
 
-        message += '\n'
+        message = bold('🌐 THORChain статистика') + '\n\n'
+
+        # --------------- NODES / SECURITY --------------------
 
         sec_ratio = self.get_network_security_ratio(new, nodes)
         if sec_ratio > 0:
@@ -865,7 +854,7 @@ class RussianLocalization(BaseLocalization):
         message += f"🖥️ {bold(new.active_nodes)} активных нод{active_nodes_change} " \
                    f"и {bold(new.standby_nodes)} нод в режиме ожидания{standby_nodes_change}.\n"
 
-        # -- BOND
+        # --------------- NODE BOND --------------------
 
         current_bond_text = bold(short_rune(new.total_active_bond_rune))
         current_bond_change = bracketify(
@@ -891,7 +880,7 @@ class RussianLocalization(BaseLocalization):
         message += f"🔗 Бонд всех нод: {current_total_bond_text}{current_total_bond_change} или " \
                    f"{current_total_bond_usd_text}{current_total_bond_usd_change}.\n"
 
-        # -- POOL
+        # --------------- POOLED RUNE --------------------
 
         current_pooled_text = bold(short_rune(new.total_rune_lp))
         current_pooled_change = bracketify(
@@ -904,7 +893,7 @@ class RussianLocalization(BaseLocalization):
         message += f"🏊 Всего в пулах: {current_pooled_text}{current_pooled_change} или " \
                    f"{current_pooled_usd_text}{current_pooled_usd_change}.\n"
 
-        # -- LIQ
+        # ----------------- LIQUIDITY / BOND / RESERVE --------------------------------
 
         current_liquidity_usd_text = bold(short_dollar(new.total_liquidity_usd))
         current_liquidity_usd_change = bracketify(
@@ -912,60 +901,56 @@ class RussianLocalization(BaseLocalization):
 
         message += f"🌊 Всего ликвидности (TVL): {current_liquidity_usd_text}{current_liquidity_usd_change}.\n"
 
-        # -- TVL
-
         tlv_change = bracketify(
             up_down_arrow(old.total_locked_usd, new.total_locked_usd, money_delta=True, money_prefix='$'))
         message += f'🏦 TVL + бонды нод: {code(short_dollar(new.total_locked_usd))}{tlv_change}.\n'
 
-        # -- RESERVE
-
         reserve_change = bracketify(up_down_arrow(old.reserve_rune, new.reserve_rune,
                                                   postfix=RAIDO_GLYPH, money_delta=True))
-
         message += f'💰 Резервы: {bold(short_rune(new.reserve_rune))}{reserve_change}.\n'
 
-        # --- FLOWS:
+        # ----------------- ADD/WITHDRAW STATS -----------------
 
         message += '\n'
+        message += f'{ital(f"За последние сутки:")}\n'
+
+        price = new.usd_per_rune
 
         if old.is_ok:
             # 24 h Add/withdrawal
             added_24h_rune = new.added_rune - old.added_rune
             withdrawn_24h_rune = new.withdrawn_rune - old.withdrawn_rune
-            swap_volume_24h_rune = new.swap_volume_rune - old.swap_volume_rune
 
             add_rune_text = bold(short_rune(added_24h_rune))
             withdraw_rune_text = bold(short_rune(withdrawn_24h_rune))
-            swap_rune_text = bold(short_rune(swap_volume_24h_rune))
-
-            price = new.usd_per_rune
 
             add_usd_text = short_dollar(added_24h_rune * price)
             withdraw_usd_text = short_dollar(withdrawn_24h_rune * price)
-            swap_usd_text = short_dollar(swap_volume_24h_rune * price)
-
-            message += f'{ital("За последние 24 часа:")}\n'
 
             if added_24h_rune:
                 message += f'➕ Добавлено в пулы: {add_rune_text} ({add_usd_text}).\n'
+
             if withdrawn_24h_rune:
                 message += f'➖ Выведено из пулов: {withdraw_rune_text} ({withdraw_usd_text}).\n'
-            if swap_volume_24h_rune:
-                message += f'🔀 Объем торгов: {swap_rune_text} ({swap_usd_text}) ' \
-                           f'при {bold(short_money(new.swaps_24h))} обменов совершено.\n'
-
-            # synthetics:
-            synth_volume_rune = code(short_rune(new.synth_volume_24h))
-            synth_volume_usd = code(short_dollar(new.synth_volume_24h_usd))
-            synth_op_count = short_money(new.synth_op_count)
-
-            message += f'💊 Объем торговли синтетиками: {synth_volume_rune} ({synth_volume_usd}) ' \
-                       f'путем {synth_op_count} обменов 🆕\n'
 
             message += '\n'
 
-        # API ---
+        synth_volume_usd = code(short_dollar(new.synth_volume_24h_usd))
+        synth_op_count = short_money(new.synth_op_count)
+
+        trade_volume_usd = code(short_dollar(new.trade_volume_24h_usd))
+        trade_op_count = short_money(new.trade_op_count)
+
+        swap_usd_text = code(short_dollar(new.swap_volume_24h_usd))
+        swap_op_count = bold(short_money(new.swaps_24h))
+
+        message += f'🔀 Всего объемы: {swap_usd_text} за {swap_op_count} операций.\n'
+        message += f'🆕 Объемы торговых активов {trade_volume_usd} за {trade_op_count} операций.\n'
+        message += f'Объем торговли синтетиками {synth_volume_usd} за {synth_op_count} операций.\n'
+
+        # ---------------- APY -----------------
+
+        message += '\n'
 
         bonding_apy_change, liquidity_apy_change = self._extract_apy_deltas(new, old)
         message += (
@@ -975,9 +960,7 @@ class RussianLocalization(BaseLocalization):
             f'{code(pretty_money(new.liquidity_apy, postfix="%"))}{liquidity_apy_change}.\n'
         )
 
-        # message += (
-        #     f'🛡️ Всего выплачено страховки от IL (непостоянных потерь): '
-        #     f'{code(short_dollar(new.loss_protection_paid_usd))}.\n')
+        # ---------------- USER STATS -----------------
 
         if new.users_daily or new.users_monthly:
             daily_users_change = bracketify(up_down_arrow(old.users_daily, new.users_daily, int_delta=True))
@@ -986,12 +969,14 @@ class RussianLocalization(BaseLocalization):
                        f'пользователей за месяц: {code(new.users_monthly)}{monthly_users_change} 🆕\n'
             message += '\n'
 
+        # ---------------- POOLS -----------------
+
         active_pool_changes = bracketify(up_down_arrow(old.active_pool_count,
                                                        new.active_pool_count, int_delta=True))
         pending_pool_changes = bracketify(up_down_arrow(old.pending_pool_count,
                                                         new.pending_pool_count, int_delta=True))
-        message += f'{bold(new.active_pool_count)} активных пулов{active_pool_changes} и ' \
-                   f'{bold(new.pending_pool_count)} ожидающих активации пулов{pending_pool_changes}.\n'
+        message += f'{bold(new.active_pool_count)} активных пулов{active_pool_changes}.\n'
+        message += f'{bold(new.pending_pool_count)} ожидающих активации пулов{pending_pool_changes}.\n'
 
         if new.next_pool_to_activate:
             next_pool_wait = self.seconds_human(new.next_pool_activation_ts - now_ts())
@@ -1075,7 +1060,7 @@ class RussianLocalization(BaseLocalization):
             up_down_arrow(e.prev.trade_swap_vol_usd, e.curr.trade_swap_vol_usd, percent_delta=True)) if e.prev else ''
 
         return (
-            f"⚖️ <b>Сводка по торговым счетам</b>\n"
+            f"⚖️ <b>Сводка по торговым счетам за сутки</b>\n"
             f"Всего держателей: {bold(pretty_money(e.curr.vaults.total_traders))}"
             f" {delta_holders}\n"
             f"Всего торговых активов: {bold(short_money(e.curr.vaults.total_usd))}"
@@ -2026,7 +2011,8 @@ class RussianLocalization(BaseLocalization):
             f'<b>Статистика кредитования</b>\n\n'
             f'🙋‍♀️ Число заемщиков: {bold(pretty_money(curr.borrower_count))} {borrower_count_delta}\n'
             f'📝 Количество транзакций: {bold(pretty_money(curr.lending_tx_count))} {lending_tx_count_delta}\n'
-            f'💰 Общее обеспечение: {bold(short_dollar(curr.total_collateral_value_usd))} {total_collateral_value_delta}\n'
+            f'💰 Общее обеспечение: {bold(short_dollar(curr.total_collateral_value_usd))}'
+            f' {total_collateral_value_delta}\n'
             f'💸 Объем займов: {bold(short_dollar(curr.total_borrowed_amount_usd))} {total_borrowed_amount_delta}\n'
             f'{self._lend_pool_desc(event)}'
             f"Коэффициент обеспечения: {pretty_money(cr)}\n"

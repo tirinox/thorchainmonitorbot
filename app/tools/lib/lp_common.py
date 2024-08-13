@@ -106,12 +106,17 @@ class LpAppFramework(App):
 
     async def test_all_locs(self, f, locs=None, *args, **kwargs):
         locs = locs or self.deps.loc_man.all
+
         await self.send_test_tg_message("--------------------------------------------------")
         for loc in locs:
             f = getattr(loc, f.__name__)
             text = f(*args, **kwargs)
             print(text)
-            print(f"\nTwitter len: {twitter_text_length(text)}")
+            if 'Twitter' in loc.__class__.__name__:
+                print(f"\nTwitter len: {twitter_text_length(text)}")
+
+            text = text.replace('------', '\n-----\n\n')
+
             await self.send_test_tg_message(text)
             sep()
 

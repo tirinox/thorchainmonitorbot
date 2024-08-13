@@ -14,7 +14,7 @@ from services.jobs.fetch.runeyield.borrower import LoanReportCard
 from services.lib.config import Config
 from services.lib.constants import thor_to_float, THOR_BLOCK_TIME, DEFAULT_CEX_NAME, \
     DEFAULT_CEX_BASE_ASSET, bp_to_percent, LOAN_MARKER, BTC_SYMBOL, ETH_SYMBOL
-from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE, DAY
+from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE, DAY, HOUR
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
     get_explorer_url_for_node, get_pool_url, get_thoryield_address, get_ip_info_link
 from services.lib.midgard.name_service import NameService, add_thor_suffix, NameMap
@@ -36,7 +36,7 @@ from services.models.lp_info import LiquidityPoolReport
 from services.models.memo import ActionType
 from services.models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting, MimirVoteOption
 from services.models.mimir_naming import MimirUnits, NEXT_CHAIN_VOTING_MAP
-from services.models.net_stats import NetworkStats
+from services.models.net_stats import NetworkStats, AlertNetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEventType, NodeEvent, \
     EventBlockHeight, EventDataSlash, calculate_security_cap_rune, EventProviderBondChange, \
     EventProviderStatus
@@ -1086,13 +1086,12 @@ class BaseLocalization(ABC):  # == English
 
         return security_cap / divisor if divisor else 0
 
-    def notification_text_network_summary(self,
-                                          old: NetworkStats, new: NetworkStats,
-                                          market: RuneMarketInfo,
-                                          nodes: List[NodeInfo]):
-        message = bold('🌐 THORChain stats') + '\n'
+    def notification_text_network_summary(self, e: AlertNetworkStats):
+        new, old, nodes = e.new, e.old, e.nodes
 
-        message += '\n'
+        message = bold('🌐 THORChain stats') + '\n\n'
+
+        # --------------- NODES / SECURITY --------------------
 
         sec_ratio = self.get_network_security_ratio(new, nodes)
         if sec_ratio > 0:
@@ -1105,7 +1104,7 @@ class BaseLocalization(ABC):  # == English
         message += f"🖥️ {bold(new.active_nodes)} active nodes {active_nodes_change} " \
                    f"and {bold(new.standby_nodes)} standby nodes {standby_nodes_change}.\n"
 
-        # -- BOND
+        # --------------- NODE BOND --------------------
 
         current_active_bond_text = bold(short_rune(new.total_active_bond_rune))
         current_active_bond_change = bracketify(
@@ -1130,7 +1129,8 @@ class BaseLocalization(ABC):  # == English
 
         message += f"🔗 Total bond including standby: {current_total_bond_text}{current_total_bond_change} or " \
                    f"{current_total_bond_usd_text}{current_total_bond_usd_change}.\n"
-        # -- POOL
+
+        # --------------- POOLED RUNE --------------------
 
         current_pooled_text = bold(short_rune(new.total_rune_lp))
         current_pooled_change = bracketify(
@@ -1143,7 +1143,7 @@ class BaseLocalization(ABC):  # == English
         message += f"🏊 Total pooled: {current_pooled_text}{current_pooled_change} or " \
                    f"{current_pooled_usd_text}{current_pooled_usd_change}.\n"
 
-        # -- LIQ
+        # ----------------- LIQUIDITY / BOND / RESERVE --------------------------------
 
         current_liquidity_usd_text = bold(short_dollar(new.total_liquidity_usd))
         current_liquidity_usd_change = bracketify(
@@ -1151,40 +1151,33 @@ class BaseLocalization(ABC):  # == English
 
         message += f"🌊 Total liquidity (TVL): {current_liquidity_usd_text}{current_liquidity_usd_change}.\n"
 
-        # -- TVL
-
         tlv_change = bracketify(
             up_down_arrow(old.total_locked_usd, new.total_locked_usd, money_delta=True, money_prefix='$'))
         message += f'🏦 TVL + Bond: {code(short_dollar(new.total_locked_usd))}{tlv_change}.\n'
-
-        # -- RESERVE
 
         reserve_change = bracketify(up_down_arrow(old.reserve_rune, new.reserve_rune,
                                                   postfix=RAIDO_GLYPH, money_delta=True))
 
         message += f'💰 Reserve: {bold(short_rune(new.reserve_rune))}{reserve_change}.\n'
 
-        # --- FLOWS:
+        # ----------------- ADD/WITHDRAW STATS -----------------
 
         message += '\n'
+        message += f'{ital(f"Last 24 hours:")}\n'
+
+        price = new.usd_per_rune
 
         if old.is_ok:
             # 24 h Add/withdrawal
             added_24h_rune = new.added_rune - old.added_rune
             withdrawn_24h_rune = new.withdrawn_rune - old.withdrawn_rune
-            swap_volume_24h_rune = new.swap_volume_rune - old.swap_volume_rune
 
             add_rune_text = bold(short_rune(added_24h_rune))
             withdraw_rune_text = bold(short_rune(withdrawn_24h_rune))
-            swap_rune_text = bold(short_rune(swap_volume_24h_rune))
-
-            price = new.usd_per_rune
 
             add_usd_text = short_dollar(added_24h_rune * price)
             withdraw_usd_text = short_dollar(withdrawn_24h_rune * price)
-            swap_usd_text = short_dollar(swap_volume_24h_rune * price)
 
-            message += f'{ital("Last 24 hours:")}\n'
 
             if added_24h_rune:
                 message += f'➕ Rune added to pools: {add_rune_text} ({add_usd_text}).\n'
@@ -1192,25 +1185,32 @@ class BaseLocalization(ABC):  # == English
             if withdrawn_24h_rune:
                 message += f'➖ Rune withdrawn: {withdraw_rune_text} ({withdraw_usd_text}).\n'
 
-            if swap_volume_24h_rune:
-                message += f'🔀 Rune swap volume: {swap_rune_text} ({swap_usd_text}) ' \
-                           f'in {bold(short_money(new.swaps_24h))} operations.\n'
-
-            # synthetics:
-            synth_volume_rune = code(short_rune(new.synth_volume_24h))
-            synth_volume_usd = code(short_dollar(new.synth_volume_24h_usd))
-            synth_op_count = short_money(new.synth_op_count)
-
-            message += f'💊 Synth trade volume: {synth_volume_rune} ({synth_volume_usd}) ' \
-                       f'in {synth_op_count} swaps.\n'
-
             message += '\n'
 
-        bonding_apy_change, liquidity_apy_change = self._extract_apy_deltas(new, old)
-        message += f'📈 Bonding APY is {code(pretty_money(new.bonding_apy, postfix="%"))}{bonding_apy_change} and ' \
-                   f'Liquidity APY is {code(pretty_money(new.liquidity_apy, postfix="%"))}{liquidity_apy_change}.\n'
+        # ----------------- SWAPS STATS -----------------
 
-        # message += f'🛡️ Total Imp. Loss Protection paid: {code(short_dollar(new.loss_protection_paid_usd))}.\n'
+        synth_volume_usd = code(short_dollar(new.synth_volume_24h_usd))
+        synth_op_count = short_money(new.synth_op_count)
+
+        trade_volume_usd = code(short_dollar(new.trade_volume_24h_usd))
+        trade_op_count = short_money(new.trade_op_count)
+
+        swap_usd_text = code(short_dollar(new.swap_volume_24h_usd))
+        swap_op_count = bold(short_money(new.swaps_24h))
+
+        message += f'🔀 Total swap volume: {swap_usd_text} in {swap_op_count} operations.\n'
+        message += f'🆕 Trade asset volume {trade_volume_usd} in {trade_op_count} swaps.\n'
+        message += f'Synth asset volume {synth_volume_usd} in {synth_op_count} swaps.\n'
+
+        # ---------------- APY -----------------
+
+        message += '\n'
+
+        bonding_apy_change, liquidity_apy_change = self._extract_apy_deltas(new, old)
+        message += f'📈 Bonding APY is {code(pretty_money(new.bonding_apy, postfix="%"))}{bonding_apy_change}.\n'
+        message += f'Liquidity APY is {code(pretty_money(new.liquidity_apy, postfix="%"))}{liquidity_apy_change}.\n'
+
+        # ---------------- USER STATS -----------------
 
         if new.users_daily or new.users_monthly:
             daily_users_change = bracketify(up_down_arrow(old.users_daily, new.users_daily, int_delta=True))
@@ -1219,6 +1219,8 @@ class BaseLocalization(ABC):  # == English
                        f'monthly users: {code(new.users_monthly)}{monthly_users_change} 🆕\n'
 
         message += '\n'
+
+        # ---------------- POOLS -----------------
 
         active_pool_changes = bracketify(up_down_arrow(old.active_pool_count,
                                                        new.active_pool_count, int_delta=True))
@@ -2778,7 +2780,7 @@ class BaseLocalization(ABC):  # == English
             up_down_arrow(e.prev.trade_swap_vol_usd, e.curr.trade_swap_vol_usd, percent_delta=True)) if e.prev else ''
 
         return (
-            f"⚖️ <b>Trade assets summary</b>\n\n"
+            f"⚖️ <b>Trade assets summary 24H</b>\n\n"
             f"Total holders: {bold(pretty_money(e.curr.vaults.total_traders))}"
             f" {delta_holders}\n"
             f"Total trade assets: {bold(short_money(e.curr.vaults.total_usd))}"

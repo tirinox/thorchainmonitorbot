@@ -25,11 +25,11 @@ from services.models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendin
 from services.models.memo import ActionType
 from services.models.mimir import MimirChange, MimirHolder
 from services.models.mimir_naming import MimirUnits
-from services.models.net_stats import NetworkStats
+from services.models.net_stats import AlertNetworkStats
 from services.models.node_info import NodeSetChanges, NodeVersionConsensus, NodeInfo
-from services.models.runepool import AlertPOLState, AlertRunePoolAction, AlertRunepoolStats
 from services.models.pool_info import PoolMapPair, PoolChanges, PoolInfo
 from services.models.price import RuneMarketInfo, AlertPrice
+from services.models.runepool import AlertPOLState, AlertRunePoolAction, AlertRunepoolStats
 from services.models.s_swap import AlertSwapStart
 from services.models.savers import AlertSaverStats
 from services.models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
@@ -153,7 +153,6 @@ class TwitterEnglishLocalization(BaseLocalization):
                     self.get_savers_limits(pool_info, usd_per_rune, e.mimir, tx.asset_amount)
                 pool_depth_part = f'Savers cap is {saver_pb} full. '
 
-                # todo
                 if self.show_add_more and amount_more > 0:
                     pool_depth_part += f'You can add {short_money(amount_more)} {asset_more} more.'
 
@@ -357,13 +356,19 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         return message.rstrip()
 
-    def notification_text_network_summary(self,
-                                          old: NetworkStats, new: NetworkStats,
-                                          market: RuneMarketInfo,
-                                          nodes: List[NodeInfo]):
+    def notification_text_network_summary(self, e: AlertNetworkStats):
+        new, old, nodes = e.new, e.old, e.nodes
+
         parts = []
 
         message = '🌐 THORChain stats\n'
+
+        def flush():
+            nonlocal message
+            parts.append(message)
+            message = ''
+
+        # --------------- NODES / SECURITY --------------------
 
         sec_ratio = self.get_network_security_ratio(new, nodes)
         if sec_ratio > 0:
@@ -373,11 +378,11 @@ class TwitterEnglishLocalization(BaseLocalization):
         active_nodes_change = bracketify_spaced(up_down_arrow(old.active_nodes, new.active_nodes, int_delta=True))
         standby_nodes_change = bracketify_spaced(up_down_arrow(old.active_nodes, new.active_nodes, int_delta=True))
         message += f"{new.active_nodes} active nodes{active_nodes_change}" \
-                   f"and {new.standby_nodes} standby nodes{standby_nodes_change}\n"
+                   f" and {new.standby_nodes} standby nodes{standby_nodes_change}\n"
 
-        parts.append(message)
+        flush()
 
-        # -- BOND
+        # --------------- NODE BOND --------------------
 
         current_active_bond_text = short_rune(new.total_active_bond_rune)
         current_active_bond_change = bracketify(
@@ -397,28 +402,25 @@ class TwitterEnglishLocalization(BaseLocalization):
             up_down_arrow(old.total_bond_usd, new.total_bond_usd, money_delta=True, money_prefix='$')
         )
 
-        message = f"🔗 Active bond: {current_active_bond_text}{current_active_bond_change} or " \
-                  f"{current_bond_usd_text}{current_bond_usd_change}.\n"
+        message += f"🔗 Active bond: {current_active_bond_text}{current_active_bond_change} or " \
+                   f"{current_bond_usd_text}{current_bond_usd_change}.\n"
 
-        parts.append(message)
+        message += f"Total bond: {current_total_bond_text}{current_total_bond_change} or " \
+                   f"{current_total_bond_usd_text}{current_total_bond_usd_change}.\n"
 
-        message = f"Total bond: {current_total_bond_text}{current_total_bond_change} or " \
-                  f"{current_total_bond_usd_text}{current_total_bond_usd_change}.\n"
+        flush()
 
-        parts.append(message)
+        # --------------- POOLED RUNE --------------------
 
-        # -- POOL
-
-        current_pooled_text = short_rune(new.total_rune_lp)
-        current_pooled_change = bracketify(
-            up_down_arrow(old.total_rune_lp, new.total_rune_lp, money_delta=True))
+        # current_pooled_text = short_rune(new.total_rune_lp)
+        # current_pooled_change = bracketify(
+        #     up_down_arrow(old.total_rune_lp, new.total_rune_lp, money_delta=True))
 
         current_pooled_usd_text = short_dollar(new.total_pooled_usd)
         current_pooled_usd_change = bracketify(
             up_down_arrow(old.total_pooled_usd, new.total_pooled_usd, money_delta=True, money_prefix='$'))
 
-        message = f"🏊 Total pooled: {current_pooled_text}{current_pooled_change} or " \
-                  f"{current_pooled_usd_text}{current_pooled_usd_change}.\n"
+        message += f"🏊 Total pooled: {current_pooled_usd_text}{current_pooled_usd_change}.\n"
 
         current_liquidity_usd_text = short_dollar(new.total_liquidity_usd)
         current_liquidity_usd_change = bracketify(
@@ -426,44 +428,29 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         message += f"🌊 Total liquidity (TVL): {current_liquidity_usd_text}{current_liquidity_usd_change}.\n"
 
-        parts.append(message)
-
-        # -- TVL
+        # ----------------- LIQUIDITY / BOND / RESERVE --------------------------------
 
         tlv_change = bracketify(
             up_down_arrow(old.total_locked_usd, new.total_locked_usd, money_delta=True, money_prefix='$'))
-        message = f'🏦 TVL + Bond: {short_dollar(new.total_locked_usd)}{tlv_change}.\n'
-        parts.append(message)
+        message += f'🏦 TVL + Bond: {short_dollar(new.total_locked_usd)}{tlv_change}.\n'
+        flush()
 
-        # -- RESERVE
+        # ----------------- ADD/WITHDRAW STATS -----------------
 
-        reserve_change = bracketify(up_down_arrow(old.reserve_rune, new.reserve_rune,
-                                                  postfix=RAIDO_GLYPH, money_delta=True))
+        message += f'Last 24 hours:\n'
 
-        message = f'💰 Reserve: {short_rune(new.reserve_rune)}{reserve_change}.\n'
-        parts.append(message)
-
-        # --------------------------------------------------------------------------------------------------------------
-
-        # --- FLOWS:
+        price = new.usd_per_rune
 
         if old.is_ok:
             # 24 h Add/withdrawal
             added_24h_rune = new.added_rune - old.added_rune
             withdrawn_24h_rune = new.withdrawn_rune - old.withdrawn_rune
-            swap_volume_24h_rune = new.swap_volume_rune - old.swap_volume_rune
 
             add_rune_text = short_rune(added_24h_rune)
             withdraw_rune_text = short_rune(withdrawn_24h_rune)
-            swap_rune_text = short_rune(swap_volume_24h_rune)
-
-            price = new.usd_per_rune
 
             add_usd_text = short_dollar(added_24h_rune * price)
             withdraw_usd_text = short_dollar(withdrawn_24h_rune * price)
-            swap_usd_text = short_dollar(swap_volume_24h_rune * price)
-
-            message = ''
 
             if added_24h_rune:
                 message += f'➕ Rune added to pools: {add_rune_text} ({add_usd_text}).\n'
@@ -471,59 +458,39 @@ class TwitterEnglishLocalization(BaseLocalization):
             if withdrawn_24h_rune:
                 message += f'➖ Rune withdrawn: {withdraw_rune_text} ({withdraw_usd_text}).\n'
 
-            if swap_volume_24h_rune:
-                message += f'🔀 Rune swap volume: {swap_rune_text} ({swap_usd_text}) ' \
-                           f'in {short_money(new.swaps_24h)} swaps.\n'
+        # ----------------- SWAPS STATS -----------------
 
-            if message:
-                message = f'Last 24 hours:\n' + message
+        # synth_volume_usd = short_dollar(new.synth_volume_24h_usd)
+        # synth_op_count = short_money(new.synth_op_count)
 
-            parts.append(message)
+        trade_volume_usd = short_dollar(new.trade_volume_24h_usd)
+        trade_op_count = short_money(new.trade_op_count)
 
-            # synthetics:
-            synth_volume_rune = short_rune(new.synth_volume_24h)
-            synth_volume_usd = short_dollar(new.synth_volume_24h_usd)
-            synth_op_count = short_money(new.synth_op_count)
+        swap_usd_text = short_dollar(new.swap_volume_24h_usd)
+        swap_op_count = short_money(new.swaps_24h)
 
-            message = f'💊 Synth trade volume: {synth_volume_rune} ({synth_volume_usd}) ' \
-                      f'in {synth_op_count} swaps\n'
-            parts.append(message)
+        message += f'🔀 Total swap volume: {swap_usd_text} in {swap_op_count} operations.\n'
+        message += f'🆕 Trade asset volume {trade_volume_usd} in {trade_op_count} swaps.\n'
+        flush()
 
-        # --------------------------------------------------------------------------------------------------------------
+        # ---------------- APY -----------------
 
         bonding_apy_change, liquidity_apy_change = self._extract_apy_deltas(new, old)
 
-        message = (
-            f'📈 Bonding APY is {pretty_money(new.bonding_apy, postfix="%")}{bonding_apy_change} and '
+        message += (
+            f'📈 Bonding APY is {pretty_money(new.bonding_apy, postfix="%")}{bonding_apy_change}.\n'
+        )
+        message += (
             f'Liquidity APY is {pretty_money(new.liquidity_apy, postfix="%")}{liquidity_apy_change}.\n'
         )
-
-        parts.append(message)
 
         if new.users_daily or new.users_monthly:
             daily_users_change = bracketify(up_down_arrow(old.users_daily, new.users_daily, int_delta=True))
             monthly_users_change = bracketify(up_down_arrow(old.users_monthly, new.users_monthly, int_delta=True))
-            message = f'👥 Daily users: {new.users_daily}{daily_users_change}, ' \
-                      f'monthly users: {new.users_monthly}{monthly_users_change} 🆕\n'
-            parts.append(message)
+            message += f'👥 Daily users: {new.users_daily}{daily_users_change},' \
+                       f' monthly users: {new.users_monthly}{monthly_users_change} 🆕\n'
 
-        # --------------------------------------------------------------------------------------------------------------
-
-        active_pool_changes = bracketify(up_down_arrow(old.active_pool_count,
-                                                       new.active_pool_count, int_delta=True))
-        pending_pool_changes = bracketify(up_down_arrow(old.pending_pool_count,
-                                                        new.pending_pool_count, int_delta=True))
-
-        # only if there next pool comes
-        if new.next_pool_to_activate:
-            message = f'{new.active_pool_count} active pools{active_pool_changes} and ' \
-                      f'{new.pending_pool_count} pending pools{pending_pool_changes}.\n'
-
-            next_pool_wait = seconds_human(new.next_pool_activation_ts - now_ts())
-            next_pool = self.pool_link(new.next_pool_to_activate)
-            message += f"Next pool is likely be activated: {next_pool} in {next_pool_wait}."
-
-            parts.append(message)
+        flush()
 
         return self.smart_split(parts)
 
@@ -1038,7 +1005,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         parts = [
             (
-                f"⚖️ Trade assets summary\n\n"
+                f"⚖️ Trade assets summary 24H\n\n"
                 f"Total holders: {pretty_money(e.curr.vaults.total_traders)}"
                 f" {delta_holders}\n"
                 f"Total trade assets: {short_money(e.curr.vaults.total_usd)}"

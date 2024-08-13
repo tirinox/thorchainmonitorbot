@@ -369,7 +369,8 @@ class App(WithLogger):
                 self.liquidity_notifier_tx.add_subscriber(d.alert_presenter)
 
             if d.cfg.tx.donate.get('enabled', True):
-                self.donate_notifier_tx = GenericTxNotifier(d, d.cfg.tx.donate, tx_types=(ActionType.DONATE,), curve=curve)
+                self.donate_notifier_tx = GenericTxNotifier(d, d.cfg.tx.donate, tx_types=(ActionType.DONATE,),
+                                                            curve=curve)
 
                 volume_filler.add_subscriber(self.donate_notifier_tx)
                 self.donate_notifier_tx.add_subscriber(d.alert_presenter)
@@ -415,9 +416,11 @@ class App(WithLogger):
 
         if d.cfg.get('net_summary.enabled', True):
             fetcher_stats = NetworkStatisticsFetcher(d)
-            notifier_stats = NetworkStatsNotifier(d)
-            fetcher_stats.add_subscriber(notifier_stats)
             tasks.append(fetcher_stats)
+
+            notifier_stats = NetworkStatsNotifier(d)
+            notifier_stats.add_subscriber(d.alert_presenter)
+            fetcher_stats.add_subscriber(notifier_stats)
 
             if achievements_enabled:
                 fetcher_stats.add_subscriber(achievements)
