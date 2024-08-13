@@ -10,6 +10,7 @@ from services.jobs.scanner.swap_extractor import SwapExtractorBlock
 from services.jobs.scanner.trade_acc import TradeAccEventDecoder
 from services.jobs.volume_filler import VolumeFillerUpdater
 from services.jobs.volume_recorder import VolumeRecorder, TxCountRecorder
+from services.lib.date_utils import now_ts, DAY
 from services.lib.depcont import DepContainer
 from services.lib.draw_utils import save_image_and_show
 from services.lib.w3.aggregator import AggregatorDataExtractor
@@ -101,12 +102,26 @@ async def demo_show_price_graph(app: LpAppFramework):
     save_image_and_show(graph, '../temp/price_gr.png')
 
 
+async def tool_get_total_volume_and_tx_count(app: LpAppFramework):
+    d = app.deps
+    d.volume_recorder = VolumeRecorder(d)
+    d.tx_count_recorder = TxCountRecorder(d)
+
+    t = now_ts()
+    total_volume = await d.volume_recorder.get_sum(t - 365 * DAY, t)
+    print(total_volume)
+
+    txs = await d.tx_count_recorder.get_stats(365)
+    print(txs)
+
+
 async def main():
     app = LpAppFramework(log_level=logging.INFO)
     async with app(brief=True):
-        await continuous_volume_recording(app)
+        # await continuous_volume_recording(app)
         # await demo_show_price_graph(app)
         # await debug_post_price_graph_to_discord(app)
+        await tool_get_total_volume_and_tx_count(app)
 
 
 if __name__ == '__main__':

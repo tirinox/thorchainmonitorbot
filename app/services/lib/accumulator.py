@@ -1,5 +1,3 @@
-import asyncio
-
 from services.lib.date_utils import now_ts
 from services.lib.db import DB
 from services.lib.utils import take_closest, gather_in_batches

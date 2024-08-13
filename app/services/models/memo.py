@@ -581,7 +581,7 @@ class THORMemo:
         return cls(ActionType.RUNEPOOL_ADD)
 
     @classmethod
-    def runepool_withdraw(cls, bp: int, affiliate: str='', affiliate_fee_bp: int=0):
+    def runepool_withdraw(cls, bp: int, affiliate: str = '', affiliate_fee_bp: int = 0):
         return cls(
             ActionType.RUNEPOOL_WITHDRAW,
             withdraw_portion_bp=bp,

@@ -9,7 +9,7 @@ async def main():
     app = LpAppFramework()
     async with app(brief=True):
         route_recorded = SwapRouteRecorder(app.deps.db)
-        routes = await route_recorded.get_top_swap_routes_by_volume(top_n=5)
+        routes = await route_recorded.get_top_swap_routes_by_volume(top_n=12)
 
         sep('NORMAL')
 
@@ -17,13 +17,13 @@ async def main():
             print(route)
 
         sep('NORMALIZED')
-        routes = await route_recorded.get_top_swap_routes_by_volume(top_n=5, normalize_assets=True)
+        routes = await route_recorded.get_top_swap_routes_by_volume(top_n=12, normalize_assets=True)
 
         for route in routes:
             print(route)
 
         sep('REORDERED and NORMALIZED')
-        routes = await route_recorded.get_top_swap_routes_by_volume(top_n=5, reorder_assets=True, normalize_assets=True)
+        routes = await route_recorded.get_top_swap_routes_by_volume(top_n=12, reorder_assets=True, normalize_assets=True)
 
         for route in routes:
             print(route)
