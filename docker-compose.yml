@@ -35,6 +35,7 @@ services:
       - '--save 300 100'
       - '--port ${REDIS_PORT}'
       - '--requirepass ${REDIS_PASSWORD}'
+      - '--bind 0.0.0.0 --protected-mode no'
 
   dozzle:
     container_name: dozzle
