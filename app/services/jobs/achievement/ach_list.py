@@ -84,7 +84,16 @@ class AchievementName:
     TRADE_BALANCE_TOTAL_USD = 'trade_balance_total_usd'
     TRADE_ASSET_HOLDERS_COUNT = 'trade_asset_holders_count'
     TRADE_ASSET_SWAPS_COUNT = 'trade_asset_swaps_count'
+    TRADE_ASSET_SWAPS_VOLUME = 'trade_asset_swaps_volume'
     TRADE_ASSET_MOVE_COUNT = 'trade_asset_move_count'
+    TRADE_ASSET_LARGEST_DEPOSIT = 'trade_asset_largest_deposit'
+
+    # runepool
+    RUNEPOOL_LARGEST_DEPOSIT = 'runepool_largest_deposit'
+    RUNEPOOL_VALUE_USD = 'runepool_value_usd'
+    RUNEPOOL_TOTAL_PROVIDERS = 'runepool_total_providers'
+    RUNEPOOL_PNL = 'runepool_pnl'
+    # todo realized pnl on withdraw
 
     @classmethod
     def all_keys(cls):
@@ -310,9 +319,16 @@ ACHIEVEMENT_DESC_MAP = {a.key: a for a in [
     ADesc(A.TOTAL_COLLATERAL_USD, 'Total collateral', prefix='$'),
 
     # trade assets
-    ADesc(A.TRADE_BALANCE_TOTAL_USD, 'Total trade asset balance', prefix='$'),  # todo: picture
-    ADesc(A.TRADE_ASSET_HOLDERS_COUNT, 'Trade asset holders'),  # todo: picture
-    ADesc(A.TRADE_ASSET_SWAPS_COUNT, 'Trade asset swaps'),
-    ADesc(A.TRADE_ASSET_MOVE_COUNT, 'Trade asset deposits/withdrawals'),
+    ADesc(A.TRADE_BALANCE_TOTAL_USD, 'Total trade asset balance', prefix='$', thresholds=10_000_000),
+    ADesc(A.TRADE_ASSET_HOLDERS_COUNT, 'Trade asset holders', thresholds=100),
+    ADesc(A.TRADE_ASSET_SWAPS_COUNT, 'Trade asset swaps', thresholds=100_000),
+    ADesc(A.TRADE_ASSET_MOVE_COUNT, 'Trade asset deposits/withdrawals', thresholds=10_000),
+    ADesc(A.TRADE_ASSET_LARGEST_DEPOSIT, 'Largest trade asset deposit', prefix='$', thresholds=100_000),
+    ADesc(A.TRADE_ASSET_SWAPS_VOLUME, 'Trade asset swaps volume', prefix='$', thresholds=1_000_000),
 
+    # runepool
+    ADesc(A.RUNEPOOL_LARGEST_DEPOSIT, 'Largest RUNEPool deposit', prefix='$'),
+    ADesc(A.RUNEPOOL_VALUE_USD, 'RUNEPool value', prefix='$'),
+    ADesc(A.RUNEPOOL_TOTAL_PROVIDERS, 'RUNEPool providers'),
+    ADesc(A.RUNEPOOL_PNL, 'RUNEPool PnL', prefix='$'),
 ]}

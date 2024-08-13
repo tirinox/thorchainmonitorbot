@@ -14,10 +14,10 @@ from services.models.loans import LendingStats, AlertLoanOpen
 from services.models.memo import ActionType
 from services.models.net_stats import NetworkStats
 from services.models.node_info import NodeSetChanges
-from services.models.runepool import AlertPOLState
+from services.models.runepool import AlertPOLState, AlertRunePoolAction
 from services.models.price import RuneMarketInfo, LastPriceHolder
 from services.models.savers import SaversBank
-from services.models.trade_acc import TradeAccountSummary, AlertTradeAccountAction, AlertTradeAccountSummary
+from services.models.trade_acc import AlertTradeAccountStats, AlertTradeAccountAction
 from services.models.tx import ThorTx
 from services.notify.types.block_notify import LastBlockStore
 
@@ -46,6 +46,7 @@ class AchievementsExtractor(WithLogger):
             kv_events = self.on_thor_tx_list(data)
         elif isinstance(data, AlertPOLState):
             kv_events = self.on_thor_pol(data)
+            kv_events += self.on_runepool_stats(data)
         elif isinstance(data, AlertKeyStats):
             kv_events = self.on_weekly_stats(data)
         elif isinstance(data, EventTestAchievement):
@@ -54,6 +55,10 @@ class AchievementsExtractor(WithLogger):
             kv_events = self.on_lending_stats(data)
         elif isinstance(data, AlertLoanOpen):
             kv_events = self.on_loan_open(data)
+        elif isinstance(data, AlertTradeAccountStats):
+            kv_events = self.on_trade_asset_summary(data)
+        elif isinstance(data, AlertTradeAccountAction):
+            kv_events = self.on_trade_asset_action(data)
 
         # todo: add event types for Trade accounts!
 
@@ -208,11 +213,37 @@ class AchievementsExtractor(WithLogger):
         ]
 
     @staticmethod
-    def on_trade_asset_summary(data: AlertTradeAccountSummary):
-        # todo
-        return []
+    def on_trade_asset_summary(data: AlertTradeAccountStats):
+        return [
+            Achievement(A.TRADE_ASSET_HOLDERS_COUNT, data.curr.vaults.total_traders),
+            Achievement(A.TRADE_BALANCE_TOTAL_USD, int(data.curr.vaults.total_usd)),
+
+            # todo more
+            # Achievement(A.TRADE_ASSET_SWAPS_VOLUME, int()),
+            # Achievement(A.TRADE_ASSET_SWAPS_COUNT, int()),
+            # Achievement(A.TRADE_ASSET_MOVE_COUNT, int(),
+        ]
 
     @staticmethod
     def on_trade_asset_action(data: AlertTradeAccountAction):
         # todo
-        return []
+        if data.is_deposit:
+            return [
+                Achievement(A.TRADE_ASSET_LARGEST_DEPOSIT, int(data.usd_amount))
+            ]
+        else:
+            return []
+
+    @staticmethod
+    def on_runepool_action(data: AlertRunePoolAction):
+        return [
+            Achievement(A.RUNEPOOL_LARGEST_DEPOSIT, int(data.usd_amount))
+        ]
+
+    @staticmethod
+    def on_runepool_stats(data: AlertPOLState):
+        return [
+            Achievement(A.RUNEPOOL_PNL, data.runepool.pnl),
+            Achievement(A.RUNEPOOL_TOTAL_PROVIDERS, data.runepool.n_providers),
+            Achievement(A.RUNEPOOL_VALUE_USD, data.runepool.usd_value),
+        ]
