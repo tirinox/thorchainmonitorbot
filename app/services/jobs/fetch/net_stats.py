@@ -15,6 +15,7 @@ class NetworkStatisticsFetcher(BaseFetcher):
         sleep_period = parse_timespan_to_seconds(deps.cfg.net_summary.fetch_period)
         super().__init__(deps, sleep_period)
         self.step_sleep = deps.cfg.sleep_step
+        self.swap_stats_days = 15
 
     async def _get_stats(self, ns: NetworkStats):
         j = await self.deps.midgard_connector.request(free_url_gen.url_stats())
@@ -77,14 +78,20 @@ class NetworkStatisticsFetcher(BaseFetcher):
             ns.next_pool_to_activate = pending_pools[0].asset if pending_pools else None
 
     async def _get_swap_stats(self, ns: NetworkStats):
-        j = await self.deps.midgard_connector.request(free_url_gen.url_for_swap_history(days=2))
+        j = await self.deps.midgard_connector.request(free_url_gen.url_for_swap_history(days=self.swap_stats_days))
         if j:
-            swap_meta = SwapHistoryResponse.from_json(j).intervals[0]
+            ns.swap_stats = swap_stats = SwapHistoryResponse.from_json(j).last_whole_interval
             ns.synth_volume_24h = (
-                    thor_to_float(swap_meta.synth_mint_volume) + thor_to_float(swap_meta.synth_redeem_volume)
+                thor_to_float(swap_stats.synth_mint_volume) + thor_to_float(swap_stats.synth_redeem_volume)
             )
-            ns.synth_op_count = swap_meta.synth_mint_count + swap_meta.synth_redeem_count
-            ns.swap_volume_24h = thor_to_float(swap_meta.total_volume)
+            ns.synth_op_count = swap_stats.synth_mint_count + swap_stats.synth_redeem_count
+
+            ns.trade_volume_24h = (
+                thor_to_float(swap_stats.to_trade_volume) + thor_to_float(swap_stats.from_trade_volume)
+            )
+            ns.trade_op_count = swap_stats.to_trade_count + swap_stats.from_trade_count
+
+            ns.swap_volume_24h = thor_to_float(swap_stats.total_volume)
         else:
             self.logger.error('Failed to get swap history from Midgard!')
 

@@ -1,6 +1,10 @@
 from dataclasses import dataclass
+from typing import Optional, NamedTuple, List
 
 from services.models.base import BaseModelMixin
+from services.models.node_info import NodeInfo
+from services.models.price import RuneMarketInfo
+from services.models.swap_history import SwapHistoryResponse
 
 
 @dataclass
@@ -50,8 +54,12 @@ class NetworkStats(BaseModelMixin):
 
     synth_op_count: int = 0  # swap history
     synth_volume_24h: float = 0  # swap history
+    trade_op_count: int = 0  # swap history
+    trade_volume_24h: float = 0  # swap history
 
     swap_volume_24h: float = 0  # swap history
+
+    swap_stats: Optional[SwapHistoryResponse] = None
 
     @property
     def total_bond_usd(self):
@@ -98,6 +106,14 @@ class NetworkStats(BaseModelMixin):
         return self.synth_volume_24h * self.usd_per_rune
 
     @property
+    def trade_volume_24h_usd(self):
+        return self.trade_volume_24h * self.usd_per_rune
+
+    @property
+    def swap_volume_24h_usd(self):
+        return self.swap_volume_24h * self.usd_per_rune
+
+    @property
     def total_nodes(self):
         return self.active_nodes + self.standby_nodes
 
@@ -105,3 +121,9 @@ class NetworkStats(BaseModelMixin):
     def is_ok(self):
         return self.total_rune_lp > 0 and self.active_pool_count > 0 \
             and self.active_nodes > 0 and self.total_active_bond_rune > 0
+
+
+class AlertNetworkStats(NamedTuple):
+    old: NetworkStats
+    new: NetworkStats
+    nodes: List[NodeInfo]
