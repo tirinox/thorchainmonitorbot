@@ -589,7 +589,8 @@ class App(WithLogger):
             runepool_decoder.add_subscriber(runepool_not)
             runepool_not.add_subscriber(d.alert_presenter)
 
-            achievements.add_subscriber(runepool_not)
+            if achievements:
+                runepool_decoder.add_subscriber(achievements)
 
         runepool_fetcher = RunePoolFetcher(d)
         need_runepool_data = False
