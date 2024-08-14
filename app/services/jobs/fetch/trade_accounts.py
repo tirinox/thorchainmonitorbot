@@ -6,7 +6,9 @@ from services.jobs.volume_recorder import TxCountRecorder, VolumeRecorder, TxCou
 from services.lib.constants import RUNE_DECIMALS
 from services.lib.date_utils import DAY
 from services.lib.depcont import DepContainer
+from services.lib.midgard.urlgen import free_url_gen
 from services.lib.utils import parallel_run_in_groups
+from services.models.swap_history import SwapHistoryResponse
 from services.models.trade_acc import AlertTradeAccountStats, TradeAccountVaults, TradeAccountStats
 
 
@@ -89,7 +91,12 @@ class TradeAccountFetcher(BaseFetcher):
         tx_counter: TxCountRecorder = self.deps.tx_count_recorder
         tx_count_stats: TxCountStats = await tx_counter.get_stats(tally_days)
 
+        days = round(self.tally_period_sec / DAY) * 2 + 1
+        j = await self.deps.midgard_connector.request(free_url_gen.url_for_swap_history(days=days))
+        swap_stats = SwapHistoryResponse.from_json(j)
+
         return AlertTradeAccountStats(
             curr=TradeAccountStats(tx_count_stats.curr, curr_volume_stats, current),
             prev=TradeAccountStats(tx_count_stats.prev, prev_volume_stats, previous),
+            swap_stats=swap_stats,
         )

@@ -284,3 +284,11 @@ def distort_randomly(x, dev_pct=10, up_only=False):
 
 def new_average(old_avg, new_value, count_of_values):
     return (old_avg * count_of_values + new_value) / (count_of_values + 1)
+
+
+def non_zero_f(x, y, f):
+    if x == 0:
+        return y
+    elif y == 0:
+        return x
+    return f(x, y)

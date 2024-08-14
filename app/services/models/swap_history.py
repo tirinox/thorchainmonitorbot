@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import List
 
+from services.lib.money import non_zero_f
+
 
 @dataclass
 class SwapsHistoryEntry:
@@ -86,12 +88,16 @@ class SwapsHistoryEntry:
             to_rune_volume_usd=int(j.get('toRuneVolumeUSD', 0))
         )
 
+    @classmethod
+    def zero(cls):
+        return cls.from_json({})
+
     def __add__(self, other: 'SwapsHistoryEntry'):
         return SwapsHistoryEntry(
             average_slip=self.average_slip + other.average_slip,
-            end_time=max(self.end_time, other.end_time),
+            end_time=non_zero_f(self.end_time, other.end_time, max),
             rune_price_usd=self.rune_price_usd,
-            start_time=min(self.start_time, other.start_time),
+            start_time=non_zero_f(self.start_time, other.start_time, min),
             synth_mint_average_slip=self.synth_mint_average_slip + other.synth_mint_average_slip,
             synth_mint_count=self.synth_mint_count + other.synth_mint_count,
             synth_mint_fees=self.synth_mint_fees + other.synth_mint_fees,
@@ -146,4 +152,4 @@ class SwapHistoryResponse:
         return self.intervals[-2] if self.intervals[-1].total_count == 0 else self.intervals[-1]
 
     def sum_of_intervals(self, start, end):
-        return sum(self.intervals[start:end])
+        return sum(self.intervals[start:end], start=SwapsHistoryEntry.zero())

@@ -193,7 +193,7 @@ async def run():
         # await demo_top_trade_asset_holders(app)
 
         # await demo_trade_acc_summary_continuous(app)
-        await demo_trade_acc_summary_single(app, reset_cache=True)
+        await demo_trade_acc_summary_single(app, reset_cache=False)
         # await demo_trade_acc_decode_continuous(app, 16515624)
 
 

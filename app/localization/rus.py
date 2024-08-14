@@ -1056,8 +1056,9 @@ class RussianLocalization(BaseLocalization):
         delta_balance = bracketify(
             up_down_arrow(e.prev.vaults.total_usd, e.curr.vaults.total_usd, percent_delta=True)) if e.prev else ''
 
+        tr_swap_volume_curr, tr_swap_volume_prev = e.curr_and_prev_trade_volume_usd
         delta_volume = bracketify(
-            up_down_arrow(e.prev.trade_swap_vol_usd, e.curr.trade_swap_vol_usd, percent_delta=True)) if e.prev else ''
+            up_down_arrow(tr_swap_volume_prev, tr_swap_volume_curr, percent_delta=True)) if e.prev else ''
 
         return (
             f"⚖️ <b>Сводка по торговым счетам за сутки</b>\n"
@@ -1069,8 +1070,7 @@ class RussianLocalization(BaseLocalization):
             f" {bracketify(short_dollar(e.curr.trade_deposit_vol_usd))}\n"
             f"Выводы: {bold(short_money(e.curr.trade_withdrawal_count, integer=True))}"
             f" {bracketify(short_dollar(e.curr.trade_withdrawal_vol_usd))}\n"
-            f"Объем торгов: {bold(short_dollar(e.curr.trade_swap_vol_usd))}"
-            f" {delta_volume}\n"
+            f"Объем торгов: {bold(short_dollar(tr_swap_volume_curr))} {delta_volume}\n"
             f"Количество обменов: {bold(short_money(e.curr.trade_swap_count, integer=True))}"
             f" {bracketify(up_down_arrow(e.prev.trade_swap_count, e.curr.trade_swap_count, int_delta=True))}\n"
             f"\n"

@@ -5,6 +5,7 @@ from services.lib.date_utils import now_ts
 from services.models.asset import normalize_asset
 from services.models.memo import ActionType
 from services.models.pool_info import PoolInfoMap
+from services.models.swap_history import SwapHistoryResponse
 from services.models.tx import ThorTx, SUCCESS, ThorSubTx, ThorCoin
 from services.models.vol_n import TxMetricType
 
@@ -131,3 +132,16 @@ class TradeAccountStats(NamedTuple):
 class AlertTradeAccountStats(NamedTuple):
     curr: TradeAccountStats
     prev: TradeAccountStats
+    swap_stats: SwapHistoryResponse
+
+    @property
+    def curr_and_prev_trade_volume_usd(self):
+        middle = len(self.swap_stats.intervals) // 2
+        interval1 = self.swap_stats.sum_of_intervals(0, middle)
+        interval2 = self.swap_stats.sum_of_intervals(middle, len(self.swap_stats.intervals))
+
+        return (
+            interval2.to_trade_volume_usd + interval2.from_trade_volume_usd,
+            interval1.to_trade_volume_usd + interval1.from_trade_volume_usd
+        )
+
