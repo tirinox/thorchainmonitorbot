@@ -1,6 +1,6 @@
 from typing import NamedTuple, List
 
-from aionode.types import ThorTradeUnits, ThorVault, ThorTradeAccount, float_to_thor
+from aionode.types import ThorTradeUnits, ThorVault, ThorTradeAccount, float_to_thor, thor_to_float
 from services.lib.date_utils import now_ts
 from services.models.asset import normalize_asset
 from services.models.memo import ActionType
@@ -141,7 +141,6 @@ class AlertTradeAccountStats(NamedTuple):
         interval2 = self.swap_stats.sum_of_intervals(middle, len(self.swap_stats.intervals))
 
         return (
-            interval2.to_trade_volume_usd + interval2.from_trade_volume_usd,
-            interval1.to_trade_volume_usd + interval1.from_trade_volume_usd
+            interval2.rune_price_usd * thor_to_float(interval2.to_trade_volume + interval2.from_trade_volume),
+            interval1.rune_price_usd * thor_to_float(interval1.to_trade_volume + interval1.from_trade_volume)
         )
-

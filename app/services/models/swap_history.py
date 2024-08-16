@@ -96,7 +96,7 @@ class SwapsHistoryEntry:
         return SwapsHistoryEntry(
             average_slip=self.average_slip + other.average_slip,
             end_time=non_zero_f(self.end_time, other.end_time, max),
-            rune_price_usd=self.rune_price_usd,
+            rune_price_usd=max(self.rune_price_usd, other.rune_price_usd),
             start_time=non_zero_f(self.start_time, other.start_time, min),
             synth_mint_average_slip=self.synth_mint_average_slip + other.synth_mint_average_slip,
             synth_mint_count=self.synth_mint_count + other.synth_mint_count,
@@ -144,7 +144,11 @@ class SwapHistoryResponse:
     def from_json(cls, j):
         return cls(
             meta=SwapsHistoryEntry.from_json(j.get('meta', {})),
-            intervals=[SwapsHistoryEntry.from_json(interval_j) for interval_j in j.get('intervals', [])]
+            intervals=[
+                SwapsHistoryEntry.from_json(interval_j)
+                for interval_j in j.get('intervals', [])
+                if interval_j.get('totalCount', '0') != '0'
+            ]
         )
 
     @property
@@ -152,4 +156,6 @@ class SwapHistoryResponse:
         return self.intervals[-2] if self.intervals[-1].total_count == 0 else self.intervals[-1]
 
     def sum_of_intervals(self, start, end):
-        return sum(self.intervals[start:end], start=SwapsHistoryEntry.zero())
+        if start >= end:
+            return SwapsHistoryEntry.zero()
+        return sum(self.intervals[start + 1:end], start=self.intervals[start])

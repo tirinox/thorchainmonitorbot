@@ -153,7 +153,7 @@ async def demo_trade_acc_summary_single(app: LpAppFramework, reset_cache=False):
     trade_acc_fetcher.add_subscriber(tr_acc_summary_not)
     # d.trade_acc_fetcher.add_subscriber(achievements)
 
-    cache_path = '../temp/trade_acc_summary_v2.pickle'
+    cache_path = '../temp/trade_acc_summary_v4.pickle'
     data = None if reset_cache else load_pickle(cache_path)
     if not data:
         await prepare_once(app)
