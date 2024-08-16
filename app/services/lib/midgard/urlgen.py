@@ -1,40 +1,10 @@
-from abc import ABC, abstractmethod
-
 from services.models.memo import ActionType
 
 
-class MidgardURLGenBase(ABC):
-    LIQUIDITY_TX_TYPES_STRING = ''
-
+class MidgardURLGenV2:
     def __init__(self, base_url: str):
         self.base_url = base_url.rstrip('/')
 
-    @abstractmethod
-    def url_for_tx(self, offset=0, count=50, address=None, types=None) -> str:
-        ...
-
-    @abstractmethod
-    def url_for_pool_depth_history(self, pool, from_ts, to_ts) -> str:
-        ...
-
-    @abstractmethod
-    def url_for_address_pool_membership(self, address, show_savers=False) -> str:
-        ...
-
-    @abstractmethod
-    def url_network(self):
-        ...
-
-    @abstractmethod
-    def url_stats(self):
-        ...
-
-    @abstractmethod
-    def url_pool_info(self):
-        ...
-
-
-class MidgardURLGenV2(MidgardURLGenBase):
     LIQUIDITY_TX_TYPES = ['withdraw', 'addLiquidity']
 
     def url_for_tx(self, offset=0, count=50, address=None, tx_type=None, txid=None, next_page_token='') -> str:
@@ -67,12 +37,19 @@ class MidgardURLGenV2(MidgardURLGenBase):
     def url_for_pool_depth_history(self, pool, from_ts, to_ts) -> str:
         return f"{self.base_url}/v2/history/depths/{pool}?interval=day&from={from_ts}&to={to_ts}"
 
-    def url_for_swap_history(self, from_ts=0, to_ts=0, days=10) -> str:
+    def url_for_swap_history(self, from_ts=0, to_ts=0, days=10, interval='day') -> str:
         if from_ts and to_ts:
             spec = f'from={from_ts}&to={to_ts}'
         else:
             spec = f'count={days}'
-        return f"{self.base_url}/v2/history/swaps?interval=day&{spec}"
+        return f"{self.base_url}/v2/history/swaps?interval={interval}&{spec}"
+
+    def url_for_earnings_history(self, from_ts=0, to_ts=0, days=10, interval='day') -> str:
+        if from_ts and to_ts:
+            spec = f'from={from_ts}&to={to_ts}'
+        else:
+            spec = f'count={days}'
+        return f"{self.base_url}/v2/history/earnings?interval={interval}&{spec}"
 
     def url_for_address_pool_membership(self, address, show_savers=False) -> str:
         return f"{self.base_url}/v2/member/{address}?showSavers={self.bool_flag(show_savers)}"
