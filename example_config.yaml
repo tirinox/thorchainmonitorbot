@@ -22,10 +22,6 @@ web3:
   retry_wait: 2s
 
 
-flipside:
-  api_key: 0123-445-881 # https://flipsidecrypto.xyz/settings/api
-
-
 thor:
   network_id: "mainnet"
 
@@ -225,21 +221,30 @@ names:
 
   affiliates:
     wr: THORWallet
+    thor1a427q3v96psuj4fnughdw8glt5r7j38lj7rkp8: THORWallet
     ss: ShapeShift
     t: THORSwap
+    T: THORSwap
+    tl: TS Ledger
+    thor160yye65pf9rzwrgqmtgav69n6zlsyfpgm9a7xk: THORSwap
     tr: Trust iOS
     te-ios: Trust iOS
     te: Trust Android
-    rg: RangoExchange
-    commission: Ferz
+    cb: Team CoinBot
     dx: Asgardex
     dcf: DecentralFi
-    ej: EdgeWallet
-    xdf: XDEFI
-    cb: CoinBot
+    ej: "Edge Wallet"
+    xdf: xDEFI
+    rg: Rango
+    lifi: LiFi
     runifier: Runifier
     0xbami: Unizen
-    ds: Defispot
+    ds: DefiSpot
+    oky: "OneKey Wallet"
+    sy: Symbiosis
+    vi: Vultisig
+    cakewallet: "Cake Wallet"
+    lends: "Lends"
 
   arb_bot_detector:
     min_sequence: 10_000  # minimum sequence number to consider this address as arbitrage
