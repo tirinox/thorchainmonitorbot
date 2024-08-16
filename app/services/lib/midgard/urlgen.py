@@ -37,18 +37,18 @@ class MidgardURLGenV2:
     def url_for_pool_depth_history(self, pool, from_ts, to_ts) -> str:
         return f"{self.base_url}/v2/history/depths/{pool}?interval=day&from={from_ts}&to={to_ts}"
 
-    def url_for_swap_history(self, from_ts=0, to_ts=0, days=10, interval='day') -> str:
+    def url_for_swap_history(self, from_ts=0, to_ts=0, count=10, interval='day') -> str:
         if from_ts and to_ts:
             spec = f'from={from_ts}&to={to_ts}'
         else:
-            spec = f'count={days}'
+            spec = f'count={count}'
         return f"{self.base_url}/v2/history/swaps?interval={interval}&{spec}"
 
-    def url_for_earnings_history(self, from_ts=0, to_ts=0, days=10, interval='day') -> str:
+    def url_for_earnings_history(self, from_ts=0, to_ts=0, count=10, interval='day') -> str:
         if from_ts and to_ts:
             spec = f'from={from_ts}&to={to_ts}'
         else:
-            spec = f'count={days}'
+            spec = f'count={count}'
         return f"{self.base_url}/v2/history/earnings?interval={interval}&{spec}"
 
     def url_for_address_pool_membership(self, address, show_savers=False) -> str:

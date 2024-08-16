@@ -1,8 +1,13 @@
+from typing import Union, Optional
+
 import aiohttp
 
 from aionode.nodeclient import ThorNodeClient
 from services.lib.constants import HTTP_CLIENT_ID
+from services.lib.midgard.urlgen import free_url_gen
 from services.lib.utils import WithLogger
+from services.models.earnings_history import EarningHistoryResponse
+from services.models.swap_history import SwapHistoryResponse
 
 DEFAULT_MIDGARD_PORT = 8080
 
@@ -21,6 +26,7 @@ class MidgardConnector(WithLogger):
         self.session = session
         self.retries = retry_number
         self.session = session or aiohttp.ClientSession()
+        self.urlgen = free_url_gen
 
     @property
     def public_url(self):
@@ -61,10 +67,22 @@ class MidgardConnector(WithLogger):
             self.logger.error(f'Midgard ({ip_address}/{path}) exception: {e!r}.')
             return self.ERROR_RESPONSE
 
-    async def request(self, path: str):
+    async def request(self, path: str) -> Union[str, dict, list]:
         result = await self._request_json_from_midgard_by_ip(self.public_url, path)
         if isinstance(result, str) and result != self.ERROR_NOT_FOUND:
             self.logger.error(f'Probably there is an issue. Midgard has returned a plain string: {result!r} '
                               f'for the path {path!r}')
         else:
             return result
+
+    async def query_earnings(self, from_ts=0, to_ts=0, count=10, interval='day') -> Optional[EarningHistoryResponse]:
+        url = self.urlgen.url_for_earnings_history(from_ts, to_ts, count, interval)
+        j = await self.request(url)
+        if j:
+            return EarningHistoryResponse.from_json(j)
+
+    async def query_swap_stats(self, from_ts=0, to_ts=0, count=10, interval='day') -> Optional[SwapHistoryResponse]:
+        url = self.urlgen.url_for_swap_history(from_ts, to_ts, count, interval)
+        j = await self.request(url)
+        if j:
+            return SwapHistoryResponse.from_json(j)

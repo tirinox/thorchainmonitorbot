@@ -7,7 +7,6 @@ from services.lib.date_utils import parse_timespan_to_seconds, now_ts
 from services.lib.depcont import DepContainer
 from services.lib.midgard.urlgen import free_url_gen
 from services.models.net_stats import NetworkStats
-from services.models.swap_history import SwapHistoryResponse
 
 
 class NetworkStatisticsFetcher(BaseFetcher):
@@ -52,7 +51,7 @@ class NetworkStatisticsFetcher(BaseFetcher):
         next_cool_cd = int(j['poolActivationCountdown'])
         ns.next_pool_activation_ts = now_ts() + THOR_BLOCK_TIME * next_cool_cd
 
-        bonding_metrics = j['bondMetrics']
+        bonding_metrics: dict = j['bondMetrics']
         ns.total_active_bond_rune = thor_to_float(bonding_metrics['totalActiveBond'])
         stand_by_bond = thor_to_float(bonding_metrics['totalStandbyBond'])
         ns.total_bond_rune = ns.total_active_bond_rune + stand_by_bond
@@ -78,20 +77,20 @@ class NetworkStatisticsFetcher(BaseFetcher):
             ns.next_pool_to_activate = pending_pools[0].asset if pending_pools else None
 
     async def _get_swap_stats(self, ns: NetworkStats):
-        j = await self.deps.midgard_connector.request(free_url_gen.url_for_swap_history(days=self.swap_stats_days))
-        if j:
-            ns.swap_stats = swap_stats = SwapHistoryResponse.from_json(j).last_whole_interval
+        swap_stats = await self.deps.midgard_connector.query_swap_stats(count=self.swap_stats_days, interval='day')
+        if swap_stats:
+            ns.swap_stats = swap_stats.last_whole_interval
             ns.synth_volume_24h = (
-                thor_to_float(swap_stats.synth_mint_volume) + thor_to_float(swap_stats.synth_redeem_volume)
+                thor_to_float(ns.swap_stats.synth_mint_volume + ns.swap_stats.synth_redeem_volume)
             )
-            ns.synth_op_count = swap_stats.synth_mint_count + swap_stats.synth_redeem_count
+            ns.synth_op_count = ns.swap_stats.synth_mint_count + ns.swap_stats.synth_redeem_count
 
             ns.trade_volume_24h = (
-                thor_to_float(swap_stats.to_trade_volume) + thor_to_float(swap_stats.from_trade_volume)
+                thor_to_float(ns.swap_stats.to_trade_volume + ns.swap_stats.from_trade_volume)
             )
-            ns.trade_op_count = swap_stats.to_trade_count + swap_stats.from_trade_count
+            ns.trade_op_count = ns.swap_stats.to_trade_count + ns.swap_stats.from_trade_count
 
-            ns.swap_volume_24h = thor_to_float(swap_stats.total_volume)
+            ns.swap_volume_24h = thor_to_float(ns.swap_stats.total_volume)
         else:
             self.logger.error('Failed to get swap history from Midgard!')
 
