@@ -136,11 +136,8 @@ class AlertTradeAccountStats(NamedTuple):
 
     @property
     def curr_and_prev_trade_volume_usd(self):
-        middle = len(self.swap_stats.intervals) // 2
-        interval1 = self.swap_stats.sum_of_intervals(0, middle)
-        interval2 = self.swap_stats.sum_of_intervals(middle, len(self.swap_stats.intervals))
-
+        interval_curr, interval_prev = self.swap_stats.curr_and_prev_interval()
         return (
-            interval2.rune_price_usd * thor_to_float(interval2.to_trade_volume + interval2.from_trade_volume),
-            interval1.rune_price_usd * thor_to_float(interval1.to_trade_volume + interval1.from_trade_volume)
+            interval_curr.rune_price_usd * thor_to_float(interval_curr.to_trade_volume + interval_curr.from_trade_volume),
+            interval_prev.rune_price_usd * thor_to_float(interval_prev.to_trade_volume + interval_prev.from_trade_volume)
         )
