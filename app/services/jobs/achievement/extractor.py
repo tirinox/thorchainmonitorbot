@@ -9,7 +9,7 @@ from services.lib.date_utils import full_years_old_ts
 from services.lib.depcont import DepContainer
 from services.lib.utils import is_list_of_type, WithLogger
 from services.models.asset import Asset
-from services.models.flipside import AlertKeyStats
+from services.models.key_stats_model import AlertKeyStats
 from services.models.loans import LendingStats, AlertLoanOpen
 from services.models.memo import ActionType
 from services.models.net_stats import NetworkStats
@@ -180,8 +180,8 @@ class AchievementsExtractor(WithLogger):
     @staticmethod
     def on_weekly_stats(ev: AlertKeyStats):
         total_locked, _ = ev.locked_value_usd_curr_prev
-        weekly_protocol_revenue, _ = ev.total_revenue_usd_curr_prev
-        weekly_affiliate_revenue, _ = ev.affiliate_fee_usd_curr_prev
+        weekly_protocol_revenue = ev.current.protocol_revenue_usd
+        weekly_affiliate_revenue = ev.current.affiliate_revenue_usd
         weekly_swap_volume, _ = ev.usd_volume_curr_prev
         total_locked_value_usd = total_locked.total_value_locked_usd
 

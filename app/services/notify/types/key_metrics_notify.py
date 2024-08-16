@@ -1,13 +1,11 @@
-from datetime import timedelta
 from typing import Optional
 
-from services.jobs.fetch.flipside.flipside import FSList
 from services.lib.cooldown import Cooldown
-from services.lib.date_utils import parse_timespan_to_seconds, DAY, now_ts
+from services.lib.date_utils import parse_timespan_to_seconds, DAY
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
-from services.models.flipside import FSFees, FSLockedValue, FSSwapCount, FSSwapVolume, AlertKeyStats
+from services.models.key_stats_model import AlertKeyStats
 from services.models.time_series import TimeSeries
 
 
@@ -33,9 +31,6 @@ class KeyMetricsNotifier(INotified, WithDelegates, WithLogger):
     def window_in_days(self):
         return int((self.notify_cd_sec + 1) / DAY)
 
-    def is_fresh_enough(self, data: FSList):
-        return data and now_ts() - data.latest_date.timestamp() < self.data_max_age
-
     async def on_data(self, sender, e: AlertKeyStats):
         if not e.current.pools:
             self.logger.error(f'No pool data! Aborting.')
@@ -43,31 +38,6 @@ class KeyMetricsNotifier(INotified, WithDelegates, WithLogger):
 
         if not e.previous.pools:
             self.logger.warning(f'No previous pool data! Go on')
-
-        if not len(e.series):
-            self.logger.warning(f'Length is 0')
-            return
-
-        e.series = e.series.remove_incomplete_rows((FSFees, FSSwapCount, FSLockedValue, FSSwapVolume))
-
-        if not self.is_fresh_enough(e.series):
-            self.logger.error(f'Network data is too old! The most recent date is {e.end_date}!')
-            self.deps.emergency.report(
-                'WeeklyKeyMetrics',
-                'Network data is too old!',
-                date=str(e.series.latest_date))
-            return
-
-        # todo: check affiliate fee rows!
-
-        last_date = e.end_date
-        previous_date = last_date - timedelta(days=self.window_in_days)
-
-        previous_data = e.series.data.get(previous_date, [])
-        self.logger.info(f'Previous date is {previous_date}; data has {len(previous_data)} entries.')
-
-        current_data = e.series.most_recent
-        self.logger.info(f'Current date is {last_date}; data has {len(current_data)} entries.')
 
         self._prev_data = e
 

@@ -9,11 +9,11 @@ from services.dialog.picture.resources import Resources
 from services.lib.constants import BTC_SYMBOL, ETH_SYMBOL, ETH_USDC_SYMBOL, ETH_USDT_SYMBOL, NATIVE_RUNE_SYMBOL
 from services.lib.draw_utils import paste_image_masked, TC_LIGHTNING_BLUE, TC_YGGDRASIL_GREEN, \
     COLOR_OF_PROFIT, font_estimate_size, distribution_bar_chart, TC_MIDGARD_TURQOISE
-from services.lib.money import pretty_money, short_dollar, format_percent, pretty_dollar, short_money, RAIDO_GLYPH
+from services.lib.money import pretty_money, short_dollar, format_percent, short_money, RAIDO_GLYPH
 from services.lib.texts import bracketify
 from services.lib.utils import async_wrap
 from services.models.asset import Asset
-from services.models.flipside import AlertKeyStats
+from services.models.key_stats_model import AlertKeyStats
 from services.models.vol_n import TxMetricType
 
 BAR_WIDTH = 514
@@ -63,10 +63,10 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         r, loc, e = self.r, self.loc, self.event
         curr_lock, prev_lock = e.locked_value_usd_curr_prev
 
-        total_revenue_usd, prev_total_revenue_usd = e.total_revenue_usd_curr_prev
-        block_rewards_usd, prev_block_rewards_usd = e.block_rewards_usd_curr_prev
-        liq_fee_usd, prev_liq_fee_usd = e.liquidity_fee_usd_curr_prev
-        aff_fee_usd, prev_aff_fee_usd = e.affiliate_fee_usd_curr_prev
+        total_revenue_usd, prev_total_revenue_usd = e.current.protocol_revenue_usd, e.previous.protocol_revenue_usd
+        block_rewards_usd, prev_block_rewards_usd = e.current.block_rewards_usd, e.previous.block_rewards_usd
+        liq_fee_usd, prev_liq_fee_usd = e.current.fee_rewards_usd, e.previous.fee_rewards_usd
+        aff_fee_usd, prev_aff_fee_usd = e.current.affiliate_revenue_usd, e.previous.affiliate_revenue_usd
 
         block_ratio = e.block_ratio
         organic_ratio = e.organic_ratio
@@ -397,6 +397,7 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         # Little hack to make the sum of the volumes equal to the USD volume.
         # We are not able to record all swap events correctly, but we can extract an approximate distribution.
         # Using this distribution, we calculate the actual trading volumes of different assets.
+
         recorded_volume_sum = curr_vol_normal + curr_vol_synth + curr_vol_trade
         difference_ratio = usd_volume / recorded_volume_sum
         curr_vol_normal = curr_vol_normal * difference_ratio

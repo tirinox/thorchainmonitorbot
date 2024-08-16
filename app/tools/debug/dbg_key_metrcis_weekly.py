@@ -4,16 +4,13 @@ import pickle
 
 from localization.languages import Language
 from services.dialog.picture.key_stats_picture import KeyStatsPictureGenerator
-from services.jobs.fetch.flipside import FlipSideConnector, FSList
-from services.jobs.fetch.flipside.urls import *
 from services.jobs.fetch.key_stats import KeyStatsFetcher
 from services.jobs.user_counter import UserCounterMiddleware
 from services.jobs.volume_recorder import TxCountRecorder, VolumeRecorder
 from services.lib.date_utils import DAY
 from services.lib.delegates import INotified
 from services.lib.texts import sep
-from services.models.flipside import FSAffiliateCollectors, FSFees, FSSwapVolume, FSSwapCount, \
-    FSLockedValue, AlertKeyStats
+from services.models.key_stats_model import AlertKeyStats
 from services.notify.types.key_metrics_notify import KeyMetricsNotifier
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
@@ -25,33 +22,7 @@ async def demo_load(app: LpAppFramework):
     print(d)
 
 
-async def demo_load_single_fs_list(app: LpAppFramework):
-    fs = FlipSideConnector(app.deps.session, app.deps.cfg.flipside.api_key)
-
-    tasks = [
-        (FS_LATEST_EARNINGS_URL, FSFees),
-        (FS_LATEST_SWAP_VOL_URL, FSSwapVolume),
-        (FS_LATEST_SWAP_AFF_FEE_URL, FSAffiliateCollectors),
-        (FS_LATEST_LOCKED_RUNE_URL, FSLockedValue),
-        (FS_LATEST_SWAP_COUNT_URL, FSSwapCount)
-    ]
-
-    async def load_one(url, cls):
-        data = await fs.request_daily_series_v2(url, cls)
-        sep(str(cls))
-        print(f'Loaded {cls.__name__} from {url}')
-        print(data)
-        sep()
-        return data
-
-    lists = [await load_one(url, cls) for url, cls in tasks]
-
-    combined_list = FSList.combine(*lists)
-    print(combined_list)
-    sep()
-
-
-class FlipSideSaver(INotified):
+class KeyMetricsSaver(INotified):
     DEFAULT_FILENAME = '../temp/fs_key_metrics_v7.pickle'
 
     def __init__(self, filename=DEFAULT_FILENAME) -> None:
@@ -86,7 +57,7 @@ async def demo_analyse_and_show(app: LpAppFramework):
     f.add_subscriber(noter)
     noter.add_subscriber(d.alert_presenter)
 
-    saver = FlipSideSaver()
+    saver = KeyMetricsSaver()
     f.add_subscriber(saver)
 
     # await f.run_once()
@@ -120,7 +91,7 @@ async def demo_picture(app: LpAppFramework):
     sep()
     print('Start')
 
-    loader = FlipSideSaver()
+    loader = KeyMetricsSaver()
     data = loader.load_data()
     if not data:
         await demo_analyse_and_show(app)
@@ -138,6 +109,29 @@ async def debug_locked_value(app: LpAppFramework):
     print(f'Locked value 7 days ago: {prev}')
 
 
+async def debug_fs_aff_collectors(app: LpAppFramework):
+    f = KeyStatsFetcher(app.deps)
+    affs = await f.get_affiliates_from_flipside()
+    top_aff = f.calc_top_affiliates(affs)
+    print(f'{top_aff = }')
+    curr, prev = f.calc_total_affiliate_curr_prev(affs)
+    print(f'{prev = }$, {curr = }$')
+    sep()
+
+
+async def debug_earnings(app: LpAppFramework):
+    f = KeyStatsFetcher(app.deps)
+    # Earnings
+    (
+        (curr_total_earnings, curr_block_earnings, curr_organic_fees),
+        (prev_total_earnings, prev_block_earnings, prev_organic_fees),
+    ) = await f.get_earnings_curr_prev()
+
+    print("Current")
+    print(f'{curr_total_earnings = }$, {curr_block_earnings = }$, {curr_organic_fees = }$')
+    print(f'{prev_total_earnings = }$, {prev_block_earnings = }$, {prev_organic_fees = }$')
+
+
 async def main():
     lp_app = LpAppFramework(log_level=logging.INFO)
     async with lp_app(brief=True):
@@ -147,11 +141,10 @@ async def main():
 
         # await demo_analyse_and_show(lp_app)
         await demo_picture(lp_app)
-        # await demo_new_flipside_sql(lp_app)
         # await demo_load(lp_app)
-        # await demo_new_flipside_swap_routes(lp_app)
-        # await demo_load_single_fs_list(lp_app)
         # await debug_locked_value(lp_app)
+        # await debug_fs_aff_collectors(lp_app)
+        # await debug_earnings(lp_app)
 
 
 if __name__ == '__main__':

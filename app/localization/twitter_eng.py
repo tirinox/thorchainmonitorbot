@@ -19,7 +19,7 @@ from services.lib.texts import x_ses, progressbar, plural, bracketify, up_down_a
 from services.lib.w3.dex_analytics import DexReportEntry, DexReport
 from services.models.asset import Asset
 from services.models.cap_info import ThorCapInfo
-from services.models.flipside import AlertKeyStats
+from services.models.key_stats_model import AlertKeyStats
 from services.models.last_block import EventBlockSpeed, BlockProduceState
 from services.models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats, AlertLendingOpenUpdate
 from services.models.memo import ActionType

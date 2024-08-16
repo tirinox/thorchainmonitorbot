@@ -17,7 +17,7 @@ from services.lib.draw_utils import img_to_bio
 from services.lib.logs import WithLogger
 from services.lib.midgard.name_service import NameService, NameMap
 from services.lib.w3.dex_analytics import DexReport
-from services.models.flipside import AlertKeyStats
+from services.models.key_stats_model import AlertKeyStats
 from services.models.last_block import EventBlockSpeed, BlockProduceState
 from services.models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats, AlertLendingOpenUpdate
 from services.models.mimir import AlertMimirChange

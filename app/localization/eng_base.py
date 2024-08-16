@@ -29,7 +29,7 @@ from services.lib.w3.dex_analytics import DexReport, DexReportEntry
 from services.lib.w3.token_record import AmountToken
 from services.models.asset import Asset
 from services.models.cap_info import ThorCapInfo
-from services.models.flipside import AlertKeyStats
+from services.models.key_stats_model import AlertKeyStats
 from services.models.last_block import BlockProduceState, EventBlockSpeed
 from services.models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats, AlertLendingOpenUpdate
 from services.models.lp_info import LiquidityPoolReport

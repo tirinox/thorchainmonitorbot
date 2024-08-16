@@ -152,10 +152,16 @@ class SwapHistoryResponse:
         )
 
     @property
-    def last_whole_interval(self):
+    def last_whole_interval(self) -> SwapsHistoryEntry:
         return self.intervals[-2] if self.intervals[-1].total_count == 0 else self.intervals[-1]
 
     def sum_of_intervals(self, start, end):
         if start >= end:
             return SwapsHistoryEntry.zero()
         return sum(self.intervals[start + 1:end], start=self.intervals[start])
+
+    def curr_and_prev_interval(self):
+        middle = len(self.intervals) // 2
+        interval_prev = self.sum_of_intervals(0, middle)
+        interval_curr = self.sum_of_intervals(middle, len(self.intervals))
+        return interval_curr, interval_prev
