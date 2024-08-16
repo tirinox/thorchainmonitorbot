@@ -209,5 +209,27 @@ class VolumeRecorder(INotified, WithLogger):
         prev_volume_stats = await self.get_sum(t0, t1)
         return curr_volume_stats, prev_volume_stats
 
+    async def get_latest_distribution_by_asset_type(self, period_sec, now=0) -> dict:
+        t1 = now or now_ts()
+        t0 = now - period_sec
+        s = await self.get_sum(t0, t1)
+
+        total = s.get(TxMetricType.SWAP, 0)
+        if total <= 0:
+            self.logger.warning(f'Period {t0}..{t1} has no swaps?')
+            ordinary, trade, synth, total = 0, 0, 0, 1
+        else:
+            trade = s.get(TxMetricType.TRADE_SWAP, 0)
+            synth = s.get(TxMetricType.SWAP_SYNTH, 0)
+            ordinary = total - trade - synth
+            if ordinary < 0:
+                raise ValueError(f'Swap accounting is broken: ordinary < 0')
+
+        return {
+            TxMetricType.SWAP: ordinary / total,
+            TxMetricType.SWAP_SYNTH: synth / total,
+            TxMetricType.TRADE_SWAP: trade / total
+        }
+
     async def get_data_range_ago_n(self, ago, n=30):
         return await self._accumulator.get_range_n(-ago, n=n)
