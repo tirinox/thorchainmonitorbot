@@ -179,7 +179,21 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
                 j = await resp.json()
                 aff_collectors = [AffiliateCollectors.from_json(item) for item in j]
                 aff_collectors.sort(key=lambda item: item.date, reverse=True)
-                # todo: check if fresh enough!!
+
+                if not aff_collectors:
+                    self.logger.error(f'No data loaded')
+                    self.deps.emergency.report('WeeklyStats',
+                                               'No data loaded',
+                                               url=FS_AFFILIATES_API_URL)
+                    raise IOError('No data from Flipside')
+
+                max_date = aff_collectors[0].date
+                if max_date - datetime.datetime.utcnow() > datetime.timedelta(days=2):
+                    self.logger.error("FS data is too old")
+                    self.deps.emergency.report('WeeklyStats', 'FS Aff data is too old',
+                                               date=max_date, url=FS_AFFILIATES_API_URL)
+                    raise IOError('Flipside returned outdated rows')
+
                 return aff_collectors
 
     def calc_top_affiliates(self, aff_collectors: List[AffiliateCollectors]):
