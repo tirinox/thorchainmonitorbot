@@ -85,7 +85,7 @@ class SlashPointTracker(BaseChangeTracker, WithLogger):
         if interval != data.interval_sec:
             return False
 
-        threshold = settings.get(NodeOpSetting.SLASH_THRESHOLD, 50)
+        threshold = settings.get(NodeOpSetting.SLASH_THRESHOLD, 1000)
 
         if data.delta_pts >= threshold:
             cd = interval * self.EXTRA_COOLDOWN_MULT
