@@ -199,7 +199,8 @@ class NodeChangePersonalNotifier(INotified, WithLogger):
                     if text:
                         task = self.deps.broadcaster.safe_send_message_rate(
                             ChannelDescriptor(platform, user),
-                            BoardMessage(text)
+                            BoardMessage(text),
+                            disable_web_page_preview=True
                         )
                         asyncio.create_task(task)
 

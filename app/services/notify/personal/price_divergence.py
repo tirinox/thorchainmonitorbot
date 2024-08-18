@@ -56,7 +56,8 @@ class PersonalPriceDivergenceNotifier(INotified, WithLogger):
         text = loc.notification_text_price_divergence(rune_market_info, normal)
         await self.deps.broadcaster.safe_send_message_rate(
             ChannelDescriptor(SettingsManager.get_platform(settings), user),
-            BoardMessage(text)
+            BoardMessage(text),
+            disable_web_page_preview=True,
         )
 
 
