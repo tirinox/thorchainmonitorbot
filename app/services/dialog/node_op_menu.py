@@ -386,19 +386,19 @@ class NodeOpDialog(DialogWithSettings):
         await query.message.edit_text(self.loc.TEXT_NOP_SLASH_THRESHOLD, reply_markup=InlineKeyboardMarkup(
             inline_keyboard=[
                 [
-                    InlineKeyboardButton('1 pt', callback_data='1'),
-                    InlineKeyboardButton('2 pts', callback_data='2'),
-                    InlineKeyboardButton('5 pts', callback_data='5'),
-                ],
-                [
-                    InlineKeyboardButton('10 pts', callback_data='10'),
-                    InlineKeyboardButton('15 pts', callback_data='15'),
-                    InlineKeyboardButton('20 pts', callback_data='20'),
-                ],
-                [
-                    InlineKeyboardButton('50 pts', callback_data='50'),
-                    InlineKeyboardButton('100 pts', callback_data='100'),
+                    InlineKeyboardButton('100 pt', callback_data='100'),
                     InlineKeyboardButton('200 pts', callback_data='200'),
+                    InlineKeyboardButton('500 pts', callback_data='500'),
+                ],
+                [
+                    InlineKeyboardButton('1K pts', callback_data='1000'),
+                    InlineKeyboardButton('2K pts', callback_data='2000'),
+                    InlineKeyboardButton('5K pts', callback_data='5000'),
+                ],
+                [
+                    InlineKeyboardButton('10K', callback_data='10000'),
+                    InlineKeyboardButton('20K', callback_data='20000'),
+                    InlineKeyboardButton('50K', callback_data='50000'),
                 ],
                 [
                     InlineKeyboardButton(self.loc.BUTTON_BACK, callback_data='back')
