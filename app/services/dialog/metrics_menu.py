@@ -18,6 +18,7 @@ from services.lib.constants import THOR_BLOCKS_PER_MINUTE
 from services.lib.date_utils import DAY, HOUR, parse_timespan_to_seconds, now_ts
 from services.lib.draw_utils import img_to_bio
 from services.lib.texts import kbd
+from services.models.net_stats import AlertNetworkStats
 from services.models.node_info import NodeInfo
 from services.models.price import AlertPrice, RuneMarketInfo
 from services.notify.types.best_pool_notify import BestPoolsNotifier
@@ -173,12 +174,12 @@ class MetricsDialog(BaseDialog):
             await message.answer(f"{loc.ERROR} {loc.NOT_READY}", disable_notification=True)
             return
 
-        rune_market_info: RuneMarketInfo = await self.deps.rune_market_fetcher.get_rune_market_info()
         await message.answer(
             loc.notification_text_network_summary(
-                old_info, new_info,
-                rune_market_info,
-                self.deps.node_holder.active_nodes
+                AlertNetworkStats(
+                    old_info, new_info,
+                    self.deps.node_holder.nodes
+                ),
             ),
             disable_web_page_preview=True,
             disable_notification=True
