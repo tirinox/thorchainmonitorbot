@@ -1,5 +1,6 @@
 from typing import NamedTuple, Optional, List
 
+from services.lib.constants import thor_to_float
 from services.lib.date_utils import now_ts
 from services.models.events import EventLoanOpen, EventLoanRepayment
 
@@ -25,48 +26,70 @@ class AlertLoanRepayment(NamedTuple):
         return self.loan.collateral_float * self.collateral_price_usd
 
 
-class PoolLendState(NamedTuple):
-    collateral_name: str
-    collateral_amount: float
+class BorrowerPool(NamedTuple):
+    # from https://vanaheimex.com/api/borrowers
+    debt: float
+    borrowers_count: int
+    collateral: float
+    pool: str
     available_rune: float
-    fill_ratio: float
+    fill: float
+    collateral_pool_in_rune: float
+    debt_in_rune: float
     collateral_available: float
+
+    @classmethod
+    def from_json(cls, data: dict):
+        return cls(
+            debt=thor_to_float(data['debt']),
+            borrowers_count=int(data['borrowersCount']),
+            collateral=thor_to_float(data['collateral']),
+            pool=data['pool'],
+            available_rune=thor_to_float(data['availableRune']),
+            fill=float(data['fill']),
+            collateral_pool_in_rune=thor_to_float(data['collateralPoolInRune']),
+            debt_in_rune=thor_to_float(data['debtInRune']),
+            collateral_available=thor_to_float(data['collateralAvailable'])
+        )
+
+    @property
+    def cr(self):
+        # todo
+        return 0.0
+
+    @property
+    def ltv(self):
+        # todo
+        return 0.0
 
 
 class LendingStats(NamedTuple):
-    borrower_count: int
     lending_tx_count: int
-    total_collateral_value_usd: float
-    total_borrowed_amount_usd: float
     rune_burned_rune: float
-    btc_current_cr: float
-    eth_current_cr: float
-    btc_current_ltv: float
-    eth_current_ltv: float
     timestamp_day: float
+    usd_per_rune: float
 
-    pools: List[PoolLendState]
+    pools: List[BorrowerPool]
 
-    @classmethod
-    def from_fs_json(cls, j):
-        j = j['visData'][0]
-        return cls(
-            borrower_count=j['Borrower Count'],
-            lending_tx_count=j['Lending TX Count'],
-            total_collateral_value_usd=j['Total Collateral Value (USD)'],
-            total_borrowed_amount_usd=j['Total Borrowed Amount (USD)'],
-            rune_burned_rune=j['RUNE Burned [RUNE]'],
-            btc_current_cr=j['BTC_CURRENT_CR'],
-            eth_current_cr=j['ETH_CURRENT_CR'],
-            btc_current_ltv=j['BTC_CURRENT_LTV'],
-            eth_current_ltv=j['ETH_CURRENT_LTV'],
-            timestamp_day=now_ts(),
-            pools=[],
-        )
+    @property
+    def total_debt(self) -> float:
+        return sum(p.debt for p in self.pools)
+
+    @property
+    def borrower_count(self) -> int:
+        return sum(p.borrowers_count for p in self.pools)
 
     @property
     def data_age(self) -> float:
         return now_ts() - self.timestamp_day
+
+    @property
+    def total_collateral_value_usd(self) -> float:
+        return sum(p.collateral_pool_in_rune * self.usd_per_rune for p in self.pools)
+
+    @property
+    def total_borrowed_amount_usd(self) -> float:
+        return sum(p.debt_in_rune * self.usd_per_rune for p in self.pools)
 
 
 class AlertLendingStats(NamedTuple):
@@ -79,5 +102,5 @@ class AlertLendingOpenUpdate(NamedTuple):
     stats: LendingStats
 
     @property
-    def pool_state(self) -> PoolLendState:
-        return next((p for p in self.stats.pools if p.collateral_name == self.asset), None)
+    def pool_state(self) -> BorrowerPool:
+        return next((p for p in self.stats.pools if p.pool == self.asset), None)

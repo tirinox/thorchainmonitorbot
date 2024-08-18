@@ -1,18 +1,18 @@
-import datetime
 from typing import List, Optional
 
 from services.jobs.fetch.base import BaseFetcher
-from services.jobs.fetch.flipside.flipside import FlipSideConnector
-from services.jobs.fetch.flipside.urls import URL_FS_BORROWERS_V3
 from services.lib.constants import THOR_BASIS_POINT_MAX, RUNE_IDEAL_SUPPLY, thor_to_float
-from services.lib.date_utils import parse_timespan_to_seconds, DAY
+from services.lib.date_utils import parse_timespan_to_seconds, DAY, now_ts
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
 from services.lib.midgard.urlgen import free_url_gen
-from services.models.loans import LendingStats, PoolLendState
+from services.models.loans import LendingStats, BorrowerPool
 from services.models.price import RuneMarketInfo
 
 MAX_AGE_TO_REPORT_ERROR = 3 * DAY
+
+# https://github.com/HooriRn/thorchain_explorer_server
+URL_VANAHEIMIX_BORROWERS = 'https://vanaheimex.com/api/borrowers'
 
 
 class LendingStatsFetcher(BaseFetcher):
@@ -20,7 +20,6 @@ class LendingStatsFetcher(BaseFetcher):
         period = parse_timespan_to_seconds(deps.cfg.lending.fetch_period)
         super().__init__(deps, period)
         self.midgard_parser = get_parser_by_network_id(deps.cfg.network_id)
-        self.fs = FlipSideConnector(deps.session, deps.cfg.flipside.api_key)
 
     async def get_borrower_list(self) -> List[str]:
         borrowers = await self.deps.midgard_connector.request(free_url_gen.url_borrowers())
@@ -40,11 +39,21 @@ class LendingStatsFetcher(BaseFetcher):
             lending_stats = lending_stats._replace(rune_burned_rune=real_burned_rune)
         return lending_stats
 
-    async def get_fs_lending_stats(self) -> Optional[LendingStats]:
-        data = await self.fs.request(URL_FS_BORROWERS_V3)
-        if data:
-            lending_stats = LendingStats.from_fs_json(data)
-            return lending_stats
+    # async def get_fs_lending_stats(self) -> Optional[LendingStats]:
+    #     # todo; fixme!!
+    #     data = await self.fs.request(URL_FS_BORROWERS_V3)
+    #     if data:
+    #         lending_stats = LendingStats.from_fs_json(data)
+    #         return lending_stats
+
+    async def get_vanaheimix_borrowers(self):
+        async with self.deps.session.get(URL_VANAHEIMIX_BORROWERS) as response:
+            j = await response.json()
+            if not isinstance(j, list):
+                raise IOError(f'{URL_VANAHEIMIX_BORROWERS} returned no list')
+
+            pools = [BorrowerPool.from_json(item) for item in j]
+            return pools
 
     def get_total_rune_for_protocol(self, market_info: RuneMarketInfo) -> float:
         consts = self.deps.mimir_const_holder
@@ -96,35 +105,52 @@ class LendingStatsFetcher(BaseFetcher):
             # just convert collateral to Runes
             collateral_pool_in_rune = thor_to_float(pool.original.loan_collateral) * pool.original.runes_per_asset
 
-            pool_stats.append(PoolLendState(
-                pool_name,
-                collateral_amount=thor_to_float(pool.original.loan_collateral),
-                available_rune=(pool_runes / total_balance_rune) * total_rune_protocol,
-                fill_ratio=collateral_pool_in_rune / ((pool_runes / total_balance_rune) * total_rune_protocol),
-                collateral_available=thor_to_float(pool.original.loan_collateral_remaining)
-            ))
+            # pool_stats.append(PoolLendState(
+            #     pool_name,
+            #     collateral_amount=thor_to_float(pool.original.loan_collateral),
+            #     available_rune=(pool_runes / total_balance_rune) * total_rune_protocol,
+            #     fill_ratio=collateral_pool_in_rune / ((pool_runes / total_balance_rune) * total_rune_protocol),
+            #     collateral_available=thor_to_float(pool.original.loan_collateral_remaining)
+            # ))
 
         return stats
 
     async def fetch(self) -> Optional[LendingStats]:
         # Load
-        lending_stats = await self.get_fs_lending_stats()
-        if not lending_stats:
-            self.logger.error(f'No lending stats')
-            return
 
-        # Check age
-        if lending_stats.data_age > MAX_AGE_TO_REPORT_ERROR:
-            self.deps.emergency.report(self.name,
-                                       'Lending data is too old',
-                                       day=str(datetime.datetime.fromtimestamp(lending_stats.timestamp_day)))
-            return
+        # lending_stats = await self.get_fs_lending_stats()
+        # if not lending_stats:
+        #     self.logger.error(f'No lending stats')
+        #     return
+        #
+        # # Check age
+        # if lending_stats.data_age > MAX_AGE_TO_REPORT_ERROR:
+        #     self.deps.emergency.report(self.name,
+        #                                'Lending data is too old',
+        #                                day=str(datetime.datetime.fromtimestamp(lending_stats.timestamp_day)))
+        #     return
+        #
+        # # Amend burned rune
+        #
+        # # Enrich with lending caps
+        # lending_stats = await self._enrich_with_caps(market_info, lending_stats)
 
-        # Amend burned rune
+        # return lending_stats
+
+        lending_pools = await self.get_vanaheimix_borrowers()
+
         market_info = await self.deps.rune_market_fetcher.get_rune_market_info()
-        lending_stats = await self.amend_burned_rune(lending_stats, market_info)
+        burnt_rune = market_info.supply_info.lending_burnt_rune if market_info and market_info.supply_info else 0.0
 
-        # Enrich with lending caps
-        lending_stats = await self._enrich_with_caps(market_info, lending_stats)
+        # todo!! from tx count recorder
+        lending_tx_count = 0
 
+        # todo
+        lending_stats = LendingStats(
+            lending_tx_count=lending_tx_count,
+            rune_burned_rune=burnt_rune,
+            timestamp_day=now_ts(),
+            pools=lending_pools,
+            usd_per_rune=self.deps.price_holder.usd_per_rune,
+        )
         return lending_stats

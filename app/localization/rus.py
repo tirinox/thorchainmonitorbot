@@ -2004,13 +2004,12 @@ class RussianLocalization(BaseLocalization):
         return pool_desc
 
     def notification_lending_stats(self, event: AlertLendingStats):
-        (borrower_count_delta, curr, lending_tx_count_delta, rune_burned_rune_delta, total_borrowed_amount_delta,
+        (borrower_count_delta, curr, rune_burned_rune_delta, total_borrowed_amount_delta,
          total_collateral_value_delta, cr) = self._lending_stats_delta(event)
 
         return (
             f'<b>Статистика кредитования</b>\n\n'
             f'🙋‍♀️ Число заемщиков: {bold(pretty_money(curr.borrower_count))} {borrower_count_delta}\n'
-            f'📝 Количество транзакций: {bold(pretty_money(curr.lending_tx_count))} {lending_tx_count_delta}\n'
             f'💰 Общее обеспечение: {bold(short_dollar(curr.total_collateral_value_usd))}'
             f' {total_collateral_value_delta}\n'
             f'💸 Объем займов: {bold(short_dollar(curr.total_borrowed_amount_usd))} {total_borrowed_amount_delta}\n'
@@ -2026,7 +2025,7 @@ class RussianLocalization(BaseLocalization):
         return (
             f'🟢 В пуле {pool_name} открылось место для кредитов.\n'
             f'{available_collateral} {pool_name} доступно для внесения как залога.\n'
-            f'Заполнение сейчас – {ital(format_percent(event.pool_state.fill_ratio, total=1.0))}.\n'
+            f'Заполнение сейчас – {ital(format_percent(event.pool_state.fill, total=1.0))}.\n'
         )
 
     TEXT_LENDING_STATS_NO_DATA = '😩 Простите, у нас пока нет никаких данных о статистике кредитования.'

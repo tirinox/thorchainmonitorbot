@@ -5,7 +5,7 @@ from services.lib.cooldown import Cooldown
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
-from services.models.loans import LendingStats, AlertLendingStats, PoolLendState
+from services.models.loans import LendingStats, AlertLendingStats, BorrowerPool
 
 
 class LendingStatsNotifier(INotified, WithDelegates, WithLogger):
@@ -25,8 +25,8 @@ class LendingStatsNotifier(INotified, WithDelegates, WithLogger):
             await self._save_old_stats(event, is_latest=False)
         await self._save_old_stats(event, is_latest=True)
 
-    KEY_DB_LENDING_STATS_PREV = 'Lending:LastStats:Previous'  # since the last posted update
-    KEY_DB_LENDING_STATS_LATEST = 'Lending:LastStats:Latest'  # stored every tick
+    KEY_DB_LENDING_STATS_PREV = 'Lending:LastStats:Previous_v2'  # since the last posted update
+    KEY_DB_LENDING_STATS_LATEST = 'Lending:LastStats:Latest_v2'  # stored every tick
 
     def _db_key(self, is_latest):
         return self.KEY_DB_LENDING_STATS_LATEST if is_latest else self.KEY_DB_LENDING_STATS_PREV
@@ -41,7 +41,7 @@ class LendingStatsNotifier(INotified, WithDelegates, WithLogger):
             j = json.loads(j)
             stats = LendingStats(**j)
             stats = stats._replace(pools=[
-                PoolLendState(*p) for p in stats.pools
+                BorrowerPool(*p) for p in stats.pools
             ])
             return stats
         except Exception as e:

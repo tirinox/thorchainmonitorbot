@@ -12,7 +12,7 @@ from services.jobs.scanner.native_scan import NativeScannerBlock
 from services.lib.money import DepthCurve
 from services.lib.texts import sep
 from services.lib.utils import load_pickle, save_pickle, read_var_file
-from services.models.loans import AlertLendingStats, LendingStats, AlertLendingOpenUpdate
+from services.models.loans import AlertLendingStats, LendingStats
 from services.notify.types.lend_stats_notify import LendingStatsNotifier
 from services.notify.types.lending_open_up import LendingCapsNotifier
 from services.notify.types.loans_notify import LoanTxNotifier
@@ -144,10 +144,6 @@ async def demo_lending_stats(app: LpAppFramework, cached=False):
         prev = copy.deepcopy(data)
 
         prev: LendingStats = prev._replace(
-            borrower_count=prev.borrower_count + random.randint(-100, 100),
-            lending_tx_count=prev.lending_tx_count + random.randint(-100, 100),
-            total_collateral_value_usd=prev.total_collateral_value_usd + random.uniform(-100000, 100000000),
-            total_borrowed_amount_usd=prev.total_borrowed_amount_usd + random.uniform(-100000, 100000000),
             rune_burned_rune=prev.rune_burned_rune + random.uniform(-100000, 10000000),
         )
 
@@ -202,7 +198,7 @@ async def demo_lending_opened_up(app: LpAppFramework):
 
             data.current.pools[0] = data.current.pools[0]._replace(
                 collateral_available=var_file.get('collateral_available', 0),
-                fill_ratio=var_file.get('fill_ratio', 101) / 100.0
+                fill=var_file.get('fill_ratio', 101) / 100.0
             )
 
         await notifier.on_data(None, data.current)

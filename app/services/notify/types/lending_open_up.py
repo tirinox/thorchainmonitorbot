@@ -3,7 +3,7 @@ from services.lib.date_utils import HOUR
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
-from services.models.loans import AlertLendingOpenUpdate, LendingStats, PoolLendState
+from services.models.loans import AlertLendingOpenUpdate, LendingStats, BorrowerPool
 
 
 class LendingCapsNotifier(INotified, WithDelegates, WithLogger):
@@ -29,7 +29,7 @@ class LendingCapsNotifier(INotified, WithDelegates, WithLogger):
     def _key(pool_name: str):
         return f'Lending:Open:{pool_name}'
 
-    async def _handle_pool(self, pool_name: str, pool: PoolLendState, event: LendingStats):
+    async def _handle_pool(self, pool_name: str, pool: BorrowerPool, event: LendingStats):
         r = await self.deps.db.get_redis()
         previous_above_caps = await r.hget(self._key(pool_name), 'above_caps')
         previous_above_caps = int(previous_above_caps) if previous_above_caps is not None else 0
@@ -37,14 +37,14 @@ class LendingCapsNotifier(INotified, WithDelegates, WithLogger):
         # print(f'Pool {pool_name} is above caps: {pool.fill_ratio:.2f}. {previous_above_caps =}')
 
         # hysteresis logic
-        if previous_above_caps and pool.fill_ratio < self.threshold:
+        if previous_above_caps and pool.fill < self.threshold:
             await r.hset(self._key(pool_name), mapping={'above_caps': 0})
             await self._notify(event, pool_name)
 
-        if not previous_above_caps and pool.fill_ratio >= 1.0:
+        if not previous_above_caps and pool.fill >= 1.0:
             await r.hset(self._key(pool_name), mapping={'above_caps': 1})
-            self.logger.info(f'Pool {pool_name} is above caps: {pool.fill_ratio:.2f}')
+            self.logger.info(f'Pool {pool_name} is above caps: {pool.fill:.2f}')
 
     async def on_data(self, sender, event: LendingStats):
         for lend_pool in event.pools:
-            await self._handle_pool(lend_pool.collateral_name, lend_pool, event)
+            await self._handle_pool(lend_pool.pool, lend_pool, event)

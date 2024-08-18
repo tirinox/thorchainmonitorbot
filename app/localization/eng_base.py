@@ -2636,11 +2636,11 @@ class BaseLocalization(ABC):  # == English
             asset = pool.collateral_name
             pool_name = self.LEND_DICT.get(asset, asset)
 
-            fill = format_percent(pool.fill_ratio, total=1.0)
+            fill = format_percent(pool.fill, total=1.0)
             remaining_collateral = short_money(pool.collateral_available)
-            if pool.fill_ratio >= 1.0:
+            if pool.fill >= 1.0:
                 sing = '🚩'
-            elif pool.fill_ratio >= 0.9:
+            elif pool.fill >= 0.9:
                 sing = '🔰'
             else:
                 sing = '🟢'
@@ -2659,6 +2659,8 @@ class BaseLocalization(ABC):  # == English
 
     @staticmethod
     def _lending_stats_delta(event: AlertLendingStats):
+        # todo! fix fields
+        # todo! flag if disabled
         curr, prev = event.current, event.previous
         if prev:
             borrower_count_delta = bracketify(up_down_arrow(curr.borrower_count, prev.borrower_count, int_delta=True))
@@ -2676,7 +2678,7 @@ class BaseLocalization(ABC):  # == English
             total_collateral_value_delta = ''
             total_borrowed_amount_delta = ''
             rune_burned_rune_delta = ''
-        cr = (event.current.btc_current_cr + event.current.eth_current_cr) * 0.5
+        cr = (event.current.btc_current_cr + event.current.eth_current_cr) * 0.5  # fixme
         return (
             borrower_count_delta, curr, lending_tx_count_delta, rune_burned_rune_delta,
             total_borrowed_amount_delta, total_collateral_value_delta, cr
@@ -2685,6 +2687,8 @@ class BaseLocalization(ABC):  # == English
     def notification_lending_stats(self, event: AlertLendingStats):
         (borrower_count_delta, curr, lending_tx_count_delta, rune_burned_rune_delta, total_borrowed_amount_delta,
          total_collateral_value_delta, cr) = self._lending_stats_delta(event)
+
+        # todo: fixme
 
         return (
             f'<b>Lending stats</b>\n\n'
@@ -2704,7 +2708,7 @@ class BaseLocalization(ABC):  # == English
         return (
             f'🟢 A lending opportunity is now available in the {bold(self.pretty_asset(event.asset))} pool.\n'
             f'{bold(available_collateral)} {ital(pool_name)} can be deposited as collateral.\n'
-            f'Fill level is {ital(format_percent(event.pool_state.fill_ratio, total=1.0))}.\n'
+            f'Fill level is {ital(format_percent(event.pool_state.fill, total=1.0))}.\n'
         )
 
     TEXT_LENDING_STATS_NO_DATA = '😩 Sorry. We have not gotten any data for lending stats yet.'

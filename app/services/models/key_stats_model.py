@@ -9,7 +9,6 @@ from services.lib.constants import STABLE_COIN_POOLS_ALL, thor_to_float
 from services.lib.date_utils import date_parse_rfc_z_no_ms
 from services.models.pool_info import PoolInfoMap
 from services.models.swap_history import SwapHistoryResponse
-from services.models.vol_n import TxMetricType
 
 
 class SwapRouteEntry(NamedTuple):

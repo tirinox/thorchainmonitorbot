@@ -974,7 +974,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         return (
             f'🟢 A lending opportunity is now available in the {self.pretty_asset(event.asset)} pool.\n'
             f'{available_collateral} {pool_name} can be deposited as collateral.\n'
-            f'Current fill level: {format_percent(event.pool_state.fill_ratio, total=1.0)}.\n'
+            f'Current fill level: {format_percent(event.pool_state.fill, total=1.0)}.\n'
         )
 
     # ------ TRADE ACCOUNT ------
