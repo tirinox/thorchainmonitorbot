@@ -420,7 +420,7 @@ class NodeOpDialog(DialogWithSettings):
     async def ask_slash_period(self, query: CallbackQuery):
         await NodeOpStates.SETT_SLASH_PERIOD.set()
         keyboard = self.inline_keyboard_time_selector()
-        value = self.settings.get(NodeOpSetting.SLASH_THRESHOLD, 1)
+        value = self.settings.get(NodeOpSetting.SLASH_THRESHOLD, 1000)
         text = self.loc.text_nop_ask_slash_period(value)
         await query.message.edit_text(text, reply_markup=keyboard)
 
