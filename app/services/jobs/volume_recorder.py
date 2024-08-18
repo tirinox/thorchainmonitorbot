@@ -78,6 +78,10 @@ class TxCountRecorder(INotified, WithLogger):
                 unique_tx_hashes[TxMetricType.RUNEPOOL_ADD].add(ident)
             elif tx.is_of_type(ActionType.RUNEPOOL_WITHDRAW):
                 unique_tx_hashes[TxMetricType.RUNEPOOL_WITHDRAW].add(ident)
+            elif tx.is_of_type(ActionType.LOAN_OPEN):
+                unique_tx_hashes[TxMetricType.LOAN_OPEN].add(ident)
+            elif tx.is_of_type(ActionType.LOAN_CLOSE):
+                unique_tx_hashes[TxMetricType.LOAN_CLOSE].add(ident)
 
         for tx_type, tx_set in unique_tx_hashes.items():
             if tx_set:
@@ -158,6 +162,10 @@ class VolumeRecorder(INotified, WithLogger):
                     volumes[TxMetricType.RUNEPOOL_ADD] += volume
                 elif tx.is_of_type(ActionType.RUNEPOOL_WITHDRAW):
                     volumes[TxMetricType.RUNEPOOL_WITHDRAW] += volume
+                elif tx.is_of_type(ActionType.LOAN_OPEN):
+                    volumes[TxMetricType.LOAN_OPEN] += volume
+                elif tx.is_of_type(ActionType.LOAN_CLOSE):
+                    volumes[TxMetricType.LOAN_CLOSE] += volume
 
                 total_volume += volume
                 ts = tx.date_timestamp
