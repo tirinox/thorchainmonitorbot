@@ -302,15 +302,22 @@ DICT_WORDS = (
     'ygg,fund,retry,native,btf,migration,interval,remove,'
     'snx,text,low,tns,register,period,usd,global,old,depth,'
     'lack,penalty,chain,node,version,churn,to,provider,nodes,lock,'
-    'up,synth,in,rune,limit,gap,solvency,of,gen,year,start,asym,swtich,start,'
+    'up,synth,in,rune,limit,gap,solvency,of,gen,year,start,asym,switch,start,'
     'on,halt,unbond,iteration,sale,reward,ratio,strict,maximum,churning,btc,bch,ltc,doge,terra,avax,atom,gaia,bnb,eth,'
     'thor,utxos,check,trading,thorname,thornames,asset,signing,set,haven,spend,funding,cloud,new,number,desired,'
     'update,memo,next,saving,savings,savers,vaults,vault,bsc,ilp,deprecate,pol,buffer,deposit,movement,utilization,'
     'thor,anchor,multiple,basis,dofm,pending,vote,voting,in,or,and,the,yield,streaming,stream,tor,top,lending,'
-    'supply,multiplier,ETH-USDC,surplus,target,swaps,order,book,books,AVAX-USDC,significant,digits,length,'
+    'supply,multiplier,surplus,target,swaps,order,book,books,significant,digits,length,'
     'red,line,lune,fees,affiliate,cut,off,BNB-BUSD-BD1,ETH-USDT,loan,repayment,maturity,lever,slip,pts,'
-    'UST,luna,wide,blame,keygen,assets,derived,round,rounds,prefer,Collateral,ready,'
-    'protocol,system,rev,incr,dynamic,trade,accounts,disabled,operational,security,bps,conf,rune'
+    'UST,luna,wide,blame,keygen,assets,derived,round,rounds,prefer,Collateral,ready,signer,currency,concurrency,'
+    'enabled,disabled,income,bnb-rune,ltc-ltc,BNB-BAT-07A,'
+    'protocol,system,rev,incr,dynamic,trade,accounts,disabled,operational,security,bps,conf,rune,'
+    'AVAX-USDT-0X9702230A8EA53601F5CD2DC00FDBC13D4DF4A8C7,BNB-NEXO-A84,BNB-USDT-6D8,BNB-TWT-8C2,BNB-AVA-645,'
+    'BSC-USDC-0X8AC76A51CC950D9822D68B83FE1AD97B32CD580D,ETH-DAI-0X6B175474E89094C44DA98B954EEDEAC495271D0F,'
+    'Eth-usdc-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48,AVAX-AVAX,bnb-bnb,terra-luna,terra-ust,BNB-BTC B-1DE,'
+    'Avax-usdc-0XB97EF9EF8734C71904D8002F8B6BC66DD9C48A6E,doge-doge,BNB-ETH-1C9,bch-bch,BNB-EQL-586,BNB-ETHBULL-D33,'
+    'Eth-usdt-0XDAC17F958D2EE523A2206206994597C13D831EC7,BNB-TWT-8C2,BNB-CAKE-435,BNB-BTCB-1DE,'
+    'miss,blocks,sign,reset,calc,reserve,backstop,slip,COALESCE,RESCHEDULE,'
 ).strip(' ,')
 
 WORD_TRANSFORM = {
@@ -340,6 +347,15 @@ WORD_TRANSFORM = {
 
 DICT_WORDS_SORTED = list(sorted(map(str.upper, DICT_WORDS.split(',')), key=len, reverse=True))
 
+
+def take_care_of_asset_name(word: str):
+    if word.count('-'):
+        # assent name has hyphens
+        word = word.replace('-', '.', 1)
+        word = word.upper()
+    elif word in WORD_TRANSFORM:
+        word = WORD_TRANSFORM[word]
+    return word
 
 def try_deducting_mimir_name(name: str, glue=' '):
     components = []
@@ -372,6 +388,6 @@ def try_deducting_mimir_name(name: str, glue=' '):
     if position < len(name):
         words.append(name[position:].upper())
 
-    words = map(lambda w: WORD_TRANSFORM.get(w, w), words)
+    words = [take_care_of_asset_name(w) for w in words]
 
     return glue.join(words)
