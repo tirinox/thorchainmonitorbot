@@ -1672,14 +1672,6 @@ class RussianLocalization(BaseLocalization):
     TEXT_BP_24H_VOLUME = 'Объем за 24 часа'
 
     def notification_text_best_pools(self, pd: PoolMapPair, n_pools):
-        # no_pool_text = 'Пока ничего, наверное, еще грузится...'
-        # text = '\n\n'.join([self.format_pool_top(top_pools, pd, title, no_pool_text, n_pools) for title, top_pools in [
-        #     ('💎 Лучшие годовые %', pd.BY_APR),
-        #     ('💸 Большие объемы', pd.BY_VOLUME_24h),
-        #     ('🏊 Максимальная ликвидность', pd.BY_DEPTH),
-        # ]])
-        #
-        # return text
         return 'Топ пулов ликвидности THORChain'
 
     # ------------------------------------------

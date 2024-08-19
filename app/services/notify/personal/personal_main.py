@@ -16,7 +16,7 @@ from services.notify.channel import BoardMessage
 from services.notify.personal.bond import BondTracker
 from services.notify.personal.chain_height import ChainHeightTracker
 from services.notify.personal.churning import NodeChurnTracker
-from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting, GeneralSettings
+from services.notify.personal.helpers import BaseChangeTracker, NodeOpSetting
 from services.notify.personal.ip_addr import IpAddressTracker
 from services.notify.personal.node_online import NodeOnlineTracker
 from services.notify.personal.presence import PresenceTracker
@@ -57,9 +57,8 @@ class NodeChangePersonalNotifier(INotified, WithLogger):
     async def prepare(self):
         if self._watchdog_enabled:
             self.logger.info(f'Starting watchdog timer: timeout = {self._disconnected_cable_timeout} sec')
+            # noinspection PyAsyncCall
             asyncio.create_task(self._watchdog_timer())
-        # self.thor_mon.subscribe(self)
-        # asyncio.create_task(self.thor_mon.listen_forever())
 
     async def _watchdog_timer(self):
         while True:
@@ -87,6 +86,7 @@ class NodeChangePersonalNotifier(INotified, WithLogger):
     async def on_data(self, sender, data):
         self._last_signal_ts = now_ts()
         if isinstance(data, NodeSetChanges):  # from Churn Fetcher
+            # noinspection PyAsyncCall
             asyncio.create_task(self._handle_node_churn_bg_job(data))  # long-running job goes to the background!
 
     async def _handle_node_churn_bg_job(self, node_set_change: NodeSetChanges):
