@@ -2104,47 +2104,7 @@ class BaseLocalization(ABC):  # == English
     TEXT_BP_TOTAL_LIQ = 'TOTAL LIQUIDITY'
     TEXT_BP_24H_VOLUME = '24H VOLUME'
 
-    def format_pool_top(self, attr_name, pd: PoolMapPair, title, no_pool_text, n_pools):
-        top_pools = pd.get_top_pools(attr_name, n=n_pools)
-        text = bold(title) + '\n'
-        for i, pool in enumerate(top_pools, start=1):
-            v = pd.get_value(pool.asset, attr_name)
-            if attr_name == pd.BY_APR:
-                v = f'{v:.1f}%'
-            else:
-                v = short_dollar(v)
-
-            delta = pd.get_difference_percent(pool.asset, attr_name)
-            # cut too small APY change
-            if delta and abs(delta) < 1:
-                delta = 0
-
-            try:
-                if attr_name == pd.BY_APR:
-                    delta_p = pretty_money(delta, signed=True, postfix=' pp')
-                else:
-                    delta_p = pretty_percent(delta)
-                delta_p = bracketify(delta_p) if delta else ''
-            except ValueError:
-                delta_p = ''
-
-            asset = Asset.from_string(pool.asset).shortest
-            url = get_pool_url(pool.asset)
-
-            text += f'#{i}. {link(url, asset)}: {code(v)} {delta_p}\n'
-        if not top_pools:
-            text += no_pool_text
-        return text.strip()
-
     def notification_text_best_pools(self, pd: PoolMapPair, n_pools):
-        # no_pool_text = 'Nothing yet. Maybe still loading...'
-        # text = '\n\n'.join([self.format_pool_top(top_pools, pd, title, no_pool_text, n_pools) for title, top_pools in [
-        #     ('💎 Best APR', pd.BY_APR),
-        #     ('💸 Top volume', pd.BY_VOLUME_24h),
-        #     ('🏊 Max Liquidity', pd.BY_DEPTH),
-        # ]])
-        #
-        # return text
         return 'THORChain top liquidity pools'
 
     # ------- INLINE BOT (English only) -------

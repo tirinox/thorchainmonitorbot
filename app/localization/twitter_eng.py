@@ -720,17 +720,6 @@ class TwitterEnglishLocalization(BaseLocalization):
 
     def notification_text_best_pools(self, pd: PoolMapPair, n_pools):
         return 'THORChain top liquidity pools'
-        # if pd.empty:
-        #     return ''
-        #
-        # n_pools = 3  # less for Twitter
-        # text = '\n'.join([self.format_pool_top(top_pools, pd, title, '', n_pools)
-        #                   for title, top_pools in [
-        #                       ('💎 Best APY', pd.BY_APR),
-        #                       ('💸 Top volume', pd.BY_VOLUME_24h),
-        #                       ('🏊 Max Liquidity', pd.BY_DEPTH),
-        #                   ]])
-        # return text
 
     def link_to_address(self, addr, name_map, chain=Chains.THOR, is_loan=False):
         # without a link, just a caption
