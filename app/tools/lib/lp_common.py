@@ -70,13 +70,16 @@ class LpAppFramework(App):
 
     async def prepare(self, brief=False):
         d = self.deps
+
+        # before all
+        await d.db.get_redis()
+        
         d.make_http_session()
 
         # often required
         d.volume_recorder = VolumeRecorder(d)
         d.tx_count_recorder = TxCountRecorder(d)
 
-        await d.db.get_redis()
         await self.create_thor_node_connector()
 
         d.rune_market_fetcher = RuneMarketInfoFetcher(d)

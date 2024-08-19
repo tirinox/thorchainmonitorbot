@@ -130,6 +130,7 @@ async def debug_earnings(app: LpAppFramework):
 async def main():
     lp_app = LpAppFramework(log_level=logging.INFO)
     async with lp_app(brief=True):
+        await lp_app.deps.db.get_redis()
         lp_app.deps.user_counter = UserCounterMiddleware(lp_app.deps)
         await lp_app.deps.last_block_fetcher.run_once()
         # await lp_app.prepare(brief=True)

@@ -328,6 +328,30 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         else:
             return prev_total, curr_total
 
+    def get_volumes_by_asset_type(self):
+        # Little hack to make the sum of the volumes equal to the USD volume.
+        # We are not able to record all swap events correctly, but we can extract an approximate distribution.
+        # Using this distribution, we calculate the actual trading volumes of different assets.
+        total_usd_volume, prev_total_usd_volume = self.event.usd_volume_curr_prev
+        dist = self.event.swap_type_distribution
+        n, s, t = (
+            dist.get(TxMetricType.SWAP, 0.0),
+            dist.get(TxMetricType.SWAP_SYNTH, 0.0),
+            dist.get(TxMetricType.TRADE_SWAP, 0.0),
+        )
+
+        curr_vol_normal = total_usd_volume * n
+        curr_vol_synth = total_usd_volume * s
+        curr_vol_trade = total_usd_volume * t
+        prev_vol_normal = prev_total_usd_volume * n
+        prev_vol_synth = prev_total_usd_volume * s
+        prev_vol_trade = prev_total_usd_volume * t
+
+        return (
+            (curr_vol_normal, curr_vol_synth, curr_vol_trade),
+            (prev_vol_normal, prev_vol_synth, prev_vol_trade),
+        )
+
     def _draw_swap_stats_block(self, draw, x, y):
         loc = self.loc
 
@@ -343,9 +367,10 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
 
         y += 150
 
-        prev_vol_synth, curr_vol_synth = self.get_swap_info_prev_curr(TxMetricType.SWAP_SYNTH, is_count=False)
-        prev_vol_trade, curr_vol_trade = self.get_swap_info_prev_curr(TxMetricType.TRADE_SWAP, is_count=False)
-        prev_vol_normal, curr_vol_normal = self.get_swap_info_prev_curr(TxMetricType.SWAP, is_count=False)
+        # Old way: recorded volumes
+        # prev_vol_synth, curr_vol_synth = self.get_swap_info_prev_curr(TxMetricType.SWAP_SYNTH, is_count=False)
+        # prev_vol_trade, curr_vol_trade = self.get_swap_info_prev_curr(TxMetricType.TRADE_SWAP, is_count=False)
+        # prev_vol_normal, curr_vol_normal = self.get_swap_info_prev_curr(TxMetricType.SWAP, is_count=False)
 
         prev_count_synth, curr_count_synth = self.get_swap_info_prev_curr(TxMetricType.SWAP_SYNTH, is_count=True)
         prev_count_trade, curr_count_trade = self.get_swap_info_prev_curr(TxMetricType.TRADE_SWAP, is_count=True)
@@ -394,18 +419,10 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
 
         # ---- TX VOLUME FIGURES ----
 
-        # Little hack to make the sum of the volumes equal to the USD volume.
-        # We are not able to record all swap events correctly, but we can extract an approximate distribution.
-        # Using this distribution, we calculate the actual trading volumes of different assets.
-
-        recorded_volume_sum = curr_vol_normal + curr_vol_synth + curr_vol_trade
-        difference_ratio = usd_volume / recorded_volume_sum
-        curr_vol_normal = curr_vol_normal * difference_ratio
-        curr_vol_synth = curr_vol_synth * difference_ratio
-        curr_vol_trade = curr_vol_trade * difference_ratio
-        prev_vol_normal = prev_vol_normal * difference_ratio
-        prev_vol_synth = prev_vol_synth * difference_ratio
-        prev_vol_trade = prev_vol_trade * difference_ratio
+        (
+            (curr_vol_normal, curr_vol_synth, curr_vol_trade),
+            (prev_vol_normal, prev_vol_synth, prev_vol_trade),
+        ) = self.get_volumes_by_asset_type()
 
         y += 44
         draw.text((x_normal, y), short_dollar(curr_vol_normal), font=coin_font, fill=palette[0], anchor='ls')
