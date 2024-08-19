@@ -143,9 +143,6 @@ async def demo_trade_acc_summary_continuous(app: LpAppFramework):
 async def demo_trade_acc_summary_single(app: LpAppFramework, reset_cache=False):
     d = app.deps
 
-    d.volume_recorder = VolumeRecorder(d)
-    d.tx_count_recorder = TxCountRecorder(d)
-
     trade_acc_fetcher = TradeAccountFetcher(d)
 
     tr_acc_summary_not = TradeAccSummaryNotifier(d)

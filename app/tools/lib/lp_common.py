@@ -9,6 +9,7 @@ from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
 from services.jobs.fetch.last_block import LastBlockFetcher
 from services.jobs.fetch.runeyield import AsgardConsumerConnectorBase, get_rune_yield_connector
 from services.jobs.fetch.tx import TxFetcher
+from services.jobs.volume_recorder import VolumeRecorder, TxCountRecorder
 from services.lib.constants import NetworkIdents
 from services.lib.delegates import INotified
 from services.lib.draw_utils import img_to_bio
@@ -70,6 +71,10 @@ class LpAppFramework(App):
     async def prepare(self, brief=False):
         d = self.deps
         d.make_http_session()
+
+        # often required
+        d.volume_recorder = VolumeRecorder(d)
+        d.tx_count_recorder = TxCountRecorder(d)
 
         await d.db.get_redis()
         await self.create_thor_node_connector()

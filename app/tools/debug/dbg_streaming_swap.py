@@ -125,10 +125,7 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
     aggregator.add_subscriber(d.dex_analytics)
 
     # Just to check stability
-    d.volume_recorder = VolumeRecorder(d)
     volume_filler.add_subscriber(d.volume_recorder)
-
-    d.tx_count_recorder = TxCountRecorder(d)
     volume_filler.add_subscriber(d.tx_count_recorder)
 
     # # Just to check stability: DEX reports

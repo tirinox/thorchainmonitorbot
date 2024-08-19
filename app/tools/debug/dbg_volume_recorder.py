@@ -52,10 +52,7 @@ async def continuous_volume_recording(lp_app):
     volume_filler = VolumeFillerUpdater(d)
     aggregator.add_subscriber(volume_filler)
 
-    d.volume_recorder = VolumeRecorder(d)
     volume_filler.add_subscriber(d.volume_recorder)
-
-    d.tx_count_recorder = TxCountRecorder(d)
     volume_filler.add_subscriber(d.tx_count_recorder)
 
     # Count Trade deposits and withdrawals
@@ -104,8 +101,6 @@ async def demo_show_price_graph(app: LpAppFramework):
 
 async def tool_get_total_volume_and_tx_count(app: LpAppFramework):
     d = app.deps
-    d.volume_recorder = VolumeRecorder(d)
-    d.tx_count_recorder = TxCountRecorder(d)
 
     t = now_ts()
     total_volume = await d.volume_recorder.get_sum(t - 365 * DAY, t)

@@ -21,9 +21,6 @@ async def prepare_once(app):
         d = app.deps
         d.block_scanner = NativeScannerBlock(d)
 
-        d.volume_recorder = VolumeRecorder(d)
-        d.tx_count_recorder = TxCountRecorder(d)
-
         await d.pool_fetcher.reload_global_pools()
         await d.last_block_fetcher.run_once()
         await d.mimir_const_fetcher.run_once()
