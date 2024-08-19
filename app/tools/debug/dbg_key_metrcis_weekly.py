@@ -46,11 +46,6 @@ class KeyMetricsSaver(INotified):
 
 async def demo_analyse_and_show(app: LpAppFramework):
     d = app.deps
-    d.volume_recorder = VolumeRecorder(d)
-    # volume_filler.add_subscriber(d.volume_recorder)
-
-    d.tx_count_recorder = TxCountRecorder(d)
-    # volume_filler.add_subscriber(d.tx_count_recorder)
 
     f = KeyStatsFetcher(d)
     noter = KeyMetricsNotifier(d)

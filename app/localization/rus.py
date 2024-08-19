@@ -12,7 +12,7 @@ from services.jobs.fetch.circulating import ThorRealms
 from services.jobs.fetch.runeyield.borrower import LoanReportCard
 from services.lib.config import Config
 from services.lib.constants import Chains, LOAN_MARKER
-from services.lib.date_utils import format_time_ago, seconds_human, now_ts, HOUR
+from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address, get_thoryield_address, \
     get_ip_info_link
 from services.lib.midgard.name_service import add_thor_suffix, NameMap
@@ -1996,12 +1996,13 @@ class RussianLocalization(BaseLocalization):
         return pool_desc
 
     def notification_lending_stats(self, event: AlertLendingStats):
-        (borrower_count_delta, curr, rune_burned_rune_delta, total_borrowed_amount_delta,
+        (borrower_count_delta, curr, lending_tx_count_delta, rune_burned_rune_delta, total_borrowed_amount_delta,
          total_collateral_value_delta, cr) = self._lending_stats_delta(event)
 
         return (
             f'<b>Статистика кредитования</b>\n\n'
             f'🙋‍♀️ Число заемщиков: {bold(pretty_money(curr.borrower_count))} {borrower_count_delta}\n'
+            f'📝 Число транзакций: {bold(pretty_money(curr.lending_tx_count, integer=True))} {lending_tx_count_delta}\n'
             f'💰 Общее обеспечение: {bold(short_dollar(curr.total_collateral_value_usd))}'
             f' {total_collateral_value_delta}\n'
             f'💸 Объем займов: {bold(short_dollar(curr.total_borrowed_amount_usd))} {total_borrowed_amount_delta}\n'

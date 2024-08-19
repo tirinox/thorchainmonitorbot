@@ -117,7 +117,7 @@ async def demo_lending_stats_with_deltas(app: LpAppFramework):
     await asyncio.sleep(5)
 
 
-LENDING_STATS_SAVED_FILE = '../temp/lending_stats.pkl'
+LENDING_STATS_SAVED_FILE = '../temp/lending_stats_v2.pkl'
 
 
 async def _preload(app):
@@ -182,6 +182,7 @@ async def demo_lending_opened_up(app: LpAppFramework):
     data = load_pickle(LENDING_STATS_SAVED_FILE)
     if not data or not isinstance(data, AlertLendingStats):
         print('No saved data. It is impossible to run this demo without the saved data.')
+        return
 
     notifier = LendingCapsNotifier(app.deps)
     notifier.add_subscriber(app.deps.alert_presenter)
@@ -198,7 +199,7 @@ async def demo_lending_opened_up(app: LpAppFramework):
 
             data.current.pools[0] = data.current.pools[0]._replace(
                 collateral_available=var_file.get('collateral_available', 0),
-                fill=var_file.get('fill_ratio', 101) / 100.0
+                fill=var_file.get('fill', 101) / 100.0
             )
 
         await notifier.on_data(None, data.current)
@@ -210,10 +211,10 @@ async def run():
     async with app(brief=True):
         # await demo_personal_loan_card(app)
 
-        # await demo_lending_stats(app, cached=True)
-        await demo_lending_stats_with_deltas(app)
+        await demo_lending_stats(app, cached=True)
+        # await demo_lending_stats_with_deltas(app)
         # await dbg_lending_limits(app)
-        # await demo_lending_opened_up(app)
+        await demo_lending_opened_up(app)
 
         # await debug_block_analyse(app, 12262380)
         # await debug_tx_records(app, 'xxx')

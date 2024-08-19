@@ -45,7 +45,7 @@ class LendingStatsNotifier(INotified, WithDelegates, WithLogger):
             ])
             return stats
         except Exception as e:
-            self.logger.exception(e)
+            self.logger.exception(f'Failed to get old stats from the DB: {e}')
             return None
 
     async def get_last_event(self) -> Optional[AlertLendingStats]:

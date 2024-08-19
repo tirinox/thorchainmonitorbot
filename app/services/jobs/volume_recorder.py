@@ -112,6 +112,12 @@ class TxCountRecorder(INotified, WithLogger):
 
         return TxCountStats(curr_dict, prev_dict)
 
+    async def get_one_metric(self, tx_type, period_days=7):
+        counter = self._counters.get(tx_type)
+        if counter:
+            return await counter.get_current_and_previous_au(period_days)
+        return 0, 0
+
 
 class VolumeRecorder(INotified, WithLogger):
     def __init__(self, deps: DepContainer):

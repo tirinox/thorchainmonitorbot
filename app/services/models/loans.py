@@ -1,6 +1,6 @@
 from typing import NamedTuple, Optional, List
 
-from services.lib.constants import thor_to_float
+from services.lib.constants import thor_to_float, THOR_BLOCK_TIME
 from services.lib.date_utils import now_ts
 from services.models.events import EventLoanOpen, EventLoanRepayment
 
@@ -37,9 +37,10 @@ class BorrowerPool(NamedTuple):
     collateral_pool_in_rune: float
     debt_in_rune: float
     collateral_available: float
+    is_enabled: bool
 
     @classmethod
-    def from_json(cls, data: dict):
+    def from_json(cls, data: dict, is_enabled=True):
         return cls(
             debt=thor_to_float(data['debt']),
             borrowers_count=int(data['borrowersCount']),
@@ -49,18 +50,19 @@ class BorrowerPool(NamedTuple):
             fill=float(data['fill']),
             collateral_pool_in_rune=thor_to_float(data['collateralPoolInRune']),
             debt_in_rune=thor_to_float(data['debtInRune']),
-            collateral_available=thor_to_float(data['collateralAvailable'])
+            collateral_available=thor_to_float(data['collateralAvailable']),
+            is_enabled=is_enabled,
         )
 
     @property
     def cr(self):
-        # todo
-        return 0.0
+        # collaterization ratio
+        return self.collateral_pool_in_rune / self.debt_in_rune
 
     @property
     def ltv(self):
-        # todo
-        return 0.0
+        # loan-to-value
+        return self.debt_in_rune / self.collateral_pool_in_rune
 
 
 class LendingStats(NamedTuple):
@@ -70,6 +72,18 @@ class LendingStats(NamedTuple):
     usd_per_rune: float
 
     pools: List[BorrowerPool]
+
+    is_paused: bool
+    loan_repayment_maturity_blk: int
+    min_cr: float
+    max_cr: float
+    lending_lever: float
+    # totalAvailableRuneForProtocol = lending_lever / 10,000 * runeBurnt
+    #   where runeBurnt = maxRuneSupply − currentRuneSupply
+
+    @property
+    def loan_repayment_maturity_sec(self):
+        return self.loan_repayment_maturity_blk * THOR_BLOCK_TIME
 
     @property
     def total_debt(self) -> float:
@@ -90,6 +104,15 @@ class LendingStats(NamedTuple):
     @property
     def total_borrowed_amount_usd(self) -> float:
         return sum(p.debt_in_rune * self.usd_per_rune for p in self.pools)
+
+    @property
+    def avg_cr(self):
+        return sum(p.cr for p in self.pools) / len(self.pools) if self.pools else 0
+
+    @property
+    def health_factor(self):
+        # total burned rune / total collateral in rune
+        return self.rune_burned_rune / sum(p.collateral_pool_in_rune for p in self.pools) if self.pools else 0
 
 
 class AlertLendingStats(NamedTuple):

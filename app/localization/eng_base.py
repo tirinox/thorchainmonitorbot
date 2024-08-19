@@ -14,7 +14,7 @@ from services.jobs.fetch.runeyield.borrower import LoanReportCard
 from services.lib.config import Config
 from services.lib.constants import thor_to_float, THOR_BLOCK_TIME, DEFAULT_CEX_NAME, \
     DEFAULT_CEX_BASE_ASSET, bp_to_percent, LOAN_MARKER, BTC_SYMBOL, ETH_SYMBOL
-from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE, DAY, HOUR
+from services.lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE, DAY
 from services.lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
     get_explorer_url_for_node, get_pool_url, get_thoryield_address, get_ip_info_link
 from services.lib.midgard.name_service import NameService, add_thor_suffix, NameMap
@@ -2593,7 +2593,7 @@ class BaseLocalization(ABC):  # == English
     def _lend_pool_desc(self, event: AlertLendingStats):
         pool_desc = ''
         for pool in sorted(event.current.pools):
-            asset = pool.collateral_name
+            asset = pool.pool
             pool_name = self.LEND_DICT.get(asset, asset)
 
             fill = format_percent(pool.fill, total=1.0)
@@ -2638,7 +2638,7 @@ class BaseLocalization(ABC):  # == English
             total_collateral_value_delta = ''
             total_borrowed_amount_delta = ''
             rune_burned_rune_delta = ''
-        cr = (event.current.btc_current_cr + event.current.eth_current_cr) * 0.5  # fixme
+        cr = event.current.avg_cr
         return (
             borrower_count_delta, curr, lending_tx_count_delta, rune_burned_rune_delta,
             total_borrowed_amount_delta, total_collateral_value_delta, cr
@@ -2648,12 +2648,10 @@ class BaseLocalization(ABC):  # == English
         (borrower_count_delta, curr, lending_tx_count_delta, rune_burned_rune_delta, total_borrowed_amount_delta,
          total_collateral_value_delta, cr) = self._lending_stats_delta(event)
 
-        # todo: fixme
-
         return (
             f'<b>Lending stats</b>\n\n'
             f'🙋‍♀️ Borrower count: {bold(pretty_money(curr.borrower_count))} {borrower_count_delta}\n'
-            f'📝 Lending Tx count: {bold(pretty_money(curr.lending_tx_count))} {lending_tx_count_delta}\n'
+            f'📝 Lending Txs: {bold(pretty_money(curr.lending_tx_count, integer=True))} {lending_tx_count_delta}\n'
             f'💰 Total collateral value: {bold(short_dollar(curr.total_collateral_value_usd))} {total_collateral_value_delta}\n'
             f'💸 Total borrowed value: {bold(short_dollar(curr.total_borrowed_amount_usd))} {total_borrowed_amount_delta}\n'
             f'{self._lend_pool_desc(event)}'
