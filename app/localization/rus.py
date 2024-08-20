@@ -1739,7 +1739,7 @@ class RussianLocalization(BaseLocalization):
             f'POL: {pre(short_rune(sp.pol))} ({format_percent(sp.pol_percent)}).\n'
             f'🔒 Бонды нод: {pre(short_rune(sp.bonded))} ({format_percent(sp.bonded_percent)}).\n'
             f'🏦 Биржы: {pre(short_rune(sp.in_cex))} ({format_percent(sp.in_cex_percent)}).\n'
-            f'💰 Сокровищница имеет {pre(pretty_rune(sp.treasury))}.'
+            f'💰 Сокровищница имеет {pre(short_rune(sp.treasury))}.'
         )
 
     SUPPLY_PIC_CIRCULATING = 'Прочие циркулирующие'

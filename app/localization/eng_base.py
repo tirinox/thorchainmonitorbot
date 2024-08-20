@@ -2187,7 +2187,7 @@ class BaseLocalization(ABC):  # == English
             f'POL: {pre(short_rune(sp.pol))} ({format_percent(sp.pol_percent)}).\n'
             f'🔒 Bond: {pre(short_rune(sp.bonded))} ({format_percent(sp.bonded_percent)}).\n'
             f'🏦 CEX: {pre(short_rune(sp.in_cex))} ({format_percent(sp.in_cex_percent)}).\n'
-            f'💰 Treasury: {pre(pretty_rune(sp.treasury))}.'
+            f'💰 Treasury: {pre(short_rune(sp.treasury))}.'
         )
 
     SUPPLY_PIC_CIRCULATING = 'Other circulating'
