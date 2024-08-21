@@ -14,7 +14,7 @@ async def demo_analise_borrower_pools(lp_app):
     bpg = BorrowerPositionGenerator(lp_app.deps)
 
     for borrower in borrowers:
-        positions = await bpg.get_borrower_positions(borrower)
+        positions = await bpg.get_borrower_positions_midgard(borrower)
         for position in positions:
             if len(position.target_assets) > 1:
                 print(f'?? {borrower} => {position.target_assets}')

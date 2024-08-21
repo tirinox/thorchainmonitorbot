@@ -1999,8 +1999,11 @@ class RussianLocalization(BaseLocalization):
         (borrower_count_delta, curr, lending_tx_count_delta, rune_burned_rune_delta, total_borrowed_amount_delta,
          total_collateral_value_delta, cr) = self._lending_stats_delta(event)
 
+        paused_str = '🛑 Кредитование остановлено!\n' if event.current.is_paused else ''
+
         return (
             f'<b>Статистика кредитования</b>\n\n'
+            f'{paused_str}'
             f'🙋‍♀️ Число заемщиков: {bold(pretty_money(curr.borrower_count))} {borrower_count_delta}\n'
             f'📝 Число транзакций: {bold(pretty_money(curr.lending_tx_count, integer=True))} {lending_tx_count_delta}\n'
             f'💰 Общее обеспечение: {bold(short_dollar(curr.total_collateral_value_usd))}'
