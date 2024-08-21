@@ -372,6 +372,11 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         # prev_vol_trade, curr_vol_trade = self.get_swap_info_prev_curr(TxMetricType.TRADE_SWAP, is_count=False)
         # prev_vol_normal, curr_vol_normal = self.get_swap_info_prev_curr(TxMetricType.SWAP, is_count=False)
 
+        (
+            (curr_vol_normal, curr_vol_synth, curr_vol_trade),
+            (prev_vol_normal, prev_vol_synth, prev_vol_trade),
+        ) = self.get_volumes_by_asset_type()
+
         prev_count_synth, curr_count_synth = self.get_swap_info_prev_curr(TxMetricType.SWAP_SYNTH, is_count=True)
         prev_count_trade, curr_count_trade = self.get_swap_info_prev_curr(TxMetricType.TRADE_SWAP, is_count=True)
         prev_count_normal, curr_count_normal = self.get_swap_info_prev_curr(TxMetricType.SWAP, is_count=True)
@@ -380,7 +385,7 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
         distribution_bar_chart(
             draw,
             # values=[swap_n_normal, swap_n_synth, swap_n_trade],
-            values=[curr_count_normal, curr_count_synth, curr_count_trade],
+            values=[curr_vol_normal, curr_vol_synth, curr_vol_trade],
             x=x, y=y, width=BAR_WIDTH, height=BAR_HEIGHT,
             palette=palette,
             gap=6,
@@ -418,11 +423,6 @@ class KeyStatsPictureGenerator(BasePictureGenerator):
                   fill=palette[2])
 
         # ---- TX VOLUME FIGURES ----
-
-        (
-            (curr_vol_normal, curr_vol_synth, curr_vol_trade),
-            (prev_vol_normal, prev_vol_synth, prev_vol_trade),
-        ) = self.get_volumes_by_asset_type()
 
         y += 44
         draw.text((x_normal, y), short_dollar(curr_vol_normal), font=coin_font, fill=palette[0], anchor='ls')
