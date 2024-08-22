@@ -6,6 +6,7 @@ from aionode.types import ThorChainInfo, thor_to_float
 from localization.achievements.ach_tw_eng import AchievementsTwitterEnglishLocalization
 from localization.eng_base import BaseLocalization
 from services.dialog.twitter.text_length import twitter_intelligent_text_splitter
+from services.jobs.fetch.net_idents import AlertChainIdChange
 from services.lib.config import Config
 from services.lib.constants import Chains, BTC_SYMBOL, ETH_SYMBOL
 from services.lib.date_utils import now_ts, seconds_human
@@ -1058,4 +1059,14 @@ class TwitterEnglishLocalization(BaseLocalization):
             f'PnL: {pretty_rune(event.current.pnl)} {pnl_delta}\n'
             f'Providers: {short_money(event.current.n_providers, integer=True)} {n_providers_delta}\n'
             f'Avg. value per provider: {pretty_rune(event.current.avg_deposit)}\n'
+        )
+
+    # ------ Network indentifiers ------
+
+    @staticmethod
+    def notification_text_chain_id_changed(event: AlertChainIdChange):
+        return (
+            f'🆔 Network identifier has changed\n\n'
+            f'Old: "{event.prev_chain_id}"\n'
+            f'New: "{event.curr_chain_id}"'
         )

@@ -10,6 +10,7 @@ from services.dialog.picture.pools_picture import PoolPictureGenerator
 from services.dialog.picture.price_picture import price_graph_from_db
 from services.dialog.picture.savers_picture import SaversPictureGenerator
 from services.jobs.achievement.ach_list import Achievement
+from services.jobs.fetch.net_idents import AlertChainIdChange
 from services.lib.constants import THOR_BLOCKS_PER_MINUTE
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
@@ -22,9 +23,9 @@ from services.models.last_block import EventBlockSpeed, BlockProduceState
 from services.models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats, AlertLendingOpenUpdate
 from services.models.mimir import AlertMimirChange
 from services.models.node_info import AlertNodeChurn
-from services.models.runepool import AlertPOLState, AlertRunepoolStats
 from services.models.pool_info import PoolChanges, PoolMapPair
 from services.models.price import AlertPrice
+from services.models.runepool import AlertPOLState, AlertRunepoolStats
 from services.models.runepool import AlertRunePoolAction
 from services.models.s_swap import AlertSwapStart
 from services.models.savers import AlertSaverStats
@@ -94,6 +95,8 @@ class AlertPresenter(INotified, WithLogger):
             await self._handle_runepool_action(data)
         elif isinstance(data, AlertRunepoolStats):
             await self._handle_runepool_stats(data)
+        elif isinstance(data, AlertChainIdChange):
+            await self._handle_chain_id(data)
 
     async def load_names(self, addresses) -> NameMap:
         if isinstance(addresses, str):
@@ -305,5 +308,11 @@ class AlertPresenter(INotified, WithLogger):
     async def _handle_runepool_stats(self, data: AlertRunepoolStats):
         await self.deps.broadcaster.notify_preconfigured_channels(
             BaseLocalization.notification_runepool_stats,
+            data
+        )
+
+    async def _handle_chain_id(self, data: AlertChainIdChange):
+        await self.deps.broadcaster.notify_preconfigured_channels(
+            BaseLocalization.notification_text_chain_id_changed,
             data
         )

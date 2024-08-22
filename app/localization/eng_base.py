@@ -10,6 +10,7 @@ from aionode.types import ThorChainInfo, ThorBalances, ThorSwapperClout
 from localization.achievements.ach_eng import AchievementsEnglishLocalization
 from proto.types import ThorName
 from services.jobs.fetch.circulating import ThorRealms
+from services.jobs.fetch.net_idents import AlertChainIdChange
 from services.jobs.fetch.runeyield.borrower import LoanReportCard
 from services.lib.config import Config
 from services.lib.constants import thor_to_float, THOR_BLOCK_TIME, DEFAULT_CEX_NAME, \
@@ -2821,6 +2822,16 @@ class BaseLocalization(ABC):  # == English
             return n_providers_delta, pnl_delta, rune_delta, share_delta
         else:
             return '', '', '', ''
+
+    # ------ Network indentifiers ------
+
+    @staticmethod
+    def notification_text_chain_id_changed(event: AlertChainIdChange):
+        return (
+            f'🆔 <b>Chain ID has changed</b>\n\n'
+            f'Old: "{code(event.prev_chain_id)}"\n'
+            f'New: "{code(event.curr_chain_id)}"'
+        )
 
     # ------ Bond providers alerts ------
 

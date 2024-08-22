@@ -622,20 +622,27 @@ runepool:
   enabled: true
   fetch_period: 5m
 
-  actions:  # (!) new
+  actions:
     # deposits and withdrawals
     enabled: true
     min_usd_total: 1000
     cooldown: 10m
     cooldown_capacity: 5  # how many times accept an event before trigger cooldown
 
-  summary:  # (!) new
+  summary:
 
     enabled: true
     cooldown: 1d
     tally_period: 1d
 
-  pol_summary:  # (!) new
+  pol_summary:
     enabled: true
     cooldown: 1d
     allow_when_zero: false
+
+
+chain_id:  # (!) new, watch hard-forks
+  enabled: true
+  fetch_period: 1m
+  cooldown: 1d
+  confidence_window_size: 14

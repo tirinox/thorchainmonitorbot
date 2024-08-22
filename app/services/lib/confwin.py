@@ -21,9 +21,13 @@ class ConfidenceWindow:
         d = sum(1 for v in self.queue if v == value) / len(self.queue)
         return d
 
-    def most_common(self, check_threshold=False):
+    def most_common(self, check_threshold=False, full_check=True):
         if len(self.queue) == 0:
-            return None
+            return
+
+        if full_check and not self.is_full:
+            return
+
         best_fit = max(set(self.queue), key=self.queue.count)
         if check_threshold:
             return best_fit if self.dominance_of(best_fit) >= self.threshold else None
@@ -38,3 +42,7 @@ class ConfidenceWindow:
 
     def __len__(self):
         return len(self.queue)
+
+    @property
+    def is_full(self):
+        return len(self.queue) == self.size

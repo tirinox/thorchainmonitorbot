@@ -10,6 +10,7 @@ def test_clear():
     c.clear()
     assert len(c) == 0
 
+
 def test_size():
     c = ConfidenceWindow(5)
     c.append(1, 2, 3, 4, 5)
@@ -53,3 +54,13 @@ def test_threshold():
     c.append(4, 4, 4, 4, 4, 4, 4, 4, 4, 4)
     assert c.most_common() == 4
     assert c.most_common(check_threshold=True) == 4
+
+
+def test_full():
+    c = ConfidenceWindow(500, threshold=0.001)
+    assert not c.is_full
+    c.append(1, 1, 1, 1, 1, 1, 1, 1, 1, 2, 1, 2, 4, 1)
+    assert not c.is_full
+
+    assert c.most_common(full_check=False) == 1
+    assert c.most_common(full_check=True) is None

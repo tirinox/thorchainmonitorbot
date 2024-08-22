@@ -11,7 +11,8 @@ from services.jobs.scanner.loan_extractor import LoanExtractorBlock
 from services.jobs.scanner.native_scan import NativeScannerBlock
 from services.lib.money import DepthCurve
 from services.lib.texts import sep
-from services.lib.utils import load_pickle, save_pickle, read_var_file
+from services.lib.utils import load_pickle, save_pickle
+from services.lib.var_file import var_file_loop
 from services.models.loans import AlertLendingStats, LendingStats
 from services.notify.types.lend_stats_notify import LendingStatsNotifier
 from services.notify.types.lending_open_up import LendingCapsNotifier
@@ -187,23 +188,18 @@ async def demo_lending_opened_up(app: LpAppFramework):
     notifier = LendingCapsNotifier(app.deps)
     notifier.add_subscriber(app.deps.alert_presenter)
 
-    prev_var = None
+    var_data = copy.deepcopy(data)
 
-    while True:
-        var_file = read_var_file()
-        if var_file != prev_var:
-            prev_var = var_file
-            sep()
-            print('New var values detected:')
-            pprint(var_file)
+    async def var_changed(_prev, curr):
+        var_data.current.pools[0] = var_data.current.pools[0]._replace(
+            collateral_available=curr.get('collateral_available', 0),
+            fill=curr.get('fill', 101) / 100.0
+        )
 
-            data.current.pools[0] = data.current.pools[0]._replace(
-                collateral_available=var_file.get('collateral_available', 0),
-                fill=var_file.get('fill', 101) / 100.0
-            )
+    async def every_tick(_):
+        await notifier.on_data(None, var_data.current)
 
-        await notifier.on_data(None, data.current)
-        await asyncio.sleep(3.0)
+    await var_file_loop(var_changed, 3.0)
 
 
 async def run():

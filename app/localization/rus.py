@@ -9,6 +9,7 @@ from localization.achievements.ach_rus import AchievementsRussianLocalization
 from localization.eng_base import BaseLocalization, CREATOR_TG, URL_LEADERBOARD_MCCN
 from proto.types import ThorName
 from services.jobs.fetch.circulating import ThorRealms
+from services.jobs.fetch.net_idents import AlertChainIdChange
 from services.jobs.fetch.runeyield.borrower import LoanReportCard
 from services.lib.config import Config
 from services.lib.constants import Chains, LOAN_MARKER
@@ -2095,6 +2096,16 @@ class RussianLocalization(BaseLocalization):
             text += self._format_pol_membership(event, of_pool='от пула')
 
         return text.strip()
+
+    # ------ Network indentifiers ------
+
+    @staticmethod
+    def notification_text_chain_id_changed(event: AlertChainIdChange):
+        return (
+            f'🆔 <b>Изменение идентификатора цепочки ChainID</b>\n\n'
+            f'Старый: {code(event.prev_chain_id)}\n'
+            f'Новый: {code(event.curr_chain_id)}\n'
+        )
 
     # ------ Bond providers alerts ------
 

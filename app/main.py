@@ -21,6 +21,7 @@ from services.jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from services.jobs.fetch.key_stats import KeyStatsFetcher
 from services.jobs.fetch.last_block import LastBlockFetcher
 from services.jobs.fetch.lending_stats import LendingStatsFetcher
+from services.jobs.fetch.net_idents import ChainIdFetcher
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.jobs.fetch.pol import RunePoolFetcher
@@ -70,6 +71,7 @@ from services.notify.personal.scheduled import PersonalPeriodicNotificationServi
 from services.notify.types.best_pool_notify import BestPoolsNotifier
 from services.notify.types.block_notify import BlockHeightNotifier, LastBlockStore
 from services.notify.types.cap_notify import LiquidityCapNotifier
+from services.notify.types.chain_id_notify import ChainIdNotifier
 from services.notify.types.chain_notify import TradingHaltedNotifier
 from services.notify.types.dex_report_notify import DexReportNotifier
 from services.notify.types.key_metrics_notify import KeyMetricsNotifier
@@ -614,6 +616,14 @@ class App(WithLogger):
             tasks.append(runepool_fetcher)
             if achievements_enabled:
                 runepool_fetcher.add_subscriber(achievements)
+
+        if d.cfg.get('chain_id.enabled', True):
+            chain_id_job = ChainIdFetcher(d)
+            tasks.append(chain_id_job)
+
+            chain_id_notifier = ChainIdNotifier(d)
+            chain_id_notifier.add_subscriber(d.alert_presenter)
+            chain_id_job.add_subscriber(chain_id_notifier)
 
         # -------- SCHEDULER --------
 

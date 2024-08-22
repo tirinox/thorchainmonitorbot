@@ -178,6 +178,7 @@ def split_by_camel_case(s: str, abbr_correction=True):
 
 
 def capitalize_each_word(s):
+    # noinspection PyTypeChecker
     return ' '.join(map(str.capitalize, str(s).split()))
 
 
