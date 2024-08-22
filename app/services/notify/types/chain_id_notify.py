@@ -1,4 +1,4 @@
-from services.jobs.fetch.net_idents import EventChainId, AlertChainIdChange
+from services.jobs.fetch.chain_id import EventChainId, AlertChainIdChange
 from services.lib.confwin import ConfidenceWindow
 from services.lib.cooldown import Cooldown
 from services.lib.delegates import INotified, WithDelegates

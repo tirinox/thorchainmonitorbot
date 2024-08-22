@@ -16,8 +16,6 @@ class AlertChainIdChange(NamedTuple):
 
 
 class ChainIdFetcher(BaseFetcher):
-    ATTEMPTS = 5
-
     def __init__(self, deps: DepContainer):
         sleep_period = parse_timespan_to_seconds(deps.cfg.chain_id.fetch_period)
         super().__init__(deps, sleep_period)

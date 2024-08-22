@@ -10,7 +10,7 @@ from aionode.types import ThorChainInfo, ThorBalances, ThorSwapperClout
 from localization.achievements.ach_eng import AchievementsEnglishLocalization
 from proto.types import ThorName
 from services.jobs.fetch.circulating import ThorRealms
-from services.jobs.fetch.net_idents import AlertChainIdChange
+from services.jobs.fetch.chain_id import AlertChainIdChange
 from services.jobs.fetch.runeyield.borrower import LoanReportCard
 from services.lib.config import Config
 from services.lib.constants import thor_to_float, THOR_BLOCK_TIME, DEFAULT_CEX_NAME, \

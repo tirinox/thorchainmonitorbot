@@ -9,7 +9,7 @@ from localization.achievements.ach_rus import AchievementsRussianLocalization
 from localization.eng_base import BaseLocalization, CREATOR_TG, URL_LEADERBOARD_MCCN
 from proto.types import ThorName
 from services.jobs.fetch.circulating import ThorRealms
-from services.jobs.fetch.net_idents import AlertChainIdChange
+from services.jobs.fetch.chain_id import AlertChainIdChange
 from services.jobs.fetch.runeyield.borrower import LoanReportCard
 from services.lib.config import Config
 from services.lib.constants import Chains, LOAN_MARKER

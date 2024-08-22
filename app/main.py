@@ -21,7 +21,7 @@ from services.jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from services.jobs.fetch.key_stats import KeyStatsFetcher
 from services.jobs.fetch.last_block import LastBlockFetcher
 from services.jobs.fetch.lending_stats import LendingStatsFetcher
-from services.jobs.fetch.net_idents import ChainIdFetcher
+from services.jobs.fetch.chain_id import ChainIdFetcher
 from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
 from services.jobs.fetch.node_info import NodeInfoFetcher
 from services.jobs.fetch.pol import RunePoolFetcher

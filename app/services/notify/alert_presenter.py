@@ -10,7 +10,7 @@ from services.dialog.picture.pools_picture import PoolPictureGenerator
 from services.dialog.picture.price_picture import price_graph_from_db
 from services.dialog.picture.savers_picture import SaversPictureGenerator
 from services.jobs.achievement.ach_list import Achievement
-from services.jobs.fetch.net_idents import AlertChainIdChange
+from services.jobs.fetch.chain_id import AlertChainIdChange
 from services.lib.constants import THOR_BLOCKS_PER_MINUTE
 from services.lib.delegates import INotified
 from services.lib.depcont import DepContainer
