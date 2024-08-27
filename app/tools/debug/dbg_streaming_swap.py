@@ -274,9 +274,6 @@ async def run():
 
         setup_logs(logging.DEBUG)
 
-        # await app.deps.pool_fetcher.reload_global_pools()
-        # await app.deps.last_block_fetcher.run_once()
-
         # await debug_full_pipeline(app, start=14519387 - 1)
 
         # await debug_fetch_ss(app)

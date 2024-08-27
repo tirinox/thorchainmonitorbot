@@ -41,9 +41,7 @@ class Broadcaster(WithLogger):
     async def get_subscribed_channels(self):
         return await self.deps.gen_alert_settings_proc.get_general_alerts_channels(self.deps.settings_manager)
 
-    async def notify_preconfigured_channels(self, f, *args, **kwargs):
-        # todo: rename!
-
+    async def broadcast_to_all(self, f, *args, **kwargs):
         subscribed_channels = await self.get_subscribed_channels()
         all_channels = self.channels + subscribed_channels
 
@@ -57,7 +55,7 @@ class Broadcaster(WithLogger):
         }
 
         if not callable(f):  # if constant
-            await self.broadcast(all_channels, f, *args, **kwargs)
+            await self.broadcast_to(all_channels, f, *args, **kwargs)
             return
 
         # not to generate same content for different channels with the same languages. test it!
@@ -86,7 +84,7 @@ class Broadcaster(WithLogger):
             results_cached_by_lang[locale.name] = result
             return result
 
-        await self.broadcast(all_channels, message_gen)
+        await self.broadcast_to(all_channels, message_gen)
 
     async def _handle_bad_user(self, channel_info):
         self.logger.warning(f'{channel_info} is about to be paused!')
@@ -172,7 +170,7 @@ class Broadcaster(WithLogger):
         else:
             return BoardMessage(str(data_source))
 
-    async def broadcast(self, channels: List[ChannelDescriptor], message, delay=0.075, **kwargs) -> int:
+    async def broadcast_to(self, channels: List[ChannelDescriptor], message, delay=0.075, **kwargs) -> int:
         if now_ts() < self._skip_all_before:
             self.logger.info('Skip message.')
             return 0

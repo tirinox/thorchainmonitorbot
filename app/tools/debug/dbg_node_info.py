@@ -56,7 +56,7 @@ async def node_version_notification_check_progress(lpgen: LpAppFramework, data: 
 
     for loc in locs:
         sep()
-        msg = loc.notification_text_version_upgrade_progress(data, ver_con)
+        msg = loc.notification_text_version_changed_progress(data, ver_con)
         print(msg)
         await lpgen.send_test_tg_message(msg)
 
@@ -69,7 +69,7 @@ async def node_version_notification_check_1(lpgen: LpAppFramework, data):
     for loc in locs:
         sep()
         # noinspection PyTypeChecker
-        msg = loc.notification_text_version_upgrade(
+        msg = loc.notification_text_version_changed(
             data,
             new_versions=[
                 VersionInfo.parse('0.59.1'),
@@ -85,7 +85,7 @@ async def node_version_notification_check_1(lpgen: LpAppFramework, data):
 
     for loc in locs:
         sep()
-        msg = loc.notification_text_version_upgrade(
+        msg = loc.notification_text_version_changed(
             data,
             new_versions=[],
             old_active_ver=VersionInfo.parse('0.59.0'),
@@ -109,7 +109,7 @@ async def node_version_notification_check_1(lpgen: LpAppFramework, data):
 
     for loc in locs:
         sep()
-        msg = loc.notification_text_version_upgrade(
+        msg = loc.notification_text_version_changed(
             data,
             new_versions=[],
             old_active_ver=VersionInfo.parse('0.59.1'),
@@ -241,7 +241,7 @@ async def demo_churn_simulator(app: LpAppFramework, version=False):
     await d.node_info_fetcher.run_once()
     print(f"There are {len(d.node_holder.nodes)} nodes")
 
-    await d.broadcaster.notify_preconfigured_channels('---------')
+    await d.broadcaster.broadcast_to_all('---------')
 
     # simulator
     # node_fetcher_simulator = NodeFetcherSimulator(d, d.node_holder.nodes)

@@ -22,14 +22,14 @@ async def twitter_post_supply(app: LpAppFramework):
     loc = app.deps.loc_man[Language.ENGLISH_TWITTER]
     b_message = BoardMessage.make_photo(pic, loc.SUPPLY_PIC_CAPTION)
 
-    await app.deps.broadcaster.notify_preconfigured_channels(b_message)
+    await app.deps.broadcaster.broadcast_to_all(b_message)
 
 
 async def twitter_post_price(app: LpAppFramework):
     loc = app.deps.loc_man.default
     graph, graph_name = await price_graph_from_db(app.deps, loc, period=14 * DAY)
 
-    await app.deps.broadcaster.notify_preconfigured_channels(
+    await app.deps.broadcaster.broadcast_to_all(
         BoardMessage.make_photo(graph, caption='Rune price', photo_file_name=graph_name)
     )
 

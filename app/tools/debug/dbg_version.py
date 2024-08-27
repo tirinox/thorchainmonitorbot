@@ -19,22 +19,22 @@ class DbgVersion:
         self.deps = app.deps
 
     async def dbg_notify(self, changes):
-        await self.deps.broadcaster.notify_preconfigured_channels(
-            BaseLocalization.notification_text_version_upgrade,
+        await self.deps.broadcaster.broadcast_to_all(
+            BaseLocalization.notification_text_version_changed,
             changes,
             [VersionInfo.parse('1.90.2')],
             None, None
         )
 
-        await self.deps.broadcaster.notify_preconfigured_channels(
-            BaseLocalization.notification_text_version_upgrade,
+        await self.deps.broadcaster.broadcast_to_all(
+            BaseLocalization.notification_text_version_changed,
             changes, [],
             VersionInfo.parse('1.90.4'),
             VersionInfo.parse('1.90.5')
         )
 
-        await self.deps.broadcaster.notify_preconfigured_channels(
-            BaseLocalization.notification_text_version_upgrade_progress,
+        await self.deps.broadcaster.broadcast_to_all(
+            BaseLocalization.notification_text_version_changed_progress,
             changes, changes.version_consensus
         )
 

@@ -9,6 +9,7 @@ from services.dialog.picture.nodes_pictures import NodePictureGenerator
 from services.dialog.picture.pools_picture import PoolPictureGenerator
 from services.dialog.picture.price_picture import price_graph_from_db
 from services.dialog.picture.savers_picture import SaversPictureGenerator
+from services.dialog.picture.supply_picture import SupplyPictureGenerator
 from services.jobs.achievement.ach_list import Achievement
 from services.jobs.fetch.chain_id import AlertChainIdChange
 from services.lib.constants import THOR_BLOCKS_PER_MINUTE
@@ -24,7 +25,7 @@ from services.models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendin
 from services.models.mimir import AlertMimirChange
 from services.models.node_info import AlertNodeChurn
 from services.models.pool_info import PoolChanges, PoolMapPair
-from services.models.price import AlertPrice
+from services.models.price import AlertPrice, RuneMarketInfo
 from services.models.runepool import AlertPOLState, AlertRunepoolStats
 from services.models.runepool import AlertRunePoolAction
 from services.models.s_swap import AlertSwapStart
@@ -32,6 +33,7 @@ from services.models.savers import AlertSaverStats
 from services.models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from services.models.transfer import RuneCEXFlow, RuneTransfer
 from services.models.tx import EventLargeTransaction
+from services.models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from services.notify.broadcast import Broadcaster
 from services.notify.channel import BoardMessage, MessageType
 from services.notify.types.chain_notify import AlertChainHalt
@@ -97,6 +99,12 @@ class AlertPresenter(INotified, WithLogger):
             await self._handle_runepool_stats(data)
         elif isinstance(data, AlertChainIdChange):
             await self._handle_chain_id(data)
+        elif isinstance(data, RuneMarketInfo):
+            await self._handle_supply(data)
+        elif isinstance(data, AlertVersionChanged):
+            await self._handle_version_changed(data)
+        elif isinstance(data, AlertVersionUpgradeProgress):
+            await self._handle_version_upgrade_progress(data)
 
     async def load_names(self, addresses) -> NameMap:
         if isinstance(addresses, str):
@@ -109,7 +117,7 @@ class AlertPresenter(INotified, WithLogger):
     async def _handle_large_tx(self, tx_event: EventLargeTransaction):
         name_map = await self.load_names(tx_event.transaction.all_addresses)
 
-        await self.broadcaster.notify_preconfigured_channels(
+        await self.broadcaster.broadcast_to_all(
             BaseLocalization.notification_text_large_single_tx,
             tx_event, name_map
         )
@@ -119,12 +127,12 @@ class AlertPresenter(INotified, WithLogger):
             transfer.from_addr, transfer.to_addr
         ])
 
-        await self.broadcaster.notify_preconfigured_channels(
+        await self.broadcaster.broadcast_to_all(
             BaseLocalization.notification_text_rune_transfer_public,
             transfer, name_map)
 
     async def _handle_rune_cex_flow(self, flow: RuneCEXFlow):
-        await self.broadcaster.notify_preconfigured_channels(BaseLocalization.notification_text_cex_flow, flow)
+        await self.broadcaster.broadcast_to_all(BaseLocalization.notification_text_cex_flow, flow)
 
     @staticmethod
     async def _block_speed_picture_generator(loc: BaseLocalization, points, event):
@@ -140,10 +148,10 @@ class AlertPresenter(INotified, WithLogger):
         return BoardMessage.make_photo(chart, caption=caption, photo_file_name=chart_name)
 
     async def _handle_block_speed(self, event: EventBlockSpeed):
-        await self.broadcaster.notify_preconfigured_channels(self._block_speed_picture_generator, event.points, event)
+        await self.broadcaster.broadcast_to_all(self._block_speed_picture_generator, event.points, event)
 
     async def _handle_dex_report(self, event: DexReport):
-        await self.broadcaster.notify_preconfigured_channels(
+        await self.broadcaster.broadcast_to_all(
             BaseLocalization.notification_text_dex_report,
             event
         )
@@ -156,10 +164,10 @@ class AlertPresenter(INotified, WithLogger):
             caption = loc.notification_text_saver_stats(event)
             return BoardMessage.make_photo(pic, caption=caption, photo_file_name=pic_name)
 
-        await self.broadcaster.notify_preconfigured_channels(_gen, event)
+        await self.broadcaster.broadcast_to_all(_gen, event)
 
     async def _handle_pool_churn(self, event: PoolChanges):
-        await self.broadcaster.notify_preconfigured_channels(BaseLocalization.notification_text_pool_churn, event)
+        await self.broadcaster.broadcast_to_all(BaseLocalization.notification_text_pool_churn, event)
 
     async def _handle_achievement(self, event: Achievement):
         async def _gen(loc: BaseLocalization, _a: Achievement):
@@ -168,7 +176,7 @@ class AlertPresenter(INotified, WithLogger):
             caption = loc.ach.notification_achievement_unlocked(event)
             return BoardMessage.make_photo(pic, caption=caption, photo_file_name=pic_name)
 
-        await self.broadcaster.notify_preconfigured_channels(_gen, event)
+        await self.broadcaster.broadcast_to_all(_gen, event)
 
     async def _handle_pol(self, event: AlertPOLState):
         # async def _gen(loc: BaseLocalization, _a: EventPOL):
@@ -179,13 +187,13 @@ class AlertPresenter(INotified, WithLogger):
         # await self.broadcaster.notify_preconfigured_channels(_gen, event)
 
         # simple text so far
-        await self.broadcaster.notify_preconfigured_channels(
+        await self.broadcaster.broadcast_to_all(
             BaseLocalization.notification_text_pol_stats, event
         )
 
     async def _handle_node_churn(self, event: AlertNodeChurn):
         if event.finished:
-            await self.broadcaster.notify_preconfigured_channels(
+            await self.broadcaster.broadcast_to_all(
                 BaseLocalization.notification_text_node_churn_finish,
                 event.changes)
 
@@ -197,11 +205,11 @@ class AlertPresenter(INotified, WithLogger):
                     caption = loc.PIC_NODE_DIVERSITY_BY_PROVIDER_CAPTION
                     return BoardMessage.make_photo(bio_graph, caption)
 
-                await self.broadcaster.notify_preconfigured_channels(_gen)
+                await self.broadcaster.broadcast_to_all(_gen)
 
         else:
             # started
-            await self.broadcaster.notify_preconfigured_channels(
+            await self.broadcaster.broadcast_to_all(
                 BaseLocalization.notification_churn_started,
                 event.changes
             )
@@ -214,12 +222,12 @@ class AlertPresenter(INotified, WithLogger):
             caption = loc.notification_text_key_metrics_caption(event)
             return BoardMessage.make_photo(pic, caption=caption, photo_file_name=pic_name)
 
-        await self.broadcaster.notify_preconfigured_channels(_gen, event)
+        await self.broadcaster.broadcast_to_all(_gen, event)
 
     async def _handle_streaming_swap_start(self, event: AlertSwapStart):
         name_map = await self.load_names(event.from_address)
 
-        await self.broadcaster.notify_preconfigured_channels(
+        await self.broadcaster.broadcast_to_all(
             BaseLocalization.notification_text_streaming_swap_started,
             event, name_map
         )
@@ -232,7 +240,7 @@ class AlertPresenter(INotified, WithLogger):
         else:
             method = BaseLocalization.notification_text_loan_repayment
 
-        await self.broadcaster.notify_preconfigured_channels(
+        await self.broadcaster.broadcast_to_all(
             method,
             event, name_map
         )
@@ -245,31 +253,31 @@ class AlertPresenter(INotified, WithLogger):
             return BoardMessage.make_photo(graph, caption=caption, photo_file_name=graph_name)
 
         if event.is_ath and event.ath_sticker:
-            await self.broadcaster.notify_preconfigured_channels(BoardMessage(event.ath_sticker, MessageType.STICKER))
+            await self.broadcaster.broadcast_to_all(BoardMessage(event.ath_sticker, MessageType.STICKER))
 
-        await self.broadcaster.notify_preconfigured_channels(price_graph_gen)
+        await self.broadcaster.broadcast_to_all(price_graph_gen)
 
     async def _handle_chain_halt(self, event: AlertChainHalt):
-        await self.broadcaster.notify_preconfigured_channels(
+        await self.broadcaster.broadcast_to_all(
             BaseLocalization.notification_text_trading_halted_multi,
             event.changed_chains
         )
 
     async def _handle_mimir(self, data: AlertMimirChange):
-        await self.deps.broadcaster.notify_preconfigured_channels(
+        await self.deps.broadcaster.broadcast_to_all(
             BaseLocalization.notification_text_mimir_changed,
             data.changes,
             data.holder,
         )
 
     async def _handle_lending_stats(self, data: AlertLendingStats):
-        await self.deps.broadcaster.notify_preconfigured_channels(
+        await self.deps.broadcaster.broadcast_to_all(
             BaseLocalization.notification_lending_stats,
             data,
         )
 
     async def _handle_lending_caps(self, data: AlertLendingOpenUpdate):
-        await self.deps.broadcaster.notify_preconfigured_channels(
+        await self.deps.broadcaster.broadcast_to_all(
             BaseLocalization.notification_lending_open_back_up,
             data,
         )
@@ -281,38 +289,38 @@ class AlertPresenter(INotified, WithLogger):
             caption = loc.notification_text_best_pools(event, 5)
             return BoardMessage.make_photo(pic, caption=caption, photo_file_name=pic_name)
 
-        await self.deps.broadcaster.notify_preconfigured_channels(generate_pool_picture, data)
+        await self.deps.broadcaster.broadcast_to_all(generate_pool_picture, data)
 
     async def _handle_trace_account_move(self, data: AlertTradeAccountAction):
         name_map = await self.load_names([data.actor, data.destination_address])
-        await self.deps.broadcaster.notify_preconfigured_channels(
+        await self.deps.broadcaster.broadcast_to_all(
             BaseLocalization.notification_text_trade_account_move,
             data,
             name_map
         )
 
     async def _handle_trace_account_summary(self, data: AlertTradeAccountStats):
-        await self.deps.broadcaster.notify_preconfigured_channels(
+        await self.deps.broadcaster.broadcast_to_all(
             BaseLocalization.notification_text_trade_account_summary,
             data,
         )
 
     async def _handle_runepool_action(self, data: AlertRunePoolAction):
         name_map = await self.load_names([data.actor, data.destination_address])
-        await self.deps.broadcaster.notify_preconfigured_channels(
+        await self.deps.broadcaster.broadcast_to_all(
             BaseLocalization.notification_runepool_action,
             data,
             name_map
         )
 
     async def _handle_runepool_stats(self, data: AlertRunepoolStats):
-        await self.deps.broadcaster.notify_preconfigured_channels(
+        await self.deps.broadcaster.broadcast_to_all(
             BaseLocalization.notification_runepool_stats,
             data
         )
 
     async def _handle_chain_id(self, data: AlertChainIdChange):
-        await self.deps.broadcaster.notify_preconfigured_channels(
+        await self.deps.broadcaster.broadcast_to_all(
             BaseLocalization.notification_text_chain_id_changed,
             data
         )

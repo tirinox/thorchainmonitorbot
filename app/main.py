@@ -107,7 +107,6 @@ class App(WithLogger):
         self._admin_messages = AdminMessages(d)
 
         self._init_configuration(log_level)
-        self.sleep_step = d.cfg.sleep_step
 
         d.node_info_fetcher = NodeInfoFetcher(d)
         d.mimir_const_fetcher = ConstMimirFetcher(d)
@@ -121,10 +120,6 @@ class App(WithLogger):
 
         self._init_settings()
         self._init_messaging()
-
-        d.emergency = EmergencyReport(d.cfg.first_admin_id, d.telegram_bot.bot)
-        if d.twitter_bot:
-            d.twitter_bot.emergency = d.emergency
 
         self.swap_notifier_tx = None
         self.refund_notifier_tx = None
@@ -156,6 +151,8 @@ class App(WithLogger):
         d.db = DB(d.loop)
         d.price_holder.load_stable_coins(d.cfg)
 
+        self.sleep_step = d.cfg.sleep_step
+
     def _init_settings(self):
         d = self.deps
         d.settings_manager = SettingsManager(d.db, d.cfg)
@@ -166,11 +163,14 @@ class App(WithLogger):
 
     def _init_messaging(self):
         d = self.deps
+        d.emergency = EmergencyReport(d.cfg.first_admin_id, d.telegram_bot.bot)
         d.loc_man = LocalizationManager(d.cfg)
         d.broadcaster = Broadcaster(d)
         d.alert_presenter = AlertPresenter(d)
         d.telegram_bot = TelegramBot(d.cfg, d.db, d.loop)
         init_dialogs(d)
+
+        d.twitter_bot.emergency = d.emergency
 
     async def create_thor_node_connector(self, thor_env=None):
         d = self.deps
@@ -511,6 +511,7 @@ class App(WithLogger):
         if d.cfg.get('supply.enabled', True):
             supply_notifier = SupplyNotifier(d)
             d.pool_fetcher.add_subscriber(supply_notifier)
+            supply_notifier.add_subscriber(d.alert_presenter)
 
         if d.cfg.get('saver_stats.enabled', True):
             # pool -- SaversStatsNotifier -------------------- alert_presenter
@@ -699,11 +700,6 @@ class App(WithLogger):
             self.deps.cfg.first_admin_id,
             BoardMessage(self._admin_messages.text_bot_restarted())
         )
-
-        # await asyncio.sleep(10)
-
-        # text = await self._admin_messages.get_debug_message_text_session()
-        # await self.deps.telegram_bot.send_message(self.deps.cfg.first_admin_id, BoardMessage(text))
 
     async def on_startup(self, _):
         self.deps.make_http_session()  # it must be inside a coroutine!

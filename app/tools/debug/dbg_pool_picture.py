@@ -13,8 +13,6 @@ from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 async def main():
     lp_app = LpAppFramework()
     async with lp_app(brief=True):
-        # pools: PoolInfoMap = await lp_app.deps.pool_fetcher.reload_global_pools()
-
         mdg = PoolInfoFetcherMidgard(lp_app.deps, 10)
         pools = await mdg.get_pool_info_midgard()
 
