@@ -452,6 +452,7 @@ class App(WithLogger):
             if d.cfg.get('node_info.version.enabled', True):
                 notifier_version = VersionNotifier(d)
                 churn_detector.add_subscriber(notifier_version)
+                notifier_version.add_subscriber(d.alert_presenter)
 
             if d.cfg.get('node_op_tools.enabled', True):
                 d.node_op_notifier = NodeChangePersonalNotifier(d)

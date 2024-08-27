@@ -50,6 +50,7 @@ from services.models.savers import how_much_savings_you_can_add, AlertSaverStats
 from services.models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from services.models.transfer import RuneTransfer, RuneCEXFlow
 from services.models.tx import ThorTx, ThorSubTx, EventLargeTransaction
+from services.models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from services.notify.channel import Messengers
 
 CREATOR_TG = '@account1242'
@@ -1412,55 +1413,49 @@ class BaseLocalization(ABC):  # == English
         n_nodes = len(data.find_nodes_with_version(realm, v))
         return f"{code(v)} ({n_nodes} {plural(n_nodes, 'node', 'nodes')})"
 
-    def notification_text_version_upgrade_progress(self,
-                                                   data: NodeSetChanges,
-                                                   ver_con: NodeVersionConsensus):
+    def notification_text_version_changed_progress(self, e: AlertVersionUpgradeProgress):
         msg = bold('🕖 THORChain version upgrade progress') + '\n\n'
 
-        progress = ver_con.ratio * 100.0
+        progress = e.ver_con.ratio * 100.0
         pb = progressbar(progress, 100.0, 14)
 
         msg += f'{pb} {progress:.0f} %\n'
-        msg += f"{pre(ver_con.top_version_count)} of {pre(ver_con.total_active_node_count)} nodes " \
-               f"upgraded to version {pre(ver_con.top_version)}.\n\n"
+        msg += f"{pre(e.ver_con.top_version_count)} of {pre(e.ver_con.total_active_node_count)} nodes " \
+               f"upgraded to version {pre(e.ver_con.top_version)}.\n\n"
 
-        cur_version_txt = self.node_version(data.current_active_version, data, active=True)
+        cur_version_txt = self.node_version(e.data.current_active_version, e.data, active=True)
         msg += f"⚡️ Active protocol version is {cur_version_txt}.\n" + \
                ital('* Minimum version among all active nodes.') + '\n\n'
 
         return msg
 
-    def notification_text_version_upgrade(self,
-                                          data: NodeSetChanges,
-                                          new_versions: List[VersionInfo],
-                                          old_active_ver: VersionInfo,
-                                          new_active_ver: VersionInfo):
+    def notification_text_version_changed(self, e: AlertVersionChanged):
         msg = bold('💫 THORChain protocol version update') + '\n\n'
 
         def version_and_nodes(v, v_all=False):
-            realm = data.nodes_all if v_all else data.active_only_nodes
-            n_nodes = len(data.find_nodes_with_version(realm, v))
+            realm = e.data.nodes_all if v_all else e.data.active_only_nodes
+            n_nodes = len(e.data.find_nodes_with_version(realm, v))
             return f"{code(v)} ({n_nodes} {plural(n_nodes, 'node', 'nodes')})"
 
-        current_active_version = data.current_active_version
+        current_active_version = e.data.current_active_version
 
-        if new_versions:
-            new_version_joined = ', '.join(version_and_nodes(v, v_all=True) for v in new_versions)
+        if e.new_versions:
+            new_version_joined = ', '.join(version_and_nodes(v, v_all=True) for v in e.new_versions)
             msg += f"🆕 New version detected: {new_version_joined}\n\n"
 
             msg += f"⚡️ Active protocol version is {version_and_nodes(current_active_version)}\n" + \
                    ital('* Minimum version among all active nodes.') + '\n\n'
 
-        if old_active_ver != new_active_ver:
-            action = 'upgraded' if new_active_ver > old_active_ver else 'downgraded'
-            emoji = '🆙' if new_active_ver > old_active_ver else '⬇️'
+        if e.old_active_ver != e.new_active_ver:
+            action = 'upgraded' if e.new_active_ver > e.old_active_ver else 'downgraded'
+            emoji = '🆙' if e.new_active_ver > e.old_active_ver else '⬇️'
             msg += (
                 f"{emoji} {bold('Attention!')} Active protocol version has been {bold(action)} "
-                f"from {pre(old_active_ver)} "
-                f"to {version_and_nodes(new_active_ver)}\n\n"
+                f"from {pre(e.old_active_ver)} "
+                f"to {version_and_nodes(e.new_active_ver)}\n\n"
             )
 
-            cnt = data.version_counter(data.active_only_nodes)
+            cnt = e.data.version_counter(e.data.active_only_nodes)
             if len(cnt) == 1:
                 msg += f"All active nodes run version {code(current_active_version)}\n"
             elif len(cnt) > 1:
@@ -1468,7 +1463,7 @@ class BaseLocalization(ABC):  # == English
                 for i, (v, count) in enumerate(cnt.most_common(5), start=1):
                     active_node = ' 👈' if v == current_active_version else ''
                     msg += f"{i}. {version_and_nodes(v)} {active_node}\n"
-                msg += f"Maximum version available is {version_and_nodes(data.max_available_version)}\n"
+                msg += f"Maximum version available is {version_and_nodes(e.data.max_available_version)}\n"
 
         return msg
 

@@ -3,7 +3,6 @@ from typing import List, NamedTuple
 from redis.asyncio import Redis
 from semver import VersionInfo
 
-from localization.manager import BaseLocalization
 from services.lib.config import SubConfig
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds
@@ -11,10 +10,7 @@ from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 from services.models.node_info import NodeSetChanges, ZERO_VERSION
-
-
-class NewVersions(NamedTuple):
-    versions: List[str]
+from services.models.version import AlertVersionChanged, AlertVersionUpgradeProgress
 
 
 class KnownVersionStorage(WithLogger):
@@ -104,11 +100,12 @@ class VersionNotifier(INotified, WithDelegates, WithLogger):
         new_versions = await self._find_new_versions(data)
 
         if new_versions:
-            await self.deps.broadcaster.notify_preconfigured_channels(
-                BaseLocalization.notification_text_version_upgrade,
-                data,
-                new_versions,
-                None, None
+            await self.pass_data_to_listeners(
+                AlertVersionChanged(
+                    data,
+                    new_versions,
+                    None, None
+                )
             )
 
             await self.store.mark_as_known(new_versions)
@@ -118,11 +115,12 @@ class VersionNotifier(INotified, WithDelegates, WithLogger):
         old_active_ver, new_active_ver = self._test_active_version_changed(data)
 
         if old_active_ver != new_active_ver:
-            await self.deps.broadcaster.notify_preconfigured_channels(
-                BaseLocalization.notification_text_version_upgrade,
-                data, [],
-                old_active_ver,
-                new_active_ver
+            await self.pass_data_to_listeners(
+                AlertVersionChanged(
+                    data, [],
+                    old_active_ver,
+                    new_active_ver
+                )
             )
             await self.cd_activate_version.do()
 
@@ -144,10 +142,7 @@ class VersionNotifier(INotified, WithDelegates, WithLogger):
         if more_than_min and await self.cd_upgrade.can_do():
             await self.cd_upgrade.do()
             await self.store.set_upgrade_progress(ver_con.ratio)
-            await self.deps.broadcaster.notify_preconfigured_channels(
-                BaseLocalization.notification_text_version_upgrade_progress,
-                data, ver_con
-            )
+            await self.pass_data_to_listeners(AlertVersionUpgradeProgress(data, ver_con))
 
     async def on_data(self, sender, changes: NodeSetChanges):
         if self.is_new_version_enabled:

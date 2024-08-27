@@ -324,3 +324,26 @@ class AlertPresenter(INotified, WithLogger):
             BaseLocalization.notification_text_chain_id_changed,
             data
         )
+
+    async def _handle_supply(self, market_info: RuneMarketInfo):
+        async def supply_pic_gen(loc: BaseLocalization):
+            gen = SupplyPictureGenerator(loc, market_info.supply_info, self.deps.net_stats)
+            pic, pic_name = await gen.get_picture()
+            return BoardMessage.make_photo(pic, loc.SUPPLY_PIC_CAPTION, pic_name)
+
+        await self.deps.broadcaster.broadcast_to_all(BaseLocalization.text_metrics_supply,
+                                                     market_info)
+        await self.deps.broadcaster.broadcast_to_all(supply_pic_gen)
+
+    async def _handle_version_upgrade_progress(self, data: AlertVersionUpgradeProgress):
+        await self.deps.broadcaster.broadcast_to_all(
+            BaseLocalization.notification_text_version_changed_progress,
+            data
+        )
+
+    async def _handle_version_changed(self, data: AlertVersionChanged):
+        await self.deps.broadcaster.broadcast_to_all(
+            BaseLocalization.notification_text_version_changed,
+            data
+        )
+
