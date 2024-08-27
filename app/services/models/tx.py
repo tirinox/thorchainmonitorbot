@@ -79,6 +79,10 @@ class ThorMetaSwap:
     memo: str = ''
     affiliate_address: str = ''  # highly likely to be a THORName
     streaming: Optional[StreamingSwap] = None
+
+    tx_type: str = ''  # swap/loan/...
+    is_streaming_swap: bool = False
+
     cex_out_amount: float = 0.0
 
     estimated_savings_vs_cex_usd: float = 0.0
@@ -92,8 +96,10 @@ class ThorMetaSwap:
             trade_slip=int(j.get('swapSlip', '0')),
             trade_target=int(j.get('swapTarget', '0')),
             affiliate_fee=bp_to_float(j.get('affiliateFee', 0)),
+            affiliate_address=j.get('affiliateAddress', ''),
             memo=j.get('memo', ''),
-            affiliate_address=j.get('affiliateAddress', '')
+            tx_type=j.get('txType', ''),
+            is_streaming_swap=j.get('isStreamingSwap', False),
         )
 
     @property
@@ -113,6 +119,7 @@ class ThorMetaSwap:
                 trade_slip=safe_sum(a.trade_slip, b.trade_slip),
                 trade_target=safe_sum(a.trade_target, b.trade_target),
                 affiliate_fee=max(a.affiliate_fee, b.affiliate_fee),
+                affiliate_address=a.affiliate_address if a.affiliate_address else b.affiliate_address,
                 memo=a.memo if a.memo else b.memo,
             )
         else:
