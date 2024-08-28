@@ -1,7 +1,7 @@
 import copy
 import logging
 from dataclasses import dataclass, field
-from typing import List, Optional, Set
+from typing import List, Optional, Set, NamedTuple
 
 from services.jobs.fetch.circulating import RuneCirculatingSupply
 from services.lib.config import Config
@@ -105,7 +105,7 @@ class LastPriceHolder:
         self.btc_per_rune = 0.000001
         self.pool_info_map: PoolInfoMap = {}
         self.last_update_ts = 0
-        self.stable_coins = stable_coins or STABLE_COIN_POOLS
+        self.stable_coins = list(stable_coins or STABLE_COIN_POOLS)
 
     def clone(self):
         return copy.deepcopy(self)
@@ -114,7 +114,7 @@ class LastPriceHolder:
         return c in self.stable_coins
 
     def load_stable_coins(self, cfg: Config):
-        self.stable_coins = cfg.get('thor.stable_coins', default=STABLE_COIN_POOLS)
+        self.stable_coins = cfg.get_pure('thor.stable_coins', default=STABLE_COIN_POOLS)
         logging.info(f'Stable coins are {", ".join(self.stable_coins)}')
 
     def calculate_rune_price_here(self, pool_map: PoolInfoMap) -> float:
@@ -263,3 +263,8 @@ class LastPriceHolder:
     @property
     def savers_pools(self):
         return [p.asset for p in self.pool_info_map.values() if p.savers_depth > 0]
+
+
+class AlertPriceDiverge(NamedTuple):
+    info: RuneMarketInfo
+    below_min_divergence: bool

@@ -35,14 +35,14 @@ from services.models.last_block import BlockProduceState, EventBlockSpeed
 from services.models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats, AlertLendingOpenUpdate
 from services.models.lp_info import LiquidityPoolReport
 from services.models.memo import ActionType
-from services.models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting, MimirVoteOption
+from services.models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting, MimirVoteOption, AlertMimirVoting
 from services.models.mimir_naming import MimirUnits, NEXT_CHAIN_VOTING_MAP
 from services.models.net_stats import NetworkStats, AlertNetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEventType, NodeEvent, \
     EventBlockHeight, EventDataSlash, calculate_security_cap_rune, EventProviderBondChange, \
     EventProviderStatus
 from services.models.pool_info import PoolInfo, PoolChanges, PoolMapPair
-from services.models.price import AlertPrice, RuneMarketInfo
+from services.models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge
 from services.models.queue import QueueInfo
 from services.models.runepool import AlertPOLState, AlertRunePoolAction, AlertRunepoolStats
 from services.models.s_swap import AlertSwapStart
@@ -965,16 +965,16 @@ class BaseLocalization(ABC):  # == English
                 message += f'→ Rune price divergence &gt;= {pretty_money(max_percent)}%\n'
         return message.strip()
 
-    def notification_text_price_divergence(self, info: RuneMarketInfo, is_low: bool):
-        title = f'〰️ Low {self.R} price divergence!' if is_low else f'🔺 High {self.R} price divergence!'
+    def notification_text_price_divergence(self, e: AlertPriceDiverge):
+        title = f'〰️ Low {self.R} price divergence!' if e.below_min_divergence else f'🔺 High {self.R} price divergence!'
 
-        div, div_p = info.divergence_abs, info.divergence_percent
+        div, div_p = e.info.divergence_abs, e.info.divergence_percent
         exclamation = self._exclamation_sign(div_p, ref=10)
 
         text = (
             f"🖖 {bold(title)}\n"
-            f"CEX Rune price is {code(pretty_dollar(info.cex_price))}\n"
-            f"Weighted average Rune price by liquidity pools is {code(pretty_dollar(info.pool_rune_price))}\n"
+            f"CEX Rune price is {code(pretty_dollar(e.info.cex_price))}\n"
+            f"Weighted average Rune price by liquidity pools is {code(pretty_dollar(e.info.pool_rune_price))}\n"
             f"<b>Divergence</b> THORChain vs CEX is {code(pretty_dollar(div))} ({div_p:.1f}%{exclamation})."
         )
         return text
@@ -1659,15 +1659,13 @@ class BaseLocalization(ABC):  # == English
     TEXT_MIMIR_VOTING_PROGRESS_TITLE = '🏛 <b>Node-Mimir voting update</b>\n\n'
     TEXT_MIMIR_VOTING_TO_SET_IT = 'to set it'
 
-    def notification_text_mimir_voting_progress(self, holder: MimirHolder, key, prev_progress,
-                                                voting: MimirVoting,
-                                                triggered_option: MimirVoteOption):
+    def notification_text_mimir_voting_progress(self, e: AlertMimirVoting):
         message = self.TEXT_MIMIR_VOTING_PROGRESS_TITLE
 
         # get up to 3 top options, if there are more options in the voting, add "there are N more..."
-        n_options = min(3, len(voting.options))
-        message += self._text_mimir_voting_options(holder, voting, voting.top_options[:n_options],
-                                                   triggered_option.value if triggered_option else None)
+        n_options = min(3, len(e.voting.options))
+        message += self._text_mimir_voting_options(e.holder, e.voting, e.voting.top_options[:n_options],
+                                                   e.triggered_option.value if e.triggered_option else None)
         return message
 
     @staticmethod

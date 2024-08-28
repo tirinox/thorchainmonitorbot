@@ -8,6 +8,7 @@ from services.dialog.picture.key_stats_picture import KeyStatsPictureGenerator
 from services.dialog.picture.nodes_pictures import NodePictureGenerator
 from services.dialog.picture.pools_picture import PoolPictureGenerator
 from services.dialog.picture.price_picture import price_graph_from_db
+from services.dialog.picture.queue_picture import queue_graph
 from services.dialog.picture.savers_picture import SaversPictureGenerator
 from services.dialog.picture.supply_picture import SupplyPictureGenerator
 from services.jobs.achievement.ach_list import Achievement
@@ -19,13 +20,15 @@ from services.lib.draw_utils import img_to_bio
 from services.lib.logs import WithLogger
 from services.lib.midgard.name_service import NameService, NameMap
 from services.lib.w3.dex_analytics import DexReport
+from services.models.cap_info import ThorCapInfo, AlertLiquidityCap
 from services.models.key_stats_model import AlertKeyStats
 from services.models.last_block import EventBlockSpeed, BlockProduceState
 from services.models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats, AlertLendingOpenUpdate
-from services.models.mimir import AlertMimirChange
+from services.models.mimir import AlertMimirChange, AlertMimirVoting
 from services.models.node_info import AlertNodeChurn
 from services.models.pool_info import PoolChanges, PoolMapPair
-from services.models.price import AlertPrice, RuneMarketInfo
+from services.models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge
+from services.models.queue import AlertQueue
 from services.models.runepool import AlertPOLState, AlertRunepoolStats
 from services.models.runepool import AlertRunePoolAction
 from services.models.s_swap import AlertSwapStart
@@ -105,6 +108,12 @@ class AlertPresenter(INotified, WithLogger):
             await self._handle_version_changed(data)
         elif isinstance(data, AlertVersionUpgradeProgress):
             await self._handle_version_upgrade_progress(data)
+        elif isinstance(data, AlertMimirVoting):
+            await self._handle_mimir_voting(data)
+        elif isinstance(data, AlertQueue):
+            await self._handle_queue(data)
+        elif isinstance(data, AlertLiquidityCap):
+            await self._handle_liquidity_cap(data)
 
     async def load_names(self, addresses) -> NameMap:
         if isinstance(addresses, str):
@@ -314,16 +323,10 @@ class AlertPresenter(INotified, WithLogger):
         )
 
     async def _handle_runepool_stats(self, data: AlertRunepoolStats):
-        await self.deps.broadcaster.broadcast_to_all(
-            BaseLocalization.notification_runepool_stats,
-            data
-        )
+        await self.deps.broadcaster.broadcast_to_all(BaseLocalization.notification_runepool_stats, data)
 
     async def _handle_chain_id(self, data: AlertChainIdChange):
-        await self.deps.broadcaster.broadcast_to_all(
-            BaseLocalization.notification_text_chain_id_changed,
-            data
-        )
+        await self.deps.broadcaster.broadcast_to_all(BaseLocalization.notification_text_chain_id_changed, data)
 
     async def _handle_supply(self, market_info: RuneMarketInfo):
         async def supply_pic_gen(loc: BaseLocalization):
@@ -342,8 +345,31 @@ class AlertPresenter(INotified, WithLogger):
         )
 
     async def _handle_version_changed(self, data: AlertVersionChanged):
-        await self.deps.broadcaster.broadcast_to_all(
-            BaseLocalization.notification_text_version_changed,
-            data
-        )
+        await self.deps.broadcaster.broadcast_to_all(BaseLocalization.notification_text_version_changed, data)
 
+    async def _handle_mimir_voting(self, e: AlertMimirVoting):
+        await self.deps.broadcaster.broadcast_to_all(BaseLocalization.notification_text_mimir_voting_progress, e)
+
+    async def _handle_queue(self, e: AlertQueue):
+        photo_name = ''
+        if e.with_picture:
+            photo, photo_name = await queue_graph(self.deps, self.deps.loc_man.default)
+        else:
+            photo = None
+
+        async def message_gen(loc: BaseLocalization):
+            text = loc.notification_text_queue_update(e.item_type, e.is_free, e.value)
+            if photo is not None:
+                return BoardMessage.make_photo(photo, text, photo_name)
+            else:
+                return text
+
+        await self.deps.broadcaster.broadcast_to_all(message_gen)
+
+    async def _handle_liquidity_cap(self, data: AlertLiquidityCap):
+        f = BaseLocalization.notification_text_cap_full if data.is_full \
+            else BaseLocalization.notification_text_cap_opened_up
+        await self.deps.broadcaster.broadcast_to_all(f, data.cap)
+
+    async def _handle_price_divergence(self, data: AlertPriceDiverge):
+        await self.deps.broadcaster.broadcast_to_all(BaseLocalization.notification_text_price_divergence, data)

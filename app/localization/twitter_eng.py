@@ -27,7 +27,7 @@ from services.models.mimir_naming import MimirUnits
 from services.models.net_stats import AlertNetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo
 from services.models.pool_info import PoolMapPair, PoolChanges, PoolInfo
-from services.models.price import RuneMarketInfo, AlertPrice
+from services.models.price import RuneMarketInfo, AlertPrice, AlertPriceDiverge
 from services.models.runepool import AlertPOLState, AlertRunePoolAction, AlertRunepoolStats
 from services.models.s_swap import AlertSwapStart
 from services.models.savers import AlertSaverStats
@@ -314,16 +314,16 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         return message.rstrip()
 
-    def notification_text_price_divergence(self, info: RuneMarketInfo, normal: bool):
-        title = f'〰️ Low {self.R} price divergence!' if normal else f'🔺 High {self.R} price divergence!'
+    def notification_text_price_divergence(self, e: AlertPriceDiverge):
+        title = f'〰️ Low {self.R} price divergence!' if e.below_min_divergence else f'🔺 High {self.R} price divergence!'
 
-        div, div_p = info.divergence_abs, info.divergence_percent
+        div, div_p = e.info.divergence_abs, e.info.divergence_percent
         exclamation = self._exclamation_sign(div_p, ref=10)
 
         text = (
             f"🖖 {title}\n"
-            f"CEX Rune price is {pretty_dollar(info.cex_price)}\n"
-            f"Weighted average Rune price over liquidity pools is {pretty_dollar(info.pool_rune_price)}\n"
+            f"CEX Rune price is {pretty_dollar(e.info.cex_price)}\n"
+            f"Weighted average Rune price over liquidity pools is {pretty_dollar(e.info.pool_rune_price)}\n"
             f"Divergence is {pretty_dollar(div)} ({div_p:.1f}%{exclamation})."
         )
         return text

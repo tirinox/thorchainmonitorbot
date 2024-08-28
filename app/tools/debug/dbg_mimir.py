@@ -8,6 +8,7 @@ from localization.languages import Language
 from services.jobs.fetch.cap import CapInfoFetcher
 from services.jobs.fetch.const_mimir import ConstMimirFetcher, MimirTuple
 from services.lib.depcont import DepContainer
+from services.models.mimir import AlertMimirVoting
 from services.notify.types.mimir_notify import MimirChangedNotifier
 from services.notify.types.voting_notify import VotingNotifier
 from tools.lib.lp_common import LpAppFramework
@@ -45,8 +46,7 @@ async def demo_voting(app: LpAppFramework):
         # for language in (Language.ENGLISH_TWITTER,):
         loc: BaseLocalization = app.deps.loc_man[language]
         await app.send_test_tg_message(loc.notification_text_mimir_voting_progress(
-            app.deps.mimir_const_holder,
-            mimir_to_test, prev_progress, voting, option,
+            AlertMimirVoting(app.deps.mimir_const_holder, voting, option)
         ))
 
     # await app.deps.broadcaster.notify_preconfigured_channels(

@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import NamedTuple
 
 from services.models.base import BaseModelMixin
 
@@ -38,3 +39,9 @@ class ThorCapInfo(BaseModelMixin):
     @property
     def how_much_usd_you_can_lp(self):
         return self.how_much_rune_you_can_lp * self.price
+
+
+class AlertLiquidityCap(NamedTuple):
+    cap: ThorCapInfo
+    is_full: bool = False
+    is_opened_up: bool = False

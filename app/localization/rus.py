@@ -34,7 +34,7 @@ from services.models.net_stats import AlertNetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeEvent, EventDataSlash, \
     NodeEventType, EventBlockHeight, EventProviderStatus, EventProviderBondChange
 from services.models.pool_info import PoolInfo, PoolChanges, PoolMapPair
-from services.models.price import AlertPrice, RuneMarketInfo
+from services.models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge
 from services.models.queue import QueueInfo
 from services.models.runepool import AlertPOLState, AlertRunePoolAction, AlertRunepoolStats
 from services.models.s_swap import AlertSwapStart
@@ -739,14 +739,14 @@ class RussianLocalization(BaseLocalization):
                 message += f'→ Расхождение цен Рун &gt;= {pretty_money(max_percent)}%\n'
         return message.strip()
 
-    def notification_text_price_divergence(self, info: RuneMarketInfo, is_low: bool):
-        title = f'〰 Низкое расхождение цены!' if is_low else f'🔺 Высокое расхождение цены!'
+    def notification_text_price_divergence(self, e: AlertPriceDiverge):
+        title = f'〰 Низкое расхождение цены!' if e.below_min_divergence else f'🔺 Высокое расхождение цены!'
 
-        div, div_p = info.divergence_abs, info.divergence_percent
+        div, div_p = e.info.divergence_abs, e.info.divergence_percent
         text = (
             f"🖖 {bold(title)}\n"
-            f"Цена Руны (на биржах): {code(pretty_dollar(info.cex_price))}\n"
-            f"Взвешенная цена Руны в пулах: {code(pretty_dollar(info.pool_rune_price))}\n"
+            f"Цена Руны (на биржах): {code(pretty_dollar(e.info.cex_price))}\n"
+            f"Взвешенная цена Руны в пулах: {code(pretty_dollar(e.info.pool_rune_price))}\n"
             f"<b>Расхождение</b> цены THORChain и биржы: {code(pretty_dollar(div))} ({div_p:.1f}%)."
         )
 

@@ -410,11 +410,13 @@ class App(WithLogger):
             fetcher_cap = CapInfoFetcher(d)
             notifier_cap = LiquidityCapNotifier(d)
             fetcher_cap.add_subscriber(notifier_cap)
+            notifier_cap.add_subscriber(d.alert_presenter)
             tasks.append(fetcher_cap)
 
         if d.cfg.get('queue.enabled', True):
             notifier_queue = QueueNotifier(d)
             store_queue.add_subscriber(notifier_queue)
+            notifier_queue.add_subscriber(d.alert_presenter)
 
         if d.cfg.get('net_summary.enabled', True):
             fetcher_stats = NetworkStatisticsFetcher(d)
@@ -506,6 +508,7 @@ class App(WithLogger):
         if d.cfg.get('constants.voting.enabled', True):
             voting_notifier = VotingNotifier(d)
             d.mimir_const_fetcher.add_subscriber(voting_notifier)
+            voting_notifier.add_subscriber(d.alert_presenter)
             if achievements_enabled:
                 d.mimir_const_fetcher.add_subscriber(achievements)
 
@@ -557,8 +560,9 @@ class App(WithLogger):
                 d.lend_stats_fetcher.add_subscriber(d.lend_stats_notifier)
 
             if lending_caps_alert_enabled:
-                cap_notifier = LendingCapsNotifier(d)
-                d.lend_stats_fetcher.add_subscriber(cap_notifier)
+                lend_cap_notifier = LendingCapsNotifier(d)
+                lend_cap_notifier.add_subscriber(d.alert_presenter)
+                d.lend_stats_fetcher.add_subscriber(lend_cap_notifier)
 
             if achievements_enabled:
                 d.lend_stats_fetcher.add_subscriber(achievements)

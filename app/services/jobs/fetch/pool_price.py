@@ -75,6 +75,7 @@ class PoolFetcher(BaseFetcher):
 
         # store into the global state
         if current_pools:
+            # todo: move it into the graph
             price_holder.update(current_pools)
 
         return price_holder.pool_info_map

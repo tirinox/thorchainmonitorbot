@@ -293,3 +293,9 @@ class MimirHolder:
 class AlertMimirChange(NamedTuple):
     changes: List[MimirChange]
     holder: MimirHolder
+
+
+class AlertMimirVoting(NamedTuple):
+    holder: MimirHolder
+    voting: MimirVoting
+    triggered_option: MimirVoteOption

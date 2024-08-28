@@ -1,15 +1,13 @@
 import json
 
-from localization.manager import BaseLocalization
-from services.lib.delegates import INotified
 from services.lib.db import DB
+from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import make_stickers_iterator, WithLogger
-from services.models.cap_info import ThorCapInfo
-from services.notify.channel import MessageType, BoardMessage
+from services.models.cap_info import ThorCapInfo, AlertLiquidityCap
 
 
-class LiquidityCapNotifier(INotified, WithLogger):
+class LiquidityCapNotifier(INotified, WithLogger, WithDelegates):
     KEY_INFO = 'Cap:Info'
     KEY_FULL_NOTIFIED = 'Cap:Full'
 
@@ -57,24 +55,6 @@ class LiquidityCapNotifier(INotified, WithLogger):
         r = await self.deps.db.get_redis()
         await r.set(self.KEY_INFO, cap.as_json_string)
 
-    # --- RAISE CAPS ---
-
-    async def _test_cap_raise(self, new: ThorCapInfo, old: ThorCapInfo):
-        # deprecated...
-        if new.cap != old.cap:
-            if new.cap > old.cap:
-                await self.send_cap_raised_sticker()
-
-            await self.deps.broadcaster.notify_preconfigured_channels(
-                BaseLocalization.notification_text_cap_change,
-                old, new)
-
-            await self._set_cap_limit_reached(False)  # reset full-cap limit notification
-
-    async def send_cap_raised_sticker(self):
-        sticker = next(self.raise_sticker_iter)
-        await self.deps.broadcaster.notify_preconfigured_channels(BoardMessage(sticker, MessageType.STICKER))
-
     # --- CAP IS FULL ---
 
     async def _set_cap_limit_reached(self, is_full):
@@ -87,19 +67,9 @@ class LiquidityCapNotifier(INotified, WithLogger):
     async def _test_cap_limit_is_full_or_opened(self, new_info: ThorCapInfo):
         can_do = not (await self._get_cap_limit_reached())
         if can_do and new_info.pooled_rune >= new_info.cap * self.full_limit_ratio:
-            await self._notify_cap_is_full(new_info)
+            await self.pass_data_to_listeners(AlertLiquidityCap(new_info, is_full=True))
             await self._set_cap_limit_reached(True)
 
         if not can_do and new_info.pooled_rune < new_info.cap * self.open_up_limit_ratio:
-            await self._notify_cap_opened_up(new_info)
+            await self.pass_data_to_listeners(AlertLiquidityCap(new_info, is_opened_up=True))
             await self._set_cap_limit_reached(False)
-
-    async def _notify_cap_is_full(self, new_info):
-        await self.deps.broadcaster.notify_preconfigured_channels(
-            BaseLocalization.notification_text_cap_full,
-            new_info)
-
-    async def _notify_cap_opened_up(self, new_info):
-        await self.deps.broadcaster.notify_preconfigured_channels(
-            BaseLocalization.notification_text_cap_opened_up,
-            new_info)

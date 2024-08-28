@@ -7,7 +7,7 @@ from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
-from services.models.mimir import MimirVoteManager, MimirVoteOption, MimirVoting
+from services.models.mimir import MimirVoteManager, MimirVoteOption, MimirVoting, AlertMimirVoting
 
 
 class VotingNotifier(INotified, WithDelegates, WithLogger):
@@ -46,11 +46,10 @@ class VotingNotifier(INotified, WithDelegates, WithLogger):
     async def _on_progress_changed(self, key, prev_progress, voting: MimirVoting, vote_option: MimirVoteOption):
         cd = Cooldown(self.deps.db, f'VotingNotification:{key}:{vote_option.value}', self.notification_cd_time)
         if await cd.can_do():
-            await self.deps.broadcaster.notify_preconfigured_channels(
-                BaseLocalization.notification_text_mimir_voting_progress,
-                self.deps.mimir_const_holder,
-                key, prev_progress, voting, vote_option,
-            )
+            await self.pass_data_to_listeners(AlertMimirVoting(
+                holder=self.deps.mimir_const_holder,
+                voting=voting, triggered_option=vote_option,
+            ))
             await cd.do()
 
     async def on_data(self, sender: ConstMimirFetcher, data: MimirTuple):
@@ -80,12 +79,3 @@ class VotingNotifier(INotified, WithDelegates, WithLogger):
                 await self._on_progress_changed(*ev)
 
         await self._save_prev_state(holder.voting_manager)
-
-    async def _dbg_notification(self, voting):
-        # fixme : debug
-        await self.deps.broadcaster.notify_preconfigured_channels(
-            BaseLocalization.notification_text_mimir_voting_progress,
-            self.deps.mimir_const_holder,
-            voting.key, 0.5, voting, voting.options[0],
-        )
-        # fixme : debug

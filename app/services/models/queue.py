@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import NamedTuple
 
 
 @dataclass
@@ -18,3 +19,10 @@ class QueueInfo:
     @property
     def is_full(self):
         return self.swap > 0 or self.outbound > 0
+
+
+class AlertQueue(NamedTuple):
+    item_type: str
+    is_free: bool
+    value: int
+    with_picture: bool = True

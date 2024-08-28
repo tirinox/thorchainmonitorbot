@@ -1,15 +1,15 @@
 from localization.manager import BaseLocalization
-from services.lib.delegates import INotified
+from services.lib.delegates import INotified, WithDelegates
 from services.lib.config import SubConfig
 from services.lib.cooldown import CooldownBiTrigger
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
-from services.models.price import RuneMarketInfo
+from services.models.price import RuneMarketInfo, AlertPriceDiverge
 from services.models.time_series import TimeSeries
 
 
-class PriceDivergenceNotifier(INotified, WithLogger):
+class PriceDivergenceNotifier(INotified, WithLogger, WithDelegates):
     MAX_POINTS = 20000
 
     def __init__(self, deps: DepContainer):
@@ -36,10 +36,10 @@ class PriceDivergenceNotifier(INotified, WithLogger):
 
         if div_p < self.min_percent:
             if await self._cd_bitrig.turn_off():
-                await self._notify(rune_market_info, is_low=True)
+                await self._notify(rune_market_info, below_min_divergence=True)
         elif div_p > self.max_percent:
             if await self._cd_bitrig.turn_on():
-                await self._notify(rune_market_info, is_low=False)
+                await self._notify(rune_market_info, below_min_divergence=False)
 
         await self.time_series.add(
             abs_delta=(cex_price - native_price),
@@ -47,9 +47,12 @@ class PriceDivergenceNotifier(INotified, WithLogger):
         )
         await self.time_series.trim_oldest(self.MAX_POINTS)
 
-    async def _notify(self, rune_market_info: RuneMarketInfo, is_low):
-        await self.deps.broadcaster.notify_preconfigured_channels(
-            BaseLocalization.notification_text_price_divergence,
+    async def _notify(self, rune_market_info: RuneMarketInfo, below_min_divergence):
+        if not rune_market_info or not rune_market_info.cex_price:
+            self.logger.error('No price info / cex price!')
+            return 
+        
+        await self.pass_data_to_listeners(AlertPriceDiverge(
             rune_market_info,
-            is_low
-        )
+            below_min_divergence
+        ))
