@@ -163,14 +163,12 @@ class App(WithLogger):
 
     def _init_messaging(self):
         d = self.deps
+        d.telegram_bot = TelegramBot(d.cfg, d.db, d.loop)
         d.emergency = EmergencyReport(d.cfg.first_admin_id, d.telegram_bot.bot)
         d.loc_man = LocalizationManager(d.cfg)
         d.broadcaster = Broadcaster(d)
         d.alert_presenter = AlertPresenter(d)
-        d.telegram_bot = TelegramBot(d.cfg, d.db, d.loop)
         init_dialogs(d)
-
-        d.twitter_bot.emergency = d.emergency
 
     async def create_thor_node_connector(self, thor_env=None):
         d = self.deps
