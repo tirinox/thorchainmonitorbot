@@ -1,7 +1,6 @@
 from typing import List, Optional
 
 from aiohttp import ContentTypeError
-from redis.asyncio import Redis
 from tqdm import tqdm
 
 from services.jobs.affiliate_merge import AffiliateTXMerger
@@ -17,13 +16,14 @@ from services.notify.dup_stop import TxDeduplicator
 class TxFetcher(BaseFetcher):
     RETRY_COUNT = 3
 
-    def __init__(self, deps: DepContainer, tx_types=None):
+    def __init__(self, deps: DepContainer, tx_types=None, only_asset=None):
         s_cfg = deps.cfg.tx
         sleep_period = parse_timespan_to_seconds(s_cfg.fetch_period)
 
         super().__init__(deps, sleep_period=sleep_period)
 
         self.tx_types = tx_types
+        self.only_asset = only_asset
 
         self.tx_per_batch = int(s_cfg.tx_per_batch)
         self.max_page_deep = int(s_cfg.max_page_deep)
@@ -67,14 +67,18 @@ class TxFetcher(BaseFetcher):
                                     address=None,
                                     tx_type=None,
                                     max_pages=None,
+                                    asset=None,
                                     start_page=0) -> List[ThorTx]:
         page = start_page
         txs = []
 
         while True:
-            q_path = free_url_gen.url_for_tx(page * self.tx_per_batch, self.tx_per_batch,
-                                             tx_type=tx_type,
-                                             address=address)
+            q_path = free_url_gen.url_for_tx(
+                page * self.tx_per_batch, self.tx_per_batch,
+                tx_type=tx_type,
+                address=address,
+                asset=asset
+            )
 
             if not self.progress_tracker:
                 self.logger.info(f"start fetching user's tx: {q_path}")
@@ -101,7 +105,12 @@ class TxFetcher(BaseFetcher):
 
         txs = []
         for tx_type in tx_types:
-            this_type_txs = await self._fetch_all_tx_of_type(address, tx_type, max_pages, start_page=start_page)
+            this_type_txs = await self._fetch_all_tx_of_type(
+                address,
+                tx_type=tx_type,
+                max_pages=max_pages, start_page=start_page,
+                asset=self.only_asset,
+            )
             txs.extend(this_type_txs)
 
         txs.sort(key=lambda tx: tx.height_int)
@@ -114,11 +123,14 @@ class TxFetcher(BaseFetcher):
 
     # -------
 
-    async def fetch_one_batch(self, page=0, txid=None, tx_types=None, next_page_token=None) -> Optional[TxParseResult]:
+    async def fetch_one_batch(self,
+                              page=0, txid=None, tx_types=None,
+                              asset=None, next_page_token=None) -> Optional[TxParseResult]:
         if next_page_token:
             q_path = free_url_gen.url_for_next_page(next_page_token)
         else:
-            q_path = free_url_gen.url_for_tx(page * self.tx_per_batch, self.tx_per_batch, txid=txid, tx_type=tx_types)
+            q_path = free_url_gen.url_for_tx(page * self.tx_per_batch, self.tx_per_batch, txid=txid, tx_type=tx_types,
+                                             asset=asset)
 
         try:
             j = await self.deps.midgard_connector.request(q_path)
@@ -128,7 +140,7 @@ class TxFetcher(BaseFetcher):
 
     async def _fetch_one_batch_tries(self, page, tries) -> Optional[TxParseResult]:
         for _ in range(tries):
-            data = await self.fetch_one_batch(page, tx_types=self.tx_types)
+            data = await self.fetch_one_batch(page, tx_types=self.tx_types, asset=self.only_asset)
             if data:
                 return data
             else:
@@ -266,11 +278,3 @@ class TxFetcher(BaseFetcher):
         for tx in txs:
             if tx.date_timestamp > now - self.max_age_sec:
                 yield tx
-
-    KEY_LAST_SEEN_TX_HASH = 'tx:scanner:last_seen:hash'
-
-    async def is_seen(self, tx_hash):
-        if not tx_hash:
-            return True
-        r: Redis = self.deps.db.redis
-        return await r.sismember(self.KEY_LAST_SEEN_TX_HASH, tx_hash)
