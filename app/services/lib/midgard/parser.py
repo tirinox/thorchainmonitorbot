@@ -1,6 +1,6 @@
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import NamedTuple, List
+from typing import NamedTuple, List, Optional
 
 from services.models.pool_info import PoolInfoHistoricEntry, PoolInfoMap, PoolInfo
 from services.models.pool_member import PoolMemberDetails
@@ -22,6 +22,10 @@ class TxParseResult(NamedTuple):
     @property
     def tx_count(self):
         return len(self.txs)
+
+    @property
+    def first(self) -> Optional[ThorTx]:
+        return self.txs[0] if self.txs else None
 
 
 class MidgardParserBase(metaclass=ABCMeta):

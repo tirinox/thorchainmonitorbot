@@ -4,6 +4,7 @@ import aiohttp
 
 from aionode.nodeclient import ThorNodeClient
 from services.lib.constants import HTTP_CLIENT_ID
+from services.lib.midgard.parser import MidgardParserV2, TxParseResult
 from services.lib.midgard.urlgen import free_url_gen
 from services.lib.utils import WithLogger
 from services.models.earnings_history import EarningHistoryResponse
@@ -17,7 +18,7 @@ class MidgardConnector(WithLogger):
     ERROR_NOT_FOUND = 'NotFound_Midgard'
     ERROR_NO_CLIENT = 'ERROR_NoClient'
 
-    def __init__(self, session: aiohttp.ClientSession, retry_number=3, public_url=''):
+    def __init__(self, session: aiohttp.ClientSession, retry_number=3, public_url='', network_id=None):
         super().__init__()
 
         self._public_url = public_url
@@ -27,6 +28,7 @@ class MidgardConnector(WithLogger):
         self.retries = retry_number
         self.session = session or aiohttp.ClientSession()
         self.urlgen = free_url_gen
+        self.parser = MidgardParserV2(network_id)
 
     @property
     def public_url(self):
@@ -86,3 +88,8 @@ class MidgardConnector(WithLogger):
         j = await self.request(url)
         if j:
             return SwapHistoryResponse.from_json(j)
+
+    async def query_transactions(self, url_for_tx) -> TxParseResult:
+        j = await self.request(url_for_tx)
+        return self.parser.parse_tx_response(j)
+
