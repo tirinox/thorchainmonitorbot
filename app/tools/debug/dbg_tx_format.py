@@ -16,9 +16,10 @@ from services.lib.midgard.urlgen import free_url_gen
 from services.lib.money import DepthCurve
 from services.lib.texts import sep
 from services.lib.w3.aggregator import AggregatorDataExtractor
-from services.models.pool_info import PoolInfo
-from services.models.tx import ThorTx
 from services.models.memo import ActionType
+from services.models.pool_info import PoolInfo
+from services.models.tx import ThorTx, EventLargeTransaction
+from services.notify.dup_stop import TxDeduplicator
 from services.notify.types.tx_notify import SwapTxNotifier, LiquidityTxNotifier, RefundTxNotifier
 from tools.lib.lp_common import LpAppFramework, load_sample_txs, Receiver
 
@@ -53,7 +54,8 @@ async def demo_savers_add(app):
 
 async def demo_test_savers_vaults(app):
     # q_path = free_url_gen.url_for_tx(0, 50, txid='050000225130CE9C5DBDDF0D1821036FC1CB7473A01EA41BB4F1EB5E3431A036')
-    q_path = free_url_gen.url_for_tx(0, 50, txid='D08540806F70536BE497E9796180DCD8A66866D9F034983C8DDB8561E8D3D1F4')
+    # q_path = free_url_gen.url_for_tx(0, 50, txid='DDC41663A7337BD60FA89B8399C4E8D1B7DDFA389B46F60CF280399978411AB2')
+    q_path = free_url_gen.url_for_tx(0, 50, txid='4B1C25DD13810B6D388C39143E3F70ABCFB693E26F61E3534D1B89920A1E0260')
     await present_one_aff_tx(app, q_path, find_aff=False)
 
 
@@ -165,9 +167,12 @@ async def send_tx_notification(app, ex_tx, loc: BaseLocalization = None):
 
     for lang in [Language.RUSSIAN, Language.ENGLISH, Language.ENGLISH_TWITTER]:
         loc = app.deps.loc_man[lang]
-        text = loc.notification_text_large_single_tx(ex_tx, rune_price, pool_info,
-                                                     name_map=nm,
-                                                     mimir=app.deps.mimir_const_holder)
+        text = loc.notification_text_large_single_tx(
+            EventLargeTransaction(
+                ex_tx, rune_price, pool_info,
+                mimir=app.deps.mimir_const_holder
+            ), name_map=nm
+        )
         await app.send_test_tg_message(text)
         sep()
         print(text)
@@ -179,12 +184,21 @@ async def refund_full_rune(app):
     await volume_filler.fill_volumes(txs)
 
 
-async def demo_full_tx_pipeline(app: LpAppFramework, announce=True):
+def foo_dedup(d):
+    return TxDeduplicator(d.db, "_debug:tx_fetcher:last_seen")
+
+
+async def demo_full_tx_pipeline(app: LpAppFramework, announce=True,
+                                tx_types=(ActionType.ADD_LIQUIDITY, ActionType.WITHDRAW, ActionType.SWAP),
+                                only_asset=None, clear=True):
     d = app.deps
 
     await d.mimir_const_fetcher.run_once()
 
-    fetcher_tx = TxFetcher(d, tx_types=(ActionType.ADD_LIQUIDITY, ActionType.WITHDRAW, ActionType.SWAP))
+    fetcher_tx = TxFetcher(d, tx_types=tx_types, only_asset=only_asset)
+    fetcher_tx.deduplicator = foo_dedup(d)
+    if clear:
+        await fetcher_tx.deduplicator.clear()
 
     aggregator = AggregatorDataExtractor(d)
     fetcher_tx.add_subscriber(aggregator)
@@ -254,7 +268,7 @@ async def demo_verify_tx_scanner_in_the_past(app: LpAppFramework):
     n_zeros = 0
 
     while True:
-        batch_txs = await fetcher_tx.fetch_one_batch(page, tx_types=ActionType.ALL_EXCEPT_DONATE)
+        batch_txs = await fetcher_tx.fetch_one_batch(page, tx_types=ActionType.GROUP_MAIN)
         batch_txs = batch_txs.txs
         batch_txs = fetcher_tx.merge_related_txs(batch_txs)
         for tx in batch_txs:
@@ -314,6 +328,40 @@ async def demo_swap_synth(app):
     await present_one_aff_tx(app, q_path)
 
 
+async def demo_swap_adjust_liquidity(app):
+    d = app.deps
+
+    fetcher = TxFetcher(d, tx_types=(ActionType.SWAP,))
+    fetcher.deduplicator = foo_dedup(d)
+    await fetcher.deduplicator.clear()
+
+    txid = '9EAF7243561F4FDAA35ABDD74D6872EA1A08F8BF67466D6EA8306ADD2E45A10F'
+    txs = await fetcher.fetch_one_batch(0, txid=txid)
+    tx = txs.txs[0]
+    tx.meta_swap.liquidity_fee = 99999
+    tx.full_rune = 100000
+
+    curve = DepthCurve.default()
+
+    swap_notifier_tx = SwapTxNotifier(d, d.cfg.tx.swap, curve=curve)
+
+    swap_notifier_tx.curve_mult = 0.00001
+    swap_notifier_tx.min_usd_total = 0.1
+
+    swap_notifier_tx.add_subscriber(d.alert_presenter)
+    swap_notifier_tx.no_repeat_protection = False
+    r = await swap_notifier_tx.on_data(None, [tx])
+    print(r)
+
+    await asyncio.sleep(5.0)
+
+    # q_path = free_url_gen.url_for_tx(0, 50,
+    #                                  txid='9EAF7243561F4FDAA35ABDD74D6872EA1A08F8BF67466D6EA8306ADD2E45A10F',
+    #                                  tx_type=ActionType.SWAP)
+    #
+    # await present_one_aff_tx(app, q_path)
+
+
 async def demo_swap_with_refund_and_incorrect_savings_vs_cex(app):
     # txid = '98A0E24728729721BC6295A85991D28BF4A26A8767D773FD6BA53E6742F70631'  # no refund, synth
     # txid = 'E22E41745A9422B12C02E26F12BE79D621DDCB3CA1BC954CCAD2AB4792DE5AC7'  # with refund BTC -> ETH + BTC
@@ -363,6 +411,8 @@ async def dbg_refund_spam(app):
 async def main():
     app = LpAppFramework()
     await app.prepare(brief=True)
+    await app.deps.mimir_const_fetcher.run_once()
+    await app.deps.pool_fetcher.run_once()
 
     # await midgard_test_donate(app, mdg, tx_parser)
     # await midgard_test_1(app, mdg, tx_parser)
@@ -384,9 +434,10 @@ async def main():
     # await find_affiliate_txs(app, 1, (ThorTxType.TYPE_SWAP,))
     # await demo_find_aggregator_error(app)
     # await demo_find_missed_txs_swap(app)
+    await demo_swap_adjust_liquidity(app)
     # await demo_swap_synth(app)
     # await demo_swap_with_refund_and_incorrect_savings_vs_cex(app)
-    await dbg_refund_spam(app)
+    # await dbg_refund_spam(app)
 
 
 if __name__ == '__main__':

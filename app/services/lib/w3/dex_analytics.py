@@ -60,7 +60,8 @@ class DexAnalyticsCollector(WithLogger, INotified):
 
     async def is_counted(self, tx_hash) -> bool:
         if tx_hash:
-            return await self.deps.db.redis.sismember(self.KEY_DEX_COUNTED_TX_SET, tx_hash)
+            r = await self.deps.db.redis.sismember(self.KEY_DEX_COUNTED_TX_SET, tx_hash)
+            return bool(r)
         return True
 
     async def _mark_as_counted(self, tx_hash):

@@ -4,13 +4,11 @@ from datetime import datetime
 from math import ceil
 from typing import List, Optional
 
-from semver import VersionInfo
-
 from aionode.types import ThorChainInfo, ThorBalances, ThorSwapperClout
 from localization.achievements.ach_eng import AchievementsEnglishLocalization
 from proto.types import ThorName
-from services.jobs.fetch.circulating import ThorRealms
 from services.jobs.fetch.chain_id import AlertChainIdChange
+from services.jobs.fetch.circulating import ThorRealms
 from services.jobs.fetch.runeyield.borrower import LoanReportCard
 from services.lib.config import Config
 from services.lib.constants import thor_to_float, THOR_BLOCK_TIME, DEFAULT_CEX_NAME, \
@@ -38,7 +36,7 @@ from services.models.memo import ActionType
 from services.models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting, MimirVoteOption, AlertMimirVoting
 from services.models.mimir_naming import MimirUnits, NEXT_CHAIN_VOTING_MAP
 from services.models.net_stats import NetworkStats, AlertNetworkStats
-from services.models.node_info import NodeSetChanges, NodeInfo, NodeVersionConsensus, NodeEventType, NodeEvent, \
+from services.models.node_info import NodeSetChanges, NodeInfo, NodeEventType, NodeEvent, \
     EventBlockHeight, EventDataSlash, calculate_security_cap_rune, EventProviderBondChange, \
     EventProviderStatus
 from services.models.pool_info import PoolInfo, PoolChanges, PoolMapPair

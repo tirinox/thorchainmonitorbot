@@ -286,7 +286,7 @@ class MimirHolder:
                 entry.changed_ts = ts
 
     def get_max_synth_per_pool_depth(self) -> float:
-        value = self.get_constant(MIMIR_KEY_MAX_SYNTH_PER_POOL_DEPTH, 1500)
+        value = self.get_constant(MIMIR_KEY_MAX_SYNTH_PER_POOL_DEPTH, 6000)
         return bp_to_float(value)
 
 

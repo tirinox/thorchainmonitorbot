@@ -87,10 +87,31 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
                 clout=clout,
             )
 
+            event = await self._event_transform(event)
+
             await self.pass_data_to_listeners(event)
 
             if self.no_repeat_protection:
                 await self.deduplicator.mark_as_seen(tx.tx_hash)
+
+    async def _event_transform(self, event: EventLargeTransaction) -> EventLargeTransaction:
+        return event
+
+    async def get_tx_from_midgard(self, tx_hash):
+        try:
+            mdg = self.deps.midgard_connector
+            txs = await mdg.query_transactions(
+                mdg.urlgen.url_for_tx(txid=tx_hash)
+            )
+            if not txs or not txs.txs:
+                raise Exception('Failed to load Tx from Midgard!')
+            first_tx = txs.first
+            if not first_tx:
+                raise Exception('No first Tx in the list!')
+
+            return first_tx
+        except Exception as e:
+            self.logger.error(f'Failed to verify liquidity fee: {e}')
 
     async def _get_clout(self, address) -> Optional[ThorSwapperClout]:
         try:
@@ -191,6 +212,32 @@ class SwapTxNotifier(GenericTxNotifier):
         await self._check_if_they_announced_as_started(txs)
 
         return await super().handle_txs_unsafe(senders, txs)
+
+    async def adjust_liquidity_fee_through_midgard(self, event: EventLargeTransaction):
+        try:
+            tx = await self.get_tx_from_midgard(event.transaction.tx_hash)
+
+            if not tx.meta_swap:
+                raise Exception('No meta_swap in the first Tx!')
+
+            liquidity_fee = tx.meta_swap.liquidity_fee
+            prev_fee = event.transaction.meta_swap.liquidity_fee
+            if prev_fee != liquidity_fee:
+                self.logger.warning(f'Fee changed for {tx.tx_hash}: {prev_fee} -> {liquidity_fee}')
+                event.transaction.meta_swap.liquidity_fee = liquidity_fee
+
+            swap_slip = tx.meta_swap.trade_slip
+            prev_slip = event.transaction.meta_swap.trade_slip
+            if prev_slip != swap_slip:
+                self.logger.warning(f'Slip changed for {tx.tx_hash}: {prev_slip} -> {swap_slip}')
+                event.transaction.meta_swap.trade_slip = swap_slip
+        except Exception as e:
+            self.logger.error(f'Failed to verify liquidity fee: {e}')
+        finally:
+            return event
+
+    async def _event_transform(self, event: EventLargeTransaction) -> EventLargeTransaction:
+        return await self.adjust_liquidity_fee_through_midgard(event)
 
     def is_tx_suitable(self, tx: ThorTx, min_rune_volume, usd_per_rune, curve_mult=None):
         # a) It is interesting if a steaming swap
