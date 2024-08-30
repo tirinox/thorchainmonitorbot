@@ -222,7 +222,7 @@ class ThorTx:
     rune_amount: float = 0.0
 
     # filled by "calc_full_rune_amount"
-    full_rune: float = 0.0  # TX volume
+    full_volume_in_rune: float = 0.0  # TX volume
     asset_per_rune: float = 0.0
 
     dex_info: SwapInOut = SwapInOut()
@@ -455,10 +455,10 @@ class ThorTx:
         return abs(factor) if force_abs else factor
 
     def symmetry_rune_vs_asset(self):
-        if not self.full_rune:
+        if not self.full_volume_in_rune:
             return 0.0, 0.0
 
-        f = 100.0 / self.full_rune
+        f = 100.0 / self.full_volume_in_rune
         if self.asset_per_rune == 0.0:
             return 0.0, 0.0
         else:
@@ -509,21 +509,21 @@ class ThorTx:
         else:
             # add, donate, refund
             r = self.calc_amount(pool_map, self.search_realm(in_only=True))
-        self.full_rune = r
+        self.full_volume_in_rune = r
 
-        if self.full_rune == 0.0:
+        if self.full_volume_in_rune == 0.0:
             logger.warning(f'Tx {self} has ZERO Rune amount!')
 
-        return self.full_rune
+        return self.full_volume_in_rune
 
     def get_usd_volume(self, usd_per_rune):
-        return usd_per_rune * self.full_rune
+        return usd_per_rune * self.full_volume_in_rune
 
     def what_percent_of_pool(self, pool_info: PoolInfo) -> float:
         percent_of_pool = 100.0
         if pool_info:
-            correction = self.full_rune if self.is_of_type(ActionType.WITHDRAW) else 0.0
-            percent_of_pool = pool_info.percent_share(self.full_rune, correction)
+            correction = self.full_volume_in_rune if self.is_of_type(ActionType.WITHDRAW) else 0.0
+            percent_of_pool = pool_info.percent_share(self.full_volume_in_rune, correction)
         return percent_of_pool
 
     def get_affiliate_fee_usd(self, usd_per_rune):

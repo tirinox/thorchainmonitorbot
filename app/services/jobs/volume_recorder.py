@@ -146,7 +146,7 @@ class VolumeRecorder(INotified, WithLogger):
         volumes = defaultdict(float)
         ts = None
         for tx in txs:
-            volume = tx.full_rune
+            volume = tx.full_volume_in_rune
             if volume > 0:
                 if tx.is_of_type(ActionType.SWAP):
                     volumes[TxMetricType.SWAP] += volume

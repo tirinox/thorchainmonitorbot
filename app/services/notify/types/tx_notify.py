@@ -148,7 +148,7 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
             else:
                 min_share_rune_volume = 0.0
 
-        if tx.full_rune >= min_rune_volume and tx.full_rune >= min_share_rune_volume:
+        if tx.full_volume_in_rune >= min_rune_volume and tx.full_volume_in_rune >= min_share_rune_volume:
             return True
 
     def dbg_evaluate_curve_for_pools(self, max_pools=20):
@@ -242,16 +242,16 @@ class SwapTxNotifier(GenericTxNotifier):
     def is_tx_suitable(self, tx: ThorTx, min_rune_volume, usd_per_rune, curve_mult=None):
         # a) It is interesting if a steaming swap
         if tx.is_streaming:
-            if tx.full_rune >= self.min_streaming_swap_usd / usd_per_rune:
+            if tx.full_volume_in_rune >= self.min_streaming_swap_usd / usd_per_rune:
                 return True
 
         # b) It is interesting if paid much to affiliate fee collector
-        affiliate_fee_rune = tx.meta_swap.affiliate_fee * tx.full_rune
+        affiliate_fee_rune = tx.meta_swap.affiliate_fee * tx.full_volume_in_rune
         if affiliate_fee_rune >= self.aff_fee_min_usd / usd_per_rune:
             return True
 
         # c) It is interesting if the Dex aggregator used
-        if tx.dex_aggregator_used and tx.full_rune >= self.dex_min_usd / usd_per_rune:
+        if tx.dex_aggregator_used and tx.full_volume_in_rune >= self.dex_min_usd / usd_per_rune:
             return True
 
         # d) If we announce that the streaming swap has started, then we should announce that it's finished,
@@ -261,7 +261,7 @@ class SwapTxNotifier(GenericTxNotifier):
 
         # e) If trade asset involved
         if tx.is_trade_asset_involved:
-            if tx.full_rune >= self.min_trade_asset_swap_usd / usd_per_rune:
+            if tx.full_volume_in_rune >= self.min_trade_asset_swap_usd / usd_per_rune:
                 return True
 
         # f) Regular rules are applied

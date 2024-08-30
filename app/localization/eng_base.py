@@ -502,7 +502,7 @@ class BaseLocalization(ABC):  # == English
 
     @staticmethod
     def lp_tx_calculations(usd_per_rune, pool_info: PoolInfo, tx: ThorTx):
-        total_usd_volume = tx.full_rune * usd_per_rune
+        total_usd_volume = tx.full_volume_in_rune * usd_per_rune
         pool_depth_usd = pool_info.usd_depth(usd_per_rune) if pool_info else 0.0
 
         percent_of_pool = tx.what_percent_of_pool(pool_info)

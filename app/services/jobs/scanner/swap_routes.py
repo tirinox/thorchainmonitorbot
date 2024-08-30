@@ -32,7 +32,7 @@ class SwapRouteRecorder(WithLogger, INotified):
         return f"{self.key_prefix}:route:{route}:{self._date_format(date)}"
 
     async def store_swap_event(self, tx):
-        volume = tx.full_rune
+        volume = tx.full_volume_in_rune
 
         if volume <= 0:
             self.logger.error(f'Tx: {tx.tx_hash} volume = {volume} R. Ignored.')
@@ -124,7 +124,7 @@ class SwapRouteRecorder(WithLogger, INotified):
             if not tx.meta_swap:
                 continue  # skip non-swap tx
 
-            if tx.full_rune <= 0:
+            if tx.full_volume_in_rune <= 0:
                 self.logger.warning(f"Skip tx {tx.tx_hash} with zero RUNE amount")
                 continue
 

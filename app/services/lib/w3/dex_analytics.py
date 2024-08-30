@@ -86,7 +86,7 @@ class DexAnalyticsCollector(WithLogger, INotified):
 
         """
         for tx in txs:
-            if tx.dex_aggregator_used and tx.full_rune > 0:
+            if tx.dex_aggregator_used and tx.full_volume_in_rune > 0:
                 tx_hash = tx.tx_hash
                 if not (await self.is_counted(tx_hash)):
                     swap_in, swap_out = 'null', 'null'
@@ -99,7 +99,7 @@ class DexAnalyticsCollector(WithLogger, INotified):
                         hash=tx.tx_hash,
                         swap_in=swap_in,
                         swap_out=swap_out,
-                        volume=tx.full_rune,
+                        volume=tx.full_volume_in_rune,
                     )
                     await self._mark_as_counted(tx_hash)
         await self.series.trim_oldest(self.MAX_POINTS)

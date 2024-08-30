@@ -190,8 +190,8 @@ async def demo_find_aff(app: LpAppFramework):
                 for tx in txs:
                     if tx.is_of_type(ActionType.SWAP):
                         if tx.dex_aggregator_used:
-                            print(tx.tx_hash, f' = {tx.full_rune:.1f} Rune; ', tx.dex_info, tx, file=f)
-                            print(tx.tx_hash, tx.full_rune, 'Rune')
+                            print(tx.tx_hash, f' = {tx.full_volume_in_rune:.1f} Rune; ', tx.dex_info, tx, file=f)
+                            print(tx.tx_hash, tx.full_volume_in_rune, 'Rune')
                             f.flush()
 
                             r = await dex_analytics.get_analytics()

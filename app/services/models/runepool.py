@@ -69,7 +69,7 @@ class AlertRunePoolAction(NamedTuple):
             in_tx=in_tx_list, out_tx=out_tx_list,
             tx_hash_rune=self.tx_hash,
             rune_amount=self.amount,
-            full_rune=self.amount,
+            full_volume_in_rune=self.amount,
             asset_per_rune=1.0,
         )
 

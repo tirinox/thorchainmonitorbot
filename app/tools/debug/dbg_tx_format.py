@@ -339,7 +339,7 @@ async def demo_swap_adjust_liquidity(app):
     txs = await fetcher.fetch_one_batch(0, txid=txid)
     tx = txs.txs[0]
     tx.meta_swap.liquidity_fee = 99999
-    tx.full_rune = 100000
+    tx.full_volume_in_rune = 100000
 
     curve = DepthCurve.default()
 
