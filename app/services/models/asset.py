@@ -1,7 +1,9 @@
 import dataclasses
+from collections import defaultdict
 from copy import copy
 
 from dataclasses import dataclass
+from typing import Iterable
 
 from proto.common import Coin
 from services.lib.constants import RUNE_DENOM, Chains, NATIVE_RUNE_SYMBOL
@@ -213,3 +215,15 @@ def is_rune(asset: str):
     asset = asset.strip()
     return asset.lower() in ('r', RUNE_DENOM) or asset.upper() == NATIVE_RUNE_SYMBOL
 
+
+def is_ambiguous_asset(asset: str, among_assets: Iterable[str]):
+    asset = Asset.from_string(asset)
+    if asset.gas_asset_from_chain(asset.chain) != asset:
+        return True
+
+    ambiguous_tracker = defaultdict(set)
+    for a in among_assets:
+        name = Asset.from_string(a).name
+        ambiguous_tracker[name].add(a)
+
+    return len(ambiguous_tracker.get(asset.name, [])) > 1

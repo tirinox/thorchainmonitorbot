@@ -1,5 +1,5 @@
 from services.lib.money import short_address
-from services.models.asset import Asset
+from services.models.asset import Asset, is_ambiguous_asset
 
 
 def test_asset1():
@@ -87,3 +87,12 @@ def test_gas_asset():
     assert not Asset.from_string('BSC.BUSD').is_gas_asset
     assert not Asset.from_string('BSC.BNB-0x123').is_gas_asset
     assert not Asset.from_string('ETH.USDT-0x123').is_gas_asset
+
+
+def test_ambiguous_name():
+    assert is_ambiguous_asset('GIAI.ATOM', [])
+    assert not is_ambiguous_asset('ETH.ETH', [])
+    assert not is_ambiguous_asset('BTC.BTC', [])
+    assert is_ambiguous_asset('THOR.BTC', [])
+    assert is_ambiguous_asset('ETH.ETH', ['ETH.ETH', 'ARB.ETH'])
+    assert not is_ambiguous_asset('ETH.ETH', ['ETH.ETH', 'LTC.LTC', 'DOGE.DOGE'])

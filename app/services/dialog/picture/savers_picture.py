@@ -1,5 +1,3 @@
-from collections import defaultdict
-
 from PIL import Image, ImageDraw
 
 from localization.manager import BaseLocalization
@@ -8,7 +6,7 @@ from services.dialog.picture.resources import Resources
 from services.lib.draw_utils import TC_WHITE, result_color, rect_progress_bar
 from services.lib.money import short_money, short_dollar
 from services.lib.utils import async_wrap
-from services.models.asset import Asset
+from services.models.asset import Asset, is_ambiguous_asset
 from services.models.savers import SaverVault, AlertSaverStats
 
 
@@ -162,13 +160,7 @@ class SaversPictureGenerator(BasePictureGenerator):
                           formatter(_delta, signed=True, **kwargs),
                           fill=result_color(_delta), font=changed_font, anchor='lm')
 
-        ambiguous_tracker = defaultdict(set)
-        for vault in cur_data.vaults:
-            name = Asset.from_string(vault.asset).name
-            ambiguous_tracker[name].add(vault.asset)
-
-        ambiguous_names = {name for name in ambiguous_tracker.keys() if len(ambiguous_tracker[name]) >= 2}
-
+        all_asset_names = [v.asset for v in cur_data.vaults]
         for vault in cur_data.vaults:
             logo = self.logos.get(vault.asset)
             if logo:
@@ -177,7 +169,8 @@ class SaversPictureGenerator(BasePictureGenerator):
                 image.paste(logo, (table_x, y - logo_size // 2), logo)
 
             a = Asset.from_string(vault.asset)
-            if a.name in ambiguous_names:
+            # if a.name in ambiguous_names:
+            if is_ambiguous_asset(str(a), all_asset_names):
                 gas_asset = a.gas_asset_from_chain(a.chain)
                 gas_logo = self.logos.get(str(gas_asset))
                 if gas_logo:
