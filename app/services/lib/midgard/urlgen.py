@@ -48,11 +48,14 @@ class MidgardURLGenV2:
         return f"{self.base_url}/v2/history/swaps?interval={interval}&{spec}"
 
     def url_for_earnings_history(self, from_ts=0, to_ts=0, count=10, interval='day') -> str:
+        spec = ''
         if from_ts and to_ts:
             spec = f'from={from_ts}&to={to_ts}'
-        else:
+        elif count:
             spec = f'count={count}'
-        return f"{self.base_url}/v2/history/earnings?interval={interval}&{spec}"
+        if interval:
+            spec += f"&interval={interval}"
+        return f"{self.base_url}/v2/history/earnings?{spec}"
 
     def url_for_savers_history(self, pool: str, from_ts=0, to_ts=0, count=10, interval='day') -> str:
         params = []

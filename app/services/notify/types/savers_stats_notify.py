@@ -1,7 +1,6 @@
-from typing import Optional, Union
+from typing import Optional
 
-from services.jobs.fetch.savers import SaversStatsFetcher
-from services.jobs.fetch.savers_vnx import VNXSaversStatsFetcher
+from services.jobs.fetch.savers_vnx import SaversStatsFetcher
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import DAY
 from services.lib.delegates import INotified, WithDelegates
@@ -11,7 +10,7 @@ from services.lib.utils import WithLogger
 
 
 class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
-    def __init__(self, deps: DepContainer, ssf: Optional[Union[SaversStatsFetcher, VNXSaversStatsFetcher]]):
+    def __init__(self, deps: DepContainer, ssf: Optional[SaversStatsFetcher]):
         super().__init__()
         self.deps = deps
 
@@ -25,7 +24,7 @@ class SaversStatsNotifier(WithDelegates, INotified, WithLogger):
             await self.cd_notify.do()
 
             period = max(DAY, self.cd_notify.cooldown)
-            event = await self.data_source.get_savers_event(period)
+            event = await self.data_source.get_savers_event_cached(period)
             if not event:
                 self.logger.warning('Failed to load Savers data!')
                 return

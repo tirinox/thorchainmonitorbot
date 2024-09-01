@@ -9,8 +9,7 @@ from localization.languages import Language
 from services.dialog.picture.crypto_logo import CryptoLogoDownloader
 from services.dialog.picture.resources import Resources
 from services.dialog.picture.savers_picture import SaversPictureGenerator
-from services.jobs.fetch.savers_port import SaverStatsPortedFetcher
-from services.jobs.fetch.savers_vnx import VNXSaversStatsFetcher
+from services.jobs.fetch.savers_vnx import SaversStatsFetcher
 from services.lib.date_utils import DAY
 from services.lib.texts import sep
 from services.lib.utils import random_chance
@@ -99,22 +98,14 @@ async def demo_logo_download(app: LpAppFramework):
         await logo_downloader.get_or_download_logo_cached(asset)
 
 
-async def demo_vnx(app: LpAppFramework):
-    ssf = VNXSaversStatsFetcher(app.deps)
-    vs = await ssf.load_real_yield_vanaheimex()
-    r = ssf.make_bank(vs)
-    pprint(r)
-
-
 async def demo_show_savers_pic(app: LpAppFramework):
-    await app.deps.pool_fetcher.run_once()
     await app.deps.last_block_fetcher.run_once()
     await app.deps.mimir_const_fetcher.run_once()
 
     # ssn = SaversStatsNotifier(app.deps, None)
     # event = await ssn.data_source.get_savers_event(7 * DAY)
 
-    source = VNXSaversStatsFetcher(app.deps)
+    source = SaversStatsFetcher(app.deps)
     event = await source.get_savers_event()
 
     loc = app.deps.loc_man[Language.ENGLISH]
@@ -140,8 +131,8 @@ async def demo_new_method_to_reach_fullness(app: LpAppFramework):
 
 async def dbg_new_saver_stats_fetcher(app: LpAppFramework):
     await app.deps.mimir_const_fetcher.run_once()
-    ssf = SaverStatsPortedFetcher(app.deps)
-    vs = await ssf.fetch()
+    ssf = SaversStatsFetcher(app.deps)
+    vs = await ssf.load_stats_now()
     vs = {k: v._asdict() for k, v in vs.items()}
     print(json.dumps(vs, indent=4))
 
@@ -153,9 +144,9 @@ async def dbg_new_saver_stats_fetcher(app: LpAppFramework):
 async def main():
     app = LpAppFramework()
     async with app(brief=True):
-        await dbg_new_saver_stats_fetcher(app)
+        # await dbg_new_saver_stats_fetcher(app)
         # await app.deps.pool_fetcher.run_once()
-        # await demo_show_savers_pic(app)
+        await demo_show_savers_pic(app)
         # await demo_show_notification(app)
         # await demo_new_method_to_reach_fullness(app)
         # await demo_vnx(app)

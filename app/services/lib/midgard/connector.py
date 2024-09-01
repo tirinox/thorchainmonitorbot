@@ -78,7 +78,7 @@ class MidgardConnector(WithLogger):
         else:
             return result
 
-    async def query_earnings(self, from_ts=0, to_ts=0, count=10, interval='day') -> Optional[EarningHistoryResponse]:
+    async def query_earnings(self, from_ts=0, to_ts=0, count=0, interval='') -> Optional[EarningHistoryResponse]:
         url = self.urlgen.url_for_earnings_history(from_ts, to_ts, count, interval)
         j = await self.request(url)
         if j:

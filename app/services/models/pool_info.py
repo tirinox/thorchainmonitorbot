@@ -89,6 +89,10 @@ class PoolInfo:
     def runes_per_asset(self):
         return self.balance_rune / self.balance_asset
 
+    @property
+    def usd_per_rune(self):
+        return self.usd_per_asset * self.asset_per_rune if self.asset_per_rune else 0.0
+
     @staticmethod
     def is_status_enabled(status):
         return status.lower() in (PoolInfo.DEPRECATED_ENABLED, PoolInfo.AVAILABLE)  # v2 compatibility
