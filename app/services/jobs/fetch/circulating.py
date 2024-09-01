@@ -201,13 +201,17 @@ class RuneCirculatingSupplyFetcher(WithLogger):
         else:
             return 0
 
-    async def get_thor_rune_total_supply(self):
+    async def get_all_native_token_supplies(self):
         url_supply = f'{self.thor_node}/cosmos/bank/v1beta1/supply'
         self.logger.debug(f'Get: "{url_supply}"')
         async with self.session.get(url_supply) as resp:
             j = await resp.json()
             items = j['supply']
-            return self.get_pure_rune_from_thor_array(items)
+            return items
+
+    async def get_thor_rune_total_supply(self):
+        supplies = await self.get_all_native_token_supplies()
+        return self.get_pure_rune_from_thor_array(supplies)
 
     async def get_thor_address_balance(self, address):
         url_balance = f'{self.thor_node}/cosmos/bank/v1beta1/balances/{address}'

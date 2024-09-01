@@ -129,3 +129,100 @@ class AlertSaverStats(NamedTuple):
     previous_stats: Optional[SaversBank]
     current_stats: SaversBank
     price_holder: LastPriceHolder
+
+
+class MidgardSaversHistoryMeta(NamedTuple):
+    start_time: str
+    end_time: str
+    start_savers_depth: str
+    start_units: int
+    start_savers_count: int
+    end_savers_depth: int
+    end_units: int
+    end_savers_count: int
+
+    @classmethod
+    def from_json(cls, j):
+        return cls(
+            start_time=j.get('startTime', ''),
+            end_time=j.get('endTime', ''),
+            start_savers_depth=j.get('startSaversDepth', ''),
+            start_units=int(j.get('startUnits', 0)),
+            start_savers_count=int(j.get('startSaversCount', 0)),
+            end_savers_depth=int(j.get('endSaversDepth', 0)),
+            end_units=int(j.get('endUnits', 0)),
+            end_savers_count=int(j.get('endSaversCount', 0)),
+        )
+
+
+class MidgardSaversHistoryInterval(NamedTuple):
+    start_time: str
+    end_time: str
+    savers_depth: int
+    savers_count: int
+    savers_units: int
+
+    @classmethod
+    def from_json(cls, j):
+        return cls(
+            start_time=j.get('startTime', ''),
+            end_time=j.get('endTime', ''),
+            savers_depth=int(j.get('saversDepth', 0)),
+            savers_count=int(j.get('saversCount', 0)),
+            savers_units=int(j.get('saversUnits', 0)),
+        )
+
+
+class MidgardSaversHistory(NamedTuple):
+    meta: MidgardSaversHistoryMeta
+    intervals: List[MidgardSaversHistoryInterval]
+
+    @classmethod
+    def from_json(cls, j):
+        return cls(
+            meta=MidgardSaversHistoryMeta.from_json(j.get('meta', {})),
+            intervals=[MidgardSaversHistoryInterval.from_json(i) for i in j.get('intervals', [])]
+        )
+
+
+class VNXSaversStats(NamedTuple):
+    asset: str
+    asset_depth: int
+    asset_price: float
+    earned: float
+    earned_old: float
+    filled: float
+    savers_count: int
+    savers_count_old: int
+    saver_return: float
+    saver_return_old: float
+    savers_depth: int
+    savers_depth_old: int
+    synth_supply: int
+
+    @classmethod
+    def from_json(cls, j):
+        new_j = j.get('savers')
+        old_j = j.get('oldSavers')
+
+        return cls(
+            asset=new_j.get('asset', ''),
+            asset_depth=int(new_j.get('assetDepth', 0.0)),
+            asset_price=float(new_j.get('assetPriceUSD', 0.0)),
+
+            filled=float(new_j.get('filled', 0.0)),
+
+            earned=float(new_j.get('earned', 0.0)),
+            earned_old=float(old_j.get('earned', 0.0)),
+
+            savers_count=int(new_j.get('saversCount', 0)),
+            savers_count_old=int(old_j.get('saversCount', 0)),
+
+            saver_return=float(new_j.get('saversReturn', 0.0) or 0.0),
+            saver_return_old=float(old_j.get('saversReturn', 0.0) or 0.0),
+
+            savers_depth=int(new_j.get('saversDepth', 0.0)),
+            savers_depth_old=int(old_j.get('saversDepth', 0.0)),
+
+            synth_supply=int(new_j.get('synthSupply', 0.0)),
+        )

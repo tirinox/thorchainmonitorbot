@@ -36,14 +36,16 @@ class RuneMarketInfoFetcher(WithLogger):
         total_pooled_rune = j.get('totalPooledRune', 0)
         return thor_to_float(total_pooled_rune)
 
-    @retries(5)
-    async def _get_circulating_supply(self) -> RuneCirculatingSupply:
-        supply_fetcher = RuneCirculatingSupplyFetcher(
+    def get_supply_fetcher(self):
+        return RuneCirculatingSupplyFetcher(
             self.deps.session,
             thor_node=self.deps.thor_connector.env.thornode_url,
-            step_sleep=self.deps.cfg.sleep_step)
+            step_sleep=self.deps.cfg.sleep_step
+        )
 
-        return await supply_fetcher.fetch()
+    @retries(5)
+    async def _get_circulating_supply(self) -> RuneCirculatingSupply:
+        return await self.get_supply_fetcher().fetch()
 
     def _enrich_circulating_supply(self, supply: RuneCirculatingSupply) -> RuneCirculatingSupply:
         ns = self.deps.net_stats

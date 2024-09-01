@@ -568,6 +568,7 @@ supply:
 saver_stats:
   enabled: true
   period: 3d
+  fetch_period: 50
 
 
 wallet_counter:

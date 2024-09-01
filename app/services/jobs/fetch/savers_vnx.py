@@ -7,50 +7,7 @@ from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 from services.models.price import LastPriceHolder
-from services.models.savers import SaverVault, AlertSaverStats, SaversBank
-
-
-class VNXSaversStats(NamedTuple):
-    asset: str
-    asset_depth: int
-    asset_price: float
-    earned: float
-    earned_old: float
-    filled: float
-    savers_count: int
-    savers_count_old: int
-    saver_return: float
-    saver_return_old: float
-    savers_depth: int
-    savers_depth_old: int
-    synth_supply: int
-
-    @classmethod
-    def from_json(cls, j):
-        new_j = j.get('savers')
-        old_j = j.get('oldSavers')
-
-        return cls(
-            asset=new_j.get('asset', ''),
-            asset_depth=int(new_j.get('assetDepth', 0.0)),
-            asset_price=float(new_j.get('assetPriceUSD', 0.0)),
-
-            filled=float(new_j.get('filled', 0.0)),
-
-            earned=float(new_j.get('earned', 0.0)),
-            earned_old=float(old_j.get('earned', 0.0)),
-
-            savers_count=int(new_j.get('saversCount', 0)),
-            savers_count_old=int(old_j.get('saversCount', 0)),
-
-            saver_return=float(new_j.get('saversReturn', 0.0) or 0.0),
-            saver_return_old=float(old_j.get('saversReturn', 0.0) or 0.0),
-
-            savers_depth=int(new_j.get('saversDepth', 0.0)),
-            savers_depth_old=int(old_j.get('saversDepth', 0.0)),
-
-            synth_supply=int(new_j.get('synthSupply', 0.0)),
-        )
+from services.models.savers import SaverVault, AlertSaverStats, SaversBank, VNXSaversStats
 
 
 class VNXSaversStatsFetcher(INotified, WithDelegates, WithLogger):

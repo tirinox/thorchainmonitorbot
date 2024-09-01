@@ -1,5 +1,6 @@
 import asyncio
 import dataclasses
+import json
 import random
 from pprint import pprint
 
@@ -8,6 +9,7 @@ from localization.languages import Language
 from services.dialog.picture.crypto_logo import CryptoLogoDownloader
 from services.dialog.picture.resources import Resources
 from services.dialog.picture.savers_picture import SaversPictureGenerator
+from services.jobs.fetch.savers_port import SaverStatsPortedFetcher
 from services.jobs.fetch.savers_vnx import VNXSaversStatsFetcher
 from services.lib.date_utils import DAY
 from services.lib.texts import sep
@@ -136,11 +138,24 @@ async def demo_new_method_to_reach_fullness(app: LpAppFramework):
         print(f'{pool.asset} - {can_add} {pool.asset}')
 
 
+async def dbg_new_saver_stats_fetcher(app: LpAppFramework):
+    await app.deps.mimir_const_fetcher.run_once()
+    ssf = SaverStatsPortedFetcher(app.deps)
+    vs = await ssf.fetch()
+    vs = {k: v._asdict() for k, v in vs.items()}
+    print(json.dumps(vs, indent=4))
+
+    input("Press enter to continue...")
+    await ssf.fetch()
+    print("Instant?")
+
+
 async def main():
     app = LpAppFramework()
     async with app(brief=True):
-        await app.deps.pool_fetcher.run_once()
-        await demo_show_savers_pic(app)
+        await dbg_new_saver_stats_fetcher(app)
+        # await app.deps.pool_fetcher.run_once()
+        # await demo_show_savers_pic(app)
         # await demo_show_notification(app)
         # await demo_new_method_to_reach_fullness(app)
         # await demo_vnx(app)

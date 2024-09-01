@@ -8,6 +8,7 @@ from services.lib.midgard.parser import MidgardParserV2, TxParseResult
 from services.lib.midgard.urlgen import free_url_gen
 from services.lib.utils import WithLogger
 from services.models.earnings_history import EarningHistoryResponse
+from services.models.savers import MidgardSaversHistory
 from services.models.swap_history import SwapHistoryResponse
 
 DEFAULT_MIDGARD_PORT = 8080
@@ -91,5 +92,12 @@ class MidgardConnector(WithLogger):
 
     async def query_transactions(self, url_for_tx) -> TxParseResult:
         j = await self.request(url_for_tx)
-        return self.parser.parse_tx_response(j)
+        if j:
+            return self.parser.parse_tx_response(j)
 
+    async def query_savers_history(self, pool, from_ts=0, to_ts=0, count=10, interval='day') \
+            -> Optional[MidgardSaversHistory]:
+        url = self.urlgen.url_for_savers_history(pool, from_ts, to_ts, count, interval)
+        j = await self.request(url)
+        if j:
+            return MidgardSaversHistory.from_json(j)
