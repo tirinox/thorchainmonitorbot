@@ -41,8 +41,8 @@ class SaversPictureGenerator(BasePictureGenerator):
         cur_data = self.event.current_stats
         prev_data = self.event.previous_stats
 
-        pool_map = self.event.price_holder.pool_info_map
-        usd_per_rune = self.event.price_holder.usd_per_rune
+        pool_map = self.event.pool_map
+        usd_per_rune = self.event.usd_per_rune
 
         cur_data.sort_vaults(key='total_asset_saved_usd', reverse=True)
 

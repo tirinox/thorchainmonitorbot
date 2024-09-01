@@ -28,7 +28,7 @@ from services.jobs.fetch.pol import RunePoolFetcher
 from services.jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
 from services.jobs.fetch.profit_against_cex import StreamingSwapVsCexProfitCalculator
 from services.jobs.fetch.queue import QueueFetcher
-from services.jobs.fetch.savers_vnx import VNXSaversStatsFetcher
+from services.jobs.fetch.savers_vnx import SaversStatsFetcher
 from services.jobs.fetch.trade_accounts import TradeAccountFetcher
 from services.jobs.fetch.tx import TxFetcher
 from services.jobs.node_churn import NodeChurnDetector
@@ -522,7 +522,7 @@ class App(WithLogger):
             # SaversStatsFetcher: any => SaversBank => [Achievements] ==> [alert_presenter]
             # SaversStatsNotifier: any => EventSaverStats  ==> [alert_presenter]
 
-            d.saver_stats_fetcher = VNXSaversStatsFetcher(d)
+            d.saver_stats_fetcher = SaversStatsFetcher(d)
             ssc = SaversStatsNotifier(d, d.saver_stats_fetcher)
             d.pool_fetcher.add_subscriber(ssc)
             ssc.add_subscriber(d.alert_presenter)

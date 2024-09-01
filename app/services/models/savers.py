@@ -4,9 +4,10 @@ from typing import List, NamedTuple, Optional
 
 from services.lib.constants import BLOCKS_PER_YEAR, SAVERS_BEGIN_BLOCK, thor_to_float
 from services.models.pool_info import PoolInfoMap, PoolInfo
-from services.models.price import LastPriceHolder
 
 TYPICAL_REBALANCE_RATIO = 0.5
+
+# fixme: delta earning, abs earnes is too low as well
 
 
 @dataclass
@@ -19,6 +20,7 @@ class SaverVault:
     asset_cap: float
     runes_earned: float
     synth_supply: float
+    pool: PoolInfo
 
     @property
     def percent_of_cap_filled(self):
@@ -27,6 +29,10 @@ class SaverVault:
     @property
     def usd_per_asset(self):
         return self.total_asset_saved_usd / self.total_asset_saved
+
+    @property
+    def usd_per_rune(self):
+        return self.pool.usd_per_rune
 
     def calc_asset_earned(self, pool_map: PoolInfoMap):
         if pool_map and (pool := pool_map.get(self.asset)):
@@ -128,7 +134,14 @@ def how_much_savings_you_can_add(pool: PoolInfo, max_synth_per_pool_depth=0.15,
 class AlertSaverStats(NamedTuple):
     previous_stats: Optional[SaversBank]
     current_stats: SaversBank
-    price_holder: LastPriceHolder
+
+    @property
+    def pool_map(self) -> PoolInfoMap:
+        return {v.asset: v.pool for v in self.current_stats.vaults}
+
+    @property
+    def usd_per_rune(self):
+        return next((p.usd_per_rune for p in self.current_stats.vaults if p.pool), 0.0)
 
 
 class MidgardSaversHistoryMeta(NamedTuple):
@@ -199,6 +212,11 @@ class VNXSaversStats(NamedTuple):
     savers_depth: int
     savers_depth_old: int
     synth_supply: int
+    pool: Optional[PoolInfo] = None
+
+    @property
+    def usd_per_rune(self):
+        return self.asset_price * self.pool.asset_per_rune
 
     @classmethod
     def from_json(cls, j):
@@ -225,4 +243,5 @@ class VNXSaversStats(NamedTuple):
             savers_depth_old=int(old_j.get('saversDepth', 0.0)),
 
             synth_supply=int(new_j.get('synthSupply', 0.0)),
+            pool=None,
         )

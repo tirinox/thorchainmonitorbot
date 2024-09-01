@@ -2417,11 +2417,11 @@ class BaseLocalization(ABC):  # == English
 
         savers, prev = event.current_stats, event.previous_stats
 
-        total_earned_usd = savers.total_rune_earned * event.price_holder.usd_per_rune
+        total_earned_usd = savers.total_rune_earned * event.usd_per_rune
         avg_apr_change, saver_number_change, total_earned_change_usd, total_usd_change = \
             self.get_savers_stat_changed_metrics_as_str(event, prev, savers, total_earned_usd)
 
-        fill_cap = savers.overall_fill_cap_percent(event.price_holder.pool_info_map)
+        fill_cap = savers.overall_fill_cap_percent(event.pool_map)
 
         message += (
             f'\n'
@@ -2444,7 +2444,7 @@ class BaseLocalization(ABC):  # == English
             avg_apr_change = bracketify(up_down_arrow(
                 prev.average_apr, savers.average_apr, money_delta=True, postfix='%'
             ), before=' ')
-            prev_total_earned_usd = prev.total_rune_earned * event.price_holder.usd_per_rune
+            prev_total_earned_usd = prev.total_rune_earned * event.usd_per_rune
             total_earned_change_usd = bracketify(up_down_arrow(
                 prev_total_earned_usd, total_earned_usd, money_delta=True, money_prefix='$'
             ), before=' ')
