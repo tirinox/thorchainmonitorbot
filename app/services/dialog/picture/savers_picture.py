@@ -170,7 +170,7 @@ class SaversPictureGenerator(BasePictureGenerator):
 
             a = Asset.from_string(vault.asset)
             # if a.name in ambiguous_names:
-            if is_ambiguous_asset(str(a), all_asset_names):
+            if is_ambiguous_asset(vault.asset, all_asset_names):
                 gas_asset = a.gas_asset_from_chain(a.chain)
                 gas_logo = self.logos.get(str(gas_asset))
                 if gas_logo:

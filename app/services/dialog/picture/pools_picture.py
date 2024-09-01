@@ -62,7 +62,7 @@ class PoolPictureGenerator(BasePictureGenerator):
             image.paste(logo, (logo_x, logo_y), logo)
 
             # ambiguous_name = a.gas_asset_from_chain(a.chain) != a
-            if is_ambiguous_asset(a.name, self.event.all_assets):
+            if is_ambiguous_asset(name.asset, self.event.all_assets):
                 # gas_asset = a.gas_asset_from_chain(a.chain)
                 # gas_logo = self.logos.get(str(gas_asset))
                 gas_logo = self.chain_logos.get(a.chain)

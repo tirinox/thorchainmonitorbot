@@ -234,7 +234,7 @@ TRANSLATE_MIMIRS = {
     "POLBUFFER": "POL Buffer",
     "POLMAXNETWORKDEPOSIT": "POL Max Network Deposit",
     "POLMAXPOOLMOVEMENT": "POL Max Pool Movement",
-    "POLSYNTHUTILIZATION": "POL Synth Utilization",  # unused?
+    "POLSYNTHUTILIZATION": "POL Synth Utilization",
     "POLTARGETSYNTHPERPOOLDEPTH": "POL Target Synth Per Pool Depth",
 }
 
