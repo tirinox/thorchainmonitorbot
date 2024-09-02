@@ -76,7 +76,7 @@ class DataController(WithLogger):
 
 
 class BaseFetcher(WithDelegates, WatchedEntity, ABC, WithLogger):
-    MAX_STARTUP_DELAY = 60
+    MAX_STARTUP_DELAY = 20
 
     def __init__(self, deps: DepContainer, sleep_period=60):
         super().__init__()

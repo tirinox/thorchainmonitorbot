@@ -516,19 +516,13 @@ class App(WithLogger):
             supply_notifier.add_subscriber(d.alert_presenter)
 
         if d.cfg.get('saver_stats.enabled', True):
-            # pool -- SaversStatsNotifier -------------------- alert_presenter
-            #     \-- SaversStatsFetcher -- Achievements ----/
-
-            # SaversStatsFetcher: any => SaversBank => [Achievements] ==> [alert_presenter]
-            # SaversStatsNotifier: any => EventSaverStats  ==> [alert_presenter]
-
             d.saver_stats_fetcher = SaversStatsFetcher(d)
+            tasks.append(d.saver_stats_fetcher)
+
             ssc = SaversStatsNotifier(d, d.saver_stats_fetcher)
-            d.pool_fetcher.add_subscriber(ssc)
             ssc.add_subscriber(d.alert_presenter)
 
             if achievements_enabled:
-                d.pool_fetcher.add_subscriber(d.saver_stats_fetcher)
                 d.saver_stats_fetcher.add_subscriber(achievements)
 
         if d.cfg.get('wallet_counter.enabled', True) and achievements_enabled:  # only used along with achievements

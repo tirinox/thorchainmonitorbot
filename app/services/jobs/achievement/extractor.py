@@ -59,6 +59,8 @@ class AchievementsExtractor(WithLogger):
             kv_events = self.on_trade_asset_summary(data)
         elif isinstance(data, AlertTradeAccountAction):
             kv_events = self.on_trade_asset_action(data)
+        # elif isinstance(data, AlertSaverStats):
+        #     pass
 
         # todo: add event types for Trade accounts!
 
