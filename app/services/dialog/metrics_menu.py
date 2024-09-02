@@ -102,8 +102,6 @@ class MetricsDialog(BaseDialog):
         elif message.text == self.loc.BUTTON_METR_STATS:
             await self.show_last_stats(message)
         elif message.text == self.loc.BUTTON_METR_SAVERS:
-            # await self.ask_generic_duration(message, 'savers', back_state)
-            # return
             await self.show_savers(message)
         elif message.text == self.loc.BUTTON_METR_TOP_POOLS:
             await self.show_top_pools(message)
@@ -145,7 +143,7 @@ class MetricsDialog(BaseDialog):
                              disable_web_page_preview=True,
                              disable_notification=True)
 
-    async def show_savers(self, message: Message, period=DAY):
+    async def show_savers(self, message: Message):
         loading_message = await self.show_loading(message)
 
         event = await self.deps.saver_stats_fetcher.get_savers_event_cached()
@@ -451,7 +449,7 @@ class MetricsDialog(BaseDialog):
         elif next_state == 'queue':
             await self.show_queue(message, period)
         elif next_state == 'savers':
-            await self.show_savers(message, period)
+            await self.show_savers(message)
         elif next_state == 'cex_flow':
             await self.show_cex_flow(message, period)
         elif next_state == 'dex_aggr':
