@@ -286,6 +286,8 @@ class MimirUnits:
         else:
             return ''
 
+MIMIR_DICT_FILENAME = '../data/mimir_naming.yaml'
+
 
 DICT_WORDS = (
     'stop,max,bond,providers,slash,penalty,incentive,curve,emission,default,'
