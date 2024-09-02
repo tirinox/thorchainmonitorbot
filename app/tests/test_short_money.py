@@ -26,6 +26,9 @@ def test_short_money_simple():
     assert short_money(1_999_405_234_456) == '2.0T'
     assert short_money(1_000_999_405_234_456) == '1001.0T'
 
+    assert short_money(1100, integer=True) == '1.1K'
+    assert short_money(444.41, integer=True) == '444'
+
 
 def test_short_money_signed():
     assert short_money(0, signed=True) == '0.0'

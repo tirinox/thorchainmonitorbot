@@ -150,7 +150,7 @@ def short_money(x, prefix='', postfix='', localization=None, signed=False, integ
         digits = detect_decimal_digits(orig_x) + 2
         x = f"{x:.{digits}f}".rstrip('0')
     else:
-        if integer:
+        if integer and not key:
             x = int(x)
         else:
             x = round_half_up(x, 1)
