@@ -102,14 +102,14 @@ class SaversStatsFetcher(BaseFetcher):
             old_earnings_pool = [p for p in prev_earnings.intervals[0].pools if p.pool == pool.asset][0]
 
             # not sure, but I think this is the correct way to calculate the earnings
-            prev_earnings = current_earnings_pool.saver_earning - old_earnings_pool.saver_earning
+            prev_earnings_val = current_earnings_pool.saver_earning - old_earnings_pool.saver_earning
 
             saver_pools[pool.asset] = VNXSaversStats(
                 asset=pool.asset,
                 saver_return=pool.savers_apr,
                 saver_return_old=old_savers_return,
                 earned=current_earnings_pool.saver_earning,
-                earned_old=prev_earnings,
+                earned_old=prev_earnings_val,
                 filled=filled,
                 savers_count=savers_history.meta.end_savers_count,
                 savers_count_old=savers_history.intervals[-1].savers_count,
