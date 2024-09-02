@@ -519,7 +519,7 @@ class App(WithLogger):
             d.saver_stats_fetcher = SaversStatsFetcher(d)
             tasks.append(d.saver_stats_fetcher)
 
-            ssc = SaversStatsNotifier(d, d.saver_stats_fetcher)
+            ssc = SaversStatsNotifier(d)
             ssc.add_subscriber(d.alert_presenter)
 
             if achievements_enabled:

@@ -44,7 +44,7 @@ def randomize_savers_data(c_data: SaversBank, sc=0.2, fail_chance=0.3):
 async def demo_show_notification(app: LpAppFramework):
     await app.send_test_tg_message('----- S T A R T -----')
 
-    ssn = SaversStatsNotifier(app.deps, None)
+    ssn = SaversStatsNotifier(app.deps)
 
     event = await ssn.data_source.get_savers_event(period=DAY)
 
@@ -102,7 +102,7 @@ async def demo_show_savers_pic(app: LpAppFramework):
     await app.deps.last_block_fetcher.run_once()
     await app.deps.mimir_const_fetcher.run_once()
 
-    # ssn = SaversStatsNotifier(app.deps, None)
+    # ssn = SaversStatsNotifier(app.deps)
     # event = await ssn.data_source.get_savers_event(7 * DAY)
 
     source = SaversStatsFetcher(app.deps)
