@@ -1,4 +1,4 @@
-from services.lib.utils import invert_dict
+import yaml
 
 MIMIR_KEY_KILL_SWITCH_START = 'KILLSWITCHSTART'
 MIMIR_KEY_KILL_SWITCH_DURATION = 'KILLSWITCHDURATION'
@@ -32,232 +32,9 @@ if POLMaxPoolMovement == 1:
 
 MIMIR_KEY_POL_SYNTH_UTILIZATION = "POLSYNTHUTILIZATION"
 
-BLOCK_CONSTANTS = {
-    'BLOCKSPERYEAR', 'FUNDMIGRATIONINTERVAL', 'CHURNINTERVAL', 'CHURNRETRYINTERVAL',
-    'SIGNINGTRANSACTIONPERIOD', 'DOUBLESIGNMAXAGE', 'LIQUIDITYLOCKUPBLOCKS',
-    'OBSERVATIONDELAYFLEXIBILITY', 'YGGFUNDRETRY', 'JAILTIMEKEYGEN', 'JAILTIMEKEYSIGN',
-    'NODEPAUSECHAINBLOCKS', 'FULLIMPLOSSPROTECTIONBLOCKS', 'TXOUTDELAYMAX', 'MAXTXOUTOFFSET',
-    MIMIR_KEY_KILL_SWITCH_DURATION, MIMIR_KEY_KILL_SWITCH_DURATION,
-}
-
-RUNE_CONSTANTS = {
-    'OUTBOUNDTRANSACTIONFEE',
-    'NATIVETRANSACTIONFEE',
-    'STAGEDPOOLCOST',
-    'MINRUNEPOOLDEPTH',
-    'MINIMUMBONDINRUNE',
-    'MINTXOUTVOLUMETHRESHOLD',
-    'TXOUTDELAYRATE',
-    'TNSFEEPERBLOCK',
-    'TNSREGISTERFEE',
-    'MAXIMUMLIQUIDITYRUNE',
-    'MAXLIQUIDITYRUNE',
-    'POOLDEPTHFORYGGFUNDINGMIN',
-    'POLMAXNETWORKDEPOSIT',
-    'MAXRUNESUPPLY',
-}
-
-BOOL_CONSTANTS = {
-    "HALTBCHCHAIN",
-    "HALTBCHTRADING",
-    "HALTBNBCHAIN",
-    "HALTBNBTRADING",
-    "HALTBTCCHAIN",
-    "HALTBTCTRADING",
-    "HALTETHCHAIN",
-    "HALTETHTRADING",
-    "HALTLTCCHAIN",
-    "HALTLTCTRADING",
-    "HALTTHORCHAIN",
-    'HALTDOGECHAIN',
-    'HALTDOGETRADING',
-    'HALTTERRACHAIN',
-    'HALTTERRATRADING',
-
-    'HALTSIGNINGBNB',
-    'HALTSIGNINGBCH',
-    'HALTSIGNINGBTC',
-    'HALTSIGNINGETH',
-    'HALTSIGNINGTERRA',
-    'HALTSIGNINGLTC',
-    'HALTSIGNINGGAIA',
-
-    'HALTHAVENCHAIN',
-
-    'HALTCHURNING',
-    "HALTTRADING",
-    "MINTSYNTHS",
-    "PAUSELP",
-    "PAUSELPBCH",
-    "PAUSELPBNB",
-    "PAUSELPBTC",
-    "PAUSELPETH",
-    "PAUSELPLTC",
-    "PAUSELPDOGE",
-    'PAUSELPTERRA',
-    "STOPFUNDYGGDRASIL",
-    "STOPSOLVENCYCHECK",
-    "THORNAME",
-    "THORNAMES",
-    'STOPSOLVENCYCHECKETH',
-    'STOPSOLVENCYCHECKBNB',
-    'STOPSOLVENCYCHECKLTC',
-    'STOPSOLVENCYCHECKBTC',
-    'STOPSOLVENCYCHECKBCH',
-    'STOPSOLVENCYCHECKDOGE',
-    'STOPSOLVENCYCHECKTERRA',
-    'STRICTBONDLIQUIDITYRATIO',
-
-    'ALTGAIACHAIN',
-    'ENABLEAVAXCHAIN',
-    'ENABLEUPDATEMEMOTERRA',
-    'HALTGAIACHAIN',
-    'RAGNAROK-TERRA',
-    'RAGNAROK-TERRA-LUNA',
-    'RAGNAROK-TERRA-USD',
-    'RAGNAROK-TERRA-UST',
-    'REMOVESNXPOOL',
-
-    "POL-ETH-ETH",
-    "POL-BTC-BTC",
-    "POL-BNB-BNB",
-
-    "RUNEPOOLENABLED",
-}
-
-DOLLAR_CONSTANTS = {
-    'MINIMUML1OUTBOUNDFEEUSD',
-}
-
-BASIS_POINTS_CONSTANTS = {
-    'MAXSYNTHPERASSETDEPTH',
-    'MAXSYNTHPERPOOLDEPTH',
-    'CLOUDPROVIDERLIMIT',
-    'POLMAXPOOLMOVEMENT',
-    'POLTARGETSYNTHPERPOOLDEPTH',
-    'POLBUFFER',
-}
-
-TRANSLATE_MIMIRS = {
-    'PAUSELPLTC': 'Pause LP LTC',
-    'PAUSELPETH': 'Pause LP ETH',
-    'PAUSELPBCH': 'Pause LP BCH',
-    'PAUSELPBNB': 'Pause LP BNB',
-    'PAUSELPBTC': 'Pause LP BTC',
-    'PAUSELPDOGE': 'Pause LP Doge',
-    'PAUSELPTERRA': 'Pause LP Terra',
-    'PAUSELP': 'Pause all LP',
-    'STOPFUNDYGGDRASIL': 'Stop Fund Yggdrasil',
-    'STOPSOLVENCYCHECK': 'Stop Solvency Check',
-    'NUMBEROFNEWNODESPERCHURN': 'Number of New Nodes per Churn',
-    'MINTSYNTHS': 'Mint Synths',
-
-    'HALTBCHCHAIN': 'Halt BCH Chain',
-    'HALTBCHTRADING': 'Halt BCH Trading',
-    'HALTSIGNINGBCH': 'Halt BCH Signing',
-    'SOLVENCYHALTBCHCHAIN': 'Solvency Halt BCH Chain',
-
-    'HALTBNBCHAIN': 'Halt BNB Chain',
-    'HALTBNBTRADING': 'Halt BNB Trading',
-    'HALTSIGNINGBNB': 'Halt BNB Signing',
-    'SOLVENCYHALTBNBCHAIN': 'Solvency Halt BNB Chain',
-
-    'HALTBTCCHAIN': 'Halt BTC Chain',
-    'HALTBTCTRADING': 'Halt BTC Trading',
-    'HALTSIGNINGBTC': 'Halt BTC Signing',
-    'SOLVENCYHALTBTCCHAIN': 'Solvency Halt BTC Chain',
-
-    'HALTETHCHAIN': 'Halt ETH Chain',
-    'HALTETHTRADING': 'Halt ETH Trading',
-    'HALTSIGNINGETH': 'Halt ETH Signing',
-    'SOLVENCYHALTETHCHAIN': 'Solvency Halt ETH Chain',
-
-    'HALTLTCCHAIN': 'Halt LTC Chain',
-    'HALTLTCTRADING': 'Halt LTC Trading',
-    'HALTSIGNINGLTC': 'Halt LTC Signing',
-    'SOLVENCYHALTLTCCHAIN': 'Solvency Halt LTC Chain',
-
-    'HALTDOGECHAIN': 'Halt DOGE Chain',
-    'HALTDOGETRADING': 'Halt DOGE Trading',
-    'HALTSIGNINGDOGE': 'Halt DOGE Signing',
-    'SOLVENCYHALTDOGECHAIN': 'Solvency Halt DOGE Chain',
-
-    'HALTTERRACHAIN': 'Halt Terra Chain',
-    'HALTTERRATRADING': 'Halt Terra Trading',
-    'HALTSIGNINGTERRA': 'Halt Terra Signing',
-    'SOLVENCYHALTTERRACHAIN': 'Solvency Halt Terra Chain',
-
-    'HALTHAVENCHAIN': 'Halt Haven Chain',  # unconfirmed!
-
-    'HALTGAIACHAIN': 'Halt Atom Chain',
-    'HALTGAIATRADING': 'Halt Atom Trading',
-    'HALTSIGNINGGAIA': 'Halt Atom Signing',
-    'SOLVENCYHALTGAIACHAIN': 'Solvency Halt Atom Chain',
-
-    'HALTTHORCHAIN': 'Halt ThorChain',
-    'HALTTRADING': 'Halt All Trading',
-
-    'MAXIMUMLIQUIDITYRUNE': 'Maximum Liquidity Rune',
-    'MAXLIQUIDITYRUNE': 'Max Liquidity Rune',
-
-    'MAXUTXOSTOSPEND': 'Max UTXO to Spend',
-
-    'THORNAME': 'THOR Name',
-    'THORNAMES': 'THOR Names',
-
-    'STOPSOLVENCYCHECKETH': 'Stop Solvency check ETH',
-    'STOPSOLVENCYCHECKBNB': 'Stop Solvency check BNB',
-    'STOPSOLVENCYCHECKLTC': 'Stop Solvency check LTC',
-    'STOPSOLVENCYCHECKBTC': 'Stop Solvency check BTC',
-    'STOPSOLVENCYCHECKBCH': 'Stop Solvency check BCH',
-    'STOPSOLVENCYCHECKDOGE': 'Stop Solvency check DOGE',
-    'STOPSOLVENCYCHECKTERRA': 'Stop Solvency check Terra',
-    'STRICTBONDLIQUIDITYRATIO': 'Strict Bond Liquidity Ratio',
-
-    'POOLDEPTHFORYGGFUNDINGMIN': 'Pool Depth For Ygg Funding Min',
-
-    'MAXSYNTHASSETDEPTH': 'Max Synth Asset Depth',
-    'HALTCHURNING': 'Halt Churning',
-
-    'MAXNODETOCHURNOUTFORLOWVERSION': 'Max Node To Churn Out For Low Version',
-
-    'CLOUDPROVIDERLIMIT': 'Cloud Provider Limit',
-
-    'DESIREDMAXVALIDATORSET': 'Desired Max Validator Set',
-    'DESIREDVALIDATORSET': 'Desired Validator Set',
-
-    'ENABLEUPDATEMEMOTERRA': 'Enable Update Memo Terra',
-
-    "POL-ETH-ETH": "POL ETH.ETH",
-    "POL-BTC-BTC": "POL BTC.BTC",
-    "POL-BNB-BNB": "POL BNB-BNB",
-    "POLBUFFER": "POL Buffer",
-    "POLMAXNETWORKDEPOSIT": "POL Max Network Deposit",
-    "POLMAXPOOLMOVEMENT": "POL Max Pool Movement",
-    "POLSYNTHUTILIZATION": "POL Synth Utilization",
-    "POLTARGETSYNTHPERPOOLDEPTH": "POL Target Synth Per Pool Depth",
-}
-
-EXCLUDED_VOTE_KEYS = [
-    'TEST',
-    'SUPPORTTHORCHAINDOTNETWORK',
-]
-
-NEXT_CHAIN_VOTING_MAP = invert_dict({
-    'DASH': 9,
-    'HAVEN': 10,
-    'ZCASH': 11,
-    'MONERO': 12,
-    'DECRED': 13,
-    'OSMOSIS': 14,
-    'MOONBEAM': 15,
-    'BNB Chain (BSC)': 16,
-    'POLYGON': 17,
-    'CARDANO': 18,
-    'JUNO': 19,
-})
-
 NEXT_CHAIN_KEY = 'NextChain'.upper()
+
+MIMIR_DICT_FILENAME = '../app/data/mimir_naming.yaml'
 
 
 class MimirUnits:
@@ -268,128 +45,114 @@ class MimirUnits:
     UNITS_USD = 'usd'
     UNITS_BASIS_POINTS = 'basis_points'
 
+
+class MimirNameRules:
+    def __init__(self):
+        self.rules = {}
+        self.dict_word_sorted = []
+
+    def load(self, filename):
+        self.rules = self._load_mimir_naming_rules(filename)
+        self.dict_word_sorted = list(sorted(self.rules.get('words', []), key=len, reverse=True))
+
     @staticmethod
-    def get_mimir_units(name):
+    def _load_mimir_naming_rules(filename):
+        with open(filename, 'r') as f:
+            data = yaml.safe_load(f)
+
+        data['words'] = [
+            w.strip().upper() for w in data['words']
+        ]
+        data['word_transform'] = {
+            k.strip().upper(): v
+            for k, v in data.get('word_transform', {}).items()
+        }
+
+        return data
+
+    @property
+    def next_chain_voting_map(self):
+        return self.rules.get('next_chain_voting_map', {})
+
+    @property
+    def rules_word_transform(self):
+        return self.rules.get('word_transform', {})
+
+    @property
+    def excluded_from_voting(self):
+        return self.rules.get('excluded_vote_keys', [])
+
+    def _take_care_of_asset_name(self, word: str):
+        up_word = word.upper()
+        if up_word in self.rules_word_transform:
+            word = self.rules_word_transform.get(up_word)
+
+        if word.count('-'):
+            # assent name has hyphens
+            word = word.replace('-', '.', 1)
+            word = word.upper()
+        return word
+
+    def try_deducting_mimir_name(self, name: str, glue=' '):
+        components = []
         name = name.upper()
-        if name in RUNE_CONSTANTS:
+
+        for word in self.dict_word_sorted:
+            word_len = len(word)
+            while True:
+                index = name.find(word)
+                if index == -1:
+                    break
+                else:
+                    components.append((index, word))
+                    name = name.replace(word, ' ' * word_len)
+
+        components.sort()  # sort by index
+
+        if not components:
+            return name.upper() + '?'
+
+        words = []
+        position = 0
+        for index, word in components:
+            if index > position:
+                missing_word = name[position:index]
+                words.append(missing_word.upper())
+            words.append(word.capitalize())
+            position = index + len(word)
+
+        if position < len(name):
+            words.append(name[position:].upper())
+
+        words = [self._take_care_of_asset_name(w) for w in words]
+
+        return glue.join(words)
+
+    def name_to_human(self, name: str):
+        r = (
+                self.rules.get('translate', {}).get(name)
+                or self.try_deducting_mimir_name(name)
+                or name
+        )
+
+        # fix issues like "Ragnarok . BNB.ETHBULL-D33"
+        r = r.replace(' . ', ' ')
+
+        return r
+
+    def get_mimir_units(self, name):
+        name = name.upper()
+        if name in self.rules['types']['rune']:
             return MimirUnits.UNITS_RUNES
-        elif name in BLOCK_CONSTANTS:
+        elif name in self.rules['types']['block']:
             return MimirUnits.UNITS_BLOCKS
-        elif name in BOOL_CONSTANTS:
+        elif name in self.rules['types']['bool']:
             return MimirUnits.UNITS_BOOL
-        elif name in DOLLAR_CONSTANTS:
+        elif name in self.rules['types']['usd']:
             return MimirUnits.UNITS_USD
         elif name == NEXT_CHAIN_KEY:
             return MimirUnits.UNITS_NEXT_CHAIN
-        elif name in BASIS_POINTS_CONSTANTS:
+        elif name in self.rules['types']['basis_points']:
             return MimirUnits.UNITS_BASIS_POINTS
         else:
             return ''
-
-MIMIR_DICT_FILENAME = '../data/mimir_naming.yaml'
-
-
-DICT_WORDS = (
-    'stop,max,bond,providers,slash,penalty,incentive,curve,emission,default,'
-    'pool,status,pause,bond,kill,switch,'
-    'bad,validator,rate,duration,fail,key,sign,points,'
-    'minimum,permitted,asgard,size,pool,cycle,sym,withdrawal,'
-    'minimum,for,yggdrasil,tx,out,offset,virtual,mult,'
-    'synths,staged,cost,double,sign,age,per,swap,block,blocks,'
-    'unbound,delay,outbound,transaction,fee,avax,enable,'
-    'chain,observe,full,imp,loss,protection,min,burn,'
-    'operator,ragnarok,terra,jail,time,available,pools,'
-    'process,num,lp,mint,volume,threshold,support,thorchain,'
-    'dot,network,observation,flexibility,attempts,liquidity,'
-    'ygg,fund,retry,native,btf,migration,interval,remove,'
-    'snx,text,low,tns,register,period,usd,global,old,depth,'
-    'lack,penalty,chain,node,version,churn,to,provider,nodes,lock,'
-    'up,synth,in,rune,limit,gap,solvency,of,gen,year,start,asym,switch,start,'
-    'on,halt,unbond,iteration,sale,reward,ratio,strict,maximum,churning,btc,bch,ltc,doge,terra,avax,atom,gaia,bnb,eth,'
-    'thor,utxos,check,trading,thorname,thornames,asset,signing,set,haven,spend,funding,cloud,new,number,desired,'
-    'update,memo,next,saving,savings,savers,vaults,vault,bsc,ilp,deprecate,pol,buffer,deposit,movement,utilization,'
-    'thor,anchor,multiple,basis,dofm,pending,vote,voting,in,or,and,the,yield,streaming,stream,tor,top,lending,'
-    'supply,multiplier,surplus,target,swaps,order,book,books,significant,digits,length,'
-    'red,line,lune,fees,affiliate,cut,off,BNB-BUSD-BD1,ETH-USDT,loan,repayment,maturity,lever,slip,pts,'
-    'UST,luna,wide,blame,keygen,assets,derived,round,rounds,prefer,Collateral,ready,signer,currency,concurrency,'
-    'enabled,disabled,income,bnb-rune,ltc-ltc,BNB-BAT-07A,'
-    'protocol,system,rev,incr,dynamic,trade,accounts,disabled,operational,security,bps,conf,rune,'
-    'AVAX-USDT-0X9702230A8EA53601F5CD2DC00FDBC13D4DF4A8C7,BNB-NEXO-A84,BNB-USDT-6D8,BNB-TWT-8C2,BNB-AVA-645,'
-    'BSC-USDC-0X8AC76A51CC950D9822D68B83FE1AD97B32CD580D,ETH-DAI-0X6B175474E89094C44DA98B954EEDEAC495271D0F,'
-    'Eth-usdc-0XA0B86991C6218B36C1D19D4A2E9EB0CE3606EB48,AVAX-AVAX,bnb-bnb,terra-luna,terra-ust,BNB-BTC B-1DE,'
-    'Avax-usdc-0XB97EF9EF8734C71904D8002F8B6BC66DD9C48A6E,doge-doge,BNB-ETH-1C9,bch-bch,BNB-EQL-586,BNB-ETHBULL-D33,'
-    'Eth-usdt-0XDAC17F958D2EE523A2206206994597C13D831EC7,BNB-TWT-8C2,BNB-CAKE-435,BNB-BTCB-1DE,'
-    'miss,blocks,sign,reset,calc,reserve,backstop,slip,COALESCE,RESCHEDULE,'
-).strip(' ,')
-
-WORD_TRANSFORM = {
-    'Thorchain': 'THORChain',
-    'Thorname': 'THORName',
-    'Thornames': 'THORNames',
-    'Lp': 'LP',
-    'Usd': 'USD',
-    'Tns': 'TNS',
-    'Btc': 'BTC',
-    'Bch': 'BCH',
-    'Ltc': 'LTC',
-    'Bnb': 'BNB',
-    'Eth': 'ETH',
-    'Snx': 'SNX',
-    'Of': 'of',
-    'On': 'on',
-    'In': 'in',
-    'From': 'from',
-    'For': 'for',
-    'Bsc': 'BSC',
-    'Ilp': 'ILP',
-    'Pol': 'POL',
-    'Tor': 'TOR',
-    'Dofm': 'Dynamic Outbound Fee Multiplier',
-}
-
-DICT_WORDS_SORTED = list(sorted(map(str.upper, DICT_WORDS.split(',')), key=len, reverse=True))
-
-
-def take_care_of_asset_name(word: str):
-    if word.count('-'):
-        # assent name has hyphens
-        word = word.replace('-', '.', 1)
-        word = word.upper()
-    elif word in WORD_TRANSFORM:
-        word = WORD_TRANSFORM[word]
-    return word
-
-def try_deducting_mimir_name(name: str, glue=' '):
-    components = []
-    name = name.upper()
-
-    for word in DICT_WORDS_SORTED:
-        word_len = len(word)
-        while True:
-            index = name.find(word)
-            if index == -1:
-                break
-            else:
-                components.append((index, word))
-                name = name.replace(word, ' ' * word_len)
-
-    components.sort()  # sort by index
-
-    if not components:
-        return name.upper() + '?'
-
-    words = []
-    position = 0
-    for index, word in components:
-        if index > position:
-            missing_word = name[position:index]
-            words.append(missing_word.upper())
-        words.append(word.capitalize())
-        position = index + len(word)
-
-    if position < len(name):
-        words.append(name[position:].upper())
-
-    words = [take_care_of_asset_name(w) for w in words]
-
-    return glue.join(words)

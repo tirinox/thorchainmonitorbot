@@ -49,3 +49,8 @@ class LocalizationManager(metaclass=Singleton):
     async def get_from_db(self, chat_id, db: DB) -> BaseLocalization:
         lang = await self.get_lang(chat_id, db)
         return self.get_from_lang(lang)
+
+    def set_mimir_rules(self, rules):
+        for loc in self._langs.values():
+            loc: BaseLocalization
+            loc.mimir_rules = rules

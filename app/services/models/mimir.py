@@ -9,8 +9,7 @@ from aionode.types import ThorConstants, ThorMimir, ThorMimirVote
 from services.lib.constants import bp_to_float
 from services.lib.texts import split_by_camel_case
 from services.models.base import BaseModelMixin
-from services.models.mimir_naming import TRANSLATE_MIMIRS, EXCLUDED_VOTE_KEYS, MimirUnits, try_deducting_mimir_name, \
-    MIMIR_KEY_MAX_SYNTH_PER_POOL_DEPTH
+from services.models.mimir_naming import MIMIR_KEY_MAX_SYNTH_PER_POOL_DEPTH, MimirNameRules
 from services.models.node_info import NodeInfo
 
 # for automatic Mimir, when it becomes 0 -> 1 or 1 -> 0, that is Admin's actions
@@ -185,6 +184,7 @@ class MimirHolder:
         self.node_mimir = {}
         self.voting_manager = MimirVoteManager([], [], [])
         self.hard_coded_pretty_names = {}
+        self.mimir_rules = MimirNameRules()
 
     EXTRA_AUTO_SOLVENCY_MIMIRS = [
         'STOPFUNDYGGDRASIL'
@@ -212,11 +212,7 @@ class MimirHolder:
         return self._const_map.get(name.upper())
 
     def pretty_name(self, name):
-        return (
-                TRANSLATE_MIMIRS.get(name) or
-                self.hard_coded_pretty_names.get(name) or
-                try_deducting_mimir_name(name) or name
-        )
+        return self.hard_coded_pretty_names.get(name) or self.mimir_rules.name_to_human(name)
 
     def update(self,
                constants: ThorConstants,
@@ -225,7 +221,7 @@ class MimirHolder:
                node_votes: List[ThorMimirVote],
                active_nodes: List[NodeInfo]):
 
-        self.voting_manager = MimirVoteManager(node_votes, active_nodes, EXCLUDED_VOTE_KEYS)
+        self.voting_manager = MimirVoteManager(node_votes, active_nodes, self.mimir_rules.excluded_from_voting)
 
         hard_coded_constants = {n.upper(): v for n, v in constants.constants.items()}
         self.hard_coded_pretty_names = {
@@ -262,7 +258,7 @@ class MimirHolder:
 
             hard_coded_value = hard_coded_constants.get(name)
             last_change_ts = self.last_changes.get(name, 0)
-            units = MimirUnits.get_mimir_units(name)
+            units = self.mimir_rules.get_mimir_units(name)
 
             self._const_map[name] = MimirEntry(
                 name,

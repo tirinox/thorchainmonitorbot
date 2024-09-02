@@ -34,7 +34,7 @@ from services.models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendin
 from services.models.lp_info import LiquidityPoolReport
 from services.models.memo import ActionType
 from services.models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting, MimirVoteOption, AlertMimirVoting
-from services.models.mimir_naming import MimirUnits, NEXT_CHAIN_VOTING_MAP
+from services.models.mimir_naming import MimirUnits
 from services.models.net_stats import NetworkStats, AlertNetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo, NodeEventType, NodeEvent, \
     EventBlockHeight, EventDataSlash, calculate_security_cap_rune, EventProviderBondChange, \
@@ -64,6 +64,7 @@ class BaseLocalization(ABC):  # == English
         self.name_service: Optional[NameService] = None
         self.name = self.__class__.__name__
         self.ach = AchievementsEnglishLocalization()
+        self.mimir_rules = None
 
     # ----- WELCOME ------
 
@@ -1513,7 +1514,7 @@ class BaseLocalization(ABC):  # == English
             return self.MIMIR_UNDEFINED
 
         if not units:
-            units = MimirUnits.get_mimir_units(name)
+            units = self.mimir_rules.get_mimir_units(name)
             if not units:
                 return str(v)
 
@@ -1530,7 +1531,7 @@ class BaseLocalization(ABC):  # == English
         elif units == MimirUnits.UNITS_NEXT_CHAIN:
             try:
                 v = int(v)
-                chain_name = NEXT_CHAIN_VOTING_MAP.get(v, self.MIMIR_UNKNOWN_CHAIN)
+                chain_name = self.mimir_rules.next_chain_voting_map.get(v, self.MIMIR_UNKNOWN_CHAIN)
                 return f'"{chain_name}"'
             except ValueError:
                 return str(v)

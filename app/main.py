@@ -59,6 +59,7 @@ from services.lib.w3.aggregator import AggregatorDataExtractor
 from services.lib.w3.dex_analytics import DexAnalyticsCollector
 from services.models.memo import ActionType
 from services.models.mimir import MimirHolder
+from services.models.mimir_naming import MIMIR_DICT_FILENAME
 from services.models.node_watchers import AlertWatchers
 from services.notify.alert_presenter import AlertPresenter
 from services.notify.broadcast import Broadcaster
@@ -101,6 +102,7 @@ class App(WithLogger):
     def __init__(self, log_level=None):
         super().__init__()
         d = self.deps = DepContainer()
+
         d.is_loading = True
         self._bg_task = None
 
@@ -109,8 +111,11 @@ class App(WithLogger):
         self._init_configuration(log_level)
 
         d.node_info_fetcher = NodeInfoFetcher(d)
+
         d.mimir_const_fetcher = ConstMimirFetcher(d)
         d.mimir_const_holder = MimirHolder()
+        d.mimir_const_holder.mimir_rules.load(MIMIR_DICT_FILENAME)
+
         d.pool_fetcher = PoolFetcher(d)
         d.last_block_fetcher = LastBlockFetcher(d)
         d.last_block_store = LastBlockStore(d)
@@ -166,6 +171,7 @@ class App(WithLogger):
         d.telegram_bot = TelegramBot(d.cfg, d.db, d.loop)
         d.emergency = EmergencyReport(d.cfg.first_admin_id, d.telegram_bot.bot)
         d.loc_man = LocalizationManager(d.cfg)
+        d.loc_man.set_mimir_rules(d.mimir_const_holder.mimir_rules)
         d.broadcaster = Broadcaster(d)
         d.alert_presenter = AlertPresenter(d)
         init_dialogs(d)

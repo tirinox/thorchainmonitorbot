@@ -23,7 +23,6 @@ from services.models.last_block import EventBlockSpeed, BlockProduceState
 from services.models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats, AlertLendingOpenUpdate
 from services.models.memo import ActionType
 from services.models.mimir import MimirChange, MimirHolder
-from services.models.mimir_naming import MimirUnits
 from services.models.net_stats import AlertNetworkStats
 from services.models.node_info import NodeSetChanges, NodeInfo
 from services.models.pool_info import PoolMapPair, PoolChanges, PoolInfo
@@ -650,7 +649,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         text = '🔔 Mimir update!\n'
 
         for change in changes:
-            units = MimirUnits.get_mimir_units(change.name)
+            units = self.mimir_rules.get_mimir_units(change.name)
             old_value_fmt = self.format_mimir_value(change.name, change.old_value, units)
             new_value_fmt = self.format_mimir_value(change.name, change.new_value, units)
             name = change.entry.pretty_name if change.entry else change.name
