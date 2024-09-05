@@ -2,7 +2,8 @@ import asyncio
 from contextlib import suppress
 from typing import NamedTuple, Dict
 
-from services.lib.constants import RUNE_IDEAL_SUPPLY, RUNE_SUPPLY_AFTER_SWITCH, thor_to_float, RUNE_DENOM
+from services.lib.constants import RUNE_IDEAL_SUPPLY, RUNE_SUPPLY_AFTER_SWITCH, thor_to_float, RUNE_DENOM, \
+    RUBE_BURNT_ADR_12
 from services.lib.utils import WithLogger
 
 
@@ -79,6 +80,14 @@ class RuneCirculatingSupply(NamedTuple):
 
     @property
     def lending_burnt_rune(self):
+        return RUNE_SUPPLY_AFTER_SWITCH - self.total - self.adr12_burnt_rune
+
+    @property
+    def adr12_burnt_rune(self):
+        return RUBE_BURNT_ADR_12
+
+    @property
+    def total_burnt_rune(self):
         return RUNE_SUPPLY_AFTER_SWITCH - self.total
 
     def find_by_realm(self, realms, join_by_name=False):
