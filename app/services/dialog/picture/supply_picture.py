@@ -294,7 +294,10 @@ class SupplyPictureGenerator(BasePictureGenerator):
 
         items = []
         if self.supply.lending_burnt_rune > 0:
-            items.append(PackItem(self.loc.SUPPLY_PIC_BURNED, abs(self.supply.lending_burnt_rune),
+            items.append(PackItem(self.loc.SUPPLY_PIC_BURNED_LENDING, abs(self.supply.lending_burnt_rune),
+                                  self.PALETTE[ThorRealms.BURNED], meta(value=True, realm=ThorRealms.BURNED)))
+        if self.supply.adr12_burnt_rune > 0:
+            items.append(PackItem(self.loc.SUPPLY_PIC_BURNED_ADR12, abs(self.supply.adr12_burnt_rune),
                                   self.PALETTE[ThorRealms.BURNED], meta(value=True, realm=ThorRealms.BURNED)))
         if self.supply.killed_switched > 0:
             items.append(PackItem(self.loc.SUPPLY_PIC_SECTION_KILLED,
