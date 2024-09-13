@@ -292,3 +292,7 @@ def non_zero_f(x, y, f):
     elif y == 0:
         return x
     return f(x, y)
+
+
+def sigmoid(x):
+    return 1.0 / (1.0 + math.exp(-x))
