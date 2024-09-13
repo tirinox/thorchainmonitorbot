@@ -18,7 +18,7 @@ class NetworkStatsNotifier(INotified, WithDelegates, WithLogger):
         notify_cd_sec = parse_timespan_to_seconds(raw_cd)
         self.notify_cd = Cooldown(self.deps.db, 'NetworkStats:Notify', notify_cd_sec)
         self.logger.info(f"it will notify every {notify_cd_sec} sec ({raw_cd})")
-        self.series = TimeSeries('NetworkStats', self.deps.db)
+        self.series = TimeSeries('NetworkStats', self.deps.db, self.MAX_POINTS)
 
     async def on_data(self, sender, data):
         new_info: NetworkStats = data
@@ -33,7 +33,7 @@ class NetworkStatsNotifier(INotified, WithDelegates, WithLogger):
             await self.notify_right_now(new_info)
             await self.notify_cd.do()
 
-        await self.series.trim_oldest(self.MAX_POINTS)
+        # await self.series.trim_oldest(self.MAX_POINTS)
 
     async def notify_right_now(self, new_info: NetworkStats):
         old_info = await self.get_previous_stats(ago=DAY)  # 24 ago!

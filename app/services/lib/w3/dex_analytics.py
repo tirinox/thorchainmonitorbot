@@ -56,7 +56,7 @@ class DexAnalyticsCollector(WithLogger, INotified):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
-        self.series = TimeSeries(self.KEY_DEX_TIME_SERIES, deps.db)
+        self.series = TimeSeries(self.KEY_DEX_TIME_SERIES, deps.db, self.MAX_POINTS)
 
     async def is_counted(self, tx_hash) -> bool:
         if tx_hash:
@@ -102,7 +102,7 @@ class DexAnalyticsCollector(WithLogger, INotified):
                         volume=tx.full_volume_in_rune,
                     )
                     await self._mark_as_counted(tx_hash)
-        await self.series.trim_oldest(self.MAX_POINTS)
+        # await self.series.trim_oldest(self.MAX_POINTS)
 
     @staticmethod
     def make_dex_report_entry(points: List[DexTxPoint], name=None):

@@ -24,7 +24,7 @@ class KeyMetricsNotifier(INotified, WithDelegates, WithLogger):
         self.notify_cd = Cooldown(self.deps.db, 'KeyMetrics:Notify', self.notify_cd_sec)
         self.logger.info(f"it will notify every {self.notify_cd_sec} sec ({raw_cd})")
 
-        self.series = TimeSeries('KeyMetrics', self.deps.db)
+        self.series = TimeSeries('KeyMetrics', self.deps.db, self.MAX_POINTS)
         self._prev_data: Optional[AlertKeyStats] = None
 
     @property

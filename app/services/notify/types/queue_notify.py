@@ -23,7 +23,7 @@ class QueueNotifier(INotified, WithLogger, WithDelegates):
         self.threshold_free = int(cfg.threshold.free)
         self.avg_period = parse_timespan_to_seconds(cfg.threshold.avg_period)
         self.watch_queues = cfg.get('watch_queues', self.DEFAULT_WATCH_QUEUES)
-        self.ts = TimeSeries(QUEUE_TIME_SERIES, self.deps.db)
+        self.ts = TimeSeries(QUEUE_TIME_SERIES, self.deps.db, self.MAX_POINTS)
 
         self.logger.debug(f'Queue alert config: {deps.cfg.queue}')
 
@@ -57,7 +57,7 @@ class QueueNotifier(INotified, WithLogger, WithDelegates):
         for key in self.watch_queues:
             await self.handle_entry(key, sender.ts)
 
-        await self.ts.trim_oldest(self.MAX_POINTS)
+        # await self.ts.trim_oldest(self.MAX_POINTS)
 
 
 class QueueStoreMetrics(INotified, WithDelegates):

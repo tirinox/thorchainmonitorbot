@@ -25,7 +25,7 @@ class LastBlockStore(INotified, WithDelegates, WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
-        self.series = TimeSeries(self.KEY_SERIES_BLOCK_HEIGHT, self.deps.db)
+        self.series = TimeSeries(self.KEY_SERIES_BLOCK_HEIGHT, self.deps.db, self.BLOCK_HEIGHT_MAX_LEN)
         self.last_thor_block = 0
         self.sleep_period = deps.last_block_fetcher.sleep_period
 
@@ -50,7 +50,7 @@ class LastBlockStore(INotified, WithDelegates, WithLogger):
 
         await self.series.add(thor_block=thor_block)
 
-        await self.series.trim_oldest(self.BLOCK_HEIGHT_MAX_LEN)
+        # await self.series.trim_oldest(self.BLOCK_HEIGHT_MAX_LEN)
 
         await self.pass_data_to_listeners(thor_block)
 

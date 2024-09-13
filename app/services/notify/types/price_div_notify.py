@@ -24,7 +24,7 @@ class PriceDivergenceNotifier(INotified, WithLogger, WithDelegates):
         self.main_cd = parse_timespan_to_seconds(cfg.as_str('cooldown', '6h'))
 
         self._cd_bitrig = CooldownBiTrigger(deps.db, 'PriceDivergence', self.main_cd, self.main_cd, default=False)
-        self.time_series = TimeSeries('PriceDivergence', deps.db)
+        self.time_series = TimeSeries('PriceDivergence', deps.db, self.MAX_POINTS)
 
     async def on_data(self, sender, rune_market_info: RuneMarketInfo):
         cex_price, native_price = rune_market_info.cex_price, rune_market_info.pool_rune_price
@@ -45,7 +45,7 @@ class PriceDivergenceNotifier(INotified, WithLogger, WithDelegates):
             abs_delta=(cex_price - native_price),
             rel_delta=div_p
         )
-        await self.time_series.trim_oldest(self.MAX_POINTS)
+        # await self.time_series.trim_oldest(self.MAX_POINTS)
 
     async def _notify(self, rune_market_info: RuneMarketInfo, below_min_divergence):
         if not rune_market_info or not rune_market_info.cex_price:

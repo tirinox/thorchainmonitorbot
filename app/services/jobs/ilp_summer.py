@@ -21,11 +21,11 @@ class ILPSummer(INotified, WithLogger):
                     if ilp_rune > 0:
                         await self.time_series.add(ilp_rune=ilp_rune)
 
-            await self.time_series.trim_oldest(self.MAX_POINTS)
+            # await self.time_series.trim_oldest(self.MAX_POINTS)
 
     async def ilp_sum(self, period=DAY):
         return await self.time_series.sum(period_sec=period, key='ilp_rune', max_points=self.MAX_POINTS)
 
     def __init__(self, deps: DepContainer):
         super().__init__()
-        self.time_series = TimeSeries('ILP:Paid-On-Withdraw', deps.db)
+        self.time_series = TimeSeries('ILP:Paid-On-Withdraw', deps.db, self.MAX_POINTS)

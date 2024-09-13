@@ -16,7 +16,7 @@ class SlashPointTracker(BaseChangeTracker, WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
-        self.series = TimeSeries('SlashPointTracker', self.deps.db)
+        self.series = TimeSeries('SlashPointTracker', self.deps.db, self.HISTORY_MAX_POINTS)
         self.std_intervals_sec = [parse_timespan_to_seconds(s) for s in STANDARD_INTERVALS]
         intervals = list(zip(STANDARD_INTERVALS, self.std_intervals_sec))
         self.logger.info(f'{intervals = }')
@@ -29,7 +29,7 @@ class SlashPointTracker(BaseChangeTracker, WithLogger):
         data = self._extract_slash_points(nodes)
         if data:
             await self.series.add(**data)
-        await self.series.trim_oldest(self.HISTORY_MAX_POINTS)
+        # await self.series.trim_oldest(self.HISTORY_MAX_POINTS)
 
     async def _read_points(self, intervals):
         tasks = [

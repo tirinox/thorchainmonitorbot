@@ -127,7 +127,7 @@ class CEXFlowTracker:
 
     def __init__(self, deps: DepContainer):
         self.deps = deps
-        self.series = TimeSeries('Rune.CEXFlow', deps.db)
+        self.series = TimeSeries('Rune.CEXFlow', deps.db, self.MAX_POINTS)
 
     async def add(self, inflow_amount: float, outflow_amount: float):
         if inflow_amount > 0 or outflow_amount > 0:
@@ -136,7 +136,7 @@ class CEXFlowTracker:
                 'out': outflow_amount
             })
 
-        await self.series.trim_oldest(self.MAX_POINTS)
+        # await self.series.trim_oldest(self.MAX_POINTS)
 
     async def read_within_period(self, period=DAY) -> RuneCEXFlow:
         points = await self.series.get_last_values_json(period, max_points=self.MAX_POINTS)

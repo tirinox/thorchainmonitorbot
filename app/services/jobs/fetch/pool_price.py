@@ -94,7 +94,7 @@ class PoolFetcher(BaseFetcher):
         if rune_market_info.pool_rune_price and rune_market_info.pool_rune_price > 0:
             pool_price_series = PriceTimeSeries(RUNE_SYMBOL_POOL, db)
             await pool_price_series.add(price=rune_market_info.pool_rune_price)
-            await pool_price_series.trim_oldest(self.price_history_max_points)
+            # await pool_price_series.trim_oldest(self.price_history_max_points)
         else:
             self.logger.error(f'Odd {rune_market_info.pool_rune_price = }')
 
@@ -102,7 +102,7 @@ class PoolFetcher(BaseFetcher):
         if rune_market_info.cex_price and rune_market_info.cex_price > 0:
             cex_price_series = PriceTimeSeries(RUNE_SYMBOL_CEX, db)
             await cex_price_series.add(price=rune_market_info.cex_price)
-            await cex_price_series.trim_oldest(self.price_history_max_points)
+            # await cex_price_series.trim_oldest(self.price_history_max_points)
         else:
             self.logger.error(f'Odd {rune_market_info.cex_price = }')
 
@@ -110,7 +110,7 @@ class PoolFetcher(BaseFetcher):
         if rune_market_info.fair_price and rune_market_info.fair_price > 0:
             deterministic_price_series = PriceTimeSeries(RUNE_SYMBOL_DET, db)
             await deterministic_price_series.add(price=rune_market_info.fair_price)
-            await deterministic_price_series.trim_oldest(self.price_history_max_points)
+            # await deterministic_price_series.trim_oldest(self.price_history_max_points)
         else:
             self.logger.error(f'Odd {rune_market_info.fair_price = }')
 

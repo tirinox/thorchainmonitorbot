@@ -5,15 +5,16 @@ from typing import Tuple
 from services.lib.date_utils import now_ts, MINUTE
 from services.lib.db import DB
 
-MAX_POINTS_DEFAULT = 10000
+MAX_POINTS_DEFAULT = 100000
 TOLERANCE_DEFAULT = 10  # sec
 MS = 1000  # milliseconds in 1 second
 
 
 class TimeSeries:
-    def __init__(self, name: str, db: DB):
+    def __init__(self, name: str, db: DB, max_len=MAX_POINTS_DEFAULT):
         self.db = db
         self.name = name
+        self.max_len = max_len
 
     @property
     def stream_name(self):
@@ -105,9 +106,7 @@ class TimeSeries:
 
     async def add(self, message_id=b'*', **kwargs):
         r = await self.db.get_redis()
-        # todo: MAXLEN
-        # todo: usage: XADD mystream MAXLEN ~ 1000 * ... entry fields here ...
-        await r.xadd(self.stream_name, kwargs, id=message_id)
+        await r.xadd(self.stream_name, kwargs, id=message_id, maxlen=self.max_len)
 
     async def add_as_json(self, j: dict = None, message_id=b'*'):
         await self.add(message_id, json=json.dumps(j))
@@ -141,7 +140,8 @@ class TimeSeries:
                 yield ts, v
                 ts0 = ts
 
-    async def trim_oldest(self, max_len):
+    async def trim_oldest(self, max_len=None):
+        max_len = max_len or self.max_len
         if not max_len:
             return
         prev_len = await self.get_length()
