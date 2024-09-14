@@ -37,7 +37,7 @@ async def get_supply_pic(app, cached=True):
     loc = loc_man.get_from_lang(Language.ENGLISH)
 
     if cached:
-        cache_path = '../temp/data_for_sup_pic_v6.pickle'
+        cache_path = '../temp/data_for_sup_pic_v7.pickle'
         try:
             net_stats, rune_market_info = load_pickle(cache_path)
         except Exception as e:

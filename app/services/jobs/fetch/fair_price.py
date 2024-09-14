@@ -40,6 +40,7 @@ class RuneMarketInfoFetcher(WithLogger):
         return RuneCirculatingSupplyFetcher(
             self.deps.session,
             thor_node=self.deps.thor_connector.env.thornode_url,
+            midgard=self.deps.midgard_connector,
             step_sleep=self.deps.cfg.sleep_step
         )
 

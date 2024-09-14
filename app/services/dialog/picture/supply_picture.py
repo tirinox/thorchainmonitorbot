@@ -7,12 +7,12 @@ from PIL import Image
 from localization.eng_base import BaseLocalization
 from services.dialog.picture.common import BasePictureGenerator, DrawRectPacker, Rect, PackItem
 from services.dialog.picture.resources import Resources
-from services.jobs.fetch.circulating import RuneCirculatingSupply, ThorRealms
-from services.lib.constants import RUNE_IDEAL_SUPPLY
+from services.lib.constants import RUNE_IDEAL_SUPPLY, ThorRealms
 from services.lib.draw_utils import font_estimate_size, reduce_alpha, adjust_brightness
 from services.lib.money import short_money
 from services.lib.plot_graph import PlotGraph
 from services.lib.utils import async_wrap
+from services.models.circ_supply import RuneCirculatingSupply
 from services.models.net_stats import NetworkStats
 
 

@@ -1,178 +1,22 @@
 import asyncio
 from contextlib import suppress
-from typing import NamedTuple, Dict
 
-from services.lib.constants import RUNE_IDEAL_SUPPLY, RUNE_SUPPLY_AFTER_SWITCH, thor_to_float, RUNE_DENOM, \
-    RUBE_BURNT_ADR_12
+from aiohttp import ClientSession
+
+from services.lib.constants import thor_to_float, RUNE_DENOM, \
+    THOR_ADDRESS_DICT, ThorRealms, TREASURY_LP_ADDRESS, MAYA_POOLS_URL
+from services.lib.midgard.connector import MidgardConnector
 from services.lib.utils import WithLogger
-
-
-class ThorRealms:
-    RESERVES = 'Reserve'
-    STANDBY_RESERVES = '.'
-
-    BONDED = 'Bonded'
-    BONDED_NODE = 'Bonded (node)'
-    LIQ_POOL = 'Pooled'
-    RUNEPOOL = 'RUNEPool'
-    POL = 'Protocol owned liquidity'
-    CIRCULATING = 'Circulating'
-
-    CEX = 'CEX'
-    BURNED = 'Burned'
-    MINTED = 'Minted'
-    TREASURY = 'Treasury'
-    MAYA_POOL = 'Maya'
-
-    KILLED = 'Killed switched'
-
-
-THOR_ADDRESS_DICT = {
-    # Reserves:
-    'thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt': (ThorRealms.RESERVES, ThorRealms.RESERVES),
-    'thor1lj62pg6ryxv2htekqx04nv7wd3g98qf9gfvamy': (ThorRealms.STANDBY_RESERVES, ThorRealms.STANDBY_RESERVES),
-
-    # Treasury:
-    'thor1qd4my7934h2sn5ag5eaqsde39va4ex2asz3yv5': ('Treasury Multisig', ThorRealms.TREASURY),
-    'thor1505gp5h48zd24uexrfgka70fg8ccedafsnj0e3': ('Treasury 1', ThorRealms.TREASURY),
-    'thor14n2q7tpemxcha8zc26j0g5pksx4x3a9xw9ryq9': ('Treasury 2', ThorRealms.TREASURY),
-    'thor1egxvam70a86jafa8gcg3kqfmfax3s0m2g3m754': ('Treasury LP', ThorRealms.TREASURY),
-
-    # CEX:
-    "thor1t60f02r8jvzjrhtnjgfj4ne6rs5wjnejwmj7fh": ("Binance", ThorRealms.CEX),
-    "thor1cqg8pyxnq03d88cl3xfn5wzjkguw5kh9enwte4": ("Binance", ThorRealms.CEX),
-    "thor1uz4fpyd5f5d6p9pzk8lxyj4qxnwq6f9utg0e7k": ("Binance", ThorRealms.CEX),
-    "thor1ty6h2ll07fqfzumphp6kq3hm4ps28xlm2l6kd6": ("crypto.com", ThorRealms.CEX),
-    "thor1jw0nhlmj4lv83dwhfknqnw6tmlvgw4xyf6rgd7": ("KuCoin", ThorRealms.CEX),
-    "thor1hy2ka6xmqjfcwagtplyttayug4eqpqhu0sdu6r": ("KuCoin", ThorRealms.CEX),
-    "thor15h7uv2339vdzt2a6qsjf6uh5zc06sed7szvze5": ("Ascendex", ThorRealms.CEX),
-    "thor1nm0rrq86ucezaf8uj35pq9fpwr5r82clphp95t": ("Kraken", ThorRealms.CEX),
-}
-
-MAYA_POOLS_URL = 'https://mayanode.mayachain.info/mayachain/pools'
-
-
-class RuneHoldEntry(NamedTuple):
-    address: str
-    amount: int
-    name: str
-    realm: str
-
-    def add_amount(self, amount):
-        return self._replace(amount=self.amount + amount)
-
-
-class RuneCirculatingSupply(NamedTuple):
-    circulating: int
-    total: int
-    holders: Dict[str, RuneHoldEntry]
-
-    @classmethod
-    def zero(cls):
-        return cls(0, 0, {})
-
-    def set_holder(self, h: RuneHoldEntry):
-        self.holders[h.address] = h
-
-    @property
-    def killed_switched(self):
-        return RUNE_IDEAL_SUPPLY - RUNE_SUPPLY_AFTER_SWITCH
-
-    @property
-    def lending_burnt_rune(self):
-        return RUNE_SUPPLY_AFTER_SWITCH - self.total - self.adr12_burnt_rune
-
-    @property
-    def adr12_burnt_rune(self):
-        return RUBE_BURNT_ADR_12
-
-    @property
-    def total_burnt_rune(self):
-        return RUNE_SUPPLY_AFTER_SWITCH - self.total
-
-    def find_by_realm(self, realms, join_by_name=False):
-        if isinstance(realms, str):
-            realms = (realms,)
-        items = [h for h in self.holders.values() if h.realm in realms]
-        if join_by_name:
-            name_dict = {}
-            for item in items:
-                if item.name in name_dict:
-                    name_dict[item.name] = name_dict[item.name].add_amount(item.amount)
-                else:
-                    name_dict[item.name] = item
-            return list(name_dict.values())
-        return items
-
-    def total_rune_in_realm(self, realms):
-        return sum(h.amount for h in self.find_by_realm(realms))
-
-    def __repr__(self) -> str:
-        return f"RuneCirculatingSupply(circulating={self.circulating}, total={self.total}, holders={len(self.holders)})"
-
-    @property
-    def in_cex(self):
-        return self.total_rune_in_realm(ThorRealms.CEX)
-
-    @property
-    def in_cex_percent(self):
-        return self.in_cex / self.total * 100
-
-    @property
-    def treasury(self):
-        return self.total_rune_in_realm(ThorRealms.TREASURY)
-
-    @property
-    def treasury_percent(self):
-        return self.treasury / self.total * 100
-
-    @property
-    def in_reserves(self):
-        return self.total_rune_in_realm((ThorRealms.RESERVES, ThorRealms.STANDBY_RESERVES))
-
-    @property
-    def bonded(self):
-        return self.total_rune_in_realm(ThorRealms.BONDED)
-
-    @property
-    def bonded_percent(self):
-        return self.bonded / self.total * 100
-
-    @property
-    def pooled(self):
-        return self.total_rune_in_realm(ThorRealms.LIQ_POOL)
-
-    @property
-    def pooled_percent(self):
-        return self.pooled / self.total * 100
-
-    @property
-    def pol(self):
-        return self.total_rune_in_realm(ThorRealms.POL)
-
-    @property
-    def pol_percent(self):
-        return self.pol / self.total * 100
-
-    @property
-    def runepool(self):
-        return self.total_rune_in_realm(ThorRealms.RUNEPOOL)
-
-    @property
-    def runepool_percent(self):
-        return self.runepool / self.total * 100
-
-    @property
-    def working(self):
-        return self.bonded + self.pooled
+from services.models.circ_supply import RuneCirculatingSupply, RuneHoldEntry
 
 
 class RuneCirculatingSupplyFetcher(WithLogger):
-    def __init__(self, session, thor_node, step_sleep=0):
+    def __init__(self, session: ClientSession, thor_node: str, midgard: MidgardConnector, step_sleep=0):
         super().__init__()
         self.session = session
         self.thor_node = thor_node
         self.step_sleep = step_sleep
+        self.midgard = midgard
 
     async def fetch(self) -> RuneCirculatingSupply:
         """
@@ -187,6 +31,12 @@ class RuneCirculatingSupplyFetcher(WithLogger):
             await asyncio.sleep(self.step_sleep)
 
             balance = await self.get_thor_address_balance(address)
+
+            if address == TREASURY_LP_ADDRESS:
+                lp_balance = await self.get_treasury_lp_value()
+                self.logger.info(f'Treasury LP balance ({address}): {lp_balance} Rune')
+                balance += lp_balance
+
             result.set_holder(RuneHoldEntry(address, balance, wallet_name, realm))
 
         maya_pool_balance = await self.get_maya_pool_rune()
@@ -236,3 +86,12 @@ class RuneCirculatingSupplyFetcher(WithLogger):
                 rune_pool = next(p for p in j if p['asset'] == 'THOR.RUNE')
                 return thor_to_float(rune_pool['balance_asset'])
         return 0.0
+
+    async def get_treasury_lp_value(self, address=TREASURY_LP_ADDRESS):
+        tr_lp = await self.midgard.query_pool_membership(address, show_savers=True)
+        pools = await self.midgard.query_pools()
+        rune_accum = 0.0
+        for member in tr_lp:
+            if member.pool in pools:
+                rune_accum += pools[member.pool].total_my_capital_of_pool_in_rune(member.liquidity_units)
+        return rune_accum

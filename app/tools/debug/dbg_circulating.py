@@ -48,19 +48,28 @@ async def my_test_circulating(lp_app: LpAppFramework):
     sep()
 
 
+def get_rune_supply_fetcher(app: LpAppFramework):
+    return RuneCirculatingSupplyFetcher(
+        app.deps.session, app.deps.thor_connector.env.thornode_url,
+        midgard=app.deps.midgard_connector
+    )
+
+
 async def debug_circulating_rune_fetcher(app: LpAppFramework):
-    # data = await app.deps.rune_market_fetcher.get_full_supply()
-    supply = RuneCirculatingSupplyFetcher(app.deps.session, app.deps.thor_connector.env.thornode_url)
+    supply = get_rune_supply_fetcher(app)
     data = await supply.fetch()
 
     print(data)
     print(data.holders)
 
 
-async def debug_circulating_rune_message(app: LpAppFramework):
-    # supply = RuneCirculatingSupplyFetcher(app.deps.session, app.deps.thor_connector.env.thornode_url)
-    # data = await supply.fetch()
+async def debug_treasury_lp(app: LpAppFramework):
+    supply = get_rune_supply_fetcher(app)
+    data = await supply.get_treasury_lp_value()
+    print(data)
 
+
+async def debug_circulating_rune_message(app: LpAppFramework):
     fetcher_stats = NetworkStatisticsFetcher(app.deps)
     app.deps.net_stats = await fetcher_stats.fetch()
 
@@ -82,9 +91,10 @@ async def main():
     lp_app = LpAppFramework(log_level=logging.INFO)
     async with lp_app():
         # await my_test_circulating(lp_app)
-        # await my_test_circulating_telegram(lp_app)
-        await debug_circulating_rune_message(lp_app)
+        await my_test_circulating_telegram(lp_app)
+        # await debug_circulating_rune_message(lp_app)
         # await debug_circulating_rune_fetcher(lp_app)
+        # await debug_treasury_lp(lp_app)
 
 
 if __name__ == '__main__':
