@@ -1,4 +1,4 @@
-from typing import Union, Optional
+from typing import Union, Optional, List
 
 import aiohttp
 
@@ -8,6 +8,8 @@ from services.lib.midgard.parser import MidgardParserV2, TxParseResult
 from services.lib.midgard.urlgen import free_url_gen
 from services.lib.utils import WithLogger
 from services.models.earnings_history import EarningHistoryResponse
+from services.models.pool_info import PoolInfoMap
+from services.models.pool_member import PoolMemberDetails
 from services.models.savers import MidgardSaversHistory
 from services.models.swap_history import SwapHistoryResponse
 
@@ -101,3 +103,18 @@ class MidgardConnector(WithLogger):
         j = await self.request(url)
         if j:
             return MidgardSaversHistory.from_json(j)
+
+    async def query_pool_membership(self, address: str, show_savers=True) -> List[PoolMemberDetails]:
+        j = await self.request(
+            self.urlgen.url_for_address_pool_membership(address, show_savers)
+        )
+        if j == self.ERROR_RESPONSE or j == self.ERROR_NOT_FOUND:
+            return []
+        else:
+            return self.parser.parse_pool_membership(j)
+
+    async def query_pools(self, period: str = '30d', parse=True) -> Optional[PoolInfoMap]:
+        raw_data = await self.request(self.urlgen.url_pool_info(period=period))
+        if not raw_data or raw_data == self.ERROR_RESPONSE:
+            return
+        return self.parser.parse_pool_info(raw_data) if parse else raw_data

@@ -1,12 +1,11 @@
 import logging
-from abc import ABCMeta, abstractmethod
 from typing import NamedTuple, List, Optional
 
+from services.models.memo import ActionType, is_action
 from services.models.pool_info import PoolInfoHistoricEntry, PoolInfoMap, PoolInfo
 from services.models.pool_member import PoolMemberDetails
 from services.models.tx import ThorTx, ThorSubTx, ThorMetaSwap, ThorMetaRefund, ThorMetaWithdraw, \
     ThorMetaAddLiquidity
-from services.models.memo import ActionType, is_action
 
 logger = logging.getLogger(__name__)
 
@@ -28,17 +27,13 @@ class TxParseResult(NamedTuple):
         return self.txs[0] if self.txs else None
 
 
-class MidgardParserBase(metaclass=ABCMeta):
+class MidgardParserV2:
+    """
+    Midgard V2 + Multi-chain network
+    """
+
     def __init__(self, network_id):
         self.network_id = network_id
-
-    @abstractmethod
-    def parse_tx_response(self, response: dict) -> TxParseResult:
-        ...
-
-    @abstractmethod
-    def parse_one_tx(self, r):
-        ...
 
     def safe_parse_raw_batch(self, raw_txs):
         for r in raw_txs:
@@ -47,28 +42,6 @@ class MidgardParserBase(metaclass=ABCMeta):
             except (IndexError, ValueError, KeyError) as e:
                 logger.error(f'failed to parse TX. error: {e!r}; json = {r}')
                 continue
-
-    @abstractmethod
-    def parse_historic_pool_items(self, response: dict) -> List[PoolInfoHistoricEntry]:
-        ...
-
-    @abstractmethod
-    def parse_pool_member_details(self, response, address='') -> List[PoolMemberDetails]:
-        ...
-
-    @abstractmethod
-    def parse_pool_membership(self, response) -> List[str]:
-        ...
-
-    @abstractmethod
-    def parse_pool_info(self, response) -> PoolInfoMap:
-        ...
-
-
-class MidgardParserV2(MidgardParserBase):
-    """
-    Midgard V2 + Multi-chain network
-    """
 
     def parse_one_tx(self, r):
         status = r.get('status', '').lower()
@@ -125,31 +98,21 @@ class MidgardParserV2(MidgardParserBase):
             ))
         return results
 
-    def parse_pool_member_details(self, response, address='') -> List[PoolMemberDetails]:
+    @staticmethod
+    def parse_pool_member_details(response, address='') -> List[PoolMemberDetails]:
         results = []
         if isinstance(response, str):
             return results
-
         for j in response.get('pools', []):
-            results.append(PoolMemberDetails(
-                asset_added=int(j.get('assetAdded', 0)),
-                asset_address=j.get('assetAddress', ''),
-                asset_withdrawn=int(j.get('assetWithdrawn', 0)),
-                date_first_added=int(j.get('dateFirstAdded', 0)),
-                date_last_added=int(j.get('dateLastAdded', 0)),
-                liquidity_units=int(j.get('liquidityUnits', 0)),
-                pool=j.get('pool', ''),
-                rune_added=int(j.get('runeAdded', 0)),
-                rune_withdrawn=int(j.get('runeWithdrawn', 0)),
-                rune_address=j.get('runeAddress', '')
-            ))
+            results.append(PoolMemberDetails.from_json(j))
         return results
 
-    def parse_pool_membership(self, response) -> List[str]:
+    @staticmethod
+    def parse_pool_membership(response) -> List[PoolMemberDetails]:
         if not response:
             return []
         pools = response.get('pools', [])
-        return [p['pool'] for p in pools if 'pool' in p]
+        return [PoolMemberDetails.from_json(p) for p in pools if 'pool' in p]
 
     def parse_pool_info(self, response) -> PoolInfoMap:
         pm = {}
@@ -176,5 +139,5 @@ class MidgardParserV2(MidgardParserBase):
         return pm
 
 
-def get_parser_by_network_id(network_id) -> MidgardParserBase:
+def get_parser_by_network_id(network_id) -> MidgardParserV2:
     return MidgardParserV2(network_id)
