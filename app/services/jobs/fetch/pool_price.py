@@ -12,7 +12,6 @@ from services.lib.constants import RUNE_SYMBOL_DET, RUNE_SYMBOL_POOL, RUNE_SYMBO
 from services.lib.date_utils import parse_timespan_to_seconds, DAY
 from services.lib.depcont import DepContainer
 from services.lib.midgard.parser import get_parser_by_network_id
-from services.lib.midgard.urlgen import free_url_gen
 from services.models.pool_info import parse_thor_pools, PoolInfo, PoolInfoMap
 from services.models.price import RuneMarketInfo
 from services.models.time_series import PriceTimeSeries
@@ -228,11 +227,11 @@ class PoolInfoFetcherMidgard(BaseFetcher):
         self.last_raw_result = None
 
     async def get_pool_info_midgard(self, period='30d') -> Optional[PoolInfoMap]:
-        raw_data = await self.deps.midgard_connector.request(free_url_gen.url_pool_info(period=period))
-        if not raw_data:
+        pool_data = await self.deps.midgard_connector.query_pools(period, parse=False)
+        if not pool_data:
             return
-        self.last_raw_result = raw_data
-        return self.parser.parse_pool_info(raw_data)
+        self.last_raw_result = pool_data
+        return self.parser.parse_pool_info(pool_data)
 
     async def fetch(self):
         result = await self.get_pool_info_midgard()

@@ -7,10 +7,9 @@ from localization.achievements.ach_rus import AchievementsRussianLocalization
 from localization.eng_base import BaseLocalization, CREATOR_TG, URL_LEADERBOARD_MCCN
 from proto.types import ThorName
 from services.jobs.fetch.chain_id import AlertChainIdChange
-from services.jobs.fetch.circulating import ThorRealms
 from services.jobs.fetch.runeyield.borrower import LoanReportCard
 from services.lib.config import Config
-from services.lib.constants import Chains, LOAN_MARKER
+from services.lib.constants import Chains, LOAN_MARKER, ThorRealms
 from services.lib.date_utils import format_time_ago, seconds_human, now_ts
 from services.lib.explorers import get_explorer_url_to_address, get_thoryield_address, \
     get_ip_info_link

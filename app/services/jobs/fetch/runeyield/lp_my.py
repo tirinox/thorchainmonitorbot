@@ -19,6 +19,7 @@ from services.models.lp_info import LiquidityPoolReport, LiquidityInOutSummary, 
     LPDailyGraphPoint, LPDailyChartByPoolDict, LPPosition
 from services.models.memo import ActionType
 from services.models.pool_info import PoolInfoMap, PoolInfo, pool_share
+from services.models.pool_member import PoolMemberDetails
 from services.models.tx import ThorTx
 
 HeightToAllPools = Dict[int, PoolInfoMap]
@@ -44,6 +45,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
         if not pools:
             pools = await self.get_my_pools(address)
+            pools = [p.pool for p in pools]
 
         historic_all_pool_states = await self._fetch_historical_pool_states(user_txs)
 
@@ -51,6 +53,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         for pool_name in pools:
             this_pool_txs = [tx for tx in user_txs if tx.first_pool == pool_name]
 
+            # todo: full membership info is available from get_my_pools! Use it!
             if Asset.from_string(pool_name).is_synth:
                 # Savers position
                 liq_report = await self._get_savers_position(historic_all_pool_states, pool_name, this_pool_txs,
@@ -78,15 +81,8 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             # Normal liquidity position
             return await self._create_lp_report_single(historic_all_pool_states, pool_name, user_txs, address)
 
-    async def get_my_pools(self, address, show_savers=True) -> List[str]:
-        mdg = self.deps.midgard_connector
-        j = await mdg.request(
-            free_url_gen.url_for_address_pool_membership(address, show_savers)
-        )
-        if j == mdg.ERROR_RESPONSE or j == mdg.ERROR_NOT_FOUND:
-            return []
-        else:
-            return self.parser.parse_pool_membership(j)
+    async def get_my_pools(self, address, show_savers=True) -> List[PoolMemberDetails]:
+        return await self.deps.midgard_connector.query_pool_membership(address, show_savers)
 
     # ------------------------------------------------------------------------------------------------------------------
 

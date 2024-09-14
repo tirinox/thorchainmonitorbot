@@ -3,7 +3,6 @@ import logging
 from dataclasses import dataclass, field
 from typing import List, Optional, Set, NamedTuple
 
-from services.jobs.fetch.circulating import RuneCirculatingSupply
 from services.lib.config import Config
 from services.lib.constants import BTC_SYMBOL, STABLE_COIN_POOLS, thor_to_float, RUNE_IDEAL_SUPPLY
 from services.lib.date_utils import now_ts, DAY
@@ -12,6 +11,7 @@ from services.lib.texts import fuzzy_search
 from services.models.asset import Asset, is_rune, ASSET_TRADE_SEPARATOR, ASSET_SYNTH_SEPARATOR, ASSET_NORMAL_SEPARATOR, \
     normalize_asset
 from services.models.base import BaseModelMixin
+from services.models.circ_supply import RuneCirculatingSupply
 from services.models.pool_info import PoolInfo, PoolInfoMap
 
 

@@ -32,7 +32,7 @@ DOGE_SYMBOL = 'DOGE.DOGE'
 
 RUNE_IDEAL_SUPPLY = 500_000_000
 RUNE_SUPPLY_AFTER_SWITCH = 486_051_059
-RUBE_BURNT_ADR_12 = 60_000_000
+RUNE_BURNT_ADR_12 = 60_000_000
 
 RUNE_DENOM = 'rune'
 
@@ -49,7 +49,6 @@ STABLE_COIN_POOLS_ALL = (
 )
 
 STABLE_COIN_POOLS = STABLE_COIN_POOLS_ALL
-
 
 DEFAULT_CEX_NAME = 'Binance'
 DEFAULT_CEX_BASE_ASSET = 'USDT'
@@ -228,3 +227,51 @@ SYNTH_MODULE = 'thor1v8ppstuf6e3x0r4glqc68d5jqcs2tf38cg2q6y'
 LOAN_MARKER = '$+'
 
 ZERO_HASH = '0000000000000000000000000000000000000000000000000000000000000000'
+
+TREASURY_LP_ADDRESS = 'thor1egxvam70a86jafa8gcg3kqfmfax3s0m2g3m754'
+
+
+class ThorRealms:
+    RESERVES = 'Reserve'
+    STANDBY_RESERVES = '.'
+
+    BONDED = 'Bonded'
+    BONDED_NODE = 'Bonded (node)'
+    LIQ_POOL = 'Pooled'
+    RUNEPOOL = 'RUNEPool'
+    POL = 'Protocol owned liquidity'
+    CIRCULATING = 'Circulating'
+
+    CEX = 'CEX'
+    BURNED = 'Burned'
+    MINTED = 'Minted'
+    TREASURY = 'Treasury'
+    MAYA_POOL = 'Maya'
+
+    KILLED = 'Killed switched'
+
+
+THOR_ADDRESS_DICT = {
+    # Reserves:
+    'thor1dheycdevq39qlkxs2a6wuuzyn4aqxhve4qxtxt': (ThorRealms.RESERVES, ThorRealms.RESERVES),
+    'thor1lj62pg6ryxv2htekqx04nv7wd3g98qf9gfvamy': (ThorRealms.STANDBY_RESERVES, ThorRealms.STANDBY_RESERVES),
+
+    # Treasury:
+    'thor1qd4my7934h2sn5ag5eaqsde39va4ex2asz3yv5': ('Treasury Multisig', ThorRealms.TREASURY),
+    'thor10qh5272ktq4wes8ex343ky9rsuehcypddjh08k': ('Treasury Vultisig', ThorRealms.TREASURY),
+    # 'thor1505gp5h48zd24uexrfgka70fg8ccedafsnj0e3': ('Treasury 1', ThorRealms.TREASURY),
+    # 'thor14n2q7tpemxcha8zc26j0g5pksx4x3a9xw9ryq9': ('Treasury 2', ThorRealms.TREASURY),
+    TREASURY_LP_ADDRESS: ('Treasury LP', ThorRealms.TREASURY),
+
+    # CEX:
+    "thor1t60f02r8jvzjrhtnjgfj4ne6rs5wjnejwmj7fh": ("Binance", ThorRealms.CEX),
+    "thor1cqg8pyxnq03d88cl3xfn5wzjkguw5kh9enwte4": ("Binance", ThorRealms.CEX),
+    "thor1uz4fpyd5f5d6p9pzk8lxyj4qxnwq6f9utg0e7k": ("Binance", ThorRealms.CEX),
+    "thor1ty6h2ll07fqfzumphp6kq3hm4ps28xlm2l6kd6": ("crypto.com", ThorRealms.CEX),
+    "thor1jw0nhlmj4lv83dwhfknqnw6tmlvgw4xyf6rgd7": ("KuCoin", ThorRealms.CEX),
+    "thor1hy2ka6xmqjfcwagtplyttayug4eqpqhu0sdu6r": ("KuCoin", ThorRealms.CEX),
+    "thor15h7uv2339vdzt2a6qsjf6uh5zc06sed7szvze5": ("Ascendex", ThorRealms.CEX),
+    "thor1nm0rrq86ucezaf8uj35pq9fpwr5r82clphp95t": ("Kraken", ThorRealms.CEX),
+}
+
+MAYA_POOLS_URL = 'https://mayanode.mayachain.info/mayachain/pools'

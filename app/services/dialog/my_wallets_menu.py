@@ -250,7 +250,8 @@ class MyWalletsMenu(DialogWithSettings):
     async def _load_my_pools(self, address: str):
         try:
             rune_yield = get_rune_yield_connector(self.deps)
-            pool_names = await rune_yield.get_my_pools(address, show_savers=True)
+            pools = await rune_yield.get_my_pools(address, show_savers=True)
+            pool_names = [p.pool for p in pools]
         except FileNotFoundError:
             logging.error(f'not found pools for address {address}')
             pool_names = []

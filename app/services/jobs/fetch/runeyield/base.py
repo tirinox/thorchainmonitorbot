@@ -4,6 +4,7 @@ from typing import List, NamedTuple, Dict
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 from services.models.lp_info import LiquidityPoolReport, LPDailyGraphPoint
+from services.models.pool_member import PoolMemberDetails
 
 
 class YieldSummary(NamedTuple):
@@ -28,5 +29,5 @@ class AsgardConsumerConnectorBase(WithLogger):
 
     # interface
     @abstractmethod
-    async def get_my_pools(self, address, show_savers=False) -> List[str]:
+    async def get_my_pools(self, address, show_savers=False) -> List[PoolMemberDetails]:
         ...
