@@ -12,8 +12,9 @@ from services.lib.utils import strip_trailing_slash
 
 
 class SubConfig:
-    def __init__(self, config_data):
+    def __init__(self, config_data, parent_path=''):
         self._root_config = config_data
+        self.parent_path = parent_path
 
     def get(self, path: str = None, default=None, pure=False) -> 'SubConfig':
         if path is None or path == '':
@@ -32,22 +33,23 @@ class SubConfig:
                     sub_config = sub_config[int(component)]
                 elif isinstance(sub_config, dict):
                     sub_config = sub_config[component]
+                else:
+                    raise LookupError(f'Cannot handle config path "{self.parent_path}.{path}"!')
 
             if isinstance(sub_config, (list, tuple, dict)):
-                # collection => SubConfig(it)
-                # fixme:
                 return (
-                    sub_config if pure else SubConfig(sub_config)
+                    sub_config if pure else SubConfig(sub_config, parent_path=f'{self.parent_path}.{path}')
                 ) if (default is None or isinstance(default, SubConfig)) else sub_config
             else:
                 # primitive => always pure!
                 return sub_config
         except LookupError:
-            # fixme: ?? print(e)
+            full_path = f'{self.parent_path}.{path}' if self.parent_path else path
             if default is not None:
+                logging.warning(f'Config path "{full_path}" not found! Using default value: {default}')
                 return default
             else:
-                raise LookupError(f'Config path "{path}" not found!')
+                raise LookupError(f'Config path "{full_path}" not found!')
 
     def get_pure(self, path=None, default=None) -> Any:
         return self.get(path, default, pure=True)
