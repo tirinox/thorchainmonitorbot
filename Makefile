@@ -1,64 +1,78 @@
 include .env
 export
 
-.DEFAULT_GOAL := help
-.PHONY: help build start stop restart pull logs clean upgrade redis-cli redis-sv-loc certbot buildf test lint graph switch-db attach
-
 BOTNAME = thtgbot
 
-help:
-	$(info Commands: build | start | stop | restart | pull | logs | clean | upgrade | redis-cli | redis-sv-loc | switch-db | attach)
+default: help
 
-attach:
+.PHONY: help
+help: # Show help for each of the Makefile recipes.
+	@grep -E '^[a-zA-Z0-9 -]+:.*#'  Makefile | sort | while read -r l; do printf "\033[1;32m$$(echo $$l | cut -f 1 -d':')\033[00m:$$(echo $$l | cut -f 2- -d'#')\n"; done
+
+
+.PHONY: attach
+attach: # Attach to the bot container.
 	docker-compose exec $(BOTNAME) bash
 
-build:
+.PHONY: build
+build: # Build images.
 	$(info Make: Building images.)
 	docker-compose build --no-cache $(BOTNAME) api redis
 	echo "Note! Use 'make start' to make the changes take effect (recreate containers with updated images)."
 
-start:
+.PHONY: start
+start: # Start containers.
 	$(info Make: Starting containers.)
 	@docker-compose up -d
 	$(info Wait a little bit...)
 	@sleep 3
 	@docker ps
 
-stop:
+.PHONY: stop
+stop: # Stop containers.
 	$(info Make: Stopping containers.)
 	@docker-compose stop
 
-restart:
+.PHONY: restart
+restart: # Restart containers.
 	$(info Make: Restarting containers.)
 	@make -s stop
 	@make -s start
 
-poke:
+.PHONY: poke
+poke: # Restart the bot.
 	@docker-compose restart $(BOTNAME) api
 	@make -s logs
 
-pull:
+.PHONY: pull
+pull: # Pull the latest changes from the repository.
 	@git pull
 
-logs:
+.PHONY: logs
+logs: # Show logs.
 	@docker-compose logs -f --tail 1000 $(BOTNAME)
 
-clean:
+.PHONY: clean
+clean: # Remove containers and volumes.
 	@docker system prune --volumes --force
 
-upgrade:
+.PHONY: upgrade
+upgrade: # Pull, build, and start.
 	@make -s pull
 	@make -s build
 	@make -s start
 
-redis-cli:
+.PHONY: redis-cli
+redis-cli: # Connect to the Redis CLI.
 	@redis-cli -p $(REDIS_PORT) -a $(REDIS_PASSWORD)
 
-redis-sv-loc:
+.PHONY: redis-sv-loc
+redis-sv-loc: # Start the Redis server locally.
 	cd redis_data
 	redis-server
 
-certbot:
+.PHONY: certbot
+certbot: # Renew the SSL certificate for the bot's web admin panel.
 	docker-compose stop $(BOTNAME) api nginx
 	sudo certbot certonly --standalone -w ./web/frontend -d "${DOMAIN}"
 	# todo: fix paths!
@@ -68,7 +82,8 @@ certbot:
 
 NODE_OP_SETT_DIR = ./temp/nodeop-settings
 
-buildf:
+.PHONY: buildf
+buildf: # Build the frontend.
 	mkdir -p ${NODE_OP_SETT_DIR}
 	cd temp; git clone https://github.com/tirinox/nodeop-settings || true
 	cd ${NODE_OP_SETT_DIR}; git pull
@@ -76,15 +91,19 @@ buildf:
 	rm -rf ./web/frontend/*
 	mv ${NODE_OP_SETT_DIR}/dist/* ./web/frontend/
 
-test:
+.PHONY: test
+test: # Run tests.
 	cd app && python -m pytest tests
 
-lint:
+.PHONY: lint
+lint: # Run linters.
 	find ./app/services -type f -name "*.py" | xargs pylint
 	find ./app/localization -type f -name "*.py" | xargs pylint
 
-graph:
+.PHONY: graph
+graph: # Generate a graph of the bot internal structure.
 	cd app && python graph.py
 
-switch-db:
+.PHONY: switch-db
+switch-db:	# Switch the database (see app/tools/switch-db.sh).
 	cd app/tools && ./switch-db.sh
