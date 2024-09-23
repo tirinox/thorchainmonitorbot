@@ -11,7 +11,7 @@ from services.models.time_series import TimeSeries
 
 class IDynamicThreshold(WithLogger, metaclass=ABCMeta):
     @abstractmethod
-    async def hit(self, value: float):
+    async def hit(self, value: float, increment_passed=True) -> bool:
         pass
 
     @abstractmethod
@@ -83,7 +83,8 @@ class DynamicThresholdSigmoid(IDynamicThreshold):
         :param adjustment_factor: Adjustment factor for the threshold
         :param acc_tol: Accumulator tolerance (default is 1 Hour)
         """
-        super().__init__(db, key, target_event_number, estimation_interval_sec, initial_threshold, min_threshold, max_threshold)
+        super().__init__(db, key, target_event_number, estimation_interval_sec, initial_threshold, min_threshold,
+                         max_threshold)
 
         self.adjustment_factor = adjustment_factor
         assert 0.0 < adjustment_factor < 10.0
@@ -127,7 +128,7 @@ class DynamicThresholdSigmoid(IDynamicThreshold):
         await self.accum.add_now(passed_events=1)
         await self.accum.clear(self.oldest_possible_event_ts)
 
-    async def hit(self, value: float):
+    async def hit(self, value: float, increment_passed=True) -> bool:
         threshold = await self.get_current_threshold()
 
         if value >= threshold:
@@ -151,7 +152,7 @@ class DynamicThresholdSigmoid(IDynamicThreshold):
 
 
 class DynamicThresholdHistory(IDynamicThreshold):
-    async def hit(self, value: float) -> bool:
+    async def hit(self, value: float, increment_passed=True) -> bool:
         old_threshold = await self.get_current_threshold()
 
         await self._series.add(value=value)
@@ -176,10 +177,13 @@ class DynamicThresholdHistory(IDynamicThreshold):
 
         passed = value >= threshold
 
-        if passed:
-            await self._accum.add_now(n=1)
+        if passed and increment_passed:
+            await self.increment_passed()
 
         return passed
+
+    async def increment_passed(self, n=1):
+        await self._accum.add_now(n=n)
 
     async def clear(self):
         await super().clear()

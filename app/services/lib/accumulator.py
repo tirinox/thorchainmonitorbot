@@ -8,6 +8,7 @@ class Accumulator:
     This class is used to count the sum of events that occur within a certain time interval.
     Items are put into buckets with tolerance.
     """
+
     def __init__(self, name, db: DB, tolerance: float):
         self.name = name
         self.db = db
@@ -37,6 +38,22 @@ class Accumulator:
         timestamp = timestamp or now_ts()
         r = await self.db.redis.hgetall(self.key_from_ts(timestamp))
         return self._convert_values_to_float(r) if conv_to_float else r
+
+    async def sum(self, start_ts: float, end_ts: float = None, key=None):
+        points = await self.get_range(start_ts, end_ts, conv_to_float=True)
+        s = 0.0
+        for d in points.values():
+            s += d.get(key, 0.0)
+        return s
+
+    async def average(self, start_ts: float, end_ts: float = None, key=None):
+        points = await self.get_range(start_ts, end_ts, conv_to_float=True)
+        s = 0.0
+        n = 0
+        for d in points.values():
+            s += d.get(key, 0.0)
+            n += 1
+        return s / n if n > 0 else 0.0
 
     @staticmethod
     def _prepare_ts(start_ts: float, end_ts: float = None):
