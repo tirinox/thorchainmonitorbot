@@ -203,23 +203,6 @@ names:
 
     "thor1fddercd7pufy0adf2rh7ml2x9jdwla5lp56dpe": "TrustWalletFee"
 
-    bnb1jzdy3vy3h0ux0j7qqcutfnsjm2xnsa5mru7gtj: "FTX"
-    bnb142q467df6jun6rt5u2ar58sp47hm5f9wvz2cvg: "Binance 1"
-    bnb1u2agwjat20494fmc6jnuau0ls937cfjn4pjwtn: "Binance 2"
-    bnb1fnd0k5l4p3ck2j9x9dp36chk059w977pszdgdz: "Binance 3"
-    bnb136ns6lfw4zs5hg4n85vdthaad7hq5m4gtkgf23: "Binance Deposits"
-    bnb1dtpty6hrxehwz9xew6ttj52l929cu8zehprzwj: "KuCoin Cold"
-    bnb13q87ekxvvte78t2q7z05lzfethnlht5agfh4ur: "KuCoin Hot"
-    bnb1apkwlqftwue7mcwvhe8zckxq030afecat9lkae: "Probit"
-    bnb16e9kvc8846lht4y2yav777p6hweffcqvva757l: "HitBTC"
-    bnb10af52w77pkehgxhnwgeca50q2t2354q4xamz5y: "MEXC"
-    bnb165r4pxe862hetuz2l3wt4yx43uhh4ph9u0ptz6: "Unknown CEX"
-    bnb1pv5vycd4xe3nu0msrewgf9tmfvam8yr3x6j97q: "Ascendex"
-    bnb1zp46uw7w3g5uku2tme5fvarf6ldf3j2l5g6cv2: "Ascendex 2"
-    bnb1axqc2gan462z6npw3c33srp4950mr5x28uc6wu: "THORChain Community"
-    bnb13a7gyv5zl57c0rzeu0henx6d0tzspvrrakxxtv: "THORChain Operational"
-    bnb1e4q8whcufp6d72w8nwmpuhxd96r4n0fstegyuy: "Burn address"
-
   affiliates:
     wr: THORWallet
     thor1a427q3v96psuj4fnughdw8glt5r7j38lj7rkp8: THORWallet
