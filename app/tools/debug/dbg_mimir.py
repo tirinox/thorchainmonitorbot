@@ -6,7 +6,7 @@ from aionode.types import ThorMimir, ThorMimirVote
 from localization.eng_base import BaseLocalization
 from localization.languages import Language
 from services.jobs.fetch.cap import CapInfoFetcher
-from services.jobs.fetch.const_mimir import ConstMimirFetcher, MimirTuple
+from services.jobs.fetch.mimir import ConstMimirFetcher, MimirTuple
 from services.lib.depcont import DepContainer
 from services.models.mimir import AlertMimirVoting
 from services.notify.types.mimir_notify import MimirChangedNotifier

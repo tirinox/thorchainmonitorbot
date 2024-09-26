@@ -2,7 +2,7 @@ import json
 from contextlib import suppress
 
 from aionode.types import ThorMimir
-from services.jobs.fetch.const_mimir import ConstMimirFetcher, MimirTuple
+from services.jobs.fetch.mimir import ConstMimirFetcher, MimirTuple
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import now_ts
 from services.lib.delegates import INotified, WithDelegates
@@ -12,6 +12,10 @@ from services.models.mimir import MimirChange, AlertMimirChange
 
 
 class MimirChangedNotifier(INotified, WithDelegates, WithLogger):
+    MIMIR_IGNORE_CHANGES = [
+        'MAXRUNESUPPLY',  # ADR 17 burn rune
+    ]
+
     def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
@@ -133,6 +137,9 @@ class MimirChangedNotifier(INotified, WithDelegates, WithLogger):
 
     async def _will_pass(self, c: MimirChange):
         if c.is_automatic_to_automatic:
+            return False
+
+        if c.name in self.MIMIR_IGNORE_CHANGES:
             return False
 
         cd = Cooldown(self.deps.db, f"MimirChange:{c.entry.name}", self.cd_sec_change, max_times=2)

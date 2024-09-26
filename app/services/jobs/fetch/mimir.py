@@ -1,9 +1,7 @@
 import asyncio
-from itertools import cycle
 from typing import List, NamedTuple
 
 from aionode.types import ThorConstants, ThorMimir, ThorMimirVote
-
 from services.jobs.fetch.base import BaseFetcher
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.depcont import DepContainer

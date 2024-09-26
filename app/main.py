@@ -15,7 +15,7 @@ from services.jobs.achievement.notifier import AchievementsNotifier
 from services.jobs.fetch.account_number import AccountNumberFetcher
 from services.jobs.fetch.cap import CapInfoFetcher
 from services.jobs.fetch.chains import ChainStateFetcher
-from services.jobs.fetch.const_mimir import ConstMimirFetcher
+from services.jobs.fetch.mimir import ConstMimirFetcher
 from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
 from services.jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from services.jobs.fetch.key_stats import KeyStatsFetcher

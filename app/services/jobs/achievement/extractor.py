@@ -3,7 +3,7 @@ from typing import List
 
 from services.jobs.achievement.ach_list import A, EventTestAchievement, Achievement
 from services.jobs.fetch.account_number import AccountNumberFetcher
-from services.jobs.fetch.const_mimir import MimirTuple
+from services.jobs.fetch.mimir import MimirTuple
 from services.lib.constants import THORCHAIN_BIRTHDAY
 from services.lib.date_utils import full_years_old_ts
 from services.lib.depcont import DepContainer

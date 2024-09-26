@@ -1,7 +1,7 @@
 import json
 
 from localization.manager import BaseLocalization
-from services.jobs.fetch.const_mimir import ConstMimirFetcher, MimirTuple
+from services.jobs.fetch.mimir import ConstMimirFetcher, MimirTuple
 from services.lib.cooldown import Cooldown
 from services.lib.date_utils import parse_timespan_to_seconds
 from services.lib.delegates import INotified, WithDelegates
