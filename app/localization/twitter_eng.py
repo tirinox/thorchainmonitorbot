@@ -3,7 +3,7 @@ from typing import List
 from aionode.types import ThorChainInfo, thor_to_float
 from localization.achievements.ach_tw_eng import AchievementsTwitterEnglishLocalization
 from localization.eng_base import BaseLocalization
-from services.dialog.twitter.text_length import twitter_intelligent_text_splitter
+from services.dialog.twitter.text_length import twitter_intelligent_text_splitter, TWITTER_LIMIT_CHARACTERS
 from services.jobs.fetch.chain_id import AlertChainIdChange
 from services.lib.config import Config
 from services.lib.constants import Chains, BTC_SYMBOL, ETH_SYMBOL
@@ -41,12 +41,12 @@ class TwitterEnglishLocalization(BaseLocalization):
     def __init__(self, cfg: Config):
         super().__init__(cfg)
         self.ach = AchievementsTwitterEnglishLocalization()
+        self.twitter_max_len = cfg.get('twitter.max_length', TWITTER_LIMIT_CHARACTERS)
 
     TEXT_DECORATION_ENABLED = False
 
-    @classmethod
-    def smart_split(cls, parts):
-        parts = twitter_intelligent_text_splitter(parts)
+    def smart_split(self, parts):
+        parts = twitter_intelligent_text_splitter(parts, self.twitter_max_len)
         return MESSAGE_SEPARATOR.join(parts).strip()
 
     def link_to_tx(self, tx_id, chain=Chains.THOR, label="TX"):

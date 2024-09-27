@@ -29,6 +29,9 @@ class TwitterBot(WithLogger):
         access_token_secret = keys.as_str('access_token_secret')
         assert consumer_key and consumer_secret and access_token and access_token_secret
 
+        self.max_length = cfg.as_int('twitter.max_length', TWITTER_LIMIT_CHARACTERS)
+        self.logger.info(f'TwitterBot is allowed to post {self.max_length} characters.')
+
         # self.auth = tweepy.OAuth2BearerHandler(bearer_token)
         self.auth = tweepy.OAuthHandler(consumer_key, consumer_secret)
         self.auth.set_access_token(access_token, access_token_secret)
@@ -58,9 +61,9 @@ class TwitterBot(WithLogger):
             return
 
         real_len = twitter_text_length(text)
-        if real_len >= TWITTER_LIMIT_CHARACTERS:
+        if real_len >= self.max_length:
             self.logger.warning(f'Too long text ({real_len} symbols): "{text}".')
-            text = twitter_cut_text(text, TWITTER_LIMIT_CHARACTERS)
+            text = twitter_cut_text(text, self.max_length)
 
         self.log_tweet(text, image)
 
@@ -84,7 +87,7 @@ class TwitterBot(WithLogger):
         await loop.run_in_executor(executor, self.post_sync, text, image)
 
     async def multi_part_post(self, text: str, image=None, executor=None, loop=None):
-        parts = text.split(MESSAGE_SEPARATOR, maxsplit=10)
+        parts = text.split(MESSAGE_SEPARATOR, maxsplit=self.MAX_TWEETS_PER_DAY)
         parts = list(filter(bool, map(str.strip, parts)))
 
         if not parts:

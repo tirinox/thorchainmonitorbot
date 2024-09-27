@@ -101,6 +101,10 @@ slack:
 twitter:
   enabled: true
   is_mock: false
+
+  max_length: 25000  # With Twitter Premium
+  #  max_length: 280  # Without Twitter Premium
+
   bot:
     consumer_key: "111"
     consumer_secret: "222"
