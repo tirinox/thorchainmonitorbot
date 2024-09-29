@@ -11,7 +11,7 @@ from aiogram.utils.helper import HelperMode
 
 from api.aionode.types import ThorSwapperClout
 from api.midgard.name_service import add_thor_suffix
-from comm.dialog.telegram.inline_list import TelegramInlineList
+from comm.telegram.inline_list import TelegramInlineList
 from comm.localization.eng_base import BaseLocalization
 from jobs.fetch.runeyield import get_rune_yield_connector
 from jobs.fetch.runeyield.borrower import BorrowerPositionGenerator
@@ -30,7 +30,7 @@ from notify.personal.helpers import GeneralSettings, Props
 from notify.personal.scheduled import PersonalPeriodicNotificationService, PersonalIdTriplet
 from .base import message_handler, query_handler, DialogWithSettings
 from .message_cat_db import MessageCategoryDB
-from .picture.lp_picture import generate_yield_picture, lp_address_summary_picture
+from comm.picture.lp_picture import generate_yield_picture, lp_address_summary_picture
 
 CAT_ADD_MORE = 'add-more'
 CAT_WALLET_MENU = 'wallet-menu'

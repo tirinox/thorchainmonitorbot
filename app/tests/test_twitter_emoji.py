@@ -1,4 +1,4 @@
-from comm.dialog.twitter import twitter_text_length, twitter_cut_text, \
+from comm.twitter.text_length import twitter_text_length, twitter_cut_text, \
     twitter_intelligent_text_splitter, abbreviate_some_long_words, TWITTER_T_CO_LENGTH, TWITTER_T_CO_EXAMPLE
 from lib.money import EMOJI_SCALE
 from lib.texts import progressbar, find_country_emoji

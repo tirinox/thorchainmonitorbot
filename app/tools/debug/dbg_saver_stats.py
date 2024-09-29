@@ -5,9 +5,9 @@ import random
 
 from comm.localization.eng_base import BaseLocalization
 from comm.localization.languages import Language
-from comm.dialog.picture.crypto_logo import CryptoLogoDownloader
-from comm.dialog.picture.resources import Resources
-from comm.dialog.picture.savers_picture import SaversPictureGenerator
+from comm.picture.crypto_logo import CryptoLogoDownloader
+from comm.picture.resources import Resources
+from comm.picture.savers_picture import SaversPictureGenerator
 from jobs.fetch.savers_vnx import SaversStatsFetcher
 from lib.date_utils import DAY
 from lib.texts import sep

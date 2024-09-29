@@ -4,8 +4,8 @@ from datetime import timedelta
 from PIL import Image, ImageDraw
 
 from comm.localization.manager import BaseLocalization
-from comm.dialog.picture.common import BasePictureGenerator
-from comm.dialog.picture.resources import Resources
+from comm.picture.common import BasePictureGenerator
+from comm.picture.resources import Resources
 from lib.constants import BTC_SYMBOL, ETH_SYMBOL, ETH_USDC_SYMBOL, ETH_USDT_SYMBOL, NATIVE_RUNE_SYMBOL
 from lib.draw_utils import paste_image_masked, TC_LIGHTNING_BLUE, TC_YGGDRASIL_GREEN, \
     COLOR_OF_PROFIT, font_estimate_size, distribution_bar_chart, TC_MIDGARD_TURQOISE

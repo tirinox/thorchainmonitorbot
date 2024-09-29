@@ -5,7 +5,7 @@ import pandas as pd
 from PIL import Image
 from PIL import ImageDraw, ImageFont
 
-from comm.dialog.picture.resources import Resources
+from comm.picture.resources import Resources
 from lib.draw_utils import LIGHT_TEXT_COLOR, default_gradient, get_palette_color_by_index, TC_WHITE, \
     font_estimate_size
 

@@ -5,14 +5,15 @@ import os
 from api.aionode.connector import ThorConnector
 from api.midgard.connector import MidgardConnector
 from api.midgard.name_service import NameService
+from api.profit_against_cex import StreamingSwapVsCexProfitCalculator
 from api.w3.aggregator import AggregatorDataExtractor
 from api.w3.dex_analytics import DexAnalyticsCollector
-from comm.dialog.discord.discord_bot import DiscordBot
+from comm.discord.discord_bot import DiscordBot
 from comm.dialog.main import init_dialogs
-from comm.dialog.slack.slack_bot import SlackBot
-from comm.dialog.telegram.sticker_downloader import TelegramStickerDownloader
-from comm.dialog.telegram.telegram import TelegramBot
-from comm.dialog.twitter.twitter_bot import TwitterBot, TwitterBotMock
+from comm.slack.slack_bot import SlackBot
+from comm.telegram.sticker_downloader import TelegramStickerDownloader
+from comm.telegram.telegram import TelegramBot
+from comm.twitter.twitter_bot import TwitterBot, TwitterBotMock
 from comm.localization.admin import AdminMessages
 from comm.localization.manager import LocalizationManager
 from jobs.achievement.notifier import AchievementsNotifier
@@ -30,7 +31,6 @@ from jobs.fetch.net_stats import NetworkStatisticsFetcher
 from jobs.fetch.node_info import NodeInfoFetcher
 from jobs.fetch.pol import RunePoolFetcher
 from jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
-from jobs.fetch.profit_against_cex import StreamingSwapVsCexProfitCalculator
 from jobs.fetch.queue import QueueFetcher
 from jobs.fetch.savers_vnx import SaversStatsFetcher
 from jobs.fetch.trade_accounts import TradeAccountFetcher

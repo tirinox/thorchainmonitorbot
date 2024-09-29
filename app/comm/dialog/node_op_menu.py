@@ -18,7 +18,7 @@ from models.node_watchers import NodeWatcherStorage
 from notify.channel import Messengers
 from notify.personal.helpers import NodeOpSetting, STANDARD_INTERVALS
 from .base import message_handler, query_handler, DialogWithSettings
-from .telegram.inline_list import TelegramInlineList
+from comm.telegram.inline_list import TelegramInlineList
 
 
 class NodeOpStates(StatesGroup):

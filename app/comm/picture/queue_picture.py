@@ -1,7 +1,7 @@
 import pandas as pd
 
 from comm.localization.manager import BaseLocalization
-from comm.dialog.picture.common import PictureAndName
+from comm.picture.common import PictureAndName
 from lib.date_utils import ts_event_points_to_pandas, DAY, today_str
 from lib.depcont import DepContainer
 from lib.draw_utils import CATEGORICAL_PALETTE

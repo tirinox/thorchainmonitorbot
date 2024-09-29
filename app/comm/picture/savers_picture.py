@@ -1,8 +1,8 @@
 from PIL import Image, ImageDraw
 
 from comm.localization.manager import BaseLocalization
-from comm.dialog.picture.common import BasePictureGenerator
-from comm.dialog.picture.resources import Resources
+from comm.picture.common import BasePictureGenerator
+from comm.picture.resources import Resources
 from lib.draw_utils import TC_WHITE, result_color, rect_progress_bar
 from lib.money import short_money, short_dollar
 from lib.utils import async_wrap

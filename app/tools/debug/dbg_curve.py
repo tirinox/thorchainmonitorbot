@@ -1,7 +1,7 @@
 import asyncio
 import math
 
-from comm.dialog.picture.block_height_picture import PRICE_GRAPH_WIDTH, PRICE_GRAPH_HEIGHT, LINE_COLOR_ACTUAL
+from comm.picture.block_height_picture import PRICE_GRAPH_WIDTH, PRICE_GRAPH_HEIGHT, LINE_COLOR_ACTUAL
 from lib.money import DepthCurve, short_dollar
 from lib.plot_graph import PlotGraphLines
 from lib.utils import async_wrap

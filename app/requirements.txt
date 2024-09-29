@@ -5,7 +5,7 @@ aiohttp
 async-timeout
 bech32
 colorama
-# discord.py==1.*
+# discord.py  # will be installed at Stage 2
 emoji
 flipside>=2.0.8
 git+https://github.com/danielgtaylor/python-betterproto@v2.0.0b5#egg=betterproto
@@ -15,7 +15,6 @@ multidict
 numpy
 pandas
 Pillow>=9.3.0
-# pysha3
 pytest
 pytest-asyncio
 python-binance==1.0.*

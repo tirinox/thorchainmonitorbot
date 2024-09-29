@@ -10,8 +10,8 @@ from api.aionode.connector import ThorConnector
 from api.aionode.types import ThorChainInfo
 from api.midgard.connector import MidgardConnector
 from api.midgard.name_service import NameService
-from comm.dialog.telegram.telegram import TelegramBot
-from comm.dialog.twitter.twitter_bot import TwitterBot
+from comm.telegram.telegram import TelegramBot
+from comm.twitter.twitter_bot import TwitterBot
 from lib.config import Config
 from lib.db import DB
 from lib.emergency import EmergencyReport

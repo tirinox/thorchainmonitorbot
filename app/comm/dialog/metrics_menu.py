@@ -20,14 +20,14 @@ from notify.public.price_notify import PriceNotifier
 from notify.public.stats_notify import NetworkStatsNotifier
 from notify.public.transfer_notify import RuneMoveNotifier
 from .base import BaseDialog, message_handler
-from .picture.block_height_picture import block_speed_chart
-from .picture.key_stats_picture import KeyStatsPictureGenerator
-from .picture.nodes_pictures import NodePictureGenerator
-from .picture.pools_picture import PoolPictureGenerator
-from .picture.price_picture import price_graph_from_db
-from .picture.queue_picture import queue_graph
-from .picture.savers_picture import SaversPictureGenerator
-from .picture.supply_picture import SupplyPictureGenerator
+from comm.picture.block_height_picture import block_speed_chart
+from comm.picture.key_stats_picture import KeyStatsPictureGenerator
+from comm.picture.nodes_pictures import NodePictureGenerator
+from comm.picture.pools_picture import PoolPictureGenerator
+from comm.picture.price_picture import price_graph_from_db
+from comm.picture.queue_picture import queue_graph
+from comm.picture.savers_picture import SaversPictureGenerator
+from comm.picture.supply_picture import SupplyPictureGenerator
 
 
 class MetricsStates(StatesGroup):

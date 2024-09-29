@@ -6,7 +6,7 @@ from typing import List
 from PIL import Image, ImageDraw
 
 from comm.localization.eng_base import BaseLocalization
-from comm.dialog.picture.resources import Resources
+from comm.picture.resources import Resources
 from lib.date_utils import DAY, now_ts, today_str
 from lib.draw_utils import default_background, CacheGrid, TC_YGGDRASIL_GREEN, \
     make_donut_chart, TC_NIGHT_BLACK, TC_PALETTE, TC_WHITE, TC_LIGHTNING_BLUE, get_palette_color_by_index, \

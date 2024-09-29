@@ -1,4 +1,4 @@
-from comm.dialog.picture.queue_picture import QUEUE_TIME_SERIES
+from comm.picture.queue_picture import QUEUE_TIME_SERIES
 
 from jobs.fetch.queue import QueueInfo
 from lib.cooldown import CooldownBiTrigger

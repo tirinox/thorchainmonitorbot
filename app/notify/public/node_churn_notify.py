@@ -1,6 +1,6 @@
 from typing import List
 
-from comm.dialog.picture.nodes_pictures import NodePictureGenerator
+from comm.picture.nodes_pictures import NodePictureGenerator
 from jobs.fetch.node_info import NodeInfoFetcher
 from jobs.node_churn import NodeChurnDetector
 from lib.cooldown import Cooldown

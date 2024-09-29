@@ -12,7 +12,7 @@ from aiogram.utils.helper import HelperMode
 
 from comm.dialog.base import BaseDialog, message_handler, query_handler
 from comm.dialog.my_wallets_menu import ContentTypes, CallbackQuery
-from comm.dialog.picture.avatar import make_avatar
+from comm.picture.avatar import make_avatar
 from comm.localization.manager import BaseLocalization
 from lib.depcont import DepContainer
 from lib.draw_utils import img_to_bio

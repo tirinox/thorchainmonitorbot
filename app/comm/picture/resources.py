@@ -3,8 +3,8 @@ import string
 
 from PIL import Image, ImageFont
 
-from comm.dialog.picture.crypto_logo import CryptoLogoDownloader
-from comm.dialog.picture.sprite_font import SpriteFont
+from comm.picture.crypto_logo import CryptoLogoDownloader
+from comm.picture.sprite_font import SpriteFont
 from lib.utils import Singleton
 
 

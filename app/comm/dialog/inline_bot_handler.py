@@ -5,8 +5,8 @@ from aiogram.types import InlineQuery, InputTextMessageContent, InlineQueryResul
 
 from comm.localization.manager import BaseLocalization
 from .base import BaseDialog, inline_bot_handler
-from .picture.lp_picture import generate_yield_picture
-from .picture.price_picture import price_graph_from_db
+from comm.picture.lp_picture import generate_yield_picture
+from comm.picture.price_picture import price_graph_from_db
 from jobs.fetch.runeyield import get_rune_yield_connector
 from lib.config import Config
 from lib.date_utils import today_str, MINUTE, parse_timespan_to_seconds, DAY

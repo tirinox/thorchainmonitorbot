@@ -10,7 +10,8 @@ from starlette.responses import JSONResponse
 from starlette.routing import Route, Mount
 from starlette.staticfiles import StaticFiles
 
-from comm.dialog.slack.slack_bot import SlackBot
+from api.w3.dex_analytics import DexAnalyticsCollector
+from comm.slack.slack_bot import SlackBot
 from jobs.user_counter import UserCounterMiddleware
 from lib.config import Config
 from lib.date_utils import parse_timespan_to_seconds, DAY
@@ -19,7 +20,6 @@ from lib.depcont import DepContainer
 from lib.geo_ip import GeoIPManager
 from lib.settings_manager import SettingsManager
 from lib.utils import setup_logs, recursive_asdict
-from lib.w3.dex_analytics import DexAnalyticsCollector
 from models.node_watchers import NodeWatcherStorage
 
 

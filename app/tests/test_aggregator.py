@@ -1,13 +1,13 @@
 import pytest
 
+from api.w3.aggr_contract import AggregatorContract
+from api.w3.resolver import AggregatorResolver, DEFAULT_AGGREGATOR_RESOLVER_PATH
+from api.w3.router_contract import TCRouterContract
+from api.w3.token_list import StaticTokenList
+from api.w3.web3_helper import Web3Helper
 from lib.config import Config
 from lib.constants import Chains
 from lib.utils import str_to_bytes
-from lib.w3.aggr_contract import AggregatorContract
-from lib.w3.resolver import AggregatorResolver, DEFAULT_AGGREGATOR_RESOLVER_PATH
-from lib.w3.router_contract import TCRouterContract
-from lib.w3.token_list import StaticTokenList
-from lib.w3.web3_helper import Web3Helper
 from tools.lib.lp_common import LpAppFramework
 
 LpAppFramework.solve_working_dir_mess()

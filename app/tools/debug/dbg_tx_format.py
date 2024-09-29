@@ -9,7 +9,7 @@ from api.w3.aggregator import AggregatorDataExtractor
 from comm.localization.languages import Language
 from comm.localization.manager import BaseLocalization
 from jobs.affiliate_merge import AffiliateTXMerger, ZERO_HASH
-from jobs.fetch.profit_against_cex import StreamingSwapVsCexProfitCalculator
+from api.profit_against_cex import StreamingSwapVsCexProfitCalculator
 from jobs.fetch.tx import TxFetcher
 from jobs.volume_filler import VolumeFillerUpdater
 from lib.constants import Chains, thor_to_float

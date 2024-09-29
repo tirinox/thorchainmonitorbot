@@ -5,7 +5,7 @@ import random
 
 from eth_utils.humanize import WEEK
 
-from comm.dialog.picture.nodes_pictures import NodePictureGenerator
+from comm.picture.nodes_pictures import NodePictureGenerator
 from jobs.fetch.node_info import NodeInfoFetcher
 from lib.date_utils import now_ts, DAY, HOUR
 from lib.draw_utils import make_donut_chart

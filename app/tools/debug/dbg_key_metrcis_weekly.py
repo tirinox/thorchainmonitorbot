@@ -3,7 +3,7 @@ import logging
 import pickle
 
 from comm.localization.languages import Language
-from comm.dialog.picture.key_stats_picture import KeyStatsPictureGenerator
+from comm.picture.key_stats_picture import KeyStatsPictureGenerator
 from jobs.fetch.key_stats import KeyStatsFetcher
 from jobs.user_counter import UserCounterMiddleware
 from lib.date_utils import DAY

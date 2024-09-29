@@ -2,7 +2,7 @@ import asyncio
 import logging
 
 from api.w3.aggregator import AggregatorDataExtractor
-from comm.dialog.picture.price_picture import price_graph_from_db
+from comm.picture.price_picture import price_graph_from_db
 from jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from jobs.fetch.pool_price import PoolFetcher
 from jobs.fetch.tx import TxFetcher

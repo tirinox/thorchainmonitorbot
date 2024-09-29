@@ -1,7 +1,7 @@
 import asyncio
 
-from comm.dialog.picture.price_picture import price_graph_from_db
-from comm.dialog.slack.slack_bot import SlackBot
+from comm.picture.price_picture import price_graph_from_db
+from comm.slack.slack_bot import SlackBot
 from lib.date_utils import DAY
 from lib.texts import sep
 from tools.lib.lp_common import LpAppFramework

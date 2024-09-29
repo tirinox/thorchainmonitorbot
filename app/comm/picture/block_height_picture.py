@@ -1,5 +1,5 @@
 from comm.localization.manager import BaseLocalization
-from comm.dialog.picture.common import PictureAndName
+from comm.picture.common import PictureAndName
 from lib.date_utils import today_str
 from lib.plot_graph import PlotGraphLines
 from lib.utils import async_wrap

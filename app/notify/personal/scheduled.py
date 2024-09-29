@@ -1,7 +1,7 @@
 import asyncio
 from typing import NamedTuple
 
-from comm.dialog.picture.lp_picture import generate_yield_picture
+from comm.picture.lp_picture import generate_yield_picture
 from jobs.fetch.runeyield import get_rune_yield_connector
 from jobs.fetch.runeyield.borrower import BorrowerPositionGenerator
 from lib.constants import LOAN_MARKER

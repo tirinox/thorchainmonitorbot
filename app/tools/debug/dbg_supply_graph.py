@@ -6,7 +6,7 @@ from pprint import pprint
 from comm.localization.eng_base import BaseLocalization
 from comm.localization.languages import Language
 from comm.localization.manager import LocalizationManager
-from comm.dialog.picture.supply_picture import SupplyPictureGenerator
+from comm.picture.supply_picture import SupplyPictureGenerator
 from jobs.fetch.last_block import LastBlockFetcher
 from jobs.fetch.net_stats import NetworkStatisticsFetcher
 from lib.date_utils import today_str
@@ -22,7 +22,7 @@ from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 @json_cached_to_file_async("../temp/supply_info_2.json")
 async def get_rune_supply(app: LpAppFramework):
     rune_market_info: RuneMarketInfo = await app.deps.rune_market_fetcher.get_rune_market_info()
-    return dataclasses.asdict(rune_market_info.supply_info)
+    return rune_market_info.supply_info._asdict()
 
 #
 # @json_cached_to_file_async("../temp/net_stats1.json")

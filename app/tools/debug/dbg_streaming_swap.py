@@ -1,9 +1,9 @@
 import asyncio
 import logging
 
+from api.profit_against_cex import StreamingSwapVsCexProfitCalculator
 from api.w3.aggregator import AggregatorDataExtractor
 from api.w3.dex_analytics import DexAnalyticsCollector
-from jobs.fetch.profit_against_cex import StreamingSwapVsCexProfitCalculator
 from jobs.fetch.streaming_swaps import StreamingSwapFechter
 from jobs.fetch.tx import TxFetcher
 from jobs.scanner.event_db import EventDatabase

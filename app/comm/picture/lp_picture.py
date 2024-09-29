@@ -6,7 +6,7 @@ from typing import List
 from PIL import ImageDraw
 
 from comm.localization.manager import BaseLocalization
-from comm.dialog.picture.resources import Resources
+from comm.picture.resources import Resources
 from lib.constants import RUNE_SYMBOL
 from lib.draw_utils import CATEGORICAL_PALETTE, pos_percent, result_color, hor_line, LIGHT_TEXT_COLOR, \
     TC_WHITE, paste_image_masked, LINE_COLOR

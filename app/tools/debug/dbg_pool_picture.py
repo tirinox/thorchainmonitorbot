@@ -3,7 +3,7 @@ import random
 from copy import deepcopy
 
 from comm.localization.languages import Language
-from comm.dialog.picture.pools_picture import PoolPictureGenerator
+from comm.picture.pools_picture import PoolPictureGenerator
 from jobs.fetch.pool_price import PoolInfoFetcherMidgard
 from lib.utils import random_chance
 from models.pool_info import PoolMapPair

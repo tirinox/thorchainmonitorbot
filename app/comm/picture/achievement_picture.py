@@ -5,8 +5,8 @@ import random
 from PIL import Image, ImageDraw
 
 from comm.localization.achievements.ach_eng import AchievementsLocalizationBase
-from comm.dialog.picture.common import BasePictureGenerator
-from comm.dialog.picture.resources import Resources
+from comm.picture.common import BasePictureGenerator
+from comm.picture.resources import Resources
 from jobs.achievement.ach_list import Achievement
 from lib.date_utils import today_str
 from lib.draw_utils import pos_percent, paste_image_masked, measure_font_to_fit_in_box, convert_indexed_png, \

@@ -3,7 +3,7 @@ import logging
 import random
 
 from comm.localization.languages import Language
-from comm.dialog.telegram.telegram import TG_TEST_USER
+from comm.telegram.telegram import TG_TEST_USER
 from jobs.node_churn import NodeChurnDetector
 from lib.date_utils import now_ts
 from api.midgard.name_service import NameMap

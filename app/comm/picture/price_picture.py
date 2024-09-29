@@ -1,5 +1,5 @@
 from comm.localization.manager import BaseLocalization
-from comm.dialog.picture.common import PictureAndName
+from comm.picture.common import PictureAndName
 from jobs.volume_recorder import VolumeRecorder
 from lib.constants import RUNE_SYMBOL_DET, RUNE_SYMBOL_POOL, RUNE_SYMBOL_CEX
 from lib.date_utils import DAY, today_str

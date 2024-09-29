@@ -1,6 +1,6 @@
 import asyncio
 
-from comm.dialog.picture.block_height_picture import block_speed_chart
+from comm.picture.block_height_picture import block_speed_chart
 from jobs.fetch.last_block import LastBlockFetcher
 from lib.date_utils import DAY
 from lib.delegates import INotified

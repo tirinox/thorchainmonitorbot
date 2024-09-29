@@ -3,7 +3,7 @@ from typing import List
 from api.aionode.types import ThorChainInfo, thor_to_float
 from api.midgard.name_service import NameMap, add_thor_suffix
 from api.w3.dex_analytics import DexReportEntry, DexReport
-from comm.dialog.twitter.text_length import twitter_intelligent_text_splitter, TWITTER_LIMIT_CHARACTERS
+from comm.twitter.text_length import twitter_intelligent_text_splitter, TWITTER_LIMIT_CHARACTERS
 from jobs.fetch.chain_id import AlertChainIdChange
 from lib.config import Config
 from lib.constants import Chains, BTC_SYMBOL, ETH_SYMBOL

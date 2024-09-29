@@ -5,8 +5,8 @@ from typing import List, NamedTuple
 from PIL import Image
 
 from comm.localization.eng_base import BaseLocalization
-from comm.dialog.picture.common import BasePictureGenerator, DrawRectPacker, Rect, PackItem
-from comm.dialog.picture.resources import Resources
+from comm.picture.common import BasePictureGenerator, DrawRectPacker, Rect, PackItem
+from comm.picture.resources import Resources
 from lib.constants import RUNE_IDEAL_SUPPLY, ThorRealms
 from lib.draw_utils import font_estimate_size, reduce_alpha, adjust_brightness
 from lib.money import short_money

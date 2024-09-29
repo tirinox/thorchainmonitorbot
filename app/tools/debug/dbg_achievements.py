@@ -6,8 +6,8 @@ import random
 from comm.localization.achievements.ach_eng import AchievementsEnglishLocalization
 from comm.localization.achievements.ach_rus import AchievementsRussianLocalization
 from comm.localization.languages import Language
-from comm.dialog.picture.achievement_picture import build_achievement_picture_generator
-from comm.dialog.telegram.telegram import TG_TEST_USER
+from comm.picture.achievement_picture import build_achievement_picture_generator
+from comm.telegram.telegram import TG_TEST_USER
 from jobs.achievement.ach_list import Achievement, EventTestAchievement, A, AchievementDescription, \
     ACHIEVEMENT_DESC_MAP
 from jobs.achievement.milestones import Milestones

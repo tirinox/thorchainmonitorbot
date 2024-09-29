@@ -1,6 +1,6 @@
 from aiogram.utils.exceptions import MessageCantBeDeleted, MessageToEditNotFound, MessageToDeleteNotFound
 
-from .telegram.telegram import TelegramBot
+from comm.telegram.telegram import TelegramBot
 from lib.db import DB
 from lib.logs import WithLogger
 
