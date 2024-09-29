@@ -642,13 +642,10 @@ class BaseLocalization(ABC):  # == English
                 ilp_text = ''
 
             if tx.is_savings:
-                cap = None  # it will stop standard LP cap from being shown
-
                 amount_more, asset_more, saver_pb, saver_cap, saver_percent = \
                     self.get_savers_limits(pool_info, usd_per_rune, e.mimir, tx.asset_amount)
                 saver_cap_part = f'Savers cap is {saver_pb} full. '
 
-                # todo
                 if self.show_add_more and amount_more > 0:
                     saver_cap_part += f'You can add {pre(short_money(amount_more))} {pre(asset_more)} more.'
 
@@ -737,6 +734,10 @@ class BaseLocalization(ABC):  # == English
         #         f'You can add {code(short_rune(cap.how_much_rune_you_can_lp))} '
         #         f'({short_dollar(cap.how_much_usd_you_can_lp)}) more.\n'
         #     )
+
+        if not tx.any_side_in_tc:
+            url = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, tx.tx_hash)
+            msg = f"\n{link(url, 'Runescan')}\n"
 
         return msg.strip()
 

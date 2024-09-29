@@ -598,6 +598,13 @@ class ThorTx:
                     if coin.asset == in_coin.asset:
                         return coin
 
+    @property
+    def any_side_in_tc(self):
+        return any(
+            c for c in self.coins_of()
+            if is_rune(c.asset) or Asset(c.asset).is_trade or Asset(c.asset).is_synth
+        )
+
 
 @dataclass
 class EventLargeTransaction:
