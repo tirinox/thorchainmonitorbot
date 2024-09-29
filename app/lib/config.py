@@ -3,9 +3,9 @@ import sys
 from typing import Any
 
 import yaml
-from api.aionode.env import ThorEnvironment, MAINNET, MULTICHAIN_STAGENET_ENVIRONMENT
 from dotenv import load_dotenv
 
+from api.aionode.env import ThorEnvironment, MAINNET, MULTICHAIN_STAGENET_ENVIRONMENT
 from lib.constants import NetworkIdents
 from lib.date_utils import parse_timespan_to_seconds
 from lib.utils import strip_trailing_slash

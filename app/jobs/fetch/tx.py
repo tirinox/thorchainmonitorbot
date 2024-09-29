@@ -3,12 +3,12 @@ from typing import List, Optional
 from aiohttp import ContentTypeError
 from tqdm import tqdm
 
+from api.midgard.parser import get_parser_by_network_id, TxParseResult
+from api.midgard.urlgen import free_url_gen
 from jobs.affiliate_merge import AffiliateTXMerger
 from jobs.fetch.base import BaseFetcher
 from lib.date_utils import parse_timespan_to_seconds, now_ts
 from lib.depcont import DepContainer
-from lib.midgard.parser import get_parser_by_network_id, TxParseResult
-from lib.midgard.urlgen import free_url_gen
 from models.tx import ThorTx
 from notify.dup_stop import TxDeduplicator
 

@@ -1,7 +1,5 @@
 from typing import Optional, List
 
-from proto.access import parse_thor_address, NativeThorTx
-from proto.types import MsgDeposit, MsgObservedTxIn
 from jobs.scanner.native_scan import BlockResult
 from lib.constants import NATIVE_RUNE_SYMBOL, thor_to_float
 from lib.depcont import DepContainer
@@ -10,6 +8,8 @@ from models.asset import Asset, is_rune
 from models.memo import ActionType
 from models.memo import THORMemo
 from models.s_swap import StreamingSwap, AlertSwapStart
+from proto.access import parse_thor_address, NativeThorTx
+from proto.types import MsgDeposit, MsgObservedTxIn
 
 
 def filter_unique_observed_txs(txs: List[NativeThorTx]):

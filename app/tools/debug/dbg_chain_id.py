@@ -3,7 +3,7 @@ import asyncio
 from comm.localization.eng_base import BaseLocalization
 from jobs.fetch.chain_id import ChainIdFetcher, EventChainId, AlertChainIdChange
 from lib.var_file import var_file_loop
-from notify.types.chain_id_notify import ChainIdNotifier
+from notify.public.chain_id_notify import ChainIdNotifier
 from tools.lib.lp_common import LpAppFramework
 
 

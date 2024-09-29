@@ -4,9 +4,8 @@ from typing import List
 
 from lib.constants import thor_to_float, ZERO_HASH
 from lib.utils import WithLogger
-from models.tx import ThorCoin, ThorTx, ThorMetaSwap, ThorMetaAddLiquidity, ThorSubTx
 from models.memo import ActionType
-
+from models.tx import ThorCoin, ThorTx, ThorMetaSwap, ThorMetaAddLiquidity, ThorSubTx
 
 
 class AffiliateTXMerger(WithLogger):

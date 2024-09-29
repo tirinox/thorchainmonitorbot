@@ -1,9 +1,9 @@
-from proto.types import MsgObservedTxIn
 from jobs.scanner.native_scan import BlockResult
 from lib.active_users import DailyActiveUserCounter, UserStats
 from lib.delegates import INotified
 from lib.depcont import DepContainer
 from lib.utils import WithLogger
+from proto.types import MsgObservedTxIn
 
 
 class UserCounterMiddleware(INotified, WithLogger):

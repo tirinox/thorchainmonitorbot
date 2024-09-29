@@ -10,7 +10,7 @@ from jobs.volume_filler import VolumeFillerUpdater
 from lib.constants import Chains, ETH_SYMBOL, AVAX_SYMBOL
 from lib.date_utils import DAY
 from lib.delegates import WithDelegates, INotified
-from lib.midgard.urlgen import free_url_gen
+from api.midgard.urlgen import free_url_gen
 from lib.money import DepthCurve
 from lib.texts import sep
 from lib.w3.aggregator import AggregatorDataExtractor
@@ -20,7 +20,7 @@ from lib.w3.router_contract import TCRouterContract
 from lib.w3.token_list import TokenListCached, StaticTokenList
 from models.tx import ThorTx
 from models.memo import ActionType
-from notify.types.tx_notify import SwapTxNotifier
+from notify.public.tx_notify import SwapTxNotifier
 from tools.debug.dbg_tx_format import load_tx
 from tools.lib.lp_common import LpAppFramework
 

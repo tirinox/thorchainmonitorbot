@@ -3,7 +3,6 @@ from collections import defaultdict
 from datetime import datetime
 from typing import NamedTuple, List, Optional, Tuple
 
-from proto.access import DecodedEvent
 from models.asset import is_rune
 from models.events import EventSwap, EventStreamingSwap, EventOutbound, EventScheduledOutbound, \
     parse_swap_and_out_event, TypeEventSwapAndOut, EventTradeAccountDeposit
@@ -11,6 +10,7 @@ from models.memo import ActionType
 from models.memo import THORMemo
 from models.s_swap import StreamingSwap
 from models.tx import ThorTx, SUCCESS, ThorMetaSwap, ThorCoin, ThorSubTx
+from proto.access import DecodedEvent
 
 
 class SwapProps(NamedTuple):

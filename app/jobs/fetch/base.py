@@ -8,7 +8,7 @@ from typing import Dict
 
 from redis import BusyLoadingError
 
-from lib.date_utils import now_ts, HOUR, MINUTE
+from lib.date_utils import now_ts, MINUTE
 from lib.delegates import WithDelegates
 from lib.depcont import DepContainer
 from lib.utils import WithLogger

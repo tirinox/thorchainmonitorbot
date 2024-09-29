@@ -6,7 +6,7 @@ from comm.localization.languages import Language
 from comm.dialog.telegram.telegram import TG_TEST_USER
 from jobs.node_churn import NodeChurnDetector
 from lib.date_utils import now_ts
-from lib.midgard.name_service import NameMap
+from api.midgard.name_service import NameMap
 from lib.texts import sep
 from models.node_info import NodeEvent, NodeEventType, EventProviderStatus, EventNodeFeeChange, \
     EventProviderBondChange

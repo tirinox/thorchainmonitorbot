@@ -20,9 +20,9 @@ from lib.w3.aggregator import AggregatorDataExtractor
 from lib.w3.dex_analytics import DexAnalyticsCollector
 from models.tx import ThorTx
 from models.memo import ActionType
-from notify.types.dex_report_notify import DexReportNotifier
-from notify.types.s_swap_notify import StreamingSwapStartTxNotifier
-from notify.types.tx_notify import SwapTxNotifier
+from notify.public.dex_report_notify import DexReportNotifier
+from notify.public.s_swap_notify import StreamingSwapStartTxNotifier
+from notify.public.tx_notify import SwapTxNotifier
 from tools.lib.lp_common import LpAppFramework
 
 BlockScannerClass = NativeScannerBlockCached

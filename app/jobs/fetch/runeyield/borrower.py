@@ -2,11 +2,11 @@ from dataclasses import dataclass
 from typing import NamedTuple, List, Dict
 
 from api.aionode.types import ThorBorrowerPosition
+from api.midgard.urlgen import free_url_gen
 from lib.constants import thor_to_float, LOAN_MARKER
 from lib.date_utils import now_ts
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
-from lib.midgard.urlgen import free_url_gen
 from models.price import LastPriceHolder
 
 

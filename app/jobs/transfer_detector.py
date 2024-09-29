@@ -1,8 +1,6 @@
 from collections import defaultdict
 from typing import List
 
-from proto.access import NativeThorTx, parse_thor_address, DecodedEvent
-from proto.types import MsgSend, MsgDeposit
 from jobs.scanner.native_scan import BlockResult
 from lib.constants import thor_to_float, DEFAULT_RESERVE_ADDRESS, BOND_MODULE, DEFAULT_RUNE_FEE, \
     RUNE_DENOM, RUNE_SYMBOL, NATIVE_RUNE_SYMBOL
@@ -10,6 +8,8 @@ from lib.delegates import WithDelegates, INotified
 from lib.utils import WithLogger
 from models.asset import Asset, is_rune
 from models.transfer import RuneTransfer
+from proto.access import NativeThorTx, parse_thor_address, DecodedEvent
+from proto.types import MsgSend, MsgDeposit
 
 
 # This one is used as a helper for the main RuneTransferDetectorTxLogs

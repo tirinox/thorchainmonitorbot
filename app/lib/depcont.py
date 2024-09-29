@@ -8,14 +8,14 @@ from aiohttp import ClientSession, ClientTimeout
 
 from api.aionode.connector import ThorConnector
 from api.aionode.types import ThorChainInfo
+from api.midgard.connector import MidgardConnector
+from api.midgard.name_service import NameService
 from comm.dialog.telegram.telegram import TelegramBot
-from comm.dialog.twitter import TwitterBot
+from comm.dialog.twitter.twitter_bot import TwitterBot
 from lib.config import Config
 from lib.db import DB
 from lib.emergency import EmergencyReport
 from lib.http_ses import ObservableSession
-from lib.midgard.connector import MidgardConnector
-from lib.midgard.name_service import NameService
 from lib.new_feature import NewFeatureManager, Features
 from lib.scheduler import Scheduler
 from lib.settings_manager import SettingsManager

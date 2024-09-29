@@ -1,10 +1,10 @@
-from comm.localization.eng_base import EnglishLocalization, BaseLocalization
-from comm.localization.languages import Language
-from comm.localization.rus import RussianLocalization
-from comm.localization.twitter_eng import TwitterEnglishLocalization
 from lib.config import Config
 from lib.db import DB
 from lib.utils import Singleton
+from .eng_base import EnglishLocalization, BaseLocalization
+from .languages import Language
+from .rus import RussianLocalization
+from .twitter_eng import TwitterEnglishLocalization
 
 
 class LocalizationManager(metaclass=Singleton):

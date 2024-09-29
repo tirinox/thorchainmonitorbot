@@ -1,4 +1,3 @@
-from contextlib import suppress
 from typing import List
 
 from jobs.fetch.pool_price import PoolFetcher

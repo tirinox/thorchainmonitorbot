@@ -9,7 +9,7 @@ from lib.constants import NetworkIdents
 from lib.depcont import DepContainer
 from lib.texts import sep
 from models.price import LastPriceHolder
-from notify.types.best_pool_notify import BestPoolsNotifier
+from notify.public.best_pool_notify import BestPoolsNotifier
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
 

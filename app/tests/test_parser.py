@@ -4,7 +4,7 @@ import pytest
 
 from jobs.affiliate_merge import AffiliateTXMerger
 from lib.constants import NetworkIdents, THOR_DIVIDER, NATIVE_RUNE_SYMBOL
-from lib.midgard.parser import MidgardParserV2
+from api.midgard.parser import MidgardParserV2
 from lib.utils import load_json
 from models.asset import is_rune
 from models.tx import ThorCoin, ThorMetaSwap, ThorTx, ThorSubTx

@@ -6,12 +6,12 @@ from typing import Optional, List, Dict
 from redis.asyncio import Redis
 from ujson import JSONDecodeError
 
+from api.midgard.parser import get_parser_by_network_id
 from jobs.fetch.base import BaseFetcher
 from lib.config import Config
 from lib.constants import RUNE_SYMBOL_DET, RUNE_SYMBOL_POOL, RUNE_SYMBOL_CEX, THOR_BLOCK_TIME
 from lib.date_utils import parse_timespan_to_seconds, DAY
 from lib.depcont import DepContainer
-from lib.midgard.parser import get_parser_by_network_id
 from models.pool_info import parse_thor_pools, PoolInfo, PoolInfoMap
 from models.price import RuneMarketInfo
 from models.time_series import PriceTimeSeries

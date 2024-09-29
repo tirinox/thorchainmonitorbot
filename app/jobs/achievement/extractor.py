@@ -1,7 +1,6 @@
 from collections import defaultdict
 from typing import List
 
-from jobs.achievement.ach_list import A, EventTestAchievement, Achievement
 from jobs.fetch.account_number import AccountNumberFetcher
 from jobs.fetch.mimir import MimirTuple
 from lib.constants import THORCHAIN_BIRTHDAY
@@ -14,12 +13,13 @@ from models.loans import LendingStats, AlertLoanOpen
 from models.memo import ActionType
 from models.net_stats import NetworkStats
 from models.node_info import NodeSetChanges
-from models.runepool import AlertPOLState, AlertRunePoolAction
 from models.price import RuneMarketInfo, LastPriceHolder
+from models.runepool import AlertPOLState, AlertRunePoolAction
 from models.savers import SaversBank
 from models.trade_acc import AlertTradeAccountStats, AlertTradeAccountAction
 from models.tx import ThorTx
-from notify.types.block_notify import LastBlockStore
+from notify.public.block_notify import LastBlockStore
+from .ach_list import A, EventTestAchievement, Achievement
 
 
 class AchievementsExtractor(WithLogger):

@@ -2,7 +2,6 @@ from time import perf_counter
 from typing import List, Optional
 
 from api.aionode.types import ThorNetwork
-
 from jobs.fetch.base import BaseFetcher
 from lib.date_utils import parse_timespan_to_seconds
 from lib.depcont import DepContainer

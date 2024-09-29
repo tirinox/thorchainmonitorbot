@@ -1,9 +1,9 @@
 import re
 from typing import List
+from unicodedata import lookup
 from urllib.parse import urlparse
 
 from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
-from unicodedata import lookup
 
 from lib.money import pretty_money, short_money
 from lib.utils import grouper

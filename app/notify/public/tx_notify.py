@@ -12,8 +12,8 @@ from models.asset import Asset
 from models.memo import ActionType
 from models.tx import ThorTx, EventLargeTransaction
 from notify.dup_stop import TxDeduplicator, TxDeduplicatorSenderCooldown
-from notify.types.cap_notify import LiquidityCapNotifier
-from notify.types.s_swap_notify import DB_KEY_ANNOUNCED_SS_START
+from notify.public.cap_notify import LiquidityCapNotifier
+from notify.public.s_swap_notify import DB_KEY_ANNOUNCED_SS_START
 
 DB_KEY_TX_ANNOUNCED_HASHES = 'large-tx:announced-hashes'
 

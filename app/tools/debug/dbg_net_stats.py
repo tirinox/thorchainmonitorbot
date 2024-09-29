@@ -16,7 +16,7 @@ from lib.texts import up_down_arrow
 from lib.utils import setup_logs, load_pickle, save_pickle
 from models.net_stats import NetworkStats, AlertNetworkStats
 from models.pool_info import PoolInfoMap, parse_thor_pools
-from notify.types.stats_notify import NetworkStatsNotifier
+from notify.public.stats_notify import NetworkStatsNotifier
 from tools.lib.lp_common import LpAppFramework
 
 CACHE_NET_STATS = False

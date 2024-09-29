@@ -1,7 +1,7 @@
 import asyncio
 
 from comm.localization.languages import Language
-from lib.midgard.name_service import NameService
+from api.midgard.name_service import NameService
 from lib.texts import sep
 from models.transfer import RuneTransfer
 from tools.lib.lp_common import LpAppFramework

@@ -1,11 +1,11 @@
 import asyncio
 
+from api.midgard.urlgen import free_url_gen
 from jobs.fetch.base import BaseFetcher
 from jobs.user_counter import UserCounterMiddleware
 from lib.constants import THOR_BLOCK_TIME, thor_to_float
 from lib.date_utils import parse_timespan_to_seconds, now_ts
 from lib.depcont import DepContainer
-from lib.midgard.urlgen import free_url_gen
 from models.net_stats import NetworkStats
 
 

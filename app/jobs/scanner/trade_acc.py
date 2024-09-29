@@ -1,7 +1,5 @@
 from typing import List
 
-from proto.access import NativeThorTx, parse_thor_address
-from proto.common import Tx
 from jobs.scanner.block_loader import BlockResult
 from lib.constants import thor_to_float
 from lib.db import DB
@@ -10,6 +8,8 @@ from lib.logs import WithLogger
 from models.memo import THORMemo, ActionType, is_action
 from models.price import LastPriceHolder
 from models.trade_acc import AlertTradeAccountAction
+from proto.access import NativeThorTx, parse_thor_address
+from proto.common import Tx
 
 
 class TradeAccEventDecoder(WithLogger, INotified, WithDelegates):

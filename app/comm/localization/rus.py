@@ -3,9 +3,8 @@ from math import ceil
 from typing import List, Optional
 
 from api.aionode.types import ThorChainInfo, ThorBalances, ThorSwapperClout, thor_to_float
-from comm.localization.achievements.ach_rus import AchievementsRussianLocalization
-from comm.localization.eng_base import BaseLocalization, CREATOR_TG, URL_LEADERBOARD_MCCN
-from proto.types import ThorName
+from api.midgard.name_service import add_thor_suffix, NameMap
+from api.w3.dex_analytics import DexReportEntry, DexReport
 from jobs.fetch.chain_id import AlertChainIdChange
 from jobs.fetch.runeyield.borrower import LoanReportCard
 from lib.config import Config
@@ -13,14 +12,12 @@ from lib.constants import Chains, LOAN_MARKER, ThorRealms
 from lib.date_utils import format_time_ago, seconds_human, now_ts
 from lib.explorers import get_explorer_url_to_address, get_thoryield_address, \
     get_ip_info_link
-from lib.midgard.name_service import add_thor_suffix, NameMap
 from lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change, short_money, short_dollar, format_percent, RAIDO_GLYPH, short_rune, pretty_percent, \
     chart_emoji, pretty_rune
 from lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
     up_down_arrow, plural, shorten_text, cut_long_text, underline
 from lib.utils import grouper, translate
-from lib.w3.dex_analytics import DexReportEntry, DexReport
 from models.asset import Asset
 from models.cap_info import ThorCapInfo
 from models.key_stats_model import AlertKeyStats
@@ -42,6 +39,9 @@ from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from models.transfer import RuneTransfer, RuneCEXFlow
 from models.tx import EventLargeTransaction
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
+from proto.types import ThorName
+from .achievements.ach_rus import AchievementsRussianLocalization
+from .eng_base import BaseLocalization, CREATOR_TG, URL_LEADERBOARD_MCCN
 
 
 class RussianLocalization(BaseLocalization):

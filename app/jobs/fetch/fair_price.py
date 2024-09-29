@@ -1,6 +1,7 @@
 import asyncio
 from typing import Optional
 
+from api.midgard.urlgen import free_url_gen
 from jobs.fetch.circulating import RuneCirculatingSupplyFetcher, RuneCirculatingSupply, RuneHoldEntry, \
     ThorRealms
 from jobs.fetch.gecko_price import get_thorchain_coin_gecko_info, gecko_market_cap_rank, gecko_ticker_price, \
@@ -8,7 +9,6 @@ from jobs.fetch.gecko_price import get_thorchain_coin_gecko_info, gecko_market_c
 from lib.constants import thor_to_float, DEFAULT_CEX_NAME, DEFAULT_CEX_BASE_ASSET
 from lib.date_utils import MINUTE
 from lib.depcont import DepContainer
-from lib.midgard.urlgen import free_url_gen
 from lib.utils import a_result_cached, WithLogger, retries
 from models.price import RuneMarketInfo
 

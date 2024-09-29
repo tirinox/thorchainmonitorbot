@@ -1,6 +1,6 @@
-from comm.localization.achievements.ach_eng import AchievementsEnglishLocalization
 from jobs.achievement.ach_list import Achievement, A
 from lib.texts import code, pre
+from .ach_eng import AchievementsEnglishLocalization
 
 
 class AchievementsRussianLocalization(AchievementsEnglishLocalization):

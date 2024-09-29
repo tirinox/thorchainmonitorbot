@@ -1,8 +1,8 @@
+from api.midgard.urlgen import free_url_gen
 from jobs.fetch.base import BaseFetcher
 from lib.constants import thor_to_float
 from lib.date_utils import parse_timespan_to_seconds
 from lib.depcont import DepContainer
-from lib.midgard.urlgen import free_url_gen
 from lib.thor_logic import get_effective_security_bond
 from models.cap_info import ThorCapInfo
 

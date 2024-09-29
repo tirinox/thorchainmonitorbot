@@ -8,7 +8,7 @@ from jobs.scanner.runepool import RunePoolEventDecoder
 from lib.money import distort_randomly
 from models.memo import THORMemo
 from models.runepool import AlertRunePoolAction, AlertRunepoolStats, RunepoolState
-from notify.types.runepool_notify import RunePoolTransactionNotifier, RunepoolStatsNotifier
+from notify.public.runepool_notify import RunePoolTransactionNotifier, RunepoolStatsNotifier
 from tools.lib.lp_common import LpAppFramework
 
 prepared = False

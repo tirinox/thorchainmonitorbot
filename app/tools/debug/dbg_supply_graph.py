@@ -14,7 +14,7 @@ from lib.draw_utils import img_to_bio
 from lib.utils import json_cached_to_file_async, load_pickle, save_pickle
 from models.price import RuneMarketInfo
 from notify.channel import BoardMessage
-from notify.types.block_notify import LastBlockStore
+from notify.public.block_notify import LastBlockStore
 from tools.debug.dbg_discord import debug_prepare_discord_bot
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 

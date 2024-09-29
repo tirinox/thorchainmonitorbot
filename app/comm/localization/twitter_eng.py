@@ -1,21 +1,19 @@
 from typing import List
 
 from api.aionode.types import ThorChainInfo, thor_to_float
-from comm.localization.achievements.ach_tw_eng import AchievementsTwitterEnglishLocalization
-from comm.localization.eng_base import BaseLocalization
-from comm.dialog.twitter import twitter_intelligent_text_splitter, TWITTER_LIMIT_CHARACTERS
+from api.midgard.name_service import NameMap, add_thor_suffix
+from api.w3.dex_analytics import DexReportEntry, DexReport
+from comm.dialog.twitter.text_length import twitter_intelligent_text_splitter, TWITTER_LIMIT_CHARACTERS
 from jobs.fetch.chain_id import AlertChainIdChange
 from lib.config import Config
 from lib.constants import Chains, BTC_SYMBOL, ETH_SYMBOL
 from lib.date_utils import now_ts, seconds_human
 from lib.explorers import get_explorer_url_to_tx
-from lib.midgard.name_service import NameMap, add_thor_suffix
 from lib.money import short_dollar, format_percent, pretty_money, pretty_dollar, RAIDO_GLYPH, \
     calc_percent_change, adaptive_round_to_str, emoji_for_percent_change, short_address, short_money, short_rune, \
     pretty_percent, chart_emoji, pretty_rune
 from lib.texts import x_ses, progressbar, plural, bracketify, up_down_arrow, \
     bracketify_spaced, shorten_text
-from lib.w3.dex_analytics import DexReportEntry, DexReport
 from models.asset import Asset
 from models.cap_info import ThorCapInfo
 from models.key_stats_model import AlertKeyStats
@@ -35,6 +33,8 @@ from models.transfer import RuneCEXFlow, RuneTransfer
 from models.tx import EventLargeTransaction
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from notify.channel import MESSAGE_SEPARATOR
+from .achievements.ach_tw_eng import AchievementsTwitterEnglishLocalization
+from .eng_base import BaseLocalization
 
 
 class TwitterEnglishLocalization(BaseLocalization):

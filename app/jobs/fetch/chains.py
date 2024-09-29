@@ -1,7 +1,6 @@
 from typing import Dict
 
 from api.aionode.types import ThorChainInfo
-
 from jobs.fetch.base import BaseFetcher
 from lib.date_utils import parse_timespan_to_seconds
 from lib.depcont import DepContainer

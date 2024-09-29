@@ -4,7 +4,7 @@ from comm.dialog.picture.block_height_picture import block_speed_chart
 from jobs.fetch.last_block import LastBlockFetcher
 from lib.date_utils import DAY
 from lib.delegates import INotified
-from notify.types.block_notify import BlockHeightNotifier
+from notify.public.block_notify import BlockHeightNotifier
 from tools.lib.lp_common import LpAppFramework
 
 

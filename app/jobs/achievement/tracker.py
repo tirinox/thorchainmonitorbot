@@ -1,10 +1,10 @@
 import json
 from typing import Optional
 
-from jobs.achievement.ach_list import Achievement
 from lib.date_utils import now_ts
 from lib.db import DB
 from lib.utils import WithLogger
+from .ach_list import Achievement
 
 
 class AchievementsTracker(WithLogger):

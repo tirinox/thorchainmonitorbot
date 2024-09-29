@@ -5,8 +5,8 @@ from typing import List, NamedTuple
 
 import ujson
 
-from proto.access import NativeThorTx, DecodedEvent, thor_decode_event
 from lib.utils import safe_get
+from proto.access import NativeThorTx, DecodedEvent, thor_decode_event
 
 logger = logging.getLogger(__name__)
 

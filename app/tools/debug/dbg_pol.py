@@ -11,7 +11,7 @@ from lib.date_utils import DAY
 from lib.depcont import DepContainer
 from lib.money import distort_randomly
 from models.runepool import POLState, AlertPOLState
-from notify.types.pol_notify import POLNotifier
+from notify.public.pol_notify import POLNotifier
 from tools.lib.lp_common import LpAppFramework
 
 

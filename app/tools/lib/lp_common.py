@@ -13,10 +13,10 @@ from jobs.volume_recorder import VolumeRecorder, TxCountRecorder
 from lib.constants import NetworkIdents
 from lib.delegates import INotified
 from lib.draw_utils import img_to_bio
-from lib.midgard.parser import MidgardParserV2
+from api.midgard.parser import MidgardParserV2
 from lib.texts import sep
 from lib.utils import load_json
-from notify.types.block_notify import LastBlockStore
+from notify.public.block_notify import LastBlockStore
 
 
 class LpAppFramework(App):

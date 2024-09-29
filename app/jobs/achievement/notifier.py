@@ -1,9 +1,9 @@
-from jobs.achievement.extractor import AchievementsExtractor
-from jobs.achievement.tracker import AchievementsTracker
 from lib.cooldown import Cooldown
 from lib.delegates import WithDelegates, INotified
 from lib.depcont import DepContainer
 from lib.utils import WithLogger
+from .extractor import AchievementsExtractor
+from .tracker import AchievementsTracker
 
 
 class AchievementsNotifier(WithLogger, WithDelegates, INotified):

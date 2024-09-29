@@ -1,6 +1,6 @@
 import asyncio
 
-from lib.midgard.connector import MidgardConnector
+from api.midgard.connector import MidgardConnector
 from lib.texts import sep
 from tools.lib.lp_common import LpAppFramework
 

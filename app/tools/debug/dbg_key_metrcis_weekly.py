@@ -10,7 +10,7 @@ from lib.date_utils import DAY
 from lib.delegates import INotified
 from lib.texts import sep
 from models.key_stats_model import AlertKeyStats
-from notify.types.key_metrics_notify import KeyMetricsNotifier
+from notify.public.key_metrics_notify import KeyMetricsNotifier
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
 

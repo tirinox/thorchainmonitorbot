@@ -13,7 +13,7 @@ from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.utils import WithLogger, hash_of_string_repr, say
 from models.events import EventOutbound, EventScheduledOutbound, \
-    parse_swap_and_out_event, TypeEventSwapAndOut, EventTradeAccountWithdraw, EventTradeAccountDeposit
+    parse_swap_and_out_event, TypeEventSwapAndOut, EventTradeAccountDeposit
 from models.tx import ThorTx
 
 

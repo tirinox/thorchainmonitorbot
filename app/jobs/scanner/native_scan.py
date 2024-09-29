@@ -1,13 +1,13 @@
 import asyncio
 from typing import List, Optional
 
-from proto.access import NativeThorTx
 from jobs.fetch.base import BaseFetcher
 from jobs.scanner.block_loader import BlockResult
 from lib.constants import THOR_BLOCK_TIME
 from lib.date_utils import now_ts
 from lib.depcont import DepContainer
 from lib.utils import safe_get
+from proto.access import NativeThorTx
 
 
 class NativeScannerBlock(BaseFetcher):

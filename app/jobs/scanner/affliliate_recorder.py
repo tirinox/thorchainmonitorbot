@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta
 
-from proto.access import NativeThorTx
 from jobs.scanner.block_loader import BlockResult
 from lib.delegates import INotified
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
-from models.memo import THORMemo
 from lib.money import pretty_dollar
+from models.memo import THORMemo
+from proto.access import NativeThorTx
 
 
 class AffiliateRecorder(WithLogger, INotified):

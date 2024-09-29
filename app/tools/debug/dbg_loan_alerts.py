@@ -15,8 +15,8 @@ from lib.utils import load_pickle, save_pickle
 from lib.var_file import var_file_loop
 from models.loans import AlertLendingStats, LendingStats
 from notify.public.lend_stats_notify import LendingStatsNotifier
-from notify.types.lending_open_up import LendingCapsNotifier
-from notify.types.loans_notify import LoanTxNotifier
+from notify.public.lending_open_up import LendingCapsNotifier
+from notify.public.loans_notify import LoanTxNotifier
 from tools.lib.lp_common import LpAppFramework
 
 

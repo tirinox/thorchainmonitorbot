@@ -1,9 +1,6 @@
 from typing import List
 
 from api.aionode.types import thor_to_float
-from proto.access import NativeThorTx, parse_thor_address
-from proto.common import Asset
-from proto.types import MsgDeposit
 from jobs.scanner.block_loader import BlockResult
 from lib.db import DB
 from lib.delegates import INotified, WithDelegates
@@ -11,6 +8,9 @@ from lib.logs import WithLogger
 from models.memo import THORMemo, ActionType, is_action
 from models.price import LastPriceHolder
 from models.runepool import AlertRunePoolAction
+from proto.access import NativeThorTx, parse_thor_address
+from proto.common import Asset
+from proto.types import MsgDeposit
 
 
 class RunePoolEventDecoder(WithLogger, INotified, WithDelegates):

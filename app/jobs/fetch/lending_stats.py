@@ -1,12 +1,12 @@
 from typing import List, Optional
 
+from api.midgard.parser import get_parser_by_network_id
+from api.midgard.urlgen import free_url_gen
 from jobs.fetch.base import BaseFetcher
 from jobs.volume_recorder import TxCountRecorder
 from lib.constants import THOR_BASIS_POINT_MAX, RUNE_IDEAL_SUPPLY, thor_to_float
 from lib.date_utils import parse_timespan_to_seconds, DAY, now_ts
 from lib.depcont import DepContainer
-from lib.midgard.parser import get_parser_by_network_id
-from lib.midgard.urlgen import free_url_gen
 from models.loans import LendingStats, BorrowerPool
 from models.price import RuneMarketInfo
 from models.vol_n import TxMetricType

@@ -1,6 +1,6 @@
-from comm.localization.achievements.common import AchievementsLocalizationBase
 from jobs.achievement.ach_list import Achievement, A, ADesc
 from lib.texts import code, pre
+from .common import AchievementsLocalizationBase
 
 
 class AchievementsEnglishLocalization(AchievementsLocalizationBase):

@@ -5,8 +5,9 @@ from math import ceil
 from typing import List, Optional
 
 from api.aionode.types import ThorChainInfo, ThorBalances, ThorSwapperClout
-from comm.localization.achievements.ach_eng import AchievementsEnglishLocalization
-from proto.types import ThorName
+from api.midgard.name_service import NameService, add_thor_suffix, NameMap
+from api.w3.dex_analytics import DexReport, DexReportEntry
+from api.w3.token_record import AmountToken
 from jobs.fetch.chain_id import AlertChainIdChange
 from jobs.fetch.runeyield.borrower import LoanReportCard
 from lib.config import Config
@@ -15,7 +16,6 @@ from lib.constants import thor_to_float, THOR_BLOCK_TIME, DEFAULT_CEX_NAME, \
 from lib.date_utils import format_time_ago, now_ts, seconds_human, MINUTE, DAY
 from lib.explorers import get_explorer_url_to_address, Chains, get_explorer_url_to_tx, \
     get_explorer_url_for_node, get_pool_url, get_thoryield_address, get_ip_info_link
-from lib.midgard.name_service import NameService, add_thor_suffix, NameMap
 from lib.money import format_percent, pretty_money, short_address, short_money, \
     calc_percent_change, adaptive_round_to_str, pretty_dollar, emoji_for_percent_change, short_dollar, \
     RAIDO_GLYPH, short_rune, pretty_percent, chart_emoji, pretty_rune
@@ -23,8 +23,6 @@ from lib.texts import progressbar, link, pre, code, bold, x_ses, ital, link_with
     up_down_arrow, bracketify, plural, join_as_numbered_list, regroup_joining, shorten_text, cut_long_text, underline, \
     comma_join
 from lib.utils import grouper, run_once, identity
-from lib.w3.dex_analytics import DexReport, DexReportEntry
-from lib.w3.token_record import AmountToken
 from models.asset import Asset
 from models.cap_info import ThorCapInfo
 from models.key_stats_model import AlertKeyStats
@@ -49,6 +47,8 @@ from models.transfer import RuneTransfer, RuneCEXFlow
 from models.tx import ThorTx, ThorSubTx, EventLargeTransaction
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from notify.channel import Messengers
+from proto.types import ThorName
+from .achievements.ach_eng import AchievementsEnglishLocalization
 
 CREATOR_TG = '@account1242'
 

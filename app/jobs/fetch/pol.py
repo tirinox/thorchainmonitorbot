@@ -1,15 +1,15 @@
 from typing import List
 
 from api.aionode.types import ThorRunePool
+from api.midgard.parser import get_parser_by_network_id
+from api.midgard.urlgen import free_url_gen
 from jobs.fetch.base import BaseFetcher
 from lib.constants import bp_to_percent, thor_to_float
 from lib.date_utils import parse_timespan_to_seconds
 from lib.depcont import DepContainer
-from lib.midgard.parser import get_parser_by_network_id
-from lib.midgard.urlgen import free_url_gen
 from models.mimir_naming import MIMIR_KEY_POL_TARGET_SYNTH_PER_POOL_DEPTH, MIMIR_KEY_POL_MAX_NETWORK_DEPOSIT
-from models.runepool import AlertPOLState, POLState, RunepoolState
 from models.pool_member import PoolMemberDetails
+from models.runepool import AlertPOLState, POLState, RunepoolState
 
 
 class RunePoolFetcher(BaseFetcher):

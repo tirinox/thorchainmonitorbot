@@ -18,7 +18,7 @@ from lib.delegates import INotified
 from lib.depcont import DepContainer
 from lib.draw_utils import img_to_bio
 from lib.logs import WithLogger
-from lib.midgard.name_service import NameService, NameMap
+from api.midgard.name_service import NameService, NameMap
 from lib.w3.dex_analytics import DexReport
 from models.cap_info import AlertLiquidityCap
 from models.key_stats_model import AlertKeyStats
