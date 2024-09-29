@@ -8,14 +8,14 @@ from api.midgard.name_service import NameService
 from api.profit_against_cex import StreamingSwapVsCexProfitCalculator
 from api.w3.aggregator import AggregatorDataExtractor
 from api.w3.dex_analytics import DexAnalyticsCollector
-from comm.discord.discord_bot import DiscordBot
 from comm.dialog.main import init_dialogs
+from comm.discord.discord_bot import DiscordBot
+from comm.localization.admin import AdminMessages
+from comm.localization.manager import LocalizationManager
 from comm.slack.slack_bot import SlackBot
 from comm.telegram.sticker_downloader import TelegramStickerDownloader
 from comm.telegram.telegram import TelegramBot
 from comm.twitter.twitter_bot import TwitterBot, TwitterBotMock
-from comm.localization.admin import AdminMessages
-from comm.localization.manager import LocalizationManager
 from jobs.achievement.notifier import AchievementsNotifier
 from jobs.fetch.account_number import AccountNumberFetcher
 from jobs.fetch.cap import CapInfoFetcher
