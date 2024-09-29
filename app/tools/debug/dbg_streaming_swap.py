@@ -1,7 +1,8 @@
 import asyncio
 import logging
 
-from proto.types import MsgDeposit, MsgObservedTxIn
+from api.w3.aggregator import AggregatorDataExtractor
+from api.w3.dex_analytics import DexAnalyticsCollector
 from jobs.fetch.profit_against_cex import StreamingSwapVsCexProfitCalculator
 from jobs.fetch.streaming_swaps import StreamingSwapFechter
 from jobs.fetch.tx import TxFetcher
@@ -12,17 +13,16 @@ from jobs.scanner.scan_cache import NativeScannerBlockCached
 from jobs.scanner.swap_extractor import SwapExtractorBlock
 from jobs.user_counter import UserCounterMiddleware
 from jobs.volume_filler import VolumeFillerUpdater
-from models.asset import Asset, AssetRUNE
 from lib.money import DepthCurve
 from lib.texts import sep
 from lib.utils import setup_logs
-from lib.w3.aggregator import AggregatorDataExtractor
-from lib.w3.dex_analytics import DexAnalyticsCollector
-from models.tx import ThorTx
+from models.asset import Asset, AssetRUNE
 from models.memo import ActionType
+from models.tx import ThorTx
 from notify.public.dex_report_notify import DexReportNotifier
 from notify.public.s_swap_notify import StreamingSwapStartTxNotifier
 from notify.public.tx_notify import SwapTxNotifier
+from proto.types import MsgDeposit, MsgObservedTxIn
 from tools.lib.lp_common import LpAppFramework
 
 BlockScannerClass = NativeScannerBlockCached

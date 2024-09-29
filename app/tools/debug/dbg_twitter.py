@@ -2,9 +2,9 @@ import asyncio
 import logging
 import os
 
+from comm.dialog.picture.price_picture import price_graph_from_db
+from comm.dialog.twitter.twitter_bot import TwitterBot, TwitterBotMock
 from comm.localization.languages import Language
-from dialog.picture.price_picture import price_graph_from_db
-from comm.dialog.twitter import TwitterBot, TwitterBotMock
 from lib.config import Config
 from lib.date_utils import DAY
 from lib.utils import setup_logs

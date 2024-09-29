@@ -5,12 +5,11 @@ This script is used to find the block where the tx was observed.
 import asyncio
 import os
 
-from proto.access import NativeThorTx
-from proto.types import MsgObservedTxIn, MsgDeposit
 from jobs.scanner.native_scan import NativeScannerBlock
-from jobs.scanner.trade_acc import TradeAccEventDecoder
 from lib.texts import sep
 from lib.utils import say
+from proto.access import NativeThorTx
+from proto.types import MsgObservedTxIn
 from tools.lib.lp_common import LpAppFramework
 
 

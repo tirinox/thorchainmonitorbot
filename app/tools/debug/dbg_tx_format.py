@@ -2,6 +2,10 @@ import asyncio
 import random
 from typing import List
 
+from api.midgard.name_service import NameMap
+from api.midgard.parser import get_parser_by_network_id
+from api.midgard.urlgen import free_url_gen
+from api.w3.aggregator import AggregatorDataExtractor
 from comm.localization.languages import Language
 from comm.localization.manager import BaseLocalization
 from jobs.affiliate_merge import AffiliateTXMerger, ZERO_HASH
@@ -10,12 +14,8 @@ from jobs.fetch.tx import TxFetcher
 from jobs.volume_filler import VolumeFillerUpdater
 from lib.constants import Chains, thor_to_float
 from lib.explorers import get_explorer_url_to_address, get_explorer_url_to_tx
-from api.midgard.name_service import NameMap
-from api.midgard.parser import get_parser_by_network_id
-from api.midgard.urlgen import free_url_gen
 from lib.money import DepthCurve
 from lib.texts import sep
-from lib.w3.aggregator import AggregatorDataExtractor
 from models.memo import ActionType
 from models.pool_info import PoolInfo
 from models.tx import ThorTx, EventLargeTransaction

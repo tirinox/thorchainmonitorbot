@@ -2,7 +2,7 @@ import asyncio
 
 from api.aionode.connector import ThorConnector
 
-from dialog.picture.price_picture import price_graph_from_db
+from comm.dialog.picture.price_picture import price_graph_from_db
 from jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
 from lib.constants import NetworkIdents

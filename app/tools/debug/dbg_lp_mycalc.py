@@ -2,8 +2,8 @@ import asyncio
 import logging
 from datetime import date
 
+from comm.dialog.picture.lp_picture import generate_yield_picture, savings_pool_picture, lp_address_summary_picture
 from comm.localization.languages import Language
-from dialog.picture.lp_picture import generate_yield_picture, savings_pool_picture, lp_address_summary_picture
 from jobs.fetch.runeyield.date2block import DateToBlockMapper
 from jobs.fetch.runeyield.lp_my import HomebrewLPConnector
 from jobs.fetch.tx import TxFetcher

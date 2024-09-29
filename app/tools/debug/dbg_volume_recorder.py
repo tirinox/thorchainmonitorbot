@@ -1,7 +1,8 @@
 import asyncio
 import logging
 
-from dialog.picture.price_picture import price_graph_from_db
+from api.w3.aggregator import AggregatorDataExtractor
+from comm.dialog.picture.price_picture import price_graph_from_db
 from jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from jobs.fetch.pool_price import PoolFetcher
 from jobs.fetch.tx import TxFetcher
@@ -12,7 +13,6 @@ from jobs.volume_filler import VolumeFillerUpdater
 from lib.date_utils import now_ts, DAY
 from lib.depcont import DepContainer
 from lib.draw_utils import save_image_and_show
-from lib.w3.aggregator import AggregatorDataExtractor
 from models.memo import ActionType
 from notify.public.price_notify import PriceNotifier
 from tools.debug.dbg_discord import debug_prepare_discord_bot

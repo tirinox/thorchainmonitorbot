@@ -8,7 +8,7 @@ from jobs.scanner.native_scan import NativeScannerBlock
 from jobs.user_counter import UserCounterMiddleware
 from lib.active_users import DailyActiveUserCounter, ManualUserCounter
 from lib.date_utils import DAY, now_ts
-from lib.utils import unique_ident, random_hex
+from lib.utils import random_hex
 from tools.lib.lp_common import LpAppFramework
 
 

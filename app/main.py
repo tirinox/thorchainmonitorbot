@@ -3,25 +3,29 @@ import logging
 import os
 
 from api.aionode.connector import ThorConnector
-from comm.localization.admin import AdminMessages
-from comm.localization.manager import LocalizationManager
+from api.midgard.connector import MidgardConnector
+from api.midgard.name_service import NameService
+from api.w3.aggregator import AggregatorDataExtractor
+from api.w3.dex_analytics import DexAnalyticsCollector
 from comm.dialog.discord.discord_bot import DiscordBot
 from comm.dialog.main import init_dialogs
 from comm.dialog.slack.slack_bot import SlackBot
 from comm.dialog.telegram.sticker_downloader import TelegramStickerDownloader
 from comm.dialog.telegram.telegram import TelegramBot
-from comm.dialog.twitter import TwitterBot, TwitterBotMock
+from comm.dialog.twitter.twitter_bot import TwitterBot, TwitterBotMock
+from comm.localization.admin import AdminMessages
+from comm.localization.manager import LocalizationManager
 from jobs.achievement.notifier import AchievementsNotifier
 from jobs.fetch.account_number import AccountNumberFetcher
 from jobs.fetch.cap import CapInfoFetcher
+from jobs.fetch.chain_id import ChainIdFetcher
 from jobs.fetch.chains import ChainStateFetcher
-from jobs.fetch.mimir import ConstMimirFetcher
 from jobs.fetch.fair_price import RuneMarketInfoFetcher
 from jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from jobs.fetch.key_stats import KeyStatsFetcher
 from jobs.fetch.last_block import LastBlockFetcher
 from jobs.fetch.lending_stats import LendingStatsFetcher
-from jobs.fetch.chain_id import ChainIdFetcher
+from jobs.fetch.mimir import ConstMimirFetcher
 from jobs.fetch.net_stats import NetworkStatisticsFetcher
 from jobs.fetch.node_info import NodeInfoFetcher
 from jobs.fetch.pol import RunePoolFetcher
@@ -49,14 +53,10 @@ from lib.db import DB
 from lib.depcont import DepContainer
 from lib.emergency import EmergencyReport
 from lib.logs import WithLogger
-from api.midgard.connector import MidgardConnector
-from api.midgard.name_service import NameService
 from lib.money import DepthCurve
 from lib.scheduler import Scheduler
 from lib.settings_manager import SettingsManager, SettingsProcessorGeneralAlerts
 from lib.utils import setup_logs
-from lib.w3.aggregator import AggregatorDataExtractor
-from lib.w3.dex_analytics import DexAnalyticsCollector
 from models.memo import ActionType
 from models.mimir import MimirHolder
 from models.mimir_naming import MIMIR_DICT_FILENAME
