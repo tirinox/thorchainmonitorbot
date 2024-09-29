@@ -2,6 +2,7 @@ import asyncio
 import logging
 import pickle
 
+from api.flipside import FlipsideConnector
 from comm.localization.languages import Language
 from comm.picture.key_stats_picture import KeyStatsPictureGenerator
 from jobs.fetch.key_stats import KeyStatsFetcher
@@ -105,7 +106,7 @@ async def debug_locked_value(app: LpAppFramework):
 
 async def debug_fs_aff_collectors(app: LpAppFramework):
     f = KeyStatsFetcher(app.deps)
-    affs = await f.get_affiliates_from_flipside()
+    affs = await FlipsideConnector(app.deps.session, app.deps.emergency).get_affiliates_from_flipside()
     top_aff = f.calc_top_affiliates(affs)
     print(f'{top_aff = }')
     curr, prev = f.calc_total_affiliate_curr_prev(affs)
@@ -138,7 +139,7 @@ async def main():
         await demo_picture(lp_app)
         # await demo_load(lp_app)
         # await debug_locked_value(lp_app)
-        # await debug_fs_aff_collectors(lp_app)
+        await debug_fs_aff_collectors(lp_app)
         # await debug_earnings(lp_app)
 
 

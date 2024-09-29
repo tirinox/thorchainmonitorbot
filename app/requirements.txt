@@ -7,7 +7,6 @@ bech32
 colorama
 # discord.py  # will be installed at Stage 2
 emoji
-flipside>=2.0.8
 git+https://github.com/danielgtaylor/python-betterproto@v2.0.0b5#egg=betterproto
 html-slacker
 markdownify

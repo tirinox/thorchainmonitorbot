@@ -1,12 +1,12 @@
 import asyncio
-from contextlib import suppress
 
 from aiohttp import ClientSession
 
 from api.aionode.connector import ThorConnector
+from api.maya import MayaConnector
 from api.midgard.connector import MidgardConnector
 from lib.constants import thor_to_float, RUNE_DENOM, \
-    THOR_ADDRESS_DICT, ThorRealms, TREASURY_LP_ADDRESS, MAYA_POOLS_URL
+    THOR_ADDRESS_DICT, ThorRealms, TREASURY_LP_ADDRESS
 from lib.utils import WithLogger
 from models.circ_supply import RuneCirculatingSupply, RuneHoldEntry
 from models.mimir_naming import MIMIR_KEY_MAX_RUNE_SUPPLY
@@ -19,6 +19,7 @@ class RuneCirculatingSupplyFetcher(WithLogger):
         self.thor = thor
         self.step_sleep = step_sleep
         self.midgard = midgard
+        self.maya = MayaConnector(session)
 
     async def fetch(self) -> RuneCirculatingSupply:
         """
@@ -43,7 +44,7 @@ class RuneCirculatingSupplyFetcher(WithLogger):
 
             result.set_holder(RuneHoldEntry(address, balance, wallet_name, realm))
 
-        maya_pool_balance = await self.get_maya_pool_rune()
+        maya_pool_balance = await self.maya.get_maya_pool_rune()
         result.set_holder(RuneHoldEntry('Maya pool', int(maya_pool_balance), 'Maya pool', ThorRealms.MAYA_POOL))
 
         locked_rune = sum(
@@ -69,29 +70,18 @@ class RuneCirculatingSupplyFetcher(WithLogger):
     async def get_all_native_token_supplies(self):
         url_supply = f'{self.thor_node_base_url}/cosmos/bank/v1beta1/supply'
         self.logger.debug(f'Get: "{url_supply}"')
-        async with self.session.get(url_supply) as resp:
-            j = await resp.json()
-            items = j['supply']
-            return items
+        supply = await self.thor.query_raw('/cosmos/bank/v1beta1/supply')
+        return supply['supply']
 
     async def get_thor_rune_total_supply(self):
         supplies = await self.get_all_native_token_supplies()
         return self.get_pure_rune_from_thor_array(supplies)
 
     async def get_thor_address_balance(self, address):
-        url_balance = f'{self.thor_node_base_url}/cosmos/bank/v1beta1/balances/{address}'
+        url_balance = f'/cosmos/bank/v1beta1/balances/{address}'
         self.logger.debug(f'Get: "{url_balance}"')
-        async with self.session.get(url_balance) as resp:
-            j = await resp.json()
-            return self.get_pure_rune_from_thor_array(j['balances'])
-
-    async def get_maya_pool_rune(self):
-        with suppress(Exception):
-            async with self.session.get(MAYA_POOLS_URL) as resp:
-                j = await resp.json()
-                rune_pool = next(p for p in j if p['asset'] == 'THOR.RUNE')
-                return thor_to_float(rune_pool['balance_asset'])
-        return 0.0
+        j = await self.thor.query_raw(url_balance)
+        return self.get_pure_rune_from_thor_array(j['balances'])
 
     async def get_treasury_lp_value(self, address=TREASURY_LP_ADDRESS):
         tr_lp = await self.midgard.query_pool_membership(address, show_savers=True)
