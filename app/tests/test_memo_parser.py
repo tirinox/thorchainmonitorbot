@@ -1,6 +1,6 @@
 import pytest
 
-from services.models.memo import THORMemo, ActionType, is_action
+from models.memo import THORMemo, ActionType, is_action
 
 
 def test_memo1():

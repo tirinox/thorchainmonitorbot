@@ -1,8 +1,8 @@
 import asyncio
 
-from localization.languages import Language
-from services.dialog.discord.discord_bot import DiscordBot
-from services.notify.channel import ChannelDescriptor
+from comm.localization.languages import Language
+from comm.dialog.discord.discord_bot import DiscordBot
+from notify.channel import ChannelDescriptor
 from tools.lib.lp_common import LpAppFramework
 
 

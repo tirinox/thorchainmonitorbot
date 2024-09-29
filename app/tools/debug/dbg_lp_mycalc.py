@@ -2,13 +2,13 @@ import asyncio
 import logging
 from datetime import date
 
-from localization.languages import Language
-from services.dialog.picture.lp_picture import generate_yield_picture, savings_pool_picture, lp_address_summary_picture
-from services.jobs.fetch.runeyield.date2block import DateToBlockMapper
-from services.jobs.fetch.runeyield.lp_my import HomebrewLPConnector
-from services.jobs.fetch.tx import TxFetcher
-from services.lib.texts import sep
-from services.models.asset import Asset
+from comm.localization.languages import Language
+from dialog.picture.lp_picture import generate_yield_picture, savings_pool_picture, lp_address_summary_picture
+from jobs.fetch.runeyield.date2block import DateToBlockMapper
+from jobs.fetch.runeyield.lp_my import HomebrewLPConnector
+from jobs.fetch.tx import TxFetcher
+from lib.texts import sep
+from models.asset import Asset
 from tools.lib.lp_common import LpAppFramework
 
 LANG = Language.RUSSIAN

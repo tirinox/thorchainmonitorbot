@@ -1,6 +1,6 @@
 import pytest
 
-from services.lib.config import Config
+from lib.config import Config
 
 
 def test_cfg1():

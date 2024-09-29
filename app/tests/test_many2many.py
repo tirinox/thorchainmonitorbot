@@ -2,8 +2,8 @@ import asyncio
 
 import pytest
 
-from services.lib.db import DB
-from services.lib.db_many2many import ManyToManySet
+from lib.db import DB
+from lib.db_many2many import ManyToManySet
 
 
 @pytest.fixture(scope='session')

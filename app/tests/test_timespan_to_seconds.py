@@ -1,4 +1,4 @@
-from services.lib.date_utils import parse_timespan_to_seconds, HOUR, MINUTE, DAY
+from lib.date_utils import parse_timespan_to_seconds, HOUR, MINUTE, DAY
 
 
 def test_1():

@@ -1,4 +1,4 @@
-from services.dialog.picture.sprite_font import SpriteFont
+from comm.dialog.picture.sprite_font import SpriteFont
 from tools.lib.lp_common import save_and_show_pic, LpAppFramework
 
 

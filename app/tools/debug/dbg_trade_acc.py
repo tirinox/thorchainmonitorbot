@@ -1,18 +1,15 @@
 import asyncio
 import pprint
 
-from localization.eng_base import BaseLocalization
-from localization.languages import Language
-from services.jobs.achievement.notifier import AchievementsNotifier
-from services.jobs.fetch.trade_accounts import TradeAccountFetcher
-from services.jobs.scanner.native_scan import NativeScannerBlock
-from services.jobs.scanner.trade_acc import TradeAccEventDecoder
-from services.jobs.volume_recorder import VolumeRecorder, TxCountRecorder
-from services.lib.money import distort_randomly
-from services.lib.texts import sep
-from services.lib.utils import load_pickle, save_pickle
-from services.models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
-from services.notify.types.trade_acc_notify import TradeAccSummaryNotifier, TradeAccTransactionNotifier
+from comm.localization.eng_base import BaseLocalization
+from jobs.achievement.notifier import AchievementsNotifier
+from jobs.fetch.trade_accounts import TradeAccountFetcher
+from jobs.scanner.native_scan import NativeScannerBlock
+from jobs.scanner.trade_acc import TradeAccEventDecoder
+from lib.texts import sep
+from lib.utils import load_pickle, save_pickle
+from models.trade_acc import AlertTradeAccountAction
+from notify.public.trade_acc_notify import TradeAccSummaryNotifier, TradeAccTransactionNotifier
 from tools.lib.lp_common import LpAppFramework
 
 prepared = False

@@ -2,25 +2,25 @@ import asyncio
 import random
 from typing import List
 
-from localization.languages import Language
-from localization.manager import BaseLocalization
-from services.jobs.affiliate_merge import AffiliateTXMerger, ZERO_HASH
-from services.jobs.fetch.profit_against_cex import StreamingSwapVsCexProfitCalculator
-from services.jobs.fetch.tx import TxFetcher
-from services.jobs.volume_filler import VolumeFillerUpdater
-from services.lib.constants import Chains, thor_to_float
-from services.lib.explorers import get_explorer_url_to_address, get_explorer_url_to_tx
-from services.lib.midgard.name_service import NameMap
-from services.lib.midgard.parser import get_parser_by_network_id
-from services.lib.midgard.urlgen import free_url_gen
-from services.lib.money import DepthCurve
-from services.lib.texts import sep
-from services.lib.w3.aggregator import AggregatorDataExtractor
-from services.models.memo import ActionType
-from services.models.pool_info import PoolInfo
-from services.models.tx import ThorTx, EventLargeTransaction
-from services.notify.dup_stop import TxDeduplicator
-from services.notify.types.tx_notify import SwapTxNotifier, LiquidityTxNotifier, RefundTxNotifier
+from comm.localization.languages import Language
+from comm.localization.manager import BaseLocalization
+from jobs.affiliate_merge import AffiliateTXMerger, ZERO_HASH
+from jobs.fetch.profit_against_cex import StreamingSwapVsCexProfitCalculator
+from jobs.fetch.tx import TxFetcher
+from jobs.volume_filler import VolumeFillerUpdater
+from lib.constants import Chains, thor_to_float
+from lib.explorers import get_explorer_url_to_address, get_explorer_url_to_tx
+from lib.midgard.name_service import NameMap
+from lib.midgard.parser import get_parser_by_network_id
+from lib.midgard.urlgen import free_url_gen
+from lib.money import DepthCurve
+from lib.texts import sep
+from lib.w3.aggregator import AggregatorDataExtractor
+from models.memo import ActionType
+from models.pool_info import PoolInfo
+from models.tx import ThorTx, EventLargeTransaction
+from notify.dup_stop import TxDeduplicator
+from notify.types.tx_notify import SwapTxNotifier, LiquidityTxNotifier, RefundTxNotifier
 from tools.lib.lp_common import LpAppFramework, load_sample_txs, Receiver
 
 

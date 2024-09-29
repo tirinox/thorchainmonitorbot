@@ -2,16 +2,15 @@ import asyncio
 import logging
 import pickle
 
-from localization.languages import Language
-from services.dialog.picture.key_stats_picture import KeyStatsPictureGenerator
-from services.jobs.fetch.key_stats import KeyStatsFetcher
-from services.jobs.user_counter import UserCounterMiddleware
-from services.jobs.volume_recorder import TxCountRecorder, VolumeRecorder
-from services.lib.date_utils import DAY
-from services.lib.delegates import INotified
-from services.lib.texts import sep
-from services.models.key_stats_model import AlertKeyStats
-from services.notify.types.key_metrics_notify import KeyMetricsNotifier
+from comm.localization.languages import Language
+from comm.dialog.picture.key_stats_picture import KeyStatsPictureGenerator
+from jobs.fetch.key_stats import KeyStatsFetcher
+from jobs.user_counter import UserCounterMiddleware
+from lib.date_utils import DAY
+from lib.delegates import INotified
+from lib.texts import sep
+from models.key_stats_model import AlertKeyStats
+from notify.types.key_metrics_notify import KeyMetricsNotifier
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
 

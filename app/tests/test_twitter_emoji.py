@@ -1,7 +1,7 @@
-from services.dialog.twitter.text_length import twitter_text_length, twitter_cut_text, \
+from comm.dialog.twitter import twitter_text_length, twitter_cut_text, \
     twitter_intelligent_text_splitter, abbreviate_some_long_words, TWITTER_T_CO_LENGTH, TWITTER_T_CO_EXAMPLE
-from services.lib.money import EMOJI_SCALE
-from services.lib.texts import progressbar, find_country_emoji
+from lib.money import EMOJI_SCALE
+from lib.texts import progressbar, find_country_emoji
 
 
 def test_emoji_text_length():

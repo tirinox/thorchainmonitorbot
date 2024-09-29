@@ -3,8 +3,8 @@ import asyncio
 from aiogram import Bot
 from aiogram.types import ParseMode
 
-from services.lib.config import Config
-from services.dialog.telegram.sticker_downloader import TelegramStickerDownloader
+from lib.config import Config
+from dialog.telegram.sticker_downloader import TelegramStickerDownloader
 
 
 async def primitive(sticker_id, bot):

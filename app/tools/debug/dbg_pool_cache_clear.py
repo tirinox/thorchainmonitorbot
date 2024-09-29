@@ -2,8 +2,8 @@ import asyncio
 import json
 import logging
 
-from services.jobs.fetch.pool_price import PoolFetcher
-from services.lib.date_utils import DAY
+from jobs.fetch.pool_price import PoolFetcher
+from lib.date_utils import DAY
 from tools.lib.lp_common import LpAppFramework
 
 TEMP_POOL_CACHE_FILE = '../temp/pool_cache.json'

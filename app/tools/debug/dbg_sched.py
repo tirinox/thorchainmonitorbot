@@ -1,8 +1,8 @@
 import asyncio
 import random
 
-from services.lib.date_utils import now_ts
-from services.lib.scheduler import Scheduler
+from lib.date_utils import now_ts
+from lib.scheduler import Scheduler
 from tools.lib.lp_common import LpAppFramework, Receiver
 
 

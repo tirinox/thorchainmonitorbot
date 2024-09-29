@@ -7,9 +7,9 @@ import logging
 import tqdm
 from redis.asyncio import Redis
 
-from services.lib.constants import THOR_BLOCK_TIME
-from services.lib.date_utils import DAY
-from services.lib.money import format_percent
+from lib.constants import THOR_BLOCK_TIME
+from lib.date_utils import DAY
+from lib.money import format_percent
 from tools.lib.lp_common import LpAppFramework
 
 MAX_AGE = 30 * DAY

@@ -3,16 +3,16 @@ import json
 import logging
 import pickle
 
-from localization.eng_base import BaseLocalization
-from localization.languages import Language
-from services.jobs.scanner.native_scan import NativeScannerBlock
-from services.jobs.transfer_detector import RuneTransferDetectorTxLogs
-from services.lib.delegates import INotified
-from services.lib.depcont import DepContainer
-from services.lib.texts import sep
-from services.models.transfer import RuneTransfer
-from services.notify.personal.balance import PersonalBalanceNotifier
-from services.notify.types.transfer_notify import RuneMoveNotifier
+from comm.localization.eng_base import BaseLocalization
+from comm.localization.languages import Language
+from jobs.scanner.native_scan import NativeScannerBlock
+from jobs.transfer_detector import RuneTransferDetectorTxLogs
+from lib.delegates import INotified
+from lib.depcont import DepContainer
+from lib.texts import sep
+from models.transfer import RuneTransfer
+from notify.personal.balance import PersonalBalanceNotifier
+from notify.public.transfer_notify import RuneMoveNotifier
 from tools.lib.lp_common import LpAppFramework, Receiver
 
 

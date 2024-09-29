@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from services.lib.new_feature import NewFeatureManager
+from lib.new_feature import NewFeatureManager
 
 
 class TestF:

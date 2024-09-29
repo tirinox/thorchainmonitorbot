@@ -2,21 +2,21 @@ import logging
 import os
 
 from main import App
-from services.dialog.telegram.telegram import telegram_send_message_basic, TG_TEST_USER
-from services.dialog.twitter.text_length import twitter_text_length
-from services.dialog.twitter.twitter_bot import TwitterBotMock
-from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
-from services.jobs.fetch.last_block import LastBlockFetcher
-from services.jobs.fetch.runeyield import AsgardConsumerConnectorBase, get_rune_yield_connector
-from services.jobs.fetch.tx import TxFetcher
-from services.jobs.volume_recorder import VolumeRecorder, TxCountRecorder
-from services.lib.constants import NetworkIdents
-from services.lib.delegates import INotified
-from services.lib.draw_utils import img_to_bio
-from services.lib.midgard.parser import MidgardParserV2
-from services.lib.texts import sep
-from services.lib.utils import load_json
-from services.notify.types.block_notify import LastBlockStore
+from comm.dialog.telegram.telegram import telegram_send_message_basic, TG_TEST_USER
+from comm.dialog.twitter import twitter_text_length
+from comm.dialog.twitter import TwitterBotMock
+from jobs.fetch.fair_price import RuneMarketInfoFetcher
+from jobs.fetch.last_block import LastBlockFetcher
+from jobs.fetch.runeyield import AsgardConsumerConnectorBase, get_rune_yield_connector
+from jobs.fetch.tx import TxFetcher
+from jobs.volume_recorder import VolumeRecorder, TxCountRecorder
+from lib.constants import NetworkIdents
+from lib.delegates import INotified
+from lib.draw_utils import img_to_bio
+from lib.midgard.parser import MidgardParserV2
+from lib.texts import sep
+from lib.utils import load_json
+from notify.types.block_notify import LastBlockStore
 
 
 class LpAppFramework(App):

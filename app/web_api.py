@@ -10,17 +10,17 @@ from starlette.responses import JSONResponse
 from starlette.routing import Route, Mount
 from starlette.staticfiles import StaticFiles
 
-from services.dialog.slack.slack_bot import SlackBot
-from services.jobs.user_counter import UserCounterMiddleware
-from services.lib.config import Config
-from services.lib.date_utils import parse_timespan_to_seconds, DAY
-from services.lib.db import DB
-from services.lib.depcont import DepContainer
-from services.lib.geo_ip import GeoIPManager
-from services.lib.settings_manager import SettingsManager
-from services.lib.utils import setup_logs, recursive_asdict
-from services.lib.w3.dex_analytics import DexAnalyticsCollector
-from services.models.node_watchers import NodeWatcherStorage
+from comm.dialog.slack.slack_bot import SlackBot
+from jobs.user_counter import UserCounterMiddleware
+from lib.config import Config
+from lib.date_utils import parse_timespan_to_seconds, DAY
+from lib.db import DB
+from lib.depcont import DepContainer
+from lib.geo_ip import GeoIPManager
+from lib.settings_manager import SettingsManager
+from lib.utils import setup_logs, recursive_asdict
+from lib.w3.dex_analytics import DexAnalyticsCollector
+from models.node_watchers import NodeWatcherStorage
 
 
 class AppSettingsAPI:

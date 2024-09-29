@@ -5,8 +5,8 @@ import os
 
 import aiofiles
 
-from services.jobs.node_churn import NodeChurnDetector
-from services.models.node_info import NodeInfo
+from jobs.node_churn import NodeChurnDetector
+from models.node_info import NodeInfo
 from tools.lib.lp_common import LpAppFramework
 
 

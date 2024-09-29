@@ -1,10 +1,10 @@
 import asyncio
 import math
 
-from services.dialog.picture.block_height_picture import PRICE_GRAPH_WIDTH, PRICE_GRAPH_HEIGHT, LINE_COLOR_ACTUAL
-from services.lib.money import DepthCurve, short_dollar
-from services.lib.plot_graph import PlotGraphLines
-from services.lib.utils import async_wrap
+from comm.dialog.picture.block_height_picture import PRICE_GRAPH_WIDTH, PRICE_GRAPH_HEIGHT, LINE_COLOR_ACTUAL
+from lib.money import DepthCurve, short_dollar
+from lib.plot_graph import PlotGraphLines
+from lib.utils import async_wrap
 from tools.lib.lp_common import LpAppFramework
 
 

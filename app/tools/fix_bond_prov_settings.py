@@ -1,11 +1,11 @@
 import asyncio
 import logging
 
-from services.lib.settings_manager import SettingsManager
-from services.lib.texts import sep
-from services.lib.utils import safe_get, grouper
-from services.notify.personal.bond_provider import BondWatchlist
-from services.notify.personal.helpers import GeneralSettings
+from lib.settings_manager import SettingsManager
+from lib.texts import sep
+from lib.utils import safe_get, grouper
+from notify.personal.bond_provider import BondWatchlist
+from notify.personal.helpers import GeneralSettings
 from tools.lib.lp_common import LpAppFramework
 
 

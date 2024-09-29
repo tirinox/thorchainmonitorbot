@@ -2,9 +2,9 @@ import asyncio
 
 import pytest
 
-from services.lib.db import DB
-from services.lib.depcont import DepContainer
-from services.lib.rate_limit import RateLimiter, RateLimitCooldown
+from lib.db import DB
+from lib.depcont import DepContainer
+from lib.rate_limit import RateLimiter, RateLimitCooldown
 
 
 @pytest.fixture(scope="function")

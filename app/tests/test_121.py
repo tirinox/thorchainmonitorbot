@@ -2,8 +2,8 @@ import asyncio
 
 import pytest
 
-from services.lib.db import DB
-from services.lib.db_one2one import OneToOne
+from lib.db import DB
+from lib.db_one2one import OneToOne
 
 
 @pytest.fixture(scope="function")

@@ -2,8 +2,8 @@
 import asyncio
 import logging
 
-from localization.manager import BaseLocalization
-from services.lib.texts import sep
+from comm.localization.manager import BaseLocalization
+from lib.texts import sep
 from tools.lib.lp_common import LpAppFramework
 
 EXAMPLE = 'thorAddrWithSynths'

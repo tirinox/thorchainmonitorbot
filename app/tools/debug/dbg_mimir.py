@@ -2,15 +2,15 @@ import asyncio
 from itertools import cycle
 from typing import List
 
-from aionode.types import ThorMimir, ThorMimirVote
-from localization.eng_base import BaseLocalization
-from localization.languages import Language
-from services.jobs.fetch.cap import CapInfoFetcher
-from services.jobs.fetch.mimir import ConstMimirFetcher, MimirTuple
-from services.lib.depcont import DepContainer
-from services.models.mimir import AlertMimirVoting
-from services.notify.types.mimir_notify import MimirChangedNotifier
-from services.notify.types.voting_notify import VotingNotifier
+from api.aionode.types import ThorMimir, ThorMimirVote
+from comm.localization.eng_base import BaseLocalization
+from comm.localization.languages import Language
+from jobs.fetch.cap import CapInfoFetcher
+from jobs.fetch.mimir import ConstMimirFetcher, MimirTuple
+from lib.depcont import DepContainer
+from models.mimir import AlertMimirVoting
+from notify.public.mimir_notify import MimirChangedNotifier
+from notify.public.voting_notify import VotingNotifier
 from tools.lib.lp_common import LpAppFramework
 
 

@@ -3,18 +3,18 @@ import dataclasses
 import os
 from pprint import pprint
 
-from localization.eng_base import BaseLocalization
-from localization.languages import Language
-from localization.manager import LocalizationManager
-from services.dialog.picture.supply_picture import SupplyPictureGenerator
-from services.jobs.fetch.last_block import LastBlockFetcher
-from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
-from services.lib.date_utils import today_str
-from services.lib.draw_utils import img_to_bio
-from services.lib.utils import json_cached_to_file_async, load_pickle, save_pickle
-from services.models.price import RuneMarketInfo
-from services.notify.channel import BoardMessage
-from services.notify.types.block_notify import LastBlockStore
+from comm.localization.eng_base import BaseLocalization
+from comm.localization.languages import Language
+from comm.localization.manager import LocalizationManager
+from comm.dialog.picture.supply_picture import SupplyPictureGenerator
+from jobs.fetch.last_block import LastBlockFetcher
+from jobs.fetch.net_stats import NetworkStatisticsFetcher
+from lib.date_utils import today_str
+from lib.draw_utils import img_to_bio
+from lib.utils import json_cached_to_file_async, load_pickle, save_pickle
+from models.price import RuneMarketInfo
+from notify.channel import BoardMessage
+from notify.types.block_notify import LastBlockStore
 from tools.debug.dbg_discord import debug_prepare_discord_bot
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 

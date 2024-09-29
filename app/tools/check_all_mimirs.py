@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from services.lib.texts import sep
+from lib.texts import sep
 from tools.lib.lp_common import LpAppFramework
 
 

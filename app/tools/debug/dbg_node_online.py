@@ -1,9 +1,9 @@
 import asyncio
 from typing import Dict
 
-from aionode.types import ThorNodeAccount
+from api.aionode.types import ThorNodeAccount
 
-from services.lib.texts import sep
+from lib.texts import sep
 from tools.lib.lp_common import LpAppFramework
 
 

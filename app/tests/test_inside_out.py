@@ -1,4 +1,4 @@
-from services.lib.utils import invert_dict_of_iterables
+from lib.utils import invert_dict_of_iterables
 
 
 def test1():

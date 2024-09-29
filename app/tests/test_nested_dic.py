@@ -1,7 +1,7 @@
 import pytest
 import ujson
 
-from services.lib.utils import nested_set, nested_get, make_nested_default_dict
+from lib.utils import nested_set, nested_get, make_nested_default_dict
 
 
 def test_get():

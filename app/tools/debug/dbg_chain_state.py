@@ -2,11 +2,11 @@ import asyncio
 import logging
 from typing import Dict
 
-from aionode.types import ThorChainInfo
-from services.jobs.fetch.chains import ChainStateFetcher
-from services.lib.texts import sep
-from services.lib.utils import chance_50
-from services.notify.types.chain_notify import TradingHaltedNotifier
+from api.aionode.types import ThorChainInfo
+from jobs.fetch.chains import ChainStateFetcher
+from lib.texts import sep
+from lib.utils import chance_50
+from notify.public.chain_notify import TradingHaltedNotifier
 from tools.lib.lp_common import LpAppFramework
 
 

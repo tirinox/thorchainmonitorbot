@@ -2,8 +2,8 @@ import asyncio
 import hashlib
 import os
 
-from services.lib.bloom_filt import BloomFilter
-from services.lib.db import DB
+from lib.bloom_filt import BloomFilter
+from lib.db import DB
 
 
 def generate_secure_random_sha3_hash(length=64):

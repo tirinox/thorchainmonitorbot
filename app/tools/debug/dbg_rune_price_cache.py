@@ -1,8 +1,8 @@
 import asyncio
 import logging
 
-from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
-from services.lib.texts import sep
+from jobs.fetch.fair_price import RuneMarketInfoFetcher
+from lib.texts import sep
 from tools.lib.lp_common import LpAppFramework
 
 

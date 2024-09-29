@@ -1,8 +1,8 @@
 import asyncio
 import logging
 
-from services.jobs.scanner.affliliate_recorder import AffiliateRecorder
-from services.jobs.scanner.native_scan import NativeScannerBlock
+from jobs.scanner.affliliate_recorder import AffiliateRecorder
+from jobs.scanner.native_scan import NativeScannerBlock
 from tools.lib.lp_common import LpAppFramework
 
 

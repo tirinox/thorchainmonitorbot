@@ -1,8 +1,8 @@
 import pytest
 
-from services.lib.money import pretty_money, short_dollar, short_money, detect_decimal_digits, format_percent, \
+from lib.money import pretty_money, short_dollar, short_money, detect_decimal_digits, format_percent, \
     parse_short_number
-from services.lib.texts import up_down_arrow
+from lib.texts import up_down_arrow
 
 
 def test_short_money():

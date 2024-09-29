@@ -2,8 +2,8 @@ import random
 
 import pytest
 
-from services.lib.utils import random_hex, random_ip_address, load_json
-from services.models.node_info import NodeSetChanges, NodeInfo
+from lib.utils import random_hex, random_ip_address, load_json
+from models.node_info import NodeSetChanges, NodeInfo
 
 
 def node_random(status=NodeInfo.ACTIVE) -> NodeInfo:

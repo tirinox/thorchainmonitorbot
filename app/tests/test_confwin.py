@@ -1,4 +1,4 @@
-from services.lib.confwin import ConfidenceWindow
+from lib.confwin import ConfidenceWindow
 
 
 def test_clear():

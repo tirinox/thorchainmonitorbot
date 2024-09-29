@@ -4,12 +4,12 @@ from copy import deepcopy
 
 import aiohttp
 
-from services.jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
-from services.lib.constants import DOGE_SYMBOL
-from services.lib.depcont import DepContainer
-from services.models.pool_info import PoolInfo
-from services.notify.broadcast import Broadcaster
-from services.notify.types.pool_churn_notify import PoolChurnNotifier
+from jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
+from lib.constants import DOGE_SYMBOL
+from lib.depcont import DepContainer
+from models.pool_info import PoolInfo
+from notify.broadcast import Broadcaster
+from notify.public.pool_churn_notify import PoolChurnNotifier
 from tools.lib.lp_common import LpAppFramework
 
 

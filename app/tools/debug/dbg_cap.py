@@ -1,7 +1,7 @@
 import asyncio
 import logging
 
-from services.jobs.fetch.cap import CapInfoFetcher
+from jobs.fetch.cap import CapInfoFetcher
 from tools.lib.lp_common import LpAppFramework
 
 

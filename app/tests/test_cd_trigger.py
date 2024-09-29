@@ -2,9 +2,9 @@ import asyncio
 
 import pytest
 
-from services.lib.cooldown import CooldownBiTrigger
-from services.lib.date_utils import now_ts
-from services.lib.db import DB
+from lib.cooldown import CooldownBiTrigger
+from lib.date_utils import now_ts
+from lib.db import DB
 
 
 @pytest.fixture(scope="function")

@@ -8,7 +8,7 @@ import betterproto
 
 import proto.types as thor_type_lib
 from proto.cosmos.tx.v1beta1 import Tx
-from services.lib.utils import expect_string
+from lib.utils import expect_string
 
 
 def parse_thor_address(addr: bytes, prefix='thor') -> str:

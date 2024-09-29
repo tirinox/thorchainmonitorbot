@@ -2,7 +2,7 @@ import asyncio
 
 import aiohttp
 
-from services.jobs.poll_tcp import TCPPollster
+from jobs.poll_tcp import TCPPollster
 
 IP_ADDRESS_LIST = ["100.21.135.206", "13.124.24.134", "13.237.27.250", "13.37.119.225", "13.48.171.132", "13.49.101.79",
                    "1.1.1.1"]

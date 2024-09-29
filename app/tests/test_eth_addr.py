@@ -1,4 +1,4 @@
-from services.dialog.picture.crypto_logo import convert_eth_address_to_case_checksum
+from comm.dialog.picture.crypto_logo import convert_eth_address_to_case_checksum
 
 
 def test_eth_addr():

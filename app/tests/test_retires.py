@@ -1,6 +1,6 @@
 import pytest
 
-from services.lib.utils import retries, TooManyTriesException
+from lib.utils import retries, TooManyTriesException
 
 
 @pytest.mark.asyncio

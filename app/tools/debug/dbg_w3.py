@@ -4,23 +4,23 @@ from typing import List
 
 from web3 import Web3
 
-from localization.languages import Language
-from services.jobs.fetch.tx import TxFetcher
-from services.jobs.volume_filler import VolumeFillerUpdater
-from services.lib.constants import Chains, ETH_SYMBOL, AVAX_SYMBOL
-from services.lib.date_utils import DAY
-from services.lib.delegates import WithDelegates, INotified
-from services.lib.midgard.urlgen import free_url_gen
-from services.lib.money import DepthCurve
-from services.lib.texts import sep
-from services.lib.w3.aggregator import AggregatorDataExtractor
-from services.lib.w3.dex_analytics import DexAnalyticsCollector
-from services.lib.w3.erc20_contract import ERC20Contract
-from services.lib.w3.router_contract import TCRouterContract
-from services.lib.w3.token_list import TokenListCached, StaticTokenList
-from services.models.tx import ThorTx
-from services.models.memo import ActionType
-from services.notify.types.tx_notify import SwapTxNotifier
+from comm.localization.languages import Language
+from jobs.fetch.tx import TxFetcher
+from jobs.volume_filler import VolumeFillerUpdater
+from lib.constants import Chains, ETH_SYMBOL, AVAX_SYMBOL
+from lib.date_utils import DAY
+from lib.delegates import WithDelegates, INotified
+from lib.midgard.urlgen import free_url_gen
+from lib.money import DepthCurve
+from lib.texts import sep
+from lib.w3.aggregator import AggregatorDataExtractor
+from lib.w3.dex_analytics import DexAnalyticsCollector
+from lib.w3.erc20_contract import ERC20Contract
+from lib.w3.router_contract import TCRouterContract
+from lib.w3.token_list import TokenListCached, StaticTokenList
+from models.tx import ThorTx
+from models.memo import ActionType
+from notify.types.tx_notify import SwapTxNotifier
 from tools.debug.dbg_tx_format import load_tx
 from tools.lib.lp_common import LpAppFramework
 

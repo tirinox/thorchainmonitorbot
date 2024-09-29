@@ -1,10 +1,10 @@
 import asyncio
 
-from services.lib.accumulator import Accumulator
-from services.lib.config import Config
-from services.lib.date_utils import HOUR, now_ts
-from services.lib.db import DB
-from services.models.time_series import TimeSeries
+from lib.accumulator import Accumulator
+from lib.config import Config
+from lib.date_utils import HOUR, now_ts
+from lib.db import DB
+from models.time_series import TimeSeries
 
 
 async def try_buckets(db):

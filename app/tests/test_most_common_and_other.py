@@ -1,4 +1,4 @@
-from services.lib.utils import most_common_and_other
+from lib.utils import most_common_and_other
 
 
 def test_most_common_and_other():

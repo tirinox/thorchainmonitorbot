@@ -1,5 +1,5 @@
-from services.lib.explorers import get_explorer_url_to_address, NetworkIdents, Chains
-from services.lib.texts import link_with_domain_text
+from lib.explorers import get_explorer_url_to_address, NetworkIdents, Chains
+from lib.texts import link_with_domain_text
 
 
 def test_expl1():

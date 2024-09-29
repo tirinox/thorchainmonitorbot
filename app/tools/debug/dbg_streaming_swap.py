@@ -2,28 +2,27 @@ import asyncio
 import logging
 
 from proto.types import MsgDeposit, MsgObservedTxIn
-from services.jobs.fetch.profit_against_cex import StreamingSwapVsCexProfitCalculator
-from services.jobs.fetch.streaming_swaps import StreamingSwapFechter
-from services.jobs.fetch.tx import TxFetcher
-from services.jobs.scanner.event_db import EventDatabase
-from services.jobs.scanner.native_scan import NativeScannerBlock
-# from services.jobs.scanner.native_scan import NativeScannerBlock
-from services.jobs.scanner.scan_cache import NativeScannerBlockCached
-from services.jobs.scanner.swap_extractor import SwapExtractorBlock
-from services.jobs.user_counter import UserCounterMiddleware
-from services.jobs.volume_filler import VolumeFillerUpdater
-from services.jobs.volume_recorder import VolumeRecorder, TxCountRecorder
-from services.models.asset import Asset, AssetRUNE
-from services.lib.money import DepthCurve
-from services.lib.texts import sep
-from services.lib.utils import setup_logs
-from services.lib.w3.aggregator import AggregatorDataExtractor
-from services.lib.w3.dex_analytics import DexAnalyticsCollector
-from services.models.tx import ThorTx
-from services.models.memo import ActionType
-from services.notify.types.dex_report_notify import DexReportNotifier
-from services.notify.types.s_swap_notify import StreamingSwapStartTxNotifier
-from services.notify.types.tx_notify import SwapTxNotifier
+from jobs.fetch.profit_against_cex import StreamingSwapVsCexProfitCalculator
+from jobs.fetch.streaming_swaps import StreamingSwapFechter
+from jobs.fetch.tx import TxFetcher
+from jobs.scanner.event_db import EventDatabase
+from jobs.scanner.native_scan import NativeScannerBlock
+# from jobs.scanner.native_scan import NativeScannerBlock
+from jobs.scanner.scan_cache import NativeScannerBlockCached
+from jobs.scanner.swap_extractor import SwapExtractorBlock
+from jobs.user_counter import UserCounterMiddleware
+from jobs.volume_filler import VolumeFillerUpdater
+from models.asset import Asset, AssetRUNE
+from lib.money import DepthCurve
+from lib.texts import sep
+from lib.utils import setup_logs
+from lib.w3.aggregator import AggregatorDataExtractor
+from lib.w3.dex_analytics import DexAnalyticsCollector
+from models.tx import ThorTx
+from models.memo import ActionType
+from notify.types.dex_report_notify import DexReportNotifier
+from notify.types.s_swap_notify import StreamingSwapStartTxNotifier
+from notify.types.tx_notify import SwapTxNotifier
 from tools.lib.lp_common import LpAppFramework
 
 BlockScannerClass = NativeScannerBlockCached

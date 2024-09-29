@@ -7,10 +7,10 @@ import os
 
 from proto.access import NativeThorTx
 from proto.types import MsgObservedTxIn, MsgDeposit
-from services.jobs.scanner.native_scan import NativeScannerBlock
-from services.jobs.scanner.trade_acc import TradeAccEventDecoder
-from services.lib.texts import sep
-from services.lib.utils import say
+from jobs.scanner.native_scan import NativeScannerBlock
+from jobs.scanner.trade_acc import TradeAccEventDecoder
+from lib.texts import sep
+from lib.utils import say
 from tools.lib.lp_common import LpAppFramework
 
 

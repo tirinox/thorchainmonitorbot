@@ -2,13 +2,13 @@ import asyncio
 import logging
 import os
 
-from localization.languages import Language
-from services.dialog.picture.price_picture import price_graph_from_db
-from services.dialog.twitter.twitter_bot import TwitterBot, TwitterBotMock
-from services.lib.config import Config
-from services.lib.date_utils import DAY
-from services.lib.utils import setup_logs
-from services.notify.channel import BoardMessage, ChannelDescriptor
+from comm.localization.languages import Language
+from dialog.picture.price_picture import price_graph_from_db
+from comm.dialog.twitter import TwitterBot, TwitterBotMock
+from lib.config import Config
+from lib.date_utils import DAY
+from lib.utils import setup_logs
+from notify.channel import BoardMessage, ChannelDescriptor
 from tools.debug.dbg_supply_graph import get_supply_pic
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 

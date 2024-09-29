@@ -1,8 +1,8 @@
 import asyncio
 import logging
 
-from services.jobs.fetch.runeyield.borrower import BorrowerPositionGenerator
-from services.lib.midgard.connector import MidgardConnector
+from jobs.fetch.runeyield.borrower import BorrowerPositionGenerator
+from lib.midgard.connector import MidgardConnector
 from tools.lib.lp_common import LpAppFramework
 
 

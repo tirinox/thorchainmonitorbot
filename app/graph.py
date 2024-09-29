@@ -2,8 +2,8 @@ import asyncio
 import os
 
 from main import App
-from services.jobs.fetch.base import qualname
-from services.lib.delegates import WithDelegates
+from jobs.fetch.base import qualname
+from lib.delegates import WithDelegates
 
 
 class GraphBuilder:

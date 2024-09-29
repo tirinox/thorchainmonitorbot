@@ -4,7 +4,7 @@ import datetime
 import aiohttp
 
 NODE_IP = '164.90.245.92'  # MCCN
-from services.lib.date_utils import MINUTE, date_parse_rfc
+from lib.date_utils import MINUTE, date_parse_rfc
 
 # NODE_IP = '157.230.75.66'  # BEPSwap
 NODE_RPC_PORT = 27147

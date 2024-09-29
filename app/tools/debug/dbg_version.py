@@ -4,12 +4,12 @@ from typing import List
 
 from semver import VersionInfo
 
-from localization.eng_base import BaseLocalization
-from services.jobs.fetch.node_info import NodeInfoFetcher
-from services.jobs.node_churn import NodeChurnDetector
-from services.lib.depcont import DepContainer
-from services.models.node_info import NodeInfo
-from services.notify.types.version_notify import VersionNotifier
+from comm.localization.eng_base import BaseLocalization
+from jobs.fetch.node_info import NodeInfoFetcher
+from jobs.node_churn import NodeChurnDetector
+from lib.depcont import DepContainer
+from models.node_info import NodeInfo
+from notify.public.version_notify import VersionNotifier
 from tools.lib.lp_common import LpAppFramework
 
 

@@ -1,9 +1,9 @@
 import asyncio
 import logging
 
-from services.lib.constants import RUNE_SYMBOL_POOL, RUNE_SYMBOL_DET
-from services.lib.date_utils import DAY
-from services.models.time_series import PriceTimeSeries
+from lib.constants import RUNE_SYMBOL_POOL, RUNE_SYMBOL_DET
+from lib.date_utils import DAY
+from models.time_series import PriceTimeSeries
 from tools.lib.lp_common import LpAppFramework
 
 

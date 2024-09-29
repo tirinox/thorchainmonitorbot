@@ -3,22 +3,22 @@ import datetime
 import os
 import random
 
-from localization.achievements.ach_eng import AchievementsEnglishLocalization
-from localization.achievements.ach_rus import AchievementsRussianLocalization
-from localization.languages import Language
-from services.dialog.picture.achievement_picture import build_achievement_picture_generator
-from services.dialog.telegram.telegram import TG_TEST_USER
-from services.jobs.achievement.ach_list import Achievement, EventTestAchievement, A, AchievementDescription, \
+from comm.localization.achievements.ach_eng import AchievementsEnglishLocalization
+from comm.localization.achievements.ach_rus import AchievementsRussianLocalization
+from comm.localization.languages import Language
+from comm.dialog.picture.achievement_picture import build_achievement_picture_generator
+from comm.dialog.telegram.telegram import TG_TEST_USER
+from jobs.achievement.ach_list import Achievement, EventTestAchievement, A, AchievementDescription, \
     ACHIEVEMENT_DESC_MAP
-from services.jobs.achievement.milestones import Milestones
-from services.jobs.achievement.notifier import AchievementsNotifier
-from services.jobs.achievement.tracker import AchievementsTracker
-from services.jobs.fetch.base import BaseFetcher
-from services.lib.date_utils import now_ts, DAY
-from services.lib.depcont import DepContainer
-from services.lib.draw_utils import img_to_bio
-from services.lib.texts import sep
-from services.models.price import RuneMarketInfo
+from jobs.achievement.milestones import Milestones
+from jobs.achievement.notifier import AchievementsNotifier
+from jobs.achievement.tracker import AchievementsTracker
+from jobs.fetch.base import BaseFetcher
+from lib.date_utils import now_ts, DAY
+from lib.depcont import DepContainer
+from lib.draw_utils import img_to_bio
+from lib.texts import sep
+from models.price import RuneMarketInfo
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
 

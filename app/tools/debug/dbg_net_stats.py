@@ -4,19 +4,19 @@ import logging
 from copy import copy
 from dataclasses import Field
 
-from aionode.types import ThorPool
+from api.aionode.types import ThorPool
 
-from localization.manager import BaseLocalization
-from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
-from services.jobs.fetch.pool_price import PoolFetcher
-from services.lib.date_utils import DAY
-from services.lib.depcont import DepContainer
-from services.lib.money import distort_randomly
-from services.lib.texts import up_down_arrow
-from services.lib.utils import setup_logs, load_pickle, save_pickle
-from services.models.net_stats import NetworkStats, AlertNetworkStats
-from services.models.pool_info import PoolInfoMap, parse_thor_pools
-from services.notify.types.stats_notify import NetworkStatsNotifier
+from comm.localization.manager import BaseLocalization
+from jobs.fetch.net_stats import NetworkStatisticsFetcher
+from jobs.fetch.pool_price import PoolFetcher
+from lib.date_utils import DAY
+from lib.depcont import DepContainer
+from lib.money import distort_randomly
+from lib.texts import up_down_arrow
+from lib.utils import setup_logs, load_pickle, save_pickle
+from models.net_stats import NetworkStats, AlertNetworkStats
+from models.pool_info import PoolInfoMap, parse_thor_pools
+from notify.types.stats_notify import NetworkStatsNotifier
 from tools.lib.lp_common import LpAppFramework
 
 CACHE_NET_STATS = False

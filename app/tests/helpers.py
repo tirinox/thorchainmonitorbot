@@ -2,8 +2,8 @@ import asyncio
 
 import pytest
 
-from services.lib.db import DB
-from services.lib.depcont import DepContainer
+from lib.db import DB
+from lib.depcont import DepContainer
 
 
 @pytest.fixture(scope="function")

@@ -4,21 +4,21 @@ import random
 from copy import copy
 from typing import Optional, List
 
-from aionode.types import ThorNetwork
+from api.aionode.types import ThorNetwork
 from semver import VersionInfo
 
-from localization.languages import Language
-from localization.manager import LocalizationManager
-from services.jobs.achievement.notifier import AchievementsNotifier
-from services.jobs.fetch.base import BaseFetcher
-from services.jobs.fetch.node_info import NodeInfoFetcher
-from services.jobs.node_churn import NodeChurnDetector
-from services.lib.depcont import DepContainer
-from services.lib.texts import sep
-from services.lib.utils import setup_logs
-from services.models.node_info import NodeSetChanges, NodeVersionConsensus, NodeInfo
-from services.notify.types.node_churn_notify import NodeChurnNotifier
-from services.notify.types.version_notify import VersionNotifier
+from comm.localization.languages import Language
+from comm.localization.manager import LocalizationManager
+from jobs.achievement.notifier import AchievementsNotifier
+from jobs.fetch.base import BaseFetcher
+from jobs.fetch.node_info import NodeInfoFetcher
+from jobs.node_churn import NodeChurnDetector
+from lib.depcont import DepContainer
+from lib.texts import sep
+from lib.utils import setup_logs
+from models.node_info import NodeSetChanges, NodeVersionConsensus, NodeInfo
+from notify.public.node_churn_notify import NodeChurnNotifier
+from notify.public.version_notify import VersionNotifier
 from tools.lib.churn_sim import DbgChurnSimulator
 from tools.lib.lp_common import LpAppFramework
 

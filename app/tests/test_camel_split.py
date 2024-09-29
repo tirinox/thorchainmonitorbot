@@ -1,4 +1,4 @@
-from services.lib.texts import split_by_camel_case
+from lib.texts import split_by_camel_case
 
 
 def test_cc():

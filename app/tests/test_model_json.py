@@ -1,7 +1,7 @@
 import json
 from dataclasses import dataclass
 
-from services.models.base import BaseModelMixin
+from models.base import BaseModelMixin
 
 
 @dataclass

@@ -1,7 +1,7 @@
-from services.lib.config import Config
-from services.lib.depcont import DepContainer
-from services.models.node_info import NodeInfo
-from services.notify.personal.chain_height import ChainHeightTracker
+from lib.config import Config
+from lib.depcont import DepContainer
+from models.node_info import NodeInfo
+from notify.personal.chain_height import ChainHeightTracker
 
 
 def make_node_h(btc, eth):

@@ -2,12 +2,12 @@ import asyncio
 import logging
 import time
 
-from localization.languages import Language
-from localization.manager import BaseLocalization
-from services.jobs.fetch.circulating import RuneCirculatingSupplyFetcher
-from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
-from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
-from services.lib.texts import sep
+from comm.localization.languages import Language
+from comm.localization.manager import BaseLocalization
+from jobs.fetch.circulating import RuneCirculatingSupplyFetcher
+from jobs.fetch.fair_price import RuneMarketInfoFetcher
+from jobs.fetch.net_stats import NetworkStatisticsFetcher
+from lib.texts import sep
 from tools.lib.lp_common import LpAppFramework
 
 

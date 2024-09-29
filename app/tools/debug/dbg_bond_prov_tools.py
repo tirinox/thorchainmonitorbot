@@ -2,15 +2,15 @@ import asyncio
 import logging
 import random
 
-from localization.languages import Language
-from services.dialog.telegram.telegram import TG_TEST_USER
-from services.jobs.node_churn import NodeChurnDetector
-from services.lib.date_utils import now_ts
-from services.lib.midgard.name_service import NameMap
-from services.lib.texts import sep
-from services.models.node_info import NodeEvent, NodeEventType, EventProviderStatus, EventNodeFeeChange, \
+from comm.localization.languages import Language
+from comm.dialog.telegram.telegram import TG_TEST_USER
+from jobs.node_churn import NodeChurnDetector
+from lib.date_utils import now_ts
+from lib.midgard.name_service import NameMap
+from lib.texts import sep
+from models.node_info import NodeEvent, NodeEventType, EventProviderStatus, EventNodeFeeChange, \
     EventProviderBondChange
-from services.notify.personal.bond_provider import PersonalBondProviderNotifier
+from notify.personal.bond_provider import PersonalBondProviderNotifier
 from tools.debug.dbg_record_nodes import NodesDBRecorder, NodePlayer
 from tools.lib.churn_sim import DbgChurnSimulator
 from tools.lib.lp_common import LpAppFramework

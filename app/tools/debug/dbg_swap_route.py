@@ -1,7 +1,7 @@
 import asyncio
 
-from services.jobs.scanner.swap_routes import SwapRouteRecorder
-from services.lib.texts import sep
+from jobs.scanner.swap_routes import SwapRouteRecorder
+from lib.texts import sep
 from tools.lib.lp_common import LpAppFramework
 
 

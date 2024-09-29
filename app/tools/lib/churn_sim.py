@@ -1,11 +1,11 @@
 import random
 
-from services.jobs.node_churn import NodeChurnDetector
-from services.lib.delegates import WithDelegates, INotified
-from services.lib.depcont import DepContainer
-from services.lib.money import distort_randomly
-from services.lib.texts import sep
-from services.models.node_info import NodeSetChanges, NodeInfo
+from jobs.node_churn import NodeChurnDetector
+from lib.delegates import WithDelegates, INotified
+from lib.depcont import DepContainer
+from lib.money import distort_randomly
+from lib.texts import sep
+from models.node_info import NodeSetChanges, NodeInfo
 
 
 class DbgChurnSimulator(WithDelegates, INotified):

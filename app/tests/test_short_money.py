@@ -1,7 +1,7 @@
 import pytest
 
-from localization.manager import RussianLocalization
-from services.lib.money import short_money, short_dollar
+from comm.localization.manager import RussianLocalization
+from lib.money import short_money, short_dollar
 
 
 def test_short_money_simple():

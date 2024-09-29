@@ -1,6 +1,6 @@
 import asyncio
 
-from services.jobs.scanner.arb_detector import ArbBotDetector
+from jobs.scanner.arb_detector import ArbBotDetector
 from tools.lib.lp_common import LpAppFramework
 
 

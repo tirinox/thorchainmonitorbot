@@ -1,5 +1,5 @@
-from services.lib.date_utils import now_ts
-from services.notify.personal.helpers import get_points_at_time_points
+from lib.date_utils import now_ts
+from notify.personal.helpers import get_points_at_time_points
 
 
 def test_1():

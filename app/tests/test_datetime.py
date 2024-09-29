@@ -1,6 +1,6 @@
 import datetime
 
-from services.lib.date_utils import days_ago_noon, DAY, full_years_old_ts, YEAR, HOUR, MINUTE
+from lib.date_utils import days_ago_noon, DAY, full_years_old_ts, YEAR, HOUR, MINUTE
 
 
 def test_ago_noon():

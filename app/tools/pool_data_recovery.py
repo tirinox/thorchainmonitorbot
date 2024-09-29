@@ -18,8 +18,8 @@ import pprint
 import tqdm
 from redis.asyncio import Redis
 
-from services.jobs.fetch.pool_price import PoolFetcher
-from services.lib.db import DB
+from jobs.fetch.pool_price import PoolFetcher
+from lib.db import DB
 
 
 async def get_remote_redis() -> Redis:

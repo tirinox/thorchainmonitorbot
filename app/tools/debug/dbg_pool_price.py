@@ -1,15 +1,15 @@
 import asyncio
 
-from aionode.connector import ThorConnector
+from api.aionode.connector import ThorConnector
 
-from services.dialog.picture.price_picture import price_graph_from_db
-from services.jobs.fetch.gecko_price import fill_rune_price_from_gecko
-from services.jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
-from services.lib.constants import NetworkIdents
-from services.lib.depcont import DepContainer
-from services.lib.texts import sep
-from services.models.price import LastPriceHolder
-from services.notify.types.best_pool_notify import BestPoolsNotifier
+from dialog.picture.price_picture import price_graph_from_db
+from jobs.fetch.gecko_price import fill_rune_price_from_gecko
+from jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
+from lib.constants import NetworkIdents
+from lib.depcont import DepContainer
+from lib.texts import sep
+from models.price import LastPriceHolder
+from notify.types.best_pool_notify import BestPoolsNotifier
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
 

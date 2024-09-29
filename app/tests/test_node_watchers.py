@@ -2,10 +2,10 @@ import asyncio
 
 import pytest
 
-from services.lib.db import DB
-from services.lib.depcont import DepContainer
-from services.lib.utils import parse_list_from_string
-from services.models.node_watchers import NodeWatcherStorage
+from lib.db import DB
+from lib.depcont import DepContainer
+from lib.utils import parse_list_from_string
+from models.node_watchers import NodeWatcherStorage
 
 
 @pytest.fixture(scope="function")

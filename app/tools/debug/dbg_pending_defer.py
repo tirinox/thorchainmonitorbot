@@ -2,10 +2,10 @@ import asyncio
 import logging
 from typing import List
 
-from services.jobs.fetch.tx import TxFetcher
-from services.jobs.volume_filler import VolumeFillerUpdater
-from services.jobs.volume_recorder import VolumeRecorder
-from services.models.tx import ThorTx
+from jobs.fetch.tx import TxFetcher
+from jobs.volume_filler import VolumeFillerUpdater
+from jobs.volume_recorder import VolumeRecorder
+from models.tx import ThorTx
 from tools.lib.lp_common import LpAppFramework, Receiver
 
 

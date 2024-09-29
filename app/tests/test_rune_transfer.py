@@ -3,11 +3,11 @@ from typing import List
 
 import pytest
 
-from services.jobs.scanner.native_scan import NativeScannerBlock
-from services.jobs.transfer_detector import RuneTransferDetectorTxLogs
-from services.lib.constants import thor_to_float
-from services.lib.texts import sep
-from services.models.transfer import RuneTransfer
+from jobs.scanner.native_scan import NativeScannerBlock
+from jobs.transfer_detector import RuneTransferDetectorTxLogs
+from lib.constants import thor_to_float
+from lib.texts import sep
+from models.transfer import RuneTransfer
 from tools.lib.lp_common import LpAppFramework
 
 

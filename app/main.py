@@ -2,100 +2,100 @@ import asyncio
 import logging
 import os
 
-from aionode.connector import ThorConnector
-from localization.admin import AdminMessages
-from localization.manager import LocalizationManager
-from services.dialog.discord.discord_bot import DiscordBot
-from services.dialog.main import init_dialogs
-from services.dialog.slack.slack_bot import SlackBot
-from services.dialog.telegram.sticker_downloader import TelegramStickerDownloader
-from services.dialog.telegram.telegram import TelegramBot
-from services.dialog.twitter.twitter_bot import TwitterBot, TwitterBotMock
-from services.jobs.achievement.notifier import AchievementsNotifier
-from services.jobs.fetch.account_number import AccountNumberFetcher
-from services.jobs.fetch.cap import CapInfoFetcher
-from services.jobs.fetch.chains import ChainStateFetcher
-from services.jobs.fetch.mimir import ConstMimirFetcher
-from services.jobs.fetch.fair_price import RuneMarketInfoFetcher
-from services.jobs.fetch.gecko_price import fill_rune_price_from_gecko
-from services.jobs.fetch.key_stats import KeyStatsFetcher
-from services.jobs.fetch.last_block import LastBlockFetcher
-from services.jobs.fetch.lending_stats import LendingStatsFetcher
-from services.jobs.fetch.chain_id import ChainIdFetcher
-from services.jobs.fetch.net_stats import NetworkStatisticsFetcher
-from services.jobs.fetch.node_info import NodeInfoFetcher
-from services.jobs.fetch.pol import RunePoolFetcher
-from services.jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
-from services.jobs.fetch.profit_against_cex import StreamingSwapVsCexProfitCalculator
-from services.jobs.fetch.queue import QueueFetcher
-from services.jobs.fetch.savers_vnx import SaversStatsFetcher
-from services.jobs.fetch.trade_accounts import TradeAccountFetcher
-from services.jobs.fetch.tx import TxFetcher
-from services.jobs.node_churn import NodeChurnDetector
-from services.jobs.scanner.loan_extractor import LoanExtractorBlock
-from services.jobs.scanner.native_scan import NativeScannerBlock
-from services.jobs.scanner.runepool import RunePoolEventDecoder
-from services.jobs.scanner.swap_extractor import SwapExtractorBlock
-from services.jobs.scanner.swap_routes import SwapRouteRecorder
-from services.jobs.scanner.trade_acc import TradeAccEventDecoder
-from services.jobs.transfer_detector import RuneTransferDetectorTxLogs
-from services.jobs.user_counter import UserCounterMiddleware
-from services.jobs.volume_filler import VolumeFillerUpdater
-from services.jobs.volume_recorder import VolumeRecorder, TxCountRecorder
-from services.lib.config import Config, SubConfig
-from services.lib.constants import HTTP_CLIENT_ID
-from services.lib.date_utils import parse_timespan_to_seconds
-from services.lib.db import DB
-from services.lib.depcont import DepContainer
-from services.lib.emergency import EmergencyReport
-from services.lib.logs import WithLogger
-from services.lib.midgard.connector import MidgardConnector
-from services.lib.midgard.name_service import NameService
-from services.lib.money import DepthCurve
-from services.lib.scheduler import Scheduler
-from services.lib.settings_manager import SettingsManager, SettingsProcessorGeneralAlerts
-from services.lib.utils import setup_logs
-from services.lib.w3.aggregator import AggregatorDataExtractor
-from services.lib.w3.dex_analytics import DexAnalyticsCollector
-from services.models.memo import ActionType
-from services.models.mimir import MimirHolder
-from services.models.mimir_naming import MIMIR_DICT_FILENAME
-from services.models.node_watchers import AlertWatchers
-from services.notify.alert_presenter import AlertPresenter
-from services.notify.broadcast import Broadcaster
-from services.notify.channel import BoardMessage
-from services.notify.personal.balance import PersonalBalanceNotifier
-from services.notify.personal.bond_provider import PersonalBondProviderNotifier
-from services.notify.personal.personal_main import NodeChangePersonalNotifier
-from services.notify.personal.price_divergence import PersonalPriceDivergenceNotifier, SettingsProcessorPriceDivergence
-from services.notify.personal.scheduled import PersonalPeriodicNotificationService
-from services.notify.types.best_pool_notify import BestPoolsNotifier
-from services.notify.types.block_notify import BlockHeightNotifier, LastBlockStore
-from services.notify.types.cap_notify import LiquidityCapNotifier
-from services.notify.types.chain_id_notify import ChainIdNotifier
-from services.notify.types.chain_notify import TradingHaltedNotifier
-from services.notify.types.dex_report_notify import DexReportNotifier
-from services.notify.types.key_metrics_notify import KeyMetricsNotifier
-from services.notify.types.lend_stats_notify import LendingStatsNotifier
-from services.notify.types.lending_open_up import LendingCapsNotifier
-from services.notify.types.loans_notify import LoanTxNotifier
-from services.notify.types.mimir_notify import MimirChangedNotifier
-from services.notify.types.node_churn_notify import NodeChurnNotifier
-from services.notify.types.pol_notify import POLNotifier
-from services.notify.types.pool_churn_notify import PoolChurnNotifier
-from services.notify.types.price_div_notify import PriceDivergenceNotifier
-from services.notify.types.price_notify import PriceNotifier
-from services.notify.types.queue_notify import QueueNotifier, QueueStoreMetrics
-from services.notify.types.runepool_notify import RunePoolTransactionNotifier, RunepoolStatsNotifier
-from services.notify.types.s_swap_notify import StreamingSwapStartTxNotifier
-from services.notify.types.savers_stats_notify import SaversStatsNotifier
-from services.notify.types.stats_notify import NetworkStatsNotifier
-from services.notify.types.supply_notify import SupplyNotifier
-from services.notify.types.trade_acc_notify import TradeAccTransactionNotifier, TradeAccSummaryNotifier
-from services.notify.types.transfer_notify import RuneMoveNotifier
-from services.notify.types.tx_notify import GenericTxNotifier, LiquidityTxNotifier, SwapTxNotifier, RefundTxNotifier
-from services.notify.types.version_notify import VersionNotifier
-from services.notify.types.voting_notify import VotingNotifier
+from api.aionode.connector import ThorConnector
+from comm.localization.admin import AdminMessages
+from comm.localization.manager import LocalizationManager
+from comm.dialog.discord.discord_bot import DiscordBot
+from comm.dialog.main import init_dialogs
+from comm.dialog.slack.slack_bot import SlackBot
+from comm.dialog.telegram.sticker_downloader import TelegramStickerDownloader
+from comm.dialog.telegram.telegram import TelegramBot
+from comm.dialog.twitter import TwitterBot, TwitterBotMock
+from jobs.achievement.notifier import AchievementsNotifier
+from jobs.fetch.account_number import AccountNumberFetcher
+from jobs.fetch.cap import CapInfoFetcher
+from jobs.fetch.chains import ChainStateFetcher
+from jobs.fetch.mimir import ConstMimirFetcher
+from jobs.fetch.fair_price import RuneMarketInfoFetcher
+from jobs.fetch.gecko_price import fill_rune_price_from_gecko
+from jobs.fetch.key_stats import KeyStatsFetcher
+from jobs.fetch.last_block import LastBlockFetcher
+from jobs.fetch.lending_stats import LendingStatsFetcher
+from jobs.fetch.chain_id import ChainIdFetcher
+from jobs.fetch.net_stats import NetworkStatisticsFetcher
+from jobs.fetch.node_info import NodeInfoFetcher
+from jobs.fetch.pol import RunePoolFetcher
+from jobs.fetch.pool_price import PoolFetcher, PoolInfoFetcherMidgard
+from jobs.fetch.profit_against_cex import StreamingSwapVsCexProfitCalculator
+from jobs.fetch.queue import QueueFetcher
+from jobs.fetch.savers_vnx import SaversStatsFetcher
+from jobs.fetch.trade_accounts import TradeAccountFetcher
+from jobs.fetch.tx import TxFetcher
+from jobs.node_churn import NodeChurnDetector
+from jobs.scanner.loan_extractor import LoanExtractorBlock
+from jobs.scanner.native_scan import NativeScannerBlock
+from jobs.scanner.runepool import RunePoolEventDecoder
+from jobs.scanner.swap_extractor import SwapExtractorBlock
+from jobs.scanner.swap_routes import SwapRouteRecorder
+from jobs.scanner.trade_acc import TradeAccEventDecoder
+from jobs.transfer_detector import RuneTransferDetectorTxLogs
+from jobs.user_counter import UserCounterMiddleware
+from jobs.volume_filler import VolumeFillerUpdater
+from jobs.volume_recorder import VolumeRecorder, TxCountRecorder
+from lib.config import Config, SubConfig
+from lib.constants import HTTP_CLIENT_ID
+from lib.date_utils import parse_timespan_to_seconds
+from lib.db import DB
+from lib.depcont import DepContainer
+from lib.emergency import EmergencyReport
+from lib.logs import WithLogger
+from lib.midgard.connector import MidgardConnector
+from lib.midgard.name_service import NameService
+from lib.money import DepthCurve
+from lib.scheduler import Scheduler
+from lib.settings_manager import SettingsManager, SettingsProcessorGeneralAlerts
+from lib.utils import setup_logs
+from lib.w3.aggregator import AggregatorDataExtractor
+from lib.w3.dex_analytics import DexAnalyticsCollector
+from models.memo import ActionType
+from models.mimir import MimirHolder
+from models.mimir_naming import MIMIR_DICT_FILENAME
+from models.node_watchers import AlertWatchers
+from notify.alert_presenter import AlertPresenter
+from notify.broadcast import Broadcaster
+from notify.channel import BoardMessage
+from notify.personal.balance import PersonalBalanceNotifier
+from notify.personal.bond_provider import PersonalBondProviderNotifier
+from notify.personal.personal_main import NodeChangePersonalNotifier
+from notify.personal.price_divergence import PersonalPriceDivergenceNotifier, SettingsProcessorPriceDivergence
+from notify.personal.scheduled import PersonalPeriodicNotificationService
+from notify.types.best_pool_notify import BestPoolsNotifier
+from notify.types.block_notify import BlockHeightNotifier, LastBlockStore
+from notify.types.cap_notify import LiquidityCapNotifier
+from notify.types.chain_id_notify import ChainIdNotifier
+from notify.public.chain_notify import TradingHaltedNotifier
+from notify.types.dex_report_notify import DexReportNotifier
+from notify.types.key_metrics_notify import KeyMetricsNotifier
+from notify.public.lend_stats_notify import LendingStatsNotifier
+from notify.types.lending_open_up import LendingCapsNotifier
+from notify.types.loans_notify import LoanTxNotifier
+from notify.public.mimir_notify import MimirChangedNotifier
+from notify.public.node_churn_notify import NodeChurnNotifier
+from notify.types.pol_notify import POLNotifier
+from notify.public.pool_churn_notify import PoolChurnNotifier
+from notify.types.price_div_notify import PriceDivergenceNotifier
+from notify.public.price_notify import PriceNotifier
+from notify.types.queue_notify import QueueNotifier, QueueStoreMetrics
+from notify.types.runepool_notify import RunePoolTransactionNotifier, RunepoolStatsNotifier
+from notify.types.s_swap_notify import StreamingSwapStartTxNotifier
+from notify.public.savers_stats_notify import SaversStatsNotifier
+from notify.types.stats_notify import NetworkStatsNotifier
+from notify.types.supply_notify import SupplyNotifier
+from notify.public.trade_acc_notify import TradeAccTransactionNotifier, TradeAccSummaryNotifier
+from notify.public.transfer_notify import RuneMoveNotifier
+from notify.types.tx_notify import GenericTxNotifier, LiquidityTxNotifier, SwapTxNotifier, RefundTxNotifier
+from notify.public.version_notify import VersionNotifier
+from notify.public.voting_notify import VotingNotifier
 
 
 class App(WithLogger):

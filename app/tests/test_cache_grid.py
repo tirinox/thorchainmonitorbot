@@ -1,4 +1,4 @@
-from services.lib.draw_utils import CacheGrid
+from lib.draw_utils import CacheGrid
 
 
 def test_grid_box():

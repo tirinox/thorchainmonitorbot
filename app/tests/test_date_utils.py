@@ -1,6 +1,6 @@
 import pytest
 
-from services.lib.date_utils import seconds_human, DAY, HOUR, MINUTE
+from lib.date_utils import seconds_human, DAY, HOUR, MINUTE
 
 
 @pytest.mark.parametrize(('x', 's'), [

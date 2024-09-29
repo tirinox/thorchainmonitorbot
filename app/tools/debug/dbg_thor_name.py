@@ -1,9 +1,9 @@
 import asyncio
 
-from localization.languages import Language
-from services.lib.midgard.name_service import NameService
-from services.lib.texts import sep
-from services.models.transfer import RuneTransfer
+from comm.localization.languages import Language
+from lib.midgard.name_service import NameService
+from lib.texts import sep
+from models.transfer import RuneTransfer
 from tools.lib.lp_common import LpAppFramework
 
 NAMES = {

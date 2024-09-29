@@ -1,9 +1,9 @@
 import asyncio
 
-from localization.eng_base import BaseLocalization
-from services.jobs.fetch.chain_id import ChainIdFetcher, EventChainId, AlertChainIdChange
-from services.lib.var_file import var_file_loop
-from services.notify.types.chain_id_notify import ChainIdNotifier
+from comm.localization.eng_base import BaseLocalization
+from jobs.fetch.chain_id import ChainIdFetcher, EventChainId, AlertChainIdChange
+from lib.var_file import var_file_loop
+from notify.types.chain_id_notify import ChainIdNotifier
 from tools.lib.lp_common import LpAppFramework
 
 

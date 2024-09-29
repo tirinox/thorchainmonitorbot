@@ -3,15 +3,15 @@ import logging
 from pprint import pprint
 from typing import Optional
 
-from aionode.types import ThorRunePoolPOL
+from api.aionode.types import ThorRunePoolPOL
 
-from services.jobs.fetch.pol import RunePoolFetcher
-from services.lib.constants import NetworkIdents, STAGENET_RESERVE_ADDRESS
-from services.lib.date_utils import DAY
-from services.lib.depcont import DepContainer
-from services.lib.money import distort_randomly
-from services.models.runepool import POLState, AlertPOLState
-from services.notify.types.pol_notify import POLNotifier
+from jobs.fetch.pol import RunePoolFetcher
+from lib.constants import NetworkIdents, STAGENET_RESERVE_ADDRESS
+from lib.date_utils import DAY
+from lib.depcont import DepContainer
+from lib.money import distort_randomly
+from models.runepool import POLState, AlertPOLState
+from notify.types.pol_notify import POLNotifier
 from tools.lib.lp_common import LpAppFramework
 
 

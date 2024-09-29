@@ -3,20 +3,20 @@ import copy
 import random
 from pprint import pprint
 
-from localization.eng_base import BaseLocalization
-from services.jobs.fetch.lending_stats import LendingStatsFetcher
-from services.jobs.fetch.runeyield.borrower import BorrowerPositionGenerator
-from services.jobs.scanner.event_db import EventDatabase
-from services.jobs.scanner.loan_extractor import LoanExtractorBlock
-from services.jobs.scanner.native_scan import NativeScannerBlock
-from services.lib.money import DepthCurve
-from services.lib.texts import sep
-from services.lib.utils import load_pickle, save_pickle
-from services.lib.var_file import var_file_loop
-from services.models.loans import AlertLendingStats, LendingStats
-from services.notify.types.lend_stats_notify import LendingStatsNotifier
-from services.notify.types.lending_open_up import LendingCapsNotifier
-from services.notify.types.loans_notify import LoanTxNotifier
+from comm.localization.eng_base import BaseLocalization
+from jobs.fetch.lending_stats import LendingStatsFetcher
+from jobs.fetch.runeyield.borrower import BorrowerPositionGenerator
+from jobs.scanner.event_db import EventDatabase
+from jobs.scanner.loan_extractor import LoanExtractorBlock
+from jobs.scanner.native_scan import NativeScannerBlock
+from lib.money import DepthCurve
+from lib.texts import sep
+from lib.utils import load_pickle, save_pickle
+from lib.var_file import var_file_loop
+from models.loans import AlertLendingStats, LendingStats
+from notify.public.lend_stats_notify import LendingStatsNotifier
+from notify.types.lending_open_up import LendingCapsNotifier
+from notify.types.loans_notify import LoanTxNotifier
 from tools.lib.lp_common import LpAppFramework
 
 

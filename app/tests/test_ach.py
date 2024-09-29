@@ -1,5 +1,5 @@
-from services.jobs.achievement.ach_list import A
-from services.jobs.achievement.tracker import AchievementsTracker
+from jobs.achievement.ach_list import A
+from jobs.achievement.tracker import AchievementsTracker
 
 
 def test_minimum_threshold():

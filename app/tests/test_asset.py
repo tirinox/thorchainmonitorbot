@@ -1,5 +1,5 @@
-from services.lib.money import short_address
-from services.models.asset import Asset, is_ambiguous_asset
+from lib.money import short_address
+from models.asset import Asset, is_ambiguous_asset
 
 
 def test_asset1():

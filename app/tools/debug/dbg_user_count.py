@@ -4,11 +4,11 @@ import random
 
 from redis.asyncio import Redis
 
-from services.jobs.scanner.native_scan import NativeScannerBlock
-from services.jobs.user_counter import UserCounterMiddleware
-from services.lib.active_users import DailyActiveUserCounter, ManualUserCounter
-from services.lib.date_utils import DAY, now_ts
-from services.lib.utils import unique_ident, random_hex
+from jobs.scanner.native_scan import NativeScannerBlock
+from jobs.user_counter import UserCounterMiddleware
+from lib.active_users import DailyActiveUserCounter, ManualUserCounter
+from lib.date_utils import DAY, now_ts
+from lib.utils import unique_ident, random_hex
 from tools.lib.lp_common import LpAppFramework
 
 

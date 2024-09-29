@@ -2,8 +2,8 @@ import asyncio
 
 import pytest
 
-from services.dialog.message_cat_db import MessageCategoryDB
-from services.lib.db import DB
+from comm.dialog.message_cat_db import MessageCategoryDB
+from lib.db import DB
 
 
 @pytest.fixture(scope='session')

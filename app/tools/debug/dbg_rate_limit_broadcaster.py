@@ -1,8 +1,8 @@
 import asyncio
 import logging
 
-from services.notify.broadcast import Broadcaster
-from services.notify.channel import ChannelDescriptor, BoardMessage, Messengers
+from notify.broadcast import Broadcaster
+from notify.channel import ChannelDescriptor, BoardMessage, Messengers
 from tools.lib.lp_common import LpAppFramework
 
 

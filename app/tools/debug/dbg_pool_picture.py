@@ -2,11 +2,11 @@ import asyncio
 import random
 from copy import deepcopy
 
-from localization.languages import Language
-from services.dialog.picture.pools_picture import PoolPictureGenerator
-from services.jobs.fetch.pool_price import PoolInfoFetcherMidgard
-from services.lib.utils import random_chance
-from services.models.pool_info import PoolMapPair
+from comm.localization.languages import Language
+from comm.dialog.picture.pools_picture import PoolPictureGenerator
+from jobs.fetch.pool_price import PoolInfoFetcherMidgard
+from lib.utils import random_chance
+from models.pool_info import PoolMapPair
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
 

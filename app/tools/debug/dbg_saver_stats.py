@@ -2,20 +2,19 @@ import asyncio
 import dataclasses
 import json
 import random
-from pprint import pprint
 
-from localization.eng_base import BaseLocalization
-from localization.languages import Language
-from services.dialog.picture.crypto_logo import CryptoLogoDownloader
-from services.dialog.picture.resources import Resources
-from services.dialog.picture.savers_picture import SaversPictureGenerator
-from services.jobs.fetch.savers_vnx import SaversStatsFetcher
-from services.lib.date_utils import DAY
-from services.lib.texts import sep
-from services.lib.utils import random_chance
-from services.models.pool_info import PoolInfo
-from services.models.savers import SaversBank, how_much_savings_you_can_add
-from services.notify.types.savers_stats_notify import SaversStatsNotifier
+from comm.localization.eng_base import BaseLocalization
+from comm.localization.languages import Language
+from comm.dialog.picture.crypto_logo import CryptoLogoDownloader
+from comm.dialog.picture.resources import Resources
+from comm.dialog.picture.savers_picture import SaversPictureGenerator
+from jobs.fetch.savers_vnx import SaversStatsFetcher
+from lib.date_utils import DAY
+from lib.texts import sep
+from lib.utils import random_chance
+from models.pool_info import PoolInfo
+from models.savers import SaversBank, how_much_savings_you_can_add
+from notify.public.savers_stats_notify import SaversStatsNotifier
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
 
