@@ -31,7 +31,6 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         super().__init__(deps)
         self.tx_fetcher = TxFetcher(deps)
         self.parser = get_parser_by_network_id(deps.cfg.network_id)
-        self.use_thor_consensus = False
         self.days_for_chart = 30
         self.block_mapper = DateToBlockMapper(deps)
         self.withdraw_fee_rune = 2.0

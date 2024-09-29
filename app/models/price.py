@@ -6,6 +6,7 @@ from typing import List, Optional, Set, NamedTuple
 from lib.config import Config
 from lib.constants import BTC_SYMBOL, STABLE_COIN_POOLS, thor_to_float, RUNE_IDEAL_SUPPLY
 from lib.date_utils import now_ts, DAY
+from lib.delegates import INotified
 from lib.money import weighted_mean
 from lib.texts import fuzzy_search
 from models.asset import Asset, is_rune, ASSET_TRADE_SEPARATOR, ASSET_SYNTH_SEPARATOR, ASSET_NORMAL_SEPARATOR, \
@@ -99,8 +100,12 @@ class AlertPrice:
     price_graph_period: int = 7 * DAY
 
 
-class LastPriceHolder:
+class LastPriceHolder(INotified):
+    async def on_data(self, sender, pool_map: PoolInfoMap):
+        self.update(pool_map)
+
     def __init__(self, stable_coins=None):
+        super().__init__()
         self.usd_per_rune = 1.0  # weighted across multiple stable coin pools
         self.btc_per_rune = 0.000001
         self.pool_info_map: PoolInfoMap = {}

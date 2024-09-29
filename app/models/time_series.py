@@ -155,8 +155,8 @@ class TimeSeries:
 
 
 class PriceTimeSeries(TimeSeries):
-    def __init__(self, coin: str, db: DB):
-        super().__init__(f'price-{coin}', db)
+    def __init__(self, coin: str, db: DB, max_len=MAX_POINTS_DEFAULT):
+        super().__init__(f'price-{coin}', db, max_len=max_len)
 
     KEY = 'price'
 
