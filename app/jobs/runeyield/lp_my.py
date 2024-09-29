@@ -5,9 +5,9 @@ from collections import defaultdict, Counter
 from typing import List, Tuple, Dict, Optional
 
 from api.midgard.parser import get_parser_by_network_id
-from jobs.fetch.runeyield import AsgardConsumerConnectorBase
-from jobs.fetch.runeyield.base import YieldSummary
-from jobs.fetch.runeyield.date2block import DateToBlockMapper
+from jobs.runeyield import AsgardConsumerConnectorBase
+from jobs.runeyield.base import YieldSummary
+from jobs.runeyield.date2block import DateToBlockMapper
 from jobs.fetch.tx import TxFetcher
 from lib.constants import thor_to_float, Chains
 from lib.date_utils import days_ago_noon, now_ts

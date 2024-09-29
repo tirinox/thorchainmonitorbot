@@ -6,7 +6,7 @@ from comm.telegram.telegram import telegram_send_message_basic, TG_TEST_USER
 from comm.twitter.twitter_bot import twitter_text_length, TwitterBotMock
 from jobs.fetch.fair_price import RuneMarketInfoFetcher
 from jobs.fetch.last_block import LastBlockFetcher
-from jobs.fetch.runeyield import AsgardConsumerConnectorBase, get_rune_yield_connector
+from jobs.runeyield import AsgardConsumerConnectorBase, get_rune_yield_connector
 from jobs.fetch.tx import TxFetcher
 from jobs.volume_recorder import VolumeRecorder, TxCountRecorder
 from lib.constants import NetworkIdents

@@ -9,7 +9,7 @@ from api.midgard.name_service import NameService, add_thor_suffix, NameMap
 from api.w3.dex_analytics import DexReport, DexReportEntry
 from api.w3.token_record import AmountToken
 from jobs.fetch.chain_id import AlertChainIdChange
-from jobs.fetch.runeyield.borrower import LoanReportCard
+from jobs.runeyield.borrower import LoanReportCard
 from lib.config import Config
 from lib.constants import thor_to_float, THOR_BLOCK_TIME, DEFAULT_CEX_NAME, \
     DEFAULT_CEX_BASE_ASSET, bp_to_percent, LOAN_MARKER, BTC_SYMBOL, ETH_SYMBOL, ThorRealms

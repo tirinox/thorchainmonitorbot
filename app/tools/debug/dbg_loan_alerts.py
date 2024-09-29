@@ -5,7 +5,7 @@ from pprint import pprint
 
 from comm.localization.eng_base import BaseLocalization
 from jobs.fetch.lending_stats import LendingStatsFetcher
-from jobs.fetch.runeyield.borrower import BorrowerPositionGenerator
+from jobs.runeyield.borrower import BorrowerPositionGenerator
 from jobs.scanner.event_db import EventDatabase
 from jobs.scanner.loan_extractor import LoanExtractorBlock
 from jobs.scanner.native_scan import NativeScannerBlock

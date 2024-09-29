@@ -2,8 +2,8 @@ import asyncio
 from typing import NamedTuple
 
 from comm.picture.lp_picture import generate_yield_picture
-from jobs.fetch.runeyield import get_rune_yield_connector
-from jobs.fetch.runeyield.borrower import BorrowerPositionGenerator
+from jobs.runeyield import get_rune_yield_connector
+from jobs.runeyield.borrower import BorrowerPositionGenerator
 from lib.constants import LOAN_MARKER
 from lib.date_utils import today_str, MONTH
 from lib.db_one2one import OneToOne

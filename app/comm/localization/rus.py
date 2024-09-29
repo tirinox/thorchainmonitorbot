@@ -6,7 +6,7 @@ from api.aionode.types import ThorChainInfo, ThorBalances, ThorSwapperClout, tho
 from api.midgard.name_service import add_thor_suffix, NameMap
 from api.w3.dex_analytics import DexReportEntry, DexReport
 from jobs.fetch.chain_id import AlertChainIdChange
-from jobs.fetch.runeyield.borrower import LoanReportCard
+from jobs.runeyield.borrower import LoanReportCard
 from lib.config import Config
 from lib.constants import Chains, LOAN_MARKER, ThorRealms
 from lib.date_utils import format_time_ago, seconds_human, now_ts

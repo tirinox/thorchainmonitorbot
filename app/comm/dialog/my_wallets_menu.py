@@ -13,8 +13,8 @@ from api.aionode.types import ThorSwapperClout
 from api.midgard.name_service import add_thor_suffix
 from comm.telegram.inline_list import TelegramInlineList
 from comm.localization.eng_base import BaseLocalization
-from jobs.fetch.runeyield import get_rune_yield_connector
-from jobs.fetch.runeyield.borrower import BorrowerPositionGenerator
+from jobs.runeyield import get_rune_yield_connector
+from jobs.runeyield.borrower import BorrowerPositionGenerator
 from lib.constants import Chains, LOAN_MARKER
 from lib.date_utils import today_str, parse_timespan_to_seconds
 from lib.depcont import DepContainer

@@ -4,6 +4,7 @@ from collections import defaultdict
 from typing import List
 
 from api.aionode.types import thor_to_float
+from api.flipside import FlipsideConnector
 from jobs.fetch.base import BaseFetcher
 from jobs.fetch.pol import RunePoolFetcher
 from jobs.fetch.pool_price import PoolFetcher
@@ -16,8 +17,6 @@ from lib.utils import WithLogger
 from models.earnings_history import EarningsInterval
 from models.key_stats_model import AlertKeyStats, KeyStats, LockedValue, AffiliateCollectors
 from models.vol_n import TxCountStats
-
-FS_AFFILIATES_API_URL = "https://flipsidecrypto.xyz/api/v1/queries/cebb9137-b58f-452d-a30a-6990a8e8fdc8/data/latest"
 
 
 class KeyStatsFetcher(BaseFetcher, WithLogger):
@@ -82,7 +81,7 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         )
 
         # Affiliates
-        affiliates = await self.get_affiliates_from_flipside()
+        affiliates = await FlipsideConnector(self.deps.session, self.deps.emergency).get_affiliates_from_flipside()
         top_affiliates = self.calc_top_affiliates(affiliates)
         curr_aff_usd, prev_aff_usd = self.calc_total_affiliate_curr_prev(affiliates)
 
@@ -172,29 +171,6 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
         # Transaction count stats
         tx_counter: TxCountRecorder = self.deps.tx_count_recorder
         return await tx_counter.get_stats(self.tally_days_period)
-
-    async def get_affiliates_from_flipside(self):
-        async with self.deps.session.get(FS_AFFILIATES_API_URL) as resp:
-            if resp.status == 200:
-                j = await resp.json()
-                aff_collectors = [AffiliateCollectors.from_json(item) for item in j]
-                aff_collectors.sort(key=lambda item: item.date, reverse=True)
-
-                if not aff_collectors:
-                    self.logger.error(f'No data loaded')
-                    self.deps.emergency.report('WeeklyStats',
-                                               'No data loaded',
-                                               url=FS_AFFILIATES_API_URL)
-                    raise IOError('No data from Flipside')
-
-                max_date = aff_collectors[0].date
-                if max_date - datetime.datetime.utcnow() > datetime.timedelta(days=2):
-                    self.logger.error("FS data is too old")
-                    self.deps.emergency.report('WeeklyStats', 'FS Aff data is too old',
-                                               date=max_date, url=FS_AFFILIATES_API_URL)
-                    raise IOError('Flipside returned outdated rows')
-
-                return aff_collectors
 
     def calc_top_affiliates(self, aff_collectors: List[AffiliateCollectors]):
         fee_usd_by_label = defaultdict(float)

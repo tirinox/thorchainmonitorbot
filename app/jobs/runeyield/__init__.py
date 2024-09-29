@@ -1,5 +1,5 @@
-from jobs.fetch.runeyield.base import AsgardConsumerConnectorBase
-from jobs.fetch.runeyield.lp_my import HomebrewLPConnector
+from jobs.runeyield.base import AsgardConsumerConnectorBase
+from jobs.runeyield.lp_my import HomebrewLPConnector
 from lib.depcont import DepContainer
 
 
