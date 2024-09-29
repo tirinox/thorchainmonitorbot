@@ -7,7 +7,7 @@ from lib.date_utils import HOUR, now_ts, DAY
 from lib.depcont import DepContainer
 from lib.utils import WithLogger
 from models.node_info import EventNodeOnline, NodeEvent, NodeEventType
-from notify.personal.helpers import BaseChangeTracker, NodeOpSetting
+from .helpers import BaseChangeTracker, NodeOpSetting
 
 TimeStampedList = List[Tuple[float, bool]]
 

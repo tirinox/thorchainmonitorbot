@@ -9,7 +9,7 @@ from lib.depcont import DepContainer
 from models.node_info import NodeSetChanges, NodeInfo, EventNodeFeeChange, \
     NodeEvent, NodeEventType, EventProviderBondChange, EventProviderStatus
 from models.node_watchers import UserWatchlist
-from notify.personal.base import BasePersonalNotifier
+from .base import BasePersonalNotifier
 
 
 class BondWatchlist(UserWatchlist):

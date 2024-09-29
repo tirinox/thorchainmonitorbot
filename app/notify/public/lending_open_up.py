@@ -1,4 +1,4 @@
-from lib.cooldown import CooldownBiTrigger, Cooldown
+from lib.cooldown import Cooldown
 from lib.date_utils import HOUR
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer

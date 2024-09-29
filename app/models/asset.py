@@ -1,12 +1,11 @@
 import dataclasses
 from collections import defaultdict
 from copy import copy
-
 from dataclasses import dataclass
 from typing import Iterable
 
-from proto.common import Coin
 from lib.constants import RUNE_DENOM, Chains, NATIVE_RUNE_SYMBOL
+from proto.common import Coin
 
 ASSET_NORMAL_SEPARATOR = '.'
 ASSET_SYNTH_SEPARATOR = '/'

@@ -1,4 +1,4 @@
-from typing import List, NamedTuple
+from typing import List
 
 from redis.asyncio import Redis
 from semver import VersionInfo

@@ -1,16 +1,18 @@
 import asyncio
 from typing import Union
 
-from comm.localization.manager import BaseLocalization
+from api.midgard.name_service import NameService, NameMap
+from api.w3.dex_analytics import DexReport
 from comm.dialog.picture.achievement_picture import build_achievement_picture_generator
 from comm.dialog.picture.block_height_picture import block_speed_chart
 from comm.dialog.picture.key_stats_picture import KeyStatsPictureGenerator
 from comm.dialog.picture.nodes_pictures import NodePictureGenerator
 from comm.dialog.picture.pools_picture import PoolPictureGenerator
-from dialog.picture.price_picture import price_graph_from_db
-from dialog.picture.queue_picture import queue_graph
+from comm.dialog.picture.price_picture import price_graph_from_db
+from comm.dialog.picture.queue_picture import queue_graph
 from comm.dialog.picture.savers_picture import SaversPictureGenerator
 from comm.dialog.picture.supply_picture import SupplyPictureGenerator
+from comm.localization.manager import BaseLocalization
 from jobs.achievement.ach_list import Achievement
 from jobs.fetch.chain_id import AlertChainIdChange
 from lib.constants import THOR_BLOCKS_PER_MINUTE
@@ -18,8 +20,6 @@ from lib.delegates import INotified
 from lib.depcont import DepContainer
 from lib.draw_utils import img_to_bio
 from lib.logs import WithLogger
-from api.midgard.name_service import NameService, NameMap
-from lib.w3.dex_analytics import DexReport
 from models.cap_info import AlertLiquidityCap
 from models.key_stats_model import AlertKeyStats
 from models.last_block import EventBlockSpeed, BlockProduceState

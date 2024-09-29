@@ -6,7 +6,7 @@ from lib.depcont import DepContainer
 from lib.utils import WithLogger
 from models.node_info import NodeEvent, NodeEventType, EventDataSlash, NodeInfo
 from models.time_series import TimeSeries
-from notify.personal.helpers import BaseChangeTracker, NodeOpSetting, STANDARD_INTERVALS
+from .helpers import BaseChangeTracker, NodeOpSetting, STANDARD_INTERVALS
 
 
 class SlashPointTracker(BaseChangeTracker, WithLogger):

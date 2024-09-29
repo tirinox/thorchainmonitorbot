@@ -3,7 +3,7 @@ from typing import NamedTuple, List, Optional
 
 from api.aionode.types import ThorSwapperClout, ThorTxStatus
 from lib.constants import THOR_BLOCK_TIME, thor_to_float
-from models.memo import THORMemo
+from .memo import THORMemo
 
 
 class StreamingSwap(NamedTuple):

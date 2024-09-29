@@ -2,7 +2,7 @@ from typing import NamedTuple, List, Optional
 
 from semver import VersionInfo
 
-from models.node_info import NodeSetChanges, NodeVersionConsensus
+from .node_info import NodeSetChanges, NodeVersionConsensus
 
 
 class AlertVersionUpgradeProgress(NamedTuple):

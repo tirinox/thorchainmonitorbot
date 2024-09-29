@@ -10,9 +10,9 @@ from lib.money import weighted_mean
 from lib.texts import fuzzy_search
 from models.asset import Asset, is_rune, ASSET_TRADE_SEPARATOR, ASSET_SYNTH_SEPARATOR, ASSET_NORMAL_SEPARATOR, \
     normalize_asset
-from models.base import BaseModelMixin
-from models.circ_supply import RuneCirculatingSupply
-from models.pool_info import PoolInfo, PoolInfoMap
+from .base import BaseModelMixin
+from .circ_supply import RuneCirculatingSupply
+from .pool_info import PoolInfo, PoolInfoMap
 
 
 @dataclass

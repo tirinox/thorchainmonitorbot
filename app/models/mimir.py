@@ -8,9 +8,9 @@ from typing import Dict, List, Optional, NamedTuple
 from api.aionode.types import ThorConstants, ThorMimir, ThorMimirVote
 from lib.constants import bp_to_float
 from lib.texts import split_by_camel_case
-from models.base import BaseModelMixin
-from models.mimir_naming import MIMIR_KEY_MAX_SYNTH_PER_POOL_DEPTH, MimirNameRules
-from models.node_info import NodeInfo
+from .base import BaseModelMixin
+from .mimir_naming import MIMIR_KEY_MAX_SYNTH_PER_POOL_DEPTH, MimirNameRules
+from .node_info import NodeInfo
 
 # for automatic Mimir, when it becomes 0 -> 1 or 1 -> 0, that is Admin's actions
 ADMIN_VALUE = 1

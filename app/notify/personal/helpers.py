@@ -3,7 +3,7 @@ from typing import List, Any, Tuple, Optional
 from lib.date_utils import now_ts
 from lib.utils import WithLogger
 from models.node_info import NodeEvent, MapAddressToPrevAndCurrNode, NodeSetChanges
-from notify.personal.user_data import UserDataCache
+from .user_data import UserDataCache
 
 STANDARD_INTERVALS = [
     '2m',

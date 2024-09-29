@@ -2,7 +2,7 @@ from typing import List
 
 from lib.depcont import DepContainer
 from models.node_info import NodeEventType, NodeEvent
-from notify.personal.helpers import BaseChangeTracker, NodeOpSetting
+from .helpers import BaseChangeTracker, NodeOpSetting
 
 
 class IpAddressTracker(BaseChangeTracker):

@@ -2,7 +2,7 @@ from typing import NamedTuple, Optional, List
 
 from lib.constants import thor_to_float, THOR_BLOCK_TIME
 from lib.date_utils import now_ts
-from models.events import EventLoanOpen, EventLoanRepayment
+from .events import EventLoanOpen, EventLoanRepayment
 
 
 class AlertLoanOpen(NamedTuple):

@@ -4,7 +4,7 @@ from typing import List
 
 from lib.depcont import DepContainer
 from lib.utils import WithLogger
-from models.node_info import NodeInfo
+from .node_info import NodeInfo
 
 
 class NodeStateDatabase(WithLogger):

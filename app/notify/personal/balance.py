@@ -7,8 +7,8 @@ from lib.utils import safe_get
 from models.asset import Asset
 from models.node_watchers import UserWatchlist
 from models.transfer import RuneTransfer
-from notify.personal.base import BasePersonalNotifier
-from notify.personal.helpers import GeneralSettings, Props
+from .base import BasePersonalNotifier
+from .helpers import GeneralSettings, Props
 
 
 class WalletWatchlist(UserWatchlist):

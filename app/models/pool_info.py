@@ -10,7 +10,7 @@ from typing import List, Dict, NamedTuple, Optional
 from api.aionode.types import ThorPool
 from lib.constants import thor_to_float
 from lib.money import calc_percent_change
-from models.asset import Asset
+from .asset import Asset
 
 
 def pool_share(rune_depth, asset_depth, my_units, pool_total_units):

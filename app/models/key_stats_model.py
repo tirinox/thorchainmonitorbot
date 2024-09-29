@@ -7,8 +7,8 @@ from typing import NamedTuple, List, Tuple, Optional
 
 from lib.constants import STABLE_COIN_POOLS_ALL, thor_to_float
 from lib.date_utils import date_parse_rfc_z_no_ms
-from models.pool_info import PoolInfoMap
-from models.swap_history import SwapHistoryResponse
+from .pool_info import PoolInfoMap
+from .swap_history import SwapHistoryResponse
 
 
 class SwapRouteEntry(NamedTuple):

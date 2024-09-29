@@ -1,10 +1,9 @@
 from dataclasses import dataclass
 from typing import Optional, NamedTuple, List
 
-from models.base import BaseModelMixin
-from models.node_info import NodeInfo
-from models.price import RuneMarketInfo
-from models.swap_history import SwapHistoryResponse
+from .base import BaseModelMixin
+from .node_info import NodeInfo
+from .swap_history import SwapHistoryResponse
 
 
 @dataclass

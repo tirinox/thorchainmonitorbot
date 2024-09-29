@@ -5,11 +5,11 @@ from lib.config import SubConfig
 from lib.constants import Chains
 from lib.date_utils import parse_timespan_to_seconds, HOUR
 from lib.depcont import DepContainer
-from lib.utils import most_common, estimate_max_by_committee
 from lib.texts import sep
+from lib.utils import most_common, estimate_max_by_committee
 from models.node_info import NodeEvent, NodeEventType, EventBlockHeight, NodeInfo
-from notify.personal.helpers import BaseChangeTracker, NodeOpSetting
-from notify.personal.user_data import UserDataCache
+from .helpers import BaseChangeTracker, NodeOpSetting
+from .user_data import UserDataCache
 
 
 class ChainHeightTracker(BaseChangeTracker):

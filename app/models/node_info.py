@@ -14,7 +14,7 @@ from lib.constants import thor_to_float, float_to_thor, bp_to_float
 from lib.date_utils import now_ts
 from lib.texts import find_country_emoji
 from lib.thor_logic import get_effective_security_bond
-from models.base import BaseModelMixin
+from .base import BaseModelMixin
 
 ZERO_VERSION = VersionInfo(0)
 

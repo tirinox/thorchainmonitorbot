@@ -8,7 +8,7 @@ from lib.utils import WithLogger
 from models.node_watchers import AlertWatchers
 from models.price import RuneMarketInfo
 from notify.channel import ChannelDescriptor, BoardMessage
-from notify.personal.helpers import GeneralSettings
+from .helpers import GeneralSettings
 
 
 class PersonalPriceDivergenceNotifier(INotified, WithLogger):

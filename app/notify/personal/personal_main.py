@@ -13,16 +13,16 @@ from models.node_info import NodeSetChanges, NodeEvent, NodeEventType
 from models.node_watchers import NodeWatcherStorage
 from notify.broadcast import ChannelDescriptor
 from notify.channel import BoardMessage
-from notify.personal.bond import BondTracker
-from notify.personal.chain_height import ChainHeightTracker
-from notify.personal.churning import NodeChurnTracker
-from notify.personal.helpers import BaseChangeTracker, NodeOpSetting
-from notify.personal.ip_addr import IpAddressTracker
-from notify.personal.node_online import NodeOnlineTracker
-from notify.personal.presence import PresenceTracker
-from notify.personal.slashing import SlashPointTracker
-from notify.personal.user_data import UserDataCache
-from notify.personal.versions import VersionTracker
+from .bond import BondTracker
+from .chain_height import ChainHeightTracker
+from .churning import NodeChurnTracker
+from .helpers import BaseChangeTracker, NodeOpSetting
+from .ip_addr import IpAddressTracker
+from .node_online import NodeOnlineTracker
+from .presence import PresenceTracker
+from .slashing import SlashPointTracker
+from .user_data import UserDataCache
+from .versions import VersionTracker
 
 MAX_CHANGES_PER_MESSAGE = 10
 

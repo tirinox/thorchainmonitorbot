@@ -1,7 +1,6 @@
 from typing import Dict, Optional
 
 from api.aionode.types import ThorLastBlock
-
 from jobs.fetch.last_block import LastBlockFetcher
 from lib.config import SubConfig
 from lib.constants import THOR_BLOCK_SPEED, THOR_BLOCK_TIME

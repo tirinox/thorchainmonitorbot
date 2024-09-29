@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from typing import List, NamedTuple, Optional
 
 from lib.constants import BLOCKS_PER_YEAR, SAVERS_BEGIN_BLOCK, thor_to_float
-from models.pool_info import PoolInfoMap, PoolInfo
+from .pool_info import PoolInfoMap, PoolInfo
 
 TYPICAL_REBALANCE_RATIO = 0.5
 

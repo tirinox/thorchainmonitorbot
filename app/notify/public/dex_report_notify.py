@@ -1,11 +1,11 @@
 from contextlib import suppress
 
+from api.w3.dex_analytics import DexAnalyticsCollector
 from lib.cooldown import Cooldown
 from lib.date_utils import parse_timespan_to_seconds
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.utils import WithLogger
-from lib.w3.dex_analytics import DexAnalyticsCollector
 
 
 class DexReportNotifier(WithDelegates, INotified, WithLogger):

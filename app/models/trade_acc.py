@@ -2,12 +2,12 @@ from typing import NamedTuple, List
 
 from api.aionode.types import ThorTradeUnits, ThorVault, ThorTradeAccount, float_to_thor, thor_to_float
 from lib.date_utils import now_ts
-from models.asset import normalize_asset
-from models.memo import ActionType
-from models.pool_info import PoolInfoMap
-from models.swap_history import SwapHistoryResponse
-from models.tx import ThorTx, SUCCESS, ThorSubTx, ThorCoin
-from models.vol_n import TxMetricType
+from .asset import normalize_asset
+from .memo import ActionType
+from .pool_info import PoolInfoMap
+from .swap_history import SwapHistoryResponse
+from .tx import ThorTx, SUCCESS, ThorSubTx, ThorCoin
+from .vol_n import TxMetricType
 
 
 class AlertTradeAccountAction(NamedTuple):
