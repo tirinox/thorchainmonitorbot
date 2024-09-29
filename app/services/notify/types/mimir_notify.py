@@ -9,11 +9,12 @@ from services.lib.delegates import INotified, WithDelegates
 from services.lib.depcont import DepContainer
 from services.lib.utils import WithLogger
 from services.models.mimir import MimirChange, AlertMimirChange
+from services.models.mimir_naming import MIMIR_KEY_MAX_RUNE_SUPPLY
 
 
 class MimirChangedNotifier(INotified, WithDelegates, WithLogger):
     MIMIR_IGNORE_CHANGES = [
-        'MAXRUNESUPPLY',  # ADR 17 burn rune
+        MIMIR_KEY_MAX_RUNE_SUPPLY,  # ADR 17 burn rune
     ]
 
     def __init__(self, deps: DepContainer):

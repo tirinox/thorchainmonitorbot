@@ -3,18 +3,20 @@ from contextlib import suppress
 
 from aiohttp import ClientSession
 
+from aionode.connector import ThorConnector
 from services.lib.constants import thor_to_float, RUNE_DENOM, \
     THOR_ADDRESS_DICT, ThorRealms, TREASURY_LP_ADDRESS, MAYA_POOLS_URL
 from services.lib.midgard.connector import MidgardConnector
 from services.lib.utils import WithLogger
 from services.models.circ_supply import RuneCirculatingSupply, RuneHoldEntry
+from services.models.mimir_naming import MIMIR_KEY_MAX_RUNE_SUPPLY
 
 
 class RuneCirculatingSupplyFetcher(WithLogger):
-    def __init__(self, session: ClientSession, thor_node: str, midgard: MidgardConnector, step_sleep=0):
+    def __init__(self, session: ClientSession, thor: ThorConnector, midgard: MidgardConnector, step_sleep=0):
         super().__init__()
         self.session = session
-        self.thor_node = thor_node
+        self.thor = thor
         self.step_sleep = step_sleep
         self.midgard = midgard
 
@@ -24,7 +26,9 @@ class RuneCirculatingSupplyFetcher(WithLogger):
         """
 
         thor_rune_supply = await self.get_thor_rune_total_supply()
-        result = RuneCirculatingSupply(thor_rune_supply, thor_rune_supply, {})
+        thor_rune_max_supply = await self.get_max_supply_from_mimir()
+
+        result = RuneCirculatingSupply(thor_rune_supply, thor_rune_supply, thor_rune_max_supply, {})
 
         for address, (wallet_name, realm) in THOR_ADDRESS_DICT.items():
             # No hurry, do it step by step
@@ -46,22 +50,24 @@ class RuneCirculatingSupplyFetcher(WithLogger):
             w.amount for w in result.holders.values()
             if w.realm in (ThorRealms.RESERVES, ThorRealms.STANDBY_RESERVES)
         )
+        circulating_rune = thor_rune_supply - locked_rune
 
-        return RuneCirculatingSupply(
-            thor_rune_supply - locked_rune, thor_rune_supply, result.holders
-        )
+        return result._replace(circulating=circulating_rune)
 
     @staticmethod
     def get_pure_rune_from_thor_array(arr):
         if arr:
             thor_rune = next((item['amount'] for item in arr if item['denom'] == RUNE_DENOM), 0)
-            # return int(int(thor_rune) / 10 ** RUNE_DECIMALS)
             return int(thor_to_float(thor_rune))
         else:
             return 0
 
+    @property
+    def thor_node_base_url(self):
+        return self.thor.env.thornode_url
+
     async def get_all_native_token_supplies(self):
-        url_supply = f'{self.thor_node}/cosmos/bank/v1beta1/supply'
+        url_supply = f'{self.thor_node_base_url}/cosmos/bank/v1beta1/supply'
         self.logger.debug(f'Get: "{url_supply}"')
         async with self.session.get(url_supply) as resp:
             j = await resp.json()
@@ -73,7 +79,7 @@ class RuneCirculatingSupplyFetcher(WithLogger):
         return self.get_pure_rune_from_thor_array(supplies)
 
     async def get_thor_address_balance(self, address):
-        url_balance = f'{self.thor_node}/cosmos/bank/v1beta1/balances/{address}'
+        url_balance = f'{self.thor_node_base_url}/cosmos/bank/v1beta1/balances/{address}'
         self.logger.debug(f'Get: "{url_balance}"')
         async with self.session.get(url_balance) as resp:
             j = await resp.json()
@@ -95,3 +101,8 @@ class RuneCirculatingSupplyFetcher(WithLogger):
             if member.pool in pools:
                 rune_accum += pools[member.pool].total_my_capital_of_pool_in_rune(member.liquidity_units)
         return rune_accum
+
+    async def get_max_supply_from_mimir(self):
+        mimir = await self.thor.query_mimir()
+        if mimir:
+            return int(thor_to_float(mimir[MIMIR_KEY_MAX_RUNE_SUPPLY]))

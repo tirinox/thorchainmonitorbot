@@ -16,11 +16,12 @@ class RuneHoldEntry(NamedTuple):
 class RuneCirculatingSupply(NamedTuple):
     circulating: int
     total: int
+    maximum: int
     holders: Dict[str, RuneHoldEntry]
 
     @classmethod
     def zero(cls):
-        return cls(0, 0, {})
+        return cls(0, 0, 0, {})
 
     def set_holder(self, h: RuneHoldEntry):
         self.holders[h.address] = h
