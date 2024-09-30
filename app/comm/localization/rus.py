@@ -398,6 +398,7 @@ class RussianLocalization(BaseLocalization):
     PRICE_GRAPH_LEGEND_CEX_PRICE = f'Цена на бирже'
     PRICE_GRAPH_VOLUME_SWAP_NORMAL = 'Объем обменов'
     PRICE_GRAPH_VOLUME_SWAP_SYNTH = 'Объем синтетиков'
+    PRICE_GRAPH_VOLUME_SWAP_TRADE = 'Объем торг. акт.'
     PRICE_GRAPH_VOLUME_SWAP_ADD = 'Объем добавления'
     PRICE_GRAPH_VOLUME_SWAP_WITHDRAW = 'Объем изъятия'
 

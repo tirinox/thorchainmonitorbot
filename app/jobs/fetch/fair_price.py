@@ -120,9 +120,9 @@ class RuneMarketInfoFetcher(BaseFetcher):
             total_trade_volume_usd=trade_volume,
             total_supply=total_supply,
             supply_info=supply_info,
-            pools=price_holder.pool_info_map,
         )
         self.logger.info(result)
+        result.pools = price_holder.pool_info_map
         return result
 
     @a_result_cached(RUNE_MARKET_INFO_CACHE_TIME)

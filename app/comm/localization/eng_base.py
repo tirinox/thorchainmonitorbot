@@ -468,6 +468,7 @@ class BaseLocalization(ABC):  # == English
     PRICE_GRAPH_LEGEND_CEX_PRICE = f'CEX {RAIDO_GLYPH} price'
     PRICE_GRAPH_VOLUME_SWAP_NORMAL = 'Swap volume'
     PRICE_GRAPH_VOLUME_SWAP_SYNTH = 'Synth volume'
+    PRICE_GRAPH_VOLUME_SWAP_TRADE = 'Trade volume'
     PRICE_GRAPH_VOLUME_SWAP_ADD = 'Add volume'
     PRICE_GRAPH_VOLUME_SWAP_WITHDRAW = 'Withdraw volume'
 

@@ -45,12 +45,12 @@ def price_graph(pool_price_df, det_price_df, cex_prices_df, volumes, loc: BaseLo
 
     # In the series, swaps = L1 swaps + synths swaps. So this is the tall bar behind "only synth" swaps
     graph.add_series_bars(pluck_from_series(volumes, TxMetricType.SWAP), BAR_COLOR_SWAP, 8)
-    graph.add_series_bars(pluck_from_series(volumes, TxMetricType.SWAP_SYNTH), BAR_COLOR_SWAP_SYNTH, 8)
+    graph.add_series_bars(pluck_from_series(volumes, TxMetricType.TRADE_SWAP), BAR_COLOR_SWAP_SYNTH, 8)
     graph.add_series_bars(pluck_from_series(volumes, TxMetricType.ADD_LIQUIDITY), BAR_COLOR_ADD, 2, -3)
     graph.add_series_bars(pluck_from_series(volumes, TxMetricType.WITHDRAW_LIQUIDITY), BAR_COLOR_WITHDRAW, 2, 3)
 
     graph.add_legend(BAR_COLOR_SWAP, loc.PRICE_GRAPH_VOLUME_SWAP_NORMAL)
-    graph.add_legend(BAR_COLOR_SWAP_SYNTH, loc.PRICE_GRAPH_VOLUME_SWAP_SYNTH)
+    graph.add_legend(BAR_COLOR_SWAP_SYNTH, loc.PRICE_GRAPH_VOLUME_SWAP_TRADE)
     graph.add_legend(BAR_COLOR_ADD, loc.PRICE_GRAPH_VOLUME_SWAP_ADD)
     graph.add_legend(BAR_COLOR_WITHDRAW, loc.PRICE_GRAPH_VOLUME_SWAP_WITHDRAW)
 
@@ -58,7 +58,7 @@ def price_graph(pool_price_df, det_price_df, cex_prices_df, volumes, loc: BaseLo
     Volume bar looks like this:
      ___
     |___| L1 swap
-    |   | Synth swap
+    |   | Trade swap
     |A  | A = Add liq.
     |A  |
     |A W| W = Withdraw liq.
