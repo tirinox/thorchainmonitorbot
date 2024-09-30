@@ -9,9 +9,11 @@ from lib.db import DB
 from lib.logs import WithLogger
 from models.tx import ThorTx
 
+BLOOM_TX_CAPACITY = 100_000_000
+
 
 class TxDeduplicator(WithLogger):
-    def __init__(self, db: DB, key, capacity=100000, error_rate=0.001):
+    def __init__(self, db: DB, key, capacity=BLOOM_TX_CAPACITY, error_rate=0.001):
         super().__init__()
         self.db = db
 

@@ -3,7 +3,7 @@ import math
 
 
 class BloomFilter:
-    def __init__(self, redis_instance, redis_key='bloom_filter', capacity=10000, error_rate=0.001):
+    def __init__(self, redis_instance, redis_key='bloom_filter', capacity=1000000, error_rate=0.001):
         self.capacity = capacity
         self.error_rate = error_rate
         self.size = self.get_size(capacity, error_rate)
