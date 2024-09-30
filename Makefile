@@ -2,6 +2,7 @@ include .env
 export
 
 BOTNAME = thtgbot
+DATE = $(shell date +'%Y-%m-%d-%H-%M-%S')
 
 default: help
 
@@ -107,3 +108,8 @@ graph: # Generate a graph of the bot internal structure.
 .PHONY: switch-db
 switch-db:	# Switch the database (see app/tools/switch-db.sh).
 	cd app/tools && ./switch-db.sh
+
+
+.PHONY: backup-db
+backup-db: # Backup the database Redis
+	cp -r ./redis_data/dump.rdb ./redis_data/dump-${DATE}.rdb
