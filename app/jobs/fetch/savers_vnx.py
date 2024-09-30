@@ -16,7 +16,6 @@ class SaversStatsFetcher(BaseFetcher):
         sleep_period = deps.cfg.as_interval('saver_stats.fetch_period', '10m')
         super().__init__(deps, sleep_period)
         self._pool_source = PoolInfoFetcherMidgard(self.deps, 0)
-        self._supply_fetcher = RuneMarketInfoFetcher(self.deps)
         self._anti_spam_sleep = 0.5
 
     @staticmethod
@@ -61,7 +60,7 @@ class SaversStatsFetcher(BaseFetcher):
     async def load_stats_now(self) -> dict[str, VNXSaversStats]:
         mimir_max_synth_per_pool_depth = self.deps.mimir_const_holder.get_max_synth_per_pool_depth()
 
-        supplies = await self._supply_fetcher.get_supply_fetcher().get_all_native_token_supplies()
+        supplies = await self.deps.rune_market_fetcher.get_supply_fetcher().get_all_native_token_supplies()
         supplies = {
             normalize_asset(s['denom']).upper(): int(s['amount']) for s in supplies
         }

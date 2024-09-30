@@ -103,7 +103,7 @@ class LastPriceHolder(INotified):
     async def on_data(self, sender, data):
         if isinstance(data, RuneMarketInfo):
             self.market_info = data
-        elif isinstance(data, PoolInfoMap):
+        elif isinstance(data, dict):  # PoolInfoMap
             self.update_pools(data)
 
     def __init__(self, stable_coins=None):
@@ -172,6 +172,7 @@ class LastPriceHolder(INotified):
         self._calculate_btc_price()
         # self._fill_asset_price()
         self.last_update_ts = now_ts()
+        logging.info(f'Fresh rune price is ${self.usd_per_rune:.3f}, {len(self.pool_info_map)} total pools')
         return self
 
     @property

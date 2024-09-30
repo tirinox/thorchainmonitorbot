@@ -24,6 +24,7 @@ class GraphBuilder:
                 for listener in node.delegates:
                     listener_name = qualname(listener)
                     results.add((emitter_name, listener_name, is_root))
+                    # print((emitter_name, listener_name, is_root))
                     queue.add(listener)
 
         return results

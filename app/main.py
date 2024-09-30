@@ -462,25 +462,28 @@ class App(WithLogger):
                 churn_detector.add_subscriber(d.node_op_notifier)
 
         if d.cfg.get('price.enabled', True):
+            tasks.append(d.rune_market_fetcher)
+
             # handles RuneMarketInfo
             notifier_price = PriceNotifier(d)
-            d.pool_fetcher.add_subscriber(notifier_price)  # todo check inputs
             notifier_price.add_subscriber(d.alert_presenter)
 
+            d.rune_market_fetcher.add_subscriber(notifier_price)
+
             if achievements_enabled:
-                d.pool_fetcher.add_subscriber(achievements)  # todo check inputs
+                d.rune_market_fetcher.add_subscriber(achievements)
 
             if d.cfg.get('price.divergence.enabled', True):
                 price_div_notifier = PriceDivergenceNotifier(d)
-                d.pool_fetcher.add_subscriber(price_div_notifier)  # todo check inputs
+                d.rune_market_fetcher.add_subscriber(price_div_notifier)
 
             if d.cfg.get('price.divergence.personal.enabled', True):
                 personal_price_div_notifier = PersonalPriceDivergenceNotifier(d)
-                d.pool_fetcher.add_subscriber(personal_price_div_notifier)  # todo check inputs
+                d.rune_market_fetcher.add_subscriber(personal_price_div_notifier)
 
         if d.cfg.get('pool_churn.enabled', True):
             notifier_pool_churn = PoolChurnNotifier(d)
-            d.pool_fetcher.add_subscriber(notifier_pool_churn)  # todo check inputs
+            d.pool_fetcher.add_subscriber(notifier_pool_churn)
             notifier_pool_churn.add_subscriber(d.alert_presenter)
 
         if d.cfg.get('best_pools.enabled', True):
@@ -513,7 +516,9 @@ class App(WithLogger):
 
         if d.cfg.get('supply.enabled', True):
             supply_notifier = SupplyNotifier(d)
-            d.pool_fetcher.add_subscriber(supply_notifier)  # todo check inputs
+            d.rune_market_fetcher.add_subscriber(supply_notifier)
+            if not d.rune_market_fetcher in tasks:
+                tasks.append(d.rune_market_fetcher)
             supply_notifier.add_subscriber(d.alert_presenter)
 
         if d.cfg.get('saver_stats.enabled', True):
@@ -691,7 +696,6 @@ class App(WithLogger):
         self.logger.info(f'Ready! Starting background jobs in {self.sleep_step}...')
         await asyncio.sleep(self.sleep_step)
 
-        # todo: debug
         # noinspection PyAsyncCall
         asyncio.create_task(self._debug_command())
 

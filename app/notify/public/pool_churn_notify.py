@@ -5,7 +5,6 @@ from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.utils import WithLogger
 from models.pool_info import PoolInfoMap, PoolChanges, PoolChange
-from models.price import RuneMarketInfo
 
 
 class PoolChurnNotifier(INotified, WithDelegates, WithLogger):
@@ -16,13 +15,13 @@ class PoolChurnNotifier(INotified, WithDelegates, WithLogger):
         cooldown_sec = parse_timespan_to_seconds(deps.cfg.pool_churn.notification.cooldown)
         self.spam_cd = Cooldown(self.deps.db, 'PoolChurnNotifier-spam', cooldown_sec)
 
-    async def on_data(self, sender: PoolInfoFetcherMidgard, data: RuneMarketInfo):
+    async def on_data(self, sender: PoolInfoFetcherMidgard, data: PoolInfoMap):
         # compare starting w 2nd iteration
         if not self.old_pool_dict:
-            self.old_pool_dict = data.pools
+            self.old_pool_dict = data
             return
 
-        pool_changes = self.compare_pool_sets(data.pools)
+        pool_changes = self.compare_pool_sets(data)
 
         # self._dbg_pool_changes(pool_changes) # fixme: debug (!)
 
@@ -32,7 +31,7 @@ class PoolChurnNotifier(INotified, WithDelegates, WithLogger):
                 await self.pass_data_to_listeners(pool_changes)
                 await self.spam_cd.do()
 
-        self.old_pool_dict = data.pools
+        self.old_pool_dict = data
 
     @staticmethod
     def split_pools_by_status(pim: PoolInfoMap):

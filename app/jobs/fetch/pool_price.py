@@ -25,7 +25,7 @@ class PoolFetcher(BaseFetcher):
     def __init__(self, deps: DepContainer):
         assert deps
         cfg: Config = deps.cfg
-        period = parse_timespan_to_seconds(cfg.price.fetch_period)
+        period = cfg.as_interval('price.pool_fetch_period', '1m')
 
         super().__init__(deps, sleep_period=period)
 
@@ -36,9 +36,6 @@ class PoolFetcher(BaseFetcher):
 
     async def fetch(self) -> PoolInfoMap:
         current_pools = await self.load_pools()
-
-        price = self.deps.price_holder.usd_per_rune
-        self.logger.info(f'Fresh rune price is ${price:.3f}, {len(current_pools)} total pools')
 
         # sometimes clear the cache
         await self.cache.automatic_clear()

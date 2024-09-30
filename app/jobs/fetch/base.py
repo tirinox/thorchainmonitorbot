@@ -64,6 +64,7 @@ class DataController(WithLogger):
             return
         name = entity.name
         self._tracker[name] = entity
+        self.logger.info(f'Registered: {entity} ({id(entity)})')
 
     def unregister(self, entity):
         if not entity:
@@ -78,7 +79,7 @@ class DataController(WithLogger):
 class BaseFetcher(WithDelegates, WatchedEntity, ABC, WithLogger):
     MAX_STARTUP_DELAY = 20
 
-    def __init__(self, deps: DepContainer, sleep_period=60):
+    def __init__(self, deps: DepContainer, sleep_period=66):
         super().__init__()
         self.deps = deps
 

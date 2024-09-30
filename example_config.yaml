@@ -46,11 +46,6 @@ thor:
     - AVAX.USDC-0XB97EF9EF8734C71904D8002F8B6BC66DD9C48A6E
 
 
-  circulating_supply:
-    # https://docs.etherscan.io/getting-started/creating-an-account
-    ether_scan_key: PLEASEPUTANETHERSCANKEYHERE
-
-
 blockchain:
   block_time: # block_time overriding... (optional)
     BTC: 10m
@@ -329,7 +324,7 @@ tx:
 
 price:
   enabled: true
-  fetch_period: 60
+
   global_cd: 12h
   change_cd: 1h
   percent_change_threshold: 5
@@ -337,6 +332,9 @@ price:
     default_period: 7d
 
   pool_max_age: 30d  # (!) new
+
+  pool_fetch_period: 60  # (!) new
+  market_fetch_period: 10m  # (!) new
 
   cex_reference:
     cex: binance
@@ -550,9 +548,8 @@ best_pools:
 
 supply:
   enabled: true
-  period: 7d
-  fetch_period: 10m  # (!) new
-  cache_time: 10m  # (!) new
+  notification: # (!) new
+    period: 7d
 
 
 saver_stats:

@@ -18,14 +18,13 @@ RUNE_MARKET_INFO_CACHE_TIME = 3 * MINUTE
 
 class RuneMarketInfoFetcher(BaseFetcher):
     async def fetch(self) -> RuneMarketInfo:
+        await self.deps.pool_fetcher.run_once()
         return await self.get_rune_market_info_cached()
 
     def __init__(self, deps: DepContainer):
-        # todo
-        period = deps.cfg.as_interval('supply.fetch_period', '1h')
+        period = deps.cfg.as_interval('price.market_fetch_period', '8m')
         super().__init__(deps, sleep_period=period)
 
-        self._ether_scan_key = deps.cfg.get('thor.circulating_supply.ether_scan_key', '')
         self._prev_result: Optional[RuneMarketInfo] = None
 
         self.cex_name = deps.cfg.as_str('price.cex_reference.cex', DEFAULT_CEX_NAME)
@@ -49,8 +48,10 @@ class RuneMarketInfoFetcher(BaseFetcher):
         )
 
     @retries(5)
-    async def _get_circulating_supply(self) -> RuneCirculatingSupply:
-        return await self.get_supply_fetcher().fetch()
+    async def get_full_supply_info(self) -> RuneCirculatingSupply:
+        supply_info = await self.get_supply_fetcher().fetch()
+        supply_info = self._enrich_circulating_supply(supply_info)
+        return supply_info
 
     def _enrich_circulating_supply(self, supply: RuneCirculatingSupply) -> RuneCirculatingSupply:
         ns = self.deps.net_stats
@@ -73,14 +74,9 @@ class RuneMarketInfoFetcher(BaseFetcher):
             self.logger.warning('No nodes available! Failed to enrich circulating supply data with node info!')
         return supply
 
-    async def get_full_supply(self) -> RuneCirculatingSupply:
-        supply_info = await self._get_circulating_supply()
-        supply_info = self._enrich_circulating_supply(supply_info)
-        return supply_info
-
     async def get_rune_market_info_from_api(self) -> RuneMarketInfo:
         # Supply
-        supply_info = await self.get_full_supply()
+        supply_info = await self.get_full_supply_info()
         await asyncio.sleep(self.step_delay)
 
         # CoinGecko stats
