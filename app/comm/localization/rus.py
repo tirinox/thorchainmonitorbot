@@ -11,7 +11,7 @@ from lib.config import Config
 from lib.constants import Chains, LOAN_MARKER, ThorRealms
 from lib.date_utils import format_time_ago, seconds_human, now_ts
 from lib.explorers import get_explorer_url_to_address, get_thoryield_address, \
-    get_ip_info_link
+    get_ip_info_link, get_explorer_url_to_tx
 from lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change, short_money, short_dollar, format_percent, RAIDO_GLYPH, short_rune, pretty_percent, \
     chart_emoji, pretty_rune
@@ -548,6 +548,10 @@ class RussianLocalization(BaseLocalization):
         msg = f"{heading}\n" \
               f"{blockchain_components_str}\n" \
               f"{content}"
+
+        if not tx.any_side_in_tc:
+            url = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, tx.tx_hash)
+            msg += f"\n{link(url, 'Runescan')}\n"
 
         return msg.strip()
 

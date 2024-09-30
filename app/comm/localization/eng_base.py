@@ -738,7 +738,7 @@ class BaseLocalization(ABC):  # == English
 
         if not tx.any_side_in_tc:
             url = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, tx.tx_hash)
-            msg = f"\n{link(url, 'Runescan')}\n"
+            msg += f"\n{link(url, 'Runescan')}\n"
 
         return msg.strip()
 
