@@ -1,13 +1,9 @@
 import logging
-import random
 
 import aiohttp
 from aiohttp import ContentTypeError
-from redis import ResponseError
-from tqdm import tqdm
 
-from lib.constants import RUNE_SYMBOL_DET, RUNE_SYMBOL_POOL, RUNE_SYMBOL_CEX
-from models.time_series import PriceTimeSeries
+from jobs.price_recorder import PriceRecorder
 
 COIN_CHART_GECKO = "https://api.coingecko.com/api/v3/coins/thorchain/market_chart?vs_currency=usd&days={days}"
 COIN_RANK_GECKO = "https://api.coingecko.com/api/v3/coins/thorchain?" \
@@ -16,7 +12,7 @@ COIN_RANK_GECKO = "https://api.coingecko.com/api/v3/coins/thorchain?" \
 GECKO_TIMEOUT = aiohttp.ClientTimeout(total=25)  # sec
 
 
-async def get_rune_chart(days):
+async def get_gecko_rune_chart(days):
     async with aiohttp.ClientSession() as session:
         async with session.get(COIN_CHART_GECKO.format(days=days), timeout=GECKO_TIMEOUT) as resp:
             j = await resp.json()
@@ -25,37 +21,17 @@ async def get_rune_chart(days):
 
 async def fill_rune_price_from_gecko(db, include_fake_det=False, fake_value=0.2):
     logging.warning('fill_rune_price_from_gecko is called!')
-    gecko_data8 = await get_rune_chart(8)
-    gecko_data1 = await get_rune_chart(1)
+    gecko_data8 = await get_gecko_rune_chart(8)
+    gecko_data1 = await get_gecko_rune_chart(1)
 
     if not gecko_data1 or not gecko_data8:
         logging.error('no gecko data!')
         return
 
     price_chart = gecko_data8 + gecko_data1
-    price_chart.sort(key=lambda p: p[0])
 
-    series = PriceTimeSeries(RUNE_SYMBOL_POOL, db)
-    await series.clear()
-
-    cex_series = PriceTimeSeries(RUNE_SYMBOL_CEX, db)
-    await cex_series.clear()
-
-    det_series = PriceTimeSeries(RUNE_SYMBOL_DET, db)
-    if include_fake_det:
-        await det_series.clear()
-
-    for ts, price in tqdm(price_chart):
-        ident = f'{ts}-0'
-        try:
-            await series.add(message_id=ident, price=price)
-            cex_price = price * random.uniform(0.95, 1.05)
-            await cex_series.add(message_id=ident, price=cex_price)
-            if include_fake_det:
-                det_price = price / random.uniform(2.8, 3.1)
-                await det_series.add(message_id=ident, price=det_price)
-        except ResponseError:
-            pass
+    price_recorder = PriceRecorder(db)
+    await price_recorder.dbg_fill_rune_price_external(price_chart, include_fake_det)
 
 
 async def get_thorchain_coin_gecko_info(session):

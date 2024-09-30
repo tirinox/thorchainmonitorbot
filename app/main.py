@@ -117,9 +117,10 @@ class App(WithLogger):
         d.mimir_const_holder.mimir_rules.load(MIMIR_DICT_FILENAME)
 
         d.pool_fetcher = PoolFetcher(d)
+
         d.last_block_fetcher = LastBlockFetcher(d)
         d.last_block_store = LastBlockStore(d)
-        d.last_block_fetcher.add_subscriber(d.last_block_store)
+
         d.rune_market_fetcher = RuneMarketInfoFetcher(d)
         d.trade_acc_fetcher = TradeAccountFetcher(d)
 
@@ -231,6 +232,7 @@ class App(WithLogger):
                 await asyncio.sleep(sleep_step)
 
                 self.logger.info('Loading pools...')
+                # todo: .run_once()
                 current_pools = await d.pool_fetcher.reload_global_pools()
                 if not current_pools:
                     raise Exception("No pool data at startup!")
@@ -270,6 +272,9 @@ class App(WithLogger):
         fetcher_queue = QueueFetcher(d)
         store_queue = QueueStoreMetrics(d)
         fetcher_queue.add_subscriber(store_queue)
+
+        d.pool_fetcher.add_subscriber(d.price_holder)
+        d.last_block_fetcher.add_subscriber(d.last_block_store)
 
         tasks = [
             d.pool_fetcher,
@@ -469,33 +474,33 @@ class App(WithLogger):
         if d.cfg.get('price.enabled', True):
             # handles RuneMarketInfo
             notifier_price = PriceNotifier(d)
-            d.pool_fetcher.add_subscriber(notifier_price)
+            d.pool_fetcher.add_subscriber(notifier_price)  # todo check inputs
             notifier_price.add_subscriber(d.alert_presenter)
 
             if achievements_enabled:
-                d.pool_fetcher.add_subscriber(achievements)
+                d.pool_fetcher.add_subscriber(achievements)  # todo check inputs
 
             if d.cfg.get('price.divergence.enabled', True):
                 price_div_notifier = PriceDivergenceNotifier(d)
-                d.pool_fetcher.add_subscriber(price_div_notifier)
+                d.pool_fetcher.add_subscriber(price_div_notifier)  # todo check inputs
 
             if d.cfg.get('price.divergence.personal.enabled', True):
                 personal_price_div_notifier = PersonalPriceDivergenceNotifier(d)
-                d.pool_fetcher.add_subscriber(personal_price_div_notifier)
+                d.pool_fetcher.add_subscriber(personal_price_div_notifier)  # todo check inputs
 
         if d.cfg.get('pool_churn.enabled', True):
             notifier_pool_churn = PoolChurnNotifier(d)
-            d.pool_fetcher.add_subscriber(notifier_pool_churn)
+            d.pool_fetcher.add_subscriber(notifier_pool_churn)  # todo check inputs
             notifier_pool_churn.add_subscriber(d.alert_presenter)
 
         if d.cfg.get('best_pools.enabled', True):
             # note: we don't use "pool_fetcher" here since PoolInfoFetcherMidgard gives richer info including APY
             period = parse_timespan_to_seconds(d.cfg.best_pools.fetch_period)
-            fetcher_pool_info = PoolInfoFetcherMidgard(d, period)
+            mdg_pool_fetcher = PoolInfoFetcherMidgard(d, period)
             d.best_pools_notifier = BestPoolsNotifier(d)
-            fetcher_pool_info.add_subscriber(d.best_pools_notifier)
+            mdg_pool_fetcher.add_subscriber(d.best_pools_notifier)
             d.best_pools_notifier.add_subscriber(d.alert_presenter)
-            tasks.append(fetcher_pool_info)
+            tasks.append(mdg_pool_fetcher)
 
         if d.cfg.get('chain_halt_state.enabled', True):
             fetcher_chain_state = ChainStateFetcher(d)
@@ -518,7 +523,7 @@ class App(WithLogger):
 
         if d.cfg.get('supply.enabled', True):
             supply_notifier = SupplyNotifier(d)
-            d.pool_fetcher.add_subscriber(supply_notifier)
+            d.pool_fetcher.add_subscriber(supply_notifier)  # todo check inputs
             supply_notifier.add_subscriber(d.alert_presenter)
 
         if d.cfg.get('saver_stats.enabled', True):

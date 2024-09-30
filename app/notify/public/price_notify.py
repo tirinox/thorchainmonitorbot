@@ -1,14 +1,11 @@
-import asyncio
-
-from lib.constants import RUNE_SYMBOL_POOL
+from jobs.price_recorder import PriceRecorder
 from lib.cooldown import Cooldown
-from lib.date_utils import MINUTE, HOUR, DAY, parse_timespan_to_seconds, now_ts
+from lib.date_utils import parse_timespan_to_seconds, now_ts
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.money import pretty_money, calc_percent_change
 from lib.utils import make_stickers_iterator, WithLogger
 from models.price import RuneMarketInfo, AlertPrice, PriceATH
-from models.time_series import PriceTimeSeries
 
 
 class PriceNotifier(INotified, WithDelegates, WithLogger):
@@ -33,7 +30,7 @@ class PriceNotifier(INotified, WithDelegates, WithLogger):
         self._cd_price_fall = Cooldown(deps.db, self.CD_KEY_PRICE_FALL_NOTIFIED, self._change_cd)
         self._cd_price_ath = Cooldown(deps.db, self.CD_KEY_ATH_NOTIFIED, self._ath_cd)
 
-        self.time_series = PriceTimeSeries(RUNE_SYMBOL_POOL, deps.db)
+        self.price_recorder = PriceRecorder(deps.db)
 
         self.ath_stickers = cfg.ath.stickers.as_list()
         self.ath_sticker_iter = make_stickers_iterator(self.ath_stickers)
@@ -49,12 +46,10 @@ class PriceNotifier(INotified, WithDelegates, WithLogger):
     # -----
 
     async def historical_get_triplet(self):
-        price_1h, price_24h, price_7d = await asyncio.gather(
-            self.time_series.select_average_ago(HOUR, tolerance=MINUTE * 7),
-            self.time_series.select_average_ago(DAY, tolerance=MINUTE * 40),
-            self.time_series.select_average_ago(DAY * 7, tolerance=HOUR * 2)
-        )
-        return price_1h, price_24h, price_7d
+        """
+        Returns 3 pool prices: price_1h, price_24h, price_7d
+        """
+        return await self.price_recorder.historical_get_triplet()
 
     def _next_ath_sticker(self):
         try:

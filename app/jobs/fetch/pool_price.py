@@ -8,14 +8,13 @@ from ujson import JSONDecodeError
 
 from api.midgard.parser import get_parser_by_network_id
 from jobs.fetch.base import BaseFetcher
+from jobs.price_recorder import PriceRecorder
 from lib.config import Config
-from lib.constants import RUNE_SYMBOL_DET, RUNE_SYMBOL_POOL, RUNE_SYMBOL_CEX, THOR_BLOCK_TIME
+from lib.constants import THOR_BLOCK_TIME
 from lib.date_utils import parse_timespan_to_seconds, DAY
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from models.pool_info import parse_thor_pools, PoolInfo, PoolInfoMap
-from models.price import RuneMarketInfo
-from models.time_series import PriceTimeSeries
 
 
 class PoolFetcher(BaseFetcher):
@@ -35,24 +34,25 @@ class PoolFetcher(BaseFetcher):
 
         self.deps = deps
         self.parser = get_parser_by_network_id(self.deps.cfg.network_id)
-        self.price_history_max_points = 200000
         self.cache = PoolCache(deps)
+        self.price_recorder = PriceRecorder(self.deps.db)  # todo: get max_points from the config
 
-    async def fetch(self) -> RuneMarketInfo:
+    async def fetch(self) -> PoolInfoMap:
         current_pools = await self.reload_global_pools()
 
         price = self.deps.price_holder.usd_per_rune
         self.logger.info(f'Fresh rune price is ${price:.3f}, {len(current_pools)} total pools')
 
-        rune_market_info: RuneMarketInfo = await self.deps.rune_market_fetcher.get_rune_market_info()
-        if rune_market_info:
-            rune_market_info.pools = current_pools
-            await self._write_price_time_series(rune_market_info)
+        # rune_market_info: RuneMarketInfo = await self.deps.rune_market_fetcher.get_rune_market_info()
+        # if rune_market_info:
+        #     rune_market_info.pool_rune_price = price
+        #     rune_market_info.pools = current_pools
+        #     await self.price_recorder.write(rune_market_info)
 
         # sometimes clear the cache
         await self.cache.automatic_clear()
 
-        return rune_market_info
+        return current_pools
 
     async def reload_global_pools(self) -> PoolInfoMap:
         """
@@ -72,51 +72,6 @@ class PoolFetcher(BaseFetcher):
 
         return price_holder.pool_info_map
 
-    async def _write_price_time_series(self, rune_market_info: RuneMarketInfo):
-        if not rune_market_info:
-            self.logger.error('No rune_market_info!')
-            return
-
-        if self.deps.price_holder:
-            rune_market_info.pool_rune_price = self.deps.price_holder.usd_per_rune
-
-        db = self.deps.db
-
-        # Pool price fill
-        if rune_market_info.pool_rune_price and rune_market_info.pool_rune_price > 0:
-            pool_price_series = PriceTimeSeries(RUNE_SYMBOL_POOL, db, max_len=self.price_history_max_points)
-            await pool_price_series.add(price=rune_market_info.pool_rune_price)
-        else:
-            self.logger.error(f'Odd {rune_market_info.pool_rune_price = }')
-
-        # CEX price fill
-        if rune_market_info.cex_price and rune_market_info.cex_price > 0:
-            cex_price_series = PriceTimeSeries(RUNE_SYMBOL_CEX, db, max_len=self.price_history_max_points)
-            await cex_price_series.add(price=rune_market_info.cex_price)
-        else:
-            self.logger.error(f'Odd {rune_market_info.cex_price = }')
-
-        # Deterministic price fill
-        if rune_market_info.fair_price and rune_market_info.fair_price > 0:
-            deterministic_price_series = PriceTimeSeries(RUNE_SYMBOL_DET, db, max_len=self.price_history_max_points)
-            await deterministic_price_series.add(price=rune_market_info.fair_price)
-        else:
-            self.logger.error(f'Odd {rune_market_info.fair_price = }')
-
-    async def _fetch_current_pool_data_from_thornode(self, height=None) -> PoolInfoMap:
-        try:
-            thor_pools = await self.deps.thor_connector.query_pools(height)
-
-            # try to get from archive
-            if not thor_pools:
-                thor_pools = await self.deps.thor_connector_archive.query_pools(height)
-
-            return parse_thor_pools(thor_pools)
-        except (TypeError, IndexError, JSONDecodeError) as e:
-            self.logger.error(f'thor_connector.query_pools failed! Err: {e} at {height = }')
-
-        return {}
-
     async def load_pools(self, height=None, caching=True, usd_per_rune=None) -> PoolInfoMap:
         if caching:
             if height is None:
@@ -134,6 +89,20 @@ class PoolFetcher(BaseFetcher):
 
         self.fill_usd_in_pools(pool_map, usd_per_rune)
         return pool_map
+
+    async def _fetch_current_pool_data_from_thornode(self, height=None) -> PoolInfoMap:
+        try:
+            thor_pools = await self.deps.thor_connector.query_pools(height)
+
+            # in case of empty response, try to load from the archive
+            if not thor_pools:
+                thor_pools = await self.deps.thor_connector_archive.query_pools(height)
+
+            return parse_thor_pools(thor_pools)
+        except (TypeError, IndexError, JSONDecodeError) as e:
+            self.logger.error(f'thor_connector.query_pools failed! Err: {e} at {height = }')
+
+        return {}
 
     @staticmethod
     def fill_usd_in_pools(pool_map: PoolInfoMap, usd_per_rune):

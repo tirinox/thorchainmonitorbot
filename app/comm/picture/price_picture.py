@@ -1,12 +1,11 @@
 from comm.localization.manager import BaseLocalization
 from comm.picture.common import PictureAndName
+from jobs.price_recorder import PriceRecorder
 from jobs.volume_recorder import VolumeRecorder
-from lib.constants import RUNE_SYMBOL_DET, RUNE_SYMBOL_POOL, RUNE_SYMBOL_CEX
 from lib.date_utils import DAY, today_str
 from lib.depcont import DepContainer
 from lib.plot_graph import PlotGraphLines
 from lib.utils import async_wrap, pluck_from_series
-from models.time_series import PriceTimeSeries
 from models.vol_n import TxMetricType
 
 PRICE_GRAPH_WIDTH = 1024
@@ -84,18 +83,10 @@ def price_graph(pool_price_df, det_price_df, cex_prices_df, volumes, loc: BaseLo
 
 
 async def price_graph_from_db(deps: DepContainer, loc: BaseLocalization, period=DAY) -> PictureAndName:
-    series = PriceTimeSeries(RUNE_SYMBOL_POOL, deps.db)
-    det_series = PriceTimeSeries(RUNE_SYMBOL_DET, deps.db)
-    cex_price_series = PriceTimeSeries(RUNE_SYMBOL_CEX, deps.db)
+    price_recorder = PriceRecorder(deps.db)
+    prices, det_prices, cex_prices = await price_recorder.get_prices(period)
+
     volume_recorder = VolumeRecorder(deps)
-
-    max_points = 10_000
-    if period >= 7 * DAY:
-        max_points = 60_000
-
-    prices = await series.get_last_values(period, with_ts=True, max_points=max_points)
-    det_prices = await det_series.get_last_values(period, with_ts=True, max_points=max_points)
-    cex_prices = await cex_price_series.get_last_values(period, with_ts=True, max_points=max_points)
     volumes = await volume_recorder.get_data_range_ago_n(period, n=VOLUME_N_POINTS)
 
     time_scale_mode = 'time' if period <= DAY else 'date'
