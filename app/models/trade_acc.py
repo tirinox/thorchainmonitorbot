@@ -137,6 +137,7 @@ class AlertTradeAccountStats(NamedTuple):
     @property
     def curr_and_prev_trade_volume_usd(self):
         interval_curr, interval_prev = self.swap_stats.curr_and_prev_interval()
+        # todo: get from local db!
         return (
             interval_curr.rune_price_usd * thor_to_float(interval_curr.to_trade_volume + interval_curr.from_trade_volume),
             interval_prev.rune_price_usd * thor_to_float(interval_prev.to_trade_volume + interval_prev.from_trade_volume)

@@ -63,3 +63,34 @@ class BloomFilter:
         Return a string representation of the Bloom filter.
         """
         return f"BloomFilter(key='{self.redis_key}', size={self.size}, hash_count={self.hash_count})"
+
+
+class BloomFilterV2(BloomFilter):
+    def _hashes(self, element):
+        """
+        Generate k hash values for the given element.
+
+        :param element: The element to hash.
+        :return: A generator yielding k hash positions.
+        """
+        # Ensure the element is a string
+        if not isinstance(element, str):
+            element = str(element)
+
+        # Compute two base hash values
+        h1 = int(hashlib.sha256(element.encode('utf-8')).hexdigest(), 16)
+        h2 = int(hashlib.md5(element.encode('utf-8')).hexdigest(), 16)
+
+        # Generate k hash values using double hashing
+        for i in range(self.hash_count):
+            yield (h1 + i * h2) % self.size
+
+    async def add(self, item):
+        for position in self._hashes(item):
+            await self.redis.setbit(self.redis_key, position, 1)
+
+    async def contains(self, item):
+        for position in self._hashes(item):
+            if not await self.redis.getbit(self.redis_key, position):
+                return False
+        return True

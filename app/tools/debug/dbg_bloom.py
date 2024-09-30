@@ -2,8 +2,9 @@ import asyncio
 import hashlib
 import os
 
-from lib.bloom_filt import BloomFilter
+from lib.bloom_filt import BloomFilter, BloomFilterV2
 from lib.db import DB
+from notify.dup_stop import BLOOM_TX_CAPACITY, BLOOM_TX_ERROR_RATE
 
 
 def generate_secure_random_sha3_hash(length=64):
@@ -38,11 +39,14 @@ async def main():
     # redis_instance = redis.from_url('redis://localhost:6379')
 
     k = 'my_bloom_filter'
-    n = 10000
+    n = 5000
 
     await redis_instance.delete(k)
 
-    bf = BloomFilter(redis_instance, redis_key=k, capacity=10000000, error_rate=0.001)
+    # bf = BloomFilter(redis_instance, redis_key=k, capacity=BLOOM_TX_CAPACITY, error_rate=BLOOM_TX_ERROR_RATE)
+    # bf = BloomFilter(redis_instance, redis_key=k, capacity=1000000, error_rate=0.0001)
+    bf = BloomFilter(redis_instance, redis_key=k, capacity=100_000_000, error_rate=0.01)
+    print(f'Initialized with key={k}, capacity={bf.capacity}, error_rate={bf.error_rate}. Size is {bf.size} bits')
 
     await bf.add("test_item")
     contains = await bf.contains("test_item")
@@ -67,7 +71,7 @@ async def main():
         if await bf.contains(bad_hash):
             false_positives += 1
 
-    print(f"False positives: {false_positives}")
+    print(f"False positives: {false_positives}. Error rate: {false_positives / n * 100:.2f}%")
 
     print("Checking true positives...")
     true_positives = 0
@@ -75,7 +79,7 @@ async def main():
         if await bf.contains(good_hash):
             true_positives += 1
 
-    print(f"True positives: {true_positives}")
+    print(f"True positives: {true_positives} / {n}")
 
     print(bf)
 

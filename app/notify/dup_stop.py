@@ -10,10 +10,11 @@ from lib.logs import WithLogger
 from models.tx import ThorTx
 
 BLOOM_TX_CAPACITY = 100_000_000
+BLOOM_TX_ERROR_RATE = 0.005
 
 
 class TxDeduplicator(WithLogger):
-    def __init__(self, db: DB, key, capacity=BLOOM_TX_CAPACITY, error_rate=0.001):
+    def __init__(self, db: DB, key, capacity=BLOOM_TX_CAPACITY, error_rate=BLOOM_TX_ERROR_RATE):
         super().__init__()
         self.db = db
 
@@ -21,12 +22,21 @@ class TxDeduplicator(WithLogger):
         assert 0.0001 < error_rate < 0.1
         assert key and isinstance(key, str)
 
+        self.total_requests = 0
+        self.positive_requests = 0
+
         full_key = f'tx:dedup_v2:{key}'
         self._bf = BloomFilter(self.db.redis, full_key, capacity, error_rate)
+        self.logger.info(
+            f'Initialized with key={key}, capacity={capacity}, error_rate={error_rate}. Size is {self._bf.size} bits')
 
     @property
     def key(self):
         return self._bf.redis_key
+
+    def __repr__(self):
+        return (f'<TxDeduplicator key={self.key}, size={self._bf.size}, hashes={self._bf.hash_count},'
+                f'pos req {self.positive_requests} / {self.total_requests}>')
 
     async def mark_as_seen(self, tx_id):
         if not tx_id:
@@ -49,7 +59,13 @@ class TxDeduplicator(WithLogger):
     async def have_ever_seen_hash(self, tx_id):
         if not tx_id:
             return True
-        return await self._bf.contains(tx_id)
+
+        r = await self._bf.contains(tx_id)
+        self.total_requests += 1
+        if r:
+            self.positive_requests += 1
+
+        return r
 
     async def batch_ever_seen_hashes(self, txs: List[str]):
         return await asyncio.gather(*[self.have_ever_seen_hash(tx_hash) for tx_hash in txs])
