@@ -19,7 +19,9 @@ RUNE_MARKET_INFO_CACHE_TIME = 3 * MINUTE
 class RuneMarketInfoFetcher(BaseFetcher):
     async def fetch(self) -> RuneMarketInfo:
         await self.deps.pool_fetcher.run_once()
-        return await self.get_rune_market_info_cached()
+        market_info = await self.get_rune_market_info_cached()
+        # await self.price_recorder.write(market_info)
+        return market_info
 
     def __init__(self, deps: DepContainer):
         period = deps.cfg.as_interval('price.market_fetch_period', '8m')

@@ -32,7 +32,6 @@ class PoolFetcher(BaseFetcher):
         self.deps = deps
         self.parser = get_parser_by_network_id(self.deps.cfg.network_id)
         self.cache = PoolCache(deps)
-        self.price_recorder = PriceRecorder(self.deps.db)  # todo: get max_points from the config
 
     async def fetch(self) -> PoolInfoMap:
         current_pools = await self.load_pools()

@@ -36,6 +36,7 @@ from jobs.fetch.savers_vnx import SaversStatsFetcher
 from jobs.fetch.trade_accounts import TradeAccountFetcher
 from jobs.fetch.tx import TxFetcher
 from jobs.node_churn import NodeChurnDetector
+from jobs.price_recorder import PriceRecorder
 from jobs.scanner.loan_extractor import LoanExtractorBlock
 from jobs.scanner.native_scan import NativeScannerBlock
 from jobs.scanner.runepool import RunePoolEventDecoder
@@ -463,6 +464,9 @@ class App(WithLogger):
 
         if d.cfg.get('price.enabled', True):
             tasks.append(d.rune_market_fetcher)
+
+            price_rec = PriceRecorder(d.db)
+            d.rune_market_fetcher.add_subscriber(price_rec)
 
             # handles RuneMarketInfo
             notifier_price = PriceNotifier(d)
