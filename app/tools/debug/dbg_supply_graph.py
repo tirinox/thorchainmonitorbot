@@ -21,7 +21,7 @@ from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
 @json_cached_to_file_async("../temp/supply_info_2.json")
 async def get_rune_supply(app: LpAppFramework):
-    rune_market_info: RuneMarketInfo = await app.deps.rune_market_fetcher.get_rune_market_info()
+    rune_market_info: RuneMarketInfo = await app.deps.rune_market_fetcher.fetch()
     return rune_market_info.supply_info._asdict()
 
 #
@@ -72,7 +72,7 @@ async def debug_get_rune_market_data(app):
 
     await d.mimir_const_fetcher.fetch()  # get constants beforehand
 
-    rune_market_info: RuneMarketInfo = await d.rune_market_fetcher.get_rune_market_info()
+    rune_market_info: RuneMarketInfo = await d.rune_market_fetcher.fetch()
     return d.net_stats, rune_market_info
 
 
@@ -98,7 +98,7 @@ async def post_supply_to_discord(app: LpAppFramework, pic):
 
 
 async def my_demo_market_info(app: LpAppFramework):
-    info = await app.deps.rune_market_fetcher.get_rune_market_info()
+    info = await app.deps.rune_market_fetcher.fetch()
     pprint(info)
 
 

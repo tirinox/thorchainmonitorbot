@@ -217,7 +217,7 @@ class MetricsDialog(BaseDialog):
             await message.answer(self.loc.queue_message(queue_info), disable_notification=True)
 
     async def show_price(self, message, period):
-        market_info = await self.deps.rune_market_fetcher.get_rune_market_info()
+        market_info = await self.deps.rune_market_fetcher.fetch()
 
         if not market_info:
             await message.answer(self.loc.TEXT_PRICE_NO_DATA, disable_notification=True)
@@ -313,7 +313,7 @@ class MetricsDialog(BaseDialog):
         loading_message = await self.show_loading(message)
 
         market_fetcher: RuneMarketInfoFetcher = self.deps.rune_market_fetcher
-        market_info = await market_fetcher.get_rune_market_info()
+        market_info = await market_fetcher.fetch()
 
         text = self.loc.text_metrics_supply(market_info)
 

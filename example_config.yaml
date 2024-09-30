@@ -10,6 +10,7 @@ startup_step_delay: 3.0
 sentry:
   url: ""
 
+
 web3:
   ETH:
     rpc: "https://mainnet.infura.io/v3/1234abdc9876610efef"
@@ -48,7 +49,12 @@ thor:
   circulating_supply:
     # https://docs.etherscan.io/getting-started/creating-an-account
     ether_scan_key: PLEASEPUTANETHERSCANKEYHERE
-    cache_time: 10m
+
+
+blockchain:
+  block_time: # block_time overriding... (optional)
+    BTC: 10m
+    ETH: 14s
 
 
 personal:
@@ -393,7 +399,7 @@ price:
     record_tolerance: 1h
 
 
-token_transfer:  # (!) renamed from rune_transfer
+token_transfer: # (!) renamed from rune_transfer
   enabled: true
   fetch_period: 30
 
@@ -542,15 +548,11 @@ best_pools:
   fetch_period: 10m
 
 
-blockchain:
-  block_time: # block_time overriding... (optional)
-    BTC: 10m
-    ETH: 14s
-
-
 supply:
   enabled: true
   period: 7d
+  fetch_period: 10m  # (!) new
+  cache_time: 10m  # (!) new
 
 
 saver_stats:
@@ -630,7 +632,7 @@ runepool:
     allow_when_zero: false
 
 
-chain_id:  # (!) new, watch hard-forks
+chain_id: # (!) new, watch hard-forks
   enabled: true
   fetch_period: 1m
   cooldown: 1d

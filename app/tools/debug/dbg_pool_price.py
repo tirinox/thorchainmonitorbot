@@ -79,7 +79,7 @@ async def find_anomaly(app, start=13225800, steps=200):
     holder = LastPriceHolder()
     while block < start + steps:
         pools = await app.deps.pool_fetcher.load_pools(block, caching=True)
-        holder.update(pools)
+        holder.update_pools(pools)
 
         print(f'Block {block}: {len(pools)} pools, rune price = {holder.usd_per_rune}')
 

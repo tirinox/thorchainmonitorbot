@@ -13,12 +13,12 @@ async def my_test_fetcher(app):
     #     print(f'{len(r)=}')
 
     mf: RuneMarketInfoFetcher = app.deps.rune_market_fetcher
-    print(await mf.get_rune_market_info())
-    print(await mf.get_rune_market_info())
-    print(await mf.get_rune_market_info())
+    print(await mf.fetch())
+    print(await mf.fetch())
+    print(await mf.fetch())
     sep()
     await asyncio.sleep(10)
-    print(await mf.get_rune_market_info())
+    print(await mf.fetch())
 
     print('done')
 

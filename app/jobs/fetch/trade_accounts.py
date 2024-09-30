@@ -62,7 +62,7 @@ class TradeAccountFetcher(BaseFetcher):
         else:
             pools = await self.deps.pool_fetcher.load_pools(height)
             # this fills asset prices in usd
-            pools = self.deps.price_holder.clone().update(pools).pool_info_map
+            pools = self.deps.price_holder.clone().update_pools(pools).pool_info_map
 
         vault_balances = await self.deps.thor_connector.query_vault(height=height)
         trade_units = await self.deps.thor_connector.query_trade_units(height)

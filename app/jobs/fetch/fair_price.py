@@ -2,6 +2,7 @@ import asyncio
 from typing import Optional
 
 from api.midgard.urlgen import free_url_gen
+from jobs.fetch.base import BaseFetcher
 from jobs.fetch.circulating import RuneCirculatingSupplyFetcher, RuneCirculatingSupply, RuneHoldEntry, \
     ThorRealms
 from jobs.fetch.gecko_price import get_thorchain_coin_gecko_info, gecko_market_cap_rank, gecko_ticker_price, \
@@ -9,17 +10,20 @@ from jobs.fetch.gecko_price import get_thorchain_coin_gecko_info, gecko_market_c
 from lib.constants import thor_to_float, DEFAULT_CEX_NAME, DEFAULT_CEX_BASE_ASSET
 from lib.date_utils import MINUTE
 from lib.depcont import DepContainer
-from lib.utils import a_result_cached, WithLogger, retries
+from lib.utils import a_result_cached, retries
 from models.price import RuneMarketInfo
 
 RUNE_MARKET_INFO_CACHE_TIME = 3 * MINUTE
 
 
-class RuneMarketInfoFetcher(WithLogger):
+class RuneMarketInfoFetcher(BaseFetcher):
+    async def fetch(self) -> RuneMarketInfo:
+        return await self.get_rune_market_info_cached()
+
     def __init__(self, deps: DepContainer):
-        super().__init__()
-        self.deps = deps
-        self.price_holder = deps.price_holder
+        # todo
+        period = deps.cfg.as_interval('supply.fetch_period', '1h')
+        super().__init__(deps, sleep_period=period)
 
         self._ether_scan_key = deps.cfg.get('thor.circulating_supply.ether_scan_key', '')
         self._prev_result: Optional[RuneMarketInfo] = None
@@ -102,7 +106,7 @@ class RuneMarketInfoFetcher(WithLogger):
         if circulating_rune <= 0:
             raise ValueError(f"circulating is invalid ({circulating_rune})")
 
-        price_holder = self.price_holder
+        price_holder = self.deps.price_holder
         if not price_holder.pool_info_map or not price_holder.usd_per_rune:
             raise ValueError(f"pool_info_map is empty!")
 
@@ -112,7 +116,6 @@ class RuneMarketInfoFetcher(WithLogger):
 
         result = RuneMarketInfo(
             circulating=circulating_rune,
-            rune_vault_locked=0,
             pool_rune_price=price_holder.usd_per_rune,
             fair_price=fair_price,
             cex_price=cex_price,
@@ -120,7 +123,8 @@ class RuneMarketInfoFetcher(WithLogger):
             rank=rank,
             total_trade_volume_usd=trade_volume,
             total_supply=total_supply,
-            supply_info=supply_info
+            supply_info=supply_info,
+            pools=price_holder.pool_info_map,
         )
         self.logger.info(result)
         return result
@@ -135,9 +139,3 @@ class RuneMarketInfoFetcher(WithLogger):
         except Exception as e:
             self.logger.exception(f'Failed to get fresh Rune market info! {e!r}', exc_info=True)
             return self._prev_result
-
-    async def get_rune_market_info(self) -> RuneMarketInfo:
-        data = await self.get_rune_market_info_cached()
-        if data:
-            self._enrich_circulating_supply(data.supply_info)
-        return data

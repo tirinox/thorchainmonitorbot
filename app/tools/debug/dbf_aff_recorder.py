@@ -10,7 +10,7 @@ async def dbg_aff_record1(app, send_alerts=False, catch_up=0, force_start_block=
     d = app.deps
     d.block_scanner = NativeScannerBlock(d)
 
-    await d.pool_fetcher.reload_global_pools()
+    await d.pool_fetcher.run_once()
 
     d.last_block_fetcher.add_subscriber(d.last_block_store)
 

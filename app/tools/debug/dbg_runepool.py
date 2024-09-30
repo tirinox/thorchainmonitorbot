@@ -20,7 +20,7 @@ async def prepare_once(app):
         d = app.deps
         d.block_scanner = NativeScannerBlock(d)
 
-        await d.pool_fetcher.reload_global_pools()
+        await d.pool_fetcher.run_once()
         await d.last_block_fetcher.run_once()
         await d.mimir_const_fetcher.run_once()
         prepared = True

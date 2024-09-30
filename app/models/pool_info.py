@@ -217,7 +217,7 @@ def parse_thor_pools(thor_pools: List[ThorPool]) -> PoolInfoMap:
             savers_units=p.savers_units,
             synth_supply=p.synth_supply,
             original=p,
-            usd_per_asset=0.0,  # fixme: fill somehow
+            usd_per_asset=p.tor_per_asset,
         )
         for p in thor_pools
     }

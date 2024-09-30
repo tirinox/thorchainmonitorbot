@@ -136,7 +136,7 @@ class BorrowerPositionGenerator(WithLogger):
             last_open_block = t_pos.last_open_height
             pools = await self.deps.pool_fetcher.load_pools(height=last_open_block)
             lph = self.deps.price_holder.clone()
-            lph.update(pools)
+            lph.update_pools(pools)
             collateral_price_last_add = lph.convert_to_usd(1.0, t_pos.asset)
         except Exception as e:
             self.logger.error(f"Could not get collateral price at last open height ({last_open_block}): {e}")

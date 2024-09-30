@@ -19,7 +19,6 @@ from .pool_info import PoolInfo, PoolInfoMap
 @dataclass
 class RuneMarketInfo:
     circulating: int = RUNE_IDEAL_SUPPLY
-    rune_vault_locked: int = 0
     pool_rune_price: float = 0.0  # THORChain Pool Price (weighted across stable coins)
     fair_price: float = 0.0  # Deterministic Price
     cex_price: float = 0.0  # Price on Centralised Exchanges
@@ -69,7 +68,7 @@ class RuneMarketInfo:
 
 
 REAL_REGISTERED_ATH = 20.87  # $ / Rune
-REAL_REGISTERED_ATH_DATE = 1621418550  # 19 may 2021
+REAL_REGISTERED_ATH_DATE = 1621418550  # 19 May 2021
 
 
 @dataclass
@@ -101,8 +100,11 @@ class AlertPrice:
 
 
 class LastPriceHolder(INotified):
-    async def on_data(self, sender, pool_map: PoolInfoMap):
-        self.update(pool_map)
+    async def on_data(self, sender, data):
+        if isinstance(data, RuneMarketInfo):
+            self.market_info = data
+        elif isinstance(data, PoolInfoMap):
+            self.update_pools(data)
 
     def __init__(self, stable_coins=None):
         super().__init__()
@@ -111,6 +113,7 @@ class LastPriceHolder(INotified):
         self.pool_info_map: PoolInfoMap = {}
         self.last_update_ts = 0
         self.stable_coins = list(stable_coins or STABLE_COIN_POOLS)
+        self.market_info = RuneMarketInfo()
 
     def clone(self):
         return copy.deepcopy(self)
@@ -163,11 +166,11 @@ class LastPriceHolder(INotified):
             pool: PoolInfo
             pool.fill_usd_per_asset(self.usd_per_rune)
 
-    def update(self, new_pool_info_map: PoolInfoMap):
+    def update_pools(self, new_pool_info_map: PoolInfoMap):
         self.pool_info_map = new_pool_info_map.copy()
         self._calculate_weighted_rune_price()
         self._calculate_btc_price()
-        self._fill_asset_price()
+        # self._fill_asset_price()
         self.last_update_ts = now_ts()
         return self
 

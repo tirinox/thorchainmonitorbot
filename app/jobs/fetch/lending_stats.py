@@ -133,7 +133,7 @@ class LendingStatsFetcher(BaseFetcher):
 
         lending_pools = await self.get_vanaheimix_borrowers()
 
-        market_info = await self.deps.rune_market_fetcher.get_rune_market_info()
+        market_info = await self.deps.rune_market_fetcher.fetch()
         burnt_rune = market_info.supply_info.lending_burnt_rune if market_info and market_info.supply_info else 0.0
 
         tx_counter: TxCountRecorder = self.deps.tx_count_recorder

@@ -31,11 +31,11 @@ class VolumeFillerUpdater(WithDelegates, INotified, WithLogger):
 
         if self.update_pools_each_time:
             # we need here most relevant pool state to estimate % of pool after TX
-            pool_info_map = await ppf.reload_global_pools()
+            pool_info_map = await ppf.load_pools()
         else:
             pool_info_map = self.deps.price_holder.pool_info_map
             if not pool_info_map:
-                pool_info_map = await ppf.reload_global_pools()
+                pool_info_map = await ppf.load_pools()
 
         for tx in txs:
             tx.calc_full_rune_amount(pool_info_map)

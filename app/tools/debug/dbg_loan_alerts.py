@@ -22,8 +22,8 @@ from tools.lib.lp_common import LpAppFramework
 
 async def dbg_lending_limits(app: LpAppFramework):
     await asyncio.gather(
-        app.deps.rune_market_fetcher.get_rune_market_info(),
-        app.deps.pool_fetcher.reload_global_pools(),
+        app.deps.rune_market_fetcher.run_once(),
+        app.deps.pool_fetcher.run_once(),
         app.deps.mimir_const_fetcher.run_once(),
     )
 
@@ -99,8 +99,8 @@ async def debug_tx_records(app: LpAppFramework, tx_id):
 
 async def demo_lending_stats_with_deltas(app: LpAppFramework):
     await asyncio.gather(
-        app.deps.pool_fetcher.reload_global_pools(),
-        app.deps.rune_market_fetcher.get_rune_market_info(),
+        app.deps.pool_fetcher.run_once(),
+        app.deps.rune_market_fetcher.run_once(),
         app.deps.mimir_const_fetcher.run_once(),
     )
 
@@ -122,9 +122,9 @@ LENDING_STATS_SAVED_FILE = '../temp/lending_stats_v2.pkl'
 
 
 async def _preload(app):
-    await app.deps.pool_fetcher.reload_global_pools()
+    await app.deps.pool_fetcher.run_once()
     await app.deps.last_block_fetcher.run_once()
-    await app.deps.rune_market_fetcher.get_rune_market_info()
+    await app.deps.rune_market_fetcher.fetch()
     await app.deps.mimir_const_fetcher.run_once()
 
 

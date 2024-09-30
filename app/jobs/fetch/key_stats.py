@@ -131,7 +131,7 @@ class KeyStatsFetcher(BaseFetcher, WithLogger):
     async def get_lock_value(self, sec_ago=0) -> LockedValue:
         height = self.deps.last_block_store.block_time_ago(sec_ago)
         pools = await self.deps.pool_fetcher.load_pools(height=height)
-        price_holder = self.deps.price_holder.clone().update(pools)
+        price_holder = self.deps.price_holder.clone().update_pools(pools)
 
         total_pooled_rune = price_holder.total_pooled_value_rune
         total_pooled_usd = price_holder.total_pooled_value_usd

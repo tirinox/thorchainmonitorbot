@@ -165,6 +165,7 @@ class ThorPool(NamedTuple):
     loan_collateral: int = 0
     loan_cr: int = 0
     derived_depth_bps: int = 0
+    asset_tor_price: int = 0
 
     STATUS_AVAILABLE = 'Available'
     STATUS_BOOTSTRAP = 'Bootstrap'
@@ -200,8 +201,17 @@ class ThorPool(NamedTuple):
             loan_collateral_remaining=int(j.get('loan_collateral_remaining', 0)),
             loan_collateral=int(j.get('loan_collateral', 0)),
             loan_cr=int(j.get('loan_cr', 0)),
-            derived_depth_bps=int(j.get('derived_depth_bps', 0))
+            derived_depth_bps=int(j.get('derived_depth_bps', 0)),
+            asset_tor_price=int(j.get('asset_tor_price', 0)),  # usd price of asset (TOR)
         )
+
+    @property
+    def tor_per_rune(self) -> float:
+        return self.tor_per_asset * self.assets_per_rune
+
+    @property
+    def tor_per_asset(self) -> float:
+        return thor_to_float(self.asset_tor_price)
 
 
 class ThorConstants(NamedTuple):

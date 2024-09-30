@@ -22,9 +22,6 @@ class PoolFetcher(BaseFetcher):
     This class queries Midgard and THORNodes to get current and historical pool prices and depths
     """
 
-    # todo: split this class: 1) PoolFetcher 2) PoolDataCache (v) 3) RuneMarketInfoFetcher
-    CACHE_TOLERANCE = 60
-
     def __init__(self, deps: DepContainer):
         assert deps
         cfg: Config = deps.cfg
@@ -38,41 +35,17 @@ class PoolFetcher(BaseFetcher):
         self.price_recorder = PriceRecorder(self.deps.db)  # todo: get max_points from the config
 
     async def fetch(self) -> PoolInfoMap:
-        current_pools = await self.reload_global_pools()
+        current_pools = await self.load_pools()
 
         price = self.deps.price_holder.usd_per_rune
         self.logger.info(f'Fresh rune price is ${price:.3f}, {len(current_pools)} total pools')
-
-        # rune_market_info: RuneMarketInfo = await self.deps.rune_market_fetcher.get_rune_market_info()
-        # if rune_market_info:
-        #     rune_market_info.pool_rune_price = price
-        #     rune_market_info.pools = current_pools
-        #     await self.price_recorder.write(rune_market_info)
 
         # sometimes clear the cache
         await self.cache.automatic_clear()
 
         return current_pools
 
-    async def reload_global_pools(self) -> PoolInfoMap:
-        """
-        Loads pools and store them into deps.price_holder
-        Returns: PoolInfoMap
-        """
-        price_holder = self.deps.price_holder
-
-        current_pools = await self.load_pools()
-
-        assert price_holder is not None
-
-        # store into the global state
-        if current_pools:
-            # todo: move it into the graph
-            price_holder.update(current_pools)
-
-        return price_holder.pool_info_map
-
-    async def load_pools(self, height=None, caching=True, usd_per_rune=None) -> PoolInfoMap:
+    async def load_pools(self, height=None, caching=True) -> PoolInfoMap:
         if caching:
             if height is None:
                 # latest
@@ -86,8 +59,6 @@ class PoolFetcher(BaseFetcher):
                     await self.cache.put(height, pool_map)
         else:
             pool_map = await self._fetch_current_pool_data_from_thornode(height)
-
-        self.fill_usd_in_pools(pool_map, usd_per_rune)
         return pool_map
 
     async def _fetch_current_pool_data_from_thornode(self, height=None) -> PoolInfoMap:
@@ -103,13 +74,6 @@ class PoolFetcher(BaseFetcher):
             self.logger.error(f'thor_connector.query_pools failed! Err: {e} at {height = }')
 
         return {}
-
-    @staticmethod
-    def fill_usd_in_pools(pool_map: PoolInfoMap, usd_per_rune):
-        if pool_map and usd_per_rune:
-            for pool in pool_map.values():
-                pool: PoolInfo
-                pool.fill_usd_per_asset(usd_per_rune)
 
     @staticmethod
     def convert_pool_list_to_dict(pool_list: List[PoolInfo]) -> Dict[str, PoolInfo]:

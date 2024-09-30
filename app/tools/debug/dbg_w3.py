@@ -148,7 +148,7 @@ async def load_dex_txs(app: LpAppFramework):
 
     vf = VolumeFillerUpdater(d)
     vf.update_pools_each_time = False
-    await app.deps.pool_fetcher.reload_global_pools()
+    await app.deps.pool_fetcher.run_once()
     aggregator.add_subscriber(vf)
 
     # VVV
@@ -169,7 +169,7 @@ async def demo_find_aff(app: LpAppFramework):
     dex_ex = AggregatorDataExtractor(d)
     vf = VolumeFillerUpdater(d)
     vf.update_pools_each_time = False
-    await app.deps.pool_fetcher.reload_global_pools()
+    await app.deps.pool_fetcher.run_once()
 
     dex_analytics = DexAnalyticsCollector(d)
     vf.add_subscriber(dex_analytics)
