@@ -232,8 +232,8 @@ class App(WithLogger):
                 await asyncio.sleep(sleep_step)
 
                 self.logger.info('Loading pools...')
-                # todo: .run_once()
-                current_pools = await d.pool_fetcher.reload_global_pools()
+                await d.pool_fetcher.run_once()
+                current_pools = d.price_holder.pool_info_map
                 if not current_pools:
                     raise Exception("No pool data at startup!")
                 await asyncio.sleep(sleep_step)
@@ -245,16 +245,6 @@ class App(WithLogger):
                 self.logger.info('Loading constants and mimir...')
                 await d.mimir_const_fetcher.run_once()  # get constants beforehand
                 await asyncio.sleep(sleep_step)
-
-                # print some information about threshold curves
-                if self.refund_notifier_tx:
-                    self.refund_notifier_tx.dbg_evaluate_curve_for_pools()
-                if self.swap_notifier_tx:
-                    self.swap_notifier_tx.dbg_evaluate_curve_for_pools()
-                if self.liquidity_notifier_tx:
-                    self.liquidity_notifier_tx.dbg_evaluate_curve_for_pools()
-                if self.donate_notifier_tx:
-                    self.donate_notifier_tx.dbg_evaluate_curve_for_pools()
 
                 break  # all is good. exit the loop
             except Exception as e:
@@ -669,6 +659,17 @@ class App(WithLogger):
 
         return tasks
 
+    async def _print_curves(self):
+        # print some information about threshold curves
+        if self.refund_notifier_tx:
+            self.refund_notifier_tx.dbg_evaluate_curve_for_pools()
+        if self.swap_notifier_tx:
+            self.swap_notifier_tx.dbg_evaluate_curve_for_pools()
+        if self.liquidity_notifier_tx:
+            self.liquidity_notifier_tx.dbg_evaluate_curve_for_pools()
+        if self.donate_notifier_tx:
+            self.donate_notifier_tx.dbg_evaluate_curve_for_pools()
+
     def die(self, code=-100):
         if self._bg_task:
             self._bg_task.cancel()
@@ -679,6 +680,7 @@ class App(WithLogger):
         try:
             tasks = await self._prepare_task_graph()
             await self._preloading()
+
             self.deps.is_loading = False
         except Exception as e:
             self.logger.exception(f'Failed to prepare tasks: {e}')
@@ -704,6 +706,8 @@ class App(WithLogger):
         # await asyncio.gather(*(task.run() for task in tasks))
 
     async def _debug_command(self):
+        await self._print_curves()
+
         await self.deps.telegram_bot.send_message(
             self.deps.cfg.first_admin_id,
             BoardMessage(self._admin_messages.text_bot_restarted())
