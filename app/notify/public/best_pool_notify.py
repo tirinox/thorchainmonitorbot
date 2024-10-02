@@ -25,7 +25,7 @@ class BestPoolsNotifier(INotified, WithDelegates, WithLogger):
         self.last_pool_detail = PoolMapPair({}, {})
         self.n_pools = deps.cfg.as_int('best_pools.num_of_top_pools', 5)
 
-    DB_KEY_PREVIOUS_STATS = 'PreviousPoolsState'
+    DB_KEY_PREVIOUS_STATS = 'PoolInfo:PreviousPoolsState'
 
     async def _write_previous_data(self, raw_pool_data):
         if not raw_pool_data:

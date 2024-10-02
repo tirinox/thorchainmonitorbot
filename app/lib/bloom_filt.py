@@ -58,6 +58,18 @@ class BloomFilter:
                 return False
         return True
 
+    async def bit_count(self):
+        """
+        Count the number of bits set to 1 in the Bloom filter.
+        """
+        return await self.redis.bitcount(self.redis_key, )
+
+    async def get_length(self):
+        """
+        Get the length of the Bloom filter.
+        """
+        return await self.redis.strlen(self.redis_key)
+
     def __str__(self):
         """
         Return a string representation of the Bloom filter.

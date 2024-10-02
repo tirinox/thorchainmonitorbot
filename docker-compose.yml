@@ -87,6 +87,25 @@ services:
       - ./app:/app
       - ./config.yaml:/config/config.yaml
 
+  dashboard:
+    build:
+      context: .
+      dockerfile: Dockerfile-dashboard
+    restart: always
+    depends_on:
+      - redis
+    ports:
+      - "8501:8501"
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+    networks:
+      - redis-net
+    volumes:
+      - ./app:/app
+      - ./config.yaml:/config/config.yaml
+
 
 networks:
   redis-net:

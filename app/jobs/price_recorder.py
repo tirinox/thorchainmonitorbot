@@ -29,9 +29,6 @@ class PriceRecorder(WithLogger, INotified):
             self.logger.error('No rune_market_info!')
             return
 
-        # if self.deps.price_holder:
-        #     rune_market_info.pool_rune_price = self.deps.price_holder.usd_per_rune
-
         # Pool price fill
         if rune_market_info.pool_rune_price and rune_market_info.pool_rune_price > 0:
             await self.pool_price_series.add(price=rune_market_info.pool_rune_price)

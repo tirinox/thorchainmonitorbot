@@ -30,6 +30,16 @@ class TxDeduplicator(WithLogger):
         self.logger.info(
             f'Initialized with key={key}, capacity={capacity}, error_rate={error_rate}. Size is {self._bf.size} bits')
 
+    async def bit_count(self):
+        return await self._bf.bit_count()
+
+    async def length(self):
+        return await self._bf.get_length()
+
+    @property
+    def size(self):
+        return self._bf.size
+
     @property
     def key(self):
         return self._bf.redis_key

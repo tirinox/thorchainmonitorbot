@@ -113,3 +113,8 @@ switch-db:	# Switch the database (see app/tools/switch-db.sh).
 .PHONY: backup-db
 backup-db: # Backup the database Redis
 	cp -r ./redis_data/dump.rdb ./redis_data/dump-${DATE}.rdb
+
+
+.PHONE: dashboard
+dashboard: # Start the dashboard
+	cd app && streamlit run dashboard.py
