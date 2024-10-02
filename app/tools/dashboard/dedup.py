@@ -15,14 +15,16 @@ async def dedup_dashboard_info(db: DB):
         dedup = TxDeduplicator(db, name)
         bit_count = await dedup.bit_count()
         size = await dedup.length()
+        stats = await dedup.load_stats()
         summary.append({
-            'name': name,
-            'bit_count': bit_count,
-            'size': size,
-            'fill_rate': format_percent(bit_count, size),
-            'total_requests': dedup.total_requests,
-            'positive_requests': dedup.positive_requests,
-            'success_rate': format_percent(dedup.positive_requests, dedup.total_requests),
+            'Names': name,
+            'Bits 1': bit_count,
+            'Size': size,
+            'Fill %': format_percent(bit_count, size),
+            'Total read': stats['total_requests'],
+            'Positive': stats['positive_requests'],
+            'Success': format_percent(stats['positive_requests'], stats['total_requests']),
+            'Writes': stats['write_requests'],
         })
 
     return summary

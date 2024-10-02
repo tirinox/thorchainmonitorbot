@@ -22,13 +22,20 @@ class TxDeduplicator(WithLogger):
         assert 0.0001 < error_rate < 0.1
         assert key and isinstance(key, str)
 
-        self.total_requests = 0
-        self.positive_requests = 0
-
         full_key = f'tx:dedup_v2:{key}'
+        self._stats_key = f'tx:dedup_v2:{key}:stats'
         self._bf = BloomFilter(self.db.redis, full_key, capacity, error_rate)
         self.logger.info(
             f'Initialized with key={key}, capacity={capacity}, error_rate={error_rate}. Size is {self._bf.size} bits')
+
+    async def load_stats(self):
+        r: Redis = self.db.redis
+        stats = await r.hgetall(self._stats_key)
+        return {
+            'total_requests': int(stats.get('total_requests', 0)),
+            'positive_requests': int(stats.get('positive_requests', 0)),
+            'write_requests': int(stats.get('write_requests', 0)),
+        }
 
     async def bit_count(self):
         return await self._bf.bit_count()
@@ -45,13 +52,14 @@ class TxDeduplicator(WithLogger):
         return self._bf.redis_key
 
     def __repr__(self):
-        return (f'<TxDeduplicator key={self.key}, size={self._bf.size}, hashes={self._bf.hash_count},'
-                f'pos req {self.positive_requests} / {self.total_requests}>')
+        return f'<TxDeduplicator key={self.key}, size={self._bf.size}, hashes={self._bf.hash_count}>'
 
     async def mark_as_seen(self, tx_id):
         if not tx_id:
             return
         await self._bf.add(tx_id)
+
+        await self.db.redis.hincrby(self._stats_key, 'write_requests', 1)
 
     async def mark_as_seen_txs(self, txs: List[ThorTx]):
         for tx in txs:
@@ -71,9 +79,9 @@ class TxDeduplicator(WithLogger):
             return True
 
         r = await self._bf.contains(tx_id)
-        self.total_requests += 1
+        await self.db.redis.hincrby(self._stats_key, 'total_requests', 1)
         if r:
-            self.positive_requests += 1
+            await self.db.redis.hincrby(self._stats_key, 'positive_requests', 1)
 
         return r
 
