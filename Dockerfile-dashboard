@@ -1,9 +1,14 @@
-FROM python:3.9-slim-buster as production
+FROM python:3.12-slim-buster as production
 
 WORKDIR /app
 ADD ./app/requirements.txt .
 
-RUN pip install --no-cache-dir streamlit --no-dependencies
+RUN apt-get update -y && \
+    apt-get install git build-essential cmake pkg-config -y
+
+RUN pip install --no-cache-dir -r requirements.txt
+
+RUN pip install --no-cache-dir streamlit
 
 EXPOSE 8501
 
