@@ -687,6 +687,9 @@ class App(WithLogger):
     async def _run_background_jobs(self):
         tasks = []
         try:
+            # noinspection PyAsyncCall
+            asyncio.create_task(self.deps.data_controller.run_save_job(self.deps.db))
+
             tasks = await self._prepare_task_graph()
             await self._preloading()
 

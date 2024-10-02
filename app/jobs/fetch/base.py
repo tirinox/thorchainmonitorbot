@@ -1,5 +1,6 @@
 import asyncio
 import datetime
+import json
 import random
 import time
 from abc import ABC, abstractmethod
@@ -9,11 +10,14 @@ from typing import Dict
 from redis import BusyLoadingError
 
 from lib.date_utils import now_ts, MINUTE
+from lib.db import DB
 from lib.delegates import WithDelegates
 from lib.depcont import DepContainer
 from lib.utils import WithLogger
 
 UNPAUSE_AFTER = 5 * MINUTE
+
+
 # UNPAUSE_AFTER = 30
 
 
@@ -75,6 +79,40 @@ class DataController(WithLogger):
     def summary(self) -> Dict[str, WatchedEntity]:
         return self._tracker
 
+    DB_KEY = 'DataController:FetcherStats'
+
+    async def save_stats(self, db: DB):
+        v: BaseFetcher
+        data = {
+            'all_paused': self._all_paused,
+            'trackers': [{
+                'name': k,
+                'error_counter': v.error_counter,
+                'total_ticks': v.total_ticks,
+                'last_timestamp': v.last_timestamp,
+                'success_rate': v.success_rate,
+                'last_run_time': v.dbg_last_run_time,
+                'avg_run_time': v.dbg_average_run_time,
+                'sleep_period': v.sleep_period,
+            } for k, v in self._tracker.items()],
+        }
+        self.logger.info(f'Saving stats of {len(data["trackers"])} fetchers')
+        await db.redis.set(self.DB_KEY, json.dumps(data))
+
+    async def load_stats(self, db: DB):
+        data = await db.redis.get(self.DB_KEY)
+        if not data:
+            return
+        return json.loads(data)
+
+    async def run_save_job(self, db: DB, interval=20):
+        while True:
+            try:
+                await self.save_stats(db)
+            except Exception as e:
+                self.logger.exception(f'Error while saving stats: {e!r}')
+            await asyncio.sleep(interval)
+
 
 class BaseFetcher(WithDelegates, WatchedEntity, ABC, WithLogger):
     MAX_STARTUP_DELAY = 20
@@ -85,7 +123,8 @@ class BaseFetcher(WithDelegates, WatchedEntity, ABC, WithLogger):
 
         self.sleep_period = sleep_period
         self.initial_sleep = random.uniform(0, min(self.MAX_STARTUP_DELAY, sleep_period))
-        self.data_controller.register(self)
+        if sleep_period > 0:
+            self.data_controller.register(self)
         self.run_times = deque(maxlen=100)
 
     @property
