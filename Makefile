@@ -42,7 +42,7 @@ restart: # Restart containers.
 
 .PHONY: poke
 poke: # Restart the bot.
-	@docker-compose restart $(BOTNAME) api
+	@docker-compose restart $(BOTNAME) api dashboard
 	@make -s logs
 
 .PHONY: pull
