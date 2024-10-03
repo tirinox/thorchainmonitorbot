@@ -548,8 +548,12 @@ best_pools:
 
 supply:
   enabled: true
-  notification: # (!) new
+  notification:
     period: 7d
+  rune_burn: # (!) new
+    notification:
+      enabled: true
+      cooldown: 1d
 
 
 saver_stats:

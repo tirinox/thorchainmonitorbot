@@ -2827,6 +2827,10 @@ class BaseLocalization(ABC):  # == English
             f'New: "{code(event.curr_chain_id)}"'
         )
 
+    # ------- Rune burn -------
+
+    RUNE_BURN_GRAPH_TITLE = 'Rune burn'
+
     # ------ Bond providers alerts ------
 
     TEXT_BOND_PROVIDER_ALERT_FOR = 'Alert for bond provider'

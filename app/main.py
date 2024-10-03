@@ -72,6 +72,7 @@ from notify.personal.price_divergence import PersonalPriceDivergenceNotifier, Se
 from notify.personal.scheduled import PersonalPeriodicNotificationService
 from notify.public.best_pool_notify import BestPoolsNotifier
 from notify.public.block_notify import BlockHeightNotifier, LastBlockStore
+from notify.public.burn_notify import BurnNotifier
 from notify.public.cap_notify import LiquidityCapNotifier
 from notify.public.chain_id_notify import ChainIdNotifier
 from notify.public.chain_notify import TradingHaltedNotifier
@@ -524,6 +525,11 @@ class App(WithLogger):
             if not d.rune_market_fetcher in tasks:
                 tasks.append(d.rune_market_fetcher)
             supply_notifier.add_subscriber(d.alert_presenter)
+
+            if d.cfg.get('supply.rune_burn.notification.enabled', True):
+                burn_notifier = BurnNotifier(d)
+                d.mimir_const_fetcher.add_subscriber(burn_notifier)
+                burn_notifier.add_subscriber(d.alert_presenter)
 
         if d.cfg.get('saver_stats.enabled', True):
             d.saver_stats_fetcher = SaversStatsFetcher(d)

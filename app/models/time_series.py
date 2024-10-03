@@ -123,7 +123,7 @@ class TimeSeries:
 
     async def select(self, start, end, count=100):
         r = await self.db.get_redis()
-        data = await r.xrange(self.stream_name, start, end, count=count)
+        data = await r.xrange(self.stream_name, start, end, count=int(count))
         return data
 
     async def clear(self):

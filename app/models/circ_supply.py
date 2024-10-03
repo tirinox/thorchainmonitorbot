@@ -1,6 +1,7 @@
 from typing import NamedTuple, Dict
 
 from lib.constants import RUNE_SUPPLY_AFTER_SWITCH, RUNE_IDEAL_SUPPLY, RUNE_BURNT_ADR_12, ThorRealms
+from lib.date_utils import DAY
 
 
 class RuneHoldEntry(NamedTuple):
@@ -117,3 +118,9 @@ class RuneCirculatingSupply(NamedTuple):
     @property
     def working(self):
         return self.bonded + self.pooled
+
+
+class RuneBurnEvent(NamedTuple):
+    curr_max_rune: float
+    prev_max_rune: float
+    period_seconds: float = DAY

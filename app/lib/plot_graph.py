@@ -39,6 +39,7 @@ class PlotGraph:
         self.y_formatter = self.int_formatter
         self.n_ticks_x = 11
         self.n_ticks_y = 20
+        self.skip_same_ticks = True
 
         r = Resources()
         self.font_ticks = r.fonts.get_font(15)
@@ -79,10 +80,13 @@ class PlotGraph:
                             int(ox), int(self.top)),
                            self.tick_color, width=1)
 
+        last_tick = None
         for i, t in enumerate(ticks):
-            x, y = int(cur_x), int(cur_y)
-            self.draw.text((x, y), t, anchor=anchor, fill=self.axis_text_color,
-                           font=self.font_ticks)
+            if last_tick is None or not self.skip_same_ticks or last_tick != t:
+                x, y = int(cur_x), int(cur_y)
+                self.draw.text((x, y), t, anchor=anchor, fill=self.axis_text_color,
+                               font=self.font_ticks)
+                last_tick = t
             if axis == 'y':
                 left = self.left + width if self.grid_lines else self.left
                 self.draw.line((left, y, self.left - self.tick_size, y), self.tick_color, width=1)
