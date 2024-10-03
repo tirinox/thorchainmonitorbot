@@ -51,8 +51,8 @@ class ThorConnector:
         data = await self._request(self.env.path_constants)
         return ThorConstants.from_json(data) if data else ThorConstants()
 
-    async def query_mimir(self) -> ThorMimir:
-        data = await self._request(self.env.path_mimir)
+    async def query_mimir(self, height=0) -> ThorMimir:
+        data = await self._request(self.env.path_mimir.format(height=height))
         return ThorMimir.from_json(data) if data else ThorMimir()
 
     async def query_mimir_votes(self) -> List[ThorMimirVote]:
