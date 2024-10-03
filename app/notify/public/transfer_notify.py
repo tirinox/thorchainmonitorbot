@@ -136,8 +136,6 @@ class CEXFlowTracker:
                 'out': outflow_amount
             })
 
-        # await self.series.trim_oldest(self.MAX_POINTS)
-
     async def read_within_period(self, period=DAY) -> RuneCEXFlow:
         points = await self.series.get_last_values_json(period, max_points=self.MAX_POINTS)
         inflow, outflow = 0.0, 0.0
