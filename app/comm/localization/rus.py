@@ -20,6 +20,7 @@ from lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketif
 from lib.utils import grouper, translate
 from models.asset import Asset
 from models.cap_info import ThorCapInfo
+from models.circ_supply import EventRuneBurn
 from models.key_stats_model import AlertKeyStats
 from models.last_block import BlockProduceState, EventBlockSpeed
 from models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats, AlertLendingOpenUpdate
@@ -2103,6 +2104,23 @@ class RussianLocalization(BaseLocalization):
             f'Новый: {code(event.curr_chain_id)}\n'
         )
 
+    # ------- Rune burn -------
+
+    RUNE_BURN_GRAPH_TITLE = 'Сожжение Rune'
+
+    @staticmethod
+    def notification_rune_burn(e: EventRuneBurn):
+        trend = 'Дефляция' if e.deflation_percent > 0 else 'Инфляция'
+        return (
+            f'🔥 <b>Сожжено рун</b>\n\n'
+            f'За последние {int(e.tally_days)} дней сожжено: {bold(pretty_rune(e.delta_rune))} '
+            f'({ital(pretty_dollar(e.delta_usd))})\n'
+            f'Всего сожжено: {bold(pretty_rune(e.total_burned_rune))} '
+            f'({ital(pretty_dollar(e.total_burned_usd))})\n'
+            f'Сжигается {bold(pretty_percent(e.system_income_burn_percent, signed=False))} от дохода системы, '
+            f'примерно {ital(pretty_rune(e.yearly_burn_prediction))} рун будет сожжено за год.\n'
+            f'{trend} составляет {bold(pretty_percent(e.deflation_percent, signed=False))}.'
+        )
     # ------ Bond providers alerts ------
 
     TEXT_BOND_PROVIDER_ALERT_FOR = 'Оповещение для поставщика бонда'

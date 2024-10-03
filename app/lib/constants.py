@@ -274,3 +274,5 @@ THOR_ADDRESS_DICT = {
     "thor15h7uv2339vdzt2a6qsjf6uh5zc06sed7szvze5": ("Ascendex", ThorRealms.CEX),
     "thor1nm0rrq86ucezaf8uj35pq9fpwr5r82clphp95t": ("Kraken", ThorRealms.CEX),
 }
+
+ADR17_TIMESTAMP = 1732626242  # Tuesday, 26 November 2024

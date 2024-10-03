@@ -1,4 +1,5 @@
 from datetime import datetime
+from math import isnan
 from typing import List
 
 import pandas as pd
@@ -145,7 +146,7 @@ class PlotGraph:
 
 
 class PlotBarGraph(PlotGraph):
-    def __init__(self, w=800, h=600, bg='gradient'):
+    def __init__(self, w=800, h=600, bg='black'):
         super().__init__(w, h, bg)
         self.series = []
         self.x_values = []
@@ -200,6 +201,8 @@ class PlotBarGraph(PlotGraph):
         for x, *ys in zip(self.x_values, *y_values):
             cur_y = self.bottom
             for y, color in zip(ys, colors):
+                if isnan(y):
+                    continue
                 height = y / max_y * h
                 x1, y1 = int(cur_x), self.h - int(cur_y)
                 x2, y2 = int(cur_x + block_width), self.h - int(cur_y + height)

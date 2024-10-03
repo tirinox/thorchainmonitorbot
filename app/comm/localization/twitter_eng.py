@@ -16,6 +16,7 @@ from lib.texts import x_ses, progressbar, plural, bracketify, up_down_arrow, \
     bracketify_spaced, shorten_text
 from models.asset import Asset
 from models.cap_info import ThorCapInfo
+from models.circ_supply import EventRuneBurn
 from models.key_stats_model import AlertKeyStats
 from models.last_block import EventBlockSpeed, BlockProduceState
 from models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats, AlertLendingOpenUpdate
@@ -1067,3 +1068,20 @@ class TwitterEnglishLocalization(BaseLocalization):
             f'Old: "{event.prev_chain_id}"\n'
             f'New: "{event.curr_chain_id}"'
         )
+
+    # ------- Rune burn -------
+
+    @staticmethod
+    def notification_rune_burn(e: EventRuneBurn):
+        trend = 'Deflation' if e.deflation_percent > 0 else 'Inflation'
+        return (
+            f'🔥 Rune burned\n\n'
+            f'Last {int(e.tally_days)} days burned: {pretty_rune(e.delta_rune)} '
+            f'({pretty_dollar(e.delta_usd)})\n'
+            f'Total burned: {pretty_rune(e.total_burned_rune)} '
+            f'({pretty_dollar(e.total_burned_usd)})\n'
+            f"Burning {pretty_percent(e.system_income_burn_percent, signed=False)} of the system's income, "
+            f"approximately {pretty_rune(e.yearly_burn_prediction)} Runes will be burned in a year.\n"
+            f"{trend} is {pretty_percent(e.deflation_percent, signed=False)}."
+        )
+   

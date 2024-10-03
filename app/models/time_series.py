@@ -95,6 +95,14 @@ class TimeSeries:
                                    with_ts=False):
         return await self.get_last_values(period_sec, 'json', max_points, tolerance_sec, with_ts, decoder=json.loads)
 
+    async def get_last_value(self, key):
+        r = await self.db.get_redis()
+        data = await r.xrevrange(self.stream_name, count=1)
+        if not data:
+            return None
+        d = data[0][1]
+        return d.get(key)
+
     async def average(self, period_sec, key, max_points=MAX_POINTS_DEFAULT, tolerance_sec=10):
         values = await self.get_last_values(period_sec, key, max_points, tolerance_sec)
         n = len(values)

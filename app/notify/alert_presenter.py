@@ -3,8 +3,10 @@ from typing import Union
 
 from api.midgard.name_service import NameService, NameMap
 from api.w3.dex_analytics import DexReport
+from comm.localization.manager import BaseLocalization
 from comm.picture.achievement_picture import build_achievement_picture_generator
 from comm.picture.block_height_picture import block_speed_chart
+from comm.picture.burn_picture import rune_burn_graph
 from comm.picture.key_stats_picture import KeyStatsPictureGenerator
 from comm.picture.nodes_pictures import NodePictureGenerator
 from comm.picture.pools_picture import PoolPictureGenerator
@@ -12,7 +14,6 @@ from comm.picture.price_picture import price_graph_from_db
 from comm.picture.queue_picture import queue_graph
 from comm.picture.savers_picture import SaversPictureGenerator
 from comm.picture.supply_picture import SupplyPictureGenerator
-from comm.localization.manager import BaseLocalization
 from jobs.achievement.ach_list import Achievement
 from jobs.fetch.chain_id import AlertChainIdChange
 from lib.constants import THOR_BLOCKS_PER_MINUTE
@@ -21,6 +22,7 @@ from lib.depcont import DepContainer
 from lib.draw_utils import img_to_bio
 from lib.logs import WithLogger
 from models.cap_info import AlertLiquidityCap
+from models.circ_supply import EventRuneBurn
 from models.key_stats_model import AlertKeyStats
 from models.last_block import EventBlockSpeed, BlockProduceState
 from models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats, AlertLendingOpenUpdate
@@ -114,6 +116,8 @@ class AlertPresenter(INotified, WithLogger):
             await self._handle_queue(data)
         elif isinstance(data, AlertLiquidityCap):
             await self._handle_liquidity_cap(data)
+        elif isinstance(data, EventRuneBurn):
+            await self._handle_rune_burn(data)
 
     async def load_names(self, addresses) -> NameMap:
         if isinstance(addresses, str):
@@ -373,3 +377,14 @@ class AlertPresenter(INotified, WithLogger):
 
     async def _handle_price_divergence(self, data: AlertPriceDiverge):
         await self.deps.broadcaster.broadcast_to_all(BaseLocalization.notification_text_price_divergence, data)
+
+    async def _handle_rune_burn(self, data: EventRuneBurn):
+        async def message_gen(loc: BaseLocalization):
+            text = loc.notification_rune_burn(data)
+            photo, photo_name = await rune_burn_graph(data.points, loc, days=data.tally_days)
+            if photo is not None:
+                return BoardMessage.make_photo(photo, text, photo_name)
+            else:
+                return text
+
+        await self.deps.broadcaster.broadcast_to_all(message_gen)

@@ -554,6 +554,7 @@ supply:
     notification:
       enabled: true
       cooldown: 1d
+      tally: 7d
 
 
 saver_stats:

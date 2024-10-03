@@ -1,7 +1,8 @@
 from typing import NamedTuple, Dict
 
 from lib.constants import RUNE_SUPPLY_AFTER_SWITCH, RUNE_IDEAL_SUPPLY, RUNE_BURNT_ADR_12, ThorRealms
-from lib.date_utils import DAY
+from lib.date_utils import DAY, now_ts
+from lib.money import calculate_yearly_growth_from_values
 
 
 class RuneHoldEntry(NamedTuple):
@@ -120,7 +121,41 @@ class RuneCirculatingSupply(NamedTuple):
         return self.bonded + self.pooled
 
 
-class RuneBurnEvent(NamedTuple):
+class EventRuneBurn(NamedTuple):
     curr_max_rune: float
     prev_max_rune: float
+    points: list
+    usd_per_rune: float
+    system_income_burn_percent: float
     period_seconds: float = DAY
+    start_ts: int = 0
+    tally_days: int = 7
+
+    @property
+    def total_burned_rune(self):
+        return RUNE_IDEAL_SUPPLY - self.curr_max_rune
+
+    @property
+    def total_burned_usd(self):
+        return self.total_burned_rune * self.usd_per_rune
+
+    @property
+    def time_passed_sec(self):
+        return now_ts() - self.start_ts
+
+    @property
+    def yearly_burn_prediction(self):
+        return self.deflation_percent * self.curr_max_rune / 100.0
+
+    @property
+    def delta_rune(self):
+        return self.prev_max_rune - self.curr_max_rune
+
+    @property
+    def delta_usd(self):
+        return self.delta_rune * self.usd_per_rune
+
+    @property
+    def deflation_percent(self):
+        pct = calculate_yearly_growth_from_values(self.curr_max_rune, self.prev_max_rune, self.tally_days)
+        return -pct

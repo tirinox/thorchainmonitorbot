@@ -25,6 +25,7 @@ from lib.texts import progressbar, link, pre, code, bold, x_ses, ital, link_with
 from lib.utils import grouper, run_once, identity
 from models.asset import Asset
 from models.cap_info import ThorCapInfo
+from models.circ_supply import EventRuneBurn
 from models.key_stats_model import AlertKeyStats
 from models.last_block import BlockProduceState, EventBlockSpeed
 from models.loans import AlertLoanOpen, AlertLoanRepayment, AlertLendingStats, AlertLendingOpenUpdate
@@ -1179,7 +1180,6 @@ class BaseLocalization(ABC):  # == English
 
             add_usd_text = short_dollar(added_24h_rune * price)
             withdraw_usd_text = short_dollar(withdrawn_24h_rune * price)
-
 
             if added_24h_rune:
                 message += f'➕ Rune added to pools: {add_rune_text} ({add_usd_text}).\n'
@@ -2830,6 +2830,20 @@ class BaseLocalization(ABC):  # == English
     # ------- Rune burn -------
 
     RUNE_BURN_GRAPH_TITLE = 'Rune burn'
+
+    @staticmethod
+    def notification_rune_burn(e: EventRuneBurn):
+        trend = 'Deflation' if e.deflation_percent > 0 else 'Inflation'
+        return (
+            f'🔥 <b>Rune burned</b>\n\n'
+            f'Last {int(e.tally_days)} days burned: {bold(pretty_rune(e.delta_rune))} '
+            f'({ital(pretty_dollar(e.delta_usd))})\n'
+            f'Total burned: {bold(pretty_rune(e.total_burned_rune))} '
+            f'({ital(pretty_dollar(e.total_burned_usd))})\n'
+            f"Burning {bold(pretty_percent(e.system_income_burn_percent, signed=False))} of the system's income, "
+            f"approximately {ital(pretty_rune(e.yearly_burn_prediction))} Runes will be burned in a year.\n"
+            f"{trend} is {bold(pretty_percent(e.deflation_percent, signed=False))}."
+        )
 
     # ------ Bond providers alerts ------
 

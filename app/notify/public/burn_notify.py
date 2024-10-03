@@ -1,13 +1,15 @@
+from typing import Optional
+
 from tqdm import tqdm
 
 from jobs.fetch.mimir import MimirTuple
-from lib.constants import THOR_BLOCK_TIME
+from lib.constants import THOR_BLOCK_TIME, THOR_BASIS_POINT_MAX, ADR17_TIMESTAMP, thor_to_float
 from lib.cooldown import Cooldown
-from lib.date_utils import now_ts
+from lib.date_utils import now_ts, DAY
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.utils import WithLogger
-from models.circ_supply import RuneBurnEvent
+from models.circ_supply import EventRuneBurn
 from models.mimir_naming import MIMIR_KEY_MAX_RUNE_SUPPLY
 from models.time_series import TimeSeries
 
@@ -17,10 +19,17 @@ class BurnNotifier(INotified, WithDelegates, WithLogger):
         super().__init__()
         self.deps = deps
         notify_cd_sec = deps.cfg.as_interval('supply.rune_burn.notification.cooldown', '2d')
+        self.tally_period = deps.cfg.as_interval('supply.rune_burn.notification.tally', '7d')
         self.cd = Cooldown(self.deps.db, 'RuneBurn', notify_cd_sec)
         self.ts = TimeSeries('RuneMaxSupply', deps.db)
 
-    async def on_data(self, sender, event: MimirTuple):
+    async def on_data(self, sender, _: MimirTuple):
+        if event := await self.get_event():
+            if await self.cd.can_do():
+                await self.pass_data_to_listeners(event)
+                await self.cd.do()
+
+    async def get_event(self) -> Optional[EventRuneBurn]:
         mimir = self.deps.mimir_const_holder
         if not mimir:
             self.logger.error('Mimir constants are not loaded yet!')
@@ -31,15 +40,35 @@ class BurnNotifier(INotified, WithDelegates, WithLogger):
             self.logger.error(f'Max supply ({MIMIR_KEY_MAX_RUNE_SUPPLY}) is not set!')
             return
 
+        system_income_burn_bp = mimir['SYSTEMINCOMEBURNRATEBP']
+        if not system_income_burn_bp:
+            self.logger.error('System income burn rate is not set!')
+            return
+
+        # last_supply = await self.get_last_supply_float()
+        data, _ = await self.ts.get_best_point_ago(self.tally_period, tolerance_percent=15)
+        last_supply = data['max_supply']
+        if last_supply is None:
+            self.logger.error('Last supply is not set!')
+            return
+
         await self.ts.add(max_supply=max_supply)
 
-        if await self.cd.can_do():
-            await self.pass_data_to_listeners(RuneBurnEvent(
-                500_000_000,
-                500_000_000,
-                period_seconds=self.cd.cooldown
-            ))
-            await self.cd.do()
+        points = await self.ts.get_last_points(self.tally_period)
+
+        return EventRuneBurn(
+            curr_max_rune=thor_to_float(max_supply),
+            prev_max_rune=thor_to_float(last_supply),
+            points=points,
+            usd_per_rune=self.deps.price_holder.usd_per_rune,
+            system_income_burn_percent=system_income_burn_bp / THOR_BASIS_POINT_MAX * 100.0,
+            period_seconds=self.cd.cooldown,
+            start_ts=ADR17_TIMESTAMP,
+            tally_days=self.tally_period / DAY,
+        )
+
+    async def get_last_supply_float(self):
+        return await self.ts.get_last_value('max_supply')
 
     async def erase_and_populate_from_history(self, period=60, max_points=1000):
         last_block = self.deps.last_block_store.thor

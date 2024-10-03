@@ -88,6 +88,8 @@ class LpAppFramework(App):
         if self.emergency:
             d.emergency.run_in_background()
 
+        d.pool_fetcher.add_subscriber(d.price_holder)
+
         brief = brief if self.brief is None else self.brief
         if brief:
             return

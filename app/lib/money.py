@@ -296,3 +296,16 @@ def non_zero_f(x, y, f):
 
 def sigmoid(x):
     return 1.0 / (1.0 + math.exp(-x))
+
+
+def calculate_yearly_growth_from_values(current_value, previous_value, n_days):
+    # Calculate the N-day growth rate
+    n_day_growth = (current_value / previous_value) - 1
+
+    # Calculate the yearly growth with compounding for N-day growth
+    yearly_growth = (1 + n_day_growth) ** (365 / n_days) - 1
+
+    # Convert to percentage
+    yearly_growth_percent = yearly_growth * 100
+
+    return yearly_growth_percent

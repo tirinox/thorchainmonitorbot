@@ -25,7 +25,7 @@ VOLUME_N_POINTS = 58
 
 @async_wrap
 def price_graph(pool_price_df, det_price_df, cex_prices_df, volumes, loc: BaseLocalization, time_scale_mode='date'):
-    graph = PlotGraphLines(PRICE_GRAPH_WIDTH, PRICE_GRAPH_HEIGHT)
+    graph = PlotGraphLines(PRICE_GRAPH_WIDTH, PRICE_GRAPH_HEIGHT, bg='black')
     graph.show_min_max = True
     graph.left = 80
     graph.legend_x = 95
