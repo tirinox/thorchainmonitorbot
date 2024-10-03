@@ -2,7 +2,7 @@ import json
 import logging
 from typing import Tuple
 
-from lib.date_utils import now_ts, MINUTE
+from lib.date_utils import now_ts, MINUTE, convert_to_milliseconds
 from lib.db import DB
 
 MAX_POINTS_DEFAULT = 100000
@@ -106,6 +106,11 @@ class TimeSeries:
 
     async def add(self, message_id=b'*', **kwargs):
         r = await self.db.get_redis()
+        await r.xadd(self.stream_name, kwargs, id=message_id, maxlen=self.max_len)
+
+    async def add_ts(self, ts, **kwargs):
+        r = await self.db.get_redis()
+        message_id = f'{convert_to_milliseconds(ts)}-0'
         await r.xadd(self.stream_name, kwargs, id=message_id, maxlen=self.max_len)
 
     async def add_as_json(self, j: dict = None, message_id=b'*'):

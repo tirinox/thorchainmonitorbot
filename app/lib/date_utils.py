@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, date
+import time
 
 import pandas as pd
 
@@ -219,3 +220,17 @@ def date_parse_rfc(s: str):
 
 def discard_time(dt: datetime):
     return dt.replace(hour=0, minute=0, second=0, microsecond=0)
+
+
+# Define a cutoff for the year 2010 in seconds (i.e., January 1, 2010, in UNIX time)
+TS_CUTOFF_2010_MS = int(datetime(2010, 1, 1).timestamp()) * 1000
+
+
+def convert_to_milliseconds(timestamp):
+    # Check if the provided timestamp is in seconds or milliseconds
+    if timestamp <= TS_CUTOFF_2010_MS:
+        # Timestamp is in seconds, convert to milliseconds
+        return int(timestamp * 1000)
+    else:
+        # Timestamp is already in milliseconds, return as is
+        return int(timestamp)

@@ -5,7 +5,7 @@ from redis import ResponseError
 from tqdm import tqdm
 
 from lib.constants import RUNE_SYMBOL_POOL, RUNE_SYMBOL_CEX, RUNE_SYMBOL_DET
-from lib.date_utils import DAY, HOUR, MINUTE
+from lib.date_utils import DAY, HOUR, MINUTE, convert_to_milliseconds
 from lib.db import DB
 from lib.delegates import INotified
 from lib.logs import WithLogger
@@ -81,14 +81,14 @@ class PriceRecorder(WithLogger, INotified):
             await self.deterministic_price_series.clear()
 
         for ts, price in tqdm(price_chart):
-            ident = f'{ts}-0'
+            ts = convert_to_milliseconds(ts)
             try:
-                await self.pool_price_series.add(message_id=ident, price=price)
+                await self.pool_price_series.add_ts(ts, price=price)
                 cex_price = price * random.uniform(0.95, 1.05)
-                await self.cex_price_series.add(message_id=ident, price=cex_price)
+                await self.cex_price_series.add_ts(ts, price=cex_price)
                 if include_fake_det:
                     det_price = price / random.uniform(2.8, 3.1)
-                    await self.deterministic_price_series.add(message_id=ident, price=det_price)
+                    await self.deterministic_price_series.add_ts(ts, price=det_price)
             except ResponseError:
                 self.logger.error('ResponseError while adding price')
 
