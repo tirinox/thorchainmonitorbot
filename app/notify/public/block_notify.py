@@ -44,12 +44,8 @@ class LastBlockStore(INotified, WithDelegates, WithLogger):
             return
 
         self.last_thor_block = thor_block
-
         self.logger.info(f'Last THOR block: #{thor_block}')
-
         await self.series.add(thor_block=thor_block)
-
-        # await self.series.trim_oldest(self.BLOCK_HEIGHT_MAX_LEN)
 
         await self.pass_data_to_listeners(thor_block)
 

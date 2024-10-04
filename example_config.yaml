@@ -554,7 +554,7 @@ supply:
     notification:
       enabled: true
       cooldown: 1d
-      tally: 7d
+      tally_period_days: 7d
 
 
 saver_stats:

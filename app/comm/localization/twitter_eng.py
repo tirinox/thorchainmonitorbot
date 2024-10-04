@@ -1084,4 +1084,3 @@ class TwitterEnglishLocalization(BaseLocalization):
             f"approximately {pretty_rune(e.yearly_burn_prediction)} Runes will be burned in a year.\n"
             f"{trend} is {pretty_percent(e.deflation_percent, signed=False)}."
         )
-   

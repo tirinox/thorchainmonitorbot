@@ -12,6 +12,7 @@ from lib.utils import WithLogger
 from models.circ_supply import EventRuneBurn
 from models.mimir_naming import MIMIR_KEY_MAX_RUNE_SUPPLY
 from models.time_series import TimeSeries
+from notify.public.block_notify import LastBlockStore
 
 
 class BurnNotifier(INotified, WithDelegates, WithLogger):
@@ -19,7 +20,7 @@ class BurnNotifier(INotified, WithDelegates, WithLogger):
         super().__init__()
         self.deps = deps
         notify_cd_sec = deps.cfg.as_interval('supply.rune_burn.notification.cooldown', '2d')
-        self.tally_period = deps.cfg.as_interval('supply.rune_burn.notification.tally', '7d')
+        self.tally_period = deps.cfg.as_int('supply.rune_burn.notification.tally_period_days', 7) * DAY
         self.cd = Cooldown(self.deps.db, 'RuneBurn', notify_cd_sec)
         self.ts = TimeSeries('RuneMaxSupply', deps.db)
 
@@ -46,11 +47,7 @@ class BurnNotifier(INotified, WithDelegates, WithLogger):
             return
 
         # last_supply = await self.get_last_supply_float()
-        data, _ = await self.ts.get_best_point_ago(self.tally_period, tolerance_percent=15)
-        last_supply = data['max_supply']
-        if last_supply is None:
-            self.logger.error('Last supply is not set!')
-            return
+        last_supply = await self.get_supply_time_ago(self.tally_period)
 
         await self.ts.add(max_supply=max_supply)
 
@@ -84,8 +81,7 @@ class BurnNotifier(INotified, WithDelegates, WithLogger):
         ts = now_ts() - total_time
 
         for _ in tqdm(range(int(max_points))):
-            mimir = await self.deps.thor_connector.query_mimir(height=int(block))
-            max_supply = mimir[MIMIR_KEY_MAX_RUNE_SUPPLY]
+            max_supply = await self.get_supply_at_block(block)
             await self.ts.add_ts(ts, max_supply=max_supply)
 
             print(f"block: {block}, ts: {ts}, max_supply: {max_supply}")
@@ -94,3 +90,16 @@ class BurnNotifier(INotified, WithDelegates, WithLogger):
             ts += period
             if block < 0:
                 break
+
+    async def get_supply_at_block(self, block: int):
+        mimir = await self.deps.thor_connector.query_mimir(height=int(block))
+        return mimir[MIMIR_KEY_MAX_RUNE_SUPPLY] if mimir else None
+
+    async def get_supply_time_ago(self, sec_ago: float, tolerance_percent=10):
+        data, _ = await self.ts.get_best_point_ago(sec_ago, tolerance_percent=tolerance_percent)
+        if data and 'max_supply' in data:
+            return data['max_supply']
+        else:
+            store: LastBlockStore = self.deps.last_block_store
+            block = store.block_time_ago(sec_ago)
+            return await self.get_supply_at_block(block)
