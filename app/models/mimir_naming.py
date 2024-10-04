@@ -1,5 +1,7 @@
 import yaml
 
+from lib.path import get_data_path
+
 MIMIR_KEY_KILL_SWITCH_START = 'KILLSWITCHSTART'
 MIMIR_KEY_KILL_SWITCH_DURATION = 'KILLSWITCHDURATION'
 
@@ -36,7 +38,7 @@ MIMIR_KEY_POL_SYNTH_UTILIZATION = "POLSYNTHUTILIZATION"
 
 NEXT_CHAIN_KEY = 'NextChain'.upper()
 
-MIMIR_DICT_FILENAME = '../app/data/mimir_naming.yaml'
+MIMIR_DICT_FILENAME = f'{get_data_path()}/mimir_naming.yaml'
 
 
 class MimirUnits:

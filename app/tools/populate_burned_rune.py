@@ -33,10 +33,17 @@ async def run():
                         help='Number of days to restore (default: 10)')
     parser.add_argument('--time_step', type=float, default=TIME_STEP,
                         help='Time step in seconds (default: HOUR / 2)')
+    # add positional arguments
+    parser.add_argument('config', type=str, help='Path to the configuration file')
 
     # Parse the arguments
     args = parser.parse_args()
     print(f'Arguments: {args}')
+
+    # clear argv
+    sys.argv = sys.argv[:1]
+    sys.argv.append(args.config)
+    app = LpAppFramework()
 
     # wish to continue?
     print()
@@ -44,10 +51,6 @@ async def run():
         print('Aborted')
         return
 
-    # clear argv
-    sys.argv = sys.argv[:1]
-
-    app = LpAppFramework()
     async with app(brief=True):
         await app.deps.last_block_fetcher.run_once()
         await app.deps.mimir_const_fetcher.run_once()

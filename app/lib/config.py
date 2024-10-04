@@ -1,5 +1,6 @@
 import logging
 import sys
+from pathlib import Path
 from typing import Any
 
 import yaml
@@ -8,6 +9,7 @@ from dotenv import load_dotenv
 from api.aionode.env import ThorEnvironment, MAINNET, MULTICHAIN_STAGENET_ENVIRONMENT
 from lib.constants import NetworkIdents
 from lib.date_utils import parse_timespan_to_seconds
+from lib.path import get_app_path
 from lib.utils import strip_trailing_slash
 
 
@@ -95,11 +97,17 @@ class SubConfig:
 
 
 class Config(SubConfig):
-    DEFAULT = '../config.yaml'
     DEFAULT_ENV_FILE = '.env'
+
+    DEFAULT_CONFIG_FILES = [
+        '/config/config.yaml',
+        '../config.yaml',
+        'config.yaml',
+    ]
 
     def __init__(self, name=None, data=None):
         load_dotenv(self.DEFAULT_ENV_FILE)
+        logging.info(f'App path is "{get_app_path()}"')
 
         if data is None:
             if name:
@@ -108,7 +116,11 @@ class Config(SubConfig):
                 if len(sys.argv) >= 2 and 'pytest' not in sys.argv[0]:
                     self._config_name = sys.argv[1]
                 else:
-                    self._config_name = self.DEFAULT
+                    # self._config_name = self.DEFAULT
+                    for config_file in self.DEFAULT_CONFIG_FILES:
+                        if Path(config_file).exists():
+                            self._config_name = config_file
+                            break
 
             logging.info(f'Loading config from "{self._config_name}".')
             with open(self._config_name, 'r') as f:
