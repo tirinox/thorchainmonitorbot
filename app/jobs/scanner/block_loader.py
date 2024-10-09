@@ -31,6 +31,14 @@ class LogItem(NamedTuple):
             error_message=error_message
         )
 
+    @property
+    def events(self):
+        events = []
+        for entry in self.entries:
+            for raw_event in entry.get('events', []):
+                events.append(DecodedEvent.from_dict(raw_event))
+        return events
+
 
 @dataclass
 class BlockResult:
@@ -145,3 +153,13 @@ class BlockResult:
                 tx.code = log.code
 
         return self
+
+    @property
+    def all_event_types(self):
+        return set(ev.type for ev in self.end_block_events)
+
+    def find_logs_by_type(self, ev_type: str):
+        for log in self.tx_logs:
+            for event in log.events:
+                if event.type == ev_type:
+                    yield event

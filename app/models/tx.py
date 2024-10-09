@@ -263,7 +263,7 @@ class ThorTx:
         sub_tx_set = self.in_tx or self.out_tx
         if not sub_tx_set:
             return self.date
-        hashes = [sub_tx.tx_id for sub_tx in sub_tx_set]
+        hashes = [sub_tx.tx_id for sub_tx in sub_tx_set if sub_tx.tx_id]
         hashes.sort()
         return hashes[0]
 

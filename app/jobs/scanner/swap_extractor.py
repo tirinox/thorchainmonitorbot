@@ -90,13 +90,6 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
 
         return swaps
 
-    @staticmethod
-    def suspect_outbound_internal(ev: EventOutbound):
-        return ev.out_id == ZERO_HASH and ev.chain == 'THOR'
-
-    def do_write_event(self, tx_id):
-        return not self.dbg_watch_swap_id or self.dbg_watch_swap_id == tx_id
-
     async def register_swap_events(self, block: BlockResult, interesting_events: List[TypeEventSwapAndOut]):
         boom = False
 
