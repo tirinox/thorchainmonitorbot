@@ -392,6 +392,19 @@ class MetricsDialog(BaseDialog):
         text = self.loc.notification_text_trade_account_summary(event) if event else self.loc.TEXT_WEEKLY_STATS_NO_DATA
         await message.answer(text, disable_notification=True)
 
+    async def show_rune_burned(self, message: Message):
+        await self.start_typing(message)
+
+        notifier = BurnNotifier(self.deps)
+        event = await notifier.get_event()
+        if not event:
+            await message.answer(self.loc.TEXT_BURN_NO_DATA, disable_notification=True)
+            return
+
+        text = self.loc.notification_rune_burn(event)
+        photo, photo_name = await rune_burn_graph(event.points, self.loc, days=7)
+        await message.answer_photo(img_to_bio(photo, photo_name), caption=text, disable_notification=True)
+
     # ---- Ask for duration (universal)
 
     def parse_duration_response(self, message: Message):
