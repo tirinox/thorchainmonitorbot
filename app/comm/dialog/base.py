@@ -218,6 +218,7 @@ class BaseDialog(ABC):
                                     reply_markup=ReplyKeyboardRemove() if remove_keyboard else None)
 
     async def show_loading(self, message: Message):
+        # todo: save message to delete it later safely even if the handler fails
         return await message.answer(self.loc.LOADING,
                                     disable_notification=True,
                                     disable_web_page_preview=True)
@@ -244,6 +245,10 @@ class BaseDialog(ABC):
     async def require_admin(self, message: Message):
         if not self.deps.cfg.is_admin(message.from_user.id):
             raise AccessRestrictedError('You are not admin!')
+
+    @staticmethod
+    async def start_typing(message: Message):
+        await message.bot.send_chat_action(message.chat.id, 'typing')
 
 
 class DialogWithSettings(BaseDialog):

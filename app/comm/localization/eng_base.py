@@ -2845,6 +2845,8 @@ class BaseLocalization(ABC):  # == English
             f"{trend} is {bold(pretty_percent(e.deflation_percent, signed=False))}."
         )
 
+    TEXT_BURN_NO_DATA = '😩 Sorry. We have not gotten any data for burned Rune yet.'
+
     # ------ Bond providers alerts ------
 
     TEXT_BOND_PROVIDER_ALERT_FOR = 'Alert for bond provider'

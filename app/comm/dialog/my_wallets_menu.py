@@ -98,8 +98,7 @@ class MyWalletsMenu(DialogWithSettings):
         else:
             name = None
 
-        # POST A LOADING STICKER
-        load_sticker = await self.answer_loading_sticker(message)
+        await self.start_typing(message)
 
         chain = Chains.detect_chain(address) or Chains.BTC
 
@@ -123,12 +122,10 @@ class MyWalletsMenu(DialogWithSettings):
         if name:
             await self.get_name_service(message).set_wallet_local_name(address, name)
 
+        await self.start_typing(message)
         # redraw menu!
         await self._on_selected_address(message, address, 0, edit=False)
         # await self._show_address_selection_menu(message, edit=edit)
-
-        # CLEAN UP
-        await self.safe_delete(load_sticker)
 
     @message_handler(state=LPMenuStates.MAIN_MENU)
     async def wallet_list_message_handler(self, message: Message):
@@ -231,19 +228,20 @@ class MyWalletsMenu(DialogWithSettings):
         self.data[self.KEY_IS_EXTERNAL] = external
 
         if reload_pools:
-            loading_message = None
+            await self.start_typing(message)
+
             if edit:
                 await message.edit_text(text=self.loc.text_lp_loading_pools(address))
-            else:
-                loading_message = await message.answer(text=self.loc.text_lp_loading_pools(address),
-                                                       reply_markup=ReplyKeyboardRemove(),
-                                                       disable_notification=True)
+            # else:
+            #     loading_message = await message.answer(text=self.loc.text_lp_loading_pools(address),
+            #                                            reply_markup=ReplyKeyboardRemove(),
+            #                                            disable_notification=True)
 
             my_pools = await self._load_my_pools(address)
             self.data[self.KEY_MY_POOLS] = my_pools
 
-            if loading_message:
-                await self.safe_delete(loading_message)
+            # if loading_message:
+            #     await self.safe_delete(loading_message)
 
         await self._present_wallet_contents_menu(message, edit=edit)
 
@@ -589,8 +587,7 @@ class MyWalletsMenu(DialogWithSettings):
         # remember the last pool (if we want to subscribe)
         self.data[self.KEY_LAST_POOL] = pool
 
-        # POST A LOADING STICKER
-        sticker = await self.answer_loading_sticker(query.message)
+        await self.start_typing(query.message)
 
         # CONTENT
 
@@ -616,7 +613,6 @@ class MyWalletsMenu(DialogWithSettings):
 
         # CLEAN UP
         await self.safe_delete(query.message)
-        await self.safe_delete(sticker)
 
     async def view_pool_report(self, query: CallbackQuery, pool, allow_subscribe=False):
         address = self.current_address
@@ -624,8 +620,7 @@ class MyWalletsMenu(DialogWithSettings):
         # remember the last pool (if we want to subscribe)
         self.data[self.KEY_LAST_POOL] = pool
 
-        # POST A LOADING STICKER
-        sticker = await self.answer_loading_sticker(query.message)
+        await self.start_typing(query.message)
 
         # WORK...
         rune_yield = get_rune_yield_connector(self.deps)
@@ -651,7 +646,6 @@ class MyWalletsMenu(DialogWithSettings):
 
         # CLEAN UP
         await self.safe_delete(query.message)
-        await self.safe_delete(sticker)
 
     async def view_address_summary(self, query: CallbackQuery):
         address = self.current_address
@@ -661,8 +655,7 @@ class MyWalletsMenu(DialogWithSettings):
             await query.message.answer(self.loc.TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS, disable_notification=True)
             return
 
-        # POST A LOADING STICKER
-        sticker = await self.answer_loading_sticker(query.message)
+        await self.start_typing(query.message)
 
         # WORK
         rune_yield = get_rune_yield_connector(self.deps)
@@ -682,8 +675,7 @@ class MyWalletsMenu(DialogWithSettings):
                                          disable_notification=True)
 
         # CLEAN UP
-        await asyncio.gather(self.safe_delete(query.message),
-                             self.safe_delete(sticker))
+        await self.safe_delete(query.message)
 
     # --- MANAGE ADDRESSES ---
 

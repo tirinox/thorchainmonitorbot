@@ -14,6 +14,7 @@ from models.node_info import NodeInfo
 from models.price import AlertPrice
 from notify.public.best_pool_notify import BestPoolsNotifier
 from notify.public.block_notify import BlockHeightNotifier
+from notify.public.burn_notify import BurnNotifier
 from notify.public.cap_notify import LiquidityCapNotifier
 from notify.public.node_churn_notify import NodeChurnNotifier
 from notify.public.price_notify import PriceNotifier
@@ -28,6 +29,7 @@ from comm.picture.price_picture import price_graph_from_db
 from comm.picture.queue_picture import queue_graph
 from comm.picture.savers_picture import SaversPictureGenerator
 from comm.picture.supply_picture import SupplyPictureGenerator
+from ..picture.burn_picture import rune_burn_graph
 
 
 class MetricsStates(StatesGroup):
@@ -144,7 +146,7 @@ class MetricsDialog(BaseDialog):
                              disable_notification=True)
 
     async def show_savers(self, message: Message):
-        loading_message = await self.show_loading(message)
+        await self.start_typing(message)
 
         event = await self.deps.saver_stats_fetcher.get_savers_event_cached()
 
@@ -160,9 +162,9 @@ class MetricsDialog(BaseDialog):
                                    caption=self.loc.notification_text_saver_stats(event),
                                    disable_notification=True)
 
-        await self.safe_delete(loading_message)
-
     async def show_last_stats(self, message: Message):
+        await self.start_typing(message)
+
         nsn = NetworkStatsNotifier(self.deps)
         old_info = await nsn.get_previous_stats()
         new_info = self.deps.net_stats
@@ -184,7 +186,7 @@ class MetricsDialog(BaseDialog):
         )
 
     async def show_node_list(self, message: Message):
-        loading_message = await self.show_loading(message)
+        await self.start_typing(message)
 
         node_fetcher = NodeInfoFetcher(self.deps)
         result_network_info = await node_fetcher.get_node_list_and_geo_info()  # todo: switch to NodeChurnDetector (DB)
@@ -193,8 +195,6 @@ class MetricsDialog(BaseDialog):
         active_node_messages = self.loc.node_list_text(node_list, NodeInfo.ACTIVE)
         standby_node_messages = self.loc.node_list_text(node_list, NodeInfo.STANDBY)
         other_node_messages = self.loc.node_list_text(node_list, 'others')
-
-        await self.safe_delete(loading_message)
 
         for message_text in (active_node_messages + standby_node_messages + other_node_messages):
             if message_text:
@@ -208,6 +208,8 @@ class MetricsDialog(BaseDialog):
         await message.answer_photo(img_to_bio(pic, gen.proper_name()), disable_notification=True)
 
     async def show_queue(self, message, period):
+        await self.start_typing(message)
+
         queue_info = self.deps.queue_holder
         plot, plot_name = await queue_graph(self.deps, self.loc, duration=period)
         if plot is not None:
@@ -217,6 +219,8 @@ class MetricsDialog(BaseDialog):
             await message.answer(self.loc.queue_message(queue_info), disable_notification=True)
 
     async def show_price(self, message, period):
+        await self.start_typing(message)
+
         market_info = await self.deps.rune_market_fetcher.fetch()
 
         if not market_info:
@@ -244,12 +248,16 @@ class MetricsDialog(BaseDialog):
                              disable_notification=True)
 
     async def show_chain_info(self, message: Message):
+        await self.start_typing(message)
+
         text = self.loc.text_chain_info(list(self.deps.chain_info.values()))
         await message.answer(text,
                              disable_web_page_preview=True,
                              disable_notification=True)
 
     async def show_mimir_info(self, message: Message):
+        await self.start_typing(message)
+
         texts = self.loc.text_mimir_info(self.deps.mimir_const_holder)
         for text in texts:
             await message.answer(text,
@@ -257,6 +265,8 @@ class MetricsDialog(BaseDialog):
                                  disable_notification=True)
 
     async def show_voting_info(self, message: Message):
+        await self.start_typing(message)
+
         texts = self.loc.text_node_mimir_voting(self.deps.mimir_const_holder)
         for text in texts:
             await message.answer(text,
@@ -264,7 +274,7 @@ class MetricsDialog(BaseDialog):
                                  disable_notification=True)
 
     async def show_block_time(self, message: Message, period=2 * DAY):
-        loading_message = await self.show_loading(message)
+        await self.start_typing(message)
 
         block_notifier: BlockHeightNotifier = self.deps.block_notifier
         points = await block_notifier.get_block_time_chart(period, convert_to_blocks_per_minute=True)
@@ -284,9 +294,10 @@ class MetricsDialog(BaseDialog):
         await message.answer_photo(img_to_bio(chart, chart_name),
                                    caption=self.loc.text_block_time_report(last_block, d, recent_bps, state),
                                    disable_notification=True)
-        await self.safe_delete(loading_message)
 
     async def show_top_pools(self, message: Message):
+        await self.start_typing(message)
+
         notifier: BestPoolsNotifier = self.deps.best_pools_notifier
         text = self.loc.notification_text_best_pools(notifier.last_pool_detail, notifier.n_pools)
 
@@ -310,7 +321,7 @@ class MetricsDialog(BaseDialog):
         await message.answer(text, disable_notification=True)
 
     async def show_rune_supply(self, message: Message):
-        loading_message = await self.show_loading(message)
+        await self.start_typing(message)
 
         market_fetcher: RuneMarketInfoFetcher = self.deps.rune_market_fetcher
         market_info = await market_fetcher.fetch()
@@ -324,9 +335,9 @@ class MetricsDialog(BaseDialog):
 
         await message.answer_photo(img_to_bio(pic, pic_name), disable_notification=True)
 
-        await self.safe_delete(loading_message)
-
     async def show_dex_aggr(self, message: Message, period=DAY):
+        await self.start_typing(message)
+
         report = await self.deps.dex_analytics.get_analytics(period)
         text = self.loc.notification_text_dex_report(report)
         await message.answer(text,
@@ -334,6 +345,8 @@ class MetricsDialog(BaseDialog):
                              disable_notification=True)
 
     async def show_pol(self, message: Message):
+        await self.start_typing(message)
+
         report = self.deps.pol_notifier.last_event
         text = self.loc.notification_text_pol_stats(report)
         await message.answer(text,
@@ -341,12 +354,11 @@ class MetricsDialog(BaseDialog):
                              disable_notification=True)
 
     async def show_weekly_stats(self, message: Message):
-        loading_message = await self.show_loading(message)
+        await self.start_typing(message)
 
         if not self.deps.weekly_stats_notifier or not self.deps.weekly_stats_notifier.last_event:
             await message.answer(self.loc.TEXT_WEEKLY_STATS_NO_DATA,
                                  disable_notification=True)
-            await self.safe_delete(loading_message)
             return
 
         ev = self.deps.weekly_stats_notifier.last_event
@@ -357,10 +369,8 @@ class MetricsDialog(BaseDialog):
 
         await message.answer_photo(img_to_bio(pic, pic_name), caption=caption, disable_notification=True)
 
-        await self.safe_delete(loading_message)
-
     async def show_lending_stats(self, message: Message):
-        loading_message = await self.show_loading(message)
+        await self.start_typing(message)
 
         try:
             event = await self.deps.lend_stats_notifier.get_last_event()
@@ -369,20 +379,18 @@ class MetricsDialog(BaseDialog):
 
         text = self.loc.notification_lending_stats(event) if event else self.loc.TEXT_LENDING_STATS_NO_DATA
         await message.answer(text, disable_notification=True)
-        await self.safe_delete(loading_message)
 
     async def show_trade_acc_stats(self, message: Message):
+        await self.start_typing(message)
+
         if not self.deps.tr_acc_summary_notifier:
             await message.answer("This method is disabled.", disable_notification=True)
             return
-
-        loading_message = await self.show_loading(message)
 
         event = self.deps.tr_acc_summary_notifier.last_event
 
         text = self.loc.notification_text_trade_account_summary(event) if event else self.loc.TEXT_WEEKLY_STATS_NO_DATA
         await message.answer(text, disable_notification=True)
-        await self.safe_delete(loading_message)
 
     # ---- Ask for duration (universal)
 
