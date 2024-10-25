@@ -67,6 +67,8 @@ from notify.broadcast import Broadcaster
 from notify.channel import BoardMessage
 from notify.personal.balance import PersonalBalanceNotifier
 from notify.personal.bond_provider import PersonalBondProviderNotifier
+from notify.personal.bond_tx_detect import BondTxDetector
+from notify.personal.bond_tx_notify import PersonalBondTxNotifier
 from notify.personal.personal_main import NodeChangePersonalNotifier
 from notify.personal.price_divergence import PersonalPriceDivergenceNotifier, SettingsProcessorPriceDivergence
 from notify.personal.scheduled import PersonalPeriodicNotificationService
@@ -435,6 +437,7 @@ class App(WithLogger):
             d.last_block_store.add_subscriber(d.block_notifier)
             d.block_notifier.add_subscriber(d.alert_presenter)
 
+        churn_detector = None
         if d.cfg.get('node_info.enabled', True):
             churn_detector = NodeChurnDetector(d)
             d.node_info_fetcher.add_subscriber(churn_detector)
@@ -443,11 +446,6 @@ class App(WithLogger):
             notifier_nodes = NodeChurnNotifier(d)
             churn_detector.add_subscriber(notifier_nodes)
             notifier_nodes.add_subscriber(d.alert_presenter)
-
-            if d.cfg.get('node_info.bond_tools.enabled', True):
-                bond_provider_tools = PersonalBondProviderNotifier(d)
-                bond_provider_tools.log_events = d.cfg.get('node_info.bond_tools.log_events')
-                churn_detector.add_subscriber(bond_provider_tools)
 
             if achievements_enabled:
                 churn_detector.add_subscriber(achievements)
@@ -462,6 +460,20 @@ class App(WithLogger):
                 await d.node_op_notifier.prepare()
 
                 churn_detector.add_subscriber(d.node_op_notifier)
+
+        if d.cfg.get('node_info.bond_tools.enabled', True):
+            # Events that come from Node Churn
+            if churn_detector:
+                bond_provider_tools = PersonalBondProviderNotifier(d)
+                bond_provider_tools.log_events = d.cfg.get('node_info.bond_tools.log_events')
+                churn_detector.add_subscriber(bond_provider_tools)
+
+            # Bond transactions come from the Block scanner
+            if d.block_scanner:
+                bond_event_detector = BondTxDetector(d)
+                bond_tx_notifier = PersonalBondTxNotifier(d)
+                d.block_scanner.add_subscriber(bond_event_detector)
+                bond_event_detector.add_subscriber(bond_tx_notifier)
 
         if d.cfg.get('price.enabled', True):
             tasks.append(d.rune_market_fetcher)
