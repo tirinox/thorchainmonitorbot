@@ -2,11 +2,12 @@ import asyncio
 import logging
 import random
 
+from api.midgard.name_service import NameMap
 from comm.localization.languages import Language
 from comm.telegram.telegram import TG_TEST_USER
+from jobs.fetch.node_info import NodeInfoFetcher
 from jobs.node_churn import NodeChurnDetector
 from lib.date_utils import now_ts
-from api.midgard.name_service import NameMap
 from lib.texts import sep
 from models.node_info import NodeEvent, NodeEventType, EventProviderStatus, EventNodeFeeChange, \
     EventProviderBondChange
@@ -130,6 +131,22 @@ async def run_playback(app: LpAppFramework, delay=5.0):
         await asyncio.sleep(delay)
 
 
+async def run_realtime(app: LpAppFramework):
+    d = app.deps
+
+    churn_detector = NodeChurnDetector(app.deps)
+
+    d.node_info_fetcher = NodeInfoFetcher(d)
+    d.node_info_fetcher.add_subscriber(churn_detector)
+
+    bond_provider_tools = PersonalBondProviderNotifier(app.deps)
+    bond_provider_tools.log_events = True
+
+    churn_detector.add_subscriber(bond_provider_tools)
+
+    await app.deps.node_info_fetcher.run()
+
+
 async def analise_churn(app: LpAppFramework):
     recorder = NodesDBRecorder(app, filename=DEFAULTS_FILE_NAME_FOR_DB_SMALL)
     await recorder.load_db()
@@ -181,7 +198,8 @@ async def main():
     app = LpAppFramework(log_level=logging.INFO)
     async with app(brief=True):
         app.deps.thor_connector.env.timeout = 100
-        await demo_run_churn_sim_continuously(app)
+        # await demo_run_churn_sim_continuously(app)
+        await run_realtime(app)
 
         # await run_playback(app, delay=0.01)
 
