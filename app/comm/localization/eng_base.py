@@ -2881,7 +2881,7 @@ class BaseLocalization(ABC):  # == English
         if event.type == NodeEventType.FEE_CHANGE:
             verb = 'has raised' if event.data.previous < event.data.current else 'has dropped'
             return (
-                f'％ The node operator {ital(verb)} the fee from '
+                f'🏦 The node operator {ital(verb)} the fee from '
                 f'{pre(format_percent(event.data.previous, 1))} to {pre(format_percent(event.data.current, 1))}.'
             )
         elif event.type == NodeEventType.CHURNING:
@@ -2909,7 +2909,7 @@ class BaseLocalization(ABC):  # == English
         elif event.type == NodeEventType.BP_PRESENCE:
             data: EventProviderStatus = event.data
             verb = 'appeared on' if data.appeared else 'disappeared from'
-            emoji = '🙅' if data.appeared else '👌'
+            emoji = '📥' if data.appeared else '📤'
             return f'{emoji} The address has {ital(verb)} the bond provider list of the node' \
                    f'{self.bp_event_duration(data)}.'
         else:
