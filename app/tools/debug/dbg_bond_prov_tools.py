@@ -7,8 +7,9 @@ from comm.localization.languages import Language
 from comm.telegram.telegram import TG_TEST_USER
 from jobs.fetch.node_info import NodeInfoFetcher
 from jobs.node_churn import NodeChurnDetector
-from lib.date_utils import now_ts
-from lib.texts import sep
+from lib.date_utils import now_ts, DAY
+from lib.money import RAIDO_GLYPH
+from lib.texts import sep, up_down_arrow
 from models.node_info import NodeEvent, NodeEventType, EventProviderStatus, EventNodeFeeChange, \
     EventProviderBondChange
 from notify.personal.bond_provider import PersonalBondProviderNotifier
@@ -60,10 +61,12 @@ async def demo_all_kinds_of_messages(app: LpAppFramework):
 
         NodeEvent.new(node, NodeEventType.BOND_CHANGE,
                       EventProviderBondChange(bp_address, bond_provider.rune_bond, bond_provider.rune_bond *
-                                              random.uniform(1.01, 1.5), on_churn=True)),
+                                              random.uniform(1.0, 1.007), on_churn=True,
+                                              duration_sec=3 * DAY)),
         NodeEvent.new(node, NodeEventType.BOND_CHANGE,
                       EventProviderBondChange(bp_address, bond_provider.rune_bond, bond_provider.rune_bond *
-                                              random.uniform(0.5, 0.99), on_churn=True)),
+                                              random.uniform(0.997, 1.0), on_churn=True,
+                                              duration_sec=5 * DAY)),
         NodeEvent.new(node, NodeEventType.BOND_CHANGE,
                       EventProviderBondChange(bp_address, bond_provider.rune_bond, bond_provider.rune_bond *
                                               random.uniform(1.01, 1.5), on_churn=False)),
@@ -71,11 +74,18 @@ async def demo_all_kinds_of_messages(app: LpAppFramework):
                       EventProviderBondChange(bp_address, bond_provider.rune_bond, bond_provider.rune_bond *
                                               random.uniform(0.5, 0.99), on_churn=False)),
 
+        NodeEvent.new(node, NodeEventType.BOND_CHANGE,
+                      EventProviderBondChange(bp_address, 0, 1, on_churn=False)),
+        NodeEvent.new(node, NodeEventType.BOND_CHANGE,
+                      EventProviderBondChange(bp_address, 100, 0, on_churn=False, duration_sec=3 * DAY)),
+
         NodeEvent.new(node, NodeEventType.BP_PRESENCE,
                       EventProviderStatus(bp_address, bond_provider.rune_bond, appeared=True,
                                           previous_ts=now_ts() - 1234)),
         NodeEvent.new(node, NodeEventType.BP_PRESENCE,
                       EventProviderStatus(bp_address, bond_provider.rune_bond, appeared=False)),
+
+
     ]
 
     name_map = NameMap.empty()
@@ -197,15 +207,16 @@ async def debug_fee_change(app: LpAppFramework):
 async def main():
     app = LpAppFramework(log_level=logging.INFO)
     async with app(brief=True):
+        await app.deps.pool_fetcher.run_once()
         app.deps.thor_connector.env.timeout = 100
         # await demo_run_churn_sim_continuously(app)
-        await run_realtime(app)
+        # await run_realtime(app)
 
         # await run_playback(app, delay=0.01)
 
         # await debug_fee_change(app)
 
-        # await demo_all_kinds_of_messages(app)
+        await demo_all_kinds_of_messages(app)
         # await analise_churn(app)
         # await dbg_second_chance_before_deactivating_channel(app)
 

@@ -5,14 +5,11 @@ from typing import List, Dict
 
 from lib.constants import thor_to_float
 from lib.date_utils import DAY, now_ts
+from lib.money import change_ratio_to_apy
 from .base import BaseModelMixin
 from .pool_info import PoolInfo, pool_share
 
 BECH_2_CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
-
-
-def change_ratio_to_apy(ch, days):
-    return 100.0 * ((1.0 + (ch / days)) ** 365 - 1.0)
 
 
 @dataclass
@@ -98,7 +95,6 @@ class LiquidityInOutSummary(BaseModelMixin):
     total_withdrawn_as_usd: float
     first_add_ts: int
     last_add_ts: int
-
 
 
 @dataclass

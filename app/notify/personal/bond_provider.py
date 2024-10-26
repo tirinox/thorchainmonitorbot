@@ -34,6 +34,7 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
         handlers = [self._handle_churn_events, self._handle_fee_events, self._handle_bond_amount_events]
         for handler in handlers:
             try:
+                # noinspection PyArgumentList
                 this_addresses, this_events = await handler(data)
                 if self.log_events:
                     for ev in events:
@@ -80,7 +81,7 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
 
     async def _memorize_node_status_change_ts(self, node: NodeInfo, ts: float, status: str) -> (str, float):
         if node:
-            old_status, old_ts = await self.remember_node_status_change_ts(node.node_address)
+            old_status, old_ts = await self.get_node_status_change_ts(node.node_address)
             await self.deps.db.redis.hset(
                 self.DB_KEY_HMAP_NODE_STATUS_CHANGE_TS,
                 node.node_address,
@@ -93,7 +94,7 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
         else:
             return None, 0
 
-    async def remember_node_status_change_ts(self, node_address: str) -> (str, float):
+    async def get_node_status_change_ts(self, node_address: str) -> (str, float):
         with suppress(Exception):
             data = await self.deps.db.redis.hget(self.DB_KEY_HMAP_NODE_STATUS_CHANGE_TS, node_address)
             data = json.loads(data)
@@ -103,6 +104,35 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
             )
 
         return None, 0
+
+    DB_KEY_BOND_PROVIDER_STATUS = 'BondProvider:BondTime'
+
+    @staticmethod
+    def bond_provider_status_hash_key(provider_address: str, node: str):
+        return f'node[{node}]-provider[{provider_address}]'
+
+    async def _memorize_bond_provider_ts(self, provider: str, node: str, ts: float, rune_bond: float) -> (float, float):
+        old_rune_bond, old_ts = await self.get_bond_provider_bond_and_change_ts(provider, node)
+        await self.deps.db.redis.hset(
+            self.DB_KEY_HMAP_NODE_STATUS_CHANGE_TS,
+            self.bond_provider_status_hash_key(provider, node),
+            json.dumps({
+                "bond": rune_bond,
+                "ts": ts,
+            })
+        )
+        return old_rune_bond, old_ts
+
+    async def get_bond_provider_bond_and_change_ts(self, provider_address: str, node: str) -> (float, float):
+        with suppress(Exception):
+            data = await self.deps.db.redis.hget(self.DB_KEY_BOND_PROVIDER_STATUS,
+                                                 self.bond_provider_status_hash_key(provider_address, node))
+            data = json.loads(data)
+            return (
+                float(data['bond']),
+                float(data['ts']),
+            )
+        return 0, 0
 
     async def _handle_churn_events(self, data: NodeSetChanges):
         events = []
@@ -148,6 +178,8 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
 
         just_churned = data.has_churn_happened
 
+        now = now_ts()
+
         for node_address, (prev_node, curr_node) in data.prev_and_curr_node_map.items():
             prev_providers = {bp.address: bp for bp in prev_node.bond_providers}
             curr_providers = {bp.address: bp for bp in curr_node.bond_providers}
@@ -163,10 +195,15 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
                 if abs(delta_bond) > self.min_bond_delta_to_react:
                     addresses.add(provider)
 
+                    old_bond, old_ts = await self._memorize_bond_provider_ts(provider, curr_node.node_address, now,
+                                                                             curr_bond)
+                    duration_sec = now - old_ts if old_ts else 0
+
                     events.append(NodeEvent.new(
                         curr_node, NodeEventType.BOND_CHANGE,
                         EventProviderBondChange(
-                            provider, prev_bond, curr_bond, on_churn=just_churned
+                            provider, prev_bond, curr_bond, on_churn=just_churned,
+                            duration_sec=duration_sec,
                         )
                     ))
 
@@ -191,6 +228,7 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
         bp_to_node_to_event = defaultdict(lambda: defaultdict(list))
         for event in group:
             event: NodeEvent
+            event = event._replace(usd_per_rune=self.deps.price_holder.usd_per_rune)  # fill Rune price
             bp_to_node_to_event[event.data.bond_provider][event.node.node_address].append(event)
 
         return loc.notification_text_bond_provider_alert(bp_to_node_to_event, name_map)

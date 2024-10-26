@@ -3,6 +3,7 @@ import random
 from math import floor, log10
 from typing import List
 
+from lib.date_utils import DAY
 from lib.utils import linear_transform
 
 EMOJI_SCALE = [
@@ -309,3 +310,18 @@ def calculate_yearly_growth_from_values(current_value, previous_value, n_days):
     yearly_growth_percent = yearly_growth * 100
 
     return yearly_growth_percent
+
+
+def change_ratio_to_apy(ch, days):
+    return 100.0 * ((1.0 + (ch / days)) ** 365 - 1.0)
+
+
+def calculate_apy(old_value, new_value, period_in_seconds):
+    # Number of seconds in a year (365 days)
+    seconds_in_year = 365 * DAY
+
+    degree = seconds_in_year / period_in_seconds
+
+    # Calculate APY
+    apy = (new_value / old_value) ** degree - 1
+    return apy * 100  # Convert to percentage

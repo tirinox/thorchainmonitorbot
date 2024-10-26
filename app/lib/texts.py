@@ -114,7 +114,7 @@ def up_down_arrow(old_value, new_value, smiley=False, more_is_better=True, same_
                   int_delta=False, money_delta=False, percent_delta=False, signed=True,
                   money_prefix='', ignore_on_no_old=True, postfix='', threshold_pct=0.0,
                   brackets=False):
-    if ignore_on_no_old and not old_value:
+    if ignore_on_no_old and old_value is None:
         return same_result
 
     delta = new_value - old_value

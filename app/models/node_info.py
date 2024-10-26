@@ -12,6 +12,7 @@ from semver import VersionInfo
 
 from lib.constants import thor_to_float, float_to_thor, bp_to_float
 from lib.date_utils import now_ts
+from lib.money import calculate_apy
 from lib.texts import find_country_emoji
 from lib.thor_logic import get_effective_security_bond
 from .base import BaseModelMixin
@@ -483,6 +484,15 @@ class EventProviderBondChange(NamedTuple):
     curr_bond: float
     on_churn: bool
 
+    duration_sec: float = 0
+
+    @property
+    def apy(self):
+        if self.prev_bond and self.duration_sec and self.on_churn:
+            apy = calculate_apy(self.prev_bond, self.curr_bond, self.duration_sec)
+            if apy < 10_000:
+                return apy
+
 
 class EventProviderStatus(NamedTuple):
     bond_provider: str
@@ -525,6 +535,7 @@ class NodeEvent(NamedTuple):
     single_per_user: bool = False
     node: NodeInfo = None
     tracker: object = None
+    usd_per_rune: float = 0.0
 
     ANY = '*'
 
