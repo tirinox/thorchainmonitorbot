@@ -66,7 +66,8 @@ class NodeChurnDetector(WithDelegates, INotified, WithLogger):
 
         try:
             # Fill out some additional data
-            result.vault_migrating = sender.thor_network.vaults_migrating
+            if sender:
+                result.vault_migrating = sender.thor_network.vaults_migrating
 
             if self.deps.last_block_store.last_thor_block == 0:
                 await self.deps.last_block_fetcher.run_once()

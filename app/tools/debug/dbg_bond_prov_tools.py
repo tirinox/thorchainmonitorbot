@@ -8,18 +8,13 @@ from comm.telegram.telegram import TG_TEST_USER
 from jobs.fetch.node_info import NodeInfoFetcher
 from jobs.node_churn import NodeChurnDetector
 from lib.date_utils import now_ts, DAY
-from lib.money import RAIDO_GLYPH
-from lib.texts import sep, up_down_arrow
+from lib.texts import sep
 from models.node_info import NodeEvent, NodeEventType, EventProviderStatus, EventNodeFeeChange, \
     EventProviderBondChange
 from notify.personal.bond_provider import PersonalBondProviderNotifier
 from tools.debug.dbg_record_nodes import NodesDBRecorder, NodePlayer
 from tools.lib.churn_sim import DbgChurnSimulator
 from tools.lib.lp_common import LpAppFramework
-
-
-async def clear_user_db(app: LpAppFramework):
-    ...
 
 
 async def demo_run_churn_sim_continuously(app: LpAppFramework):
@@ -85,7 +80,6 @@ async def demo_all_kinds_of_messages(app: LpAppFramework):
         NodeEvent.new(node, NodeEventType.BP_PRESENCE,
                       EventProviderStatus(bp_address, bond_provider.rune_bond, appeared=False)),
 
-
     ]
 
     name_map = NameMap.empty()
@@ -106,8 +100,8 @@ DEFAULTS_FILE_NAME_FOR_DB_BIG = f'../temp/mainnet_nodes_db_1.json'
 DEFAULTS_FILE_NAME_FOR_DB_SMALL = f'../temp/mainnet_nodes_db_small.json'
 
 
-async def run_recorder(app: LpAppFramework):
-    recorder = NodesDBRecorder(app, filename=DEFAULTS_FILE_NAME_FOR_DB_BIG)
+async def run_recorder(app: LpAppFramework, start, end, file=None):
+    recorder = NodesDBRecorder(app, filename=file or DEFAULTS_FILE_NAME_FOR_DB_BIG)
 
     await recorder.load_db()
     recorder.print_db_map()
@@ -116,13 +110,12 @@ async def run_recorder(app: LpAppFramework):
 
     await recorder.ensure_last_block()
 
-    start = 12529212 - 20
-    await recorder.scan(left_block=start, right_block=12603435)
+    await recorder.scan(start, end)
     await recorder.save_db()
 
 
-async def run_playback(app: LpAppFramework, delay=5.0):
-    recorder = NodesDBRecorder(app, filename=DEFAULTS_FILE_NAME_FOR_DB_BIG)
+async def run_playback(app: LpAppFramework, file=None, delay=5.0):
+    recorder = NodesDBRecorder(app, filename=file or DEFAULTS_FILE_NAME_FOR_DB_BIG)
     await recorder.load_db()
     recorder.print_db_map()
 
@@ -211,14 +204,14 @@ async def main():
         app.deps.thor_connector.env.timeout = 100
         # await demo_run_churn_sim_continuously(app)
         # await run_realtime(app)
-
         # await run_playback(app, delay=0.01)
-
         # await debug_fee_change(app)
-
-        await demo_all_kinds_of_messages(app)
+        # await demo_all_kinds_of_messages(app)
         # await analise_churn(app)
         # await dbg_second_chance_before_deactivating_channel(app)
+
+        # await run_recorder(app, 18298005 - 3, 18298005 + 3, file='../temp/whitelist1.json')
+        await run_playback(app, file='../temp/whitelist1.json', delay=1)
 
 
 if __name__ == '__main__':

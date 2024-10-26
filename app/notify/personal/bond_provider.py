@@ -36,8 +36,8 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
             try:
                 # noinspection PyArgumentList
                 this_addresses, this_events = await handler(data)
-                if self.log_events:
-                    for ev in events:
+                if self.log_events and this_events:
+                    for ev in this_events:
                         ev: NodeEvent
                         self.logger.info(f'Bond tools event: {ev}')
 
@@ -213,6 +213,7 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
                     curr_node, NodeEventType.BP_PRESENCE,
                     EventProviderStatus(bp_address, curr_providers[bp_address].rune_bond, appeared=True)
                 ))
+                addresses.add(bp_address)
 
             left_bp = prev_bp_addresses - curr_bp_addresses
             for bp_address in left_bp:
@@ -220,6 +221,7 @@ class PersonalBondProviderNotifier(BasePersonalNotifier):
                     curr_node, NodeEventType.BP_PRESENCE,
                     EventProviderStatus(bp_address, prev_providers[bp_address].rune_bond, appeared=False)
                 ))
+                addresses.add(bp_address)
 
         return addresses, events
 

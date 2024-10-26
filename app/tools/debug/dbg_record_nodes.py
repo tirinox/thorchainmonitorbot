@@ -165,8 +165,12 @@ class NodesDBRecorder:
         return NodeChurnDetector(self.app.deps).extract_changes(n2, n1)
 
     def print_db_map(self):
-        min_block = min(int(b) for b in self.db.keys())
-        max_block = max(int(b) for b in self.db.keys())
+        keys = list(self.db.keys())
+        if not keys:
+            print('No db loaded. Skipping print')
+            return
+        min_block = min(int(b) for b in keys)
+        max_block = max(int(b) for b in keys)
         r = ''
         for i in range(min_block, max_block + 1):
             r += ('o' if str(i) in self.db else '.')
