@@ -2874,44 +2874,49 @@ class BaseLocalization(ABC):  # == English
     @staticmethod
     def bp_bond_percent(ev: EventProviderBondChange):
         if ev.prev_bond <= 0:
-            return 0
+            return format_percent(100, signed=True)
         return format_percent(ev.curr_bond - ev.prev_bond, ev.prev_bond, signed=True)
 
     def bond_provider_event_text(self, event: NodeEvent):
         if event.type == NodeEventType.FEE_CHANGE:
-            verb = 'has raised' if event.data.previous < event.data.current else 'has dropped'
+            up = event.data.previous < event.data.current
+            verb = 'has raised' if up else 'has dropped'
+            emoji = '📈' if up else '📉'
             return (
-                f'🏦 The node operator {ital(verb)} the fee from '
+                f'％{emoji} The node operator {ital(verb)} the fee from '
                 f'{pre(format_percent(event.data.previous, 1))} to {pre(format_percent(event.data.current, 1))}.'
             )
         elif event.type == NodeEventType.CHURNING:
             data: EventProviderStatus = event.data
             emoji = '✳️' if data.appeared else '⏳'
             verb = 'churned in' if data.appeared else 'churned out'
-            return f'{emoji} The node has {bold(verb)}{self.bp_event_duration(data)}.'
+            return f'{emoji} The node has {bold(verb)}. {self.bp_event_duration(data)}'
         elif event.type == NodeEventType.PRESENCE:
             data: EventProviderStatus = event.data
             verb = 'connected' if data.appeared else 'disconnected'
             emoji = '✅' if data.appeared else '❌'
-            return f'{emoji} The node has {bold(verb)}{self.bp_event_duration(data)}!'
+            return f'{emoji} The node has {bold(verb)}!{self.bp_event_duration(data)}'
         elif event.type == NodeEventType.BOND_CHANGE:
             data: EventProviderBondChange = event.data
             delta = data.curr_bond - data.prev_bond
             delta_str = up_down_arrow(data.prev_bond, data.curr_bond, money_delta=True, postfix=RAIDO_GLYPH)
             verb = 'increased' if delta > 0 else 'decreased'
             emoji = '📈' if delta > 0 else '📉'
+            usd_val = delta * event.usd_per_rune
+            apy_str = f' | APY: {bold(format_percent(data.apy, signed=True))}' if data.apy else ''
+
             return (
                 f'{emoji} Bond amount has {bold(verb)} '
                 f'from {pre(pretty_rune(data.prev_bond))} '
                 f'to {pre(pretty_rune(data.curr_bond))} '
-                f'({ital(delta_str)} or {ital(self.bp_bond_percent(data))}).'
+                f'({ital(delta_str)} | {ital(self.bp_bond_percent(data))} | {short_dollar(usd_val)}{apy_str})'
             )
         elif event.type == NodeEventType.BP_PRESENCE:
             data: EventProviderStatus = event.data
-            verb = 'appeared on' if data.appeared else 'disappeared from'
-            emoji = '📥' if data.appeared else '📤'
-            return f'{emoji} The address has {ital(verb)} the bond provider list of the node' \
-                   f'{self.bp_event_duration(data)}.'
+            verb = 'whitelisted' if data.appeared else 'no longer whitelisted'
+            emoji = '🤍' if data.appeared else '📤'
+            return f'{emoji} The address is {ital(verb)}.' \
+                   f'{self.bp_event_duration(data)}'
         else:
             return ''
 
