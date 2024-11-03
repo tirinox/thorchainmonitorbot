@@ -24,6 +24,9 @@ class BondProvider(typing.NamedTuple):
     address: str
     rune_bond: float
     is_node_operator: bool = False
+    anticipated_award: float = 0.0
+    bond_share: float = 0.0
+    fee_rate: float = 0.0  # 0..1
 
 
 @dataclass
@@ -90,6 +93,27 @@ class NodeInfo(BaseModelMixin):
     def ident(self):
         return self.node_address
 
+    @staticmethod
+    def _make_bond_provider(raw, total_bond, fee_rate, node_op_address, total_reward: float) -> BondProvider:
+        bond = float(thor_to_float(raw['bond']))
+        bond_share = bond / total_bond
+
+        anticipated_award = bond_share * total_reward * (1.0 - fee_rate)
+
+        address = raw['bond_address']
+        if address == node_op_address:
+            # The node operator also gets entire fees in addition to normal BP award, right?
+            anticipated_award += total_reward * fee_rate
+
+        return BondProvider(
+            address=address,
+            rune_bond=bond,
+            is_node_operator=(address == node_op_address),
+            anticipated_award=anticipated_award,
+            bond_share=bond_share,
+            fee_rate=fee_rate,
+        )
+
     @classmethod
     def from_json(cls, jstr):
         if not jstr:
@@ -97,14 +121,18 @@ class NodeInfo(BaseModelMixin):
         d = json.loads(jstr) if isinstance(jstr, (str, bytes)) else jstr
         node_operator = d.get('node_operator_address', '')
         bond_provider_info = d.get('bond_providers', {})
+        total_bond = float(thor_to_float(d.get('total_bond', 0)))
+        bond_prov_fee_rate = bp_to_float(bond_provider_info.get('node_operator_fee', 0))
+        node_address = d.get('node_address', '')
+        current_award = thor_to_float(d.get('current_award', 0.0))
         return cls(
             status=d.get('status', NodeInfo.DISABLED),
-            node_address=d.get('node_address', ''),
-            bond=float(thor_to_float(d.get('total_bond', 0))),
+            node_address=node_address,
+            bond=total_bond,
             ip_address=d.get('ip_address', ''),
             version=d.get('version', ''),
             slash_points=int(d.get('slash_points', 0)),
-            current_award=thor_to_float(d.get('current_award', 0.0)),
+            current_award=current_award,
             requested_to_leave=bool(d.get('requested_to_leave', False)),
             forced_to_leave=bool(d.get('forced_to_leave', False)),
             active_block_height=int(d.get('active_block_height', 0)),
@@ -112,14 +140,11 @@ class NodeInfo(BaseModelMixin):
             observe_chains=d.get('observe_chains', []),
             jail=d.get('jail', {}),
             bond_providers=[
-                BondProvider(
-                    address=(bond_provider_address := prov.get('bond_address')),
-                    rune_bond=thor_to_float(prov.get('bond', 0)),
-                    is_node_operator=(bond_provider_address == node_operator)
-                ) for prov in (bond_provider_info.get('providers') or [])
+                cls._make_bond_provider(prov, total_bond, bond_prov_fee_rate, node_operator, current_award)
+                for prov in (bond_provider_info.get('providers') or [])
             ],
             node_operator=node_operator,
-            node_operator_fee=bp_to_float(bond_provider_info.get('node_operator_fee', 0))
+            node_operator_fee=bond_prov_fee_rate
         )
 
     @classmethod

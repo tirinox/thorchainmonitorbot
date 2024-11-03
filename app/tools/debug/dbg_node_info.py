@@ -16,7 +16,9 @@ from jobs.node_churn import NodeChurnDetector
 from lib.depcont import DepContainer
 from lib.texts import sep
 from lib.utils import setup_logs
+from models.node_db import NodeStateDatabase
 from models.node_info import NodeSetChanges, NodeVersionConsensus, NodeInfo
+from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from notify.public.node_churn_notify import NodeChurnNotifier
 from notify.public.version_notify import VersionNotifier
 from tools.lib.churn_sim import DbgChurnSimulator
@@ -56,7 +58,7 @@ async def node_version_notification_check_progress(lpgen: LpAppFramework, data: 
 
     for loc in locs:
         sep()
-        msg = loc.notification_text_version_changed_progress(data, ver_con)
+        msg = loc.notification_text_version_changed_progress(AlertVersionUpgradeProgress(data, ver_con))
         print(msg)
         await lpgen.send_test_tg_message(msg)
 
@@ -70,13 +72,15 @@ async def node_version_notification_check_1(lpgen: LpAppFramework, data):
         sep()
         # noinspection PyTypeChecker
         msg = loc.notification_text_version_changed(
-            data,
-            new_versions=[
-                VersionInfo.parse('0.59.1'),
-                VersionInfo.parse('0.60.0'),
-            ],
-            old_active_ver=None,
-            new_active_ver=None
+            AlertVersionChanged(
+                data,
+                new_versions=[
+                    VersionInfo.parse('0.59.1'),
+                    VersionInfo.parse('0.60.0'),
+                ],
+                old_active_ver=None,
+                new_active_ver=None
+            )
         )
         print(msg)
         await lpgen.send_test_tg_message(msg)
@@ -86,10 +90,12 @@ async def node_version_notification_check_1(lpgen: LpAppFramework, data):
     for loc in locs:
         sep()
         msg = loc.notification_text_version_changed(
-            data,
-            new_versions=[],
-            old_active_ver=VersionInfo.parse('0.59.0'),
-            new_active_ver=VersionInfo.parse('0.59.1')
+            AlertVersionChanged(
+                data,
+                new_versions=[],
+                old_active_ver=VersionInfo.parse('0.59.0'),
+                new_active_ver=VersionInfo.parse('0.59.1')
+            )
         )
         print(msg)
         await lpgen.send_test_tg_message(msg)
@@ -110,10 +116,12 @@ async def node_version_notification_check_1(lpgen: LpAppFramework, data):
     for loc in locs:
         sep()
         msg = loc.notification_text_version_changed(
-            data,
-            new_versions=[],
-            old_active_ver=VersionInfo.parse('0.59.1'),
-            new_active_ver=VersionInfo.parse('0.59.0')
+            AlertVersionChanged(
+                data,
+                new_versions=[],
+                old_active_ver=VersionInfo.parse('0.59.1'),
+                new_active_ver=VersionInfo.parse('0.59.0')
+            )
         )
         print(msg)
         await lpgen.send_test_tg_message(msg)
@@ -358,12 +366,36 @@ class DbgChurnFaker:
         return data
 
 
+async def dbg_node_info_bond_provider_parsing(app: LpAppFramework):
+    nodes = await app.deps.node_info_fetcher.fetch()
+    for node in nodes:
+        node: NodeInfo
+        award = node.current_award
+        calc_award = sum(bp.anticipated_award for bp in node.bond_providers)
+        delta = abs(award - calc_award)
+        # verify the bond providers reward sum up to the node reward
+        if delta > 0.0001:
+            print(f'{node.node_address = }')
+            print(f'{award = }')
+            print(f'{calc_award = }')
+            print(f'{delta = }')
+            print('---')
+
+    node_db = NodeStateDatabase(app.deps, key='NodeInfo:_debugNodes')
+    await node_db.save_node_info_list(nodes)
+
+    loaded_nodes = await node_db.get_last_node_info_list()
+    assert loaded_nodes == nodes
+
+
+
 async def main():
     app = LpAppFramework()
     async with app:
         # await demo_churn_pipeline(app)
         # await demo_churn_test(app)
-        await demo_churn_simulator(app)
+        # await demo_churn_simulator(app)
+        await dbg_node_info_bond_provider_parsing(app)
 
 
 if __name__ == "__main__":
