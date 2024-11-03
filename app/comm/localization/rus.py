@@ -307,6 +307,7 @@ class RussianLocalization(BaseLocalization):
     TEXT_CLICK_FOR_DETAILED_CARD = '\n\n👇 Выберите пул, чтобы получить подробную карточку информации о позиции.'
     TEXT_BALANCE_TITTLE = '💲Account balance:'
     TEXT_LOCAL_NAME = 'Локальное имя'
+    TEXT_TOTAL = 'Всего'
 
     def text_address_explorer_details(self, address, chain):
         thor_yield_url = get_thoryield_address(address, chain)

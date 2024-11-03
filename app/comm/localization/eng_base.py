@@ -345,22 +345,31 @@ class BaseLocalization(ABC):  # == English
         net = self.cfg.network_id
         return link_with_domain_text(get_explorer_url_to_address(net, chain, address))
 
-    @staticmethod
-    def text_balances(balances: ThorBalances, title, price_holder: LastPriceHolder):
+    TEXT_TOTAL = 'Total'
+
+    def text_balances(self, balances: ThorBalances, title, price_holder: LastPriceHolder):
         if not balances or not len(balances.assets):
             return ''
 
+        total_usd = 0.0
+
         items = []
         for coin in balances.assets:
-            postfix = ' ' + Asset.from_string(coin.asset).pretty_str
-            items.append(bold(short_money(coin.amount_float)) + ital(postfix))
+            usd_value = price_holder.convert_to_usd(coin.amount_float, coin.asset)
+            items.append(
+                f'{bold(short_money(coin.amount_float))} {Asset.from_string(coin.asset).pretty_str}'
+                f' | {ital(short_dollar(usd_value))}'
+            )
+            if usd_value is not None:
+                total_usd += usd_value
+            else:
+                logging.warning(f'Cannot convert {coin.amount_float} {coin.asset} to USD')
 
         if len(items) == 1:
-            # todo: add value in $
             result = f'{title} {items[0]}'
         else:
             result = '\n'.join([title] + items)
-            # todo: add total
+            result += f'\n∑ {self.TEXT_TOTAL}: {ital(short_dollar(total_usd))}'
         return f'\n\n{result}'
 
     TEXT_CLICK_FOR_DETAILED_CARD = '\n\n👇 Click on the button to get a detailed card.'
