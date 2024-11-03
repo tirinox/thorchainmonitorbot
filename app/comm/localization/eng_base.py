@@ -385,7 +385,7 @@ class BaseLocalization(ABC):  # == English
         spent_text = pretty_rune(thor_to_float(clout.spent))
 
         clout_text = f'{bold(score_text)} score | {bold(reclaimed_text)} reclaimed | {bold(spent_text)} spent'
-        return f'\n\n💪Swapper clout: {clout_text}\n\n'
+        return f'\n\n💪Swapper clout: {clout_text}'
 
     @staticmethod
     def text_track_limit(min_limit):
@@ -2977,7 +2977,7 @@ class BaseLocalization(ABC):  # == English
                 f'{award_text}{node_op_text}\n'
             )
 
-        return f'\n\n🔗Bond provision:\n{message}' if message else ''
+        return f'\n\n🔗Bond provision:\n{message.strip()}' if message else ''
 
 
 class EnglishLocalization(BaseLocalization):

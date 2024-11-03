@@ -302,7 +302,7 @@ class RussianLocalization(BaseLocalization):
         spent_text = pretty_rune(thor_to_float(clout.spent))
 
         clout_text = f'{bold(score_text)} очков | {bold(reclaimed_text)} восстановлено | {bold(spent_text)} потрачено'
-        return f'\n\n💪Влиятельность: {clout_text}\n\n'
+        return f'\n\n💪Влиятельность: {clout_text}'
 
     TEXT_CLICK_FOR_DETAILED_CARD = '\n\n👇 Выберите пул, чтобы получить подробную карточку информации о позиции.'
     TEXT_BALANCE_TITTLE = '💲Account balance:'

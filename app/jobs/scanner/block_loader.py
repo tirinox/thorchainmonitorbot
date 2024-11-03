@@ -69,6 +69,12 @@ class BlockResult:
         return filter(lambda tx: isinstance(tx.first_message, tx_class), self.txs)
 
     def _validate_txs_and_logs_count(self):
+        if self.txs is None:
+            raise ValueError(f'Block #{self.block_no}: txs is None')
+
+        if self.tx_logs is None:
+            raise ValueError(f'Block #{self.block_no}: tx_logs is None')
+
         if len(self.txs) != len(self.tx_logs):
             raise ValueError(f'Block #{self.block_no}: txs and logs count mismatch'
                              f' ({len(self.txs)=} vs {len(self.tx_logs)=})')
