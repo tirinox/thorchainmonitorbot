@@ -276,8 +276,9 @@ class MyWalletsMenu(DialogWithSettings):
         min_limit = float(address_obj.get(Props.PROP_MIN_LIMIT, 0))
         chain = Chains.detect_chain(address)
 
-        balances, thor_name, local_name, clout = await asyncio.gather(
+        balances, bond_prov, thor_name, local_name, clout = await asyncio.gather(
             self.get_balances(address, with_trade_accounts=True),
+            self.get_bond_provision(address),
             self.deps.name_service.lookup_name_by_address(address),
             self.get_name_service(message).get_wallet_local_name(address),
             self.get_clout(address)
@@ -286,7 +287,8 @@ class MyWalletsMenu(DialogWithSettings):
         text = self.loc.text_inside_my_wallet_title(address, my_pools, balances,
                                                     min_limit if track_balance else None,
                                                     chain, thor_name, local_name,
-                                                    clout)
+                                                    clout, bond_prov,
+                                                    price_holder=self.deps.price_holder)
         inline_kbd = self._keyboard_inside_wallet_menu().keyboard()
         if edit:
             await message.edit_text(text=text,
@@ -753,6 +755,13 @@ class MyWalletsMenu(DialogWithSettings):
             with suppress(Exception):
                 balances = await self.deps.trade_acc_fetcher.get_whole_balances(address, with_trade_accounts)
                 return balances
+            return 'Failed to load balances'
+
+    async def get_bond_provision(self, address: str):
+        if LPAddress.is_thor_prefix(address):
+            with suppress(Exception):
+                return list(self.deps.node_holder.find_bond_providers(address))
+            return 'Failed to load bond provision data'
 
     async def get_clout(self, address: str) -> Optional[ThorSwapperClout]:
         with suppress(Exception):

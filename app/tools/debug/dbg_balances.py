@@ -20,7 +20,7 @@ async def main():
         balances = await lp_app.deps.trade_acc_fetcher.get_whole_balances(address, with_trade_account=True)
 
         sep()
-        text = BaseLocalization.text_balances(balances)
+        text = BaseLocalization.text_balances(balances, 'Balances')
         print(text)
         sep()
 

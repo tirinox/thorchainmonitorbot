@@ -38,7 +38,7 @@ from models.node_info import NodeSetChanges, NodeInfo, NodeEventType, NodeEvent,
     EventBlockHeight, EventDataSlash, EventProviderBondChange, \
     EventProviderStatus, NodeListHolder, BondProvider
 from models.pool_info import PoolInfo, PoolChanges, PoolMapPair
-from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge
+from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge, LastPriceHolder
 from models.queue import QueueInfo
 from models.runepool import AlertPOLState, AlertRunePoolAction, AlertRunepoolStats
 from models.s_swap import AlertSwapStart
@@ -346,62 +346,68 @@ class BaseLocalization(ABC):  # == English
         return link_with_domain_text(get_explorer_url_to_address(net, chain, address))
 
     @staticmethod
-    def text_balances(balances: ThorBalances, title='Account balance:'):
+    def text_balances(balances: ThorBalances, title, price_holder: LastPriceHolder):
         if not balances or not len(balances.assets):
             return ''
+
         items = []
         for coin in balances.assets:
             postfix = ' ' + Asset.from_string(coin.asset).pretty_str
             items.append(bold(short_money(coin.amount_float)) + ital(postfix))
 
         if len(items) == 1:
+            # todo: add value in $
             result = f'{title} {items[0]}'
         else:
             result = '\n'.join([title] + items)
-        return result + '\n\n'
+            # todo: add total
+        return f'\n\n{result}'
+
+    TEXT_CLICK_FOR_DETAILED_CARD = '\n\n👇 Click on the button to get a detailed card.'
+    TEXT_BALANCE_TITTLE = '💲Account balances:'
+    TEXT_LOCAL_NAME = 'Local name'
+
+    @staticmethod
+    def text_swapper_clout(clout):
+        if not clout:
+            return ''
+        score_text = pretty_rune(thor_to_float(clout.score))
+        reclaimed_text = pretty_rune(thor_to_float(clout.reclaimed))
+        spent_text = pretty_rune(thor_to_float(clout.spent))
+
+        clout_text = f'{bold(score_text)} score | {bold(reclaimed_text)} reclaimed | {bold(spent_text)} spent'
+        return f'\n\n💪Swapper clout: {clout_text}\n\n'
+
+    @staticmethod
+    def text_track_limit(min_limit):
+        return f'\n\n📨 Transactions ≥ {short_rune(min_limit)} are tracked.' if min_limit is not None else ''
+
+    def text_address_explorer_details(self, address, chain):
+        thor_yield_url = get_thoryield_address(address, chain)
+        return (
+            f"\n\n🔍 Explorer: {self.explorer_link_to_address_with_domain(address)}\n"
+            f"🌎 View it on {link(thor_yield_url, 'THORYield')}"
+        )
 
     def text_inside_my_wallet_title(self, address, pools, balances: ThorBalances, min_limit: float, chain,
-                                    thor_name: Optional[ThorName], local_name, clout: Optional[ThorSwapperClout]):
-        if pools:
-            title = '\n'
-            footer = "\n\n👇 Click on the button to get a detailed card."
-        else:
-            title = self.TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS + '\n\n'
-            footer = ''
-
-        explorer_links = self.explorer_link_to_address_with_domain(address)
-
-        balance_str = self.text_balances(balances)
-
-        if clout:
-            score_text = pretty_rune(thor_to_float(clout.score))
-            reclaimed_text = pretty_rune(thor_to_float(clout.reclaimed))
-            spent_text = pretty_rune(thor_to_float(clout.spent))
-            clout_text = f'{bold(score_text)} score | {bold(reclaimed_text)} reclaimed | {bold(spent_text)} spent'
-            balance_str += f'Swapper clout: {clout_text}\n\n'
-
+                                    thor_name: Optional[ThorName], local_name, clout: Optional[ThorSwapperClout],
+                                    bond_prov: List[Tuple[NodeInfo, BondProvider]],
+                                    price_holder: LastPriceHolder):
         acc_caption = ''
         if thor_name:
             acc_caption += f' | THORName: {pre(add_thor_suffix(thor_name))}'
         if local_name:
-            acc_caption += f' | Local name: {pre(local_name)}'
-
-        thor_yield_url = get_thoryield_address(self.cfg.network_id, address, chain)
-        thor_yield_link = link(thor_yield_url, 'THORYield')
-
-        if min_limit is not None:
-            limit_str = f'📨 Transactions ≥ {short_rune(min_limit)} are tracked.\n'
-        else:
-            limit_str = ''
+            acc_caption += f' | {self.TEXT_LOCAL_NAME}: {pre(local_name)}'
 
         return (
             f'🛳️ Account "{code(address)}"{acc_caption}\n'
-            f'{title}'
-            f'{balance_str}'
-            f'{limit_str}'
-            f"🔍 Explorer: {explorer_links}\n"
-            f"🌎 View it on {thor_yield_link}"
-            f'{footer}'
+            f'{self.TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS if not pools else ""}'
+            f'{self.text_balances(balances, self.TEXT_BALANCE_TITTLE, price_holder)}'
+            f'{self.text_bond_provision(bond_prov, price_holder.usd_per_rune)}'
+            f'{self.text_swapper_clout(clout)}'
+            f'{self.text_track_limit(min_limit)}'
+            f'{self.text_address_explorer_details(address, chain)}'
+            f'{self.TEXT_CLICK_FOR_DETAILED_CARD if pools else ""}'
         )
 
     def text_lp_today(self):
@@ -2297,7 +2303,7 @@ class BaseLocalization(ABC):  # == English
         pretty_pool = pool_asset.l1_asset.pretty_str
         explorer_url = get_explorer_url_to_address(self.cfg.network_id, Chains.THOR, address)
         explorer_link = link(explorer_url, short_address(address, 10, 5))
-        thor_yield_url = get_thoryield_address(self.cfg.network_id, address)
+        thor_yield_url = get_thoryield_address(address)
         thor_yield_link = link(thor_yield_url, 'THORYield')
         name_str = f' ({ital(local_name)})' if local_name else ''
 
@@ -2920,9 +2926,7 @@ class BaseLocalization(ABC):  # == English
         else:
             return ''
 
-    def text_bond_provision(self, bonds: List[Tuple[NodeInfo, BondProvider]], usd_per_rune: float,
-                            title='Bond provision:', name_map=None,
-                            ):
+    def text_bond_provision(self, bonds: List[Tuple[NodeInfo, BondProvider]], usd_per_rune: float, name_map=None):
         if not bonds:
             return ''
 
@@ -2964,7 +2968,7 @@ class BaseLocalization(ABC):  # == English
                 f'{award_text}{node_op_text}\n'
             )
 
-        return f'\n\n{title}\n{message}' if message else ''
+        return f'\n\n🔗Bond provision:\n{message}' if message else ''
 
 
 class EnglishLocalization(BaseLocalization):

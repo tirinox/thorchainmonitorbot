@@ -92,12 +92,9 @@ def get_pool_url(pool_name):
     return f'https://app.thorswap.finance/add/{pool_name}'
 
 
-def get_thoryield_address(network: str, address: str, chain: str = Chains.THOR):
-    if network == NetworkIdents.TESTNET_MULTICHAIN:
-        return f'https://mctn.vercel.app/dashboard?{chain}={address}'
-    else:
-        chain = chain.lower()
-        return f'https://app.thoryield.com/lp?{chain}={address}'
+def get_thoryield_address(address: str, chain: str = Chains.THOR):
+    chain = chain.lower()
+    return f'https://app.thoryield.com/lp?{chain}={address}'
 
 
 def get_ip_info_link(ip_address):

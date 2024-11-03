@@ -1,17 +1,16 @@
 from datetime import datetime
 from math import ceil
-from typing import List, Optional
+from typing import List, Tuple
 
-from api.aionode.types import ThorChainInfo, ThorBalances, ThorSwapperClout, thor_to_float
-from api.midgard.name_service import add_thor_suffix, NameMap
+from api.aionode.types import ThorChainInfo, thor_to_float
+from api.midgard.name_service import NameMap
 from api.w3.dex_analytics import DexReportEntry, DexReport
 from jobs.fetch.chain_id import AlertChainIdChange
 from jobs.runeyield.borrower import LoanReportCard
 from lib.config import Config
 from lib.constants import Chains, LOAN_MARKER, ThorRealms
 from lib.date_utils import format_time_ago, seconds_human, now_ts
-from lib.explorers import get_explorer_url_to_address, get_thoryield_address, \
-    get_ip_info_link, get_explorer_url_to_tx
+from lib.explorers import get_explorer_url_to_address, get_ip_info_link, get_explorer_url_to_tx, get_thoryield_address
 from lib.money import pretty_dollar, pretty_money, short_address, adaptive_round_to_str, calc_percent_change, \
     emoji_for_percent_change, short_money, short_dollar, format_percent, RAIDO_GLYPH, short_rune, pretty_percent, \
     chart_emoji, pretty_rune
@@ -29,7 +28,7 @@ from models.memo import ActionType
 from models.mimir import MimirChange, MimirHolder
 from models.net_stats import AlertNetworkStats
 from models.node_info import NodeSetChanges, NodeInfo, NodeEvent, EventDataSlash, \
-    NodeEventType, EventBlockHeight, EventProviderStatus, EventProviderBondChange
+    NodeEventType, EventBlockHeight, EventProviderStatus, EventProviderBondChange, BondProvider
 from models.pool_info import PoolInfo, PoolChanges, PoolMapPair
 from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge
 from models.queue import QueueInfo
@@ -40,7 +39,6 @@ from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from models.transfer import RuneTransfer, RuneCEXFlow
 from models.tx import EventLargeTransaction
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
-from proto.types import ThorName
 from .achievements.ach_rus import AchievementsRussianLocalization
 from .eng_base import BaseLocalization, CREATOR_TG, URL_LEADERBOARD_MCCN
 
@@ -295,49 +293,31 @@ class RussianLocalization(BaseLocalization):
                f'Идет загрузка пулов для адреса {pre(address)}...\n' \
                f'Иногда она может идти долго, если Midgard сильно нагружен.'
 
-    def text_inside_my_wallet_title(self, address, pools, balances: ThorBalances, min_limit: float, chain,
-                                    thor_name: Optional[ThorName], local_name, clout: Optional[ThorSwapperClout]):
-        if pools:
-            title = '\n'
-            footer = '\n\n👇 Выберите пул, чтобы получить подробную карточку информации о позиции.'
-        else:
-            title = self.TEXT_LP_NO_POOLS_FOR_THIS_ADDRESS + '\n\n'
-            footer = ''
+    @staticmethod
+    def text_swapper_clout(clout):
+        if not clout:
+            return ''
+        score_text = pretty_rune(thor_to_float(clout.score))
+        reclaimed_text = pretty_rune(thor_to_float(clout.reclaimed))
+        spent_text = pretty_rune(thor_to_float(clout.spent))
 
-        explorer_links = self.explorer_link_to_address_with_domain(address)
+        clout_text = f'{bold(score_text)} очков | {bold(reclaimed_text)} восстановлено | {bold(spent_text)} потрачено'
+        return f'\n\n💪Влиятельность: {clout_text}\n\n'
 
-        balance_str = self.text_balances(balances, 'Балансы аккаунта: ')
+    TEXT_CLICK_FOR_DETAILED_CARD = '\n\n👇 Выберите пул, чтобы получить подробную карточку информации о позиции.'
+    TEXT_BALANCE_TITTLE = '💲Account balance:'
+    TEXT_LOCAL_NAME = 'Локальное имя'
 
-        if clout:
-            score_text = pretty_rune(thor_to_float(clout.score))
-            reclaimed_text = pretty_rune(thor_to_float(clout.reclaimed))
-            spent_text = pretty_rune(thor_to_float(clout.spent))
-            clout_text = f'всего {bold(score_text)} | восстановлено {bold(reclaimed_text)} | потрачено {bold(spent_text)}'
-            balance_str += f'Влиятельность: {clout_text}\n\n'
-
-        acc_caption = ''
-        if thor_name:
-            acc_caption += f' | THORName: {code(add_thor_suffix(thor_name))}'
-        if local_name:
-            acc_caption += f' | Имя: {code(local_name)}'
-
-        thor_yield_url = get_thoryield_address(self.cfg.network_id, address, chain)
-        thor_yield_link = link(thor_yield_url, 'THORYield')
-
-        if min_limit is not None:
-            limit_str = f'📨 Транзакции ≥ {short_rune(min_limit)} отслеживаются.\n'
-        else:
-            limit_str = ''
-
+    def text_address_explorer_details(self, address, chain):
+        thor_yield_url = get_thoryield_address(address, chain)
         return (
-            f'🛳️ Аккаунт: "{pre(address)}"{acc_caption}\n'
-            f'{title}'
-            f"{balance_str}"
-            f'{limit_str}'
-            f"🔍 Обозреватель: {explorer_links}\n"
-            f"🌎 Посмотреть на {thor_yield_link}"
-            f"{footer}"
+            f"\n\n🔍 Обозреватель: {self.explorer_link_to_address_with_domain(address)}\n"
+            f"🌎 Посмотреть на {link(thor_yield_url, 'THORYield')}"
         )
+
+    @staticmethod
+    def text_track_limit(min_limit):
+        return f'\n\n📨 Транзакции объемом ≥ {short_rune(min_limit)} отслеживаются.' if min_limit is not None else ''
 
     def text_lp_today(self):
         today = datetime.now().strftime('%d.%m.%Y')
@@ -2121,6 +2101,7 @@ class RussianLocalization(BaseLocalization):
             f'примерно {ital(pretty_rune(e.yearly_burn_prediction))} рун будет сожжено за год.\n'
             f'{trend} составляет {bold(pretty_percent(e.deflation_percent, signed=False))}.'
         )
+
     # ------ Bond providers alerts ------
 
     TEXT_BOND_PROVIDER_ALERT_FOR = 'Оповещение для поставщика бонда'
@@ -2170,3 +2151,47 @@ class RussianLocalization(BaseLocalization):
             return f'{emoji} Этот адрес {verb} провайдеров бонда для ноды. {self.bp_event_duration(data)}'
         else:
             return ''
+
+    def text_bond_provision(self, bonds: List[Tuple[NodeInfo, BondProvider]], usd_per_rune: float, name_map=None):
+        if not bonds:
+            return ''
+
+        message = ''
+
+        bonds.sort(key=(lambda _bp: _bp[1].rune_bond), reverse=True)
+
+        # bp_link = '👤' + self.link_to_address(node.node_address, name_map)
+        for i, (node, bp) in enumerate(bonds, start=1):
+            node_op_text = ' [Оператор]' if bp.is_node_operator else ''
+            emoji = '🌩️' if node.is_active else '⏱️'
+            node_link = f'{emoji} нода {self.link_to_address(node.node_address, name_map)}'
+
+            if bp.rune_bond > 0:
+                if bp.bond_share > 0.1:
+                    share_str = f' | {pretty_percent(bp.bond_share * 100.0, signed=False)}'
+                else:
+                    share_str = ''
+                provided_str = (
+                    f'{bold(pretty_rune(bp.rune_bond))} '
+                    f'({ital(short_dollar(bp.rune_bond * usd_per_rune))}) бонд'
+                    f'{share_str}'
+                )
+            else:
+                provided_str = 'нет бонда'
+                if not bp.is_node_operator:
+                    provided_str += ', но в белом списке'
+
+            if bp.anticipated_award > 0:
+                award_text = (
+                    f'следующая награда 💰{bold(pretty_rune(bp.anticipated_award))} '
+                    f'({ital(short_dollar(bp.anticipated_award * usd_per_rune))})'
+                )
+            else:
+                award_text = 'нет награды'
+
+            message += (
+                f'└ {i}. {node_link} ← {provided_str}, '
+                f'{award_text}{node_op_text}\n'
+            )
+
+        return f'\n\n🔗Предоставление бонда:\n{message}' if message else ''
