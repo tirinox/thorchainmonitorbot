@@ -197,6 +197,8 @@ class ThorConnector:
             else:
                 return [ThorTradeAccount.from_json(data)]
 
+        return []
+
     async def query_runepool(self, height=0):
         url = self.env.path_runepool.format(height=height)
         data = await self._request(url)

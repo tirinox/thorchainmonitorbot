@@ -35,12 +35,13 @@ class TradeAccountFetcher(BaseFetcher):
         """
         balances = []
         trade_accounts = await self.deps.thor_connector.query_trade_account(address)
-        for trade_account in trade_accounts:
-            balances.append(ThorCoin(
-                trade_account.asset,
-                trade_account.units,
-                RUNE_DECIMALS
-            ))
+        if trade_accounts:
+            for trade_account in trade_accounts:
+                balances.append(ThorCoin(
+                    trade_account.asset,
+                    trade_account.units,
+                    RUNE_DECIMALS
+                ))
         return balances
 
     async def get_whole_balances(self, address: str, with_trade_account=True) -> ThorBalances:

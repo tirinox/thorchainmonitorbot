@@ -6,7 +6,7 @@ import typing
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from statistics import median
-from typing import List, Dict, NamedTuple, Optional, Tuple, Any
+from typing import List, Dict, NamedTuple, Optional, Tuple, Any, Iterator
 
 from semver import VersionInfo
 
@@ -190,14 +190,19 @@ class NodeListHolder:
     def is_ip_nodes(self, ip_address):
         return any(ip_address == n.ip_address for n in self.nodes)
 
+    def calculate_security_cap_rune(self, full=False):
+        active_bonds = [float_to_thor(node.bond) for node in self.nodes if node.is_active]
+        if full:
+            cap = sum(active_bonds)
+        else:
+            cap = get_effective_security_bond(active_bonds)
+        return thor_to_float(cap)
 
-def calculate_security_cap_rune(nodes: List[NodeInfo], full=False):
-    active_bonds = [float_to_thor(node.bond) for node in nodes if node.is_active]
-    if full:
-        cap = sum(active_bonds)
-    else:
-        cap = get_effective_security_bond(active_bonds)
-    return thor_to_float(cap)
+    def find_bond_providers(self, address: str) -> Iterator[Tuple[NodeInfo, BondProvider]]:
+        for node in self.nodes:
+            for bp in node.bond_providers:
+                if bp.address == address:
+                    yield node, bp
 
 
 class EventBondProviderPayout(NamedTuple):

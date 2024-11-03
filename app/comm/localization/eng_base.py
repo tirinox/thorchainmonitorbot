@@ -35,8 +35,8 @@ from models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting, Mimi
 from models.mimir_naming import MimirUnits
 from models.net_stats import NetworkStats, AlertNetworkStats
 from models.node_info import NodeSetChanges, NodeInfo, NodeEventType, NodeEvent, \
-    EventBlockHeight, EventDataSlash, calculate_security_cap_rune, EventProviderBondChange, \
-    EventProviderStatus
+    EventBlockHeight, EventDataSlash, EventProviderBondChange, \
+    EventProviderStatus, NodeListHolder
 from models.pool_info import PoolInfo, PoolChanges, PoolMapPair
 from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge
 from models.queue import QueueInfo
@@ -1079,7 +1079,7 @@ class BaseLocalization(ABC):  # == English
 
     @staticmethod
     def get_network_security_ratio(stats: NetworkStats, nodes: List[NodeInfo]) -> float:
-        security_cap = calculate_security_cap_rune(nodes, full=True)
+        security_cap = NodeListHolder(nodes).calculate_security_cap_rune(full=True)
 
         if not security_cap:
             logging.warning('Security cap is zero!')
