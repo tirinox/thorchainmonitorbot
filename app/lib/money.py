@@ -92,6 +92,8 @@ def too_big(x, limit_abs=1e7):
 def pretty_percent(x, limit_abs=1e7, limit_text='N/A %', signed=True):
     if too_big(x, limit_abs):
         return limit_text
+    if x == 0.0:
+        return '0 %'
     return pretty_money(x, postfix=' %', signed=signed)
 
 

@@ -2124,7 +2124,7 @@ class RussianLocalization(BaseLocalization):
     # ------ Bond providers alerts ------
 
     TEXT_BOND_PROVIDER_ALERT_FOR = 'Оповещение для поставщика бонда'
-    TEXT_BP_NODE = '🖥️ Нода'
+    TEXT_BP_NODE = '⛈️ Нода'
 
     def bp_event_duration(self, ev: EventProviderStatus):
         dur = ev.duration

@@ -19,17 +19,20 @@ async def main():
 
         balances = await lp_app.deps.trade_acc_fetcher.get_whole_balances(address, with_trade_account=True)
 
-        text = BaseLocalization.text_balances(balances)
         sep()
+        text = BaseLocalization.text_balances(balances)
         print(text)
         sep()
 
         bond_and_nodes = list(lp_app.deps.node_holder.find_bond_providers(address))
-        bonds = [bp for _, bp in bond_and_nodes]
+        # bonds = [bp for _, bp in bond_and_nodes]
 
-        print('Bond providers:')
-        for i, bp in enumerate(bonds, start=1):
-            print(f'{i}. {bp}')
+        sep()
+        usd_per_rune = lp_app.deps.price_holder.usd_per_rune
+        text = lp_app.deps.loc_man.default.text_bond_provision(bond_and_nodes, usd_per_rune=usd_per_rune)
+        print(text)
+        sep()
+        await lp_app.send_test_tg_message(text)
 
 
 if __name__ == '__main__':

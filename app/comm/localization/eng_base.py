@@ -2,7 +2,7 @@ import logging
 from abc import ABC
 from datetime import datetime
 from math import ceil
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from api.aionode.types import ThorChainInfo, ThorBalances, ThorSwapperClout
 from api.midgard.name_service import NameService, add_thor_suffix, NameMap
@@ -36,7 +36,7 @@ from models.mimir_naming import MimirUnits
 from models.net_stats import NetworkStats, AlertNetworkStats
 from models.node_info import NodeSetChanges, NodeInfo, NodeEventType, NodeEvent, \
     EventBlockHeight, EventDataSlash, EventProviderBondChange, \
-    EventProviderStatus, NodeListHolder
+    EventProviderStatus, NodeListHolder, BondProvider
 from models.pool_info import PoolInfo, PoolChanges, PoolMapPair
 from models.price import AlertPrice, RuneMarketInfo, AlertPriceDiverge
 from models.queue import QueueInfo
@@ -2850,7 +2850,7 @@ class BaseLocalization(ABC):  # == English
     # ------ Bond providers alerts ------
 
     TEXT_BOND_PROVIDER_ALERT_FOR = 'Alert for bond provider'
-    TEXT_BP_NODE = '🖥️ Node'
+    TEXT_BP_NODE = '⛈ Node'
 
     def notification_text_bond_provider_alert(self, bp_to_node_to_event, name_map: NameMap):
         message = ''
@@ -2919,6 +2919,52 @@ class BaseLocalization(ABC):  # == English
                    f'{self.bp_event_duration(data)}'
         else:
             return ''
+
+    def text_bond_provision(self, bonds: List[Tuple[NodeInfo, BondProvider]], usd_per_rune: float,
+                            title='Bond provision:', name_map=None,
+                            ):
+        if not bonds:
+            return ''
+
+        message = ''
+
+        bonds.sort(key=(lambda _bp: _bp[1].rune_bond), reverse=True)
+
+        # bp_link = '👤' + self.link_to_address(node.node_address, name_map)
+        for i, (node, bp) in enumerate(bonds, start=1):
+            node_op_text = ' [NodeOp]' if bp.is_node_operator else ''
+            emoji = '🌩️' if node.is_active else '⏱️'
+            node_link = f'{emoji} node {self.link_to_address(node.node_address, name_map)}'
+
+            if bp.rune_bond > 0:
+                if bp.bond_share > 0.1:
+                    share_str = f' | {pretty_percent(bp.bond_share * 100.0, signed=False)}'
+                else:
+                    share_str = ''
+                provided_str = (
+                    f'{bold(pretty_rune(bp.rune_bond))} '
+                    f'({ital(short_dollar(bp.rune_bond * usd_per_rune))}) bond'
+                    f'{share_str}'
+                )
+            else:
+                provided_str = 'no bond'
+                if not bp.is_node_operator:
+                    provided_str += ', but whitelisted'
+
+            if bp.anticipated_award > 0:
+                award_text = (
+                    f'next reward is 💰{bold(pretty_rune(bp.anticipated_award))} '
+                    f'({ital(short_dollar(bp.anticipated_award * usd_per_rune))})'
+                )
+            else:
+                award_text = 'no reward'
+
+            message += (
+                f'└ {i}. {node_link} ← {provided_str}, '
+                f'{award_text}{node_op_text}\n'
+            )
+
+        return f'\n\n{title}\n{message}' if message else ''
 
 
 class EnglishLocalization(BaseLocalization):

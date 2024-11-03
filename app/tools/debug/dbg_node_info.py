@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import random
+from collections import Counter
 from copy import copy
 from typing import Optional, List
 
@@ -387,6 +388,20 @@ async def dbg_node_info_bond_provider_parsing(app: LpAppFramework):
     loaded_nodes = await node_db.get_last_node_info_list()
     assert loaded_nodes == nodes
 
+    await most_frequent_addy(nodes)
+
+
+async def most_frequent_addy(nodes: List[NodeInfo]):
+    c = Counter()
+    for n in nodes:
+        c[n.node_operator] += 1
+        for bp in n.bond_providers:
+            c[bp.address] += 1
+
+    # format nicely top 10
+    print('Top 10 most frequent addresses:')
+    for i, (k, v) in enumerate(c.most_common(10), start=1):
+        print(f'{i}. {k} -> {v}')
 
 
 async def main():
