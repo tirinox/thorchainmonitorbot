@@ -11,6 +11,8 @@ from lib.utils import WithLogger
 from models.mimir import MimirChange, AlertMimirChange
 from models.mimir_naming import MIMIR_KEY_MAX_RUNE_SUPPLY
 
+TOO_MANY_CHANGES = 10
+
 
 class MimirChangedNotifier(INotified, WithDelegates, WithLogger):
     MIMIR_IGNORE_CHANGES = [
@@ -48,7 +50,7 @@ class MimirChangedNotifier(INotified, WithDelegates, WithLogger):
                 self.deps.mimir_const_holder.register_change_ts(name, ts)
 
     async def on_data(self, sender: ConstMimirFetcher, data: MimirTuple):
-        _, fresh_mimir, node_mimir, votes = data
+        _, fresh_mimir, node_mimir, votes, _ = data
 
         if not fresh_mimir or not fresh_mimir.constants:
             return
@@ -113,6 +115,10 @@ class MimirChangedNotifier(INotified, WithDelegates, WithLogger):
             await self._save_mimir_state(node_mimir, is_node_mimir=True)
 
         if changes:
+            if len(changes) > TOO_MANY_CHANGES:
+                self.deps.emergency.report(self.logger.name, f'Too many Mimir changes: {len(changes)}')
+                return
+
             await self.pass_data_to_listeners(AlertMimirChange(
                 changes, self.deps.mimir_const_holder
             ))
