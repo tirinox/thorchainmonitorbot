@@ -117,6 +117,7 @@ class App(WithLogger):
         d.mimir_const_fetcher = ConstMimirFetcher(d)
         d.mimir_const_holder = MimirHolder()
         d.mimir_const_holder.mimir_rules.load(MIMIR_DICT_FILENAME)
+        d.mimir_const_fetcher.add_subscriber(d.mimir_const_holder)
 
         d.pool_fetcher = PoolFetcher(d)
 

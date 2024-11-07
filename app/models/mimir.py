@@ -7,6 +7,8 @@ from typing import Dict, List, Optional, NamedTuple
 
 from api.aionode.types import ThorConstants, ThorMimir, ThorMimirVote
 from lib.constants import bp_to_float
+from lib.delegates import INotified
+from lib.logs import WithLogger
 from lib.texts import split_by_camel_case
 from .base import BaseModelMixin
 from .mimir_naming import MIMIR_KEY_MAX_SYNTH_PER_POOL_DEPTH, MimirNameRules
@@ -174,8 +176,21 @@ class MimirChange(BaseModelMixin):
         return self.new_value if self.new_value != 0 else self.old_value
 
 
-class MimirHolder:
-    def __init__(self) -> None:
+class MimirTuple(NamedTuple):
+    constants: ThorConstants
+    mimir: ThorMimir
+    node_mimir: dict
+    votes: List[ThorMimirVote]
+    active_nodes: List[NodeInfo]
+
+
+class MimirHolder(INotified, WithLogger):
+    async def on_data(self, sender, data: MimirTuple):
+        self.update(data)
+
+    def __init__(self):
+        super().__init__()
+
         self.last_changes: Dict[str, float] = {}
 
         self._const_map = {}
@@ -218,22 +233,22 @@ class MimirHolder:
     def pretty_name(self, name):
         return self.hard_coded_pretty_names.get(name) or self.mimir_rules.name_to_human(name)
 
-    def update(self,
-               constants: ThorConstants,
-               mimir: ThorMimir,
-               node_mimir: Dict[str, str],
-               node_votes: List[ThorMimirVote],
-               active_nodes: List[NodeInfo]):
+    def update(self, data: MimirTuple):
+        if not data.mimir.constants or not data.constants.constants:
+            return
 
-        self.voting_manager = MimirVoteManager(node_votes, active_nodes, self.mimir_rules.excluded_from_voting)
+        self.logger.info(f'Got {len(data.constants.constants)} CONST entries'
+                         f' and {len(data.mimir.constants)} MIMIR entries.')
 
-        hard_coded_constants = {n.upper(): v for n, v in constants.constants.items()}
+        self.voting_manager = MimirVoteManager(data.votes, data.active_nodes, self.mimir_rules.excluded_from_voting)
+
+        hard_coded_constants = {n.upper(): v for n, v in data.constants.constants.items()}
         self.hard_coded_pretty_names = {
             n.upper(): split_by_camel_case(n)
-            for n in constants.constants.keys()
+            for n in data.constants.constants.keys()
         }
-        mimir_constants = {n.upper(): v for n, v in mimir.constants.items()}
-        node_mimir = {n.upper(): v for n, v in node_mimir.items()}
+        mimir_constants = {n.upper(): v for n, v in data.mimir.constants.items()}
+        node_mimir = {n.upper(): v for n, v in data.node_mimir.items()}
 
         const_names = set(hard_coded_constants.keys())
         mimir_names = set(mimir_constants.keys())

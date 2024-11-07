@@ -2,7 +2,6 @@ from collections import defaultdict
 from typing import List
 
 from jobs.fetch.account_number import AccountNumberFetcher
-from jobs.fetch.mimir import MimirTuple
 from lib.constants import THORCHAIN_BIRTHDAY
 from lib.date_utils import full_years_old_ts
 from lib.depcont import DepContainer
@@ -11,6 +10,7 @@ from models.asset import Asset
 from models.key_stats_model import AlertKeyStats
 from models.loans import LendingStats, AlertLoanOpen
 from models.memo import ActionType
+from models.mimir import MimirTuple
 from models.net_stats import NetworkStats
 from models.node_info import NodeSetChanges
 from models.price import RuneMarketInfo, LastPriceHolder

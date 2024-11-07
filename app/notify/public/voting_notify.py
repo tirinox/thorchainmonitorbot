@@ -1,12 +1,12 @@
 import json
 
-from jobs.fetch.mimir import ConstMimirFetcher, MimirTuple
+from jobs.fetch.mimir import ConstMimirFetcher
 from lib.cooldown import Cooldown
 from lib.date_utils import parse_timespan_to_seconds
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.utils import WithLogger
-from models.mimir import MimirVoteManager, MimirVoteOption, MimirVoting, AlertMimirVoting
+from models.mimir import MimirVoteManager, MimirVoteOption, MimirVoting, AlertMimirVoting, MimirTuple
 
 
 class VotingNotifier(INotified, WithDelegates, WithLogger):

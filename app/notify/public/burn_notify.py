@@ -2,7 +2,6 @@ from typing import Optional
 
 from tqdm import tqdm
 
-from jobs.fetch.mimir import MimirTuple
 from lib.constants import THOR_BLOCK_TIME, THOR_BASIS_POINT_MAX, ADR17_TIMESTAMP, thor_to_float
 from lib.cooldown import Cooldown
 from lib.date_utils import now_ts, DAY
@@ -10,6 +9,7 @@ from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.utils import WithLogger
 from models.circ_supply import EventRuneBurn
+from models.mimir import MimirTuple
 from models.mimir_naming import MIMIR_KEY_MAX_RUNE_SUPPLY
 from models.time_series import TimeSeries
 from notify.public.block_notify import LastBlockStore
