@@ -1,4 +1,5 @@
 import asyncio
+import random
 from itertools import cycle
 from typing import List
 
@@ -6,9 +7,10 @@ from api.aionode.types import ThorMimir, ThorMimirVote
 from comm.localization.eng_base import BaseLocalization
 from comm.localization.languages import Language
 from jobs.fetch.cap import CapInfoFetcher
-from jobs.fetch.mimir import ConstMimirFetcher, MimirTuple
+from jobs.fetch.mimir import ConstMimirFetcher
 from lib.depcont import DepContainer
-from models.mimir import AlertMimirVoting
+from lib.var_file import var_file_loop
+from models.mimir import AlertMimirVoting, MimirTuple
 from notify.public.mimir_notify import MimirChangedNotifier
 from notify.public.voting_notify import VotingNotifier
 from tools.lib.lp_common import LpAppFramework
@@ -69,9 +71,14 @@ class MimirMockChangesFetcher(ConstMimirFetcher):
         self.method = method
         self.prev = None
         self.sleep_period = 3
+        self.mock_active = True
 
     async def fetch(self) -> MimirTuple:
         results = await super().fetch()
+
+        if not self.mock_active:
+            print('Mock is inactive! Returning original results...')
+            return results
 
         if self.method == self.VOTES:
             self._dbg_randomize_votes(results.votes)
@@ -103,12 +110,12 @@ class MimirMockChangesFetcher(ConstMimirFetcher):
     _dbg_wheel = cycle([0, 1, 0, 5825662, 0, 55555, 1])
 
     def _dbg_randomize_mimir(self, fresh_mimir: ThorMimir, node_mimir: dict):
-        # if random.uniform(0, 1) > 0.5:
-        #     fresh_mimir.constants['LOKI_CONST'] = "555"
-        # if random.uniform(0, 1) > 0.3:
-        #     fresh_mimir.constants['LOKI_CONST'] = "777"
-        # if random.uniform(0, 1) > 0.6:
-        #     fresh_mimir.constants['NativeTransactionFee'] = 300000
+        if random.uniform(0, 1) > 0.5:
+            fresh_mimir.constants['LOKI_CONST'] = "555"
+        if random.uniform(0, 1) > 0.3:
+            fresh_mimir.constants['LOKI_CONST'] = "777"
+        if random.uniform(0, 1) > 0.6:
+            fresh_mimir.constants['NativeTransactionFee'] = 300000
         # if random.uniform(0, 1) > 0.3:
         #     try:
         #         del fresh_mimir.constants['NativeTransactionFee']
@@ -139,23 +146,29 @@ class MimirMockChangesFetcher(ConstMimirFetcher):
 
         return results
 
-    async def _dbg_fail_to_get_mimir(self, r):
-        return r
+    async def _dbg_fail_to_get_mimir(self, r: MimirTuple):
+        return r._replace(mimir=ThorMimir({}))
 
 
 async def demo_mimir_spam_filter(app: LpAppFramework):
-    mimir_fetcher = MimirMockChangesFetcher(app.deps, MimirMockChangesFetcher.AUTO_AUTO)
+    mimir_fetcher = MimirMockChangesFetcher(app.deps, MimirMockChangesFetcher.GENERAL)
+    mimir_fetcher.sleep_period = 5
+
+    mimir_holder = app.deps.mimir_const_holder
+    mimir_fetcher.add_subscriber(mimir_holder)
 
     mimir_notifier = MimirChangedNotifier(app.deps)
     mimir_fetcher.add_subscriber(mimir_notifier)
     mimir_notifier.add_subscriber(app.deps.alert_presenter)
 
-    await mimir_fetcher.run()
+    async def f_every_tick(*_):
+        await mimir_fetcher.run_once()
 
+    async def var_changed(_, curr):
+        mimir_fetcher.mock_active = bool(curr.get('mimir_mock_active'))
+        print(f'Mock active: {mimir_fetcher.mock_active}')
 
-async def dbg_fail_to_get_mimir(app: LpAppFramework):
-    mimir_fetcher = Mi
-    await mimir_fetcher.run()
+    await var_file_loop(var_changed, f_every_tick, sleep_time=5.0)
 
 
 async def run():

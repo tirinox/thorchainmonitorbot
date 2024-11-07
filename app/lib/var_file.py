@@ -25,13 +25,14 @@ def read_var_file():
         return {}
 
 
-async def var_file_loop(f_on_change, f_every_tick, sleep_time=3.0):
+async def var_file_loop(f_on_change=None, f_every_tick=None, sleep_time=3.0):
     prev_var = None
     while True:
         var_file = read_var_file()
 
         try:
-            await f_every_tick(var_file)
+            if f_every_tick:
+                await f_every_tick(var_file)
         except Exception as e:
             logging.error(f'Error in var file loop {f_every_tick = }: {e}')
 
@@ -40,11 +41,11 @@ async def var_file_loop(f_on_change, f_every_tick, sleep_time=3.0):
             pprint(var_file)
 
             try:
-                await f_on_change(prev_var, var_file)
+                if f_on_change:
+                    await f_on_change(prev_var, var_file)
             except Exception as e:
                 logging.error(f'Error in var file loop {f_on_change = }: {e}')
 
             prev_var = var_file
 
         await asyncio.sleep(sleep_time)
-

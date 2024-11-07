@@ -234,7 +234,11 @@ class MimirHolder(INotified, WithLogger):
         return self.hard_coded_pretty_names.get(name) or self.mimir_rules.name_to_human(name)
 
     def update(self, data: MimirTuple):
-        if not data.mimir.constants or not data.constants.constants:
+        if not data.mimir.constants:
+            self.logger.error('Mimir data is empty!')
+            return
+        if not data.constants.constants:
+            self.logger.error('Constants data is empty!')
             return
 
         self.logger.info(f'Got {len(data.constants.constants)} CONST entries'
