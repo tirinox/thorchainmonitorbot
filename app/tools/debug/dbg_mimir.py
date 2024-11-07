@@ -62,6 +62,7 @@ class MimirMockChangesFetcher(ConstMimirFetcher):
     VOTES = 'votes'
     GENERAL = 'general'
     AUTO_AUTO = 'auto_auto'
+    MIMIR_FAILS = 'mimir_fails'
 
     def __init__(self, deps: DepContainer, method: str):
         super().__init__(deps)
@@ -80,6 +81,8 @@ class MimirMockChangesFetcher(ConstMimirFetcher):
             results = results._replace(mimir=mimir, votes=votes)
         elif self.method == self.AUTO_AUTO:
             results = self._dbg_auto_to_auto(results)
+        elif self.method == self.MIMIR_FAILS:
+            results = await self._dbg_fail_to_get_mimir(results)
 
         return results
 
@@ -136,6 +139,9 @@ class MimirMockChangesFetcher(ConstMimirFetcher):
 
         return results
 
+    async def _dbg_fail_to_get_mimir(self, r):
+        return r
+
 
 async def demo_mimir_spam_filter(app: LpAppFramework):
     mimir_fetcher = MimirMockChangesFetcher(app.deps, MimirMockChangesFetcher.AUTO_AUTO)
@@ -144,6 +150,11 @@ async def demo_mimir_spam_filter(app: LpAppFramework):
     mimir_fetcher.add_subscriber(mimir_notifier)
     mimir_notifier.add_subscriber(app.deps.alert_presenter)
 
+    await mimir_fetcher.run()
+
+
+async def dbg_fail_to_get_mimir(app: LpAppFramework):
+    mimir_fetcher = Mi
     await mimir_fetcher.run()
 
 

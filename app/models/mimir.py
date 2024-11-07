@@ -211,9 +211,9 @@ class MimirHolder:
     def get_entry(self, name) -> Optional[MimirEntry]:
         return self._const_map.get(name.upper())
 
-    def __getitem__(self, item):
+    def __getitem__(self, item) -> Optional[MimirEntry]:
         e = self.get_entry(item)
-        return e.real_value
+        return e.real_value if e else None
 
     def pretty_name(self, name):
         return self.hard_coded_pretty_names.get(name) or self.mimir_rules.name_to_human(name)
