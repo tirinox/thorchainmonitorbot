@@ -111,11 +111,17 @@ class MimirMockChangesFetcher(ConstMimirFetcher):
 
     def _dbg_randomize_mimir(self, fresh_mimir: ThorMimir, node_mimir: dict):
         if random.uniform(0, 1) > 0.5:
-            fresh_mimir.constants['LOKI_CONST'] = "555"
+            fresh_mimir.constants['DERIVEDDEPTHBASISPTS'] = "555"
         if random.uniform(0, 1) > 0.3:
-            fresh_mimir.constants['LOKI_CONST'] = "777"
+            fresh_mimir.constants['DERIVEDDEPTHBASISPTS'] = "777"
+        if random.uniform(0, 1) > 0.4:
+            fresh_mimir.constants['DERIVEDDEPTHBASISPTS'] = 10000
+
         if random.uniform(0, 1) > 0.6:
             fresh_mimir.constants['NativeTransactionFee'] = 300000
+        if random.uniform(0, 1) > 0.5:
+            fresh_mimir.constants['EVMDISABLECONTRACTWHITELIST'] = 0 if random.uniform(0, 1) > 0.5 else 1
+
         # if random.uniform(0, 1) > 0.3:
         #     try:
         #         del fresh_mimir.constants['NativeTransactionFee']

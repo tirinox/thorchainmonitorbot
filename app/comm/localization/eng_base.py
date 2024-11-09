@@ -1787,7 +1787,7 @@ class BaseLocalization(ABC):  # == English
         for change in changes:
             old_value_fmt = code(self.format_mimir_value(change.entry.name, change.old_value, change.entry.units))
             new_value_fmt = code(self.format_mimir_value(change.entry.name, change.new_value, change.entry.units))
-            name = code(change.entry.pretty_name if change.entry else change.name)
+            name = f'{code(change.entry.pretty_name)} ({ital(change.entry.name)})' if change.entry else code(change.name)
 
             e = change.entry
             if e:
@@ -1801,19 +1801,14 @@ class BaseLocalization(ABC):  # == English
                     text += bold('[💔 Node-Mimir off ]  ')
 
             if change.kind == MimirChange.ADDED_MIMIR:
-                text += (
-                    f'➕ The constant \"{name}\" has been overridden by a new Mimir. '
-                    f'The default value was {old_value_fmt} → the new value is {new_value_fmt}‼️'
-                )
+                text += f'➕ New MIMIR "{name}": {old_value_fmt} → {new_value_fmt}‼️'
             elif change.kind == MimirChange.REMOVED_MIMIR:
-                text += f"➖ Mimir's constant \"{name}\" has been deleted. It was {old_value_fmt} before. ‼️"
+                text += f'➖ MIMIR "{name}" has been deleted. Previous value was {old_value_fmt} before. ‼️'
                 if change.new_value is not None:
                     text += f" Now this constant reverted to its default value: {new_value_fmt}."
             else:
                 text += (
-                    f"🔄 Mimir's constant \"{name}\" has been updated from "
-                    f"{old_value_fmt} → "
-                    f"to {new_value_fmt}‼️"
+                    f'🔄 MIMIR "{name}": {old_value_fmt} → {new_value_fmt}‼️'
                 )
                 if change.entry.automatic and change.non_zero_value:
                     text += f' at block #{ital(change.non_zero_value)}.'
