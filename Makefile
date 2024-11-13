@@ -122,5 +122,5 @@ dashboard: # Start the dashboard
 
 .PHONY: redis-analysis
 redis-analysis: # Run the Redis analytics tool
-    docker-compose exec $(BOTNAME) bash -c 'PYTHONPATH="/app" python tools/redis_analytics.py /config/config.yaml'
+	docker-compose exec $(BOTNAME) bash -c 'PYTHONPATH="/app" python tools/redis_analytics.py /config/config.yaml'
  
