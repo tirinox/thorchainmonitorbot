@@ -115,6 +115,12 @@ backup-db: # Backup the database Redis
 	cp -r ./redis_data/dump.rdb ./redis_data/dump-${DATE}.rdb
 
 
-.PHONE: dashboard
+.PHONY: dashboard
 dashboard: # Start the dashboard
 	cd app && streamlit run dashboard.py
+
+
+.PHONY: redis-analysis
+redis-analysis: # Run the Redis analytics tool
+    docker-compose exec $(BOTNAME) bash -c 'PYTHONPATH="/app" python tools/redis_analytics.py /config/config.yaml'
+ 

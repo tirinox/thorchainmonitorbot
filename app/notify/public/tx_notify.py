@@ -6,7 +6,7 @@ from lib.config import SubConfig
 from lib.date_utils import parse_timespan_to_seconds, MINUTE
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
-from lib.money import DepthCurve, pretty_dollar
+from lib.money import DepthCurve, pretty_dollar, short_dollar
 from lib.utils import WithLogger
 from models.asset import Asset
 from models.memo import ActionType
@@ -31,6 +31,7 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
 
         self.max_age_sec = parse_timespan_to_seconds(deps.cfg.tx.max_age)
         self.min_usd_total = int(params.min_usd_total)
+        self.logger.info(f"Min USD total is {short_dollar(self.min_usd_total)}.")
         self.no_repeat_protection = True
 
         self.deduplicator = TxDeduplicator(deps.db, DB_KEY_TX_ANNOUNCED_HASHES)
