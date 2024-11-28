@@ -41,7 +41,7 @@ class BurnNotifier(INotified, WithDelegates, WithLogger):
             self.logger.error(f'Max supply ({MIMIR_KEY_MAX_RUNE_SUPPLY}) is not set!')
             return
 
-        system_income_burn_bp = mimir['SYSTEMINCOMEBURNRATEBP']
+        system_income_burn_bp = mimir['SYSTEMINCOMEBURNRATEBPS']
         if not system_income_burn_bp:
             self.logger.error('System income burn rate is not set!')
             return
