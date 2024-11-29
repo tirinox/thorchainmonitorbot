@@ -1,4 +1,5 @@
 import logging
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -105,9 +106,21 @@ class Config(SubConfig):
         'config.yaml',
     ]
 
+    def _load_env(self):
+        env_file = self.DEFAULT_ENV_FILE
+        if not os.path.exists(env_file):
+            # try to locate it in the parent directory
+            env_file = f'../{env_file}'
+            if not os.path.exists(env_file):
+                logging.error(f'Cannot find env file "{env_file}"!')
+                exit(-404)
+
+        load_dotenv(env_file)
+
     def __init__(self, name=None, data=None):
-        load_dotenv(self.DEFAULT_ENV_FILE)
         logging.info(f'App path is "{get_app_path()}"')
+
+        self._load_env()
 
         if data is None:
             if name:
