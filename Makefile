@@ -4,6 +4,7 @@ export
 BOTNAME = thtgbot
 DATE = $(shell date +'%Y-%m-%d-%H-%M-%S')
 
+
 default: help
 
 .PHONY: help
@@ -13,26 +14,30 @@ help: # Show help for each of the Makefile recipes.
 
 .PHONY: attach
 attach: # Attach to the bot container.
-	docker-compose exec $(BOTNAME) bash
+	docker compose exec $(BOTNAME) bash
+
 
 .PHONY: build
 build: # Build images.
 	$(info Make: Building images.)
-	docker-compose build --no-cache $(BOTNAME) api redis
+	docker compose build --no-cache $(BOTNAME) api redis
 	echo "Note! Use 'make start' to make the changes take effect (recreate containers with updated images)."
+
 
 .PHONY: start
 start: # Start containers.
 	$(info Make: Starting containers.)
-	@docker-compose up -d
+	@docker compose up -d
 	$(info Wait a little bit...)
 	@sleep 3
 	@docker ps
 
+
 .PHONY: stop
 stop: # Stop containers.
 	$(info Make: Stopping containers.)
-	@docker-compose stop
+	@docker compose stop
+
 
 .PHONY: restart
 restart: # Restart containers.
@@ -40,22 +45,27 @@ restart: # Restart containers.
 	@make -s stop
 	@make -s start
 
+
 .PHONY: poke
-poke: # Restart the bot.
-	@docker-compose restart $(BOTNAME) api dashboard
+poke: # Restart only the bot container, API server and dashboard without restarting the database server.
+	@docker compose restart $(BOTNAME) api dashboard
 	@make -s logs
+
 
 .PHONY: pull
 pull: # Pull the latest changes from the repository.
 	@git pull
 
+
 .PHONY: logs
 logs: # Show logs.
-	@docker-compose logs -f --tail 1000 $(BOTNAME)
+	@docker compose logs -f --tail 1000 $(BOTNAME)
+
 
 .PHONY: clean
 clean: # Remove containers and volumes.
 	@docker system prune --volumes --force
+
 
 .PHONY: upgrade
 upgrade: # Pull, build, and start.
@@ -63,23 +73,27 @@ upgrade: # Pull, build, and start.
 	@make -s build
 	@make -s start
 
+
 .PHONY: redis-cli
 redis-cli: # Connect to the Redis CLI.
 	@redis-cli -p $(REDIS_PORT) -a $(REDIS_PASSWORD)
+
 
 .PHONY: redis-sv-loc
 redis-sv-loc: # Start the Redis server locally.
 	cd redis_data
 	redis-server
 
+
 .PHONY: certbot
 certbot: # Renew the SSL certificate for the bot's web admin panel.
-	docker-compose stop $(BOTNAME) api nginx
+	docker compose stop $(BOTNAME) api nginx
 	sudo certbot certonly --standalone -w ./web/frontend -d "${DOMAIN}"
 	# todo: fix paths!
 	sudo rm -rf "./web/letsencrypt/${DOMAIN}/"
 	sudo cp -rL "/etc/letsencrypt/live/${DOMAIN}/*" "./web/letsencrypt/"
 	make start
+
 
 NODE_OP_SETT_DIR = ./temp/nodeop-settings
 
@@ -92,9 +106,11 @@ buildf: # Build the frontend.
 	rm -rf ./web/frontend/*
 	mv ${NODE_OP_SETT_DIR}/dist/* ./web/frontend/
 
+
 .PHONY: test
 test: # Run tests.
 	cd app && python -m pytest tests
+
 
 .PHONY: lint
 lint: # Run linters.
@@ -122,5 +138,5 @@ dashboard: # Start the dashboard
 
 .PHONY: redis-analysis
 redis-analysis: # Run the Redis analytics tool
-	docker-compose exec $(BOTNAME) bash -c 'PYTHONPATH="/app" python tools/redis_analytics.py /config/config.yaml'
+	docker compose exec $(BOTNAME) bash -c 'PYTHONPATH="/app" python tools/redis_analytics.py /config/config.yaml'
  
