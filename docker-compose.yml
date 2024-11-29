@@ -1,4 +1,3 @@
-version: "3.3"
 services:
   thtgbot:
     build:
@@ -12,11 +11,29 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
+      - REDIS_DB_INDEX=${REDIS_DB_INDEX}
     networks:
       - redis-net
     volumes:
       - ./app:/app
       - ./config.yaml:/config/config.yaml
+
+  renderer:
+    build:
+      context: renderer
+      dockerfile: Dockerfile-renderer
+    restart: always
+    depends_on:
+      - redis
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD}
+      - REDIS_HOST=${REDIS_HOST}
+      - REDIS_PORT=${REDIS_PORT}
+      - REDIS_DB_INDEX=${REDIS_DB_INDEX}
+    networks:
+      - redis-net
+    volumes:
+      - ./renderer:/app
 
   redis:
     image: "redis:7.4.0-alpine"
@@ -35,7 +52,7 @@ services:
       - '--save 300 100'
       - '--port ${REDIS_PORT}'
       - '--requirepass ${REDIS_PASSWORD}'
-#      - '--bind 0.0.0.0 --protected-mode no'
+  #      - '--bind 0.0.0.0 --protected-mode no'
 
   dozzle:
     container_name: dozzle
@@ -63,7 +80,7 @@ services:
     volumes:
       - ./web/frontend/:/web/frontend/
       - ./web/nginx.conf:/etc/nginx/nginx.conf:ro
-#      - ./web/nginx-test.conf:/etc/nginx/nginx.conf:ro
+      #      - ./web/nginx-test.conf:/etc/nginx/nginx.conf:ro
       - "./web/letsencrypt:/etc/letsencrypt:ro"
     environment:
       CERTBOT_EMAIL: developer@tirinox.ru
@@ -81,6 +98,7 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
+      - REDIS_DB_INDEX=${REDIS_DB_INDEX}
     networks:
       - redis-net
     volumes:
@@ -100,6 +118,7 @@ services:
       - REDIS_PASSWORD=${REDIS_PASSWORD}
       - REDIS_HOST=${REDIS_HOST}
       - REDIS_PORT=${REDIS_PORT}
+      - REDIS_DB_INDEX=${REDIS_DB_INDEX}
     networks:
       - redis-net
     volumes:

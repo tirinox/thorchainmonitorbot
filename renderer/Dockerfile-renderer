@@ -1,0 +1,43 @@
+# Use official Python image as base
+FROM python:3.11-slim
+
+# Set environment variables
+ENV PYTHONUNBUFFERED=1
+ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    wget \
+    libnss3 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libgbm1 \
+    libgtk-3-0 \
+    libasound2 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxrandr2 \
+    libpangocairo-1.0-0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy requirements and install
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Install Playwright and browsers
+RUN playwright install --with-deps
+
+# Copy the worker script
+COPY worker.py .
+
+# Expose any necessary ports (if needed)
+# EXPOSE 5672  # Not necessary unless you want to expose from worker
+
+# Set entrypoint
+CMD ["python", "worker.py"]
