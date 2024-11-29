@@ -141,7 +141,7 @@ redis-analysis: # Run the Redis analytics tool
 	docker compose exec $(BOTNAME) bash -c 'PYTHONPATH="/app" python tools/redis_analytics.py /config/config.yaml'
 
 
- .PHONY renderer-up
+.PHONY: renderer-up
 renderer-up: # Launch the HTML renderer image
-    docker compose up -d renderer
+	docker compose up -d renderer
 

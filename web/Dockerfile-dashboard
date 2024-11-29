@@ -1,4 +1,4 @@
-FROM python:3.12-slim-buster as production
+FROM python:3.11-slim-buster as production
 
 WORKDIR /app
 ADD ../app/requirements.txt .

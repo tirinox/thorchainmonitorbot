@@ -1,7 +1,5 @@
 import dataclasses
-from typing import NamedTuple, Optional
-
-from pydantic.fields import List
+from typing import NamedTuple, Optional, List
 
 from api.aionode.types import float_to_thor, ThorRunePool, ThorRunePoolPOL
 from lib.constants import NATIVE_RUNE_SYMBOL, THOR_BASIS_POINT_MAX, thor_to_float
