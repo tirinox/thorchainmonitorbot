@@ -36,8 +36,10 @@ RUN playwright install --with-deps
 # Copy the worker script
 COPY worker.py .
 
-# Expose any necessary ports (if needed)
-# EXPOSE 5672  # Not necessary unless you want to expose from worker
+
+# Expose the port FastAPI will run on
+EXPOSE 8404
 
 # Set entrypoint
-CMD ["python", "worker.py"]
+#CMD ["python", "worker.py"]
+CMD ["uvicorn", "worker:app", "--host", "0.0.0.0", "--port", "8404", "--workers", "1"]

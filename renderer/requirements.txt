@@ -1,4 +1,6 @@
 redis>=4.5.5
 playwright>=1.40.0
 jinja2
-aiohttp
+fastapi
+uvicorn[standard]
+aiofiles

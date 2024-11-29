@@ -145,3 +145,6 @@ redis-analysis: # Run the Redis analytics tool
 renderer-up: # Launch the HTML renderer image
 	docker compose up -d renderer
 
+.PHONY: renderer-dev
+renderer-dev: # Launch the HTML renderer image in development mode
+	cd renderer && uvicorn worker:app --port 8404 --reload
