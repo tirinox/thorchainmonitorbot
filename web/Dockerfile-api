@@ -1,7 +1,7 @@
 FROM python:3.9-slim-buster as production
 
 WORKDIR /app
-ADD ./app/requirements.txt .
+ADD ../app/requirements.txt .
 
 RUN apt-get update -y && \
     apt-get install git build-essential cmake pkg-config -y

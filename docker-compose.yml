@@ -71,7 +71,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile-api
+      dockerfile: web/Dockerfile-api
     restart: always
     depends_on:
       - redis
@@ -90,7 +90,7 @@ services:
   dashboard:
     build:
       context: .
-      dockerfile: Dockerfile-dashboard
+      dockerfile: web/Dockerfile-dashboard
     restart: always
     depends_on:
       - redis
