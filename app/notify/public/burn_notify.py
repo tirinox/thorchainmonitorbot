@@ -10,7 +10,7 @@ from lib.depcont import DepContainer
 from lib.utils import WithLogger
 from models.circ_supply import EventRuneBurn
 from models.mimir import MimirTuple
-from models.mimir_naming import MIMIR_KEY_MAX_RUNE_SUPPLY
+from models.mimir_naming import MIMIR_KEY_MAX_RUNE_SUPPLY, MIMIR_KEY_SYSTEM_INCOME_BURN_RATE
 from models.time_series import TimeSeries
 from notify.public.block_notify import LastBlockStore
 
@@ -41,13 +41,15 @@ class BurnNotifier(INotified, WithDelegates, WithLogger):
             self.logger.error(f'Max supply ({MIMIR_KEY_MAX_RUNE_SUPPLY}) is not set!')
             return
 
-        system_income_burn_bp = mimir['SYSTEMINCOMEBURNRATEBPS']
+        system_income_burn_bp = int(mimir[MIMIR_KEY_SYSTEM_INCOME_BURN_RATE])
         if not system_income_burn_bp:
-            self.logger.error('System income burn rate is not set!')
+            self.logger.error(f'System income burn rate {MIMIR_KEY_SYSTEM_INCOME_BURN_RATE} is not set!')
             return
 
         # last_supply = await self.get_last_supply_float()
         last_supply = await self.get_supply_time_ago(self.tally_period)
+
+        # todo: get circulating supply instead of last supply
 
         await self.ts.add(max_supply=max_supply)
 

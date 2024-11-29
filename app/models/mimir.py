@@ -226,7 +226,7 @@ class MimirHolder(INotified, WithLogger):
     def get_entry(self, name) -> Optional[MimirEntry]:
         return self._const_map.get(name.upper())
 
-    def __getitem__(self, item) -> Optional[MimirEntry]:
+    def __getitem__(self, item):
         e = self.get_entry(item)
         return e.real_value if e else None
 
