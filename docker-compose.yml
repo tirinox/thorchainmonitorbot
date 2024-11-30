@@ -23,6 +23,8 @@ services:
       context: renderer
       dockerfile: Dockerfile-renderer
     restart: always
+    ports:
+      - "8404:8404"
     depends_on:
       - redis
     environment:

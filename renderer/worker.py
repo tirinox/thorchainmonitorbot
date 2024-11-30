@@ -11,6 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
 from renderer import Renderer
+from demo import demo_template_parameters, available_demo_templates
 
 TEMPLATES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
 
@@ -78,18 +79,7 @@ async def render_html_to_png(browser, html_content, w=1280, h=720):
     return png_bytes
 
 
-@app.post("/render", response_class=Response, responses={
-    200: {
-        "content": {"image/png": {}}
-    }
-})
-async def render_html_to_png(request: RenderRequest):
-    """
-    Renders an HTML template with provided parameters and returns a PNG image.
-    """
-    template_name = request.template_name
-    parameters = request.parameters
-
+async def render_full_pipeline(template_name, parameters):
     width = parameters.get('width', 1280)
     height = parameters.get('height', 720)
 
@@ -98,11 +88,33 @@ async def render_html_to_png(request: RenderRequest):
 
     # Render the HTML to PNG
     start_time = time.monotonic()
-    png_bytes = await renderer.render_html_to_png(rendered_html, int(width), int(height))
+    png_bytes = await renderer.render_html_to_png(rendered_html, width, height)
     end_time = time.monotonic()
-    print(f"Rendered PNG image in {end_time - start_time:.2f} seconds.")
-
+    print(f"Rendered Demo PNG image in {end_time - start_time:.2f} seconds.")
     return Response(png_bytes)
+
+
+@app.post("/render", response_class=Response, responses={200: {"content": {"image/png": {}}}})
+async def render_html_to_png(request: RenderRequest):
+    """
+    Renders an HTML template with provided parameters and returns a PNG image.
+    """
+    template_name = request.template_name
+    parameters = request.parameters
+    return await render_full_pipeline(template_name, parameters)
+
+
+@app.get("/render/demo/{name}", response_class=Response, responses={200: {"content": {"image/png": {}}}})
+async def render_demo_template(name: str):
+    """
+    Renders a demo HTML template with the given name and returns a PNG image.
+    """
+
+    template_name, parameters = demo_template_parameters(name)
+    if not template_name:
+        return Response(status_code=404,
+                        content=f"Demo template '{name}' not found. Available templates: {available_demo_templates()}")
+    return await render_full_pipeline(template_name, parameters)
 
 
 def handle_shutdown(sig, frame):

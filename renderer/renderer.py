@@ -74,7 +74,7 @@ class Renderer:
 
             # If width and height are specified, set the viewport for this page
             if width and height:
-                await page.set_viewport_size({'width': width, 'height': height})
+                await page.set_viewport_size({'width': int(width), 'height': int(height)})
                 logging.info(f"Set viewport size to {width=}, {height=}")
             else:
                 await page.set_viewport_size(self.default_viewport)

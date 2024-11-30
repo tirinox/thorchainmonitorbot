@@ -36,7 +36,6 @@ RUN playwright install --with-deps
 # Copy the worker script
 COPY worker.py .
 
-
 # Expose the port FastAPI will run on
 EXPOSE 8404
 
