@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<style>
+    /* Optional: Style the canvas container */
+    #chart-container {
+        width: 60%;
+        margin: 50px auto;
+    }
+</style>
+
+<div id="chart-container">
+    <canvas id="myBarChart"></canvas>
+</div>
+
+<script>
+// Get the context of the canvas element we want to select
+const ctx = document.getElementById('myBarChart').getContext('2d');
+
+// Define the data for the chart
+const data = {
+  labels: ['January', 'February', 'March', 'April', 'May', 'June'], // X-axis labels
+  datasets: [{
+    label: 'Sales ($)',
+    data: [500, 700, 800, 600, 900, 750], // Y-axis data
+    backgroundColor: 'rgba(54, 162, 235, 0.6)', // Bar color
+    borderColor: 'rgba(54, 162, 235, 1)', // Border color
+    borderWidth: 1 // Border width
+  }]
+};
+
+// Define the configuration options
+const config = {
+  type: 'bar', // Specify the chart type
+  data: data,
+  options: {
+    responsive: true, // Make the chart responsive
+    scales: {
+      y: {
+        beginAtZero: true, // Start the Y-axis at zero
+        title: {
+          display: true,
+          text: 'Amount in USD'
+        }
+      },
+      x: {
+        title: {
+          display: true,
+          text: 'Months'
+        }
+      }
+    },
+    plugins: {
+      title: {
+        display: true,
+        text: 'Monthly Sales Data'
+      },
+      legend: {
+        display: true,
+        position: 'top'
+      }
+    }
+  }
+};
+
+// Create and render the chart
+const myBarChart = new Chart(ctx, config);
+
+</script>
+
+{% endblock %}

@@ -4,14 +4,27 @@
     <meta charset="UTF-8">
     <title>{{ title }}</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; color: white; background: #061913 }
-        h1 { color: #333; }
-        p { font-size: 14px; }
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            color: white;
+            background: #061913;
+        }
+
+        h1 {
+            color: #FFF;
+        }
+
+        p {
+            font-size: 14px;
+        }
 
     </style>
+    <script src="http://127.0.0.1:8404/static/chart.umd.min.js"></script>
+
 </head>
 <body>
-    {% block content %}
-    {% endblock %}
+{% block content %}
+{% endblock %}
 </body>
 </html>
