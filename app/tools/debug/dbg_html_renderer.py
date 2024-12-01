@@ -3,7 +3,7 @@ import os
 
 from PIL import Image
 
-from lib.html_renderer import InfographicRenderer
+from lib.html_renderer import InfographicRendererRPC
 from tools.lib.lp_common import LpAppFramework
 
 OUT_FILE = '../temp/renderer_output.png'
@@ -12,12 +12,12 @@ OUT_FILE = '../temp/renderer_output.png'
 async def main():
     app = LpAppFramework()
     async with app(brief=True):
-        ig_render = InfographicRenderer(app.deps.db, timeout=60.0)
-        png_bytes = await ig_render.render('foo.html', {
+        ig_render = InfographicRendererRPC(app.deps.session, timeout=60.0)
+        png_bytes = await ig_render.render('foo.jinja2', {
             "title": "Test Render",
             "heading": "Hello, World!",
             "message": "This is a test HTML to PNG rendering.",
-            "width": 800, "height": 600
+            # "width": 800, "height": 600
         })
 
         if png_bytes:
