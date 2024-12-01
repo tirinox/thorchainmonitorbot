@@ -27,11 +27,7 @@ logging.basicConfig(
 
 class RenderRequest(BaseModel):
     template_name: str = Field(..., example="example.html")
-    parameters: Dict[str, str] = Field(..., example={"title": "Test", "heading": "Hello", "message": "This is a test."})
-    width: Optional[int] = Field(None, ge=100, le=5000, example=1280,
-                                 description="Optional width for the viewport in pixels.")
-    height: Optional[int] = Field(None, ge=100, le=5000, example=720,
-                                  description="Optional height for the viewport in pixels.")
+    parameters: Dict = Field(..., example={"title": "Test", "heading": "Hello", "message": "This is a test."})
 
 
 renderer = Renderer(templates_dir=TEMPLATES_DIR)
@@ -92,6 +88,17 @@ async def render_full_pipeline(template_name, parameters):
     end_time = time.monotonic()
     print(f"Rendered Demo PNG image in {end_time - start_time:.2f} seconds.")
     return Response(png_bytes)
+
+
+@app.get("/render/demo-html/{name}")
+async def render_just_html(name: str):
+    template_name, parameters = demo_template_parameters(name)
+    if not template_name:
+        return Response(status_code=404,
+                        content=f"Demo template '{name}' not found. Available templates: {available_demo_templates()}")
+
+    rendered_html = renderer.render_template(template_name, parameters)
+    return Response(content=rendered_html, media_type="text/html")
 
 
 @app.post("/render", response_class=Response, responses={200: {"content": {"image/png": {}}}})
