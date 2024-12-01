@@ -20,7 +20,7 @@ class Renderer:
         self.browser_context = None
         self.jinja_env = Environment(
             loader=FileSystemLoader(self.templates_dir),
-            autoescape=select_autoescape(['html', 'xml'])
+            autoescape=select_autoescape(['html', 'xml', 'jinja2'])
         )
         logging.info(f"Renderer initialized with templates directory: {self.templates_dir}")
 
@@ -56,6 +56,10 @@ class Renderer:
         """
         try:
             template = self.jinja_env.get_template(template_name)
+
+            parameters.setdefault('width', self.default_viewport['width'])
+            parameters.setdefault('height', self.default_viewport['height'])
+
             rendered_html = template.render(parameters)
             logging.info(f"Template {template_name} rendered with parameters: {parameters}")
             return rendered_html
