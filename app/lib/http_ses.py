@@ -16,6 +16,7 @@ from aiohttp.helpers import sentinel
 from aiohttp.typedefs import StrOrURL, LooseCookies, LooseHeaders, JSONEncoder
 
 from lib.date_utils import now_ts
+from lib.logs import class_logger
 from lib.lru import LRUCache, WindowAverage, RPSCounter
 from lib.utils import WithLogger
 
@@ -62,15 +63,16 @@ class RequestEntry:
         self.response_codes[response.status] += 1
         self.last_timestamp_response = now_ts()
 
-        text = await response.text()
-        if text is None:
-            self.none_count += 1
-        elif not (text.startswith('{') or text.startswith('[')):
-            self.text_answer_count += 1
-            self.last_text_answer = (text[:100]
-                                     .replace('<', ' ')
-                                     .replace('>', ' ')
-                                     .replace('\n', ''))
+        if response.content_type != 'application/octet-stream':
+            text = await response.text()
+            if text is None:
+                self.none_count += 1
+            elif not (text.startswith('{') or text.startswith('[')):
+                self.text_answer_count += 1
+                self.last_text_answer = (text[:100]
+                                         .replace('<', ' ')
+                                         .replace('>', ' ')
+                                         .replace('\n', ''))
 
         self.update_time(ts_start)
 
@@ -217,6 +219,7 @@ class ObservableSession(aiohttp.ClientSession, WithLogger):
                  trust_env: bool = False, requote_redirect_url: bool = True,
                  trace_configs: Optional[List[TraceConfig]] = None, read_bufsize: int = 2 ** 16,
                  debug_deque_size=MAX_CACHE_SIZE) -> None:
+        self.logger = class_logger(self)
         super().__init__(connector=connector, loop=loop, cookies=cookies, headers=headers,
                          skip_auto_headers=skip_auto_headers, auth=auth, json_serialize=json_serialize,
                          request_class=request_class, response_class=response_class,
