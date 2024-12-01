@@ -50,7 +50,7 @@ class Renderer:
             await self.playwright.stop()
             logging.info("Playwright stopped.")
 
-    def render_template(self, template_name: str, parameters: dict) -> str:
+    def render_template(self, template_name: str, parameters: dict, replace_base_url=None) -> str:
         """
         Render a Jinja2 template with the given parameters.
         """
@@ -61,6 +61,10 @@ class Renderer:
             parameters.setdefault('height', self.default_viewport['height'])
 
             rendered_html = template.render(parameters)
+
+            if replace_base_url:
+                rendered_html = rendered_html.replace('http://renderer:8404', replace_base_url)
+
             logging.info(f"Template {template_name} rendered with parameters: {parameters}")
             return rendered_html
         except Exception as e:

@@ -97,7 +97,7 @@ async def render_just_html(name: str):
         return Response(status_code=404,
                         content=f"Demo template '{name}' not found. Available templates: {available_demo_templates()}")
 
-    rendered_html = renderer.render_template(template_name, parameters)
+    rendered_html = renderer.render_template(template_name, parameters, replace_base_url="http://localhost:8404")
     return Response(content=rendered_html, media_type="text/html")
 
 

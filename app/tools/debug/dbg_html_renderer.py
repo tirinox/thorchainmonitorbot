@@ -12,8 +12,8 @@ OUT_FILE = '../temp/renderer_output.png'
 async def main():
     app = LpAppFramework()
     async with app(brief=True):
-        ig_render = InfographicRendererRPC(app.deps.session, timeout=60.0)
-        png_bytes = await ig_render.render('foo.jinja2', {
+        ig_render = InfographicRendererRPC(app.deps, timeout=60.0)
+        png_bytes = await ig_render.render('rune_burn_and_income.jinja2', {
             "title": "Test Render",
             "heading": "Hello, World!",
             "message": "This is a test HTML to PNG rendering.",
