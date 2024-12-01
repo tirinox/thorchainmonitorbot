@@ -193,7 +193,7 @@ def img_to_bio(image: PIL.Image.Image, name):
         logging.error('Nothing to save!')
         return
 
-    if isinstance(image, BytesIO):
+    if isinstance(image, (BytesIO, bytes)):
         logging.warning('Got BytesIO. Supposed to be PIL.Image')
         return image
 
