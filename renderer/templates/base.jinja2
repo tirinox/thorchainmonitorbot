@@ -4,9 +4,18 @@
     <meta charset="UTF-8">
     <title>{{ title }}</title>
     <style>
+        /* Dynamically set the viewport size */
+        html, body {
+            width: {{ width }}px;
+            height: {{ height }}px;
+            margin: 0;
+            padding: 0;
+            overflow: hidden; /* Prevent scrollbars */
+            border: 1px solid #000;
+        }
+
         body {
             font-family: Arial, sans-serif;
-            margin: 20px;
             color: white;
             background: #061913;
         }

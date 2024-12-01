@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "base.jinja2" %}
 
 {% block content %}
 
@@ -9,6 +9,11 @@
         margin: 50px auto;
     }
 </style>
+
+<div>
+    <img src="/static/tc_logo_transparent.png" alt="THORChain logo">
+    <div class="title">Burned Rune</div>
+</div>
 
 <div id="chart-container">
     <canvas id="myBarChart"></canvas>
