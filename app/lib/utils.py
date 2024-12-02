@@ -571,3 +571,32 @@ async def gather_in_batches(tasks: List[Awaitable[Any]], batch_size: int) -> Lis
         batch_results = await asyncio.gather(*batch)
         results.extend(batch_results)
     return results
+
+
+def namedtuple_to_dict(obj) -> dict:
+    """
+    Converts a NamedTuple instance to a dictionary including its fields and properties.
+
+    Args:
+        obj (NamedTuple): The NamedTuple instance to convert.
+
+    Returns:
+        dict: A dictionary representation of the NamedTuple, including fields and properties.
+    """
+    if not is_named_tuple_instance(obj):
+        raise TypeError("Input must be an instance of NamedTuple.")
+
+    # Get fields using _asdict()
+    result = obj._asdict()
+
+    # Add properties dynamically
+    for attr in dir(obj):
+        # Check if it's a property and not private or already in the result
+        if (
+                not attr.startswith("_") and
+                not attr in result and
+                isinstance(getattr(type(obj), attr, None), property)
+        ):
+            result[attr] = getattr(obj, attr)
+
+    return result

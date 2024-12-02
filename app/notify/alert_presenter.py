@@ -22,6 +22,7 @@ from lib.depcont import DepContainer
 from lib.draw_utils import img_to_bio
 from lib.html_renderer import InfographicRendererRPC
 from lib.logs import WithLogger
+from lib.utils import namedtuple_to_dict
 from models.cap_info import AlertLiquidityCap
 from models.circ_supply import EventRuneBurn
 from models.key_stats_model import AlertKeyStats
@@ -388,15 +389,7 @@ class AlertPresenter(INotified, WithLogger):
             # photo, photo_name = await rune_burn_graph(data.points, loc, days=data.tally_days)
 
             # todo: share EventRuneBurn between the components, use Pydantic
-            photo = await self.renderer.render('rune_burn_and_income.jinja2', {
-                'points': data.points,
-                'days': data.tally_days,
-                'start_ts': data.start_ts,
-                'curr_max_rune': data.curr_max_rune,
-                'prev_max_rune': data.prev_max_rune,
-                'usd_per_rune': data.usd_per_rune,
-                'system_income_burn_percent': data.system_income_burn_percent,
-            })
+            photo = await self.renderer.render('rune_burn_and_income.jinja2', namedtuple_to_dict(data))
             if photo is not None:
                 return BoardMessage.make_photo(photo, text, 'rune_burnt.png')
             else:
