@@ -131,8 +131,8 @@ class PackItem(NamedTuple):
     color: str = TC_WHITE
     meta_data: dict = None
 
-    def meta_key(self, key):
-        return self.meta_data.get(key) if self.meta_data else None
+    def meta_key(self, key, default=None):
+        return self.meta_data.get(key, default) if self.meta_data else default
 
 
 class DrawRectPacker:

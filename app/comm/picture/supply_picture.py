@@ -32,11 +32,11 @@ class SupplyPictureGenerator(BasePictureGenerator):
 
     FILENAME_PREFIX = 'thorchain_supply'
 
-    MIN_FONT_SIZE = 30
+    MIN_FONT_SIZE = 32
     MAX_FONT_SIZE = 50
 
-    MIN_VALUE_FONT_SIZE = 40
-    MAX_VALUE_FONT_SIZE = 100
+    MIN_VALUE_FONT_SIZE = 45
+    MAX_VALUE_FONT_SIZE = 99
 
     def _draw_rect(self, r: Rect, item: PackItem, outline='black'):
         if item.color:
@@ -49,15 +49,16 @@ class SupplyPictureGenerator(BasePictureGenerator):
             self._put_overlay(r, path, alpha=0.2)
 
         if item.meta_key('show_weight') and item.weight > 1e6:
-            font_sz = min(self.MAX_VALUE_FONT_SIZE, max(self.MIN_FONT_SIZE, int(sqrt(item.weight) / 80)))
+            font_sz = min(item.meta_key('max_value_font', self.MAX_VALUE_FONT_SIZE),
+                          max(self.MIN_FONT_SIZE, int(sqrt(item.weight) / 80)))
             font = self.res.fonts.get_font(font_sz)
             text = short_money(item.weight)
 
             self._add_text(r.center, text,
                            anchor='mm',
                            font=font,
-                           fill=adjust_brightness(item.color, 1.1),
-                           stroke_fill=adjust_brightness(item.color, 0.5))
+                           fill=adjust_brightness(item.color, 5.1),
+                           stroke_fill=adjust_brightness(item.color, 0.2))
         if item.label:
             label_pos = item.meta_key('label_pos')
             if label_pos == 'up':
@@ -66,10 +67,15 @@ class SupplyPictureGenerator(BasePictureGenerator):
                 px, py, anchor = -10, 0, 'rt'
             elif label_pos == 'right':
                 px, py, anchor = 10 + r.w, 0, 'lt'
+            elif label_pos == 'tight_top':
+                px, py, anchor = 10, 6, 'lt'
             else:
                 px, py, anchor = 10, 14, 'lt'
 
-            font_sz = min(self.MAX_FONT_SIZE, max(self.MIN_FONT_SIZE, int(sqrt(item.weight) / 0.7e2)))
+            font_sz = min(
+                item.meta_key('max_title_font', self.MAX_FONT_SIZE),
+                max(self.MIN_FONT_SIZE, int(sqrt(item.weight) / 0.7e2))
+            )
             font = self.res.fonts.get_font(font_sz)
 
             self._add_text(r.shift_from_origin(px, py), item.label, anchor=anchor,
@@ -158,10 +164,10 @@ class SupplyPictureGenerator(BasePictureGenerator):
         legend_font = self.res.fonts.get_font_bold(30)
         legend_items = [
             ThorRealms.RESERVES,
-            ThorRealms.RUNEPOOL,
-            ThorRealms.POL,
             ThorRealms.BONDED,
             ThorRealms.LIQ_POOL,
+            ThorRealms.RUNEPOOL,
+            ThorRealms.POL,
             'Binance',
             'Kraken',
             ThorRealms.TREASURY,
@@ -211,8 +217,9 @@ class SupplyPictureGenerator(BasePictureGenerator):
     def _plot(self):
         outer_rect = Rect.from_frame(self.left, self.top, self.right, self.bottom, self.WIDTH, self.HEIGHT)
 
-        def meta(label='', value=True, realm=''):
-            return {'show_weight': value, 'label_pos': label, 'overlay_path': self.OVERLAYS.get(realm)}
+        def meta(label='', value=True, realm='', **kwargs):
+            return {'show_weight': value, 'label_pos': label, 'overlay_path': self.OVERLAYS.get(realm),
+                    **kwargs}
 
         # Top level layout (horizontal)
         rune_pool = self.net_stats.total_rune_pool
@@ -235,12 +242,8 @@ class SupplyPictureGenerator(BasePictureGenerator):
                 self.translate.get(reserve.realm, reserve.realm),
                 reserve.amount,
                 self.PALETTE.get(reserve.realm, 'black'),
-                meta_data=meta(realm=reserve.realm)
+                meta_data=meta(realm=reserve.realm, max_value_font=80)
             ),
-            PackItem(self.loc.SUPPLY_PIC_RUNE_POOL, rune_pool, self.PALETTE[ThorRealms.RUNEPOOL],
-                     meta(realm=ThorRealms.RUNEPOOL, label='up' if rune_pool < 1e6 else '')),
-            PackItem(self.loc.SUPPLY_PIC_POL, self.net_stats.total_rune_pol, self.PALETTE[ThorRealms.POL],
-                     meta(realm=ThorRealms.POL)),
 
         ], locked_rect, align=DrawRectPacker.V)
 
@@ -253,16 +256,29 @@ class SupplyPictureGenerator(BasePictureGenerator):
                      meta(realm=ThorRealms.BONDED)),
             PackItem(self.loc.SUPPLY_PIC_POOLED, pooled, self.PALETTE[ThorRealms.LIQ_POOL],
                      meta(realm=ThorRealms.LIQ_POOL)),
+            PackItem(self.loc.SUPPLY_PIC_RUNE_POOL, rune_pool, self.PALETTE[ThorRealms.RUNEPOOL],
+                     meta(realm=ThorRealms.RUNEPOOL, label='tight_top',
+                          max_title_font=24)),
+            PackItem(self.loc.SUPPLY_PIC_POL, self.net_stats.total_rune_pol, self.PALETTE[ThorRealms.POL],
+                     meta(realm=ThorRealms.POL)),
+
         ], working_rect, align=DrawRectPacker.V)
 
         # Column 3: Circulating Rune
 
         # Circulating
+        # other_circulating = self.supply.circulating - self.supply.treasury - self.supply.in_cex
         other_circulating = self.supply.circulating - self.supply.treasury - self.supply.in_cex
         burned_killed_rune = RUNE_IDEAL_SUPPLY - self.supply.total
 
-        [cex_rect, other_rect, killed_rect] = self._pack([
+        [cex_rect, *_, other_rect, killed_rect] = self._pack([
             PackItem('', self.supply.in_cex, ''),  # CEX Block
+
+            # PackItem(self.loc.SUPPLY_PIC_TREASURY, self.supply.treasury, self.PALETTE[ThorRealms.TREASURY],
+            #          meta(realm=ThorRealms.TREASURY)),
+            # PackItem(self.loc.SUPPLY_PIC_MAYA, self.maya_pool, self.PALETTE[ThorRealms.MAYA_POOL],
+            #          meta(realm=ThorRealms.MAYA_POOL, label='up')),
+
             PackItem('', other_circulating, ''),
             PackItem('', max(1, burned_killed_rune), ''),  # Killed & burned
         ], circulating_rect, align=DrawRectPacker.V)
@@ -290,6 +306,7 @@ class SupplyPictureGenerator(BasePictureGenerator):
                      meta(realm=ThorRealms.TREASURY)),
             PackItem(self.loc.SUPPLY_PIC_MAYA, self.maya_pool, self.PALETTE[ThorRealms.MAYA_POOL],
                      meta(realm=ThorRealms.MAYA_POOL, label='up')),
+
         ], other_rect, align=DrawRectPacker.INSIDE_LARGEST)
 
         items = []
