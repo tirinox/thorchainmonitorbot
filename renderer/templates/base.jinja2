@@ -4,18 +4,20 @@
     <meta charset="UTF-8">
     <title>{{ title }}</title>
     <style>
+        @font-face {
+            font-family: ThorFont;
+            src: url(http://renderer:8404/static/my.ttf);
+        }
+
         /* Dynamically set the viewport size */
         html, body {
-            width: {{ width }}px;
-            height: {{ height }}px;
             margin: 0;
             padding: 0;
             overflow: hidden; /* Prevent scrollbars */
-            border: 1px solid #000;
         }
 
         body {
-            font-family: Arial, sans-serif;
+            font-family: ThorFont, Arial, sans-serif;
             color: white;
             background: #061913;
         }
@@ -28,12 +30,38 @@
             font-size: 14px;
         }
 
+        .highlight-blue {
+            color: #00CCFF;
+        }
+
+        .yggdrasil-green {
+            color: #33FF99;
+        }
+
+        .midgard-turqoise {
+            color: #23DCC8;
+        }
+
+        .night-black {
+            background-color: #101921;
+        }
+
+        .container {
+            position: relative;
+            width: {{ width }}px;
+            height: {{ height }}px;
+            margin: 0;
+            padding: 0;
+            border: 1px darkcyan dashed;
+        }
+
     </style>
     <script src="http://renderer:8404/static/chart.umd.min.js"></script>
-
 </head>
-<body>
-{% block content %}
-{% endblock %}
+<body class="night-black">
+<div class="container">
+    {% block content %}
+    {% endblock %}
+</div>
 </body>
 </html>

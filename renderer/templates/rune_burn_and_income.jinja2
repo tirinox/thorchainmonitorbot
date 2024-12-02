@@ -2,76 +2,116 @@
 
 {% block content %}
 
-<style>
-    /* Optional: Style the canvas container */
-    #chart-container {
-        width: 60%;
-        margin: 50px auto;
-    }
-</style>
-
-<div>
-    <img src="http://renderer:8404/static/tc_logo_transparent.png" alt="THORChain logo">
-    <div class="title">Burned Rune</div>
-</div>
-
-<div id="chart-container">
-    <canvas id="myBarChart"></canvas>
-</div>
-
-<script>
-// Get the context of the canvas element we want to select
-const ctx = document.getElementById('myBarChart').getContext('2d');
-
-// Define the data for the chart
-const data = {
-  labels: ['January', 'February', 'March', 'April', 'May', 'June'], // X-axis labels
-  datasets: [{
-    label: 'Sales ($)',
-    data: [500, 700, 800, 600, 900, 750], // Y-axis data
-    backgroundColor: 'rgba(54, 162, 235, 0.6)', // Bar color
-    borderColor: 'rgba(255, 255, 255, 1)', // Border color
-    borderWidth: 1 // Border width
-  }]
-};
-
-// Define the configuration options
-const config = {
-  type: 'bar', // Specify the chart type
-  data: data,
-  options: {
-    responsive: true, // Make the chart responsive
-    scales: {
-      y: {
-        beginAtZero: true, // Start the Y-axis at zero
-        title: {
-          display: true,
-          text: 'Amount in USD'
+    <style>
+        /* Optional: Style the canvas container */
+        #chart-container {
+            position: absolute;
+            top: 5%;
+            left: 10%;
+            width: 80%;
+            height: 90%;
+            margin: 0;
+            padding: 0;
+            border: #23DCC8 1px dashed;
         }
-      },
-      x: {
-        title: {
-          display: true,
-          text: 'Months'
-        }
-      }
-    },
-    plugins: {
-      title: {
-        display: true,
-        text: 'Monthly Sales Data'
-      },
-      legend: {
-        display: true,
-        position: 'top'
-      }
-    }
-  }
-};
+    </style>
 
-// Create and render the chart
-const myBarChart = new Chart(ctx, config);
+    <div>
+        <img src="http://renderer:8404/static/tc_logo_transparent.png" alt="THORChain logo">
+        <div class="title">Burned Rune</div>
+    </div>
 
-</script>
+
+    <div id="chart-container">
+        <canvas id="myBarChart"></canvas>
+    </div>
+
+    <script>
+        // Get the context of the canvas element we want to select
+        const ctx = document.getElementById('myBarChart').getContext('2d');
+
+        Chart.defaults.font.family = 'ThorFont'; // Set the font family for the chart
+        Chart.defaults.color = 'white'; // Set the font color for the chart
+
+        const runeBurnt = {{ points|safe }};
+        console.log(runeBurnt);
+        // points are [ [x, y], [x, y], ... ]
+
+        let dateStrings = runeBurnt.map(point => new Date(point[0] * 1e3));
+        // format dates to DD.MM HH:MM
+        dateStrings = dateStrings.map(date => {
+            const day = date.getDate().toString().padStart(2, '0');
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const hours = date.getHours().toString().padStart(2, '0');
+            const minutes = date.getMinutes().toString().padStart(2, '0');
+            return `${day}/${month} ${hours}:${minutes}`;
+        });
+
+        const values = runeBurnt.map(point => point[1]);
+
+        // Define the data for the chart
+        const data = {
+            labels: dateStrings, // X-axis labels
+            datasets: [{
+                label: '',
+                data: values, // Y-axis data
+                backgroundColor: '#33FF99', // Bar color
+            }]
+        };
+
+        // Define the configuration options
+        const config = {
+            type: 'bar', // Specify the chart type
+            data: data,
+            options: {
+                responsive: true, // Make the chart responsive
+                legend: {
+                    display: false
+                },
+                scales: {
+/*                    y: {
+                        beginAtZero: true, // Start the Y-axis at zero
+                        title: {
+                            display: true,
+                            text: 'Burnt Rune',
+                        }
+                    },*/
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Time'
+                        }
+                    }
+                },
+                plugins: {
+                    title: {
+                        display: true,
+                        text: 'Burnt Rune',
+                        font: {
+                            family: 'ThorFont',
+                        }
+                    },
+                   /* legend: {
+                        display: true,
+                        position: 'top',
+                        labels: {
+                            font: {
+                                family: 'ThorFont',
+                            }
+                        }
+                    }*/
+                }
+            }
+        };
+
+        // Create and render the chart
+
+        // when fonts loaded
+        document.fonts.ready.then(() => {
+            const myBarChart = new Chart(ctx, config);
+        });
+
+
+    </script>
 
 {% endblock %}
