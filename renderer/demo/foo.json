@@ -1,0 +1,8 @@
+{
+  "template_name": "foo.jinja2",
+  "parameters": {
+    "title": "Demo 2",
+    "heading": "Hello 2",
+    "message": "This is a demo template."
+  }
+}
