@@ -1,8 +1,8 @@
 {
   "template_name": "rune_burn_and_income.jinja2",
   "parameters": {
-    "curr_max_rune": 499964160.38996035,
-    "prev_max_rune": 499980976.7753087,
+    "curr_max_rune": 499963784.4919901,
+    "prev_max_rune": 499980534.3469493,
     "points": [
       [
         1732824000,
@@ -90,13 +90,26 @@
       ],
       [
         1733126400,
-        1500.2691155076027
+        1613.4312642216682
+      ],
+      [
+        1733140800,
+        262.73582154512405
       ]
     ],
-    "usd_per_rune": 5.67474517732679,
+    "usd_per_rune": 5.9067508869114524,
     "system_income_burn_percent": 5.0,
     "period_seconds": 30.0,
     "start_ts": 1732626242,
-    "tally_days": 7.0
+    "tally_days": 7.0,
+    "deflation_percent": 0.17453429707976476,
+    "delta_rune": 16749.85495918989,
+    "delta_usd": 98937.22063583309,
+    "time_passed_sec": 523966.83495903015,
+    "total_burned_rune": 36215.50800991058,
+    "total_burned_usd": 213915.98405748815,
+    "yearly_burn_prediction": 872608.2769164848,
+    "width": 1280,
+    "height": 720
   }
 }

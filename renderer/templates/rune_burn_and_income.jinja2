@@ -6,19 +6,44 @@
         /* Optional: Style the canvas container */
         #chart-container {
             position: absolute;
-            top: 5%;
-            left: 10%;
-            width: 80%;
-            height: 90%;
+            top: 15%;
+            left: 25%;
+            width: 50%;
+            height: 50%;
             margin: 0;
             padding: 0;
+
+        {% if debug %}
             border: #23DCC8 1px dashed;
+        {% endif %}
+
+        }
+
+        .tables {
+            margin: {{ margin }}px;
         }
     </style>
 
-    <div>
+    <div class="tables">
         <img src="http://renderer:8404/static/tc_logo_transparent.png" alt="THORChain logo">
         <div class="title">Burned Rune</div>
+        <div>
+            <span>System Income burn percent:</span>
+            <span>{{ "%.1f"|format(system_income_burn_percent) }} %</span>
+        </div>
+        <div>
+            <span>Rune burnt last {{ tally_days|int }} days:</span>
+            <span>{{ "%.1f"|format(prev_max_rune - curr_max_rune) }}ᚱ</span>
+        </div>
+        <div>
+            <span>Total burned:</span>
+            <span>{{ "%.1f"|format(total_burned_rune) }}ᚱ | {{ "$%.1f"|format(total_burned_usd) }}</span>
+        </div>
+        <span>
+            <span>Prediction for 1 year:</span>
+            <span>{{ yearly_burn_prediction|round }}ᚱ</span>
+        </span>
+
     </div>
 
 
@@ -39,12 +64,14 @@
 
         let dateStrings = runeBurnt.map(point => new Date(point[0] * 1e3));
         // format dates to DD.MM HH:MM
+        let even = true
         dateStrings = dateStrings.map(date => {
             const day = date.getDate().toString().padStart(2, '0');
             const month = (date.getMonth() + 1).toString().padStart(2, '0');
             const hours = date.getHours().toString().padStart(2, '0');
             const minutes = date.getMinutes().toString().padStart(2, '0');
-            return `${day}/${month} ${hours}:${minutes}`;
+            even = !even
+            return even ? `${day}/${month} ${hours}:${minutes}` : '';
         });
 
         const values = runeBurnt.map(point => point[1]);
@@ -56,6 +83,9 @@
                 label: '',
                 data: values, // Y-axis data
                 backgroundColor: '#33FF99', // Bar color
+                borderWidth: 2,
+                borderRadius: Number.MAX_VALUE,
+                borderSkipped: false,
             }]
         };
 
@@ -65,22 +95,24 @@
             data: data,
             options: {
                 responsive: true, // Make the chart responsive
-                legend: {
-                    display: false
+                tooltips: {
+                    enabled: false
                 },
                 scales: {
-/*                    y: {
+                    y: {
                         beginAtZero: true, // Start the Y-axis at zero
-                        title: {
-                            display: true,
-                            text: 'Burnt Rune',
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)',
                         }
-                    },*/
+                    },
                     x: {
                         title: {
                             display: true,
                             text: 'Time'
-                        }
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)',
+                        },
                     }
                 },
                 plugins: {
@@ -91,15 +123,9 @@
                             family: 'ThorFont',
                         }
                     },
-                   /* legend: {
-                        display: true,
-                        position: 'top',
-                        labels: {
-                            font: {
-                                family: 'ThorFont',
-                            }
-                        }
-                    }*/
+                    legend: {
+                        display: false
+                    },
                 }
             }
         };

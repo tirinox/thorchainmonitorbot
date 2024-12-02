@@ -5,6 +5,7 @@ from pprint import pprint
 from comm.picture.burn_picture import rune_burn_graph
 from lib.date_utils import HOUR, DAY
 from lib.texts import sep
+from lib.utils import namedtuple_to_dict
 from notify.public.burn_notify import BurnNotifier
 from tools.lib.lp_common import LpAppFramework, save_and_show_pic
 
@@ -22,7 +23,7 @@ async def demo_last_burn_event(app: LpAppFramework, notifier):
     event = await notifier.get_event()
     pprint(event._asdict())
     sep()
-    print(json.dumps(event._asdict(), indent=2))
+    print(json.dumps(namedtuple_to_dict(event), indent=2))
     sep()
 
     await app.deps.alert_presenter.on_data(None, event)

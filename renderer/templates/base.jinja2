@@ -14,12 +14,20 @@
             margin: 0;
             padding: 0;
             overflow: hidden; /* Prevent scrollbars */
+            position: fixed;
+            width: {{ width }}px;
+            height: {{ height }}px;
+
         }
 
         body {
             font-family: ThorFont, Arial, sans-serif;
             color: white;
             background: #061913;
+        {% if debug %}
+            border: 1px darkcyan dashed;
+        {% endif %}
+
         }
 
         h1 {
@@ -48,20 +56,24 @@
 
         .container {
             position: relative;
-            width: {{ width }}px;
-            height: {{ height }}px;
             margin: 0;
             padding: 0;
-            border: 1px darkcyan dashed;
+            width: 100vw;
+            height: 100vh;
+            border: 1px rgba(255, 255, 255, 0.01) dashed;
+            display: block;
         }
+
 
     </style>
     <script src="http://renderer:8404/static/chart.umd.min.js"></script>
 </head>
 <body class="night-black">
 <div class="container">
+
     {% block content %}
     {% endblock %}
+
 </div>
 </body>
 </html>
