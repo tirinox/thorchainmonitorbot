@@ -8,6 +8,7 @@ from typing import Dict, Optional
 
 from fastapi import FastAPI, Response
 from fastapi.staticfiles import StaticFiles
+from jinja2 import TemplateNotFound
 from pydantic import BaseModel, Field
 
 from renderer import Renderer
@@ -80,7 +81,10 @@ async def render_full_pipeline(template_name, parameters):
     height = parameters.get('height', 720)
 
     # Render the template
-    rendered_html = renderer.render_template(template_name, parameters)
+    try:
+        rendered_html = renderer.render_template(template_name, parameters)
+    except TemplateNotFound:
+        return Response(status_code=404, content=f"Template '{template_name}' not found.")
 
     # Render the HTML to PNG
     start_time = time.monotonic()
@@ -97,7 +101,7 @@ async def render_just_html(name: str):
         return Response(status_code=404,
                         content=f"Demo template '{name}' not found. Available templates: {available_demo_templates()}")
 
-    rendered_html = renderer.render_template(template_name, parameters, replace_base_url="http://localhost:8404")
+    rendered_html = renderer.render_template(template_name, parameters, replace_base_url="http://127.0.0.1:8404")
     return Response(content=rendered_html, media_type="text/html")
 
 
