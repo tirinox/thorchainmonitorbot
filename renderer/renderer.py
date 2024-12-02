@@ -1,7 +1,7 @@
 import logging
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from playwright.async_api import async_playwright, Page
+from playwright.async_api import async_playwright, Page, ConsoleMessage
 
 
 class Renderer:
@@ -29,11 +29,20 @@ class Renderer:
         Initialize Playwright and launch the browser.
         """
         self.playwright = await async_playwright().start()
-        self.browser = await self.playwright.chromium.launch(headless=True)
+        self.browser = await self.playwright.chromium.launch(
+            headless=True,
+            args=[
+                "--disable-web-security",
+                "--disable-features=IsolateOrigins,site-per-process",
+                "--allow-running-insecure-content",
+                "--disable-blink-features=AutomationControlled"
+            ]
+        )
         self.browser_context = await self.browser.new_context(
             viewport=self.default_viewport,
             device_scale_factor=self.device_scale_factor
         )
+        self.browser_context.on("page", self.on_new_page)
         logging.info(f"Browser launched and context created with default viewport: {self.default_viewport}")
 
     async def stop(self):
@@ -101,3 +110,45 @@ class Renderer:
         except Exception as e:
             logging.error(f"Error rendering HTML to PNG: {e}")
             raise e
+
+    async def on_new_page(self, page: Page):
+        """
+        Event handler for new pages. Attaches event listeners to capture console and network logs.
+        """
+        # Capture console messages
+        page.on("console", self.handle_console_message)
+
+        # Capture network requests and responses
+        page.on("request", self.handle_request)
+        page.on("response", self.handle_response)
+
+        # Capture page errors
+        page.on("pageerror", self.handle_page_error)
+
+    async def handle_console_message(self, message: ConsoleMessage):
+        """
+        Handle console messages from the browser.
+        """
+        msg_type = message.type
+        msg_text = message.text
+        args = [arg.to_string() for arg in message.args]
+        full_message = f"Console {msg_type}: {msg_text} Args: {args}"
+        logging.info(full_message)
+
+    async def handle_request(self, request):
+        """
+        Handle network requests made by the page.
+        """
+        logging.info(f"Request: {request.method} {request.url}")
+
+    async def handle_response(self, response):
+        """
+        Handle network responses received by the page.
+        """
+        logging.info(f"Response: {response.status} {response.url}")
+
+    async def handle_page_error(self, error):
+        """
+        Handle page errors (unhandled exceptions in the page).
+        """
+        logging.error(f"Page error: {error}")
