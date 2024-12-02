@@ -11,7 +11,7 @@ class Renderer:
     """
 
     def __init__(self, templates_dir: str,
-                 device_scale_factor: int = 2):
+                 device_scale_factor: int = 1):
         self.templates_dir = templates_dir
         self.default_viewport = {'width': 1280, 'height': 720}
         self.device_scale_factor = device_scale_factor
