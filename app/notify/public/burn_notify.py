@@ -1,10 +1,11 @@
 from typing import Optional
 
+import pandas as pd
 from tqdm import tqdm
 
 from lib.constants import THOR_BLOCK_TIME, THOR_BASIS_POINT_MAX, ADR17_TIMESTAMP, thor_to_float
 from lib.cooldown import Cooldown
-from lib.date_utils import now_ts, DAY
+from lib.date_utils import now_ts, DAY, ts_event_points_to_pandas
 from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.utils import WithLogger
@@ -53,8 +54,8 @@ class BurnNotifier(INotified, WithDelegates, WithLogger):
 
         await self.ts.add(max_supply=max_supply)
 
-        points = await self.ts.get_last_points(self.tally_period)
-
+        points = await self.get_points_for_chart()
+        points = self._extract_only_burned_rune_delta(pd.DataFrame(points))
         return EventRuneBurn(
             curr_max_rune=thor_to_float(max_supply),
             prev_max_rune=thor_to_float(last_supply),
@@ -65,6 +66,26 @@ class BurnNotifier(INotified, WithDelegates, WithLogger):
             start_ts=ADR17_TIMESTAMP,
             tally_days=self.tally_period / DAY,
         )
+
+    async def get_points_for_chart(self):
+        points = await self.ts.get_last_points(self.tally_period)
+
+        df = ts_event_points_to_pandas(points, shift_time=False)
+        df["t"] = pd.to_datetime(df["t"], unit='s')
+        df['max_supply'] = df['max_supply'].apply(thor_to_float)
+        df['max_supply_delta'] = -df['max_supply'].diff().dropna()
+        df = df.resample('4h', on='t').sum()
+
+        return df
+
+    @staticmethod
+    def _extract_only_burned_rune_delta(df: pd.DataFrame):
+        row = df['max_supply_delta']
+        timestamps = row.index
+        return [
+            (int(ts.timestamp()), value)
+            for ts, value in zip(timestamps, row)
+        ]
 
     async def get_last_supply_float(self):
         return await self.ts.get_last_value('max_supply')

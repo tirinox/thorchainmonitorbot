@@ -20,6 +20,7 @@ from lib.constants import THOR_BLOCKS_PER_MINUTE
 from lib.delegates import INotified
 from lib.depcont import DepContainer
 from lib.draw_utils import img_to_bio
+from lib.html_renderer import InfographicRendererRPC
 from lib.logs import WithLogger
 from models.cap_info import AlertLiquidityCap
 from models.circ_supply import EventRuneBurn
@@ -50,6 +51,7 @@ class AlertPresenter(INotified, WithLogger):
         self.deps = deps
         self.broadcaster: Broadcaster = deps.broadcaster
         self.name_service: NameService = deps.name_service
+        self.renderer = InfographicRendererRPC(deps)
 
     async def on_data(self, sender, data):
         # noinspection PyAsyncCall
@@ -381,9 +383,22 @@ class AlertPresenter(INotified, WithLogger):
     async def _handle_rune_burn(self, data: EventRuneBurn):
         async def message_gen(loc: BaseLocalization):
             text = loc.notification_rune_burn(data)
-            photo, photo_name = await rune_burn_graph(data.points, loc, days=data.tally_days)
+
+            # old
+            # photo, photo_name = await rune_burn_graph(data.points, loc, days=data.tally_days)
+
+            # todo: share EventRuneBurn between the components, use Pydantic
+            photo = await self.renderer.render('rune_burn_and_income.jinja2', {
+                'points': data.points,
+                'days': data.tally_days,
+                'start_ts': data.start_ts,
+                'curr_max_rune': data.curr_max_rune,
+                'prev_max_rune': data.prev_max_rune,
+                'usd_per_rune': data.usd_per_rune,
+                'system_income_burn_percent': data.system_income_burn_percent,
+            })
             if photo is not None:
-                return BoardMessage.make_photo(photo, text, photo_name)
+                return BoardMessage.make_photo(photo, text, 'rune_burnt.png')
             else:
                 return text
 
