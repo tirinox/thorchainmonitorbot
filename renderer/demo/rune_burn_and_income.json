@@ -109,7 +109,8 @@
     "total_burned_rune": 36215.50800991058,
     "total_burned_usd": 213915.98405748815,
     "yearly_burn_prediction": 872608.2769164848,
-    "width": 1280,
-    "height": 720
+    "circulating_suppy": 339897651,
+    "_width": 1280,
+    "_height": 720
   }
 }

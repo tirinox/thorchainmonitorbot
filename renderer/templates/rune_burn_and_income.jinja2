@@ -7,7 +7,7 @@
         #chart-container {
             position: absolute;
             top: 15%;
-            left: 25%;
+            left: 20%;
             width: 50%;
             height: 50%;
             margin: 0;
@@ -19,9 +19,6 @@
 
         }
 
-        .tables {
-            margin: {{ margin }}px;
-        }
     </style>
 
     <div class="tables">
@@ -39,10 +36,15 @@
             <span>Total burned:</span>
             <span>{{ "%.1f"|format(total_burned_rune) }}ᚱ | {{ "$%.1f"|format(total_burned_usd) }}</span>
         </div>
-        <span>
+        <div>
             <span>Prediction for 1 year:</span>
             <span>{{ yearly_burn_prediction|round }}ᚱ</span>
-        </span>
+        </div>
+        <div>
+            <span>Rune circulating supply</span>
+            <span>{{ circulating_suppy|round }}ᚱ</span>
+        </div>
+
 
     </div>
 
@@ -103,24 +105,41 @@
                         beginAtZero: true, // Start the Y-axis at zero
                         grid: {
                             color: 'rgba(255, 255, 255, 0.1)',
-                        }
+                        },
+                        font: {
+                            size: 16,
+                        },
+                        ticks: {
+                            font: {
+                                size: 16,
+                            }
+                        },
                     },
                     x: {
                         title: {
                             display: true,
-                            text: 'Time'
+                            text: 'Time',
+                            font: {
+                                size: 16,
+                            }
                         },
                         grid: {
                             color: 'rgba(255, 255, 255, 0.1)',
+                        },
+                        ticks: {
+                            font: {
+                                size: 16,
+                            }
                         },
                     }
                 },
                 plugins: {
                     title: {
                         display: true,
-                        text: 'Burnt Rune',
+                        text: 'Burnt Rune Chart',
                         font: {
                             family: 'ThorFont',
+                            size: 20,
                         }
                     },
                     legend: {
