@@ -50,7 +50,7 @@ class BurnNotifier(INotified, WithDelegates, WithLogger):
         # last_supply = await self.get_last_supply_float()
         last_supply = await self.get_supply_time_ago(self.tally_period)
 
-        # todo: get circulating supply instead of last supply
+        supply_info = await self.deps.rune_market_fetcher.get_full_supply_info()
 
         await self.ts.add(max_supply=max_supply)
 
@@ -65,6 +65,7 @@ class BurnNotifier(INotified, WithDelegates, WithLogger):
             period_seconds=self.cd.cooldown,
             start_ts=ADR17_TIMESTAMP,
             tally_days=self.tally_period / DAY,
+            circulating_suppy=supply_info.circulating,
         )
 
     async def get_points_for_chart(self):

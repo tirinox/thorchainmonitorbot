@@ -130,6 +130,7 @@ class EventRuneBurn(NamedTuple):
     period_seconds: float = DAY
     start_ts: int = 0
     tally_days: int = 7
+    circulating_suppy: float = 1
 
     @property
     def total_burned_rune(self):
