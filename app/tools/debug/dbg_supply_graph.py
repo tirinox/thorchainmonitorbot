@@ -114,7 +114,7 @@ async def run():
 
         # await app.deps.pool_fetcher.fetch()
 
-        pic, _ = await get_supply_pic(app, cached=False)
+        pic, _ = await get_supply_pic(app, cached=True)
         save_and_show_pic(pic, show=True, name='supply')
 
         # await post_supply_to_discord(app, pic)

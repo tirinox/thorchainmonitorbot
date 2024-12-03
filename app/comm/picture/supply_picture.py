@@ -129,6 +129,7 @@ class SupplyPictureGenerator(BasePictureGenerator):
             ThorRealms.CEX: '#bbb3ef',
             'Binance': '#d0a10d',
             'Kraken': '#7263d6',
+            'Bybit': '#a0a0a0',
             ThorRealms.TREASURY: '#35f8ec',
             ThorRealms.MAYA_POOL: '#347ce0',
             ThorRealms.BURNED: '#dd5627',
@@ -138,6 +139,7 @@ class SupplyPictureGenerator(BasePictureGenerator):
         self.OVERLAYS = {
             'Binance': './data/supply_chart/binance.png',
             'Kraken': './data/supply_chart/kraken.png',
+            'Bybit': './data/supply_chart/bybit.png',
             ThorRealms.BONDED: './data/supply_chart/bonded.png',
             ThorRealms.CIRCULATING: './data/supply_chart/circulating.png',
             ThorRealms.MAYA_POOL: './data/supply_chart/maya.png',
