@@ -53,7 +53,7 @@ class AlertPresenter(INotified, WithLogger):
         self.broadcaster: Broadcaster = deps.broadcaster
         self.name_service: NameService = deps.name_service
         self.renderer = InfographicRendererRPC(deps)
-        self.use_renderer = False
+        self.use_renderer = True
 
     async def on_data(self, sender, data):
         # noinspection PyAsyncCall

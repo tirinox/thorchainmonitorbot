@@ -96,6 +96,12 @@
             type: 'bar', // Specify the chart type
             data: data,
             options: {
+                animation: false,
+                animations: {
+                    colors: false,
+                    x: false
+                },
+
                 responsive: true, // Make the chart responsive
                 tooltips: {
                     enabled: false
@@ -149,13 +155,11 @@
             }
         };
 
-        // Create and render the chart
-
         // when fonts loaded
         document.fonts.ready.then(() => {
+            // Create and render the chart
             const myBarChart = new Chart(ctx, config);
         });
-
 
     </script>
 
