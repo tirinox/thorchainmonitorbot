@@ -129,11 +129,14 @@ class Renderer:
         """
         Handle console messages from the browser.
         """
-        msg_type = message.type
-        msg_text = message.text
-        args = [arg.to_string() for arg in message.args]
-        full_message = f"Console {msg_type}: {msg_text} Args: {args}"
-        logging.info(full_message)
+        try:
+            msg_type = message.type
+            msg_text = message.text
+            args = [arg.to_string() for arg in message.args]
+            full_message = f"Console {msg_type}: {msg_text} Args: {args}"
+            logging.info(full_message)
+        except Exception as e:
+            logging.error(f"Error handling console message: {e}")
 
     async def handle_request(self, request):
         """

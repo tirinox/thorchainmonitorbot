@@ -28,17 +28,16 @@ WORKDIR /app
 
 # Copy requirements and install
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+RUN pip install --no-cache-dir -r renderer/requirements.txt
 
 # Install Playwright and browsers
 RUN playwright install --with-deps
 
-# Copy the worker script
-COPY worker.py .
-
 # Expose the port FastAPI will run on
 EXPOSE 8404
 
-# Set entrypoint
-#CMD ["python", "worker.py"]
-CMD ["uvicorn", "worker:app", "--host", "0.0.0.0", "--port", "8404", "--workers", "1"]
+# fixme: location of the app worker!!!
+CMD ["uvicorn", "renderer.worker:app", "--host", "0.0.0.0", "--port", "8404", "--workers", "1"]
+
+# Note! In order to debug the container, you can run the following command:
+#    docker compose run renderer bash

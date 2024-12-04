@@ -11,11 +11,14 @@ from fastapi.staticfiles import StaticFiles
 from jinja2 import TemplateNotFound
 from pydantic import BaseModel, Field
 
-from demo import demo_template_parameters, available_demo_templates
-from renderer import Renderer
-from const import DEVICE_SCALE_FACTOR
+from .demo import demo_template_parameters, available_demo_templates
+from .renderer import Renderer
+from .const import DEVICE_SCALE_FACTOR
 
 TEMPLATES_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'templates')
+
+# todo: get it from env or something like that...
+LOC_HOST_BASE = 'http://127.0.0.1:8404'
 
 # Configure logging
 logging.basicConfig(
@@ -28,7 +31,7 @@ logging.basicConfig(
 
 
 class RenderRequest(BaseModel):
-    template_name: str = Field(..., example="example.html")
+    template_name: str = Field(..., example="example.jinja2")
     parameters: Dict = Field(..., example={"title": "Test", "heading": "Hello", "message": "This is a test."})
 
 
@@ -60,7 +63,7 @@ async def lifespan(app: FastAPI):
 app = FastAPI(title="HTML to PNG Renderer", lifespan=lifespan)
 
 # Mount the static directory
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/static", StaticFiles(directory="renderer/static"), name="static")
 
 
 async def render_html_to_png(browser, html_content, w=1280, h=720):
@@ -83,6 +86,7 @@ async def render_full_pipeline(template_name, parameters):
 
     # Render the template
     try:
+        # rendered_html = renderer.render_template(template_name, parameters, replace_base_url=LOC_HOST_BASE)
         rendered_html = renderer.render_template(template_name, parameters)
     except TemplateNotFound:
         return Response(status_code=404, content=f"Template '{template_name}' not found.")
@@ -106,7 +110,7 @@ async def render_just_html(name: str, req: Request):
         logging.info(f"Query parameters: {req.query_params}")
         parameters.update(req.query_params)
 
-    rendered_html = renderer.render_template(template_name, parameters, replace_base_url="http://127.0.0.1:8404")
+    rendered_html = renderer.render_template(template_name, parameters, replace_base_url=LOC_HOST_BASE)
     return Response(content=rendered_html, media_type="text/html")
 
 

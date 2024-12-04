@@ -21,8 +21,8 @@ services:
 
   renderer:
     build:
-      context: renderer
-      dockerfile: Dockerfile-renderer
+      context: .
+      dockerfile: renderer/Dockerfile-renderer
     restart: always
     ports:
       - "8404:8404"
@@ -36,7 +36,9 @@ services:
     networks:
       - redis-net
     volumes:
-      - ./renderer:/app
+      - ./app:/app
+      - ./config.yaml:/config/config.yaml
+      - ./.env:/app/.env
 
   redis:
     image: "redis:7.4.0-alpine"

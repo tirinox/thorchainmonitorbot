@@ -147,4 +147,4 @@ renderer-up: # Launch the HTML renderer image
 
 .PHONY: renderer-dev
 renderer-dev: # Launch the HTML renderer image in development mode
-	cd renderer && uvicorn worker:app --port 8404 --reload
+	cd app && uvicorn renderer.worker:app --port 8404 --reload
