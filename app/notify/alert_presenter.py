@@ -53,6 +53,7 @@ class AlertPresenter(INotified, WithLogger):
         self.broadcaster: Broadcaster = deps.broadcaster
         self.name_service: NameService = deps.name_service
         self.renderer = InfographicRendererRPC(deps)
+        self.use_renderer = False
 
     async def on_data(self, sender, data):
         # noinspection PyAsyncCall
@@ -385,11 +386,13 @@ class AlertPresenter(INotified, WithLogger):
         async def message_gen(loc: BaseLocalization):
             text = loc.notification_rune_burn(data)
 
-            # old
-            # photo, photo_name = await rune_burn_graph(data.points, loc, days=data.tally_days)
+            if self.use_renderer:
+                # todo: share EventRuneBurn between the components, use Pydantic
+                photo = await self.renderer.render('rune_burn_and_income.jinja2', namedtuple_to_dict(data))
+            else:
+                # old style
+                photo, photo_name = await rune_burn_graph(data.points, loc, days=data.tally_days)
 
-            # todo: share EventRuneBurn between the components, use Pydantic
-            photo = await self.renderer.render('rune_burn_and_income.jinja2', namedtuple_to_dict(data))
             if photo is not None:
                 return BoardMessage.make_photo(photo, text, 'rune_burnt.png')
             else:

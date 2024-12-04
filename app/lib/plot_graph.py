@@ -1,6 +1,6 @@
 from datetime import datetime
 from math import isnan
-from typing import List
+from typing import List, Tuple, Union
 
 import pandas as pd
 from PIL import Image
@@ -151,13 +151,16 @@ class PlotBarGraph(PlotGraph):
         self.series = []
         self.x_values = []
 
-    def plot_bars(self, df: pd.DataFrame, column, color):
-        values = df[column]
+    def plot_bars(self, df: Union[pd.DataFrame, List[Tuple[float, float]]], column, color):
+        if isinstance(df, pd.DataFrame):
+            x_values = [int(cur_t / 1_000_000_000) for cur_t in df.index.values.tolist()]
+            y_values = df[column].values.tolist()
+        else:
+            # list of tuple (ts, value)
+            x_values, y_values = zip(*df)
 
-        self.x_values = [int(cur_t / 1_000_000_000) for cur_t in df.index.values.tolist()]
-        self.series.append((
-            values.values.tolist(), color
-        ))
+        self.x_values = x_values
+        self.series.append((y_values, color))
 
         return self
 
