@@ -96,6 +96,12 @@ class SupplyPictureGenerator(BasePictureGenerator):
                  net_stats: NetworkStats):
         super().__init__(loc)
 
+        if not supply.bonded:
+            raise ValueError('Bonded supply is not set. Please, check the data.')
+
+        if not supply.pooled:
+            raise ValueError('Pooled supply is not set. Please, check the data.')
+
         self.supply = supply
         self.net_stats = net_stats
         self.maya_pool = self.supply.total_rune_in_realm(ThorRealms.MAYA_POOL)
