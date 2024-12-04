@@ -134,6 +134,7 @@ class SupplyPictureGenerator(BasePictureGenerator):
             ThorRealms.MAYA_POOL: '#347ce0',
             ThorRealms.BURNED: '#dd5627',
             ThorRealms.KILLED: '#9e1d0b',
+            ThorRealms.INCOME_BURN: '#dd5627',
         }
 
         self.OVERLAYS = {
@@ -172,10 +173,12 @@ class SupplyPictureGenerator(BasePictureGenerator):
             ThorRealms.POL,
             'Binance',
             'Kraken',
+            'Bybit',
             ThorRealms.TREASURY,
             ThorRealms.MAYA_POOL,
             ThorRealms.BURNED,
             ThorRealms.KILLED,
+            # ThorRealms.INCOME_BURN,
         ]
         for title in legend_items:
             color = self.PALETTE.get(title, '#fff')
@@ -252,6 +255,7 @@ class SupplyPictureGenerator(BasePictureGenerator):
         # Column 2: Bond and Pool (working Rune)
         bonded = self.net_stats.total_bond_rune
         pooled = self.net_stats.total_rune_lp
+        burnt_income = self.supply.burnt_rune_from_income
 
         self._pack([
             PackItem(self.loc.SUPPLY_PIC_BONDED, bonded, self.PALETTE[ThorRealms.BONDED],
@@ -264,6 +268,9 @@ class SupplyPictureGenerator(BasePictureGenerator):
             PackItem(self.loc.SUPPLY_PIC_POL, self.net_stats.total_rune_pol, self.PALETTE[ThorRealms.POL],
                      meta(realm=ThorRealms.POL)),
 
+            PackItem('', burnt_income,
+                     self.PALETTE[ThorRealms.BURNED], meta(realm=ThorRealms.INCOME_BURN)),
+
         ], working_rect, align=DrawRectPacker.V)
 
         # Column 3: Circulating Rune
@@ -271,7 +278,7 @@ class SupplyPictureGenerator(BasePictureGenerator):
         # Circulating
         # other_circulating = self.supply.circulating - self.supply.treasury - self.supply.in_cex
         other_circulating = self.supply.circulating - self.supply.treasury - self.supply.in_cex
-        burned_killed_rune = RUNE_IDEAL_SUPPLY - self.supply.total
+        burned_killed_rune = (self.supply.maximum or RUNE_IDEAL_SUPPLY) - self.supply.total
 
         [cex_rect, *_, other_rect, killed_rect] = self._pack([
             PackItem('', self.supply.in_cex, ''),  # CEX Block

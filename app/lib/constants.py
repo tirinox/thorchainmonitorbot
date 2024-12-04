@@ -237,7 +237,7 @@ class ThorRealms:
 
     BONDED = 'Bonded'
     BONDED_NODE = 'Bonded (node)'
-    LIQ_POOL = 'Pooled'
+    LIQ_POOL = 'Liquidity pools'
     RUNEPOOL = 'RUNEPool'
     POL = 'Protocol owned liquidity'
     CIRCULATING = 'Circulating'
@@ -246,9 +246,10 @@ class ThorRealms:
     BURNED = 'Burned'
     MINTED = 'Minted'
     TREASURY = 'Treasury'
-    MAYA_POOL = 'Maya'
+    MAYA_POOL = 'Maya liquidity pool'
 
     KILLED = 'Killed switched'
+    INCOME_BURN = 'System income burn'
 
 
 THOR_ADDRESS_DICT = {

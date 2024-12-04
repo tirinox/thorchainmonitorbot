@@ -33,6 +33,10 @@ class RuneCirculatingSupply(NamedTuple):
         return RUNE_IDEAL_SUPPLY - RUNE_SUPPLY_AFTER_SWITCH
 
     @property
+    def burnt_rune_from_income(self):
+        return RUNE_IDEAL_SUPPLY - self.maximum
+
+    @property
     def lending_burnt_rune(self):
         return RUNE_SUPPLY_AFTER_SWITCH - self.total - self.adr12_burnt_rune
 
