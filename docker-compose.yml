@@ -17,6 +17,7 @@ services:
     volumes:
       - ./app:/app
       - ./config.yaml:/config/config.yaml
+      - ./.env:/app/.env
 
   renderer:
     build:
