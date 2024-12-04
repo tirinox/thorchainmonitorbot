@@ -84,8 +84,8 @@ services:
       - redis-net
     volumes:
       - ./web/frontend/:/web/frontend/
-#      - ./web/nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./web/nginx-test.conf:/etc/nginx/nginx.conf:ro
+      - ./web/${NGINX_CFG_NAME:-nginx.conf}:/etc/nginx/nginx.conf:ro
+#      - ./web/nginx-test.conf:/etc/nginx/nginx.conf:ro
       - "./web/letsencrypt:/etc/letsencrypt:ro"
     environment:
       CERTBOT_EMAIL: developer@tirinox.ru
@@ -109,6 +109,7 @@ services:
     volumes:
       - ./app:/app
       - ./config.yaml:/config/config.yaml
+      - ./.env:/app/.env
 
   dashboard:
     build:
@@ -129,6 +130,7 @@ services:
     volumes:
       - ./app:/app
       - ./config.yaml:/config/config.yaml
+      - ./.env:/app/.env
 
 
 networks:
