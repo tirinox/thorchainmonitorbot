@@ -27,8 +27,8 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 # Copy requirements and install
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r renderer/requirements.txt
+COPY app/renderer/requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Install Playwright and browsers
 RUN playwright install --with-deps
@@ -36,7 +36,6 @@ RUN playwright install --with-deps
 # Expose the port FastAPI will run on
 EXPOSE 8404
 
-# fixme: location of the app worker!!!
 CMD ["uvicorn", "renderer.worker:app", "--host", "0.0.0.0", "--port", "8404", "--workers", "1"]
 
 # Note! In order to debug the container, you can run the following command:

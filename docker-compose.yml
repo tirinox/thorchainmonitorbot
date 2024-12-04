@@ -22,7 +22,7 @@ services:
   renderer:
     build:
       context: .
-      dockerfile: renderer/Dockerfile-renderer
+      dockerfile: app/renderer/Dockerfile-renderer
     restart: always
     ports:
       - "8404:8404"
