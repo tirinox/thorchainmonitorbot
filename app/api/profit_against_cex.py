@@ -8,6 +8,7 @@ from binance.exceptions import BinanceAPIException
 from lib.constants import thor_to_float
 from lib.date_utils import MINUTE
 from lib.delegates import INotified, WithDelegates
+from lib.depcont import DepContainer
 from lib.money import pretty_dollar
 from lib.utils import WithLogger, get_ttl_hash
 from models.asset import Asset
@@ -54,10 +55,15 @@ def order_book_evaluate(action: str, order_book: dict, amount: float) -> Optiona
 class StreamingSwapVsCexProfitCalculator(WithLogger, WithDelegates, INotified):
     BINANCE_CACHE_TIME = 5 * MINUTE
 
-    def __init__(self, deps):
+    def __init__(self, deps: DepContainer):
         super().__init__()
         self.deps = deps
         self.binance = Client()
+        self.logger.info(f'ProfitVsCEX is {"enabled" if self.is_enabled else "disabled"}')
+
+    @property
+    def is_enabled(self):
+        return self.deps.cfg.get_pure('estimated_savings_vs_cex_enabled', False)
 
     @classmethod
     def url_cex(cls, from_asset: Asset, to_asset: Asset, amount: float):
@@ -177,9 +183,9 @@ class StreamingSwapVsCexProfitCalculator(WithLogger, WithDelegates, INotified):
 
         self.logger.info(f'Tx {tx.tx_hash} profit vs CEX: {pretty_dollar(savings_usd)}')
 
-    async def on_data(self, sender, data):
+    async def _process_transactions(self, txs):
         try:
-            for tx in data:
+            for tx in txs:
                 tx: ThorTx
                 if tx.is_streaming:
                     await self.get_cex_data_v2(tx)
@@ -191,4 +197,7 @@ class StreamingSwapVsCexProfitCalculator(WithLogger, WithDelegates, INotified):
                                            txs=', '.join([tx.tx_hash for tx in data]),
                                            error=repr(e))
 
+    async def on_data(self, sender, data):
+        if self.is_enabled:
+            await self._process_transactions(data)
         await self.pass_data_to_listeners(data)
