@@ -582,14 +582,16 @@ class BaseLocalization(ABC):  # == English
 
         return f"{route_str} ({short_dollar(tx.get_usd_volume(usd_per_rune))})"
 
-    def _exclamation_sign(self, value, cfg_key='', ref=100):
-        exclamation_limit = self.cfg.as_float(f'tx.exclamation.{cfg_key}', 10000) if cfg_key else ref
-        if value >= exclamation_limit * 2:
-            return '‼️'
-        elif value > exclamation_limit:
-            return '❗'
-        else:
-            return ''
+    @staticmethod
+    def _exclamation_sign(value, cfg_key='', ref=100):
+        return ''
+        # exclamation_limit = self.cfg.as_float(f'tx.exclamation.{cfg_key}', 10000) if cfg_key else ref
+        # if value >= exclamation_limit * 2:
+        #     return '‼️'
+        # elif value > exclamation_limit:
+        #     return '❗'
+        # else:
+        #     return ''
 
     @run_once
     def tx_add_date_if_older_than(self):
