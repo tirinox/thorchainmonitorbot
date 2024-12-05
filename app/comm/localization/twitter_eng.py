@@ -127,10 +127,7 @@ class TwitterEnglishLocalization(BaseLocalization):
 
         if tx.is_of_type((ActionType.ADD_LIQUIDITY, ActionType.WITHDRAW, ActionType.DONATE)):
             if tx.affiliate_fee > 0:
-                aff_fee_usd = tx.get_affiliate_fee_usd(usd_per_rune)
-                mark = self._exclamation_sign(aff_fee_usd, 'fee_usd_limit')
-                aff_text = f'Aff. fee: {short_dollar(aff_fee_usd)}{mark} ' \
-                           f'({format_percent(tx.affiliate_fee, 1)})\n'
+                aff_text = f'Aff. fee: {format_percent(tx.affiliate_fee, 1)}\n'
             else:
                 aff_text = ''
 
@@ -181,25 +178,20 @@ class TwitterEnglishLocalization(BaseLocalization):
         elif tx.is_of_type(ActionType.SWAP):
             content += self.format_swap_route(tx, usd_per_rune)
             slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
-            l_fee_usd = tx.meta_swap.liquidity_fee_rune_float * usd_per_rune
 
             if tx.affiliate_fee > 0:
-                aff_fee_usd = tx.get_affiliate_fee_usd(usd_per_rune)
-                mark = self._exclamation_sign(aff_fee_usd, 'fee_usd_limit')
-
                 aff_collector = self.name_service.get_affiliate_name(tx.memo.affiliate_address)
-                aff_collector = f'{aff_collector} ' if aff_collector else ''
+                aff_collector = f'{aff_collector} affiliate fee' if aff_collector else 'Affiliate fee'
 
-                aff_text = f'{aff_collector}Aff. fee: {short_dollar(aff_fee_usd)}{mark} ' \
-                           f'({format_percent(tx.affiliate_fee, 1)})\n'
+                aff_text = f'{aff_collector}: {format_percent(tx.affiliate_fee, 1)}\n'
             else:
                 aff_text = ''
 
-            slip_mark = self._exclamation_sign(l_fee_usd, 'slip_usd_limit')
+            liq_fee_pct = tx.liquidity_fee_percent
             content += (
                 f"\n{aff_text}"
                 f"Slip: {slip_str}, "
-                f"liq. fee: {short_dollar(l_fee_usd)}{slip_mark}"
+                f"liq. fee: {format_percent(liq_fee_pct) if liq_fee_pct else self.NA}"
             )
 
             if tx.is_streaming:

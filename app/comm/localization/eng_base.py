@@ -640,14 +640,11 @@ class BaseLocalization(ABC):  # == English
 
         asset = Asset(tx.first_pool).name
 
-        content = f''
+        content = ''
 
         if tx.is_of_type((ActionType.ADD_LIQUIDITY, ActionType.WITHDRAW, ActionType.DONATE)):
             if tx.affiliate_fee > 0:
-                aff_fee_usd = tx.get_affiliate_fee_usd(usd_per_rune)
-                mark = self._exclamation_sign(aff_fee_usd, 'fee_usd_limit')
-                aff_text = f'Affiliate fee: {bold(short_dollar(aff_fee_usd))}{mark} ' \
-                           f'({format_percent(tx.affiliate_fee, 1)})\n'
+                aff_text = f'Affiliate fee: {format_percent(tx.affiliate_fee, 1)}\n'
             else:
                 aff_text = ''
 
@@ -701,27 +698,22 @@ class BaseLocalization(ABC):  # == English
                     f"\nReason: {pre(reason)}"
             )
         elif tx.is_of_type(ActionType.SWAP):
-            content = self.format_swap_route(tx, usd_per_rune)
+            content += self.format_swap_route(tx, usd_per_rune)
             slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
-            l_fee_usd = tx.meta_swap.liquidity_fee_rune_float * usd_per_rune
 
             if tx.affiliate_fee > 0:
-                aff_fee_usd = tx.get_affiliate_fee_usd(usd_per_rune)
-                mark = self._exclamation_sign(aff_fee_usd, 'fee_usd_limit')
-
                 aff_collector = self.name_service.get_affiliate_name(tx.memo.affiliate_address)
-                aff_collector = f'{aff_collector} ' if aff_collector else ''
+                aff_collector = f'{aff_collector} affiliate fee' if aff_collector else 'Affiliate fee'
 
-                aff_text = f'{aff_collector}Affiliate fee: {bold(short_dollar(aff_fee_usd))}{mark} ' \
-                           f'({format_percent(tx.affiliate_fee, 1)})\n'
+                aff_text = f'{aff_collector}: {format_percent(tx.affiliate_fee, 1)}\n'
             else:
                 aff_text = ''
 
-            slip_mark = self._exclamation_sign(l_fee_usd, 'slip_usd_limit')
+            liq_fee_pct = tx.liquidity_fee_percent
             content += (
                 f"\n{aff_text}"
                 f"Slip: {bold(slip_str)}, "
-                f"liquidity fee: {bold(short_dollar(l_fee_usd))}{slip_mark}"
+                f"liquidity fee: {bold(format_percent(liq_fee_pct)) if liq_fee_pct else self.NA}"
             )
 
             if tx.is_streaming:
@@ -754,9 +746,13 @@ class BaseLocalization(ABC):  # == English
         #         f'({short_dollar(cap.how_much_usd_you_can_lp)}) more.\n'
         #     )
 
-        if not tx.any_side_in_tc:
-            url = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, tx.tx_hash)
-            msg += f"\n{link(url, 'Runescan')}\n"
+        # if not tx.any_side_in_tc:
+
+        url = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, tx.tx_hash)
+        msg += (
+            f"\n"
+            f"📎{link(url, 'Runescan')}\n"
+        )
 
         return msg.strip()
 
@@ -2788,8 +2784,7 @@ class BaseLocalization(ABC):  # == English
             aff_collector = self.name_service.get_affiliate_name(event.affiliate)
             aff_collector = f'{aff_collector} ' if aff_collector else ''
 
-            aff_text = f'{aff_collector}Aff. fee: {short_dollar(event.affiliate_usd)} ' \
-                       f'({format_percent(event.affiliate_rate, 1)})\n'
+            aff_text = f'{aff_collector}Aff. fee: {format_percent(event.affiliate_rate, 1)}\n'
         else:
             aff_text = ''
 

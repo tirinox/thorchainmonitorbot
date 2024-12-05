@@ -110,6 +110,9 @@ class ThorMetaSwap:
     def liquidity_fee_rune_float(self):
         return thor_to_float(self.liquidity_fee)
 
+    def liquidity_fee_in_percent(self, full_rune_volume):
+        return self.liquidity_fee_rune_float / full_rune_volume * 100.0
+
     @staticmethod
     def merge_two(a: 'ThorMetaSwap', b: 'ThorMetaSwap'):
         if a and b:
@@ -604,6 +607,12 @@ class ThorTx:
             c for c in self.coins_of()
             if is_rune(c.asset) or Asset(c.asset).is_trade or Asset(c.asset).is_synth
         )
+
+    @property
+    def liquidity_fee_percent(self):
+        if not self.meta_swap:
+            return 0.0
+        return self.meta_swap.liquidity_fee_in_percent(self.full_volume_in_rune)
 
 
 @dataclass

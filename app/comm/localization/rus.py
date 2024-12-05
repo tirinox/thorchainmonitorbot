@@ -432,10 +432,7 @@ class RussianLocalization(BaseLocalization):
 
         if tx.is_of_type((ActionType.ADD_LIQUIDITY, ActionType.WITHDRAW, ActionType.DONATE)):
             if tx.affiliate_fee > 0:
-                aff_fee_usd = tx.get_affiliate_fee_usd(usd_per_rune)
-                mark = self._exclamation_sign(aff_fee_usd, 'fee_usd_limit')
-                aff_text = f'Партнерский бонус: {bold(short_dollar(aff_fee_usd))}{mark} ' \
-                           f'({format_percent(tx.affiliate_fee, 1)})\n'
+                aff_text = f'Партнерский бонус: {format_percent(tx.affiliate_fee, 1)}\n'
             else:
                 aff_text = ''
 
@@ -490,26 +487,22 @@ class RussianLocalization(BaseLocalization):
         elif tx.is_of_type(ActionType.SWAP):
             content += self.format_swap_route(tx, usd_per_rune)
             slip_str = f'{tx.meta_swap.trade_slip_percent:.3f} %'
-            l_fee_usd = tx.meta_swap.liquidity_fee_rune_float * usd_per_rune
 
             if tx.affiliate_fee > 0:
-                aff_fee_usd = tx.get_affiliate_fee_usd(usd_per_rune)
-                mark = self._exclamation_sign(aff_fee_usd, 'fee_usd_limit')
-
                 aff_collector = self.name_service.get_affiliate_name(tx.memo.affiliate_address)
-                aff_collector = f'{aff_collector} ' if aff_collector else ''
+                aff_collector = f'{aff_collector} комиссия партнера' if aff_collector else 'Партнерская комиссия'
 
-                aff_text = f'{aff_collector}Партнерский бонус: {bold(short_dollar(aff_fee_usd))}{mark} ' \
-                           f'({format_percent(tx.affiliate_fee, 1)})\n'
+                aff_text = f'{aff_collector}: {format_percent(tx.affiliate_fee, 1)}\n'
             else:
                 aff_text = ''
 
-            slip_mark = self._exclamation_sign(l_fee_usd, 'slip_usd_limit')
             content += (
                 f"\n{aff_text}"
                 f"Проскальзывание: {bold(slip_str)}\n"
-                f"Комиссия пулам: {bold(pretty_dollar(l_fee_usd))}{slip_mark}"
             )
+
+            if tx.liquidity_fee_percent:
+                content += f"Комиссия пулам: {bold(format_percent(tx.liquidity_fee_percent))}\n"
 
             if tx.is_streaming:
                 duration = tx.meta_swap.streaming.total_duration
@@ -531,9 +524,12 @@ class RussianLocalization(BaseLocalization):
               f"{blockchain_components_str}\n" \
               f"{content}"
 
-        if not tx.any_side_in_tc:
-            url = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, tx.tx_hash)
-            msg += f"\n{link(url, 'Runescan')}\n"
+        # if not tx.any_side_in_tc:
+        url = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, tx.tx_hash)
+        msg += (
+            f"\n"
+            f"📎{link(url, 'Runescan')}\n"
+        )
 
         return msg.strip()
 
@@ -2022,8 +2018,7 @@ class RussianLocalization(BaseLocalization):
             aff_collector = self.name_service.get_affiliate_name(event.affiliate)
             aff_collector = f'{aff_collector} ' if aff_collector else ''
 
-            aff_text = f'{aff_collector}партнерская комиссия: {short_dollar(event.affiliate_usd)} ' \
-                       f'({format_percent(event.affiliate_rate, 1)})\n'
+            aff_text = f'{aff_collector}партнерская комиссия: {format_percent(event.affiliate_rate, 1)}\n'
         else:
             aff_text = ''
 
