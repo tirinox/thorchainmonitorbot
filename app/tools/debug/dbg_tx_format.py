@@ -434,7 +434,7 @@ async def main():
     # await find_affiliate_txs(app, 1, (ThorTxType.TYPE_SWAP,))
     # await demo_find_aggregator_error(app)
     # await demo_find_missed_txs_swap(app)
-    await demo_swap_adjust_liquidity(app)
+    # await demo_swap_adjust_liquidity(app)
     # await demo_swap_synth(app)
     # await demo_swap_with_refund_and_incorrect_savings_vs_cex(app)
     # await dbg_refund_spam(app)

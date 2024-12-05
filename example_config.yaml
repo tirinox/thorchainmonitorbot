@@ -280,12 +280,12 @@ tx:
 
   add_date_if_older_than: 2h
 
-  estimated_savings_vs_cex_enabled: false
+  estimated_savings_vs_cex_enabled: false  # (!) new
 
-  exclamation:
-    fee_usd_limit: 3000
-    ilp_usd_limit: 5000
-    slip_usd_limit: 5000
+  #  exclamation:
+  #    fee_usd_limit: 3000
+  #    ilp_usd_limit: 5000
+  #    slip_usd_limit: 5000
 
   curve:
     - depth: 10k
@@ -313,7 +313,7 @@ tx:
 
   swap:
     enabled: true
-    min_usd_total: 5000
+    min_usd_total: 50
     curve_mult: 0.3
 
     also_trigger_when:
@@ -323,7 +323,7 @@ tx:
       streaming_swap:
         volume_greater: 25000
         notify_start: true
-      trade_asset_swap: # (!) new
+      trade_asset_swap:
         volume_greater: 10_000
 
   donate:
@@ -358,10 +358,10 @@ price:
   price_graph:
     default_period: 7d
 
-  pool_max_age: 30d  # (!) new
+  pool_max_age: 30d
 
-  pool_fetch_period: 60  # (!) new
-  market_fetch_period: 10m  # (!) new
+  pool_fetch_period: 60
+  market_fetch_period: 10m
 
   cex_reference:
     cex: binance
@@ -577,7 +577,7 @@ supply:
   enabled: true
   notification:
     period: 7d
-  rune_burn: # (!) new
+  rune_burn:
     notification:
       enabled: true
       cooldown: 1d
@@ -615,7 +615,7 @@ lending:
   fetch_period: 2h
 
   stats_report:
-    enabled: true
+    enabled: false
     cooldown: 3d
 
   caps_alert:
@@ -661,7 +661,7 @@ runepool:
     allow_when_zero: false
 
 
-chain_id: # (!) new, watch hard-forks
+chain_id:
   enabled: true
   fetch_period: 1m
   cooldown: 1d
