@@ -74,8 +74,9 @@ class RussianLocalization(BaseLocalization):
     def _announcement():
         return (
             '\n\n'
-            '➡️Русскоязычные группы THORChain переехали: https://t.me/ThorchainRus (основная) и '
-            'https://t.me/runetradingru2 (торговля, флуд).'
+            '➡️ Русскоязычные группы THORChain переехали: \n'
+            ' 👉 <b>https://t.me/ThorchainRus</b> (основная) \n'
+            ' 👉 <b>https://t.me/runetradingru2</b> (торговля, флуд)'
         )
 
     @classmethod
