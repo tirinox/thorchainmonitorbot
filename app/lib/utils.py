@@ -600,3 +600,17 @@ def namedtuple_to_dict(obj) -> dict:
             result[attr] = getattr(obj, attr)
 
     return result
+
+
+_GLB_HIT_COUNTER = {}
+
+
+def hit_every(key: str, n: int) -> bool:
+    g = _GLB_HIT_COUNTER
+    if key not in g:
+        g[key] = 0
+    g[key] += 1
+    if g[key] >= n:
+        g[key] = 0
+        return True
+    return False

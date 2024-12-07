@@ -16,7 +16,7 @@ from lib.money import pretty_dollar, pretty_money, short_address, adaptive_round
     chart_emoji, pretty_rune
 from lib.texts import bold, link, code, ital, pre, x_ses, progressbar, bracketify, \
     up_down_arrow, plural, shorten_text, cut_long_text, underline
-from lib.utils import grouper, translate
+from lib.utils import grouper, translate, hit_every
 from models.asset import Asset
 from models.cap_info import ThorCapInfo
 from models.circ_supply import EventRuneBurn
@@ -70,6 +70,18 @@ class RussianLocalization(BaseLocalization):
         'T': ' трлн',
     }
 
+    @staticmethod
+    def _announcement():
+        return (
+            '\n\n'
+            '➡️Русскоязычные группы THORChain переехали: https://t.me/ThorchainRus (основная) и '
+            'https://t.me/runetradingru2 (торговля, флуд).'
+        )
+
+    @classmethod
+    def _conditional_announcement(cls):
+        return cls._announcement() if hit_every('rus_tg_move', 4) else ''
+
     # ---- WELCOME ----
     def help_message(self):
         return (
@@ -93,9 +105,8 @@ class RussianLocalization(BaseLocalization):
         return (
             f"Привет! Здесь ты можешь найти метрики THORChain и узнать результаты предоставления ликвидности в пулы.\n"
             f"Цена {self.R} сейчас <code>{info.price:.3f} $</code>.\n"
-            f"<b>⚠️ Бот теперь уведомляет только в канале {self.alert_channel_name}!</b>\n"
             f"Набери /help, чтобы видеть список команд.\n"
-            f"🤗 Отзывы и поддержка: {CREATOR_TG}."
+            f"🤗 Отзывы и поддержка: {CREATOR_TG}.{self._announcement()}"
         )
 
     def unknown_command(self):
@@ -528,8 +539,10 @@ class RussianLocalization(BaseLocalization):
         url = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, tx.tx_hash)
         msg += (
             f"\n"
-            f"📎{link(url, 'Runescan')}\n"
+            f"📎 {link(url, 'Runescan')}"
         )
+
+        msg += self._conditional_announcement()
 
         return msg.strip()
 
@@ -560,6 +573,7 @@ class RussianLocalization(BaseLocalization):
             f'Пользователь: {user_link} / {tx_link}{clout_str}\n'
             f'{amount_str} {asset_str} ({short_dollar(e.volume_usd)}) → ⚡ → {bold(target_asset_str)}\n'
             f'{dur_str}'
+            f'{self._conditional_announcement()}'
         )
 
     # ------- QUEUE -------
@@ -1265,6 +1279,7 @@ class RussianLocalization(BaseLocalization):
                   f'▪️ – {ital("Автоматика")}'
     MIMIR_NO_DATA = 'Нет данных'
     MIMIR_BLOCKS = 'блоков'
+    MIMIR_UNTIL_BLOCK = 'до блока'
     MIMIR_DISABLED = 'ВЫКЛЮЧЕНО'
     MIMIR_YES = 'ДА'
     MIMIR_NO = 'НЕТ'
@@ -1369,8 +1384,10 @@ class RussianLocalization(BaseLocalization):
         text = '🔔 <b>Обновление Мимир!</b>\n\n'
 
         for change in changes:
-            old_value_fmt = code(self.format_mimir_value(change.entry.name, change.old_value, change.entry.units))
-            new_value_fmt = code(self.format_mimir_value(change.entry.name, change.new_value, change.entry.units))
+            old_value_fmt = code(self.format_mimir_value(change.entry.name, change.old_value, change.entry.units,
+                                                         mimir.last_thor_block))
+            new_value_fmt = code(self.format_mimir_value(change.entry.name, change.new_value, change.entry.units,
+                                                         mimir.last_thor_block))
             name = code(change.entry.pretty_name if change.entry else change.name)
 
             e = change.entry
@@ -1759,9 +1776,12 @@ class RussianLocalization(BaseLocalization):
             name_map=name_map
         )
 
-        return f'💸 <b>Большой перевод</b>{tx_link}: ' \
-               f'{code(short_money(t.amount, postfix=" " + asset))}{usd_amt} ' \
-               f'от {from_my} ➡️ к {to_my}{memo}.'
+        return (
+            f'💸 <b>Большой перевод</b>{tx_link}: '
+            f'{code(short_money(t.amount, postfix=" " + asset))}{usd_amt} '
+            f'от {from_my} ➡️ к {to_my}{memo}.'
+            f'{self._conditional_announcement()}'
+        )
 
     @staticmethod
     def unsubscribe_text(unsub_id):
