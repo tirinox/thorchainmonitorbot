@@ -539,6 +539,7 @@ constants:
   mimir_change:
     enabled: true
     cooldown: 20m
+    max_hits_before_cd: 5  # (!) new
   fetch_period: 130s
 
   voting:

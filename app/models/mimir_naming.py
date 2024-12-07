@@ -40,16 +40,24 @@ MIMIR_KEY_POL_SYNTH_UTILIZATION = "POLSYNTHUTILIZATION"
 
 NEXT_CHAIN_KEY = 'NextChain'.upper()
 
+EXTRA_AUTO_SOLVENCY_MIMIRS = [
+    'STOPFUNDYGGDRASIL'
+]
+
+MIMIR_PAUSE_GLOBAL = 'NODEPAUSECHAINGLOBAL'
+
 MIMIR_DICT_FILENAME = f'{get_data_path()}/mimir_naming.yaml'
 
 
 class MimirUnits:
     UNITS_RUNES = 'runes'
     UNITS_BLOCKS = 'blocks'
+    UNITS_UNTIL_BLOCK = 'until_block'
     UNITS_BOOL = 'bool'
     UNITS_NEXT_CHAIN = 'next_chain'
     UNITS_USD = 'usd'
     UNITS_BASIS_POINTS = 'basis_points'
+    UNITS_INT = 'int'
 
 
 class MimirNameRules:
@@ -150,8 +158,10 @@ class MimirNameRules:
         name = name.upper()
         if name in self.rules['types']['rune']:
             return MimirUnits.UNITS_RUNES
-        elif name in self.rules['types']['block']:
+        elif name in self.rules['types']['blocks']:
             return MimirUnits.UNITS_BLOCKS
+        elif name in self.rules['types']['until_block']:
+            return MimirUnits.UNITS_UNTIL_BLOCK
         elif name in self.rules['types']['bool']:
             return MimirUnits.UNITS_BOOL
         elif name in self.rules['types']['usd']:

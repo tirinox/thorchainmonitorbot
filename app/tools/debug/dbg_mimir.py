@@ -11,6 +11,7 @@ from jobs.fetch.mimir import ConstMimirFetcher
 from lib.depcont import DepContainer
 from lib.var_file import var_file_loop
 from models.mimir import AlertMimirVoting, MimirTuple
+from models.mimir_naming import MIMIR_PAUSE_GLOBAL
 from notify.public.mimir_notify import MimirChangedNotifier
 from notify.public.voting_notify import VotingNotifier
 from tools.lib.lp_common import LpAppFramework
@@ -65,6 +66,7 @@ class MimirMockChangesFetcher(ConstMimirFetcher):
     GENERAL = 'general'
     AUTO_AUTO = 'auto_auto'
     MIMIR_FAILS = 'mimir_fails'
+    PAUSE_GLOBAL = MIMIR_PAUSE_GLOBAL
 
     def __init__(self, deps: DepContainer, method: str):
         super().__init__(deps)
@@ -90,6 +92,8 @@ class MimirMockChangesFetcher(ConstMimirFetcher):
             results = self._dbg_auto_to_auto(results)
         elif self.method == self.MIMIR_FAILS:
             results = await self._dbg_fail_to_get_mimir(results)
+        elif self.method == self.PAUSE_GLOBAL:
+            results = await self._dbg_pause_global(results)
 
         return results
 
@@ -155,9 +159,23 @@ class MimirMockChangesFetcher(ConstMimirFetcher):
     async def _dbg_fail_to_get_mimir(self, r: MimirTuple):
         return r._replace(mimir=ThorMimir({}))
 
+    async def _dbg_pause_global(self, r: MimirTuple):
+        await self.deps.last_block_fetcher.run_once()
 
-async def demo_mimir_spam_filter(app: LpAppFramework):
-    mimir_fetcher = MimirMockChangesFetcher(app.deps, MimirMockChangesFetcher.GENERAL)
+        key = MIMIR_PAUSE_GLOBAL
+        self.prev = r.mimir.constants[key]
+        thor_block = self.deps.last_block_store.thor
+        next_block = thor_block + random.randint(10, 10000)
+
+        current = r.mimir.constants[key] = next_block
+
+        print(f'Mock: Mimir {key!r} | {self.prev} => {current}!')
+
+        return r
+
+
+async def demo_mimir_spam_filter(app: LpAppFramework, mode):
+    mimir_fetcher = MimirMockChangesFetcher(app.deps, mode)
     mimir_fetcher.sleep_period = 5
 
     mimir_holder = app.deps.mimir_const_holder
@@ -183,7 +201,8 @@ async def run():
 
     # await demo_cap_test(app)
     # await demo_mimir_consensus(app)
-    await demo_mimir_spam_filter(app)
+    # await demo_mimir_spam_filter(app, mode=MimirMockChangesFetcher.PAUSE_GLOBAL)
+    await demo_mimir_spam_filter(app, mode=MimirMockChangesFetcher.GENERAL)
 
 
 if __name__ == '__main__':

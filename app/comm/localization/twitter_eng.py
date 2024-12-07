@@ -639,13 +639,12 @@ class TwitterEnglishLocalization(BaseLocalization):
         if not changes:
             return ''
 
-        text = '🔔 Mimir update!\n'
+        text = '🔔 Mimir update!\n\n'
 
         for change in changes:
-            units = self.mimir_rules.get_mimir_units(change.name)
-            old_value_fmt = self.format_mimir_value(change.name, change.old_value, units)
-            new_value_fmt = self.format_mimir_value(change.name, change.new_value, units)
-            name = change.entry.pretty_name if change.entry else change.name
+            old_value_fmt, new_value_fmt = self._old_and_new_mimir(change, mimir)
+
+            name = f'{change.entry.pretty_name} ({change.entry.name})' if change.entry else change.name
 
             e = change.entry
             if e:
@@ -655,23 +654,23 @@ class TwitterEnglishLocalization(BaseLocalization):
                     text += '[👩‍💻 Admins ]  '
                 elif e.source == e.SOURCE_NODE:
                     text += '[🤝 Nodes voted ]  '
+                elif e.source == e.SOURCE_NODE_PAUSE:
+                    text += '[⏸️] '
                 elif e.source == e.SOURCE_NODE_CEASED:
                     text += '[💔 Node-Mimir off ]  '
 
             if change.kind == MimirChange.ADDED_MIMIR:
                 text += (
                     f'➕ New Mimir \"{name}\". '
-                    f'Default: {old_value_fmt} → New: {new_value_fmt}‼️'
+                    f'Default: {old_value_fmt} → New: {new_value_fmt}'
                 )
             elif change.kind == MimirChange.REMOVED_MIMIR:
-                text += f"➖ Mimir \"{name}\" has been removed. It was {old_value_fmt} before. ‼️"
+                text += f"➖ Mimir \"{name}\" has been removed. It was {old_value_fmt} before."
                 if change.new_value is not None:
                     text += f" Now it has its default value: {new_value_fmt}."
             else:
                 text += (
-                    f"🔄 Mimir \"{name}\" has been updated from "
-                    f"{old_value_fmt} → "
-                    f"to {new_value_fmt}‼️"
+                    f"\"{name}\": {old_value_fmt} → {new_value_fmt}️"
                 )
                 if change.entry.automatic and change.non_zero_value:
                     text += f' at block #{change.new_value}.'

@@ -1385,10 +1385,10 @@ class RussianLocalization(BaseLocalization):
         text = '🔔 <b>Обновление Мимир!</b>\n\n'
 
         for change in changes:
-            old_value_fmt = code(self.format_mimir_value(change.entry.name, change.old_value, change.entry.units,
-                                                         mimir.last_thor_block))
-            new_value_fmt = code(self.format_mimir_value(change.entry.name, change.new_value, change.entry.units,
-                                                         mimir.last_thor_block))
+            old_value_fmt, new_value_fmt = self._old_and_new_mimir(change, mimir)
+            old_value_fmt = code(old_value_fmt)
+            new_value_fmt = code(new_value_fmt)
+
             name = code(change.entry.pretty_name if change.entry else change.name)
 
             e = change.entry
@@ -1399,6 +1399,8 @@ class RussianLocalization(BaseLocalization):
                     text += bold('[👩‍💻 Администраторы ]  ')
                 elif e.source == e.SOURCE_NODE:
                     text += bold('[🤝 Голосование нод ]  ')
+                elif e.source == e.SOURCE_NODE_PAUSE:
+                    text += bold('[⏸️] ')
                 elif e.source == e.SOURCE_NODE_CEASED:
                     text += bold('[💔 Мимир нод отменен ]  ')
 
@@ -1406,17 +1408,17 @@ class RussianLocalization(BaseLocalization):
                 text += (
                     f'➕ Настройка "{name}" теперь переопределена новым Мимиром. '
                     f'Старое значение по умолчанию было: {old_value_fmt} → '
-                    f'новое значение стало: {new_value_fmt}‼️'
+                    f'новое значение стало: {new_value_fmt}'
                 )
             elif change.kind == MimirChange.REMOVED_MIMIR:
                 text += f'➖ Настройка Мимира "{name}" была удалена! Ранее она имела значение: {old_value_fmt}.'
                 if change.new_value is not None:
-                    text += f' Теперь она вернулась к исходной константе: {new_value_fmt}‼️'
+                    text += f' Теперь она вернулась к исходной константе: {new_value_fmt}'
             else:
                 text += (
-                    f'🔄 Настройка Мимира "{name}" была изменена. '
+                    f'Настройка Мимира "{name}" была изменена. '
                     f'Старое значение: {old_value_fmt} → '
-                    f'новое значение теперь: {new_value_fmt}‼️'
+                    f'новое значение теперь: {new_value_fmt}'
                 )
                 if change.entry.automatic and change.non_zero_value:
                     text += f' (на блоке #{ital(change.non_zero_value)}).'

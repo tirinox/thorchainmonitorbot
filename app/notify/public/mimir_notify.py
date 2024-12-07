@@ -23,6 +23,7 @@ class MimirChangedNotifier(INotified, WithDelegates, WithLogger):
         super().__init__()
         self.deps = deps
         self.cd_sec_change = deps.cfg.as_interval('constants.mimir_change.cooldown')
+        self.max_hits_before_cd = deps.cfg.as_int('constants.mimir_change.max_hits_before_cd')
 
     @staticmethod
     def mimir_last_modification_key(name):
@@ -50,7 +51,8 @@ class MimirChangedNotifier(INotified, WithDelegates, WithLogger):
                 self.deps.mimir_const_holder.register_change_ts(name, ts)
 
     async def on_data(self, sender: ConstMimirFetcher, data: MimirTuple):
-        _, fresh_mimir, node_mimir, votes, _ = data
+        fresh_mimir = data.mimir
+        node_mimir = data.node_mimir
 
         if not fresh_mimir or not fresh_mimir.constants:
             return
@@ -149,7 +151,8 @@ class MimirChangedNotifier(INotified, WithDelegates, WithLogger):
         if c.name in self.MIMIR_IGNORE_CHANGES:
             return False
 
-        cd = Cooldown(self.deps.db, f"MimirChange:{c.entry.name}", self.cd_sec_change, max_times=2)
+        cd = Cooldown(self.deps.db, f"MimirChange:{c.entry.name}", self.cd_sec_change,
+                      max_times=self.max_hits_before_cd)
         if await cd.can_do():
             await cd.do()
             return True

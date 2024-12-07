@@ -751,7 +751,7 @@ class BaseLocalization(ABC):  # == English
         url = get_explorer_url_to_tx(self.cfg.network_id, Chains.THOR, tx.tx_hash)
         msg += (
             f"\n"
-            f"📎{link(url, 'Runescan')}\n"
+            f"📎 {link(url, 'Runescan')}"
         )
 
         return msg.strip()
@@ -1513,6 +1513,7 @@ class BaseLocalization(ABC):  # == English
                   f'▪️ – {ital("Automatic solvency checker")}'
     MIMIR_NO_DATA = 'No data'
     MIMIR_BLOCKS = 'blocks'
+    MIMIR_UNTIL_BLOCK = 'until block'
     MIMIR_DISABLED = 'DISABLED'
     MIMIR_YES = 'YES'
     MIMIR_NO = 'NO'
@@ -1523,7 +1524,7 @@ class BaseLocalization(ABC):  # == English
 
     MIMIR_UNKNOWN_CHAIN = 'Unknown chain'
 
-    def format_mimir_value(self, name: str, v, units: str = '') -> str:
+    def format_mimir_value(self, name: str, v, units: str = '', thor_block=0) -> str:
         if v is None:
             return self.MIMIR_UNDEFINED
 
@@ -1539,6 +1540,15 @@ class BaseLocalization(ABC):  # == English
             seconds = blocks * THOR_BLOCK_TIME
             time_str = self.seconds_human(seconds) if seconds != 0 else self.MIMIR_DISABLED
             return f'{time_str}, {blocks} {self.MIMIR_BLOCKS}'
+        elif units == MimirUnits.UNITS_UNTIL_BLOCK:
+            until_block = int(v)
+            if thor_block:
+                blocks_left = until_block - thor_block
+                time_left = blocks_left * THOR_BLOCK_TIME
+                time_str = f' (~{self.seconds_human(time_left)})'
+            else:
+                time_str = ''
+            return f'{self.MIMIR_UNTIL_BLOCK} #{until_block}{time_str}'
         elif units == MimirUnits.UNITS_BOOL:
             s = self.MIMIR_YES if bool(int(v)) else self.MIMIR_NO
             return f'{s}'
@@ -1557,7 +1567,17 @@ class BaseLocalization(ABC):  # == English
         else:
             return str(v)
 
-    def format_mimir_entry(self, i: int, m: MimirEntry):
+    def _old_and_new_mimir(self, change, mimir):
+        units = self.mimir_rules.get_mimir_units(change.name)
+        if units == MimirUnits.UNITS_UNTIL_BLOCK:
+            old_units = MimirUnits.UNITS_INT
+        else:
+            old_units = units
+        old_value_fmt = self.format_mimir_value(change.name, change.old_value, old_units, mimir.last_thor_block)
+        new_value_fmt = self.format_mimir_value(change.name, change.new_value, units, mimir.last_thor_block)
+        return old_value_fmt, new_value_fmt
+
+    def format_mimir_entry(self, i: int, m: MimirEntry, thor_block=0):
         if m.source == m.SOURCE_ADMIN:
             mark = '🔹'
         elif m.source == m.SOURCE_NODE:
@@ -1568,7 +1588,7 @@ class BaseLocalization(ABC):  # == English
             mark = ''
 
         if m.hard_coded_value is not None:
-            std_value_fmt = self.format_mimir_value(m.name, m.hard_coded_value, m.units)
+            std_value_fmt = self.format_mimir_value(m.name, m.hard_coded_value, m.units, thor_block)
             std_value = f'({self.MIMIR_STANDARD_VALUE} {pre(std_value_fmt)})'
         else:
             std_value = ''
@@ -1579,7 +1599,7 @@ class BaseLocalization(ABC):  # == English
         else:
             last_change = ''
 
-        real_value_fmt = self.format_mimir_value(m.name, m.real_value, m.units)
+        real_value_fmt = self.format_mimir_value(m.name, m.real_value, m.units, thor_block)
         return f'{i}. {mark}{bold(m.pretty_name)} = {code(real_value_fmt)} {std_value} {last_change}'
 
     def text_mimir_intro(self):
@@ -1593,7 +1613,7 @@ class BaseLocalization(ABC):  # == English
         text_lines = []
 
         for i, entry in enumerate(holder.all_entries, start=1):
-            text_lines.append(self.format_mimir_entry(i, entry))
+            text_lines.append(self.format_mimir_entry(i, entry, holder.last_thor_block))
 
         lines_grouped = ['\n'.join(line_group) for line_group in grouper(self.MIMIR_ENTRIES_PER_MESSAGE, text_lines)]
 
@@ -1637,7 +1657,7 @@ class BaseLocalization(ABC):  # == English
             extra = f' {pb}{self._text_votes_to_pass(option)}' \
                 if not already_consensus else self.TEXT_NODE_MIMIR_ALREADY_CONSENSUS
 
-            pretty_value = self.format_mimir_value(voting.key, str(option.value))
+            pretty_value = self.format_mimir_value(voting.key, str(option.value), thor_block=holder.last_thor_block)
             mark = '👏' if option.value == triggered_option_value else ''
             counter = f"{i}. " if n_options > 1 else ''
 
@@ -1783,9 +1803,12 @@ class BaseLocalization(ABC):  # == English
         text = '🔔 <b>Mimir update!</b>\n\n'
 
         for change in changes:
-            old_value_fmt = code(self.format_mimir_value(change.entry.name, change.old_value, change.entry.units))
-            new_value_fmt = code(self.format_mimir_value(change.entry.name, change.new_value, change.entry.units))
-            name = f'{code(change.entry.pretty_name)} ({ital(change.entry.name)})' if change.entry else code(change.name)
+            old_value_fmt, new_value_fmt = self._old_and_new_mimir(change, mimir)
+            old_value_fmt = code(old_value_fmt)
+            new_value_fmt = code(new_value_fmt)
+
+            name = f'{code(change.entry.pretty_name)} ({ital(change.entry.name)})' if change.entry else code(
+                change.name)
 
             e = change.entry
             if e:
@@ -1795,18 +1818,20 @@ class BaseLocalization(ABC):  # == English
                     text += bold('[👩‍💻 Admins ]  ')
                 elif e.source == e.SOURCE_NODE:
                     text += bold('[🤝 Nodes voted ]  ')
+                elif e.source == e.SOURCE_NODE_PAUSE:
+                    text += bold('[⏸️] ')
                 elif e.source == e.SOURCE_NODE_CEASED:
                     text += bold('[💔 Node-Mimir off ]  ')
 
             if change.kind == MimirChange.ADDED_MIMIR:
-                text += f'➕ New MIMIR "{name}": {old_value_fmt} → {new_value_fmt}‼️'
+                text += f'➕ New MIMIR "{name}": {old_value_fmt} → {new_value_fmt}'
             elif change.kind == MimirChange.REMOVED_MIMIR:
-                text += f'➖ MIMIR "{name}" has been deleted. Previous value was {old_value_fmt} before. ‼️'
+                text += f'➖ MIMIR "{name}" has been deleted. Previous value was {old_value_fmt} before.'
                 if change.new_value is not None:
                     text += f" Now this constant reverted to its default value: {new_value_fmt}."
             else:
                 text += (
-                    f'🔄 MIMIR "{name}": {old_value_fmt} → {new_value_fmt}‼️'
+                    f'"{name}": {old_value_fmt} → {new_value_fmt}'
                 )
                 if change.entry.automatic and change.non_zero_value:
                     text += f' at block #{ital(change.non_zero_value)}.'

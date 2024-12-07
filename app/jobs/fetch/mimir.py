@@ -44,5 +44,6 @@ class ConstMimirFetcher(BaseFetcher):
 
         return MimirTuple(
             constants, mimir, node_mimir, votes,
-            active_nodes=self.deps.node_holder.active_nodes
+            active_nodes=self.deps.node_holder.active_nodes,
+            last_thor_block=int(self.deps.last_block_store),
         )

@@ -11,7 +11,8 @@ from lib.delegates import INotified
 from lib.logs import WithLogger
 from lib.texts import split_by_camel_case
 from .base import BaseModelMixin
-from .mimir_naming import MIMIR_KEY_MAX_SYNTH_PER_POOL_DEPTH, MimirNameRules
+from .mimir_naming import MIMIR_KEY_MAX_SYNTH_PER_POOL_DEPTH, MimirNameRules, EXTRA_AUTO_SOLVENCY_MIMIRS, \
+    MIMIR_PAUSE_GLOBAL
 from .node_info import NodeInfo
 
 # for automatic Mimir, when it becomes 0 -> 1 or 1 -> 0, that is Admin's actions
@@ -117,6 +118,7 @@ class MimirEntry:
     SOURCE_AUTO = 'auto'
     SOURCE_NODE = 'node-mimir'
     SOURCE_NODE_CEASED = 'node-mimir-ceased'
+    SOURCE_NODE_PAUSE = 'node-pause'
 
     @property
     def automatic(self) -> bool:
@@ -130,7 +132,7 @@ class MimirEntry:
     def can_be_automatic(name: str):
         name = name.strip().upper()
         is_halt = name.startswith('HALT') or name.startswith('SOLVENCYHALT')
-        return is_halt or name in MimirHolder.EXTRA_AUTO_SOLVENCY_MIMIRS
+        return is_halt or name in EXTRA_AUTO_SOLVENCY_MIMIRS
 
     @property
     def automated(self):
@@ -182,6 +184,7 @@ class MimirTuple(NamedTuple):
     node_mimir: dict
     votes: List[ThorMimirVote]
     active_nodes: List[NodeInfo]
+    last_thor_block: int
 
 
 class MimirHolder(INotified, WithLogger):
@@ -200,10 +203,7 @@ class MimirHolder(INotified, WithLogger):
         self.voting_manager = MimirVoteManager([], [], [])
         self.hard_coded_pretty_names = {}
         self.mimir_rules = MimirNameRules()
-
-    EXTRA_AUTO_SOLVENCY_MIMIRS = [
-        'STOPFUNDYGGDRASIL'
-    ]
+        self.last_thor_block = 0
 
     @property
     def is_loaded(self):
@@ -244,6 +244,8 @@ class MimirHolder(INotified, WithLogger):
         self.logger.info(f'Got {len(data.constants.constants)} CONST entries'
                          f' and {len(data.mimir.constants)} MIMIR entries.')
 
+        self.last_thor_block = data.last_thor_block
+
         self.voting_manager = MimirVoteManager(data.votes, data.active_nodes, self.mimir_rules.excluded_from_voting)
 
         hard_coded_constants = {n.upper(): v for n, v in data.constants.constants.items()}
@@ -272,6 +274,8 @@ class MimirHolder(INotified, WithLogger):
 
             if is_automatic:
                 source = MimirEntry.SOURCE_AUTO
+            elif name == MIMIR_PAUSE_GLOBAL:
+                source = MimirEntry.SOURCE_NODE_PAUSE
             elif name in node_mimir_names:
                 source = MimirEntry.SOURCE_NODE
             elif name in overridden_names or name not in const_names:
