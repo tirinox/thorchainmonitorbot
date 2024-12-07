@@ -514,7 +514,7 @@ class RussianLocalization(BaseLocalization):
             )
 
             if tx.liquidity_fee_percent:
-                content += f"Комиссия пулам: {bold(format_percent(tx.liquidity_fee_percent))}\n"
+                content += f"Комиссия пулам: {bold(format_percent(tx.liquidity_fee_percent))}"
 
             if tx.is_streaming:
                 duration = tx.meta_swap.streaming.total_duration
