@@ -62,6 +62,12 @@ logs: # Show logs.
 	@docker compose logs -f --tail 1000 $(BOTNAME)
 
 
+.PHONE: dump-logs
+dump-logs: # Dump logs to logs.txt.
+	echo "Dumping logs to logs.txt..."
+	@docker compose logs --tail 180000 $(BOTNAME) > logs.txt
+
+
 .PHONY: clean
 clean: # Remove containers and volumes.
 	@docker system prune --volumes --force
@@ -144,6 +150,7 @@ redis-analysis: # Run the Redis analytics tool
 .PHONY: renderer-up
 renderer-up: # Launch the HTML renderer image
 	docker compose up -d renderer
+
 
 .PHONY: renderer-dev
 renderer-dev: # Launch the HTML renderer image in development mode
