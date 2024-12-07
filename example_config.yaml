@@ -551,6 +551,7 @@ chain_halt_state:
   enabled: true
   fetch_period: 67s
   cooldown: 1h
+  max_hits_before_cd: 5  # (!) new
 
 
 last_block:

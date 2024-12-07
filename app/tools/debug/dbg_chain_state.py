@@ -40,6 +40,7 @@ class NaughtyChainStateFetcher(ChainStateFetcher):
 async def demo_chain_halt_notifications(app):
     d = app.deps
     fetcher_chain_state = NaughtyChainStateFetcher(d)
+    fetcher_chain_state.sleep_period = 1
     notifier_trade_halt = TradingHaltedNotifier(d)
     fetcher_chain_state.add_subscriber(notifier_trade_halt)
     notifier_trade_halt.add_subscriber(d.alert_presenter)

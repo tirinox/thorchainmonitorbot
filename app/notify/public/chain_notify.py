@@ -22,7 +22,8 @@ class TradingHaltedNotifier(INotified, WithDelegates, WithLogger):
         self.deps = deps
 
         self.cooldown_sec = self.deps.cfg.as_interval('chain_halt_state.cooldown', 10 * MINUTE)
-        self.hit_count_before_cooldown = 5
+        self.max_hits_before_cd = self.deps.cfg.as_int('chain_halt_state.max_hits_before_cd', 5)
+        self.logger.info(f'Chain Halt cooldown: {self.cooldown_sec} sec, max hits: {self.max_hits_before_cd}')
 
     def _dbg_randomize_chain_dic_halted(self, data: Dict[str, ThorChainInfo]):
         for item in data.values():
@@ -32,7 +33,7 @@ class TradingHaltedNotifier(INotified, WithDelegates, WithLogger):
     def _make_spam_control(self, chain: str):
         return Cooldown(
             self.deps.db, f'TradingHalted:{chain}',
-            self.cooldown_sec, max_times=self.hit_count_before_cooldown
+            self.cooldown_sec, max_times=self.max_hits_before_cd
         )
 
     async def _can_notify_on_chain(self, chain: str):
