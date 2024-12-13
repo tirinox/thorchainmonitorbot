@@ -13,31 +13,26 @@ logger = logging.getLogger(__name__)
 
 class LogItem(NamedTuple):
     code: int
-    entries: dict
+    events: list
     error_message: str
 
     @classmethod
     def load(cls, tx_result):
         code = tx_result.get('code', 0)
         if code != 0:
-            entries = {}
+            events = []
             error_message = tx_result.get('log')
         else:
-            entries = ujson.loads(tx_result.get('log'))
+            # entries = ujson.loads(tx_result.get('log'))
+            # v3
+            entries = tx_result.get('events', [])
+            events = [DecodedEvent.from_dict(raw_event) for raw_event in entries]
             error_message = ''
         return cls(
             code=code,
-            entries=entries,
+            events=events,
             error_message=error_message
         )
-
-    @property
-    def events(self):
-        events = []
-        for entry in self.entries:
-            for raw_event in entry.get('events', []):
-                events.append(DecodedEvent.from_dict(raw_event))
-        return events
 
 
 @dataclass
@@ -58,9 +53,6 @@ class BlockResult:
     @property
     def is_behind(self):
         return self.last_available_block != 0 and self.block_no < self.last_available_block
-
-    def find_events_by_type(self, ev_type: str):
-        return filter(lambda ev: ev.type == ev_type, self.end_block_events)
 
     TYPE_SWAP = 'swap'
     TYPE_SCHEDULED_OUT = 'scheduled_outbound'
@@ -143,11 +135,11 @@ class BlockResult:
             if log.code != 0:
                 logger.error(f'Error in tx: code={log.code}; error_message={log.error_message}; block #{block_no}')
 
-        end_block_events = safe_get(block_results_raw, 'result', 'end_block_events') or []
+        end_block_events = safe_get(block_results_raw, 'result', 'finalize_block_events') or []
         decoded_end_block_events = [thor_decode_event(ev, block_no) for ev in end_block_events]
 
         # txs are empty so far; use load_txs to fill them
-        return BlockResult(block_no, [], decoded_tx_logs, decoded_end_block_events)
+        return BlockResult(block_no, txs=[], tx_logs=decoded_tx_logs, end_block_events=decoded_end_block_events)
 
     def fill_transactions(self, txs: List[NativeThorTx]):
         self.txs = txs

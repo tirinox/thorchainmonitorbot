@@ -131,11 +131,9 @@ class RuneTransferDetectorTxLogs(WithDelegates, INotified, WithLogger):
             for logs in r.tx_logs:
                 if not logs:  # may be None
                     continue
-                for log in logs.entries:
-                    for ev in log['events']:
-                        dec_ev = DecodedEvent.from_dict(ev)
-                        if t := self._build_transfer_from_event(dec_ev, r.block_no):
-                            transfers.append(t)
+                for ev in logs.events:
+                    if t := self._build_transfer_from_event(ev, r.block_no):
+                        transfers.append(t)
         except (TypeError, KeyError, ValueError) as e:
             self.logger.exception(f'Error processing tx logs {e}', stack_info=True)
 

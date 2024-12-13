@@ -181,7 +181,7 @@ async def main():
 
         # await demo_non_zero_code(app)
 
-        # await demo_block_scanner_active(app, send_alerts=True, catch_up=True)
+        await demo_block_scanner_active(app, send_alerts=True, catch_up=True)
 
         # await demo_block_scanner_active(app, send_alerts=False, force_start_block=100)  # test behind your node
 
@@ -193,7 +193,7 @@ async def main():
         # await demo_native_block_action_detector(app)
 
         # await debug_block_tx_status_check(app)
-        await demo_rune_transfers_once(app, block=16374337)
+        # await demo_rune_transfers_once(app, block=16374337)
         # await dbg_second_chance_before_deactivate(app)
 
 
