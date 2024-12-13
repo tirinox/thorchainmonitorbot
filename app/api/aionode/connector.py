@@ -192,7 +192,7 @@ class ThorConnector:
 
     async def query_trade_account(self, address, height=0) -> List[ThorTradeAccount]:
         url = self.env.path_trade_account.format(wallet=address, height=height)
-        data = await self._request(url)
+        data = await self._request(url, treat_empty_as_ok=True)
         if data:
             if isinstance(data, list):
                 return [ThorTradeAccount.from_json(p) for p in data]
