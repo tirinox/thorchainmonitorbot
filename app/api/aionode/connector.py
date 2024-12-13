@@ -249,8 +249,7 @@ class ThorConnector:
                     data = await client.request(path, is_rpc=is_rpc)
 
                     if treat_empty_as_ok:
-                        if data is not None:
-                            return data
+                        return data
                     else:
                         if data:
                             # only non-empty data is considered as valid
