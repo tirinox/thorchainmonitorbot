@@ -1,14 +1,19 @@
 import asyncio
 import logging
 
-from jobs.scanner.block_loader import thor_decode_amount_field
-from jobs.scanner.native_scan_v3 import BlockScannerV3
+from jobs.scanner.native_scan import BlockScanner
+from jobs.scanner.util import thor_decode_amount_field, pubkey_to_thor_address
 from tools.lib.lp_common import LpAppFramework
+
+"""
+Contains error tx: 18995227
+Contains send tx: 18994586
+"""
 
 
 async def dbg_get_block(app, block):
     d = app.deps
-    scanner = BlockScannerV3(d, sleep_period=10.0)
+    scanner = BlockScanner(d, sleep_period=10.0)
 
     d.last_block_fetcher.add_subscriber(d.last_block_store)
     await d.last_block_fetcher.run_once()
@@ -36,6 +41,8 @@ def dbg_decode_thor_amounts():
 
 
 async def main():
+    print(pubkey_to_thor_address("A7dfWmk8lROhAOMYrSx/XaVc1U27nT73WSLpbUzany5I"))
+
     dbg_decode_thor_amounts()
 
     app = LpAppFramework(log_level=logging.DEBUG)

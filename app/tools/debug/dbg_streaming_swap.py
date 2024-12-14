@@ -8,7 +8,6 @@ from jobs.fetch.streaming_swaps import StreamingSwapFechter
 from jobs.fetch.tx import TxFetcher
 from jobs.scanner.event_db import EventDatabase
 from jobs.scanner.native_scan import BlockScanner
-# from jobs.scanner.native_scan import NativeScannerBlock
 from jobs.scanner.scan_cache import BlockScannerCached
 from jobs.scanner.swap_extractor import SwapExtractorBlock
 from jobs.user_counter import UserCounterMiddleware
@@ -22,7 +21,6 @@ from models.tx import ThorAction
 from notify.public.dex_report_notify import DexReportNotifier
 from notify.public.s_swap_notify import StreamingSwapStartTxNotifier
 from notify.public.tx_notify import SwapTxNotifier
-from proto.types import MsgDeposit, MsgObservedTxIn
 from tools.lib.lp_common import LpAppFramework
 
 BlockScannerClass = BlockScannerCached
@@ -159,16 +157,6 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
             await asyncio.sleep(5.9)
 
 
-async def debug_detect_start_on_deposit_rune(app):
-    scanner = BlockScannerClass(app.deps)
-    blk = await scanner.fetch_one_block(12079656)  # RUNE => ETH.THOR
-    sss = StreamingSwapStartTxNotifier(app.deps)
-    deposits = blk.find_tx_by_type(MsgDeposit)
-
-    results = sss.detector.handle_deposits(deposits)
-    print(results)
-
-
 async def demo_search_for_deposit_streaming_synth(app):
     tx_fetcher = TxFetcher(app.deps, tx_types=(ActionType.SWAP,))
     txs = await tx_fetcher.fetch_one_batch(tx_types=tx_fetcher.tx_types)
@@ -198,22 +186,6 @@ async def debug_tx_records(app: LpAppFramework, tx_id):
     sep('tx')
     tx = props.build_tx()
     print(tx)
-
-
-async def debug_detect_start_on_external_tx(app: LpAppFramework):
-    scanner = BlockScannerClass(app.deps)
-    sss = StreamingSwapStartTxNotifier(app.deps)
-
-    # 12132229 vs 12136527
-
-    sep('BLOCK 12132229')
-
-    blk = await scanner.fetch_one_block(12132223)
-    deposits = list(blk.find_tx_by_type(MsgObservedTxIn))
-    results = sss.detector.handle_observed_txs(deposits)
-    print(results)
-
-    sep()
 
 
 async def debug_cex_profit_calc(app: LpAppFramework, tx_id):

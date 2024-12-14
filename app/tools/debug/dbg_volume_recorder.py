@@ -55,7 +55,7 @@ async def continuous_volume_recording(lp_app):
     volume_filler.add_subscriber(d.tx_count_recorder)
 
     # Count Trade deposits and withdrawals
-    traed = TradeAccEventDecoder(d.db, d.price_holder)
+    traed = TradeAccEventDecoder(d.price_holder)
     d.block_scanner.add_subscriber(traed)
     traed.add_subscriber(d.volume_recorder)
     traed.add_subscriber(d.tx_count_recorder)

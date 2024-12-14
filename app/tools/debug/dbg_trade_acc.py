@@ -67,7 +67,7 @@ async def demo_decode_trade_acc(app: LpAppFramework, tx_id):
     height = BLOCK_MAP[tx_id]
     block = await scanner.fetch_one_block(height)
 
-    dcd = TradeAccEventDecoder(app.deps.db, app.deps.price_holder)
+    dcd = TradeAccEventDecoder(app.deps.price_holder)
     r = await dcd.on_data(None, block)
 
     if not r:
@@ -95,7 +95,7 @@ async def demo_trade_acc_decode_continuous(app: LpAppFramework, b=0):
     scanner = BlockScanner(d, last_block=b)
     scanner.one_block_per_run = b > 0
 
-    dcd = TradeAccEventDecoder(d.db, d.price_holder)
+    dcd = TradeAccEventDecoder(d.price_holder)
     dcd.sleep_period = 60
     dcd.initial_sleep = 0
     scanner.add_subscriber(dcd)
