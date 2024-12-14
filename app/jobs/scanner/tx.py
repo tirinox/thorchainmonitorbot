@@ -55,6 +55,10 @@ class ThorTxMessage(NamedTuple):
     def txs(self) -> List[dict]:
         return self.attrs.get('txs', [])
 
+    @property
+    def coins(self) -> List[dict]:
+        return self.attrs.get('coins', [])
+
     def __len__(self):
         return len(self.txs)
 

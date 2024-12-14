@@ -6,7 +6,7 @@ import pickle
 from comm.localization.eng_base import BaseLocalization
 from comm.localization.languages import Language
 from jobs.scanner.native_scan import BlockScanner
-from jobs.transfer_detector import RuneTransferDetectorTxLogs
+from jobs.scanner.transfer_detector import RuneTransferDetector
 from lib.delegates import INotified
 from lib.depcont import DepContainer
 from lib.texts import sep
@@ -32,7 +32,7 @@ class ReceiverPublicText(INotified):
 async def demo_native_block_action_detector(app, start=12209517):
     scanner = BlockScanner(app.deps, last_block=start)
     scanner.one_block_per_run = True
-    detector = RuneTransferDetectorTxLogs()
+    detector = RuneTransferDetector()
     scanner.add_subscriber(detector)
     detector.add_subscriber(Receiver('Transfer'))
     # action_extractor = NativeActionExtractor(app.deps)
@@ -46,7 +46,7 @@ async def demo_block_scanner_active(app, send_alerts=False, catch_up=False, forc
                                     print_txs=False):
     d = app.deps
     scanner = BlockScanner(d, sleep_period=10.0)
-    detector = RuneTransferDetectorTxLogs()
+    detector = RuneTransferDetector()
     scanner.add_subscriber(detector)
 
     d.last_block_fetcher.add_subscriber(d.last_block_store)
@@ -57,7 +57,7 @@ async def demo_block_scanner_active(app, send_alerts=False, catch_up=False, forc
 
     if catch_up:
         await scanner.ensure_last_block()
-        scanner.last_block -= 3
+        scanner.last_block -= 100
     elif force_start_block:
         scanner.last_block = force_start_block
 
@@ -71,7 +71,7 @@ async def demo_block_scanner_active(app, send_alerts=False, catch_up=False, forc
 async def get_transfers_from_block(app, block_index):
     scanner = BlockScanner(app.deps)
     r = await scanner.fetch_one_block(block_index)
-    parser = RuneTransferDetectorTxLogs()
+    parser = RuneTransferDetector()
     transfers = parser.process_events(r)
     return transfers
 
@@ -155,7 +155,7 @@ async def debug_ill_transfers(app: LpAppFramework):
 
     scanner = BlockScanner(app.deps, last_block=block_id)
     block = await scanner.fetch_one_block(block_id)
-    detector = RuneTransferDetectorTxLogs()
+    detector = RuneTransferDetector()
     events = detector.process_events(block)
     print(events)
 

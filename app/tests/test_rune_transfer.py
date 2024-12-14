@@ -4,7 +4,7 @@ from typing import List
 import pytest
 
 from jobs.scanner.native_scan import BlockScanner
-from jobs.transfer_detector import RuneTransferDetectorTxLogs
+from jobs.scanner.transfer_detector import RuneTransferDetector
 from lib.constants import thor_to_float
 from lib.texts import sep
 from models.transfer import RuneTransfer
@@ -21,7 +21,7 @@ def fixture_app():
 async def get_transfers_from_block(app, block_index):
     scanner = BlockScanner(app.deps)
     r = await scanner.fetch_one_block(block_index)
-    parser = RuneTransferDetectorTxLogs()
+    parser = RuneTransferDetector()
     transfers = parser.process_events(r)
     return transfers
 

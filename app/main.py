@@ -43,7 +43,7 @@ from jobs.scanner.runepool import RunePoolEventDecoder
 from jobs.scanner.swap_extractor import SwapExtractorBlock
 from jobs.scanner.swap_routes import SwapRouteRecorder
 from jobs.scanner.trade_acc import TradeAccEventDecoder
-from jobs.transfer_detector import RuneTransferDetectorTxLogs
+from jobs.scanner.transfer_detector import RuneTransferDetector
 from jobs.user_counter import UserCounterMiddleware
 from jobs.volume_filler import VolumeFillerUpdater
 from jobs.volume_recorder import VolumeRecorder, TxCountRecorder
@@ -295,7 +295,7 @@ class App(WithLogger):
             reserve_address = d.cfg.as_str('native_scanner.reserve_address')
 
             # Personal Rune transfer notifications
-            transfer_decoder = RuneTransferDetectorTxLogs(reserve_address)
+            transfer_decoder = RuneTransferDetector(reserve_address)
             d.block_scanner.add_subscriber(transfer_decoder)
             balance_notifier = PersonalBalanceNotifier(d)
             transfer_decoder.add_subscriber(balance_notifier)
@@ -578,7 +578,7 @@ class App(WithLogger):
 
         if d.cfg.get('trade_accounts.enabled', True):
             # Trade account actions
-            traed = TradeAccEventDecoder(d.db, d.price_holder)
+            traed = TradeAccEventDecoder(d.price_holder)
             d.block_scanner.add_subscriber(traed)
 
             traed.add_subscriber(d.volume_recorder)
