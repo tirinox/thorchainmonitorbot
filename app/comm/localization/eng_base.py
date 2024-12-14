@@ -33,6 +33,7 @@ from models.lp_info import LiquidityPoolReport
 from models.memo import ActionType
 from models.mimir import MimirChange, MimirHolder, MimirEntry, MimirVoting, MimirVoteOption, AlertMimirVoting
 from models.mimir_naming import MimirUnits
+from models.name import ThorName
 from models.net_stats import NetworkStats, AlertNetworkStats
 from models.node_info import NodeSetChanges, NodeInfo, NodeEventType, NodeEvent, \
     EventBlockHeight, EventDataSlash, EventProviderBondChange, \
@@ -48,7 +49,6 @@ from models.transfer import RuneTransfer, RuneCEXFlow
 from models.tx import ThorAction, ThorSubTx, EventLargeTransaction
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from notify.channel import Messengers
-from proto.types import ThorName
 from .achievements.ach_eng import AchievementsEnglishLocalization
 
 CREATOR_TG = '@account1242'

@@ -3,14 +3,14 @@ import json
 import struct
 from typing import Optional, List, Iterable, Dict, NamedTuple
 
-from .connector import MidgardConnector
 from lib.config import Config
 from lib.constants import Chains
 from lib.date_utils import parse_timespan_to_seconds
 from lib.db import DB
 from lib.utils import WithLogger, keys_to_lower, filter_none_values
+from models.name import ThorName, make_virtual_thor_name, ThorNameAlias
 from models.node_info import NodeListHolder
-from proto.types import ThorName, ThorNameAlias
+from .connector import MidgardConnector
 
 
 class NameMap(NamedTuple):
@@ -31,15 +31,6 @@ class NameMap(NamedTuple):
         self.by_name[thor_name.name] = thor_name
         for alias in thor_name.aliases:
             self.by_address[alias.address] = thor_name
-
-
-def make_virtual_thor_name(address: str, name: str):
-    return ThorName(
-        name, 0, address.encode(),
-        aliases=[
-            ThorNameAlias(Chains.detect_chain(address), address)
-        ]
-    )
 
 
 # ThorName: address[owner] -> many of [name] -> many of [address (thor + chains)]
@@ -205,11 +196,11 @@ class THORNameCache:
 
     @staticmethod
     def _key_thorname_to_addresses(name: str):
-        return f'THORName:Entries:{name}'
+        return f'THORName:Entries_v2:{name}'
 
     @staticmethod
     def _key_address_to_names(address: str):
-        return f'THORName:Address-to-Names:{address}'
+        return f'THORName:Address-to-Names_v2:{address}'
 
     async def save_name_list(self, address: str, names: List[str], expiring: bool = True):
         ex = self.thorname_expire if expiring else None
@@ -253,7 +244,7 @@ class THORNameCache:
             if data == self.NO_VALUE:
                 return data
             else:
-                return ThorName().from_json(data)
+                return ThorName.from_json(data)
         except (TypeError, struct.error):
             return
 
@@ -284,7 +275,7 @@ class THORNameAPIClient:
             return ThorName(
                 name=name,
                 expire_block_height=int(results['expire']),
-                owner=results['owner'].encode(),
+                owner=results['owner'],
                 aliases=[
                     ThorNameAlias(alias['chain'], alias['address']) for alias in results['entries']
                 ]
