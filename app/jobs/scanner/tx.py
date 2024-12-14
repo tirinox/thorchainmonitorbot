@@ -1,17 +1,12 @@
-import base64
 from typing import NamedTuple, List
 
-from jobs.scanner.util import parse_thor_address, thor_decode_amount_field
+from jobs.scanner.util import thor_decode_amount_field, pubkey_to_thor_address
 from lib.utils import safe_get
-
-"""
-Contains error tx: 18995227
-Contains send tx: 18994586
-"""
 
 
 class ThorEvent(NamedTuple):
     attrs: dict
+    height: int = 0
 
     def get(self, key, default=None):
         return self.attrs.get(key, default)
@@ -25,12 +20,15 @@ class ThorEvent(NamedTuple):
     def __iter__(self):
         return iter(self.attrs)
 
+    def __repr__(self):
+        return f"ThorEvent({self.attrs})"
+
     @classmethod
-    def from_dict(cls, d):
+    def from_dict(cls, d, height):
         for key in ('coin', 'amount'):
             if key in d:
                 d['_amount'], d['_asset'] = thor_decode_amount_field(d[key])
-        return cls(d)
+        return cls(d, height)
 
     @property
     def amount(self):
@@ -73,12 +71,6 @@ class ThorTxMessage(NamedTuple):
         return cls(d)
 
 
-def debase64(s: str):
-    if not s:
-        return b''
-    return base64.decodebytes(s.encode()).decode()
-
-
 class ThorSignerInfo(NamedTuple):
     public_key: str
     mode: dict
@@ -86,7 +78,7 @@ class ThorSignerInfo(NamedTuple):
 
     @property
     def address(self):
-        return parse_thor_address(debase64(self.public_key))
+        return pubkey_to_thor_address(self.public_key)
 
     @classmethod
     def from_dict(cls, d):
@@ -101,11 +93,12 @@ class NativeThorTx(NamedTuple):
     tx_hash: str
     code: int
     events: List[ThorEvent]
+    height: int
     original: dict
     signers: List[ThorSignerInfo]
     messages: List[ThorTxMessage]
     log: str = ''
-    memo: str = ''
+    this_memo: str = ''
 
     @property
     def error_message(self):
@@ -120,20 +113,22 @@ class NativeThorTx(NamedTuple):
         """
         Tries to get memo from txs, for instance "/types.MsgObservedTxIn" has memo in txs
         """
-        if self.memo:
-            return self.memo
+        if self.this_memo:
+            return self.this_memo
 
         for msg in self.messages:
             if 'txs' in msg:
                 for tx in msg['txs']:
                     if memo := safe_get(tx, 'tx', 'memo'):
                         return memo
+            elif memo := msg.get('memo'):
+                return memo
         return ''
 
     @classmethod
-    def from_dict(cls, d):
+    def from_dict(cls, d, height):
         result = d.get('result', {})
-        tx = result.get('tx', {})
+        tx = d.get('tx', {})
         signers_raw = safe_get(tx, 'auth_info', 'signer_infos')
         signers = [ThorSignerInfo.from_dict(s) for s in signers_raw]
         body = tx.get('body', {})
@@ -141,11 +136,12 @@ class NativeThorTx(NamedTuple):
         return cls(
             tx_hash=d['hash'],
             code=result['code'],
-            events=[ThorEvent(attrs) for attrs in result.get('events', [])],
+            height=height,
+            events=[ThorEvent.from_dict(attrs, height=height) for attrs in result.get('events', [])],
             log=result.get('log', ''),
             original=d,
             signers=signers,
-            memo=body.get('memo', ''),
+            this_memo=body.get('memo', ''),
             messages=messages,
         )
 

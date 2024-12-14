@@ -2,7 +2,7 @@ from typing import NamedTuple, Optional, Tuple, Union
 
 from lib.constants import POOL_MODULE, NATIVE_RUNE_SYMBOL, thor_to_float, bp_to_float
 from lib.utils import expect_string
-from jobs.scanner.block_loader import DecodedEvent
+from jobs.scanner.tx import ThorEvent
 
 
 class EventSwap(NamedTuple):
@@ -22,12 +22,12 @@ class EventSwap(NamedTuple):
     amount: int = 0
     asset: str = ''
     memo: str = ''
-    original: Optional[DecodedEvent] = None
+    original: Optional[ThorEvent] = None
     height: int = 0
 
     @classmethod
-    def from_event(cls, event: DecodedEvent):
-        attrs = event.attributes
+    def from_event(cls, event: ThorEvent):
+        attrs = event.attrs
         return cls(
             pool=attrs.get('pool', ''),
             swap_target=int(attrs.get('swap_target', 0)),
@@ -61,12 +61,12 @@ class EventStreamingSwap(NamedTuple):
     out_amt_str: str = ''
     failed_swaps: str = ''
     failed_swap_reasons: str = ''
-    original: Optional[DecodedEvent] = None
+    original: Optional[ThorEvent] = None
     height: int = 0
 
     @classmethod
-    def from_event(cls, event: DecodedEvent):
-        attrs = event.attributes
+    def from_event(cls, event: ThorEvent):
+        attrs = event.attrs
         return cls(
             tx_id=attrs.get('tx_id', ''),
             interval=int(attrs.get('interval', 0)),
@@ -122,12 +122,12 @@ class EventOutbound(NamedTuple):
     amount: int = 0
     asset: str = ''
     memo: str = ''
-    original: Optional[DecodedEvent] = None
+    original: Optional[ThorEvent] = None
     height: int = 0
 
     @classmethod
-    def from_event(cls, event: DecodedEvent):
-        attrs = event.attributes
+    def from_event(cls, event: ThorEvent):
+        attrs = event.attrs
         return cls(
             tx_id=attrs.get('in_tx_id', ''),
             out_id=attrs.get('id', ''),
@@ -174,12 +174,12 @@ class EventScheduledOutbound(NamedTuple):
     max_gas_asset_0: str = ''
     max_gas_amount_0: int = 0
     max_gas_decimals_0: int = 0
-    original: Optional[DecodedEvent] = None
+    original: Optional[ThorEvent] = None
     height: int = 0
 
     @classmethod
-    def from_event(cls, event: DecodedEvent):
-        attrs = event.attributes
+    def from_event(cls, event: ThorEvent):
+        attrs = event.attrs
         return cls(
             chain=attrs.get('chain', ''),
             to_address=attrs.get('to_address', ''),
@@ -223,8 +223,8 @@ class EventLoanOpen(NamedTuple):
     height: int = 0
 
     @classmethod
-    def from_event(cls, event: DecodedEvent):
-        attrs = event.attributes
+    def from_event(cls, event: ThorEvent):
+        attrs = event.attrs
         cr = bp_to_float(attrs.get('collateralization_ratio', 0))
         return cls(
             tx_id='',
@@ -234,7 +234,8 @@ class EventLoanOpen(NamedTuple):
             collateral_asset=attrs.get('collateral_asset', ''),
             target_asset=attrs.get('target_asset', ''),
             owner=attrs.get('owner', ''),
-            height=event.height
+            height=event.height  # fixme!!
+
         )
 
     @property
@@ -255,8 +256,8 @@ class EventLoanRepayment(NamedTuple):
     height: int = 0
 
     @classmethod
-    def from_event(cls, event: DecodedEvent):
-        attrs = event.attributes
+    def from_event(cls, event: ThorEvent):
+        attrs = event.attrs
         return cls(
             tx_id='',
             collateral_withdrawn=int(attrs.get('collateral_withdrawn', 0)),
@@ -282,11 +283,11 @@ class EventTradeAccountDeposit(NamedTuple):
     rune_address: str
     asset_address: str
     height: int = 0
-    original: Optional[DecodedEvent] = None
+    original: Optional[ThorEvent] = None
 
     @classmethod
-    def from_event(cls, event: DecodedEvent):
-        attrs = event.attributes
+    def from_event(cls, event: ThorEvent):
+        attrs = event.attrs
         return cls(
             tx_id=attrs.get('tx_id', ''),
             amount=int(attrs.get('amount', 0)),
@@ -309,11 +310,11 @@ class EventTradeAccountWithdraw(NamedTuple):
     rune_address: str
     asset_address: str
     height: int = 0
-    original: Optional[DecodedEvent] = None
+    original: Optional[ThorEvent] = None
 
     @classmethod
-    def from_event(cls, event: DecodedEvent):
-        attrs = event.attributes
+    def from_event(cls, event: ThorEvent):
+        attrs = event.attrs
         return cls(
             tx_id=attrs.get('tx_id', ''),
             amount=int(attrs.get('amount', 0)),
@@ -329,7 +330,7 @@ class EventTradeAccountWithdraw(NamedTuple):
         return thor_to_float(self.amount)
 
 
-def parse_swap_and_out_event(e: DecodedEvent):
+def parse_swap_and_out_event(e: ThorEvent):
     if e.type == 'swap':
         return EventSwap.from_event(e)
     elif e.type == 'streaming_swap':

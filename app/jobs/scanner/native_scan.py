@@ -1,13 +1,12 @@
 import asyncio
-from typing import List, Optional
+from typing import Optional
 
 from jobs.fetch.base import BaseFetcher
-from jobs.scanner.block_loader import BlockResult, load_txs
+from jobs.scanner.block_result import BlockResult
 from lib.constants import THOR_BLOCK_TIME
 from lib.date_utils import now_ts
 from lib.depcont import DepContainer
 from lib.utils import safe_get
-from proto.access import NativeThorTx
 
 
 class BlockScanner(BaseFetcher):
@@ -85,9 +84,9 @@ class BlockScanner(BaseFetcher):
 
     def _on_error_block(self, block: BlockResult):
         self._on_error('Block.is_error!',
-                       code=block.error_code,
-                       message=block.error_message,
-                       last_available=block.last_available_block)
+                       code=block.error.code,
+                       message=block.error.message,
+                       last_available=block.error.last_available_block)
 
     def should_run_aggressive_scan(self):
         time_since_last_block = now_ts() - self._last_block_ts
@@ -127,19 +126,20 @@ class BlockScanner(BaseFetcher):
 
                 if block_result.is_error:
                     if self.allow_jumps:
+                        last_av_b = block_result.error.last_available_block
                         if block_result.is_behind:
                             self.logger.warning(f'It seems that no blocks available before '
-                                                f'{block_result.last_available_block}. '
+                                                f'{last_av_b}. '
                                                 f'Jumping to it!')
                             self.deps.emergency.report(self.NAME, 'Jump block',
                                                        from_block=self._last_block,
-                                                       to_block=block_result.last_available_block)
-                            self._last_block = block_result.last_available_block
+                                                       to_block=last_av_b)
+                            self._last_block = last_av_b
                             self._this_block_attempts = 0
                         elif block_result.is_ahead:
                             self.logger.debug(f'We are running ahead of real block height. '
                                               f'{self._last_block = },'
-                                              f'{block_result.last_available_block = }')
+                                              f'{last_av_b = }')
                             break
                         else:
                             self._on_error_block(block_result)
@@ -173,53 +173,21 @@ class BlockScanner(BaseFetcher):
         if result:
             return int(safe_get(result, 'result', 'sync_info', 'latest_block_height'))
 
-    async def _fetch_block_results_raw(self, block_no):
-        return await self.deps.thor_connector.query_native_block_results_raw(block_no)
-
-    async def fetch_block_results(self, block_no) -> Optional[BlockResult]:
-        block_results_raw = await self._fetch_block_results_raw(block_no)
-        if block_results_raw is not None:
-            block_result = BlockResult.load_block(block_results_raw, block_no)
-            return block_result
-        else:
-            self.logger.warning(f'Error fetching block txs results #{block_no}.')
-
-    async def _fetch_block_txs_raw(self, block_no):
-        return await self.deps.thor_connector.query_tendermint_block_raw(block_no)
-
-    async def fetch_block_txs(self, block_no) -> Optional[List[NativeThorTx]]:
-        result = await self._fetch_block_txs_raw(block_no)
-        if result is not None:
-            return load_txs(result)
-        else:
-            self.logger.warning(f'Error fetching block #{block_no}.')
-            self.deps.emergency.report(self.NAME, 'Error fetching block', block_no=block_no)
-
     async def fetch_one_block(self, block_index) -> Optional[BlockResult]:
-        """
-        Fetches one block by its height. Combines fetch_block_results and fetch_block_txs
-        Does not save the block to the database.
-        """
-
-        # This is needed to get the block results namely Logs and Tx status codes.
-        block_result = await self.fetch_block_results(block_index)
-        if block_result is None:
+        block_raw = await self.deps.thor_connector.query_thorchain_block_raw(block_index)
+        if block_raw is None:
             return
+
+        block_result = BlockResult.load_block(block_raw, block_index)
 
         if block_result.is_error:
             return block_result
 
-        # This is needed to get user intents from the block (Deposits and Sends).
-        txs = await self.fetch_block_txs(block_index)
-        block_result.fill_transactions(txs)
-        if block_result.txs is None:
-            self.logger.error(f'Failed to get transactions of the block #{block_index}.')
-            return
-
-        self.logger.info(f'Block #{block_index} has {len(block_result.txs)} txs, '
-                         f'{len(block_result.tx_logs)} logs, '
-                         f'{len(block_result.end_block_events)} events.')
+        self.logger.info(
+            f'Block #{block_index} has {len(block_result.txs)} txs, '
+            f'{len(block_result.end_block_events)} end block events, '
+            f'{len(block_result.begin_block_events)} begin block events.'
+        )
 
         # So we match the logs with the txs
         return block_result.only_successful
-        # return block_result
