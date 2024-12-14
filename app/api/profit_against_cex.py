@@ -63,7 +63,7 @@ class StreamingSwapVsCexProfitCalculator(WithLogger, WithDelegates, INotified):
 
     @property
     def is_enabled(self):
-        return self.deps.cfg.get_pure('estimated_savings_vs_cex_enabled', False)
+        return self.deps.cfg.get_pure('tx.estimated_savings_vs_cex_enabled', False)
 
     @classmethod
     def url_cex(cls, from_asset: Asset, to_asset: Asset, amount: float):

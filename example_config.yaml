@@ -439,18 +439,6 @@ token_transfer: # (!) renamed from rune_transfer
     cooldown: 1d
 
   cex_list:
-    - bnb1jzdy3vy3h0ux0j7qqcutfnsjm2xnsa5mru7gtj
-    - bnb142q467df6jun6rt5u2ar58sp47hm5f9wvz2cvg
-    - bnb1u2agwjat20494fmc6jnuau0ls937cfjn4pjwtn
-    - bnb1fnd0k5l4p3ck2j9x9dp36chk059w977pszdgdz
-    - bnb136ns6lfw4zs5hg4n85vdthaad7hq5m4gtkgf23
-    - bnb1dtpty6hrxehwz9xew6ttj52l929cu8zehprzwj
-    - bnb1apkwlqftwue7mcwvhe8zckxq030afecat9lkae
-    - bnb16e9kvc8846lht4y2yav777p6hweffcqvva757l
-    - bnb10af52w77pkehgxhnwgeca50q2t2354q4xamz5y
-    - bnb165r4pxe862hetuz2l3wt4yx43uhh4ph9u0ptz6
-    - bnb1pv5vycd4xe3nu0msrewgf9tmfvam8yr3x6j97q
-    - bnb13q87ekxvvte78t2q7z05lzfethnlht5agfh4ur
     - thor1t60f02r8jvzjrhtnjgfj4ne6rs5wjnejwmj7fh
     - thor1uz4fpyd5f5d6p9pzk8lxyj4qxnwq6f9utg0e7k
     - thor1ty6h2ll07fqfzumphp6kq3hm4ps28xlm2l6kd6
