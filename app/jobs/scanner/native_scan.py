@@ -2,7 +2,7 @@ import asyncio
 from typing import List, Optional
 
 from jobs.fetch.base import BaseFetcher
-from jobs.scanner.block_loader import BlockResult
+from jobs.scanner.block_loader import BlockResult, load_txs
 from lib.constants import THOR_BLOCK_TIME
 from lib.date_utils import now_ts
 from lib.depcont import DepContainer
@@ -190,7 +190,7 @@ class BlockScanner(BaseFetcher):
     async def fetch_block_txs(self, block_no) -> Optional[List[NativeThorTx]]:
         result = await self._fetch_block_txs_raw(block_no)
         if result is not None:
-            return BlockResult.load_txs(result, block_no)
+            return load_txs(result)
         else:
             self.logger.warning(f'Error fetching block #{block_no}.')
             self.deps.emergency.report(self.NAME, 'Error fetching block', block_no=block_no)

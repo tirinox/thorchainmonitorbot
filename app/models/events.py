@@ -2,7 +2,7 @@ from typing import NamedTuple, Optional, Tuple, Union
 
 from lib.constants import POOL_MODULE, NATIVE_RUNE_SYMBOL, thor_to_float, bp_to_float
 from lib.utils import expect_string
-from proto.access import DecodedEvent
+from jobs.scanner.block_loader import DecodedEvent
 
 
 class EventSwap(NamedTuple):

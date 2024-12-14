@@ -10,7 +10,7 @@ from models.memo import ActionType
 from models.memo import THORMemo
 from models.s_swap import StreamingSwap
 from models.tx import ThorTx, SUCCESS, ThorMetaSwap, ThorCoin, ThorSubTx
-from proto.access import DecodedEvent
+from jobs.scanner.block_loader import DecodedEvent
 
 
 class SwapProps(NamedTuple):

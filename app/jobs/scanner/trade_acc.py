@@ -1,6 +1,6 @@
 from typing import List
 
-from jobs.scanner.block_loader import BlockResult
+from jobs.scanner.block_loader import BlockResult, parse_thor_address
 from lib.constants import thor_to_float
 from lib.db import DB
 from lib.delegates import INotified, WithDelegates
@@ -8,7 +8,7 @@ from lib.logs import WithLogger
 from models.memo import THORMemo, ActionType, is_action
 from models.price import LastPriceHolder
 from models.trade_acc import AlertTradeAccountAction
-from proto.access import NativeThorTx, parse_thor_address
+from proto.access import NativeThorTx
 from proto.common import Tx
 
 

@@ -1,12 +1,22 @@
 import logging
 import re
+import typing
 from dataclasses import dataclass, replace
 from typing import List, NamedTuple
 
-from lib.utils import safe_get
-from proto.access import NativeThorTx, DecodedEvent, thor_decode_event
+import bech32
+
+from lib.utils import safe_get, expect_string
 
 logger = logging.getLogger(__name__)
+
+
+def parse_thor_address(addr: bytes, prefix='thor') -> str:
+    if isinstance(addr, bytes) and addr.startswith(prefix.encode('utf-8')):
+        return addr.decode('utf-8')
+
+    good_bits = bech32.convertbits(list(addr), 8, 5, False)
+    return bech32.bech32_encode(prefix, good_bits)
 
 
 class LogItem(NamedTuple):
@@ -33,6 +43,90 @@ class LogItem(NamedTuple):
         )
 
 
+def thor_decode_amount_field(string: str):
+    """ e.g. 114731984rune """
+    amt, asset = '', ''
+    still_numbers = True
+
+    for symbol in string:
+        if not str.isdigit(symbol):
+            still_numbers = False
+        if still_numbers:
+            amt += symbol
+        else:
+            asset += symbol
+
+    return (int(amt) if amt else 0), asset.strip().upper()
+
+
+class DecodedEvent(typing.NamedTuple):
+    type: str
+    attributes: typing.Dict[str, str]
+    height: int = 0
+
+    @classmethod
+    def from_dict(cls, d):
+        return cls(
+            type=d['type'],
+            attributes={attr['key']: attr.get('value') for attr in d['attributes']},
+            height=d.get('height', 0)
+        )
+
+    @classmethod
+    def from_dict_our(cls, d):
+        return cls(
+            type=d['type'],
+            attributes=d['attributes'],
+            height=d.get('height', 0)
+        )
+
+    @property
+    def to_dict(self):
+        return {
+            'type': self.type,
+            'attributes': {
+                k: expect_string(v) if isinstance(v, bytes) else v
+                for k, v in self.attributes.items()
+            },
+            'height': int(self.height),
+        }
+
+
+def thor_decode_event(e, height) -> DecodedEvent:
+    decoded_attrs = {}
+    for attr in e['attributes']:
+        key = attr.get('key')
+        value = attr.get('value')
+        decoded_attrs[key] = value
+        if key == 'amount' or key == 'coin':
+            decoded_attrs['amount'], decoded_attrs['asset'] = thor_decode_amount_field(value)
+
+    return DecodedEvent(e.get('type', ''), decoded_attrs, height=height)
+
+
+class ScannerError(NamedTuple):
+    code: int
+    message: str
+    last_available_block: int = 0
+
+
+def _get_is_error(result):
+    error = result.get('error')
+    if error:
+        code = error.get('code')
+        error_message = f"{error.get('message')}/{error.get('data')}"
+        if code == -32603:
+            # must be that no all blocks are present, try to extract the last available block no from the error msg
+            data = str(error.get('data', ''))
+            match = re.findall(r'\d+', data)
+            if match:
+                last_available_block = int(match[-1])
+                return ScannerError(code, error_message, last_available_block)
+
+        # else general error
+        return ScannerError(code, error_message)
+
+
 @dataclass
 class BlockResult:
     block_no: int
@@ -51,9 +145,6 @@ class BlockResult:
     @property
     def is_behind(self):
         return self.last_available_block != 0 and self.block_no < self.last_available_block
-
-    TYPE_SWAP = 'swap'
-    TYPE_SCHEDULED_OUT = 'scheduled_outbound'
 
     def find_tx_by_type(self, tx_class):
         return filter(lambda tx: isinstance(tx.first_message, tx_class), self.txs)
@@ -84,46 +175,12 @@ class BlockResult:
 
         return replace(self, txs=new_txs, tx_logs=new_logs)
 
-    @staticmethod
-    def _get_is_error(result, requested_block_height):
-        error = result.get('error')
-        if error:
-            code = error.get('code')
-            error_message = f"{error.get('message')}/{error.get('data')}"
-            if code == -32603:
-                # must be that no all blocks are present, try to extract the last available block no from the error msg
-                data = str(error.get('data', ''))
-                match = re.findall(r'\d+', data)
-                if match:
-                    last_available_block = int(match[-1])
-                    return BlockResult(requested_block_height, [], [], [],
-                                       is_error=True, error_code=code, error_message=error_message,
-                                       last_available_block=last_available_block)
-
-            # else general error
-            return BlockResult(requested_block_height, [], [], [],
-                               is_error=True, error_code=code, error_message=error_message)
-
-    @staticmethod
-    def _decode_one_tx(raw):
-        try:
-            return NativeThorTx.from_base64(raw)
-        except Exception as e:
-            logger.error(f'Error decoding tx: {e}')
-
-    @classmethod
-    def load_txs(cls, result, block_no):
-        if cls._get_is_error(result, block_no):
-            return
-
-        raw_txs = safe_get(result, 'result', 'block', 'data', 'txs') or []
-        # some of them can be None!
-        return [cls._decode_one_tx(raw) for raw in raw_txs]
-
     @classmethod
     def load_block(cls, block_results_raw, block_no):
-        if err := cls._get_is_error(block_results_raw, block_no):
-            return err
+        if err := _get_is_error(block_results_raw):
+            return BlockResult(block_no, txs=[], tx_logs=[], end_block_events=[], is_error=True,
+                               error_code=err.code, error_message=err.message,
+                               last_available_block=err.last_available_block)
 
         tx_result_arr = safe_get(block_results_raw, 'result', 'txs_results') or []
 

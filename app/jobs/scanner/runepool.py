@@ -1,14 +1,14 @@
 from typing import List
 
 from api.aionode.types import thor_to_float
-from jobs.scanner.block_loader import BlockResult
+from jobs.scanner.block_loader import BlockResult, parse_thor_address
 from lib.db import DB
 from lib.delegates import INotified, WithDelegates
 from lib.logs import WithLogger
 from models.memo import THORMemo, ActionType, is_action
 from models.price import LastPriceHolder
 from models.runepool import AlertRunePoolAction
-from proto.access import NativeThorTx, parse_thor_address
+from proto.access import NativeThorTx
 from proto.common import Asset
 from proto.types import MsgDeposit
 
