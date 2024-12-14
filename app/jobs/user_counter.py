@@ -3,7 +3,7 @@ from lib.active_users import DailyActiveUserCounter, UserStats
 from lib.delegates import INotified
 from lib.depcont import DepContainer
 from lib.utils import WithLogger
-from proto.types import MsgObservedTxIn
+# from proto.types import MsgObservedTxIn
 
 
 class UserCounterMiddleware(INotified, WithLogger):
@@ -23,16 +23,18 @@ class UserCounterMiddleware(INotified, WithLogger):
         users = set()
         for ev in data.end_block_events:
             for field in self.USER_FIELDS:
-                value = ev.attributes.get(field)
+                value = ev.attrs.get(field)
                 if value and value:
                     users.add(value)
 
         for tx in data.txs:
             if msg := tx.first_message:
-                if isinstance(msg, MsgObservedTxIn):
+                if msg.type == msg.MsgObservedTxIn:
                     for observed_tx in msg.txs:
-                        if observed_tx and observed_tx.tx and observed_tx.tx.from_address:
-                            users.add(observed_tx.tx.from_address)
+                        if observed_tx and observed_tx.get('tx'):
+                            user = observed_tx['tx'].get('from_address')
+                            if user:
+                                users.add(user)
 
         users -= self._excluded_addresses
         return users
