@@ -1,11 +1,8 @@
 import base64
-import datetime
 import re
-from hashlib import sha256
 from typing import List, NamedTuple
 
 import ujson
-from dateutil.parser import parse as date_parser
 
 THOR_BASE_MULT = 10 ** 8
 THOR_BASE_MULT_INV = 1.0 / THOR_BASE_MULT
@@ -420,127 +417,6 @@ class ThorBalances(NamedTuple):
     def find_by_name(self, name):
         candidates = [coin for coin in self.assets if coin.asset == name]
         return candidates[0] if candidates else None
-
-
-class ThorBlock(NamedTuple):
-    height: int
-    chain_id: str
-    time: datetime.datetime
-    hash: str
-    txs_hashes: List[str]
-
-    @classmethod
-    def decode_tx_hash(cls, tx_b64: str):
-        decoded = base64.b64decode(tx_b64.encode('utf-8'))
-        return sha256(decoded).hexdigest().upper()
-
-    @classmethod
-    def from_json(cls, j):
-        result = j.get('result', {})
-        block = result['block']
-        header = block['header']
-        time = date_parser(header['time'])
-
-        txs = [
-            '0x' + cls.decode_tx_hash(content) for content in block['data']['txs']
-        ]
-
-        return cls(
-            height=int(header['height']),
-            chain_id=header['chain_id'],
-            time=time,
-            hash=result['block_id']['hash'],
-            txs_hashes=txs
-        )
-
-
-class ThorTxAttribute(NamedTuple):
-    key: str
-    value: str
-    index: bool
-
-    @classmethod
-    def from_json(cls, j):
-        k = j.get('key')
-        v = j.get('value')
-        return cls(
-            base64.b64decode(k).decode('utf-8') if k else None,
-            base64.b64decode(v).decode('utf-8') if v else None,
-            bool(j['index'])
-        )
-
-
-class ThorTxEvent(NamedTuple):
-    type: str
-    attributes: List[ThorTxAttribute]
-
-    @classmethod
-    def from_json(cls, j):
-        return cls(
-            type=j['type'],
-            attributes=[ThorTxAttribute.from_json(a) for a in j['attributes']]
-        )
-
-    def value_of(self, key):
-        return next(a.value for a in self.attributes if a.key == key)
-
-    @property
-    def sender(self):
-        return self.value_of('sender')
-
-    @property
-    def recipient(self):
-        return self.value_of('recipient')
-
-    @property
-    def amount(self):
-        amt_str = self.value_of('amount')
-        value, asset = re.findall(r'[A-Za-z]+|\d+', amt_str)
-        return int(value), asset
-
-
-class ThorNativeTX(NamedTuple):
-    hash: str
-    height: int
-    index: int
-    code: int
-    data: str
-    log: List[dict]
-    gas_wanted: int
-    gas_used: int
-    events: List[ThorTxEvent]
-
-    TYPE_SET_MIMIR = 'set_mimir_attr'
-    TYPE_ADD_LIQUIDITY = 'add_liquidity'
-    TYPE_WITHDRAW = 'withdraw'
-
-    @property
-    def type(self):
-        return re.sub(r'[^a-zA-Z0-9_]', '', self.data)
-
-    @property
-    def transfers(self):
-        return [e for e in self.events if e.type == 'transfer']
-
-    @classmethod
-    def from_json(cls, j):
-        result = j.get('result', j)
-        tx_result = result['tx_result']
-        data = base64.b64decode(tx_result['data']).decode('utf-8').strip()
-        log = ujson.loads(tx_result['log'])
-        events = [ThorTxEvent.from_json(e) for e in tx_result['events']]
-
-        return cls(
-            hash=result['hash'],
-            height=int(result['height']),
-            index=int(result['index']),
-            code=int(tx_result['code']),
-            data=data,
-            log=log,
-            gas_wanted=int(tx_result['gas_wanted']),
-            gas_used=int(tx_result['gas_used']),
-            events=events
-        )
 
 
 class ThorTradeUnits(NamedTuple):

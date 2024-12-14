@@ -31,6 +31,7 @@ class ThorEnvironment:
     path_vault_asgard: str = "/thorchain/vaults/asgard?height={height}"
     path_balance: str = '/cosmos/bank/v1beta1/balances/{address}'
     path_block_by_height: str = '/block?height={height}'
+    path_thorchain_block_by_height: str = '/thorchain/block?height={height}'
     path_tx_by_hash: str = '/cosmos/tx/v1beta1/txs/{hash}'
     path_tx_by_hash_old: str = '/tx?hash={hash}'
     path_tx_search: str = '/tx_search?query={query}&prove={prove}&page={page}&per_page={per_page}&order_by={order_by}'

@@ -56,7 +56,6 @@ class ThorConnector:
 
         return ThorMimir.from_json(data) if data else ThorMimir()
 
-
     async def query_mimir_votes(self) -> List[ThorMimirVote]:
         response = await self._request(self.env.path_mimir_votes)
         mimirs = response.get('mimirs', [])
@@ -92,17 +91,10 @@ class ThorConnector:
         data = await self._request(path, is_rpc=True)
         return data
 
-    async def query_block(self, height) -> ThorBalances:
-        data = await self.query_tendermint_block_raw(height)
-        return ThorBlock.from_json(data)
-
-    async def query_native_tx(self, tx_hash: str, before_hard_fork=False):
-        tx_hash = str(tx_hash)
-
-        path_pattern = self.env.path_tx_by_hash_old if before_hard_fork else self.env.path_tx_by_hash
-        path = path_pattern.format(hash=tx_hash)
-        data = await self._request(path, is_rpc=True)
-        return ThorNativeTX.from_json(data)
+    async def query_thorchain_block_raw(self, height):
+        path = self.env.path_thorchain_block_by_height.format(height=height)
+        data = await self._request(path)
+        return data
 
     async def query_genesis(self):
         data = await self._request(self.env.path_genesis, is_rpc=True)
