@@ -46,8 +46,13 @@ class ThorEvent(NamedTuple):
 class ThorTxMessage(NamedTuple):
     attrs: dict
 
+    MsgObservedTxIn = '/types.MsgObservedTxIn'
+    MsgDeposit = '/types.MsgDeposit'
+    MsgSend = '/types.MsgSend'
+    MsgSendCosmos = '/cosmos.bank.v1beta1.MsgSend'
+
     @property
-    def txs(self):
+    def txs(self) -> List[dict]:
         return self.attrs.get('txs', [])
 
     def __len__(self):
