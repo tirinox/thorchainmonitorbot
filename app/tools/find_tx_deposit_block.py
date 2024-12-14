@@ -6,7 +6,7 @@ import asyncio
 import os
 
 from jobs.scanner.native_scan import BlockScanner
-from jobs.scanner.tx import NativeThorTx, MsgName
+from jobs.scanner.tx import NativeThorTx
 from lib.texts import sep
 from lib.utils import say
 from tools.lib.lp_common import LpAppFramework
@@ -17,7 +17,7 @@ def is_our_tx(tx: NativeThorTx, tx_id_to_find):
         return True
 
     for msg in tx.messages:
-        if msg.type == MsgName.OBSERVED_IN:
+        if msg.type == msg.MsgObservedTxIn:
             observed_tx = msg.txs[0]['tx']['id']
             if observed_tx.lower() == tx_id_to_find:
                 return True

@@ -41,13 +41,13 @@ def dbg_decode_thor_amounts():
 
 
 async def main():
-    print(pubkey_to_thor_address("A7dfWmk8lROhAOMYrSx/XaVc1U27nT73WSLpbUzany5I"))
-
-    dbg_decode_thor_amounts()
+    # print(pubkey_to_thor_address("A7dfWmk8lROhAOMYrSx/XaVc1U27nT73WSLpbUzany5I"))
+    # dbg_decode_thor_amounts()
 
     app = LpAppFramework(log_level=logging.DEBUG)
     async with app(brief=True):
-        await dbg_get_block(app, block=18994647)
+        # await dbg_get_block(app, block=19999647)
+        await dbg_get_block(app, block=1999647)
 
 
 if __name__ == '__main__':

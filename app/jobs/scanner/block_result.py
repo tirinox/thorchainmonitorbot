@@ -15,20 +15,15 @@ class ScannerError(NamedTuple):
 
 
 def is_block_error(result):
-    error = result.get('error')
-    if error:
-        code = error.get('code')
-        error_message = f"{error.get('message')}/{error.get('data')}"
-        if code == -32603:
-            # must be that no all blocks are present, try to extract the last available block no from the error msg
-            data = str(error.get('data', ''))
-            match = re.findall(r'\d+', data)
+    code = result.get('code')
+    message = result.get('message')
+    if code and message:
+        last_available_block = 0
+        if code == 3:  # too old
+            match = re.findall(r'\d+', message)
             if match:
                 last_available_block = int(match[-1])
-                return ScannerError(code, error_message, last_available_block)
-
-        # else general error
-        return ScannerError(code, error_message)
+        return ScannerError(code, message, last_available_block)
 
 
 @dataclass

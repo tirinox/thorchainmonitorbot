@@ -130,10 +130,10 @@ async def main():
         # await benchmark_accuracy_of_hyper_log_log(lp_app)
         # await play_dau(lp_app)
         # await auto_play_dau(lp_app)
-        # await real_life_active_scan_user_counter(lp_app)
+        await real_life_active_scan_user_counter(lp_app)
         # await demo_unique_users_of_block(lp_app)
         # await demo_display_user_stats(lp_app)
-        await demo_simulate_users(lp_app)
+        # await demo_simulate_users(lp_app)
 
 if __name__ == '__main__':
     asyncio.run(main())
