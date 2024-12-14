@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from typing import Iterable
 
 from lib.constants import RUNE_DENOM, Chains, NATIVE_RUNE_SYMBOL
-from proto.common import Coin
 
 ASSET_NORMAL_SEPARATOR = '.'
 ASSET_SYNTH_SEPARATOR = '/'
@@ -94,13 +93,6 @@ class Asset:
             return cls(chain, name, tag, is_synth, is_virtual, is_trade)
         except (IndexError, TypeError, ValueError):
             return cls(name=asset)
-
-    @classmethod
-    def from_coin(cls, coin: Coin):
-        template = f'{coin.asset.chain}.{coin.asset.symbol}'
-        a = cls.from_string(template)
-        a.is_synth = bool(coin.asset.synth)
-        return a
 
     PILL = '💊'
     TRADE = '🔄'
