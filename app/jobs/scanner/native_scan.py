@@ -10,7 +10,7 @@ from lib.utils import safe_get
 from proto.access import NativeThorTx
 
 
-class NativeScannerBlock(BaseFetcher):
+class BlockScanner(BaseFetcher):
     MAX_ATTEMPTS_TO_SKIP_BLOCK = 5
 
     NAME = 'block_scanner'

@@ -1,14 +1,14 @@
 import asyncio
 import logging
 
-from jobs.scanner.native_scan import NativeScannerBlock
+from jobs.scanner.native_scan import BlockScanner
 from proto.access import thor_decode_amount_field
 from tools.lib.lp_common import LpAppFramework
 
 
 async def dbg_get_block(app, block):
     d = app.deps
-    scanner = NativeScannerBlock(d, sleep_period=10.0)
+    scanner = BlockScanner(d, sleep_period=10.0)
 
     d.last_block_fetcher.add_subscriber(d.last_block_store)
     await d.last_block_fetcher.run_once()

@@ -6,7 +6,7 @@ from comm.picture.price_picture import price_graph_from_db
 from jobs.fetch.gecko_price import fill_rune_price_from_gecko
 from jobs.fetch.pool_price import PoolFetcher
 from jobs.fetch.tx import TxFetcher
-from jobs.scanner.native_scan import NativeScannerBlock
+from jobs.scanner.native_scan import BlockScanner
 from jobs.scanner.swap_extractor import SwapExtractorBlock
 from jobs.scanner.trade_acc import TradeAccEventDecoder
 from jobs.volume_filler import VolumeFillerUpdater
@@ -42,7 +42,7 @@ async def continuous_volume_recording(lp_app):
     aggregator = AggregatorDataExtractor(d)
     fetcher_tx.add_subscriber(aggregator)
 
-    d.block_scanner = NativeScannerBlock(d, max_attempts=3)
+    d.block_scanner = BlockScanner(d, max_attempts=3)
     native_action_extractor = SwapExtractorBlock(d)
     d.block_scanner.add_subscriber(native_action_extractor)
 

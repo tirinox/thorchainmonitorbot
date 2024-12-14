@@ -4,7 +4,7 @@ import pprint
 from comm.localization.eng_base import BaseLocalization
 from jobs.achievement.notifier import AchievementsNotifier
 from jobs.fetch.trade_accounts import TradeAccountFetcher
-from jobs.scanner.native_scan import NativeScannerBlock
+from jobs.scanner.native_scan import BlockScanner
 from jobs.scanner.trade_acc import TradeAccEventDecoder
 from lib.texts import sep
 from lib.utils import load_pickle, save_pickle
@@ -62,7 +62,7 @@ BLOCK_MAP = {
 async def demo_decode_trade_acc(app: LpAppFramework, tx_id):
     await prepare_once(app)
 
-    scanner = NativeScannerBlock(app.deps)
+    scanner = BlockScanner(app.deps)
 
     height = BLOCK_MAP[tx_id]
     block = await scanner.fetch_one_block(height)
@@ -92,7 +92,7 @@ async def demo_trade_acc_decode_continuous(app: LpAppFramework, b=0):
     # b = 16515624
 
     d = app.deps
-    scanner = NativeScannerBlock(d, last_block=b)
+    scanner = BlockScanner(d, last_block=b)
     scanner.one_block_per_run = b > 0
 
     dcd = TradeAccEventDecoder(d.db, d.price_holder)

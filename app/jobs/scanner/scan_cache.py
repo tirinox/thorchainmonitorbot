@@ -1,16 +1,16 @@
 import ujson
 
-from jobs.scanner.native_scan import NativeScannerBlock
+from jobs.scanner.native_scan import BlockScanner
 from lib.depcont import DepContainer
 
 
-class NativeScannerBlockCached(NativeScannerBlock):
+class BlockScannerCached(BlockScanner):
     DB_KEY_BLOCK = 'tx:scanner:cache:block'
     DB_KEY_TXS = 'tx:scanner:cache:transactions'
 
     def __init__(self, deps: DepContainer,
                  sleep_period=None, last_block=0,
-                 max_attempts=NativeScannerBlock.MAX_ATTEMPTS_TO_SKIP_BLOCK):
+                 max_attempts=BlockScanner.MAX_ATTEMPTS_TO_SKIP_BLOCK):
         super().__init__(deps, sleep_period, last_block, max_attempts)
 
     async def _fetch_block_results_raw(self, block_no):

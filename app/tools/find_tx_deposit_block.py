@@ -5,7 +5,7 @@ This script is used to find the block where the tx was observed.
 import asyncio
 import os
 
-from jobs.scanner.native_scan import NativeScannerBlock
+from jobs.scanner.native_scan import BlockScanner
 from lib.texts import sep
 from lib.utils import say
 from proto.access import NativeThorTx
@@ -45,7 +45,7 @@ async def run():
 
         height -= 1
 
-        scanner = NativeScannerBlock(app.deps)
+        scanner = BlockScanner(app.deps)
 
         finished = False
         while height > 0 and not finished:

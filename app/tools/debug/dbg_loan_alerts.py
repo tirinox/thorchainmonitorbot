@@ -8,7 +8,7 @@ from jobs.fetch.lending_stats import LendingStatsFetcher
 from jobs.runeyield.borrower import BorrowerPositionGenerator
 from jobs.scanner.event_db import EventDatabase
 from jobs.scanner.loan_extractor import LoanExtractorBlock
-from jobs.scanner.native_scan import NativeScannerBlock
+from jobs.scanner.native_scan import BlockScanner
 from lib.money import DepthCurve
 from lib.texts import sep
 from lib.utils import load_pickle, save_pickle
@@ -34,7 +34,7 @@ async def dbg_lending_limits(app: LpAppFramework):
 
 
 async def debug_block_analyse(app: LpAppFramework, block_no):
-    scanner = NativeScannerBlock(app.deps)
+    scanner = BlockScanner(app.deps)
     # await scanner.run()
     blk = await scanner.fetch_one_block(block_no)
     print(blk)
@@ -60,7 +60,7 @@ async def debug_full_pipeline(app, start=None, tx_id=None, single_block=False):
     d = app.deps
 
     # Block scanner: the source of the river
-    d.block_scanner = NativeScannerBlock(d, last_block=start)
+    d.block_scanner = BlockScanner(d, last_block=start)
     d.block_scanner.one_block_per_run = single_block
     d.block_scanner.allow_jumps = False
 

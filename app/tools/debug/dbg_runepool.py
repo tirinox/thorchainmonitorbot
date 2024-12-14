@@ -3,7 +3,7 @@ import pprint
 
 from comm.localization.eng_base import BaseLocalization
 from jobs.fetch.pol import RunePoolFetcher
-from jobs.scanner.native_scan import NativeScannerBlock
+from jobs.scanner.native_scan import BlockScanner
 from jobs.scanner.runepool import RunePoolEventDecoder
 from lib.money import distort_randomly
 from models.memo import THORMemo
@@ -18,7 +18,7 @@ async def prepare_once(app):
     global prepared
     if not prepared:
         d = app.deps
-        d.block_scanner = NativeScannerBlock(d)
+        d.block_scanner = BlockScanner(d)
 
         await d.pool_fetcher.run_once()
         await d.last_block_fetcher.run_once()
@@ -34,7 +34,7 @@ DEPOSIT_TX_HEIGHT_2 = 17005268
 async def demo_decode_runepool_deposit(app: LpAppFramework, height):
     await prepare_once(app)
 
-    scanner = NativeScannerBlock(app.deps)
+    scanner = BlockScanner(app.deps)
 
     block = await scanner.fetch_one_block(height)
 
@@ -79,7 +79,7 @@ async def demo_runepool_continuous(app: LpAppFramework, b=0):
     await prepare_once(app)
 
     d = app.deps
-    d.block_scanner = NativeScannerBlock(d, last_block=b)
+    d.block_scanner = BlockScanner(d, last_block=b)
     d.block_scanner.one_block_per_run = b > 0
 
     runepool_decoder = RunePoolEventDecoder(d.db, d.price_holder)

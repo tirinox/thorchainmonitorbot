@@ -7,9 +7,9 @@ from api.w3.dex_analytics import DexAnalyticsCollector
 from jobs.fetch.streaming_swaps import StreamingSwapFechter
 from jobs.fetch.tx import TxFetcher
 from jobs.scanner.event_db import EventDatabase
-from jobs.scanner.native_scan import NativeScannerBlock
+from jobs.scanner.native_scan import BlockScanner
 # from jobs.scanner.native_scan import NativeScannerBlock
-from jobs.scanner.scan_cache import NativeScannerBlockCached
+from jobs.scanner.scan_cache import BlockScannerCached
 from jobs.scanner.swap_extractor import SwapExtractorBlock
 from jobs.user_counter import UserCounterMiddleware
 from jobs.volume_filler import VolumeFillerUpdater
@@ -25,9 +25,9 @@ from notify.public.tx_notify import SwapTxNotifier
 from proto.types import MsgDeposit, MsgObservedTxIn
 from tools.lib.lp_common import LpAppFramework
 
-BlockScannerClass = NativeScannerBlockCached
+BlockScannerClass = BlockScannerCached
 print(BlockScannerClass, ' <= look!')
-BlockScannerClass = NativeScannerBlock
+BlockScannerClass = BlockScanner
 
 
 # 1)

@@ -5,7 +5,7 @@ import pickle
 
 from comm.localization.eng_base import BaseLocalization
 from comm.localization.languages import Language
-from jobs.scanner.native_scan import NativeScannerBlock
+from jobs.scanner.native_scan import BlockScanner
 from jobs.transfer_detector import RuneTransferDetectorTxLogs
 from lib.delegates import INotified
 from lib.depcont import DepContainer
@@ -30,7 +30,7 @@ class ReceiverPublicText(INotified):
 
 
 async def demo_native_block_action_detector(app, start=12209517):
-    scanner = NativeScannerBlock(app.deps, last_block=start)
+    scanner = BlockScanner(app.deps, last_block=start)
     scanner.one_block_per_run = True
     detector = RuneTransferDetectorTxLogs()
     scanner.add_subscriber(detector)
@@ -45,7 +45,7 @@ async def demo_native_block_action_detector(app, start=12209517):
 async def demo_block_scanner_active(app, send_alerts=False, catch_up=False, force_start_block=None,
                                     print_txs=False):
     d = app.deps
-    scanner = NativeScannerBlock(d, sleep_period=10.0)
+    scanner = BlockScanner(d, sleep_period=10.0)
     detector = RuneTransferDetectorTxLogs()
     scanner.add_subscriber(detector)
 
@@ -69,7 +69,7 @@ async def demo_block_scanner_active(app, send_alerts=False, catch_up=False, forc
 
 
 async def get_transfers_from_block(app, block_index):
-    scanner = NativeScannerBlock(app.deps)
+    scanner = BlockScanner(app.deps)
     r = await scanner.fetch_one_block(block_index)
     parser = RuneTransferDetectorTxLogs()
     transfers = parser.process_events(r)
@@ -92,7 +92,7 @@ async def demo_rune_transfers_once(app, block=12_918_080):
 
 
 async def search_out(app):
-    scanner = NativeScannerBlock(app.deps)
+    scanner = BlockScanner(app.deps)
 
     block_start = 6230655 - 2
     search = '687522'
@@ -113,7 +113,7 @@ async def get_block_cached(app, block_index):
         with open(filename, 'rb') as f:
             block = pickle.load(f)
     except FileNotFoundError:
-        scanner = NativeScannerBlock(app.deps)
+        scanner = BlockScanner(app.deps)
         block = await scanner.fetch_one_block(block_index)
         with open(filename, 'wb') as f:
             pickle.dump(block, f)
@@ -153,7 +153,7 @@ async def debug_ill_transfers(app: LpAppFramework):
     tx_id = '22174930993EEA1E7CDB6511FB8C5E81BDC37C0DCFB23EEA6696C0CD9D13351B'
     block_id = 15264091
 
-    scanner = NativeScannerBlock(app.deps, last_block=block_id)
+    scanner = BlockScanner(app.deps, last_block=block_id)
     block = await scanner.fetch_one_block(block_id)
     detector = RuneTransferDetectorTxLogs()
     events = detector.process_events(block)

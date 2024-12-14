@@ -38,7 +38,7 @@ from jobs.fetch.tx import TxFetcher
 from jobs.node_churn import NodeChurnDetector
 from jobs.price_recorder import PriceRecorder
 from jobs.scanner.loan_extractor import LoanExtractorBlock
-from jobs.scanner.native_scan import NativeScannerBlock
+from jobs.scanner.native_scan import BlockScanner
 from jobs.scanner.runepool import RunePoolEventDecoder
 from jobs.scanner.swap_extractor import SwapExtractorBlock
 from jobs.scanner.swap_routes import SwapRouteRecorder
@@ -290,7 +290,7 @@ class App(WithLogger):
         if d.cfg.get('native_scanner.enabled', True):
             # The block scanner itself
             max_attempts = d.cfg.as_int('native_scanner.max_attempts_per_block', 5)
-            d.block_scanner = NativeScannerBlock(d, max_attempts=max_attempts)
+            d.block_scanner = BlockScanner(d, max_attempts=max_attempts)
             tasks.append(d.block_scanner)
             reserve_address = d.cfg.as_str('native_scanner.reserve_address')
 

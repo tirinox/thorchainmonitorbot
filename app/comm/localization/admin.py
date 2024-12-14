@@ -1,7 +1,7 @@
 import asyncio
 
 from jobs.fetch.base import DataController, BaseFetcher
-from jobs.scanner.native_scan import NativeScannerBlock
+from jobs.scanner.native_scan import BlockScanner
 from lib.constants import THOR_BLOCK_TIME
 from lib.date_utils import format_time_ago, now_ts, MINUTE, seconds_human
 from lib.depcont import DepContainer
@@ -151,7 +151,7 @@ class AdminMessages:
         return f'Check the terminal please.'
 
     async def get_message_about_scanner(self):
-        scanner: NativeScannerBlock = self.deps.block_scanner
+        scanner: BlockScanner = self.deps.block_scanner
         last_thor_block = int(self.deps.last_block_store)
         block_diff = (last_thor_block - scanner.last_block)
 

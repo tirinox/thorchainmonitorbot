@@ -3,8 +3,6 @@ import re
 from dataclasses import dataclass, replace
 from typing import List, NamedTuple
 
-import ujson
-
 from lib.utils import safe_get
 from proto.access import NativeThorTx, DecodedEvent, thor_decode_event
 
