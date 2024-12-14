@@ -10,7 +10,7 @@ from lib.texts import shorten_text
 from lib.utils import WithLogger
 from models.asset import Asset
 from models.memo import ActionType
-from models.tx import ThorTx, ThorSubTx
+from models.tx import ThorAction, ThorSubTx
 from .aggr_contract import AggregatorContract
 from .erc20_contract import ERC20Contract
 from .resolver import AggregatorResolver, DEFAULT_AGGREGATOR_RESOLVER_PATH
@@ -135,7 +135,7 @@ class AggregatorDataExtractor(WithLogger, INotified, WithDelegates):
         except (ValueError, AttributeError, TypeError, LookupError):
             self.logger.exception(f'Error decoding Swap {tag} @ {tx_hash} ({chain})')
 
-    async def _try_detect_out_aggregator_from_memo(self, tx: ThorTx) -> Optional[AmountToken]:
+    async def _try_detect_out_aggregator_from_memo(self, tx: ThorAction) -> Optional[AmountToken]:
         if memo := tx.memo:
             if memo.uses_aggregator_out:
                 chain = Asset(tx.first_output_tx.coins[0].asset).chain
@@ -150,7 +150,7 @@ class AggregatorDataExtractor(WithLogger, INotified, WithDelegates):
                     aggr_name=aggr_name
                 )
 
-    async def on_data(self, sender, txs: List[ThorTx]):
+    async def on_data(self, sender, txs: List[ThorAction]):
         with suppress(Exception):  # This must not break the rest of the pipeline! So ignore everything bad
             for tx in txs:
                 if tx.is_of_type(ActionType.SWAP):

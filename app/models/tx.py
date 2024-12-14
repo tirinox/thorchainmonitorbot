@@ -200,7 +200,7 @@ PENDING = 'pending'
 
 
 @dataclass
-class ThorTx:
+class ThorAction:
     date: int
     height: int
     status: str
@@ -383,12 +383,12 @@ class ThorTx:
         return int(self.tx_hash, 16)
 
     def __eq__(self, other):
-        if isinstance(other, ThorTx):
+        if isinstance(other, ThorAction):
             return self.height_int == other.height_int and self.tx_hash == other.tx_hash and self.type == other.type
         else:
             return False
 
-    def deep_eq(self, other: 'ThorTx'):
+    def deep_eq(self, other: 'ThorAction'):
         if other != self:
             return False
         if len(other.in_tx) != len(self.in_tx):
@@ -617,7 +617,7 @@ class ThorTx:
 
 @dataclass
 class EventLargeTransaction:
-    transaction: ThorTx
+    transaction: ThorAction
     usd_per_rune: float
     pool_info: PoolInfo
     cap_info: Optional[ThorCapInfo] = None

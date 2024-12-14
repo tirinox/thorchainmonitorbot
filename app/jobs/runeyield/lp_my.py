@@ -19,7 +19,7 @@ from models.lp_info import LiquidityPoolReport, LiquidityInOutSummary, FeeReport
 from models.memo import ActionType
 from models.pool_info import PoolInfoMap, PoolInfo, pool_share
 from models.pool_member import PoolMemberDetails
-from models.tx import ThorTx
+from models.tx import ThorAction
 
 HeightToAllPools = Dict[int, PoolInfoMap]
 
@@ -94,7 +94,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
     async def _create_lp_report_single(self,
                                        historic_all_pool_states: HeightToAllPools,
                                        pool_name: str,
-                                       user_txs: List[ThorTx],
+                                       user_txs: List[ThorAction],
                                        address) -> LiquidityPoolReport:
         # todo: idea: check date_last_added, if it is not changed - get user_txs from local cache
         # todo: or you can compare current liq_units! if it has changed, you reload tx! (unsafe)
@@ -143,7 +143,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         return liq_report
 
     @staticmethod
-    def _find_thor_address_in_tx_list(txs: List[ThorTx]) -> str:
+    def _find_thor_address_in_tx_list(txs: List[ThorAction]) -> str:
         thor_addresses = (tx.input_thor_address for tx in txs)
         thor_addresses = list(filter(bool, thor_addresses))
         if thor_addresses:
@@ -153,7 +153,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         return ''
 
     @staticmethod
-    def is_lp_grandfathered(txs: List[ThorTx], pool: str = '') -> bool:
+    def is_lp_grandfathered(txs: List[ThorAction], pool: str = '') -> bool:
         for tx in txs:
             if tx.is_of_type(ActionType.ADD_LIQUIDITY):
                 if pool and tx.first_pool == pool:
@@ -162,13 +162,13 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         return False
 
     @staticmethod
-    def _apply_pool_filter(txs: List[ThorTx], pool_filter=None) -> List[ThorTx]:
+    def _apply_pool_filter(txs: List[ThorAction], pool_filter=None) -> List[ThorAction]:
         if pool_filter:
             return [tx for tx in txs if pool_filter == tx.first_pool]
         else:
             return txs
 
-    async def _get_user_tx_actions(self, address: str, pool_filter=None) -> List[ThorTx]:
+    async def _get_user_tx_actions(self, address: str, pool_filter=None) -> List[ThorAction]:
         txs = await self.tx_fetcher.fetch_all_tx(address, liquidity_change_only=True)
 
         txs = self._apply_pool_filter(txs, pool_filter)
@@ -211,14 +211,14 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
         return txs
 
-    async def _fetch_historical_pool_states(self, txs: List[ThorTx]) -> HeightToAllPools:
+    async def _fetch_historical_pool_states(self, txs: List[ThorAction]) -> HeightToAllPools:
         heights = list(set(tx.height_int for tx in txs))
         ppf = self.deps.pool_fetcher
         tasks = [ppf.load_pools(h, caching=True) for h in heights]
         pool_states = await asyncio.gather(*tasks)
         return dict(zip(heights, pool_states))
 
-    def _get_liquidity_in_out_summary(self, txs: List[ThorTx],
+    def _get_liquidity_in_out_summary(self, txs: List[ThorAction],
                                       pool_name,
                                       pool_historic: HeightToAllPools,
                                       withdraw_fee_rune,
@@ -317,7 +317,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
             raise ValueError('No USD price can be extracted. Perhaps USD pools are missing at that point')
         return price
 
-    def _get_earliest_prices(self, txs: List[ThorTx], pool_historic: HeightToAllPools) \
+    def _get_earliest_prices(self, txs: List[ThorAction], pool_historic: HeightToAllPools) \
             -> Tuple[Optional[float], Optional[float]]:
         if not txs:
             return None, None
@@ -356,7 +356,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         return LPPosition.create(pool_info, my_units, usd_per_rune, is_savings)
 
     @staticmethod
-    def _update_units(units, tx: ThorTx):
+    def _update_units(units, tx: ThorAction):
         if tx.is_of_type(ActionType.ADD_LIQUIDITY):
             units += tx.meta_add.liquidity_units_int
         elif tx.is_of_type(ActionType.WITHDRAW):
@@ -364,7 +364,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         return units
 
     def _get_fee_report(self,
-                        txs: List[ThorTx],
+                        txs: List[ThorAction],
                         pool: str,
                         pool_historic: HeightToAllPools):
 
@@ -379,8 +379,8 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
 
         units = 0
         for tx0, tx1 in pairwise(txs):
-            tx0: ThorTx
-            tx1: ThorTx
+            tx0: ThorAction
+            tx1: ThorAction
             units = self._update_units(units, tx0)
 
             # User quit completely and entered again
@@ -423,7 +423,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
                          fee_rune=fee_rune,
                          fee_asset=fee_asset)
 
-    def _pool_units_by_day(self, txs: List[ThorTx], now=None, days=14) -> List:
+    def _pool_units_by_day(self, txs: List[ThorAction], now=None, days=14) -> List:
         if not txs:
             return [(i, 0) for i in range(days)]  # always 0
 
@@ -460,7 +460,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         return self.last_block
 
     async def _get_charts(self,
-                          txs: List[ThorTx],
+                          txs: List[ThorAction],
                           days=14) -> LPDailyChartByPoolDict:
 
         tx_by_pool_map = defaultdict(list)
@@ -495,7 +495,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         return results
 
     @staticmethod
-    def _get_last_deposit_height(txs: List[ThorTx]) -> int:
+    def _get_last_deposit_height(txs: List[ThorAction]) -> int:
         last_deposit_height = -1
         for tx in txs:
             if tx.is_of_type(ActionType.ADD_LIQUIDITY):
@@ -526,7 +526,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         coverage = deposit_value - redeem_value
         return max(0.0, coverage)
 
-    def _get_deposit_values_r0_and_a0(self, txs: List[ThorTx],
+    def _get_deposit_values_r0_and_a0(self, txs: List[ThorAction],
                                       historic_all_pool_states: HeightToAllPools,
                                       pool_name: str) -> (float, float):
         """
@@ -558,7 +558,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         return pool or PoolInfo(pool_name, 1, 1, 1, PoolInfo.STAGED)
 
     @staticmethod
-    def final_liquidity(txs: List[ThorTx]):
+    def final_liquidity(txs: List[ThorAction]):
         lp = 0
         for tx in txs:
             if tx.is_of_type(ActionType.ADD_LIQUIDITY):
@@ -568,7 +568,7 @@ class HomebrewLPConnector(AsgardConsumerConnectorBase):
         return lp
 
     @staticmethod
-    def cut_off_previous_lp_sessions(txs: List[ThorTx]):
+    def cut_off_previous_lp_sessions(txs: List[ThorAction]):
         lp = defaultdict(float)  # track LP units for each pool
         new_txs = []
         for tx in txs:

@@ -6,7 +6,7 @@ from lib.constants import NATIVE_RUNE_SYMBOL, THOR_BASIS_POINT_MAX, thor_to_floa
 from .memo import ActionType, THORMemo
 from .pool_member import PoolMemberDetails
 from .price import LastPriceHolder
-from .tx import ThorTx, SUCCESS, ThorSubTx, ThorCoin
+from .tx import ThorAction, SUCCESS, ThorSubTx, ThorCoin
 
 
 class AlertRunePoolAction(NamedTuple):
@@ -40,7 +40,7 @@ class AlertRunePoolAction(NamedTuple):
         return self.usd_amount * self.affiliate_rate
 
     @property
-    def as_thor_tx(self) -> ThorTx:
+    def as_thor_tx(self) -> ThorAction:
         in_tx_list, out_tx_list = [], []
 
         if self.is_deposit:
@@ -60,7 +60,7 @@ class AlertRunePoolAction(NamedTuple):
             ))
             t = ActionType.RUNEPOOL_WITHDRAW
 
-        return ThorTx(
+        return ThorAction(
             0, self.height, SUCCESS,
             type=t.value,
             pools=[],

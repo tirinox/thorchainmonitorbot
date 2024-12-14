@@ -10,7 +10,7 @@ from lib.money import DepthCurve, pretty_dollar, short_dollar
 from lib.utils import WithLogger
 from models.asset import Asset
 from models.memo import ActionType
-from models.tx import ThorTx, EventLargeTransaction
+from models.tx import ThorAction, EventLargeTransaction
 from notify.dup_stop import TxDeduplicator, TxDeduplicatorSenderCooldown
 from notify.public.cap_notify import LiquidityCapNotifier
 from notify.public.s_swap_notify import DB_KEY_ANNOUNCED_SS_START
@@ -36,13 +36,13 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
 
         self.deduplicator = TxDeduplicator(deps.db, DB_KEY_TX_ANNOUNCED_HASHES)
 
-    async def on_data(self, senders, txs: List[ThorTx]):
+    async def on_data(self, senders, txs: List[ThorAction]):
         try:
             await self.handle_txs_unsafe(senders, txs)
         except Exception as e:
             self.logger.exception(f"Failed! {e}")
 
-    async def handle_txs_unsafe(self, senders, txs: List[ThorTx]):
+    async def handle_txs_unsafe(self, senders, txs: List[ThorAction]):
         # 1. filter irrelevant tx types
         txs = [tx for tx in txs if tx.is_of_type(self.tx_types)]  # filter my TX types
 
@@ -121,7 +121,7 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
             self.logger.error(f'Error getting clout for {address}: {e}')
             return None
 
-    def _get_min_usd_depth(self, tx: ThorTx, usd_per_rune):
+    def _get_min_usd_depth(self, tx: ThorAction, usd_per_rune):
         pools = tx.pools
         if not pools:
             # in case of refund maybe
@@ -135,7 +135,7 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
         min_pool_depth = min(p.usd_depth(usd_per_rune) for p in pool_info_list)
         return min_pool_depth
 
-    def is_tx_suitable(self, tx: ThorTx, min_rune_volume, usd_per_rune, curve_mult=None):
+    def is_tx_suitable(self, tx: ThorAction, min_rune_volume, usd_per_rune, curve_mult=None):
         pool_usd_depth = self._get_min_usd_depth(tx, usd_per_rune)
         if pool_usd_depth == 0.0:
             if not tx.is_of_type(ActionType.REFUND):
@@ -176,7 +176,7 @@ class LiquidityTxNotifier(GenericTxNotifier):
         self.savers_min_usd_total = params.as_float('savers.min_usd_total', 10_000.0)
         self.savers_curve_mult = params.as_float('savers.curve_mult', 0.4)
 
-    def is_tx_suitable(self, tx: ThorTx, min_rune_volume, usd_per_rune, curve_mult=None):
+    def is_tx_suitable(self, tx: ThorAction, min_rune_volume, usd_per_rune, curve_mult=None):
         if tx.meta_withdraw and (tx.meta_withdraw.ilp_rune >= self.ilp_paid_min_usd / usd_per_rune):
             return True
 
@@ -199,7 +199,7 @@ class SwapTxNotifier(GenericTxNotifier):
         self._ev_db = EventDatabase(deps.db)
         self.swap_start_deduplicator = TxDeduplicator(deps.db, DB_KEY_ANNOUNCED_SS_START)
 
-    async def _check_if_they_announced_as_started(self, txs: List[ThorTx]):
+    async def _check_if_they_announced_as_started(self, txs: List[ThorAction]):
         if not txs:
             return
 
@@ -209,7 +209,7 @@ class SwapTxNotifier(GenericTxNotifier):
         if self._ss_txs_started:
             self.logger.info(f'These Txs were announced as started SS before: {self._ss_txs_started}')
 
-    async def handle_txs_unsafe(self, senders, txs: List[ThorTx]):
+    async def handle_txs_unsafe(self, senders, txs: List[ThorAction]):
         await self._check_if_they_announced_as_started(txs)
 
         return await super().handle_txs_unsafe(senders, txs)
@@ -240,7 +240,7 @@ class SwapTxNotifier(GenericTxNotifier):
     async def _event_transform(self, event: EventLargeTransaction) -> EventLargeTransaction:
         return await self.adjust_liquidity_fee_through_midgard(event)
 
-    def is_tx_suitable(self, tx: ThorTx, min_rune_volume, usd_per_rune, curve_mult=None):
+    def is_tx_suitable(self, tx: ThorAction, min_rune_volume, usd_per_rune, curve_mult=None):
         # a) It is interesting if a steaming swap
         if tx.is_streaming:
             if tx.full_volume_in_rune >= self.min_streaming_swap_usd / usd_per_rune:

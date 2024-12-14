@@ -7,13 +7,13 @@ from lib.depcont import DepContainer
 from lib.utils import WithLogger
 from models.memo import ActionType
 from models.time_series import TimeSeries
-from models.tx import ThorTx
+from models.tx import ThorAction
 
 
 class ILPSummer(INotified, WithLogger):
     MAX_POINTS = 10000
 
-    async def on_data(self, sender, data: List[ThorTx]):
+    async def on_data(self, sender, data: List[ThorAction]):
         with suppress(Exception):  # This must not break the rest of the pipeline! So ignore everything bad
             for tx in data:
                 if tx.is_of_type(ActionType.WITHDRAW):

@@ -7,7 +7,7 @@ from lib.constants import NetworkIdents, THOR_DIVIDER, NATIVE_RUNE_SYMBOL
 from api.midgard.parser import MidgardParserV2
 from lib.utils import load_json
 from models.asset import is_rune
-from models.tx import ThorCoin, ThorMetaSwap, ThorTx, ThorSubTx
+from models.tx import ThorCoin, ThorMetaSwap, ThorAction, ThorSubTx
 
 PATH = './sample_data'
 DIV = THOR_DIVIDER
@@ -70,8 +70,8 @@ def test_merge_two_swap_events():
 def test_affiliate_merge_simple(example_tx_gen):
     affiliate_tx_examples = example_tx_gen('affiliate_merge_test.json').txs
     t0, t1 = affiliate_tx_examples[:2]
-    t0: ThorTx
-    t1: ThorTx
+    t0: ThorAction
+    t1: ThorAction
     merger = AffiliateTXMerger()
     tm = merger.merge_same_txs(t0, t1)
     assert tm.meta_swap.trade_slip == '123'

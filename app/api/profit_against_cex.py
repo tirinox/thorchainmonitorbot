@@ -12,7 +12,7 @@ from lib.depcont import DepContainer
 from lib.money import pretty_dollar
 from lib.utils import WithLogger, get_ttl_hash
 from models.asset import Asset
-from models.tx import ThorTx
+from models.tx import ThorAction
 
 
 def order_book_evaluate(action: str, order_book: dict, amount: float) -> Optional[float]:
@@ -114,7 +114,7 @@ class StreamingSwapVsCexProfitCalculator(WithLogger, WithDelegates, INotified):
 
     TC_PROFIT_VS_CEX_TOO_MUCH_RATIO = 0.4
 
-    async def get_cex_data_v2(self, tx: ThorTx):
+    async def get_cex_data_v2(self, tx: ThorAction):
         """
         Get CEX output at the moment!
         @param tx:
@@ -147,7 +147,7 @@ class StreamingSwapVsCexProfitCalculator(WithLogger, WithDelegates, INotified):
 
         self._finalize_tx(tx)
 
-    async def get_cex_data_v1(self, tx: ThorTx):
+    async def get_cex_data_v1(self, tx: ThorAction):
         """
         Get CEX output at the moment!
         @param tx:
@@ -167,7 +167,7 @@ class StreamingSwapVsCexProfitCalculator(WithLogger, WithDelegates, INotified):
 
             self._finalize_tx(tx)
 
-    def _finalize_tx(self, tx: ThorTx):
+    def _finalize_tx(self, tx: ThorAction):
         savings_usd = tx.get_profit_vs_cex_in_usd(self.deps.price_holder)
         volume_usd = tx.get_usd_volume(self.deps.price_holder.usd_per_rune)
 
@@ -186,7 +186,7 @@ class StreamingSwapVsCexProfitCalculator(WithLogger, WithDelegates, INotified):
     async def _process_transactions(self, txs):
         try:
             for tx in txs:
-                tx: ThorTx
+                tx: ThorAction
                 if tx.is_streaming:
                     await self.get_cex_data_v2(tx)
         except Exception as e:

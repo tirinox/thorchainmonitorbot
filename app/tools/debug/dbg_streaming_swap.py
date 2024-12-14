@@ -18,7 +18,7 @@ from lib.texts import sep
 from lib.utils import setup_logs
 from models.asset import Asset, AssetRUNE
 from models.memo import ActionType
-from models.tx import ThorTx
+from models.tx import ThorAction
 from notify.public.dex_report_notify import DexReportNotifier
 from notify.public.s_swap_notify import StreamingSwapStartTxNotifier
 from notify.public.tx_notify import SwapTxNotifier
@@ -181,7 +181,7 @@ async def demo_search_for_deposit_streaming_synth(app):
         for tx in txs.txs:
             if not tx.meta_swap:
                 continue
-            tx: ThorTx
+            tx: ThorAction
             if Asset(tx.first_input_tx.first_asset).is_synth:
                 if tx.memo.is_streaming:
                     sep('BINGO')

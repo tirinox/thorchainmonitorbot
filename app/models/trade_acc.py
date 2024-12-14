@@ -6,7 +6,7 @@ from .asset import normalize_asset
 from .memo import ActionType
 from .pool_info import PoolInfoMap
 from .swap_history import SwapHistoryResponse
-from .tx import ThorTx, SUCCESS, ThorSubTx, ThorCoin
+from .tx import ThorAction, SUCCESS, ThorSubTx, ThorCoin
 from .vol_n import TxMetricType
 
 
@@ -30,7 +30,7 @@ class AlertTradeAccountAction(NamedTuple):
         return ActionType.TRADE_ACC_DEPOSIT if self.is_deposit else ActionType.TRADE_ACC_WITHDRAW
 
     @property
-    def as_thor_tx(self) -> ThorTx:
+    def as_thor_tx(self) -> ThorAction:
         in_tx_list = []
         out_tx_list = []
         pools = [self.asset]
@@ -53,7 +53,7 @@ class AlertTradeAccountAction(NamedTuple):
             ))
 
         ts = int(now_ts() * 1e9)
-        return ThorTx(
+        return ThorAction(
             ts, 0, SUCCESS, self.action_type.value,
             pools, in_tx_list, out_tx_list,
             None, None, None, None,

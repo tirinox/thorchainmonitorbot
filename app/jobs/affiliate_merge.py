@@ -5,7 +5,7 @@ from typing import List
 from lib.constants import thor_to_float, ZERO_HASH
 from lib.utils import WithLogger
 from models.memo import ActionType
-from models.tx import ThorCoin, ThorTx, ThorMetaSwap, ThorMetaAddLiquidity, ThorSubTx
+from models.tx import ThorCoin, ThorAction, ThorMetaSwap, ThorMetaAddLiquidity, ThorSubTx
 
 
 class AffiliateTXMerger(WithLogger):
@@ -24,7 +24,7 @@ class AffiliateTXMerger(WithLogger):
         amount_a, amount_b = thor_to_float(a.amount), thor_to_float(b.amount)
         return self.calc_affiliate_fee_floats(amount_a, amount_b)
 
-    def calc_affiliate_fee_rate(self, tx_a: ThorTx, tx_b: ThorTx):
+    def calc_affiliate_fee_rate(self, tx_a: ThorAction, tx_b: ThorAction):
         if tx_a.meta_add and tx_b.meta_add:
             a_fee = self.calc_affiliate_fee_floats(tx_a.meta_add.liquidity_units_int, tx_b.meta_add.liquidity_units_int)
         elif tx_a.meta_swap and tx_b.meta_swap:
@@ -53,7 +53,7 @@ class AffiliateTXMerger(WithLogger):
         else:
             return a_fee
 
-    def merge_same_txs(self, tx1: ThorTx, tx2: ThorTx) -> ThorTx:
+    def merge_same_txs(self, tx1: ThorAction, tx2: ThorAction) -> ThorAction:
         if tx1.type != tx2.type:
             # add/withdraw savers is a combination of forever pending swap and add/withdraw
             if tx1.is_of_type(ActionType.SWAP) and tx2.is_of_type(ActionType.GROUP_ADD_WITHDRAW):
@@ -127,7 +127,7 @@ class AffiliateTXMerger(WithLogger):
             )
         return new_input_transactions
 
-    def merge_affiliate_txs(self, txs: List[ThorTx]):
+    def merge_affiliate_txs(self, txs: List[ThorAction]):
         len_before = len(txs)
         same_tx_id_set = defaultdict(list)
         for tx in txs:

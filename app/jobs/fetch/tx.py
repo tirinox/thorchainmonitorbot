@@ -9,7 +9,7 @@ from jobs.affiliate_merge import AffiliateTXMerger
 from jobs.fetch.base import BaseFetcher
 from lib.date_utils import parse_timespan_to_seconds, now_ts
 from lib.depcont import DepContainer
-from models.tx import ThorTx
+from models.tx import ThorAction
 from notify.dup_stop import TxDeduplicator
 
 
@@ -50,7 +50,7 @@ class TxFetcher(BaseFetcher):
             self.logger.info(f'New tx to analyze: {len(txs)}')
         return txs
 
-    async def post_action(self, txs: List[ThorTx]):
+    async def post_action(self, txs: List[ThorAction]):
         hashes = [self.get_seen_hash(t) for t in txs]
         for h in hashes:
             await self.deduplicator.mark_as_seen(h)
@@ -68,7 +68,7 @@ class TxFetcher(BaseFetcher):
                                     tx_type=None,
                                     max_pages=None,
                                     asset=None,
-                                    start_page=0) -> List[ThorTx]:
+                                    start_page=0) -> List[ThorAction]:
         page = start_page
         txs = []
 
@@ -100,7 +100,7 @@ class TxFetcher(BaseFetcher):
         return txs
 
     async def fetch_all_tx(self, address=None, liquidity_change_only=False,
-                           max_pages=None, start_page=0) -> List[ThorTx]:
+                           max_pages=None, start_page=0) -> List[ThorAction]:
         tx_types = free_url_gen.LIQUIDITY_TX_TYPES if liquidity_change_only else [None]
 
         txs = []
@@ -117,7 +117,7 @@ class TxFetcher(BaseFetcher):
         self.logger.info(f'User {address = } has {len(txs)} tx ({liquidity_change_only = }).')
         return txs
 
-    def merge_related_txs(self, txs) -> List[ThorTx]:
+    def merge_related_txs(self, txs) -> List[ThorAction]:
         txs = self.tx_merger.merge_affiliate_txs(txs)
         return txs
 
@@ -266,10 +266,10 @@ class TxFetcher(BaseFetcher):
         return all_txs
 
     @staticmethod
-    def get_seen_hash(tx: ThorTx):
+    def get_seen_hash(tx: ThorAction):
         return tx.tx_hash
 
-    def _filter_by_age(self, txs: List[ThorTx]):
+    def _filter_by_age(self, txs: List[ThorAction]):
         # do nothing
         if self.max_age_sec == 0:
             return txs

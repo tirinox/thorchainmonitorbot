@@ -4,7 +4,7 @@ from typing import NamedTuple, List, Optional
 from models.memo import ActionType, is_action
 from models.pool_info import PoolInfoHistoricEntry, PoolInfoMap, PoolInfo
 from models.pool_member import PoolMemberDetails
-from models.tx import ThorTx, ThorSubTx, ThorMetaSwap, ThorMetaRefund, ThorMetaWithdraw, \
+from models.tx import ThorAction, ThorSubTx, ThorMetaSwap, ThorMetaRefund, ThorMetaWithdraw, \
     ThorMetaAddLiquidity
 
 logger = logging.getLogger(__name__)
@@ -12,7 +12,7 @@ logger = logging.getLogger(__name__)
 
 class TxParseResult(NamedTuple):
     total_count: int = 0
-    txs: List[ThorTx] = None
+    txs: List[ThorAction] = None
     tx_count_unfiltered: int = 0
     network_id: str = ''
     next_page_token: str = ''
@@ -23,7 +23,7 @@ class TxParseResult(NamedTuple):
         return len(self.txs)
 
     @property
-    def first(self) -> Optional[ThorTx]:
+    def first(self) -> Optional[ThorAction]:
         return self.txs[0] if self.txs else None
 
 
@@ -62,7 +62,7 @@ class MidgardParserV2:
         meta_refund = ThorMetaRefund.parse(
             metadata.get('refund', {})) if is_action(tx_type, ActionType.REFUND) else None
 
-        return ThorTx(
+        return ThorAction(
             int(date), int(block_height), status, tx_type,
             pools, in_tx_list, out_tx_list,
             meta_add, meta_withdraw, meta_swap, meta_refund

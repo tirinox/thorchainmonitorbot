@@ -7,7 +7,7 @@ from lib.delegates import INotified
 from lib.depcont import DepContainer
 from lib.utils import WithLogger
 from models.time_series import TimeSeries
-from models.tx import ThorTx
+from models.tx import ThorAction
 from .token_record import AmountToken
 
 
@@ -68,7 +68,7 @@ class DexAnalyticsCollector(WithLogger, INotified):
         if tx_hash:
             await self.deps.db.redis.sadd(self.KEY_DEX_COUNTED_TX_SET, tx_hash)
 
-    async def on_data(self, sender, txs: List[ThorTx]):
+    async def on_data(self, sender, txs: List[ThorAction]):
         with suppress(Exception):
             await self.handle_txs_unsafe(txs)
 

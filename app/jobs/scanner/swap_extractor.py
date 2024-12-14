@@ -14,7 +14,7 @@ from lib.depcont import DepContainer
 from lib.utils import WithLogger, hash_of_string_repr, say
 from models.events import EventOutbound, EventScheduledOutbound, \
     parse_swap_and_out_event, TypeEventSwapAndOut, EventTradeAccountDeposit
-from models.tx import ThorTx
+from models.tx import ThorAction
 
 
 class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
@@ -33,7 +33,7 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
         self.dbg_file = None
         self.dbg_ignore_finished_status = False
 
-    async def on_data(self, sender, block: BlockResult) -> List[ThorTx]:
+    async def on_data(self, sender, block: BlockResult) -> List[ThorAction]:
         # Incoming swap intentions will be recorded in the DB
         new_swaps = await self.register_new_swaps(block, block.block_no)
 
@@ -128,7 +128,7 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
             if swap_ev:
                 yield swap_ev
 
-    async def find_tx(self, tx_id) -> Optional[ThorTx]:
+    async def find_tx(self, tx_id) -> Optional[ThorAction]:
         swap_info = await self._db.read_tx_status(tx_id)
         if swap_info:
             tx = swap_info.build_tx()
@@ -136,7 +136,7 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
 
     async def detect_swap_finished(self,
                                    block: BlockResult,
-                                   interesting_events: List[TypeEventSwapAndOut]) -> List[ThorTx]:
+                                   interesting_events: List[TypeEventSwapAndOut]) -> List[ThorAction]:
         """
             We do not wait until scheduled outbound will be sent out.
             Swap end is detected by

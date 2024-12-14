@@ -5,7 +5,7 @@ from comm.picture.common import BasePictureGenerator
 from comm.picture.resources import Resources
 from lib.utils import async_wrap
 from models.s_swap import StreamingSwap
-from models.tx import ThorTx
+from models.tx import ThorAction
 
 
 class StreamingSwapPictureGenerator(BasePictureGenerator):
@@ -15,7 +15,7 @@ class StreamingSwapPictureGenerator(BasePictureGenerator):
     LINE_COLOR = '#41484d'
     COLUMN_COLOR = '#eee'
 
-    def __init__(self, loc: BaseLocalization, tx: ThorTx, s_swap: StreamingSwap):
+    def __init__(self, loc: BaseLocalization, tx: ThorAction, s_swap: StreamingSwap):
         super().__init__(loc)
         self.bg = Image.open(self.BG_FILE)
         self.tx = tx

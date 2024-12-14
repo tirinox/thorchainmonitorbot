@@ -17,7 +17,7 @@ from models.price import RuneMarketInfo, LastPriceHolder
 from models.runepool import AlertPOLState, AlertRunePoolAction
 from models.savers import SaversBank
 from models.trade_acc import AlertTradeAccountStats, AlertTradeAccountAction
-from models.tx import ThorTx
+from models.tx import ThorAction
 from notify.public.block_notify import LastBlockStore
 from .ach_list import A, EventTestAchievement, Achievement
 
@@ -42,7 +42,7 @@ class AchievementsExtractor(WithLogger):
             kv_events = self.on_savers(data, self.deps.price_holder)
         elif isinstance(sender, AccountNumberFetcher):
             kv_events = [Achievement(A.WALLET_COUNT, int(data))]
-        elif is_list_of_type(data, ThorTx):
+        elif is_list_of_type(data, ThorAction):
             kv_events = self.on_thor_tx_list(data)
         elif isinstance(data, AlertPOLState):
             kv_events = self.on_thor_pol(data)
@@ -154,7 +154,7 @@ class AchievementsExtractor(WithLogger):
 
         return events
 
-    def on_thor_tx_list(self, txs: List[ThorTx]):
+    def on_thor_tx_list(self, txs: List[ThorAction]):
         results = defaultdict(float)
 
         def update(key, value, spec=''):

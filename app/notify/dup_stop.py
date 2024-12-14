@@ -7,7 +7,7 @@ from lib.bloom_filt import BloomFilter
 from lib.cooldown import Cooldown
 from lib.db import DB
 from lib.logs import WithLogger
-from models.tx import ThorTx
+from models.tx import ThorAction
 
 BLOOM_TX_CAPACITY = 100_000_000
 BLOOM_TX_ERROR_RATE = 0.005
@@ -61,7 +61,7 @@ class TxDeduplicator(WithLogger):
 
         await self.db.redis.hincrby(self._stats_key, 'write_requests', 1)
 
-    async def mark_as_seen_txs(self, txs: List[ThorTx]):
+    async def mark_as_seen_txs(self, txs: List[ThorAction]):
         for tx in txs:
             if tx and tx.tx_hash:
                 await self.mark_as_seen(tx.tx_hash)
@@ -69,7 +69,7 @@ class TxDeduplicator(WithLogger):
     async def forget(self, tx_id):
         raise NotImplementedError
 
-    async def have_ever_seen(self, tx: ThorTx):
+    async def have_ever_seen(self, tx: ThorAction):
         if not tx or not tx.tx_hash:
             return True
         return await self.have_ever_seen_hash(tx.tx_hash)
@@ -97,7 +97,7 @@ class TxDeduplicator(WithLogger):
                 tmp_txs_hashes.append(tx_id)
         return tmp_txs_hashes
 
-    async def only_txs_having_certain_flag(self, txs: List[ThorTx], desired_flag) -> List[ThorTx]:
+    async def only_txs_having_certain_flag(self, txs: List[ThorAction], desired_flag) -> List[ThorAction]:
         tx_dict = {tx.tx_hash: tx for tx in txs if tx and tx.tx_hash}
         filtered_tx_hashes = set(await self.only_hashes_having_certain_flag(list(tx_dict.keys()), desired_flag))
         return [tx for tx in tx_dict.values() if tx.tx_hash in filtered_tx_hashes]
@@ -108,14 +108,14 @@ class TxDeduplicator(WithLogger):
     async def only_seen_hashes(self, txs: List[str]) -> List[str]:
         return await self.only_hashes_having_certain_flag(txs, True)
 
-    async def only_new_txs(self, txs: List[ThorTx], logs=False) -> List[ThorTx]:
+    async def only_new_txs(self, txs: List[ThorAction], logs=False) -> List[ThorAction]:
         len_in = len(txs)
         results = await self.only_txs_having_certain_flag(txs, False)
         if logs and len(results) != len_in:
             self.logger.info(f'(k={self.key}) Filtered {len_in} txs to {len(results)} new txs.')
         return results
 
-    async def only_seen_txs(self, txs: List[ThorTx]) -> List[ThorTx]:
+    async def only_seen_txs(self, txs: List[ThorAction]) -> List[ThorAction]:
         return await self.only_txs_having_certain_flag(txs, True)
 
     async def clear(self):
@@ -129,7 +129,7 @@ class TxDeduplicatorSenderCooldown(TxDeduplicator):
         self._cooldown_key_prefix = cooldown_key_prefix
         self._cooldown_sec = cooldown_sec
 
-    async def have_ever_seen(self, tx: ThorTx):
+    async def have_ever_seen(self, tx: ThorAction):
         if not tx or not tx.tx_hash:
             return True
 

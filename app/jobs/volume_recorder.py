@@ -10,12 +10,12 @@ from lib.utils import WithLogger
 from models.memo import ActionType
 from models.runepool import AlertRunePoolAction
 from models.trade_acc import AlertTradeAccountAction
-from models.tx import ThorTx
+from models.tx import ThorAction
 from models.vol_n import TxCountStats, TxMetricType
 from notify.dup_stop import TxDeduplicator
 
 
-def convert_trade_actions_to_txs(txs, d: DepContainer) -> List[ThorTx]:
+def convert_trade_actions_to_txs(txs, d: DepContainer) -> List[ThorAction]:
     """
     The classes below are able to handle both ThorTx and AlertTradeAccountAction, AlertRunePoolAction
      thanks to this function.
@@ -52,7 +52,7 @@ class TxCountRecorder(INotified, WithLogger):
         }
         self._deduplicator = TxDeduplicator(deps.db, 'TxCount')
 
-    async def _write_tx_count(self, txs: List[ThorTx]):
+    async def _write_tx_count(self, txs: List[ThorAction]):
         unique_tx_hashes = defaultdict(set)
         for tx in txs:
             if not tx or not (ident := tx.tx_hash):
@@ -94,7 +94,7 @@ class TxCountRecorder(INotified, WithLogger):
         if unique_tx_hashes:
             self.logger.debug(f'Unique txs written {unique_tx_hashes}')
 
-    async def on_data(self, sender, txs: Union[List[ThorTx], AlertTradeAccountAction]):
+    async def on_data(self, sender, txs: Union[List[ThorAction], AlertTradeAccountAction]):
         try:
             txs = convert_trade_actions_to_txs(txs, self.deps)
             txs = await self._deduplicator.only_new_txs(txs, logs=True)
@@ -130,7 +130,7 @@ class VolumeRecorder(INotified, WithLogger):
 
         self._deduplicator = TxDeduplicator(deps.db, 'VolumeRecorder')
 
-    async def on_data(self, sender, txs: Union[List[ThorTx], AlertTradeAccountAction]):
+    async def on_data(self, sender, txs: Union[List[ThorAction], AlertTradeAccountAction]):
         try:
             txs = convert_trade_actions_to_txs(txs, self.deps)
             txs = await self._deduplicator.only_new_txs(txs, logs=True)
@@ -139,7 +139,7 @@ class VolumeRecorder(INotified, WithLogger):
         except Exception as e:
             self.logger.exception('Error while writing volume', exc_info=e)
 
-    async def handle_txs_unsafe(self, txs: List[ThorTx]):
+    async def handle_txs_unsafe(self, txs: List[ThorAction]):
         current_price = self.deps.price_holder.usd_per_rune or 0.01
         total_volume = 0.0
 

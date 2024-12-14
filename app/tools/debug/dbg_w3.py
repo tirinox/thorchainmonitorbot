@@ -19,7 +19,7 @@ from lib.delegates import WithDelegates, INotified
 from lib.money import DepthCurve
 from lib.texts import sep
 from models.memo import ActionType
-from models.tx import ThorTx
+from models.tx import ThorAction
 from notify.public.tx_notify import SwapTxNotifier
 from tools.debug.dbg_tx_format import load_tx
 from tools.lib.lp_common import LpAppFramework
@@ -117,7 +117,7 @@ async def demo_decoder(app: LpAppFramework):
 
 class FilterTxMiddleware(WithDelegates, INotified):
     @staticmethod
-    def is_ok_tx(tx: ThorTx):
+    def is_ok_tx(tx: ThorAction):
         assets = (ETH_SYMBOL, AVAX_SYMBOL)
         if inp := tx.first_input_tx:
             if inp.first_asset in assets:
@@ -127,7 +127,7 @@ class FilterTxMiddleware(WithDelegates, INotified):
                 return True
         return False
 
-    async def on_data(self, sender, txs: List[ThorTx]):
+    async def on_data(self, sender, txs: List[ThorAction]):
         txs = [tx for tx in txs if self.is_ok_tx(tx)]
         await self.pass_data_to_listeners(txs, sender)
 

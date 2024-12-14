@@ -18,7 +18,7 @@ from lib.money import DepthCurve
 from lib.texts import sep
 from models.memo import ActionType
 from models.pool_info import PoolInfo
-from models.tx import ThorTx, EventLargeTransaction
+from models.tx import ThorAction, EventLargeTransaction
 from notify.dup_stop import TxDeduplicator
 from notify.public.tx_notify import SwapTxNotifier, LiquidityTxNotifier, RefundTxNotifier
 from tools.lib.lp_common import LpAppFramework, load_sample_txs, Receiver
@@ -208,7 +208,7 @@ async def demo_full_tx_pipeline(app: LpAppFramework, announce=True,
 
     all_accepted_tx_hashes = set()
 
-    async def print_hashes(_, txs: List[ThorTx]):
+    async def print_hashes(_, txs: List[ThorAction]):
         hashes = {tx.tx_hash for tx in txs}
         sep()
         print('Accepted hashes = ', hashes)

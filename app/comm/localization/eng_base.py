@@ -45,7 +45,7 @@ from models.s_swap import AlertSwapStart
 from models.savers import how_much_savings_you_can_add, AlertSaverStats
 from models.trade_acc import AlertTradeAccountAction, AlertTradeAccountStats
 from models.transfer import RuneTransfer, RuneCEXFlow
-from models.tx import ThorTx, ThorSubTx, EventLargeTransaction
+from models.tx import ThorAction, ThorSubTx, EventLargeTransaction
 from models.version import AlertVersionUpgradeProgress, AlertVersionChanged
 from notify.channel import Messengers
 from proto.types import ThorName
@@ -513,12 +513,12 @@ class BaseLocalization(ABC):  # == English
             result += self.TEXT_MORE_TXS.format(n=extra_n)
         return result
 
-    def link_to_explorer_user_address_for_tx(self, tx: ThorTx, name_map):
+    def link_to_explorer_user_address_for_tx(self, tx: ThorAction, name_map):
         address, _ = tx.sender_address_and_chain
         return self.link_to_address(tx.sender_address, name_map)  # Chains.THOR is always here, that is deliberate!
 
     @staticmethod
-    def lp_tx_calculations(usd_per_rune, pool_info: PoolInfo, tx: ThorTx):
+    def lp_tx_calculations(usd_per_rune, pool_info: PoolInfo, tx: ThorAction):
         total_usd_volume = tx.full_volume_in_rune * usd_per_rune
         pool_depth_usd = pool_info.usd_depth(usd_per_rune) if pool_info else 0.0
 
@@ -559,7 +559,7 @@ class BaseLocalization(ABC):  # == English
         ends = {self.pretty_asset(a): v for a, v in ends.items()}
         return ', '.join(f"{self.format_op_amount(amount)} {asset}" for asset, amount in ends.items())
 
-    def format_swap_route(self, tx: ThorTx, usd_per_rune):
+    def format_swap_route(self, tx: ThorAction, usd_per_rune):
         input_str = self._get_asset_summary_string(tx, in_only=True)
         output_str = self._get_asset_summary_string(tx, out_only=True)
 
@@ -597,7 +597,7 @@ class BaseLocalization(ABC):  # == English
     def tx_add_date_if_older_than(self):
         return self.cfg.as_interval('tx.add_date_if_older_than', '3h')
 
-    def tx_date(self, tx: ThorTx):
+    def tx_date(self, tx: ThorAction):
         now = now_ts()
         if tx.date_timestamp < now - self.tx_add_date_if_older_than():
             return self.format_time_ago(now - tx.date_timestamp)

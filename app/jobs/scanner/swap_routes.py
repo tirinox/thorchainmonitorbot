@@ -8,7 +8,7 @@ from lib.logs import WithLogger
 from lib.money import pretty_dollar
 from models.asset import normalize_asset
 from models.key_stats_model import SwapRouteEntry
-from models.tx import ThorTx
+from models.tx import ThorAction
 from notify.dup_stop import TxDeduplicator
 
 ROUTE_SEP = '=='
@@ -119,7 +119,7 @@ class SwapRouteRecorder(WithLogger, INotified):
                 self._clear_counter = 0
                 await self.clear_old_events(self.days_to_keep)
 
-    async def on_data(self, sender, data: List[ThorTx]):
+    async def on_data(self, sender, data: List[ThorAction]):
         for tx in data:
             if not tx.meta_swap:
                 continue  # skip non-swap tx

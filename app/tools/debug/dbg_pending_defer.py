@@ -5,7 +5,7 @@ from typing import List
 from jobs.fetch.tx import TxFetcher
 from jobs.volume_filler import VolumeFillerUpdater
 from jobs.volume_recorder import VolumeRecorder
-from models.tx import ThorTx
+from models.tx import ThorAction
 from tools.lib.lp_common import LpAppFramework, Receiver
 
 
@@ -18,7 +18,7 @@ async def continuous_pending_scan(app):
     pending_set = set()
     block_height = {}
 
-    async def on_data(sender: VolumeRecorder, data: List[ThorTx]):
+    async def on_data(sender: VolumeRecorder, data: List[ThorAction]):
         for tx in data:
             h = tx.tx_hash
             if h:
