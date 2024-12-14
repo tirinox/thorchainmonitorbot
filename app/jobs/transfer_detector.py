@@ -8,7 +8,8 @@ from lib.delegates import WithDelegates, INotified
 from lib.utils import WithLogger
 from models.asset import Asset, is_rune
 from models.transfer import RuneTransfer
-from proto.access import NativeThorTx, parse_thor_address, DecodedEvent
+from proto.access import NativeThorTx
+from jobs.scanner.block_loader import DecodedEvent, parse_thor_address
 from proto.types import MsgSend, MsgDeposit
 
 
@@ -29,6 +30,7 @@ class RuneTransferDetectorNativeTX(WithDelegates, INotified):
             # find out memo
             memo = tx.memo
 
+            # todo!
             for message in tx.tx.body.messages:
                 comment = (type(message)).__name__
                 if isinstance(message, MsgSend):
@@ -65,6 +67,7 @@ class RuneTransferDetectorNativeTX(WithDelegates, INotified):
                             comment=comment,
                             memo=memo,
                         ))
+                # todo: add handler of /cosmos.bank.v1beta1.MsgSend
         return transfers
 
     async def on_data(self, sender, data):
