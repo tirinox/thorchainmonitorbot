@@ -1025,8 +1025,7 @@ class TwitterEnglishLocalization(BaseLocalization):
             aff_collector = self.name_service.get_affiliate_name(event.affiliate)
             aff_collector = f'{aff_collector} ' if aff_collector else ''
 
-            aff_text = f'{aff_collector}Aff. fee: {short_dollar(event.affiliate_usd)} ' \
-                       f'({format_percent(event.affiliate_rate, 1)})\n'
+            aff_text = f'{aff_collector}Aff. fee: {format_percent(event.affiliate_rate, 1)}\n'
         else:
             aff_text = ''
 

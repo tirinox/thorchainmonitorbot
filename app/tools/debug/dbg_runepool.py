@@ -26,9 +26,13 @@ async def prepare_once(app):
         prepared = True
 
 
-DEPOSIT_TX_HASH_1 = 'FA5EDC7CE67C61E19F2A7CEA500338248D082FC0D79E0829578DFF8E78D3607C'
-DEPOSIT_TX_HEIGHT_1 = 16982896
-DEPOSIT_TX_HEIGHT_2 = 17005268
+WITHDRAW_TX_HASH = '6B27CC9346DF91559294DBDFD812D01E2FE79AFB18D6E5C0CD9EEED4C022AB77'
+WITHDRAW_TX_HEIGHT = 18990272
+
+DEPOSIT_TX_HASH = '0ABC436F8093EC56185E19B6338EF8C76051DD2B22D95DA94A27C8BC49343B3B'
+DEPOSIT_TX_HEIGHT = 18961411
+
+# DEPOSIT_TX_HEIGHT_2 = 17005268
 
 
 async def demo_decode_runepool_deposit(app: LpAppFramework, height):
@@ -150,11 +154,11 @@ async def demo_runepool_stats(app: LpAppFramework):
 async def run():
     app = LpAppFramework()
     async with app(brief=True):
-        # await demo_decode_runepool_deposit(app, DEPOSIT_TX_HEIGHT_1)
-        # await demo_decode_runepool_deposit(app, DEPOSIT_TX_HEIGHT_2)
+        await demo_decode_runepool_deposit(app, DEPOSIT_TX_HEIGHT)
+        await demo_decode_runepool_deposit(app, WITHDRAW_TX_HEIGHT)
         # await demo_simulate_withdrawal(app)
         # await demo_runepool_continuous(app, b=DEPOSIT_TX_HEIGHT_1)
-        await demo_runepool_stats(app)
+        # await demo_runepool_stats(app)
 
 
 if __name__ == '__main__':

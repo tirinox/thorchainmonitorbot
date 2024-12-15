@@ -74,10 +74,15 @@ class ThorTxMessage(NamedTuple):
     def coins(self) -> List[dict]:
         return self.attrs.get('coins', [])
 
+    def __bool__(self):
+        return bool(self.attrs)
+
     def __len__(self):
         return len(self.txs)
 
     def __getitem__(self, key):
+        if isinstance(key, slice):
+            raise TypeError("Slicing is not supported for this object.")
         return self.attrs[key]
 
     def __iter__(self):
