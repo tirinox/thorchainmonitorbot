@@ -52,8 +52,8 @@ class BlockResult:
     def is_behind(self):
         return self.error.last_available_block != 0 and self.block_no < self.error.last_available_block
 
-    def find_tx_by_type(self, tx_class):
-        return filter(lambda tx: isinstance(tx.first_message, tx_class), self.txs)
+    def find_tx_by_type(self, msg_type):
+        return filter(lambda tx: tx.first_message.type == msg_type, self.txs)
 
     @property
     def only_successful(self) -> 'BlockResult':
