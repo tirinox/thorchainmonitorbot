@@ -1,4 +1,4 @@
-from typing import NamedTuple, List
+from typing import NamedTuple, List, Optional
 
 from jobs.scanner.util import thor_decode_amount_field, pubkey_to_thor_address
 from lib.utils import safe_get
@@ -6,7 +6,6 @@ from lib.utils import safe_get
 
 class ThorEvent(NamedTuple):
     attrs: dict
-    height: int = 0
 
     def get(self, key, default=None):
         return self.attrs.get(key, default)
@@ -24,11 +23,15 @@ class ThorEvent(NamedTuple):
         return f"ThorEvent({self.attrs})"
 
     @classmethod
-    def from_dict(cls, d, height):
+    def from_dict(cls, d, height=0):
         for key in ('coin', 'amount'):
             if key in d:
                 d['_amount'], d['_asset'] = thor_decode_amount_field(d[key])
-        return cls(d, height)
+
+        o = cls(d)
+        if height:
+            o.height = height
+        return o
 
     @property
     def amount(self):
@@ -42,6 +45,14 @@ class ThorEvent(NamedTuple):
     def type(self):
         return self.attrs.get('type', '')
 
+    @property
+    def height(self):
+        return self.attrs.get('_height', 0)
+
+    @height.setter
+    def height(self, value):
+        self.attrs['_height'] = value
+
 
 class ThorTxMessage(NamedTuple):
     attrs: dict
@@ -50,6 +61,10 @@ class ThorTxMessage(NamedTuple):
     MsgDeposit = '/types.MsgDeposit'
     MsgSend = '/types.MsgSend'
     MsgSendCosmos = '/cosmos.bank.v1beta1.MsgSend'
+
+    @property
+    def is_send(self):
+        return self.type == self.MsgSend or self.type == self.MsgSendCosmos
 
     @property
     def txs(self) -> List[dict]:
@@ -78,6 +93,15 @@ class ThorTxMessage(NamedTuple):
     @classmethod
     def from_dict(cls, d):
         return cls(d)
+
+    @property
+    def deep_memo(self):
+        if 'txs' in self.attrs:
+            for tx in self.attrs['txs']:
+                if memo := safe_get(tx, 'tx', 'memo'):
+                    return memo
+        elif memo := self.attrs.get('memo'):
+            return memo
 
 
 class ThorSignerInfo(NamedTuple):
@@ -120,17 +144,13 @@ class NativeThorTx(NamedTuple):
     @property
     def deep_memo(self):
         """
-        Tries to get memo from txs, for instance "/types.MsgObservedTxIn" has memo in txs
+        Tries to get memo from inside TXs messages, for instance "/types.MsgObservedTxIn" has memo in txs[].tx.memo
         """
         if self.this_memo:
             return self.this_memo
 
         for msg in self.messages:
-            if 'txs' in msg:
-                for tx in msg['txs']:
-                    if memo := safe_get(tx, 'tx', 'memo'):
-                        return memo
-            elif memo := msg.get('memo'):
+            if memo := msg.deep_memo:
                 return memo
         return ''
 
@@ -163,5 +183,5 @@ class NativeThorTx(NamedTuple):
         return not self.is_success
 
     @property
-    def first_message(self):
+    def first_message(self) -> Optional[ThorTxMessage]:
         return self.messages[0] if self.messages else None

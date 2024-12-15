@@ -33,7 +33,7 @@ class RuneTransferDetectorNativeTX(WithLogger):
             for message in tx.messages:
                 comment = message.type
                 # todo: test if it works good for /cosmos.bank.v1beta1.MsgSend
-                if message.type == message.MsgSend or message.type == message.MsgSendCosmos:
+                if message.is_send:
                     from_addr = message.get('from_address', '')
                     to_addr = message.get('to_address', '')
 
