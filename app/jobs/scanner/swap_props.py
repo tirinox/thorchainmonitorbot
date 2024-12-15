@@ -10,7 +10,7 @@ from models.memo import ActionType
 from models.memo import THORMemo
 from models.s_swap import StreamingSwap
 from models.tx import ThorAction, SUCCESS, ThorMetaSwap, ThorCoin, ThorSubTx
-from jobs.scanner.block_loader import DecodedEvent
+from jobs.scanner.block_result import ThorEvent
 
 
 class SwapProps(NamedTuple):
@@ -36,7 +36,7 @@ class SwapProps(NamedTuple):
         for key, value in attrs.items():
             if key.startswith('ev_'):
                 raw_dict = json.loads(value)
-                event = DecodedEvent.from_dict_our(raw_dict)
+                event = ThorEvent.from_dict(raw_dict)
                 swap_ev = parse_swap_and_out_event(event)
                 results.append(swap_ev)
 
@@ -147,7 +147,7 @@ class SwapProps(NamedTuple):
     def has_swaps(self):
         return any(isinstance(ev, EventSwap) for ev in self.events)
 
-    def build_tx(self) -> ThorAction:
+    def build_action(self) -> ThorAction:
         attrs = self.attrs
 
         memo_str = self.attrs.get('memo', '')

@@ -6,11 +6,10 @@ from jobs.scanner.tx import NativeThorTx
 from lib.db import DB
 from lib.delegates import INotified, WithDelegates
 from lib.logs import WithLogger
-from models.asset import Asset, is_rune
+from models.asset import is_rune
 from models.memo import THORMemo, ActionType, is_action
 from models.price import LastPriceHolder
 from models.runepool import AlertRunePoolAction
-# fixme! v3
 
 
 class RunePoolEventDecoder(WithLogger, INotified, WithDelegates):

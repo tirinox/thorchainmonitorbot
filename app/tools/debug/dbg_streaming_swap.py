@@ -243,12 +243,14 @@ async def run():
     async with app(brief=True):
         print('start!')
 
+        await app.deps.pool_fetcher.run_once()
+
         setup_logs(logging.DEBUG)
 
-        # await debug_full_pipeline(app, start=14519387 - 1)
+        await debug_full_pipeline(app)
 
         # await debug_fetch_ss(app)
-        await debug_block_analyse(app, block=17361911)
+        # await debug_block_analyse(app, block=17361911)
         # await debug_full_pipeline(app, start=16387377, single_block=True,
         #                           tx_id='BE7B085E50DE86CD9BD8959ABF3EA924AC60302330888D484219B8B7385F7B1D')
         # await debug_tx_records(app, 'E8766E3D825A7BFD755ECA14454256CA25980F8B4BA1C9DCD64ABCE4904F033D')
@@ -261,12 +263,12 @@ async def run():
         # )
 
         # ------------------- trade to trade no stream -------------------
-        await debug_full_pipeline(
-            app,
-            start=16908330,
-            tx_id='BAB65D6A6A2D7AC127FDF36DF2B1219AC5F44732804848DB4FCEFC72AD5BCE77',
-            single_block=True
-        )
+        # await debug_full_pipeline(
+        #     app,
+        #     start=16908330,
+        #     tx_id='BAB65D6A6A2D7AC127FDF36DF2B1219AC5F44732804848DB4FCEFC72AD5BCE77',
+        #     single_block=True
+        # )
 
         # ------------------- trade to trade with stream -------------------
         # await debug_full_pipeline(

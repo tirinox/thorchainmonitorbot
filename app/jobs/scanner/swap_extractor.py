@@ -4,7 +4,6 @@ import sys
 from collections import defaultdict
 from typing import List, Optional
 
-from jobs.affiliate_merge import ZERO_HASH
 from jobs.scanner.event_db import EventDatabase
 from jobs.scanner.native_scan import BlockResult
 from jobs.scanner.swap_props import SwapProps
@@ -13,7 +12,7 @@ from lib.delegates import INotified, WithDelegates
 from lib.depcont import DepContainer
 from lib.utils import WithLogger, hash_of_string_repr, say
 from models.events import EventOutbound, EventScheduledOutbound, \
-    parse_swap_and_out_event, TypeEventSwapAndOut, EventTradeAccountDeposit
+    parse_swap_and_out_event, TypeEventSwapAndOut, EventTradeAccountDeposit, EventSwap
 from models.tx import ThorAction
 
 
@@ -46,9 +45,7 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
         # Extract finished TX
         txs = await self.detect_swap_finished(block, interesting_events)
 
-        if self.dbg_watch_swap_id:
-            if any(tx.tx_hash == self.dbg_watch_swap_id for tx in txs):
-                self.dbg_print(f'🎉 Swap finished\n')
+        self.dbg_track_swap_id(txs)
 
         if new_swaps or txs:
             self.logger.info(f"New swaps detected {len(new_swaps)} and {len(txs)} passed in block #{block.block_no}")
@@ -99,27 +96,15 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
 
             hash_key = hash_of_string_repr(swap_ev, block.block_no)[:8]
 
+            if not swap_ev.original:
+                self.logger.error(f'Original event is missing for {swap_ev} at block #{block.block_no}')
+                continue
+
             await self._db.write_tx_status(swap_ev.tx_id, {
-                f"ev_{hash_key}": swap_ev.original.to_dict
+                f"ev_{hash_key}": swap_ev.original.attrs
             })
 
-            # --8<-- debugging stuff --8<--
-            # if isinstance(swap_ev, EventSwap):
-            #     self.dbg_swaps += 1
-            #
-            # if swap_ev.tx_id == self.dbg_watch_swap_id:
-            #     self.dbg_print(f'👹 new event for watched TX!!! {swap_ev.__class__} at block #{swap_ev.height}\n')
-            #     self.dbg_print(swap_ev)
-            #     self.dbg_print('----------\n')
-            #
-            #     if not boom:
-            #         await say('Event!!')
-            #         boom = True
-            #
-            #     if isinstance(swap_ev, EventScheduledOutbound):
-            #         await say('Scheduled outbound!')
-            #         self.dbg_print('Scheduled outbound!\n')
-            # --8<-- debugging stuff --8<--
+            # boom = await self.dbg_on_swap_events(swap_ev, boom)
 
     @staticmethod
     def get_events_of_interest(block: BlockResult) -> List[TypeEventSwapAndOut]:
@@ -173,7 +158,7 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
 
         return results
 
-    # --- debug and research ---
+    # ------------------------------------ debug and research ---------------------------------------
 
     def dbg_open_file(self, filename):
         os.makedirs(os.path.dirname(filename), exist_ok=True)
@@ -195,3 +180,27 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
     def dbg_print(self, *args):
         s = self.dbg_file or sys.stdout
         print(*args, file=s, flush=True)
+
+    def dbg_track_swap_id(self, txs):
+        if self.dbg_watch_swap_id:
+            if any(tx.tx_hash == self.dbg_watch_swap_id for tx in txs):
+                self.dbg_print(f'🎉 Swap finished\n')
+
+    async def dbg_on_swap_events(self, swap_ev: TypeEventSwapAndOut, boom):
+        if isinstance(swap_ev, EventSwap):
+            self.dbg_swaps += 1
+
+        if swap_ev.tx_id == self.dbg_watch_swap_id:
+            self.dbg_print(f'👹 new event for watched TX!!! {swap_ev.__class__} at block #{swap_ev.height}\n')
+            self.dbg_print(swap_ev)
+            self.dbg_print('----------\n')
+
+            if not boom:
+                await say('Event!!')
+                boom = True
+
+            if isinstance(swap_ev, EventScheduledOutbound):
+                await say('Scheduled outbound!')
+                self.dbg_print('Scheduled outbound!\n')
+
+        return boom

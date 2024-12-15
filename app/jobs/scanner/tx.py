@@ -107,6 +107,7 @@ class ThorTxMessage(NamedTuple):
                     return memo
         elif memo := self.attrs.get('memo'):
             return memo
+        return ''
 
 
 class ThorSignerInfo(NamedTuple):
