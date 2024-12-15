@@ -180,7 +180,7 @@ class RuneTransferDetector(WithDelegates, INotified, WithLogger):
 
     async def on_data(self, sender, data: BlockResult):
         if not data.txs or not data.begin_block_events:
-            self.logger.warning(f'Empty block #{data.block_no}?')
+            self.logger.debug(f'Empty block #{data.block_no}?')
             return
 
         transfers_tx = self.tx_proc.process_block(data.txs, data.block_no)

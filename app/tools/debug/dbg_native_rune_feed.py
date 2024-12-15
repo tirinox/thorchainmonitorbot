@@ -42,10 +42,11 @@ async def demo_native_block_action_detector(app, start=12209517):
 
 
 # sic!
-async def demo_block_scanner_active(app, send_alerts=False, catch_up=False, force_start_block=None,
+async def demo_block_scanner_active(app, send_alerts=False, catch_up=0, force_start_block=None,
                                     print_txs=False):
     d = app.deps
-    scanner = BlockScanner(d, sleep_period=10.0)
+    # scanner = BlockScanner(d, sleep_period=10.0)
+    scanner = BlockScanner(d)
     detector = RuneTransferDetector()
     scanner.add_subscriber(detector)
 
@@ -57,7 +58,7 @@ async def demo_block_scanner_active(app, send_alerts=False, catch_up=False, forc
 
     if catch_up:
         await scanner.ensure_last_block()
-        scanner.last_block -= 100
+        scanner.last_block -= catch_up
     elif force_start_block:
         scanner.last_block = force_start_block
 
@@ -181,7 +182,7 @@ async def main():
 
         # await demo_non_zero_code(app)
 
-        await demo_block_scanner_active(app, send_alerts=True, catch_up=True)
+        await demo_block_scanner_active(app, send_alerts=True, catch_up=5)
 
         # await demo_block_scanner_active(app, send_alerts=False, force_start_block=100)  # test behind your node
 
