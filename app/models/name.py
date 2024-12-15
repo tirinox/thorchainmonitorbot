@@ -1,3 +1,4 @@
+import json
 from typing import NamedTuple, List
 
 from lib.constants import Chains
@@ -15,7 +16,7 @@ class ThorName(NamedTuple):
     aliases: List[ThorNameAlias]
 
     def to_json(self):
-        return {
+        d = {
             'name': self.name,
             'expiry': self.expire_block_height,
             'owner': self.owner,
@@ -27,9 +28,11 @@ class ThorName(NamedTuple):
                 for alias in self.aliases
             ]
         }
+        return json.dumps(d)
 
     @classmethod
-    def from_json(cls, data):
+    def from_json(cls, data_str):
+        data = data_str if isinstance(data_str, dict) else json.loads(data_str)
         return ThorName(
             data['name'],
             data['expiry'],
