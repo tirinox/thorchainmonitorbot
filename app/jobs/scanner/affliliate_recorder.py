@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta
 
-from jobs.scanner.block_loader import BlockResult
+from jobs.scanner.block_result import BlockResult
+from jobs.scanner.tx import NativeThorTx
 from lib.delegates import INotified
 from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from lib.money import pretty_dollar
 from models.memo import THORMemo
-from proto.access import NativeThorTx
 
 
 class AffiliateRecorder(WithLogger, INotified):
@@ -62,19 +62,18 @@ class AffiliateRecorder(WithLogger, INotified):
         self.logger.debug(f"Stored swap event: {key} for {aff}: {pretty_dollar(affiliate_fee)} at {dt}")
 
     async def _process_aff_tx(self, tx: NativeThorTx, memo: THORMemo):
-        # tx_data
-        pass
-        # print(f'Found affiliate address: {memo.affiliate_address} in tx: {tx.hash} type: {memo.action}')
+        print(f'Found affiliate address: {memo.affiliate_address} in tx: {tx.tx_hash} type: {memo.action}')
+        pass  # todo
 
     async def on_data(self, sender, data: BlockResult):
         for tx in data.txs:
             try:
-                if tx.memo:
-                    memo = THORMemo.parse_memo(tx.memo)
-                    if memo.affiliate_address:
-                        await self._process_aff_tx(tx, memo)
+                if memo := tx.deep_memo:
+                    memo_obj = THORMemo.parse_memo(memo)
+                    if memo_obj.affiliate_address:
+                        await self._process_aff_tx(tx, memo_obj)
             except Exception as e:
-                self.logger.error(f'Error {e!r} processing tx: {tx.hash} at block #{data.block_no}')
+                self.logger.error(f'Error {e!r} processing tx: {tx.tx_hash} at block #{data.block_no}')
 
         # Sometimes we need to clear old dates
         await self.clear_old_events(self.days_to_keep)
