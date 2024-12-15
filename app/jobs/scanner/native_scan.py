@@ -4,7 +4,7 @@ from typing import Optional
 from jobs.fetch.base import BaseFetcher
 from jobs.scanner.block_result import BlockResult
 from lib.constants import THOR_BLOCK_TIME
-from lib.date_utils import now_ts, now_ts_utc
+from lib.date_utils import now_ts_utc
 from lib.depcont import DepContainer
 from lib.utils import safe_get
 

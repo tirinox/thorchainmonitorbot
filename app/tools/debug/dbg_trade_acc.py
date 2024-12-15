@@ -40,23 +40,14 @@ async def demo_trade_balance(app: LpAppFramework):
     await asyncio.sleep(2.0)
 
 
-TX_ID_DEPOSIT = "9699628842381c43f413fd004ac5b6679e682cecc46a95b45fa28998ea1fee2e"
-TX_DEPOSIT_BLOCK_HEIGHT = 16391695
-TX_ID_WITHDRAWAL = "8F61556AC39FD3EC6C79D3F00B3D47E1AB62F0879B74FF63B6AE2E1EFF6F7978"
-TX_WITHDRAWAL_BLOCK_HEIGHT = 16389279
+TX_ID_DEPOSIT_USDC = "B30F34A6168F4C1282C3762C0E6CDE50B541ADE849F0770BE36DFE517AF0A71C"
 
-TX_WITHDRAW_USDT = '5CADA8C13A6CAC009F1B3653979F17CBAB8BAC416D2DB8E265EE8CE73C4366F6'
-TX_WITHDRAW_USDT_BLOCK_HEIGHT = 16469565
+TX_ID_WITHDRAWAL = "8F61556AC39FD3EC6C79D3F00B3D47E1AB62F0879B74FF63B6AE2E1EFF6F7978"
+
+TX_WITHDRAW_USDC = '4466C745450161E0B8BE30D0429267E88CE0BAB7BBF5310734990CB7AEFC9414'
 
 TX_ID_DEPOSIT_BTC = '442371c470efb32c1d91651889da5af900306dcff43cfdbf678d56ce2a84be2b'
-TX_DEPOSIT_BTC_BLOCK_HEIGHT = 16485260
 
-BLOCK_MAP = {
-    TX_ID_DEPOSIT: TX_DEPOSIT_BLOCK_HEIGHT,
-    TX_ID_WITHDRAWAL: TX_WITHDRAWAL_BLOCK_HEIGHT,
-    TX_WITHDRAW_USDT: TX_WITHDRAW_USDT_BLOCK_HEIGHT,
-    TX_ID_DEPOSIT_BTC: TX_DEPOSIT_BTC_BLOCK_HEIGHT,
-}
 
 
 async def demo_decode_trade_acc(app: LpAppFramework, tx_id):
@@ -64,7 +55,9 @@ async def demo_decode_trade_acc(app: LpAppFramework, tx_id):
 
     scanner = BlockScanner(app.deps)
 
-    height = BLOCK_MAP[tx_id]
+    tx = await app.deps.thor_connector.query_tx_details(tx_id)
+    height = tx['consensus_height']
+
     block = await scanner.fetch_one_block(height)
 
     dcd = TradeAccEventDecoder(app.deps.price_holder)
@@ -177,7 +170,8 @@ async def run():
     app = LpAppFramework()
     async with app(brief=True):
         # await demo_trade_balance(app)
-        # await demo_decode_trade_acc(app, TX_ID_DEPOSIT_BTC)
+        # await demo_decode_trade_acc(app, TX_WITHDRAW_USDC)
+        await demo_decode_trade_acc(app, TX_ID_DEPOSIT_USDC)
         # sep()
         # await demo_decode_trade_acc(app, TX_ID_WITHDRAWAL)
         # sep()
@@ -187,7 +181,7 @@ async def run():
         # await demo_top_trade_asset_holders(app)
 
         # await demo_trade_acc_summary_continuous(app)
-        await demo_trade_acc_summary_single(app, reset_cache=False)
+        # await demo_trade_acc_summary_single(app, reset_cache=False)
         # await demo_trade_acc_decode_continuous(app, 16515624)
 
 

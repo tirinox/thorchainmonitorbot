@@ -1,15 +1,15 @@
 from typing import List
 
-from jobs.scanner.block_loader import BlockResult, parse_thor_address
+from jobs.scanner.block_result import BlockResult
+from jobs.scanner.tx import NativeThorTx
 from lib.constants import thor_to_float
-from lib.db import DB
 from lib.delegates import INotified, WithDelegates
 from lib.logs import WithLogger
+from models.asset import Asset
 from models.memo import THORMemo, ActionType, is_action
 from models.price import LastPriceHolder
 from models.trade_acc import AlertTradeAccountAction
-from proto.access import NativeThorTx
-from proto.common import Tx
+# from proto fixme
 
 
 class TradeAccEventDecoder(WithLogger, INotified, WithDelegates):
@@ -17,16 +17,15 @@ class TradeAccEventDecoder(WithLogger, INotified, WithDelegates):
     This class is responsible for decoding deposits and withdrawals from the Trade Accounts.
     """
 
-    def __init__(self, db: DB, price_holder: LastPriceHolder):
+    def __init__(self, price_holder: LastPriceHolder):
         super().__init__()
-        self.redis = db.redis
         self.price_holder = price_holder
 
     async def on_data(self, sender, data: BlockResult):
         all_events = {}
         for tx in data.txs:
-            if tx.memo:
-                if memo := THORMemo.parse_memo(tx.memo, no_raise=True):
+            if deep_memo := tx.deep_memo:
+                if memo := THORMemo.parse_memo(deep_memo, no_raise=True):
                     if is_action(memo.action, (ActionType.TRADE_ACC_WITHDRAW, ActionType.TRADE_ACC_DEPOSIT)):
                         tx_events = self._convert_tx_to_event(tx, memo)
                         for event in tx_events:
@@ -59,50 +58,54 @@ class TradeAccEventDecoder(WithLogger, INotified, WithDelegates):
 
         return results
 
-    def _make_deposit(self, memo, tx) -> List[AlertTradeAccountAction]:
+    def _make_deposit(self, memo, tx: NativeThorTx) -> List[AlertTradeAccountAction]:
         observed_in_tx = tx.first_message
 
         for sub_tx in observed_in_tx.txs:
-            in_tx: Tx = sub_tx.tx
+            in_tx: dict = sub_tx['tx']
 
             # here we override tx_id with inner tx id!
-            tx_id = in_tx.id
+            tx_id = in_tx['id']
+            coins = in_tx['coins']
 
-            if len(in_tx.coins) != 1:
-                self.logger.warning(f'Tx {tx_id} has abnormal coins count: {len(in_tx.coins)}')
+            if len(coins) != 1:
+                self.logger.warning(f'Tx {tx_id} has abnormal coins count: {len(coins)}')
                 continue
 
-            coin = in_tx.coins[0]
-            amount = thor_to_float(coin.amount)
-            asset = f'{coin.asset.chain}~{coin.asset.symbol}'
-            usd_amount = self.price_holder.convert_to_usd(amount, asset)
+            coin = coins[0]
+            amount = thor_to_float(coin['amount'])
+            asset = Asset.from_string(coin['asset'])
+            asset_str = f'{asset.chain}~{asset.name}'
+            usd_amount = self.price_holder.convert_to_usd(amount, asset_str)
 
             yield AlertTradeAccountAction(
                 tx_id,
-                actor=in_tx.from_address,
+                actor=in_tx['from_address'],
                 destination_address=memo.dest_address,
                 amount=amount,
                 usd_amount=usd_amount,
-                asset=asset,
-                chain=coin.asset.chain,
+                asset=asset_str,
+                chain=asset.chain,
                 is_deposit=True,
             )
 
-    def _make_withdraw(self, memo, tx) -> List[AlertTradeAccountAction]:
-        coins = tx.first_message.coins
-        for coin in coins:
-            amount = thor_to_float(coin.amount)
-            asset = f'{coin.asset.chain}~{coin.asset.symbol}'
-            usd_amount = self.price_holder.convert_to_usd(amount, asset)
-            actor = parse_thor_address(tx.first_message.signer)
+    def _make_withdraw(self, memo, tx: NativeThorTx) -> List[AlertTradeAccountAction]:
+        msg = tx.first_message
+        for coin in msg.coins:
+            coin: dict
+            amount = thor_to_float(coin['amount'])
+            asset = Asset.from_string(coin['asset'])
+            asset_str = f'{asset.chain}~{asset.name}'
+            usd_amount = self.price_holder.convert_to_usd(amount, asset_str)
+            actor = msg['signer']
 
             yield AlertTradeAccountAction(
-                tx.hash,
+                tx.tx_hash,
                 actor=actor,
                 destination_address=memo.dest_address,
                 amount=amount,
                 usd_amount=usd_amount,
-                asset=asset,
-                chain=coin.asset.chain,
+                asset=asset_str,
+                chain=asset.chain,
                 is_deposit=False,
             )

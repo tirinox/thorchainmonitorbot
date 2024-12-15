@@ -51,7 +51,7 @@ class TwitterEnglishLocalization(BaseLocalization):
         return MESSAGE_SEPARATOR.join(parts).strip()
 
     def link_to_tx(self, tx_id, chain=Chains.THOR, label="TX"):
-        return "TX:" + get_explorer_url_to_tx(self.cfg.network_id, chain, tx_id)
+        return "TX: " + get_explorer_url_to_tx(self.cfg.network_id, chain, tx_id)
 
     PIC_NODE_DIVERSITY_BY_PROVIDER_CAPTION = 'THORChain nodes'
 

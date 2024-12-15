@@ -78,7 +78,7 @@ class ThorTxMessage(NamedTuple):
         return len(self.txs)
 
     def __getitem__(self, key):
-        return self.txs[key]
+        return self.attrs[key]
 
     def __iter__(self):
         return iter(self.attrs)
