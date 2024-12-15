@@ -4,7 +4,7 @@ from typing import Optional
 from jobs.fetch.base import BaseFetcher
 from jobs.scanner.block_result import BlockResult
 from lib.constants import THOR_BLOCK_TIME
-from lib.date_utils import now_ts
+from lib.date_utils import now_ts, now_ts_utc
 from lib.depcont import DepContainer
 from lib.utils import safe_get
 
@@ -26,7 +26,7 @@ class BlockScanner(BaseFetcher):
         self._last_block_ts = 0
 
         # if more time has passed since the last block, we should run aggressive scan
-        self._time_tolerance_for_aggressive_scan = THOR_BLOCK_TIME * 1.1  # 6 sec + 10%
+        self._time_tolerance_for_aggressive_scan = THOR_BLOCK_TIME * 1.5  # 6 sec + 50%
 
     @property
     def last_block_ts(self):
@@ -83,13 +83,13 @@ class BlockScanner(BaseFetcher):
             return False
 
     def _on_error_block(self, block: BlockResult):
-        self._on_error('Block.is_error!',
+        self._on_error(f'Block.error #{block.error.code}: {block.error.message}',
                        code=block.error.code,
                        message=block.error.message,
                        last_available=block.error.last_available_block)
 
     def should_run_aggressive_scan(self):
-        time_since_last_block = now_ts() - self._last_block_ts
+        time_since_last_block = now_ts_utc() - self._last_block_ts
         if time_since_last_block > self._time_tolerance_for_aggressive_scan:
             self.logger.info(f'😡 time_since_last_block = {time_since_last_block:.3f} sec. Run aggressive scan!')
             return True
@@ -124,6 +124,10 @@ class BlockScanner(BaseFetcher):
                     self._on_error('None returned')
                     break
 
+                # if block_result.timestamp:
+                #     self._last_block_ts = block_result.timestamp
+                self._last_block_ts = now_ts_utc()
+
                 if block_result.is_error:
                     if self.allow_jumps:
                         last_av_b = block_result.error.last_available_block
@@ -153,7 +157,6 @@ class BlockScanner(BaseFetcher):
                 self._on_error(str(e))
                 break
 
-            self._last_block_ts = now_ts()
             self._last_block += 1
             self._this_block_attempts = 0
             self._block_cycle += 1

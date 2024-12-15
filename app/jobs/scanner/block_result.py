@@ -4,6 +4,8 @@ from dataclasses import dataclass, replace
 from typing import List, NamedTuple
 
 from jobs.scanner.tx import NativeThorTx, ThorEvent
+from lib.date_utils import date_parse_rfc
+from lib.utils import safe_get
 
 logger = logging.getLogger(__name__)
 
@@ -13,13 +15,16 @@ class ScannerError(NamedTuple):
     message: str
     last_available_block: int = 0
 
+    CODE_FUTURE = 2
+    CODE_ANCIENT = 3
+
 
 def is_block_error(result):
     code = result.get('code')
     message = result.get('message')
     if code and message:
         last_available_block = 0
-        if code == 3:  # too old
+        if code == ScannerError.CODE_ANCIENT:  # too old
             match = re.findall(r'\d+', message)
             if match:
                 last_available_block = int(match[-1])
@@ -33,6 +38,7 @@ class BlockResult:
     end_block_events: List[ThorEvent]
     begin_block_events: List[ThorEvent]
     error: ScannerError
+    timestamp: int = 0
 
     @property
     def is_error(self):
@@ -40,7 +46,7 @@ class BlockResult:
 
     @property
     def is_ahead(self):
-        return self.error.last_available_block != 0 and self.block_no > self.error.last_available_block
+        return self.error and self.error.code == self.error.CODE_FUTURE
 
     @property
     def is_behind(self):
@@ -61,18 +67,21 @@ class BlockResult:
     @classmethod
     def load_block(cls, block_results_raw: dict, block_no):
         if err := is_block_error(block_results_raw):
-            return BlockResult(block_no, txs=[], end_block_events=[], begin_block_events=[], error=err)
+            return BlockResult(block_no, txs=[], end_block_events=[], begin_block_events=[], error=err, timestamp=0)
 
         txs = [NativeThorTx.from_dict(tx, block_no) for tx in block_results_raw.get('txs', [])]
         begin_block_events = [ThorEvent.from_dict(e, block_no) for e in block_results_raw.get('begin_block_events', [])]
         end_block_events = [ThorEvent.from_dict(e, block_no) for e in block_results_raw.get('end_block_events', [])]
+
+        ts = date_parse_rfc(safe_get(block_results_raw, 'header', 'time')).timestamp()
 
         return cls(
             block_no=block_no,
             txs=txs,
             end_block_events=end_block_events,
             begin_block_events=begin_block_events,
-            error=ScannerError(0, '')
+            error=ScannerError(0, ''),
+            timestamp=ts,
         )
 
     @property
