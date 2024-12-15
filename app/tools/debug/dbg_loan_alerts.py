@@ -79,7 +79,7 @@ async def debug_tx_records(app: LpAppFramework, tx_id):
     print(props)
 
     sep('tx')
-    tx = props.build_tx()
+    tx = props.build_action()
     print(tx)
 
 

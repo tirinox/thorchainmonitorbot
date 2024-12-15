@@ -131,7 +131,7 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
     async def find_tx(self, tx_id) -> Optional[ThorAction]:
         swap_info = await self._db.read_tx_status(tx_id)
         if swap_info:
-            tx = swap_info.build_tx()
+            tx = swap_info.build_action()
             return tx
 
     async def detect_swap_finished(self,
@@ -166,7 +166,7 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
                 # to ignore it in the future
                 await self._db.write_tx_status_kw(tx_id, status=SwapProps.STATUS_GIVEN_AWAY)
 
-                results.append(swap_props.build_tx())
+                results.append(swap_props.build_action())
 
         if results:
             self.logger.info(f'Give away {len(results)} Txs.')
