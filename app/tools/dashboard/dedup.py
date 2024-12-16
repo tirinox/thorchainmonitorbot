@@ -1,9 +1,8 @@
-from lib.db import DB
 from lib.money import format_percent
 from notify.dup_stop import TxDeduplicator
 
 
-async def dedup_dashboard_info(db: DB):
+async def dedup_dashboard_info(d):
     items = [
         "scanner:last_seen", 'route:seen_tx', 'TxCount', 'VolumeRecorder', "loans:announced-hashes",
         'RunePool:announced-hashes', 'ss-started:announced-hashes', 'TradeAcc:announced-hashes',
@@ -12,7 +11,7 @@ async def dedup_dashboard_info(db: DB):
 
     summary = []
     for name in items:
-        dedup = TxDeduplicator(db, name)
+        dedup = TxDeduplicator(d.db, name)
         bit_count = await dedup.bit_count()
         size = await dedup.length()
         stats = await dedup.load_stats()

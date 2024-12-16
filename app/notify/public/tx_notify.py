@@ -157,6 +157,7 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
         usd_per_rune = self.deps.price_holder.usd_per_rune
 
         summary = " --- Threshold curve evaluation ---\n"
+        pool_thresholds = []
         for pool in pools[:max_pools]:
             if pool.asset.startswith('THOR'):  # no virtuals
                 continue
@@ -164,7 +165,19 @@ class GenericTxNotifier(INotified, WithDelegates, WithLogger):
             min_pool_share = self.curve.evaluate(depth_usd) * self.curve_mult
             min_share_usd_volume = depth_usd * min_pool_share
             summary += f"Pool: {pool.asset[:20]:<20} => Min Tx volume is {pretty_dollar(min_share_usd_volume)}\n"
+            pool_thresholds.append(
+                {
+                    'pool': f'{pool.asset[:20]}',
+                    'module': self.logger.name,
+                    'curve_mult': self.curve_mult,
+                    'depth_usd': depth_usd,
+                    'min_usd_volume': min_share_usd_volume,
+                    'min_rune_volume': min_share_usd_volume / usd_per_rune,
+                }
+            )
+        print(summary)
         self.logger.info(summary)
+        return pool_thresholds
 
 
 class LiquidityTxNotifier(GenericTxNotifier):

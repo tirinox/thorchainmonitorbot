@@ -1,7 +1,11 @@
 import asyncio
 from typing import Optional
 
-from discord import Client, File, Intents
+try:
+    from discord import Client, File, Intents
+except ImportError:
+    Client = File = Intents = None
+
 from markdownify import markdownify
 
 from lib.config import Config

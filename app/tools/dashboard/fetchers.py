@@ -1,12 +1,11 @@
-from lib.date_utils import seconds_human, now_ts, MINUTE, format_time_ago
-from lib.db import DB
 from jobs.fetch.base import DataController
+from lib.date_utils import seconds_human, now_ts, MINUTE, format_time_ago
 from lib.money import format_percent
 
 
-async def fetchers_dashboard_info(db: DB):
+async def fetchers_dashboard_info(d):
     dc = DataController()
-    data = await dc.load_stats(db)
+    data = await dc.load_stats(d.db)
     now = now_ts()
     return [
         {
@@ -22,46 +21,3 @@ async def fetchers_dashboard_info(db: DB):
             'last_run_time': round(f['last_run_time'], 2) if f.get('last_run_time') else 'N/A',
         } for f in data['trackers']
     ]
-
-    # for name, fetcher in data_ctrl.summary.items():
-    #     fetcher: BaseFetcher
-    #     if fetcher.success_rate < 90.0:
-    #         errors = f'❌︎ {fetcher.error_counter} errors'
-    #     else:
-    #         errors = '🆗 No errors' if not fetcher.error_counter else f'🆗︎ {fetcher.error_counter} errors'
-    #
-    #     last_ts = fetcher.last_timestamp
-    #     sec_elapsed = now_ts() - last_ts
-    #     last_txt = format_time_ago(sec_elapsed)
-    #     if sec_elapsed > 10 * MINUTE:
-    #         last_txt += '❗'
-    #
-    #     interval = seconds_human(fetcher.sleep_period)
-    #     success_rate_txt = format_percent(fetcher.success_rate)
-    #
-    #     if fetcher.total_ticks > 0:
-    #         ticks_str = fetcher.total_ticks
-    #     else:
-    #         ticks_str = '🤷 none yet!'
-    #
-    #     if fetcher.run_times:
-    #         last_run_time_str = round(fetcher.dbg_last_run_time, 2)
-    #         avg_run_time_str = round(fetcher.dbg_average_run_time, 2)
-    #         run_time_str = (
-    #             f'\nAvg. run time is {pre(avg_run_time_str)} s, '
-    #             f'last run time is {pre(last_run_time_str)} s'
-    #         )
-    #     else:
-    #         run_time_str = ''
-    #
-    #     message += (
-    #         f"{bold(name)}\n"
-    #         f"{errors}. "
-    #         f"Last date: {ital(last_txt)}. "
-    #         f"Interval: {ital(interval)}. "
-    #         f"Success rate: {pre(success_rate_txt)}. "
-    #         f"Total ticks: {ticks_str}{run_time_str}"
-    #         f"\n\n"
-    #     )
-
-    return []
