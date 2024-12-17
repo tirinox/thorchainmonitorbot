@@ -22,11 +22,18 @@ class ThorEvent(NamedTuple):
     def __repr__(self):
         return f"ThorEvent({self.attrs})"
 
+    @staticmethod
+    def _decode_combined_value_asset(d, v):
+        d['_amount'], d['_asset'] = thor_decode_amount_field(v)
+
     @classmethod
     def from_dict(cls, d, height=0):
-        for key in ('coin', 'amount'):
-            if key in d:
-                d['_amount'], d['_asset'] = thor_decode_amount_field(d[key])
+        if coin := d.get('coin'):
+            cls._decode_combined_value_asset(d, coin)
+        elif amount := d.get('amount'):
+            # if there are any letters in "amount"
+            if any(c.isalpha() for c in amount):
+                cls._decode_combined_value_asset(d, amount)
 
         o = cls(d)
         if height:
@@ -35,11 +42,11 @@ class ThorEvent(NamedTuple):
 
     @property
     def amount(self):
-        return self.attrs.get('_amount', 0)
+        return self.attrs.get('_amount', 0) or self.attrs.get('amount', 0)
 
     @property
     def asset(self):
-        return self.attrs.get('_asset', '')
+        return self.attrs.get('_asset', '') or self.attrs.get('asset', '')
 
     @property
     def type(self):

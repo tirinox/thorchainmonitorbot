@@ -247,13 +247,15 @@ async def run():
 
         setup_logs(logging.DEBUG)
 
-        await debug_full_pipeline(app)
+        # await debug_full_pipeline(app)
 
         # await debug_fetch_ss(app)
         # await debug_block_analyse(app, block=17361911)
         # await debug_full_pipeline(app, start=16387377, single_block=True,
         #                           tx_id='BE7B085E50DE86CD9BD8959ABF3EA924AC60302330888D484219B8B7385F7B1D')
         # await debug_tx_records(app, 'E8766E3D825A7BFD755ECA14454256CA25980F8B4BA1C9DCD64ABCE4904F033D')
+
+        await debug_tx_records(app, '62065183022E32395A1538DE9AE28CCCD81247327971990D8A57FD88BE2594EC')
 
         # await debug_full_pipeline(
         #     app,
