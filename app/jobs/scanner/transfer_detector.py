@@ -31,7 +31,7 @@ class RuneTransferDetectorNativeTX(WithLogger):
 
             # todo!
             for message in tx.messages:
-                comment = message.type
+                comment = str(message.type).replace('/types.msg', '')
                 # todo: test if it works good for /cosmos.bank.v1beta1.MsgSend
                 if message.is_send:
                     from_addr = message.get('from_address', '')
@@ -56,7 +56,6 @@ class RuneTransferDetectorNativeTX(WithLogger):
                         ))
                 elif message.type == message.MsgDeposit:
                     for coin in message.coins:
-                        asset = Asset.from_string(coin.get('asset', ''))
                         transfers.append(RuneTransfer(
                             from_addr=message.get('signer', '?'),
                             to_addr='',
@@ -64,7 +63,7 @@ class RuneTransferDetectorNativeTX(WithLogger):
                             tx_hash=tx.tx_hash,
                             amount=thor_to_float(coin.get('amount', 0)),
                             is_native=True,
-                            asset=asset,
+                            asset=coin.get('asset', ''),
                             comment=comment,
                             memo=memo,
                         ))
