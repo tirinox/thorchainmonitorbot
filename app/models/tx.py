@@ -377,7 +377,15 @@ class ThorAction:
 
     @property
     def first_pool_l1(self):
-        return Asset.to_L1_pool_name(self.first_pool)
+        if self.first_pool:
+            pool = self.first_pool
+        elif self.first_input_tx:
+            pool = self.first_input_tx.first_asset
+        elif self.first_output_tx:
+            pool = self.first_output_tx.first_asset
+        else:
+            raise ValueError('Unable to determine pool')
+        return Asset.to_L1_pool_name(pool)
 
     def __hash__(self) -> int:
         return int(self.tx_hash, 16)
