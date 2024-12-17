@@ -2,7 +2,7 @@ import dataclasses
 from collections import defaultdict
 from copy import copy
 from dataclasses import dataclass
-from typing import Iterable
+from typing import Iterable, Union
 
 from lib.constants import RUNE_DENOM, Chains, NATIVE_RUNE_SYMBOL
 
@@ -67,23 +67,26 @@ class Asset:
 
     @classmethod
     def from_string(cls, asset: str):
+        if isinstance(asset, Asset):
+            return asset
+
+        if not isinstance(asset, str):
+            raise ValueError('Asset must be a string')
+
+        if asset == RUNE_DENOM:
+            return copy(AssetRUNE)
+
+        is_synth, is_trade = False, False
+        if is_synthetic(asset):
+            is_synth = True
+            separator = ASSET_SYNTH_SEPARATOR
+        elif is_trade_asset(asset):
+            is_trade = True
+            separator = ASSET_TRADE_SEPARATOR
+        else:
+            separator = ASSET_NORMAL_SEPARATOR
+
         try:
-            if not isinstance(asset, str):
-                raise ValueError('Asset must be a string')
-
-            if asset == RUNE_DENOM:
-                return copy(AssetRUNE)
-
-            is_synth, is_trade = False, False
-            if is_synthetic(asset):
-                is_synth = True
-                separator = ASSET_SYNTH_SEPARATOR
-            elif is_trade_asset(asset):
-                is_trade = True
-                separator = ASSET_TRADE_SEPARATOR
-            else:
-                separator = ASSET_NORMAL_SEPARATOR
-
             chain, name_and_tag = asset.split(separator, maxsplit=2)
             name, tag = cls.get_name_tag(name_and_tag)
             chain = str(chain).upper()
@@ -91,8 +94,9 @@ class Asset:
             tag = str(tag).upper()
             is_virtual = chain == 'THOR' and name != 'RUNE'
             return cls(chain, name, tag, is_synth, is_virtual, is_trade)
-        except (IndexError, TypeError, ValueError):
-            return cls(name=asset)
+        except ValueError:
+            # not enough values to unpack. It's a string like "ETH" or "BTC"
+            return cls.gas_asset_from_chain(str(asset).upper())
 
     PILL = '💊'
     TRADE = '🔄'
@@ -202,7 +206,9 @@ class Asset:
 AssetRUNE = Asset.from_string(NATIVE_RUNE_SYMBOL)
 
 
-def is_rune(asset: str):
+def is_rune(asset: Union[Asset, str]):
+    if isinstance(asset, Asset):
+        asset = str(asset)
     asset = asset.strip()
     return asset.lower() in ('r', RUNE_DENOM) or asset.upper() == NATIVE_RUNE_SYMBOL
 
