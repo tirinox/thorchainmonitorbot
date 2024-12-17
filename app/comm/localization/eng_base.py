@@ -2268,10 +2268,19 @@ class BaseLocalization(ABC):  # == English
         # Comment
         comment = ''
         if t.comment:
-            comment = shorten_text(t.comment, 100)
-            if comment.startswith('Msg'):
-                comment = comment[3:]
-            comment = f' "{comment.capitalize()}"'
+            # noinspection PyTypeChecker
+            comment = t.comment
+            translate_table = {
+                '/types.MsgSend': 'Send',
+                '/cosmos.bank.v1beta1.MsgSend': 'Send (Cosmos)',
+                '/types.MsgDeposit': 'Deposit',
+            }
+
+            for k, v in translate_table.items():
+                comment = comment.replace(k, v)
+
+            comment = shorten_text(comment, 100)
+            comment = f' "{comment}"'
 
         # TX link
         if t.tx_hash:

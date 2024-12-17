@@ -45,14 +45,14 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
         return self.is_cex(transfer.from_addr) and self.is_cex(transfer.to_addr)
 
     async def handle_big_transfer(self, transfer: RuneTransfer, usd_per_rune):
+        # ignore cex to cex transfers?
+        if self.ignore_cex2cex and self.is_cex2cex(transfer):
+            self.logger.info(f'Ignoring CEX2CEX transfer: {transfer}')
+            return
+
+        # compare against min_usd_amount threshold
         min_usd_amount = self.min_usd_native
-
         if transfer.amount * usd_per_rune >= min_usd_amount:
-            # ignore cex to cex transfers?
-            if self.ignore_cex2cex and self.is_cex2cex(transfer):
-                self.logger.info(f'Ignoring CEX2CEX transfer: {transfer}')
-                return
-
             if await self.move_cd.can_do():
                 await self.move_cd.do()
 
@@ -66,6 +66,7 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
         if transfer.comment:
             comment = transfer.comment.lower()
             for ignore_comment in self.IGNORE_COMMENTS:
+                # fixme issue: bond is deposit, it is ignored
                 if ignore_comment in comment:
                     return True
 
@@ -93,7 +94,11 @@ class RuneMoveNotifier(INotified, WithDelegates, WithLogger):
         transfers = self._fill_asset_prices(transfers)
 
         for transfer in transfers:
-            await self.handle_big_transfer(transfer, usd_per_rune)
+            try:
+                await self.handle_big_transfer(transfer, usd_per_rune)
+            except Exception as e:
+                self.logger.exception(f"Error handling transfer: {e}", exc_info=e)
+
             await self._store_transfer(transfer)
 
         if self.flow_enabled:
@@ -143,6 +148,10 @@ class CEXFlowTracker:
             inflow += float(p['in'])
             outflow += float(p['out'])
         overflow = len(points) >= self.MAX_POINTS
-        return RuneCEXFlow(inflow, outflow, len(points), overflow,
-                           usd_per_rune=self.deps.price_holder.usd_per_rune,
-                           period_sec=period)
+        return RuneCEXFlow(
+            inflow, outflow,
+            len(points),
+            overflow,
+            usd_per_rune=self.deps.price_holder.usd_per_rune,
+            period_sec=period
+        )

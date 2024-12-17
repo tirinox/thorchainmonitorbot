@@ -1,5 +1,4 @@
 import asyncio
-import json
 import logging
 import pickle
 
@@ -51,6 +50,7 @@ async def demo_block_scanner_active(app, send_alerts=False, catch_up=0, force_st
     scanner.add_subscriber(detector)
 
     d.last_block_fetcher.add_subscriber(d.last_block_store)
+    # noinspection PyAsyncCall
     asyncio.create_task(d.last_block_fetcher.run())
 
     if print_txs:
@@ -73,7 +73,7 @@ async def get_transfers_from_block(app, block_index):
     scanner = BlockScanner(app.deps)
     r = await scanner.fetch_one_block(block_index)
     parser = RuneTransferDetector()
-    transfers = parser.process_events(r)
+    transfers = await parser.process_block(r)
     return transfers
 
 
@@ -90,22 +90,6 @@ async def demo_rune_transfers_once(app, block=12_918_080):
     await notifier.on_data(None, transfers)
 
     await asyncio.sleep(3.0)
-
-
-async def search_out(app):
-    scanner = BlockScanner(app.deps)
-
-    block_start = 6230655 - 2
-    search = '687522'
-
-    b = block_start
-    while True:
-        tx_logs = await scanner.fetch_block_results(b)
-        if search in json.dumps(tx_logs):
-            print(tx_logs)
-            print(f'Found a needle in block #{b}!!! ')
-            break
-        b += 1
 
 
 async def get_block_cached(app, block_index):
@@ -151,13 +135,12 @@ async def demo_non_zero_code(app: LpAppFramework):
 
 
 async def debug_ill_transfers(app: LpAppFramework):
-    tx_id = '22174930993EEA1E7CDB6511FB8C5E81BDC37C0DCFB23EEA6696C0CD9D13351B'
     block_id = 15264091
 
     scanner = BlockScanner(app.deps, last_block=block_id)
     block = await scanner.fetch_one_block(block_id)
     detector = RuneTransferDetector()
-    events = detector.process_events(block)
+    events = detector.process_block(block)
     print(events)
 
 
@@ -175,27 +158,19 @@ async def dbg_second_chance_before_deactivate(app):
         await asyncio.sleep(10.0)
 
 
+BLOCK_UNBOND = 19027130
+BLOCK_BOND = 18986273
+BLOCK_SEND = 19034147
+
+
 async def main():
     app = LpAppFramework(log_level=logging.INFO)
     async with app(brief=True):
-        # await debug_ill_transfers(app)
-
-        # await demo_non_zero_code(app)
-
-        await demo_block_scanner_active(app, send_alerts=True, catch_up=5)
-
-        # await demo_block_scanner_active(app, send_alerts=False, force_start_block=100)  # test behind your node
-
-        # await demo_debug_personal_transfer(app)
-
-        # await search_out(app)
-
-        # await demo_test_rune_detector(app)
-        # await demo_native_block_action_detector(app)
-
-        # await debug_block_tx_status_check(app)
-        # await demo_rune_transfers_once(app, block=16374337)
-        # await dbg_second_chance_before_deactivate(app)
+        await app.deps.pool_fetcher.run_once()
+        # await demo_block_scanner_active(app, send_alerts=True, catch_up=5)
+        await demo_rune_transfers_once(app, BLOCK_BOND)
+        # await demo_rune_transfers_once(app, BLOCK_UNBOND)
+        # await demo_rune_transfers_once(app, BLOCK_SEND)
 
 
 if __name__ == '__main__':

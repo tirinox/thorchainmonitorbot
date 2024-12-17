@@ -8,7 +8,7 @@ from lib.constants import thor_to_float, DEFAULT_RESERVE_ADDRESS, BOND_MODULE, D
     RUNE_DENOM, RUNE_SYMBOL, NATIVE_RUNE_SYMBOL
 from lib.delegates import WithDelegates, INotified
 from lib.utils import WithLogger
-from models.asset import Asset, is_rune
+from models.asset import is_rune
 from models.transfer import RuneTransfer
 
 
@@ -29,9 +29,8 @@ class RuneTransferDetectorNativeTX(WithLogger):
             # find out memo
             memo = tx.deep_memo
 
-            # todo!
             for message in tx.messages:
-                comment = str(message.type).replace('/types.msg', '')
+                comment = str(message.type)
                 # todo: test if it works good for /cosmos.bank.v1beta1.MsgSend
                 if message.is_send:
                     from_addr = message.get('from_address', '')
@@ -177,17 +176,22 @@ class RuneTransferDetector(WithDelegates, INotified, WithLogger):
         self.tx_proc = RuneTransferDetectorNativeTX()
         self.log_proc = RuneTransferDetectorTxLogs(reserve_address)
 
-    async def on_data(self, sender, data: BlockResult):
+    async def process_block(self, data: BlockResult) -> List[RuneTransfer]:
         if not data.txs or not data.begin_block_events:
             self.logger.debug(f'Empty block #{data.block_no}?')
-            return
+            return []
 
         transfers_tx = self.tx_proc.process_block(data.txs, data.block_no)
         transfers_logs = self.log_proc.process_events(data)
 
         transfers = transfers_tx + transfers_logs
-
         if transfers:
             self.logger.info(f'Detected total {len(transfers)} transfers at block #{data.block_no} '
                              f'({len(transfers_tx)} from TXs, {len(transfers_logs)} from logs).')
+
+        return transfers
+
+    async def on_data(self, sender, data: BlockResult):
+        transfers = await self.process_block(data)
+        if transfers:
             await self.pass_data_to_listeners(transfers)
