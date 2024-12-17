@@ -94,14 +94,14 @@ class SwapExtractorBlock(WithDelegates, INotified, WithLogger):
             if not swap_ev.tx_id:
                 continue
 
-            hash_key = hash_of_string_repr(swap_ev, block.block_no)[:8]
+            hash_key = hash_of_string_repr(swap_ev, block.block_no)[:6]
 
             if not swap_ev.original:
                 self.logger.error(f'Original event is missing for {swap_ev} at block #{block.block_no}')
                 continue
 
             await self._db.write_tx_status(swap_ev.tx_id, {
-                f"ev_{hash_key}": swap_ev.original.attrs
+                f"ev_{swap_ev.original.type}_{hash_key}": swap_ev.original.attrs
             })
 
             # boom = await self.dbg_on_swap_events(swap_ev, boom)

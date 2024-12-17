@@ -34,7 +34,7 @@ class SwapProps(NamedTuple):
         results = []
         key: str
         for key, value in attrs.items():
-            if key.startswith('ev_'):
+            if key.startswith("ev_"):
                 raw_dict = json.loads(value)
                 event = ThorEvent.from_dict(raw_dict)
                 swap_ev = parse_swap_and_out_event(event)
