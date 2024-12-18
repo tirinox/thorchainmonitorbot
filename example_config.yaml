@@ -204,10 +204,10 @@ names:
     "thor1jw0nhlmj4lv83dwhfknqnw6tmlvgw4xyf6rgd7": "KuCoin Hot"
     "thor1hy2ka6xmqjfcwagtplyttayug4eqpqhu0sdu6r": "KuCoin Cold"
     "thor15h7uv2339vdzt2a6qsjf6uh5zc06sed7szvze5": "Ascendex"
-    "thor1nm0rrq86ucezaf8uj35pq9fpwr5r82clphp95t": "Kraken"
+    "thor1nm0rrq86ucezaf8uj35pq9fpwr5r82clphp95t": "Kraken Hot"
+    "thor1t2hav42urasnsvwa6x6fyezaex9f953plh72pq": "Kraken Cold"
     "thor1mtqtupwgjwn397w3dx9fqmqgzrfzq3240frash": "Bybit"
     "thor1wfe7hsuvup27lx04p5al4zlcnx6elsnyft7dzm": "TreasuryLP2"
-
     "thor1fddercd7pufy0adf2rh7ml2x9jdwla5lp56dpe": "TrustWalletFee"
 
   affiliates:
@@ -447,6 +447,9 @@ token_transfer: # (!) renamed from rune_transfer
     - thor1hy2ka6xmqjfcwagtplyttayug4eqpqhu0sdu6r
     - thor15nzfs98pz8qsuvpuvq4eepe9n4rhsp4pp0g84g
     - thor15h7uv2339vdzt2a6qsjf6uh5zc06sed7szvze5
+    - thor1nm0rrq86ucezaf8uj35pq9fpwr5r82clphp95t
+    - thor1t2hav42urasnsvwa6x6fyezaex9f953plh72pq
+    - thor1mtqtupwgjwn397w3dx9fqmqgzrfzq3240frash
 
   ignore_cex2cex: true
 
