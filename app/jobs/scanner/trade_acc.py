@@ -9,7 +9,6 @@ from models.asset import Asset
 from models.memo import THORMemo, ActionType, is_action
 from models.price import LastPriceHolder
 from models.trade_acc import AlertTradeAccountAction
-# from proto fixme
 
 
 class TradeAccEventDecoder(WithLogger, INotified, WithDelegates):

@@ -11,10 +11,6 @@ from models.memo import THORMemo
 from models.s_swap import StreamingSwap, AlertSwapStart
 
 
-# from proto.access import NativeThorTx
-# from proto.types import MsgDeposit, MsgObservedTxIn
-
-
 class SwapStartDetector(WithLogger):
     def __init__(self, deps: DepContainer):
         super().__init__()
