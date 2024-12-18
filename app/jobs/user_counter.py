@@ -3,7 +3,6 @@ from lib.active_users import DailyActiveUserCounter, UserStats
 from lib.delegates import INotified
 from lib.depcont import DepContainer
 from lib.utils import WithLogger
-# from proto.types import MsgObservedTxIn
 
 
 class UserCounterMiddleware(INotified, WithLogger):
@@ -43,6 +42,7 @@ class UserCounterMiddleware(INotified, WithLogger):
         users = self.get_unique_users(data)
         if users:
             self.logger.info(f'Adding {len(users)} unique users at this tick.')
+            self.logger.debug(f'{users = }')
         await self._counter.hit(users=users)
 
         # Example of usage:

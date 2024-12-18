@@ -125,7 +125,7 @@ async def demo_simulate_users(app: LpAppFramework):
 
 
 async def main():
-    lp_app = LpAppFramework(log_level=logging.INFO)
+    lp_app = LpAppFramework(log_level=logging.DEBUG)
     async with lp_app(brief=True):
         # await benchmark_accuracy_of_hyper_log_log(lp_app)
         # await play_dau(lp_app)
