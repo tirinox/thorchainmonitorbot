@@ -35,7 +35,8 @@ class RenderRequest(BaseModel):
     parameters: Dict = Field(..., example={"title": "Test", "heading": "Hello", "message": "This is a test."})
 
 
-renderer = Renderer(templates_dir=TEMPLATES_DIR, device_scale_factor=DEVICE_SCALE_FACTOR)
+renderer = Renderer(templates_dir=TEMPLATES_DIR, device_scale_factor=DEVICE_SCALE_FACTOR,
+                    resource_base_url=LOC_HOST_BASE)
 
 
 # Initialize FastAPI with Lifespan
@@ -110,7 +111,7 @@ async def render_just_html(name: str, req: Request):
         logging.info(f"Query parameters: {req.query_params}")
         parameters.update(req.query_params)
 
-    rendered_html = renderer.render_template(template_name, parameters, replace_base_url=LOC_HOST_BASE)
+    rendered_html = renderer.render_template(template_name, parameters, override_resource_dir='')
     return Response(content=rendered_html, media_type="text/html")
 
 

@@ -11,7 +11,8 @@ class Renderer:
     """
 
     def __init__(self, templates_dir: str,
-                 device_scale_factor: int = 1):
+                 device_scale_factor: int = 1,
+                 resource_base_url=''):
         self.templates_dir = templates_dir
         self.default_viewport = {'width': 1280, 'height': 720}
         self.device_scale_factor = device_scale_factor
@@ -22,6 +23,7 @@ class Renderer:
             loader=FileSystemLoader(self.templates_dir),
             autoescape=select_autoescape(['html', 'xml', 'jinja2'])
         )
+        self._resource_base_url = resource_base_url
         logging.info(f"Renderer initialized with templates directory: {self.templates_dir}")
 
     async def start(self):
@@ -59,7 +61,7 @@ class Renderer:
             await self.playwright.stop()
             logging.info("Playwright stopped.")
 
-    def render_template(self, template_name: str, parameters: dict, replace_base_url=None) -> str:
+    def render_template(self, template_name: str, parameters: dict, override_resource_dir=None) -> str:
         """
         Render a Jinja2 template with the given parameters.
         """
@@ -71,8 +73,10 @@ class Renderer:
 
             rendered_html = template.render(parameters)
 
-            if replace_base_url:
-                rendered_html = rendered_html.replace('http://renderer:8404', replace_base_url)
+            if override_resource_dir is not None:
+                rendered_html = rendered_html.replace('renderer', override_resource_dir)
+            elif self._resource_base_url:
+                rendered_html = rendered_html.replace('renderer', self._resource_base_url)
 
             logging.info(f"Template {template_name} rendered with parameters: {parameters}")
             return rendered_html
