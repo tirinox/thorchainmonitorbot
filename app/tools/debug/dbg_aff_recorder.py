@@ -40,7 +40,7 @@ async def main():
     app = LpAppFramework(log_level=logging.INFO)
     async with app(brief=True):
         # await dbg_aff_record1(app, catch_up=50)
-        await dbg_aff_record1(app, one_block=True, force_start_block=16089600)
+        await dbg_aff_record1(app, one_block=False, force_start_block=19000000)
 
 
 if __name__ == '__main__':

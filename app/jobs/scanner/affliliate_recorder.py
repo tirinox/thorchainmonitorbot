@@ -7,17 +7,18 @@ from lib.depcont import DepContainer
 from lib.logs import WithLogger
 from lib.money import pretty_dollar
 from models.memo import THORMemo
+from notify.dup_stop import TxDeduplicator
 
 
 class AffiliateRecorder(WithLogger, INotified):
     def __init__(self, deps: DepContainer, key_prefix="tx"):
         super().__init__()
         self.deps = deps
-        self.redis = deps.db.redis
         self.key_prefix = key_prefix
         self.days_to_keep = 60
         self.clear_every_ticks = 10
         self._clear_counter = 0
+        self._dedup = TxDeduplicator(deps.db, 'AffiliateRecorder')
 
     @staticmethod
     def _date_format(date):
@@ -27,10 +28,11 @@ class AffiliateRecorder(WithLogger, INotified):
         cutoff_time = datetime.now() - timedelta(days=days)
         fail_count = 0
         total_deleted = 0
+        redis = await self.deps.db.get_redis()
         while True:
-            keys = await self.redis.keys(self._prefixed_key('*', cutoff_time))
+            keys = await redis.keys(self._prefixed_key('*', cutoff_time))
             if keys:
-                await self.redis.delete(*keys)
+                await redis.delete(*keys)
                 total_deleted += len(keys)
             else:
                 fail_count += 1
@@ -41,8 +43,8 @@ class AffiliateRecorder(WithLogger, INotified):
 
         self.logger.info(f"Deleted {total_deleted} old swap events older than {days} days")
 
-    def _prefixed_key(self, route, date):
-        return f"{self.key_prefix}:aff_collector:{route}:{self._date_format(date)}"
+    def _prefixed_key(self, name, date):
+        return f"{self.key_prefix}:aff_collector:{name}:{self._date_format(date)}"
 
     @staticmethod
     def get_affiliate_name(memo: THORMemo):
@@ -58,11 +60,13 @@ class AffiliateRecorder(WithLogger, INotified):
 
         affiliate_fee = memo.affiliate_fee_0_1 * volume_usd
 
-        await self.redis.hincrbyfloat(key, "volume", affiliate_fee)
+        redis = await self.deps.db.get_redis()
+        await redis.hincrbyfloat(key, "volume", affiliate_fee)
         self.logger.debug(f"Stored swap event: {key} for {aff}: {pretty_dollar(affiliate_fee)} at {dt}")
 
     async def _process_aff_tx(self, tx: NativeThorTx, memo: THORMemo):
         print(f'Found affiliate address: {memo.affiliate_address} in tx: {tx.tx_hash} type: {memo.action}')
+        print(tx)
         pass  # todo
 
     async def on_data(self, sender, data: BlockResult):
@@ -70,7 +74,7 @@ class AffiliateRecorder(WithLogger, INotified):
             try:
                 if memo := tx.deep_memo:
                     memo_obj = THORMemo.parse_memo(memo)
-                    if memo_obj.affiliate_address:
+                    if memo_obj and memo_obj.affiliate_address:
                         await self._process_aff_tx(tx, memo_obj)
             except Exception as e:
                 self.logger.error(f'Error {e!r} processing tx: {tx.tx_hash} at block #{data.block_no}')
