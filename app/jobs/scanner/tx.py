@@ -116,6 +116,12 @@ class ThorTxMessage(NamedTuple):
             return memo
         return ''
 
+    def __repr__(self):
+        return f"ThorTxMessage({self.attrs})"
+
+    def __str__(self):
+        return f"ThorTxMessage({self.attrs})"
+
 
 class ThorSignerInfo(NamedTuple):
     public_key: str
