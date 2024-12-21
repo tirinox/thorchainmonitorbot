@@ -5,6 +5,7 @@ FROM python:3.11-slim
 ENV PYTHONUNBUFFERED=1
 ENV PLAYWRIGHT_BROWSERS_PATH=/ms-playwright
 
+
 # Install dependencies
 RUN apt-get update && apt-get install -y \
     wget \
@@ -23,15 +24,16 @@ RUN apt-get update && apt-get install -y \
     libpangocairo-1.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
+# Install Playwright and browsers
+RUN pip install playwright
+RUN playwright install --with-deps
+
 # Set working directory
 WORKDIR /app
 
 # Copy requirements and install
 COPY app/renderer/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
-
-# Install Playwright and browsers
-RUN playwright install --with-deps
 
 # Expose the port FastAPI will run on
 EXPOSE 8404
