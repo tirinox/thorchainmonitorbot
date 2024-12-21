@@ -3,6 +3,8 @@ import logging
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from playwright.async_api import async_playwright, Page, ConsoleMessage
 
+from lib.money import short_rune, short_dollar
+
 
 class Renderer:
     """
@@ -23,6 +25,10 @@ class Renderer:
             loader=FileSystemLoader(self.templates_dir),
             autoescape=select_autoescape(['html', 'xml', 'jinja2'])
         )
+        self.jinja_env.globals.update({
+            'short_rune': short_rune,
+            'short_dollar': short_dollar,
+        })
         self._resource_base_url = resource_base_url
         logging.info(f"Renderer initialized with templates directory: {self.templates_dir}")
 
