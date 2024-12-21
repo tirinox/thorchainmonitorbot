@@ -6,45 +6,163 @@
         /* Optional: Style the canvas container */
         #chart-container {
             position: absolute;
-            top: 15%;
-            left: 20%;
-            width: 50%;
-            height: 50%;
-            margin: 0;
+            top: 20%;
+            left: 5%;
+            right: 5%;
+            width: auto;
+            height: 55%;
             padding: 0;
+        }
 
-        {% if debug %}
-            border: #23DCC8 1px dashed;
-        {% endif %}
+        .header-box {
+            display: flex;
+            align-items: center;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo {
+            width: 100px;
+            height: auto;
+            margin-right: 20px;
+        }
+
+        .indicator-container {
+            position: absolute;
+            bottom: 5%;
+            left: 3%;
+            right: 3%;
+
+            display: flex;
+            flex-direction: row;
+            align-items: stretch;
+            flex-wrap: nowrap;
+            justify-content: space-around;
+        }
+
+        .indicator-box {
+            display: flex;
+            margin: 6px;
+            padding: 6px;
+
+            background: rgba(52, 51, 51, 0.21);
+            border-radius: 12px;
+            font-family: ThorFontLight;
+            justify-content: space-between;
+            flex-direction: column;
+            align-items: center;
 
         }
 
+        .indicator-label {
+            display: flex;
+
+            font-weight: normal;
+            font-size: 18px;
+            color: #a3a3a3;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .indicator-subvalue {
+            display: flex;
+            font-weight: bolder;
+            font-size: 24px;
+            color: #dddcdc;
+            margin-bottom: 3px;
+            letter-spacing: 2px;
+            text-shadow: none;
+        }
+
+        .indicator-value {
+            font-weight: bold;
+            font-size: 32px;
+            color: #ffffff; /* Bright orange color */
+            margin-bottom: 3px;
+            letter-spacing: 2px;
+            text-shadow: #e4bf01 1px 0 10px;
+        }
+
+        .burn-percent {
+            font-size: 40px;
+        }
+
+        .fire:after {
+            content: '🔥';
+        }
+        .fire-1 {
+            filter: saturate(10%);
+        }
+        .fire-2 {
+            filter: saturate(20%);
+        }
+        .fire-3 {
+            filter: saturate(30%);
+        }
+        .fire-4 {
+            filter: saturate(40%);
+        }
+        .fire-5 {
+            filter: saturate(50%);
+        }
+        .fire-6 {
+            filter: saturate(60%);
+        }
+        .fire-7 {
+            filter: saturate(70%);
+        }
+        .fire-8 {
+            filter: saturate(80%);
+        }
+        .fire-9 {
+            filter: saturate(90%);
+        }
+        .fire-10 {
+            filter: saturate(100%);
+        }
+        .fire-over {
+            filter: saturate(200%);
+        }
+
+
     </style>
 
-    <div class="tables">
-        <img src="renderer/static/tc_logo_transparent.png" alt="THORChain logo">
-        <div class="title">Burned Rune</div>
-        <div>
-            <span>System Income burn percent:</span>
-            <span>{{ "%.1f"|format(system_income_burn_percent) }} %</span>
-        </div>
-        <div>
-            <span>Rune burnt last {{ tally_days|int }} days:</span>
-            <span>{{ "%.1f"|format(prev_max_rune - curr_max_rune) }}ᚱ</span>
-        </div>
-        <div>
-            <span>Total burned:</span>
-            <span>{{ "%.1f"|format(total_burned_rune) }}ᚱ | {{ "$%.1f"|format(total_burned_usd) }}</span>
-        </div>
-        <div>
-            <span>Prediction for 1 year:</span>
-            <span>{{ yearly_burn_prediction|round }}ᚱ</span>
-        </div>
-        <div>
-            <span>Rune circulating supply</span>
-            <span>{{ circulating_suppy|round }}ᚱ</span>
+    <div class="header-box">
+        <img class="logo" src="renderer/static/tc_logo_transparent.png?rv=1" alt="THORChain logo">
+        <div class="title">THORCHAIN ⤬ BURNED RUNE 🔥</div>
+    </div>
+
+    <div class="indicator-container">
+
+        <div class="indicator-box">
+            <div class="indicator-value burn-percent">🔥{{ "%.1f"|format(system_income_burn_percent) }} %</div>
+            <div class="indicator-label">System Income burn</div>
         </div>
 
+        <div class="indicator-box">
+            <div class="indicator-value"><span class="fire"></span>{{ "%.1f"|format(points[-1][1]) }}ᚱ</div>
+            <div class="indicator-subvalue">({{ short_dollar(usd_per_rune * points[-1][1]) }})</div>
+            <div class="indicator-label">Rune burned last 24H</div>
+        </div>
+
+        <div class="indicator-box">
+            <div class="indicator-value"><span class="fire"></span>{{ short_rune(prev_max_rune - curr_max_rune) }}</div>
+            <div class="indicator-subvalue">({{ short_dollar((prev_max_rune - curr_max_rune) * usd_per_rune) }})</div>
+            <div class="indicator-label">Rune burned last {{ tally_days|int }} days</div>
+        </div>
+
+        <div class="indicator-box">
+            <div class="indicator-value"><span class="fire"></span> {{ short_rune(total_burned_rune) }}</div>
+            <div class="indicator-subvalue">({{ short_dollar(total_burned_usd) }})</div>
+            <div class="indicator-label">Total Rune burned</div>
+        </div>
+
+        <div class="indicator-box">
+            <div class="indicator-value"><span class="fire fire-over"></span>{{ short_rune(yearly_burn_prediction) }}</div>
+            <div class="indicator-subvalue">({{ short_dollar(yearly_burn_prediction * usd_per_rune) }})</div>
+            <div class="indicator-label">Prediction for 1 year</div>
+        </div>
 
     </div>
 
@@ -61,19 +179,19 @@
         Chart.defaults.color = 'white'; // Set the font color for the chart
 
         const runeBurnt = {{ points|safe }};
-        console.log(runeBurnt);
         // points are [ [x, y], [x, y], ... ]
 
         let dateStrings = runeBurnt.map(point => new Date(point[0] * 1e3));
+        console.log(runeBurnt);
         // format dates to DD.MM HH:MM
-        let even = true
+        let even = false
         dateStrings = dateStrings.map(date => {
             const day = date.getDate().toString().padStart(2, '0');
             const month = (date.getMonth() + 1).toString().padStart(2, '0');
             const hours = date.getHours().toString().padStart(2, '0');
             const minutes = date.getMinutes().toString().padStart(2, '0');
             even = !even
-            return even ? `${day}/${month} ${hours}:${minutes}` : '';
+            return even ? `${day}.${month}` : '';
         });
 
         const values = runeBurnt.map(point => point[1]);
@@ -107,41 +225,35 @@
                     enabled: false
                 },
                 scales: {
+                    x: {
+                        title: {
+                            display: false,
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)',
+                        },
+                        ticks: {
+                            font: {
+                                size: 24,
+                            }
+                        },
+                    },
                     y: {
                         beginAtZero: true, // Start the Y-axis at zero
                         grid: {
                             color: 'rgba(255, 255, 255, 0.1)',
                         },
-                        font: {
-                            size: 16,
-                        },
                         ticks: {
                             font: {
-                                size: 16,
+                                size: 18,
                             }
                         },
                     },
-                    x: {
-                        title: {
-                            display: true,
-                            text: 'Time',
-                            font: {
-                                size: 16,
-                            }
-                        },
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.1)',
-                        },
-                        ticks: {
-                            font: {
-                                size: 16,
-                            }
-                        },
-                    }
+
                 },
                 plugins: {
                     title: {
-                        display: true,
+                        display: false,
                         text: 'Burnt Rune Chart',
                         font: {
                             family: 'ThorFont',

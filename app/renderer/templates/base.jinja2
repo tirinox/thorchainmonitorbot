@@ -9,15 +9,36 @@
             src: url(renderer/static/ThorFont.ttf);
         }
 
+        @font-face {
+            font-family: ThorFontLight;
+            src: url(renderer/static/Exo2-VariableFont_wght.ttf);
+        }
+
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
+
         /* Dynamically set the viewport size */
         html, body {
             margin: 0;
             padding: 0;
+            font-family: ThorFontLight, Arial, sans-serif;
+            font-weight: 100;
             overflow: hidden; /* Prevent scrollbars */
             position: fixed;
             width: {{ width }}px;
             height: {{ height }}px;
+            background-color: #061913;
+        }
 
+
+        div {
+        {% if debug %}
+            border: #083a34 1px dashed;
+        {% endif %}
         }
 
         body {
@@ -66,8 +87,22 @@
             max-height: {{ height }}px;
         }
 
+        .title {
+            letter-spacing: 0.15em;
+            font-family: ThorFontLight, a;
+            font-size: 2.7em;
+            font-weight: normal;
+        }
+
     </style>
     <script src="renderer/static/chart.umd.min.js"></script>
+    {% if auto %}
+        <script>
+            setInterval(function () {
+                location.reload();
+            }, 3000);
+        </script>
+    {% endif %}
 </head>
 <body class="night-black">
 <div class="container">
