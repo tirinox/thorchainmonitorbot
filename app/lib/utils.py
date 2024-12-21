@@ -20,9 +20,6 @@ from itertools import tee
 from typing import Iterable, List, Any, Awaitable
 from urllib.parse import urlparse, urlunparse
 
-import aiofiles
-import aiohttp
-
 from lib.date_utils import today_str
 from lib.logs import setup_logs, WithLogger
 
@@ -245,21 +242,6 @@ def unique_ident(args, prec='full'):
     items = [today_str(prec), *map(str, args)]
     full_string = ''.join(items)
     return hashlib.md5(full_string.encode()).hexdigest()
-
-
-async def download_file(url, target_path):
-    async with aiohttp.ClientSession() as session:
-        if not url:
-            raise FileNotFoundError
-
-        logging.info(f'Downloading file from {url}...')
-        async with session.get(url) as resp:
-            if resp.status == 200:
-                f = await aiofiles.open(target_path, mode='wb')
-                await f.write(await resp.read())
-                await f.close()
-
-            return resp.status
 
 
 def iterable_but_not_str(it):

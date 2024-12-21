@@ -6,7 +6,7 @@ from PIL import Image
 
 from lib.constants import *
 from models.asset import Asset
-from lib.utils import download_file
+from lib.file_util import download_file
 
 logger = logging.getLogger(__name__)
 

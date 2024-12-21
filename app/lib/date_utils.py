@@ -1,7 +1,9 @@
 from datetime import datetime, timedelta, date
-import time
 
-import pandas as pd
+try:
+    import pandas as pd
+except ImportError:
+    pd = None
 
 MINUTE = 60
 HOUR = 60 * MINUTE
